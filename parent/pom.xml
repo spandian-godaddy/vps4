@@ -23,7 +23,7 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
 
-        <testcase.excludedGroups>gdg.hfs.Phase2Tests</testcase.excludedGroups>
+        <tests.excluded>**/phase2/**</tests.excluded>
     </properties>
 
     <build>
@@ -56,7 +56,9 @@
                         </dependency>
                     </dependencies>
                     <configuration>
-                        <excludedGroups>${testcase.excludedGroups}</excludedGroups>
+                        <excludes>
+                            <exclude>${tests.excluded}</exclude>
+                        </excludes>
                     </configuration>
                     <executions>
                         <execution>
@@ -177,8 +179,7 @@
                 <activeByDefault>false</activeByDefault>
             </activation>
             <properties>
-                <!-- when this profile is active, remove the Phase2Tests annotation class from the excluded groups -->
-                <testcase.excludedGroups></testcase.excludedGroups>
+                <tests.excluded></tests.excluded>
             </properties>
         </profile>
      </profiles>
