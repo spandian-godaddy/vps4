@@ -1,0 +1,15 @@
+<project>
+    <modelVersion>4.0.0</modelVersion>
+
+    <groupId>com.godaddy.vps4</groupId>
+    <artifactId>vps4-project</artifactId>
+    <version>0.0.1-SNAPSHOT</version>
+    <name>VPS4</name>
+    <packaging>pom</packaging>
+
+    <modules>
+        <module>parent</module>
+        <module>web</module>
+    </modules>
+
+</project>
