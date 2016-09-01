@@ -11,6 +11,10 @@ import org.slf4j.LoggerFactory;
 
 import com.godaddy.vps4.security.User;
 
+import io.swagger.annotations.Api;
+
+@Api(tags = { "users" })
+
 @Path("/users")
 @Produces(MediaType.APPLICATION_JSON)
 public class UsersResource {
