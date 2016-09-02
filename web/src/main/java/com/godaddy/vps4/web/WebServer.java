@@ -24,6 +24,7 @@ import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jsr310.JSR310Module;
 import com.fasterxml.jackson.jaxrs.json.JacksonJaxbJsonProvider;
 import com.fasterxml.jackson.jaxrs.json.JacksonJsonProvider;
+import com.godaddy.vps4.jdbc.DatabaseModule;
 import com.godaddy.vps4.security.UserModule;
 import com.google.inject.AbstractModule;
 import com.google.inject.Guice;
@@ -100,6 +101,7 @@ public class WebServer {
         });
 
         modules.add(new UserModule());
+        modules.add(new DatabaseModule());
         modules.add(new AbstractModule() {
             @Override
             public void configure() {

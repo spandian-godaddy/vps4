@@ -13,7 +13,7 @@ public class ExampleDatabaseTest {
         User user = new User();
         user.name = "Brian";
 
-        new UsersResource(user).getUser();
+        new UsersResource(null, user).getUser();
         assertTrue(true);
     }
 }

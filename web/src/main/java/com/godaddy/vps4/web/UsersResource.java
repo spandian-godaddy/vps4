@@ -1,6 +1,7 @@
 package com.godaddy.vps4.web;
 
 import javax.inject.Inject;
+import javax.sql.DataSource;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
@@ -24,7 +25,7 @@ public class UsersResource {
     final User user;
 
     @Inject
-    public UsersResource(User user) {
+    public UsersResource(DataSource dataSource, User user) {
         this.user = user;
     }
 
