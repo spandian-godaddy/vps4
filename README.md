@@ -29,5 +29,17 @@ TODO: move this into scripts/release?  (in root project directory?) vs storing s
                      -DgenerateBackupPoms=false
 
 ** (finalize properties?  resolve version ranges?  all the pre-release stuff...)
-                 
-    mvn clean package -Pphase2-tests
+
+To just run unit tests:
+
+    mvn clean package
+
+To run integration/phase2 tests (after all other build phases):
+
+    mvn clean verify -Pphase2-tests
+    
+The database can be rebuilt with the 'rebuild-database' profile, which
+runs in the pre-integration-test build phase:
+
+    mvn clean verify -Pphase2-tests -Prebuild-database
+    

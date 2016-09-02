@@ -11,6 +11,10 @@
 	<artifactId>vps4-core</artifactId>
 	<name>VPS4 Core</name>
 	<packaging>jar</packaging>
+	
+	<properties>
+	    <vps.env>local</vps.env>
+	</properties>
 
 	<build>
 		<plugins>
@@ -29,13 +33,14 @@
 						    <quiet>true</quiet>
 						    <files>
 						      <file>src/main/resources/vps4.properties</file>
-						      <file>src/main/resources/vps4.local.properties</file>
+						      <file>src/main/resources/vps4.${vps.env}.properties</file>
 						    </files>
 						</configuration>
 					</execution>
 				</executions>
 			</plugin>
 			
+			<!-- Example of using antrun plugin -->
 			<plugin>
 			    <artifactId>maven-antrun-plugin</artifactId>
 			    <version>1.8</version>
@@ -47,7 +52,7 @@
 			             </goals>
 			             <configuration>
 			                 <target>
-			                     <echo>Test property: ${db.vps4.bootstrap.username}</echo>
+			                     <echo>Bootstrap database: ${db.vps4.server}:${db.vps4.port}/${db.vps4.bootstrap.database}</echo>
 			                 </target>
 			             </configuration>
 			         </execution>
@@ -66,5 +71,81 @@
 		</dependency>
 
 	</dependencies>
+	
+	<profiles>
+	    <profile>
+	        <id>rebuild-database</id>
+	        <activation>
+	            <activeByDefault>false</activeByDefault>
+	        </activation>
+	        <build>            
+                <plugins>
+	                <plugin>
+	                    <groupId>org.codehaus.mojo</groupId>
+	                    <artifactId>sql-maven-plugin</artifactId>
+	                    <version>1.5</version>
+	                    
+	                    <dependencies>
+	                        <dependency>
+	                            <groupId>org.postgresql</groupId>
+	                            <artifactId>postgresql</artifactId>
+	                            <version>9.4-1201-jdbc4</version>
+	                        </dependency>
+	                    </dependencies>
+	                    
+	                    <configuration>
+	                        <driver>org.postgresql.Driver</driver>
+	                    </configuration>
+	                    
+	                    <executions>
+	                        <execution>
+	                            <id>drop-create-database</id>
+	                            <phase>pre-integration-test</phase>
+	                            <goals>
+	                                <goal>execute</goal>
+	                            </goals>
+	                            <configuration>
+	                                <url>jdbc:postgresql://${db.vps4.server}:${db.vps4.port}/${db.vps4.bootstrap.database}</url>
+	                                <username>${db.vps4.bootstrap.username}</username>
+	                                <password>${db.vps4.bootstrap.password}</password>
+	                                <autocommit>true</autocommit>
+	                                <delimiterType>row</delimiterType>	                                
+	                                <enableFiltering>true</enableFiltering>
+                                    <srcFiles>
+                                        <srcFile>sql/bootstrap/drop_db.sql</srcFile>
+                                        <srcFile>sql/bootstrap/create_db.sql</srcFile>
+                                    </srcFiles>
+	                            </configuration>
+	                        </execution>
+	                        <execution>
+                                <id>build-database</id>
+                                <phase>pre-integration-test</phase>
+                                <goals>
+                                    <goal>execute</goal>
+                                </goals>
+                                <configuration>
+                                    <url>jdbc:postgresql://${db.vps4.server}:${db.vps4.port}/${db.vps4.database}</url>
+                                    <username>${db.vps4.username}</username>
+                                    <password>${db.vps4.password}</password>
+                                    <autocommit>true</autocommit>
+                                    <delimiterType>row</delimiterType>
+                                    
+                                    <orderFile>ascending</orderFile>
+                                    <fileset>
+                                        <basedir>sql/migrations</basedir>
+                                        <includes>
+                                            <include>**/*.sql</include>
+                                        </includes>
+                                    </fileset>
+                                </configuration>
+                            </execution>
+	                    </executions>
+	                    
+	                </plugin>
+	            </plugins>
+	        </build>
+	           
+	    </profile>
+    </profiles>
 
 </project>
