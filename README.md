@@ -42,4 +42,17 @@ The database can be rebuilt with the 'rebuild-database' profile, which
 runs in the pre-integration-test build phase:
 
     mvn clean verify -Pphase2-tests -Prebuild-database
+
+    
+Integration Testing
+===================
+
+Running the maven build on Jenkins:
+
+Jenkins Integration Database:  p3dlvps4dbint.cloud.phx3.gdg
+
+mvn clean verify     \
+  -Dvps4.env=jenkins \
+  -Ddb.vps4.database=db.vps4.database=vps4_int_${GIT_COMMIT} \
+  -Pphase2-tests -Prebuild-database
     
