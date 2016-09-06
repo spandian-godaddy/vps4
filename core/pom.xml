@@ -13,7 +13,7 @@
 	<packaging>jar</packaging>
 	
 	<properties>
-	    <vps.env>local</vps.env>
+	    <vps4.env>local</vps4.env>
 	</properties>
 
 	<build>
@@ -33,7 +33,7 @@
 						    <quiet>true</quiet>
 						    <files>
 						      <file>src/main/resources/vps4.properties</file>
-						      <file>src/main/resources/vps4.${vps.env}.properties</file>
+						      <file>src/main/resources/vps4.${vps4.env}.properties</file>
 						    </files>
 						</configuration>
 					</execution>
@@ -124,8 +124,8 @@
 	                                <delimiterType>row</delimiterType>	                                
 	                                <enableFiltering>true</enableFiltering>
                                     <srcFiles>
-                                        <srcFile>sql/bootstrap/drop_db.sql</srcFile>
-                                        <srcFile>sql/bootstrap/create_db.sql</srcFile>
+                                        <srcFile>${project.basedir}/sql/bootstrap/drop_db.sql</srcFile>
+                                        <srcFile>${project.basedir}/sql/bootstrap/create_db.sql</srcFile>
                                     </srcFiles>
 	                            </configuration>
 	                        </execution>
@@ -144,11 +144,29 @@
                                     
                                     <orderFile>ascending</orderFile>
                                     <fileset>
-                                        <basedir>sql/migrations</basedir>
+                                        <basedir>${project.basedir}/sql/migrations</basedir>
                                         <includes>
                                             <include>**/*.sql</include>
                                         </includes>
                                     </fileset>
+                                </configuration>
+                            </execution>
+                            <execution>
+                                <id>drop-database-after-tests</id>
+                                <phase>post-integration-test</phase>
+                                <goals>
+                                    <goal>execute</goal>
+                                </goals>
+                                <configuration>
+                                    <url>jdbc:postgresql://${db.vps4.server}:${db.vps4.port}/${db.vps4.bootstrap.database}</url>
+                                    <username>${db.vps4.bootstrap.username}</username>
+                                    <password>${db.vps4.bootstrap.password}</password>
+                                    <autocommit>true</autocommit>
+                                    <delimiterType>row</delimiterType>                                  
+                                    <enableFiltering>true</enableFiltering>
+                                    <srcFiles>
+                                        <srcFile>${project.basedir}/sql/bootstrap/drop_db.sql</srcFile>
+                                    </srcFiles>
                                 </configuration>
                             </execution>
 	                    </executions>

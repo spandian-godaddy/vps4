@@ -24,7 +24,7 @@ public class ConfigProvider implements Provider<Config> {
     public Config get() {
 
         // populate Config object
-        BasicConfig config = new BasicConfig();
+        SystemPropertyConfig config = new SystemPropertyConfig();
 
         String environment = System.getProperty("vps4.env", "local");
         logger.info("configuration environment: {}", environment);
