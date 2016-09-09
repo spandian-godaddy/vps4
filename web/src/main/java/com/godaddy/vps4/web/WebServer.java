@@ -17,6 +17,7 @@ import org.eclipse.jetty.util.thread.QueuedThreadPool;
 import org.jboss.resteasy.plugins.guice.GuiceResteasyBootstrapServletContextListener;
 import org.jboss.resteasy.util.GetRestful;
 
+import com.godaddy.vps4.vm.VmModule;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
 import com.google.inject.Module;
@@ -57,6 +58,8 @@ public class WebServer {
         modules.add(new SwaggerModule());
 
         modules.add(new WebModule());
+        
+        modules.add(new VmModule());
 
         Injector injector = Guice.createInjector(modules);
 

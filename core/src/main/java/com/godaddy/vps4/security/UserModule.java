@@ -6,8 +6,7 @@ public class UserModule extends AbstractModule {
 
     @Override
     protected void configure() {
-        User user = new User();
-        user.name = "Brian";
+        User user = new User("Brian", 0, "shopperId");
 
         bind(User.class).toInstance(user);
     }

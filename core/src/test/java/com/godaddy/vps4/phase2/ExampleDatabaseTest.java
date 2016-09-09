@@ -4,7 +4,6 @@ import static org.junit.Assert.assertTrue;
 
 import java.sql.Connection;
 import java.sql.ResultSet;
-import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.sql.Statement;
 
@@ -39,8 +38,7 @@ public class ExampleDatabaseTest {
 
         }
 
-        User user = new User();
-        user.name = "Brian";
+        User user = new User("Brian", 0, "ShopperId");
 
         assertTrue(true);
     }

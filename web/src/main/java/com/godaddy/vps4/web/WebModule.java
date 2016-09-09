@@ -13,5 +13,6 @@ public class WebModule extends AbstractModule {
 
         install(new UserModule());
         bind(UsersResource.class);
+        bind(VmsResource.class);
     }
 }
