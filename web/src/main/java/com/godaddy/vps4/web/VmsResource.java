@@ -13,7 +13,6 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
 
-import org.jboss.resteasy.annotations.Body;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -26,7 +25,6 @@ import com.godaddy.vps4.vm.VirtualMachineService;
 import gdg.hfs.vhfs.vm.Vm;
 import gdg.hfs.vhfs.vm.VmService;
 import io.swagger.annotations.Api;
-import io.swagger.annotations.ApiParam;
 
 @Api(tags = { "vms" })
 
@@ -36,14 +34,14 @@ import io.swagger.annotations.ApiParam;
 public class VmsResource {
 
 	private static final Logger logger = LoggerFactory.getLogger(VmsResource.class);
-	
+
 	final User user;
 	final VirtualMachineService virtualMachineService;
 	final PrivilegeService privilegeService;
     final VmService vmService;
-	
+
 	@Inject
-	public VmsResource(DataSource dataSource, 
+	public VmsResource(DataSource dataSource,
             PrivilegeService privilegeService,
 			User user,
             VmService vmService,
@@ -53,14 +51,14 @@ public class VmsResource {
         this.privilegeService = privilegeService;
         this.vmService = vmService;
 	}
-	
+
 	@GET
 	@Path("/{vmId}")
 	public CombinedVm getVm(@PathParam("vmId") int vmId) {
-		
+
 		logger.info("getting vm with id {}", vmId);
 //		return new CombinedVm();
-		
+
 		// first check our database to see if we have a record of this VM
         VirtualMachine virtualMachine = virtualMachineService.getVirtualMachine(vmId);
         if (virtualMachine == null) {
@@ -77,9 +75,9 @@ public class VmsResource {
         }
 
         return new CombinedVm(vm, virtualMachine);
-	
+
 	}
-	
+
 	@POST
 	@Path("/")
 	public boolean createVm(@QueryParam("orionGuid") UUID orionGuid,
@@ -87,22 +85,22 @@ public class VmsResource {
 							@QueryParam("tier") int tier,
 							@QueryParam("controlPanel") String controlPanel,
 							@QueryParam("managedLevel") int managedLevel) {
-		
+
 		return true;
-		
+
 	}
-	
+
 	@POST
 	@Path("/{vmId}/provision")
-	public CombinedVm provisionVm(@QueryParam("name") String name, 
+	public CombinedVm provisionVm(@QueryParam("name") String name,
    							   @QueryParam("vmId") long vmId,
-							   @QueryParam("image") String image, 
-							   @QueryParam("dataCenter") long projectId, 
+							   @QueryParam("image") String image,
+							   @QueryParam("dataCenter") long projectId,
 							   @QueryParam("username") String username,
 							   @QueryParam("password") String password) {
-		
+
 		logger.info("creating new vm");
-		
+
 		return new CombinedVm();
 	}
 }
