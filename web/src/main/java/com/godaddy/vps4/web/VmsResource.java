@@ -26,6 +26,7 @@ import gdg.hfs.vhfs.vm.Vm;
 import gdg.hfs.vhfs.vm.VmService;
 import io.swagger.annotations.Api;
 
+@Vps4Api
 @Api(tags = { "vms" })
 
 @Path("/vms")

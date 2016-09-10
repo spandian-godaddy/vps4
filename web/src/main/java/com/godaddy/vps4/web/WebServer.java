@@ -79,11 +79,16 @@ public class WebServer {
         return handler;
 	}
 
+	static boolean isVps4Api(Class<?> resourceClass) {
+	    return resourceClass.isAnnotationPresent(Vps4Api.class);
+	}
+
 	static void populateSwaggerModels(Injector injector) {
 
 	    // extract JAX-RS classes from injector
         final Set<Class<?>> appClasses = injector.getAllBindings().keySet().stream()
             .map(key -> key.getTypeLiteral().getRawType())
+            .filter(WebServer::isVps4Api)
             .filter(GetRestful::isRootResource)
             .distinct()
             .collect(Collectors.toSet());
