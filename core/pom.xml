@@ -151,7 +151,7 @@
 	                                <delimiterType>row</delimiterType>	                                
 	                                <enableFiltering>true</enableFiltering>
                                     <srcFiles>
-                                        <!--<srcFile>${project.basedir}/sql/bootstrap/drop_db.sql</srcFile>-->
+                                        <srcFile>${project.basedir}/sql/bootstrap/drop_db.sql</srcFile>
                                         <srcFile>${project.basedir}/sql/bootstrap/create_db.sql</srcFile>
                                     </srcFiles>
 	                            </configuration>
@@ -178,7 +178,7 @@
                                     </fileset>
                                 </configuration>
                             </execution>
-                            <!--<execution>
+                            <execution>
                                 <id>drop-database-after-tests</id>
                                 <phase>post-integration-test</phase>
                                 <goals>
@@ -195,7 +195,7 @@
                                         <srcFile>${project.basedir}/sql/bootstrap/drop_db.sql</srcFile>
                                     </srcFiles>
                                 </configuration>
-                            </execution>-->
+                            </execution>
 	                    </executions>
 	                    
 	                </plugin>
