@@ -96,11 +96,11 @@ public class VmsResource {
 							@QueryParam("controlPanel") String controlPanel,
 							@QueryParam("managedLevel") int managedLevel) {
 
-		Long controlPanelId = controlPanelService.getControlPanelId(controlPanel);
-		Long osTypeId = osTypeService.getOsTypeId(osType);
+		int controlPanelId = controlPanelService.getControlPanelId(controlPanel);
+		int osTypeId = osTypeService.getOsTypeId(osType);
 		VirtualMachineSpec spec = virtualMachineService.getSpec(tier);
 		
-		virtualMachineService.createVirtualMachine(orionGuid, osTypeId, controlPanelId, spec, managedLevel);
+		virtualMachineService.createVirtualMachine(orionGuid, osTypeId, controlPanelId, spec.specId, managedLevel);
 		
 		
 		return true;

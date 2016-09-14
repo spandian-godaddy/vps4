@@ -9,5 +9,5 @@ public interface ControlPanelService {
 
     List<String> listControlPanelTypes();
 
-    Long getControlPanelId(String controlPanel);
+    int getControlPanelId(String controlPanel);
 }

@@ -107,22 +107,24 @@ public class JdbcVirtualMachineService implements VirtualMachineService {
 
 	@Override
 	public VirtualMachineSpec getSpec(int tier) {
-		// TODO Auto-generated method stub
-		return null;
+        return Sql.with(dataSource).exec("SELECT * FROM virtual_machine_spec "
+                + " WHERE tier=? ",
+                Sql.nextOrNull(this::mapVirtualMachineSpec),
+                tier);
 	}
 
 	@Override
 	public void createVirtualMachine(UUID orionGuid, 
-			Long osTypeId, 
-			Long controlPanelId, 
-			VirtualMachineSpec spec,
+			int osTypeId, 
+			int controlPanelId, 
+			int specId,
 			int managedLevel) {
 		Sql.with(dataSource).exec("SELECT * FROM virtual_machine_create(?,?,?,?,?)", 
 				null, 
 				orionGuid, 
 				osTypeId, 
 				controlPanelId, 
-				spec, 
+				specId, 
 				managedLevel);
 	}
 

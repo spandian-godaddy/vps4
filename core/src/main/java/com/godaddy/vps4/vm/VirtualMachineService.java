@@ -28,9 +28,9 @@ public interface VirtualMachineService {
     void destroyVirtualMachine(long vmId);  // (just updates status/sets validUntil, destroy is accomplished on backend)
 
 	void createVirtualMachine(UUID orionGuid, 
-							  Long osTypeId, 
-							  Long controlPanelId, 
-							  VirtualMachineSpec spec,
+							  int osTypeId, 
+							  int controlPanelId, 
+							  int specId,
 							  int managedLevel);
 
 

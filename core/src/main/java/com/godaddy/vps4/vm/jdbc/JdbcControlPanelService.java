@@ -28,22 +28,17 @@ public class JdbcControlPanelService implements ControlPanelService {
     }
 
     @Override
-    public Long getControlPanelId(String controlPanel) {
-        if (controlPanel == null) {
-            return null;
-        }
-        else {
-            return Sql.with(dataSource).exec(
+    public int getControlPanelId(String controlPanel) {
+        return Sql.with(dataSource).exec(
                     "SELECT (control_panel_id) from control_panel WHERE name=?",
                     this::controlPanelIdMapper,
                     controlPanel);
-        }
     }
 
-    public Long controlPanelIdMapper(ResultSet rs) throws SQLException {
+    public int controlPanelIdMapper(ResultSet rs) throws SQLException {
         try {
             rs.next();
-            return rs.getLong("control_panel_id");
+            return rs.getInt("control_panel_id");
         }
         catch (SQLException sqlEx) {
             throw new IllegalArgumentException("Control Panel Does not exist");
