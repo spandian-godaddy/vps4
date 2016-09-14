@@ -1,14 +1,17 @@
 package com.godaddy.vps4.vm;
 
 import java.util.List;
+import java.util.UUID;
 
 public interface VirtualMachineService {
 
     List<VirtualMachine> listVirtualMachines(long projectId);
 
     VirtualMachine getVirtualMachine(long vmId);
-
+    
     VirtualMachineSpec getSpec(String name);
+    
+    VirtualMachineSpec getSpec(int tier);
 
     /**
      *
@@ -23,6 +26,12 @@ public interface VirtualMachineService {
     // updateStatus(long vmId, int newStatus)
 
     void destroyVirtualMachine(long vmId);  // (just updates status/sets validUntil, destroy is accomplished on backend)
+
+	void createVirtualMachine(UUID orionGuid, 
+							  Long osTypeId, 
+							  Long controlPanelId, 
+							  VirtualMachineSpec spec,
+							  int managedLevel);
 
 
 }

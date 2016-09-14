@@ -4,6 +4,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.util.List;
+import java.util.UUID;
 
 import javax.inject.Inject;
 import javax.sql.DataSource;
@@ -53,7 +54,13 @@ public class JdbcVirtualMachineService implements VirtualMachineService {
 
         VirtualMachineSpec spec = mapVirtualMachineSpec(rs);
 
-        return new VirtualMachine(rs.getLong("vm_id"), rs.getLong("sgid"), spec, rs.getString("name"));
+        return new VirtualMachine(rs.getLong("vm_id"), 
+        		java.util.UUID.fromString(rs.getString("orion_guid")), 
+        		rs.getLong("project_id"), 
+        		spec, 
+        		rs.getString("name"),
+        		rs.getInt("control_panel_id"),
+        		rs.getInt("os_type_id"));
     }
 
     protected VirtualMachineSpec mapVirtualMachineSpec(ResultSet rs) throws SQLException {
@@ -97,6 +104,27 @@ public class JdbcVirtualMachineService implements VirtualMachineService {
                 null,
                 vmId);
     }
+
+	@Override
+	public VirtualMachineSpec getSpec(int tier) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public void createVirtualMachine(UUID orionGuid, 
+			Long osTypeId, 
+			Long controlPanelId, 
+			VirtualMachineSpec spec,
+			int managedLevel) {
+		Sql.with(dataSource).exec("SELECT * FROM virtual_machine_create(?,?,?,?,?)", 
+				null, 
+				orionGuid, 
+				osTypeId, 
+				controlPanelId, 
+				spec, 
+				managedLevel);
+	}
 
 
 }

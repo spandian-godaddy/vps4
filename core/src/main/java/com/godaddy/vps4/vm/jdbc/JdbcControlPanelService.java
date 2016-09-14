@@ -34,7 +34,7 @@ public class JdbcControlPanelService implements ControlPanelService {
         }
         else {
             return Sql.with(dataSource).exec(
-                    "SELECT (controlpanel_id) from control_panel WHERE name=?",
+                    "SELECT (control_panel_id) from control_panel WHERE name=?",
                     this::controlPanelIdMapper,
                     controlPanel);
         }
@@ -43,7 +43,7 @@ public class JdbcControlPanelService implements ControlPanelService {
     public Long controlPanelIdMapper(ResultSet rs) throws SQLException {
         try {
             rs.next();
-            return rs.getLong("controlpanel_id");
+            return rs.getLong("control_panel_id");
         }
         catch (SQLException sqlEx) {
             throw new IllegalArgumentException("Control Panel Does not exist");

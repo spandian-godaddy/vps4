@@ -19,8 +19,11 @@ import org.slf4j.LoggerFactory;
 import com.godaddy.vps4.security.PrivilegeService;
 import com.godaddy.vps4.security.User;
 import com.godaddy.vps4.vm.CombinedVm;
+import com.godaddy.vps4.vm.ControlPanelService;
+import com.godaddy.vps4.vm.OsTypeService;
 import com.godaddy.vps4.vm.VirtualMachine;
 import com.godaddy.vps4.vm.VirtualMachineService;
+import com.godaddy.vps4.vm.VirtualMachineSpec;
 
 import gdg.hfs.vhfs.vm.Vm;
 import gdg.hfs.vhfs.vm.VmService;
@@ -39,18 +42,24 @@ public class VmsResource {
 	final User user;
 	final VirtualMachineService virtualMachineService;
 	final PrivilegeService privilegeService;
+	final ControlPanelService controlPanelService;
     final VmService vmService;
+	final OsTypeService osTypeService;
 
 	@Inject
 	public VmsResource(DataSource dataSource,
             PrivilegeService privilegeService,
 			User user,
             VmService vmService,
-            VirtualMachineService virtualMachineService) {
+            VirtualMachineService virtualMachineService,
+            ControlPanelService controlPanelService,
+            OsTypeService osTypeService) {
 		this.user = user;
         this.virtualMachineService = virtualMachineService;
         this.privilegeService = privilegeService;
         this.vmService = vmService;
+        this.controlPanelService = controlPanelService;
+        this.osTypeService = osTypeService;
 	}
 
 	@GET
@@ -82,11 +91,18 @@ public class VmsResource {
 	@POST
 	@Path("/")
 	public boolean createVm(@QueryParam("orionGuid") UUID orionGuid,
-							@QueryParam("operatingSystem") String operatingSystem,
+							@QueryParam("osType") String osType,
 							@QueryParam("tier") int tier,
 							@QueryParam("controlPanel") String controlPanel,
 							@QueryParam("managedLevel") int managedLevel) {
 
+		Long controlPanelId = controlPanelService.getControlPanelId(controlPanel);
+		Long osTypeId = osTypeService.getOsTypeId(osType);
+		VirtualMachineSpec spec = virtualMachineService.getSpec(tier);
+		
+		virtualMachineService.createVirtualMachine(orionGuid, osTypeId, controlPanelId, spec, managedLevel);
+		
+		
 		return true;
 
 	}
