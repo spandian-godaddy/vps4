@@ -6,6 +6,7 @@ CREATE TABLE virtual_machine (
     , name		 		 	TEXT
     , control_panel_id 		INTEGER	 REFERENCES control_panel(control_panel_id)
     , os_type_id			INTEGER	 REFERENCES os_type(os_type_id)
+    , managed_level			INTEGER	 NOT NULL
 );
 
 CREATE INDEX virtual_machine_sgid_idx ON virtual_machine (project_id);

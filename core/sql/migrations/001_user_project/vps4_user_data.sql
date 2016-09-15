@@ -1,0 +1,1 @@
+INSERT INTO vps4_user (vps4_user_id, shopper_id) VALUES (42, 'SomeUser');

@@ -5,17 +5,11 @@ import java.util.UUID;
 public class VirtualMachine {
 
     public final long vmId;
-    
     public final UUID orionGuid;
-
     public final long projectId;
-
     public final VirtualMachineSpec spec;
-
     public final String name;
-    
     public final int controlPanelId;
-    
     public final int osTypeId;
 
     public VirtualMachine(long vmId, UUID orionGuid, long projectId, VirtualMachineSpec spec, String name, int controlPanelId, int osTypeId) {

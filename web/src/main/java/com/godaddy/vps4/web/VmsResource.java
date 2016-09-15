@@ -16,6 +16,8 @@ import javax.ws.rs.core.MediaType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.godaddy.vps4.project.Project;
+import com.godaddy.vps4.project.ProjectService;
 import com.godaddy.vps4.security.PrivilegeService;
 import com.godaddy.vps4.security.User;
 import com.godaddy.vps4.vm.CombinedVm;
@@ -45,21 +47,26 @@ public class VmsResource {
 	final ControlPanelService controlPanelService;
     final VmService vmService;
 	final OsTypeService osTypeService;
+	final ProjectService projectService;
 
+	//TODO: Break this up into multiple classes to reduce number of dependencies.
 	@Inject
-	public VmsResource(DataSource dataSource,
+	public VmsResource(DataSource dataSource, 
             PrivilegeService privilegeService,
 			User user,
             VmService vmService,
             VirtualMachineService virtualMachineService,
             ControlPanelService controlPanelService,
-            OsTypeService osTypeService) {
+            OsTypeService osTypeService,
+            ProjectService projectService
+            ) {
 		this.user = user;
         this.virtualMachineService = virtualMachineService;
         this.privilegeService = privilegeService;
         this.vmService = vmService;
         this.controlPanelService = controlPanelService;
         this.osTypeService = osTypeService;
+        this.projectService = projectService;
 	}
 
 	@GET
@@ -100,11 +107,10 @@ public class VmsResource {
 		int osTypeId = osTypeService.getOsTypeId(osType);
 		VirtualMachineSpec spec = virtualMachineService.getSpec(tier);
 		
-		virtualMachineService.createVirtualMachine(orionGuid, osTypeId, controlPanelId, spec.specId, managedLevel);
-		
+		Project project = projectService.createProject(orionGuid.toString(), user.getId());
+		virtualMachineService.createVirtualMachine(orionGuid, project.getSgid(), osTypeId, controlPanelId, spec.specId, managedLevel);
 		
 		return true;
-
 	}
 
 	@POST

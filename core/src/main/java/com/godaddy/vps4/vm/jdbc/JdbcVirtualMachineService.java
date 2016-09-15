@@ -114,14 +114,16 @@ public class JdbcVirtualMachineService implements VirtualMachineService {
 	}
 
 	@Override
-	public void createVirtualMachine(UUID orionGuid, 
+	public void createVirtualMachine(UUID orionGuid,
+			long projectId,
 			int osTypeId, 
 			int controlPanelId, 
 			int specId,
 			int managedLevel) {
-		Sql.with(dataSource).exec("SELECT * FROM virtual_machine_create(?,?,?,?,?)", 
+		Sql.with(dataSource).exec("SELECT * FROM virtual_machine_create(?,?,?,?,?,?)", 
 				null, 
 				orionGuid, 
+				projectId,
 				osTypeId, 
 				controlPanelId, 
 				specId, 

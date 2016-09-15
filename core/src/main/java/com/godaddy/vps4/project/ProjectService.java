@@ -5,12 +5,14 @@ import java.util.UUID;
 
 public interface ProjectService {
 
-    List<Project> getServiceGroups(long userId, boolean active);
+    List<Project> getProjects(long userId, boolean active);
 
-    Project getServiceGroup(long sgid);
+    Project getProject(long projectId);
 
-    Project createServiceGroup(String name, long userId, UUID account, short dataCenterId);
+    Project createProject(String name, long userId);
+    
+//    Project createProject(String name, long userId, UUID account, short dataCenterId);
 
-    Project deleteServiceGroup(long sgid);
+    Project deleteProject(long sgid);
 
 }
