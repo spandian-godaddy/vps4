@@ -34,12 +34,12 @@ public class JdbcVirtualMachineService implements VirtualMachineService {
     }
 
     @Override
-    public List<VirtualMachine> listVirtualMachines(long sgid) {
+    public List<VirtualMachine> listVirtualMachines(long projectId) {
         return Sql.with(dataSource).exec("SELECT * FROM virtual_machine vm "
                 + " JOIN virtual_machine_spec vms ON vms.spec_id=vm.spec_id "
-                + " WHERE sgid=? ",
+                + " WHERE project_id=? ",
                 Sql.listOf(this::mapVirtualMachine),
-                sgid);
+                projectId);
     }
 
     public VirtualMachine getVirtualMachine(long vmId) {
@@ -77,15 +77,15 @@ public class JdbcVirtualMachineService implements VirtualMachineService {
     }
 
     @Override
-    public VirtualMachine createVirtualMachine(long vmId, long sgid, String spec, String name) {
+    public VirtualMachine createVirtualMachine(long vmId, long projectId, String spec, String name) {
 
-        Sql.with(dataSource).exec("SELECT * FROM virtual_machine_create(?,?,?,?)", null, vmId, sgid, spec, name);
+        Sql.with(dataSource).exec("SELECT * FROM virtual_machine_create(?,?,?,?)", null, vmId, projectId, spec, name);
 
         return null;
     }
 
     @Override
-    public void destroyVirtualMachine(long vmId) {
+    public void destroyVirtualMachine(UUID orionGuid) {
 
         // FIXME this should be setting the 'valid_until' instead of deleting the record
         //       (the direct deletion was just until active/destroyed filtering is put in place)
@@ -100,9 +100,9 @@ public class JdbcVirtualMachineService implements VirtualMachineService {
         // ^^ the assumption is we are calling into the vertical service
         //    to get historical data of active virtual machines
 
-        Sql.with(dataSource).exec("DELETE FROM virtual_machine vm WHERE vm_id=? ",
+        Sql.with(dataSource).exec("DELETE FROM virtual_machine vm WHERE orion_guid=? ",
                 null,
-                vmId);
+                orionGuid);
     }
 
 	@Override

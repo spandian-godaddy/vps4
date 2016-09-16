@@ -108,7 +108,7 @@ public class VmsResource {
 		VirtualMachineSpec spec = virtualMachineService.getSpec(tier);
 		
 		Project project = projectService.createProject(orionGuid.toString(), user.getId());
-		virtualMachineService.createVirtualMachine(orionGuid, project.getSgid(), osTypeId, controlPanelId, spec.specId, managedLevel);
+		virtualMachineService.createVirtualMachine(orionGuid, project.getProjectId(), osTypeId, controlPanelId, spec.specId, managedLevel);
 		
 		return true;
 	}

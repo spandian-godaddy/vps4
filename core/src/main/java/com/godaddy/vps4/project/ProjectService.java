@@ -11,8 +11,6 @@ public interface ProjectService {
 
     Project createProject(String name, long userId);
     
-//    Project createProject(String name, long userId, UUID account, short dataCenterId);
-
     Project deleteProject(long sgid);
 
 }

@@ -39,7 +39,7 @@ public class JdbcProjectService implements ProjectService {
                             "data_center_id," +
                             "valid_on," +
                             "valid_until" +
-                            " FROM get_user_service_groups_active(?)",
+                            " FROM get_user_projects_active(?)",
                     Sql.listOf(this::mapProject),
                     userId);
 
@@ -53,7 +53,7 @@ public class JdbcProjectService implements ProjectService {
                             "data_center_id," +
                             "valid_on," +
                             "valid_until" +
-                            " FROM get_user_service_groups(?)",
+                            " FROM get_user_projects(?)",
                     Sql.listOf(this::mapProject),
                     userId);
         }

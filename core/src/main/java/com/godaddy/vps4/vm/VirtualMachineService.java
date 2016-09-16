@@ -25,7 +25,7 @@ public interface VirtualMachineService {
 
     // updateStatus(long vmId, int newStatus)
 
-    void destroyVirtualMachine(long vmId);  // (just updates status/sets validUntil, destroy is accomplished on backend)
+    void destroyVirtualMachine(UUID uuid);  // (just updates status/sets validUntil, destroy is accomplished on backend)
 
 	void createVirtualMachine(UUID orionGuid,
 							  long projectId,
