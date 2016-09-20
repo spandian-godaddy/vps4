@@ -119,19 +119,6 @@
             <artifactId>postgresql</artifactId>
             <version>9.4-1201-jdbc4</version>
         </dependency>
-        
-        <!-- HFS dependencies -->
-        <dependency>
-            <groupId>hfs</groupId>
-            <artifactId>vhfs-common-web-lib</artifactId>
-            <version>1.0.0.23726</version>
-            <exclusions>
-            	<exclusion>
-            		<groupId>*</groupId>
-            		<artifactId>*</artifactId>           		
-            	</exclusion>
-            </exclusions>
-        </dependency>
 
 	</dependencies>
 	
