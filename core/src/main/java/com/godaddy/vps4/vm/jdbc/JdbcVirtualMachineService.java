@@ -49,6 +49,14 @@ public class JdbcVirtualMachineService implements VirtualMachineService {
                 Sql.nextOrNull(this::mapVirtualMachine),
                 vmId);
     }
+    
+    public VirtualMachine getVirtualMachine(UUID orionGuid) {
+        return Sql.with(dataSource).exec("SELECT * FROM virtual_machine vm "
+                + " JOIN virtual_machine_spec vms ON vms.spec_id=vm.spec_id "
+                + " WHERE orion_guid=? ",
+                Sql.nextOrNull(this::mapVirtualMachine),
+                orionGuid);
+    }
 
     protected VirtualMachine mapVirtualMachine(ResultSet rs) throws SQLException {
 
@@ -83,6 +91,12 @@ public class JdbcVirtualMachineService implements VirtualMachineService {
 
         return null;
     }
+
+	@Override
+	public void updateVirtualMachine(UUID orionGuid, String name, String image, int dataCenterId) {
+		// TODO Auto-generated method stub
+		
+	}
 
     @Override
     public void destroyVirtualMachine(UUID orionGuid) {

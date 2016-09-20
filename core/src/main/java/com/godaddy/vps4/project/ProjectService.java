@@ -1,7 +1,6 @@
 package com.godaddy.vps4.project;
 
 import java.util.List;
-import java.util.UUID;
 
 public interface ProjectService {
 

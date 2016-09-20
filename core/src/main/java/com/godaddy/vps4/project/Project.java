@@ -1,7 +1,6 @@
 package com.godaddy.vps4.project;
 
 import java.time.Instant;
-import java.util.UUID;
 
 public class Project {
 

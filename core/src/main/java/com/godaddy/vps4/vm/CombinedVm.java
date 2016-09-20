@@ -1,6 +1,6 @@
 package com.godaddy.vps4.vm;
 
-import gdg.hfs.vhfs.vm.Vm;
+import com.godaddy.vps4.hfs.Vm;
 
 public class CombinedVm {
     public long vmId;

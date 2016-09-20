@@ -3,8 +3,6 @@ package com.godaddy.vps4.project.jdbc;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.List;
-import java.util.UUID;
-
 import javax.inject.Inject;
 import javax.sql.DataSource;
 

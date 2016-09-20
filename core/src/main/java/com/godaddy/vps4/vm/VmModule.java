@@ -20,7 +20,7 @@ public class VmModule extends AbstractModule {
 		bind(VirtualMachineService.class).to(JdbcVirtualMachineService.class);
 		bind(ControlPanelService.class).to(JdbcControlPanelService.class);
 		bind(OsTypeService.class).to(JdbcOsTypeService.class);
-		bind(VmService.class).toProvider(new HfsClientProvider(VmService.class)).in(Singleton.class);
+		bind(VmService.class).toProvider(new HfsClientProvider<VmService>(VmService.class)).in(Singleton.class);
 	}
 
 }

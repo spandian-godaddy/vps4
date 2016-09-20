@@ -9,6 +9,8 @@ public interface VirtualMachineService {
 
     VirtualMachine getVirtualMachine(long vmId);
     
+    VirtualMachine getVirtualMachine(UUID orionGuid);
+    
     VirtualMachineSpec getSpec(String name);
     
     VirtualMachineSpec getSpec(int tier);
@@ -33,6 +35,8 @@ public interface VirtualMachineService {
 							  int controlPanelId, 
 							  int specId,
 							  int managedLevel);
+
+	void updateVirtualMachine(UUID orionGuid, String name, String image, int dataCenterId);
 
 
 }

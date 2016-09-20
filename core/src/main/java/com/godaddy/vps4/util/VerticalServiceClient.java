@@ -1,6 +1,5 @@
 package com.godaddy.vps4.util;
 
-import javax.inject.Inject;
 import javax.ws.rs.client.Client;
 import javax.ws.rs.client.ClientBuilder;
 

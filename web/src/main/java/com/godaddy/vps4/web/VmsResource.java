@@ -1,11 +1,20 @@
 package com.godaddy.vps4.web;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.atomic.AtomicLong;
 
 import javax.inject.Inject;
 import javax.sql.DataSource;
 import javax.ws.rs.Consumes;
+import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
+import javax.ws.rs.NotFoundException;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
@@ -16,6 +25,10 @@ import javax.ws.rs.core.MediaType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.godaddy.vps4.hfs.Flavor;
+import com.godaddy.vps4.hfs.Vm;
+import com.godaddy.vps4.hfs.VmService;
+import com.godaddy.vps4.hfs.VmService.FlavorList;
 import com.godaddy.vps4.project.Project;
 import com.godaddy.vps4.project.ProjectService;
 import com.godaddy.vps4.security.PrivilegeService;
@@ -27,8 +40,6 @@ import com.godaddy.vps4.vm.VirtualMachine;
 import com.godaddy.vps4.vm.VirtualMachineService;
 import com.godaddy.vps4.vm.VirtualMachineSpec;
 
-import gdg.hfs.vhfs.vm.Vm;
-import gdg.hfs.vhfs.vm.VmService;
 import io.swagger.annotations.Api;
 
 @Vps4Api
@@ -48,6 +59,9 @@ public class VmsResource {
     final VmService vmService;
 	final OsTypeService osTypeService;
 	final ProjectService projectService;
+	final Map<Long, VmAction> actions = new ConcurrentHashMap<>();
+	final AtomicLong actionIdPool = new AtomicLong();
+	final ExecutorService threadPool = Executors.newCachedThreadPool();
 
 	//TODO: Break this up into multiple classes to reduce number of dependencies.
 	@Inject
@@ -68,7 +82,33 @@ public class VmsResource {
         this.osTypeService = osTypeService;
         this.projectService = projectService;
 	}
-
+	
+	@GET
+	@Path("actions/{actionId}")
+	public VmAction getAction(@PathParam("actionId") long actionId) {
+		
+		VmAction action = actions.get(actionId);
+		if (action == null) {
+			throw new NotFoundException("actionId " + actionId + " not found");
+		}
+		
+		return action;
+	}
+	
+	@GET
+	@Path("/flavors")
+	public List<Flavor> getFlavors() {
+		
+		logger.info("getting flavors from HFS...");
+		
+		FlavorList flavorList = vmService.getFlavors();
+		logger.info("flavorList: {}", flavorList);
+		if (flavorList != null && flavorList.results != null) {
+			return flavorList.results;
+		}
+		return new ArrayList<>();
+	}
+	
 	@GET
 	@Path("/{vmId}")
 	public CombinedVm getVm(@PathParam("vmId") int vmId) {
@@ -116,14 +156,91 @@ public class VmsResource {
 	@POST
 	@Path("/{vmId}/provision")
 	public CombinedVm provisionVm(@QueryParam("name") String name,
-   							   @QueryParam("vmId") long vmId,
-							   @QueryParam("image") String image,
-							   @QueryParam("dataCenter") long projectId,
-							   @QueryParam("username") String username,
-							   @QueryParam("password") String password) {
+							      @QueryParam("orionGuid") UUID orionGuid,
+							      @QueryParam("image") String image,
+							      @QueryParam("dataCenter") int dataCenterId,
+							      @QueryParam("username") String username,
+							      @QueryParam("password") String password) {
+		
+		VirtualMachine virtualMachine = virtualMachineService.getVirtualMachine(orionGuid);
+		
+		virtualMachineService.updateVirtualMachine(orionGuid, name, image, dataCenterId);
 
 		logger.info("creating new vm");
-
+		
+		CreateVmAction action = new CreateVmAction();
+		action.type = ActionType.CREATE;
+		action.actionId = actionIdPool.incrementAndGet();
+		action.status = ActionStatus.IN_PROGRESS;
+		
+		action.image = image;
+		action.flavor = virtualMachine.spec.name;
+		//TODO: This will need to be replaced with a generated hostname
+		action.hostname = "newVmHostname";
+		
+		actions.put(action.actionId, action);
+		
+		threadPool.execute( new CreateVmWorker(vmService, action));
+		
 		return new CombinedVm();
+	}
+	
+	@DELETE
+	@Path("vms/{vmId}")
+	public VmAction destroyVm(@PathParam("vmId") long vmId) {
+		
+		Vm vm = vmService.getVm(vmId);
+		if (vm == null) {
+			throw new NotFoundException("vmId " + vmId + " not found");
+		}
+		
+		// TODO verify VM status is destroyable
+		
+		DestroyVmAction action = new DestroyVmAction();
+		action.type = ActionType.DESTROY;
+		action.actionId = actionIdPool.incrementAndGet();
+		action.status = ActionStatus.IN_PROGRESS;
+		action.vmId = vmId;
+		
+		actions.put(action.actionId, action);
+		
+		threadPool.execute(new DestroyVmWorker(vmService, action));
+			
+		
+		return action;
+	}
+	
+	public enum ActionStatus {
+		IN_PROGRESS,
+		COMPLETE,
+		ERROR
+	}
+	
+	public enum ActionType {
+		CREATE,
+		DESTROY
+	}
+	
+	public static class VmAction {
+		public long actionId;
+		public ActionType type;
+		public volatile ActionStatus status;
+		public volatile String message;
+	}
+	
+	public static class CreateVmAction extends VmAction {
+		public String flavor;
+		public String image;
+		public String hostname;
+		public String hfsSgid;
+		public String username;
+		public String password;
+		
+		public volatile String ip;
+		public volatile long vmId;
+	}
+	
+	public static class DestroyVmAction extends VmAction {
+		public long vmId;
 	}
 }
