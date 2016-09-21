@@ -160,11 +160,10 @@ public class VmsResource {
 							      @QueryParam("image") String image,
 							      @QueryParam("dataCenter") int dataCenterId,
 							      @QueryParam("username") String username,
-							      @QueryParam("password") String password) {
+							      @QueryParam("password") String password) throws InterruptedException {
 		
 		VirtualMachine virtualMachine = virtualMachineService.getVirtualMachine(orionGuid);
-		
-		virtualMachineService.updateVirtualMachine(orionGuid, name, image, dataCenterId);
+		Project project = projectService.getProject(virtualMachine.projectId);
 
 		logger.info("creating new vm");
 		
@@ -178,11 +177,22 @@ public class VmsResource {
 		//TODO: This will need to be replaced with a generated hostname
 		action.hostname = "newVmHostname";
 		
+		action.hfsSgid = project.getVhfsSgid();
+		action.username = username;
+		action.password = password;
+		
 		actions.put(action.actionId, action);
 		
-		threadPool.execute( new CreateVmWorker(vmService, action));
+		CreateVmWorker worker = new CreateVmWorker(vmService, action); 
+		threadPool.execute(worker);
 		
-		return new CombinedVm();
+		synchronized (worker) {
+		    worker.wait();
+		}
+		
+		virtualMachineService.updateVirtualMachine(orionGuid, name, action.vm.vmId, image, dataCenterId);
+		
+		return new CombinedVm(action.vm, virtualMachine);
 	}
 	
 	@DELETE
@@ -206,7 +216,6 @@ public class VmsResource {
 		
 		threadPool.execute(new DestroyVmWorker(vmService, action));
 			
-		
 		return action;
 	}
 	
@@ -236,8 +245,7 @@ public class VmsResource {
 		public String username;
 		public String password;
 		
-		public volatile String ip;
-		public volatile long vmId;
+		public volatile Vm vm;
 	}
 	
 	public static class DestroyVmAction extends VmAction {

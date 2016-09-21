@@ -68,9 +68,16 @@ public class CreateVmWorker implements Runnable {
 		// TODO verify hfsAction created successfully
 		
 		// wait for VmAction to complete
-		while (!hfsAction.state.equals("RUNNING")) {
+		while (!hfsAction.state.equals("COMPLETE")) {
 			
 			logger.info("waiting on VM to provision: {}", hfsAction);
+			
+			if (hfsAction.state.equals("IN_PROGRESS")) {
+				action.vm = vmService.getVm(hfsAction.vmId);
+				synchronized (this) {
+				    this.notify();
+				}
+			}
 			
 			// give the VM time to spin up
 			try {
@@ -82,13 +89,7 @@ public class CreateVmWorker implements Runnable {
 			hfsAction = vmService.getVmAction(hfsAction.vmId, hfsAction.vmActionId);
 		}
 		
-		// 
-		action.vmId = hfsAction.vmId;
-		
-		Vm vm = vmService.getVm(action.vmId);
-		// assert vm != null
-		
-		action.ip = vm.address.ip_address;
+		action.vm = vmService.getVm(hfsAction.vmId);		
 		action.status = ActionStatus.COMPLETE;
 	}
 	

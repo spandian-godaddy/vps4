@@ -1,9 +1,9 @@
-DROP FUNCTION IF EXISTS virtual_machine_create(orion_guid UUID,
-	project_id BIGINT,
-	os_type_id INT, 
-	control_panel_id INT, 
-	spec_name INT, 
-	managed_level INT);
+DROP FUNCTION IF EXISTS virtual_machine_create(p_orion_guid UUID,
+	p_project_id BIGINT,
+	p_os_type_id INT, 
+	p_control_panel_id INT, 
+	p_spec_name INT, 
+	p_managed_level INT);
 
 CREATE OR REPLACE FUNCTION virtual_machine_create(p_orion_guid UUID,
 	p_project_id BIGINT,

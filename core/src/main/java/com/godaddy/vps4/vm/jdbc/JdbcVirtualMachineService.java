@@ -92,12 +92,6 @@ public class JdbcVirtualMachineService implements VirtualMachineService {
         return null;
     }
 
-	@Override
-	public void updateVirtualMachine(UUID orionGuid, String name, String image, int dataCenterId) {
-		// TODO Auto-generated method stub
-		
-	}
-
     @Override
     public void destroyVirtualMachine(UUID orionGuid) {
 
@@ -143,6 +137,9 @@ public class JdbcVirtualMachineService implements VirtualMachineService {
 				specId, 
 				managedLevel);
 	}
-
-
+	
+	@Override
+	public void updateVirtualMachine(UUID orionGuid, String name, long vmId, String image, int dataCenterId) {
+		Sql.with(dataSource).exec("SELECT * FROM virtual_machine_update(?, ?, ?, ?, ?)", null, orionGuid, name, vmId, image, dataCenterId);
+	}
 }

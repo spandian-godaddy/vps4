@@ -20,6 +20,7 @@ public class CombinedVm {
 
     public CombinedVm(Vm vm, VirtualMachine virtualMachine) {
         if(vm != null) {
+        	vmId = vm.vmId;
             status = vm.status;
             running = vm.running;
             useable = vm.useable;
@@ -30,7 +31,6 @@ public class CombinedVm {
         }
 
         if (virtualMachine != null) {
-            vmId = virtualMachine.vmId;
             spec = virtualMachine.spec.name;
             name = virtualMachine.name;
         }

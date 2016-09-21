@@ -36,7 +36,7 @@ public interface VirtualMachineService {
 							  int specId,
 							  int managedLevel);
 
-	void updateVirtualMachine(UUID orionGuid, String name, String image, int dataCenterId);
+	void updateVirtualMachine(UUID orionGuid, String name, long vmId, String image, int dataCenterId);
 
 
 }
