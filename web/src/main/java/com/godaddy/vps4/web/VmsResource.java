@@ -25,6 +25,7 @@ import javax.ws.rs.core.MediaType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.godaddy.vps4.hfs.CreateVMRequest;
 import com.godaddy.vps4.hfs.Flavor;
 import com.godaddy.vps4.hfs.Vm;
 import com.godaddy.vps4.hfs.VmService;
@@ -172,20 +173,29 @@ public class VmsResource {
 		action.actionId = actionIdPool.incrementAndGet();
 		action.status = ActionStatus.IN_PROGRESS;
 		
-		action.image = image;
-		action.flavor = virtualMachine.spec.name;
-		//TODO: This will need to be replaced with a generated hostname
-		action.hostname = "newVmHostname";
-		
-		action.hfsSgid = project.getVhfsSgid();
-		action.username = username;
-		action.password = password;
-		
+        CreateVMRequest hfsCreateRequest = new CreateVMRequest();
+        hfsCreateRequest.cpuCores = (int) virtualMachine.spec.cpuCoreCount;
+        hfsCreateRequest.diskGiB = (int) virtualMachine.spec.diskGib;
+        hfsCreateRequest.ramMiB = (int) virtualMachine.spec.memoryMib;
+
+        hfsCreateRequest.sgid = project.getVhfsSgid();
+        hfsCreateRequest.image_name = image;
+        hfsCreateRequest.os = image;
+
+        // TODO: This will need to be replaced with a generated hostname
+        hfsCreateRequest.hostname = "tempHostname";
+
+        hfsCreateRequest.username = username;
+        hfsCreateRequest.password = password;
+
+        action.hfsCreateRequest = hfsCreateRequest;
+
 		actions.put(action.actionId, action);
 		
 		CreateVmWorker worker = new CreateVmWorker(vmService, action); 
 		threadPool.execute(worker);
 		
+		//Wait for the VM Id
 		synchronized (worker) {
 		    worker.wait();
 		}
@@ -238,12 +248,7 @@ public class VmsResource {
 	}
 	
 	public static class CreateVmAction extends VmAction {
-		public String flavor;
-		public String image;
-		public String hostname;
-		public String hfsSgid;
-		public String username;
-		public String password;
+		public CreateVMRequest hfsCreateRequest = new CreateVMRequest();
 		
 		public volatile Vm vm;
 	}
