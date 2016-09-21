@@ -36,6 +36,7 @@ import com.godaddy.vps4.security.PrivilegeService;
 import com.godaddy.vps4.security.User;
 import com.godaddy.vps4.vm.CombinedVm;
 import com.godaddy.vps4.vm.ControlPanelService;
+import com.godaddy.vps4.vm.HostnameGenerator;
 import com.godaddy.vps4.vm.OsTypeService;
 import com.godaddy.vps4.vm.VirtualMachine;
 import com.godaddy.vps4.vm.VirtualMachineService;
@@ -183,7 +184,7 @@ public class VmsResource {
         hfsCreateRequest.os = image;
 
         // TODO: This will need to be replaced with a generated hostname
-        hfsCreateRequest.hostname = "tempHostname";
+        hfsCreateRequest.hostname = HostnameGenerator.GetHostname();
 
         hfsCreateRequest.username = username;
         hfsCreateRequest.password = password;
