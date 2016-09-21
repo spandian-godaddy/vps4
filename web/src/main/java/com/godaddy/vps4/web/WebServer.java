@@ -19,7 +19,7 @@ import org.jboss.resteasy.util.GetRestful;
 
 import com.godaddy.vps4.jdbc.DatabaseModule;
 import com.godaddy.vps4.security.UserModule;
-import com.godaddy.vps4.vm.VmModule;
+import com.godaddy.vps4.web.vm.VmModule;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
 import com.google.inject.Module;

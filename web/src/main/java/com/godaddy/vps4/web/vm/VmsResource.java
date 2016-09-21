@@ -1,4 +1,4 @@
-package com.godaddy.vps4.web;
+package com.godaddy.vps4.web.vm;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -40,6 +40,7 @@ import com.godaddy.vps4.vm.OsTypeService;
 import com.godaddy.vps4.vm.VirtualMachine;
 import com.godaddy.vps4.vm.VirtualMachineService;
 import com.godaddy.vps4.vm.VirtualMachineSpec;
+import com.godaddy.vps4.web.Vps4Api;
 
 import io.swagger.annotations.Api;
 

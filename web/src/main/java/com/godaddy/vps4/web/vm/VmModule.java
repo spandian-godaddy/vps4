@@ -1,4 +1,4 @@
-package com.godaddy.vps4.vm;
+package com.godaddy.vps4.web.vm;
 
 import javax.inject.Singleton;
 
@@ -6,6 +6,9 @@ import com.godaddy.vps4.hfs.HfsClientProvider;
 import com.godaddy.vps4.hfs.VmService;
 import com.godaddy.vps4.security.PrivilegeService;
 import com.godaddy.vps4.security.jdbc.JdbcPrivilegeService;
+import com.godaddy.vps4.vm.ControlPanelService;
+import com.godaddy.vps4.vm.OsTypeService;
+import com.godaddy.vps4.vm.VirtualMachineService;
 import com.godaddy.vps4.vm.jdbc.JdbcControlPanelService;
 import com.godaddy.vps4.vm.jdbc.JdbcOsTypeService;
 import com.godaddy.vps4.vm.jdbc.JdbcVirtualMachineService;
