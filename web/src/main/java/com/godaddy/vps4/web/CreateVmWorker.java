@@ -65,6 +65,8 @@ public class CreateVmWorker implements Runnable {
 			hfsAction = vmService.getVmAction(hfsAction.vmId, hfsAction.vmActionId);
 		}
 		
+        logger.info("provisioning complete: {}", hfsAction);
+
 		action.vm = vmService.getVm(hfsAction.vmId);		
 		action.status = ActionStatus.COMPLETE;
 	}
