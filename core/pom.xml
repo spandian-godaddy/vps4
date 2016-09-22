@@ -62,19 +62,7 @@
 	</build>
 
 	<dependencies>
-	
-		<dependency>
-            <groupId>io.swagger</groupId>
-            <artifactId>swagger-jersey2-jaxrs</artifactId>
-            <version>1.5.4</version>
-            <exclusions>
-                <exclusion>
-                    <!-- swagger tries to pull in an older version of Jersey -->
-                    <groupId>org.glassfish.jersey.containers</groupId>
-                    <artifactId>*</artifactId>
-                </exclusion>
-            </exclusions>
-        </dependency>
+
 		
 		<!-- JAX-RS extensions -->
 		<dependency>
@@ -87,6 +75,12 @@
             <groupId>org.jboss.resteasy</groupId>
             <artifactId>resteasy-client</artifactId>
             <version>3.0.19.Final</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.jboss.logging</groupId>
+                    <artifactId>*</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
 	
         <!-- Encryption -->

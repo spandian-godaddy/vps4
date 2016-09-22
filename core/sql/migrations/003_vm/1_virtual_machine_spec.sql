@@ -10,7 +10,7 @@ CREATE TABLE virtual_machine_spec (
     , name 			  VARCHAR(255)
     
     , valid_on        TIMESTAMP NOT NULL DEFAULT NOW()
-    , valid_until     TIMESTAMP DEFAULT NULL
+    , valid_until     TIMESTAMP NOT NULL DEFAULT 'infinity'
     
     , UNIQUE (spec_name, valid_until)
 );

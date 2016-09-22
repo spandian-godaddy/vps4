@@ -26,7 +26,7 @@ public class VirtualMachineServiceTest {
     VirtualMachineService virtualMachineService;
 
     ProjectService projectService;
-    
+
     Injector injector = Guice.createInjector(new DatabaseModule());
 
     @Before
@@ -34,18 +34,18 @@ public class VirtualMachineServiceTest {
     	DataSource dataSource = injector.getInstance(DataSource.class);
 
         Sql.with(dataSource).exec("TRUNCATE TABLE virtual_machine", null);
-        Sql.with(dataSource).exec("SELECT create_project(?, ?)", Sql.nextOrNull(rs -> rs.getLong(1)), "project4", 1);
-        
 
         virtualMachineService = new JdbcVirtualMachineService(dataSource);
         projectService = new JdbcProjectService(dataSource);
+
+        projectService.createProject("project4", 1, 1);
     }
 
     @Test
     public void testService() {
 
-        Project project = projectService.createProject("My Special Project", 1);
-        
+        Project project = projectService.createProject("My Special Project", 1, 1);
+
         UUID orionGuid = java.util.UUID.fromString("a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a12");
 
         virtualMachineService.createVirtualMachine(orionGuid, project.getProjectId(), 1, 1, 1, 1);

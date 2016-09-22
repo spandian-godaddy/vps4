@@ -26,7 +26,7 @@ public class JdbcVirtualMachineService implements VirtualMachineService {
 
     @Override
     public VirtualMachineSpec getSpec(String name) {
-    	
+
         return Sql.with(dataSource).exec("SELECT * FROM virtual_machine_spec "
                 + " WHERE spec_name=? ",
                 Sql.nextOrNull(this::mapVirtualMachineSpec),
@@ -49,7 +49,7 @@ public class JdbcVirtualMachineService implements VirtualMachineService {
                 Sql.nextOrNull(this::mapVirtualMachine),
                 vmId);
     }
-    
+
     public VirtualMachine getVirtualMachine(UUID orionGuid) {
         return Sql.with(dataSource).exec("SELECT * FROM virtual_machine vm "
                 + " JOIN virtual_machine_spec vms ON vms.spec_id=vm.spec_id "
@@ -62,10 +62,10 @@ public class JdbcVirtualMachineService implements VirtualMachineService {
 
         VirtualMachineSpec spec = mapVirtualMachineSpec(rs);
 
-        return new VirtualMachine(rs.getLong("vm_id"), 
-        		java.util.UUID.fromString(rs.getString("orion_guid")), 
-        		rs.getLong("project_id"), 
-        		spec, 
+        return new VirtualMachine(rs.getLong("vm_id"),
+        		java.util.UUID.fromString(rs.getString("orion_guid")),
+        		rs.getLong("project_id"),
+        		spec,
         		rs.getString("name"),
         		rs.getInt("control_panel_id"),
         		rs.getInt("os_type_id"));
@@ -124,20 +124,20 @@ public class JdbcVirtualMachineService implements VirtualMachineService {
 	@Override
 	public void createVirtualMachine(UUID orionGuid,
 			long projectId,
-			int osTypeId, 
-			int controlPanelId, 
+			int osTypeId,
+			int controlPanelId,
 			int specId,
 			int managedLevel) {
-		Sql.with(dataSource).exec("SELECT * FROM virtual_machine_create(?,?,?,?,?,?)", 
-				null, 
-				orionGuid, 
+		Sql.with(dataSource).exec("SELECT * FROM virtual_machine_create(?,?,?,?,?,?)",
+				null,
+				orionGuid,
 				projectId,
-				osTypeId, 
-				controlPanelId, 
-				specId, 
+				osTypeId,
+				controlPanelId,
+				specId,
 				managedLevel);
 	}
-	
+
 	@Override
 	public void updateVirtualMachine(UUID orionGuid, String name, long vmId, String image, int dataCenterId) {
 		Sql.with(dataSource).exec("SELECT * FROM virtual_machine_update(?, ?, ?, ?, ?)", null, orionGuid, name, vmId, image, dataCenterId);

@@ -1,6 +1,4 @@
 
-DROP TABLE IF EXISTS privilege, user_privilege, user_project_privilege CASCADE;
-
 CREATE TABLE privilege (
     privilege_id    BIGINT PRIMARY KEY,
     privilege_tx    VARCHAR(255) NOT NULL,

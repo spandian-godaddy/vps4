@@ -23,7 +23,7 @@ import com.google.inject.Guice;
 import com.google.inject.Injector;
 
 //These tests are broken. Remove the ignore once they have been fixed.
-@Ignore 
+@Ignore
 public class JdbcProjectServiceTest {
 
 	Injector injector = Guice.createInjector(new DatabaseModule());
@@ -75,7 +75,7 @@ public class JdbcProjectServiceTest {
 
         String projectName = "testProject";
 
-        Project project = projectService.createProject(projectName, 1);
+        Project project = projectService.createProject(projectName, 1, 1);
         assertTrue(project.getProjectId() > 0);
         assertEquals(projectName, project.getName());
         assertEquals("vps4-" + project.getProjectId(), project.getVhfsSgid());

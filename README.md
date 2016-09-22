@@ -4,8 +4,9 @@
 Building
 ========
 
--Pphase2-tests # activate 'phase2-tests' profile
--Prebuild-db   # activate 'rebuild-db' profile
+    -Pphase2-tests # activate 'phase2-tests' profile
+    
+    -Prebuild-db   # activate 'rebuild-db' profile
 
 
 
@@ -55,4 +56,12 @@ mvn clean verify     \
   -Dvps4.env=jenkins \
   -Ddb.vps4.database=db.vps4.database=vps4_int_${GIT_COMMIT} \
   -Pphase2-tests -Prebuild-database
-    
+
+
+Rebuilding Database
+===================
+
+To rebuild the database without running any tests (from the 'core' project)
+
+    mvn initialize sql:execute@drop-create-database sql:execute@build-database -Prebuild-database
+

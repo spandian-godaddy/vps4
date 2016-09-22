@@ -1,10 +1,9 @@
-DROP TABLE IF EXISTS os_type;
 
 CREATE TABLE os_type
 (
-      name TEXT NOT NULL UNIQUE
-    , os_type_id serial PRIMARY KEY
+    os_type_id INT PRIMARY KEY
+    , name TEXT NOT NULL UNIQUE 
 );
 
-INSERT INTO os_type(name, os_type_id) VALUES ('linux', 1);
-INSERT INTO os_type(name, os_type_id) VALUES ('windows', 2);
+INSERT INTO os_type(os_type_id, name) VALUES (1, 'linux');
+INSERT INTO os_type(os_type_id, name) VALUES (2, 'windows');

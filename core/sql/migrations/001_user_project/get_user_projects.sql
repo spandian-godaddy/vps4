@@ -1,4 +1,4 @@
-DROP FUNCTION IF EXISTS get_user_projects(p_user_id BIGINT);
+
 CREATE OR REPLACE FUNCTION get_user_projects(p_user_id vps4_user.vps4_user_id%TYPE)
     RETURNS TABLE(project_id BIGINT,
     project_name VARCHAR(255),

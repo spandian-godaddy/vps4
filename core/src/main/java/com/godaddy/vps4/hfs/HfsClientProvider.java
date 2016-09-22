@@ -33,7 +33,6 @@ import javax.net.ssl.X509TrustManager;
 import javax.ws.rs.client.Client;
 import javax.ws.rs.client.ClientBuilder;
 
-import org.glassfish.jersey.client.ClientConfig;
 import org.jboss.resteasy.client.jaxrs.ResteasyWebTarget;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -50,7 +49,7 @@ public class HfsClientProvider<T> implements Provider<T> {
     private static final Logger logger = LoggerFactory.getLogger(HfsClientProvider.class);
 
     private final Class<T> serviceClass;
-    
+
     final KeyManager keyManager;
 
     @Inject Config config;
@@ -62,7 +61,7 @@ public class HfsClientProvider<T> implements Provider<T> {
         this.serviceClass = serviceClass;
         this.keyManager = newKeyManager();
     }
-    
+
     private static class HfsKeyManager implements X509KeyManager {
 
         final X509Certificate[] certChain;
@@ -218,7 +217,6 @@ public class HfsClientProvider<T> implements Provider<T> {
         ClientBuilder clientBuilder = ClientBuilder.newBuilder();
 
 		try {
-			clientBuilder = clientBuilder.withConfig(new ClientConfig());
 
 			if (baseUrl.startsWith("https")) {
 				if (keyManager == null) {

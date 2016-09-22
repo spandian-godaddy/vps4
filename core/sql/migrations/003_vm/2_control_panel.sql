@@ -1,10 +1,9 @@
-DROP TABLE IF EXISTS control_panel;
 
 CREATE TABLE control_panel
 (
-      name TEXT NOT NULL UNIQUE
-    , control_panel_id serial PRIMARY KEY
+    control_panel_id INT PRIMARY KEY
+    , name TEXT NOT NULL UNIQUE
 );
 
-INSERT INTO control_panel(name, control_panel_id) VALUES ('cpanel', 1);
-INSERT INTO control_panel(name, control_panel_id) VALUES ('plesk', 2);
+INSERT INTO control_panel(control_panel_id, name) VALUES (1, 'cpanel');
+INSERT INTO control_panel(control_panel_id, name) VALUES (2, 'plesk');

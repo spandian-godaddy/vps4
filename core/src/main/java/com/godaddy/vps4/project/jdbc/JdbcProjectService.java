@@ -103,11 +103,11 @@ public class JdbcProjectService implements ProjectService {
     }
 
 	@Override
-	public Project createProject(String name, long userId) {
+	public Project createProject(String name, long userId, int dataCenterId) {
 		logger.info("creating service group: '{}' for user {}", name, userId);
-        long newProjectId = Sql.with(dataSource).exec("SELECT * FROM create_project(?, ?)",
+        long newProjectId = Sql.with(dataSource).exec("SELECT * FROM create_project(?, ?, ?)",
                 Sql.nextOrNull(rs -> rs.getLong(1)),
-                name, userId);
+                name, userId, dataCenterId);
 
         return getProject(newProjectId);
 	}
