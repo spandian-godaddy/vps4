@@ -12,6 +12,8 @@ BEGIN
 	
 	INSERT INTO virtual_machine (vm_id, orion_guid, name, project_id, spec_id, managed_level, image_id)
 	   VALUES (p_vm_id, p_orion_guid, p_name, p_project_id, p_spec_id, p_managed_level, p_image_id);
+	   
+    UPDATE virtual_machine_request SET provision_date = NOW() WHERE orion_guid = p_orion_guid;
 
 END;
 $$ LANGUAGE plpgsql;

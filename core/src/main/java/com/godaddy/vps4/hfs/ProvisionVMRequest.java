@@ -1,6 +1,6 @@
 package com.godaddy.vps4.hfs;
 
-public class CreateVMRequest {
+public class ProvisionVMRequest {
 
     public String sgid;
 

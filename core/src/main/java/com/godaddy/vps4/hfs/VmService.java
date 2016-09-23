@@ -27,7 +27,7 @@ public interface VmService {
 
 	@POST
     @Path("/")
-    VmAction createVm(CreateVMRequest request);
+    VmAction createVm(ProvisionVMRequest request);
 
 	@POST
     @Path("{vmId}/destroy")

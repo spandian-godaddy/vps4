@@ -26,8 +26,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.godaddy.vps4.Vps4Exception;
-import com.godaddy.vps4.hfs.CreateVMRequest;
 import com.godaddy.vps4.hfs.Flavor;
+import com.godaddy.vps4.hfs.ProvisionVMRequest;
 import com.godaddy.vps4.hfs.Vm;
 import com.godaddy.vps4.hfs.VmService;
 import com.godaddy.vps4.hfs.VmService.FlavorList;
@@ -177,47 +177,23 @@ public class VmsResource {
 		
         logger.info("provisioning vm with orionGuid {}", orionGuid);
 
-        VirtualMachineRequest request = virtualMachineService.getVirtualMachineRequest(orionGuid);
+        VirtualMachineRequest request = getVmRequestToProvision(orionGuid);
 
-        Project project = projectService.createProject(orionGuid.toString(), user.getId(), dataCenterId);
-        if (project == null) {
-            throw new Vps4Exception("PROJECT_FAILED_TO_CREATE", "Failed to create new project for orionGuid " + orionGuid.toString());
-        }
+        Project project = createProject(orionGuid, dataCenterId);
 
-        VirtualMachineSpec spec = virtualMachineService.getSpec(request.tier);
-        if (spec == null) {
-            throw new Vps4Exception("INVALID_SPEC", String.format("spec with tier %d not found", request.tier));
-        }
+        VirtualMachineSpec spec = GetVirtualMachineSpec(request);
         
-        int imageId = imageService.getImageId(image);
-        if (imageId == 0) {
-            throw new Vps4Exception("INVALID_IMAGE", String.format("image %s not found", image));
-        }
+        int imageId = GetImageId(image);
 		
 		CreateVmAction action = new CreateVmAction();
 		action.type = ActionType.CREATE;
 		action.actionId = actionIdPool.incrementAndGet();
 		action.status = ActionStatus.IN_PROGRESS;
-		
-        CreateVMRequest hfsCreateRequest = new CreateVMRequest();
-        hfsCreateRequest.cpuCores = (int) spec.cpuCoreCount;
-        hfsCreateRequest.diskGiB = (int) spec.diskGib;
-        hfsCreateRequest.ramMiB = (int) spec.memoryMib;
-
-        hfsCreateRequest.sgid = project.getVhfsSgid();
-        hfsCreateRequest.image_name = image;
-        hfsCreateRequest.os = image;
-
-        hfsCreateRequest.hostname = HostnameGenerator.GetHostname();
-
-        hfsCreateRequest.username = username;
-        hfsCreateRequest.password = password;
-
-        action.hfsCreateRequest = hfsCreateRequest;
+        action.hfsProvisionRequest = createProvisionVmRequest(image, username, password, project, spec);
 
 		actions.put(action.actionId, action);
 		
-		CreateVmWorker worker = new CreateVmWorker(vmService, action); 
+        ProvisionVmWorker worker = new ProvisionVmWorker(vmService, action);
 		threadPool.execute(worker);
 		
 		//Wait for the VM Id
@@ -231,6 +207,55 @@ public class VmsResource {
 		
         return new CombinedVm(action.vm, virtualMachine);
 	}
+
+    private ProvisionVMRequest createProvisionVmRequest(String image, String username, String password, Project project, VirtualMachineSpec spec) {
+        ProvisionVMRequest hfsProvisionRequest = new ProvisionVMRequest();
+        hfsProvisionRequest.cpuCores = (int) spec.cpuCoreCount;
+        hfsProvisionRequest.diskGiB = (int) spec.diskGib;
+        hfsProvisionRequest.ramMiB = (int) spec.memoryMib;
+
+        hfsProvisionRequest.sgid = project.getVhfsSgid();
+        hfsProvisionRequest.image_name = image;
+        hfsProvisionRequest.os = image;
+
+        hfsProvisionRequest.hostname = HostnameGenerator.GetHostname();
+
+        hfsProvisionRequest.username = username;
+        hfsProvisionRequest.password = password;
+        return hfsProvisionRequest;
+    }
+
+    private VirtualMachineRequest getVmRequestToProvision(UUID orionGuid) {
+        VirtualMachineRequest request = virtualMachineService.getVirtualMachineRequest(orionGuid);
+        if (request == null) {
+            throw new Vps4Exception("REQUEST_NOT_FOUND", String.format("The virtual machine request for orion guid {} was not found", orionGuid));
+        }
+        return request;
+    }
+
+    private Project createProject(UUID orionGuid, int dataCenterId) {
+        Project project = projectService.createProject(orionGuid.toString(), user.getId(), dataCenterId);
+        if (project == null) {
+            throw new Vps4Exception("PROJECT_FAILED_TO_CREATE", "Failed to create new project for orionGuid " + orionGuid.toString());
+        }
+        return project;
+    }
+
+    private VirtualMachineSpec GetVirtualMachineSpec(VirtualMachineRequest request) {
+        VirtualMachineSpec spec = virtualMachineService.getSpec(request.tier);
+        if (spec == null) {
+            throw new Vps4Exception("INVALID_SPEC", String.format("spec with tier %d not found", request.tier));
+        }
+        return spec;
+    }
+
+    private int GetImageId(String image) {
+        int imageId = imageService.getImageId(image);
+        if (imageId == 0) {
+            throw new Vps4Exception("INVALID_IMAGE", String.format("image %s not found", image));
+        }
+        return imageId;
+    }
 	
 	@DELETE
 	@Path("vms/{vmId}")
@@ -275,7 +300,7 @@ public class VmsResource {
 	}
 	
 	public static class CreateVmAction extends VmAction {
-		public CreateVMRequest hfsCreateRequest = new CreateVMRequest();
+        public ProvisionVMRequest hfsProvisionRequest = new ProvisionVMRequest();
 		
 		public volatile Vm vm;
 	}

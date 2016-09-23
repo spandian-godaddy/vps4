@@ -10,15 +10,15 @@ import com.godaddy.vps4.hfs.VmService.FlavorList;
 import com.godaddy.vps4.web.vm.VmsResource.ActionStatus;
 import com.godaddy.vps4.web.vm.VmsResource.CreateVmAction;
 
-public class CreateVmWorker implements Runnable {
+public class ProvisionVmWorker implements Runnable {
 	
-	private static final Logger logger = LoggerFactory.getLogger(CreateVmWorker.class);
+	private static final Logger logger = LoggerFactory.getLogger(ProvisionVmWorker.class);
 
 	final VmService vmService;
 	
 	final CreateVmAction action;
 	
-	public CreateVmWorker(VmService vmService, CreateVmAction action) {
+	public ProvisionVmWorker(VmService vmService, CreateVmAction action) {
 		this.vmService = vmService;
 		this.action = action;
 	}
@@ -39,9 +39,9 @@ public class CreateVmWorker implements Runnable {
 	@Override
 	public void run() {
 		
-        logger.info("sending HFS VM request: {}", action.hfsCreateRequest);
+        logger.info("sending HFS VM request: {}", action.hfsProvisionRequest);
 		
-        VmAction hfsAction = vmService.createVm(action.hfsCreateRequest);
+        VmAction hfsAction = vmService.createVm(action.hfsProvisionRequest);
 		
 		// wait for VmAction to complete
 		while (!hfsAction.state.equals("COMPLETE")) {
