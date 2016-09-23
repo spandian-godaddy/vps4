@@ -7,9 +7,11 @@ import com.godaddy.vps4.hfs.VmService;
 import com.godaddy.vps4.security.PrivilegeService;
 import com.godaddy.vps4.security.jdbc.JdbcPrivilegeService;
 import com.godaddy.vps4.vm.ControlPanelService;
+import com.godaddy.vps4.vm.ImageService;
 import com.godaddy.vps4.vm.OsTypeService;
 import com.godaddy.vps4.vm.VirtualMachineService;
 import com.godaddy.vps4.vm.jdbc.JdbcControlPanelService;
+import com.godaddy.vps4.vm.jdbc.JdbcImageService;
 import com.godaddy.vps4.vm.jdbc.JdbcOsTypeService;
 import com.godaddy.vps4.vm.jdbc.JdbcVirtualMachineService;
 import com.google.inject.AbstractModule;
@@ -22,6 +24,7 @@ public class VmModule extends AbstractModule {
 		bind(VirtualMachineService.class).to(JdbcVirtualMachineService.class);
 		bind(ControlPanelService.class).to(JdbcControlPanelService.class);
 		bind(OsTypeService.class).to(JdbcOsTypeService.class);
+        bind(ImageService.class).to(JdbcImageService.class);
 		bind(VmService.class).toProvider(new HfsClientProvider<VmService>(VmService.class)).in(Singleton.class);
 	}
 }

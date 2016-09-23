@@ -25,6 +25,7 @@ import javax.ws.rs.core.MediaType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.godaddy.vps4.Vps4Exception;
 import com.godaddy.vps4.hfs.CreateVMRequest;
 import com.godaddy.vps4.hfs.Flavor;
 import com.godaddy.vps4.hfs.Vm;
@@ -36,8 +37,10 @@ import com.godaddy.vps4.security.PrivilegeService;
 import com.godaddy.vps4.security.User;
 import com.godaddy.vps4.vm.CombinedVm;
 import com.godaddy.vps4.vm.ControlPanelService;
+import com.godaddy.vps4.vm.ImageService;
 import com.godaddy.vps4.vm.OsTypeService;
 import com.godaddy.vps4.vm.VirtualMachine;
+import com.godaddy.vps4.vm.VirtualMachineRequest;
 import com.godaddy.vps4.vm.VirtualMachineService;
 import com.godaddy.vps4.vm.VirtualMachineSpec;
 import com.godaddy.vps4.web.Vps4Api;
@@ -61,6 +64,8 @@ public class VmsResource {
     final VmService vmService;
 	final OsTypeService osTypeService;
 	final ProjectService projectService;
+    final ImageService imageService;
+
 	final Map<Long, VmAction> actions = new ConcurrentHashMap<>();
 	final AtomicLong actionIdPool = new AtomicLong();
 	final ExecutorService threadPool = Executors.newCachedThreadPool();
@@ -74,7 +79,8 @@ public class VmsResource {
             VirtualMachineService virtualMachineService,
             ControlPanelService controlPanelService,
             OsTypeService osTypeService,
-            ProjectService projectService
+            ProjectService projectService,
+            ImageService imageService
             ) {
 		this.user = user;
         this.virtualMachineService = virtualMachineService;
@@ -83,6 +89,7 @@ public class VmsResource {
         this.controlPanelService = controlPanelService;
         this.osTypeService = osTypeService;
         this.projectService = projectService;
+        this.imageService = imageService;
 	}
 	
 	@GET
@@ -137,37 +144,54 @@ public class VmsResource {
 
 	}
 
+    @GET
+    @Path("/requests/{orionGuid}")
+    public VirtualMachineRequest getVmRequest(@PathParam("orionGuid") UUID orionGuid) {
+        logger.info("getting vm request with orionGuid {}", orionGuid);
+        return virtualMachineService.getVirtualMachineRequest(orionGuid);
+    }
+
 	@POST
 	@Path("/")
-	public boolean createVm(@QueryParam("orionGuid") UUID orionGuid,
-							@QueryParam("osType") String osType,
-							@QueryParam("tier") int tier,
-							@QueryParam("controlPanel") String controlPanel,
-							@QueryParam("managedLevel") int managedLevel) {
+    public VirtualMachineRequest createVm(@QueryParam("orionGuid") UUID orionGuid,
+            @QueryParam("operatingSystem") String operatingSystem,
+            @QueryParam("tier") int tier,
+            @QueryParam("controlPanel") String controlPanel,
+            @QueryParam("managedLevel") int managedLevel) {
 
-		int controlPanelId = controlPanelService.getControlPanelId(controlPanel);
-		int osTypeId = osTypeService.getOsTypeId(osType);
-		VirtualMachineSpec spec = virtualMachineService.getSpec(tier);
+        logger.info("creating new vm request for orionGuid {}", orionGuid);
+        virtualMachineService.createVirtualMachineRequest(orionGuid, operatingSystem, controlPanel, tier, managedLevel);
+        return virtualMachineService.getVirtualMachineRequest(orionGuid);
 		
-		Project project = projectService.createProject(orionGuid.toString(), user.getId());
-		virtualMachineService.createVirtualMachine(orionGuid, project.getProjectId(), osTypeId, controlPanelId, spec.specId, managedLevel);
-		
-		return true;
 	}
 
 	@POST
 	@Path("/{vmId}/provision")
-	public CombinedVm provisionVm(@QueryParam("name") String name,
-							      @QueryParam("orionGuid") UUID orionGuid,
-							      @QueryParam("image") String image,
-							      @QueryParam("dataCenter") int dataCenterId,
-							      @QueryParam("username") String username,
-							      @QueryParam("password") String password) throws InterruptedException {
+    public CombinedVm provisionVm(@QueryParam("name") String name,
+            @QueryParam("orionGuid") UUID orionGuid,
+            @QueryParam("image") String image,
+            @QueryParam("dataCenter") int dataCenterId,
+            @QueryParam("username") String username,
+            @QueryParam("password") String password) throws InterruptedException {
 		
-		VirtualMachine virtualMachine = virtualMachineService.getVirtualMachine(orionGuid);
-		Project project = projectService.getProject(virtualMachine.projectId);
+        logger.info("provisioning vm with orionGuid {}", orionGuid);
 
-		logger.info("creating new vm");
+        VirtualMachineRequest request = virtualMachineService.getVirtualMachineRequest(orionGuid);
+
+        Project project = projectService.createProject(orionGuid.toString(), user.getId(), dataCenterId);
+        if (project == null) {
+            throw new Vps4Exception("PROJECT_FAILED_TO_CREATE", "Failed to create new project for orionGuid " + orionGuid.toString());
+        }
+
+        VirtualMachineSpec spec = virtualMachineService.getSpec(request.tier);
+        if (spec == null) {
+            throw new Vps4Exception("INVALID_SPEC", String.format("spec with tier %d not found", request.tier));
+        }
+        
+        int imageId = imageService.getImageId(image);
+        if (imageId == 0) {
+            throw new Vps4Exception("INVALID_IMAGE", String.format("image %s not found", image));
+        }
 		
 		CreateVmAction action = new CreateVmAction();
 		action.type = ActionType.CREATE;
@@ -175,9 +199,9 @@ public class VmsResource {
 		action.status = ActionStatus.IN_PROGRESS;
 		
         CreateVMRequest hfsCreateRequest = new CreateVMRequest();
-        hfsCreateRequest.cpuCores = (int) virtualMachine.spec.cpuCoreCount;
-        hfsCreateRequest.diskGiB = (int) virtualMachine.spec.diskGib;
-        hfsCreateRequest.ramMiB = (int) virtualMachine.spec.memoryMib;
+        hfsCreateRequest.cpuCores = (int) spec.cpuCoreCount;
+        hfsCreateRequest.diskGiB = (int) spec.diskGib;
+        hfsCreateRequest.ramMiB = (int) spec.memoryMib;
 
         hfsCreateRequest.sgid = project.getVhfsSgid();
         hfsCreateRequest.image_name = image;
@@ -201,9 +225,11 @@ public class VmsResource {
 		    worker.wait();
 		}
 		
-		virtualMachineService.updateVirtualMachine(orionGuid, name, action.vm.vmId, image, dataCenterId);
+        virtualMachineService.provisionVirtualMachine(action.vm.vmId, orionGuid, name, project.getProjectId(),
+                spec.specId, request.managedLevel, imageId);
+        VirtualMachine virtualMachine = virtualMachineService.getVirtualMachine(action.vm.vmId);
 		
-		return new CombinedVm(action.vm, virtualMachine);
+        return new CombinedVm(action.vm, virtualMachine);
 	}
 	
 	@DELETE

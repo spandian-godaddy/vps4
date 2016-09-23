@@ -1,5 +1,6 @@
 package com.godaddy.vps4.vm;
 
+import java.time.Instant;
 import java.util.UUID;
 
 public class VirtualMachine {
@@ -9,23 +10,32 @@ public class VirtualMachine {
     public final long projectId;
     public final VirtualMachineSpec spec;
     public final String name;
-    public final int controlPanelId;
-    public final int osTypeId;
+    public final String image;
+    public final Instant validOn;
+    public final Instant validUntil;
 
-    public VirtualMachine(long vmId, UUID orionGuid, long projectId, VirtualMachineSpec spec, String name, int controlPanelId, int osTypeId) {
+    public VirtualMachine(long vmId,
+            UUID orionGuid,
+            long projectId,
+            VirtualMachineSpec spec,
+            String name,
+            String image,
+            Instant validOn,
+            Instant validUntil) {
         this.vmId = vmId;
         this.orionGuid = orionGuid;
         this.projectId = projectId;
         this.spec = spec;
         this.name = name;
-        this.controlPanelId = controlPanelId;
-        this.osTypeId = osTypeId;
+        this.image = image;
+        this.validOn = validOn;
+        this.validUntil = validUntil;
     }
 
     @Override
     public String toString() {
-        return "VirtualMachine [vmId=" + vmId + ", projectId=" + projectId + ", spec="
-                + spec.name + ", name=" + name + "]";
+        return "VirtualMachine [vmId=" + vmId + ", orionGuid= " + orionGuid + ", projectId=" + projectId + ", spec="
+                + spec.name + ", name=" + name + ", image=" + image + ", validOn=" + validOn + ", validUntil=" + validUntil + "]";
     }
 
 }

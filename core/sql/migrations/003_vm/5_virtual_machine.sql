@@ -1,6 +1,6 @@
 CREATE TABLE virtual_machine_request (
     orion_guid         UUID PRIMARY KEY
-    , tier_id          INT NOT NULL
+    , tier             INT NOT NULL
     , managed_level    INT NOT NULL
     , operating_system TEXT NOT NULL
     , control_panel    TEXT NOT NULL

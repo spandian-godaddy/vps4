@@ -9,4 +9,6 @@ public interface ImageService {
     void addCompatibleImage(String name, Long controlPanelId);
 
     void removeCompatibleImage(String name);
+
+    int getImageId(String image);
 }

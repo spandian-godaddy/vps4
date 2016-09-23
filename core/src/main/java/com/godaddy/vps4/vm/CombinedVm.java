@@ -1,5 +1,7 @@
 package com.godaddy.vps4.vm;
 
+import java.time.Instant;
+
 import com.godaddy.vps4.hfs.Vm;
 
 public class CombinedVm {
@@ -11,6 +13,8 @@ public class CombinedVm {
     public String spec;
     public String image;
     public String name;
+    public Instant validOn;
+    public Instant validUntil;
 
     public CombinedVm(){}
     
@@ -33,6 +37,8 @@ public class CombinedVm {
         if (virtualMachine != null) {
             spec = virtualMachine.spec.name;
             name = virtualMachine.name;
+            validOn = virtualMachine.validOn;
+            validUntil = virtualMachine.validUntil;
         }
     }
 

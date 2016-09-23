@@ -29,14 +29,10 @@ public interface VirtualMachineService {
 
     void destroyVirtualMachine(UUID uuid);  // (just updates status/sets validUntil, destroy is accomplished on backend)
 
-	void createVirtualMachine(UUID orionGuid,
-							  long projectId,
-							  int osTypeId, 
-							  int controlPanelId, 
-							  int specId,
-							  int managedLevel);
+    void createVirtualMachineRequest(UUID orionGuid, String osType, String controlPanel, int tier, int managedLevel);
 
-	void updateVirtualMachine(UUID orionGuid, String name, long vmId, String image, int dataCenterId);
+    VirtualMachineRequest getVirtualMachineRequest(UUID orionGuid);
 
+    void provisionVirtualMachine(long vmId, UUID orionGuid, String name, long projectId, int specId, int managedLevel, int imageId);
 
 }

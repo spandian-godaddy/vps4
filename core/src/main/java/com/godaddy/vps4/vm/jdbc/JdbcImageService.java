@@ -11,7 +11,7 @@ import com.godaddy.vps4.vm.ImageService;
 public class JdbcImageService implements ImageService {
     private final DataSource dataSource;
 
-    private final String tableName = "compatible_image";
+    private final String tableName = "image";
 
     @Inject
     public JdbcImageService(DataSource dataSource) {
@@ -37,6 +37,12 @@ public class JdbcImageService implements ImageService {
         Sql.with(dataSource).exec(
                 "DELETE FROM " + this.tableName + " WHERE name=?",
                 null, name);
+    }
+
+    @Override
+    public int getImageId(String image) {
+        return Sql.with(dataSource).exec("SELECT image_id FROM " + tableName + " WHERE name=?",
+                Sql.nextOrNull(rs -> rs.getInt("image_id")), image);
     }
 
 }

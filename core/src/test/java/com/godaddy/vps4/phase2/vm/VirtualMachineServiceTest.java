@@ -1,21 +1,22 @@
 package com.godaddy.vps4.phase2.vm;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 
-import java.util.List;
 import java.util.UUID;
 
 import javax.sql.DataSource;
 
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
 import com.godaddy.vps4.jdbc.DatabaseModule;
 import com.godaddy.vps4.jdbc.Sql;
-import com.godaddy.vps4.project.Project;
 import com.godaddy.vps4.project.ProjectService;
 import com.godaddy.vps4.project.jdbc.JdbcProjectService;
 import com.godaddy.vps4.vm.VirtualMachine;
+import com.godaddy.vps4.vm.VirtualMachineRequest;
 import com.godaddy.vps4.vm.VirtualMachineService;
 import com.godaddy.vps4.vm.jdbc.JdbcVirtualMachineService;
 import com.google.inject.Guice;
@@ -33,7 +34,8 @@ public class VirtualMachineServiceTest {
     public void setupService() {
     	DataSource dataSource = injector.getInstance(DataSource.class);
 
-        Sql.with(dataSource).exec("TRUNCATE TABLE virtual_machine", null);
+        Sql.with(dataSource).exec("TRUNCATE TABLE virtual_machine CASCADE", null);
+        Sql.with(dataSource).exec("TRUNCATE TABLE virtual_machine_request CASCADE", null);
 
         virtualMachineService = new JdbcVirtualMachineService(dataSource);
         projectService = new JdbcProjectService(dataSource);
@@ -41,23 +43,54 @@ public class VirtualMachineServiceTest {
         projectService.createProject("project4", 1, 1);
     }
 
+    @After
+    public void cleanupService() {
+
+        DataSource dataSource = injector.getInstance(DataSource.class);
+
+        Sql.with(dataSource).exec("TRUNCATE TABLE virtual_machine CASCADE", null);
+        Sql.with(dataSource).exec("TRUNCATE TABLE virtual_machine_request CASCADE", null);
+
+    }
+
     @Test
     public void testService() {
 
-        Project project = projectService.createProject("My Special Project", 1, 1);
-
         UUID orionGuid = java.util.UUID.fromString("a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a12");
+        String os = "linux";
+        String controlPanel = "cpanel";
+        int tier = 10;
+        int managedLevel = 0;
 
-        virtualMachineService.createVirtualMachine(orionGuid, project.getProjectId(), 1, 1, 1, 1);
+        virtualMachineService.createVirtualMachineRequest(orionGuid, os, controlPanel, tier, managedLevel);
 
-        List<VirtualMachine> vms = virtualMachineService.listVirtualMachines(project.getProjectId());
+        VirtualMachineRequest vmRequest = virtualMachineService.getVirtualMachineRequest(orionGuid);
 
-        assertEquals(1, vms.size());
+        assertNotNull(vmRequest);
+        assertEquals(orionGuid, vmRequest.orionGuid);
+        assertEquals(os, vmRequest.operatingSystem);
+        assertEquals(controlPanel, vmRequest.controlPanel);
+        assertEquals(tier, vmRequest.tier);
+        assertEquals(managedLevel, vmRequest.managedLevel);
 
-        virtualMachineService.destroyVirtualMachine(orionGuid);
+        String name = "testServer";
+        int vmId = 1;
+        int imageId = 1;
+        int projectId = 1;
+        int specId = 1;
 
-        vms = virtualMachineService.listVirtualMachines(project.getProjectId());
-        assertEquals(0, vms.size());
+        virtualMachineService.provisionVirtualMachine(vmId, orionGuid, name, projectId, specId, managedLevel, imageId);
+
+        VirtualMachine vm = virtualMachineService.getVirtualMachine(1);
+
+        assertNotNull(vm);
+        assertEquals(vmId, vm.vmId);
+        assertEquals(name, vm.name);
+        assertEquals(projectId, vm.projectId);
+        assertEquals(specId, vm.spec.specId);
+
+        // vms =
+        // virtualMachineService.listVirtualMachines(project.getProjectId());
     }
 
 }
