@@ -11,8 +11,7 @@ public class ExampleTest {
     @Test
     public void alwaysPasses() {
 
-        User user = new User();
-        user.name = "Brian";
+        User user = new User("Brian", 0, "ShopperId");
 
         assertTrue(true);
     }

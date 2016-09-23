@@ -17,6 +17,9 @@ import org.eclipse.jetty.util.thread.QueuedThreadPool;
 import org.jboss.resteasy.plugins.guice.GuiceResteasyBootstrapServletContextListener;
 import org.jboss.resteasy.util.GetRestful;
 
+import com.godaddy.vps4.jdbc.DatabaseModule;
+import com.godaddy.vps4.security.UserModule;
+import com.godaddy.vps4.web.vm.VmModule;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
 import com.google.inject.Module;
@@ -56,7 +59,11 @@ public class WebServer {
         modules.add(new GuiceFilterModule());
         modules.add(new SwaggerModule());
 
+        modules.add(new DatabaseModule());
         modules.add(new WebModule());
+        modules.add(new UserModule());
+
+        modules.add(new VmModule());
 
         Injector injector = Guice.createInjector(modules);
 
@@ -72,11 +79,16 @@ public class WebServer {
         return handler;
 	}
 
+	static boolean isVps4Api(Class<?> resourceClass) {
+	    return resourceClass.isAnnotationPresent(Vps4Api.class);
+	}
+
 	static void populateSwaggerModels(Injector injector) {
 
 	    // extract JAX-RS classes from injector
         final Set<Class<?>> appClasses = injector.getAllBindings().keySet().stream()
             .map(key -> key.getTypeLiteral().getRawType())
+            .filter(WebServer::isVps4Api)
             .filter(GetRestful::isRootResource)
             .distinct()
             .collect(Collectors.toSet());
