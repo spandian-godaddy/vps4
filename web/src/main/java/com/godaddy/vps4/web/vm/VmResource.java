@@ -219,7 +219,7 @@ public class VmResource {
         hfsProvisionRequest.image_name = image;
         hfsProvisionRequest.os = image;
 
-        hfsProvisionRequest.hostname = HostnameGenerator.GetHostname();
+        hfsProvisionRequest.hostname = HostnameGenerator.getHostname();
 
         hfsProvisionRequest.username = username;
         hfsProvisionRequest.password = password;
