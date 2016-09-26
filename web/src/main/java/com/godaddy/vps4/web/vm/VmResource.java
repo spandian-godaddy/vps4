@@ -183,9 +183,9 @@ public class VmResource {
 
         Project project = createProject(orionGuid, dataCenterId);
 
-        VirtualMachineSpec spec = GetVirtualMachineSpec(request);
+        VirtualMachineSpec spec = getVirtualMachineSpec(request);
 
-        int imageId = GetImageId(image);
+        int imageId = getImageId(image);
 
 		CreateVmAction action = new CreateVmAction();
 		action.actionId = actionIdPool.incrementAndGet();
@@ -242,7 +242,7 @@ public class VmResource {
         return project;
     }
 
-    private VirtualMachineSpec GetVirtualMachineSpec(VirtualMachineRequest request) {
+    private VirtualMachineSpec getVirtualMachineSpec(VirtualMachineRequest request) {
         VirtualMachineSpec spec = virtualMachineService.getSpec(request.tier);
         if (spec == null) {
             throw new Vps4Exception("INVALID_SPEC", String.format("spec with tier %d not found", request.tier));
@@ -250,7 +250,7 @@ public class VmResource {
         return spec;
     }
 
-    private int GetImageId(String image) {
+    private int getImageId(String image) {
         int imageId = imageService.getImageId(image);
         if (imageId == 0) {
             throw new Vps4Exception("INVALID_IMAGE", String.format("image %s not found", image));
