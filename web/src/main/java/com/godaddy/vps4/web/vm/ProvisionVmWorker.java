@@ -7,9 +7,9 @@ import com.godaddy.vps4.hfs.Flavor;
 import com.godaddy.vps4.hfs.VmAction;
 import com.godaddy.vps4.hfs.VmService;
 import com.godaddy.vps4.hfs.VmService.FlavorList;
+import com.godaddy.vps4.web.Action.ActionStatus;
+import com.godaddy.vps4.web.vm.VmResource.CreateVmAction;
 
-import com.godaddy.vps4.web.vm.VmsResource.ActionStatus;
-import com.godaddy.vps4.web.vm.VmsResource.CreateVmAction;
 
 public class ProvisionVmWorker implements Runnable {
 

@@ -75,7 +75,7 @@ public class VmResource {
 
 	//TODO: Break this up into multiple classes to reduce number of dependencies.
 	@Inject
-	public VmResource(DataSource dataSource, 
+	public VmResource(DataSource dataSource,
             PrivilegeService privilegeService,
 			User user,
             VmService vmService,
@@ -94,25 +94,25 @@ public class VmResource {
         this.projectService = projectService;
         this.imageService = imageService;
 	}
-	
+
 	@GET
 	@Path("actions/{actionId}")
     public Action getAction(@PathParam("actionId") long actionId) {
-		
-        Action action = actions.get(actionId);
+
+	    Action action = actions.get(actionId);
 		if (action == null) {
 			throw new NotFoundException("actionId " + actionId + " not found");
 		}
-		
+
 		return action;
 	}
-	
+
 	@GET
 	@Path("/flavors")
 	public List<Flavor> getFlavors() {
-		
+
 		logger.info("getting flavors from HFS...");
-		
+
 		FlavorList flavorList = vmService.getFlavors();
 		logger.info("flavorList: {}", flavorList);
 		if (flavorList != null && flavorList.results != null) {
@@ -120,7 +120,7 @@ public class VmResource {
 		}
 		return new ArrayList<>();
 	}
-	
+
 	@GET
 	@Path("/{vmId}")
 	public CombinedVm getVm(@PathParam("vmId") int vmId) {
@@ -165,7 +165,7 @@ public class VmResource {
         logger.info("creating new vm request for orionGuid {}", orionGuid);
         virtualMachineService.createVirtualMachineRequest(orionGuid, operatingSystem, controlPanel, tier, managedLevel);
         return virtualMachineService.getVirtualMachineRequest(orionGuid);
-		
+
 	}
 
 	@POST
@@ -176,7 +176,7 @@ public class VmResource {
             @QueryParam("dataCenter") int dataCenterId,
             @QueryParam("username") String username,
             @QueryParam("password") String password) throws InterruptedException {
-		
+
         logger.info("provisioning vm with orionGuid {}", orionGuid);
 
         VirtualMachineRequest request = getVmRequestToProvision(orionGuid);
@@ -184,28 +184,28 @@ public class VmResource {
         Project project = createProject(orionGuid, dataCenterId);
 
         VirtualMachineSpec spec = GetVirtualMachineSpec(request);
-        
+
         int imageId = GetImageId(image);
-		
+
 		CreateVmAction action = new CreateVmAction();
 		action.actionId = actionIdPool.incrementAndGet();
 		action.status = ActionStatus.IN_PROGRESS;
         action.hfsProvisionRequest = createProvisionVmRequest(image, username, password, project, spec);
 
 		actions.put(action.actionId, action);
-		
+
         ProvisionVmWorker worker = new ProvisionVmWorker(vmService, action);
 		threadPool.execute(worker);
-		
+
 		//Wait for the VM Id
 		synchronized (worker) {
 		    worker.wait();
 		}
-		
+
         virtualMachineService.provisionVirtualMachine(action.vm.vmId, orionGuid, name, project.getProjectId(),
                 spec.specId, request.managedLevel, imageId);
         VirtualMachine virtualMachine = virtualMachineService.getVirtualMachine(action.vm.vmId);
-		
+
         return new CombinedVm(action.vm, virtualMachine);
 	}
 
@@ -257,39 +257,39 @@ public class VmResource {
         }
         return imageId;
     }
-	
+
 	@DELETE
 	@Path("vms/{vmId}")
     public Action destroyVm(@PathParam("vmId") long vmId) {
-		
+
 		Vm vm = vmService.getVm(vmId);
 		if (vm == null) {
 			throw new NotFoundException("vmId " + vmId + " not found");
 		}
-		
+
 		// TODO verify VM status is destroyable
-		
+
 		DestroyVmAction action = new DestroyVmAction();
 		action.actionId = actionIdPool.incrementAndGet();
 		action.status = ActionStatus.IN_PROGRESS;
 		action.vmId = vmId;
-		
+
 		actions.put(action.actionId, action);
-		
+
 		threadPool.execute(new DestroyVmWorker(vmService, action));
-			
+
 		return action;
 	}
-	
-	
 
-	
+
+
+
     public static class CreateVmAction extends Action {
         public ProvisionVMRequest hfsProvisionRequest = new ProvisionVMRequest();
-		
+
 		public volatile Vm vm;
 	}
-	
+
     public static class DestroyVmAction extends Action {
 		public long vmId;
 	}
