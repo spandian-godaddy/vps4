@@ -3,10 +3,8 @@ package com.godaddy.vps4.web.vm;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.godaddy.vps4.hfs.Flavor;
 import com.godaddy.vps4.hfs.VmAction;
 import com.godaddy.vps4.hfs.VmService;
-import com.godaddy.vps4.hfs.VmService.FlavorList;
 import com.godaddy.vps4.web.Action.ActionStatus;
 import com.godaddy.vps4.web.vm.VmResource.CreateVmAction;
 
@@ -22,19 +20,6 @@ public class ProvisionVmWorker implements Runnable {
 	public ProvisionVmWorker(VmService vmService, CreateVmAction action) {
 		this.vmService = vmService;
 		this.action = action;
-	}
-
-	protected Flavor findFlavor(String name) {
-
-		FlavorList flavors = vmService.getFlavors();
-		if (flavors != null && flavors.results != null) {
-			for (Flavor flavor : flavors.results) {
-				if (flavor.name.equals(name)) {
-					return flavor;
-				}
-			}
-		}
-		return null;
 	}
 
 	@Override
