@@ -7,8 +7,13 @@ import com.godaddy.vps4.hfs.Flavor;
 import com.godaddy.vps4.hfs.VmAction;
 import com.godaddy.vps4.hfs.VmService;
 import com.godaddy.vps4.hfs.VmService.FlavorList;
+<<<<<<< Updated upstream
 import com.godaddy.vps4.web.vm.VmsResource.ActionStatus;
 import com.godaddy.vps4.web.vm.VmsResource.CreateVmAction;
+=======
+import com.godaddy.vps4.web.Action.ActionStatus;
+import com.godaddy.vps4.web.vm.VmResource.CreateVmAction;
+>>>>>>> Stashed changes
 
 public class ProvisionVmWorker implements Runnable {
 	
