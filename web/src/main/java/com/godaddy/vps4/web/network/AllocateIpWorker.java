@@ -9,6 +9,7 @@ import com.godaddy.vps4.Vps4Exception;
 
 import gdg.hfs.vhfs.network.AddressAction;
 import gdg.hfs.vhfs.network.IpAddress;
+import gdg.hfs.vhfs.network.IpAddress.Status;
 import gdg.hfs.vhfs.network.NetworkService;
 
 public class AllocateIpWorker implements Callable<IpAddress> {
@@ -45,12 +46,18 @@ public class AllocateIpWorker implements Callable<IpAddress> {
         if (hfsAction.status.equals(AddressAction.Status.COMPLETE)) {
             IpAddress ipAddress = networkService.getAddress(hfsAction.addressId);
 
+            if (ipAddress.status != Status.UNBOUND) {
+                throw new Vps4Exception("ALLOCATE_IP_FAILED", String.format("IP %s is not unbound", ipAddress.address));
+            }
+
             logger.info("Address allocate is complete: {}", hfsAction);
             logger.info("Allocated address: {}", ipAddress);
 
             return ipAddress;
         }
+
         throw new Vps4Exception("ALLOCATE_IP_FAILED", String.format("Allocate IP failed for project %s", sgid));
+
     }
 
 }
