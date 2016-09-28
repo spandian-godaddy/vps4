@@ -19,6 +19,7 @@ import org.jboss.resteasy.util.GetRestful;
 
 import com.godaddy.vps4.jdbc.DatabaseModule;
 import com.godaddy.vps4.security.UserModule;
+import com.godaddy.vps4.web.network.NetworkModule;
 import com.godaddy.vps4.web.vm.VmModule;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
@@ -64,6 +65,7 @@ public class WebServer {
         modules.add(new UserModule());
 
         modules.add(new VmModule());
+        modules.add(new NetworkModule());
 
         Injector injector = Guice.createInjector(modules);
 

@@ -48,6 +48,7 @@ import com.godaddy.vps4.web.Action;
 import com.godaddy.vps4.web.Action.ActionStatus;
 import com.godaddy.vps4.web.Vps4Api;
 
+import gdg.hfs.vhfs.network.NetworkService;
 import io.swagger.annotations.Api;
 
 @Vps4Api
@@ -65,6 +66,7 @@ public class VmResource {
 	final PrivilegeService privilegeService;
 	final ControlPanelService controlPanelService;
     final VmService vmService;
+    final NetworkService networkService;
 	final OsTypeService osTypeService;
 	final ProjectService projectService;
     final ImageService imageService;
@@ -79,6 +81,7 @@ public class VmResource {
             PrivilegeService privilegeService,
 			User user,
             VmService vmService,
+            NetworkService networkService,
             VirtualMachineService virtualMachineService,
             ControlPanelService controlPanelService,
             OsTypeService osTypeService,
@@ -89,6 +92,7 @@ public class VmResource {
         this.virtualMachineService = virtualMachineService;
         this.privilegeService = privilegeService;
         this.vmService = vmService;
+        this.networkService = networkService;
         this.controlPanelService = controlPanelService;
         this.osTypeService = osTypeService;
         this.projectService = projectService;
@@ -99,7 +103,7 @@ public class VmResource {
 	@Path("actions/{actionId}")
     public Action getAction(@PathParam("actionId") long actionId) {
 
-	    Action action = actions.get(actionId);
+        Action action = actions.get(actionId);
 		if (action == null) {
 			throw new NotFoundException("actionId " + actionId + " not found");
 		}
@@ -194,13 +198,10 @@ public class VmResource {
 
 		actions.put(action.actionId, action);
 
-        ProvisionVmWorker worker = new ProvisionVmWorker(vmService, action);
+        ProvisionVmWorker worker = new ProvisionVmWorker(vmService, networkService, action, threadPool);
 		threadPool.execute(worker);
 
-		//Wait for the VM Id
-		synchronized (worker) {
-		    worker.wait();
-		}
+		worker.waitForVmId();
 
         virtualMachineService.provisionVirtualMachine(action.vm.vmId, orionGuid, name, project.getProjectId(),
                 spec.specId, request.managedLevel, imageId);
@@ -261,7 +262,6 @@ public class VmResource {
 	@DELETE
 	@Path("vms/{vmId}")
     public Action destroyVm(@PathParam("vmId") long vmId) {
-
 		Vm vm = vmService.getVm(vmId);
 		if (vm == null) {
 			throw new NotFoundException("vmId " + vmId + " not found");
@@ -280,9 +280,6 @@ public class VmResource {
 
 		return action;
 	}
-
-
-
 
     public static class CreateVmAction extends Action {
         public ProvisionVMRequest hfsProvisionRequest = new ProvisionVMRequest();
