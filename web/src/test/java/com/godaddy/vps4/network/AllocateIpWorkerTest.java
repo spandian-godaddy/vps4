@@ -40,13 +40,13 @@ public class AllocateIpWorkerTest {
 
         hfsAction.status = AddressAction.Status.COMPLETE;
 
-        IpAddress ip = addressActionTest("vps4-1");
+        IpAddress ip = allocateWorkerTest("vps4-1");
 
         assertEquals(ipAddress.address, ip.address);
         assertEquals(ipAddress.addressId, ip.addressId);
     }
 
-    private IpAddress addressActionTest(String sgid) {
+    private IpAddress allocateWorkerTest(String sgid) {
 
         hfsAction.completedAt = Instant.now().toString();
 
@@ -66,7 +66,7 @@ public class AllocateIpWorkerTest {
     public void testAllocateIpFailed() {
         hfsAction.status = AddressAction.Status.FAILED;
         try {
-            addressActionTest("vps4-1");
+            allocateWorkerTest("vps4-1");
             Assert.fail("CommandException expected!");
         } catch (Vps4Exception ve) {
             assertEquals("ALLOCATE_IP_FAILED", ve.getId());
@@ -84,7 +84,7 @@ public class AllocateIpWorkerTest {
          hfsAction.status = AddressAction.Status.COMPLETE;
         
          try {
-            addressActionTest("vps4-1");
+            allocateWorkerTest("vps4-1");
              Assert.fail("IllegalStateException should have been thrown for address not in UNBOUND status");
         } catch (Vps4Exception ve) {
             assertEquals("ALLOCATE_IP_FAILED", ve.getId());
