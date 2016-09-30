@@ -11,6 +11,7 @@ import org.slf4j.LoggerFactory;
 
 import com.godaddy.vps4.hfs.VmAction;
 import com.godaddy.vps4.hfs.VmService;
+import com.godaddy.vps4.vm.HostnameGenerator;
 import com.godaddy.vps4.web.Action.ActionStatus;
 import com.godaddy.vps4.web.network.AllocateIpWorker;
 import com.godaddy.vps4.web.network.BindIpWorker;
@@ -49,26 +50,26 @@ public class ProvisionVmWorker implements Runnable {
 
         logger.info("sending HFS VM request: {}", action.hfsProvisionRequest);
 
-        VmAction hfsAction = vmService.createVm(action.hfsProvisionRequest);
-
         Future<IpAddress> ipFuture = allocateIp();
 
-        hfsAction = waitForVmAction(hfsAction);
-
+        IpAddress ip = null;
         try {
-            IpAddress ip = ipFuture.get();
+            ip = ipFuture.get();
             action.ip = ip;
-
-            new BindIpWorker(hfsNetworkService, ip.addressId, hfsAction.vmId).run();
-
-            // assert bindAction.status is successful
-
         }
         catch (ExecutionException | InterruptedException e) {
             // allocating the IP address failed somehow
             // fail the action
             action.status = ActionStatus.ERROR;
         }
+
+        action.hfsProvisionRequest.hostname = HostnameGenerator.getHostname(ip.address);
+        VmAction hfsAction = vmService.createVm(action.hfsProvisionRequest);
+        hfsAction = waitForVmAction(hfsAction);
+
+        new BindIpWorker(hfsNetworkService, ip.addressId, hfsAction.vmId).run();
+
+        // assert bindAction.status is successful
 
         logger.info("provisioning complete: {}", hfsAction);
 

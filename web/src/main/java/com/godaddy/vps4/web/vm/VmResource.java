@@ -36,7 +36,6 @@ import com.godaddy.vps4.security.PrivilegeService;
 import com.godaddy.vps4.security.User;
 import com.godaddy.vps4.vm.CombinedVm;
 import com.godaddy.vps4.vm.ControlPanelService;
-import com.godaddy.vps4.vm.HostnameGenerator;
 import com.godaddy.vps4.vm.ImageService;
 import com.godaddy.vps4.vm.OsTypeService;
 import com.godaddy.vps4.vm.VirtualMachine;
@@ -210,8 +209,6 @@ public class VmResource {
         hfsProvisionRequest.sgid = project.getVhfsSgid();
         hfsProvisionRequest.image_name = image;
         hfsProvisionRequest.os = image;
-
-        hfsProvisionRequest.hostname = HostnameGenerator.getHostname();
 
         hfsProvisionRequest.username = username;
         hfsProvisionRequest.password = password;
