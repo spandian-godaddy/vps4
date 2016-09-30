@@ -7,7 +7,7 @@ public class ProvisionVMRequest {
     public String hostname;
 
     public String os;
-
+    
     public String image_name;
 
     public int cpuCores;
@@ -20,10 +20,11 @@ public class ProvisionVMRequest {
 
     public String password;
 
-    @Override
-    public String toString() {
-        return "CreateVMRequest [sgid=" + sgid + ", hostname=" + hostname + ", os=" + os + ", image_name=" + image_name + ", cpuCores="
-                + cpuCores + ", diskGiB=" + diskGiB + ", ramMiB=" + ramMiB + ", username=" + username + ", password=" + password + "]";
-    }
+	@Override
+	public String toString() {
+        return "CreateVMRequest [sgid=" + sgid + ", hostname=" + hostname + ", os=" + os + ", image_name=" + image_name
+				+ ", cpuCores=" + cpuCores + ", diskGiB=" + diskGiB + ", ramMiB=" + ramMiB + ", username=" + username
+				+ ", password=" + password + "]";
+	}
 
 }
