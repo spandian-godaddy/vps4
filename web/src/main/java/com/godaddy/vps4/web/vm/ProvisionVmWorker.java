@@ -17,6 +17,8 @@ import com.godaddy.vps4.web.network.AllocateIpWorker;
 import com.godaddy.vps4.web.network.BindIpWorker;
 import com.godaddy.vps4.web.vm.VmResource.CreateVmAction;
 
+import gdg.hfs.vhfs.network.AddressAction;
+import gdg.hfs.vhfs.network.AddressAction.Status;
 import gdg.hfs.vhfs.network.IpAddress;
 import gdg.hfs.vhfs.network.NetworkService;
 
@@ -48,9 +50,69 @@ public class ProvisionVmWorker implements Runnable {
     @Override
     public void run() {
 
+        logger.info("begin provision vm for request: {}", action.hfsProvisionRequest);
+        action.status = ActionStatus.IN_PROGRESS;
+        VmAction hfsCreateVmAction = null;
+
+        IpAddress ip = allocatedIp();
+
+        if (action.status != ActionStatus.ERROR) {
+
+            hfsCreateVmAction = provisionVm(ip);
+
+            if (hfsCreateVmAction != null) {
+                action.vm = vmService.getVm(hfsCreateVmAction.vmId);
+            }
+        }
+
+        if (action.status != ActionStatus.ERROR) {
+
+            bindIp(ip, hfsCreateVmAction);
+        }
+
+        if (action.status != ActionStatus.ERROR) {
+
+            action.status = ActionStatus.COMPLETE;
+        }
+
+        logger.info("provision vm finished with status {} for action: {}", hfsCreateVmAction);
+    }
+
+    private AddressAction bindIp(IpAddress ip, VmAction hfsAction) {
+        Future<AddressAction> bindIpFuture = threadPool.submit(new BindIpWorker(hfsNetworkService, ip.addressId, hfsAction.vmId));
+        AddressAction bindIpAction = null;
+        try {
+            bindIpAction = bindIpFuture.get();
+
+            if (bindIpAction.status == Status.FAILED) {
+                action.status = ActionStatus.ERROR;
+                logger.warn("failed to bind addressId {} to vmId {}, action: {}", ip.addressId, hfsAction.vmId, bindIpAction);
+            }
+        }
+        catch (InterruptedException | ExecutionException e) {
+            action.status = ActionStatus.ERROR;
+            logger.warn("failed to bind addressId {} to vmId {}", ip.addressId, hfsAction.vmId);
+        }
+        return bindIpAction;
+    }
+
+    private VmAction provisionVm(IpAddress ip) {
+
         logger.info("sending HFS VM request: {}", action.hfsProvisionRequest);
 
-        Future<IpAddress> ipFuture = allocateIp();
+        action.hfsProvisionRequest.hostname = HostnameGenerator.getHostname(ip.address);
+        VmAction hfsAction = vmService.createVm(action.hfsProvisionRequest);
+        hfsAction = waitForVmAction(hfsAction);
+
+        if (!hfsAction.state.equals("COMPLETE")) {
+            logger.warn("failed to provision VM, action: {}", hfsAction);
+        }
+
+        return hfsAction;
+    }
+
+    private IpAddress allocatedIp() {
+        Future<IpAddress> ipFuture = threadPool.submit(new AllocateIpWorker(hfsNetworkService, action.project, vps4NetworkService));
 
         IpAddress ip = null;
         try {
@@ -58,28 +120,15 @@ public class ProvisionVmWorker implements Runnable {
             action.ip = ip;
         }
         catch (ExecutionException | InterruptedException e) {
-            // allocating the IP address failed somehow
-            // fail the action
             action.status = ActionStatus.ERROR;
+            logger.warn("failed to allocate an IP: {}", action);
         }
-
-        action.hfsProvisionRequest.hostname = HostnameGenerator.getHostname(ip.address);
-        VmAction hfsAction = vmService.createVm(action.hfsProvisionRequest);
-        hfsAction = waitForVmAction(hfsAction);
-
-        new BindIpWorker(hfsNetworkService, ip.addressId, hfsAction.vmId).run();
-
-        // assert bindAction.status is successful
-
-        logger.info("provisioning complete: {}", hfsAction);
-
-        action.vm = vmService.getVm(hfsAction.vmId);
-        action.status = ActionStatus.COMPLETE;
+        return ip;
     }
 
     protected VmAction waitForVmAction(VmAction hfsAction) {
         // wait for VmAction to complete
-        while (!hfsAction.state.equals("COMPLETE")) {
+        while (hfsAction.state.equals("REQUESTED") || hfsAction.state.equals("IN_PROGRESS")) {
 
             logger.info("waiting on VM to provision: {}", hfsAction);
 
@@ -99,13 +148,6 @@ public class ProvisionVmWorker implements Runnable {
             hfsAction = vmService.getVmAction(hfsAction.vmId, hfsAction.vmActionId);
         }
         return hfsAction;
-    }
-
-    protected Future<IpAddress> allocateIp() {
-        // while we're waiting on the VM to be created,
-        // spin off the IP allocation task
-
-        return threadPool.submit(new AllocateIpWorker(hfsNetworkService, action.project, vps4NetworkService));
     }
 
     public void waitForVmId() {

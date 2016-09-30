@@ -28,7 +28,7 @@ public class BindIpWorkerTest {
     }
 
     @Test
-    public void testBindIp() {
+    public void testBindIp() throws Exception {
 
         bindWorkerTest(AddressAction.Status.COMPLETE);
 
@@ -36,7 +36,7 @@ public class BindIpWorkerTest {
         assertEquals(AddressAction.Status.COMPLETE, actualAction.status);
     }
 
-    private void bindWorkerTest(AddressAction.Status desiredStatus) {
+    private void bindWorkerTest(AddressAction.Status desiredStatus) throws Exception {
 
         AddressAction action = new AddressAction();
         action.addressActionId = 1;
@@ -48,17 +48,18 @@ public class BindIpWorkerTest {
         Mockito.when(networkService.getAddressAction(addressId, vmId)).thenReturn(action);
 
         BindIpWorker bindIp = new BindIpWorker(networkService, addressId, vmId);
-        bindIp.run();
+        bindIp.call();
 
         verify(networkService).bindIp(addressId, vmId);
     }
 
     @Test
-    public void testBindIpFailed() {
+    public void testBindIpFailed() throws Exception {
         try {
             bindWorkerTest(AddressAction.Status.FAILED);
             Assert.fail("CommandException expected!");
-        } catch (Vps4Exception ve) {
+        }
+        catch (Vps4Exception ve) {
             assertEquals("BIND_IP_FAILED", ve.getId());
         }
     }

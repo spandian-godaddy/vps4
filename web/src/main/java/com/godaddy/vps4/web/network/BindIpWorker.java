@@ -1,15 +1,16 @@
 package com.godaddy.vps4.web.network;
 
+import java.util.concurrent.Callable;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.godaddy.vps4.Vps4Exception;
-import com.godaddy.vps4.web.Action.ActionStatus;
 
 import gdg.hfs.vhfs.network.AddressAction;
 import gdg.hfs.vhfs.network.NetworkService;
 
-public class BindIpWorker implements Runnable {
+public class BindIpWorker implements Callable<AddressAction> {
 
     private static final Logger logger = LoggerFactory.getLogger(BindIpWorker.class);
 
@@ -24,7 +25,7 @@ public class BindIpWorker implements Runnable {
     }
 
     @Override
-    public void run() {
+    public AddressAction call() throws Exception {
         logger.info("sending HFS request to bind addressId {} to vmId {}", addressId, vmId);
 
         AddressAction hfsAction = networkService.bindIp(addressId, vmId);
@@ -34,7 +35,8 @@ public class BindIpWorker implements Runnable {
 
             try {
                 Thread.sleep(2000);
-            } catch (InterruptedException e) {
+            }
+            catch (InterruptedException e) {
                 logger.warn("Interrupted while sleeping");
             }
 
@@ -43,9 +45,11 @@ public class BindIpWorker implements Runnable {
 
         if (hfsAction.status.equals(AddressAction.Status.COMPLETE)) {
             logger.info("bind ip complete: {}", hfsAction);
-        } else {
+        }
+        else {
             throw new Vps4Exception("BIND_IP_FAILED", String.format("Bind IP %d failed for VM %d", addressId, vmId));
         }
-    }
 
+        return hfsAction;
+    }
 }
