@@ -17,4 +17,15 @@ public class HostnameGeneratorTest {
         assertEquals("s192-168-1-1.secureserver.net", hostname);
     }
 
+    @Test(expected = Vps4Exception.class)
+    public void testGetHostnameInvalidCharacter() {
+        String ipAddress = "a92.168.1.1";
+        HostnameGenerator.getHostname(ipAddress);
+    }
+
+    @Test(expected = Vps4Exception.class)
+    public void testGetHostnameInvalidIp() {
+        String ipAddress = "192.168.1";
+        HostnameGenerator.getHostname(ipAddress);
+    }
 }
