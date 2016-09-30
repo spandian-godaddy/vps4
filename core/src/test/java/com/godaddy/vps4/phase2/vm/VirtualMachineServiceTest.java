@@ -13,6 +13,7 @@ import org.junit.Test;
 
 import com.godaddy.vps4.jdbc.DatabaseModule;
 import com.godaddy.vps4.jdbc.Sql;
+import com.godaddy.vps4.project.Project;
 import com.godaddy.vps4.project.ProjectService;
 import com.godaddy.vps4.project.jdbc.JdbcProjectService;
 import com.godaddy.vps4.vm.VirtualMachine;
@@ -30,17 +31,20 @@ public class VirtualMachineServiceTest {
 
     Injector injector = Guice.createInjector(new DatabaseModule());
 
+    Project project;
+
     @Before
     public void setupService() {
-    	DataSource dataSource = injector.getInstance(DataSource.class);
+        DataSource dataSource = injector.getInstance(DataSource.class);
 
         Sql.with(dataSource).exec("TRUNCATE TABLE virtual_machine CASCADE", null);
         Sql.with(dataSource).exec("TRUNCATE TABLE virtual_machine_request CASCADE", null);
+        Sql.with(dataSource).exec("TRUNCATE TABLE project CASCADE", null);
 
         virtualMachineService = new JdbcVirtualMachineService(dataSource);
         projectService = new JdbcProjectService(dataSource);
 
-        projectService.createProject("project4", 1, 1);
+        project = projectService.createProject("testVirtualMachineServiceProject", 1, 1);
     }
 
     @After
@@ -50,6 +54,7 @@ public class VirtualMachineServiceTest {
 
         Sql.with(dataSource).exec("TRUNCATE TABLE virtual_machine CASCADE", null);
         Sql.with(dataSource).exec("TRUNCATE TABLE virtual_machine_request CASCADE", null);
+        Sql.with(dataSource).exec("TRUNCATE TABLE project CASCADE", null);
 
     }
 
@@ -76,17 +81,16 @@ public class VirtualMachineServiceTest {
         String name = "testServer";
         int vmId = 1;
         int imageId = 1;
-        int projectId = 1;
         int specId = 1;
 
-        virtualMachineService.provisionVirtualMachine(vmId, orionGuid, name, projectId, specId, managedLevel, imageId);
+        virtualMachineService.provisionVirtualMachine(vmId, orionGuid, name, project.getProjectId(), specId, managedLevel, imageId);
 
         VirtualMachine vm = virtualMachineService.getVirtualMachine(1);
 
         assertNotNull(vm);
         assertEquals(vmId, vm.vmId);
         assertEquals(name, vm.name);
-        assertEquals(projectId, vm.projectId);
+        assertEquals(project.getProjectId(), vm.projectId);
         assertEquals(specId, vm.spec.specId);
 
         // vms =

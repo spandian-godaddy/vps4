@@ -19,7 +19,8 @@ BEGIN
         p.data_center_id,
         p.valid_on,
         p.valid_until
-    FROM project p;
+    FROM project p
+    WHERE p.project_id = p_project_id;
 
 END;
 $$ LANGUAGE plpgsql;
