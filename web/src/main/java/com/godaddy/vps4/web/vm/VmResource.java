@@ -10,7 +10,6 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicLong;
 
 import javax.inject.Inject;
-import javax.sql.DataSource;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
@@ -48,6 +47,7 @@ import com.godaddy.vps4.web.Action;
 import com.godaddy.vps4.web.Action.ActionStatus;
 import com.godaddy.vps4.web.Vps4Api;
 
+import gdg.hfs.vhfs.network.IpAddress;
 import gdg.hfs.vhfs.network.NetworkService;
 import io.swagger.annotations.Api;
 
@@ -61,78 +61,73 @@ public class VmResource {
 
     private static final Logger logger = LoggerFactory.getLogger(VmResource.class);
 
-	final User user;
-	final VirtualMachineService virtualMachineService;
-	final PrivilegeService privilegeService;
-	final ControlPanelService controlPanelService;
+    final User user;
+    final VirtualMachineService virtualMachineService;
+    final PrivilegeService privilegeService;
+    final ControlPanelService controlPanelService;
     final VmService vmService;
-    final NetworkService networkService;
-	final OsTypeService osTypeService;
-	final ProjectService projectService;
+    final NetworkService hfsNetworkService;
+    final OsTypeService osTypeService;
+    final ProjectService projectService;
     final ImageService imageService;
+    final com.godaddy.vps4.network.NetworkService vps4NetworkService;
 
     final Map<Long, Action> actions = new ConcurrentHashMap<>();
-	final AtomicLong actionIdPool = new AtomicLong();
-	final ExecutorService threadPool = Executors.newCachedThreadPool();
+    final AtomicLong actionIdPool = new AtomicLong();
+    final ExecutorService threadPool = Executors.newCachedThreadPool();
 
-	//TODO: Break this up into multiple classes to reduce number of dependencies.
-	@Inject
-	public VmResource(DataSource dataSource,
-            PrivilegeService privilegeService,
-			User user,
-            VmService vmService,
-            NetworkService networkService,
-            VirtualMachineService virtualMachineService,
-            ControlPanelService controlPanelService,
-            OsTypeService osTypeService,
-            ProjectService projectService,
-            ImageService imageService
-            ) {
-		this.user = user;
+    // TODO: Break this up into multiple classes to reduce number of
+    // dependencies.
+    @Inject
+    public VmResource(PrivilegeService privilegeService, User user, VmService vmService, NetworkService hfsNetworkService,
+            VirtualMachineService virtualMachineService, ControlPanelService controlPanelService, OsTypeService osTypeService,
+            ProjectService projectService, ImageService imageService, com.godaddy.vps4.network.NetworkService vps4NetworkService) {
+        this.user = user;
         this.virtualMachineService = virtualMachineService;
         this.privilegeService = privilegeService;
         this.vmService = vmService;
-        this.networkService = networkService;
+        this.hfsNetworkService = hfsNetworkService;
         this.controlPanelService = controlPanelService;
         this.osTypeService = osTypeService;
         this.projectService = projectService;
         this.imageService = imageService;
-	}
+        this.vps4NetworkService = vps4NetworkService;
+    }
 
-	@GET
-	@Path("actions/{actionId}")
+    @GET
+    @Path("actions/{actionId}")
     public Action getAction(@PathParam("actionId") long actionId) {
 
         Action action = actions.get(actionId);
-		if (action == null) {
-			throw new NotFoundException("actionId " + actionId + " not found");
-		}
+        if (action == null) {
+            throw new NotFoundException("actionId " + actionId + " not found");
+        }
 
-		return action;
-	}
+        return action;
+    }
 
-	@GET
-	@Path("/flavors")
-	public List<Flavor> getFlavors() {
+    @GET
+    @Path("/flavors")
+    public List<Flavor> getFlavors() {
 
-		logger.info("getting flavors from HFS...");
+        logger.info("getting flavors from HFS...");
 
-		FlavorList flavorList = vmService.getFlavors();
-		logger.info("flavorList: {}", flavorList);
-		if (flavorList != null && flavorList.results != null) {
-			return flavorList.results;
-		}
-		return new ArrayList<>();
-	}
+        FlavorList flavorList = vmService.getFlavors();
+        logger.info("flavorList: {}", flavorList);
+        if (flavorList != null && flavorList.results != null) {
+            return flavorList.results;
+        }
+        return new ArrayList<>();
+    }
 
-	@GET
-	@Path("/{vmId}")
-	public CombinedVm getVm(@PathParam("vmId") int vmId) {
+    @GET
+    @Path("/{vmId}")
+    public CombinedVm getVm(@PathParam("vmId") int vmId) {
 
-		logger.info("getting vm with id {}", vmId);
-//		return new CombinedVm();
+        logger.info("getting vm with id {}", vmId);
+        // return new CombinedVm();
 
-		// first check our database to see if we have a record of this VM
+        // first check our database to see if we have a record of this VM
         VirtualMachine virtualMachine = virtualMachineService.getVirtualMachine(vmId);
         if (virtualMachine == null) {
             // TODO need to return 404 here
@@ -149,7 +144,7 @@ public class VmResource {
 
         return new CombinedVm(vm, virtualMachine);
 
-	}
+    }
 
     @GET
     @Path("/requests/{orionGuid}")
@@ -158,27 +153,21 @@ public class VmResource {
         return virtualMachineService.getVirtualMachineRequest(orionGuid);
     }
 
-	@POST
-	@Path("/")
-    public VirtualMachineRequest createVm(@QueryParam("orionGuid") UUID orionGuid,
-            @QueryParam("operatingSystem") String operatingSystem,
-            @QueryParam("tier") int tier,
-            @QueryParam("controlPanel") String controlPanel,
-            @QueryParam("managedLevel") int managedLevel) {
+    @POST
+    @Path("/")
+    public VirtualMachineRequest createVm(@QueryParam("orionGuid") UUID orionGuid, @QueryParam("operatingSystem") String operatingSystem,
+            @QueryParam("tier") int tier, @QueryParam("controlPanel") String controlPanel, @QueryParam("managedLevel") int managedLevel) {
 
         logger.info("creating new vm request for orionGuid {}", orionGuid);
         virtualMachineService.createVirtualMachineRequest(orionGuid, operatingSystem, controlPanel, tier, managedLevel);
         return virtualMachineService.getVirtualMachineRequest(orionGuid);
 
-	}
+    }
 
-	@POST
-	@Path("/{vmId}/provision")
-    public CombinedVm provisionVm(@QueryParam("name") String name,
-            @QueryParam("orionGuid") UUID orionGuid,
-            @QueryParam("image") String image,
-            @QueryParam("dataCenter") int dataCenterId,
-            @QueryParam("username") String username,
+    @POST
+    @Path("/{vmId}/provision")
+    public CombinedVm provisionVm(@QueryParam("name") String name, @QueryParam("orionGuid") UUID orionGuid,
+            @QueryParam("image") String image, @QueryParam("dataCenter") int dataCenterId, @QueryParam("username") String username,
             @QueryParam("password") String password) throws InterruptedException {
 
         logger.info("provisioning vm with orionGuid {}", orionGuid);
@@ -191,26 +180,28 @@ public class VmResource {
 
         int imageId = getImageId(image);
 
-		CreateVmAction action = new CreateVmAction();
-		action.actionId = actionIdPool.incrementAndGet();
-		action.status = ActionStatus.IN_PROGRESS;
+        CreateVmAction action = new CreateVmAction();
+        action.actionId = actionIdPool.incrementAndGet();
+        action.status = ActionStatus.IN_PROGRESS;
         action.hfsProvisionRequest = createProvisionVmRequest(image, username, password, project, spec);
+        action.project = project;
 
-		actions.put(action.actionId, action);
+        actions.put(action.actionId, action);
 
-        ProvisionVmWorker worker = new ProvisionVmWorker(vmService, networkService, action, threadPool);
-		threadPool.execute(worker);
+        ProvisionVmWorker worker = new ProvisionVmWorker(vmService, hfsNetworkService, action, threadPool, vps4NetworkService);
+        threadPool.execute(worker);
 
-		worker.waitForVmId();
+        worker.waitForVmId();
 
-        virtualMachineService.provisionVirtualMachine(action.vm.vmId, orionGuid, name, project.getProjectId(),
-                spec.specId, request.managedLevel, imageId);
+        virtualMachineService.provisionVirtualMachine(action.vm.vmId, orionGuid, name, project.getProjectId(), spec.specId,
+                request.managedLevel, imageId);
         VirtualMachine virtualMachine = virtualMachineService.getVirtualMachine(action.vm.vmId);
 
         return new CombinedVm(action.vm, virtualMachine);
-	}
+    }
 
-    private ProvisionVMRequest createProvisionVmRequest(String image, String username, String password, Project project, VirtualMachineSpec spec) {
+    private ProvisionVMRequest createProvisionVmRequest(String image, String username, String password, Project project,
+            VirtualMachineSpec spec) {
         ProvisionVMRequest hfsProvisionRequest = new ProvisionVMRequest();
         hfsProvisionRequest.cpuCores = (int) spec.cpuCoreCount;
         hfsProvisionRequest.diskGiB = (int) spec.diskGib;
@@ -230,7 +221,8 @@ public class VmResource {
     private VirtualMachineRequest getVmRequestToProvision(UUID orionGuid) {
         VirtualMachineRequest request = virtualMachineService.getVirtualMachineRequest(orionGuid);
         if (request == null) {
-            throw new Vps4Exception("REQUEST_NOT_FOUND", String.format("The virtual machine request for orion guid {} was not found", orionGuid));
+            throw new Vps4Exception("REQUEST_NOT_FOUND",
+                    String.format("The virtual machine request for orion guid {} was not found", orionGuid));
         }
         return request;
     }
@@ -259,35 +251,37 @@ public class VmResource {
         return imageId;
     }
 
-	@DELETE
-	@Path("vms/{vmId}")
+    @DELETE
+    @Path("vms/{vmId}")
     public Action destroyVm(@PathParam("vmId") long vmId) {
-		Vm vm = vmService.getVm(vmId);
-		if (vm == null) {
-			throw new NotFoundException("vmId " + vmId + " not found");
-		}
+        Vm vm = vmService.getVm(vmId);
+        if (vm == null) {
+            throw new NotFoundException("vmId " + vmId + " not found");
+        }
 
-		// TODO verify VM status is destroyable
+        // TODO verify VM status is destroyable
 
-		DestroyVmAction action = new DestroyVmAction();
-		action.actionId = actionIdPool.incrementAndGet();
-		action.status = ActionStatus.IN_PROGRESS;
-		action.vmId = vmId;
+        DestroyVmAction action = new DestroyVmAction();
+        action.actionId = actionIdPool.incrementAndGet();
+        action.status = ActionStatus.IN_PROGRESS;
+        action.vmId = vmId;
 
-		actions.put(action.actionId, action);
+        actions.put(action.actionId, action);
 
-		threadPool.execute(new DestroyVmWorker(vmService, action));
+        threadPool.execute(new DestroyVmWorker(vmService, action));
 
-		return action;
-	}
+        return action;
+    }
 
     public static class CreateVmAction extends Action {
         public ProvisionVMRequest hfsProvisionRequest = new ProvisionVMRequest();
 
-		public volatile Vm vm;
-	}
+        public volatile Project project;
+        public volatile Vm vm;
+        public volatile IpAddress ip;
+    }
 
     public static class DestroyVmAction extends Action {
-		public long vmId;
-	}
+        public long vmId;
+    }
 }

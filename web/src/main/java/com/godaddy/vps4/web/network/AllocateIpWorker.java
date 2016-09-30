@@ -6,6 +6,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.godaddy.vps4.Vps4Exception;
+import com.godaddy.vps4.project.Project;
 
 import gdg.hfs.vhfs.network.AddressAction;
 import gdg.hfs.vhfs.network.IpAddress;
@@ -17,26 +18,29 @@ public class AllocateIpWorker implements Callable<IpAddress> {
     private static final Logger logger = LoggerFactory.getLogger(AllocateIpWorker.class);
 
     final NetworkService networkService;
-    final String sgid;
+    final Project project;
+    final com.godaddy.vps4.network.NetworkService vps4NetworkService;
 
-    public AllocateIpWorker(NetworkService networkService, String sgid) {
-        this.networkService = networkService;
-        this.sgid = sgid;
+    public AllocateIpWorker(NetworkService hfsNetworkService, Project project, com.godaddy.vps4.network.NetworkService vps4NetworkService) {
+        this.networkService = hfsNetworkService;
+        this.project = project;
+        this.vps4NetworkService = vps4NetworkService;
     }
 
     @Override
     public IpAddress call() {
 
-        logger.info("sending HFS request to allocate IP for hfsSgid: {}", sgid);
+        logger.info("sending HFS request to allocate IP for hfsSgid: {}", project.getVhfsSgid());
 
-        AddressAction hfsAction = networkService.acquireIp(sgid);
+        AddressAction hfsAction = networkService.acquireIp(project.getVhfsSgid());
 
         while (!hfsAction.status.equals(AddressAction.Status.COMPLETE) && !hfsAction.status.equals(AddressAction.Status.FAILED)) {
             logger.info("waiting on ip allocation: {}", hfsAction);
 
             try {
                 Thread.sleep(2000);
-            } catch (InterruptedException e) {
+            }
+            catch (InterruptedException e) {
                 logger.warn("Interrupted while sleeping");
             }
 
@@ -53,10 +57,12 @@ public class AllocateIpWorker implements Callable<IpAddress> {
             logger.info("Address allocate is complete: {}", hfsAction);
             logger.info("Allocated address: {}", ipAddress);
 
+            vps4NetworkService.createIpAddress(ipAddress.addressId, project.getProjectId());
+
             return ipAddress;
         }
 
-        throw new Vps4Exception("ALLOCATE_IP_FAILED", String.format("Allocate IP failed for project %s", sgid));
+        throw new Vps4Exception("ALLOCATE_IP_FAILED", String.format("Allocate IP failed for project %d", project.getProjectId()));
 
     }
 

@@ -22,7 +22,7 @@ public class ProvisionVMRequest {
 
 	@Override
 	public String toString() {
-		return "CreateVMRequest [sgid=" + sgid + ", hostname=" + hostname + ", os=" + os + ", image_name=" + image_name
+        return "CreateVMRequest [sgid=" + sgid + ", hostname=" + hostname + ", os=" + os + ", image_name=" + image_name
 				+ ", cpuCores=" + cpuCores + ", diskGiB=" + diskGiB + ", ramMiB=" + ramMiB + ", username=" + username
 				+ ", password=" + password + "]";
 	}

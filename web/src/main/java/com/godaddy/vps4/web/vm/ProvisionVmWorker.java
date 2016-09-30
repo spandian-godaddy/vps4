@@ -21,27 +21,31 @@ import gdg.hfs.vhfs.network.NetworkService;
 
 public class ProvisionVmWorker implements Runnable {
 
-	private static final Logger logger = LoggerFactory.getLogger(ProvisionVmWorker.class);
+    private static final Logger logger = LoggerFactory.getLogger(ProvisionVmWorker.class);
 
-	final VmService vmService;
+    final VmService vmService;
 
-	final NetworkService networkService;
+    final NetworkService hfsNetworkService;
 
-	final CreateVmAction action;
+    final CreateVmAction action;
 
-	final CountDownLatch inProgressLatch = new CountDownLatch(1);
+    final CountDownLatch inProgressLatch = new CountDownLatch(1);
 
-	final ExecutorService threadPool;
+    final ExecutorService threadPool;
 
-	public ProvisionVmWorker(VmService vmService, NetworkService networkService, CreateVmAction action, ExecutorService threadPool) {
-		this.vmService = vmService;
-		this.networkService = networkService;
-		this.action = action;
-		this.threadPool = threadPool;
-	}
+    final com.godaddy.vps4.network.NetworkService vps4NetworkService;
+
+    public ProvisionVmWorker(VmService vmService, NetworkService hfsNetworkService, CreateVmAction action, ExecutorService threadPool,
+            com.godaddy.vps4.network.NetworkService vps4NetworkService) {
+        this.vmService = vmService;
+        this.hfsNetworkService = hfsNetworkService;
+        this.action = action;
+        this.threadPool = threadPool;
+        this.vps4NetworkService = vps4NetworkService;
+    }
 
     @Override
-	public void run() {
+    public void run() {
 
         logger.info("sending HFS VM request: {}", action.hfsProvisionRequest);
 
@@ -53,12 +57,14 @@ public class ProvisionVmWorker implements Runnable {
 
         try {
             IpAddress ip = ipFuture.get();
+            action.ip = ip;
 
-            new BindIpWorker(networkService, ip.addressId, hfsAction.vmId).run();
+            new BindIpWorker(hfsNetworkService, ip.addressId, hfsAction.vmId).run();
 
             // assert bindAction.status is successful
 
-        } catch (ExecutionException|InterruptedException e) {
+        }
+        catch (ExecutionException | InterruptedException e) {
             // allocating the IP address failed somehow
             // fail the action
             action.status = ActionStatus.ERROR;
@@ -66,9 +72,9 @@ public class ProvisionVmWorker implements Runnable {
 
         logger.info("provisioning complete: {}", hfsAction);
 
-		action.vm = vmService.getVm(hfsAction.vmId);
-		action.status = ActionStatus.COMPLETE;
-	}
+        action.vm = vmService.getVm(hfsAction.vmId);
+        action.status = ActionStatus.COMPLETE;
+    }
 
     protected VmAction waitForVmAction(VmAction hfsAction) {
         // wait for VmAction to complete
@@ -84,7 +90,8 @@ public class ProvisionVmWorker implements Runnable {
             // give the VM time to spin up
             try {
                 Thread.sleep(2000);
-            } catch (InterruptedException e) {
+            }
+            catch (InterruptedException e) {
                 logger.warn("Interrupted while sleeping");
             }
 
@@ -97,14 +104,15 @@ public class ProvisionVmWorker implements Runnable {
         // while we're waiting on the VM to be created,
         // spin off the IP allocation task
 
-        return threadPool.submit(new AllocateIpWorker(networkService, action.hfsProvisionRequest.sgid));
+        return threadPool.submit(new AllocateIpWorker(hfsNetworkService, action.project, vps4NetworkService));
     }
 
     public void waitForVmId() {
         while (action.vm == null) {
             try {
                 inProgressLatch.await(1, TimeUnit.SECONDS);
-            } catch (InterruptedException e) {
+            }
+            catch (InterruptedException e) {
                 logger.warn("Interrupted waiting for action");
             }
         }

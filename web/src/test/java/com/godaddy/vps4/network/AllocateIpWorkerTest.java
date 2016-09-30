@@ -10,6 +10,7 @@ import org.junit.Test;
 import org.mockito.Mockito;
 
 import com.godaddy.vps4.Vps4Exception;
+import com.godaddy.vps4.project.Project;
 import com.godaddy.vps4.web.network.AllocateIpWorker;
 
 import gdg.hfs.vhfs.network.AddressAction;
@@ -48,6 +49,8 @@ public class AllocateIpWorkerTest {
 
     private IpAddress allocateWorkerTest(String sgid) {
 
+        Project project = new Project(1, "project1", "vps4-1", 1, Instant.now(), Instant.MAX);
+
         hfsAction.completedAt = Instant.now().toString();
 
         NetworkService networkService = Mockito.mock(NetworkService.class);
@@ -55,7 +58,9 @@ public class AllocateIpWorkerTest {
         Mockito.when(networkService.getAddressAction(hfsAction.addressId, hfsAction.addressActionId)).thenReturn(hfsAction);
         Mockito.when(networkService.getAddress(hfsAction.addressId)).thenReturn(ipAddress);
 
-        AllocateIpWorker worker = new AllocateIpWorker(networkService, sgid);
+        com.godaddy.vps4.network.NetworkService vps4NetworkService = Mockito.mock(com.godaddy.vps4.network.NetworkService.class);
+
+        AllocateIpWorker worker = new AllocateIpWorker(networkService, project, vps4NetworkService);
         IpAddress ip = worker.call();
 
         verify(networkService).acquireIp(sgid);
@@ -68,27 +73,29 @@ public class AllocateIpWorkerTest {
         try {
             allocateWorkerTest("vps4-1");
             Assert.fail("CommandException expected!");
-        } catch (Vps4Exception ve) {
+        }
+        catch (Vps4Exception ve) {
             assertEquals("ALLOCATE_IP_FAILED", ve.getId());
         }
     }
 
     @Test
-     public void testAllocateIpNotUnbound() {
-    
-         ipAddress = new IpAddress();
-         ipAddress.address = "192.168.1.1";
-         ipAddress.addressId = hfsAction.addressId;
-         ipAddress.status = Status.BOUND;
-        
-         hfsAction.status = AddressAction.Status.COMPLETE;
-        
-         try {
+    public void testAllocateIpNotUnbound() {
+
+        ipAddress = new IpAddress();
+        ipAddress.address = "192.168.1.1";
+        ipAddress.addressId = hfsAction.addressId;
+        ipAddress.status = Status.BOUND;
+
+        hfsAction.status = AddressAction.Status.COMPLETE;
+
+        try {
             allocateWorkerTest("vps4-1");
-             Assert.fail("IllegalStateException should have been thrown for address not in UNBOUND status");
-        } catch (Vps4Exception ve) {
+            Assert.fail("IllegalStateException should have been thrown for address not in UNBOUND status");
+        }
+        catch (Vps4Exception ve) {
             assertEquals("ALLOCATE_IP_FAILED", ve.getId());
-         }
-     }
+        }
+    }
 
 }
