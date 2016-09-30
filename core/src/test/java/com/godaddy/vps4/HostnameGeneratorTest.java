@@ -22,10 +22,4 @@ public class HostnameGeneratorTest {
         String ipAddress = "a92.168.1.1";
         HostnameGenerator.getHostname(ipAddress);
     }
-
-    @Test(expected = Vps4Exception.class)
-    public void testGetHostnameInvalidIp() {
-        String ipAddress = "192.168.1";
-        HostnameGenerator.getHostname(ipAddress);
-    }
 }

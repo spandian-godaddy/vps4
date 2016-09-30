@@ -64,12 +64,6 @@
 
 	<dependencies>
 
-		<dependency>
-			<groupId>commons-validator</groupId>
-			<artifactId>commons-validator</artifactId>
-			<version>1.5.1</version>
-		</dependency>
-
 		<!-- JAX-RS extensions -->
 		<dependency>
 			<groupId>com.fasterxml.jackson.jaxrs</groupId>
