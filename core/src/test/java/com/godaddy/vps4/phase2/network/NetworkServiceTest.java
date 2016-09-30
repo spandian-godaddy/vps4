@@ -11,6 +11,7 @@ import java.util.List;
 
 import javax.sql.DataSource;
 
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -30,20 +31,26 @@ public class NetworkServiceTest {
     Injector injector = Guice.createInjector(new DatabaseModule());
 
     long project;
+    DataSource dataSource;
 
     @Before
     public void setupService() {
-        DataSource dataSource = injector.getInstance(DataSource.class);
+        dataSource = injector.getInstance(DataSource.class);
 
         Sql.with(dataSource).exec("TRUNCATE TABLE ip_address", null);
+        Sql.with(dataSource).exec("TRUNCATE TABLE project CASCADE", null);
 
         ProjectService projectService = new JdbcProjectService(dataSource);
         networkService = new JdbcNetworkService(dataSource);
 
         projectService.createProject("testNetwork", 1, 1);
 
-        project = Sql.with(dataSource).exec("SELECT project_id FROM project",
-                Sql.nextOrNull(this::mapUserAccount));
+        project = Sql.with(dataSource).exec("SELECT project_id FROM project", Sql.nextOrNull(this::mapUserAccount));
+    }
+
+    @After
+    public void cleanup() {
+        Sql.with(dataSource).exec("TRUNCATE TABLE project CASCADE", null);
     }
 
     protected Long mapUserAccount(ResultSet rs) throws SQLException {
