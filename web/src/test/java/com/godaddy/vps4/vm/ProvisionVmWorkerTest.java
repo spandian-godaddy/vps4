@@ -1,6 +1,7 @@
 package com.godaddy.vps4.vm;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -85,5 +86,36 @@ public class ProvisionVmWorkerTest {
         verify(vmService, times(1)).createVm(any(ProvisionVMRequest.class));
         verify(hfsNetworkSerivce, times(1)).acquireIp(action.project.getVhfsSgid());
         verify(hfsNetworkSerivce, times(1)).bindIp(ip.addressId, vmActionComplete.vmId);
+    }
+
+    @Test
+    public void provisionVmAllocateIpFailsTest() throws InterruptedException, ExecutionException {
+
+        VmService vmService = Mockito.mock(VmService.class);
+        NetworkService hfsNetworkSerivce = Mockito.mock(NetworkService.class);
+        ExecutorService threadPool = Executors.newCachedThreadPool();
+        com.godaddy.vps4.network.NetworkService vps4NetworkService = Mockito.mock(com.godaddy.vps4.network.NetworkService.class);
+
+        CreateVmAction action = new CreateVmAction();
+        Project project = new Project(1, "testProject", "vps4-1", 1, Instant.now(), Instant.MAX);
+        action.project = project;
+
+        AddressAction addressAction = new AddressAction();
+        addressAction.status = Status.FAILED;
+
+        Mockito.when(hfsNetworkSerivce.acquireIp(action.project.getVhfsSgid())).thenReturn(addressAction);
+
+        ProvisionVmWorker worker = new ProvisionVmWorker(vmService, hfsNetworkSerivce, action, threadPool, vps4NetworkService);
+        worker.run();
+
+        threadPool.shutdown();
+        threadPool.awaitTermination(Long.MAX_VALUE, TimeUnit.NANOSECONDS);
+
+        assertEquals(ActionStatus.ERROR, action.status);
+        verify(hfsNetworkSerivce, times(1)).acquireIp(action.project.getVhfsSgid());
+        assertNull(action.vm);
+        assertNull(action.ip);
+
+        verify(vmService, times(0)).createVm(any(ProvisionVMRequest.class));
     }
 }
