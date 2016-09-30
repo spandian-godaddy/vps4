@@ -9,6 +9,7 @@ import java.util.concurrent.TimeUnit;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.godaddy.vps4.Vps4Exception;
 import com.godaddy.vps4.hfs.VmAction;
 import com.godaddy.vps4.hfs.VmService;
 import com.godaddy.vps4.vm.HostnameGenerator;
@@ -78,22 +79,19 @@ public class ProvisionVmWorker implements Runnable {
         logger.info("provision vm finished with status {} for action: {}", hfsCreateVmAction);
     }
 
-    private AddressAction bindIp(IpAddress ip, VmAction hfsAction) {
-        Future<AddressAction> bindIpFuture = threadPool.submit(new BindIpWorker(hfsNetworkService, ip.addressId, hfsAction.vmId));
-        AddressAction bindIpAction = null;
+    private void bindIp(IpAddress ip, VmAction hfsAction) {
         try {
-            bindIpAction = bindIpFuture.get();
+            AddressAction bindIpAction = new BindIpWorker(hfsNetworkService, ip.addressId, hfsAction.vmId).call();
 
             if (bindIpAction.status == Status.FAILED) {
                 action.status = ActionStatus.ERROR;
                 logger.warn("failed to bind addressId {} to vmId {}, action: {}", ip.addressId, hfsAction.vmId, bindIpAction);
             }
         }
-        catch (InterruptedException | ExecutionException e) {
+        catch (Vps4Exception e) {
             action.status = ActionStatus.ERROR;
             logger.warn("failed to bind addressId {} to vmId {}", ip.addressId, hfsAction.vmId);
         }
-        return bindIpAction;
     }
 
     private VmAction provisionVm(IpAddress ip) {

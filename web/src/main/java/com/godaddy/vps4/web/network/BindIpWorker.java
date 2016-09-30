@@ -25,7 +25,7 @@ public class BindIpWorker implements Callable<AddressAction> {
     }
 
     @Override
-    public AddressAction call() throws Exception {
+    public AddressAction call() {
         logger.info("sending HFS request to bind addressId {} to vmId {}", addressId, vmId);
 
         AddressAction hfsAction = networkService.bindIp(addressId, vmId);
@@ -43,13 +43,11 @@ public class BindIpWorker implements Callable<AddressAction> {
             hfsAction = networkService.getAddressAction(hfsAction.addressId, hfsAction.addressActionId);
         }
 
-        if (hfsAction.status.equals(AddressAction.Status.COMPLETE)) {
-            logger.info("bind ip complete: {}", hfsAction);
-        }
-        else {
+        if (!hfsAction.status.equals(AddressAction.Status.COMPLETE)) {
             throw new Vps4Exception("BIND_IP_FAILED", String.format("Bind IP %d failed for VM %d", addressId, vmId));
         }
 
+        logger.info("bind ip complete: {}", hfsAction);
         return hfsAction;
     }
 }
