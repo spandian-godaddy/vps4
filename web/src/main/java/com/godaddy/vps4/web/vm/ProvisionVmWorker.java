@@ -104,6 +104,7 @@ public class ProvisionVmWorker implements Runnable {
 
         if (!hfsAction.state.equals("COMPLETE")) {
             logger.warn("failed to provision VM, action: {}", hfsAction);
+            action.status = ActionStatus.ERROR;
         }
 
         return hfsAction;

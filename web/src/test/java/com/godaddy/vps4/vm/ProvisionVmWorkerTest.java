@@ -7,11 +7,11 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
 import java.time.Instant;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
+import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mockito;
 
@@ -31,43 +31,59 @@ import gdg.hfs.vhfs.network.NetworkService;
 
 public class ProvisionVmWorkerTest {
 
-    @Test
-    public void provisionVmTest() throws InterruptedException, ExecutionException {
+    private VmService vmService;
+    private NetworkService hfsNetworkSerivce;
+    private ExecutorService threadPool;
+    private com.godaddy.vps4.network.NetworkService vps4NetworkService;
 
-        VmService vmService = Mockito.mock(VmService.class);
-        NetworkService hfsNetworkSerivce = Mockito.mock(NetworkService.class);
-        ExecutorService threadPool = Executors.newCachedThreadPool();
-        com.godaddy.vps4.network.NetworkService vps4NetworkService = Mockito.mock(com.godaddy.vps4.network.NetworkService.class);
+    private IpAddress ip;
+    private VmAction vmActionInProgress;
+    private VmAction vmActionAfter;
+    private CreateVmAction action;
+    private Vm vm;
+    private AddressAction addressAction;
 
-        IpAddress ip = new IpAddress();
+    @Before
+    public void setup() {
+
+        vmService = Mockito.mock(VmService.class);
+        hfsNetworkSerivce = Mockito.mock(NetworkService.class);
+        threadPool = Executors.newCachedThreadPool();
+        vps4NetworkService = Mockito.mock(com.godaddy.vps4.network.NetworkService.class);
+
+        ip = new IpAddress();
         ip.address = "127.0.0.1";
         ip.addressId = 123;
         ip.status = IpAddress.Status.UNBOUND;
 
-        VmAction vmActionInProgress = new VmAction();
+        vmActionInProgress = new VmAction();
         vmActionInProgress.state = "IN_PROGRESS";
         vmActionInProgress.vmId = 12;
         vmActionInProgress.vmActionId = 1;
 
-        VmAction vmActionComplete = new VmAction();
-        vmActionComplete.state = "COMPLETE";
-        vmActionComplete.vmId = vmActionInProgress.vmId;
-        vmActionComplete.vmActionId = vmActionInProgress.vmActionId;
+        vmActionAfter = new VmAction();
+        vmActionAfter.state = "COMPLETE";
+        vmActionAfter.vmId = vmActionInProgress.vmId;
+        vmActionAfter.vmActionId = vmActionInProgress.vmActionId;
 
-        CreateVmAction action = new CreateVmAction();
+        action = new CreateVmAction();
         Project project = new Project(1, "testProject", "vps4-1", 1, Instant.now(), Instant.MAX);
         action.project = project;
 
-        Vm vm = new Vm();
-        vm.vmId = vmActionComplete.vmId;
+        vm = new Vm();
+        vm.vmId = vmActionAfter.vmId;
 
-        AddressAction addressAction = new AddressAction();
+        addressAction = new AddressAction();
         addressAction.status = Status.COMPLETE;
         addressAction.addressId = ip.addressId;
+    }
+
+    @Test
+    public void provisionVmTest() throws InterruptedException {
 
         Mockito.when(vmService.createVm(action.hfsProvisionRequest)).thenReturn(vmActionInProgress);
-        Mockito.when(vmService.getVmAction(vmActionInProgress.vmId, vmActionInProgress.vmActionId)).thenReturn(vmActionComplete);
-        Mockito.when(vmService.getVm(vmActionComplete.vmId)).thenReturn(vm);
+        Mockito.when(vmService.getVmAction(vmActionInProgress.vmId, vmActionInProgress.vmActionId)).thenReturn(vmActionAfter);
+        Mockito.when(vmService.getVm(vmActionAfter.vmId)).thenReturn(vm);
 
         Mockito.when(hfsNetworkSerivce.acquireIp(action.project.getVhfsSgid())).thenReturn(addressAction);
         Mockito.when(hfsNetworkSerivce.getAddress(addressAction.addressId)).thenReturn(ip);
@@ -79,28 +95,18 @@ public class ProvisionVmWorkerTest {
         threadPool.shutdown();
         threadPool.awaitTermination(Long.MAX_VALUE, TimeUnit.NANOSECONDS);
 
-        assertEquals(vmActionComplete.vmId, action.vm.vmId);
+        assertEquals(vmActionAfter.vmId, action.vm.vmId);
         assertEquals(ActionStatus.COMPLETE, action.status);
         assertEquals(ip.addressId, action.ip.addressId);
 
         verify(vmService, times(1)).createVm(any(ProvisionVMRequest.class));
         verify(hfsNetworkSerivce, times(1)).acquireIp(action.project.getVhfsSgid());
-        verify(hfsNetworkSerivce, times(1)).bindIp(ip.addressId, vmActionComplete.vmId);
+        verify(hfsNetworkSerivce, times(1)).bindIp(ip.addressId, vmActionAfter.vmId);
     }
 
     @Test
-    public void provisionVmAllocateIpFailsTest() throws InterruptedException, ExecutionException {
+    public void provisionVmAllocateIpFailsTest() throws InterruptedException {
 
-        VmService vmService = Mockito.mock(VmService.class);
-        NetworkService hfsNetworkSerivce = Mockito.mock(NetworkService.class);
-        ExecutorService threadPool = Executors.newCachedThreadPool();
-        com.godaddy.vps4.network.NetworkService vps4NetworkService = Mockito.mock(com.godaddy.vps4.network.NetworkService.class);
-
-        CreateVmAction action = new CreateVmAction();
-        Project project = new Project(1, "testProject", "vps4-1", 1, Instant.now(), Instant.MAX);
-        action.project = project;
-
-        AddressAction addressAction = new AddressAction();
         addressAction.status = Status.FAILED;
 
         Mockito.when(hfsNetworkSerivce.acquireIp(action.project.getVhfsSgid())).thenReturn(addressAction);
@@ -117,5 +123,62 @@ public class ProvisionVmWorkerTest {
         assertNull(action.ip);
 
         verify(vmService, times(0)).createVm(any(ProvisionVMRequest.class));
+    }
+
+    @Test
+    public void provisionVmPorvisionFailsTest() throws InterruptedException {
+
+        vmActionAfter.state = "FAILED";
+
+        Mockito.when(vmService.createVm(action.hfsProvisionRequest)).thenReturn(vmActionInProgress);
+        Mockito.when(vmService.getVmAction(vmActionInProgress.vmId, vmActionInProgress.vmActionId)).thenReturn(vmActionAfter);
+        Mockito.when(vmService.getVm(vmActionAfter.vmId)).thenReturn(vm);
+
+        Mockito.when(hfsNetworkSerivce.acquireIp(action.project.getVhfsSgid())).thenReturn(addressAction);
+        Mockito.when(hfsNetworkSerivce.getAddress(addressAction.addressId)).thenReturn(ip);
+
+        ProvisionVmWorker worker = new ProvisionVmWorker(vmService, hfsNetworkSerivce, action, threadPool, vps4NetworkService);
+        worker.run();
+
+        threadPool.shutdown();
+        threadPool.awaitTermination(Long.MAX_VALUE, TimeUnit.NANOSECONDS);
+
+        assertEquals(vmActionAfter.vmId, action.vm.vmId);
+        assertEquals(ActionStatus.ERROR, action.status);
+        assertEquals(ip.addressId, action.ip.addressId);
+
+        verify(vmService, times(1)).createVm(any(ProvisionVMRequest.class));
+        verify(hfsNetworkSerivce, times(1)).acquireIp(action.project.getVhfsSgid());
+        verify(hfsNetworkSerivce, times(0)).bindIp(ip.addressId, vmActionAfter.vmId);
+    }
+
+    @Test
+    public void provisionVmBindFailsTest() throws InterruptedException {
+
+        AddressAction addressActionFailed = new AddressAction();
+        addressActionFailed.status = Status.FAILED;
+        addressActionFailed.addressId = ip.addressId;
+
+        Mockito.when(vmService.createVm(action.hfsProvisionRequest)).thenReturn(vmActionInProgress);
+        Mockito.when(vmService.getVmAction(vmActionInProgress.vmId, vmActionInProgress.vmActionId)).thenReturn(vmActionAfter);
+        Mockito.when(vmService.getVm(vmActionAfter.vmId)).thenReturn(vm);
+
+        Mockito.when(hfsNetworkSerivce.acquireIp(action.project.getVhfsSgid())).thenReturn(addressAction);
+        Mockito.when(hfsNetworkSerivce.getAddress(addressAction.addressId)).thenReturn(ip);
+        Mockito.when(hfsNetworkSerivce.bindIp(ip.addressId, vmActionInProgress.vmId)).thenReturn(addressActionFailed);
+
+        ProvisionVmWorker worker = new ProvisionVmWorker(vmService, hfsNetworkSerivce, action, threadPool, vps4NetworkService);
+        worker.run();
+
+        threadPool.shutdown();
+        threadPool.awaitTermination(Long.MAX_VALUE, TimeUnit.NANOSECONDS);
+
+        assertEquals(vmActionAfter.vmId, action.vm.vmId);
+        assertEquals(ActionStatus.ERROR, action.status);
+        assertEquals(ip.addressId, action.ip.addressId);
+
+        verify(vmService, times(1)).createVm(any(ProvisionVMRequest.class));
+        verify(hfsNetworkSerivce, times(1)).acquireIp(action.project.getVhfsSgid());
+        verify(hfsNetworkSerivce, times(1)).bindIp(ip.addressId, vmActionAfter.vmId);
     }
 }
