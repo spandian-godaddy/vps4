@@ -45,7 +45,6 @@ import com.godaddy.vps4.vm.VirtualMachineSpec;
 import com.godaddy.vps4.web.Action;
 import com.godaddy.vps4.web.Action.ActionStatus;
 import com.godaddy.vps4.web.Vps4Api;
-import com.google.inject.Singleton;
 
 import gdg.hfs.vhfs.network.IpAddress;
 import gdg.hfs.vhfs.network.NetworkService;
@@ -57,10 +56,13 @@ import io.swagger.annotations.Api;
 @Path("/vms")
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
-@Singleton
 public class VmResource {
 
     private static final Logger logger = LoggerFactory.getLogger(VmResource.class);
+
+    static final Map<Long, Action> actions = new ConcurrentHashMap<>();
+    static final AtomicLong actionIdPool = new AtomicLong();
+    static final ExecutorService threadPool = Executors.newCachedThreadPool();
 
     final User user;
     final VirtualMachineService virtualMachineService;
@@ -72,10 +74,6 @@ public class VmResource {
     final ProjectService projectService;
     final ImageService imageService;
     final com.godaddy.vps4.network.NetworkService vps4NetworkService;
-
-    final Map<Long, Action> actions = new ConcurrentHashMap<>();
-    final AtomicLong actionIdPool = new AtomicLong();
-    final ExecutorService threadPool = Executors.newCachedThreadPool();
 
     // TODO: Break this up into multiple classes to reduce number of
     // dependencies.
