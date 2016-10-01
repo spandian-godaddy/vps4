@@ -45,6 +45,7 @@ import com.godaddy.vps4.vm.VirtualMachineSpec;
 import com.godaddy.vps4.web.Action;
 import com.godaddy.vps4.web.Action.ActionStatus;
 import com.godaddy.vps4.web.Vps4Api;
+import com.google.inject.Singleton;
 
 import gdg.hfs.vhfs.network.IpAddress;
 import gdg.hfs.vhfs.network.NetworkService;
@@ -56,6 +57,7 @@ import io.swagger.annotations.Api;
 @Path("/vms")
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
+@Singleton
 public class VmResource {
 
     private static final Logger logger = LoggerFactory.getLogger(VmResource.class);
