@@ -1,5 +1,7 @@
 package com.godaddy.vps4.web.vm;
 
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
@@ -50,7 +52,7 @@ public class ProvisionVmWorker implements Runnable {
 
     @Override
     public void run() {
-
+        action.step = CreateVmStep.StartServerSetup;
         logger.info("begin provision vm for request: {}", action.hfsProvisionRequest);
         action.status = ActionStatus.IN_PROGRESS;
         VmAction hfsCreateVmAction = null;
@@ -72,7 +74,7 @@ public class ProvisionVmWorker implements Runnable {
         }
 
         if (action.status != ActionStatus.ERROR) {
-
+            action.step = CreateVmStep.SetupComplete;
             action.status = ActionStatus.COMPLETE;
         }
 
@@ -80,6 +82,7 @@ public class ProvisionVmWorker implements Runnable {
     }
 
     private void bindIp(IpAddress ip, VmAction hfsAction) {
+        action.step = CreateVmStep.ConfiguringNetwork;
         try {
             AddressAction bindIpAction = new BindIpWorker(hfsNetworkService, ip.addressId, hfsAction.vmId).call();
 
@@ -98,7 +101,10 @@ public class ProvisionVmWorker implements Runnable {
 
         logger.info("sending HFS VM request: {}", action.hfsProvisionRequest);
 
+        action.step = CreateVmStep.GeneratingHostname;
         action.hfsProvisionRequest.hostname = HostnameGenerator.getHostname(ip.address);
+
+        action.step = CreateVmStep.RequestingServer;
         VmAction hfsAction = vmService.createVm(action.hfsProvisionRequest);
         hfsAction = waitForVmAction(hfsAction);
 
@@ -106,11 +112,11 @@ public class ProvisionVmWorker implements Runnable {
             logger.warn("failed to provision VM, action: {}", hfsAction);
             action.status = ActionStatus.ERROR;
         }
-
         return hfsAction;
     }
 
     private IpAddress allocatedIp() {
+        action.step = CreateVmStep.RequestingIPAddress;
         Future<IpAddress> ipFuture = threadPool.submit(new AllocateIpWorker(hfsNetworkService, action.project, vps4NetworkService));
 
         IpAddress ip = null;
@@ -125,7 +131,18 @@ public class ProvisionVmWorker implements Runnable {
         return ip;
     }
 
+    private static final Map<Integer, CreateVmStep> hfsTicks = newHfsTicksMap();
+
+    static Map<Integer, CreateVmStep> newHfsTicksMap() {
+        Map<Integer, CreateVmStep> hfsTicksMap = new ConcurrentHashMap<>();
+        hfsTicksMap.put(1, CreateVmStep.RequestingServer);
+        hfsTicksMap.put(2, CreateVmStep.CreatingServer);
+        hfsTicksMap.put(3, CreateVmStep.ConfiguringServer);
+        return hfsTicksMap;
+    }
+
     protected VmAction waitForVmAction(VmAction hfsAction) {
+        int currentHfsTick = 1;
         // wait for VmAction to complete
         while (hfsAction.state.equals("REQUESTED") || hfsAction.state.equals("IN_PROGRESS")) {
 
@@ -134,6 +151,14 @@ public class ProvisionVmWorker implements Runnable {
             if (hfsAction.state.equals("IN_PROGRESS")) {
                 action.vm = vmService.getVm(hfsAction.vmId);
                 inProgressLatch.countDown();
+            }
+
+            if (hfsAction.tickNum > currentHfsTick) {
+                CreateVmStep newState = hfsTicks.get(hfsAction.tickNum);
+                if (newState != null) {
+                    action.step = newState;
+                }
+                currentHfsTick = hfsAction.tickNum;
             }
 
             // give the VM time to spin up

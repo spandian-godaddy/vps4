@@ -8,9 +8,11 @@ public class VmAction {
 
     public String state;
 
-	@Override
-	public String toString() {
-		return "VmAction [vmActionId=" + vmActionId + ", vmId=" + vmId + ", state=" + state + "]";
-	}
+    public int tickNum;
+
+    @Override
+    public String toString() {
+        return "VmAction [vmActionId=" + vmActionId + ", vmId=" + vmId + ", state=" + state + ", tickNum=" + tickNum + "]";
+    }
 
 }

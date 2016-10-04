@@ -97,6 +97,8 @@ public class VmResource {
     @Path("actions/{actionId}")
     public Action getAction(@PathParam("actionId") long actionId) {
 
+        logger.debug("Here's a list of all of the action ids {}", actions.keySet());
+
         Action action = actions.get(actionId);
         if (action == null) {
             throw new NotFoundException("actionId " + actionId + " not found");
@@ -181,10 +183,10 @@ public class VmResource {
 
         CreateVmAction action = new CreateVmAction();
         action.actionId = actionIdPool.incrementAndGet();
+        logger.debug("Action.actionid = {}", action.actionId);
         action.status = ActionStatus.IN_PROGRESS;
         action.hfsProvisionRequest = createProvisionVmRequest(image, username, password, project, spec);
         action.project = project;
-
         actions.put(action.actionId, action);
 
         ProvisionVmWorker worker = new ProvisionVmWorker(vmService, hfsNetworkService, action, threadPool, vps4NetworkService);
@@ -271,11 +273,15 @@ public class VmResource {
     }
 
     public static class CreateVmAction extends Action {
+
         public ProvisionVMRequest hfsProvisionRequest = new ProvisionVMRequest();
 
         public volatile Project project;
         public volatile Vm vm;
         public volatile IpAddress ip;
+        public volatile CreateVmStep step;
+
+        public CreateVmStep[] steps = CreateVmStep.values();
     }
 
     public static class DestroyVmAction extends Action {

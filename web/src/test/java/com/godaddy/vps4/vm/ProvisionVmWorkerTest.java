@@ -21,6 +21,7 @@ import com.godaddy.vps4.hfs.VmAction;
 import com.godaddy.vps4.hfs.VmService;
 import com.godaddy.vps4.project.Project;
 import com.godaddy.vps4.web.Action.ActionStatus;
+import com.godaddy.vps4.web.vm.CreateVmStep;
 import com.godaddy.vps4.web.vm.ProvisionVmWorker;
 import com.godaddy.vps4.web.vm.VmResource.CreateVmAction;
 
@@ -60,6 +61,7 @@ public class ProvisionVmWorkerTest {
         vmActionInProgress.state = "IN_PROGRESS";
         vmActionInProgress.vmId = 12;
         vmActionInProgress.vmActionId = 1;
+        vmActionInProgress.tickNum = 3;
 
         vmActionAfter = new VmAction();
         vmActionAfter.state = "COMPLETE";
@@ -67,6 +69,7 @@ public class ProvisionVmWorkerTest {
         vmActionAfter.vmActionId = vmActionInProgress.vmActionId;
 
         action = new CreateVmAction();
+        action.status = ActionStatus.IN_PROGRESS;
         Project project = new Project(1, "testProject", "vps4-1", 1, Instant.now(), Instant.MAX);
         action.project = project;
 
@@ -98,6 +101,7 @@ public class ProvisionVmWorkerTest {
         assertEquals(vmActionAfter.vmId, action.vm.vmId);
         assertEquals(ActionStatus.COMPLETE, action.status);
         assertEquals(ip.addressId, action.ip.addressId);
+        assertEquals(CreateVmStep.SetupComplete, action.step);
 
         verify(vmService, times(1)).createVm(any(ProvisionVMRequest.class));
         verify(hfsNetworkSerivce, times(1)).acquireIp(action.project.getVhfsSgid());
@@ -121,6 +125,7 @@ public class ProvisionVmWorkerTest {
         verify(hfsNetworkSerivce, times(1)).acquireIp(action.project.getVhfsSgid());
         assertNull(action.vm);
         assertNull(action.ip);
+        assertEquals(CreateVmStep.RequestingIPAddress, action.step);
 
         verify(vmService, times(0)).createVm(any(ProvisionVMRequest.class));
     }
@@ -129,6 +134,7 @@ public class ProvisionVmWorkerTest {
     public void provisionVmPorvisionFailsTest() throws InterruptedException {
 
         vmActionAfter.state = "FAILED";
+        vmActionInProgress.tickNum = 3;
 
         Mockito.when(vmService.createVm(action.hfsProvisionRequest)).thenReturn(vmActionInProgress);
         Mockito.when(vmService.getVmAction(vmActionInProgress.vmId, vmActionInProgress.vmActionId)).thenReturn(vmActionAfter);
@@ -146,6 +152,7 @@ public class ProvisionVmWorkerTest {
         assertEquals(vmActionAfter.vmId, action.vm.vmId);
         assertEquals(ActionStatus.ERROR, action.status);
         assertEquals(ip.addressId, action.ip.addressId);
+        assertEquals(CreateVmStep.ConfiguringServer, action.step);
 
         verify(vmService, times(1)).createVm(any(ProvisionVMRequest.class));
         verify(hfsNetworkSerivce, times(1)).acquireIp(action.project.getVhfsSgid());
@@ -176,6 +183,7 @@ public class ProvisionVmWorkerTest {
         assertEquals(vmActionAfter.vmId, action.vm.vmId);
         assertEquals(ActionStatus.ERROR, action.status);
         assertEquals(ip.addressId, action.ip.addressId);
+        assertEquals(CreateVmStep.ConfiguringNetwork, action.step);
 
         verify(vmService, times(1)).createVm(any(ProvisionVMRequest.class));
         verify(hfsNetworkSerivce, times(1)).acquireIp(action.project.getVhfsSgid());
