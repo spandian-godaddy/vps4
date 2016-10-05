@@ -2,6 +2,7 @@ package com.godaddy.vps4.util.validators;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 public class Validator {
 
@@ -16,20 +17,11 @@ public class Validator {
     }
 
     public boolean isValid(String value) {
-        for (Rule rule : rules) {
-            if (!rule.isValid(value)) {
-                return false;
-            }
-        }
-        return true;
+        return rules.stream().allMatch(r -> r.isValid(value));
     }
 
     public List<Validation> validate(String value) {
-        List<Validation> validations = new ArrayList<>();
-        for (Rule rule : rules) {
-            validations.add(new Validation(rule, rule.isValid(value)));
-        }
-        return validations;
+        return rules.stream().map(r -> new Validation(r, r.isValid(value))).collect(Collectors.toList());
     }
 
 }
