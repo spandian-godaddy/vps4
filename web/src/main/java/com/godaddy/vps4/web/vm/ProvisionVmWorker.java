@@ -3,9 +3,7 @@ package com.godaddy.vps4.web.vm;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
 import org.slf4j.Logger;
@@ -117,14 +115,13 @@ public class ProvisionVmWorker implements Runnable {
 
     private IpAddress allocatedIp() {
         action.step = CreateVmStep.RequestingIPAddress;
-        Future<IpAddress> ipFuture = threadPool.submit(new AllocateIpWorker(hfsNetworkService, action.project, vps4NetworkService));
 
         IpAddress ip = null;
         try {
-            ip = ipFuture.get();
+            ip = new AllocateIpWorker(hfsNetworkService, action.project, vps4NetworkService).call();
             action.ip = ip;
         }
-        catch (ExecutionException | InterruptedException e) {
+        catch (Vps4Exception e) {
             action.status = ActionStatus.ERROR;
             logger.warn("failed to allocate an IP: {}", action);
         }
