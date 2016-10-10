@@ -285,8 +285,8 @@ public class VmResource {
     @DELETE
     @Path("vms/{vmId}")
     public Action destroyVm(@PathParam("vmId") long vmId) {
-        Vm vm = vmService.getVm(vmId);
-        if (vm == null) {
+        VirtualMachine virtualMachine = virtualMachineService.getVirtualMachine(vmId);
+        if (virtualMachine == null) {
             throw new NotFoundException("vmId " + vmId + " not found");
         }
 
@@ -295,11 +295,11 @@ public class VmResource {
         DestroyVmAction action = new DestroyVmAction();
         action.actionId = actionIdPool.incrementAndGet();
         action.status = ActionStatus.IN_PROGRESS;
-        action.vmId = vmId;
+        action.virtualMachine = virtualMachine;
 
         actions.put(action.actionId, action);
 
-        threadPool.execute(new DestroyVmWorker(vmService, action));
+        threadPool.execute(new DestroyVmWorker(action, vmService, hfsNetworkService, vps4NetworkService, virtualMachineService, threadPool));
 
         return action;
     }
@@ -317,6 +317,6 @@ public class VmResource {
     }
 
     public static class DestroyVmAction extends Action {
-        public long vmId;
+        public VirtualMachine virtualMachine;
     }
 }

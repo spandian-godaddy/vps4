@@ -8,15 +8,14 @@ public interface VirtualMachineService {
     List<VirtualMachine> listVirtualMachines(long projectId);
 
     VirtualMachine getVirtualMachine(long vmId);
-    
+
     VirtualMachine getVirtualMachine(UUID orionGuid);
-    
+
     VirtualMachineSpec getSpec(String name);
-    
+
     VirtualMachineSpec getSpec(int tier);
 
     /**
-     *
      * @param vmId - the VM ID from the VM Vertical Service
      * @param projectId
      * @param spec
@@ -27,7 +26,7 @@ public interface VirtualMachineService {
 
     // updateStatus(long vmId, int newStatus)
 
-    void destroyVirtualMachine(UUID uuid);  // (just updates status/sets validUntil, destroy is accomplished on backend)
+    void destroyVirtualMachine(long vmId); // (just updates status/sets validUntil, destroy is accomplished on backend)
 
     void createVirtualMachineRequest(UUID orionGuid, String osType, String controlPanel, int tier, int managedLevel);
 

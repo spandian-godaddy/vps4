@@ -10,5 +10,5 @@ public interface NetworkService {
 
     IpAddress getIpAddress(long ipAddressId);
 
-    List<IpAddress> listIpAddresses(long sgid);
+    List<IpAddress> listIpAddresses(long projectId);
 }

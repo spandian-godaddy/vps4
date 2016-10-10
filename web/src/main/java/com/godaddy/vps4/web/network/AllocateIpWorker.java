@@ -47,22 +47,22 @@ public class AllocateIpWorker implements Callable<IpAddress> {
             hfsAction = networkService.getAddressAction(hfsAction.addressId, hfsAction.addressActionId);
         }
 
-        if (hfsAction.status.equals(AddressAction.Status.COMPLETE)) {
-            IpAddress ipAddress = networkService.getAddress(hfsAction.addressId);
-
-            if (ipAddress.status != Status.UNBOUND) {
-                throw new Vps4Exception("ALLOCATE_IP_FAILED", String.format("IP %s is not unbound", ipAddress.address));
-            }
-
-            logger.info("Address allocate is complete: {}", hfsAction);
-            logger.info("Allocated address: {}", ipAddress);
-
-            vps4NetworkService.createIpAddress(ipAddress.addressId, project.getProjectId());
-
-            return ipAddress;
+        if (!hfsAction.status.equals(AddressAction.Status.COMPLETE)) {
+            throw new Vps4Exception("ALLOCATE_IP_FAILED", String.format("Allocate IP failed for project %d", project.getProjectId()));
         }
 
-        throw new Vps4Exception("ALLOCATE_IP_FAILED", String.format("Allocate IP failed for project %d", project.getProjectId()));
+        IpAddress ipAddress = networkService.getAddress(hfsAction.addressId);
+
+        if (ipAddress.status != Status.UNBOUND) {
+            throw new Vps4Exception("ALLOCATE_IP_FAILED", String.format("IP %s is not unbound", ipAddress.address));
+        }
+
+        logger.info("Address allocate is complete: {}", hfsAction);
+        logger.info("Allocated address: {}", ipAddress);
+
+        vps4NetworkService.createIpAddress(ipAddress.addressId, project.getProjectId());
+
+        return ipAddress;
 
     }
 
