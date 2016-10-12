@@ -48,6 +48,89 @@
 					</execution>
 				</executions>
 			</plugin>
+			<plugin>
+				<groupId>org.codehaus.mojo</groupId>
+				<artifactId>build-helper-maven-plugin</artifactId>
+				<version>1.5</version>
+				<executions>
+					<execution>
+						<phase>initialize</phase>
+						<id>parse-version</id>
+						<goals>
+							<goal>parse-version</goal>
+						</goals>
+					</execution>
+				</executions>
+			</plugin>
+			
+			<plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>rpm-maven-plugin</artifactId>
+                <configuration>
+                    <distribution>Go Daddy 2016</distribution>
+                    <group>VPS4</group>
+                    <projversion>${parsedVersion.majorVersion}.${parsedVersion.minorVersion}.${parsedVersion.incrementalVersion}</projversion>
+                    <release>${parsedVersion.buildNumber}</release>
+                    <packager>rpm</packager>
+                    <changelogFile>src/changelog</changelogFile>
+                    <defineStatements>
+                        <defineStatement>_unpackaged_files_terminate_build 0</defineStatement>
+                    </defineStatements>
+                    <mappings>
+                        <mapping>
+                            <directory>/opt/vps4/vps4-web</directory>
+                            <filemode>755</filemode>
+                            <username>root</username>
+                            <groupname>root</groupname>
+                        </mapping>
+                        <mapping>
+                            <directory>/var/log/vps4-web</directory>
+                            <filemode>755</filemode>
+                            <username>vps4</username>
+                            <groupname>vps4</groupname>
+                        </mapping>
+                        <mapping>
+                            <directory>/usr/lib/systemd/system</directory>
+                            <directoryIncluded>false</directoryIncluded>
+                            <filemode>644</filemode>
+                            <username>root</username>
+                            <groupname>root</groupname>
+                            <sources>
+                                <source>
+                                    <location>pkg/vps4-web.service</location>
+                                </source>
+                            </sources>
+                        </mapping>
+                        <mapping>
+                            <directory>/opt/vps4/vps4-web</directory>
+                            <filemode>644</filemode>
+                            <username>root</username>
+                            <groupname>root</groupname>
+                            <sources>
+                                <source>
+                                    <location>target/${project.artifactId}-${project.version}.jar</location>
+                                </source>
+                                <softlinkSource>
+                                    <location>${project.artifactId}-${project.version}.jar</location>
+                                    <destination>${project.artifactId}.jar</destination>
+                                </softlinkSource>
+                            </sources>
+                        </mapping>
+                    </mappings>
+                    <preinstallScriptlet>
+                        <scriptFile>pkg/preinstallScript</scriptFile>
+                    </preinstallScriptlet>
+                    <postinstallScriptlet>
+                        <scriptFile>pkg/postinstallScript</scriptFile>
+                    </postinstallScriptlet>
+                    <preremoveScriptlet>
+                        <scriptFile>pkg/preremoveScript</scriptFile>
+                    </preremoveScriptlet>
+                    <postremoveScriptlet>
+                        <scriptFile>pkg/postremoveScript</scriptFile>
+                    </postremoveScriptlet>
+                </configuration>
+            </plugin>
 		</plugins>
 	</build>
 

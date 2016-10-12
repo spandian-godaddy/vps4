@@ -1,0 +1,18 @@
+[Unit]
+Description=GD VPS4-Web
+After=network.target
+
+[Service]
+User=vps4
+SyslogIdentifier=vps4
+WorkingDirectory=/var/log/vps4-web
+ExecStart=/usr/bin/java -cp "/opt/vps4/vps4-web/vps4-web.jar:/opt/vps4/vps4-web/conf/*" com.godaddy.vps4.web.WebServer start
+ExecStop=/usr/bin/java -jar /opt/vps4/vps4-web/vps4-web.jar stop
+
+User=vps4
+Group=vps4
+Restart=always
+RestartSec=20
+
+[Install]
+WantedBy=multi-user.target
