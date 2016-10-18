@@ -1,6 +1,7 @@
 package com.godaddy.vps4.vm;
 
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 public interface VirtualMachineService {
@@ -33,5 +34,7 @@ public interface VirtualMachineService {
     VirtualMachineRequest getVirtualMachineRequest(UUID orionGuid);
 
     void provisionVirtualMachine(long vmId, UUID orionGuid, String name, long projectId, int specId, int managedLevel, int imageId);
+    
+    void updateVirtualMachine(long vmId, Map<String, Object> paramsToUpdate);
 
 }

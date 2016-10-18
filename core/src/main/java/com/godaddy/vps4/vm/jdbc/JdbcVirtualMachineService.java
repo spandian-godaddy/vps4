@@ -3,7 +3,9 @@ package com.godaddy.vps4.vm.jdbc;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Timestamp;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 import javax.inject.Inject;
@@ -93,7 +95,7 @@ public class JdbcVirtualMachineService implements VirtualMachineService {
 
     @Override
     public void destroyVirtualMachine(long vmId) {
-        Sql.with(dataSource).exec("UPDATE virtual_machine vm " + " SET valid_until=NOW() " + " WHERE vm_id=?", null, vmId);
+        Sql.with(dataSource).exec("UPDATE virtual_machine vm SET valid_until=NOW() WHERE vm_id=?", null, vmId);
     }
 
     @Override
@@ -128,5 +130,24 @@ public class JdbcVirtualMachineService implements VirtualMachineService {
     public void provisionVirtualMachine(long vmId, UUID orionGuid, String name, long projectId, int specId, int managedLevel, int imageId) {
         Sql.with(dataSource).exec("SELECT * FROM virtual_machine_provision(?, ?, ?, ?, ?, ?, ?)", null, vmId, orionGuid, name, projectId,
                 specId, managedLevel, imageId);
+    }
+    
+    @Override
+    public void updateVirtualMachine(long vmId, Map<String, Object> paramsToUpdate){
+        if(paramsToUpdate.isEmpty())
+            return;
+        ArrayList<Object> values = new ArrayList<Object>() ;
+        StringBuilder nameSets= new StringBuilder() ;
+        nameSets.append("UPDATE virtual_machine vm SET ");
+        for(Map.Entry<String,Object> pair: paramsToUpdate.entrySet()){
+            if(values.size() > 0)
+                nameSets.append(", ");
+            nameSets.append(pair.getKey());
+            nameSets.append("=?");
+            values.add(pair.getValue());
+        }
+        nameSets.append(" WHERE vm_id=?");
+        values.add(vmId);
+        Sql.with(dataSource).exec(nameSets.toString(), null, values.toArray());
     }
 }
