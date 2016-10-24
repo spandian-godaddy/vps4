@@ -28,7 +28,6 @@ public class UnbindIpWorker implements Callable<NetworkAction> {
         logger.info("sending HFS request to unbind addressId {}", action.addressId);
 
         AddressAction hfsAction = networkService.unbindIp(action.addressId);
-        action.hfsAddressActionId = hfsAction.addressActionId;
 
         while (!hfsAction.status.equals(AddressAction.Status.COMPLETE) && !hfsAction.status.equals(AddressAction.Status.FAILED)) {
             logger.info("waiting on unbind ip: {}", hfsAction);

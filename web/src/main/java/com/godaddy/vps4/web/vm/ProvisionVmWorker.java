@@ -15,11 +15,10 @@ import com.godaddy.vps4.hfs.VmService;
 import com.godaddy.vps4.vm.HostnameGenerator;
 import com.godaddy.vps4.web.Action.ActionStatus;
 import com.godaddy.vps4.web.network.AllocateIpWorker;
+import com.godaddy.vps4.web.network.BindIpAction;
 import com.godaddy.vps4.web.network.BindIpWorker;
 import com.godaddy.vps4.web.vm.VmResource.CreateVmAction;
 
-import gdg.hfs.vhfs.network.AddressAction;
-import gdg.hfs.vhfs.network.AddressAction.Status;
 import gdg.hfs.vhfs.network.IpAddress;
 import gdg.hfs.vhfs.network.NetworkService;
 
@@ -82,9 +81,10 @@ public class ProvisionVmWorker implements Runnable {
     private void bindIp(IpAddress ip, VmAction hfsAction) {
         action.step = CreateVmStep.ConfiguringNetwork;
         try {
-            AddressAction bindIpAction = new BindIpWorker(hfsNetworkService, ip.addressId, hfsAction.vmId).call();
+            BindIpAction bindIpAction = new BindIpAction(ip.addressId, hfsAction.vmId);
+            new BindIpWorker(bindIpAction, hfsNetworkService).run();
 
-            if (bindIpAction.status == Status.FAILED) {
+            if (bindIpAction.status == ActionStatus.ERROR) {
                 action.status = ActionStatus.ERROR;
                 logger.warn("failed to bind addressId {} to vmId {}, action: {}", ip.addressId, hfsAction.vmId, bindIpAction);
             }

@@ -1,34 +1,32 @@
 package com.godaddy.vps4.web.network;
 
-import java.util.concurrent.Callable;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.godaddy.vps4.Vps4Exception;
+import com.godaddy.vps4.web.Action.ActionStatus;
 
 import gdg.hfs.vhfs.network.AddressAction;
 import gdg.hfs.vhfs.network.NetworkService;
 
-public class BindIpWorker implements Callable<AddressAction> {
+public class BindIpWorker implements Runnable {
 
     private static final Logger logger = LoggerFactory.getLogger(BindIpWorker.class);
 
     final NetworkService networkService;
-    final long addressId;
-    final long vmId;
 
-    public BindIpWorker(NetworkService networkService, long addressId, long vmId) {
+    final BindIpAction action;
+
+    public BindIpWorker(BindIpAction action, NetworkService networkService) {
         this.networkService = networkService;
-        this.addressId = addressId;
-        this.vmId = vmId;
+        this.action = action;
     }
 
     @Override
-    public AddressAction call() {
-        logger.info("sending HFS request to bind addressId {} to vmId {}", addressId, vmId);
+    public void run() {
+        logger.info("sending HFS request to bind addressId {} to vmId {}", action.getAddressId(), action.getVmId());
 
-        AddressAction hfsAction = networkService.bindIp(addressId, vmId);
+        AddressAction hfsAction = networkService.bindIp(action.getAddressId(), action.getVmId());
 
         while (!hfsAction.status.equals(AddressAction.Status.COMPLETE) && !hfsAction.status.equals(AddressAction.Status.FAILED)) {
             logger.info("waiting on bind ip: {}", hfsAction);
@@ -44,10 +42,12 @@ public class BindIpWorker implements Callable<AddressAction> {
         }
 
         if (!hfsAction.status.equals(AddressAction.Status.COMPLETE)) {
-            throw new Vps4Exception("BIND_IP_FAILED", String.format("Bind IP %d failed for VM %d", addressId, vmId));
+            action.status = ActionStatus.ERROR;
+            throw new Vps4Exception("BIND_IP_FAILED",
+                    String.format("Bind IP %d failed for VM %d", action.getAddressId(), action.getVmId()));
         }
 
+        action.status = ActionStatus.COMPLETE;
         logger.info("bind ip complete: {}", hfsAction);
-        return hfsAction;
     }
 }

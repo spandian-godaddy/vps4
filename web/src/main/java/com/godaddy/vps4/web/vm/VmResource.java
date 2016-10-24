@@ -48,7 +48,6 @@ import com.godaddy.vps4.web.Vps4Api;
 
 import gdg.hfs.vhfs.network.IpAddress;
 import gdg.hfs.vhfs.network.NetworkService;
-
 import io.swagger.annotations.Api;
 
 @Vps4Api
@@ -217,7 +216,6 @@ public class VmResource {
         CreateVmAction action = new CreateVmAction();
         action.actionId = actionIdPool.incrementAndGet();
         logger.debug("Action.actionid = {}", action.actionId);
-        action.status = ActionStatus.IN_PROGRESS;
         action.hfsProvisionRequest = createProvisionVmRequest(image, username, password, project, spec);
         action.project = project;
         actions.put(action.actionId, action);
@@ -300,7 +298,8 @@ public class VmResource {
 
         actions.put(action.actionId, action);
 
-        threadPool.execute(new DestroyVmWorker(action, vmService, hfsNetworkService, vps4NetworkService, virtualMachineService, threadPool));
+        threadPool
+                .execute(new DestroyVmWorker(action, vmService, hfsNetworkService, vps4NetworkService, virtualMachineService, threadPool));
 
         return action;
     }

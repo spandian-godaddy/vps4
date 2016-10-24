@@ -10,6 +10,7 @@ import org.junit.Test;
 import org.mockito.Mockito;
 
 import com.godaddy.vps4.Vps4Exception;
+import com.godaddy.vps4.web.network.BindIpAction;
 import com.godaddy.vps4.web.network.BindIpWorker;
 
 import gdg.hfs.vhfs.network.AddressAction;
@@ -47,8 +48,9 @@ public class BindIpWorkerTest {
         Mockito.when(networkService.bindIp(addressId, vmId)).thenReturn(action);
         Mockito.when(networkService.getAddressAction(addressId, vmId)).thenReturn(action);
 
-        BindIpWorker bindIp = new BindIpWorker(networkService, addressId, vmId);
-        bindIp.call();
+        BindIpAction bindIpAction = new BindIpAction(addressId, vmId);
+        BindIpWorker bindIp = new BindIpWorker(bindIpAction, networkService);
+        bindIp.run();
 
         verify(networkService).bindIp(addressId, vmId);
     }
