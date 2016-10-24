@@ -49,7 +49,7 @@ public class ProvisionVmWorker implements Runnable {
 
     @Override
     public void run() {
-        action.step = CreateVmStep.StartServerSetup;
+        action.step = CreateVmStep.StartingServerSetup;
         logger.info("begin provision vm for request: {}", action.hfsProvisionRequest);
         action.status = ActionStatus.IN_PROGRESS;
         VmAction hfsCreateVmAction = null;

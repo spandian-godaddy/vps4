@@ -5,8 +5,9 @@ public enum CreateVmStep {
     RequestingIPAddress, 
     GeneratingHostname, 
     RequestingServer, 
-    StartServerSetup, 
+    StartingServerSetup, 
     ConfiguringServer, 
-    ConfiguringNetwork, 
+    ConfiguringNetwork,
+    VerifyingSetup,
     SetupComplete;
 }
