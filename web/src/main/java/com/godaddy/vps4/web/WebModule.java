@@ -13,5 +13,7 @@ public class WebModule extends AbstractModule {
         bind(VmResource.class);
         bind(VmPatchResource.class);
         bind(ValidatorResource.class);
+
+        bind(TestResource.class);
     }
 }

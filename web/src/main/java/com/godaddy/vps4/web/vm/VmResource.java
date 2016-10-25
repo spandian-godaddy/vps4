@@ -62,6 +62,7 @@ public class VmResource {
 
     static final Map<Long, Action> actions = new ConcurrentHashMap<>();
     static final Map<UUID, CreateVmAction> provisionActions = new ConcurrentHashMap<>();
+
     static final AtomicLong actionIdPool = new AtomicLong();
     static final ExecutorService threadPool = Executors.newCachedThreadPool();
 
@@ -130,21 +131,21 @@ public class VmResource {
     }
 
     @GET
-    @Path("/{vmId}")
-    public CombinedVm getVm(@PathParam("vmId") long vmId) {
+    @Path("/{orionGuid}")
+    public CombinedVm getVm(@PathParam("orionGuid") UUID orionGuid) {
 
-        logger.info("getting vm with id {}", vmId);
+        logger.info("getting vm with id {}", orionGuid);
 
-        VirtualMachine virtualMachine = virtualMachineService.getVirtualMachine(vmId);
+        VirtualMachine virtualMachine = virtualMachineService.getVirtualMachine(orionGuid);
         if (virtualMachine == null) {
             // TODO need to return 404 here
-            throw new IllegalArgumentException("Unknown VM ID: " + vmId);
+            throw new IllegalArgumentException("Unknown VM ID: " + orionGuid);
         }
 
         privilegeService.requireAnyPrivilegeToSgid(user, virtualMachine.projectId);
 
         // now reach out to the VM vertical to get all the details
-        Vm vm = getVmFromVmVertical(vmId);
+        Vm vm = getVmFromVmVertical(virtualMachine.vmId);
 
         return new CombinedVm(vm, virtualMachine);
 
@@ -156,27 +157,6 @@ public class VmResource {
             throw new IllegalArgumentException("Cannot find VM ID " + vmId + " in vm vertical");
         }
         return vm;
-    }
-
-    @GET
-    @Path("/")
-    public CombinedVm getVm(@QueryParam("orionGuid") UUID orionGuid) {
-
-        logger.info("getting vm with orionGuid {}", orionGuid);
-
-        VirtualMachine virtualMachine = virtualMachineService.getVirtualMachine(orionGuid);
-        if (virtualMachine == null) {
-            // TODO need to return 404 here
-            throw new IllegalArgumentException("Unknown VM with orionGuid: " + orionGuid);
-        }
-
-        privilegeService.requireAnyPrivilegeToSgid(user, virtualMachine.projectId);
-
-        // now reach out to the VM vertical to get all the details
-        Vm vm = getVmFromVmVertical(virtualMachine.vmId);
-
-        return new CombinedVm(vm, virtualMachine);
-
     }
 
     @GET
@@ -197,42 +177,59 @@ public class VmResource {
 
     }
 
+    public static class ProvisionVmRequest {
+        public String name;
+        public UUID   orionGuid;
+        public String image;
+        public int    dataCenterId;
+        public String username;
+        public String password;
+    }
+
+    @GET
+    @Path("/provisions/{orionGuid}")
+    public CreateVmAction getProvisionAction(@PathParam("orionGuid") UUID orionGuid) {
+        return provisionActions.get(orionGuid);
+    }
+
     @POST
-    @Path("/{vmId}/provision")
-    public CreateVmAction provisionVm(@QueryParam("name") String name, @QueryParam("orionGuid") UUID orionGuid,
-            @QueryParam("image") String image, @QueryParam("dataCenter") int dataCenterId, @QueryParam("username") String username,
-            @QueryParam("password") String password) throws InterruptedException {
+    @Path("/provisions/")
+    public CreateVmAction provisionVm(ProvisionVmRequest provisionRequest) throws InterruptedException {
 
-        logger.info("provisioning vm with orionGuid {}", orionGuid);
+        logger.info("provisioning vm with orionGuid {}", provisionRequest.orionGuid);
 
-        VirtualMachineRequest request = getVmRequestToProvision(orionGuid);
+        VirtualMachineRequest request = getVmRequestToProvision(provisionRequest.orionGuid);
 
-        Project project = createProject(orionGuid, dataCenterId);
+        Project project = createProject(provisionRequest.orionGuid, provisionRequest.dataCenterId);
 
         VirtualMachineSpec spec = getVirtualMachineSpec(request);
 
-        int imageId = getImageId(image);
+        int imageId = getImageId(provisionRequest.image);
 
+        // FIXME need to get the action back to the caller so they can poll the status/steps/ticks
         CreateVmAction action = new CreateVmAction();
         action.actionId = actionIdPool.incrementAndGet();
         logger.debug("Action.actionid = {}", action.actionId);
-        action.hfsProvisionRequest = createProvisionVmRequest(image, username, password, project, spec);
+        action.hfsProvisionRequest = createHfsProvisionVmRequest(provisionRequest.image, provisionRequest.username, provisionRequest.password, project, spec);
         action.project = project;
         actions.put(action.actionId, action);
-        provisionActions.put(orionGuid, action);
+        provisionActions.put(provisionRequest.orionGuid, action);
 
-        ProvisionVmWorker worker = new ProvisionVmWorker(vmService, hfsNetworkService, action, threadPool, vps4NetworkService);
-        threadPool.execute(worker);
+        //final ProvisionVmWorker worker = new ProvisionVmWorker(vmService, hfsNetworkService, action, threadPool, vps4NetworkService);
+        final FakeProvisionVmWorker worker = new FakeProvisionVmWorker(action);
+        threadPool.execute(() -> {
+            worker.run();
+        });
 
-        worker.waitForVmId();
+        //worker.waitForVmId();
 
-        virtualMachineService.provisionVirtualMachine(action.vm.vmId, orionGuid, name, project.getProjectId(), spec.specId,
+        virtualMachineService.provisionVirtualMachine(action.vm.vmId, provisionRequest.orionGuid, provisionRequest.name, project.getProjectId(), spec.specId,
                 request.managedLevel, imageId);
 
         return action;
     }
 
-    private ProvisionVMRequest createProvisionVmRequest(String image, String username, String password, Project project,
+    private ProvisionVMRequest createHfsProvisionVmRequest(String image, String username, String password, Project project,
             VirtualMachineSpec spec) {
         ProvisionVMRequest hfsProvisionRequest = new ProvisionVMRequest();
         hfsProvisionRequest.cpuCores = (int) spec.cpuCoreCount;

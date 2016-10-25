@@ -73,6 +73,8 @@ public class WebServer {
         handler.setContextPath("/");
         handler.addEventListener(injector.getInstance(GuiceResteasyBootstrapServletContextListener.class));
 
+        handler.addFilter(CorsFilter.class, "/*", EnumSet.allOf(DispatcherType.class));
+
         FilterHolder guiceFilter = new FilterHolder(injector.getInstance(GuiceFilter.class));
         handler.addFilter(guiceFilter,  "/*",  EnumSet.allOf(DispatcherType.class));
 
