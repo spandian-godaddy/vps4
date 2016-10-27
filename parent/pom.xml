@@ -151,7 +151,6 @@
             <groupId>org.mockito</groupId>
             <artifactId>mockito-core</artifactId>
             <version>1.8.5</version>
-            <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>junit</groupId>

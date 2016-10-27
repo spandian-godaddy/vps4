@@ -214,17 +214,18 @@ public class VmResource {
         action.project = project;
         actions.put(action.actionId, action);
         provisionActions.put(provisionRequest.orionGuid, action);
-
         //final ProvisionVmWorker worker = new ProvisionVmWorker(vmService, hfsNetworkService, action, threadPool, vps4NetworkService);
-        final FakeProvisionVmWorker worker = new FakeProvisionVmWorker(action);
+        final FakeProvisionVmWorker worker = new FakeProvisionVmWorker(action, virtualMachineService, provisionRequest.orionGuid,
+                                                        provisionRequest.name, project.getProjectId(),
+                                                        spec.specId, request.managedLevel, imageId);
         threadPool.execute(() -> {
             worker.run();
         });
 
         //worker.waitForVmId();
 
-        virtualMachineService.provisionVirtualMachine(action.vm.vmId, provisionRequest.orionGuid, provisionRequest.name, project.getProjectId(), spec.specId,
-                request.managedLevel, imageId);
+//        virtualMachineService.provisionVirtualMachine(action.vm.vmId, provisionRequest.orionGuid, provisionRequest.name, project.getProjectId(), spec.specId,
+//                request.managedLevel, imageId);
 
         return action;
     }

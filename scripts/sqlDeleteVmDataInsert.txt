@@ -1,0 +1,26 @@
+These 3 Inserts will populate the database with a VM to be deleted.
+The test vm url to call is: 
+http://localhost:3000/#/hosting/vps4/servers/0afac885-2e24-495c-8776-64602aeb047d
+Upon successful deletion the vm with vm_id=0 will have valid_until 
+set to a date instead of "infinity".
+
+INSERT INTO public.virtual_machine as vm(
+vm_id, orion_guid, name, project_id, spec_id, managed_level, image_id)
+VALUES (0, '0afac885-2e24-495c-8776-64602aeb047d', 'GTest', 46, 1, 1, 1)
+on conflict (vm_id)
+do update set valid_until = 'infinity'
+where vm.vm_id = 0;
+
+INSERT into public.project as proj(
+    project_id, project_name, data_center_id, vhfs_sgid)
+    VALUES(46, '0afac885-2e24-495c-8776-64602aeb047d', 1, 'vps4-46')
+on conflict (project_id)
+do update set project_name = '0afac885-2e24-495c-8776-64602aeb047d'
+where proj.project_id = 46;
+
+INSERT into public.ip_address as ip(
+    ip_address_id, project_id)
+    VALUES(0, 46)
+on conflict(ip_address_id)
+do update set project_id = 46
+where ip.ip_address_id = 0;

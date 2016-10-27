@@ -38,7 +38,7 @@ public class CorsFilter implements Filter {
             //       We could probably also process the Authorization header
             //       in the pre-flight request
             response.setHeader("Access-Control-Allow-Origin", origin);
-            response.setHeader("Access-Control-Allow-Methods", "POST, GET, PUT, DELETE");
+            response.setHeader("Access-Control-Allow-Methods", "POST, GET, PUT, DELETE, PATCH");
             response.setHeader("Access-Control-Allow-Headers", "Authorization, Content-Type");
 
             // don't allow the client to send us cookies

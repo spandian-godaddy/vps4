@@ -1,6 +1,7 @@
 package com.godaddy.vps4.web.vm;
 
 import java.util.Map;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
@@ -13,6 +14,7 @@ import com.godaddy.vps4.Vps4Exception;
 import com.godaddy.vps4.hfs.VmAction;
 import com.godaddy.vps4.hfs.VmService;
 import com.godaddy.vps4.vm.HostnameGenerator;
+import com.godaddy.vps4.vm.VirtualMachineService;
 import com.godaddy.vps4.web.Action.ActionStatus;
 import com.godaddy.vps4.web.network.AllocateIpWorker;
 import com.godaddy.vps4.web.network.BindIpAction;
@@ -37,14 +39,37 @@ public class ProvisionVmWorker implements Runnable {
     final ExecutorService threadPool;
 
     final com.godaddy.vps4.network.NetworkService vps4NetworkService;
+    
+    final VirtualMachineService virtualMachineService;
+    
+    final UUID orionGuid;
+    
+    final String name;
+    
+    final long projectId;
+    
+    final int specId;
+    
+    final int managedLevel;
+    
+    final int imageId;
 
     public ProvisionVmWorker(VmService vmService, NetworkService hfsNetworkService, CreateVmAction action, ExecutorService threadPool,
-            com.godaddy.vps4.network.NetworkService vps4NetworkService) {
+            com.godaddy.vps4.network.NetworkService vps4NetworkService, VirtualMachineService virtualMachineService,
+            UUID orionGuid, String name, long projectId, int specId,
+            int managedLevel, int imageId) {
         this.vmService = vmService;
         this.hfsNetworkService = hfsNetworkService;
         this.action = action;
         this.threadPool = threadPool;
         this.vps4NetworkService = vps4NetworkService;
+        this.virtualMachineService = virtualMachineService;
+        this.orionGuid = orionGuid;
+        this.name = name;
+        this.projectId = projectId;
+        this.specId = specId;
+        this.managedLevel = managedLevel;
+        this.imageId = imageId;
     }
 
     @Override
@@ -70,6 +95,11 @@ public class ProvisionVmWorker implements Runnable {
             bindIp(ip, hfsCreateVmAction);
         }
 
+        if (action.status != ActionStatus.ERROR){
+            virtualMachineService.provisionVirtualMachine(action.vm.vmId, orionGuid, name, projectId, 
+                                                        specId, managedLevel, imageId);
+        }
+        
         if (action.status != ActionStatus.ERROR) {
             action.step = CreateVmStep.SetupComplete;
             action.status = ActionStatus.COMPLETE;

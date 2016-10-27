@@ -7,6 +7,7 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
 import java.time.Instant;
+import java.util.UUID;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
@@ -43,6 +44,13 @@ public class ProvisionVmWorkerTest {
     private CreateVmAction action;
     private Vm vm;
     private AddressAction addressAction;
+    private VirtualMachineService virtualMachineService;
+    private UUID orionGuid;
+    private String name;
+    private long projectId;
+    private int specId;
+    private int managedLevel; 
+    private int imageId;
 
     @Before
     public void setup() {
@@ -51,7 +59,8 @@ public class ProvisionVmWorkerTest {
         hfsNetworkSerivce = Mockito.mock(NetworkService.class);
         threadPool = Executors.newCachedThreadPool();
         vps4NetworkService = Mockito.mock(com.godaddy.vps4.network.NetworkService.class);
-
+        virtualMachineService = Mockito.mock(VirtualMachineService.class);
+        
         ip = new IpAddress();
         ip.address = "127.0.0.1";
         ip.addressId = 123;
@@ -79,6 +88,20 @@ public class ProvisionVmWorkerTest {
         addressAction = new AddressAction();
         addressAction.status = Status.COMPLETE;
         addressAction.addressId = ip.addressId;
+        
+        
+        orionGuid = UUID.randomUUID();
+        name = "testName";
+        projectId = 1;
+        specId = 1;
+        managedLevel = 1; 
+        imageId = 1;
+    }
+    
+    private void runProvisionVmWorker(){
+        ProvisionVmWorker worker = new ProvisionVmWorker(vmService, hfsNetworkSerivce, action, threadPool, vps4NetworkService,
+                virtualMachineService, orionGuid, name, projectId, specId, managedLevel, imageId);
+        worker.run();
     }
 
     @Test
@@ -92,8 +115,7 @@ public class ProvisionVmWorkerTest {
         Mockito.when(hfsNetworkSerivce.getAddress(addressAction.addressId)).thenReturn(ip);
         Mockito.when(hfsNetworkSerivce.bindIp(ip.addressId, vmActionInProgress.vmId)).thenReturn(addressAction);
 
-        ProvisionVmWorker worker = new ProvisionVmWorker(vmService, hfsNetworkSerivce, action, threadPool, vps4NetworkService);
-        worker.run();
+        runProvisionVmWorker();
 
         threadPool.shutdown();
         threadPool.awaitTermination(Long.MAX_VALUE, TimeUnit.NANOSECONDS);
@@ -115,8 +137,7 @@ public class ProvisionVmWorkerTest {
 
         Mockito.when(hfsNetworkSerivce.acquireIp(action.project.getVhfsSgid())).thenReturn(addressAction);
 
-        ProvisionVmWorker worker = new ProvisionVmWorker(vmService, hfsNetworkSerivce, action, threadPool, vps4NetworkService);
-        worker.run();
+        runProvisionVmWorker();
 
         threadPool.shutdown();
         threadPool.awaitTermination(Long.MAX_VALUE, TimeUnit.NANOSECONDS);
@@ -143,8 +164,7 @@ public class ProvisionVmWorkerTest {
         Mockito.when(hfsNetworkSerivce.acquireIp(action.project.getVhfsSgid())).thenReturn(addressAction);
         Mockito.when(hfsNetworkSerivce.getAddress(addressAction.addressId)).thenReturn(ip);
 
-        ProvisionVmWorker worker = new ProvisionVmWorker(vmService, hfsNetworkSerivce, action, threadPool, vps4NetworkService);
-        worker.run();
+        runProvisionVmWorker();
 
         threadPool.shutdown();
         threadPool.awaitTermination(Long.MAX_VALUE, TimeUnit.NANOSECONDS);
@@ -174,8 +194,7 @@ public class ProvisionVmWorkerTest {
         Mockito.when(hfsNetworkSerivce.getAddress(addressAction.addressId)).thenReturn(ip);
         Mockito.when(hfsNetworkSerivce.bindIp(ip.addressId, vmActionInProgress.vmId)).thenReturn(addressActionFailed);
 
-        ProvisionVmWorker worker = new ProvisionVmWorker(vmService, hfsNetworkSerivce, action, threadPool, vps4NetworkService);
-        worker.run();
+        runProvisionVmWorker();
 
         threadPool.shutdown();
         threadPool.awaitTermination(Long.MAX_VALUE, TimeUnit.NANOSECONDS);

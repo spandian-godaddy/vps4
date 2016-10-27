@@ -1,9 +1,5 @@
 package com.godaddy.vps4.web.vm;
 
-import javax.inject.Singleton;
-
-import com.godaddy.vps4.hfs.HfsClientProvider;
-import com.godaddy.vps4.hfs.VmService;
 import com.godaddy.vps4.security.PrivilegeService;
 import com.godaddy.vps4.security.jdbc.JdbcPrivilegeService;
 import com.godaddy.vps4.vm.ControlPanelService;
@@ -25,6 +21,5 @@ public class VmModule extends AbstractModule {
 		bind(ControlPanelService.class).to(JdbcControlPanelService.class);
 		bind(OsTypeService.class).to(JdbcOsTypeService.class);
         bind(ImageService.class).to(JdbcImageService.class);
-		bind(VmService.class).toProvider(new HfsClientProvider<VmService>(VmService.class)).in(Singleton.class);
 	}
 }

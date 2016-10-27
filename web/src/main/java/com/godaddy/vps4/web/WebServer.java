@@ -17,8 +17,12 @@ import org.eclipse.jetty.util.thread.QueuedThreadPool;
 import org.jboss.resteasy.plugins.guice.GuiceResteasyBootstrapServletContextListener;
 import org.jboss.resteasy.util.GetRestful;
 
+import com.godaddy.vps4.config.Config;
+import com.godaddy.vps4.config.ConfigProvider;
 import com.godaddy.vps4.jdbc.DatabaseModule;
 import com.godaddy.vps4.security.UserModule;
+import com.godaddy.vps4.web.hfs.HfsMockModule;
+import com.godaddy.vps4.web.hfs.HfsModule;
 import com.godaddy.vps4.web.network.NetworkModule;
 import com.godaddy.vps4.web.vm.VmModule;
 import com.google.inject.Guice;
@@ -30,6 +34,11 @@ import io.swagger.config.Scanner;
 import io.swagger.config.ScannerFactory;
 
 public class WebServer {
+    
+    private static int getPortFromConfig(){
+        Config conf = new ConfigProvider().get();
+        return Integer.valueOf(conf.get("vps4.http.port", "8080"));
+    }
 
 	public static void main(String[] args) throws Exception {
 
@@ -39,7 +48,8 @@ public class WebServer {
 	    Server server = new Server(threadPool);
 
 	    ServerConnector httpConnector = new ServerConnector(server);
-	    httpConnector.setPort(8080);
+	    int port = getPortFromConfig();
+	    httpConnector.setPort(port);
 	    server.addConnector(httpConnector);
 
 	    HandlerList handlers = new HandlerList();
@@ -59,6 +69,11 @@ public class WebServer {
 
         modules.add(new GuiceFilterModule());
         modules.add(new SwaggerModule());
+        
+        if(System.getProperty("vps4.hfs.mock", "false").equals("true"))
+            modules.add(new HfsMockModule());
+        else
+            modules.add(new HfsModule());
 
         modules.add(new DatabaseModule());
         modules.add(new WebModule());
