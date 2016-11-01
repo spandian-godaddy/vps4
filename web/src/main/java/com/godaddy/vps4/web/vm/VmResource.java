@@ -48,6 +48,7 @@ import com.godaddy.vps4.web.Vps4Api;
 
 import gdg.hfs.vhfs.network.IpAddress;
 import gdg.hfs.vhfs.network.NetworkService;
+import gdg.hfs.vhfs.sysadmin.SysAdminService;
 import io.swagger.annotations.Api;
 
 @Vps4Api
@@ -75,14 +76,16 @@ public class VmResource {
     final OsTypeService osTypeService;
     final ProjectService projectService;
     final ImageService imageService;
+    final SysAdminService sysAdminService;
     final com.godaddy.vps4.network.NetworkService vps4NetworkService;
 
     // TODO: Break this up into multiple classes to reduce number of
     // dependencies.
     @Inject
-    public VmResource(PrivilegeService privilegeService, User user, VmService vmService, NetworkService hfsNetworkService,
+    public VmResource(SysAdminService sysAdminService, PrivilegeService privilegeService, User user, VmService vmService, NetworkService hfsNetworkService,
             VirtualMachineService virtualMachineService, ControlPanelService controlPanelService, OsTypeService osTypeService,
             ProjectService projectService, ImageService imageService, com.godaddy.vps4.network.NetworkService vps4NetworkService) {
+        this.sysAdminService = sysAdminService;
         this.user = user;
         this.virtualMachineService = virtualMachineService;
         this.privilegeService = privilegeService;
@@ -191,6 +194,27 @@ public class VmResource {
     public CreateVmAction getProvisionAction(@PathParam("orionGuid") UUID orionGuid) {
         return provisionActions.get(orionGuid);
     }
+    
+    public static class ProvisionVmInfo{
+        public UUID orionGuid;
+        public String name;
+        public long projectId;
+        public int specId;
+        public int managedLevel;
+        public int imageId;
+        public String username;
+        
+        public ProvisionVmInfo(UUID orionGuid, String name, long projectId, int specId, 
+                                int managedLevel, int imageId, String username){
+            this.orionGuid = orionGuid;
+            this.name = name;
+            this.projectId = projectId;
+            this.specId = specId;
+            this.managedLevel = managedLevel;
+            this.imageId = imageId;
+            this.username = username;
+        }
+    }
 
     @POST
     @Path("/provisions/")
@@ -214,19 +238,20 @@ public class VmResource {
         action.project = project;
         actions.put(action.actionId, action);
         provisionActions.put(provisionRequest.orionGuid, action);
-        //final ProvisionVmWorker worker = new ProvisionVmWorker(vmService, hfsNetworkService, action, threadPool, vps4NetworkService);
-        final FakeProvisionVmWorker worker = new FakeProvisionVmWorker(action, virtualMachineService, provisionRequest.orionGuid,
-                                                        provisionRequest.name, project.getProjectId(),
-                                                        spec.specId, request.managedLevel, imageId);
+        ProvisionVmInfo vmInfo = new ProvisionVmInfo(provisionRequest.orionGuid, provisionRequest.name, project.getProjectId(),
+                                                     spec.specId, request.managedLevel, imageId, provisionRequest.username);
+        final ProvisionVmWorker provisionWorker = new ProvisionVmWorker(vmService, hfsNetworkService, sysAdminService,  
+                                                                        vps4NetworkService, virtualMachineService,
+                                                                        action, threadPool, vmInfo);
         threadPool.execute(() -> {
-            worker.run();
+            provisionWorker.run();
         });
-
-        //worker.waitForVmId();
-
-//        virtualMachineService.provisionVirtualMachine(action.vm.vmId, provisionRequest.orionGuid, provisionRequest.name, project.getProjectId(), spec.specId,
-//                request.managedLevel, imageId);
-
+        
+        if (action.status != ActionStatus.ERROR) {
+            action.step = CreateVmStep.SetupComplete;
+            action.status = ActionStatus.COMPLETE;
+        }
+        
         return action;
     }
 

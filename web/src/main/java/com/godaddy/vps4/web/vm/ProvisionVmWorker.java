@@ -15,61 +15,48 @@ import com.godaddy.vps4.hfs.VmAction;
 import com.godaddy.vps4.hfs.VmService;
 import com.godaddy.vps4.vm.HostnameGenerator;
 import com.godaddy.vps4.vm.VirtualMachineService;
+import com.godaddy.vps4.web.Action;
 import com.godaddy.vps4.web.Action.ActionStatus;
 import com.godaddy.vps4.web.network.AllocateIpWorker;
 import com.godaddy.vps4.web.network.BindIpAction;
 import com.godaddy.vps4.web.network.BindIpWorker;
+import com.godaddy.vps4.web.sysadmin.DisableAdminWorker;
+import com.godaddy.vps4.web.sysadmin.EnableAdminWorker;
+import com.godaddy.vps4.web.sysadmin.SysAdminWorker;
 import com.godaddy.vps4.web.vm.VmResource.CreateVmAction;
+import com.godaddy.vps4.web.vm.VmResource.ProvisionVmInfo;
 
 import gdg.hfs.vhfs.network.IpAddress;
 import gdg.hfs.vhfs.network.NetworkService;
+import gdg.hfs.vhfs.sysadmin.SysAdminService;
 
 public class ProvisionVmWorker implements Runnable {
 
     private static final Logger logger = LoggerFactory.getLogger(ProvisionVmWorker.class);
 
     final VmService vmService;
-
     final NetworkService hfsNetworkService;
-
-    final CreateVmAction action;
-
-    final CountDownLatch inProgressLatch = new CountDownLatch(1);
-
-    final ExecutorService threadPool;
-
+    final SysAdminService sysAdminService;
+    final VirtualMachineService virtualMachineService;
     final com.godaddy.vps4.network.NetworkService vps4NetworkService;
     
-    final VirtualMachineService virtualMachineService;
-    
-    final UUID orionGuid;
-    
-    final String name;
-    
-    final long projectId;
-    
-    final int specId;
-    
-    final int managedLevel;
-    
-    final int imageId;
+    final CreateVmAction action;
+    final CountDownLatch inProgressLatch = new CountDownLatch(1);
+    final ExecutorService threadPool;
 
-    public ProvisionVmWorker(VmService vmService, NetworkService hfsNetworkService, CreateVmAction action, ExecutorService threadPool,
+    final ProvisionVmInfo vmInfo;
+
+    public ProvisionVmWorker(VmService vmService, NetworkService hfsNetworkService, SysAdminService sysAdminService, 
             com.godaddy.vps4.network.NetworkService vps4NetworkService, VirtualMachineService virtualMachineService,
-            UUID orionGuid, String name, long projectId, int specId,
-            int managedLevel, int imageId) {
+            CreateVmAction action, ExecutorService threadPool, ProvisionVmInfo vmInfo) {
         this.vmService = vmService;
         this.hfsNetworkService = hfsNetworkService;
+        this.sysAdminService = sysAdminService;
         this.action = action;
         this.threadPool = threadPool;
         this.vps4NetworkService = vps4NetworkService;
         this.virtualMachineService = virtualMachineService;
-        this.orionGuid = orionGuid;
-        this.name = name;
-        this.projectId = projectId;
-        this.specId = specId;
-        this.managedLevel = managedLevel;
-        this.imageId = imageId;
+        this.vmInfo = vmInfo;
     }
 
     @Override
@@ -96,15 +83,19 @@ public class ProvisionVmWorker implements Runnable {
         }
 
         if (action.status != ActionStatus.ERROR){
-            virtualMachineService.provisionVirtualMachine(action.vm.vmId, orionGuid, name, projectId, 
-                                                        specId, managedLevel, imageId);
+            virtualMachineService.provisionVirtualMachine(action.vm.vmId, vmInfo.orionGuid, vmInfo.name, vmInfo.projectId, 
+                    vmInfo.specId, vmInfo.managedLevel, vmInfo.imageId);
         }
         
-        if (action.status != ActionStatus.ERROR) {
+        if (action.status != ActionStatus.ERROR){
+            setAdminAccess();
+        }
+        
+        if (action.status != ActionStatus.ERROR) {      
             action.step = CreateVmStep.SetupComplete;
             action.status = ActionStatus.COMPLETE;
         }
-
+        
         logger.info("provision vm finished with status {} for action: {}", hfsCreateVmAction);
     }
 
@@ -166,6 +157,24 @@ public class ProvisionVmWorker implements Runnable {
         hfsTicksMap.put(2, CreateVmStep.CreatingServer);
         hfsTicksMap.put(3, CreateVmStep.ConfiguringServer);
         return hfsTicksMap;
+    }
+    
+    private void setAdminAccess(){
+        SysAdminWorker adminWorker;
+        if(vmInfo.managedLevel < 1){
+            // unmanaged = enable admin access
+            adminWorker = new EnableAdminWorker(sysAdminService, action.vm.vmId, vmInfo.username);
+        }
+        else{
+            adminWorker =  new DisableAdminWorker(sysAdminService, action.vm.vmId, vmInfo.username);
+        }
+        try{
+            adminWorker.run();
+        }
+        catch(Vps4Exception e){
+            action.status = Action.ActionStatus.ERROR;
+            logger.warn("Failed to set admin access");
+        }
     }
 
     protected VmAction waitForVmAction(VmAction hfsAction) {

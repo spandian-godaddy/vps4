@@ -8,6 +8,7 @@ public enum CreateVmStep {
     StartingServerSetup, 
     ConfiguringServer, 
     ConfiguringNetwork,
+    SettingAdminAccess,
     VerifyingSetup,
     SetupComplete;
 }

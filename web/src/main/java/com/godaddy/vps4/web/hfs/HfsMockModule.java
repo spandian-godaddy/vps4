@@ -11,6 +11,7 @@ import com.google.inject.AbstractModule;
 
 import gdg.hfs.vhfs.network.AddressAction;
 import gdg.hfs.vhfs.network.NetworkService;
+import gdg.hfs.vhfs.sysadmin.SysAdminService;
 
 public class HfsMockModule extends AbstractModule{
     
@@ -20,6 +21,8 @@ public class HfsMockModule extends AbstractModule{
         bind(NetworkService.class).toInstance(netService);
         VmService vmService = buildMockVmService();
         bind(VmService.class).toInstance(vmService);
+        SysAdminService sysAdminService = Mockito.mock(SysAdminService.class);
+        bind(SysAdminService.class).toInstance(sysAdminService);
     }
 
     private VmService buildMockVmService() {

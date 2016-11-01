@@ -25,16 +25,21 @@ import com.godaddy.vps4.web.Action.ActionStatus;
 import com.godaddy.vps4.web.vm.CreateVmStep;
 import com.godaddy.vps4.web.vm.ProvisionVmWorker;
 import com.godaddy.vps4.web.vm.VmResource.CreateVmAction;
+import com.godaddy.vps4.web.vm.VmResource.ProvisionVmInfo;
 
 import gdg.hfs.vhfs.network.AddressAction;
 import gdg.hfs.vhfs.network.AddressAction.Status;
 import gdg.hfs.vhfs.network.IpAddress;
 import gdg.hfs.vhfs.network.NetworkService;
+import gdg.hfs.vhfs.sysadmin.SysAdminService;
+import gdg.hfs.vhfs.sysadmin.SysAdminAction;
+
 
 public class ProvisionVmWorkerTest {
 
     private VmService vmService;
     private NetworkService hfsNetworkSerivce;
+    private SysAdminService sysAdminService;
     private ExecutorService threadPool;
     private com.godaddy.vps4.network.NetworkService vps4NetworkService;
 
@@ -42,6 +47,8 @@ public class ProvisionVmWorkerTest {
     private VmAction vmActionInProgress;
     private VmAction vmActionAfter;
     private CreateVmAction action;
+    private SysAdminAction sysAdminActionInProgress;
+    private SysAdminAction sysAdminActionComplete;
     private Vm vm;
     private AddressAction addressAction;
     private VirtualMachineService virtualMachineService;
@@ -51,15 +58,18 @@ public class ProvisionVmWorkerTest {
     private int specId;
     private int managedLevel; 
     private int imageId;
+    private String username;
 
     @Before
     public void setup() {
 
         vmService = Mockito.mock(VmService.class);
         hfsNetworkSerivce = Mockito.mock(NetworkService.class);
+        sysAdminService = Mockito.mock(SysAdminService.class);
         threadPool = Executors.newCachedThreadPool();
         vps4NetworkService = Mockito.mock(com.godaddy.vps4.network.NetworkService.class);
         virtualMachineService = Mockito.mock(VirtualMachineService.class);
+        
         
         ip = new IpAddress();
         ip.address = "127.0.0.1";
@@ -72,6 +82,16 @@ public class ProvisionVmWorkerTest {
         vmActionInProgress.vmActionId = 1;
         vmActionInProgress.tickNum = 3;
 
+        sysAdminActionInProgress = new SysAdminAction();
+        sysAdminActionInProgress.status = SysAdminAction.Status.IN_PROGRESS;
+        sysAdminActionInProgress.vmId = 12;
+        sysAdminActionInProgress.sysAdminActionId = 123321;
+        
+        sysAdminActionComplete = new SysAdminAction();
+        sysAdminActionComplete.status = SysAdminAction.Status.COMPLETE;
+        sysAdminActionComplete.vmId = 12;
+        sysAdminActionComplete.sysAdminActionId = 123321;
+        
         vmActionAfter = new VmAction();
         vmActionAfter.state = "COMPLETE";
         vmActionAfter.vmId = vmActionInProgress.vmId;
@@ -96,17 +116,17 @@ public class ProvisionVmWorkerTest {
         specId = 1;
         managedLevel = 1; 
         imageId = 1;
+        username = "testuser";
     }
     
     private void runProvisionVmWorker(){
-        ProvisionVmWorker worker = new ProvisionVmWorker(vmService, hfsNetworkSerivce, action, threadPool, vps4NetworkService,
-                virtualMachineService, orionGuid, name, projectId, specId, managedLevel, imageId);
+        ProvisionVmInfo vmInfo = new ProvisionVmInfo(orionGuid, name, projectId, specId, managedLevel, imageId, username);
+        ProvisionVmWorker worker = new ProvisionVmWorker(vmService, hfsNetworkSerivce, sysAdminService,
+                vps4NetworkService, virtualMachineService, action, threadPool, vmInfo);
         worker.run();
     }
-
-    @Test
-    public void provisionVmTest() throws InterruptedException {
-
+    
+    private void runProvisionVmWorkerSuccessfully()  throws InterruptedException {
         Mockito.when(vmService.createVm(action.hfsProvisionRequest)).thenReturn(vmActionInProgress);
         Mockito.when(vmService.getVmAction(vmActionInProgress.vmId, vmActionInProgress.vmActionId)).thenReturn(vmActionAfter);
         Mockito.when(vmService.getVm(vmActionAfter.vmId)).thenReturn(vm);
@@ -115,10 +135,20 @@ public class ProvisionVmWorkerTest {
         Mockito.when(hfsNetworkSerivce.getAddress(addressAction.addressId)).thenReturn(ip);
         Mockito.when(hfsNetworkSerivce.bindIp(ip.addressId, vmActionInProgress.vmId)).thenReturn(addressAction);
 
+        Mockito.when(sysAdminService.enableAdmin(vm.vmId, username)).thenReturn(sysAdminActionInProgress);
+        Mockito.when(sysAdminService.disableAdmin(vm.vmId, username)).thenReturn(sysAdminActionInProgress);
+        Mockito.when(sysAdminService.getSysAdminAction(sysAdminActionInProgress.sysAdminActionId)).thenReturn(sysAdminActionComplete);
+        
         runProvisionVmWorker();
 
         threadPool.shutdown();
         threadPool.awaitTermination(Long.MAX_VALUE, TimeUnit.NANOSECONDS);
+    }
+
+    @Test
+    public void provisionVmTest() throws InterruptedException {
+        
+        runProvisionVmWorkerSuccessfully();
 
         assertEquals(vmActionAfter.vmId, action.vm.vmId);
         assertEquals(ActionStatus.COMPLETE, action.status);
@@ -128,8 +158,36 @@ public class ProvisionVmWorkerTest {
         verify(vmService, times(1)).createVm(any(ProvisionVMRequest.class));
         verify(hfsNetworkSerivce, times(1)).acquireIp(action.project.getVhfsSgid());
         verify(hfsNetworkSerivce, times(1)).bindIp(ip.addressId, vmActionAfter.vmId);
+        verify(sysAdminService, times(1)).enableAdmin(vm.vmId, username);
+        verify(sysAdminService, times(1)).disableAdmin(vm.vmId, username);
     }
+    
+    @Test
+    public void provisionVmTestUnmanaged() throws InterruptedException {
+        // Unmanaged should not disable admin access on provision.
+        managedLevel=0;
+        
+        runProvisionVmWorkerSuccessfully();
 
+        verify(sysAdminService, times(1)).enableAdmin(vm.vmId, username);
+        verify(sysAdminService, times(0)).disableAdmin(vm.vmId, username);
+    }
+    
+    @Test
+    public void disableAdminAccessFails() throws InterruptedException{
+        sysAdminActionComplete.status = SysAdminAction.Status.FAILED;
+        runProvisionVmWorkerSuccessfully();
+        assertEquals(ActionStatus.ERROR, action.status);
+    }
+    
+    @Test
+    public void enableAdminAccessFails() throws InterruptedException{
+        managedLevel=0;
+        sysAdminActionComplete.status = SysAdminAction.Status.FAILED;
+        runProvisionVmWorkerSuccessfully();
+        assertEquals(ActionStatus.ERROR, action.status);
+    }
+    
     @Test
     public void provisionVmAllocateIpFailsTest() throws InterruptedException {
 
