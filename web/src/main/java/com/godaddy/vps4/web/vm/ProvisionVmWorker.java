@@ -20,9 +20,7 @@ import com.godaddy.vps4.web.Action.ActionStatus;
 import com.godaddy.vps4.web.network.AllocateIpWorker;
 import com.godaddy.vps4.web.network.BindIpAction;
 import com.godaddy.vps4.web.network.BindIpWorker;
-import com.godaddy.vps4.web.sysadmin.DisableAdminWorker;
-import com.godaddy.vps4.web.sysadmin.EnableAdminWorker;
-import com.godaddy.vps4.web.sysadmin.SysAdminWorker;
+import com.godaddy.vps4.web.sysadmin.ToggleAdminWorker;
 import com.godaddy.vps4.web.vm.VmResource.CreateVmAction;
 import com.godaddy.vps4.web.vm.VmResource.ProvisionVmInfo;
 
@@ -160,14 +158,10 @@ public class ProvisionVmWorker implements Runnable {
     }
     
     private void setAdminAccess(){
-        SysAdminWorker adminWorker;
-        if(vmInfo.managedLevel < 1){
-            // unmanaged = enable admin access
-            adminWorker = new EnableAdminWorker(sysAdminService, action.vm.vmId, vmInfo.username);
-        }
-        else{
-            adminWorker =  new DisableAdminWorker(sysAdminService, action.vm.vmId, vmInfo.username);
-        }
+        Runnable adminWorker;
+        // unmanaged = enable admin access
+        adminWorker = new ToggleAdminWorker(sysAdminService, action.vm.vmId, vmInfo.username, vmInfo.managedLevel < 1);
+
         try{
             adminWorker.run();
         }
