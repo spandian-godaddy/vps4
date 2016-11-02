@@ -15,14 +15,15 @@ public class CombinedVm {
     public String name;
     public Instant validOn;
     public Instant validUntil;
+    public String controlPanel;
 
     public CombinedVm(){}
     
     public CombinedVm(Vm vm) {
-        this(vm, null);
+        this(vm, null, null);
     }
 
-    public CombinedVm(Vm vm, VirtualMachine virtualMachine) {
+    public CombinedVm(Vm vm, VirtualMachine virtualMachine, VirtualMachineRequest vmRequest) {
         if(vm != null) {
         	vmId = vm.vmId;
             status = vm.status;
@@ -39,6 +40,10 @@ public class CombinedVm {
             name = virtualMachine.name;
             validOn = virtualMachine.validOn;
             validUntil = virtualMachine.validUntil;
+        }
+        
+        if (vmRequest != null){
+            controlPanel = vmRequest.controlPanel;
         }
     }
 

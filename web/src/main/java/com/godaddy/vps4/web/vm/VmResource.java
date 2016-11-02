@@ -148,11 +148,13 @@ public class VmResource {
         }
 
         privilegeService.requireAnyPrivilegeToSgid(user, virtualMachine.projectId);
+        
+        VirtualMachineRequest req = virtualMachineService.getVirtualMachineRequest(orionGuid);
 
         // now reach out to the VM vertical to get all the details
         Vm vm = getVmFromVmVertical(virtualMachine.vmId);
 
-        return new CombinedVm(vm, virtualMachine);
+        return new CombinedVm(vm, virtualMachine, req);
 
     }
 
