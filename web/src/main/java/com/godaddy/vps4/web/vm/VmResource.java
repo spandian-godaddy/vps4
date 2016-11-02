@@ -45,6 +45,8 @@ import com.godaddy.vps4.vm.VirtualMachineSpec;
 import com.godaddy.vps4.web.Action;
 import com.godaddy.vps4.web.Action.ActionStatus;
 import com.godaddy.vps4.web.Vps4Api;
+import com.godaddy.vps4.web.sysadmin.SetAdminAction;
+import com.godaddy.vps4.web.sysadmin.ToggleAdminWorker;
 
 import gdg.hfs.vhfs.network.IpAddress;
 import gdg.hfs.vhfs.network.NetworkService;
@@ -179,7 +181,44 @@ public class VmResource {
         return virtualMachineService.getVirtualMachineRequest(orionGuid);
 
     }
+    
+    public static class SetAdminRequest {
+        public String username;
+    }
+    
+    @POST
+    @Path("/{vmId}/enableAdmin")
+    public SetAdminAction enableUserAdmin(@QueryParam("vmId") long vmId, SetAdminRequest setAdminRequest){
+        SetAdminAction action = new SetAdminAction(setAdminRequest.username, vmId, true);
+        setUserAdmin(action);
+        return action;
+    }
+    
+    @POST
+    @Path("/{vmId}/disableAdmin")
+    public SetAdminAction disableUserAdmin(@QueryParam("vmId") long vmId, SetAdminRequest setAdminRequest){
+        SetAdminAction action = new SetAdminAction(setAdminRequest.username, vmId, false);
+        setUserAdmin(action);
+        return action;
+    }
 
+
+    private void setUserAdmin(SetAdminAction action) {
+        actions.put(action.actionId, action);
+        ToggleAdminWorker worker = new ToggleAdminWorker(sysAdminService, action);
+        
+            action.status = Action.ActionStatus.IN_PROGRESS;
+            threadPool.execute(() -> {
+                try{
+                    worker.run();
+                }
+                catch (Vps4Exception e){
+                    action.status = Action.ActionStatus.ERROR;
+                }
+            });
+        
+    }
+    
     public static class ProvisionVmRequest {
         public String name;
         public UUID   orionGuid;
