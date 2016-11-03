@@ -1,7 +1,6 @@
 package com.godaddy.vps4.web.vm;
 
 import java.util.Map;
-import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
@@ -14,9 +13,11 @@ import com.godaddy.vps4.Vps4Exception;
 import com.godaddy.vps4.hfs.VmAction;
 import com.godaddy.vps4.hfs.VmService;
 import com.godaddy.vps4.vm.HostnameGenerator;
+import com.godaddy.vps4.vm.Image.ControlPanel;
 import com.godaddy.vps4.vm.VirtualMachineService;
-import com.godaddy.vps4.web.Action;
 import com.godaddy.vps4.web.Action.ActionStatus;
+import com.godaddy.vps4.web.cpanel.ImageConfigAction;
+import com.godaddy.vps4.web.cpanel.ImageConfigWorker;
 import com.godaddy.vps4.web.network.AllocateIpWorker;
 import com.godaddy.vps4.web.network.BindIpAction;
 import com.godaddy.vps4.web.network.BindIpWorker;
@@ -24,6 +25,7 @@ import com.godaddy.vps4.web.sysadmin.ToggleAdminWorker;
 import com.godaddy.vps4.web.vm.VmResource.CreateVmAction;
 import com.godaddy.vps4.web.vm.VmResource.ProvisionVmInfo;
 
+import gdg.hfs.vhfs.cpanel.CPanelService;
 import gdg.hfs.vhfs.network.IpAddress;
 import gdg.hfs.vhfs.network.NetworkService;
 import gdg.hfs.vhfs.sysadmin.SysAdminService;
@@ -32,27 +34,31 @@ public class ProvisionVmWorker implements Runnable {
 
     private static final Logger logger = LoggerFactory.getLogger(ProvisionVmWorker.class);
 
+    final CreateVmAction action;
+    final ExecutorService threadPool;
+
     final VmService vmService;
     final NetworkService hfsNetworkService;
     final SysAdminService sysAdminService;
     final VirtualMachineService virtualMachineService;
     final com.godaddy.vps4.network.NetworkService vps4NetworkService;
-    
-    final CreateVmAction action;
+
     final CountDownLatch inProgressLatch = new CountDownLatch(1);
-    final ExecutorService threadPool;
-
     final ProvisionVmInfo vmInfo;
+    final CPanelService cPanelService;
 
-    public ProvisionVmWorker(VmService vmService, NetworkService hfsNetworkService, SysAdminService sysAdminService, 
+    private final String provisionFailedId = "PROVISION_VM_FAILED";
+
+    public ProvisionVmWorker(VmService vmService, NetworkService hfsNetworkService, SysAdminService sysAdminService,
             com.godaddy.vps4.network.NetworkService vps4NetworkService, VirtualMachineService virtualMachineService,
-            CreateVmAction action, ExecutorService threadPool, ProvisionVmInfo vmInfo) {
+            CPanelService cPanelService, CreateVmAction action, ExecutorService threadPool, ProvisionVmInfo vmInfo) {
         this.vmService = vmService;
         this.hfsNetworkService = hfsNetworkService;
         this.sysAdminService = sysAdminService;
         this.action = action;
         this.threadPool = threadPool;
         this.vps4NetworkService = vps4NetworkService;
+        this.cPanelService = cPanelService;
         this.virtualMachineService = virtualMachineService;
         this.vmInfo = vmInfo;
     }
@@ -64,53 +70,58 @@ public class ProvisionVmWorker implements Runnable {
         action.status = ActionStatus.IN_PROGRESS;
         VmAction hfsCreateVmAction = null;
 
-        IpAddress ip = allocatedIp();
-
-        if (action.status != ActionStatus.ERROR) {
+        try {
+            IpAddress ip = allocatedIp();
 
             hfsCreateVmAction = provisionVm(ip);
 
             if (hfsCreateVmAction != null) {
                 action.vm = vmService.getVm(hfsCreateVmAction.vmId);
             }
-        }
-
-        if (action.status != ActionStatus.ERROR) {
 
             bindIp(ip, hfsCreateVmAction);
-        }
 
-        if (action.status != ActionStatus.ERROR){
-            virtualMachineService.provisionVirtualMachine(action.vm.vmId, vmInfo.orionGuid, vmInfo.name, vmInfo.projectId, 
-                    vmInfo.specId, vmInfo.managedLevel, vmInfo.imageId);
-        }
-        
-        if (action.status != ActionStatus.ERROR){
+            virtualMachineService.provisionVirtualMachine(action.vm.vmId, vmInfo.orionGuid, vmInfo.name, vmInfo.projectId,
+                    vmInfo.specId, vmInfo.managedLevel, vmInfo.image.imageId);
+
+            if (vmInfo.image.controlPanel == ControlPanel.CPANEL) {
+                runCPanelConfig(action.vm.vmId, ip.address);
+            }
+
             setAdminAccess();
-        }
-        
-        if (action.status != ActionStatus.ERROR) {      
+
             action.step = CreateVmStep.SetupComplete;
             action.status = ActionStatus.COMPLETE;
+
+            logger.info("provision vm finished with status {} for action: {}", hfsCreateVmAction);
         }
-        
-        logger.info("provision vm finished with status {} for action: {}", hfsCreateVmAction);
+        catch (Vps4Exception e) {
+            action.status = ActionStatus.ERROR;
+            action.message = e.toString();
+            logger.warn("Provision VM Failed: action={} exception={}", action.toString(), e.toString());
+        }
+    }
+
+    private void runCPanelConfig(long vmId, String publicIp) {
+
+        action.step = CreateVmStep.ConfiguringCPanel;
+
+        ImageConfigAction imageConfigAction = new ImageConfigAction(vmId, publicIp);
+        ImageConfigWorker imageConfigWorker = new ImageConfigWorker(imageConfigAction, cPanelService);
+        imageConfigWorker.run();
+
+        if (imageConfigAction.status == ActionStatus.ERROR) {
+            throw new Vps4Exception(provisionFailedId, String.format("failed cpanel image config on vmId %d", vmId));
+        }
     }
 
     private void bindIp(IpAddress ip, VmAction hfsAction) {
         action.step = CreateVmStep.ConfiguringNetwork;
-        try {
-            BindIpAction bindIpAction = new BindIpAction(ip.addressId, hfsAction.vmId);
-            new BindIpWorker(bindIpAction, hfsNetworkService).run();
+        BindIpAction bindIpAction = new BindIpAction(ip.addressId, hfsAction.vmId);
+        new BindIpWorker(bindIpAction, hfsNetworkService).run();
 
-            if (bindIpAction.status == ActionStatus.ERROR) {
-                action.status = ActionStatus.ERROR;
-                logger.warn("failed to bind addressId {} to vmId {}, action: {}", ip.addressId, hfsAction.vmId, bindIpAction);
-            }
-        }
-        catch (Vps4Exception e) {
-            action.status = ActionStatus.ERROR;
-            logger.warn("failed to bind addressId {} to vmId {}", ip.addressId, hfsAction.vmId);
+        if (bindIpAction.status == ActionStatus.ERROR) {
+            throw new Vps4Exception(provisionFailedId, String.format("failed to bind ip, action: %s", bindIpAction));
         }
     }
 
@@ -122,12 +133,15 @@ public class ProvisionVmWorker implements Runnable {
         action.hfsProvisionRequest.hostname = HostnameGenerator.getHostname(ip.address);
 
         action.step = CreateVmStep.RequestingServer;
-        VmAction hfsAction = vmService.createVm(action.hfsProvisionRequest);
-        hfsAction = waitForVmAction(hfsAction);
+        VmAction hfsAction = null;
+        hfsAction = vmService.createVm(action.hfsProvisionRequest);
 
-        if (!hfsAction.state.equals("COMPLETE")) {
-            logger.warn("failed to provision VM, action: {}", hfsAction);
-            action.status = ActionStatus.ERROR;
+        if (hfsAction != null) {
+            hfsAction = waitForVmAction(hfsAction);
+
+            if (!hfsAction.state.equals("COMPLETE")) {
+                throw new Vps4Exception(provisionFailedId, String.format("failed to provision VM, action: %s", hfsAction));
+            }
         }
         return hfsAction;
     }
@@ -135,15 +149,8 @@ public class ProvisionVmWorker implements Runnable {
     private IpAddress allocatedIp() {
         action.step = CreateVmStep.RequestingIPAddress;
 
-        IpAddress ip = null;
-        try {
-            ip = new AllocateIpWorker(hfsNetworkService, action.project, vps4NetworkService).call();
-            action.ip = ip;
-        }
-        catch (Vps4Exception e) {
-            action.status = ActionStatus.ERROR;
-            logger.warn("failed to allocate an IP: {}", action);
-        }
+        IpAddress ip = new AllocateIpWorker(hfsNetworkService, action.project, vps4NetworkService).call();
+        action.ip = ip;
         return ip;
     }
 
@@ -156,19 +163,9 @@ public class ProvisionVmWorker implements Runnable {
         hfsTicksMap.put(3, CreateVmStep.ConfiguringServer);
         return hfsTicksMap;
     }
-    
-    private void setAdminAccess(){
-        Runnable adminWorker;
-        // unmanaged = enable admin access
-        adminWorker = new ToggleAdminWorker(sysAdminService, action.vm.vmId, vmInfo.username, vmInfo.managedLevel < 1);
 
-        try{
-            adminWorker.run();
-        }
-        catch(Vps4Exception e){
-            action.status = Action.ActionStatus.ERROR;
-            logger.warn("Failed to set admin access");
-        }
+    private void setAdminAccess() {
+        new ToggleAdminWorker(sysAdminService, action.vm.vmId, action.hfsProvisionRequest.username, vmInfo.managedLevel < 1).run();
     }
 
     protected VmAction waitForVmAction(VmAction hfsAction) {

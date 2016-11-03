@@ -36,6 +36,7 @@ import com.godaddy.vps4.security.PrivilegeService;
 import com.godaddy.vps4.security.User;
 import com.godaddy.vps4.vm.CombinedVm;
 import com.godaddy.vps4.vm.ControlPanelService;
+import com.godaddy.vps4.vm.Image;
 import com.godaddy.vps4.vm.ImageService;
 import com.godaddy.vps4.vm.OsTypeService;
 import com.godaddy.vps4.vm.VirtualMachine;
@@ -48,6 +49,7 @@ import com.godaddy.vps4.web.Vps4Api;
 import com.godaddy.vps4.web.sysadmin.SetAdminAction;
 import com.godaddy.vps4.web.sysadmin.ToggleAdminWorker;
 
+import gdg.hfs.vhfs.cpanel.CPanelService;
 import gdg.hfs.vhfs.network.IpAddress;
 import gdg.hfs.vhfs.network.NetworkService;
 import gdg.hfs.vhfs.sysadmin.SysAdminService;
@@ -80,13 +82,15 @@ public class VmResource {
     final ImageService imageService;
     final SysAdminService sysAdminService;
     final com.godaddy.vps4.network.NetworkService vps4NetworkService;
+    final CPanelService cPanelService;
 
     // TODO: Break this up into multiple classes to reduce number of
     // dependencies.
     @Inject
-    public VmResource(SysAdminService sysAdminService, PrivilegeService privilegeService, User user, VmService vmService, NetworkService hfsNetworkService,
-            VirtualMachineService virtualMachineService, ControlPanelService controlPanelService, OsTypeService osTypeService,
-            ProjectService projectService, ImageService imageService, com.godaddy.vps4.network.NetworkService vps4NetworkService) {
+    public VmResource(SysAdminService sysAdminService, PrivilegeService privilegeService, User user, VmService vmService,
+            NetworkService hfsNetworkService, VirtualMachineService virtualMachineService, ControlPanelService controlPanelService,
+            OsTypeService osTypeService, ProjectService projectService, ImageService imageService,
+            com.godaddy.vps4.network.NetworkService vps4NetworkService, CPanelService cPanelService) {
         this.sysAdminService = sysAdminService;
         this.user = user;
         this.virtualMachineService = virtualMachineService;
@@ -98,6 +102,7 @@ public class VmResource {
         this.projectService = projectService;
         this.imageService = imageService;
         this.vps4NetworkService = vps4NetworkService;
+        this.cPanelService = cPanelService;
     }
 
     @GET
@@ -148,7 +153,7 @@ public class VmResource {
         }
 
         privilegeService.requireAnyPrivilegeToSgid(user, virtualMachine.projectId);
-        
+
         VirtualMachineRequest req = virtualMachineService.getVirtualMachineRequest(orionGuid);
 
         // now reach out to the VM vertical to get all the details
@@ -183,49 +188,48 @@ public class VmResource {
         return virtualMachineService.getVirtualMachineRequest(orionGuid);
 
     }
-    
+
     public static class SetAdminRequest {
         public String username;
     }
-    
+
     @POST
     @Path("/{vmId}/enableAdmin")
-    public SetAdminAction enableUserAdmin(@QueryParam("vmId") long vmId, SetAdminRequest setAdminRequest){
+    public SetAdminAction enableUserAdmin(@QueryParam("vmId") long vmId, SetAdminRequest setAdminRequest) {
         SetAdminAction action = new SetAdminAction(setAdminRequest.username, vmId, true);
         setUserAdmin(action);
         return action;
     }
-    
+
     @POST
     @Path("/{vmId}/disableAdmin")
-    public SetAdminAction disableUserAdmin(@QueryParam("vmId") long vmId, SetAdminRequest setAdminRequest){
+    public SetAdminAction disableUserAdmin(@QueryParam("vmId") long vmId, SetAdminRequest setAdminRequest) {
         SetAdminAction action = new SetAdminAction(setAdminRequest.username, vmId, false);
         setUserAdmin(action);
         return action;
     }
 
-
     private void setUserAdmin(SetAdminAction action) {
         actions.put(action.actionId, action);
         ToggleAdminWorker worker = new ToggleAdminWorker(sysAdminService, action);
-        
-            action.status = Action.ActionStatus.IN_PROGRESS;
-            threadPool.execute(() -> {
-                try{
-                    worker.run();
-                }
-                catch (Vps4Exception e){
-                    action.status = Action.ActionStatus.ERROR;
-                }
-            });
-        
+
+        action.status = Action.ActionStatus.IN_PROGRESS;
+        threadPool.execute(() -> {
+            try {
+                worker.run();
+            }
+            catch (Vps4Exception e) {
+                action.status = Action.ActionStatus.ERROR;
+            }
+        });
+
     }
-    
+
     public static class ProvisionVmRequest {
         public String name;
-        public UUID   orionGuid;
+        public UUID orionGuid;
         public String image;
-        public int    dataCenterId;
+        public int dataCenterId;
         public String username;
         public String password;
     }
@@ -235,25 +239,23 @@ public class VmResource {
     public CreateVmAction getProvisionAction(@PathParam("orionGuid") UUID orionGuid) {
         return provisionActions.get(orionGuid);
     }
-    
-    public static class ProvisionVmInfo{
+
+    public static class ProvisionVmInfo {
         public UUID orionGuid;
         public String name;
         public long projectId;
         public int specId;
         public int managedLevel;
-        public int imageId;
-        public String username;
-        
-        public ProvisionVmInfo(UUID orionGuid, String name, long projectId, int specId, 
-                                int managedLevel, int imageId, String username){
+        public Image image;
+
+        public ProvisionVmInfo(UUID orionGuid, String name, long projectId, int specId,
+                int managedLevel, Image image) {
             this.orionGuid = orionGuid;
             this.name = name;
             this.projectId = projectId;
             this.specId = specId;
             this.managedLevel = managedLevel;
-            this.imageId = imageId;
-            this.username = username;
+            this.image = image;
         }
     }
 
@@ -269,30 +271,32 @@ public class VmResource {
 
         VirtualMachineSpec spec = getVirtualMachineSpec(request);
 
-        int imageId = getImageId(provisionRequest.image);
+        Image image = getImage(provisionRequest.image);
+        // TODO - verify that the image maches the request (control panel, managed level, OS)
 
         // FIXME need to get the action back to the caller so they can poll the status/steps/ticks
-        CreateVmAction action = new CreateVmAction();
+        ProvisionVMRequest hfsRequest = createHfsProvisionVmRequest(provisionRequest.image, provisionRequest.username,
+                provisionRequest.password, project, spec);
+        CreateVmAction action = new CreateVmAction(hfsRequest);
         action.actionId = actionIdPool.incrementAndGet();
         logger.debug("Action.actionid = {}", action.actionId);
-        action.hfsProvisionRequest = createHfsProvisionVmRequest(provisionRequest.image, provisionRequest.username, provisionRequest.password, project, spec);
         action.project = project;
         actions.put(action.actionId, action);
         provisionActions.put(provisionRequest.orionGuid, action);
         ProvisionVmInfo vmInfo = new ProvisionVmInfo(provisionRequest.orionGuid, provisionRequest.name, project.getProjectId(),
-                                                     spec.specId, request.managedLevel, imageId, provisionRequest.username);
-        final ProvisionVmWorker provisionWorker = new ProvisionVmWorker(vmService, hfsNetworkService, sysAdminService,  
-                                                                        vps4NetworkService, virtualMachineService,
-                                                                        action, threadPool, vmInfo);
+                spec.specId, request.managedLevel, image);
+        final ProvisionVmWorker provisionWorker = new ProvisionVmWorker(vmService, hfsNetworkService, sysAdminService,
+                vps4NetworkService, virtualMachineService, cPanelService,
+                action, threadPool, vmInfo);
         threadPool.execute(() -> {
             provisionWorker.run();
         });
-        
+
         if (action.status != ActionStatus.ERROR) {
             action.step = CreateVmStep.SetupComplete;
             action.status = ActionStatus.COMPLETE;
         }
-        
+
         return action;
     }
 
@@ -305,7 +309,6 @@ public class VmResource {
 
         hfsProvisionRequest.sgid = project.getVhfsSgid();
         hfsProvisionRequest.image_name = image;
-        hfsProvisionRequest.os = image;
 
         hfsProvisionRequest.username = username;
         hfsProvisionRequest.password = password;
@@ -337,12 +340,12 @@ public class VmResource {
         return spec;
     }
 
-    private int getImageId(String image) {
-        int imageId = imageService.getImageId(image);
-        if (imageId == 0) {
+    private Image getImage(String name) {
+        Image image = imageService.getImage(name);
+        if (image == null) {
             throw new Vps4Exception("INVALID_IMAGE", String.format("image %s not found", image));
         }
-        return imageId;
+        return image;
     }
 
     @DELETE
@@ -370,7 +373,11 @@ public class VmResource {
 
     public static class CreateVmAction extends Action {
 
-        public ProvisionVMRequest hfsProvisionRequest = new ProvisionVMRequest();
+        public CreateVmAction(ProvisionVMRequest request) {
+            hfsProvisionRequest = request;
+        }
+
+        public final ProvisionVMRequest hfsProvisionRequest;
 
         public volatile Project project;
         public volatile Vm vm;
@@ -378,9 +385,37 @@ public class VmResource {
         public volatile CreateVmStep step;
 
         public CreateVmStep[] steps = CreateVmStep.values();
+
+        @Override
+        public String toString() {
+            StringBuilder stringBuilder = new StringBuilder();
+            stringBuilder.append("CreateVMAction [id: ");
+            stringBuilder.append(actionId);
+            stringBuilder.append(", status: ");
+            stringBuilder.append(status);
+            stringBuilder.append(", step: ");
+            stringBuilder.append(step);
+            stringBuilder.append(", message: ");
+            stringBuilder.append(message);
+            if (project != null) {
+                stringBuilder.append(", project: ");
+                stringBuilder.append(project.getName());
+            }
+            if (vm != null) {
+                stringBuilder.append(", vmId: ");
+                stringBuilder.append(vm.vmId);
+            }
+            if (ip != null) {
+                stringBuilder.append(", addressId: ");
+                stringBuilder.append(ip.addressId);
+            }
+            stringBuilder.append("]");
+            return stringBuilder.toString();
+        }
     }
 
     public static class DestroyVmAction extends Action {
         public VirtualMachine virtualMachine;
     }
+
 }

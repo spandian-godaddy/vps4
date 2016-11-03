@@ -10,5 +10,7 @@ public interface ImageService {
 
     void removeCompatibleImage(String name);
 
-    int getImageId(String image);
+    int getImageId(String name);
+
+    Image getImage(String name);
 }

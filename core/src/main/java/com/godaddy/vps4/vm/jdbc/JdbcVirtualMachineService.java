@@ -127,7 +127,7 @@ public class JdbcVirtualMachineService implements VirtualMachineService {
     }
 
     @Override
-    public void provisionVirtualMachine(long vmId, UUID orionGuid, String name, long projectId, int specId, int managedLevel, int imageId) {
+    public void provisionVirtualMachine(long vmId, UUID orionGuid, String name, long projectId, int specId, int managedLevel, long imageId) {
         Sql.with(dataSource).exec("SELECT * FROM virtual_machine_provision(?, ?, ?, ?, ?, ?, ?)", null, vmId, orionGuid, name, projectId,
                 specId, managedLevel, imageId);
     }

@@ -4,7 +4,7 @@ CREATE OR REPLACE FUNCTION virtual_machine_provision(p_vm_id BIGINT
 	, p_project_id BIGINT
 	, p_spec_id INT
 	, p_managed_level INT
-	, p_image_id INT)
+	, p_image_id BIGINT)
 
     RETURNS VOID AS $$
 DECLARE

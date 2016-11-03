@@ -80,7 +80,7 @@ public class VirtualMachineServiceTest {
 
         String name = "testServer";
         int vmId = 1;
-        int imageId = 1;
+        long imageId = 1;
         int specId = 1;
 
         virtualMachineService.provisionVirtualMachine(vmId, orionGuid, name, project.getProjectId(), specId, managedLevel, imageId);

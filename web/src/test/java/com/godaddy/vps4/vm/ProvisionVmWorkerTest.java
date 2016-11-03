@@ -21,19 +21,21 @@ import com.godaddy.vps4.hfs.Vm;
 import com.godaddy.vps4.hfs.VmAction;
 import com.godaddy.vps4.hfs.VmService;
 import com.godaddy.vps4.project.Project;
+import com.godaddy.vps4.vm.Image.ControlPanel;
 import com.godaddy.vps4.web.Action.ActionStatus;
 import com.godaddy.vps4.web.vm.CreateVmStep;
 import com.godaddy.vps4.web.vm.ProvisionVmWorker;
 import com.godaddy.vps4.web.vm.VmResource.CreateVmAction;
 import com.godaddy.vps4.web.vm.VmResource.ProvisionVmInfo;
 
+import gdg.hfs.vhfs.cpanel.CPanelAction;
+import gdg.hfs.vhfs.cpanel.CPanelService;
 import gdg.hfs.vhfs.network.AddressAction;
 import gdg.hfs.vhfs.network.AddressAction.Status;
 import gdg.hfs.vhfs.network.IpAddress;
 import gdg.hfs.vhfs.network.NetworkService;
-import gdg.hfs.vhfs.sysadmin.SysAdminService;
 import gdg.hfs.vhfs.sysadmin.SysAdminAction;
-
+import gdg.hfs.vhfs.sysadmin.SysAdminService;
 
 public class ProvisionVmWorkerTest {
 
@@ -42,6 +44,7 @@ public class ProvisionVmWorkerTest {
     private SysAdminService sysAdminService;
     private ExecutorService threadPool;
     private com.godaddy.vps4.network.NetworkService vps4NetworkService;
+    private CPanelService cPanelService;
 
     private IpAddress ip;
     private VmAction vmActionInProgress;
@@ -56,9 +59,10 @@ public class ProvisionVmWorkerTest {
     private String name;
     private long projectId;
     private int specId;
-    private int managedLevel; 
+    private int managedLevel;
     private int imageId;
     private String username;
+    private Image image;
 
     @Before
     public void setup() {
@@ -68,9 +72,17 @@ public class ProvisionVmWorkerTest {
         sysAdminService = Mockito.mock(SysAdminService.class);
         threadPool = Executors.newCachedThreadPool();
         vps4NetworkService = Mockito.mock(com.godaddy.vps4.network.NetworkService.class);
+        cPanelService = Mockito.mock(CPanelService.class);
         virtualMachineService = Mockito.mock(VirtualMachineService.class);
-        
-        
+
+        orionGuid = UUID.randomUUID();
+        name = "testName";
+        projectId = 1;
+        specId = 1;
+        managedLevel = 1;
+        imageId = 1;
+        username = "testuser";
+
         ip = new IpAddress();
         ip.address = "127.0.0.1";
         ip.addressId = 123;
@@ -86,18 +98,23 @@ public class ProvisionVmWorkerTest {
         sysAdminActionInProgress.status = SysAdminAction.Status.IN_PROGRESS;
         sysAdminActionInProgress.vmId = 12;
         sysAdminActionInProgress.sysAdminActionId = 123321;
-        
+
         sysAdminActionComplete = new SysAdminAction();
         sysAdminActionComplete.status = SysAdminAction.Status.COMPLETE;
         sysAdminActionComplete.vmId = 12;
         sysAdminActionComplete.sysAdminActionId = 123321;
-        
+
         vmActionAfter = new VmAction();
         vmActionAfter.state = "COMPLETE";
         vmActionAfter.vmId = vmActionInProgress.vmId;
         vmActionAfter.vmActionId = vmActionInProgress.vmActionId;
 
-        action = new CreateVmAction();
+        image = new Image();
+        image.controlPanel = ControlPanel.NONE;
+
+        ProvisionVMRequest hfsRequest = new ProvisionVMRequest();
+        hfsRequest.username = username;
+        action = new CreateVmAction(hfsRequest);
         action.status = ActionStatus.IN_PROGRESS;
         Project project = new Project(1, "testProject", "vps4-1", 1, Instant.now(), Instant.MAX);
         action.project = project;
@@ -108,25 +125,16 @@ public class ProvisionVmWorkerTest {
         addressAction = new AddressAction();
         addressAction.status = Status.COMPLETE;
         addressAction.addressId = ip.addressId;
-        
-        
-        orionGuid = UUID.randomUUID();
-        name = "testName";
-        projectId = 1;
-        specId = 1;
-        managedLevel = 1; 
-        imageId = 1;
-        username = "testuser";
     }
-    
-    private void runProvisionVmWorker(){
-        ProvisionVmInfo vmInfo = new ProvisionVmInfo(orionGuid, name, projectId, specId, managedLevel, imageId, username);
+
+    private void runProvisionVmWorker() {
+        ProvisionVmInfo vmInfo = new ProvisionVmInfo(orionGuid, name, projectId, specId, managedLevel, image);
         ProvisionVmWorker worker = new ProvisionVmWorker(vmService, hfsNetworkSerivce, sysAdminService,
-                vps4NetworkService, virtualMachineService, action, threadPool, vmInfo);
+                vps4NetworkService, virtualMachineService, cPanelService, action, threadPool, vmInfo);
         worker.run();
     }
-    
-    private void runProvisionVmWorkerSuccessfully()  throws InterruptedException {
+
+    private void runProvisionVmWorkerSuccessfully() throws InterruptedException {
         Mockito.when(vmService.createVm(action.hfsProvisionRequest)).thenReturn(vmActionInProgress);
         Mockito.when(vmService.getVmAction(vmActionInProgress.vmId, vmActionInProgress.vmActionId)).thenReturn(vmActionAfter);
         Mockito.when(vmService.getVm(vmActionAfter.vmId)).thenReturn(vm);
@@ -138,7 +146,7 @@ public class ProvisionVmWorkerTest {
         Mockito.when(sysAdminService.enableAdmin(vm.vmId, username)).thenReturn(sysAdminActionInProgress);
         Mockito.when(sysAdminService.disableAdmin(vm.vmId, username)).thenReturn(sysAdminActionInProgress);
         Mockito.when(sysAdminService.getSysAdminAction(sysAdminActionInProgress.sysAdminActionId)).thenReturn(sysAdminActionComplete);
-        
+
         runProvisionVmWorker();
 
         threadPool.shutdown();
@@ -147,7 +155,7 @@ public class ProvisionVmWorkerTest {
 
     @Test
     public void provisionVmTest() throws InterruptedException {
-        
+
         runProvisionVmWorkerSuccessfully();
 
         assertEquals(vmActionAfter.vmId, action.vm.vmId);
@@ -161,33 +169,33 @@ public class ProvisionVmWorkerTest {
         verify(sysAdminService, times(1)).enableAdmin(vm.vmId, username);
         verify(sysAdminService, times(1)).disableAdmin(vm.vmId, username);
     }
-    
+
     @Test
     public void provisionVmTestUnmanaged() throws InterruptedException {
         // Unmanaged should not disable admin access on provision.
-        managedLevel=0;
-        
+        managedLevel = 0;
+
         runProvisionVmWorkerSuccessfully();
 
         verify(sysAdminService, times(1)).enableAdmin(vm.vmId, username);
         verify(sysAdminService, times(0)).disableAdmin(vm.vmId, username);
     }
-    
+
     @Test
-    public void disableAdminAccessFails() throws InterruptedException{
+    public void disableAdminAccessFails() throws InterruptedException {
         sysAdminActionComplete.status = SysAdminAction.Status.FAILED;
         runProvisionVmWorkerSuccessfully();
         assertEquals(ActionStatus.ERROR, action.status);
     }
-    
+
     @Test
-    public void enableAdminAccessFails() throws InterruptedException{
-        managedLevel=0;
+    public void enableAdminAccessFails() throws InterruptedException {
+        managedLevel = 0;
         sysAdminActionComplete.status = SysAdminAction.Status.FAILED;
         runProvisionVmWorkerSuccessfully();
         assertEquals(ActionStatus.ERROR, action.status);
     }
-    
+
     @Test
     public void provisionVmAllocateIpFailsTest() throws InterruptedException {
 
@@ -210,7 +218,7 @@ public class ProvisionVmWorkerTest {
     }
 
     @Test
-    public void provisionVmPorvisionFailsTest() throws InterruptedException {
+    public void provisionVmProvisionFailsTest() throws InterruptedException {
 
         vmActionAfter.state = "FAILED";
         vmActionInProgress.tickNum = 3;
@@ -265,5 +273,46 @@ public class ProvisionVmWorkerTest {
         verify(vmService, times(1)).createVm(any(ProvisionVMRequest.class));
         verify(hfsNetworkSerivce, times(1)).acquireIp(action.project.getVhfsSgid());
         verify(hfsNetworkSerivce, times(1)).bindIp(ip.addressId, vmActionAfter.vmId);
+    }
+
+    @Test
+    public void provisionCPanelVmTest() throws InterruptedException {
+
+        CPanelAction cpanelActionInProgress = new CPanelAction();
+        cpanelActionInProgress.status = CPanelAction.Status.IN_PROGRESS;
+        cpanelActionInProgress.actionId = 123456;
+
+        CPanelAction cpanelActionComplete = new CPanelAction();
+        cpanelActionComplete.status = CPanelAction.Status.COMPLETE;
+
+        Mockito.when(cPanelService.imageConfig(vmActionInProgress.vmId, ip.address)).thenReturn(cpanelActionInProgress);
+        Mockito.when(cPanelService.getAction(cpanelActionInProgress.actionId)).thenReturn(cpanelActionComplete);
+
+        image.controlPanel = ControlPanel.CPANEL;
+
+        runProvisionVmWorkerSuccessfully();
+
+        assertEquals(ActionStatus.COMPLETE, action.status);
+        assertEquals(CreateVmStep.SetupComplete, action.step);
+
+        verify(cPanelService, times(1)).imageConfig(vmActionInProgress.vmId, ip.address);
+    }
+
+    @Test
+    public void provisionCPanelVmConfigFailsTest() throws InterruptedException {
+
+        CPanelAction cpanelActionInProgress = new CPanelAction();
+        cpanelActionInProgress.status = CPanelAction.Status.FAILED;
+
+        Mockito.when(cPanelService.imageConfig(vmActionInProgress.vmId, ip.address)).thenReturn(cpanelActionInProgress);
+
+        image.controlPanel = ControlPanel.CPANEL;
+
+        runProvisionVmWorkerSuccessfully();
+
+        assertEquals(ActionStatus.ERROR, action.status);
+        assertEquals(CreateVmStep.ConfiguringCPanel, action.step);
+
+        verify(cPanelService, times(1)).imageConfig(vmActionInProgress.vmId, ip.address);
     }
 }

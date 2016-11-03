@@ -33,8 +33,8 @@ public interface VirtualMachineService {
 
     VirtualMachineRequest getVirtualMachineRequest(UUID orionGuid);
 
-    void provisionVirtualMachine(long vmId, UUID orionGuid, String name, long projectId, int specId, int managedLevel, int imageId);
-    
+    void provisionVirtualMachine(long vmId, UUID orionGuid, String name, long projectId, int specId, int managedLevel, long imageId);
+
     void updateVirtualMachine(long vmId, Map<String, Object> paramsToUpdate);
 
 }

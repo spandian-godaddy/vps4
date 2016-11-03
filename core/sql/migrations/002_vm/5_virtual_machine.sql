@@ -15,7 +15,7 @@ CREATE TABLE virtual_machine (
     , project_id 		BIGINT   NOT NULL REFERENCES project(project_id) 
     , spec_id    		SMALLINT NOT NULL REFERENCES virtual_machine_spec(spec_id)
     , managed_level		INTEGER	 NOT NULL
-    , image_id			INTEGER  NOT NULL REFERENCES image(image_id)
+    , image_id			BIGINT   NOT NULL REFERENCES image(image_id)
     
     , valid_on          TIMESTAMP NOT NULL DEFAULT NOW()
     , valid_until       TIMESTAMP NOT NULL DEFAULT 'infinity'

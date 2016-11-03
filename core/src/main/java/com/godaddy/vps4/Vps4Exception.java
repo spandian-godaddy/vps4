@@ -20,4 +20,19 @@ public class Vps4Exception extends RuntimeException {
         return id;
     }
 
+    @Override
+    public String toString() {
+        StringBuilder builder = new StringBuilder();
+        builder.append("Vps4Exception: id=");
+        builder.append(id);
+        builder.append(", message=");
+        builder.append(getMessage());
+        if (this.getCause() != null) {
+            builder.append(", cause=");
+            builder.append(getCause().toString());
+        }
+
+        return builder.toString();
+    }
+
 }

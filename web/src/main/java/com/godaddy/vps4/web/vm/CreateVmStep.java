@@ -10,5 +10,6 @@ public enum CreateVmStep {
     ConfiguringNetwork,
     SettingAdminAccess,
     VerifyingSetup,
-    SetupComplete;
+    SetupComplete,
+    ConfiguringCPanel;
 }
