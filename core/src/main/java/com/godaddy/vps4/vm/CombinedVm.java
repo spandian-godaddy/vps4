@@ -2,7 +2,7 @@ package com.godaddy.vps4.vm;
 
 import java.time.Instant;
 
-import com.godaddy.vps4.hfs.Vm;
+import gdg.hfs.vhfs.vm.Vm;
 
 public class CombinedVm {
     public long vmId;
@@ -17,21 +17,22 @@ public class CombinedVm {
     public Instant validUntil;
     public String controlPanel;
 
-    public CombinedVm(){}
-    
+    public CombinedVm() {
+    }
+
     public CombinedVm(Vm vm) {
         this(vm, null, null);
     }
 
     public CombinedVm(Vm vm, VirtualMachine virtualMachine, VirtualMachineRequest vmRequest) {
-        if(vm != null) {
-        	vmId = vm.vmId;
+        if (vm != null) {
+            vmId = vm.vmId;
             status = vm.status;
             running = vm.running;
             useable = vm.useable;
-            if(vm.address != null)
+            if (vm.address != null)
                 address = vm.address.ip_address;
-            if(vm.osinfo != null)
+            if (vm.osinfo != null)
                 image = vm.osinfo.name;
         }
 
@@ -41,8 +42,8 @@ public class CombinedVm {
             validOn = virtualMachine.validOn;
             validUntil = virtualMachine.validUntil;
         }
-        
-        if (vmRequest != null){
+
+        if (vmRequest != null) {
             controlPanel = vmRequest.controlPanel;
         }
     }

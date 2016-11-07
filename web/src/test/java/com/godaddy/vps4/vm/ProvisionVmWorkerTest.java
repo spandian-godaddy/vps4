@@ -16,10 +16,6 @@ import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mockito;
 
-import com.godaddy.vps4.hfs.ProvisionVMRequest;
-import com.godaddy.vps4.hfs.Vm;
-import com.godaddy.vps4.hfs.VmAction;
-import com.godaddy.vps4.hfs.VmService;
 import com.godaddy.vps4.project.Project;
 import com.godaddy.vps4.vm.Image.ControlPanel;
 import com.godaddy.vps4.web.Action.ActionStatus;
@@ -36,6 +32,10 @@ import gdg.hfs.vhfs.network.IpAddress;
 import gdg.hfs.vhfs.network.NetworkService;
 import gdg.hfs.vhfs.sysadmin.SysAdminAction;
 import gdg.hfs.vhfs.sysadmin.SysAdminService;
+import gdg.hfs.vhfs.vm.CreateVMRequest;
+import gdg.hfs.vhfs.vm.Vm;
+import gdg.hfs.vhfs.vm.VmAction;
+import gdg.hfs.vhfs.vm.VmService;
 
 public class ProvisionVmWorkerTest {
 
@@ -110,7 +110,7 @@ public class ProvisionVmWorkerTest {
         image = new Image();
         image.controlPanel = ControlPanel.NONE;
 
-        ProvisionVMRequest hfsRequest = new ProvisionVMRequest();
+        CreateVMRequest hfsRequest = new CreateVMRequest();
         hfsRequest.username = username;
         action = new CreateVmAction(hfsRequest);
         action.status = ActionStatus.IN_PROGRESS;
@@ -161,7 +161,7 @@ public class ProvisionVmWorkerTest {
         assertEquals(ip.addressId, action.ip.addressId);
         assertEquals(CreateVmStep.SetupComplete, action.step);
 
-        verify(vmService, times(1)).createVm(any(ProvisionVMRequest.class));
+        verify(vmService, times(1)).createVm(any(CreateVMRequest.class));
         verify(hfsNetworkSerivce, times(1)).acquireIp(action.project.getVhfsSgid());
         verify(hfsNetworkSerivce, times(1)).bindIp(ip.addressId, vmActionAfter.vmId);
         verify(sysAdminService, times(1)).enableAdmin(vm.vmId, username);
@@ -212,7 +212,7 @@ public class ProvisionVmWorkerTest {
         assertNull(action.ip);
         assertEquals(CreateVmStep.RequestingIPAddress, action.step);
 
-        verify(vmService, times(0)).createVm(any(ProvisionVMRequest.class));
+        verify(vmService, times(0)).createVm(any(CreateVMRequest.class));
     }
 
     @Test
@@ -238,7 +238,7 @@ public class ProvisionVmWorkerTest {
         assertEquals(ip.addressId, action.ip.addressId);
         assertEquals(CreateVmStep.ConfiguringServer, action.step);
 
-        verify(vmService, times(1)).createVm(any(ProvisionVMRequest.class));
+        verify(vmService, times(1)).createVm(any(CreateVMRequest.class));
         verify(hfsNetworkSerivce, times(1)).acquireIp(action.project.getVhfsSgid());
         verify(hfsNetworkSerivce, times(0)).bindIp(ip.addressId, vmActionAfter.vmId);
     }
@@ -268,7 +268,7 @@ public class ProvisionVmWorkerTest {
         assertEquals(ip.addressId, action.ip.addressId);
         assertEquals(CreateVmStep.ConfiguringNetwork, action.step);
 
-        verify(vmService, times(1)).createVm(any(ProvisionVMRequest.class));
+        verify(vmService, times(1)).createVm(any(CreateVMRequest.class));
         verify(hfsNetworkSerivce, times(1)).acquireIp(action.project.getVhfsSgid());
         verify(hfsNetworkSerivce, times(1)).bindIp(ip.addressId, vmActionAfter.vmId);
     }

@@ -25,11 +25,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.godaddy.vps4.Vps4Exception;
-import com.godaddy.vps4.hfs.Flavor;
-import com.godaddy.vps4.hfs.ProvisionVMRequest;
-import com.godaddy.vps4.hfs.Vm;
-import com.godaddy.vps4.hfs.VmService;
-import com.godaddy.vps4.hfs.VmService.FlavorList;
 import com.godaddy.vps4.project.Project;
 import com.godaddy.vps4.project.ProjectService;
 import com.godaddy.vps4.security.PrivilegeService;
@@ -53,6 +48,11 @@ import gdg.hfs.vhfs.cpanel.CPanelService;
 import gdg.hfs.vhfs.network.IpAddress;
 import gdg.hfs.vhfs.network.NetworkService;
 import gdg.hfs.vhfs.sysadmin.SysAdminService;
+import gdg.hfs.vhfs.vm.CreateVMRequest;
+import gdg.hfs.vhfs.vm.Flavor;
+import gdg.hfs.vhfs.vm.FlavorList;
+import gdg.hfs.vhfs.vm.Vm;
+import gdg.hfs.vhfs.vm.VmService;
 import io.swagger.annotations.Api;
 
 @Vps4Api
@@ -132,7 +132,7 @@ public class VmResource {
 
         logger.info("getting flavors from HFS...");
 
-        FlavorList flavorList = vmService.getFlavors();
+        FlavorList flavorList = vmService.listFlavors();
         logger.info("flavorList: {}", flavorList);
         if (flavorList != null && flavorList.results != null) {
             return flavorList.results;
@@ -275,7 +275,7 @@ public class VmResource {
         // TODO - verify that the image maches the request (control panel, managed level, OS)
 
         // FIXME need to get the action back to the caller so they can poll the status/steps/ticks
-        ProvisionVMRequest hfsRequest = createHfsProvisionVmRequest(provisionRequest.image, provisionRequest.username,
+        CreateVMRequest hfsRequest = createHfsProvisionVmRequest(provisionRequest.image, provisionRequest.username,
                 provisionRequest.password, project, spec);
         CreateVmAction action = new CreateVmAction(hfsRequest);
         action.actionId = actionIdPool.incrementAndGet();
@@ -300,9 +300,9 @@ public class VmResource {
         return action;
     }
 
-    private ProvisionVMRequest createHfsProvisionVmRequest(String image, String username, String password, Project project,
+    private CreateVMRequest createHfsProvisionVmRequest(String image, String username, String password, Project project,
             VirtualMachineSpec spec) {
-        ProvisionVMRequest hfsProvisionRequest = new ProvisionVMRequest();
+        CreateVMRequest hfsProvisionRequest = new CreateVMRequest();
         hfsProvisionRequest.cpuCores = (int) spec.cpuCoreCount;
         hfsProvisionRequest.diskGiB = (int) spec.diskGib;
         hfsProvisionRequest.ramMiB = (int) spec.memoryMib;
@@ -373,11 +373,11 @@ public class VmResource {
 
     public static class CreateVmAction extends Action {
 
-        public CreateVmAction(ProvisionVMRequest request) {
+        public CreateVmAction(CreateVMRequest request) {
             hfsProvisionRequest = request;
         }
 
-        public final ProvisionVMRequest hfsProvisionRequest;
+        public final CreateVMRequest hfsProvisionRequest;
 
         public volatile Project project;
         public volatile Vm vm;
