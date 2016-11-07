@@ -24,8 +24,6 @@ import org.mockito.Mockito;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
 
-import com.godaddy.vps4.hfs.VmAction;
-import com.godaddy.vps4.hfs.VmService;
 import com.godaddy.vps4.network.IpAddress;
 import com.godaddy.vps4.web.Action.ActionStatus;
 import com.godaddy.vps4.web.vm.DestroyVmWorker;
@@ -35,6 +33,8 @@ import com.google.inject.Injector;
 import gdg.hfs.vhfs.network.AddressAction;
 import gdg.hfs.vhfs.network.AddressAction.Status;
 import gdg.hfs.vhfs.network.NetworkService;
+import gdg.hfs.vhfs.vm.VmAction;
+import gdg.hfs.vhfs.vm.VmService;
 
 public class DestroyVmWorkerTest {
 

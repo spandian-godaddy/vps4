@@ -11,8 +11,6 @@ import java.util.concurrent.Future;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.godaddy.vps4.hfs.VmAction;
-import com.godaddy.vps4.hfs.VmService;
 import com.godaddy.vps4.network.IpAddress;
 import com.godaddy.vps4.vm.VirtualMachineService;
 import com.godaddy.vps4.web.Action;
@@ -23,6 +21,8 @@ import com.godaddy.vps4.web.network.UnbindIpWorker;
 import com.godaddy.vps4.web.vm.VmResource.DestroyVmAction;
 
 import gdg.hfs.vhfs.network.NetworkService;
+import gdg.hfs.vhfs.vm.VmAction;
+import gdg.hfs.vhfs.vm.VmService;
 
 public class DestroyVmWorker implements Runnable {
 

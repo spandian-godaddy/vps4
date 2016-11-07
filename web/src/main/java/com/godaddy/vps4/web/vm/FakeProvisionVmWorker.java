@@ -5,14 +5,13 @@ import java.util.UUID;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.godaddy.vps4.hfs.Vm;
-import com.godaddy.vps4.hfs.VmAction;
-import com.godaddy.vps4.hfs.VmAddress;
 import com.godaddy.vps4.vm.VirtualMachineService;
 import com.godaddy.vps4.web.Action.ActionStatus;
 import com.godaddy.vps4.web.vm.VmResource.CreateVmAction;
 
 import gdg.hfs.vhfs.network.IpAddress;
+import gdg.hfs.vhfs.vm.Vm;
+import gdg.hfs.vhfs.vm.VmAddress;
 
 public class FakeProvisionVmWorker implements Runnable {
 
@@ -26,11 +25,10 @@ public class FakeProvisionVmWorker implements Runnable {
     final int specId;
     final int managedLevel;
     final int imageId;
-    
 
     public FakeProvisionVmWorker(CreateVmAction action, VirtualMachineService virtualMachineService,
-                                UUID orionGuid, String name, long projectId, int specId,
-                                int managedLevel, int imageId) {
+            UUID orionGuid, String name, long projectId, int specId,
+            int managedLevel, int imageId) {
         this.action = action;
         this.virtualMachineService = virtualMachineService;
         this.orionGuid = orionGuid;
@@ -39,7 +37,7 @@ public class FakeProvisionVmWorker implements Runnable {
         this.specId = specId;
         this.managedLevel = managedLevel;
         this.imageId = imageId;
-        
+
     }
 
     @Override
@@ -77,13 +75,14 @@ public class FakeProvisionVmWorker implements Runnable {
         action.status = ActionStatus.COMPLETE;
 
         logger.info("provision vm finished with status {} for action: {}", action);
-        
+
     }
 
     static void sleep(long ms) {
         try {
             Thread.sleep(ms);
-        } catch (InterruptedException e) {
+        }
+        catch (InterruptedException e) {
             throw new RuntimeException(e);
         }
     }

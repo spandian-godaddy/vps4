@@ -10,8 +10,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.godaddy.vps4.Vps4Exception;
-import com.godaddy.vps4.hfs.VmAction;
-import com.godaddy.vps4.hfs.VmService;
 import com.godaddy.vps4.vm.HostnameGenerator;
 import com.godaddy.vps4.vm.Image.ControlPanel;
 import com.godaddy.vps4.vm.VirtualMachineService;
@@ -29,6 +27,8 @@ import gdg.hfs.vhfs.cpanel.CPanelService;
 import gdg.hfs.vhfs.network.IpAddress;
 import gdg.hfs.vhfs.network.NetworkService;
 import gdg.hfs.vhfs.sysadmin.SysAdminService;
+import gdg.hfs.vhfs.vm.VmAction;
+import gdg.hfs.vhfs.vm.VmService;
 
 public class ProvisionVmWorker implements Runnable {
 

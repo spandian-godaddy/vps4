@@ -4,17 +4,17 @@ import org.mockito.Mockito;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
 
-import com.godaddy.vps4.hfs.Vm;
-import com.godaddy.vps4.hfs.VmAction;
-import com.godaddy.vps4.hfs.VmService;
 import com.google.inject.AbstractModule;
 
 import gdg.hfs.vhfs.network.AddressAction;
 import gdg.hfs.vhfs.network.NetworkService;
 import gdg.hfs.vhfs.sysadmin.SysAdminService;
+import gdg.hfs.vhfs.vm.Vm;
+import gdg.hfs.vhfs.vm.VmAction;
+import gdg.hfs.vhfs.vm.VmService;
 
-public class HfsMockModule extends AbstractModule{
-    
+public class HfsMockModule extends AbstractModule {
+
     @Override
     public void configure() {
         NetworkService netService = buildMockNetworkService();
@@ -44,8 +44,9 @@ public class HfsMockModule extends AbstractModule{
         Answer<AddressAction> answer = new Answer<AddressAction>() {
             // returns 3 in progress responses then a complete response
             private int timesCalled = 0;
+
             public AddressAction answer(InvocationOnMock invocation) throws Throwable {
-                if (timesCalled < 3){
+                if (timesCalled < 3) {
                     timesCalled++;
                     return buildAddressAction(AddressAction.Status.IN_PROGRESS);
                 }
@@ -53,7 +54,7 @@ public class HfsMockModule extends AbstractModule{
                 return buildAddressAction(AddressAction.Status.COMPLETE);
             }
         };
-        
+
         NetworkService netService = Mockito.mock(NetworkService.class);
         AddressAction newAction = buildAddressAction(AddressAction.Status.NEW);
         Mockito.when(netService.unbindIp(0)).thenReturn(newAction);
@@ -61,8 +62,8 @@ public class HfsMockModule extends AbstractModule{
         Mockito.when(netService.getAddressAction(12345, 54321)).thenAnswer(answer);
         return netService;
     }
-    
-    private AddressAction buildAddressAction(AddressAction.Status status){
+
+    private AddressAction buildAddressAction(AddressAction.Status status) {
         AddressAction newAction = new AddressAction();
         newAction.status = status;
         newAction.addressId = 12345;
