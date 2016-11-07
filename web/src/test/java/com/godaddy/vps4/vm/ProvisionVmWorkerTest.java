@@ -60,7 +60,6 @@ public class ProvisionVmWorkerTest {
     private long projectId;
     private int specId;
     private int managedLevel;
-    private int imageId;
     private String username;
     private Image image;
 
@@ -80,7 +79,6 @@ public class ProvisionVmWorkerTest {
         projectId = 1;
         specId = 1;
         managedLevel = 1;
-        imageId = 1;
         username = "testuser";
 
         ip = new IpAddress();

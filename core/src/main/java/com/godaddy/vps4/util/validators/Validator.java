@@ -1,6 +1,5 @@
 package com.godaddy.vps4.util.validators;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
