@@ -34,7 +34,7 @@ public class HfsMockModule extends AbstractModule {
         VmAction completeDelAction = new VmAction();
         completeDelAction.vmActionId = 1111;
         completeDelAction.vmId = 0;
-        completeDelAction.state = "COMPLETE";
+        completeDelAction.state = VmAction.Status.COMPLETE;
         completeDelAction.tickNum = 1;
         Mockito.when(vmService.destroyVm(0)).thenReturn(completeDelAction);
         return vmService;

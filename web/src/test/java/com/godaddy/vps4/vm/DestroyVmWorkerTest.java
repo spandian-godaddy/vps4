@@ -79,8 +79,8 @@ public class DestroyVmWorkerTest {
         when(hfsNetworkSerivce.releaseIp(anyLong())).thenAnswer(getAddressActionAnswer(Status.IN_PROGRESS));
         when(hfsNetworkSerivce.getAddressAction(anyLong(), anyLong())).thenAnswer(getAddressActionAnswer(Status.COMPLETE));
 
-        when(vmService.destroyVm(action.virtualMachine.vmId)).thenAnswer(getVmActionAnswer("IN_PROGRESS"));
-        when(vmService.getVmAction(action.virtualMachine.vmId, 1)).thenAnswer(getVmActionAnswer("COMPLETE"));
+        when(vmService.destroyVm(action.virtualMachine.vmId)).thenAnswer(getVmActionAnswer(VmAction.Status.IN_PROGRESS));
+        when(vmService.getVmAction(action.virtualMachine.vmId, 1)).thenAnswer(getVmActionAnswer(VmAction.Status.COMPLETE));
 
         DestroyVmWorker worker = new DestroyVmWorker(action, vmService, hfsNetworkSerivce, vps4NetworkService, virtualMachineService,
                 threadPool);
@@ -95,7 +95,7 @@ public class DestroyVmWorkerTest {
         verify(virtualMachineService, times(1)).destroyVirtualMachine(action.virtualMachine.vmId);
     }
 
-    private Answer<VmAction> getVmActionAnswer(String state) {
+    private Answer<VmAction> getVmActionAnswer(VmAction.Status state) {
         return new Answer<VmAction>() {
 
             @Override
@@ -153,8 +153,8 @@ public class DestroyVmWorkerTest {
         when(hfsNetworkSerivce.releaseIp(anyLong())).thenAnswer(getAddressActionAnswer(Status.IN_PROGRESS));
         when(hfsNetworkSerivce.getAddressAction(anyLong(), anyLong())).thenAnswer(getAddressActionAnswer(Status.COMPLETE));
 
-        when(vmService.destroyVm(action.virtualMachine.vmId)).thenAnswer(getVmActionAnswer("IN_PROGRESS"));
-        when(vmService.getVmAction(action.virtualMachine.vmId, 1)).thenAnswer(getVmActionAnswer("ERROR"));
+        when(vmService.destroyVm(action.virtualMachine.vmId)).thenAnswer(getVmActionAnswer(VmAction.Status.IN_PROGRESS));
+        when(vmService.getVmAction(action.virtualMachine.vmId, 1)).thenAnswer(getVmActionAnswer(VmAction.Status.FAILED));
 
         DestroyVmWorker worker = new DestroyVmWorker(action, vmService, hfsNetworkSerivce, vps4NetworkService, virtualMachineService,
                 threadPool);

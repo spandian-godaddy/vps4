@@ -57,7 +57,8 @@ public class DestroyVmWorker implements Runnable {
             VmAction hfsAction = vmService.destroyVm(action.virtualMachine.vmId);
 
             // wait for the HFS action to complete
-            while (hfsAction.state.equals("REQUESTED") || hfsAction.state.equals("IN_PROGRESS")) {
+            while (hfsAction.state == VmAction.Status.NEW || hfsAction.state == VmAction.Status.REQUESTED
+                    || hfsAction.state == VmAction.Status.IN_PROGRESS) {
                 logger.info("waiting on VM to be destroyed: {}", hfsAction);
 
                 // give the VM time to be destroyed
@@ -72,7 +73,7 @@ public class DestroyVmWorker implements Runnable {
                 hfsAction = vmService.getVmAction(action.virtualMachine.vmId, hfsAction.vmActionId);
             }
 
-            if (hfsAction.state.equals("COMPLETE"))
+            if (hfsAction.state == VmAction.Status.COMPLETE)
                 logger.info("VM destroyed: {}", hfsAction);
             else {
                 logger.warn("VM destroy failed: {}", hfsAction);

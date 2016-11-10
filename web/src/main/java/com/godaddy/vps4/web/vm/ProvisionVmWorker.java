@@ -140,7 +140,7 @@ public class ProvisionVmWorker implements Runnable {
         if (hfsAction != null) {
             hfsAction = waitForVmAction(hfsAction);
 
-            if (!hfsAction.state.equals("COMPLETE")) {
+            if (!(hfsAction.state == VmAction.Status.COMPLETE)) {
                 throw new Vps4Exception(provisionFailedId, String.format("failed to provision VM, action: %s", hfsAction));
             }
         }
@@ -172,11 +172,12 @@ public class ProvisionVmWorker implements Runnable {
     protected VmAction waitForVmAction(VmAction hfsAction) {
         int currentHfsTick = 1;
         // wait for VmAction to complete
-        while (hfsAction.state.equals("REQUESTED") || hfsAction.state.equals("IN_PROGRESS")) {
+        while (hfsAction.state == VmAction.Status.NEW || hfsAction.state == VmAction.Status.REQUESTED
+                || hfsAction.state == VmAction.Status.IN_PROGRESS) {
 
             logger.info("waiting on VM to provision: {}", hfsAction);
 
-            if (hfsAction.state.equals("IN_PROGRESS")) {
+            if (hfsAction.state == VmAction.Status.IN_PROGRESS) {
                 action.vm = vmService.getVm(hfsAction.vmId);
                 inProgressLatch.countDown();
             }

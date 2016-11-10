@@ -87,7 +87,7 @@ public class ProvisionVmWorkerTest {
         ip.status = IpAddress.Status.UNBOUND;
 
         vmActionInProgress = new VmAction();
-        vmActionInProgress.state = "IN_PROGRESS";
+        vmActionInProgress.state = VmAction.Status.IN_PROGRESS;
         vmActionInProgress.vmId = 12;
         vmActionInProgress.vmActionId = 1;
         vmActionInProgress.tickNum = 3;
@@ -103,7 +103,7 @@ public class ProvisionVmWorkerTest {
         sysAdminActionComplete.sysAdminActionId = 123321;
 
         vmActionAfter = new VmAction();
-        vmActionAfter.state = "COMPLETE";
+        vmActionAfter.state = VmAction.Status.COMPLETE;
         vmActionAfter.vmId = vmActionInProgress.vmId;
         vmActionAfter.vmActionId = vmActionInProgress.vmActionId;
 
@@ -218,7 +218,7 @@ public class ProvisionVmWorkerTest {
     @Test
     public void provisionVmProvisionFailsTest() throws InterruptedException {
 
-        vmActionAfter.state = "FAILED";
+        vmActionAfter.state = VmAction.Status.FAILED;
         vmActionInProgress.tickNum = 3;
 
         Mockito.when(vmService.createVm(action.hfsProvisionRequest)).thenReturn(vmActionInProgress);
