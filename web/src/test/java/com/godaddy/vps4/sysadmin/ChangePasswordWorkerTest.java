@@ -12,23 +12,23 @@ import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
 
 import com.godaddy.vps4.web.Action.ActionStatus;
-import com.godaddy.vps4.web.sysadmin.SetAdminAction;
+import com.godaddy.vps4.web.sysadmin.SetPasswordAction;
 import com.godaddy.vps4.web.sysadmin.SysAdminResource;
-import com.godaddy.vps4.web.sysadmin.SysAdminResource.SetAdminRequest;
-import com.godaddy.vps4.web.vm.VmResource;
+import com.godaddy.vps4.web.sysadmin.SysAdminResource.UpdatePasswordRequest;
 
 import gdg.hfs.vhfs.sysadmin.SysAdminAction;
 import gdg.hfs.vhfs.sysadmin.SysAdminService;
 
-public class ToggleAdminWorkerTest {
+public class ChangePasswordWorkerTest {
 
     SysAdminService sysAdminService;
     SysAdminAction inProgressAction;
     SysAdminAction completeAction;
     long vmId = 1;
     String username = "testUsername";
+    String newPassword = "newTestPassword";
     SysAdminResource resource;
-    SetAdminRequest request;
+    UpdatePasswordRequest request;
 
     private SysAdminAction buildAction(SysAdminAction.Status status) {
         SysAdminAction action = new SysAdminAction();
@@ -43,15 +43,16 @@ public class ToggleAdminWorkerTest {
         completeAction = buildAction(SysAdminAction.Status.COMPLETE);
 
         sysAdminService = Mockito.mock(SysAdminService.class);
-        when(sysAdminService.enableAdmin(vmId, username)).thenReturn(inProgressAction);
-        when(sysAdminService.disableAdmin(vmId, username)).thenReturn(inProgressAction);
+        when(sysAdminService.changePassword(vmId, username, newPassword)).thenReturn(inProgressAction);
+        when(sysAdminService.changePassword(vmId, "root", newPassword)).thenReturn(inProgressAction);
         when(sysAdminService.getSysAdminAction(inProgressAction.sysAdminActionId)).thenReturn(completeAction);
         resource = new SysAdminResource(sysAdminService);
-        request = new SetAdminRequest();
+        request = new UpdatePasswordRequest();
         request.username = username;
+        request.password = newPassword;
     }
 
-    private void waitForActionCompletion(SetAdminAction action) {
+    private void waitForActionCompletion(SetPasswordAction action) {
         Assert.assertEquals(ActionStatus.IN_PROGRESS, action.status);
         while (action.status.equals(ActionStatus.IN_PROGRESS)) {
             try {
@@ -64,35 +65,27 @@ public class ToggleAdminWorkerTest {
     }
 
     @Test
-    public void testEnableAdminAccess() {
-        SetAdminAction returnAction = resource.enableUserAdmin(vmId, request);
+    public void testChangePassword() {
+        SetPasswordAction returnAction = resource.setPassword(vmId, request);
         waitForActionCompletion(returnAction);
-        verify(sysAdminService, times(1)).enableAdmin(vmId, username);
-        verify(sysAdminService, times(0)).disableAdmin(vmId, username);
+        verify(sysAdminService, times(1)).changePassword(vmId, username, newPassword);
+        verify(sysAdminService, times(1)).changePassword(vmId, "root", newPassword);
         Assert.assertEquals(ActionStatus.COMPLETE, returnAction.status);
     }
 
-    @Test
-    public void testDisableAdminAccess() {
-        SetAdminAction returnAction = resource.disableUserAdmin(vmId, request);
-        waitForActionCompletion(returnAction);
-        verify(sysAdminService, times(1)).enableAdmin(vmId, username);
-        verify(sysAdminService, times(1)).disableAdmin(vmId, username);
-        Assert.assertEquals(ActionStatus.COMPLETE, returnAction.status);
-    }
 
     @Test
-    public void testFailEnableCase() {
+    public void testChangePasswordFailsOnUser() {
         completeAction.status = SysAdminAction.Status.FAILED;
-        SetAdminAction returnAction = resource.enableUserAdmin(vmId, request);
+        SetPasswordAction returnAction = resource.setPassword(vmId, request);
         waitForActionCompletion(returnAction);
-        verify(sysAdminService, times(1)).enableAdmin(vmId, username);
-        verify(sysAdminService, times(0)).disableAdmin(vmId, username);
+        verify(sysAdminService, times(1)).changePassword(vmId, username, newPassword);
+        verify(sysAdminService, times(0)).changePassword(vmId, "root", newPassword);
         Assert.assertEquals(ActionStatus.ERROR, returnAction.status);
     }
-
+    
     @Test
-    public void testFailDisableCase() {
+    public void testChangePasswordFailsOnRoot() {
         Answer<SysAdminAction> answer = new Answer<SysAdminAction>() {
             // returns 1 complete, then 1 failed, then repeats
             private int timesCalled = 0;
@@ -108,10 +101,11 @@ public class ToggleAdminWorkerTest {
         };
         completeAction.status = SysAdminAction.Status.FAILED;
         when(sysAdminService.getSysAdminAction(inProgressAction.sysAdminActionId)).thenAnswer(answer);
-        SetAdminAction returnAction = resource.disableUserAdmin(vmId, request);
+        SetPasswordAction returnAction = resource.setPassword(vmId, request);
         waitForActionCompletion(returnAction);
-        verify(sysAdminService, times(1)).enableAdmin(vmId, username);
-        verify(sysAdminService, times(1)).disableAdmin(vmId, username);
+        verify(sysAdminService, times(1)).changePassword(vmId, username, newPassword);
+        verify(sysAdminService, times(1)).changePassword(vmId, "root", newPassword);
         Assert.assertEquals(ActionStatus.ERROR, returnAction.status);
     }
+
 }
