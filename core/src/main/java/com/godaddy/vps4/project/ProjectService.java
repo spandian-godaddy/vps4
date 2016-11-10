@@ -10,6 +10,6 @@ public interface ProjectService {
 
     Project createProject(String name, long userId, int dataCenterId);
 
-    Project deleteProject(long sgid);
+    Project deleteProject(long projectId);
 
 }

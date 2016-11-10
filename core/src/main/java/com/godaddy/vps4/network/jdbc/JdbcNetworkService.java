@@ -9,6 +9,7 @@ import javax.sql.DataSource;
 
 import com.godaddy.vps4.jdbc.Sql;
 import com.godaddy.vps4.network.IpAddress;
+import com.godaddy.vps4.network.IpAddress.IpAddressType;
 import com.godaddy.vps4.network.NetworkService;
 
 public class JdbcNetworkService implements NetworkService {
@@ -21,17 +22,19 @@ public class JdbcNetworkService implements NetworkService {
     }
 
     @Override
-    public void createIpAddress(long ipAddressId, long projectId) {
+    public void createIpAddress(long ipAddressId, long vmId, String address, IpAddressType type) {
 
-        Sql.with(dataSource).exec("SELECT * FROM ip_address_create(?,?)", null,
-                ipAddressId, projectId);
+        Sql.with(dataSource).exec("SELECT * FROM ip_address_create(?,?,?,?)", null,
+                ipAddressId, vmId, address, type.getId());
 
     }
 
-    protected IpAddress mapMcsIpAddress(ResultSet rs) throws SQLException {
+    protected IpAddress mapIpAddress(ResultSet rs) throws SQLException {
 
         return new IpAddress(rs.getLong("ip_address_id"),
-                rs.getLong("project_id"),
+                rs.getLong("vm_id"),
+                rs.getString("ip_address"),
+                IpAddress.IpAddressType.valueOf(rs.getInt("ip_address_type_id")),
                 rs.getTimestamp("valid_on").toInstant(),
                 rs.getTimestamp("valid_until").toInstant());
     }
@@ -46,13 +49,20 @@ public class JdbcNetworkService implements NetworkService {
     public IpAddress getIpAddress(long ipAddressId) {
         return Sql.with(dataSource).exec(
                 "SELECT * FROM ip_address ip " + " WHERE ip_address_id=? ",
-                Sql.nextOrNull(this::mapMcsIpAddress), ipAddressId);
+                Sql.nextOrNull(this::mapIpAddress), ipAddressId);
     }
 
     @Override
-    public List<IpAddress> listIpAddresses(long projectId) {
+    public List<IpAddress> getVmIpAddresses(long vmId) {
         return Sql.with(dataSource).exec(
-                "SELECT * FROM ip_address ip " + " WHERE project_id=? ",
-                Sql.listOf(this::mapMcsIpAddress), projectId);
+                "SELECT * FROM ip_address ip " + " WHERE vm_id=? ",
+                Sql.listOf(this::mapIpAddress), vmId);
+    }
+
+    @Override
+    public IpAddress getVmPrimaryAddress(long vmId) {
+        return Sql.with(dataSource).exec(
+                "SELECT * FROM ip_address ip " + " WHERE vm_id=? AND ip_address_type_id = ?",
+                Sql.nextOrNull(this::mapIpAddress), vmId, IpAddress.IpAddressType.PRIMARY.getId());
     }
 }

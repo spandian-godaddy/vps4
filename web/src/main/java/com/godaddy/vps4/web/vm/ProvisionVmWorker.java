@@ -10,6 +10,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.godaddy.vps4.Vps4Exception;
+import com.godaddy.vps4.network.IpAddress.IpAddressType;
 import com.godaddy.vps4.vm.HostnameGenerator;
 import com.godaddy.vps4.vm.Image.ControlPanel;
 import com.godaddy.vps4.vm.VirtualMachineService;
@@ -149,7 +150,7 @@ public class ProvisionVmWorker implements Runnable {
     private IpAddress allocatedIp() {
         action.step = CreateVmStep.RequestingIPAddress;
 
-        IpAddress ip = new AllocateIpWorker(hfsNetworkService, action.project, vps4NetworkService).call();
+        IpAddress ip = new AllocateIpWorker(IpAddressType.PRIMARY, action.project, hfsNetworkService, vps4NetworkService).call();
         action.ip = ip;
         return ip;
     }

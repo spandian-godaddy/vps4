@@ -6,6 +6,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.godaddy.vps4.Vps4Exception;
+import com.godaddy.vps4.network.IpAddress.IpAddressType;
 import com.godaddy.vps4.project.Project;
 
 import gdg.hfs.vhfs.network.AddressAction;
@@ -20,10 +21,13 @@ public class AllocateIpWorker implements Callable<IpAddress> {
     final NetworkService networkService;
     final Project project;
     final com.godaddy.vps4.network.NetworkService vps4NetworkService;
+    private final IpAddressType type;
 
-    public AllocateIpWorker(NetworkService hfsNetworkService, Project project, com.godaddy.vps4.network.NetworkService vps4NetworkService) {
-        this.networkService = hfsNetworkService;
+    public AllocateIpWorker(IpAddressType type, Project project, NetworkService hfsNetworkService,
+            com.godaddy.vps4.network.NetworkService vps4NetworkService) {
+        this.type = type;
         this.project = project;
+        this.networkService = hfsNetworkService;
         this.vps4NetworkService = vps4NetworkService;
     }
 
@@ -60,7 +64,7 @@ public class AllocateIpWorker implements Callable<IpAddress> {
         logger.info("Address allocate is complete: {}", hfsAction);
         logger.info("Allocated address: {}", ipAddress);
 
-        vps4NetworkService.createIpAddress(ipAddress.addressId, project.getProjectId());
+        vps4NetworkService.createIpAddress(ipAddress.addressId, project.getProjectId(), ipAddress.address, type);
 
         return ipAddress;
 

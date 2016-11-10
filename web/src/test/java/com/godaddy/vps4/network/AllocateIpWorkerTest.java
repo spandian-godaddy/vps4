@@ -10,6 +10,7 @@ import org.junit.Test;
 import org.mockito.Mockito;
 
 import com.godaddy.vps4.Vps4Exception;
+import com.godaddy.vps4.network.IpAddress.IpAddressType;
 import com.godaddy.vps4.project.Project;
 import com.godaddy.vps4.web.network.AllocateIpWorker;
 
@@ -60,7 +61,7 @@ public class AllocateIpWorkerTest {
 
         com.godaddy.vps4.network.NetworkService vps4NetworkService = Mockito.mock(com.godaddy.vps4.network.NetworkService.class);
 
-        AllocateIpWorker worker = new AllocateIpWorker(networkService, project, vps4NetworkService);
+        AllocateIpWorker worker = new AllocateIpWorker(IpAddressType.PRIMARY, project, networkService, vps4NetworkService);
         IpAddress ip = worker.call();
 
         verify(networkService).acquireIp(sgid);

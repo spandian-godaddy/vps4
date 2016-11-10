@@ -88,7 +88,7 @@ public class DestroyVmWorker implements Runnable {
 
     private void unbindAndReleaseIps() {
 
-        List<IpAddress> addresses = vps4NetworkService.listIpAddresses(action.virtualMachine.projectId);
+        List<IpAddress> addresses = vps4NetworkService.getVmIpAddresses(action.virtualMachine.vmId);
         CompletionService<NetworkAction> unbindCompletionService = new ExecutorCompletionService<NetworkAction>(
                 Executors.newFixedThreadPool(addresses.size()));
         int remainingFutures = 0;

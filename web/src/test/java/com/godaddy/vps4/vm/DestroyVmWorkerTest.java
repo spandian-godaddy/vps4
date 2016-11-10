@@ -25,6 +25,7 @@ import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
 
 import com.godaddy.vps4.network.IpAddress;
+import com.godaddy.vps4.network.IpAddress.IpAddressType;
 import com.godaddy.vps4.web.Action.ActionStatus;
 import com.godaddy.vps4.web.vm.DestroyVmWorker;
 import com.godaddy.vps4.web.vm.VmResource.DestroyVmAction;
@@ -64,13 +65,15 @@ public class DestroyVmWorkerTest {
                 Instant.MAX);
 
         addresses = new ArrayList<IpAddress>();
-        addresses.add(new IpAddress(123, action.virtualMachine.projectId, Instant.now(), Instant.MAX));
-        addresses.add(new IpAddress(124, action.virtualMachine.projectId, Instant.now(), Instant.MAX));
+        addresses
+                .add(new IpAddress(123, action.virtualMachine.projectId, "192.168.1.1", IpAddressType.PRIMARY, Instant.now(), Instant.MAX));
+        addresses.add(
+                new IpAddress(124, action.virtualMachine.projectId, "192.168.1.2", IpAddressType.SECONDARY, Instant.now(), Instant.MAX));
     }
 
     @Test
     public void testDestroyVm() {
-        when(vps4NetworkService.listIpAddresses(action.virtualMachine.projectId)).thenReturn(addresses);
+        when(vps4NetworkService.getVmIpAddresses(action.virtualMachine.vmId)).thenReturn(addresses);
 
         when(hfsNetworkSerivce.unbindIp(anyLong())).thenAnswer(getAddressActionAnswer(Status.IN_PROGRESS));
         when(hfsNetworkSerivce.releaseIp(anyLong())).thenAnswer(getAddressActionAnswer(Status.IN_PROGRESS));
@@ -124,7 +127,7 @@ public class DestroyVmWorkerTest {
 
     @Test
     public void testDestroyVmUnbindFails() {
-        when(vps4NetworkService.listIpAddresses(action.virtualMachine.projectId)).thenReturn(addresses);
+        when(vps4NetworkService.getVmIpAddresses(action.virtualMachine.vmId)).thenReturn(addresses);
 
         when(hfsNetworkSerivce.unbindIp(anyLong())).thenAnswer(getAddressActionAnswer(Status.IN_PROGRESS));
         when(hfsNetworkSerivce.getAddressAction(anyLong(), anyLong())).thenAnswer(getAddressActionAnswer(Status.FAILED));
@@ -144,7 +147,7 @@ public class DestroyVmWorkerTest {
 
     @Test
     public void testDestroyVmDestroyVmFails() {
-        when(vps4NetworkService.listIpAddresses(action.virtualMachine.projectId)).thenReturn(addresses);
+        when(vps4NetworkService.getVmIpAddresses(action.virtualMachine.vmId)).thenReturn(addresses);
 
         when(hfsNetworkSerivce.unbindIp(anyLong())).thenAnswer(getAddressActionAnswer(Status.IN_PROGRESS));
         when(hfsNetworkSerivce.releaseIp(anyLong())).thenAnswer(getAddressActionAnswer(Status.IN_PROGRESS));
