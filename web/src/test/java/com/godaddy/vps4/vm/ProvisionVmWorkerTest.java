@@ -166,6 +166,8 @@ public class ProvisionVmWorkerTest {
         verify(hfsNetworkSerivce, times(1)).bindIp(ip.addressId, vmActionAfter.vmId);
         verify(sysAdminService, times(1)).enableAdmin(vm.vmId, username);
         verify(sysAdminService, times(1)).disableAdmin(vm.vmId, username);
+        verify(vps4NetworkService, times(1)).createIpAddress(ip.addressId, vm.vmId, ip.address,
+                com.godaddy.vps4.network.IpAddress.IpAddressType.PRIMARY);
     }
 
     @Test

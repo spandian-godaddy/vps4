@@ -118,8 +118,8 @@ public class ProvisionVmWorker implements Runnable {
 
     private void bindIp(IpAddress ip, VmAction hfsAction) {
         action.step = CreateVmStep.ConfiguringNetwork;
-        BindIpAction bindIpAction = new BindIpAction(ip.addressId, hfsAction.vmId);
-        new BindIpWorker(bindIpAction, hfsNetworkService).run();
+        BindIpAction bindIpAction = new BindIpAction(ip.addressId, ip.address, hfsAction.vmId, IpAddressType.PRIMARY);
+        new BindIpWorker(bindIpAction, hfsNetworkService, vps4NetworkService).run();
 
         if (bindIpAction.status == ActionStatus.ERROR) {
             throw new Vps4Exception(provisionFailedId, String.format("failed to bind ip, action: %s", bindIpAction));
@@ -150,7 +150,7 @@ public class ProvisionVmWorker implements Runnable {
     private IpAddress allocatedIp() {
         action.step = CreateVmStep.RequestingIPAddress;
 
-        IpAddress ip = new AllocateIpWorker(IpAddressType.PRIMARY, action.project, hfsNetworkService, vps4NetworkService).call();
+        IpAddress ip = new AllocateIpWorker(action.project, hfsNetworkService).call();
         action.ip = ip;
         return ip;
     }
