@@ -20,12 +20,14 @@ import junit.framework.Assert;
 public class BindIpWorkerTest {
 
     NetworkService networkService;
+    com.godaddy.vps4.network.NetworkService vps4NetworkService;
     long addressId = 1;
     long vmId = 1;
 
     @Before
     public void setUpRequest() {
         networkService = Mockito.mock(NetworkService.class);
+        vps4NetworkService = Mockito.mock(com.godaddy.vps4.network.NetworkService.class);
     }
 
     @Test
@@ -48,8 +50,8 @@ public class BindIpWorkerTest {
         Mockito.when(networkService.bindIp(addressId, vmId)).thenReturn(action);
         Mockito.when(networkService.getAddressAction(addressId, vmId)).thenReturn(action);
 
-        BindIpAction bindIpAction = new BindIpAction(addressId, vmId);
-        BindIpWorker bindIp = new BindIpWorker(bindIpAction, networkService);
+        BindIpAction bindIpAction = new BindIpAction(addressId, "127.0.0.1", vmId, IpAddress.IpAddressType.PRIMARY);
+        BindIpWorker bindIp = new BindIpWorker(bindIpAction, networkService, vps4NetworkService);
         bindIp.run();
 
         verify(networkService).bindIp(addressId, vmId);

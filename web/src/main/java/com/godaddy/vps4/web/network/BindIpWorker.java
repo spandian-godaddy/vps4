@@ -14,11 +14,12 @@ public class BindIpWorker implements Runnable {
     private static final Logger logger = LoggerFactory.getLogger(BindIpWorker.class);
 
     final NetworkService networkService;
-
+    final com.godaddy.vps4.network.NetworkService vps4NetworkService;
     final BindIpAction action;
 
-    public BindIpWorker(BindIpAction action, NetworkService networkService) {
+    public BindIpWorker(BindIpAction action, NetworkService networkService, com.godaddy.vps4.network.NetworkService vps4NetworkService) {
         this.networkService = networkService;
+        this.vps4NetworkService = vps4NetworkService;
         this.action = action;
     }
 
@@ -47,6 +48,7 @@ public class BindIpWorker implements Runnable {
                     String.format("Bind IP %d failed for VM %d", action.getAddressId(), action.getVmId()));
         }
 
+        vps4NetworkService.createIpAddress(action.getAddressId(), action.getVmId(), action.getAddress(), action.getType());
         action.status = ActionStatus.COMPLETE;
         logger.info("bind ip complete: {}", hfsAction);
     }
