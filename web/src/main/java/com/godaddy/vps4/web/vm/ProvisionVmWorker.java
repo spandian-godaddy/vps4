@@ -80,10 +80,10 @@ public class ProvisionVmWorker implements Runnable {
                 action.vm = vmService.getVm(hfsCreateVmAction.vmId);
             }
 
-            bindIp(ip, hfsCreateVmAction);
-
             virtualMachineService.provisionVirtualMachine(action.vm.vmId, vmInfo.orionGuid, vmInfo.name, vmInfo.projectId,
                     vmInfo.specId, vmInfo.managedLevel, vmInfo.image.imageId);
+
+            bindIp(ip, hfsCreateVmAction);
 
             if (vmInfo.image.controlPanel == ControlPanel.CPANEL) {
                 runCPanelConfig(action.vm.vmId, ip.address);
