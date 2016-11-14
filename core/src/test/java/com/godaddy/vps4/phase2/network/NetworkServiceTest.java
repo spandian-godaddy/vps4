@@ -4,8 +4,6 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
-import java.sql.ResultSet;
-import java.sql.SQLException;
 import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
@@ -17,14 +15,13 @@ import org.junit.Before;
 import org.junit.Test;
 
 import com.godaddy.vps4.jdbc.DatabaseModule;
-import com.godaddy.vps4.jdbc.Sql;
 import com.godaddy.vps4.network.IpAddress;
 import com.godaddy.vps4.network.NetworkService;
 import com.godaddy.vps4.network.jdbc.JdbcNetworkService;
+import com.godaddy.vps4.phase2.SqlTestData;
 import com.godaddy.vps4.project.ProjectService;
 import com.godaddy.vps4.project.jdbc.JdbcProjectService;
 import com.godaddy.vps4.vm.VirtualMachineService;
-import com.godaddy.vps4.vm.jdbc.JdbcVirtualMachineService;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
 
@@ -35,7 +32,7 @@ public class NetworkServiceTest {
     ProjectService projectService;
     private Injector injector = Guice.createInjector(new DatabaseModule());
 
-    private long project;
+    private long projectId;
     private long vmId;
     private UUID orionGuid = UUID.randomUUID();
     private DataSource dataSource;
@@ -47,33 +44,15 @@ public class NetworkServiceTest {
         networkService = new JdbcNetworkService(dataSource);
         projectService = new JdbcProjectService(dataSource);
 
-        String projectName = "testNetwork";
-        projectService.createProject(projectName, 1, 1);
+        projectId = projectService.createProject("testNetwork", 1, 1).getProjectId();
 
-        project = Sql.with(dataSource).exec("SELECT project_id FROM project WHERE project_name = ?",
-                Sql.nextOrNull(rs -> rs.getLong("project_id")), projectName);
-        vmId = Sql.with(dataSource).exec("SELECT max(vm_id) as vm_id FROM virtual_machine",
-                Sql.nextOrNull(this::mapVmId)) + 1;
-
-        virtualMachineService = new JdbcVirtualMachineService(dataSource);
-        virtualMachineService.createVirtualMachineRequest(orionGuid, "linux", "none", 10, 0);
-        virtualMachineService.provisionVirtualMachine(vmId, orionGuid, "networkTestVm", project, 1, 0, 1);
-    }
-
-    private long mapVmId(ResultSet rs) throws SQLException {
-        if (!rs.isAfterLast()) {
-            return rs.getLong("vm_id");
-        }
-        return 0;
+        vmId = SqlTestData.insertTestVm(orionGuid, projectId, dataSource);
     }
 
     @After
     public void cleanup() {
-        Sql.with(dataSource).exec("DELETE FROM ip_address WHERE vm_id = ?", null, vmId);
-        Sql.with(dataSource).exec("DELETE FROM virtual_machine WHERE vm_id = ?", null, vmId);
-        Sql.with(dataSource).exec("DELETE FROM virtual_machine_request WHERE orion_guid = ?", null, orionGuid);
-        Sql.with(dataSource).exec("DELETE FROM user_project_privilege WHERE project_id = ?", null, project);
-        Sql.with(dataSource).exec("DELETE FROM project WHERE project_id = ?", null, project);
+        SqlTestData.cleanupTestVmAndRelatedData(vmId, orionGuid, dataSource);
+        SqlTestData.cleanupTestProject(projectId, dataSource);
     }
 
     @Test
