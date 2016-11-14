@@ -53,7 +53,7 @@ public class NetworkServiceTest {
         project = Sql.with(dataSource).exec("SELECT project_id FROM project WHERE project_name = ?",
                 Sql.nextOrNull(rs -> rs.getLong("project_id")), projectName);
         vmId = Sql.with(dataSource).exec("SELECT max(vm_id) FROM virtual_machine",
-                Sql.nextOrNull(this::mapVmId));
+                Sql.nextOrNull(this::mapVmId)) + 1;
 
         virtualMachineService = new JdbcVirtualMachineService(dataSource);
         virtualMachineService.createVirtualMachineRequest(orionGuid, "linux", "none", 10, 0);
