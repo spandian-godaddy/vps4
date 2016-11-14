@@ -52,7 +52,7 @@ public class NetworkServiceTest {
 
         project = Sql.with(dataSource).exec("SELECT project_id FROM project WHERE project_name = ?",
                 Sql.nextOrNull(rs -> rs.getLong("project_id")), projectName);
-        vmId = Sql.with(dataSource).exec("SELECT max(vm_id) FROM virtual_machine",
+        vmId = Sql.with(dataSource).exec("SELECT max(vm_id) as vm_id FROM virtual_machine",
                 Sql.nextOrNull(this::mapVmId)) + 1;
 
         virtualMachineService = new JdbcVirtualMachineService(dataSource);
@@ -61,7 +61,7 @@ public class NetworkServiceTest {
     }
 
     private long mapVmId(ResultSet rs) throws SQLException {
-        if (rs.next()) {
+        if (!rs.isAfterLast()) {
             return rs.getLong("vm_id");
         }
         return 0;

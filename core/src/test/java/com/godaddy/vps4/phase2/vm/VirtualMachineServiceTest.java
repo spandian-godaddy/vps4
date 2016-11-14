@@ -3,6 +3,8 @@ package com.godaddy.vps4.phase2.vm;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.UUID;
 
 import javax.sql.DataSource;
@@ -26,25 +28,30 @@ import com.google.inject.Injector;
 public class VirtualMachineServiceTest {
 
     VirtualMachineService virtualMachineService;
-
     ProjectService projectService;
-
     Injector injector = Guice.createInjector(new DatabaseModule());
-
     Project project;
+    private UUID orionGuid = UUID.randomUUID();
+    DataSource dataSource = injector.getInstance(DataSource.class);
+    long vmId;
 
     @Before
     public void setupService() {
-        DataSource dataSource = injector.getInstance(DataSource.class);
-
-        Sql.with(dataSource).exec("TRUNCATE TABLE virtual_machine CASCADE", null);
-        Sql.with(dataSource).exec("TRUNCATE TABLE virtual_machine_request CASCADE", null);
-        Sql.with(dataSource).exec("TRUNCATE TABLE project CASCADE", null);
 
         virtualMachineService = new JdbcVirtualMachineService(dataSource);
         projectService = new JdbcProjectService(dataSource);
 
+        vmId = Sql.with(dataSource).exec("SELECT max(vm_id) as vm_id FROM virtual_machine",
+                Sql.nextOrNull(this::mapVmId)) + 1;
+
         project = projectService.createProject("testVirtualMachineServiceProject", 1, 1);
+    }
+
+    private long mapVmId(ResultSet rs) throws SQLException {
+        if (!rs.isAfterLast()) {
+            return rs.getLong("vm_id");
+        }
+        return 0;
     }
 
     @After
@@ -52,16 +59,16 @@ public class VirtualMachineServiceTest {
 
         DataSource dataSource = injector.getInstance(DataSource.class);
 
-        Sql.with(dataSource).exec("TRUNCATE TABLE virtual_machine CASCADE", null);
-        Sql.with(dataSource).exec("TRUNCATE TABLE virtual_machine_request CASCADE", null);
-        Sql.with(dataSource).exec("TRUNCATE TABLE project CASCADE", null);
+        Sql.with(dataSource).exec("DELETE FROM virtual_machine WHERE vm_id = ?", null, vmId);
+        Sql.with(dataSource).exec("DELETE FROM virtual_machine_request WHERE orion_guid = ?", null, orionGuid);
+        Sql.with(dataSource).exec("DELETE FROM user_project_privilege WHERE project_id = ?", null, project.getProjectId());
+        Sql.with(dataSource).exec("DELETE FROM project WHERE project_id = ?", null, project.getProjectId());
 
     }
 
     @Test
     public void testService() {
 
-        UUID orionGuid = java.util.UUID.fromString("a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a12");
         String os = "linux";
         String controlPanel = "cpanel";
         int tier = 10;
@@ -79,13 +86,12 @@ public class VirtualMachineServiceTest {
         assertEquals(managedLevel, vmRequest.managedLevel);
 
         String name = "testServer";
-        int vmId = 1;
         long imageId = 1;
         int specId = 1;
 
         virtualMachineService.provisionVirtualMachine(vmId, orionGuid, name, project.getProjectId(), specId, managedLevel, imageId);
 
-        VirtualMachine vm = virtualMachineService.getVirtualMachine(1);
+        VirtualMachine vm = virtualMachineService.getVirtualMachine(vmId);
 
         assertNotNull(vm);
         assertEquals(vmId, vm.vmId);
