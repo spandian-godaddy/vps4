@@ -52,9 +52,11 @@ public class HfsClientProvider<T> implements Provider<T> {
 
     final KeyManager keyManager;
 
-    @Inject Config config;
+    @Inject
+    Config config;
 
-    @Inject JacksonJsonProvider jacksonJsonProvider;
+    @Inject
+    JacksonJsonProvider jacksonJsonProvider;
 
     @Inject
     public HfsClientProvider(Class<T> serviceClass) {
@@ -125,78 +127,69 @@ public class HfsClientProvider<T> implements Provider<T> {
         }
     };
 
-	protected X509Certificate[] readCertificateChain(InputStream certStream)
-	{
-		try(InputStream is = new BufferedInputStream(certStream))
-    	{
-    		CertificateFactory certFactory = CertificateFactory.getInstance("X.509");
-    		Collection<? extends Certificate> certs = certFactory.generateCertificates(is);
+    protected X509Certificate[] readCertificateChain(InputStream certStream) {
+        try (InputStream is = new BufferedInputStream(certStream)) {
+            CertificateFactory certFactory = CertificateFactory.getInstance("X.509");
+            Collection<? extends Certificate> certs = certFactory.generateCertificates(is);
 
-    		X509Certificate[] certChain = new X509Certificate[certs.size()];
-    		int certIndex = 0;
+            X509Certificate[] certChain = new X509Certificate[certs.size()];
+            int certIndex = 0;
 
-    		for (Certificate cert : certs)
-    		{
-    			certChain[certIndex++] = (X509Certificate)cert;
-    		}
-    		return certChain;
-    	}
-		catch(IOException|CertificateException e)
-		{
-			throw new RuntimeException(e);
-		}
-	}
+            for (Certificate cert : certs) {
+                certChain[certIndex++] = (X509Certificate) cert;
+            }
+            return certChain;
+        }
+        catch (IOException | CertificateException e) {
+            throw new RuntimeException(e);
+        }
+    }
 
-	protected PrivateKey readPrivateKey(InputStream keyStream)
-	{
-		try(InputStream is = new BufferedInputStream(keyStream))
-    	{
-    		KeyFactory keyFactory = KeyFactory.getInstance("RSA");
+    protected PrivateKey readPrivateKey(InputStream keyStream) {
+        try (InputStream is = new BufferedInputStream(keyStream)) {
+            KeyFactory keyFactory = KeyFactory.getInstance("RSA");
 
-    		// read the key into memory
-    		ByteArrayOutputStream bos = new ByteArrayOutputStream(4096);
-    		int b = -1;
-    		while ((b = is.read()) != -1)
-    		{
-    			bos.write(b);
-    		}
+            // read the key into memory
+            ByteArrayOutputStream bos = new ByteArrayOutputStream(4096);
+            int b = -1;
+            while ((b = is.read()) != -1) {
+                bos.write(b);
+            }
 
-    		byte[] keyBytes = bos.toByteArray();
+            byte[] keyBytes = bos.toByteArray();
 
-    		EncodedKeySpec keySpec = new PKCS8EncodedKeySpec(keyBytes);
+            EncodedKeySpec keySpec = new PKCS8EncodedKeySpec(keyBytes);
 
-    		return (RSAPrivateKey) keyFactory.generatePrivate(keySpec);
-    	}
-		catch(Exception e)
-		{
-			throw new RuntimeException(e);
-		}
-	}
+            return (RSAPrivateKey) keyFactory.generatePrivate(keySpec);
+        }
+        catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
 
-	protected static KeyManager newKeyManager() {
+    protected static KeyManager newKeyManager() {
 
-		InputStream is = HfsClientProvider.class.getResourceAsStream("/com/godaddy/businesshosting/hfs/diablo.hfs.stage.pem");
-		if (is == null) {
-			logger.info("Cannot find client certificate");
-			return null;
-		}
-
+        // TODO Get the key from Zoookeeper based on environment
+        InputStream isKey = HfsClientProvider.class.getResourceAsStream("/vps4.hfs.test.key");
+        InputStream isCrt = HfsClientProvider.class.getResourceAsStream("/vps4.hfs.test.crt");
 
         try {
-        	byte[] bytes = ByteStreams.toByteArray(is);
+            byte[] bytesKey = ByteStreams.toByteArray(isKey);
+            byte[] bytesCrt = ByteStreams.toByteArray(isCrt);
 
             PEMFile privatePemFile = PEMFile.readPEM(new InputStreamReader(
-            		new ByteArrayInputStream(bytes),
+                    new ByteArrayInputStream(bytesKey),
                     Charsets.UTF8));
             PEMFile publicPemFile = PEMFile.readPEM(new InputStreamReader(
-                    new ByteArrayInputStream(bytes),
+                    new ByteArrayInputStream(bytesCrt),
                     Charsets.UTF8));
 
             logger.info("client private key: {}", privatePemFile.getPrivateKey());
             logger.info("client public key: {}", publicPemFile.getCertChain().toString());
 
             return new HfsKeyManager(publicPemFile.getCertChain(), privatePemFile.getPrivateKey());
-        } catch (IOException e) {
+        }
+        catch (IOException e) {
             throw new RuntimeException(e);
         }
     }
@@ -216,37 +209,38 @@ public class HfsClientProvider<T> implements Provider<T> {
 
         ClientBuilder clientBuilder = ClientBuilder.newBuilder();
 
-		try {
+        try {
 
-			if (baseUrl.startsWith("https")) {
-				if (keyManager == null) {
-					throw new IllegalStateException("HTTPS connection requested, but we have no client certificates");
-				}
-				// we're connecting to an SSL endpoint, and we have
-				// client certificates, so wire that up
-				KeyManager[] keyManagers = { keyManager };
-				TrustManager[] trustManagers = { trustManager };
+            if (baseUrl.startsWith("https")) {
+                if (keyManager == null) {
+                    throw new IllegalStateException("HTTPS connection requested, but we have no client certificates");
+                }
+                // we're connecting to an SSL endpoint, and we have
+                // client certificates, so wire that up
+                KeyManager[] keyManagers = { keyManager };
+                TrustManager[] trustManagers = { trustManager };
 
-				SSLContext sslContext = SSLContext.getInstance("TLSv1.2");
-				sslContext.init(keyManagers, trustManagers, new SecureRandom());
+                SSLContext sslContext = SSLContext.getInstance("TLSv1.2");
+                sslContext.init(keyManagers, trustManagers, new SecureRandom());
 
-				clientBuilder = clientBuilder.sslContext(sslContext).hostnameVerifier(INSECURE_HOSTNAME_VERIFIER);
-			}
+                clientBuilder = clientBuilder.sslContext(sslContext).hostnameVerifier(INSECURE_HOSTNAME_VERIFIER);
+            }
 
-		} catch (Throwable t) {
-			throw new RuntimeException(t);
-		}
+        }
+        catch (Throwable t) {
+            throw new RuntimeException(t);
+        }
 
-		Client client = clientBuilder.build();
+        Client client = clientBuilder.build();
 
-		logger.debug("building HTTP client to service {} at base url {}", serviceClass.getName(), baseUrl);
+        logger.debug("building HTTP client to service {} at base url {}", serviceClass.getName(), baseUrl);
 
-		client.register(jacksonJsonProvider);
+        client.register(jacksonJsonProvider);
 
-		// client.register(new ErrorResponseFilter());
+        // client.register(new ErrorResponseFilter());
 
-		ResteasyWebTarget target = (ResteasyWebTarget) client.target(baseUrl);
+        ResteasyWebTarget target = (ResteasyWebTarget) client.target(baseUrl);
 
-		return (T) target.proxy(serviceClass);
+        return (T) target.proxy(serviceClass);
     }
 }
