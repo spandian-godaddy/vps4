@@ -17,6 +17,10 @@ public class DataSourceProvider implements Provider<DataSource> {
 
     private final Config config;
 
+    private volatile DataSource dataSource;
+
+    private final Object createLock = new Object();
+
     @Inject
     public DataSourceProvider(Config config) {
         this.config = config;
@@ -24,6 +28,17 @@ public class DataSourceProvider implements Provider<DataSource> {
 
     @Override
     public DataSource get() {
+        if (dataSource == null) {
+            synchronized(createLock) {
+                if (dataSource == null) {
+                    dataSource = buildDataSource();
+                }
+            }
+        }
+        return dataSource;
+    }
+
+    protected DataSource buildDataSource() {
         // build datasource from config
         String server = config.get("db.vps4.server");
         String username = config.get("db.vps4.username");
@@ -50,7 +65,6 @@ public class DataSourceProvider implements Provider<DataSource> {
                 dataSource.close();
             }
         }));
-
         return dataSource;
     }
 }
