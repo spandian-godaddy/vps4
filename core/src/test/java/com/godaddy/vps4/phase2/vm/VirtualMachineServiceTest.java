@@ -3,8 +3,6 @@ package com.godaddy.vps4.phase2.vm;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
-import java.sql.ResultSet;
-import java.sql.SQLException;
 import java.util.UUID;
 
 import javax.sql.DataSource;
@@ -14,7 +12,7 @@ import org.junit.Before;
 import org.junit.Test;
 
 import com.godaddy.vps4.jdbc.DatabaseModule;
-import com.godaddy.vps4.jdbc.Sql;
+import com.godaddy.vps4.phase2.SqlTestData;
 import com.godaddy.vps4.project.Project;
 import com.godaddy.vps4.project.ProjectService;
 import com.godaddy.vps4.project.jdbc.JdbcProjectService;
@@ -27,43 +25,24 @@ import com.google.inject.Injector;
 
 public class VirtualMachineServiceTest {
 
-    VirtualMachineService virtualMachineService;
-    ProjectService projectService;
     Injector injector = Guice.createInjector(new DatabaseModule());
-    Project project;
-    private UUID orionGuid = UUID.randomUUID();
     DataSource dataSource = injector.getInstance(DataSource.class);
+    VirtualMachineService virtualMachineService = new JdbcVirtualMachineService(dataSource);
+    ProjectService projectService = new JdbcProjectService(dataSource);
+    private UUID orionGuid = UUID.randomUUID();
+    Project project;
     long vmId;
 
     @Before
     public void setupService() {
-
-        virtualMachineService = new JdbcVirtualMachineService(dataSource);
-        projectService = new JdbcProjectService(dataSource);
-
-        vmId = Sql.with(dataSource).exec("SELECT max(vm_id) as vm_id FROM virtual_machine",
-                Sql.nextOrNull(this::mapVmId)) + 1;
-
         project = projectService.createProject("testVirtualMachineServiceProject", 1, 1);
-    }
-
-    private long mapVmId(ResultSet rs) throws SQLException {
-        if (!rs.isAfterLast()) {
-            return rs.getLong("vm_id");
-        }
-        return 0;
+        vmId = SqlTestData.getNextId(dataSource);
     }
 
     @After
     public void cleanupService() {
-
-        DataSource dataSource = injector.getInstance(DataSource.class);
-
-        Sql.with(dataSource).exec("DELETE FROM virtual_machine WHERE vm_id = ?", null, vmId);
-        Sql.with(dataSource).exec("DELETE FROM virtual_machine_request WHERE orion_guid = ?", null, orionGuid);
-        Sql.with(dataSource).exec("DELETE FROM user_project_privilege WHERE project_id = ?", null, project.getProjectId());
-        Sql.with(dataSource).exec("DELETE FROM project WHERE project_id = ?", null, project.getProjectId());
-
+        SqlTestData.cleanupTestVmAndRelatedData(vmId, orionGuid, dataSource);
+        SqlTestData.cleanupTestProject(project.getProjectId(), dataSource);
     }
 
     @Test
