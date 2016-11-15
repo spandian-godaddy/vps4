@@ -1,14 +1,9 @@
 <project>
     <modelVersion>4.0.0</modelVersion>
 
-    <parent>
-        <groupId>com.godaddy.vps4</groupId>
-        <artifactId>vps4-parent</artifactId>
-        <version>0.0.1-SNAPSHOT</version>
-        <relativePath>parent</relativePath>
-    </parent>
-    
+    <groupId>com.godaddy.vps4</groupId>
     <artifactId>vps4-project</artifactId>
+    <version>0.0.1-SNAPSHOT</version>
     <name>VPS4</name>
     <packaging>pom</packaging>
 
@@ -17,5 +12,16 @@
         <module>core</module>
         <module>web</module>
     </modules>
+    
+    <build>
+        <plugins>
+            <plugin>
+                <artifactId>maven-deploy-plugin</artifactId>
+                <configuration>
+                    <skip>true</skip>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
 
 </project>
