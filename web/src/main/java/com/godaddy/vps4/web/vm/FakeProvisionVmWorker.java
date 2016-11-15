@@ -6,7 +6,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.godaddy.vps4.vm.VirtualMachineService;
-import com.godaddy.vps4.web.Action.ActionStatus;
+import com.godaddy.vps4.vm.ActionStatus;
 import com.godaddy.vps4.web.vm.VmResource.CreateVmAction;
 
 import gdg.hfs.vhfs.network.IpAddress;

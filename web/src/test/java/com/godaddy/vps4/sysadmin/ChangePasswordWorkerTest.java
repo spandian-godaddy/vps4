@@ -11,7 +11,7 @@ import org.mockito.Mockito;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
 
-import com.godaddy.vps4.web.Action.ActionStatus;
+import com.godaddy.vps4.vm.ActionStatus;
 import com.godaddy.vps4.web.sysadmin.SetPasswordAction;
 import com.godaddy.vps4.web.sysadmin.SysAdminResource;
 import com.godaddy.vps4.web.sysadmin.SysAdminResource.UpdatePasswordRequest;

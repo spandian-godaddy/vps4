@@ -24,9 +24,9 @@ import org.mockito.Mockito;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
 
+import com.godaddy.vps4.vm.ActionStatus;
 import com.godaddy.vps4.network.IpAddress;
 import com.godaddy.vps4.network.IpAddress.IpAddressType;
-import com.godaddy.vps4.web.Action.ActionStatus;
 import com.godaddy.vps4.web.vm.DestroyVmWorker;
 import com.godaddy.vps4.web.vm.VmResource.DestroyVmAction;
 import com.google.inject.Injector;

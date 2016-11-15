@@ -5,8 +5,8 @@ import java.util.concurrent.Callable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.godaddy.vps4.vm.ActionStatus;
 import com.godaddy.vps4.Vps4Exception;
-import com.godaddy.vps4.web.Action.ActionStatus;
 
 import gdg.hfs.vhfs.network.AddressAction;
 import gdg.hfs.vhfs.network.NetworkService;

@@ -18,7 +18,7 @@ import org.mockito.Mockito;
 
 import com.godaddy.vps4.project.Project;
 import com.godaddy.vps4.vm.Image.ControlPanel;
-import com.godaddy.vps4.web.Action.ActionStatus;
+import com.godaddy.vps4.vm.ActionStatus;
 import com.godaddy.vps4.web.vm.CreateVmStep;
 import com.godaddy.vps4.web.vm.ProvisionVmWorker;
 import com.godaddy.vps4.web.vm.VmResource.CreateVmAction;

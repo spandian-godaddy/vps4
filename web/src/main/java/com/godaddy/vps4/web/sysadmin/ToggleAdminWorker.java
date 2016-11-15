@@ -2,8 +2,8 @@ package com.godaddy.vps4.web.sysadmin;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.godaddy.vps4.vm.ActionStatus;
 import com.godaddy.vps4.Vps4Exception;
-import com.godaddy.vps4.web.Action;
 
 import gdg.hfs.vhfs.sysadmin.SysAdminAction;
 import gdg.hfs.vhfs.sysadmin.SysAdminService;
@@ -48,11 +48,11 @@ public class ToggleAdminWorker implements Runnable{
                 hfsSysAction = sysAdminService.disableAdmin(vmId, username);
                 SysAdminWorker.waitForSysAdminAction(sysAdminService, hfsSysAction);
             }
-            action.status = Action.ActionStatus.COMPLETE;
+            action.status = ActionStatus.COMPLETE;
         } catch (Exception e) {
             String toggle = enabled ? "ENABLE" : "DISABLE";
             String message = String.format("Failed to %s admin for vm: %d", toggle, vmId);
-            action.status = Action.ActionStatus.ERROR;
+            action.status = ActionStatus.ERROR;
             logger.error(message, e);
             throw new Vps4Exception(toggle+"_ADMIN_WORKER_FAILED", message);
         }

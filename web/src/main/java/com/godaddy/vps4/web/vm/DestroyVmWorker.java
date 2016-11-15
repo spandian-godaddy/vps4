@@ -13,8 +13,8 @@ import org.slf4j.LoggerFactory;
 
 import com.godaddy.vps4.network.IpAddress;
 import com.godaddy.vps4.vm.VirtualMachineService;
+import com.godaddy.vps4.vm.ActionStatus;
 import com.godaddy.vps4.web.Action;
-import com.godaddy.vps4.web.Action.ActionStatus;
 import com.godaddy.vps4.web.network.NetworkAction;
 import com.godaddy.vps4.web.network.ReleaseIpWorker;
 import com.godaddy.vps4.web.network.UnbindIpWorker;
@@ -53,7 +53,7 @@ public class DestroyVmWorker implements Runnable {
 
         unbindAndReleaseIps();
 
-        if (action.status != Action.ActionStatus.ERROR) {
+        if (action.status != ActionStatus.ERROR) {
             VmAction hfsAction = vmService.destroyVm(action.virtualMachine.vmId);
 
             // wait for the HFS action to complete
@@ -114,7 +114,7 @@ public class DestroyVmWorker implements Runnable {
                             .submit(new ReleaseIpWorker(new NetworkAction(networkAction.addressId), hfsNetworkService, vps4NetworkService));
                 }
                 else {
-                    action.status = Action.ActionStatus.ERROR;
+                    action.status = ActionStatus.ERROR;
                 }
             }
             catch (ExecutionException | InterruptedException e) {

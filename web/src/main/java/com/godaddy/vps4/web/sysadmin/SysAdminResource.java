@@ -18,6 +18,7 @@ import javax.ws.rs.core.MediaType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.godaddy.vps4.vm.ActionStatus;
 import com.godaddy.vps4.Vps4Exception;
 import com.godaddy.vps4.web.Action;
 import com.godaddy.vps4.web.Vps4Api;
@@ -64,13 +65,13 @@ public class SysAdminResource {
         actions.put(action.actionId, action);
         SetPasswordWorker worker = new SetPasswordWorker(sysAdminService, action);
 
-        action.status = Action.ActionStatus.IN_PROGRESS;
+        action.status = ActionStatus.IN_PROGRESS;
         threadPool.execute(() -> {
             try {
                 worker.run();
             }
             catch (Vps4Exception e) {
-                action.status = Action.ActionStatus.ERROR;
+                action.status = ActionStatus.ERROR;
             }
         });
         return action;
@@ -100,13 +101,13 @@ public class SysAdminResource {
         actions.put(action.actionId, action);
         ToggleAdminWorker worker = new ToggleAdminWorker(sysAdminService, action);
 
-        action.status = Action.ActionStatus.IN_PROGRESS;
+        action.status = ActionStatus.IN_PROGRESS;
         threadPool.execute(() -> {
             try {
                 worker.run();
             }
             catch (Vps4Exception e) {
-                action.status = Action.ActionStatus.ERROR;
+                action.status = ActionStatus.ERROR;
             }
         });
 

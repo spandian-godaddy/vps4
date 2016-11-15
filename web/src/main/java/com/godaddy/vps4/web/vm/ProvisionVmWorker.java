@@ -14,7 +14,7 @@ import com.godaddy.vps4.network.IpAddress.IpAddressType;
 import com.godaddy.vps4.vm.HostnameGenerator;
 import com.godaddy.vps4.vm.Image.ControlPanel;
 import com.godaddy.vps4.vm.VirtualMachineService;
-import com.godaddy.vps4.web.Action.ActionStatus;
+import com.godaddy.vps4.vm.ActionStatus;
 import com.godaddy.vps4.web.cpanel.ImageConfigAction;
 import com.godaddy.vps4.web.cpanel.ImageConfigWorker;
 import com.godaddy.vps4.web.network.AllocateIpWorker;

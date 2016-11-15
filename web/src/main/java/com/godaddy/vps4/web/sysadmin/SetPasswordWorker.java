@@ -2,6 +2,7 @@ package com.godaddy.vps4.web.sysadmin;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.godaddy.vps4.vm.ActionStatus;
 import com.godaddy.vps4.Vps4Exception;
 import com.godaddy.vps4.web.Action;
 
@@ -35,10 +36,10 @@ public class SetPasswordWorker implements Runnable{
                 SysAdminWorker.waitForSysAdminAction(sysAdminService, hfsSysAction);
                 logger.debug("END: Setting password for user {} on vm {}", username, vmId);
             }
-            action.status = Action.ActionStatus.COMPLETE;
+            action.status = ActionStatus.COMPLETE;
         } catch (Exception e) {
             String message = String.format("Failed to change password for user {} on vm {}", usernames, vmId);
-            action.status = Action.ActionStatus.ERROR;
+            action.status = ActionStatus.ERROR;
             logger.error(message, e);
             throw new Vps4Exception("CHANGE_PASSWORD_FAILED", message);
         }
