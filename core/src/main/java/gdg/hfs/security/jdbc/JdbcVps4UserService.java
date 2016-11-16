@@ -14,14 +14,14 @@ import com.godaddy.vps4.security.Vps4User;
 
 import gdg.hfs.security.Vps4UserService;
 
-public class JdbcUserService implements Vps4UserService {
+public class JdbcVps4UserService implements Vps4UserService {
 
-    private static final Logger logger = LoggerFactory.getLogger(JdbcUserService.class);
+    private static final Logger logger = LoggerFactory.getLogger(JdbcVps4UserService.class);
 
     private final DataSource dataSource;
 
     @Inject
-    public JdbcUserService(DataSource dataSource) {
+    public JdbcVps4UserService(DataSource dataSource) {
         this.dataSource = dataSource;
     }
 
