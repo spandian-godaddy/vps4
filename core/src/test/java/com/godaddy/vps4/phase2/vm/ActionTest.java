@@ -1,7 +1,5 @@
 package com.godaddy.vps4.phase2.vm;
 
-import java.util.HashMap;
-import java.util.Map;
 import java.util.UUID;
 
 import javax.sql.DataSource;
@@ -40,14 +38,14 @@ public class ActionTest {
         project = projectService.createProject("testVirtualMachineServiceProject", 1, 1);
         vmId = SqlTestData.insertTestVm(orionGuid, project.getProjectId(), dataSource);
     }
-    
+
     @After
     public void cleanupService() {
         Sql.with(dataSource).exec("DELETE from vm_action where virtual_machine_id = ?", null, vmId);
         SqlTestData.cleanupTestVmAndRelatedData(vmId, orionGuid, dataSource);
         SqlTestData.cleanupTestProject(project.getProjectId(), dataSource);
     }
-    
+
     @Test
     public void testCreate(){
         long actionId = actionService.createAction(vmId, "{}", 1);
@@ -57,24 +55,26 @@ public class ActionTest {
         Assert.assertEquals(ActionStatus.NEW, action.status);
         Assert.assertEquals(ActionType.CREATE_VM, action.type);
     }
-    
+
     @Test
     public void testCreateWithJson(){
-        long actionId = actionService.createAction(vmId, 
+        long actionId = actionService.createAction(vmId,
                 "{\"one\":1, \"2\":\"two\", \"three\":[\"omg\", \"array\"]}", 1);
         Action action = actionService.getAction(actionId);
         Assert.assertEquals("{\"one\":1, \"2\":\"two\", \"three\":[\"omg\", \"array\"]}", action.request);
     }
-    
+
     @Test
     public void testUpdateStatus(){
         long actionId = actionService.createAction(vmId, "{}", 1);
         Action action = actionService.getAction(actionId);
         Assert.assertEquals(ActionStatus.NEW, action.status);
-        Map<String, Object> hm = new HashMap<String, Object>();
-        hm.put("status_id", 3);
-        actionService.updateAction(action.id, hm);
+
+        actionService.completeAction(actionId, "{ \"some\": \"response\" }", "some notes");
+
         action = actionService.getAction(action.id);
         Assert.assertEquals(ActionStatus.COMPLETE, action.status);
+        Assert.assertEquals("{ \"some\": \"response\" }", action.response);
+        Assert.assertEquals("some notes", action.note);
     }
 }

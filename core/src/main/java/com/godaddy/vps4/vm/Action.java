@@ -3,7 +3,7 @@ package com.godaddy.vps4.vm;
 import java.time.Instant;
 
 public class Action {
-    
+
     public final long id;
     public final long virtualMachineId;
     public final ActionType type;
@@ -13,22 +13,22 @@ public class Action {
     public final ActionStatus status;
     public final Instant created;
     public final String note;
-    
-    public Action(long id, long virtualMachineId, String type, long vps4UserId, String request, String response, String status, Instant created, String note){
+
+    public Action(long id, long virtualMachineId, ActionType type, long vps4UserId, String request, String response, ActionStatus status, Instant created, String note){
         this.id = id;
         this.virtualMachineId = virtualMachineId;
-        this.type = ActionType.valueOf(type);
+        this.type = type;
         this.vps4UserId = vps4UserId;
         this.request = request;
         this.response = response;
-        this.status = ActionStatus.valueOf(status);
+        this.status = status;
         this.created = created;
         this.note = note;
     }
-    
-    
+
+
     public String toString(){
-        return "Action [id: " + id 
+        return "Action [id: " + id
                 + " virtualMachineId: " + virtualMachineId
                 + " actionType: " + type
                 + " vps4UserId: " + vps4UserId
@@ -38,5 +38,5 @@ public class Action {
                 + " created: " + created
                 + " note: " + note + "]";
     }
-    
+
 }
