@@ -27,26 +27,26 @@ public class JdbcVps4UserService implements Vps4UserService {
 
     @Override
     public Vps4User getUserForShopper(String shopperId) {
-        return Sql.with(dataSource).exec("SELECT vps4_user_id, shopper_id, username FROM vps4_user WHERE shopper_id=?",
+        return Sql.with(dataSource).exec("SELECT vps4_user_id, shopper_id FROM vps4_user WHERE shopper_id=?",
                 Sql.nextOrNull(this::mapUser),
                 shopperId);
     }
 
     @Override
     public Vps4User getUserForId(long userId) {
-        return Sql.with(dataSource).exec("SELECT vps4_user_id, shopper_id, username FROM vps4_user WHERE vps4_user_id=?",
+        return Sql.with(dataSource).exec("SELECT vps4_user_id, shopper_id FROM vps4_user WHERE vps4_user_id=?",
                 Sql.nextOrNull(this::mapUser),
                 userId);
     }
 
     @Override
-    public Vps4User getOrCreateUserForShopper(String shopperId, String username) {
+    public Vps4User getOrCreateUserForShopper(String shopperId) {
 
         // if the user doesn't exist yet, create it
-        Sql.with(dataSource).exec("INSERT INTO vps4_user (shopper_id, username) "
-                + " SELECT ?, ? WHERE NOT EXISTS ( SELECT 1 FROM vps4_user WHERE shopper_id=? )",
+        Sql.with(dataSource).exec("INSERT INTO vps4_user (shopper_id) "
+                + " SELECT ? WHERE NOT EXISTS ( SELECT 1 FROM vps4_user WHERE shopper_id=? )",
                 null,
-                shopperId, username, shopperId);
+                shopperId, shopperId);
 
         Vps4User user = getUserForShopper(shopperId);
         if (user == null) {
@@ -61,9 +61,8 @@ public class JdbcVps4UserService implements Vps4UserService {
 
         long userId = rs.getLong("vps4_user_id");
         String shopperId = rs.getString("shopper_id");
-        String username = rs.getString("username");
 
-        return new Vps4User(username, userId, shopperId);
+        return new Vps4User(userId, shopperId);
     }
 
 }

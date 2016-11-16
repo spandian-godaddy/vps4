@@ -8,6 +8,6 @@ public interface Vps4UserService {
 
     Vps4User getUserForId(long userId);
 
-    Vps4User getOrCreateUserForShopper(String shopperId, String username);
+    Vps4User getOrCreateUserForShopper(String shopperId);
 
 }

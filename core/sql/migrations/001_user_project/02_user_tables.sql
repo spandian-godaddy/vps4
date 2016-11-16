@@ -2,7 +2,6 @@
 CREATE TABLE vps4_user (
     vps4_user_id BIGSERIAL PRIMARY KEY,
     shopper_id   VARCHAR(255) NOT NULL UNIQUE,
-    username     TEXT NOT NULL
 );
 
 CREATE TABLE project (

@@ -9,7 +9,7 @@ public class Vps4UserModule extends AbstractModule {
 
     @Override
     protected void configure() {
-        Vps4User user = new Vps4User("SomeUser", 42, "someShopperId");
+        Vps4User user = new Vps4User(42, "someShopperId");
 
         bind(Vps4User.class).toInstance(user);
         bind(ProjectService.class).to(JdbcProjectService.class);
