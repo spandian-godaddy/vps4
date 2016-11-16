@@ -4,7 +4,7 @@ import org.slf4j.LoggerFactory;
 
 import com.godaddy.vps4.vm.ActionStatus;
 import com.godaddy.vps4.Vps4Exception;
-import com.godaddy.vps4.vm.UserService;
+import com.godaddy.vps4.vm.VmUserService;
 import com.godaddy.vps4.web.Action;
 
 
@@ -17,13 +17,13 @@ public class ToggleAdminWorker implements Runnable{
 
 
     final SysAdminService sysAdminService;
-    final UserService userService;
+    final VmUserService userService;
     final long vmId;
     final String username;
     final boolean enabled;
     SetAdminAction action;
     
-    public ToggleAdminWorker(SysAdminService sysAdminService, UserService userService, SetAdminAction action) {
+    public ToggleAdminWorker(SysAdminService sysAdminService, VmUserService userService, SetAdminAction action) {
         this.sysAdminService = sysAdminService;
         this.userService = userService;
         this.vmId = action.getVmId();
@@ -32,7 +32,7 @@ public class ToggleAdminWorker implements Runnable{
         this.action = action;
     }
     
-    public ToggleAdminWorker(SysAdminService sysAdminService, UserService userService, long vmId, String username, boolean enabled) {
+    public ToggleAdminWorker(SysAdminService sysAdminService, VmUserService userService, long vmId, String username, boolean enabled) {
         this.sysAdminService = sysAdminService;
         this.userService = userService;
         this.vmId = vmId;

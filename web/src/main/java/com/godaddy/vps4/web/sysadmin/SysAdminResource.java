@@ -20,7 +20,7 @@ import org.slf4j.LoggerFactory;
 
 import com.godaddy.vps4.vm.ActionStatus;
 import com.godaddy.vps4.Vps4Exception;
-import com.godaddy.vps4.vm.UserService;
+import com.godaddy.vps4.vm.VmUserService;
 import com.godaddy.vps4.web.Action;
 import com.godaddy.vps4.web.Vps4Api;
 import com.godaddy.vps4.web.vm.VmResource.CreateVmAction;
@@ -46,10 +46,10 @@ public class SysAdminResource {
     static final ExecutorService threadPool = Executors.newCachedThreadPool();
 
     final SysAdminService sysAdminService;
-    final UserService userService;
+    final VmUserService userService;
 
     @Inject
-    public SysAdminResource(SysAdminService sysAdminService, UserService userService) {
+    public SysAdminResource(SysAdminService sysAdminService, VmUserService userService) {
         this.sysAdminService = sysAdminService;
         this.userService = userService;
     }

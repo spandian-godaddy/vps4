@@ -1,13 +1,13 @@
 package com.godaddy.vps4.security;
 
-public class User {
+public class Vps4User {
 
     private final String name;
     private final long id;
 
 	private final String shopperId;
 
-	public User(String name, long id, String shopperId) {
+	public Vps4User(String name, long id, String shopperId) {
 		this.id = id;
 		this.shopperId = shopperId;
 		this.name = name;

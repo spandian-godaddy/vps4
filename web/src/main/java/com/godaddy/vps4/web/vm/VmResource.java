@@ -28,13 +28,13 @@ import com.godaddy.vps4.Vps4Exception;
 import com.godaddy.vps4.project.Project;
 import com.godaddy.vps4.project.ProjectService;
 import com.godaddy.vps4.security.PrivilegeService;
-import com.godaddy.vps4.security.User;
+import com.godaddy.vps4.security.Vps4User;
 import com.godaddy.vps4.vm.CombinedVm;
 import com.godaddy.vps4.vm.ControlPanelService;
 import com.godaddy.vps4.vm.Image;
 import com.godaddy.vps4.vm.ImageService;
 import com.godaddy.vps4.vm.OsTypeService;
-import com.godaddy.vps4.vm.UserService;
+import com.godaddy.vps4.vm.VmUserService;
 import com.godaddy.vps4.vm.VirtualMachine;
 import com.godaddy.vps4.vm.VirtualMachineRequest;
 import com.godaddy.vps4.vm.VirtualMachineService;
@@ -72,7 +72,7 @@ public class VmResource {
     static final AtomicLong actionIdPool = new AtomicLong();
     static final ExecutorService threadPool = Executors.newCachedThreadPool();
 
-    final User user;
+    final Vps4User user;
     final VirtualMachineService virtualMachineService;
     final PrivilegeService privilegeService;
     final ControlPanelService controlPanelService;
@@ -82,14 +82,14 @@ public class VmResource {
     final ProjectService projectService;
     final ImageService imageService;
     final SysAdminService sysAdminService;
-    final UserService userService;
+    final VmUserService userService;
     final com.godaddy.vps4.network.NetworkService vps4NetworkService;
     final CPanelService cPanelService;
 
     // TODO: Break this up into multiple classes to reduce number of
     // dependencies.
     @Inject
-    public VmResource(UserService userService, SysAdminService sysAdminService, PrivilegeService privilegeService, User user, VmService vmService,
+    public VmResource(VmUserService userService, SysAdminService sysAdminService, PrivilegeService privilegeService, Vps4User user, VmService vmService,
             NetworkService hfsNetworkService, VirtualMachineService virtualMachineService, ControlPanelService controlPanelService,
             OsTypeService osTypeService, ProjectService projectService, ImageService imageService,
             com.godaddy.vps4.network.NetworkService vps4NetworkService, CPanelService cPanelService) {

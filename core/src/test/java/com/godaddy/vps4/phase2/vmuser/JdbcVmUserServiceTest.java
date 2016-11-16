@@ -1,4 +1,4 @@
-package com.godaddy.vps4.phase2.user;
+package com.godaddy.vps4.phase2.vmuser;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -19,13 +19,13 @@ import com.godaddy.vps4.jdbc.DatabaseModule;
 import com.godaddy.vps4.phase2.SqlTestData;
 import com.godaddy.vps4.project.ProjectService;
 import com.godaddy.vps4.project.jdbc.JdbcProjectService;
-import com.godaddy.vps4.vm.User;
-import com.godaddy.vps4.vm.UserService;
-import com.godaddy.vps4.vm.jdbc.JdbcUserService;
+import com.godaddy.vps4.vm.VmUser;
+import com.godaddy.vps4.vm.VmUserService;
+import com.godaddy.vps4.vm.jdbc.JdbcVmUserService;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
 
-public class JdbcUserServiceTest {
+public class JdbcVmUserServiceTest {
 
     private Injector injector = Guice.createInjector(new DatabaseModule());
     private DataSource dataSource = injector.getInstance(DataSource.class);
@@ -50,11 +50,11 @@ public class JdbcUserServiceTest {
 
     @Test
     public void testCreateUser() throws SQLException {
-        UserService service = new JdbcUserService(dataSource);
+        VmUserService service = new JdbcVmUserService(dataSource);
         service.createUser(username, vmId, true);
-        List<User> ul = service.listUsers(vmId);
+        List<VmUser> ul = service.listUsers(vmId);
         assertEquals(1, ul.size());
-        User usr = ul.get(0);
+        VmUser usr = ul.get(0);
         assertEquals(username, usr.username);
         assertEquals(vmId, usr.vmId);
         assertTrue(usr.adminEnabled);
@@ -62,12 +62,12 @@ public class JdbcUserServiceTest {
 
     @Test
     public void testCreateUserNoAdmin() throws SQLException {
-        UserService service = new JdbcUserService(dataSource);
+        VmUserService service = new JdbcVmUserService(dataSource);
         service.createUser(username, vmId, false);
-        List<User> ul = service.listUsers(vmId);
+        List<VmUser> ul = service.listUsers(vmId);
         assertEquals(1, ul.size());
         assertEquals(1, ul.size());
-        User usr = ul.get(0);
+        VmUser usr = ul.get(0);
         assertEquals(username, usr.username);
         assertEquals(vmId, usr.vmId);
         assertFalse(usr.adminEnabled);
@@ -75,16 +75,16 @@ public class JdbcUserServiceTest {
 
     @Test
     public void testCreate2ndUser() {
-        UserService service = new JdbcUserService(dataSource);
+        VmUserService service = new JdbcVmUserService(dataSource);
         service.createUser(username, vmId, false);
         service.createUser("testuser2", vmId, false);
-        List<User> ul = service.listUsers(vmId);
+        List<VmUser> ul = service.listUsers(vmId);
         assertEquals(2, ul.size());
     }
 
     @Test(expected = RuntimeException.class)
     public void testCreateUserAlreadyExists() throws SQLException {
-        UserService service = new JdbcUserService(dataSource);
+        VmUserService service = new JdbcVmUserService(dataSource);
         service.createUser(username, vmId, false);
         service.createUser(username, vmId, false);
         fail("Should throw exception");
@@ -92,10 +92,10 @@ public class JdbcUserServiceTest {
 
     @Test
     public void testUpdateUserAdminAccess() {
-        UserService service = new JdbcUserService(dataSource);
+        VmUserService service = new JdbcVmUserService(dataSource);
         service.createUser(username, vmId, false);
-        List<User> ul = service.listUsers(vmId);
-        User u = ul.get(0);
+        List<VmUser> ul = service.listUsers(vmId);
+        VmUser u = ul.get(0);
         assertFalse(u.adminEnabled);
         service.updateUserAdminAccess(username, vmId, true);
         ul = service.listUsers(vmId);

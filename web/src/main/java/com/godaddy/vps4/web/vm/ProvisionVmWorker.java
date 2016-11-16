@@ -13,7 +13,7 @@ import com.godaddy.vps4.Vps4Exception;
 import com.godaddy.vps4.network.IpAddress.IpAddressType;
 import com.godaddy.vps4.vm.HostnameGenerator;
 import com.godaddy.vps4.vm.Image.ControlPanel;
-import com.godaddy.vps4.vm.UserService;
+import com.godaddy.vps4.vm.VmUserService;
 import com.godaddy.vps4.vm.VirtualMachineService;
 import com.godaddy.vps4.vm.ActionStatus;
 import com.godaddy.vps4.web.cpanel.ImageConfigAction;
@@ -42,7 +42,7 @@ public class ProvisionVmWorker implements Runnable {
     final VmService vmService;
     final NetworkService hfsNetworkService;
     final SysAdminService sysAdminService;
-    final UserService userService;
+    final VmUserService userService;
     final VirtualMachineService virtualMachineService;
     final com.godaddy.vps4.network.NetworkService vps4NetworkService;
 
@@ -52,7 +52,7 @@ public class ProvisionVmWorker implements Runnable {
 
     private final String provisionFailedId = "PROVISION_VM_FAILED";
 
-    public ProvisionVmWorker(VmService vmService, NetworkService hfsNetworkService, SysAdminService sysAdminService, UserService userService,
+    public ProvisionVmWorker(VmService vmService, NetworkService hfsNetworkService, SysAdminService sysAdminService, VmUserService userService,
             com.godaddy.vps4.network.NetworkService vps4NetworkService, VirtualMachineService virtualMachineService,
             CPanelService cPanelService, CreateVmAction action, ExecutorService threadPool, ProvisionVmInfo vmInfo) {
         this.vmService = vmService;

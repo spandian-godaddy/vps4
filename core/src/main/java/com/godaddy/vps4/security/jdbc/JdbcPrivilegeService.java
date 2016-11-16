@@ -7,7 +7,7 @@ import com.godaddy.vps4.jdbc.Sql;
 import com.godaddy.vps4.project.ProjectPrivilege;
 import com.godaddy.vps4.security.Privilege;
 import com.godaddy.vps4.security.PrivilegeService;
-import com.godaddy.vps4.security.User;
+import com.godaddy.vps4.security.Vps4User;
 
 
 
@@ -21,14 +21,14 @@ public class JdbcPrivilegeService implements PrivilegeService {
     }
 
     @Override
-    public void requirePrivilege(User user, Privilege privilege) {
+    public void requirePrivilege(Vps4User user, Privilege privilege) {
         if (!checkPrivilege(user, privilege)) {
             throw new AuthorizationException(user.getShopperId() + " does not have privilege " + privilege.name());
         }
     }
 
     @Override
-    public boolean checkPrivilege(User user, Privilege privilege) {
+    public boolean checkPrivilege(Vps4User user, Privilege privilege) {
         return Sql.with(dataSource).call(
                 "{ call check_privilege(?,?,?) }",
                 Sql.nextOrNull(rs -> rs.getInt(1) > 0),
@@ -36,14 +36,14 @@ public class JdbcPrivilegeService implements PrivilegeService {
     }
 
     @Override
-    public void requireAnyPrivilegeToSgid(User user, long sgid) {
+    public void requireAnyPrivilegeToSgid(Vps4User user, long sgid) {
         if (!checkAnyPrivilegeToSgid(user, sgid)) {
             throw new AuthorizationException(user.getShopperId() + " does not have privilege on service group " + sgid);
         }
     }
 
     @Override
-    public boolean checkAnyPrivilegeToSgid(User user, long sgid) {
+    public boolean checkAnyPrivilegeToSgid(Vps4User user, long sgid) {
         return Sql.with(dataSource).call(
                 "{ call check_any_privilege(?,?) }",
                 Sql.nextOrNull(rs -> rs.getInt(1) > 0),
@@ -51,7 +51,7 @@ public class JdbcPrivilegeService implements PrivilegeService {
     }
 
     @Override
-    public boolean checkPrivilege(User user, long sgid, ProjectPrivilege privilege) {
+    public boolean checkPrivilege(Vps4User user, long sgid, ProjectPrivilege privilege) {
         return Sql.with(dataSource).call(
                 "{ call check_privilege(?,?,?) }",
                 Sql.nextOrNull(rs -> rs.getInt(1) > 0),
@@ -59,7 +59,7 @@ public class JdbcPrivilegeService implements PrivilegeService {
     }
 
     @Override
-    public void requirePrivilege(User user, long sgid, ProjectPrivilege privilege) {
+    public void requirePrivilege(Vps4User user, long sgid, ProjectPrivilege privilege) {
         if (!checkPrivilege(user, sgid, privilege)) {
             throw new AuthorizationException(user.getShopperId() + " does not have privilege " + privilege.name() + " on service group " + sgid);
         }

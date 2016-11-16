@@ -22,7 +22,7 @@ import org.slf4j.LoggerFactory;
 import com.godaddy.vps4.config.Config;
 import com.godaddy.vps4.config.ConfigProvider;
 import com.godaddy.vps4.jdbc.DatabaseModule;
-import com.godaddy.vps4.security.UserModule;
+import com.godaddy.vps4.security.Vps4UserModule;
 import com.godaddy.vps4.web.hfs.HfsMockModule;
 import com.godaddy.vps4.web.hfs.HfsModule;
 import com.godaddy.vps4.web.network.NetworkModule;
@@ -83,7 +83,7 @@ public class WebServer {
 
         modules.add(new DatabaseModule());
         modules.add(new WebModule());
-        modules.add(new UserModule());
+        modules.add(new Vps4UserModule());
 
         modules.add(new VmModule());
         modules.add(new NetworkModule());

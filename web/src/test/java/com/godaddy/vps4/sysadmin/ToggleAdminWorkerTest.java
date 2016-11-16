@@ -11,7 +11,7 @@ import org.mockito.Mockito;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
 
-import com.godaddy.vps4.vm.UserService;
+import com.godaddy.vps4.vm.VmUserService;
 import com.godaddy.vps4.vm.ActionStatus;
 import com.godaddy.vps4.web.sysadmin.SetAdminAction;
 import com.godaddy.vps4.web.sysadmin.SysAdminResource;
@@ -23,7 +23,7 @@ import gdg.hfs.vhfs.sysadmin.SysAdminService;
 public class ToggleAdminWorkerTest {
 
     SysAdminService sysAdminService;
-    UserService userService;
+    VmUserService userService;
     SysAdminAction inProgressAction;
     SysAdminAction completeAction;
     long vmId = 1;
@@ -48,7 +48,7 @@ public class ToggleAdminWorkerTest {
         when(sysAdminService.disableAdmin(vmId, username)).thenReturn(inProgressAction);
         when(sysAdminService.getSysAdminAction(inProgressAction.sysAdminActionId)).thenReturn(completeAction);
 
-        userService = Mockito.mock(UserService.class);
+        userService = Mockito.mock(VmUserService.class);
         when(userService.userExists(username, vmId)).thenReturn(true);
         
         resource = new SysAdminResource(sysAdminService, userService);
