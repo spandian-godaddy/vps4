@@ -27,7 +27,7 @@ public class Vps4User {
 
     @Override
     public String toString() {
-        return "User [id=" + id + ", shopperId=" + shopperId + "username" + username + "]";
+        return "User [id=" + id + ", shopperId=" + shopperId + "username=" + username + "]";
     }
 
 }
