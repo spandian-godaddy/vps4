@@ -40,17 +40,13 @@ public class JdbcUserServiceTest {
         Vps4UserService userService = new JdbcVps4UserService(dataSource);
 
         Vps4User user1 = userService.getOrCreateUserForShopper(shopperId);
-
         assertEquals(shopperId, user1.getShopperId());
-
         long user1Id = user1.getId();
 
         Vps4User user2 = userService.getOrCreateUserForShopper(shopperId);
-
         assertEquals(user1.getId(), user2.getId());
 
         Vps4User user3 = userService.getUserForId(user1Id);
-
         assertEquals(shopperId, user3.getShopperId());
     }
 
