@@ -1,16 +1,15 @@
 package com.godaddy.vps4.vm.jdbc;
 
-import java.sql.ResultSet;
-import java.sql.SQLException;
-
-import javax.inject.Inject;
-import javax.sql.DataSource;
-
 import com.godaddy.vps4.jdbc.Sql;
 import com.godaddy.vps4.vm.Action;
 import com.godaddy.vps4.vm.ActionService;
 import com.godaddy.vps4.vm.ActionStatus;
 import com.godaddy.vps4.vm.ActionType;
+
+import javax.inject.Inject;
+import javax.sql.DataSource;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 
 public class JdbcActionService implements ActionService{
 
@@ -21,10 +20,11 @@ public class JdbcActionService implements ActionService{
         this.dataSource = dataSource;
     }
 
+
     @Override
-    public long createAction(long vmId, String request, long userId){
-       return Sql.with(dataSource).exec("INSERT INTO vm_action (virtual_machine_id, request, vps4_user_id) VALUES (?, ?::json, ?) RETURNING id;",
-               Sql.nextOrNull(rs -> rs.getLong("id")), vmId, request, userId);
+    public long createAction(long vmId, ActionType actionType, String request, long userId){
+       return Sql.with(dataSource).exec("INSERT INTO vm_action (virtual_machine_id, action_type_id, request, vps4_user_id) VALUES (?, ?, ?::json, ?) RETURNING id;",
+               Sql.nextOrNull(rs -> rs.getLong("id")), vmId, actionType.getActionTypeId(), request, userId);
     }
 
     @Override

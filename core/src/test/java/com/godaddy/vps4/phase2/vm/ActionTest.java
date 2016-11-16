@@ -1,13 +1,5 @@
 package com.godaddy.vps4.phase2.vm;
 
-import java.util.UUID;
-
-import javax.sql.DataSource;
-
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
-
 import com.godaddy.vps4.jdbc.DatabaseModule;
 import com.godaddy.vps4.jdbc.Sql;
 import com.godaddy.vps4.phase2.SqlTestData;
@@ -21,8 +13,15 @@ import com.godaddy.vps4.vm.ActionType;
 import com.godaddy.vps4.vm.jdbc.JdbcActionService;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
 
-import junit.framework.Assert;
+import javax.sql.DataSource;
+import java.util.UUID;
+
+import static junit.framework.Assert.assertEquals;
+import static junit.framework.Assert.assertTrue;
 
 public class ActionTest {
     Injector injector = Guice.createInjector(new DatabaseModule());
@@ -32,11 +31,13 @@ public class ActionTest {
     private UUID orionGuid = UUID.randomUUID();
     Project project;
     long vmId;
+    ActionType type;
 
     @Before
     public void setupService(){
         project = projectService.createProject("testVirtualMachineServiceProject", 1, 1);
         vmId = SqlTestData.insertTestVm(orionGuid, project.getProjectId(), dataSource);
+        type = ActionType.CREATE_VM;
     }
 
     @After
@@ -48,33 +49,34 @@ public class ActionTest {
 
     @Test
     public void testCreate(){
-        long actionId = actionService.createAction(vmId, "{}", 1);
+        long actionId = actionService.createAction(vmId, type, "{}", 1);
         Action action = actionService.getAction(actionId);
-        Assert.assertEquals("{}", action.request);
-        Assert.assertEquals(vmId, action.virtualMachineId);
-        Assert.assertEquals(ActionStatus.NEW, action.status);
-        Assert.assertEquals(ActionType.CREATE_VM, action.type);
+        assertEquals("{}", action.request);
+        assertEquals(vmId, action.virtualMachineId);
+        assertTrue(action.type == ActionType.CREATE_VM);
+        assertEquals(ActionStatus.NEW, action.status);
+        assertEquals(ActionType.CREATE_VM, action.type);
     }
 
     @Test
     public void testCreateWithJson(){
-        long actionId = actionService.createAction(vmId,
+        long actionId = actionService.createAction(vmId, type,
                 "{\"one\":1, \"2\":\"two\", \"three\":[\"omg\", \"array\"]}", 1);
         Action action = actionService.getAction(actionId);
-        Assert.assertEquals("{\"one\":1, \"2\":\"two\", \"three\":[\"omg\", \"array\"]}", action.request);
+        assertEquals("{\"one\":1, \"2\":\"two\", \"three\":[\"omg\", \"array\"]}", action.request);
     }
 
     @Test
     public void testUpdateStatus(){
-        long actionId = actionService.createAction(vmId, "{}", 1);
+        long actionId = actionService.createAction(vmId, type, "{}", 1);
         Action action = actionService.getAction(actionId);
-        Assert.assertEquals(ActionStatus.NEW, action.status);
+        assertEquals(ActionStatus.NEW, action.status);
 
         actionService.completeAction(actionId, "{ \"some\": \"response\" }", "some notes");
 
         action = actionService.getAction(action.id);
-        Assert.assertEquals(ActionStatus.COMPLETE, action.status);
-        Assert.assertEquals("{ \"some\": \"response\" }", action.response);
-        Assert.assertEquals("some notes", action.note);
+        assertEquals(ActionStatus.COMPLETE, action.status);
+        assertEquals("{ \"some\": \"response\" }", action.response);
+        assertEquals("some notes", action.note);
     }
 }
