@@ -1,8 +1,29 @@
 package com.godaddy.vps4.vm;
 
+import java.util.Map;
+
+import static java.util.Arrays.stream;
+import static java.util.stream.Collectors.toMap;
+
 public enum ActionType {
 
-    CREATE_VM, ENABLE_ADMIN_ACCESS, DISABLE_ADMIN_ACCESS, START_VM, STOP_VM, RESTART_VM, DESTROY_VM
-    
+    CREATE_VM(1), RESTART_VM(2), ENABLE_ADMIN_ACCESS(3), DISABLE_ADMIN_ACCESS(4), START_VM(5), STOP_VM(6), DESTROY_VM(7) ;
+
+    private final int typeId;
+
+    ActionType(int typeId) {
+        this.typeId = typeId;
+    }
+
+    private final static Map<Integer, ActionType> map = stream(ActionType.values())
+            .collect(toMap(type -> type.typeId, type -> type));
+
+    public static ActionType valueOf(int typeId) {
+        return map.get(typeId);
+    }
+
+    public int getActionTypeId() {
+        return typeId;
+    }
 
 }
