@@ -50,7 +50,6 @@ public class AllocateIpWorker implements Callable<IpAddress> {
         }
 
         IpAddress ipAddress = networkService.getAddress(hfsAction.addressId);
-
         if (ipAddress.status != Status.UNBOUND) {
             throw new Vps4Exception("ALLOCATE_IP_FAILED", String.format("IP %s is not unbound", ipAddress.address));
         }

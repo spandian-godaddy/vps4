@@ -11,6 +11,7 @@ import org.mockito.Mockito;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
 
+import com.godaddy.vps4.vm.UserService;
 import com.godaddy.vps4.vm.ActionStatus;
 import com.godaddy.vps4.web.sysadmin.SetAdminAction;
 import com.godaddy.vps4.web.sysadmin.SysAdminResource;
@@ -22,6 +23,7 @@ import gdg.hfs.vhfs.sysadmin.SysAdminService;
 public class ToggleAdminWorkerTest {
 
     SysAdminService sysAdminService;
+    UserService userService;
     SysAdminAction inProgressAction;
     SysAdminAction completeAction;
     long vmId = 1;
@@ -45,7 +47,11 @@ public class ToggleAdminWorkerTest {
         when(sysAdminService.enableAdmin(vmId, username)).thenReturn(inProgressAction);
         when(sysAdminService.disableAdmin(vmId, username)).thenReturn(inProgressAction);
         when(sysAdminService.getSysAdminAction(inProgressAction.sysAdminActionId)).thenReturn(completeAction);
-        resource = new SysAdminResource(sysAdminService);
+
+        userService = Mockito.mock(UserService.class);
+        when(userService.userExists(username, vmId)).thenReturn(true);
+        
+        resource = new SysAdminResource(sysAdminService, userService);
         request = new SetAdminRequest();
         request.username = username;
     }
@@ -88,6 +94,16 @@ public class ToggleAdminWorkerTest {
         verify(sysAdminService, times(1)).enableAdmin(vmId, username);
         verify(sysAdminService, times(0)).disableAdmin(vmId, username);
         Assert.assertEquals(ActionStatus.ERROR, returnAction.status);
+    }
+    
+    @Test
+    public void testUserDoesntExist(){
+        when(userService.userExists(username, vmId)).thenReturn(false); // overwrites the one defined in setup
+        
+        SetAdminAction returnAction = resource.disableUserAdmin(vmId, request);
+        verify(sysAdminService, times(0)).enableAdmin(Mockito.anyLong(), Mockito.anyString());
+        verify(sysAdminService, times(0)).disableAdmin(Mockito.anyLong(), Mockito.anyString());
+        Assert.assertEquals(ActionStatus.INVALID, returnAction.status);
     }
 
     @Test

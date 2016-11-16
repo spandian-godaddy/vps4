@@ -20,9 +20,11 @@ import org.slf4j.LoggerFactory;
 
 import com.godaddy.vps4.vm.ActionStatus;
 import com.godaddy.vps4.Vps4Exception;
+import com.godaddy.vps4.vm.UserService;
 import com.godaddy.vps4.web.Action;
 import com.godaddy.vps4.web.Vps4Api;
 import com.godaddy.vps4.web.vm.VmResource.CreateVmAction;
+
 
 import gdg.hfs.vhfs.sysadmin.SysAdminService;
 import io.swagger.annotations.Api;
@@ -44,10 +46,12 @@ public class SysAdminResource {
     static final ExecutorService threadPool = Executors.newCachedThreadPool();
 
     final SysAdminService sysAdminService;
+    final UserService userService;
 
     @Inject
-    public SysAdminResource(SysAdminService sysAdminService) {
+    public SysAdminResource(SysAdminService sysAdminService, UserService userService) {
         this.sysAdminService = sysAdminService;
+        this.userService = userService;
     }
     
     public static class UpdatePasswordRequest{
@@ -62,6 +66,11 @@ public class SysAdminResource {
         // Windows does not have a "root" user.
         String[] usernames = {updatePasswordRequest.username, "root"};
         SetPasswordAction action = new SetPasswordAction(vmId, usernames, updatePasswordRequest.password);
+        if (!userService.userExists(updatePasswordRequest.username, vmId)) {
+            action.message = "Cannot find user " + action.getUsername() + " for vm "+action.getVmId();
+            action.status = ActionStatus.INVALID;
+            return action;
+        }
         actions.put(action.actionId, action);
         SetPasswordWorker worker = new SetPasswordWorker(sysAdminService, action);
 
@@ -80,7 +89,9 @@ public class SysAdminResource {
     public static class SetAdminRequest {
         public String username;
     }
+    
 
+    
     @POST
     @Path("/{vmId}/enableAdmin")
     public SetAdminAction enableUserAdmin(@QueryParam("vmId") long vmId, SetAdminRequest setAdminRequest) {
@@ -98,8 +109,13 @@ public class SysAdminResource {
     }
     
     private void setUserAdmin(SetAdminAction action) {
+        if (!userService.userExists(action.getUsername(), action.getVmId())) {
+            action.message = "Cannot find user " + action.getUsername() + " for vm "+action.getVmId();
+            action.status = ActionStatus.INVALID;
+            return;
+        }
         actions.put(action.actionId, action);
-        ToggleAdminWorker worker = new ToggleAdminWorker(sysAdminService, action);
+        ToggleAdminWorker worker = new ToggleAdminWorker(sysAdminService, userService, action);
 
         action.status = ActionStatus.IN_PROGRESS;
         threadPool.execute(() -> {

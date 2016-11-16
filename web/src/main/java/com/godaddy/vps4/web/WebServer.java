@@ -16,6 +16,8 @@ import org.eclipse.jetty.servlet.ServletContextHandler;
 import org.eclipse.jetty.util.thread.QueuedThreadPool;
 import org.jboss.resteasy.plugins.guice.GuiceResteasyBootstrapServletContextListener;
 import org.jboss.resteasy.util.GetRestful;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.godaddy.vps4.config.Config;
 import com.godaddy.vps4.config.ConfigProvider;
@@ -34,6 +36,8 @@ import io.swagger.config.Scanner;
 import io.swagger.config.ScannerFactory;
 
 public class WebServer {
+    
+    private static final Logger logger = LoggerFactory.getLogger(WebServer.class);
     
     private static int getPortFromConfig(){
         Config conf = new ConfigProvider().get();
@@ -69,9 +73,11 @@ public class WebServer {
 
         modules.add(new GuiceFilterModule());
         modules.add(new SwaggerModule());
-        
         if(System.getProperty("vps4.hfs.mock", "false").equals("true"))
+        {
+            logger.info("USING MOCK HFS");
             modules.add(new HfsMockModule());
+        }
         else
             modules.add(new HfsModule());
 

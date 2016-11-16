@@ -42,6 +42,7 @@ public class ProvisionVmWorkerTest {
     private VmService vmService;
     private NetworkService hfsNetworkSerivce;
     private SysAdminService sysAdminService;
+    private UserService userService;
     private ExecutorService threadPool;
     private com.godaddy.vps4.network.NetworkService vps4NetworkService;
     private CPanelService cPanelService;
@@ -73,6 +74,7 @@ public class ProvisionVmWorkerTest {
         vps4NetworkService = Mockito.mock(com.godaddy.vps4.network.NetworkService.class);
         cPanelService = Mockito.mock(CPanelService.class);
         virtualMachineService = Mockito.mock(VirtualMachineService.class);
+        userService = Mockito.mock(UserService.class);
 
         orionGuid = UUID.randomUUID();
         name = "testName";
@@ -127,7 +129,7 @@ public class ProvisionVmWorkerTest {
 
     private void runProvisionVmWorker() {
         ProvisionVmInfo vmInfo = new ProvisionVmInfo(orionGuid, name, projectId, specId, managedLevel, image);
-        ProvisionVmWorker worker = new ProvisionVmWorker(vmService, hfsNetworkSerivce, sysAdminService,
+        ProvisionVmWorker worker = new ProvisionVmWorker(vmService, hfsNetworkSerivce, sysAdminService, userService,
                 vps4NetworkService, virtualMachineService, cPanelService, action, threadPool, vmInfo);
         worker.run();
     }

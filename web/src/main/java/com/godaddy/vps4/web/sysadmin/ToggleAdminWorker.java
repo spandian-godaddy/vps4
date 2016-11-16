@@ -4,6 +4,9 @@ import org.slf4j.LoggerFactory;
 
 import com.godaddy.vps4.vm.ActionStatus;
 import com.godaddy.vps4.Vps4Exception;
+import com.godaddy.vps4.vm.UserService;
+import com.godaddy.vps4.web.Action;
+
 
 import gdg.hfs.vhfs.sysadmin.SysAdminAction;
 import gdg.hfs.vhfs.sysadmin.SysAdminService;
@@ -14,21 +17,24 @@ public class ToggleAdminWorker implements Runnable{
 
 
     final SysAdminService sysAdminService;
+    final UserService userService;
     final long vmId;
     final String username;
     final boolean enabled;
     SetAdminAction action;
     
-    public ToggleAdminWorker(SysAdminService sysAdminService, SetAdminAction action) {
+    public ToggleAdminWorker(SysAdminService sysAdminService, UserService userService, SetAdminAction action) {
         this.sysAdminService = sysAdminService;
+        this.userService = userService;
         this.vmId = action.getVmId();
         this.username = action.getUsername();
         this.enabled = action.getAdminEnabled();
         this.action = action;
     }
     
-    public ToggleAdminWorker(SysAdminService sysAdminService, long vmId, String username, boolean enabled) {
+    public ToggleAdminWorker(SysAdminService sysAdminService, UserService userService, long vmId, String username, boolean enabled) {
         this.sysAdminService = sysAdminService;
+        this.userService = userService;
         this.vmId = vmId;
         this.username = username;
         this.enabled = enabled;
@@ -48,6 +54,9 @@ public class ToggleAdminWorker implements Runnable{
                 hfsSysAction = sysAdminService.disableAdmin(vmId, username);
                 SysAdminWorker.waitForSysAdminAction(sysAdminService, hfsSysAction);
             }
+            
+            userService.updateUserAdminAccess(action.getUsername(), action.getVmId(), enabled);
+
             action.status = ActionStatus.COMPLETE;
         } catch (Exception e) {
             String toggle = enabled ? "ENABLE" : "DISABLE";

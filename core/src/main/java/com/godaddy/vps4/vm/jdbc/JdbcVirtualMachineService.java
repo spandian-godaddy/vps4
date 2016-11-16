@@ -60,7 +60,7 @@ public class JdbcVirtualMachineService implements VirtualMachineService {
 
     public VirtualMachine getVirtualMachine(UUID orionGuid) {
         return Sql.with(dataSource)
-                .exec("SELECT vm.vm_id, vm.orion_guid, vm.project_id, vm.name as \"vm_name\", "
+                .exec("SELECT vm.vm_id, vm.orion_guid, vm.project_id, vm.name as \"vm_name\","
                         + "vm.valid_on as \"vm_valid_on\", vm.valid_until as \"vm_valid_until\", vms.spec_id, vms.spec_name, "
                         + "vms.tier, vms.cpu_core_count, vms.memory_mib, vms.disk_gib, vms.valid_on as \"spec_valid_on\", "
                         + "vms.valid_until as \"spec_valid_until\", image.name as \"image_name\" FROM virtual_machine vm "

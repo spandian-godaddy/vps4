@@ -4,12 +4,29 @@ http://localhost:3000/#/hosting/vps4/servers/0afac885-2e24-495c-8776-64602aeb047
 Upon successful deletion the vm with vm_id=0 will have valid_until 
 set to a date instead of "infinity".
 
+INSERT INTO public.virtual_machine_request as vm_request(
+orion_guid, tier, managed_level, operating_system, control_panel)
+VALUES ('0afac885-2e24-495c-8776-64602aeb047d', 10, 1, 'linux', 'None')
+on conflict (orion_guid)
+do update set tier = 10
+where vm_request.orion_guid = '0afac885-2e24-495c-8776-64602aeb047d';
+
+INSERT INTO public.project as project(
+project_id, project_name, data_center_id, vhfs_sgid, valid_until)
+VALUES(46, '0afac885-2e24-495c-8776-64602aeb047d', 1, 'vps4-46', 'infinity')
+
 INSERT INTO public.virtual_machine as vm(
 vm_id, orion_guid, name, project_id, spec_id, managed_level, image_id)
 VALUES (0, '0afac885-2e24-495c-8776-64602aeb047d', 'GTest', 46, 1, 1, 1)
 on conflict (vm_id)
 do update set valid_until = 'infinity'
 where vm.vm_id = 0;
+
+INSERT INT public.vm_user (name, virtual_machine_id, admin_enabled)
+VALUES('testuser', 0, false)
+on conflict (name, virtual_machine_id)
+do update set admin_enabled = false 
+where name='testuser' and virtual_machine_id=0;
 
 INSERT into public.project as proj(
     project_id, project_name, data_center_id, vhfs_sgid)

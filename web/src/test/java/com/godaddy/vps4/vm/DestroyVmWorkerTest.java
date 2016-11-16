@@ -61,8 +61,7 @@ public class DestroyVmWorkerTest {
         threadPool = Executors.newCachedThreadPool();
 
         action = new DestroyVmAction();
-        action.virtualMachine = new VirtualMachine(1, UUID.randomUUID(), 1, null, "testDestroyVmServerName", "centos-7", Instant.now(),
-                Instant.MAX);
+        action.virtualMachine = new VirtualMachine(1, UUID.randomUUID(), 1, null, "testDestroyVmServerName", "centos-7", Instant.now(), Instant.MAX);
 
         addresses = new ArrayList<IpAddress>();
         addresses

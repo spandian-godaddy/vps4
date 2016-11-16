@@ -11,6 +11,7 @@ import org.mockito.Mockito;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
 
+import com.godaddy.vps4.vm.UserService;
 import com.godaddy.vps4.vm.ActionStatus;
 import com.godaddy.vps4.web.sysadmin.SetPasswordAction;
 import com.godaddy.vps4.web.sysadmin.SysAdminResource;
@@ -22,6 +23,7 @@ import gdg.hfs.vhfs.sysadmin.SysAdminService;
 public class ChangePasswordWorkerTest {
 
     SysAdminService sysAdminService;
+    UserService userService;
     SysAdminAction inProgressAction;
     SysAdminAction completeAction;
     long vmId = 1;
@@ -46,7 +48,10 @@ public class ChangePasswordWorkerTest {
         when(sysAdminService.changePassword(vmId, username, newPassword)).thenReturn(inProgressAction);
         when(sysAdminService.changePassword(vmId, "root", newPassword)).thenReturn(inProgressAction);
         when(sysAdminService.getSysAdminAction(inProgressAction.sysAdminActionId)).thenReturn(completeAction);
-        resource = new SysAdminResource(sysAdminService);
+        
+        userService = Mockito.mock(UserService.class);
+        when(userService.userExists(Mockito.anyString(), Mockito.anyLong())).thenReturn(true);
+        resource = new SysAdminResource(sysAdminService, userService);
         request = new UpdatePasswordRequest();
         request.username = username;
         request.password = newPassword;

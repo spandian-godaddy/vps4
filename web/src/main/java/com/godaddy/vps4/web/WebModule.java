@@ -1,6 +1,7 @@
 package com.godaddy.vps4.web;
 
 import com.godaddy.vps4.web.validator.ValidatorResource;
+import com.godaddy.vps4.web.vm.UserResource;
 import com.godaddy.vps4.web.vm.VmPatchResource;
 import com.godaddy.vps4.web.vm.VmResource;
 import com.godaddy.vps4.web.sysadmin.SysAdminResource;
@@ -15,7 +16,7 @@ public class WebModule extends AbstractModule {
         bind(VmPatchResource.class);
         bind(ValidatorResource.class);
         bind(SysAdminResource.class);
-
+        bind(UserResource.class);
         bind(TestResource.class);
     }
 }

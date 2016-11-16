@@ -34,6 +34,7 @@ import com.godaddy.vps4.vm.ControlPanelService;
 import com.godaddy.vps4.vm.Image;
 import com.godaddy.vps4.vm.ImageService;
 import com.godaddy.vps4.vm.OsTypeService;
+import com.godaddy.vps4.vm.UserService;
 import com.godaddy.vps4.vm.VirtualMachine;
 import com.godaddy.vps4.vm.VirtualMachineRequest;
 import com.godaddy.vps4.vm.VirtualMachineService;
@@ -41,6 +42,8 @@ import com.godaddy.vps4.vm.VirtualMachineSpec;
 import com.godaddy.vps4.web.Action;
 import com.godaddy.vps4.vm.ActionStatus;
 import com.godaddy.vps4.web.Vps4Api;
+import com.godaddy.vps4.web.sysadmin.SetAdminAction;
+import com.godaddy.vps4.web.sysadmin.ToggleAdminWorker;
 
 import gdg.hfs.vhfs.cpanel.CPanelService;
 import gdg.hfs.vhfs.network.IpAddress;
@@ -79,16 +82,18 @@ public class VmResource {
     final ProjectService projectService;
     final ImageService imageService;
     final SysAdminService sysAdminService;
+    final UserService userService;
     final com.godaddy.vps4.network.NetworkService vps4NetworkService;
     final CPanelService cPanelService;
 
     // TODO: Break this up into multiple classes to reduce number of
     // dependencies.
     @Inject
-    public VmResource(SysAdminService sysAdminService, PrivilegeService privilegeService, User user, VmService vmService,
+    public VmResource(UserService userService, SysAdminService sysAdminService, PrivilegeService privilegeService, User user, VmService vmService,
             NetworkService hfsNetworkService, VirtualMachineService virtualMachineService, ControlPanelService controlPanelService,
             OsTypeService osTypeService, ProjectService projectService, ImageService imageService,
             com.godaddy.vps4.network.NetworkService vps4NetworkService, CPanelService cPanelService) {
+        this.userService = userService;
         this.sysAdminService = sysAdminService;
         this.user = user;
         this.virtualMachineService = virtualMachineService;
@@ -145,6 +150,7 @@ public class VmResource {
         logger.info("getting vm with id {}", orionGuid);
 
         VirtualMachine virtualMachine = virtualMachineService.getVirtualMachine(orionGuid);
+        
         if (virtualMachine == null) {
             // TODO need to return 404 here
             throw new IllegalArgumentException("Unknown VM ID: " + orionGuid);
@@ -186,8 +192,6 @@ public class VmResource {
         return virtualMachineService.getVirtualMachineRequest(orionGuid);
 
     }
-
-   
 
     public static class ProvisionVmRequest {
         public String name;
@@ -236,7 +240,7 @@ public class VmResource {
         VirtualMachineSpec spec = getVirtualMachineSpec(request);
 
         Image image = getImage(provisionRequest.image);
-        // TODO - verify that the image maches the request (control panel, managed level, OS)
+        // TODO - verify that the image matches the request (control panel, managed level, OS)
 
         // FIXME need to get the action back to the caller so they can poll the status/steps/ticks
         CreateVMRequest hfsRequest = createHfsProvisionVmRequest(provisionRequest.image, provisionRequest.username,
@@ -249,7 +253,7 @@ public class VmResource {
         provisionActions.put(provisionRequest.orionGuid, action);
         ProvisionVmInfo vmInfo = new ProvisionVmInfo(provisionRequest.orionGuid, provisionRequest.name, project.getProjectId(),
                 spec.specId, request.managedLevel, image);
-        final ProvisionVmWorker provisionWorker = new ProvisionVmWorker(vmService, hfsNetworkService, sysAdminService,
+        final ProvisionVmWorker provisionWorker = new ProvisionVmWorker(vmService, hfsNetworkService, sysAdminService, userService,
                 vps4NetworkService, virtualMachineService, cPanelService,
                 action, threadPool, vmInfo);
         threadPool.execute(() -> {

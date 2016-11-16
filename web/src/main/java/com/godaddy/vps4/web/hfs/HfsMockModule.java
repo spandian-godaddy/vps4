@@ -1,14 +1,19 @@
 package com.godaddy.vps4.web.hfs;
 
+
 import org.mockito.Mockito;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
 
 import com.google.inject.AbstractModule;
 
+import gdg.hfs.vhfs.cpanel.CPanelService;
 import gdg.hfs.vhfs.network.AddressAction;
+import gdg.hfs.vhfs.network.IpAddress;
 import gdg.hfs.vhfs.network.NetworkService;
+import gdg.hfs.vhfs.sysadmin.SysAdminAction;
 import gdg.hfs.vhfs.sysadmin.SysAdminService;
+import gdg.hfs.vhfs.vm.CreateVMRequest;
 import gdg.hfs.vhfs.vm.Vm;
 import gdg.hfs.vhfs.vm.VmAction;
 import gdg.hfs.vhfs.vm.VmService;
@@ -21,9 +26,27 @@ public class HfsMockModule extends AbstractModule {
         bind(NetworkService.class).toInstance(netService);
         VmService vmService = buildMockVmService();
         bind(VmService.class).toInstance(vmService);
-        SysAdminService sysAdminService = Mockito.mock(SysAdminService.class);
+        SysAdminService sysAdminService = buildSysAdminService();
         bind(SysAdminService.class).toInstance(sysAdminService);
+        CPanelService cpService = Mockito.mock(CPanelService.class);
+        bind(CPanelService.class).toInstance(cpService);
+        
+
     }
+    
+    private SysAdminService buildSysAdminService(){
+       SysAdminService sysAdminService = Mockito.mock(SysAdminService.class);
+       SysAdminAction completeAction = new SysAdminAction();
+       completeAction.status = SysAdminAction.Status.COMPLETE;
+       Mockito.when(sysAdminService.enableAdmin(Mockito.anyLong(), Mockito.anyString())).thenReturn(completeAction);
+       Mockito.when(sysAdminService.disableAdmin(Mockito.anyLong(), Mockito.anyString())).thenReturn(completeAction);
+       Mockito.when(sysAdminService.changePassword(Mockito.anyLong(), Mockito.anyString(), Mockito.anyString())).thenReturn(completeAction);
+       Mockito.when(sysAdminService.getSysAdminAction(Mockito.anyLong())).thenReturn(completeAction);
+
+       return sysAdminService;
+       
+    }
+
 
     private VmService buildMockVmService() {
         VmService vmService = Mockito.mock(VmService.class);
@@ -37,8 +60,10 @@ public class HfsMockModule extends AbstractModule {
         completeDelAction.state = VmAction.Status.COMPLETE;
         completeDelAction.tickNum = 1;
         Mockito.when(vmService.destroyVm(0)).thenReturn(completeDelAction);
+        Mockito.when(vmService.createVm(Mockito.any(CreateVMRequest.class))).thenReturn(completeDelAction);
         return vmService;
     }
+
 
     private NetworkService buildMockNetworkService() {
         Answer<AddressAction> answer = new Answer<AddressAction>() {
@@ -59,8 +84,19 @@ public class HfsMockModule extends AbstractModule {
         AddressAction newAction = buildAddressAction(AddressAction.Status.NEW);
         Mockito.when(netService.unbindIp(0)).thenReturn(newAction);
         Mockito.when(netService.releaseIp(0)).thenReturn(newAction);
+        Mockito.when(netService.acquireIp(Mockito.anyString())).thenReturn(newAction);
+        Mockito.when(netService.bindIp(12345,0)).thenReturn(newAction);
         Mockito.when(netService.getAddressAction(12345, 54321)).thenAnswer(answer);
+        Mockito.when(netService.getAddress(12345)).thenReturn(buildIpAddress());
         return netService;
+    }
+    
+    private IpAddress buildIpAddress(){
+        IpAddress ip = new IpAddress();
+        ip.address = "2.23.123.111";
+        ip.status = IpAddress.Status.UNBOUND;
+        ip.addressId = 12345;
+        return ip;
     }
 
     private AddressAction buildAddressAction(AddressAction.Status status) {
