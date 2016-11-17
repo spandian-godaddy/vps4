@@ -11,11 +11,11 @@ import org.junit.Test;
 import com.godaddy.vps4.jdbc.DatabaseModule;
 import com.godaddy.vps4.jdbc.Sql;
 import com.godaddy.vps4.security.Vps4User;
+import com.godaddy.vps4.security.jdbc.JdbcVps4UserService;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
 
 import gdg.hfs.security.Vps4UserService;
-import gdg.hfs.security.jdbc.JdbcVps4UserService;
 
 public class JdbcUserServiceTest {
 
@@ -45,7 +45,7 @@ public class JdbcUserServiceTest {
         Vps4User user2 = userService.getOrCreateUserForShopper(shopperId);
         assertEquals(user1.getId(), user2.getId());
 
-        Vps4User user3 = userService.getUserForId(user1Id);
+        Vps4User user3 = userService.getUser(user1Id);
         assertEquals(shopperId, user3.getShopperId());
     }
 

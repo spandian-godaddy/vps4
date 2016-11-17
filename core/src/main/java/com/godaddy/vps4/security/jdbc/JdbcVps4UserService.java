@@ -1,4 +1,4 @@
-package gdg.hfs.security.jdbc;
+package com.godaddy.vps4.security.jdbc;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -26,14 +26,14 @@ public class JdbcVps4UserService implements Vps4UserService {
     }
 
     @Override
-    public Vps4User getUserForShopper(String shopperId) {
+    public Vps4User getUser(String shopperId) {
         return Sql.with(dataSource).exec("SELECT vps4_user_id, shopper_id FROM vps4_user WHERE shopper_id=?",
                 Sql.nextOrNull(this::mapUser),
                 shopperId);
     }
 
     @Override
-    public Vps4User getUserForId(long userId) {
+    public Vps4User getUser(long userId) {
         return Sql.with(dataSource).exec("SELECT vps4_user_id, shopper_id FROM vps4_user WHERE vps4_user_id=?",
                 Sql.nextOrNull(this::mapUser),
                 userId);
@@ -48,7 +48,7 @@ public class JdbcVps4UserService implements Vps4UserService {
                 null,
                 shopperId, shopperId);
 
-        Vps4User user = getUserForShopper(shopperId);
+        Vps4User user = getUser(shopperId);
         if (user == null) {
             throw new IllegalStateException("Unable to lazily create user for shopper " + shopperId);
         }
