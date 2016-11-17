@@ -36,7 +36,6 @@ public class JdbcUserServiceTest {
 
     @Test
     public void getOrCreateUserForShopperTest() {
-
         Vps4UserService userService = new JdbcVps4UserService(dataSource);
 
         Vps4User user1 = userService.getOrCreateUserForShopper(shopperId);
