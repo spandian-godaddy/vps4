@@ -31,14 +31,14 @@ public class ExampleDatabaseTest {
                 try (ResultSet rs = stmt.executeQuery("SELECT * FROM information_schema.tables")) {
 
                     while (rs.next()) {
-                        System.out.println( rs.getString("table_schema") + "." + rs.getString("table_name") );
+                        System.out.println(rs.getString("table_schema") + "." + rs.getString("table_name"));
                     }
                 }
             }
 
         }
 
-        Vps4User user = new Vps4User("Brian", 0, "ShopperId");
+        Vps4User user = new Vps4User(0, "ShopperId");
 
         assertTrue(true);
     }
