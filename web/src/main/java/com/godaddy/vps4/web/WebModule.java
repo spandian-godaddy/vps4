@@ -17,6 +17,5 @@ public class WebModule extends AbstractModule {
         bind(ValidatorResource.class);
         bind(SysAdminResource.class);
         bind(UserResource.class);
-        bind(TestResource.class);
     }
 }
