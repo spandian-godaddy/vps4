@@ -4,3 +4,6 @@
 **/.classpath
 **/.project
 *.orig
+**/*.iml
+*.idea
+**/coverage/

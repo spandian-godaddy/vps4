@@ -1,5 +1,26 @@
 package com.godaddy.vps4.web.vm;
 
+import com.godaddy.vps4.Vps4Exception;
+import com.godaddy.vps4.project.Project;
+import com.godaddy.vps4.project.ProjectService;
+import com.godaddy.vps4.security.PrivilegeService;
+import com.godaddy.vps4.security.Vps4User;
+import com.godaddy.vps4.vm.*;
+import com.godaddy.vps4.vm.Image;
+import com.godaddy.vps4.web.Action;
+import com.godaddy.vps4.web.Vps4Api;
+import gdg.hfs.vhfs.cpanel.CPanelService;
+import gdg.hfs.vhfs.network.IpAddress;
+import gdg.hfs.vhfs.network.NetworkService;
+import gdg.hfs.vhfs.sysadmin.SysAdminService;
+import gdg.hfs.vhfs.vm.*;
+import io.swagger.annotations.Api;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import javax.inject.Inject;
+import javax.ws.rs.*;
+import javax.ws.rs.core.MediaType;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -8,53 +29,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicLong;
-
-import javax.inject.Inject;
-import javax.ws.rs.Consumes;
-import javax.ws.rs.DELETE;
-import javax.ws.rs.GET;
-import javax.ws.rs.NotFoundException;
-import javax.ws.rs.POST;
-import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.Produces;
-import javax.ws.rs.QueryParam;
-import javax.ws.rs.core.MediaType;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import com.godaddy.vps4.Vps4Exception;
-import com.godaddy.vps4.project.Project;
-import com.godaddy.vps4.project.ProjectService;
-import com.godaddy.vps4.security.PrivilegeService;
-import com.godaddy.vps4.security.Vps4User;
-import com.godaddy.vps4.vm.CombinedVm;
-import com.godaddy.vps4.vm.ControlPanelService;
-import com.godaddy.vps4.vm.Image;
-import com.godaddy.vps4.vm.ImageService;
-import com.godaddy.vps4.vm.OsTypeService;
-import com.godaddy.vps4.vm.VmUserService;
-import com.godaddy.vps4.vm.VirtualMachine;
-import com.godaddy.vps4.vm.VirtualMachineRequest;
-import com.godaddy.vps4.vm.VirtualMachineService;
-import com.godaddy.vps4.vm.VirtualMachineSpec;
-import com.godaddy.vps4.web.Action;
-import com.godaddy.vps4.vm.ActionStatus;
-import com.godaddy.vps4.web.Vps4Api;
-import com.godaddy.vps4.web.sysadmin.SetAdminAction;
-import com.godaddy.vps4.web.sysadmin.ToggleAdminWorker;
-
-import gdg.hfs.vhfs.cpanel.CPanelService;
-import gdg.hfs.vhfs.network.IpAddress;
-import gdg.hfs.vhfs.network.NetworkService;
-import gdg.hfs.vhfs.sysadmin.SysAdminService;
-import gdg.hfs.vhfs.vm.CreateVMRequest;
-import gdg.hfs.vhfs.vm.Flavor;
-import gdg.hfs.vhfs.vm.FlavorList;
-import gdg.hfs.vhfs.vm.Vm;
-import gdg.hfs.vhfs.vm.VmService;
-import io.swagger.annotations.Api;
 
 @Vps4Api
 @Api(tags = { "vms" })
@@ -85,14 +59,17 @@ public class VmResource {
     final VmUserService userService;
     final com.godaddy.vps4.network.NetworkService vps4NetworkService;
     final CPanelService cPanelService;
+    final ActionService actionService;
 
     // TODO: Break this up into multiple classes to reduce number of
     // dependencies.
     @Inject
-    public VmResource(VmUserService userService, SysAdminService sysAdminService, PrivilegeService privilegeService, Vps4User user, VmService vmService,
-            NetworkService hfsNetworkService, VirtualMachineService virtualMachineService, ControlPanelService controlPanelService,
-            OsTypeService osTypeService, ProjectService projectService, ImageService imageService,
-            com.godaddy.vps4.network.NetworkService vps4NetworkService, CPanelService cPanelService) {
+    public VmResource(VmUserService userService, SysAdminService sysAdminService, PrivilegeService privilegeService,
+                      Vps4User user, VmService vmService, NetworkService hfsNetworkService,
+                      VirtualMachineService virtualMachineService, ControlPanelService controlPanelService,
+                      OsTypeService osTypeService, ProjectService projectService, ImageService imageService,
+                      com.godaddy.vps4.network.NetworkService vps4NetworkService, CPanelService cPanelService,
+                      ActionService actionService) {
         this.userService = userService;
         this.sysAdminService = sysAdminService;
         this.user = user;
@@ -106,6 +83,7 @@ public class VmResource {
         this.imageService = imageService;
         this.vps4NetworkService = vps4NetworkService;
         this.cPanelService = cPanelService;
+        this.actionService = actionService;
     }
 
     @GET
@@ -191,6 +169,112 @@ public class VmResource {
         virtualMachineService.createVirtualMachineRequest(orionGuid, operatingSystem, controlPanel, tier, managedLevel);
         return virtualMachineService.getVirtualMachineRequest(orionGuid);
 
+    }
+
+    @POST
+    @Path("{vmId}/start")
+    public ManageVmAction startVm(@PathParam("vmId") long vmId) {
+        ManageVmAction action = new ManageVmAction(vmId, ActionType.START_VM);
+        manageVm(vmId, action);
+        return action;
+    }
+
+    @POST
+    @Path("{vmId}/stop")
+    public ManageVmAction stopVm(@PathParam("vmId") long vmId) {
+        ManageVmAction action = new ManageVmAction(vmId, ActionType.STOP_VM);
+        manageVm(vmId, action);
+        return action;
+    }
+
+    @POST
+    @Path("{vmId}/restart")
+    public ManageVmAction restartVm(@PathParam("vmId") long vmId) {
+        ManageVmAction action = new ManageVmAction(vmId, ActionType.RESTART_VM);
+        manageVm(vmId, action);
+        return action;
+    }
+
+    /**
+     * Check if vm exists
+     * @param vmId
+     * @return virtualmachine project id if found
+     * @throws VmNotFoundException
+     */
+    private long getVmProjectId(long vmId) throws VmNotFoundException {
+        VirtualMachine vm;
+
+        try {
+            vm = virtualMachineService.getVirtualMachine(vmId);
+            if(vm == null) {
+                throw new VmNotFoundException("Could not find VM for specified vm id: " + vmId );
+            }
+        } catch (Exception ex) {
+            logger.error("Could not find vm with VM ID: {} ", vmId, ex);
+            throw new VmNotFoundException( "Could not find vm with VM ID: " + vmId, ex);
+        }
+        return vm.projectId;
+    }
+
+    /**
+     * Check if user is allowed to access the vm
+     * @param vmProjectId
+     * @return true if user has access, false otherwise
+     */
+    private boolean userExistsOnVm(long vmProjectId) {
+        try {
+            privilegeService.requireAnyPrivilegeToSgid(user, vmProjectId);
+            return true;
+        } catch (Exception ex) {
+            logger.error("Could not ascertain user privileges. ", ex);
+            return false;
+        }
+    }
+
+    /**
+     * Manage the vm to perform actions like start / stop / restart vm.
+     * @param vmId
+     * @param action
+     */
+    private void manageVm (long vmId, ManageVmAction action) {
+
+        action.status = ActionStatus.IN_PROGRESS;
+        long actionId = actionService.createAction(vmId, action.getActionType(), "{}", user.getId());
+        action.setActionId(actionId);
+
+        // Check if vm exists and user has access to the vm.
+        long vmProjectId;
+        try {
+            vmProjectId = getVmProjectId(vmId);
+        } catch (Exception ex) {
+            String message = String.format("Could not get project id for requested vm id: %d.", vmId);
+            logger.error("Could not get project id for VM vm id: {} ", vmId, ex);
+            action.status = ActionStatus.ERROR;
+            action.setMessage(message);
+            actionService.failAction(vmId, "{}", message);
+            return;
+        }
+
+        if (!userExistsOnVm(vmProjectId)) {
+            String message = String.format("User %s does not exist on vm id: %d%n ", user, vmId);
+            logger.error(message);
+            action.status = ActionStatus.ERROR;
+            action.setMessage(message);
+            actionService.failAction(vmId, "{}", message);
+            return;
+        }
+
+
+        ManageVmWorker worker = new ManageVmWorker(vmService, actionService, vmId, action);
+        threadPool.execute(() -> {
+            try {
+                worker.run();
+            } catch (Vps4Exception e) {
+                action.status = ActionStatus.ERROR;
+                action.setMessage(e.getMessage());
+                actionService.failAction(vmId, "{}", e.getMessage());
+            }
+        });
     }
 
     public static class ProvisionVmRequest {
