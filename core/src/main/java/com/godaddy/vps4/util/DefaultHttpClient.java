@@ -52,12 +52,14 @@ public class DefaultHttpClient {
                     .setSslcontext(sslContext)
                     .setHostnameVerifier(SSLConnectionSocketFactory.ALLOW_ALL_HOSTNAME_VERIFIER)
                     .disableRedirectHandling()
+                    .setMaxConnPerRoute(250)
+                    .setMaxConnTotal(500)
                     .build();
         }
         catch (Exception e) {
             throw new RuntimeException(e);
         }
-    } 
+    }
 
     public static HttpClient get() {
         return httpClient;
