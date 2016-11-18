@@ -1,4 +1,4 @@
-package com.godaddy.vps4.security.crypto;
+package com.godaddy.vps4.web.security.crypto;
 
 import java.security.interfaces.RSAPrivateCrtKey;
 import java.security.interfaces.RSAPublicKey;

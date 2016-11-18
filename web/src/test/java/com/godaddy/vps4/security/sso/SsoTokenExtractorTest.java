@@ -17,8 +17,8 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 import org.mockito.Mockito;
 
-import com.godaddy.vps4.security.crypto.KeyPairUtil;
-import com.godaddy.vps4.security.crypto.RSAKeyPair;
+import com.godaddy.vps4.web.security.crypto.KeyPairUtil;
+import com.godaddy.vps4.web.security.crypto.RSAKeyPair;
 import com.godaddy.vps4.web.security.sso.KeyService;
 import com.godaddy.vps4.web.security.sso.SsoTokenExtractor;
 import com.godaddy.vps4.web.security.sso.token.SsoToken;

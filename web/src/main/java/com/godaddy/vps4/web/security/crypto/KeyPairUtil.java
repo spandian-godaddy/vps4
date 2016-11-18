@@ -1,4 +1,4 @@
-package com.godaddy.vps4.security.crypto;
+package com.godaddy.vps4.web.security.crypto;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
