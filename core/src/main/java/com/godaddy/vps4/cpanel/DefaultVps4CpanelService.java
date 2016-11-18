@@ -1,4 +1,4 @@
-package com.godaddy.vps4.web.cpanel;
+package com.godaddy.vps4.cpanel;
 
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
@@ -8,7 +8,7 @@ import java.util.concurrent.TimeoutException;
 import javax.inject.Inject;
 
 import com.godaddy.vps4.config.Config;
-import com.godaddy.vps4.web.cpanel.CpanelClient.CpanelServiceType;
+import com.godaddy.vps4.cpanel.CpanelClient.CpanelServiceType;
 
 public class DefaultVps4CpanelService implements Vps4CpanelService {
 

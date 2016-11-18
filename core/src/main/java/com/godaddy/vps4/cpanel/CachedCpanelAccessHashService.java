@@ -1,4 +1,4 @@
-package com.godaddy.vps4.web.cpanel;
+package com.godaddy.vps4.cpanel;
 
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;

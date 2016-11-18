@@ -1,6 +1,6 @@
-package com.godaddy.vps4.web.cpanel;
+package com.godaddy.vps4.cpanel;
 
-class CPanelAccount {
+public class CPanelAccount {
     public String name;
 
     public CPanelAccount(String name) {

@@ -1,8 +1,8 @@
-package com.godaddy.vps4.web.cpanel;
+package com.godaddy.vps4.cpanel;
 
 import java.util.List;
 
-import com.godaddy.vps4.web.cpanel.CpanelClient.CpanelServiceType;
+import com.godaddy.vps4.cpanel.CpanelClient.CpanelServiceType;
 
 public interface Vps4CpanelService {
 

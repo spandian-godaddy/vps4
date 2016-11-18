@@ -13,8 +13,11 @@ import javax.ws.rs.core.MediaType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.godaddy.vps4.cpanel.CPanelAccount;
+import com.godaddy.vps4.cpanel.CPanelSession;
+import com.godaddy.vps4.cpanel.Vps4CpanelService;
+import com.godaddy.vps4.cpanel.CpanelClient.CpanelServiceType;
 import com.godaddy.vps4.web.Vps4Api;
-import com.godaddy.vps4.web.cpanel.CpanelClient.CpanelServiceType;
 
 import io.swagger.annotations.Api;
 

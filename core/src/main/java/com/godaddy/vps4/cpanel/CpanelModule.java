@@ -1,4 +1,4 @@
-package com.godaddy.vps4.web.cpanel;
+package com.godaddy.vps4.cpanel;
 
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
