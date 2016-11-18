@@ -11,11 +11,10 @@ import org.junit.Test;
 import com.godaddy.vps4.jdbc.DatabaseModule;
 import com.godaddy.vps4.jdbc.Sql;
 import com.godaddy.vps4.security.Vps4User;
+import com.godaddy.vps4.security.Vps4UserService;
 import com.godaddy.vps4.security.jdbc.JdbcVps4UserService;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
-
-import gdg.hfs.security.Vps4UserService;
 
 public class JdbcUserServiceTest {
 

@@ -1,5 +1,6 @@
 package com.godaddy.vps4.web;
 
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.List;
@@ -7,7 +8,9 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import javax.servlet.DispatcherType;
+import javax.sql.DataSource;
 
+import org.apache.http.impl.client.HttpClientBuilder;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.ServerConnector;
 import org.eclipse.jetty.server.handler.HandlerList;
@@ -21,13 +24,18 @@ import org.slf4j.LoggerFactory;
 
 import com.godaddy.vps4.config.Config;
 import com.godaddy.vps4.config.ConfigProvider;
-import com.godaddy.vps4.cpanel.CpanelModule;
-import com.godaddy.vps4.cpanel.FakeCpanelModule;
 import com.godaddy.vps4.hfs.HfsMockModule;
 import com.godaddy.vps4.hfs.HfsModule;
 import com.godaddy.vps4.jdbc.DatabaseModule;
 import com.godaddy.vps4.security.Vps4UserModule;
+import com.godaddy.vps4.security.Vps4UserService;
+import com.godaddy.vps4.security.jdbc.JdbcVps4UserService;
 import com.godaddy.vps4.web.network.NetworkModule;
+import com.godaddy.vps4.web.security.AuthenticationFilter;
+import com.godaddy.vps4.web.security.Vps4RequestAuthenticator;
+import com.godaddy.vps4.web.security.sso.HttpKeyService;
+import com.godaddy.vps4.web.security.sso.KeyService;
+import com.godaddy.vps4.web.security.sso.SsoTokenExtractor;
 import com.godaddy.vps4.vm.VmModule;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
@@ -39,50 +47,50 @@ import io.swagger.config.ScannerFactory;
 
 public class WebServer {
 
-
     private static final Logger logger = LoggerFactory.getLogger(WebServer.class);
+    static Config conf = new ConfigProvider().get();
 
-    private static int getPortFromConfig(){
-        Config conf = new ConfigProvider().get();
+    private static int getPortFromConfig() {
         return Integer.valueOf(conf.get("vps4.http.port", "8080"));
     }
 
-	public static void main(String[] args) throws Exception {
+    public static void main(String[] args) throws Exception {
 
-		QueuedThreadPool threadPool = new QueuedThreadPool();
-	    threadPool.setMaxThreads(500);
+        ServletContextHandler servletContext = new ServletContextHandler(ServletContextHandler.SESSIONS);
 
-	    Server server = new Server(threadPool);
+        QueuedThreadPool threadPool = new QueuedThreadPool();
+        threadPool.setMaxThreads(500);
 
-	    ServerConnector httpConnector = new ServerConnector(server);
-	    int port = getPortFromConfig();
-	    httpConnector.setPort(port);
-	    server.addConnector(httpConnector);
+        Server server = new Server(threadPool);
 
-	    HandlerList handlers = new HandlerList();
+        ServerConnector httpConnector = new ServerConnector(server);
+        int port = getPortFromConfig();
+        httpConnector.setPort(port);
+        server.addConnector(httpConnector);
 
-	    handlers.addHandler(SwaggerContextHandler.newSwaggerResourceContext());
-	    handlers.addHandler(newHandler());
+        HandlerList handlers = new HandlerList();
 
-	    server.setHandler(handlers);
+        handlers.addHandler(SwaggerContextHandler.newSwaggerResourceContext());
+        handlers.addHandler(newHandler());
+
+        server.setHandler(handlers);
 
         server.start();
         server.join();
-	}
+    }
 
-	protected static ServletContextHandler newHandler() {
+    protected static ServletContextHandler newHandler() {
 
         List<Module> modules = new ArrayList<>();
 
         modules.add(new GuiceFilterModule());
         modules.add(new SwaggerModule());
-
-        if(System.getProperty("vps4.hfs.mock", "false").equals("true")) {
+        if (System.getProperty("vps4.hfs.mock", "false").equals("true")) {
             logger.info("USING MOCK HFS");
             modules.add(new HfsMockModule());
-        } else {
-            modules.add(new HfsModule());
         }
+        else
+            modules.add(new HfsModule());
 
         modules.add(new DatabaseModule());
         modules.add(new WebModule());
@@ -90,39 +98,55 @@ public class WebServer {
 
         modules.add(new VmModule());
         modules.add(new NetworkModule());
-        //modules.add(new CPanelModule());
-        modules.add(new FakeCpanelModule());
         modules.add(new CommandClientModule());
 
         Injector injector = Guice.createInjector(modules);
+        DataSource dataSource = injector.getInstance(DataSource.class);
 
         ServletContextHandler handler = new ServletContextHandler();
         handler.setContextPath("/");
         handler.addEventListener(injector.getInstance(GuiceResteasyBootstrapServletContextListener.class));
 
+        addAuthentication(handler, dataSource);
         handler.addFilter(CorsFilter.class, "/*", EnumSet.allOf(DispatcherType.class));
 
         FilterHolder guiceFilter = new FilterHolder(injector.getInstance(GuiceFilter.class));
-        handler.addFilter(guiceFilter,  "/*",  EnumSet.allOf(DispatcherType.class));
+        handler.addFilter(guiceFilter, "/*", EnumSet.allOf(DispatcherType.class));
 
         populateSwaggerModels(injector);
 
         return handler;
-	}
+    }
 
-	static boolean isVps4Api(Class<?> resourceClass) {
-	    return resourceClass.isAnnotationPresent(Vps4Api.class);
-	}
+    private static void addAuthentication(ServletContextHandler handler, DataSource dataSource) {
+        // TODO properly configure HTTP client (max routes per host, etc)
+        KeyService keyService = new HttpKeyService(conf.get("sso.url"), HttpClientBuilder.create().build());
 
-	static void populateSwaggerModels(Injector injector) {
+        Vps4UserService userService = new JdbcVps4UserService(dataSource);
 
-	    // extract JAX-RS classes from injector
+        long sessionTimeoutMs = conf.getDuration("auth.timeout", Duration.ofHours(24)).toMillis();
+        logger.info("JWT timeout: {}", sessionTimeoutMs);
+
+        SsoTokenExtractor tokenExtractor = new SsoTokenExtractor(keyService, sessionTimeoutMs);
+
+        handler.addFilter(
+                new FilterHolder(new AuthenticationFilter(new Vps4RequestAuthenticator(tokenExtractor, userService))),
+                "/*", EnumSet.of(DispatcherType.REQUEST));
+    }
+
+    static boolean isVps4Api(Class<?> resourceClass) {
+        return resourceClass.isAnnotationPresent(Vps4Api.class);
+    }
+
+    static void populateSwaggerModels(Injector injector) {
+
+        // extract JAX-RS classes from injector
         final Set<Class<?>> appClasses = injector.getAllBindings().keySet().stream()
-            .map(key -> key.getTypeLiteral().getRawType())
-            .filter(WebServer::isVps4Api)
-            .filter(GetRestful::isRootResource)
-            .distinct()
-            .collect(Collectors.toSet());
+                .map(key -> key.getTypeLiteral().getRawType())
+                .filter(WebServer::isVps4Api)
+                .filter(GetRestful::isRootResource)
+                .distinct()
+                .collect(Collectors.toSet());
 
         ScannerFactory.setScanner(new Scanner() {
             @Override
@@ -140,6 +164,6 @@ public class WebServer {
                 // ignore
             }
         });
-	}
+    }
 
 }

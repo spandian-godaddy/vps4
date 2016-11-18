@@ -1,5 +1,6 @@
 package com.godaddy.vps4.config;
 
+import java.time.Duration;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -43,6 +44,14 @@ public class BasicConfig implements Config {
 
     public void set(String key, String value) {
         properties.put(key, value);
+    }
+
+    public Duration getDuration(String configProperty, Duration defaultPropertyValue) {
+        String configValue = get(configProperty, null);
+        if (configValue == null) {
+            return defaultPropertyValue;
+        }
+        return Duration.ofSeconds(Long.parseLong(configValue));
     }
 
 }
