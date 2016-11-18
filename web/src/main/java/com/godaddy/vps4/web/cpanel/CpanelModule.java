@@ -12,7 +12,7 @@ public class CpanelModule extends AbstractModule {
 
     @Override
     public void configure() {
-
+        bind(Vps4CpanelService.class).to(DefaultVps4CpanelService.class);
     }
 
     @Provides

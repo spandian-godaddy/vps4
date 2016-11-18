@@ -9,7 +9,7 @@ public class FakeCpanelModule extends AbstractModule {
 
     @Override
     public void configure() {
-
+        bind(Vps4CpanelService.class).to(DefaultVps4CpanelService.class);
     }
 
     static final String accessHash = "b32b85d55e3d94408b78f729455e0076"

@@ -8,9 +8,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import javax.inject.Inject;
-import javax.inject.Named;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -26,11 +23,7 @@ public class CachedCpanelAccessHashService implements CpanelAccessHashService {
 
     final CpanelAccessHashService accessHashService;
 
-    @Inject
-    public CachedCpanelAccessHashService(
-            @Named("CpanelAccessHash")
-            ExecutorService threadPool,
-            CpanelAccessHashService accessHashService) {
+    public CachedCpanelAccessHashService(ExecutorService threadPool, CpanelAccessHashService accessHashService) {
         this.threadPool = threadPool;
         this.accessHashService = accessHashService;
     }
