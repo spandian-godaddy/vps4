@@ -1,4 +1,4 @@
-package com.godaddy.vps4.web.vm;
+package com.godaddy.vps4.vm;
 
 import com.godaddy.vps4.security.PrivilegeService;
 import com.godaddy.vps4.security.jdbc.JdbcPrivilegeService;

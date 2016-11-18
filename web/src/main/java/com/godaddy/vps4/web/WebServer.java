@@ -26,7 +26,7 @@ import com.godaddy.vps4.security.Vps4UserModule;
 import com.godaddy.vps4.web.hfs.HfsMockModule;
 import com.godaddy.vps4.web.hfs.HfsModule;
 import com.godaddy.vps4.web.network.NetworkModule;
-import com.godaddy.vps4.web.vm.VmModule;
+import com.godaddy.vps4.vm.VmModule;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
 import com.google.inject.Module;
