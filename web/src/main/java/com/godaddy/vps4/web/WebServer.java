@@ -23,6 +23,8 @@ import com.godaddy.vps4.config.Config;
 import com.godaddy.vps4.config.ConfigProvider;
 import com.godaddy.vps4.jdbc.DatabaseModule;
 import com.godaddy.vps4.security.Vps4UserModule;
+import com.godaddy.vps4.web.cpanel.CpanelModule;
+import com.godaddy.vps4.web.cpanel.FakeCpanelModule;
 import com.godaddy.vps4.web.hfs.HfsMockModule;
 import com.godaddy.vps4.web.hfs.HfsModule;
 import com.godaddy.vps4.web.network.NetworkModule;
@@ -36,9 +38,10 @@ import io.swagger.config.Scanner;
 import io.swagger.config.ScannerFactory;
 
 public class WebServer {
-    
+
+
     private static final Logger logger = LoggerFactory.getLogger(WebServer.class);
-    
+
     private static int getPortFromConfig(){
         Config conf = new ConfigProvider().get();
         return Integer.valueOf(conf.get("vps4.http.port", "8080"));
@@ -73,13 +76,13 @@ public class WebServer {
 
         modules.add(new GuiceFilterModule());
         modules.add(new SwaggerModule());
-        if(System.getProperty("vps4.hfs.mock", "false").equals("true"))
-        {
+
+        if(System.getProperty("vps4.hfs.mock", "false").equals("true")) {
             logger.info("USING MOCK HFS");
             modules.add(new HfsMockModule());
-        }
-        else
+        } else {
             modules.add(new HfsModule());
+        }
 
         modules.add(new DatabaseModule());
         modules.add(new WebModule());
@@ -87,6 +90,8 @@ public class WebServer {
 
         modules.add(new VmModule());
         modules.add(new NetworkModule());
+        //modules.add(new CPanelModule());
+        modules.add(new FakeCpanelModule());
 
         Injector injector = Guice.createInjector(modules);
 
