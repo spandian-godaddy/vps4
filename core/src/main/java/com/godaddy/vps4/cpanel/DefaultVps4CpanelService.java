@@ -7,10 +7,15 @@ import java.util.concurrent.TimeoutException;
 
 import javax.inject.Inject;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.godaddy.vps4.config.Config;
 import com.godaddy.vps4.cpanel.CpanelClient.CpanelServiceType;
 
 public class DefaultVps4CpanelService implements Vps4CpanelService {
+
+    private static final Logger logger = LoggerFactory.getLogger(DefaultVps4CpanelService.class);
 
     final CpanelAccessHashService accessHashService;
 
@@ -59,6 +64,8 @@ public class DefaultVps4CpanelService implements Vps4CpanelService {
 
             } catch ( /*UnauthorizedAccess*/Exception e) {
 
+                logger.error("Exception listing CPanel accounts", e);
+
                 // we weren't able to access the target VM, which may be due to an
                 // access hash we thought was good, but has now been invalidated,
                 // so invalidate the access hash so a new one will be attempted
@@ -94,6 +101,8 @@ public class DefaultVps4CpanelService implements Vps4CpanelService {
                 // we timed out attempting to connect/read from the target VM
 
             } catch ( /*UnauthorizedAccess*/Exception e) {
+
+                logger.error("Exception creating CPanel session", e);
 
                 // we weren't able to access the target VM, which may be due to an
                 // access hash we thought was good, but has now been invalidated,
