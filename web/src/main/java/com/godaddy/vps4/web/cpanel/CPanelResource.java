@@ -1,5 +1,6 @@
 package com.godaddy.vps4.web.cpanel;
 
+import java.io.IOException;
 import java.util.List;
 
 import javax.inject.Inject;
@@ -15,8 +16,10 @@ import org.slf4j.LoggerFactory;
 
 import com.godaddy.vps4.cpanel.CPanelAccount;
 import com.godaddy.vps4.cpanel.CPanelSession;
+import com.godaddy.vps4.cpanel.CpanelAccessDeniedException;
 import com.godaddy.vps4.cpanel.Vps4CpanelService;
 import com.godaddy.vps4.cpanel.CpanelClient.CpanelServiceType;
+import com.godaddy.vps4.cpanel.CpanelTimeoutException;
 import com.godaddy.vps4.web.Vps4Api;
 
 import io.swagger.annotations.Api;
@@ -41,7 +44,21 @@ public class CPanelResource {
     @GET
     @Path("{vmId}/cpanel/session")
     public CPanelSession getCPanelSession(@PathParam("vmId") long vmId) {
-        return cpanelService.createSession(vmId, "root", CpanelServiceType.whostmgrd);
+        try {
+            return cpanelService.createSession(vmId, "root", CpanelServiceType.whostmgrd);
+        }
+        catch (CpanelAccessDeniedException e) {
+            // TODO bubble a more specific error to the client
+            //      (UI can show a "Authentication issue" error
+            //       instead of just generic "something happened")
+        }
+        catch (CpanelTimeoutException e) {
+
+        }
+        catch (IOException e) {
+
+        }
+        return null;
     }
 
     @GET
@@ -50,6 +67,18 @@ public class CPanelResource {
 
         logger.info("GET listCpanelAccounts for VM: {}", vmId);
 
-        return cpanelService.listCpanelAccounts(vmId);
+        try {
+            return cpanelService.listCpanelAccounts(vmId);
+        }
+        catch (CpanelAccessDeniedException e) {
+            // TODO bubble a more specific error to the client
+        }
+        catch (CpanelTimeoutException e) {
+
+        }
+        catch (IOException e) {
+
+        }
+        return null;
     }
 }

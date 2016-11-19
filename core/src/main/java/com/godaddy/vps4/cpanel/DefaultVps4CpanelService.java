@@ -1,12 +1,17 @@
 package com.godaddy.vps4.cpanel;
 
+import java.io.IOException;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
+import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.TimeoutException;
 
 import javax.inject.Inject;
 
+import org.json.simple.JSONArray;
+import org.json.simple.JSONObject;
+import org.json.simple.parser.JSONParser;
+import org.json.simple.parser.ParseException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -35,83 +40,105 @@ public class DefaultVps4CpanelService implements Vps4CpanelService {
         return "50.62.9.38";
     }
 
-    // TODO consolidate access hash logic into withAccessHash(String accessHash) lambda
+    interface CpanelClientHandler<T> {
+        T handle(CpanelClient client)
+                throws CpanelAccessDeniedException, CpanelTimeoutException, IOException;
+    }
 
-    @Override
-    public List<CPanelAccount> listCpanelAccounts(long vmId) {
+    <T> T withAccessHash(long vmId, CpanelClientHandler<T> handler)
+            throws CpanelAccessDeniedException, CpanelTimeoutException, IOException {
 
         Instant timeoutAt = Instant.now().plus(timeoutVal, ChronoUnit.MILLIS);
+
+        Exception lastThrown = null;
 
         while (Instant.now().isBefore(timeoutAt)) {
 
             // TODO remove the hardcoded values for IP
-            String accessHash = accessHashService.getAccessHash(vmId, "10.32.155.80", "172.19.46.185", timeoutAt);
+            String fromIp = "172.19.46.185";
+            String publicIp = getVmIp(vmId);
+
+            String accessHash = accessHashService.getAccessHash(vmId, publicIp, fromIp, timeoutAt);
             if (accessHash == null) {
                 // we couldn't get the access hash, so no point in even
                 // trying to contact the VM
+
+                // TODO throw this as CpanelAccessDeniedException?
                 return null;
             }
 
             // TODO make sure we're still within timeoutAt to actually
             //      make the call to the VM
 
+            CpanelClient cPanelClient = new CpanelClient(publicIp, accessHash);
+
             try {
                 // need to configure read timeout in HTTP client
-                return new GetCpanelAccounts(vmId, getVmIp(vmId), accessHash).call();
+                return handler.handle(cPanelClient);
 
-            } catch ( TimeoutException e) {
-                // we timed out attempting to connect/read from the target VM
+            } catch (CpanelAccessDeniedException e) {
 
-            } catch ( /*UnauthorizedAccess*/Exception e) {
-
-                logger.error("Exception listing CPanel accounts", e);
+                logger.warn("Access denied for cPanel VM {}, invalidating access hash", publicIp);
 
                 // we weren't able to access the target VM, which may be due to an
                 // access hash we thought was good, but has now been invalidated,
                 // so invalidate the access hash so a new one will be attempted
                 //cached.invalidate(fetchedAt);
                 accessHashService.invalidAccessHash(vmId, accessHash);
+                lastThrown = e;
+
+            } catch (IOException e) {
+                logger.warn("Unable communicating with VM " + vmId, e);
+                // we timed out attempting to connect/read from the target VM
+                // or we had some other transport-level issue
+                lastThrown = e;
             }
+
         }
-        return null; // FIXME throw TimeoutException
+        // if we've run out of time communicating with the VM, but our last issue
+        // was that we were having auth issues, bubble that exception back up to
+        // the client, since that's the best description of the troubles we're having
+        if (lastThrown != null && lastThrown instanceof CpanelAccessDeniedException) {
+            throw (CpanelAccessDeniedException)lastThrown;
+        }
+
+        // any other issue is bubbled as a general timeout exception
+        throw new CpanelTimeoutException("Timed out retrying an operation on VM " + vmId);
     }
 
     @Override
-    public CPanelSession createSession(long vmId, String username, CpanelServiceType serviceType) {
-        Instant timeoutAt = Instant.now().plus(timeoutVal, ChronoUnit.MILLIS);
+    public List<CPanelAccount> listCpanelAccounts(long vmId)
+            throws CpanelAccessDeniedException, CpanelTimeoutException, IOException {
 
-        while (Instant.now().isBefore(timeoutAt)) {
+        return withAccessHash(vmId, cPanelClient -> {
 
-            // TODO remove the hardcoded values for IP
-            String accessHash = accessHashService.getAccessHash(vmId, "10.32.155.80", "172.19.46.185", timeoutAt);
-            if (accessHash == null) {
-                // we couldn't get the access hash, so no point in even
-                // trying to contact the VM
-                return null;
-            }
+            JSONParser parser = new JSONParser();
 
-            // TODO make sure we're still within timeoutAt to actually
-            //      make the call to the VM
-
+            String sitesJson = cPanelClient.listSites();
+            logger.debug("sites JSON: {}", sitesJson);
             try {
-                // need to configure read timeout in HTTP client
-                return new CpanelClient(getVmIp(vmId), accessHash).createSession(username, serviceType);
+                JSONObject jsonObject = (JSONObject) parser.parse(sitesJson);
+                JSONObject data = (JSONObject) jsonObject.get("data");
+                JSONArray accnts = (JSONArray) data.get("acct");
 
-            } catch ( TimeoutException e) {
-                // we timed out attempting to connect/read from the target VM
+                List<CPanelAccount> domains = new ArrayList<>();
+                for (Object object : accnts) {
+                    JSONObject accnt = (JSONObject) object;
+                    domains.add(new CPanelAccount((String) accnt.get("domain")));
+                }
 
-            } catch ( /*UnauthorizedAccess*/Exception e) {
-
-                logger.error("Exception creating CPanel session", e);
-
-                // we weren't able to access the target VM, which may be due to an
-                // access hash we thought was good, but has now been invalidated,
-                // so invalidate the access hash so a new one will be attempted
-                //cached.invalidate(fetchedAt);
-                accessHashService.invalidAccessHash(vmId, accessHash);
+                return domains;
+            } catch (ParseException e) {
+                throw new IOException("Error parsing cPanel account list response", e);
             }
-        }
-        return null; // FIXME throw TimeoutException
+        });
+    }
+
+    @Override
+    public CPanelSession createSession(long vmId, String username, CpanelServiceType serviceType)
+            throws CpanelAccessDeniedException, CpanelTimeoutException, IOException {
+
+        return withAccessHash(vmId, cPanelClient -> cPanelClient.createSession(username, serviceType));
     }
 
 }

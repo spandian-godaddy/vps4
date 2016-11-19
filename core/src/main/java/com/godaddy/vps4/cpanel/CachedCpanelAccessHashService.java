@@ -54,48 +54,65 @@ public class CachedCpanelAccessHashService implements CpanelAccessHashService {
                 logger.trace("cached entry for vm {} was created while we were waiting, using it", vmId);
                 cached = existing;
             }
+        }
 
-            // is the cached value good?
-            if (Instant.now().isBefore(cached.expiresAt)) {
-                // Note: this may be null if the cached value represents "we couldn't retrieve the hash"
-                return cached.getAccessHash();
-            }
+        // is the cached value good?
+        if (Instant.now().isBefore(cached.expiresAt)) {
+            logger.debug("access hash cache hit for vm {}", vmId);
+            // Note: this may be null if the cached value represents "we couldn't retrieve the hash"
+            return cached.getAccessHash();
+        }
 
-            // the cached value needs to be refreshed
-            // see if we need to do it, or if somebody else is already doing it
-            if (cached.fetching.compareAndSet(false, true)) {
+        // the cached value needs to be refreshed
+        // see if we need to do it, or if somebody else is already doing it
+        if (cached.fetching.compareAndSet(false, true)) {
 
-                // we own fetching, spin off a thread
-                Fetcher fetcher = new Fetcher(
-                        () -> accessHashService.getAccessHash(vmId, publicIp, fromIp, timeoutAt),
-                        cached);
+            logger.debug("spinning off access hash fetch for vm {}", vmId);
 
-                threadPool.submit(fetcher);
-            }
+            // we own fetching, spin off a thread
+            Fetcher fetcher = new Fetcher(
+                    () -> accessHashService.getAccessHash(vmId, publicIp, fromIp, timeoutAt),
+                    cached);
 
-            // at this point, _someone_ is fetching the access hash, so
-            // wait on the signal when the fetch is complete
-            final Object fetchDoneSignal = cached.lock;
+            threadPool.submit(fetcher);
+        }
 
-            // if we're still fetching,
-            // (i.e. it didn't complete while we were in lock acquisition)
-            // then wait the fetchDone condition
-            while (cached.fetching.get()
-                    && Instant.now().isBefore(timeoutAt)) {
+        // at this point, _someone_ is fetching the access hash, so
+        // wait on the signal when the fetch is complete
+        final Object fetchDoneSignal = cached.lock;
 
-                synchronized(fetchDoneSignal) {
-                    try {
-                        fetchDoneSignal.wait(200);
-                        // FIXME while loop around wait, factor in 'timeoutAt'
-                    }
-                    catch (InterruptedException e) {
+        logger.debug("access hash fetch in progress for vm {}, waiting...", vmId);
 
-                    }
+        // if we're still fetching,
+        // (i.e. it didn't complete while we were in lock acquisition)
+        // then wait the fetchDone condition
+        while (cached.fetching.get()
+                && Instant.now().isBefore(timeoutAt)) {
+
+            synchronized(fetchDoneSignal) {
+                try {
+                    fetchDoneSignal.wait(200);
+                    // FIXME while loop around wait, factor in 'timeoutAt'
+                }
+                catch (InterruptedException e) {
+
                 }
             }
         }
 
-        return cached.getAccessHash();
+        // if we now have a good value, return that
+        if (Instant.now().isBefore(cached.expiresAt)) {
+            logger.debug("fetch successful for vm {}", vmId);
+            return cached.getAccessHash();
+        }
+
+        // if the the current cached value is still expired,
+        // and we (probably) haven't been able to get a new one,
+        // don't just return the current expired access hash,
+        // return null to indicate an issue
+        logger.debug("waited for access hash for vm {}, "
+                + "but fetch didn't complete before our timeout", vmId);
+        return null;
     }
 
     static class Fetcher implements Runnable {
