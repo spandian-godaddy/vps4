@@ -7,7 +7,10 @@ import static java.util.stream.Collectors.toMap;
 
 public enum ActionType {
 
-    CREATE_VM(1), RESTART_VM(2), ENABLE_ADMIN_ACCESS(3), DISABLE_ADMIN_ACCESS(4), START_VM(5), STOP_VM(6), DESTROY_VM(7) ;
+    CREATE_VM(1), RESTART_VM(2),
+    ENABLE_ADMIN_ACCESS(3), DISABLE_ADMIN_ACCESS(4),
+    START_VM(5), STOP_VM(6), DESTROY_VM(7),
+    SET_PASSWORD(8);
 
     private final int typeId;
 
