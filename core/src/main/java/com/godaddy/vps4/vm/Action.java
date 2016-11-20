@@ -9,17 +9,19 @@ public class Action {
     public final ActionType type;
     public final long vps4UserId;
     public final String request;
+    public final String state;
     public final String response;
     public final ActionStatus status;
     public final Instant created;
     public final String note;
 
-    public Action(long id, long virtualMachineId, ActionType type, long vps4UserId, String request, String response, ActionStatus status, Instant created, String note){
+    public Action(long id, long virtualMachineId, ActionType type, long vps4UserId, String request, String state, String response, ActionStatus status, Instant created, String note){
         this.id = id;
         this.virtualMachineId = virtualMachineId;
         this.type = type;
         this.vps4UserId = vps4UserId;
         this.request = request;
+        this.state = state;
         this.response = response;
         this.status = status;
         this.created = created;
@@ -33,6 +35,7 @@ public class Action {
                 + " actionType: " + type
                 + " vps4UserId: " + vps4UserId
                 + " request: " + request
+                + " state: " + state
                 + " response: " + response
                 + " status: " + status
                 + " created: " + created

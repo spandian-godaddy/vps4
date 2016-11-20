@@ -40,6 +40,20 @@ public class JdbcActionService implements ActionService{
     }
 
     @Override
+    public void markActionInProgress(long actionId) {
+        Sql.with(dataSource).exec("UPDATE vm_action SET status_id=2 WHERE id=?",
+                null,
+                actionId);
+    }
+
+    @Override
+    public void updateActionState(long actionId, String state) {
+        Sql.with(dataSource).exec("UPDATE vm_action SET state=? WHERE id=?",
+                null,
+                state, actionId);
+    }
+
+    @Override
     public Action getAction(long actionId){
         return Sql.with(dataSource).exec("SELECT *  FROM vm_action "
                 + " JOIN action_status on vm_action.status_id = action_status.status_id"
@@ -52,7 +66,7 @@ public class JdbcActionService implements ActionService{
         ActionStatus status = ActionStatus.valueOf(rs.getString("status"));
         ActionType type = ActionType.valueOf(rs.getString("type"));
         return new Action(rs.getLong("id"), rs.getLong("virtual_machine_id"), type, rs.getLong("vps4_user_id"),
-                          rs.getString("request"), rs.getString("response"), status,
+                          rs.getString("request"), rs.getString("state"), rs.getString("response"), status,
                           rs.getTimestamp("created").toInstant(), rs.getString("note"));
     }
 
