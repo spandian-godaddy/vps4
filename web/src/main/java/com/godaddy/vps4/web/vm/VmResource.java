@@ -7,12 +7,8 @@ import com.godaddy.vps4.security.PrivilegeService;
 import com.godaddy.vps4.security.Vps4User;
 import com.godaddy.vps4.vm.*;
 import com.godaddy.vps4.vm.Image;
-import com.godaddy.vps4.web.Action;
 import com.godaddy.vps4.web.Vps4Api;
 import gdg.hfs.vhfs.cpanel.CPanelService;
-import gdg.hfs.vhfs.network.IpAddress;
-import gdg.hfs.vhfs.network.NetworkService;
-import gdg.hfs.vhfs.sysadmin.SysAdminService;
 import gdg.hfs.vhfs.vm.*;
 import io.swagger.annotations.Api;
 import org.slf4j.Logger;
@@ -23,12 +19,7 @@ import javax.ws.rs.*;
 import javax.ws.rs.core.MediaType;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import java.util.UUID;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.atomic.AtomicLong;
 
 @Vps4Api
 @Api(tags = { "vms" })
@@ -40,56 +31,35 @@ public class VmResource {
 
     private static final Logger logger = LoggerFactory.getLogger(VmResource.class);
 
-    static final Map<Long, Action> actions = new ConcurrentHashMap<>();
-    static final Map<UUID, CreateVmAction> provisionActions = new ConcurrentHashMap<>();
+    private final Vps4User user;
+    private final VirtualMachineService virtualMachineService;
+    private final PrivilegeService privilegeService;
+    private final VmService vmService;
+    private final ProjectService projectService;
+    private final ImageService imageService;
+    private final ActionService actionService;
 
-    static final AtomicLong actionIdPool = new AtomicLong();
-    static final ExecutorService threadPool = Executors.newCachedThreadPool();
-
-    final Vps4User user;
-    final VirtualMachineService virtualMachineService;
-    final PrivilegeService privilegeService;
-    final ControlPanelService controlPanelService;
-    final VmService vmService;
-    final NetworkService hfsNetworkService;
-    final OsTypeService osTypeService;
-    final ProjectService projectService;
-    final ImageService imageService;
-    final SysAdminService sysAdminService;
-    final VmUserService userService;
-    final com.godaddy.vps4.network.NetworkService vps4NetworkService;
-    final CPanelService cPanelService;
-    final ActionService actionService;
-
-    // TODO: Break this up into multiple classes to reduce number of
-    // dependencies.
     @Inject
-    public VmResource(VmUserService userService, SysAdminService sysAdminService, PrivilegeService privilegeService,
-                      Vps4User user, VmService vmService, NetworkService hfsNetworkService,
-                      VirtualMachineService virtualMachineService, ControlPanelService controlPanelService,
-                      OsTypeService osTypeService, ProjectService projectService, ImageService imageService,
-                      com.godaddy.vps4.network.NetworkService vps4NetworkService, CPanelService cPanelService,
+    public VmResource(PrivilegeService privilegeService,
+                      Vps4User user, VmService vmService,
+                      VirtualMachineService virtualMachineService,
+                      ProjectService projectService, ImageService imageService,
+                      com.godaddy.vps4.network.NetworkService vps4NetworkService,
+                      CPanelService cPanelService,
                       ActionService actionService) {
-        this.userService = userService;
-        this.sysAdminService = sysAdminService;
         this.user = user;
         this.virtualMachineService = virtualMachineService;
         this.privilegeService = privilegeService;
         this.vmService = vmService;
-        this.hfsNetworkService = hfsNetworkService;
-        this.controlPanelService = controlPanelService;
-        this.osTypeService = osTypeService;
         this.projectService = projectService;
         this.imageService = imageService;
-        this.vps4NetworkService = vps4NetworkService;
-        this.cPanelService = cPanelService;
         this.actionService = actionService;
     }
 
     @GET
     @Path("actions/{actionId}")
     public Action getAction(@PathParam("actionId") long actionId) {
-        Action action = actions.get(actionId);
+        Action action = actionService.getAction(actionId);
         if (action == null) {
             throw new NotFoundException("actionId " + actionId + " not found");
         }
@@ -98,13 +68,24 @@ public class VmResource {
 
     @GET
     @Path("actions/provision/{orionGuid}")
-    public CreateVmAction getProvisionActions(@PathParam("orionGuid") UUID orionGuid) {
-        CreateVmAction action = provisionActions.get(orionGuid);
+    public Action getProvisionActions(@PathParam("orionGuid") UUID orionGuid) {
+        //CreateVmAction action = provisionActions.get(orionGuid);
+
+        Action action = getActionFromOrionGuid(orionGuid);
         if (action == null) {
             throw new NotFoundException("action or orionGuid " + orionGuid + " not found");
         }
 
         return action;
+    }
+
+    protected Action getActionFromOrionGuid(UUID orionGuid) {
+
+        // TODO
+        // - add an action_id to the provision request table
+        // - update that column when a provision is started for a specific provision request
+        // - add a way to look that up through actionService (or something)
+        return null;
     }
 
     @GET
@@ -128,7 +109,7 @@ public class VmResource {
         logger.info("getting vm with id {}", orionGuid);
 
         VirtualMachine virtualMachine = virtualMachineService.getVirtualMachine(orionGuid);
-        
+
         if (virtualMachine == null) {
             // TODO need to return 404 here
             throw new IllegalArgumentException("Unknown VM ID: " + orionGuid);
@@ -173,26 +154,20 @@ public class VmResource {
 
     @POST
     @Path("{vmId}/start")
-    public ManageVmAction startVm(@PathParam("vmId") long vmId) {
-        ManageVmAction action = new ManageVmAction(vmId, ActionType.START_VM);
-        manageVm(vmId, action);
-        return action;
+    public Action startVm(@PathParam("vmId") long vmId) throws VmNotFoundException {
+        return manageVm(vmId, ActionType.START_VM);
     }
 
     @POST
     @Path("{vmId}/stop")
-    public ManageVmAction stopVm(@PathParam("vmId") long vmId) {
-        ManageVmAction action = new ManageVmAction(vmId, ActionType.STOP_VM);
-        manageVm(vmId, action);
-        return action;
+    public Action stopVm(@PathParam("vmId") long vmId) throws VmNotFoundException {
+        return manageVm(vmId, ActionType.STOP_VM);
     }
 
     @POST
     @Path("{vmId}/restart")
-    public ManageVmAction restartVm(@PathParam("vmId") long vmId) {
-        ManageVmAction action = new ManageVmAction(vmId, ActionType.RESTART_VM);
-        manageVm(vmId, action);
-        return action;
+    public Action restartVm(@PathParam("vmId") long vmId) throws VmNotFoundException {
+        return manageVm(vmId, ActionType.RESTART_VM);
     }
 
     /**
@@ -217,64 +192,27 @@ public class VmResource {
     }
 
     /**
-     * Check if user is allowed to access the vm
-     * @param vmProjectId
-     * @return true if user has access, false otherwise
-     */
-    private boolean userExistsOnVm(long vmProjectId) {
-        try {
-            privilegeService.requireAnyPrivilegeToSgid(user, vmProjectId);
-            return true;
-        } catch (Exception ex) {
-            logger.error("Could not ascertain user privileges. ", ex);
-            return false;
-        }
-    }
-
-    /**
      * Manage the vm to perform actions like start / stop / restart vm.
      * @param vmId
      * @param action
      */
-    private void manageVm (long vmId, ManageVmAction action) {
-
-        action.status = ActionStatus.IN_PROGRESS;
-        long actionId = actionService.createAction(vmId, action.getActionType(), "{}", user.getId());
-        action.setActionId(actionId);
+    private Action manageVm (long vmId, ActionType type) throws VmNotFoundException {
 
         // Check if vm exists and user has access to the vm.
-        long vmProjectId;
-        try {
-            vmProjectId = getVmProjectId(vmId);
-        } catch (Exception ex) {
-            String message = String.format("Could not get project id for requested vm id: %d.", vmId);
-            logger.error("Could not get project id for VM vm id: {} ", vmId, ex);
-            action.status = ActionStatus.ERROR;
-            action.setMessage(message);
-            actionService.failAction(vmId, "{}", message);
-            return;
+        long vmProjectId = getVmProjectId(vmId);
+
+        privilegeService.requireAnyPrivilegeToSgid(user, vmProjectId);
+
+        long actionId = actionService.createAction(vmId, type, "", user.getId());
+
+        // FIXME orchestration-client call
+        switch(type) {
+        case START_VM:
+        case STOP_VM:
+        case RESTART_VM:
         }
 
-        if (!userExistsOnVm(vmProjectId)) {
-            String message = String.format("User %s does not exist on vm id: %d%n ", user, vmId);
-            logger.error(message);
-            action.status = ActionStatus.ERROR;
-            action.setMessage(message);
-            actionService.failAction(vmId, "{}", message);
-            return;
-        }
-
-
-        ManageVmWorker worker = new ManageVmWorker(vmService, actionService, vmId, action);
-        threadPool.execute(() -> {
-            try {
-                worker.run();
-            } catch (Vps4Exception e) {
-                action.status = ActionStatus.ERROR;
-                action.setMessage(e.getMessage());
-                actionService.failAction(vmId, "{}", e.getMessage());
-            }
-        });
+        return actionService.getAction(actionId);
     }
 
     public static class ProvisionVmRequest {
@@ -288,32 +226,14 @@ public class VmResource {
 
     @GET
     @Path("/provisions/{orionGuid}")
-    public CreateVmAction getProvisionAction(@PathParam("orionGuid") UUID orionGuid) {
-        return provisionActions.get(orionGuid);
-    }
+    public Action getProvisionAction(@PathParam("orionGuid") UUID orionGuid) {
 
-    public static class ProvisionVmInfo {
-        public UUID orionGuid;
-        public String name;
-        public long projectId;
-        public int specId;
-        public int managedLevel;
-        public Image image;
-
-        public ProvisionVmInfo(UUID orionGuid, String name, long projectId, int specId,
-                int managedLevel, Image image) {
-            this.orionGuid = orionGuid;
-            this.name = name;
-            this.projectId = projectId;
-            this.specId = specId;
-            this.managedLevel = managedLevel;
-            this.image = image;
-        }
+        return getActionFromOrionGuid(orionGuid);
     }
 
     @POST
     @Path("/provisions/")
-    public CreateVmAction provisionVm(ProvisionVmRequest provisionRequest) throws InterruptedException {
+    public Action provisionVm(ProvisionVmRequest provisionRequest) throws InterruptedException {
 
         logger.info("provisioning vm with orionGuid {}", provisionRequest.orionGuid);
 
@@ -329,27 +249,33 @@ public class VmResource {
         // FIXME need to get the action back to the caller so they can poll the status/steps/ticks
         CreateVMRequest hfsRequest = createHfsProvisionVmRequest(provisionRequest.image, provisionRequest.username,
                 provisionRequest.password, project, spec);
-        CreateVmAction action = new CreateVmAction(hfsRequest);
-        action.actionId = actionIdPool.incrementAndGet();
-        logger.debug("Action.actionid = {}", action.actionId);
-        action.project = project;
-        actions.put(action.actionId, action);
-        provisionActions.put(provisionRequest.orionGuid, action);
+
+        // FIXME we don't have the vmId here yet, since we're using the HFS vmId and we haven't made the HFS
+        //       VM request yet
+        long vmId = 0; // ?
+        long actionId = actionService.createAction(vmId, ActionType.CREATE_VM, "", user.getId());
+
+        //action.project = project;
+        //actions.put(action.actionId, action);
+        //provisionActions.put(provisionRequest.orionGuid, action);
+
         ProvisionVmInfo vmInfo = new ProvisionVmInfo(provisionRequest.orionGuid, provisionRequest.name, project.getProjectId(),
                 spec.specId, request.managedLevel, image);
-        final ProvisionVmWorker provisionWorker = new ProvisionVmWorker(vmService, hfsNetworkService, sysAdminService, userService,
-                vps4NetworkService, virtualMachineService, cPanelService,
-                action, threadPool, vmInfo);
-        threadPool.execute(() -> {
-            provisionWorker.run();
-        });
 
-        if (action.status != ActionStatus.ERROR) {
-            action.step = CreateVmStep.SetupComplete;
-            action.status = ActionStatus.COMPLETE;
-        }
+        // FIXME orchestration client
+        //final ProvisionVmWorker provisionWorker = new ProvisionVmWorker(vmService, hfsNetworkService, sysAdminService, userService,
+        //        vps4NetworkService, virtualMachineService, cPanelService,
+        //        action, threadPool, vmInfo);
+        //threadPool.execute(() -> {
+        //    provisionWorker.run();
+        //});
 
-        return action;
+//        if (action.status != ActionStatus.ERROR) {
+//            action.step = CreateVmStep.SetupComplete;
+//            action.status = ActionStatus.COMPLETE;
+//        }
+
+        return actionService.getAction(actionId);
     }
 
     private CreateVMRequest createHfsProvisionVmRequest(String image, String username, String password, Project project,
@@ -410,64 +336,20 @@ public class VmResource {
 
         // TODO verify VM status is destroyable
 
-        DestroyVmAction action = new DestroyVmAction();
-        action.actionId = actionIdPool.incrementAndGet();
-        action.status = ActionStatus.IN_PROGRESS;
-        action.virtualMachine = virtualMachine;
+        // FIXME generic Action
+        long actionId = actionService.createAction(vmId, ActionType.CREATE_VM, "", user.getId());
+//        DestroyVmAction action = new DestroyVmAction();
+//        action.actionId = actionIdPool.incrementAndGet();
+//        action.status = ActionStatus.IN_PROGRESS;
+//        action.virtualMachine = virtualMachine;
+//
+//        actions.put(action.actionId, action);
+//
+          // FIXME orchestration client
+//        threadPool
+//                .execute(new DestroyVmWorker(action, vmService, hfsNetworkService, vps4NetworkService, virtualMachineService, threadPool));
 
-        actions.put(action.actionId, action);
-
-        threadPool
-                .execute(new DestroyVmWorker(action, vmService, hfsNetworkService, vps4NetworkService, virtualMachineService, threadPool));
-
-        return action;
-    }
-
-    public static class CreateVmAction extends Action {
-
-        public CreateVmAction(CreateVMRequest request) {
-            hfsProvisionRequest = request;
-        }
-
-        public final CreateVMRequest hfsProvisionRequest;
-
-        public volatile Project project;
-        public volatile Vm vm;
-        public volatile IpAddress ip;
-        public volatile CreateVmStep step;
-
-        public CreateVmStep[] steps = CreateVmStep.values();
-
-        @Override
-        public String toString() {
-            StringBuilder stringBuilder = new StringBuilder();
-            stringBuilder.append("CreateVMAction [id: ");
-            stringBuilder.append(actionId);
-            stringBuilder.append(", status: ");
-            stringBuilder.append(status);
-            stringBuilder.append(", step: ");
-            stringBuilder.append(step);
-            stringBuilder.append(", message: ");
-            stringBuilder.append(message);
-            if (project != null) {
-                stringBuilder.append(", project: ");
-                stringBuilder.append(project.getName());
-            }
-            if (vm != null) {
-                stringBuilder.append(", vmId: ");
-                stringBuilder.append(vm.vmId);
-            }
-            if (ip != null) {
-                stringBuilder.append(", addressId: ");
-                stringBuilder.append(ip.addressId);
-            }
-            stringBuilder.append("]");
-            return stringBuilder.toString();
-        }
-    }
-
-    public static class DestroyVmAction extends Action {
-        public VirtualMachine virtualMachine;
+        return actionService.getAction(actionId);
     }
 
 }

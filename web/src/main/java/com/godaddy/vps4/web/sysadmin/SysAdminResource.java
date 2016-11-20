@@ -1,12 +1,5 @@
 package com.godaddy.vps4.web.sysadmin;
 
-import java.util.Map;
-import java.util.UUID;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.atomic.AtomicLong;
-
 import javax.inject.Inject;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.POST;
@@ -18,13 +11,12 @@ import javax.ws.rs.core.MediaType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.godaddy.vps4.vm.ActionStatus;
-import com.godaddy.vps4.Vps4Exception;
+import com.godaddy.vps4.security.Vps4User;
+import com.godaddy.vps4.vm.Action;
+import com.godaddy.vps4.vm.ActionService;
+import com.godaddy.vps4.vm.ActionType;
 import com.godaddy.vps4.vm.VmUserService;
-import com.godaddy.vps4.web.Action;
 import com.godaddy.vps4.web.Vps4Api;
-import com.godaddy.vps4.web.vm.VmResource.CreateVmAction;
-
 
 import gdg.hfs.vhfs.sysadmin.SysAdminService;
 import io.swagger.annotations.Api;
@@ -39,93 +31,96 @@ public class SysAdminResource {
 
     private static final Logger logger = LoggerFactory.getLogger(SysAdminResource.class);
 
-    static final Map<Long, Action> actions = new ConcurrentHashMap<>();
-    static final Map<UUID, CreateVmAction> provisionActions = new ConcurrentHashMap<>();
-
-    static final AtomicLong actionIdPool = new AtomicLong();
-    static final ExecutorService threadPool = Executors.newCachedThreadPool();
-
     final SysAdminService sysAdminService;
     final VmUserService userService;
 
+    final ActionService actionService;
+    final Vps4User user;
+
     @Inject
-    public SysAdminResource(SysAdminService sysAdminService, VmUserService userService) {
+    public SysAdminResource(SysAdminService sysAdminService, VmUserService userService,
+            ActionService actionService, Vps4User user) {
         this.sysAdminService = sysAdminService;
         this.userService = userService;
+        this.actionService = actionService;
+        this.user = user;
     }
-    
+
     public static class UpdatePasswordRequest{
         public String username;
         public String password;
     }
-    
+
     @POST
     @Path("/{vmId}/setPassword")
-    public SetPasswordAction setPassword(@QueryParam("vmId") long vmId, UpdatePasswordRequest updatePasswordRequest){
+    public Action setPassword(@QueryParam("vmId") long vmId, UpdatePasswordRequest updatePasswordRequest){
+
         // TODO: This will need more logic when we include Windows
         // Windows does not have a "root" user.
         String[] usernames = {updatePasswordRequest.username, "root"};
-        SetPasswordAction action = new SetPasswordAction(vmId, usernames, updatePasswordRequest.password);
-        if (!userService.userExists(updatePasswordRequest.username, vmId)) {
-            action.message = "Cannot find user " + action.getUsername() + " for vm "+action.getVmId();
-            action.status = ActionStatus.INVALID;
-            return action;
-        }
-        actions.put(action.actionId, action);
-        SetPasswordWorker worker = new SetPasswordWorker(sysAdminService, action);
 
-        action.status = ActionStatus.IN_PROGRESS;
-        threadPool.execute(() -> {
-            try {
-                worker.run();
-            }
-            catch (Vps4Exception e) {
-                action.status = ActionStatus.ERROR;
-            }
-        });
-        return action;
+//        SetPasswordAction action = new SetPasswordAction(vmId, usernames, updatePasswordRequest.password);
+        if (!userService.userExists(updatePasswordRequest.username, vmId)) {
+
+            // FIXME throw exception
+            //action.message = "Cannot find user " + updatePasswordRequest.username + " for vm "+vmId;
+            //action.status = ActionStatus.INVALID;
+            //return action;
+        }
+
+        long actionId = actionService.createAction(vmId, ActionType.SET_PASSWORD, "", user.getId());
+
+        // FIXME orchestration client call to SetPassword
+
+        return actionService.getAction(actionId);
     }
-    
+
     public static class SetAdminRequest {
         public String username;
     }
-    
 
-    
+
+
     @POST
     @Path("/{vmId}/enableAdmin")
-    public SetAdminAction enableUserAdmin(@QueryParam("vmId") long vmId, SetAdminRequest setAdminRequest) {
-        SetAdminAction action = new SetAdminAction(setAdminRequest.username, vmId, true);
-        setUserAdmin(action);
-        return action;
+    public Action enableUserAdmin(@QueryParam("vmId") long vmId, SetAdminRequest setAdminRequest) {
+
+        return setUserAdmin(setAdminRequest.username, vmId, true);
     }
 
     @POST
     @Path("/{vmId}/disableAdmin")
-    public SetAdminAction disableUserAdmin(@QueryParam("vmId") long vmId, SetAdminRequest setAdminRequest) {
-        SetAdminAction action = new SetAdminAction(setAdminRequest.username, vmId, false);
-        setUserAdmin(action);
-        return action;
+    public Action disableUserAdmin(@QueryParam("vmId") long vmId, SetAdminRequest setAdminRequest) {
+        return setUserAdmin(setAdminRequest.username, vmId, false);
     }
-    
-    private void setUserAdmin(SetAdminAction action) {
-        if (!userService.userExists(action.getUsername(), action.getVmId())) {
-            action.message = "Cannot find user " + action.getUsername() + " for vm "+action.getVmId();
-            action.status = ActionStatus.INVALID;
-            return;
-        }
-        actions.put(action.actionId, action);
-        ToggleAdminWorker worker = new ToggleAdminWorker(sysAdminService, userService, action);
 
-        action.status = ActionStatus.IN_PROGRESS;
-        threadPool.execute(() -> {
-            try {
-                worker.run();
-            }
-            catch (Vps4Exception e) {
-                action.status = ActionStatus.ERROR;
-            }
-        });
+    private Action setUserAdmin(String username, long vmId, boolean adminEnabled) {
+        if (!userService.userExists(username, vmId)) {
+            // FIXME throw exception
+            //action.message = "Cannot find user " + action.getUsername() + " for vm "+vmId;
+            //action.status = ActionStatus.INVALID;
+            //return;
+        }
+        //actions.put(action.actionId, action);
+
+        long actionId = actionService.createAction(vmId,
+                adminEnabled ? ActionType.ENABLE_ADMIN_ACCESS : ActionType.DISABLE_ADMIN_ACCESS,
+                "", user.getId());
+
+        // TODO call orchestration client
+        //ToggleAdminWorker worker = new ToggleAdminWorker(sysAdminService, userService, action);
+
+//        action.status = ActionStatus.IN_PROGRESS;
+//        threadPool.execute(() -> {
+//            try {
+//                worker.run();
+//            }
+//            catch (Vps4Exception e) {
+//                action.status = ActionStatus.ERROR;
+//            }
+//        });
+
+        return actionService.getAction(actionId);
 
     }
 }
