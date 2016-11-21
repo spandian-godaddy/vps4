@@ -1,8 +1,7 @@
-package com.godaddy.vps4.web.hfs;
+package com.godaddy.vps4.hfs;
 
 import javax.inject.Singleton;
 
-import com.godaddy.vps4.hfs.HfsClientProvider;
 import com.google.inject.AbstractModule;
 
 import gdg.hfs.vhfs.cpanel.CPanelService;

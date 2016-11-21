@@ -1,4 +1,4 @@
-package com.godaddy.vps4.web.hfs;
+package com.godaddy.vps4.hfs;
 
 
 import org.mockito.Mockito;
