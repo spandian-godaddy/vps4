@@ -1,5 +1,7 @@
 package com.godaddy.vps4.web.sysadmin;
 
+import java.util.Arrays;
+
 import javax.inject.Inject;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.POST;
@@ -11,13 +13,19 @@ import javax.ws.rs.core.MediaType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.godaddy.vps4.orchestration.hfs.sysadmin.SetPassword;
+import com.godaddy.vps4.orchestration.hfs.sysadmin.ToggleAdmin;
+import com.godaddy.vps4.orchestration.sysadmin.Vps4SetPassword;
+import com.godaddy.vps4.orchestration.sysadmin.Vps4ToggleAdmin;
 import com.godaddy.vps4.security.Vps4User;
 import com.godaddy.vps4.vm.Action;
 import com.godaddy.vps4.vm.ActionService;
 import com.godaddy.vps4.vm.ActionType;
 import com.godaddy.vps4.vm.VmUserService;
 import com.godaddy.vps4.web.Vps4Api;
+import com.godaddy.vps4.web.util.Commands;
 
+import gdg.hfs.orchestration.CommandService;
 import gdg.hfs.vhfs.sysadmin.SysAdminService;
 import io.swagger.annotations.Api;
 
@@ -35,14 +43,16 @@ public class SysAdminResource {
     final VmUserService userService;
 
     final ActionService actionService;
+    final CommandService commandService;
     final Vps4User user;
 
     @Inject
     public SysAdminResource(SysAdminService sysAdminService, VmUserService userService,
-            ActionService actionService, Vps4User user) {
+            ActionService actionService, CommandService commandService, Vps4User user) {
         this.sysAdminService = sysAdminService;
         this.userService = userService;
         this.actionService = actionService;
+        this.commandService = commandService;
         this.user = user;
     }
 
@@ -70,7 +80,16 @@ public class SysAdminResource {
 
         long actionId = actionService.createAction(vmId, ActionType.SET_PASSWORD, "", user.getId());
 
-        // FIXME orchestration client call to SetPassword
+        SetPassword.Request request = new SetPassword.Request();
+        request.usernames = Arrays.asList(usernames);
+        request.password = updatePasswordRequest.password;
+        request.vmId = vmId;
+
+        Vps4SetPassword.Request vps4Request = new Vps4SetPassword.Request();
+        vps4Request.actionId = actionId;
+        vps4Request.setPasswordRequest = request;
+
+        Commands.execute(commandService, "Vps4SetPassword", vps4Request);
 
         return actionService.getAction(actionId);
     }
@@ -101,24 +120,21 @@ public class SysAdminResource {
             //action.status = ActionStatus.INVALID;
             //return;
         }
-        //actions.put(action.actionId, action);
 
         long actionId = actionService.createAction(vmId,
                 adminEnabled ? ActionType.ENABLE_ADMIN_ACCESS : ActionType.DISABLE_ADMIN_ACCESS,
                 "", user.getId());
 
-        // TODO call orchestration client
-        //ToggleAdminWorker worker = new ToggleAdminWorker(sysAdminService, userService, action);
+        ToggleAdmin.Request request = new ToggleAdmin.Request();
+        request.enabled = adminEnabled;
+        request.vmId = vmId;
+        request.username = username;
 
-//        action.status = ActionStatus.IN_PROGRESS;
-//        threadPool.execute(() -> {
-//            try {
-//                worker.run();
-//            }
-//            catch (Vps4Exception e) {
-//                action.status = ActionStatus.ERROR;
-//            }
-//        });
+        Vps4ToggleAdmin.Request vps4Request = new Vps4ToggleAdmin.Request();
+        vps4Request.actionId = actionId;
+        vps4Request.toggleAdminRequest = request;
+
+        Commands.execute(commandService, "Vps4ToggleAdmin", vps4Request);
 
         return actionService.getAction(actionId);
 

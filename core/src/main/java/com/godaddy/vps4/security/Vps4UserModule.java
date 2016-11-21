@@ -2,7 +2,10 @@ package com.godaddy.vps4.security;
 
 import com.godaddy.vps4.project.ProjectService;
 import com.godaddy.vps4.project.jdbc.JdbcProjectService;
+import com.godaddy.vps4.security.jdbc.JdbcVps4UserService;
 import com.google.inject.AbstractModule;
+
+import gdg.hfs.security.Vps4UserService;
 
 // TODO refactor into SecurityModule, manage things like privileges
 public class Vps4UserModule extends AbstractModule {
@@ -13,6 +16,7 @@ public class Vps4UserModule extends AbstractModule {
 
         bind(Vps4User.class).toInstance(user);
         bind(ProjectService.class).to(JdbcProjectService.class);
+        bind(Vps4UserService.class).to(JdbcVps4UserService.class);
     }
 
 }

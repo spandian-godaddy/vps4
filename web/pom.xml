@@ -220,6 +220,16 @@
             <artifactId>vps4-core</artifactId>
             <version>0.0.1-SNAPSHOT</version>
         </dependency>
+        <dependency>
+            <groupId>com.godaddy.vps4</groupId>
+            <artifactId>vps4-orchestration-plugin</artifactId>
+            <version>0.0.1-SNAPSHOT</version>
+        </dependency>
+        <dependency>
+            <groupId>com.godaddy.hosting</groupId>
+            <artifactId>orchestration-client</artifactId>
+            <version>0.0.1-24</version>
+        </dependency>
 
 	</dependencies>
 

@@ -1,6 +1,9 @@
 package com.godaddy.vps4.web.vm;
 
 import com.godaddy.vps4.Vps4Exception;
+import com.godaddy.vps4.orchestration.vm.ProvisionVm;
+import com.godaddy.vps4.orchestration.vm.VmActionRequest;
+import com.godaddy.vps4.orchestration.vm.Vps4TestCommand;
 import com.godaddy.vps4.project.Project;
 import com.godaddy.vps4.project.ProjectService;
 import com.godaddy.vps4.security.PrivilegeService;
@@ -8,6 +11,12 @@ import com.godaddy.vps4.security.Vps4User;
 import com.godaddy.vps4.vm.*;
 import com.godaddy.vps4.vm.Image;
 import com.godaddy.vps4.web.Vps4Api;
+import com.godaddy.vps4.web.util.Commands;
+
+import gdg.hfs.orchestration.CommandGroupSpec;
+import gdg.hfs.orchestration.CommandService;
+import gdg.hfs.orchestration.CommandSpec;
+import gdg.hfs.orchestration.CommandState;
 import gdg.hfs.vhfs.cpanel.CPanelService;
 import gdg.hfs.vhfs.vm.*;
 import io.swagger.annotations.Api;
@@ -18,6 +27,7 @@ import javax.inject.Inject;
 import javax.ws.rs.*;
 import javax.ws.rs.core.MediaType;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
 
@@ -38,6 +48,7 @@ public class VmResource {
     private final ProjectService projectService;
     private final ImageService imageService;
     private final ActionService actionService;
+    private final CommandService commandService;
 
     @Inject
     public VmResource(PrivilegeService privilegeService,
@@ -46,7 +57,8 @@ public class VmResource {
                       ProjectService projectService, ImageService imageService,
                       com.godaddy.vps4.network.NetworkService vps4NetworkService,
                       CPanelService cPanelService,
-                      ActionService actionService) {
+                      ActionService actionService,
+                      CommandService commandService) {
         this.user = user;
         this.virtualMachineService = virtualMachineService;
         this.privilegeService = privilegeService;
@@ -54,6 +66,7 @@ public class VmResource {
         this.projectService = projectService;
         this.imageService = imageService;
         this.actionService = actionService;
+        this.commandService = commandService;
     }
 
     @GET
@@ -69,7 +82,6 @@ public class VmResource {
     @GET
     @Path("actions/provision/{orionGuid}")
     public Action getProvisionActions(@PathParam("orionGuid") UUID orionGuid) {
-        //CreateVmAction action = provisionActions.get(orionGuid);
 
         Action action = getActionFromOrionGuid(orionGuid);
         if (action == null) {
@@ -205,12 +217,18 @@ public class VmResource {
 
         long actionId = actionService.createAction(vmId, type, "", user.getId());
 
-        // FIXME orchestration-client call
+        // TODO wrap commands with VPS4 ActionCommand wrapper
+        CommandState command = null;
         switch(type) {
-        case START_VM:
-        case STOP_VM:
-        case RESTART_VM:
+        case START_VM:      command = Commands.execute(commandService, "StartVm", vmId);    break;
+        case STOP_VM:       command = Commands.execute(commandService, "StopVm", vmId);     break;
+        case RESTART_VM:    command = Commands.execute(commandService, "RestartVm", vmId);  break;
+        default:
+            throw new IllegalArgumentException("Unknown type: " + type);
         }
+        logger.info("managing vm {} with command {}", type, command.commandId);
+
+        // TODO actionService.tagWithCommand(actionId, command.commandId);
 
         return actionService.getAction(actionId);
     }
@@ -237,16 +255,15 @@ public class VmResource {
 
         logger.info("provisioning vm with orionGuid {}", provisionRequest.orionGuid);
 
-        VirtualMachineRequest request = getVmRequestToProvision(provisionRequest.orionGuid);
+        VirtualMachineRequest vmRequest = getVmRequestToProvision(provisionRequest.orionGuid);
 
         Project project = createProject(provisionRequest.orionGuid, provisionRequest.dataCenterId);
 
-        VirtualMachineSpec spec = getVirtualMachineSpec(request);
+        VirtualMachineSpec spec = getVirtualMachineSpec(vmRequest);
 
         Image image = getImage(provisionRequest.image);
         // TODO - verify that the image matches the request (control panel, managed level, OS)
 
-        // FIXME need to get the action back to the caller so they can poll the status/steps/ticks
         CreateVMRequest hfsRequest = createHfsProvisionVmRequest(provisionRequest.image, provisionRequest.username,
                 provisionRequest.password, project, spec);
 
@@ -255,25 +272,18 @@ public class VmResource {
         long vmId = 0; // ?
         long actionId = actionService.createAction(vmId, ActionType.CREATE_VM, "", user.getId());
 
-        //action.project = project;
-        //actions.put(action.actionId, action);
-        //provisionActions.put(provisionRequest.orionGuid, action);
-
         ProvisionVmInfo vmInfo = new ProvisionVmInfo(provisionRequest.orionGuid, provisionRequest.name, project.getProjectId(),
-                spec.specId, request.managedLevel, image);
+                spec.specId, vmRequest.managedLevel, image);
 
-        // FIXME orchestration client
-        //final ProvisionVmWorker provisionWorker = new ProvisionVmWorker(vmService, hfsNetworkService, sysAdminService, userService,
-        //        vps4NetworkService, virtualMachineService, cPanelService,
-        //        action, threadPool, vmInfo);
-        //threadPool.execute(() -> {
-        //    provisionWorker.run();
-        //});
+        ProvisionVm.Request request = new ProvisionVm.Request();
+        request.actionId = actionId;
+        request.hfsRequest = hfsRequest;
+        request.vmInfo = vmInfo;
 
-//        if (action.status != ActionStatus.ERROR) {
-//            action.step = CreateVmStep.SetupComplete;
-//            action.status = ActionStatus.COMPLETE;
-//        }
+        CommandState command = Commands.execute(commandService, "ProvisionVm", request);
+        logger.info("provisioning VM in {}", command.commandId);
+
+        // TODO actionService.tagWithCommand(actionId, command.commandId);
 
         return actionService.getAction(actionId);
     }
@@ -336,18 +346,15 @@ public class VmResource {
 
         // TODO verify VM status is destroyable
 
-        // FIXME generic Action
-        long actionId = actionService.createAction(vmId, ActionType.CREATE_VM, "", user.getId());
-//        DestroyVmAction action = new DestroyVmAction();
-//        action.actionId = actionIdPool.incrementAndGet();
-//        action.status = ActionStatus.IN_PROGRESS;
-//        action.virtualMachine = virtualMachine;
-//
-//        actions.put(action.actionId, action);
-//
-          // FIXME orchestration client
-//        threadPool
-//                .execute(new DestroyVmWorker(action, vmService, hfsNetworkService, vps4NetworkService, virtualMachineService, threadPool));
+        long actionId = actionService.createAction(vmId, ActionType.DESTROY_VM, null, user.getId());
+
+        VmActionRequest request = new VmActionRequest();
+        request.actionId = actionId;
+        request.vmId = vmId;
+
+        CommandState command = Commands.execute(commandService, "Vps4DestroyVm", request);
+
+        // TODO actionService.tagWithCommand(actionId, command.commandId);
 
         return actionService.getAction(actionId);
     }

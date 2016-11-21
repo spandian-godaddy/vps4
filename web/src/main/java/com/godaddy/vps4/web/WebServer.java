@@ -92,6 +92,7 @@ public class WebServer {
         modules.add(new NetworkModule());
         //modules.add(new CPanelModule());
         modules.add(new FakeCpanelModule());
+        modules.add(new CommandClientModule());
 
         Injector injector = Guice.createInjector(modules);
 
