@@ -26,7 +26,6 @@ import com.godaddy.vps4.web.Vps4Api;
 import com.godaddy.vps4.web.util.Commands;
 
 import gdg.hfs.orchestration.CommandService;
-import gdg.hfs.vhfs.sysadmin.SysAdminService;
 import io.swagger.annotations.Api;
 
 @Vps4Api
@@ -39,7 +38,6 @@ public class SysAdminResource {
 
     private static final Logger logger = LoggerFactory.getLogger(SysAdminResource.class);
 
-    final SysAdminService sysAdminService;
     final VmUserService userService;
 
     final ActionService actionService;
@@ -47,9 +45,8 @@ public class SysAdminResource {
     final Vps4User user;
 
     @Inject
-    public SysAdminResource(SysAdminService sysAdminService, VmUserService userService,
+    public SysAdminResource(VmUserService userService,
             ActionService actionService, CommandService commandService, Vps4User user) {
-        this.sysAdminService = sysAdminService;
         this.userService = userService;
         this.actionService = actionService;
         this.commandService = commandService;
