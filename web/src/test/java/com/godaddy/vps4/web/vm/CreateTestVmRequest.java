@@ -41,19 +41,17 @@ public class CreateTestVmRequest {
         this.userService = userService;
     }
 
-    static final String SHOPPER_ID = "5y5";
-
-    protected void provision(int tier, int managedLevel, String operatingSystem, String controlPanel) {
+    protected void provision(int tier, int managedLevel, String operatingSystem, String controlPanel, String shopperId) {
 
         VirtualMachineSpec spec = virtualMachineService.getSpec(tier);
 
         UUID orionGuid = UUID.randomUUID();
-        virtualMachineService.createVirtualMachineRequest(orionGuid, operatingSystem, controlPanel, tier, managedLevel);
+        virtualMachineService.createVirtualMachineRequest(orionGuid, operatingSystem, controlPanel, tier, managedLevel, shopperId);
 
         // normally we would get this from HFS
         long vmId = new Random().nextInt(1000000);
 
-        Vps4User user = userService.getOrCreateUserForShopper(SHOPPER_ID);
+        Vps4User user = userService.getOrCreateUserForShopper(shopperId);
 
         long projectId = projectService.createProject("My Cool Project", user.getId(), 1).getProjectId();
 
@@ -63,13 +61,16 @@ public class CreateTestVmRequest {
     }
 
     public static void main(String[] args) {
+
+        final String shopperId = "5y5";
+
         Injector injector = Guice.createInjector(
                 new ConfigModule(), new DatabaseModule(),
-                new VmModule(), new SecurityModule(), new AutoCreateVps4UserModule(SHOPPER_ID));
+                new VmModule(), new SecurityModule(), new AutoCreateVps4UserModule(shopperId));
 
         CreateTestVmRequest force = injector.getInstance(CreateTestVmRequest.class);
 
-        force.provision(10, 0, "centos-7", "cpanel");
+        force.provision(10, 0, "centos-7", "cpanel", shopperId);
     }
 
 }
