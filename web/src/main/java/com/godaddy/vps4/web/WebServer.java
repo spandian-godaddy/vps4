@@ -109,7 +109,8 @@ public class WebServer {
         handler.setContextPath("/");
         handler.addEventListener(injector.getInstance(GuiceResteasyBootstrapServletContextListener.class));
 
-        addAuthentication(handler, dataSource);
+        // TODO add flag to conditionally disable authentication before enabling
+        //addAuthentication(handler, dataSource);
         handler.addFilter(CorsFilter.class, "/*", EnumSet.allOf(DispatcherType.class));
 
         FilterHolder guiceFilter = new FilterHolder(injector.getInstance(GuiceFilter.class));
