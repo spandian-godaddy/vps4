@@ -1,6 +1,4 @@
-package gdg.hfs.security;
-
-import com.godaddy.vps4.security.Vps4User;
+package com.godaddy.vps4.security;
 
 public interface Vps4UserService {
 

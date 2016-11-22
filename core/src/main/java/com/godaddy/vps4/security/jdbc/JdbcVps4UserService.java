@@ -11,8 +11,7 @@ import org.slf4j.LoggerFactory;
 
 import com.godaddy.vps4.jdbc.Sql;
 import com.godaddy.vps4.security.Vps4User;
-
-import gdg.hfs.security.Vps4UserService;
+import com.godaddy.vps4.security.Vps4UserService;
 
 public class JdbcVps4UserService implements Vps4UserService {
 
