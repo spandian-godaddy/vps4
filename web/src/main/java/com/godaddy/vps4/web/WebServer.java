@@ -24,19 +24,20 @@ import org.slf4j.LoggerFactory;
 
 import com.godaddy.vps4.config.Config;
 import com.godaddy.vps4.config.ConfigProvider;
+import com.godaddy.vps4.cpanel.FakeCpanelModule;
 import com.godaddy.vps4.hfs.HfsMockModule;
 import com.godaddy.vps4.hfs.HfsModule;
 import com.godaddy.vps4.jdbc.DatabaseModule;
 import com.godaddy.vps4.security.Vps4UserModule;
 import com.godaddy.vps4.security.Vps4UserService;
 import com.godaddy.vps4.security.jdbc.JdbcVps4UserService;
+import com.godaddy.vps4.vm.VmModule;
 import com.godaddy.vps4.web.network.NetworkModule;
 import com.godaddy.vps4.web.security.AuthenticationFilter;
 import com.godaddy.vps4.web.security.Vps4RequestAuthenticator;
 import com.godaddy.vps4.web.security.sso.HttpKeyService;
 import com.godaddy.vps4.web.security.sso.KeyService;
 import com.godaddy.vps4.web.security.sso.SsoTokenExtractor;
-import com.godaddy.vps4.vm.VmModule;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
 import com.google.inject.Module;
@@ -98,6 +99,7 @@ public class WebServer {
 
         modules.add(new VmModule());
         modules.add(new NetworkModule());
+        modules.add(new FakeCpanelModule());
         modules.add(new CommandClientModule());
 
         Injector injector = Guice.createInjector(modules);
