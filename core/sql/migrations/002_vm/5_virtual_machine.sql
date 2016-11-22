@@ -6,6 +6,7 @@ CREATE TABLE virtual_machine_request (
     , control_panel    TEXT NOT NULL
     , create_date      TIMESTAMP NOT NULL DEFAULT NOW()
     , provision_date   TIMESTAMP
+    , shopper_id       TEXT	NOT NULL
 );
 
 CREATE TABLE virtual_machine (

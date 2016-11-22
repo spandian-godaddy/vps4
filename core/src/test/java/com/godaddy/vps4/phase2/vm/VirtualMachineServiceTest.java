@@ -50,10 +50,11 @@ public class VirtualMachineServiceTest {
 
         String os = "linux";
         String controlPanel = "cpanel";
+        String shopperId = "testShopperId";
         int tier = 10;
         int managedLevel = 0;
 
-        virtualMachineService.createVirtualMachineRequest(orionGuid, os, controlPanel, tier, managedLevel);
+        virtualMachineService.createVirtualMachineRequest(orionGuid, os, controlPanel, tier, managedLevel, shopperId);
 
         VirtualMachineRequest vmRequest = virtualMachineService.getVirtualMachineRequest(orionGuid);
 

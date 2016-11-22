@@ -107,9 +107,9 @@ public class JdbcVirtualMachineService implements VirtualMachineService {
     }
 
     @Override
-    public void createVirtualMachineRequest(UUID orionGuid, String operatingSystem, String controlPanel, int tier, int managedLevel) {
-        Sql.with(dataSource).exec("SELECT * FROM virtual_machine_request_create(?,?,?,?,?)", null, orionGuid, operatingSystem, tier,
-                controlPanel, managedLevel);
+    public void createVirtualMachineRequest(UUID orionGuid, String operatingSystem, String controlPanel, int tier, int managedLevel, String shopperId) {
+        Sql.with(dataSource).exec("SELECT * FROM virtual_machine_request_create(?,?,?,?,?,?)", null, orionGuid, operatingSystem, tier,
+                controlPanel, managedLevel, shopperId);
     }
 
     @Override
@@ -123,7 +123,8 @@ public class JdbcVirtualMachineService implements VirtualMachineService {
 
         return new VirtualMachineRequest(java.util.UUID.fromString(rs.getString("orion_guid")), rs.getInt("tier"),
                 rs.getInt("managed_level"), rs.getString("operating_system"), rs.getString("control_panel"),
-                rs.getTimestamp("create_date").toInstant(), provisionDate != null ? provisionDate.toInstant() : null);
+                rs.getTimestamp("create_date").toInstant(), provisionDate != null ? provisionDate.toInstant() : null,
+                rs.getString("shopper_id"));
     }
 
     @Override

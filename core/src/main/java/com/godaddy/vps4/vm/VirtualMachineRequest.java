@@ -12,8 +12,9 @@ public class VirtualMachineRequest {
     public final String controlPanel;
     public final Instant createDate;
     public final Instant provisionDate;
+    public final String shopperId;
 
-    public VirtualMachineRequest(UUID orionGuid, int tier, int managedLevel, String operatingSystem, String controlPanel, Instant createDate, Instant provisionDate) {
+    public VirtualMachineRequest(UUID orionGuid, int tier, int managedLevel, String operatingSystem, String controlPanel, Instant createDate, Instant provisionDate, String shopperId) {
         this.orionGuid = orionGuid;
         this.tier = tier;
         this.managedLevel = managedLevel;
@@ -21,13 +22,14 @@ public class VirtualMachineRequest {
         this.controlPanel = controlPanel;
         this.createDate = createDate;
         this.provisionDate = provisionDate;
+        this.shopperId = shopperId;
     }
 
     @Override
     public String toString() {
         return "VirtualMachineRequest [orionGuid: " + orionGuid + " tier: " + tier + " managedLevel: " + managedLevel +
                 " operatingSystem: " + operatingSystem + " controlPanel: " + controlPanel + " createDate: " + createDate +
-                " provisionDate: " + provisionDate + "]";
+                " provisionDate: " + provisionDate + " shopperId: " + shopperId + "]";
     }
 
 }

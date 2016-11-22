@@ -45,7 +45,7 @@ public class VmPatchResourceTest {
         
         orionGuid = UUID.randomUUID();
         int managedLevel = 0;
-        virtualMachineService.createVirtualMachineRequest(orionGuid, "linux", "cpanel", 10, managedLevel);
+        virtualMachineService.createVirtualMachineRequest(orionGuid, "linux", "cpanel", 10, managedLevel, "testShopperId");
         
         vmId = 1000+Math.abs((new Random().nextLong()));  //HFS usually creates this, so we're making it up
         virtualMachineService.provisionVirtualMachine(vmId, orionGuid, initialName, 

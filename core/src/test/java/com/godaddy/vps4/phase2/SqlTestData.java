@@ -17,7 +17,7 @@ public class SqlTestData {
     public static long insertTestVm(UUID orionGuid, long projectId, DataSource dataSource) {
         JdbcVirtualMachineService virtualMachineService = new JdbcVirtualMachineService(dataSource);
         long vmId = getNextId(dataSource);
-        virtualMachineService.createVirtualMachineRequest(orionGuid, "linux", "none", 10, 0);
+        virtualMachineService.createVirtualMachineRequest(orionGuid, "linux", "none", 10, 0, "testShopperId");
         virtualMachineService.provisionVirtualMachine(vmId, orionGuid, "networkTestVm", projectId, 1, 0, 1);
         return vmId;
     }

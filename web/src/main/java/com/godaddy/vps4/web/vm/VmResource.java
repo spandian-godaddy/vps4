@@ -156,10 +156,10 @@ public class VmResource {
     @POST
     @Path("/")
     public VirtualMachineRequest createVm(@QueryParam("orionGuid") UUID orionGuid, @QueryParam("operatingSystem") String operatingSystem,
-            @QueryParam("tier") int tier, @QueryParam("controlPanel") String controlPanel, @QueryParam("managedLevel") int managedLevel) {
+            @QueryParam("tier") int tier, @QueryParam("controlPanel") String controlPanel, @QueryParam("managedLevel") int managedLevel, @QueryParam("shopperId") String shopperId) {
 
         logger.info("creating new vm request for orionGuid {}", orionGuid);
-        virtualMachineService.createVirtualMachineRequest(orionGuid, operatingSystem, controlPanel, tier, managedLevel);
+        virtualMachineService.createVirtualMachineRequest(orionGuid, operatingSystem, controlPanel, tier, managedLevel, shopperId);
         return virtualMachineService.getVirtualMachineRequest(orionGuid);
 
     }
