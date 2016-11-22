@@ -28,13 +28,15 @@ import com.godaddy.vps4.cpanel.FakeCpanelModule;
 import com.godaddy.vps4.hfs.HfsMockModule;
 import com.godaddy.vps4.hfs.HfsModule;
 import com.godaddy.vps4.jdbc.DatabaseModule;
-import com.godaddy.vps4.security.Vps4UserModule;
+import com.godaddy.vps4.security.SecurityModule;
 import com.godaddy.vps4.security.Vps4UserService;
 import com.godaddy.vps4.security.jdbc.JdbcVps4UserService;
 import com.godaddy.vps4.vm.VmModule;
 import com.godaddy.vps4.web.network.NetworkModule;
 import com.godaddy.vps4.web.security.AuthenticationFilter;
 import com.godaddy.vps4.web.security.Vps4RequestAuthenticator;
+import com.godaddy.vps4.web.security.Vps4UserFakeModule;
+import com.godaddy.vps4.web.security.Vps4UserModule;
 import com.godaddy.vps4.web.security.sso.HttpKeyService;
 import com.godaddy.vps4.web.security.sso.KeyService;
 import com.godaddy.vps4.web.security.sso.SsoTokenExtractor;
@@ -50,6 +52,7 @@ public class WebServer {
 
     private static final Logger logger = LoggerFactory.getLogger(WebServer.class);
     static Config conf = new ConfigProvider().get();
+    private static boolean useFakeUser = System.getProperty("vps4.user.fake", "false").equals("true");
 
     private static int getPortFromConfig() {
         return Integer.valueOf(conf.get("vps4.http.port", "8080"));
@@ -93,9 +96,11 @@ public class WebServer {
         else
             modules.add(new HfsModule());
 
+        modules.add(getUserModule(useFakeUser));
+
         modules.add(new DatabaseModule());
         modules.add(new WebModule());
-        modules.add(new Vps4UserModule());
+        modules.add(new SecurityModule());
 
         modules.add(new VmModule());
         modules.add(new NetworkModule());
@@ -109,8 +114,9 @@ public class WebServer {
         handler.setContextPath("/");
         handler.addEventListener(injector.getInstance(GuiceResteasyBootstrapServletContextListener.class));
 
-        // TODO add flag to conditionally disable authentication before enabling
-        //addAuthentication(handler, dataSource);
+        if (!useFakeUser)
+            addAuthentication(handler, dataSource);
+
         handler.addFilter(CorsFilter.class, "/*", EnumSet.allOf(DispatcherType.class));
 
         FilterHolder guiceFilter = new FilterHolder(injector.getInstance(GuiceFilter.class));
@@ -119,6 +125,16 @@ public class WebServer {
         populateSwaggerModels(injector);
 
         return handler;
+    }
+
+    private static Module getUserModule(boolean useFakeUser) {
+        if (useFakeUser) {
+            logger.info("USING FAKE USER");
+            return new Vps4UserFakeModule();
+        }
+        else {
+            return new Vps4UserModule();
+        }
     }
 
     private static void addAuthentication(ServletContextHandler handler, DataSource dataSource) {
