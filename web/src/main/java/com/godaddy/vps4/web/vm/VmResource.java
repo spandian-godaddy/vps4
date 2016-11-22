@@ -1,35 +1,54 @@
 package com.godaddy.vps4.web.vm;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.UUID;
+
+import javax.inject.Inject;
+import javax.ws.rs.Consumes;
+import javax.ws.rs.DELETE;
+import javax.ws.rs.GET;
+import javax.ws.rs.NotFoundException;
+import javax.ws.rs.POST;
+import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
+import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
+import javax.ws.rs.core.MediaType;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.godaddy.vps4.Vps4Exception;
 import com.godaddy.vps4.orchestration.vm.ProvisionVm;
 import com.godaddy.vps4.orchestration.vm.VmActionRequest;
-import com.godaddy.vps4.orchestration.vm.Vps4TestCommand;
 import com.godaddy.vps4.project.Project;
 import com.godaddy.vps4.project.ProjectService;
 import com.godaddy.vps4.security.PrivilegeService;
 import com.godaddy.vps4.security.Vps4User;
-import com.godaddy.vps4.vm.*;
+import com.godaddy.vps4.vm.Action;
+import com.godaddy.vps4.vm.ActionService;
+import com.godaddy.vps4.vm.ActionType;
+import com.godaddy.vps4.vm.CombinedVm;
 import com.godaddy.vps4.vm.Image;
+import com.godaddy.vps4.vm.ImageService;
+import com.godaddy.vps4.vm.ProvisionVmInfo;
+import com.godaddy.vps4.vm.VirtualMachine;
+import com.godaddy.vps4.vm.VirtualMachineRequest;
+import com.godaddy.vps4.vm.VirtualMachineService;
+import com.godaddy.vps4.vm.VirtualMachineSpec;
 import com.godaddy.vps4.web.Vps4Api;
 import com.godaddy.vps4.web.util.Commands;
 
-import gdg.hfs.orchestration.CommandGroupSpec;
 import gdg.hfs.orchestration.CommandService;
-import gdg.hfs.orchestration.CommandSpec;
 import gdg.hfs.orchestration.CommandState;
 import gdg.hfs.vhfs.cpanel.CPanelService;
-import gdg.hfs.vhfs.vm.*;
+import gdg.hfs.vhfs.vm.CreateVMRequest;
+import gdg.hfs.vhfs.vm.Flavor;
+import gdg.hfs.vhfs.vm.FlavorList;
+import gdg.hfs.vhfs.vm.Vm;
+import gdg.hfs.vhfs.vm.VmService;
 import io.swagger.annotations.Api;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import javax.inject.Inject;
-import javax.ws.rs.*;
-import javax.ws.rs.core.MediaType;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.UUID;
 
 @Vps4Api
 @Api(tags = { "vms" })
