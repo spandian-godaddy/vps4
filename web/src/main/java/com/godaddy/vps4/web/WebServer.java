@@ -39,6 +39,7 @@ import com.godaddy.vps4.web.security.Vps4UserModule;
 import com.godaddy.vps4.web.security.sso.HttpKeyService;
 import com.godaddy.vps4.web.security.sso.KeyService;
 import com.godaddy.vps4.web.security.sso.SsoTokenExtractor;
+import com.godaddy.vps4.web.util.resteasy.Vps4GuiceResteasyBootstrapServletContextListener;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
 import com.google.inject.Module;
@@ -106,7 +107,7 @@ public class WebServer {
 
         ServletContextHandler handler = new ServletContextHandler();
         handler.setContextPath("/");
-        handler.addEventListener(injector.getInstance(GuiceResteasyBootstrapServletContextListener.class));
+        handler.addEventListener(injector.getInstance(Vps4GuiceResteasyBootstrapServletContextListener.class));
 
         if (!useFakeUser)
             addAuthentication(handler, dataSource);

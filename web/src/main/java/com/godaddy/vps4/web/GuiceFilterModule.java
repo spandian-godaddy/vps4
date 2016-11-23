@@ -1,6 +1,5 @@
 package com.godaddy.vps4.web;
 
-import org.jboss.resteasy.plugins.guice.GuiceResteasyBootstrapServletContextListener;
 import org.jboss.resteasy.plugins.server.servlet.HttpServletDispatcher;
 
 import com.fasterxml.jackson.databind.DeserializationFeature;
@@ -9,6 +8,7 @@ import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jsr310.JSR310Module;
 import com.fasterxml.jackson.jaxrs.json.JacksonJaxbJsonProvider;
 import com.fasterxml.jackson.jaxrs.json.JacksonJsonProvider;
+import com.godaddy.vps4.web.util.resteasy.Vps4GuiceResteasyBootstrapServletContextListener;
 import com.google.inject.Scopes;
 import com.google.inject.servlet.GuiceFilter;
 import com.google.inject.servlet.ServletModule;
@@ -29,7 +29,7 @@ public class GuiceFilterModule extends ServletModule {
         // by binding the servlet context listener here, the 'parentInjector'
         // field is injected by Guice.  That parentInjector is what contains
         // all of our application-level bindings
-        bind(GuiceResteasyBootstrapServletContextListener.class);
+        bind(Vps4GuiceResteasyBootstrapServletContextListener.class);
 
         // hook Jackson into Jersey as the POJO <-> JSON mapper
         ObjectMapper mapper = new ObjectMapper();
