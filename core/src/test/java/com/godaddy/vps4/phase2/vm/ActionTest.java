@@ -1,5 +1,16 @@
 package com.godaddy.vps4.phase2.vm;
 
+import static junit.framework.Assert.assertEquals;
+import static junit.framework.Assert.assertTrue;
+
+import java.util.UUID;
+
+import javax.sql.DataSource;
+
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
+
 import com.godaddy.vps4.jdbc.DatabaseModule;
 import com.godaddy.vps4.jdbc.Sql;
 import com.godaddy.vps4.phase2.SqlTestData;
@@ -13,15 +24,6 @@ import com.godaddy.vps4.vm.ActionType;
 import com.godaddy.vps4.vm.jdbc.JdbcActionService;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
-
-import javax.sql.DataSource;
-import java.util.UUID;
-
-import static junit.framework.Assert.assertEquals;
-import static junit.framework.Assert.assertTrue;
 
 public class ActionTest {
     Injector injector = Guice.createInjector(new DatabaseModule());
@@ -43,7 +45,7 @@ public class ActionTest {
     @After
     public void cleanupService() {
         Sql.with(dataSource).exec("DELETE from vm_action where vm_id = ?", null, vmId);
-        SqlTestData.cleanupTestVmAndRelatedData(vmId, orionGuid, dataSource);
+        SqlTestData.cleanupTestVmAndRelatedData(vmId, dataSource);
         SqlTestData.cleanupTestProject(project.getProjectId(), dataSource);
     }
 

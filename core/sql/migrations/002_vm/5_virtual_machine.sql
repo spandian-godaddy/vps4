@@ -1,4 +1,4 @@
-CREATE TABLE virtual_machine_request (
+CREATE TABLE orion_request (
     orion_guid         UUID PRIMARY KEY
     , tier             INT NOT NULL
     , managed_level    INT NOT NULL
@@ -11,7 +11,7 @@ CREATE TABLE virtual_machine_request (
 
 CREATE TABLE virtual_machine (
     vm_id        		BIGINT   PRIMARY KEY
-    , orion_guid        UUID     NOT NULL REFERENCES virtual_machine_request(orion_guid)
+    , orion_guid        UUID     NOT NULL REFERENCES orion_request(orion_guid)
     , name              TEXT     NOT NULL
     , project_id 		BIGINT   NOT NULL REFERENCES project(project_id) 
     , spec_id    		SMALLINT NOT NULL REFERENCES virtual_machine_spec(spec_id)

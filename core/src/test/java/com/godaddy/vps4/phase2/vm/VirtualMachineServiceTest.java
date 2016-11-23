@@ -2,8 +2,13 @@ package com.godaddy.vps4.phase2.vm;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 import javax.sql.DataSource;
 
@@ -12,6 +17,7 @@ import org.junit.Before;
 import org.junit.Test;
 
 import com.godaddy.vps4.jdbc.DatabaseModule;
+import com.godaddy.vps4.jdbc.Sql;
 import com.godaddy.vps4.phase2.SqlTestData;
 import com.godaddy.vps4.project.Project;
 import com.godaddy.vps4.project.ProjectService;
@@ -30,29 +36,40 @@ public class VirtualMachineServiceTest {
     VirtualMachineService virtualMachineService = new JdbcVirtualMachineService(dataSource);
     ProjectService projectService = new JdbcProjectService(dataSource);
     private UUID orionGuid = UUID.randomUUID();
-    Project project;
-    long vmId;
+    List<Project> projects;
+    List<Long> vmIds;
+    List<UUID> vmRequests;
+    String os = "linux";
+    String controlPanel = "cpanel";
+    String shopperId = "TestUser";
+    int tier = 10;
+    int managedLevel = 0;
 
     @Before
-    public void setupService() {
-        project = projectService.createProject("testVirtualMachineServiceProject", 1, 1);
-        vmId = SqlTestData.getNextId(dataSource);
+    public void setup() {
+        vmIds = new ArrayList<>();
+        projects = new ArrayList<>();
+        vmRequests = new ArrayList<>();
     }
 
     @After
-    public void cleanupService() {
-        SqlTestData.cleanupTestVmAndRelatedData(vmId, orionGuid, dataSource);
-        SqlTestData.cleanupTestProject(project.getProjectId(), dataSource);
+    public void cleanup() {
+        for (long vmId : vmIds) {
+            SqlTestData.cleanupTestVmAndRelatedData(vmId, dataSource);
+        }
+        for (UUID request : vmRequests) {
+            Sql.with(dataSource).exec("DELETE FROM orion_request WHERE orion_guid = ?", null, request);
+        }
+        for (Project project : projects) {
+            SqlTestData.cleanupTestProject(project.getProjectId(), dataSource);
+        }
     }
 
     @Test
     public void testService() {
-
-        String os = "linux";
-        String controlPanel = "cpanel";
-        String shopperId = "testShopperId";
-        int tier = 10;
-        int managedLevel = 0;
+        projects.add(SqlTestData.createProject(dataSource));
+        long vmId = SqlTestData.getNextId(dataSource);
+        vmIds.add(vmId);
 
         virtualMachineService.createVirtualMachineRequest(orionGuid, os, controlPanel, tier, managedLevel, shopperId);
 
@@ -69,18 +86,38 @@ public class VirtualMachineServiceTest {
         long imageId = 1;
         int specId = 1;
 
-        virtualMachineService.provisionVirtualMachine(vmId, orionGuid, name, project.getProjectId(), specId, managedLevel, imageId);
+        virtualMachineService.provisionVirtualMachine(vmId, orionGuid, name, projects.get(0).getProjectId(), specId, managedLevel, imageId);
 
         VirtualMachine vm = virtualMachineService.getVirtualMachine(vmId);
 
         assertNotNull(vm);
         assertEquals(vmId, vm.vmId);
         assertEquals(name, vm.name);
-        assertEquals(project.getProjectId(), vm.projectId);
+        assertEquals(projects.get(0).getProjectId(), vm.projectId);
         assertEquals(specId, vm.spec.specId);
+    }
 
-        // vms =
-        // virtualMachineService.listVirtualMachines(project.getProjectId());
+    @Test
+    public void testGetVirtualMachines() {
+        List<UUID> createdVms = new ArrayList<>();
+        for(int i = 0; i < 2; i++) {
+            projects.add(SqlTestData.createProject(dataSource));
+            createdVms.add(UUID.randomUUID());
+            vmIds.add(SqlTestData.insertTestVm(createdVms.get(i), projects.get(i).getProjectId(), dataSource));
+            vmRequests.add(UUID.randomUUID());
+            virtualMachineService.createVirtualMachineRequest(vmRequests.get(i), os, controlPanel, tier, managedLevel, shopperId);
+        }
+
+        List<UUID> requests = virtualMachineService.getOrionRequests(shopperId);
+        for (UUID request : vmRequests)
+            assertTrue(requests.contains(request));
+        assertEquals(vmRequests.size(), requests.size());
+
+        List<Long> projectIds = projects.stream().map(Project::getProjectId).collect(Collectors.toList());
+        Map<UUID, String> vms = virtualMachineService.getVirtualMachines(projectIds);
+        for (UUID vm : createdVms)
+            assertTrue(vms.containsKey(vm));
+        assertEquals(vmIds.size(), vms.size());
     }
 
 }

@@ -2,7 +2,9 @@ package com.godaddy.vps4.web.vm;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 import javax.inject.Inject;
 import javax.ws.rs.Consumes;
@@ -71,13 +73,13 @@ public class VmResource {
 
     @Inject
     public VmResource(PrivilegeService privilegeService,
-                      Vps4User user, VmService vmService,
-                      VirtualMachineService virtualMachineService,
-                      ProjectService projectService, ImageService imageService,
-                      com.godaddy.vps4.network.NetworkService vps4NetworkService,
-                      CPanelService cPanelService,
-                      ActionService actionService,
-                      CommandService commandService) {
+            Vps4User user, VmService vmService,
+            VirtualMachineService virtualMachineService,
+            ProjectService projectService, ImageService imageService,
+            com.godaddy.vps4.network.NetworkService vps4NetworkService,
+            CPanelService cPanelService,
+            ActionService actionService,
+            CommandService commandService) {
         this.user = user;
         this.virtualMachineService = virtualMachineService;
         this.privilegeService = privilegeService;
@@ -203,6 +205,7 @@ public class VmResource {
 
     /**
      * Check if vm exists
+     * 
      * @param vmId
      * @return virtualmachine project id if found
      * @throws VmNotFoundException
@@ -212,22 +215,24 @@ public class VmResource {
 
         try {
             vm = virtualMachineService.getVirtualMachine(vmId);
-            if(vm == null) {
-                throw new VmNotFoundException("Could not find VM for specified vm id: " + vmId );
+            if (vm == null) {
+                throw new VmNotFoundException("Could not find VM for specified vm id: " + vmId);
             }
-        } catch (Exception ex) {
+        }
+        catch (Exception ex) {
             logger.error("Could not find vm with VM ID: {} ", vmId, ex);
-            throw new VmNotFoundException( "Could not find vm with VM ID: " + vmId, ex);
+            throw new VmNotFoundException("Could not find vm with VM ID: " + vmId, ex);
         }
         return vm.projectId;
     }
 
     /**
      * Manage the vm to perform actions like start / stop / restart vm.
+     * 
      * @param vmId
      * @param action
      */
-    private Action manageVm (long vmId, ActionType type) throws VmNotFoundException {
+    private Action manageVm(long vmId, ActionType type) throws VmNotFoundException {
 
         // Check if vm exists and user has access to the vm.
         long vmProjectId = getVmProjectId(vmId);
@@ -238,10 +243,16 @@ public class VmResource {
 
         // TODO wrap commands with VPS4 ActionCommand wrapper
         CommandState command = null;
-        switch(type) {
-        case START_VM:      command = Commands.execute(commandService, "StartVm", vmId);    break;
-        case STOP_VM:       command = Commands.execute(commandService, "StopVm", vmId);     break;
-        case RESTART_VM:    command = Commands.execute(commandService, "RestartVm", vmId);  break;
+        switch (type) {
+        case START_VM:
+            command = Commands.execute(commandService, "StartVm", vmId);
+            break;
+        case STOP_VM:
+            command = Commands.execute(commandService, "StopVm", vmId);
+            break;
+        case RESTART_VM:
+            command = Commands.execute(commandService, "RestartVm", vmId);
+            break;
         default:
             throw new IllegalArgumentException("Unknown type: " + type);
         }
@@ -287,7 +298,7 @@ public class VmResource {
                 provisionRequest.password, project, spec);
 
         // FIXME we don't have the vmId here yet, since we're using the HFS vmId and we haven't made the HFS
-        //       VM request yet
+        // VM request yet
         long vmId = 0; // ?
         long actionId = actionService.createAction(vmId, ActionType.CREATE_VM, "{}", user.getId());
 
@@ -356,7 +367,7 @@ public class VmResource {
     }
 
     @DELETE
-    @Path("vms/{vmId}")
+    @Path("/{vmId}")
     public Action destroyVm(@PathParam("vmId") long vmId) {
         VirtualMachine virtualMachine = virtualMachineService.getVirtualMachine(vmId);
         if (virtualMachine == null) {
@@ -378,4 +389,17 @@ public class VmResource {
         return actionService.getAction(actionId);
     }
 
+    @GET
+    @Path("/")
+    public Map<UUID, String> getVirtualMachines() {
+        List<Long> projectIds = projectService.getProjects(user.getId(), true).stream().map(Project::getProjectId)
+                .collect(Collectors.toList());
+        return virtualMachineService.getVirtualMachines(projectIds);
+    }
+
+    @GET
+    @Path("/orionRequests")
+    public List<UUID> getOrionRequests() {
+        return virtualMachineService.getOrionRequests(user.getShopperId());
+    }
 }

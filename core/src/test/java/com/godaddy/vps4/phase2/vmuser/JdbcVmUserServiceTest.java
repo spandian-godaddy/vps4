@@ -44,7 +44,7 @@ public class JdbcVmUserServiceTest {
 
     @After
     public void cleanup() {
-        SqlTestData.cleanupTestVmAndRelatedData(vmId, orionGuid, dataSource);
+        SqlTestData.cleanupTestVmAndRelatedData(vmId, dataSource);
         SqlTestData.cleanupTestProject(projectId, dataSource);
     }
 

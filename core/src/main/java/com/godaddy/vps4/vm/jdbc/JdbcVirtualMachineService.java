@@ -4,6 +4,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -108,13 +109,13 @@ public class JdbcVirtualMachineService implements VirtualMachineService {
 
     @Override
     public void createVirtualMachineRequest(UUID orionGuid, String operatingSystem, String controlPanel, int tier, int managedLevel, String shopperId) {
-        Sql.with(dataSource).exec("SELECT * FROM virtual_machine_request_create(?,?,?,?,?,?)", null, orionGuid, operatingSystem, tier,
+        Sql.with(dataSource).exec("SELECT * FROM orion_request_create(?,?,?,?,?,?)", null, orionGuid, operatingSystem, tier,
                 controlPanel, managedLevel, shopperId);
     }
 
     @Override
     public VirtualMachineRequest getVirtualMachineRequest(UUID orionGuid) {
-        return Sql.with(dataSource).exec("SELECT * FROM virtual_machine_request WHERE orion_guid = ?",
+        return Sql.with(dataSource).exec("SELECT * FROM orion_request WHERE orion_guid = ?",
                 Sql.nextOrNull(this::mapVirtualMachineRequest), orionGuid);
     }
 
@@ -128,20 +129,21 @@ public class JdbcVirtualMachineService implements VirtualMachineService {
     }
 
     @Override
-    public void provisionVirtualMachine(long vmId, UUID orionGuid, String name, long projectId, int specId, int managedLevel, long imageId) {
+    public void provisionVirtualMachine(long vmId, UUID orionGuid, String name, long projectId, int specId, int managedLevel,
+            long imageId) {
         Sql.with(dataSource).exec("SELECT * FROM virtual_machine_provision(?, ?, ?, ?, ?, ?, ?)", null, vmId, orionGuid, name, projectId,
                 specId, managedLevel, imageId);
     }
-    
+
     @Override
-    public void updateVirtualMachine(long vmId, Map<String, Object> paramsToUpdate){
-        if(paramsToUpdate.isEmpty())
+    public void updateVirtualMachine(long vmId, Map<String, Object> paramsToUpdate) {
+        if (paramsToUpdate.isEmpty())
             return;
-        ArrayList<Object> values = new ArrayList<Object>() ;
-        StringBuilder nameSets= new StringBuilder() ;
+        ArrayList<Object> values = new ArrayList<Object>();
+        StringBuilder nameSets = new StringBuilder();
         nameSets.append("UPDATE virtual_machine vm SET ");
-        for(Map.Entry<String,Object> pair: paramsToUpdate.entrySet()){
-            if(values.size() > 0)
+        for (Map.Entry<String, Object> pair : paramsToUpdate.entrySet()) {
+            if (values.size() > 0)
                 nameSets.append(", ");
             nameSets.append(pair.getKey());
             nameSets.append("=?");
@@ -150,5 +152,23 @@ public class JdbcVirtualMachineService implements VirtualMachineService {
         nameSets.append(" WHERE vm_id=?");
         values.add(vmId);
         Sql.with(dataSource).exec(nameSets.toString(), null, values.toArray());
+    }
+
+    @Override
+    public Map<UUID, String> getVirtualMachines(List<Long> projects) {
+        if (projects.isEmpty())
+            return new HashMap<UUID, String>();
+
+        String projectsList = projects.toString().replace('[', '(').replace(']', ')');
+        return (Map<UUID, String>) Sql.with(dataSource).exec(
+                "SELECT name, orion_guid FROM virtual_machine WHERE project_id in " + projectsList,
+                Sql.mapOf(rs -> rs.getString("name"), rs -> UUID.fromString(rs.getString("orion_guid"))));
+    }
+
+    @Override
+    public List<UUID> getOrionRequests(String shopperId) {
+        return (List<UUID>) Sql.with(dataSource).exec(
+                "SELECT orion_guid from orion_request WHERE shopper_id = ? AND provision_date IS NULL",
+                Sql.listOf(rs -> UUID.fromString(rs.getString("orion_guid"))), shopperId);
     }
 }
