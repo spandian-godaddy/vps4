@@ -5,7 +5,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 public class BasicConfig implements Config {
 
-    private final Map<String, String> properties = new ConcurrentHashMap<>();
+    protected final Map<String, String> properties = new ConcurrentHashMap<>();
 
     private final Config parent;
 
@@ -39,6 +39,11 @@ public class BasicConfig implements Config {
             throw new IllegalStateException("Missing config: " + key);
         }
         return value;
+    }
+
+    @Override
+    public byte[] getData(String path) {
+        return null;
     }
 
     public void set(String key, String value) {
