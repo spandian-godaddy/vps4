@@ -1,5 +1,9 @@
 package com.godaddy.vps4.web;
 
+import java.io.IOException;
+import java.net.InetAddress;
+import java.net.ServerSocket;
+import java.net.Socket;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.EnumSet;
@@ -51,7 +55,14 @@ public class WebServer {
     private static boolean useFakeUser = System.getProperty("vps4.user.fake", "false").equals("true");
 
     public static void main(String[] args) throws Exception {
+        if (args.length == 1 && args[0].equals("stop")) {
+            stopServer();
+        } else {
+            startServer();
+        }
+    }
 
+    public static void startServer() throws Exception {
         Injector injector = newInjector();
 
         Config conf = injector.getInstance(Config.class);
@@ -74,7 +85,41 @@ public class WebServer {
         server.setHandler(handlers);
 
         server.start();
+
+        ServerSocket stopSocket = new ServerSocket(getStopPort(), 1, InetAddress.getLoopbackAddress());
+
+        new Thread((Runnable)() -> {
+
+            try {
+                try {
+                    logger.info("listening for shutdown on port {}", stopSocket.getLocalPort());
+                    stopSocket.accept();
+                    logger.info("shutdown request received, stopping server...");
+                    try {
+                        server.stop();
+                    } catch (Exception e) {
+                        logger.warn("Error stopping server", e);
+                    }
+                } finally {
+                    stopSocket.close();
+                }
+            } catch (IOException e) {
+                logger.error("Error listening on shutdown port", e);
+            }
+
+        }, "VPS4 Stop Listener").start();
+
         server.join();
+    }
+
+    static void stopServer() throws Exception {
+        int stopPort = getStopPort();
+        logger.info("stopping server using port {}", stopPort);
+        new Socket(InetAddress.getLoopbackAddress(), stopPort).close();
+    }
+
+    static int getStopPort() {
+        return Integer.parseInt(System.getProperty("hfs.http.stopPort", "9080"));
     }
 
     protected static Injector newInjector() {
