@@ -24,7 +24,7 @@ public class SqlTestData {
 
     public static void cleanupTestVmAndRelatedData(long vmId, UUID orionGuid, DataSource dataSource) {
         Sql.with(dataSource).exec("DELETE FROM ip_address WHERE vm_id = ?", null, vmId);
-        Sql.with(dataSource).exec("DELETE FROM vm_user WHERE virtual_machine_id = ?", null, vmId);
+        Sql.with(dataSource).exec("DELETE FROM vm_user WHERE vm_id = ?", null, vmId);
         Sql.with(dataSource).exec("DELETE FROM virtual_machine WHERE vm_id = ?", null, vmId);
         Sql.with(dataSource).exec("DELETE FROM virtual_machine_request WHERE orion_guid = ?", null, orionGuid);
     }

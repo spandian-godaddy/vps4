@@ -38,27 +38,27 @@ public class JdbcVmUserService implements VmUserService{
     @Override
     public List<VmUser> listUsers(long vmId){
         return Sql.with(dataSource)
-                .exec("SELECT name, virtual_machine_id, admin_enabled"
+                .exec("SELECT name, vm_id, admin_enabled"
                         + " FROM vm_user"
-                        + " WHERE virtual_machine_id=?", Sql.listOf(this::mapUser), vmId);
+                        + " WHERE vm_id=?", Sql.listOf(this::mapUser), vmId);
     }
     
     @Override
     public void updateUserAdminAccess(String username, long vmId, boolean adminEnabled){
-        Sql.with(dataSource).exec("UPDATE vm_user SET admin_enabled=? WHERE name=? AND virtual_machine_id=?", null, adminEnabled, username, vmId);
+        Sql.with(dataSource).exec("UPDATE vm_user SET admin_enabled=? WHERE name=? AND vm_id=?", null, adminEnabled, username, vmId);
     }
     
     protected VmUser mapUser(ResultSet rs) throws SQLException{
         return new VmUser(rs.getString("name"), 
-                        rs.getLong("virtual_machine_id"), rs.getBoolean("admin_enabled"));
+                        rs.getLong("vm_id"), rs.getBoolean("admin_enabled"));
     }
     
     @Override
     public boolean userExists(String username, long vmId){
         List<VmUser> users = Sql.with(dataSource)
-                .exec("SELECT name, virtual_machine_id, admin_enabled"
+                .exec("SELECT name, vm_id, admin_enabled"
                         + " FROM vm_user"
-                        + " WHERE virtual_machine_id=? AND name=?", Sql.listOf(this::mapUser), vmId, username);
+                        + " WHERE vm_id=? AND name=?", Sql.listOf(this::mapUser), vmId, username);
         return users.size() > 0;
     }
 

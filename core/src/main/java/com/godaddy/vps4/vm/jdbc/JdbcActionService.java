@@ -1,15 +1,16 @@
 package com.godaddy.vps4.vm.jdbc;
 
+import java.sql.ResultSet;
+import java.sql.SQLException;
+
+import javax.inject.Inject;
+import javax.sql.DataSource;
+
 import com.godaddy.vps4.jdbc.Sql;
 import com.godaddy.vps4.vm.Action;
 import com.godaddy.vps4.vm.ActionService;
 import com.godaddy.vps4.vm.ActionStatus;
 import com.godaddy.vps4.vm.ActionType;
-
-import javax.inject.Inject;
-import javax.sql.DataSource;
-import java.sql.ResultSet;
-import java.sql.SQLException;
 
 public class JdbcActionService implements ActionService{
 
@@ -23,7 +24,7 @@ public class JdbcActionService implements ActionService{
 
     @Override
     public long createAction(long vmId, ActionType actionType, String request, long userId){
-       return Sql.with(dataSource).exec("INSERT INTO vm_action (virtual_machine_id, action_type_id, request, vps4_user_id) VALUES (?, ?, ?::json, ?) RETURNING id;",
+       return Sql.with(dataSource).exec("INSERT INTO vm_action (vm_id, action_type_id, request, vps4_user_id) VALUES (?, ?, ?::json, ?) RETURNING id;",
                Sql.nextOrNull(rs -> rs.getLong("id")), vmId, actionType.getActionTypeId(), request, userId);
     }
 
@@ -65,7 +66,7 @@ public class JdbcActionService implements ActionService{
     private Action mapAction(ResultSet rs) throws SQLException {
         ActionStatus status = ActionStatus.valueOf(rs.getString("status"));
         ActionType type = ActionType.valueOf(rs.getString("type"));
-        return new Action(rs.getLong("id"), rs.getLong("virtual_machine_id"), type, rs.getLong("vps4_user_id"),
+		return new Action(rs.getLong("id"), rs.getLong("vm_id"), type, rs.getLong("vps4_user_id"),
                           rs.getString("request"), rs.getString("state"), rs.getString("response"), status,
                           rs.getTimestamp("created").toInstant(), rs.getString("note"));
     }

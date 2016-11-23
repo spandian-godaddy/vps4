@@ -42,7 +42,7 @@ public class ActionTest {
 
     @After
     public void cleanupService() {
-        Sql.with(dataSource).exec("DELETE from vm_action where virtual_machine_id = ?", null, vmId);
+        Sql.with(dataSource).exec("DELETE from vm_action where vm_id = ?", null, vmId);
         SqlTestData.cleanupTestVmAndRelatedData(vmId, orionGuid, dataSource);
         SqlTestData.cleanupTestProject(project.getProjectId(), dataSource);
     }
