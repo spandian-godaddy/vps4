@@ -7,8 +7,8 @@ User=vps4
 SyslogIdentifier=vps4
 WorkingDirectory=/var/log/vps4-web
 EnvironmentFile=/etc/sysconfig/vps4
-ExecStart=/usr/bin/java -cp "/opt/vps4/vps4-web/vps4-web.jar:/opt/vps4/vps4-web/conf/*" -Dvps4.env=${VPS4_ENV} com.godaddy.vps4.web.WebServer start
-ExecStop=/usr/bin/java -jar /opt/vps4/vps4-web/vps4-web.jar stop
+ExecStart=/usr/bin/java -cp "/opt/vps4/vps4-web/vps4-web.jar:/opt/vps4/vps4-web/conf/*" -Dvps4.env=${VPS4_ENV} -Dhfs.http.stopPort=9081 com.godaddy.vps4.web.WebServer start
+ExecStop=/usr/bin/java -jar /opt/vps4/vps4-web/vps4-web.jar -Dhfs.http.stopPort=9081 stop
 
 User=vps4
 Group=vps4
