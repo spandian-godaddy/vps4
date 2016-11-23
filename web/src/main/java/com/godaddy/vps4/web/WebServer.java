@@ -183,7 +183,11 @@ public class WebServer {
 
         Vps4UserService userService = injector.getInstance(Vps4UserService.class);
 
-        long sessionTimeoutMs = conf.getDuration("auth.timeout", Duration.ofHours(24)).toMillis();
+        long sessionTimeoutMs = Duration.ofSeconds(
+                Long.parseLong(
+                        conf.get(
+                                "auth.timeout",
+                                String.valueOf(Duration.ofHours(24).getSeconds())))).toMillis();
         logger.info("JWT timeout: {}", sessionTimeoutMs);
 
         SsoTokenExtractor tokenExtractor = new SsoTokenExtractor(keyService, sessionTimeoutMs);
