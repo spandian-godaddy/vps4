@@ -8,7 +8,6 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import javax.servlet.DispatcherType;
-import javax.sql.DataSource;
 
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.eclipse.jetty.server.Server;
@@ -17,19 +16,16 @@ import org.eclipse.jetty.server.handler.HandlerList;
 import org.eclipse.jetty.servlet.FilterHolder;
 import org.eclipse.jetty.servlet.ServletContextHandler;
 import org.eclipse.jetty.util.thread.QueuedThreadPool;
-import org.jboss.resteasy.plugins.guice.GuiceResteasyBootstrapServletContextListener;
 import org.jboss.resteasy.util.GetRestful;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.godaddy.vps4.config.Config;
-import com.godaddy.vps4.config.ConfigProvider;
 import com.godaddy.vps4.cpanel.FakeCpanelModule;
 import com.godaddy.vps4.hfs.HfsClientModule;
 import com.godaddy.vps4.jdbc.DatabaseModule;
 import com.godaddy.vps4.security.SecurityModule;
 import com.godaddy.vps4.security.Vps4UserService;
-import com.godaddy.vps4.security.jdbc.JdbcVps4UserService;
 import com.godaddy.vps4.vm.VmModule;
 import com.godaddy.vps4.web.network.NetworkModule;
 import com.godaddy.vps4.web.security.AuthenticationFilter;
@@ -51,16 +47,14 @@ import io.swagger.config.ScannerFactory;
 public class WebServer {
 
     private static final Logger logger = LoggerFactory.getLogger(WebServer.class);
-    static Config conf = new ConfigProvider().get();
-    private static boolean useFakeUser = System.getProperty("vps4.user.fake", "false").equals("true");
 
-    private static int getPortFromConfig() {
-        return Integer.valueOf(conf.get("vps4.http.port", "8080"));
-    }
+    private static boolean useFakeUser = System.getProperty("vps4.user.fake", "false").equals("true");
 
     public static void main(String[] args) throws Exception {
 
-        ServletContextHandler servletContext = new ServletContextHandler(ServletContextHandler.SESSIONS);
+        Injector injector = newInjector();
+
+        Config conf = injector.getInstance(Config.class);
 
         QueuedThreadPool threadPool = new QueuedThreadPool();
         threadPool.setMaxThreads(500);
@@ -68,14 +62,14 @@ public class WebServer {
         Server server = new Server(threadPool);
 
         ServerConnector httpConnector = new ServerConnector(server);
-        int port = getPortFromConfig();
+        int port = Integer.parseInt(conf.get("vps4.http.port", "8080"));
         httpConnector.setPort(port);
         server.addConnector(httpConnector);
 
         HandlerList handlers = new HandlerList();
 
         handlers.addHandler(SwaggerContextHandler.newSwaggerResourceContext());
-        handlers.addHandler(newHandler());
+        handlers.addHandler(newHandler(conf, injector));
 
         server.setHandler(handlers);
 
@@ -83,8 +77,7 @@ public class WebServer {
         server.join();
     }
 
-    protected static ServletContextHandler newHandler() {
-
+    protected static Injector newInjector() {
         List<Module> modules = new ArrayList<>();
 
         modules.add(new GuiceFilterModule());
@@ -102,15 +95,17 @@ public class WebServer {
         modules.add(new FakeCpanelModule());
         modules.add(new CommandClientModule());
 
-        Injector injector = Guice.createInjector(modules);
-        DataSource dataSource = injector.getInstance(DataSource.class);
+        return Guice.createInjector(modules);
+    }
+
+    protected static ServletContextHandler newHandler(Config config, Injector injector) {
 
         ServletContextHandler handler = new ServletContextHandler();
         handler.setContextPath("/");
         handler.addEventListener(injector.getInstance(Vps4GuiceResteasyBootstrapServletContextListener.class));
 
         if (!useFakeUser)
-            addAuthentication(handler, dataSource);
+            addAuthentication(handler, injector);
 
         handler.addFilter(CorsFilter.class, "/*", EnumSet.allOf(DispatcherType.class));
 
@@ -132,11 +127,16 @@ public class WebServer {
         }
     }
 
-    private static void addAuthentication(ServletContextHandler handler, DataSource dataSource) {
+    private static void addAuthentication(ServletContextHandler handler, Injector injector) {
+
+        Config conf = injector.getInstance(Config.class);
+
+
+        // TODO wire up KeyService using DI
         // TODO properly configure HTTP client (max routes per host, etc)
         KeyService keyService = new HttpKeyService(conf.get("sso.url"), HttpClientBuilder.create().build());
 
-        Vps4UserService userService = new JdbcVps4UserService(dataSource);
+        Vps4UserService userService = injector.getInstance(Vps4UserService.class);
 
         long sessionTimeoutMs = conf.getDuration("auth.timeout", Duration.ofHours(24)).toMillis();
         logger.info("JWT timeout: {}", sessionTimeoutMs);
