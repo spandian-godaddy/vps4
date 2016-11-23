@@ -37,7 +37,7 @@ public class BasicConfig implements Config {
     public String get(String key) {
         String value = get(key, null);
         if (value == null) {
-            throw new IllegalStateException("Missing config: " + value);
+            throw new IllegalStateException("Missing config: " + key);
         }
         return value;
     }
