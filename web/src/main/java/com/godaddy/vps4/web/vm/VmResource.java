@@ -234,7 +234,7 @@ public class VmResource {
 
         privilegeService.requireAnyPrivilegeToSgid(user, vmProjectId);
 
-        long actionId = actionService.createAction(vmId, type, "", user.getId());
+        long actionId = actionService.createAction(vmId, type, "{}", user.getId());
 
         // TODO wrap commands with VPS4 ActionCommand wrapper
         CommandState command = null;
@@ -289,7 +289,7 @@ public class VmResource {
         // FIXME we don't have the vmId here yet, since we're using the HFS vmId and we haven't made the HFS
         //       VM request yet
         long vmId = 0; // ?
-        long actionId = actionService.createAction(vmId, ActionType.CREATE_VM, "", user.getId());
+        long actionId = actionService.createAction(vmId, ActionType.CREATE_VM, "{}", user.getId());
 
         ProvisionVmInfo vmInfo = new ProvisionVmInfo(provisionRequest.orionGuid, provisionRequest.name, project.getProjectId(),
                 spec.specId, vmRequest.managedLevel, image);
