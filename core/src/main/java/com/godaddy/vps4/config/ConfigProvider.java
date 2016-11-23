@@ -16,7 +16,7 @@ public class ConfigProvider implements Provider<Config> {
     @Override
     public Config get() {
 
-        Config config = new SystemPropertyConfig();
+        Config config = null;
 
         if (ZooKeeperClient.isConfigured()) {
             // if zookeeper is setup, use only it
@@ -38,7 +38,7 @@ public class ConfigProvider implements Provider<Config> {
             }
         }
 
-        return config;
+        return new SystemPropertyConfig(config);
     }
 
 }
