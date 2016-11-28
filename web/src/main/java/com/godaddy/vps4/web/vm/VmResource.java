@@ -405,7 +405,7 @@ public class VmResource {
     public Map<UUID, String> getVirtualMachines() {
         List<Long> projectIds = projectService.getProjects(user.getId(), true).stream().map(Project::getProjectId)
                 .collect(Collectors.toList());
-        return virtualMachineService.getVirtualMachines(projectIds);
+        return virtualMachineService.getVirtualMachines(user.getId());
     }
 
     @GET

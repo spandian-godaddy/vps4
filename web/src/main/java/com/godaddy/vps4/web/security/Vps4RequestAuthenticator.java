@@ -7,6 +7,7 @@ import org.slf4j.LoggerFactory;
 
 import com.godaddy.vps4.security.Vps4User;
 import com.godaddy.vps4.security.Vps4UserService;
+import com.godaddy.vps4.vm.VirtualMachineService;
 import com.godaddy.vps4.web.security.sso.SsoTokenExtractor;
 import com.godaddy.vps4.web.security.sso.token.IdpSsoToken;
 import com.godaddy.vps4.web.security.sso.token.SsoToken;
@@ -19,9 +20,13 @@ public class Vps4RequestAuthenticator implements RequestAuthenticator {
 
     private final Vps4UserService userService;
 
-    public Vps4RequestAuthenticator(SsoTokenExtractor tokenExtractor, Vps4UserService userService) {
+    private final VirtualMachineService virtualMachineService;
+
+    public Vps4RequestAuthenticator(SsoTokenExtractor tokenExtractor, Vps4UserService userService,
+            VirtualMachineService virtualMachineService) {
         this.tokenExtractor = tokenExtractor;
         this.userService = userService;
+        this.virtualMachineService = virtualMachineService;
     }
 
     @Override
@@ -39,6 +44,10 @@ public class Vps4RequestAuthenticator implements RequestAuthenticator {
             shopperId = ((IdpSsoToken) token).getShopperId();
         }
 
-        return userService.getOrCreateUserForShopper(shopperId);
+        Vps4User user = userService.getOrCreateUserForShopper(shopperId);
+        // TODO: Remove this after ECOMM integration
+        virtualMachineService.createOrionRequestIfNoneExists(user);
+
+        return user;
     }
 }

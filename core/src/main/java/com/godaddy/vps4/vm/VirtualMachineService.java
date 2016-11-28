@@ -4,6 +4,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
+import com.godaddy.vps4.security.Vps4User;
+
 public interface VirtualMachineService {
 
     List<VirtualMachine> listVirtualMachines(long projectId);
@@ -37,8 +39,10 @@ public interface VirtualMachineService {
 
     void updateVirtualMachine(long vmId, Map<String, Object> paramsToUpdate);
 
-    Map<UUID, String> getVirtualMachines(List<Long> projects);
+    Map<UUID, String> getVirtualMachines(long vps4UserId);
 
     List<UUID> getOrionRequests(String shopperId);
+
+    void createOrionRequestIfNoneExists(Vps4User vps4User);
 
 }

@@ -37,11 +37,15 @@ public class SqlTestData {
 
     public static void cleanupTestProject(long projectId, DataSource dataSource) {
         Sql.with(dataSource).exec("DELETE FROM user_project_privilege WHERE project_id = ?", null, projectId);
+        Sql.with(dataSource).exec("DELETE FROM user_project WHERE project_id = ?", null, projectId);
         Sql.with(dataSource).exec("DELETE FROM project WHERE project_id = ?", null, projectId);
     }
 
     public static Project createProject(DataSource dataSource) {
         JdbcProjectService projectService = new JdbcProjectService(dataSource);
-        return projectService.createProject(UUID.randomUUID().toString(), 1, 1);
+        Project project = projectService.createProject(UUID.randomUUID().toString(), 1, 1);
+        Sql.with(dataSource).exec("INSERT INTO user_project (vps4_user_id, project_id) VALUES (?, ?)", null, 1,
+                project.getProjectId());
+        return project;
     }
 }
