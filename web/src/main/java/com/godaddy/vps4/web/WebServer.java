@@ -25,7 +25,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.godaddy.vps4.config.Config;
-import com.godaddy.vps4.cpanel.FakeCpanelModule;
+import com.godaddy.vps4.cpanel.CpanelModule;
 import com.godaddy.vps4.hfs.HfsClientModule;
 import com.godaddy.vps4.hfs.HfsMockModule;
 import com.godaddy.vps4.jdbc.DatabaseModule;
@@ -147,7 +147,8 @@ public class WebServer {
 
         modules.add(new VmModule());
         modules.add(new NetworkModule());
-        modules.add(new FakeCpanelModule());
+        //modules.add(new FakeCpanelModule());
+        modules.add(new CpanelModule());
         modules.add(new CommandClientModule());
 
         return Guice.createInjector(modules);
