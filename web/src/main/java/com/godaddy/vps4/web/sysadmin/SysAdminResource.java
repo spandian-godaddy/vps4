@@ -31,7 +31,7 @@ import io.swagger.annotations.Api;
 @Vps4Api
 @Api(tags = { "vms" })
 
-@Path("/vms")
+@Path("/api/vms")
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
 public class SysAdminResource {

@@ -23,7 +23,7 @@ import io.swagger.annotations.ApiOperation;
 @Vps4Api
 @Api(tags = { "vms" })
 
-@Path("/vms")
+@Path("/api/vms")
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
 public class VmPatchResource {
@@ -46,7 +46,7 @@ public class VmPatchResource {
     @Produces({ "application/json" })
     @ApiOperation(value = "Update VM Attributes", httpMethod = "PATCH")
     public void updateVm(@PathParam("vmId") long vmId, VmPatch vmPatch) {
-        Map<String, Object> vmPatchMap = new HashMap<String, Object>();
+        Map<String, Object> vmPatchMap = new HashMap<>();
         if (vmPatch.name != null && !vmPatch.name.equals(""))
             vmPatchMap.put("name", vmPatch.name);
         logger.info("Updating vm {}'s with {} ", vmId, vmPatchMap.toString());

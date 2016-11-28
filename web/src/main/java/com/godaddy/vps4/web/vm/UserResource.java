@@ -19,7 +19,7 @@ import io.swagger.annotations.Api;
 @Vps4Api
 @Api(tags = { "vms" })
 
-@Path("/vms")
+@Path("/api/vms")
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
 public class UserResource {
@@ -28,9 +28,9 @@ public class UserResource {
     @Inject
     public UserResource(VmUserService userService){
         this.userService = userService;
-        
+
     }
-    
+
     @GET
     @Path("/{vmId}/users")
     public List<VmUser> getUsers(@PathParam("vmId") long vmId){

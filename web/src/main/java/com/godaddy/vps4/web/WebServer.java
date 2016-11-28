@@ -152,7 +152,7 @@ public class WebServer {
         if (!useFakeUser)
             addAuthentication(handler, injector);
 
-        handler.addFilter(CorsFilter.class, "/*", EnumSet.allOf(DispatcherType.class));
+        handler.addFilter(CorsFilter.class, "/api/*", EnumSet.allOf(DispatcherType.class));
 
         FilterHolder guiceFilter = new FilterHolder(injector.getInstance(GuiceFilter.class));
         handler.addFilter(guiceFilter, "/*", EnumSet.allOf(DispatcherType.class));
@@ -194,7 +194,7 @@ public class WebServer {
 
         handler.addFilter(
                 new FilterHolder(new AuthenticationFilter(new Vps4RequestAuthenticator(tokenExtractor, userService))),
-                "/*", EnumSet.of(DispatcherType.REQUEST));
+                "/api/*", EnumSet.of(DispatcherType.REQUEST));
     }
 
     static boolean isVps4Api(Class<?> resourceClass) {

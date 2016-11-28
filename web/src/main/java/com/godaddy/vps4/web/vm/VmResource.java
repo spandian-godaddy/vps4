@@ -55,7 +55,7 @@ import io.swagger.annotations.Api;
 @Vps4Api
 @Api(tags = { "vms" })
 
-@Path("/vms")
+@Path("/api/vms")
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
 public class VmResource {
@@ -210,7 +210,7 @@ public class VmResource {
 
     /**
      * Check if vm exists
-     * 
+     *
      * @param vmId
      * @return virtualmachine project id if found
      * @throws VmNotFoundException
@@ -233,7 +233,7 @@ public class VmResource {
 
     /**
      * Manage the vm to perform actions like start / stop / restart vm.
-     * 
+     *
      * @param vmId
      * @param action
      */
