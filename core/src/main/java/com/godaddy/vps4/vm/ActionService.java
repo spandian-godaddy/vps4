@@ -1,10 +1,14 @@
 package com.godaddy.vps4.vm;
 
+import java.util.UUID;
+
 public interface ActionService {
 
     long createAction(long vmId, ActionType actionType, String request, long userId);
 
     Action getAction(long actionId);
+    
+    void tagWithCommand(long actionId, UUID commandId);
 
     void markActionInProgress(long actionId);
     

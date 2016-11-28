@@ -80,6 +80,7 @@ public class VmResource {
             CPanelService cPanelService,
             ActionService actionService,
             CommandService commandService) {
+
         this.user = user;
         this.virtualMachineService = virtualMachineService;
         this.privilegeService = privilegeService;
@@ -176,8 +177,12 @@ public class VmResource {
 
     @POST
     @Path("/")
-    public VirtualMachineRequest createVm(@QueryParam("orionGuid") UUID orionGuid, @QueryParam("operatingSystem") String operatingSystem,
-            @QueryParam("tier") int tier, @QueryParam("controlPanel") String controlPanel, @QueryParam("managedLevel") int managedLevel, @QueryParam("shopperId") String shopperId) {
+    public VirtualMachineRequest createVm(@QueryParam("orionGuid") UUID orionGuid, 
+            @QueryParam("operatingSystem") String operatingSystem, 
+            @QueryParam("tier") int tier, 
+            @QueryParam("controlPanel") String controlPanel, 
+            @QueryParam("managedLevel") int managedLevel, 
+            @QueryParam("shopperId") String shopperId) {
 
         logger.info("creating new vm request for orionGuid {}", orionGuid);
         virtualMachineService.createVirtualMachineRequest(orionGuid, operatingSystem, controlPanel, tier, managedLevel, shopperId);
@@ -294,16 +299,18 @@ public class VmResource {
         Image image = getImage(provisionRequest.image);
         // TODO - verify that the image matches the request (control panel, managed level, OS)
 
-        CreateVMRequest hfsRequest = createHfsProvisionVmRequest(provisionRequest.image, provisionRequest.username,
-                provisionRequest.password, project, spec);
+        CreateVMRequest hfsRequest = createHfsProvisionVmRequest(provisionRequest.image, provisionRequest.username, provisionRequest.password, project, spec);
 
         // FIXME we don't have the vmId here yet, since we're using the HFS vmId and we haven't made the HFS
         // VM request yet
         long vmId = 0; // ?
         long actionId = actionService.createAction(vmId, ActionType.CREATE_VM, "{}", user.getId());
+        logger.info("Action id: {}", actionId);
 
-        ProvisionVmInfo vmInfo = new ProvisionVmInfo(provisionRequest.orionGuid, provisionRequest.name, project.getProjectId(),
+        ProvisionVmInfo vmInfo = new ProvisionVmInfo(provisionRequest.orionGuid, 
+                provisionRequest.name, project.getProjectId(), 
                 spec.specId, vmRequest.managedLevel, image);
+        logger.info("vmInfo: {}", vmInfo.toString());
 
         ProvisionVm.Request request = new ProvisionVm.Request();
         request.actionId = actionId;
@@ -313,13 +320,14 @@ public class VmResource {
         CommandState command = Commands.execute(commandService, "ProvisionVm", request);
         logger.info("provisioning VM in {}", command.commandId);
 
-        // TODO actionService.tagWithCommand(actionId, command.commandId);
+        actionService.tagWithCommand(actionId, command.commandId);
 
         return actionService.getAction(actionId);
     }
 
-    private CreateVMRequest createHfsProvisionVmRequest(String image, String username, String password, Project project,
-            VirtualMachineSpec spec) {
+    private CreateVMRequest createHfsProvisionVmRequest(String image, String username, 
+            String password, Project project, VirtualMachineSpec spec) {
+        
         CreateVMRequest hfsProvisionRequest = new CreateVMRequest();
         hfsProvisionRequest.cpuCores = (int) spec.cpuCoreCount;
         hfsProvisionRequest.diskGiB = (int) spec.diskGib;
@@ -336,7 +344,7 @@ public class VmResource {
     private VirtualMachineRequest getVmRequestToProvision(UUID orionGuid) {
         VirtualMachineRequest request = virtualMachineService.getVirtualMachineRequest(orionGuid);
         if (request == null) {
-            throw new Vps4Exception("REQUEST_NOT_FOUND",
+            throw new Vps4Exception("REQUEST_NOT_FOUND", 
                     String.format("The virtual machine request for orion guid {} was not found", orionGuid));
         }
         return request;
@@ -345,7 +353,8 @@ public class VmResource {
     private Project createProject(UUID orionGuid, int dataCenterId) {
         Project project = projectService.createProject(orionGuid.toString(), user.getId(), dataCenterId);
         if (project == null) {
-            throw new Vps4Exception("PROJECT_FAILED_TO_CREATE", "Failed to create new project for orionGuid " + orionGuid.toString());
+            throw new Vps4Exception("PROJECT_FAILED_TO_CREATE", 
+                    "Failed to create new project for orionGuid " + orionGuid.toString());
         }
         return project;
     }
@@ -353,7 +362,8 @@ public class VmResource {
     private VirtualMachineSpec getVirtualMachineSpec(VirtualMachineRequest request) {
         VirtualMachineSpec spec = virtualMachineService.getSpec(request.tier);
         if (spec == null) {
-            throw new Vps4Exception("INVALID_SPEC", String.format("spec with tier %d not found", request.tier));
+            throw new Vps4Exception("INVALID_SPEC", 
+                    String.format("spec with tier %d not found", request.tier));
         }
         return spec;
     }
@@ -361,7 +371,8 @@ public class VmResource {
     private Image getImage(String name) {
         Image image = imageService.getImage(name);
         if (image == null) {
-            throw new Vps4Exception("INVALID_IMAGE", String.format("image %s not found", image));
+            throw new Vps4Exception("INVALID_IMAGE", 
+                    String.format("image %s not found", image));
         }
         return image;
     }
