@@ -173,7 +173,6 @@ public class JdbcVirtualMachineService implements VirtualMachineService {
 
     @Override
     public void createOrionRequestIfNoneExists(String shopperId) {
-        Map<UUID, String> vms = getVirtualMachines(shopperId);
         if (getVirtualMachines(shopperId).isEmpty() && getOrionRequests(shopperId).isEmpty()) {
             createVirtualMachineRequest(UUID.randomUUID(), "linux", "cpanel", 20, 1, shopperId);
         }
