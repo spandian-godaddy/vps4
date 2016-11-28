@@ -4,7 +4,6 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -156,14 +155,13 @@ public class JdbcVirtualMachineService implements VirtualMachineService {
     }
 
     @Override
-    public Map<UUID, String> getVirtualMachines(List<Long> projects) {
-        if (projects.isEmpty())
-            return new HashMap<UUID, String>();
-
-        String projectsList = projects.toString().replace('[', '(').replace(']', ')');
+    public Map<UUID, String> getVirtualMachines(String shopperId) {
         return (Map<UUID, String>) Sql.with(dataSource).exec(
-                "SELECT name, orion_guid FROM virtual_machine WHERE project_id in " + projectsList,
-                Sql.mapOf(rs -> rs.getString("name"), rs -> UUID.fromString(rs.getString("orion_guid"))));
+                "select v.name, v.orion_guid from virtual_machine v JOIN user_project up ON up.project_id = v.project_id"
+                        + " JOIN vps4_user u ON up.vps4_user_id = u.vps4_user_id"
+                        + " WHERE u.shopper_id = ?"
+                        + " AND v.valid_until = 'infinity'",
+                Sql.mapOf(rs -> rs.getString("name"), rs -> UUID.fromString(rs.getString("orion_guid"))), shopperId);
     }
 
     @Override
@@ -171,5 +169,13 @@ public class JdbcVirtualMachineService implements VirtualMachineService {
         return (List<UUID>) Sql.with(dataSource).exec(
                 "SELECT orion_guid from orion_request WHERE shopper_id = ? AND provision_date IS NULL",
                 Sql.listOf(rs -> UUID.fromString(rs.getString("orion_guid"))), shopperId);
+    }
+
+    @Override
+    public void createOrionRequestIfNoneExists(String shopperId) {
+        Map<UUID, String> vms = getVirtualMachines(shopperId);
+        if (getVirtualMachines(shopperId).isEmpty() && getOrionRequests(shopperId).isEmpty()) {
+            createVirtualMachineRequest(UUID.randomUUID(), "linux", "cpanel", 20, 1, shopperId);
+        }
     }
 }

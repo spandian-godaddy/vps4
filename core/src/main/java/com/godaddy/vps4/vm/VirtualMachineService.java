@@ -37,8 +37,10 @@ public interface VirtualMachineService {
 
     void updateVirtualMachine(long vmId, Map<String, Object> paramsToUpdate);
 
-    Map<UUID, String> getVirtualMachines(List<Long> projects);
+    Map<UUID, String> getVirtualMachines(String shopperId);
 
     List<UUID> getOrionRequests(String shopperId);
+
+    void createOrionRequestIfNoneExists(String shopperId);
 
 }

@@ -8,7 +8,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
 import javax.sql.DataSource;
 
@@ -113,11 +112,37 @@ public class VirtualMachineServiceTest {
             assertTrue(requests.contains(request));
         assertEquals(vmRequests.size(), requests.size());
 
-        List<Long> projectIds = projects.stream().map(Project::getProjectId).collect(Collectors.toList());
-        Map<UUID, String> vms = virtualMachineService.getVirtualMachines(projectIds);
+        Map<UUID, String> vms = virtualMachineService.getVirtualMachines(shopperId);
         for (UUID vm : createdVms)
             assertTrue(vms.containsKey(vm));
         assertEquals(vmIds.size(), vms.size());
+    }
+    
+    @Test
+    public void testGetOrCreateCredit() {
+        
+        List<UUID> requests = virtualMachineService.getOrionRequests(shopperId);
+        assertTrue(requests.isEmpty());
+
+        virtualMachineService.createOrionRequestIfNoneExists(shopperId);
+        requests = virtualMachineService.getOrionRequests(shopperId);
+        assertTrue(!requests.isEmpty());
+        vmRequests.add(requests.get(0));
+
+        Project project = SqlTestData.createProject(dataSource);
+        virtualMachineService.provisionVirtualMachine(1, requests.get(0), "test", project.getProjectId(), 2, 0, 1);
+        vmIds.add((long) 1);
+
+        virtualMachineService.createOrionRequestIfNoneExists(shopperId);
+        requests = virtualMachineService.getOrionRequests(shopperId);
+        assertTrue(requests.isEmpty());
+
+        virtualMachineService.destroyVirtualMachine(1);
+
+        virtualMachineService.createOrionRequestIfNoneExists(shopperId);
+        requests = virtualMachineService.getOrionRequests(shopperId);
+        assertTrue(!requests.isEmpty());
+        vmRequests.add(requests.get(0));
     }
 
 }

@@ -30,6 +30,7 @@ import com.godaddy.vps4.hfs.HfsClientModule;
 import com.godaddy.vps4.jdbc.DatabaseModule;
 import com.godaddy.vps4.security.SecurityModule;
 import com.godaddy.vps4.security.Vps4UserService;
+import com.godaddy.vps4.vm.VirtualMachineService;
 import com.godaddy.vps4.vm.VmModule;
 import com.godaddy.vps4.web.network.NetworkModule;
 import com.godaddy.vps4.web.security.AuthenticationFilter;
@@ -181,7 +182,6 @@ public class WebServer {
         // TODO properly configure HTTP client (max routes per host, etc)
         KeyService keyService = new HttpKeyService(conf.get("sso.url"), HttpClientBuilder.create().build());
 
-        Vps4UserService userService = injector.getInstance(Vps4UserService.class);
 
         long sessionTimeoutMs = Duration.ofSeconds(
                 Long.parseLong(
@@ -192,8 +192,10 @@ public class WebServer {
 
         SsoTokenExtractor tokenExtractor = new SsoTokenExtractor(keyService, sessionTimeoutMs);
 
+        VirtualMachineService virtualMachineService = injector.getInstance(VirtualMachineService.class);
+        Vps4UserService userService = injector.getInstance(Vps4UserService.class);
         handler.addFilter(
-                new FilterHolder(new AuthenticationFilter(new Vps4RequestAuthenticator(tokenExtractor, userService))),
+                new FilterHolder(new AuthenticationFilter(new Vps4RequestAuthenticator(tokenExtractor, userService, virtualMachineService))),
                 "/api/*", EnumSet.of(DispatcherType.REQUEST));
     }
 
