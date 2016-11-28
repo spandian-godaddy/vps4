@@ -21,6 +21,7 @@ import com.godaddy.vps4.phase2.SqlTestData;
 import com.godaddy.vps4.project.Project;
 import com.godaddy.vps4.project.ProjectService;
 import com.godaddy.vps4.project.jdbc.JdbcProjectService;
+import com.godaddy.vps4.security.Vps4User;
 import com.godaddy.vps4.vm.VirtualMachine;
 import com.godaddy.vps4.vm.VirtualMachineRequest;
 import com.godaddy.vps4.vm.VirtualMachineService;
@@ -40,7 +41,7 @@ public class VirtualMachineServiceTest {
     List<UUID> vmRequests;
     String os = "linux";
     String controlPanel = "cpanel";
-    String shopperId = "TestUser";
+    Vps4User vps4User = new Vps4User(1, "TestUser");
     int tier = 10;
     int managedLevel = 0;
 
@@ -70,7 +71,7 @@ public class VirtualMachineServiceTest {
         long vmId = SqlTestData.getNextId(dataSource);
         vmIds.add(vmId);
 
-        virtualMachineService.createVirtualMachineRequest(orionGuid, os, controlPanel, tier, managedLevel, shopperId);
+        virtualMachineService.createVirtualMachineRequest(orionGuid, os, controlPanel, tier, managedLevel, vps4User.getShopperId());
 
         VirtualMachineRequest vmRequest = virtualMachineService.getVirtualMachineRequest(orionGuid);
 
@@ -104,15 +105,16 @@ public class VirtualMachineServiceTest {
             createdVms.add(UUID.randomUUID());
             vmIds.add(SqlTestData.insertTestVm(createdVms.get(i), projects.get(i).getProjectId(), dataSource));
             vmRequests.add(UUID.randomUUID());
-            virtualMachineService.createVirtualMachineRequest(vmRequests.get(i), os, controlPanel, tier, managedLevel, shopperId);
+            virtualMachineService.createVirtualMachineRequest(vmRequests.get(i), os, controlPanel, tier, managedLevel,
+                    vps4User.getShopperId());
         }
 
-        List<UUID> requests = virtualMachineService.getOrionRequests(shopperId);
+        List<UUID> requests = virtualMachineService.getOrionRequests(vps4User.getShopperId());
         for (UUID request : vmRequests)
             assertTrue(requests.contains(request));
         assertEquals(vmRequests.size(), requests.size());
 
-        Map<UUID, String> vms = virtualMachineService.getVirtualMachines(shopperId);
+        Map<UUID, String> vms = virtualMachineService.getVirtualMachines(vps4User.getId());
         for (UUID vm : createdVms)
             assertTrue(vms.containsKey(vm));
         assertEquals(vmIds.size(), vms.size());
@@ -121,11 +123,11 @@ public class VirtualMachineServiceTest {
     @Test
     public void testGetOrCreateCredit() {
         
-        List<UUID> requests = virtualMachineService.getOrionRequests(shopperId);
+        List<UUID> requests = virtualMachineService.getOrionRequests(vps4User.getShopperId());
         assertTrue(requests.isEmpty());
 
-        virtualMachineService.createOrionRequestIfNoneExists(shopperId);
-        requests = virtualMachineService.getOrionRequests(shopperId);
+        virtualMachineService.createOrionRequestIfNoneExists(vps4User);
+        requests = virtualMachineService.getOrionRequests(vps4User.getShopperId());
         assertTrue(!requests.isEmpty());
         vmRequests.add(requests.get(0));
 
@@ -133,14 +135,14 @@ public class VirtualMachineServiceTest {
         virtualMachineService.provisionVirtualMachine(1, requests.get(0), "test", project.getProjectId(), 2, 0, 1);
         vmIds.add((long) 1);
 
-        virtualMachineService.createOrionRequestIfNoneExists(shopperId);
-        requests = virtualMachineService.getOrionRequests(shopperId);
+        virtualMachineService.createOrionRequestIfNoneExists(vps4User);
+        requests = virtualMachineService.getOrionRequests(vps4User.getShopperId());
         assertTrue(requests.isEmpty());
 
         virtualMachineService.destroyVirtualMachine(1);
 
-        virtualMachineService.createOrionRequestIfNoneExists(shopperId);
-        requests = virtualMachineService.getOrionRequests(shopperId);
+        virtualMachineService.createOrionRequestIfNoneExists(vps4User);
+        requests = virtualMachineService.getOrionRequests(vps4User.getShopperId());
         assertTrue(!requests.isEmpty());
         vmRequests.add(requests.get(0));
     }

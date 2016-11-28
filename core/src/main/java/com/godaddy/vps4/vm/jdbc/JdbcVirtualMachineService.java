@@ -13,6 +13,7 @@ import javax.sql.DataSource;
 
 import com.godaddy.vps4.jdbc.ConnectionProvider;
 import com.godaddy.vps4.jdbc.Sql;
+import com.godaddy.vps4.security.Vps4User;
 import com.godaddy.vps4.vm.VirtualMachine;
 import com.godaddy.vps4.vm.VirtualMachineRequest;
 import com.godaddy.vps4.vm.VirtualMachineService;
@@ -155,13 +156,13 @@ public class JdbcVirtualMachineService implements VirtualMachineService {
     }
 
     @Override
-    public Map<UUID, String> getVirtualMachines(String shopperId) {
+    public Map<UUID, String> getVirtualMachines(long vps4UserId) {
         return (Map<UUID, String>) Sql.with(dataSource).exec(
                 "select v.name, v.orion_guid from virtual_machine v JOIN user_project up ON up.project_id = v.project_id"
                         + " JOIN vps4_user u ON up.vps4_user_id = u.vps4_user_id"
-                        + " WHERE u.shopper_id = ?"
+                        + " WHERE u.vps4_user_id = ?"
                         + " AND v.valid_until = 'infinity'",
-                Sql.mapOf(rs -> rs.getString("name"), rs -> UUID.fromString(rs.getString("orion_guid"))), shopperId);
+                Sql.mapOf(rs -> rs.getString("name"), rs -> UUID.fromString(rs.getString("orion_guid"))), vps4UserId);
     }
 
     @Override
@@ -172,9 +173,9 @@ public class JdbcVirtualMachineService implements VirtualMachineService {
     }
 
     @Override
-    public void createOrionRequestIfNoneExists(String shopperId) {
-        if (getVirtualMachines(shopperId).isEmpty() && getOrionRequests(shopperId).isEmpty()) {
-            createVirtualMachineRequest(UUID.randomUUID(), "linux", "cpanel", 20, 1, shopperId);
+    public void createOrionRequestIfNoneExists(Vps4User vps4User) {
+        if (getVirtualMachines(vps4User.getId()).isEmpty() && getOrionRequests(vps4User.getShopperId()).isEmpty()) {
+            createVirtualMachineRequest(UUID.randomUUID(), "linux", "cpanel", 20, 1, vps4User.getShopperId());
         }
     }
 }
