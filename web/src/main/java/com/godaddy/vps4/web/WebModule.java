@@ -12,6 +12,7 @@ public class WebModule extends AbstractModule {
 
     @Override
     public void configure() {
+        bind(StatusResource.class);
 
         bind(VmResource.class);
         bind(VmPatchResource.class);
