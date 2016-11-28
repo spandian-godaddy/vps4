@@ -27,6 +27,7 @@ import org.slf4j.LoggerFactory;
 import com.godaddy.vps4.config.Config;
 import com.godaddy.vps4.cpanel.FakeCpanelModule;
 import com.godaddy.vps4.hfs.HfsClientModule;
+import com.godaddy.vps4.hfs.HfsMockModule;
 import com.godaddy.vps4.jdbc.DatabaseModule;
 import com.godaddy.vps4.security.SecurityModule;
 import com.godaddy.vps4.security.Vps4UserService;
@@ -128,7 +129,15 @@ public class WebServer {
 
         modules.add(new GuiceFilterModule());
         modules.add(new SwaggerModule());
-        modules.add(new HfsClientModule());
+        
+        if (System.getProperty("vps4.hfs.mock", "false").equals("true")) {       
+            modules.add(new HfsMockModule());
+            logger.info("USING MOCK HFS");        
+         }     
+         else{      
+             modules.add(new HfsClientModule());
+         }
+        
 
         modules.add(getUserModule(useFakeUser));
 
