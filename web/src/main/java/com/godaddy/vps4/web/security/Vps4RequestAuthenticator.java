@@ -46,8 +46,9 @@ public class Vps4RequestAuthenticator implements RequestAuthenticator {
 
         Vps4User user = userService.getOrCreateUserForShopper(shopperId);
         // TODO: Remove this after ECOMM integration
-        virtualMachineService.createOrionRequestIfNoneExists(user);
-
+        if (user.getShopperId().length() == 3) {
+            virtualMachineService.createOrionRequestIfNoneExists(user);
+        }
         return user;
     }
 }
