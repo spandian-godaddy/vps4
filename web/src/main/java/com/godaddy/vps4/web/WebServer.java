@@ -121,7 +121,7 @@ public class WebServer {
     }
 
     static int getStopPort() {
-        return Integer.parseInt(System.getProperty("hfs.http.stopPort", "9080"));
+        return Integer.parseInt(System.getProperty("hfs.http.stopPort", "9081"));
     }
 
     protected static Injector newInjector() {
