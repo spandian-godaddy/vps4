@@ -37,7 +37,7 @@ public class DefaultVps4CpanelService implements Vps4CpanelService {
     }
 
     private String getVmIp(long vmId) {
-        return "132.148.82.156";
+        return "50.62.9.38";
     }
 
     interface CpanelClientHandler<T> {
