@@ -18,8 +18,9 @@ BEGIN
         p.data_center_id,
         p.valid_on,
         p.valid_until
-    FROM user_project p
-    WHERE p.user_id = p_user_id;
+    FROM project p
+    	INNER JOIN user_project_privilege upp ON p.project_id = upp.project_id
+    WHERE upp.vps4_user_id = p_user_id;
 
 END
 $$ LANGUAGE plpgsql;

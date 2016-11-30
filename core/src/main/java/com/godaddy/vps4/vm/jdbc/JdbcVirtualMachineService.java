@@ -158,7 +158,7 @@ public class JdbcVirtualMachineService implements VirtualMachineService {
     @Override
     public Map<UUID, String> getVirtualMachines(long vps4UserId) {
         return (Map<UUID, String>) Sql.with(dataSource).exec(
-                "select v.name, v.orion_guid from virtual_machine v JOIN user_project up ON up.project_id = v.project_id"
+                "select v.name, v.orion_guid from virtual_machine v JOIN user_project_privilege up ON up.project_id = v.project_id"
                         + " JOIN vps4_user u ON up.vps4_user_id = u.vps4_user_id"
                         + " WHERE u.vps4_user_id = ?"
                         + " AND v.valid_until = 'infinity'",
