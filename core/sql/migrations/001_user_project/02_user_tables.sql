@@ -13,10 +13,3 @@ CREATE TABLE project (
     valid_until    TIMESTAMP DEFAULT 'infinity',
     status_id      SMALLINT          -- ACTIVE|SUSPENDED|INACTIVE
 );
-
-CREATE TABLE user_project (
-    vps4_user_id 		BIGINT NOT NULL REFERENCES vps4_user(vps4_user_id),
-    project_id 			BIGINT NOT NULL REFERENCES project(project_id),
-    
-    PRIMARY KEY (vps4_user_id, project_id)
-);
