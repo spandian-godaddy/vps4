@@ -18,6 +18,7 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
 
+import org.json.simple.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -244,7 +245,7 @@ public class VmResource {
 
         privilegeService.requireAnyPrivilegeToSgid(user, vmProjectId);
 
-        long actionId = actionService.createAction(vmId, type, "{}", user.getId());
+        long actionId = actionService.createAction(vmId, type, new JSONObject().toJSONString(), user.getId());
 
         // TODO wrap commands with VPS4 ActionCommand wrapper
         CommandState command = null;
@@ -304,7 +305,7 @@ public class VmResource {
         // FIXME we don't have the vmId here yet, since we're using the HFS vmId and we haven't made the HFS
         // VM request yet
         long vmId = 0; // ?
-        long actionId = actionService.createAction(vmId, ActionType.CREATE_VM, "{}", user.getId());
+        long actionId = actionService.createAction(vmId, ActionType.CREATE_VM, new JSONObject().toJSONString(), user.getId());
         logger.info("Action id: {}", actionId);
 
         ProvisionVmInfo vmInfo = new ProvisionVmInfo(provisionRequest.orionGuid, 
@@ -387,7 +388,7 @@ public class VmResource {
 
         // TODO verify VM status is destroyable
 
-        long actionId = actionService.createAction(vmId, ActionType.DESTROY_VM, null, user.getId());
+        long actionId = actionService.createAction(vmId, ActionType.DESTROY_VM, new JSONObject().toJSONString(), user.getId());
 
         VmActionRequest request = new VmActionRequest();
         request.actionId = actionId;

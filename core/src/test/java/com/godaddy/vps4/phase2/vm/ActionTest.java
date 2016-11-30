@@ -3,10 +3,12 @@ package com.godaddy.vps4.phase2.vm;
 import static junit.framework.Assert.assertEquals;
 import static junit.framework.Assert.assertTrue;
 
+import java.util.ArrayList;
 import java.util.UUID;
 
 import javax.sql.DataSource;
 
+import org.json.simple.JSONObject;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -51,7 +53,7 @@ public class ActionTest {
 
     @Test
     public void testCreate(){
-        long actionId = actionService.createAction(vmId, type, "{}", 1);
+        long actionId = actionService.createAction(vmId, type, new JSONObject().toJSONString(), 1);
         Action action = actionService.getAction(actionId);
         assertEquals("{}", action.request);
         assertEquals(vmId, action.virtualMachineId);
@@ -62,15 +64,20 @@ public class ActionTest {
 
     @Test
     public void testCreateWithJson(){
+        JSONObject testObj = new JSONObject();
+        testObj.put("one", 1);
+        testObj.put("2", "two");
+        testObj.put("three", new String[] {"omg", "array"});
+        
         long actionId = actionService.createAction(vmId, type,
-                "{\"one\":1, \"2\":\"two\", \"three\":[\"omg\", \"array\"]}", 1);
+                testObj.toJSONString(), 1);
         Action action = actionService.getAction(actionId);
         assertEquals("{\"one\":1, \"2\":\"two\", \"three\":[\"omg\", \"array\"]}", action.request);
     }
 
     @Test
     public void testUpdateStatus(){
-        long actionId = actionService.createAction(vmId, type, "{}", 1);
+        long actionId = actionService.createAction(vmId, type, new JSONObject().toJSONString(), 1);
         Action action = actionService.getAction(actionId);
         assertEquals(ActionStatus.NEW, action.status);
 

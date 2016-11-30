@@ -10,6 +10,7 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
 
+import org.json.simple.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -74,8 +75,12 @@ public class SysAdminResource {
             //action.status = ActionStatus.INVALID;
             //return action;
         }
+        
+        JSONObject pwRequest = new JSONObject();
+        pwRequest.put("username", updatePasswordRequest.username);
 
-        long actionId = actionService.createAction(vmId, ActionType.SET_PASSWORD, "", user.getId());
+        long actionId = actionService.createAction(vmId, ActionType.SET_PASSWORD, 
+                pwRequest.toJSONString(), user.getId());
 
         SetPassword.Request request = new SetPassword.Request();
         request.usernames = Arrays.asList(usernames);
@@ -118,9 +123,13 @@ public class SysAdminResource {
             //return;
         }
 
+        JSONObject adminRequest = new JSONObject();
+        adminRequest.put("username", username);
+        adminRequest.put("enabled", adminEnabled);
+        
         long actionId = actionService.createAction(vmId,
                 adminEnabled ? ActionType.ENABLE_ADMIN_ACCESS : ActionType.DISABLE_ADMIN_ACCESS,
-                "", user.getId());
+                adminRequest.toJSONString(), user.getId());
 
         ToggleAdmin.Request request = new ToggleAdmin.Request();
         request.enabled = adminEnabled;
