@@ -3,7 +3,6 @@ package com.godaddy.vps4.phase2.vm;
 import static junit.framework.Assert.assertEquals;
 import static junit.framework.Assert.assertTrue;
 
-import java.util.ArrayList;
 import java.util.UUID;
 
 import javax.sql.DataSource;
@@ -60,19 +59,6 @@ public class ActionTest {
         assertTrue(action.type == ActionType.CREATE_VM);
         assertEquals(ActionStatus.NEW, action.status);
         assertEquals(ActionType.CREATE_VM, action.type);
-    }
-
-    @Test
-    public void testCreateWithJson(){
-        JSONObject testObj = new JSONObject();
-        testObj.put("one", 1);
-        testObj.put("2", "two");
-        testObj.put("three", new String[] {"omg", "array"});
-        
-        long actionId = actionService.createAction(vmId, type,
-                testObj.toJSONString(), 1);
-        Action action = actionService.getAction(actionId);
-        assertEquals("{\"one\":1, \"2\":\"two\", \"three\":[\"omg\", \"array\"]}", action.request);
     }
 
     @Test
