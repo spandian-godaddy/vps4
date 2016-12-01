@@ -17,27 +17,34 @@ import org.slf4j.LoggerFactory;
 
 import com.godaddy.vps4.config.Config;
 import com.godaddy.vps4.cpanel.CpanelClient.CpanelServiceType;
+import com.godaddy.vps4.network.NetworkService;
 
 public class DefaultVps4CpanelService implements Vps4CpanelService {
 
     private static final Logger logger = LoggerFactory.getLogger(DefaultVps4CpanelService.class);
 
     final CpanelAccessHashService accessHashService;
+    final NetworkService networkService;
 
     final int timeoutVal;
 
     @Inject
-    public DefaultVps4CpanelService(CpanelAccessHashService accessHashService, Config conf) {
-        this(accessHashService, Integer.parseInt(conf.get("vps4.callable.timeout", "10000")));
+    public DefaultVps4CpanelService(CpanelAccessHashService accessHashService, NetworkService networkService, Config conf) {
+        this(accessHashService, networkService, Integer.parseInt(conf.get("vps4.callable.timeout", "10000")));
     }
 
-    public DefaultVps4CpanelService(CpanelAccessHashService accessHashService, int timeoutVal) {
+    public DefaultVps4CpanelService(CpanelAccessHashService accessHashService, NetworkService networkService, int timeoutVal) {
         this.accessHashService = accessHashService;
+        this.networkService = networkService;
         this.timeoutVal = timeoutVal;
     }
 
     private String getVmIp(long vmId) {
-        return "50.62.9.38";
+        return networkService.getVmPrimaryAddress(vmId).ipAddress;
+    }
+
+    private String getOriginatorIp() {
+        return "172.19.46.185";
     }
 
     interface CpanelClientHandler<T> {
@@ -55,7 +62,7 @@ public class DefaultVps4CpanelService implements Vps4CpanelService {
         while (Instant.now().isBefore(timeoutAt)) {
 
             // TODO remove the hardcoded values for IP
-            String fromIp = "172.19.46.185";
+            String fromIp = getOriginatorIp();
             String publicIp = getVmIp(vmId);
 
             String accessHash = accessHashService.getAccessHash(vmId, publicIp, fromIp, timeoutAt);

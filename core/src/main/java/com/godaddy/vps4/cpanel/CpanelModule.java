@@ -16,7 +16,7 @@ public class CpanelModule extends AbstractModule {
     }
 
     @Provides
-    public CachedCpanelAccessHashService provideAccessHashService(CPanelService cpanelService) {
+    public CpanelAccessHashService provideAccessHashService(CPanelService cpanelService) {
 
         ExecutorService pool = Executors.newCachedThreadPool();
 
