@@ -1,13 +1,17 @@
 package com.godaddy.vps4.hfs;
 
-import org.mockito.Mockito;
-
 import com.google.inject.AbstractModule;
 import com.google.inject.Provides;
 
 import gdg.hfs.vhfs.cpanel.CPanelService;
 import gdg.hfs.vhfs.vm.CreateVMRequest;
+import gdg.hfs.vhfs.vm.CreateVMWithFlavorRequest;
+import gdg.hfs.vhfs.vm.FlavorList;
+import gdg.hfs.vhfs.vm.ImageList;
 import gdg.hfs.vhfs.vm.Vm;
+import gdg.hfs.vhfs.vm.VmAddress;
+import gdg.hfs.vhfs.vm.VmList;
+import gdg.hfs.vhfs.vm.VmOSInfo;
 import gdg.hfs.vhfs.vm.VmAction;
 import gdg.hfs.vhfs.vm.VmService;
 import gdg.hfs.request.CompleteResponse;
@@ -18,6 +22,7 @@ public class HfsMockModule extends AbstractModule {
     private static final long actionId = 123;
     private static final CPanelAction reqAccessRet;
     private static final CPanelAction getActionRet;
+    private static final VmAction createVmAction;
 
     static final String accessHash = "b32b85d55e3d94408b78f729455e0076"
           + "930065e534418a463322bd966edc5a1e"
@@ -59,38 +64,105 @@ public class HfsMockModule extends AbstractModule {
         getActionRet.status = CPanelAction.Status.COMPLETE;
         getActionRet.actionId = actionId;
         getActionRet.responsePayload = String.format("{\"cphash\":\"%s\",\"success\":true,\"error\":null}", accessHash);
+
+        createVmAction = new VmAction();
+        createVmAction.vmActionId = 1111;
+        createVmAction.vmId = 0;
+        createVmAction.state = VmAction.Status.COMPLETE;
+        createVmAction.tickNum = 1;
     }
 
     @Override
     public void configure() {
-        VmService vmService = buildMockVmService();
-        bind(VmService.class).toInstance(vmService);
+        //VmService vmService = buildMockVmService();
+        //bind(VmService.class).toInstance(vmService);
     }
-    
-    private VmService buildMockVmService() {
-        VmService vmService = Mockito.mock(VmService.class);
-        Vm vm0 = new Vm();
-        vm0.vmId = 0;
-        vm0.status = "Live";
-        Mockito.when(vmService.getVm(Mockito.anyLong())).thenReturn(vm0);
-        VmAction completeDelAction = new VmAction();
-        completeDelAction.vmActionId = 1111;
-        completeDelAction.vmId = 0;
-        completeDelAction.state = VmAction.Status.COMPLETE;
-        completeDelAction.tickNum = 1;
-        Mockito.when(vmService.destroyVm(0)).thenReturn(completeDelAction);
-        Mockito.when(vmService.createVm(Mockito.any(CreateVMRequest.class))).thenReturn(completeDelAction);
-        return vmService;
+
+    @Provides
+    public VmService buildMockVmService() {
+        return new VmService() {
+
+            @Override
+            public VmAction createVm(CreateVMRequest arg0) {
+                // NOTE: do nothing, Implement when needed
+                return createVmAction;
+            }
+
+            @Override
+            public VmAction createVmWithFlavor(CreateVMWithFlavorRequest arg0) {
+                // NOTE: do nothing, Implement when needed
+                return null;
+            }
+
+            @Override
+            public VmAction destroyVm(long vmId) {
+                VmAction delAction = new VmAction();
+                delAction.vmActionId = 1111;
+                delAction.vmId = vmId;
+                delAction.state = VmAction.Status.COMPLETE;
+                delAction.tickNum = 1;
+                return delAction;
+            }
+
+            @Override
+            public ImageList getImages(int arg0, int arg1) {
+                // NOTE: do nothing, Implement when needed
+                return null;
+            }
+
+            @Override
+            public Vm getVm(long vmId) {
+                Vm vm = new Vm();
+                vm.vmId = vmId;
+                vm.status = "Live";
+                vm.address = new VmAddress();
+                vm.address.ip_address = "132.148.82.152";
+                vm.osinfo = new VmOSInfo();
+                vm.osinfo.name = "CentOS-7";
+                return vm;
+            }
+
+            @Override
+            public VmAction getVmAction(long arg0, long arg1) {
+                // NOTE: do nothing, Implement when needed
+                return null;
+            }
+
+            @Override
+            public VmList getVmsBulk(String arg0) {
+                // NOTE: do nothing, Implement when needed
+                return null;
+            }
+
+            @Override
+            public FlavorList listFlavors() {
+                // NOTE: do nothing, Implement when needed
+                return null;
+            }
+
+            @Override
+            public VmList listVms(String arg0) {
+                // NOTE: do nothing, Implement when needed
+                return null;
+            }
+
+            @Override
+            public VmAction startVm(long arg0) {
+                // NOTE: do nothing, Implement when needed
+                return null;
+            }
+
+            @Override
+            public VmAction stopVm(long arg0) {
+                // NOTE: do nothing, Implement when needed
+                return null;
+            }
+
+        };
     }
 
     @Provides
     public CPanelService provideCPanelService() {
-        /*
-        CPanelService cpService = Mockito.mock(CPanelService.class);
-        Mockito.when(cpService.requestAccess(Mockito.anyLong(), Mockito.anyString(), Mockito.anyString())).thenReturn(reqAccessRet);
-        Mockito.when(cpService.getAction(reqAccessRet.actionId)).thenReturn(getActionRet);
-        return cpService;
-        */
 
         return new CPanelService() {
 
