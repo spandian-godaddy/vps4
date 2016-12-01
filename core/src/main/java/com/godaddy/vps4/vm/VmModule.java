@@ -1,5 +1,7 @@
 package com.godaddy.vps4.vm;
 
+import com.godaddy.vps4.network.NetworkService;
+import com.godaddy.vps4.network.jdbc.JdbcNetworkService;
 import com.godaddy.vps4.security.PrivilegeService;
 import com.godaddy.vps4.security.jdbc.JdbcPrivilegeService;
 import com.godaddy.vps4.vm.*;
@@ -17,5 +19,6 @@ public class VmModule extends AbstractModule {
         bind(ImageService.class).to(JdbcImageService.class);
         bind(VmUserService.class).to(JdbcVmUserService.class);
 		bind(ActionService.class).to(JdbcActionService.class);
+		bind(NetworkService.class).to(JdbcNetworkService.class);
 	}
 }

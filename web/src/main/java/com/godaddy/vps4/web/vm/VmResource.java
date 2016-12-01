@@ -27,6 +27,7 @@ import com.godaddy.vps4.network.NetworkService;
 import com.godaddy.vps4.network.IpAddress;
 import com.godaddy.vps4.orchestration.vm.ProvisionVm;
 import com.godaddy.vps4.orchestration.vm.VmActionRequest;
+import com.godaddy.vps4.orchestration.vm.Vps4DestroyVm;
 import com.godaddy.vps4.project.Project;
 import com.godaddy.vps4.project.ProjectService;
 import com.godaddy.vps4.security.PrivilegeService;
@@ -397,10 +398,11 @@ public class VmResource {
 
         long actionId = actionService.createAction(vmId, ActionType.DESTROY_VM, new JSONObject().toJSONString(), user.getId());
 
-        VmActionRequest request = new VmActionRequest();
+
+        Vps4DestroyVm.Request request = new Vps4DestroyVm.Request();
         request.actionId = actionId;
         request.vmId = vmId;
-
+        
         CommandState command = Commands.execute(commandService, "Vps4DestroyVm", request);
 
         // TODO actionService.tagWithCommand(actionId, command.commandId);
