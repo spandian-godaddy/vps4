@@ -59,6 +59,20 @@
                     </execution>
                 </executions>
             </plugin>
+            
+            <plugin>
+                <groupId>org.flywaydb</groupId>
+                <artifactId>flyway-maven-plugin</artifactId>
+                <version>4.0.3</version>
+                <configuration>
+                    <url>jdbc:postgresql://${db.vps4.server}:${db.vps4.port}/${db.vps4.database}</url>
+                    <user>${db.vps4.username}</user>
+                    <password>${db.vps4.password}</password>
+                    <locations>
+                        <location>filesystem:sql/migrations</location>
+                    </locations>
+                </configuration>
+            </plugin>
 
             <plugin>
                 <groupId>org.codehaus.mojo</groupId>
@@ -236,28 +250,6 @@
                                         <srcFile>${project.basedir}/sql/bootstrap/drop_db.sql</srcFile>
                                         <srcFile>${project.basedir}/sql/bootstrap/create_db.sql</srcFile>
                                     </srcFiles>
-                                </configuration>
-                            </execution>
-                            <execution>
-                                <id>build-database</id>
-                                <phase>pre-integration-test</phase>
-                                <goals>
-                                    <goal>execute</goal>
-                                </goals>
-                                <configuration>
-                                    <url>jdbc:postgresql://${db.vps4.server}:${db.vps4.port}/${db.vps4.database}</url>
-                                    <username>${db.vps4.username}</username>
-                                    <password>${db.vps4.password}</password>
-                                    <autocommit>true</autocommit>
-                                    <delimiterType>row</delimiterType>
-
-                                    <orderFile>ascending</orderFile>
-                                    <fileset>
-                                        <basedir>${project.basedir}/sql/migrations</basedir>
-                                        <includes>
-                                            <include>**/*.sql</include>
-                                        </includes>
-                                    </fileset>
                                 </configuration>
                             </execution>
                             <execution>

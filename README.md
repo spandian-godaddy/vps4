@@ -61,9 +61,31 @@ mvn clean verify     \
 Rebuilding Database
 ===================
 
-To rebuild the database without running any tests (from the 'core' project)
+To recreate the (empty) database and setup the vps4 database user (from the 'core' project)
 
-    mvn initialize sql:execute@drop-create-database sql:execute@build-database -Prebuild-database
+    mvn initialize sql:execute@drop-create-database -Prebuild-database
+    
+Apply migrations:  (from an empty database -- will fail against non-empty schemas)
+
+    mvn initialize flyway:migrate
+    
+If you have a database, but just need to blow away the database contents:
+
+    mvn initialize flyway:clean
+
+
+Database Migrations
+===================
+
+Migrations live in `core/sql/migrations`
+
+Migrations must be named in the form `V{version}__{name}.sql`
+
+ * the letter V
+ * a version (like 1.2.3)
+ * double-underscore
+ * name
+ *.sql
 
 
 Encrypted Configuration
