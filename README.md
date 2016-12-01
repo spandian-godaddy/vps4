@@ -65,3 +65,34 @@ To rebuild the database without running any tests (from the 'core' project)
 
     mvn initialize sql:execute@drop-create-database sql:execute@build-database -Prebuild-database
 
+
+Encrypted Configuration
+=======================
+
+Configuration files are kept in core/src/main/resources/{environment}/
+
+`vps4.properties` contains all the properties for that particular environment
+
+Secrets like, for instance, production database credentials, are stored in an encrypted
+properties file in the environment directory:
+
+`vps4.enc.properties` is a properties file encrypted with the environment's public key
+
+The public and private keys for the respective environments are read from the classpath at:
+
+    vps4.{environment}.priv.pem
+    vps4.{environment}.pub.pem
+
+To modify encrypted properties, unencrypt the `vps.enc.properties` file for a particular environment: 
+
+    mvn exec:java@decrypt-config -Dvps4.env={environment}
+
+This will use the environment private key to decrypt `vps4.enc.properties` into `vps4.unenc.properties`.
+
+Modify `vps4.unenc.properties`, then re-encrypt:
+
+    mvn exec:java@encrypt-config -Dvps4.env={environment}
+
+
+_Never_ check in the `vps4.unenc.properties` files, as these contain the plaintext secrets.
+These files are explicitly ignored in .gitignore.

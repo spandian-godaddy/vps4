@@ -1,12 +1,11 @@
 package com.godaddy.vps4.config;
 
-import java.io.IOException;
-
 import javax.inject.Provider;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.godaddy.vps4.Environment;
 import com.godaddy.vps4.util.ZooKeeperClient;
 
 public class ConfigProvider implements Provider<Config> {
@@ -28,13 +27,18 @@ public class ConfigProvider implements Provider<Config> {
 
             logger.info("No ZooKeeper client configured, using configuration files on the classpath");
 
-            String environment = System.getProperty("vps4.env", "local");
+            Environment environment = Environment.CURRENT;
             logger.info("configuration environment: {}", environment);
 
+            String basePath = "/com/godaddy/vps4/config";
+
             try {
-                config = FileConfig.readFromClasspath(config, "/vps4.properties", "/vps4." + environment + ".properties");
-            } catch(IOException e) {
-                throw new IllegalStateException(e);
+                config = FileConfig.readFromClasspath(config,
+                        basePath + "/base/vps4.properties",
+                        basePath + "/" + environment.getLocalName() + "/vps4.properties",
+                        basePath + "/" + environment.getLocalName() + "/vps4.enc.properties");
+            } catch(Exception e) {
+                throw new RuntimeException(e);
             }
         }
 

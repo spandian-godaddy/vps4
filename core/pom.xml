@@ -59,11 +59,44 @@
                     </execution>
                 </executions>
             </plugin>
+
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>exec-maven-plugin</artifactId>
+                <version>1.5.0</version>
+                <executions>
+                    <execution>
+                        <id>encrypt-config</id>
+                        <configuration>
+                            <mainClass>com.godaddy.vps4.tools.EncryptionConfig</mainClass>
+                            <arguments>
+                                <argument>encrypt</argument>
+                            </arguments>
+                        </configuration>
+                        <goals>
+                            <goal>java</goal>
+                        </goals>
+                    </execution>
+                    <execution>
+                        <id>decrypt-config</id>
+                        <configuration>
+                            <mainClass>com.godaddy.vps4.tools.EncryptionConfig</mainClass>
+                            <arguments>
+                                <argument>decrypt</argument>
+                            </arguments>
+                        </configuration>
+                        <goals>
+                            <goal>java</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+            
         </plugins>
     </build>
 
     <dependencies>
-
+    
         <!-- JAX-RS extensions -->
         <dependency>
             <groupId>com.fasterxml.jackson.jaxrs</groupId>
@@ -124,6 +157,13 @@
             <groupId>org.apache.curator</groupId>
             <artifactId>curator-recipes</artifactId>
             <version>2.9.1</version>
+            <exclusions>
+                <!-- we provide log4j via slf4j bridge -->
+                <exclusion>
+                    <groupId>log4j</groupId>
+                    <artifactId>*</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
 
         <!-- HFS Dependencies -->

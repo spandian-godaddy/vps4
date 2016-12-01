@@ -2,14 +2,22 @@ package com.godaddy.vps4.hfs.crypto;
 
 import java.io.IOException;
 import java.io.Reader;
+import java.security.KeyFactory;
 import java.security.KeyPair;
+import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
+import java.security.PublicKey;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
+import java.security.spec.EncodedKeySpec;
+import java.security.spec.InvalidKeySpecException;
+import java.security.spec.X509EncodedKeySpec;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
+import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.cert.X509CertificateHolder;
 import org.bouncycastle.cert.jcajce.JcaX509CertificateConverter;
 import org.bouncycastle.openssl.PEMKeyPair;
@@ -25,15 +33,22 @@ public class PEMFile {
 
     private final X509Certificate[] certChain;
 
+    private final PublicKey publicKey;
+
     private final PrivateKey privateKey;
 
-    public PEMFile(X509Certificate[] certChain, PrivateKey privateKey) {
+    public PEMFile(X509Certificate[] certChain, PublicKey publicKey, PrivateKey privateKey) {
         this.certChain = certChain;
         this.privateKey = privateKey;
+        this.publicKey = publicKey;
     }
 
     public X509Certificate[] getCertChain() {
         return certChain;
+    }
+
+    public PublicKey getPublicKey() {
+        return publicKey;
     }
 
     public PrivateKey getPrivateKey() {
@@ -46,6 +61,7 @@ public class PEMFile {
 
             List<X509Certificate> certChain = new ArrayList<>();
             PrivateKey privateKey = null;
+            PublicKey publicKey = null;
 
             Object pemObject = null;
             while ((pemObject = pemReader.readObject()) != null) {
@@ -71,17 +87,34 @@ public class PEMFile {
 
                     privateKey = keyPair.getPrivate();
 
+                } else if (pemObject instanceof SubjectPublicKeyInfo) {
+
+                    SubjectPublicKeyInfo pubKeyInfo = (SubjectPublicKeyInfo)pemObject;
+
+                    KeyFactory keyFactory = KeyFactory.getInstance("RSA");
+                    EncodedKeySpec publicKeySpec = new X509EncodedKeySpec(pubKeyInfo.getEncoded());
+                    publicKey = keyFactory.generatePublic(publicKeySpec);
+
                 } else {
                     logger.debug("unknown PEM object: {}" + pemObject.toString());
                 }
             }
 
-            return new PEMFile(certChain.toArray(new X509Certificate[certChain.size()]), privateKey);
+            return new PEMFile(certChain.toArray(new X509Certificate[certChain.size()]), publicKey, privateKey);
 
-        } catch (IOException|CertificateException e) {
+        } catch (IOException | CertificateException | NoSuchAlgorithmException | InvalidKeySpecException e) {
             // TODO
             throw new RuntimeException(e);
         }
     }
+
+    @Override
+    public String toString() {
+        return "PEMFile [certChain=" + Arrays.toString(certChain)
+                + ", publicKey=" + publicKey + ", privateKey=" + privateKey
+                + "]";
+    }
+
+
 
 }

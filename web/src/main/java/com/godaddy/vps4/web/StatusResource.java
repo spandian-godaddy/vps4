@@ -5,6 +5,8 @@ import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
 
+import com.godaddy.vps4.Environment;
+
 @Vps4Api
 
 @Path("/")
@@ -13,6 +15,7 @@ public class StatusResource {
 
     public static class ApplicationStatus {
         public String version = Version.CURRENT;
+        public Environment environment = Environment.CURRENT;
     }
 
     @GET
