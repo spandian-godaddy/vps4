@@ -7,16 +7,22 @@ import java.security.cert.X509Certificate;
 import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.inject.Singleton;
-import javax.net.ssl.HostnameVerifier;
 import javax.net.ssl.KeyManager;
 import javax.net.ssl.SSLContext;
-import javax.net.ssl.SSLSession;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.X509TrustManager;
 import javax.ws.rs.client.Client;
-import javax.ws.rs.client.ClientBuilder;
 
+import org.apache.http.client.HttpClient;
+import org.apache.http.config.RegistryBuilder;
+import org.apache.http.conn.socket.ConnectionSocketFactory;
+import org.apache.http.conn.socket.PlainConnectionSocketFactory;
+import org.apache.http.conn.ssl.SSLConnectionSocketFactory;
+import org.apache.http.impl.client.HttpClients;
+import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
+import org.jboss.resteasy.client.jaxrs.ResteasyClientBuilder;
 import org.jboss.resteasy.client.jaxrs.ResteasyWebTarget;
+import org.jboss.resteasy.client.jaxrs.engines.ApacheHttpClient4Engine;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -47,7 +53,8 @@ public class HfsClientProvider<T> implements Provider<T> {
     public T get() {
         String baseUrl = config.get("hfs.base.url");
 
-        ClientBuilder clientBuilder = ClientBuilder.newBuilder();
+        RegistryBuilder<ConnectionSocketFactory> registryBuilder = RegistryBuilder.<ConnectionSocketFactory>create();
+        registryBuilder.register("http", PlainConnectionSocketFactory.INSTANCE);
 
         try {
 
@@ -63,7 +70,13 @@ public class HfsClientProvider<T> implements Provider<T> {
                 SSLContext sslContext = SSLContext.getInstance("TLSv1.2");
                 sslContext.init(keyManagers, trustManagers, new SecureRandom());
 
-                clientBuilder = clientBuilder.sslContext(sslContext).hostnameVerifier(INSECURE_HOSTNAME_VERIFIER);
+                SSLConnectionSocketFactory sslsf = new SSLConnectionSocketFactory(
+                        sslContext,
+                        new String[] { "TLSv1.2" }, //limitation by delegation api only supports tlsv1
+                        null,
+                        SSLConnectionSocketFactory.ALLOW_ALL_HOSTNAME_VERIFIER);
+
+                registryBuilder.register("https", sslsf);
             }
 
         }
@@ -71,7 +84,18 @@ public class HfsClientProvider<T> implements Provider<T> {
             throw new RuntimeException(t);
         }
 
-        Client client = clientBuilder.build();
+        // configure a connection pool
+        PoolingHttpClientConnectionManager connPool = new PoolingHttpClientConnectionManager(registryBuilder.build());
+        connPool.setMaxTotal(500);
+        connPool.setDefaultMaxPerRoute(250);
+
+        HttpClient httpClient = HttpClients.custom()
+                .setConnectionManager(connPool)
+                .build();
+
+        Client client = new ResteasyClientBuilder()
+                .httpEngine(new ApacheHttpClient4Engine(httpClient))
+                .build();
 
         logger.debug("building HTTP client to service {} at base url {}", serviceClass.getName(), baseUrl);
 
@@ -101,14 +125,5 @@ public class HfsClientProvider<T> implements Provider<T> {
         public X509Certificate[] getAcceptedIssuers() {
             return null;
         }
-    };
-
-    private static final HostnameVerifier INSECURE_HOSTNAME_VERIFIER = new HostnameVerifier() {
-
-        @Override
-        public boolean verify(String arg0, SSLSession arg1) {
-            return true;
-        }
-
     };
 }
