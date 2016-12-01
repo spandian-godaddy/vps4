@@ -32,8 +32,8 @@
                         <configuration>
                             <quiet>true</quiet>
                             <files>
-                                <file>src/main/resources/vps4.properties</file>
-                                <file>src/main/resources/vps4.${vps4.env}.properties</file>
+                                <file>src/main/resources/com/godaddy/vps4/config/base/vps4.properties</file>
+                                <file>src/main/resources/com/godaddy/vps4/config/${vps4.env}/vps4.properties</file>
                             </files>
                         </configuration>
                     </execution>
