@@ -23,6 +23,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.godaddy.vps4.Vps4Exception;
+import com.godaddy.vps4.network.NetworkService;
+import com.godaddy.vps4.network.IpAddress;
 import com.godaddy.vps4.orchestration.vm.ProvisionVm;
 import com.godaddy.vps4.orchestration.vm.VmActionRequest;
 import com.godaddy.vps4.project.Project;
@@ -71,6 +73,7 @@ public class VmResource {
     private final ImageService imageService;
     private final ActionService actionService;
     private final CommandService commandService;
+    private final NetworkService networkService;
 
     @Inject
     public VmResource(PrivilegeService privilegeService,
@@ -80,7 +83,8 @@ public class VmResource {
             com.godaddy.vps4.network.NetworkService vps4NetworkService,
             CPanelService cPanelService,
             ActionService actionService,
-            CommandService commandService) {
+            CommandService commandService,
+            NetworkService networkService) {
 
         this.user = user;
         this.virtualMachineService = virtualMachineService;
@@ -90,6 +94,7 @@ public class VmResource {
         this.imageService = imageService;
         this.actionService = actionService;
         this.commandService = commandService;
+        this.networkService = networkService;
     }
 
     @GET
@@ -157,7 +162,9 @@ public class VmResource {
         // now reach out to the VM vertical to get all the details
         Vm vm = getVmFromVmVertical(virtualMachine.vmId);
 
-        return new CombinedVm(vm, virtualMachine, req);
+        IpAddress primary = networkService.getVmPrimaryAddress(virtualMachine.vmId);
+
+        return new CombinedVm(vm, virtualMachine, req, primary.ipAddress);
 
     }
 
