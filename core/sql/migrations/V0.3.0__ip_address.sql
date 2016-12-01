@@ -50,7 +50,7 @@ CREATE OR REPLACE FUNCTION ip_address_delete(
     RETURNS VOID AS $$
 BEGIN
     
-     UPDATE ip_address SET valid_until = NOW();
+     UPDATE ip_address SET valid_until = NOW() WHERE ip_address_id = p_ip_address_id;
 
 END;
 $$ LANGUAGE plpgsql;
