@@ -74,8 +74,6 @@ public class HfsMockModule extends AbstractModule {
 
     @Override
     public void configure() {
-        //VmService vmService = buildMockVmService();
-        //bind(VmService.class).toInstance(vmService);
     }
 
     @Provides
@@ -84,14 +82,13 @@ public class HfsMockModule extends AbstractModule {
 
             @Override
             public VmAction createVm(CreateVMRequest arg0) {
-                // NOTE: do nothing, Implement when needed
                 return createVmAction;
             }
 
             @Override
             public VmAction createVmWithFlavor(CreateVMWithFlavorRequest arg0) {
                 // NOTE: do nothing, Implement when needed
-                return null;
+                throw new UnsupportedOperationException("Not implemented, yet");
             }
 
             @Override
@@ -107,7 +104,7 @@ public class HfsMockModule extends AbstractModule {
             @Override
             public ImageList getImages(int arg0, int arg1) {
                 // NOTE: do nothing, Implement when needed
-                return null;
+                throw new UnsupportedOperationException("Not implemented, yet");
             }
 
             @Override
@@ -125,37 +122,37 @@ public class HfsMockModule extends AbstractModule {
             @Override
             public VmAction getVmAction(long arg0, long arg1) {
                 // NOTE: do nothing, Implement when needed
-                return null;
+                throw new UnsupportedOperationException("Not implemented, yet");
             }
 
             @Override
             public VmList getVmsBulk(String arg0) {
                 // NOTE: do nothing, Implement when needed
-                return null;
+                throw new UnsupportedOperationException("Not implemented, yet");
             }
 
             @Override
             public FlavorList listFlavors() {
                 // NOTE: do nothing, Implement when needed
-                return null;
+                throw new UnsupportedOperationException("Not implemented, yet");
             }
 
             @Override
             public VmList listVms(String arg0) {
                 // NOTE: do nothing, Implement when needed
-                return null;
+                throw new UnsupportedOperationException("Not implemented, yet");
             }
 
             @Override
             public VmAction startVm(long arg0) {
                 // NOTE: do nothing, Implement when needed
-                return null;
+                throw new UnsupportedOperationException("Not implemented, yet");
             }
 
             @Override
             public VmAction stopVm(long arg0) {
                 // NOTE: do nothing, Implement when needed
-                return null;
+                throw new UnsupportedOperationException("Not implemented, yet");
             }
 
         };
@@ -179,48 +176,49 @@ public class HfsMockModule extends AbstractModule {
             @Override
             public CPanelAction imagePrep(long arg0) {
                 // NOTE: do nothing, Implement when needed
-                return null;
+                throw new UnsupportedOperationException("Not implemented, yet");
             }
 
             @Override
             public CPanelAction licenseActivate(long arg0, String arg1) {
                 // NOTE: do nothing, Implement when needed
-                return null;
+                throw new UnsupportedOperationException("Not implemented, yet");
             }
 
             @Override
             public CPanelAction licenseRefresh(long arg0) {
                 // NOTE: do nothing, Implement when needed
-                return null;
+                throw new UnsupportedOperationException("Not implemented, yet");
             }
 
             @Override
             public CPanelAction licenseRelease(long arg0, String arg1) {
                 // NOTE: do nothing, Implement when needed
-                return null;
+                throw new UnsupportedOperationException("Not implemented, yet");
             }
 
             @Override
             public CPanelAction licenseUpdateIP(long arg0, String arg1, String arg2) {
                 // NOTE: do nothing, Implement when needed
-                return null;
+                throw new UnsupportedOperationException("Not implemented, yet");
             }
 
             @Override
             public void onComplete(CompleteResponse arg0) {
                 // NOTE: do nothing, Implement when needed
+                throw new UnsupportedOperationException("Not implemented, yet");
             }
 
             @Override
             public CPanelAction requestSiteList(long arg0, String arg1, String arg2) {
                 // NOTE: do nothing, Implement when needed
-                return null;
+                throw new UnsupportedOperationException("Not implemented, yet");
             }
 
             @Override
             public CPanelAction imageConfig(long arg0, String arg1) {
                 // NOTE: do nothing, Implement when needed
-                return null;
+                throw new UnsupportedOperationException("Not implemented, yet");
             }
         };
     }
