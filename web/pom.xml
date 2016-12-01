@@ -237,7 +237,7 @@
         <dependency>
             <groupId>com.godaddy.vps4</groupId>
             <artifactId>vps4-orchestration-plugin</artifactId>
-            <version>0.0.1-9</version>
+            <version>0.0.1-20</version>
         </dependency>
         <dependency>
             <groupId>com.godaddy.hosting</groupId>
