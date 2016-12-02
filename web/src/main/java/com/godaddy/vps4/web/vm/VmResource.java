@@ -437,7 +437,7 @@ public class VmResource {
 
     @GET
     @Path("/orionRequests")
-    public List<UUID> getOrionRequests() {
+    public List<VirtualMachineRequest> getOrionRequests() {
         return virtualMachineService.getOrionRequests(user.getShopperId());
     }
 }

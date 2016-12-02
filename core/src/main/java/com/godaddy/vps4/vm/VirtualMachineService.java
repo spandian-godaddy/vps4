@@ -41,7 +41,7 @@ public interface VirtualMachineService {
 
     Map<UUID, String> getVirtualMachines(long vps4UserId);
 
-    List<UUID> getOrionRequests(String shopperId);
+    List<VirtualMachineRequest> getOrionRequests(String shopperId);
 
     void createOrionRequestIfNoneExists(Vps4User vps4User);
 
