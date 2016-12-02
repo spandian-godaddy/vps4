@@ -166,10 +166,10 @@ public class JdbcVirtualMachineService implements VirtualMachineService {
     }
 
     @Override
-    public List<UUID> getOrionRequests(String shopperId) {
-        return (List<UUID>) Sql.with(dataSource).exec(
-                "SELECT orion_guid from orion_request WHERE shopper_id = ? AND provision_date IS NULL",
-                Sql.listOf(rs -> UUID.fromString(rs.getString("orion_guid"))), shopperId);
+    public List<VirtualMachineRequest> getOrionRequests(String shopperId) {
+        return (List<VirtualMachineRequest>) Sql.with(dataSource).exec(
+                "SELECT * from orion_request WHERE shopper_id = ? AND provision_date IS NULL",
+                Sql.listOf(this::mapVirtualMachineRequest), shopperId);
     }
 
     @Override

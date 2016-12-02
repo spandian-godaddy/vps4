@@ -8,6 +8,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 import javax.sql.DataSource;
 
@@ -109,9 +110,11 @@ public class VirtualMachineServiceTest {
                     vps4User.getShopperId());
         }
 
-        List<UUID> requests = virtualMachineService.getOrionRequests(vps4User.getShopperId());
+        List<VirtualMachineRequest> requests = virtualMachineService.getOrionRequests(vps4User.getShopperId());
+
+        List<UUID> requestGuids = requests.stream().map(rs -> rs.orionGuid).collect(Collectors.toList());
         for (UUID request : vmRequests)
-            assertTrue(requests.contains(request));
+            assertTrue(requestGuids.contains(request));
         assertEquals(vmRequests.size(), requests.size());
 
         Map<UUID, String> vms = virtualMachineService.getVirtualMachines(vps4User.getId());
@@ -123,16 +126,16 @@ public class VirtualMachineServiceTest {
     @Test
     public void testGetOrCreateCredit() {
         
-        List<UUID> requests = virtualMachineService.getOrionRequests(vps4User.getShopperId());
+        List<VirtualMachineRequest> requests = virtualMachineService.getOrionRequests(vps4User.getShopperId());
         assertTrue(requests.isEmpty());
 
         virtualMachineService.createOrionRequestIfNoneExists(vps4User);
         requests = virtualMachineService.getOrionRequests(vps4User.getShopperId());
         assertTrue(!requests.isEmpty());
-        vmRequests.add(requests.get(0));
+        vmRequests.add(requests.get(0).orionGuid);
 
         Project project = SqlTestData.createProject(dataSource);
-        virtualMachineService.provisionVirtualMachine(1, requests.get(0), "test", project.getProjectId(), 2, 0, 1);
+        virtualMachineService.provisionVirtualMachine(1, requests.get(0).orionGuid, "test", project.getProjectId(), 2, 0, 1);
         vmIds.add((long) 1);
 
         virtualMachineService.createOrionRequestIfNoneExists(vps4User);
@@ -144,7 +147,7 @@ public class VirtualMachineServiceTest {
         virtualMachineService.createOrionRequestIfNoneExists(vps4User);
         requests = virtualMachineService.getOrionRequests(vps4User.getShopperId());
         assertTrue(!requests.isEmpty());
-        vmRequests.add(requests.get(0));
+        vmRequests.add(requests.get(0).orionGuid);
     }
 
 }
