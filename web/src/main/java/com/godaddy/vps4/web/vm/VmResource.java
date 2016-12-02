@@ -23,11 +23,13 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.godaddy.vps4.Vps4Exception;
-import com.godaddy.vps4.network.NetworkService;
 import com.godaddy.vps4.network.IpAddress;
+import com.godaddy.vps4.network.NetworkService;
 import com.godaddy.vps4.orchestration.vm.ProvisionVm;
-import com.godaddy.vps4.orchestration.vm.VmActionRequest;
 import com.godaddy.vps4.orchestration.vm.Vps4DestroyVm;
+import com.godaddy.vps4.orchestration.vm.Vps4RestartVm;
+import com.godaddy.vps4.orchestration.vm.Vps4StartVm;
+import com.godaddy.vps4.orchestration.vm.Vps4StopVm;
 import com.godaddy.vps4.project.Project;
 import com.godaddy.vps4.project.ProjectService;
 import com.godaddy.vps4.security.PrivilegeService;
@@ -255,24 +257,39 @@ public class VmResource {
 
         long actionId = actionService.createAction(vmId, type, new JSONObject().toJSONString(), user.getId());
 
-        // TODO wrap commands with VPS4 ActionCommand wrapper
         CommandState command = null;
         switch (type) {
         case START_VM:
-            command = Commands.execute(commandService, "StartVm", vmId);
+            
+            Vps4StartVm.Request startRequest = new Vps4StartVm.Request();
+            startRequest.actionId = actionId;
+            startRequest.vmId = vmId;
+
+            command = Commands.execute(commandService, "Vps4StartVm", startRequest);
             break;
+            
         case STOP_VM:
-            command = Commands.execute(commandService, "StopVm", vmId);
+            Vps4StopVm.Request stopRequest = new Vps4StopVm.Request();
+            stopRequest.actionId = actionId;
+            stopRequest.vmId = vmId;
+            
+            command = Commands.execute(commandService, "Vps4StopVm", stopRequest);
             break;
+            
         case RESTART_VM:
-            command = Commands.execute(commandService, "RestartVm", vmId);
+            Vps4RestartVm.Request restartRequest = new Vps4RestartVm.Request();
+            restartRequest.actionId = actionId;
+            restartRequest.vmId = vmId;
+            
+            command = Commands.execute(commandService, "Vps4RestartVm", restartRequest);
             break;
+            
         default:
             throw new IllegalArgumentException("Unknown type: " + type);
         }
         logger.info("managing vm {} with command {}", type, command.commandId);
 
-        // TODO actionService.tagWithCommand(actionId, command.commandId);
+        actionService.tagWithCommand(actionId, command.commandId);
 
         return actionService.getAction(actionId);
     }
