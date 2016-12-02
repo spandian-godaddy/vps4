@@ -2,9 +2,7 @@ package com.godaddy.vps4.web.vm;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
 import javax.inject.Inject;
 import javax.ws.rs.Consumes;
@@ -429,10 +427,8 @@ public class VmResource {
 
     @GET
     @Path("/")
-    public Map<UUID, String> getVirtualMachines() {
-        List<Long> projectIds = projectService.getProjects(user.getId(), true).stream().map(Project::getProjectId)
-                .collect(Collectors.toList());
-        return virtualMachineService.getVirtualMachines(user.getId());
+    public List<VirtualMachine> getVirtualMachines() {
+        return virtualMachineService.getVirtualMachinesForUser(user.getId());
     }
 
     @GET

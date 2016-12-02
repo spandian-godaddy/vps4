@@ -8,7 +8,7 @@ import com.godaddy.vps4.security.Vps4User;
 
 public interface VirtualMachineService {
 
-    List<VirtualMachine> listVirtualMachines(long projectId);
+    List<VirtualMachine> getVirtualMachinesForProject(long projectId);
 
     VirtualMachine getVirtualMachine(long vmId);
 
@@ -39,7 +39,7 @@ public interface VirtualMachineService {
 
     void updateVirtualMachine(long vmId, Map<String, Object> paramsToUpdate);
 
-    Map<UUID, String> getVirtualMachines(long vps4UserId);
+    List<VirtualMachine> getVirtualMachinesForUser(long vps4UserId);
 
     List<VirtualMachineRequest> getOrionRequests(String shopperId);
 
