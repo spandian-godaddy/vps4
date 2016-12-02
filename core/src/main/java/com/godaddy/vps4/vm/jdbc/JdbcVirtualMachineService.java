@@ -23,6 +23,13 @@ public class JdbcVirtualMachineService implements VirtualMachineService {
 
     private final DataSource dataSource;
 
+    private String selectVirtualMachineQuery = "SELECT vm.vm_id, vm.orion_guid, vm.project_id, vm.name as \"vm_name\", "
+            + "vm.valid_on as \"vm_valid_on\", vm.valid_until as \"vm_valid_until\", vms.spec_id, vms.spec_name, "
+            + "vms.tier, vms.cpu_core_count, vms.memory_mib, vms.disk_gib, vms.valid_on as \"spec_valid_on\", "
+            + "vms.valid_until as \"spec_valid_until\", image.name as \"image_name\" FROM virtual_machine vm "
+            + "JOIN virtual_machine_spec vms ON vms.spec_id=vm.spec_id "
+            + "JOIN image ON image.image_id=vm.image_id ";
+
     @Inject
     public JdbcVirtualMachineService(DataSource dataSource) {
         this.dataSource = dataSource;
@@ -39,34 +46,19 @@ public class JdbcVirtualMachineService implements VirtualMachineService {
     }
 
     @Override
-    public List<VirtualMachine> listVirtualMachines(long projectId) {
+    public List<VirtualMachine> getVirtualMachinesForProject(long projectId) {
         return Sql.with(dataSource)
-                .exec("SELECT vm.vm_id, vm.orion_guid, vm.project_id, vm.name as \"vm_name\", "
-                        + "vm.valid_on as \"vm_valid_on\", vm.valid_until as \"vm_valid_until\", vms.spec_id, vms.spec_name, "
-                        + "vms.tier, vms.cpu_core_count, vms.memory_mib, vms.disk_gib, vms.valid_on as \"spec_valid_on\", "
-                        + "vms.valid_until as \"spec_valid_until\", image.name as \"image_name\" FROM virtual_machine vm "
-                        + "JOIN virtual_machine_spec vms ON vms.spec_id=vm.spec_id " + "JOIN image ON image.image_id=vm.image_id "
-                        + " WHERE project_id=?", Sql.listOf(this::mapVirtualMachine), projectId);
+                .exec(selectVirtualMachineQuery + "WHERE project_id=?", Sql.listOf(this::mapVirtualMachine), projectId);
     }
 
     public VirtualMachine getVirtualMachine(long vmId) {
         return Sql.with(dataSource)
-                .exec("SELECT vm.vm_id, vm.orion_guid, vm.project_id, vm.name as \"vm_name\", "
-                        + "vm.valid_on as \"vm_valid_on\", vm.valid_until as \"vm_valid_until\", vms.spec_id, vms.spec_name, "
-                        + "vms.tier, vms.cpu_core_count, vms.memory_mib, vms.disk_gib, vms.valid_on as \"spec_valid_on\", "
-                        + "vms.valid_until as \"spec_valid_until\", image.name as \"image_name\" FROM virtual_machine vm "
-                        + "JOIN virtual_machine_spec vms ON vms.spec_id=vm.spec_id JOIN image ON image.image_id=vm.image_id "
-                        + " WHERE vm_id=?", Sql.nextOrNull(this::mapVirtualMachine), vmId);
+                .exec(selectVirtualMachineQuery + "WHERE vm_id=?", Sql.nextOrNull(this::mapVirtualMachine), vmId);
     }
 
     public VirtualMachine getVirtualMachine(UUID orionGuid) {
         return Sql.with(dataSource)
-                .exec("SELECT vm.vm_id, vm.orion_guid, vm.project_id, vm.name as \"vm_name\","
-                        + "vm.valid_on as \"vm_valid_on\", vm.valid_until as \"vm_valid_until\", vms.spec_id, vms.spec_name, "
-                        + "vms.tier, vms.cpu_core_count, vms.memory_mib, vms.disk_gib, vms.valid_on as \"spec_valid_on\", "
-                        + "vms.valid_until as \"spec_valid_until\", image.name as \"image_name\" FROM virtual_machine vm "
-                        + "JOIN virtual_machine_spec vms ON vms.spec_id=vm.spec_id JOIN image ON image.image_id=vm.image_id "
-                        + " WHERE orion_guid=?", Sql.nextOrNull(this::mapVirtualMachine), orionGuid);
+                .exec(selectVirtualMachineQuery + "WHERE orion_guid=?", Sql.nextOrNull(this::mapVirtualMachine), orionGuid);
     }
 
     protected VirtualMachine mapVirtualMachine(ResultSet rs) throws SQLException {
@@ -156,13 +148,13 @@ public class JdbcVirtualMachineService implements VirtualMachineService {
     }
 
     @Override
-    public Map<UUID, String> getVirtualMachines(long vps4UserId) {
-        return (Map<UUID, String>) Sql.with(dataSource).exec(
-                "select v.name, v.orion_guid from virtual_machine v JOIN user_project_privilege up ON up.project_id = v.project_id"
-                        + " JOIN vps4_user u ON up.vps4_user_id = u.vps4_user_id"
-                        + " WHERE u.vps4_user_id = ?"
-                        + " AND v.valid_until = 'infinity'",
-                Sql.mapOf(rs -> rs.getString("name"), rs -> UUID.fromString(rs.getString("orion_guid"))), vps4UserId);
+    public List<VirtualMachine> getVirtualMachinesForUser(long vps4UserId) {
+        return Sql.with(dataSource).exec(selectVirtualMachineQuery
+                + "JOIN user_project_privilege up ON up.project_id = vm.project_id"
+                + " JOIN vps4_user u ON up.vps4_user_id = u.vps4_user_id"
+                + " WHERE u.vps4_user_id = ?"
+                + " AND vm.valid_until = 'infinity'",
+                Sql.listOf(this::mapVirtualMachine), vps4UserId);
     }
 
     @Override
@@ -174,7 +166,7 @@ public class JdbcVirtualMachineService implements VirtualMachineService {
 
     @Override
     public void createOrionRequestIfNoneExists(Vps4User vps4User) {
-        if (getVirtualMachines(vps4User.getId()).isEmpty() && getOrionRequests(vps4User.getShopperId()).isEmpty()) {
+        if (getVirtualMachinesForUser(vps4User.getId()).isEmpty() && getOrionRequests(vps4User.getShopperId()).isEmpty()) {
             createVirtualMachineRequest(UUID.randomUUID(), "linux", "cpanel", 20, 1, vps4User.getShopperId());
         }
     }

@@ -6,7 +6,6 @@ import static org.junit.Assert.assertTrue;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -117,9 +116,10 @@ public class VirtualMachineServiceTest {
             assertTrue(requestGuids.contains(request));
         assertEquals(vmRequests.size(), requests.size());
 
-        Map<UUID, String> vms = virtualMachineService.getVirtualMachines(vps4User.getId());
+        List<VirtualMachine> vms = virtualMachineService.getVirtualMachinesForUser(vps4User.getId());
+        List<UUID> vmGuids = vms.stream().map(vm -> vm.orionGuid).collect(Collectors.toList());
         for (UUID vm : createdVms)
-            assertTrue(vms.containsKey(vm));
+            assertTrue(vmGuids.contains(vm));
         assertEquals(vmIds.size(), vms.size());
     }
     
