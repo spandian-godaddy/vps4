@@ -159,9 +159,11 @@ public class WebServer {
         ServletContextHandler handler = new ServletContextHandler();
         handler.setContextPath("/");
         handler.addEventListener(injector.getInstance(Vps4GuiceResteasyBootstrapServletContextListener.class));
-
+        
         if (!useFakeUser)
+        {
             addAuthentication(handler, injector);
+        }
 
         handler.addFilter(CorsFilter.class, "/api/*", EnumSet.allOf(DispatcherType.class));
 
@@ -205,7 +207,7 @@ public class WebServer {
         VirtualMachineService virtualMachineService = injector.getInstance(VirtualMachineService.class);
         Vps4UserService userService = injector.getInstance(Vps4UserService.class);
         handler.addFilter(
-                new FilterHolder(new AuthenticationFilter(new Vps4RequestAuthenticator(tokenExtractor, userService, virtualMachineService))),
+                new FilterHolder(new AuthenticationFilter(new Vps4RequestAuthenticator(tokenExtractor, userService, virtualMachineService, conf))),
                 "/api/*", EnumSet.of(DispatcherType.REQUEST));
     }
 

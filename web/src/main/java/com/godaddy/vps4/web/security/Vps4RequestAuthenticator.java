@@ -1,10 +1,13 @@
 package com.godaddy.vps4.web.security;
 
+import javax.inject.Inject;
 import javax.servlet.http.HttpServletRequest;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.godaddy.vps4.Environment;
+import com.godaddy.vps4.config.Config;
 import com.godaddy.vps4.security.Vps4User;
 import com.godaddy.vps4.security.Vps4UserService;
 import com.godaddy.vps4.vm.VirtualMachineService;
@@ -21,14 +24,26 @@ public class Vps4RequestAuthenticator implements RequestAuthenticator {
     private final Vps4UserService userService;
 
     private final VirtualMachineService virtualMachineService;
+    
+    private final Config config;
 
+    @Inject
     public Vps4RequestAuthenticator(SsoTokenExtractor tokenExtractor, Vps4UserService userService,
-            VirtualMachineService virtualMachineService) {
+            VirtualMachineService virtualMachineService, Config config) {
         this.tokenExtractor = tokenExtractor;
         this.userService = userService;
         this.virtualMachineService = virtualMachineService;
+        this.config = config;
     }
 
+    private boolean isStagingOrProductionEnv() {
+        return ((Environment.CURRENT == Environment.STAGE) || (Environment.CURRENT == Environment.PROD) ? true : false);
+    }
+    
+    private boolean isInternalShopper(Vps4User user, String shopperId) {
+        return (user.getShopperId().length() == 3);
+    }
+    
     @Override
     public Vps4User authenticate(HttpServletRequest request) {
 
@@ -45,10 +60,19 @@ public class Vps4RequestAuthenticator implements RequestAuthenticator {
         }
 
         Vps4User user = userService.getOrCreateUserForShopper(shopperId);
+
         // TODO: Remove this after ECOMM integration
-        if (user.getShopperId().length() == 3) {
-            virtualMachineService.createOrionRequestIfNoneExists(user);
+        logger.info("Environment Staging or Production? : {}" , isStagingOrProductionEnv());
+        boolean allow3LetterAccountsOnly = Boolean.parseBoolean(config.get("allow3LetterAccountsOnly", "true"));
+        if(isStagingOrProductionEnv()) {
+            if (isInternalShopper(user, shopperId)) {
+                virtualMachineService.createOrionRequestIfNoneExists(user);
+            } else if(allow3LetterAccountsOnly) {
+                logger.warn("Non-3-letter shopper encountered in ALPHA release: {}", user);
+                throw new RuntimeException("Currently only 3 letter accounts are allowed in ALPHA release. ");
+            }
         }
+
         return user;
     }
 }
