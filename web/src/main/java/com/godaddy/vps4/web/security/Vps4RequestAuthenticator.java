@@ -62,17 +62,15 @@ public class Vps4RequestAuthenticator implements RequestAuthenticator {
         Vps4User user = userService.getOrCreateUserForShopper(shopperId);
 
         // TODO: Remove this after ECOMM integration
-        logger.info("Environment Staging or Production? : {}" , isStagingOrProductionEnv());
         boolean allow3LetterAccountsOnly = Boolean.parseBoolean(config.get("allow3LetterAccountsOnly", "true"));
-        if(isStagingOrProductionEnv()) {
-            if (isInternalShopper(user, shopperId)) {
-                virtualMachineService.createOrionRequestIfNoneExists(user);
-            } else if(allow3LetterAccountsOnly) {
-                logger.warn("Non-3-letter shopper encountered in ALPHA release: {}", user);
-                throw new RuntimeException("Currently only 3 letter accounts are allowed in ALPHA release. ");
-            }
+        logger.info("Environment Staging or Production? : {}" , isStagingOrProductionEnv());
+        logger.info("Allow internal shoppers only: {}", allow3LetterAccountsOnly );
+        if (isStagingOrProductionEnv() && allow3LetterAccountsOnly && !isInternalShopper(user, shopperId)) {
+            logger.warn("Non-3-letter shopper encountered in ALPHA release: {}", user);
+            throw new RuntimeException("Currently only 3 letter accounts are allowed in ALPHA release. ");
         }
 
+        virtualMachineService.createOrionRequestIfNoneExists(user);
         return user;
     }
 }
