@@ -11,6 +11,7 @@ public class VirtualMachine {
     public final VirtualMachineSpec spec;
     public final String name;
     public final String image;
+    public final String primaryIpAddress;
     public final Instant validOn;
     public final Instant validUntil;
 
@@ -20,6 +21,7 @@ public class VirtualMachine {
             VirtualMachineSpec spec,
             String name,
             String image,
+            String primaryIpAddress,
             Instant validOn,
             Instant validUntil) {
         this.vmId = vmId;
@@ -28,6 +30,7 @@ public class VirtualMachine {
         this.spec = spec;
         this.name = name;
         this.image = image;
+        this.primaryIpAddress = primaryIpAddress;
         this.validOn = validOn;
         this.validUntil = validUntil;
     }
@@ -35,7 +38,8 @@ public class VirtualMachine {
     @Override
     public String toString() {
         return "VirtualMachine [vmId=" + vmId + ", orionGuid= " + orionGuid + ", projectId=" + projectId + ", spec="
-                + spec.name + ", name=" + name + ", image=" + image + ", validOn=" + validOn + ", validUntil=" + validUntil + "]";
+                + spec.name + ", name=" + name + ", image=" + image + ", primaryIpAddress=" + primaryIpAddress + ", validOn=" + validOn
+                + ", validUntil=" + validUntil + "]";
     }
 
 }

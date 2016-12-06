@@ -23,12 +23,15 @@ public class JdbcVirtualMachineService implements VirtualMachineService {
 
     private final DataSource dataSource;
 
+    private String privateIpType = "1";
+
     private String selectVirtualMachineQuery = "SELECT vm.vm_id, vm.orion_guid, vm.project_id, vm.name as \"vm_name\", "
             + "vm.valid_on as \"vm_valid_on\", vm.valid_until as \"vm_valid_until\", vms.spec_id, vms.spec_name, "
             + "vms.tier, vms.cpu_core_count, vms.memory_mib, vms.disk_gib, vms.valid_on as \"spec_valid_on\", "
-            + "vms.valid_until as \"spec_valid_until\", image.name as \"image_name\" FROM virtual_machine vm "
+            + "vms.valid_until as \"spec_valid_until\", image.name as \"image_name\", ip.ip_address FROM virtual_machine vm "
             + "JOIN virtual_machine_spec vms ON vms.spec_id=vm.spec_id "
-            + "JOIN image ON image.image_id=vm.image_id ";
+            + "JOIN image ON image.image_id=vm.image_id "
+            + "LEFT JOIN ip_address ip ON ip.vm_id = vm.vm_id AND ip.ip_address_type_id = " + privateIpType + " ";
 
     @Inject
     public JdbcVirtualMachineService(DataSource dataSource) {
@@ -48,17 +51,17 @@ public class JdbcVirtualMachineService implements VirtualMachineService {
     @Override
     public List<VirtualMachine> getVirtualMachinesForProject(long projectId) {
         return Sql.with(dataSource)
-                .exec(selectVirtualMachineQuery + "WHERE project_id=?", Sql.listOf(this::mapVirtualMachine), projectId);
+                .exec(selectVirtualMachineQuery + "WHERE vm.project_id=?", Sql.listOf(this::mapVirtualMachine), projectId);
     }
 
     public VirtualMachine getVirtualMachine(long vmId) {
         return Sql.with(dataSource)
-                .exec(selectVirtualMachineQuery + "WHERE vm_id=?", Sql.nextOrNull(this::mapVirtualMachine), vmId);
+                .exec(selectVirtualMachineQuery + "WHERE vm.vm_id=?", Sql.nextOrNull(this::mapVirtualMachine), vmId);
     }
 
     public VirtualMachine getVirtualMachine(UUID orionGuid) {
         return Sql.with(dataSource)
-                .exec(selectVirtualMachineQuery + "WHERE orion_guid=?", Sql.nextOrNull(this::mapVirtualMachine), orionGuid);
+                .exec(selectVirtualMachineQuery + "WHERE vm.orion_guid=?", Sql.nextOrNull(this::mapVirtualMachine), orionGuid);
     }
 
     protected VirtualMachine mapVirtualMachine(ResultSet rs) throws SQLException {
@@ -66,7 +69,8 @@ public class JdbcVirtualMachineService implements VirtualMachineService {
         VirtualMachineSpec spec = mapVirtualMachineSpec(rs);
 
         return new VirtualMachine(rs.getLong("vm_id"), java.util.UUID.fromString(rs.getString("orion_guid")), rs.getLong("project_id"),
-                spec, rs.getString("vm_name"), rs.getString("image_name"), rs.getTimestamp("vm_valid_on").toInstant(),
+                spec, rs.getString("vm_name"), rs.getString("image_name"), rs.getString("ip_address"),
+                rs.getTimestamp("vm_valid_on").toInstant(),
                 validUntil != null ? validUntil.toInstant() : null);
     }
 
@@ -150,10 +154,10 @@ public class JdbcVirtualMachineService implements VirtualMachineService {
     @Override
     public List<VirtualMachine> getVirtualMachinesForUser(long vps4UserId) {
         return Sql.with(dataSource).exec(selectVirtualMachineQuery
-                + "JOIN user_project_privilege up ON up.project_id = vm.project_id"
-                + " JOIN vps4_user u ON up.vps4_user_id = u.vps4_user_id"
-                + " WHERE u.vps4_user_id = ?"
-                + " AND vm.valid_until = 'infinity'",
+                + "JOIN user_project_privilege up ON up.project_id = vm.project_id "
+                + "JOIN vps4_user u ON up.vps4_user_id = u.vps4_user_id "
+                + "WHERE u.vps4_user_id = ? "
+                + "AND vm.valid_until = 'infinity'",
                 Sql.listOf(this::mapVirtualMachine), vps4UserId);
     }
 

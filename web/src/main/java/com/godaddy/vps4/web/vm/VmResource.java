@@ -21,7 +21,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.godaddy.vps4.Vps4Exception;
-import com.godaddy.vps4.network.IpAddress;
 import com.godaddy.vps4.network.NetworkService;
 import com.godaddy.vps4.orchestration.vm.ProvisionVm;
 import com.godaddy.vps4.orchestration.vm.Vps4DestroyVm;
@@ -163,9 +162,7 @@ public class VmResource {
         // now reach out to the VM vertical to get all the details
         Vm vm = getVmFromVmVertical(virtualMachine.vmId);
 
-        IpAddress primary = networkService.getVmPrimaryAddress(virtualMachine.vmId);
-
-        return new CombinedVm(vm, virtualMachine, req, primary.ipAddress);
+        return new CombinedVm(vm, virtualMachine, req);
 
     }
 

@@ -21,17 +21,15 @@ public class CombinedVm {
     }
 
     public CombinedVm(Vm vm) {
-        this(vm, null, null, null);
+        this(vm, null, null);
     }
 
-    public CombinedVm(Vm vm, VirtualMachine virtualMachine, VirtualMachineRequest vmRequest, String ipAddress) {
+    public CombinedVm(Vm vm, VirtualMachine virtualMachine, VirtualMachineRequest vmRequest) {
         if (vm != null) {
             vmId = vm.vmId;
             status = vm.status;
             running = vm.running;
             useable = vm.useable;
-            if (ipAddress != null)
-                address = ipAddress;
             if (vm.osinfo != null)
                 image = vm.osinfo.name;
         }
@@ -39,6 +37,8 @@ public class CombinedVm {
         if (virtualMachine != null) {
             spec = virtualMachine.spec.name;
             name = virtualMachine.name;
+            if (virtualMachine.primaryIpAddress != null)
+                address = virtualMachine.primaryIpAddress;
             validOn = virtualMachine.validOn;
             validUntil = virtualMachine.validUntil;
         }
