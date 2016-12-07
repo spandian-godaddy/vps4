@@ -3,9 +3,8 @@
 
 	<parent>
 		<groupId>com.godaddy.vps4</groupId>
-		<artifactId>vps4-parent</artifactId>
+		<artifactId>vps4-project</artifactId>
 		<version>0.0.1-SNAPSHOT</version>
-		<relativePath>../parent</relativePath>
 	</parent>
 
 	<artifactId>vps4-web</artifactId>
