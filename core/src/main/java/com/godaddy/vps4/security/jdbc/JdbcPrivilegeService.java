@@ -36,32 +36,49 @@ public class JdbcPrivilegeService implements PrivilegeService {
     }
 
     @Override
-    public void requireAnyPrivilegeToSgid(Vps4User user, long sgid) {
-        if (!checkAnyPrivilegeToSgid(user, sgid)) {
-            throw new AuthorizationException(user.getShopperId() + " does not have privilege on service group " + sgid);
+    public void requireAnyPrivilegeToVmId(Vps4User user, long vmId) {
+        if(!Sql.with(dataSource).call("SELECT COUNT(privilege_id) " +
+                                         "FROM user_project_privilege " + 
+                                           "JOIN virtual_machine " + 
+                                             "ON virtual_machine.project_id = user_project_privilege.project_id " +
+                                         "WHERE user_project_privilege.vps4_user_id = ? " +
+                                            "AND virtual_machine.vm_id = ? " +
+                                            "AND NOW() < virtual_machine.valid_until;", 
+                                        Sql.nextOrNull(rs -> rs.getInt(1) > 0), 
+                                        user.getId(), vmId)) {
+            throw new AuthorizationException(user.getShopperId() + " does not have privilege for vm " + vmId);
+        }
+        
+    }
+
+
+    @Override
+    public void requireAnyPrivilegeToProjectId(Vps4User user, long projectId) {
+        if (!checkAnyPrivilegeToProjectId(user, projectId)) {
+            throw new AuthorizationException(user.getShopperId() + " does not have privilege on service group " + projectId);
         }
     }
 
     @Override
-    public boolean checkAnyPrivilegeToSgid(Vps4User user, long sgid) {
+    public boolean checkAnyPrivilegeToProjectId(Vps4User user, long projectId) {
         return Sql.with(dataSource).call(
                 "{ call check_any_privilege(?,?) }",
                 Sql.nextOrNull(rs -> rs.getInt(1) > 0),
-                user.getId(), sgid);
+                user.getId(), projectId);
     }
 
     @Override
-    public boolean checkPrivilege(Vps4User user, long sgid, ProjectPrivilege privilege) {
+    public boolean checkPrivilege(Vps4User user, long projectId, ProjectPrivilege privilege) {
         return Sql.with(dataSource).call(
                 "{ call check_privilege(?,?,?) }",
                 Sql.nextOrNull(rs -> rs.getInt(1) > 0),
-                user.getId(), sgid, privilege.id());
+                user.getId(), projectId, privilege.id());
     }
 
     @Override
-    public void requirePrivilege(Vps4User user, long sgid, ProjectPrivilege privilege) {
-        if (!checkPrivilege(user, sgid, privilege)) {
-            throw new AuthorizationException(user.getShopperId() + " does not have privilege " + privilege.name() + " on service group " + sgid);
+    public void requirePrivilege(Vps4User user, long projectId, ProjectPrivilege privilege) {
+        if (!checkPrivilege(user, projectId, privilege)) {
+            throw new AuthorizationException(user.getShopperId() + " does not have privilege " + privilege.name() + " on service group " + projectId);
         }
     }
 

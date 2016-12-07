@@ -25,7 +25,7 @@ public interface VirtualMachineService {
      * @param name
      * @return
      */
-    VirtualMachine createVirtualMachine(long vmId, long projectId, String spec, String name);
+//    VirtualMachine createVirtualMachine(long vmId, long projectId, String spec, String name);
 
     // updateStatus(long vmId, int newStatus)
 

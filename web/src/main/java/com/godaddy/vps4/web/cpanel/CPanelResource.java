@@ -18,6 +18,8 @@ import com.godaddy.vps4.cpanel.CPanelAccount;
 import com.godaddy.vps4.cpanel.CPanelSession;
 import com.godaddy.vps4.cpanel.CpanelAccessDeniedException;
 import com.godaddy.vps4.cpanel.Vps4CpanelService;
+import com.godaddy.vps4.security.PrivilegeService;
+import com.godaddy.vps4.security.Vps4User;
 import com.godaddy.vps4.cpanel.CpanelClient.CpanelServiceType;
 import com.godaddy.vps4.cpanel.CpanelTimeoutException;
 import com.godaddy.vps4.web.Vps4Api;
@@ -35,15 +37,24 @@ public class CPanelResource {
     private static final Logger logger = LoggerFactory.getLogger(CPanelResource.class);
 
     final Vps4CpanelService cpanelService;
+    final PrivilegeService privilegeService;
+    final Vps4User user;
 
     @Inject
-    public CPanelResource(Vps4CpanelService cpanelService) {
+    public CPanelResource(Vps4CpanelService cpanelService,
+                          PrivilegeService privilegeService,
+                          Vps4User user) {
         this.cpanelService = cpanelService;
+        this.privilegeService = privilegeService;
+        this.user = user;
     }
 
     @GET
     @Path("{vmId}/cpanel/session")
     public CPanelSession getCPanelSession(@PathParam("vmId") long vmId) {
+        
+        privilegeService.requireAnyPrivilegeToVmId(user, vmId);
+        
         try {
             return cpanelService.createSession(vmId, "root", CpanelServiceType.whostmgrd);
         }
@@ -67,6 +78,8 @@ public class CPanelResource {
 
         logger.info("GET listCpanelAccounts for VM: {}", vmId);
 
+        privilegeService.requireAnyPrivilegeToVmId(user, vmId);
+        
         try {
             return cpanelService.listCpanelAccounts(vmId);
         }

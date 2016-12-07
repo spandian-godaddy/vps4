@@ -18,6 +18,7 @@ import com.godaddy.vps4.orchestration.hfs.sysadmin.SetPassword;
 import com.godaddy.vps4.orchestration.hfs.sysadmin.ToggleAdmin;
 import com.godaddy.vps4.orchestration.sysadmin.Vps4SetPassword;
 import com.godaddy.vps4.orchestration.sysadmin.Vps4ToggleAdmin;
+import com.godaddy.vps4.security.PrivilegeService;
 import com.godaddy.vps4.security.Vps4User;
 import com.godaddy.vps4.vm.Action;
 import com.godaddy.vps4.vm.ActionService;
@@ -43,15 +44,20 @@ public class SysAdminResource {
 
     final ActionService actionService;
     final CommandService commandService;
+    final PrivilegeService privilegeService;
     final Vps4User user;
 
     @Inject
     public SysAdminResource(VmUserService userService,
-            ActionService actionService, CommandService commandService, Vps4User user) {
+                            ActionService actionService, 
+                            CommandService commandService, 
+                            Vps4User user,
+                            PrivilegeService privilegeService) {
         this.userService = userService;
         this.actionService = actionService;
         this.commandService = commandService;
         this.user = user;
+        this.privilegeService = privilegeService;
     }
 
     public static class UpdatePasswordRequest{
@@ -63,6 +69,7 @@ public class SysAdminResource {
     @Path("/{vmId}/setPassword")
     public Action setPassword(@QueryParam("vmId") long vmId, UpdatePasswordRequest updatePasswordRequest){
 
+        privilegeService.requireAnyPrivilegeToVmId(user, vmId);
         // TODO: This will need more logic when we include Windows
         // Windows does not have a "root" user.
         String[] usernames = {updatePasswordRequest.username, "root"};
@@ -100,8 +107,6 @@ public class SysAdminResource {
         public String username;
     }
 
-
-
     @POST
     @Path("/{vmId}/enableAdmin")
     public Action enableUserAdmin(@QueryParam("vmId") long vmId, SetAdminRequest setAdminRequest) {
@@ -122,6 +127,8 @@ public class SysAdminResource {
             //action.status = ActionStatus.INVALID;
             //return;
         }
+        
+        privilegeService.requireAnyPrivilegeToVmId(user, vmId);
 
         JSONObject adminRequest = new JSONObject();
         adminRequest.put("username", username);

@@ -82,13 +82,13 @@ public class JdbcVirtualMachineService implements VirtualMachineService {
                 validUntil != null ? validUntil.toInstant() : null);
     }
 
-    @Override
-    public VirtualMachine createVirtualMachine(long vmId, long projectId, String spec, String name) {
-
-        Sql.with(dataSource).exec("SELECT * FROM virtual_machine_create(?,?,?,?)", null, vmId, projectId, spec, name);
-
-        return null;
-    }
+//    @Override
+//    public VirtualMachine createVirtualMachine(long vmId, long projectId, String spec, String name) {
+//
+//        Sql.with(dataSource).exec("SELECT * FROM virtual_machine_create(?,?,?,?)", null, vmId, projectId, spec, name);
+//
+//        return null;
+//    }
 
     @Override
     public void destroyVirtualMachine(long vmId) {

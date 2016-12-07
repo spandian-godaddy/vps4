@@ -12,6 +12,8 @@ import javax.ws.rs.core.MediaType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.godaddy.vps4.security.PrivilegeService;
+import com.godaddy.vps4.security.Vps4User;
 import com.godaddy.vps4.vm.VirtualMachineService;
 import com.godaddy.vps4.web.PATCH;
 import com.godaddy.vps4.web.Vps4Api;
@@ -31,10 +33,16 @@ public class VmPatchResource {
     private static final Logger logger = LoggerFactory.getLogger(VmResource.class);
 
     final VirtualMachineService virtualMachineService;
+    final PrivilegeService privilegeService;
+    final Vps4User user;
 
     @Inject
-    public VmPatchResource(VirtualMachineService virtualMachineService) {
+    public VmPatchResource(VirtualMachineService virtualMachineService,
+                           Vps4User user,
+                           PrivilegeService privilegeService) {
         this.virtualMachineService = virtualMachineService;
+        this.privilegeService = privilegeService;
+        this.user = user;
     }
 
     public static class VmPatch {
@@ -46,6 +54,7 @@ public class VmPatchResource {
     @Produces({ "application/json" })
     @ApiOperation(value = "Update VM Attributes", httpMethod = "PATCH")
     public void updateVm(@PathParam("vmId") long vmId, VmPatch vmPatch) {
+        privilegeService.requireAnyPrivilegeToVmId(user, vmId);
         Map<String, Object> vmPatchMap = new HashMap<>();
         if (vmPatch.name != null && !vmPatch.name.equals(""))
             vmPatchMap.put("name", vmPatch.name);

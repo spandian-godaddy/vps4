@@ -13,7 +13,6 @@ import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
-import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
 
 import org.json.simple.JSONObject;
@@ -31,6 +30,7 @@ import com.godaddy.vps4.project.Project;
 import com.godaddy.vps4.project.ProjectService;
 import com.godaddy.vps4.security.PrivilegeService;
 import com.godaddy.vps4.security.Vps4User;
+import com.godaddy.vps4.security.jdbc.AuthorizationException;
 import com.godaddy.vps4.vm.Action;
 import com.godaddy.vps4.vm.ActionService;
 import com.godaddy.vps4.vm.ActionType;
@@ -100,33 +100,45 @@ public class VmResource {
     @GET
     @Path("actions/{actionId}")
     public Action getAction(@PathParam("actionId") long actionId) {
+        
         Action action = actionService.getAction(actionId);
+        
         if (action == null) {
             throw new NotFoundException("actionId " + actionId + " not found");
         }
+        
+        privilegeService.requireAnyPrivilegeToVmId(user, action.virtualMachineId);
+        
         return action;
     }
 
-    @GET
-    @Path("actions/provision/{orionGuid}")
-    public Action getProvisionActions(@PathParam("orionGuid") UUID orionGuid) {
-
-        Action action = getActionFromOrionGuid(orionGuid);
-        if (action == null) {
-            throw new NotFoundException("action or orionGuid " + orionGuid + " not found");
-        }
-
-        return action;
-    }
-
-    protected Action getActionFromOrionGuid(UUID orionGuid) {
-
-        // TODO
-        // - add an action_id to the provision request table
-        // - update that column when a provision is started for a specific provision request
-        // - add a way to look that up through actionService (or something)
-        return null;
-    }
+//    @GET
+//    @Path("actions/provision/{orionGuid}")
+//    public Action getProvisionActions(@PathParam("orionGuid") UUID orionGuid) {
+//
+//        Action action = getActionFromOrionGuid(orionGuid);
+//        if (action == null) {
+//            throw new NotFoundException("action or orionGuid " + orionGuid + " not found");
+//        }
+//
+//        return action;
+//    }
+//    
+//    @GET
+//    @Path("/provisions/{orionGuid}")
+//    public Action getProvisionAction(@PathParam("orionGuid") UUID orionGuid) {
+//
+//        return getActionFromOrionGuid(orionGuid);
+//    }
+//
+//    protected Action getActionFromOrionGuid(UUID orionGuid) {
+//
+//        // TODO
+//        // - add an action_id to the provision request table
+//        // - update that column when a provision is started for a specific provision request
+//        // - add a way to look that up through actionService (or something)
+//        return null;
+//    }
 
     @GET
     @Path("/flavors")
@@ -155,7 +167,7 @@ public class VmResource {
             throw new IllegalArgumentException("Unknown VM ID: " + orionGuid);
         }
 
-        privilegeService.requireAnyPrivilegeToSgid(user, virtualMachine.projectId);
+        privilegeService.requireAnyPrivilegeToProjectId(user, virtualMachine.projectId);
 
         VirtualMachineRequest req = virtualMachineService.getVirtualMachineRequest(orionGuid);
 
@@ -163,7 +175,6 @@ public class VmResource {
         Vm vm = getVmFromVmVertical(virtualMachine.vmId);
 
         return new CombinedVm(vm, virtualMachine, req);
-
     }
 
     private Vm getVmFromVmVertical(long vmId) {
@@ -177,24 +188,37 @@ public class VmResource {
     @GET
     @Path("/requests/{orionGuid}")
     public VirtualMachineRequest getVmRequest(@PathParam("orionGuid") UUID orionGuid) {
+        VirtualMachine virtualMachine = virtualMachineService.getVirtualMachine(orionGuid);
+
+        if (virtualMachine == null) {
+            // TODO need to return 404 here
+            throw new IllegalArgumentException("Unknown VM ID: " + orionGuid);
+        }
+
+        privilegeService.requireAnyPrivilegeToProjectId(user, virtualMachine.projectId);
         logger.info("getting vm request with orionGuid {}", orionGuid);
         return virtualMachineService.getVirtualMachineRequest(orionGuid);
+        
     }
 
-    @POST
-    @Path("/")
-    public VirtualMachineRequest createVm(@QueryParam("orionGuid") UUID orionGuid, 
-            @QueryParam("operatingSystem") String operatingSystem, 
-            @QueryParam("tier") int tier, 
-            @QueryParam("controlPanel") String controlPanel, 
-            @QueryParam("managedLevel") int managedLevel, 
-            @QueryParam("shopperId") String shopperId) {
-
-        logger.info("creating new vm request for orionGuid {}", orionGuid);
-        virtualMachineService.createVirtualMachineRequest(orionGuid, operatingSystem, controlPanel, tier, managedLevel, shopperId);
-        return virtualMachineService.getVirtualMachineRequest(orionGuid);
-
-    }
+//    @POST
+//    @Path("/")
+//    public VirtualMachineRequest createVm(@QueryParam("orionGuid") UUID orionGuid, 
+//            @QueryParam("operatingSystem") String operatingSystem, 
+//            @QueryParam("tier") int tier, 
+//            @QueryParam("controlPanel") String controlPanel, 
+//            @QueryParam("managedLevel") int managedLevel, 
+//            @QueryParam("shopperId") String shopperId) {
+//
+//        if (!user.getShopperId().equals(shopperId)) {
+//            throw new AuthorizationException(user.getShopperId() + " can not create a vm with a different shopperId(" + shopperId + ")");
+//        }
+//        
+//        logger.info("creating new vm request for orionGuid {}", orionGuid);
+//        virtualMachineService.createVirtualMachineRequest(orionGuid, operatingSystem, controlPanel, tier, managedLevel, shopperId);
+//        return virtualMachineService.getVirtualMachineRequest(orionGuid);
+//
+//    }
 
     @POST
     @Path("{vmId}/start")
@@ -248,7 +272,7 @@ public class VmResource {
         // Check if vm exists and user has access to the vm.
         long vmProjectId = getVmProjectId(vmId);
 
-        privilegeService.requireAnyPrivilegeToSgid(user, vmProjectId);
+        privilegeService.requireAnyPrivilegeToProjectId(user, vmProjectId);
 
         long actionId = actionService.createAction(vmId, type, new JSONObject().toJSONString(), user.getId());
 
@@ -298,13 +322,6 @@ public class VmResource {
         public String password;
     }
 
-    @GET
-    @Path("/provisions/{orionGuid}")
-    public Action getProvisionAction(@PathParam("orionGuid") UUID orionGuid) {
-
-        return getActionFromOrionGuid(orionGuid);
-    }
-
     @POST
     @Path("/provisions/")
     public Action provisionVm(ProvisionVmRequest provisionRequest) throws InterruptedException {
@@ -312,6 +329,10 @@ public class VmResource {
         logger.info("provisioning vm with orionGuid {}", provisionRequest.orionGuid);
 
         VirtualMachineRequest vmRequest = getVmRequestToProvision(provisionRequest.orionGuid);
+        
+        if (!(user.getShopperId().equals(vmRequest.shopperId))) {
+            throw new AuthorizationException(user.getShopperId() + " does not have privilege for vm request with orion guid " + vmRequest.orionGuid);
+        }
 
         Project project = createProject(provisionRequest.orionGuid, provisionRequest.dataCenterId);
 
@@ -405,6 +426,8 @@ public class VmResource {
         if (virtualMachine == null) {
             throw new NotFoundException("vmId " + vmId + " not found");
         }
+        
+        privilegeService.requireAnyPrivilegeToProjectId(user, virtualMachine.projectId);
 
         // TODO verify VM status is destroyable
 

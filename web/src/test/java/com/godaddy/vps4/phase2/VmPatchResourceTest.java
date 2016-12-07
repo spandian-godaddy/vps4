@@ -1,12 +1,15 @@
 package com.godaddy.vps4.phase2;
 
 import org.junit.Test;
+import org.mockito.Mockito;
 
 import com.godaddy.vps4.jdbc.DatabaseModule;
 import com.godaddy.vps4.jdbc.Sql;
 import com.godaddy.vps4.project.Project;
 import com.godaddy.vps4.project.ProjectService;
 import com.godaddy.vps4.project.jdbc.JdbcProjectService;
+import com.godaddy.vps4.security.PrivilegeService;
+import com.godaddy.vps4.security.Vps4User;
 import com.godaddy.vps4.vm.VirtualMachine;
 import com.godaddy.vps4.vm.VirtualMachineService;
 import com.godaddy.vps4.vm.jdbc.JdbcVirtualMachineService;
@@ -30,6 +33,7 @@ public class VmPatchResourceTest {
     Injector injector = Guice.createInjector(new DatabaseModule());
     VirtualMachineService virtualMachineService;
     ProjectService projectService;
+    PrivilegeService privilegeService = Mockito.mock(PrivilegeService.class);
     Project project;
     UUID orionGuid;
     long vmId;
@@ -70,7 +74,7 @@ public class VmPatchResourceTest {
     private VirtualMachine updateVmName(String newName) {
         VirtualMachine vm = virtualMachineService.getVirtualMachine(vmId);
         assertEquals(initialName, vm.name);
-        VmPatchResource patchResource = new VmPatchResource(virtualMachineService);
+        VmPatchResource patchResource = new VmPatchResource(virtualMachineService, null, privilegeService);
         VmPatch vmPatch = new VmPatch();
         vmPatch.name = newName;
         patchResource.updateVm(vmId, vmPatch);
