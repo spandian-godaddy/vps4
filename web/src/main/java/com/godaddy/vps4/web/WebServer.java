@@ -4,7 +4,6 @@ import java.io.IOException;
 import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.time.Duration;
 import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.List;
@@ -13,7 +12,6 @@ import java.util.stream.Collectors;
 
 import javax.servlet.DispatcherType;
 
-import org.apache.http.impl.client.HttpClientBuilder;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.ServerConnector;
 import org.eclipse.jetty.server.handler.HandlerList;
@@ -30,17 +28,13 @@ import com.godaddy.vps4.hfs.HfsClientModule;
 import com.godaddy.vps4.hfs.HfsMockModule;
 import com.godaddy.vps4.jdbc.DatabaseModule;
 import com.godaddy.vps4.security.SecurityModule;
-import com.godaddy.vps4.security.Vps4UserService;
-import com.godaddy.vps4.vm.VirtualMachineService;
 import com.godaddy.vps4.vm.VmModule;
 import com.godaddy.vps4.web.network.NetworkModule;
 import com.godaddy.vps4.web.security.AuthenticationFilter;
-import com.godaddy.vps4.web.security.Vps4RequestAuthenticator;
+import com.godaddy.vps4.web.security.RequestAuthenticator;
 import com.godaddy.vps4.web.security.Vps4UserFakeModule;
 import com.godaddy.vps4.web.security.Vps4UserModule;
-import com.godaddy.vps4.web.security.sso.HttpKeyService;
-import com.godaddy.vps4.web.security.sso.KeyService;
-import com.godaddy.vps4.web.security.sso.SsoTokenExtractor;
+import com.godaddy.vps4.web.security.sso.SsoModule;
 import com.godaddy.vps4.web.util.resteasy.Vps4GuiceResteasyBootstrapServletContextListener;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
@@ -129,21 +123,22 @@ public class WebServer {
 
         modules.add(new GuiceFilterModule());
         modules.add(new SwaggerModule());
-        
-        if (System.getProperty("vps4.hfs.mock", "false").equals("true")) {       
+
+        if (System.getProperty("vps4.hfs.mock", "false").equals("true")) {
             modules.add(new HfsMockModule());
-            logger.info("USING MOCK HFS");        
-         }     
-         else{      
+            logger.info("USING MOCK HFS");
+         }
+         else{
              modules.add(new HfsClientModule());
          }
-        
+
 
         modules.add(getUserModule(useFakeUser));
 
         modules.add(new DatabaseModule());
         modules.add(new WebModule());
         modules.add(new SecurityModule());
+        modules.add(new SsoModule());
 
         modules.add(new VmModule());
         modules.add(new NetworkModule());
@@ -159,10 +154,12 @@ public class WebServer {
         ServletContextHandler handler = new ServletContextHandler();
         handler.setContextPath("/");
         handler.addEventListener(injector.getInstance(Vps4GuiceResteasyBootstrapServletContextListener.class));
-        
-        if (!useFakeUser)
-        {
-            addAuthentication(handler, injector);
+
+        if (!useFakeUser) {
+            RequestAuthenticator requestAuthenticator = injector.getInstance(RequestAuthenticator.class);
+            handler.addFilter(
+                    new FilterHolder(new AuthenticationFilter(requestAuthenticator)),
+                    "/api/*", EnumSet.of(DispatcherType.REQUEST));
         }
 
         handler.addFilter(CorsFilter.class, "/api/*", EnumSet.allOf(DispatcherType.class));
@@ -183,32 +180,6 @@ public class WebServer {
         else {
             return new Vps4UserModule();
         }
-    }
-
-    private static void addAuthentication(ServletContextHandler handler, Injector injector) {
-
-        Config conf = injector.getInstance(Config.class);
-
-
-        // TODO wire up KeyService using DI
-        // TODO properly configure HTTP client (max routes per host, etc)
-        KeyService keyService = new HttpKeyService(conf.get("sso.url"), HttpClientBuilder.create().build());
-
-
-        long sessionTimeoutMs = Duration.ofSeconds(
-                Long.parseLong(
-                        conf.get(
-                                "auth.timeout",
-                                String.valueOf(Duration.ofHours(24).getSeconds())))).toMillis();
-        logger.info("JWT timeout: {}", sessionTimeoutMs);
-
-        SsoTokenExtractor tokenExtractor = new SsoTokenExtractor(keyService, sessionTimeoutMs);
-
-        VirtualMachineService virtualMachineService = injector.getInstance(VirtualMachineService.class);
-        Vps4UserService userService = injector.getInstance(Vps4UserService.class);
-        handler.addFilter(
-                new FilterHolder(new AuthenticationFilter(new Vps4RequestAuthenticator(tokenExtractor, userService, virtualMachineService, conf))),
-                "/api/*", EnumSet.of(DispatcherType.REQUEST));
     }
 
     static boolean isVps4Api(Class<?> resourceClass) {
