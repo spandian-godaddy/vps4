@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import javax.inject.Singleton;
 import javax.servlet.DispatcherType;
 import javax.servlet.ServletContext;
 import javax.servlet.ServletContextEvent;
@@ -23,7 +24,6 @@ import com.godaddy.vps4.security.SecurityModule;
 import com.godaddy.vps4.vm.VmModule;
 import com.godaddy.vps4.web.network.NetworkModule;
 import com.godaddy.vps4.web.security.AuthenticationFilter;
-import com.godaddy.vps4.web.security.RequestAuthenticator;
 import com.godaddy.vps4.web.security.Vps4UserFakeModule;
 import com.godaddy.vps4.web.security.Vps4UserModule;
 import com.godaddy.vps4.web.security.sso.SsoModule;
@@ -32,6 +32,7 @@ import com.google.inject.Guice;
 import com.google.inject.Injector;
 import com.google.inject.Module;
 import com.google.inject.servlet.GuiceFilter;
+import com.google.inject.servlet.ServletModule;
 
 import io.swagger.config.Scanner;
 import io.swagger.config.ScannerFactory;
@@ -54,18 +55,9 @@ public class Vps4Application implements ServletContextListener {
 
         resteasyListener.contextInitialized(sce);
 
-        if (!useFakeUser) {
-            RequestAuthenticator requestAuthenticator = injector.getInstance(RequestAuthenticator.class);
-
-            context.addFilter("Vps4AuthFilter", new AuthenticationFilter(requestAuthenticator))
-                .addMappingForUrlPatterns(EnumSet.of(DispatcherType.REQUEST), false, "/api/*");
-        }
-
-        context.addFilter("CORS", CorsFilter.class)
-            .addMappingForUrlPatterns(EnumSet.of(DispatcherType.REQUEST), false,"/api/*");
-
-        context.addFilter("GuiceFilter", injector.getInstance(GuiceFilter.class))
-            .addMappingForUrlPatterns(EnumSet.allOf(DispatcherType.class), false, "/*");
+        context.addFilter("GuiceFilter",
+                injector.getInstance(GuiceFilter.class))
+                .addMappingForUrlPatterns(EnumSet.allOf(DispatcherType.class), true, "/*");
 
         populateSwaggerModels(injector);
     }
@@ -118,6 +110,19 @@ public class Vps4Application implements ServletContextListener {
         //modules.add(new FakeCpanelModule());
         modules.add(new CpanelModule());
         modules.add(new CommandClientModule());
+        modules.add(new ServletModule() {
+            @Override
+            public void configureServlets() {
+
+                bind(CorsFilter.class).in(Singleton.class);
+                filter("/api/*").through(CorsFilter.class);
+
+                if (!useFakeUser) {
+                    bind(AuthenticationFilter.class).in(Singleton.class);
+                    filter("/api/*").through(AuthenticationFilter.class);
+                }
+            }
+        });
 
         return Guice.createInjector(modules);
     }

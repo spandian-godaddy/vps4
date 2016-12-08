@@ -3,6 +3,7 @@ package com.godaddy.vps4.web.security;
 import java.io.IOException;
 import java.io.Writer;
 
+import javax.inject.Inject;
 import javax.servlet.Filter;
 import javax.servlet.FilterChain;
 import javax.servlet.FilterConfig;
@@ -36,6 +37,7 @@ public class AuthenticationFilter implements Filter {
 
     final RequestAuthenticator authenticator;
 
+    @Inject
     public AuthenticationFilter(RequestAuthenticator authenticator) {
         this.authenticator = authenticator;
     }
