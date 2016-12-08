@@ -4,7 +4,9 @@ import java.io.IOException;
 import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.net.UnknownHostException;
 
+import org.apache.curator.framework.CuratorFramework;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.ServerConnector;
 import org.eclipse.jetty.server.handler.HandlerList;
@@ -14,6 +16,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.godaddy.vps4.config.Config;
+import com.godaddy.vps4.util.ZooKeeperClient;
+import com.godaddy.vps4.web.servicediscovery.ServiceRegistration;
+import com.godaddy.vps4.web.servicediscovery.ServiceRegistrationContextListener;
 import com.google.inject.Injector;
 
 public class WebServer {
@@ -53,6 +58,20 @@ public class WebServer {
 
         // TODO bind with ServiceLoader
         handler.addEventListener(new Vps4Application());
+
+        boolean serviceDiscoveryEnabled = Boolean.parseBoolean(conf.get("servicediscovery.enabled", "false"));
+        if (serviceDiscoveryEnabled) {
+            CuratorFramework zk = ZooKeeperClient.getInstance();
+
+            ServiceRegistration serviceRegistration = new ServiceRegistration();
+            serviceRegistration.address = resolveHostname();
+            serviceRegistration.locations.add("/api/");
+            serviceRegistration.name = "vps4";
+            serviceRegistration.port = port;
+            serviceRegistration.sslPort = 0;
+
+            handler.addEventListener(new ServiceRegistrationContextListener(serviceRegistration, "/service/registrations/", zk));
+        }
 
         handlers.addHandler(handler);
 
@@ -98,6 +117,15 @@ public class WebServer {
 
     static int getStopPort() {
         return Integer.parseInt(System.getProperty("hfs.http.stopPort", "9081"));
+    }
+
+    protected static String resolveHostname() {
+        try {
+            return InetAddress.getLocalHost().getHostName();
+        }
+        catch (UnknownHostException e) {
+            throw new RuntimeException("Unable to determine local hostname", e);
+        }
     }
 
 }
