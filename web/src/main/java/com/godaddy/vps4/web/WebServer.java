@@ -70,7 +70,9 @@ public class WebServer {
             serviceRegistration.port = port;
             serviceRegistration.sslPort = 0;
 
-            handler.addEventListener(new ServiceRegistrationContextListener(serviceRegistration, "/service/registrations/", zk));
+            String path = conf.get("servicediscovery.zk.path");
+
+            handler.addEventListener(new ServiceRegistrationContextListener(serviceRegistration, path, zk));
         }
 
         handlers.addHandler(handler);
