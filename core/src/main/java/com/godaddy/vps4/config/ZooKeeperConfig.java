@@ -101,11 +101,15 @@ public class ZooKeeperConfig extends BasicConfig implements Closeable {
 
     protected void readConfig(String parentPrefix, String path) throws Exception {
 
-        logger.trace("reading node {}  (parent prefix: {})", path, parentPrefix);
+        logger.debug("reading node {}  (parent prefix: {})", path, parentPrefix);
 
         // read data of node
         //
         byte[] utf8Data = getData(path);
+        if (utf8Data == null) {
+            logger.warn("No config found in ZooKeeper at path: {}", path);
+            return;
+        }
 
         String data = new String(utf8Data, Charsets.UTF8);
 
