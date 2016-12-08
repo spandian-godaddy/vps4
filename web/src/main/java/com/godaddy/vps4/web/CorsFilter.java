@@ -25,28 +25,28 @@ public class CorsFilter implements Filter {
 
     @Override
     public void doFilter(ServletRequest req, ServletResponse res, FilterChain chain) throws IOException, ServletException {
-
+        logger.info("CorsFilter");
         HttpServletRequest request = (HttpServletRequest)req;
         HttpServletResponse response = (HttpServletResponse)res;
 
         String origin = request.getHeader("Origin");
         if (origin != null) {
 
+            // Note: we're allowing any origin here with the assumption
+            //       that the actual resource will process the 'Authorization'
+            //       header when the actual request occurs.
+            //       We could probably also process the Authorization header
+            //       in the pre-flight request
+            response.setHeader("Access-Control-Allow-Origin", origin);
+            response.setHeader("Access-Control-Allow-Methods", "POST, GET, PUT, DELETE, PATCH");
+            response.setHeader("Access-Control-Allow-Headers", "Authorization, Content-Type");
+
+            // don't allow the client to send us cookies
+            response.setHeader("Access-Control-Allow-Credentials", "false");
+
             if (request.getHeader("Access-Control-Request-Method") != null) {
 
                 logger.debug("pre-flight CORS request: {}", origin);
-
-                // Note: we're allowing any origin here with the assumption
-                //       that the actual resource will process the 'Authorization'
-                //       header when the actual request occurs.
-                //       We could probably also process the Authorization header
-                //       in the pre-flight request
-                response.setHeader("Access-Control-Allow-Origin", origin);
-                response.setHeader("Access-Control-Allow-Methods", "POST, GET, PUT, DELETE, PATCH");
-                response.setHeader("Access-Control-Allow-Headers", "Authorization, Content-Type");
-
-                // don't allow the client to send us cookies
-                response.setHeader("Access-Control-Allow-Credentials", "false");
 
                 // don't process any downstream filters, those will be handled
                 // when the request itself (not the pre-flight) comes in
