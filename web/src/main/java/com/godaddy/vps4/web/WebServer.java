@@ -66,7 +66,7 @@ public class WebServer {
             ServiceRegistration serviceRegistration = new ServiceRegistration();
             serviceRegistration.address = resolveHostname();
             serviceRegistration.locations.add("/api/");
-            serviceRegistration.name = "vps4";
+            serviceRegistration.name = "api";
             serviceRegistration.port = port;
             serviceRegistration.sslPort = 0;
 
