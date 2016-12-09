@@ -195,7 +195,7 @@
         <dependency>
             <groupId>hfs</groupId>
             <artifactId>vhfs-common-web-lib</artifactId>
-            <version>1.0.0.27031</version>
+            <version>1.0.0.27699</version>
             <exclusions>
                 <exclusion>
                     <groupId>*</groupId>

@@ -188,16 +188,14 @@ public class VmResource {
     @GET
     @Path("/requests/{orionGuid}")
     public VirtualMachineRequest getVmRequest(@PathParam("orionGuid") UUID orionGuid) {
-        VirtualMachine virtualMachine = virtualMachineService.getVirtualMachine(orionGuid);
-
-        if (virtualMachine == null) {
-            // TODO need to return 404 here
+        VirtualMachineRequest vmRequest = virtualMachineService.getVirtualMachineRequest(orionGuid);
+        if (vmRequest == null) {
             throw new IllegalArgumentException("Unknown VM ID: " + orionGuid);
         }
-
-        privilegeService.requireAnyPrivilegeToProjectId(user, virtualMachine.projectId);
-        logger.info("getting vm request with orionGuid {}", orionGuid);
-        return virtualMachineService.getVirtualMachineRequest(orionGuid);
+        if (!(vmRequest.shopperId.equals(user.getShopperId()))){
+            throw new AuthorizationException(user.getShopperId() + " does not have privilege for vmRequest with orion guid " + orionGuid);
+        }
+        return vmRequest;
         
     }
 
@@ -384,6 +382,7 @@ public class VmResource {
     }
 
     private VirtualMachineRequest getVmRequestToProvision(UUID orionGuid) {
+        logger.debug("Got request to provision server with guid {}", orionGuid);
         VirtualMachineRequest request = virtualMachineService.getVirtualMachineRequest(orionGuid);
         if (request == null) {
             throw new Vps4Exception("REQUEST_NOT_FOUND", 
@@ -454,6 +453,7 @@ public class VmResource {
     @GET
     @Path("/orionRequests")
     public List<VirtualMachineRequest> getOrionRequests() {
+        logger.debug("Getting orion requests for shopper {}", user.getShopperId());
         return virtualMachineService.getOrionRequests(user.getShopperId());
     }
 }
