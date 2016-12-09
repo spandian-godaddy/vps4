@@ -7,6 +7,9 @@ import static org.junit.Assert.assertTrue;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.stream.Collectors;
 
 import javax.sql.DataSource;
@@ -124,14 +127,24 @@ public class VirtualMachineServiceTest {
     }
     
     @Test
-    public void testGetOrCreateCredit() {
+    public void testGetOrCreateCredit() throws InterruptedException {
         
         List<VirtualMachineRequest> requests = virtualMachineService.getOrionRequests(vps4User.getShopperId());
         assertTrue(requests.isEmpty());
 
-        virtualMachineService.createOrionRequestIfNoneExists(vps4User);
+        int numberOfTasks = 10;
+        List<Callable<Void>> tasks = new ArrayList<>();
+        for (int i = 0; i < numberOfTasks; i++) {
+            tasks.add(() -> {
+                virtualMachineService.createOrionRequestIfNoneExists(vps4User);
+                return null;
+            });
+        }
+        ExecutorService executor = Executors.newFixedThreadPool(numberOfTasks);
+        executor.invokeAll(tasks);
+
         requests = virtualMachineService.getOrionRequests(vps4User.getShopperId());
-        assertTrue(!requests.isEmpty());
+        assertEquals(1, requests.size());
         vmRequests.add(requests.get(0).orionGuid);
 
         Project project = SqlTestData.createProject(dataSource);

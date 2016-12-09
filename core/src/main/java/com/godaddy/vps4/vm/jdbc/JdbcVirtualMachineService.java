@@ -170,14 +170,6 @@ public class JdbcVirtualMachineService implements VirtualMachineService {
 
     @Override
     public void createOrionRequestIfNoneExists(Vps4User vps4User) {
-        Sql.with(dataSource).exec(
-                "INSERT INTO orion_request (orion_guid, operating_system, tier, control_panel, managed_level, shopper_id) "
-                        + "SELECT ?, ?, ?, ?, ?, ? WHERE NOT EXISTS "
-                        + "(SELECT 1 FROM orion_request WHERE shopper_id = ? AND provision_date IS NULL"
-                        + " UNION SELECT 1 FROM virtual_machine vm "
-                        + "JOIN user_project_privilege up ON up.project_id = vm.project_id "
-                        + "JOIN vps4_user u ON up.vps4_user_id = u.vps4_user_id "
-                        + "WHERE u.vps4_user_id = ? AND vm.valid_until = 'infinity');",
-                null, UUID.randomUUID(), "linux", 10, "cpanel", 1, vps4User.getShopperId(), vps4User.getShopperId(), vps4User.getId());
+        Sql.with(dataSource).exec("SELECT * FROM auto_create_orion_request(?)", null, vps4User.getId());
     }
 }
