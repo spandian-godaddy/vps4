@@ -122,8 +122,8 @@
                             <arguments>
                                 <!-- Note: hfs.zk.hosts needs to be set -->
                                 <argument>/config/vps4</argument>
-                                <argument>src/main/resources/com/godaddy/vps4/config/base</argument>
-                                <argument>src/main/resources/com/godaddy/vps4/config/${vps4.env}</argument>
+                                <argument>${project.basedir}/src/main/resources/com/godaddy/vps4/config/base</argument>
+                                <argument>${project.basedir}/src/main/resources/com/godaddy/vps4/config/${vps4.env}</argument>
                             </arguments>
                         </configuration>
                         <goals>
