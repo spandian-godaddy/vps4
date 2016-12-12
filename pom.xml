@@ -4,7 +4,7 @@
     <parent>
         <groupId>com.godaddy.hfs</groupId>
         <artifactId>hfs-base-project</artifactId>
-        <version>0.0.1-SNAPSHOT</version>
+        <version>0.2.0</version>
     </parent>
 
     <groupId>com.godaddy.vps4</groupId>
