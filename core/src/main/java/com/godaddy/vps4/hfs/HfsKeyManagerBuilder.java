@@ -18,6 +18,7 @@ import java.security.interfaces.RSAPrivateKey;
 import java.security.spec.EncodedKeySpec;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.util.Collection;
+import java.util.Objects;
 
 import javax.net.ssl.KeyManager;
 import javax.net.ssl.X509KeyManager;
@@ -28,7 +29,6 @@ import org.slf4j.LoggerFactory;
 import com.godaddy.hfs.crypto.PEMFile;
 import com.godaddy.hfs.io.Charsets;
 import com.godaddy.hfs.config.Config;
-import com.google.common.io.ByteStreams;
 
 public class HfsKeyManagerBuilder {
 
@@ -122,32 +122,28 @@ public class HfsKeyManagerBuilder {
 
     public static KeyManager newKeyManager(Config config) {
 
-        // TODO Get the key from Zoookeeper based on environment
         String keyPath = config.get("hfs.client.key");
         String certPath = config.get("hfs.client.cert");
 
-        InputStream isKey = HfsClientProvider.class.getResourceAsStream(keyPath);
-        InputStream isCrt = HfsClientProvider.class.getResourceAsStream(certPath);
+        logger.info("reading HFS key/cert from {}/{}", keyPath, certPath);
 
-        try {
-            byte[] bytesKey = ByteStreams.toByteArray(isKey);
-            byte[] bytesCrt = ByteStreams.toByteArray(isCrt);
+        byte[] bytesKey = config.getData(keyPath);
+        byte[] bytesCrt = config.getData(certPath);
 
-            PEMFile privatePemFile = PEMFile.readPEM(new InputStreamReader(
-                    new ByteArrayInputStream(bytesKey),
-                    Charsets.UTF8));
-            PEMFile publicPemFile = PEMFile.readPEM(new InputStreamReader(
-                    new ByteArrayInputStream(bytesCrt),
-                    Charsets.UTF8));
+        Objects.requireNonNull(bytesKey, "HFS key is required");
+        Objects.requireNonNull(bytesCrt, "HFS cert is required");
 
-            logger.info("client private key: {}", privatePemFile.getPrivateKey());
-            logger.info("client public key: {}", publicPemFile.getCertChain().toString());
+        PEMFile privatePemFile = PEMFile.readPEM(new InputStreamReader(
+                new ByteArrayInputStream(bytesKey),
+                Charsets.UTF8));
+        PEMFile publicPemFile = PEMFile.readPEM(new InputStreamReader(
+                new ByteArrayInputStream(bytesCrt),
+                Charsets.UTF8));
 
-            return new HfsKeyManager(publicPemFile.getCertChain(), privatePemFile.getPrivateKey());
-        }
-        catch (IOException e) {
-            throw new RuntimeException(e);
-        }
+        logger.info("client private key: {}", privatePemFile.getPrivateKey());
+        logger.info("client public key: {}", publicPemFile.getCertChain().toString());
+
+        return new HfsKeyManager(publicPemFile.getCertChain(), privatePemFile.getPrivateKey());
     }
 
 
