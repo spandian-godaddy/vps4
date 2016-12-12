@@ -4,7 +4,7 @@ import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.sql.DataSource;
 
-import com.godaddy.vps4.config.Config;
+import com.godaddy.hfs.config.Config;
 
 public class DataSourceProvider implements Provider<DataSource> {
 

@@ -17,6 +17,19 @@
 
     <build>
         <plugins>
+        
+            <!--  TODO: uncomment once ZkInit is running
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-jar-plugin</artifactId>
+                <version>3.0.2</version>
+                <configuration>
+                    <excludes>
+                        <exclude>/com/godaddy/vps4/config/**</exclude>
+                    </excludes>
+                </configuration>
+            </plugin>
+             -->
 
             <plugin>
                 <groupId>org.codehaus.mojo</groupId>
@@ -31,8 +44,8 @@
                         <configuration>
                             <quiet>true</quiet>
                             <files>
-                                <file>src/main/resources/com/godaddy/vps4/config/base/vps4.properties</file>
-                                <file>src/main/resources/com/godaddy/vps4/config/${vps4.env}/vps4.properties</file>
+                                <file>src/main/resources/com/godaddy/vps4/config/base/config.properties</file>
+                                <file>src/main/resources/com/godaddy/vps4/config/${vps4.env}/config.properties</file>
                             </files>
                         </configuration>
                     </execution>
@@ -102,6 +115,21 @@
                             <goal>java</goal>
                         </goals>
                     </execution>
+                    <execution>
+                        <id>zk-init</id>
+                        <configuration>
+                            <mainClass>com.godaddy.hfs.tools.ZkInit</mainClass>
+                            <arguments>
+                                <!-- Note: hfs.zk.hosts needs to be set -->
+                                <argument>/config/vps4</argument>
+                                <argument>src/main/resources/com/godaddy/vps4/config/base</argument>
+                                <argument>src/main/resources/com/godaddy/vps4/config/${vps4.env}</argument>
+                            </arguments>
+                        </configuration>
+                        <goals>
+                            <goal>java</goal>
+                        </goals>
+                    </execution>
                 </executions>
             </plugin>
             
@@ -109,6 +137,37 @@
     </build>
 
     <dependencies>
+    
+        <dependency>
+            <groupId>com.godaddy.hfs</groupId>
+            <artifactId>hfs-config</artifactId>
+            <version>0.0.1-SNAPSHOT</version>
+        </dependency>
+    
+        <dependency>
+            <groupId>com.godaddy.hfs</groupId>
+            <artifactId>hfs-config-zookeeper</artifactId>
+            <version>0.0.1-SNAPSHOT</version>
+        </dependency>
+    
+        <dependency>
+            <groupId>com.godaddy.hfs</groupId>
+            <artifactId>hfs-crypto</artifactId>
+            <version>0.0.1-SNAPSHOT</version>
+        </dependency>
+        
+        <dependency>
+            <groupId>com.godaddy.hfs</groupId>
+            <artifactId>hfs-jdbc</artifactId>
+            <version>0.0.1-SNAPSHOT</version>
+        </dependency>
+        
+        <!-- https://mvnrepository.com/artifact/org.apache.commons/commons-lang3 -->
+        <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-lang3</artifactId>
+            <version>3.0</version>
+        </dependency>
     
         <!-- JAX-RS extensions -->
         <dependency>
@@ -127,56 +186,12 @@
                     <artifactId>*</artifactId>
                 </exclusion>
             </exclusions>
-        </dependency>
-
-        <!-- Encryption -->
-        <dependency>
-            <groupId>org.bouncycastle</groupId>
-            <artifactId>bcprov-jdk15on</artifactId>
-            <version>1.54</version>
-        </dependency>
-        <dependency>
-            <groupId>org.bouncycastle</groupId>
-            <artifactId>bcpkix-jdk15on</artifactId>
-            <version>1.54</version>
-        </dependency>
-
-        <!-- basic dependency injection -->
-        <dependency>
-            <groupId>com.google.inject</groupId>
-            <artifactId>guice</artifactId>
-            <version>4.1.0</version>
-        </dependency>
-
-        <dependency>
-            <groupId>com.zaxxer</groupId>
-            <artifactId>HikariCP</artifactId>
-            <version>2.4.3</version>
-        </dependency>
+        </dependency>        
 
         <dependency>
             <groupId>org.postgresql</groupId>
             <artifactId>postgresql</artifactId>
             <version>9.4-1201-jdbc4</version>
-        </dependency>
-        
-        <dependency>
-            <groupId>com.googlecode.json-simple</groupId>
-            <artifactId>json-simple</artifactId>
-            <version>1.1.1</version>
-        </dependency>
-        
-        <dependency>
-            <groupId>org.apache.curator</groupId>
-            <artifactId>curator-recipes</artifactId>
-            <version>2.9.1</version>
-            <exclusions>
-                <!-- we provide log4j via slf4j bridge -->
-                <exclusion>
-                    <groupId>log4j</groupId>
-                    <artifactId>*</artifactId>
-                </exclusion>
-            </exclusions>
         </dependency>
 
         <!-- HFS Dependencies -->

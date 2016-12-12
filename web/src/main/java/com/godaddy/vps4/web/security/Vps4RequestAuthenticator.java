@@ -6,14 +6,14 @@ import javax.servlet.http.HttpServletRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.godaddy.hfs.sso.SsoTokenExtractor;
+import com.godaddy.hfs.sso.token.IdpSsoToken;
+import com.godaddy.hfs.sso.token.SsoToken;
+import com.godaddy.hfs.config.Config;
 import com.godaddy.vps4.Environment;
-import com.godaddy.vps4.config.Config;
 import com.godaddy.vps4.security.Vps4User;
 import com.godaddy.vps4.security.Vps4UserService;
 import com.godaddy.vps4.vm.VirtualMachineService;
-import com.godaddy.vps4.web.security.sso.SsoTokenExtractor;
-import com.godaddy.vps4.web.security.sso.token.IdpSsoToken;
-import com.godaddy.vps4.web.security.sso.token.SsoToken;
 
 public class Vps4RequestAuthenticator implements RequestAuthenticator {
 
@@ -24,7 +24,7 @@ public class Vps4RequestAuthenticator implements RequestAuthenticator {
     private final Vps4UserService userService;
 
     private final VirtualMachineService virtualMachineService;
-    
+
     private final Config config;
 
     @Inject
@@ -39,11 +39,11 @@ public class Vps4RequestAuthenticator implements RequestAuthenticator {
     private boolean isStagingOrProductionEnv() {
         return ((Environment.CURRENT == Environment.STAGE) || (Environment.CURRENT == Environment.PROD) ? true : false);
     }
-    
+
     private boolean isInternalShopper(Vps4User user, String shopperId) {
         return (user.getShopperId().length() == 3);
     }
-    
+
     @Override
     public Vps4User authenticate(HttpServletRequest request) {
 

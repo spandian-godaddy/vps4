@@ -17,12 +17,12 @@ import javax.crypto.Cipher;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.godaddy.hfs.crypto.PEMFile;
 import com.godaddy.vps4.Environment;
-import com.godaddy.vps4.hfs.crypto.PEMFile;
 
 /**
- *   /com/godaddy/vps4/config/{vps4.env}/vps4.unenc.properties
- *     => /com/godaddy/vps4/config/{vps4.env}/vps4.enc.properties
+ *   /com/godaddy/vps4/config/{vps4.env}/config.unenc.properties
+ *     => /com/godaddy/vps4/config/{vps4.env}/config.enc.properties
  *
  *  openssl genpkey -algorithm RSA -out vps4.${VPS4_ENV}.priv.pem -pkeyopt rsa_keygen_bits:4096
  *  openssl rsa -pubout -in vps4.${VPS4_ENV}.priv.pem -out vps4.${VPS4_ENV}.pub.pem
@@ -106,11 +106,11 @@ public class EncryptionConfig {
 
 
     static Path encryptedPath(String env) {
-        return Paths.get("src/main/resources/com/godaddy/vps4/config/" + env + "/vps4.enc.properties");
+        return Paths.get("src/main/resources/com/godaddy/vps4/config/" + env + "/config.enc.properties");
     }
 
     static Path unencryptedPath(String env) {
-        return Paths.get("src/main/resources/com/godaddy/vps4/config/" + env + "/vps4.unenc.properties");
+        return Paths.get("src/main/resources/com/godaddy/vps4/config/" + env + "/config.unenc.properties");
     }
 
     static PrivateKey readPrivateKey(String env) throws Exception {

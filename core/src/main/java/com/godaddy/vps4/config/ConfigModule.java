@@ -1,5 +1,6 @@
 package com.godaddy.vps4.config;
 
+import com.godaddy.hfs.config.Config;
 import com.google.inject.AbstractModule;
 import com.google.inject.Scopes;
 

@@ -11,7 +11,7 @@ import org.apache.http.entity.ByteArrayEntity;
 import org.apache.http.message.BasicStatusLine;
 import org.junit.Test;
 
-import com.godaddy.vps4.util.Charsets;
+import com.godaddy.hfs.io.Charsets;
 
 import static org.mockito.Mockito.*;
 

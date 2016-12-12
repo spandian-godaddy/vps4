@@ -27,7 +27,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.fasterxml.jackson.jaxrs.json.JacksonJsonProvider;
-import com.godaddy.vps4.config.Config;
+import com.godaddy.hfs.config.Config;
 
 @Singleton
 public class HfsClientProvider<T> implements Provider<T> {

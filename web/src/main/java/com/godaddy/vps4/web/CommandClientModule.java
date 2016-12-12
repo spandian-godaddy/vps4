@@ -4,7 +4,7 @@ import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.godaddy.vps4.config.Config;
+import com.godaddy.hfs.config.Config;
 import com.google.inject.AbstractModule;
 import com.google.inject.Provides;
 

@@ -25,9 +25,9 @@ import javax.net.ssl.X509KeyManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.godaddy.vps4.config.Config;
-import com.godaddy.vps4.hfs.crypto.PEMFile;
-import com.godaddy.vps4.util.Charsets;
+import com.godaddy.hfs.crypto.PEMFile;
+import com.godaddy.hfs.io.Charsets;
+import com.godaddy.hfs.config.Config;
 import com.google.common.io.ByteStreams;
 
 public class HfsKeyManagerBuilder {

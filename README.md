@@ -99,17 +99,29 @@ Migrations must be named in the form `V{version}__{name}.sql`
  *.sql
 
 
+ZooKeeper Configuration
+=======================
+
+    mvn exec:java@zk-init -Dvps4.env={environment} -Dhfs.zk.hosts=somehostzk01.cloud.phx3.gdg,somehostzk02.cloud.phx3.gdg
+
+'vps4.env' is the configuration at core/src/main/resources/com/godaddy/vps4/config/{vps4.env}
+that will override the base configuration at core/src/main/resources/com/godaddy/vps4/config/base
+
+'hfs.zk.hosts' is the ZooKeeper cluster that will be written to
+
+
+
 Encrypted Configuration
 =======================
 
 Configuration files are kept in core/src/main/resources/{environment}/
 
-`vps4.properties` contains all the properties for that particular environment
+`config.properties` contains all the properties for that particular environment
 
 Secrets like, for instance, production database credentials, are stored in an encrypted
 properties file in the environment directory:
 
-`vps4.enc.properties` is a properties file encrypted with the environment's public key
+`config.enc.properties` is a properties file encrypted with the environment's public key
 
 The public and private keys for the respective environments are read from the classpath at:
 
