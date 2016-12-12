@@ -51,7 +51,8 @@ public class Configs {
     static Config buildConfig() {
         config = new SystemPropertyConfig();
 
-        if (ZooKeeperClient.isConfigured()) {
+        // TODO enable when zookeeper config is being pushed
+        if (false) { //ZooKeeperClient.isConfigured()) {
             // if zookeeper is setup, use only it
             logger.info("ZooKeeper client configuration present, using ZooKeeper for configuration");
 
