@@ -51,15 +51,18 @@ public class Configs {
     static Config buildConfig() {
         config = new SystemPropertyConfig();
 
-        // TODO enable when zookeeper config is being pushed
-        if (false) { //ZooKeeperClient.isConfigured()) {
+        if (ZooKeeperClient.isConfigured()) {
             // if zookeeper is setup, use only it
             logger.info("ZooKeeper client configuration present, using ZooKeeper for configuration");
 
             try {
-                config = ConfigNodeReader.toConfig(
-                        new ZooKeeperConfig(ZooKeeperClient.getInstance()).readConfig("/config/vps4"),
-                        config);
+                ConfigNode zkRootNode = new ZooKeeperConfig(ZooKeeperClient.getInstance())
+                        .readConfig("/config/vps4");
+
+                logger.info("zk config: {}", zkRootNode);
+
+                config = ConfigNodeReader.toConfig(zkRootNode, config);
+
             } catch (Exception e) {
                 throw new RuntimeException("Error building ZooKeeper config", e);
             }
