@@ -1,6 +1,9 @@
-package com.godaddy.vps4.vm;
+package com.godaddy.vps4.web.vm;
 
 import java.time.Instant;
+
+import com.godaddy.vps4.vm.VirtualMachine;
+import com.godaddy.vps4.vm.VirtualMachineRequest;
 
 import gdg.hfs.vhfs.vm.Vm;
 

@@ -20,7 +20,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.godaddy.vps4.Vps4Exception;
-import com.godaddy.vps4.config.Config;
+import com.godaddy.hfs.config.Config;
 import com.godaddy.vps4.network.NetworkService;
 import com.godaddy.vps4.orchestration.vm.ProvisionVm;
 import com.godaddy.vps4.orchestration.vm.Vps4DestroyVm;
@@ -35,7 +35,6 @@ import com.godaddy.vps4.security.jdbc.AuthorizationException;
 import com.godaddy.vps4.vm.Action;
 import com.godaddy.vps4.vm.ActionService;
 import com.godaddy.vps4.vm.ActionType;
-import com.godaddy.vps4.vm.CombinedVm;
 import com.godaddy.vps4.vm.Image;
 import com.godaddy.vps4.vm.ImageService;
 import com.godaddy.vps4.vm.ProvisionVmInfo;
@@ -104,15 +103,15 @@ public class VmResource {
     @GET
     @Path("actions/{actionId}")
     public Action getAction(@PathParam("actionId") long actionId) {
-        
+
         Action action = actionService.getAction(actionId);
-        
+
         if (action == null) {
             throw new NotFoundException("actionId " + actionId + " not found");
         }
-        
+
         privilegeService.requireAnyPrivilegeToVmId(user, action.virtualMachineId);
-        
+
         return action;
     }
 
@@ -127,7 +126,7 @@ public class VmResource {
 //
 //        return action;
 //    }
-//    
+//
 //    @GET
 //    @Path("/provisions/{orionGuid}")
 //    public Action getProvisionAction(@PathParam("orionGuid") UUID orionGuid) {
@@ -200,22 +199,22 @@ public class VmResource {
             throw new AuthorizationException(user.getShopperId() + " does not have privilege for vmRequest with orion guid " + orionGuid);
         }
         return vmRequest;
-        
+
     }
 
 //    @POST
 //    @Path("/")
-//    public VirtualMachineRequest createVm(@QueryParam("orionGuid") UUID orionGuid, 
-//            @QueryParam("operatingSystem") String operatingSystem, 
-//            @QueryParam("tier") int tier, 
-//            @QueryParam("controlPanel") String controlPanel, 
-//            @QueryParam("managedLevel") int managedLevel, 
+//    public VirtualMachineRequest createVm(@QueryParam("orionGuid") UUID orionGuid,
+//            @QueryParam("operatingSystem") String operatingSystem,
+//            @QueryParam("tier") int tier,
+//            @QueryParam("controlPanel") String controlPanel,
+//            @QueryParam("managedLevel") int managedLevel,
 //            @QueryParam("shopperId") String shopperId) {
 //
 //        if (!user.getShopperId().equals(shopperId)) {
 //            throw new AuthorizationException(user.getShopperId() + " can not create a vm with a different shopperId(" + shopperId + ")");
 //        }
-//        
+//
 //        logger.info("creating new vm request for orionGuid {}", orionGuid);
 //        virtualMachineService.createVirtualMachineRequest(orionGuid, operatingSystem, controlPanel, tier, managedLevel, shopperId);
 //        return virtualMachineService.getVirtualMachineRequest(orionGuid);
@@ -281,30 +280,30 @@ public class VmResource {
         CommandState command = null;
         switch (type) {
         case START_VM:
-            
+
             Vps4StartVm.Request startRequest = new Vps4StartVm.Request();
             startRequest.actionId = actionId;
             startRequest.vmId = vmId;
 
             command = Commands.execute(commandService, "Vps4StartVm", startRequest);
             break;
-            
+
         case STOP_VM:
             Vps4StopVm.Request stopRequest = new Vps4StopVm.Request();
             stopRequest.actionId = actionId;
             stopRequest.vmId = vmId;
-            
+
             command = Commands.execute(commandService, "Vps4StopVm", stopRequest);
             break;
-            
+
         case RESTART_VM:
             Vps4RestartVm.Request restartRequest = new Vps4RestartVm.Request();
             restartRequest.actionId = actionId;
             restartRequest.vmId = vmId;
-            
+
             command = Commands.execute(commandService, "Vps4RestartVm", restartRequest);
             break;
-            
+
         default:
             throw new IllegalArgumentException("Unknown type: " + type);
         }
@@ -331,7 +330,7 @@ public class VmResource {
         logger.info("provisioning vm with orionGuid {}", provisionRequest.orionGuid);
 
         VirtualMachineRequest vmRequest = getVmRequestToProvision(provisionRequest.orionGuid);
-        
+
         if (!(user.getShopperId().equals(vmRequest.shopperId))) {
             throw new AuthorizationException(user.getShopperId() + " does not have privilege for vm request with orion guid " + vmRequest.orionGuid);
         }
@@ -352,8 +351,8 @@ public class VmResource {
         long actionId = actionService.createAction(vmId, ActionType.CREATE_VM, new JSONObject().toJSONString(), user.getId());
         logger.info("Action id: {}", actionId);
 
-        ProvisionVmInfo vmInfo = new ProvisionVmInfo(provisionRequest.orionGuid, 
-                provisionRequest.name, project.getProjectId(), 
+        ProvisionVmInfo vmInfo = new ProvisionVmInfo(provisionRequest.orionGuid,
+                provisionRequest.name, project.getProjectId(),
                 spec.specId, vmRequest.managedLevel, image);
         logger.info("vmInfo: {}", vmInfo.toString());
 
@@ -372,7 +371,7 @@ public class VmResource {
 
     private CreateVMWithFlavorRequest createHfsProvisionVmRequest(String image, String username,
             String password, Project project, VirtualMachineSpec spec) {
-        
+
         CreateVMWithFlavorRequest hfsProvisionRequest = new CreateVMWithFlavorRequest();
         hfsProvisionRequest.rawFlavor = spec.specName;
 
@@ -381,7 +380,7 @@ public class VmResource {
 
         hfsProvisionRequest.username = username;
         hfsProvisionRequest.password = password;
-        
+
         hfsProvisionRequest.zone = config.get("openstack.zone", null);
         return hfsProvisionRequest;
     }
@@ -390,7 +389,7 @@ public class VmResource {
         logger.debug("Got request to provision server with guid {}", orionGuid);
         VirtualMachineRequest request = virtualMachineService.getVirtualMachineRequest(orionGuid);
         if (request == null) {
-            throw new Vps4Exception("REQUEST_NOT_FOUND", 
+            throw new Vps4Exception("REQUEST_NOT_FOUND",
                     String.format("The virtual machine request for orion guid {} was not found", orionGuid));
         }
         return request;
@@ -399,7 +398,7 @@ public class VmResource {
     private Project createProject(UUID orionGuid, int dataCenterId) {
         Project project = projectService.createProject(orionGuid.toString(), user.getId(), dataCenterId);
         if (project == null) {
-            throw new Vps4Exception("PROJECT_FAILED_TO_CREATE", 
+            throw new Vps4Exception("PROJECT_FAILED_TO_CREATE",
                     "Failed to create new project for orionGuid " + orionGuid.toString());
         }
         return project;
@@ -408,7 +407,7 @@ public class VmResource {
     private VirtualMachineSpec getVirtualMachineSpec(VirtualMachineRequest request) {
         VirtualMachineSpec spec = virtualMachineService.getSpec(request.tier);
         if (spec == null) {
-            throw new Vps4Exception("INVALID_SPEC", 
+            throw new Vps4Exception("INVALID_SPEC",
                     String.format("spec with tier %d not found", request.tier));
         }
         return spec;
@@ -417,7 +416,7 @@ public class VmResource {
     private Image getImage(String name) {
         Image image = imageService.getImage(name);
         if (image == null) {
-            throw new Vps4Exception("INVALID_IMAGE", 
+            throw new Vps4Exception("INVALID_IMAGE",
                     String.format("image %s not found", image));
         }
         return image;
@@ -430,7 +429,7 @@ public class VmResource {
         if (virtualMachine == null) {
             throw new NotFoundException("vmId " + vmId + " not found");
         }
-        
+
         privilegeService.requireAnyPrivilegeToProjectId(user, virtualMachine.projectId);
 
         // TODO verify VM status is destroyable
@@ -441,7 +440,7 @@ public class VmResource {
         Vps4DestroyVm.Request request = new Vps4DestroyVm.Request();
         request.actionId = actionId;
         request.vmId = vmId;
-        
+
         CommandState command = Commands.execute(commandService, "Vps4DestroyVm", request);
 
         // TODO actionService.tagWithCommand(actionId, command.commandId);
