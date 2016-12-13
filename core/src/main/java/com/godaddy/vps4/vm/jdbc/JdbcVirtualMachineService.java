@@ -28,7 +28,7 @@ public class JdbcVirtualMachineService implements VirtualMachineService {
     private String selectVirtualMachineQuery = "SELECT vm.vm_id, vm.orion_guid, vm.project_id, vm.name as \"vm_name\", "
             + "vm.valid_on as \"vm_valid_on\", vm.valid_until as \"vm_valid_until\", vms.spec_id, vms.spec_name, "
             + "vms.tier, vms.cpu_core_count, vms.memory_mib, vms.disk_gib, vms.valid_on as \"spec_valid_on\", "
-            + "vms.valid_until as \"spec_valid_until\", image.name as \"image_name\", ip.ip_address FROM virtual_machine vm "
+            + "vms.valid_until as \"spec_valid_until\", vms.name as \"spec_vps4_name\", image.name as \"image_name\", ip.ip_address FROM virtual_machine vm "
             + "JOIN virtual_machine_spec vms ON vms.spec_id=vm.spec_id "
             + "JOIN image ON image.image_id=vm.image_id "
             + "LEFT JOIN ip_address ip ON ip.vm_id = vm.vm_id AND ip.ip_address_type_id = " + privateIpType + " ";
@@ -77,8 +77,8 @@ public class JdbcVirtualMachineService implements VirtualMachineService {
     protected VirtualMachineSpec mapVirtualMachineSpec(ResultSet rs) throws SQLException {
         Timestamp validUntil = rs.getTimestamp("spec_valid_until");
 
-        return new VirtualMachineSpec(rs.getInt("spec_id"), rs.getString("spec_name"), rs.getInt("tier"), rs.getInt("cpu_core_count"),
-                rs.getInt("memory_mib"), rs.getInt("disk_gib"), rs.getTimestamp("spec_valid_on").toInstant(),
+        return new VirtualMachineSpec(rs.getInt("spec_id"), rs.getString("spec_vps4_name"), rs.getString("spec_name"), rs.getInt("tier"),
+                rs.getInt("cpu_core_count"), rs.getInt("memory_mib"), rs.getInt("disk_gib"), rs.getTimestamp("spec_valid_on").toInstant(),
                 validUntil != null ? validUntil.toInstant() : null);
     }
 
@@ -98,7 +98,7 @@ public class JdbcVirtualMachineService implements VirtualMachineService {
     @Override
     public VirtualMachineSpec getSpec(int tier) {
         return Sql.with(dataSource)
-                .exec("SELECT spec_id, spec_name, tier, cpu_core_count, memory_mib, disk_gib, valid_on as \"spec_valid_on\", "
+                .exec("SELECT spec_id, name as \"spec_vps4_name\", spec_name, tier, cpu_core_count, memory_mib, disk_gib, valid_on as \"spec_valid_on\", "
                         + "valid_until as \"spec_valid_until\" FROM virtual_machine_spec WHERE tier=? ",
                         Sql.nextOrNull(this::mapVirtualMachineSpec), tier);
     }

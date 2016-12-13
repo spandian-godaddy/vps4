@@ -7,6 +7,7 @@ public class VirtualMachineSpec {
     public final int specId;
 
     public final String name;
+    public final String specName;
     public final int tier;
 
     public final int cpuCoreCount;
@@ -16,10 +17,11 @@ public class VirtualMachineSpec {
     public final Instant validOn;
     public final Instant validUntil;
 
-    public VirtualMachineSpec(int specId, String name, int tier, int cpuCoreCount, int memoryMib,
+    public VirtualMachineSpec(int specId, String name, String specName, int tier, int cpuCoreCount, int memoryMib,
             int diskGib, Instant validOn, Instant validUntil) {
         this.specId = specId;
         this.name = name;
+        this.specName = specName;
         this.tier = tier;
         this.cpuCoreCount = cpuCoreCount;
         this.memoryMib = memoryMib;

@@ -20,6 +20,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.godaddy.vps4.Vps4Exception;
+import com.godaddy.vps4.config.Config;
 import com.godaddy.vps4.network.NetworkService;
 import com.godaddy.vps4.orchestration.vm.ProvisionVm;
 import com.godaddy.vps4.orchestration.vm.Vps4DestroyVm;
@@ -48,7 +49,7 @@ import com.godaddy.vps4.web.util.Commands;
 import gdg.hfs.orchestration.CommandService;
 import gdg.hfs.orchestration.CommandState;
 import gdg.hfs.vhfs.cpanel.CPanelService;
-import gdg.hfs.vhfs.vm.CreateVMRequest;
+import gdg.hfs.vhfs.vm.CreateVMWithFlavorRequest;
 import gdg.hfs.vhfs.vm.Flavor;
 import gdg.hfs.vhfs.vm.FlavorList;
 import gdg.hfs.vhfs.vm.Vm;
@@ -74,6 +75,7 @@ public class VmResource {
     private final ActionService actionService;
     private final CommandService commandService;
     private final NetworkService networkService;
+    private final Config config;
 
     @Inject
     public VmResource(PrivilegeService privilegeService,
@@ -84,7 +86,8 @@ public class VmResource {
             CPanelService cPanelService,
             ActionService actionService,
             CommandService commandService,
-            NetworkService networkService) {
+            NetworkService networkService,
+            Config config) {
 
         this.user = user;
         this.virtualMachineService = virtualMachineService;
@@ -95,6 +98,7 @@ public class VmResource {
         this.actionService = actionService;
         this.commandService = commandService;
         this.networkService = networkService;
+        this.config = config;
     }
 
     @GET
@@ -339,7 +343,8 @@ public class VmResource {
         Image image = getImage(provisionRequest.image);
         // TODO - verify that the image matches the request (control panel, managed level, OS)
 
-        CreateVMRequest hfsRequest = createHfsProvisionVmRequest(provisionRequest.image, provisionRequest.username, provisionRequest.password, project, spec);
+        CreateVMWithFlavorRequest hfsRequest = createHfsProvisionVmRequest(provisionRequest.image, provisionRequest.username,
+                provisionRequest.password, project, spec);
 
         // FIXME we don't have the vmId here yet, since we're using the HFS vmId and we haven't made the HFS
         // VM request yet
@@ -365,19 +370,19 @@ public class VmResource {
         return actionService.getAction(actionId);
     }
 
-    private CreateVMRequest createHfsProvisionVmRequest(String image, String username, 
+    private CreateVMWithFlavorRequest createHfsProvisionVmRequest(String image, String username,
             String password, Project project, VirtualMachineSpec spec) {
         
-        CreateVMRequest hfsProvisionRequest = new CreateVMRequest();
-        hfsProvisionRequest.cpuCores = (int) spec.cpuCoreCount;
-        hfsProvisionRequest.diskGiB = (int) spec.diskGib;
-        hfsProvisionRequest.ramMiB = (int) spec.memoryMib;
+        CreateVMWithFlavorRequest hfsProvisionRequest = new CreateVMWithFlavorRequest();
+        hfsProvisionRequest.rawFlavor = spec.specName;
 
         hfsProvisionRequest.sgid = project.getVhfsSgid();
         hfsProvisionRequest.image_name = image;
 
         hfsProvisionRequest.username = username;
         hfsProvisionRequest.password = password;
+        
+        hfsProvisionRequest.zone = config.get("openstack.zone", null);
         return hfsProvisionRequest;
     }
 
