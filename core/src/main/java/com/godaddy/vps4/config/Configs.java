@@ -3,6 +3,10 @@ package com.godaddy.vps4.config;
 import java.io.BufferedReader;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.net.URL;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.security.PrivateKey;
 
 import org.slf4j.Logger;
@@ -73,41 +77,51 @@ public class Configs {
             Environment env = Environment.CURRENT;
             logger.info("configuration environment: {}", env);
 
-            String basePath = "/com/godaddy/vps4/config";
+            String classpathPath = "/com/godaddy/vps4/config";
+            URL configResource = Configs.class.getResource(classpathPath);
+            if (configResource != null) {
 
-            try {
-                //PrivateKey privateKey = readPrivateKey(env);
+                try {
+                    Path basePath = Paths.get(configResource.toURI());
+                    if (Files.exists(basePath)) {
 
-                FileConfig fileConfig = new FileConfig();
+                        logger.info("reading config at base path: {}", basePath);
 
-                // read configs, renaming the root node to "" so that the root of the path
-                // isn't "base" or "dev/test/..."
-                ConfigNode baseNode = fileConfig.readConfig(basePath + "/base").rename("");
-                ConfigNode envNode = fileConfig.readConfig(basePath + "/" + env.getLocalName()).rename("");
+                        FileConfig fileConfig = new FileConfig();
 
-                // TODO decrypt baseNode, envNode
-                // remove 'blah.ext.enc' nodes, replace in ConfigNode tree with 'blah.ext.unenc'
-                // ConfigNodeReader should have intelligence to look for a '.unenc' file and
-                // - for properties files, merge the config values together
-                // - for data files, overwrite the existing with the .unenc
+                        // read configs, renaming the root node to "" so that the root of the path
+                        // isn't "base" or "dev/test/..."
+                        ConfigNode baseNode = fileConfig.readConfig(basePath.resolve("base")).rename("");
+                        ConfigNode envNode = fileConfig.readConfig(basePath.resolve(env.getLocalName())).rename("");
 
-                // merge baseNode, envNode, encEnvNode in overriding order
-                // (properties files are automatically merged since we're writing to a common BasicConfig)
-                // (data files overwrite)
-                BasicConfig mergedConfig = new BasicConfig(config);
+                        // TODO decrypt baseNode, envNode
+                        // remove 'blah.ext.enc' nodes, replace in ConfigNode tree with 'blah.ext.unenc'
+                        // ConfigNodeReader should have intelligence to look for a '.unenc' file and
+                        // - for properties files, merge the config values together
+                        // - for data files, overwrite the existing with the .unenc
 
-                if (baseNode != null) {
-                    ConfigNodeReader.read(baseNode, mergedConfig);
+                        // merge baseNode, envNode, encEnvNode in overriding order
+                        // (properties files are automatically merged since we're writing to a common BasicConfig)
+                        // (data files overwrite)
+                        BasicConfig mergedConfig = new BasicConfig(config);
+
+                        if (baseNode != null) {
+                            ConfigNodeReader.read(baseNode, mergedConfig);
+                        }
+
+                        if (envNode != null) {
+                            ConfigNodeReader.read(envNode, mergedConfig);
+                        }
+
+                        config = mergedConfig;
+                    } else {
+                        logger.info("No config found at path: {}", basePath);
+                    }
+                } catch(Exception e) {
+                    throw new RuntimeException(e);
                 }
-
-                if (envNode != null) {
-                    ConfigNodeReader.read(envNode, mergedConfig);
-                }
-
-                config = mergedConfig;
-
-            } catch(Exception e) {
-                throw new RuntimeException(e);
+            } else {
+                logger.info("No config found on classpath at: {}", classpathPath);
             }
         }
 
