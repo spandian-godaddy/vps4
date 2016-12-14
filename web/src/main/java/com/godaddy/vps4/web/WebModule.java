@@ -20,5 +20,7 @@ public class WebModule extends AbstractModule {
         bind(CPanelResource.class);
         bind(SysAdminResource.class);
         bind(UserResource.class);
+
+        bind(Vps4ExceptionMapper.class);
     }
 }
