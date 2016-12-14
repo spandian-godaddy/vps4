@@ -3,11 +3,16 @@ package com.godaddy.vps4.config;
 import java.io.BufferedReader;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.net.URI;
 import java.net.URL;
+import java.nio.file.FileSystem;
+import java.nio.file.FileSystemNotFoundException;
+import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.security.PrivateKey;
+import java.util.Collections;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -82,7 +87,16 @@ public class Configs {
             if (configResource != null) {
 
                 try {
-                    Path basePath = Paths.get(configResource.toURI());
+                    URI uri = configResource.toURI();
+                    Path basePath = null;
+                    try {
+                        basePath = Paths.get(uri);
+                    } catch (FileSystemNotFoundException e) {
+                        FileSystem fs = FileSystems.newFileSystem(uri, Collections.<String,Object>emptyMap());
+
+                        basePath = fs.provider().getPath(uri);
+                    }
+
                     if (Files.exists(basePath)) {
 
                         logger.info("reading config at base path: {}", basePath);
