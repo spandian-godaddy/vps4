@@ -26,9 +26,9 @@ import javax.net.ssl.X509KeyManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.godaddy.hfs.config.Config;
 import com.godaddy.hfs.crypto.PEMFile;
 import com.godaddy.hfs.io.Charsets;
-import com.godaddy.hfs.config.Config;
 
 public class HfsKeyManagerBuilder {
 
@@ -122,8 +122,8 @@ public class HfsKeyManagerBuilder {
 
     public static KeyManager newKeyManager(Config config) {
 
-        String keyPath = config.get("hfs.client.key");
-        String certPath = config.get("hfs.client.cert");
+        String keyPath = "vps4.key";
+        String certPath = "vps4";
 
         logger.info("reading HFS key/cert from {}/{}", keyPath, certPath);
 

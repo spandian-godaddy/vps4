@@ -1,6 +1,7 @@
 package com.godaddy.vps4.config;
 
 import java.io.BufferedReader;
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.URI;
@@ -12,7 +13,9 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.security.PrivateKey;
+import java.util.ArrayList;
 import java.util.Collections;
+import java.util.List;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -58,6 +61,12 @@ public class Configs {
      * @return
      */
     static Config buildConfig() {
+        
+        String[] zookeeperNodesToRead = {
+                "/config/vps4",
+                "/hfs/ssl/web"
+        };
+        
         config = new SystemPropertyConfig();
 
         if (ZooKeeperClient.isConfigured()) {
@@ -65,12 +74,9 @@ public class Configs {
             logger.info("ZooKeeper client configuration present, using ZooKeeper for configuration");
 
             try {
-                ConfigNode zkRootNode = new ZooKeeperConfig(ZooKeeperClient.getInstance())
-                        .readConfig("/config/vps4");
+                List<ConfigNode> nodes = getZookeeperConfigNodes(zookeeperNodesToRead);
 
-                logger.info("zk config: {}", zkRootNode);
-
-                config = ConfigNodeReader.toConfig(zkRootNode, config);
+                config = mergeConfigs(nodes.toArray(new ConfigNode[nodes.size()]));
 
             } catch (Exception e) {
                 throw new RuntimeException("Error building ZooKeeper config", e);
@@ -117,17 +123,8 @@ public class Configs {
                         // merge baseNode, envNode, encEnvNode in overriding order
                         // (properties files are automatically merged since we're writing to a common BasicConfig)
                         // (data files overwrite)
-                        BasicConfig mergedConfig = new BasicConfig(config);
+                        config = mergeConfigs(baseNode, envNode);
 
-                        if (baseNode != null) {
-                            ConfigNodeReader.read(baseNode, mergedConfig);
-                        }
-
-                        if (envNode != null) {
-                            ConfigNodeReader.read(envNode, mergedConfig);
-                        }
-
-                        config = mergedConfig;
                     } else {
                         logger.info("No config found at path: {}", basePath);
                     }
@@ -140,6 +137,30 @@ public class Configs {
         }
 
         return new SystemPropertyConfig(config);
+    }
+
+    private static List<ConfigNode> getZookeeperConfigNodes(String[] nodesToRead) throws Exception {
+        List<ConfigNode> nodes = new ArrayList<>();
+
+        for (String nodeToRead : nodesToRead) {
+        nodes.add(new ZooKeeperConfig(ZooKeeperClient.getInstance())
+                    .readConfig(nodeToRead));
+        }
+        return nodes;
+    }
+
+    private static Config mergeConfigs(ConfigNode... nodes) throws IOException {
+        
+        BasicConfig mergedConfig = new BasicConfig(config);
+        
+        for (ConfigNode node : nodes) {
+            if (node != null) {
+                logger.info("merging config node: {}", node);
+                ConfigNodeReader.read(node, mergedConfig);
+            }
+        }
+
+        return mergedConfig;
     }
 
     static PrivateKey readPrivateKey(Environment env) throws Exception {
