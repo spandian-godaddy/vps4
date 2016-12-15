@@ -19,8 +19,8 @@ import org.json.simple.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.godaddy.vps4.Vps4Exception;
 import com.godaddy.hfs.config.Config;
+import com.godaddy.vps4.Vps4Exception;
 import com.godaddy.vps4.network.NetworkService;
 import com.godaddy.vps4.orchestration.vm.ProvisionVm;
 import com.godaddy.vps4.orchestration.vm.Vps4DestroyVm;
@@ -110,9 +110,20 @@ public class VmResource {
             throw new NotFoundException("actionId " + actionId + " not found");
         }
 
-        privilegeService.requireAnyPrivilegeToVmId(user, action.virtualMachineId);
+        if (action.virtualMachineId == 0) {
+            requireSameActionUser(action);
+        }
+        else {
+            privilegeService.requireAnyPrivilegeToVmId(user, action.virtualMachineId);
+        }
 
         return action;
+    }
+
+    public void requireSameActionUser(Action action) {
+        if (user.getId() != action.vps4UserId) {
+            throw new AuthorizationException(user.getShopperId() + " is not authorized to view action " + action.id);
+        }
     }
 
 //    @GET
