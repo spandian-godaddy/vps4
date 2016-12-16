@@ -125,13 +125,21 @@ public class DefaultVps4CpanelService implements Vps4CpanelService {
             logger.debug("sites JSON: {}", sitesJson);
             try {
                 JSONObject jsonObject = (JSONObject) parser.parse(sitesJson);
-                JSONObject data = (JSONObject) jsonObject.get("data");
-                JSONArray accnts = (JSONArray) data.get("acct");
 
                 List<CPanelAccount> domains = new ArrayList<>();
-                for (Object object : accnts) {
-                    JSONObject accnt = (JSONObject) object;
-                    domains.add(new CPanelAccount((String) accnt.get("domain")));
+
+                JSONObject data = (JSONObject) jsonObject.get("data");
+                if (data != null) {
+                    JSONArray accnts = (JSONArray) data.get("acct");
+                    if (accnts != null) {
+                        for (Object object : accnts) {
+                            JSONObject accnt = (JSONObject) object;
+                            String domain = (String) accnt.get("domain");
+                            if (domain != null) {
+                                domains.add(new CPanelAccount(domain));
+                            }
+                        }
+                    }
                 }
 
                 return domains;
