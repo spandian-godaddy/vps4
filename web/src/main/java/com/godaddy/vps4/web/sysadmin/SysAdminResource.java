@@ -6,8 +6,8 @@ import javax.inject.Inject;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
-import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
 
 import org.json.simple.JSONObject;
@@ -67,7 +67,7 @@ public class SysAdminResource {
 
     @POST
     @Path("/{vmId}/setPassword")
-    public Action setPassword(@QueryParam("vmId") long vmId, UpdatePasswordRequest updatePasswordRequest){
+    public Action setPassword(@PathParam("vmId") long vmId, UpdatePasswordRequest updatePasswordRequest) {
 
         privilegeService.requireAnyPrivilegeToVmId(user, vmId);
         // TODO: This will need more logic when we include Windows
@@ -109,14 +109,14 @@ public class SysAdminResource {
 
     @POST
     @Path("/{vmId}/enableAdmin")
-    public Action enableUserAdmin(@QueryParam("vmId") long vmId, SetAdminRequest setAdminRequest) {
+    public Action enableUserAdmin(@PathParam("vmId") long vmId, SetAdminRequest setAdminRequest) {
 
         return setUserAdmin(setAdminRequest.username, vmId, true);
     }
 
     @POST
     @Path("/{vmId}/disableAdmin")
-    public Action disableUserAdmin(@QueryParam("vmId") long vmId, SetAdminRequest setAdminRequest) {
+    public Action disableUserAdmin(@PathParam("vmId") long vmId, SetAdminRequest setAdminRequest) {
         return setUserAdmin(setAdminRequest.username, vmId, false);
     }
 
