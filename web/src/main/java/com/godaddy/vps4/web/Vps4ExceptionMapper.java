@@ -20,15 +20,17 @@ public class Vps4ExceptionMapper implements ExceptionMapper<Throwable> {
     @Override
     public Response toResponse(Throwable t) {
 
-        logger.debug("writing response for exception", t);
-
         if (t instanceof WebApplicationException) {
+            logger.debug("writing response for web exception", t);
             WebApplicationException wae = (WebApplicationException)t;
             return wae.getResponse();
         }
 
         if (t instanceof Vps4Exception) {
             Vps4Exception ve = (Vps4Exception)t;
+
+            logger.warn("writing response for VPS4 exception", ve);
+
             JSONObject json = new JSONObject();
             json.put("id", ve.getId());
 
@@ -38,6 +40,7 @@ public class Vps4ExceptionMapper implements ExceptionMapper<Throwable> {
                     .build();
         }
 
+        logger.warn("general exception", t);
         return Response.serverError()
                     .type(MediaType.APPLICATION_JSON)
                     .build();
