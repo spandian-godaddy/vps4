@@ -52,9 +52,11 @@ public class CPanelResource {
     @GET
     @Path("{vmId}/cpanel/session")
     public CPanelSession getCPanelSession(@PathParam("vmId") long vmId) {
-        
+
         privilegeService.requireAnyPrivilegeToVmId(user, vmId);
-        
+
+        logger.info("get cpanel session for vmId {}", vmId);
+
         try {
             return cpanelService.createSession(vmId, "root", CpanelServiceType.whostmgrd);
         }
@@ -79,7 +81,7 @@ public class CPanelResource {
         logger.info("GET listCpanelAccounts for VM: {}", vmId);
 
         privilegeService.requireAnyPrivilegeToVmId(user, vmId);
-        
+
         try {
             return cpanelService.listCpanelAccounts(vmId);
         }
