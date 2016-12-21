@@ -8,7 +8,6 @@ import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
-
 import org.mockito.Mockito;
 
 import com.godaddy.vps4.Vps4Exception;
@@ -97,7 +96,7 @@ public class SysAdminResourceUserTest {
         validUser = userService.getOrCreateUserForShopper("validUserShopperId");
         invalidUser = userService.getOrCreateUserForShopper("invalidUserShopperId");
         virtualMachineService.createVirtualMachineRequest(orionGuid, "linux", "cPanel", 10, 1, "validUserShopperId");
-        project = projService.createProject("TestProject", validUser.getId(), 1);
+        project = projService.createProject("TestProject", validUser.getId(), 1, "vps4-test-");
         virtualMachineService.provisionVirtualMachine(vmId, orionGuid, "fakeVM", project.getProjectId(), 1, 1, 1);
     }
     

@@ -44,7 +44,7 @@ public class NetworkServiceTest {
         networkService = new JdbcNetworkService(dataSource);
         projectService = new JdbcProjectService(dataSource);
 
-        projectId = projectService.createProject("testNetwork", 1, 1).getProjectId();
+        projectId = SqlTestData.createProject(dataSource).getProjectId();
 
         vmId = SqlTestData.insertTestVm(orionGuid, projectId, dataSource);
     }

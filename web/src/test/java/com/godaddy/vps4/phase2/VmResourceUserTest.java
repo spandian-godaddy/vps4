@@ -103,7 +103,7 @@ public class VmResourceUserTest {
         validUser = userService.getOrCreateUserForShopper("validUserShopperId");
         invalidUser = userService.getOrCreateUserForShopper("invalidUserShopperId");
         virtualMachineService.createVirtualMachineRequest(orionGuid, "linux", "cPanel", 10, 1, "validUserShopperId");
-        project = projService.createProject("TestProject", validUser.getId(), 1);
+        project = projService.createProject("TestProject", validUser.getId(), 1, "vps4-test-");
         virtualMachineService.provisionVirtualMachine(vmId, orionGuid, "fakeVM", project.getProjectId(), 1, 1, 1);
         
         networkService.createIpAddress(1234, vmId, "127.0.0.1", IpAddressType.PRIMARY);

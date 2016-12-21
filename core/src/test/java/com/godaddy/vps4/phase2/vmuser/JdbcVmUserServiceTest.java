@@ -38,7 +38,7 @@ public class JdbcVmUserServiceTest {
 
     @Before
     public void setupServers() throws SQLException {
-        projectId = projectService.createProject("testNetwork", 1, 1).getProjectId();
+        projectId = projectService.createProject("testNetwork", 1, 1, "vps4-test-").getProjectId();
         vmId = SqlTestData.insertTestVm(orionGuid, projectId, dataSource);
     }
 

@@ -38,7 +38,7 @@ public class ActionTest {
 
     @Before
     public void setupService(){
-        project = projectService.createProject("testVirtualMachineServiceProject", 1, 1);
+        project = SqlTestData.createProject(dataSource);
         vmId = SqlTestData.insertTestVm(orionGuid, project.getProjectId(), dataSource);
         type = ActionType.CREATE_VM;
     }

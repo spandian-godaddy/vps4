@@ -8,45 +8,27 @@ import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
-
 import org.mockito.Mockito;
 
 import com.godaddy.vps4.Vps4Exception;
 import com.godaddy.vps4.cpanel.Vps4CpanelService;
 import com.godaddy.vps4.jdbc.DatabaseModule;
 import com.godaddy.vps4.jdbc.Sql;
-import com.godaddy.vps4.network.IpAddress.IpAddressType;
-import com.godaddy.vps4.network.jdbc.JdbcNetworkService;
-import com.godaddy.vps4.network.NetworkService;
 import com.godaddy.vps4.project.Project;
 import com.godaddy.vps4.project.ProjectService;
-import com.godaddy.vps4.project.jdbc.JdbcProjectService;
 import com.godaddy.vps4.security.PrivilegeService;
 import com.godaddy.vps4.security.SecurityModule;
 import com.godaddy.vps4.security.Vps4User;
 import com.godaddy.vps4.security.Vps4UserService;
-import com.godaddy.vps4.security.jdbc.JdbcPrivilegeService;
-import com.godaddy.vps4.security.jdbc.JdbcVps4UserService;
 import com.godaddy.vps4.vm.ActionService;
-import com.godaddy.vps4.vm.ActionType;
 import com.godaddy.vps4.vm.VirtualMachineService;
 import com.godaddy.vps4.vm.VmModule;
-import com.godaddy.vps4.vm.jdbc.JdbcActionService;
-import com.godaddy.vps4.vm.jdbc.JdbcVirtualMachineService;
 import com.godaddy.vps4.web.cpanel.CPanelResource;
-import com.godaddy.vps4.web.vm.VmNotFoundException;
-import com.godaddy.vps4.web.vm.VmResource;
 import com.google.inject.AbstractModule;
 import com.google.inject.Guice;
 import com.google.inject.Inject;
 import com.google.inject.Injector;
 import com.google.inject.Provides;
-
-import gdg.hfs.orchestration.CommandGroupSpec;
-import gdg.hfs.orchestration.CommandService;
-import gdg.hfs.orchestration.CommandState;
-import gdg.hfs.vhfs.vm.Vm;
-import gdg.hfs.vhfs.vm.VmService;
 
 public class CpanelResourceUserTest {
     
@@ -103,7 +85,7 @@ public class CpanelResourceUserTest {
         validUser = userService.getOrCreateUserForShopper("validUserShopperId");
         invalidUser = userService.getOrCreateUserForShopper("invalidUserShopperId");
         virtualMachineService.createVirtualMachineRequest(orionGuid, "linux", "cPanel", 10, 1, "validUserShopperId");
-        project = projService.createProject("TestProject", validUser.getId(), 1);
+        project = projService.createProject("TestProject", validUser.getId(), 1, "vps4-test-");
         virtualMachineService.provisionVirtualMachine(vmId, orionGuid, "fakeVM", project.getProjectId(), 1, 1, 1);
     }
     

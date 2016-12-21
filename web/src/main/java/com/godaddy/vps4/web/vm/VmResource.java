@@ -75,6 +75,7 @@ public class VmResource {
     private final CommandService commandService;
     private final NetworkService networkService;
     private final Config config;
+    private final String sgidPrefix;
 
     @Inject
     public VmResource(PrivilegeService privilegeService,
@@ -98,6 +99,7 @@ public class VmResource {
         this.commandService = commandService;
         this.networkService = networkService;
         this.config = config;
+        sgidPrefix = config.get("hfs.sgid.prefix", "vps4-undefined-");
     }
 
     @GET
@@ -364,7 +366,7 @@ public class VmResource {
 
         ProvisionVmInfo vmInfo = new ProvisionVmInfo(provisionRequest.orionGuid,
                 provisionRequest.name, project.getProjectId(),
-                spec.specId, vmRequest.managedLevel, image);
+                spec.specId, vmRequest.managedLevel, image, project.getVhfsSgid());
         logger.info("vmInfo: {}", vmInfo.toString());
 
         ProvisionVm.Request request = new ProvisionVm.Request();
@@ -407,7 +409,7 @@ public class VmResource {
     }
 
     private Project createProject(UUID orionGuid, int dataCenterId) {
-        Project project = projectService.createProject(orionGuid.toString(), user.getId(), dataCenterId);
+        Project project = projectService.createProject(orionGuid.toString(), user.getId(), dataCenterId, sgidPrefix);
         if (project == null) {
             throw new Vps4Exception("PROJECT_FAILED_TO_CREATE",
                     "Failed to create new project for orionGuid " + orionGuid.toString());

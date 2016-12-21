@@ -1,5 +1,14 @@
 package com.godaddy.vps4.phase2;
 
+import static org.junit.Assert.assertEquals;
+
+import java.util.Random;
+import java.util.UUID;
+
+import javax.sql.DataSource;
+
+import org.junit.After;
+import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mockito;
 
@@ -9,7 +18,6 @@ import com.godaddy.vps4.project.Project;
 import com.godaddy.vps4.project.ProjectService;
 import com.godaddy.vps4.project.jdbc.JdbcProjectService;
 import com.godaddy.vps4.security.PrivilegeService;
-import com.godaddy.vps4.security.Vps4User;
 import com.godaddy.vps4.vm.VirtualMachine;
 import com.godaddy.vps4.vm.VirtualMachineService;
 import com.godaddy.vps4.vm.jdbc.JdbcVirtualMachineService;
@@ -17,16 +25,6 @@ import com.godaddy.vps4.web.vm.VmPatchResource;
 import com.godaddy.vps4.web.vm.VmPatchResource.VmPatch;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
-
-import static org.junit.Assert.*;
-
-import java.util.Random;
-import java.util.UUID;
-
-import javax.sql.DataSource;
-
-import org.junit.After;
-import org.junit.Before;
 
 public class VmPatchResourceTest {
     
@@ -45,7 +43,7 @@ public class VmPatchResourceTest {
     public void setupTest(){
         virtualMachineService = new JdbcVirtualMachineService(dataSource);
         projectService = new JdbcProjectService(dataSource);
-        project = projectService.createProject("testVirtualMachineServiceProject", 1, 1);
+        project = projectService.createProject("testVirtualMachineServiceProject", 1, 1, "vps4-test-");
         
         orionGuid = UUID.randomUUID();
         int managedLevel = 0;

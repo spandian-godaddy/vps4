@@ -42,6 +42,6 @@ public class SqlTestData {
 
     public static Project createProject(DataSource dataSource) {
         JdbcProjectService projectService = new JdbcProjectService(dataSource);
-        return projectService.createProject(UUID.randomUUID().toString(), 1, 1);
+        return projectService.createProject(UUID.randomUUID().toString(), 1, 1, "vps4-test-");
     }
 }

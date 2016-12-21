@@ -8,12 +8,14 @@ import java.sql.Connection;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.List;
+
 import javax.sql.DataSource;
 
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
+
 import com.godaddy.vps4.jdbc.DatabaseModule;
 import com.godaddy.vps4.jdbc.Sql;
 import com.godaddy.vps4.project.Project;
@@ -75,7 +77,7 @@ public class JdbcProjectServiceTest {
 
         String projectName = "testProject";
 
-        Project project = projectService.createProject(projectName, 1, 1);
+        Project project = projectService.createProject(projectName, 1, 1, "vps4-test-");
         assertTrue(project.getProjectId() > 0);
         assertEquals(projectName, project.getName());
         assertEquals("vps4-" + project.getProjectId(), project.getVhfsSgid());

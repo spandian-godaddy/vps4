@@ -53,7 +53,7 @@ public class CreateTestVmRequest {
 
         Vps4User user = userService.getOrCreateUserForShopper(shopperId);
 
-        long projectId = projectService.createProject("My Cool Project", user.getId(), 1).getProjectId();
+        long projectId = projectService.createProject("My Cool Project", user.getId(), 1, "vps4-test-").getProjectId();
 
         int imageId = imageService.getImageId(operatingSystem);
 

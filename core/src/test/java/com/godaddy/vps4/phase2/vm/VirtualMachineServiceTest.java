@@ -148,6 +148,7 @@ public class VirtualMachineServiceTest {
         vmRequests.add(requests.get(0).orionGuid);
 
         Project project = SqlTestData.createProject(dataSource);
+        projects.add(project);
         virtualMachineService.provisionVirtualMachine(1, requests.get(0).orionGuid, "test", project.getProjectId(), 2, 0, 1);
         vmIds.add((long) 1);
 
