@@ -71,7 +71,7 @@ public class NetworkServiceTest {
         networkService.createIpAddress(primaryId, vmId, primaryAddress, IpAddress.IpAddressType.PRIMARY);
         try {
             networkService.createIpAddress(126, vmId, primaryAddress, IpAddress.IpAddressType.SECONDARY);
-            Assert.fail(); // This should fail to insert a duplicate IP address
+            Assert.fail("This should fail to insert a duplicate IP address");
         }
         catch (Exception e) {
         }
