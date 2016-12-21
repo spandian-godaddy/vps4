@@ -25,6 +25,8 @@ import com.godaddy.vps4.vm.VirtualMachineService;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
 
+import junit.framework.Assert;
+
 public class NetworkServiceTest {
 
     private NetworkService networkService;
@@ -67,6 +69,12 @@ public class NetworkServiceTest {
         networkService.createIpAddress(addressId, vmId, ipAddress, IpAddress.IpAddressType.PRIMARY);
         networkService.createIpAddress(addressId + 1, vmId, "127.0.0.2", IpAddress.IpAddressType.SECONDARY);
         networkService.createIpAddress(primaryId, vmId, primaryAddress, IpAddress.IpAddressType.PRIMARY);
+        try {
+            networkService.createIpAddress(126, vmId, primaryAddress, IpAddress.IpAddressType.SECONDARY);
+            Assert.fail(); // This should fail to insert a duplicate IP address
+        }
+        catch (Exception e) {
+        }
 
         List<IpAddress> ips = networkService.getVmIpAddresses(vmId);
         assertEquals(3, ips.size());
