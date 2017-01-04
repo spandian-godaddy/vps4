@@ -30,9 +30,7 @@ import com.google.inject.AbstractModule;
 import com.google.inject.Guice;
 import com.google.inject.Inject;
 import com.google.inject.Injector;
-import com.google.inject.Module;
 import com.google.inject.Provides;
-import com.google.inject.util.Modules;
 
 import gdg.hfs.orchestration.CommandGroupSpec;
 import gdg.hfs.orchestration.CommandService;
@@ -55,15 +53,20 @@ public class SysAdminResourceUserTest {
     @Inject
     ProjectService projService;
 
+    @Inject
+    VmUserService vmUserService;
+
+    /*
     Module mockModule = binder -> {
         VmUserService vmUserService = Mockito.mock(VmUserService.class);
         binder.bind(VmUserService.class).toInstance(vmUserService);
     };
+    */
 
     private Injector injector = Guice.createInjector(
             new SecurityModule(),
             new DatabaseModule(),
-            Modules.override(new VmModule()).with(mockModule),
+            new VmModule(),
             new AbstractModule() {
                 
                 @Override
@@ -88,6 +91,7 @@ public class SysAdminResourceUserTest {
     UUID orionGuid;
     long vmId = 98765;
     Project project;
+    String username = "fakeUser";
 
     @Before
     public void setupTest(){
@@ -98,11 +102,13 @@ public class SysAdminResourceUserTest {
         virtualMachineService.createVirtualMachineRequest(orionGuid, "linux", "cPanel", 10, 1, "validUserShopperId");
         project = projService.createProject("TestProject", validUser.getId(), 1, "vps4-test-");
         virtualMachineService.provisionVirtualMachine(vmId, orionGuid, "fakeVM", project.getProjectId(), 1, 1, 1);
+        vmUserService.createUser(username, vmId);
     }
     
     @After
     public void teardownTest(){
         DataSource dataSource = injector.getInstance(DataSource.class);
+        Sql.with(dataSource).exec("DELETE FROM vm_user WHERE name = ? AND vm_id = ?", null, username, vmId);
         Sql.with(dataSource).exec("DELETE FROM vm_action where vm_id = ?", null, vmId);
         Sql.with(dataSource).exec("DELETE FROM virtual_machine WHERE vm_id = ?", null, vmId);
         projService.deleteProject(project.getProjectId());
@@ -117,10 +123,11 @@ public class SysAdminResourceUserTest {
         user = invalidUser;
         return injector.getInstance(SysAdminResource.class);
     }
+    
     @Test
     public void testSetPassword(){
         UpdatePasswordRequest request = new UpdatePasswordRequest();
-        request.username = "fakeUser";
+        request.username = username;
         
         getValidResource().setPassword(vmId, request);
         try{
@@ -134,7 +141,7 @@ public class SysAdminResourceUserTest {
     @Test
     public void testEnableUserAdmin(){
         SetAdminRequest request = new SetAdminRequest();
-        request.username = "fakeUser";
+        request.username = username;
         
         getValidResource().enableUserAdmin(vmId, request);
         try{
@@ -148,7 +155,7 @@ public class SysAdminResourceUserTest {
     @Test
     public void testdisableUserAdmin(){
         SetAdminRequest request = new SetAdminRequest();
-        request.username = "fakeUser";
+        request.username = username;
         
         getValidResource().disableUserAdmin(vmId, request);
         try{

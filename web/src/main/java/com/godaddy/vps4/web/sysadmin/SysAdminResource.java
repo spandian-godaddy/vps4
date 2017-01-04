@@ -14,8 +14,8 @@ import org.json.simple.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.godaddy.vps4.Vps4Exception;
 import com.godaddy.vps4.orchestration.hfs.sysadmin.SetPassword;
-import com.godaddy.vps4.orchestration.hfs.sysadmin.ToggleAdmin;
 import com.godaddy.vps4.orchestration.sysadmin.Vps4SetPassword;
 import com.godaddy.vps4.orchestration.sysadmin.Vps4ToggleAdmin;
 import com.godaddy.vps4.security.PrivilegeService;
@@ -110,7 +110,6 @@ public class SysAdminResource {
     @POST
     @Path("/{vmId}/enableAdmin")
     public Action enableUserAdmin(@PathParam("vmId") long vmId, SetAdminRequest setAdminRequest) {
-
         return setUserAdmin(setAdminRequest.username, vmId, true);
     }
 
@@ -121,11 +120,9 @@ public class SysAdminResource {
     }
 
     private Action setUserAdmin(String username, long vmId, boolean adminEnabled) {
+        logger.info("Username: {} VMid: {} Admin access enabled? {}", username, vmId, adminEnabled);
         if (!userService.userExists(username, vmId)) {
-            // FIXME throw exception
-            //action.message = "Cannot find user " + action.getUsername() + " for vm "+vmId;
-            //action.status = ActionStatus.INVALID;
-            //return;
+            throw new Vps4Exception("VM_USER_NOT_FOUND", "User not found on virtual machine.");
         }
         
         privilegeService.requireAnyPrivilegeToVmId(user, vmId);
@@ -138,14 +135,12 @@ public class SysAdminResource {
                 adminEnabled ? ActionType.ENABLE_ADMIN_ACCESS : ActionType.DISABLE_ADMIN_ACCESS,
                 adminRequest.toJSONString(), user.getId());
 
-        ToggleAdmin.Request request = new ToggleAdmin.Request();
-        request.enabled = adminEnabled;
-        request.vmId = vmId;
-        request.username = username;
 
         Vps4ToggleAdmin.Request vps4Request = new Vps4ToggleAdmin.Request();
         vps4Request.actionId = actionId;
-        vps4Request.toggleAdminRequest = request;
+        vps4Request.enabled = adminEnabled;
+        vps4Request.vmId = vmId;
+        vps4Request.username = username;
 
         Commands.execute(commandService, "Vps4ToggleAdmin", vps4Request);
 
