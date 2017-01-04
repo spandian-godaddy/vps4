@@ -40,8 +40,6 @@ public class CombinedVm {
         if (virtualMachine != null) {
             spec = virtualMachine.spec.name;
             name = virtualMachine.name;
-            if (virtualMachine.primaryIpAddress != null)
-                address = virtualMachine.primaryIpAddress;
             validOn = virtualMachine.validOn;
             validUntil = virtualMachine.validUntil;
         }

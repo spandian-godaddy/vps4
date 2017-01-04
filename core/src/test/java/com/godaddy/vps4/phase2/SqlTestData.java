@@ -5,10 +5,16 @@ import java.util.UUID;
 import javax.sql.DataSource;
 
 import com.godaddy.vps4.jdbc.Sql;
+import com.godaddy.vps4.network.NetworkService;
+import com.godaddy.vps4.network.jdbc.JdbcNetworkService;
 import com.godaddy.vps4.project.Project;
 import com.godaddy.vps4.project.jdbc.JdbcProjectService;
+import com.godaddy.vps4.vm.ImageService;
 import com.godaddy.vps4.vm.VirtualMachine;
+import com.godaddy.vps4.vm.VirtualMachineService;
+import com.godaddy.vps4.vm.jdbc.JdbcImageService;
 import com.godaddy.vps4.vm.jdbc.JdbcVirtualMachineService;
+
 
 public class SqlTestData {
 
@@ -18,7 +24,9 @@ public class SqlTestData {
     }
 
     public static long insertTestVm(UUID orionGuid, long projectId, DataSource dataSource) {
-        JdbcVirtualMachineService virtualMachineService = new JdbcVirtualMachineService(dataSource);
+        NetworkService networkService = new JdbcNetworkService (dataSource);
+        ImageService imageService = new JdbcImageService(dataSource);
+        VirtualMachineService virtualMachineService = new JdbcVirtualMachineService(dataSource, networkService, imageService);
         long vmId = getNextId(dataSource);
         virtualMachineService.createVirtualMachineRequest(orionGuid, "linux", "none", 10, 0, "TestUser");
         virtualMachineService.provisionVirtualMachine(vmId, orionGuid, "networkTestVm", projectId, 1, 0, 1);
@@ -26,7 +34,9 @@ public class SqlTestData {
     }
 
     public static void cleanupTestVmAndRelatedData(long vmId, DataSource dataSource) {
-        JdbcVirtualMachineService virtualMachineService = new JdbcVirtualMachineService(dataSource);
+        NetworkService networkService = new JdbcNetworkService(dataSource);
+        ImageService imageService = new JdbcImageService(dataSource);
+        VirtualMachineService virtualMachineService = new JdbcVirtualMachineService(dataSource, networkService, imageService);
         VirtualMachine vm = virtualMachineService.getVirtualMachine(vmId);
 
         Sql.with(dataSource).exec("DELETE FROM ip_address WHERE vm_id = ?", null, vmId);

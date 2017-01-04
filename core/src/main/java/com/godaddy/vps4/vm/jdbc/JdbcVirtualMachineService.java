@@ -13,7 +13,11 @@ import javax.sql.DataSource;
 
 import com.godaddy.vps4.jdbc.ConnectionProvider;
 import com.godaddy.vps4.jdbc.Sql;
+import com.godaddy.vps4.network.IpAddress;
+import com.godaddy.vps4.network.NetworkService;
 import com.godaddy.vps4.security.Vps4User;
+import com.godaddy.vps4.vm.Image;
+import com.godaddy.vps4.vm.ImageService;
 import com.godaddy.vps4.vm.VirtualMachine;
 import com.godaddy.vps4.vm.VirtualMachineRequest;
 import com.godaddy.vps4.vm.VirtualMachineService;
@@ -23,20 +27,22 @@ public class JdbcVirtualMachineService implements VirtualMachineService {
 
     private final DataSource dataSource;
 
-    private String privateIpType = "1";
+    private NetworkService networkService;
+    private ImageService imageService;
 
     private String selectVirtualMachineQuery = "SELECT vm.vm_id, vm.orion_guid, vm.project_id, vm.name as \"vm_name\", "
             + "vm.valid_on as \"vm_valid_on\", vm.valid_until as \"vm_valid_until\", vms.spec_id, vms.spec_name, "
             + "vms.tier, vms.cpu_core_count, vms.memory_mib, vms.disk_gib, vms.valid_on as \"spec_valid_on\", "
-            + "vms.valid_until as \"spec_valid_until\", vms.name as \"spec_vps4_name\", image.name as \"image_name\", ip.ip_address FROM virtual_machine vm "
+            + "vms.valid_until as \"spec_valid_until\", vms.name as \"spec_vps4_name\", image.name as \"image_name\" FROM virtual_machine vm "
             + "JOIN virtual_machine_spec vms ON vms.spec_id=vm.spec_id "
-            + "JOIN image ON image.image_id=vm.image_id "
-            + "LEFT JOIN ip_address ip ON ip.vm_id = vm.vm_id AND ip.ip_address_type_id = " + privateIpType + " ";
+            + "JOIN image ON image.image_id=vm.image_id ";
 
     @Inject
-    public JdbcVirtualMachineService(DataSource dataSource) {
+    public JdbcVirtualMachineService(DataSource dataSource, NetworkService networkService, ImageService imageService) {
         this.dataSource = dataSource;
         new ConnectionProvider(dataSource);
+        this.networkService = networkService;
+        this.imageService = imageService;
     }
 
     @Override
@@ -67,10 +73,12 @@ public class JdbcVirtualMachineService implements VirtualMachineService {
     protected VirtualMachine mapVirtualMachine(ResultSet rs) throws SQLException {
         Timestamp validUntil = rs.getTimestamp("vm_valid_until");
         VirtualMachineSpec spec = mapVirtualMachineSpec(rs);
+        long vmId = rs.getLong("vm_id");
+        IpAddress ipAddress = networkService.getVmPrimaryAddress(vmId);
+        Image image = imageService.getImage(rs.getString("image_name"));
 
         return new VirtualMachine(rs.getLong("vm_id"), java.util.UUID.fromString(rs.getString("orion_guid")), rs.getLong("project_id"),
-                spec, rs.getString("vm_name"), rs.getString("image_name"), rs.getString("ip_address"),
-                rs.getTimestamp("vm_valid_on").toInstant(),
+                spec, rs.getString("vm_name"), image, ipAddress, rs.getTimestamp("vm_valid_on").toInstant(),
                 validUntil != null ? validUntil.toInstant() : null);
     }
 

@@ -14,12 +14,16 @@ import org.mockito.Mockito;
 
 import com.godaddy.vps4.jdbc.DatabaseModule;
 import com.godaddy.vps4.jdbc.Sql;
+import com.godaddy.vps4.network.NetworkService;
+import com.godaddy.vps4.network.jdbc.JdbcNetworkService;
 import com.godaddy.vps4.project.Project;
 import com.godaddy.vps4.project.ProjectService;
 import com.godaddy.vps4.project.jdbc.JdbcProjectService;
 import com.godaddy.vps4.security.PrivilegeService;
+import com.godaddy.vps4.vm.ImageService;
 import com.godaddy.vps4.vm.VirtualMachine;
 import com.godaddy.vps4.vm.VirtualMachineService;
+import com.godaddy.vps4.vm.jdbc.JdbcImageService;
 import com.godaddy.vps4.vm.jdbc.JdbcVirtualMachineService;
 import com.godaddy.vps4.web.vm.VmPatchResource;
 import com.godaddy.vps4.web.vm.VmPatchResource.VmPatch;
@@ -41,7 +45,9 @@ public class VmPatchResourceTest {
     
     @Before
     public void setupTest(){
-        virtualMachineService = new JdbcVirtualMachineService(dataSource);
+        NetworkService networkService = new JdbcNetworkService(dataSource);
+        ImageService imageService = new JdbcImageService(dataSource);
+        virtualMachineService = new JdbcVirtualMachineService(dataSource, networkService, imageService);
         projectService = new JdbcProjectService(dataSource);
         project = projectService.createProject("testVirtualMachineServiceProject", 1, 1, "vps4-test-");
         

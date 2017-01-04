@@ -172,7 +172,7 @@ public class VmResource {
 
     @GET
     @Path("/{orionGuid}")
-    public CombinedVm getVm(@PathParam("orionGuid") UUID orionGuid) {
+    public VirtualMachine getVm(@PathParam("orionGuid") UUID orionGuid) {
 
         logger.info("getting vm with id {}", orionGuid);
 
@@ -185,20 +185,7 @@ public class VmResource {
 
         privilegeService.requireAnyPrivilegeToProjectId(user, virtualMachine.projectId);
 
-        VirtualMachineRequest req = virtualMachineService.getVirtualMachineRequest(orionGuid);
-
-        // now reach out to the VM vertical to get all the details
-        Vm vm = getVmFromVmVertical(virtualMachine.vmId);
-
-        return new CombinedVm(vm, virtualMachine, req);
-    }
-
-    private Vm getVmFromVmVertical(long vmId) {
-        Vm vm = vmService.getVm(vmId);
-        if (vm == null) {
-            throw new IllegalArgumentException("Cannot find VM ID " + vmId + " in vm vertical");
-        }
-        return vm;
+        return virtualMachine;
     }
 
     @GET
@@ -472,5 +459,36 @@ public class VmResource {
     public List<VirtualMachineRequest> getOrionRequests() {
         logger.debug("Getting orion requests for shopper {}", user.getShopperId());
         return virtualMachineService.getOrionRequests(user.getShopperId());
+    }
+
+    @GET
+    @Path("/{orionGuid}/details")
+    public VirtualMachineDetails getVirtualMachineDetails(@PathParam("orionGuid") UUID orionGuid) {
+        VirtualMachine virtualMachine = getVm(orionGuid);
+        privilegeService.requireAnyPrivilegeToProjectId(user, virtualMachine.projectId);
+
+        Vm vm = getVmFromVmVertical(virtualMachine.vmId);
+        return new VirtualMachineDetails(vm);
+    }
+
+    private Vm getVmFromVmVertical(long vmId) {
+        try {
+            Vm vm = vmService.getVm(vmId);
+            return vm;
+        }
+        catch (Exception e) {
+            logger.warn("Cannot find VM ID {} in vm vertical", vmId);
+            return null;
+        }
+    }
+
+    @GET
+    @Path("/{orionGuid}/withDetails")
+    public VirtualMachineWithDetails getVirtualMachineWithDetails(@PathParam("orionGuid") UUID orionGuid) {
+        VirtualMachine virtualMachine = getVm(orionGuid);
+        privilegeService.requireAnyPrivilegeToProjectId(user, virtualMachine.projectId);
+
+        Vm vm = getVmFromVmVertical(virtualMachine.vmId);
+        return new VirtualMachineWithDetails(virtualMachine, new VirtualMachineDetails(vm));
     }
 }

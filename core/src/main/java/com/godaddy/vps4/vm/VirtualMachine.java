@@ -3,6 +3,8 @@ package com.godaddy.vps4.vm;
 import java.time.Instant;
 import java.util.UUID;
 
+import com.godaddy.vps4.network.IpAddress;
+
 public class VirtualMachine {
 
     public final long vmId;
@@ -10,8 +12,8 @@ public class VirtualMachine {
     public final long projectId;
     public final VirtualMachineSpec spec;
     public final String name;
-    public final String image;
-    public final String primaryIpAddress;
+    public final Image image;
+    public final IpAddress primaryIpAddress;
     public final Instant validOn;
     public final Instant validUntil;
 
@@ -20,8 +22,8 @@ public class VirtualMachine {
             long projectId,
             VirtualMachineSpec spec,
             String name,
-            String image,
-            String primaryIpAddress,
+            Image image,
+            IpAddress primaryIpAddress,
             Instant validOn,
             Instant validUntil) {
         this.vmId = vmId;
@@ -35,11 +37,23 @@ public class VirtualMachine {
         this.validUntil = validUntil;
     }
 
+    public VirtualMachine(VirtualMachine virtualMachine) {
+        this.vmId = virtualMachine.vmId;
+        this.orionGuid = virtualMachine.orionGuid;
+        this.projectId = virtualMachine.projectId;
+        this.spec = virtualMachine.spec;
+        this.name = virtualMachine.name;
+        this.image = virtualMachine.image;
+        this.primaryIpAddress = virtualMachine.primaryIpAddress;
+        this.validOn = virtualMachine.validOn;
+        this.validUntil = virtualMachine.validUntil;
+    }
+
     @Override
     public String toString() {
         return "VirtualMachine [vmId=" + vmId + ", orionGuid= " + orionGuid + ", projectId=" + projectId + ", spec="
-                + spec.name + ", name=" + name + ", image=" + image + ", primaryIpAddress=" + primaryIpAddress + ", validOn=" + validOn
-                + ", validUntil=" + validUntil + "]";
+                + spec.name + ", name=" + name + ", image=" + image.imageName + ", primaryIpAddress=" + primaryIpAddress.ipAddress
+                + ", validOn=" + validOn + ", validUntil=" + validUntil + "]";
     }
 
 }
