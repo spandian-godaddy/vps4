@@ -38,6 +38,7 @@ public class VmPatchResourceTest {
     PrivilegeService privilegeService = Mockito.mock(PrivilegeService.class);
     Project project;
     UUID orionGuid;
+    UUID id;
     long vmId;
     DataSource dataSource = injector.getInstance(DataSource.class);
     long virtualMachineRequestId;
@@ -81,7 +82,7 @@ public class VmPatchResourceTest {
         VmPatchResource patchResource = new VmPatchResource(virtualMachineService, null, privilegeService);
         VmPatch vmPatch = new VmPatch();
         vmPatch.name = newName;
-        patchResource.updateVm(vmId, vmPatch);
+        patchResource.updateVm(vm.id, vmPatch);
         vm = virtualMachineService.getVirtualMachine(vmId);
         return vm;
     }

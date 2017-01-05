@@ -39,8 +39,8 @@ public class DefaultVps4CpanelService implements Vps4CpanelService {
         this.timeoutVal = timeoutVal;
     }
 
-    private String getVmIp(long vmId) {
-        return networkService.getVmPrimaryAddress(vmId).ipAddress;
+    private String getVmIp(long hfsVmId) {
+        return networkService.getVmPrimaryAddress(hfsVmId).ipAddress;
     }
 
     private String getOriginatorIp() {
@@ -52,7 +52,7 @@ public class DefaultVps4CpanelService implements Vps4CpanelService {
                 throws CpanelAccessDeniedException, CpanelTimeoutException, IOException;
     }
 
-    <T> T withAccessHash(long vmId, CpanelClientHandler<T> handler)
+    <T> T withAccessHash(long hfsVmId, CpanelClientHandler<T> handler)
             throws CpanelAccessDeniedException, CpanelTimeoutException, IOException {
 
         Instant timeoutAt = Instant.now().plus(timeoutVal, ChronoUnit.MILLIS);
@@ -63,9 +63,9 @@ public class DefaultVps4CpanelService implements Vps4CpanelService {
 
             // TODO remove the hardcoded values for IP
             String fromIp = getOriginatorIp();
-            String publicIp = getVmIp(vmId);
+            String publicIp = getVmIp(hfsVmId);
 
-            String accessHash = accessHashService.getAccessHash(vmId, publicIp, fromIp, timeoutAt);
+            String accessHash = accessHashService.getAccessHash(hfsVmId, publicIp, fromIp, timeoutAt);
             if (accessHash == null) {
                 // we couldn't get the access hash, so no point in even
                 // trying to contact the VM
@@ -91,11 +91,11 @@ public class DefaultVps4CpanelService implements Vps4CpanelService {
                 // access hash we thought was good, but has now been invalidated,
                 // so invalidate the access hash so a new one will be attempted
                 //cached.invalidate(fetchedAt);
-                accessHashService.invalidAccessHash(vmId, accessHash);
+                accessHashService.invalidAccessHash(hfsVmId, accessHash);
                 lastThrown = e;
 
             } catch (IOException e) {
-                logger.warn("Unable communicating with VM " + vmId, e);
+                logger.warn("Unable communicating with VM " + hfsVmId, e);
                 // we timed out attempting to connect/read from the target VM
                 // or we had some other transport-level issue
                 lastThrown = e;
@@ -110,14 +110,14 @@ public class DefaultVps4CpanelService implements Vps4CpanelService {
         }
 
         // any other issue is bubbled as a general timeout exception
-        throw new CpanelTimeoutException("Timed out retrying an operation on VM " + vmId);
+        throw new CpanelTimeoutException("Timed out retrying an operation on VM " + hfsVmId);
     }
 
     @Override
-    public List<CPanelAccount> listCpanelAccounts(long vmId)
+    public List<CPanelAccount> listCpanelAccounts(long hfsVmId)
             throws CpanelAccessDeniedException, CpanelTimeoutException, IOException {
 
-        return withAccessHash(vmId, cPanelClient -> {
+        return withAccessHash(hfsVmId, cPanelClient -> {
 
             JSONParser parser = new JSONParser();
 
@@ -150,10 +150,10 @@ public class DefaultVps4CpanelService implements Vps4CpanelService {
     }
 
     @Override
-    public CPanelSession createSession(long vmId, String username, CpanelServiceType serviceType)
+    public CPanelSession createSession(long hfsVmId, String username, CpanelServiceType serviceType)
             throws CpanelAccessDeniedException, CpanelTimeoutException, IOException {
 
-        return withAccessHash(vmId, cPanelClient -> cPanelClient.createSession(username, serviceType));
+        return withAccessHash(hfsVmId, cPanelClient -> cPanelClient.createSession(username, serviceType));
     }
 
 }

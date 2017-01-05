@@ -1,15 +1,16 @@
 package com.godaddy.vps4.vm;
 
 import java.util.List;
+import java.util.UUID;
 
 public interface VmUserService {
 	
-	void createUser(String username, long vmId, boolean adminEnabled);
-	void createUser(String username, long vmId);
+	void createUser(String username, UUID vmId, boolean adminEnabled);
+	void createUser(String username, UUID vmId);
 	
-	List<VmUser> listUsers(long vmId);
+	List<VmUser> listUsers(UUID vmId);
 	
-	void updateUserAdminAccess(String username, long vmId, boolean adminEnabled);
+	void updateUserAdminAccess(String username, UUID vmId, boolean adminEnabled);
 	
-	boolean userExists(String username, long vmId);
+	boolean userExists(String username, UUID vmId);
 }

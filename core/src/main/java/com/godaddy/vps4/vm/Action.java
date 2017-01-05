@@ -1,11 +1,12 @@
 package com.godaddy.vps4.vm;
 
 import java.time.Instant;
+import java.util.UUID;
 
 public class Action {
 
     public final long id;
-    public final long virtualMachineId;
+    public final UUID virtualMachineId;
     public final ActionType type;
     public final long vps4UserId;
     public final String request;
@@ -15,7 +16,7 @@ public class Action {
     public final Instant created;
     public final String note;
 
-    public Action(long id, long virtualMachineId, ActionType type, long vps4UserId, String request, String state, String response, ActionStatus status, Instant created, String note){
+    public Action(long id, UUID virtualMachineId, ActionType type, long vps4UserId, String request, String state, String response, ActionStatus status, Instant created, String note){
         this.id = id;
         this.virtualMachineId = virtualMachineId;
         this.type = type;

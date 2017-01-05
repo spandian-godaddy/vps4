@@ -1,5 +1,7 @@
 package com.godaddy.vps4.security.jdbc;
 
+import java.util.UUID;
+
 import javax.inject.Inject;
 import javax.sql.DataSource;
 
@@ -47,6 +49,22 @@ public class JdbcPrivilegeService implements PrivilegeService {
                                         Sql.nextOrNull(rs -> rs.getInt(1) > 0), 
                                         user.getId(), vmId)) {
             throw new AuthorizationException(user.getShopperId() + " does not have privilege for vm " + vmId);
+        }
+        
+    }
+    
+    @Override
+    public void requireAnyPrivilegeToVmId(Vps4User user, UUID id) {
+        if(!Sql.with(dataSource).call("SELECT COUNT(privilege_id) " +
+                                         "FROM user_project_privilege " + 
+                                           "JOIN virtual_machine " + 
+                                             "ON virtual_machine.project_id = user_project_privilege.project_id " +
+                                         "WHERE user_project_privilege.vps4_user_id = ? " +
+                                            "AND virtual_machine.id = ? " +
+                                            "AND NOW() < virtual_machine.valid_until;", 
+                                        Sql.nextOrNull(rs -> rs.getInt(1) > 0), 
+                                        user.getId(), id)) {
+            throw new AuthorizationException(user.getShopperId() + " does not have privilege for vm " + id);
         }
         
     }

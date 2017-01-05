@@ -5,6 +5,7 @@ import static java.util.stream.Collectors.toMap;
 
 import java.time.Instant;
 import java.util.Map;
+import java.util.UUID;
 
 public class IpAddress {
 
@@ -30,13 +31,13 @@ public class IpAddress {
     }
 
     public final long ipAddressId;
-    public final long vmId;
+    public final UUID vmId;
     public final String ipAddress;
     public final IpAddressType ipAddressType;
     public final Instant validOn;
     public final Instant validUntil;
 
-    public IpAddress(long ipAddressId, long vmId, String ipAddress, IpAddressType ipAddressType, Instant validOn, Instant validUntil) {
+    public IpAddress(long ipAddressId, UUID vmId, String ipAddress, IpAddressType ipAddressType, Instant validOn, Instant validUntil) {
         this.ipAddressId = ipAddressId;
         this.vmId = vmId;
         this.ipAddress = ipAddress;

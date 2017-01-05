@@ -7,6 +7,7 @@ import com.godaddy.vps4.network.IpAddress;
 
 public class VirtualMachine {
 
+    public final UUID id;
     public final long vmId;
     public final UUID orionGuid;
     public final long projectId;
@@ -17,7 +18,8 @@ public class VirtualMachine {
     public final Instant validOn;
     public final Instant validUntil;
 
-    public VirtualMachine(long vmId,
+    public VirtualMachine(UUID id,
+            long vmId,
             UUID orionGuid,
             long projectId,
             VirtualMachineSpec spec,
@@ -26,6 +28,7 @@ public class VirtualMachine {
             IpAddress primaryIpAddress,
             Instant validOn,
             Instant validUntil) {
+        this.id = id;
         this.vmId = vmId;
         this.orionGuid = orionGuid;
         this.projectId = projectId;
@@ -38,6 +41,7 @@ public class VirtualMachine {
     }
 
     public VirtualMachine(VirtualMachine virtualMachine) {
+        this.id = virtualMachine.id;
         this.vmId = virtualMachine.vmId;
         this.orionGuid = virtualMachine.orionGuid;
         this.projectId = virtualMachine.projectId;
@@ -51,7 +55,7 @@ public class VirtualMachine {
 
     @Override
     public String toString() {
-        return "VirtualMachine [vmId=" + vmId + ", orionGuid= " + orionGuid + ", projectId=" + projectId + ", spec="
+        return "VirtualMachine [id=" + id + ", vmId=" + vmId + ", orionGuid= " + orionGuid + ", projectId=" + projectId + ", spec="
                 + spec.name + ", name=" + name + ", image=" + image.imageName + ", primaryIpAddress=" + primaryIpAddress.ipAddress
                 + ", validOn=" + validOn + ", validUntil=" + validUntil + "]";
     }

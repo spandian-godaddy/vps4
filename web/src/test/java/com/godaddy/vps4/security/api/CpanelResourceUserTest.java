@@ -21,6 +21,7 @@ import com.godaddy.vps4.security.SecurityModule;
 import com.godaddy.vps4.security.Vps4User;
 import com.godaddy.vps4.security.Vps4UserService;
 import com.godaddy.vps4.vm.ActionService;
+import com.godaddy.vps4.vm.VirtualMachine;
 import com.godaddy.vps4.vm.VirtualMachineService;
 import com.godaddy.vps4.vm.VmModule;
 import com.godaddy.vps4.web.cpanel.CPanelResource;
@@ -75,6 +76,7 @@ public class CpanelResourceUserTest {
     UUID orionGuid;
     long vmId = 98765;
     Project project;
+    VirtualMachine vm;
     
     
     
@@ -87,13 +89,14 @@ public class CpanelResourceUserTest {
         virtualMachineService.createVirtualMachineRequest(orionGuid, "linux", "cPanel", 10, 1, "validUserShopperId");
         project = projService.createProject("TestProject", validUser.getId(), 1, "vps4-test-");
         virtualMachineService.provisionVirtualMachine(vmId, orionGuid, "fakeVM", project.getProjectId(), 1, 1, 1);
+        vm = virtualMachineService.getVirtualMachine(vmId);
     }
     
     @After
     public void teardownTest(){
         DataSource dataSource = injector.getInstance(DataSource.class);
-        Sql.with(dataSource).exec("DELETE FROM vm_action where vm_id = ?", null, vmId);
-        Sql.with(dataSource).exec("DELETE FROM virtual_machine WHERE vm_id = ?", null, vmId);
+        Sql.with(dataSource).exec("DELETE FROM vm_action where vm_id = ?", null, vm.id);
+        Sql.with(dataSource).exec("DELETE FROM virtual_machine WHERE id = ?", null, vm.id);
         projService.deleteProject(project.getProjectId());
     }
     

@@ -3,6 +3,7 @@ package com.godaddy.vps4.vm.jdbc;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.List;
+import java.util.UUID;
 
 import javax.inject.Inject;
 import javax.sql.DataSource;
@@ -22,21 +23,21 @@ public class JdbcVmUserService implements VmUserService{
     }
     
     @Override
-    public void createUser(String username, long vmId, boolean adminEnabled){
+    public void createUser(String username, UUID vmId, boolean adminEnabled){
         Sql.with(dataSource).exec("SELECT * from user_create(?,?,?)", 
                                     null,  
                                     username, vmId, adminEnabled);
     }
     
     @Override
-    public void createUser(String username, long vmId){
+    public void createUser(String username, UUID vmId){
         Sql.with(dataSource).exec("SELECT * from user_create(?,?,?)", 
                                     null,  
                                     username, vmId, false);
     }
     
     @Override
-    public List<VmUser> listUsers(long vmId){
+    public List<VmUser> listUsers(UUID vmId){
         return Sql.with(dataSource)
                 .exec("SELECT name, vm_id, admin_enabled"
                         + " FROM vm_user"
@@ -44,17 +45,17 @@ public class JdbcVmUserService implements VmUserService{
     }
     
     @Override
-    public void updateUserAdminAccess(String username, long vmId, boolean adminEnabled){
+    public void updateUserAdminAccess(String username, UUID vmId, boolean adminEnabled){
         Sql.with(dataSource).exec("UPDATE vm_user SET admin_enabled=? WHERE name=? AND vm_id=?", null, adminEnabled, username, vmId);
     }
     
     protected VmUser mapUser(ResultSet rs) throws SQLException{
         return new VmUser(rs.getString("name"), 
-                        rs.getLong("vm_id"), rs.getBoolean("admin_enabled"));
+                        UUID.fromString(rs.getString("vm_id")), rs.getBoolean("admin_enabled"));
     }
     
     @Override
-    public boolean userExists(String username, long vmId){
+    public boolean userExists(String username, UUID vmId){
         List<VmUser> users = Sql.with(dataSource)
                 .exec("SELECT name, vm_id, admin_enabled"
                         + " FROM vm_user"

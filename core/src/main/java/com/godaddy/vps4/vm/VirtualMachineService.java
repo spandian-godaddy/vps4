@@ -10,7 +10,7 @@ public interface VirtualMachineService {
 
     List<VirtualMachine> getVirtualMachinesForProject(long projectId);
 
-    VirtualMachine getVirtualMachine(long vmId);
+    VirtualMachine getVirtualMachine(long hfsVmId);
 
     VirtualMachine getVirtualMachine(UUID orionGuid);
 
@@ -35,9 +35,9 @@ public interface VirtualMachineService {
 
     VirtualMachineRequest getVirtualMachineRequest(UUID orionGuid);
 
-    void provisionVirtualMachine(long vmId, UUID orionGuid, String name, long projectId, int specId, int managedLevel, long imageId);
+    UUID provisionVirtualMachine(long vmId, UUID orionGuid, String name, long projectId, int specId, int managedLevel, long imageId);
 
-    void updateVirtualMachine(long vmId, Map<String, Object> paramsToUpdate);
+    void updateVirtualMachine(UUID vmId, Map<String, Object> paramsToUpdate);
 
     List<VirtualMachine> getVirtualMachinesForUser(long vps4UserId);
 

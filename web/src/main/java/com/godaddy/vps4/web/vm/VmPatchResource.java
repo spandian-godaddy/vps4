@@ -2,6 +2,7 @@ package com.godaddy.vps4.web.vm;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.UUID;
 
 import javax.ws.rs.Consumes;
 import javax.ws.rs.Path;
@@ -53,7 +54,7 @@ public class VmPatchResource {
     @Path("/{vmId}")
     @Produces({ "application/json" })
     @ApiOperation(value = "Update VM Attributes", httpMethod = "PATCH")
-    public void updateVm(@PathParam("vmId") long vmId, VmPatch vmPatch) {
+    public void updateVm(@PathParam("vmId") UUID vmId, VmPatch vmPatch) {
         privilegeService.requireAnyPrivilegeToVmId(user, vmId);
         Map<String, Object> vmPatchMap = new HashMap<>();
         if (vmPatch.name != null && !vmPatch.name.equals(""))

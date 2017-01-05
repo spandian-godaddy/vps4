@@ -4,7 +4,7 @@ import java.util.UUID;
 
 public interface ActionService {
 
-    long createAction(long vmId, ActionType actionType, String request, long userId);
+    long createAction(UUID vmId, ActionType actionType, String request, long userId);
 
     Action getAction(long actionId);
     

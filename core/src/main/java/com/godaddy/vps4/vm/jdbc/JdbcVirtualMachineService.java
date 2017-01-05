@@ -30,7 +30,7 @@ public class JdbcVirtualMachineService implements VirtualMachineService {
     private NetworkService networkService;
     private ImageService imageService;
 
-    private String selectVirtualMachineQuery = "SELECT vm.vm_id, vm.orion_guid, vm.project_id, vm.name as \"vm_name\", "
+    private String selectVirtualMachineQuery = "SELECT vm.id, vm.vm_id, vm.orion_guid, vm.project_id, vm.name as \"vm_name\", "
             + "vm.valid_on as \"vm_valid_on\", vm.valid_until as \"vm_valid_until\", vms.spec_id, vms.spec_name, "
             + "vms.tier, vms.cpu_core_count, vms.memory_mib, vms.disk_gib, vms.valid_on as \"spec_valid_on\", "
             + "vms.valid_until as \"spec_valid_until\", vms.name as \"spec_vps4_name\", image.name as \"image_name\" FROM virtual_machine vm "
@@ -60,9 +60,9 @@ public class JdbcVirtualMachineService implements VirtualMachineService {
                 .exec(selectVirtualMachineQuery + "WHERE vm.project_id=?", Sql.listOf(this::mapVirtualMachine), projectId);
     }
 
-    public VirtualMachine getVirtualMachine(long vmId) {
+    public VirtualMachine getVirtualMachine(long hfsVmId) {
         return Sql.with(dataSource)
-                .exec(selectVirtualMachineQuery + "WHERE vm.vm_id=?", Sql.nextOrNull(this::mapVirtualMachine), vmId);
+                .exec(selectVirtualMachineQuery + "WHERE vm.vm_id=?", Sql.nextOrNull(this::mapVirtualMachine), hfsVmId);
     }
 
     public VirtualMachine getVirtualMachine(UUID orionGuid) {
@@ -77,7 +77,7 @@ public class JdbcVirtualMachineService implements VirtualMachineService {
         IpAddress ipAddress = networkService.getVmPrimaryAddress(vmId);
         Image image = imageService.getImage(rs.getString("image_name"));
 
-        return new VirtualMachine(rs.getLong("vm_id"), java.util.UUID.fromString(rs.getString("orion_guid")), rs.getLong("project_id"),
+        return new VirtualMachine(java.util.UUID.fromString(rs.getString("id")), rs.getLong("vm_id"), java.util.UUID.fromString(rs.getString("orion_guid")), rs.getLong("project_id"),
                 spec, rs.getString("vm_name"), image, ipAddress, rs.getTimestamp("vm_valid_on").toInstant(),
                 validUntil != null ? validUntil.toInstant() : null);
     }
@@ -89,14 +89,6 @@ public class JdbcVirtualMachineService implements VirtualMachineService {
                 rs.getInt("cpu_core_count"), rs.getInt("memory_mib"), rs.getInt("disk_gib"), rs.getTimestamp("spec_valid_on").toInstant(),
                 validUntil != null ? validUntil.toInstant() : null);
     }
-
-//    @Override
-//    public VirtualMachine createVirtualMachine(long vmId, long projectId, String spec, String name) {
-//
-//        Sql.with(dataSource).exec("SELECT * FROM virtual_machine_create(?,?,?,?)", null, vmId, projectId, spec, name);
-//
-//        return null;
-//    }
 
     @Override
     public void destroyVirtualMachine(long vmId) {
@@ -134,14 +126,16 @@ public class JdbcVirtualMachineService implements VirtualMachineService {
     }
 
     @Override
-    public void provisionVirtualMachine(long vmId, UUID orionGuid, String name, long projectId, int specId, int managedLevel,
-            long imageId) {
-        Sql.with(dataSource).exec("SELECT * FROM virtual_machine_provision(?, ?, ?, ?, ?, ?, ?)", null, vmId, orionGuid, name, projectId,
-                specId, managedLevel, imageId);
+    public UUID provisionVirtualMachine(long vmId, UUID orionGuid, String name, 
+                                        long projectId, int specId, int managedLevel, long imageId) {
+        UUID virtual_machine_id = UUID.randomUUID();
+        Sql.with(dataSource).exec("SELECT * FROM virtual_machine_provision(?, ?, ?, ?, ?, ?, ?, ?)", null, 
+                virtual_machine_id, vmId, orionGuid, name, projectId, specId, managedLevel, imageId);
+        return virtual_machine_id;
     }
 
     @Override
-    public void updateVirtualMachine(long vmId, Map<String, Object> paramsToUpdate) {
+    public void updateVirtualMachine(UUID id, Map<String, Object> paramsToUpdate) {
         if (paramsToUpdate.isEmpty())
             return;
         ArrayList<Object> values = new ArrayList<Object>();
@@ -154,8 +148,8 @@ public class JdbcVirtualMachineService implements VirtualMachineService {
             nameSets.append("=?");
             values.add(pair.getValue());
         }
-        nameSets.append(" WHERE vm_id=?");
-        values.add(vmId);
+        nameSets.append(" WHERE id=?");
+        values.add(id);
         Sql.with(dataSource).exec(nameSets.toString(), null, values.toArray());
     }
 

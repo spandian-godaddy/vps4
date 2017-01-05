@@ -39,8 +39,8 @@ public class SqlTestData {
         VirtualMachineService virtualMachineService = new JdbcVirtualMachineService(dataSource, networkService, imageService);
         VirtualMachine vm = virtualMachineService.getVirtualMachine(vmId);
 
-        Sql.with(dataSource).exec("DELETE FROM ip_address WHERE vm_id = ?", null, vmId);
-        Sql.with(dataSource).exec("DELETE FROM vm_user WHERE vm_id = ?", null, vmId);
+        Sql.with(dataSource).exec("DELETE FROM ip_address WHERE vm_id = ?", null, vm.id);
+        Sql.with(dataSource).exec("DELETE FROM vm_user WHERE vm_id = ?", null, vm.id);
         Sql.with(dataSource).exec("DELETE FROM virtual_machine WHERE vm_id = ?", null, vmId);
         Sql.with(dataSource).exec("DELETE FROM orion_request WHERE orion_guid = ?", null, vm.orionGuid);
     }

@@ -24,8 +24,8 @@ public class JdbcActionService implements ActionService {
     }
 
     @Override
-    public long createAction(long vmId, ActionType actionType, String request, long userId) {
-        if (vmId == 0) {
+    public long createAction(UUID vmId, ActionType actionType, String request, long userId) {
+        if (vmId == null) {
             // use case: action needs to be created in the db table prior to sending a vm provisioning request to orchestration engine
             return Sql.with(dataSource).exec("INSERT INTO vm_action (vm_id, action_type_id, request, vps4_user_id) "
                     + "VALUES (?, ?, ?::json, ?) RETURNING id;",
@@ -72,7 +72,12 @@ public class JdbcActionService implements ActionService {
     private Action mapAction(ResultSet rs) throws SQLException {
         ActionStatus status = ActionStatus.valueOf(rs.getString("status"));
         ActionType type = ActionType.valueOf(rs.getString("type"));
-        return new Action(rs.getLong("id"), rs.getLong("vm_id"), type, rs.getLong("vps4_user_id"), 
+        String vmIdStr = rs.getString("vm_id");
+        UUID vmid = null; 
+        if (vmIdStr != null){
+            vmid = UUID.fromString(vmIdStr);
+        }
+        return new Action(rs.getLong("id"), vmid, type, rs.getLong("vps4_user_id"), 
                 rs.getString("request"), rs.getString("state"), rs.getString("response"), status, 
                 rs.getTimestamp("created").toInstant(), rs.getString("note"));
     }

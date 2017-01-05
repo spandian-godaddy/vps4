@@ -14,6 +14,7 @@ import org.junit.Test;
 
 import com.godaddy.vps4.jdbc.DatabaseModule;
 import com.godaddy.vps4.jdbc.Sql;
+import com.godaddy.vps4.network.jdbc.JdbcNetworkService;
 import com.godaddy.vps4.phase2.SqlTestData;
 import com.godaddy.vps4.project.Project;
 import com.godaddy.vps4.project.ProjectService;
@@ -22,7 +23,11 @@ import com.godaddy.vps4.vm.Action;
 import com.godaddy.vps4.vm.ActionService;
 import com.godaddy.vps4.vm.ActionStatus;
 import com.godaddy.vps4.vm.ActionType;
+import com.godaddy.vps4.vm.VirtualMachine;
+import com.godaddy.vps4.vm.VirtualMachineService;
 import com.godaddy.vps4.vm.jdbc.JdbcActionService;
+import com.godaddy.vps4.vm.jdbc.JdbcImageService;
+import com.godaddy.vps4.vm.jdbc.JdbcVirtualMachineService;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
 
@@ -31,31 +36,35 @@ public class ActionTest {
     DataSource dataSource = injector.getInstance(DataSource.class);
     ActionService actionService = new JdbcActionService(dataSource);
     ProjectService projectService = new JdbcProjectService(dataSource);
+    VirtualMachineService vmService = new JdbcVirtualMachineService(dataSource, new JdbcNetworkService(dataSource), new JdbcImageService(dataSource));
+    
     private UUID orionGuid = UUID.randomUUID();
     Project project;
     long vmId;
     ActionType type;
+    VirtualMachine vm;
 
     @Before
     public void setupService(){
         project = SqlTestData.createProject(dataSource);
         vmId = SqlTestData.insertTestVm(orionGuid, project.getProjectId(), dataSource);
+        vm = vmService.getVirtualMachine(vmId);
         type = ActionType.CREATE_VM;
     }
 
     @After
     public void cleanupService() {
-        Sql.with(dataSource).exec("DELETE from vm_action where vm_id = ?", null, vmId);
+        Sql.with(dataSource).exec("DELETE from vm_action where vm_id = ?", null, vm.id);
         SqlTestData.cleanupTestVmAndRelatedData(vmId, dataSource);
         SqlTestData.cleanupTestProject(project.getProjectId(), dataSource);
     }
 
     @Test
     public void testCreate(){
-        long actionId = actionService.createAction(vmId, type, new JSONObject().toJSONString(), 1);
+        long actionId = actionService.createAction(vm.id, type, new JSONObject().toJSONString(), 1);
         Action action = actionService.getAction(actionId);
         assertEquals("{}", action.request);
-        assertEquals(vmId, action.virtualMachineId);
+        assertEquals(vm.id, action.virtualMachineId);
         assertTrue(action.type == ActionType.CREATE_VM);
         assertEquals(ActionStatus.NEW, action.status);
         assertEquals(ActionType.CREATE_VM, action.type);
@@ -63,7 +72,7 @@ public class ActionTest {
 
     @Test
     public void testUpdateStatus(){
-        long actionId = actionService.createAction(vmId, type, new JSONObject().toJSONString(), 1);
+        long actionId = actionService.createAction(vm.id, type, new JSONObject().toJSONString(), 1);
         Action action = actionService.getAction(actionId);
         assertEquals(ActionStatus.NEW, action.status);
 

@@ -112,7 +112,7 @@ public class VmResource {
             throw new NotFoundException("actionId " + actionId + " not found");
         }
 
-        if (action.virtualMachineId == 0) {
+        if (action.virtualMachineId == null) {
             requireSameActionUser(action);
         }
         else {
@@ -246,7 +246,7 @@ public class VmResource {
      * @return virtualmachine project id if found
      * @throws VmNotFoundException
      */
-    private long getVmProjectId(long vmId) throws VmNotFoundException {
+    private VirtualMachine getVm(long vmId) throws VmNotFoundException {
         VirtualMachine vm;
 
         try {
@@ -259,7 +259,7 @@ public class VmResource {
             logger.error("Could not find vm with VM ID: {} ", vmId, ex);
             throw new VmNotFoundException("Could not find vm with VM ID: " + vmId, ex);
         }
-        return vm.projectId;
+        return vm;
     }
 
     /**
@@ -271,11 +271,12 @@ public class VmResource {
     private Action manageVm(long vmId, ActionType type) throws VmNotFoundException {
 
         // Check if vm exists and user has access to the vm.
-        long vmProjectId = getVmProjectId(vmId);
+        VirtualMachine vm = getVm(vmId);
+        long vmProjectId = vm.projectId;
 
         privilegeService.requireAnyPrivilegeToProjectId(user, vmProjectId);
 
-        long actionId = actionService.createAction(vmId, type, new JSONObject().toJSONString(), user.getId());
+        long actionId = actionService.createAction(vm.id, type, new JSONObject().toJSONString(), user.getId());
 
         CommandState command = null;
         switch (type) {
@@ -347,7 +348,7 @@ public class VmResource {
 
         // FIXME we don't have the vmId here yet, since we're using the HFS vmId and we haven't made the HFS
         // VM request yet
-        long vmId = 0; // ?
+        UUID vmId = null; // ?
         long actionId = actionService.createAction(vmId, ActionType.CREATE_VM, new JSONObject().toJSONString(), user.getId());
         logger.info("Action id: {}", actionId);
 
@@ -434,7 +435,7 @@ public class VmResource {
 
         // TODO verify VM status is destroyable
 
-        long actionId = actionService.createAction(vmId, ActionType.DESTROY_VM, new JSONObject().toJSONString(), user.getId());
+        long actionId = actionService.createAction(virtualMachine.id, ActionType.DESTROY_VM, new JSONObject().toJSONString(), user.getId());
 
 
         Vps4DestroyVm.Request request = new Vps4DestroyVm.Request();

@@ -95,6 +95,7 @@ public class VmResourceUserTest {
     UUID orionGuid;
     long vmId = 98765;
     Project project;
+    UUID id;
 
     @Before
     public void setupTest(){
@@ -104,17 +105,17 @@ public class VmResourceUserTest {
         invalidUser = userService.getOrCreateUserForShopper("invalidUserShopperId");
         virtualMachineService.createVirtualMachineRequest(orionGuid, "linux", "cPanel", 10, 1, "validUserShopperId");
         project = projService.createProject("TestProject", validUser.getId(), 1, "vps4-test-");
-        virtualMachineService.provisionVirtualMachine(vmId, orionGuid, "fakeVM", project.getProjectId(), 1, 1, 1);
+        id = virtualMachineService.provisionVirtualMachine(vmId, orionGuid, "fakeVM", project.getProjectId(), 1, 1, 1);
         
-        networkService.createIpAddress(1234, vmId, "127.0.0.1", IpAddressType.PRIMARY);
+        networkService.createIpAddress(1234, id, "127.0.0.1", IpAddressType.PRIMARY);
     }
 
     @After
     public void teardownTest(){
         DataSource dataSource = injector.getInstance(DataSource.class);
-        Sql.with(dataSource).exec("DELETE FROM vm_action where vm_id = ?", null, vmId);
+        Sql.with(dataSource).exec("DELETE FROM vm_action where vm_id = ?", null, id);
         Sql.with(dataSource).exec("DELETE FROM ip_address where ip_address_id = ?", null, 1234);
-        Sql.with(dataSource).exec("DELETE FROM virtual_machine WHERE vm_id = ?", null, vmId);
+        Sql.with(dataSource).exec("DELETE FROM virtual_machine WHERE id = ?", null, id);
         projService.deleteProject(project.getProjectId());
     }
 
@@ -130,7 +131,7 @@ public class VmResourceUserTest {
 
     @Test
     public void testListActions(){
-        long actionId = actionService.createAction(vmId, ActionType.CREATE_VM, "{}", validUser.getId());
+        long actionId = actionService.createAction(id, ActionType.CREATE_VM, "{}", validUser.getId());
         newValidVmResource().getAction(actionId);
         try{
             newInvalidVmResource().getAction(actionId);
