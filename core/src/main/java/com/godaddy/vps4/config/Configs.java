@@ -63,8 +63,8 @@ public class Configs {
     static Config buildConfig() {
         
         String[] zookeeperNodesToRead = {
-                "/config/vps4",
-                "/hfs/ssl/web"
+                "/hfs/ssl/web",
+                "/config/vps4"
         };
         
         config = new SystemPropertyConfig();
