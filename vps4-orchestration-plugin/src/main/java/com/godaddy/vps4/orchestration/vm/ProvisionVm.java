@@ -22,7 +22,6 @@ import com.godaddy.vps4.vm.CreateVmStep;
 import com.godaddy.vps4.vm.HostnameGenerator;
 import com.godaddy.vps4.vm.Image.ControlPanel;
 import com.godaddy.vps4.vm.ProvisionVmInfo;
-import com.godaddy.vps4.vm.VirtualMachine;
 import com.godaddy.vps4.vm.VirtualMachineService;
 import com.godaddy.vps4.vm.VmUserService;
 
@@ -71,6 +70,7 @@ public class ProvisionVm extends ActionCommand<ProvisionVm.Request, ProvisionVm.
     public Response executeWithAction(CommandContext context, Request request) throws Exception {
 
         this.request = request;
+        ProvisionVmInfo vmInfo = request.vmInfo;
 
         state = new ActionState();
 
@@ -80,81 +80,90 @@ public class ProvisionVm extends ActionCommand<ProvisionVm.Request, ProvisionVm.
 
         // allocate IP address
         setStep(CreateVmStep.RequestingIPAddress);
-
-        String sgid = request.vmInfo.sgid;
-
-        AllocateIp.Request allocation = new AllocateIp.Request();
-        allocation.sgid = sgid;
-        allocation.zone = request.hfsRequest.zone;
-
-        gdg.hfs.vhfs.network.IpAddress ip = context.execute(AllocateIp.class, allocation);
-
-        // provision the VM
-        ProvisionVmInfo vmInfo = request.vmInfo;
+        AllocateIp.Request allocateIpRequest = createAllocateIpRequest(request, vmInfo);
+        gdg.hfs.vhfs.network.IpAddress ip = context.execute(AllocateIp.class, allocateIpRequest);
 
         CreateVMWithFlavorRequest hfsRequest = request.hfsRequest;
-
+        
+        // Generate a new hostname from the allocated ip
         setStep(CreateVmStep.GeneratingHostname);
-
         hfsRequest.hostname = HostnameGenerator.getHostname(ip.address);
 
+        // Create the VM
         setStep(CreateVmStep.RequestingServer);
-
         VmAction vmAction = context.execute(CreateVm.class, hfsRequest);
 
-        // TODO update action with VM
+        // Get the hfs vm
         Vm hfsVm = context.execute("GetVmAfterCreate", ctx -> (Vm)vmService.getVm(vmAction.vmId));
         
+        // TODO update action with VM
 
-        // VPS4 VM bookeeping
+        // VPS4 VM bookeeping (Add hfs vmid to the virtual_machine db row)
         context.execute("Vps4ProvisionVm", ctx -> {
-            virtualMachineService.provisionVirtualMachine(hfsVm.vmId, vmInfo.orionGuid, vmInfo.name, vmInfo.projectId,
-                    vmInfo.specId, vmInfo.managedLevel, vmInfo.image.imageId);
+            virtualMachineService.addHfsVmIdToVirtualMachine(vmInfo.vmId, hfsVm.vmId);
             return null;
         });
-
-        VirtualMachine vm = virtualMachineService.getVirtualMachine(hfsVm.vmId);
         
         // associate the Vm with the user that created it
         context.execute("CreateVps4User", ctx -> {
-            vmUserService.createUser(hfsRequest.username, vm.id);
+            vmUserService.createUser(hfsRequest.username, vmInfo.vmId);
             return null;
         });
 
-        // bind IP
+        // bind IP to the VM
         setStep(CreateVmStep.ConfiguringNetwork);
-        //BindIpAction bindIpAction = new BindIpAction(ip.addressId, ip.address, hfsAction.vmId, IpAddressType.PRIMARY);
-        BindIpRequest bindRequest = new BindIpRequest();
-        bindRequest.addressId = ip.addressId;
-        bindRequest.vmId = hfsVm.vmId;
+        BindIpRequest bindRequest = createBindIpRequest(ip, hfsVm);
         context.execute(BindIp.class, bindRequest);
 
-        context.execute("Create-"+ip.addressId, ctx -> {networkService.createIpAddress(ip.addressId, vm.id, ip.address, IpAddressType.PRIMARY);
+        // Add the ip to the database
+        context.execute("Create-"+ip.addressId, ctx -> {networkService.createIpAddress(ip.addressId, vmInfo.vmId, ip.address, IpAddressType.PRIMARY);
                                                         return null;});
 
-
         if (vmInfo.image.controlPanel == ControlPanel.CPANEL) {
-
+            // VM with cPanel
             setStep(CreateVmStep.ConfiguringCPanel);
 
-            ConfigureCpanelRequest cpanelRequest = new ConfigureCpanelRequest();
-            cpanelRequest.vmId = hfsVm.vmId;
-            cpanelRequest.publicIp = hfsVm.address.ip_address;
-
+            // configure cpanel on the vm
+            ConfigureCpanelRequest cpanelRequest = createConfigureCpanelRequest(hfsVm);
             context.execute(ConfigureCpanel.class, cpanelRequest);
         }
 
+        // enable/disable admin access for user
+        ToggleAdmin.Request toggleAdminRequest = createToggleAdminRequest(request, vmInfo, hfsVm);
+        context.execute(ToggleAdmin.class, toggleAdminRequest);
+
+        setStep(CreateVmStep.SetupComplete);
+        logger.info("provision vm finished with status {} for action: {}", vmAction);
+        return null;
+    }
+
+    private ToggleAdmin.Request createToggleAdminRequest(Request request, ProvisionVmInfo vmInfo, Vm hfsVm) {
         ToggleAdmin.Request toggleAdminRequest = new ToggleAdmin.Request();
         toggleAdminRequest.enabled = vmInfo.managedLevel < 1;
         toggleAdminRequest.vmId = hfsVm.vmId;
         toggleAdminRequest.username = request.hfsRequest.username;
-        context.execute(ToggleAdmin.class, toggleAdminRequest);
+        return toggleAdminRequest;
+    }
 
-        setStep(CreateVmStep.SetupComplete);
+    private ConfigureCpanelRequest createConfigureCpanelRequest(Vm hfsVm) {
+        ConfigureCpanelRequest cpanelRequest = new ConfigureCpanelRequest();
+        cpanelRequest.vmId = hfsVm.vmId;
+        cpanelRequest.publicIp = hfsVm.address.ip_address;
+        return cpanelRequest;
+    }
 
-        logger.info("provision vm finished with status {} for action: {}", vmAction);
+    private BindIpRequest createBindIpRequest(gdg.hfs.vhfs.network.IpAddress ip, Vm hfsVm) {
+        BindIpRequest bindRequest = new BindIpRequest();
+        bindRequest.addressId = ip.addressId;
+        bindRequest.vmId = hfsVm.vmId;
+        return bindRequest;
+    }
 
-        return null;
+    private AllocateIp.Request createAllocateIpRequest(Request request, ProvisionVmInfo vmInfo) {
+        AllocateIp.Request allocation = new AllocateIp.Request();
+        allocation.sgid = vmInfo.sgid;
+        allocation.zone = request.hfsRequest.zone;
+        return allocation;
     }
 
     protected void setStep(CreateVmStep step) throws JsonProcessingException {

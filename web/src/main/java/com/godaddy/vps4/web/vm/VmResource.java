@@ -343,24 +343,20 @@ public class VmResource {
         Image image = getImage(provisionRequest.image);
         // TODO - verify that the image matches the request (control panel, managed level, OS)
 
+        UUID vmId = virtualMachineService.provisionVirtualMachine(0, vmRequest.orionGuid, provisionRequest.name, 
+                                                                    project.getProjectId(), spec.specId, 
+                                                                    vmRequest.managedLevel, image.imageId);
+        
         CreateVMWithFlavorRequest hfsRequest = createHfsProvisionVmRequest(provisionRequest.image, provisionRequest.username,
                 provisionRequest.password, project, spec);
-
-        // FIXME we don't have the vmId here yet, since we're using the HFS vmId and we haven't made the HFS
-        // VM request yet
-        UUID vmId = null; // ?
+        
         long actionId = actionService.createAction(vmId, ActionType.CREATE_VM, new JSONObject().toJSONString(), user.getId());
         logger.info("Action id: {}", actionId);
 
-        ProvisionVmInfo vmInfo = new ProvisionVmInfo(provisionRequest.orionGuid,
-                provisionRequest.name, project.getProjectId(),
-                spec.specId, vmRequest.managedLevel, image, project.getVhfsSgid());
+        ProvisionVmInfo vmInfo = new ProvisionVmInfo(vmId, vmRequest.managedLevel, image, project.getVhfsSgid());
         logger.info("vmInfo: {}", vmInfo.toString());
 
-        ProvisionVm.Request request = new ProvisionVm.Request();
-        request.actionId = actionId;
-        request.hfsRequest = hfsRequest;
-        request.vmInfo = vmInfo;
+        ProvisionVm.Request request = createProvisionVmRequest(hfsRequest, actionId, vmInfo);
 
         CommandState command = Commands.execute(commandService, "ProvisionVm", request);
         logger.info("provisioning VM in {}", command.commandId);
@@ -370,18 +366,24 @@ public class VmResource {
         return actionService.getAction(actionId);
     }
 
+    private ProvisionVm.Request createProvisionVmRequest(CreateVMWithFlavorRequest hfsRequest, 
+                                                         long actionId,
+                                                         ProvisionVmInfo vmInfo) {
+        ProvisionVm.Request request = new ProvisionVm.Request();
+        request.actionId = actionId;
+        request.hfsRequest = hfsRequest;
+        request.vmInfo = vmInfo;
+        return request;
+    }
+
     private CreateVMWithFlavorRequest createHfsProvisionVmRequest(String image, String username,
             String password, Project project, VirtualMachineSpec spec) {
-
         CreateVMWithFlavorRequest hfsProvisionRequest = new CreateVMWithFlavorRequest();
         hfsProvisionRequest.rawFlavor = spec.specName;
-
         hfsProvisionRequest.sgid = project.getVhfsSgid();
         hfsProvisionRequest.image_name = image;
-
         hfsProvisionRequest.username = username;
         hfsProvisionRequest.password = password;
-
         hfsProvisionRequest.zone = config.get("openstack.zone", null);
         return hfsProvisionRequest;
     }

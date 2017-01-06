@@ -37,6 +37,8 @@ public interface VirtualMachineService {
 
     UUID provisionVirtualMachine(long vmId, UUID orionGuid, String name, long projectId, int specId, int managedLevel, long imageId);
 
+    void addHfsVmIdToVirtualMachine(UUID vmId, long hfsVmId);
+    
     void updateVirtualMachine(UUID vmId, Map<String, Object> paramsToUpdate);
 
     List<VirtualMachine> getVirtualMachinesForUser(long vps4UserId);

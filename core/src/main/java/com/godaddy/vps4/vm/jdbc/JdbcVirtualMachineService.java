@@ -4,6 +4,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -132,6 +133,13 @@ public class JdbcVirtualMachineService implements VirtualMachineService {
         Sql.with(dataSource).exec("SELECT * FROM virtual_machine_provision(?, ?, ?, ?, ?, ?, ?, ?)", null, 
                 virtual_machine_id, vmId, orionGuid, name, projectId, specId, managedLevel, imageId);
         return virtual_machine_id;
+    }
+    
+    @Override
+    public void addHfsVmIdToVirtualMachine(UUID vmId, long hfsVmId){
+        Map<String, Object> vmPatchMap = new HashMap<>();
+        vmPatchMap.put("vm_id", hfsVmId);
+        updateVirtualMachine(vmId, vmPatchMap);
     }
 
     @Override

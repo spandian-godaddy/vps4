@@ -215,6 +215,7 @@ public class VmResourceUserTest {
         provisionRequest.orionGuid = newGuid;
         provisionRequest.dataCenterId = 1;
         provisionRequest.image = "centos-7";
+        provisionRequest.name = "Test Name";
         newValidVmResource().provisionVm(provisionRequest);
         try{
             newInvalidVmResource().provisionVm(provisionRequest);
