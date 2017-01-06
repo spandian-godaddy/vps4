@@ -1,0 +1,129 @@
+<project>
+    <modelVersion>4.0.0</modelVersion>
+    
+    <parent>
+		<groupId>com.godaddy.vps4</groupId>
+		<artifactId>vps4-project</artifactId>
+		<version>0.0.1-SNAPSHOT</version>
+	</parent>
+
+    <artifactId>vps4-orchestration-plugin</artifactId>
+    <packaging>jar</packaging>
+    <name>VPS4 Orchestration Plugin</name>
+    
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-shade-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>shade</goal>
+                        </goals>
+                        <configuration>
+                            <createDependencyReducedPom>false</createDependencyReducedPom>
+                            <filters>
+                                <filter>
+                                    <artifact>*:*</artifact>
+                                    <excludes>
+                                        <exclude>META-INF/*.SF</exclude>
+                                        <exclude>META-INF/*.DSA</exclude>
+                                        <exclude>META-INF/*.RSA</exclude>
+                                    </excludes>
+                                </filter>
+                            </filters>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
+
+    <dependencies>
+
+        <!-- EXTERNAL dependencies -->
+        <dependency>
+            <groupId>com.google.inject</groupId>
+            <artifactId>guice</artifactId>
+            <version>4.0</version>
+            <scope>provided</scope>
+        </dependency>
+
+        <!-- INTERNAL dependencies -->
+        <dependency>
+            <groupId>com.godaddy.hosting</groupId>
+            <artifactId>orchestration-api</artifactId>
+            <version>0.0.1-24</version>
+            <scope>provided</scope>
+        </dependency>
+        
+        <dependency>
+            <groupId>com.godaddy.hosting</groupId>
+            <artifactId>orchestration-web</artifactId>
+            <version>0.0.1-24</version>
+            <scope>provided</scope>
+        </dependency>
+        
+        <dependency>
+            <groupId>com.godaddy.vps4</groupId>
+            <artifactId>vps4-core</artifactId>
+            <version>0.0.1-SNAPSHOT</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.slf4j</groupId>
+                    <artifactId>*</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+        
+        <!-- HFS Dependencies -->
+        <dependency>
+            <groupId>hfs</groupId>
+            <artifactId>vhfs-sysadmin-common-lib</artifactId>
+            <version>1.0.0.26964</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>*</groupId>
+                    <artifactId>*</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+        <dependency>
+            <groupId>hfs</groupId>
+            <artifactId>vhfs-network-common-lib</artifactId>
+            <version>1.0.0.27800</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>*</groupId>
+                    <artifactId>*</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+        <dependency>
+            <groupId>hfs</groupId>
+            <artifactId>vhfs-common-web-lib</artifactId>
+            <version>1.0.0.27699</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>*</groupId>
+                    <artifactId>*</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+        <dependency>
+            <groupId>hfs</groupId>
+            <artifactId>hhfs-request-lib</artifactId>
+            <version>1.0.0.26697</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>*</groupId>
+                    <artifactId>*</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+
+    </dependencies>
+
+</project>

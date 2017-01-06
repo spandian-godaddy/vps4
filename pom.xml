@@ -16,6 +16,7 @@
     <modules>
         <module>core</module>
         <module>web</module>
+        <module>vps4-orchestration-plugin</module>
     </modules>
 
 </project>
