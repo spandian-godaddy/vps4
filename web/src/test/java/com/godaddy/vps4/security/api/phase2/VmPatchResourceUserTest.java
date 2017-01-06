@@ -1,4 +1,4 @@
-package com.godaddy.vps4.security.api;
+package com.godaddy.vps4.security.api.phase2;
 
 import java.util.UUID;
 
