@@ -69,7 +69,7 @@
                     <mappings>
                         <mapping>
                             <directory>/opt/hfs/hfs-engine/plugins</directory>
-                            <filemode>744</filemode>
+                            <filemode>755</filemode>
                             <username>root</username>
                             <groupname>root</groupname>
                             <sources>
