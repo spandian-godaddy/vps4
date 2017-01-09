@@ -60,7 +60,7 @@ public class JdbcPrivilegeService implements PrivilegeService {
                                            "JOIN virtual_machine " + 
                                              "ON virtual_machine.project_id = user_project_privilege.project_id " +
                                          "WHERE user_project_privilege.vps4_user_id = ? " +
-                                            "AND virtual_machine.id = ? " +
+                                            "AND virtual_machine.vm_id = ? " +
                                             "AND NOW() < virtual_machine.valid_until;", 
                                         Sql.nextOrNull(rs -> rs.getInt(1) > 0), 
                                         user.getId(), id)) {

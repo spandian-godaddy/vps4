@@ -31,7 +31,7 @@ public class JdbcVirtualMachineService implements VirtualMachineService {
     private NetworkService networkService;
     private ImageService imageService;
 
-    private String selectVirtualMachineQuery = "SELECT vm.id, vm.hfs_vm_id, vm.orion_guid, vm.project_id, vm.name as \"vm_name\", "
+    private String selectVirtualMachineQuery = "SELECT vm.vm_id, vm.hfs_vm_id, vm.orion_guid, vm.project_id, vm.name as \"vm_name\", "
             + "vm.valid_on as \"vm_valid_on\", vm.valid_until as \"vm_valid_until\", vms.spec_id, vms.spec_name, "
             + "vms.tier, vms.cpu_core_count, vms.memory_mib, vms.disk_gib, vms.valid_on as \"spec_valid_on\", "
             + "vms.valid_until as \"spec_valid_until\", vms.name as \"spec_vps4_name\", image.name as \"image_name\" FROM virtual_machine vm "
@@ -78,7 +78,7 @@ public class JdbcVirtualMachineService implements VirtualMachineService {
         IpAddress ipAddress = networkService.getVmPrimaryAddress(vmId);
         Image image = imageService.getImage(rs.getString("image_name"));
 
-        return new VirtualMachine(java.util.UUID.fromString(rs.getString("id")), rs.getLong("hfs_vm_id"), java.util.UUID.fromString(rs.getString("orion_guid")), rs.getLong("project_id"),
+        return new VirtualMachine(java.util.UUID.fromString(rs.getString("vm_id")), rs.getLong("hfs_vm_id"), java.util.UUID.fromString(rs.getString("orion_guid")), rs.getLong("project_id"),
                 spec, rs.getString("vm_name"), image, ipAddress, rs.getTimestamp("vm_valid_on").toInstant(),
                 validUntil != null ? validUntil.toInstant() : null);
     }
@@ -156,7 +156,7 @@ public class JdbcVirtualMachineService implements VirtualMachineService {
             nameSets.append("=?");
             values.add(pair.getValue());
         }
-        nameSets.append(" WHERE id=?");
+        nameSets.append(" WHERE vm_id=?");
         values.add(id);
         Sql.with(dataSource).exec(nameSets.toString(), null, values.toArray());
     }

@@ -65,8 +65,8 @@ public class SysAdminResource {
         this.vmService = vmService;
     }
     
-    private VirtualMachine getVm(long vmId){
-        return vmService.getVirtualMachine(vmId);
+    private VirtualMachine getVm(long hfsVmId){
+        return vmService.getVirtualMachine(hfsVmId);
     }
 
     public static class UpdatePasswordRequest{

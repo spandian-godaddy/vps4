@@ -115,7 +115,7 @@ public class VmResourceUserTest {
         DataSource dataSource = injector.getInstance(DataSource.class);
         Sql.with(dataSource).exec("DELETE FROM vm_action where vm_id = ?", null, vmId);
         Sql.with(dataSource).exec("DELETE FROM ip_address where ip_address_id = ?", null, 1234);
-        Sql.with(dataSource).exec("DELETE FROM virtual_machine WHERE id = ?", null, vmId);
+        Sql.with(dataSource).exec("DELETE FROM virtual_machine WHERE vm_id = ?", null, vmId);
         projService.deleteProject(project.getProjectId());
     }
 
