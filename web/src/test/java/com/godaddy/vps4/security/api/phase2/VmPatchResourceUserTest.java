@@ -68,9 +68,9 @@ public class VmPatchResourceUserTest {
     Vps4User user;
     
     UUID orionGuid;
-    long vmId = 98765;
+    long hfsVmId = 98765;
     Project project;
-    VirtualMachine vm;
+    UUID vmId;
     
     @Before
     public void setupTest(){
@@ -80,15 +80,15 @@ public class VmPatchResourceUserTest {
         invalidUser = userService.getOrCreateUserForShopper("invalidUserShopperId");
         virtualMachineService.createVirtualMachineRequest(orionGuid, "linux", "cPanel", 10, 1, "validUserShopperId");
         project = projService.createProject("TestProject", validUser.getId(), 1, "vps4-test-");
-        virtualMachineService.provisionVirtualMachine(vmId, orionGuid, "fakeVM", project.getProjectId(), 1, 1, 1);
-        vm = virtualMachineService.getVirtualMachine(vmId);
+        vmId = virtualMachineService.provisionVirtualMachine(orionGuid, "fakeVM", project.getProjectId(), 1, 1, 1);
+        virtualMachineService.addHfsVmIdToVirtualMachine(vmId, hfsVmId);
     }
     
     @After
     public void teardownTest(){
         DataSource dataSource = injector.getInstance(DataSource.class);
-        Sql.with(dataSource).exec("DELETE FROM vm_action where vm_id = ?", null, vm.id);
-        Sql.with(dataSource).exec("DELETE FROM virtual_machine WHERE id = ?", null, vm.id);
+        Sql.with(dataSource).exec("DELETE FROM vm_action where vm_id = ?", null, vmId);
+        Sql.with(dataSource).exec("DELETE FROM virtual_machine WHERE vm_id = ?", null, vmId);
         projService.deleteProject(project.getProjectId());
     }
     
@@ -107,9 +107,9 @@ public class VmPatchResourceUserTest {
         VmPatch vmPatch = new VmPatch();
         vmPatch.name = "fakeName";
         
-        newValidVmResource().updateVm(vm.id, vmPatch);
+        newValidVmResource().updateVm(vmId, vmPatch);
         try{
-            newInvalidVmResource().updateVm(vm.id, vmPatch);
+            newInvalidVmResource().updateVm(vmId, vmPatch);
             Assert.fail();
         }catch (Vps4Exception e){
             //do nothing

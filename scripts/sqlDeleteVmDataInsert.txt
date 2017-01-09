@@ -1,7 +1,7 @@
 These 3 Inserts will populate the database with a VM to be deleted.
 The test vm url to call is: 
 http://localhost:3000/#/hosting/vps4/servers/0afac885-2e24-495c-8776-64602aeb047d
-Upon successful deletion the vm with vm_id=0 will have valid_until 
+Upon successful deletion the vm with hfs_vm_id=0 will have valid_until 
 set to a date instead of "infinity".
 
 INSERT INTO public.orion_request as vm_request(
@@ -16,11 +16,11 @@ project_id, project_name, data_center_id, vhfs_sgid, valid_until)
 VALUES(46, '0afac885-2e24-495c-8776-64602aeb047d', 1, 'vps4-46', 'infinity')
 
 INSERT INTO public.virtual_machine as vm(
-vm_id, orion_guid, name, project_id, spec_id, managed_level, image_id)
+hfs_vm_id, orion_guid, name, project_id, spec_id, managed_level, image_id)
 VALUES (0, '0afac885-2e24-495c-8776-64602aeb047d', 'GTest', 46, 1, 1, 1)
-on conflict (vm_id)
+on conflict (hfs_vm_id)
 do update set valid_until = 'infinity'
-where vm.vm_id = 0;
+where vm.hfs_vm_id = 0;
 
 INSERT INT public.vm_user (name, virtual_machine_id, admin_enabled)
 VALUES('testuser', 0, false)

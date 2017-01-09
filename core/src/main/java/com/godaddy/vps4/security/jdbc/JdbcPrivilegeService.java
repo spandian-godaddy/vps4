@@ -38,17 +38,17 @@ public class JdbcPrivilegeService implements PrivilegeService {
     }
 
     @Override
-    public void requireAnyPrivilegeToVmId(Vps4User user, long vmId) {
+    public void requireAnyPrivilegeToVmId(Vps4User user, long hfsVmId) {
         if(!Sql.with(dataSource).call("SELECT COUNT(privilege_id) " +
                                          "FROM user_project_privilege " + 
                                            "JOIN virtual_machine " + 
                                              "ON virtual_machine.project_id = user_project_privilege.project_id " +
                                          "WHERE user_project_privilege.vps4_user_id = ? " +
-                                            "AND virtual_machine.vm_id = ? " +
+                                            "AND virtual_machine.hfs_vm_id = ? " +
                                             "AND NOW() < virtual_machine.valid_until;", 
                                         Sql.nextOrNull(rs -> rs.getInt(1) > 0), 
-                                        user.getId(), vmId)) {
-            throw new AuthorizationException(user.getShopperId() + " does not have privilege for vm " + vmId);
+                                        user.getId(), hfsVmId)) {
+            throw new AuthorizationException(user.getShopperId() + " does not have privilege for hfs vm " + hfsVmId);
         }
         
     }
@@ -60,7 +60,7 @@ public class JdbcPrivilegeService implements PrivilegeService {
                                            "JOIN virtual_machine " + 
                                              "ON virtual_machine.project_id = user_project_privilege.project_id " +
                                          "WHERE user_project_privilege.vps4_user_id = ? " +
-                                            "AND virtual_machine.id = ? " +
+                                            "AND virtual_machine.vm_id = ? " +
                                             "AND NOW() < virtual_machine.valid_until;", 
                                         Sql.nextOrNull(rs -> rs.getInt(1) > 0), 
                                         user.getId(), id)) {

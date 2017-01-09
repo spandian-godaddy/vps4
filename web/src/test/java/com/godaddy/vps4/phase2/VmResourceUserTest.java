@@ -67,7 +67,7 @@ public class VmResourceUserTest {
                 public void configure() {
                     // HFS services
                     Vm hfsVm = new Vm();
-                    hfsVm.vmId = vmId;
+                    hfsVm.vmId = hfsVmId;
                     VmService vmService = Mockito.mock(VmService.class);
                     Mockito.when(vmService.getVm(Mockito.anyLong())).thenReturn(hfsVm);
 
@@ -93,9 +93,9 @@ public class VmResourceUserTest {
     Vps4User user;
 
     UUID orionGuid;
-    long vmId = 98765;
+    long hfsVmId = 98765;
     Project project;
-    UUID id;
+    UUID vmId;
 
     @Before
     public void setupTest(){
@@ -105,17 +105,17 @@ public class VmResourceUserTest {
         invalidUser = userService.getOrCreateUserForShopper("invalidUserShopperId");
         virtualMachineService.createVirtualMachineRequest(orionGuid, "linux", "cPanel", 10, 1, "validUserShopperId");
         project = projService.createProject("TestProject", validUser.getId(), 1, "vps4-test-");
-        id = virtualMachineService.provisionVirtualMachine(vmId, orionGuid, "fakeVM", project.getProjectId(), 1, 1, 1);
-        
-        networkService.createIpAddress(1234, id, "127.0.0.1", IpAddressType.PRIMARY);
+        vmId = virtualMachineService.provisionVirtualMachine(orionGuid, "fakeVM", project.getProjectId(), 1, 1, 1);
+        virtualMachineService.addHfsVmIdToVirtualMachine(vmId, hfsVmId);
+        networkService.createIpAddress(1234, vmId, "127.0.0.1", IpAddressType.PRIMARY);
     }
 
     @After
     public void teardownTest(){
         DataSource dataSource = injector.getInstance(DataSource.class);
-        Sql.with(dataSource).exec("DELETE FROM vm_action where vm_id = ?", null, id);
+        Sql.with(dataSource).exec("DELETE FROM vm_action where vm_id = ?", null, vmId);
         Sql.with(dataSource).exec("DELETE FROM ip_address where ip_address_id = ?", null, 1234);
-        Sql.with(dataSource).exec("DELETE FROM virtual_machine WHERE id = ?", null, id);
+        Sql.with(dataSource).exec("DELETE FROM virtual_machine WHERE vm_id = ?", null, vmId);
         projService.deleteProject(project.getProjectId());
     }
 
@@ -131,7 +131,7 @@ public class VmResourceUserTest {
 
     @Test
     public void testListActions(){
-        long actionId = actionService.createAction(id, ActionType.CREATE_VM, "{}", validUser.getId());
+        long actionId = actionService.createAction(vmId, ActionType.CREATE_VM, "{}", validUser.getId());
         newValidVmResource().getAction(actionId);
         try{
             newInvalidVmResource().getAction(actionId);
@@ -165,9 +165,9 @@ public class VmResourceUserTest {
 
     @Test
     public void testStartVm() throws VmNotFoundException{
-        newValidVmResource().startVm(vmId);
+        newValidVmResource().startVm(hfsVmId);
         try{
-            newInvalidVmResource().startVm(vmId);
+            newInvalidVmResource().startVm(hfsVmId);
             Assert.fail();
         }catch (Vps4Exception e){
             //do nothing
@@ -176,9 +176,9 @@ public class VmResourceUserTest {
 
     @Test
     public void testStopVm() throws VmNotFoundException{
-        newValidVmResource().stopVm(vmId);
+        newValidVmResource().stopVm(hfsVmId);
         try{
-            newInvalidVmResource().stopVm(vmId);
+            newInvalidVmResource().stopVm(hfsVmId);
             Assert.fail();
         }catch (Vps4Exception e){
             //do nothing
@@ -187,9 +187,9 @@ public class VmResourceUserTest {
 
     @Test
     public void testRestartVm() throws VmNotFoundException{
-        newValidVmResource().restartVm(vmId);
+        newValidVmResource().restartVm(hfsVmId);
         try{
-            newInvalidVmResource().restartVm(vmId);
+            newInvalidVmResource().restartVm(hfsVmId);
             Assert.fail();
         }catch (Vps4Exception e){
             //do nothing
@@ -198,9 +198,9 @@ public class VmResourceUserTest {
 
     @Test
     public void testDestroyVm() throws VmNotFoundException{
-        newValidVmResource().destroyVm(vmId);
+        newValidVmResource().destroyVm(hfsVmId);
         try{
-            newInvalidVmResource().destroyVm(vmId);
+            newInvalidVmResource().destroyVm(hfsVmId);
             Assert.fail();
         }catch (Vps4Exception e){
             //do nothing
@@ -215,6 +215,7 @@ public class VmResourceUserTest {
         provisionRequest.orionGuid = newGuid;
         provisionRequest.dataCenterId = 1;
         provisionRequest.image = "centos-7";
+        provisionRequest.name = "Test Name";
         newValidVmResource().provisionVm(provisionRequest);
         try{
             newInvalidVmResource().provisionVm(provisionRequest);

@@ -70,7 +70,7 @@ public class JdbcNetworkService implements NetworkService {
     @Override
     public IpAddress getVmPrimaryAddress(long hfsVmId) {
         return Sql.with(dataSource).exec(
-                "SELECT * FROM ip_address ip JOIN virtual_machine vm on ip.vm_id = vm.id WHERE vm.vm_id=? AND ip.ip_address_type_id = ?",
+                "SELECT * FROM ip_address ip JOIN virtual_machine vm on ip.vm_id = vm.vm_id WHERE vm.hfs_vm_id=? AND ip.ip_address_type_id = ?",
                 Sql.nextOrNull(this::mapIpAddress), hfsVmId, IpAddress.IpAddressType.PRIMARY.getId());
     }
 }

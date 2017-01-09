@@ -49,7 +49,7 @@ public class CreateTestVmRequest {
         virtualMachineService.createVirtualMachineRequest(orionGuid, operatingSystem, controlPanel, tier, managedLevel, shopperId);
 
         // normally we would get this from HFS
-        long vmId = new Random().nextInt(1000000);
+        long hfsVmId = new Random().nextInt(1000000);
 
         Vps4User user = userService.getOrCreateUserForShopper(shopperId);
 
@@ -57,7 +57,8 @@ public class CreateTestVmRequest {
 
         int imageId = imageService.getImageId(operatingSystem);
 
-        virtualMachineService.provisionVirtualMachine(vmId, orionGuid, "SomeNewVm", projectId, spec.specId, managedLevel, imageId);
+        UUID vmId = virtualMachineService.provisionVirtualMachine(orionGuid, "SomeNewVm", projectId, spec.specId, managedLevel, imageId);
+        virtualMachineService.addHfsVmIdToVirtualMachine(vmId, hfsVmId);
     }
 
     public static void main(String[] args) {
