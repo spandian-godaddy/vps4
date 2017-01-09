@@ -11,11 +11,15 @@ ALTER TABLE virtual_machine RENAME id TO vm_id;
 -- Remove hfs_vm_id not null constraint
 ALTER TABLE virtual_machine ALTER COLUMN hfs_vm_id DROP NOT NULL;
 
---Make new index for hfs_vm_id
+-- Make new index for hfs_vm_id
 CREATE INDEX virtual_machine_hfs_vm_id_idx ON virtual_machine (hfs_vm_id);
 
 -- CREATE vm_id index
 CREATE INDEX virtual_machine_vm_id_idx ON virtual_machine (vm_id);
+
+-- Add not null to vm_action and ip_address
+ALTER TABLE vm_action ALTER COLUMN vm_id SET NOT NULL;
+ALTER TABLE ip_address ALTER COLUMN vm_id SET NOT NULL;
 
 --Make new virtual_machine_provision function
 CREATE OR REPLACE FUNCTION virtual_machine_provision(p_vm_id UUID
