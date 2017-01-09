@@ -343,7 +343,7 @@ public class VmResource {
         Image image = getImage(provisionRequest.image);
         // TODO - verify that the image matches the request (control panel, managed level, OS)
 
-        UUID vmId = virtualMachineService.provisionVirtualMachine(0, vmRequest.orionGuid, provisionRequest.name, 
+        UUID vmId = virtualMachineService.provisionVirtualMachine(vmRequest.orionGuid, provisionRequest.name, 
                                                                     project.getProjectId(), spec.specId, 
                                                                     vmRequest.managedLevel, image.imageId);
         

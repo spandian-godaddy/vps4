@@ -77,8 +77,8 @@ public class VirtualMachineServiceTest {
     @Test
     public void testService() {
         projects.add(SqlTestData.createProject(dataSource));
-        long vmId = SqlTestData.getNextId(dataSource);
-        vmIds.add(vmId);
+        long hfsVmId = SqlTestData.getNextId(dataSource);
+        vmIds.add(hfsVmId);
 
         virtualMachineService.createVirtualMachineRequest(orionGuid, os, controlPanel, tier, managedLevel, vps4User.getShopperId());
 
@@ -95,12 +95,13 @@ public class VirtualMachineServiceTest {
         long imageId = 1;
         int specId = 1;
 
-        virtualMachineService.provisionVirtualMachine(vmId, orionGuid, name, projects.get(0).getProjectId(), specId, managedLevel, imageId);
+        UUID vmId = virtualMachineService.provisionVirtualMachine(orionGuid, name, projects.get(0).getProjectId(), specId, managedLevel, imageId);
+        virtualMachineService.addHfsVmIdToVirtualMachine(vmId, hfsVmId);
 
-        VirtualMachine vm = virtualMachineService.getVirtualMachine(vmId);
+        VirtualMachine vm = virtualMachineService.getVirtualMachine(hfsVmId);
 
         assertNotNull(vm);
-        assertEquals(vmId, vm.vmId);
+        assertEquals(hfsVmId, vm.vmId);
         assertEquals(name, vm.name);
         assertEquals(projects.get(0).getProjectId(), vm.projectId);
         assertEquals(specId, vm.spec.specId);
@@ -155,7 +156,9 @@ public class VirtualMachineServiceTest {
 
         Project project = SqlTestData.createProject(dataSource);
         projects.add(project);
-        virtualMachineService.provisionVirtualMachine(1, requests.get(0).orionGuid, "test", project.getProjectId(), 2, 0, 1);
+        UUID vmId = virtualMachineService.provisionVirtualMachine(requests.get(0).orionGuid, "test", project.getProjectId(), 2, 0, 1);
+        virtualMachineService.addHfsVmIdToVirtualMachine(vmId,1);
+        
         vmIds.add((long) 1);
 
         virtualMachineService.createOrionRequestIfNoneExists(vps4User);

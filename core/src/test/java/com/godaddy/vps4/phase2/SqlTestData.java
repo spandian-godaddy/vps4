@@ -27,10 +27,11 @@ public class SqlTestData {
         NetworkService networkService = new JdbcNetworkService (dataSource);
         ImageService imageService = new JdbcImageService(dataSource);
         VirtualMachineService virtualMachineService = new JdbcVirtualMachineService(dataSource, networkService, imageService);
-        long vmId = getNextId(dataSource);
+        long hfsVmId = getNextId(dataSource);
         virtualMachineService.createVirtualMachineRequest(orionGuid, "linux", "none", 10, 0, "TestUser");
-        virtualMachineService.provisionVirtualMachine(vmId, orionGuid, "networkTestVm", projectId, 1, 0, 1);
-        return vmId;
+        UUID vmId = virtualMachineService.provisionVirtualMachine(orionGuid, "networkTestVm", projectId, 1, 0, 1);
+        virtualMachineService.addHfsVmIdToVirtualMachine(vmId, hfsVmId);
+        return hfsVmId;
     }
 
     public static void cleanupTestVmAndRelatedData(long hfsVmId, DataSource dataSource) {

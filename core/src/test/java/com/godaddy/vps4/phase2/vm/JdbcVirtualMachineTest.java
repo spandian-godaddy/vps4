@@ -60,7 +60,8 @@ public class JdbcVirtualMachineTest {
     public void testProvisionVmCreatesId() {
         vmService.createVirtualMachineRequest(orionGuid, "linux", "cPanel", 10, 1, "testShopperId");
         project = projService.createProject("testProject", 1, 1, "testPrefix");
-        UUID vmId = vmService.provisionVirtualMachine(1231, orionGuid, "testName", project.getProjectId(), 1, 1, 1);
+        UUID vmId = vmService.provisionVirtualMachine(orionGuid, "testName", project.getProjectId(), 1, 1, 1);
+        vmService.addHfsVmIdToVirtualMachine(vmId, 1231);
         assertNotNull(vmId);
         assertEquals(UUID.class, vmId.getClass());
     }

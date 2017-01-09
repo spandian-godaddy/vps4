@@ -39,7 +39,7 @@ public class VmPatchResourceTest {
     Project project;
     UUID orionGuid;
     UUID id;
-    long vmId;
+    long hfsVmId;
     DataSource dataSource = injector.getInstance(DataSource.class);
     long virtualMachineRequestId;
     String initialName = "testServer";
@@ -56,15 +56,16 @@ public class VmPatchResourceTest {
         int managedLevel = 0;
         virtualMachineService.createVirtualMachineRequest(orionGuid, "linux", "cpanel", 10, managedLevel, "testShopperId");
         
-        vmId = 1000+Math.abs((new Random().nextLong()));  //HFS usually creates this, so we're making it up
-        virtualMachineService.provisionVirtualMachine(vmId, orionGuid, initialName, 
+        UUID vmId = virtualMachineService.provisionVirtualMachine(orionGuid, initialName, 
                                                      project.getProjectId(), 
                                                      1, managedLevel, 1);
+        hfsVmId = 1000+Math.abs((new Random().nextLong()));  //HFS usually creates this, so we're making it up
+        virtualMachineService.addHfsVmIdToVirtualMachine(vmId, hfsVmId);
     }
     
     @After
     public void teardownTest(){
-        Sql.with(dataSource).exec("DELETE from virtual_machine where hfs_vm_id = ?", null, vmId);
+        Sql.with(dataSource).exec("DELETE from virtual_machine where hfs_vm_id = ?", null, hfsVmId);
         Sql.with(dataSource).exec("DELETE from orion_request where orion_guid = ?", null, orionGuid);
         Sql.with(dataSource).exec("DELETE from user_project_privilege where project_id = ?", null, project.getProjectId());
         Sql.with(dataSource).exec("DELETE from project where project_id = ?", null, project.getProjectId());
@@ -77,13 +78,13 @@ public class VmPatchResourceTest {
     }
 
     private VirtualMachine updateVmName(String newName) {
-        VirtualMachine vm = virtualMachineService.getVirtualMachine(vmId);
+        VirtualMachine vm = virtualMachineService.getVirtualMachine(hfsVmId);
         assertEquals(initialName, vm.name);
         VmPatchResource patchResource = new VmPatchResource(virtualMachineService, null, privilegeService);
         VmPatch vmPatch = new VmPatch();
         vmPatch.name = newName;
         patchResource.updateVm(vm.id, vmPatch);
-        vm = virtualMachineService.getVirtualMachine(vmId);
+        vm = virtualMachineService.getVirtualMachine(hfsVmId);
         return vm;
     }
     

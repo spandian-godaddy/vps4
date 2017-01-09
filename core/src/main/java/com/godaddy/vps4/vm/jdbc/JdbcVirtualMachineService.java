@@ -127,11 +127,11 @@ public class JdbcVirtualMachineService implements VirtualMachineService {
     }
 
     @Override
-    public UUID provisionVirtualMachine(long vmId, UUID orionGuid, String name, 
+    public UUID provisionVirtualMachine(UUID orionGuid, String name, 
                                         long projectId, int specId, int managedLevel, long imageId) {
         UUID virtual_machine_id = UUID.randomUUID();
-        Sql.with(dataSource).exec("SELECT * FROM virtual_machine_provision(?, ?, ?, ?, ?, ?, ?, ?)", null, 
-                virtual_machine_id, vmId, orionGuid, name, projectId, specId, managedLevel, imageId);
+        Sql.with(dataSource).exec("SELECT * FROM virtual_machine_provision(?, ?, ?, ?, ?, ?, ?)", null, 
+                virtual_machine_id, orionGuid, name, projectId, specId, managedLevel, imageId);
         return virtual_machine_id;
     }
     
