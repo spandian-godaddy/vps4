@@ -1,5 +1,6 @@
 package com.godaddy.vps4.vm;
 
+import java.util.List;
 import java.util.UUID;
 
 public interface ActionService {
@@ -7,6 +8,10 @@ public interface ActionService {
     long createAction(UUID vmId, ActionType actionType, String request, long userId);
 
     Action getAction(long actionId);
+    
+    List<Action> getActions(UUID vmId);
+    
+    List<Action> getActions(UUID vmId, long limit, long offset);
     
     void tagWithCommand(long actionId, UUID commandId);
 

@@ -2,6 +2,7 @@ package com.godaddy.vps4.vm.jdbc;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.List;
 import java.util.UUID;
 
 import javax.inject.Inject;
@@ -68,7 +69,34 @@ public class JdbcActionService implements ActionService {
                 + " where id = ?;", 
                 Sql.nextOrNull(this::mapAction), actionId);
     }
-
+    
+    @Override
+    public long countActions(UUID vmId){
+        return Sql.with(dataSource).exec("SELECT count(id) FROM vm_action " 
+                + " where vm_id = ?;", 
+                null, vmId);
+    }
+    
+    @Override
+    public List<Action> getActions(UUID vmId){
+        return Sql.with(dataSource).exec("SELECT *  FROM vm_action " 
+                + " JOIN action_status on vm_action.status_id = action_status.status_id" 
+                + " JOIN action_type on vm_action.action_type_id = action_type.type_id" 
+                + " where vm_id = ?;", 
+                Sql.listOf(this::mapAction), vmId);
+    }
+    
+    @Override
+    public List<Action> getActions(UUID vmId, long limit, long offset){
+        return Sql.with(dataSource).exec("SELECT *  FROM vm_action " 
+                + " JOIN action_status on vm_action.status_id = action_status.status_id" 
+                + " JOIN action_type on vm_action.action_type_id = action_type.type_id" 
+                + " where vm_id = ?"
+                + " ORDER BY created DESC"
+                + " LIMIT ? OFFSET ?;", 
+                Sql.listOf(this::mapAction), vmId, limit, offset);
+    }
+    
     private Action mapAction(ResultSet rs) throws SQLException {
         ActionStatus status = ActionStatus.valueOf(rs.getString("status"));
         ActionType type = ActionType.valueOf(rs.getString("type"));

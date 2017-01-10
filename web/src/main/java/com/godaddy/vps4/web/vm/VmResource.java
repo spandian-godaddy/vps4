@@ -41,6 +41,7 @@ import com.godaddy.vps4.vm.VirtualMachine;
 import com.godaddy.vps4.vm.VirtualMachineCredit;
 import com.godaddy.vps4.vm.VirtualMachineService;
 import com.godaddy.vps4.vm.VirtualMachineSpec;
+import com.godaddy.vps4.web.PaginatedResult;
 import com.godaddy.vps4.web.Vps4Api;
 import com.godaddy.vps4.web.util.Commands;
 
@@ -116,6 +117,17 @@ public class VmResource {
         }
 
         return action;
+    }
+    
+   
+    @GET
+    @Path("actions/{vmId}/{limit}/{offset}")
+    public PaginatedResult<Action> getActions(@PathParam("vmId") UUID vmId, @PathParam("limit") long limit, @PathParam("offset") long offset) {
+        privilegeService.requireAnyPrivilegeToVmId(user, vmId);
+        List<Action> actions = actionService.getActions(vmId, limit, offset);
+        long numberOfResults = actionService.
+        PaginatedResult<Action> result = new PaginatedResult<Action>(actions, limit, offset, 10000, "OMG WTF");
+        return result;
     }
 
     public void requireSameActionUser(Action action) {
