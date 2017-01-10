@@ -18,7 +18,9 @@ CREATE INDEX virtual_machine_hfs_vm_id_idx ON virtual_machine (hfs_vm_id);
 CREATE INDEX virtual_machine_vm_id_idx ON virtual_machine (vm_id);
 
 -- Add not null to vm_action and ip_address
+DELETE FROM vm_action where vm_id is null;
 ALTER TABLE vm_action ALTER COLUMN vm_id SET NOT NULL;
+DELETE FROM ip_address where vm_id is null;
 ALTER TABLE ip_address ALTER COLUMN vm_id SET NOT NULL;
 
 --Make new virtual_machine_provision function
