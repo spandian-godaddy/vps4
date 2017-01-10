@@ -8,6 +8,7 @@ import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
+import javax.ws.rs.QueryParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
 
@@ -41,34 +42,51 @@ public class CPanelResource {
     final Vps4User user;
 
     @Inject
-    public CPanelResource(Vps4CpanelService cpanelService,
-                          PrivilegeService privilegeService,
-                          Vps4User user) {
+    public CPanelResource(Vps4CpanelService cpanelService, PrivilegeService privilegeService, Vps4User user) {
         this.cpanelService = cpanelService;
         this.privilegeService = privilegeService;
         this.user = user;
     }
 
     @GET
-    @Path("{vmId}/cpanel/session")
-    public CPanelSession getCPanelSession(@PathParam("vmId") long vmId) {
+    @Path("{vmId}/cpanel/whmSession")
+    public CPanelSession getWHMSession(@PathParam("vmId") long vmId) {
 
         privilegeService.requireAnyPrivilegeToVmId(user, vmId);
 
-        logger.info("get cpanel session for vmId {}", vmId);
+        logger.info("get WHM session for vmId {}", vmId);
 
         try {
             return cpanelService.createSession(vmId, "root", CpanelServiceType.whostmgrd);
-        }
-        catch (CpanelAccessDeniedException e) {
+        } catch (CpanelAccessDeniedException e) {
             // TODO bubble a more specific error to the client
-            //      (UI can show a "Authentication issue" error
-            //       instead of just generic "something happened")
-        }
-        catch (CpanelTimeoutException e) {
+            // (UI can show a "Authentication issue" error
+            // instead of just generic "something happened")
+        } catch (CpanelTimeoutException e) {
+
+        } catch (IOException e) {
 
         }
-        catch (IOException e) {
+        return null;
+    }
+
+    @GET
+    @Path("{vmId}/cpanel/cpanelSession")
+    public CPanelSession getCPanelSession(@PathParam("vmId") long vmId, @QueryParam("username") String username) {
+
+        privilegeService.requireAnyPrivilegeToVmId(user, vmId);
+
+        logger.info("get cPanel session for vmId {}", vmId);
+
+        try {
+            return cpanelService.createSession(vmId, username, CpanelServiceType.cpaneld);
+        } catch (CpanelAccessDeniedException e) {
+            // TODO bubble a more specific error to the client
+            // (UI can show a "Authentication issue" error
+            // instead of just generic "something happened")
+        } catch (CpanelTimeoutException e) {
+
+        } catch (IOException e) {
 
         }
         return null;
@@ -84,14 +102,11 @@ public class CPanelResource {
 
         try {
             return cpanelService.listCpanelAccounts(vmId);
-        }
-        catch (CpanelAccessDeniedException e) {
+        } catch (CpanelAccessDeniedException e) {
             // TODO bubble a more specific error to the client
-        }
-        catch (CpanelTimeoutException e) {
+        } catch (CpanelTimeoutException e) {
 
-        }
-        catch (IOException e) {
+        } catch (IOException e) {
 
         }
         return null;

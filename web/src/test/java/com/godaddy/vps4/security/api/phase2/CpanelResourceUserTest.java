@@ -21,7 +21,6 @@ import com.godaddy.vps4.security.SecurityModule;
 import com.godaddy.vps4.security.Vps4User;
 import com.godaddy.vps4.security.Vps4UserService;
 import com.godaddy.vps4.vm.ActionService;
-import com.godaddy.vps4.vm.VirtualMachine;
 import com.godaddy.vps4.vm.VirtualMachineService;
 import com.godaddy.vps4.vm.VmModule;
 import com.godaddy.vps4.web.cpanel.CPanelResource;
@@ -111,10 +110,21 @@ public class CpanelResourceUserTest {
     }
 
     @Test
-    public void testListActions(){
-        getValidResource().getCPanelSession(hfsVmId);
+    public void testGetWHMSession(){
+        getValidResource().getWHMSession(hfsVmId);
         try{
-            getInvalidResource().getCPanelSession(hfsVmId);
+            getInvalidResource().getWHMSession(hfsVmId);
+            Assert.fail();
+        }catch (Vps4Exception e){
+            //do nothing
+        }
+    }
+
+    @Test
+    public void testGetCPanelSession(){
+        getValidResource().getCPanelSession(hfsVmId, "testuser");
+        try{
+            getInvalidResource().getCPanelSession(hfsVmId, "testuser");
             Assert.fail();
         }catch (Vps4Exception e){
             //do nothing
