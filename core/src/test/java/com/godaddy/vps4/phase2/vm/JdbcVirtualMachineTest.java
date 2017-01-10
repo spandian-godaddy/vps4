@@ -1,6 +1,7 @@
 package com.godaddy.vps4.phase2.vm;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 
 import java.util.UUID;
 
@@ -52,7 +53,7 @@ public class JdbcVirtualMachineTest {
     public void cleanup() {
         
         SqlTestData.cleanupTestVmAndRelatedData(1231, dataSource);
-        Sql.with(dataSource).exec("DELETE FROM orion_request WHERE orion_guid = ?", null, orionGuid);
+        Sql.with(dataSource).exec("DELETE FROM credit WHERE orion_guid = ?", null, orionGuid);
         SqlTestData.cleanupTestProject(project.getProjectId(), dataSource);
     }
 

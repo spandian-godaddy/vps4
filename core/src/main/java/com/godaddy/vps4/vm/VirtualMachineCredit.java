@@ -3,7 +3,7 @@ package com.godaddy.vps4.vm;
 import java.time.Instant;
 import java.util.UUID;
 
-public class VirtualMachineRequest {
+public class VirtualMachineCredit {
 
     public final UUID orionGuid;
     public final int tier;
@@ -14,7 +14,7 @@ public class VirtualMachineRequest {
     public final Instant provisionDate;
     public final String shopperId;
 
-    public VirtualMachineRequest(UUID orionGuid, int tier, int managedLevel, String operatingSystem, String controlPanel, Instant createDate, Instant provisionDate, String shopperId) {
+    public VirtualMachineCredit(UUID orionGuid, int tier, int managedLevel, String operatingSystem, String controlPanel, Instant createDate, Instant provisionDate, String shopperId) {
         this.orionGuid = orionGuid;
         this.tier = tier;
         this.managedLevel = managedLevel;

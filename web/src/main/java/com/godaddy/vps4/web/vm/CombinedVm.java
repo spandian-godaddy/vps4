@@ -3,7 +3,7 @@ package com.godaddy.vps4.web.vm;
 import java.time.Instant;
 
 import com.godaddy.vps4.vm.VirtualMachine;
-import com.godaddy.vps4.vm.VirtualMachineRequest;
+import com.godaddy.vps4.vm.VirtualMachineCredit;
 
 import gdg.hfs.vhfs.vm.Vm;
 
@@ -27,7 +27,7 @@ public class CombinedVm {
         this(vm, null, null);
     }
 
-    public CombinedVm(Vm vm, VirtualMachine virtualMachine, VirtualMachineRequest vmRequest) {
+    public CombinedVm(Vm vm, VirtualMachine virtualMachine, VirtualMachineCredit vmRequest) {
         if (vm != null) {
             vmId = vm.vmId;
             status = vm.status;

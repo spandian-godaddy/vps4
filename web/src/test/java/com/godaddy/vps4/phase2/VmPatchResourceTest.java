@@ -66,7 +66,7 @@ public class VmPatchResourceTest {
     @After
     public void teardownTest(){
         Sql.with(dataSource).exec("DELETE from virtual_machine where hfs_vm_id = ?", null, hfsVmId);
-        Sql.with(dataSource).exec("DELETE from orion_request where orion_guid = ?", null, orionGuid);
+        Sql.with(dataSource).exec("DELETE from credit where orion_guid = ?", null, orionGuid);
         Sql.with(dataSource).exec("DELETE from user_project_privilege where project_id = ?", null, project.getProjectId());
         Sql.with(dataSource).exec("DELETE from project where project_id = ?", null, project.getProjectId());
     }

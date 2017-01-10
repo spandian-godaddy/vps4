@@ -33,7 +33,7 @@ public interface VirtualMachineService {
 
     void createVirtualMachineRequest(UUID orionGuid, String osType, String controlPanel, int tier, int managedLevel, String shopperId);
 
-    VirtualMachineRequest getVirtualMachineRequest(UUID orionGuid);
+    VirtualMachineCredit getVirtualMachineCredit(UUID orionGuid);
 
     UUID provisionVirtualMachine(UUID orionGuid, String name, long projectId, int specId, int managedLevel, long imageId);
 
@@ -43,7 +43,7 @@ public interface VirtualMachineService {
 
     List<VirtualMachine> getVirtualMachinesForUser(long vps4UserId);
 
-    List<VirtualMachineRequest> getOrionRequests(String shopperId);
+    List<VirtualMachineCredit> getVirtualMachineCredits(String shopperId);
 
     void createOrionRequestIfNoneExists(Vps4User vps4User);
 

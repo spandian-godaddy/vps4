@@ -152,16 +152,7 @@ public class VmResourceUserTest {
         }
     }
 
-    @Test
-    public void testGetVmRequest(){
-        newValidVmResource().getVmRequest(orionGuid);
-        try{
-            newInvalidVmResource().getVmRequest(orionGuid);
-            Assert.fail();
-        }catch (Vps4Exception e){
-            //do nothing
-        }
-    }
+
 
     @Test
     public void testStartVm() throws VmNotFoundException{

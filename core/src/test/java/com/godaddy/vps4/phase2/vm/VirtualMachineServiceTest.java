@@ -29,7 +29,7 @@ import com.godaddy.vps4.project.jdbc.JdbcProjectService;
 import com.godaddy.vps4.security.Vps4User;
 import com.godaddy.vps4.vm.ImageService;
 import com.godaddy.vps4.vm.VirtualMachine;
-import com.godaddy.vps4.vm.VirtualMachineRequest;
+import com.godaddy.vps4.vm.VirtualMachineCredit;
 import com.godaddy.vps4.vm.VirtualMachineService;
 import com.godaddy.vps4.vm.jdbc.JdbcImageService;
 import com.godaddy.vps4.vm.jdbc.JdbcVirtualMachineService;
@@ -67,7 +67,7 @@ public class VirtualMachineServiceTest {
             SqlTestData.cleanupTestVmAndRelatedData(vmId, dataSource);
         }
         for (UUID request : vmRequests) {
-            Sql.with(dataSource).exec("DELETE FROM orion_request WHERE orion_guid = ?", null, request);
+            Sql.with(dataSource).exec("DELETE FROM credit WHERE orion_guid = ?", null, request);
         }
         for (Project project : projects) {
             SqlTestData.cleanupTestProject(project.getProjectId(), dataSource);
@@ -82,7 +82,7 @@ public class VirtualMachineServiceTest {
 
         virtualMachineService.createVirtualMachineRequest(orionGuid, os, controlPanel, tier, managedLevel, vps4User.getShopperId());
 
-        VirtualMachineRequest vmRequest = virtualMachineService.getVirtualMachineRequest(orionGuid);
+        VirtualMachineCredit vmRequest = virtualMachineService.getVirtualMachineCredit(orionGuid);
 
         assertNotNull(vmRequest);
         assertEquals(orionGuid, vmRequest.orionGuid);
@@ -119,7 +119,7 @@ public class VirtualMachineServiceTest {
                     vps4User.getShopperId());
         }
 
-        List<VirtualMachineRequest> requests = virtualMachineService.getOrionRequests(vps4User.getShopperId());
+        List<VirtualMachineCredit> requests = virtualMachineService.getVirtualMachineCredits(vps4User.getShopperId());
 
         List<UUID> requestGuids = requests.stream().map(rs -> rs.orionGuid).collect(Collectors.toList());
         for (UUID request : vmRequests)
@@ -136,7 +136,7 @@ public class VirtualMachineServiceTest {
     @Test
     public void testGetOrCreateCredit() throws InterruptedException {
         
-        List<VirtualMachineRequest> requests = virtualMachineService.getOrionRequests(vps4User.getShopperId());
+        List<VirtualMachineCredit> requests = virtualMachineService.getVirtualMachineCredits(vps4User.getShopperId());
         assertTrue(requests.isEmpty());
 
         int numberOfTasks = 10;
@@ -150,7 +150,7 @@ public class VirtualMachineServiceTest {
         ExecutorService executor = Executors.newFixedThreadPool(numberOfTasks);
         executor.invokeAll(tasks);
 
-        requests = virtualMachineService.getOrionRequests(vps4User.getShopperId());
+        requests = virtualMachineService.getVirtualMachineCredits(vps4User.getShopperId());
         assertEquals(1, requests.size());
         vmRequests.add(requests.get(0).orionGuid);
 
@@ -162,13 +162,13 @@ public class VirtualMachineServiceTest {
         vmIds.add((long) 1);
 
         virtualMachineService.createOrionRequestIfNoneExists(vps4User);
-        requests = virtualMachineService.getOrionRequests(vps4User.getShopperId());
+        requests = virtualMachineService.getVirtualMachineCredits(vps4User.getShopperId());
         assertTrue(requests.isEmpty());
 
         virtualMachineService.destroyVirtualMachine(1);
 
         virtualMachineService.createOrionRequestIfNoneExists(vps4User);
-        requests = virtualMachineService.getOrionRequests(vps4User.getShopperId());
+        requests = virtualMachineService.getVirtualMachineCredits(vps4User.getShopperId());
         assertTrue(!requests.isEmpty());
         vmRequests.add(requests.get(0).orionGuid);
     }

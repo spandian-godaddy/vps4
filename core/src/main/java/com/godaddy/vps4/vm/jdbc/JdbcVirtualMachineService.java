@@ -20,7 +20,7 @@ import com.godaddy.vps4.security.Vps4User;
 import com.godaddy.vps4.vm.Image;
 import com.godaddy.vps4.vm.ImageService;
 import com.godaddy.vps4.vm.VirtualMachine;
-import com.godaddy.vps4.vm.VirtualMachineRequest;
+import com.godaddy.vps4.vm.VirtualMachineCredit;
 import com.godaddy.vps4.vm.VirtualMachineService;
 import com.godaddy.vps4.vm.VirtualMachineSpec;
 
@@ -106,21 +106,21 @@ public class JdbcVirtualMachineService implements VirtualMachineService {
 
     @Override
     public void createVirtualMachineRequest(UUID orionGuid, String operatingSystem, String controlPanel, int tier, int managedLevel, String shopperId) {
-        Sql.with(dataSource).exec("SELECT * FROM orion_request_create(?,?,?,?,?,?)", 
+        Sql.with(dataSource).exec("SELECT * FROM credit_create(?,?,?,?,?,?)", 
                 null, orionGuid, operatingSystem, tier,
                 controlPanel, managedLevel, shopperId);
     }
 
     @Override
-    public VirtualMachineRequest getVirtualMachineRequest(UUID orionGuid) {
-        return Sql.with(dataSource).exec("SELECT * FROM orion_request WHERE orion_guid = ?",
-                Sql.nextOrNull(this::mapVirtualMachineRequest), orionGuid);
+    public VirtualMachineCredit getVirtualMachineCredit(UUID orionGuid) {
+        return Sql.with(dataSource).exec("SELECT * FROM credit WHERE orion_guid = ?",
+                Sql.nextOrNull(this::mapVirtualMachineCredit), orionGuid);
     }
 
-    private VirtualMachineRequest mapVirtualMachineRequest(ResultSet rs) throws SQLException {
+    private VirtualMachineCredit mapVirtualMachineCredit(ResultSet rs) throws SQLException {
         Timestamp provisionDate = rs.getTimestamp("provision_date");
 
-        return new VirtualMachineRequest(java.util.UUID.fromString(rs.getString("orion_guid")), rs.getInt("tier"),
+        return new VirtualMachineCredit(java.util.UUID.fromString(rs.getString("orion_guid")), rs.getInt("tier"),
                 rs.getInt("managed_level"), rs.getString("operating_system"), rs.getString("control_panel"),
                 rs.getTimestamp("create_date").toInstant(), provisionDate != null ? provisionDate.toInstant() : null,
                 rs.getString("shopper_id"));
@@ -172,15 +172,15 @@ public class JdbcVirtualMachineService implements VirtualMachineService {
     }
 
     @Override
-    public List<VirtualMachineRequest> getOrionRequests(String shopperId) {
-        return (List<VirtualMachineRequest>) Sql.with(dataSource).exec(
-                "SELECT * from orion_request WHERE shopper_id = ? AND provision_date IS NULL",
-                Sql.listOf(this::mapVirtualMachineRequest), shopperId);
+    public List<VirtualMachineCredit> getVirtualMachineCredits(String shopperId) {
+        return (List<VirtualMachineCredit>) Sql.with(dataSource).exec(
+                "SELECT * from credit WHERE shopper_id = ? AND provision_date IS NULL",
+                Sql.listOf(this::mapVirtualMachineCredit), shopperId);
     }
 
     @Override
     public void createOrionRequestIfNoneExists(Vps4User vps4User) {
-        Sql.with(dataSource).exec("SELECT * FROM auto_create_orion_request(?, ?, ?, ?, ?)", null, vps4User.getId(), 10, "linux", "cpanel",
+        Sql.with(dataSource).exec("SELECT * FROM auto_create_credit(?, ?, ?, ?, ?)", null, vps4User.getId(), 10, "linux", "cpanel",
                 1);
     }
 }
