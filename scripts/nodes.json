@@ -1,0 +1,58 @@
+{
+  "dev": {
+      "app": [
+        "p3dlvps4app01.cloud.phx3.gdg",
+        "p3dlvps4app02.cloud.phx3.gdg"
+      ],
+      "orchestration": [
+        "p3dlvps4app01.cloud.phx3.gdg"
+      ],
+      "zookeeper": [
+        "p3dlvps4zk01.cloud.phx3.gdg",
+        "p3dlvps4zk02.cloud.phx3.gdg",
+        "p3dlvps4zk03.cloud.phx3.gdg"
+      ]
+  },
+  "test": {
+      "app": [
+        "p3tlvps4app01.cloud.phx3.gdg",
+        "p3tlvps4app02.cloud.phx3.gdg"
+      ],
+      "orchestration": [
+        "p3tlvps4app01.cloud.phx3.gdg"
+      ],
+      "zookeeper": [
+        "p3tlvps4zk01.cloud.phx3.gdg",
+        "p3tlvps4zk02.cloud.phx3.gdg",
+        "p3tlvps4zk03.cloud.phx3.gdg"
+      ]
+  },
+  "stage": {
+      "app": [
+        "p3slvps4app01.cloud.phx3.gdg",
+        "p3slvps4app02.cloud.phx3.gdg"
+      ],
+      "orchestration": [
+        "p3slvps4app01.cloud.phx3.gdg"
+      ],
+      "zookeeper": [
+        "p3slvps4zk01.cloud.phx3.gdg",
+        "p3slvps4zk02.cloud.phx3.gdg",
+        "p3slvps4zk03.cloud.phx3.gdg"
+      ]
+  },
+  "prod": {
+      "app": [
+        "a2plvps4app01.cloud.iad2.gdg",
+        "a2plvps4app02.cloud.iad2.gdg"
+      ],
+      "orchestration": [
+        "a2plvps4app01.cloud.iad2.gdg"
+      ],
+      "zookeeper": [
+        "a2plvps4zk01.cloud.iad2.gdg",
+        "a2plvps4zk02.cloud.iad2.gdg",
+        "a2plvps4zk03.cloud.iad2.gdg"
+      ]
+  }
+}
