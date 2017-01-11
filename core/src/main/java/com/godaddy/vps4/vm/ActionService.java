@@ -11,8 +11,6 @@ public interface ActionService {
 
     Action getAction(long actionId);
     
-    List<Action> getActions(UUID vmId);
-    
     ResultSubset<Action> getActions(UUID vmId, long limit, long offset);
     
     void tagWithCommand(long actionId, UUID commandId);
