@@ -1,0 +1,95 @@
+package com.godaddy.vps4.web.vm;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.UUID;
+
+import org.junit.Test;
+import org.mockito.Mockito;
+
+import com.godaddy.vps4.jdbc.ResultSubset;
+import com.godaddy.vps4.security.PrivilegeService;
+import com.godaddy.vps4.security.Vps4User;
+import com.godaddy.vps4.vm.Action;
+import com.godaddy.vps4.vm.ActionService;
+import com.godaddy.vps4.vm.ActionStatus;
+import com.godaddy.vps4.vm.ActionType;
+import com.godaddy.vps4.web.PaginatedResult;
+import com.google.inject.AbstractModule;
+import com.google.inject.Guice;
+import com.google.inject.Injector;
+import com.google.inject.Provides;
+
+
+import static org.junit.Assert.assertEquals;
+
+
+public class GetVmActionsTest {
+    
+    ResultSubset<Action> actionSubset;
+    
+    UUID vmId = UUID.randomUUID();
+    
+    @Test
+    public void testNullResults(){
+        actionSubset = null;
+        
+        Injector injector = Guice.createInjector(
+                new AbstractModule() {
+            @Override
+            public void configure() {
+                PrivilegeService privilegeService = Mockito.mock(PrivilegeService.class);
+                Mockito.when(privilegeService.checkAnyPrivilegeToProjectId(Mockito.any(Vps4User.class),Mockito.anyLong())).thenReturn(true);
+                bind(PrivilegeService.class).toInstance(privilegeService);
+                
+                ActionService actionService = Mockito.mock(ActionService.class);
+                Mockito.when(actionService.getActions(Mockito.any(UUID.class), Mockito.anyLong(), Mockito.anyLong())).thenReturn(actionSubset);
+                bind(ActionService.class).toInstance(actionService);
+            }
+            
+            @Provides
+            public Vps4User provideUser() {
+                return new Vps4User(1, "123456666");
+            }
+        });
+        
+        ActionResource vmResource = injector.getInstance(ActionResource.class);
+        PaginatedResult<Action> actionResults = vmResource.getActions(UUID.randomUUID(), 10, 10);
+        System.out.println(actionResults.results.size());
+        assertEquals(0, actionResults.pagination.total);
+        assertEquals(new ArrayList<Action>(), actionResults.results);
+    }
+    
+    @Test
+    public void testNonNullResults(){
+        List<Action> actionList = new ArrayList<Action>();
+        actionList.add(new Action(1, vmId, ActionType.STOP_VM, 1, "", "", "", ActionStatus.COMPLETE, null, ""));
+        actionSubset = new ResultSubset<Action>(actionList, 1);
+        
+        Injector injector = Guice.createInjector(
+                new AbstractModule() {
+            @Override
+            public void configure() {
+                PrivilegeService privilegeService = Mockito.mock(PrivilegeService.class);
+                Mockito.when(privilegeService.checkAnyPrivilegeToProjectId(Mockito.any(Vps4User.class),Mockito.anyLong())).thenReturn(true);
+                bind(PrivilegeService.class).toInstance(privilegeService);
+                
+                ActionService actionService = Mockito.mock(ActionService.class);
+                Mockito.when(actionService.getActions(Mockito.any(UUID.class), Mockito.anyLong(), Mockito.anyLong())).thenReturn(actionSubset);
+                bind(ActionService.class).toInstance(actionService);
+            }
+            
+            @Provides
+            public Vps4User provideUser() {
+                return new Vps4User(1, "123456666");
+            }
+        });
+        
+        ActionResource vmResource = injector.getInstance(ActionResource.class);
+        PaginatedResult<Action> actionResults = vmResource.getActions(UUID.randomUUID(), 10, 10);
+        System.out.println(actionResults.results.size());
+        assertEquals(1, actionResults.pagination.total);
+        assertEquals(actionList, actionResults.results);
+    }
+
+}

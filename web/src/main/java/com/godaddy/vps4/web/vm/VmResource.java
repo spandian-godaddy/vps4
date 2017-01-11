@@ -41,7 +41,6 @@ import com.godaddy.vps4.vm.VirtualMachine;
 import com.godaddy.vps4.vm.VirtualMachineCredit;
 import com.godaddy.vps4.vm.VirtualMachineService;
 import com.godaddy.vps4.vm.VirtualMachineSpec;
-import com.godaddy.vps4.web.PaginatedResult;
 import com.godaddy.vps4.web.Vps4Api;
 import com.godaddy.vps4.web.util.Commands;
 
@@ -99,43 +98,7 @@ public class VmResource {
         sgidPrefix = config.get("hfs.sgid.prefix", "vps4-undefined-");
     }
 
-    @GET
-    @Path("actions/{actionId}")
-    public Action getAction(@PathParam("actionId") long actionId) {
-
-        Action action = actionService.getAction(actionId);
-
-        if (action == null) {
-            throw new NotFoundException("actionId " + actionId + " not found");
-        }
-
-        if (action.virtualMachineId == null) {
-            requireSameActionUser(action);
-        }
-        else {
-            privilegeService.requireAnyPrivilegeToVmId(user, action.virtualMachineId);
-        }
-
-        return action;
-    }
     
-   
-    @GET
-    @Path("actions/{vmId}/{limit}/{offset}")
-    public PaginatedResult<Action> getActions(@PathParam("vmId") UUID vmId, @PathParam("limit") long limit, @PathParam("offset") long offset) {
-        privilegeService.requireAnyPrivilegeToVmId(user, vmId);
-        List<Action> actions = actionService.getActions(vmId, limit, offset);
-        long numberOfResults = actionService.
-        PaginatedResult<Action> result = new PaginatedResult<Action>(actions, limit, offset, 10000, "OMG WTF");
-        return result;
-    }
-
-    public void requireSameActionUser(Action action) {
-        if (user.getId() != action.vps4UserId) {
-            throw new AuthorizationException(user.getShopperId() + " is not authorized to view action " + action.id);
-        }
-    }
-
 //    @GET
 //    @Path("actions/provision/{orionGuid}")
 //    public Action getProvisionActions(@PathParam("orionGuid") UUID orionGuid) {

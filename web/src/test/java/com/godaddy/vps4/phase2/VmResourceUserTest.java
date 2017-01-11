@@ -25,6 +25,7 @@ import com.godaddy.vps4.vm.ActionService;
 import com.godaddy.vps4.vm.ActionType;
 import com.godaddy.vps4.vm.VirtualMachineService;
 import com.godaddy.vps4.vm.VmModule;
+import com.godaddy.vps4.web.vm.ActionResource;
 import com.godaddy.vps4.web.vm.VmNotFoundException;
 import com.godaddy.vps4.web.vm.VmResource;
 import com.godaddy.vps4.web.vm.VmResource.ProvisionVmRequest;
@@ -132,9 +133,13 @@ public class VmResourceUserTest {
     @Test
     public void testListActions(){
         long actionId = actionService.createAction(vmId, ActionType.CREATE_VM, "{}", validUser.getId());
-        newValidVmResource().getAction(actionId);
+        user = validUser;
+        ActionResource validActionResource = injector.getInstance(ActionResource.class);
+        validActionResource.getAction(actionId);
         try{
-            newInvalidVmResource().getAction(actionId);
+            user = invalidUser;
+            ActionResource invalidActionResource = injector.getInstance(ActionResource.class);
+            invalidActionResource.getAction(actionId);
             Assert.fail();
         }catch (Vps4Exception e){
             System.out.println(e);

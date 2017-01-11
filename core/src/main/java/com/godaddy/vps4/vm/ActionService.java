@@ -3,6 +3,8 @@ package com.godaddy.vps4.vm;
 import java.util.List;
 import java.util.UUID;
 
+import com.godaddy.vps4.jdbc.ResultSubset;
+
 public interface ActionService {
 
     long createAction(UUID vmId, ActionType actionType, String request, long userId);
@@ -11,7 +13,7 @@ public interface ActionService {
     
     List<Action> getActions(UUID vmId);
     
-    List<Action> getActions(UUID vmId, long limit, long offset);
+    ResultSubset<Action> getActions(UUID vmId, long limit, long offset);
     
     void tagWithCommand(long actionId, UUID commandId);
 
