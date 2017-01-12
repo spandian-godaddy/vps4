@@ -142,16 +142,16 @@ public class VmResource {
     }
 
     @GET
-    @Path("/{orionGuid}")
-    public VirtualMachine getVm(@PathParam("orionGuid") UUID orionGuid) {
+    @Path("/{vmId}")
+    public VirtualMachine getVm(@PathParam("vmId") UUID vmId) {
 
-        logger.info("getting vm with id {}", orionGuid);
+        logger.info("getting vm with id {}", vmId);
 
-        VirtualMachine virtualMachine = virtualMachineService.getVirtualMachine(orionGuid);
+        VirtualMachine virtualMachine = virtualMachineService.getVirtualMachine(vmId);
 
         if (virtualMachine == null) {
             // TODO need to return 404 here
-            throw new IllegalArgumentException("Unknown VM ID: " + orionGuid);
+            throw new IllegalArgumentException("Unknown VM ID: " + vmId);
         }
 
         privilegeService.requireAnyPrivilegeToProjectId(user, virtualMachine.projectId);
@@ -235,7 +235,7 @@ public class VmResource {
 
         privilegeService.requireAnyPrivilegeToProjectId(user, vmProjectId);
 
-        long actionId = actionService.createAction(vm.id, type, new JSONObject().toJSONString(), user.getId());
+        long actionId = actionService.createAction(vm.vmId, type, new JSONObject().toJSONString(), user.getId());
 
         CommandState command = null;
         switch (type) {
@@ -396,7 +396,7 @@ public class VmResource {
 
         // TODO verify VM status is destroyable
 
-        long actionId = actionService.createAction(virtualMachine.id, ActionType.DESTROY_VM, new JSONObject().toJSONString(), user.getId());
+        long actionId = actionService.createAction(virtualMachine.vmId, ActionType.DESTROY_VM, new JSONObject().toJSONString(), user.getId());
 
 
         Vps4DestroyVm.Request request = new Vps4DestroyVm.Request();
@@ -419,12 +419,12 @@ public class VmResource {
 
 
     @GET
-    @Path("/{orionGuid}/details")
-    public VirtualMachineDetails getVirtualMachineDetails(@PathParam("orionGuid") UUID orionGuid) {
-        VirtualMachine virtualMachine = getVm(orionGuid);
+    @Path("/{vmId}/details")
+    public VirtualMachineDetails getVirtualMachineDetails(@PathParam("vmId") UUID vmId) {
+        VirtualMachine virtualMachine = getVm(vmId);
         privilegeService.requireAnyPrivilegeToProjectId(user, virtualMachine.projectId);
 
-        Vm vm = getVmFromVmVertical(virtualMachine.vmId);
+        Vm vm = getVmFromVmVertical(virtualMachine.hfsVmId);
         return new VirtualMachineDetails(vm);
     }
 
@@ -440,12 +440,12 @@ public class VmResource {
     }
 
     @GET
-    @Path("/{orionGuid}/withDetails")
-    public VirtualMachineWithDetails getVirtualMachineWithDetails(@PathParam("orionGuid") UUID orionGuid) {
-        VirtualMachine virtualMachine = getVm(orionGuid);
+    @Path("/{vmId}/withDetails")
+    public VirtualMachineWithDetails getVirtualMachineWithDetails(@PathParam("vmId") UUID vmId) {
+        VirtualMachine virtualMachine = getVm(vmId);
         privilegeService.requireAnyPrivilegeToProjectId(user, virtualMachine.projectId);
 
-        Vm vm = getVmFromVmVertical(virtualMachine.vmId);
+        Vm vm = getVmFromVmVertical(virtualMachine.hfsVmId);
         return new VirtualMachineWithDetails(virtualMachine, new VirtualMachineDetails(vm));
     }
 }

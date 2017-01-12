@@ -83,7 +83,7 @@ public class VmPatchResourceTest {
         VmPatchResource patchResource = new VmPatchResource(virtualMachineService, null, privilegeService);
         VmPatch vmPatch = new VmPatch();
         vmPatch.name = newName;
-        patchResource.updateVm(vm.id, vmPatch);
+        patchResource.updateVm(vm.vmId, vmPatch);
         vm = virtualMachineService.getVirtualMachine(hfsVmId);
         return vm;
     }

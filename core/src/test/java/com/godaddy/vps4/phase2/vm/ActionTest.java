@@ -54,17 +54,17 @@ public class ActionTest {
 
     @After
     public void cleanupService() {
-        Sql.with(dataSource).exec("DELETE from vm_action where vm_id = ?", null, vm.id);
+        Sql.with(dataSource).exec("DELETE from vm_action where vm_id = ?", null, vm.vmId);
         SqlTestData.cleanupTestVmAndRelatedData(vmId, dataSource);
         SqlTestData.cleanupTestProject(project.getProjectId(), dataSource);
     }
 
     @Test
     public void testCreate(){
-        long actionId = actionService.createAction(vm.id, type, new JSONObject().toJSONString(), 1);
+        long actionId = actionService.createAction(vm.vmId, type, new JSONObject().toJSONString(), 1);
         Action action = actionService.getAction(actionId);
         assertEquals("{}", action.request);
-        assertEquals(vm.id, action.virtualMachineId);
+        assertEquals(vm.vmId, action.virtualMachineId);
         assertTrue(action.type == ActionType.CREATE_VM);
         assertEquals(ActionStatus.NEW, action.status);
         assertEquals(ActionType.CREATE_VM, action.type);
@@ -72,7 +72,7 @@ public class ActionTest {
 
     @Test
     public void testUpdateStatus(){
-        long actionId = actionService.createAction(vm.id, type, new JSONObject().toJSONString(), 1);
+        long actionId = actionService.createAction(vm.vmId, type, new JSONObject().toJSONString(), 1);
         Action action = actionService.getAction(actionId);
         assertEquals(ActionStatus.NEW, action.status);
 

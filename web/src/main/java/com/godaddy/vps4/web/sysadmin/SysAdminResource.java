@@ -84,7 +84,7 @@ public class SysAdminResource {
         String[] usernames = {updatePasswordRequest.username, "root"};
         VirtualMachine vm = getVm(vmId);
 //        SetPasswordAction action = new SetPasswordAction(vmId, usernames, updatePasswordRequest.password);
-        if (!userService.userExists(updatePasswordRequest.username, vm.id)) {
+        if (!userService.userExists(updatePasswordRequest.username, vm.vmId)) {
 
             // FIXME throw exception
             //action.message = "Cannot find user " + updatePasswordRequest.username + " for vm "+vmId;
@@ -95,7 +95,7 @@ public class SysAdminResource {
         JSONObject pwRequest = new JSONObject();
         pwRequest.put("username", updatePasswordRequest.username);
 
-        long actionId = actionService.createAction(vm.id, ActionType.SET_PASSWORD, 
+        long actionId = actionService.createAction(vm.vmId, ActionType.SET_PASSWORD, 
                 pwRequest.toJSONString(), user.getId());
 
         SetPassword.Request request = new SetPassword.Request();
@@ -132,13 +132,13 @@ public class SysAdminResource {
         logger.info("Username: {} VMid: {} Admin access enabled? {}", username, vmId, adminEnabled);
         privilegeService.requireAnyPrivilegeToVmId(user, vmId);
         VirtualMachine vm = getVm(vmId);
-        if (!userService.userExists(username, vm.id)) {
+        if (!userService.userExists(username, vm.vmId)) {
             throw new Vps4Exception("VM_USER_NOT_FOUND", "User not found on virtual machine.");
         }
         JSONObject adminRequest = new JSONObject();
         adminRequest.put("username", username);
         adminRequest.put("enabled", adminEnabled);
-        long actionId = actionService.createAction(vm.id,
+        long actionId = actionService.createAction(vm.vmId,
                 adminEnabled ? ActionType.ENABLE_ADMIN_ACCESS : ActionType.DISABLE_ADMIN_ACCESS,
                 adminRequest.toJSONString(), user.getId());
 
@@ -147,7 +147,7 @@ public class SysAdminResource {
         vps4Request.actionId = actionId;
         vps4Request.enabled = adminEnabled;
         vps4Request.hfsVmId = vmId;
-        vps4Request.vmId = vm.id;
+        vps4Request.vmId = vm.vmId;
         vps4Request.username = username;
 
         Commands.execute(commandService, "Vps4ToggleAdmin", vps4Request);

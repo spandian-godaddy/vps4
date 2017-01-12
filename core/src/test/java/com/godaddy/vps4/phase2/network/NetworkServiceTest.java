@@ -74,22 +74,22 @@ public class NetworkServiceTest {
         long primaryId = 125;
         String primaryAddress = "192.168.1.1";
 
-        networkService.createIpAddress(addressId, vm.id, ipAddress, IpAddress.IpAddressType.PRIMARY);
-        networkService.createIpAddress(addressId + 1, vm.id, "127.0.0.2", IpAddress.IpAddressType.SECONDARY);
-        networkService.createIpAddress(primaryId, vm.id, primaryAddress, IpAddress.IpAddressType.PRIMARY);
+        networkService.createIpAddress(addressId, vm.vmId, ipAddress, IpAddress.IpAddressType.PRIMARY);
+        networkService.createIpAddress(addressId + 1, vm.vmId, "127.0.0.2", IpAddress.IpAddressType.SECONDARY);
+        networkService.createIpAddress(primaryId, vm.vmId, primaryAddress, IpAddress.IpAddressType.PRIMARY);
         try {
-            networkService.createIpAddress(126, vm.id, primaryAddress, IpAddress.IpAddressType.SECONDARY);
+            networkService.createIpAddress(126, vm.vmId, primaryAddress, IpAddress.IpAddressType.SECONDARY);
             Assert.fail("This should fail to insert a duplicate IP address");
         }
         catch (Exception e) {
         }
 
-        List<IpAddress> ips = networkService.getVmIpAddresses(vm.id);
+        List<IpAddress> ips = networkService.getVmIpAddresses(vm.vmId);
         assertEquals(3, ips.size());
 
         IpAddress ip = networkService.getIpAddress(addressId);
 
-        assertEquals(vm.id, ip.vmId);
+        assertEquals(vm.vmId, ip.vmId);
         assertTrue(ip.validUntil.isAfter(Instant.now()));
         assertNotNull(ip.validOn);
         assertEquals(addressId, ip.ipAddressId);
@@ -98,7 +98,7 @@ public class NetworkServiceTest {
 
         IpAddress primary = networkService.getVmPrimaryAddress(vmId);
 
-        assertEquals(vm.id, primary.vmId);
+        assertEquals(vm.vmId, primary.vmId);
         assertTrue(primary.validUntil.isAfter(Instant.now()));
         assertNotNull(primary.validOn);
         assertEquals(primaryId, primary.ipAddressId);

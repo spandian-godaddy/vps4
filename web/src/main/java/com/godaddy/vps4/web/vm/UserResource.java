@@ -1,13 +1,14 @@
 package com.godaddy.vps4.web.vm;
 
 import java.util.List;
+import java.util.UUID;
 
 import javax.inject.Inject;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
-import javax.ws.rs.Produces;
 import javax.ws.rs.PathParam;
+import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
 
 import com.godaddy.vps4.vm.VirtualMachine;
@@ -36,8 +37,8 @@ public class UserResource {
 
     @GET
     @Path("/{vmId}/users")
-    public List<VmUser> getUsers(@PathParam("vmId") long vmId){
+    public List<VmUser> getUsers(@PathParam("vmId") UUID vmId) {
         VirtualMachine vm = vmService.getVirtualMachine(vmId);
-        return userService.listUsers(vm.id);
+        return userService.listUsers(vm.vmId);
     }
 }

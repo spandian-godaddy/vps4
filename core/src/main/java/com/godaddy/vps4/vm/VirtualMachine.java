@@ -7,8 +7,8 @@ import com.godaddy.vps4.network.IpAddress;
 
 public class VirtualMachine {
 
-    public final UUID id;
-    public final long vmId;
+    public final UUID vmId;
+    public final long hfsVmId;
     public final UUID orionGuid;
     public final long projectId;
     public final VirtualMachineSpec spec;
@@ -28,8 +28,8 @@ public class VirtualMachine {
             IpAddress primaryIpAddress,
             Instant validOn,
             Instant validUntil) {
-        this.id = id;
-        this.vmId = vmId;
+        this.vmId = id;
+        this.hfsVmId = vmId;
         this.orionGuid = orionGuid;
         this.projectId = projectId;
         this.spec = spec;
@@ -41,8 +41,8 @@ public class VirtualMachine {
     }
 
     public VirtualMachine(VirtualMachine virtualMachine) {
-        this.id = virtualMachine.id;
         this.vmId = virtualMachine.vmId;
+        this.hfsVmId = virtualMachine.hfsVmId;
         this.orionGuid = virtualMachine.orionGuid;
         this.projectId = virtualMachine.projectId;
         this.spec = virtualMachine.spec;
@@ -55,9 +55,10 @@ public class VirtualMachine {
 
     @Override
     public String toString() {
-        return "VirtualMachine [id=" + id + ", vmId=" + vmId + ", orionGuid= " + orionGuid + ", projectId=" + projectId + ", spec="
-                + spec.name + ", name=" + name + ", image=" + image.imageName + ", primaryIpAddress=" + primaryIpAddress.ipAddress
-                + ", validOn=" + validOn + ", validUntil=" + validUntil + "]";
+        return String.format(
+                "VirtualMachine [vmId=%s, hfsVmId=%d, orionGuid=%s, projectId=%d, spec=%s, name=%s, image=%s, primaryIpAddress=%s, validOn=%s, validUntil=%s]",
+                vmId, hfsVmId, orionGuid, projectId, spec.name, name, image == null ? "" : image.imageName,
+                primaryIpAddress == null ? "" : primaryIpAddress.ipAddress, validOn, validUntil);
     }
 
 }

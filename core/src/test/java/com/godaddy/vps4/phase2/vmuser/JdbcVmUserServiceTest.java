@@ -59,54 +59,54 @@ public class JdbcVmUserServiceTest {
     @Test
     public void testCreateUser() throws SQLException {
         VmUserService service = new JdbcVmUserService(dataSource);
-        service.createUser(username, vm.id, true);
-        List<VmUser> ul = service.listUsers(vm.id);
+        service.createUser(username, vm.vmId, true);
+        List<VmUser> ul = service.listUsers(vm.vmId);
         assertEquals(1, ul.size());
         VmUser usr = ul.get(0);
         assertEquals(username, usr.username);
-        assertEquals(vm.id, usr.vmId);
+        assertEquals(vm.vmId, usr.vmId);
         assertTrue(usr.adminEnabled);
     }
 
     @Test
     public void testCreateUserNoAdmin() throws SQLException {
         VmUserService service = new JdbcVmUserService(dataSource);
-        service.createUser(username, vm.id, false);
-        List<VmUser> ul = service.listUsers(vm.id);
+        service.createUser(username, vm.vmId, false);
+        List<VmUser> ul = service.listUsers(vm.vmId);
         assertEquals(1, ul.size());
         assertEquals(1, ul.size());
         VmUser usr = ul.get(0);
         assertEquals(username, usr.username);
-        assertEquals(vm.id, usr.vmId);
+        assertEquals(vm.vmId, usr.vmId);
         assertFalse(usr.adminEnabled);
     }
 
     @Test
     public void testCreate2ndUser() {
         VmUserService service = new JdbcVmUserService(dataSource);
-        service.createUser(username, vm.id, false);
-        service.createUser("testuser2", vm.id, false);
-        List<VmUser> ul = service.listUsers(vm.id);
+        service.createUser(username, vm.vmId, false);
+        service.createUser("testuser2", vm.vmId, false);
+        List<VmUser> ul = service.listUsers(vm.vmId);
         assertEquals(2, ul.size());
     }
 
     @Test(expected = RuntimeException.class)
     public void testCreateUserAlreadyExists() throws SQLException {
         VmUserService service = new JdbcVmUserService(dataSource);
-        service.createUser(username, vm.id, false);
-        service.createUser(username, vm.id, false);
+        service.createUser(username, vm.vmId, false);
+        service.createUser(username, vm.vmId, false);
         fail("Should throw exception");
     }
 
     @Test
     public void testUpdateUserAdminAccess() {
         VmUserService service = new JdbcVmUserService(dataSource);
-        service.createUser(username, vm.id, false);
-        List<VmUser> ul = service.listUsers(vm.id);
+        service.createUser(username, vm.vmId, false);
+        List<VmUser> ul = service.listUsers(vm.vmId);
         VmUser u = ul.get(0);
         assertFalse(u.adminEnabled);
-        service.updateUserAdminAccess(username, vm.id, true);
-        ul = service.listUsers(vm.id);
+        service.updateUserAdminAccess(username, vm.vmId, true);
+        ul = service.listUsers(vm.vmId);
         u = ul.get(0);
         assertTrue(u.adminEnabled);
     }

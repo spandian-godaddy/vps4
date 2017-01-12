@@ -12,7 +12,9 @@ public interface VirtualMachineService {
 
     VirtualMachine getVirtualMachine(long hfsVmId);
 
-    VirtualMachine getVirtualMachine(UUID orionGuid);
+    VirtualMachine getVirtualMachineByOrionGuid(UUID orionGuid);
+
+    VirtualMachine getVirtualMachine(UUID vmId);
 
     VirtualMachineSpec getSpec(String name);
 

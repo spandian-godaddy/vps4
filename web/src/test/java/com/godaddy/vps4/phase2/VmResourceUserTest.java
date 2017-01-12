@@ -148,9 +148,9 @@ public class VmResourceUserTest {
 
     @Test
     public void testGetVm(){
-        newValidVmResource().getVm(orionGuid);
+        newValidVmResource().getVm(vmId);
         try{
-            newInvalidVmResource().getVm(orionGuid);
+            newInvalidVmResource().getVm(vmId);
             Assert.fail();
         }catch (Vps4Exception e){
             //do nothing

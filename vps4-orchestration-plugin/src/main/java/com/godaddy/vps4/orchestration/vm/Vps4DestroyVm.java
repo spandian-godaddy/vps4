@@ -44,7 +44,7 @@ public class Vps4DestroyVm extends ActionCommand<Vps4DestroyVm.Request, Vps4Dest
         final long vmId = request.vmId;
         VirtualMachine vm = this.virtualMachineService.getVirtualMachine(vmId); 
 
-        List<IpAddress> addresses = networkService.getVmIpAddresses(vm.id);
+        List<IpAddress> addresses = networkService.getVmIpAddresses(vm.vmId);
 
         for (IpAddress address : addresses) {
             context.execute("Unbind-"+address.ipAddressId, UnbindIp.class, address.ipAddressId);

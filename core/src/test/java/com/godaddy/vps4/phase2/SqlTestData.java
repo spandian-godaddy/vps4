@@ -18,7 +18,7 @@ import com.godaddy.vps4.vm.jdbc.JdbcVirtualMachineService;
 
 public class SqlTestData {
 
-    public static long getNextId(DataSource dataSource) {
+    public static long getNextHfsVmId(DataSource dataSource) {
         return Sql.with(dataSource).exec("SELECT max(hfs_vm_id) as hfs_vm_id FROM virtual_machine",
                 Sql.nextOrNull(rs -> rs.isAfterLast() ? 0 : rs.getLong("hfs_vm_id"))) + 1;
     }
@@ -27,7 +27,7 @@ public class SqlTestData {
         NetworkService networkService = new JdbcNetworkService (dataSource);
         ImageService imageService = new JdbcImageService(dataSource);
         VirtualMachineService virtualMachineService = new JdbcVirtualMachineService(dataSource, networkService, imageService);
-        long hfsVmId = getNextId(dataSource);
+        long hfsVmId = getNextHfsVmId(dataSource);
         virtualMachineService.createVirtualMachineRequest(orionGuid, "linux", "none", 10, 0, "TestUser");
         UUID vmId = virtualMachineService.provisionVirtualMachine(orionGuid, "networkTestVm", projectId, 1, 0, 1);
         virtualMachineService.addHfsVmIdToVirtualMachine(vmId, hfsVmId);
@@ -40,8 +40,8 @@ public class SqlTestData {
         VirtualMachineService virtualMachineService = new JdbcVirtualMachineService(dataSource, networkService, imageService);
         VirtualMachine vm = virtualMachineService.getVirtualMachine(hfsVmId);
 
-        Sql.with(dataSource).exec("DELETE FROM ip_address WHERE vm_id = ?", null, vm.id);
-        Sql.with(dataSource).exec("DELETE FROM vm_user WHERE vm_id = ?", null, vm.id);
+        Sql.with(dataSource).exec("DELETE FROM ip_address WHERE vm_id = ?", null, vm.vmId);
+        Sql.with(dataSource).exec("DELETE FROM vm_user WHERE vm_id = ?", null, vm.vmId);
         Sql.with(dataSource).exec("DELETE FROM virtual_machine WHERE hfs_vm_id = ?", null, hfsVmId);
         Sql.with(dataSource).exec("DELETE FROM credit WHERE orion_guid = ?", null, vm.orionGuid);
     }

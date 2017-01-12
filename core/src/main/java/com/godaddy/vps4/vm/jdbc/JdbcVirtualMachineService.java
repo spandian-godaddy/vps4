@@ -66,19 +66,24 @@ public class JdbcVirtualMachineService implements VirtualMachineService {
                 .exec(selectVirtualMachineQuery + "WHERE vm.hfs_vm_id=?", Sql.nextOrNull(this::mapVirtualMachine), hfsVmId);
     }
 
-    public VirtualMachine getVirtualMachine(UUID orionGuid) {
+    public VirtualMachine getVirtualMachineByOrionGuid(UUID orionGuid) {
         return Sql.with(dataSource)
                 .exec(selectVirtualMachineQuery + "WHERE vm.orion_guid=?", Sql.nextOrNull(this::mapVirtualMachine), orionGuid);
+    }
+
+    public VirtualMachine getVirtualMachine(UUID vmId) {
+        return Sql.with(dataSource)
+                .exec(selectVirtualMachineQuery + "WHERE vm.vm_id=?", Sql.nextOrNull(this::mapVirtualMachine), vmId);
     }
 
     protected VirtualMachine mapVirtualMachine(ResultSet rs) throws SQLException {
         Timestamp validUntil = rs.getTimestamp("vm_valid_until");
         VirtualMachineSpec spec = mapVirtualMachineSpec(rs);
-        long vmId = rs.getLong("hfs_vm_id");
+        UUID vmId = java.util.UUID.fromString(rs.getString("vm_id"));
         IpAddress ipAddress = networkService.getVmPrimaryAddress(vmId);
         Image image = imageService.getImage(rs.getString("image_name"));
 
-        return new VirtualMachine(java.util.UUID.fromString(rs.getString("vm_id")), rs.getLong("hfs_vm_id"), java.util.UUID.fromString(rs.getString("orion_guid")), rs.getLong("project_id"),
+        return new VirtualMachine(vmId, rs.getLong("hfs_vm_id"), java.util.UUID.fromString(rs.getString("orion_guid")), rs.getLong("project_id"),
                 spec, rs.getString("vm_name"), image, ipAddress, rs.getTimestamp("vm_valid_on").toInstant(),
                 validUntil != null ? validUntil.toInstant() : null);
     }
