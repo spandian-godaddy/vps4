@@ -135,8 +135,9 @@ public class DefaultVps4CpanelService implements Vps4CpanelService {
                         for (Object object : accnts) {
                             JSONObject accnt = (JSONObject) object;
                             String domain = (String) accnt.get("domain");
+                            String username = (String) accnt.get("user");
                             if (domain != null) {
-                                domains.add(new CPanelAccount(domain));
+                                domains.add(new CPanelAccount(domain, username));
                             }
                         }
                     }
