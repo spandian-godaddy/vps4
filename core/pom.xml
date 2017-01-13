@@ -94,7 +94,7 @@
                     <execution>
                         <id>encrypt-config</id>
                         <configuration>
-                            <mainClass>com.godaddy.vps4.tools.EncryptionConfig</mainClass>
+                            <mainClass>com.godaddy.hfs.crypto.tools.EncryptionConfig</mainClass>
                             <arguments>
                                 <argument>encrypt</argument>
                                 <argument>${project.basedir}/src/main/resources/com/godaddy/vps4/config/${vps4.env}</argument>
@@ -108,7 +108,7 @@
                     <execution>
                         <id>decrypt-config</id>
                         <configuration>
-                            <mainClass>com.godaddy.vps4.tools.EncryptionConfig</mainClass>
+                            <mainClass>com.godaddy.hfs.crypto.tools.EncryptionConfig</mainClass>
                             <arguments>
                                 <argument>decrypt</argument>
                                 <argument>${project.basedir}/src/main/resources/com/godaddy/vps4/config/${vps4.env}</argument>
@@ -145,25 +145,25 @@
         <dependency>
             <groupId>com.godaddy.hfs</groupId>
             <artifactId>hfs-config</artifactId>
-            <version>0.2.6</version>
+            <version>0.3.0</version>
         </dependency>
     
         <dependency>
             <groupId>com.godaddy.hfs</groupId>
             <artifactId>hfs-config-zookeeper</artifactId>
-            <version>0.2.6</version>
+            <version>0.3.0</version>
         </dependency>
     
         <dependency>
             <groupId>com.godaddy.hfs</groupId>
             <artifactId>hfs-crypto</artifactId>
-            <version>0.2.6</version>
+            <version>0.3.0</version>
         </dependency>
         
         <dependency>
             <groupId>com.godaddy.hfs</groupId>
             <artifactId>hfs-jdbc</artifactId>
-            <version>0.2.6</version>
+            <version>0.3.0</version>
         </dependency>
         
         <!-- https://mvnrepository.com/artifact/org.apache.commons/commons-lang3 -->

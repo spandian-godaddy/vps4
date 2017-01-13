@@ -28,10 +28,10 @@ import com.godaddy.hfs.config.ConfigNodeReader;
 import com.godaddy.hfs.config.FileConfig;
 import com.godaddy.hfs.config.SystemPropertyConfig;
 import com.godaddy.hfs.config.ZooKeeperConfig;
+import com.godaddy.hfs.crypto.tools.EncryptionConfig;
+import com.godaddy.hfs.crypto.tools.EncryptionUtil;
 import com.godaddy.hfs.zookeeper.ZooKeeperClient;
 import com.godaddy.vps4.Environment;
-import com.godaddy.vps4.tools.EncryptionConfig;
-import com.godaddy.vps4.tools.EncryptionUtil;
 
 public class Configs {
 
