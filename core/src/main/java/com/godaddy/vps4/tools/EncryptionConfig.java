@@ -1,31 +1,20 @@
 package com.godaddy.vps4.tools;
 
-import java.io.BufferedReader;
-import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.security.PrivateKey;
-import java.security.PublicKey;
-import java.util.Arrays;
-import java.util.List;
-import java.util.stream.Collectors;
-
-import javax.crypto.Cipher;
+import java.security.Key;
+import java.util.Base64;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.godaddy.hfs.crypto.PEMFile;
-import com.godaddy.vps4.Environment;
-
 /**
- *   /com/godaddy/vps4/config/{vps4.env}/config.unenc.properties
- *     => /com/godaddy/vps4/config/{vps4.env}/config.enc.properties
  *
- *  openssl genpkey -algorithm RSA -out vps4.${VPS4_ENV}.priv.pem -pkeyopt rsa_keygen_bits:4096
- *  openssl rsa -pubout -in vps4.${VPS4_ENV}.priv.pem -out vps4.${VPS4_ENV}.pub.pem
+ * .enc file format:
+ * iv:base64 ':' ciphertext:base64
+ *
+ * iv - random seed for each block cipher (generated on a per-file basis)
  *
  */
 public class EncryptionConfig {
@@ -38,8 +27,8 @@ public class EncryptionConfig {
 
     public static void main(String[] args) throws Exception {
 
-        if (args.length == 0) {
-            System.out.println("Usage: [cmd] encrypt|decrypt");
+        if (args.length < 3) {
+            System.out.println("Usage: [cmd] [encrypt key]|[decrypt key] configpath");
             return;
         }
 
@@ -54,109 +43,102 @@ public class EncryptionConfig {
             return;
         }
 
-        List<String> envs = Arrays.stream(Environment.values())
-                .map( env -> env.getLocalName().toLowerCase() )
-                .collect(Collectors.toList());
+        Path configPath = Paths.get(args[1]);
+        if (!Files.exists(configPath)) {
+        	System.err.println("Config path not found: " + configPath);
+        	return;
+        }
 
-        for (String env : envs) {
+        Path keyPath = Paths.get(args[2]);
+        if (!Files.exists(keyPath)) {
+        	System.err.println("Key not found: " + keyPath);
+        	return;
+        }
 
-            switch(mode) {
-            case DECRYPT: decrypt(env); break;
-            case ENCRYPT: encrypt(env); break;
-            }
+        Key key = EncryptionUtil.readAesKey(
+                Base64.getDecoder().decode(
+                        Files.readAllBytes(keyPath)));
+
+        switch(mode) {
+        case DECRYPT:
+
+        	decrypt(configPath, key);
+        	break;
+
+        case ENCRYPT:
+
+        	encrypt(configPath, key);
+        	break;
         }
 
     }
 
-    static void encrypt(String env) throws Exception {
-        logger.info("looking for encrypted properties for environment: {}", env);
-        Path unencryptedFile = unencryptedPath(env);
-        if (!Files.exists(unencryptedFile)) {
-            return;
-        }
+    static void encrypt(Path path, Key key) throws Exception {
 
-        PublicKey publicKey = readPublicKey(env);
+    	if (Files.isDirectory(path)) {
+    		// recursively decrypt files in child directories
+    		Files.list(path).forEach(child -> {
+    			try {
+    				encrypt(child, key);
+    			} catch (Exception e) {
+    				throw new RuntimeException(e);
+    			}
+        	});
 
-        Path encryptedFile = encryptedPath(env);
+		} else if (Files.isRegularFile(path)) {
 
-        // encrypt vps4.unenc.properties => vps4.enc.properties
-        // (and if successful delete the unencrypted resource)
-        logger.info("encrypting {} => {}", unencryptedFile, encryptedFile);
-        Files.write(encryptedFile,
-                encrypt(Files.readAllBytes(unencryptedFile), publicKey));
-    }
+			String filename = path.getFileName().toString();
 
-    static void decrypt(String env) throws Exception {
-        logger.info("looking for encrypted properties for environment: {}", env);
-        Path encryptedFile = encryptedPath(env);
-        if (!Files.exists(encryptedFile)) {
-            return;
-        }
+			if (filename.endsWith(".unenc")) {
 
-        PrivateKey privateKey = readPrivateKey(env);
+				// ".unenc => .enc"
+				String encryptedFilename = filename.substring(
+						0,
+						filename.length() - ".unenc".length()) + ".enc";
+				Path encryptedPath = path.resolveSibling(encryptedFilename);
 
-        Path unencryptedFile = unencryptedPath(env);
+				logger.info("encrypting: {}", filename);
 
-        // encrypt vps4.unenc.properties => vps4.enc.properties
-        // (and if successful delete the unencrypted resource)
-        logger.info("decrypting {} => {}", encryptedFile, unencryptedFile);
-        Files.write(unencryptedFile,
-                decrypt(Files.readAllBytes(encryptedFile), privateKey));
+				Files.write(encryptedPath,
+		                EncryptionUtil.encryptAes(Files.readAllBytes(path), key));
+			}
+		}
     }
 
 
-    static Path encryptedPath(String env) {
-        return Paths.get("src/main/resources/com/godaddy/vps4/config/" + env + "/config.enc.properties");
+
+    static void decrypt(Path path, Key key) throws Exception {
+
+    	if (Files.isDirectory(path)) {
+    		// recursively decrypt files in child directories
+    		Files.list(path).forEach(child -> {
+    			try {
+    				decrypt(child, key);
+    			} catch (Exception e) {
+    				throw new RuntimeException(e);
+    			}
+        	});
+
+		} else if (Files.isRegularFile(path)) {
+
+			String filename = path.getFileName().toString();
+
+			if (filename.endsWith(".enc")) {
+
+				// ".enc => .unenc"
+				String decryptedFilename = filename.substring(
+						0,
+						filename.length() - ".enc".length()) + ".unenc";
+				Path decryptedPath = path.resolveSibling(decryptedFilename);
+
+				logger.info("decrypting: {}", filename);
+
+				Files.write(decryptedPath,
+		                EncryptionUtil.decryptAes(Files.readAllBytes(path), key));
+			}
+		}
     }
 
-    static Path unencryptedPath(String env) {
-        return Paths.get("src/main/resources/com/godaddy/vps4/config/" + env + "/config.unenc.properties");
-    }
 
-    static PrivateKey readPrivateKey(String env) throws Exception {
-     // get the private key for this environment
-        String privateKeyPath = "/vps4." + env + ".priv.pem";
-        InputStream is = EncryptionConfig.class.getResourceAsStream(privateKeyPath);
-        if (is == null) {
-            throw new Exception("Private key for environment " + env + " not found at: " + privateKeyPath);
-        }
-        PrivateKey privateKey = PEMFile.readPEM(new BufferedReader(new InputStreamReader(is))).getPrivateKey();
-        if (privateKey == null) {
-            throw new Exception("No private key found in resource: " + privateKeyPath);
-        }
-        return privateKey;
-    }
-
-    static PublicKey readPublicKey(String env) throws Exception {
-        // get the private key for this environment
-        String privateKeyPath = "/vps4." + env + ".pub.pem";
-        InputStream is = EncryptionConfig.class.getResourceAsStream(privateKeyPath);
-        if (is == null) {
-            throw new Exception("Public key for environment " + env + " not found at: " + privateKeyPath);
-        }
-        PublicKey publicKey = PEMFile.readPEM(new BufferedReader(new InputStreamReader(is))).getPublicKey();
-        if (publicKey == null) {
-            throw new Exception("No public key found in resource: " + privateKeyPath);
-        }
-        return publicKey;
-    }
-
-    static final String CIPHER = "RSA/ECB/PKCS1Padding";
-
-    public static byte[] encrypt(byte[] text, PublicKey key) throws Exception {
-
-        Cipher cipher = Cipher.getInstance(CIPHER);
-        cipher.init(Cipher.ENCRYPT_MODE, key);
-
-        return cipher.doFinal(text);
-    }
-
-    public static byte[] decrypt(byte[] text, PrivateKey key) throws Exception {
-
-        Cipher cipher = Cipher.getInstance(CIPHER);
-        cipher.init(Cipher.DECRYPT_MODE, key);
-
-        return cipher.doFinal(text);
-    }
 
 }
