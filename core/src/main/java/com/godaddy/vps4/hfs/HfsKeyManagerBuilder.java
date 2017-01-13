@@ -122,8 +122,8 @@ public class HfsKeyManagerBuilder {
 
     public static KeyManager newKeyManager(Config config) {
 
-        String keyPath = "vps4.key";
-        String certPath = "vps4";
+        String keyPath = config.get("hfs.client.keyPath");
+        String certPath = config.get("hfs.client.certPath");
 
         logger.info("reading HFS key/cert from {}/{}", keyPath, certPath);
 
