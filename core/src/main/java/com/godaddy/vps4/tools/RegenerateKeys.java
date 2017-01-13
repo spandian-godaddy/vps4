@@ -7,6 +7,8 @@ import java.util.Base64;
 
 import javax.crypto.SecretKey;
 
+import com.godaddy.hfs.crypto.tools.EncryptionUtil;
+
 public class RegenerateKeys {
 
 	public static void main(String[] args) throws Exception {
