@@ -5,12 +5,16 @@ import java.util.List;
 import java.util.UUID;
 
 import javax.ws.rs.Consumes;
+import javax.ws.rs.DefaultValue;
 import javax.ws.rs.GET;
 import javax.ws.rs.NotFoundException;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
+import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.UriInfo;
 
 import com.godaddy.vps4.jdbc.ResultSubset;
 import com.godaddy.vps4.security.PrivilegeService;
@@ -32,6 +36,7 @@ import io.swagger.annotations.Api;
 @Consumes(MediaType.APPLICATION_JSON)
 
 public class ActionResource {
+    
     private final PrivilegeService privilegeService;
     private final ActionService actionService;
     private final Vps4User user;
@@ -67,12 +72,13 @@ public class ActionResource {
     
    
     @GET
-    @Path("actions/{vmId}/{limit}/{offset}")
-    public PaginatedResult<Action> getActions(@PathParam("vmId") UUID vmId, @PathParam("limit") long limit, @PathParam("offset") long offset) {
+    @Path("actions/{vmId}")
+    public PaginatedResult<Action> getActions(@PathParam("vmId") UUID vmId, 
+                                              @DefaultValue("10") @QueryParam("limit") long limit, 
+                                              @DefaultValue("0") @QueryParam("offset") long offset, 
+                                              @Context UriInfo uri) {
         privilegeService.requireAnyPrivilegeToVmId(user, vmId);
         
-        String baseUrl = "actions/" + vmId.toString();
-
         ResultSubset<Action> actions = actionService.getActions(vmId, limit, offset);
         long totalRows = 0;
         List<Action> actionList = new ArrayList<Action>();
@@ -81,10 +87,10 @@ public class ActionResource {
             actionList = actions.results;
         }
         
-        return new PaginatedResult<Action>(actionList, limit, offset, totalRows, baseUrl);
+        return new PaginatedResult<Action>(actionList, limit, offset, totalRows, uri);
     }
 
-    public void requireSameActionUser(Action action) {
+    private void requireSameActionUser(Action action) {
         if (user.getId() != action.vps4UserId) {
             throw new AuthorizationException(user.getShopperId() + " is not authorized to view action " + action.id);
         }

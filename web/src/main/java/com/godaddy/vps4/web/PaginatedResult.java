@@ -2,6 +2,8 @@ package com.godaddy.vps4.web;
 
 import java.util.List;
 
+import javax.ws.rs.core.UriInfo;
+
 public class PaginatedResult<ResultType> {
     
     public class PaginationData{
@@ -21,8 +23,9 @@ public class PaginatedResult<ResultType> {
     public List<ResultType> results;
     public PaginationData pagination;
     
-    public PaginatedResult(List<ResultType> results, long limit, long offset, long total, String baseUrl){
+    public PaginatedResult(List<ResultType> results, long limit, long offset, long total, UriInfo uri){
           this.results = results;
+          String baseUrl = uri.getAbsolutePath().toString();
           String nextUrl = generateNextUrl(limit, offset, total, baseUrl);
           String prevUrl = generatePreviousUrl(limit, offset, baseUrl);
           this.pagination = new PaginationData(nextUrl, prevUrl, limit, total);
@@ -35,7 +38,8 @@ public class PaginatedResult<ResultType> {
         if( prevOffset < 0){
             prevOffset = 0;
         }
-        return baseUrl + "/" + limit + "/" + prevOffset;
+        String newUrl = generateNewUrl(limit, prevOffset, baseUrl);
+        return newUrl;
     }
     
     private String generateNextUrl(long limit, long offset, long total, String baseUrl){
@@ -43,6 +47,11 @@ public class PaginatedResult<ResultType> {
         if(nextOffset >= total){
             nextOffset = offset;
         }
-        return baseUrl + "/" + limit + "/" + nextOffset;
+        String newUrl = generateNewUrl(limit, nextOffset, baseUrl);
+        return newUrl;
+    }
+    
+    private String generateNewUrl(long limit, long offset, String baseUrl) {
+        return String.format("%s/?limit=%d&offset=%d", baseUrl, limit, offset);
     }
 }
