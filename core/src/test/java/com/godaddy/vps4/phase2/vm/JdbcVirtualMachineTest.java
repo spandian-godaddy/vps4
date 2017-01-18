@@ -47,12 +47,13 @@ public class JdbcVirtualMachineTest {
     
 
     UUID orionGuid = UUID.randomUUID();
+    UUID vmId;
     Project project;
     
     @After
     public void cleanup() {
         
-        SqlTestData.cleanupTestVmAndRelatedData(1231, dataSource);
+        SqlTestData.cleanupTestVmAndRelatedData(vmId, dataSource);
         Sql.with(dataSource).exec("DELETE FROM credit WHERE orion_guid = ?", null, orionGuid);
         SqlTestData.cleanupTestProject(project.getProjectId(), dataSource);
     }
@@ -61,7 +62,7 @@ public class JdbcVirtualMachineTest {
     public void testProvisionVmCreatesId() {
         vmService.createVirtualMachineRequest(orionGuid, "linux", "cPanel", 10, 1, "testShopperId");
         project = projService.createProject("testProject", 1, 1, "testPrefix");
-        UUID vmId = vmService.provisionVirtualMachine(orionGuid, "testName", project.getProjectId(), 1, 1, 1);
+        vmId = vmService.provisionVirtualMachine(orionGuid, "testName", project.getProjectId(), 1, 1, 1);
         vmService.addHfsVmIdToVirtualMachine(vmId, 1231);
         assertNotNull(vmId);
         assertEquals(UUID.class, vmId.getClass());

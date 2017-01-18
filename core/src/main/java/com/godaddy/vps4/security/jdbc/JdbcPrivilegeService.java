@@ -66,7 +66,6 @@ public class JdbcPrivilegeService implements PrivilegeService {
                                         user.getId(), id)) {
             throw new AuthorizationException(user.getShopperId() + " does not have privilege for vm " + id);
         }
-        
     }
 
 

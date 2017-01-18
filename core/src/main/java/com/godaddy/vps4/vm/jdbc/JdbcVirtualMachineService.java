@@ -171,8 +171,7 @@ public class JdbcVirtualMachineService implements VirtualMachineService {
         return Sql.with(dataSource).exec(selectVirtualMachineQuery
                 + "JOIN user_project_privilege up ON up.project_id = vm.project_id "
                 + "JOIN vps4_user u ON up.vps4_user_id = u.vps4_user_id "
-                + "WHERE u.vps4_user_id = ? "
-                + "AND vm.valid_until = 'infinity'",
+                + "WHERE u.vps4_user_id = ?",
                 Sql.listOf(this::mapVirtualMachine), vps4UserId);
     }
 

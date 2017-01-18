@@ -1,8 +1,10 @@
 package com.godaddy.vps4.web.vm;
 
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 import javax.inject.Inject;
 import javax.ws.rs.Consumes;
@@ -149,12 +151,18 @@ public class VmResource {
 
         VirtualMachine virtualMachine = virtualMachineService.getVirtualMachine(vmId);
 
-        if (virtualMachine == null) {
-            // TODO need to return 404 here
-            throw new IllegalArgumentException("Unknown VM ID: " + vmId);
+        if (virtualMachine == null || virtualMachine.validUntil.isBefore(Instant.now())) {
+            throw new NotFoundException("Unknown VM ID: " + vmId);
         }
 
-        privilegeService.requireAnyPrivilegeToProjectId(user, virtualMachine.projectId);
+        try {
+            privilegeService.requireAnyPrivilegeToProjectId(user, virtualMachine.projectId);
+        }
+        catch (AuthorizationException e) {
+            logger.warn("User {} not authorized for vmId {}. Rethrowing NotFoundException to prevent attempts to find valid VM ids.",
+                    user.getShopperId(), vmId);
+            throw new NotFoundException("Unknown VM ID: " + vmId);
+        }
 
         return virtualMachine;
     }
@@ -413,7 +421,11 @@ public class VmResource {
     @GET
     @Path("/")
     public List<VirtualMachine> getVirtualMachines() {
-        return virtualMachineService.getVirtualMachinesForUser(user.getId());
+        List<VirtualMachine> vms = virtualMachineService.getVirtualMachinesForUser(user.getId());
+
+        vms = vms.stream().filter(vm -> vm.validUntil.isAfter(Instant.now())).collect(Collectors.toList());
+        
+        return vms;
     }
 
 

@@ -38,7 +38,7 @@ public class JdbcVmUserServiceTest {
     VirtualMachineService vmService = new JdbcVirtualMachineService(dataSource, new JdbcNetworkService(dataSource), new JdbcImageService(dataSource));
 
     private long projectId;
-    private long hfsVmId;
+    private UUID vmId;
     private UUID orionGuid = UUID.randomUUID();
     private String username = "testuser";
     private VirtualMachine vm;
@@ -46,13 +46,13 @@ public class JdbcVmUserServiceTest {
     @Before
     public void setupServers() throws SQLException {
         projectId = projectService.createProject("testNetwork", 1, 1, "vps4-test-").getProjectId();
-        hfsVmId = SqlTestData.insertTestVm(orionGuid, projectId, dataSource);
-        vm = vmService.getVirtualMachine(hfsVmId);
+        vmId = SqlTestData.insertTestVm(orionGuid, projectId, dataSource);
+        vm = vmService.getVirtualMachine(vmId);
     }
 
     @After
     public void cleanup() {
-        SqlTestData.cleanupTestVmAndRelatedData(hfsVmId, dataSource);
+        SqlTestData.cleanupTestVmAndRelatedData(vmId, dataSource);
         SqlTestData.cleanupTestProject(projectId, dataSource);
     }
 

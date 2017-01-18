@@ -4,6 +4,7 @@ import java.util.UUID;
 
 import javax.inject.Inject;
 import javax.sql.DataSource;
+import javax.ws.rs.NotFoundException;
 
 import org.junit.After;
 import org.junit.Assert;
@@ -152,7 +153,8 @@ public class VmResourceUserTest {
         try{
             newInvalidVmResource().getVm(vmId);
             Assert.fail();
-        }catch (Vps4Exception e){
+        }
+        catch (NotFoundException e) {
             //do nothing
         }
     }

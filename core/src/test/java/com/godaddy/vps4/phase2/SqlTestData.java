@@ -23,7 +23,7 @@ public class SqlTestData {
                 Sql.nextOrNull(rs -> rs.isAfterLast() ? 0 : rs.getLong("hfs_vm_id"))) + 1;
     }
 
-    public static long insertTestVm(UUID orionGuid, long projectId, DataSource dataSource) {
+    public static UUID insertTestVm(UUID orionGuid, long projectId, DataSource dataSource) {
         NetworkService networkService = new JdbcNetworkService (dataSource);
         ImageService imageService = new JdbcImageService(dataSource);
         VirtualMachineService virtualMachineService = new JdbcVirtualMachineService(dataSource, networkService, imageService);
@@ -31,18 +31,18 @@ public class SqlTestData {
         virtualMachineService.createVirtualMachineRequest(orionGuid, "linux", "none", 10, 0, "TestUser");
         UUID vmId = virtualMachineService.provisionVirtualMachine(orionGuid, "networkTestVm", projectId, 1, 0, 1);
         virtualMachineService.addHfsVmIdToVirtualMachine(vmId, hfsVmId);
-        return hfsVmId;
+        return vmId;
     }
 
-    public static void cleanupTestVmAndRelatedData(long hfsVmId, DataSource dataSource) {
+    public static void cleanupTestVmAndRelatedData(UUID vmId, DataSource dataSource) {
         NetworkService networkService = new JdbcNetworkService(dataSource);
         ImageService imageService = new JdbcImageService(dataSource);
         VirtualMachineService virtualMachineService = new JdbcVirtualMachineService(dataSource, networkService, imageService);
-        VirtualMachine vm = virtualMachineService.getVirtualMachine(hfsVmId);
+        VirtualMachine vm = virtualMachineService.getVirtualMachine(vmId);
 
         Sql.with(dataSource).exec("DELETE FROM ip_address WHERE vm_id = ?", null, vm.vmId);
         Sql.with(dataSource).exec("DELETE FROM vm_user WHERE vm_id = ?", null, vm.vmId);
-        Sql.with(dataSource).exec("DELETE FROM virtual_machine WHERE hfs_vm_id = ?", null, hfsVmId);
+        Sql.with(dataSource).exec("DELETE FROM virtual_machine WHERE vm_id = ?", null, vmId);
         Sql.with(dataSource).exec("DELETE FROM credit WHERE orion_guid = ?", null, vm.orionGuid);
     }
 

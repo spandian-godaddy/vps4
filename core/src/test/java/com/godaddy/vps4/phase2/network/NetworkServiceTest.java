@@ -40,7 +40,7 @@ public class NetworkServiceTest {
     private Injector injector = Guice.createInjector(new DatabaseModule());
 
     private long projectId;
-    private long vmId;
+    private UUID vmId;
     private UUID orionGuid = UUID.randomUUID();
     private DataSource dataSource;
     private VirtualMachine vm;

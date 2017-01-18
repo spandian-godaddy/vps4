@@ -40,7 +40,7 @@ public class ActionTest {
     
     private UUID orionGuid = UUID.randomUUID();
     Project project;
-    long vmId;
+    UUID vmId;
     ActionType type;
     VirtualMachine vm;
 
