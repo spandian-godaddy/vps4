@@ -42,12 +42,11 @@ public class JdbcVps4UserService implements Vps4UserService {
     public Vps4User getOrCreateUserForShopper(String shopperId) {
 
         // if the user doesn't exist yet, create it
-        Sql.with(dataSource).exec("INSERT INTO vps4_user (shopper_id) "
-                + " SELECT ? WHERE NOT EXISTS ( SELECT 1 FROM vps4_user WHERE shopper_id=? )",
-                null,
-                shopperId, shopperId);
+        Vps4User user = Sql.with(dataSource).exec(
+                  " SELECT * FROM get_or_create_user(?)",
+                  Sql.nextOrNull(this::mapUser),
+                shopperId);
 
-        Vps4User user = getUser(shopperId);
         if (user == null) {
             throw new IllegalStateException("Unable to lazily create user for shopper " + shopperId);
         }
