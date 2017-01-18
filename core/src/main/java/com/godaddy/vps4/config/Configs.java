@@ -102,7 +102,7 @@ public class Configs {
         Environment env = Environment.CURRENT;
         logger.info("configuration environment: {}", env);
 
-        String classpathPath = "/com/godaddy/vps4/config";
+        String classpathPath = "/com/godaddy/vps4/config/base";
         URL configResource = Configs.class.getResource(classpathPath);
         if (configResource != null) {
 
@@ -125,8 +125,8 @@ public class Configs {
 
                     // read configs, renaming the root node to "" so that the root of the path
                     // isn't "base" or "dev/test/..."
-                    ConfigNode baseNode = fileConfig.readConfig(basePath.resolve("base")).rename("");
-                    ConfigNode envNode = fileConfig.readConfig(basePath.resolve(env.getLocalName())).rename("");
+                    ConfigNode baseNode = fileConfig.readConfig(basePath).rename("");
+                    ConfigNode envNode = fileConfig.readConfig(basePath.resolveSibling(env.getLocalName())).rename("");
 
                     // get the symmetric key for this environment
                     //Key key = readKeyFromClasspath("/vps4." + env.name().toLowerCase() + ".key");
