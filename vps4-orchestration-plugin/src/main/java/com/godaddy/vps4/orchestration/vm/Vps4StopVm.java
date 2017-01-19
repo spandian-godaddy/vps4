@@ -30,7 +30,7 @@ public class Vps4StopVm extends ActionCommand<Vps4StopVm.Request, Vps4StopVm.Res
 
     @Override
     protected Response executeWithAction(CommandContext context, Request request) throws Exception {
-        long vmId = request.vmId;
+        long vmId = request.hfsVmId;
         
         VmAction hfsAction = context.execute("Vps4StopVm", ctx -> {
             return vmService.stopVm(vmId);
@@ -45,7 +45,7 @@ public class Vps4StopVm extends ActionCommand<Vps4StopVm.Request, Vps4StopVm.Res
     }
     
     public static class Request implements ActionRequest{
-        public long vmId;
+        public long hfsVmId;
         public long actionId;
 
         @Override

@@ -1,6 +1,7 @@
 package com.godaddy.vps4.web.sysadmin;
 
 import java.util.Arrays;
+import java.util.UUID;
 
 import javax.inject.Inject;
 import javax.ws.rs.Consumes;
@@ -65,8 +66,8 @@ public class SysAdminResource {
         this.vmService = vmService;
     }
     
-    private VirtualMachine getVm(long hfsVmId){
-        return vmService.getVirtualMachine(hfsVmId);
+    private VirtualMachine getVm(UUID vmId) {
+        return vmService.getVirtualMachine(vmId);
     }
 
     public static class UpdatePasswordRequest{
@@ -76,7 +77,7 @@ public class SysAdminResource {
 
     @POST
     @Path("/{vmId}/setPassword")
-    public Action setPassword(@PathParam("vmId") long vmId, UpdatePasswordRequest updatePasswordRequest) {
+    public Action setPassword(@PathParam("vmId") UUID vmId, UpdatePasswordRequest updatePasswordRequest) {
 
         privilegeService.requireAnyPrivilegeToVmId(user, vmId);
         // TODO: This will need more logic when we include Windows
@@ -101,7 +102,7 @@ public class SysAdminResource {
         SetPassword.Request request = new SetPassword.Request();
         request.usernames = Arrays.asList(usernames);
         request.password = updatePasswordRequest.password;
-        request.vmId = vmId;
+        request.hfsVmId = vm.hfsVmId;
 
         Vps4SetPassword.Request vps4Request = new Vps4SetPassword.Request();
         vps4Request.actionId = actionId;
@@ -118,17 +119,17 @@ public class SysAdminResource {
 
     @POST
     @Path("/{vmId}/enableAdmin")
-    public Action enableUserAdmin(@PathParam("vmId") long vmId, SetAdminRequest setAdminRequest) {
+    public Action enableUserAdmin(@PathParam("vmId") UUID vmId, SetAdminRequest setAdminRequest) {
         return setUserAdmin(setAdminRequest.username, vmId, true);
     }
 
     @POST
     @Path("/{vmId}/disableAdmin")
-    public Action disableUserAdmin(@PathParam("vmId") long vmId, SetAdminRequest setAdminRequest) {
+    public Action disableUserAdmin(@PathParam("vmId") UUID vmId, SetAdminRequest setAdminRequest) {
         return setUserAdmin(setAdminRequest.username, vmId, false);
     }
 
-    private Action setUserAdmin(String username, long vmId, boolean adminEnabled) {
+    private Action setUserAdmin(String username, UUID vmId, boolean adminEnabled) {
         logger.info("Username: {} VMid: {} Admin access enabled? {}", username, vmId, adminEnabled);
         privilegeService.requireAnyPrivilegeToVmId(user, vmId);
         VirtualMachine vm = getVm(vmId);
@@ -146,7 +147,7 @@ public class SysAdminResource {
         Vps4ToggleAdmin.Request vps4Request = new Vps4ToggleAdmin.Request();
         vps4Request.actionId = actionId;
         vps4Request.enabled = adminEnabled;
-        vps4Request.hfsVmId = vmId;
+        vps4Request.hfsVmId = vm.hfsVmId;
         vps4Request.vmId = vm.vmId;
         vps4Request.username = username;
 

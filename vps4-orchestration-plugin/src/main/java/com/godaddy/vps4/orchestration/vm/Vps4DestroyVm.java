@@ -41,7 +41,7 @@ public class Vps4DestroyVm extends ActionCommand<Vps4DestroyVm.Request, Vps4Dest
     @Override
     public Response executeWithAction(CommandContext context, Vps4DestroyVm.Request request) {
 
-        final long vmId = request.vmId;
+        final long vmId = request.hfsVmId;
         VirtualMachine vm = this.virtualMachineService.getVirtualMachine(vmId); 
 
         List<IpAddress> addresses = networkService.getVmIpAddresses(vm.vmId);
@@ -64,7 +64,7 @@ public class Vps4DestroyVm extends ActionCommand<Vps4DestroyVm.Request, Vps4Dest
     }
     
     public static class Request implements ActionRequest{
-        public long vmId;
+        public long hfsVmId;
         public long actionId;
 
         @Override

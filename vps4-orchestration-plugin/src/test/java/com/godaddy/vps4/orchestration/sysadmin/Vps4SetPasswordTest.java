@@ -40,7 +40,7 @@ public class Vps4SetPasswordTest {
     public void testSetPassword() throws Exception {
 
         SetPassword.Request setPasswordRequest = new SetPassword.Request();
-        setPasswordRequest.vmId = 42;
+        setPasswordRequest.hfsVmId = 42;
         setPasswordRequest.usernames = Arrays.asList("user1", "user2", "user3");
         setPasswordRequest.password = "somenewpassword";
 
@@ -49,11 +49,11 @@ public class Vps4SetPasswordTest {
         request.setPasswordRequest = setPasswordRequest;
 
         SysAdminAction action = new SysAdminAction();
-        action.vmId = request.setPasswordRequest.vmId;
+        action.vmId = request.setPasswordRequest.hfsVmId;
         action.sysAdminActionId = 73;
         action.status = Status.COMPLETE;
 
-        when(sysAdminService.changePassword(eq(setPasswordRequest.vmId), anyString(), eq(setPasswordRequest.password))).thenReturn(action);
+        when(sysAdminService.changePassword(eq(setPasswordRequest.hfsVmId), anyString(), eq(setPasswordRequest.password))).thenReturn(action);
         when(sysAdminService.getSysAdminAction(action.sysAdminActionId)).thenReturn(action);
 
         command.execute(context, request);

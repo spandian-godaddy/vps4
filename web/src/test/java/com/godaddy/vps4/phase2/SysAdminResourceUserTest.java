@@ -20,7 +20,6 @@ import com.godaddy.vps4.security.SecurityModule;
 import com.godaddy.vps4.security.Vps4User;
 import com.godaddy.vps4.security.Vps4UserService;
 import com.godaddy.vps4.vm.ActionService;
-import com.godaddy.vps4.vm.VirtualMachine;
 import com.godaddy.vps4.vm.VirtualMachineService;
 import com.godaddy.vps4.vm.VmModule;
 import com.godaddy.vps4.vm.VmUserService;
@@ -132,9 +131,9 @@ public class SysAdminResourceUserTest {
         UpdatePasswordRequest request = new UpdatePasswordRequest();
         request.username = username;
         
-        getValidResource().setPassword(hfsVmId, request);
+        getValidResource().setPassword(vmId, request);
         try{
-            getInvalidResource().setPassword(hfsVmId, request);
+            getInvalidResource().setPassword(vmId, request);
             Assert.fail();
         }catch (Vps4Exception e){
             //do nothing
@@ -146,9 +145,9 @@ public class SysAdminResourceUserTest {
         SetAdminRequest request = new SetAdminRequest();
         request.username = username;
         
-        getValidResource().enableUserAdmin(hfsVmId, request);
+        getValidResource().enableUserAdmin(vmId, request);
         try{
-            getInvalidResource().enableUserAdmin(hfsVmId, request);
+            getInvalidResource().enableUserAdmin(vmId, request);
             Assert.fail();
         }catch (Vps4Exception e){
             //do nothing
@@ -160,9 +159,9 @@ public class SysAdminResourceUserTest {
         SetAdminRequest request = new SetAdminRequest();
         request.username = username;
         
-        getValidResource().disableUserAdmin(hfsVmId, request);
+        getValidResource().disableUserAdmin(vmId, request);
         try{
-            getInvalidResource().disableUserAdmin(hfsVmId, request);
+            getInvalidResource().disableUserAdmin(vmId, request);
             Assert.fail();
         }catch (Vps4Exception e){
             //do nothing

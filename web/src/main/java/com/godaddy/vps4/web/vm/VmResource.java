@@ -190,43 +190,20 @@ public class VmResource {
 
     @POST
     @Path("{vmId}/start")
-    public Action startVm(@PathParam("vmId") long vmId) throws VmNotFoundException {
+    public Action startVm(@PathParam("vmId") UUID vmId) throws VmNotFoundException {
         return manageVm(vmId, ActionType.START_VM);
     }
 
     @POST
     @Path("{vmId}/stop")
-    public Action stopVm(@PathParam("vmId") long vmId) throws VmNotFoundException {
+    public Action stopVm(@PathParam("vmId") UUID vmId) throws VmNotFoundException {
         return manageVm(vmId, ActionType.STOP_VM);
     }
 
     @POST
     @Path("{vmId}/restart")
-    public Action restartVm(@PathParam("vmId") long vmId) throws VmNotFoundException {
+    public Action restartVm(@PathParam("vmId") UUID vmId) throws VmNotFoundException {
         return manageVm(vmId, ActionType.RESTART_VM);
-    }
-
-    /**
-     * Check if vm exists
-     *
-     * @param vmId
-     * @return virtualmachine project id if found
-     * @throws VmNotFoundException
-     */
-    private VirtualMachine getVm(long vmId) throws VmNotFoundException {
-        VirtualMachine vm;
-
-        try {
-            vm = virtualMachineService.getVirtualMachine(vmId);
-            if (vm == null) {
-                throw new VmNotFoundException("Could not find VM for specified vm id: " + vmId);
-            }
-        }
-        catch (Exception ex) {
-            logger.error("Could not find vm with VM ID: {} ", vmId, ex);
-            throw new VmNotFoundException("Could not find vm with VM ID: " + vmId, ex);
-        }
-        return vm;
     }
 
     /**
@@ -235,7 +212,7 @@ public class VmResource {
      * @param vmId
      * @param action
      */
-    private Action manageVm(long vmId, ActionType type) throws VmNotFoundException {
+    private Action manageVm(UUID vmId, ActionType type) throws VmNotFoundException {
 
         // Check if vm exists and user has access to the vm.
         VirtualMachine vm = getVm(vmId);
@@ -251,7 +228,7 @@ public class VmResource {
 
             Vps4StartVm.Request startRequest = new Vps4StartVm.Request();
             startRequest.actionId = actionId;
-            startRequest.vmId = vmId;
+            startRequest.hfsVmId = vm.hfsVmId;
 
             command = Commands.execute(commandService, "Vps4StartVm", startRequest);
             break;
@@ -259,7 +236,7 @@ public class VmResource {
         case STOP_VM:
             Vps4StopVm.Request stopRequest = new Vps4StopVm.Request();
             stopRequest.actionId = actionId;
-            stopRequest.vmId = vmId;
+            stopRequest.hfsVmId = vm.hfsVmId;
 
             command = Commands.execute(commandService, "Vps4StopVm", stopRequest);
             break;
@@ -267,7 +244,7 @@ public class VmResource {
         case RESTART_VM:
             Vps4RestartVm.Request restartRequest = new Vps4RestartVm.Request();
             restartRequest.actionId = actionId;
-            restartRequest.vmId = vmId;
+            restartRequest.hfsVmId = vm.hfsVmId;
 
             command = Commands.execute(commandService, "Vps4RestartVm", restartRequest);
             break;
@@ -394,7 +371,7 @@ public class VmResource {
 
     @DELETE
     @Path("/{vmId}")
-    public Action destroyVm(@PathParam("vmId") long vmId) {
+    public Action destroyVm(@PathParam("vmId") UUID vmId) {
         VirtualMachine virtualMachine = virtualMachineService.getVirtualMachine(vmId);
         if (virtualMachine == null) {
             throw new NotFoundException("vmId " + vmId + " not found");
@@ -409,7 +386,7 @@ public class VmResource {
 
         Vps4DestroyVm.Request request = new Vps4DestroyVm.Request();
         request.actionId = actionId;
-        request.vmId = vmId;
+        request.hfsVmId = virtualMachine.hfsVmId;
 
         CommandState command = Commands.execute(commandService, "Vps4DestroyVm", request);
 

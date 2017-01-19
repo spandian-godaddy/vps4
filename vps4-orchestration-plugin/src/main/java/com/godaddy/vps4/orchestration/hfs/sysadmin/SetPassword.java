@@ -17,7 +17,7 @@ public class SetPassword implements Command<SetPassword.Request, Void> {
     private static final Logger logger = LoggerFactory.getLogger(SetPassword.class);
 
     public static class Request {
-        public long vmId;
+        public long hfsVmId;
         public List<String> usernames;
         public String password;
     }
@@ -31,11 +31,11 @@ public class SetPassword implements Command<SetPassword.Request, Void> {
 
     public Void execute(CommandContext context, Request request) {
 
-        logger.debug("Setting passwords for users {} on vm {}", request.usernames.toString(), request.vmId);
+        logger.debug("Setting passwords for users {} on vm {}", request.usernames.toString(), request.hfsVmId);
 
         for(String username : request.usernames){
 
-            SysAdminAction hfsSysAction = context.execute("SetPassword-"+username, ctx -> sysAdminService.changePassword(request.vmId, username, request.password));
+            SysAdminAction hfsSysAction = context.execute("SetPassword-"+username, ctx -> sysAdminService.changePassword(request.hfsVmId, username, request.password));
 
             context.execute("WaitForSet-"+username, WaitForSysAdminAction.class, hfsSysAction);
         }
