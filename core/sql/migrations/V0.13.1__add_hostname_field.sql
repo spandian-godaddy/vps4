@@ -1,0 +1,1 @@
+ALTER TABLE virtual_machine ADD hostname VARCHAR(255);
