@@ -171,9 +171,9 @@ public class VmResourceUserTest {
 
     @Test
     public void testStartVm() throws VmNotFoundException{
-        newValidVmResource().startVm(vmId);
+        newValidVmResource().startVm(vmIds.get(0));
         try{
-            newInvalidVmResource().startVm(vmId);
+            newInvalidVmResource().startVm(vmIds.get(0));
             Assert.fail();
         }
         catch (NotFoundException e) {
@@ -183,9 +183,9 @@ public class VmResourceUserTest {
 
     @Test
     public void testStopVm() throws VmNotFoundException{
-        newValidVmResource().stopVm(vmId);
+        newValidVmResource().stopVm(vmIds.get(0));
         try{
-            newInvalidVmResource().stopVm(vmId);
+            newInvalidVmResource().stopVm(vmIds.get(0));
             Assert.fail();
         }
         catch (NotFoundException e) {
@@ -195,9 +195,9 @@ public class VmResourceUserTest {
 
     @Test
     public void testRestartVm() throws VmNotFoundException{
-        newValidVmResource().restartVm(vmId);
+        newValidVmResource().restartVm(vmIds.get(0));
         try{
-            newInvalidVmResource().restartVm(vmId);
+            newInvalidVmResource().restartVm(vmIds.get(0));
             Assert.fail();
         }
         catch (NotFoundException e) {
@@ -207,9 +207,9 @@ public class VmResourceUserTest {
 
     @Test
     public void testDestroyVm() throws VmNotFoundException{
-        newValidVmResource().destroyVm(vmId);
+        newValidVmResource().destroyVm(vmIds.get(0));
         try{
-            newInvalidVmResource().destroyVm(vmId);
+            newInvalidVmResource().destroyVm(vmIds.get(0));
             Assert.fail();
         }catch (Vps4Exception e){
             //do nothing
