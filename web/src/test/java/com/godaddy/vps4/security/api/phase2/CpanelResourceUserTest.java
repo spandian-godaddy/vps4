@@ -96,6 +96,7 @@ public class CpanelResourceUserTest {
         DataSource dataSource = injector.getInstance(DataSource.class);
         Sql.with(dataSource).exec("DELETE FROM vm_action where vm_id = ?", null, vmId);
         Sql.with(dataSource).exec("DELETE FROM virtual_machine WHERE vm_id = ?", null, vmId);
+        Sql.with(dataSource).exec("DELETE FROM credit WHERE orion_guid = ?", null, orionGuid);
         projService.deleteProject(project.getProjectId());
     }
     

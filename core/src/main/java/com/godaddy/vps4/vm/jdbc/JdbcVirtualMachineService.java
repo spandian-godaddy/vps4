@@ -146,6 +146,13 @@ public class JdbcVirtualMachineService implements VirtualMachineService {
         vmPatchMap.put("hfs_vm_id", hfsVmId);
         updateVirtualMachine(vmId, vmPatchMap);
     }
+    
+    @Override
+    public void setHostname(UUID vmId, String hostname){
+        Map<String, Object> vmPatchMap = new HashMap<>();
+        vmPatchMap.put("hostname", hostname);
+        updateVirtualMachine(vmId, vmPatchMap);
+    }
 
     @Override
     public void updateVirtualMachine(UUID id, Map<String, Object> paramsToUpdate) {

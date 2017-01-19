@@ -88,6 +88,7 @@ public class ProvisionVm extends ActionCommand<ProvisionVm.Request, ProvisionVm.
         // Generate a new hostname from the allocated ip
         setStep(CreateVmStep.GeneratingHostname);
         hfsRequest.hostname = HostnameGenerator.getHostname(ip.address);
+        virtualMachineService.setHostname(vmInfo.vmId, hfsRequest.hostname);
 
         // Create the VM
         setStep(CreateVmStep.RequestingServer);

@@ -1,5 +1,7 @@
 package com.godaddy.vps4.phase2;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 
 import javax.inject.Inject;
@@ -94,30 +96,36 @@ public class VmResourceUserTest {
     Vps4User invalidUser;
     Vps4User user;
 
-    UUID orionGuid;
+    List<UUID> orionGuids = new ArrayList<UUID>();
     long hfsVmId = 98765;
     Project project;
-    UUID vmId;
+    List<UUID> vmIds = new ArrayList<UUID>();
 
     @Before
     public void setupTest(){
         injector.injectMembers(this);
-        orionGuid = UUID.randomUUID();
+        orionGuids.add(UUID.randomUUID());
         validUser = userService.getOrCreateUserForShopper("validUserShopperId");
         invalidUser = userService.getOrCreateUserForShopper("invalidUserShopperId");
-        virtualMachineService.createVirtualMachineRequest(orionGuid, "linux", "cPanel", 10, 1, "validUserShopperId");
+        virtualMachineService.createVirtualMachineRequest(orionGuids.get(0), "linux", "cPanel", 10, 1, "validUserShopperId");
         project = projService.createProject("TestProject", validUser.getId(), 1, "vps4-test-");
-        vmId = virtualMachineService.provisionVirtualMachine(orionGuid, "fakeVM", project.getProjectId(), 1, 1, 1);
-        virtualMachineService.addHfsVmIdToVirtualMachine(vmId, hfsVmId);
-        networkService.createIpAddress(1234, vmId, "127.0.0.1", IpAddressType.PRIMARY);
+        vmIds.add(virtualMachineService.provisionVirtualMachine(orionGuids.get(0), "fakeVM", project.getProjectId(), 1, 1, 1));
+        virtualMachineService.addHfsVmIdToVirtualMachine(vmIds.get(0), hfsVmId);
+        networkService.createIpAddress(1234, vmIds.get(0), "127.0.0.1", IpAddressType.PRIMARY);
+        
     }
 
     @After
     public void teardownTest(){
         DataSource dataSource = injector.getInstance(DataSource.class);
-        Sql.with(dataSource).exec("DELETE FROM vm_action where vm_id = ?", null, vmId);
         Sql.with(dataSource).exec("DELETE FROM ip_address where ip_address_id = ?", null, 1234);
-        Sql.with(dataSource).exec("DELETE FROM virtual_machine WHERE vm_id = ?", null, vmId);
+        for (UUID vmId : vmIds) {
+            Sql.with(dataSource).exec("DELETE FROM vm_action where vm_id = ?", null, vmId);
+            Sql.with(dataSource).exec("DELETE FROM virtual_machine WHERE vm_id = ?", null, vmId);
+        }
+        for (UUID orionGuid : orionGuids) {
+            Sql.with(dataSource).exec("DELETE FROM credit WHERE orion_guid = ?", null, orionGuid);
+        }
         projService.deleteProject(project.getProjectId());
     }
 
@@ -133,7 +141,7 @@ public class VmResourceUserTest {
 
     @Test
     public void testListActions(){
-        long actionId = actionService.createAction(vmId, ActionType.CREATE_VM, "{}", validUser.getId());
+        long actionId = actionService.createAction(vmIds.get(0), ActionType.CREATE_VM, "{}", validUser.getId());
         user = validUser;
         ActionResource validActionResource = injector.getInstance(ActionResource.class);
         validActionResource.getAction(actionId);
@@ -149,9 +157,9 @@ public class VmResourceUserTest {
 
     @Test
     public void testGetVm(){
-        newValidVmResource().getVm(vmId);
+        newValidVmResource().getVm(vmIds.get(0));
         try{
-            newInvalidVmResource().getVm(vmId);
+            newInvalidVmResource().getVm(vmIds.get(0));
             Assert.fail();
         }
         catch (NotFoundException e) {
@@ -211,13 +219,14 @@ public class VmResourceUserTest {
     @Test
     public void testProvisionVm() throws InterruptedException {
         UUID newGuid = UUID.randomUUID();
+        orionGuids.add(newGuid);
         virtualMachineService.createVirtualMachineRequest(newGuid, "linux", "cPanel", 10, 1, validUser.getShopperId());
         ProvisionVmRequest provisionRequest = new ProvisionVmRequest();
         provisionRequest.orionGuid = newGuid;
         provisionRequest.dataCenterId = 1;
         provisionRequest.image = "centos-7";
         provisionRequest.name = "Test Name";
-        newValidVmResource().provisionVm(provisionRequest);
+        vmIds.add(newValidVmResource().provisionVm(provisionRequest).virtualMachineId);
         try{
             newInvalidVmResource().provisionVm(provisionRequest);
             Assert.fail();
