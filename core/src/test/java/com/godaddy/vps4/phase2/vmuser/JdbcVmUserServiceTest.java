@@ -16,7 +16,6 @@ import org.junit.Before;
 import org.junit.Test;
 
 import com.godaddy.vps4.jdbc.DatabaseModule;
-import com.godaddy.vps4.network.jdbc.JdbcNetworkService;
 import com.godaddy.vps4.phase2.SqlTestData;
 import com.godaddy.vps4.project.ProjectService;
 import com.godaddy.vps4.project.jdbc.JdbcProjectService;
@@ -24,7 +23,6 @@ import com.godaddy.vps4.vm.VirtualMachine;
 import com.godaddy.vps4.vm.VirtualMachineService;
 import com.godaddy.vps4.vm.VmUser;
 import com.godaddy.vps4.vm.VmUserService;
-import com.godaddy.vps4.vm.jdbc.JdbcImageService;
 import com.godaddy.vps4.vm.jdbc.JdbcVirtualMachineService;
 import com.godaddy.vps4.vm.jdbc.JdbcVmUserService;
 import com.google.inject.Guice;
@@ -35,7 +33,7 @@ public class JdbcVmUserServiceTest {
     private Injector injector = Guice.createInjector(new DatabaseModule());
     private DataSource dataSource = injector.getInstance(DataSource.class);
     ProjectService projectService = new JdbcProjectService(dataSource);
-    VirtualMachineService vmService = new JdbcVirtualMachineService(dataSource, new JdbcNetworkService(dataSource), new JdbcImageService(dataSource));
+    VirtualMachineService vmService = new JdbcVirtualMachineService(dataSource);
 
     private long projectId;
     private UUID vmId;

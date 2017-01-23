@@ -42,7 +42,7 @@ public class VirtualMachineServiceTest {
     DataSource dataSource = injector.getInstance(DataSource.class);
     NetworkService networkService = new JdbcNetworkService(dataSource);
     ImageService imageService = new JdbcImageService(dataSource);
-    VirtualMachineService virtualMachineService = new JdbcVirtualMachineService(dataSource, networkService, imageService);
+    VirtualMachineService virtualMachineService = new JdbcVirtualMachineService(dataSource);
     ProjectService projectService = new JdbcProjectService(dataSource);
     private UUID orionGuid = UUID.randomUUID();
     List<Project> projects;
@@ -98,14 +98,15 @@ public class VirtualMachineServiceTest {
         long hfsVmId = SqlTestData.getNextHfsVmId(dataSource);
         virtualMachineService.addHfsVmIdToVirtualMachine(vmId, hfsVmId);
 
-        VirtualMachine vm = virtualMachineService.getVirtualMachine(hfsVmId);
+        VirtualMachine vm = virtualMachineService.getVirtualMachine(vmId);
+        verifyVm(name, specId, hfsVmId, vm);
+
+        vm = virtualMachineService.getVirtualMachine(hfsVmId);
         verifyVm(name, specId, hfsVmId, vm);
         
         vm = virtualMachineService.getVirtualMachineByOrionGuid(orionGuid);
         verifyVm(name, specId, hfsVmId, vm);
-        
-        vm = virtualMachineService.getVirtualMachine(vmId);
-        verifyVm(name, specId, hfsVmId, vm);
+
     }
 
     private void verifyVm(String name, int specId, long hfsVmId, VirtualMachine vm) {

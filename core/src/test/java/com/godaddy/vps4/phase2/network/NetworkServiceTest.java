@@ -21,10 +21,8 @@ import com.godaddy.vps4.network.jdbc.JdbcNetworkService;
 import com.godaddy.vps4.phase2.SqlTestData;
 import com.godaddy.vps4.project.ProjectService;
 import com.godaddy.vps4.project.jdbc.JdbcProjectService;
-import com.godaddy.vps4.vm.ImageService;
 import com.godaddy.vps4.vm.VirtualMachine;
 import com.godaddy.vps4.vm.VirtualMachineService;
-import com.godaddy.vps4.vm.jdbc.JdbcImageService;
 import com.godaddy.vps4.vm.jdbc.JdbcVirtualMachineService;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
@@ -35,7 +33,6 @@ public class NetworkServiceTest {
 
     private NetworkService networkService;
     private VirtualMachineService virtualMachineService;
-    private ImageService imageService;
     ProjectService projectService;
     private Injector injector = Guice.createInjector(new DatabaseModule());
 
@@ -50,8 +47,7 @@ public class NetworkServiceTest {
         dataSource = injector.getInstance(DataSource.class);
         networkService = new JdbcNetworkService(dataSource);
         projectService = new JdbcProjectService(dataSource);
-        imageService = new JdbcImageService(dataSource);
-        virtualMachineService = new JdbcVirtualMachineService(dataSource, networkService, imageService);
+        virtualMachineService = new JdbcVirtualMachineService(dataSource);
         
         projectId = SqlTestData.createProject(dataSource).getProjectId();
 

@@ -15,10 +15,10 @@ import javax.sql.DataSource;
 import com.godaddy.vps4.jdbc.ConnectionProvider;
 import com.godaddy.vps4.jdbc.Sql;
 import com.godaddy.vps4.network.IpAddress;
-import com.godaddy.vps4.network.NetworkService;
 import com.godaddy.vps4.security.Vps4User;
 import com.godaddy.vps4.vm.Image;
-import com.godaddy.vps4.vm.ImageService;
+import com.godaddy.vps4.vm.Image.ControlPanel;
+import com.godaddy.vps4.vm.Image.OperatingSystem;
 import com.godaddy.vps4.vm.VirtualMachine;
 import com.godaddy.vps4.vm.VirtualMachineCredit;
 import com.godaddy.vps4.vm.VirtualMachineService;
@@ -28,22 +28,21 @@ public class JdbcVirtualMachineService implements VirtualMachineService {
 
     private final DataSource dataSource;
 
-    private NetworkService networkService;
-    private ImageService imageService;
-
     private String selectVirtualMachineQuery = "SELECT vm.vm_id, vm.hfs_vm_id, vm.orion_guid, vm.project_id, vm.name as \"vm_name\", "
             + "vm.valid_on as \"vm_valid_on\", vm.valid_until as \"vm_valid_until\", vms.spec_id, vms.spec_name, "
             + "vms.tier, vms.cpu_core_count, vms.memory_mib, vms.disk_gib, vms.valid_on as \"spec_valid_on\", "
-            + "vms.valid_until as \"spec_valid_until\", vms.name as \"spec_vps4_name\", image.name as \"image_name\" FROM virtual_machine vm "
+            + "vms.valid_until as \"spec_valid_until\", vms.name as \"spec_vps4_name\", "
+            + "image.name, image.image_id, image.control_panel_id, image.os_type_id, "
+            + "ip.ip_address_id, ip.ip_address, ip.ip_address_type_id, ip.valid_on, ip.valid_until "
+            + "FROM virtual_machine vm "
             + "JOIN virtual_machine_spec vms ON vms.spec_id=vm.spec_id "
-            + "JOIN image ON image.image_id=vm.image_id ";
+            + "JOIN image ON image.image_id=vm.image_id "
+            + "LEFT JOIN ip_address ip ON ip.vm_id = vm.vm_id AND ip.ip_address_type_id = 1 ";
 
     @Inject
-    public JdbcVirtualMachineService(DataSource dataSource, NetworkService networkService, ImageService imageService) {
+    public JdbcVirtualMachineService(DataSource dataSource) {
         this.dataSource = dataSource;
         new ConnectionProvider(dataSource);
-        this.networkService = networkService;
-        this.imageService = imageService;
     }
 
     @Override
@@ -80,12 +79,37 @@ public class JdbcVirtualMachineService implements VirtualMachineService {
         Timestamp validUntil = rs.getTimestamp("vm_valid_until");
         VirtualMachineSpec spec = mapVirtualMachineSpec(rs);
         UUID vmId = java.util.UUID.fromString(rs.getString("vm_id"));
-        IpAddress ipAddress = networkService.getVmPrimaryAddress(vmId);
-        Image image = imageService.getImage(rs.getString("image_name"));
+        IpAddress ipAddress = mapIpAddress(rs);
+        Image image = mapImage(rs);
 
         return new VirtualMachine(vmId, rs.getLong("hfs_vm_id"), java.util.UUID.fromString(rs.getString("orion_guid")), rs.getLong("project_id"),
                 spec, rs.getString("vm_name"), image, ipAddress, rs.getTimestamp("vm_valid_on").toInstant(),
                 validUntil != null ? validUntil.toInstant() : null);
+    }
+
+    protected IpAddress mapIpAddress(ResultSet rs) throws SQLException {
+        long ipAddressId = rs.getLong("ip_address_id");
+        if (ipAddressId == 0) {
+            return null;
+        }
+        return new IpAddress(rs.getLong("ip_address_id"),
+                UUID.fromString(rs.getString("vm_id")),
+                rs.getString("ip_address"),
+                IpAddress.IpAddressType.valueOf(rs.getInt("ip_address_type_id")),
+                rs.getTimestamp("valid_on").toInstant(),
+                rs.getTimestamp("valid_until").toInstant());
+    }
+
+    private Image mapImage(ResultSet rs) throws SQLException {
+        Image image = new Image();
+
+        image.imageName = rs.getString("name");
+        image.imageId = rs.getLong("image_id");
+        image.controlPanel = ControlPanel.valueOf(rs.getInt("control_panel_id"));
+        image.operatingSystem = OperatingSystem.valueOf(rs.getInt("os_type_id"));
+
+        return image;
+
     }
 
     protected VirtualMachineSpec mapVirtualMachineSpec(ResultSet rs) throws SQLException {

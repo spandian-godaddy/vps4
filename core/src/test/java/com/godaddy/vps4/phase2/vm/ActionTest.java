@@ -14,7 +14,6 @@ import org.junit.Test;
 
 import com.godaddy.vps4.jdbc.DatabaseModule;
 import com.godaddy.vps4.jdbc.Sql;
-import com.godaddy.vps4.network.jdbc.JdbcNetworkService;
 import com.godaddy.vps4.phase2.SqlTestData;
 import com.godaddy.vps4.project.Project;
 import com.godaddy.vps4.project.ProjectService;
@@ -26,7 +25,6 @@ import com.godaddy.vps4.vm.ActionType;
 import com.godaddy.vps4.vm.VirtualMachine;
 import com.godaddy.vps4.vm.VirtualMachineService;
 import com.godaddy.vps4.vm.jdbc.JdbcActionService;
-import com.godaddy.vps4.vm.jdbc.JdbcImageService;
 import com.godaddy.vps4.vm.jdbc.JdbcVirtualMachineService;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
@@ -36,7 +34,7 @@ public class ActionTest {
     DataSource dataSource = injector.getInstance(DataSource.class);
     ActionService actionService = new JdbcActionService(dataSource);
     ProjectService projectService = new JdbcProjectService(dataSource);
-    VirtualMachineService vmService = new JdbcVirtualMachineService(dataSource, new JdbcNetworkService(dataSource), new JdbcImageService(dataSource));
+    VirtualMachineService vmService = new JdbcVirtualMachineService(dataSource);
     
     private UUID orionGuid = UUID.randomUUID();
     Project project;
