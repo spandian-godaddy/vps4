@@ -45,7 +45,6 @@ public class JdbcVirtualMachineService implements VirtualMachineService {
     @Inject
     public JdbcVirtualMachineService(DataSource dataSource) {
         this.dataSource = dataSource;
-        new ConnectionProvider(dataSource);
     }
 
     @Override
