@@ -31,25 +31,25 @@ import io.swagger.annotations.Api;
 @Vps4Api
 @Api(tags = { "vms" })
 
-@Path("/api/vms")
+@Path("/api")
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
 
 public class ActionResource {
-    
+
     private final PrivilegeService privilegeService;
     private final ActionService actionService;
     private final Vps4User user;
-    
+
     @Inject
-    public ActionResource(PrivilegeService privilegeService, 
+    public ActionResource(PrivilegeService privilegeService,
                           ActionService actionService,
                           Vps4User user){
         this.privilegeService = privilegeService;
         this.actionService = actionService;
         this.user = user;
     }
-    
+
     @GET
     @Path("actions/{actionId}")
     public Action getAction(@PathParam("actionId") long actionId) {
@@ -69,16 +69,15 @@ public class ActionResource {
 
         return action;
     }
-    
-   
+
     @GET
-    @Path("actions/{vmId}")
-    public PaginatedResult<Action> getActions(@PathParam("vmId") UUID vmId, 
-                                              @DefaultValue("10") @QueryParam("limit") long limit, 
-                                              @DefaultValue("0") @QueryParam("offset") long offset, 
+    @Path("vms/{vmId}/actions")
+    public PaginatedResult<Action> getActions(@PathParam("vmId") UUID vmId,
+                                              @DefaultValue("10") @QueryParam("limit") long limit,
+                                              @DefaultValue("0") @QueryParam("offset") long offset,
                                               @Context UriInfo uri) {
         privilegeService.requireAnyPrivilegeToVmId(user, vmId);
-        
+
         ResultSubset<Action> actions = actionService.getActions(vmId, limit, offset);
         long totalRows = 0;
         List<Action> actionList = new ArrayList<Action>();
@@ -86,7 +85,7 @@ public class ActionResource {
             totalRows = actions.totalRows;
             actionList = actions.results;
         }
-        
+
         return new PaginatedResult<Action>(actionList, limit, offset, totalRows, uri);
     }
 

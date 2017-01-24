@@ -1,7 +1,6 @@
 package com.godaddy.vps4.web.vm;
 
 import java.time.Instant;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -50,8 +49,6 @@ import gdg.hfs.orchestration.CommandService;
 import gdg.hfs.orchestration.CommandState;
 import gdg.hfs.vhfs.cpanel.CPanelService;
 import gdg.hfs.vhfs.vm.CreateVMWithFlavorRequest;
-import gdg.hfs.vhfs.vm.Flavor;
-import gdg.hfs.vhfs.vm.FlavorList;
 import gdg.hfs.vhfs.vm.Vm;
 import gdg.hfs.vhfs.vm.VmService;
 import io.swagger.annotations.Api;
@@ -101,48 +98,6 @@ public class VmResource {
     }
 
 
-//    @GET
-//    @Path("actions/provision/{orionGuid}")
-//    public Action getProvisionActions(@PathParam("orionGuid") UUID orionGuid) {
-//
-//        Action action = getActionFromOrionGuid(orionGuid);
-//        if (action == null) {
-//            throw new NotFoundException("action or orionGuid " + orionGuid + " not found");
-//        }
-//
-//        return action;
-//    }
-//
-//    @GET
-//    @Path("/provisions/{orionGuid}")
-//    public Action getProvisionAction(@PathParam("orionGuid") UUID orionGuid) {
-//
-//        return getActionFromOrionGuid(orionGuid);
-//    }
-//
-//    protected Action getActionFromOrionGuid(UUID orionGuid) {
-//
-//        // TODO
-//        // - add an action_id to the provision request table
-//        // - update that column when a provision is started for a specific provision request
-//        // - add a way to look that up through actionService (or something)
-//        return null;
-//    }
-
-    @GET
-    @Path("/flavors")
-    public List<Flavor> getFlavors() {
-
-        logger.info("getting flavors from HFS...");
-
-        FlavorList flavorList = vmService.listFlavors();
-        logger.info("flavorList: {}", flavorList);
-        if (flavorList != null && flavorList.results != null) {
-            return flavorList.results;
-        }
-        return new ArrayList<>();
-    }
-
     @GET
     @Path("/{vmId}")
     public VirtualMachine getVm(@PathParam("vmId") UUID vmId) {
@@ -166,27 +121,6 @@ public class VmResource {
 
         return virtualMachine;
     }
-
-
-
-//    @POST
-//    @Path("/")
-//    public VirtualMachineRequest createVm(@QueryParam("orionGuid") UUID orionGuid,
-//            @QueryParam("operatingSystem") String operatingSystem,
-//            @QueryParam("tier") int tier,
-//            @QueryParam("controlPanel") String controlPanel,
-//            @QueryParam("managedLevel") int managedLevel,
-//            @QueryParam("shopperId") String shopperId) {
-//
-//        if (!user.getShopperId().equals(shopperId)) {
-//            throw new AuthorizationException(user.getShopperId() + " can not create a vm with a different shopperId(" + shopperId + ")");
-//        }
-//
-//        logger.info("creating new vm request for orionGuid {}", orionGuid);
-//        virtualMachineService.createVirtualMachineRequest(orionGuid, operatingSystem, controlPanel, tier, managedLevel, shopperId);
-//        return virtualMachineService.getVirtualMachineRequest(orionGuid);
-//
-//    }
 
     @POST
     @Path("{vmId}/start")
@@ -269,7 +203,7 @@ public class VmResource {
     }
 
     @POST
-    @Path("/provisions/")
+    @Path("/")
     public Action provisionVm(ProvisionVmRequest provisionRequest) throws InterruptedException {
 
         logger.info("provisioning vm with orionGuid {}", provisionRequest.orionGuid);

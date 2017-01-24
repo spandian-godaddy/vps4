@@ -66,7 +66,7 @@ public class VmResourceUserTest {
             new SecurityModule(),
             new VmModule(),
             new AbstractModule() {
-                
+
                 @Override
                 public void configure() {
                     // HFS services
@@ -112,7 +112,7 @@ public class VmResourceUserTest {
         vmIds.add(virtualMachineService.provisionVirtualMachine(orionGuids.get(0), "fakeVM", project.getProjectId(), 1, 1, 1));
         virtualMachineService.addHfsVmIdToVirtualMachine(vmIds.get(0), hfsVmId);
         networkService.createIpAddress(1234, vmIds.get(0), "127.0.0.1", IpAddressType.PRIMARY);
-        
+
     }
 
     @After
