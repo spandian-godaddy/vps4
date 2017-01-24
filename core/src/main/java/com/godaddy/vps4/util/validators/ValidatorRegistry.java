@@ -18,6 +18,7 @@ public class ValidatorRegistry {
     static void addValidatorsToRegistry(Map<String, Validator> validators) {
         validators.put("username", getUsernameValidator());
         validators.put("password", getPasswordValidator());
+        validators.put("hostname", getHostnameValidator());
     }
 
     static Validator getUsernameValidator() {
@@ -36,6 +37,18 @@ public class ValidatorRegistry {
             new Rule("Includes at least one uppercase letter", ".*[A-Z].*$"),
             new Rule("Includes at least one digit", ".*[0-9].*$"),
             new Rule("Includes at least one special character", ".*[@!#$%].*$")
+        )));
+    }
+    
+    static Validator getHostnameValidator() {
+        return(new Validator(Arrays.asList(
+            new Rule("Fully Qualified Hostname (xxx.xxx.xxx)", "[a-zA-Z0-9-]{1,15}\\.[a-zA-Z0-9-]{1,15}\\.[a-zA-Z0-9-]{1,15}"),
+            new Rule(". and - are the only allowed special characters", "^[a-zA-Z0-9-.]*$"),
+            new Rule("Less than 16 characters per section", "[a-zA-Z0-9-]{1,15}\\.[a-zA-Z0-9-]{1,15}\\.[a-zA-Z0-9-]{1,15}"),
+            new Rule("Doesn't begin with a hyphen", "^(?!-).*$"),
+            new Rule("Doesn't end with a hyphen", ".*(?<!-)$"),
+            new Rule("Multiple periods may not be adjacent", "^((?!\\.\\.).)*$"),
+            new Rule("Multiple hyphens may not be adjacent", "^((?!\\-\\-).)*$")
         )));
     }
 

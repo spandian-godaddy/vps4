@@ -30,7 +30,7 @@ public class JdbcVirtualMachineService implements VirtualMachineService {
     private final DataSource dataSource;
 
     private String selectVirtualMachineQuery = "SELECT vm.vm_id, vm.hfs_vm_id, vm.orion_guid, vm.project_id, vm.name as \"vm_name\", "
-            + "vm.valid_on as \"vm_valid_on\", vm.valid_until as \"vm_valid_until\", vms.spec_id, vms.spec_name, "
+            + "vm.hostname, vm.valid_on as \"vm_valid_on\", vm.valid_until as \"vm_valid_until\", vms.spec_id, vms.spec_name, "
             + "vms.tier, vms.cpu_core_count, vms.memory_mib, vms.disk_gib, vms.valid_on as \"spec_valid_on\", "
             + "vms.valid_until as \"spec_valid_until\", vms.name as \"spec_vps4_name\", "
             + "image.name, image.image_id, image.control_panel_id, image.os_type_id, "
@@ -92,7 +92,8 @@ public class JdbcVirtualMachineService implements VirtualMachineService {
                 spec, rs.getString("vm_name"), 
                 image, ipAddress, dataCenter,
                 rs.getTimestamp("vm_valid_on").toInstant(),
-                validUntil != null ? validUntil.toInstant() : null);
+                validUntil != null ? validUntil.toInstant() : null,
+                rs.getString("hostname"));
     }
 
     protected IpAddress mapIpAddress(ResultSet rs) throws SQLException {
@@ -229,5 +230,14 @@ public class JdbcVirtualMachineService implements VirtualMachineService {
     public void createOrionRequestIfNoneExists(Vps4User vps4User) {
         Sql.with(dataSource).exec("SELECT * FROM auto_create_credit(?, ?, ?, ?, ?)", null, vps4User.getId(), 10, "linux", "cpanel",
                 1);
+    }
+    
+    @Override
+    public boolean virtualMachineHasCpanel(UUID vmId){
+        List<VirtualMachine> vms = Sql.with(dataSource).exec(selectVirtualMachineQuery 
+                + "JOIN control_panel ON image.control_panel_id = control_panel.control_panel_id "
+                + "where control_panel.name = 'cpanel' "
+                + "and vm.vm_id = ?;", Sql.listOf(this::mapVirtualMachine), vmId);
+        return vms.size() > 0;
     }
 }

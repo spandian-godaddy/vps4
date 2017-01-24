@@ -9,6 +9,8 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mockito;
+import static org.mockito.Mockito.*;
+
 
 import com.godaddy.vps4.Vps4Exception;
 import com.godaddy.vps4.jdbc.DatabaseModule;
@@ -19,14 +21,18 @@ import com.godaddy.vps4.security.PrivilegeService;
 import com.godaddy.vps4.security.SecurityModule;
 import com.godaddy.vps4.security.Vps4User;
 import com.godaddy.vps4.security.Vps4UserService;
+import com.godaddy.vps4.vm.Action;
 import com.godaddy.vps4.vm.ActionService;
+import com.godaddy.vps4.vm.VirtualMachine;
 import com.godaddy.vps4.vm.VirtualMachineService;
 import com.godaddy.vps4.vm.VmModule;
 import com.godaddy.vps4.vm.VmUserService;
+import com.godaddy.vps4.web.CommandClientModule;
 import com.godaddy.vps4.web.sysadmin.SysAdminResource;
 import com.godaddy.vps4.web.sysadmin.SysAdminResource.SetAdminRequest;
 import com.godaddy.vps4.web.sysadmin.SysAdminResource.SetHostnameRequest;
 import com.godaddy.vps4.web.sysadmin.SysAdminResource.UpdatePasswordRequest;
+import com.godaddy.vps4.web.util.Commands;
 import com.google.inject.AbstractModule;
 import com.google.inject.Guice;
 import com.google.inject.Inject;
@@ -36,8 +42,10 @@ import com.google.inject.Provides;
 import gdg.hfs.orchestration.CommandGroupSpec;
 import gdg.hfs.orchestration.CommandService;
 import gdg.hfs.orchestration.CommandState;
+import gdg.hfs.vhfs.sysadmin.SysAdminService;
+import gdg.hfs.vhfs.vm.VmService;
 
-public class SysAdminResourceUserTest {
+public class SetHostnameTest {
     
     @Inject
     PrivilegeService privilegeService;
@@ -56,6 +64,10 @@ public class SysAdminResourceUserTest {
 
     @Inject
     VmUserService vmUserService;
+    
+//    Commands commands;
+    CommandService commandService;
+//    SysAdminService adminService;
 
     /*
     Module mockModule = binder -> {
@@ -68,11 +80,15 @@ public class SysAdminResourceUserTest {
             new SecurityModule(),
             new DatabaseModule(),
             new VmModule(),
+//            new CommandClientModule(),
             new AbstractModule() {
                 
                 @Override
                 protected void configure() {
-                    CommandService commandService = Mockito.mock(CommandService.class);
+//                    adminService = mock(SysAdminService.class);
+                    
+//                    commands = Mockito.mock(Commands.class);
+                    commandService = Mockito.mock(CommandService.class);
                     CommandState commandState = new CommandState();
                     commandState.commandId = UUID.randomUUID();
                     Mockito.when(commandService.executeCommand(Mockito.any(CommandGroupSpec.class))).thenReturn(commandState);
@@ -123,61 +139,15 @@ public class SysAdminResourceUserTest {
         return injector.getInstance(SysAdminResource.class);
     }
     
-    private SysAdminResource getInvalidResource() {
-        user = invalidUser;
-        return injector.getInstance(SysAdminResource.class);
-    }
-    
     @Test
-    public void testSetPassword(){
-        UpdatePasswordRequest request = new UpdatePasswordRequest();
-        request.username = username;
-        
-        getValidResource().setPassword(vmId, request);
-        try{
-            getInvalidResource().setPassword(vmId, request);
-            Assert.fail();
-        }catch (Vps4Exception e){
-            //do nothing
-        }
-    }
-    
-    @Test
-    public void testEnableUserAdmin(){
-        SetAdminRequest request = new SetAdminRequest();
-        request.username = username;
-        
-        getValidResource().enableUserAdmin(vmId, request);
-        try{
-            getInvalidResource().enableUserAdmin(vmId, request);
-            Assert.fail();
-        }catch (Vps4Exception e){
-            //do nothing
-        }
-    }
-    
-    @Test
-    public void testdisableUserAdmin(){
-        SetAdminRequest request = new SetAdminRequest();
-        request.username = username;
-        
-        getValidResource().disableUserAdmin(vmId, request);
-        try{
-            getInvalidResource().disableUserAdmin(vmId, request);
-            Assert.fail();
-        }catch (Vps4Exception e){
-            //do nothing
-        }
-    }
-    
-    @Test
-    public void testSetHostname(){
+    public void testSetInvalidHostname(){
         SetHostnameRequest request = new SetHostnameRequest();
         request.hostname = "newhostname.test.tst";
         
         getValidResource().setHostname(vmId, request);
         try{
-            getInvalidResource().setHostname(vmId, request);
+            request.hostname = "invalidHostname..tst";
+            getValidResource().setHostname(vmId, request);
             Assert.fail();
         }catch (Vps4Exception e){
             //do nothing

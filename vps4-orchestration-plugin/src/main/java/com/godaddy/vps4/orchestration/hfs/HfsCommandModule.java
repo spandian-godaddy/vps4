@@ -7,6 +7,8 @@ import com.godaddy.vps4.orchestration.hfs.network.BindIp;
 import com.godaddy.vps4.orchestration.hfs.network.ReleaseIp;
 import com.godaddy.vps4.orchestration.hfs.network.UnbindIp;
 import com.godaddy.vps4.orchestration.hfs.network.WaitForAddressAction;
+import com.godaddy.vps4.orchestration.hfs.sysadmin.RefreshCpanelLicense;
+import com.godaddy.vps4.orchestration.hfs.sysadmin.SetHostname;
 import com.godaddy.vps4.orchestration.hfs.sysadmin.SetPassword;
 import com.godaddy.vps4.orchestration.hfs.sysadmin.ToggleAdmin;
 import com.godaddy.vps4.orchestration.hfs.sysadmin.WaitForSysAdminAction;
@@ -43,10 +45,12 @@ public class HfsCommandModule extends AbstractModule {
         // SysAdmin
         bind(SetPassword.class);
         bind(ToggleAdmin.class);
+        bind(SetHostname.class);
         bind(WaitForSysAdminAction.class);
 
         // CPanel
         bind(ConfigureCpanel.class);
+        bind(RefreshCpanelLicense.class);        
         bind(WaitForCpanelAction.class);
 
     }

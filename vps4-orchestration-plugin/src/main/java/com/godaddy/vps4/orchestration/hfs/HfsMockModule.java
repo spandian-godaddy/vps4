@@ -39,9 +39,14 @@ public class HfsMockModule extends AbstractModule {
        SysAdminService sysAdminService = Mockito.mock(SysAdminService.class);
        SysAdminAction completeAction = new SysAdminAction();
        completeAction.status = SysAdminAction.Status.COMPLETE;
+       
+       SysAdminAction errorAction = new SysAdminAction();
+       errorAction.status = SysAdminAction.Status.FAILED;
+       
        Mockito.when(sysAdminService.enableAdmin(Mockito.anyLong(), Mockito.anyString())).thenReturn(completeAction);
        Mockito.when(sysAdminService.disableAdmin(Mockito.anyLong(), Mockito.anyString())).thenReturn(completeAction);
        Mockito.when(sysAdminService.changePassword(Mockito.anyLong(), Mockito.anyString(), Mockito.anyString())).thenReturn(completeAction);
+       Mockito.when(sysAdminService.changeHostname(Mockito.anyLong(), Mockito.anyString())).thenReturn(completeAction);
        Mockito.when(sysAdminService.getSysAdminAction(Mockito.anyLong())).thenReturn(completeAction);
 
        return sysAdminService;

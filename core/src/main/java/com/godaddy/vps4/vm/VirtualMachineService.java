@@ -50,5 +50,7 @@ public interface VirtualMachineService {
     List<VirtualMachineCredit> getVirtualMachineCredits(String shopperId);
 
     void createOrionRequestIfNoneExists(Vps4User vps4User);
+    
+    boolean virtualMachineHasCpanel(UUID vmId);
 
 }

@@ -4,6 +4,7 @@ import java.util.Arrays;
 import java.util.UUID;
 
 import javax.inject.Inject;
+import javax.validation.ValidationException;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
@@ -16,11 +17,15 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.godaddy.vps4.Vps4Exception;
+import com.godaddy.vps4.orchestration.hfs.sysadmin.SetHostname;
 import com.godaddy.vps4.orchestration.hfs.sysadmin.SetPassword;
+import com.godaddy.vps4.orchestration.sysadmin.Vps4SetHostname;
 import com.godaddy.vps4.orchestration.sysadmin.Vps4SetPassword;
 import com.godaddy.vps4.orchestration.sysadmin.Vps4ToggleAdmin;
 import com.godaddy.vps4.security.PrivilegeService;
 import com.godaddy.vps4.security.Vps4User;
+import com.godaddy.vps4.util.validators.Validator;
+import com.godaddy.vps4.util.validators.ValidatorRegistry;
 import com.godaddy.vps4.vm.Action;
 import com.godaddy.vps4.vm.ActionService;
 import com.godaddy.vps4.vm.ActionType;
@@ -111,6 +116,44 @@ public class SysAdminResource {
         Commands.execute(commandService, "Vps4SetPassword", vps4Request);
 
         return actionService.getAction(actionId);
+    }
+    
+    public static class SetHostnameRequest{
+        public String hostname;
+    }
+    
+    @POST
+    @Path("/{vmId}/setHostname")
+    public Action setHostname(@PathParam("vmId") UUID vmId, SetHostnameRequest setHostnameRequest) {
+        privilegeService.requireAnyPrivilegeToVmId(user, vmId);
+        JSONObject hostnameJsonRequest = new JSONObject();
+        
+        Validator validator = ValidatorRegistry.getInstance().get("hostname");
+        if (!validator.isValid(setHostnameRequest.hostname)){
+            throw new Vps4Exception("INVALID_HOSTNAME", String.format("%s is an invalid hostname", setHostnameRequest.hostname));
+        }
+        
+        hostnameJsonRequest.put("hostname", setHostnameRequest.hostname);
+        
+        long actionId = actionService.createAction(vmId, ActionType.SET_HOSTNAME, 
+                hostnameJsonRequest.toJSONString(), user.getId());
+        
+        VirtualMachine vm = getVm(vmId);
+        
+        SetHostname.Request hfsRequest = new SetHostname.Request();
+        hfsRequest.hfsVmId = vm.hfsVmId;
+        hfsRequest.hostname = setHostnameRequest.hostname;
+        
+        Vps4SetHostname.Request vps4Request = new Vps4SetHostname.Request();
+        vps4Request.setHostnameRequest = hfsRequest;
+        vps4Request.vmId = vmId;
+        vps4Request.oldHostname = vm.hostname;
+        vps4Request.actionId = actionId;
+        
+        Commands.execute(commandService, "Vps4SetHostname", vps4Request);
+        
+        return actionService.getAction(actionId);
+        
     }
 
     public static class SetAdminRequest {
