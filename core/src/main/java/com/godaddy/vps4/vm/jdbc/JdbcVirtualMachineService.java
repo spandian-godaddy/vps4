@@ -16,6 +16,7 @@ import com.godaddy.vps4.jdbc.ConnectionProvider;
 import com.godaddy.vps4.jdbc.Sql;
 import com.godaddy.vps4.network.IpAddress;
 import com.godaddy.vps4.security.Vps4User;
+import com.godaddy.vps4.vm.DataCenter;
 import com.godaddy.vps4.vm.Image;
 import com.godaddy.vps4.vm.Image.ControlPanel;
 import com.godaddy.vps4.vm.Image.OperatingSystem;
@@ -33,12 +34,14 @@ public class JdbcVirtualMachineService implements VirtualMachineService {
             + "vms.tier, vms.cpu_core_count, vms.memory_mib, vms.disk_gib, vms.valid_on as \"spec_valid_on\", "
             + "vms.valid_until as \"spec_valid_until\", vms.name as \"spec_vps4_name\", "
             + "image.name, image.image_id, image.control_panel_id, image.os_type_id, "
-            + "ip.ip_address_id, ip.ip_address, ip.ip_address_type_id, ip.valid_on, ip.valid_until "
+            + "ip.ip_address_id, ip.ip_address, ip.ip_address_type_id, ip.valid_on, ip.valid_until, "
+            + "dc.data_center_id, dc.description "
             + "FROM virtual_machine vm "
             + "JOIN virtual_machine_spec vms ON vms.spec_id=vm.spec_id "
             + "JOIN image ON image.image_id=vm.image_id "
-            + "LEFT JOIN ip_address ip ON ip.vm_id = vm.vm_id AND ip.ip_address_type_id = 1 ";
-
+            + "JOIN project prj ON prj.project_id=vm.project_id " 
+            + "JOIN data_center dc ON dc.data_center_id=prj.data_center_id "
+            + "LEFT JOIN ip_address ip ON ip.vm_id = vm.vm_id AND ip.ip_address_type_id = 1";
     @Inject
     public JdbcVirtualMachineService(DataSource dataSource) {
         this.dataSource = dataSource;
@@ -81,9 +84,14 @@ public class JdbcVirtualMachineService implements VirtualMachineService {
         UUID vmId = java.util.UUID.fromString(rs.getString("vm_id"));
         IpAddress ipAddress = mapIpAddress(rs);
         Image image = mapImage(rs);
+        DataCenter dataCenter = mapDataCenter(rs);
 
-        return new VirtualMachine(vmId, rs.getLong("hfs_vm_id"), java.util.UUID.fromString(rs.getString("orion_guid")), rs.getLong("project_id"),
-                spec, rs.getString("vm_name"), image, ipAddress, rs.getTimestamp("vm_valid_on").toInstant(),
+        return new VirtualMachine(vmId, rs.getLong("hfs_vm_id"), 
+                java.util.UUID.fromString(rs.getString("orion_guid")), 
+                rs.getLong("project_id"),
+                spec, rs.getString("vm_name"), 
+                image, ipAddress, dataCenter,
+                rs.getTimestamp("vm_valid_on").toInstant(),
                 validUntil != null ? validUntil.toInstant() : null);
     }
 
@@ -109,7 +117,11 @@ public class JdbcVirtualMachineService implements VirtualMachineService {
         image.operatingSystem = OperatingSystem.valueOf(rs.getInt("os_type_id"));
 
         return image;
+    }
 
+    private DataCenter mapDataCenter(ResultSet rs) throws SQLException {
+        return new DataCenter(rs.getInt("data_center_id"),
+                rs.getString("description"));
     }
 
     protected VirtualMachineSpec mapVirtualMachineSpec(ResultSet rs) throws SQLException {
