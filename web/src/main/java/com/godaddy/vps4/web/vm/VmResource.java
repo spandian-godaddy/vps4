@@ -100,7 +100,7 @@ public class VmResource {
         sgidPrefix = config.get("hfs.sgid.prefix", "vps4-undefined-");
     }
 
-    
+
 //    @GET
 //    @Path("actions/provision/{orionGuid}")
 //    public Action getProvisionActions(@PathParam("orionGuid") UUID orionGuid) {
@@ -288,12 +288,12 @@ public class VmResource {
         Image image = getImage(provisionRequest.image);
         // TODO - verify that the image matches the request (control panel, managed level, OS)
 
-        UUID vmId = virtualMachineService.provisionVirtualMachine(vmCredit.orionGuid, provisionRequest.name, 
+        UUID vmId = virtualMachineService.provisionVirtualMachine(vmCredit.orionGuid, provisionRequest.name,
                 project.getProjectId(), spec.specId, vmCredit.managedLevel, image.imageId);
-        
+
         CreateVMWithFlavorRequest hfsRequest = createHfsProvisionVmRequest(provisionRequest.image, provisionRequest.username,
                 provisionRequest.password, project, spec);
-        
+
         long actionId = actionService.createAction(vmId, ActionType.CREATE_VM, new JSONObject().toJSONString(), user.getId());
         logger.info("Action id: {}", actionId);
 
@@ -310,7 +310,7 @@ public class VmResource {
         return actionService.getAction(actionId);
     }
 
-    private ProvisionVm.Request createProvisionVmRequest(CreateVMWithFlavorRequest hfsRequest, 
+    private ProvisionVm.Request createProvisionVmRequest(CreateVMWithFlavorRequest hfsRequest,
                                                          long actionId,
                                                          ProvisionVmInfo vmInfo) {
         ProvisionVm.Request request = new ProvisionVm.Request();
@@ -401,7 +401,7 @@ public class VmResource {
         List<VirtualMachine> vms = virtualMachineService.getVirtualMachinesForUser(user.getId());
 
         vms = vms.stream().filter(vm -> vm.validUntil.isAfter(Instant.now())).collect(Collectors.toList());
-        
+
         return vms;
     }
 

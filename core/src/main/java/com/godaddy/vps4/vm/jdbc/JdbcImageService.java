@@ -44,15 +44,21 @@ public class JdbcImageService implements ImageService {
                 null, name);
     }
 
+    /**
+     * TODO getImage and getImageId receiving 'name' (and interpreted as hfs_name) is a hold-over
+     *      from when the HFS image name was passed all the way down from the UI.
+     *      Once the UI is passing down an image ID instead of the internal HFS image name, remove
+     *      the ability to look up an image by HFS image name
+     */
     @Override
     public int getImageId(String name) {
-        return Sql.with(dataSource).exec("SELECT image_id FROM " + tableName + " WHERE name=?",
+        return Sql.with(dataSource).exec("SELECT image_id FROM " + tableName + " WHERE hfs_name=?",
                 Sql.nextOrNull(rs -> rs.getInt("image_id")), name);
     }
 
     @Override
     public Image getImage(String name) {
-        return Sql.with(dataSource).exec("SELECT image_id, name, control_panel_id, os_type_id FROM " + tableName + " WHERE name=?",
+        return Sql.with(dataSource).exec("SELECT image_id, name, hfs_name, control_panel_id, os_type_id FROM " + tableName + " WHERE hfs_name=?",
                 Sql.nextOrNull(this::mapImage), name);
     }
 
