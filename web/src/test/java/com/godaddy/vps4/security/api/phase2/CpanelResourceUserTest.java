@@ -79,7 +79,9 @@ public class CpanelResourceUserTest {
     long hfsVmId = 98765;
     VirtualMachine virtualMachine;
     DataSource dataSource = injector.getInstance(DataSource.class);
-    
+    Project project;
+    UUID vmId;
+
     @Before
     public void setupTest(){
         injector.injectMembers(this);
@@ -88,6 +90,8 @@ public class CpanelResourceUserTest {
         invalidUser = userService.getOrCreateUserForShopper("invalidUserShopperId");
         virtualMachine = SqlTestData.insertTestVm(orionGuid, validUser.getId(), dataSource);
         virtualMachineService.addHfsVmIdToVirtualMachine(virtualMachine.vmId, hfsVmId);
+        project = projService.createProject("TestProject", validUser.getId(), 1, "vps4-test-");
+        vmId = virtualMachine.vmId;
     }
 
     @After
