@@ -324,7 +324,7 @@ public class VmResource {
 
         CommandState command = Commands.execute(commandService, "Vps4DestroyVm", request);
 
-        // TODO actionService.tagWithCommand(actionId, command.commandId);
+        actionService.tagWithCommand(actionId, command.commandId);
 
         return actionService.getAction(actionId);
     }
