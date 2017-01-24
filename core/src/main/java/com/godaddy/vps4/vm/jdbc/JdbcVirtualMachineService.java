@@ -12,7 +12,6 @@ import java.util.UUID;
 import javax.inject.Inject;
 import javax.sql.DataSource;
 
-import com.godaddy.vps4.jdbc.ConnectionProvider;
 import com.godaddy.vps4.jdbc.Sql;
 import com.godaddy.vps4.network.IpAddress;
 import com.godaddy.vps4.security.Vps4User;
@@ -231,10 +230,10 @@ public class JdbcVirtualMachineService implements VirtualMachineService {
         Sql.with(dataSource).exec("SELECT * FROM auto_create_credit(?, ?, ?, ?, ?)", null, vps4User.getId(), 10, "linux", "cpanel",
                 1);
     }
-    
+
     @Override
     public boolean virtualMachineHasCpanel(UUID vmId){
-        List<VirtualMachine> vms = Sql.with(dataSource).exec(selectVirtualMachineQuery 
+        List<VirtualMachine> vms = Sql.with(dataSource).exec(selectVirtualMachineQuery
                 + "JOIN control_panel ON image.control_panel_id = control_panel.control_panel_id "
                 + "where control_panel.name = 'cpanel' "
                 + "and vm.vm_id = ?;", Sql.listOf(this::mapVirtualMachine), vmId);
