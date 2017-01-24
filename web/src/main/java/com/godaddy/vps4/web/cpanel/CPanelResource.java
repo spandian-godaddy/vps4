@@ -2,10 +2,12 @@ package com.godaddy.vps4.web.cpanel;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.UUID;
 
 import javax.inject.Inject;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
+import javax.ws.rs.NotFoundException;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.QueryParam;
@@ -21,6 +23,8 @@ import com.godaddy.vps4.cpanel.CpanelAccessDeniedException;
 import com.godaddy.vps4.cpanel.Vps4CpanelService;
 import com.godaddy.vps4.security.PrivilegeService;
 import com.godaddy.vps4.security.Vps4User;
+import com.godaddy.vps4.vm.VirtualMachine;
+import com.godaddy.vps4.vm.VirtualMachineService;
 import com.godaddy.vps4.cpanel.CpanelClient.CpanelServiceType;
 import com.godaddy.vps4.cpanel.CpanelTimeoutException;
 import com.godaddy.vps4.web.Vps4Api;
@@ -39,25 +43,28 @@ public class CPanelResource {
 
     final Vps4CpanelService cpanelService;
     final PrivilegeService privilegeService;
+    final VirtualMachineService virtualMachineService;
     final Vps4User user;
 
     @Inject
-    public CPanelResource(Vps4CpanelService cpanelService, PrivilegeService privilegeService, Vps4User user) {
+    public CPanelResource(Vps4CpanelService cpanelService, PrivilegeService privilegeService,
+            VirtualMachineService virtualMachineService, Vps4User user) {
         this.cpanelService = cpanelService;
         this.privilegeService = privilegeService;
+        this.virtualMachineService = virtualMachineService;
         this.user = user;
     }
 
     @GET
     @Path("{vmId}/cpanel/whmSession")
-    public CPanelSession getWHMSession(@PathParam("vmId") long vmId) {
-
-        privilegeService.requireAnyPrivilegeToVmId(user, vmId);
+    public CPanelSession getWHMSession(@PathParam("vmId") UUID vmId) {
 
         logger.info("get WHM session for vmId {}", vmId);
 
+        VirtualMachine vm = resolveVirtualMachine(vmId);
+
         try {
-            return cpanelService.createSession(vmId, "root", CpanelServiceType.whostmgrd);
+            return cpanelService.createSession(vm.hfsVmId, "root", CpanelServiceType.whostmgrd);
         } catch (CpanelAccessDeniedException e) {
             // TODO bubble a more specific error to the client
             // (UI can show a "Authentication issue" error
@@ -72,14 +79,14 @@ public class CPanelResource {
 
     @GET
     @Path("{vmId}/cpanel/cpanelSession")
-    public CPanelSession getCPanelSession(@PathParam("vmId") long vmId, @QueryParam("username") String username) {
-
-        privilegeService.requireAnyPrivilegeToVmId(user, vmId);
+    public CPanelSession getCPanelSession(@PathParam("vmId") UUID vmId, @QueryParam("username") String username) {
 
         logger.info("get cPanel session for vmId {}", vmId);
 
+        VirtualMachine vm = resolveVirtualMachine(vmId);
+
         try {
-            return cpanelService.createSession(vmId, username, CpanelServiceType.cpaneld);
+            return cpanelService.createSession(vm.hfsVmId, username, CpanelServiceType.cpaneld);
         } catch (CpanelAccessDeniedException e) {
             // TODO bubble a more specific error to the client
             // (UI can show a "Authentication issue" error
@@ -94,14 +101,14 @@ public class CPanelResource {
 
     @GET
     @Path("/{vmId}/cpanel/accounts")
-    public List<CPanelAccount> listCpanelAccounts(@PathParam("vmId") long vmId) {
+    public List<CPanelAccount> listCpanelAccounts(@PathParam("vmId") UUID vmId) {
 
         logger.info("GET listCpanelAccounts for VM: {}", vmId);
 
-        privilegeService.requireAnyPrivilegeToVmId(user, vmId);
+        VirtualMachine vm = resolveVirtualMachine(vmId);
 
         try {
-            return cpanelService.listCpanelAccounts(vmId);
+            return cpanelService.listCpanelAccounts(vm.hfsVmId);
         } catch (CpanelAccessDeniedException e) {
             // TODO bubble a more specific error to the client
         } catch (CpanelTimeoutException e) {
@@ -111,4 +118,15 @@ public class CPanelResource {
         }
         return null;
     }
+
+    VirtualMachine resolveVirtualMachine(UUID vmId) {
+        privilegeService.requireAnyPrivilegeToVmId(user, vmId);
+
+        VirtualMachine vm = virtualMachineService.getVirtualMachine(vmId);
+        if (vm == null) {
+            throw new NotFoundException("VM not found: " + vmId);
+        }
+        return vm;
+    }
+
 }

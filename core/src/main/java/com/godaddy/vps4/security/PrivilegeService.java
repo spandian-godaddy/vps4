@@ -9,9 +9,7 @@ public interface PrivilegeService {
     void requirePrivilege(Vps4User user, Privilege privilege);
 
     boolean checkPrivilege(Vps4User user, Privilege privilege);
-    
-    void requireAnyPrivilegeToVmId(Vps4User user, long vmId);
-    
+
     void requireAnyPrivilegeToVmId(Vps4User user, UUID id);
 
     void requireAnyPrivilegeToProjectId(Vps4User user, long projectId);
