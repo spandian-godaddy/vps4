@@ -33,13 +33,13 @@ public class JdbcVirtualMachineService implements VirtualMachineService {
             + "vm.hostname, vm.valid_on as \"vm_valid_on\", vm.valid_until as \"vm_valid_until\", vms.spec_id, vms.spec_name, "
             + "vms.tier, vms.cpu_core_count, vms.memory_mib, vms.disk_gib, vms.valid_on as \"spec_valid_on\", "
             + "vms.valid_until as \"spec_valid_until\", vms.name as \"spec_vps4_name\", "
-            + "image.name, image.image_id, image.control_panel_id, image.os_type_id, "
+            + "image.name, image.hfs_name, image.image_id, image.control_panel_id, image.os_type_id, "
             + "ip.ip_address_id, ip.ip_address, ip.ip_address_type_id, ip.valid_on, ip.valid_until, "
             + "dc.data_center_id, dc.description "
             + "FROM virtual_machine vm "
             + "JOIN virtual_machine_spec vms ON vms.spec_id=vm.spec_id "
             + "JOIN image ON image.image_id=vm.image_id "
-            + "JOIN project prj ON prj.project_id=vm.project_id " 
+            + "JOIN project prj ON prj.project_id=vm.project_id "
             + "JOIN data_center dc ON dc.data_center_id=prj.data_center_id "
             + "LEFT JOIN ip_address ip ON ip.vm_id = vm.vm_id AND ip.ip_address_type_id = 1";
     @Inject
@@ -86,10 +86,10 @@ public class JdbcVirtualMachineService implements VirtualMachineService {
         Image image = mapImage(rs);
         DataCenter dataCenter = mapDataCenter(rs);
 
-        return new VirtualMachine(vmId, rs.getLong("hfs_vm_id"), 
-                java.util.UUID.fromString(rs.getString("orion_guid")), 
+        return new VirtualMachine(vmId, rs.getLong("hfs_vm_id"),
+                java.util.UUID.fromString(rs.getString("orion_guid")),
                 rs.getLong("project_id"),
-                spec, rs.getString("vm_name"), 
+                spec, rs.getString("vm_name"),
                 image, ipAddress, dataCenter,
                 rs.getTimestamp("vm_valid_on").toInstant(),
                 validUntil != null ? validUntil.toInstant() : null,
@@ -113,6 +113,7 @@ public class JdbcVirtualMachineService implements VirtualMachineService {
         Image image = new Image();
 
         image.imageName = rs.getString("name");
+        image.hfsName = rs.getString("hfs_name");
         image.imageId = rs.getLong("image_id");
         image.controlPanel = ControlPanel.valueOf(rs.getInt("control_panel_id"));
         image.operatingSystem = OperatingSystem.valueOf(rs.getInt("os_type_id"));
@@ -148,7 +149,7 @@ public class JdbcVirtualMachineService implements VirtualMachineService {
 
     @Override
     public void createVirtualMachineRequest(UUID orionGuid, String operatingSystem, String controlPanel, int tier, int managedLevel, String shopperId) {
-        Sql.with(dataSource).exec("SELECT * FROM credit_create(?,?,?,?,?,?)", 
+        Sql.with(dataSource).exec("SELECT * FROM credit_create(?,?,?,?,?,?)",
                 null, orionGuid, operatingSystem, tier,
                 controlPanel, managedLevel, shopperId);
     }
@@ -169,21 +170,21 @@ public class JdbcVirtualMachineService implements VirtualMachineService {
     }
 
     @Override
-    public UUID provisionVirtualMachine(UUID orionGuid, String name, 
+    public UUID provisionVirtualMachine(UUID orionGuid, String name,
                                         long projectId, int specId, int managedLevel, long imageId) {
         UUID virtual_machine_id = UUID.randomUUID();
-        Sql.with(dataSource).exec("SELECT * FROM virtual_machine_provision(?, ?, ?, ?, ?, ?, ?)", null, 
+        Sql.with(dataSource).exec("SELECT * FROM virtual_machine_provision(?, ?, ?, ?, ?, ?, ?)", null,
                 virtual_machine_id, orionGuid, name, projectId, specId, managedLevel, imageId);
         return virtual_machine_id;
     }
-    
+
     @Override
     public void addHfsVmIdToVirtualMachine(UUID vmId, long hfsVmId){
         Map<String, Object> vmPatchMap = new HashMap<>();
         vmPatchMap.put("hfs_vm_id", hfsVmId);
         updateVirtualMachine(vmId, vmPatchMap);
     }
-    
+
     @Override
     public void setHostname(UUID vmId, String hostname){
         Map<String, Object> vmPatchMap = new HashMap<>();

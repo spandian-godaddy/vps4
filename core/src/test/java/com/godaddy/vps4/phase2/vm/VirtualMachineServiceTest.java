@@ -103,7 +103,7 @@ public class VirtualMachineServiceTest {
 
         vm = virtualMachineService.getVirtualMachine(hfsVmId);
         verifyVm(name, specId, hfsVmId, vm);
-        
+
         vm = virtualMachineService.getVirtualMachineByOrionGuid(orionGuid);
         verifyVm(name, specId, hfsVmId, vm);
 
@@ -115,6 +115,8 @@ public class VirtualMachineServiceTest {
         assertEquals(name, vm.name);
         assertEquals(projects.get(0).getProjectId(), vm.projectId);
         assertEquals(specId, vm.spec.specId);
+        assertEquals("centos-7", vm.image.hfsName);
+        assertEquals("CentOS 7", vm.image.imageName);
     }
 
     @Test
@@ -142,10 +144,10 @@ public class VirtualMachineServiceTest {
             assertTrue(vmGuids.contains(vm));
         assertEquals(vmIds.size(), vms.size());
     }
-    
+
     @Test
     public void testGetOrCreateCredit() throws InterruptedException {
-        
+
         List<VirtualMachineCredit> requests = virtualMachineService.getVirtualMachineCredits(vps4User.getShopperId());
         assertTrue(requests.isEmpty());
 
@@ -169,7 +171,7 @@ public class VirtualMachineServiceTest {
         UUID vmId = virtualMachineService.provisionVirtualMachine(requests.get(0).orionGuid, "test", project.getProjectId(), 2, 0, 1);
         vmIds.add(vmId);
         virtualMachineService.addHfsVmIdToVirtualMachine(vmId,1);
-        
+
 
         virtualMachineService.createOrionRequestIfNoneExists(vps4User);
         requests = virtualMachineService.getVirtualMachineCredits(vps4User.getShopperId());

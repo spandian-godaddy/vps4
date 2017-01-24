@@ -63,6 +63,7 @@ public class JdbcImageService implements ImageService {
         Image image = new Image();
 
         image.imageName = rs.getString("name");
+        image.hfsName = rs.getString("hfs_name");
         image.imageId = rs.getLong("image_id");
         image.controlPanel = ControlPanel.valueOf(rs.getInt("control_panel_id"));
         image.operatingSystem = OperatingSystem.valueOf(rs.getInt("os_type_id"));

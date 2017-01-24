@@ -39,7 +39,30 @@ public class Image {
     }
 
     public long imageId;
+
+    /**
+     * The human readable/display-able name of this image
+     */
     public String imageName;
+
+    /**
+     * The name of this image in HFS
+     * (the name that would be used interacting with the HFS
+     *  VM vertical)
+     */
+    public String hfsName;
+
+    /**
+     * The {@link ControlPanel} installed on this image.
+     *
+     */
     public ControlPanel controlPanel;
+
+    /**
+     * The operating system this VM runs.
+     *
+     * In order to provision a VM, this must match the
+     * {@link VirtualMachineCredit#operatingSystem}.
+     */
     public OperatingSystem operatingSystem;
 }
