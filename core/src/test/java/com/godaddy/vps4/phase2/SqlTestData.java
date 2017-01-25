@@ -22,7 +22,7 @@ public class SqlTestData {
     public static UUID insertTestVm(UUID orionGuid, long projectId, DataSource dataSource) {
         VirtualMachineService virtualMachineService = new JdbcVirtualMachineService(dataSource);
         long hfsVmId = getNextHfsVmId(dataSource);
-        virtualMachineService.createVirtualMachineRequest(orionGuid, "linux", "none", 10, 0, "TestUser");
+        virtualMachineService.createVirtualMachineCredit(orionGuid, "linux", "none", 10, 0, "TestUser");
         UUID vmId = virtualMachineService.provisionVirtualMachine(orionGuid, "networkTestVm", projectId, 1, 0, 1);
         virtualMachineService.addHfsVmIdToVirtualMachine(vmId, hfsVmId);
         return vmId;

@@ -48,7 +48,7 @@ public class VmPatchResourceTest {
         
         orionGuid = UUID.randomUUID();
         int managedLevel = 0;
-        virtualMachineService.createVirtualMachineRequest(orionGuid, "linux", "cpanel", 10, managedLevel, "testShopperId");
+        virtualMachineService.createVirtualMachineCredit(orionGuid, "linux", "cpanel", 10, managedLevel, "testShopperId");
         
         UUID vmId = virtualMachineService.provisionVirtualMachine(orionGuid, initialName, 
                                                      project.getProjectId(), 
