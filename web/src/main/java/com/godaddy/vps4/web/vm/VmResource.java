@@ -334,10 +334,14 @@ public class VmResource {
 
     private VirtualMachineCredit getVmCreditToProvision(UUID orionGuid) {
         logger.debug("Got request to provision server with guid {}", orionGuid);
-        VirtualMachineCredit credit = virtualMachineService.getVirtualMachineCredit(orionGuid);
+        VirtualMachineCredit credit = virtualMachineService.getAndReserveCredit(orionGuid);
         if (credit == null) {
             throw new Vps4Exception("CREDIT_NOT_FOUND",
-                    String.format("The virtual machine credit for orion guid {} was not found", orionGuid));
+                    String.format("The virtual machine credit for orion guid %s was not found", orionGuid));
+        }
+        else if (credit.provisionDate != null) {
+            throw new Vps4Exception("CREDIT_ALREADY_USED",
+                    String.format("The virtual machine credit for orion guid %s was provisioned on %s", orionGuid, credit.provisionDate));
         }
         return credit;
     }

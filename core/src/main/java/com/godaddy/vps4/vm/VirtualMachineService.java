@@ -53,4 +53,6 @@ public interface VirtualMachineService {
     
     boolean virtualMachineHasCpanel(UUID vmId);
 
+    VirtualMachineCredit getAndReserveCredit(UUID orionGuid);
+
 }
