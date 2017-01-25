@@ -146,7 +146,7 @@ public class JdbcVirtualMachineService implements VirtualMachineService {
     }
 
     @Override
-    public void createVirtualMachineRequest(UUID orionGuid, String operatingSystem, String controlPanel, int tier, int managedLevel, String shopperId) {
+    public void createVirtualMachineCredit(UUID orionGuid, String operatingSystem, String controlPanel, int tier, int managedLevel, String shopperId) {
         Sql.with(dataSource).exec("SELECT * FROM credit_create(?,?,?,?,?,?)",
                 null, orionGuid, operatingSystem, tier,
                 controlPanel, managedLevel, shopperId);

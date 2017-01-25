@@ -33,7 +33,7 @@ public interface VirtualMachineService {
 
     void destroyVirtualMachine(long vmId); // (just updates status/sets validUntil, destroy is accomplished on backend)
 
-    void createVirtualMachineRequest(UUID orionGuid, String osType, String controlPanel, int tier, int managedLevel, String shopperId);
+    void createVirtualMachineCredit(UUID orionGuid, String osType, String controlPanel, int tier, int managedLevel, String shopperId);
 
     VirtualMachineCredit getVirtualMachineCredit(UUID orionGuid);
 

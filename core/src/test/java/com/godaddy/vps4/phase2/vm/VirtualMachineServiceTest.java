@@ -47,7 +47,7 @@ public class VirtualMachineServiceTest {
     private UUID orionGuid = UUID.randomUUID();
     List<Project> projects;
     List<UUID> vmIds;
-    List<UUID> vmRequests;
+    List<UUID> vmCredits;
     String os = "linux";
     String controlPanel = "cpanel";
     Vps4User vps4User = new Vps4User(1, "TestUser");
@@ -58,7 +58,7 @@ public class VirtualMachineServiceTest {
     public void setup() {
         vmIds = new ArrayList<>();
         projects = new ArrayList<>();
-        vmRequests = new ArrayList<>();
+        vmCredits = new ArrayList<>();
     }
 
     @After
@@ -66,7 +66,7 @@ public class VirtualMachineServiceTest {
         for (UUID vmId : vmIds) {
             SqlTestData.cleanupTestVmAndRelatedData(vmId, dataSource);
         }
-        for (UUID request : vmRequests) {
+        for (UUID request : vmCredits) {
             Sql.with(dataSource).exec("DELETE FROM credit WHERE orion_guid = ?", null, request);
         }
         for (Project project : projects) {
@@ -78,7 +78,7 @@ public class VirtualMachineServiceTest {
     public void testService() {
         projects.add(SqlTestData.createProject(dataSource));
 
-        virtualMachineService.createVirtualMachineRequest(orionGuid, os, controlPanel, tier, managedLevel, vps4User.getShopperId());
+        virtualMachineService.createVirtualMachineCredit(orionGuid, os, controlPanel, tier, managedLevel, vps4User.getShopperId());
 
         VirtualMachineCredit vmRequest = virtualMachineService.getVirtualMachineCredit(orionGuid);
 
@@ -126,17 +126,17 @@ public class VirtualMachineServiceTest {
             projects.add(SqlTestData.createProject(dataSource));
             createdVms.add(UUID.randomUUID());
             vmIds.add(SqlTestData.insertTestVm(createdVms.get(i), projects.get(i).getProjectId(), dataSource));
-            vmRequests.add(UUID.randomUUID());
-            virtualMachineService.createVirtualMachineRequest(vmRequests.get(i), os, controlPanel, tier, managedLevel,
+            vmCredits.add(UUID.randomUUID());
+            virtualMachineService.createVirtualMachineCredit(vmCredits.get(i), os, controlPanel, tier, managedLevel,
                     vps4User.getShopperId());
         }
 
         List<VirtualMachineCredit> requests = virtualMachineService.getVirtualMachineCredits(vps4User.getShopperId());
 
         List<UUID> requestGuids = requests.stream().map(rs -> rs.orionGuid).collect(Collectors.toList());
-        for (UUID request : vmRequests)
-            assertTrue(requestGuids.contains(request));
-        assertEquals(vmRequests.size(), requests.size());
+        for (UUID credit : vmCredits)
+            assertTrue(requestGuids.contains(credit));
+        assertEquals(vmCredits.size(), requests.size());
 
         List<VirtualMachine> vms = virtualMachineService.getVirtualMachinesForUser(vps4User.getId());
         List<UUID> vmGuids = vms.stream().map(vm -> vm.orionGuid).collect(Collectors.toList());
@@ -164,7 +164,7 @@ public class VirtualMachineServiceTest {
 
         requests = virtualMachineService.getVirtualMachineCredits(vps4User.getShopperId());
         assertEquals(1, requests.size());
-        vmRequests.add(requests.get(0).orionGuid);
+        vmCredits.add(requests.get(0).orionGuid);
 
         Project project = SqlTestData.createProject(dataSource);
         projects.add(project);
@@ -182,7 +182,7 @@ public class VirtualMachineServiceTest {
         virtualMachineService.createOrionRequestIfNoneExists(vps4User);
         requests = virtualMachineService.getVirtualMachineCredits(vps4User.getShopperId());
         assertTrue(!requests.isEmpty());
-        vmRequests.add(requests.get(0).orionGuid);
+        vmCredits.add(requests.get(0).orionGuid);
     }
 
 }

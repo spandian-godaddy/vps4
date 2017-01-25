@@ -46,7 +46,7 @@ public class CreateTestVmRequest {
         VirtualMachineSpec spec = virtualMachineService.getSpec(tier);
 
         UUID orionGuid = UUID.randomUUID();
-        virtualMachineService.createVirtualMachineRequest(orionGuid, operatingSystem, controlPanel, tier, managedLevel, shopperId);
+        virtualMachineService.createVirtualMachineCredit(orionGuid, operatingSystem, controlPanel, tier, managedLevel, shopperId);
 
         // normally we would get this from HFS
         long hfsVmId = new Random().nextInt(1000000);

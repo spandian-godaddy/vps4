@@ -108,7 +108,7 @@ public class VmResourceUserTest {
         orionGuids.add(UUID.randomUUID());
         validUser = userService.getOrCreateUserForShopper("validUserShopperId");
         invalidUser = userService.getOrCreateUserForShopper("invalidUserShopperId");
-        virtualMachineService.createVirtualMachineRequest(orionGuids.get(0), "linux", "cPanel", 10, 1, "validUserShopperId");
+        virtualMachineService.createVirtualMachineCredit(orionGuids.get(0), "linux", "cPanel", 10, 1, "validUserShopperId");
         project = projService.createProject("TestProject", validUser.getId(), 1, "vps4-test-");
         vmIds.add(virtualMachineService.provisionVirtualMachine(orionGuids.get(0), "fakeVM", project.getProjectId(), 1, 1, 1));
         virtualMachineService.addHfsVmIdToVirtualMachine(vmIds.get(0), hfsVmId);
@@ -222,7 +222,7 @@ public class VmResourceUserTest {
     public void testProvisionVm() throws InterruptedException {
         UUID newGuid = UUID.randomUUID();
         orionGuids.add(newGuid);
-        virtualMachineService.createVirtualMachineRequest(newGuid, "linux", "cPanel", 10, 1, validUser.getShopperId());
+        virtualMachineService.createVirtualMachineCredit(newGuid, "linux", "cPanel", 10, 1, validUser.getShopperId());
         ProvisionVmRequest provisionRequest = new ProvisionVmRequest();
         provisionRequest.orionGuid = newGuid;
         provisionRequest.dataCenterId = 1;

@@ -60,7 +60,7 @@ public class JdbcVirtualMachineTest {
 
     @Test
     public void testProvisionVmCreatesId() {
-        vmService.createVirtualMachineRequest(orionGuid, "linux", "cPanel", 10, 1, "testShopperId");
+        vmService.createVirtualMachineCredit(orionGuid, "linux", "cPanel", 10, 1, "testShopperId");
         project = projService.createProject("testProject", 1, 1, "testPrefix");
         vmId = vmService.provisionVirtualMachine(orionGuid, "testName", project.getProjectId(), 1, 1, 1);
         vmService.addHfsVmIdToVirtualMachine(vmId, 1231);
