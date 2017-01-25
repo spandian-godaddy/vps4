@@ -238,5 +238,10 @@ public class JdbcVirtualMachineService implements VirtualMachineService {
                 + "where control_panel.name = 'cpanel' "
                 + "and vm.vm_id = ?;", Sql.listOf(this::mapVirtualMachine), vmId);
         return vms.size() > 0;
+	}	
+		
+    public VirtualMachineCredit getAndReserveCredit(UUID orionGuid) {
+        return Sql.with(dataSource).exec("SELECT * FROM get_and_reserve_vm_credit_for_provision(?)",
+                Sql.nextOrNull(this::mapVirtualMachineCredit), orionGuid);
     }
 }
