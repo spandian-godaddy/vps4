@@ -38,23 +38,19 @@ public class ActionTest {
     
     private UUID orionGuid = UUID.randomUUID();
     Project project;
-    UUID vmId;
     ActionType type;
     VirtualMachine vm;
 
     @Before
     public void setupService(){
-        project = SqlTestData.createProject(dataSource);
-        vmId = SqlTestData.insertTestVm(orionGuid, project.getProjectId(), dataSource);
-        vm = vmService.getVirtualMachine(vmId);
+        vm = SqlTestData.insertTestVm(orionGuid, dataSource);
         type = ActionType.CREATE_VM;
     }
 
     @After
     public void cleanupService() {
         Sql.with(dataSource).exec("DELETE from vm_action where vm_id = ?", null, vm.vmId);
-        SqlTestData.cleanupTestVmAndRelatedData(vmId, dataSource);
-        SqlTestData.cleanupTestProject(project.getProjectId(), dataSource);
+        SqlTestData.cleanupTestVmAndRelatedData(vm.vmId, dataSource);
     }
 
     @Test

@@ -22,8 +22,6 @@ import com.godaddy.vps4.phase2.SqlTestData;
 import com.godaddy.vps4.project.ProjectService;
 import com.godaddy.vps4.project.jdbc.JdbcProjectService;
 import com.godaddy.vps4.vm.VirtualMachine;
-import com.godaddy.vps4.vm.VirtualMachineService;
-import com.godaddy.vps4.vm.jdbc.JdbcVirtualMachineService;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
 
@@ -32,12 +30,9 @@ import junit.framework.Assert;
 public class NetworkServiceTest {
 
     private NetworkService networkService;
-    private VirtualMachineService virtualMachineService;
     ProjectService projectService;
     private Injector injector = Guice.createInjector(new DatabaseModule());
 
-    private long projectId;
-    private UUID vmId;
     private UUID orionGuid = UUID.randomUUID();
     private DataSource dataSource;
     private VirtualMachine vm;
@@ -47,18 +42,13 @@ public class NetworkServiceTest {
         dataSource = injector.getInstance(DataSource.class);
         networkService = new JdbcNetworkService(dataSource);
         projectService = new JdbcProjectService(dataSource);
-        virtualMachineService = new JdbcVirtualMachineService(dataSource);
         
-        projectId = SqlTestData.createProject(dataSource).getProjectId();
-
-        vmId = SqlTestData.insertTestVm(orionGuid, projectId, dataSource);
-        vm = virtualMachineService.getVirtualMachine(vmId);
+        vm = SqlTestData.insertTestVm(orionGuid, dataSource);
     }
 
     @After
     public void cleanup() {
-        SqlTestData.cleanupTestVmAndRelatedData(vmId, dataSource);
-        SqlTestData.cleanupTestProject(projectId, dataSource);
+        SqlTestData.cleanupTestVmAndRelatedData(vm.vmId, dataSource);
     }
 
     @Test
@@ -92,7 +82,7 @@ public class NetworkServiceTest {
         assertEquals(ipAddress, ip.ipAddress);
         assertEquals(IpAddress.IpAddressType.SECONDARY, ip.ipAddressType);
 
-        IpAddress primary = networkService.getVmPrimaryAddress(vmId);
+        IpAddress primary = networkService.getVmPrimaryAddress(vm.vmId);
 
         assertEquals(vm.vmId, primary.vmId);
         assertTrue(primary.validUntil.isAfter(Instant.now()));

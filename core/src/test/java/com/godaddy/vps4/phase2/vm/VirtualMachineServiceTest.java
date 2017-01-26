@@ -23,7 +23,6 @@ import com.godaddy.vps4.jdbc.Sql;
 import com.godaddy.vps4.network.NetworkService;
 import com.godaddy.vps4.network.jdbc.JdbcNetworkService;
 import com.godaddy.vps4.phase2.SqlTestData;
-import com.godaddy.vps4.project.Project;
 import com.godaddy.vps4.project.ProjectService;
 import com.godaddy.vps4.project.jdbc.JdbcProjectService;
 import com.godaddy.vps4.security.Vps4User;
@@ -31,6 +30,7 @@ import com.godaddy.vps4.vm.ImageService;
 import com.godaddy.vps4.vm.VirtualMachine;
 import com.godaddy.vps4.vm.VirtualMachineCredit;
 import com.godaddy.vps4.vm.VirtualMachineService;
+import com.godaddy.vps4.vm.VirtualMachineService.ProvisionVirtualMachineParameters;
 import com.godaddy.vps4.vm.jdbc.JdbcImageService;
 import com.godaddy.vps4.vm.jdbc.JdbcVirtualMachineService;
 import com.google.inject.Guice;
@@ -45,8 +45,7 @@ public class VirtualMachineServiceTest {
     VirtualMachineService virtualMachineService = new JdbcVirtualMachineService(dataSource);
     ProjectService projectService = new JdbcProjectService(dataSource);
     private UUID orionGuid = UUID.randomUUID();
-    List<Project> projects;
-    List<UUID> vmIds;
+    List<VirtualMachine> virtualMachines;
     List<UUID> vmCredits;
     String os = "linux";
     String controlPanel = "cpanel";
@@ -56,28 +55,22 @@ public class VirtualMachineServiceTest {
 
     @Before
     public void setup() {
-        vmIds = new ArrayList<>();
-        projects = new ArrayList<>();
+        virtualMachines = new ArrayList<>();
         vmCredits = new ArrayList<>();
     }
 
     @After
     public void cleanup() {
-        for (UUID vmId : vmIds) {
-            SqlTestData.cleanupTestVmAndRelatedData(vmId, dataSource);
+        for (VirtualMachine vm : virtualMachines) {
+            SqlTestData.cleanupTestVmAndRelatedData(vm.vmId, dataSource);
         }
         for (UUID request : vmCredits) {
             Sql.with(dataSource).exec("DELETE FROM credit WHERE orion_guid = ?", null, request);
-        }
-        for (Project project : projects) {
-            SqlTestData.cleanupTestProject(project.getProjectId(), dataSource);
         }
     }
 
     @Test
     public void testService() {
-        projects.add(SqlTestData.createProject(dataSource));
-
         virtualMachineService.createVirtualMachineCredit(orionGuid, os, controlPanel, tier, managedLevel, vps4User.getShopperId());
 
         VirtualMachineCredit vmRequest = virtualMachineService.getVirtualMachineCredit(orionGuid);
@@ -93,12 +86,14 @@ public class VirtualMachineServiceTest {
         long imageId = 1;
         int specId = 1;
 
-        UUID vmId = virtualMachineService.provisionVirtualMachine(orionGuid, name, projects.get(0).getProjectId(), specId, managedLevel, imageId);
-        vmIds.add(vmId);
+        ProvisionVirtualMachineParameters params = new ProvisionVirtualMachineParameters(vps4User.getId(), 1, "vps4-testing-",
+                orionGuid, name, 10, 1, "centos-7");
+        VirtualMachine vm = virtualMachineService.provisionVirtualMachine(params);
+        virtualMachines.add(vm);
         long hfsVmId = SqlTestData.getNextHfsVmId(dataSource);
-        virtualMachineService.addHfsVmIdToVirtualMachine(vmId, hfsVmId);
+        virtualMachineService.addHfsVmIdToVirtualMachine(vm.vmId, hfsVmId);
 
-        VirtualMachine vm = virtualMachineService.getVirtualMachine(vmId);
+        vm = virtualMachineService.getVirtualMachine(vm.vmId);
         verifyVm(name, specId, hfsVmId, vm);
 
         vm = virtualMachineService.getVirtualMachine(hfsVmId);
@@ -113,7 +108,6 @@ public class VirtualMachineServiceTest {
         assertNotNull(vm);
         assertEquals(hfsVmId, vm.hfsVmId);
         assertEquals(name, vm.name);
-        assertEquals(projects.get(0).getProjectId(), vm.projectId);
         assertEquals(specId, vm.spec.specId);
         assertEquals("centos-7", vm.image.hfsName);
         assertEquals("CentOS 7", vm.image.imageName);
@@ -123,9 +117,8 @@ public class VirtualMachineServiceTest {
     public void testGetVirtualMachines() {
         List<UUID> createdVms = new ArrayList<>();
         for(int i = 0; i < 2; i++) {
-            projects.add(SqlTestData.createProject(dataSource));
             createdVms.add(UUID.randomUUID());
-            vmIds.add(SqlTestData.insertTestVm(createdVms.get(i), projects.get(i).getProjectId(), dataSource));
+            virtualMachines.add(SqlTestData.insertTestVm(createdVms.get(i), dataSource));
             vmCredits.add(UUID.randomUUID());
             virtualMachineService.createVirtualMachineCredit(vmCredits.get(i), os, controlPanel, tier, managedLevel,
                     vps4User.getShopperId());
@@ -142,7 +135,7 @@ public class VirtualMachineServiceTest {
         List<UUID> vmGuids = vms.stream().map(vm -> vm.orionGuid).collect(Collectors.toList());
         for (UUID vm : createdVms)
             assertTrue(vmGuids.contains(vm));
-        assertEquals(vmIds.size(), vms.size());
+        assertEquals(virtualMachines.size(), vms.size());
     }
 
     @Test
@@ -166,12 +159,12 @@ public class VirtualMachineServiceTest {
         assertEquals(1, requests.size());
         vmCredits.add(requests.get(0).orionGuid);
 
-        Project project = SqlTestData.createProject(dataSource);
-        projects.add(project);
-        virtualMachineService.claimVmCredit(requests.get(0).orionGuid);
-        UUID vmId = virtualMachineService.provisionVirtualMachine(requests.get(0).orionGuid, "test", project.getProjectId(), 2, 0, 1);
-        vmIds.add(vmId);
-        virtualMachineService.addHfsVmIdToVirtualMachine(vmId,1);
+        ProvisionVirtualMachineParameters params = new ProvisionVirtualMachineParameters(vps4User.getId(), 1, "vps4-testing-",
+                requests.get(0).orionGuid, "test", 10, 1, "centos-7");
+
+        VirtualMachine virtualMachine = virtualMachineService.provisionVirtualMachine(params);
+        virtualMachines.add(virtualMachine);
+        virtualMachineService.addHfsVmIdToVirtualMachine(virtualMachine.vmId, 1);
 
 
         virtualMachineService.createOrionRequestIfNoneExists(vps4User);

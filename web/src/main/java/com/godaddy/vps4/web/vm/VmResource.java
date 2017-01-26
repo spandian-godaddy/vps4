@@ -36,12 +36,12 @@ import com.godaddy.vps4.security.jdbc.AuthorizationException;
 import com.godaddy.vps4.vm.Action;
 import com.godaddy.vps4.vm.ActionService;
 import com.godaddy.vps4.vm.ActionType;
-import com.godaddy.vps4.vm.Image;
 import com.godaddy.vps4.vm.ImageService;
 import com.godaddy.vps4.vm.ProvisionVmInfo;
 import com.godaddy.vps4.vm.VirtualMachine;
 import com.godaddy.vps4.vm.VirtualMachineCredit;
 import com.godaddy.vps4.vm.VirtualMachineService;
+import com.godaddy.vps4.vm.VirtualMachineService.ProvisionVirtualMachineParameters;
 import com.godaddy.vps4.vm.VirtualMachineSpec;
 import com.godaddy.vps4.web.Vps4Api;
 import com.godaddy.vps4.web.util.Commands;
@@ -281,25 +281,24 @@ public class VmResource {
                     user.getShopperId() + " does not have privilege for vm request with orion guid " + vmCredit.orionGuid);
         }
 
-        vmCredit = reserveVmCreditToProvision(provisionRequest.orionGuid);
-
-        Project project = createProject(provisionRequest.orionGuid, provisionRequest.dataCenterId);
-
-        VirtualMachineSpec spec = getVirtualMachineSpec(vmCredit);
-
-        Image image = getImage(provisionRequest.image);
         // TODO - verify that the image matches the request (control panel, managed level, OS)
 
-        UUID vmId = virtualMachineService.provisionVirtualMachine(vmCredit.orionGuid, provisionRequest.name,
-                project.getProjectId(), spec.specId, vmCredit.managedLevel, image.imageId);
+        ProvisionVirtualMachineParameters params = new ProvisionVirtualMachineParameters(user.getId(), provisionRequest.dataCenterId,
+                sgidPrefix, provisionRequest.orionGuid, provisionRequest.name, vmCredit.tier, vmCredit.managedLevel,
+                provisionRequest.image);
+
+        VirtualMachine virtualMachine = virtualMachineService.provisionVirtualMachine(params);
+        Project project = projectService.getProject(virtualMachine.projectId);
 
         CreateVMWithFlavorRequest hfsRequest = createHfsProvisionVmRequest(provisionRequest.image, provisionRequest.username,
-                provisionRequest.password, project, spec);
+                provisionRequest.password, project, virtualMachine.spec);
 
-        long actionId = actionService.createAction(vmId, ActionType.CREATE_VM, new JSONObject().toJSONString(), user.getId());
+        long actionId = actionService.createAction(virtualMachine.vmId, ActionType.CREATE_VM, new JSONObject().toJSONString(),
+                user.getId());
         logger.info("Action id: {}", actionId);
 
-        ProvisionVmInfo vmInfo = new ProvisionVmInfo(vmId, vmCredit.managedLevel, image, project.getVhfsSgid());
+        ProvisionVmInfo vmInfo = new ProvisionVmInfo(virtualMachine.vmId, vmCredit.managedLevel, virtualMachine.image,
+                project.getVhfsSgid());
         logger.info("vmInfo: {}", vmInfo.toString());
 
         ProvisionVm.Request request = createProvisionVmRequest(hfsRequest, actionId, vmInfo);
@@ -341,46 +340,6 @@ public class VmResource {
                     String.format("The virtual machine credit for orion guid %s was not found", orionGuid));
         }
         return credit;
-    }
-
-    private VirtualMachineCredit reserveVmCreditToProvision(UUID orionGuid) {
-        VirtualMachineCredit credit = virtualMachineService.claimVmCredit(orionGuid);
-        if (credit == null) {
-            throw new Vps4Exception("CREDIT_NOT_FOUND",
-                    String.format("The virtual machine credit for orion guid %s was not found", orionGuid));
-        }
-        else if (credit.provisionDate != null) {
-            throw new Vps4Exception("CREDIT_ALREADY_USED",
-                    String.format("The virtual machine credit for orion guid %s was provisioned on %s", orionGuid, credit.provisionDate));
-        }
-        return credit;
-    }
-
-    private Project createProject(UUID orionGuid, int dataCenterId) {
-        Project project = projectService.createProject(orionGuid.toString(), user.getId(), dataCenterId, sgidPrefix);
-        if (project == null) {
-            throw new Vps4Exception("PROJECT_FAILED_TO_CREATE",
-                    "Failed to create new project for orionGuid " + orionGuid.toString());
-        }
-        return project;
-    }
-
-    private VirtualMachineSpec getVirtualMachineSpec(VirtualMachineCredit credit) {
-        VirtualMachineSpec spec = virtualMachineService.getSpec(credit.tier);
-        if (spec == null) {
-            throw new Vps4Exception("INVALID_SPEC",
-                    String.format("spec with tier %d not found", credit.tier));
-        }
-        return spec;
-    }
-
-    private Image getImage(String name) {
-        Image image = imageService.getImage(name);
-        if (image == null) {
-            throw new Vps4Exception("INVALID_IMAGE",
-                    String.format("image %s not found", image));
-        }
-        return image;
     }
 
     @DELETE
