@@ -148,7 +148,7 @@ public class VirtualMachineServiceTest {
         List<Callable<Void>> tasks = new ArrayList<>();
         for (int i = 0; i < numberOfTasks; i++) {
             tasks.add(() -> {
-                virtualMachineService.createOrionRequestIfNoneExists(vps4User);
+                virtualMachineService.createCreditIfNoneExists(vps4User);
                 return null;
             });
         }
@@ -167,13 +167,13 @@ public class VirtualMachineServiceTest {
         virtualMachineService.addHfsVmIdToVirtualMachine(virtualMachine.vmId, 1);
 
 
-        virtualMachineService.createOrionRequestIfNoneExists(vps4User);
+        virtualMachineService.createCreditIfNoneExists(vps4User);
         requests = virtualMachineService.getVirtualMachineCredits(vps4User.getShopperId());
         assertTrue(requests.isEmpty());
 
         virtualMachineService.destroyVirtualMachine(1);
 
-        virtualMachineService.createOrionRequestIfNoneExists(vps4User);
+        virtualMachineService.createCreditIfNoneExists(vps4User);
         requests = virtualMachineService.getVirtualMachineCredits(vps4User.getShopperId());
         assertTrue(!requests.isEmpty());
         vmCredits.add(requests.get(0).orionGuid);

@@ -235,7 +235,7 @@ public class JdbcVirtualMachineService implements VirtualMachineService {
     }
 
     @Override
-    public void createOrionRequestIfNoneExists(Vps4User vps4User) {
+    public void createCreditIfNoneExists(Vps4User vps4User) {
         Sql.with(dataSource).exec("SELECT * FROM auto_create_credit(?, ?, ?, ?, ?)", null, vps4User.getId(), 10, "linux", "cpanel",
                 1);
     }
