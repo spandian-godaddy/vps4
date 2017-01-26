@@ -1,5 +1,7 @@
 package com.godaddy.vps4.orchestration.vm;
 
+import java.util.Arrays;
+
 import javax.inject.Inject;
 
 import org.slf4j.Logger;
@@ -15,13 +17,16 @@ import com.godaddy.vps4.orchestration.hfs.cpanel.ConfigureCpanel.ConfigureCpanel
 import com.godaddy.vps4.orchestration.hfs.network.AllocateIp;
 import com.godaddy.vps4.orchestration.hfs.network.BindIp;
 import com.godaddy.vps4.orchestration.hfs.network.BindIp.BindIpRequest;
+import com.godaddy.vps4.orchestration.hfs.sysadmin.SetPassword;
 import com.godaddy.vps4.orchestration.hfs.sysadmin.ToggleAdmin;
 import com.godaddy.vps4.orchestration.hfs.vm.CreateVm;
 import com.godaddy.vps4.vm.ActionService;
 import com.godaddy.vps4.vm.CreateVmStep;
 import com.godaddy.vps4.vm.HostnameGenerator;
+import com.godaddy.vps4.vm.Image;
 import com.godaddy.vps4.vm.Image.ControlPanel;
 import com.godaddy.vps4.vm.ProvisionVmInfo;
+import com.godaddy.vps4.vm.VirtualMachine;
 import com.godaddy.vps4.vm.VirtualMachineService;
 import com.godaddy.vps4.vm.VmUserService;
 
@@ -110,6 +115,13 @@ public class ProvisionVm extends ActionCommand<ProvisionVm.Request, ProvisionVm.
             vmUserService.createUser(hfsRequest.username, vmInfo.vmId);
             return null;
         });
+        
+        // set the root password to the same as the user password (LINUX ONLY)
+        VirtualMachine vm = virtualMachineService.getVirtualMachine(vmInfo.vmId);
+        if(vm.image.operatingSystem == Image.OperatingSystem.LINUX) {
+            SetPassword.Request setRootPasswordRequest = createSetRootPasswordRequest(request, hfsVm);
+            context.execute(SetPassword.class, setRootPasswordRequest);
+        }
 
         // bind IP to the VM
         setStep(CreateVmStep.ConfiguringNetwork);
@@ -136,6 +148,15 @@ public class ProvisionVm extends ActionCommand<ProvisionVm.Request, ProvisionVm.
         setStep(CreateVmStep.SetupComplete);
         logger.info("provision vm finished with status {} for action: {}", vmAction);
         return null;
+    }
+    
+    private SetPassword.Request createSetRootPasswordRequest(Request request, Vm hfsVm) {
+        SetPassword.Request setPasswordRequest = new SetPassword.Request();
+        setPasswordRequest.hfsVmId = hfsVm.vmId;
+        String[] usernames = {"root"};
+        setPasswordRequest.usernames = Arrays.asList(usernames);
+        setPasswordRequest.password = request.hfsRequest.password;
+        return setPasswordRequest;
     }
 
     private ToggleAdmin.Request createToggleAdminRequest(Request request, ProvisionVmInfo vmInfo, Vm hfsVm) {
