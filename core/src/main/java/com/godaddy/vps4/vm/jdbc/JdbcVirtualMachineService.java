@@ -240,7 +240,8 @@ public class JdbcVirtualMachineService implements VirtualMachineService {
         return vms.size() > 0;
 	}	
 		
-    public VirtualMachineCredit getAndReserveCredit(UUID orionGuid) {
+    @Override
+    public VirtualMachineCredit claimVmCredit(UUID orionGuid) {
         return Sql.with(dataSource).exec("SELECT * FROM get_and_reserve_vm_credit_for_provision(?)",
                 Sql.nextOrNull(this::mapVirtualMachineCredit), orionGuid);
     }

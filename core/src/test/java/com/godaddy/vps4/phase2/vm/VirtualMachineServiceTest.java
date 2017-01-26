@@ -168,6 +168,7 @@ public class VirtualMachineServiceTest {
 
         Project project = SqlTestData.createProject(dataSource);
         projects.add(project);
+        virtualMachineService.claimVmCredit(requests.get(0).orionGuid);
         UUID vmId = virtualMachineService.provisionVirtualMachine(requests.get(0).orionGuid, "test", project.getProjectId(), 2, 0, 1);
         vmIds.add(vmId);
         virtualMachineService.addHfsVmIdToVirtualMachine(vmId,1);
