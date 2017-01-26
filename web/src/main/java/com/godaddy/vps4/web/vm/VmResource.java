@@ -274,12 +274,7 @@ public class VmResource {
 
         logger.info("provisioning vm with orionGuid {}", provisionRequest.orionGuid);
 
-        VirtualMachineCredit vmCredit = getVmCreditToProvision(provisionRequest.orionGuid);
-
-        if (!(user.getShopperId().equals(vmCredit.shopperId))) {
-            throw new AuthorizationException(
-                    user.getShopperId() + " does not have privilege for vm request with orion guid " + vmCredit.orionGuid);
-        }
+        VirtualMachineCredit vmCredit = verifyUserHasAccessToCredit(provisionRequest.orionGuid);
 
         // TODO - verify that the image matches the request (control panel, managed level, OS)
 
@@ -309,6 +304,17 @@ public class VmResource {
         actionService.tagWithCommand(actionId, command.commandId);
 
         return actionService.getAction(actionId);
+    }
+
+
+    private VirtualMachineCredit verifyUserHasAccessToCredit(UUID orionGuid) {
+        VirtualMachineCredit vmCredit = getVmCreditToProvision(orionGuid);
+
+        if (!(user.getShopperId().equals(vmCredit.shopperId))) {
+            throw new AuthorizationException(
+                    user.getShopperId() + " does not have privilege for vm request with orion guid " + vmCredit.orionGuid);
+        }
+        return vmCredit;
     }
 
     private ProvisionVm.Request createProvisionVmRequest(CreateVMWithFlavorRequest hfsRequest,
