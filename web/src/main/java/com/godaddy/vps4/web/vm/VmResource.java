@@ -215,6 +215,8 @@ public class VmResource {
                     user.getShopperId() + " does not have privilege for vm request with orion guid " + vmCredit.orionGuid);
         }
 
+        vmCredit = reserveVmCreditToProvision(provisionRequest.orionGuid);
+
         Project project = createProject(provisionRequest.orionGuid, provisionRequest.dataCenterId);
 
         VirtualMachineSpec spec = getVirtualMachineSpec(vmCredit);
@@ -267,8 +269,16 @@ public class VmResource {
     }
 
     private VirtualMachineCredit getVmCreditToProvision(UUID orionGuid) {
-        logger.debug("Got request to provision server with guid {}", orionGuid);
-        VirtualMachineCredit credit = virtualMachineService.getAndReserveCredit(orionGuid);
+        VirtualMachineCredit credit = virtualMachineService.getVirtualMachineCredit(orionGuid);
+        if (credit == null) {
+            throw new Vps4Exception("CREDIT_NOT_FOUND",
+                    String.format("The virtual machine credit for orion guid %s was not found", orionGuid));
+        }
+        return credit;
+    }
+
+    private VirtualMachineCredit reserveVmCreditToProvision(UUID orionGuid) {
+        VirtualMachineCredit credit = virtualMachineService.claimVmCredit(orionGuid);
         if (credit == null) {
             throw new Vps4Exception("CREDIT_NOT_FOUND",
                     String.format("The virtual machine credit for orion guid %s was not found", orionGuid));
