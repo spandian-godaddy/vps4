@@ -36,7 +36,6 @@ import com.godaddy.vps4.security.jdbc.AuthorizationException;
 import com.godaddy.vps4.vm.Action;
 import com.godaddy.vps4.vm.ActionService;
 import com.godaddy.vps4.vm.ActionType;
-import com.godaddy.vps4.vm.ImageService;
 import com.godaddy.vps4.vm.ProvisionVmInfo;
 import com.godaddy.vps4.vm.VirtualMachine;
 import com.godaddy.vps4.vm.VirtualMachineCredit;
@@ -71,7 +70,6 @@ public class VmResource {
     private final PrivilegeService privilegeService;
     private final VmService vmService;
     private final ProjectService projectService;
-    private final ImageService imageService;
     private final ActionService actionService;
     private final CommandService commandService;
     private final Config config;
@@ -81,7 +79,7 @@ public class VmResource {
     public VmResource(PrivilegeService privilegeService,
             Vps4User user, VmService vmService,
             VirtualMachineService virtualMachineService,
-            ProjectService projectService, ImageService imageService,
+            ProjectService projectService,
             com.godaddy.vps4.network.NetworkService vps4NetworkService,
             CPanelService cPanelService,
             ActionService actionService,
@@ -93,7 +91,6 @@ public class VmResource {
         this.privilegeService = privilegeService;
         this.vmService = vmService;
         this.projectService = projectService;
-        this.imageService = imageService;
         this.actionService = actionService;
         this.commandService = commandService;
         this.config = config;
@@ -278,11 +275,18 @@ public class VmResource {
 
         // TODO - verify that the image matches the request (control panel, managed level, OS)
 
-        ProvisionVirtualMachineParameters params = new ProvisionVirtualMachineParameters(user.getId(), provisionRequest.dataCenterId,
-                sgidPrefix, provisionRequest.orionGuid, provisionRequest.name, vmCredit.tier, vmCredit.managedLevel,
-                provisionRequest.image);
+        ProvisionVirtualMachineParameters params;
+        VirtualMachine virtualMachine;
+        try {
+            params = new ProvisionVirtualMachineParameters(user.getId(), provisionRequest.dataCenterId,
+                    sgidPrefix, provisionRequest.orionGuid, provisionRequest.name, vmCredit.tier, vmCredit.managedLevel,
+                    provisionRequest.image);
+            virtualMachine = virtualMachineService.provisionVirtualMachine(params);
+        }
+        catch (Exception e) {
+            throw new Vps4Exception("PROVISION_VM_FAILED", e.getCause().getMessage(), e);
+        }
 
-        VirtualMachine virtualMachine = virtualMachineService.provisionVirtualMachine(params);
         Project project = projectService.getProject(virtualMachine.projectId);
 
         CreateVMWithFlavorRequest hfsRequest = createHfsProvisionVmRequest(provisionRequest.image, provisionRequest.username,

@@ -70,7 +70,7 @@ public class Vps4RequestAuthenticator implements RequestAuthenticator {
             throw new RuntimeException("Currently only 3 letter accounts are allowed in ALPHA release. ");
         }
 
-        virtualMachineService.createOrionRequestIfNoneExists(user);
+        virtualMachineService.createCreditIfNoneExists(user);
         return user;
     }
 }
