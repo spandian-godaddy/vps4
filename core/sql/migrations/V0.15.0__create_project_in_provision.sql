@@ -23,7 +23,7 @@ BEGIN
     SELECT * FROM credit INTO credit_to_provision WHERE orion_guid = p_orion_guid FOR UPDATE;
     
     IF credit_to_provision.provision_date IS NOT NULL THEN
-        RAISE 'Credit for orion guid % is already provisioned', credit_to_provision.provision_date;
+        RAISE 'Credit for orion guid % is already provisioned', credit_to_provision.orion_guid;
     END IF;
     
     SELECT * FROM create_project(p_orion_guid::text, p_vps4_user_id, p_data_center_id, p_sgid_prefix) INTO v_project_id;

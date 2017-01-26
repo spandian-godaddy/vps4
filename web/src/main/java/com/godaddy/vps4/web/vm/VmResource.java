@@ -284,7 +284,7 @@ public class VmResource {
             virtualMachine = virtualMachineService.provisionVirtualMachine(params);
         }
         catch (Exception e) {
-            throw new Vps4Exception("PROVISION_VM_FAILED", e.getCause().getMessage(), e);
+            throw new Vps4Exception("PROVISION_VM_FAILED", e.getMessage(), e);
         }
 
         Project project = projectService.getProject(virtualMachine.projectId);
