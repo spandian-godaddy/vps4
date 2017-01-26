@@ -14,11 +14,12 @@ import org.junit.Test;
 import com.godaddy.vps4.jdbc.DatabaseModule;
 import com.godaddy.vps4.jdbc.Sql;
 import com.godaddy.vps4.phase2.SqlTestData;
-import com.godaddy.vps4.project.Project;
 import com.godaddy.vps4.project.ProjectService;
 import com.godaddy.vps4.security.SecurityModule;
 import com.godaddy.vps4.security.Vps4UserService;
+import com.godaddy.vps4.vm.VirtualMachine;
 import com.godaddy.vps4.vm.VirtualMachineService;
+import com.godaddy.vps4.vm.VirtualMachineService.ProvisionVirtualMachineParameters;
 import com.godaddy.vps4.vm.VmModule;
 import com.google.inject.Guice;
 import com.google.inject.Inject;
@@ -47,25 +48,24 @@ public class JdbcVirtualMachineTest {
     
 
     UUID orionGuid = UUID.randomUUID();
-    UUID vmId;
-    Project project;
+    VirtualMachine virtualMachine;
     
     @After
     public void cleanup() {
         
-        SqlTestData.cleanupTestVmAndRelatedData(vmId, dataSource);
+        SqlTestData.cleanupTestVmAndRelatedData(virtualMachine.vmId, dataSource);
         Sql.with(dataSource).exec("DELETE FROM credit WHERE orion_guid = ?", null, orionGuid);
-        SqlTestData.cleanupTestProject(project.getProjectId(), dataSource);
     }
 
     @Test
     public void testProvisionVmCreatesId() {
         vmService.createVirtualMachineCredit(orionGuid, "linux", "cPanel", 10, 1, "testShopperId");
-        project = projService.createProject("testProject", 1, 1, "testPrefix");
-        vmId = vmService.provisionVirtualMachine(orionGuid, "testName", project.getProjectId(), 1, 1, 1);
-        vmService.addHfsVmIdToVirtualMachine(vmId, 1231);
-        assertNotNull(vmId);
-        assertEquals(UUID.class, vmId.getClass());
+        ProvisionVirtualMachineParameters params = new ProvisionVirtualMachineParameters(1, 1, "testPrefix", orionGuid, "testName", 10, 1,
+                "centos-7");
+        virtualMachine = vmService.provisionVirtualMachine(params);
+        assertNotNull(virtualMachine);
+        vmService.addHfsVmIdToVirtualMachine(virtualMachine.vmId, 1231);
+        assertEquals(UUID.class, virtualMachine.vmId.getClass());
     }
 
 }

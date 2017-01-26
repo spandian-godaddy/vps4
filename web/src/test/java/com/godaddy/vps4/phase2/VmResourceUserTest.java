@@ -28,6 +28,7 @@ import com.godaddy.vps4.vm.Action;
 import com.godaddy.vps4.vm.ActionService;
 import com.godaddy.vps4.vm.ActionType;
 import com.godaddy.vps4.vm.VirtualMachineService;
+import com.godaddy.vps4.vm.VirtualMachineService.ProvisionVirtualMachineParameters;
 import com.godaddy.vps4.vm.VmModule;
 import com.godaddy.vps4.web.vm.ActionResource;
 import com.godaddy.vps4.web.vm.VmNotFoundException;
@@ -110,7 +111,9 @@ public class VmResourceUserTest {
         invalidUser = userService.getOrCreateUserForShopper("invalidUserShopperId");
         virtualMachineService.createVirtualMachineCredit(orionGuids.get(0), "linux", "cPanel", 10, 1, "validUserShopperId");
         project = projService.createProject("TestProject", validUser.getId(), 1, "vps4-test-");
-        vmIds.add(virtualMachineService.provisionVirtualMachine(orionGuids.get(0), "fakeVM", project.getProjectId(), 1, 1, 1));
+        ProvisionVirtualMachineParameters params = new ProvisionVirtualMachineParameters(validUser.getId(), 1, "vps4-testing-",
+                orionGuids.get(0), "fakeVM", 10, 1, "centos-7");
+        vmIds.add(virtualMachineService.provisionVirtualMachine(params).vmId);
         virtualMachineService.addHfsVmIdToVirtualMachine(vmIds.get(0), hfsVmId);
         networkService.createIpAddress(1234, vmIds.get(0), "127.0.0.1", IpAddressType.PRIMARY);
 

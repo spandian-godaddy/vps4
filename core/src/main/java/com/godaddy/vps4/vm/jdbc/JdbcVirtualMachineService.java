@@ -168,12 +168,21 @@ public class JdbcVirtualMachineService implements VirtualMachineService {
     }
 
     @Override
-    public UUID provisionVirtualMachine(UUID orionGuid, String name,
-                                        long projectId, int specId, int managedLevel, long imageId) {
-        UUID virtual_machine_id = UUID.randomUUID();
-        Sql.with(dataSource).exec("SELECT * FROM virtual_machine_provision(?, ?, ?, ?, ?, ?, ?)", null,
-                virtual_machine_id, orionGuid, name, projectId, specId, managedLevel, imageId);
-        return virtual_machine_id;
+    public VirtualMachine provisionVirtualMachine(ProvisionVirtualMachineParameters vmProvisionParameters)
+    {
+        UUID vmId = UUID.randomUUID();
+        Sql.with(dataSource).exec("SELECT * FROM virtual_machine_provision(?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                null,
+                vmId,
+                vmProvisionParameters.getVps4UserId(),
+                vmProvisionParameters.getDataCenterId(),
+                vmProvisionParameters.getSgidPrefix(),
+                vmProvisionParameters.getOrionGuid(),
+                vmProvisionParameters.getName(),
+                vmProvisionParameters.getTier(),
+                vmProvisionParameters.getManagedLevel(),
+                vmProvisionParameters.getImageHfsName());
+        return getVirtualMachine(vmId);
     }
 
     @Override
@@ -238,11 +247,5 @@ public class JdbcVirtualMachineService implements VirtualMachineService {
                 + "where control_panel.name = 'cpanel' "
                 + "and vm.vm_id = ?;", Sql.listOf(this::mapVirtualMachine), vmId);
         return vms.size() > 0;
-	}	
-		
-    @Override
-    public VirtualMachineCredit claimVmCredit(UUID orionGuid) {
-        return Sql.with(dataSource).exec("SELECT * FROM get_and_reserve_vm_credit_for_provision(?)",
-                Sql.nextOrNull(this::mapVirtualMachineCredit), orionGuid);
     }
 }
