@@ -11,7 +11,7 @@ import org.junit.Test;
 
 import com.godaddy.vps4.Vps4Exception;
 import com.godaddy.vps4.jdbc.DatabaseModule;
-import com.godaddy.vps4.jdbc.Sql;
+import com.godaddy.vps4.phase2.SqlTestData;
 import com.godaddy.vps4.project.ProjectService;
 import com.godaddy.vps4.security.PrivilegeService;
 import com.godaddy.vps4.security.SecurityModule;
@@ -20,7 +20,6 @@ import com.godaddy.vps4.security.Vps4UserService;
 import com.godaddy.vps4.vm.ActionService;
 import com.godaddy.vps4.vm.VirtualMachine;
 import com.godaddy.vps4.vm.VirtualMachineService;
-import com.godaddy.vps4.vm.VirtualMachineService.ProvisionVirtualMachineParameters;
 import com.godaddy.vps4.vm.VmModule;
 import com.godaddy.vps4.web.vm.VmPatchResource;
 import com.godaddy.vps4.web.vm.VmPatchResource.VmPatch;
@@ -70,6 +69,7 @@ public class VmPatchResourceUserTest {
     UUID orionGuid;
     long hfsVmId = 98765;
     VirtualMachine virtualMachine;
+    DataSource dataSource = injector.getInstance(DataSource.class);
     
     @Before
     public void setupTest(){
@@ -77,20 +77,13 @@ public class VmPatchResourceUserTest {
         orionGuid = UUID.randomUUID();
         validUser = userService.getOrCreateUserForShopper("validUserShopperId");
         invalidUser = userService.getOrCreateUserForShopper("invalidUserShopperId");
-        virtualMachineService.createVirtualMachineCredit(orionGuid, "linux", "cPanel", 10, 1, "validUserShopperId");
-        ProvisionVirtualMachineParameters params = new ProvisionVirtualMachineParameters(validUser.getId(), 1, "vps4-testing-",
-                orionGuid, "fakeVM", 10, 1, "centos-7");
-        virtualMachine = virtualMachineService.provisionVirtualMachine(params);
+        virtualMachine = SqlTestData.insertTestVm(orionGuid, validUser.getId(), dataSource);
         virtualMachineService.addHfsVmIdToVirtualMachine(virtualMachine.vmId, hfsVmId);
     }
     
     @After
     public void teardownTest(){
-        DataSource dataSource = injector.getInstance(DataSource.class);
-        Sql.with(dataSource).exec("DELETE FROM vm_action where vm_id = ?", null, virtualMachine.vmId);
-        Sql.with(dataSource).exec("DELETE FROM virtual_machine WHERE vm_id = ?", null, virtualMachine.vmId);
-        Sql.with(dataSource).exec("DELETE FROM credit WHERE orion_guid = ?", null, orionGuid);
-        projService.deleteProject(virtualMachine.projectId);
+        SqlTestData.cleanupTestVmAndRelatedData(virtualMachine.vmId, dataSource);
     }
     
     protected VmPatchResource newValidVmResource() {

@@ -19,7 +19,6 @@ import com.godaddy.vps4.security.SecurityModule;
 import com.godaddy.vps4.security.Vps4UserService;
 import com.godaddy.vps4.vm.VirtualMachine;
 import com.godaddy.vps4.vm.VirtualMachineService;
-import com.godaddy.vps4.vm.VirtualMachineService.ProvisionVirtualMachineParameters;
 import com.godaddy.vps4.vm.VmModule;
 import com.google.inject.Guice;
 import com.google.inject.Inject;
@@ -59,12 +58,8 @@ public class JdbcVirtualMachineTest {
 
     @Test
     public void testProvisionVmCreatesId() {
-        vmService.createVirtualMachineCredit(orionGuid, "linux", "cPanel", 10, 1, "testShopperId");
-        ProvisionVirtualMachineParameters params = new ProvisionVirtualMachineParameters(1, 1, "testPrefix", orionGuid, "testName", 10, 1,
-                "centos-7");
-        virtualMachine = vmService.provisionVirtualMachine(params);
+        virtualMachine = SqlTestData.insertTestVm(orionGuid, dataSource);
         assertNotNull(virtualMachine);
-        vmService.addHfsVmIdToVirtualMachine(virtualMachine.vmId, 1231);
         assertEquals(UUID.class, virtualMachine.vmId.getClass());
     }
 

@@ -19,10 +19,14 @@ public class SqlTestData {
     }
 
     public static VirtualMachine insertTestVm(UUID orionGuid, DataSource dataSource) {
+        return insertTestVm(orionGuid, 1, dataSource);
+    }
+
+    public static VirtualMachine insertTestVm(UUID orionGuid, long vps4UserId, DataSource dataSource) {
         VirtualMachineService virtualMachineService = new JdbcVirtualMachineService(dataSource);
         long hfsVmId = getNextHfsVmId(dataSource);
         virtualMachineService.createVirtualMachineCredit(orionGuid, "linux", "none", 10, 0, "TestUser");
-        ProvisionVirtualMachineParameters params = new ProvisionVirtualMachineParameters(1, 1, "vps4-testing-", orionGuid,
+        ProvisionVirtualMachineParameters params = new ProvisionVirtualMachineParameters(vps4UserId, 1, "vps4-testing-", orionGuid,
                 "testVirtualMachine", 10, 1, "centos-7");
         VirtualMachine virtualMachine = virtualMachineService.provisionVirtualMachine(params);
         virtualMachineService.addHfsVmIdToVirtualMachine(virtualMachine.vmId, hfsVmId);
@@ -35,6 +39,7 @@ public class SqlTestData {
 
         Sql.with(dataSource).exec("DELETE FROM ip_address WHERE vm_id = ?", null, vm.vmId);
         Sql.with(dataSource).exec("DELETE FROM vm_user WHERE vm_id = ?", null, vm.vmId);
+        Sql.with(dataSource).exec("DELETE FROM vm_action where vm_id = ?", null, vm.vmId);
         Sql.with(dataSource).exec("DELETE FROM virtual_machine WHERE vm_id = ?", null, vmId);
         Sql.with(dataSource).exec("DELETE FROM credit WHERE orion_guid = ?", null, vm.orionGuid);
         Sql.with(dataSource).exec("DELETE FROM user_project_privilege WHERE project_id = ?", null, vm.projectId);

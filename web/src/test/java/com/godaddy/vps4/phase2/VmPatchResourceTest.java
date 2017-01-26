@@ -18,7 +18,6 @@ import com.godaddy.vps4.project.jdbc.JdbcProjectService;
 import com.godaddy.vps4.security.PrivilegeService;
 import com.godaddy.vps4.vm.VirtualMachine;
 import com.godaddy.vps4.vm.VirtualMachineService;
-import com.godaddy.vps4.vm.VirtualMachineService.ProvisionVirtualMachineParameters;
 import com.godaddy.vps4.vm.jdbc.JdbcVirtualMachineService;
 import com.godaddy.vps4.web.vm.VmPatchResource;
 import com.godaddy.vps4.web.vm.VmPatchResource.VmPatch;
@@ -34,7 +33,7 @@ public class VmPatchResourceTest {
     UUID orionGuid;
     DataSource dataSource = injector.getInstance(DataSource.class);
     long virtualMachineRequestId;
-    String initialName = "testServer";
+    String initialName;
     VirtualMachine virtualMachine;
     
     @Before
@@ -43,11 +42,8 @@ public class VmPatchResourceTest {
         projectService = new JdbcProjectService(dataSource);
         
         orionGuid = UUID.randomUUID();
-        int managedLevel = 0;
-        virtualMachineService.createVirtualMachineCredit(orionGuid, "linux", "cpanel", 10, managedLevel, "testShopperId");
-        ProvisionVirtualMachineParameters params = new ProvisionVirtualMachineParameters(1, 1, "vps4-testing-",
-                orionGuid, initialName, 10, managedLevel, "centos-7");
-        virtualMachine = virtualMachineService.provisionVirtualMachine(params);
+        virtualMachine = SqlTestData.insertTestVm(orionGuid, dataSource);
+        initialName = virtualMachine.name;
         long hfsVmId = 1000 + Math.abs((new Random().nextLong())); // HFS usually creates this, so we're making it up
         virtualMachineService.addHfsVmIdToVirtualMachine(virtualMachine.vmId, hfsVmId);
     }
