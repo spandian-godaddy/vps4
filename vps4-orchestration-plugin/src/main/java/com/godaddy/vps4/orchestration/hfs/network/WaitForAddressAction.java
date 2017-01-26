@@ -25,7 +25,7 @@ public class WaitForAddressAction implements Command<AddressAction, AddressActio
     public AddressAction execute(CommandContext context, AddressAction hfsAction) {
         while (!hfsAction.status.equals(AddressAction.Status.COMPLETE)
                 && !hfsAction.status.equals(AddressAction.Status.FAILED)) {
-            logger.info("waiting on bind ip: {}", hfsAction);
+            logger.info("waiting for address action: {}", hfsAction);
 
             try {
                 Thread.sleep(2000);
