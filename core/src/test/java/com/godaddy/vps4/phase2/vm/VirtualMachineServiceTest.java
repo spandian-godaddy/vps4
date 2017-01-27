@@ -55,6 +55,11 @@ public class VirtualMachineServiceTest {
 
     @Before
     public void setup() {
+        List<VirtualMachine> oldVms = virtualMachineService.getVirtualMachinesForUser(vps4User.getId());
+        for (VirtualMachine oldVm : oldVms) {
+            SqlTestData.cleanupTestVmAndRelatedData(oldVm.vmId, dataSource);
+        }
+
         virtualMachines = new ArrayList<>();
         vmCredits = new ArrayList<>();
     }
@@ -70,7 +75,7 @@ public class VirtualMachineServiceTest {
     }
 
     @Test
-    public void testService() {
+    public void testService() throws InterruptedException {
         virtualMachineService.createVirtualMachineCredit(orionGuid, os, controlPanel, tier, managedLevel, vps4User.getShopperId());
 
         VirtualMachineCredit vmRequest = virtualMachineService.getVirtualMachineCredit(orionGuid);
@@ -88,7 +93,29 @@ public class VirtualMachineServiceTest {
 
         ProvisionVirtualMachineParameters params = new ProvisionVirtualMachineParameters(vps4User.getId(), 1, "vps4-testing-",
                 orionGuid, name, 10, 1, "centos-7");
-        VirtualMachine vm = virtualMachineService.provisionVirtualMachine(params);
+
+        int numberOfTasks = 10;
+        List<Callable<Void>> tasks = new ArrayList<>();
+        for (int i = 0; i < numberOfTasks; i++) {
+            tasks.add(() -> {
+                try {
+                    virtualMachineService.provisionVirtualMachine(params);
+                }
+                catch (Exception e) {
+                    // Do nothing
+                }
+                return null;
+            });
+        }
+        ExecutorService executor = Executors.newFixedThreadPool(numberOfTasks);
+        executor.invokeAll(tasks);
+
+        List<VirtualMachine> vms = virtualMachineService.getVirtualMachinesForUser(vps4User.getId());
+
+        assertEquals(1, vms.size());
+
+        VirtualMachine vm = vms.get(0);
+        
         virtualMachines.add(vm);
         long hfsVmId = SqlTestData.getNextHfsVmId(dataSource);
         virtualMachineService.addHfsVmIdToVirtualMachine(vm.vmId, hfsVmId);
