@@ -13,6 +13,7 @@ import com.godaddy.vps4.security.Vps4User;
 import com.godaddy.vps4.security.Vps4UserService;
 import com.godaddy.vps4.vm.ImageService;
 import com.godaddy.vps4.vm.VirtualMachineService;
+import com.godaddy.vps4.vm.VirtualMachineService.ProvisionVirtualMachineParameters;
 import com.godaddy.vps4.vm.VirtualMachineSpec;
 import com.godaddy.vps4.vm.VmModule;
 import com.godaddy.vps4.web.security.AutoCreateVps4UserModule;
@@ -46,18 +47,16 @@ public class CreateTestVmRequest {
         VirtualMachineSpec spec = virtualMachineService.getSpec(tier);
 
         UUID orionGuid = UUID.randomUUID();
-        virtualMachineService.createVirtualMachineRequest(orionGuid, operatingSystem, controlPanel, tier, managedLevel, shopperId);
+        virtualMachineService.createVirtualMachineCredit(orionGuid, operatingSystem, controlPanel, tier, managedLevel, shopperId);
 
         // normally we would get this from HFS
         long hfsVmId = new Random().nextInt(1000000);
 
         Vps4User user = userService.getOrCreateUserForShopper(shopperId);
 
-        long projectId = projectService.createProject("My Cool Project", user.getId(), 1, "vps4-test-").getProjectId();
-
-        int imageId = imageService.getImageId(operatingSystem);
-
-        UUID vmId = virtualMachineService.provisionVirtualMachine(orionGuid, "SomeNewVm", projectId, spec.specId, managedLevel, imageId);
+        ProvisionVirtualMachineParameters params = new ProvisionVirtualMachineParameters(user.getId(), 1, "vps4-testing-", orionGuid,
+                "SomeNewVm", 1, 1, operatingSystem);
+        UUID vmId = virtualMachineService.provisionVirtualMachine(params).vmId;
         virtualMachineService.addHfsVmIdToVirtualMachine(vmId, hfsVmId);
     }
 

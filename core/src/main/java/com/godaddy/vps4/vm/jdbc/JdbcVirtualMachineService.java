@@ -146,7 +146,7 @@ public class JdbcVirtualMachineService implements VirtualMachineService {
     }
 
     @Override
-    public void createVirtualMachineRequest(UUID orionGuid, String operatingSystem, String controlPanel, int tier, int managedLevel, String shopperId) {
+    public void createVirtualMachineCredit(UUID orionGuid, String operatingSystem, String controlPanel, int tier, int managedLevel, String shopperId) {
         Sql.with(dataSource).exec("SELECT * FROM credit_create(?,?,?,?,?,?)",
                 null, orionGuid, operatingSystem, tier,
                 controlPanel, managedLevel, shopperId);
@@ -168,12 +168,21 @@ public class JdbcVirtualMachineService implements VirtualMachineService {
     }
 
     @Override
-    public UUID provisionVirtualMachine(UUID orionGuid, String name,
-                                        long projectId, int specId, int managedLevel, long imageId) {
-        UUID virtual_machine_id = UUID.randomUUID();
-        Sql.with(dataSource).exec("SELECT * FROM virtual_machine_provision(?, ?, ?, ?, ?, ?, ?)", null,
-                virtual_machine_id, orionGuid, name, projectId, specId, managedLevel, imageId);
-        return virtual_machine_id;
+    public VirtualMachine provisionVirtualMachine(ProvisionVirtualMachineParameters vmProvisionParameters)
+    {
+        UUID vmId = UUID.randomUUID();
+        Sql.with(dataSource).exec("SELECT * FROM virtual_machine_provision(?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                null,
+                vmId,
+                vmProvisionParameters.getVps4UserId(),
+                vmProvisionParameters.getDataCenterId(),
+                vmProvisionParameters.getSgidPrefix(),
+                vmProvisionParameters.getOrionGuid(),
+                vmProvisionParameters.getName(),
+                vmProvisionParameters.getTier(),
+                vmProvisionParameters.getManagedLevel(),
+                vmProvisionParameters.getImageHfsName());
+        return getVirtualMachine(vmId);
     }
 
     @Override
@@ -226,7 +235,7 @@ public class JdbcVirtualMachineService implements VirtualMachineService {
     }
 
     @Override
-    public void createOrionRequestIfNoneExists(Vps4User vps4User) {
+    public void createCreditIfNoneExists(Vps4User vps4User) {
         Sql.with(dataSource).exec("SELECT * FROM auto_create_credit(?, ?, ?, ?, ?)", null, vps4User.getId(), 10, "linux", "cpanel",
                 1);
     }

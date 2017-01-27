@@ -9,30 +9,21 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mockito;
-import static org.mockito.Mockito.*;
-
 
 import com.godaddy.vps4.Vps4Exception;
 import com.godaddy.vps4.jdbc.DatabaseModule;
-import com.godaddy.vps4.jdbc.Sql;
-import com.godaddy.vps4.project.Project;
 import com.godaddy.vps4.project.ProjectService;
 import com.godaddy.vps4.security.PrivilegeService;
 import com.godaddy.vps4.security.SecurityModule;
 import com.godaddy.vps4.security.Vps4User;
 import com.godaddy.vps4.security.Vps4UserService;
-import com.godaddy.vps4.vm.Action;
 import com.godaddy.vps4.vm.ActionService;
 import com.godaddy.vps4.vm.VirtualMachine;
 import com.godaddy.vps4.vm.VirtualMachineService;
 import com.godaddy.vps4.vm.VmModule;
 import com.godaddy.vps4.vm.VmUserService;
-import com.godaddy.vps4.web.CommandClientModule;
 import com.godaddy.vps4.web.sysadmin.SysAdminResource;
-import com.godaddy.vps4.web.sysadmin.SysAdminResource.SetAdminRequest;
 import com.godaddy.vps4.web.sysadmin.SysAdminResource.SetHostnameRequest;
-import com.godaddy.vps4.web.sysadmin.SysAdminResource.UpdatePasswordRequest;
-import com.godaddy.vps4.web.util.Commands;
 import com.google.inject.AbstractModule;
 import com.google.inject.Guice;
 import com.google.inject.Inject;
@@ -42,8 +33,6 @@ import com.google.inject.Provides;
 import gdg.hfs.orchestration.CommandGroupSpec;
 import gdg.hfs.orchestration.CommandService;
 import gdg.hfs.orchestration.CommandState;
-import gdg.hfs.vhfs.sysadmin.SysAdminService;
-import gdg.hfs.vhfs.vm.VmService;
 
 public class SetHostnameTest {
     
@@ -107,9 +96,8 @@ public class SetHostnameTest {
     
     UUID orionGuid;
     long hfsVmId = 98765;
-    Project project;
+    VirtualMachine virtualMachine;
     String username = "fakeUser";
-    UUID vmId;
 
     @Before
     public void setupTest(){
@@ -117,21 +105,15 @@ public class SetHostnameTest {
         orionGuid = UUID.randomUUID();
         validUser = userService.getOrCreateUserForShopper("validUserShopperId");
         invalidUser = userService.getOrCreateUserForShopper("invalidUserShopperId");
-        virtualMachineService.createVirtualMachineRequest(orionGuid, "linux", "cPanel", 10, 1, "validUserShopperId");
-        project = projService.createProject("TestProject", validUser.getId(), 1, "vps4-test-");
-        vmId = virtualMachineService.provisionVirtualMachine(orionGuid, "fakeVM", project.getProjectId(), 1, 1, 1);
-        virtualMachineService.addHfsVmIdToVirtualMachine(vmId, hfsVmId);
-        vmUserService.createUser(username, vmId);
+        virtualMachine = SqlTestData.insertTestVm(orionGuid, validUser.getId(), injector.getInstance(DataSource.class));
+        virtualMachineService.addHfsVmIdToVirtualMachine(virtualMachine.vmId, hfsVmId);
+        vmUserService.createUser(username, virtualMachine.vmId);
     }
     
     @After
     public void teardownTest(){
         DataSource dataSource = injector.getInstance(DataSource.class);
-        Sql.with(dataSource).exec("DELETE FROM vm_user WHERE name = ? AND vm_id = ?", null, username, vmId);
-        Sql.with(dataSource).exec("DELETE FROM vm_action where vm_id = ?", null, vmId);
-        Sql.with(dataSource).exec("DELETE FROM virtual_machine WHERE vm_id = ?", null, vmId);
-        Sql.with(dataSource).exec("DELETE FROM credit WHERE orion_guid = ?", null, orionGuid);
-        projService.deleteProject(project.getProjectId());
+        SqlTestData.cleanupTestVmAndRelatedData(virtualMachine.vmId, dataSource);
     }
     
     private SysAdminResource getValidResource() {
@@ -144,10 +126,10 @@ public class SetHostnameTest {
         SetHostnameRequest request = new SetHostnameRequest();
         request.hostname = "newhostname.test.tst";
         
-        getValidResource().setHostname(vmId, request);
+        getValidResource().setHostname(virtualMachine.vmId, request);
         try{
             request.hostname = "invalidHostname..tst";
-            getValidResource().setHostname(vmId, request);
+            getValidResource().setHostname(virtualMachine.vmId, request);
             Assert.fail();
         }catch (Vps4Exception e){
             //do nothing

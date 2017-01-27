@@ -12,14 +12,13 @@ import org.mockito.Mockito;
 
 import com.godaddy.vps4.Vps4Exception;
 import com.godaddy.vps4.jdbc.DatabaseModule;
-import com.godaddy.vps4.jdbc.Sql;
-import com.godaddy.vps4.project.Project;
 import com.godaddy.vps4.project.ProjectService;
 import com.godaddy.vps4.security.PrivilegeService;
 import com.godaddy.vps4.security.SecurityModule;
 import com.godaddy.vps4.security.Vps4User;
 import com.godaddy.vps4.security.Vps4UserService;
 import com.godaddy.vps4.vm.ActionService;
+import com.godaddy.vps4.vm.VirtualMachine;
 import com.godaddy.vps4.vm.VirtualMachineService;
 import com.godaddy.vps4.vm.VmModule;
 import com.godaddy.vps4.vm.VmUserService;
@@ -91,9 +90,9 @@ public class SysAdminResourceUserTest {
     
     UUID orionGuid;
     long hfsVmId = 98765;
-    Project project;
     String username = "fakeUser";
-    UUID vmId;
+    VirtualMachine virtualMachine;
+    DataSource dataSource = injector.getInstance(DataSource.class);
 
     @Before
     public void setupTest(){
@@ -101,21 +100,14 @@ public class SysAdminResourceUserTest {
         orionGuid = UUID.randomUUID();
         validUser = userService.getOrCreateUserForShopper("validUserShopperId");
         invalidUser = userService.getOrCreateUserForShopper("invalidUserShopperId");
-        virtualMachineService.createVirtualMachineRequest(orionGuid, "linux", "cPanel", 10, 1, "validUserShopperId");
-        project = projService.createProject("TestProject", validUser.getId(), 1, "vps4-test-");
-        vmId = virtualMachineService.provisionVirtualMachine(orionGuid, "fakeVM", project.getProjectId(), 1, 1, 1);
-        virtualMachineService.addHfsVmIdToVirtualMachine(vmId, hfsVmId);
-        vmUserService.createUser(username, vmId);
+        virtualMachine = SqlTestData.insertTestVm(orionGuid, validUser.getId(), dataSource);
+        virtualMachineService.addHfsVmIdToVirtualMachine(virtualMachine.vmId, hfsVmId);
+        vmUserService.createUser(username, virtualMachine.vmId);
     }
     
     @After
     public void teardownTest(){
-        DataSource dataSource = injector.getInstance(DataSource.class);
-        Sql.with(dataSource).exec("DELETE FROM vm_user WHERE name = ? AND vm_id = ?", null, username, vmId);
-        Sql.with(dataSource).exec("DELETE FROM vm_action where vm_id = ?", null, vmId);
-        Sql.with(dataSource).exec("DELETE FROM virtual_machine WHERE vm_id = ?", null, vmId);
-        Sql.with(dataSource).exec("DELETE FROM credit WHERE orion_guid = ?", null, orionGuid);
-        projService.deleteProject(project.getProjectId());
+        SqlTestData.cleanupTestVmAndRelatedData(virtualMachine.vmId, dataSource);
     }
     
     private SysAdminResource getValidResource() {
@@ -133,9 +125,9 @@ public class SysAdminResourceUserTest {
         UpdatePasswordRequest request = new UpdatePasswordRequest();
         request.username = username;
         
-        getValidResource().setPassword(vmId, request);
+        getValidResource().setPassword(virtualMachine.vmId, request);
         try{
-            getInvalidResource().setPassword(vmId, request);
+            getInvalidResource().setPassword(virtualMachine.vmId, request);
             Assert.fail();
         }catch (Vps4Exception e){
             //do nothing
@@ -147,9 +139,9 @@ public class SysAdminResourceUserTest {
         SetAdminRequest request = new SetAdminRequest();
         request.username = username;
         
-        getValidResource().enableUserAdmin(vmId, request);
+        getValidResource().enableUserAdmin(virtualMachine.vmId, request);
         try{
-            getInvalidResource().enableUserAdmin(vmId, request);
+            getInvalidResource().enableUserAdmin(virtualMachine.vmId, request);
             Assert.fail();
         }catch (Vps4Exception e){
             //do nothing
@@ -161,9 +153,9 @@ public class SysAdminResourceUserTest {
         SetAdminRequest request = new SetAdminRequest();
         request.username = username;
         
-        getValidResource().disableUserAdmin(vmId, request);
+        getValidResource().disableUserAdmin(virtualMachine.vmId, request);
         try{
-            getInvalidResource().disableUserAdmin(vmId, request);
+            getInvalidResource().disableUserAdmin(virtualMachine.vmId, request);
             Assert.fail();
         }catch (Vps4Exception e){
             //do nothing
@@ -175,9 +167,9 @@ public class SysAdminResourceUserTest {
         SetHostnameRequest request = new SetHostnameRequest();
         request.hostname = "newhostname.test.tst";
         
-        getValidResource().setHostname(vmId, request);
+        getValidResource().setHostname(virtualMachine.vmId, request);
         try{
-            getInvalidResource().setHostname(vmId, request);
+            getInvalidResource().setHostname(virtualMachine.vmId, request);
             Assert.fail();
         }catch (Vps4Exception e){
             //do nothing

@@ -13,8 +13,6 @@ import org.junit.Test;
 import org.mockito.Mockito;
 
 import com.godaddy.vps4.jdbc.DatabaseModule;
-import com.godaddy.vps4.jdbc.Sql;
-import com.godaddy.vps4.project.Project;
 import com.godaddy.vps4.project.ProjectService;
 import com.godaddy.vps4.project.jdbc.JdbcProjectService;
 import com.godaddy.vps4.security.PrivilegeService;
@@ -32,37 +30,27 @@ public class VmPatchResourceTest {
     VirtualMachineService virtualMachineService;
     ProjectService projectService;
     PrivilegeService privilegeService = Mockito.mock(PrivilegeService.class);
-    Project project;
     UUID orionGuid;
-    UUID id;
-    long hfsVmId;
     DataSource dataSource = injector.getInstance(DataSource.class);
     long virtualMachineRequestId;
-    String initialName = "testServer";
+    String initialName;
+    VirtualMachine virtualMachine;
     
     @Before
     public void setupTest(){
         virtualMachineService = new JdbcVirtualMachineService(dataSource);
         projectService = new JdbcProjectService(dataSource);
-        project = projectService.createProject("testVirtualMachineServiceProject", 1, 1, "vps4-test-");
         
         orionGuid = UUID.randomUUID();
-        int managedLevel = 0;
-        virtualMachineService.createVirtualMachineRequest(orionGuid, "linux", "cpanel", 10, managedLevel, "testShopperId");
-        
-        UUID vmId = virtualMachineService.provisionVirtualMachine(orionGuid, initialName, 
-                                                     project.getProjectId(), 
-                                                     1, managedLevel, 1);
-        hfsVmId = 1000+Math.abs((new Random().nextLong()));  //HFS usually creates this, so we're making it up
-        virtualMachineService.addHfsVmIdToVirtualMachine(vmId, hfsVmId);
+        virtualMachine = SqlTestData.insertTestVm(orionGuid, dataSource);
+        initialName = virtualMachine.name;
+        long hfsVmId = 1000 + Math.abs((new Random().nextLong())); // HFS usually creates this, so we're making it up
+        virtualMachineService.addHfsVmIdToVirtualMachine(virtualMachine.vmId, hfsVmId);
     }
     
     @After
     public void teardownTest(){
-        Sql.with(dataSource).exec("DELETE from virtual_machine where hfs_vm_id = ?", null, hfsVmId);
-        Sql.with(dataSource).exec("DELETE from credit where orion_guid = ?", null, orionGuid);
-        Sql.with(dataSource).exec("DELETE from user_project_privilege where project_id = ?", null, project.getProjectId());
-        Sql.with(dataSource).exec("DELETE from project where project_id = ?", null, project.getProjectId());
+        SqlTestData.cleanupTestVmAndRelatedData(virtualMachine.vmId, dataSource);
     }
     
     
@@ -72,13 +60,13 @@ public class VmPatchResourceTest {
     }
 
     private VirtualMachine updateVmName(String newName) {
-        VirtualMachine vm = virtualMachineService.getVirtualMachine(hfsVmId);
+        VirtualMachine vm = virtualMachineService.getVirtualMachine(virtualMachine.vmId);
         assertEquals(initialName, vm.name);
         VmPatchResource patchResource = new VmPatchResource(virtualMachineService, null, privilegeService);
         VmPatch vmPatch = new VmPatch();
         vmPatch.name = newName;
         patchResource.updateVm(vm.vmId, vmPatch);
-        vm = virtualMachineService.getVirtualMachine(hfsVmId);
+        vm = virtualMachineService.getVirtualMachine(virtualMachine.vmId);
         return vm;
     }
     

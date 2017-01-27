@@ -19,7 +19,6 @@ import com.godaddy.vps4.jdbc.DatabaseModule;
 import com.godaddy.vps4.jdbc.Sql;
 import com.godaddy.vps4.network.IpAddress.IpAddressType;
 import com.godaddy.vps4.network.NetworkService;
-import com.godaddy.vps4.project.Project;
 import com.godaddy.vps4.project.ProjectService;
 import com.godaddy.vps4.security.SecurityModule;
 import com.godaddy.vps4.security.Vps4User;
@@ -98,8 +97,8 @@ public class VmResourceUserTest {
 
     List<UUID> orionGuids = new ArrayList<UUID>();
     long hfsVmId = 98765;
-    Project project;
     List<UUID> vmIds = new ArrayList<UUID>();
+    DataSource dataSource = injector.getInstance(DataSource.class);
 
     @Before
     public void setupTest(){
@@ -107,26 +106,20 @@ public class VmResourceUserTest {
         orionGuids.add(UUID.randomUUID());
         validUser = userService.getOrCreateUserForShopper("validUserShopperId");
         invalidUser = userService.getOrCreateUserForShopper("invalidUserShopperId");
-        virtualMachineService.createVirtualMachineRequest(orionGuids.get(0), "linux", "cPanel", 10, 1, "validUserShopperId");
-        project = projService.createProject("TestProject", validUser.getId(), 1, "vps4-test-");
-        vmIds.add(virtualMachineService.provisionVirtualMachine(orionGuids.get(0), "fakeVM", project.getProjectId(), 1, 1, 1));
+        vmIds.add(SqlTestData.insertTestVm(orionGuids.get(0), validUser.getId(), dataSource).vmId);
         virtualMachineService.addHfsVmIdToVirtualMachine(vmIds.get(0), hfsVmId);
         networkService.createIpAddress(1234, vmIds.get(0), "127.0.0.1", IpAddressType.PRIMARY);
-        
     }
 
     @After
     public void teardownTest(){
-        DataSource dataSource = injector.getInstance(DataSource.class);
         Sql.with(dataSource).exec("DELETE FROM ip_address where ip_address_id = ?", null, 1234);
         for (UUID vmId : vmIds) {
-            Sql.with(dataSource).exec("DELETE FROM vm_action where vm_id = ?", null, vmId);
-            Sql.with(dataSource).exec("DELETE FROM virtual_machine WHERE vm_id = ?", null, vmId);
+            SqlTestData.cleanupTestVmAndRelatedData(vmId, dataSource);
         }
         for (UUID orionGuid : orionGuids) {
             Sql.with(dataSource).exec("DELETE FROM credit WHERE orion_guid = ?", null, orionGuid);
         }
-        projService.deleteProject(project.getProjectId());
     }
 
     protected VmResource newValidVmResource() {
@@ -220,7 +213,7 @@ public class VmResourceUserTest {
     public void testProvisionVm() throws InterruptedException {
         UUID newGuid = UUID.randomUUID();
         orionGuids.add(newGuid);
-        virtualMachineService.createVirtualMachineRequest(newGuid, "linux", "cPanel", 10, 1, validUser.getShopperId());
+        virtualMachineService.createVirtualMachineCredit(newGuid, "linux", "cPanel", 10, 1, validUser.getShopperId());
         ProvisionVmRequest provisionRequest = new ProvisionVmRequest();
         provisionRequest.orionGuid = newGuid;
         provisionRequest.dataCenterId = 1;
