@@ -41,6 +41,6 @@ public class ImageResource {
     public Set<Image> getImages(@QueryParam("os") String os,
                                 @QueryParam("controlPanel") String controlPanel) {
         logger.info("getting images with os = {} and controlPanel = {}", os, controlPanel);
-        return imageService.getImages(os, controlPanel);
+        return imageService.getImages(os, controlPanel, null);
     }
 }
