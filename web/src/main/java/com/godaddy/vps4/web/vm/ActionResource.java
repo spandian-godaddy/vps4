@@ -72,7 +72,7 @@ public class ActionResource {
     
    
     @GET
-    @Path("actions/{vmId}")
+    @Path("{vmId}/actions")
     public PaginatedResult<Action> getActions(@PathParam("vmId") UUID vmId, 
                                               @DefaultValue("10") @QueryParam("limit") long limit, 
                                               @DefaultValue("0") @QueryParam("offset") long offset, 
