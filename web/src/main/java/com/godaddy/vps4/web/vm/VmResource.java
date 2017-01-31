@@ -36,6 +36,7 @@ import com.godaddy.vps4.security.jdbc.AuthorizationException;
 import com.godaddy.vps4.vm.Action;
 import com.godaddy.vps4.vm.ActionService;
 import com.godaddy.vps4.vm.ActionType;
+import com.godaddy.vps4.vm.ImageService;
 import com.godaddy.vps4.vm.ProvisionVmInfo;
 import com.godaddy.vps4.vm.VirtualMachine;
 import com.godaddy.vps4.vm.VirtualMachineCredit;
@@ -70,6 +71,7 @@ public class VmResource {
     private final PrivilegeService privilegeService;
     private final VmService vmService;
     private final ProjectService projectService;
+    private final ImageService imageService;
     private final ActionService actionService;
     private final CommandService commandService;
     private final Config config;
@@ -80,6 +82,7 @@ public class VmResource {
             Vps4User user, VmService vmService,
             VirtualMachineService virtualMachineService,
             ProjectService projectService,
+            ImageService imageService,
             com.godaddy.vps4.network.NetworkService vps4NetworkService,
             CPanelService cPanelService,
             ActionService actionService,
@@ -91,6 +94,7 @@ public class VmResource {
         this.privilegeService = privilegeService;
         this.vmService = vmService;
         this.projectService = projectService;
+        this.imageService = imageService;
         this.actionService = actionService;
         this.commandService = commandService;
         this.config = config;
@@ -223,8 +227,12 @@ public class VmResource {
         logger.info("provisioning vm with orionGuid {}", provisionRequest.orionGuid);
 
         VirtualMachineCredit vmCredit = verifyUserHasAccessToCredit(provisionRequest.orionGuid);
-
-        // TODO - verify that the image matches the request (control panel, managed level, OS)
+   
+        if(imageService.getImages(vmCredit.operatingSystem, vmCredit.controlPanel, provisionRequest.image).size() == 0){
+            // verify that the image matches the request (control panel, managed level, OS)
+            String message = String.format("The image %s is not valid for this credit.", provisionRequest.image);
+            throw new Vps4Exception("INVALID_IMAGE", message);
+        }
 
         ProvisionVirtualMachineParameters params;
         VirtualMachine virtualMachine;

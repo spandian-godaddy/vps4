@@ -213,7 +213,7 @@ public class VmResourceUserTest {
     public void testProvisionVm() throws InterruptedException {
         UUID newGuid = UUID.randomUUID();
         orionGuids.add(newGuid);
-        virtualMachineService.createVirtualMachineCredit(newGuid, "linux", "cPanel", 10, 1, validUser.getShopperId());
+        virtualMachineService.createVirtualMachineCredit(newGuid, "linux", "none", 10, 1, validUser.getShopperId());
         ProvisionVmRequest provisionRequest = new ProvisionVmRequest();
         provisionRequest.orionGuid = newGuid;
         provisionRequest.dataCenterId = 1;
@@ -224,6 +224,28 @@ public class VmResourceUserTest {
             newInvalidVmResource().provisionVm(provisionRequest);
             Assert.fail();
         }catch (Vps4Exception e) {
+            //do nothing
+        }
+    }
+    
+    @Test
+    public void testProvisionVmInvalidCredit() throws InterruptedException {
+        // Verify that if a provision request image does not match the credits os and control panel
+        // an exception is thrown.
+        UUID newGuid = UUID.randomUUID();
+        orionGuids.add(newGuid);
+        virtualMachineService.createVirtualMachineCredit(newGuid, "linux", "cpanel", 10, 1, validUser.getShopperId());
+        ProvisionVmRequest provisionRequest = new ProvisionVmRequest();
+        provisionRequest.orionGuid = newGuid;
+        provisionRequest.dataCenterId = 1;
+        provisionRequest.image = "centos-7";
+        provisionRequest.name = "Test Name";
+        
+        try{
+            vmIds.add(newValidVmResource().provisionVm(provisionRequest).virtualMachineId);
+            Assert.fail();
+        }catch (Vps4Exception e) {
+            Assert.assertEquals("INVALID_IMAGE", e.getId());
             //do nothing
         }
     }
