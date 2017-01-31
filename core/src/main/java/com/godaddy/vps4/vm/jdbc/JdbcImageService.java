@@ -28,7 +28,7 @@ public class JdbcImageService implements ImageService {
         return Sql.with(dataSource).exec("SELECT name FROM " + this.tableName,
                 Sql.setOf(rs -> rs.getString("name")));
     }
-
+    
     @Override
     public void addCompatibleImage(String name, Long controlPanelId) {
         Sql.with(dataSource)
@@ -60,6 +60,17 @@ public class JdbcImageService implements ImageService {
     public Image getImage(String name) {
         return Sql.with(dataSource).exec("SELECT image_id, name, hfs_name, control_panel_id, os_type_id FROM " + tableName + " WHERE hfs_name=?",
                 Sql.nextOrNull(this::mapImage), name);
+    }
+    
+    @Override
+    public Set<Image> getImages(String os, String controlPanel) {
+        return Sql.with(dataSource).exec("SELECT image.image_id, image.name, image.hfs_name, image.control_panel_id, image.os_type_id" +
+                                           " FROM " + tableName + " AS image" + 
+                                           " JOIN control_panel AS cp ON image.control_panel_id = cp.control_panel_id" +
+                                           " JOIN os_type AS os ON image.os_type_id = os.os_type_id" +
+                                           " WHERE (?::text is null or LOWER(os.name) = LOWER(?))" + 
+                                           " AND   (?::text is null or LOWER(cp.name) = LOWER(?))",
+                                         Sql.setOf(this::mapImage), os, os, controlPanel, controlPanel);
     }
 
     private Image mapImage(ResultSet rs) throws SQLException {
