@@ -13,4 +13,6 @@ public interface ImageService {
     int getImageId(String name);
 
     Image getImage(String name);
+    
+    Set<Image> getImages(String os, String controlPanel);
 }
