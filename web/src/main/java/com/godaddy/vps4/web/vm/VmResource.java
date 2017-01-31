@@ -97,35 +97,6 @@ public class VmResource {
         sgidPrefix = config.get("hfs.sgid.prefix", "vps4-undefined-");
     }
 
-
-//    @GET
-//    @Path("actions/provision/{orionGuid}")
-//    public Action getProvisionActions(@PathParam("orionGuid") UUID orionGuid) {
-//
-//        Action action = getActionFromOrionGuid(orionGuid);
-//        if (action == null) {
-//            throw new NotFoundException("action or orionGuid " + orionGuid + " not found");
-//        }
-//
-//        return action;
-//    }
-//
-//    @GET
-//    @Path("/provisions/{orionGuid}")
-//    public Action getProvisionAction(@PathParam("orionGuid") UUID orionGuid) {
-//
-//        return getActionFromOrionGuid(orionGuid);
-//    }
-//
-//    protected Action getActionFromOrionGuid(UUID orionGuid) {
-//
-//        // TODO
-//        // - add an action_id to the provision request table
-//        // - update that column when a provision is started for a specific provision request
-//        // - add a way to look that up through actionService (or something)
-//        return null;
-//    }
-
     @GET
     @Path("/flavors")
     public List<Flavor> getFlavors() {
@@ -164,26 +135,6 @@ public class VmResource {
         return virtualMachine;
     }
 
-
-
-//    @POST
-//    @Path("/")
-//    public VirtualMachineRequest createVm(@QueryParam("orionGuid") UUID orionGuid,
-//            @QueryParam("operatingSystem") String operatingSystem,
-//            @QueryParam("tier") int tier,
-//            @QueryParam("controlPanel") String controlPanel,
-//            @QueryParam("managedLevel") int managedLevel,
-//            @QueryParam("shopperId") String shopperId) {
-//
-//        if (!user.getShopperId().equals(shopperId)) {
-//            throw new AuthorizationException(user.getShopperId() + " can not create a vm with a different shopperId(" + shopperId + ")");
-//        }
-//
-//        logger.info("creating new vm request for orionGuid {}", orionGuid);
-//        virtualMachineService.createVirtualMachineRequest(orionGuid, operatingSystem, controlPanel, tier, managedLevel, shopperId);
-//        return virtualMachineService.getVirtualMachineRequest(orionGuid);
-//
-//    }
 
     @POST
     @Path("{vmId}/start")
