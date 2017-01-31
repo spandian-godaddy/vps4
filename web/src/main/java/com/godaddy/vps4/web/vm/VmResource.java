@@ -94,7 +94,6 @@ public class VmResource {
         sgidPrefix = config.get("hfs.sgid.prefix", "vps4-undefined-");
     }
 
-
     @GET
     @Path("/{vmId}")
     public VirtualMachine getVm(@PathParam("vmId") UUID vmId) {

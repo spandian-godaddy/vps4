@@ -71,10 +71,10 @@ public class ActionResource {
     }
 
     @GET
-    @Path("vms/{vmId}/actions")
-    public PaginatedResult<Action> getActions(@PathParam("vmId") UUID vmId,
-                                              @DefaultValue("10") @QueryParam("limit") long limit,
-                                              @DefaultValue("0") @QueryParam("offset") long offset,
+    @Path("{vmId}/actions")
+    public PaginatedResult<Action> getActions(@PathParam("vmId") UUID vmId, 
+                                              @DefaultValue("10") @QueryParam("limit") long limit, 
+                                              @DefaultValue("0") @QueryParam("offset") long offset, 
                                               @Context UriInfo uri) {
         privilegeService.requireAnyPrivilegeToVmId(user, vmId);
 
