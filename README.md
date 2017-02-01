@@ -7,7 +7,7 @@ Environments
 | Dev   | https://vps4.api.dev-godaddy.com/  | https://myh.dev-godaddy.com:9200/#/hosting/vps4/index  |
 | Test  | https://vps4.api.test-godaddy.com/ | https://myh.test-godaddy.com:9200/#/hosting/vps4/index |
 | Stage | https://vps4.api.stg-godaddy.com/  | https://myh.stg-godaddy.com:9200/#/hosting/vps4/index  |
-| Prod  | https://vps4.api.iad2.godaddy.com/ | https://myh.stg-godaddy.com:9200/#/hosting/vps4/index  |
+| Prod  | https://vps4.api.iad2.godaddy.com/ | https://myh.godaddy.com/#/hosting/vps4/index           |
 
 Note: Stage HUI apparently points at prod API, so (for now) 'prod' HUI is only visible through stage
 
