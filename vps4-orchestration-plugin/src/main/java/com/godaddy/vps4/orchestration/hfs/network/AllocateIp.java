@@ -6,6 +6,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.godaddy.vps4.Vps4Exception;
+import com.godaddy.vps4.network.IpAddressValidator;
 
 import gdg.hfs.orchestration.Command;
 import gdg.hfs.orchestration.CommandContext;
@@ -41,6 +42,7 @@ public class AllocateIp implements Command<AllocateIp.Request, IpAddress> {
 
         // FIXME get address
         IpAddress ipAddress = networkService.getAddress(hfsAction.addressId);
+        IpAddressValidator.validateIpAddress(ipAddress.address);
         if (ipAddress.status != Status.UNBOUND) {
             throw new Vps4Exception("ALLOCATE_IP_FAILED", String.format("IP %s is not unbound", ipAddress.address));
         }
