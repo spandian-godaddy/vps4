@@ -17,6 +17,7 @@ import com.godaddy.vps4.orchestration.hfs.cpanel.ConfigureCpanel.ConfigureCpanel
 import com.godaddy.vps4.orchestration.hfs.network.AllocateIp;
 import com.godaddy.vps4.orchestration.hfs.network.BindIp;
 import com.godaddy.vps4.orchestration.hfs.network.BindIp.BindIpRequest;
+import com.godaddy.vps4.orchestration.hfs.smtp.CreateMailRelay;
 import com.godaddy.vps4.orchestration.hfs.sysadmin.SetPassword;
 import com.godaddy.vps4.orchestration.hfs.sysadmin.ToggleAdmin;
 import com.godaddy.vps4.orchestration.hfs.vm.CreateVm;
@@ -32,6 +33,7 @@ import com.godaddy.vps4.vm.VmUserService;
 
 import gdg.hfs.orchestration.CommandContext;
 import gdg.hfs.orchestration.CommandMetadata;
+import gdg.hfs.vhfs.mailrelay.MailRelayTarget;
 import gdg.hfs.vhfs.vm.CreateVMWithFlavorRequest;
 import gdg.hfs.vhfs.vm.Vm;
 import gdg.hfs.vhfs.vm.VmAction;
@@ -87,6 +89,11 @@ public class ProvisionVm extends ActionCommand<ProvisionVm.Request, ProvisionVm.
         setStep(CreateVmStep.RequestingIPAddress);
         AllocateIp.Request allocateIpRequest = createAllocateIpRequest(request, vmInfo);
         gdg.hfs.vhfs.network.IpAddress ip = context.execute(AllocateIp.class, allocateIpRequest);
+
+        // create mail relay
+        setStep(CreateVmStep.RequestingMailRelay);
+        CreateMailRelay.Request createMailRelayRequest = new CreateMailRelay.Request(ip.address);
+        MailRelayTarget mailRelay = context.execute(CreateMailRelay.class, createMailRelayRequest);
 
         CreateVMWithFlavorRequest hfsRequest = request.hfsRequest;
         

@@ -8,6 +8,9 @@ import org.mockito.stubbing.Answer;
 import com.google.inject.AbstractModule;
 
 import gdg.hfs.vhfs.cpanel.CPanelService;
+import gdg.hfs.vhfs.mailrelay.MailRelayAction;
+import gdg.hfs.vhfs.mailrelay.MailRelayAction.Status;
+import gdg.hfs.vhfs.mailrelay.MailRelayService;
 import gdg.hfs.vhfs.network.AddressAction;
 import gdg.hfs.vhfs.network.IpAddress;
 import gdg.hfs.vhfs.network.NetworkService;
@@ -31,8 +34,26 @@ public class HfsMockModule extends AbstractModule {
         bind(SysAdminService.class).toInstance(sysAdminService);
         CPanelService cpService = Mockito.mock(CPanelService.class);
         bind(CPanelService.class).toInstance(cpService);
+        MailRelayService mailRelayService = buildMailRelayService();
+        bind(MailRelayService.class).toInstance(mailRelayService);
+    }
 
+    private MailRelayService buildMailRelayService() {
+        MailRelayService mailRelayService = Mockito.mock(MailRelayService.class);
+        MailRelayAction completeAction = new MailRelayAction();
+        completeAction.status = Status.COMPLETE;
+        completeAction.action_id = 1;
+        completeAction.id = 1;
 
+        MailRelayAction inProgressAction = new MailRelayAction();
+        inProgressAction.status = Status.IN_PROGRESS;
+        inProgressAction.action_id = 1;
+        inProgressAction.id = 1;
+
+        Mockito.when(mailRelayService.createMailRelay(Mockito.anyString())).thenReturn(inProgressAction);
+        Mockito.when(mailRelayService.getMailRelayAction(Mockito.anyLong(), Mockito.anyLong())).thenReturn(completeAction);
+
+        return mailRelayService;
     }
 
     private SysAdminService buildSysAdminService(){
