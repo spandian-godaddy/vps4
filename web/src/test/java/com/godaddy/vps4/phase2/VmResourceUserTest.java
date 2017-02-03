@@ -23,6 +23,7 @@ import com.godaddy.vps4.project.ProjectService;
 import com.godaddy.vps4.security.SecurityModule;
 import com.godaddy.vps4.security.Vps4User;
 import com.godaddy.vps4.security.Vps4UserService;
+import com.godaddy.vps4.vm.Action;
 import com.godaddy.vps4.vm.ActionService;
 import com.godaddy.vps4.vm.ActionType;
 import com.godaddy.vps4.vm.VirtualMachineService;
@@ -65,7 +66,7 @@ public class VmResourceUserTest {
             new SecurityModule(),
             new VmModule(),
             new AbstractModule() {
-                
+
                 @Override
                 public void configure() {
                     // HFS services
@@ -202,7 +203,8 @@ public class VmResourceUserTest {
     public void testDestroyVm() throws VmNotFoundException{
         newValidVmResource().destroyVm(vmIds.get(0));
         try{
-            newInvalidVmResource().destroyVm(vmIds.get(0));
+            Action action = newInvalidVmResource().destroyVm(vmIds.get(0));
+            Assert.assertNotNull(action.commandId);
             Assert.fail();
         }catch (Vps4Exception e){
             //do nothing

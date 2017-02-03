@@ -14,6 +14,7 @@ import com.godaddy.vps4.Vps4Exception;
 import com.godaddy.vps4.cpanel.Vps4CpanelService;
 import com.godaddy.vps4.jdbc.DatabaseModule;
 import com.godaddy.vps4.phase2.SqlTestData;
+import com.godaddy.vps4.project.Project;
 import com.godaddy.vps4.project.ProjectService;
 import com.godaddy.vps4.security.PrivilegeService;
 import com.godaddy.vps4.security.SecurityModule;
@@ -31,52 +32,54 @@ import com.google.inject.Injector;
 import com.google.inject.Provides;
 
 public class CpanelResourceUserTest {
-    
+
     @Inject
     PrivilegeService privilegeService;
-    
+
     @Inject
     VirtualMachineService virtualMachineService;
-    
+
     @Inject
     ActionService actionService;
-    
+
     @Inject
     Vps4UserService userService;
-    
+
     @Inject
     Vps4CpanelService cpanelService;
-    
+
     @Inject
     ProjectService projService;
-    
+
     Injector injector = Guice.createInjector(new DatabaseModule(),
             new SecurityModule(),
             new VmModule(),
             new AbstractModule() {
-                
+
                 @Override
                 protected void configure() {
                     Vps4CpanelService cpServ = Mockito.mock(Vps4CpanelService.class);
                     bind(Vps4CpanelService.class).toInstance(cpServ);
-                    
+
                 }
-                
-                @Provides 
+
+                @Provides
                 Vps4User provideUser() {
                     return user;
                 }
             });
-    
+
     Vps4User validUser;
     Vps4User invalidUser;
     Vps4User user;
-    
+
+    UUID vmId;
     UUID orionGuid;
     long hfsVmId = 98765;
+    Project project;
     VirtualMachine virtualMachine;
     DataSource dataSource = injector.getInstance(DataSource.class);
-    
+
     @Before
     public void setupTest(){
         injector.injectMembers(this);
@@ -85,18 +88,20 @@ public class CpanelResourceUserTest {
         invalidUser = userService.getOrCreateUserForShopper("invalidUserShopperId");
         virtualMachine = SqlTestData.insertTestVm(orionGuid, validUser.getId(), dataSource);
         virtualMachineService.addHfsVmIdToVirtualMachine(virtualMachine.vmId, hfsVmId);
+        project = projService.createProject("TestProject", validUser.getId(), 1, "vps4-test-");
+        vmId = virtualMachine.vmId;
     }
-    
+
     @After
     public void teardownTest(){
         SqlTestData.cleanupTestVmAndRelatedData(virtualMachine.vmId, dataSource);
     }
-    
+
     private CPanelResource getValidResource() {
         user = validUser;
         return injector.getInstance(CPanelResource.class);
     }
-    
+
     private CPanelResource getInvalidResource() {
         user = invalidUser;
         return injector.getInstance(CPanelResource.class);
@@ -104,9 +109,9 @@ public class CpanelResourceUserTest {
 
     @Test
     public void testGetWHMSession(){
-        getValidResource().getWHMSession(hfsVmId);
+        getValidResource().getWHMSession(vmId);
         try{
-            getInvalidResource().getWHMSession(hfsVmId);
+            getInvalidResource().getWHMSession(vmId);
             Assert.fail();
         }catch (Vps4Exception e){
             //do nothing
@@ -115,20 +120,20 @@ public class CpanelResourceUserTest {
 
     @Test
     public void testGetCPanelSession(){
-        getValidResource().getCPanelSession(hfsVmId, "testuser");
+        getValidResource().getCPanelSession(vmId, "testuser");
         try{
-            getInvalidResource().getCPanelSession(hfsVmId, "testuser");
+            getInvalidResource().getCPanelSession(vmId, "testuser");
             Assert.fail();
         }catch (Vps4Exception e){
             //do nothing
         }
     }
-    
+
     @Test
     public void testListCpanelAccounts(){
-        getValidResource().listCpanelAccounts(hfsVmId);
+        getValidResource().listCpanelAccounts(vmId);
         try{
-            getInvalidResource().listCpanelAccounts(hfsVmId);
+            getInvalidResource().listCpanelAccounts(vmId);
             Assert.fail();
         }catch (Vps4Exception e){
             //do nothing

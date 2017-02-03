@@ -139,7 +139,6 @@ public class VmResource {
         return virtualMachine;
     }
 
-
     @POST
     @Path("{vmId}/start")
     public Action startVm(@PathParam("vmId") UUID vmId) throws VmNotFoundException {
@@ -221,7 +220,7 @@ public class VmResource {
     }
 
     @POST
-    @Path("/provisions/")
+    @Path("/")
     public Action provisionVm(ProvisionVmRequest provisionRequest) throws InterruptedException {
 
         logger.info("provisioning vm with orionGuid {}", provisionRequest.orionGuid);
@@ -332,7 +331,7 @@ public class VmResource {
 
         CommandState command = Commands.execute(commandService, "Vps4DestroyVm", request);
 
-        // TODO actionService.tagWithCommand(actionId, command.commandId);
+        actionService.tagWithCommand(actionId, command.commandId);
 
         return actionService.getAction(actionId);
     }

@@ -15,8 +15,9 @@ public class Action {
     public final ActionStatus status;
     public final Instant created;
     public final String note;
+    public final UUID commandId;
 
-    public Action(long id, UUID virtualMachineId, ActionType type, long vps4UserId, String request, String state, String response, ActionStatus status, Instant created, String note){
+    public Action(long id, UUID virtualMachineId, ActionType type, long vps4UserId, String request, String state, String response, ActionStatus status, Instant created, String note, UUID commandId){
         this.id = id;
         this.virtualMachineId = virtualMachineId;
         this.type = type;
@@ -27,6 +28,7 @@ public class Action {
         this.status = status;
         this.created = created;
         this.note = note;
+        this.commandId = commandId;
     }
 
 
@@ -40,7 +42,8 @@ public class Action {
                 + " response: " + response
                 + " status: " + status
                 + " created: " + created
-                + " note: " + note + "]";
+                + " note: " + note
+                + " commandId: " + commandId + "]";
     }
 
 }
