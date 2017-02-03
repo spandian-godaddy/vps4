@@ -79,8 +79,6 @@ public class CpanelResourceUserTest {
     long hfsVmId = 98765;
     VirtualMachine virtualMachine;
     DataSource dataSource = injector.getInstance(DataSource.class);
-    Project project;
-    UUID vmId;
 
     @Before
     public void setupTest(){
