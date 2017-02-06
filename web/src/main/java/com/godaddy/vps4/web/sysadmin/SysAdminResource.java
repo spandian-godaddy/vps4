@@ -1,10 +1,10 @@
 package com.godaddy.vps4.web.sysadmin;
 
-import java.util.Arrays;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 
 import javax.inject.Inject;
-import javax.validation.ValidationException;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
@@ -29,6 +29,7 @@ import com.godaddy.vps4.util.validators.ValidatorRegistry;
 import com.godaddy.vps4.vm.Action;
 import com.godaddy.vps4.vm.ActionService;
 import com.godaddy.vps4.vm.ActionType;
+import com.godaddy.vps4.vm.Image.OperatingSystem;
 import com.godaddy.vps4.vm.VirtualMachine;
 import com.godaddy.vps4.vm.VirtualMachineService;
 import com.godaddy.vps4.vm.VmUserService;
@@ -86,9 +87,13 @@ public class SysAdminResource {
 
         privilegeService.requireAnyPrivilegeToVmId(user, vmId);
         // TODO: This will need more logic when we include Windows
-        // Windows does not have a "root" user.
-        String[] usernames = {updatePasswordRequest.username, "root"};
         VirtualMachine vm = getVm(vmId);
+        List<String> usernames = new ArrayList<String>();
+        usernames.add(updatePasswordRequest.username);
+        if(vm.image.operatingSystem == OperatingSystem.LINUX){
+            usernames.add("root");
+        }
+        
 //        SetPasswordAction action = new SetPasswordAction(vmId, usernames, updatePasswordRequest.password);
         if (!userService.userExists(updatePasswordRequest.username, vm.vmId)) {
 
@@ -105,7 +110,7 @@ public class SysAdminResource {
                 pwRequest.toJSONString(), user.getId());
 
         SetPassword.Request request = new SetPassword.Request();
-        request.usernames = Arrays.asList(usernames);
+        request.usernames = usernames;
         request.password = updatePasswordRequest.password;
         request.hfsVmId = vm.hfsVmId;
 
