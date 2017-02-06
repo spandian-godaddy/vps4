@@ -9,6 +9,8 @@ public interface NetworkService {
 
     void createIpAddress(long ipAddressId, UUID vmId, String ipAddress, IpAddressType ipAddressType);
 
+    void createIpAddress(long ipAddressId, UUID vmId, String ipAddress, IpAddressType ipAddressType, Long mailRelayTargetId);
+
     void destroyIpAddress(long ipAddressId);
 
     IpAddress getIpAddress(long ipAddressId);

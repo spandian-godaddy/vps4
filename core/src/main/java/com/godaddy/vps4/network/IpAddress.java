@@ -36,19 +36,34 @@ public class IpAddress {
     public final IpAddressType ipAddressType;
     public final Instant validOn;
     public final Instant validUntil;
+    public final Long mailRelayId;
 
-    public IpAddress(long ipAddressId, UUID vmId, String ipAddress, IpAddressType ipAddressType, Instant validOn, Instant validUntil) {
+    public IpAddress(long ipAddressId, UUID vmId, String ipAddress, IpAddressType ipAddressType, Instant validOn, Instant validUntil, Long mailRelayId) {
         this.ipAddressId = ipAddressId;
         this.vmId = vmId;
         this.ipAddress = ipAddress;
         this.ipAddressType = ipAddressType;
         this.validOn = validOn;
         this.validUntil = validUntil;
+        this.mailRelayId = mailRelayId;
     }
 
     @Override
     public String toString() {
-        return "IpAddress [ipAddressId=" + ipAddressId + " vmId=" + vmId + " validOn=" + validOn + "validUntil" + validUntil
-                + "]";
+        StringBuilder result = new StringBuilder();
+        result.append("IpAddress [ipAddressId=");
+        result.append(ipAddressId);
+        result.append(" vmId=");
+        result.append(vmId);
+        result.append(" validOn=");
+        result.append(validOn);
+        result.append(" validUntil");
+        result.append(validUntil);
+        if (mailRelayId != null) {
+            result.append(" mailRelayId=");
+            result.append(mailRelayId);
+        }
+        result.append("]");
+        return result.toString();
     }
 }

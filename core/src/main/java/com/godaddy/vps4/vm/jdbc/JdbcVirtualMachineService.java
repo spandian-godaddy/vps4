@@ -14,6 +14,7 @@ import javax.sql.DataSource;
 
 import com.godaddy.vps4.jdbc.Sql;
 import com.godaddy.vps4.network.IpAddress;
+import com.godaddy.vps4.network.jdbc.IpAddressMapper;
 import com.godaddy.vps4.security.Vps4User;
 import com.godaddy.vps4.vm.DataCenter;
 import com.godaddy.vps4.vm.Image;
@@ -33,7 +34,7 @@ public class JdbcVirtualMachineService implements VirtualMachineService {
             + "vms.tier, vms.cpu_core_count, vms.memory_mib, vms.disk_gib, vms.valid_on as \"spec_valid_on\", "
             + "vms.valid_until as \"spec_valid_until\", vms.name as \"spec_vps4_name\", "
             + "image.name, image.hfs_name, image.image_id, image.control_panel_id, image.os_type_id, "
-            + "ip.ip_address_id, ip.ip_address, ip.ip_address_type_id, ip.valid_on, ip.valid_until, "
+            + "ip.ip_address_id, ip.ip_address, ip.ip_address_type_id, ip.valid_on, ip.valid_until, ip.mail_relay_id, "
             + "dc.data_center_id, dc.description "
             + "FROM virtual_machine vm "
             + "JOIN virtual_machine_spec vms ON vms.spec_id=vm.spec_id "
@@ -99,12 +100,7 @@ public class JdbcVirtualMachineService implements VirtualMachineService {
         if (ipAddressId == 0) {
             return null;
         }
-        return new IpAddress(rs.getLong("ip_address_id"),
-                UUID.fromString(rs.getString("vm_id")),
-                rs.getString("ip_address"),
-                IpAddress.IpAddressType.valueOf(rs.getInt("ip_address_type_id")),
-                rs.getTimestamp("valid_on").toInstant(),
-                rs.getTimestamp("valid_until").toInstant());
+        return IpAddressMapper.mapIpAddress(rs);
     }
 
     private Image mapImage(ResultSet rs) throws SQLException {

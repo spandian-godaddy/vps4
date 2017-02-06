@@ -52,7 +52,7 @@ public class NetworkServiceTest {
     }
 
     @Test
-    public void testService() {
+    public void testCreateIp() {
 
         long addressId = 123;
         String ipAddress = "127.0.0.1";
@@ -60,18 +60,11 @@ public class NetworkServiceTest {
         long primaryId = 125;
         String primaryAddress = "192.168.1.1";
 
-        networkService.createIpAddress(addressId, vm.vmId, ipAddress, IpAddress.IpAddressType.PRIMARY);
-        networkService.createIpAddress(addressId + 1, vm.vmId, "127.0.0.2", IpAddress.IpAddressType.SECONDARY);
-        networkService.createIpAddress(primaryId, vm.vmId, primaryAddress, IpAddress.IpAddressType.PRIMARY);
-        try {
-            networkService.createIpAddress(126, vm.vmId, primaryAddress, IpAddress.IpAddressType.SECONDARY);
-            Assert.fail("This should fail to insert a duplicate IP address");
-        }
-        catch (Exception e) {
-        }
+        networkService.createIpAddress(primaryId, vm.vmId, primaryAddress, IpAddress.IpAddressType.PRIMARY, new Long(3));
+        networkService.createIpAddress(addressId, vm.vmId, ipAddress, IpAddress.IpAddressType.SECONDARY);
 
         List<IpAddress> ips = networkService.getVmIpAddresses(vm.vmId);
-        assertEquals(3, ips.size());
+        assertEquals(2, ips.size());
 
         IpAddress ip = networkService.getIpAddress(addressId);
 
@@ -81,6 +74,7 @@ public class NetworkServiceTest {
         assertEquals(addressId, ip.ipAddressId);
         assertEquals(ipAddress, ip.ipAddress);
         assertEquals(IpAddress.IpAddressType.SECONDARY, ip.ipAddressType);
+        assertTrue(ip.mailRelayId == null);
 
         IpAddress primary = networkService.getVmPrimaryAddress(vm.vmId);
 
@@ -90,10 +84,66 @@ public class NetworkServiceTest {
         assertEquals(primaryId, primary.ipAddressId);
         assertEquals(primaryAddress, primary.ipAddress);
         assertEquals(IpAddress.IpAddressType.PRIMARY, primary.ipAddressType);
+        assertEquals(new Long(3), primary.mailRelayId);
+    }
+
+    @Test
+    public void testDeleteIp() {
+        long addressId = 123;
+        String ipAddress = "127.0.0.1";
+        networkService.createIpAddress(addressId, vm.vmId, ipAddress, IpAddress.IpAddressType.SECONDARY);
+
+        IpAddress ip = networkService.getIpAddress(addressId);
 
         networkService.destroyIpAddress(addressId);
 
         IpAddress deletedIp = networkService.getIpAddress(addressId);
         assertTrue(deletedIp.validUntil.isBefore(ip.validUntil));
+    }
+
+    @Test
+    public void TestDuplicatePrimaryFails() {
+        long primaryId = 125;
+        String primaryAddress = "192.168.1.1";
+
+        networkService.createIpAddress(primaryId, vm.vmId, primaryAddress, IpAddress.IpAddressType.PRIMARY, new Long(3));
+        try {
+            networkService.createIpAddress(primaryId + 1, vm.vmId, "127.0.0.2", IpAddress.IpAddressType.PRIMARY, new Long(3));
+            Assert.fail("This should fail to insert a new Primary IP");
+        }
+        catch (Exception se) {
+        }
+    }
+
+    @Test
+    public void TestDuplicateMailRelayId() {
+        long primaryId = 125;
+        String primaryAddress = "192.168.1.1";
+
+        networkService.createIpAddress(primaryId, vm.vmId, primaryAddress, IpAddress.IpAddressType.PRIMARY, new Long(3));
+        try {
+            networkService.createIpAddress(primaryId + 2, vm.vmId, "127.0.0.3", IpAddress.IpAddressType.SECONDARY, new Long(3));
+            Assert.fail("This should fail to insert a duplicate mail relay id");
+        }
+        catch (Exception e) {
+        }
+    }
+
+    @Test
+    public void TestDuplicateIpAddress() {
+        long addressId = 123;
+        long primaryId = 125;
+        String primaryAddress = "192.168.1.1";
+        String ipAddress = "127.0.0.1";
+
+        networkService.createIpAddress(primaryId, vm.vmId, primaryAddress, IpAddress.IpAddressType.PRIMARY, new Long(3));
+        networkService.createIpAddress(addressId, vm.vmId, ipAddress, IpAddress.IpAddressType.SECONDARY);
+
+        try {
+            networkService.createIpAddress(126, vm.vmId, primaryAddress, IpAddress.IpAddressType.SECONDARY);
+            Assert.fail("This should fail to insert a duplicate IP address");
+        }
+        catch (Exception e) {
+        }
     }
 }

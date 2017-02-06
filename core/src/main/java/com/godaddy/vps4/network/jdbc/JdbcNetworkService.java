@@ -1,7 +1,5 @@
 package com.godaddy.vps4.network.jdbc;
 
-import java.sql.ResultSet;
-import java.sql.SQLException;
 import java.util.List;
 import java.util.UUID;
 
@@ -23,21 +21,15 @@ public class JdbcNetworkService implements NetworkService {
     }
 
     @Override
-    public void createIpAddress(long ipAddressId, UUID vmId, String address, IpAddressType type) {
-
-        Sql.with(dataSource).exec("SELECT * FROM ip_address_create(?,?,?,?)", null,
-                ipAddressId, vmId, address, type.getId());
-
+    public void createIpAddress(long ipAddressId, UUID vmId, String address, IpAddressType ipAddressType) {
+        createIpAddress(ipAddressId, vmId, address, ipAddressType, null);
     }
 
-    protected IpAddress mapIpAddress(ResultSet rs) throws SQLException {
+    @Override
+    public void createIpAddress(long ipAddressId, UUID vmId, String ipAddress, IpAddressType ipAddressType, Long mailRelayTargetId) {
+        Sql.with(dataSource).exec("SELECT * FROM ip_address_create(?,?,?,?,?)", null,
+                ipAddressId, vmId, ipAddress, ipAddressType.getId(), mailRelayTargetId);
 
-        return new IpAddress(rs.getLong("ip_address_id"),
-                UUID.fromString(rs.getString("vm_id")),
-                rs.getString("ip_address"),
-                IpAddress.IpAddressType.valueOf(rs.getInt("ip_address_type_id")),
-                rs.getTimestamp("valid_on").toInstant(),
-                rs.getTimestamp("valid_until").toInstant());
     }
 
     @Override
@@ -50,27 +42,27 @@ public class JdbcNetworkService implements NetworkService {
     public IpAddress getIpAddress(long ipAddressId) {
         return Sql.with(dataSource).exec(
                 "SELECT * FROM ip_address ip " + " WHERE ip_address_id=? ",
-                Sql.nextOrNull(this::mapIpAddress), ipAddressId);
+                Sql.nextOrNull(IpAddressMapper::mapIpAddress), ipAddressId);
     }
 
     @Override
     public List<IpAddress> getVmIpAddresses(UUID vmId) {
         return Sql.with(dataSource).exec(
                 "SELECT * FROM ip_address ip " + " WHERE vm_id=? ",
-                Sql.listOf(this::mapIpAddress), vmId);
+                Sql.listOf(IpAddressMapper::mapIpAddress), vmId);
     }
 
     @Override
     public IpAddress getVmPrimaryAddress(UUID vmId) {
         return Sql.with(dataSource).exec(
                 "SELECT * FROM ip_address ip WHERE vm_id=? AND ip_address_type_id = ?",
-                Sql.nextOrNull(this::mapIpAddress), vmId, IpAddress.IpAddressType.PRIMARY.getId());
+                Sql.nextOrNull(IpAddressMapper::mapIpAddress), vmId, IpAddress.IpAddressType.PRIMARY.getId());
     }
     
     @Override
     public IpAddress getVmPrimaryAddress(long hfsVmId) {
         return Sql.with(dataSource).exec(
                 "SELECT * FROM ip_address ip JOIN virtual_machine vm on ip.vm_id = vm.vm_id WHERE vm.hfs_vm_id=? AND ip.ip_address_type_id = ?",
-                Sql.nextOrNull(this::mapIpAddress), hfsVmId, IpAddress.IpAddressType.PRIMARY.getId());
+                Sql.nextOrNull(IpAddressMapper::mapIpAddress), hfsVmId, IpAddress.IpAddressType.PRIMARY.getId());
     }
 }

@@ -136,8 +136,10 @@ public class ProvisionVm extends ActionCommand<ProvisionVm.Request, ProvisionVm.
         context.execute(BindIp.class, bindRequest);
 
         // Add the ip to the database
-        context.execute("Create-"+ip.addressId, ctx -> {networkService.createIpAddress(ip.addressId, vmInfo.vmId, ip.address, IpAddressType.PRIMARY);
-                                                        return null;});
+        context.execute("Create-" + ip.addressId, ctx -> {
+            networkService.createIpAddress(ip.addressId, vmInfo.vmId, ip.address, IpAddressType.PRIMARY, mailRelay.id);
+            return null;
+        });
 
         if (vmInfo.image.controlPanel == ControlPanel.CPANEL) {
             // VM with cPanel
