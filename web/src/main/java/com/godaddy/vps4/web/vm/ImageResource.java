@@ -22,7 +22,7 @@ import io.swagger.annotations.Api;
 @Vps4Api
 @Api(tags = { "vms" })
 
-@Path("/api/vms")
+@Path("/api")
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
 public class ImageResource {
@@ -37,7 +37,7 @@ public class ImageResource {
     }
     
     @GET
-    @Path("/images")
+    @Path("/vmImages")
     public Set<Image> getImages(@QueryParam("os") String os,
                                 @QueryParam("controlPanel") String controlPanel) {
         logger.info("getting images with os = {} and controlPanel = {}", os, controlPanel);

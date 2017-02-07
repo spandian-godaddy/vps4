@@ -1,7 +1,6 @@
 package com.godaddy.vps4.web.vm;
 
 import java.time.Instant;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -50,8 +49,6 @@ import gdg.hfs.orchestration.CommandService;
 import gdg.hfs.orchestration.CommandState;
 import gdg.hfs.vhfs.cpanel.CPanelService;
 import gdg.hfs.vhfs.vm.CreateVMWithFlavorRequest;
-import gdg.hfs.vhfs.vm.Flavor;
-import gdg.hfs.vhfs.vm.FlavorList;
 import gdg.hfs.vhfs.vm.Vm;
 import gdg.hfs.vhfs.vm.VmService;
 import io.swagger.annotations.Api;
@@ -99,20 +96,6 @@ public class VmResource {
         this.commandService = commandService;
         this.config = config;
         sgidPrefix = config.get("hfs.sgid.prefix", "vps4-undefined-");
-    }
-
-    @GET
-    @Path("/flavors")
-    public List<Flavor> getFlavors() {
-
-        logger.info("getting flavors from HFS...");
-
-        FlavorList flavorList = vmService.listFlavors();
-        logger.info("flavorList: {}", flavorList);
-        if (flavorList != null && flavorList.results != null) {
-            return flavorList.results;
-        }
-        return new ArrayList<>();
     }
 
     @GET
