@@ -67,6 +67,16 @@ public class JdbcActionService implements ActionService {
     }
 
     @Override
+    public Action getVmAction(UUID vmId, long actionId) {
+        return Sql.with(dataSource).exec("SELECT * FROM vm_action "
+                + " JOIN action_status on vm_action.status_id = action_status.status_id"
+                + " JOIN action_type on vm_action.action_type_id = action_type.type_id"
+                + " WHERE id = ?"
+                + " AND vm_id = ?;",
+                Sql.nextOrNull(this::mapAction), actionId, vmId);
+    }
+
+    @Override
     public ResultSubset<Action> getActions(UUID vmId, long limit, long offset){
         return Sql.with(dataSource).exec("SELECT *, count(*) over() as total_rows FROM vm_action "
                 + " JOIN action_status on vm_action.status_id = action_status.status_id"
