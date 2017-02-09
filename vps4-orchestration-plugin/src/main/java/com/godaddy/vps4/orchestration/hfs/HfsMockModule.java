@@ -11,6 +11,7 @@ import gdg.hfs.vhfs.cpanel.CPanelService;
 import gdg.hfs.vhfs.mailrelay.MailRelayAction;
 import gdg.hfs.vhfs.mailrelay.MailRelayAction.Status;
 import gdg.hfs.vhfs.mailrelay.MailRelayService;
+import gdg.hfs.vhfs.mailrelay.MailRelayTarget;
 import gdg.hfs.vhfs.network.AddressAction;
 import gdg.hfs.vhfs.network.IpAddress;
 import gdg.hfs.vhfs.network.NetworkService;
@@ -49,9 +50,13 @@ public class HfsMockModule extends AbstractModule {
         inProgressAction.status = Status.IN_PROGRESS;
         inProgressAction.action_id = 1;
         inProgressAction.id = 1;
+        
+        MailRelayTarget mailRelayTarget = new MailRelayTarget();
+        mailRelayTarget.id = 1234;
 
         Mockito.when(mailRelayService.createMailRelay(Mockito.anyString())).thenReturn(inProgressAction);
         Mockito.when(mailRelayService.getMailRelayAction(Mockito.anyLong(), Mockito.anyLong())).thenReturn(completeAction);
+        Mockito.when(mailRelayService.getTargetSpec(Mockito.anyString())).thenReturn(mailRelayTarget);
 
         return mailRelayService;
     }
