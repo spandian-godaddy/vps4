@@ -1,0 +1,1 @@
+UPDATE image SET name='CentOS 7 (cPanel 11)' WHERE hfs_name='centos-7-cPanel-11';
