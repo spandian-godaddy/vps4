@@ -7,6 +7,8 @@ import com.godaddy.vps4.orchestration.hfs.network.BindIp;
 import com.godaddy.vps4.orchestration.hfs.network.ReleaseIp;
 import com.godaddy.vps4.orchestration.hfs.network.UnbindIp;
 import com.godaddy.vps4.orchestration.hfs.network.WaitForAddressAction;
+import com.godaddy.vps4.orchestration.hfs.plesk.ConfigurePlesk;
+import com.godaddy.vps4.orchestration.hfs.plesk.WaitForPleskAction;
 import com.godaddy.vps4.orchestration.hfs.smtp.CreateMailRelay;
 import com.godaddy.vps4.orchestration.hfs.smtp.WaitForMailRelayAction;
 import com.godaddy.vps4.orchestration.hfs.sysadmin.RefreshCpanelLicense;
@@ -55,6 +57,10 @@ public class HfsCommandModule extends AbstractModule {
         bind(RefreshCpanelLicense.class);        
         bind(WaitForCpanelAction.class);
 
+        // Plesk
+        bind(ConfigurePlesk.class);
+        bind(WaitForPleskAction.class);
+        
         // SMTP
         bind(CreateMailRelay.class);
         bind(WaitForMailRelayAction.class);

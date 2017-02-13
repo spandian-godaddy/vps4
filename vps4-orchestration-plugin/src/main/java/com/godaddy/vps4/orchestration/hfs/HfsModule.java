@@ -14,6 +14,7 @@ import com.google.inject.AbstractModule;
 import gdg.hfs.vhfs.cpanel.CPanelService;
 import gdg.hfs.vhfs.mailrelay.MailRelayService;
 import gdg.hfs.vhfs.network.NetworkService;
+import gdg.hfs.vhfs.plesk.PleskService;
 import gdg.hfs.vhfs.sysadmin.SysAdminService;
 import gdg.hfs.vhfs.vm.VmService;
 
@@ -25,6 +26,7 @@ public class HfsModule extends AbstractModule {
         bind(VmService.class).toProvider(new HfsClientProvider<VmService>(VmService.class)).in(Singleton.class);
         bind(NetworkService.class).toProvider(new HfsClientProvider<NetworkService>(NetworkService.class)).in(Singleton.class);
         bind(CPanelService.class).toProvider(new HfsClientProvider<CPanelService>(CPanelService.class)).in(Singleton.class);
+        bind(PleskService.class).toProvider(new HfsClientProvider<PleskService>(PleskService.class)).in(Singleton.class);
         bind(MailRelayService.class).toProvider(new HfsClientProvider<MailRelayService>(MailRelayService.class)).in(Singleton.class);
         
       // hook Jackson into Jersey as the POJO <-> JSON mapper

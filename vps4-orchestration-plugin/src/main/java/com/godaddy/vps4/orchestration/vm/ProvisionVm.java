@@ -17,6 +17,8 @@ import com.godaddy.vps4.orchestration.hfs.cpanel.ConfigureCpanel.ConfigureCpanel
 import com.godaddy.vps4.orchestration.hfs.network.AllocateIp;
 import com.godaddy.vps4.orchestration.hfs.network.BindIp;
 import com.godaddy.vps4.orchestration.hfs.network.BindIp.BindIpRequest;
+import com.godaddy.vps4.orchestration.hfs.plesk.ConfigurePlesk;
+import com.godaddy.vps4.orchestration.hfs.plesk.ConfigurePlesk.ConfigurePleskRequest;
 import com.godaddy.vps4.orchestration.hfs.smtp.CreateMailRelay;
 import com.godaddy.vps4.orchestration.hfs.sysadmin.SetPassword;
 import com.godaddy.vps4.orchestration.hfs.sysadmin.ToggleAdmin;
@@ -109,8 +111,6 @@ public class ProvisionVm extends ActionCommand<ProvisionVm.Request, ProvisionVm.
         // Get the hfs vm
         Vm hfsVm = context.execute("GetVmAfterCreate", ctx -> (Vm)vmService.getVm(vmAction.vmId));
         
-        // TODO update action with VM
-
         // VPS4 VM bookeeping (Add hfs vmid to the virtual_machine db row)
         context.execute("Vps4ProvisionVm", ctx -> {
             virtualMachineService.addHfsVmIdToVirtualMachine(vmInfo.vmId, hfsVm.vmId);
@@ -148,6 +148,14 @@ public class ProvisionVm extends ActionCommand<ProvisionVm.Request, ProvisionVm.
             // configure cpanel on the vm
             ConfigureCpanelRequest cpanelRequest = createConfigureCpanelRequest(hfsVm);
             context.execute(ConfigureCpanel.class, cpanelRequest);
+        
+        } else if (vmInfo.image.controlPanel == ControlPanel.PLESK) {
+            // VM with Plesk image
+            setStep(CreateVmStep.ConfiguringPlesk);
+            
+            // configure Plesk on the vm
+            ConfigurePleskRequest pleskRequest = createConfigurePleskRequest(hfsVm, request);
+            context.execute(ConfigurePlesk.class, pleskRequest);
         }
 
         // enable/disable admin access for user
@@ -181,6 +189,11 @@ public class ProvisionVm extends ActionCommand<ProvisionVm.Request, ProvisionVm.
         cpanelRequest.vmId = hfsVm.vmId;
         cpanelRequest.publicIp = hfsVm.address.ip_address;
         return cpanelRequest;
+    }
+
+    private ConfigurePleskRequest createConfigurePleskRequest(Vm hfsVm, Request request) {
+        ConfigurePleskRequest pleskRequest = new ConfigurePleskRequest(hfsVm.vmId, request.hfsRequest.username, request.hfsRequest.password);
+        return pleskRequest;
     }
 
     private BindIpRequest createBindIpRequest(gdg.hfs.vhfs.network.IpAddress ip, Vm hfsVm) {

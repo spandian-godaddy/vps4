@@ -12,5 +12,6 @@ public enum CreateVmStep {
     SettingAdminAccess,
     VerifyingSetup,
     SetupComplete,
-    ConfiguringCPanel;
+    ConfiguringCPanel,
+    ConfiguringPlesk;
 }
