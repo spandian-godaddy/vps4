@@ -13,7 +13,6 @@ import com.godaddy.vps4.orchestration.ActionCommand;
 import com.godaddy.vps4.orchestration.ActionRequest;
 import com.godaddy.vps4.orchestration.hfs.sysadmin.RefreshCpanelLicense;
 import com.godaddy.vps4.orchestration.hfs.sysadmin.SetHostname;
-import com.godaddy.vps4.orchestration.vm.ProvisionVm.ActionState;
 import com.godaddy.vps4.vm.ActionService;
 import com.godaddy.vps4.vm.UpdateHostnameStep;
 import com.godaddy.vps4.vm.VirtualMachineService;

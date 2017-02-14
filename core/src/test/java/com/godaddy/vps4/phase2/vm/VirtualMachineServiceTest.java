@@ -88,7 +88,6 @@ public class VirtualMachineServiceTest {
         assertEquals(managedLevel, vmRequest.managedLevel);
 
         String name = "testServer";
-        long imageId = 1;
         int specId = 1;
 
         ProvisionVirtualMachineParameters params = new ProvisionVirtualMachineParameters(vps4User.getId(), 1, "vps4-testing-",

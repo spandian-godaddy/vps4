@@ -14,7 +14,6 @@ import com.godaddy.vps4.security.Vps4UserService;
 import com.godaddy.vps4.vm.ImageService;
 import com.godaddy.vps4.vm.VirtualMachineService;
 import com.godaddy.vps4.vm.VirtualMachineService.ProvisionVirtualMachineParameters;
-import com.godaddy.vps4.vm.VirtualMachineSpec;
 import com.godaddy.vps4.vm.VmModule;
 import com.godaddy.vps4.web.security.AutoCreateVps4UserModule;
 import com.google.inject.Guice;
@@ -43,8 +42,6 @@ public class CreateTestVmRequest {
     }
 
     protected void provision(int tier, int managedLevel, String operatingSystem, String controlPanel, String shopperId) {
-
-        VirtualMachineSpec spec = virtualMachineService.getSpec(tier);
 
         UUID orionGuid = UUID.randomUUID();
         virtualMachineService.createVirtualMachineCredit(orionGuid, operatingSystem, controlPanel, tier, managedLevel, shopperId);

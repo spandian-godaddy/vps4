@@ -1,17 +1,15 @@
 package com.godaddy.vps4.orchestration.hfs.sysadmin;
 
-import com.godaddy.vps4.orchestration.hfs.cpanel.WaitForCpanelAction;
-import com.google.inject.Inject;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import com.godaddy.vps4.orchestration.hfs.cpanel.WaitForCpanelAction;
+import com.google.inject.Inject;
 
 import gdg.hfs.orchestration.Command;
 import gdg.hfs.orchestration.CommandContext;
 import gdg.hfs.vhfs.cpanel.CPanelAction;
 import gdg.hfs.vhfs.cpanel.CPanelService;
-import gdg.hfs.vhfs.sysadmin.SysAdminAction;
-import gdg.hfs.vhfs.sysadmin.SysAdminService;
 
 public class RefreshCpanelLicense implements Command<RefreshCpanelLicense.Request, Void> {
 

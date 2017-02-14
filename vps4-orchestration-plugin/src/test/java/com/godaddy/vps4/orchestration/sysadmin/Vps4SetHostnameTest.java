@@ -1,14 +1,16 @@
 package com.godaddy.vps4.orchestration.sysadmin;
 
-import static org.mockito.Mockito.*;
+import static org.mockito.Matchers.eq;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
-import java.util.Arrays;
 import java.util.UUID;
 
 import org.junit.Test;
 
 import com.godaddy.vps4.orchestration.TestCommandContext;
-import com.godaddy.vps4.orchestration.hfs.ActionNotCompletedException;
 import com.godaddy.vps4.orchestration.hfs.sysadmin.SetHostname;
 import com.godaddy.vps4.orchestration.hfs.sysadmin.SetPassword;
 import com.godaddy.vps4.orchestration.hfs.sysadmin.WaitForSysAdminAction;
@@ -20,9 +22,9 @@ import com.google.inject.Injector;
 import gdg.hfs.orchestration.CommandContext;
 import gdg.hfs.orchestration.GuiceCommandProvider;
 import gdg.hfs.vhfs.sysadmin.SysAdminAction;
+import gdg.hfs.vhfs.sysadmin.SysAdminAction.Status;
 import gdg.hfs.vhfs.sysadmin.SysAdminService;
 import junit.framework.Assert;
-import gdg.hfs.vhfs.sysadmin.SysAdminAction.Status;
 
 public class Vps4SetHostnameTest {
 
