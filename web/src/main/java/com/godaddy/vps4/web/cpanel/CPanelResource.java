@@ -17,12 +17,14 @@ import javax.ws.rs.core.MediaType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.godaddy.vps4.Vps4Exception;
 import com.godaddy.vps4.cpanel.CPanelAccount;
 import com.godaddy.vps4.cpanel.CPanelSession;
 import com.godaddy.vps4.cpanel.CpanelAccessDeniedException;
 import com.godaddy.vps4.cpanel.Vps4CpanelService;
 import com.godaddy.vps4.security.PrivilegeService;
 import com.godaddy.vps4.security.Vps4User;
+import com.godaddy.vps4.vm.Image.ControlPanel;
 import com.godaddy.vps4.vm.VirtualMachine;
 import com.godaddy.vps4.vm.VirtualMachineService;
 import com.godaddy.vps4.cpanel.CpanelClient.CpanelServiceType;
@@ -62,7 +64,7 @@ public class CPanelResource {
         logger.info("get WHM session for vmId {}", vmId);
 
         VirtualMachine vm = resolveVirtualMachine(vmId);
-
+        
         try {
             return cpanelService.createSession(vm.hfsVmId, "root", CpanelServiceType.whostmgrd);
         } catch (CpanelAccessDeniedException e) {
@@ -125,6 +127,9 @@ public class CPanelResource {
         VirtualMachine vm = virtualMachineService.getVirtualMachine(vmId);
         if (vm == null) {
             throw new NotFoundException("VM not found: " + vmId);
+        }
+        if (vm.image.controlPanel != ControlPanel.CPANEL) {
+            throw new  Vps4Exception("INVALID_IMAGE", String.format("Image for %s is not cPanel.", vmId));
         }
         return vm;
     }

@@ -15,6 +15,8 @@ import gdg.hfs.vhfs.mailrelay.MailRelayTarget;
 import gdg.hfs.vhfs.network.AddressAction;
 import gdg.hfs.vhfs.network.IpAddress;
 import gdg.hfs.vhfs.network.NetworkService;
+import gdg.hfs.vhfs.plesk.PleskAction;
+import gdg.hfs.vhfs.plesk.PleskService;
 import gdg.hfs.vhfs.sysadmin.SysAdminAction;
 import gdg.hfs.vhfs.sysadmin.SysAdminService;
 import gdg.hfs.vhfs.vm.CreateVMRequest;
@@ -37,6 +39,17 @@ public class HfsMockModule extends AbstractModule {
         bind(CPanelService.class).toInstance(cpService);
         MailRelayService mailRelayService = buildMailRelayService();
         bind(MailRelayService.class).toInstance(mailRelayService);
+        PleskService pleskService = buildPleskService();
+        bind(PleskService.class).toInstance(pleskService);
+        
+    }
+    
+    private PleskService buildPleskService() {
+        PleskAction completeAction = new PleskAction();
+        completeAction.status = PleskAction.Status.COMPLETE;
+        PleskService pleskService = Mockito.mock(PleskService.class);
+        Mockito.when(pleskService.imageConfig(Mockito.anyLong(),  Mockito.anyString(), Mockito.anyString())).thenReturn(completeAction);
+        return pleskService;
     }
 
     private MailRelayService buildMailRelayService() {

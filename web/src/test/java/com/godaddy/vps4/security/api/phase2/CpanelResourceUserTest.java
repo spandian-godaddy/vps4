@@ -5,7 +5,6 @@ import java.util.UUID;
 import javax.sql.DataSource;
 
 import org.junit.After;
-import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mockito;
@@ -20,6 +19,7 @@ import com.godaddy.vps4.security.PrivilegeService;
 import com.godaddy.vps4.security.SecurityModule;
 import com.godaddy.vps4.security.Vps4User;
 import com.godaddy.vps4.security.Vps4UserService;
+import com.godaddy.vps4.security.jdbc.AuthorizationException;
 import com.godaddy.vps4.vm.ActionService;
 import com.godaddy.vps4.vm.VirtualMachine;
 import com.godaddy.vps4.vm.VirtualMachineService;
@@ -74,27 +74,44 @@ public class CpanelResourceUserTest {
     Vps4User user;
 
     UUID vmId;
+    UUID centVmId;
     UUID orionGuid;
+    UUID centOrionGuid;
     long hfsVmId = 98765;
+    long centHfsVmId = 56789;
     Project project;
     VirtualMachine virtualMachine;
+    VirtualMachine centVirtualMachine;
     DataSource dataSource = injector.getInstance(DataSource.class);
 
     @Before
     public void setupTest(){
         injector.injectMembers(this);
         orionGuid = UUID.randomUUID();
+        centOrionGuid = UUID.randomUUID();
         validUser = userService.getOrCreateUserForShopper("validUserShopperId");
         invalidUser = userService.getOrCreateUserForShopper("invalidUserShopperId");
-        virtualMachine = SqlTestData.insertTestVm(orionGuid, validUser.getId(), dataSource);
-        virtualMachineService.addHfsVmIdToVirtualMachine(virtualMachine.vmId, hfsVmId);
         project = projService.createProject("TestProject", validUser.getId(), 1, "vps4-test-");
+        createCpanelVm();
+        createCentVm();
+    }
+
+    private void createCpanelVm() {
+        virtualMachine = SqlTestData.insertTestVm(orionGuid, validUser.getId(), dataSource, "centos-7-cPanel-11");
+        virtualMachineService.addHfsVmIdToVirtualMachine(virtualMachine.vmId, hfsVmId);
         vmId = virtualMachine.vmId;
+    }
+    
+    private void createCentVm() {
+        centVirtualMachine = SqlTestData.insertTestVm(centOrionGuid, validUser.getId(), dataSource);
+        virtualMachineService.addHfsVmIdToVirtualMachine(centVirtualMachine.vmId, centHfsVmId);
+        centVmId = centVirtualMachine.vmId;
     }
 
     @After
     public void teardownTest(){
         SqlTestData.cleanupTestVmAndRelatedData(virtualMachine.vmId, dataSource);
+        SqlTestData.cleanupTestVmAndRelatedData(centVirtualMachine.vmId, dataSource);
     }
 
     private CPanelResource getValidResource() {
@@ -106,37 +123,55 @@ public class CpanelResourceUserTest {
         user = invalidUser;
         return injector.getInstance(CPanelResource.class);
     }
+    
+    
 
     @Test
     public void testGetWHMSession(){
         getValidResource().getWHMSession(vmId);
-        try{
-            getInvalidResource().getWHMSession(vmId);
-            Assert.fail();
-        }catch (Vps4Exception e){
-            //do nothing
-        }
     }
+    
+    @Test(expected=AuthorizationException.class)
+    public void testGetWHMSessionInvalidUser(){
+        getInvalidResource().getWHMSession(vmId);
+    }
+    
+    @Test(expected=Vps4Exception.class)
+    public void testGetWhmSessionInvalidImage(){
+        getValidResource().getWHMSession(centVmId);
+    }
+    
+    
 
     @Test
     public void testGetCPanelSession(){
         getValidResource().getCPanelSession(vmId, "testuser");
-        try{
-            getInvalidResource().getCPanelSession(vmId, "testuser");
-            Assert.fail();
-        }catch (Vps4Exception e){
-            //do nothing
-        }
     }
-
+    
+    @Test(expected=AuthorizationException.class)
+    public void testGetCPanelSessionInvalidUser(){
+        getInvalidResource().getCPanelSession(vmId, "testuser");
+    }
+    
+    @Test(expected=Vps4Exception.class)
+    public void testGetCPanelSessionInvalidImage(){
+        getValidResource().getCPanelSession(centVmId, "testuser");
+    }
+    
+    
     @Test
     public void testListCpanelAccounts(){
         getValidResource().listCpanelAccounts(vmId);
-        try{
-            getInvalidResource().listCpanelAccounts(vmId);
-            Assert.fail();
-        }catch (Vps4Exception e){
-            //do nothing
-        }
     }
+    
+    @Test(expected=AuthorizationException.class)
+    public void testListCpanelAccountsInvalidUser(){
+        getInvalidResource().listCpanelAccounts(vmId);
+    }
+    
+    @Test(expected=Vps4Exception.class)
+    public void testListCpanelAccountsInvalidImage(){
+        getValidResource().listCpanelAccounts(centVmId);
+    }
+    
 }
