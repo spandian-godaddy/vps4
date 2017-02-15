@@ -1,0 +1,18 @@
+{
+    "hdd":{
+        "data":[["2017-02-14 20:54:04 UTC","49826","81.100965216400539"]],
+        "headers":["Timestamp","Free Megabytes","% Free Space"]
+    },
+    "cpu":{
+        "data":[["2017-02-14 20:54:01 UTC","0.47919165028173738","0.197926985985935","0.67711326932119453","0.0052086048943667104","78.571961363257145","98.933903183576945"]],
+        "headers":["Timestamp","% User Time","% Privileged Time","% Processor Time","% Interrupt Time","Interrupts/sec","% Idle Time"]
+    },
+    "mem":{
+        "data":[["2017-02-14 20:54:02 UTC","3591780","848629760","116903936","40448000","5770948608","14.705203903974882"]],
+        "headers":["Timestamp","Available KBytes","Committed Bytes","Pool Paged Bytes","Cache Bytes","Commit Limit","% Committed Bytes In Use"]
+    },
+    "io":{
+        "data":[["2017-02-14 20:54:03 UTC","0.64665606955305577","0","0.64665606955305577","0","7388.0389280862446"]],
+        "headers":["Timestamp","Disk Transfers/sec","Disk Reads/sec","Disk Writes/sec","Disk Read Bytes/sec","Disk Write Bytes/sec"]
+    }
+}

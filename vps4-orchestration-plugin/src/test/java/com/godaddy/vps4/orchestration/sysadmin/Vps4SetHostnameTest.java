@@ -48,27 +48,27 @@ public class Vps4SetHostnameTest {
         SetHostname.Request setHostnameRequest = new SetHostname.Request();
         setHostnameRequest.hfsVmId = 42;
         setHostnameRequest.hostname = "newhostname.testing.tld";
-        
+
         Vps4SetHostname.Request request = new Vps4SetHostname.Request();
         request.actionId = 12;
         request.oldHostname = "oldhostname.testing.tld";
         request.vmId = UUID.randomUUID();
         request.setHostnameRequest = setHostnameRequest;
-        
+
         SysAdminAction action = new SysAdminAction();
         action.vmId = request.setHostnameRequest.hfsVmId;
         action.sysAdminActionId = 73;
         action.status = Status.COMPLETE;
 
-        when(sysAdminService.changeHostname(eq(setHostnameRequest.hfsVmId), eq(setHostnameRequest.hostname))).thenReturn(action);
+        when(sysAdminService.changeHostname(eq(setHostnameRequest.hfsVmId), eq(setHostnameRequest.hostname), eq(null))).thenReturn(action);
         when(sysAdminService.getSysAdminAction(action.sysAdminActionId)).thenReturn(action);
 
         command.execute(context, request);
 
-        verify(sysAdminService, times(1)).changeHostname(42, "newhostname.testing.tld");
+        verify(sysAdminService, times(1)).changeHostname(42, "newhostname.testing.tld", null);
         verify(virtualMachineService, times(1)).setHostname(request.vmId, "newhostname.testing.tld");
     }
-    
+
     @Test
     public void testSetHostnameFail() throws Exception {
         // Verify the old hostname is reset in the database upon failure.
@@ -76,19 +76,19 @@ public class Vps4SetHostnameTest {
         SetHostname.Request setHostnameRequest = new SetHostname.Request();
         setHostnameRequest.hfsVmId = 42;
         setHostnameRequest.hostname = "newhostname.testing.tld";
-        
+
         Vps4SetHostname.Request request = new Vps4SetHostname.Request();
         request.actionId = 12;
         request.oldHostname = "oldhostname.testing.tld";
         request.vmId = UUID.randomUUID();
         request.setHostnameRequest = setHostnameRequest;
-        
+
         SysAdminAction action = new SysAdminAction();
         action.vmId = request.setHostnameRequest.hfsVmId;
         action.sysAdminActionId = 73;
         action.status = Status.FAILED;
 
-        when(sysAdminService.changeHostname(eq(setHostnameRequest.hfsVmId), eq(setHostnameRequest.hostname))).thenReturn(action);
+        when(sysAdminService.changeHostname(eq(setHostnameRequest.hfsVmId), eq(setHostnameRequest.hostname), eq(null))).thenReturn(action);
         when(sysAdminService.getSysAdminAction(action.sysAdminActionId)).thenReturn(action);
 
         try{

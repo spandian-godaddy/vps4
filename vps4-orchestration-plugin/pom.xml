@@ -124,17 +124,6 @@
         <!-- HFS Dependencies -->
         <dependency>
             <groupId>hfs</groupId>
-            <artifactId>vhfs-sysadmin-common-lib</artifactId>
-            <version>1.0.0.26964</version>
-            <exclusions>
-                <exclusion>
-                    <groupId>*</groupId>
-                    <artifactId>*</artifactId>
-                </exclusion>
-            </exclusions>
-        </dependency>
-        <dependency>
-            <groupId>hfs</groupId>
             <artifactId>vhfs-network-common-lib</artifactId>
             <version>1.0.0.27800</version>
             <exclusions>

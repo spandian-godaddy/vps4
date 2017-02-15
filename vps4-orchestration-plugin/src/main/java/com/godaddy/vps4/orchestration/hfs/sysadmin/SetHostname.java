@@ -13,26 +13,28 @@ import gdg.hfs.vhfs.sysadmin.SysAdminService;
 public class SetHostname implements Command<SetHostname.Request, Void> {
 
     private static final Logger logger = LoggerFactory.getLogger(SetHostname.class);
-    
+
     public static class Request {
         public long hfsVmId;
         public String hostname;
     }
-    
+
     private final SysAdminService sysAdminService;
-    
+
     @Inject
     public SetHostname(SysAdminService sysAdminService) {
         this.sysAdminService = sysAdminService;
     }
-    
+
     public Void execute(CommandContext context, Request request){
         logger.debug("Setting hostname to {} for hfs vm {}", request.hostname, request.hfsVmId);
-        
-        SysAdminAction hfsSysAction = context.execute("SetHostname", ctx -> sysAdminService.changeHostname(request.hfsVmId, request.hostname));
-        
+
+        // FIXME pull control panel from VM (or add to Request)
+        String controlPanel = null;
+        SysAdminAction hfsSysAction = context.execute("SetHostname", ctx -> sysAdminService.changeHostname(request.hfsVmId, request.hostname, controlPanel));
+
         context.execute("WaitForSetHostname", WaitForSysAdminAction.class, hfsSysAction);
-        
+
         return null;
     }
 }

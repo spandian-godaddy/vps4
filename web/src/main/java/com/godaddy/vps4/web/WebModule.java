@@ -3,6 +3,7 @@ package com.godaddy.vps4.web;
 import com.godaddy.vps4.web.cpanel.CPanelResource;
 import com.godaddy.vps4.web.credit.CreditResource;
 import com.godaddy.vps4.web.sysadmin.SysAdminResource;
+import com.godaddy.vps4.web.sysadmin.UsageStatsResource;
 import com.godaddy.vps4.web.validator.ValidatorResource;
 import com.godaddy.vps4.web.vm.ActionResource;
 import com.godaddy.vps4.web.vm.VmActionResource;
@@ -30,6 +31,7 @@ public class WebModule extends AbstractModule {
         bind(ActionResource.class);
         bind(VmActionResource.class);
         bind(ImageResource.class);
+        bind(UsageStatsResource.class);
 
         bind(Vps4ExceptionMapper.class);
     }
