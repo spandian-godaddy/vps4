@@ -1,8 +1,13 @@
 package com.godaddy.vps4.sysadmin;
 
+import java.time.Instant;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
 import java.util.List;
 
 import org.json.simple.JSONObject;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.godaddy.vps4.sysadmin.VmUsage.CpuUsage;
 import com.godaddy.vps4.sysadmin.VmUsage.DiskUsage;
@@ -11,9 +16,9 @@ import com.godaddy.vps4.sysadmin.VmUsage.MemUsage;
 
 public class VmUsageParser {
 
-    List<String> headers;
+    static final DateTimeFormatter FORMAT = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss z");
 
-    List<List<String>> data;
+    private static final Logger logger = LoggerFactory.getLogger(VmUsageParser.class);
 
     public VmUsage parse(JSONObject json) {
 
@@ -31,12 +36,46 @@ public class VmUsageParser {
     }
 
     @SuppressWarnings("unchecked")
-    protected void readStructure(JSONObject json) {
-        headers = (List<String>)json.get("headers"); // aray of string column names
-        data = (List<List<String>>)json.get("data"); // array of arrays of string column values
+    protected Row readMostRecentRow(JSONObject json) {
+        List<String> headers = (List<String>)json.get("headers"); // aray of string column names
+        List<List<String>> data = (List<List<String>>)json.get("data"); // array of arrays of string column values
         if (headers == null || data == null) {
             throw new IllegalArgumentException("Unexpected data format ('headers'/'data')");
         }
+
+        int timestampIndex = headers.indexOf("Timestamp");
+        if (timestampIndex == -1) {
+            return null;
+        }
+
+        Row row = new Row();
+        row.headers = headers;
+
+        Instant mostRecent = null;
+
+        for (int i=0; i<data.size(); i++) {
+            List<String> values = data.get(i);
+
+            String sTimestamp = values.get(timestampIndex);
+            try {
+                Instant timestamp = FORMAT.parse(sTimestamp, Instant::from);
+
+                if (mostRecent == null || timestamp.isAfter(mostRecent)) {
+                    mostRecent = timestamp;
+                    row.values = values;
+                    row.timestamp = timestamp;
+                }
+
+            } catch (DateTimeParseException e) {
+                logger.warn("Unable to parse timestamp: {}", sTimestamp);
+            }
+        }
+
+        if (row.values == null) {
+            return null;
+        }
+
+        return row;
     }
 
     protected IoUsage parseIo(JSONObject json) {
@@ -45,29 +84,25 @@ public class VmUsageParser {
             return null;
         }
 
-        IoUsage usage = new IoUsage();
-
-        readStructure(json);
-
-        if (data.size() < 1) {
+        Row row = readMostRecentRow(json);
+        if (row == null) {
             return null;
         }
 
-        // TODO look for the most recent data, based on 'Timestamp' header
-        //  with format:  yyyy-MM-dd HH:mm:ss UTC
-        List<String> row = data.get(0);
+        IoUsage usage = new IoUsage();
+        usage.timestamp = row.timestamp;
 
-        if (headers.contains("tps")) {
+        if (row.containsHeader("tps")) {
             // linux
-            usage.readTps = Double.parseDouble(getValue("rtps", row));
-            usage.writeTps = Double.parseDouble(getValue("wtps", row));
-            usage.totalTps = Double.parseDouble(getValue("tps", row));
+            usage.readTps = Double.parseDouble(row.getValue("rtps"));
+            usage.writeTps = Double.parseDouble(row.getValue("wtps"));
+            usage.totalTps = Double.parseDouble(row.getValue("tps"));
 
-        } else if (headers.contains("Disk Transfers/sec")) {
+        } else if (row.containsHeader("Disk Transfers/sec")) {
             // windows
-            usage.readTps = Double.parseDouble(getValue("Disk Reads/sec", row));
-            usage.writeTps = Double.parseDouble(getValue("Disk Writes/sec", row));
-            usage.totalTps = Double.parseDouble(getValue("Disk Transfers/sec", row));
+            usage.readTps = Double.parseDouble(row.getValue("Disk Reads/sec"));
+            usage.writeTps = Double.parseDouble(row.getValue("Disk Writes/sec"));
+            usage.totalTps = Double.parseDouble(row.getValue("Disk Transfers/sec"));
 
         } else {
             return null;
@@ -82,27 +117,23 @@ public class VmUsageParser {
             return null;
         }
 
-        DiskUsage usage = new DiskUsage();
-
-        readStructure(json);
-
-        if (data.size() < 1) {
+        Row row = readMostRecentRow(json);
+        if (row == null) {
             return null;
         }
 
-        // TODO look for the most recent data, based on 'Timestamp' header
-        //  with format:  yyyy-MM-dd HH:mm:ss UTC
-        List<String> row = data.get(0);
+        DiskUsage usage = new DiskUsage();
+        usage.timestamp = row.timestamp;
 
-        if (headers.contains("Used")) {
+        if (row.containsHeader("Used")) {
             // linux
-            usage.mibUsed = Long.parseLong(getValue("Used", row));
-            usage.mibAvail = Long.parseLong(getValue("Avail", row));
+            usage.mibUsed = Long.parseLong(row.getValue("Used"));
+            usage.mibAvail = Long.parseLong(row.getValue("Avail"));
 
-        } else if (headers.contains("% Free Space")) {
+        } else if (row.containsHeader("% Free Space")) {
             // windows
-            long freeMb = Long.parseLong(getValue("Free Megabytes", row));
-            double pctFreeSpace = Double.parseDouble(getValue("% Free Space", row)) / 100d;
+            long freeMb = Long.parseLong(row.getValue("Free Megabytes"));
+            double pctFreeSpace = Double.parseDouble(row.getValue("% Free Space")) / 100d;
             long availMb = (long)(((double)freeMb) / pctFreeSpace);
 
             usage.mibUsed = freeMb;
@@ -121,26 +152,24 @@ public class VmUsageParser {
             return null;
         }
 
-        CpuUsage usage = new CpuUsage();
-
-        readStructure(json);
-
-        if (data.size() < 1) {
+        Row row = readMostRecentRow(json);
+        if (row == null) {
             return null;
         }
 
-        List<String> row = data.get(0);
+        CpuUsage usage = new CpuUsage();
+        usage.timestamp = row.timestamp;
 
-        if (headers.contains("%user")) {
+        if (row.containsHeader("%user")) {
             // linux
-            usage.userPercent = Double.parseDouble(getValue("%user", row));
+            usage.userPercent = Double.parseDouble(row.getValue("%user"));
             // TODO add '%nice' value to 'userPercent' here?
-            usage.systemPercent = Double.parseDouble(getValue("%system", row));
+            usage.systemPercent = Double.parseDouble(row.getValue("%system"));
 
-        } else if (headers.contains("% User Time")) {
+        } else if (row.containsHeader("% User Time")) {
             // windows
-            usage.userPercent = Double.parseDouble(getValue("% User Time", row));
-            usage.systemPercent = Double.parseDouble(getValue("% Processor Time", row));
+            usage.userPercent = Double.parseDouble(row.getValue("% User Time"));
+            usage.systemPercent = Double.parseDouble(row.getValue("% Processor Time"));
 
         } else {
             return null;
@@ -154,25 +183,23 @@ public class VmUsageParser {
             return null;
         }
 
-        MemUsage usage = new MemUsage();
-
-        readStructure(json);
-
-        if (data.size() < 1) {
+        Row row = readMostRecentRow(json);
+        if (row == null) {
             return null;
         }
 
-        List<String> row = data.get(0);
+        MemUsage usage = new MemUsage();
+        usage.timestamp = row.timestamp;
 
-        if (headers.contains("kbcommit")) {
+        if (row.containsHeader("kbcommit")) {
             // linux
-            usage.mibMemFree = Long.parseLong(getValue("kbmemfree", row)) / 1024L;
-            usage.mibMemUsed = Long.parseLong(getValue("kbmemused", row)) / 1024L;
+            usage.mibMemFree = Long.parseLong(row.getValue("kbmemfree")) / 1024L;
+            usage.mibMemUsed = Long.parseLong(row.getValue("kbmemused")) / 1024L;
 
-        } else if (headers.contains("Available KBytes")) {
+        } else if (row.containsHeader("Available KBytes")) {
             // windows
-            long mibMemAvail = Long.parseLong(getValue("Available KBytes", row)) / 1024L;
-            long mibMemCommitted = Long.parseLong(getValue("Committed Bytes", row)) / 1024L;
+            long mibMemAvail = Long.parseLong(row.getValue("Available KBytes")) / 1024L;
+            long mibMemCommitted = Long.parseLong(row.getValue("Committed Bytes")) / 1024L;
             usage.mibMemFree = mibMemAvail;
             usage.mibMemUsed = mibMemCommitted;
 
@@ -183,15 +210,27 @@ public class VmUsageParser {
         return usage;
     }
 
-    protected String getValue(String columnName, List<String> row) {
-        int index = headers.indexOf(columnName);
-        if (index == -1) {
-            throw new IllegalArgumentException("Missing '" + columnName + "' header");
+
+
+    static class Row {
+        Instant timestamp;
+        List<String> headers;
+        List<String> values;
+
+        boolean containsHeader(String headerName) {
+            return headers.contains(headerName);
         }
-        if (index >= row.size()) {
-            throw new IllegalArgumentException("Column '" + columnName + "' missing from data");
+
+        String getValue(String columnName) {
+            int index = headers.indexOf(columnName);
+            if (index == -1) {
+                throw new IllegalArgumentException("Missing '" + columnName + "' header");
+            }
+            if (index >= values.size()) {
+                throw new IllegalArgumentException("Column '" + columnName + "' missing from data");
+            }
+            return values.get(index);
         }
-        return row.get(index);
     }
 
 }
