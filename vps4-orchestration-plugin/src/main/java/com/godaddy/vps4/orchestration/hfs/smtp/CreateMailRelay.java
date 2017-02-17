@@ -39,7 +39,7 @@ public class CreateMailRelay implements Command<CreateMailRelay.Request, MailRel
 
         IpAddressValidator.validateIpAddress(request.ipAddress);
 
-        MailRelayAction hfsAction = context.execute("RequestFromHFS",
+        MailRelayAction hfsAction = context.execute("RequestMailRelayFromHfs",
                 ctx -> mailRelayService.createMailRelay(request.ipAddress));
 
         context.execute(WaitForMailRelayAction.class, hfsAction);

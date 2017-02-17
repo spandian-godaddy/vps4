@@ -5,6 +5,7 @@ import static org.junit.Assert.assertEquals;
 
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.time.Instant;
 
 import org.json.simple.JSONObject;
 import org.json.simple.JSONValue;
@@ -64,19 +65,23 @@ public class VmUsageParserTest {
             assertNotNull(usage.disk);
             assertEquals(49826L, usage.disk.mibUsed);
             assertEquals(61437L, usage.disk.mibAvail);
+            assertEquals("2017-02-14T20:54:04Z", usage.disk.timestamp.toString());
 
             assertNotNull(usage.cpu);
             assertEquals(0.47919d, usage.cpu.userPercent, 0.001d);
             assertEquals(0.67711d, usage.cpu.systemPercent, 0.001d);
+            assertEquals("2017-02-14T20:54:01Z", usage.cpu.timestamp.toString());
 
             assertNotNull(usage.io);
             assertEquals(0.6466d, usage.io.totalTps, 0.0001d);
             assertEquals(0d, usage.io.readTps, 0d);
             assertEquals(0.6466d, usage.io.writeTps, 0.0001d);
+            assertEquals("2017-02-14T20:54:03Z", usage.io.timestamp.toString());
 
             assertNotNull(usage.mem);
             assertEquals(3507d, usage.mem.mibMemFree, 0d);
             assertEquals(828740d, usage.mem.mibMemUsed, 0d);
+            assertEquals("2017-02-14T20:54:02Z", usage.mem.timestamp.toString());
         }
 
     }

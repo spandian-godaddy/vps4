@@ -16,6 +16,8 @@ import javax.ws.rs.core.Response;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.godaddy.vps4.Vps4Exception;
 import com.godaddy.vps4.security.PrivilegeService;
@@ -36,6 +38,8 @@ import io.swagger.annotations.Api;
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
 public class UsageStatsResource {
+
+    private static final Logger logger = LoggerFactory.getLogger(UsageStatsResource.class);
 
     final SysAdminService sysAdminService;
 
@@ -87,6 +91,9 @@ public class UsageStatsResource {
                         "BAD_USAGE_RESPONSE",
                         "Unable to parse usage response");
             }
+        } else {
+            logger.warn("Bad response for server usage for vm {}: status {}",
+                    vmId, response.getStatus());
         }
 
         return null;
