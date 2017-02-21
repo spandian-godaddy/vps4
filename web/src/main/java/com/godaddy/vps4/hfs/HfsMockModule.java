@@ -1,9 +1,13 @@
 package com.godaddy.vps4.hfs;
 
+import org.mockito.Mockito;
+
 import com.google.inject.AbstractModule;
 import com.google.inject.Provides;
 
 import gdg.hfs.vhfs.cpanel.CPanelService;
+import gdg.hfs.vhfs.sysadmin.SysAdminAction;
+import gdg.hfs.vhfs.sysadmin.SysAdminService;
 import gdg.hfs.vhfs.vm.CreateVMRequest;
 import gdg.hfs.vhfs.vm.CreateVMWithFlavorRequest;
 import gdg.hfs.vhfs.vm.FlavorList;
@@ -74,7 +78,20 @@ public class HfsMockModule extends AbstractModule {
 
     @Override
     public void configure() {
+        SysAdminService sysAdminService = buildSysAdminService();
+        bind(SysAdminService.class).toInstance(sysAdminService);
     }
+    
+    private SysAdminService buildSysAdminService(){
+        SysAdminService sysAdminService = Mockito.mock(SysAdminService.class);
+        SysAdminAction completeAction = new SysAdminAction();
+        completeAction.status = SysAdminAction.Status.COMPLETE;
+
+        Mockito.when(sysAdminService.getSysAdminAction(Mockito.anyLong())).thenReturn(completeAction);
+
+        return sysAdminService;
+
+     }
 
     @Provides
     public VmService buildMockVmService() {

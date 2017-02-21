@@ -17,6 +17,7 @@ import com.godaddy.vps4.security.PrivilegeService;
 import com.godaddy.vps4.security.SecurityModule;
 import com.godaddy.vps4.security.Vps4User;
 import com.godaddy.vps4.security.Vps4UserService;
+import com.godaddy.vps4.vm.Action;
 import com.godaddy.vps4.vm.ActionService;
 import com.godaddy.vps4.vm.VirtualMachine;
 import com.godaddy.vps4.vm.VirtualMachineService;
@@ -69,14 +70,10 @@ public class SetHostnameTest {
             new SecurityModule(),
             new DatabaseModule(),
             new VmModule(),
-//            new CommandClientModule(),
             new AbstractModule() {
                 
                 @Override
                 protected void configure() {
-//                    adminService = mock(SysAdminService.class);
-                    
-//                    commands = Mockito.mock(Commands.class);
                     commandService = Mockito.mock(CommandService.class);
                     CommandState commandState = new CommandState();
                     commandState.commandId = UUID.randomUUID();
@@ -122,18 +119,18 @@ public class SetHostnameTest {
     }
     
     @Test
-    public void testSetInvalidHostname(){
+    public void testSetValidHostname(){
         SetHostnameRequest request = new SetHostnameRequest();
         request.hostname = "newhostname.test.tst";
-        
+        Action action = getValidResource().setHostname(virtualMachine.vmId, request);
+        Assert.assertNotNull(action.commandId);
+    }
+    
+    @Test(expected=Vps4Exception.class)
+    public void testSetInvalidHostname(){
+        SetHostnameRequest request = new SetHostnameRequest();
+        request.hostname = "invalidHostname..tst";
         getValidResource().setHostname(virtualMachine.vmId, request);
-        try{
-            request.hostname = "invalidHostname..tst";
-            getValidResource().setHostname(virtualMachine.vmId, request);
-            Assert.fail();
-        }catch (Vps4Exception e){
-            //do nothing
-        }
     }
     
     

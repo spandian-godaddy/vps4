@@ -2,6 +2,9 @@ package com.godaddy.vps4.web.util;
 
 import java.util.Arrays;
 
+import com.godaddy.vps4.orchestration.ActionRequest;
+import com.godaddy.vps4.vm.ActionService;
+
 import gdg.hfs.orchestration.CommandGroupSpec;
 import gdg.hfs.orchestration.CommandService;
 import gdg.hfs.orchestration.CommandSpec;
@@ -20,4 +23,11 @@ public class Commands {
 
         return commandService.executeCommand(groupSpec);
     }
+    
+    public static CommandState execute(CommandService commandService, ActionService actionService, String commandName, ActionRequest request) {
+        CommandState command = execute(commandService, commandName, request);
+        actionService.tagWithCommand(request.getActionId(), command.commandId);
+        return command;
+    }
+
 }

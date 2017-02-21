@@ -37,6 +37,7 @@ import com.godaddy.vps4.web.Vps4Api;
 import com.godaddy.vps4.web.util.Commands;
 
 import gdg.hfs.orchestration.CommandService;
+import gdg.hfs.orchestration.CommandState;
 import io.swagger.annotations.Api;
 
 @Vps4Api
@@ -118,7 +119,7 @@ public class SysAdminResource {
         vps4Request.actionId = actionId;
         vps4Request.setPasswordRequest = request;
 
-        Commands.execute(commandService, "Vps4SetPassword", vps4Request);
+        Commands.execute(commandService, actionService, "Vps4SetPassword", vps4Request);
 
         return actionService.getAction(actionId);
     }
@@ -155,7 +156,7 @@ public class SysAdminResource {
         vps4Request.oldHostname = vm.hostname;
         vps4Request.actionId = actionId;
         
-        Commands.execute(commandService, "Vps4SetHostname", vps4Request);
+        Commands.execute(commandService, actionService, "Vps4SetHostname", vps4Request);
         
         return actionService.getAction(actionId);
         
@@ -199,8 +200,8 @@ public class SysAdminResource {
         vps4Request.vmId = vm.vmId;
         vps4Request.username = username;
 
-        Commands.execute(commandService, "Vps4ToggleAdmin", vps4Request);
-
+        Commands.execute(commandService, actionService, "Vps4ToggleAdmin", vps4Request);
+        
         return actionService.getAction(actionId);
 
     }

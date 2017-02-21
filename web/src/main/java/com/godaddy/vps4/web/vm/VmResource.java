@@ -164,7 +164,7 @@ public class VmResource {
             startRequest.actionId = actionId;
             startRequest.hfsVmId = vm.hfsVmId;
 
-            command = Commands.execute(commandService, "Vps4StartVm", startRequest);
+            command = Commands.execute(commandService, actionService, "Vps4StartVm", startRequest);
             break;
 
         case STOP_VM:
@@ -172,7 +172,7 @@ public class VmResource {
             stopRequest.actionId = actionId;
             stopRequest.hfsVmId = vm.hfsVmId;
 
-            command = Commands.execute(commandService, "Vps4StopVm", stopRequest);
+            command = Commands.execute(commandService, actionService, "Vps4StopVm", stopRequest);
             break;
 
         case RESTART_VM:
@@ -180,15 +180,13 @@ public class VmResource {
             restartRequest.actionId = actionId;
             restartRequest.hfsVmId = vm.hfsVmId;
 
-            command = Commands.execute(commandService, "Vps4RestartVm", restartRequest);
+            command = Commands.execute(commandService, actionService, "Vps4RestartVm", restartRequest);
             break;
 
         default:
             throw new IllegalArgumentException("Unknown type: " + type);
         }
         logger.info("managing vm {} with command {}", type, command.commandId);
-
-        actionService.tagWithCommand(actionId, command.commandId);
 
         return actionService.getAction(actionId);
     }
@@ -243,10 +241,8 @@ public class VmResource {
 
         ProvisionVm.Request request = createProvisionVmRequest(hfsRequest, actionId, vmInfo);
 
-        CommandState command = Commands.execute(commandService, "ProvisionVm", request);
+        CommandState command = Commands.execute(commandService, actionService, "ProvisionVm", request);
         logger.info("provisioning VM in {}", command.commandId);
-
-        actionService.tagWithCommand(actionId, command.commandId);
 
         return actionService.getAction(actionId);
     }
@@ -307,14 +303,11 @@ public class VmResource {
 
         long actionId = actionService.createAction(virtualMachine.vmId, ActionType.DESTROY_VM, new JSONObject().toJSONString(), user.getId());
 
-
         Vps4DestroyVm.Request request = new Vps4DestroyVm.Request();
         request.actionId = actionId;
         request.hfsVmId = virtualMachine.hfsVmId;
 
-        CommandState command = Commands.execute(commandService, "Vps4DestroyVm", request);
-
-        actionService.tagWithCommand(actionId, command.commandId);
+        Commands.execute(commandService, actionService, "Vps4DestroyVm", request);
 
         return actionService.getAction(actionId);
     }

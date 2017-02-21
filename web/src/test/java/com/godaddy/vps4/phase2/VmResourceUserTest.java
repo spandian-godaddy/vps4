@@ -138,14 +138,16 @@ public class VmResourceUserTest {
         user = validUser;
         ActionResource validActionResource = injector.getInstance(ActionResource.class);
         validActionResource.getAction(actionId);
-        try {
-            user = invalidUser;
-            ActionResource invalidActionResource = injector.getInstance(ActionResource.class);
-            invalidActionResource.getAction(actionId);
-            Assert.fail();
-        } catch (Vps4Exception e) {
-            System.out.println(e);
-        }
+    }
+    
+    @Test(expected=Vps4Exception.class)
+    public void testListActionsInvalidUser() {
+        long actionId = actionService.createAction(vmIds.get(0), ActionType.CREATE_VM, "{}", validUser.getId());
+        user = validUser;
+        ActionResource validActionResource = injector.getInstance(ActionResource.class);
+        user = invalidUser;
+        ActionResource invalidActionResource = injector.getInstance(ActionResource.class);
+        invalidActionResource.getAction(actionId);
     }
 
     @Test
@@ -156,89 +158,85 @@ public class VmResourceUserTest {
         VmActionResource validActionResource = injector.getInstance(VmActionResource.class);
         validActionResource.getVmAction(vmId, actionId);
 
-        try {
-            user = invalidUser;
-            VmActionResource invalidActionResource = injector.getInstance(VmActionResource.class);
-            invalidActionResource.getVmAction(vmId, actionId);
-            Assert.fail();
-        } catch (Vps4Exception e) {
-            System.out.println(e);
-        }
+    }
+    
+    @Test(expected=Vps4Exception.class)
+    public void testGetVmActionInvalidUser() {
+        UUID vmId = vmIds.get(0);
+        long actionId = actionService.createAction(vmId, ActionType.CREATE_VM, "{}", validUser.getId());
+        user = invalidUser;
+        VmActionResource invalidActionResource = injector.getInstance(VmActionResource.class);
+        invalidActionResource.getVmAction(vmId, actionId);
     }
 
     @Test
     public void testGetVm() {
         newValidVmResource().getVm(vmIds.get(0));
-        try {
-            newInvalidVmResource().getVm(vmIds.get(0));
-            Assert.fail();
-        } catch (NotFoundException e) {
-            // do nothing
-        }
+    }
+    
+    @Test(expected=NotFoundException.class)
+    public void testGetVmNotFound() {
+        newInvalidVmResource().getVm(vmIds.get(0));
+    }
+    
+    @Test
+    public void testStartVm() throws VmNotFoundException{
+        Action action = newValidVmResource().startVm(vmIds.get(0));
+        Assert.assertNotNull(action.commandId);
     }
 
-    @Test
-    public void testStartVm() throws VmNotFoundException {
-        newValidVmResource().startVm(vmIds.get(0));
-        try {
-            newInvalidVmResource().startVm(vmIds.get(0));
-            Assert.fail();
-        } catch (NotFoundException e) {
-            // do nothing
-        }
+    @Test(expected=NotFoundException.class)
+    public void testStartVmInvalid() throws VmNotFoundException {
+        newInvalidVmResource().startVm(vmIds.get(0));
     }
 
     @Test
     public void testStopVm() throws VmNotFoundException {
-        newValidVmResource().stopVm(vmIds.get(0));
-        try {
-            newInvalidVmResource().stopVm(vmIds.get(0));
-            Assert.fail();
-        } catch (NotFoundException e) {
-            // do nothing
-        }
+        Action action = newValidVmResource().stopVm(vmIds.get(0));
+        Assert.assertNotNull(action.commandId);
     }
 
-    @Test
-    public void testRestartVm() throws VmNotFoundException {
-        newValidVmResource().restartVm(vmIds.get(0));
-        try {
-            newInvalidVmResource().restartVm(vmIds.get(0));
-            Assert.fail();
-        } catch (NotFoundException e) {
-            // do nothing
-        }
+    @Test(expected=NotFoundException.class)
+    public void testRestartVmInvalid() throws VmNotFoundException {
+        newInvalidVmResource().restartVm(vmIds.get(0));
     }
 
     @Test
     public void testDestroyVm() throws VmNotFoundException {
-        newValidVmResource().destroyVm(vmIds.get(0));
-        try {
-            Action action = newInvalidVmResource().destroyVm(vmIds.get(0));
-            Assert.assertNotNull(action.commandId);
-            Assert.fail();
-        } catch (Vps4Exception e) {
-            // do nothing
-        }
+        Action action = newValidVmResource().destroyVm(vmIds.get(0));
+        Assert.assertNotNull(action.commandId);
     }
-
-    @Test
-    public void testProvisionVm() throws InterruptedException {
+    
+    @Test(expected=Vps4Exception.class)
+    public void testDestroyVmInvalid() throws VmNotFoundException {
+        newInvalidVmResource().destroyVm(vmIds.get(0));
+    }
+    
+    private ProvisionVmRequest createProvisionRequest(String controlPanel) {
         UUID newGuid = UUID.randomUUID();
         orionGuids.add(newGuid);
-        virtualMachineService.createVirtualMachineCredit(newGuid, "linux", "none", 10, 1, validUser.getShopperId());
+        virtualMachineService.createVirtualMachineCredit(newGuid, "linux", controlPanel, 10, 1, validUser.getShopperId());
         ProvisionVmRequest provisionRequest = new ProvisionVmRequest();
         provisionRequest.orionGuid = newGuid;
         provisionRequest.dataCenterId = 1;
         provisionRequest.image = "centos-7";
         provisionRequest.name = "Test Name";
-        vmIds.add(newValidVmResource().provisionVm(provisionRequest).virtualMachineId);
-        try {
-            newInvalidVmResource().provisionVm(provisionRequest);
-            Assert.fail();
-        } catch (Vps4Exception e) {
-            // do nothing
-        }
+        return provisionRequest;
+    }
+    
+    @Test
+    public void testProvisionVm() throws InterruptedException {
+        ProvisionVmRequest provisionRequest = createProvisionRequest("none");
+        Action action = newValidVmResource().provisionVm(provisionRequest);
+        vmIds.add(action.virtualMachineId);
+        Assert.assertNotNull(action.commandId);
+        
+    }
+    
+    @Test(expected=Vps4Exception.class)
+    public void testProvisionVmInvalidResource() throws InterruptedException {
+        ProvisionVmRequest provisionRequest = createProvisionRequest("none");
+        newInvalidVmResource().provisionVm(provisionRequest);
     }
 
     @Test
@@ -246,14 +244,7 @@ public class VmResourceUserTest {
         // Verify that if a provision request image does not match the credits
         // os and control panel
         // an exception is thrown.
-        UUID newGuid = UUID.randomUUID();
-        orionGuids.add(newGuid);
-        virtualMachineService.createVirtualMachineCredit(newGuid, "linux", "cpanel", 10, 1, validUser.getShopperId());
-        ProvisionVmRequest provisionRequest = new ProvisionVmRequest();
-        provisionRequest.orionGuid = newGuid;
-        provisionRequest.dataCenterId = 1;
-        provisionRequest.image = "centos-7";
-        provisionRequest.name = "Test Name";
+        ProvisionVmRequest provisionRequest = createProvisionRequest("cpanel");
 
         try {
             vmIds.add(newValidVmResource().provisionVm(provisionRequest).virtualMachineId);
