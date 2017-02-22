@@ -60,7 +60,7 @@ public class NetworkServiceTest {
         long primaryId = 125;
         String primaryAddress = "192.168.1.1";
 
-        networkService.createIpAddress(primaryId, vm.vmId, primaryAddress, IpAddress.IpAddressType.PRIMARY, new Long(3));
+        networkService.createIpAddress(primaryId, vm.vmId, primaryAddress, IpAddress.IpAddressType.PRIMARY);
         networkService.createIpAddress(addressId, vm.vmId, ipAddress, IpAddress.IpAddressType.SECONDARY);
 
         List<IpAddress> ips = networkService.getVmIpAddresses(vm.vmId);
@@ -74,7 +74,6 @@ public class NetworkServiceTest {
         assertEquals(addressId, ip.ipAddressId);
         assertEquals(ipAddress, ip.ipAddress);
         assertEquals(IpAddress.IpAddressType.SECONDARY, ip.ipAddressType);
-        assertTrue(ip.mailRelayId == null);
 
         IpAddress primary = networkService.getVmPrimaryAddress(vm.vmId);
 
@@ -84,7 +83,6 @@ public class NetworkServiceTest {
         assertEquals(primaryId, primary.ipAddressId);
         assertEquals(primaryAddress, primary.ipAddress);
         assertEquals(IpAddress.IpAddressType.PRIMARY, primary.ipAddressType);
-        assertEquals(new Long(3), primary.mailRelayId);
     }
 
     @Test
@@ -106,26 +104,12 @@ public class NetworkServiceTest {
         long primaryId = 125;
         String primaryAddress = "192.168.1.1";
 
-        networkService.createIpAddress(primaryId, vm.vmId, primaryAddress, IpAddress.IpAddressType.PRIMARY, new Long(3));
+        networkService.createIpAddress(primaryId, vm.vmId, primaryAddress, IpAddress.IpAddressType.PRIMARY);
         try {
-            networkService.createIpAddress(primaryId + 1, vm.vmId, "127.0.0.2", IpAddress.IpAddressType.PRIMARY, new Long(3));
+            networkService.createIpAddress(primaryId + 1, vm.vmId, "127.0.0.2", IpAddress.IpAddressType.PRIMARY);
             Assert.fail("This should fail to insert a new Primary IP");
         }
         catch (Exception se) {
-        }
-    }
-
-    @Test
-    public void TestDuplicateMailRelayId() {
-        long primaryId = 125;
-        String primaryAddress = "192.168.1.1";
-
-        networkService.createIpAddress(primaryId, vm.vmId, primaryAddress, IpAddress.IpAddressType.PRIMARY, new Long(3));
-        try {
-            networkService.createIpAddress(primaryId + 2, vm.vmId, "127.0.0.3", IpAddress.IpAddressType.SECONDARY, new Long(3));
-            Assert.fail("This should fail to insert a duplicate mail relay id");
-        }
-        catch (Exception e) {
         }
     }
 
@@ -136,7 +120,7 @@ public class NetworkServiceTest {
         String primaryAddress = "192.168.1.1";
         String ipAddress = "127.0.0.1";
 
-        networkService.createIpAddress(primaryId, vm.vmId, primaryAddress, IpAddress.IpAddressType.PRIMARY, new Long(3));
+        networkService.createIpAddress(primaryId, vm.vmId, primaryAddress, IpAddress.IpAddressType.PRIMARY);
         networkService.createIpAddress(addressId, vm.vmId, ipAddress, IpAddress.IpAddressType.SECONDARY);
 
         try {
