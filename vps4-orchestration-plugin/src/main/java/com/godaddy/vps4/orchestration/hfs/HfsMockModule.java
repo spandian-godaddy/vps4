@@ -1,6 +1,9 @@
 package com.godaddy.vps4.orchestration.hfs;
 
 
+import java.util.ArrayList;
+import java.util.List;
+
 import org.mockito.Mockito;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
@@ -8,10 +11,9 @@ import org.mockito.stubbing.Answer;
 import com.google.inject.AbstractModule;
 
 import gdg.hfs.vhfs.cpanel.CPanelService;
-import gdg.hfs.vhfs.mailrelay.MailRelayAction;
-import gdg.hfs.vhfs.mailrelay.MailRelayAction.Status;
+import gdg.hfs.vhfs.mailrelay.MailRelay;
+import gdg.hfs.vhfs.mailrelay.MailRelayHistory;
 import gdg.hfs.vhfs.mailrelay.MailRelayService;
-import gdg.hfs.vhfs.mailrelay.MailRelayTarget;
 import gdg.hfs.vhfs.network.AddressAction;
 import gdg.hfs.vhfs.network.IpAddress;
 import gdg.hfs.vhfs.network.NetworkService;
@@ -54,22 +56,17 @@ public class HfsMockModule extends AbstractModule {
 
     private MailRelayService buildMailRelayService() {
         MailRelayService mailRelayService = Mockito.mock(MailRelayService.class);
-        MailRelayAction completeAction = new MailRelayAction();
-        completeAction.status = Status.COMPLETE;
-        completeAction.action_id = 1;
-        completeAction.id = 1;
 
-        MailRelayAction inProgressAction = new MailRelayAction();
-        inProgressAction.status = Status.IN_PROGRESS;
-        inProgressAction.action_id = 1;
-        inProgressAction.id = 1;
+        MailRelay mailRelayTarget = new MailRelay();
+        mailRelayTarget.quota = 5000;
+        
+        MailRelayHistory singleHistory = new MailRelayHistory();
+        List<MailRelayHistory> history = new ArrayList<>();
+        history.add(singleHistory);
 
-        MailRelayTarget mailRelayTarget = new MailRelayTarget();
-        mailRelayTarget.id = 1234;
-
-        Mockito.when(mailRelayService.createMailRelay(Mockito.anyString())).thenReturn(inProgressAction);
-        Mockito.when(mailRelayService.getMailRelayAction(Mockito.anyLong(), Mockito.anyLong())).thenReturn(completeAction);
-        Mockito.when(mailRelayService.getTargetSpec(Mockito.anyString())).thenReturn(mailRelayTarget);
+        Mockito.when(mailRelayService.setRelayQuota(Mockito.anyString(), Mockito.anyObject())).thenReturn(mailRelayTarget);
+        Mockito.when(mailRelayService.getMailRelay(Mockito.anyString())).thenReturn(mailRelayTarget);
+        Mockito.when(mailRelayService.getRelayHistory(Mockito.anyString())).thenReturn(history);
 
         return mailRelayService;
     }
