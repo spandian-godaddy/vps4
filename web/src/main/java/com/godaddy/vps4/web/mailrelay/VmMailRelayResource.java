@@ -1,4 +1,4 @@
-package com.godaddy.vps4.web.smtp;
+package com.godaddy.vps4.web.mailrelay;
 
 import java.util.List;
 import java.util.UUID;
@@ -28,7 +28,7 @@ import io.swagger.annotations.Api;
 @Path("/api/vms")
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
-public class VmSmtpResource {
+public class VmMailRelayResource {
 
     private final MailRelayService mailRelayService;
     private final NetworkService networkService;
@@ -36,7 +36,7 @@ public class VmSmtpResource {
     private final Vps4User user;
     
     @Inject
-    public VmSmtpResource(Vps4User user, MailRelayService mailRelayService, NetworkService networkService,
+    public VmMailRelayResource(Vps4User user, MailRelayService mailRelayService, NetworkService networkService,
             PrivilegeService privilegeService) {
         this.user = user;
         this.mailRelayService = mailRelayService;
@@ -45,8 +45,8 @@ public class VmSmtpResource {
     }
 
     @GET
-    @Path("{vmId}/smtp/current")
-    public MailRelay getCurrentSmtpUsage(@PathParam("vmId") UUID vmId) {
+    @Path("{vmId}/mailRelay/current")
+    public MailRelay getCurrentMailRelayUsage(@PathParam("vmId") UUID vmId) {
         
         privilegeService.requireAnyPrivilegeToVmId(user, vmId);
 
@@ -55,8 +55,8 @@ public class VmSmtpResource {
     }
     
     @GET
-    @Path("{vmId}/smtp/history")
-    public List<MailRelayHistory> getSmtpUsageHistory(@PathParam("vmId") UUID vmId) {
+    @Path("{vmId}/mailRelay/history")
+    public List<MailRelayHistory> getMailRelayHistory(@PathParam("vmId") UUID vmId) {
 
         privilegeService.requireAnyPrivilegeToVmId(user, vmId);
 

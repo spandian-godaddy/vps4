@@ -2,7 +2,7 @@ package com.godaddy.vps4.web;
 
 import com.godaddy.vps4.web.cpanel.CPanelResource;
 import com.godaddy.vps4.web.credit.CreditResource;
-import com.godaddy.vps4.web.smtp.VmSmtpResource;
+import com.godaddy.vps4.web.mailrelay.VmMailRelayResource;
 import com.godaddy.vps4.web.sysadmin.SysAdminResource;
 import com.godaddy.vps4.web.sysadmin.UsageStatsResource;
 import com.godaddy.vps4.web.validator.ValidatorResource;
@@ -24,7 +24,7 @@ public class WebModule extends AbstractModule {
         bind(VmResource.class);
         bind(VmFlavorResource.class);
         bind(VmPatchResource.class);
-        bind(VmSmtpResource.class);
+        bind(VmMailRelayResource.class);
         bind(ValidatorResource.class);
         bind(CPanelResource.class);
         bind(SysAdminResource.class);
