@@ -5,7 +5,6 @@ import static org.junit.Assert.assertEquals;
 
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.time.Instant;
 
 import org.json.simple.JSONObject;
 import org.json.simple.JSONValue;
@@ -80,7 +79,7 @@ public class VmUsageParserTest {
 
             assertNotNull(usage.mem);
             assertEquals(3507d, usage.mem.mibMemFree, 0d);
-            assertEquals(828740d, usage.mem.mibMemUsed, 0d);
+            assertEquals(809d, usage.mem.mibMemUsed, 0d);
             assertEquals("2017-02-14T20:54:02Z", usage.mem.timestamp.toString());
         }
 
