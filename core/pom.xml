@@ -198,6 +198,22 @@
             <version>9.4-1201-jdbc4</version>
         </dependency>
 
+		<dependency>
+			<groupId>javax.cache</groupId>
+			<artifactId>cache-api</artifactId>
+			<version>1.0.0</version>
+		</dependency>
+		<dependency>
+			<groupId>com.hazelcast</groupId>
+			<artifactId>hazelcast</artifactId>
+			<version>3.8</version>
+		</dependency>
+		<dependency>
+			<groupId>com.google.inject.extensions</groupId>
+			<artifactId>guice-multibindings</artifactId>
+			<version>4.1.0</version>
+		</dependency>
+
         <!-- HFS Dependencies -->
         
         <dependency>

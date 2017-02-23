@@ -11,6 +11,7 @@ import org.slf4j.LoggerFactory;
 import com.godaddy.hfs.swagger.SwaggerModule;
 import com.godaddy.hfs.web.CorsFilter;
 import com.godaddy.hfs.web.GuiceFilterModule;
+import com.godaddy.vps4.cache.HazelcastCacheModule;
 import com.godaddy.vps4.cpanel.CpanelModule;
 import com.godaddy.vps4.hfs.HfsClientModule;
 import com.godaddy.vps4.hfs.HfsMockModule;
@@ -42,6 +43,7 @@ public class Vps4Injector {
     static Injector newInstance() {
         List<Module> modules = new ArrayList<>();
 
+        modules.add(new ListenerModule());
         modules.add(new GuiceFilterModule());
         modules.add(new SwaggerModule());
 
@@ -79,6 +81,7 @@ public class Vps4Injector {
                 }
             }
         });
+        modules.add(new HazelcastCacheModule());
 
         return Guice.createInjector(modules);
     }

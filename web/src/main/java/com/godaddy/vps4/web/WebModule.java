@@ -1,5 +1,6 @@
 package com.godaddy.vps4.web;
 
+import com.godaddy.vps4.web.cache.CacheResource;
 import com.godaddy.vps4.web.cpanel.CPanelResource;
 import com.godaddy.vps4.web.credit.CreditResource;
 import com.godaddy.vps4.web.sysadmin.SysAdminResource;
@@ -32,6 +33,7 @@ public class WebModule extends AbstractModule {
         bind(VmActionResource.class);
         bind(ImageResource.class);
         bind(UsageStatsResource.class);
+        bind(CacheResource.class);
 
         bind(Vps4ExceptionMapper.class);
     }
