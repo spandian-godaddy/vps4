@@ -8,6 +8,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.godaddy.vps4.Vps4Exception;
 import com.godaddy.vps4.network.IpAddress.IpAddressType;
 import com.godaddy.vps4.network.NetworkService;
 import com.godaddy.vps4.orchestration.ActionCommand;
@@ -99,12 +100,7 @@ public class ProvisionVm extends ActionCommand<ProvisionVm.Request, ProvisionVm.
 
         // create mail relay
         setStep(CreateVmStep.RequestingMailRelay);
-        MailRelayUpdate mailRelayUpdate = new MailRelayUpdate();
-        mailRelayUpdate.quota = 5000; // TODO make this a config value;
-        MailRelay relay = mailRelayService.setRelayQuota(ip.address, mailRelayUpdate);
-        if (relay == null | relay.quota != mailRelayUpdate.quota) {
-            logger.warn("Failed to create mail relay for ip {}. Provision will continue, please fix the mailRelay", ip.address);
-        }
+        requestMailRelay(ip);
 
         CreateVMWithFlavorRequest hfsRequest = request.hfsRequest;
         
@@ -174,6 +170,18 @@ public class ProvisionVm extends ActionCommand<ProvisionVm.Request, ProvisionVm.
         setStep(CreateVmStep.SetupComplete);
         logger.info("provision vm finished with status {} for action: {}", vmAction);
         return null;
+    }
+
+    private void requestMailRelay(gdg.hfs.vhfs.network.IpAddress ip) {
+        MailRelayUpdate mailRelayUpdate = new MailRelayUpdate();
+        mailRelayUpdate.quota = 5000; // TODO make this a config value;
+        MailRelay relay = mailRelayService.setRelayQuota(ip.address, mailRelayUpdate);
+        if (relay == null || relay.quota != mailRelayUpdate.quota) {
+            throw new Vps4Exception(
+                    "MAIL_RELAY_CREATE_FAILED",
+                    String.format("Failed to create mail relay for ip %s. Provision will not continue, please fix the mailRelay",
+                            ip.address));
+        }
     }
     
     private SetPassword.Request createSetRootPasswordRequest(Request request, Vm hfsVm) {
