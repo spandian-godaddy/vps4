@@ -21,14 +21,9 @@ public class JdbcNetworkService implements NetworkService {
     }
 
     @Override
-    public void createIpAddress(long ipAddressId, UUID vmId, String address, IpAddressType ipAddressType) {
-        createIpAddress(ipAddressId, vmId, address, ipAddressType, null);
-    }
-
-    @Override
-    public void createIpAddress(long ipAddressId, UUID vmId, String ipAddress, IpAddressType ipAddressType, Long mailRelayTargetId) {
-        Sql.with(dataSource).exec("SELECT * FROM ip_address_create(?,?,?,?,?)", null,
-                ipAddressId, vmId, ipAddress, ipAddressType.getId(), mailRelayTargetId);
+    public void createIpAddress(long ipAddressId, UUID vmId, String ipAddress, IpAddressType ipAddressType) {
+        Sql.with(dataSource).exec("SELECT * FROM ip_address_create(?,?,?,?)", null,
+                ipAddressId, vmId, ipAddress, ipAddressType.getId());
 
     }
 

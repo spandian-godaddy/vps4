@@ -19,7 +19,6 @@ import com.godaddy.vps4.orchestration.hfs.network.BindIp;
 import com.godaddy.vps4.orchestration.hfs.network.BindIp.BindIpRequest;
 import com.godaddy.vps4.orchestration.hfs.plesk.ConfigurePlesk;
 import com.godaddy.vps4.orchestration.hfs.plesk.ConfigurePlesk.ConfigurePleskRequest;
-import com.godaddy.vps4.orchestration.hfs.smtp.CreateMailRelay;
 import com.godaddy.vps4.orchestration.hfs.sysadmin.SetPassword;
 import com.godaddy.vps4.orchestration.hfs.sysadmin.ToggleAdmin;
 import com.godaddy.vps4.orchestration.hfs.vm.CreateVm;
@@ -35,7 +34,9 @@ import com.godaddy.vps4.vm.VmUserService;
 
 import gdg.hfs.orchestration.CommandContext;
 import gdg.hfs.orchestration.CommandMetadata;
-import gdg.hfs.vhfs.mailrelay.MailRelayTarget;
+import gdg.hfs.vhfs.mailrelay.MailRelay;
+import gdg.hfs.vhfs.mailrelay.MailRelayService;
+import gdg.hfs.vhfs.mailrelay.MailRelayUpdate;
 import gdg.hfs.vhfs.vm.CreateVMWithFlavorRequest;
 import gdg.hfs.vhfs.vm.Vm;
 import gdg.hfs.vhfs.vm.VmAction;
@@ -58,6 +59,8 @@ public class ProvisionVm extends ActionCommand<ProvisionVm.Request, ProvisionVm.
 
     final NetworkService networkService;
 
+    final MailRelayService mailRelayService;
+
     Request request;
 
     ActionState state;
@@ -67,12 +70,14 @@ public class ProvisionVm extends ActionCommand<ProvisionVm.Request, ProvisionVm.
                     VmService vmService,
                     VirtualMachineService virtualMachineService,
                     VmUserService vmUserService,
-                    NetworkService networkService) {
+            NetworkService networkService,
+            MailRelayService mailRelayService) {
         super(actionService);
         this.vmService = vmService;
         this.virtualMachineService = virtualMachineService;
         this.vmUserService = vmUserService;
         this.networkService = networkService;
+        this.mailRelayService = mailRelayService;
     }
 
     @Override
@@ -94,8 +99,7 @@ public class ProvisionVm extends ActionCommand<ProvisionVm.Request, ProvisionVm.
 
         // create mail relay
         setStep(CreateVmStep.RequestingMailRelay);
-        CreateMailRelay.Request createMailRelayRequest = new CreateMailRelay.Request(ip.address);
-        MailRelayTarget mailRelay = context.execute(CreateMailRelay.class, createMailRelayRequest);
+        requestMailRelay(ip);
 
         CreateVMWithFlavorRequest hfsRequest = request.hfsRequest;
         
@@ -137,7 +141,7 @@ public class ProvisionVm extends ActionCommand<ProvisionVm.Request, ProvisionVm.
 
         // Add the ip to the database
         context.execute("Create-" + ip.addressId, ctx -> {
-            networkService.createIpAddress(ip.addressId, vmInfo.vmId, ip.address, IpAddressType.PRIMARY, mailRelay.id);
+            networkService.createIpAddress(ip.addressId, vmInfo.vmId, ip.address, IpAddressType.PRIMARY);
             return null;
         });
 
@@ -165,6 +169,16 @@ public class ProvisionVm extends ActionCommand<ProvisionVm.Request, ProvisionVm.
         setStep(CreateVmStep.SetupComplete);
         logger.info("provision vm finished with status {} for action: {}", vmAction);
         return null;
+    }
+
+    private void requestMailRelay(gdg.hfs.vhfs.network.IpAddress ip) {
+        MailRelayUpdate mailRelayUpdate = new MailRelayUpdate();
+        mailRelayUpdate.quota = 5000; // TODO make this a config value;
+        MailRelay relay = mailRelayService.setRelayQuota(ip.address, mailRelayUpdate);
+        if (relay == null || relay.quota != mailRelayUpdate.quota) {
+            throw new RuntimeException(String
+                    .format("Failed to create mail relay for ip %s. Provision will not continue, please fix the mailRelay", ip.address));
+        }
     }
     
     private SetPassword.Request createSetRootPasswordRequest(Request request, Vm hfsVm) {
