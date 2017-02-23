@@ -1,11 +1,21 @@
 package com.godaddy.vps4.hfs;
 
+import java.util.ArrayList;
+import java.util.List;
+
+import org.joda.time.DateTime;
 import org.mockito.Mockito;
 
 import com.google.inject.AbstractModule;
 import com.google.inject.Provides;
 
+import gdg.hfs.request.CompleteResponse;
+import gdg.hfs.vhfs.cpanel.CPanelAction;
 import gdg.hfs.vhfs.cpanel.CPanelService;
+import gdg.hfs.vhfs.mailrelay.MailRelay;
+import gdg.hfs.vhfs.mailrelay.MailRelayHistory;
+import gdg.hfs.vhfs.mailrelay.MailRelayService;
+import gdg.hfs.vhfs.mailrelay.MailRelayUpdate;
 import gdg.hfs.vhfs.sysadmin.SysAdminAction;
 import gdg.hfs.vhfs.sysadmin.SysAdminService;
 import gdg.hfs.vhfs.vm.CreateVMRequest;
@@ -13,13 +23,11 @@ import gdg.hfs.vhfs.vm.CreateVMWithFlavorRequest;
 import gdg.hfs.vhfs.vm.FlavorList;
 import gdg.hfs.vhfs.vm.ImageList;
 import gdg.hfs.vhfs.vm.Vm;
+import gdg.hfs.vhfs.vm.VmAction;
 import gdg.hfs.vhfs.vm.VmAddress;
 import gdg.hfs.vhfs.vm.VmList;
 import gdg.hfs.vhfs.vm.VmOSInfo;
-import gdg.hfs.vhfs.vm.VmAction;
 import gdg.hfs.vhfs.vm.VmService;
-import gdg.hfs.request.CompleteResponse;
-import gdg.hfs.vhfs.cpanel.CPanelAction;
 
 public class HfsMockModule extends AbstractModule {
 
@@ -27,6 +35,8 @@ public class HfsMockModule extends AbstractModule {
     private static final CPanelAction reqAccessRet;
     private static final CPanelAction getActionRet;
     private static final VmAction createVmAction;
+    private static final MailRelay mailRelay;
+    private static final List<MailRelayHistory> mailRelayHistory;
 
     static final String accessHash = "b32b85d55e3d94408b78f729455e0076"
           + "930065e534418a463322bd966edc5a1e"
@@ -74,6 +84,17 @@ public class HfsMockModule extends AbstractModule {
         createVmAction.vmId = 0;
         createVmAction.state = VmAction.Status.COMPLETE;
         createVmAction.tickNum = 1;
+
+        mailRelay = new MailRelay();
+        mailRelay.quota = 5000;
+        mailRelay.relays = 1000;
+
+        MailRelayHistory history = new MailRelayHistory();
+        history.date = DateTime.now().toString();
+        history.quota = 5000;
+        history.relays = 1234;
+        mailRelayHistory = new ArrayList<>();
+        mailRelayHistory.add(history);
     }
 
     @Override
@@ -236,6 +257,31 @@ public class HfsMockModule extends AbstractModule {
             public CPanelAction imageConfig(long arg0, String arg1) {
                 // NOTE: do nothing, Implement when needed
                 throw new UnsupportedOperationException("Not implemented, yet");
+            }
+        };
+    }
+
+    @Provides
+    public MailRelayService provideMailRelayService() {
+
+        return new MailRelayService() {
+
+            @Override
+            public MailRelay getMailRelay(String arg0) {
+                return mailRelay;
+            }
+
+            @Override
+            public List<MailRelayHistory> getRelayHistory(String arg0) {
+                return mailRelayHistory;
+            }
+
+            @Override
+            public MailRelay setRelayQuota(String arg0, MailRelayUpdate arg1) {
+                MailRelay relay = new MailRelay();
+                relay.quota = arg1.quota;
+                relay.relays = 0;
+                return relay;
             }
         };
     }
