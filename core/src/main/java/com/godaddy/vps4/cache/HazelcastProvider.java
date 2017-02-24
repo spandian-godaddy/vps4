@@ -13,6 +13,7 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectMapper.DefaultTyping;
+import com.fasterxml.jackson.datatype.jsr310.JSR310Module;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.EvictionPolicy;
@@ -45,6 +46,16 @@ public class HazelcastProvider implements Provider<HazelcastInstance> {
         return Hazelcast.getOrCreateHazelcastInstance(newConfig(nodes));
     }
 
+    public static ObjectMapper newObjectMapper() {
+        ObjectMapper mapper = new ObjectMapper();
+        mapper.enableDefaultTyping(DefaultTyping.NON_FINAL, JsonTypeInfo.As.PROPERTY);
+        mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+        mapper.configure(SerializationFeature.FAIL_ON_EMPTY_BEANS, false);
+        mapper.registerModule(new JSR310Module());
+        mapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
+        return mapper;
+    }
+
     public Config newConfig(List<String> nodes) {
         Config config = new Config();
         config.setInstanceName("vps4");
@@ -52,10 +63,7 @@ public class HazelcastProvider implements Provider<HazelcastInstance> {
         //
         // configure serialization
         //
-        ObjectMapper mapper = new ObjectMapper();
-        mapper.enableDefaultTyping(DefaultTyping.NON_FINAL, JsonTypeInfo.As.PROPERTY);
-        mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
-        mapper.configure(SerializationFeature.FAIL_ON_EMPTY_BEANS, false);
+        ObjectMapper mapper = newObjectMapper();
 
         GlobalSerializerConfig globalSerializerConfig = new GlobalSerializerConfig()
                     .setImplementation(new JsonSerializer(mapper))

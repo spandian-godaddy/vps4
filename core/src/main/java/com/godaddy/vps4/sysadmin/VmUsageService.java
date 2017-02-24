@@ -152,6 +152,10 @@ public class VmUsageService {
 
         public VmUsage usage;
 
+        public CachedVmUsage() {
+
+        }
+
         public CachedVmUsage(VmUsage usage, boolean fetching) {
             this.usage = usage;
             this.fetching = fetching;

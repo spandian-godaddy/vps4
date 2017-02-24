@@ -23,8 +23,10 @@ import java.io.InputStreamReader;
 import java.time.Duration;
 import java.time.Instant;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.godaddy.hfs.io.Charsets;
 import com.godaddy.vps4.cache.CacheName;
+import com.godaddy.vps4.cache.HazelcastProvider;
 import com.godaddy.vps4.sysadmin.VmUsageService.CachedVmUsage;
 
 import gdg.hfs.vhfs.sysadmin.SysAdminService;
@@ -65,6 +67,16 @@ public class VmUsageServiceTest {
         return usage;
     }
 
+    @Test
+    public void testSerialization() throws Exception {
+        ObjectMapper mapper = HazelcastProvider.newObjectMapper();
+
+        String json = mapper.writeValueAsString(new CachedVmUsage(this.linuxUsage, false));
+        CachedVmUsage cachedUsage = (CachedVmUsage)mapper.readValue(json, Object.class);
+        assertNotNull(cachedUsage);
+        assertNotNull(cachedUsage.usage);
+        assertFalse(cachedUsage.fetching);
+    }
 
     @Test
     public void testUsageNotRun() throws Exception {
