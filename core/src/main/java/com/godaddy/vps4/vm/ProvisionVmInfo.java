@@ -9,15 +9,17 @@ public class ProvisionVmInfo {
     public String sgid;
     public int managedLevel;
     public Image image;
+    public int mailRelayQuota;
 
     public ProvisionVmInfo() {        
     }
     
-    public ProvisionVmInfo(UUID vmId, int managedLevel, Image image, String sgid) {
+    public ProvisionVmInfo(UUID vmId, int managedLevel, Image image, String sgid, int mailRelayQuota) {
         this.vmId = vmId;
         this.sgid = sgid;
         this.managedLevel = managedLevel;
         this.image = image;
+        this.mailRelayQuota = mailRelayQuota;
     }
 
     public String toString() {
