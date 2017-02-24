@@ -17,19 +17,11 @@
 
     <build>
         <plugins>
-        
-            <!--  TODO: uncomment once ZkInit is running
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-jar-plugin</artifactId>
-                <version>3.0.2</version>
-                <configuration>
-                    <excludes>
-                        <exclude>/com/godaddy/vps4/config/**</exclude>
-                    </excludes>
-                </configuration>
-            </plugin>
-             -->
+
+            <!-- TODO: uncomment once ZkInit is running <plugin> <groupId>org.apache.maven.plugins</groupId> 
+                <artifactId>maven-jar-plugin</artifactId> <version>3.0.2</version> <configuration> 
+                <excludes> <exclude>/com/godaddy/vps4/config/**</exclude> </excludes> </configuration> 
+                </plugin> -->
 
             <plugin>
                 <groupId>org.codehaus.mojo</groupId>
@@ -71,7 +63,7 @@
                     </execution>
                 </executions>
             </plugin>
-            
+
             <plugin>
                 <groupId>org.flywaydb</groupId>
                 <artifactId>flyway-maven-plugin</artifactId>
@@ -136,43 +128,42 @@
                     </execution>
                 </executions>
             </plugin>
-            
         </plugins>
     </build>
 
     <dependencies>
-    
+
         <dependency>
             <groupId>com.godaddy.hfs</groupId>
             <artifactId>hfs-config</artifactId>
             <version>0.3.2</version>
         </dependency>
-    
+
         <dependency>
             <groupId>com.godaddy.hfs</groupId>
             <artifactId>hfs-config-zookeeper</artifactId>
             <version>0.3.2</version>
         </dependency>
-    
+
         <dependency>
             <groupId>com.godaddy.hfs</groupId>
             <artifactId>hfs-crypto</artifactId>
             <version>0.3.2</version>
         </dependency>
-        
+
         <dependency>
             <groupId>com.godaddy.hfs</groupId>
             <artifactId>hfs-jdbc</artifactId>
             <version>0.3.2</version>
         </dependency>
-        
+
         <!-- https://mvnrepository.com/artifact/org.apache.commons/commons-lang3 -->
         <dependency>
             <groupId>org.apache.commons</groupId>
             <artifactId>commons-lang3</artifactId>
             <version>3.0</version>
         </dependency>
-    
+
         <!-- JAX-RS extensions -->
         <dependency>
             <groupId>com.fasterxml.jackson.jaxrs</groupId>
@@ -190,7 +181,7 @@
                     <artifactId>*</artifactId>
                 </exclusion>
             </exclusions>
-        </dependency>        
+        </dependency>
 
         <dependency>
             <groupId>org.postgresql</groupId>
@@ -198,24 +189,24 @@
             <version>9.4-1201-jdbc4</version>
         </dependency>
 
-		<dependency>
-			<groupId>javax.cache</groupId>
-			<artifactId>cache-api</artifactId>
-			<version>1.0.0</version>
-		</dependency>
-		<dependency>
-			<groupId>com.hazelcast</groupId>
-			<artifactId>hazelcast</artifactId>
-			<version>3.8</version>
-		</dependency>
-		<dependency>
-			<groupId>com.google.inject.extensions</groupId>
-			<artifactId>guice-multibindings</artifactId>
-			<version>4.1.0</version>
-		</dependency>
+        <dependency>
+            <groupId>javax.cache</groupId>
+            <artifactId>cache-api</artifactId>
+            <version>1.0.0</version>
+        </dependency>
+        <dependency>
+            <groupId>com.hazelcast</groupId>
+            <artifactId>hazelcast</artifactId>
+            <version>3.8</version>
+        </dependency>
+        <dependency>
+            <groupId>com.google.inject.extensions</groupId>
+            <artifactId>guice-multibindings</artifactId>
+            <version>4.1.0</version>
+        </dependency>
 
         <!-- HFS Dependencies -->
-        
+
         <dependency>
             <groupId>hfs</groupId>
             <artifactId>vhfs-cpanel-common-lib</artifactId>
@@ -227,7 +218,7 @@
                 </exclusion>
             </exclusions>
         </dependency>
-        
+
         <dependency>
             <groupId>hfs</groupId>
             <artifactId>vhfs-plesk-common-lib</artifactId>
@@ -239,11 +230,23 @@
                 </exclusion>
             </exclusions>
         </dependency>
-        
+
         <dependency>
             <groupId>hfs</groupId>
             <artifactId>vhfs-sysadmin-common-lib</artifactId>
             <version>1.0.0.28990</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>*</groupId>
+                    <artifactId>*</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+
+        <dependency>
+            <groupId>hfs</groupId>
+            <artifactId>hhfs-request-lib</artifactId>
+            <version>1.0.0.26697</version>
             <exclusions>
                 <exclusion>
                     <groupId>*</groupId>
@@ -325,5 +328,4 @@
 
         </profile>
     </profiles>
-
 </project>

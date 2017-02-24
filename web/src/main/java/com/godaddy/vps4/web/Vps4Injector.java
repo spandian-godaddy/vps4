@@ -16,6 +16,7 @@ import com.godaddy.vps4.cpanel.CpanelModule;
 import com.godaddy.vps4.hfs.HfsClientModule;
 import com.godaddy.vps4.hfs.HfsMockModule;
 import com.godaddy.vps4.jdbc.DatabaseModule;
+import com.godaddy.vps4.plesk.PleskModule;
 import com.godaddy.vps4.security.SecurityModule;
 import com.godaddy.vps4.sso.SsoModule;
 import com.godaddy.vps4.vm.VmModule;
@@ -67,6 +68,7 @@ public class Vps4Injector {
         modules.add(new NetworkModule());
         //modules.add(new FakeCpanelModule());
         modules.add(new CpanelModule());
+        modules.add(new PleskModule());
         modules.add(new CommandClientModule());
         modules.add(new ServletModule() {
             @Override
