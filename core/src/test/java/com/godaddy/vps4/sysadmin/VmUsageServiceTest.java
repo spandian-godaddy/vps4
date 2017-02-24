@@ -24,6 +24,7 @@ import java.time.Duration;
 import java.time.Instant;
 
 import com.godaddy.hfs.io.Charsets;
+import com.godaddy.vps4.cache.CacheName;
 import com.godaddy.vps4.sysadmin.VmUsageService.CachedVmUsage;
 
 import gdg.hfs.vhfs.sysadmin.SysAdminService;
@@ -44,7 +45,7 @@ public class VmUsageServiceTest {
         sysAdminService = mock(SysAdminService.class);
         CacheManager cacheManager = mock(CacheManager.class);
         cache = mock(Cache.class);
-        when(cacheManager.getCache("usage", Long.class, CachedVmUsage.class)).thenReturn(cache);
+        when(cacheManager.getCache(CacheName.VM_USAGE, Long.class, CachedVmUsage.class)).thenReturn(cache);
 
         vmUsageService = new VmUsageService(sysAdminService, cacheManager);
 
