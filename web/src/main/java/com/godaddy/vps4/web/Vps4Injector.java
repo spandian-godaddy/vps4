@@ -19,6 +19,7 @@ import com.godaddy.vps4.jdbc.DatabaseModule;
 import com.godaddy.vps4.plesk.PleskModule;
 import com.godaddy.vps4.security.SecurityModule;
 import com.godaddy.vps4.sso.SsoModule;
+import com.godaddy.vps4.sysadmin.SysAdminModule;
 import com.godaddy.vps4.vm.VmModule;
 import com.godaddy.vps4.web.network.NetworkModule;
 import com.godaddy.vps4.web.security.AuthenticationFilter;
@@ -66,6 +67,7 @@ public class Vps4Injector {
 
         modules.add(new VmModule());
         modules.add(new NetworkModule());
+        modules.add(new SysAdminModule());
         //modules.add(new FakeCpanelModule());
         modules.add(new CpanelModule());
         modules.add(new PleskModule());

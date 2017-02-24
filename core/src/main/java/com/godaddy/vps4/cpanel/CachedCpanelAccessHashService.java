@@ -39,7 +39,7 @@ public class CachedCpanelAccessHashService implements CpanelAccessHashService {
             cached.invalidate(cached.accessHash);
         }
 
-        // TODO: do we also need propogate the invalidate call down to the next layer i.e to the accessHashService?
+        accessHashService.invalidAccessHash(vmId, accessHash);
     }
 
     @Override

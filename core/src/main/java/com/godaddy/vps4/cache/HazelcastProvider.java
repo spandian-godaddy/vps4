@@ -15,8 +15,11 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectMapper.DefaultTyping;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.hazelcast.config.Config;
+import com.hazelcast.config.EvictionPolicy;
 import com.hazelcast.config.GlobalSerializerConfig;
 import com.hazelcast.config.JoinConfig;
+import com.hazelcast.config.MaxSizeConfig;
+import com.hazelcast.config.MaxSizeConfig.MaxSizePolicy;
 import com.hazelcast.config.NetworkConfig;
 import com.hazelcast.config.SerializationConfig;
 import com.hazelcast.core.Hazelcast;
@@ -64,11 +67,15 @@ public class HazelcastProvider implements Provider<HazelcastInstance> {
         config.setSerializationConfig(serializationConfig);
 
         //
-        // configure eviction policy per map (example)
+        // configure eviction policy per map
         //
-        //MapConfig mailrelayConfig = config.getMapConfig("mailrelay");
-        //mailrelayConfig.setEvictionPolicy(EvictionPolicy.LRU);
-        //mailrelayConfig.setMaxSizeConfig(new MaxSizeConfig(1000, MaxSizePolicy.PER_NODE));
+        config.getMapConfig("cpanel.accesshash")
+                .setEvictionPolicy(EvictionPolicy.LRU)
+                .setMaxSizeConfig(new MaxSizeConfig(10000, MaxSizePolicy.PER_NODE));
+
+        config.getMapConfig("vm.usage")
+                .setEvictionPolicy(EvictionPolicy.LRU)
+                .setMaxSizeConfig(new MaxSizeConfig(10000, MaxSizePolicy.PER_NODE));
 
         //
         // configure discovery
