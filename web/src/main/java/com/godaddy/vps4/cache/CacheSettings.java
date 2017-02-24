@@ -19,7 +19,7 @@ public class CacheSettings {
                             AccessedExpiryPolicy.factoryOf(Duration.ONE_MINUTE))
                     .setStatisticsEnabled(false));
 
-        cacheManager.createCache("cpanel.accesshash",
+        cacheManager.createCache(CacheName.CPANEL_ACCESSHASH,
                 new MutableConfiguration<Long, String>()
                     .setStoreByValue(true)
                     .setTypes(Long.class, String.class)
@@ -27,7 +27,7 @@ public class CacheSettings {
                             AccessedExpiryPolicy.factoryOf(Duration.ETERNAL))
                     .setStatisticsEnabled(false));
 
-        cacheManager.createCache("vm.usage",
+        cacheManager.createCache(CacheName.VM_USAGE,
                 new MutableConfiguration<Long, CachedVmUsage>()
                     .setStoreByValue(true)
                     .setTypes(Long.class, CachedVmUsage.class)

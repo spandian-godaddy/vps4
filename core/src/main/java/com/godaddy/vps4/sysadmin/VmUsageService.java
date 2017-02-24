@@ -14,6 +14,8 @@ import org.json.simple.parser.ParseException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.godaddy.vps4.cache.CacheName;
+
 import gdg.hfs.vhfs.sysadmin.SysAdminService;
 
 public class VmUsageService {
@@ -27,7 +29,7 @@ public class VmUsageService {
     @Inject
     public VmUsageService(SysAdminService sysAdminService, CacheManager cacheManager) {
         this.sysAdminService = sysAdminService;
-        this.cache = cacheManager.getCache("usage", Long.class, CachedVmUsage.class);
+        this.cache = cacheManager.getCache(CacheName.VM_USAGE, Long.class, CachedVmUsage.class);
     }
 
     public VmUsage getUsage(long hfsVmId) throws java.text.ParseException {
