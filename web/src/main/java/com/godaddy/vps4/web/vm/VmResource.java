@@ -97,7 +97,7 @@ public class VmResource {
         this.commandService = commandService;
         this.config = config;
         sgidPrefix = this.config.get("hfs.sgid.prefix", "vps4-undefined-");
-        mailRelayQuota = this.config.getInt("mailrelay.quota", 5000);
+        mailRelayQuota = Integer.parseInt(this.config.get("mailrelay.quota", "5000"));
     }
 
     @GET
