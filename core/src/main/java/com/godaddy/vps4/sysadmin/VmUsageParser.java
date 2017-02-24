@@ -199,7 +199,7 @@ public class VmUsageParser {
         } else if (row.containsHeader("Available KBytes")) {
             // windows
             long mibMemAvail = Long.parseLong(row.getValue("Available KBytes")) / 1024L;
-            long mibMemCommitted = Long.parseLong(row.getValue("Committed Bytes")) / 1024L;
+            long mibMemCommitted = Long.parseLong(row.getValue("Committed Bytes")) / 1024L / 1024L;
             usage.mibMemFree = mibMemAvail;
             usage.mibMemUsed = mibMemCommitted;
 

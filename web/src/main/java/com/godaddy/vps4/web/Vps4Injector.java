@@ -11,12 +11,15 @@ import org.slf4j.LoggerFactory;
 import com.godaddy.hfs.swagger.SwaggerModule;
 import com.godaddy.hfs.web.CorsFilter;
 import com.godaddy.hfs.web.GuiceFilterModule;
+import com.godaddy.vps4.cache.HazelcastCacheModule;
 import com.godaddy.vps4.cpanel.CpanelModule;
 import com.godaddy.vps4.hfs.HfsClientModule;
 import com.godaddy.vps4.hfs.HfsMockModule;
 import com.godaddy.vps4.jdbc.DatabaseModule;
+import com.godaddy.vps4.plesk.PleskModule;
 import com.godaddy.vps4.security.SecurityModule;
 import com.godaddy.vps4.sso.SsoModule;
+import com.godaddy.vps4.sysadmin.SysAdminModule;
 import com.godaddy.vps4.vm.VmModule;
 import com.godaddy.vps4.web.network.NetworkModule;
 import com.godaddy.vps4.web.security.AuthenticationFilter;
@@ -42,6 +45,7 @@ public class Vps4Injector {
     static Injector newInstance() {
         List<Module> modules = new ArrayList<>();
 
+        modules.add(new ListenerModule());
         modules.add(new GuiceFilterModule());
         modules.add(new SwaggerModule());
 
@@ -63,8 +67,10 @@ public class Vps4Injector {
 
         modules.add(new VmModule());
         modules.add(new NetworkModule());
+        modules.add(new SysAdminModule());
         //modules.add(new FakeCpanelModule());
         modules.add(new CpanelModule());
+        modules.add(new PleskModule());
         modules.add(new CommandClientModule());
         modules.add(new ServletModule() {
             @Override
@@ -79,6 +85,7 @@ public class Vps4Injector {
                 }
             }
         });
+        modules.add(new HazelcastCacheModule());
 
         return Guice.createInjector(modules);
     }
