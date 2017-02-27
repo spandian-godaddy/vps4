@@ -36,6 +36,8 @@ import com.godaddy.vps4.vm.jdbc.JdbcVirtualMachineService;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
 
+import junit.framework.Assert;
+
 public class VirtualMachineServiceTest {
 
     Injector injector = Guice.createInjector(new DatabaseModule());
@@ -72,6 +74,33 @@ public class VirtualMachineServiceTest {
         for (UUID request : vmCredits) {
             Sql.with(dataSource).exec("DELETE FROM credit WHERE orion_guid = ?", null, request);
         }
+    }
+    
+    @Test
+    public void testHasCPanel() {
+        virtualMachineService.createVirtualMachineCredit(orionGuid, "centos", "cpanel", tier, managedLevel, vps4User.getShopperId());
+        vmCredits.add(orionGuid);
+        ProvisionVirtualMachineParameters params = new ProvisionVirtualMachineParameters(vps4User.getId(), 1, "vps4-testing-",
+                orionGuid, "testServer", 10, 1, "centos-7-cPanel-11");
+        
+        virtualMachineService.provisionVirtualMachine(params);
+        
+        VirtualMachine vm = virtualMachineService.getVirtualMachinesForUser(vps4User.getId()).get(0);
+        virtualMachines.add(vm);
+        Assert.assertTrue(virtualMachineService.virtualMachineHasCpanel(vm.vmId));
+    }
+    
+    @Test
+    public void testHasPleskPanel() {
+        virtualMachineService.createVirtualMachineCredit(orionGuid, "windows", "plesk", tier, managedLevel, vps4User.getShopperId());
+        vmCredits.add(orionGuid);
+        ProvisionVirtualMachineParameters params = new ProvisionVirtualMachineParameters(vps4User.getId(), 1, "vps4-testing-",
+                orionGuid, "testServer", 10, 1, "windows-2012r2-plesk-12.5");
+        
+        virtualMachineService.provisionVirtualMachine(params);
+        VirtualMachine vm = virtualMachineService.getVirtualMachinesForUser(vps4User.getId()).get(0);
+        virtualMachines.add(vm);
+        Assert.assertTrue(virtualMachineService.virtualMachineHasPlesk(vm.vmId));
     }
 
     @Test
@@ -138,6 +167,8 @@ public class VirtualMachineServiceTest {
         assertEquals("centos-7", vm.image.hfsName);
         assertEquals("CentOS 7", vm.image.imageName);
     }
+    
+    
 
     @Test
     public void testGetVirtualMachines() {
