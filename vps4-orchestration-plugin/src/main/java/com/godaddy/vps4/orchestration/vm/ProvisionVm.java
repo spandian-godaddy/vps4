@@ -41,6 +41,7 @@ import gdg.hfs.vhfs.vm.CreateVMWithFlavorRequest;
 import gdg.hfs.vhfs.vm.Vm;
 import gdg.hfs.vhfs.vm.VmAction;
 import gdg.hfs.vhfs.vm.VmService;
+import gdg.hfs.vhfs.network.IpAddress;
 
 @CommandMetadata(
     name="ProvisionVm",
@@ -95,7 +96,7 @@ public class ProvisionVm extends ActionCommand<ProvisionVm.Request, ProvisionVm.
         // allocate IP address
         setStep(CreateVmStep.RequestingIPAddress);
         AllocateIp.Request allocateIpRequest = createAllocateIpRequest(request, vmInfo);
-        gdg.hfs.vhfs.network.IpAddress ip = context.execute(AllocateIp.class, allocateIpRequest);
+        IpAddress ip = context.execute(AllocateIp.class, allocateIpRequest);
 
         // create mail relay
         setStep(CreateVmStep.RequestingMailRelay);
@@ -150,7 +151,7 @@ public class ProvisionVm extends ActionCommand<ProvisionVm.Request, ProvisionVm.
             setStep(CreateVmStep.ConfiguringCPanel);
 
             // configure cpanel on the vm
-            ConfigureCpanelRequest cpanelRequest = createConfigureCpanelRequest(hfsVm);
+            ConfigureCpanelRequest cpanelRequest = createConfigureCpanelRequest(hfsVm, ip);
             context.execute(ConfigureCpanel.class, cpanelRequest);
         
         } else if (vmInfo.image.controlPanel == ControlPanel.PLESK) {
@@ -171,7 +172,7 @@ public class ProvisionVm extends ActionCommand<ProvisionVm.Request, ProvisionVm.
         return null;
     }
 
-    private void requestMailRelay(gdg.hfs.vhfs.network.IpAddress ip) {
+    private void requestMailRelay(IpAddress ip) {
         MailRelayUpdate mailRelayUpdate = new MailRelayUpdate();
         mailRelayUpdate.quota = 5000; // TODO make this a config value;
         MailRelay relay = mailRelayService.setRelayQuota(ip.address, mailRelayUpdate);
@@ -198,10 +199,10 @@ public class ProvisionVm extends ActionCommand<ProvisionVm.Request, ProvisionVm.
         return toggleAdminRequest;
     }
 
-    private ConfigureCpanelRequest createConfigureCpanelRequest(Vm hfsVm) {
+    private ConfigureCpanelRequest createConfigureCpanelRequest(Vm hfsVm, IpAddress ip) {
         ConfigureCpanelRequest cpanelRequest = new ConfigureCpanelRequest();
         cpanelRequest.vmId = hfsVm.vmId;
-        cpanelRequest.publicIp = hfsVm.address.ip_address;
+        cpanelRequest.publicIp = ip.address;
         return cpanelRequest;
     }
 
@@ -210,7 +211,7 @@ public class ProvisionVm extends ActionCommand<ProvisionVm.Request, ProvisionVm.
         return pleskRequest;
     }
 
-    private BindIpRequest createBindIpRequest(gdg.hfs.vhfs.network.IpAddress ip, Vm hfsVm) {
+    private BindIpRequest createBindIpRequest(IpAddress ip, Vm hfsVm) {
         BindIpRequest bindRequest = new BindIpRequest();
         bindRequest.addressId = ip.addressId;
         bindRequest.vmId = hfsVm.vmId;
