@@ -16,6 +16,7 @@ import gdg.hfs.vhfs.mailrelay.MailRelay;
 import gdg.hfs.vhfs.mailrelay.MailRelayHistory;
 import gdg.hfs.vhfs.mailrelay.MailRelayService;
 import gdg.hfs.vhfs.mailrelay.MailRelayUpdate;
+import gdg.hfs.vhfs.plesk.PleskService;
 import gdg.hfs.vhfs.sysadmin.SysAdminAction;
 import gdg.hfs.vhfs.sysadmin.SysAdminService;
 import gdg.hfs.vhfs.vm.CreateVMRequest;
@@ -101,6 +102,8 @@ public class HfsMockModule extends AbstractModule {
     public void configure() {
         SysAdminService sysAdminService = buildSysAdminService();
         bind(SysAdminService.class).toInstance(sysAdminService);
+        PleskService pleskService = Mockito.mock(PleskService.class);
+        bind(PleskService.class).toInstance(pleskService);
     }
     
     private SysAdminService buildSysAdminService(){

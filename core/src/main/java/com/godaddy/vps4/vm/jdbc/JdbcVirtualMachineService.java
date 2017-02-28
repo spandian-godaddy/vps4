@@ -235,13 +235,22 @@ public class JdbcVirtualMachineService implements VirtualMachineService {
         Sql.with(dataSource).exec("SELECT * FROM auto_create_credit(?, ?, ?, ?, ?)", null, vps4User.getId(), 10, "linux", "cpanel",
                 1);
     }
+    
+    private boolean virtualMachineHasControlPanel(UUID vmId, String controlPanel){
+        List<VirtualMachine> vms = Sql.with(dataSource).exec(selectVirtualMachineQuery
+                + "JOIN control_panel ON image.control_panel_id = control_panel.control_panel_id "
+                + "where control_panel.name = ? "
+                + "and vm.vm_id = ?;", Sql.listOf(this::mapVirtualMachine), controlPanel, vmId);
+        return vms.size() > 0;
+    }
 
     @Override
     public boolean virtualMachineHasCpanel(UUID vmId){
-        List<VirtualMachine> vms = Sql.with(dataSource).exec(selectVirtualMachineQuery
-                + "JOIN control_panel ON image.control_panel_id = control_panel.control_panel_id "
-                + "where control_panel.name = 'cpanel' "
-                + "and vm.vm_id = ?;", Sql.listOf(this::mapVirtualMachine), vmId);
-        return vms.size() > 0;
+        return virtualMachineHasControlPanel(vmId, "cpanel");
+    }
+    
+    @Override
+    public boolean virtualMachineHasPlesk(UUID vmId){
+        return virtualMachineHasControlPanel(vmId, "plesk");
     }
 }

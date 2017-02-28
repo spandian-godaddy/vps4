@@ -8,8 +8,7 @@ import com.godaddy.vps4.network.IpAddress;
 import com.godaddy.vps4.network.NetworkService;
 import com.godaddy.vps4.orchestration.ActionCommand;
 import com.godaddy.vps4.orchestration.ActionRequest;
-import com.godaddy.vps4.orchestration.hfs.network.ReleaseIp;
-import com.godaddy.vps4.orchestration.hfs.network.UnbindIp;
+import com.godaddy.vps4.orchestration.hfs.network.DestroyIpAddress;
 import com.godaddy.vps4.orchestration.hfs.vm.DestroyVm;
 import com.godaddy.vps4.vm.ActionService;
 import com.godaddy.vps4.vm.VirtualMachine;
@@ -17,7 +16,6 @@ import com.godaddy.vps4.vm.VirtualMachineService;
 
 import gdg.hfs.orchestration.CommandContext;
 import gdg.hfs.orchestration.CommandMetadata;
-
 
 @CommandMetadata(
         name="Vps4DestroyVm",
@@ -37,26 +35,25 @@ public class Vps4DestroyVm extends ActionCommand<Vps4DestroyVm.Request, Vps4Dest
         this.networkService = networkService;
         this.virtualMachineService = virtualMachineService;
     }
-
+    
+  
     @Override
     public Response executeWithAction(CommandContext context, Vps4DestroyVm.Request request) {
-
-        final long vmId = request.hfsVmId;
-        VirtualMachine vm = this.virtualMachineService.getVirtualMachine(vmId); 
+        final long hfsVmId = request.hfsVmId;
+        VirtualMachine vm = this.virtualMachineService.getVirtualMachine(hfsVmId); 
 
         List<IpAddress> addresses = networkService.getVmIpAddresses(vm.vmId);
 
         for (IpAddress address : addresses) {
-            context.execute("Unbind-"+address.ipAddressId, UnbindIp.class, address.ipAddressId);
-            context.execute("Release-"+address.ipAddressId, ReleaseIp.class, address.ipAddressId);
+            context.execute("DeleteIpAddress"+address.ipAddressId, DestroyIpAddress.class, new DestroyIpAddress.Request(address, vm));
             context.execute("Destroy-"+address.ipAddressId, ctx -> {networkService.destroyIpAddress(address.ipAddressId); 
                                                                     return null;});
         }
-
-        context.execute("DestroyVmHfs", DestroyVm.class, vmId);
+        
+        context.execute("DestroyVmHfs", DestroyVm.class, hfsVmId);
 
         context.execute("Vps4DestroyVm", ctx -> {
-            virtualMachineService.destroyVirtualMachine(vmId);
+            virtualMachineService.destroyVirtualMachine(hfsVmId);
             return null;
         });
 

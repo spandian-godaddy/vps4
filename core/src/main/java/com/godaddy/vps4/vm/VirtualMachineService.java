@@ -108,4 +108,6 @@ public interface VirtualMachineService {
     void createCreditIfNoneExists(Vps4User vps4User);
     
     boolean virtualMachineHasCpanel(UUID vmId);
+    
+    boolean virtualMachineHasPlesk(UUID vmId);
 }
