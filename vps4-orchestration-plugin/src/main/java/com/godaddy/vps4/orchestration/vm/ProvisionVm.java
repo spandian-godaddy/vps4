@@ -99,7 +99,7 @@ public class ProvisionVm extends ActionCommand<ProvisionVm.Request, ProvisionVm.
 
         // create mail relay
         setStep(CreateVmStep.RequestingMailRelay);
-        requestMailRelay(ip);
+        requestMailRelay(ip, vmInfo.mailRelayQuota);
 
         CreateVMWithFlavorRequest hfsRequest = request.hfsRequest;
         
@@ -171,9 +171,9 @@ public class ProvisionVm extends ActionCommand<ProvisionVm.Request, ProvisionVm.
         return null;
     }
 
-    private void requestMailRelay(gdg.hfs.vhfs.network.IpAddress ip) {
+    private void requestMailRelay(IpAddress ip, int mailRelayQuota) {
         MailRelayUpdate mailRelayUpdate = new MailRelayUpdate();
-        mailRelayUpdate.quota = 5000; // TODO make this a config value;
+        mailRelayUpdate.quota = mailRelayQuota;
         MailRelay relay = mailRelayService.setRelayQuota(ip.address, mailRelayUpdate);
         if (relay == null || relay.quota != mailRelayUpdate.quota) {
             throw new RuntimeException(String

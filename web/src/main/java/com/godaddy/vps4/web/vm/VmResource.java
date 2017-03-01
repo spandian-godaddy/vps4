@@ -73,6 +73,7 @@ public class VmResource {
     private final CommandService commandService;
     private final Config config;
     private final String sgidPrefix;
+    private final int mailRelayQuota;
 
     @Inject
     public VmResource(PrivilegeService privilegeService,
@@ -95,7 +96,8 @@ public class VmResource {
         this.actionService = actionService;
         this.commandService = commandService;
         this.config = config;
-        sgidPrefix = config.get("hfs.sgid.prefix", "vps4-undefined-");
+        sgidPrefix = this.config.get("hfs.sgid.prefix", "vps4-undefined-");
+        mailRelayQuota = Integer.parseInt(this.config.get("mailrelay.quota", "5000"));
     }
 
     @GET
@@ -236,7 +238,7 @@ public class VmResource {
         logger.info("Action id: {}", actionId);
 
         ProvisionVmInfo vmInfo = new ProvisionVmInfo(virtualMachine.vmId, vmCredit.managedLevel, virtualMachine.image,
-                project.getVhfsSgid());
+                project.getVhfsSgid(), mailRelayQuota);
         logger.info("vmInfo: {}", vmInfo.toString());
 
         ProvisionVm.Request request = createProvisionVmRequest(hfsRequest, actionId, vmInfo);
