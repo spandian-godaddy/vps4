@@ -5,5 +5,9 @@ public interface CacheName {
     public static final String VM_USAGE = "vm.usage";
 
     public static final String CPANEL_ACCESSHASH = "cpanel.accesshash";
+    
+    public static final String MAIL_RELAY_USAGE = "mail.relay.usage";
+    
+    public static final String MAIL_RELAY_HISTORY = "mail.relay.history";
 
 }
