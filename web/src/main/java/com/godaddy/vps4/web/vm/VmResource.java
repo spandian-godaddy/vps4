@@ -21,7 +21,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.godaddy.hfs.config.Config;
-import com.godaddy.vps4.Vps4Exception;
 import com.godaddy.vps4.orchestration.vm.ProvisionVm;
 import com.godaddy.vps4.orchestration.vm.Vps4DestroyVm;
 import com.godaddy.vps4.orchestration.vm.Vps4RestartVm;
@@ -43,6 +42,7 @@ import com.godaddy.vps4.vm.VirtualMachineService;
 import com.godaddy.vps4.vm.VirtualMachineService.ProvisionVirtualMachineParameters;
 import com.godaddy.vps4.vm.VirtualMachineSpec;
 import com.godaddy.vps4.web.Vps4Api;
+import com.godaddy.vps4.web.Vps4Exception;
 import com.godaddy.vps4.web.util.Commands;
 
 import gdg.hfs.orchestration.CommandService;

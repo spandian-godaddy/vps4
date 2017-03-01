@@ -1,4 +1,4 @@
-package com.godaddy.vps4;
+package com.godaddy.vps4.web;
 
 public class Vps4Exception extends RuntimeException {
 

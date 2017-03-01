@@ -5,8 +5,6 @@ import javax.inject.Inject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.godaddy.vps4.Vps4Exception;
-
 import gdg.hfs.orchestration.Command;
 import gdg.hfs.orchestration.CommandContext;
 import gdg.hfs.vhfs.plesk.PleskAction;
@@ -44,7 +42,7 @@ public class WaitForPleskAction implements Command<PleskAction, Void> {
         if(hfsAction.status == PleskAction.Status.COMPLETE) {
             logger.info("Vm Action completed. hfsAction: {} ", hfsAction );
         } else {
-            throw new Vps4Exception("Plesk_Config_Image_Failed", String.format(" Failed action: %s", hfsAction));
+            throw new RuntimeException(String.format(" Failed action: %s", hfsAction));
         } 
         
         return null;

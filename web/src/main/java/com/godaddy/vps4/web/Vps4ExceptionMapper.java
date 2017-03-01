@@ -10,7 +10,7 @@ import org.json.simple.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.godaddy.vps4.Vps4Exception;
+import com.godaddy.vps4.security.jdbc.AuthorizationException;
 
 @Provider
 public class Vps4ExceptionMapper implements ExceptionMapper<Throwable> {
@@ -33,6 +33,20 @@ public class Vps4ExceptionMapper implements ExceptionMapper<Throwable> {
 
             JSONObject json = new JSONObject();
             json.put("id", ve.getId());
+
+            return Response.serverError()
+                    .type(MediaType.APPLICATION_JSON)
+                    .entity(json.toJSONString())
+                    .build();
+        }
+
+        if (t instanceof AuthorizationException) {
+            AuthorizationException ae = (AuthorizationException) t;
+
+            logger.warn("writing response for Authorization exception", ae);
+
+            JSONObject json = new JSONObject();
+            json.put("id", "AUTHORIZATION_DENIED");
 
             return Response.serverError()
                     .type(MediaType.APPLICATION_JSON)

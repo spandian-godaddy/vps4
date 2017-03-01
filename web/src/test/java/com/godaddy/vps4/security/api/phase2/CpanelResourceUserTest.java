@@ -9,7 +9,6 @@ import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mockito;
 
-import com.godaddy.vps4.Vps4Exception;
 import com.godaddy.vps4.cpanel.Vps4CpanelService;
 import com.godaddy.vps4.jdbc.DatabaseModule;
 import com.godaddy.vps4.phase2.SqlTestData;
@@ -24,6 +23,7 @@ import com.godaddy.vps4.vm.ActionService;
 import com.godaddy.vps4.vm.VirtualMachine;
 import com.godaddy.vps4.vm.VirtualMachineService;
 import com.godaddy.vps4.vm.VmModule;
+import com.godaddy.vps4.web.Vps4Exception;
 import com.godaddy.vps4.web.cpanel.CPanelResource;
 import com.google.inject.AbstractModule;
 import com.google.inject.Guice;

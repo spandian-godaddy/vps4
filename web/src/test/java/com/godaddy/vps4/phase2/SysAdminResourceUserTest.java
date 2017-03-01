@@ -10,13 +10,13 @@ import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mockito;
 
-import com.godaddy.vps4.Vps4Exception;
 import com.godaddy.vps4.jdbc.DatabaseModule;
 import com.godaddy.vps4.project.ProjectService;
 import com.godaddy.vps4.security.PrivilegeService;
 import com.godaddy.vps4.security.SecurityModule;
 import com.godaddy.vps4.security.Vps4User;
 import com.godaddy.vps4.security.Vps4UserService;
+import com.godaddy.vps4.security.jdbc.AuthorizationException;
 import com.godaddy.vps4.vm.ActionService;
 import com.godaddy.vps4.vm.VirtualMachine;
 import com.godaddy.vps4.vm.VirtualMachineService;
@@ -129,7 +129,8 @@ public class SysAdminResourceUserTest {
         try{
             getInvalidResource().setPassword(virtualMachine.vmId, request);
             Assert.fail();
-        }catch (Vps4Exception e){
+        }
+        catch (AuthorizationException e) {
             //do nothing
         }
     }
@@ -143,7 +144,8 @@ public class SysAdminResourceUserTest {
         try{
             getInvalidResource().enableUserAdmin(virtualMachine.vmId, request);
             Assert.fail();
-        }catch (Vps4Exception e){
+        }
+        catch (AuthorizationException e) {
             //do nothing
         }
     }
@@ -157,7 +159,8 @@ public class SysAdminResourceUserTest {
         try{
             getInvalidResource().disableUserAdmin(virtualMachine.vmId, request);
             Assert.fail();
-        }catch (Vps4Exception e){
+        }
+        catch (AuthorizationException e) {
             //do nothing
         }
     }
@@ -171,7 +174,8 @@ public class SysAdminResourceUserTest {
         try{
             getInvalidResource().setHostname(virtualMachine.vmId, request);
             Assert.fail();
-        }catch (Vps4Exception e){
+        }
+        catch (AuthorizationException e) {
             //do nothing
         }
     }

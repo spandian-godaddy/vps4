@@ -1,14 +1,11 @@
 package com.godaddy.vps4.cpanel;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.time.Instant;
 
-import com.godaddy.vps4.Vps4Exception;
-
-import org.json.simple.parser.JSONParser;
 import org.json.simple.JSONObject;
+import org.json.simple.parser.JSONParser;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import gdg.hfs.vhfs.cpanel.CPanelAction;
 import gdg.hfs.vhfs.cpanel.CPanelService;
@@ -54,7 +51,7 @@ public class HfsCpanelAccessHashService implements CpanelAccessHashService {
 
         if (!hfsAction.status.equals(CPanelAction.Status.COMPLETE)) {
             logger.warn("failed to generate access hash {}", hfsAction);
-            throw new Vps4Exception("CPANEL_GENERATE_ACCESS_HASH_FAILED", "CPanel generate access hash failed");
+            throw new RuntimeException("CPanel generate access hash failed");
         }
 
         logger.info("generate access hash complete: {}", hfsAction);

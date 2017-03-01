@@ -19,7 +19,7 @@ import org.json.simple.parser.JSONParser;
 import org.junit.Test;
 import org.mockito.Mockito;
 
-import com.godaddy.vps4.Vps4Exception;
+import com.godaddy.vps4.web.Vps4Exception;
 import com.godaddy.vps4.web.security.AuthenticationFilter;
 import com.godaddy.vps4.web.security.RequestAuthenticator;
 

@@ -10,7 +10,6 @@ import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mockito;
 
-import com.godaddy.vps4.Vps4Exception;
 import com.godaddy.vps4.jdbc.DatabaseModule;
 import com.godaddy.vps4.project.ProjectService;
 import com.godaddy.vps4.security.PrivilegeService;
@@ -23,6 +22,7 @@ import com.godaddy.vps4.vm.VirtualMachine;
 import com.godaddy.vps4.vm.VirtualMachineService;
 import com.godaddy.vps4.vm.VmModule;
 import com.godaddy.vps4.vm.VmUserService;
+import com.godaddy.vps4.web.Vps4Exception;
 import com.godaddy.vps4.web.sysadmin.SysAdminResource;
 import com.godaddy.vps4.web.sysadmin.SysAdminResource.SetHostnameRequest;
 import com.google.inject.AbstractModule;

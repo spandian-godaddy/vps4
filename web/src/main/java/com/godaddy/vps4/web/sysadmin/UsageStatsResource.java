@@ -11,7 +11,6 @@ import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
 
-import com.godaddy.vps4.Vps4Exception;
 import com.godaddy.vps4.security.PrivilegeService;
 import com.godaddy.vps4.security.Vps4User;
 import com.godaddy.vps4.sysadmin.VmUsage;
@@ -19,6 +18,7 @@ import com.godaddy.vps4.sysadmin.VmUsageService;
 import com.godaddy.vps4.vm.VirtualMachine;
 import com.godaddy.vps4.vm.VirtualMachineService;
 import com.godaddy.vps4.web.Vps4Api;
+import com.godaddy.vps4.web.Vps4Exception;
 
 import io.swagger.annotations.Api;
 

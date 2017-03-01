@@ -8,7 +8,6 @@ import javax.inject.Inject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.godaddy.vps4.Vps4Exception;
 import com.godaddy.vps4.vm.CreateVmStep;
 
 import gdg.hfs.orchestration.Command;
@@ -65,7 +64,7 @@ public class WaitForVmAction implements Command<VmAction, VmAction> {
             hfsAction = vmService.getVmAction(hfsAction.vmId, hfsAction.vmActionId);
         }
         if (!(hfsAction.state == VmAction.Status.COMPLETE)) {
-            throw new Vps4Exception("PROVISION_VM_FAILED", String.format("failed to provision VM, action: %s", hfsAction));
+            throw new RuntimeException(String.format("failed to provision VM, action: %s", hfsAction));
         }
         return hfsAction;
     }

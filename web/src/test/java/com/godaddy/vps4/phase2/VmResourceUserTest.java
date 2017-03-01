@@ -14,7 +14,6 @@ import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mockito;
 
-import com.godaddy.vps4.Vps4Exception;
 import com.godaddy.vps4.jdbc.DatabaseModule;
 import com.godaddy.vps4.jdbc.Sql;
 import com.godaddy.vps4.network.IpAddress.IpAddressType;
@@ -23,11 +22,13 @@ import com.godaddy.vps4.project.ProjectService;
 import com.godaddy.vps4.security.SecurityModule;
 import com.godaddy.vps4.security.Vps4User;
 import com.godaddy.vps4.security.Vps4UserService;
+import com.godaddy.vps4.security.jdbc.AuthorizationException;
 import com.godaddy.vps4.vm.Action;
 import com.godaddy.vps4.vm.ActionService;
 import com.godaddy.vps4.vm.ActionType;
 import com.godaddy.vps4.vm.VirtualMachineService;
 import com.godaddy.vps4.vm.VmModule;
+import com.godaddy.vps4.web.Vps4Exception;
 import com.godaddy.vps4.web.vm.ActionResource;
 import com.godaddy.vps4.web.vm.VmActionResource;
 import com.godaddy.vps4.web.vm.VmNotFoundException;
@@ -140,7 +141,7 @@ public class VmResourceUserTest {
         validActionResource.getAction(actionId);
     }
     
-    @Test(expected=Vps4Exception.class)
+    @Test(expected = AuthorizationException.class)
     public void testListActionsInvalidUser() {
         long actionId = actionService.createAction(vmIds.get(0), ActionType.CREATE_VM, "{}", validUser.getId());
         user = validUser;
@@ -160,7 +161,7 @@ public class VmResourceUserTest {
 
     }
     
-    @Test(expected=Vps4Exception.class)
+    @Test(expected = AuthorizationException.class)
     public void testGetVmActionInvalidUser() {
         UUID vmId = vmIds.get(0);
         long actionId = actionService.createAction(vmId, ActionType.CREATE_VM, "{}", validUser.getId());
@@ -207,7 +208,7 @@ public class VmResourceUserTest {
         Assert.assertNotNull(action.commandId);
     }
     
-    @Test(expected=Vps4Exception.class)
+    @Test(expected = AuthorizationException.class)
     public void testDestroyVmInvalid() throws VmNotFoundException {
         newInvalidVmResource().destroyVm(vmIds.get(0));
     }
@@ -233,7 +234,7 @@ public class VmResourceUserTest {
         
     }
     
-    @Test(expected=Vps4Exception.class)
+    @Test(expected = AuthorizationException.class)
     public void testProvisionVmInvalidResource() throws InterruptedException {
         ProvisionVmRequest provisionRequest = createProvisionRequest("none");
         newInvalidVmResource().provisionVm(provisionRequest);

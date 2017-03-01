@@ -5,8 +5,6 @@ import javax.inject.Inject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.godaddy.vps4.Vps4Exception;
-
 import gdg.hfs.orchestration.Command;
 import gdg.hfs.orchestration.CommandContext;
 import gdg.hfs.vhfs.vm.VmAction;
@@ -45,7 +43,7 @@ public class WaitForManageVmAction implements Command<VmAction, VmAction> {
         if(hfsAction.state == VmAction.Status.COMPLETE) {
             logger.info("Vm Action completed. hfsAction: {} ", hfsAction );
         } else {
-            throw new Vps4Exception("Manage_VM_Failed", String.format(" Failed action: %s", hfsAction));
+            throw new RuntimeException(String.format(" Failed action: %s", hfsAction));
         } 
         return hfsAction;
     }

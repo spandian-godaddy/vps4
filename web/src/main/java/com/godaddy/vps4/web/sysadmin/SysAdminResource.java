@@ -16,7 +16,6 @@ import org.json.simple.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.godaddy.vps4.Vps4Exception;
 import com.godaddy.vps4.orchestration.hfs.sysadmin.SetHostname;
 import com.godaddy.vps4.orchestration.hfs.sysadmin.SetPassword;
 import com.godaddy.vps4.orchestration.sysadmin.Vps4SetHostname;
@@ -34,6 +33,7 @@ import com.godaddy.vps4.vm.VirtualMachine;
 import com.godaddy.vps4.vm.VirtualMachineService;
 import com.godaddy.vps4.vm.VmUserService;
 import com.godaddy.vps4.web.Vps4Api;
+import com.godaddy.vps4.web.Vps4Exception;
 import com.godaddy.vps4.web.util.Commands;
 
 import gdg.hfs.orchestration.CommandService;
