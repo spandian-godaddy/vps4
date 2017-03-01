@@ -21,6 +21,8 @@ import gdg.hfs.vhfs.mailrelay.MailRelay;
 import gdg.hfs.vhfs.mailrelay.MailRelayHistory;
 import gdg.hfs.vhfs.mailrelay.MailRelayService;
 import io.swagger.annotations.Api;
+import io.swagger.annotations.ApiOperation;
+import io.swagger.annotations.ApiParam;
 
 @Vps4Api
 @Api(tags = { "vms" })
@@ -46,7 +48,9 @@ public class VmMailRelayResource {
 
     @GET
     @Path("{vmId}/mailRelay/current")
-    public MailRelay getCurrentMailRelayUsage(@PathParam("vmId") UUID vmId) {
+    @ApiOperation(value = "Get today's mail relay use for the selected server", notes = "Get today's mail relay use for the selected server.")
+    public MailRelay getCurrentMailRelayUsage(
+            @ApiParam(value = "The ID of the selected server", required = true) @PathParam("vmId") UUID vmId) {
         
         privilegeService.requireAnyPrivilegeToVmId(user, vmId);
 
@@ -56,7 +60,9 @@ public class VmMailRelayResource {
     
     @GET
     @Path("{vmId}/mailRelay/history")
-    public List<MailRelayHistory> getMailRelayHistory(@PathParam("vmId") UUID vmId) {
+    @ApiOperation(value = "Get past mail relay use for the selected server", notes = "Get past mail relay use for the selected server")
+    public List<MailRelayHistory> getMailRelayHistory(
+            @ApiParam(value = "The ID of the selected server", required = true) @PathParam("vmId") UUID vmId) {
 
         privilegeService.requireAnyPrivilegeToVmId(user, vmId);
 
