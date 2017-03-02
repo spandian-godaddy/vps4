@@ -10,6 +10,7 @@ import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
 
+import com.godaddy.vps4.mailrelay.MailRelayService;
 import com.godaddy.vps4.network.IpAddress;
 import com.godaddy.vps4.network.NetworkService;
 import com.godaddy.vps4.security.PrivilegeService;
@@ -19,7 +20,6 @@ import com.google.inject.Inject;
 
 import gdg.hfs.vhfs.mailrelay.MailRelay;
 import gdg.hfs.vhfs.mailrelay.MailRelayHistory;
-import gdg.hfs.vhfs.mailrelay.MailRelayService;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
@@ -49,25 +49,27 @@ public class VmMailRelayResource {
     @GET
     @Path("{vmId}/mailRelay/current")
     @ApiOperation(value = "Get today's mail relay use for the selected server", notes = "Get today's mail relay use for the selected server.")
-    public MailRelay getCurrentMailRelayUsage(
-            @ApiParam(value = "The ID of the selected server", required = true) @PathParam("vmId") UUID vmId) {
+    public MailRelay getCurrentMailRelayUsage(@ApiParam(value = "The ID of the selected server", required = true) @PathParam("vmId") UUID vmId) { 
         
         privilegeService.requireAnyPrivilegeToVmId(user, vmId);
-
+        
         IpAddress ipAddress = networkService.getVmPrimaryAddress(vmId);
+        
         return mailRelayService.getMailRelay(ipAddress.ipAddress);
+        
     }
     
     @GET
     @Path("{vmId}/mailRelay/history")
     @ApiOperation(value = "Get past mail relay use for the selected server", notes = "Get past mail relay use for the selected server")
-    public List<MailRelayHistory> getMailRelayHistory(
-            @ApiParam(value = "The ID of the selected server", required = true) @PathParam("vmId") UUID vmId) {
+    public List<MailRelayHistory> getMailRelayHistory(@ApiParam(value = "The ID of the selected server", required = true) @PathParam("vmId") UUID vmId) {
 
         privilegeService.requireAnyPrivilegeToVmId(user, vmId);
 
         IpAddress ipAddress = networkService.getVmPrimaryAddress(vmId);
-        return mailRelayService.getRelayHistory(ipAddress.ipAddress);
+        
+        return mailRelayService.getMailRelayHistory(ipAddress.ipAddress);
+        
     }
     
 }
