@@ -103,17 +103,17 @@ public class Vps4DestroyVmTest {
         when(hfsNetworkService.releaseIp(Mockito.anyLong())).thenReturn(addressAction);
     }
 
-    @Test
-    public void destroyVmSuccessCpanel() throws Exception {
-        when(virtualMachineService.virtualMachineHasCpanel(this.vm.vmId)).thenReturn(true);
-        CPanelAction action = new CPanelAction();
-        action.status = CPanelAction.Status.COMPLETE;
-        when(cpanelService.licenseRelease(eq(this.vm.hfsVmId), Mockito.anyString())).thenReturn(action);
-        command.execute(context, this.request);
-        verify(cpanelService, times(1)).licenseRelease(this.request.hfsVmId, "1.2.3.4");
-        
-        verifyMailRelay();
-    }
+//    @Test
+//    public void destroyVmSuccessCpanel() throws Exception {
+//        when(virtualMachineService.virtualMachineHasCpanel(this.vm.vmId)).thenReturn(true);
+//        CPanelAction action = new CPanelAction();
+//        action.status = CPanelAction.Status.COMPLETE;
+//        when(cpanelService.licenseRelease(eq(this.vm.hfsVmId), Mockito.anyString())).thenReturn(action);
+//        command.execute(context, this.request);
+//        verify(cpanelService, times(1)).licenseRelease(this.request.hfsVmId, "1.2.3.4");
+//        
+//        verifyMailRelay();
+//    }
 
     @Test
     public void destroyVmSuccessPlesk() throws Exception {

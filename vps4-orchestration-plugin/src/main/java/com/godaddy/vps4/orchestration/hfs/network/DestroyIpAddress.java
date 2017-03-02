@@ -67,7 +67,9 @@ public class DestroyIpAddress implements Command<DestroyIpAddress.Request, Void>
     private void releaseControlPanelLicense(CommandContext context, VirtualMachine vm, String ipAddress) {
         if(virtualMachineService.virtualMachineHasCpanel(vm.vmId)){
             CPanelAction action = context.execute("Unlicense-Cpanel", ctx -> {
-                return cpanelService.licenseRelease(vm.hfsVmId, ipAddress);
+                // TODO put this back when the cpanel vertical service starts using our allocated IP
+//                return cpanelService.licenseRelease(vm.hfsVmId, ipAddress);
+                return cpanelService.licenseRelease(vm.hfsVmId, vm.primaryIpAddress.ipAddress);
             });
             context.execute(WaitForCpanelAction.class, action);
         }
