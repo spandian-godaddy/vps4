@@ -5,9 +5,9 @@ import javax.cache.configuration.MutableConfiguration;
 import javax.cache.expiry.AccessedExpiryPolicy;
 import javax.cache.expiry.Duration;
 
-import com.godaddy.vps4.mailrelay.MailRelayService.CachedMailRelayHistory;
-import com.godaddy.vps4.mailrelay.MailRelayService.CachedMailRelayUsage;
 import com.godaddy.vps4.sysadmin.VmUsageService.CachedVmUsage;
+import com.godaddy.vps4.web.mailrelay.VmMailRelayResource.CachedMailRelayHistory;
+import com.godaddy.vps4.web.mailrelay.VmMailRelayResource.CachedMailRelayUsage;
 
 public class CacheSettings {
 
@@ -38,17 +38,17 @@ public class CacheSettings {
                     .setStatisticsEnabled(false));
         
         cacheManager.createCache(CacheName.MAIL_RELAY_USAGE,
-                new MutableConfiguration<String, CachedMailRelayUsage>()
+                new MutableConfiguration<Long, CachedMailRelayUsage>()
                     .setStoreByValue(true)
-                    .setTypes(String.class, CachedMailRelayUsage.class)
+                    .setTypes(Long.class, CachedMailRelayUsage.class)
                     .setExpiryPolicyFactory(
                             AccessedExpiryPolicy.factoryOf(Duration.ONE_MINUTE))
                     .setStatisticsEnabled(false));
         
         cacheManager.createCache(CacheName.MAIL_RELAY_HISTORY,
-                new MutableConfiguration<String, CachedMailRelayHistory>()
+                new MutableConfiguration<Long, CachedMailRelayHistory>()
                     .setStoreByValue(true)
-                    .setTypes(String.class, CachedMailRelayHistory.class)
+                    .setTypes(Long.class, CachedMailRelayHistory.class)
                     .setExpiryPolicyFactory(
                             AccessedExpiryPolicy.factoryOf(Duration.ONE_MINUTE))
                     .setStatisticsEnabled(false));
