@@ -4,6 +4,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.StringJoiner;
 import java.util.UUID;
 
 import javax.inject.Inject;
@@ -65,7 +66,7 @@ public class JdbcActionService implements ActionService {
                 + " where id = ?;",
                 Sql.nextOrNull(this::mapAction), actionId);
     }
-
+    
     @Override
     public Action getVmAction(UUID vmId, long actionId) {
         return Sql.with(dataSource).exec("SELECT * FROM vm_action "
@@ -75,7 +76,7 @@ public class JdbcActionService implements ActionService {
                 + " AND vm_id = ?;",
                 Sql.nextOrNull(this::mapAction), actionId, vmId);
     }
-
+    
     @Override
     public ResultSubset<Action> getActions(UUID vmId, long limit, long offset){
         return Sql.with(dataSource).exec("SELECT *, count(*) over() as total_rows FROM vm_action "
@@ -86,6 +87,28 @@ public class JdbcActionService implements ActionService {
                 + " LIMIT ? OFFSET ?;",
                 Sql.nextOrNull(this::mapActionWithTotal),
                 vmId, limit, offset);
+    }
+    
+    @Override
+    public ResultSubset<Action> getActions(UUID vmId, long limit, long offset, List<String> statusList){
+        
+        return Sql.with(dataSource).exec("SELECT *, count(*) over() as total_rows FROM vm_action "
+                + " JOIN action_status on vm_action.status_id = action_status.status_id"
+                + " JOIN action_type on vm_action.action_type_id = action_type.type_id"
+                + " where vm_id = ?"
+                + " and action_status.status in " + formattedStatusList(statusList)
+                + " ORDER BY created DESC"
+                + " LIMIT ? OFFSET ?;",
+                Sql.nextOrNull(this::mapActionWithTotal),
+                vmId, limit, offset);
+    }
+    
+    private String formattedStatusList(List<String> statusList){
+        StringJoiner statusJoiner = new StringJoiner("\', \'", "('", "')");
+        for(String status : statusList){
+            statusJoiner.add(status.toUpperCase());
+        }
+        return statusJoiner.toString();
     }
 
     private ResultSubset<Action> mapActionWithTotal(ResultSet rs) throws SQLException {

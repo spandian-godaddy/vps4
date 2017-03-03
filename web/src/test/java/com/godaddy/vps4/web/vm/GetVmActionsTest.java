@@ -3,6 +3,7 @@ package com.godaddy.vps4.web.vm;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
 
@@ -10,7 +11,13 @@ import javax.ws.rs.core.UriInfo;
 
 import org.junit.Before;
 import org.junit.Test;
-import org.mockito.Mockito;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.any;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.anyLong;
+import static org.mockito.Mockito.anyList;
+import static org.mockito.Mockito.verify;
 
 import com.godaddy.vps4.jdbc.ResultSubset;
 import com.godaddy.vps4.security.PrivilegeService;
@@ -37,31 +44,30 @@ public class GetVmActionsTest {
 
     @Before
     public void setupTest() {
-        uriInfo = Mockito.mock(UriInfo.class);
+        uriInfo = mock(UriInfo.class);
         URI uri = null;
         try {
             uri = new URI("http://fakeUri/something/something/");
         } catch (URISyntaxException e) {
             // do nothing
         }
-        Mockito.when(uriInfo.getAbsolutePath()).thenReturn(uri);
+        when(uriInfo.getAbsolutePath()).thenReturn(uri);
     }
 
     @Test
     public void testNullResults() {
         actionSubset = null;
-
+        ActionService actionService = mock(ActionService.class);
         Injector injector = Guice.createInjector(new AbstractModule() {
             @Override
             public void configure() {
-                PrivilegeService privilegeService = Mockito.mock(PrivilegeService.class);
-                Mockito.when(
-                        privilegeService.checkAnyPrivilegeToProjectId(Mockito.any(Vps4User.class), Mockito.anyLong()))
+                PrivilegeService privilegeService = mock(PrivilegeService.class);
+                when(
+                        privilegeService.checkAnyPrivilegeToProjectId(any(Vps4User.class), anyLong()))
                         .thenReturn(true);
                 bind(PrivilegeService.class).toInstance(privilegeService);
-
-                ActionService actionService = Mockito.mock(ActionService.class);
-                Mockito.when(actionService.getActions(Mockito.any(UUID.class), Mockito.anyLong(), Mockito.anyLong()))
+                
+                when(actionService.getActions(any(UUID.class), anyLong(), anyLong()))
                         .thenReturn(actionSubset);
                 bind(ActionService.class).toInstance(actionService);
 
@@ -75,8 +81,8 @@ public class GetVmActionsTest {
         });
 
         VmActionResource vmActionResource = injector.getInstance(VmActionResource.class);
-        PaginatedResult<Action> actionResults = vmActionResource.getActions(UUID.randomUUID(), 10, 10, uriInfo);
-        System.out.println(actionResults.results.size());
+        PaginatedResult<Action> actionResults = vmActionResource.getActions(vmId, 10, 10, null, uriInfo);
+        verify(actionService, times(1)).getActions(vmId, 10, 10);
         assertEquals(0, actionResults.pagination.total);
         assertEquals(new ArrayList<Action>(), actionResults.results);
     }
@@ -86,18 +92,49 @@ public class GetVmActionsTest {
         List<Action> actionList = new ArrayList<Action>();
         actionList.add(new Action(1, vmId, ActionType.STOP_VM, 1, "", "", "", ActionStatus.COMPLETE, null, "", null));
         actionSubset = new ResultSubset<Action>(actionList, 1);
-
+        ActionService actionService = mock(ActionService.class);
         Injector injector = Guice.createInjector(new AbstractModule() {
             @Override
             public void configure() {
-                PrivilegeService privilegeService = Mockito.mock(PrivilegeService.class);
-                Mockito.when(
-                        privilegeService.checkAnyPrivilegeToProjectId(Mockito.any(Vps4User.class), Mockito.anyLong()))
+                PrivilegeService privilegeService = mock(PrivilegeService.class);
+                when(privilegeService.checkAnyPrivilegeToProjectId(any(Vps4User.class), anyLong()))
+                        .thenReturn(true);
+                bind(PrivilegeService.class).toInstance(privilegeService);
+                
+                when(actionService.getActions(any(UUID.class), anyLong(), anyLong()))
+                        .thenReturn(actionSubset);
+                bind(ActionService.class).toInstance(actionService);
+            }
+
+            @Provides
+            public Vps4User provideUser() {
+                return new Vps4User(1, "123456666");
+            }
+        });
+        VmActionResource vmActionResource = injector.getInstance(VmActionResource.class);
+        PaginatedResult<Action> actionResults = vmActionResource.getActions(vmId, 10, 10, null, uriInfo);
+        verify(actionService, times(1)).getActions(vmId, 10, 10);
+        assertEquals(1, actionResults.pagination.total);
+        assertEquals(actionList, actionResults.results);
+    }
+    
+    @Test
+    public void testFilteredResults() {
+        // uses a different getActions, since there is now a non-empty list being passed to vmActionResource.getActions
+        List<Action> actionList = new ArrayList<Action>();
+        actionList.add(new Action(1, vmId, ActionType.STOP_VM, 1, "", "", "", ActionStatus.COMPLETE, null, "", null));
+        actionSubset = new ResultSubset<Action>(actionList, 1);
+        ActionService actionService = mock(ActionService.class);
+        Injector injector = Guice.createInjector(new AbstractModule() {
+            @Override
+            public void configure() {
+                PrivilegeService privilegeService = mock(PrivilegeService.class);
+                when(
+                        privilegeService.checkAnyPrivilegeToProjectId(any(Vps4User.class), anyLong()))
                         .thenReturn(true);
                 bind(PrivilegeService.class).toInstance(privilegeService);
 
-                ActionService actionService = Mockito.mock(ActionService.class);
-                Mockito.when(actionService.getActions(Mockito.any(UUID.class), Mockito.anyLong(), Mockito.anyLong()))
+                when(actionService.getActions(any(UUID.class), anyLong(), anyLong(), anyList()))
                         .thenReturn(actionSubset);
                 bind(ActionService.class).toInstance(actionService);
             }
@@ -109,8 +146,9 @@ public class GetVmActionsTest {
         });
 
         VmActionResource vmActionResource = injector.getInstance(VmActionResource.class);
-        PaginatedResult<Action> actionResults = vmActionResource.getActions(UUID.randomUUID(), 10, 10, uriInfo);
-        System.out.println(actionResults.results.size());
+        List<String> statusList = Arrays.asList(new String[]{"NEW", "IN PROGRESS"});
+        PaginatedResult<Action> actionResults = vmActionResource.getActions(vmId, 10, 10, statusList, uriInfo);
+        verify(actionService, times(1)).getActions(vmId, 10, 10, statusList);
         assertEquals(1, actionResults.pagination.total);
         assertEquals(actionList, actionResults.results);
     }

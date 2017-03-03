@@ -21,6 +21,7 @@ import com.godaddy.vps4.security.PrivilegeService;
 import com.godaddy.vps4.security.Vps4User;
 import com.godaddy.vps4.vm.Action;
 import com.godaddy.vps4.vm.ActionService;
+import com.godaddy.vps4.vm.ActionType;
 import com.godaddy.vps4.web.PaginatedResult;
 import com.godaddy.vps4.web.Vps4Api;
 import com.google.inject.Inject;
@@ -51,10 +52,18 @@ public class VmActionResource {
     @Path("{vmId}/actions")
     public PaginatedResult<Action> getActions(@PathParam("vmId") UUID vmId,
             @DefaultValue("10") @QueryParam("limit") long limit, @DefaultValue("0") @QueryParam("offset") long offset,
+            @QueryParam("status") List<String> status,
             @Context UriInfo uri) {
-        privilegeService.requireAnyPrivilegeToVmId(user, vmId);
 
-        ResultSubset<Action> actions = actionService.getActions(vmId, limit, offset);
+        privilegeService.requireAnyPrivilegeToVmId(user, vmId);
+        
+        ResultSubset<Action> actions;
+        if(status == null || status.isEmpty()){
+             actions = actionService.getActions(vmId, limit, offset);
+        }else{
+            actions = actionService.getActions(vmId, limit, offset, status);
+        }   
+        
         long totalRows = 0;
         List<Action> actionList = new ArrayList<Action>();
         if (actions != null) {
@@ -69,8 +78,9 @@ public class VmActionResource {
     @Path("{vmId}/actions/{actionId}")
     public Action getVmAction(@PathParam("vmId") UUID vmId, @PathParam("actionId") long actionId) {
         privilegeService.requireAnyPrivilegeToVmId(user, vmId);
+        
         Action action = actionService.getVmAction(vmId, actionId);
-
+        
         if (action == null) {
             throw new NotFoundException("actionId " + actionId + " not found");
         }

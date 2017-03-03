@@ -1,0 +1,1 @@
+CREATE INDEX vm_action_vm_id on vm_action (vm_id);
