@@ -4,7 +4,6 @@ import com.godaddy.vps4.orchestration.hfs.cpanel.ConfigureCpanel;
 import com.godaddy.vps4.orchestration.hfs.cpanel.WaitForCpanelAction;
 import com.godaddy.vps4.orchestration.hfs.network.AllocateIp;
 import com.godaddy.vps4.orchestration.hfs.network.BindIp;
-import com.godaddy.vps4.orchestration.hfs.network.DestroyIpAddress;
 import com.godaddy.vps4.orchestration.hfs.network.ReleaseIp;
 import com.godaddy.vps4.orchestration.hfs.network.UnbindIp;
 import com.godaddy.vps4.orchestration.hfs.network.WaitForAddressAction;
@@ -43,7 +42,6 @@ public class HfsCommandModule extends AbstractModule {
         bind(BindIp.class);
         bind(ReleaseIp.class);
         bind(UnbindIp.class);
-        bind(DestroyIpAddress.class);
         bind(WaitForAddressAction.class);
 
         // SysAdmin

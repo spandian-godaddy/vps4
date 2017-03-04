@@ -4,6 +4,7 @@ import com.godaddy.vps4.orchestration.sysadmin.Vps4SetHostname;
 import com.godaddy.vps4.orchestration.sysadmin.Vps4SetPassword;
 import com.godaddy.vps4.orchestration.sysadmin.Vps4ToggleAdmin;
 import com.godaddy.vps4.orchestration.vm.ProvisionVm;
+import com.godaddy.vps4.orchestration.vm.Vps4DestroyIpAddress;
 import com.godaddy.vps4.orchestration.vm.Vps4DestroyVm;
 import com.godaddy.vps4.orchestration.vm.Vps4RestartVm;
 import com.godaddy.vps4.orchestration.vm.Vps4StartVm;
@@ -24,5 +25,6 @@ public class Vps4CommandModule extends AbstractModule {
         bind(Vps4StartVm.class);
         bind(Vps4StopVm.class);
         bind(Vps4RestartVm.class);
+        bind(Vps4DestroyIpAddress.class);
     }
 }

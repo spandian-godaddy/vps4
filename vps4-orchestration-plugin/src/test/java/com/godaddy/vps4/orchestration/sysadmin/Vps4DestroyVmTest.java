@@ -51,7 +51,7 @@ public class Vps4DestroyVmTest {
     MailRelayService mailRelayService = mock(MailRelayService.class);
     VmService vmService = mock(VmService.class);
     
-    Vps4DestroyVm command = new Vps4DestroyVm(actionService, networkService, virtualMachineService);
+    Vps4DestroyVm command = new Vps4DestroyVm(actionService, networkService, virtualMachineService, vmService, cpanelService);
 
     Injector injector = Guice.createInjector(binder -> {
         binder.bind(UnbindIp.class);
