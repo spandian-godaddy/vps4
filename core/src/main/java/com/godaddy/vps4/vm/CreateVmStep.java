@@ -13,5 +13,6 @@ public enum CreateVmStep {
     VerifyingSetup,
     SetupComplete,
     ConfiguringCPanel,
-    ConfiguringPlesk;
+    ConfiguringPlesk,
+    SetHostname;
 }

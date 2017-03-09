@@ -19,6 +19,7 @@ import com.godaddy.vps4.orchestration.hfs.network.BindIp;
 import com.godaddy.vps4.orchestration.hfs.network.BindIp.BindIpRequest;
 import com.godaddy.vps4.orchestration.hfs.plesk.ConfigurePlesk;
 import com.godaddy.vps4.orchestration.hfs.plesk.ConfigurePlesk.ConfigurePleskRequest;
+import com.godaddy.vps4.orchestration.hfs.sysadmin.SetHostname;
 import com.godaddy.vps4.orchestration.hfs.sysadmin.SetPassword;
 import com.godaddy.vps4.orchestration.hfs.sysadmin.ToggleAdmin;
 import com.godaddy.vps4.orchestration.hfs.vm.CreateVm;
@@ -45,12 +46,12 @@ import gdg.hfs.vhfs.vm.VmService;
 
 @CommandMetadata(
     name="ProvisionVm",
-    requestType=ProvisionVm.Request.class,
-    responseType=ProvisionVm.Response.class
+    requestType=Vps4ProvisionVm.Request.class,
+    responseType=Vps4ProvisionVm.Response.class
 )
-public class ProvisionVm extends ActionCommand<ProvisionVm.Request, ProvisionVm.Response> {
+public class Vps4ProvisionVm extends ActionCommand<Vps4ProvisionVm.Request, Vps4ProvisionVm.Response> {
 
-    private static final Logger logger = LoggerFactory.getLogger(ProvisionVm.class);
+    private static final Logger logger = LoggerFactory.getLogger(Vps4ProvisionVm.class);
 
     final VmService vmService;
 
@@ -65,11 +66,13 @@ public class ProvisionVm extends ActionCommand<ProvisionVm.Request, ProvisionVm.
     Request request;
 
     ActionState state;
+    
+    String hostname;
 
     CommandContext context;
 
     @Inject
-    public ProvisionVm(ActionService actionService,
+    public Vps4ProvisionVm(ActionService actionService,
                     VmService vmService,
                     VirtualMachineService virtualMachineService,
                     VmUserService vmUserService,
@@ -106,11 +109,24 @@ public class ProvisionVm extends ActionCommand<ProvisionVm.Request, ProvisionVm.
 
         configureControlPanel(hfsVm);
 
+        setHostname(hfsVm);
+        
         configureAdminUser(hfsVm);
 
         setStep(CreateVmStep.SetupComplete);
         logger.info("provision vm finished: {}", hfsVm);
         return null;
+    }
+    
+    private void setHostname(Vm hfsVm){
+        setStep(CreateVmStep.SetHostname);
+        
+        SetHostname.Request hfsRequest = new SetHostname.Request();
+        hfsRequest.hfsVmId = hfsVm.vmId;
+        hfsRequest.hostname = this.hostname;
+        hfsRequest.controlPanel = request.vmInfo.image.controlPanel.toString().toLowerCase();
+        
+        context.execute(SetHostname.class, hfsRequest);
     }
 
     private void configureControlPanel(Vm hfsVm) {
@@ -168,7 +184,8 @@ public class ProvisionVm extends ActionCommand<ProvisionVm.Request, ProvisionVm.
 
         // Generate a new hostname from the allocated ip
         setStep(CreateVmStep.GeneratingHostname);
-        hfsRequest.hostname = HostnameGenerator.getHostname(ip.address);
+        this.hostname = HostnameGenerator.getHostname(ip.address);
+        hfsRequest.hostname = this.hostname;
         virtualMachineService.setHostname(request.vmInfo.vmId, hfsRequest.hostname);
 
         // Create the VM

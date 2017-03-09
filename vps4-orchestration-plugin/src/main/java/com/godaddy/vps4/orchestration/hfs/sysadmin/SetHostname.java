@@ -17,6 +17,7 @@ public class SetHostname implements Command<SetHostname.Request, Void> {
     public static class Request {
         public long hfsVmId;
         public String hostname;
+        public String controlPanel;
     }
 
     private final SysAdminService sysAdminService;
@@ -29,9 +30,7 @@ public class SetHostname implements Command<SetHostname.Request, Void> {
     public Void execute(CommandContext context, Request request){
         logger.debug("Setting hostname to {} for hfs vm {}", request.hostname, request.hfsVmId);
 
-        // FIXME pull control panel from VM (or add to Request)
-        String controlPanel = null;
-        SysAdminAction hfsSysAction = context.execute("SetHostname", ctx -> sysAdminService.changeHostname(request.hfsVmId, request.hostname, controlPanel));
+        SysAdminAction hfsSysAction = context.execute("SetHostname", ctx -> sysAdminService.changeHostname(request.hfsVmId, request.hostname, request.controlPanel));
 
         context.execute("WaitForSetHostname", WaitForSysAdminAction.class, hfsSysAction);
 

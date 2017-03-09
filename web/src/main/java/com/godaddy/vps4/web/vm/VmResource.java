@@ -21,7 +21,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.godaddy.hfs.config.Config;
-import com.godaddy.vps4.orchestration.vm.ProvisionVm;
+import com.godaddy.vps4.orchestration.vm.Vps4ProvisionVm;
 import com.godaddy.vps4.orchestration.vm.Vps4DestroyVm;
 import com.godaddy.vps4.orchestration.vm.Vps4RestartVm;
 import com.godaddy.vps4.orchestration.vm.Vps4StartVm;
@@ -241,7 +241,7 @@ public class VmResource {
                 project.getVhfsSgid(), mailRelayQuota);
         logger.info("vmInfo: {}", vmInfo.toString());
 
-        ProvisionVm.Request request = createProvisionVmRequest(hfsRequest, actionId, vmInfo);
+        Vps4ProvisionVm.Request request = createProvisionVmRequest(hfsRequest, actionId, vmInfo);
 
         CommandState command = Commands.execute(commandService, actionService, "ProvisionVm", request);
         logger.info("provisioning VM in {}", command.commandId);
@@ -260,10 +260,10 @@ public class VmResource {
         return vmCredit;
     }
 
-    private ProvisionVm.Request createProvisionVmRequest(CreateVMWithFlavorRequest hfsRequest,
+    private Vps4ProvisionVm.Request createProvisionVmRequest(CreateVMWithFlavorRequest hfsRequest,
                                                          long actionId,
                                                          ProvisionVmInfo vmInfo) {
-        ProvisionVm.Request request = new ProvisionVm.Request();
+        Vps4ProvisionVm.Request request = new Vps4ProvisionVm.Request();
         request.actionId = actionId;
         request.hfsRequest = hfsRequest;
         request.vmInfo = vmInfo;
