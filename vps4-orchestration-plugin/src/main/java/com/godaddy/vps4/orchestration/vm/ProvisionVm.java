@@ -66,6 +66,8 @@ public class ProvisionVm extends ActionCommand<ProvisionVm.Request, ProvisionVm.
 
     ActionState state;
 
+    CommandContext context;
+
     @Inject
     public ProvisionVm(ActionService actionService,
                     VmService vmService,
@@ -85,29 +87,89 @@ public class ProvisionVm extends ActionCommand<ProvisionVm.Request, ProvisionVm.
     public Response executeWithAction(CommandContext context, Request request) throws Exception {
 
         this.request = request;
-        ProvisionVmInfo vmInfo = request.vmInfo;
-
-        state = new ActionState();
+        this.context = context;
+        this.state = new ActionState();
 
         setStep(CreateVmStep.StartingServerSetup);
 
         logger.info("begin provision vm for request: {}", request);
 
-        // allocate IP address
-        setStep(CreateVmStep.RequestingIPAddress);
-        AllocateIp.Request allocateIpRequest = createAllocateIpRequest(request, vmInfo);
-        gdg.hfs.vhfs.network.IpAddress ip = context.execute(AllocateIp.class, allocateIpRequest);
+        IpAddress ip = allocateIp();
 
-        // create mail relay
-        setStep(CreateVmStep.RequestingMailRelay);
-        requestMailRelay(ip, vmInfo.mailRelayQuota);
+        createMailRelay(ip);
 
+        Vm hfsVm = createVm(ip);
+
+        setupUsers(hfsVm);
+
+        bindIp(hfsVm, ip);
+
+        configureControlPanel(hfsVm);
+
+        configureAdminUser(hfsVm);
+
+        setStep(CreateVmStep.SetupComplete);
+        logger.info("provision vm finished: {}", hfsVm);
+        return null;
+    }
+
+    private void configureControlPanel(Vm hfsVm) {
+        if (request.vmInfo.image.controlPanel == ControlPanel.CPANEL) {
+            // VM with cPanel
+            setStep(CreateVmStep.ConfiguringCPanel);
+
+            // configure cpanel on the vm
+            ConfigureCpanelRequest cpanelRequest = createConfigureCpanelRequest(hfsVm);
+            context.execute(ConfigureCpanel.class, cpanelRequest);
+
+        } else if (request.vmInfo.image.controlPanel == ControlPanel.PLESK) {
+            // VM with Plesk image
+            setStep(CreateVmStep.ConfiguringPlesk);
+
+            // configure Plesk on the vm
+            ConfigurePleskRequest pleskRequest = createConfigurePleskRequest(hfsVm, request);
+            context.execute(ConfigurePlesk.class, pleskRequest);
+        }
+    }
+
+    private void bindIp(Vm hfsVm, IpAddress ip) {
+        // bind IP to the VM
+        setStep(CreateVmStep.ConfiguringNetwork);
+
+        BindIpRequest bindRequest = new BindIpRequest();
+        bindRequest.addressId = ip.addressId;
+        bindRequest.vmId = hfsVm.vmId;
+        context.execute(BindIp.class, bindRequest);
+
+        // Add the ip to the database
+        context.execute("Create-" + ip.addressId, ctx -> {
+            networkService.createIpAddress(ip.addressId, request.vmInfo.vmId, ip.address, IpAddressType.PRIMARY);
+            return null;
+        });
+    }
+
+    private void setupUsers(Vm hfsVm) {
+        // associate the Vm with the user that created it
+        context.execute("CreateVps4User", ctx -> {
+            vmUserService.createUser(request.hfsRequest.username, request.vmInfo.vmId);
+            return null;
+        });
+
+        // set the root password to the same as the user password (LINUX ONLY)
+        VirtualMachine vm = virtualMachineService.getVirtualMachine(request.vmInfo.vmId);
+        if(vm.image.operatingSystem == Image.OperatingSystem.LINUX) {
+            SetPassword.Request setRootPasswordRequest = createSetRootPasswordRequest(request, hfsVm);
+            context.execute(SetPassword.class, setRootPasswordRequest);
+        }
+    }
+
+    private Vm createVm(IpAddress ip) {
         CreateVMWithFlavorRequest hfsRequest = request.hfsRequest;
-        
+
         // Generate a new hostname from the allocated ip
         setStep(CreateVmStep.GeneratingHostname);
         hfsRequest.hostname = HostnameGenerator.getHostname(ip.address);
-        virtualMachineService.setHostname(vmInfo.vmId, hfsRequest.hostname);
+        virtualMachineService.setHostname(request.vmInfo.vmId, hfsRequest.hostname);
 
         // Create the VM
         setStep(CreateVmStep.RequestingServer);
@@ -115,73 +177,29 @@ public class ProvisionVm extends ActionCommand<ProvisionVm.Request, ProvisionVm.
 
         // Get the hfs vm
         Vm hfsVm = context.execute("GetVmAfterCreate", ctx -> (Vm)vmService.getVm(vmAction.vmId));
-        
+
         // VPS4 VM bookeeping (Add hfs vmid to the virtual_machine db row)
         context.execute("Vps4ProvisionVm", ctx -> {
-            virtualMachineService.addHfsVmIdToVirtualMachine(vmInfo.vmId, hfsVm.vmId);
-            return null;
-        });
-        
-        // associate the Vm with the user that created it
-        context.execute("CreateVps4User", ctx -> {
-            vmUserService.createUser(hfsRequest.username, vmInfo.vmId);
-            return null;
-        });
-        
-        // set the root password to the same as the user password (LINUX ONLY)
-        VirtualMachine vm = virtualMachineService.getVirtualMachine(vmInfo.vmId);
-        if(vm.image.operatingSystem == Image.OperatingSystem.LINUX) {
-            SetPassword.Request setRootPasswordRequest = createSetRootPasswordRequest(request, hfsVm);
-            context.execute(SetPassword.class, setRootPasswordRequest);
-        }
-
-        // bind IP to the VM
-        setStep(CreateVmStep.ConfiguringNetwork);
-        BindIpRequest bindRequest = createBindIpRequest(ip, hfsVm);
-        context.execute(BindIp.class, bindRequest);
-
-        // Add the ip to the database
-        context.execute("Create-" + ip.addressId, ctx -> {
-            networkService.createIpAddress(ip.addressId, vmInfo.vmId, ip.address, IpAddressType.PRIMARY);
+            virtualMachineService.addHfsVmIdToVirtualMachine(request.vmInfo.vmId, hfsVm.vmId);
             return null;
         });
 
-        if (vmInfo.image.controlPanel == ControlPanel.CPANEL) {
-            // VM with cPanel
-            setStep(CreateVmStep.ConfiguringCPanel);
-
-            // configure cpanel on the vm
-            ConfigureCpanelRequest cpanelRequest = createConfigureCpanelRequest(hfsVm);
-            context.execute(ConfigureCpanel.class, cpanelRequest);
-        
-        } else if (vmInfo.image.controlPanel == ControlPanel.PLESK) {
-            // VM with Plesk image
-            setStep(CreateVmStep.ConfiguringPlesk);
-            
-            // configure Plesk on the vm
-            ConfigurePleskRequest pleskRequest = createConfigurePleskRequest(hfsVm, request);
-            context.execute(ConfigurePlesk.class, pleskRequest);
-        }
-
-        // enable/disable admin access for user
-        ToggleAdmin.Request toggleAdminRequest = createToggleAdminRequest(request, vmInfo, hfsVm);
-        context.execute(ToggleAdmin.class, toggleAdminRequest);
-
-        setStep(CreateVmStep.SetupComplete);
-        logger.info("provision vm finished with status {} for action: {}", vmAction);
-        return null;
+        return hfsVm;
     }
 
-    private void requestMailRelay(IpAddress ip, int mailRelayQuota) {
+    private void createMailRelay(IpAddress ip) {
+
+        setStep(CreateVmStep.RequestingMailRelay);
+
         MailRelayUpdate mailRelayUpdate = new MailRelayUpdate();
-        mailRelayUpdate.quota = mailRelayQuota;
+        mailRelayUpdate.quota = request.vmInfo.mailRelayQuota;
         MailRelay relay = mailRelayService.setRelayQuota(ip.address, mailRelayUpdate);
         if (relay == null || relay.quota != mailRelayUpdate.quota) {
             throw new RuntimeException(String
                     .format("Failed to create mail relay for ip %s. Provision will not continue, please fix the mailRelay", ip.address));
         }
     }
-    
+
     private SetPassword.Request createSetRootPasswordRequest(Request request, Vm hfsVm) {
         SetPassword.Request setPasswordRequest = new SetPassword.Request();
         setPasswordRequest.hfsVmId = hfsVm.vmId;
@@ -191,12 +209,13 @@ public class ProvisionVm extends ActionCommand<ProvisionVm.Request, ProvisionVm.
         return setPasswordRequest;
     }
 
-    private ToggleAdmin.Request createToggleAdminRequest(Request request, ProvisionVmInfo vmInfo, Vm hfsVm) {
+    private void configureAdminUser(Vm hfsVm) {
         ToggleAdmin.Request toggleAdminRequest = new ToggleAdmin.Request();
-        toggleAdminRequest.enabled = vmInfo.managedLevel < 1;
+        toggleAdminRequest.enabled = request.vmInfo.managedLevel < 1;
         toggleAdminRequest.vmId = hfsVm.vmId;
         toggleAdminRequest.username = request.hfsRequest.username;
-        return toggleAdminRequest;
+
+        context.execute(ToggleAdmin.class, toggleAdminRequest);
     }
 
     private ConfigureCpanelRequest createConfigureCpanelRequest(Vm hfsVm) {
@@ -211,23 +230,24 @@ public class ProvisionVm extends ActionCommand<ProvisionVm.Request, ProvisionVm.
         return pleskRequest;
     }
 
-    private BindIpRequest createBindIpRequest(gdg.hfs.vhfs.network.IpAddress ip, Vm hfsVm) {
-        BindIpRequest bindRequest = new BindIpRequest();
-        bindRequest.addressId = ip.addressId;
-        bindRequest.vmId = hfsVm.vmId;
-        return bindRequest;
+    private IpAddress allocateIp() {
+
+        setStep(CreateVmStep.RequestingIPAddress);
+
+        AllocateIp.Request allocateIpRequest = new AllocateIp.Request();
+        allocateIpRequest.sgid = request.vmInfo.sgid;
+        allocateIpRequest.zone = request.hfsRequest.zone;
+
+        return context.execute(AllocateIp.class, allocateIpRequest);
     }
 
-    private AllocateIp.Request createAllocateIpRequest(Request request, ProvisionVmInfo vmInfo) {
-        AllocateIp.Request allocation = new AllocateIp.Request();
-        allocation.sgid = vmInfo.sgid;
-        allocation.zone = request.hfsRequest.zone;
-        return allocation;
-    }
-
-    protected void setStep(CreateVmStep step) throws JsonProcessingException {
+    protected void setStep(CreateVmStep step) {
         state.step = step;
-        actionService.updateActionState(request.getActionId(), mapper.writeValueAsString(state));
+        try {
+            actionService.updateActionState(request.getActionId(), mapper.writeValueAsString(state));
+        } catch (JsonProcessingException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     public static class Request implements ActionRequest {
