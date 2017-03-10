@@ -45,9 +45,7 @@ public class Vps4SetHostnameTest {
     @Test
     public void testSetHostnameSuccess() throws Exception {
 
-        SetHostname.Request setHostnameRequest = new SetHostname.Request();
-        setHostnameRequest.hfsVmId = 42;
-        setHostnameRequest.hostname = "newhostname.testing.tld";
+        SetHostname.Request setHostnameRequest = new SetHostname.Request(42, "newhostname.testing.tld", "none");
 
         Vps4SetHostname.Request request = new Vps4SetHostname.Request();
         request.actionId = 12;
@@ -73,9 +71,7 @@ public class Vps4SetHostnameTest {
     public void testSetHostnameFail() throws Exception {
         // Verify the old hostname is reset in the database upon failure.
 
-        SetHostname.Request setHostnameRequest = new SetHostname.Request();
-        setHostnameRequest.hfsVmId = 42;
-        setHostnameRequest.hostname = "newhostname.testing.tld";
+        SetHostname.Request setHostnameRequest = new SetHostname.Request(42, "newhostname.testing.tld", "none");
 
         Vps4SetHostname.Request request = new Vps4SetHostname.Request();
         request.actionId = 12;

@@ -18,6 +18,18 @@ public class SetHostname implements Command<SetHostname.Request, Void> {
         public long hfsVmId;
         public String hostname;
         public String controlPanel;
+        
+        public Request(){}
+        
+        public Request(long hfsVmId, String hostname, String controlPanel){
+            this.hfsVmId = hfsVmId;
+            this.hostname = hostname;
+            if(controlPanel.toLowerCase().equals("none")){
+                this.controlPanel = null;
+            }else{
+                this.controlPanel = controlPanel.toLowerCase();
+            }
+        }
     }
 
     private final SysAdminService sysAdminService;
@@ -29,7 +41,7 @@ public class SetHostname implements Command<SetHostname.Request, Void> {
 
     public Void execute(CommandContext context, Request request){
         logger.debug("Setting hostname to {} for hfs vm {}", request.hostname, request.hfsVmId);
-
+        
         SysAdminAction hfsSysAction = context.execute("SetHostname", ctx -> sysAdminService.changeHostname(request.hfsVmId, request.hostname, request.controlPanel));
 
         context.execute("WaitForSetHostname", WaitForSysAdminAction.class, hfsSysAction);

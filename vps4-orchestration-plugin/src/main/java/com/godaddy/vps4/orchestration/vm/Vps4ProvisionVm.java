@@ -121,10 +121,8 @@ public class Vps4ProvisionVm extends ActionCommand<Vps4ProvisionVm.Request, Vps4
     private void setHostname(Vm hfsVm){
         setStep(CreateVmStep.SetHostname);
         
-        SetHostname.Request hfsRequest = new SetHostname.Request();
-        hfsRequest.hfsVmId = hfsVm.vmId;
-        hfsRequest.hostname = this.hostname;
-        hfsRequest.controlPanel = request.vmInfo.image.controlPanel.toString().toLowerCase();
+        SetHostname.Request hfsRequest = new SetHostname.Request(hfsVm.vmId, this.hostname, 
+                                                request.vmInfo.image.controlPanel.toString());
         
         context.execute(SetHostname.class, hfsRequest);
     }

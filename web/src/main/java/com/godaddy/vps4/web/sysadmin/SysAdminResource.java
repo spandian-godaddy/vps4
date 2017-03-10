@@ -146,10 +146,7 @@ public class SysAdminResource {
         
         VirtualMachine vm = getVm(vmId);
         
-        SetHostname.Request hfsRequest = new SetHostname.Request();
-        hfsRequest.hfsVmId = vm.hfsVmId;
-        hfsRequest.hostname = setHostnameRequest.hostname;
-        hfsRequest.controlPanel = vm.image.controlPanel.toString().toLowerCase();
+        SetHostname.Request hfsRequest = new SetHostname.Request(vm.hfsVmId, setHostnameRequest.hostname, vm.image.controlPanel.toString());
         
         Vps4SetHostname.Request vps4Request = new Vps4SetHostname.Request();
         vps4Request.setHostnameRequest = hfsRequest;
