@@ -29,6 +29,7 @@ import com.godaddy.vps4.cache.CacheName;
 import com.godaddy.vps4.cache.HazelcastProvider;
 import com.godaddy.vps4.sysadmin.VmUsageService.CachedVmUsage;
 
+import gdg.hfs.vhfs.sysadmin.SysAdminAction;
 import gdg.hfs.vhfs.sysadmin.SysAdminService;
 
 public class VmUsageServiceTest {
@@ -41,6 +42,9 @@ public class VmUsageServiceTest {
 
     String linuxUsageJson;
     VmUsage linuxUsage;
+
+    String hddOnlyUsageJson;
+    VmUsage hddOnlyUsage;
 
     @Before
     public void setUp() throws Exception {
@@ -57,6 +61,12 @@ public class VmUsageServiceTest {
             linuxUsageJson = json.toJSONString();
             linuxUsage = new VmUsageParser().parse(json);
         }
+
+        try (InputStream is = VmUsageParserTest.class.getResourceAsStream("usage_stats_hdd_only.json")) {
+            JSONObject json = (JSONObject)JSONValue.parse(new InputStreamReader(is, Charsets.UTF8));
+            hddOnlyUsageJson = json.toJSONString();
+            hddOnlyUsage = new VmUsageParser().parse(json);
+        }
     }
 
     protected VmUsage makeValid(VmUsage usage) {
@@ -71,11 +81,40 @@ public class VmUsageServiceTest {
     public void testSerialization() throws Exception {
         ObjectMapper mapper = HazelcastProvider.newObjectMapper();
 
-        String json = mapper.writeValueAsString(new CachedVmUsage(this.linuxUsage, false));
+        String json = mapper.writeValueAsString(new CachedVmUsage(this.linuxUsage, 1));
         CachedVmUsage cachedUsage = (CachedVmUsage)mapper.readValue(json, Object.class);
         assertNotNull(cachedUsage);
         assertNotNull(cachedUsage.usage);
-        assertFalse(cachedUsage.fetching);
+        assertEquals(1, cachedUsage.updateActionId);
+    }
+
+    @Test
+    public void testHddOnlyInitialUsage() throws Exception {
+
+        // when HFS returns that no usage has been run on the target VM...
+        Response response = mock(Response.class);
+        when(response.readEntity(String.class)).thenReturn(hddOnlyUsageJson);
+
+        when(sysAdminService.usageStatsResults(42, null, null)).thenReturn(response);
+
+        SysAdminAction action = new SysAdminAction();
+        action.vmId = 42;
+        action.status = SysAdminAction.Status.COMPLETE;
+
+        when(sysAdminService.usageStatsUpdate(42, 1)).thenReturn(action);
+
+        VmUsage usage = vmUsageService.getUsage(42);
+        usage = vmUsageService.getUsage(42);
+
+        // we should have kicked off the usage stats update...
+        verify(sysAdminService, Mockito.times(2)).usageStatsUpdate(42, 1);
+
+        // ... but still returned an empty since we want to return
+        // immediately since usage stats take a little while to gather
+        assertNotNull(usage);
+        assertNull(usage.io);
+        assertNull(usage.cpu);
+        assertNull(usage.disk);
     }
 
     @Test
@@ -85,6 +124,11 @@ public class VmUsageServiceTest {
         Response response = mock(Response.class);
         when(response.readEntity(String.class)).thenReturn("{\"data\":\"has not completed\"}");
 
+        SysAdminAction action = new SysAdminAction();
+        action.vmId = 42;
+        action.status = SysAdminAction.Status.COMPLETE;
+
+        when(sysAdminService.usageStatsUpdate(42, 1)).thenReturn(action);
         when(sysAdminService.usageStatsResults(42, null, null)).thenReturn(response);
 
         VmUsage usage = vmUsageService.getUsage(42);
@@ -104,7 +148,7 @@ public class VmUsageServiceTest {
     public void testCachedVps4() throws Exception {
 
         // when we already have a good cached usage for the given VM...
-        when(cache.get(42L)).thenReturn(new CachedVmUsage(makeValid(linuxUsage), false));
+        when(cache.get(42L)).thenReturn(new CachedVmUsage(makeValid(linuxUsage), -1));
 
         VmUsage usage = vmUsageService.getUsage(42);
         assertEquals(linuxUsage, usage);
@@ -120,13 +164,19 @@ public class VmUsageServiceTest {
         // when we have stale cached usage in the VPS4 cache...
         // (invalidate the linux usage that the cache will return)
         linuxUsage.cpu.timestamp = Instant.now().minus(Duration.ofHours(48));
-        when(cache.get(42L)).thenReturn(new CachedVmUsage(linuxUsage, false));
+        when(cache.get(42L)).thenReturn(new CachedVmUsage(linuxUsage, -1));
 
         // ... but HFS has good (albeit stale) data
         Response response = mock(Response.class);
         when(response.getStatus()).thenReturn(202);
         when(response.readEntity(String.class)).thenReturn(this.linuxUsageJson);
         when(sysAdminService.usageStatsResults(42, null, null)).thenReturn(response);
+
+        SysAdminAction action = new SysAdminAction();
+        action.vmId = 42;
+        action.status = SysAdminAction.Status.COMPLETE;
+
+        when(sysAdminService.usageStatsUpdate(42, 1)).thenReturn(action);
 
         VmUsage usage = vmUsageService.getUsage(42);
 
@@ -141,7 +191,7 @@ public class VmUsageServiceTest {
         assertNotNull(argument.getValue().usage);
 
         // and since the HFS data was stale, we should be fetching new data
-        assertTrue(argument.getValue().fetching);
+        assertEquals(0, argument.getValue().updateActionId);
     }
 
     @Test
@@ -150,7 +200,7 @@ public class VmUsageServiceTest {
         // when we have stale cached usage in the VPS4 cache...
         // (invalidate the linux usage that the cache will return)
         linuxUsage.cpu.timestamp = Instant.now().minus(Duration.ofHours(48));
-        when(cache.get(42L)).thenReturn(new CachedVmUsage(linuxUsage, false));
+        when(cache.get(42L)).thenReturn(new CachedVmUsage(linuxUsage, -1));
 
         // ... and HFS has data, but it's expired...
         Response response = mock(Response.class);
@@ -162,6 +212,12 @@ public class VmUsageServiceTest {
         when(response.readEntity(String.class)).thenReturn(responseJson.toJSONString());
         when(sysAdminService.usageStatsResults(42, null, null)).thenReturn(response);
 
+        SysAdminAction action = new SysAdminAction();
+        action.vmId = 42;
+        action.status = SysAdminAction.Status.COMPLETE;
+
+        when(sysAdminService.usageStatsUpdate(42, 1)).thenReturn(action);
+
         VmUsage usage = vmUsageService.getUsage(42);
 
         // we should use HFS's data
@@ -171,7 +227,7 @@ public class VmUsageServiceTest {
         ArgumentCaptor<CachedVmUsage> argument = ArgumentCaptor.forClass(CachedVmUsage.class);
         verify(cache).put(eq(42L), argument.capture());
         assertNotNull(argument.getValue().usage);
-        assertTrue(argument.getValue().fetching);
+        assertEquals(0, argument.getValue().updateActionId);
 
         // ... and we should have fired off a request to HFS
         //     to update the usage

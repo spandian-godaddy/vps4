@@ -1,0 +1,32 @@
+{
+  "hdd": {
+    "data": [
+      [
+        "2017-03-10 23:24:58 UTC",
+        "/dev/vda1",
+        "40948",
+        "8075",
+        "32873",
+        "20%",
+        "/",
+        "41940288",
+        "194096",
+        "41746192",
+        "1%"
+      ]
+    ],
+    "headers": [
+      "Timestamp",
+      "Filesystem",
+      "1M-blocks",
+      "Used",
+      "Avail",
+      "Use%",
+      "MountedOn",
+      "Inodes",
+      "IUsed",
+      "IFree",
+      "IUse%"
+    ]
+  }
+}

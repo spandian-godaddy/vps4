@@ -16,6 +16,7 @@ import org.slf4j.LoggerFactory;
 
 import com.godaddy.vps4.cache.CacheName;
 
+import gdg.hfs.vhfs.sysadmin.SysAdminAction;
 import gdg.hfs.vhfs.sysadmin.SysAdminService;
 
 public class VmUsageService {
@@ -63,24 +64,19 @@ public class VmUsageService {
 
             if (shouldRefresh(usage)) {
 
-                if (cachedUsage == null
-                    || (cachedUsage != null && !cachedUsage.fetching)) {
+                if (shouldSendUpdateRequest(cachedUsage)) {
                     logger.debug("HFS data is old or missing (hfsVmId={}), requesting refresh", hfsVmId);
-                    sysAdminService.usageStatsUpdate(hfsVmId, 1);
+                    SysAdminAction updateAction = sysAdminService.usageStatsUpdate(hfsVmId, 1);
+                    logger.info("updating usage stats with action: {}", updateAction);
 
                     // update our cache to show that we've requested
-                    cachedUsage = new CachedVmUsage(usage, true);
+                    cachedUsage = new CachedVmUsage(usage, updateAction.sysAdminActionId);
                     cache.put(hfsVmId, cachedUsage);
-
-                } else {
-                    // the data needs to be refreshed, but the 'fetching' flag is already
-                    //   set, so we've sent them a request.
-                    // let the cachedUsage we already had return
                 }
 
             } else {
                 logger.debug("HFS responded with newer data (hfsVmId={}), caching", hfsVmId);
-                cachedUsage = new CachedVmUsage(usage, false);
+                cachedUsage = new CachedVmUsage(usage, -1);
                 cache.put(hfsVmId, cachedUsage);
             }
         }
@@ -89,6 +85,43 @@ public class VmUsageService {
             usage = new VmUsage();
         }
         return usage;
+    }
+
+    /**
+     * If our usage data is stale, determine if we need to make a request to HFS
+     * to update the usage data
+     *
+     * @param cachedUsage
+     * @return
+     */
+    boolean shouldSendUpdateRequest(CachedVmUsage cachedUsage) {
+
+        if (cachedUsage == null) {
+            // we have no cached usage, trigger update
+            return true;
+
+        } else if (cachedUsage.updateActionId < 0) {
+            // we have no active request to HFS, so go ahead and create a new request
+            return true;
+
+        } else if (cachedUsage.updateActionId > 0) {
+            // the data needs to be refreshed, but we've already sent a request to HFS.
+            // Check on the request to see if we need to send another one
+            SysAdminAction updateAction = sysAdminService.getSysAdminAction(cachedUsage.updateActionId);
+
+            if (updateAction.status == SysAdminAction.Status.COMPLETE
+                || updateAction.status == SysAdminAction.Status.FAILED) {
+                // if the action we sent has completed, but we still aren't getting updated data,
+                // then send another request
+                return true;
+
+            } else {
+                // otherwise, assume there are issues on the HFS side that are keeping
+                // the sysadmin requests from completing, and don't flood them with requests
+                // (wait for the existing action to go through to a terminal state)
+            }
+        }
+        return false;
     }
 
     boolean shouldRefresh(VmUsage usage) {
@@ -148,7 +181,7 @@ public class VmUsageService {
          * whether VPS4 has already requested a 'usage stats update' from HFS
          * for this cache entry
          */
-        public boolean fetching;
+        public long updateActionId;
 
         public VmUsage usage;
 
@@ -156,9 +189,9 @@ public class VmUsageService {
 
         }
 
-        public CachedVmUsage(VmUsage usage, boolean fetching) {
+        public CachedVmUsage(VmUsage usage, long updateActionId) {
             this.usage = usage;
-            this.fetching = fetching;
+            this.updateActionId = updateActionId;
         }
     }
 }
