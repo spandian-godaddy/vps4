@@ -151,6 +151,12 @@
             <groupId>com.godaddy.hfs</groupId>
             <artifactId>hfs-web</artifactId>
             <version>0.2.6</version>
+            <exclusions>
+            	<exclusion>
+            		<groupId>org.glassfish.jersey.core</groupId>
+            		<artifactId>jersey-server</artifactId>
+            	</exclusion>
+            </exclusions>
         </dependency>
         <dependency>
             <groupId>com.godaddy.hfs</groupId>
