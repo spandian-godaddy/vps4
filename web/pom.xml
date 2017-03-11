@@ -154,7 +154,7 @@
             <exclusions>
             	<exclusion>
             		<groupId>org.glassfish.jersey.core</groupId>
-            		<artifactId>jersey-server</artifactId>
+            		<artifactId>jersey-client</artifactId>
             	</exclusion>
             </exclusions>
         </dependency>
