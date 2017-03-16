@@ -16,6 +16,7 @@ import org.slf4j.LoggerFactory;
 
 import com.godaddy.vps4.security.PrivilegeService;
 import com.godaddy.vps4.security.Vps4User;
+import com.godaddy.vps4.vm.Action;
 import com.godaddy.vps4.vm.ActionService;
 import com.godaddy.vps4.vm.ActionType;
 import com.godaddy.vps4.vm.VirtualMachineService;
@@ -60,7 +61,7 @@ public class VmPatchResource {
     @Path("/{vmId}")
     @Produces({ "application/json" })
     @ApiOperation(value = "Update VM Attributes", httpMethod = "PATCH")
-    public void updateVm(@PathParam("vmId") UUID vmId, VmPatch vmPatch) {
+    public Action updateVm(@PathParam("vmId") UUID vmId, VmPatch vmPatch) {
         privilegeService.requireAnyPrivilegeToVmId(user, vmId);
         Map<String, Object> vmPatchMap = new HashMap<>();
         StringBuilder notes = new StringBuilder();
@@ -72,5 +73,6 @@ public class VmPatchResource {
         long actionId = this.actionService.createAction(vmId, ActionType.UPDATE_SERVER, new JSONObject().toJSONString(), user.getId());
         virtualMachineService.updateVirtualMachine(vmId, vmPatchMap);
         this.actionService.completeAction(actionId, new JSONObject().toJSONString(), notes.toString());
+        return this.actionService.getAction(actionId);
     }
 }
