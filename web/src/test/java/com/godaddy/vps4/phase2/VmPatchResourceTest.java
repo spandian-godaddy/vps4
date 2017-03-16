@@ -10,12 +10,18 @@ import javax.sql.DataSource;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
-import org.mockito.Mockito;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.anyLong;
+import static org.mockito.Mockito.eq;
 
 import com.godaddy.vps4.jdbc.DatabaseModule;
 import com.godaddy.vps4.project.ProjectService;
 import com.godaddy.vps4.project.jdbc.JdbcProjectService;
 import com.godaddy.vps4.security.PrivilegeService;
+import com.godaddy.vps4.security.Vps4User;
+import com.godaddy.vps4.vm.ActionService;
 import com.godaddy.vps4.vm.VirtualMachine;
 import com.godaddy.vps4.vm.VirtualMachineService;
 import com.godaddy.vps4.vm.jdbc.JdbcVirtualMachineService;
@@ -29,7 +35,8 @@ public class VmPatchResourceTest {
     Injector injector = Guice.createInjector(new DatabaseModule());
     VirtualMachineService virtualMachineService;
     ProjectService projectService;
-    PrivilegeService privilegeService = Mockito.mock(PrivilegeService.class);
+    PrivilegeService privilegeService = mock(PrivilegeService.class);
+    ActionService actionService = mock(ActionService.class);
     UUID orionGuid;
     DataSource dataSource = injector.getInstance(DataSource.class);
     long virtualMachineRequestId;
@@ -57,12 +64,14 @@ public class VmPatchResourceTest {
     private void testValidServerName(String newName){
         VirtualMachine vm = updateVmName(newName);
         assertEquals(newName, vm.name);
+        verify(actionService, times(1)).completeAction(anyLong(), eq("{}"), eq("Name = "+newName));
     }
 
     private VirtualMachine updateVmName(String newName) {
         VirtualMachine vm = virtualMachineService.getVirtualMachine(virtualMachine.vmId);
         assertEquals(initialName, vm.name);
-        VmPatchResource patchResource = new VmPatchResource(virtualMachineService, null, privilegeService);
+        Vps4User user = new Vps4User(1234, "FakeShopper");
+        VmPatchResource patchResource = new VmPatchResource(virtualMachineService, user, privilegeService, actionService);
         VmPatch vmPatch = new VmPatch();
         vmPatch.name = newName;
         patchResource.updateVm(vm.vmId, vmPatch);

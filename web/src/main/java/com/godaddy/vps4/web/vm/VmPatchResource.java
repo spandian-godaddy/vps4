@@ -10,11 +10,14 @@ import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
 
+import org.json.simple.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.godaddy.vps4.security.PrivilegeService;
 import com.godaddy.vps4.security.Vps4User;
+import com.godaddy.vps4.vm.ActionService;
+import com.godaddy.vps4.vm.ActionType;
 import com.godaddy.vps4.vm.VirtualMachineService;
 import com.godaddy.vps4.web.PATCH;
 import com.godaddy.vps4.web.Vps4Api;
@@ -35,14 +38,17 @@ public class VmPatchResource {
 
     final VirtualMachineService virtualMachineService;
     final PrivilegeService privilegeService;
+    final ActionService actionService;
     final Vps4User user;
 
     @Inject
     public VmPatchResource(VirtualMachineService virtualMachineService,
                            Vps4User user,
-                           PrivilegeService privilegeService) {
+                           PrivilegeService privilegeService,
+                           ActionService actionService) {
         this.virtualMachineService = virtualMachineService;
         this.privilegeService = privilegeService;
+        this.actionService = actionService;
         this.user = user;
     }
 
@@ -57,9 +63,14 @@ public class VmPatchResource {
     public void updateVm(@PathParam("vmId") UUID vmId, VmPatch vmPatch) {
         privilegeService.requireAnyPrivilegeToVmId(user, vmId);
         Map<String, Object> vmPatchMap = new HashMap<>();
-        if (vmPatch.name != null && !vmPatch.name.equals(""))
+        StringBuilder notes = new StringBuilder();
+        if (vmPatch.name != null && !vmPatch.name.equals("")){
             vmPatchMap.put("name", vmPatch.name);
+            notes.append("Name = " + vmPatch.name);
+        }
         logger.info("Updating vm {}'s with {} ", vmId, vmPatchMap.toString());
+        long actionId = this.actionService.createAction(vmId, ActionType.UPDATE_SERVER, new JSONObject().toJSONString(), user.getId());
         virtualMachineService.updateVirtualMachine(vmId, vmPatchMap);
+        this.actionService.completeAction(actionId, new JSONObject().toJSONString(), notes.toString());
     }
 }

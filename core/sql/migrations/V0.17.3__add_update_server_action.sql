@@ -1,0 +1,1 @@
+INSERT into action_type (type, type_id) VALUES ('UPDATE_SERVER', 10);
