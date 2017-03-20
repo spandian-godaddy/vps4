@@ -19,7 +19,7 @@ import gdg.hfs.vhfs.sysadmin.SysAdminAction;
 import gdg.hfs.vhfs.sysadmin.SysAdminAction.Status;
 import gdg.hfs.vhfs.sysadmin.SysAdminService;
 
-public class ConfigureMtaTest {
+public class ConfigureMailRelayTest {
 
     SysAdminService sysAdminService = mock(SysAdminService.class);
 
@@ -34,7 +34,7 @@ public class ConfigureMtaTest {
     CommandContext context = new TestCommandContext(new GuiceCommandProvider(injector));
 
     @Test
-    public void testExecuteConfigMtaSuccess() {
+    public void testExecuteConfigMailRelaySuccess() {
         ConfigureMailRelayRequest request = new ConfigureMailRelayRequest(777L, "cpanel");
 
         SysAdminAction sysAdminAction = new SysAdminAction();
@@ -50,7 +50,7 @@ public class ConfigureMtaTest {
     }
 
     @Test(expected = RuntimeException.class)
-    public void testExecuteConfigMtaFail() {
+    public void testExecuteConfigMailRelayFail() {
         ConfigureMailRelayRequest request = new ConfigureMailRelayRequest(777L, "cpanel");
         
         when(sysAdminService.configureMTA(request.vmId, request.controlPanel)).thenThrow(new RuntimeException("HFS Failed"));

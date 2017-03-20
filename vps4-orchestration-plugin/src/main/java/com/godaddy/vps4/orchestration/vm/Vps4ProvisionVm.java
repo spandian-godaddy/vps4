@@ -109,13 +109,13 @@ public class Vps4ProvisionVm extends ActionCommand<Vps4ProvisionVm.Request, Vps4
 
         bindIp(hfsVm, ip);
 
-        configureMailRelay(hfsVm);
-
         configureControlPanel(hfsVm);
 
         setHostname(hfsVm);
         
         configureAdminUser(hfsVm);
+
+        configureMailRelay(hfsVm);
 
         setStep(CreateVmStep.SetupComplete);
         logger.info("provision vm finished: {}", hfsVm);
@@ -168,6 +168,8 @@ public class Vps4ProvisionVm extends ActionCommand<Vps4ProvisionVm.Request, Vps4
 
     private void configureMailRelay(Vm hfsVm) {
         setStep(CreateVmStep.ConfigureMailRelay);
+
+        String controlPanel = request.vmInfo.image.controlPanel.NONE ? null : request.vmInfo.image.controlPanel.name().toLowerCase();
 
         ConfigureMailRelayRequest configureMailRelayRequest = new ConfigureMailRelayRequest(hfsVm.vmId,
                 request.vmInfo.image.controlPanel.name().toLowerCase());
