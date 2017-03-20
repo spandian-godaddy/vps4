@@ -23,8 +23,8 @@ import com.godaddy.vps4.orchestration.hfs.sysadmin.SetHostname;
 import com.godaddy.vps4.orchestration.hfs.sysadmin.SetPassword;
 import com.godaddy.vps4.orchestration.hfs.sysadmin.ToggleAdmin;
 import com.godaddy.vps4.orchestration.hfs.vm.CreateVm;
-import com.godaddy.vps4.orchestration.sysadmin.ConfigureMta;
-import com.godaddy.vps4.orchestration.sysadmin.ConfigureMta.ConfigureMtaRequest;
+import com.godaddy.vps4.orchestration.sysadmin.ConfigureMailRelay;
+import com.godaddy.vps4.orchestration.sysadmin.ConfigureMailRelay.ConfigureMailRelayRequest;
 import com.godaddy.vps4.vm.ActionService;
 import com.godaddy.vps4.vm.CreateVmStep;
 import com.godaddy.vps4.vm.HostnameGenerator;
@@ -109,7 +109,7 @@ public class Vps4ProvisionVm extends ActionCommand<Vps4ProvisionVm.Request, Vps4
 
         bindIp(hfsVm, ip);
 
-        configureMta(hfsVm);
+        configureMailRelay(hfsVm);
 
         configureControlPanel(hfsVm);
 
@@ -166,12 +166,12 @@ public class Vps4ProvisionVm extends ActionCommand<Vps4ProvisionVm.Request, Vps4
         });
     }
 
-    private void configureMta(Vm hfsVm) {
+    private void configureMailRelay(Vm hfsVm) {
         setStep(CreateVmStep.ConfigureMailRelay);
 
-        ConfigureMtaRequest configureMtaRequest = new ConfigureMtaRequest(hfsVm.vmId,
+        ConfigureMailRelayRequest configureMailRelayRequest = new ConfigureMailRelayRequest(hfsVm.vmId,
                 request.vmInfo.image.controlPanel.name().toLowerCase());
-        context.execute(ConfigureMta.class, configureMtaRequest);
+        context.execute(ConfigureMailRelay.class, configureMailRelayRequest);
 
     }
 

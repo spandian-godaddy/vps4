@@ -9,7 +9,7 @@ import org.junit.Test;
 
 import com.godaddy.vps4.orchestration.TestCommandContext;
 import com.godaddy.vps4.orchestration.hfs.sysadmin.WaitForSysAdminAction;
-import com.godaddy.vps4.orchestration.sysadmin.ConfigureMta.ConfigureMtaRequest;
+import com.godaddy.vps4.orchestration.sysadmin.ConfigureMailRelay.ConfigureMailRelayRequest;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
 
@@ -23,10 +23,10 @@ public class ConfigureMtaTest {
 
     SysAdminService sysAdminService = mock(SysAdminService.class);
 
-    ConfigureMta command = new ConfigureMta(sysAdminService);
+    ConfigureMailRelay command = new ConfigureMailRelay(sysAdminService);
 
     Injector injector = Guice.createInjector(binder -> {
-        binder.bind(ConfigureMta.class);
+        binder.bind(ConfigureMailRelay.class);
         binder.bind(WaitForSysAdminAction.class);
         binder.bind(SysAdminService.class).toInstance(sysAdminService);
     });
@@ -35,7 +35,7 @@ public class ConfigureMtaTest {
 
     @Test
     public void testExecuteConfigMtaSuccess() {
-        ConfigureMtaRequest request = new ConfigureMtaRequest(777L, "cpanel");
+        ConfigureMailRelayRequest request = new ConfigureMailRelayRequest(777L, "cpanel");
 
         SysAdminAction sysAdminAction = new SysAdminAction();
         sysAdminAction.sysAdminActionId = 123;
@@ -51,7 +51,7 @@ public class ConfigureMtaTest {
 
     @Test(expected = RuntimeException.class)
     public void testExecuteConfigMtaFail() {
-        ConfigureMtaRequest request = new ConfigureMtaRequest(777L, "cpanel");
+        ConfigureMailRelayRequest request = new ConfigureMailRelayRequest(777L, "cpanel");
         
         when(sysAdminService.configureMTA(request.vmId, request.controlPanel)).thenThrow(new RuntimeException("HFS Failed"));
         
