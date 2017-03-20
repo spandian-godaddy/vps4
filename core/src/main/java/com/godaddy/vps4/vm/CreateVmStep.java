@@ -14,5 +14,6 @@ public enum CreateVmStep {
     SetupComplete,
     ConfiguringCPanel,
     ConfiguringPlesk,
-    SetHostname;
+    SetHostname, 
+    ConfigureMailRelay;
 }
