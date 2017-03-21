@@ -20,6 +20,7 @@ import com.godaddy.vps4.orchestration.hfs.vm.RestartVm;
 import com.godaddy.vps4.orchestration.hfs.vm.StartVm;
 import com.godaddy.vps4.orchestration.hfs.vm.StopVm;
 import com.godaddy.vps4.orchestration.hfs.vm.WaitForVmAction;
+import com.godaddy.vps4.orchestration.sysadmin.ConfigureMailRelay;
 import com.godaddy.vps4.orchestration.vm.WaitForManageVmAction;
 import com.google.inject.AbstractModule;
 
@@ -49,6 +50,7 @@ public class HfsCommandModule extends AbstractModule {
         bind(ToggleAdmin.class);
         bind(SetHostname.class);
         bind(WaitForSysAdminAction.class);
+        bind(ConfigureMailRelay.class);
 
         // CPanel
         bind(ConfigureCpanel.class);

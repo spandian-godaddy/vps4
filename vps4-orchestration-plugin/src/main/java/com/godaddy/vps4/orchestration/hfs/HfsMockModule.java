@@ -84,6 +84,7 @@ public class HfsMockModule extends AbstractModule {
        Mockito.when(sysAdminService.changePassword(Mockito.anyLong(), Mockito.anyString(), Mockito.anyString())).thenReturn(completeAction);
        Mockito.when(sysAdminService.changeHostname(Mockito.anyLong(), Mockito.anyString(), Mockito.any())).thenReturn(completeAction);
        Mockito.when(sysAdminService.getSysAdminAction(Mockito.anyLong())).thenReturn(completeAction);
+        Mockito.when(sysAdminService.configureMTA(Mockito.anyLong(), Mockito.anyString())).thenReturn(completeAction);
 
        return sysAdminService;
 

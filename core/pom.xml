@@ -239,7 +239,7 @@
         <dependency>
             <groupId>hfs</groupId>
             <artifactId>vhfs-sysadmin-common-lib</artifactId>
-            <version>1.0.0.28990</version>
+            <version>1.0.0.29762</version>
             <exclusions>
                 <exclusion>
                     <groupId>*</groupId>

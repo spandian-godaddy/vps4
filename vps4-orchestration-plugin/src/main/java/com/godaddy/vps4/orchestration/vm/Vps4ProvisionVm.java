@@ -23,6 +23,8 @@ import com.godaddy.vps4.orchestration.hfs.sysadmin.SetHostname;
 import com.godaddy.vps4.orchestration.hfs.sysadmin.SetPassword;
 import com.godaddy.vps4.orchestration.hfs.sysadmin.ToggleAdmin;
 import com.godaddy.vps4.orchestration.hfs.vm.CreateVm;
+import com.godaddy.vps4.orchestration.sysadmin.ConfigureMailRelay;
+import com.godaddy.vps4.orchestration.sysadmin.ConfigureMailRelay.ConfigureMailRelayRequest;
 import com.godaddy.vps4.vm.ActionService;
 import com.godaddy.vps4.vm.CreateVmStep;
 import com.godaddy.vps4.vm.HostnameGenerator;
@@ -113,11 +115,13 @@ public class Vps4ProvisionVm extends ActionCommand<Vps4ProvisionVm.Request, Vps4
         
         configureAdminUser(hfsVm);
 
+        configureMailRelay(hfsVm);
+
         setStep(CreateVmStep.SetupComplete);
         logger.info("provision vm finished: {}", hfsVm);
         return null;
     }
-    
+
     private void setHostname(Vm hfsVm){
         setStep(CreateVmStep.SetHostname);
         
@@ -160,6 +164,17 @@ public class Vps4ProvisionVm extends ActionCommand<Vps4ProvisionVm.Request, Vps4
             networkService.createIpAddress(ip.addressId, request.vmInfo.vmId, ip.address, IpAddressType.PRIMARY);
             return null;
         });
+    }
+
+    private void configureMailRelay(Vm hfsVm) {
+        setStep(CreateVmStep.ConfigureMailRelay);
+
+        String controlPanel = request.vmInfo.image.controlPanel.NONE ? null : request.vmInfo.image.controlPanel.name().toLowerCase();
+
+        ConfigureMailRelayRequest configureMailRelayRequest = new ConfigureMailRelayRequest(hfsVm.vmId,
+                request.vmInfo.image.controlPanel.name().toLowerCase());
+        context.execute(ConfigureMailRelay.class, configureMailRelayRequest);
+
     }
 
     private void setupUsers(Vm hfsVm) {
