@@ -16,7 +16,7 @@ import javax.ws.rs.core.MediaType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.godaddy.vps4.plesk.PleskAccount;
+import com.godaddy.vps4.plesk.PleskSubscription;
 import com.godaddy.vps4.plesk.PleskSession;
 import com.godaddy.vps4.plesk.Vps4PleskService;
 import com.godaddy.vps4.security.PrivilegeService;
@@ -67,7 +67,7 @@ public class PleskResource {
 
     @GET
     @Path("{vmId}/plesk/accounts")
-    public List<PleskAccount> listPleskAccounts(@PathParam("vmId") UUID vmId) {
+    public List<PleskSubscription> listPleskAccounts(@PathParam("vmId") UUID vmId) {
         
         logger.info("Get Plesk site accounts for vmId {} ", vmId);
         

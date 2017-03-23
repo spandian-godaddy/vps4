@@ -83,8 +83,7 @@ public class Vps4PleskServiceTest {
 
     @Test
     public void testListPleskAccounts() throws PollerTimedOutException, Exception {
-        //String responsePayload = "{\"sites\":\"{'name': 'atulscreativedomain.com','webspace': 'Physical hosting','ip_address': '10.198.32.140','ftp_login': 'pleskvmAdmin','diskused': '0 B',},{'name': 'atulsmightydomain.com','webspace': 'Physical hosting','ip_address': '10.198.32.140','ftp_login': 'pleskvmAdmin','diskused': '0 B',},{'name': 'atulsPleskVM07.secureserver.net','webspace': 'Physical hosting','ip_address': '10.198.32.140','ftp_login': 'pleskvmAdmin','diskused': '3.66 MB',},{'name': 'atulsuperdomain1.com','webspace': 'Physical hosting','ip_address': '10.198.32.140','ftp_login': 'pleskvmAdmin','diskused': '0 B',},{'name': 'george.omg','webspace': 'Physical hosting','ip_address': '10.198.32.140','ftp_login': 'pleskvmAdmin','diskused': '0 B',},{'name': 'newtestsubscriptiondomain.com','webspace': 'Physical hosting','ip_address': '10.198.32.140','ftp_login': 'someUser123','diskused': '298 KB',}\"}";
-        String responsePayload = "{ \"sites\": [ { \"name\": \"atulscreativedomain.com\", \"webspace\": \"Physical hosting\", \"ip_address\": \"10.198.32.140\", \"ftp_login\": \"pleskvmAdmin\", \"diskused\": \"0 B\", }, { \"name\": \"atulsmightydomain.com\", \"webspace\": \"Physical hosting\", \"ip_address\": \"10.198.32.140\", \"ftp_login\": \"pleskvmAdmin\", \"diskused\": \"0 B\", }, { \"name\": \"atulsPleskVM07.secureserver.net\", \"webspace\": \"Physical hosting\", \"ip_address\": \"10.198.32.140\", \"ftp_login\": \"pleskvmAdmin\", \"diskused\": \"3.66 MB\", }, { \"name\": \"atulsuperdomain1.com\", \"webspace\": \"Physical hosting\", \"ip_address\": \"10.198.32.140\", \"ftp_login\": \"pleskvmAdmin\", \"diskused\": \"0 B\", }, { \"name\": \"george.omg\", \"webspace\": \"Physical hosting\", \"ip_address\": \"10.198.32.140\", \"ftp_login\": \"pleskvmAdmin\", \"diskused\": \"0 B\", }, { \"name\": \"newtestsubscriptiondomain.com\", \"webspace\": \"Physical hosting\", \"ip_address\": \"10.198.32.140\", \"ftp_login\": \"someUser123\", \"diskused\": \"298 KB\", } ] }";
+        String responsePayload = "{\"subscriptions\":[\"atuls-test-plesk.org\",\"atuls-test-plesk-02.org\"],\"sites\":[{\"name\":\"atuls-test-plesk-02.org\",\"webspace\":\"Physical hosting\",\"ip_address\":\"10.198.32.154\",\"ftp_login\":\"eric\",\"diskused\":\"297 KB\"},{\"name\":\"atuls-test-plesk.org\",\"webspace\":\"Physical hosting\",\"ip_address\":\"10.198.32.154\",\"ftp_login\":\"atulbhoite\",\"diskused\":\"297 KB\"},{\"name\":\"tannersite.org\",\"webspace\":\"Physical hosting\",\"ip_address\":\"10.198.32.154\",\"ftp_login\":\"eric\",\"diskused\":\"0 B\"}]}"; 
 
         pleskAction.responsePayload = responsePayload;
         
@@ -92,7 +91,7 @@ public class Vps4PleskServiceTest {
         when(poller.poll(pleskAction, timeoutValue)).thenReturn(responsePayload);
         
         try {
-            List<PleskAccount> pleskAccounts = vps4PleskService.listPleskAccounts(hfsVmId);
+            List<PleskSubscription> pleskAccounts = vps4PleskService.listPleskAccounts(hfsVmId);
             assertNotNull("Plesk accounts list should not be empty.", pleskAccounts);
             assertTrue("Plesk accounts list length should be greater than 0.", pleskAccounts.size() > 0);
         }

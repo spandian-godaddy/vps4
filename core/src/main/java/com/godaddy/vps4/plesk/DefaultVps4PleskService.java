@@ -2,6 +2,8 @@ package com.godaddy.vps4.plesk;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collector;
+import java.util.stream.Collectors;
 
 import javax.inject.Inject;
 
@@ -40,7 +42,7 @@ public class DefaultVps4PleskService implements Vps4PleskService {
     }
 
     @Override
-    public List<PleskAccount> listPleskAccounts(long hfsVmId) throws ParseException, PollerTimedOutException, Exception {
+    public List<PleskSubscription> listPleskAccounts(long hfsVmId) throws ParseException, PollerTimedOutException, Exception {
 
         PleskAction pleskAction;
 
@@ -74,33 +76,23 @@ public class DefaultVps4PleskService implements Vps4PleskService {
         }
     }
 
-    private List<PleskAccount> parseSiteListPayload(String responsePayload) throws ParseException {
-        List<PleskAccount> accounts = new ArrayList<>();
+    @SuppressWarnings("unchecked")
+    private List<PleskSubscription> parseSiteListPayload(String responsePayload) throws ParseException, Exception {
 
         JSONParser parser = new JSONParser();
         JSONObject payloadJson = (JSONObject) parser.parse(responsePayload);
         logger.info("Response pay load: {} ", responsePayload);
 
-        JSONArray sitesArray = (JSONArray) payloadJson.get("sites");
-        if (sitesArray != null) {
-
-            for (Object object : sitesArray) {
-
-                JSONObject site = (JSONObject) object;
-                if (site != null) {
-                    String domain = (String) site.get("name");
-                    String webspace = (String) site.get("webspace");
-                    String ipAddress = (String) site.get("ip_address");
-                    String ftpLogin = (String) site.get("ftp_login");
-                    String diskUsed = (String) site.get("diskused");
-
-                    PleskAccount pleskAccount = new PleskAccount(domain, webspace, ipAddress, ftpLogin, diskUsed);
-                    logger.info(pleskAccount.toString());
-                    accounts.add(pleskAccount);
-                }
-            }
+        JSONArray subscriptionsArray = (JSONArray) payloadJson.get("subscriptions");
+        if (subscriptionsArray != null) {
+            List<PleskSubscription> accounts = (List<PleskSubscription>) subscriptionsArray.stream()
+                    .map(subscription -> new PleskSubscription(subscription))
+                    .collect(Collectors.toList());
+            return accounts;
         }
-        return accounts;
+        String message = "Could not parse the subscription list. ";
+        logger.error(message);
+        throw new Exception(message);
     }
 
     @Override

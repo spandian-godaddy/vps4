@@ -8,7 +8,7 @@ import com.godaddy.vps4.util.PollerTimedOutException;
 
 public interface Vps4PleskService {
 
-    List<PleskAccount> listPleskAccounts(long hfsVmId)
+    List<PleskSubscription> listPleskAccounts(long hfsVmId)
             throws PleskUrlUnavailableException, ParseException, PollerTimedOutException, Exception;
 
     PleskSession getPleskSsoUrl(long hfsVmId, String fromIpAddress)
