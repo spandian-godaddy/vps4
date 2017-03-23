@@ -93,7 +93,9 @@ public class Vps4PleskServiceTest {
         try {
             List<PleskSubscription> pleskAccounts = vps4PleskService.listPleskAccounts(hfsVmId);
             assertNotNull("Plesk accounts list should not be empty.", pleskAccounts);
-            assertTrue("Plesk accounts list length should be greater than 0.", pleskAccounts.size() > 0);
+            assertTrue("Plesk accounts list length does not match expected.", pleskAccounts.size() == 2);
+            assertEquals("Expected plesk subscription does not match actual.", "atuls-test-plesk.org", pleskAccounts.get(0).getName());
+            assertEquals("Expected plesk subscription does not match actual.", "atuls-test-plesk-02.org", pleskAccounts.get(1).getName());
         }
         catch (Exception e) {
             fail("Encountered unexpected exception in listPleskAccounts, failing test. Exception: " + e);
