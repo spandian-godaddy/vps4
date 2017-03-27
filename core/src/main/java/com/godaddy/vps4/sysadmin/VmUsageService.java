@@ -100,7 +100,8 @@ public class VmUsageService {
             // we have no cached usage, trigger update
             return true;
 
-        } else if (cachedUsage.updateActionId < 0) {
+        }
+        else if (cachedUsage.updateActionId <= 0) {
             // we have no active request to HFS, so go ahead and create a new request
             return true;
 
