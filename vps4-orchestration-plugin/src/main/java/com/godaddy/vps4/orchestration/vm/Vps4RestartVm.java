@@ -36,13 +36,13 @@ public class Vps4RestartVm extends ActionCommand<Vps4RestartVm.Request, Vps4Rest
             return vmService.stopVm(vmId);
         });
         
-        hfsAction = context.execute(WaitForManageVmAction.class, hfsAction);
+        hfsAction = context.execute("WaitForStop", WaitForManageVmAction.class, hfsAction);
         
         hfsAction = context.execute("Vps4StartVm", ctx -> {
             return vmService.startVm(vmId);
         });
         
-        hfsAction = context.execute(WaitForManageVmAction.class, hfsAction);
+        hfsAction = context.execute("WaitForStart", WaitForManageVmAction.class, hfsAction);
         
         Vps4RestartVm.Response response = new Vps4RestartVm.Response();
         response.vmId = vmId;
