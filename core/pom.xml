@@ -214,6 +214,18 @@
 
         <dependency>
             <groupId>hfs</groupId>
+            <artifactId>vhfs-nodeping-common-lib</artifactId>
+            <version>1.0.0.29941</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>*</groupId>
+                    <artifactId>*</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+
+        <dependency>
+            <groupId>hfs</groupId>
             <artifactId>vhfs-cpanel-common-lib</artifactId>
             <version>1.1.0.26861</version>
             <exclusions>

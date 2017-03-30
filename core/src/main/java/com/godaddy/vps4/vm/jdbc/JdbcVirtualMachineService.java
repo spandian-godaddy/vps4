@@ -162,7 +162,7 @@ public class JdbcVirtualMachineService implements VirtualMachineService {
         return new VirtualMachineCredit(java.util.UUID.fromString(rs.getString("orion_guid")), rs.getInt("tier"),
                 rs.getInt("managed_level"), rs.getString("operating_system"), rs.getString("control_panel"),
                 rs.getTimestamp("create_date").toInstant(), provisionDate != null ? provisionDate.toInstant() : null,
-                rs.getString("shopper_id"));
+                rs.getString("shopper_id"), rs.getInt("monitoring"));
     }
 
     @Override
