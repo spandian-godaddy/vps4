@@ -113,7 +113,7 @@ that will override the base configuration at core/src/main/resources/com/godaddy
 
 Encrypted Configuration
 =======================
-First, you need to update your Java files to allow unlimited strenght encryption. Download and follow
+First, you need to update your Java files to allow unlimited strength encryption. Download and follow
 the directions in the readme.txt here: 
 http://www.oracle.com/technetwork/java/javase/downloads/jce8-download-2133166.html
 
