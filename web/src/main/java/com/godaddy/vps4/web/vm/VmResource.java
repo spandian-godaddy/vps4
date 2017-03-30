@@ -21,8 +21,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.godaddy.hfs.config.Config;
-import com.godaddy.vps4.orchestration.vm.Vps4ProvisionVm;
 import com.godaddy.vps4.orchestration.vm.Vps4DestroyVm;
+import com.godaddy.vps4.orchestration.vm.Vps4ProvisionVm;
 import com.godaddy.vps4.orchestration.vm.Vps4RestartVm;
 import com.godaddy.vps4.orchestration.vm.Vps4StartVm;
 import com.godaddy.vps4.orchestration.vm.Vps4StopVm;
@@ -74,6 +74,7 @@ public class VmResource {
     private final Config config;
     private final String sgidPrefix;
     private final int mailRelayQuota;
+    private final long nodePingAccountId;
 
     @Inject
     public VmResource(PrivilegeService privilegeService,
@@ -98,6 +99,7 @@ public class VmResource {
         this.config = config;
         sgidPrefix = this.config.get("hfs.sgid.prefix", "vps4-undefined-");
         mailRelayQuota = Integer.parseInt(this.config.get("mailrelay.quota", "5000"));
+        nodePingAccountId = Long.parseLong(this.config.get("nodeping.accountid"));
     }
 
     @GET
@@ -237,8 +239,10 @@ public class VmResource {
                 user.getId());
         logger.info("Action id: {}", actionId);
 
+        long ifMonitoringThenNodePingAccountId = vmCredit.monitoring == 1 ? nodePingAccountId : 0;
+
         ProvisionVmInfo vmInfo = new ProvisionVmInfo(virtualMachine.vmId, vmCredit.managedLevel, virtualMachine.image,
-                project.getVhfsSgid(), mailRelayQuota);
+                project.getVhfsSgid(), mailRelayQuota, ifMonitoringThenNodePingAccountId);
         logger.info("vmInfo: {}", vmInfo.toString());
 
         Vps4ProvisionVm.Request request = createProvisionVmRequest(hfsRequest, actionId, vmInfo);

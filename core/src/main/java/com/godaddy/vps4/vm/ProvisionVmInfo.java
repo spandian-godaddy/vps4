@@ -10,16 +10,18 @@ public class ProvisionVmInfo {
     public int managedLevel;
     public Image image;
     public int mailRelayQuota;
+    public long nodePingAccountId;
 
     public ProvisionVmInfo() {        
     }
     
-    public ProvisionVmInfo(UUID vmId, int managedLevel, Image image, String sgid, int mailRelayQuota) {
+    public ProvisionVmInfo(UUID vmId, int managedLevel, Image image, String sgid, int mailRelayQuota, long nodePingAccountId) {
         this.vmId = vmId;
         this.sgid = sgid;
         this.managedLevel = managedLevel;
         this.image = image;
         this.mailRelayQuota = mailRelayQuota;
+        this.nodePingAccountId = nodePingAccountId;
     }
 
     public String toString() {

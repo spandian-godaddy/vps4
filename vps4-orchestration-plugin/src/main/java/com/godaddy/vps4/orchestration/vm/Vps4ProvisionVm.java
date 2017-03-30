@@ -17,6 +17,7 @@ import com.godaddy.vps4.orchestration.hfs.cpanel.ConfigureCpanel.ConfigureCpanel
 import com.godaddy.vps4.orchestration.hfs.network.AllocateIp;
 import com.godaddy.vps4.orchestration.hfs.network.BindIp;
 import com.godaddy.vps4.orchestration.hfs.network.BindIp.BindIpRequest;
+import com.godaddy.vps4.orchestration.hfs.nodeping.CreateCheck;
 import com.godaddy.vps4.orchestration.hfs.plesk.ConfigurePlesk;
 import com.godaddy.vps4.orchestration.hfs.plesk.ConfigurePlesk.ConfigurePleskRequest;
 import com.godaddy.vps4.orchestration.hfs.sysadmin.SetHostname;
@@ -117,9 +118,18 @@ public class Vps4ProvisionVm extends ActionCommand<Vps4ProvisionVm.Request, Vps4
 
         configureMailRelay(hfsVm);
 
+        configureNodePing(hfsVm);
+
         setStep(CreateVmStep.SetupComplete);
-        logger.info("provision vm finished: {}", hfsVm);
+
         return null;
+    }
+
+    private void configureNodePing(Vm hfsVm) {
+        if (request.vmInfo.nodePingAccountId > 0) {
+            CreateCheck.Request request = new CreateCheck.Request();
+        }
+
     }
 
     private void setHostname(Vm hfsVm){
