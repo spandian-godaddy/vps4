@@ -126,12 +126,11 @@ properties file in the environment directory:
 
 `config.properties.enc` is a properties file encrypted with the environment's public key
 
-The public and private keys for the respective environments are read from the classpath at:
+The keys for the respective environments are read from https://github.secureserver.net/vps4/vps4/tree/master/core/src/main/resources:
 
-    vps4.{environment}.priv.pem
-    vps4.{environment}.pub.pem
+    vps4.{environment}.key
     
-The keys can be found on the Jenkins server at /opt/vps4/keys. 
+The keys for stage and prod can be found on the Jenkins server at /opt/vps4/keys. 
 _Never_ check in the `vps4.stage.key` or `vps4.prod.key` files.
 These files are explicitly ignored in .gitignore.
 
