@@ -113,6 +113,9 @@ that will override the base configuration at core/src/main/resources/com/godaddy
 
 Encrypted Configuration
 =======================
+First, you need to update your Java files to allow unlimited strenght encryption. Download and follow
+the directions in the readme.txt here: 
+http://www.oracle.com/technetwork/java/javase/downloads/jce8-download-2133166.html
 
 Configuration files are kept in core/src/main/resources/{environment}/
 
@@ -121,23 +124,27 @@ Configuration files are kept in core/src/main/resources/{environment}/
 Secrets like, for instance, production database credentials, are stored in an encrypted
 properties file in the environment directory:
 
-`config.enc.properties` is a properties file encrypted with the environment's public key
+`config.properties.enc` is a properties file encrypted with the environment's public key
 
 The public and private keys for the respective environments are read from the classpath at:
 
     vps4.{environment}.priv.pem
     vps4.{environment}.pub.pem
+    
+The keys can be found on the Jenkins server at /opt/vps4/keys. 
+_Never_ check in the `vps4.stage.key` or `vps4.prod.key` files.
+These files are explicitly ignored in .gitignore.
 
-To modify encrypted properties, unencrypt the `vps.enc.properties` file for a particular environment: 
+To modify encrypted properties, unencrypt the `vps.properties.enc` file for a particular environment: 
 
-    mvn exec:java@decrypt-config -Dvps4.env={environment}
+    mvn -Dvps4.env={environment} exec:java@decrypt-config
 
-This will use the environment private key to decrypt `vps4.enc.properties` into `vps4.unenc.properties`.
+This will use the environment private key to decrypt `vps4.properties.enc` into `vps4.properties.unenc`.
 
-Modify `vps4.unenc.properties`, then re-encrypt:
+Modify `vps4.properties.unenc`, then re-encrypt:
 
-    mvn exec:java@encrypt-config -Dvps4.env={environment}
+    mvn -Dvps4.env={environment} exec:java@encrypt-config
 
 
-_Never_ check in the `vps4.unenc.properties` files, as these contain the plaintext secrets.
+_Never_ check in the `vps4.properties.unenc` files, as these contain the plaintext secrets.
 These files are explicitly ignored in .gitignore.
