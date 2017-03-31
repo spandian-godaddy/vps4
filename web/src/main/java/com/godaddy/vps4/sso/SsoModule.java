@@ -14,6 +14,7 @@ import com.godaddy.hfs.sso.KeyService;
 import com.godaddy.hfs.sso.SsoTokenExtractor;
 import com.godaddy.vps4.web.security.RequestAuthenticator;
 import com.godaddy.vps4.web.security.Vps4RequestAuthenticator;
+import com.godaddy.vps4.web.security.Vps4SupportRequestAuthenticator;
 import com.google.inject.AbstractModule;
 import com.google.inject.Provides;
 
@@ -23,7 +24,18 @@ public class SsoModule extends AbstractModule {
 
     @Override
     public void configure() {
-        bind(RequestAuthenticator.class).to(Vps4RequestAuthenticator.class);
+        bind(RequestAuthenticator.class).to(Vps4SupportRequestAuthenticator.class);
+        bind(Vps4RequestAuthenticator.class);
+    }
+
+    @Provides @Singleton
+    public SsoSupportTokenExtractor provideSupportTokenExtractor(Config config) {
+
+        KeyService keyService = new HttpKeyService(
+                config.get("sso.url"),
+                HttpClientBuilder.create().build());
+
+        return new SsoSupportTokenExtractor(keyService);
     }
 
     @Provides @Singleton

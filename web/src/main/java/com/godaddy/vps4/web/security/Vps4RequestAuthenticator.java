@@ -6,16 +6,16 @@ import javax.servlet.http.HttpServletRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.godaddy.hfs.config.Config;
 import com.godaddy.hfs.sso.SsoTokenExtractor;
 import com.godaddy.hfs.sso.token.IdpSsoToken;
 import com.godaddy.hfs.sso.token.SsoToken;
-import com.godaddy.hfs.config.Config;
 import com.godaddy.vps4.Environment;
 import com.godaddy.vps4.security.Vps4User;
 import com.godaddy.vps4.security.Vps4UserService;
 import com.godaddy.vps4.vm.VirtualMachineService;
 
-public class Vps4RequestAuthenticator implements RequestAuthenticator {
+public class Vps4RequestAuthenticator implements RequestAuthenticator<Vps4User> {
 
     private final Logger logger = LoggerFactory.getLogger(Vps4RequestAuthenticator.class);
 

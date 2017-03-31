@@ -17,46 +17,36 @@ import org.json.simple.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.godaddy.vps4.security.Vps4User;
 import com.godaddy.vps4.web.Vps4Exception;
 
-/**
- * Examine a request using authenticators, attach the first authenticated user found to the a request attribute.
- *
- * No additional action is taken if an authenticated user is _not_ found, since all downstream actions may not necessarily require
- * authentication, it's up to downstream to take that action (like, for example, redirect to the SSO login page).
- *
- * @author Brian Diekelman
- *
- */
-public class AuthenticationFilter implements Filter {
+public class SupportAuthenticationFilter implements Filter {
 
-    private static final Logger logger = LoggerFactory.getLogger(AuthenticationFilter.class);
-
-    public static final String USER_ATTRIBUTE_NAME = "hfs-user";
-
-    final RequestAuthenticator<Vps4User> authenticator;
-
+    private static final Logger logger = LoggerFactory.getLogger(SupportAuthenticationFilter.class);
+    
+    final RequestAuthenticator<Boolean> authenticator; 
+    
     @Inject
-    public AuthenticationFilter(Vps4RequestAuthenticator authenticator) {
+    public SupportAuthenticationFilter(Vps4SupportRequestAuthenticator authenticator) {
         this.authenticator = authenticator;
     }
 
     @Override
     public void init(FilterConfig filterConfig) throws ServletException {
-
     }
 
     @Override
-    public void doFilter(ServletRequest req, ServletResponse res, FilterChain chain)
-            throws IOException, ServletException {
-
+    public void doFilter(ServletRequest req, ServletResponse res, FilterChain chain) throws IOException, ServletException {
+        
+        logger.info("Attempting to check if request is from a support admin...");
+        
         HttpServletRequest request = (HttpServletRequest) req;
 
         try {
-            Vps4User user = authenticator.authenticate(request);
-            if (user != null) {
-                request.setAttribute(USER_ATTRIBUTE_NAME, user);
+            // check if user is a support administrator
+            Boolean isSupportAdmin = authenticator.authenticate(request);
+            if (isSupportAdmin) {
+                // user was verified as a support administrator.
+                logger.info("Verified user as support admin...");
                 chain.doFilter(req, res);
                 return;
             }
@@ -65,8 +55,8 @@ public class AuthenticationFilter implements Filter {
                 HttpServletResponse response = (HttpServletResponse) res;
 
                 JSONObject json = new JSONObject();
-                json.put("id", "MISSING_AUTHENTICATION");
-                json.put("message", "No SSO token was found in your request");
+                json.put("id", "MISSING_SUPPORT_AUTHENTICATION");
+                json.put("message", "SSO token does not allow support level access");
 
                 response.setStatus(HttpServletResponse.SC_FORBIDDEN);
                 response.setContentType("application/json");
@@ -90,7 +80,7 @@ public class AuthenticationFilter implements Filter {
 
         }
         catch (Exception e) {
-            logger.warn("Exception in request authenticator", e);
+            logger.warn("Exception in support request authenticator", e);
 
             JSONObject json = new JSONObject();
             json.put("id", "INTERNAL_ERROR");
@@ -103,12 +93,10 @@ public class AuthenticationFilter implements Filter {
                 writer.write(json.toJSONString());
             }
         }
-
     }
 
     @Override
     public void destroy() {
-
     }
 
 }

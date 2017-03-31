@@ -21,7 +21,7 @@ import org.mockito.Mockito;
 
 import com.godaddy.vps4.web.Vps4Exception;
 import com.godaddy.vps4.web.security.AuthenticationFilter;
-import com.godaddy.vps4.web.security.RequestAuthenticator;
+import com.godaddy.vps4.web.security.Vps4RequestAuthenticator;
 
 public class AuthenticationFilterTest {
 
@@ -30,7 +30,7 @@ public class AuthenticationFilterTest {
 
         Vps4User vps4User = new Vps4User(1234, "asdf");
 
-        RequestAuthenticator auth = mock(RequestAuthenticator.class);
+        Vps4RequestAuthenticator auth = mock(Vps4RequestAuthenticator.class);
         when(auth.authenticate(any(HttpServletRequest.class))).thenReturn(vps4User);
 
         AuthenticationFilter filter = new AuthenticationFilter(auth);
@@ -51,7 +51,7 @@ public class AuthenticationFilterTest {
 
         Vps4User vps4User = null;
 
-        RequestAuthenticator auth = mock(RequestAuthenticator.class);
+        Vps4RequestAuthenticator auth = mock(Vps4RequestAuthenticator.class);
         when(auth.authenticate(any(HttpServletRequest.class))).thenReturn(vps4User);
 
         AuthenticationFilter filter = new AuthenticationFilter(auth);
@@ -76,7 +76,7 @@ public class AuthenticationFilterTest {
 
         Vps4User user = new Vps4User(1234, "asdf");
 
-        RequestAuthenticator auth = mock(RequestAuthenticator.class);
+        Vps4RequestAuthenticator auth = mock(Vps4RequestAuthenticator.class);
         when(auth.authenticate(any(HttpServletRequest.class))).thenReturn(user);
 
         AuthenticationFilter filter = new AuthenticationFilter(auth);
@@ -100,7 +100,7 @@ public class AuthenticationFilterTest {
     public void testGeneralException() throws Exception {
         Vps4User user = new Vps4User(1234, "asdf");
 
-        RequestAuthenticator auth = mock(RequestAuthenticator.class);
+        Vps4RequestAuthenticator auth = mock(Vps4RequestAuthenticator.class);
         when(auth.authenticate(any(HttpServletRequest.class))).thenReturn(user);
 
         AuthenticationFilter filter = new AuthenticationFilter(auth);
