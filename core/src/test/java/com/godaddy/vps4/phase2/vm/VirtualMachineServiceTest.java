@@ -19,7 +19,7 @@ import org.junit.Before;
 import org.junit.Test;
 
 import com.godaddy.vps4.jdbc.DatabaseModule;
-import com.godaddy.vps4.jdbc.Sql;
+import com.godaddy.hfs.jdbc.Sql;
 import com.godaddy.vps4.network.NetworkService;
 import com.godaddy.vps4.network.jdbc.JdbcNetworkService;
 import com.godaddy.vps4.phase2.SqlTestData;
@@ -75,28 +75,28 @@ public class VirtualMachineServiceTest {
             Sql.with(dataSource).exec("DELETE FROM credit WHERE orion_guid = ?", null, request);
         }
     }
-    
+
     @Test
     public void testHasCPanel() {
         virtualMachineService.createVirtualMachineCredit(orionGuid, "centos", "cpanel", tier, managedLevel, vps4User.getShopperId());
         vmCredits.add(orionGuid);
         ProvisionVirtualMachineParameters params = new ProvisionVirtualMachineParameters(vps4User.getId(), 1, "vps4-testing-",
                 orionGuid, "testServer", 10, 1, "centos-7-cPanel-11");
-        
+
         virtualMachineService.provisionVirtualMachine(params);
-        
+
         VirtualMachine vm = virtualMachineService.getVirtualMachinesForUser(vps4User.getId()).get(0);
         virtualMachines.add(vm);
         Assert.assertTrue(virtualMachineService.virtualMachineHasCpanel(vm.vmId));
     }
-    
+
     @Test
     public void testHasPleskPanel() {
         virtualMachineService.createVirtualMachineCredit(orionGuid, "windows", "plesk", tier, managedLevel, vps4User.getShopperId());
         vmCredits.add(orionGuid);
         ProvisionVirtualMachineParameters params = new ProvisionVirtualMachineParameters(vps4User.getId(), 1, "vps4-testing-",
                 orionGuid, "testServer", 10, 1, "windows-2012r2-plesk-12.5");
-        
+
         virtualMachineService.provisionVirtualMachine(params);
         VirtualMachine vm = virtualMachineService.getVirtualMachinesForUser(vps4User.getId()).get(0);
         virtualMachines.add(vm);
@@ -143,7 +143,7 @@ public class VirtualMachineServiceTest {
         assertEquals(1, vms.size());
 
         VirtualMachine vm = vms.get(0);
-        
+
         virtualMachines.add(vm);
         long hfsVmId = SqlTestData.getNextHfsVmId(dataSource);
         virtualMachineService.addHfsVmIdToVirtualMachine(vm.vmId, hfsVmId);
@@ -167,8 +167,8 @@ public class VirtualMachineServiceTest {
         assertEquals("centos-7", vm.image.hfsName);
         assertEquals("CentOS 7", vm.image.imageName);
     }
-    
-    
+
+
 
     @Test
     public void testGetVirtualMachines() {

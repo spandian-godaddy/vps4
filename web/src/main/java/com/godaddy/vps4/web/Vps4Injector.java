@@ -8,9 +8,14 @@ import javax.inject.Singleton;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.godaddy.hfs.servicediscovery.ZkServiceRegistrationModule;
+import com.godaddy.hfs.swagger.SwaggerClassFilter;
 import com.godaddy.hfs.swagger.SwaggerModule;
 import com.godaddy.hfs.web.CorsFilter;
 import com.godaddy.hfs.web.GuiceFilterModule;
+import com.godaddy.hfs.web.SimpleWebServerModule;
+import com.godaddy.hfs.zookeeper.ZooKeeperModule;
+import com.godaddy.vps4.cache.CacheModule;
 import com.godaddy.vps4.cache.HazelcastCacheModule;
 import com.godaddy.vps4.cpanel.CpanelModule;
 import com.godaddy.vps4.hfs.HfsClientModule;
@@ -29,6 +34,7 @@ import com.godaddy.vps4.web.security.Vps4UserModule;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
 import com.google.inject.Module;
+import com.google.inject.multibindings.Multibinder;
 import com.google.inject.servlet.ServletModule;
 
 public class Vps4Injector {
@@ -46,9 +52,16 @@ public class Vps4Injector {
     static Injector newInstance() {
         List<Module> modules = new ArrayList<>();
 
-        modules.add(new ListenerModule());
-        modules.add(new GuiceFilterModule());
+        modules.add(new SimpleWebServerModule());
+        modules.add(new GuiceFilterModule(
+                "/api/*",
+                "/",
+                "/swagger.json"
+        ));
         modules.add(new SwaggerModule());
+
+        modules.add(new ZooKeeperModule());
+        modules.add(new ZkServiceRegistrationModule());
 
         if (System.getProperty("vps4.hfs.mock", "false").equals("true")) {
             modules.add(new HfsMockModule());
@@ -84,8 +97,13 @@ public class Vps4Injector {
                     bind(AuthenticationFilter.class).in(Singleton.class);
                     filter("/api/*").through(AuthenticationFilter.class);
                 }
+
+                Multibinder.newSetBinder(binder(), SwaggerClassFilter.class)
+                    .addBinding().toInstance(resourceClass ->
+                        resourceClass.isAnnotationPresent(Vps4Api.class));
             }
         });
+        modules.add(new CacheModule());
         modules.add(new HazelcastCacheModule());
 
         return Guice.createInjector(modules);

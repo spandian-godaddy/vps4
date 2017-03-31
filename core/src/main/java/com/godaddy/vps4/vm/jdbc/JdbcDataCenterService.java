@@ -6,7 +6,8 @@ import java.sql.SQLException;
 import javax.inject.Inject;
 import javax.sql.DataSource;
 
-import com.godaddy.vps4.jdbc.Sql;
+import com.godaddy.hfs.jdbc.Sql;
+
 import com.godaddy.vps4.vm.DataCenter;
 import com.godaddy.vps4.vm.DataCenterService;
 

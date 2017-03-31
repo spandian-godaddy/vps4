@@ -4,7 +4,7 @@ import java.util.UUID;
 
 import javax.sql.DataSource;
 
-import com.godaddy.vps4.jdbc.Sql;
+import com.godaddy.hfs.jdbc.Sql;
 import com.godaddy.vps4.vm.VirtualMachine;
 import com.godaddy.vps4.vm.VirtualMachineService;
 import com.godaddy.vps4.vm.VirtualMachineService.ProvisionVirtualMachineParameters;
@@ -21,7 +21,7 @@ public class SqlTestData {
     public static VirtualMachine insertTestVm(UUID orionGuid, DataSource dataSource) {
         return insertTestVm(orionGuid, 1, dataSource);
     }
-    
+
     public static VirtualMachine insertTestVm(UUID orionGuid, long vps4UserId, DataSource dataSource){
         return insertTestVm(orionGuid, vps4UserId, dataSource, "centos-7");
     }

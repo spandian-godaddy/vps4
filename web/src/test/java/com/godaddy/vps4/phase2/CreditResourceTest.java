@@ -10,7 +10,7 @@ import org.junit.Before;
 import org.junit.Test;
 
 import com.godaddy.vps4.jdbc.DatabaseModule;
-import com.godaddy.vps4.jdbc.Sql;
+import com.godaddy.hfs.jdbc.Sql;
 import com.godaddy.vps4.security.SecurityModule;
 import com.godaddy.vps4.security.Vps4User;
 import com.godaddy.vps4.security.Vps4UserService;
@@ -31,11 +31,11 @@ public class CreditResourceTest {
     private UUID orionGuid = UUID.randomUUID();
 
     private Injector injector = Guice.createInjector(
-            new DatabaseModule(), 
+            new DatabaseModule(),
             new SecurityModule(),
             new VmModule(),
             new AbstractModule() {
-                
+
                 @Override
                 public void configure() {
                 }

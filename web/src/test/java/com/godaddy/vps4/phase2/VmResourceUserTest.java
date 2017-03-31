@@ -15,7 +15,7 @@ import org.junit.Test;
 import org.mockito.Mockito;
 
 import com.godaddy.vps4.jdbc.DatabaseModule;
-import com.godaddy.vps4.jdbc.Sql;
+import com.godaddy.hfs.jdbc.Sql;
 import com.godaddy.vps4.network.IpAddress.IpAddressType;
 import com.godaddy.vps4.network.NetworkService;
 import com.godaddy.vps4.project.ProjectService;
@@ -140,7 +140,7 @@ public class VmResourceUserTest {
         ActionResource validActionResource = injector.getInstance(ActionResource.class);
         validActionResource.getAction(actionId);
     }
-    
+
     @Test(expected = AuthorizationException.class)
     public void testListActionsInvalidUser() {
         long actionId = actionService.createAction(vmIds.get(0), ActionType.CREATE_VM, "{}", validUser.getId());
@@ -160,7 +160,7 @@ public class VmResourceUserTest {
         validActionResource.getVmAction(vmId, actionId);
 
     }
-    
+
     @Test(expected = AuthorizationException.class)
     public void testGetVmActionInvalidUser() {
         UUID vmId = vmIds.get(0);
@@ -174,12 +174,12 @@ public class VmResourceUserTest {
     public void testGetVm() {
         newValidVmResource().getVm(vmIds.get(0));
     }
-    
+
     @Test(expected=NotFoundException.class)
     public void testGetVmNotFound() {
         newInvalidVmResource().getVm(vmIds.get(0));
     }
-    
+
     @Test
     public void testStartVm() throws VmNotFoundException{
         Action action = newValidVmResource().startVm(vmIds.get(0));
@@ -207,12 +207,12 @@ public class VmResourceUserTest {
         Action action = newValidVmResource().destroyVm(vmIds.get(0));
         Assert.assertNotNull(action.commandId);
     }
-    
+
     @Test(expected = AuthorizationException.class)
     public void testDestroyVmInvalid() throws VmNotFoundException {
         newInvalidVmResource().destroyVm(vmIds.get(0));
     }
-    
+
     private ProvisionVmRequest createProvisionRequest(String controlPanel) {
         UUID newGuid = UUID.randomUUID();
         orionGuids.add(newGuid);
@@ -224,16 +224,16 @@ public class VmResourceUserTest {
         provisionRequest.name = "Test Name";
         return provisionRequest;
     }
-    
+
     @Test
     public void testProvisionVm() throws InterruptedException {
         ProvisionVmRequest provisionRequest = createProvisionRequest("none");
         Action action = newValidVmResource().provisionVm(provisionRequest);
         vmIds.add(action.virtualMachineId);
         Assert.assertNotNull(action.commandId);
-        
+
     }
-    
+
     @Test(expected = AuthorizationException.class)
     public void testProvisionVmInvalidResource() throws InterruptedException {
         ProvisionVmRequest provisionRequest = createProvisionRequest("none");

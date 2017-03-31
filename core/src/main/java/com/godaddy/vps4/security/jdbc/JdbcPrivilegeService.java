@@ -5,7 +5,8 @@ import java.util.UUID;
 import javax.inject.Inject;
 import javax.sql.DataSource;
 
-import com.godaddy.vps4.jdbc.Sql;
+import com.godaddy.hfs.jdbc.Sql;
+
 import com.godaddy.vps4.project.ProjectPrivilege;
 import com.godaddy.vps4.security.Privilege;
 import com.godaddy.vps4.security.PrivilegeService;

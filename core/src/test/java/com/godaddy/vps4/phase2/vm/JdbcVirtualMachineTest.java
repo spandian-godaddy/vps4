@@ -12,7 +12,7 @@ import org.junit.Before;
 import org.junit.Test;
 
 import com.godaddy.vps4.jdbc.DatabaseModule;
-import com.godaddy.vps4.jdbc.Sql;
+import com.godaddy.hfs.jdbc.Sql;
 import com.godaddy.vps4.phase2.SqlTestData;
 import com.godaddy.vps4.project.ProjectService;
 import com.godaddy.vps4.security.SecurityModule;
@@ -25,33 +25,33 @@ import com.google.inject.Inject;
 import com.google.inject.Injector;
 
 public class JdbcVirtualMachineTest {
-    
-    Injector injector = Guice.createInjector(new DatabaseModule(), 
-                                             new VmModule(), 
+
+    Injector injector = Guice.createInjector(new DatabaseModule(),
+                                             new VmModule(),
                                              new SecurityModule());
     DataSource dataSource = injector.getInstance(DataSource.class);
-    
+
     @Inject
     VirtualMachineService vmService;
-    
+
     @Inject
     ProjectService projService;
-    
+
     @Inject
     Vps4UserService userService;
-    
+
     @Before
     public void setupTest(){
         injector.injectMembers(this);
     }
-    
+
 
     UUID orionGuid = UUID.randomUUID();
     VirtualMachine virtualMachine;
-    
+
     @After
     public void cleanup() {
-        
+
         SqlTestData.cleanupTestVmAndRelatedData(virtualMachine.vmId, dataSource);
         Sql.with(dataSource).exec("DELETE FROM credit WHERE orion_guid = ?", null, orionGuid);
     }

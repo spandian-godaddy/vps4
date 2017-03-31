@@ -5,6 +5,7 @@ import javax.inject.Provider;
 import javax.sql.DataSource;
 
 import com.godaddy.hfs.config.Config;
+import com.godaddy.hfs.jdbc.DataSources;
 
 public class DataSourceProvider implements Provider<DataSource> {
 

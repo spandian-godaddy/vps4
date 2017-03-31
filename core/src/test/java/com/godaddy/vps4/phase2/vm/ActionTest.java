@@ -13,7 +13,7 @@ import org.junit.Before;
 import org.junit.Test;
 
 import com.godaddy.vps4.jdbc.DatabaseModule;
-import com.godaddy.vps4.jdbc.Sql;
+import com.godaddy.hfs.jdbc.Sql;
 import com.godaddy.vps4.phase2.SqlTestData;
 import com.godaddy.vps4.project.Project;
 import com.godaddy.vps4.project.ProjectService;
@@ -35,7 +35,7 @@ public class ActionTest {
     ActionService actionService = new JdbcActionService(dataSource);
     ProjectService projectService = new JdbcProjectService(dataSource);
     VirtualMachineService vmService = new JdbcVirtualMachineService(dataSource);
-    
+
     private UUID orionGuid = UUID.randomUUID();
     Project project;
     ActionType type;

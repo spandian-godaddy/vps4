@@ -7,7 +7,8 @@ import java.util.List;
 import javax.inject.Inject;
 import javax.sql.DataSource;
 
-import com.godaddy.vps4.jdbc.Sql;
+import com.godaddy.hfs.jdbc.Sql;
+
 import com.godaddy.vps4.vm.ControlPanelService;
 
 public class JdbcControlPanelService implements ControlPanelService {

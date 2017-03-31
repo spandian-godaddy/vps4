@@ -6,7 +6,8 @@ import java.util.UUID;
 import javax.inject.Inject;
 import javax.sql.DataSource;
 
-import com.godaddy.vps4.jdbc.Sql;
+import com.godaddy.hfs.jdbc.Sql;
+
 import com.godaddy.vps4.network.IpAddress;
 import com.godaddy.vps4.network.IpAddress.IpAddressType;
 import com.godaddy.vps4.network.NetworkService;
@@ -53,7 +54,7 @@ public class JdbcNetworkService implements NetworkService {
                 "SELECT * FROM ip_address ip WHERE vm_id=? AND ip_address_type_id = ?",
                 Sql.nextOrNull(IpAddressMapper::mapIpAddress), vmId, IpAddress.IpAddressType.PRIMARY.getId());
     }
-    
+
     @Override
     public IpAddress getVmPrimaryAddress(long hfsVmId) {
         return Sql.with(dataSource).exec(
