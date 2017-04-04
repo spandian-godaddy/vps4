@@ -169,11 +169,11 @@ public class Vps4ProvisionVm extends ActionCommand<Vps4ProvisionVm.Request, Vps4
     private void configureMailRelay(Vm hfsVm) {
         setStep(CreateVmStep.ConfigureMailRelay);
 
-        String controlPanel = request.vmInfo.image.controlPanel == ControlPanel.NONE ? null
+        String controlPanel = request.vmInfo.image.controlPanel.equals(ControlPanel.NONE) ? null
                 : request.vmInfo.image.controlPanel.name().toLowerCase();
 
         ConfigureMailRelayRequest configureMailRelayRequest = new ConfigureMailRelayRequest(hfsVm.vmId,
-                request.vmInfo.image.controlPanel.name().toLowerCase());
+                controlPanel);
         context.execute(ConfigureMailRelay.class, configureMailRelayRequest);
 
     }
