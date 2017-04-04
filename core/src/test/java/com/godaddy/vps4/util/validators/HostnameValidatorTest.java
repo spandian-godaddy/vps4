@@ -10,7 +10,7 @@ public class HostnameValidatorTest {
 
     @Test
     public void fqdn() {
-    	// 3 sets of 1-15 characters separated by periods
+        // 3 sets of 1-15 characters separated by periods
         assertTrue(validator.isValid("fake.User-name1.test"));
         assertFalse(validator.isValid(".User-name1.test"));  // empty first section
         assertFalse(validator.isValid("fake.User-name1.test.test")); // 4 sections
@@ -74,5 +74,14 @@ public class HostnameValidatorTest {
         assertFalse(validator.isValid("fake.User--name1.test")); // adjacent hyphens
     }
     
+    @Test
+    public void shouldNotStartWithW3Prefix() {
+        // Cannot begin www. prefix
+
+        assertFalse(validator.isValid("www.is-invalid.test"));
+        assertTrue(validator.isValid("the.www-in-middle.test"));
+        assertTrue(validator.isValid("ww.is-valid.test"));
+        assertTrue(validator.isValid("wwww.is-also-valid.test"));
+    }
 
 }
