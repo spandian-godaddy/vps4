@@ -2,8 +2,12 @@ package com.godaddy.vps4.vm.jdbc;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Timestamp;
 import java.util.ArrayList;
+import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.StringJoiner;
 import java.util.UUID;
 
@@ -79,37 +83,77 @@ public class JdbcActionService implements ActionService {
 
     @Override
     public ResultSubset<Action> getActions(UUID vmId, long limit, long offset){
-        return Sql.with(dataSource).exec("SELECT *, count(*) over() as total_rows FROM vm_action "
-                + " JOIN action_status on vm_action.status_id = action_status.status_id"
-                + " JOIN action_type on vm_action.action_type_id = action_type.type_id"
-                + " where vm_id = ?"
-                + " ORDER BY created DESC"
-                + " LIMIT ? OFFSET ?;",
-                Sql.nextOrNull(this::mapActionWithTotal),
-                vmId, limit, offset);
+        return getActions(vmId, limit, offset, null, null, null);
     }
 
     @Override
     public ResultSubset<Action> getActions(UUID vmId, long limit, long offset, List<String> statusList){
-
-        return Sql.with(dataSource).exec("SELECT *, count(*) over() as total_rows FROM vm_action "
+        return getActions(vmId, limit, offset, statusList, null, null);
+    }
+    
+    @Override
+    public ResultSubset<Action> getActions(UUID vmId, long limit, long offset, List<String> statusList, Date beginDate, Date endDate){ 
+        Map<String, Object> filterParams = new HashMap<String, Object>();
+        if (vmId != null){
+            filterParams.put("vm_id", vmId);
+        }
+        
+        ArrayList<Object> filterValues = new ArrayList<Object>();
+        StringBuilder actionsQuery = new StringBuilder();
+        actionsQuery.append("SELECT *, count(*) over() as total_rows FROM vm_action "
                 + " JOIN action_status on vm_action.status_id = action_status.status_id"
                 + " JOIN action_type on vm_action.action_type_id = action_type.type_id"
-                + " where vm_id = ?"
-                + " and action_status.status in " + formattedStatusList(statusList)
-                + " ORDER BY created DESC"
-                + " LIMIT ? OFFSET ?;",
+                + " WHERE 1=1 ");
+        for (Map.Entry<String, Object> pair: filterParams.entrySet()){
+            actionsQuery.append(" and ");
+            actionsQuery.append(pair.getKey());
+            actionsQuery.append("=?");
+            filterValues.add(pair.getValue());
+        }
+        
+        buildStatusList(statusList, filterValues, actionsQuery);
+        
+        buidDateQuery(beginDate, endDate, filterValues, actionsQuery);
+        
+        actionsQuery.append(" ORDER BY created DESC LIMIT ? OFFSET ?;");
+        filterValues.add(limit);
+        filterValues.add(offset);
+        return Sql.with(dataSource).exec(actionsQuery.toString(),
                 Sql.nextOrNull(this::mapActionWithTotal),
-                vmId, limit, offset);
+                filterValues.toArray());
     }
 
-    private String formattedStatusList(List<String> statusList){
-        StringJoiner statusJoiner = new StringJoiner("\', \'", "('", "')");
-        for(String status : statusList){
-            statusJoiner.add(status.toUpperCase());
+    private void buidDateQuery(Date beginDate, Date endDate,
+            ArrayList<Object> filterValues, StringBuilder actionsQuery) {
+        if (beginDate != null){
+            actionsQuery.append(" and created >= ?");
+            filterValues.add(new Timestamp(beginDate.getTime()));
         }
-        return statusJoiner.toString();
+        if (endDate != null){
+            actionsQuery.append(" and created <= ?");
+            filterValues.add(new Timestamp(endDate.getTime()));
+        }
     }
+
+    private void buildStatusList(List<String> statusList,
+            ArrayList<Object> filterValues, StringBuilder actionsQuery) {
+        if (statusList != null && !statusList.isEmpty())
+        {
+            actionsQuery.append(" and (");
+            boolean first = true;
+            for(String status : statusList){
+                if(first){
+                    actionsQuery.append("action_status.status = ? ");
+                    first = false;
+                }
+                else{
+                    actionsQuery.append(" OR action_status.status = ? ");
+                }
+                filterValues.add(status);
+            }
+            actionsQuery.append(")");
+        }
+    } 
 
     private ResultSubset<Action> mapActionWithTotal(ResultSet rs) throws SQLException {
        long totalRows = rs.getLong("total_rows");
