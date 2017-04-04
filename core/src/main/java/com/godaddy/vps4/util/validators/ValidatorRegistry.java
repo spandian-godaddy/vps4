@@ -48,7 +48,8 @@ public class ValidatorRegistry {
             new Rule("Doesn't begin with a hyphen", "^(?!-).*$"),
             new Rule("Doesn't end with a hyphen", ".*(?<!-)$"),
             new Rule("Multiple periods may not be adjacent", "^((?!\\.\\.).)*$"),
-            new Rule("Multiple hyphens may not be adjacent", "^((?!\\-\\-).)*$")
+            new Rule("Multiple hyphens may not be adjacent", "^((?!\\-\\-).)*$"),
+            new Rule("Doesn't begin with www.", "^(?!www\\.).*$")
         )));
     }
 
