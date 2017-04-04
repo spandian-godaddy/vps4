@@ -17,6 +17,9 @@ import gdg.hfs.vhfs.mailrelay.MailRelayService;
 import gdg.hfs.vhfs.network.AddressAction;
 import gdg.hfs.vhfs.network.IpAddress;
 import gdg.hfs.vhfs.network.NetworkService;
+import gdg.hfs.vhfs.nodeping.NodePingAction;
+import gdg.hfs.vhfs.nodeping.NodePingAction.Status;
+import gdg.hfs.vhfs.nodeping.NodePingService;
 import gdg.hfs.vhfs.plesk.PleskAction;
 import gdg.hfs.vhfs.plesk.PleskService;
 import gdg.hfs.vhfs.sysadmin.SysAdminAction;
@@ -43,9 +46,11 @@ public class HfsMockModule extends AbstractModule {
         bind(MailRelayService.class).toInstance(mailRelayService);
         PleskService pleskService = buildPleskService();
         bind(PleskService.class).toInstance(pleskService);
+        NodePingService nodePingService = buildNodePingService();
+        bind(NodePingService.class).toInstance(nodePingService);
         
     }
-    
+
     private PleskService buildPleskService() {
         PleskAction completeAction = new PleskAction();
         completeAction.status = PleskAction.Status.COMPLETE;
@@ -153,5 +158,16 @@ public class HfsMockModule extends AbstractModule {
         newAction.addressId = 12345;
         newAction.addressActionId = 54321;
         return newAction;
+    }
+
+    private NodePingService buildNodePingService() {
+        NodePingService nodePingService = Mockito.mock(NodePingService.class);
+        NodePingAction nodePingAction = new NodePingAction();
+        nodePingAction.status = Status.COMPLETE;
+        nodePingAction.accountId = 1234;
+        nodePingAction.checkId = "newCheck";
+        Mockito.when(nodePingService.createCheck(Mockito.anyLong(), Mockito.anyString(), Mockito.anyString())).thenReturn(nodePingAction);
+        Mockito.when(nodePingService.deleteCheck(Mockito.anyLong(), Mockito.anyString())).thenReturn(nodePingAction);
+        return nodePingService;
     }
 }
