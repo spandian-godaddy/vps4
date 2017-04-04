@@ -50,7 +50,7 @@ public class Vps4SetHostname extends ActionCommand<Vps4SetHostname.Request, Void
             setStep(request.actionId, UpdateHostnameStep.UpdatingHostname);
             context.execute(SetHostname.class, request.setHostnameRequest);
         }catch(Exception e){
-            logger.error("Error while etting hostname to {} on vm {}.", request.setHostnameRequest.hostname, request.vmId);
+            logger.error("Error while setting hostname to {} on vm {}.", request.setHostnameRequest.hostname, request.vmId);
             virtualMachineService.setHostname(request.vmId, request.oldHostname);
             response.put("message", e.getMessage());
             throw e;

@@ -8,3 +8,4 @@
 *.idea
 **/coverage/
 **/workbench.xmi
+**/.DS_Store
