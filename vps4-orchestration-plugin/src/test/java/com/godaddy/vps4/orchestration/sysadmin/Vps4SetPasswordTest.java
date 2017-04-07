@@ -7,10 +7,12 @@ import java.util.Arrays;
 import org.junit.Test;
 
 import com.godaddy.vps4.orchestration.TestCommandContext;
+import com.godaddy.vps4.orchestration.hfs.plesk.UpdateAdminPassword;
 import com.godaddy.vps4.orchestration.hfs.sysadmin.SetPassword;
 import com.godaddy.vps4.orchestration.hfs.sysadmin.WaitForSysAdminAction;
 import com.godaddy.vps4.vm.ActionService;
 import com.godaddy.vps4.vm.VmUserService;
+import com.godaddy.vps4.vm.Image.ControlPanel;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
 
@@ -26,7 +28,7 @@ public class Vps4SetPasswordTest {
     SysAdminService sysAdminService = mock(SysAdminService.class);
     VmUserService userService = mock(VmUserService.class);
 
-    Vps4SetPassword command = new Vps4SetPassword(actionService);
+    Vps4SetPassword command = spy(new Vps4SetPassword(actionService));
 
     Injector injector = Guice.createInjector(binder -> {
         binder.bind(SetPassword.class);
@@ -47,6 +49,7 @@ public class Vps4SetPasswordTest {
         Vps4SetPassword.Request request = new Vps4SetPassword.Request();
         request.actionId = 12;
         request.setPasswordRequest = setPasswordRequest;
+        request.controlPanel = ControlPanel.NONE;
 
         SysAdminAction action = new SysAdminAction();
         action.vmId = request.setPasswordRequest.hfsVmId;
@@ -62,6 +65,25 @@ public class Vps4SetPasswordTest {
             verify(sysAdminService, times(1))
                 .changePassword(42, username, "somenewpassword");
         }
+    }
+
+    @Test
+    public void testSetPasswordWithPlesk() throws Exception {
+        CommandContext context = mock(CommandContext.class);
+        SetPassword.Request setPasswordReq = mock(SetPassword.Request.class);
+        UpdateAdminPassword.Request updateAdminReq = mock(UpdateAdminPassword.Request.class);
+
+        Vps4SetPassword.Request request = new Vps4SetPassword.Request();
+        request.actionId = 12;
+        request.setPasswordRequest = setPasswordReq;
+        request.controlPanel = ControlPanel.PLESK;
+
+        doReturn(updateAdminReq).when(command).makeUpdateAdminRequest(eq(request));
+
+        command.execute(context, request);
+
+        verify(context, times(1)).execute(SetPassword.class, setPasswordReq);
+        verify(context, times(1)).execute(UpdateAdminPassword.class, updateAdminReq);
     }
 
 }
