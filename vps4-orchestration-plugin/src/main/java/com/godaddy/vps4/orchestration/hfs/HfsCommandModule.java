@@ -8,6 +8,7 @@ import com.godaddy.vps4.orchestration.hfs.network.ReleaseIp;
 import com.godaddy.vps4.orchestration.hfs.network.UnbindIp;
 import com.godaddy.vps4.orchestration.hfs.network.WaitForAddressAction;
 import com.godaddy.vps4.orchestration.hfs.plesk.ConfigurePlesk;
+import com.godaddy.vps4.orchestration.hfs.plesk.UpdateAdminPassword;
 import com.godaddy.vps4.orchestration.hfs.plesk.WaitForPleskAction;
 import com.godaddy.vps4.orchestration.hfs.sysadmin.RefreshCpanelLicense;
 import com.godaddy.vps4.orchestration.hfs.sysadmin.SetHostname;
@@ -59,6 +60,7 @@ public class HfsCommandModule extends AbstractModule {
 
         // Plesk
         bind(ConfigurePlesk.class);
+        bind(UpdateAdminPassword.class);
         bind(WaitForPleskAction.class);
     }
 }

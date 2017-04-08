@@ -118,6 +118,7 @@ public class SysAdminResource {
         Vps4SetPassword.Request vps4Request = new Vps4SetPassword.Request();
         vps4Request.actionId = actionId;
         vps4Request.setPasswordRequest = request;
+        vps4Request.controlPanel = vm.image.controlPanel;
 
         Commands.execute(commandService, actionService, "Vps4SetPassword", vps4Request);
 

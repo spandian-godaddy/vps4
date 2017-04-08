@@ -51,6 +51,7 @@ public class HfsMockModule extends AbstractModule {
         completeAction.status = PleskAction.Status.COMPLETE;
         PleskService pleskService = Mockito.mock(PleskService.class);
         Mockito.when(pleskService.imageConfig(Mockito.anyLong(),  Mockito.anyString(), Mockito.anyString())).thenReturn(completeAction);
+        Mockito.when(pleskService.adminPassUpdate(Mockito.anyLong(), Mockito.anyString())).thenReturn(completeAction);
         return pleskService;
     }
 
