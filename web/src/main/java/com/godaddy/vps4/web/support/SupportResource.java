@@ -110,8 +110,8 @@ public class SupportResource {
             @DefaultValue("10") @QueryParam("limit") long limit, 
             @DefaultValue("0") @QueryParam("offset") long offset,
             @QueryParam("status") List<String> status,
-            @ApiParam(value = "Earliest date/time the action was created.  Format = yyyy-MM-dd hh:mm:ss timezone", example = "2017-03-20 01:02:03 msc") @QueryParam("beginTime") String beginTime,
-            @ApiParam(value = "Latest date/time the action was created.  Format = yyyy-MM-dd hh:mm:ss timezone", example = "2017-03-20 01:02:03 msc") @QueryParam("endTime") String endTime,
+            @ApiParam(value = "Earliest date/time the action was created.  Format = yyyy-MM-dd hh:mm:ss timezone", example = "2017-01-01 01:02:03 GMT") @QueryParam("beginTime") String beginTime,
+            @ApiParam(value = "Latest date/time the action was created.  Format = yyyy-MM-dd hh:mm:ss timezone", example = "2017-03-20 01:02:03 GMT") @QueryParam("endTime") String endTime,
             @DefaultValue("false") @QueryParam("includeCommandData") boolean includeCommandData,
             @Context UriInfo uri) throws ParseException {
 
