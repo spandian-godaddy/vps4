@@ -165,9 +165,9 @@ public class HfsMockModule extends AbstractModule {
         NodePingAction nodePingAction = new NodePingAction();
         nodePingAction.status = Status.COMPLETE;
         nodePingAction.accountId = 1234;
-        nodePingAction.checkId = "newCheck";
+        nodePingAction.checkId = (long) 4321;
         Mockito.when(nodePingService.createCheck(Mockito.anyLong(), Mockito.anyString(), Mockito.anyString())).thenReturn(nodePingAction);
-        Mockito.when(nodePingService.deleteCheck(Mockito.anyLong(), Mockito.anyString())).thenReturn(nodePingAction);
+        Mockito.when(nodePingService.deleteCheck(Mockito.anyLong(), Mockito.anyLong())).thenReturn(nodePingAction);
         return nodePingService;
     }
 }

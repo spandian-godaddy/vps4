@@ -1,8 +1,6 @@
 package com.godaddy.vps4.orchestration.hfs.nodeping;
 
-    import javax.ws.rs.core.Response;
-
-import org.slf4j.Logger;
+    import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.google.inject.Inject;
@@ -18,7 +16,7 @@ public class DeleteCheck implements Command<DeleteCheck.Request, NodePingAction>
 
     public static class Request {
         public long accountId;
-        public String checkId;
+        public long checkId;
     }
 
     final NodePingService nodePingService;
@@ -38,7 +36,6 @@ public class DeleteCheck implements Command<DeleteCheck.Request, NodePingAction>
         
         hfsAction = context.execute(WaitForNodePingAction.class, hfsAction);
         
-        Response checks = nodePingService.getChecks(request.accountId);
         return hfsAction;
     }
 }

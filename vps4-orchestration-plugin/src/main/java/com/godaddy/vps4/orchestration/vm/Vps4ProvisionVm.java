@@ -42,7 +42,7 @@ import gdg.hfs.vhfs.mailrelay.MailRelay;
 import gdg.hfs.vhfs.mailrelay.MailRelayService;
 import gdg.hfs.vhfs.mailrelay.MailRelayUpdate;
 import gdg.hfs.vhfs.network.IpAddress;
-import gdg.hfs.vhfs.nodeping.NodePingAction;
+import gdg.hfs.vhfs.nodeping.NodePingCheck;
 import gdg.hfs.vhfs.vm.CreateVMWithFlavorRequest;
 import gdg.hfs.vhfs.vm.Vm;
 import gdg.hfs.vhfs.vm.VmAction;
@@ -128,9 +128,10 @@ public class Vps4ProvisionVm extends ActionCommand<Vps4ProvisionVm.Request, Vps4
 
     private void configureNodePing(IpAddress ipAddress) {
         if (request.vmInfo.nodePingAccountId > 0) {
-            CreateCheck.Request nodePingRequest = new CreateCheck.Request(request.vmInfo.nodePingAccountId, ipAddress.address);
-            NodePingAction nodePingAction = context.execute(CreateCheck.class, nodePingRequest);
-            logger.debug("CheckId: {}", nodePingAction.checkId);
+            CreateCheck.Request nodePingRequest = new CreateCheck.Request(request.vmInfo.nodePingAccountId, ipAddress.address,
+                    ipAddress.address);
+            NodePingCheck nodePingCheck = context.execute(CreateCheck.class, nodePingRequest);
+            logger.debug("CheckId: {}", nodePingCheck.checkId);
         }
 
     }
