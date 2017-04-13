@@ -17,7 +17,7 @@ import com.godaddy.vps4.orchestration.hfs.cpanel.ConfigureCpanel.ConfigureCpanel
 import com.godaddy.vps4.orchestration.hfs.network.AllocateIp;
 import com.godaddy.vps4.orchestration.hfs.network.BindIp;
 import com.godaddy.vps4.orchestration.hfs.network.BindIp.BindIpRequest;
-import com.godaddy.vps4.orchestration.hfs.nodeping.CreateCheck;
+import com.godaddy.vps4.orchestration.hfs.pingcheck.CreateCheck;
 import com.godaddy.vps4.orchestration.hfs.plesk.ConfigurePlesk;
 import com.godaddy.vps4.orchestration.hfs.plesk.ConfigurePlesk.ConfigurePleskRequest;
 import com.godaddy.vps4.orchestration.hfs.sysadmin.SetHostname;

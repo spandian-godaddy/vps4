@@ -1,4 +1,4 @@
-package com.godaddy.vps4.orchestration.hfs.nodeping;
+package com.godaddy.vps4.orchestration.hfs.pingcheck;
 
     import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -15,6 +15,10 @@ public class DeleteCheck implements Command<DeleteCheck.Request, NodePingAction>
     private static final Logger logger = LoggerFactory.getLogger(DeleteCheck.class);
 
     public static class Request {
+        public Request(long accountId, long checkId) {
+            this.accountId = accountId;
+            this.checkId = checkId;
+        }
         public long accountId;
         public long checkId;
     }
