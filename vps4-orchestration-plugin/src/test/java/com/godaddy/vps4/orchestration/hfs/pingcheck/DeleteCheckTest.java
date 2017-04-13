@@ -38,8 +38,6 @@ public class DeleteCheckTest {
         context = new TestCommandContext(new GuiceCommandProvider(injector));
     }
 
-    CreateCheck.Request request = new CreateCheck.Request(123L, "192.168.1.1", "TestCheck");
-
     @Test
     public void testDeleteCheckSuccess() {
         DeleteCheck.Request request = new DeleteCheck.Request(123L, 345L);
@@ -60,7 +58,7 @@ public class DeleteCheckTest {
     }
 
     @Test(expected = RuntimeException.class)
-    public void testCreateCheckFail() {
+    public void testDeleteCheckFail() {
         DeleteCheck.Request request = new DeleteCheck.Request(123L, 345L);
 
         when(nodePingService.deleteCheck(request.accountId, request.checkId))
