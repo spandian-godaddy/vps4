@@ -127,8 +127,8 @@ public class Vps4ProvisionVm extends ActionCommand<Vps4ProvisionVm.Request, Vps4
     }
 
     private void configureNodePing(IpAddress ipAddress) {
-        if (request.vmInfo.nodePingAccountId > 0) {
-            CreateCheck.Request nodePingRequest = new CreateCheck.Request(request.vmInfo.nodePingAccountId, ipAddress.address,
+        if (request.vmInfo.pingCheckAccountId > 0) {
+            CreateCheck.Request nodePingRequest = new CreateCheck.Request(request.vmInfo.pingCheckAccountId, ipAddress.address,
                     ipAddress.address);
             NodePingCheck nodePingCheck = context.execute(CreateCheck.class, nodePingRequest);
             logger.debug("CheckId: {}", nodePingCheck.checkId);

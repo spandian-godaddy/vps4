@@ -33,7 +33,7 @@ public class CreateCheckTest {
         command = new CreateCheck(nodePingService);
         injector = Guice.createInjector(binder -> {
             binder.bind(CreateCheck.class);
-            binder.bind(WaitForNodePingAction.class);
+            binder.bind(WaitForPingCheckAction.class);
             binder.bind(NodePingService.class).toInstance(nodePingService);
         });
         context = new TestCommandContext(new GuiceCommandProvider(injector));

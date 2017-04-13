@@ -38,7 +38,7 @@ public class DeleteCheck implements Command<DeleteCheck.Request, NodePingAction>
         NodePingAction hfsAction = context.execute("RequestDeleteNodepingCheck",
                 ctx -> nodePingService.deleteCheck(request.accountId, request.checkId));
         
-        hfsAction = context.execute(WaitForNodePingAction.class, hfsAction);
+        hfsAction = context.execute(WaitForPingCheckAction.class, hfsAction);
         
         return hfsAction;
     }

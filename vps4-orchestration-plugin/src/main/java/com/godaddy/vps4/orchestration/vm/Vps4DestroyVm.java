@@ -10,6 +10,7 @@ import com.godaddy.vps4.network.NetworkService;
 import com.godaddy.vps4.orchestration.ActionCommand;
 import com.godaddy.vps4.orchestration.ActionRequest;
 import com.godaddy.vps4.orchestration.hfs.cpanel.WaitForCpanelAction;
+import com.godaddy.vps4.orchestration.hfs.pingcheck.DeleteCheck;
 import com.godaddy.vps4.orchestration.hfs.vm.DestroyVm;
 import com.godaddy.vps4.vm.ActionService;
 import com.godaddy.vps4.vm.VirtualMachine;
@@ -61,7 +62,12 @@ public class Vps4DestroyVm extends ActionCommand<Vps4DestroyVm.Request, Vps4Dest
         List<IpAddress> addresses = networkService.getVmIpAddresses(vm.vmId);
 
         for (IpAddress address : addresses) {
-            context.execute("DeleteIpAddress"+address.ipAddressId, Vps4DestroyIpAddress.class, new Vps4DestroyIpAddress.Request(address, vm));
+            if(address.pingCheckId != null ){
+                DeleteCheck.Request deleteCheckRequest = new DeleteCheck.Request(request.pingCheckAccountId, address.pingCheckId);
+                context.execute(DeleteCheck.class, deleteCheckRequest);
+            }
+            
+            context.execute("DeleteIpAddress-"+address.ipAddressId, Vps4DestroyIpAddress.class, new Vps4DestroyIpAddress.Request(address, vm));
             context.execute("Destroy-"+address.ipAddressId, ctx -> {networkService.destroyIpAddress(address.ipAddressId); 
                                                                     return null;});
         }
@@ -89,6 +95,7 @@ public class Vps4DestroyVm extends ActionCommand<Vps4DestroyVm.Request, Vps4Dest
     public static class Request implements ActionRequest{
         public long hfsVmId;
         public long actionId;
+        public long pingCheckAccountId;
 
         @Override
         public long getActionId() {

@@ -10,14 +10,14 @@ import gdg.hfs.orchestration.CommandContext;
 import gdg.hfs.vhfs.nodeping.NodePingAction;
 import gdg.hfs.vhfs.nodeping.NodePingService;
 
-public class WaitForNodePingAction implements Command<NodePingAction, NodePingAction> {
+public class WaitForPingCheckAction implements Command<NodePingAction, NodePingAction> {
 
-    private static final Logger logger = LoggerFactory.getLogger(WaitForNodePingAction.class);
+    private static final Logger logger = LoggerFactory.getLogger(WaitForPingCheckAction.class);
 
     final NodePingService nodePingService;
 
     @Inject
-    public WaitForNodePingAction(NodePingService nodePingService) {
+    public WaitForPingCheckAction(NodePingService nodePingService) {
         this.nodePingService = nodePingService;
     }
 
