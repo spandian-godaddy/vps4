@@ -132,6 +132,12 @@ public class Vps4ProvisionVm extends ActionCommand<Vps4ProvisionVm.Request, Vps4
                     ipAddress.address);
             NodePingCheck nodePingCheck = context.execute(CreateCheck.class, nodePingRequest);
             logger.debug("CheckId: {}", nodePingCheck.checkId);
+
+            // Add the checkId to the IpAddress
+            context.execute("AddCheckIdToIp-" + ipAddress.address, ctx -> {
+                networkService.updateIpWithCheckId(ipAddress.addressId, nodePingCheck.checkId);
+                return null;
+            });
         }
 
     }

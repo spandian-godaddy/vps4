@@ -16,9 +16,9 @@ public class CreateCheck implements Command<CreateCheck.Request, NodePingCheck> 
     private static final Logger logger = LoggerFactory.getLogger(CreateCheck.class);
     
     public static class Request {
-        public Request(long nodePingAccountId, String address, String label) {
+        public Request(long nodePingAccountId, String target, String label) {
             this.accountId = nodePingAccountId;
-            this.target = address;
+            this.target = target;
             this.label = label;
         }
         public long accountId;

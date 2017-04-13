@@ -88,7 +88,7 @@ public class Vps4DestroyVmTest {
         AddressAction addressAction = new AddressAction();
         addressAction.status = AddressAction.Status.COMPLETE;
         
-        this.primaryIp = new IpAddress(123, UUID.randomUUID(), "1.2.3.4", IpAddressType.PRIMARY,null, null);
+        this.primaryIp = new IpAddress(123, UUID.randomUUID(), "1.2.3.4", IpAddressType.PRIMARY, null, null, null);
         ArrayList<IpAddress> addresses = new ArrayList<IpAddress>();
         addresses.add(this.primaryIp);
         
