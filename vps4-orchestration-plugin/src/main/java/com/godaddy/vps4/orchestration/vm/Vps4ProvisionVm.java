@@ -122,24 +122,9 @@ public class Vps4ProvisionVm extends ActionCommand<Vps4ProvisionVm.Request, Vps4
         configureNodePing(ip);
 
         setStep(CreateVmStep.SetupComplete);
+        logger.info("provision vm finished: {}", hfsVm);
 
         return null;
-    }
-
-    private void configureNodePing(IpAddress ipAddress) {
-        if (request.vmInfo.pingCheckAccountId > 0) {
-            CreateCheck.Request nodePingRequest = new CreateCheck.Request(request.vmInfo.pingCheckAccountId, ipAddress.address,
-                    ipAddress.address);
-            NodePingCheck nodePingCheck = context.execute(CreateCheck.class, nodePingRequest);
-            logger.debug("CheckId: {}", nodePingCheck.checkId);
-
-            // Add the checkId to the IpAddress
-            context.execute("AddCheckIdToIp-" + ipAddress.address, ctx -> {
-                networkService.updateIpWithCheckId(ipAddress.addressId, nodePingCheck.checkId);
-                return null;
-            });
-        }
-
     }
 
     private void setHostname(Vm hfsVm){
@@ -290,6 +275,21 @@ public class Vps4ProvisionVm extends ActionCommand<Vps4ProvisionVm.Request, Vps4
         allocateIpRequest.zone = request.hfsRequest.zone;
 
         return context.execute(AllocateIp.class, allocateIpRequest);
+    }
+
+    private void configureNodePing(IpAddress ipAddress) {
+        if (request.vmInfo.pingCheckAccountId > 0) {
+            CreateCheck.Request nodePingRequest = new CreateCheck.Request(request.vmInfo.pingCheckAccountId, ipAddress.address,
+                    ipAddress.address);
+            NodePingCheck nodePingCheck = context.execute(CreateCheck.class, nodePingRequest);
+            logger.debug("CheckId: {}", nodePingCheck.checkId);
+
+            // Add the checkId to the IpAddress
+            context.execute("AddCheckIdToIp-" + ipAddress.address, ctx -> {
+                networkService.updateIpWithCheckId(ipAddress.addressId, nodePingCheck.checkId);
+                return null;
+            });
+        }
     }
 
     protected void setStep(CreateVmStep step) {

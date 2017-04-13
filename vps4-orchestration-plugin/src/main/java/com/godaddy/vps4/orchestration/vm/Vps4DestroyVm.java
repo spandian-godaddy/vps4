@@ -93,6 +93,11 @@ public class Vps4DestroyVm extends ActionCommand<Vps4DestroyVm.Request, Vps4Dest
     }
     
     public static class Request implements ActionRequest{
+        public Request(long hfsVmId, long actionId, long pingCheckAccountId) {
+            this.hfsVmId = hfsVmId;
+            this.actionId = actionId;
+            this.pingCheckAccountId = pingCheckAccountId;
+        }
         public long hfsVmId;
         public long actionId;
         public long pingCheckAccountId;

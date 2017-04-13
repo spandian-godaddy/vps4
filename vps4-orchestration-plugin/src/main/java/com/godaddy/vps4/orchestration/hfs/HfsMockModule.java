@@ -19,6 +19,7 @@ import gdg.hfs.vhfs.network.IpAddress;
 import gdg.hfs.vhfs.network.NetworkService;
 import gdg.hfs.vhfs.nodeping.NodePingAction;
 import gdg.hfs.vhfs.nodeping.NodePingAction.Status;
+import gdg.hfs.vhfs.nodeping.NodePingCheck;
 import gdg.hfs.vhfs.nodeping.NodePingService;
 import gdg.hfs.vhfs.plesk.PleskAction;
 import gdg.hfs.vhfs.plesk.PleskService;
@@ -166,8 +167,12 @@ public class HfsMockModule extends AbstractModule {
         nodePingAction.status = Status.COMPLETE;
         nodePingAction.accountId = 1234;
         nodePingAction.checkId = (long) 4321;
+
+        NodePingCheck check = new NodePingCheck(nodePingAction.accountId, nodePingAction.checkId, "fakeCheck");
+
         Mockito.when(nodePingService.createCheck(Mockito.anyLong(), Mockito.anyString(), Mockito.anyString())).thenReturn(nodePingAction);
         Mockito.when(nodePingService.deleteCheck(Mockito.anyLong(), Mockito.anyLong())).thenReturn(nodePingAction);
+        Mockito.when(nodePingService.getCheck(Mockito.anyLong(), Mockito.anyLong())).thenReturn(check);
         return nodePingService;
     }
 }

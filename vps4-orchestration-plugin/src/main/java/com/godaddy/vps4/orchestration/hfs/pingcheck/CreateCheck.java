@@ -43,6 +43,8 @@ public class CreateCheck implements Command<CreateCheck.Request, NodePingCheck> 
         
         hfsAction = context.execute(WaitForPingCheckAction.class, hfsAction);
         
+        logger.info("Check {} created on target {}", hfsAction.checkId, request.target);
+
         return nodePingService.getCheck(hfsAction.accountId, hfsAction.checkId);
     }
 }

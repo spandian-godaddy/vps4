@@ -63,7 +63,7 @@ public class JdbcNetworkService implements NetworkService {
 
     @Override
     public void updateIpWithCheckId(long addressId, long checkId) {
-        Sql.with(dataSource).exec("SELECT * FROM update_ip_address_add_ping_check_id(?,?)", null, addressId, checkId);
+        Sql.with(dataSource).exec("UPDATE ip_address SET ping_check_id = ? WHERE ip_address_id = ?;", null, addressId, checkId);
 
     }
 }

@@ -309,9 +309,7 @@ public class VmResource {
 
         long actionId = actionService.createAction(virtualMachine.vmId, ActionType.DESTROY_VM, new JSONObject().toJSONString(), user.getId());
 
-        Vps4DestroyVm.Request request = new Vps4DestroyVm.Request();
-        request.actionId = actionId;
-        request.hfsVmId = virtualMachine.hfsVmId;
+        Vps4DestroyVm.Request request = new Vps4DestroyVm.Request(virtualMachine.hfsVmId, actionId, pingCheckAccountId);
 
         Commands.execute(commandService, actionService, "Vps4DestroyVm", request);
 
