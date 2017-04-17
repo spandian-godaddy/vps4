@@ -1,0 +1,170 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>com.godaddy.vps4</groupId>
+        <artifactId>vps4-project</artifactId>
+        <version>0.0.1-SNAPSHOT</version>
+    </parent>
+
+    <artifactId>vps4-message-consumer</artifactId>
+    <name>VPS4 Message Consumer</name>
+    <packaging>jar</packaging>
+
+    <properties>
+        <vps4.env>local</vps4.env>
+    </properties>
+
+    <build>
+        <plugins>
+
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-shade-plugin</artifactId>
+                <version>3.0.0</version>
+                <executions>
+                    <execution>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>shade</goal>
+                        </goals>
+                        <configuration>
+                            <createDependencyReducedPom>false</createDependencyReducedPom>
+                            <transformers>
+                                <transformer
+                                    implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
+                                    <manifestEntries>
+                                        <Main-Class>com.godaddy.vps4.consumer.Vps4ConsumerApplication</Main-Class>
+                                        <Implementation-Title>com.godaddy.hosting.vps4.consumer</Implementation-Title>
+                                        <Implementation-Version>${project.version}</Implementation-Version>
+                                    </manifestEntries>
+                                </transformer>
+                            </transformers>
+                            <filters>
+                                <filter>
+                                    <artifact>*:*</artifact>
+                                    <excludes>
+                                        <exclude>META-INF/*.SF</exclude>
+                                        <exclude>META-INF/*.DSA</exclude>
+                                        <exclude>META-INF/*.RSA</exclude>
+                                    </excludes>
+                                </filter>
+                            </filters>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>build-helper-maven-plugin</artifactId>
+                <version>3.0.0</version>
+                <executions>
+                    <execution>
+                        <phase>initialize</phase>
+                        <id>parse-version</id>
+                        <goals>
+                            <goal>parse-version</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>rpm-maven-plugin</artifactId>
+                <version>2.1.5</version>
+                <configuration>
+                    <distribution>Go Daddy 2017</distribution>
+                    <group>VPS4</group>
+                    <projversion>${parsedVersion.majorVersion}.${parsedVersion.minorVersion}.${parsedVersion.incrementalVersion}</projversion>
+                    <release>${parsedVersion.buildNumber}</release>
+                    <packager>rpm</packager>
+                    <changelogFile>src/changelog</changelogFile>
+                    <defineStatements>
+                        <defineStatement>_unpackaged_files_terminate_build 0</defineStatement>
+                    </defineStatements>
+                    <mappings>
+                        <mapping>
+                            <directory>/opt/vps4/vps4-message-consumer</directory>
+                            <filemode>755</filemode>
+                            <username>root</username>
+                            <groupname>root</groupname>
+                        </mapping>
+                        <mapping>
+                            <directory>/var/log/vps4/vps4-message-consumer</directory>
+                            <filemode>755</filemode>
+                            <username>vps4</username>
+                            <groupname>vps4</groupname>
+                        </mapping>
+                        <mapping>
+                            <directory>/usr/lib/systemd/system</directory>
+                            <directoryIncluded>false</directoryIncluded>
+                            <filemode>644</filemode>
+                            <username>root</username>
+                            <groupname>root</groupname>
+                            <sources>
+                                <source>
+                                    <location>pkg/vps4-message-consumer.service</location>
+                                </source>
+                            </sources>
+                        </mapping>
+                        <mapping>
+                            <directory>/opt/vps4/vps4-message-consumer</directory>
+                            <filemode>644</filemode>
+                            <username>root</username>
+                            <groupname>root</groupname>
+                            <sources>
+                                <source>
+                                    <location>target/${project.artifactId}-${project.version}.jar</location>
+                                </source>
+                                <softlinkSource>
+                                    <location>${project.artifactId}-${project.version}.jar</location>
+                                    <destination>${project.artifactId}.jar</destination>
+                                </softlinkSource>
+                            </sources>
+                        </mapping>
+                    </mappings>
+                    <preinstallScriptlet>
+                        <scriptFile>pkg/preinstallScript</scriptFile>
+                    </preinstallScriptlet>
+                    <postinstallScriptlet>
+                        <scriptFile>pkg/postinstallScript</scriptFile>
+                    </postinstallScriptlet>
+                    <preremoveScriptlet>
+                        <scriptFile>pkg/preremoveScript</scriptFile>
+                    </preremoveScriptlet>
+                    <postremoveScriptlet>
+                        <scriptFile>pkg/postremoveScript</scriptFile>
+                    </postremoveScriptlet>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
+
+
+    <dependencies>
+
+        <!-- Internal dependencies -->
+        <dependency>
+            <groupId>com.godaddy.vps4</groupId>
+            <artifactId>vps4-core</artifactId>
+            <version>0.0.1-SNAPSHOT</version>
+        </dependency>
+
+        <!-- External dependencies -->
+        <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-lang3</artifactId>
+            <version>3.0</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.apache.kafka</groupId>
+            <artifactId>kafka-clients</artifactId>
+            <version>0.10.2.0</version>
+        </dependency>
+
+    </dependencies>
+</project>

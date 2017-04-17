@@ -1,0 +1,11 @@
+if [ $1 -eq 1 ] ; then 
+    # Initial installation 
+    /usr/bin/systemctl preset vps4-message-consumer.service >/dev/null 2>&1 || :
+
+elif [ $1 = 2 ]; then
+    # upgrade
+    
+    # start the service after upgrade
+    /usr/bin/systemctl start vps4-message-consumer.service > /dev/null 2>&1 || :
+    
+fi 

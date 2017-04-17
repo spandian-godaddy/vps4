@@ -17,6 +17,7 @@
         <module>core</module>
         <module>web</module>
         <module>vps4-orchestration-plugin</module>
+        <module>vps4-message-consumer</module>
     </modules>
 
 </project>
