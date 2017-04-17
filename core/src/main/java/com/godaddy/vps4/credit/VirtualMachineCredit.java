@@ -1,4 +1,4 @@
-package com.godaddy.vps4.vm;
+package com.godaddy.vps4.credit;
 
 import java.time.Instant;
 import java.util.UUID;
