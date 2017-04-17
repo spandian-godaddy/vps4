@@ -21,6 +21,7 @@ import com.godaddy.vps4.orchestration.TestCommandContext;
 import com.godaddy.vps4.orchestration.hfs.network.ReleaseIp;
 import com.godaddy.vps4.orchestration.hfs.network.UnbindIp;
 import com.godaddy.vps4.orchestration.vm.Vps4DestroyVm;
+import com.godaddy.vps4.vm.AccountStatus;
 import com.godaddy.vps4.vm.ActionService;
 import com.godaddy.vps4.vm.VirtualMachine;
 import com.godaddy.vps4.vm.VirtualMachineService;
@@ -29,7 +30,6 @@ import com.google.inject.Injector;
 
 import gdg.hfs.orchestration.CommandContext;
 import gdg.hfs.orchestration.GuiceCommandProvider;
-import gdg.hfs.vhfs.cpanel.CPanelAction;
 import gdg.hfs.vhfs.cpanel.CPanelService;
 import gdg.hfs.vhfs.mailrelay.MailRelayService;
 import gdg.hfs.vhfs.mailrelay.MailRelayUpdate;
@@ -76,7 +76,7 @@ public class Vps4DestroyVmTest {
         this.vm = new VirtualMachine(UUID.randomUUID(), 42, UUID.randomUUID(), 1,
                 null, "VM Name",
                 null, null, null, null, null, 
-                "fake.host.name");
+                "fake.host.name", AccountStatus.ACTIVE);
 
         this.request = new Vps4DestroyVm.Request();
         this.request.hfsVmId = 42;

@@ -13,10 +13,10 @@ import javax.inject.Inject;
 import javax.sql.DataSource;
 
 import com.godaddy.hfs.jdbc.Sql;
-
 import com.godaddy.vps4.network.IpAddress;
 import com.godaddy.vps4.network.jdbc.IpAddressMapper;
 import com.godaddy.vps4.security.Vps4User;
+import com.godaddy.vps4.vm.AccountStatus;
 import com.godaddy.vps4.vm.DataCenter;
 import com.godaddy.vps4.vm.Image;
 import com.godaddy.vps4.vm.Image.ControlPanel;
@@ -31,7 +31,7 @@ public class JdbcVirtualMachineService implements VirtualMachineService {
     private final DataSource dataSource;
 
     private String selectVirtualMachineQuery = "SELECT vm.vm_id, vm.hfs_vm_id, vm.orion_guid, vm.project_id, vm.name as \"vm_name\", "
-            + "vm.hostname, vm.valid_on as \"vm_valid_on\", vm.valid_until as \"vm_valid_until\", vms.spec_id, vms.spec_name, "
+            + "vm.hostname, vm.account_status_id, vm.valid_on as \"vm_valid_on\", vm.valid_until as \"vm_valid_until\", vms.spec_id, vms.spec_name, "
             + "vms.tier, vms.cpu_core_count, vms.memory_mib, vms.disk_gib, vms.valid_on as \"spec_valid_on\", "
             + "vms.valid_until as \"spec_valid_until\", vms.name as \"spec_vps4_name\", "
             + "image.name, image.hfs_name, image.image_id, image.control_panel_id, image.os_type_id, "
@@ -93,7 +93,8 @@ public class JdbcVirtualMachineService implements VirtualMachineService {
                 image, ipAddress, dataCenter,
                 rs.getTimestamp("vm_valid_on").toInstant(),
                 validUntil != null ? validUntil.toInstant() : null,
-                rs.getString("hostname"));
+                rs.getString("hostname"),
+                AccountStatus.valueOf(rs.getInt("account_status_id")));
     }
 
     protected IpAddress mapIpAddress(ResultSet rs) throws SQLException {
