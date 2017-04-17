@@ -4,6 +4,7 @@ import static org.junit.Assert.assertTrue;
 
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import com.godaddy.vps4.consumer.Vps4ConsumerInjector;
@@ -17,6 +18,7 @@ import com.google.inject.Injector;
  * It simply produces a few messages using a producer thread, and attempts to see if they were consumed by the consumer thread.
  * 
  */
+@Ignore
 public class Vps4KafkaConsumerTest {
 
     Vps4ConsumerManager manager;

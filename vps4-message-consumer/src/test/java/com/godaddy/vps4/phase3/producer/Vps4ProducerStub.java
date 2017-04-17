@@ -15,7 +15,7 @@ public class Vps4ProducerStub {
 
     public void stubProducer() {
         
-        props.put("bootstrap.servers", "localhost:9092");
+        props.put("bootstrap.servers", "p3dlvps4kafka01.cloud.phx3.gdg:9092");
         props.put("acks", "all");
         props.put("retries", 0);
         props.put("batch.size", 16384);
