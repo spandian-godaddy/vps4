@@ -18,6 +18,7 @@ import com.godaddy.hfs.zookeeper.ZooKeeperModule;
 import com.godaddy.vps4.cache.CacheModule;
 import com.godaddy.vps4.cache.HazelcastCacheModule;
 import com.godaddy.vps4.cpanel.CpanelModule;
+import com.godaddy.vps4.credit.CreditModule;
 import com.godaddy.vps4.hfs.HfsClientModule;
 import com.godaddy.vps4.hfs.HfsMockModule;
 import com.godaddy.vps4.jdbc.DatabaseModule;
@@ -82,6 +83,7 @@ public class Vps4Injector {
         modules.add(new SsoModule());
         modules.add(new SsoSupportModule());
 
+        modules.add(new CreditModule());
         modules.add(new VmModule());
         modules.add(new NetworkModule());
         modules.add(new SysAdminModule());

@@ -5,6 +5,7 @@ import java.util.UUID;
 
 import javax.inject.Inject;
 
+import com.godaddy.vps4.credit.Vps4CreditService;
 import com.godaddy.vps4.network.IpAddress;
 import com.godaddy.vps4.network.NetworkService;
 import com.godaddy.vps4.orchestration.ActionCommand;
@@ -32,7 +33,9 @@ public class Vps4DestroyVm extends ActionCommand<Vps4DestroyVm.Request, Vps4Dest
     final NetworkService networkService;
 
     final VirtualMachineService virtualMachineService;
-    
+
+    final Vps4CreditService creditService;
+
     final VmService vmService;
     
     final CPanelService cpanelService;
@@ -41,11 +44,13 @@ public class Vps4DestroyVm extends ActionCommand<Vps4DestroyVm.Request, Vps4Dest
     public Vps4DestroyVm(ActionService actionService,
             NetworkService networkService, 
             VirtualMachineService virtualMachineService,
+            Vps4CreditService creditService,
             VmService vmService,
             CPanelService cpanelService) {
         super(actionService);
         this.networkService = networkService;
         this.virtualMachineService = virtualMachineService;
+        this.creditService = creditService;
         this.vmService = vmService;
         this.cpanelService = cpanelService;
     }
@@ -70,6 +75,11 @@ public class Vps4DestroyVm extends ActionCommand<Vps4DestroyVm.Request, Vps4Dest
 
         context.execute("Vps4DestroyVm", ctx -> {
             virtualMachineService.destroyVirtualMachine(hfsVmId);
+            return null;
+        });
+
+        context.execute("Vps4ReleaseVmCredit", ctx -> {
+            creditService.unclaimVirtualMachineCredit(vm.orionGuid);
             return null;
         });
 

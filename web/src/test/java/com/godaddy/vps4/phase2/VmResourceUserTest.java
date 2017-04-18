@@ -14,6 +14,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mockito;
 
+import com.godaddy.vps4.credit.Vps4CreditService;
 import com.godaddy.vps4.jdbc.DatabaseModule;
 import com.godaddy.hfs.jdbc.Sql;
 import com.godaddy.vps4.network.IpAddress.IpAddressType;
@@ -50,6 +51,9 @@ public class VmResourceUserTest {
 
     @Inject
     VirtualMachineService virtualMachineService;
+
+    @Inject
+    Vps4CreditService creditService;
 
     @Inject
     ActionService actionService;
@@ -216,7 +220,7 @@ public class VmResourceUserTest {
     private ProvisionVmRequest createProvisionRequest(String controlPanel) {
         UUID newGuid = UUID.randomUUID();
         orionGuids.add(newGuid);
-        virtualMachineService.createVirtualMachineCredit(newGuid, "linux", controlPanel, 10, 1, validUser.getShopperId());
+        creditService.createVirtualMachineCredit(newGuid, "linux", controlPanel, 10, 1, validUser.getShopperId());
         ProvisionVmRequest provisionRequest = new ProvisionVmRequest();
         provisionRequest.orionGuid = newGuid;
         provisionRequest.dataCenterId = 1;

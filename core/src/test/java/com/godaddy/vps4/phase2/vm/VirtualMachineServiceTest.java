@@ -18,6 +18,9 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
+import com.godaddy.vps4.credit.VirtualMachineCredit;
+import com.godaddy.vps4.credit.Vps4CreditService;
+import com.godaddy.vps4.credit.jdbc.JdbcVps4CreditService;
 import com.godaddy.vps4.jdbc.DatabaseModule;
 import com.godaddy.hfs.jdbc.Sql;
 import com.godaddy.vps4.network.NetworkService;
@@ -28,7 +31,6 @@ import com.godaddy.vps4.project.jdbc.JdbcProjectService;
 import com.godaddy.vps4.security.Vps4User;
 import com.godaddy.vps4.vm.ImageService;
 import com.godaddy.vps4.vm.VirtualMachine;
-import com.godaddy.vps4.vm.VirtualMachineCredit;
 import com.godaddy.vps4.vm.VirtualMachineService;
 import com.godaddy.vps4.vm.VirtualMachineService.ProvisionVirtualMachineParameters;
 import com.godaddy.vps4.vm.jdbc.JdbcImageService;
@@ -45,6 +47,7 @@ public class VirtualMachineServiceTest {
     NetworkService networkService = new JdbcNetworkService(dataSource);
     ImageService imageService = new JdbcImageService(dataSource);
     VirtualMachineService virtualMachineService = new JdbcVirtualMachineService(dataSource);
+    Vps4CreditService creditService = new JdbcVps4CreditService(dataSource);
     ProjectService projectService = new JdbcProjectService(dataSource);
     private UUID orionGuid = UUID.randomUUID();
     List<VirtualMachine> virtualMachines;
@@ -78,7 +81,7 @@ public class VirtualMachineServiceTest {
 
     @Test
     public void testHasCPanel() {
-        virtualMachineService.createVirtualMachineCredit(orionGuid, "centos", "cpanel", tier, managedLevel, vps4User.getShopperId());
+        creditService.createVirtualMachineCredit(orionGuid, "centos", "cpanel", tier, managedLevel, vps4User.getShopperId());
         vmCredits.add(orionGuid);
         ProvisionVirtualMachineParameters params = new ProvisionVirtualMachineParameters(vps4User.getId(), 1, "vps4-testing-",
                 orionGuid, "testServer", 10, 1, "centos-7-cPanel-11");
@@ -92,7 +95,7 @@ public class VirtualMachineServiceTest {
 
     @Test
     public void testHasPleskPanel() {
-        virtualMachineService.createVirtualMachineCredit(orionGuid, "windows", "plesk", tier, managedLevel, vps4User.getShopperId());
+        creditService.createVirtualMachineCredit(orionGuid, "windows", "plesk", tier, managedLevel, vps4User.getShopperId());
         vmCredits.add(orionGuid);
         ProvisionVirtualMachineParameters params = new ProvisionVirtualMachineParameters(vps4User.getId(), 1, "vps4-testing-",
                 orionGuid, "testServer", 10, 1, "windows-2012r2-plesk-12.5");
@@ -105,9 +108,9 @@ public class VirtualMachineServiceTest {
 
     @Test
     public void testService() throws InterruptedException {
-        virtualMachineService.createVirtualMachineCredit(orionGuid, os, controlPanel, tier, managedLevel, vps4User.getShopperId());
+        creditService.createVirtualMachineCredit(orionGuid, os, controlPanel, tier, managedLevel, vps4User.getShopperId());
 
-        VirtualMachineCredit vmRequest = virtualMachineService.getVirtualMachineCredit(orionGuid);
+        VirtualMachineCredit vmRequest = creditService.getVirtualMachineCredit(orionGuid);
 
         assertNotNull(vmRequest);
         assertEquals(orionGuid, vmRequest.orionGuid);
@@ -177,11 +180,11 @@ public class VirtualMachineServiceTest {
             createdVms.add(UUID.randomUUID());
             virtualMachines.add(SqlTestData.insertTestVm(createdVms.get(i), dataSource));
             vmCredits.add(UUID.randomUUID());
-            virtualMachineService.createVirtualMachineCredit(vmCredits.get(i), os, controlPanel, tier, managedLevel,
+            creditService.createVirtualMachineCredit(vmCredits.get(i), os, controlPanel, tier, managedLevel,
                     vps4User.getShopperId());
         }
 
-        List<VirtualMachineCredit> requests = virtualMachineService.getVirtualMachineCredits(vps4User.getShopperId());
+        List<VirtualMachineCredit> requests = creditService.getVirtualMachineCredits(vps4User.getShopperId());
 
         List<UUID> requestGuids = requests.stream().map(rs -> rs.orionGuid).collect(Collectors.toList());
         for (UUID credit : vmCredits)
@@ -198,21 +201,21 @@ public class VirtualMachineServiceTest {
     @Test
     public void testGetOrCreateCredit() throws InterruptedException {
 
-        List<VirtualMachineCredit> requests = virtualMachineService.getVirtualMachineCredits(vps4User.getShopperId());
+        List<VirtualMachineCredit> requests = creditService.getVirtualMachineCredits(vps4User.getShopperId());
         assertTrue(requests.isEmpty());
 
         int numberOfTasks = 10;
         List<Callable<Void>> tasks = new ArrayList<>();
         for (int i = 0; i < numberOfTasks; i++) {
             tasks.add(() -> {
-                virtualMachineService.createCreditIfNoneExists(vps4User);
+                creditService.createCreditIfNoneExists(vps4User);
                 return null;
             });
         }
         ExecutorService executor = Executors.newFixedThreadPool(numberOfTasks);
         executor.invokeAll(tasks);
 
-        requests = virtualMachineService.getVirtualMachineCredits(vps4User.getShopperId());
+        requests = creditService.getVirtualMachineCredits(vps4User.getShopperId());
         assertEquals(1, requests.size());
         vmCredits.add(requests.get(0).orionGuid);
 
@@ -224,14 +227,14 @@ public class VirtualMachineServiceTest {
         virtualMachineService.addHfsVmIdToVirtualMachine(virtualMachine.vmId, 1);
 
 
-        virtualMachineService.createCreditIfNoneExists(vps4User);
-        requests = virtualMachineService.getVirtualMachineCredits(vps4User.getShopperId());
+        creditService.createCreditIfNoneExists(vps4User);
+        requests = creditService.getVirtualMachineCredits(vps4User.getShopperId());
         assertTrue(requests.isEmpty());
 
         virtualMachineService.destroyVirtualMachine(1);
 
-        virtualMachineService.createCreditIfNoneExists(vps4User);
-        requests = virtualMachineService.getVirtualMachineCredits(vps4User.getShopperId());
+        creditService.createCreditIfNoneExists(vps4User);
+        requests = creditService.getVirtualMachineCredits(vps4User.getShopperId());
         assertTrue(!requests.isEmpty());
         vmCredits.add(requests.get(0).orionGuid);
     }

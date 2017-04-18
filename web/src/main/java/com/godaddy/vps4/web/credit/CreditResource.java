@@ -13,9 +13,9 @@ import javax.ws.rs.core.MediaType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.godaddy.vps4.credit.VirtualMachineCredit;
+import com.godaddy.vps4.credit.Vps4CreditService;
 import com.godaddy.vps4.security.Vps4User;
-import com.godaddy.vps4.vm.VirtualMachineCredit;
-import com.godaddy.vps4.vm.VirtualMachineService;
 import com.godaddy.vps4.web.Vps4Api;
 import com.google.inject.Inject;
 
@@ -32,18 +32,18 @@ public class CreditResource {
     private static final Logger logger = LoggerFactory.getLogger(CreditResource.class);
 
     private final Vps4User user;
-    private final VirtualMachineService virtualMachineService;
+    private final Vps4CreditService creditService;
 
     @Inject
-    public CreditResource(Vps4User user, VirtualMachineService virtualMachineService) {
+    public CreditResource(Vps4User user, Vps4CreditService creditService) {
         this.user = user;
-        this.virtualMachineService = virtualMachineService;
+        this.creditService = creditService;
     }
 
     @GET
     @Path("/{orionGuid}")
     public VirtualMachineCredit getCredit(@PathParam("orionGuid") UUID orionGuid) {
-        VirtualMachineCredit credit = virtualMachineService.getVirtualMachineCredit(orionGuid);
+        VirtualMachineCredit credit = creditService.getVirtualMachineCredit(orionGuid);
         if (credit == null || !(credit.shopperId.equals(user.getShopperId()))) {
             throw new IllegalArgumentException("Unknown Credit ID: " + orionGuid);
         }
@@ -54,7 +54,7 @@ public class CreditResource {
     @Path("/")
     public List<VirtualMachineCredit> getCredits() {
         logger.debug("Getting credits for shopper {}", user.getShopperId());
-        return virtualMachineService.getVirtualMachineCredits(user.getShopperId());
+        return creditService.getVirtualMachineCredits(user.getShopperId());
     }
 
 }

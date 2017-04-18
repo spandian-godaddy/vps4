@@ -13,7 +13,7 @@ import com.godaddy.hfs.sso.token.SsoToken;
 import com.godaddy.vps4.Environment;
 import com.godaddy.vps4.security.Vps4User;
 import com.godaddy.vps4.security.Vps4UserService;
-import com.godaddy.vps4.vm.VirtualMachineService;
+import com.godaddy.vps4.credit.Vps4CreditService;
 
 public class Vps4RequestAuthenticator implements RequestAuthenticator<Vps4User> {
 
@@ -23,16 +23,16 @@ public class Vps4RequestAuthenticator implements RequestAuthenticator<Vps4User> 
 
     private final Vps4UserService userService;
 
-    private final VirtualMachineService virtualMachineService;
+    private final Vps4CreditService creditService;
 
     private final Config config;
 
     @Inject
     public Vps4RequestAuthenticator(SsoTokenExtractor tokenExtractor, Vps4UserService userService,
-            VirtualMachineService virtualMachineService, Config config) {
+            Vps4CreditService creditService, Config config) {
         this.tokenExtractor = tokenExtractor;
         this.userService = userService;
-        this.virtualMachineService = virtualMachineService;
+        this.creditService = creditService;
         this.config = config;
     }
 
@@ -70,7 +70,7 @@ public class Vps4RequestAuthenticator implements RequestAuthenticator<Vps4User> 
             throw new RuntimeException("Currently only 3 letter accounts are allowed in ALPHA release. ");
         }
 
-        virtualMachineService.createCreditIfNoneExists(user);
+        creditService.createCreditIfNoneExists(user);
         return user;
     }
 }
