@@ -13,6 +13,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.godaddy.vps4.security.Vps4User;
+import com.godaddy.vps4.vm.AccountStatus;
 
 import gdg.hfs.vhfs.ecomm.Account;
 import gdg.hfs.vhfs.ecomm.ECommService;
@@ -51,7 +52,8 @@ public class ECommCreditService implements Vps4CreditService {
                 account.plan_features.get("control_panel_type"),
                 null, // create date was in credit table but not in ecomm account
                 stringToInstant(account.product_meta.get("provision_date")),
-                account.shopper_id);
+                account.shopper_id,
+                AccountStatus.valueOf(account.status.name().toUpperCase()));
     }
 
     private Instant stringToInstant(String provisionDate) {

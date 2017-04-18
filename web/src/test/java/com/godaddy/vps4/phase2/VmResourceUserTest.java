@@ -14,9 +14,10 @@ import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mockito;
 
+import com.godaddy.hfs.jdbc.Sql;
+import com.godaddy.vps4.credit.CreditModule;
 import com.godaddy.vps4.credit.Vps4CreditService;
 import com.godaddy.vps4.jdbc.DatabaseModule;
-import com.godaddy.hfs.jdbc.Sql;
 import com.godaddy.vps4.network.IpAddress.IpAddressType;
 import com.godaddy.vps4.network.NetworkService;
 import com.godaddy.vps4.project.ProjectService;
@@ -68,7 +69,7 @@ public class VmResourceUserTest {
     NetworkService networkService;
 
     private Injector injector = Guice.createInjector(new DatabaseModule(), new SecurityModule(), new VmModule(),
-            new AbstractModule() {
+            new CreditModule(), new AbstractModule() {
 
                 @Override
                 public void configure() {

@@ -10,9 +10,10 @@ import javax.inject.Inject;
 import javax.sql.DataSource;
 
 import com.godaddy.hfs.jdbc.Sql;
-import com.godaddy.vps4.credit.Vps4CreditService;
 import com.godaddy.vps4.credit.VirtualMachineCredit;
+import com.godaddy.vps4.credit.Vps4CreditService;
 import com.godaddy.vps4.security.Vps4User;
+import com.godaddy.vps4.vm.AccountStatus;
 
 public class JdbcVps4CreditService implements Vps4CreditService {
 
@@ -42,7 +43,7 @@ public class JdbcVps4CreditService implements Vps4CreditService {
         return new VirtualMachineCredit(java.util.UUID.fromString(rs.getString("orion_guid")), rs.getInt("tier"),
                 rs.getInt("managed_level"), rs.getString("operating_system"), rs.getString("control_panel"),
                 rs.getTimestamp("create_date").toInstant(), provisionDate != null ? provisionDate.toInstant() : null,
-                rs.getString("shopper_id"));
+                rs.getString("shopper_id"), AccountStatus.ACTIVE);
     }
 
     @Override
