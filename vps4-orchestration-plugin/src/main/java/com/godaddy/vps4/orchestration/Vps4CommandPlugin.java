@@ -3,6 +3,7 @@ package com.godaddy.vps4.orchestration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.godaddy.vps4.credit.CreditModule;
 import com.godaddy.vps4.jdbc.DatabaseModule;
 import com.godaddy.vps4.orchestration.hfs.HfsCommandModule;
 import com.godaddy.vps4.orchestration.hfs.HfsMockModule;
@@ -17,7 +18,7 @@ import gdg.hfs.orchestration.CommandProvider;
 import gdg.hfs.orchestration.GuiceCommandProvider;
 
 public class Vps4CommandPlugin implements CommandPlugin {
-    
+
     private static final Logger logger = LoggerFactory.getLogger(Vps4CommandPlugin.class);
 
     @Override
@@ -27,17 +28,17 @@ public class Vps4CommandPlugin implements CommandPlugin {
 
     @Override
     public CommandProvider newCommandProvider() {
-        
+
         AbstractModule hfsModule = null;
-        
-        if (System.getProperty("vps4.hfs.mock", "false").equals("true")) {       
+
+        if (System.getProperty("vps4.hfs.mock", "false").equals("true")) {
             hfsModule = new HfsMockModule();
-            logger.info("USING MOCK HFS");        
-         }     
-         else{      
+            logger.info("USING MOCK HFS");
+         }
+         else{
              hfsModule = new HfsModule();
          }
-        
+
         Injector injector = Guice.createInjector(
 
                 hfsModule,
@@ -45,6 +46,7 @@ public class Vps4CommandPlugin implements CommandPlugin {
 
                 new DatabaseModule(),
                 new VmModule(),
+                new CreditModule(),
 
                 new Vps4CommandModule()
                 );

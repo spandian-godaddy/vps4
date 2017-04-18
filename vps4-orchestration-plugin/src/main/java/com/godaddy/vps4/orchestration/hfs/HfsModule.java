@@ -12,6 +12,7 @@ import com.godaddy.vps4.hfs.HfsClientProvider;
 import com.google.inject.AbstractModule;
 
 import gdg.hfs.vhfs.cpanel.CPanelService;
+import gdg.hfs.vhfs.ecomm.ECommService;
 import gdg.hfs.vhfs.mailrelay.MailRelayService;
 import gdg.hfs.vhfs.network.NetworkService;
 import gdg.hfs.vhfs.plesk.PleskService;
@@ -28,7 +29,8 @@ public class HfsModule extends AbstractModule {
         bind(CPanelService.class).toProvider(new HfsClientProvider<CPanelService>(CPanelService.class)).in(Singleton.class);
         bind(PleskService.class).toProvider(new HfsClientProvider<PleskService>(PleskService.class)).in(Singleton.class);
         bind(MailRelayService.class).toProvider(new HfsClientProvider<MailRelayService>(MailRelayService.class)).in(Singleton.class);
-        
+        bind(ECommService.class).toProvider(new HfsClientProvider<ECommService>(ECommService.class)).in(Singleton.class);
+
       // hook Jackson into Jersey as the POJO <-> JSON mapper
       ObjectMapper mapper = new ObjectMapper();
       mapper.registerModule(new JSR310Module());
@@ -37,7 +39,7 @@ public class HfsModule extends AbstractModule {
 
       JacksonJsonProvider jsonProvider = new JacksonJaxbJsonProvider(mapper, JacksonJaxbJsonProvider.DEFAULT_ANNOTATIONS);
 //      jsonProvider.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
-      
+
       bind(JacksonJsonProvider.class).toInstance(jsonProvider);
     }
 }
