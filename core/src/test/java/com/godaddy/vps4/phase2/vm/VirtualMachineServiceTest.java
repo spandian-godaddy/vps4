@@ -21,14 +21,15 @@ import org.junit.Test;
 import com.godaddy.vps4.credit.VirtualMachineCredit;
 import com.godaddy.vps4.credit.Vps4CreditService;
 import com.godaddy.vps4.credit.jdbc.JdbcVps4CreditService;
-import com.godaddy.vps4.jdbc.DatabaseModule;
 import com.godaddy.hfs.jdbc.Sql;
+import com.godaddy.vps4.jdbc.DatabaseModule;
 import com.godaddy.vps4.network.NetworkService;
 import com.godaddy.vps4.network.jdbc.JdbcNetworkService;
 import com.godaddy.vps4.phase2.SqlTestData;
 import com.godaddy.vps4.project.ProjectService;
 import com.godaddy.vps4.project.jdbc.JdbcProjectService;
 import com.godaddy.vps4.security.Vps4User;
+import com.godaddy.vps4.vm.AccountStatus;
 import com.godaddy.vps4.vm.ImageService;
 import com.godaddy.vps4.vm.VirtualMachine;
 import com.godaddy.vps4.vm.VirtualMachineService;
@@ -169,6 +170,7 @@ public class VirtualMachineServiceTest {
         assertEquals(specId, vm.spec.specId);
         assertEquals("centos-7", vm.image.hfsName);
         assertEquals("CentOS 7", vm.image.imageName);
+        assertEquals(AccountStatus.ACTIVE, vm.accountStatus);
     }
 
 

@@ -19,6 +19,7 @@ public class VirtualMachine {
     public final Instant validOn;
     public final Instant validUntil;
     public final String hostname;
+    public final AccountStatus accountStatus;
 
     public VirtualMachine(UUID id,
             long vmId,
@@ -31,7 +32,8 @@ public class VirtualMachine {
             DataCenter dataCenter,
             Instant validOn,
             Instant validUntil,
-            String hostname) {
+            String hostname,
+            AccountStatus accountStatus) {
         this.vmId = id;
         this.hfsVmId = vmId;
         this.orionGuid = orionGuid;
@@ -44,6 +46,7 @@ public class VirtualMachine {
         this.validOn = validOn;
         this.validUntil = validUntil;
         this.hostname = hostname;
+        this.accountStatus = accountStatus;
     }
 
     public VirtualMachine(VirtualMachine virtualMachine) {
@@ -59,14 +62,16 @@ public class VirtualMachine {
         this.validOn = virtualMachine.validOn;
         this.validUntil = virtualMachine.validUntil;
         this.hostname = virtualMachine.hostname;
+        this.accountStatus = virtualMachine.accountStatus;
     }
 
     @Override
     public String toString() {
         return String.format(
-                "VirtualMachine [vmId=%s, hfsVmId=%d, orionGuid=%s, projectId=%d, spec=%s, name=%s, hostname=%s, image=%s, primaryIpAddress=%s, dataCenter=%s, validOn=%s, validUntil=%s]",
+                "VirtualMachine [vmId=%s, hfsVmId=%d, orionGuid=%s, projectId=%d, spec=%s, name=%s, hostname=%s, image=%s, primaryIpAddress=%s, dataCenter=%s, accountStatus=%s, validOn=%s, validUntil=%s]",
                 vmId, hfsVmId, orionGuid, projectId, spec.name, name, hostname, image == null ? "" : image.imageName,
-                primaryIpAddress == null ? "" : primaryIpAddress.ipAddress, dataCenter == null ? "" : dataCenter.dataCenterName, validOn, validUntil);
+                primaryIpAddress == null ? "" : primaryIpAddress.ipAddress, dataCenter == null ? "" : dataCenter.dataCenterName,
+                accountStatus.toString(), validOn, validUntil);
     }
 
 }

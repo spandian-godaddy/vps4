@@ -1,0 +1,17 @@
+[Unit]
+Description=GD VPS4-Message-Consumer
+After=network.target
+
+[Service]
+User=vps4
+SyslogIdentifier=vps4-message-consumer
+WorkingDirectory=/var/log/vps4/vps4-message-consumer
+ExecStart=/usr/bin/java -jar /opt/vps4/vps4-message-consumer/vps4-message-consumer.jar start
+
+User=vps4
+Group=vps4
+Restart=always
+RestartSec=20
+
+[Install]
+WantedBy=multi-user.target
