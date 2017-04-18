@@ -107,6 +107,8 @@ public class HfsMockModule extends AbstractModule {
         Mockito.when(vmService.getVmAction(Mockito.anyLong(),Mockito.anyLong())).thenReturn(completeDelAction);
         Mockito.when(vmService.destroyVm(0)).thenReturn(completeDelAction);
         Mockito.when(vmService.createVm(Mockito.any(CreateVMRequest.class))).thenReturn(completeDelAction);
+        Mockito.when(vmService.startVm(Mockito.anyLong())).thenReturn(completeDelAction);
+        Mockito.when(vmService.stopVm(Mockito.anyLong())).thenReturn(completeDelAction);
         Mockito.when(vmService.createVmWithFlavor(Mockito.any(CreateVMWithFlavorRequest.class))).thenReturn(completeDelAction);
         Mockito.when(vmService.getVmAction(Mockito.anyLong(), Mockito.anyLong())).thenReturn(completeDelAction);
         return vmService;

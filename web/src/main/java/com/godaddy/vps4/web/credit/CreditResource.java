@@ -1,5 +1,6 @@
 package com.godaddy.vps4.web.credit;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 
@@ -56,5 +57,4 @@ public class CreditResource {
         logger.debug("Getting credits for shopper {}", user.getShopperId());
         return virtualMachineService.getVirtualMachineCredits(user.getShopperId());
     }
-
 }

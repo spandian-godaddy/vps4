@@ -11,6 +11,7 @@ import javax.ws.rs.Consumes;
 import javax.ws.rs.DefaultValue;
 import javax.ws.rs.GET;
 import javax.ws.rs.NotFoundException;
+import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
@@ -28,6 +29,7 @@ import com.godaddy.vps4.security.Vps4UserService;
 import com.godaddy.vps4.vm.Action;
 import com.godaddy.vps4.vm.ActionService;
 import com.godaddy.vps4.vm.VirtualMachine;
+import com.godaddy.vps4.vm.VirtualMachineCredit;
 import com.godaddy.vps4.vm.VirtualMachineService;
 import com.godaddy.vps4.web.PaginatedResult;
 import com.godaddy.vps4.web.Vps4Api;
@@ -136,4 +138,26 @@ public class SupportResource {
         }
         return new PaginatedResult<SupportAction>(supportActions, limit, offset, totalRows, uri);
     }
+    
+    @POST
+    @Path("/createCredit")
+    public VirtualMachineCredit createCredit(CreateCreditRequest request){
+        UUID orionGuid = UUID.randomUUID();
+        
+        virtualMachineService.createVirtualMachineCredit(orionGuid, 
+                request.operatingSystem, request.controlPanel, 
+                request.tier, request.managedLevel, request.shopperId);
+        
+        VirtualMachineCredit credit = virtualMachineService.getVirtualMachineCredit(orionGuid);
+        return credit;
+    }
+    
+    public static class CreateCreditRequest {
+        public int tier;
+        public int managedLevel;
+        public String operatingSystem;
+        public String controlPanel;
+        public String shopperId;
+    }
+    
 }
