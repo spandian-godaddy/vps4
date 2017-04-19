@@ -41,14 +41,14 @@ public class JdbcVps4CreditService implements Vps4CreditService {
         Timestamp provisionDate = rs.getTimestamp("provision_date");
 
         return new VirtualMachineCredit(java.util.UUID.fromString(rs.getString("orion_guid")), rs.getInt("tier"),
-                rs.getInt("managed_level"), rs.getString("operating_system"), rs.getString("control_panel"),
+                rs.getInt("managed_level"), rs.getInt("monitoring"), rs.getString("operating_system"), rs.getString("control_panel"),
                 rs.getTimestamp("create_date").toInstant(), provisionDate != null ? provisionDate.toInstant() : null,
                 rs.getString("shopper_id"), AccountStatus.ACTIVE);
     }
 
     @Override
     public List<VirtualMachineCredit> getVirtualMachineCredits(String shopperId) {
-        return (List<VirtualMachineCredit>) Sql.with(dataSource).exec(
+        return Sql.with(dataSource).exec(
                 "SELECT * from credit WHERE shopper_id = ? AND provision_date IS NULL",
                 Sql.listOf(this::mapVirtualMachineCredit), shopperId);
     }

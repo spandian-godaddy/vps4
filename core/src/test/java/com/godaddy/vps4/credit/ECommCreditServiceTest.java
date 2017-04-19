@@ -45,6 +45,7 @@ public class ECommCreditServiceTest {
         account.plan_features = new HashMap<>();
         account.plan_features.put("tier", "10");
         account.plan_features.put("managed_level", "1");
+        account.plan_features.put("monitoring", "0");
         account.plan_features.put("operatingsystem", "linux");
         account.plan_features.put("control_panel_type", "cpanel");
         account.product_meta = new HashMap<>();

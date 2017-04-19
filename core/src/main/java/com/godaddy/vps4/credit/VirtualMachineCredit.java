@@ -18,26 +18,26 @@ public class VirtualMachineCredit {
     public final int monitoring;
     public final AccountStatus accountStatus;
 
-    public VirtualMachineCredit(UUID orionGuid, int tier, int managedLevel, String operatingSystem, String controlPanel, Instant createDate,
-            Instant provisionDate, String shopperId, int monitoring, AccountStatus accountStatus) {
+    public VirtualMachineCredit(UUID orionGuid, int tier, int managedLevel, int monitoring, String operatingSystem,
+            String controlPanel, Instant createDate, Instant provisionDate, String shopperId, AccountStatus accountStatus) {
         this.orionGuid = orionGuid;
         this.tier = tier;
         this.managedLevel = managedLevel;
+        this.monitoring = monitoring;
         this.operatingSystem = operatingSystem;
         this.controlPanel = controlPanel;
         this.createDate = createDate;
         this.provisionDate = provisionDate;
         this.shopperId = shopperId;
-        this.monitoring = monitoring;
         this.accountStatus = accountStatus;
     }
 
     @Override
     public String toString() {
-        return "VirtualMachineRequest [orionGuid: " + orionGuid + " tier: " + tier + 
-                " managedLevel: " + managedLevel + " operatingSystem: " + operatingSystem +
-                " controlPanel: " + controlPanel + " createDate: " + createDate + 
-                " provisionDate: " + provisionDate + " shopperId: " + shopperId + 
-                " monitoring: " + monitoring + " accountStatus: " + accountStatus + "]";
+        return "VirtualMachineRequest [orionGuid: " + orionGuid + " tier: " + tier +
+                " managedLevel: " + managedLevel + " monitoring: " + monitoring +
+                " operatingSystem: " + operatingSystem + " controlPanel: " + controlPanel +
+                " createDate: " + createDate + " provisionDate: " + provisionDate +
+                " shopperId: " + shopperId + " accountStatus: " + accountStatus + "]";
     }
 }

@@ -48,6 +48,7 @@ public class ECommCreditService implements Vps4CreditService {
         return new VirtualMachineCredit(UUID.fromString(account.account_guid),
                 Integer.parseInt(account.plan_features.get("tier")),
                 Integer.parseInt(account.plan_features.get("managed_level")),
+                Integer.parseInt(account.plan_features.get("monitoring")),
                 account.plan_features.get("os"),
                 account.plan_features.get("control_panel_type"),
                 null, // create date was in credit table but not in ecomm account
