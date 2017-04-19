@@ -18,4 +18,6 @@ public interface NetworkService {
     IpAddress getVmPrimaryAddress(UUID vmId);
     
     IpAddress getVmPrimaryAddress(long hfsVmId);
+
+    void updateIpWithCheckId(long addressId, long checkId);
 }

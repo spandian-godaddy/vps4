@@ -1,0 +1,42 @@
+<project>
+  <modelVersion>4.0.0</modelVersion>
+  
+  <parent>
+    <groupId>com.godaddy.vps4</groupId>
+    <artifactId>vps4-project</artifactId>
+    <version>0.0.1-SNAPSHOT</version>
+  </parent>
+  
+  <artifactId>vps4-phase3-tests</artifactId>
+  <name>VPS4 Phase 3 Tests</name>
+  <packaging>jar</packaging>
+  
+  <properties>
+        <vps4.env>local</vps4.env>
+  </properties>
+  
+  <dependencies>
+	<dependency>
+	  <groupId>com.jcraft</groupId>
+	  <artifactId>jsch</artifactId>
+	  <version>0.1.46</version>
+	</dependency>
+	<dependency>
+        <groupId>com.godaddy.hfs</groupId>
+        <artifactId>hfs-crypto</artifactId>
+        <version>0.3.2</version>
+    </dependency>
+	<dependency>
+            <groupId>org.jboss.resteasy</groupId>
+            <artifactId>resteasy-client</artifactId>
+            <version>3.0.19.Final</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.jboss.logging</groupId>
+                    <artifactId>*</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+	    
+  </dependencies>
+</project>

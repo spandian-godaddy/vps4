@@ -2,6 +2,7 @@ package com.godaddy.vps4.hfs;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Random;
 
 import org.joda.time.DateTime;
 import org.mockito.Mockito;
@@ -81,7 +82,7 @@ public class HfsMockModule extends AbstractModule {
         getActionRet.responsePayload = String.format("{\"cphash\":\"%s\",\"success\":true,\"error\":null}", accessHash);
 
         createVmAction = new VmAction();
-        createVmAction.vmActionId = 1111;
+        createVmAction.vmActionId = new Random().nextInt(100000);
         createVmAction.vmId = 0;
         createVmAction.state = VmAction.Status.COMPLETE;
         createVmAction.tickNum = 1;
@@ -161,9 +162,13 @@ public class HfsMockModule extends AbstractModule {
             }
 
             @Override
-            public VmAction getVmAction(long arg0, long arg1) {
-                // NOTE: do nothing, Implement when needed
-                throw new UnsupportedOperationException("Not implemented, yet");
+            public VmAction getVmAction(long vmId, long actionId) {
+                VmAction startVmAction = new VmAction();
+                startVmAction.vmActionId = actionId;
+                startVmAction.vmId = vmId;
+                startVmAction.state = VmAction.Status.COMPLETE;
+                startVmAction.tickNum = 1;
+                return startVmAction;
             }
 
             @Override
@@ -185,15 +190,24 @@ public class HfsMockModule extends AbstractModule {
             }
 
             @Override
-            public VmAction startVm(long arg0) {
-                // NOTE: do nothing, Implement when needed
-                throw new UnsupportedOperationException("Not implemented, yet");
+            public VmAction startVm(long vmId) {
+             // NOTE: do nothing, Implement when needed
+                VmAction startVmAction = new VmAction();
+                startVmAction.vmActionId = new Random().nextInt(10000);
+                startVmAction.vmId = vmId;
+                startVmAction.state = VmAction.Status.COMPLETE;
+                startVmAction.tickNum = 1;
+                return startVmAction;
             }
 
             @Override
-            public VmAction stopVm(long arg0) {
-                // NOTE: do nothing, Implement when needed
-                throw new UnsupportedOperationException("Not implemented, yet");
+            public VmAction stopVm(long vmId) {
+                VmAction stopVmAction = new VmAction();
+                stopVmAction.vmActionId = new Random().nextInt(10000);
+                stopVmAction.vmId = vmId;
+                stopVmAction.state = VmAction.Status.COMPLETE;
+                stopVmAction.tickNum = 1;
+                return stopVmAction;
             }
 
         };

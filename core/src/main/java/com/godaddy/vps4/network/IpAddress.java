@@ -34,14 +34,17 @@ public class IpAddress {
     public final UUID vmId;
     public final String ipAddress;
     public final IpAddressType ipAddressType;
+    public final Long pingCheckId;
     public final Instant validOn;
     public final Instant validUntil;
 
-    public IpAddress(long ipAddressId, UUID vmId, String ipAddress, IpAddressType ipAddressType, Instant validOn, Instant validUntil) {
+    public IpAddress(long ipAddressId, UUID vmId, String ipAddress, IpAddressType ipAddressType, Long pingCheckId, Instant validOn,
+            Instant validUntil) {
         this.ipAddressId = ipAddressId;
         this.vmId = vmId;
         this.ipAddress = ipAddress;
         this.ipAddressType = ipAddressType;
+        this.pingCheckId = pingCheckId;
         this.validOn = validOn;
         this.validUntil = validUntil;
     }
