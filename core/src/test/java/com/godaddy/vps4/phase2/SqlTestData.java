@@ -34,6 +34,7 @@ public class SqlTestData {
         ProvisionVirtualMachineParameters params = new ProvisionVirtualMachineParameters(vps4UserId, 1, "vps4-testing-", orionGuid,
                 "testVirtualMachine", 10, 1, "centos-7");
         VirtualMachine virtualMachine = virtualMachineService.provisionVirtualMachine(params);
+        creditService.claimVirtualMachineCredit(orionGuid, 1);
         virtualMachineService.addHfsVmIdToVirtualMachine(virtualMachine.vmId, hfsVmId);
         return virtualMachine;
     }
@@ -50,11 +51,11 @@ public class SqlTestData {
         Sql.with(dataSource).exec("DELETE FROM user_project_privilege WHERE project_id = ?", null, vm.projectId);
         Sql.with(dataSource).exec("DELETE FROM project WHERE project_id = ?", null, vm.projectId);
     }
-    
+
     public static void deleteVps4User(long userId, DataSource dataSource){
         Sql.with(dataSource).exec("DELETE FROM vps4_user where vps4_user_id = ?", null, userId);
     }
-    
+
     public static void createActionWithDate(UUID vmId, ActionType actionType, Timestamp created, long userId, DataSource dataSource){
         Sql.with(dataSource).exec("INSERT INTO vm_action (vm_id, action_type_id, created, vps4_user_id) VALUES (?, ?, ?, ?)", null, vmId, actionType.getActionTypeId(), created, userId);
     }

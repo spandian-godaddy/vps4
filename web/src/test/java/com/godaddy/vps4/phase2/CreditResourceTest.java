@@ -9,14 +9,14 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
-import com.godaddy.vps4.credit.Vps4CreditService;
-import com.godaddy.vps4.credit.VirtualMachineCredit;
-import com.godaddy.vps4.jdbc.DatabaseModule;
 import com.godaddy.hfs.jdbc.Sql;
+import com.godaddy.vps4.credit.CreditModule;
+import com.godaddy.vps4.credit.VirtualMachineCredit;
+import com.godaddy.vps4.credit.Vps4CreditService;
+import com.godaddy.vps4.jdbc.DatabaseModule;
 import com.godaddy.vps4.security.SecurityModule;
 import com.godaddy.vps4.security.Vps4User;
 import com.godaddy.vps4.security.Vps4UserService;
-import com.godaddy.vps4.vm.VirtualMachineService;
 import com.godaddy.vps4.vm.VmModule;
 import com.godaddy.vps4.web.credit.CreditResource;
 import com.google.inject.AbstractModule;
@@ -34,6 +34,7 @@ public class CreditResourceTest {
     private Injector injector = Guice.createInjector(
             new DatabaseModule(),
             new SecurityModule(),
+            new CreditModule(),
             new VmModule(),
             new AbstractModule() {
 

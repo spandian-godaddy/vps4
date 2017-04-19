@@ -1,6 +1,7 @@
 package com.godaddy.vps4.phase2.vm;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
@@ -119,6 +120,8 @@ public class VirtualMachineServiceTest {
         assertEquals(controlPanel, vmRequest.controlPanel);
         assertEquals(tier, vmRequest.tier);
         assertEquals(managedLevel, vmRequest.managedLevel);
+        assertEquals(AccountStatus.ACTIVE, vmRequest.accountStatus);
+        assertNull(vmRequest.provisionDate);
 
         String name = "testServer";
         int specId = 1;
@@ -126,24 +129,13 @@ public class VirtualMachineServiceTest {
         ProvisionVirtualMachineParameters params = new ProvisionVirtualMachineParameters(vps4User.getId(), 1, "vps4-testing-",
                 orionGuid, name, 10, 1, "centos-7");
 
-        int numberOfTasks = 10;
-        List<Callable<Void>> tasks = new ArrayList<>();
-        for (int i = 0; i < numberOfTasks; i++) {
-            tasks.add(() -> {
-                try {
-                    virtualMachineService.provisionVirtualMachine(params);
-                }
-                catch (Exception e) {
-                    // Do nothing
-                }
-                return null;
-            });
-        }
-        ExecutorService executor = Executors.newFixedThreadPool(numberOfTasks);
-        executor.invokeAll(tasks);
+        virtualMachineService.provisionVirtualMachine(params);
+        creditService.claimVirtualMachineCredit(orionGuid, 1);
+
+        vmRequest = creditService.getVirtualMachineCredit(orionGuid);
+        assertNotNull(vmRequest.provisionDate);
 
         List<VirtualMachine> vms = virtualMachineService.getVirtualMachinesForUser(vps4User.getId());
-
         assertEquals(1, vms.size());
 
         VirtualMachine vm = vms.get(0);
@@ -160,7 +152,6 @@ public class VirtualMachineServiceTest {
 
         vm = virtualMachineService.getVirtualMachineByOrionGuid(orionGuid);
         verifyVm(name, specId, hfsVmId, vm);
-
     }
 
     private void verifyVm(String name, int specId, long hfsVmId, VirtualMachine vm) {
@@ -180,18 +171,9 @@ public class VirtualMachineServiceTest {
         List<UUID> createdVms = new ArrayList<>();
         for(int i = 0; i < 2; i++) {
             createdVms.add(UUID.randomUUID());
-            virtualMachines.add(SqlTestData.insertTestVm(createdVms.get(i), dataSource));
+            virtualMachines.add(SqlTestData.insertTestVm(createdVms.get(i), vps4User.getId(), dataSource));
             vmCredits.add(UUID.randomUUID());
-            creditService.createVirtualMachineCredit(vmCredits.get(i), os, controlPanel, tier, managedLevel,
-                    vps4User.getShopperId());
         }
-
-        List<VirtualMachineCredit> requests = creditService.getVirtualMachineCredits(vps4User.getShopperId());
-
-        List<UUID> requestGuids = requests.stream().map(rs -> rs.orionGuid).collect(Collectors.toList());
-        for (UUID credit : vmCredits)
-            assertTrue(requestGuids.contains(credit));
-        assertEquals(vmCredits.size(), requests.size());
 
         List<VirtualMachine> vms = virtualMachineService.getVirtualMachinesForUser(vps4User.getId());
         List<UUID> vmGuids = vms.stream().map(vm -> vm.orionGuid).collect(Collectors.toList());
@@ -219,12 +201,14 @@ public class VirtualMachineServiceTest {
 
         requests = creditService.getVirtualMachineCredits(vps4User.getShopperId());
         assertEquals(1, requests.size());
-        vmCredits.add(requests.get(0).orionGuid);
+        UUID guidWithCredit = requests.get(0).orionGuid;
+        vmCredits.add(guidWithCredit);
 
         ProvisionVirtualMachineParameters params = new ProvisionVirtualMachineParameters(vps4User.getId(), 1, "vps4-testing-",
                 requests.get(0).orionGuid, "test", 10, 1, "centos-7");
 
         VirtualMachine virtualMachine = virtualMachineService.provisionVirtualMachine(params);
+        creditService.claimVirtualMachineCredit(guidWithCredit, 1);
         virtualMachines.add(virtualMachine);
         virtualMachineService.addHfsVmIdToVirtualMachine(virtualMachine.vmId, 1);
 
@@ -234,6 +218,7 @@ public class VirtualMachineServiceTest {
         assertTrue(requests.isEmpty());
 
         virtualMachineService.destroyVirtualMachine(1);
+        creditService.unclaimVirtualMachineCredit(guidWithCredit);
 
         creditService.createCreditIfNoneExists(vps4User);
         requests = creditService.getVirtualMachineCredits(vps4User.getShopperId());
