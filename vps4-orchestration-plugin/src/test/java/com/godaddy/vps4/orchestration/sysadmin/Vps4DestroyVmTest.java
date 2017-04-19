@@ -14,7 +14,7 @@ import org.junit.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mockito;
 
-import com.godaddy.vps4.credit.Vps4CreditService;
+import com.godaddy.vps4.credit.CreditService;
 import com.godaddy.vps4.network.IpAddress;
 import com.godaddy.vps4.network.IpAddress.IpAddressType;
 import com.godaddy.vps4.network.NetworkService;
@@ -48,7 +48,7 @@ public class Vps4DestroyVmTest {
     ActionService actionService = mock(ActionService.class);
     NetworkService networkService = mock(NetworkService.class);
     VirtualMachineService virtualMachineService = mock(VirtualMachineService.class);
-    Vps4CreditService creditService = mock(Vps4CreditService.class);
+    CreditService creditService = mock(CreditService.class);
     gdg.hfs.vhfs.network.NetworkService hfsNetworkService = mock(gdg.hfs.vhfs.network.NetworkService.class);
     CPanelService cpanelService = mock(CPanelService.class);
     PleskService pleskService = mock(PleskService.class);

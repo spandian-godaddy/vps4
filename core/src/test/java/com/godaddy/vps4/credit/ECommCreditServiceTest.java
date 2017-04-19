@@ -25,7 +25,7 @@ import gdg.hfs.vhfs.ecomm.MetadataUpdate;
 public class ECommCreditServiceTest {
 
     ECommService ecommService = mock(ECommService.class);
-    Vps4CreditService creditService = new ECommCreditService(ecommService);
+    CreditService creditService = new ECommCreditService(ecommService);
 
     Injector injector = Guice.createInjector(binder -> {
         binder.bind(ECommService.class).toInstance(ecommService);

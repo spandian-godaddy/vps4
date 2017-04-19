@@ -5,7 +5,7 @@ import java.util.UUID;
 
 import com.godaddy.vps4.security.Vps4User;
 
-public interface Vps4CreditService {
+public interface CreditService {
 
     void createVirtualMachineCredit(UUID orionGuid, String osType, String controlPanel, int tier, int managedLevel, String shopperId);
 

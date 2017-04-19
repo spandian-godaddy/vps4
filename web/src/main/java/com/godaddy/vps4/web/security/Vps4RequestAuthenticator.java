@@ -13,7 +13,7 @@ import com.godaddy.hfs.sso.token.SsoToken;
 import com.godaddy.vps4.Environment;
 import com.godaddy.vps4.security.Vps4User;
 import com.godaddy.vps4.security.Vps4UserService;
-import com.godaddy.vps4.credit.Vps4CreditService;
+import com.godaddy.vps4.credit.CreditService;
 
 public class Vps4RequestAuthenticator implements RequestAuthenticator<Vps4User> {
 
@@ -23,13 +23,13 @@ public class Vps4RequestAuthenticator implements RequestAuthenticator<Vps4User> 
 
     private final Vps4UserService userService;
 
-    private final Vps4CreditService creditService;
+    private final CreditService creditService;
 
     private final Config config;
 
     @Inject
     public Vps4RequestAuthenticator(SsoTokenExtractor tokenExtractor, Vps4UserService userService,
-            Vps4CreditService creditService, Config config) {
+            CreditService creditService, Config config) {
         this.tokenExtractor = tokenExtractor;
         this.userService = userService;
         this.creditService = creditService;

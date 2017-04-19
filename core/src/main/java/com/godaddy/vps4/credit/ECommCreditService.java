@@ -20,7 +20,7 @@ import gdg.hfs.vhfs.ecomm.ECommService;
 import gdg.hfs.vhfs.ecomm.MetadataUpdate;
 
 
-public class ECommCreditService implements Vps4CreditService {
+public class ECommCreditService implements CreditService {
 
     private static final Logger logger = LoggerFactory.getLogger(ECommCreditService.class);
 

@@ -15,7 +15,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.godaddy.vps4.credit.VirtualMachineCredit;
-import com.godaddy.vps4.credit.Vps4CreditService;
+import com.godaddy.vps4.credit.CreditService;
 import com.godaddy.vps4.security.Vps4User;
 import com.godaddy.vps4.web.Vps4Api;
 import com.google.inject.Inject;
@@ -33,10 +33,10 @@ public class CreditResource {
     private static final Logger logger = LoggerFactory.getLogger(CreditResource.class);
 
     private final Vps4User user;
-    private final Vps4CreditService creditService;
+    private final CreditService creditService;
 
     @Inject
-    public CreditResource(Vps4User user, Vps4CreditService creditService) {
+    public CreditResource(Vps4User user, CreditService creditService) {
         this.user = user;
         this.creditService = creditService;
     }

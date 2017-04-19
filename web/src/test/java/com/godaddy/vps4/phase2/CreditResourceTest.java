@@ -12,7 +12,7 @@ import org.junit.Test;
 import com.godaddy.hfs.jdbc.Sql;
 import com.godaddy.vps4.credit.CreditModule;
 import com.godaddy.vps4.credit.VirtualMachineCredit;
-import com.godaddy.vps4.credit.Vps4CreditService;
+import com.godaddy.vps4.credit.CreditService;
 import com.godaddy.vps4.jdbc.DatabaseModule;
 import com.godaddy.vps4.security.SecurityModule;
 import com.godaddy.vps4.security.Vps4User;
@@ -49,7 +49,7 @@ public class CreditResourceTest {
             });
 
     Vps4UserService userService = injector.getInstance(Vps4UserService.class);
-    Vps4CreditService creditService = injector.getInstance(Vps4CreditService.class);
+    CreditService creditService = injector.getInstance(CreditService.class);
 
     protected CreditResource newValidCreditResource() {
         user = validUser;

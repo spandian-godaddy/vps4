@@ -11,16 +11,16 @@ import javax.sql.DataSource;
 
 import com.godaddy.hfs.jdbc.Sql;
 import com.godaddy.vps4.credit.VirtualMachineCredit;
-import com.godaddy.vps4.credit.Vps4CreditService;
+import com.godaddy.vps4.credit.CreditService;
 import com.godaddy.vps4.security.Vps4User;
 import com.godaddy.vps4.vm.AccountStatus;
 
-public class JdbcVps4CreditService implements Vps4CreditService {
+public class JdbcCreditService implements CreditService {
 
     private final DataSource dataSource;
 
     @Inject
-    public JdbcVps4CreditService(DataSource dataSource) {
+    public JdbcCreditService(DataSource dataSource) {
         this.dataSource = dataSource;
     }
 

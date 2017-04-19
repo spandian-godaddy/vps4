@@ -20,8 +20,8 @@ import org.junit.Before;
 import org.junit.Test;
 
 import com.godaddy.vps4.credit.VirtualMachineCredit;
-import com.godaddy.vps4.credit.Vps4CreditService;
-import com.godaddy.vps4.credit.jdbc.JdbcVps4CreditService;
+import com.godaddy.vps4.credit.CreditService;
+import com.godaddy.vps4.credit.jdbc.JdbcCreditService;
 import com.godaddy.hfs.jdbc.Sql;
 import com.godaddy.vps4.jdbc.DatabaseModule;
 import com.godaddy.vps4.network.NetworkService;
@@ -49,7 +49,7 @@ public class VirtualMachineServiceTest {
     NetworkService networkService = new JdbcNetworkService(dataSource);
     ImageService imageService = new JdbcImageService(dataSource);
     VirtualMachineService virtualMachineService = new JdbcVirtualMachineService(dataSource);
-    Vps4CreditService creditService = new JdbcVps4CreditService(dataSource);
+    CreditService creditService = new JdbcCreditService(dataSource);
     ProjectService projectService = new JdbcProjectService(dataSource);
     private UUID orionGuid = UUID.randomUUID();
     List<VirtualMachine> virtualMachines;

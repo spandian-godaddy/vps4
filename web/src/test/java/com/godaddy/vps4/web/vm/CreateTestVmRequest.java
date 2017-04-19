@@ -6,7 +6,7 @@ import java.util.UUID;
 import javax.inject.Inject;
 
 import com.godaddy.vps4.config.ConfigModule;
-import com.godaddy.vps4.credit.Vps4CreditService;
+import com.godaddy.vps4.credit.CreditService;
 import com.godaddy.vps4.jdbc.DatabaseModule;
 import com.godaddy.vps4.project.ProjectService;
 import com.godaddy.vps4.security.SecurityModule;
@@ -24,7 +24,7 @@ public class CreateTestVmRequest {
 
     final VirtualMachineService virtualMachineService;
 
-    final Vps4CreditService creditService;
+    final CreditService creditService;
 
     final ProjectService projectService;
 
@@ -35,7 +35,7 @@ public class CreateTestVmRequest {
     @Inject
     public CreateTestVmRequest(
             VirtualMachineService virtualMachineService,
-            Vps4CreditService creditService,
+            CreditService creditService,
             ProjectService projectService,
             ImageService imageService,
             Vps4UserService userService) {

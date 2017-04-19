@@ -5,7 +5,7 @@ import java.util.UUID;
 
 import javax.inject.Inject;
 
-import com.godaddy.vps4.credit.Vps4CreditService;
+import com.godaddy.vps4.credit.CreditService;
 import com.godaddy.vps4.network.IpAddress;
 import com.godaddy.vps4.network.NetworkService;
 import com.godaddy.vps4.orchestration.ActionCommand;
@@ -35,7 +35,7 @@ public class Vps4DestroyVm extends ActionCommand<Vps4DestroyVm.Request, Vps4Dest
 
     final VirtualMachineService virtualMachineService;
 
-    final Vps4CreditService creditService;
+    final CreditService creditService;
 
     final VmService vmService;
     
@@ -45,7 +45,7 @@ public class Vps4DestroyVm extends ActionCommand<Vps4DestroyVm.Request, Vps4Dest
     public Vps4DestroyVm(ActionService actionService,
             NetworkService networkService, 
             VirtualMachineService virtualMachineService,
-            Vps4CreditService creditService,
+            CreditService creditService,
             VmService vmService,
             CPanelService cpanelService) {
         super(actionService);

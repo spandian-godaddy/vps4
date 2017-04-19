@@ -24,7 +24,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.godaddy.vps4.credit.VirtualMachineCredit;
-import com.godaddy.vps4.credit.Vps4CreditService;
+import com.godaddy.vps4.credit.CreditService;
 import com.godaddy.vps4.jdbc.ResultSubset;
 import com.godaddy.vps4.security.Vps4User;
 import com.godaddy.vps4.security.Vps4UserService;
@@ -54,13 +54,13 @@ public class SupportResource {
 
     private final ActionService actionService;
     private final VirtualMachineService virtualMachineService;
-    private final Vps4CreditService creditService;
+    private final CreditService creditService;
     private final Vps4UserService vps4UserService;
     private final CommandService commandService;
 
     @Inject
     public SupportResource(ActionService actionService, VirtualMachineService virtualMachineService,
-            Vps4CreditService creditService, Vps4UserService vps4UserService, CommandService commandService){
+            CreditService creditService, Vps4UserService vps4UserService, CommandService commandService){
         this.actionService = actionService;
         this.virtualMachineService = virtualMachineService;
         this.creditService = creditService;

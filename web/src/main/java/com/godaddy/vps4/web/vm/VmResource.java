@@ -22,7 +22,7 @@ import org.slf4j.LoggerFactory;
 
 import com.godaddy.hfs.config.Config;
 import com.godaddy.vps4.credit.VirtualMachineCredit;
-import com.godaddy.vps4.credit.Vps4CreditService;
+import com.godaddy.vps4.credit.CreditService;
 import com.godaddy.vps4.orchestration.vm.Vps4ProvisionVm;
 import com.godaddy.vps4.orchestration.vm.Vps4DestroyVm;
 import com.godaddy.vps4.orchestration.vm.Vps4ProvisionVm;
@@ -67,7 +67,7 @@ public class VmResource {
 
     private final Vps4User user;
     private final VirtualMachineService virtualMachineService;
-    private final Vps4CreditService creditService;
+    private final CreditService creditService;
     private final PrivilegeService privilegeService;
     private final VmService vmService;
     private final ProjectService projectService;
@@ -83,7 +83,7 @@ public class VmResource {
     public VmResource(PrivilegeService privilegeService,
             Vps4User user, VmService vmService,
             VirtualMachineService virtualMachineService,
-            Vps4CreditService creditService,
+            CreditService creditService,
             ProjectService projectService,
             ImageService imageService,
             com.godaddy.vps4.network.NetworkService vps4NetworkService,
