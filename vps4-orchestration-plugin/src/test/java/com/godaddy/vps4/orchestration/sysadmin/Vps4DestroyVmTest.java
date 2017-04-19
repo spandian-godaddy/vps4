@@ -85,7 +85,10 @@ public class Vps4DestroyVmTest {
                 null, null, null, null, null, 
                 "fake.host.name", AccountStatus.ACTIVE);
 
-        this.request = new Vps4DestroyVm.Request(42, 12, 123);
+        request = new Vps4DestroyVm.Request();
+        request.hfsVmId = 42;
+        request.actionId = 12;
+        request.pingCheckAccountId = 123;
         
         VmAction vmAction = new VmAction();
         vmAction.state = VmAction.Status.COMPLETE;
