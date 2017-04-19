@@ -34,6 +34,8 @@ import gdg.hfs.vhfs.cpanel.CPanelService;
 import gdg.hfs.vhfs.mailrelay.MailRelayService;
 import gdg.hfs.vhfs.mailrelay.MailRelayUpdate;
 import gdg.hfs.vhfs.network.AddressAction;
+import gdg.hfs.vhfs.nodeping.NodePingAction;
+import gdg.hfs.vhfs.nodeping.NodePingService;
 import gdg.hfs.vhfs.plesk.PleskAction;
 import gdg.hfs.vhfs.plesk.PleskService;
 import gdg.hfs.vhfs.vm.VmAction;
@@ -50,6 +52,7 @@ public class Vps4DestroyVmTest {
     PleskService pleskService = mock(PleskService.class);
     MailRelayService mailRelayService = mock(MailRelayService.class);
     VmService vmService = mock(VmService.class);
+    NodePingService nodePingService = mock(NodePingService.class);
     
     Vps4DestroyVm command = new Vps4DestroyVm(actionService, networkService, virtualMachineService, vmService, cpanelService);
 
@@ -62,6 +65,7 @@ public class Vps4DestroyVmTest {
         binder.bind(CPanelService.class).toInstance(cpanelService);
         binder.bind(PleskService.class).toInstance(pleskService);
         binder.bind(MailRelayService.class).toInstance(mailRelayService);
+        binder.bind(NodePingService.class).toInstance(nodePingService);
     });
 
     CommandContext context = new TestCommandContext(new GuiceCommandProvider(injector));
@@ -78,9 +82,7 @@ public class Vps4DestroyVmTest {
                 null, null, null, null, null, 
                 "fake.host.name", AccountStatus.ACTIVE);
 
-        this.request = new Vps4DestroyVm.Request();
-        this.request.hfsVmId = 42;
-        this.request.actionId = 12;
+        this.request = new Vps4DestroyVm.Request(42, 12, 123);
         
         VmAction vmAction = new VmAction();
         vmAction.state = VmAction.Status.COMPLETE;
@@ -88,7 +90,10 @@ public class Vps4DestroyVmTest {
         AddressAction addressAction = new AddressAction();
         addressAction.status = AddressAction.Status.COMPLETE;
         
-        this.primaryIp = new IpAddress(123, UUID.randomUUID(), "1.2.3.4", IpAddressType.PRIMARY,null, null);
+        NodePingAction pingCheckAction = new NodePingAction();
+        pingCheckAction.status = NodePingAction.Status.COMPLETE;
+
+        this.primaryIp = new IpAddress(123, UUID.randomUUID(), "1.2.3.4", IpAddressType.PRIMARY, 5522L, null, null);
         ArrayList<IpAddress> addresses = new ArrayList<IpAddress>();
         addresses.add(this.primaryIp);
         
@@ -101,6 +106,8 @@ public class Vps4DestroyVmTest {
         when(networkService.getVmIpAddresses(this.vm.vmId)).thenReturn(addresses);
         when(hfsNetworkService.unbindIp(Mockito.anyLong())).thenReturn(addressAction);
         when(hfsNetworkService.releaseIp(Mockito.anyLong())).thenReturn(addressAction);
+        when(nodePingService.deleteCheck(request.pingCheckAccountId, primaryIp.pingCheckId)).thenReturn(pingCheckAction);
+        when(nodePingService.getAction(pingCheckAction.actionId)).thenReturn(pingCheckAction);
     }
 
 //    @Test
@@ -123,6 +130,7 @@ public class Vps4DestroyVmTest {
         when(pleskService.licenseRelease(this.vm.hfsVmId)).thenReturn(action);
         command.execute(context, this.request);
         verify(pleskService, times(1)).licenseRelease(this.request.hfsVmId);
+        verify(nodePingService, times(1)).deleteCheck(request.pingCheckAccountId, primaryIp.pingCheckId);
         
         verifyMailRelay();
 

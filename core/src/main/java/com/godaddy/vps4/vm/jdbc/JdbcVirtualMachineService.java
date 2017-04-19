@@ -35,7 +35,7 @@ public class JdbcVirtualMachineService implements VirtualMachineService {
             + "vms.tier, vms.cpu_core_count, vms.memory_mib, vms.disk_gib, vms.valid_on as \"spec_valid_on\", "
             + "vms.valid_until as \"spec_valid_until\", vms.name as \"spec_vps4_name\", "
             + "image.name, image.hfs_name, image.image_id, image.control_panel_id, image.os_type_id, "
-            + "ip.ip_address_id, ip.ip_address, ip.ip_address_type_id, ip.valid_on, ip.valid_until, "
+            + "ip.ip_address_id, ip.ip_address, ip.ip_address_type_id, ip.valid_on, ip.valid_until, ip.ping_check_id, "
             + "dc.data_center_id, dc.description "
             + "FROM virtual_machine vm "
             + "JOIN virtual_machine_spec vms ON vms.spec_id=vm.spec_id "
@@ -162,7 +162,7 @@ public class JdbcVirtualMachineService implements VirtualMachineService {
         return new VirtualMachineCredit(java.util.UUID.fromString(rs.getString("orion_guid")), rs.getInt("tier"),
                 rs.getInt("managed_level"), rs.getString("operating_system"), rs.getString("control_panel"),
                 rs.getTimestamp("create_date").toInstant(), provisionDate != null ? provisionDate.toInstant() : null,
-                rs.getString("shopper_id"));
+                rs.getString("shopper_id"), rs.getInt("monitoring"));
     }
 
     @Override
