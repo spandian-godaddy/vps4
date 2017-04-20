@@ -14,8 +14,10 @@ import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mockito;
 
-import com.godaddy.vps4.jdbc.DatabaseModule;
 import com.godaddy.hfs.jdbc.Sql;
+import com.godaddy.vps4.credit.CreditModule;
+import com.godaddy.vps4.credit.CreditService;
+import com.godaddy.vps4.jdbc.DatabaseModule;
 import com.godaddy.vps4.network.IpAddress.IpAddressType;
 import com.godaddy.vps4.network.NetworkService;
 import com.godaddy.vps4.project.ProjectService;
@@ -52,6 +54,9 @@ public class VmResourceUserTest {
     VirtualMachineService virtualMachineService;
 
     @Inject
+    CreditService creditService;
+
+    @Inject
     ActionService actionService;
 
     @Inject
@@ -64,7 +69,7 @@ public class VmResourceUserTest {
     NetworkService networkService;
 
     private Injector injector = Guice.createInjector(new DatabaseModule(), new SecurityModule(), new VmModule(),
-            new AbstractModule() {
+            new CreditModule(), new AbstractModule() {
 
                 @Override
                 public void configure() {
@@ -216,7 +221,7 @@ public class VmResourceUserTest {
     private ProvisionVmRequest createProvisionRequest(String controlPanel) {
         UUID newGuid = UUID.randomUUID();
         orionGuids.add(newGuid);
-        virtualMachineService.createVirtualMachineCredit(newGuid, "linux", controlPanel, 10, 1, validUser.getShopperId());
+        creditService.createVirtualMachineCredit(newGuid, "linux", controlPanel, 10, 1, validUser.getShopperId());
         ProvisionVmRequest provisionRequest = new ProvisionVmRequest();
         provisionRequest.orionGuid = newGuid;
         provisionRequest.dataCenterId = 1;

@@ -23,13 +23,14 @@ import javax.ws.rs.core.UriInfo;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.godaddy.vps4.credit.VirtualMachineCredit;
+import com.godaddy.vps4.credit.CreditService;
 import com.godaddy.vps4.jdbc.ResultSubset;
 import com.godaddy.vps4.security.Vps4User;
 import com.godaddy.vps4.security.Vps4UserService;
 import com.godaddy.vps4.vm.Action;
 import com.godaddy.vps4.vm.ActionService;
 import com.godaddy.vps4.vm.VirtualMachine;
-import com.godaddy.vps4.vm.VirtualMachineCredit;
 import com.godaddy.vps4.vm.VirtualMachineService;
 import com.godaddy.vps4.web.PaginatedResult;
 import com.godaddy.vps4.web.Vps4Api;
@@ -48,23 +49,25 @@ import io.swagger.annotations.ApiParam;
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
 public class SupportResource {
-    
+
     private static final Logger logger = LoggerFactory.getLogger(SupportResource.class);
 
     private final ActionService actionService;
     private final VirtualMachineService virtualMachineService;
+    private final CreditService creditService;
     private final Vps4UserService vps4UserService;
     private final CommandService commandService;
 
     @Inject
-    public SupportResource(ActionService actionService, VirtualMachineService virtualMachineService, 
-            Vps4UserService vps4UserService, CommandService commandService){
+    public SupportResource(ActionService actionService, VirtualMachineService virtualMachineService,
+            CreditService creditService, Vps4UserService vps4UserService, CommandService commandService){
         this.actionService = actionService;
         this.virtualMachineService = virtualMachineService;
+        this.creditService = creditService;
         this.vps4UserService = vps4UserService;
         this.commandService = commandService;
     }
-    
+
     @GET
     @Path("vms")
     public List<VirtualMachine> getVm(@QueryParam("shopperId") String shopperId) {
@@ -75,10 +78,10 @@ public class SupportResource {
             throw new NotFoundException("Unknown shopper id: " + shopperId);
         }
         List<VirtualMachine> virtualMachines = virtualMachineService.getVirtualMachinesForUser(vps4User.getId());
-        
+
         return virtualMachines;
     }
-    
+
     @GET
     @Path("actions/{actionId}")
     public SupportAction getAction(@PathParam("actionId") long actionId) {
@@ -88,7 +91,7 @@ public class SupportResource {
         if (action == null) {
             throw new NotFoundException("actionId " + actionId + " not found");
         }
-        
+
         CommandState commandState = null;
         if(action.commandId != null){
             commandState = this.commandService.getCommand(action.commandId);
@@ -96,7 +99,7 @@ public class SupportResource {
 
         return new SupportAction(action, commandState);
     }
-    
+
     private Date convertDate(String strDate) throws ParseException{
         DateFormat df = new SimpleDateFormat("yyyy-MM-dd hh:mm:ss z");
         Date resultDate = null;
@@ -105,11 +108,11 @@ public class SupportResource {
         }
         return resultDate;
     }
-    
+
     @GET
     @Path("actions")
     public PaginatedResult<SupportAction> getActions(@QueryParam("vmId") UUID vmId,
-            @DefaultValue("10") @QueryParam("limit") long limit, 
+            @DefaultValue("10") @QueryParam("limit") long limit,
             @DefaultValue("0") @QueryParam("offset") long offset,
             @QueryParam("status") List<String> status,
             @ApiParam(value = "Earliest date/time the action was created.  Format = yyyy-MM-dd hh:mm:ss timezone", example = "2017-01-01 01:02:03 GMT") @QueryParam("beginTime") String beginTime,
@@ -119,11 +122,11 @@ public class SupportResource {
 
         Date beginDate = convertDate(beginTime);
         Date endDate = convertDate(endTime);
-        
+
         ResultSubset<Action> actions = actionService.getActions(vmId, limit, offset, status, beginDate, endDate);
-        
+
         List<SupportAction> supportActions = new ArrayList<SupportAction>();
-        
+
         long totalRows = 0;
         if (actions != null) {
             totalRows = actions.totalRows;
@@ -138,20 +141,20 @@ public class SupportResource {
         }
         return new PaginatedResult<SupportAction>(supportActions, limit, offset, totalRows, uri);
     }
-    
+
     @POST
     @Path("/createCredit")
     public VirtualMachineCredit createCredit(CreateCreditRequest request){
         UUID orionGuid = UUID.randomUUID();
-        
-        virtualMachineService.createVirtualMachineCredit(orionGuid, 
-                request.operatingSystem, request.controlPanel, 
+
+        creditService.createVirtualMachineCredit(orionGuid,
+                request.operatingSystem, request.controlPanel,
                 request.tier, request.managedLevel, request.shopperId);
-        
-        VirtualMachineCredit credit = virtualMachineService.getVirtualMachineCredit(orionGuid);
+
+        VirtualMachineCredit credit = creditService.getVirtualMachineCredit(orionGuid);
         return credit;
     }
-    
+
     public static class CreateCreditRequest {
         public int tier;
         public int managedLevel;
@@ -159,5 +162,5 @@ public class SupportResource {
         public String controlPanel;
         public String shopperId;
     }
-    
+
 }

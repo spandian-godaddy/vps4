@@ -15,14 +15,12 @@ import javax.sql.DataSource;
 import com.godaddy.hfs.jdbc.Sql;
 import com.godaddy.vps4.network.IpAddress;
 import com.godaddy.vps4.network.jdbc.IpAddressMapper;
-import com.godaddy.vps4.security.Vps4User;
 import com.godaddy.vps4.vm.AccountStatus;
 import com.godaddy.vps4.vm.DataCenter;
 import com.godaddy.vps4.vm.Image;
 import com.godaddy.vps4.vm.Image.ControlPanel;
 import com.godaddy.vps4.vm.Image.OperatingSystem;
 import com.godaddy.vps4.vm.VirtualMachine;
-import com.godaddy.vps4.vm.VirtualMachineCredit;
 import com.godaddy.vps4.vm.VirtualMachineService;
 import com.godaddy.vps4.vm.VirtualMachineSpec;
 
@@ -144,28 +142,6 @@ public class JdbcVirtualMachineService implements VirtualMachineService {
     }
 
     @Override
-    public void createVirtualMachineCredit(UUID orionGuid, String operatingSystem, String controlPanel, int tier, int managedLevel, String shopperId) {
-        Sql.with(dataSource).exec("SELECT * FROM credit_create(?,?,?,?,?,?)",
-                null, orionGuid, operatingSystem, tier,
-                controlPanel, managedLevel, shopperId);
-    }
-
-    @Override
-    public VirtualMachineCredit getVirtualMachineCredit(UUID orionGuid) {
-        return Sql.with(dataSource).exec("SELECT * FROM credit WHERE orion_guid = ?",
-                Sql.nextOrNull(this::mapVirtualMachineCredit), orionGuid);
-    }
-
-    private VirtualMachineCredit mapVirtualMachineCredit(ResultSet rs) throws SQLException {
-        Timestamp provisionDate = rs.getTimestamp("provision_date");
-
-        return new VirtualMachineCredit(java.util.UUID.fromString(rs.getString("orion_guid")), rs.getInt("tier"),
-                rs.getInt("managed_level"), rs.getString("operating_system"), rs.getString("control_panel"),
-                rs.getTimestamp("create_date").toInstant(), provisionDate != null ? provisionDate.toInstant() : null,
-                rs.getString("shopper_id"), rs.getInt("monitoring"));
-    }
-
-    @Override
     public VirtualMachine provisionVirtualMachine(ProvisionVirtualMachineParameters vmProvisionParameters)
     {
         UUID vmId = UUID.randomUUID();
@@ -223,19 +199,6 @@ public class JdbcVirtualMachineService implements VirtualMachineService {
                 + "JOIN vps4_user u ON up.vps4_user_id = u.vps4_user_id "
                 + "WHERE u.vps4_user_id = ?",
                 Sql.listOf(this::mapVirtualMachine), vps4UserId);
-    }
-
-    @Override
-    public List<VirtualMachineCredit> getVirtualMachineCredits(String shopperId) {
-        return (List<VirtualMachineCredit>) Sql.with(dataSource).exec(
-                "SELECT * from credit WHERE shopper_id = ? AND provision_date IS NULL",
-                Sql.listOf(this::mapVirtualMachineCredit), shopperId);
-    }
-
-    @Override
-    public void createCreditIfNoneExists(Vps4User vps4User) {
-        Sql.with(dataSource).exec("SELECT * FROM auto_create_credit(?, ?, ?, ?, ?)", null, vps4User.getId(), 10, "linux", "cpanel",
-                1);
     }
 
     private boolean virtualMachineHasControlPanel(UUID vmId, String controlPanel){

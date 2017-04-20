@@ -18,9 +18,9 @@
     <build>
         <plugins>
 
-            <!-- TODO: uncomment once ZkInit is running <plugin> <groupId>org.apache.maven.plugins</groupId> 
-                <artifactId>maven-jar-plugin</artifactId> <version>3.0.2</version> <configuration> 
-                <excludes> <exclude>/com/godaddy/vps4/config/**</exclude> </excludes> </configuration> 
+            <!-- TODO: uncomment once ZkInit is running <plugin> <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-jar-plugin</artifactId> <version>3.0.2</version> <configuration>
+                <excludes> <exclude>/com/godaddy/vps4/config/**</exclude> </excludes> </configuration>
                 </plugin> -->
 
             <plugin>
@@ -238,6 +238,18 @@
 
         <dependency>
             <groupId>hfs</groupId>
+            <artifactId>vhfs-ecomm-common-lib</artifactId>
+            <version>1.1.0.30233</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>*</groupId>
+                    <artifactId>*</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+
+        <dependency>
+            <groupId>hfs</groupId>
             <artifactId>vhfs-plesk-common-lib</artifactId>
             <version>1.1.0.30103</version>
             <exclusions>
@@ -271,6 +283,7 @@
                 </exclusion>
             </exclusions>
         </dependency>
+
         <dependency>
             <groupId>hfs</groupId>
             <artifactId>vhfs-common-web-lib</artifactId>
@@ -282,7 +295,6 @@
                 </exclusion>
             </exclusions>
         </dependency>
-        
 
     </dependencies>
 

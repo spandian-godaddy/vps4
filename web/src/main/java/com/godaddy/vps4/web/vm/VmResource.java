@@ -21,6 +21,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.godaddy.hfs.config.Config;
+import com.godaddy.vps4.credit.VirtualMachineCredit;
+import com.godaddy.vps4.credit.CreditService;
+import com.godaddy.vps4.orchestration.vm.Vps4ProvisionVm;
 import com.godaddy.vps4.orchestration.vm.Vps4DestroyVm;
 import com.godaddy.vps4.orchestration.vm.Vps4ProvisionVm;
 import com.godaddy.vps4.orchestration.vm.Vps4RestartVm;
@@ -37,7 +40,6 @@ import com.godaddy.vps4.vm.ActionType;
 import com.godaddy.vps4.vm.ImageService;
 import com.godaddy.vps4.vm.ProvisionVmInfo;
 import com.godaddy.vps4.vm.VirtualMachine;
-import com.godaddy.vps4.vm.VirtualMachineCredit;
 import com.godaddy.vps4.vm.VirtualMachineService;
 import com.godaddy.vps4.vm.VirtualMachineService.ProvisionVirtualMachineParameters;
 import com.godaddy.vps4.vm.VirtualMachineSpec;
@@ -65,6 +67,7 @@ public class VmResource {
 
     private final Vps4User user;
     private final VirtualMachineService virtualMachineService;
+    private final CreditService creditService;
     private final PrivilegeService privilegeService;
     private final VmService vmService;
     private final ProjectService projectService;
@@ -80,6 +83,7 @@ public class VmResource {
     public VmResource(PrivilegeService privilegeService,
             Vps4User user, VmService vmService,
             VirtualMachineService virtualMachineService,
+            CreditService creditService,
             ProjectService projectService,
             ImageService imageService,
             com.godaddy.vps4.network.NetworkService vps4NetworkService,
@@ -90,6 +94,7 @@ public class VmResource {
 
         this.user = user;
         this.virtualMachineService = virtualMachineService;
+        this.creditService = creditService;
         this.privilegeService = privilegeService;
         this.vmService = vmService;
         this.projectService = projectService;
@@ -225,6 +230,7 @@ public class VmResource {
                     sgidPrefix, provisionRequest.orionGuid, provisionRequest.name, vmCredit.tier, vmCredit.managedLevel,
                     provisionRequest.image);
             virtualMachine = virtualMachineService.provisionVirtualMachine(params);
+            creditService.claimVirtualMachineCredit(provisionRequest.orionGuid, provisionRequest.dataCenterId);
         }
         catch (Exception e) {
             throw new Vps4Exception("PROVISION_VM_FAILED", e.getMessage(), e);
@@ -287,11 +293,15 @@ public class VmResource {
     }
 
     private VirtualMachineCredit getVmCreditToProvision(UUID orionGuid) {
-        VirtualMachineCredit credit = virtualMachineService.getVirtualMachineCredit(orionGuid);
+        VirtualMachineCredit credit = creditService.getVirtualMachineCredit(orionGuid);
         if (credit == null) {
             throw new Vps4Exception("CREDIT_NOT_FOUND",
                     String.format("The virtual machine credit for orion guid %s was not found", orionGuid));
         }
+        if (credit.provisionDate != null)
+            throw new Vps4Exception("CREDIT_ALREADY_IN_USE",
+                    String.format("The virtual machine credit for orion guid %s is already provisioned'", orionGuid));
+
         return credit;
     }
 

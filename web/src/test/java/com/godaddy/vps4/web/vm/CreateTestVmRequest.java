@@ -6,6 +6,7 @@ import java.util.UUID;
 import javax.inject.Inject;
 
 import com.godaddy.vps4.config.ConfigModule;
+import com.godaddy.vps4.credit.CreditService;
 import com.godaddy.vps4.jdbc.DatabaseModule;
 import com.godaddy.vps4.project.ProjectService;
 import com.godaddy.vps4.security.SecurityModule;
@@ -23,6 +24,8 @@ public class CreateTestVmRequest {
 
     final VirtualMachineService virtualMachineService;
 
+    final CreditService creditService;
+
     final ProjectService projectService;
 
     final ImageService imageService;
@@ -32,10 +35,12 @@ public class CreateTestVmRequest {
     @Inject
     public CreateTestVmRequest(
             VirtualMachineService virtualMachineService,
+            CreditService creditService,
             ProjectService projectService,
             ImageService imageService,
             Vps4UserService userService) {
         this.virtualMachineService = virtualMachineService;
+        this.creditService = creditService;
         this.projectService = projectService;
         this.imageService = imageService;
         this.userService = userService;
@@ -44,7 +49,7 @@ public class CreateTestVmRequest {
     protected void provision(int tier, int managedLevel, String operatingSystem, String controlPanel, String shopperId) {
 
         UUID orionGuid = UUID.randomUUID();
-        virtualMachineService.createVirtualMachineCredit(orionGuid, operatingSystem, controlPanel, tier, managedLevel, shopperId);
+        creditService.createVirtualMachineCredit(orionGuid, operatingSystem, controlPanel, tier, managedLevel, shopperId);
 
         // normally we would get this from HFS
         long hfsVmId = new Random().nextInt(1000000);

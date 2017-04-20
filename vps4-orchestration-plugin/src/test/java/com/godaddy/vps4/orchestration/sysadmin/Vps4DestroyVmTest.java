@@ -14,6 +14,7 @@ import org.junit.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mockito;
 
+import com.godaddy.vps4.credit.CreditService;
 import com.godaddy.vps4.network.IpAddress;
 import com.godaddy.vps4.network.IpAddress.IpAddressType;
 import com.godaddy.vps4.network.NetworkService;
@@ -47,6 +48,7 @@ public class Vps4DestroyVmTest {
     ActionService actionService = mock(ActionService.class);
     NetworkService networkService = mock(NetworkService.class);
     VirtualMachineService virtualMachineService = mock(VirtualMachineService.class);
+    CreditService creditService = mock(CreditService.class);
     gdg.hfs.vhfs.network.NetworkService hfsNetworkService = mock(gdg.hfs.vhfs.network.NetworkService.class);
     CPanelService cpanelService = mock(CPanelService.class);
     PleskService pleskService = mock(PleskService.class);
@@ -54,7 +56,8 @@ public class Vps4DestroyVmTest {
     VmService vmService = mock(VmService.class);
     NodePingService nodePingService = mock(NodePingService.class);
     
-    Vps4DestroyVm command = new Vps4DestroyVm(actionService, networkService, virtualMachineService, vmService, cpanelService);
+    Vps4DestroyVm command = new Vps4DestroyVm(actionService, networkService, virtualMachineService,
+                                              creditService, vmService, cpanelService);
 
     Injector injector = Guice.createInjector(binder -> {
         binder.bind(UnbindIp.class);
@@ -112,18 +115,6 @@ public class Vps4DestroyVmTest {
         when(nodePingService.deleteCheck(request.pingCheckAccountId, primaryIp.pingCheckId)).thenReturn(pingCheckAction);
         when(nodePingService.getAction(pingCheckAction.actionId)).thenReturn(pingCheckAction);
     }
-
-//    @Test
-//    public void destroyVmSuccessCpanel() throws Exception {
-//        when(virtualMachineService.virtualMachineHasCpanel(this.vm.vmId)).thenReturn(true);
-//        CPanelAction action = new CPanelAction();
-//        action.status = CPanelAction.Status.COMPLETE;
-//        when(cpanelService.licenseRelease(eq(this.vm.hfsVmId), Mockito.anyString())).thenReturn(action);
-//        command.execute(context, this.request);
-//        verify(cpanelService, times(1)).licenseRelease(this.request.hfsVmId, "1.2.3.4");
-//        
-//        verifyMailRelay();
-//    }
 
     @Test
     public void destroyVmSuccessPlesk() throws Exception {

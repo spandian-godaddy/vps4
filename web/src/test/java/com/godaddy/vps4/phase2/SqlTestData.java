@@ -5,6 +5,8 @@ import java.util.UUID;
 import javax.sql.DataSource;
 
 import com.godaddy.hfs.jdbc.Sql;
+import com.godaddy.vps4.credit.CreditService;
+import com.godaddy.vps4.credit.jdbc.JdbcCreditService;
 import com.godaddy.vps4.vm.VirtualMachine;
 import com.godaddy.vps4.vm.VirtualMachineService;
 import com.godaddy.vps4.vm.VirtualMachineService.ProvisionVirtualMachineParameters;
@@ -28,8 +30,9 @@ public class SqlTestData {
 
     public static VirtualMachine insertTestVm(UUID orionGuid, long vps4UserId, DataSource dataSource, String imageName) {
         VirtualMachineService virtualMachineService = new JdbcVirtualMachineService(dataSource);
+        CreditService creditService = new JdbcCreditService(dataSource);
         long hfsVmId = getNextHfsVmId(dataSource);
-        virtualMachineService.createVirtualMachineCredit(orionGuid, "linux", "none", 10, 0, "TestUser");
+        creditService.createVirtualMachineCredit(orionGuid, "linux", "none", 10, 0, "TestUser");
         ProvisionVirtualMachineParameters params = new ProvisionVirtualMachineParameters(vps4UserId, 1, "vps4-testing-", orionGuid,
                 "testVirtualMachine", 10, 1, imageName);
         VirtualMachine virtualMachine = virtualMachineService.provisionVirtualMachine(params);
