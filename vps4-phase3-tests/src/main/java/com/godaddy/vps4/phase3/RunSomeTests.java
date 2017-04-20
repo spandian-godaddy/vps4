@@ -7,6 +7,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
+import com.godaddy.vps4.phase3.api.SsoClient;
 import com.godaddy.vps4.phase3.api.Vps4ApiClient;
 import com.godaddy.vps4.phase3.tests.ChangeHostnameTest;
 import com.godaddy.vps4.phase3.tests.StopStartVmTest;
@@ -14,8 +15,12 @@ import com.godaddy.vps4.phase3.virtualmachine.VirtualMachinePool;
 
 
 /*
- * arg[0] = the url that you plan to run against.  Example: http://127.0.0.1:8089/
- * arg[1] = the authorization key to log in to the url.  Example: "sso-jwt afJhbGciOiAiUlMyNTYiLCAia2lkIjogInhqQzVZZE1BZVEifQ.eyJhY2NvdW50TmFtZSI6ICJnc2hlcHBhcmQiLCAiYXV0aCI6ICJiYXNpYyIsICJmYWN0b3JzIjogeyJrX3B3IjogMTQ5MTMzMjI3MX0sICJmaXJzdG5hbWUiOiAiR2VvcmdlIiwgImZ0YyI6IDEsICJncm91cHMiOiBbIkRldi1WZXJ0aWdvIiwgIlRvb2x6aWxsYS1RQSIsICJRQSJdLCAiaWF0IjogMTQ5MTMzMjI3MSwgImp0aSI6ICJOUmM1YnhlT2FqZmliNkdMRU5qNmlBIiwgImxhc3RuYW1lIjogIlNoZXBwYXJkIiwgInR5cCI6ICJqb21heCJ9.vddEc26-NeFWvXGIYkelLdpr8qOHwatGKy5uHNYUMbsfPw3CTclCRNbBn0Ixy0mDjfZUFooHY4DWiP_cR24u8sV7mdnvAW6osnGJcfpnNUYzWEOntOjSI_IpipNXNtXYvCVEsJcGiSzs3nBMAqTHLQuwqydCJn65JLaRLkrFrXY"
+ * arg[0] = the vps4 url that you plan to run against.  Example: http://127.0.0.1:8089/
+ * arg[1] = the vps4 shopperId
+ * arg[2] = the vps4 password
+ * arg[3] = the SSO URL to get the admin token from: (example: https://sso.dev-godaddy.com/v1/api/token)
+ * arg[4] = the admin (jomax) username
+ * arg[5] = the admin password
  * */
 
 public class RunSomeTests {
@@ -26,14 +31,25 @@ public class RunSomeTests {
     public static void main(String[] args) throws Exception{
 
         String URL = args[0];
-        String user = args[1];
-        String authHeader = args[2];
-
-        Vps4ApiClient vps4ApiClient = new Vps4ApiClient(URL, authHeader);
-
-        VirtualMachinePool vmPool = new VirtualMachinePool(4, 2, vps4ApiClient, user);
-
+        String vps4User = args[1];
+        String vps4Password = args[2];
+        
+        String ssoUrl = args[3];
+        String adminUser = args[4];
+        String adminPassword = args[5];
+        
+        
+        SsoClient ssoClient = new SsoClient(ssoUrl);
+        
+        String adminAuthHeader = ssoClient.getJomaxSsoToken(adminUser, adminPassword);
+        Vps4ApiClient adminClient = new Vps4ApiClient(URL, adminAuthHeader);
+        
+        String vps4AuthHeader = ssoClient.getVps4SsoToken(vps4User, vps4Password);
+        Vps4ApiClient vps4ApiClient = new Vps4ApiClient(URL, vps4AuthHeader);
+        
         ExecutorService threadPool = Executors.newCachedThreadPool();
+        
+        VirtualMachinePool vmPool = new VirtualMachinePool(4, 2, vps4ApiClient, adminClient, vps4User, threadPool);
 
         List<VmTest> tests = Arrays.asList(
                 new ChangeHostnameTest(randomHostname()),

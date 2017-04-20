@@ -26,7 +26,7 @@ public class Vps4ApiClient {
 
     public Vps4ApiClient(String baseUrl, String authHeader){
       this.baseUrl = baseUrl;
-      this.authHeader = authHeader;
+      this.authHeader = "sso-jwt " + authHeader;
     }
 
     protected class Result {
@@ -101,7 +101,7 @@ public class Vps4ApiClient {
         JSONObject primaryIp = (JSONObject) vm.get("primaryIpAddress");
         return primaryIp.get("ipAddress").toString();
     }
-
+    
     public String setHostname(UUID vmId, String hostname){
         JSONObject body = new JSONObject();
         body.put("hostname", hostname);
@@ -203,7 +203,8 @@ public class Vps4ApiClient {
 
         HttpClient client = getHttpClient();
         HttpGet request = new HttpGet(url);
-
+        System.out.println(url);
+        System.out.println(authHeader);
         return callApi(client, request);
     }
 

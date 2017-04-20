@@ -4,6 +4,7 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.BlockingDeque;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.Semaphore;
 
@@ -27,16 +28,24 @@ public class VirtualMachinePool {
 
     final Vps4ApiClient apiClient;
     
+    final Vps4ApiClient adminClient;
+    
     final String user;
+    
+    final ExecutorService threadPool;
 
-    public VirtualMachinePool(int maxTotalVmCount, int maxImageVmCount, Vps4ApiClient apiClient, String user){
+    public VirtualMachinePool(int maxTotalVmCount, int maxImageVmCount, 
+            Vps4ApiClient apiClient, Vps4ApiClient adminClient, String user,
+            ExecutorService threadPool){
 
         this.maxTotalVmCount = maxTotalVmCount;
         this.maxPerImageVmCount = maxImageVmCount;
 
         this.vmLeases = new Semaphore(maxTotalVmCount);
         this.apiClient = apiClient;
+        this.adminClient = adminClient;
         this.user = user;
+        this.threadPool = threadPool;
     }
 
     public VirtualMachine getVm(String imageName){
@@ -134,36 +143,35 @@ public class VirtualMachinePool {
                 if (vmLeases.tryAcquire()) {
                     logger.trace("leased {}", imageName);
                     // we _can_ spin one up
-                    vm = createVm();
-                } else {
-                    // we _can't_ spin one up, so we have to wait until one is returned
-                    // to the pool
-                    logger.trace("no leases available, waiting for {}", imageName);
-                    try {
-                        vm = pool.takeFirst();
-                    } catch (InterruptedException e) {
-                        throw new RuntimeException(e);
-                    }
+                    createVm();
+                } 
+                // we _can't_ spin one up, so we have to wait until one is returned
+                // to the pool
+                logger.trace("no leases available, waiting for {}", imageName);
+                try {
+                    vm = pool.takeFirst();
+                } catch (InterruptedException e) {
+                    throw new RuntimeException(e);
                 }
             }
             logger.trace("acquired {}", vm);
             return vm;
         }
 
-        public VirtualMachine createVm() {
+        public void createVm() {
+            threadPool.submit(() -> {
             // Create the VM and add to the pool
             UUID orionGuid = createVmCredit();
             UUID vmId = provisionVm(orionGuid);
             
-            // FIXME 'username'/'password' must be externalized
-
-            return new VirtualMachine(
+            offer( new VirtualMachine(
                     VirtualMachinePool.this,
                     VirtualMachinePool.this.apiClient,
                     this.imageName,
                     username,
                     password,
-                    vmId);
+                    vmId));
+            });
         }
 
         public UUID createVmCredit(){
@@ -179,7 +187,7 @@ public class VirtualMachinePool {
             if(imageName.toUpperCase().contains("WIN")){
                 os = "windows";
             }
-            return apiClient.createVmCredit(user, os, controlPanel, 0, 10);
+            return adminClient.createVmCredit(user, os, controlPanel, 0, 10);
         }
 
         static final String username = "vpstester";
