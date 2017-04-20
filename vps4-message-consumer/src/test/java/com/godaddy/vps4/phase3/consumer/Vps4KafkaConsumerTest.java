@@ -1,17 +1,15 @@
 package com.godaddy.vps4.phase3.consumer;
 
-import static org.junit.Assert.assertTrue;
-
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Ignore;
-import org.junit.Test;
-
 import com.godaddy.vps4.consumer.Vps4ConsumerInjector;
 import com.godaddy.vps4.consumer.Vps4ConsumerManager;
 import com.godaddy.vps4.handler.BasicMessageHandler;
 import com.godaddy.vps4.phase3.producer.Vps4ProducerStub;
 import com.google.inject.Injector;
+import org.junit.After;
+import org.junit.Ignore;
+import org.junit.Test;
+
+import static org.junit.Assert.assertTrue;
 
 /**
  * This test case can be run only of the host has a kafka broker running on it.

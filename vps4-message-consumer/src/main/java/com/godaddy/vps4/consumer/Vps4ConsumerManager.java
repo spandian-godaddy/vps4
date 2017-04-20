@@ -1,21 +1,15 @@
 package com.godaddy.vps4.consumer;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
-import java.util.concurrent.ThreadFactory;
-import java.util.concurrent.TimeUnit;
-
-import javax.inject.Inject;
-
+import com.godaddy.vps4.consumer.config.KafkaConfiguration;
+import com.godaddy.vps4.handler.MessageHandler;
+import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.godaddy.vps4.consumer.config.KafkaConfiguration;
-import com.godaddy.vps4.handler.Vps4MessageHandler;
-import com.google.common.util.concurrent.ThreadFactoryBuilder;
+import javax.inject.Inject;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.*;
 
 public class Vps4ConsumerManager {
 
@@ -32,7 +26,8 @@ public class Vps4ConsumerManager {
         this.kafkaConfig = kafkaConfig;
     }
 
-    public void createConsumerGroup(Vps4MessageHandler messageHandler) {
+    @Inject
+    public void createConsumerGroup(MessageHandler messageHandler) {
 
         int consumerCount = kafkaConfig.getNumberOfConsumers();
         logger.info("Creating consumer graup with {} consumer(s)", consumerCount);

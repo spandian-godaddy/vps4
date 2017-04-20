@@ -1,10 +1,8 @@
 package com.godaddy.vps4.consumer;
 
-import com.godaddy.vps4.handler.BasicMessageHandler;
+import ch.qos.logback.classic.Level;
 import com.godaddy.vps4.handler.Vps4MessageHandler;
 import com.google.inject.Injector;
-
-import ch.qos.logback.classic.Level;
 
 public class Vps4ConsumerApplication {
 
@@ -16,12 +14,9 @@ public class Vps4ConsumerApplication {
         
         Injector injector = Vps4ConsumerInjector.newInstance();
         
-        // TODO: use actual message handler implementation instead of this dummy implementation
-        Vps4MessageHandler messageHandler = new BasicMessageHandler();
-
         // create kafka consumers and start listening to messages on the topic
         Vps4ConsumerManager manager = injector.getInstance(Vps4ConsumerManager.class);
-        manager.createConsumerGroup(messageHandler);
+        manager.createConsumerGroup(injector.getInstance(Vps4MessageHandler.class));
 
         Runtime.getRuntime().addShutdownHook(new Thread() {
             @Override

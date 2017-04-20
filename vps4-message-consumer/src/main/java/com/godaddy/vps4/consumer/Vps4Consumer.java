@@ -18,8 +18,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.godaddy.vps4.consumer.config.KafkaConfiguration;
-import com.godaddy.vps4.handler.Vps4MessageHandler;
-import com.godaddy.vps4.handler.Vps4MessageHandlerException;
+import com.godaddy.vps4.handler.MessageHandler;
+import com.godaddy.vps4.handler.MessageHandlerException;
 
 public class Vps4Consumer implements Runnable {
 
@@ -31,10 +31,10 @@ public class Vps4Consumer implements Runnable {
 
     private final AtomicBoolean closed = new AtomicBoolean(false);
     
-    private Vps4MessageHandler messageHandler;
+    private MessageHandler messageHandler;
 
     @Inject
-    public Vps4Consumer(KafkaConfiguration kafkaConfig, Vps4MessageHandler messageHandler) {
+    public Vps4Consumer(KafkaConfiguration kafkaConfig, MessageHandler messageHandler) {
         this.kafkaConfig = kafkaConfig;
         this.messageHandler = messageHandler;
     }
@@ -85,7 +85,7 @@ public class Vps4Consumer implements Runnable {
         catch( IllegalStateException | IllegalArgumentException | KafkaException ex ) {
             logger.error("Caught Kafka Exception: ", ex);
         }
-        catch(Vps4MessageHandlerException vme) {
+        catch(MessageHandlerException vme) {
             logger.error("Message Handler could not handle message. Caught vps4 message exception: {}", vme);
         }
         catch (Exception ex) {
