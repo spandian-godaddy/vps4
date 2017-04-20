@@ -30,14 +30,13 @@ public class RunSomeTests {
 
     public static void main(String[] args) throws Exception{
 
-        String URL = args[0];
-        String vps4User = args[1];
-        String vps4Password = args[2];
+        String URL = args[1];
+        String vps4User = args[2];
+        String vps4Password = args[3];
         
-        String ssoUrl = args[3];
-        String adminUser = args[4];
-        String adminPassword = args[5];
-        
+        String ssoUrl = args[4];
+        String adminUser = args[5];
+        String adminPassword = args[6];
         
         SsoClient ssoClient = new SsoClient(ssoUrl);
         
