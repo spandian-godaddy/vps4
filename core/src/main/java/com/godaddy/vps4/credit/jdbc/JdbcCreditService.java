@@ -61,13 +61,13 @@ public class JdbcCreditService implements CreditService {
 
     @Override
     public void claimVirtualMachineCredit(UUID orionGuid, int dataCenterId) {
-        Sql.with(dataSource).exec("UPDATE credit SET provision_date = NOW() WHERE orion_guid = ?",
+        Sql.with(dataSource).exec("UPDATE credit SET provision_date = NOW() WHERE provision_date IS NULL AND orion_guid = ?",
                 null, orionGuid);
     }
 
     @Override
     public void unclaimVirtualMachineCredit(UUID orionGuid) {
-        Sql.with(dataSource).exec("UPDATE credit SET provision_date = NULL WHERE orion_guid = ?",
+        Sql.with(dataSource).exec("UPDATE credit SET provision_date = NULL WHERE provision_date IS NOT NULL AND orion_guid = ?",
                 null, orionGuid);
     }
 
