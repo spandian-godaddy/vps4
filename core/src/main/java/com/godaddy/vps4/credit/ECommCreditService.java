@@ -38,7 +38,7 @@ public class ECommCreditService implements CreditService {
             Account account = ecommService.getAccount(orionGuid.toString());
             credit = mapVirtualMachineCredit(account);
         } catch(Exception ex) {
-            logger.error("Error retrieving VPS4 credit for account guid {}", orionGuid.toString(), ex);
+            logger.error("Error retrieving VPS4 credit for account guid {}", orionGuid.toString());
         }
 
         return credit;

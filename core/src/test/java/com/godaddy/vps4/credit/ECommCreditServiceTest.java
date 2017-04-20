@@ -1,8 +1,15 @@
 package com.godaddy.vps4.credit;
 
-import static org.junit.Assert.*;
-import static org.mockito.Matchers.*;
-import static org.mockito.Mockito.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.eq;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 import java.time.Instant;
 import java.util.Arrays;
@@ -62,6 +69,7 @@ public class ECommCreditServiceTest {
     public void testGetCreditMapsAccount() throws Exception {
         when(ecommService.getAccount(orionGuid.toString())).thenReturn(account);
         VirtualMachineCredit credit = creditService.getVirtualMachineCredit(orionGuid);
+        System.out.println(credit.toString());
 
         assertEquals(orionGuid, credit.orionGuid);
         assertEquals(Integer.parseInt(account.plan_features.get("tier")), credit.tier);
@@ -81,6 +89,15 @@ public class ECommCreditServiceTest {
         VirtualMachineCredit credit = creditService.getVirtualMachineCredit(orionGuid);
 
         assertEquals(testDate, credit.provisionDate);
+    }
+
+    @Test
+    public void testGetCreditsForAccountNotFound() throws Exception {
+        when(ecommService.getAccount(orionGuid.toString()))
+            .thenThrow(new RuntimeException("Fake account not found"));
+        VirtualMachineCredit credit = creditService.getVirtualMachineCredit(orionGuid);
+
+        assertNull(credit);
     }
 
     @Test
