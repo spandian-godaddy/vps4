@@ -93,7 +93,7 @@ public class ECommCreditService implements CreditService {
     }
 
     @Override
-    public void createCreditIfNoneExists(Vps4User vps4User) {
+    public synchronized void createCreditIfNoneExists(Vps4User vps4User) {
         String shopperId = vps4User.getShopperId();
         if (getVirtualMachineCredits(shopperId).isEmpty())
             this.createVirtualMachineCredit(UUID.randomUUID(), "linux", "cpanel", 10, 1, shopperId);
