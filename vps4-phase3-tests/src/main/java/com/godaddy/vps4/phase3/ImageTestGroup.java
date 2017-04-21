@@ -5,10 +5,16 @@ import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.godaddy.vps4.phase3.virtualmachine.VirtualMachine;
 import com.godaddy.vps4.phase3.virtualmachine.VirtualMachinePool;
 
 public class ImageTestGroup extends TestGroup {
+    
+    private static final Logger logger = LoggerFactory.getLogger(ImageTestGroup.class);
+
 
     protected final List<VmTest> tests = new ArrayList<>();
 
@@ -40,6 +46,7 @@ public class ImageTestGroup extends TestGroup {
                     execution.status = TestStatus.RUNNING;
                     VirtualMachine vm = vmPool.getVm(this.imageName);
                     try {
+                        logger.debug("Executing test {} on vm {}", test.toString(), vm.toString());
                         test.execute(vm);
                     } finally {
                         vm.release();

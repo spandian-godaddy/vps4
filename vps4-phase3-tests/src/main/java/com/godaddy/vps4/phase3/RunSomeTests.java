@@ -7,6 +7,9 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.godaddy.vps4.phase3.api.SsoClient;
 import com.godaddy.vps4.phase3.api.Vps4ApiClient;
 import com.godaddy.vps4.phase3.tests.ChangeHostnameTest;
@@ -25,6 +28,8 @@ import com.godaddy.vps4.phase3.virtualmachine.VirtualMachinePool;
 
 public class RunSomeTests {
 
+    private static final Logger logger = LoggerFactory.getLogger(RunSomeTests.class);
+    
     static String USERNAME = "testuser";
     static String PASSWORD = "testVPS4YOU!";
 

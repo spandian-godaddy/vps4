@@ -61,7 +61,6 @@ public class SsoClient {
         body.put("realm", realm);
         
         Vps4JsonResponse<JSONObject> response = sendPost(body);
-        System.out.println(response.statusCode + " " + response.jsonResponse);
         return response.jsonResponse.get("data").toString();
     }
 

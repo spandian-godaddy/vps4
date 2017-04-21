@@ -91,7 +91,7 @@ public class TestGroup {
                     // we have passed (by virtue of not failing)
                     groupExecution.status = TestStatus.PASS;
                 }
-                logger.trace("test group execution done: " + this);
+                logger.debug("test group execution done: " + this);
             } catch (InterruptedException e) {
                 groupExecution.status = TestStatus.FAIL;
                 throw new RuntimeException(e);

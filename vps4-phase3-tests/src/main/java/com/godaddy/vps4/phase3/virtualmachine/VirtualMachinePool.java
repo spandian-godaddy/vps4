@@ -123,7 +123,7 @@ public class VirtualMachinePool {
         public void offer(VirtualMachine vm) {
             boolean repooled = pool.offer(vm);
             if (!repooled) {
-                logger.trace("pool '{}' at capacity, destroying {}", imageName, vm);
+                logger.debug("pool '{}' at capacity, destroying {}", imageName, vm);
                 // pool is already at its capacity, so just destroy the VM
                 destroy(vm);
             }
@@ -141,20 +141,20 @@ public class VirtualMachinePool {
             if (vm == null) {
                 // no pooled VMs, can we spin one up?
                 if (vmLeases.tryAcquire()) {
-                    logger.trace("leased {}", imageName);
+                    logger.debug("creating vm for {}", imageName);
                     // we _can_ spin one up
                     createVm();
                 } 
                 // we _can't_ spin one up, so we have to wait until one is returned
                 // to the pool
-                logger.trace("no leases available, waiting for {}", imageName);
+                logger.debug("waiting for vm with image {}", imageName);
                 try {
                     vm = pool.takeFirst();
                 } catch (InterruptedException e) {
                     throw new RuntimeException(e);
                 }
             }
-            logger.trace("acquired {}", vm);
+            logger.debug("acquired {}", vm);
             return vm;
         }
 

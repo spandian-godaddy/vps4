@@ -1,12 +1,17 @@
 package com.godaddy.vps4.phase3.tests;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.godaddy.vps4.phase3.VmTest;
 import com.godaddy.vps4.phase3.api.Vps4ApiClient;
 import com.godaddy.vps4.phase3.ssh.Vps4SshClient;
 import com.godaddy.vps4.phase3.virtualmachine.VirtualMachine;
 
-public class ChangeHostnameTest implements VmTest
-{
+public class ChangeHostnameTest implements VmTest {
+    
+    private static final Logger logger = LoggerFactory.getLogger(ChangeHostnameTest.class);
+    
     final String newHostname;
 
     public ChangeHostnameTest(String newHostname) {
@@ -18,9 +23,11 @@ public class ChangeHostnameTest implements VmTest
         Vps4ApiClient vps4Client = vm.getClient();
 
         String setHostnameActionId = vps4Client.setHostname(vm.vmId, newHostname);
+        logger.debug("Wait for change hostname on vm {}", vm);
         vps4Client.pollForVmActionComplete(vm.vmId, setHostnameActionId);
 
         String restartVmActionId = vps4Client.restartVm(vm.vmId);
+        logger.debug("Wait for restart on vm {}", vm);
         vps4Client.pollForVmActionComplete(vm.vmId, restartVmActionId, 240);
 
         Vps4SshClient sshClient = vm.ssh();

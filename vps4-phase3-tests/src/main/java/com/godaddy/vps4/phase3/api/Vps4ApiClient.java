@@ -203,8 +203,6 @@ public class Vps4ApiClient {
 
         HttpClient client = getHttpClient();
         HttpGet request = new HttpGet(url);
-        System.out.println(url);
-        System.out.println(authHeader);
         return callApi(client, request);
     }
 

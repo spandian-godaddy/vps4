@@ -53,5 +53,9 @@ public class VirtualMachine {
     public void destroy() {
         vmPool.destroy(this);
     }
+    
+    public String toString(){
+        return "VMID: " + vmId + ", Image Name: " + imageName;
+    }
 
 }
