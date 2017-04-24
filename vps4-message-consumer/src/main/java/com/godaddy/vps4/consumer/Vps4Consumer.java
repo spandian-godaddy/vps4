@@ -1,9 +1,8 @@
 package com.godaddy.vps4.consumer;
 
+
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import javax.inject.Inject;
@@ -25,13 +24,13 @@ public class Vps4Consumer implements Runnable {
 
     private static final Logger logger = LoggerFactory.getLogger(Vps4Consumer.class);
 
-    private KafkaConfiguration kafkaConfig;
+    private final KafkaConfiguration kafkaConfig;
 
-    private KafkaConsumer<String, String> kafkaConsumer;
+    private final MessageHandler messageHandler;
 
     private final AtomicBoolean closed = new AtomicBoolean(false);
-    
-    private MessageHandler messageHandler;
+
+    private volatile KafkaConsumer<String, String> kafkaConsumer;
 
     @Inject
     public Vps4Consumer(KafkaConfiguration kafkaConfig, MessageHandler messageHandler) {
@@ -39,9 +38,9 @@ public class Vps4Consumer implements Runnable {
         this.messageHandler = messageHandler;
     }
 
-    
+
     @Override
-    public void run() {
+    public synchronized void run() {
 
         String threadName = Thread.currentThread().getName();
         logger.info("Starting consumer {} ...", threadName);
@@ -50,8 +49,10 @@ public class Vps4Consumer implements Runnable {
 
             List<String> topics = Arrays.asList(kafkaConfig.getTopic());
             logger.info("Topics: {}", topics);
+
             // Create a kafka consumer
             kafkaConsumer = new KafkaConsumer<>(kafkaConfig.getKafkaConsumerProps());
+
             // kafka consumer should subscribe to the topic
             kafkaConsumer.subscribe(topics);
 
@@ -62,23 +63,20 @@ public class Vps4Consumer implements Runnable {
 
                 for (ConsumerRecord<String, String> record : records) {
 
-                    Map<String, Object> data = new HashMap<>();
-                    data.put("partition", record.partition());
-                    data.put("offset", record.offset());
-                    data.put("value", record.value());
-
                     logger.info("Message retrieved: {}", record.value());
                     logger.info("Message handler {} will handle this message now... ", messageHandler.getClass().getName());
-                    
+
                     // handle the message
                     messageHandler.handleMessage(record.value());
+
+                    logger.info("offset: {}", record.offset());
                 }
             }
         }
         catch (WakeupException e) {
             // ignore for shutdown
-            logger.info("Invoking shutdown of kafka consumer {}: {} ", threadName, e);
             if (!closed.get()) {
+                logger.info("Consumer wakeup before close {}", threadName, e);
                 throw e;
             }
         }
@@ -94,11 +92,11 @@ public class Vps4Consumer implements Runnable {
         }
         finally {
             logger.info("Closing consumer {}", threadName);
-            
+
             try {
-                
+
                 kafkaConsumer.close();
-                
+
             } catch(InterruptException iex) {
                 logger.error("Caught exception during kafka consumer close action : ", iex);
             }
@@ -106,10 +104,15 @@ public class Vps4Consumer implements Runnable {
     }
 
     public void shutdown() {
-        // invoking shutdown of consumer
-        String threadName = Thread.currentThread().getName();
-        logger.info("Invoking shutdown of consumer {}...", threadName);
-        closed.set(true);
-        kafkaConsumer.wakeup();
+
+        if (closed.compareAndSet(false, true)) {
+
+            String threadName = Thread.currentThread().getName();
+            logger.info("Invoking shutdown of consumer {}...", threadName);
+
+            kafkaConsumer.wakeup();
+        }
     }
+
+
 }
