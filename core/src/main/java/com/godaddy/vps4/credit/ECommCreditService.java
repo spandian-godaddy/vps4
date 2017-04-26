@@ -53,8 +53,8 @@ public class ECommCreditService implements CreditService {
         return new VirtualMachineCredit(UUID.fromString(account.account_guid),
                 Integer.parseInt(account.plan_features.get("tier")),
                 Integer.parseInt(account.plan_features.get("managed_level")),
-                Integer.parseInt(account.plan_features.get("monitoring")),
-                account.plan_features.get("os"),
+                Integer.parseInt(account.plan_features.getOrDefault("monitoring", "0")),
+                account.plan_features.get("operatingsystem"),
                 account.plan_features.get("control_panel_type"),
                 null, // create date was in credit table but not in ecomm account
                 stringToInstant(account.product_meta.get("provision_date")),
@@ -89,10 +89,11 @@ public class ECommCreditService implements CreditService {
 
     @Override
     public void createVirtualMachineCredit(UUID orionGuid, String operatingSystem, String controlPanel,
-                                          int tier, int managedLevel, String shopperId) {
+                                          int tier, int managedLevel, int monitoring, String shopperId) {
         Map<String, String> planFeatures = new HashMap<>();
         planFeatures.put("tier", String.valueOf(tier));
         planFeatures.put("managed_level", String.valueOf(managedLevel));
+        planFeatures.put("monitoring", String.valueOf(monitoring));
         planFeatures.put("operatingsystem", operatingSystem);
         planFeatures.put("control_panel_type", controlPanel);
 
@@ -110,7 +111,7 @@ public class ECommCreditService implements CreditService {
     public synchronized void createCreditIfNoneExists(Vps4User vps4User) {
         String shopperId = vps4User.getShopperId();
         if (getVirtualMachineCredits(shopperId).isEmpty())
-            this.createVirtualMachineCredit(UUID.randomUUID(), "linux", "cpanel", 10, 1, shopperId);
+            this.createVirtualMachineCredit(UUID.randomUUID(), "linux", "cpanel", 10, 1, 0, shopperId);
     }
 
     @Override

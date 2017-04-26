@@ -147,7 +147,7 @@ public class SupportResource {
 
         creditService.createVirtualMachineCredit(orionGuid,
                 request.operatingSystem, request.controlPanel,
-                request.tier, request.managedLevel, request.shopperId);
+                request.tier, request.managedLevel, request.monitoring, request.shopperId);
 
         VirtualMachineCredit credit = creditService.getVirtualMachineCredit(orionGuid);
         return credit;
@@ -156,6 +156,7 @@ public class SupportResource {
     public static class CreateCreditRequest {
         public int tier;
         public int managedLevel;
+        public int monitoring;
         public String operatingSystem;
         public String controlPanel;
         public String shopperId;

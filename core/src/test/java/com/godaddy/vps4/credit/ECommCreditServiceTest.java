@@ -88,7 +88,7 @@ public class ECommCreditServiceTest {
         assertEquals(orionGuid, credit.orionGuid);
         assertEquals(Integer.parseInt(account.plan_features.get("tier")), credit.tier);
         assertEquals(Integer.parseInt(account.plan_features.get("managed_level")), credit.managedLevel);
-        assertEquals(account.plan_features.get("os"), credit.operatingSystem);
+        assertEquals(account.plan_features.get("operatingsystem"), credit.operatingSystem);
         assertEquals(account.plan_features.get("control_panel_type"), credit.controlPanel);
         assertEquals(null, credit.createDate);
         assertEquals(null, credit.provisionDate);
@@ -145,8 +145,20 @@ public class ECommCreditServiceTest {
     }
 
     @Test
+    public void testGetCreditsNoAvailableCredits() throws Exception {
+        when(ecommService.getAccounts(account.shopper_id)).thenReturn(Arrays.asList(account));
+
+        List<VirtualMachineCredit> credits = creditService.getVirtualMachineCredits(account.shopper_id);
+        assertEquals(1, credits.size());
+
+        account.product_meta.put("data_center", "phx");
+        credits = creditService.getVirtualMachineCredits(account.shopper_id);
+        assertEquals(0, credits.size());
+    }
+
+    @Test
     public void testCreateCreditCallsCreateAccount() throws Exception {
-        creditService.createVirtualMachineCredit(orionGuid, "linux", "cpanel", 10, 1, account.shopper_id);
+        creditService.createVirtualMachineCredit(orionGuid, "linux", "cpanel", 10, 1, 0, account.shopper_id);
 
         ArgumentCaptor<Account> argument = ArgumentCaptor.forClass(Account.class);
         verify(ecommService).createAccount(argument.capture());

@@ -221,7 +221,7 @@ public class VmResourceUserTest {
     private ProvisionVmRequest createProvisionRequest(String controlPanel) {
         UUID newGuid = UUID.randomUUID();
         orionGuids.add(newGuid);
-        creditService.createVirtualMachineCredit(newGuid, "linux", controlPanel, 10, 1, validUser.getShopperId());
+        creditService.createVirtualMachineCredit(newGuid, "linux", controlPanel, 10, 1, 0, validUser.getShopperId());
         ProvisionVmRequest provisionRequest = new ProvisionVmRequest();
         provisionRequest.orionGuid = newGuid;
         provisionRequest.dataCenterId = 1;

@@ -7,7 +7,8 @@ import com.godaddy.vps4.security.Vps4User;
 
 public interface CreditService {
 
-    void createVirtualMachineCredit(UUID orionGuid, String osType, String controlPanel, int tier, int managedLevel, String shopperId);
+    void createVirtualMachineCredit(UUID orionGuid, String osType, String controlPanel,
+            int tier, int managedLevel, int monitoring, String shopperId);
 
     VirtualMachineCredit getVirtualMachineCredit(UUID orionGuid);
 

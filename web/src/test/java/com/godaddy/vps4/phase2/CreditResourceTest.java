@@ -65,7 +65,7 @@ public class CreditResourceTest {
     public void setupTest() {
         validUser = userService.getOrCreateUserForShopper("validUserShopperId");
         invalidUser = userService.getOrCreateUserForShopper("invalidUserShopperId");
-        creditService.createVirtualMachineCredit(orionGuid, "linux", "cPanel", 10, 1, "validUserShopperId");
+        creditService.createVirtualMachineCredit(orionGuid, "linux", "cPanel", 10, 1, 0, "validUserShopperId");
     }
 
     @After
