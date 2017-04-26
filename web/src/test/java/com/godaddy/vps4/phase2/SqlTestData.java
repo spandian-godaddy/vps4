@@ -32,7 +32,7 @@ public class SqlTestData {
         VirtualMachineService virtualMachineService = new JdbcVirtualMachineService(dataSource);
         CreditService creditService = new JdbcCreditService(dataSource);
         long hfsVmId = getNextHfsVmId(dataSource);
-        creditService.createVirtualMachineCredit(orionGuid, "linux", "none", 10, 0, "TestUser");
+        creditService.createVirtualMachineCredit(orionGuid, "linux", "none", 10, 0, 0, "TestUser");
         ProvisionVirtualMachineParameters params = new ProvisionVirtualMachineParameters(vps4UserId, 1, "vps4-testing-", orionGuid,
                 "testVirtualMachine", 10, 1, imageName);
         VirtualMachine virtualMachine = virtualMachineService.provisionVirtualMachine(params);

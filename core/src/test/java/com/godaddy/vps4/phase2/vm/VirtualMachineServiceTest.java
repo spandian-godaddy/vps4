@@ -60,6 +60,7 @@ public class VirtualMachineServiceTest {
     Vps4User vps4User = new Vps4User(1, "TestUser");
     int tier = 10;
     int managedLevel = 0;
+    int monitoring = 0;
 
     @Before
     public void setup() {
@@ -84,7 +85,7 @@ public class VirtualMachineServiceTest {
 
     @Test
     public void testHasCPanel() {
-        creditService.createVirtualMachineCredit(orionGuid, "centos", "cpanel", tier, managedLevel, vps4User.getShopperId());
+        creditService.createVirtualMachineCredit(orionGuid, "centos", "cpanel", tier, managedLevel, monitoring, vps4User.getShopperId());
         vmCredits.add(orionGuid);
         ProvisionVirtualMachineParameters params = new ProvisionVirtualMachineParameters(vps4User.getId(), 1, "vps4-testing-",
                 orionGuid, "testServer", 10, 1, "centos-7-cPanel-11");
@@ -98,7 +99,7 @@ public class VirtualMachineServiceTest {
 
     @Test
     public void testHasPleskPanel() {
-        creditService.createVirtualMachineCredit(orionGuid, "windows", "plesk", tier, managedLevel, vps4User.getShopperId());
+        creditService.createVirtualMachineCredit(orionGuid, "windows", "plesk", tier, managedLevel, monitoring, vps4User.getShopperId());
         vmCredits.add(orionGuid);
         ProvisionVirtualMachineParameters params = new ProvisionVirtualMachineParameters(vps4User.getId(), 1, "vps4-testing-",
                 orionGuid, "testServer", 10, 1, "windows-2012r2-plesk-12.5");
@@ -111,7 +112,7 @@ public class VirtualMachineServiceTest {
 
     @Test
     public void testService() throws InterruptedException {
-        creditService.createVirtualMachineCredit(orionGuid, os, controlPanel, tier, managedLevel, vps4User.getShopperId());
+        creditService.createVirtualMachineCredit(orionGuid, os, controlPanel, tier, managedLevel, monitoring, vps4User.getShopperId());
 
         VirtualMachineCredit vmRequest = creditService.getVirtualMachineCredit(orionGuid);
 

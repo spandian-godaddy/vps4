@@ -26,11 +26,12 @@ public class JdbcCreditService implements CreditService {
     }
 
     @Override
-    public void createVirtualMachineCredit(UUID orionGuid, String operatingSystem, 
-            String controlPanel, int tier, int managedLevel, String shopperId) {
-        Sql.with(dataSource).exec("SELECT * FROM credit_create(?,?,?,?,?,?)",
+    public void createVirtualMachineCredit(UUID orionGuid, String operatingSystem, String controlPanel,
+            int tier, int managedLevel, int monitoring, String shopperId) {
+        Sql.with(dataSource).exec("INSERT INTO credit (orion_guid, operating_system, tier, control_panel,"
+                + " managed_level, monitoring, shopper_id) VALUES (?, ?, ?, ?, ?, ?, ?)",
                 null, orionGuid, operatingSystem, tier,
-                controlPanel, managedLevel, shopperId);
+                controlPanel, managedLevel, monitoring, shopperId);
     }
 
     @Override
@@ -65,7 +66,6 @@ public class JdbcCreditService implements CreditService {
     
     private VirtualMachineCredit mapVirtualMachineCredit(ResultSet rs) throws SQLException {
         Timestamp provisionDate = rs.getTimestamp("provision_date");
-        
         DataCenter dataCenter = mapDataCenter(rs);
 
         return new VirtualMachineCredit(java.util.UUID.fromString(rs.getString("orion_guid")), rs.getInt("tier"),
