@@ -15,7 +15,6 @@ public class VirtualMachine {
     public final String name;
     public final Image image;
     public final IpAddress primaryIpAddress;
-    public final DataCenter dataCenter;
     public final Instant validOn;
     public final Instant validUntil;
     public final String hostname;
@@ -29,7 +28,6 @@ public class VirtualMachine {
             String name,
             Image image,
             IpAddress primaryIpAddress,
-            DataCenter dataCenter,
             Instant validOn,
             Instant validUntil,
             String hostname,
@@ -42,7 +40,6 @@ public class VirtualMachine {
         this.name = name;
         this.image = image;
         this.primaryIpAddress = primaryIpAddress;
-        this.dataCenter = dataCenter;
         this.validOn = validOn;
         this.validUntil = validUntil;
         this.hostname = hostname;
@@ -58,20 +55,18 @@ public class VirtualMachine {
         this.name = virtualMachine.name;
         this.image = virtualMachine.image;
         this.primaryIpAddress = virtualMachine.primaryIpAddress;
-        this.dataCenter = virtualMachine.dataCenter;
         this.validOn = virtualMachine.validOn;
         this.validUntil = virtualMachine.validUntil;
         this.hostname = virtualMachine.hostname;
         this.accountStatus = virtualMachine.accountStatus;
     }
-
+    
     @Override
     public String toString() {
         return String.format(
                 "VirtualMachine [vmId=%s, hfsVmId=%d, orionGuid=%s, projectId=%d, spec=%s, name=%s, hostname=%s, image=%s, primaryIpAddress=%s, dataCenter=%s, accountStatus=%s, validOn=%s, validUntil=%s]",
                 vmId, hfsVmId, orionGuid, projectId, spec.name, name, hostname, image == null ? "" : image.imageName,
-                primaryIpAddress == null ? "" : primaryIpAddress.ipAddress, dataCenter == null ? "" : dataCenter.dataCenterName,
+                primaryIpAddress == null ? "" : primaryIpAddress.ipAddress,
                 accountStatus.toString(), validOn, validUntil);
     }
-
 }

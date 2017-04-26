@@ -22,6 +22,8 @@ import org.junit.Test;
 import org.mockito.ArgumentCaptor;
 
 import com.godaddy.vps4.security.Vps4User;
+import com.godaddy.vps4.vm.DataCenter;
+import com.godaddy.vps4.vm.DataCenterService;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
 
@@ -32,7 +34,8 @@ import gdg.hfs.vhfs.ecomm.MetadataUpdate;
 public class ECommCreditServiceTest {
 
     ECommService ecommService = mock(ECommService.class);
-    CreditService creditService = new ECommCreditService(ecommService);
+    DataCenterService dcService = mock(DataCenterService.class);
+    CreditService creditService = new ECommCreditService(ecommService, dcService);
 
     Injector injector = Guice.createInjector(binder -> {
         binder.bind(ECommService.class).toInstance(ecommService);
@@ -64,12 +67,23 @@ public class ECommCreditServiceTest {
         creditService.getVirtualMachineCredit(orionGuid);
         verify(ecommService).getAccount(eq(orionGuid.toString()));
     }
+    
+    @Test
+    public void testGetCreditIncludesDataCenter(){
+        DataCenter dc = new DataCenter(1, "phx3");
+        account.product_meta.put("data_center", String.valueOf(dc.dataCenterId));
+        when(ecommService.getAccount(orionGuid.toString())).thenReturn(account);
+        VirtualMachineCredit credit = creditService.getVirtualMachineCredit(orionGuid);
+
+        assertEquals(orionGuid, credit.orionGuid);
+        
+        
+    }
 
     @Test
     public void testGetCreditMapsAccount() throws Exception {
         when(ecommService.getAccount(orionGuid.toString())).thenReturn(account);
         VirtualMachineCredit credit = creditService.getVirtualMachineCredit(orionGuid);
-        System.out.println(credit.toString());
 
         assertEquals(orionGuid, credit.orionGuid);
         assertEquals(Integer.parseInt(account.plan_features.get("tier")), credit.tier);
@@ -194,4 +208,6 @@ public class ECommCreditServiceTest {
         assertNull(newProdMeta.to.get("data_center"));
         assertNull(newProdMeta.to.get("provision_date"));
     }
+    
+    
 }

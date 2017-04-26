@@ -7,7 +7,10 @@ import static org.junit.Assert.assertTrue;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import javax.sql.DataSource;
 
@@ -21,53 +24,73 @@ import com.godaddy.hfs.jdbc.Sql;
 import com.godaddy.vps4.project.Project;
 import com.godaddy.vps4.project.ProjectService;
 import com.godaddy.vps4.project.jdbc.JdbcProjectService;
+import com.godaddy.vps4.security.Vps4User;
+import com.godaddy.vps4.security.Vps4UserService;
+import com.godaddy.vps4.security.jdbc.JdbcVps4UserService;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
 
-//These tests are broken. Remove the ignore once they have been fixed.
-@Ignore
 public class JdbcProjectServiceTest {
 
 	Injector injector = Guice.createInjector(new DatabaseModule());
     private DataSource dataSource;
+    
+    Map<String, Vps4User> users = new HashMap<String, Vps4User>();
+    Map<String, Project> projects = new HashMap<String, Project>();
 
     @Before
-    @After
-    public void truncate() throws SQLException {
+    public void setupTests() throws SQLException {
+        
         if (dataSource == null) {
             dataSource = injector.getInstance(DataSource.class);
         }
+        ProjectService ps = new JdbcProjectService(dataSource);
+        Vps4UserService vps4UserService = new JdbcVps4UserService(dataSource);
+        
+        
+        
         try (Connection conn = dataSource.getConnection()) {
             try (Statement statement = conn.createStatement()) {
-                statement.executeUpdate("TRUNCATE TABLE user_project_privilege CASCADE;");
-                statement.executeUpdate("TRUNCATE TABLE project CASCADE;");
-                statement.executeUpdate("TRUNCATE TABLE vps4_user CASCADE;");
+                users.put("user1", vps4UserService.getOrCreateUserForShopper("testuser1"));
+                users.put("user2", vps4UserService.getOrCreateUserForShopper("testuser2"));
+                projects.put("project4", ps.createProject("project4", users.get("user1").getId(), "unit-test"));
+                projects.put("project3", ps.createProject("project3", users.get("user1").getId(), "unit-test"));
+                projects.put("project2", ps.createProject("project2", users.get("user2").getId(), "unit-test"));
+                projects.put("project1", ps.createProject("project1", users.get("user2").getId(), "unit-test"));
+                
             }
+        }
+    }
+    
+    @After
+    public void teardownTests() throws SQLException{
+        if (dataSource == null) {
+            dataSource = injector.getInstance(DataSource.class);
+        }
+        ProjectService ps = new JdbcProjectService(dataSource);
+        try (Connection conn = dataSource.getConnection()) {
             try (Statement statement = conn.createStatement()) {
-                statement.executeUpdate("INSERT INTO vps4_user(vps4_user_id, shopper_id) VALUES (1, 'testuser1');");
-                statement.executeUpdate("INSERT INTO vps4_user(vps4_user_id, shopper_id) VALUES (2, 'testuser2');");
-                Sql.with(dataSource).exec("SELECT create_project(?, ?)",
-                        Sql.nextOrNull(rs -> rs.getLong(1)), "project4", 1);
-                Sql.with(dataSource).exec("SELECT create_project(?, ?)",
-                        Sql.nextOrNull(rs -> rs.getLong(1)), "project3", 1);
-                Sql.with(dataSource).exec("SELECT create_project(?, ?)",
-                        Sql.nextOrNull(rs -> rs.getLong(1)), "project2", 2);
-                Sql.with(dataSource).exec("SELECT create_project(?, ?)",
-                        Sql.nextOrNull(rs -> rs.getLong(1)), "project1", 2);
+                for(Vps4User user: users.values()){
+                    statement.executeUpdate("DELETE FROM user_project_privilege where vps4_user_id = " + user.getId() + ";");
+                    statement.executeUpdate("DELETE FROM vps4_user where vps4_user_id = " + user.getId() + ";");
+                }
             }
+        }
+        for (Project p : projects.values()){
+            ps.deleteProject(p.getProjectId());
         }
     }
 
     @Test
     public void testGetProjects() {
 		ProjectService ps = new JdbcProjectService(dataSource);
-        List<Project> projects = ps.getProjects(1, true);
+        List<Project> projects = ps.getProjects(users.get("user1").getId(), true);
         assertEquals(2, projects.size());
-        Project group1 = projects.stream().filter(group -> group.getName().equals("testProject1")).findFirst().get();
-        Project group2 = projects.stream().filter(group -> group.getName().equals("testProject2")).findFirst().get();
+        Project group1 = projects.stream().filter(group -> group.getName().equals("project4")).findFirst().get();
+        Project group2 = projects.stream().filter(group -> group.getName().equals("project3")).findFirst().get();
         assertNotNull(group1);
         assertNotNull(group2);
-        projects = ps.getProjects(3, true);
+        projects = ps.getProjects(users.get("user2").getId() + 1, true);
         assertEquals(0, projects.size());
     }
 
@@ -77,9 +100,9 @@ public class JdbcProjectServiceTest {
 
         String projectName = "testProject";
 
-        Project project = projectService.createProject(projectName, 1, 1, "vps4-test-");
+        Project project = projectService.createProject(projectName, users.get("user1").getId(), "vps4-test-");
         assertTrue(project.getProjectId() > 0);
         assertEquals(projectName, project.getName());
-        assertEquals("vps4-" + project.getProjectId(), project.getVhfsSgid());
+        assertEquals("vps4-test-" + project.getProjectId(), project.getVhfsSgid());
     }
 }

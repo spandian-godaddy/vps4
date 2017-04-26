@@ -11,6 +11,7 @@ import java.util.UUID;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 import javax.sql.DataSource;
@@ -164,8 +165,6 @@ public class VirtualMachineServiceTest {
         assertEquals(AccountStatus.ACTIVE, vm.accountStatus);
     }
 
-
-
     @Test
     public void testGetVirtualMachines() {
         List<UUID> createdVms = new ArrayList<>();
@@ -185,27 +184,20 @@ public class VirtualMachineServiceTest {
     @Test
     public void testGetOrCreateCredit() throws InterruptedException {
 
-        List<VirtualMachineCredit> requests = creditService.getVirtualMachineCredits(vps4User.getShopperId());
-        assertTrue(requests.isEmpty());
-
+        List<VirtualMachineCredit> credits = creditService.getVirtualMachineCredits(vps4User.getShopperId());
+        assertTrue(credits.isEmpty());
         int numberOfTasks = 10;
-        List<Callable<Void>> tasks = new ArrayList<>();
         for (int i = 0; i < numberOfTasks; i++) {
-            tasks.add(() -> {
                 creditService.createCreditIfNoneExists(vps4User);
-                return null;
-            });
         }
-        ExecutorService executor = Executors.newFixedThreadPool(numberOfTasks);
-        executor.invokeAll(tasks);
-
-        requests = creditService.getVirtualMachineCredits(vps4User.getShopperId());
-        assertEquals(1, requests.size());
-        UUID guidWithCredit = requests.get(0).orionGuid;
+        
+        credits = creditService.getVirtualMachineCredits(vps4User.getShopperId());
+        assertEquals(1, credits.size());
+        UUID guidWithCredit = credits.get(0).orionGuid;
         vmCredits.add(guidWithCredit);
 
         ProvisionVirtualMachineParameters params = new ProvisionVirtualMachineParameters(vps4User.getId(), 1, "vps4-testing-",
-                requests.get(0).orionGuid, "test", 10, 1, "centos-7");
+                credits.get(0).orionGuid, "test", 10, 1, "centos-7");
 
         VirtualMachine virtualMachine = virtualMachineService.provisionVirtualMachine(params);
         creditService.claimVirtualMachineCredit(guidWithCredit, 1);
@@ -214,16 +206,16 @@ public class VirtualMachineServiceTest {
 
 
         creditService.createCreditIfNoneExists(vps4User);
-        requests = creditService.getVirtualMachineCredits(vps4User.getShopperId());
-        assertTrue(requests.isEmpty());
+        credits = creditService.getVirtualMachineCredits(vps4User.getShopperId());
+        assertTrue(credits.isEmpty());
 
         virtualMachineService.destroyVirtualMachine(1);
         creditService.unclaimVirtualMachineCredit(guidWithCredit);
 
         creditService.createCreditIfNoneExists(vps4User);
-        requests = creditService.getVirtualMachineCredits(vps4User.getShopperId());
-        assertTrue(!requests.isEmpty());
-        vmCredits.add(requests.get(0).orionGuid);
+        credits = creditService.getVirtualMachineCredits(vps4User.getShopperId());
+        assertTrue(!credits.isEmpty());
+        vmCredits.add(credits.get(0).orionGuid);
     }
 
 }

@@ -8,7 +8,7 @@ public interface ProjectService {
 
     Project getProject(long projectId);
 
-    Project createProject(String name, long userId, int dataCenterId, String sgidPrefix);
+    Project createProject(String name, long userId, String sgidPrefix);
 
     Project deleteProject(long projectId);
 

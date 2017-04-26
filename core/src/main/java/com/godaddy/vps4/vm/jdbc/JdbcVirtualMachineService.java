@@ -33,13 +33,11 @@ public class JdbcVirtualMachineService implements VirtualMachineService {
             + "vms.tier, vms.cpu_core_count, vms.memory_mib, vms.disk_gib, vms.valid_on as \"spec_valid_on\", "
             + "vms.valid_until as \"spec_valid_until\", vms.name as \"spec_vps4_name\", "
             + "image.name, image.hfs_name, image.image_id, image.control_panel_id, image.os_type_id, "
-            + "ip.ip_address_id, ip.ip_address, ip.ip_address_type_id, ip.valid_on, ip.valid_until, ip.ping_check_id, "
-            + "dc.data_center_id, dc.description "
+            + "ip.ip_address_id, ip.ip_address, ip.ip_address_type_id, ip.valid_on, ip.valid_until, ip.ping_check_id "
             + "FROM virtual_machine vm "
             + "JOIN virtual_machine_spec vms ON vms.spec_id=vm.spec_id "
             + "JOIN image ON image.image_id=vm.image_id "
             + "JOIN project prj ON prj.project_id=vm.project_id "
-            + "JOIN data_center dc ON dc.data_center_id=prj.data_center_id "
             + "LEFT JOIN ip_address ip ON ip.vm_id = vm.vm_id AND ip.ip_address_type_id = 1";
     @Inject
     public JdbcVirtualMachineService(DataSource dataSource) {
@@ -82,13 +80,12 @@ public class JdbcVirtualMachineService implements VirtualMachineService {
         UUID vmId = java.util.UUID.fromString(rs.getString("vm_id"));
         IpAddress ipAddress = mapIpAddress(rs);
         Image image = mapImage(rs);
-        DataCenter dataCenter = mapDataCenter(rs);
 
         return new VirtualMachine(vmId, rs.getLong("hfs_vm_id"),
                 java.util.UUID.fromString(rs.getString("orion_guid")),
                 rs.getLong("project_id"),
                 spec, rs.getString("vm_name"),
-                image, ipAddress, dataCenter,
+                image, ipAddress, 
                 rs.getTimestamp("vm_valid_on").toInstant(),
                 validUntil != null ? validUntil.toInstant() : null,
                 rs.getString("hostname"),
@@ -113,11 +110,6 @@ public class JdbcVirtualMachineService implements VirtualMachineService {
         image.operatingSystem = OperatingSystem.valueOf(rs.getInt("os_type_id"));
 
         return image;
-    }
-
-    private DataCenter mapDataCenter(ResultSet rs) throws SQLException {
-        return new DataCenter(rs.getInt("data_center_id"),
-                rs.getString("description"));
     }
 
     protected VirtualMachineSpec mapVirtualMachineSpec(ResultSet rs) throws SQLException {
@@ -145,11 +137,10 @@ public class JdbcVirtualMachineService implements VirtualMachineService {
     public VirtualMachine provisionVirtualMachine(ProvisionVirtualMachineParameters vmProvisionParameters)
     {
         UUID vmId = UUID.randomUUID();
-        Sql.with(dataSource).exec("SELECT * FROM virtual_machine_provision(?, ?, ?, ?, ?, ?, ?, ?, ?)",
+        Sql.with(dataSource).exec("SELECT * FROM virtual_machine_provision(?, ?, ?, ?, ?, ?, ?, ?)",
                 null,
                 vmId,
                 vmProvisionParameters.getVps4UserId(),
-                vmProvisionParameters.getDataCenterId(),
                 vmProvisionParameters.getSgidPrefix(),
                 vmProvisionParameters.getOrionGuid(),
                 vmProvisionParameters.getName(),

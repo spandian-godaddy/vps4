@@ -77,9 +77,7 @@ public class SupportResource {
         if(vps4User == null){
             throw new NotFoundException("Unknown shopper id: " + shopperId);
         }
-        List<VirtualMachine> virtualMachines = virtualMachineService.getVirtualMachinesForUser(vps4User.getId());
-
-        return virtualMachines;
+        return virtualMachineService.getVirtualMachinesForUser(vps4User.getId());
     }
 
     @GET

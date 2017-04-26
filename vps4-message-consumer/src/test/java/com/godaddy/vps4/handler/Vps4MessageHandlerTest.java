@@ -14,6 +14,7 @@ import java.util.UUID;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
+import org.mockito.Mockito;
 
 import com.godaddy.hfs.config.Config;
 import com.godaddy.vps4.credit.CreditService;
@@ -22,6 +23,8 @@ import com.godaddy.vps4.security.Vps4User;
 import com.godaddy.vps4.security.Vps4UserService;
 import com.godaddy.vps4.vm.AccountStatus;
 import com.godaddy.vps4.vm.ActionService;
+import com.godaddy.vps4.vm.DataCenter;
+import com.godaddy.vps4.vm.DataCenterService;
 import com.godaddy.vps4.vm.VirtualMachine;
 import com.godaddy.vps4.vm.VirtualMachineService;
 
@@ -36,6 +39,7 @@ public class Vps4MessageHandlerTest {
     ActionService actionServiceMock;
     Vps4UserService vps4UserServiceMock;
     CommandService commandServiceMock;
+    DataCenterService dcService;
     Config configMock;
 
     @Before
@@ -45,6 +49,8 @@ public class Vps4MessageHandlerTest {
         actionServiceMock = mock(ActionService.class);
         vps4UserServiceMock = mock(Vps4UserService.class);
         commandServiceMock = mock(CommandService.class);
+        dcService = mock(DataCenterService.class);
+        when(dcService.getDataCenter(5)).thenReturn(new DataCenter(5,"testDataCenter"));
         configMock = mock(Config.class);
         when(configMock.get("nodeping.accountid")).thenReturn("1");
     }
@@ -53,11 +59,13 @@ public class Vps4MessageHandlerTest {
     public void handleMessageNoDifferenceTest() throws MessageHandlerException {
         
         VirtualMachine vm = new VirtualMachine(UUID.randomUUID(), 123L, UUID.fromString("e36b4412-ec52-420f-86fd-cf5332cf0c88"), 321L, null,
-                "TestVm", null, null, null, null,
+                "TestVm", null, null, null,
                 null, null, AccountStatus.ACTIVE);
         when(vmServiceMock.getVirtualMachineByOrionGuid(vm.orionGuid)).thenReturn(vm);
         
-        VirtualMachineCredit vmCredit = new VirtualMachineCredit(vm.orionGuid, 10, 0, 1, "linux", "none", null, null, "TestShopper", AccountStatus.ACTIVE);
+        DataCenter dc = dcService.getDataCenter(5);
+        
+        VirtualMachineCredit vmCredit = new VirtualMachineCredit(vm.orionGuid, 10, 0, 1, "linux", "none", null, null, "TestShopper", AccountStatus.ACTIVE, dc);
         when(creditServiceMock.getVirtualMachineCredit(vmCredit.orionGuid)).thenReturn(vmCredit);
         
         MessageHandler handler = new Vps4MessageHandler(vmServiceMock,
@@ -123,12 +131,14 @@ public class Vps4MessageHandlerTest {
     public void handleMessageRemovedTest() throws MessageHandlerException {
 
         VirtualMachine vm = new VirtualMachine(UUID.randomUUID(), 123L, UUID.fromString("e36b4412-ec52-420f-86fd-cf5332cf0c88"), 321L, null,
-                "TestVm", null, null, null, null,
+                "TestVm", null, null, null,
                 null, null, AccountStatus.ACTIVE);
         when(vmServiceMock.getVirtualMachineByOrionGuid(vm.orionGuid)).thenReturn(vm);
 
+        DataCenter dc = dcService.getDataCenter(5);
+        
         VirtualMachineCredit vmCredit = new VirtualMachineCredit(vm.orionGuid, 10, 0, 1, "linux", "none", null, null, "TestShopper",
-                AccountStatus.REMOVED);
+                AccountStatus.REMOVED, dc);
         when(creditServiceMock.getVirtualMachineCredit(vmCredit.orionGuid)).thenReturn(vmCredit);
 
         Vps4User user = new Vps4User(123, vmCredit.shopperId);

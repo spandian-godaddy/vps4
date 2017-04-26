@@ -31,30 +31,32 @@ public class JdbcProjectService implements ProjectService {
 
         if (active) {
             return Sql.with(dataSource).exec(
-                    "SELECT project_id," +
-                            "project_name	," +
-                            "status_id," +
-                            "vhfs_sgid," +
-                            // "billing_account_uid," +
-                            "data_center_id," +
-                            "valid_on," +
-                            "valid_until" +
-                            " FROM get_user_projects_active(?)",
+                    "SELECT "
+                    + "p.project_id, "
+                    + "p.project_name, "
+                    + "p.status_id, "
+                    + "p.vhfs_sgid, "
+                    + "p.valid_on, "
+                    + "p.valid_until "
+                    + "FROM project p "
+                    + "INNER JOIN user_project_privilege upp ON p.project_id = upp.project_id "
+                    + "WHERE upp.vps4_user_id = ? AND p.valid_until > NOW()",
                     Sql.listOf(this::mapProject),
                     userId);
 
         }
         else {
             return Sql.with(dataSource).exec(
-                    "SELECT project_id," +
-                            "project_name," +
-                            "status_id," +
-                            "vhfs_sgid," +
-                            // "billing_account_uid," +
-                            "data_center_id," +
-                            "valid_on," +
-                            "valid_until" +
-                            " FROM get_user_projects(?)",
+                    "SELECT "
+                    + "p.project_id, "
+                    + "p.project_name, "
+                    + "p.status_id, "
+                    + "p.vhfs_sgid, "
+                    + "p.valid_on, "
+                    + "p.valid_until "
+                    + "FROM project p "
+                    + "INNER JOIN user_project_privilege upp ON p.project_id = upp.project_id "
+                    + "WHERE upp.vps4_user_id = ?",
                     Sql.listOf(this::mapProject),
                     userId);
         }
@@ -64,8 +66,6 @@ public class JdbcProjectService implements ProjectService {
         return new Project(rs.getLong("project_id"),
                 rs.getString("project_name"),
                 rs.getString("vhfs_sgid"),
-                // java.util.UUID.fromString(rs.getString("billing_account_uid")),
-                rs.getInt("data_center_id"),
                 rs.getTimestamp("valid_on").toInstant(),
                 rs.getTimestamp("valid_until").toInstant());
     }
@@ -77,11 +77,9 @@ public class JdbcProjectService implements ProjectService {
                         "project_name," +
                         "status_id," +
                         "vhfs_sgid," +
-                        // "billing_account_uid," +
-                        "data_center_id," +
                         "valid_on," +
                         "valid_until" +
-                        " FROM get_project(?)",
+                        " FROM project where project_id = ?",
                 Sql.nextOrNull(this::mapProject),
                 project_id);
     }
@@ -106,11 +104,11 @@ public class JdbcProjectService implements ProjectService {
     }
 
     @Override
-    public Project createProject(String name, long userId, int dataCenterId, String sgidPrefix) {
+    public Project createProject(String name, long userId, String sgidPrefix) {
         logger.info("creating project: '{}' for user {}", name, userId);
-        long newProjectId = Sql.with(dataSource).exec("SELECT * FROM create_project(?, ?, ?, ?)",
+        long newProjectId = Sql.with(dataSource).exec("SELECT * FROM create_project(?, ?, ?)",
                 Sql.nextOrNull(rs -> rs.getLong(1)),
-                name, userId, dataCenterId, sgidPrefix);
+                name, userId, sgidPrefix);
 
         return getProject(newProjectId);
     }

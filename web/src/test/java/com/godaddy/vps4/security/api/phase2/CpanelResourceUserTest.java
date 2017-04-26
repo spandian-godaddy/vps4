@@ -91,7 +91,7 @@ public class CpanelResourceUserTest {
         centOrionGuid = UUID.randomUUID();
         validUser = userService.getOrCreateUserForShopper("validUserShopperId");
         invalidUser = userService.getOrCreateUserForShopper("invalidUserShopperId");
-        project = projService.createProject("TestProject", validUser.getId(), 1, "vps4-test-");
+        project = projService.createProject("TestProject", validUser.getId(), "vps4-test-");
         createCpanelVm();
         createCentVm();
     }

@@ -333,7 +333,7 @@ public class VmResource {
     @Path("/")
     public List<VirtualMachine> getVirtualMachines() {
         List<VirtualMachine> vms = virtualMachineService.getVirtualMachinesForUser(user.getId());
-
+        
         vms = vms.stream().filter(vm -> vm.validUntil.isAfter(Instant.now())).collect(Collectors.toList());
 
         return vms;
@@ -348,6 +348,7 @@ public class VmResource {
         privilegeService.requireAnyPrivilegeToProjectId(user, virtualMachine.projectId);
 
         Vm vm = getVmFromVmVertical(virtualMachine.hfsVmId);
+
         return new VirtualMachineDetails(vm);
     }
 

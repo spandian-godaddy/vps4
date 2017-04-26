@@ -14,6 +14,8 @@ import org.slf4j.LoggerFactory;
 
 import com.godaddy.vps4.security.Vps4User;
 import com.godaddy.vps4.vm.AccountStatus;
+import com.godaddy.vps4.vm.DataCenter;
+import com.godaddy.vps4.vm.DataCenterService;
 
 import gdg.hfs.vhfs.ecomm.Account;
 import gdg.hfs.vhfs.ecomm.ECommService;
@@ -25,10 +27,12 @@ public class ECommCreditService implements CreditService {
     private static final Logger logger = LoggerFactory.getLogger(ECommCreditService.class);
 
     final ECommService ecommService;
+    final DataCenterService dataCenterService;
 
     @Inject
-    public  ECommCreditService(ECommService ecommService) {
+    public  ECommCreditService(ECommService ecommService, DataCenterService dataCenterService) {
         this.ecommService = ecommService;
+        this.dataCenterService = dataCenterService;
     }
 
     @Override
@@ -45,6 +49,7 @@ public class ECommCreditService implements CreditService {
     }
 
     private VirtualMachineCredit mapVirtualMachineCredit(Account account) {
+        DataCenter dc = getDataCenter(account);
         return new VirtualMachineCredit(UUID.fromString(account.account_guid),
                 Integer.parseInt(account.plan_features.get("tier")),
                 Integer.parseInt(account.plan_features.get("managed_level")),
@@ -54,7 +59,16 @@ public class ECommCreditService implements CreditService {
                 null, // create date was in credit table but not in ecomm account
                 stringToInstant(account.product_meta.get("provision_date")),
                 account.shopper_id,
-                AccountStatus.valueOf(account.status.name().toUpperCase()));
+                AccountStatus.valueOf(account.status.name().toUpperCase()),
+                dc);
+    }
+    
+    private DataCenter getDataCenter(Account account) {
+        if(account.product_meta.containsKey("data_center")){
+            int dcId = Integer.valueOf(account.product_meta.get("data_center"));
+            return this.dataCenterService.getDataCenter(dcId);
+        }
+        return null;
     }
 
     private Instant stringToInstant(String provisionDate) {
