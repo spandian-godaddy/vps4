@@ -24,6 +24,20 @@ import gdg.hfs.vhfs.ecomm.MetadataUpdate;
 
 public class ECommCreditService implements CreditService {
 
+    private interface ProductMeta{
+        public static final String DATA_CENTER = "data_center";
+        public static final String PRODUCT_ID = "product_id";
+    }
+
+    private interface PlanFeatures{
+        public static final String TIER = "tier";
+        public static final String MANAGED_LEVEL = "managed_level";
+        public static final String MONITORING = "monitoring";
+        public static final String OPERATING_SYSTEM = "operatingsystem";
+        public static final String CONTROL_PANEL_TYPE = "control_panel_type";
+        public static final String PROVISION_DATE = "provision_date";
+    }
+
     private static final Logger logger = LoggerFactory.getLogger(ECommCreditService.class);
 
     final ECommService ecommService;
@@ -49,23 +63,31 @@ public class ECommCreditService implements CreditService {
     }
 
     private VirtualMachineCredit mapVirtualMachineCredit(Account account) {
-        DataCenter dc = getDataCenter(account);
         return new VirtualMachineCredit(UUID.fromString(account.account_guid),
-                Integer.parseInt(account.plan_features.get("tier")),
-                Integer.parseInt(account.plan_features.get("managed_level")),
-                Integer.parseInt(account.plan_features.getOrDefault("monitoring", "0")),
-                account.plan_features.get("operatingsystem"),
-                account.plan_features.get("control_panel_type"),
+                Integer.parseInt(account.plan_features.get(PlanFeatures.TIER)),
+                Integer.parseInt(account.plan_features.get(PlanFeatures.MANAGED_LEVEL)),
+                Integer.parseInt(account.plan_features.getOrDefault(PlanFeatures.MONITORING, "0")),
+                account.plan_features.get(PlanFeatures.OPERATING_SYSTEM),
+                account.plan_features.get(PlanFeatures.CONTROL_PANEL_TYPE),
                 null, // create date was in credit table but not in ecomm account
-                stringToInstant(account.product_meta.get("provision_date")),
+                stringToInstant(account.product_meta.get(PlanFeatures.PROVISION_DATE)),
                 account.shopper_id,
                 AccountStatus.valueOf(account.status.name().toUpperCase()),
-                dc);
+                getDataCenter(account), getProductId(account));
     }
-    
+
+    private UUID getProductId(Account account) {
+        String productIdStr = account.product_meta.get(ProductMeta.PRODUCT_ID);
+        UUID productId = null;
+        if (productIdStr != null){
+            productId = UUID.fromString(productIdStr);
+        }
+        return productId;
+    }
+
     private DataCenter getDataCenter(Account account) {
-        if(account.product_meta.containsKey("data_center")){
-            int dcId = Integer.valueOf(account.product_meta.get("data_center"));
+        if(account.product_meta.containsKey(ProductMeta.DATA_CENTER)){
+            int dcId = Integer.valueOf(account.product_meta.get(ProductMeta.DATA_CENTER));
             return this.dataCenterService.getDataCenter(dcId);
         }
         return null;
@@ -82,7 +104,7 @@ public class ECommCreditService implements CreditService {
         List<Account> accounts = ecommService.getAccounts(shopperId);
         return accounts.stream()
                 .filter(a -> a.status == Account.Status.active)
-                .filter(a -> !a.product_meta.containsKey("data_center"))
+                .filter(a -> !a.product_meta.containsKey(ProductMeta.DATA_CENTER))
                 .map(this::mapVirtualMachineCredit)
                 .collect(Collectors.toList());
     }
@@ -91,11 +113,11 @@ public class ECommCreditService implements CreditService {
     public void createVirtualMachineCredit(UUID orionGuid, String operatingSystem, String controlPanel,
                                           int tier, int managedLevel, int monitoring, String shopperId) {
         Map<String, String> planFeatures = new HashMap<>();
-        planFeatures.put("tier", String.valueOf(tier));
-        planFeatures.put("managed_level", String.valueOf(managedLevel));
-        planFeatures.put("monitoring", String.valueOf(monitoring));
-        planFeatures.put("operatingsystem", operatingSystem);
-        planFeatures.put("control_panel_type", controlPanel);
+        planFeatures.put(PlanFeatures.TIER, String.valueOf(tier));
+        planFeatures.put(PlanFeatures.MANAGED_LEVEL, String.valueOf(managedLevel));
+        planFeatures.put(PlanFeatures.MONITORING, String.valueOf(monitoring));
+        planFeatures.put(PlanFeatures.OPERATING_SYSTEM, operatingSystem);
+        planFeatures.put(PlanFeatures.CONTROL_PANEL_TYPE, controlPanel);
 
         Account account = new Account();
         account.shopper_id = shopperId;
@@ -115,14 +137,16 @@ public class ECommCreditService implements CreditService {
     }
 
     @Override
-    public void claimVirtualMachineCredit(UUID orionGuid, int dataCenterId) {
+    public void claimVirtualMachineCredit(UUID orionGuid, int dataCenterId, UUID productId) {
         Map<String,String> from = new HashMap<>();
-        from.put("data_center", null);
-        from.put("provision_date", null);
+        from.put(ProductMeta.DATA_CENTER, null);
+        from.put(PlanFeatures.PROVISION_DATE, null);
+        from.put(ProductMeta.PRODUCT_ID, null);
 
         Map<String,String> to = new HashMap<>();
-        to.put("data_center", String.valueOf(dataCenterId));
-        to.put("provision_date", Instant.now().toString());
+        to.put(ProductMeta.DATA_CENTER, String.valueOf(dataCenterId));
+        to.put(PlanFeatures.PROVISION_DATE, Instant.now().toString());
+        to.put(ProductMeta.PRODUCT_ID, productId.toString());
 
         MetadataUpdate prodMeta = new MetadataUpdate();
         prodMeta.from = from;
@@ -135,12 +159,14 @@ public class ECommCreditService implements CreditService {
     public void unclaimVirtualMachineCredit(UUID orionGuid) {
         Account account = ecommService.getAccount(orionGuid.toString());
         Map<String,String> from = new HashMap<>();
-        from.put("data_center", account.product_meta.get("data_center"));
-        from.put("provision_date", account.product_meta.get("provision_date"));
+        from.put(ProductMeta.DATA_CENTER, account.product_meta.get(ProductMeta.DATA_CENTER));
+        from.put(PlanFeatures.PROVISION_DATE, account.product_meta.get(PlanFeatures.PROVISION_DATE));
+        from.put(ProductMeta.PRODUCT_ID, account.product_meta.get(ProductMeta.PRODUCT_ID));
 
         Map<String,String> to = new HashMap<>();
-        to.put("data_center", null);
-        to.put("provision_date", null);
+        to.put(ProductMeta.DATA_CENTER, null);
+        to.put(PlanFeatures.PROVISION_DATE, null);
+        to.put(ProductMeta.PRODUCT_ID, null);
 
         MetadataUpdate prodMeta = new MetadataUpdate();
         prodMeta.from = from;

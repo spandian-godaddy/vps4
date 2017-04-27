@@ -47,8 +47,8 @@ public class SqlTestData {
         Sql.with(dataSource).exec("DELETE FROM ip_address WHERE vm_id = ?", null, vm.vmId);
         Sql.with(dataSource).exec("DELETE FROM vm_user WHERE vm_id = ?", null, vm.vmId);
         Sql.with(dataSource).exec("DELETE FROM vm_action where vm_id = ?", null, vm.vmId);
-        Sql.with(dataSource).exec("DELETE FROM virtual_machine WHERE vm_id = ?", null, vmId);
         Sql.with(dataSource).exec("DELETE FROM credit WHERE orion_guid = ?", null, vm.orionGuid);
+        Sql.with(dataSource).exec("DELETE FROM virtual_machine WHERE vm_id = ?", null, vmId);
         Sql.with(dataSource).exec("DELETE FROM user_project_privilege WHERE project_id = ?", null, vm.projectId);
         Sql.with(dataSource).exec("DELETE FROM project WHERE project_id = ?", null, vm.projectId);
     }

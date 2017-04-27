@@ -67,7 +67,7 @@ public class ECommCreditServiceTest {
         creditService.getVirtualMachineCredit(orionGuid);
         verify(ecommService).getAccount(eq(orionGuid.toString()));
     }
-    
+
     @Test
     public void testGetCreditIncludesDataCenter(){
         DataCenter dc = new DataCenter(1, "phx3");
@@ -76,8 +76,16 @@ public class ECommCreditServiceTest {
         VirtualMachineCredit credit = creditService.getVirtualMachineCredit(orionGuid);
 
         assertEquals(orionGuid, credit.orionGuid);
-        
-        
+    }
+
+    @Test
+    public void testGetCreditIncludesProductId(){
+        UUID vmId = UUID.randomUUID();
+        account.product_meta.put("product_id", vmId.toString());
+        when(ecommService.getAccount(orionGuid.toString())).thenReturn(account);
+        VirtualMachineCredit credit = creditService.getVirtualMachineCredit(orionGuid);
+
+        assertEquals(vmId, credit.productId);
     }
 
     @Test
@@ -191,7 +199,8 @@ public class ECommCreditServiceTest {
     @Test
     public void testClaimCreditCallsUpdateProdMeta() throws Exception {
         int phx3 = 1;
-        creditService.claimVirtualMachineCredit(orionGuid, phx3);
+        UUID vmId = UUID.randomUUID();
+        creditService.claimVirtualMachineCredit(orionGuid, phx3, vmId);
 
         ArgumentCaptor<MetadataUpdate> argument = ArgumentCaptor.forClass(MetadataUpdate.class);
         verify(ecommService).updateProductMetadata(eq(orionGuid.toString()), argument.capture());
@@ -220,6 +229,6 @@ public class ECommCreditServiceTest {
         assertNull(newProdMeta.to.get("data_center"));
         assertNull(newProdMeta.to.get("provision_date"));
     }
-    
-    
+
+
 }

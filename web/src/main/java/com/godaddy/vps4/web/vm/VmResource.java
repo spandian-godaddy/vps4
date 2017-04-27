@@ -21,9 +21,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.godaddy.hfs.config.Config;
-import com.godaddy.vps4.credit.VirtualMachineCredit;
 import com.godaddy.vps4.credit.CreditService;
-import com.godaddy.vps4.orchestration.vm.Vps4ProvisionVm;
+import com.godaddy.vps4.credit.VirtualMachineCredit;
 import com.godaddy.vps4.orchestration.vm.Vps4DestroyVm;
 import com.godaddy.vps4.orchestration.vm.Vps4ProvisionVm;
 import com.godaddy.vps4.orchestration.vm.Vps4RestartVm;
@@ -37,6 +36,7 @@ import com.godaddy.vps4.security.jdbc.AuthorizationException;
 import com.godaddy.vps4.vm.Action;
 import com.godaddy.vps4.vm.ActionService;
 import com.godaddy.vps4.vm.ActionType;
+import com.godaddy.vps4.vm.DataCenter;
 import com.godaddy.vps4.vm.ImageService;
 import com.godaddy.vps4.vm.ProvisionVmInfo;
 import com.godaddy.vps4.vm.VirtualMachine;
@@ -49,7 +49,6 @@ import com.godaddy.vps4.web.util.Commands;
 
 import gdg.hfs.orchestration.CommandService;
 import gdg.hfs.orchestration.CommandState;
-import gdg.hfs.vhfs.cpanel.CPanelService;
 import gdg.hfs.vhfs.vm.CreateVMWithFlavorRequest;
 import gdg.hfs.vhfs.vm.Vm;
 import gdg.hfs.vhfs.vm.VmService;
@@ -86,8 +85,6 @@ public class VmResource {
             CreditService creditService,
             ProjectService projectService,
             ImageService imageService,
-            com.godaddy.vps4.network.NetworkService vps4NetworkService,
-            CPanelService cPanelService,
             ActionService actionService,
             CommandService commandService,
             Config config) {
@@ -112,7 +109,6 @@ public class VmResource {
     public VirtualMachine getVm(@PathParam("vmId") UUID vmId) {
 
         logger.info("getting vm with id {}", vmId);
-
         VirtualMachine virtualMachine = virtualMachineService.getVirtualMachine(vmId);
 
         if (virtualMachine == null || virtualMachine.validUntil.isBefore(Instant.now())) {
@@ -216,7 +212,7 @@ public class VmResource {
         logger.info("provisioning vm with orionGuid {}", provisionRequest.orionGuid);
 
         VirtualMachineCredit vmCredit = verifyUserHasAccessToCredit(provisionRequest.orionGuid);
-   
+
         if(imageService.getImages(vmCredit.operatingSystem, vmCredit.controlPanel, provisionRequest.image).size() == 0){
             // verify that the image matches the request (control panel, managed level, OS)
             String message = String.format("The image %s is not valid for this credit.", provisionRequest.image);
@@ -230,7 +226,7 @@ public class VmResource {
                     sgidPrefix, provisionRequest.orionGuid, provisionRequest.name, vmCredit.tier, vmCredit.managedLevel,
                     provisionRequest.image);
             virtualMachine = virtualMachineService.provisionVirtualMachine(params);
-            creditService.claimVirtualMachineCredit(provisionRequest.orionGuid, provisionRequest.dataCenterId);
+            creditService.claimVirtualMachineCredit(provisionRequest.orionGuid, provisionRequest.dataCenterId, virtualMachine.vmId);
         }
         catch (Exception e) {
             throw new Vps4Exception("PROVISION_VM_FAILED", e.getMessage(), e);
@@ -333,10 +329,7 @@ public class VmResource {
     @Path("/")
     public List<VirtualMachine> getVirtualMachines() {
         List<VirtualMachine> vms = virtualMachineService.getVirtualMachinesForUser(user.getId());
-        
-        vms = vms.stream().filter(vm -> vm.validUntil.isAfter(Instant.now())).collect(Collectors.toList());
-
-        return vms;
+        return vms.stream().filter(vm -> vm.validUntil.isAfter(Instant.now())).collect(Collectors.toList());
     }
 
 
@@ -345,17 +338,13 @@ public class VmResource {
     @Path("/{vmId}/details")
     public VirtualMachineDetails getVirtualMachineDetails(@PathParam("vmId") UUID vmId) {
         VirtualMachine virtualMachine = getVm(vmId);
-        privilegeService.requireAnyPrivilegeToProjectId(user, virtualMachine.projectId);
-
         Vm vm = getVmFromVmVertical(virtualMachine.hfsVmId);
-
         return new VirtualMachineDetails(vm);
     }
 
     private Vm getVmFromVmVertical(long vmId) {
         try {
-            Vm vm = vmService.getVm(vmId);
-            return vm;
+            return vmService.getVm(vmId);
         }
         catch (Exception e) {
             logger.warn("Cannot find VM ID {} in vm vertical", vmId);
@@ -367,9 +356,8 @@ public class VmResource {
     @Path("/{vmId}/withDetails")
     public VirtualMachineWithDetails getVirtualMachineWithDetails(@PathParam("vmId") UUID vmId) {
         VirtualMachine virtualMachine = getVm(vmId);
-        privilegeService.requireAnyPrivilegeToProjectId(user, virtualMachine.projectId);
-
+        DataCenter dc = creditService.getVirtualMachineCredit(virtualMachine.orionGuid).dataCenter;
         Vm vm = getVmFromVmVertical(virtualMachine.hfsVmId);
-        return new VirtualMachineWithDetails(virtualMachine, new VirtualMachineDetails(vm));
+        return new VirtualMachineWithDetails(virtualMachine, new VirtualMachineDetails(vm), dc);
     }
 }

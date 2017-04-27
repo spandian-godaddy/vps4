@@ -16,7 +16,7 @@ public interface CreditService {
 
     void createCreditIfNoneExists(Vps4User vps4User);
 
-    void claimVirtualMachineCredit(UUID orionGuid, int dataCenterId);
+    void claimVirtualMachineCredit(UUID orionGuid, int dataCenterId, UUID productId);
 
     void unclaimVirtualMachineCredit(UUID orionGuid);
 }

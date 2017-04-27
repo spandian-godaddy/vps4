@@ -10,8 +10,8 @@ import javax.inject.Inject;
 import javax.sql.DataSource;
 
 import com.godaddy.hfs.jdbc.Sql;
-import com.godaddy.vps4.credit.VirtualMachineCredit;
 import com.godaddy.vps4.credit.CreditService;
+import com.godaddy.vps4.credit.VirtualMachineCredit;
 import com.godaddy.vps4.security.Vps4User;
 import com.godaddy.vps4.vm.AccountStatus;
 import com.godaddy.vps4.vm.DataCenter;
@@ -53,27 +53,36 @@ public class JdbcCreditService implements CreditService {
     }
 
     @Override
-    public void claimVirtualMachineCredit(UUID orionGuid, int dataCenterId) {
-        Sql.with(dataSource).exec("UPDATE credit SET provision_date = NOW(), data_center_id = ? WHERE provision_date IS NULL AND orion_guid = ?",
-                null, dataCenterId, orionGuid);
+    public void claimVirtualMachineCredit(UUID orionGuid, int dataCenterId, UUID productId) {
+        Sql.with(dataSource).exec("UPDATE credit SET provision_date = NOW(), data_center_id = ?, product_id = ? WHERE provision_date IS NULL AND orion_guid = ?",
+                null, dataCenterId, productId, orionGuid);
     }
 
     @Override
     public void unclaimVirtualMachineCredit(UUID orionGuid) {
-        Sql.with(dataSource).exec("UPDATE credit SET provision_date = NULL WHERE provision_date IS NOT NULL AND orion_guid = ?",
+        Sql.with(dataSource).exec("UPDATE credit SET provision_date = NULL, product_id = NULL WHERE provision_date IS NOT NULL AND orion_guid = ?",
                 null, orionGuid);
     }
-    
+
     private VirtualMachineCredit mapVirtualMachineCredit(ResultSet rs) throws SQLException {
         Timestamp provisionDate = rs.getTimestamp("provision_date");
         DataCenter dataCenter = mapDataCenter(rs);
-
-        return new VirtualMachineCredit(java.util.UUID.fromString(rs.getString("orion_guid")), rs.getInt("tier"),
+        UUID productId = mapProductId(rs);
+        return new VirtualMachineCredit(UUID.fromString(rs.getString("orion_guid")), rs.getInt("tier"),
                 rs.getInt("managed_level"), rs.getInt("monitoring"), rs.getString("operating_system"), rs.getString("control_panel"),
                 rs.getTimestamp("create_date").toInstant(), provisionDate != null ? provisionDate.toInstant() : null,
-                rs.getString("shopper_id"), AccountStatus.ACTIVE, dataCenter);
+                rs.getString("shopper_id"), AccountStatus.ACTIVE, dataCenter, productId);
     }
-    
+
+    private UUID mapProductId(ResultSet rs) throws SQLException {
+        String productIdStr = rs.getString("product_id");
+        UUID productId = null;
+        if (productIdStr != null){
+            productId = UUID.fromString(productIdStr);
+        }
+        return productId;
+    }
+
     private DataCenter mapDataCenter(ResultSet rs) throws SQLException {
         int dcId = rs.getInt("data_center_id");
         if(dcId == 0){

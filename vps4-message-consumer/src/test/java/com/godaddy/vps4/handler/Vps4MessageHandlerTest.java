@@ -14,7 +14,6 @@ import java.util.UUID;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
-import org.mockito.Mockito;
 
 import com.godaddy.hfs.config.Config;
 import com.godaddy.vps4.credit.CreditService;
@@ -57,17 +56,17 @@ public class Vps4MessageHandlerTest {
 
     @Test
     public void handleMessageNoDifferenceTest() throws MessageHandlerException {
-        
+
         VirtualMachine vm = new VirtualMachine(UUID.randomUUID(), 123L, UUID.fromString("e36b4412-ec52-420f-86fd-cf5332cf0c88"), 321L, null,
                 "TestVm", null, null, null,
                 null, null, AccountStatus.ACTIVE);
         when(vmServiceMock.getVirtualMachineByOrionGuid(vm.orionGuid)).thenReturn(vm);
-        
+
         DataCenter dc = dcService.getDataCenter(5);
-        
-        VirtualMachineCredit vmCredit = new VirtualMachineCredit(vm.orionGuid, 10, 0, 1, "linux", "none", null, null, "TestShopper", AccountStatus.ACTIVE, dc);
+
+        VirtualMachineCredit vmCredit = new VirtualMachineCredit(vm.orionGuid, 10, 0, 1, "linux", "none", null, null, "TestShopper", AccountStatus.ACTIVE, dc, vm.vmId);
         when(creditServiceMock.getVirtualMachineCredit(vmCredit.orionGuid)).thenReturn(vmCredit);
-        
+
         MessageHandler handler = new Vps4MessageHandler(vmServiceMock,
                 creditServiceMock,
                 actionServiceMock,
@@ -136,9 +135,9 @@ public class Vps4MessageHandlerTest {
         when(vmServiceMock.getVirtualMachineByOrionGuid(vm.orionGuid)).thenReturn(vm);
 
         DataCenter dc = dcService.getDataCenter(5);
-        
+
         VirtualMachineCredit vmCredit = new VirtualMachineCredit(vm.orionGuid, 10, 0, 1, "linux", "none", null, null, "TestShopper",
-                AccountStatus.REMOVED, dc);
+                AccountStatus.REMOVED, dc, vm.vmId);
         when(creditServiceMock.getVirtualMachineCredit(vmCredit.orionGuid)).thenReturn(vmCredit);
 
         Vps4User user = new Vps4User(123, vmCredit.shopperId);
@@ -158,7 +157,7 @@ public class Vps4MessageHandlerTest {
 
         handler.handleMessage(
                 "{\"id\":\"a82c9629-3e19-4b3a-a870-edc0059eebe5\",\"notification\":{\"type\":[\"added\"],\"account_guid\":\"e36b4412-ec52-420f-86fd-cf5332cf0c88\"}}");
-        
+
         ArgumentCaptor<CommandGroupSpec> argument = ArgumentCaptor.forClass(CommandGroupSpec.class);
         verify(commandServiceMock, times(1)).executeCommand(argument.capture());
         assertEquals("Vps4DestroyVm", argument.getValue().commands.get(0).command);

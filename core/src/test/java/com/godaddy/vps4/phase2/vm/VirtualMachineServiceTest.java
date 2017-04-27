@@ -1,17 +1,13 @@
 package com.godaddy.vps4.phase2.vm;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
-import java.util.concurrent.Callable;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 import javax.sql.DataSource;
@@ -20,10 +16,10 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
-import com.godaddy.vps4.credit.VirtualMachineCredit;
-import com.godaddy.vps4.credit.CreditService;
-import com.godaddy.vps4.credit.jdbc.JdbcCreditService;
 import com.godaddy.hfs.jdbc.Sql;
+import com.godaddy.vps4.credit.CreditService;
+import com.godaddy.vps4.credit.VirtualMachineCredit;
+import com.godaddy.vps4.credit.jdbc.JdbcCreditService;
 import com.godaddy.vps4.jdbc.DatabaseModule;
 import com.godaddy.vps4.network.NetworkService;
 import com.godaddy.vps4.network.jdbc.JdbcNetworkService;
@@ -131,8 +127,8 @@ public class VirtualMachineServiceTest {
         ProvisionVirtualMachineParameters params = new ProvisionVirtualMachineParameters(vps4User.getId(), 1, "vps4-testing-",
                 orionGuid, name, 10, 1, "centos-7");
 
-        virtualMachineService.provisionVirtualMachine(params);
-        creditService.claimVirtualMachineCredit(orionGuid, 1);
+        UUID vmId = virtualMachineService.provisionVirtualMachine(params).vmId;
+        creditService.claimVirtualMachineCredit(orionGuid, 1, vmId);
 
         vmRequest = creditService.getVirtualMachineCredit(orionGuid);
         assertNotNull(vmRequest.provisionDate);
@@ -191,7 +187,7 @@ public class VirtualMachineServiceTest {
         for (int i = 0; i < numberOfTasks; i++) {
                 creditService.createCreditIfNoneExists(vps4User);
         }
-        
+
         credits = creditService.getVirtualMachineCredits(vps4User.getShopperId());
         assertEquals(1, credits.size());
         UUID guidWithCredit = credits.get(0).orionGuid;
@@ -201,7 +197,7 @@ public class VirtualMachineServiceTest {
                 credits.get(0).orionGuid, "test", 10, 1, "centos-7");
 
         VirtualMachine virtualMachine = virtualMachineService.provisionVirtualMachine(params);
-        creditService.claimVirtualMachineCredit(guidWithCredit, 1);
+        creditService.claimVirtualMachineCredit(guidWithCredit, 1, virtualMachine.vmId);
         virtualMachines.add(virtualMachine);
         virtualMachineService.addHfsVmIdToVirtualMachine(virtualMachine.vmId, 1);
 
