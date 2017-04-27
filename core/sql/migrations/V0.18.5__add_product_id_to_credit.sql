@@ -1,1 +1,1 @@
-ALTER TABLE credit ADD COLUMN IF NOT EXISTS product_id UUID REFERENCES virtual_machine (vm_id);
+ALTER TABLE credit ADD COLUMN product_id UUID REFERENCES virtual_machine (vm_id);
