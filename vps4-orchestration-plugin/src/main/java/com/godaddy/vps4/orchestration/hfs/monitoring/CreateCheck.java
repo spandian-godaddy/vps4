@@ -1,4 +1,4 @@
-package com.godaddy.vps4.orchestration.hfs.pingcheck;
+package com.godaddy.vps4.orchestration.hfs.monitoring;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -11,7 +11,7 @@ import gdg.hfs.vhfs.nodeping.NodePingAction;
 import gdg.hfs.vhfs.nodeping.NodePingCheck;
 import gdg.hfs.vhfs.nodeping.NodePingService;
 
-public class CreateCheck implements Command<CreateCheck.Request, NodePingCheck> {
+public class CreateCheck implements Command<CreateCheck.Request, Long> {
     
     private static final Logger logger = LoggerFactory.getLogger(CreateCheck.class);
     
@@ -34,7 +34,7 @@ public class CreateCheck implements Command<CreateCheck.Request, NodePingCheck> 
     }
     
     @Override
-    public NodePingCheck execute(CommandContext context, CreateCheck.Request request) {
+    public Long execute(CommandContext context, CreateCheck.Request request) {
         
         logger.info("Sending HFS request to create nodeping check for target: {}", request.target);
         
@@ -45,6 +45,8 @@ public class CreateCheck implements Command<CreateCheck.Request, NodePingCheck> 
         
         logger.info("Check {} created on target {}", hfsAction.checkId, request.target);
 
-        return nodePingService.getCheck(hfsAction.accountId, hfsAction.checkId);
+        NodePingCheck check = nodePingService.getCheck(hfsAction.accountId, hfsAction.checkId);
+        
+        return check.checkId;
     }
 }

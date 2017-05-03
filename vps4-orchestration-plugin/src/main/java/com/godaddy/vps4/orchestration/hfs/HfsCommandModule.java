@@ -2,14 +2,14 @@ package com.godaddy.vps4.orchestration.hfs;
 
 import com.godaddy.vps4.orchestration.hfs.cpanel.ConfigureCpanel;
 import com.godaddy.vps4.orchestration.hfs.cpanel.WaitForCpanelAction;
+import com.godaddy.vps4.orchestration.hfs.monitoring.CreateCheck;
+import com.godaddy.vps4.orchestration.hfs.monitoring.DeleteCheck;
+import com.godaddy.vps4.orchestration.hfs.monitoring.WaitForPingCheckAction;
 import com.godaddy.vps4.orchestration.hfs.network.AllocateIp;
 import com.godaddy.vps4.orchestration.hfs.network.BindIp;
 import com.godaddy.vps4.orchestration.hfs.network.ReleaseIp;
 import com.godaddy.vps4.orchestration.hfs.network.UnbindIp;
 import com.godaddy.vps4.orchestration.hfs.network.WaitForAddressAction;
-import com.godaddy.vps4.orchestration.hfs.pingcheck.CreateCheck;
-import com.godaddy.vps4.orchestration.hfs.pingcheck.DeleteCheck;
-import com.godaddy.vps4.orchestration.hfs.pingcheck.WaitForPingCheckAction;
 import com.godaddy.vps4.orchestration.hfs.plesk.ConfigurePlesk;
 import com.godaddy.vps4.orchestration.hfs.plesk.UpdateAdminPassword;
 import com.godaddy.vps4.orchestration.hfs.plesk.WaitForPleskAction;

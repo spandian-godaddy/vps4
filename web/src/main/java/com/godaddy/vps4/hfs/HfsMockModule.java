@@ -1,5 +1,9 @@
 package com.godaddy.vps4.hfs;
 
+import static org.mockito.Matchers.anyInt;
+import static org.mockito.Matchers.anyLong;
+import static org.mockito.Matchers.anyString;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
@@ -17,6 +21,9 @@ import gdg.hfs.vhfs.mailrelay.MailRelay;
 import gdg.hfs.vhfs.mailrelay.MailRelayHistory;
 import gdg.hfs.vhfs.mailrelay.MailRelayService;
 import gdg.hfs.vhfs.mailrelay.MailRelayUpdate;
+import gdg.hfs.vhfs.nodeping.NodePingEvent;
+import gdg.hfs.vhfs.nodeping.NodePingService;
+import gdg.hfs.vhfs.nodeping.NodePingUptimeRecord;
 import gdg.hfs.vhfs.plesk.PleskService;
 import gdg.hfs.vhfs.sysadmin.SysAdminAction;
 import gdg.hfs.vhfs.sysadmin.SysAdminService;
@@ -105,8 +112,20 @@ public class HfsMockModule extends AbstractModule {
         bind(SysAdminService.class).toInstance(sysAdminService);
         PleskService pleskService = Mockito.mock(PleskService.class);
         bind(PleskService.class).toInstance(pleskService);
+        NodePingService nodePingService = buildNodePingService();
+        bind(NodePingService.class).toInstance(nodePingService);
     }
-    
+
+    private NodePingService buildNodePingService() {
+        NodePingService nodePingService = Mockito.mock(NodePingService.class);
+        List<NodePingEvent> events = new ArrayList<>();
+        Mockito.when(nodePingService.getCheckEvents(anyLong(), anyLong(), anyInt())).thenReturn(events);
+        List<NodePingUptimeRecord> records = new ArrayList<>();
+        Mockito.when(nodePingService.getCheckUptime(anyLong(), anyLong(), anyString(), anyString(), anyString())).thenReturn(records);
+        
+        return nodePingService;
+    }
+
     private SysAdminService buildSysAdminService(){
         SysAdminService sysAdminService = Mockito.mock(SysAdminService.class);
         SysAdminAction completeAction = new SysAdminAction();

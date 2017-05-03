@@ -10,6 +10,8 @@ import org.junit.Before;
 import org.junit.Test;
 
 import com.godaddy.vps4.orchestration.TestCommandContext;
+import com.godaddy.vps4.orchestration.hfs.monitoring.CreateCheck;
+import com.godaddy.vps4.orchestration.hfs.monitoring.WaitForPingCheckAction;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
 
@@ -55,10 +57,10 @@ public class CreateCheckTest {
         when(nodePingService.getAction(nodePingAction.actionId)).thenReturn(nodePingAction);
         when(nodePingService.getCheck(nodePingAction.accountId, nodePingAction.checkId)).thenReturn(testCheck);
 
-        NodePingCheck check = command.execute(context, request);
+        long checkId = command.execute(context, request);
 
         verify(nodePingService, times(1)).createCheck(request.accountId, request.target, request.label);
-        assertEquals(testCheck, check);
+        assertEquals(testCheck.checkId, checkId);
     }
     
     @Test(expected = RuntimeException.class)

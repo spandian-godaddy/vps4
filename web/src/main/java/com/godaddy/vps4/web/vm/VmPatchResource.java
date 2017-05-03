@@ -35,7 +35,7 @@ import io.swagger.annotations.ApiOperation;
 @Consumes(MediaType.APPLICATION_JSON)
 public class VmPatchResource {
 
-    private static final Logger logger = LoggerFactory.getLogger(VmResource.class);
+    private static final Logger logger = LoggerFactory.getLogger(VmPatchResource.class);
 
     final VirtualMachineService virtualMachineService;
     final PrivilegeService privilegeService;

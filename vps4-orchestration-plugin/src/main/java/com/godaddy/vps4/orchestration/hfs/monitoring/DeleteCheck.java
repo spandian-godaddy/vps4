@@ -1,4 +1,4 @@
-package com.godaddy.vps4.orchestration.hfs.pingcheck;
+package com.godaddy.vps4.orchestration.hfs.monitoring;
 
     import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

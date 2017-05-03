@@ -49,7 +49,7 @@ public class HfsMockModule extends AbstractModule {
         bind(PleskService.class).toInstance(pleskService);
         NodePingService nodePingService = buildNodePingService();
         bind(NodePingService.class).toInstance(nodePingService);
-        
+
     }
 
     private PleskService buildPleskService() {

@@ -14,10 +14,10 @@ import com.godaddy.vps4.orchestration.ActionCommand;
 import com.godaddy.vps4.orchestration.ActionRequest;
 import com.godaddy.vps4.orchestration.hfs.cpanel.ConfigureCpanel;
 import com.godaddy.vps4.orchestration.hfs.cpanel.ConfigureCpanel.ConfigureCpanelRequest;
+import com.godaddy.vps4.orchestration.hfs.monitoring.CreateCheck;
 import com.godaddy.vps4.orchestration.hfs.network.AllocateIp;
 import com.godaddy.vps4.orchestration.hfs.network.BindIp;
 import com.godaddy.vps4.orchestration.hfs.network.BindIp.BindIpRequest;
-import com.godaddy.vps4.orchestration.hfs.pingcheck.CreateCheck;
 import com.godaddy.vps4.orchestration.hfs.plesk.ConfigurePlesk;
 import com.godaddy.vps4.orchestration.hfs.plesk.ConfigurePlesk.ConfigurePleskRequest;
 import com.godaddy.vps4.orchestration.hfs.sysadmin.SetHostname;
@@ -42,7 +42,6 @@ import gdg.hfs.vhfs.mailrelay.MailRelay;
 import gdg.hfs.vhfs.mailrelay.MailRelayService;
 import gdg.hfs.vhfs.mailrelay.MailRelayUpdate;
 import gdg.hfs.vhfs.network.IpAddress;
-import gdg.hfs.vhfs.nodeping.NodePingCheck;
 import gdg.hfs.vhfs.vm.CreateVMWithFlavorRequest;
 import gdg.hfs.vhfs.vm.Vm;
 import gdg.hfs.vhfs.vm.VmAction;
@@ -281,12 +280,12 @@ public class Vps4ProvisionVm extends ActionCommand<Vps4ProvisionVm.Request, Vps4
         if (request.vmInfo.pingCheckAccountId > 0) {
             CreateCheck.Request nodePingRequest = new CreateCheck.Request(request.vmInfo.pingCheckAccountId, ipAddress.address,
                     ipAddress.address);
-            NodePingCheck nodePingCheck = context.execute(CreateCheck.class, nodePingRequest);
-            logger.debug("CheckId: {}", nodePingCheck.checkId);
+            long checkId = context.execute(CreateCheck.class, nodePingRequest);
+            logger.debug("CheckId: {}", checkId);
 
             // Add the checkId to the IpAddress
             context.execute("AddCheckIdToIp-" + ipAddress.address, ctx -> {
-                networkService.updateIpWithCheckId(ipAddress.addressId, nodePingCheck.checkId);
+                networkService.updateIpWithCheckId(ipAddress.addressId, checkId);
                 return null;
             });
         }

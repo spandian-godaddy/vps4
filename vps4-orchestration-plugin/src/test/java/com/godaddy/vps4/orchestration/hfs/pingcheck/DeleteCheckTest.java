@@ -10,6 +10,8 @@ import org.junit.Before;
 import org.junit.Test;
 
 import com.godaddy.vps4.orchestration.TestCommandContext;
+import com.godaddy.vps4.orchestration.hfs.monitoring.DeleteCheck;
+import com.godaddy.vps4.orchestration.hfs.monitoring.WaitForPingCheckAction;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
 
