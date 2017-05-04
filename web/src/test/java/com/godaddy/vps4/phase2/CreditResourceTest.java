@@ -2,21 +2,18 @@ package com.godaddy.vps4.phase2;
 
 import java.util.UUID;
 
-import javax.sql.DataSource;
-
-import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
+import org.mockito.Mockito;
 
-import com.godaddy.hfs.jdbc.Sql;
-import com.godaddy.vps4.credit.CreditModule;
 import com.godaddy.vps4.credit.VirtualMachineCredit;
 import com.godaddy.vps4.credit.CreditService;
 import com.godaddy.vps4.jdbc.DatabaseModule;
 import com.godaddy.vps4.security.SecurityModule;
 import com.godaddy.vps4.security.Vps4User;
 import com.godaddy.vps4.security.Vps4UserService;
+import com.godaddy.vps4.vm.AccountStatus;
 import com.godaddy.vps4.vm.VmModule;
 import com.godaddy.vps4.web.credit.CreditResource;
 import com.google.inject.AbstractModule;
@@ -30,16 +27,18 @@ public class CreditResourceTest {
     private Vps4User invalidUser;
     private Vps4User user;
     private UUID orionGuid = UUID.randomUUID();
+    private VirtualMachineCredit vmCredit;
+    CreditService creditService = Mockito.mock(CreditService.class);
+
 
     private Injector injector = Guice.createInjector(
             new DatabaseModule(),
             new SecurityModule(),
-            new CreditModule(),
-            new VmModule(),
             new AbstractModule() {
 
                 @Override
                 public void configure() {
+                    bind(CreditService.class).toInstance(creditService);
                 }
 
                 @Provides
@@ -49,7 +48,6 @@ public class CreditResourceTest {
             });
 
     Vps4UserService userService = injector.getInstance(Vps4UserService.class);
-    CreditService creditService = injector.getInstance(CreditService.class);
 
     protected CreditResource newValidCreditResource() {
         user = validUser;
@@ -65,13 +63,9 @@ public class CreditResourceTest {
     public void setupTest() {
         validUser = userService.getOrCreateUserForShopper("validUserShopperId");
         invalidUser = userService.getOrCreateUserForShopper("invalidUserShopperId");
-        creditService.createVirtualMachineCredit(orionGuid, "linux", "cPanel", 10, 1, 0, "validUserShopperId");
-    }
-
-    @After
-    public void teardownTest() {
-        DataSource dataSource = injector.getInstance(DataSource.class);
-        Sql.with(dataSource).exec("DELETE FROM credit WHERE orion_guid = ?", null, orionGuid);
+        vmCredit = new VirtualMachineCredit(orionGuid, 10, 1, 0, "linux", "cPanel",
+                null, null, "validUserShopperId", AccountStatus.ACTIVE, null);
+        Mockito.when(creditService.getVirtualMachineCredit(orionGuid)).thenReturn(vmCredit);
     }
 
     @Test
@@ -86,6 +80,7 @@ public class CreditResourceTest {
         catch (IllegalArgumentException e) {
             // do nothing
         }
+
     }
 
 }

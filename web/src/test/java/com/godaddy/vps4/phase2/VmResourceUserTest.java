@@ -12,19 +12,24 @@ import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
+import org.mockito.Mock;
 import org.mockito.Mockito;
 
 import com.godaddy.hfs.jdbc.Sql;
 import com.godaddy.vps4.credit.CreditModule;
 import com.godaddy.vps4.credit.CreditService;
+import com.godaddy.vps4.credit.ECommCreditService;
+import com.godaddy.vps4.credit.VirtualMachineCredit;
 import com.godaddy.vps4.jdbc.DatabaseModule;
 import com.godaddy.vps4.network.IpAddress.IpAddressType;
 import com.godaddy.vps4.network.NetworkService;
+import com.godaddy.vps4.orchestration.hfs.HfsModule;
 import com.godaddy.vps4.project.ProjectService;
 import com.godaddy.vps4.security.SecurityModule;
 import com.godaddy.vps4.security.Vps4User;
 import com.godaddy.vps4.security.Vps4UserService;
 import com.godaddy.vps4.security.jdbc.AuthorizationException;
+import com.godaddy.vps4.vm.AccountStatus;
 import com.godaddy.vps4.vm.Action;
 import com.godaddy.vps4.vm.ActionService;
 import com.godaddy.vps4.vm.ActionType;
@@ -45,6 +50,7 @@ import gdg.hfs.orchestration.CommandGroupSpec;
 import gdg.hfs.orchestration.CommandService;
 import gdg.hfs.orchestration.CommandState;
 import gdg.hfs.vhfs.cpanel.CPanelService;
+import gdg.hfs.vhfs.ecomm.ECommService;
 import gdg.hfs.vhfs.vm.Vm;
 import gdg.hfs.vhfs.vm.VmService;
 
@@ -52,9 +58,6 @@ public class VmResourceUserTest {
 
     @Inject
     VirtualMachineService virtualMachineService;
-
-    @Inject
-    CreditService creditService;
 
     @Inject
     ActionService actionService;
@@ -68,11 +71,18 @@ public class VmResourceUserTest {
     @Inject
     NetworkService networkService;
 
-    private Injector injector = Guice.createInjector(new DatabaseModule(), new SecurityModule(), new VmModule(),
-            new CreditModule(), new AbstractModule() {
+    CreditService creditService = Mockito.mock(CreditService.class);
+
+    private Injector injector = Guice.createInjector(
+            new DatabaseModule(),
+            new SecurityModule(),
+            new VmModule(),
+            new AbstractModule() {
 
                 @Override
                 public void configure() {
+                    bind(CreditService.class).toInstance(creditService);
+
                     // HFS services
                     Vm hfsVm = new Vm();
                     hfsVm.vmId = hfsVmId;
@@ -221,7 +231,9 @@ public class VmResourceUserTest {
     private ProvisionVmRequest createProvisionRequest(String controlPanel) {
         UUID newGuid = UUID.randomUUID();
         orionGuids.add(newGuid);
-        creditService.createVirtualMachineCredit(newGuid, "linux", controlPanel, 10, 1, 0, validUser.getShopperId());
+        VirtualMachineCredit vmCredit = new VirtualMachineCredit(newGuid, 10, 1, 0, "linux",
+                controlPanel, null, null, "validUserShopperId", AccountStatus.ACTIVE, null);
+        Mockito.when(creditService.getVirtualMachineCredit(newGuid)).thenReturn(vmCredit);
         ProvisionVmRequest provisionRequest = new ProvisionVmRequest();
         provisionRequest.orionGuid = newGuid;
         provisionRequest.dataCenterId = 1;
