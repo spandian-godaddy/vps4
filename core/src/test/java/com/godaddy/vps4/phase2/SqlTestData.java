@@ -6,8 +6,6 @@ import java.util.UUID;
 import javax.sql.DataSource;
 
 import com.godaddy.hfs.jdbc.Sql;
-import com.godaddy.vps4.credit.CreditService;
-import com.godaddy.vps4.credit.jdbc.JdbcCreditService;
 import com.godaddy.vps4.vm.ActionType;
 import com.godaddy.vps4.vm.VirtualMachine;
 import com.godaddy.vps4.vm.VirtualMachineService;
@@ -28,13 +26,10 @@ public class SqlTestData {
 
     public static VirtualMachine insertTestVm(UUID orionGuid, long vps4UserId, DataSource dataSource) {
         VirtualMachineService virtualMachineService = new JdbcVirtualMachineService(dataSource);
-        CreditService creditService = new JdbcCreditService(dataSource);
         long hfsVmId = getNextHfsVmId(dataSource);
-        creditService.createVirtualMachineCredit(orionGuid, "linux", "none", 10, 0, 0, "TestUser");
         ProvisionVirtualMachineParameters params = new ProvisionVirtualMachineParameters(vps4UserId, 1, "vps4-testing-", orionGuid,
                 "testVirtualMachine", 10, 1, "centos-7");
         VirtualMachine virtualMachine = virtualMachineService.provisionVirtualMachine(params);
-        creditService.claimVirtualMachineCredit(orionGuid, 1, virtualMachine.vmId);
         virtualMachineService.addHfsVmIdToVirtualMachine(virtualMachine.vmId, hfsVmId);
         return virtualMachine;
     }
@@ -46,7 +41,6 @@ public class SqlTestData {
         Sql.with(dataSource).exec("DELETE FROM ip_address WHERE vm_id = ?", null, vm.vmId);
         Sql.with(dataSource).exec("DELETE FROM vm_user WHERE vm_id = ?", null, vm.vmId);
         Sql.with(dataSource).exec("DELETE FROM vm_action where vm_id = ?", null, vm.vmId);
-        Sql.with(dataSource).exec("DELETE FROM credit WHERE orion_guid = ?", null, vm.orionGuid);
         Sql.with(dataSource).exec("DELETE FROM virtual_machine WHERE vm_id = ?", null, vmId);
         Sql.with(dataSource).exec("DELETE FROM user_project_privilege WHERE project_id = ?", null, vm.projectId);
         Sql.with(dataSource).exec("DELETE FROM project WHERE project_id = ?", null, vm.projectId);

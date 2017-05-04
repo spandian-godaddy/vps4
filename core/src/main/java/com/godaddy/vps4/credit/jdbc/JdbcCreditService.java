@@ -15,7 +15,9 @@ import com.godaddy.vps4.credit.VirtualMachineCredit;
 import com.godaddy.vps4.security.Vps4User;
 import com.godaddy.vps4.vm.AccountStatus;
 import com.godaddy.vps4.vm.DataCenter;
+import com.google.inject.Singleton;
 
+@Singleton
 public class JdbcCreditService implements CreditService {
 
     private final DataSource dataSource;

@@ -180,23 +180,6 @@ public class ECommCreditServiceTest {
     }
 
     @Test
-    public void testCreateCreditIfNoneExists() throws Exception {
-        Vps4User vps4User = new Vps4User(1, account.shopper_id);
-        creditService.createCreditIfNoneExists(vps4User);
-        verify(ecommService).getAccounts(account.shopper_id);
-        verify(ecommService).createAccount(any(Account.class));
-    }
-
-    @Test
-    public void testCreditAlreadyExists() throws Exception {
-        when(ecommService.getAccounts(account.shopper_id)).thenReturn(Arrays.asList(account));
-        Vps4User vps4User = new Vps4User(1, account.shopper_id);
-        creditService.createCreditIfNoneExists(vps4User);
-        verify(ecommService).getAccounts(account.shopper_id);
-        verify(ecommService, never()).createAccount(any(Account.class));
-    }
-
-    @Test
     public void testClaimCreditCallsUpdateProdMeta() throws Exception {
         int phx3 = 1;
         UUID vmId = UUID.randomUUID();

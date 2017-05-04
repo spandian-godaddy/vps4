@@ -26,10 +26,11 @@ public class Vps4ConsumerInjector {
     public static Injector newInstance() {
         List<Module> modules = new ArrayList<>();
         modules.add(new ConfigModule());
-        modules.add(new CreditModule());
         modules.add(new VmModule());
         modules.add(new SecurityModule());
         modules.add(new DatabaseModule());
+        modules.add(new HfsClientModule());
+        modules.add(new CreditModule());
         modules.add(new CommandClientModule());
         modules.add(new Vps4ConsumerModule());
         return Guice.createInjector(modules);
