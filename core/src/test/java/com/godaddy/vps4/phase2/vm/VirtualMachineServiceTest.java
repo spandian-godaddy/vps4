@@ -2,7 +2,6 @@ package com.godaddy.vps4.phase2.vm;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 import java.util.ArrayList;
@@ -16,7 +15,6 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
-import com.godaddy.hfs.jdbc.Sql;
 import com.godaddy.vps4.jdbc.DatabaseModule;
 import com.godaddy.vps4.network.NetworkService;
 import com.godaddy.vps4.network.jdbc.JdbcNetworkService;
@@ -69,9 +67,6 @@ public class VirtualMachineServiceTest {
     public void cleanup() {
         for (VirtualMachine vm : virtualMachines) {
             SqlTestData.cleanupTestVmAndRelatedData(vm.vmId, dataSource);
-        }
-        for (UUID request : vmCredits) {
-            Sql.with(dataSource).exec("DELETE FROM credit WHERE orion_guid = ?", null, request);
         }
     }
 

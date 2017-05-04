@@ -7,12 +7,10 @@ import java.util.UUID;
 
 import javax.sql.DataSource;
 
-import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
 import com.godaddy.vps4.jdbc.DatabaseModule;
-import com.godaddy.hfs.jdbc.Sql;
 import com.godaddy.vps4.phase2.SqlTestData;
 import com.godaddy.vps4.project.ProjectService;
 import com.godaddy.vps4.security.SecurityModule;
@@ -48,13 +46,6 @@ public class JdbcVirtualMachineTest {
 
     UUID orionGuid = UUID.randomUUID();
     VirtualMachine virtualMachine;
-
-    @After
-    public void cleanup() {
-
-        SqlTestData.cleanupTestVmAndRelatedData(virtualMachine.vmId, dataSource);
-        Sql.with(dataSource).exec("DELETE FROM credit WHERE orion_guid = ?", null, orionGuid);
-    }
 
     @Test
     public void testProvisionVmCreatesId() {

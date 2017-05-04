@@ -7,14 +7,13 @@ import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mockito;
 
-import com.godaddy.vps4.credit.VirtualMachineCredit;
 import com.godaddy.vps4.credit.CreditService;
+import com.godaddy.vps4.credit.VirtualMachineCredit;
 import com.godaddy.vps4.jdbc.DatabaseModule;
 import com.godaddy.vps4.security.SecurityModule;
 import com.godaddy.vps4.security.Vps4User;
 import com.godaddy.vps4.security.Vps4UserService;
 import com.godaddy.vps4.vm.AccountStatus;
-import com.godaddy.vps4.vm.VmModule;
 import com.godaddy.vps4.web.credit.CreditResource;
 import com.google.inject.AbstractModule;
 import com.google.inject.Guice;
@@ -64,7 +63,7 @@ public class CreditResourceTest {
         validUser = userService.getOrCreateUserForShopper("validUserShopperId");
         invalidUser = userService.getOrCreateUserForShopper("invalidUserShopperId");
         vmCredit = new VirtualMachineCredit(orionGuid, 10, 1, 0, "linux", "cPanel",
-                null, null, "validUserShopperId", AccountStatus.ACTIVE, null);
+                null, null, "validUserShopperId", AccountStatus.ACTIVE, null, null);
         Mockito.when(creditService.getVirtualMachineCredit(orionGuid)).thenReturn(vmCredit);
     }
 

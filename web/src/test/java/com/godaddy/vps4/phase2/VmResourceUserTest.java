@@ -12,18 +12,14 @@ import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
-import org.mockito.Mock;
 import org.mockito.Mockito;
 
 import com.godaddy.hfs.jdbc.Sql;
-import com.godaddy.vps4.credit.CreditModule;
 import com.godaddy.vps4.credit.CreditService;
-import com.godaddy.vps4.credit.ECommCreditService;
 import com.godaddy.vps4.credit.VirtualMachineCredit;
 import com.godaddy.vps4.jdbc.DatabaseModule;
 import com.godaddy.vps4.network.IpAddress.IpAddressType;
 import com.godaddy.vps4.network.NetworkService;
-import com.godaddy.vps4.orchestration.hfs.HfsModule;
 import com.godaddy.vps4.project.ProjectService;
 import com.godaddy.vps4.security.SecurityModule;
 import com.godaddy.vps4.security.Vps4User;
@@ -50,7 +46,6 @@ import gdg.hfs.orchestration.CommandGroupSpec;
 import gdg.hfs.orchestration.CommandService;
 import gdg.hfs.orchestration.CommandState;
 import gdg.hfs.vhfs.cpanel.CPanelService;
-import gdg.hfs.vhfs.ecomm.ECommService;
 import gdg.hfs.vhfs.vm.Vm;
 import gdg.hfs.vhfs.vm.VmService;
 
@@ -132,9 +127,6 @@ public class VmResourceUserTest {
         Sql.with(dataSource).exec("DELETE FROM ip_address where ip_address_id = ?", null, 1234);
         for (UUID vmId : vmIds) {
             SqlTestData.cleanupTestVmAndRelatedData(vmId, dataSource);
-        }
-        for (UUID orionGuid : orionGuids) {
-            Sql.with(dataSource).exec("DELETE FROM credit WHERE orion_guid = ?", null, orionGuid);
         }
     }
 
@@ -232,7 +224,7 @@ public class VmResourceUserTest {
         UUID newGuid = UUID.randomUUID();
         orionGuids.add(newGuid);
         VirtualMachineCredit vmCredit = new VirtualMachineCredit(newGuid, 10, 1, 0, "linux",
-                controlPanel, null, null, "validUserShopperId", AccountStatus.ACTIVE, null);
+                controlPanel, null, null, "validUserShopperId", AccountStatus.ACTIVE, null, null);
         Mockito.when(creditService.getVirtualMachineCredit(newGuid)).thenReturn(vmCredit);
         ProvisionVmRequest provisionRequest = new ProvisionVmRequest();
         provisionRequest.orionGuid = newGuid;
