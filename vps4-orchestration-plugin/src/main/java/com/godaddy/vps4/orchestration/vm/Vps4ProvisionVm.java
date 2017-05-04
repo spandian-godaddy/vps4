@@ -1,6 +1,7 @@
 package com.godaddy.vps4.orchestration.vm;
 
 import java.util.Arrays;
+import java.util.UUID;
 
 import javax.inject.Inject;
 
@@ -69,7 +70,7 @@ public class Vps4ProvisionVm extends ActionCommand<Vps4ProvisionVm.Request, Vps4
     Request request;
 
     ActionState state;
-    
+
     String hostname;
 
     CommandContext context;
@@ -113,8 +114,8 @@ public class Vps4ProvisionVm extends ActionCommand<Vps4ProvisionVm.Request, Vps4
         configureControlPanel(hfsVm);
 
         setHostname(hfsVm);
-        
-        configureAdminUser(hfsVm);
+
+        configureAdminUser(hfsVm, request.vmInfo.vmId);
 
         configureMailRelay(hfsVm);
 
@@ -128,10 +129,10 @@ public class Vps4ProvisionVm extends ActionCommand<Vps4ProvisionVm.Request, Vps4
 
     private void setHostname(Vm hfsVm){
         setStep(CreateVmStep.SetHostname);
-        
-        SetHostname.Request hfsRequest = new SetHostname.Request(hfsVm.vmId, this.hostname, 
+
+        SetHostname.Request hfsRequest = new SetHostname.Request(hfsVm.vmId, this.hostname,
                                                 request.vmInfo.image.controlPanel.toString());
-        
+
         context.execute(SetHostname.class, hfsRequest);
     }
 
@@ -211,7 +212,7 @@ public class Vps4ProvisionVm extends ActionCommand<Vps4ProvisionVm.Request, Vps4
         VmAction vmAction = context.execute(CreateVm.class, hfsRequest);
 
         // Get the hfs vm
-        Vm hfsVm = context.execute("GetVmAfterCreate", ctx -> (Vm)vmService.getVm(vmAction.vmId));
+        Vm hfsVm = context.execute("GetVmAfterCreate", ctx -> vmService.getVm(vmAction.vmId));
 
         // VPS4 VM bookeeping (Add hfs vmid to the virtual_machine db row)
         context.execute("Vps4ProvisionVm", ctx -> {
@@ -244,13 +245,17 @@ public class Vps4ProvisionVm extends ActionCommand<Vps4ProvisionVm.Request, Vps4
         return setPasswordRequest;
     }
 
-    private void configureAdminUser(Vm hfsVm) {
+    private void configureAdminUser(Vm hfsVm, UUID vmId) {
+        boolean adminEnabled = request.vmInfo.image.controlPanel == ControlPanel.NONE;
+        String username = request.hfsRequest.username;
         ToggleAdmin.Request toggleAdminRequest = new ToggleAdmin.Request();
-        toggleAdminRequest.enabled = request.vmInfo.managedLevel < 1;
+        toggleAdminRequest.enabled = adminEnabled;
         toggleAdminRequest.vmId = hfsVm.vmId;
-        toggleAdminRequest.username = request.hfsRequest.username;
+        toggleAdminRequest.username = username;
 
         context.execute(ToggleAdmin.class, toggleAdminRequest);
+
+        vmUserService.updateUserAdminAccess(username, vmId, adminEnabled);
     }
 
     private ConfigureCpanelRequest createConfigureCpanelRequest(Vm hfsVm) {
