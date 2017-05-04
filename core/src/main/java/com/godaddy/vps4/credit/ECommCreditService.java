@@ -16,12 +16,13 @@ import com.godaddy.vps4.security.Vps4User;
 import com.godaddy.vps4.vm.AccountStatus;
 import com.godaddy.vps4.vm.DataCenter;
 import com.godaddy.vps4.vm.DataCenterService;
+import com.google.inject.Singleton;
 
 import gdg.hfs.vhfs.ecomm.Account;
 import gdg.hfs.vhfs.ecomm.ECommService;
 import gdg.hfs.vhfs.ecomm.MetadataUpdate;
 
-
+@Singleton
 public class ECommCreditService implements CreditService {
 
     private interface ProductMeta{
@@ -131,9 +132,8 @@ public class ECommCreditService implements CreditService {
 
     @Override
     public synchronized void createCreditIfNoneExists(Vps4User vps4User) {
-        String shopperId = vps4User.getShopperId();
-        if (getVirtualMachineCredits(shopperId).isEmpty())
-            this.createVirtualMachineCredit(UUID.randomUUID(), "linux", "cpanel", 10, 1, 0, shopperId);
+        // Not necessary with the ECommCreditService, go to crm manager catalog and purchase a VM
+        // Warning: This method if implemented can result in multiple credits due to multiple vps4-web nodes
     }
 
     @Override
