@@ -147,3 +147,24 @@ Modify `vps4.properties.unenc`, then re-encrypt:
 
 _Never_ check in the `vps4.properties.unenc` files, as these contain the plaintext secrets.
 These files are explicitly ignored in .gitignore.
+
+
+Creating VM Test Credits
+=======================
+Oh, you want to test creating a VM?  You'll need a VM credit for that.
+
+- Login to CRM of the desired test environment using your shopperID
+    - Create one in dev/test if you don't have one.
+- Go to Catalog in the drop down box on the left sidebar.
+- Browse to Misc and search for VPS4. (products will move out of Misc when CRM updates them)
+- Select the desired product
+- Select Add to Cart and then Checkout
+- For dev/test use the test credit card number: 4111111111111111
+
+| Env   |   API                              |
+| ----  | ---------------------------------- |
+| Dev   | https://crm.int.dev-godaddy.com    |
+| Test  | https://crm.int.test-godaddy.com   |
+| Stage | unknown                            |
+| Prod  | https://crm.int.godaddy.com        |
+
