@@ -85,4 +85,37 @@ public class VmUsageParserTest {
 
     }
 
+    @Test
+    public void testParseEmptyValues() throws Exception {
+
+        try (InputStream is = VmUsageParserTest.class.getResourceAsStream("usage_stats_empty_vals.json")) {
+            assertNotNull(is);
+
+            JSONObject json = (JSONObject)JSONValue.parse(new InputStreamReader(is, Charsets.UTF8));
+
+            VmUsageParser parser = new VmUsageParser();
+
+            VmUsage usage = parser.parse(json);
+
+            assertNotNull(usage);
+
+            assertNotNull(usage.disk);
+            assertEquals(0L, usage.disk.mibUsed);
+            assertEquals(0L, usage.disk.mibAvail);
+
+            assertNotNull(usage.cpu);
+            assertEquals(0.0d, usage.cpu.userPercent, 0d);
+            assertEquals(0.0d, usage.cpu.systemPercent, 0d);
+
+            assertNotNull(usage.io);
+            assertEquals(0.0d, usage.io.totalTps, 0d);
+            assertEquals(0.0d, usage.io.readTps, 0d);
+            assertEquals(0.0d, usage.io.writeTps, 0d);
+
+            assertNotNull(usage.mem);
+            assertEquals(0.0d, usage.mem.mibMemFree, 0d);
+            assertEquals(0.0d, usage.mem.mibMemUsed, 0d);
+        }
+    }
+
 }
