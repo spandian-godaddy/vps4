@@ -29,7 +29,7 @@
         "p3tlvps4zk02.cloud.phx3.gdg",
         "p3tlvps4zk03.cloud.phx3.gdg"
       ],
-      "messageConsumer": [
+      "consumer": [
         "p3tlvps4kafka01.cloud.phx3.gdg"
       ]
   },
@@ -46,7 +46,7 @@
         "p3slvps4zk02.cloud.phx3.gdg",
         "p3slvps4zk03.cloud.phx3.gdg"
       ],
-      "messageConsumer": [
+      "consumer": [
         "p3slvps4kafka01.cloud.phx3.gdg"
       ]
   },
@@ -63,7 +63,7 @@
         "a2plvps4zk02.cloud.iad2.gdg",
         "a2plvps4zk03.cloud.iad2.gdg"
       ],
-      "messageConsumer": [
+      "consumer": [
         "a2plvps4kafka01.cloud.iad2.gdg"
       ]
   }
