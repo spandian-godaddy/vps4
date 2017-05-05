@@ -60,7 +60,7 @@ public class Vps4ConsumerGroup {
 
         logger.info("creating consumer group for config: {}", kafkaConfig);
 
-        for (int i=0; i<kafkaConfig.getNumberOfConsumers(); i++) {
+        for (int i = 0; i < kafkaConfig.getNumberOfConsumers(); i++) {
             Vps4Consumer consumer = new Vps4Consumer(kafkaConfig, messageHandler);
             consumers.add(consumer);
         }

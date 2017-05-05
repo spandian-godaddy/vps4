@@ -1,15 +1,22 @@
 package com.godaddy.vps4.consumer;
 
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-
-import com.godaddy.vps4.consumer.config.KafkaConfiguration;
-import com.godaddy.vps4.handler.MessageHandler;
-import com.google.inject.Injector;
-
 import ch.qos.logback.classic.Level;
+import com.godaddy.hfs.zookeeper.ZooKeeperClient;
+import com.godaddy.vps4.consumer.config.KafkaConfiguration;
+import com.godaddy.vps4.consumer.config.ZookeeperConfig;
+import com.godaddy.vps4.handler.MessageHandler;
+import com.godaddy.vps4.handler.util.ZkAppRegistrationService;
+import com.google.inject.Injector;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.util.concurrent.*;
 
 public class Vps4ConsumerApplication {
+
+    private static final Logger logger = LoggerFactory.getLogger(Vps4ConsumerApplication.class);
+
+    private final static CountDownLatch shutdownLatch = new CountDownLatch(1);
 
     public static void main(String[] args) {
 
@@ -19,6 +26,20 @@ public class Vps4ConsumerApplication {
 
         Injector injector = Vps4ConsumerInjector.newInstance();
 
+
+        ZookeeperConfig zkConfig = injector.getInstance(ZookeeperConfig.class);
+        // get a handle to the zookeeper registration service
+        ZkAppRegistrationService zkAppRegistrationService =
+                new ZkAppRegistrationService(zkConfig.getPath(), zkConfig.getServiceName(),
+                        ZooKeeperClient.getInstance());
+
+        runZkServiceRegistration(zkAppRegistrationService,
+                (() -> runVps4ConsumerGroup(injector)));
+
+    }
+
+    private static void runVps4ConsumerGroup(Injector injector) {
+        // get the kafka configuration
         KafkaConfiguration kafkaConfig = injector.getInstance(KafkaConfiguration.class);
 
         MessageHandler messageHandler = injector.getInstance(MessageHandler.class);
@@ -30,6 +51,7 @@ public class Vps4ConsumerApplication {
 
         consumerGroup.submit(pool);
 
+        logger.info("shutting down consumer group pool");
         pool.shutdown();
 
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
@@ -37,10 +59,52 @@ public class Vps4ConsumerApplication {
             // notify the consumers they should stop work
             consumerGroup.shutdown();
 
-            // no need to wait for the pool to terminate, since
-            // we're already in a shutdown hook
-            // (as soon as the pool terminates it the JVM stops)
+            // Force the shutdown hook to wait till all threads have completed.
+            // This allows for the zk registration service to un-register itself.
+            try {
+                shutdownLatch.await();
+            } catch (InterruptedException e) {
+                logger.warn("interrupted waiting for shutdown latch to trigger");
+            }
+
         }));
+
+        logger.info("waiting on vps4 consumer group pool to terminate");
+
+        while (!pool.isTerminated()) {
+            try {
+                logger.info("pool not terminated, waiting for termination");
+                pool.awaitTermination(100, TimeUnit.MILLISECONDS);
+            } catch (InterruptedException e) {
+                logger.info("Vps4ConsumerGroup pool termination was interrupted. ", e);
+            }
+        }
+    }
+
+    public static void runZkServiceRegistration(ZkAppRegistrationService zkAppRegistrationService, Runnable vps4ConsumerGroup) {
+
+        // register with zookeeper
+        zkAppRegistrationService.register();
+
+        ExecutorService pool = Executors.newSingleThreadExecutor();
+        Future<?> future = pool.submit(vps4ConsumerGroup);
+
+        try {
+            future.get();
+        } catch (InterruptedException e) {
+            logger.warn("Caught InterruptedException exception while getting future: ", e);
+        } catch (ExecutionException e) {
+            logger.warn("Caught exceution exception: ", e);
+        } finally {
+            try {
+                logger.info("Un-registering with zookeeper...");
+                zkAppRegistrationService.close();
+                pool.shutdown();
+            } finally {
+                shutdownLatch.countDown();
+            }
+        }
+
     }
 
 }

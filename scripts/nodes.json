@@ -11,6 +11,9 @@
         "p3dlvps4zk01.cloud.phx3.gdg",
         "p3dlvps4zk02.cloud.phx3.gdg",
         "p3dlvps4zk03.cloud.phx3.gdg"
+      ],
+      "consumer": [
+        "p3dlvps4kafka01.cloud.phx3.gdg"
       ]
   },
   "test": {
@@ -25,6 +28,9 @@
         "p3tlvps4zk01.cloud.phx3.gdg",
         "p3tlvps4zk02.cloud.phx3.gdg",
         "p3tlvps4zk03.cloud.phx3.gdg"
+      ],
+      "messageConsumer": [
+        "p3tlvps4kafka01.cloud.phx3.gdg"
       ]
   },
   "stage": {
@@ -39,6 +45,9 @@
         "p3slvps4zk01.cloud.phx3.gdg",
         "p3slvps4zk02.cloud.phx3.gdg",
         "p3slvps4zk03.cloud.phx3.gdg"
+      ],
+      "messageConsumer": [
+        "p3slvps4kafka01.cloud.phx3.gdg"
       ]
   },
   "prod": {
@@ -53,6 +62,9 @@
         "a2plvps4zk01.cloud.iad2.gdg",
         "a2plvps4zk02.cloud.iad2.gdg",
         "a2plvps4zk03.cloud.iad2.gdg"
+      ],
+      "messageConsumer": [
+        "a2plvps4kafka01.cloud.iad2.gdg"
       ]
   }
 }
