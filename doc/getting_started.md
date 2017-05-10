@@ -1,11 +1,12 @@
-Getting Started developing on VPS4
+# Getting Started developing on VPS4
 
 - git clone vps4 code locally:
     - https://github.secureserver.net/vps4/vps4
 - download Java 8 SDK
 - download eclipse Java EE
 - create maven settings file:
-File: ~/.m2/settings.xml
+> File: ~/.m2/settings.xml
+```xml
 <settings>
     <profiles>
         <profile>
@@ -31,6 +32,7 @@ File: ~/.m2/settings.xml
         </server>
     </servers>
 </settings>
+```
 
 - import code into eclipse
     - open eclipse, select File->Import->Maven->Existing Maven Projects
@@ -57,6 +59,7 @@ File: ~/.m2/settings.xml
 
 - Setup Postgres database
     - Install postgresql locally or install vagrant
+    - For Mac, one way to do it:
         - Install homebrew
         - brew install postgresql
         - createuser -s -r postgres
@@ -64,19 +67,21 @@ File: ~/.m2/settings.xml
         - Modify /etc/hosts to redirect domain vps4-local-dbserver.dev-godaddy.com
         - Locally if postgres installed locally or at vagrant IP if using vagrant
             - echo "127.0.0.1   vps4-local-dbserver.dev-godaddy.com" >> /etc/hosts
-    - Via commandline, in vps4/core dir
+    - Via commandline, in `vps4/core` dir, initialize postgres db:
+```bash
 mvn initialize sql:execute@drop-create-database -Prebuild-database
 mvn initialize flyway:migrate
+```
 
 - Creating first VM
     - Run Orchestration Engine
     - Run WebServer
-    - Use a tool to generate a uuid like python: python -c "from uuid import uuid4; print(uuid4())"
+    - Use a tool to generate a uuid like python: `python -c "from uuid import uuid4; print(uuid4())"`
         - Ex:17f0a467-293b-45ed-9990-a75d3d3adaa5
     - Create a vps4 credit
     - Swagger URL for vps4 local: http://localhost:8089/swagger/#!/vms/provisionVm
-    - 
-    - Body of POST:
+    - Example POST:
+```json
 {
   "name": "sejvm01",
   "orionGuid": "1637bf9c-18aa-11e7-83d9-60f81db99564",
@@ -85,10 +90,14 @@ mvn initialize flyway:migrate
   "username": "sjohnson",
   "password": "onevps4ME!"
 }
- 
+```
+
 - Import HFS web developer client cert into browser (Chrome?) to use hfs swagger UI
     - Repeat below steps for any environment needed.  Steps are for STAGE
     - Generate the pksc12 cert
+    - Example:
+    
+```bash
 cd workspaces/vps4
 git clone https://github.secureserver.net/hfs/Creds.git
 mkdir -p hfs_swagger_certs/{DEV,TEST,STAGE,PROD}
@@ -98,12 +107,13 @@ cp hfs_end_web_developer.crt hfs_end_web_developer.key hfs_int_web.crt hfs_root.
 cd !$
 cat hfs_int_web.crt hfs_root.crt >> temp_certfile
 openssl pkcs12 -export -passout pass:changeit -in hfs_end_web_developer.crt -inkey hfs_end_web_developer.key -certfile temp_certfile -out hfs_end_web_developer.p12
+```
 
-    - Import into Mac KeyChain
-        - Open KeyChain Access
-        - Click login and My Certificates
-        - File->Import Items, browse to new .p12 file
-        - Insert password from above: changeit
+  - Import into Mac KeyChain
+      - Open KeyChain Access
+      - Click login and My Certificates
+      - File->Import Items, browse to new .p12 file
+      - Insert password from above: changeit
 
-Use HFS Mock:
- - Add to VM arguments in orchestration engine run configurations: -Dvps4.hfs.mock=true
+Bypass HFS altogether, use the Mock HFS:
+ - Add to VM arguments in orchestration engine run configurations: `-Dvps4.hfs.mock=true`
