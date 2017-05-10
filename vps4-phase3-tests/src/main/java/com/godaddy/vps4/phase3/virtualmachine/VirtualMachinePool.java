@@ -212,7 +212,7 @@ public class VirtualMachinePool {
         static final String username = "vpstester";
         static final String password = "thisvps4TEST!";
 
-        public synchronized UUID provisionVm(UUID orionGuid){
+        public UUID provisionVm(UUID orionGuid){
             JSONObject provisionResult = apiClient.provisionVm("VPS4 Phase 3 Test VM",
                     orionGuid, imageName, 1, username, password);
 
