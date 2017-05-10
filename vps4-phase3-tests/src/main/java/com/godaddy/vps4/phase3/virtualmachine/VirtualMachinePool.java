@@ -7,6 +7,8 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.Semaphore;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import org.json.simple.JSONObject;
 import org.slf4j.Logger;
@@ -27,15 +29,15 @@ public class VirtualMachinePool {
     final Map<String, PerImagePool> poolByImageName = new ConcurrentHashMap<>();
 
     final Vps4ApiClient apiClient;
-    
+
     final Vps4ApiClient adminClient;
-    
-    final String user;
-    
+
+    final String shopperId;
+
     final ExecutorService threadPool;
 
-    public VirtualMachinePool(int maxTotalVmCount, int maxImageVmCount, 
-            Vps4ApiClient apiClient, Vps4ApiClient adminClient, String user,
+    public VirtualMachinePool(int maxTotalVmCount, int maxImageVmCount,
+            Vps4ApiClient apiClient, Vps4ApiClient adminClient, String shopperId,
             ExecutorService threadPool){
 
         this.maxTotalVmCount = maxTotalVmCount;
@@ -44,7 +46,7 @@ public class VirtualMachinePool {
         this.vmLeases = new Semaphore(maxTotalVmCount);
         this.apiClient = apiClient;
         this.adminClient = adminClient;
-        this.user = user;
+        this.shopperId = shopperId;
         this.threadPool = threadPool;
     }
 
@@ -65,7 +67,7 @@ public class VirtualMachinePool {
             // checked out from this pool, and we don't have an image of that name
         }
     }
-    
+
     public void destroyAll(){
         for(PerImagePool pool : poolByImageName.values()){
             pool.destroyAll();
@@ -86,14 +88,13 @@ public class VirtualMachinePool {
     class PerImagePool {
 
         final String imageName;
-
         final BlockingDeque<VirtualMachine> pool;
 
         public PerImagePool(String imageName) {
             this.imageName = imageName;
             this.pool = new LinkedBlockingDeque<>(VirtualMachinePool.this.maxPerImageVmCount);
         }
-        
+
         public void destroyAll(){
             for(VirtualMachine vm : pool){
                 destroy(vm);
@@ -137,14 +138,13 @@ public class VirtualMachinePool {
             // if we don't have a VM, and we can't create one, wait for a VM to
             // be returned to the pool
             VirtualMachine vm = pool.pollFirst();
-            
+
             if (vm == null) {
                 // no pooled VMs, can we spin one up?
                 if (vmLeases.tryAcquire()) {
-                    logger.debug("creating vm for {}", imageName);
-                    // we _can_ spin one up
-                    createVm();
-                } 
+                    // we _can_ spin one up if a credit is available
+                    tryCreateVm();
+                }
                 // we _can't_ spin one up, so we have to wait until one is returned
                 // to the pool
                 logger.debug("waiting for vm with image {}", imageName);
@@ -158,42 +158,61 @@ public class VirtualMachinePool {
             return vm;
         }
 
-        public void createVm() {
+        public void tryCreateVm() {
             threadPool.submit(() -> {
             // Create the VM and add to the pool
-            UUID orionGuid = createVmCredit();
-            UUID vmId = provisionVm(orionGuid);
-            
-            offer( new VirtualMachine(
-                    VirtualMachinePool.this,
-                    VirtualMachinePool.this.apiClient,
-                    this.imageName,
-                    username,
-                    password,
-                    vmId));
-            });
+            UUID orionGuid = getVmCredit();
+            if (orionGuid == null) {
+                logger.debug("no credits available to create vm {}", imageName);
+            }
+            else {
+                logger.debug("creating vm for {}, using credit guid {}", imageName, orionGuid);
+                UUID vmId = provisionVm(orionGuid);
+
+                offer( new VirtualMachine(
+                        VirtualMachinePool.this,
+                        VirtualMachinePool.this.apiClient,
+                        this.imageName,
+                        username,
+                        password,
+                        vmId));
+            }});
         }
 
-        public UUID createVmCredit(){
-            String controlPanel = "none";
-            if(imageName.toUpperCase().contains("CPANEL")){
-                controlPanel = "cpanel";
-            }
-            else if(imageName.toUpperCase().contains("PLESK")){
-                controlPanel = "plesk";
-            }
-
-            String os = "linux";
-            if(imageName.toUpperCase().contains("WIN")){
-                os = "windows";
-            }
-            return adminClient.createVmCredit(user, os, controlPanel, 0, 10);
+        public UUID getVmCredit() {
+            // Check if a vm credit is available for pool image via hfs ecomm api
+            String pattern = "(?<os>\\w*)-\\w*(?:-(?<panel>\\w*)-\\w*)*";
+            Matcher m = Pattern.compile(pattern).matcher(imageName);
+            m.matches();
+            String os = m.group("os").equals("windows") ? "windows" : "Linux";
+            String panel = m.group("panel") != null ? m.group("panel") :  "MYH";
+            return apiClient.getVmCredit(shopperId,  os,  panel);
         }
+
+//        public UUID createVmCredit(){
+//            // credits should no longer be created via vps4 api, but instead should now be
+//            // created in Orion -> HFS Orion Listener -> Cassandra and retrieved thru ecomm api
+//            // However, hfs ecomm api does allow creating credits if necessary (eg. staging)
+//
+//            String controlPanel = "MYH";
+//            if(imageName.toUpperCase().contains("CPANEL")){
+//                controlPanel = "cPanel";
+//            }
+//            else if(imageName.toUpperCase().contains("PLESK")){
+//                controlPanel = "Plesk";
+//            }
+//
+//            String os = "Linux";
+//            if(imageName.toUpperCase().contains("WIN")){
+//                os = "windows";
+//            }
+//            return adminClient.createVmCredit(shopperId, os, controlPanel, 0, 10);
+//        }
 
         static final String username = "vpstester";
         static final String password = "thisvps4TEST!";
 
-        public UUID provisionVm(UUID orionGuid){
+        public synchronized UUID provisionVm(UUID orionGuid){
             JSONObject provisionResult = apiClient.provisionVm("VPS4 Phase 3 Test VM",
                     orionGuid, imageName, 1, username, password);
 

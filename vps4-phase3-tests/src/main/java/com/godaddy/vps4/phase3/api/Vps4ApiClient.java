@@ -101,7 +101,7 @@ public class Vps4ApiClient {
         JSONObject primaryIp = (JSONObject) vm.get("primaryIpAddress");
         return primaryIp.get("ipAddress").toString();
     }
-    
+
     public String setHostname(UUID vmId, String hostname){
         JSONObject body = new JSONObject();
         body.put("hostname", hostname);
@@ -124,8 +124,21 @@ public class Vps4ApiClient {
         assert(createCreditResponse.statusCode == 200);
         JSONObject createCreditJsonResult = createCreditResponse.jsonResponse;
         UUID retVal =  UUID.fromString(createCreditJsonResult.get("orionGuid").toString());
-        
+
         return retVal;
+    }
+
+    public UUID getVmCredit(String shopperId, String os, String panel) {
+        Vps4JsonResponse<JSONArray> getCreditsResponse = sendGetList("/api/credits");
+        assert(getCreditsResponse.statusCode == 200);
+        JSONArray credits = getCreditsResponse.jsonResponse;
+        for (int i=0; i < credits.size(); i++)
+        {
+            JSONObject credit = (JSONObject) credits.get(i);
+            if (credit.get("controlPanel").equals(panel) && credit.get("operatingSystem").equals(os))
+                return UUID.fromString(credit.get("orionGuid").toString());
+        }
+        return null;
     }
 
 
@@ -166,7 +179,7 @@ public class Vps4ApiClient {
     }
 
     public void pollForVmActionComplete(UUID vmId, String actionId){
-        this.pollForVmActionComplete(vmId, actionId, 20);
+        this.pollForVmActionComplete(vmId, actionId, 60);
     }
 
     public void pollForVmActionComplete(UUID vmId, String actionId, long timeoutSeconds){
@@ -184,7 +197,7 @@ public class Vps4ApiClient {
             }
         }
         if(!result.jsonResponse.get("status").equals("COMPLETE")){
-            throw new RuntimeException("Couldn't complete action in time." + actionId);
+            throw new RuntimeException("Couldn't complete action " + actionId + "in time " + timeoutSeconds + "s");
         }
     }
 
