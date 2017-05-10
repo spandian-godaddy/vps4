@@ -35,6 +35,26 @@ public class VmUsageParser {
         return usage;
     }
 
+    private long parseLong(String val, String valType) {
+        try {
+            return Long.parseLong(val);
+        }
+        catch (NumberFormatException e) {
+            logger.warn("Unable to parse value for type: {}", valType);
+            return 0L; // If we are unable to parse then return a default value
+        }
+    }
+
+    private double parseDouble(String val, String valType) {
+        try {
+            return Double.parseDouble(val);
+        }
+        catch (NumberFormatException e) {
+            logger.warn("Unable to parse value for type: {}", valType);
+            return 0.0d; // If we are unable to parse then return a default value
+        }
+    }
+
     @SuppressWarnings("unchecked")
     protected Row readMostRecentRow(JSONObject json) {
         List<String> headers = (List<String>)json.get("headers"); // aray of string column names
@@ -94,15 +114,15 @@ public class VmUsageParser {
 
         if (row.containsHeader("tps")) {
             // linux
-            usage.readTps = Double.parseDouble(row.getValue("rtps"));
-            usage.writeTps = Double.parseDouble(row.getValue("wtps"));
-            usage.totalTps = Double.parseDouble(row.getValue("tps"));
+            usage.readTps = parseDouble(row.getValue("rtps"), "rtps");
+            usage.writeTps = parseDouble(row.getValue("wtps"), "wtps");
+            usage.totalTps = parseDouble(row.getValue("tps"), "tps");
 
         } else if (row.containsHeader("Disk Transfers/sec")) {
             // windows
-            usage.readTps = Double.parseDouble(row.getValue("Disk Reads/sec"));
-            usage.writeTps = Double.parseDouble(row.getValue("Disk Writes/sec"));
-            usage.totalTps = Double.parseDouble(row.getValue("Disk Transfers/sec"));
+            usage.readTps = parseDouble(row.getValue("Disk Reads/sec"), "Disk Reads/sec");
+            usage.writeTps = parseDouble(row.getValue("Disk Writes/sec"), "Disk Writes/sec");
+            usage.totalTps = parseDouble(row.getValue("Disk Transfers/sec"), "Disk Transfers/sec");
 
         } else {
             return null;
@@ -127,13 +147,13 @@ public class VmUsageParser {
 
         if (row.containsHeader("Used")) {
             // linux
-            usage.mibUsed = Long.parseLong(row.getValue("Used"));
-            usage.mibAvail = Long.parseLong(row.getValue("Avail"));
+            usage.mibUsed = parseLong(row.getValue("Used"), "Used");
+            usage.mibAvail = parseLong(row.getValue("Avail"), "Avail");
 
         } else if (row.containsHeader("% Free Space")) {
             // windows
-            long freeMb = Long.parseLong(row.getValue("Free Megabytes"));
-            double pctFreeSpace = Double.parseDouble(row.getValue("% Free Space")) / 100d;
+            long freeMb = parseLong(row.getValue("Free Megabytes"), "Free Megabytes");
+            double pctFreeSpace = parseDouble(row.getValue("% Free Space"), "% Free Space") / 100d;
             long availMb = (long)(((double)freeMb) / pctFreeSpace);
 
             usage.mibUsed = freeMb;
@@ -162,14 +182,14 @@ public class VmUsageParser {
 
         if (row.containsHeader("%user")) {
             // linux
-            usage.userPercent = Double.parseDouble(row.getValue("%user"));
+            usage.userPercent = parseDouble(row.getValue("%user"), "%user");
             // TODO add '%nice' value to 'userPercent' here?
-            usage.systemPercent = Double.parseDouble(row.getValue("%system"));
+            usage.systemPercent = parseDouble(row.getValue("%system"), "%system");
 
         } else if (row.containsHeader("% User Time")) {
             // windows
-            usage.userPercent = Double.parseDouble(row.getValue("% User Time"));
-            usage.systemPercent = Double.parseDouble(row.getValue("% Processor Time"));
+            usage.userPercent = parseDouble(row.getValue("% User Time"), "% User Time");
+            usage.systemPercent = parseDouble(row.getValue("% Processor Time"), "% Processor Time");
 
         } else {
             return null;
@@ -193,13 +213,13 @@ public class VmUsageParser {
 
         if (row.containsHeader("kbcommit")) {
             // linux
-            usage.mibMemFree = Long.parseLong(row.getValue("kbmemfree")) / 1024L;
-            usage.mibMemUsed = Long.parseLong(row.getValue("kbmemused")) / 1024L;
+            usage.mibMemFree = parseLong(row.getValue("kbmemfree"), "kbmemfree") / 1024L;
+            usage.mibMemUsed = parseLong(row.getValue("kbmemused"), "kbmemused") / 1024L;
 
         } else if (row.containsHeader("Available KBytes")) {
             // windows
-            long mibMemAvail = Long.parseLong(row.getValue("Available KBytes")) / 1024L;
-            long mibMemCommitted = Long.parseLong(row.getValue("Committed Bytes")) / 1024L / 1024L;
+            long mibMemAvail = parseLong(row.getValue("Available KBytes"), "Available KBytes") / 1024L;
+            long mibMemCommitted = parseLong(row.getValue("Committed Bytes"), "Committed Bytes") / 1024L / 1024L;
             usage.mibMemFree = mibMemAvail;
             usage.mibMemUsed = mibMemCommitted;
 

@@ -1,0 +1,106 @@
+{
+  "hdd": {
+    "data": [
+      [
+        "2017-02-09 17:41:52 UTC",
+        "/dev/vda1",
+        "40948",
+        "",
+        "",
+        "20%",
+        "/",
+        "41940288",
+        "203018",
+        "41737270",
+        "1%"
+      ]
+    ],
+    "headers": [
+      "Timestamp",
+      "Filesystem",
+      "1M-blocks",
+      "Used",
+      "Avail",
+      "Use%",
+      "MountedOn",
+      "Inodes",
+      "IUsed",
+      "IFree",
+      "IUse%"
+    ]
+  },
+  "cpu": {
+    "data": [
+      [
+        "2017-02-09 17:40:02 UTC",
+        "-1",
+        "",
+        "0.04",
+        "",
+        "0.24",
+        "0.00",
+        "98.29"
+      ]
+    ],
+    "headers": [
+      "Timestamp",
+      "CPU",
+      "%user",
+      "%nice",
+      "%system",
+      "%iowait",
+      "%steal",
+      "%idle"
+    ]
+  },
+  "mem": {
+    "data": [
+      [
+        "2017-02-09 17:40:02 UTC",
+        "",
+        "",
+        "86.35",
+        "0",
+        "1016608",
+        "1118524",
+        "38.14",
+        "547200",
+        "780688",
+        "4"
+      ]
+    ],
+    "headers": [
+      "Timestamp",
+      "kbmemfree",
+      "kbmemused",
+      "%memused",
+      "kbbuffers",
+      "kbcached",
+      "kbcommit",
+      "%commit",
+      "kbactive",
+      "kbinact",
+      "kbdirty"
+    ]
+  },
+  "io": {
+    "data": [
+      [
+        "2017-02-09 17:40:02 UTC",
+        "",
+        "",
+        "",
+        "247.16",
+        "9.75"
+      ]
+    ],
+    "headers": [
+      "Timestamp",
+      "tps",
+      "rtps",
+      "wtps",
+      "bread/s",
+      "bwrtn/s"
+    ]
+  }
+}
