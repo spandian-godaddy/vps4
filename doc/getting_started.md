@@ -1,9 +1,10 @@
 # Getting Started developing on VPS4
 
+
 - git clone vps4 code locally:
     - https://github.secureserver.net/vps4/vps4
 - download Java 8 SDK
-- download eclipse Java EE
+- download Eclipse IDE for Java Developers
 - create maven settings file:
 > File: ~/.m2/settings.xml
 ```xml
