@@ -23,7 +23,8 @@ public class Image {
     }
 
     public enum ControlPanel {
-        NONE(0), CPANEL(1), PLESK(2);
+        // MYH means no control panel
+        MYH(0), CPANEL(1), PLESK(2);
 
         private final int id;
 

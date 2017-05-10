@@ -49,7 +49,7 @@ public class Vps4SetPasswordTest {
         Vps4SetPassword.Request request = new Vps4SetPassword.Request();
         request.actionId = 12;
         request.setPasswordRequest = setPasswordRequest;
-        request.controlPanel = ControlPanel.NONE;
+        request.controlPanel = ControlPanel.MYH;
 
         SysAdminAction action = new SysAdminAction();
         action.vmId = request.setPasswordRequest.hfsVmId;
