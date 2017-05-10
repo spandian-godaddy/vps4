@@ -27,7 +27,7 @@ File: ~/.m2/settings.xml
         <server>
             <id>default</id>
             <username>ci_hostingcore</username>
-            <password>mhHVGysB4UyMz6XF</password>
+            <password>ask-somone-on-the-team-for-real-password</password>
         </server>
     </servers>
 </settings>
