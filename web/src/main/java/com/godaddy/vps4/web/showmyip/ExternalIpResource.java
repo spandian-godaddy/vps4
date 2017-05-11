@@ -1,6 +1,7 @@
 package com.godaddy.vps4.web.showmyip;
 
 import java.util.Iterator;
+import java.util.List;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.Consumes;
@@ -30,28 +31,28 @@ import io.swagger.annotations.Api;
 public class ExternalIpResource {
 
     private static final Logger logger = LoggerFactory.getLogger(ExternalIpResource.class);
-
+    
+    private static final String X_FORWARDED_FOR = "X-Forwarded-For";
+    
     @GET
     @Path("showmyip")
-    public ExternalIp getClientIpFromRequestHeader(@Context HttpServletRequest req, @Context HttpHeaders headers) {
-        logger.info("Value for REMOTE_ADDR: {} ", req.getRemoteAddr());
-        logger.info("Value for X-FORWARDED-FOR: {} ", req.getParameter("X-Forwarded-For"));
+    public ExternalIp getClientIpFromRequestHeader(@Context HttpHeaders headers, @Context HttpServletRequest req) {
 
+        // TODO: remove - only here for debug purposes.
         MultivaluedMap<String, String> allheadersMap = headers.getRequestHeaders();
         Iterator<String> i = allheadersMap.keySet().iterator();
-        
         while(i.hasNext()) {
             String key = i.next();
             logger.info(" {} : {} ", key, allheadersMap.get(key));
         }
         
-        if (StringUtils.isNotBlank(req.getRemoteAddr())) {
+        List<String> xForwardedFor = headers.getRequestHeader(X_FORWARDED_FOR);
+        if(xForwardedFor != null && !xForwardedFor.isEmpty()) {
+            return new ExternalIp(xForwardedFor.get(0).split(",")[0]);
+        } else if(StringUtils.isNotBlank(req.getRemoteAddr())){
             return new ExternalIp(req.getRemoteAddr());
         }
-        else if (StringUtils.isNotBlank(req.getParameter("X-Forwarded-For"))) {
-            return new ExternalIp(req.getParameter("X-Forwarded-For"));
-        }
-
+        
         throw new NotAcceptableException("Unable to determine client IP address from request header. ");
     }
 }
