@@ -8,6 +8,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
 import org.json.simple.JSONObject;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.mockito.Mockito;
 import static org.mockito.Mockito.*;
@@ -17,24 +18,21 @@ import com.godaddy.vps4.phase3.virtualmachine.VirtualMachinePool;
 
 public class TestGroupExecutionTest {
 
-    @Test
+    @Ignore("Used to test the tests") @Test
     public void testGroupExecution() throws InterruptedException {
 
         ExecutorService threadPool = Executors.newCachedThreadPool();
 
         Vps4ApiClient apiClient = mock(Vps4ApiClient.class);
 
-        System.out.println(apiClient);
-
         when(apiClient.getVmCredit(any(), any(), any()))
             .thenAnswer(invocation -> UUID.randomUUID());
-
 
         when(apiClient.deleteVm(any(UUID.class))).thenReturn(null);
 
         // String name, UUID orionGuid, String imageName, int dcId, String username, String password
 
-        when(apiClient.provisionVm(any(String.class), any(UUID.class), any(String.class), anyInt(), any(String.class), any(String.class)))
+        when(apiClient.provisionVm(any(), any(), any(), anyInt(), any(), any()))
             .thenAnswer(invocation -> {
                 JSONObject json = new JSONObject();
                 json.put("virtualMachineId", UUID.randomUUID());
