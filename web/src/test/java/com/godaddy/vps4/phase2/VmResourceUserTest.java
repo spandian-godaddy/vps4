@@ -236,7 +236,7 @@ public class VmResourceUserTest {
 
     @Test
     public void testProvisionVm() throws InterruptedException {
-        ProvisionVmRequest provisionRequest = createProvisionRequest("none");
+        ProvisionVmRequest provisionRequest = createProvisionRequest("myh");
         Action action = newValidVmResource().provisionVm(provisionRequest);
         vmIds.add(action.virtualMachineId);
         Assert.assertNotNull(action.commandId);
@@ -245,7 +245,7 @@ public class VmResourceUserTest {
 
     @Test(expected = AuthorizationException.class)
     public void testProvisionVmInvalidResource() throws InterruptedException {
-        ProvisionVmRequest provisionRequest = createProvisionRequest("none");
+        ProvisionVmRequest provisionRequest = createProvisionRequest("myh");
         newInvalidVmResource().provisionVm(provisionRequest);
     }
 

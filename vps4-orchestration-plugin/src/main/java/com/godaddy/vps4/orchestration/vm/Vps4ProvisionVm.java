@@ -174,7 +174,7 @@ public class Vps4ProvisionVm extends ActionCommand<Vps4ProvisionVm.Request, Vps4
     private void configureMailRelay(Vm hfsVm) {
         setStep(CreateVmStep.ConfigureMailRelay);
 
-        String controlPanel = request.vmInfo.image.controlPanel.equals(ControlPanel.NONE) ? null
+        String controlPanel = request.vmInfo.image.controlPanel.equals(ControlPanel.MYH) ? null
                 : request.vmInfo.image.controlPanel.name().toLowerCase();
 
         ConfigureMailRelayRequest configureMailRelayRequest = new ConfigureMailRelayRequest(hfsVm.vmId,
@@ -246,7 +246,7 @@ public class Vps4ProvisionVm extends ActionCommand<Vps4ProvisionVm.Request, Vps4
     }
 
     private void configureAdminUser(Vm hfsVm, UUID vmId) {
-        boolean adminEnabled = request.vmInfo.image.controlPanel == ControlPanel.NONE;
+        boolean adminEnabled = request.vmInfo.image.controlPanel == ControlPanel.MYH;
         String username = request.hfsRequest.username;
         ToggleAdmin.Request toggleAdminRequest = new ToggleAdmin.Request();
         toggleAdminRequest.enabled = adminEnabled;

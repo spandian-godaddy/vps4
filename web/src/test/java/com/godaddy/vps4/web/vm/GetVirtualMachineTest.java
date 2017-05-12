@@ -50,7 +50,7 @@ public class GetVirtualMachineTest {
         when(virtualMachineService.getVirtualMachine(vmId)).thenReturn(vm);
 
         dc = new DataCenter(5, "testDc");
-        VirtualMachineCredit credit = new VirtualMachineCredit(vm.orionGuid, 10, 0, 0, "linux", "none", Instant.now(),
+        VirtualMachineCredit credit = new VirtualMachineCredit(vm.orionGuid, 10, 0, 0, "linux", "myh", Instant.now(),
                 null, shopperId, AccountStatus.ACTIVE, dc, vmId);
 
         CreditService creditService = Mockito.mock(CreditService.class);

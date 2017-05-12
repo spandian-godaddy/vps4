@@ -94,7 +94,7 @@ public class Vps4ProvisionVmTest {
         long hfsVmId = 42;
         this.image = new Image();
         image.operatingSystem = Image.OperatingSystem.WINDOWS;
-        image.controlPanel = ControlPanel.NONE;
+        image.controlPanel = ControlPanel.MYH;
         this.vm = new VirtualMachine(UUID.randomUUID(), hfsVmId, UUID.randomUUID(), 1,
                 null, "VM Name",
                 image, null, null, null,

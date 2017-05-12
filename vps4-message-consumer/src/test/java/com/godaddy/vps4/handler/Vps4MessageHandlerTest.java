@@ -64,7 +64,7 @@ public class Vps4MessageHandlerTest {
 
         DataCenter dc = dcService.getDataCenter(5);
 
-        VirtualMachineCredit vmCredit = new VirtualMachineCredit(vm.orionGuid, 10, 0, 1, "linux", "none", null, null, "TestShopper", AccountStatus.ACTIVE, dc, vm.vmId);
+        VirtualMachineCredit vmCredit = new VirtualMachineCredit(vm.orionGuid, 10, 0, 1, "linux", "myh", null, null, "TestShopper", AccountStatus.ACTIVE, dc, vm.vmId);
         when(creditServiceMock.getVirtualMachineCredit(vmCredit.orionGuid)).thenReturn(vmCredit);
 
         MessageHandler handler = new Vps4MessageHandler(vmServiceMock,
@@ -136,7 +136,7 @@ public class Vps4MessageHandlerTest {
 
         DataCenter dc = dcService.getDataCenter(5);
 
-        VirtualMachineCredit vmCredit = new VirtualMachineCredit(vm.orionGuid, 10, 0, 1, "linux", "none", null, null, "TestShopper",
+        VirtualMachineCredit vmCredit = new VirtualMachineCredit(vm.orionGuid, 10, 0, 1, "linux", "myh", null, null, "TestShopper",
                 AccountStatus.REMOVED, dc, vm.vmId);
         when(creditServiceMock.getVirtualMachineCredit(vmCredit.orionGuid)).thenReturn(vmCredit);
 

@@ -29,37 +29,44 @@ import com.godaddy.vps4.phase3.virtualmachine.VirtualMachinePool;
 public class RunSomeTests {
 
     private static final Logger logger = LoggerFactory.getLogger(RunSomeTests.class);
-    
+
     static String USERNAME = "testuser";
     static String PASSWORD = "testVPS4YOU!";
 
+    static final int MAX_TOTAL_VM = 2;
+    static final int MAX_PER_IMAGE_VM = 1;
+
     public static void main(String[] args) throws Exception{
 
-        String URL = args[1];
-        String vps4User = args[2];
-        String vps4Password = args[3];
-        
-        String ssoUrl = args[4];
-        String adminUser = args[5];
-        String adminPassword = args[6];
-        
+        String URL = args[0];
+        String vps4ShopperId = args[1];
+        String vps4Password = args[2];
+
+        String ssoUrl = args[3];
+        String adminUser = args[4];
+        String adminPassword = args[5];
+
+        for (int i=0; i < args.length; i++)
+            logger.error("Arg {}: {}", i, args[i]);
+
         SsoClient ssoClient = new SsoClient(ssoUrl);
-        
+
         String adminAuthHeader = ssoClient.getJomaxSsoToken(adminUser, adminPassword);
         Vps4ApiClient adminClient = new Vps4ApiClient(URL, adminAuthHeader);
-        
-        String vps4AuthHeader = ssoClient.getVps4SsoToken(vps4User, vps4Password);
+
+        String vps4AuthHeader = ssoClient.getVps4SsoToken(vps4ShopperId, vps4Password);
         Vps4ApiClient vps4ApiClient = new Vps4ApiClient(URL, vps4AuthHeader);
-        
+
         ExecutorService threadPool = Executors.newCachedThreadPool();
-        
-        VirtualMachinePool vmPool = new VirtualMachinePool(4, 2, vps4ApiClient, adminClient, vps4User, threadPool);
+
+        VirtualMachinePool vmPool = new VirtualMachinePool(MAX_TOTAL_VM, MAX_PER_IMAGE_VM, vps4ApiClient,
+                adminClient, vps4ShopperId, threadPool);
 
         List<VmTest> tests = Arrays.asList(
                 new ChangeHostnameTest(randomHostname()),
                 new StopStartVmTest()
         );
-        
+
         TestGroup vps4 = new TestGroup("VPS4 Phase3 Tests");
 
         ImageTestGroup centos7 = new ImageTestGroup("centos-7");
@@ -87,13 +94,13 @@ public class RunSomeTests {
             vmPool.destroyAll();
             printResults(testGroupExecution);
             System.exit(1);
-        } 
-        
+        }
+
         vmPool.destroyAll();
         printResults(testGroupExecution);
-       
+
     }
-    
+
     private static void printResults(TestGroupExecution testGroupExecution){
         System.out.println("===========================================");
         System.out.println("===========================================");
