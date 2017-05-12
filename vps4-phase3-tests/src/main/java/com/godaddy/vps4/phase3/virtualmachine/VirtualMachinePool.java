@@ -7,6 +7,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.Semaphore;
+import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -90,9 +91,13 @@ public class VirtualMachinePool {
         final String imageName;
         final BlockingDeque<VirtualMachine> pool;
 
+        final Semaphore perImageLeases;
+
         public PerImagePool(String imageName) {
             this.imageName = imageName;
             this.pool = new LinkedBlockingDeque<>(VirtualMachinePool.this.maxPerImageVmCount);
+
+            this.perImageLeases = new Semaphore(VirtualMachinePool.this.maxPerImageVmCount);
         }
 
         public void destroyAll(){
@@ -139,20 +144,26 @@ public class VirtualMachinePool {
             // be returned to the pool
             VirtualMachine vm = pool.pollFirst();
 
-            if (vm == null) {
+            while (vm == null) {
                 // no pooled VMs, can we spin one up?
-                if (vmLeases.tryAcquire()) {
-                    // we _can_ spin one up if a credit is available
-                    tryCreateVm();
+                if (perImageLeases.tryAcquire()) {
+                    if (vmLeases.tryAcquire()) {
+                        // we _can_ spin one up if a credit is available
+                        tryCreateVm();
+                    } else {
+                        perImageLeases.release();
+                    }
                 }
                 // we _can't_ spin one up, so we have to wait until one is returned
                 // to the pool
                 logger.debug("waiting for vm with image {}", imageName);
                 try {
-                    vm = pool.takeFirst();
+                    vm = pool.poll(15, TimeUnit.SECONDS);
                 } catch (InterruptedException e) {
                     throw new RuntimeException(e);
                 }
+
+                // TODO overall timeout (when to give up)
             }
             logger.debug("acquired {}", vm);
             return vm;
@@ -164,6 +175,7 @@ public class VirtualMachinePool {
             UUID orionGuid = getVmCredit();
             if (orionGuid == null) {
                 logger.debug("no credits available to create vm {}", imageName);
+                vmLeases.release();
             }
             else {
                 logger.debug("creating vm for {}, using credit guid {}", imageName, orionGuid);
@@ -212,7 +224,7 @@ public class VirtualMachinePool {
         static final String username = "vpstester";
         static final String password = "thisvps4TEST!";
 
-        public synchronized UUID provisionVm(UUID orionGuid){
+        public UUID provisionVm(UUID orionGuid){
             JSONObject provisionResult = apiClient.provisionVm("VPS4 Phase 3 Test VM",
                     orionGuid, imageName, 1, username, password);
 
