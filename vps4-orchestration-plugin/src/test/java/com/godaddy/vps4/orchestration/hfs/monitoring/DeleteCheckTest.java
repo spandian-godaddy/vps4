@@ -1,4 +1,4 @@
-package com.godaddy.vps4.orchestration.hfs.pingcheck;
+package com.godaddy.vps4.orchestration.hfs.monitoring;
 
 import static org.junit.Assert.assertEquals;
 import static org.mockito.Mockito.mock;

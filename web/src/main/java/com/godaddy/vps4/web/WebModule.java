@@ -8,6 +8,7 @@ import com.godaddy.vps4.web.monitoring.VmMonitoringResource;
 import com.godaddy.vps4.web.plesk.PleskResource;
 import com.godaddy.vps4.web.showmyip.ExternalIpResource;
 import com.godaddy.vps4.web.support.SupportResource;
+import com.godaddy.vps4.web.support.UserSupportResource;
 import com.godaddy.vps4.web.sysadmin.SysAdminResource;
 import com.godaddy.vps4.web.sysadmin.UsageStatsResource;
 import com.godaddy.vps4.web.validator.ValidatorResource;
@@ -45,6 +46,7 @@ public class WebModule extends AbstractModule {
         bind(ExternalIpResource.class);
 
         bind(SupportResource.class);
+        bind(UserSupportResource.class);
         
         bind(Vps4ExceptionMapper.class);
         

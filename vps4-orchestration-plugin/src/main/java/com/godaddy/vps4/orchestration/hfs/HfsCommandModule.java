@@ -1,6 +1,7 @@
 package com.godaddy.vps4.orchestration.hfs;
 
 import com.godaddy.vps4.orchestration.hfs.cpanel.ConfigureCpanel;
+import com.godaddy.vps4.orchestration.hfs.cpanel.RefreshCpanelLicense;
 import com.godaddy.vps4.orchestration.hfs.cpanel.WaitForCpanelAction;
 import com.godaddy.vps4.orchestration.hfs.monitoring.CreateCheck;
 import com.godaddy.vps4.orchestration.hfs.monitoring.DeleteCheck;
@@ -13,7 +14,7 @@ import com.godaddy.vps4.orchestration.hfs.network.WaitForAddressAction;
 import com.godaddy.vps4.orchestration.hfs.plesk.ConfigurePlesk;
 import com.godaddy.vps4.orchestration.hfs.plesk.UpdateAdminPassword;
 import com.godaddy.vps4.orchestration.hfs.plesk.WaitForPleskAction;
-import com.godaddy.vps4.orchestration.hfs.sysadmin.RefreshCpanelLicense;
+import com.godaddy.vps4.orchestration.hfs.sysadmin.AddUser;
 import com.godaddy.vps4.orchestration.hfs.sysadmin.SetHostname;
 import com.godaddy.vps4.orchestration.hfs.sysadmin.SetPassword;
 import com.godaddy.vps4.orchestration.hfs.sysadmin.ToggleAdmin;
@@ -55,6 +56,7 @@ public class HfsCommandModule extends AbstractModule {
         bind(SetHostname.class);
         bind(WaitForSysAdminAction.class);
         bind(ConfigureMailRelay.class);
+        bind(AddUser.class);
 
         // CPanel
         bind(ConfigureCpanel.class);

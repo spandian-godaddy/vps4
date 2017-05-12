@@ -1,11 +1,13 @@
 package com.godaddy.vps4.web.support;
 
 import java.text.DateFormat;
+import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 import java.util.UUID;
-import java.util.Date;
 
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DefaultValue;
@@ -23,8 +25,8 @@ import javax.ws.rs.core.UriInfo;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.godaddy.vps4.credit.VirtualMachineCredit;
 import com.godaddy.vps4.credit.CreditService;
+import com.godaddy.vps4.credit.VirtualMachineCredit;
 import com.godaddy.vps4.jdbc.ResultSubset;
 import com.godaddy.vps4.security.Vps4User;
 import com.godaddy.vps4.security.Vps4UserService;
@@ -35,7 +37,6 @@ import com.godaddy.vps4.vm.VirtualMachineService;
 import com.godaddy.vps4.web.PaginatedResult;
 import com.godaddy.vps4.web.Vps4Api;
 import com.google.inject.Inject;
-import java.text.ParseException;
 
 import gdg.hfs.orchestration.CommandService;
 import gdg.hfs.orchestration.CommandState;
@@ -70,7 +71,7 @@ public class SupportResource {
 
     @GET
     @Path("vms")
-    public List<VirtualMachine> getVm(@QueryParam("shopperId") String shopperId) {
+    public List<VirtualMachine> getVms(@QueryParam("shopperId") String shopperId) {
 
         logger.info("getting vms with shopper id {}", shopperId);
         Vps4User vps4User = vps4UserService.getUser(shopperId);
@@ -78,6 +79,19 @@ public class SupportResource {
             throw new NotFoundException("Unknown shopper id: " + shopperId);
         }
         return virtualMachineService.getVirtualMachinesForUser(vps4User.getId());
+    }
+
+    @GET
+    @Path("vms/{vmId}")
+    public VirtualMachine getVm(@PathParam("vmId") UUID vmId) {
+        logger.info("getting vm with id {}", vmId);
+        VirtualMachine virtualMachine = virtualMachineService.getVirtualMachine(vmId);
+
+        if (virtualMachine == null || virtualMachine.validUntil.isBefore(Instant.now())) {
+            throw new NotFoundException("Unknown VM ID: " + vmId);
+        }
+
+        return virtualMachine;
     }
 
     @GET

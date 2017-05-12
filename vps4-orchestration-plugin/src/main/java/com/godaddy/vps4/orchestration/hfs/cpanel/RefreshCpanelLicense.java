@@ -1,9 +1,8 @@
-package com.godaddy.vps4.orchestration.hfs.sysadmin;
+package com.godaddy.vps4.orchestration.hfs.cpanel;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.godaddy.vps4.orchestration.hfs.cpanel.WaitForCpanelAction;
 import com.google.inject.Inject;
 
 import gdg.hfs.orchestration.Command;

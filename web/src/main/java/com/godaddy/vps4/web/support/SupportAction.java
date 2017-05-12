@@ -8,6 +8,7 @@ public class SupportAction {
 
     public final Action action;
     public final CommandState orchestrationCommand;
+    public String message;
     
 
     public SupportAction(Action action,  CommandState orchestrationCommand){
@@ -16,9 +17,16 @@ public class SupportAction {
     }
 
 
+    public SupportAction(Action action, CommandState command, String message) {
+        this.action = action;
+        this.orchestrationCommand = command;
+        this.message = message;
+    }
+
     public String toString(){
         return "Action [action: " + action
-                + " command: " + orchestrationCommand + "]";
+                + " command: " + orchestrationCommand
+                + " message: " + message + "]";
     }
 
 }

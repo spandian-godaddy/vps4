@@ -241,10 +241,10 @@ public class VmResource {
                 user.getId());
         logger.info("Action id: {}", actionId);
 
-        long ifMonitoringThenPingCheckAccountId = vmCredit.monitoring == 1 ? pingCheckAccountId : 0;
+        long ifMonitoringThenMonitoringAccountId = vmCredit.monitoring == 1 ? pingCheckAccountId : 0;
 
         ProvisionVmInfo vmInfo = new ProvisionVmInfo(virtualMachine.vmId, vmCredit.managedLevel, virtualMachine.image,
-                project.getVhfsSgid(), mailRelayQuota, ifMonitoringThenPingCheckAccountId);
+                project.getVhfsSgid(), mailRelayQuota, ifMonitoringThenMonitoringAccountId);
         logger.info("vmInfo: {}", vmInfo.toString());
 
         Vps4ProvisionVm.Request request = createProvisionVmRequest(hfsRequest, actionId, vmInfo);

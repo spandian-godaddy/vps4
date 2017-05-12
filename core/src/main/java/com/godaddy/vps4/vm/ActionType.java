@@ -1,17 +1,24 @@
 package com.godaddy.vps4.vm;
 
-import java.util.Map;
-
 import static java.util.Arrays.stream;
 import static java.util.stream.Collectors.toMap;
 
+import java.util.Map;
+
 public enum ActionType {
 
-    CREATE_VM(1), RESTART_VM(2),
-    ENABLE_ADMIN_ACCESS(3), DISABLE_ADMIN_ACCESS(4),
-    START_VM(5), STOP_VM(6), DESTROY_VM(7),
-    SET_PASSWORD(8), SET_HOSTNAME(9),
-    UPDATE_SERVER(10);
+    CREATE_VM(1), 
+    RESTART_VM(2),
+    ENABLE_ADMIN_ACCESS(3), 
+    DISABLE_ADMIN_ACCESS(4),
+    START_VM(5), 
+    STOP_VM(6), 
+    DESTROY_VM(7),
+    SET_PASSWORD(8), 
+    SET_HOSTNAME(9),
+    UPDATE_SERVER(10), 
+    ADD_ADMIN_USER(11), 
+    REMOVE_ADMIN_USER(12);
 
     private final int typeId;
 
