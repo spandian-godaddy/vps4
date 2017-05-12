@@ -34,6 +34,7 @@ import com.godaddy.vps4.web.security.AuthenticationFilter;
 import com.godaddy.vps4.web.security.SupportAuthenticationFilter;
 import com.godaddy.vps4.web.security.Vps4UserFakeModule;
 import com.godaddy.vps4.web.security.Vps4UserModule;
+import com.godaddy.vps4.web.util.RequestIdFilter;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
 import com.google.inject.Module;
@@ -98,10 +99,14 @@ public class Vps4Injector {
                 bind(CorsFilter.class).in(Singleton.class);
                 filter("/api/*").through(CorsFilter.class);
 
+                // attach a thread-local request ID
+                bind(RequestIdFilter.class).in(Singleton.class);
+                filter("/api/*").through(RequestIdFilter.class);
+
                 if (!useFakeUser) {
                     bind(AuthenticationFilter.class).in(Singleton.class);
                     filter("/api/*").through(AuthenticationFilter.class);
-                    
+
                     bind(SupportAuthenticationFilter.class).in(Singleton.class);
                     filter("/api/support*").through(SupportAuthenticationFilter.class);
                 }

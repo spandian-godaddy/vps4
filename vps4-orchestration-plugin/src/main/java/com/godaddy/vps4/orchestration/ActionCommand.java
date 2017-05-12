@@ -1,14 +1,22 @@
 package com.godaddy.vps4.orchestration;
 
+import java.lang.reflect.Field;
+import java.util.UUID;
+
 import org.json.simple.JSONObject;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.godaddy.vps4.util.ThreadLocalRequestId;
 import com.godaddy.vps4.vm.ActionService;
 
 import gdg.hfs.orchestration.Command;
 import gdg.hfs.orchestration.CommandContext;
 
 public abstract class ActionCommand<Req extends ActionRequest, Res> implements Command<Req, Res> {
+
+    private static final Logger logger = LoggerFactory.getLogger(ActionCommand.class);
 
     protected static final ObjectMapper mapper = new ObjectMapper();
 
@@ -24,6 +32,8 @@ public abstract class ActionCommand<Req extends ActionRequest, Res> implements C
         final long actionId = req.getActionId();
 
         // TODO validate actionId
+
+        setRequestId(context);
 
         actionService.markActionInProgress(actionId);
         try {
@@ -41,9 +51,34 @@ public abstract class ActionCommand<Req extends ActionRequest, Res> implements C
 
             actionService.failAction(actionId, response.toJSONString(), null);
             throw new RuntimeException(e);
+
+        } finally {
+            ThreadLocalRequestId.set(null);
         }
     }
 
     protected abstract Res executeWithAction(CommandContext context, Req req) throws Exception;
+
+    /**
+     * peek inside the implementation of a CommandContext and
+     * pull out the command ID, then set it as the request ID
+     *
+     * @param context
+     */
+    public static void setRequestId(CommandContext context) {
+
+        try {
+            Field field = context.getClass().getField("commandId");
+            field.setAccessible(true);
+
+            Object o = field.get(context);
+            if (o != null && o instanceof UUID) {
+                ThreadLocalRequestId.set( (UUID) o );
+            }
+
+        } catch (Exception e) {
+            logger.error("Unable to extract command ID from CommandContext");
+        }
+    }
 
 }

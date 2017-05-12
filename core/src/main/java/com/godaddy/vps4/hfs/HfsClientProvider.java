@@ -1,8 +1,10 @@
 package com.godaddy.vps4.hfs;
 
+import java.io.IOException;
 import java.security.SecureRandom;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
+import java.util.UUID;
 
 import javax.inject.Inject;
 import javax.inject.Provider;
@@ -12,6 +14,8 @@ import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.X509TrustManager;
 import javax.ws.rs.client.Client;
+import javax.ws.rs.client.ClientRequestContext;
+import javax.ws.rs.client.ClientRequestFilter;
 
 import org.apache.http.client.HttpClient;
 import org.apache.http.config.RegistryBuilder;
@@ -28,6 +32,7 @@ import org.slf4j.LoggerFactory;
 
 import com.fasterxml.jackson.jaxrs.json.JacksonJsonProvider;
 import com.godaddy.hfs.config.Config;
+import com.godaddy.vps4.util.ThreadLocalRequestId;
 
 @Singleton
 public class HfsClientProvider<T> implements Provider<T> {
@@ -102,6 +107,19 @@ public class HfsClientProvider<T> implements Provider<T> {
         client.register(jacksonJsonProvider);
 
         // client.register(new ErrorResponseFilter());
+
+        // add a header to all HFS requests indicating the request ID
+        client.register(new ClientRequestFilter() {
+
+            @Override
+            public void filter(ClientRequestContext requestContext) throws IOException {
+
+                UUID requestId = ThreadLocalRequestId.get();
+                if (requestId != null) {
+                    requestContext.getHeaders().add("X-Request-Id", requestId.toString());
+                }
+            }
+        });
 
         ResteasyWebTarget target = (ResteasyWebTarget) client.target(baseUrl);
 
