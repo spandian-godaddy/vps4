@@ -31,7 +31,7 @@ import io.swagger.annotations.Api;
 public class ExternalIpResource {
 
     private static final Logger logger = LoggerFactory.getLogger(ExternalIpResource.class);
-    
+
     private static final String X_FORWARDED_FOR = "X-Forwarded-For";
     
     @GET
@@ -52,7 +52,7 @@ public class ExternalIpResource {
         } else if(StringUtils.isNotBlank(req.getRemoteAddr())){
             return new ExternalIp(req.getRemoteAddr());
         }
-        
+
         throw new NotAcceptableException("Unable to determine client IP address from request header. ");
     }
 }
