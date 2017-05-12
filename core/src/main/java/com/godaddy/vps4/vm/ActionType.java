@@ -18,7 +18,7 @@ public enum ActionType {
     SET_HOSTNAME(9),
     UPDATE_SERVER(10), 
     ADD_ADMIN_USER(11), 
-    REMOVE_ADMIN_USER(12);
+    DELETE_USER(12);
 
     private final int typeId;
 

@@ -104,4 +104,15 @@ public class JdbcVmUserServiceTest {
         assertTrue(u.adminEnabled);
     }
 
+    @Test
+    public void testDeleteUser() {
+        VmUserService service = new JdbcVmUserService(dataSource);
+        service.createUser(username, vm.vmId, true);
+        List<VmUser> ul = service.listUsers(vm.vmId);
+        assertEquals(1, ul.size());
+        service.deleteUser(username, vm.vmId);
+        ul = service.listUsers(vm.vmId);
+        assertEquals(0, ul.size());
+    }
+
 }

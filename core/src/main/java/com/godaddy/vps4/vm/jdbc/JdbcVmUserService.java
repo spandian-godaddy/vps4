@@ -9,7 +9,6 @@ import javax.inject.Inject;
 import javax.sql.DataSource;
 
 import com.godaddy.hfs.jdbc.Sql;
-
 import com.godaddy.vps4.vm.VmUser;
 import com.godaddy.vps4.vm.VmUserService;
 
@@ -33,6 +32,11 @@ public class JdbcVmUserService implements VmUserService{
         Sql.with(dataSource).exec("SELECT * from user_create(?,?,?)",
                                     null,
                                     username, vmId, false);
+    }
+
+    @Override
+    public void deleteUser(String username, UUID vmId) {
+        Sql.with(dataSource).exec("DELETE FROM vm_user WHERE vm_id=? and name=?", null, vmId, username);
     }
 
     @Override

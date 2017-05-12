@@ -209,6 +209,12 @@
             <artifactId>guice-multibindings</artifactId>
             <version>4.1.0</version>
         </dependency>
+        
+        <dependency>
+            <groupId>org.passay</groupId>
+            <artifactId>passay</artifactId>
+            <version>1.2.0</version>
+        </dependency>
 
         <!-- HFS Dependencies -->
 

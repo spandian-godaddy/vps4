@@ -14,8 +14,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.godaddy.vps4.orchestration.sysadmin.Vps4AddAdminUser;
+import com.godaddy.vps4.orchestration.sysadmin.Vps4RemoveUser;
 import com.godaddy.vps4.security.Vps4User;
 import com.godaddy.vps4.security.Vps4UserService;
+import com.godaddy.vps4.sysadmin.UsernamePasswordGenerator;
 import com.godaddy.vps4.vm.Action;
 import com.godaddy.vps4.vm.ActionService;
 import com.godaddy.vps4.vm.ActionType;
@@ -57,11 +59,11 @@ public class UserSupportResource {
     @POST
     @Path("vms/{vmId}/addAdminUser")
     public SupportAction addAdminUser(@PathParam("vmId") UUID vmId) {
-        logger.info("Adding an admin user to vm " + vmId + " from the support api");
+        logger.info("Adding an admin user to vm {} from the support api", vmId);
         VirtualMachine vm = supportResource.getVm(vmId);
 
-        String username = "newuser"; // TODO: Generate new username
-        String password = "abcdWXYZ1!"; // TODO: Generate a password
+        String username = UsernamePasswordGenerator.generateUsername(12);
+        String password = UsernamePasswordGenerator.generatePassword(14);
 
         JSONObject addUserJson = new JSONObject();
         addUserJson.put("username", username);
@@ -83,6 +85,31 @@ public class UserSupportResource {
         
         SupportAction supportAction = new SupportAction(action, command, message.toString());
 
+        return supportAction;
+    }
+
+    @POST
+    @Path("/vms/{vmId}/removeUser/{username}")
+    public SupportAction removeUser(@PathParam("vmId") UUID vmId, @PathParam("username") String username) {
+        logger.info("Removing user {} from vm {}", username, vmId);
+        VirtualMachine vm = supportResource.getVm(vmId);
+
+        JSONObject removeUserJson = new JSONObject();
+        removeUserJson.put("username", username);
+
+        long actionId = actionService.createAction(vmId, ActionType.DELETE_USER, removeUserJson.toJSONString(), supportUser.getId());
+
+        Vps4RemoveUser.Request request = new Vps4RemoveUser.Request();
+        request.hfsVmId = vm.hfsVmId;
+        request.username = username;
+        request.actionId = actionId;
+        request.vmId = vmId;
+
+        CommandState command = Commands.execute(commandService, actionService, "Vps4RemoveUser", request);
+
+        Action action = actionService.getAction(actionId);
+
+        SupportAction supportAction = new SupportAction(action, command, null);
         return supportAction;
     }
 

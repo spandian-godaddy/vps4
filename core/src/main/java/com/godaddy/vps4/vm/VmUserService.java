@@ -13,4 +13,6 @@ public interface VmUserService {
 	void updateUserAdminAccess(String username, UUID vmId, boolean adminEnabled);
 	
 	boolean userExists(String username, UUID vmId);
+
+    void deleteUser(String username, UUID vmId);
 }
