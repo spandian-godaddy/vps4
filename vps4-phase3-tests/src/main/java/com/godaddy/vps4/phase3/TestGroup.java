@@ -112,9 +112,9 @@ public class TestGroup {
                 System.out.println("PASS: " + testExecution);
             }
             catch (ExecutionException e) {
-                testExecution.exception = e;
-                System.out.println("FAIL: " + testExecution + " " + e);
                 testExecution.status = TestStatus.FAIL;
+                testExecution.exception = e;
+                System.out.println("FAIL: " + testExecution);
             }
 
             if (testExecution.status == TestStatus.FAIL) {

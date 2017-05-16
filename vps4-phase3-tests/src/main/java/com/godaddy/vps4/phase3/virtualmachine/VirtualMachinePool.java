@@ -7,6 +7,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.Semaphore;
+import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -24,6 +25,8 @@ public class VirtualMachinePool {
 
     final int maxPerImageVmCount;
 
+    final int maxVmWaitSeconds;
+
     final Semaphore vmLeases;
 
     final Map<String, PerImagePool> poolByImageName = new ConcurrentHashMap<>();
@@ -36,12 +39,13 @@ public class VirtualMachinePool {
 
     final ExecutorService threadPool;
 
-    public VirtualMachinePool(int maxTotalVmCount, int maxImageVmCount,
+    public VirtualMachinePool(int maxTotalVmCount, int maxImageVmCount, int maxVmWaitSeconds,
             Vps4ApiClient apiClient, Vps4ApiClient adminClient, String shopperId,
             ExecutorService threadPool){
 
         this.maxTotalVmCount = maxTotalVmCount;
         this.maxPerImageVmCount = maxImageVmCount;
+        this.maxVmWaitSeconds = maxVmWaitSeconds;
 
         this.vmLeases = new Semaphore(maxTotalVmCount);
         this.apiClient = apiClient;
@@ -90,9 +94,13 @@ public class VirtualMachinePool {
         final String imageName;
         final BlockingDeque<VirtualMachine> pool;
 
+        final Semaphore perImageLeases;
+
         public PerImagePool(String imageName) {
             this.imageName = imageName;
             this.pool = new LinkedBlockingDeque<>(VirtualMachinePool.this.maxPerImageVmCount);
+
+            this.perImageLeases = new Semaphore(VirtualMachinePool.this.maxPerImageVmCount);
         }
 
         public void destroyAll(){
@@ -133,7 +141,8 @@ public class VirtualMachinePool {
         public VirtualMachine get() {
             // if we have a VM available, return it
 
-            // if we don't have a VM, but are under our per-image limit, create one
+            // if we don't have a VM, but are under our per-image limit and
+            // max-vm limit, create one
 
             // if we don't have a VM, and we can't create one, wait for a VM to
             // be returned to the pool
@@ -141,15 +150,24 @@ public class VirtualMachinePool {
 
             if (vm == null) {
                 // no pooled VMs, can we spin one up?
-                if (vmLeases.tryAcquire()) {
-                    // we _can_ spin one up if a credit is available
-                    tryCreateVm();
+                if (perImageLeases.tryAcquire()) {
+                    if (vmLeases.tryAcquire()) {
+                        // we _can_ spin one up if a credit is available
+                        createVm();
+                    } else {
+                        perImageLeases.release();
+                    }
                 }
                 // we _can't_ spin one up, so we have to wait until one is returned
                 // to the pool
                 logger.debug("waiting for vm with image {}", imageName);
                 try {
-                    vm = pool.takeFirst();
+                    vm = pool.pollFirst(maxVmWaitSeconds, TimeUnit.SECONDS);
+                    if (vm == null) {
+
+                        logger.error("Can't wait forever, giving up! Never got vm with image " + imageName);
+                        throw new RuntimeException("CreateVm Timed out. " + imageName + " vm did not complete.");
+                    }
                 } catch (InterruptedException e) {
                     throw new RuntimeException(e);
                 }
@@ -158,24 +176,25 @@ public class VirtualMachinePool {
             return vm;
         }
 
-        public void tryCreateVm() {
+        public void createVm() {
             threadPool.submit(() -> {
-            // Create the VM and add to the pool
-            UUID orionGuid = getVmCredit();
-            if (orionGuid == null) {
-                logger.debug("no credits available to create vm {}", imageName);
-            }
-            else {
-                logger.debug("creating vm for {}, using credit guid {}", imageName, orionGuid);
-                UUID vmId = provisionVm(orionGuid);
+                UUID orionGuid = getVmCredit();
+                if (orionGuid == null) {
+                    vmLeases.release();
+                    logger.error("No credit available to create vm {}", imageName);
+                }
+                else {
+                // Create the VM and add to the pool
+                    logger.debug("creating vm for {}, using credit guid {}", imageName, orionGuid);
+                    UUID vmId = provisionVm(orionGuid);
 
-                offer( new VirtualMachine(
-                        VirtualMachinePool.this,
-                        VirtualMachinePool.this.apiClient,
-                        this.imageName,
-                        username,
-                        password,
-                        vmId));
+                    offer( new VirtualMachine(
+                            VirtualMachinePool.this,
+                            VirtualMachinePool.this.apiClient,
+                            this.imageName,
+                            username,
+                            password,
+                            vmId));
             }});
         }
 
@@ -212,14 +231,14 @@ public class VirtualMachinePool {
         static final String username = "vpstester";
         static final String password = "thisvps4TEST!";
 
-        public synchronized UUID provisionVm(UUID orionGuid){
+        public UUID provisionVm(UUID orionGuid){
             JSONObject provisionResult = apiClient.provisionVm("VPS4 Phase 3 Test VM",
                     orionGuid, imageName, 1, username, password);
 
             UUID vmId = UUID.fromString(provisionResult.get("virtualMachineId").toString());
 
             String actionId = provisionResult.get("id").toString();
-            apiClient.pollForVmActionComplete(vmId, actionId, 1800); // 30 minutes :(
+            apiClient.pollForVmActionComplete(vmId, actionId, maxVmWaitSeconds);
             return vmId;
         }
 
