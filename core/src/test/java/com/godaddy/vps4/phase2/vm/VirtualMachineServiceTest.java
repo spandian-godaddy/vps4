@@ -73,7 +73,7 @@ public class VirtualMachineServiceTest {
     @Test
     public void testHasCPanel() {
         ProvisionVirtualMachineParameters params = new ProvisionVirtualMachineParameters(vps4User.getId(), 1, "vps4-testing-",
-                orionGuid, "testServer", 10, 1, "centos-7-cPanel-11");
+                orionGuid, "testServer", 10, 1, "centos-7-cpanel-11");
 
         virtualMachineService.provisionVirtualMachine(params);
 

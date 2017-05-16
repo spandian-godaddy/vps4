@@ -97,11 +97,11 @@ public class CpanelResourceUserTest {
     }
 
     private void createCpanelVm() {
-        virtualMachine = SqlTestData.insertTestVm(orionGuid, validUser.getId(), dataSource, "centos-7-cPanel-11");
+        virtualMachine = SqlTestData.insertTestVm(orionGuid, validUser.getId(), dataSource, "centos-7-cpanel-11");
         virtualMachineService.addHfsVmIdToVirtualMachine(virtualMachine.vmId, hfsVmId);
         vmId = virtualMachine.vmId;
     }
-    
+
     private void createCentVm() {
         centVirtualMachine = SqlTestData.insertTestVm(centOrionGuid, validUser.getId(), dataSource);
         virtualMachineService.addHfsVmIdToVirtualMachine(centVirtualMachine.vmId, centHfsVmId);
@@ -123,55 +123,55 @@ public class CpanelResourceUserTest {
         user = invalidUser;
         return injector.getInstance(CPanelResource.class);
     }
-    
-    
+
+
 
     @Test
     public void testGetWHMSession(){
         getValidResource().getWHMSession(vmId);
     }
-    
+
     @Test(expected=AuthorizationException.class)
     public void testGetWHMSessionInvalidUser(){
         getInvalidResource().getWHMSession(vmId);
     }
-    
+
     @Test(expected=Vps4Exception.class)
     public void testGetWhmSessionInvalidImage(){
         getValidResource().getWHMSession(centVmId);
     }
-    
-    
+
+
 
     @Test
     public void testGetCPanelSession(){
         getValidResource().getCPanelSession(vmId, "testuser");
     }
-    
+
     @Test(expected=AuthorizationException.class)
     public void testGetCPanelSessionInvalidUser(){
         getInvalidResource().getCPanelSession(vmId, "testuser");
     }
-    
+
     @Test(expected=Vps4Exception.class)
     public void testGetCPanelSessionInvalidImage(){
         getValidResource().getCPanelSession(centVmId, "testuser");
     }
-    
-    
+
+
     @Test
     public void testListCpanelAccounts(){
         getValidResource().listCpanelAccounts(vmId);
     }
-    
+
     @Test(expected=AuthorizationException.class)
     public void testListCpanelAccountsInvalidUser(){
         getInvalidResource().listCpanelAccounts(vmId);
     }
-    
+
     @Test(expected=Vps4Exception.class)
     public void testListCpanelAccountsInvalidImage(){
         getValidResource().listCpanelAccounts(centVmId);
     }
-    
+
 }
