@@ -7,6 +7,12 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
+import org.apache.commons.cli.CommandLine;
+import org.apache.commons.cli.CommandLineParser;
+import org.apache.commons.cli.DefaultParser;
+import org.apache.commons.cli.Option;
+import org.apache.commons.cli.Options;
+import org.apache.commons.cli.ParseException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -16,42 +22,24 @@ import com.godaddy.vps4.phase3.tests.ChangeHostnameTest;
 import com.godaddy.vps4.phase3.tests.StopStartVmTest;
 import com.godaddy.vps4.phase3.virtualmachine.VirtualMachinePool;
 
-
-/*
- * arg[0] = the vps4 url that you plan to run against.  Example: http://127.0.0.1:8089/
- * arg[1] = the vps4 shopperId
- * arg[2] = the vps4 password
- * arg[3] = the SSO URL to get the admin token from: (example: https://sso.dev-godaddy.com/v1/api/token)
- * arg[4] = the admin (jomax) username
- * arg[5] = the admin password
- * arg[6] = the maximum number of vms to create for testing
- * arg[7] = the maximum number of vms per image type
- * arg[8] = the maximum time in seconds a test will wait for a VM
- * */
-
 public class RunSomeTests {
 
     private static final Logger logger = LoggerFactory.getLogger(RunSomeTests.class);
 
-    static String USERNAME = "testuser";
-    static String PASSWORD = "testVPS4YOU!";
-
     public static void main(String[] args) throws Exception{
 
-        String URL = args[0];
-        String vps4ShopperId = args[1];
-        String vps4Password = args[2];
+        CommandLine cmd = parseCliArgs(args);
+        String URL = cmd.getOptionValue("api-url");
+        String vps4ShopperId = cmd.getOptionValue("shopper");
+        String vps4Password = cmd.getOptionValue("password");
 
-        String ssoUrl = args[3];
-        String adminUser = args[4];
-        String adminPassword = args[5];
+        String ssoUrl = cmd.getOptionValue("sso-url");
+        String adminUser = cmd.getOptionValue("admin");
+        String adminPassword = cmd.getOptionValue("admin-pass");
 
-        int maxTotalVm = Integer.parseInt(args[6]);
-        int maxPerImageVm = Integer.parseInt(args[7]);
-        int maxVmWaitSeconds = Integer.parseInt(args[8]);
-
-        for (int i=0; i < args.length; i++)
-            logger.error("Arg {}: {}", i, args[i]);
+        int maxTotalVm = Integer.parseInt(cmd.getOptionValue("max-vms"));
+        int maxPerImageVm = Integer.parseInt(cmd.getOptionValue("pool-size"));
+        int maxVmWaitSeconds = Integer.parseInt(cmd.getOptionValue("vm-timeout"));
 
         SsoClient ssoClient = new SsoClient(ssoUrl);
 
@@ -102,7 +90,26 @@ public class RunSomeTests {
 
         vmPool.destroyAll();
         printResults(testGroupExecution);
+    }
 
+    private static CommandLine parseCliArgs(String[] args) throws ParseException {
+
+        CommandLineParser parser = new DefaultParser();
+        Options options = new Options();
+        options.addOption( "a", "api-url", true, "vps4 api url that you plan to run against.  Example: http://127.0.0.1:8089/" );
+        options.addOption( "s", "shopper", true, "vps4 shopperId" );
+        options.addOption( "p", "password", true, "vps4 password" );
+        options.addOption( "o", "sso-url", true, "sso url to get the admin token");
+        options.addOption( "j", "admin", true, "admin (jomax) username" );
+        options.addOption( "k", "admin-pass", true, "admin password");
+        options.addOption( "m", "max-vms", true, "maximum number of vms to create");
+        options.addOption( "p", "pool-size", true, "maximum number of vms per image type");
+        options.addOption( "t", "vm-timeout", true, "maximum time in seconds a test will wait for a VM");
+
+        CommandLine cmd = parser.parse(options, args);
+        for (Option option : cmd.getOptions())
+            logger.debug("Args: {} : {}", option.getLongOpt(), option.getValue());
+        return cmd;
     }
 
     private static void printResults(TestGroupExecution testGroupExecution){
