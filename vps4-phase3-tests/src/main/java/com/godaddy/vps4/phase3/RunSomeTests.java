@@ -24,6 +24,9 @@ import com.godaddy.vps4.phase3.virtualmachine.VirtualMachinePool;
  * arg[3] = the SSO URL to get the admin token from: (example: https://sso.dev-godaddy.com/v1/api/token)
  * arg[4] = the admin (jomax) username
  * arg[5] = the admin password
+ * arg[6] = the maximum number of vms to create for testing
+ * arg[7] = the maximum number of vms per image type
+ * arg[8] = the maximum time in seconds a test will wait for a VM
  * */
 
 public class RunSomeTests {
@@ -32,9 +35,6 @@ public class RunSomeTests {
 
     static String USERNAME = "testuser";
     static String PASSWORD = "testVPS4YOU!";
-
-    static final int MAX_TOTAL_VM = 2;
-    static final int MAX_PER_IMAGE_VM = 1;
 
     public static void main(String[] args) throws Exception{
 
@@ -45,6 +45,10 @@ public class RunSomeTests {
         String ssoUrl = args[3];
         String adminUser = args[4];
         String adminPassword = args[5];
+
+        int maxTotalVm = Integer.parseInt(args[6]);
+        int maxPerImageVm = Integer.parseInt(args[7]);
+        int maxVmWaitSeconds = Integer.parseInt(args[8]);
 
         for (int i=0; i < args.length; i++)
             logger.error("Arg {}: {}", i, args[i]);
@@ -59,8 +63,8 @@ public class RunSomeTests {
 
         ExecutorService threadPool = Executors.newCachedThreadPool();
 
-        VirtualMachinePool vmPool = new VirtualMachinePool(MAX_TOTAL_VM, MAX_PER_IMAGE_VM, vps4ApiClient,
-                adminClient, vps4ShopperId, threadPool);
+        VirtualMachinePool vmPool = new VirtualMachinePool(maxTotalVm, maxPerImageVm, maxVmWaitSeconds,
+                vps4ApiClient, adminClient, vps4ShopperId, threadPool);
 
         List<VmTest> tests = Arrays.asList(
                 new ChangeHostnameTest(randomHostname()),

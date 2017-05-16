@@ -29,7 +29,7 @@ public class TestExecution {
 
     @Override
     public String toString() {
-        return "TestExecution [test=" + test + ", exception=" + exception + ", status=" + status + "]";
+        return "TestExecution [status=" + status + " test=" + test + ", exception=" + exception + "]";
     }
 
 
