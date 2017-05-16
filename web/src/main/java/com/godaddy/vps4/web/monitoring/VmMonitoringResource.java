@@ -2,17 +2,21 @@ package com.godaddy.vps4.web.monitoring;
 
 import java.time.Duration;
 import java.time.Instant;
+import java.util.Comparator;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
 import javax.ws.rs.Consumes;
+import javax.ws.rs.DefaultValue;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
 
+import org.joda.time.DateTime;
 import org.joda.time.LocalDate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -42,7 +46,6 @@ public class VmMonitoringResource {
     private final long monitoringAccountId;
     private final VmResource vmResource;
     private final Config config;
-    private final int DaysOfMonitoring = 30;
 
     @Inject
     public VmMonitoringResource(NodePingService monitoringService, VmResource vmResource,
@@ -55,27 +58,58 @@ public class VmMonitoringResource {
 
     @GET
     @Path("/{vmId}/uptime")
-    public List<MonitoringUptimeRecord> getVmUptime(@PathParam("vmId") UUID vmId) {
+    public List<MonitoringUptimeRecord> getVmUptime(@PathParam("vmId") UUID vmId, @QueryParam("days") @DefaultValue("30") Integer days) {
         VirtualMachine vm = vmResource.getVm(vmId);
-        
+        Instant start = Instant.now().minus(Duration.ofDays(days-1));
+        if(start.isBefore(vm.validOn)){
+            start = vm.validOn;
+        }
+
+        String startStr = start.toString();
+
+        String end = LocalDate.now().plusDays(1).toString(); // the end date in the nodeping api is non-inclusive
+
         List<NodePingUptimeRecord> nodepingRecords = monitoringService.getCheckUptime(monitoringAccountId,
                 vm.primaryIpAddress.pingCheckId,
                 "days",
-                LocalDate.now().minusDays(DaysOfMonitoring).toString(),
-                LocalDate.now().toString());
+                startStr,
+                end);
+
+        sortRecordsByDateAsc(nodepingRecords);
 
         return nodepingRecords.stream().map(x -> new MonitoringUptimeRecord(x)).collect(Collectors.toList());
     }
 
+    private void sortRecordsByDateAsc(List<NodePingUptimeRecord> nodepingRecords) {
+        NodePingUptimeRecord total = null;
+        // remove the "total" record so it doesn't blow up the date parsing in the sort.
+        for (NodePingUptimeRecord record : nodepingRecords){
+            if(record.label.equals("total")){
+                total = record;
+                nodepingRecords.remove(record);
+                break;
+            }
+        }
+
+        nodepingRecords.sort(new Comparator<NodePingUptimeRecord>() {
+            @Override
+            public int compare(NodePingUptimeRecord o1, NodePingUptimeRecord o2) {
+                return DateTime.parse(o1.label).compareTo(DateTime.parse(o2.label));
+            }
+        });
+        // add the total record back because we still want to return it.
+        nodepingRecords.add(total);
+    }
+
     @GET
     @Path("/{vmId}/monitoringEvents")
-    public List<MonitoringEvent> getVmMonitoringEvents(@PathParam("vmId") UUID vmId) {
+    public List<MonitoringEvent> getVmMonitoringEvents(@PathParam("vmId") UUID vmId, @QueryParam("days") @DefaultValue("30") Integer days ) {
         VirtualMachine vm = vmResource.getVm(vmId);
 
         List<NodePingEvent> sourceEvents = monitoringService.getCheckEvents(monitoringAccountId,
                 vm.primaryIpAddress.pingCheckId, 0);
         List<MonitoringEvent> events = sourceEvents.stream().map(x -> new MonitoringEvent(x)).collect(Collectors.toList());
-        events = events.stream().filter(e -> e.start.isAfter(Instant.now().minus(Duration.ofDays(DaysOfMonitoring))))
+        events = events.stream().filter(e -> e.start.isAfter(Instant.now().minus(Duration.ofDays(days))))
                 .collect(Collectors.toList());
         return events;
     }
