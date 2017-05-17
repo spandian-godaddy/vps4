@@ -135,7 +135,8 @@ public class Vps4ApiClient {
         for (int i=0; i < credits.size(); i++)
         {
             JSONObject credit = (JSONObject) credits.get(i);
-            if (credit.get("controlPanel").equals(panel) && credit.get("operatingSystem").equals(os))
+            if ( ((String)credit.get("controlPanel")).equalsIgnoreCase(panel) &&
+                 ((String)credit.get("operatingSystem")).equalsIgnoreCase(os))
                 return UUID.fromString(credit.get("orionGuid").toString());
         }
         return null;
