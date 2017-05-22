@@ -1,6 +1,5 @@
 package com.godaddy.vps4.web.plesk;
 
-import java.util.Iterator;
 import java.util.List;
 import java.util.UUID;
 
@@ -13,10 +12,10 @@ import javax.ws.rs.NotFoundException;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.MultivaluedMap;
 
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
@@ -60,27 +59,29 @@ public class PleskResource {
     
     @GET
     @Path("{vmId}/plesk/pleskSessionUrl")
-    public PleskSession getPleskSessionUrl(@PathParam("vmId") UUID vmId, @Context HttpHeaders headers, @Context HttpServletRequest req) {
+    public PleskSession getPleskSessionUrl(@PathParam("vmId") UUID vmId, @QueryParam("fromIpAddress") String fromIpAddress, @Context HttpHeaders headers, @Context HttpServletRequest req) {
         
-        logger.info("Get Plesk session url for vmId {} ", vmId);
-        
-        // TODO: remove - only here for debug purposes.
-        MultivaluedMap<String, String> allheadersMap = headers.getRequestHeaders();
-        Iterator<String> i = allheadersMap.keySet().iterator();
-        while(i.hasNext()) {
-            String key = i.next();
-            logger.info(" {} : {} ", key, allheadersMap.get(key));
+        logger.info("Getting Plesk session url for vmId {} ", vmId);
+
+        /*
+         * If the fromIpAddress is provided as a query parameter, use it. Otherwise:
+         * Use the x-forwarded-for http header value to determine public IP of customers.
+         * This header is populated by the nginx server for VPS4.
+         * If the http header is not available, attempt to use the remote_addr.
+         * This code does not work for SSO login of internal users, 
+         * since the x-forwarded-for http header does not contain the public ip for internal GD users.
+         */
+        if(StringUtils.isBlank(fromIpAddress)) {
+             List<String> xForwardedFor = headers.getRequestHeader(X_FORWARDED_FOR);
+             if(xForwardedFor != null && !xForwardedFor.isEmpty()) {
+                 fromIpAddress = xForwardedFor.get(0).split(",")[0];
+             } else if(StringUtils.isNotBlank(req.getRemoteAddr())){
+                 fromIpAddress = req.getRemoteAddr();
+             } else {
+                 throw new NotAcceptableException("Unable to determine client IP address from request header. ");
+             }
         }
-        
-        String fromIpAddress;
-        List<String> xForwardedFor = headers.getRequestHeader(X_FORWARDED_FOR);
-        if(xForwardedFor != null && !xForwardedFor.isEmpty()) {
-            fromIpAddress = xForwardedFor.get(0).split(",")[0];
-        } else if(StringUtils.isNotBlank(req.getRemoteAddr())){
-            fromIpAddress = req.getRemoteAddr();
-        } else {
-            throw new NotAcceptableException("Unable to determine client IP address from request header. ");
-        }
+
         
         VirtualMachine vm = resolveVirtualMachine(vmId);
         try {

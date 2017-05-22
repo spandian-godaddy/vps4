@@ -6,7 +6,6 @@ import com.godaddy.vps4.web.credit.CreditResource;
 import com.godaddy.vps4.web.mailrelay.VmMailRelayResource;
 import com.godaddy.vps4.web.monitoring.VmMonitoringResource;
 import com.godaddy.vps4.web.plesk.PleskResource;
-import com.godaddy.vps4.web.showmyip.ExternalIpResource;
 import com.godaddy.vps4.web.support.SupportResource;
 import com.godaddy.vps4.web.support.UserSupportResource;
 import com.godaddy.vps4.web.sysadmin.SysAdminResource;
@@ -43,7 +42,6 @@ public class WebModule extends AbstractModule {
         bind(ImageResource.class);
         bind(UsageStatsResource.class);
         bind(CacheResource.class);
-        bind(ExternalIpResource.class);
 
         bind(SupportResource.class);
         bind(UserSupportResource.class);
