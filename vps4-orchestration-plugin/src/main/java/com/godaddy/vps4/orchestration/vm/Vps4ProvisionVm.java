@@ -15,7 +15,6 @@ import com.godaddy.vps4.orchestration.ActionCommand;
 import com.godaddy.vps4.orchestration.ActionRequest;
 import com.godaddy.vps4.orchestration.hfs.cpanel.ConfigureCpanel;
 import com.godaddy.vps4.orchestration.hfs.cpanel.ConfigureCpanel.ConfigureCpanelRequest;
-import com.godaddy.vps4.orchestration.hfs.monitoring.CreateCheck;
 import com.godaddy.vps4.orchestration.hfs.network.AllocateIp;
 import com.godaddy.vps4.orchestration.hfs.network.BindIp;
 import com.godaddy.vps4.orchestration.hfs.network.BindIp.BindIpRequest;
@@ -43,6 +42,8 @@ import gdg.hfs.vhfs.mailrelay.MailRelay;
 import gdg.hfs.vhfs.mailrelay.MailRelayService;
 import gdg.hfs.vhfs.mailrelay.MailRelayUpdate;
 import gdg.hfs.vhfs.network.IpAddress;
+import gdg.hfs.vhfs.nodeping.NodePingCheck;
+import gdg.hfs.vhfs.nodeping.NodePingService;
 import gdg.hfs.vhfs.vm.CreateVMWithFlavorRequest;
 import gdg.hfs.vhfs.vm.Vm;
 import gdg.hfs.vhfs.vm.VmAction;
@@ -67,6 +68,8 @@ public class Vps4ProvisionVm extends ActionCommand<Vps4ProvisionVm.Request, Vps4
 
     final MailRelayService mailRelayService;
 
+    final NodePingService monitoringService;
+
     Request request;
 
     ActionState state;
@@ -81,13 +84,15 @@ public class Vps4ProvisionVm extends ActionCommand<Vps4ProvisionVm.Request, Vps4
                     VirtualMachineService virtualMachineService,
                     VmUserService vmUserService,
             NetworkService networkService,
-            MailRelayService mailRelayService) {
+            MailRelayService mailRelayService,
+            NodePingService monitoringService) {
         super(actionService);
         this.vmService = vmService;
         this.virtualMachineService = virtualMachineService;
         this.vmUserService = vmUserService;
         this.networkService = networkService;
         this.mailRelayService = mailRelayService;
+        this.monitoringService = monitoringService;
     }
 
     @Override
@@ -130,7 +135,7 @@ public class Vps4ProvisionVm extends ActionCommand<Vps4ProvisionVm.Request, Vps4
     private void setHostname(Vm hfsVm){
         setStep(CreateVmStep.SetHostname);
 
-        SetHostname.Request hfsRequest = new SetHostname.Request(hfsVm.vmId, this.hostname,
+        SetHostname.Request hfsRequest = new SetHostname.Request(hfsVm.vmId, hostname,
                                                 request.vmInfo.image.controlPanel.toString());
 
         context.execute(SetHostname.class, hfsRequest);
@@ -203,8 +208,8 @@ public class Vps4ProvisionVm extends ActionCommand<Vps4ProvisionVm.Request, Vps4
 
         // Generate a new hostname from the allocated ip
         setStep(CreateVmStep.GeneratingHostname);
-        this.hostname = HostnameGenerator.getHostname(ip.address);
-        hfsRequest.hostname = this.hostname;
+        hostname = HostnameGenerator.getHostname(ip.address);
+        hfsRequest.hostname = hostname;
         virtualMachineService.setHostname(request.vmInfo.vmId, hfsRequest.hostname);
 
         // Create the VM
@@ -283,14 +288,13 @@ public class Vps4ProvisionVm extends ActionCommand<Vps4ProvisionVm.Request, Vps4
 
     private void configureNodePing(IpAddress ipAddress) {
         if (request.vmInfo.pingCheckAccountId > 0) {
-            CreateCheck.Request nodePingRequest = new CreateCheck.Request(request.vmInfo.pingCheckAccountId, ipAddress.address,
-                    ipAddress.address);
-            long checkId = context.execute(CreateCheck.class, nodePingRequest);
-            logger.debug("CheckId: {}", checkId);
+            NodePingCheck check = monitoringService.createCheck(request.vmInfo.pingCheckAccountId, ipAddress.address,
+                    ipAddress.address, null, "1", null);
+            logger.debug("CheckId: {}", check.checkId);
 
             // Add the checkId to the IpAddress
             context.execute("AddCheckIdToIp-" + ipAddress.address, ctx -> {
-                networkService.updateIpWithCheckId(ipAddress.addressId, checkId);
+                networkService.updateIpWithCheckId(ipAddress.addressId, check.checkId);
                 return null;
             });
         }

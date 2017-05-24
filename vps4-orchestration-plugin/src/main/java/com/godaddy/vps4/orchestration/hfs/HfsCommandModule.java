@@ -3,9 +3,6 @@ package com.godaddy.vps4.orchestration.hfs;
 import com.godaddy.vps4.orchestration.hfs.cpanel.ConfigureCpanel;
 import com.godaddy.vps4.orchestration.hfs.cpanel.RefreshCpanelLicense;
 import com.godaddy.vps4.orchestration.hfs.cpanel.WaitForCpanelAction;
-import com.godaddy.vps4.orchestration.hfs.monitoring.CreateCheck;
-import com.godaddy.vps4.orchestration.hfs.monitoring.DeleteCheck;
-import com.godaddy.vps4.orchestration.hfs.monitoring.WaitForPingCheckAction;
 import com.godaddy.vps4.orchestration.hfs.network.AllocateIp;
 import com.godaddy.vps4.orchestration.hfs.network.BindIp;
 import com.godaddy.vps4.orchestration.hfs.network.ReleaseIp;
@@ -69,10 +66,5 @@ public class HfsCommandModule extends AbstractModule {
         bind(ConfigurePlesk.class);
         bind(UpdateAdminPassword.class);
         bind(WaitForPleskAction.class);
-
-        // PingCheck
-        bind(CreateCheck.class);
-        bind(DeleteCheck.class);
-        bind(WaitForPingCheckAction.class);
     }
 }

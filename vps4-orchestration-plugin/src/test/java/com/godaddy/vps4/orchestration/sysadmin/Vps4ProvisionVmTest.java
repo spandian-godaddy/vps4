@@ -38,6 +38,7 @@ import gdg.hfs.vhfs.mailrelay.MailRelay;
 import gdg.hfs.vhfs.mailrelay.MailRelayService;
 import gdg.hfs.vhfs.mailrelay.MailRelayUpdate;
 import gdg.hfs.vhfs.network.IpAddress;
+import gdg.hfs.vhfs.nodeping.NodePingService;
 import gdg.hfs.vhfs.plesk.PleskService;
 import gdg.hfs.vhfs.vm.CreateVMWithFlavorRequest;
 import gdg.hfs.vhfs.vm.Vm;
@@ -58,9 +59,10 @@ public class Vps4ProvisionVmTest {
     SetHostname setHostname = mock(SetHostname.class);
     ToggleAdmin toggleAdmin = mock(ToggleAdmin.class);
     ConfigureMailRelay configureMailRelay = mock(ConfigureMailRelay.class);
+    NodePingService nodePingService = mock(NodePingService.class);
 
     Vps4ProvisionVm command = new Vps4ProvisionVm(actionService, vmService,
-            virtualMachineService, vmUserService, networkService, mailRelayService);
+            virtualMachineService, vmUserService, networkService, mailRelayService, nodePingService);
 
     Injector injector = Guice.createInjector(binder -> {
         binder.bind(ActionService.class).toInstance(actionService);

@@ -1,6 +1,7 @@
 package com.godaddy.vps4.orchestration.sysadmin;
 
 import static org.mockito.Matchers.eq;
+import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -35,7 +36,6 @@ import gdg.hfs.vhfs.cpanel.CPanelService;
 import gdg.hfs.vhfs.mailrelay.MailRelayService;
 import gdg.hfs.vhfs.mailrelay.MailRelayUpdate;
 import gdg.hfs.vhfs.network.AddressAction;
-import gdg.hfs.vhfs.nodeping.NodePingAction;
 import gdg.hfs.vhfs.nodeping.NodePingService;
 import gdg.hfs.vhfs.plesk.PleskAction;
 import gdg.hfs.vhfs.plesk.PleskService;
@@ -57,7 +57,7 @@ public class Vps4DestroyVmTest {
     NodePingService nodePingService = mock(NodePingService.class);
     
     Vps4DestroyVm command = new Vps4DestroyVm(actionService, networkService, virtualMachineService,
-                                              creditService, vmService, cpanelService);
+            creditService, vmService, cpanelService, nodePingService);
 
     Injector injector = Guice.createInjector(binder -> {
         binder.bind(UnbindIp.class);
@@ -96,9 +96,6 @@ public class Vps4DestroyVmTest {
         AddressAction addressAction = new AddressAction();
         addressAction.status = AddressAction.Status.COMPLETE;
         
-        NodePingAction pingCheckAction = new NodePingAction();
-        pingCheckAction.status = NodePingAction.Status.COMPLETE;
-
         this.primaryIp = new IpAddress(123, UUID.randomUUID(), "1.2.3.4", IpAddressType.PRIMARY, 5522L, null, null);
         ArrayList<IpAddress> addresses = new ArrayList<IpAddress>();
         addresses.add(this.primaryIp);
@@ -112,8 +109,7 @@ public class Vps4DestroyVmTest {
         when(networkService.getVmIpAddresses(this.vm.vmId)).thenReturn(addresses);
         when(hfsNetworkService.unbindIp(Mockito.anyLong())).thenReturn(addressAction);
         when(hfsNetworkService.releaseIp(Mockito.anyLong())).thenReturn(addressAction);
-        when(nodePingService.deleteCheck(request.pingCheckAccountId, primaryIp.pingCheckId)).thenReturn(pingCheckAction);
-        when(nodePingService.getAction(pingCheckAction.actionId)).thenReturn(pingCheckAction);
+        doNothing().when(nodePingService).deleteCheck(request.pingCheckAccountId, primaryIp.pingCheckId);
     }
 
     @Test

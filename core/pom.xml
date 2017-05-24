@@ -221,7 +221,7 @@
         <dependency>
             <groupId>hfs</groupId>
             <artifactId>vhfs-nodeping-common-lib</artifactId>
-            <version>1.0.0.30492</version>
+            <version>1.0.0.30737</version>
             <exclusions>
                 <exclusion>
                     <groupId>*</groupId>

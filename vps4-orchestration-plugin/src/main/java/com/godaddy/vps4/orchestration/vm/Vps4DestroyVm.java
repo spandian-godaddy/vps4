@@ -11,7 +11,6 @@ import com.godaddy.vps4.network.NetworkService;
 import com.godaddy.vps4.orchestration.ActionCommand;
 import com.godaddy.vps4.orchestration.ActionRequest;
 import com.godaddy.vps4.orchestration.hfs.cpanel.WaitForCpanelAction;
-import com.godaddy.vps4.orchestration.hfs.monitoring.DeleteCheck;
 import com.godaddy.vps4.orchestration.hfs.vm.DestroyVm;
 import com.godaddy.vps4.vm.ActionService;
 import com.godaddy.vps4.vm.VirtualMachine;
@@ -21,6 +20,7 @@ import gdg.hfs.orchestration.CommandContext;
 import gdg.hfs.orchestration.CommandMetadata;
 import gdg.hfs.vhfs.cpanel.CPanelAction;
 import gdg.hfs.vhfs.cpanel.CPanelService;
+import gdg.hfs.vhfs.nodeping.NodePingService;
 import gdg.hfs.vhfs.vm.Vm;
 import gdg.hfs.vhfs.vm.VmService;
 
@@ -41,19 +41,23 @@ public class Vps4DestroyVm extends ActionCommand<Vps4DestroyVm.Request, Vps4Dest
     
     final CPanelService cpanelService;
 
+    final NodePingService monitoringService;
+
     @Inject
     public Vps4DestroyVm(ActionService actionService,
             NetworkService networkService, 
             VirtualMachineService virtualMachineService,
             CreditService creditService,
             VmService vmService,
-            CPanelService cpanelService) {
+            CPanelService cpanelService,
+            NodePingService monitoringService) {
         super(actionService);
         this.networkService = networkService;
         this.virtualMachineService = virtualMachineService;
         this.creditService = creditService;
         this.vmService = vmService;
         this.cpanelService = cpanelService;
+        this.monitoringService = monitoringService;
     }
     
   
@@ -68,8 +72,7 @@ public class Vps4DestroyVm extends ActionCommand<Vps4DestroyVm.Request, Vps4Dest
 
         for (IpAddress address : addresses) {
             if(address.pingCheckId != null ){
-                DeleteCheck.Request deleteCheckRequest = new DeleteCheck.Request(request.pingCheckAccountId, address.pingCheckId);
-                context.execute(DeleteCheck.class, deleteCheckRequest);
+                monitoringService.deleteCheck(request.pingCheckAccountId, address.pingCheckId);
             }
             
             context.execute("DeleteIpAddress-"+address.ipAddressId, Vps4DestroyIpAddress.class, new Vps4DestroyIpAddress.Request(address, vm));
