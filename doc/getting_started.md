@@ -5,7 +5,7 @@
     - https://github.secureserver.net/vps4/vps4
 - download Java 8 SDK
 - download Eclipse IDE for Java Developers
-- create maven settings file:
+- create maven settings file (be sure to get the password for line 22):
 > File: ~/.m2/settings.xml
 ```xml
 <settings>
@@ -39,8 +39,11 @@
     - open eclipse, select File->Import->Maven->Existing Maven Projects
     - Browse to dir of vps4 git code
     - Select all and finish
-    - In project explorer, right click vps4-core->Maven->Update project
     - Click on vps-core/pom.xml in project explorer, go to menu Run->Run As->maven install
+    - In project explorer, right click vps4-core->Maven->Update project
+    - We found that after updating project, there were still three errors in the "Problems" tab of Eclipse
+        - The errors said "plugin execution not covered by lifecycle configuration"
+        - This can be fixed by right clicking each error and ignoring in Eclipse
 
 - Create Eclipse Run Configurations
     - Run->Run configurations
@@ -63,6 +66,7 @@
     - For Mac, one way to do it:
         - Install homebrew
         - brew install postgresql
+		- brew services start postgresql
         - createuser -s -r postgres
         - Test using cmd: psql -U postgres postgres
         - Modify /etc/hosts to redirect domain vps4-local-dbserver.dev-godaddy.com
