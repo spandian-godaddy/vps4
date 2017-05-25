@@ -1,0 +1,1 @@
+UPDATE image SET name='Windows 2012 R2 (Plesk 17.0.17)' WHERE hfs_name='windows-2012r2-plesk-12.5';
