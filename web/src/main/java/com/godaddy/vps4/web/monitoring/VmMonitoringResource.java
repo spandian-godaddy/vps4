@@ -14,7 +14,9 @@ import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
+import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.UriInfo;
 
 import org.joda.time.DateTime;
 import org.joda.time.LocalDate;
@@ -23,6 +25,7 @@ import org.slf4j.LoggerFactory;
 
 import com.godaddy.hfs.config.Config;
 import com.godaddy.vps4.vm.VirtualMachine;
+import com.godaddy.vps4.web.PaginatedResult;
 import com.godaddy.vps4.web.Vps4Api;
 import com.godaddy.vps4.web.vm.VmResource;
 import com.google.inject.Inject;
@@ -103,14 +106,37 @@ public class VmMonitoringResource {
 
     @GET
     @Path("/{vmId}/monitoringEvents")
-    public List<MonitoringEvent> getVmMonitoringEvents(@PathParam("vmId") UUID vmId, @QueryParam("days") @DefaultValue("30") Integer days ) {
+    public PaginatedResult<MonitoringEvent> getVmMonitoringEvents(@PathParam("vmId") UUID vmId,
+            @QueryParam("days") @DefaultValue("30") Integer days,
+            @DefaultValue("10") @QueryParam("limit") Integer limit,
+            @DefaultValue("0") @QueryParam("offset") Integer offset,
+            @Context UriInfo uri) {
         VirtualMachine vm = vmResource.getVm(vmId);
+
+        int scrubbedLimit = Math.max(limit, 0);
+        int scrubbedOffset = Math.max(offset, 0);
 
         List<NodePingEvent> sourceEvents = monitoringService.getCheckEvents(monitoringAccountId,
                 vm.primaryIpAddress.pingCheckId, 0);
+
+        // only events from past "days" days
+        List<MonitoringEvent> events = getDaysOfEvents(days, sourceEvents);
+
+        int totalRows = events.size();
+
+        // only the specified range of events.
+        events = events.subList(Math.min(scrubbedOffset, events.size()), Math.min(scrubbedOffset+scrubbedLimit, events.size()));
+
+        return new PaginatedResult<MonitoringEvent>(events, scrubbedLimit, scrubbedOffset, totalRows, uri);
+    }
+
+    private List<MonitoringEvent> getDaysOfEvents(Integer days,
+            List<NodePingEvent> sourceEvents) {
         List<MonitoringEvent> events = sourceEvents.stream().map(x -> new MonitoringEvent(x)).collect(Collectors.toList());
         events = events.stream().filter(e -> e.start.isAfter(Instant.now().minus(Duration.ofDays(days))))
                 .collect(Collectors.toList());
         return events;
     }
+
+
 }

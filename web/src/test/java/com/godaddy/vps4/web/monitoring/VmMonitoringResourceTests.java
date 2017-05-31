@@ -8,12 +8,16 @@ import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
+
+import javax.ws.rs.core.UriInfo;
 
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
@@ -24,6 +28,7 @@ import org.junit.Test;
 import com.godaddy.hfs.config.Config;
 import com.godaddy.vps4.network.IpAddress;
 import com.godaddy.vps4.vm.VirtualMachine;
+import com.godaddy.vps4.web.PaginatedResult;
 import com.godaddy.vps4.web.vm.VmResource;
 
 import gdg.hfs.vhfs.nodeping.NodePingEvent;
@@ -39,6 +44,9 @@ public class VmMonitoringResourceTests {
     VirtualMachine vm;
     long monitoringAccountId = 12;
     JSONParser parser;
+    UriInfo uriInfo;
+
+
 
     @Before
     public void setup() {
@@ -50,6 +58,18 @@ public class VmMonitoringResourceTests {
         when(vmResource.getVm(vm.vmId)).thenReturn(vm);
         when(config.get("nodeping.accountid")).thenReturn("12");
         parser = new JSONParser();
+        setupUri();
+    }
+
+    private void setupUri(){
+        uriInfo = mock(UriInfo.class);
+        URI uri = null;
+        try {
+            uri = new URI("http://fakeUri/something/something/");
+        } catch (URISyntaxException e) {
+            // do nothing
+        }
+        when(uriInfo.getAbsolutePath()).thenReturn(uri);
     }
 
     @Test
@@ -95,10 +115,12 @@ public class VmMonitoringResourceTests {
         when(monitoringService.getCheckEvents(monitoringAccountId, vm.primaryIpAddress.pingCheckId, 0)).thenReturn(npEvents);
 
         resource = new VmMonitoringResource(monitoringService, vmResource, config);
-        List<MonitoringEvent> events = resource.getVmMonitoringEvents(vm.vmId, 30);
+        PaginatedResult<MonitoringEvent> events = resource.getVmMonitoringEvents(vm.vmId, Integer.valueOf(30),
+                Integer.valueOf(10), Integer.valueOf(0), uriInfo);
 
-        assertEquals(1, events.size());
-        MonitoringEvent event = events.get(0);
+        assertEquals(1, events.results.size());
+        assertEquals(1, events.pagination.total);
+        MonitoringEvent event = events.results.get(0);
         assertEquals("down", event.type);
         assertTrue(event.open);
         assertEquals(Instant.ofEpochMilli(now), event.start);
