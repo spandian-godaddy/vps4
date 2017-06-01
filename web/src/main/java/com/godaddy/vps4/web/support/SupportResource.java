@@ -176,4 +176,14 @@ public class SupportResource {
         public String shopperId;
     }
 
+    @POST
+    @Path("credits/{orionGuid}/release")
+    public VirtualMachineCredit releaseCredit(@PathParam("orionGuid") UUID orionGuid) {
+        creditService.unclaimVirtualMachineCredit(orionGuid);
+
+        VirtualMachineCredit credit = creditService.getVirtualMachineCredit(orionGuid);
+        return credit;
+    }
+
+
 }
