@@ -30,12 +30,10 @@ public class RunSomeTests {
 
         CommandLine cmd = parseCliArgs(args);
         String URL = cmd.getOptionValue("api-url");
+        String ssoUrl = cmd.getOptionValue("sso-url");
+
         String vps4ShopperId = cmd.getOptionValue("shopper");
         String vps4Password = cmd.getOptionValue("password");
-
-        String ssoUrl = cmd.getOptionValue("sso-url");
-        String adminUser = cmd.getOptionValue("admin");
-        String adminPassword = cmd.getOptionValue("admin-pass");
 
         int maxTotalVm = Integer.parseInt(cmd.getOptionValue("max-vms"));
         int maxPerImageVm = Integer.parseInt(cmd.getOptionValue("pool-size"));
@@ -43,8 +41,13 @@ public class RunSomeTests {
 
         SsoClient ssoClient = new SsoClient(ssoUrl);
 
-        String adminAuthHeader = ssoClient.getJomaxSsoToken(adminUser, adminPassword);
-        Vps4ApiClient adminClient = new Vps4ApiClient(URL, adminAuthHeader);
+        Vps4ApiClient adminClient = null;
+        if (cmd.hasOption("admin")) {
+            String adminUser = cmd.getOptionValue("admin");
+            String adminPassword = cmd.getOptionValue("admin-pass");
+            String adminAuthHeader = ssoClient.getJomaxSsoToken(adminUser, adminPassword);
+            adminClient = new Vps4ApiClient(URL, adminAuthHeader);
+        }
 
         String vps4AuthHeader = ssoClient.getVps4SsoToken(vps4ShopperId, vps4Password);
         Vps4ApiClient vps4ApiClient = new Vps4ApiClient(URL, vps4AuthHeader);
