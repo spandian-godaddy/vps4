@@ -42,6 +42,8 @@ import gdg.hfs.vhfs.mailrelay.MailRelay;
 import gdg.hfs.vhfs.mailrelay.MailRelayService;
 import gdg.hfs.vhfs.mailrelay.MailRelayUpdate;
 import gdg.hfs.vhfs.network.IpAddress;
+import gdg.hfs.vhfs.nodeping.CheckType;
+import gdg.hfs.vhfs.nodeping.CreateCheckRequest;
 import gdg.hfs.vhfs.nodeping.NodePingCheck;
 import gdg.hfs.vhfs.nodeping.NodePingService;
 import gdg.hfs.vhfs.vm.CreateVMWithFlavorRequest;
@@ -288,8 +290,14 @@ public class Vps4ProvisionVm extends ActionCommand<Vps4ProvisionVm.Request, Vps4
 
     private void configureNodePing(IpAddress ipAddress) {
         if (request.vmInfo.pingCheckAccountId > 0) {
-            NodePingCheck check = monitoringService.createCheck(request.vmInfo.pingCheckAccountId, ipAddress.address,
-                    ipAddress.address, null, "1", null);
+
+            CreateCheckRequest checkRequest = new CreateCheckRequest();
+            checkRequest.target = ipAddress.address;
+            checkRequest.label = ipAddress.address;
+            checkRequest.interval = 1;
+            checkRequest.type = CheckType.PING;
+
+            NodePingCheck check = monitoringService.createCheck(request.vmInfo.pingCheckAccountId, checkRequest);
             logger.debug("CheckId: {}", check.checkId);
 
             // Add the checkId to the IpAddress

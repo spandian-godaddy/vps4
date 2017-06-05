@@ -166,10 +166,12 @@ public class HfsMockModule extends AbstractModule {
     private NodePingService buildNodePingService() {
         NodePingService nodePingService = Mockito.mock(NodePingService.class);
 
-        NodePingCheck check = new NodePingCheck(1234, 4321, "fakeCheck");
+        NodePingCheck check = new NodePingCheck();
+        check.accountId = 1234;
+        check.checkId = 4321;
+        check.nodepingCheckId = "fakeCheck";
 
-        Mockito.when(nodePingService.createCheck(Mockito.anyLong(), Mockito.anyString(), Mockito.anyString(), Mockito.anyString(),
-                Mockito.anyString(), Mockito.anyString())).thenReturn(check);
+        Mockito.when(nodePingService.createCheck(Mockito.anyLong(), Mockito.anyObject())).thenReturn(check);
         doNothing().when(nodePingService).deleteCheck(Mockito.anyLong(), Mockito.anyLong());
         Mockito.when(nodePingService.getCheck(Mockito.anyLong(), Mockito.anyLong())).thenReturn(check);
         return nodePingService;
