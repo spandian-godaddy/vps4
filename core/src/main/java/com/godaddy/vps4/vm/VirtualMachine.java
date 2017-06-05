@@ -60,11 +60,11 @@ public class VirtualMachine {
         this.hostname = virtualMachine.hostname;
         this.accountStatus = virtualMachine.accountStatus;
     }
-    
+
     @Override
     public String toString() {
         return String.format(
-                "VirtualMachine [vmId=%s, hfsVmId=%d, orionGuid=%s, projectId=%d, spec=%s, name=%s, hostname=%s, image=%s, primaryIpAddress=%s, dataCenter=%s, accountStatus=%s, validOn=%s, validUntil=%s]",
+                "VirtualMachine [vmId=%s, hfsVmId=%d, orionGuid=%s, projectId=%d, spec=%s, name=%s, hostname=%s, image=%s, primaryIpAddress=%s, accountStatus=%s, validOn=%s, validUntil=%s]",
                 vmId, hfsVmId, orionGuid, projectId, spec.name, name, hostname, image == null ? "" : image.imageName,
                 primaryIpAddress == null ? "" : primaryIpAddress.ipAddress,
                 accountStatus.toString(), validOn, validUntil);

@@ -38,14 +38,14 @@ public class Vps4DestroyVm extends ActionCommand<Vps4DestroyVm.Request, Vps4Dest
     final CreditService creditService;
 
     final VmService vmService;
-    
+
     final CPanelService cpanelService;
 
     final NodePingService monitoringService;
 
     @Inject
     public Vps4DestroyVm(ActionService actionService,
-            NetworkService networkService, 
+            NetworkService networkService,
             VirtualMachineService virtualMachineService,
             CreditService creditService,
             VmService vmService,
@@ -59,38 +59,28 @@ public class Vps4DestroyVm extends ActionCommand<Vps4DestroyVm.Request, Vps4Dest
         this.cpanelService = cpanelService;
         this.monitoringService = monitoringService;
     }
-    
-  
+
+
     @Override
     public Response executeWithAction(CommandContext context, Vps4DestroyVm.Request request) {
         final long hfsVmId = request.hfsVmId;
-        VirtualMachine vm = this.virtualMachineService.getVirtualMachine(hfsVmId); 
-        
+        VirtualMachine vm = this.virtualMachineService.getVirtualMachine(hfsVmId);
+
         unlicenseCpanel(context, hfsVmId, vm.vmId);
-        
+
         List<IpAddress> addresses = networkService.getVmIpAddresses(vm.vmId);
 
         for (IpAddress address : addresses) {
             if(address.pingCheckId != null ){
                 monitoringService.deleteCheck(request.pingCheckAccountId, address.pingCheckId);
             }
-            
+
             context.execute("DeleteIpAddress-"+address.ipAddressId, Vps4DestroyIpAddress.class, new Vps4DestroyIpAddress.Request(address, vm));
-            context.execute("Destroy-"+address.ipAddressId, ctx -> {networkService.destroyIpAddress(address.ipAddressId); 
+            context.execute("Destroy-"+address.ipAddressId, ctx -> {networkService.destroyIpAddress(address.ipAddressId);
                                                                     return null;});
         }
-        
+
         context.execute("DestroyVmHfs", DestroyVm.class, hfsVmId);
-
-        context.execute("Vps4DestroyVm", ctx -> {
-            virtualMachineService.destroyVirtualMachine(hfsVmId);
-            return null;
-        });
-
-        context.execute("Vps4ReleaseVmCredit", ctx -> {
-            creditService.unclaimVirtualMachineCredit(vm.orionGuid);
-            return null;
-        });
 
         return null;
     }
@@ -104,7 +94,7 @@ public class Vps4DestroyVm extends ActionCommand<Vps4DestroyVm.Request, Vps4Dest
             context.execute(WaitForCpanelAction.class, action);
         }
     }
-    
+
     public static class Request implements ActionRequest{
 
         public long hfsVmId;
@@ -116,7 +106,7 @@ public class Vps4DestroyVm extends ActionCommand<Vps4DestroyVm.Request, Vps4Dest
             return actionId;
         }
     }
-    
+
     public static class Response {
         public long vmId;
     }

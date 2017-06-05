@@ -322,6 +322,11 @@ public class VmResource {
 
         Commands.execute(commandService, actionService, "Vps4DestroyVm", request);
 
+        // The request has been created successfully.
+        // Detach the user from the vm, and we'll handle the delete from here.
+        creditService.unclaimVirtualMachineCredit(virtualMachine.orionGuid);
+        virtualMachineService.destroyVirtualMachine(virtualMachine.hfsVmId);
+
         return actionService.getAction(actionId);
     }
 
