@@ -1,6 +1,8 @@
 package com.godaddy.vps4.hfs;
 
+import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.security.SecureRandom;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
@@ -16,7 +18,11 @@ import javax.net.ssl.X509TrustManager;
 import javax.ws.rs.client.Client;
 import javax.ws.rs.client.ClientRequestContext;
 import javax.ws.rs.client.ClientRequestFilter;
+import javax.ws.rs.client.ClientResponseContext;
+import javax.ws.rs.client.ClientResponseFilter;
+import javax.ws.rs.core.Response;
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.http.client.HttpClient;
 import org.apache.http.config.RegistryBuilder;
 import org.apache.http.conn.socket.ConnectionSocketFactory;
@@ -106,7 +112,21 @@ public class HfsClientProvider<T> implements Provider<T> {
 
         client.register(jacksonJsonProvider);
 
-        // client.register(new ErrorResponseFilter());
+        client.register(new ClientResponseFilter() {
+            @Override
+            public void filter(ClientRequestContext requestContext, ClientResponseContext responseContext) throws IOException {
+                if (responseContext.getStatus() != Response.Status.OK.getStatusCode()) {
+                    StringBuilder errMsg = new StringBuilder();
+                    BufferedReader reader = new BufferedReader(new InputStreamReader(responseContext.getEntityStream()));
+                    String line;
+                    while((line = reader.readLine()) != null){
+                        errMsg.append(line);
+                    }
+                    logger.error("Error response with status {} returned. Response body: {}.",
+                            Integer.toString(responseContext.getStatus()), StringUtils.left(errMsg.toString(), 1024));
+                }
+            }
+        });
 
         // add a header to all HFS requests indicating the request ID
         client.register(new ClientRequestFilter() {
