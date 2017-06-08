@@ -115,7 +115,7 @@ public class HfsClientProvider<T> implements Provider<T> {
         client.register(new ClientResponseFilter() {
             @Override
             public void filter(ClientRequestContext requestContext, ClientResponseContext responseContext) throws IOException {
-                if (responseContext.getStatus() != Response.Status.OK.getStatusCode()) {
+                if (!responseContext.getStatusInfo().getFamily().equals(Response.Status.Family.SUCCESSFUL)) {
                     StringBuilder errMsg = new StringBuilder();
                     BufferedReader reader = new BufferedReader(new InputStreamReader(responseContext.getEntityStream()));
                     String line;
@@ -143,7 +143,7 @@ public class HfsClientProvider<T> implements Provider<T> {
 
         ResteasyWebTarget target = (ResteasyWebTarget) client.target(baseUrl);
 
-        return (T) target.proxy(serviceClass);
+        return target.proxy(serviceClass);
     }
 
     private static final X509TrustManager trustManager = new X509TrustManager() {
