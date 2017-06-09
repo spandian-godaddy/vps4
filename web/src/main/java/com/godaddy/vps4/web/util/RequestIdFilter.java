@@ -1,7 +1,6 @@
 package com.godaddy.vps4.web.util;
 
 import java.io.IOException;
-import java.util.UUID;
 
 import javax.servlet.Filter;
 import javax.servlet.FilterChain;
@@ -30,6 +29,8 @@ public class RequestIdFilter implements Filter {
 
     private static final Logger logger = LoggerFactory.getLogger(RequestIdFilter.class);
 
+    private static final int REQUEST_ID_MAX_LENGTH = 50;
+
     @Override
     public void init(FilterConfig filterConfig) throws ServletException {
 
@@ -45,12 +46,13 @@ public class RequestIdFilter implements Filter {
 
         String requestId = ((HttpServletRequest)request).getHeader("X-Request-Id");
         if (requestId != null) {
-            try {
-                ThreadLocalRequestId.set( UUID.fromString(requestId) );
 
-            } catch (IllegalArgumentException e) {
-                logger.error("Unable to set thread-local request ID", e);
+            if (requestId.length() <= REQUEST_ID_MAX_LENGTH) {
+                ThreadLocalRequestId.set(requestId);
+            } else {
+                logger.warn("Request ID header exceeds max length of {}", REQUEST_ID_MAX_LENGTH);
             }
+
         }
 
         try {

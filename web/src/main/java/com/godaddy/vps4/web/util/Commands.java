@@ -1,7 +1,6 @@
 package com.godaddy.vps4.web.util;
 
 import java.util.Arrays;
-import java.util.UUID;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -31,7 +30,7 @@ public class Commands {
         CommandState command = commandService.executeCommand(groupSpec);
 
         if (command.commandId != null) {
-            UUID requestId = ThreadLocalRequestId.get();
+            String requestId = ThreadLocalRequestId.get();
             if (requestId != null) {
                 logger.info("request {} => command {}", requestId, command.commandId);
             }
