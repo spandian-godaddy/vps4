@@ -1,7 +1,7 @@
 package com.godaddy.vps4.sysadmin;
 
-import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -62,8 +62,8 @@ public class VmUsageParserTest {
             assertNotNull(usage);
 
             assertNotNull(usage.disk);
-            assertEquals(49826L, usage.disk.mibUsed);
-            assertEquals(61437L, usage.disk.mibAvail);
+            assertEquals(11611L, usage.disk.mibUsed);
+            assertEquals(49826L, usage.disk.mibAvail);
             assertEquals("2017-02-14T20:54:04Z", usage.disk.timestamp.toString());
 
             assertNotNull(usage.cpu);

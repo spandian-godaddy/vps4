@@ -154,10 +154,10 @@ public class VmUsageParser {
             // windows
             long freeMb = parseLong(row.getValue("Free Megabytes"), "Free Megabytes");
             double pctFreeSpace = parseDouble(row.getValue("% Free Space"), "% Free Space") / 100d;
-            long availMb = (long)(((double)freeMb) / pctFreeSpace);
+            long totalMbs = (long)((freeMb) / pctFreeSpace);
 
-            usage.mibUsed = freeMb;
-            usage.mibAvail = availMb;
+            usage.mibAvail = freeMb;
+            usage.mibUsed = totalMbs - freeMb;
 
         } else {
             return null;
