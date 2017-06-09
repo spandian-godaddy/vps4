@@ -1,7 +1,5 @@
 package com.godaddy.vps4.util;
 
-import java.util.UUID;
-
 /**
  *
  * Tracks a 'request ID' in a ThreadLocal.
@@ -24,13 +22,13 @@ import java.util.UUID;
  */
 public class ThreadLocalRequestId {
 
-    private static final ThreadLocal<UUID> threadLocalRequestId = new ThreadLocal<>();
+    private static final ThreadLocal<String> threadLocalRequestId = new ThreadLocal<>();
 
-    public static void set(UUID requestId) {
+    public static void set(String requestId) {
         threadLocalRequestId.set(requestId);
     }
 
-    public static UUID get() {
+    public static String get() {
         return threadLocalRequestId.get();
     }
 }

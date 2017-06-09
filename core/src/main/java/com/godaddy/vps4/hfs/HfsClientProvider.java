@@ -6,7 +6,6 @@ import java.io.InputStreamReader;
 import java.security.SecureRandom;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
-import java.util.UUID;
 
 import javax.inject.Inject;
 import javax.inject.Provider;
@@ -134,9 +133,9 @@ public class HfsClientProvider<T> implements Provider<T> {
             @Override
             public void filter(ClientRequestContext requestContext) throws IOException {
 
-                UUID requestId = ThreadLocalRequestId.get();
+                String requestId = ThreadLocalRequestId.get();
                 if (requestId != null) {
-                    requestContext.getHeaders().add("X-Request-Id", requestId.toString());
+                    requestContext.getHeaders().add("X-Request-Id", requestId);
                 }
             }
         });

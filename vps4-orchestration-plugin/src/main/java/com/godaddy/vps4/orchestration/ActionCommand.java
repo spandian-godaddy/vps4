@@ -73,7 +73,7 @@ public abstract class ActionCommand<Req extends ActionRequest, Res> implements C
 
             Object o = field.get(context);
             if (o != null && o instanceof UUID) {
-                ThreadLocalRequestId.set( (UUID) o );
+                ThreadLocalRequestId.set( ((UUID) o).toString() );
             }
 
         } catch (Exception e) {

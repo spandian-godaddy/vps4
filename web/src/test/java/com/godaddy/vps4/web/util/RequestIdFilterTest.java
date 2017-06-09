@@ -1,5 +1,15 @@
 package com.godaddy.vps4.web.util;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
+import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+
+import java.util.Collections;
+import java.util.UUID;
+import java.util.concurrent.atomic.AtomicReference;
+
 import javax.servlet.FilterChain;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -7,14 +17,7 @@ import javax.servlet.http.HttpServletResponse;
 import org.junit.Before;
 import org.junit.Test;
 
-import static org.junit.Assert.*;
-
 import com.godaddy.vps4.util.ThreadLocalRequestId;
-
-import static org.mockito.Mockito.*;
-
-import java.util.UUID;
-import java.util.concurrent.atomic.AtomicReference;
 
 public class RequestIdFilterTest {
 
@@ -34,11 +37,11 @@ public class RequestIdFilterTest {
     @Test
     public void testRequestIdAttach() throws Exception {
 
-        UUID requestId = UUID.randomUUID();
+        String requestId = UUID.randomUUID().toString();
 
-        when(request.getHeader("X-Request-Id")).thenReturn(requestId.toString());
+        when(request.getHeader("X-Request-Id")).thenReturn(requestId);
 
-        final AtomicReference<UUID> requestIdWithinRequestChain = new AtomicReference<>();
+        final AtomicReference<String> requestIdWithinRequestChain = new AtomicReference<>();
 
         doAnswer(invocation -> {
 
@@ -57,15 +60,27 @@ public class RequestIdFilterTest {
     }
 
     @Test
-    public void testBadRequestId() throws Exception {
+    public void testRequestIdBadLength() throws Exception {
 
-        when(request.getHeader("X-Request-Id")).thenReturn("not-a-valid-uuid");
+        String requestId = String.join("", Collections.nCopies(51, "a"));
+
+        when(request.getHeader("X-Request-Id")).thenReturn(requestId);
+
+        final AtomicReference<String> requestIdWithinRequestChain = new AtomicReference<>();
+
+        doAnswer(invocation -> {
+
+            requestIdWithinRequestChain.set(ThreadLocalRequestId.get());
+            return null;
+
+        }).when(chain).doFilter(request, response);
 
         filter.doFilter(request, response, chain);
 
-        assertNull("thread-local request is not set", ThreadLocalRequestId.get());
+        assertNull("thread-local request ID is NOT set during request",
+                        requestIdWithinRequestChain.get());
 
-        // filter chain is still invoked (ignoring bad request ID)
-        verify(chain).doFilter(request, response);
+        assertNull("thread-local request ID is unset after request",
+                        ThreadLocalRequestId.get());
     }
 }
