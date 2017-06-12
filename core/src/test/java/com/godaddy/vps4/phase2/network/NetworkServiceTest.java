@@ -34,21 +34,25 @@ public class NetworkServiceTest {
     private Injector injector = Guice.createInjector(new DatabaseModule());
 
     private UUID orionGuid = UUID.randomUUID();
+    private UUID orionGuidTwo = UUID.randomUUID();
     private DataSource dataSource;
     private VirtualMachine vm;
+    private VirtualMachine vmTwo;
 
     @Before
     public void setupService() {
         dataSource = injector.getInstance(DataSource.class);
         networkService = new JdbcNetworkService(dataSource);
         projectService = new JdbcProjectService(dataSource);
-        
+
         vm = SqlTestData.insertTestVm(orionGuid, dataSource);
+        vmTwo = SqlTestData.insertTestVm(orionGuidTwo, dataSource);
     }
 
     @After
     public void cleanup() {
         SqlTestData.cleanupTestVmAndRelatedData(vm.vmId, dataSource);
+        SqlTestData.cleanupTestVmAndRelatedData(vmTwo.vmId, dataSource);
     }
 
     @Test
@@ -130,4 +134,31 @@ public class NetworkServiceTest {
         catch (Exception e) {
         }
     }
+
+    @Test
+    public void TestReuseOfPrimaryIp() {
+        long primaryId = 125;
+        String primaryAddress = "192.168.1.1";
+
+        networkService.createIpAddress(primaryId, vm.vmId, primaryAddress, IpAddress.IpAddressType.PRIMARY);
+        networkService.destroyIpAddress(primaryId);
+
+        networkService.createIpAddress(primaryId + 1, vmTwo.vmId, primaryAddress, IpAddress.IpAddressType.PRIMARY);
+    }
+
+    @Test
+    public void TestReuseOfIpWhileStillActiveFails() {
+        long primaryId = 125;
+        String primaryAddress = "192.168.1.1";
+
+        networkService.createIpAddress(primaryId, vm.vmId, primaryAddress, IpAddress.IpAddressType.PRIMARY);
+        try {
+            networkService.createIpAddress(primaryId + 1, vmTwo.vmId, primaryAddress, IpAddress.IpAddressType.PRIMARY);
+            Assert.fail("This should fail to insert a duplicate active IP address");
+        }
+        catch (Exception e) {
+        }
+    }
+
+
 }
