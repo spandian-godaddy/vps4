@@ -1,4 +1,4 @@
-package com.godaddy.vps4.web.cpanel;
+package com.godaddy.vps4.web.controlPanel.cpanel;
 
 import java.io.IOException;
 import java.util.List;
@@ -7,11 +7,10 @@ import java.util.UUID;
 import javax.inject.Inject;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
-import javax.ws.rs.NotFoundException;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
-import javax.ws.rs.QueryParam;
 import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
 
 import org.slf4j.Logger;
@@ -20,17 +19,18 @@ import org.slf4j.LoggerFactory;
 import com.godaddy.vps4.cpanel.CPanelAccount;
 import com.godaddy.vps4.cpanel.CPanelSession;
 import com.godaddy.vps4.cpanel.CpanelAccessDeniedException;
+import com.godaddy.vps4.cpanel.CpanelClient.CpanelServiceType;
+import com.godaddy.vps4.cpanel.CpanelTimeoutException;
 import com.godaddy.vps4.cpanel.Vps4CpanelService;
 import com.godaddy.vps4.security.PrivilegeService;
 import com.godaddy.vps4.security.Vps4User;
 import com.godaddy.vps4.vm.Image.ControlPanel;
 import com.godaddy.vps4.vm.VirtualMachine;
 import com.godaddy.vps4.vm.VirtualMachineService;
-import com.godaddy.vps4.cpanel.CpanelClient.CpanelServiceType;
-import com.godaddy.vps4.cpanel.CpanelTimeoutException;
 import com.godaddy.vps4.web.Vps4Api;
-import com.godaddy.vps4.web.Vps4Exception;
+import com.godaddy.vps4.web.controlPanel.ControlPanelRequestValidation;
 
+import gdg.hfs.vhfs.vm.VmService;
 import io.swagger.annotations.Api;
 
 @Vps4Api
@@ -46,14 +46,16 @@ public class CPanelResource {
     final Vps4CpanelService cpanelService;
     final PrivilegeService privilegeService;
     final VirtualMachineService virtualMachineService;
+    final VmService hfsVmService;
     final Vps4User user;
 
     @Inject
     public CPanelResource(Vps4CpanelService cpanelService, PrivilegeService privilegeService,
-            VirtualMachineService virtualMachineService, Vps4User user) {
+            VirtualMachineService virtualMachineService, VmService hfsVmService, Vps4User user) {
         this.cpanelService = cpanelService;
         this.privilegeService = privilegeService;
         this.virtualMachineService = virtualMachineService;
+        this.hfsVmService = hfsVmService;
         this.user = user;
     }
 
@@ -64,7 +66,7 @@ public class CPanelResource {
         logger.info("get WHM session for vmId {}", vmId);
 
         VirtualMachine vm = resolveVirtualMachine(vmId);
-        
+
         try {
             return cpanelService.createSession(vm.hfsVmId, "root", CpanelServiceType.whostmgrd);
         } catch (CpanelAccessDeniedException e) {
@@ -121,17 +123,10 @@ public class CPanelResource {
         return null;
     }
 
-    VirtualMachine resolveVirtualMachine(UUID vmId) {
-        privilegeService.requireAnyPrivilegeToVmId(user, vmId);
-
-        VirtualMachine vm = virtualMachineService.getVirtualMachine(vmId);
-        if (vm == null) {
-            throw new NotFoundException("VM not found: " + vmId);
-        }
-        if (vm.image.controlPanel != ControlPanel.CPANEL) {
-            throw new  Vps4Exception("INVALID_IMAGE", String.format("Image for %s is not cPanel.", vmId));
-        }
-        return vm;
+    private VirtualMachine resolveVirtualMachine(UUID vmId) {
+        return ControlPanelRequestValidation.getValidVirtualMachine(user, privilegeService,
+                virtualMachineService, hfsVmService,
+                ControlPanel.CPANEL, vmId);
     }
 
 }

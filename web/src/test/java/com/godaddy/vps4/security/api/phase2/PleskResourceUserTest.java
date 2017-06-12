@@ -9,10 +9,10 @@ import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mockito;
 
-import com.godaddy.vps4.cpanel.Vps4CpanelService;
 import com.godaddy.vps4.hfs.HfsMockModule;
 import com.godaddy.vps4.jdbc.DatabaseModule;
 import com.godaddy.vps4.phase2.SqlTestData;
+import com.godaddy.vps4.plesk.Vps4PleskService;
 import com.godaddy.vps4.project.Project;
 import com.godaddy.vps4.project.ProjectService;
 import com.godaddy.vps4.security.PrivilegeService;
@@ -25,7 +25,7 @@ import com.godaddy.vps4.vm.VirtualMachine;
 import com.godaddy.vps4.vm.VirtualMachineService;
 import com.godaddy.vps4.vm.VmModule;
 import com.godaddy.vps4.web.Vps4Exception;
-import com.godaddy.vps4.web.controlPanel.cpanel.CPanelResource;
+import com.godaddy.vps4.web.controlPanel.plesk.PleskResource;
 import com.google.inject.AbstractModule;
 import com.google.inject.Guice;
 import com.google.inject.Inject;
@@ -34,7 +34,8 @@ import com.google.inject.Provides;
 
 import gdg.hfs.vhfs.vm.VmService;
 
-public class CpanelResourceUserTest {
+
+public class PleskResourceUserTest {
 
     @Inject
     PrivilegeService privilegeService;
@@ -49,7 +50,7 @@ public class CpanelResourceUserTest {
     Vps4UserService userService;
 
     @Inject
-    Vps4CpanelService cpanelService;
+    Vps4PleskService pleskService;
 
     @Inject
     ProjectService projService;
@@ -65,8 +66,8 @@ public class CpanelResourceUserTest {
 
                 @Override
                 protected void configure() {
-                    Vps4CpanelService cpServ = Mockito.mock(Vps4CpanelService.class);
-                    bind(Vps4CpanelService.class).toInstance(cpServ);
+                    Vps4PleskService cpServ = Mockito.mock(Vps4PleskService.class);
+                    bind(Vps4PleskService.class).toInstance(cpServ);
 
                 }
 
@@ -81,7 +82,7 @@ public class CpanelResourceUserTest {
     Vps4User user;
 
     UUID vmId;
-    UUID centVmId;
+    UUID windowsVmId;
     UUID orionGuid;
     UUID centOrionGuid;
     long hfsVmId = 98765;
@@ -99,20 +100,20 @@ public class CpanelResourceUserTest {
         validUser = userService.getOrCreateUserForShopper("validUserShopperId");
         invalidUser = userService.getOrCreateUserForShopper("invalidUserShopperId");
         project = projService.createProject("TestProject", validUser.getId(), "vps4-test-");
-        createCpanelVm();
-        createCentVm();
+        createPleskVm();
+        createWindowsVm();
     }
 
-    private void createCpanelVm() {
-        virtualMachine = SqlTestData.insertTestVm(orionGuid, validUser.getId(), dataSource, "centos-7-cpanel-11");
+    private void createPleskVm() {
+        virtualMachine = SqlTestData.insertTestVm(orionGuid, validUser.getId(), dataSource, "windows-2012r2-plesk-12.5");
         virtualMachineService.addHfsVmIdToVirtualMachine(virtualMachine.vmId, hfsVmId);
         vmId = virtualMachine.vmId;
     }
 
-    private void createCentVm() {
-        centVirtualMachine = SqlTestData.insertTestVm(centOrionGuid, validUser.getId(), dataSource);
+    private void createWindowsVm() {
+        centVirtualMachine = SqlTestData.insertTestVm(centOrionGuid, validUser.getId(), dataSource, "windows-2012r2");
         virtualMachineService.addHfsVmIdToVirtualMachine(centVirtualMachine.vmId, centHfsVmId);
-        centVmId = centVirtualMachine.vmId;
+        windowsVmId = centVirtualMachine.vmId;
     }
 
     @After
@@ -121,72 +122,58 @@ public class CpanelResourceUserTest {
         SqlTestData.cleanupTestVmAndRelatedData(centVirtualMachine.vmId, dataSource);
     }
 
-    private CPanelResource getValidResource() {
+    private PleskResource getValidResource() {
         user = validUser;
-        return injector.getInstance(CPanelResource.class);
+        return injector.getInstance(PleskResource.class);
     }
 
-    private CPanelResource getInvalidResource() {
+    private PleskResource getInvalidResource() {
         user = invalidUser;
-        return injector.getInstance(CPanelResource.class);
+        return injector.getInstance(PleskResource.class);
     }
 
-
-
     @Test
-    public void testGetWHMSession(){
-        getValidResource().getWHMSession(vmId);
+    public void testGetPleskSession(){
+        getValidResource().getPleskSessionUrl(vmId, "1.2.3.4", null, null);
     }
 
     @Test(expected=AuthorizationException.class)
-    public void testGetWHMSessionInvalidUser(){
-        getInvalidResource().getWHMSession(vmId);
+    public void testPleskSessionInvalidUser(){
+        getInvalidResource().getPleskSessionUrl(vmId, "1.2.3.4", null, null);
     }
 
     @Test(expected=Vps4Exception.class)
-    public void testGetWhmSessionInvalidImage(){
-        getValidResource().getWHMSession(centVmId);
+    public void testGetPleskSessionInvalidImage(){
+        getValidResource().getPleskSessionUrl(windowsVmId, "1.2.3.4", null, null);
     }
 
-
-
-    @Test
-    public void testGetCPanelSession(){
-        getValidResource().getCPanelSession(vmId, "testuser");
-    }
 
     @Test(expected=AuthorizationException.class)
-    public void testGetCPanelSessionInvalidUser(){
-        getInvalidResource().getCPanelSession(vmId, "testuser");
-    }
-
-    @Test(expected=Vps4Exception.class)
-    public void testGetCPanelSessionInvalidImage(){
-        getValidResource().getCPanelSession(centVmId, "testuser");
+    public void testGetPleskSessionInvalidUser(){
+        getInvalidResource().getPleskSessionUrl(windowsVmId, "1.2.3.4", null, null);
     }
 
 
     @Test
-    public void testListCpanelAccounts(){
-        getValidResource().listCpanelAccounts(vmId);
+    public void testGetPleskAccounts(){
+        getValidResource().listPleskAccounts(vmId);
     }
 
     @Test(expected=AuthorizationException.class)
-    public void testListCpanelAccountsInvalidUser(){
-        getInvalidResource().listCpanelAccounts(vmId);
+    public void testPleskAccountsInvalidUser(){
+        getInvalidResource().listPleskAccounts(vmId);
     }
 
     @Test(expected=Vps4Exception.class)
-    public void testListCpanelAccountsInvalidImage(){
-        getValidResource().listCpanelAccounts(centVmId);
+    public void testGetPleskAccountsInvalidImage(){
+        getValidResource().listPleskAccounts(windowsVmId);
     }
 
+
     @Test(expected=AuthorizationException.class)
-    public void testVmIdDoesntExist(){
-        // Authorization Exception is thrown because the valid user doesn't
-        // have permissions on the vm with id randomUUID even though that UUID
-        // doesn't even exist.
-        getValidResource().listCpanelAccounts(UUID.randomUUID());
+    public void testGetPleskAccountsInvalidUser(){
+        getInvalidResource().listPleskAccounts(windowsVmId);
     }
+
 
 }

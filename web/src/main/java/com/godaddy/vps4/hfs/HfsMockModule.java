@@ -122,7 +122,7 @@ public class HfsMockModule extends AbstractModule {
         Mockito.when(nodePingService.getCheckEvents(anyLong(), anyLong(), anyInt())).thenReturn(events);
         List<NodePingUptimeRecord> records = new ArrayList<>();
         Mockito.when(nodePingService.getCheckUptime(anyLong(), anyLong(), anyString(), anyString(), anyString())).thenReturn(records);
-        
+
         return nodePingService;
     }
 
@@ -172,7 +172,7 @@ public class HfsMockModule extends AbstractModule {
             public Vm getVm(long vmId) {
                 Vm vm = new Vm();
                 vm.vmId = vmId;
-                vm.status = "Live";
+                vm.status = "ACTIVE";
                 vm.address = new VmAddress();
                 vm.address.ip_address = "132.148.82.152";
                 vm.osinfo = new VmOSInfo();
