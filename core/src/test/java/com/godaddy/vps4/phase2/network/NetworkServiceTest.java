@@ -147,7 +147,7 @@ public class NetworkServiceTest {
     }
 
     @Test
-    public void TestReuseOfIpWhileStillActiveFails() {
+    public void TestReuseOfActiveIpFails() {
         long primaryId = 125;
         String primaryAddress = "192.168.1.1";
 
