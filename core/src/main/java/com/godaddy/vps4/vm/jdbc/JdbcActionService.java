@@ -92,7 +92,7 @@ public class JdbcActionService implements ActionService {
     }
     
     @Override
-    public ResultSubset<Action> getActions(UUID vmId, long limit, long offset, List<String> statusList, Date beginDate, Date endDate){ 
+    public ResultSubset<Action> getActions(UUID vmId, long limit, long offset, List<String> statusList, Date beginDate, Date endDate){
         Map<String, Object> filterParams = new HashMap<String, Object>();
         if (vmId != null){
             filterParams.put("vm_id", vmId);
@@ -115,9 +115,14 @@ public class JdbcActionService implements ActionService {
         
         buidDateQuery(beginDate, endDate, filterValues, actionsQuery);
         
-        actionsQuery.append(" ORDER BY created DESC LIMIT ? OFFSET ?;");
-        filterValues.add(limit);
+        actionsQuery.append(" ORDER BY created DESC ");
+        if (limit >= 0) {
+            actionsQuery.append("LIMIT ? ");
+            filterValues.add(limit);
+        }
+        actionsQuery.append("OFFSET ?;");
         filterValues.add(offset);
+
         return Sql.with(dataSource).exec(actionsQuery.toString(),
                 Sql.nextOrNull(this::mapActionWithTotal),
                 filterValues.toArray());

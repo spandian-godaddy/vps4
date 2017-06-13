@@ -67,6 +67,7 @@ public class VmResourceUserTest {
     NetworkService networkService;
 
     CreditService creditService = Mockito.mock(CreditService.class);
+    Vm hfsVm;
 
     private Injector injector = Guice.createInjector(
             new DatabaseModule(),
@@ -79,7 +80,8 @@ public class VmResourceUserTest {
                     bind(CreditService.class).toInstance(creditService);
 
                     // HFS services
-                    Vm hfsVm = new Vm();
+                    hfsVm = new Vm();
+                    hfsVm.status = "ACTIVE";
                     hfsVm.vmId = hfsVmId;
                     VmService vmService = Mockito.mock(VmService.class);
                     Mockito.when(vmService.getVm(Mockito.anyLong())).thenReturn(hfsVm);
@@ -189,6 +191,7 @@ public class VmResourceUserTest {
 
     @Test
     public void testStartVm() throws VmNotFoundException{
+        hfsVm.status = "STOPPED";
         Action action = newValidVmResource().startVm(vmIds.get(0));
         Assert.assertNotNull(action.commandId);
     }

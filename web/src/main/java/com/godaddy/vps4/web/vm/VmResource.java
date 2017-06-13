@@ -1,8 +1,7 @@
 package com.godaddy.vps4.web.vm;
 
 import java.time.Instant;
-import java.util.List;
-import java.util.UUID;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import javax.inject.Inject;
@@ -16,7 +15,10 @@ import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
 
+import com.godaddy.vps4.jdbc.ResultSubset;
 import org.json.simple.JSONObject;
+import org.json.simple.parser.JSONParser;
+import org.json.simple.parser.ParseException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -130,70 +132,90 @@ public class VmResource {
     @POST
     @Path("{vmId}/start")
     public Action startVm(@PathParam("vmId") UUID vmId) throws VmNotFoundException {
-        return manageVm(vmId, ActionType.START_VM);
+        validateNoPowerActionInProgress(vmId);
+        String errorMessage = "Can't start server, server is already running";
+        validateServerStatus(vmId, errorMessage, "STOPPED");
+
+        // Check if vm exists and user has access to the vm.
+        VirtualMachine vm = getVm(vmId);
+        long actionId = actionService.createAction(vm.vmId, ActionType.START_VM, new JSONObject().toJSONString(), user.getId());
+
+        CommandState command;
+        Vps4StartVm.Request startRequest = new Vps4StartVm.Request();
+        startRequest.actionId = actionId;
+        startRequest.hfsVmId = vm.hfsVmId;
+
+        command = Commands.execute(commandService, actionService, "Vps4StartVm", startRequest);
+        logger.info("managing vm {} with command {}", ActionType.START_VM, command.commandId);
+        return actionService.getAction(actionId);
     }
 
     @POST
     @Path("{vmId}/stop")
     public Action stopVm(@PathParam("vmId") UUID vmId) throws VmNotFoundException {
-        return manageVm(vmId, ActionType.STOP_VM);
+        validateNoPowerActionInProgress(vmId);
+        String errorMessage = "Can't stop server, server isn't running";
+        validateServerStatus(vmId, errorMessage, "ACTIVE");
+
+        // Check if vm exists and user has access to the vm.
+        VirtualMachine vm = getVm(vmId);
+        long actionId = actionService.createAction(vm.vmId, ActionType.STOP_VM, new JSONObject().toJSONString(), user.getId());
+
+        CommandState command;
+        Vps4StopVm.Request stopRequest = new Vps4StopVm.Request();
+        stopRequest.actionId = actionId;
+        stopRequest.hfsVmId = vm.hfsVmId;
+
+        command = Commands.execute(commandService, actionService, "Vps4StopVm", stopRequest);
+        logger.info("managing vm {} with command {}", ActionType.STOP_VM, command.commandId);
+        return actionService.getAction(actionId);
     }
 
     @POST
     @Path("{vmId}/restart")
     public Action restartVm(@PathParam("vmId") UUID vmId) throws VmNotFoundException {
-        return manageVm(vmId, ActionType.RESTART_VM);
-    }
-
-    /**
-     * Manage the vm to perform actions like start / stop / restart vm.
-     *
-     * @param vmId
-     * @param action
-     */
-    private Action manageVm(UUID vmId, ActionType type) throws VmNotFoundException {
+        validateNoPowerActionInProgress(vmId);
+        String errorMessage = "Can't restart server, server isn't running";
+        validateServerStatus(vmId, errorMessage, "ACTIVE");
 
         // Check if vm exists and user has access to the vm.
         VirtualMachine vm = getVm(vmId);
-        long vmProjectId = vm.projectId;
+        long actionId = actionService.createAction(vm.vmId, ActionType.RESTART_VM, new JSONObject().toJSONString(), user.getId());
 
-        privilegeService.requireAnyPrivilegeToProjectId(user, vmProjectId);
+        CommandState command;
+        Vps4RestartVm.Request restartRequest = new Vps4RestartVm.Request();
+        restartRequest.actionId = actionId;
+        restartRequest.hfsVmId = vm.hfsVmId;
 
-        long actionId = actionService.createAction(vm.vmId, type, new JSONObject().toJSONString(), user.getId());
-
-        CommandState command = null;
-        switch (type) {
-        case START_VM:
-
-            Vps4StartVm.Request startRequest = new Vps4StartVm.Request();
-            startRequest.actionId = actionId;
-            startRequest.hfsVmId = vm.hfsVmId;
-
-            command = Commands.execute(commandService, actionService, "Vps4StartVm", startRequest);
-            break;
-
-        case STOP_VM:
-            Vps4StopVm.Request stopRequest = new Vps4StopVm.Request();
-            stopRequest.actionId = actionId;
-            stopRequest.hfsVmId = vm.hfsVmId;
-
-            command = Commands.execute(commandService, actionService, "Vps4StopVm", stopRequest);
-            break;
-
-        case RESTART_VM:
-            Vps4RestartVm.Request restartRequest = new Vps4RestartVm.Request();
-            restartRequest.actionId = actionId;
-            restartRequest.hfsVmId = vm.hfsVmId;
-
-            command = Commands.execute(commandService, actionService, "Vps4RestartVm", restartRequest);
-            break;
-
-        default:
-            throw new IllegalArgumentException("Unknown type: " + type);
-        }
-        logger.info("managing vm {} with command {}", type, command.commandId);
-
+        command = Commands.execute(commandService, actionService, "Vps4RestartVm", restartRequest);
+        logger.info("managing vm {} with command {}", ActionType.RESTART_VM, command.commandId);
         return actionService.getAction(actionId);
+    }
+
+    private void validateServerStatus(UUID vmId, String errorMessage, String expectedState) {
+        Vm hfsVm = vmService.getVm(getVm(vmId).hfsVmId);
+        if (!expectedState.equals(hfsVm.status))
+            throw new Vps4Exception("INVALID_STATUS", errorMessage);
+    }
+
+    private void validateNoPowerActionInProgress(UUID vmId) {
+        List<String> actionList = new ArrayList<>();
+        actionList.add("NEW");
+        actionList.add("IN_PROGRESS");
+        ResultSubset<Action> actions = actionService.getActions(
+                vmId, -1, 0, actionList
+        );
+
+        List<ActionType> powerActions = new ArrayList<>();
+        powerActions.add(ActionType.START_VM);
+        powerActions.add(ActionType.STOP_VM);
+        powerActions.add(ActionType.RESTART_VM);
+
+        if (actions != null) {
+            long numOfConflictingActions = actions.results.stream().filter(i -> powerActions.contains(i.type)).count();
+            if (numOfConflictingActions > 0)
+                throw new Vps4Exception("CONFLICTING_INCOMPLETE_ACTION", "Action is already running");
+        }
     }
 
     public static class ProvisionVmRequest {
