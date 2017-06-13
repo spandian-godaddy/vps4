@@ -146,19 +146,13 @@ public class NetworkServiceTest {
         networkService.createIpAddress(primaryId + 1, vmTwo.vmId, primaryAddress, IpAddress.IpAddressType.PRIMARY);
     }
 
-    @Test
+    @Test(expected=RuntimeException.class)
     public void TestReuseOfActiveIpFails() {
         long primaryId = 125;
         String primaryAddress = "192.168.1.1";
 
         networkService.createIpAddress(primaryId, vm.vmId, primaryAddress, IpAddress.IpAddressType.PRIMARY);
-        try {
-            networkService.createIpAddress(primaryId + 1, vmTwo.vmId, primaryAddress, IpAddress.IpAddressType.PRIMARY);
-            Assert.fail("This should fail to insert a duplicate active IP address");
-        }
-        catch (Exception e) {
-        }
+        // Should fail to insert a duplicate active IP address
+        networkService.createIpAddress(primaryId + 1, vmTwo.vmId, primaryAddress, IpAddress.IpAddressType.PRIMARY);
     }
-
-
 }
