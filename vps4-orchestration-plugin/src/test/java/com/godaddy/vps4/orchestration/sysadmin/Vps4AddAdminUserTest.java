@@ -7,6 +7,7 @@ import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 import java.util.UUID;
 
@@ -33,6 +34,7 @@ public class Vps4AddAdminUserTest {
         vmUserService = mock(VmUserService.class);
         command = new Vps4AddAdminUser(actionService, vmUserService);
         context = mock(CommandContext.class);
+        when(context.getId()).thenReturn(UUID.randomUUID());
     }
 
     @Test

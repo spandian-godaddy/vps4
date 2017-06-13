@@ -53,8 +53,7 @@ public class TestCommandContext implements CommandContext {
 
     @Override
     public UUID getId() {
-        // TODO Auto-generated method stub
-        return null;
+        return UUID.randomUUID();
     }
 
     @Override

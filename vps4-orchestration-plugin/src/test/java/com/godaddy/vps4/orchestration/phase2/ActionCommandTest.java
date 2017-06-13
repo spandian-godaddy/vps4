@@ -1,5 +1,7 @@
 package com.godaddy.vps4.orchestration.phase2;
 
+import java.util.UUID;
+
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -31,6 +33,7 @@ public class ActionCommandTest {
         ActionService actionService = injector.getInstance(ActionService.class);
 
         CommandContext context = Mockito.mock(CommandContext.class);
+        Mockito.when(context.getId()).thenReturn(UUID.randomUUID());
 
         ActionRequest request = new ActionRequest() {
             @Override

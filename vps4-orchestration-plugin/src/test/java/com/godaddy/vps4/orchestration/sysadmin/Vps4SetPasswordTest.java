@@ -1,8 +1,16 @@
 package com.godaddy.vps4.orchestration.sysadmin;
 
-import static org.mockito.Mockito.*;
+import static org.mockito.Matchers.anyString;
+import static org.mockito.Matchers.eq;
+import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 import java.util.Arrays;
+import java.util.UUID;
 
 import org.junit.Test;
 
@@ -11,16 +19,16 @@ import com.godaddy.vps4.orchestration.hfs.plesk.UpdateAdminPassword;
 import com.godaddy.vps4.orchestration.hfs.sysadmin.SetPassword;
 import com.godaddy.vps4.orchestration.hfs.sysadmin.WaitForSysAdminAction;
 import com.godaddy.vps4.vm.ActionService;
-import com.godaddy.vps4.vm.VmUserService;
 import com.godaddy.vps4.vm.Image.ControlPanel;
+import com.godaddy.vps4.vm.VmUserService;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
 
 import gdg.hfs.orchestration.CommandContext;
 import gdg.hfs.orchestration.GuiceCommandProvider;
 import gdg.hfs.vhfs.sysadmin.SysAdminAction;
-import gdg.hfs.vhfs.sysadmin.SysAdminService;
 import gdg.hfs.vhfs.sysadmin.SysAdminAction.Status;
+import gdg.hfs.vhfs.sysadmin.SysAdminService;
 
 public class Vps4SetPasswordTest {
 
@@ -70,6 +78,7 @@ public class Vps4SetPasswordTest {
     @Test
     public void testSetPasswordWithPlesk() throws Exception {
         CommandContext context = mock(CommandContext.class);
+        when(context.getId()).thenReturn(UUID.randomUUID());
         SetPassword.Request setPasswordReq = mock(SetPassword.Request.class);
         UpdateAdminPassword.Request updateAdminReq = mock(UpdateAdminPassword.Request.class);
 
