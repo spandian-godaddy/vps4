@@ -1,8 +1,5 @@
 package com.godaddy.vps4.orchestration;
 
-import java.lang.reflect.Field;
-import java.util.UUID;
-
 import org.json.simple.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -66,19 +63,7 @@ public abstract class ActionCommand<Req extends ActionRequest, Res> implements C
      * @param context
      */
     public static void setRequestId(CommandContext context) {
-
-        try {
-            Field field = context.getClass().getField("commandId");
-            field.setAccessible(true);
-
-            Object o = field.get(context);
-            if (o != null && o instanceof UUID) {
-                ThreadLocalRequestId.set( ((UUID) o).toString() );
-            }
-
-        } catch (Exception e) {
-            logger.error("Unable to extract command ID from CommandContext");
-        }
+        ThreadLocalRequestId.set( context.getId().toString() );
     }
 
 }

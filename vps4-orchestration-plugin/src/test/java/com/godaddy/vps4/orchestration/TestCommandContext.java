@@ -1,5 +1,6 @@
 package com.godaddy.vps4.orchestration;
 
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
 
@@ -48,6 +49,18 @@ public class TestCommandContext implements CommandContext {
 
     protected CommandContext newChildContext(String alias) {
         return new TestCommandContext(commandProvider);
+    }
+
+    @Override
+    public UUID getId() {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    @Override
+    public void sleep(long arg0) {
+        // TODO Auto-generated method stub
+
     }
 
 }

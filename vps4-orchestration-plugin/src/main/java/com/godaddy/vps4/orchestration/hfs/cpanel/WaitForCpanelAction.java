@@ -29,12 +29,7 @@ public class WaitForCpanelAction implements Command<CPanelAction, Void> {
 
             logger.info("waiting on config image: {}", hfsAction);
 
-            try {
-                Thread.sleep(2000);
-            }
-            catch (InterruptedException e) {
-                logger.warn("Interrupted while sleeping");
-            }
+            context.sleep(2000);
 
             hfsAction = cPanelService.getAction(hfsAction.actionId);
         }

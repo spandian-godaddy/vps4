@@ -85,27 +85,18 @@
     </build>
 
     <dependencies>
-
-        <!-- EXTERNAL dependencies -->
-        <dependency>
-            <groupId>com.google.inject</groupId>
-            <artifactId>guice</artifactId>
-            <version>4.0</version>
-            <scope>provided</scope>
-        </dependency>
-
         <!-- INTERNAL dependencies -->
         <dependency>
             <groupId>com.godaddy.hosting</groupId>
             <artifactId>orchestration-api</artifactId>
-            <version>0.0.1-35</version>
+            <version>0.3.0-9</version>
             <scope>provided</scope>
         </dependency>
         
         <dependency>
             <groupId>com.godaddy.hosting</groupId>
             <artifactId>orchestration-web</artifactId>
-            <version>0.0.1-35</version>
+            <version>0.3.0-9</version>
             <scope>provided</scope>
         </dependency>
         

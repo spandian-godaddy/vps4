@@ -24,19 +24,13 @@ public class WaitForManageVmAction implements Command<VmAction, VmAction> {
     @Override
     public VmAction execute(CommandContext context, VmAction hfsAction) {
         // wait for VmAction to complete
-        while (hfsAction.state == VmAction.Status.NEW 
-                || hfsAction.state == VmAction.Status.REQUESTED 
+        while (hfsAction.state == VmAction.Status.NEW
+                || hfsAction.state == VmAction.Status.REQUESTED
                 || hfsAction.state == VmAction.Status.IN_PROGRESS) {
 
-            logger.info("waiting for vm action to complete: {}", hfsAction);         
+            logger.info("waiting for vm action to complete: {}", hfsAction);
 
-            // sleep for 2 secs - allow vm action to complete on hfs side.
-            try {
-                Thread.sleep(2000);
-            }
-            catch (InterruptedException e) {
-                logger.warn("Interrupted while sleeping");
-            }
+            context.sleep(2000);
 
             hfsAction = vmService.getVmAction(hfsAction.vmId, hfsAction.vmActionId);
         }
@@ -44,7 +38,7 @@ public class WaitForManageVmAction implements Command<VmAction, VmAction> {
             logger.info("Vm Action completed. hfsAction: {} ", hfsAction );
         } else {
             throw new RuntimeException(String.format(" Failed action: %s", hfsAction));
-        } 
+        }
         return hfsAction;
     }
 

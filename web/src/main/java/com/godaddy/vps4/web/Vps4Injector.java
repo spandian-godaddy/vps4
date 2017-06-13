@@ -8,6 +8,7 @@ import javax.inject.Singleton;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.godaddy.hfs.servicediscovery.ZkServiceRegistrationModule;
 import com.godaddy.hfs.swagger.SwaggerClassFilter;
 import com.godaddy.hfs.swagger.SwaggerModule;
@@ -92,6 +93,7 @@ public class Vps4Injector {
         modules.add(new CpanelModule());
         modules.add(new PleskModule());
         modules.add(new CommandClientModule());
+        modules.add(binder -> {binder.bind(ObjectMapper.class).toProvider(ObjectMapperProvider.class);});
         modules.add(new ServletModule() {
             @Override
             public void configureServlets() {

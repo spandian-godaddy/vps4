@@ -29,12 +29,7 @@ public class WaitForSysAdminAction implements Command<SysAdminAction, SysAdminAc
         while (sysAction.status == SysAdminAction.Status.NEW
                 || sysAction.status == SysAdminAction.Status.IN_PROGRESS) {
             logger.info("waiting on System Admin Action: {}", sysAction);
-            try {
-                Thread.sleep(2000);
-            }
-            catch (InterruptedException e) {
-                logger.warn("Interrupted while sleeping");
-            }
+            context.sleep(2000);
             sysAction = sysAdminService.getSysAdminAction(sysAction.sysAdminActionId);
         }
 

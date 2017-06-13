@@ -27,12 +27,7 @@ public class WaitForAddressAction implements Command<AddressAction, AddressActio
                 && !hfsAction.status.equals(AddressAction.Status.FAILED)) {
             logger.info("waiting for address action: {}", hfsAction);
 
-            try {
-                Thread.sleep(2000);
-            }
-            catch (InterruptedException e) {
-                logger.warn("Interrupted while sleeping");
-            }
+            context.sleep(2000);
 
             hfsAction = networkService.getAddressAction(hfsAction.addressId, hfsAction.addressActionId);
         }

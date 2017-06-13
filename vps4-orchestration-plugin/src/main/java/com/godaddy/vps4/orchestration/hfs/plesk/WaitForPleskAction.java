@@ -15,7 +15,7 @@ public class WaitForPleskAction implements Command<PleskAction, Void> {
     private static final Logger logger = LoggerFactory.getLogger(WaitForPleskAction.class);
 
     final PleskService pleskService;
-    
+
     @Inject
     public WaitForPleskAction(PleskService pleskService) {
         this.pleskService = pleskService;
@@ -24,27 +24,22 @@ public class WaitForPleskAction implements Command<PleskAction, Void> {
     @Override
     public Void execute(CommandContext context, PleskAction hfsAction) {
 
-        while (hfsAction.status != PleskAction.Status.COMPLETE 
+        while (hfsAction.status != PleskAction.Status.COMPLETE
                 && hfsAction.status != PleskAction.Status.FAILED) {
 
             logger.info("waiting on plesk config image: {}", hfsAction);
 
-            try {
-                Thread.sleep(2000);
-            }
-            catch (InterruptedException e) {
-                logger.warn("Interrupted while sleeping");
-            }
+            context.sleep(2000);
 
             hfsAction = pleskService.getAction(hfsAction.actionId);
         }
-        
+
         if(hfsAction.status == PleskAction.Status.COMPLETE) {
             logger.info("Vm Action completed. hfsAction: {} ", hfsAction );
         } else {
             throw new RuntimeException(String.format(" Failed action: %s", hfsAction));
-        } 
-        
+        }
+
         return null;
     }
 

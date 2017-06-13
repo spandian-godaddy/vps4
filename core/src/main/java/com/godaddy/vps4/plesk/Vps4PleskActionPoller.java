@@ -18,9 +18,9 @@ import gdg.hfs.vhfs.plesk.PleskService;
 public class Vps4PleskActionPoller implements Vps4Poller<PleskAction, Integer, String> {
 
     private static final Logger logger = LoggerFactory.getLogger(Vps4PleskActionPoller.class);
-    
+
     private PleskService pleskService;
-    
+
     @Inject
     public Vps4PleskActionPoller(PleskService pleskService) {
         this.pleskService = pleskService;
@@ -28,13 +28,13 @@ public class Vps4PleskActionPoller implements Vps4Poller<PleskAction, Integer, S
 
     @Override
     public String poll(PleskAction pleskAction, Integer timeoutValue) throws PollerTimedOutException {
-        
+
         long pleskActionId = pleskAction.actionId;
         Instant expiration = Instant.now().plus(timeoutValue, ChronoUnit.MILLIS);
 
         logger.info("Started polling for action id: {} , polling till expiration: {} ", pleskActionId, expiration.toString());
 
-        while (Instant.now().isBefore(expiration) && 
+        while (Instant.now().isBefore(expiration) &&
                 (pleskAction.status == Status.NEW || pleskAction.status == Status.IN_PROGRESS)) {
 
             pleskAction = pleskService.getAction(pleskActionId);

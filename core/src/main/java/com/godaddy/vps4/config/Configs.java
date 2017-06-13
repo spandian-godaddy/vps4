@@ -47,8 +47,9 @@ public class Configs {
 
         try {
             config = new SystemPropertyConfig();
+            String configMode = System.getProperty("vps4.config.mode", "zk").toLowerCase();
 
-            if (ZooKeeperClient.isConfigured()) {
+            if (configMode.equals("zk") && ZooKeeperClient.isConfigured()) {
                 // if zookeeper is setup, use only it
                 logger.info("ZooKeeper client configuration present, using ZooKeeper for configuration");
 

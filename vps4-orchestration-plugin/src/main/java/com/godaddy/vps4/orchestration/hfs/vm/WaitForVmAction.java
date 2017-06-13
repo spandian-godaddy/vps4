@@ -53,13 +53,7 @@ public class WaitForVmAction implements Command<VmAction, VmAction> {
                 currentHfsTick = hfsAction.tickNum;
             }
 
-            // give the VM time to spin up
-            try {
-                Thread.sleep(2000);
-            }
-            catch (InterruptedException e) {
-                logger.warn("Interrupted while sleeping");
-            }
+            context.sleep(2000);
 
             hfsAction = vmService.getVmAction(hfsAction.vmId, hfsAction.vmActionId);
         }
