@@ -142,7 +142,7 @@ public class HfsClientProvider<T> implements Provider<T> {
 
         ResteasyWebTarget target = (ResteasyWebTarget) client.target(baseUrl);
 
-        return target.proxy(serviceClass);
+        return target.proxyBuilder(serviceClass).classloader(getClass().getClassLoader()).build();
     }
 
     private static final X509TrustManager trustManager = new X509TrustManager() {
