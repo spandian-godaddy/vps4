@@ -4,6 +4,8 @@ import java.util.UUID;
 
 import javax.sql.DataSource;
 
+import gdg.hfs.vhfs.vm.Vm;
+import gdg.hfs.vhfs.vm.VmService;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -54,10 +56,14 @@ public class SetHostnameTest {
 
     @Inject
     VmUserService vmUserService;
+
+    @Inject
+    VmService vmService;
     
 //    Commands commands;
     CommandService commandService;
 //    SysAdminService adminService;
+    Vm hfsVm;
 
     /*
     Module mockModule = binder -> {
@@ -74,11 +80,21 @@ public class SetHostnameTest {
                 
                 @Override
                 protected void configure() {
+                    // HFS services
+                    hfsVm = new Vm();
+                    hfsVm.status = "ACTIVE";
+                    hfsVm.vmId = hfsVmId;
+                    VmService vmService = Mockito.mock(VmService.class);
+                    Mockito.when(vmService.getVm(Mockito.anyLong())).thenReturn(hfsVm);
+
+                    // Command service
                     commandService = Mockito.mock(CommandService.class);
                     CommandState commandState = new CommandState();
                     commandState.commandId = UUID.randomUUID();
                     Mockito.when(commandService.executeCommand(Mockito.any(CommandGroupSpec.class))).thenReturn(commandState);
+
                     bind(CommandService.class).toInstance(commandService);
+                    bind(VmService.class).toInstance(vmService);
                 }
                 
                 @Provides
