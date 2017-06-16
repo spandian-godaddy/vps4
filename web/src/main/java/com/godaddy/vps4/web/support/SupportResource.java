@@ -154,36 +154,4 @@ public class SupportResource {
         return new PaginatedResult<SupportAction>(supportActions, limit, offset, totalRows, uri);
     }
 
-    @POST
-    @Path("/createCredit")
-    public VirtualMachineCredit createCredit(CreateCreditRequest request){
-        UUID orionGuid = UUID.randomUUID();
-
-        creditService.createVirtualMachineCredit(orionGuid,
-                request.operatingSystem, request.controlPanel,
-                request.tier, request.managedLevel, request.monitoring, request.shopperId);
-
-        VirtualMachineCredit credit = creditService.getVirtualMachineCredit(orionGuid);
-        return credit;
-    }
-
-    public static class CreateCreditRequest {
-        public int tier;
-        public int managedLevel;
-        public int monitoring;
-        public String operatingSystem;
-        public String controlPanel;
-        public String shopperId;
-    }
-
-    @POST
-    @Path("credits/{orionGuid}/release")
-    public VirtualMachineCredit releaseCredit(@PathParam("orionGuid") UUID orionGuid) {
-        creditService.unclaimVirtualMachineCredit(orionGuid);
-
-        VirtualMachineCredit credit = creditService.getVirtualMachineCredit(orionGuid);
-        return credit;
-    }
-
-
 }

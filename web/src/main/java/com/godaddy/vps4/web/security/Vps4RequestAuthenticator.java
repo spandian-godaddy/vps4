@@ -8,22 +8,19 @@ import org.slf4j.LoggerFactory;
 
 import com.godaddy.hfs.config.Config;
 import com.godaddy.hfs.sso.SsoTokenExtractor;
-import com.godaddy.hfs.sso.token.IdpSsoToken;
 import com.godaddy.hfs.sso.token.SsoToken;
 import com.godaddy.vps4.Environment;
 import com.godaddy.vps4.security.Vps4User;
 import com.godaddy.vps4.security.Vps4UserService;
 import com.godaddy.vps4.credit.CreditService;
 
-public class Vps4RequestAuthenticator implements RequestAuthenticator<Vps4User> {
+public class Vps4RequestAuthenticator implements RequestAuthenticator<GDUser> {
 
     private final Logger logger = LoggerFactory.getLogger(Vps4RequestAuthenticator.class);
 
     private final SsoTokenExtractor tokenExtractor;
 
     private final Vps4UserService userService;
-
-    private final CreditService creditService;
 
     private final Config config;
 
@@ -32,7 +29,6 @@ public class Vps4RequestAuthenticator implements RequestAuthenticator<Vps4User> 
             CreditService creditService, Config config) {
         this.tokenExtractor = tokenExtractor;
         this.userService = userService;
-        this.creditService = creditService;
         this.config = config;
     }
 
@@ -40,37 +36,35 @@ public class Vps4RequestAuthenticator implements RequestAuthenticator<Vps4User> 
         return ((Environment.CURRENT == Environment.STAGE) || (Environment.CURRENT == Environment.PROD) ? true : false);
     }
 
-    private boolean isInternalShopper(Vps4User user, String shopperId) {
+    private boolean isInternalShopper(Vps4User user) {
         return (user.getShopperId().length() == 3);
     }
 
     @Override
-    public Vps4User authenticate(HttpServletRequest request) {
+    public GDUser authenticate(HttpServletRequest request) {
 
         SsoToken token = tokenExtractor.extractToken(request);
         if (token == null) {
             return null;
         }
 
-        // TODO break out auth into separate tables for each type (map to mcs_user)
-        // so one table for mcs_user_idp, mcs_user_jomax, etc
-        String shopperId = token.getUsername();
-        if (token instanceof IdpSsoToken) {
-            shopperId = ((IdpSsoToken) token).getShopperId();
+        String shopperOverride = request.getHeader("X-Shopper-Id");
+        GDUser gdUser = new GDUser(token, shopperOverride);
+
+        if (!gdUser.isStaff())
+        {
+            // TODO: Remove this after ECOMM integration
+            Vps4User user = userService.getOrCreateUserForShopper(gdUser.getShopperId());
+
+            boolean allow3LetterAccountsOnly = Boolean.parseBoolean(config.get("allow3LetterAccountsOnly", "true"));
+            logger.info("Environment Staging or Production? : {}", isStagingOrProductionEnv());
+            logger.info("Allow internal shoppers only: {}", allow3LetterAccountsOnly );
+            if (isStagingOrProductionEnv() && allow3LetterAccountsOnly && !isInternalShopper(user)) {
+                logger.warn("Non-3-letter shopper encountered in ALPHA release: {}", user);
+                throw new RuntimeException("Currently only 3 letter accounts are allowed in ALPHA release. ");
+            }
         }
 
-        Vps4User user = userService.getOrCreateUserForShopper(shopperId);
-
-        // TODO: Remove this after ECOMM integration
-        boolean allow3LetterAccountsOnly = Boolean.parseBoolean(config.get("allow3LetterAccountsOnly", "true"));
-        logger.info("Environment Staging or Production? : {}" , isStagingOrProductionEnv());
-        logger.info("Allow internal shoppers only: {}", allow3LetterAccountsOnly );
-        if (isStagingOrProductionEnv() && allow3LetterAccountsOnly && !isInternalShopper(user, shopperId)) {
-            logger.warn("Non-3-letter shopper encountered in ALPHA release: {}", user);
-            throw new RuntimeException("Currently only 3 letter accounts are allowed in ALPHA release. ");
-        }
-
-        creditService.createCreditIfNoneExists(user);
-        return user;
+        return gdUser;
     }
 }

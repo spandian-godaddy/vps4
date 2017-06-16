@@ -21,17 +21,16 @@ import org.mockito.Mockito;
 
 import com.godaddy.vps4.web.Vps4Exception;
 import com.godaddy.vps4.web.security.AuthenticationFilter;
+import com.godaddy.vps4.web.security.GDUser;
 import com.godaddy.vps4.web.security.Vps4RequestAuthenticator;
 
 public class AuthenticationFilterTest {
 
     @Test
     public void testAuthenticated() throws Exception {
-
-        Vps4User vps4User = new Vps4User(1234, "asdf");
-
+        GDUser gdUser = GDUserMock.createShopper("shopperId");
         Vps4RequestAuthenticator auth = mock(Vps4RequestAuthenticator.class);
-        when(auth.authenticate(any(HttpServletRequest.class))).thenReturn(vps4User);
+        when(auth.authenticate(any(HttpServletRequest.class))).thenReturn(gdUser);
 
         AuthenticationFilter filter = new AuthenticationFilter(auth);
 
@@ -48,11 +47,10 @@ public class AuthenticationFilterTest {
 
     @Test
     public void testUnauthenticated() throws Exception {
-
-        Vps4User vps4User = null;
+        GDUser gdUser = null;
 
         Vps4RequestAuthenticator auth = mock(Vps4RequestAuthenticator.class);
-        when(auth.authenticate(any(HttpServletRequest.class))).thenReturn(vps4User);
+        when(auth.authenticate(any(HttpServletRequest.class))).thenReturn(gdUser);
 
         AuthenticationFilter filter = new AuthenticationFilter(auth);
 
@@ -73,11 +71,10 @@ public class AuthenticationFilterTest {
 
     @Test
     public void testVps4Exception() throws Exception {
-
-        Vps4User user = new Vps4User(1234, "asdf");
+        GDUser gdUser = GDUserMock.createShopper("shopperId");
 
         Vps4RequestAuthenticator auth = mock(Vps4RequestAuthenticator.class);
-        when(auth.authenticate(any(HttpServletRequest.class))).thenReturn(user);
+        when(auth.authenticate(any(HttpServletRequest.class))).thenReturn(gdUser);
 
         AuthenticationFilter filter = new AuthenticationFilter(auth);
 
@@ -98,10 +95,10 @@ public class AuthenticationFilterTest {
 
     @Test
     public void testGeneralException() throws Exception {
-        Vps4User user = new Vps4User(1234, "asdf");
+        GDUser gdUser = GDUserMock.createShopper("shopperId");
 
         Vps4RequestAuthenticator auth = mock(Vps4RequestAuthenticator.class);
-        when(auth.authenticate(any(HttpServletRequest.class))).thenReturn(user);
+        when(auth.authenticate(any(HttpServletRequest.class))).thenReturn(gdUser);
 
         AuthenticationFilter filter = new AuthenticationFilter(auth);
 

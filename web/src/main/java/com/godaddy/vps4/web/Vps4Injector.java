@@ -32,7 +32,7 @@ import com.godaddy.vps4.sysadmin.SysAdminModule;
 import com.godaddy.vps4.vm.VmModule;
 import com.godaddy.vps4.web.network.NetworkModule;
 import com.godaddy.vps4.web.security.AuthenticationFilter;
-import com.godaddy.vps4.web.security.SupportAuthenticationFilter;
+import com.godaddy.vps4.web.security.GDUserModule;
 import com.godaddy.vps4.web.security.Vps4UserFakeModule;
 import com.godaddy.vps4.web.security.Vps4UserModule;
 import com.godaddy.vps4.web.util.RequestIdFilter;
@@ -79,6 +79,7 @@ public class Vps4Injector {
 
         modules.add(getUserModule(useFakeUser));
 
+        modules.add(new GDUserModule());
         modules.add(new DatabaseModule());
         modules.add(new WebModule());
         modules.add(new SecurityModule());
@@ -108,9 +109,6 @@ public class Vps4Injector {
                 if (!useFakeUser) {
                     bind(AuthenticationFilter.class).in(Singleton.class);
                     filter("/api/*").through(AuthenticationFilter.class);
-
-                    bind(SupportAuthenticationFilter.class).in(Singleton.class);
-                    filter("/api/support*").through(SupportAuthenticationFilter.class);
                 }
 
                 Multibinder.newSetBinder(binder(), SwaggerClassFilter.class)
