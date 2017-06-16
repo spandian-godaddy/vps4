@@ -3,7 +3,6 @@ package com.godaddy.vps4.cpanel;
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.Before;
-import org.mockito.Mock;
 import org.mockito.Mockito;
 
 import javax.cache.Cache;

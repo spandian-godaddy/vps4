@@ -1,14 +1,7 @@
 package com.godaddy.vps4.cpanel;
 
-import com.godaddy.vps4.cpanel.CPanelSession.MetaData;
-import com.godaddy.vps4.cpanel.CPanelSession.Data;
-
 import org.junit.Assert;
 import org.junit.Test;
-
-import org.mockito.Mock;
-import org.mockito.Mockito;
-import org.mockito.internal.util.reflection.Whitebox;
 
 import java.time.Instant;
 import java.util.Random;
