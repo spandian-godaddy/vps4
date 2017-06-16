@@ -67,17 +67,6 @@ public class ControlPanelRequestValidationTest {
     }
 
     @Test
-    public void testValidStatus() {
-        ControlPanelRequestValidation.validateCorrectStatus("ACTIVE", UUID.randomUUID());
-        ControlPanelRequestValidation.validateCorrectStatus("active", UUID.randomUUID());
-    }
-
-    @Test(expected=Vps4Exception.class)
-    public void testIncorrectStatus(){
-        ControlPanelRequestValidation.validateCorrectStatus("STOPPED", UUID.randomUUID());
-    }
-
-    @Test
     public void testGetValidVirtualMachine() {
         Vps4User user = new Vps4User(1, "fakeShopper");
         PrivilegeService privilegeService = Mockito.mock(PrivilegeService.class);

@@ -14,6 +14,8 @@ import com.godaddy.vps4.web.Vps4Exception;
 import gdg.hfs.vhfs.vm.Vm;
 import gdg.hfs.vhfs.vm.VmService;
 
+import static com.godaddy.vps4.web.util.RequestValidation.validateServerIsActive;
+
 public class ControlPanelRequestValidation {
 
     public static void validateVmExists(VirtualMachine vm, UUID vmId){
@@ -29,12 +31,6 @@ public class ControlPanelRequestValidation {
         }
     }
 
-    public static void validateCorrectStatus(String hfsStatus, UUID vmId){
-        if (!hfsStatus.toUpperCase().equals("ACTIVE")){
-            throw new Vps4Exception("INVALID_STATUS", String.format("Server %s is not currently active.", vmId));
-        }
-    }
-
     public static VirtualMachine getValidVirtualMachine(Vps4User user,
             PrivilegeService privilegeService,
             VirtualMachineService virtualMachineService,
@@ -44,7 +40,7 @@ public class ControlPanelRequestValidation {
         validateVmExists(vm, vmId);
         validateCorrectControlPanel(vm, controlPanel, vmId);
         Vm hfsVm = hfsVmService.getVm(vm.hfsVmId);
-        validateCorrectStatus(hfsVm.status, vmId);
+        validateServerIsActive(hfsVm);
         return vm;
     }
 }
