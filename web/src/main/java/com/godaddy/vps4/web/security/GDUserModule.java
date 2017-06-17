@@ -13,7 +13,7 @@ public class GDUserModule extends AbstractModule {
 
     @Provides
     protected GDUser provideUser(HttpServletRequest request) {
-        return (GDUser) request.getAttribute(AuthenticationFilter.USER_ATTRIBUTE_NAME);
+        return (GDUser) request.getAttribute(SsoAuthenticationFilter.USER_ATTRIBUTE_NAME);
     }
 
 }

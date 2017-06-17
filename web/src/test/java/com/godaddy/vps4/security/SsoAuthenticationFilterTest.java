@@ -20,20 +20,19 @@ import org.junit.Test;
 import org.mockito.Mockito;
 
 import com.godaddy.vps4.web.Vps4Exception;
-import com.godaddy.vps4.web.security.AuthenticationFilter;
-import com.godaddy.vps4.web.security.Vps4RequestAuthenticator;
+import com.godaddy.vps4.web.security.GDUser;
+import com.godaddy.vps4.web.security.SsoAuthenticationFilter;
+import com.godaddy.vps4.web.security.SsoRequestAuthenticator;
 
-public class AuthenticationFilterTest {
+public class SsoAuthenticationFilterTest {
 
     @Test
     public void testAuthenticated() throws Exception {
+        GDUser gdUser = GDUserMock.createShopper("shopperId");
+        SsoRequestAuthenticator auth = mock(SsoRequestAuthenticator.class);
+        when(auth.authenticate(any(HttpServletRequest.class))).thenReturn(gdUser);
 
-        Vps4User vps4User = new Vps4User(1234, "asdf");
-
-        Vps4RequestAuthenticator auth = mock(Vps4RequestAuthenticator.class);
-        when(auth.authenticate(any(HttpServletRequest.class))).thenReturn(vps4User);
-
-        AuthenticationFilter filter = new AuthenticationFilter(auth);
+        SsoAuthenticationFilter filter = new SsoAuthenticationFilter(auth);
 
         HttpServletRequest request = mock(HttpServletRequest.class);
         HttpServletResponse response = mock(HttpServletResponse.class);
@@ -41,20 +40,18 @@ public class AuthenticationFilterTest {
 
         filter.doFilter(request, response, chain);
 
-        verify(request).setAttribute(any(), any());
+        verify(request).setAttribute("sso-user", gdUser);
         verify(chain).doFilter(request, response);
-
     }
 
     @Test
     public void testUnauthenticated() throws Exception {
+        GDUser gdUser = null;
 
-        Vps4User vps4User = null;
+        SsoRequestAuthenticator auth = mock(SsoRequestAuthenticator.class);
+        when(auth.authenticate(any(HttpServletRequest.class))).thenReturn(gdUser);
 
-        Vps4RequestAuthenticator auth = mock(Vps4RequestAuthenticator.class);
-        when(auth.authenticate(any(HttpServletRequest.class))).thenReturn(vps4User);
-
-        AuthenticationFilter filter = new AuthenticationFilter(auth);
+        SsoAuthenticationFilter filter = new SsoAuthenticationFilter(auth);
 
         HttpServletRequest request = mock(HttpServletRequest.class);
         HttpServletResponse response = mock(HttpServletResponse.class);
@@ -73,13 +70,12 @@ public class AuthenticationFilterTest {
 
     @Test
     public void testVps4Exception() throws Exception {
+        GDUser gdUser = GDUserMock.createShopper("shopperId");
 
-        Vps4User user = new Vps4User(1234, "asdf");
+        SsoRequestAuthenticator auth = mock(SsoRequestAuthenticator.class);
+        when(auth.authenticate(any(HttpServletRequest.class))).thenReturn(gdUser);
 
-        Vps4RequestAuthenticator auth = mock(Vps4RequestAuthenticator.class);
-        when(auth.authenticate(any(HttpServletRequest.class))).thenReturn(user);
-
-        AuthenticationFilter filter = new AuthenticationFilter(auth);
+        SsoAuthenticationFilter filter = new SsoAuthenticationFilter(auth);
 
         HttpServletRequest request = mock(HttpServletRequest.class);
         HttpServletResponse response = mock(HttpServletResponse.class);
@@ -98,12 +94,12 @@ public class AuthenticationFilterTest {
 
     @Test
     public void testGeneralException() throws Exception {
-        Vps4User user = new Vps4User(1234, "asdf");
+        GDUser gdUser = GDUserMock.createShopper("shopperId");
 
-        Vps4RequestAuthenticator auth = mock(Vps4RequestAuthenticator.class);
-        when(auth.authenticate(any(HttpServletRequest.class))).thenReturn(user);
+        SsoRequestAuthenticator auth = mock(SsoRequestAuthenticator.class);
+        when(auth.authenticate(any(HttpServletRequest.class))).thenReturn(gdUser);
 
-        AuthenticationFilter filter = new AuthenticationFilter(auth);
+        SsoAuthenticationFilter filter = new SsoAuthenticationFilter(auth);
 
         HttpServletRequest request = mock(HttpServletRequest.class);
         HttpServletResponse response = mock(HttpServletResponse.class);
