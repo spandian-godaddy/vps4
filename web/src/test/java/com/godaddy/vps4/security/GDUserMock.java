@@ -11,7 +11,11 @@ public class GDUserMock {
         return create(shopperId, false, false);
     }
 
-    public static GDUser createEmployee(String shopperId) {
+    public static GDUser createEmployee() {
+        return create(null, true, false);
+    }
+
+    public static GDUser createEmployee2Shopper(String shopperId) {
         return create(shopperId, true, false);
     }
 
@@ -21,8 +25,9 @@ public class GDUserMock {
 
     public static GDUser create(String shopperId, boolean isEmployee, boolean isAdmin) {
         GDUser gdUser = Mockito.mock(GDUser.class);
-        when(gdUser.isAdmin()).thenReturn(isAdmin);
+        when(gdUser.isShopper()).thenReturn(shopperId!=null);
         when(gdUser.isEmployee()).thenReturn(isEmployee);
+        when(gdUser.isAdmin()).thenReturn(isAdmin);
         when(gdUser.getShopperId()).thenReturn(shopperId);
         return gdUser;
     }

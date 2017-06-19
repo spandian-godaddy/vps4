@@ -18,7 +18,7 @@ import org.slf4j.LoggerFactory;
 import com.godaddy.vps4.credit.CreditService;
 import com.godaddy.vps4.credit.VirtualMachineCredit;
 import com.godaddy.vps4.web.Vps4Api;
-import com.godaddy.vps4.web.Vps4Exception;
+import com.godaddy.vps4.web.Vps4NoShopperException;
 import com.godaddy.vps4.web.security.AdminOnly;
 import com.godaddy.vps4.web.security.GDUser;
 import com.google.inject.Inject;
@@ -48,7 +48,7 @@ public class CreditResource {
     @Path("/{orionGuid}")
     public VirtualMachineCredit getCredit(@PathParam("orionGuid") UUID orionGuid) {
         VirtualMachineCredit credit = creditService.getVirtualMachineCredit(orionGuid);
-        if (!user.isAdmin())
+        if (user.isShopper())
             if (credit == null || !credit.shopperId.equals(user.getShopperId())) {
                 throw new NotFoundException("Unknown Credit ID: " + orionGuid);
         }
@@ -58,9 +58,9 @@ public class CreditResource {
     @GET
     @Path("/")
     public List<VirtualMachineCredit> getCredits() {
-        logger.error("Getting credits for shopper {}", user.getShopperId());
         if (user.getShopperId() == null)
-            throw new Vps4Exception("SHOPPER_ID_REQUIRED", "Shopper-ID required, cannot be null");
+            throw new Vps4NoShopperException();
+        logger.error("Getting credits for shopper {}", user.getShopperId());
         return creditService.getVirtualMachineCredits(user.getShopperId());
     }
 

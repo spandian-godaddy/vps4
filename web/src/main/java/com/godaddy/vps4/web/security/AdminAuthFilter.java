@@ -10,20 +10,6 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.ext.Provider;
 
-//@Provider
-//@ServerInterceptor
-//public class AdminAuthInterceptor implements PreProcessInterceptor{
-//
-//    @Override
-//    public ServerResponse preProcess(HttpRequest request, ResourceMethodInvoker method)
-//            throws Failure, WebApplicationException {
-//        GDUser user = (GDUser) request.getAttribute(AuthenticationFilter.USER_ATTRIBUTE_NAME);
-//        if (method.getMethod().isAnnotationPresent(AdminOnly.class) && !user.isStaff())
-//            return new ServerResponse("Admin-only resource", 403, new Headers<>());
-//        return null;
-//    }
-//}
-
 @Provider
 public class AdminAuthFilter implements ContainerRequestFilter {
 
