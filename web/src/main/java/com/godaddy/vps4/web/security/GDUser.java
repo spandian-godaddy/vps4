@@ -1,15 +1,13 @@
 package com.godaddy.vps4.web.security;
 
-import java.util.List;
-
 import com.godaddy.hfs.sso.token.SsoToken;
 
 public class GDUser {
 
-    private final static String VPS4_TEAM = "Dev-VPS4";
     SsoToken token;
     String shopperId;
-    List<String> employeeGroups;
+    boolean isEmployee;
+    boolean isAdmin;
     String username;
 
     public String getShopperId() {
@@ -21,18 +19,17 @@ public class GDUser {
     }
 
     public boolean isEmployee() {
-        return employeeGroups != null;
+        return isEmployee;
     }
 
     public boolean isAdmin() {
-        return isEmployee() && employeeGroups.contains(VPS4_TEAM);
+        return isAdmin;
     }
 
     @Override
     public String toString() {
-        return "GDUser [token=" + token + ", shopperId=" + shopperId + ", employeeGroups=" + employeeGroups
-                + ", username=" + username + ", isShopper()=" + isShopper() + ", isEmployee()=" + isEmployee()
-                + ", isAdmin()=" + isAdmin() + "]";
+        return "GDUser [token=" + token + ", shopperId=" + shopperId + ", username=" + username + ", isShopper()="
+                + isShopper() + ", isEmployee()=" + isEmployee() + ", isAdmin()=" + isAdmin() + "]";
     }
 
 }

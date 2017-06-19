@@ -12,6 +12,8 @@ import com.godaddy.vps4.web.util.AlphaHelper;
 
 public class SsoRequestAuthenticator implements RequestAuthenticator<GDUser> {
 
+    private final String VPS4_TEAM = "Dev-VPS4";
+
     private final SsoTokenExtractor tokenExtractor;
     private final AlphaHelper alphaHelper;
 
@@ -44,13 +46,16 @@ public class SsoRequestAuthenticator implements RequestAuthenticator<GDUser> {
         gdUser.token = token;
         gdUser.username = token.getUsername();
         if (token instanceof JomaxSsoToken) {
-            gdUser.employeeGroups = ((JomaxSsoToken) token).getGroups();
             gdUser.shopperId = shopperOverride;
+            gdUser.isEmployee = true;
+            gdUser.isAdmin = ((JomaxSsoToken) token).getGroups().contains(VPS4_TEAM);
         }
         else if (token instanceof IdpSsoToken) {
             gdUser.shopperId = ((IdpSsoToken) token).getShopperId();
             if (token.employeeUser != null) {
-                gdUser.employeeGroups = ((JomaxSsoToken) token.employeeUser).getGroups();
+                gdUser.isEmployee = true;
+                gdUser.isAdmin = ((JomaxSsoToken) token.employeeUser)
+                        .getGroups().contains(VPS4_TEAM);
             }
         }
         else

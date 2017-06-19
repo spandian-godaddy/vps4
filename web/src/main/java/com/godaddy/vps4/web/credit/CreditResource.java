@@ -60,7 +60,7 @@ public class CreditResource {
     public List<VirtualMachineCredit> getCredits() {
         if (user.getShopperId() == null)
             throw new Vps4NoShopperException();
-        logger.error("Getting credits for shopper {}", user.getShopperId());
+        logger.debug("Getting credits for shopper {}", user.getShopperId());
         return creditService.getVirtualMachineCredits(user.getShopperId());
     }
 
