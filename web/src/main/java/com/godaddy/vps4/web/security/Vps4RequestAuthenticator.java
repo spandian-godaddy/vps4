@@ -15,6 +15,8 @@ import com.godaddy.vps4.security.Vps4User;
 import com.godaddy.vps4.security.Vps4UserService;
 import com.godaddy.vps4.credit.CreditService;
 
+// Referencing code should be updated to use new SsoRequestAuthenticator
+@Deprecated
 public class Vps4RequestAuthenticator implements RequestAuthenticator<Vps4User> {
 
     private final Logger logger = LoggerFactory.getLogger(Vps4RequestAuthenticator.class);

@@ -13,6 +13,8 @@ import com.godaddy.hfs.sso.token.JomaxSsoToken;
 import com.godaddy.hfs.sso.token.SsoToken;
 import com.godaddy.vps4.sso.SsoSupportTokenExtractor;
 
+// Referencing code should be updated to use SsoRequestAuthenticator
+@Deprecated
 public class Vps4SupportRequestAuthenticator implements RequestAuthenticator<Boolean> {
 
     private final Logger logger = LoggerFactory.getLogger(Vps4SupportRequestAuthenticator.class);
@@ -27,7 +29,7 @@ public class Vps4SupportRequestAuthenticator implements RequestAuthenticator<Boo
 
     private static final String AUTH_TYPE_EMPLOYEE_TO_SHOPPER_TO_SHOPPER = "e2s2s";
 
-    // TODO: change this group to be more configurable / granular (roles based on levels). 
+    // TODO: change this group to be more configurable / granular (roles based on levels).
     private static final String SEARCH_GROUP = "Development";
 
     @Inject
@@ -37,10 +39,11 @@ public class Vps4SupportRequestAuthenticator implements RequestAuthenticator<Boo
 
     /**
      * Check if the user is a support administrator based on the token.
-     * If the user is an employee with basic auth and jomax realm 
+     * If the user is an employee with basic auth and jomax realm
      * OR the user is employee delegate (e2s or e2s2s delegated auth_idp token in header or cookie)
      * OR if the user is authenticated and has an auth_jomax cookie
      */
+    @Override
     public Boolean authenticate(HttpServletRequest request) {
         logger.info("Authenticating user as a support administrator...");
 
@@ -48,7 +51,7 @@ public class Vps4SupportRequestAuthenticator implements RequestAuthenticator<Boo
         logger.info("Verifying support admin status: Token details: {}", token);
 
         if (token != null) {
-            
+
             if(StringUtils.equalsIgnoreCase(REALM, token.getRealm())
                     || StringUtils.equals(AUTH_TYPE_EMPOLYEE_TO_SHOPPER, token.getAuthType())
                     || StringUtils.equals(AUTH_TYPE_EMPLOYEE_TO_SHOPPER_TO_SHOPPER, token.getAuthType()) ) {
@@ -58,7 +61,7 @@ public class Vps4SupportRequestAuthenticator implements RequestAuthenticator<Boo
                 return true;
             }
 
-        } 
+        }
 
         return this.authenticateJomaxCookie(request);
     }

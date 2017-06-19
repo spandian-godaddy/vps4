@@ -26,6 +26,9 @@ import com.godaddy.vps4.web.Vps4Exception;
  * No additional action is taken if an authenticated user is _not_ found, since all downstream actions may not necessarily require
  * authentication, it's up to downstream to take that action (like, for example, redirect to the SSO login page).
  */
+
+// Referencing code should be updated to use new SsoAuthenticationFilter
+@Deprecated
 public class AuthenticationFilter implements Filter {
 
     private static final Logger logger = LoggerFactory.getLogger(AuthenticationFilter.class);
