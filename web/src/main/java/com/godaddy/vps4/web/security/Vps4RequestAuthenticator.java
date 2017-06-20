@@ -15,6 +15,8 @@ import com.godaddy.vps4.security.Vps4User;
 import com.godaddy.vps4.security.Vps4UserService;
 import com.godaddy.vps4.credit.CreditService;
 
+// Referencing code should be updated to use new SsoRequestAuthenticator
+@Deprecated
 public class Vps4RequestAuthenticator implements RequestAuthenticator<Vps4User> {
 
     private final Logger logger = LoggerFactory.getLogger(Vps4RequestAuthenticator.class);
@@ -23,8 +25,6 @@ public class Vps4RequestAuthenticator implements RequestAuthenticator<Vps4User> 
 
     private final Vps4UserService userService;
 
-    private final CreditService creditService;
-
     private final Config config;
 
     @Inject
@@ -32,7 +32,6 @@ public class Vps4RequestAuthenticator implements RequestAuthenticator<Vps4User> 
             CreditService creditService, Config config) {
         this.tokenExtractor = tokenExtractor;
         this.userService = userService;
-        this.creditService = creditService;
         this.config = config;
     }
 
@@ -40,7 +39,7 @@ public class Vps4RequestAuthenticator implements RequestAuthenticator<Vps4User> 
         return ((Environment.CURRENT == Environment.STAGE) || (Environment.CURRENT == Environment.PROD) ? true : false);
     }
 
-    private boolean isInternalShopper(Vps4User user, String shopperId) {
+    private boolean isInternalShopper(Vps4User user) {
         return (user.getShopperId().length() == 3);
     }
 
@@ -65,12 +64,11 @@ public class Vps4RequestAuthenticator implements RequestAuthenticator<Vps4User> 
         boolean allow3LetterAccountsOnly = Boolean.parseBoolean(config.get("allow3LetterAccountsOnly", "true"));
         logger.info("Environment Staging or Production? : {}" , isStagingOrProductionEnv());
         logger.info("Allow internal shoppers only: {}", allow3LetterAccountsOnly );
-        if (isStagingOrProductionEnv() && allow3LetterAccountsOnly && !isInternalShopper(user, shopperId)) {
+        if (isStagingOrProductionEnv() && allow3LetterAccountsOnly && !isInternalShopper(user)) {
             logger.warn("Non-3-letter shopper encountered in ALPHA release: {}", user);
             throw new RuntimeException("Currently only 3 letter accounts are allowed in ALPHA release. ");
         }
 
-        creditService.createCreditIfNoneExists(user);
         return user;
     }
 }

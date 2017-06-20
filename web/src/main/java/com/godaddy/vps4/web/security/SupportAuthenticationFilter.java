@@ -19,12 +19,14 @@ import org.slf4j.LoggerFactory;
 
 import com.godaddy.vps4.web.Vps4Exception;
 
+// Referencing code should be updated to use new SsoAuthenticationFilter
+@Deprecated
 public class SupportAuthenticationFilter implements Filter {
 
     private static final Logger logger = LoggerFactory.getLogger(SupportAuthenticationFilter.class);
-    
-    final RequestAuthenticator<Boolean> authenticator; 
-    
+
+    final RequestAuthenticator<Boolean> authenticator;
+
     @Inject
     public SupportAuthenticationFilter(Vps4SupportRequestAuthenticator authenticator) {
         this.authenticator = authenticator;
@@ -36,9 +38,9 @@ public class SupportAuthenticationFilter implements Filter {
 
     @Override
     public void doFilter(ServletRequest req, ServletResponse res, FilterChain chain) throws IOException, ServletException {
-        
+
         logger.info("Attempting to check if request is from a support admin...");
-        
+
         HttpServletRequest request = (HttpServletRequest) req;
 
         try {

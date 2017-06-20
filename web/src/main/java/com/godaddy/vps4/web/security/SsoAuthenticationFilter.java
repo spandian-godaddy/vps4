@@ -17,7 +17,6 @@ import org.json.simple.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.godaddy.vps4.security.Vps4User;
 import com.godaddy.vps4.web.Vps4Exception;
 
 /**
@@ -26,19 +25,16 @@ import com.godaddy.vps4.web.Vps4Exception;
  * No additional action is taken if an authenticated user is _not_ found, since all downstream actions may not necessarily require
  * authentication, it's up to downstream to take that action (like, for example, redirect to the SSO login page).
  */
+public class SsoAuthenticationFilter implements Filter {
 
-// Referencing code should be updated to use new SsoAuthenticationFilter
-@Deprecated
-public class AuthenticationFilter implements Filter {
+    private static final Logger logger = LoggerFactory.getLogger(SsoAuthenticationFilter.class);
 
-    private static final Logger logger = LoggerFactory.getLogger(AuthenticationFilter.class);
+    public static final String USER_ATTRIBUTE_NAME = "sso-user";
 
-    public static final String USER_ATTRIBUTE_NAME = "hfs-user";
-
-    final RequestAuthenticator<Vps4User> authenticator;
+    final RequestAuthenticator<GDUser> authenticator;
 
     @Inject
-    public AuthenticationFilter(Vps4RequestAuthenticator authenticator) {
+    public SsoAuthenticationFilter(SsoRequestAuthenticator authenticator) {
         this.authenticator = authenticator;
     }
 
@@ -54,7 +50,7 @@ public class AuthenticationFilter implements Filter {
         HttpServletRequest request = (HttpServletRequest) req;
 
         try {
-            Vps4User user = authenticator.authenticate(request);
+            GDUser user = authenticator.authenticate(request);
             if (user != null) {
                 request.setAttribute(USER_ATTRIBUTE_NAME, user);
                 chain.doFilter(req, res);
