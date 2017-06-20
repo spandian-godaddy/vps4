@@ -200,7 +200,8 @@ public class VirtualMachinePool {
 
         public UUID getVmCredit() {
             // Check if a vm credit is available for pool image via hfs ecomm api
-            String pattern = "(?<os>\\w*)-\\w*(?:-(?<panel>\\w*)-\\w*)*";
+            // Regex example: hfs-centos-7-cpanel-11, where <os> is centos, and <panel> is cpanel
+            String pattern = "(?:hfs-)?(?<os>\\w*)-\\w*(?:-(?<panel>\\w*)-\\w*)?";
             Matcher m = Pattern.compile(pattern).matcher(imageName);
             m.matches();
             String os = m.group("os").equals("windows") ? "windows" : "Linux";
