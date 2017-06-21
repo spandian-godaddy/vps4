@@ -19,9 +19,7 @@ import org.junit.Test;
 
 import com.godaddy.vps4.credit.CreditService;
 import com.godaddy.vps4.credit.VirtualMachineCredit;
-import com.godaddy.vps4.jdbc.DatabaseModule;
 import com.godaddy.vps4.security.GDUserMock;
-import com.godaddy.vps4.security.SecurityModule;
 import com.godaddy.vps4.vm.AccountStatus;
 import com.godaddy.vps4.web.Vps4Exception;
 import com.godaddy.vps4.web.Vps4NoShopperException;
@@ -43,8 +41,6 @@ public class CreditResourceTest {
 
 
     private Injector injector = Guice.createInjector(
-            new DatabaseModule(),
-            new SecurityModule(),
             new AbstractModule() {
 
                 @Override
@@ -64,8 +60,9 @@ public class CreditResourceTest {
 
     @Before
     public void setupTest() {
+        user = GDUserMock.createShopper();
         vmCredit = new VirtualMachineCredit(orionGuid, 10, 1, 0, "linux", "cPanel",
-                null, null, "validUserShopperId", AccountStatus.ACTIVE, null, null);
+                null, null, user.getShopperId(), AccountStatus.ACTIVE, null, null);
         when(creditService.getVirtualMachineCredit(orionGuid)).thenReturn(vmCredit);
         when(creditService.getUnclaimedVirtualMachineCredits("validUserShopperId"))
                      .thenReturn(Arrays.asList(vmCredit));
@@ -73,7 +70,6 @@ public class CreditResourceTest {
 
     @Test
     public void testShopperGetCredit() {
-        user = GDUserMock.createShopper("validUserShopperId");
         VirtualMachineCredit credit = getCreditResource().getCredit(orionGuid);
         Assert.assertEquals(orionGuid, credit.orionGuid);
     }
@@ -88,7 +84,7 @@ public class CreditResourceTest {
 
     @Test
     public void testAdminGetCredit() {
-        user = GDUserMock.createAdmin(null);
+        user = GDUserMock.createAdmin();
         VirtualMachineCredit credit = getCreditResource().getCredit(orionGuid);
         Assert.assertEquals(orionGuid, credit.orionGuid);
     }
@@ -101,14 +97,12 @@ public class CreditResourceTest {
 
     @Test(expected=NotFoundException.class)
     public void testNoCreditGetCredit() {
-        user = GDUserMock.createShopper("validUserShopperId");
         UUID noSuchCreditGuid = UUID.randomUUID();
         getCreditResource().getCredit(noSuchCreditGuid);
     }
 
     @Test
     public void testShopperGetCredits() {
-        user = GDUserMock.createShopper("validUserShopperId");
         List<VirtualMachineCredit> credits = getCreditResource().getCredits(false);
         Assert.assertTrue(credits.contains(vmCredit));
     }
@@ -129,7 +123,8 @@ public class CreditResourceTest {
 
     @Test
     public void testE2SGetCredits() {
-        user = GDUserMock.createEmployee2Shopper("validUserShopperId");
+        user = GDUserMock.createEmployee2Shopper();
+        List<VirtualMachineCredit> credits = getCreditResource().getCredits();
         List<VirtualMachineCredit> credits = getCreditResource().getCredits(false);
         Assert.assertTrue(credits.contains(vmCredit));
     }

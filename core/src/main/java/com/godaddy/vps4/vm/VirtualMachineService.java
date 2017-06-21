@@ -90,14 +90,16 @@ public interface VirtualMachineService {
     }
 
     void addHfsVmIdToVirtualMachine(UUID vmId, long hfsVmId);
-    
+
     void setHostname(UUID vmId, String hostname);
-    
+
     void updateVirtualMachine(UUID vmId, Map<String, Object> paramsToUpdate);
 
     List<VirtualMachine> getVirtualMachinesForUser(long vps4UserId);
-    
+
     boolean virtualMachineHasCpanel(UUID vmId);
-    
+
     boolean virtualMachineHasPlesk(UUID vmId);
+
+    long getUserIdByVmId(UUID vmId);
 }

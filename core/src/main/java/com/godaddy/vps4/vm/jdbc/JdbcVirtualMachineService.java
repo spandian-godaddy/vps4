@@ -59,16 +59,19 @@ public class JdbcVirtualMachineService implements VirtualMachineService {
                 .exec(selectVirtualMachineQuery + "WHERE vm.project_id=?", Sql.listOf(this::mapVirtualMachine), projectId);
     }
 
+    @Override
     public VirtualMachine getVirtualMachine(long hfsVmId) {
         return Sql.with(dataSource)
                 .exec(selectVirtualMachineQuery + "WHERE vm.hfs_vm_id=?", Sql.nextOrNull(this::mapVirtualMachine), hfsVmId);
     }
 
+    @Override
     public VirtualMachine getVirtualMachineByOrionGuid(UUID orionGuid) {
         return Sql.with(dataSource)
                 .exec(selectVirtualMachineQuery + "WHERE vm.orion_guid=?", Sql.nextOrNull(this::mapVirtualMachine), orionGuid);
     }
 
+    @Override
     public VirtualMachine getVirtualMachine(UUID vmId) {
         return Sql.with(dataSource)
                 .exec(selectVirtualMachineQuery + "WHERE vm.vm_id=?", Sql.nextOrNull(this::mapVirtualMachine), vmId);
@@ -85,7 +88,7 @@ public class JdbcVirtualMachineService implements VirtualMachineService {
                 java.util.UUID.fromString(rs.getString("orion_guid")),
                 rs.getLong("project_id"),
                 spec, rs.getString("vm_name"),
-                image, ipAddress, 
+                image, ipAddress,
                 rs.getTimestamp("vm_valid_on").toInstant(),
                 validUntil != null ? validUntil.toInstant() : null,
                 rs.getString("hostname"),
@@ -208,5 +211,12 @@ public class JdbcVirtualMachineService implements VirtualMachineService {
     @Override
     public boolean virtualMachineHasPlesk(UUID vmId){
         return virtualMachineHasControlPanel(vmId, "plesk");
+    }
+
+    @Override
+    public long getUserIdByVmId(UUID vmId) {
+        return Sql.with(dataSource).exec("SELECT vps4_user_id FROM virtual_machine v "
+                + "JOIN user_project_privilege upp ON v.project_id = upp.project_id "
+                + "WHERE v.vm_id=?;", Sql.nextOrNull(rs -> rs.getLong("vps4_user_id")), vmId);
     }
 }

@@ -90,31 +90,30 @@ public class JdbcActionService implements ActionService {
     public ResultSubset<Action> getActions(UUID vmId, long limit, long offset, List<String> statusList){
         return getActions(vmId, limit, offset, statusList, null, null);
     }
-    
+
     @Override
     public ResultSubset<Action> getActions(UUID vmId, long limit, long offset, List<String> statusList, Date beginDate, Date endDate){
         Map<String, Object> filterParams = new HashMap<String, Object>();
         if (vmId != null){
             filterParams.put("vm_id", vmId);
         }
-        
+
         ArrayList<Object> filterValues = new ArrayList<Object>();
         StringBuilder actionsQuery = new StringBuilder();
         actionsQuery.append("SELECT *, count(*) over() as total_rows FROM vm_action "
                 + " JOIN action_status on vm_action.status_id = action_status.status_id"
-                + " JOIN action_type on vm_action.action_type_id = action_type.type_id"
-                + " WHERE 1=1 ");
+                + " JOIN action_type on vm_action.action_type_id = action_type.type_id");
         for (Map.Entry<String, Object> pair: filterParams.entrySet()){
             actionsQuery.append(" and ");
             actionsQuery.append(pair.getKey());
             actionsQuery.append("=?");
             filterValues.add(pair.getValue());
         }
-        
+
         buildStatusList(statusList, filterValues, actionsQuery);
-        
+
         buidDateQuery(beginDate, endDate, filterValues, actionsQuery);
-        
+
         actionsQuery.append(" ORDER BY created DESC ");
         if (limit >= 0) {
             actionsQuery.append("LIMIT ? ");
@@ -158,7 +157,7 @@ public class JdbcActionService implements ActionService {
             }
             actionsQuery.append(")");
         }
-    } 
+    }
 
     private ResultSubset<Action> mapActionWithTotal(ResultSet rs) throws SQLException {
        long totalRows = rs.getLong("total_rows");
