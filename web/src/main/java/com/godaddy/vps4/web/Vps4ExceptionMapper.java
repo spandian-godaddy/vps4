@@ -49,9 +49,9 @@ public class Vps4ExceptionMapper implements ExceptionMapper<Throwable> {
             logger.warn("writing response for Authorization exception", ae);
 
             JSONObject json = new JSONObject();
-            json.put("id", "AUTHORIZATION_DENIED");
+            json.put("id", "NOT_FOUND");
 
-            return Response.serverError()
+            return Response.status(Response.Status.NOT_FOUND)
                     .type(MediaType.APPLICATION_JSON)
                     .entity(json.toJSONString())
                     .build();

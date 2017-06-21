@@ -60,14 +60,7 @@ public class VmActionResource {
 
     private void verifyUserPrivilege(UUID vmId) {
         Vps4User vps4User = userService.getOrCreateUserForShopper(user.getShopperId());
-        try {
-            privilegeService.requireAnyPrivilegeToVmId(vps4User, vmId);
-        }
-        catch (AuthorizationException e) {
-            logger.warn("User {} not authorized for vmId {}. Rethrowing NotFoundException to prevent attempts to find valid VM ids.",
-                    user.getShopperId(), vmId);
-            throw new NotFoundException("Unknown VM ID: " + vmId);
-        }
+        privilegeService.requireAnyPrivilegeToVmId(vps4User, vmId);
     }
 
     @GET
