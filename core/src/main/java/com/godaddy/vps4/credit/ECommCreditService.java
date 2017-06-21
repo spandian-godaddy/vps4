@@ -12,7 +12,6 @@ import javax.inject.Inject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.godaddy.vps4.security.Vps4User;
 import com.godaddy.vps4.vm.AccountStatus;
 import com.godaddy.vps4.vm.DataCenter;
 import com.godaddy.vps4.vm.DataCenterService;
@@ -101,11 +100,20 @@ public class ECommCreditService implements CreditService {
     }
 
     @Override
-    public List<VirtualMachineCredit> getVirtualMachineCredits(String shopperId) {
+    public List<VirtualMachineCredit> getUnclaimedVirtualMachineCredits(String shopperId) {
         List<Account> accounts = ecommService.getAccounts(shopperId);
         return accounts.stream()
                 .filter(a -> a.status == Account.Status.active)
                 .filter(a -> !a.product_meta.containsKey(ProductMeta.DATA_CENTER))
+                .map(this::mapVirtualMachineCredit)
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    public List<VirtualMachineCredit> getActiveVirtualMachineCredits(String shopperId) {
+        List<Account> accounts = ecommService.getAccounts(shopperId);
+        return accounts.stream()
+                .filter(a -> a.status == Account.Status.active)
                 .map(this::mapVirtualMachineCredit)
                 .collect(Collectors.toList());
     }
@@ -128,12 +136,6 @@ public class ECommCreditService implements CreditService {
         account.plan_features = planFeatures;
 
         ecommService.createAccount(account);
-    }
-
-    @Override
-    public synchronized void createCreditIfNoneExists(Vps4User vps4User) {
-        // Not necessary with the ECommCreditService, go to crm manager catalog and purchase a VM
-        // Warning: This method if implemented can result in multiple credits due to multiple vps4-web nodes
     }
 
     @Override

@@ -11,9 +11,9 @@ import com.godaddy.hfs.sso.SsoTokenExtractor;
 import com.godaddy.hfs.sso.token.IdpSsoToken;
 import com.godaddy.hfs.sso.token.SsoToken;
 import com.godaddy.vps4.Environment;
+import com.godaddy.vps4.credit.CreditService;
 import com.godaddy.vps4.security.Vps4User;
 import com.godaddy.vps4.security.Vps4UserService;
-import com.godaddy.vps4.credit.CreditService;
 
 // Referencing code should be updated to use new SsoRequestAuthenticator
 @Deprecated

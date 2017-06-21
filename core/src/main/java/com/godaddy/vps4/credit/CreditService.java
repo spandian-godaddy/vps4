@@ -3,8 +3,6 @@ package com.godaddy.vps4.credit;
 import java.util.List;
 import java.util.UUID;
 
-import com.godaddy.vps4.security.Vps4User;
-
 public interface CreditService {
 
     void createVirtualMachineCredit(UUID orionGuid, String osType, String controlPanel,
@@ -12,9 +10,9 @@ public interface CreditService {
 
     VirtualMachineCredit getVirtualMachineCredit(UUID orionGuid);
 
-    List<VirtualMachineCredit> getVirtualMachineCredits(String shopperId);
+    List<VirtualMachineCredit> getUnclaimedVirtualMachineCredits(String shopperId);
 
-    void createCreditIfNoneExists(Vps4User vps4User);
+    List<VirtualMachineCredit> getActiveVirtualMachineCredits(String shopperId);
 
     void claimVirtualMachineCredit(UUID orionGuid, int dataCenterId, UUID productId);
 
