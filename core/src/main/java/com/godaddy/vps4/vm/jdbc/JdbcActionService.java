@@ -102,7 +102,8 @@ public class JdbcActionService implements ActionService {
         StringBuilder actionsQuery = new StringBuilder();
         actionsQuery.append("SELECT *, count(*) over() as total_rows FROM vm_action "
                 + " JOIN action_status on vm_action.status_id = action_status.status_id"
-                + " JOIN action_type on vm_action.action_type_id = action_type.type_id");
+                + " JOIN action_type on vm_action.action_type_id = action_type.type_id"
+                + " WHERE 1=1 ");
         for (Map.Entry<String, Object> pair: filterParams.entrySet()){
             actionsQuery.append(" and ");
             actionsQuery.append(pair.getKey());
