@@ -124,7 +124,6 @@ public class CreditResourceTest {
     @Test
     public void testE2SGetCredits() {
         user = GDUserMock.createEmployee2Shopper();
-        List<VirtualMachineCredit> credits = getCreditResource().getCredits();
         List<VirtualMachineCredit> credits = getCreditResource().getCredits(false);
         Assert.assertTrue(credits.contains(vmCredit));
     }

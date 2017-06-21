@@ -25,8 +25,8 @@ import com.godaddy.vps4.security.GDUserMock;
 import com.godaddy.vps4.security.SecurityModule;
 import com.godaddy.vps4.security.Vps4User;
 import com.godaddy.vps4.security.Vps4UserService;
+import com.godaddy.vps4.security.jdbc.AuthorizationException;
 import com.godaddy.vps4.vm.Action;
-import com.godaddy.vps4.vm.ActionStatus;
 import com.godaddy.vps4.vm.ActionType;
 import com.godaddy.vps4.vm.VirtualMachine;
 import com.godaddy.vps4.vm.VmModule;
@@ -98,7 +98,7 @@ public class VmActionResourceTest {
         Assert.assertEquals(expectedGuid, action.commandId);
     }
 
-    @Test(expected=NotFoundException.class)
+    @Test(expected=AuthorizationException.class)
     public void testUnauthorizedShopperGetVmAction() {
         VirtualMachine vm = createTestVm(user.getShopperId());
         Action action = createTestVmAction(vm.vmId, ActionType.CREATE_VM);
@@ -173,7 +173,7 @@ public class VmActionResourceTest {
         Assert.assertTrue(commandIds.contains(action2.commandId));
     }
 
-    @Test(expected=NotFoundException.class)
+    @Test(expected=AuthorizationException.class)
     public void testUnauthorizedShopperListActions() {
         VirtualMachine vm = createTestVm(user.getShopperId());
         createTestVmAction(vm.vmId, ActionType.CREATE_VM);
