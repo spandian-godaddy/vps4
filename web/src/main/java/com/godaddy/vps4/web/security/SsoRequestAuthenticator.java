@@ -3,6 +3,9 @@ package com.godaddy.vps4.web.security;
 import javax.inject.Inject;
 import javax.servlet.http.HttpServletRequest;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.godaddy.hfs.sso.SsoTokenExtractor;
 import com.godaddy.hfs.sso.token.IdpSsoToken;
 import com.godaddy.hfs.sso.token.JomaxSsoToken;
@@ -11,6 +14,8 @@ import com.godaddy.vps4.web.Vps4Exception;
 import com.godaddy.vps4.web.util.AlphaHelper;
 
 public class SsoRequestAuthenticator implements RequestAuthenticator<GDUser> {
+
+    private static final Logger logger = LoggerFactory.getLogger(SsoRequestAuthenticator.class);
 
     private final String VPS4_TEAM = "Dev-VPS4";
 
@@ -36,6 +41,8 @@ public class SsoRequestAuthenticator implements RequestAuthenticator<GDUser> {
         if (gdUser.isShopper()) {
             alphaHelper.verifyValidAlphaUser(gdUser.getShopperId());
         }
+
+        logger.info("GD User authenticated: {}, URI: {}", gdUser.toString(), request.getRequestURI());
 
         return gdUser;
     }

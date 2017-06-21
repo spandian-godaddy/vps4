@@ -13,7 +13,6 @@ import com.godaddy.vps4.web.sysadmin.SysAdminResource;
 import com.godaddy.vps4.web.sysadmin.UsageStatsResource;
 import com.godaddy.vps4.web.util.AlphaHelper;
 import com.godaddy.vps4.web.validator.ValidatorResource;
-import com.godaddy.vps4.web.vm.ActionResource;
 import com.godaddy.vps4.web.vm.ImageResource;
 import com.godaddy.vps4.web.vm.UserResource;
 import com.godaddy.vps4.web.vm.VmActionResource;
@@ -29,6 +28,7 @@ public class WebModule extends AbstractModule {
         bind(StatusResource.class);
 
         bind(VmResource.class);
+        bind(VmActionResource.class);
         bind(VmFlavorResource.class);
         bind(VmPatchResource.class);
         bind(VmMailRelayResource.class);
@@ -39,7 +39,6 @@ public class WebModule extends AbstractModule {
         bind(SysAdminResource.class);
         bind(UserResource.class);
         bind(CreditResource.class);
-        bind(ActionResource.class);
         bind(VmActionResource.class);
         bind(ImageResource.class);
         bind(UsageStatsResource.class);

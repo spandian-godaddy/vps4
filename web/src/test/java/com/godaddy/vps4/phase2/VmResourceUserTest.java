@@ -28,12 +28,9 @@ import com.godaddy.vps4.security.jdbc.AuthorizationException;
 import com.godaddy.vps4.vm.AccountStatus;
 import com.godaddy.vps4.vm.Action;
 import com.godaddy.vps4.vm.ActionService;
-import com.godaddy.vps4.vm.ActionType;
 import com.godaddy.vps4.vm.VirtualMachineService;
 import com.godaddy.vps4.vm.VmModule;
 import com.godaddy.vps4.web.Vps4Exception;
-import com.godaddy.vps4.web.vm.ActionResource;
-import com.godaddy.vps4.web.vm.VmActionResource;
 import com.godaddy.vps4.web.vm.VmNotFoundException;
 import com.godaddy.vps4.web.vm.VmResource;
 import com.godaddy.vps4.web.vm.VmResource.ProvisionVmRequest;
@@ -140,43 +137,6 @@ public class VmResourceUserTest {
     protected VmResource newInvalidVmResource() {
         user = invalidUser;
         return injector.getInstance(VmResource.class);
-    }
-
-    @Test
-    public void testListActions() {
-        long actionId = actionService.createAction(vmIds.get(0), ActionType.CREATE_VM, "{}", validUser.getId());
-        user = validUser;
-        ActionResource validActionResource = injector.getInstance(ActionResource.class);
-        validActionResource.getAction(actionId);
-    }
-
-    @Test(expected = AuthorizationException.class)
-    public void testListActionsInvalidUser() {
-        long actionId = actionService.createAction(vmIds.get(0), ActionType.CREATE_VM, "{}", validUser.getId());
-        user = validUser;
-        ActionResource validActionResource = injector.getInstance(ActionResource.class);
-        user = invalidUser;
-        ActionResource invalidActionResource = injector.getInstance(ActionResource.class);
-        invalidActionResource.getAction(actionId);
-    }
-
-    @Test
-    public void testGetVmAction() {
-        UUID vmId = vmIds.get(0);
-        long actionId = actionService.createAction(vmId, ActionType.CREATE_VM, "{}", validUser.getId());
-        user = validUser;
-        VmActionResource validActionResource = injector.getInstance(VmActionResource.class);
-        validActionResource.getVmAction(vmId, actionId);
-
-    }
-
-    @Test(expected = AuthorizationException.class)
-    public void testGetVmActionInvalidUser() {
-        UUID vmId = vmIds.get(0);
-        long actionId = actionService.createAction(vmId, ActionType.CREATE_VM, "{}", validUser.getId());
-        user = invalidUser;
-        VmActionResource invalidActionResource = injector.getInstance(VmActionResource.class);
-        invalidActionResource.getVmAction(vmId, actionId);
     }
 
     @Test

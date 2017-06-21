@@ -22,8 +22,16 @@ public class Vps4ExceptionMapper implements ExceptionMapper<Throwable> {
 
         if (t instanceof WebApplicationException) {
             logger.debug("writing response for web exception", t);
-            WebApplicationException wae = (WebApplicationException)t;
-            return wae.getResponse();
+            Response.Status status = Response.Status.fromStatusCode(
+                    ((WebApplicationException) t).getResponse().getStatus());
+
+
+            JSONObject json = new JSONObject();
+            json.put("id", status.name());
+            return Response.status(status)
+                    .type(MediaType.APPLICATION_JSON)
+                    .entity(json.toJSONString())
+                    .build();
         }
 
         if (t instanceof Vps4Exception) {
@@ -49,9 +57,9 @@ public class Vps4ExceptionMapper implements ExceptionMapper<Throwable> {
             logger.warn("writing response for Authorization exception", ae);
 
             JSONObject json = new JSONObject();
-            json.put("id", "AUTHORIZATION_DENIED");
+            json.put("id", "NOT_FOUND");
 
-            return Response.serverError()
+            return Response.status(Response.Status.NOT_FOUND)
                     .type(MediaType.APPLICATION_JSON)
                     .entity(json.toJSONString())
                     .build();

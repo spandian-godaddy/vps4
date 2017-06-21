@@ -16,14 +16,19 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.UriInfo;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.godaddy.vps4.jdbc.ResultSubset;
 import com.godaddy.vps4.security.PrivilegeService;
 import com.godaddy.vps4.security.Vps4User;
+import com.godaddy.vps4.security.Vps4UserService;
+import com.godaddy.vps4.security.jdbc.AuthorizationException;
 import com.godaddy.vps4.vm.Action;
 import com.godaddy.vps4.vm.ActionService;
-import com.godaddy.vps4.vm.ActionType;
 import com.godaddy.vps4.web.PaginatedResult;
 import com.godaddy.vps4.web.Vps4Api;
+import com.godaddy.vps4.web.security.GDUser;
 import com.google.inject.Inject;
 
 import io.swagger.annotations.Api;
@@ -37,33 +42,41 @@ import io.swagger.annotations.Api;
 
 public class VmActionResource {
 
+    private static final Logger logger = LoggerFactory.getLogger(VmActionResource.class);
+
     private final PrivilegeService privilegeService;
     private final ActionService actionService;
-    private final Vps4User user;
+    private final Vps4UserService userService;
+    private final GDUser user;
 
     @Inject
-    public VmActionResource(PrivilegeService privilegeService, ActionService actionService, Vps4User user) {
+    public VmActionResource(PrivilegeService privilegeService, ActionService actionService,
+            Vps4UserService userService, GDUser user) {
         this.privilegeService = privilegeService;
         this.actionService = actionService;
+        this.userService = userService;
         this.user = user;
+    }
+
+    private void verifyUserPrivilege(UUID vmId) {
+        Vps4User vps4User = userService.getOrCreateUserForShopper(user.getShopperId());
+        privilegeService.requireAnyPrivilegeToVmId(vps4User, vmId);
     }
 
     @GET
     @Path("{vmId}/actions")
     public PaginatedResult<Action> getActions(@PathParam("vmId") UUID vmId,
-            @DefaultValue("10") @QueryParam("limit") long limit, @DefaultValue("0") @QueryParam("offset") long offset,
+            @DefaultValue("10") @QueryParam("limit") long limit,
+            @DefaultValue("0") @QueryParam("offset") long offset,
             @QueryParam("status") List<String> status,
             @Context UriInfo uri) {
 
-        privilegeService.requireAnyPrivilegeToVmId(user, vmId);
-        
+        if (user.isShopper())
+            verifyUserPrivilege(vmId);
+
         ResultSubset<Action> actions;
-        if(status == null || status.isEmpty()){
-             actions = actionService.getActions(vmId, limit, offset);
-        }else{
-            actions = actionService.getActions(vmId, limit, offset, status);
-        }   
-        
+        actions = actionService.getActions(vmId, limit, offset, status);
+
         long totalRows = 0;
         List<Action> actionList = new ArrayList<Action>();
         if (actions != null) {
@@ -77,10 +90,10 @@ public class VmActionResource {
     @GET
     @Path("{vmId}/actions/{actionId}")
     public Action getVmAction(@PathParam("vmId") UUID vmId, @PathParam("actionId") long actionId) {
-        privilegeService.requireAnyPrivilegeToVmId(user, vmId);
-        
+        if (user.isShopper())
+            verifyUserPrivilege(vmId);
+
         Action action = actionService.getVmAction(vmId, actionId);
-        
         if (action == null) {
             throw new NotFoundException("actionId " + actionId + " not found");
         }
