@@ -3,7 +3,6 @@ package com.godaddy.vps4.orchestration.vm;
 import javax.inject.Inject;
 
 import com.godaddy.vps4.orchestration.ActionCommand;
-import com.godaddy.vps4.orchestration.ActionRequest;
 import com.godaddy.vps4.vm.ActionService;
 
 import gdg.hfs.orchestration.CommandContext;
@@ -13,11 +12,11 @@ import gdg.hfs.vhfs.vm.VmService;
 
 @CommandMetadata(
         name="Vps4StopVm",
-        requestType=Vps4StopVm.Request.class,
+        requestType=VmActionRequest.class,
         responseType=Vps4StopVm.Response.class
     )
-public class Vps4StopVm extends ActionCommand<Vps4StopVm.Request, Vps4StopVm.Response> {
-    
+public class Vps4StopVm extends ActionCommand<VmActionRequest, Vps4StopVm.Response> {
+
     final ActionService actionService;
     final VmService vmService;
 
@@ -29,34 +28,24 @@ public class Vps4StopVm extends ActionCommand<Vps4StopVm.Request, Vps4StopVm.Res
     }
 
     @Override
-    protected Response executeWithAction(CommandContext context, Request request) throws Exception {
+    protected Response executeWithAction(CommandContext context, VmActionRequest request) throws Exception {
         long vmId = request.hfsVmId;
-        
+
         VmAction hfsAction = context.execute("Vps4StopVm", ctx -> {
             return vmService.stopVm(vmId);
         });
-        
+
         hfsAction = context.execute(WaitForManageVmAction.class, hfsAction);
-        
+
         Vps4StopVm.Response response = new Vps4StopVm.Response();
         response.vmId = vmId;
         response.hfsAction = hfsAction;
         return response;
     }
-    
-    public static class Request implements ActionRequest{
-        public long hfsVmId;
-        public long actionId;
 
-        @Override
-        public long getActionId() {
-            return actionId;
-        }
-    }
-    
     public static class Response {
         public long vmId;
         public VmAction hfsAction;
     }
-    
+
 }
