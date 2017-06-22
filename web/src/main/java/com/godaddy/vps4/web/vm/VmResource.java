@@ -132,13 +132,12 @@ public class VmResource {
         return virtualMachine;
     }
 
-    private Action createAction(UUID vmId, ActionType actionType, VmActionRequest request, String commandName) {
+    private Action createActionAndExecute(UUID vmId, ActionType actionType, VmActionRequest request, String commandName) {
         long vps4UserId = virtualMachineService.getUserIdByVmId(vmId);
         long actionId = actionService.createAction(vmId, actionType, new JSONObject().toJSONString(), vps4UserId);
         request.setActionId(actionId);
 
-        CommandState command;
-        command = Commands.execute(commandService, actionService, commandName, request);
+        CommandState command = Commands.execute(commandService, actionService, commandName, request);
         logger.info("managing vm {} with command {}:{}", vmId, actionType, command.commandId);
         return actionService.getAction(actionId);
     }
@@ -153,7 +152,7 @@ public class VmResource {
 
         VmActionRequest startRequest = new VmActionRequest();
         startRequest.hfsVmId = vm.hfsVmId;
-        return createAction(vm.vmId, ActionType.START_VM, startRequest, "Vps4StartVm");
+        return createActionAndExecute(vm.vmId, ActionType.START_VM, startRequest, "Vps4StartVm");
     }
 
     @POST
@@ -166,7 +165,7 @@ public class VmResource {
 
         VmActionRequest stopRequest = new VmActionRequest();
         stopRequest.hfsVmId = vm.hfsVmId;
-        return createAction(vm.vmId, ActionType.STOP_VM, stopRequest, "Vps4StopVm");
+        return createActionAndExecute(vm.vmId, ActionType.STOP_VM, stopRequest, "Vps4StopVm");
     }
 
     @POST
@@ -179,7 +178,7 @@ public class VmResource {
 
         VmActionRequest restartRequest = new VmActionRequest();
         restartRequest.hfsVmId = vm.hfsVmId;
-        return createAction(vm.vmId, ActionType.RESTART_VM, restartRequest, "Vps4RestartVm");
+        return createActionAndExecute(vm.vmId, ActionType.RESTART_VM, restartRequest, "Vps4RestartVm");
     }
 
     public static class ProvisionVmRequest {
@@ -298,7 +297,7 @@ public class VmResource {
         destroyRequest.hfsVmId = vm.hfsVmId;
         destroyRequest.pingCheckAccountId = pingCheckAccountId;
 
-        Action deleteAction = createAction(vm.vmId, ActionType.DESTROY_VM, destroyRequest, "Vps4DestroyVm");
+        Action deleteAction = createActionAndExecute(vm.vmId, ActionType.DESTROY_VM, destroyRequest, "Vps4DestroyVm");
 
         // The request has been created successfully.
         // Detach the user from the vm, and we'll handle the delete from here.
