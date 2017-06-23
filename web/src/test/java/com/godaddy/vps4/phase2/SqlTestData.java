@@ -18,8 +18,8 @@ import com.godaddy.vps4.vm.jdbc.JdbcVirtualMachineService;
 
 
 public class SqlTestData {
-    private final static String TEST_VM_NAME = "testVirtualMachine";
-    private final static String TEST_VM_SGID = "vps4-testing-";
+    public final static String TEST_VM_NAME = "testVirtualMachine";
+    public final static String TEST_VM_SGID = "vps4-testing-";
 
     public static long getNextHfsVmId(DataSource dataSource) {
         return Sql.with(dataSource).exec("SELECT max(hfs_vm_id) as hfs_vm_id FROM virtual_machine",
@@ -61,7 +61,7 @@ public class SqlTestData {
 
     public static void cleanupSqlTestData(DataSource dataSource) {
         String test_vm_condition = "v.name='" + TEST_VM_NAME + "'";
-        String test_sgid_condition = "p.vhfs_sgid='" + TEST_VM_SGID + "%'";
+        String test_sgid_condition = "p.vhfs_sgid like '" + TEST_VM_SGID + "%'";
 
         Sql.with(dataSource).exec("DELETE FROM ip_address i USING virtual_machine v WHERE i.vm_id = v.vm_id AND " + test_vm_condition, null);
         Sql.with(dataSource).exec("DELETE FROM vm_user u USING virtual_machine v WHERE u.vm_id = v.vm_id AND " + test_vm_condition, null);
@@ -71,6 +71,7 @@ public class SqlTestData {
         Sql.with(dataSource).exec("DELETE FROM project p WHERE " + test_sgid_condition, null);
     }
 
+    @Deprecated
     public static void cleanupTestVmAndRelatedData(UUID vmId, DataSource dataSource) {
         VirtualMachineService virtualMachineService = new JdbcVirtualMachineService(dataSource);
         VirtualMachine vm = virtualMachineService.getVirtualMachine(vmId);

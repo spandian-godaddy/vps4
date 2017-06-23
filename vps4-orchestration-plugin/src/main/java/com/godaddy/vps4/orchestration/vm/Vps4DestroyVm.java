@@ -9,7 +9,6 @@ import com.godaddy.vps4.credit.CreditService;
 import com.godaddy.vps4.network.IpAddress;
 import com.godaddy.vps4.network.NetworkService;
 import com.godaddy.vps4.orchestration.ActionCommand;
-import com.godaddy.vps4.orchestration.ActionRequest;
 import com.godaddy.vps4.orchestration.hfs.cpanel.WaitForCpanelAction;
 import com.godaddy.vps4.orchestration.hfs.vm.DestroyVm;
 import com.godaddy.vps4.vm.ActionService;
@@ -95,16 +94,8 @@ public class Vps4DestroyVm extends ActionCommand<Vps4DestroyVm.Request, Vps4Dest
         }
     }
 
-    public static class Request implements ActionRequest{
-
-        public long hfsVmId;
-        public long actionId;
+    public static class Request extends VmActionRequest {
         public long pingCheckAccountId;
-
-        @Override
-        public long getActionId() {
-            return actionId;
-        }
     }
 
     public static class Response {

@@ -1,7 +1,12 @@
 package com.godaddy.vps4.web.vm;
 
+import static com.godaddy.vps4.web.util.RequestValidation.validateNoConflictingActions;
+import static com.godaddy.vps4.web.util.RequestValidation.validateServerIsActive;
+import static com.godaddy.vps4.web.util.RequestValidation.validateServerIsStopped;
+
 import java.time.Instant;
-import java.util.*;
+import java.util.List;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 import javax.inject.Inject;
@@ -22,15 +27,14 @@ import org.slf4j.LoggerFactory;
 import com.godaddy.hfs.config.Config;
 import com.godaddy.vps4.credit.CreditService;
 import com.godaddy.vps4.credit.VirtualMachineCredit;
+import com.godaddy.vps4.orchestration.vm.VmActionRequest;
 import com.godaddy.vps4.orchestration.vm.Vps4DestroyVm;
 import com.godaddy.vps4.orchestration.vm.Vps4ProvisionVm;
-import com.godaddy.vps4.orchestration.vm.Vps4RestartVm;
-import com.godaddy.vps4.orchestration.vm.Vps4StartVm;
-import com.godaddy.vps4.orchestration.vm.Vps4StopVm;
 import com.godaddy.vps4.project.Project;
 import com.godaddy.vps4.project.ProjectService;
 import com.godaddy.vps4.security.PrivilegeService;
 import com.godaddy.vps4.security.Vps4User;
+import com.godaddy.vps4.security.Vps4UserService;
 import com.godaddy.vps4.security.jdbc.AuthorizationException;
 import com.godaddy.vps4.vm.Action;
 import com.godaddy.vps4.vm.ActionService;
@@ -44,6 +48,8 @@ import com.godaddy.vps4.vm.VirtualMachineService.ProvisionVirtualMachineParamete
 import com.godaddy.vps4.vm.VirtualMachineSpec;
 import com.godaddy.vps4.web.Vps4Api;
 import com.godaddy.vps4.web.Vps4Exception;
+import com.godaddy.vps4.web.Vps4NoShopperException;
+import com.godaddy.vps4.web.security.GDUser;
 import com.godaddy.vps4.web.util.Commands;
 
 import gdg.hfs.orchestration.CommandService;
@@ -52,8 +58,6 @@ import gdg.hfs.vhfs.vm.CreateVMWithFlavorRequest;
 import gdg.hfs.vhfs.vm.Vm;
 import gdg.hfs.vhfs.vm.VmService;
 import io.swagger.annotations.Api;
-
-import static com.godaddy.vps4.web.util.RequestValidation.*;
 
 @Vps4Api
 @Api(tags = { "vms" })
@@ -65,8 +69,9 @@ public class VmResource {
 
     private static final Logger logger = LoggerFactory.getLogger(VmResource.class);
 
-    private final Vps4User user;
+    private final GDUser user;
     private final VirtualMachineService virtualMachineService;
+    private final Vps4UserService userService;
     private final CreditService creditService;
     private final PrivilegeService privilegeService;
     private final VmService vmService;
@@ -81,7 +86,8 @@ public class VmResource {
 
     @Inject
     public VmResource(PrivilegeService privilegeService,
-            Vps4User user, VmService vmService,
+            GDUser user, VmService vmService,
+            Vps4UserService userService,
             VirtualMachineService virtualMachineService,
             CreditService creditService,
             ProjectService projectService,
@@ -92,6 +98,7 @@ public class VmResource {
 
         this.user = user;
         this.virtualMachineService = virtualMachineService;
+        this.userService = userService;
         this.creditService = creditService;
         this.privilegeService = privilegeService;
         this.vmService = vmService;
@@ -105,93 +112,73 @@ public class VmResource {
         pingCheckAccountId = Long.parseLong(this.config.get("nodeping.accountid"));
     }
 
+    private void verifyUserPrivilege(VirtualMachine vm) {
+        Vps4User vps4User = userService.getOrCreateUserForShopper(user.getShopperId());
+        privilegeService.requireAnyPrivilegeToProjectId(vps4User, vm.projectId);
+    }
+
     @GET
     @Path("/{vmId}")
     public VirtualMachine getVm(@PathParam("vmId") UUID vmId) {
-
         logger.info("getting vm with id {}", vmId);
+
         VirtualMachine virtualMachine = virtualMachineService.getVirtualMachine(vmId);
-
-        if (virtualMachine == null || virtualMachine.validUntil.isBefore(Instant.now())) {
+        if (virtualMachine == null || virtualMachine.validUntil.isBefore(Instant.now()))
             throw new NotFoundException("Unknown VM ID: " + vmId);
-        }
 
-        try {
-            privilegeService.requireAnyPrivilegeToProjectId(user, virtualMachine.projectId);
-        }
-        catch (AuthorizationException e) {
-            logger.warn("User {} not authorized for vmId {}. Rethrowing NotFoundException to prevent attempts to find valid VM ids.",
-                    user.getShopperId(), vmId);
-            throw new NotFoundException("Unknown VM ID: " + vmId);
-        }
+        if (user.isShopper())
+            verifyUserPrivilege(virtualMachine);
 
         return virtualMachine;
     }
 
+    private Action createActionAndExecute(UUID vmId, ActionType actionType, VmActionRequest request, String commandName) {
+        long vps4UserId = virtualMachineService.getUserIdByVmId(vmId);
+        long actionId = actionService.createAction(vmId, actionType, new JSONObject().toJSONString(), vps4UserId);
+        request.setActionId(actionId);
+
+        CommandState command = Commands.execute(commandService, actionService, commandName, request);
+        logger.info("managing vm {} with command {}:{}", vmId, actionType, command.commandId);
+        return actionService.getAction(actionId);
+    }
+
     @POST
     @Path("{vmId}/start")
-    public Action startVm(@PathParam("vmId") UUID vmId) throws VmNotFoundException {
-        // Check if vm exists and user has access to the vm.
+    public Action startVm(@PathParam("vmId") UUID vmId) {
         VirtualMachine vm = getVm(vmId);
         validateNoConflictingActions(vmId, actionService,
                 ActionType.START_VM, ActionType.STOP_VM, ActionType.RESTART_VM);
+        validateServerIsStopped(vmService.getVm(vm.hfsVmId));
 
-        validateServerIsStopped(vmService.getVm(getVm(vmId).hfsVmId));
-
-        long actionId = actionService.createAction(vm.vmId, ActionType.START_VM, new JSONObject().toJSONString(), user.getId());
-
-        CommandState command;
-        Vps4StartVm.Request startRequest = new Vps4StartVm.Request();
-        startRequest.actionId = actionId;
+        VmActionRequest startRequest = new VmActionRequest();
         startRequest.hfsVmId = vm.hfsVmId;
-
-        command = Commands.execute(commandService, actionService, "Vps4StartVm", startRequest);
-        logger.info("managing vm {} with command {}", ActionType.START_VM, command.commandId);
-        return actionService.getAction(actionId);
+        return createActionAndExecute(vm.vmId, ActionType.START_VM, startRequest, "Vps4StartVm");
     }
 
     @POST
     @Path("{vmId}/stop")
-    public Action stopVm(@PathParam("vmId") UUID vmId) throws VmNotFoundException {
-        // Check if vm exists and user has access to the vm.
+    public Action stopVm(@PathParam("vmId") UUID vmId) {
         VirtualMachine vm = getVm(vmId);
         validateNoConflictingActions(vmId, actionService,
                 ActionType.START_VM, ActionType.STOP_VM, ActionType.RESTART_VM);
+        validateServerIsActive(vmService.getVm(vm.hfsVmId));
 
-        validateServerIsActive(vmService.getVm(getVm(vmId).hfsVmId));
-
-        long actionId = actionService.createAction(vm.vmId, ActionType.STOP_VM, new JSONObject().toJSONString(), user.getId());
-
-        CommandState command;
-        Vps4StopVm.Request stopRequest = new Vps4StopVm.Request();
-        stopRequest.actionId = actionId;
+        VmActionRequest stopRequest = new VmActionRequest();
         stopRequest.hfsVmId = vm.hfsVmId;
-
-        command = Commands.execute(commandService, actionService, "Vps4StopVm", stopRequest);
-        logger.info("managing vm {} with command {}", ActionType.STOP_VM, command.commandId);
-        return actionService.getAction(actionId);
+        return createActionAndExecute(vm.vmId, ActionType.STOP_VM, stopRequest, "Vps4StopVm");
     }
 
     @POST
     @Path("{vmId}/restart")
-    public Action restartVm(@PathParam("vmId") UUID vmId) throws VmNotFoundException {
-        // Check if vm exists and user has access to the vm.
+    public Action restartVm(@PathParam("vmId") UUID vmId) {
         VirtualMachine vm = getVm(vmId);
         validateNoConflictingActions(vmId, actionService,
                 ActionType.START_VM, ActionType.STOP_VM, ActionType.RESTART_VM);
+        validateServerIsActive(vmService.getVm(vm.hfsVmId));
 
-        validateServerIsActive(vmService.getVm(getVm(vmId).hfsVmId));
-
-        long actionId = actionService.createAction(vm.vmId, ActionType.RESTART_VM, new JSONObject().toJSONString(), user.getId());
-
-        CommandState command;
-        Vps4RestartVm.Request restartRequest = new Vps4RestartVm.Request();
-        restartRequest.actionId = actionId;
+        VmActionRequest restartRequest = new VmActionRequest();
         restartRequest.hfsVmId = vm.hfsVmId;
-
-        command = Commands.execute(commandService, actionService, "Vps4RestartVm", restartRequest);
-        logger.info("managing vm {} with command {}", ActionType.RESTART_VM, command.commandId);
-        return actionService.getAction(actionId);
+        return createActionAndExecute(vm.vmId, ActionType.RESTART_VM, restartRequest, "Vps4RestartVm");
     }
 
     public static class ProvisionVmRequest {
@@ -206,9 +193,11 @@ public class VmResource {
     @POST
     @Path("/")
     public Action provisionVm(ProvisionVmRequest provisionRequest) throws InterruptedException {
+        if (user.getShopperId() == null)
+            throw new Vps4NoShopperException();
+        Vps4User vps4User = userService.getOrCreateUserForShopper(user.getShopperId());
 
         logger.info("provisioning vm with orionGuid {}", provisionRequest.orionGuid);
-
         VirtualMachineCredit vmCredit = verifyUserHasAccessToCredit(provisionRequest.orionGuid);
 
         if(imageService.getImages(vmCredit.operatingSystem, vmCredit.controlPanel, provisionRequest.image).size() == 0){
@@ -220,7 +209,7 @@ public class VmResource {
         ProvisionVirtualMachineParameters params;
         VirtualMachine virtualMachine;
         try {
-            params = new ProvisionVirtualMachineParameters(user.getId(), provisionRequest.dataCenterId,
+            params = new ProvisionVirtualMachineParameters(vps4User.getId(), provisionRequest.dataCenterId,
                     sgidPrefix, provisionRequest.orionGuid, provisionRequest.name, vmCredit.tier, vmCredit.managedLevel,
                     provisionRequest.image);
             virtualMachine = virtualMachineService.provisionVirtualMachine(params);
@@ -236,7 +225,7 @@ public class VmResource {
                 provisionRequest.password, project, virtualMachine.spec);
 
         long actionId = actionService.createAction(virtualMachine.vmId, ActionType.CREATE_VM, new JSONObject().toJSONString(),
-                user.getId());
+                vps4User.getId());
         logger.info("Action id: {}", actionId);
 
         long ifMonitoringThenMonitoringAccountId = vmCredit.monitoring == 1 ? pingCheckAccountId : 0;
@@ -302,40 +291,32 @@ public class VmResource {
     @DELETE
     @Path("/{vmId}")
     public Action destroyVm(@PathParam("vmId") UUID vmId) {
-        VirtualMachine virtualMachine = virtualMachineService.getVirtualMachine(vmId);
-        if (virtualMachine == null) {
-            throw new NotFoundException("vmId " + vmId + " not found");
-        }
+        VirtualMachine vm = getVm(vmId);
 
-        privilegeService.requireAnyPrivilegeToProjectId(user, virtualMachine.projectId);
+        Vps4DestroyVm.Request destroyRequest = new Vps4DestroyVm.Request();
+        destroyRequest.hfsVmId = vm.hfsVmId;
+        destroyRequest.pingCheckAccountId = pingCheckAccountId;
 
-        // TODO verify VM status is destroyable
-
-        long actionId = actionService.createAction(virtualMachine.vmId, ActionType.DESTROY_VM, new JSONObject().toJSONString(), user.getId());
-
-        Vps4DestroyVm.Request request = new Vps4DestroyVm.Request();
-        request.hfsVmId = virtualMachine.hfsVmId;
-        request.actionId = actionId;
-        request.pingCheckAccountId = pingCheckAccountId;
-
-        Commands.execute(commandService, actionService, "Vps4DestroyVm", request);
+        Action deleteAction = createActionAndExecute(vm.vmId, ActionType.DESTROY_VM, destroyRequest, "Vps4DestroyVm");
 
         // The request has been created successfully.
         // Detach the user from the vm, and we'll handle the delete from here.
-        creditService.unclaimVirtualMachineCredit(virtualMachine.orionGuid);
-        virtualMachineService.destroyVirtualMachine(virtualMachine.hfsVmId);
+        creditService.unclaimVirtualMachineCredit(vm.orionGuid);
+        virtualMachineService.destroyVirtualMachine(vm.hfsVmId);
 
-        return actionService.getAction(actionId);
+        return deleteAction;
     }
 
     @GET
     @Path("/")
     public List<VirtualMachine> getVirtualMachines() {
-        List<VirtualMachine> vms = virtualMachineService.getVirtualMachinesForUser(user.getId());
+        if (user.getShopperId() == null)
+            throw new Vps4NoShopperException();
+        Vps4User vps4User = userService.getUser(user.getShopperId());
+
+        List<VirtualMachine> vms = virtualMachineService.getVirtualMachinesForUser(vps4User.getId());
         return vms.stream().filter(vm -> vm.validUntil.isAfter(Instant.now())).collect(Collectors.toList());
     }
-
-
 
     @GET
     @Path("/{vmId}/details")

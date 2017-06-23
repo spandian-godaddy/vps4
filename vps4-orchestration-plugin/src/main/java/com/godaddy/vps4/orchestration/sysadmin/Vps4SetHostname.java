@@ -43,7 +43,7 @@ public class Vps4SetHostname extends ActionCommand<Vps4SetHostname.Request, Void
             throws Exception {
 
         logger.debug("Setting hostname to {} on vm {}", request.setHostnameRequest.hostname, request.vmId);
-        
+
         virtualMachineService.setHostname(request.vmId, request.setHostnameRequest.hostname);
         JSONObject response = new JSONObject();
         try{
@@ -55,7 +55,7 @@ public class Vps4SetHostname extends ActionCommand<Vps4SetHostname.Request, Void
             response.put("message", e.getMessage());
             throw e;
         }
-        
+
         if (virtualMachineService.virtualMachineHasCpanel(request.vmId)){
             // Refresh Cpanel License
             setStep(request.actionId, UpdateHostnameStep.RefreshingCpanelLicense);
@@ -63,14 +63,14 @@ public class Vps4SetHostname extends ActionCommand<Vps4SetHostname.Request, Void
             cpLicRequest.hfsVmId = request.setHostnameRequest.hfsVmId;
             context.execute(RefreshCpanelLicense.class, cpLicRequest);
         }
-        
+
         return null;
     }
-    
+
     public static class ActionState{
         public UpdateHostnameStep step;
     }
-    
+
     private void setStep(long actionId, UpdateHostnameStep step) throws JsonProcessingException {
         ActionState state = new ActionState();
         state.step = step;
@@ -88,9 +88,10 @@ public class Vps4SetHostname extends ActionCommand<Vps4SetHostname.Request, Void
             return actionId;
         }
     }
+
     public static class Response {
         public long hfsVmId;
         public SysAdminAction hfsAction;
     }
-    
+
 }

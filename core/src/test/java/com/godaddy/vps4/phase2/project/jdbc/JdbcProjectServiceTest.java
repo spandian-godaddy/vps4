@@ -34,21 +34,21 @@ public class JdbcProjectServiceTest {
 
 	Injector injector = Guice.createInjector(new DatabaseModule());
     private DataSource dataSource;
-    
+
     Map<String, Vps4User> users = new HashMap<String, Vps4User>();
     Map<String, Project> projects = new HashMap<String, Project>();
 
     @Before
     public void setupTests() throws SQLException {
-        
+
         if (dataSource == null) {
             dataSource = injector.getInstance(DataSource.class);
         }
         ProjectService ps = new JdbcProjectService(dataSource);
         Vps4UserService vps4UserService = new JdbcVps4UserService(dataSource);
-        
-        
-        
+
+
+
         try (Connection conn = dataSource.getConnection()) {
             try (Statement statement = conn.createStatement()) {
                 users.put("user1", vps4UserService.getOrCreateUserForShopper("testuser1"));
@@ -57,11 +57,11 @@ public class JdbcProjectServiceTest {
                 projects.put("project3", ps.createProject("project3", users.get("user1").getId(), "unit-test"));
                 projects.put("project2", ps.createProject("project2", users.get("user2").getId(), "unit-test"));
                 projects.put("project1", ps.createProject("project1", users.get("user2").getId(), "unit-test"));
-                
+
             }
         }
     }
-    
+
     @After
     public void teardownTests() throws SQLException{
         if (dataSource == null) {
@@ -74,10 +74,8 @@ public class JdbcProjectServiceTest {
                     statement.executeUpdate("DELETE FROM user_project_privilege where vps4_user_id = " + user.getId() + ";");
                     statement.executeUpdate("DELETE FROM vps4_user where vps4_user_id = " + user.getId() + ";");
                 }
+                statement.executeUpdate("DELETE FROM project where vhfs_sgid like 'unit-test%';");
             }
-        }
-        for (Project p : projects.values()){
-            ps.deleteProject(p.getProjectId());
         }
     }
 
