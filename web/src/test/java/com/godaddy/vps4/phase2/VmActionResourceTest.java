@@ -3,6 +3,7 @@ package com.godaddy.vps4.phase2;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+import java.lang.reflect.Method;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.Arrays;
@@ -30,17 +31,23 @@ import com.godaddy.vps4.vm.Action;
 import com.godaddy.vps4.vm.ActionType;
 import com.godaddy.vps4.vm.VirtualMachine;
 import com.godaddy.vps4.vm.VmModule;
+import com.godaddy.vps4.web.security.AdminOnly;
 import com.godaddy.vps4.web.security.GDUser;
+import com.godaddy.vps4.web.vm.ActionWithDetails;
 import com.godaddy.vps4.web.vm.VmActionResource;
 import com.google.inject.AbstractModule;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
 import com.google.inject.Provides;
 
+import gdg.hfs.orchestration.CommandService;
+import gdg.hfs.orchestration.CommandState;
+
 public class VmActionResourceTest {
 
     private GDUser user;
     private UriInfo uri = mock(UriInfo.class);
+    private CommandService commandService = mock(CommandService.class);
 
     @Inject Vps4UserService userService;
     @Inject DataSource dataSource;
@@ -53,6 +60,7 @@ public class VmActionResourceTest {
 
                 @Override
                 public void configure() {
+                    bind(CommandService.class).toInstance(commandService);
                 }
 
                 @Provides
@@ -212,6 +220,31 @@ public class VmActionResourceTest {
         statusList = Arrays.asList("COMPLETE");
         actions = getVmActionResource().getActions(vm.vmId, 10, 0, statusList, uri).results;
         Assert.assertTrue(actions.isEmpty());
+    }
+
+    @Test
+    public void testGetActionDetailsAdminOnly() {
+        try {
+            Method method = VmActionResource.class.getMethod("getVmActionWithDetails", UUID.class, long.class);
+            Assert.assertTrue(method.isAnnotationPresent(AdminOnly.class));
+        }
+        catch(NoSuchMethodException ex) {
+            Assert.fail();
+        }
+    }
+
+    @Test
+    public void testGetVmActionDetails() {
+        VirtualMachine vm = createTestVm(user.getShopperId());
+        Action action = createTestVmAction(vm.vmId, ActionType.CREATE_VM);
+        CommandState command = mock(CommandState.class);
+        when(commandService.getCommand(action.commandId)).thenReturn(command);
+
+        user = GDUserMock.createAdmin();
+        ActionWithDetails detailedAction = getVmActionResource()
+                .getVmActionWithDetails(vm.vmId, action.id);
+        Assert.assertEquals(detailedAction.commandId, action.commandId);
+        Assert.assertEquals(detailedAction.orchestrationCommand, command);
     }
 }
 

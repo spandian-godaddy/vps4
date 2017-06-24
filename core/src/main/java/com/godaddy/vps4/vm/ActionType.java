@@ -7,18 +7,18 @@ import java.util.Map;
 
 public enum ActionType {
 
-    CREATE_VM(1), 
+    CREATE_VM(1),
     RESTART_VM(2),
-    ENABLE_ADMIN_ACCESS(3), 
+    ENABLE_ADMIN_ACCESS(3),
     DISABLE_ADMIN_ACCESS(4),
-    START_VM(5), 
-    STOP_VM(6), 
+    START_VM(5),
+    STOP_VM(6),
     DESTROY_VM(7),
-    SET_PASSWORD(8), 
+    SET_PASSWORD(8),
     SET_HOSTNAME(9),
-    UPDATE_SERVER(10), 
-    ADD_ADMIN_USER(11), 
-    DELETE_USER(12);
+    UPDATE_SERVER(10),
+    ADD_ADMIN_USER(11),
+    DELETE_ADMIN_USER(12);
 
     private final int typeId;
 
