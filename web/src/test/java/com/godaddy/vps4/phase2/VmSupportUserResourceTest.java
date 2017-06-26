@@ -97,14 +97,9 @@ public class VmSupportUserResourceTest {
     }
 
     @Test
-    public void testAddAdminUserAdminOnly() {
-        try {
-            Method method = VmSupportUserResource.class.getMethod("addAdminUser", UUID.class);
-            Assert.assertTrue(method.isAnnotationPresent(AdminOnly.class));
-        }
-        catch(NoSuchMethodException ex) {
-            Assert.fail();
-        }
+    public void testAddAdminUserAdminOnly() throws NoSuchMethodException {
+        Method method = VmSupportUserResource.class.getMethod("addAdminUser", UUID.class);
+        Assert.assertTrue(method.isAnnotationPresent(AdminOnly.class));
     }
 
     @Test
@@ -121,14 +116,9 @@ public class VmSupportUserResourceTest {
     }
 
     @Test
-    public void testRemoveAdminUserAdminOnly() {
-        try {
-            Method method = VmSupportUserResource.class.getMethod("removeAdminUser", UUID.class, String.class);
-            Assert.assertTrue(method.isAnnotationPresent(AdminOnly.class));
-        }
-        catch(NoSuchMethodException ex) {
-            Assert.fail();
-        }
+    public void testRemoveAdminUserAdminOnly() throws NoSuchMethodException {
+        Method method = VmSupportUserResource.class.getMethod("removeAdminUser", UUID.class, String.class);
+        Assert.assertTrue(method.isAnnotationPresent(AdminOnly.class));
     }
 
     @Test

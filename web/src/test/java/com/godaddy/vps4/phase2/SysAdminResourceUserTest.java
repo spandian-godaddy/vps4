@@ -4,12 +4,6 @@ import java.util.UUID;
 
 import javax.sql.DataSource;
 
-import com.godaddy.vps4.vm.*;
-import com.godaddy.vps4.web.Vps4Exception;
-import com.godaddy.vps4.web.vm.VmNotFoundException;
-import com.godaddy.vps4.web.vm.VmResource;
-import gdg.hfs.vhfs.vm.Vm;
-import gdg.hfs.vhfs.vm.VmService;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -23,6 +17,13 @@ import com.godaddy.vps4.security.SecurityModule;
 import com.godaddy.vps4.security.Vps4User;
 import com.godaddy.vps4.security.Vps4UserService;
 import com.godaddy.vps4.security.jdbc.AuthorizationException;
+import com.godaddy.vps4.vm.Action;
+import com.godaddy.vps4.vm.ActionService;
+import com.godaddy.vps4.vm.VirtualMachine;
+import com.godaddy.vps4.vm.VirtualMachineService;
+import com.godaddy.vps4.vm.VmModule;
+import com.godaddy.vps4.vm.VmUserService;
+import com.godaddy.vps4.web.Vps4Exception;
 import com.godaddy.vps4.web.sysadmin.SysAdminResource;
 import com.godaddy.vps4.web.sysadmin.SysAdminResource.SetAdminRequest;
 import com.godaddy.vps4.web.sysadmin.SysAdminResource.SetHostnameRequest;
@@ -36,8 +37,8 @@ import com.google.inject.Provides;
 import gdg.hfs.orchestration.CommandGroupSpec;
 import gdg.hfs.orchestration.CommandService;
 import gdg.hfs.orchestration.CommandState;
-
-import static org.junit.Assert.fail;
+import gdg.hfs.vhfs.vm.Vm;
+import gdg.hfs.vhfs.vm.VmService;
 
 public class SysAdminResourceUserTest {
 
