@@ -23,14 +23,16 @@ import com.godaddy.vps4.jdbc.ResultSubset;
 import com.godaddy.vps4.security.PrivilegeService;
 import com.godaddy.vps4.security.Vps4User;
 import com.godaddy.vps4.security.Vps4UserService;
-import com.godaddy.vps4.security.jdbc.AuthorizationException;
 import com.godaddy.vps4.vm.Action;
 import com.godaddy.vps4.vm.ActionService;
 import com.godaddy.vps4.web.PaginatedResult;
 import com.godaddy.vps4.web.Vps4Api;
+import com.godaddy.vps4.web.security.AdminOnly;
 import com.godaddy.vps4.web.security.GDUser;
 import com.google.inject.Inject;
 
+import gdg.hfs.orchestration.CommandService;
+import gdg.hfs.orchestration.CommandState;
 import io.swagger.annotations.Api;
 
 @Vps4Api
@@ -47,14 +49,16 @@ public class VmActionResource {
     private final PrivilegeService privilegeService;
     private final ActionService actionService;
     private final Vps4UserService userService;
+    private final CommandService commandService;
     private final GDUser user;
 
     @Inject
     public VmActionResource(PrivilegeService privilegeService, ActionService actionService,
-            Vps4UserService userService, GDUser user) {
+            Vps4UserService userService, CommandService commandService, GDUser user) {
         this.privilegeService = privilegeService;
         this.actionService = actionService;
         this.userService = userService;
+        this.commandService = commandService;
         this.user = user;
     }
 
@@ -99,5 +103,15 @@ public class VmActionResource {
         }
 
         return action;
+    }
+
+    @AdminOnly
+    @GET
+    @Path("{vmId}/actions/{actionId}/withDetails")
+    public ActionWithDetails getVmActionWithDetails(@PathParam("vmId") UUID vmId,
+            @PathParam("actionId") long actionId) {
+        Action action = this.getVmAction(vmId, actionId);
+        CommandState commandState = this.commandService.getCommand(action.commandId);
+        return new ActionWithDetails(action, commandState);
     }
 }

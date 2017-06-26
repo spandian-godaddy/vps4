@@ -27,14 +27,12 @@ import com.godaddy.vps4.mailrelay.MailRelayModule;
 import com.godaddy.vps4.plesk.PleskModule;
 import com.godaddy.vps4.security.SecurityModule;
 import com.godaddy.vps4.sso.SsoModule;
-import com.godaddy.vps4.sso.SsoSupportModule;
 import com.godaddy.vps4.sysadmin.SysAdminModule;
 import com.godaddy.vps4.vm.VmModule;
 import com.godaddy.vps4.web.network.NetworkModule;
 import com.godaddy.vps4.web.security.AuthenticationFilter;
 import com.godaddy.vps4.web.security.GDUserModule;
 import com.godaddy.vps4.web.security.SsoAuthenticationFilter;
-import com.godaddy.vps4.web.security.SupportAuthenticationFilter;
 import com.godaddy.vps4.web.security.Vps4UserFakeModule;
 import com.godaddy.vps4.web.security.Vps4UserModule;
 import com.godaddy.vps4.web.util.RequestIdFilter;
@@ -86,7 +84,6 @@ public class Vps4Injector {
         modules.add(new WebModule());
         modules.add(new SecurityModule());
         modules.add(new SsoModule());
-        modules.add(new SsoSupportModule());
 
         modules.add(new CreditModule());
         modules.add(new VmModule());
@@ -114,9 +111,6 @@ public class Vps4Injector {
 
                     bind(AuthenticationFilter.class).in(Singleton.class);
                     filter("/api/*").through(AuthenticationFilter.class);
-
-                    bind(SupportAuthenticationFilter.class).in(Singleton.class);
-                    filter("/api/support*").through(SupportAuthenticationFilter.class);
                 }
 
                 Multibinder.newSetBinder(binder(), SwaggerClassFilter.class)
