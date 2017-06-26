@@ -102,7 +102,7 @@ public class VmResourceProvisionTest {
         ProvisionVmRequest request = new ProvisionVmRequest();
         request.orionGuid = orionGuid;
         request.dataCenterId = 1;
-        request.image = "centos-7";
+        request.image = "hfs-centos-7";
         request.name = SqlTestData.TEST_VM_NAME;
         return request;
     }
