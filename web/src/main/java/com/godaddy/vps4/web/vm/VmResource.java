@@ -49,6 +49,7 @@ import com.godaddy.vps4.vm.VirtualMachineSpec;
 import com.godaddy.vps4.web.Vps4Api;
 import com.godaddy.vps4.web.Vps4Exception;
 import com.godaddy.vps4.web.Vps4NoShopperException;
+import com.godaddy.vps4.web.security.AdminOnly;
 import com.godaddy.vps4.web.security.GDUser;
 import com.godaddy.vps4.web.util.Commands;
 
@@ -326,7 +327,14 @@ public class VmResource {
         return new VirtualMachineDetails(vm);
     }
 
-    private Vm getVmFromVmVertical(long vmId) {
+    @GET
+    @Path("/{vmId}/hfsDetails")
+    public Vm getMoreDetails(@PathParam("vmId") UUID vmId) {
+        VirtualMachine virtualMachine = getVm(vmId);
+        return getVmFromVmVertical(virtualMachine.hfsVmId);
+    }
+
+    public Vm getVmFromVmVertical(long vmId) {
         try {
             return vmService.getVm(vmId);
         }

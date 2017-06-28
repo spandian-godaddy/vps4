@@ -38,11 +38,7 @@ import gdg.hfs.vhfs.vm.VmService;
 
 public class VmResourceProvisionTest {
 
-//    @Inject
-//    Vps4UserService userService;
-
-    @Inject
-    DataSource dataSource;
+    @Inject DataSource dataSource;
 
     private GDUser user;
     private CreditService creditService = Mockito.mock(CreditService.class);
@@ -75,9 +71,9 @@ public class VmResourceProvisionTest {
                 }
             });
 
-
     @Before
     public void setupTest() {
+        System.setProperty("hfs.sgid.prefix", SqlTestData.TEST_VM_SGID);
         injector.injectMembers(this);
         user = GDUserMock.createShopper();
     }

@@ -42,7 +42,7 @@ public class Vps4ExceptionMapper implements ExceptionMapper<Throwable> {
             JSONObject json = new JSONObject();
             json.put("id", ve.getId());
 
-            Response.Status status = Response.Status.INTERNAL_SERVER_ERROR;
+            Response.Status status = Response.Status.BAD_REQUEST;
             if (ve.getId().equals("CONFLICTING_INCOMPLETE_ACTION") || ve.getId().equals("INVALID_STATUS"))
                 status = Response.Status.CONFLICT;
             return Response.status(status)
