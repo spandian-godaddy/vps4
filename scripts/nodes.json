@@ -66,5 +66,22 @@
       "consumer": [
         "a2plvps4kafka01.cloud.iad2.gdg"
       ]
+  },
+  "prod-phx3": {
+      "app": [
+        "p3plvps4app01.cloud.phx3.gdg",
+        "p3plvps4app02.cloud.phx3.gdg"
+      ],
+      "orchestration": [
+        "p3plvps4app01.cloud.phx3.gdg"
+      ],
+      "zookeeper": [
+        "p3plvps4zk01.cloud.phx3.gdg",
+        "p3plvps4zk02.cloud.phx3.gdg",
+        "p3plvps4zk03.cloud.phx3.gdg"
+      ],
+      "consumer": [
+        "p3plvps4kafka01.cloud.phx3.gdg"
+      ]
   }
 }

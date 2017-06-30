@@ -26,7 +26,7 @@ public class RegenerateKeys {
 
 	public static void regenerate(String prefix, Path targetDir) throws Exception {
 
-		String[] environments = { "local", "dev", "test", "stage", "prod" };
+		String[] environments = { "local", "dev", "test", "stage", "prod", "prod-phx3" };
 
 		for (String env : environments) {
 
