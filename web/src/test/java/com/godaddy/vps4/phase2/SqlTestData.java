@@ -41,7 +41,7 @@ public class SqlTestData {
                 TEST_VM_NAME, 10, 1, imageName);
         VirtualMachine virtualMachine = virtualMachineService.provisionVirtualMachine(params);
         virtualMachineService.addHfsVmIdToVirtualMachine(virtualMachine.vmId, hfsVmId);
-        return virtualMachine;
+        return virtualMachineService.getVirtualMachine(virtualMachine.vmId);
     }
 
     public static Action insertTestVmAction(UUID commandId, UUID vmId, ActionType actionType, DataSource dataSource) {
