@@ -1,11 +1,14 @@
 package com.godaddy.vps4.orchestration.hfs.plesk;
 
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 import org.junit.Test;
 
 import com.godaddy.vps4.orchestration.TestCommandContext;
-import com.godaddy.vps4.orchestration.hfs.plesk.ConfigurePlesk.ConfigurePleskRequest;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
 
