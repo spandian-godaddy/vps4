@@ -326,7 +326,14 @@ public class VmResource {
         return new VirtualMachineDetails(vm);
     }
 
-    private Vm getVmFromVmVertical(long vmId) {
+    @GET
+    @Path("/{vmId}/hfsDetails")
+    public Vm getMoreDetails(@PathParam("vmId") UUID vmId) {
+        VirtualMachine virtualMachine = getVm(vmId);
+        return getVmFromVmVertical(virtualMachine.hfsVmId);
+    }
+
+    public Vm getVmFromVmVertical(long vmId) {
         try {
             return vmService.getVm(vmId);
         }

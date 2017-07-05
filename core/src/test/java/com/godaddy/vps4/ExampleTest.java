@@ -12,6 +12,7 @@ public class ExampleTest {
     public void alwaysPasses() {
 
         Vps4User user = new Vps4User(0, "ShopperId");
+        user.toString();
 
         assertTrue(true);
     }

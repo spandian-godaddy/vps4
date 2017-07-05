@@ -30,11 +30,8 @@ import com.godaddy.vps4.sso.SsoModule;
 import com.godaddy.vps4.sysadmin.SysAdminModule;
 import com.godaddy.vps4.vm.VmModule;
 import com.godaddy.vps4.web.network.NetworkModule;
-import com.godaddy.vps4.web.security.AuthenticationFilter;
 import com.godaddy.vps4.web.security.GDUserModule;
 import com.godaddy.vps4.web.security.SsoAuthenticationFilter;
-import com.godaddy.vps4.web.security.Vps4UserFakeModule;
-import com.godaddy.vps4.web.security.Vps4UserModule;
 import com.godaddy.vps4.web.util.RequestIdFilter;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
@@ -45,8 +42,6 @@ import com.google.inject.servlet.ServletModule;
 public class Vps4Injector {
 
     private static final Logger logger = LoggerFactory.getLogger(Vps4Injector.class);
-
-    private static boolean useFakeUser = System.getProperty("vps4.user.fake", "false").equals("true");
 
     private static final Injector INJECTOR = newInstance();
 
@@ -76,9 +71,6 @@ public class Vps4Injector {
             modules.add(new HfsClientModule());
         }
 
-
-        modules.add(getUserModule(useFakeUser));
-
         modules.add(new GDUserModule());
         modules.add(new DatabaseModule());
         modules.add(new WebModule());
@@ -105,13 +97,8 @@ public class Vps4Injector {
                 bind(RequestIdFilter.class).in(Singleton.class);
                 filter("/api/*").through(RequestIdFilter.class);
 
-                if (!useFakeUser) {
-                    bind(SsoAuthenticationFilter.class).in(Singleton.class);
-                    filter("/api/*").through(SsoAuthenticationFilter.class);
-
-                    bind(AuthenticationFilter.class).in(Singleton.class);
-                    filter("/api/*").through(AuthenticationFilter.class);
-                }
+                bind(SsoAuthenticationFilter.class).in(Singleton.class);
+                filter("/api/*").through(SsoAuthenticationFilter.class);
 
                 Multibinder.newSetBinder(binder(), SwaggerClassFilter.class)
                     .addBinding().toInstance(resourceClass ->
@@ -122,15 +109,5 @@ public class Vps4Injector {
         modules.add(new HazelcastCacheModule());
 
         return Guice.createInjector(modules);
-    }
-
-    private static Module getUserModule(boolean useFakeUser) {
-        if (useFakeUser) {
-            logger.info("USING FAKE USER");
-            return new Vps4UserFakeModule();
-        }
-        else {
-            return new Vps4UserModule();
-        }
     }
 }

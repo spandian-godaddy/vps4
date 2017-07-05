@@ -23,15 +23,12 @@ import org.slf4j.LoggerFactory;
 import com.godaddy.vps4.plesk.PleskSession;
 import com.godaddy.vps4.plesk.PleskSubscription;
 import com.godaddy.vps4.plesk.Vps4PleskService;
-import com.godaddy.vps4.security.PrivilegeService;
-import com.godaddy.vps4.security.Vps4User;
 import com.godaddy.vps4.vm.Image.ControlPanel;
 import com.godaddy.vps4.vm.VirtualMachine;
-import com.godaddy.vps4.vm.VirtualMachineService;
 import com.godaddy.vps4.web.Vps4Api;
 import com.godaddy.vps4.web.controlPanel.ControlPanelRequestValidation;
+import com.godaddy.vps4.web.vm.VmResource;
 
-import gdg.hfs.vhfs.vm.VmService;
 import io.swagger.annotations.Api;
 
 @Vps4Api
@@ -46,24 +43,21 @@ public class PleskResource {
 
     private static final String X_FORWARDED_FOR = "X-Forwarded-For";
 
+    final VmResource vmResource;
     final Vps4PleskService pleskService;
-    final PrivilegeService privilegeService;
-    final VirtualMachineService virtualMachineService;
-    final VmService hfsVmService;
-    final Vps4User user;
 
     @Inject
-    public PleskResource(Vps4PleskService pleskService, PrivilegeService privilegeService, VirtualMachineService virtualMachineService, VmService hfsVmService, Vps4User user) {
+    public PleskResource(VmResource vmResource, Vps4PleskService pleskService) {
+        this.vmResource = vmResource;
         this.pleskService = pleskService;
-        this.privilegeService = privilegeService;
-        this.virtualMachineService = virtualMachineService;
-        this.hfsVmService = hfsVmService;
-        this.user = user;
     }
 
     @GET
     @Path("{vmId}/plesk/pleskSessionUrl")
-    public PleskSession getPleskSessionUrl(@PathParam("vmId") UUID vmId, @QueryParam("fromIpAddress") String fromIpAddress, @Context HttpHeaders headers, @Context HttpServletRequest req) {
+    public PleskSession getPleskSessionUrl(@PathParam("vmId") UUID vmId,
+            @QueryParam("fromIpAddress") String fromIpAddress,
+            @Context HttpHeaders headers,
+            @Context HttpServletRequest req) {
 
         logger.info("Getting Plesk session url for vmId {} ", vmId);
 
@@ -113,8 +107,7 @@ public class PleskResource {
     }
 
     private VirtualMachine resolveVirtualMachine(UUID vmId) {
-        return ControlPanelRequestValidation.getValidVirtualMachine(user, privilegeService,
-                virtualMachineService, hfsVmService,
+        return ControlPanelRequestValidation.getValidVirtualMachine(vmResource,
                 ControlPanel.PLESK, vmId);
     }
 
