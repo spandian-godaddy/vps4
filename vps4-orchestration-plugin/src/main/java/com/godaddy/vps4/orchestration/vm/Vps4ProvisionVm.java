@@ -290,7 +290,7 @@ public class Vps4ProvisionVm extends ActionCommand<Vps4ProvisionVm.Request, Vps4
 
     private void configureNodePing(IpAddress ipAddress) {
         if (request.vmInfo.pingCheckAccountId > 0) {
-
+            setStep(CreateVmStep.ConfigureNodeping);
             CreateCheckRequest checkRequest = new CreateCheckRequest();
             checkRequest.target = ipAddress.address;
             checkRequest.label = ipAddress.address;
