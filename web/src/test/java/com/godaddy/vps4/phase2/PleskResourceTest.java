@@ -77,7 +77,7 @@ public class PleskResourceTest {
     public void setupTest(){
         injector.injectMembers(this);
         user = GDUserMock.createShopper();
-        vm = createTestVm("hfs-windows-2012r2-plesk-12.5");
+        vm = createTestVm("hfs-windows-2012r2-plesk-17");
         winVm = createTestVm("hfs-windows-2012r2");
     }
 
