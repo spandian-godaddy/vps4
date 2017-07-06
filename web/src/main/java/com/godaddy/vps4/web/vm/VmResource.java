@@ -312,7 +312,8 @@ public class VmResource {
     public List<VirtualMachine> getVirtualMachines() {
         if (user.getShopperId() == null)
             throw new Vps4NoShopperException();
-        Vps4User vps4User = userService.getUser(user.getShopperId());
+        Vps4User vps4User = userService.getOrCreateUserForShopper(user.getShopperId());
+//        Vps4User vps4User = userService.getUser(user.getShopperId());
 
         List<VirtualMachine> vms = virtualMachineService.getVirtualMachinesForUser(vps4User.getId());
         return vms.stream().filter(vm -> vm.validUntil.isAfter(Instant.now())).collect(Collectors.toList());
