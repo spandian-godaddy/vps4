@@ -9,7 +9,8 @@ public enum Environment {
     DEV,
     TEST,
     STAGE,
-    PROD
+    PROD,
+    PROD_PHX3
     ;
 
     private final String localName;

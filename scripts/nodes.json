@@ -67,7 +67,7 @@
         "a2plvps4kafka01.cloud.iad2.gdg"
       ]
   },
-  "prod-phx3": {
+  "prod_phx3": {
       "app": [
         "p3plvps4app01.cloud.phx3.gdg",
         "p3plvps4app02.cloud.phx3.gdg"
