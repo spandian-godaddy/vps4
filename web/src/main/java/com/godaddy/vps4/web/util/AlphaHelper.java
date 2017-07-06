@@ -20,7 +20,9 @@ public class AlphaHelper {
     }
 
     private boolean isStagingOrProductionEnv() {
-        return ((Environment.CURRENT == Environment.STAGE) || (Environment.CURRENT == Environment.PROD) ? true : false);
+        return ((Environment.CURRENT == Environment.STAGE) ||
+                (Environment.CURRENT == Environment.PROD) ||
+                (Environment.CURRENT == Environment.PROD_PHX3) ? true : false);
     }
 
     private boolean isInternalShopper(String shopperId) {

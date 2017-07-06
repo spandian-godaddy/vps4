@@ -43,11 +43,8 @@ import gdg.hfs.vhfs.vm.VmService;
 
 public class VmResourceUserTest {
 
-    @Inject
-    Vps4UserService userService;
-
-    @Inject
-    DataSource dataSource;
+    @Inject Vps4UserService userService;
+    @Inject DataSource dataSource;
 
     private GDUser user;
     private CreditService creditService = Mockito.mock(CreditService.class);
@@ -462,6 +459,15 @@ public class VmResourceUserTest {
     public void testAdminGetVmWithDetails() {
         user = GDUserMock.createAdmin();
         testGetVmWithDetails();
+    }
+
+    // === getHfsDetails Tests ===
+    @Test
+    public void testShopperGetHfsDetails() {
+        VirtualMachine vm = createTestVm();
+
+        Vm hfsvm = getVmResource().getMoreDetails(vm.vmId);
+        Assert.assertEquals(hfsvm.vmId, hfsVmId);
     }
 
 }

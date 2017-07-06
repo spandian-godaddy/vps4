@@ -293,7 +293,7 @@
         <dependency>
             <groupId>hfs</groupId>
             <artifactId>vhfs-common-web-lib</artifactId>
-            <version>1.0.0.29220</version>
+            <version>1.0.0.31074</version>
             <exclusions>
                 <exclusion>
                     <groupId>*</groupId>

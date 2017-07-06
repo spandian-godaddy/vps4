@@ -1,6 +1,5 @@
 package com.godaddy.vps4.web.controlPanel.cpanel;
 
-import java.io.IOException;
 import java.util.List;
 import java.util.UUID;
 
@@ -18,19 +17,14 @@ import org.slf4j.LoggerFactory;
 
 import com.godaddy.vps4.cpanel.CPanelAccount;
 import com.godaddy.vps4.cpanel.CPanelSession;
-import com.godaddy.vps4.cpanel.CpanelAccessDeniedException;
 import com.godaddy.vps4.cpanel.CpanelClient.CpanelServiceType;
-import com.godaddy.vps4.cpanel.CpanelTimeoutException;
 import com.godaddy.vps4.cpanel.Vps4CpanelService;
-import com.godaddy.vps4.security.PrivilegeService;
-import com.godaddy.vps4.security.Vps4User;
 import com.godaddy.vps4.vm.Image.ControlPanel;
 import com.godaddy.vps4.vm.VirtualMachine;
-import com.godaddy.vps4.vm.VirtualMachineService;
 import com.godaddy.vps4.web.Vps4Api;
 import com.godaddy.vps4.web.controlPanel.ControlPanelRequestValidation;
+import com.godaddy.vps4.web.vm.VmResource;
 
-import gdg.hfs.vhfs.vm.VmService;
 import io.swagger.annotations.Api;
 
 @Vps4Api
@@ -43,20 +37,13 @@ public class CPanelResource {
 
     private static final Logger logger = LoggerFactory.getLogger(CPanelResource.class);
 
+    final VmResource vmResource;
     final Vps4CpanelService cpanelService;
-    final PrivilegeService privilegeService;
-    final VirtualMachineService virtualMachineService;
-    final VmService hfsVmService;
-    final Vps4User user;
 
     @Inject
-    public CPanelResource(Vps4CpanelService cpanelService, PrivilegeService privilegeService,
-            VirtualMachineService virtualMachineService, VmService hfsVmService, Vps4User user) {
+    public CPanelResource(VmResource vmResource, Vps4CpanelService cpanelService) {
+        this.vmResource = vmResource;
         this.cpanelService = cpanelService;
-        this.privilegeService = privilegeService;
-        this.virtualMachineService = virtualMachineService;
-        this.hfsVmService = hfsVmService;
-        this.user = user;
     }
 
     @GET
@@ -69,15 +56,16 @@ public class CPanelResource {
 
         try {
             return cpanelService.createSession(vm.hfsVmId, "root", CpanelServiceType.whostmgrd);
-        } catch (CpanelAccessDeniedException e) {
-            // TODO bubble a more specific error to the client
-            // (UI can show a "Authentication issue" error
-            // instead of just generic "something happened")
-        } catch (CpanelTimeoutException e) {
-
-        } catch (IOException e) {
-
+//        } catch (CpanelAccessDeniedException e) {
+//            // TODO bubble a more specific error to the client
+//            // (UI can show a "Authentication issue" error
+//            // instead of just generic "something happened")
+//        } catch (CpanelTimeoutException e) {
+//        } catch (IOException e) {
+        } catch (Exception e) {
+            logger.warn("Could not provide WHM cpanel session for vmId {} , Exception: {} ", vmId, e);
         }
+
         return null;
     }
 
@@ -91,14 +79,14 @@ public class CPanelResource {
 
         try {
             return cpanelService.createSession(vm.hfsVmId, username, CpanelServiceType.cpaneld);
-        } catch (CpanelAccessDeniedException e) {
-            // TODO bubble a more specific error to the client
-            // (UI can show a "Authentication issue" error
-            // instead of just generic "something happened")
-        } catch (CpanelTimeoutException e) {
-
-        } catch (IOException e) {
-
+//        } catch (CpanelAccessDeniedException e) {
+//            // TODO bubble a more specific error to the client
+//            // (UI can show a "Authentication issue" error
+//            // instead of just generic "something happened")
+//        } catch (CpanelTimeoutException e) {
+//        } catch (IOException e) {
+        } catch (Exception e) {
+            logger.warn("Could not provide cpanel session for vmId {} , Exception: {} ", vmId, e);
         }
         return null;
     }
@@ -113,19 +101,20 @@ public class CPanelResource {
 
         try {
             return cpanelService.listCpanelAccounts(vm.hfsVmId);
-        } catch (CpanelAccessDeniedException e) {
-            // TODO bubble a more specific error to the client
-        } catch (CpanelTimeoutException e) {
-
-        } catch (IOException e) {
-
+//        } catch (CpanelAccessDeniedException e) {
+//            // TODO bubble a more specific error to the client
+//            // (UI can show a "Authentication issue" error
+//            // instead of just generic "something happened")
+//        } catch (CpanelTimeoutException e) {
+//        } catch (IOException e) {
+        } catch (Exception e) {
+            logger.warn("Could not provide cpanel accounts for vmId {} , Exception: {} ", vmId, e);
         }
         return null;
     }
 
     private VirtualMachine resolveVirtualMachine(UUID vmId) {
-        return ControlPanelRequestValidation.getValidVirtualMachine(user, privilegeService,
-                virtualMachineService, hfsVmService,
+        return ControlPanelRequestValidation.getValidVirtualMachine(vmResource,
                 ControlPanel.CPANEL, vmId);
     }
 

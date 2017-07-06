@@ -41,7 +41,7 @@ public class SqlTestData {
                 TEST_VM_NAME, 10, 1, imageName);
         VirtualMachine virtualMachine = virtualMachineService.provisionVirtualMachine(params);
         virtualMachineService.addHfsVmIdToVirtualMachine(virtualMachine.vmId, hfsVmId);
-        return virtualMachine;
+        return virtualMachineService.getVirtualMachine(virtualMachine.vmId);
     }
 
     public static Action insertTestVmAction(UUID commandId, UUID vmId, ActionType actionType, DataSource dataSource) {
@@ -71,16 +71,4 @@ public class SqlTestData {
         Sql.with(dataSource).exec("DELETE FROM project p WHERE " + test_sgid_condition, null);
     }
 
-    @Deprecated
-    public static void cleanupTestVmAndRelatedData(UUID vmId, DataSource dataSource) {
-        VirtualMachineService virtualMachineService = new JdbcVirtualMachineService(dataSource);
-        VirtualMachine vm = virtualMachineService.getVirtualMachine(vmId);
-
-        Sql.with(dataSource).exec("DELETE FROM ip_address WHERE vm_id = ?", null, vm.vmId);
-        Sql.with(dataSource).exec("DELETE FROM vm_user WHERE vm_id = ?", null, vm.vmId);
-        Sql.with(dataSource).exec("DELETE FROM vm_action where vm_id = ?", null, vm.vmId);
-        Sql.with(dataSource).exec("DELETE FROM virtual_machine WHERE vm_id = ?", null, vmId);
-        Sql.with(dataSource).exec("DELETE FROM user_project_privilege WHERE project_id = ?", null, vm.projectId);
-        Sql.with(dataSource).exec("DELETE FROM project WHERE project_id = ?", null, vm.projectId);
-    }
 }

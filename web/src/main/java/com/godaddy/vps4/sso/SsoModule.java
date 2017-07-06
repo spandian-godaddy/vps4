@@ -13,7 +13,6 @@ import com.godaddy.hfs.sso.HttpKeyService;
 import com.godaddy.hfs.sso.KeyService;
 import com.godaddy.hfs.sso.SsoTokenExtractor;
 import com.godaddy.vps4.web.security.SsoRequestAuthenticator;
-import com.godaddy.vps4.web.security.Vps4RequestAuthenticator;
 import com.google.inject.AbstractModule;
 import com.google.inject.Provides;
 
@@ -23,7 +22,6 @@ public class SsoModule extends AbstractModule {
 
     @Override
     public void configure() {
-        bind(Vps4RequestAuthenticator.class);
         bind(SsoRequestAuthenticator.class);
     }
 
