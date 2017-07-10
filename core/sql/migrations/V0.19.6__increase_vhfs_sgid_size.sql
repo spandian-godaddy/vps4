@@ -1,0 +1,1 @@
+ALTER TABLE project ALTER COLUMN vhfs_sgid TYPE varchar(80);
