@@ -5,6 +5,7 @@ import com.godaddy.vps4.network.jdbc.JdbcNetworkService;
 import com.godaddy.vps4.security.PrivilegeService;
 import com.godaddy.vps4.security.jdbc.JdbcPrivilegeService;
 import com.godaddy.vps4.snapshot.SnapshotService;
+import com.godaddy.vps4.snapshot.jdbc.JdbcSnapshotService;
 import com.godaddy.vps4.vm.jdbc.*;
 import com.google.inject.AbstractModule;
 
@@ -20,6 +21,5 @@ public class VmModule extends AbstractModule {
 		bind(ActionService.class).to(JdbcActionService.class);
 		bind(NetworkService.class).to(JdbcNetworkService.class);
 		bind(DataCenterService.class).to(JdbcDataCenterService.class);
-		bind(SnapshotService.class).to(JdbcSnapshotService.class);
 	}
 }

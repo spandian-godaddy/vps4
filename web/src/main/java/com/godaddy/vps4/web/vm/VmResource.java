@@ -36,7 +36,6 @@ import com.godaddy.vps4.security.PrivilegeService;
 import com.godaddy.vps4.security.Vps4User;
 import com.godaddy.vps4.security.Vps4UserService;
 import com.godaddy.vps4.security.jdbc.AuthorizationException;
-import com.godaddy.vps4.vm.Action;
 import com.godaddy.vps4.vm.ActionService;
 import com.godaddy.vps4.vm.ActionType;
 import com.godaddy.vps4.vm.DataCenter;
@@ -126,25 +125,26 @@ public class VmResource {
         if (virtualMachine == null || virtualMachine.validUntil.isBefore(Instant.now()))
             throw new NotFoundException("Unknown VM ID: " + vmId);
 
+        logger.info(String.format("VM valid until: %s | %s", virtualMachine.validUntil, Instant.now()));
         if (user.isShopper())
             verifyUserPrivilege(virtualMachine);
 
         return virtualMachine;
     }
 
-    private Action createActionAndExecute(UUID vmId, ActionType actionType, VmActionRequest request, String commandName) {
+    private VmAction createActionAndExecute(UUID vmId, ActionType actionType, VmActionRequest request, String commandName) {
         long vps4UserId = virtualMachineService.getUserIdByVmId(vmId);
         long actionId = actionService.createAction(vmId, actionType, new JSONObject().toJSONString(), vps4UserId);
         request.setActionId(actionId);
 
         CommandState command = Commands.execute(commandService, actionService, commandName, request);
         logger.info("managing vm {} with command {}:{}", vmId, actionType, command.commandId);
-        return actionService.getAction(actionId);
+        return new VmAction(actionService.getAction(actionId));
     }
 
     @POST
     @Path("{vmId}/start")
-    public Action startVm(@PathParam("vmId") UUID vmId) {
+    public VmAction startVm(@PathParam("vmId") UUID vmId) {
         VirtualMachine vm = getVm(vmId);
         validateNoConflictingActions(vmId, actionService,
                 ActionType.START_VM, ActionType.STOP_VM, ActionType.RESTART_VM);
@@ -157,7 +157,7 @@ public class VmResource {
 
     @POST
     @Path("{vmId}/stop")
-    public Action stopVm(@PathParam("vmId") UUID vmId) {
+    public VmAction stopVm(@PathParam("vmId") UUID vmId) {
         VirtualMachine vm = getVm(vmId);
         validateNoConflictingActions(vmId, actionService,
                 ActionType.START_VM, ActionType.STOP_VM, ActionType.RESTART_VM);
@@ -170,7 +170,7 @@ public class VmResource {
 
     @POST
     @Path("{vmId}/restart")
-    public Action restartVm(@PathParam("vmId") UUID vmId) {
+    public VmAction restartVm(@PathParam("vmId") UUID vmId) {
         VirtualMachine vm = getVm(vmId);
         validateNoConflictingActions(vmId, actionService,
                 ActionType.START_VM, ActionType.STOP_VM, ActionType.RESTART_VM);
@@ -192,7 +192,7 @@ public class VmResource {
 
     @POST
     @Path("/")
-    public Action provisionVm(ProvisionVmRequest provisionRequest) throws InterruptedException {
+    public VmAction provisionVm(ProvisionVmRequest provisionRequest) throws InterruptedException {
         if (user.getShopperId() == null)
             throw new Vps4NoShopperException();
         Vps4User vps4User = userService.getOrCreateUserForShopper(user.getShopperId());
@@ -226,7 +226,7 @@ public class VmResource {
 
         long actionId = actionService.createAction(virtualMachine.vmId, ActionType.CREATE_VM, new JSONObject().toJSONString(),
                 vps4User.getId());
-        logger.info("Action id: {}", actionId);
+        logger.info("VmAction id: {}", actionId);
 
         long ifMonitoringThenMonitoringAccountId = vmCredit.monitoring == 1 ? pingCheckAccountId : 0;
 
@@ -239,7 +239,7 @@ public class VmResource {
         CommandState command = Commands.execute(commandService, actionService, "ProvisionVm", request);
         logger.info("provisioning VM in {}", command.commandId);
 
-        return actionService.getAction(actionId);
+        return new VmAction(actionService.getAction(actionId));
     }
 
 
@@ -290,7 +290,7 @@ public class VmResource {
 
     @DELETE
     @Path("/{vmId}")
-    public Action destroyVm(@PathParam("vmId") UUID vmId) {
+    public VmAction destroyVm(@PathParam("vmId") UUID vmId) {
         VirtualMachine vm = getVm(vmId);
         validateNoConflictingActions(vmId, actionService,
                 ActionType.START_VM, ActionType.STOP_VM, ActionType.RESTART_VM, ActionType.CREATE_VM);
@@ -299,7 +299,7 @@ public class VmResource {
         destroyRequest.hfsVmId = vm.hfsVmId;
         destroyRequest.pingCheckAccountId = pingCheckAccountId;
 
-        Action deleteAction = createActionAndExecute(vm.vmId, ActionType.DESTROY_VM, destroyRequest, "Vps4DestroyVm");
+        VmAction deleteAction = createActionAndExecute(vm.vmId, ActionType.DESTROY_VM, destroyRequest, "Vps4DestroyVm");
 
         // The request has been created successfully.
         // Detach the user from the vm, and we'll handle the delete from here.

@@ -19,6 +19,7 @@ public class ValidatorRegistry {
         validators.put("username", getUsernameValidator());
         validators.put("password", getPasswordValidator());
         validators.put("hostname", getHostnameValidator());
+        validators.put("snapshot-name", getSnapshotNameValidator());
     }
 
     static Validator getUsernameValidator() {
@@ -50,6 +51,13 @@ public class ValidatorRegistry {
             new Rule("Multiple periods may not be adjacent", "^((?!\\.\\.).)*$"),
             new Rule("Multiple hyphens may not be adjacent", "^((?!\\-\\-).)*$"),
             new Rule("Doesn't begin with www.", "^(?!www\\.).*$")
+        )));
+    }
+
+    static Validator getSnapshotNameValidator() {
+        return (new Validator(Arrays.asList(
+                new Rule("Only Alpha-Numeric Values and _ and - characters", "[a-z0-9_-]*"),
+                new Rule("Between 5 and 16 characters", ".{5,16}")
         )));
     }
 

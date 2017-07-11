@@ -7,7 +7,7 @@ import com.godaddy.vps4.snapshot.SnapshotService;
 import com.godaddy.vps4.snapshot.SnapshotStatus;
 import com.godaddy.vps4.snapshot.SnapshotWithDetails;
 import com.godaddy.vps4.vm.VirtualMachine;
-import com.godaddy.vps4.vm.jdbc.JdbcSnapshotService;
+import com.godaddy.vps4.snapshot.jdbc.JdbcSnapshotService;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
 import org.junit.After;

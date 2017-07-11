@@ -7,6 +7,7 @@ import com.godaddy.vps4.security.Vps4User;
 import com.godaddy.vps4.security.Vps4UserService;
 import com.godaddy.vps4.security.jdbc.AuthorizationException;
 import com.godaddy.vps4.snapshot.Snapshot;
+import com.godaddy.vps4.snapshot.SnapshotModule;
 import com.godaddy.vps4.snapshot.SnapshotStatus;
 import com.godaddy.vps4.snapshot.SnapshotWithDetails;
 import com.godaddy.vps4.vm.VirtualMachine;
@@ -45,6 +46,8 @@ public class SnapshotResourceTest {
             new DatabaseModule(),
             new SecurityModule(),
             new VmModule(),
+            new SnapshotModule(),
+            new Phase2ExternalsModule(),
             new AbstractModule() {
                 @Override
                 public void configure() {

@@ -9,6 +9,7 @@ import gdg.hfs.vhfs.ecomm.ECommService;
 import gdg.hfs.vhfs.mailrelay.MailRelayService;
 import gdg.hfs.vhfs.nodeping.NodePingService;
 import gdg.hfs.vhfs.plesk.PleskService;
+import gdg.hfs.vhfs.snapshot.SnapshotService;
 import gdg.hfs.vhfs.sysadmin.SysAdminService;
 import gdg.hfs.vhfs.vm.VmService;
 

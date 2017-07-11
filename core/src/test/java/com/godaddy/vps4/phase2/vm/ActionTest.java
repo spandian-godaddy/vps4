@@ -58,7 +58,7 @@ public class ActionTest {
         long actionId = actionService.createAction(vm.vmId, type, new JSONObject().toJSONString(), 1);
         Action action = actionService.getAction(actionId);
         assertEquals("{}", action.request);
-        assertEquals(vm.vmId, action.virtualMachineId);
+        assertEquals(vm.vmId, action.resourceId);
         assertTrue(action.type == ActionType.CREATE_VM);
         assertEquals(ActionStatus.NEW, action.status);
         assertEquals(ActionType.CREATE_VM, action.type);

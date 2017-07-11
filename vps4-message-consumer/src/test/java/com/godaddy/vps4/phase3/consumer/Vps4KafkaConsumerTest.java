@@ -8,6 +8,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
+import org.junit.Ignore;
 import org.junit.Test;
 
 import com.godaddy.vps4.consumer.Vps4ConsumerGroup;
@@ -22,7 +23,7 @@ import com.google.inject.Injector;
  * It simply produces a few messages using a producer thread, and attempts to see if they were consumed by the consumer thread.
  *
  */
-//@Ignore
+@Ignore
 public class Vps4KafkaConsumerTest {
 
     @Test

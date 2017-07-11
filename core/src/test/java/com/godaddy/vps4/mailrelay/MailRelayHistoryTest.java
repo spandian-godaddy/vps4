@@ -17,6 +17,7 @@ import javax.cache.Cache;
 import javax.cache.CacheManager;
 
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import com.godaddy.vps4.cache.CacheName;
@@ -128,9 +129,9 @@ public class MailRelayHistoryTest {
     public void testGetCachedMailRelayHigherLimitThanDays(){
         List<MailRelayHistory> history = new ArrayList<MailRelayHistory>();
         MailRelayHistory oldHistory = new MailRelayHistory();
-        oldHistory.date = "2017-07-22";
+        oldHistory.date = LocalDate.now().minus(2, ChronoUnit.DAYS).toString();
         MailRelayHistory newHistory = new MailRelayHistory();
-        newHistory.date = "2017-07-23";
+        newHistory.date = LocalDate.now().minus(1, ChronoUnit.DAYS).toString();
         history.add(oldHistory);
         history.add(newHistory);
         CachedMailRelayHistory cachedHistory = new CachedMailRelayHistory();
