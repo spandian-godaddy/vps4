@@ -292,6 +292,8 @@ public class VmResource {
     @Path("/{vmId}")
     public Action destroyVm(@PathParam("vmId") UUID vmId) {
         VirtualMachine vm = getVm(vmId);
+        validateNoConflictingActions(vmId, actionService,
+                ActionType.START_VM, ActionType.STOP_VM, ActionType.RESTART_VM, ActionType.CREATE_VM);
 
         Vps4DestroyVm.Request destroyRequest = new Vps4DestroyVm.Request();
         destroyRequest.hfsVmId = vm.hfsVmId;
