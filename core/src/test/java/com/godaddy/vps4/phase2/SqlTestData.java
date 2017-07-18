@@ -6,6 +6,8 @@ import java.util.UUID;
 import javax.sql.DataSource;
 
 import com.godaddy.hfs.jdbc.Sql;
+import com.godaddy.vps4.snapshot.Snapshot;
+import com.godaddy.vps4.snapshot.SnapshotWithDetails;
 import com.godaddy.vps4.vm.ActionType;
 import com.godaddy.vps4.vm.VirtualMachine;
 import com.godaddy.vps4.vm.VirtualMachineService;
@@ -40,7 +42,8 @@ public class SqlTestData {
 
         Sql.with(dataSource).exec("DELETE FROM ip_address WHERE vm_id = ?", null, vm.vmId);
         Sql.with(dataSource).exec("DELETE FROM vm_user WHERE vm_id = ?", null, vm.vmId);
-        Sql.with(dataSource).exec("DELETE FROM vm_action where vm_id = ?", null, vm.vmId);
+        Sql.with(dataSource).exec("DELETE FROM vm_action WHERE vm_id = ?", null, vm.vmId);
+        Sql.with(dataSource).exec("DELETE FROM snapshot WHERE vm_id = ?", null, vm.vmId);
         Sql.with(dataSource).exec("DELETE FROM virtual_machine WHERE vm_id = ?", null, vmId);
         Sql.with(dataSource).exec("DELETE FROM user_project_privilege WHERE project_id = ?", null, vm.projectId);
         Sql.with(dataSource).exec("DELETE FROM project WHERE project_id = ?", null, vm.projectId);
@@ -51,6 +54,12 @@ public class SqlTestData {
     }
 
     public static void createActionWithDate(UUID vmId, ActionType actionType, Timestamp created, long userId, DataSource dataSource){
-        Sql.with(dataSource).exec("INSERT INTO vm_action (vm_id, action_type_id, created, vps4_user_id) VALUES (?, ?, ?, ?)", null, vmId, actionType.getActionTypeId(), created, userId);
+        Sql.with(dataSource).exec("INSERT INTO vm_action (vm_id, action_type_id, created, vps4_user_id) VALUES (?, ?, ?, ?)",
+                null, vmId, actionType.getActionTypeId(), created, userId);
+    }
+
+    public static void insertTestSnapshot(SnapshotWithDetails snapshot, DataSource dataSource) {
+        Sql.with(dataSource).exec("INSERT INTO snapshot (id, hfs_image_id, project_id, hfs_snapshot_id, vm_id, name, status) VALUES (?, ?, ?, ?, ?, ?, ?)",
+                null, snapshot.id, snapshot.hfsImageId, snapshot.projectId, snapshot.hfsSnapshotId, snapshot.vmId, snapshot.name, snapshot.status.getSnapshotStatusId());
     }
 }

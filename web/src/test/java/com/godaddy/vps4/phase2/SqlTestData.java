@@ -4,6 +4,7 @@ import java.util.UUID;
 
 import javax.sql.DataSource;
 
+import com.godaddy.vps4.snapshot.SnapshotWithDetails;
 import org.json.simple.JSONObject;
 
 import com.godaddy.hfs.jdbc.Sql;
@@ -66,9 +67,18 @@ public class SqlTestData {
         Sql.with(dataSource).exec("DELETE FROM ip_address i USING virtual_machine v WHERE i.vm_id = v.vm_id AND " + test_vm_condition, null);
         Sql.with(dataSource).exec("DELETE FROM vm_user u USING virtual_machine v WHERE u.vm_id = v.vm_id AND " + test_vm_condition, null);
         Sql.with(dataSource).exec("DELETE FROM vm_action a USING virtual_machine v WHERE a.vm_id = v.vm_id AND " + test_vm_condition, null);
+        Sql.with(dataSource).exec("DELETE FROM snapshot a USING virtual_machine v WHERE a.vm_id = v.vm_id AND " + test_vm_condition, null);
         Sql.with(dataSource).exec("DELETE FROM virtual_machine v USING project p WHERE v.project_id = p.project_id AND " + test_sgid_condition, null);
         Sql.with(dataSource).exec("DELETE FROM user_project_privilege uvp USING project p WHERE uvp.project_id = p.project_id AND " + test_sgid_condition, null);
         Sql.with(dataSource).exec("DELETE FROM project p WHERE " + test_sgid_condition, null);
     }
 
+    public static void insertTestSnapshot(SnapshotWithDetails snapshot, DataSource dataSource) {
+        Sql.with(dataSource).exec("INSERT INTO snapshot (id, hfs_image_id, project_id, hfs_snapshot_id, vm_id, name) VALUES (?, ?, ?, ?, ?, ?)",
+                null, snapshot.id, snapshot.hfsSnapshotId, snapshot.projectId, snapshot.hfsSnapshotId, snapshot.vmId, snapshot.name);
+    }
+
+    public static void invalidateTestSnapshot(UUID id, DataSource dataSource) {
+        Sql.with(dataSource).exec("UPDATE snapshot SET status = 5 WHERE id = '" + id + "'", null);
+    }
 }
