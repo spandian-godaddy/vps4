@@ -296,6 +296,8 @@ public class Vps4ProvisionVm extends ActionCommand<Vps4ProvisionVm.Request, Vps4
             checkRequest.label = ipAddress.address;
             checkRequest.interval = 1;
             checkRequest.type = CheckType.PING;
+            // TODO: Make this hfs callback useful - notify support?
+            checkRequest.webhookUrl = "http://www.godaddy.com";
 
             NodePingCheck check = monitoringService.createCheck(request.vmInfo.pingCheckAccountId, checkRequest);
             logger.debug("CheckId: {}", check.checkId);

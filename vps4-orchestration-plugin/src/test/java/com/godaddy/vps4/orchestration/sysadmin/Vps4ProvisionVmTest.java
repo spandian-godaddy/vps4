@@ -1,8 +1,10 @@
 package com.godaddy.vps4.orchestration.sysadmin;
 
 import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.anyLong;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -38,6 +40,8 @@ import gdg.hfs.vhfs.mailrelay.MailRelay;
 import gdg.hfs.vhfs.mailrelay.MailRelayService;
 import gdg.hfs.vhfs.mailrelay.MailRelayUpdate;
 import gdg.hfs.vhfs.network.IpAddress;
+import gdg.hfs.vhfs.nodeping.CreateCheckRequest;
+import gdg.hfs.vhfs.nodeping.NodePingCheck;
 import gdg.hfs.vhfs.nodeping.NodePingService;
 import gdg.hfs.vhfs.plesk.PleskService;
 import gdg.hfs.vhfs.vm.CreateVMWithFlavorRequest;
@@ -90,6 +94,7 @@ public class Vps4ProvisionVmTest {
     String username = "tester";
     UUID vmId = UUID.randomUUID();
     Image image;
+    ProvisionVmInfo vmInfo;
 
     @Before
     public void setupTest(){
@@ -111,12 +116,12 @@ public class Vps4ProvisionVmTest {
         hfsProvisionRequest.password = "sweeTT3st!";
         hfsProvisionRequest.zone = null;
 
-        ProvisionVmInfo vmInfo = new ProvisionVmInfo();
-        vmInfo.vmId = this.vmId;
-        vmInfo.image = image;
-        vmInfo.mailRelayQuota = 5000;
-        vmInfo.pingCheckAccountId = 0;
-        vmInfo.sgid = "";
+        this.vmInfo = new ProvisionVmInfo();
+        this.vmInfo.vmId = this.vmId;
+        this.vmInfo.image = image;
+        this.vmInfo.mailRelayQuota = 5000;
+        this.vmInfo.pingCheckAccountId = 0;
+        this.vmInfo.sgid = "";
 
         request = new Vps4ProvisionVm.Request();
         request.actionId = 12;
@@ -153,6 +158,23 @@ public class Vps4ProvisionVmTest {
         this.image.controlPanel = Image.ControlPanel.PLESK;
         command.execute(context, this.request);
         verify(vmUserService, times(1)).updateUserAdminAccess(username, vmId, false);
+    }
+
+    @Test
+    public void testProvisionVmDoesntConfigureNodePing() {
+        command.execute(context, this.request);
+        verify(nodePingService, never()).createCheck(anyLong(), any(CreateCheckRequest.class));
+    }
+
+    @Test
+    public void testProvisionVmConfiguresNodePing() {
+        NodePingCheck check = mock(NodePingCheck.class);
+        check.checkId = 1;
+        when(nodePingService.createCheck(anyLong(), any())).thenReturn(check);
+        this.vmInfo.pingCheckAccountId = 1;
+
+        command.execute(context, this.request);
+        verify(nodePingService, times(1)).createCheck(eq(1L), any(CreateCheckRequest.class));
     }
 
 }
