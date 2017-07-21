@@ -7,6 +7,8 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.UUID;
 
@@ -55,7 +57,7 @@ public class Vps4DestroyVmTest {
     MailRelayService mailRelayService = mock(MailRelayService.class);
     VmService vmService = mock(VmService.class);
     NodePingService nodePingService = mock(NodePingService.class);
-    
+
     Vps4DestroyVm command = new Vps4DestroyVm(actionService, networkService, virtualMachineService,
             creditService, vmService, cpanelService, nodePingService);
 
@@ -72,37 +74,38 @@ public class Vps4DestroyVmTest {
     });
 
     CommandContext context = new TestCommandContext(new GuiceCommandProvider(injector));
-    
+
     VirtualMachine vm;
     Vps4DestroyVm.Request request;
     IpAddress primaryIp;
     MailRelayUpdate mrUpdate;
-    
+
     @Before
     public void setupTest(){
         this.vm = new VirtualMachine(UUID.randomUUID(), 42, UUID.randomUUID(), 1,
                 null, "VM Name",
-                null, null, null, null, 
+                null, null, null, null,
                 "fake.host.name", AccountStatus.ACTIVE);
 
         request = new Vps4DestroyVm.Request();
         request.hfsVmId = 42;
         request.actionId = 12;
         request.pingCheckAccountId = 123;
-        
+
         VmAction vmAction = new VmAction();
         vmAction.state = VmAction.Status.COMPLETE;
-        
+
         AddressAction addressAction = new AddressAction();
         addressAction.status = AddressAction.Status.COMPLETE;
-        
-        this.primaryIp = new IpAddress(123, UUID.randomUUID(), "1.2.3.4", IpAddressType.PRIMARY, 5522L, null, null);
+
+        this.primaryIp = new IpAddress(123, UUID.randomUUID(), "1.2.3.4", IpAddressType.PRIMARY, 5522L,
+                Instant.now(), Instant.now().plus(24, ChronoUnit.HOURS));
         ArrayList<IpAddress> addresses = new ArrayList<IpAddress>();
         addresses.add(this.primaryIp);
-        
+
         mrUpdate = new MailRelayUpdate();
         mrUpdate.quota = 0;
-        
+
         when(virtualMachineService.getVirtualMachine(eq(this.request.hfsVmId))).thenReturn(this.vm);
         when(vmService.destroyVm(eq(this.request.hfsVmId))).thenReturn(vmAction);
         when(vmService.getVmAction(Mockito.anyLong(), Mockito.anyLong())).thenReturn(vmAction);
@@ -121,11 +124,11 @@ public class Vps4DestroyVmTest {
         command.execute(context, this.request);
         verify(pleskService, times(1)).licenseRelease(this.request.hfsVmId);
         verify(nodePingService, times(1)).deleteCheck(request.pingCheckAccountId, primaryIp.pingCheckId);
-        
+
         verifyMailRelay();
 
     }
-    
+
     private void verifyMailRelay() {
         ArgumentCaptor<MailRelayUpdate> argument = ArgumentCaptor.forClass(MailRelayUpdate.class);
         ArgumentCaptor<String> ipAddress = ArgumentCaptor.forClass(String.class);

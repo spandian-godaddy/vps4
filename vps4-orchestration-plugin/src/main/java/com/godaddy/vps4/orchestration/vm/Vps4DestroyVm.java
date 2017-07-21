@@ -1,9 +1,14 @@
 package com.godaddy.vps4.orchestration.vm;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 import javax.inject.Inject;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.godaddy.vps4.credit.CreditService;
 import com.godaddy.vps4.network.IpAddress;
@@ -29,6 +34,8 @@ import gdg.hfs.vhfs.vm.VmService;
         responseType=Vps4DestroyVm.Response.class
     )
 public class Vps4DestroyVm extends ActionCommand<Vps4DestroyVm.Request, Vps4DestroyVm.Response> {
+
+    private static final Logger logger = LoggerFactory.getLogger(Vps4DestroyVm.class);
 
     final NetworkService networkService;
 
@@ -64,10 +71,15 @@ public class Vps4DestroyVm extends ActionCommand<Vps4DestroyVm.Request, Vps4Dest
     public Response executeWithAction(CommandContext context, Vps4DestroyVm.Request request) {
         final long hfsVmId = request.hfsVmId;
         VirtualMachine vm = this.virtualMachineService.getVirtualMachine(hfsVmId);
+        logger.info("Destroying VM {} with hfsVmId {}", vm.vmId, hfsVmId);
 
         unlicenseCpanel(context, hfsVmId, vm.vmId);
 
         List<IpAddress> addresses = networkService.getVmIpAddresses(vm.vmId);
+        if (addresses != null){
+            // filter out all previously removed IPs
+            addresses = addresses.stream().filter(address -> address.validUntil.isAfter(Instant.now())).collect(Collectors.toList());
+        }
 
         for (IpAddress address : addresses) {
             if(address.pingCheckId != null ){
@@ -81,6 +93,7 @@ public class Vps4DestroyVm extends ActionCommand<Vps4DestroyVm.Request, Vps4Dest
 
         context.execute("DestroyVmHfs", DestroyVm.class, hfsVmId);
 
+        logger.info("Completed destroying VM {} with hfsVmId {}", vm.vmId, hfsVmId);
         return null;
     }
 

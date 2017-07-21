@@ -1,0 +1,1 @@
+INSERT INTO action_type(type_id, type) VALUES (16, 'ADD_IP'), (17, 'DESTROY_IP');

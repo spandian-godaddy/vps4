@@ -4,10 +4,14 @@ import java.util.UUID;
 
 import javax.sql.DataSource;
 
-import com.godaddy.vps4.snapshot.SnapshotWithDetails;
 import org.json.simple.JSONObject;
 
 import com.godaddy.hfs.jdbc.Sql;
+import com.godaddy.vps4.network.IpAddress;
+import com.godaddy.vps4.network.IpAddress.IpAddressType;
+import com.godaddy.vps4.network.NetworkService;
+import com.godaddy.vps4.network.jdbc.JdbcNetworkService;
+import com.godaddy.vps4.snapshot.SnapshotWithDetails;
 import com.godaddy.vps4.vm.Action;
 import com.godaddy.vps4.vm.ActionService;
 import com.godaddy.vps4.vm.ActionType;
@@ -43,6 +47,12 @@ public class SqlTestData {
         VirtualMachine virtualMachine = virtualMachineService.provisionVirtualMachine(params);
         virtualMachineService.addHfsVmIdToVirtualMachine(virtualMachine.vmId, hfsVmId);
         return virtualMachineService.getVirtualMachine(virtualMachine.vmId);
+    }
+
+    public static IpAddress insertTestIp(long ipAddressId, UUID vmId, String ipAddress, IpAddressType ipAddressType, DataSource dataSource){
+        NetworkService networkService = new JdbcNetworkService(dataSource);
+        networkService.createIpAddress(ipAddressId, vmId, ipAddress, ipAddressType);
+        return networkService.getIpAddress(ipAddressId);
     }
 
     public static Action insertTestVmAction(UUID commandId, UUID vmId, ActionType actionType, DataSource dataSource) {
