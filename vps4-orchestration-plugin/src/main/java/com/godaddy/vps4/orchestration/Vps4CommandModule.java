@@ -1,6 +1,6 @@
 package com.godaddy.vps4.orchestration;
 
-import com.godaddy.vps4.orchestration.sysadmin.Vps4AddAdminUser;
+import com.godaddy.vps4.orchestration.sysadmin.Vps4AddSupportUser;
 import com.godaddy.vps4.orchestration.sysadmin.Vps4RemoveUser;
 import com.godaddy.vps4.orchestration.sysadmin.Vps4SetHostname;
 import com.godaddy.vps4.orchestration.sysadmin.Vps4SetPassword;
@@ -32,7 +32,7 @@ public class Vps4CommandModule extends AbstractModule {
         bind(Vps4DestroyIpAddress.class);
         bind(Vps4DestroyIpAddressAction.class);
         bind(Vps4AddIpAddress.class);
-        bind(Vps4AddAdminUser.class);
+        bind(Vps4AddSupportUser.class);
         bind(Vps4RemoveUser.class);
     }
 }

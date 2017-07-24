@@ -8,22 +8,23 @@ import com.godaddy.vps4.orchestration.hfs.sysadmin.AddUser;
 import com.godaddy.vps4.orchestration.hfs.sysadmin.ToggleAdmin;
 import com.godaddy.vps4.vm.ActionService;
 import com.godaddy.vps4.vm.VmUserService;
+import com.godaddy.vps4.vm.VmUserType;
 import com.google.inject.Inject;
 
 import gdg.hfs.orchestration.CommandContext;
 import gdg.hfs.orchestration.CommandMetadata;
 
 @CommandMetadata(
-        name = "Vps4AddAdminUser",
-        requestType = Vps4AddAdminUser.Request.class,
+        name = "Vps4AddSupportUser",
+        requestType = Vps4AddSupportUser.Request.class,
         responseType = Void.class
 )
-public class Vps4AddAdminUser extends ActionCommand<Vps4AddAdminUser.Request, Void> {
+public class Vps4AddSupportUser extends ActionCommand<Vps4AddSupportUser.Request, Void> {
 
     private final VmUserService vmUserService;
 
     @Inject
-    public Vps4AddAdminUser(ActionService actionService, VmUserService vmUserService) {
+    public Vps4AddSupportUser(ActionService actionService, VmUserService vmUserService) {
         super(actionService);
         this.vmUserService = vmUserService;
     }
@@ -56,7 +57,7 @@ public class Vps4AddAdminUser extends ActionCommand<Vps4AddAdminUser.Request, Vo
         toggleAdminRequest.enabled = true;
         context.execute(ToggleAdmin.class, toggleAdminRequest);
 
-        vmUserService.createUser(req.username, req.vmId, true);
+        vmUserService.createUser(req.username, req.vmId, true, VmUserType.SUPPORT);
         // TODO: Add scheduled task to remove this user when scheduler is available.
 
         return null;

@@ -11,6 +11,7 @@ import java.util.UUID;
 
 import javax.sql.DataSource;
 
+import com.godaddy.vps4.vm.*;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -19,10 +20,6 @@ import com.godaddy.vps4.jdbc.DatabaseModule;
 import com.godaddy.vps4.phase2.SqlTestData;
 import com.godaddy.vps4.project.ProjectService;
 import com.godaddy.vps4.project.jdbc.JdbcProjectService;
-import com.godaddy.vps4.vm.VirtualMachine;
-import com.godaddy.vps4.vm.VirtualMachineService;
-import com.godaddy.vps4.vm.VmUser;
-import com.godaddy.vps4.vm.VmUserService;
 import com.godaddy.vps4.vm.jdbc.JdbcVirtualMachineService;
 import com.godaddy.vps4.vm.jdbc.JdbcVmUserService;
 import com.google.inject.Guice;
@@ -52,13 +49,14 @@ public class JdbcVmUserServiceTest {
     @Test
     public void testCreateUser() throws SQLException {
         VmUserService service = new JdbcVmUserService(dataSource);
-        service.createUser(username, vm.vmId, true);
+        service.createUser(username, vm.vmId, true, VmUserType.CUSTOMER);
         List<VmUser> ul = service.listUsers(vm.vmId);
         assertEquals(1, ul.size());
         VmUser usr = ul.get(0);
         assertEquals(username, usr.username);
         assertEquals(vm.vmId, usr.vmId);
         assertTrue(usr.adminEnabled);
+        assertEquals(VmUserType.CUSTOMER, usr.vmUserType);
     }
 
     @Test

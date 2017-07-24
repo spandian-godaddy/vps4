@@ -11,6 +11,7 @@ import javax.sql.DataSource;
 import com.godaddy.hfs.jdbc.Sql;
 import com.godaddy.vps4.vm.VmUser;
 import com.godaddy.vps4.vm.VmUserService;
+import com.godaddy.vps4.vm.VmUserType;
 
 public class JdbcVmUserService implements VmUserService{
     private final DataSource dataSource;
@@ -21,17 +22,21 @@ public class JdbcVmUserService implements VmUserService{
     }
 
     @Override
+    public void createUser(String username, UUID vmId, boolean adminEnabled, VmUserType vmUserType) {
+        Sql.with(dataSource).exec("INSERT INTO vm_user (name, admin_enabled, vm_id, vm_user_type_id) VALUES (?, ?, ?, ?)",
+                null, username, adminEnabled, vmId, vmUserType.getVmUserTypeId());
+    }
+
+    @Override
     public void createUser(String username, UUID vmId, boolean adminEnabled){
-        Sql.with(dataSource).exec("SELECT * from user_create(?,?,?)",
-                                    null,
-                                    username, vmId, adminEnabled);
+        Sql.with(dataSource).exec("INSERT INTO vm_user (name, admin_enabled, vm_id) VALUES (?, ?, ?)",
+                null, username, adminEnabled, vmId);
     }
 
     @Override
     public void createUser(String username, UUID vmId){
-        Sql.with(dataSource).exec("SELECT * from user_create(?,?,?)",
-                                    null,
-                                    username, vmId, false);
+        Sql.with(dataSource).exec("INSERT INTO vm_user (name, admin_enabled, vm_id) VALUES (?, ?, ?)",
+                null, username, false, vmId);
     }
 
     @Override
@@ -42,9 +47,17 @@ public class JdbcVmUserService implements VmUserService{
     @Override
     public List<VmUser> listUsers(UUID vmId){
         return Sql.with(dataSource)
-                .exec("SELECT name, vm_id, admin_enabled"
-                        + " FROM vm_user"
-                        + " WHERE vm_id=?", Sql.listOf(this::mapUser), vmId);
+                .exec("SELECT u.name, u.vm_id, u.admin_enabled, ut.type_name"
+                        + " FROM vm_user u JOIN vm_user_type ut ON u.vm_user_type_id = ut.type_id"
+                        + " WHERE u.vm_id=?", Sql.listOf(this::mapUser), vmId);
+    }
+
+    @Override
+    public VmUser getSupportUser(UUID vmId) {
+        return Sql.with(dataSource)
+                .exec("SELECT u.name, u.vm_id, u.admin_enabled, ut.type_name"
+                        + " FROM vm_user u JOIN vm_user_type ut ON u.vm_user_type_id = ut.type_id"
+                        + " WHERE ut.type_name='SUPPORT' AND u.vm_id=?", Sql.nextOrNull(this::mapUser), vmId);
     }
 
     @Override
@@ -54,15 +67,17 @@ public class JdbcVmUserService implements VmUserService{
 
     protected VmUser mapUser(ResultSet rs) throws SQLException{
         return new VmUser(rs.getString("name"),
-                        UUID.fromString(rs.getString("vm_id")), rs.getBoolean("admin_enabled"));
+                UUID.fromString(rs.getString("vm_id")),
+                rs.getBoolean("admin_enabled"),
+                VmUserType.valueOf(rs.getString("type_name")));
     }
 
     @Override
     public boolean userExists(String username, UUID vmId){
         List<VmUser> users = Sql.with(dataSource)
-                .exec("SELECT name, vm_id, admin_enabled"
-                        + " FROM vm_user"
-                        + " WHERE vm_id=? AND name=?", Sql.listOf(this::mapUser), vmId, username);
+                .exec("SELECT u.name, u.vm_id, u.admin_enabled, ut.type_name"
+                        + " FROM vm_user u JOIN vm_user_type ut ON u.vm_user_type_id = ut.type_id"
+                        + " WHERE u.vm_id=? AND u.name=?", Sql.listOf(this::mapUser), vmId, username);
         return users.size() > 0;
     }
 

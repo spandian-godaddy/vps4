@@ -11,6 +11,7 @@ import static org.mockito.Mockito.when;
 
 import java.util.UUID;
 
+import com.godaddy.vps4.vm.VmUserType;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -21,28 +22,28 @@ import com.godaddy.vps4.vm.VmUserService;
 
 import gdg.hfs.orchestration.CommandContext;
 
-public class Vps4AddAdminUserTest {
+public class Vps4AddSupportUserTest {
 
     ActionService actionService;
     VmUserService vmUserService;
-    Vps4AddAdminUser command;
+    Vps4AddSupportUser command;
     CommandContext context;
 
     @Before
     public void setup() {
         actionService = mock(ActionService.class);
         vmUserService = mock(VmUserService.class);
-        command = new Vps4AddAdminUser(actionService, vmUserService);
+        command = new Vps4AddSupportUser(actionService, vmUserService);
         context = mock(CommandContext.class);
         when(context.getId()).thenReturn(UUID.randomUUID());
     }
 
     @Test
-    public void testVps4AddAdminUser() {
+    public void testVps4AddSupportUser() {
         doReturn(null).when(context).execute(eq(AddUser.class), anyObject());
         doReturn(null).when(context).execute(eq(ToggleAdmin.class), anyObject());
 
-        Vps4AddAdminUser.Request req = new Vps4AddAdminUser.Request();
+        Vps4AddSupportUser.Request req = new Vps4AddSupportUser.Request();
         req.hfsVmId = 123;
         req.vmId = UUID.randomUUID();
         req.username = "testuser";
@@ -54,6 +55,6 @@ public class Vps4AddAdminUserTest {
 
         verify(context, times(1)).execute(eq(AddUser.class), anyObject());
         verify(context, times(1)).execute(eq(ToggleAdmin.class), anyObject());
-        verify(vmUserService, times(1)).createUser(req.username, req.vmId, true);
+        verify(vmUserService, times(1)).createUser(req.username, req.vmId, true, VmUserType.SUPPORT);
     }
 }

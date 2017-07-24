@@ -1,26 +1,13 @@
 package com.godaddy.vps4.phase2;
 
-import java.lang.reflect.Method;
-import java.util.UUID;
-
-import javax.inject.Inject;
-import javax.sql.DataSource;
-
-import org.junit.After;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
-import org.mockito.Mockito;
-
 import com.godaddy.vps4.credit.CreditService;
 import com.godaddy.vps4.jdbc.DatabaseModule;
-import com.godaddy.vps4.security.GDUserMock;
-import com.godaddy.vps4.security.SecurityModule;
-import com.godaddy.vps4.security.Vps4User;
-import com.godaddy.vps4.security.Vps4UserService;
-import com.godaddy.vps4.vm.ActionType;
-import com.godaddy.vps4.vm.VirtualMachine;
-import com.godaddy.vps4.vm.VmModule;
+import com.godaddy.vps4.security.*;
+import com.godaddy.vps4.security.jdbc.JdbcPrivilegeService;
+import com.godaddy.vps4.vm.*;
+import com.godaddy.vps4.vm.jdbc.JdbcActionService;
+import com.godaddy.vps4.vm.jdbc.JdbcImageService;
+import com.godaddy.vps4.vm.jdbc.JdbcVirtualMachineService;
 import com.godaddy.vps4.web.security.AdminOnly;
 import com.godaddy.vps4.web.security.GDUser;
 import com.godaddy.vps4.web.vm.ActionWithDetails;
@@ -29,11 +16,20 @@ import com.google.inject.AbstractModule;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
 import com.google.inject.Provides;
-
 import gdg.hfs.orchestration.CommandGroupSpec;
 import gdg.hfs.orchestration.CommandService;
 import gdg.hfs.orchestration.CommandState;
 import gdg.hfs.vhfs.vm.VmService;
+import org.junit.After;
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.Test;
+import org.mockito.Mockito;
+
+import javax.inject.Inject;
+import javax.sql.DataSource;
+import java.lang.reflect.Method;
+import java.util.UUID;
 
 public class VmSupportUserResourceTest {
 
@@ -43,12 +39,14 @@ public class VmSupportUserResourceTest {
     @Inject
     DataSource dataSource;
 
+    VmUserService vmUserService = Mockito.mock(VmUserService.class);
+
     private GDUser user;
+    private VmUser supportUser;
 
     private Injector injector = Guice.createInjector(
             new DatabaseModule(),
             new SecurityModule(),
-            new VmModule(),
             new AbstractModule() {
 
                 @Override
@@ -58,6 +56,9 @@ public class VmSupportUserResourceTest {
 
                     CreditService creditService = Mockito.mock(CreditService.class);
                     bind(CreditService.class).toInstance(creditService);
+
+                    bind(VmUserService.class).toInstance(vmUserService);
+
                     // Command Service
                     CommandService commandService = Mockito.mock(CommandService.class);
                     CommandState commandState = new CommandState();
@@ -65,6 +66,11 @@ public class VmSupportUserResourceTest {
                     Mockito.when(commandService.executeCommand(Mockito.any(CommandGroupSpec.class)))
                             .thenReturn(commandState);
                     bind(CommandService.class).toInstance(commandService);
+
+                    bind(ActionService.class).to(JdbcActionService.class);
+                    bind(ImageService.class).to(JdbcImageService.class);
+                    bind(PrivilegeService.class).to(JdbcPrivilegeService.class); // TODO break out to security module
+                    bind(VirtualMachineService.class).to(JdbcVirtualMachineService.class);
                 }
 
                 @Provides
@@ -86,6 +92,7 @@ public class VmSupportUserResourceTest {
     }
 
     private VmSupportUserResource getVmSupportUserResource() {
+        Mockito.when(vmUserService.getSupportUser(Mockito.any(UUID.class))).thenReturn(supportUser);
         return injector.getInstance(VmSupportUserResource.class);
     }
 
@@ -97,17 +104,18 @@ public class VmSupportUserResourceTest {
     }
 
     @Test
-    public void testAddAdminUserAdminOnly() throws NoSuchMethodException {
-        Method method = VmSupportUserResource.class.getMethod("addAdminUser", UUID.class);
+    public void testAddSupportUserAdminOnly() throws NoSuchMethodException {
+        Method method = VmSupportUserResource.class.getMethod("addSupportUser", UUID.class);
         Assert.assertTrue(method.isAnnotationPresent(AdminOnly.class));
     }
 
     @Test
-    public void testAddAdminUser() {
+    public void testAddSupportUser() {
         VirtualMachine vm = createTestVm();
+        supportUser = null;
 
-        ActionWithDetails action = getVmSupportUserResource().addAdminUser(vm.vmId);
-        Assert.assertEquals(action.type, ActionType.ADD_ADMIN_USER);
+        ActionWithDetails action = getVmSupportUserResource().addSupportUser(vm.vmId);
+        Assert.assertEquals(action.type, ActionType.ADD_SUPPORT_USER);
         Assert.assertNotNull(action.commandId);
         Assert.assertNotNull(action.orchestrationCommand);
         Assert.assertNotNull(action.message);
@@ -116,18 +124,32 @@ public class VmSupportUserResourceTest {
     }
 
     @Test
-    public void testRemoveAdminUserAdminOnly() throws NoSuchMethodException {
-        Method method = VmSupportUserResource.class.getMethod("removeAdminUser", UUID.class, String.class);
+    public void testAddSecondSupportUser() {
+        VirtualMachine vm = createTestVm();
+        supportUser = new VmUser("random-username", UUID.randomUUID(), true, VmUserType.SUPPORT);
+
+        ActionWithDetails action = getVmSupportUserResource().addSupportUser(vm.vmId);
+        Assert.assertEquals(action.type, ActionType.SET_PASSWORD);
+        Assert.assertNotNull(action.commandId);
+        Assert.assertNotNull(action.orchestrationCommand);
+        Assert.assertNotNull(action.message);
+        Assert.assertTrue(action.message.contains("Username"));
+        Assert.assertTrue(action.message.contains("Password"));
+    }
+
+    @Test
+    public void testRemoveSupportUserAdminOnly() throws NoSuchMethodException {
+        Method method = VmSupportUserResource.class.getMethod("removeSupportUser", UUID.class);
         Assert.assertTrue(method.isAnnotationPresent(AdminOnly.class));
     }
 
     @Test
-    public void testRemoveAdminUser() {
+    public void testRemoveSupportUser() {
         VirtualMachine vm = createTestVm();
+        supportUser = new VmUser("random-username", UUID.randomUUID(), true, VmUserType.SUPPORT);
 
-        ActionWithDetails action = getVmSupportUserResource()
-                .removeAdminUser(vm.vmId, "random-username");
-        Assert.assertEquals(action.type, ActionType.DELETE_ADMIN_USER);
+        ActionWithDetails action = getVmSupportUserResource().removeSupportUser(vm.vmId);
+        Assert.assertEquals(action.type, ActionType.REMOVE_SUPPORT_USER);
         Assert.assertNotNull(action.commandId);
         Assert.assertNotNull(action.orchestrationCommand);
         Assert.assertNull(action.message);
@@ -135,5 +157,4 @@ public class VmSupportUserResourceTest {
         // Test that class overrides toString
         Assert.assertTrue(action.toString().contains("ActionWithDetails"));
     }
-
 }

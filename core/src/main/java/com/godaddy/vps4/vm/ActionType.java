@@ -17,8 +17,8 @@ public enum ActionType {
     SET_PASSWORD(8),
     SET_HOSTNAME(9),
     UPDATE_SERVER(10),
-    ADD_ADMIN_USER(11),
-    DELETE_ADMIN_USER(12),
+    ADD_SUPPORT_USER(11),
+    REMOVE_SUPPORT_USER(12),
     ADD_IP(16),
     DESTROY_IP(17);
 
