@@ -1,5 +1,9 @@
 package com.godaddy.vps4.web.mailrelay;
 
+import java.time.Instant;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 import java.util.List;
 import java.util.UUID;
 
@@ -8,16 +12,15 @@ import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
 
 import com.godaddy.vps4.mailrelay.MailRelayService;
 import com.godaddy.vps4.network.IpAddress;
 import com.godaddy.vps4.network.NetworkService;
-import com.godaddy.vps4.security.PrivilegeService;
-import com.godaddy.vps4.security.Vps4User;
-import com.godaddy.vps4.security.Vps4UserService;
+import com.godaddy.vps4.vm.VirtualMachine;
 import com.godaddy.vps4.web.Vps4Api;
-import com.godaddy.vps4.web.security.GDUser;
+import com.godaddy.vps4.web.vm.VmResource;
 import com.google.inject.Inject;
 
 import gdg.hfs.vhfs.mailrelay.MailRelay;
@@ -34,26 +37,16 @@ import io.swagger.annotations.ApiParam;
 @Consumes(MediaType.APPLICATION_JSON)
 public class VmMailRelayResource {
 
-    private final GDUser user;
     private final MailRelayService mailRelayService;
     private final NetworkService networkService;
-    private final PrivilegeService privilegeService;
-    private final Vps4UserService vps4UserService;
+    private final VmResource vmResource;
 
     @Inject
-    public VmMailRelayResource(GDUser user, MailRelayService mailRelayService,
-            NetworkService networkService, PrivilegeService privilegeService,
-            Vps4UserService vps4UserService) {
-        this.user = user;
+    public VmMailRelayResource(MailRelayService mailRelayService,
+            NetworkService networkService, VmResource vmResource) {
         this.mailRelayService = mailRelayService;
         this.networkService = networkService;
-        this.privilegeService = privilegeService;
-        this.vps4UserService = vps4UserService;
-    }
-
-    private void verifyUserPrivilege(UUID vmId) {
-        Vps4User vps4User = vps4UserService.getOrCreateUserForShopper(user.getShopperId());
-        privilegeService.requireAnyPrivilegeToVmId(vps4User, vmId);
+        this.vmResource = vmResource;
     }
 
     @GET
@@ -62,22 +55,34 @@ public class VmMailRelayResource {
     public MailRelay getCurrentMailRelayUsage(
             @ApiParam(value = "The ID of the selected server", required = true) @PathParam("vmId") UUID vmId) {
 
-        if (user.isShopper())
-            verifyUserPrivilege(vmId);
+        VirtualMachine vm = vmResource.getVm(vmId);
         IpAddress ipAddress = networkService.getVmPrimaryAddress(vmId);
         return mailRelayService.getMailRelay(ipAddress.ipAddress);
     }
 
     @GET
     @Path("{vmId}/mailRelay/history")
-    @ApiOperation(value = "Get past mail relay use for the selected server", notes = "Get past mail relay use for the selected server")
+    @ApiOperation(value = "Get past mail relay use for the selected server.  Ordered by date descending.", notes = "Get past mail relay use for the selected server.  Ordered by date descending.")
     public List<MailRelayHistory> getMailRelayHistory(
-            @ApiParam(value = "The ID of the selected server", required = true) @PathParam("vmId") UUID vmId) {
-
-        if (user.isShopper())
-            verifyUserPrivilege(vmId);
+            @ApiParam(value = "The ID of the selected server", required = true) @PathParam("vmId") UUID vmId,
+            @ApiParam(value = "The number of data points to return", defaultValue = "30", required = false) @QueryParam("daysToReturn") int daysToReturn) {
+        VirtualMachine vm = vmResource.getVm(vmId);
         IpAddress ipAddress = networkService.getVmPrimaryAddress(vmId);
-        return mailRelayService.getMailRelayHistory(ipAddress.ipAddress);
+        LocalDate startDate = getLocalDateFromInstant(vm.validOn);
+        List<MailRelayHistory> history;
+        if(daysToReturn > 0){
+            history = mailRelayService.getMailRelayHistory(ipAddress.ipAddress, startDate, daysToReturn);
+        }
+        else{
+            history = mailRelayService.getMailRelayHistory(ipAddress.ipAddress, startDate);
+        }
+        return history;
+    }
+
+    private LocalDate getLocalDateFromInstant(Instant i){
+        LocalDateTime ldt = LocalDateTime.ofInstant(i, ZoneOffset.UTC);
+        return LocalDate.of(ldt.getYear(), ldt.getMonth(), ldt.getDayOfMonth());
+
     }
 
 }

@@ -1,5 +1,8 @@
 package com.godaddy.vps4.phase2;
 
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 import java.util.UUID;
 
 import javax.inject.Inject;
@@ -10,6 +13,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mockito;
 
+import com.godaddy.vps4.credit.CreditService;
 import com.godaddy.vps4.jdbc.DatabaseModule;
 import com.godaddy.vps4.mailrelay.MailRelayService;
 import com.godaddy.vps4.network.IpAddress.IpAddressType;
@@ -28,6 +32,12 @@ import com.google.inject.Guice;
 import com.google.inject.Injector;
 import com.google.inject.Provides;
 
+import gdg.hfs.orchestration.CommandGroupSpec;
+import gdg.hfs.orchestration.CommandService;
+import gdg.hfs.orchestration.CommandState;
+import gdg.hfs.vhfs.vm.Vm;
+import gdg.hfs.vhfs.vm.VmService;
+
 public class MailRelayResourceTest {
 
     @Inject Vps4UserService userService;
@@ -37,6 +47,10 @@ public class MailRelayResourceTest {
 
     private GDUser user;
     private VirtualMachine vm;
+
+    private Vm hfsVm;
+    private long hfsVmId = 98765;
+
 
     private Injector injector = Guice.createInjector(
             new DatabaseModule(),
@@ -48,6 +62,23 @@ public class MailRelayResourceTest {
                 protected void configure() {
                     mailRelayService = Mockito.mock(MailRelayService.class);
                     bind(MailRelayService.class).toInstance(mailRelayService);
+
+                    CreditService creditService = Mockito.mock(CreditService.class);
+                    bind(CreditService.class).toInstance(creditService);
+
+                    CommandService commandService = Mockito.mock(CommandService.class);
+                    CommandState commandState = new CommandState();
+                    commandState.commandId = UUID.randomUUID();
+                    Mockito.when(commandService.executeCommand(Mockito.any(CommandGroupSpec.class)))
+                            .thenReturn(commandState);
+                    bind(CommandService.class).toInstance(commandService);
+
+                    hfsVm = new Vm();
+                    hfsVm.status = "ACTIVE";
+                    hfsVm.vmId = hfsVmId;
+                    VmService vmService = Mockito.mock(VmService.class);
+                    Mockito.when(vmService.getVm(Mockito.anyLong())).thenReturn(hfsVm);
+                    bind(VmService.class).toInstance(vmService);
                 }
 
                 @Provides
@@ -101,18 +132,38 @@ public class MailRelayResourceTest {
     // === getMailRelayHistory Tests ===
     @Test
     public void testShopperGetMailRelayHistory(){
-        getMailRelayResource().getMailRelayHistory(vm.vmId);
+        getMailRelayResource().getMailRelayHistory(vm.vmId, 0);
     }
 
     @Test(expected=AuthorizationException.class)
     public void testUnauthorizedShopperGetMailRelayHistory(){
         user = GDUserMock.createShopper("shopperX");
-        getMailRelayResource().getMailRelayHistory(vm.vmId);
+        getMailRelayResource().getMailRelayHistory(vm.vmId, 0);
     }
 
     @Test
     public void testAdminGetMailRelayHistory(){
         user = GDUserMock.createAdmin();
-        getMailRelayResource().getMailRelayHistory(vm.vmId);
+        getMailRelayResource().getMailRelayHistory(vm.vmId, 0);
     }
+
+    @Test
+    public void testAdminGetMailRelayHistory0DaysToReturnReturnsAll(){
+        user = GDUserMock.createAdmin();
+        getMailRelayResource().getMailRelayHistory(vm.vmId, 0);
+        LocalDateTime ldt = LocalDateTime.ofInstant(vm.validOn, ZoneOffset.UTC);
+        LocalDate startTime = LocalDate.of(ldt.getYear(), ldt.getMonth(), ldt.getDayOfMonth());
+        Mockito.verify(mailRelayService, Mockito.times(1)).getMailRelayHistory("127.0.0.1", startTime);
+    }
+
+    @Test
+    public void testAdminGetMailRelayHistoryDefineDaysToReturn(){
+        user = GDUserMock.createAdmin();
+        getMailRelayResource().getMailRelayHistory(vm.vmId, 30);
+        LocalDateTime ldt = LocalDateTime.ofInstant(vm.validOn, ZoneOffset.UTC);
+        LocalDate startTime = LocalDate.of(ldt.getYear(), ldt.getMonth(), ldt.getDayOfMonth());
+        Mockito.verify(mailRelayService, Mockito.times(1)).getMailRelayHistory("127.0.0.1", startTime, 30);
+    }
+
+
 }
