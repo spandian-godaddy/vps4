@@ -13,9 +13,7 @@ import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
-import org.mockito.Mockito;
 
-import com.godaddy.vps4.credit.CreditService;
 import com.godaddy.vps4.jdbc.DatabaseModule;
 import com.godaddy.vps4.security.GDUserMock;
 import com.godaddy.vps4.security.SecurityModule;
@@ -39,20 +37,11 @@ import com.google.inject.Guice;
 import com.google.inject.Injector;
 import com.google.inject.Provides;
 
-import gdg.hfs.orchestration.CommandGroupSpec;
-import gdg.hfs.orchestration.CommandService;
-import gdg.hfs.orchestration.CommandState;
-import gdg.hfs.vhfs.vm.Vm;
-import gdg.hfs.vhfs.vm.VmService;
-
 public class SnapshotResourceTest {
     @Inject Vps4UserService userService;
     @Inject DataSource dataSource;
 
     private GDUser user;
-    private CreditService creditService = Mockito.mock(CreditService.class);
-    private Vm hfsVm;
-    private long hfsVmId = 98765;
 
     private Injector injector = Guice.createInjector(
             new DatabaseModule(),
@@ -64,23 +53,6 @@ public class SnapshotResourceTest {
 
                 @Override
                 public void configure() {
-                    bind(CreditService.class).toInstance(creditService);
-
-                    // HFS services
-                    hfsVm = new Vm();
-                    hfsVm.status = "ACTIVE";
-                    hfsVm.vmId = hfsVmId;
-                    VmService vmService = Mockito.mock(VmService.class);
-                    Mockito.when(vmService.getVm(Mockito.anyLong())).thenReturn(hfsVm);
-                    bind(VmService.class).toInstance(vmService);
-
-                    // Command Service
-                    CommandService commandService = Mockito.mock(CommandService.class);
-                    CommandState commandState = new CommandState();
-                    commandState.commandId = UUID.randomUUID();
-                    Mockito.when(commandService.executeCommand(Mockito.any(CommandGroupSpec.class)))
-                            .thenReturn(commandState);
-                    bind(CommandService.class).toInstance(commandService);
                 }
 
                 @Provides
