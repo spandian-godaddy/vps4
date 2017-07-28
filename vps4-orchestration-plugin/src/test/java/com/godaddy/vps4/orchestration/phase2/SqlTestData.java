@@ -15,11 +15,11 @@ import java.util.UUID;
 
 
 public class SqlTestData {
-    public final static String TEST_SHOPPER_ID = "testShopperId";
-    public final static String TEST_PROJECT_NAME = "testProject";
-    public final static String TEST_VM_NAME = "testVirtualMachine";
-    public final static String TEST_SNAPSHOT_NAME = "test-snapshot";
-    public final static String TEST_SGID = "vps4-testing-";
+    public final static String TEST_SHOPPER_ID = "orchtestShopperId";
+    public final static String TEST_PROJECT_NAME = "orchtestProject";
+    public final static String TEST_VM_NAME = "orchtestVirtualMachine";
+    public final static String TEST_SNAPSHOT_NAME = "orch-snapshot";
+    public final static String TEST_SGID = "orch-vps4-testing-";
 
     public static Vps4User insertUser(Vps4UserService userService) {
         return userService.getOrCreateUserForShopper(TEST_SHOPPER_ID);
