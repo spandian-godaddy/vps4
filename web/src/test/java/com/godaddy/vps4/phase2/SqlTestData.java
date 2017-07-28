@@ -24,6 +24,7 @@ import com.godaddy.vps4.vm.jdbc.JdbcVirtualMachineService;
 
 public class SqlTestData {
     public final static String TEST_VM_NAME = "testVirtualMachine";
+    public final static String TEST_SNAPSHOT_NAME = "test-snapshot";
     public final static String TEST_VM_SGID = "vps4-testing-";
 
     public static long getNextHfsVmId(DataSource dataSource) {
@@ -72,11 +73,13 @@ public class SqlTestData {
 
     public static void cleanupSqlTestData(DataSource dataSource) {
         String test_vm_condition = "v.name='" + TEST_VM_NAME + "'";
+        String test_snapshot_condition = "s.name='" + TEST_SNAPSHOT_NAME + "'";
         String test_sgid_condition = "p.vhfs_sgid like '" + TEST_VM_SGID + "%'";
 
         Sql.with(dataSource).exec("DELETE FROM ip_address i USING virtual_machine v WHERE i.vm_id = v.vm_id AND " + test_vm_condition, null);
         Sql.with(dataSource).exec("DELETE FROM vm_user u USING virtual_machine v WHERE u.vm_id = v.vm_id AND " + test_vm_condition, null);
         Sql.with(dataSource).exec("DELETE FROM vm_action a USING virtual_machine v WHERE a.vm_id = v.vm_id AND " + test_vm_condition, null);
+        Sql.with(dataSource).exec("DELETE FROM snapshot_action a USING snapshot s WHERE a.snapshot_id = s.id AND " + test_snapshot_condition, null);
         Sql.with(dataSource).exec("DELETE FROM snapshot a USING virtual_machine v WHERE a.vm_id = v.vm_id AND " + test_vm_condition, null);
         Sql.with(dataSource).exec("DELETE FROM virtual_machine v USING project p WHERE v.project_id = p.project_id AND " + test_sgid_condition, null);
         Sql.with(dataSource).exec("DELETE FROM user_project_privilege uvp USING project p WHERE uvp.project_id = p.project_id AND " + test_sgid_condition, null);
@@ -90,5 +93,15 @@ public class SqlTestData {
 
     public static void invalidateTestSnapshot(UUID id, DataSource dataSource) {
         Sql.with(dataSource).exec("UPDATE snapshot SET status = 5 WHERE id = '" + id + "'", null);
+    }
+
+    public static void cleanupTestSnapshot(DataSource dataSource, String snapshotName) {
+        String test_snapshot_condition = "s.name='" + snapshotName + "'";
+        String test_vm_condition = "v.name='" + TEST_VM_NAME + "'";
+
+        Sql.with(dataSource).exec("DELETE FROM snapshot_action a USING snapshot s WHERE a.snapshot_id = s.id AND "
+                + test_snapshot_condition, null);
+        Sql.with(dataSource).exec("DELETE FROM snapshot a USING virtual_machine v WHERE a.vm_id = v.vm_id AND "
+                + test_vm_condition + " AND " + test_snapshot_condition, null);
     }
 }

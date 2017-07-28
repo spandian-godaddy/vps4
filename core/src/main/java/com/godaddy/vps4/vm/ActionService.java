@@ -8,17 +8,25 @@ import com.godaddy.vps4.jdbc.ResultSubset;
 
 public interface ActionService {
 
-    long createAction(UUID vmId, ActionType actionType, String request, long userId);
+    long createAction(UUID resourceId, ActionType actionType, String request, long userId);
 
     Action getAction(long actionId);
 
     Action getVmAction(UUID vmId, long actionId);
 
-    ResultSubset<Action> getActions(UUID vmId, long limit, long offset);
+    default Action getSnapshotAction(UUID snapshotId, long actionId) {
+        throw new UnsupportedOperationException("Not implemented, yet");
+    }
 
-    ResultSubset<Action> getActions(UUID vmId, long limit, long offset, List<String> statusList);
+    default List<Action> getActions(UUID resourceId) {
+        throw new UnsupportedOperationException("Not implemented, yet");
+    }
 
-    ResultSubset<Action> getActions(UUID vmId, long limit, long offset, List<String> statusList, Date beginDate, Date endDate);
+    ResultSubset<Action> getActions(UUID resourceId, long limit, long offset);
+
+    ResultSubset<Action> getActions(UUID resourceId, long limit, long offset, List<String> statusList);
+
+    ResultSubset<Action> getActions(UUID resourceId, long limit, long offset, List<String> statusList, Date beginDate, Date endDate);
 
     void tagWithCommand(long actionId, UUID commandId);
 

@@ -16,6 +16,8 @@ import javax.sql.DataSource;
 import javax.ws.rs.NotFoundException;
 import javax.ws.rs.core.UriInfo;
 
+import com.godaddy.vps4.vm.Action;
+import com.godaddy.vps4.web.vm.VmAction;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -27,13 +29,12 @@ import com.godaddy.vps4.security.SecurityModule;
 import com.godaddy.vps4.security.Vps4User;
 import com.godaddy.vps4.security.Vps4UserService;
 import com.godaddy.vps4.security.jdbc.AuthorizationException;
-import com.godaddy.vps4.vm.Action;
 import com.godaddy.vps4.vm.ActionType;
 import com.godaddy.vps4.vm.VirtualMachine;
 import com.godaddy.vps4.vm.VmModule;
 import com.godaddy.vps4.web.security.AdminOnly;
 import com.godaddy.vps4.web.security.GDUser;
-import com.godaddy.vps4.web.vm.ActionWithDetails;
+import com.godaddy.vps4.web.vm.VmActionWithDetails;
 import com.godaddy.vps4.web.vm.VmActionResource;
 import com.google.inject.AbstractModule;
 import com.google.inject.Guice;
@@ -99,11 +100,11 @@ public class VmActionResourceTest {
     @Test
     public void testShopperGetVmAction() {
         VirtualMachine vm = createTestVm(user.getShopperId());
-        Action action = createTestVmAction(vm.vmId, ActionType.CREATE_VM);
-        UUID expectedGuid = action.commandId;
+        Action coreVMAction = createTestVmAction(vm.vmId, ActionType.CREATE_VM);
+        UUID expectedGuid = coreVMAction.commandId;
 
-        action = getVmActionResource().getVmAction(vm.vmId, action.id);
-        Assert.assertEquals(expectedGuid, action.commandId);
+        VmAction vmAction = getVmActionResource().getVmAction(vm.vmId, coreVMAction.id);
+        Assert.assertEquals(expectedGuid, vmAction.commandId);
     }
 
     @Test(expected=AuthorizationException.class)
@@ -112,7 +113,7 @@ public class VmActionResourceTest {
         Action action = createTestVmAction(vm.vmId, ActionType.CREATE_VM);
 
         user = GDUserMock.createShopper("shopperX");
-        action = getVmActionResource().getVmAction(vm.vmId, action.id);
+        getVmActionResource().getVmAction(vm.vmId, action.id);
     }
 
     @Test(expected=NotFoundException.class)
@@ -136,34 +137,34 @@ public class VmActionResourceTest {
     @Test
     public void testEmployeeGetVmAction() {
         VirtualMachine vm = createTestVm(user.getShopperId());
-        Action action = createTestVmAction(vm.vmId, ActionType.CREATE_VM);
-        UUID expectedGuid = action.commandId;
+        Action coreVMAction = createTestVmAction(vm.vmId, ActionType.CREATE_VM);
+        UUID expectedGuid = coreVMAction.commandId;
 
         user = GDUserMock.createEmployee();
-        action = getVmActionResource().getVmAction(vm.vmId, action.id);
-        Assert.assertEquals(expectedGuid, action.commandId);
+        VmAction vmAction = getVmActionResource().getVmAction(vm.vmId, coreVMAction.id);
+        Assert.assertEquals(expectedGuid, vmAction.commandId);
     }
 
     @Test
     public void testE2SGetVmAction() {
         VirtualMachine vm = createTestVm(user.getShopperId());
-        Action action = createTestVmAction(vm.vmId, ActionType.CREATE_VM);
-        UUID expectedGuid = action.commandId;
+        Action coreVMAction = createTestVmAction(vm.vmId, ActionType.CREATE_VM);
+        UUID expectedGuid = coreVMAction.commandId;
 
         user = GDUserMock.createEmployee2Shopper();
-        action = getVmActionResource().getVmAction(vm.vmId, action.id);
-        Assert.assertEquals(expectedGuid, action.commandId);
+        VmAction vmAction = getVmActionResource().getVmAction(vm.vmId, coreVMAction.id);
+        Assert.assertEquals(expectedGuid, vmAction.commandId);
     }
 
     @Test
     public void testAdminGetVmAction() {
         VirtualMachine vm = createTestVm(user.getShopperId());
-        Action action = createTestVmAction(vm.vmId, ActionType.CREATE_VM);
-        UUID expectedGuid = action.commandId;
+        Action coreVMAction = createTestVmAction(vm.vmId, ActionType.CREATE_VM);
+        UUID expectedGuid = coreVMAction.commandId;
 
         user = GDUserMock.createAdmin();
-        action = getVmActionResource().getVmAction(vm.vmId, action.id);
-        Assert.assertEquals(expectedGuid, action.commandId);
+        VmAction vmAction = getVmActionResource().getVmAction(vm.vmId, coreVMAction.id);
+        Assert.assertEquals(expectedGuid, vmAction.commandId);
     }
 
 
@@ -173,10 +174,10 @@ public class VmActionResourceTest {
         Action action1 = createTestVmAction(vm.vmId, ActionType.CREATE_VM);
         Action action2 = createTestVmAction(vm.vmId, ActionType.STOP_VM);
 
-        List<Action> actions = getVmActionResource().getActions(vm.vmId, 10, 0, null, uri).results;
-        Assert.assertEquals(2, actions.size());
+        List<VmAction> vmActions = getVmActionResource().getActions(vm.vmId, 10, 0, null, uri).results;
+        Assert.assertEquals(2, vmActions.size());
 
-        List<UUID> commandIds = actions.stream().map(a -> a.commandId).collect(Collectors.toList());
+        List<UUID> commandIds = vmActions.stream().map(a -> a.commandId).collect(Collectors.toList());
         Assert.assertTrue(commandIds.contains(action1.commandId));
         Assert.assertTrue(commandIds.contains(action2.commandId));
     }
@@ -194,8 +195,8 @@ public class VmActionResourceTest {
     public void testNoActionsListActions() {
         VirtualMachine vm = createTestVm(user.getShopperId());
 
-        List<Action> actions = getVmActionResource().getActions(vm.vmId, 10, 0, null, uri).results;
-        Assert.assertTrue(actions.isEmpty());
+        List<VmAction> vmActions = getVmActionResource().getActions(vm.vmId, 10, 0, null, uri).results;
+        Assert.assertTrue(vmActions.isEmpty());
     }
 
     @Test
@@ -204,8 +205,8 @@ public class VmActionResourceTest {
         Action action = createTestVmAction(vm.vmId, ActionType.CREATE_VM);
 
         user = GDUserMock.createAdmin();
-        List<Action> actions = getVmActionResource().getActions(vm.vmId, 10, 0, null, uri).results;
-        Assert.assertEquals(actions.get(0).commandId, action.commandId);
+        List<VmAction> vmActions = getVmActionResource().getActions(vm.vmId, 10, 0, null, uri).results;
+        Assert.assertEquals(vmActions.get(0).commandId, action.commandId);
     }
 
     @Test
@@ -214,12 +215,12 @@ public class VmActionResourceTest {
         createTestVmAction(vm.vmId, ActionType.CREATE_VM);
         List<String> statusList = Arrays.asList("NEW");
 
-        List<Action> actions = getVmActionResource().getActions(vm.vmId, 10, 0, statusList, uri).results;
-        Assert.assertEquals(1, actions.size());
+        List<VmAction> vmActions = getVmActionResource().getActions(vm.vmId, 10, 0, statusList, uri).results;
+        Assert.assertEquals(1, vmActions.size());
 
         statusList = Arrays.asList("COMPLETE");
-        actions = getVmActionResource().getActions(vm.vmId, 10, 0, statusList, uri).results;
-        Assert.assertTrue(actions.isEmpty());
+        vmActions = getVmActionResource().getActions(vm.vmId, 10, 0, statusList, uri).results;
+        Assert.assertTrue(vmActions.isEmpty());
     }
 
     @Test
@@ -241,7 +242,7 @@ public class VmActionResourceTest {
         when(commandService.getCommand(action.commandId)).thenReturn(command);
 
         user = GDUserMock.createAdmin();
-        ActionWithDetails detailedAction = getVmActionResource()
+        VmActionWithDetails detailedAction = getVmActionResource()
                 .getVmActionWithDetails(vm.vmId, action.id);
         Assert.assertEquals(detailedAction.commandId, action.commandId);
         Assert.assertEquals(detailedAction.orchestrationCommand, command);

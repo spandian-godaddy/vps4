@@ -72,7 +72,7 @@ public class VmSupportUserResource {
     @AdminOnly
     @POST
     @Path("/{vmId}/supportUser")
-    public ActionWithDetails addSupportUser(@PathParam("vmId") UUID vmId) {
+    public VmActionWithDetails addSupportUser(@PathParam("vmId") UUID vmId) {
         VirtualMachine vm = vmResource.getVm(vmId);
         VmUser user = vmUserService.getSupportUser(vmId);
         String password = UsernamePasswordGenerator.generatePassword(14);
@@ -99,7 +99,7 @@ public class VmSupportUserResource {
             message.put("Username", username);
             message.put("Password", password);
 
-            return new ActionWithDetails(action, command, message.toString());
+            return new VmActionWithDetails(action, command, message.toString());
         } else {
             logger.info("Changing password for admin user on vm {} from the support api", vmId);
             String username = user.username;
@@ -128,14 +128,14 @@ public class VmSupportUserResource {
             message.put("Username", username);
             message.put("Password", password);
 
-            return new ActionWithDetails(action, command, message.toString());
+            return new VmActionWithDetails(action, command, message.toString());
         }
     }
 
     @AdminOnly
     @DELETE
     @Path("/{vmId}/supportUser")
-    public ActionWithDetails removeSupportUser(@PathParam("vmId") UUID vmId) {
+    public VmActionWithDetails removeSupportUser(@PathParam("vmId") UUID vmId) {
         VirtualMachine vm = vmResource.getVm(vmId);
         VmUser user = vmUserService.getSupportUser(vmId);
 
@@ -160,7 +160,7 @@ public class VmSupportUserResource {
 
             Action action = actionService.getAction(actionId);
 
-            return new ActionWithDetails(action, command);
+            return new VmActionWithDetails(action, command);
         }
     }
 }

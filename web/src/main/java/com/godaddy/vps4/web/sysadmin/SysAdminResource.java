@@ -15,6 +15,7 @@ import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
 
+import com.godaddy.vps4.web.vm.VmAction;
 import org.json.simple.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -26,7 +27,6 @@ import com.godaddy.vps4.orchestration.sysadmin.Vps4SetPassword;
 import com.godaddy.vps4.orchestration.sysadmin.Vps4ToggleAdmin;
 import com.godaddy.vps4.util.validators.Validator;
 import com.godaddy.vps4.util.validators.ValidatorRegistry;
-import com.godaddy.vps4.vm.Action;
 import com.godaddy.vps4.vm.ActionService;
 import com.godaddy.vps4.vm.ActionType;
 import com.godaddy.vps4.vm.Image.OperatingSystem;
@@ -81,7 +81,7 @@ public class SysAdminResource {
 
     @POST
     @Path("/{vmId}/setPassword")
-    public Action setPassword(@PathParam("vmId") UUID vmId, UpdatePasswordRequest updatePasswordRequest) {
+    public VmAction setPassword(@PathParam("vmId") UUID vmId, UpdatePasswordRequest updatePasswordRequest) {
         VirtualMachine vm = vmResource.getVm(vmId);
 
         validateServerIsActive(vmResource.getVmFromVmVertical(vm.hfsVmId));
@@ -116,7 +116,7 @@ public class SysAdminResource {
 
         Commands.execute(commandService, actionService, "Vps4SetPassword", vps4Request);
 
-        return actionService.getAction(actionId);
+        return new VmAction(actionService.getAction(actionId));
     }
 
     public static class SetHostnameRequest{
@@ -125,7 +125,7 @@ public class SysAdminResource {
 
     @POST
     @Path("/{vmId}/setHostname")
-    public Action setHostname(@PathParam("vmId") UUID vmId, SetHostnameRequest setHostnameRequest) {
+    public VmAction setHostname(@PathParam("vmId") UUID vmId, SetHostnameRequest setHostnameRequest) {
         VirtualMachine vm = vmResource.getVm(vmId);
 
         validateServerIsActive(vmResource.getVmFromVmVertical(vm.hfsVmId));
@@ -153,7 +153,7 @@ public class SysAdminResource {
 
         Commands.execute(commandService, actionService, "Vps4SetHostname", vps4Request);
 
-        return actionService.getAction(actionId);
+        return new VmAction(actionService.getAction(actionId));
 
     }
 
@@ -163,17 +163,17 @@ public class SysAdminResource {
 
     @POST
     @Path("/{vmId}/enableAdmin")
-    public Action enableUserAdmin(@PathParam("vmId") UUID vmId, SetAdminRequest setAdminRequest) {
+    public VmAction enableUserAdmin(@PathParam("vmId") UUID vmId, SetAdminRequest setAdminRequest) {
         return setUserAdmin(setAdminRequest.username, vmId, true);
     }
 
     @POST
     @Path("/{vmId}/disableAdmin")
-    public Action disableUserAdmin(@PathParam("vmId") UUID vmId, SetAdminRequest setAdminRequest) {
+    public VmAction disableUserAdmin(@PathParam("vmId") UUID vmId, SetAdminRequest setAdminRequest) {
         return setUserAdmin(setAdminRequest.username, vmId, false);
     }
 
-    private Action setUserAdmin(String username, UUID vmId, boolean shouldEnable) {
+    private VmAction setUserAdmin(String username, UUID vmId, boolean shouldEnable) {
         logger.info("Username: {} VmId: {} Enable admin access? {}", username, vmId, shouldEnable);
         VirtualMachine vm = vmResource.getVm(vmId);
 
@@ -201,6 +201,6 @@ public class SysAdminResource {
 
         Commands.execute(commandService, actionService, "Vps4ToggleAdmin", vps4Request);
 
-        return actionService.getAction(actionId);
+        return new VmAction(actionService.getAction(actionId));
     }
 }

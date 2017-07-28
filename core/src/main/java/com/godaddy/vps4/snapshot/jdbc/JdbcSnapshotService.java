@@ -1,4 +1,4 @@
-package com.godaddy.vps4.vm.jdbc;
+package com.godaddy.vps4.snapshot.jdbc;
 
 import com.godaddy.hfs.jdbc.Sql;
 import com.godaddy.vps4.snapshot.Snapshot;
@@ -21,6 +21,62 @@ public class JdbcSnapshotService implements SnapshotService {
     @Inject
     public JdbcSnapshotService(DataSource dataSource) {
         this.dataSource = dataSource;
+    }
+
+    @Override
+    public UUID createSnapshot(long projectId, UUID vmId, String name) {
+        UUID snapshotId = UUID.randomUUID();
+        Sql.with(dataSource).exec("INSERT INTO snapshot (id, name, project_id, vm_id) "
+                        + "VALUES (?, ?, ?, ?);", null, snapshotId, name, projectId, vmId);
+        return snapshotId;
+    }
+
+    @Override
+    public boolean isOverQuota(UUID vmId) {
+        return Sql.with(dataSource).exec(
+                "SELECT COUNT(*) FROM SNAPSHOT JOIN snapshot_status ON snapshot.status = snapshot_status.status_id "
+                + " WHERE vm_id = ? AND snapshot_status.status NOT IN ('ERROR', 'DESTROYED')",
+                this::isOverQuotaMapper, vmId);
+    }
+
+    private boolean isOverQuotaMapper(ResultSet rs) throws SQLException {
+        return rs.next() && rs.getLong("count") > 0;
+    }
+
+    @Override
+    public void updateHfsSnapshotId(UUID snapshotId, long hfsSnapshotId) {
+        Sql.with(dataSource).exec("UPDATE snapshot SET modified_at=NOW(), hfs_snapshot_id=? "
+                + " WHERE id=?", null, hfsSnapshotId, snapshotId);
+    }
+
+    @Override
+    public void updateHfsImageId(UUID snapshotId, String hfsImageId) {
+        Sql.with(dataSource).exec("UPDATE snapshot SET modified_at=NOW(), hfs_image_id=? "
+                + " WHERE id=?", null, hfsImageId, snapshotId);
+    }
+
+    @Override
+    public void markSnapshotInProgress(UUID snapshotId) {
+        Sql.with(dataSource).exec("UPDATE snapshot SET modified_at=NOW(), status=? "
+                + " WHERE id=?", null, SnapshotStatus.IN_PROGRESS.getSnapshotStatusId(), snapshotId);
+    }
+
+    @Override
+    public void markSnapshotComplete(UUID snapshotId) {
+        Sql.with(dataSource).exec("UPDATE snapshot SET modified_at=NOW(), status=? "
+                + " WHERE id=?", null, SnapshotStatus.COMPLETE.getSnapshotStatusId(), snapshotId);
+    }
+
+    @Override
+    public void markSnapshotErrored(UUID snapshotId) {
+        Sql.with(dataSource).exec("UPDATE snapshot SET modified_at=NOW(), status=? "
+                + " WHERE id=?", null, SnapshotStatus.ERROR.getSnapshotStatusId(), snapshotId);
+    }
+
+    @Override
+    public void markSnapshotDestroyed(UUID snapshotId) {
+        Sql.with(dataSource).exec("UPDATE snapshot SET modified_at=NOW(), status=? "
+                + " WHERE id=?", null, SnapshotStatus.DESTROYED.getSnapshotStatusId(), snapshotId);
     }
 
     @Override

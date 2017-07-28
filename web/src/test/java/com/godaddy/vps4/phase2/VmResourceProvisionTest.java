@@ -19,8 +19,8 @@ import com.godaddy.vps4.security.GDUserMock;
 import com.godaddy.vps4.security.SecurityModule;
 import com.godaddy.vps4.security.jdbc.AuthorizationException;
 import com.godaddy.vps4.vm.AccountStatus;
-import com.godaddy.vps4.vm.Action;
 import com.godaddy.vps4.vm.VmModule;
+import com.godaddy.vps4.web.vm.VmAction;
 import com.godaddy.vps4.web.Vps4Exception;
 import com.godaddy.vps4.web.Vps4NoShopperException;
 import com.godaddy.vps4.web.security.GDUser;
@@ -108,8 +108,8 @@ public class VmResourceProvisionTest {
         ProvisionVmRequest request = createProvisionVmRequest(credit.orionGuid);
         Mockito.when(creditService.getVirtualMachineCredit(credit.orionGuid)).thenReturn(credit);
 
-        Action action = getVmResource().provisionVm(request);
-        Assert.assertNotNull(action.commandId);
+        VmAction vmAction = getVmResource().provisionVm(request);
+        Assert.assertNotNull(vmAction.commandId);
     }
 
     // === provisionVm Tests ===

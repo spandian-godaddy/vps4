@@ -1,5 +1,6 @@
 package com.godaddy.vps4.orchestration;
 
+import com.godaddy.vps4.snapshot.SnapshotModule;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -43,11 +44,10 @@ public class Vps4CommandPlugin implements CommandPlugin {
 
                 hfsModule,
                 new HfsCommandModule(),
-
                 new DatabaseModule(),
                 new VmModule(),
                 new CreditModule(),
-
+                new SnapshotModule(),
                 new Vps4CommandModule()
                 );
 

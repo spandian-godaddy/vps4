@@ -7,6 +7,7 @@ import javax.inject.Inject;
 import javax.sql.DataSource;
 import javax.ws.rs.NotFoundException;
 
+import com.godaddy.vps4.web.vm.VmAction;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -21,7 +22,6 @@ import com.godaddy.vps4.security.SecurityModule;
 import com.godaddy.vps4.security.Vps4User;
 import com.godaddy.vps4.security.Vps4UserService;
 import com.godaddy.vps4.security.jdbc.AuthorizationException;
-import com.godaddy.vps4.vm.Action;
 import com.godaddy.vps4.vm.VirtualMachine;
 import com.godaddy.vps4.vm.VmModule;
 import com.godaddy.vps4.web.Vps4Exception;
@@ -167,8 +167,8 @@ public class VmResourceUserTest {
     public void startVm() {
         VirtualMachine vm = createTestVm();
 
-        Action action = getVmResource().startVm(vm.vmId);
-        Assert.assertNotNull(action.commandId);
+        VmAction vmAction = getVmResource().startVm(vm.vmId);
+        Assert.assertNotNull(vmAction.commandId);
     }
 
     @Test
@@ -218,8 +218,8 @@ public class VmResourceUserTest {
     public void testStopVm() {
         VirtualMachine vm = createTestVm();
 
-        Action action = getVmResource().stopVm(vm.vmId);
-        Assert.assertNotNull(action.commandId);
+        VmAction vmAction = getVmResource().stopVm(vm.vmId);
+        Assert.assertNotNull(vmAction.commandId);
     }
 
     @Test
@@ -265,8 +265,8 @@ public class VmResourceUserTest {
     public void testRestartVm() {
         VirtualMachine vm = createTestVm();
 
-        Action action = getVmResource().restartVm(vm.vmId);
-        Assert.assertNotNull(action.commandId);
+        VmAction vmAction = getVmResource().restartVm(vm.vmId);
+        Assert.assertNotNull(vmAction.commandId);
     }
 
     @Test
@@ -319,14 +319,14 @@ public class VmResourceUserTest {
     public void testStopWhileRestartingVm() {
         VirtualMachine vm = createTestVm();
 
-        Action action = getVmResource().restartVm(vm.vmId);
-        Assert.assertNotNull(action.commandId);
+        VmAction vmAction = getVmResource().restartVm(vm.vmId);
+        Assert.assertNotNull(vmAction.commandId);
         try {
             getVmResource().stopVm(vm.vmId);
             Assert.fail("Exception not thrown");
         } catch (Vps4Exception e) {
             System.out.println(e.getId());
-            Assert.assertNotNull(action.commandId);
+            Assert.assertNotNull(vmAction.commandId);
         }
     }
 
@@ -334,8 +334,8 @@ public class VmResourceUserTest {
     public void testDestroyVm() {
         VirtualMachine vm = createTestVm();
 
-        Action action = getVmResource().destroyVm(vm.vmId);
-        Assert.assertNotNull(action.commandId);
+        VmAction vmAction = getVmResource().destroyVm(vm.vmId);
+        Assert.assertNotNull(vmAction.commandId);
     }
 
     @Test

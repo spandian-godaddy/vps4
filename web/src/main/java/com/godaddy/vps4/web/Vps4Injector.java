@@ -5,6 +5,7 @@ import java.util.List;
 
 import javax.inject.Singleton;
 
+import com.godaddy.vps4.snapshot.SnapshotModule;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -79,6 +80,7 @@ public class Vps4Injector {
 
         modules.add(new CreditModule());
         modules.add(new VmModule());
+        modules.add(new SnapshotModule());
         modules.add(new NetworkModule());
         modules.add(new SysAdminModule());
         modules.add(new MailRelayModule());

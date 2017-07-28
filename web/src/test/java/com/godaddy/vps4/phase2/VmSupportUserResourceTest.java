@@ -10,7 +10,7 @@ import com.godaddy.vps4.vm.jdbc.JdbcImageService;
 import com.godaddy.vps4.vm.jdbc.JdbcVirtualMachineService;
 import com.godaddy.vps4.web.security.AdminOnly;
 import com.godaddy.vps4.web.security.GDUser;
-import com.godaddy.vps4.web.vm.ActionWithDetails;
+import com.godaddy.vps4.web.vm.VmActionWithDetails;
 import com.godaddy.vps4.web.vm.VmSupportUserResource;
 import com.google.inject.AbstractModule;
 import com.google.inject.Guice;
@@ -114,7 +114,7 @@ public class VmSupportUserResourceTest {
         VirtualMachine vm = createTestVm();
         supportUser = null;
 
-        ActionWithDetails action = getVmSupportUserResource().addSupportUser(vm.vmId);
+        VmActionWithDetails action = getVmSupportUserResource().addSupportUser(vm.vmId);
         Assert.assertEquals(action.type, ActionType.ADD_SUPPORT_USER);
         Assert.assertNotNull(action.commandId);
         Assert.assertNotNull(action.orchestrationCommand);
@@ -128,7 +128,7 @@ public class VmSupportUserResourceTest {
         VirtualMachine vm = createTestVm();
         supportUser = new VmUser("random-username", UUID.randomUUID(), true, VmUserType.SUPPORT);
 
-        ActionWithDetails action = getVmSupportUserResource().addSupportUser(vm.vmId);
+        VmActionWithDetails action = getVmSupportUserResource().addSupportUser(vm.vmId);
         Assert.assertEquals(action.type, ActionType.SET_PASSWORD);
         Assert.assertNotNull(action.commandId);
         Assert.assertNotNull(action.orchestrationCommand);
@@ -148,13 +148,13 @@ public class VmSupportUserResourceTest {
         VirtualMachine vm = createTestVm();
         supportUser = new VmUser("random-username", UUID.randomUUID(), true, VmUserType.SUPPORT);
 
-        ActionWithDetails action = getVmSupportUserResource().removeSupportUser(vm.vmId);
+        VmActionWithDetails action = getVmSupportUserResource().removeSupportUser(vm.vmId);
         Assert.assertEquals(action.type, ActionType.REMOVE_SUPPORT_USER);
         Assert.assertNotNull(action.commandId);
         Assert.assertNotNull(action.orchestrationCommand);
         Assert.assertNull(action.message);
 
         // Test that class overrides toString
-        Assert.assertTrue(action.toString().contains("ActionWithDetails"));
+        Assert.assertTrue(action.toString().contains("VmActionWithDetails"));
     }
 }

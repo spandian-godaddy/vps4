@@ -7,11 +7,13 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
+import java.time.Instant;
 import java.util.UUID;
 
 import javax.inject.Inject;
 import javax.sql.DataSource;
 
+import com.godaddy.vps4.vm.*;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -24,9 +26,6 @@ import com.godaddy.vps4.security.Vps4User;
 import com.godaddy.vps4.security.Vps4UserService;
 import com.godaddy.vps4.security.jdbc.AuthorizationException;
 import com.godaddy.vps4.security.jdbc.JdbcPrivilegeService;
-import com.godaddy.vps4.vm.ActionService;
-import com.godaddy.vps4.vm.VirtualMachine;
-import com.godaddy.vps4.vm.VirtualMachineService;
 import com.godaddy.vps4.vm.jdbc.JdbcVirtualMachineService;
 import com.godaddy.vps4.web.security.GDUser;
 import com.godaddy.vps4.web.vm.VmPatchResource;
@@ -35,6 +34,7 @@ import com.google.inject.AbstractModule;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
 import com.google.inject.Provides;
+import org.mockito.Mockito;
 
 public class VmPatchResourceTest {
 
@@ -54,7 +54,14 @@ public class VmPatchResourceTest {
 
                 @Override
                 public void configure() {
+                    // Action service
+                    Action coreVmAction = new Action(123L, UUID.randomUUID(), ActionType.UPDATE_SERVER,
+                            123L, "", "", "", ActionStatus.COMPLETE,
+                            Instant.now(), "", UUID.randomUUID());
+                    Mockito.when(actionService.getAction(Mockito.anyLong()))
+                            .thenReturn(coreVmAction);
                     bind(ActionService.class).toInstance(actionService);
+
                     bind(PrivilegeService.class).to(JdbcPrivilegeService.class);
                     bind(VirtualMachineService.class).to(JdbcVirtualMachineService.class);
                 }
