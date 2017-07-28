@@ -1,5 +1,21 @@
 package com.godaddy.vps4.phase2;
 
+import java.lang.reflect.Method;
+import java.time.Instant;
+import java.util.List;
+import java.util.UUID;
+
+import javax.inject.Inject;
+import javax.sql.DataSource;
+import javax.ws.rs.NotFoundException;
+
+import org.junit.After;
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.Test;
+import org.mockito.Mockito;
+
+import com.godaddy.vps4.credit.CreditService;
 import com.godaddy.vps4.jdbc.DatabaseModule;
 import com.godaddy.vps4.security.GDUserMock;
 import com.godaddy.vps4.security.SecurityModule;
@@ -15,32 +31,28 @@ import com.godaddy.vps4.vm.VmModule;
 import com.godaddy.vps4.web.Vps4NoShopperException;
 import com.godaddy.vps4.web.security.AdminOnly;
 import com.godaddy.vps4.web.security.GDUser;
+import com.godaddy.vps4.web.snapshot.SnapshotAction;
 import com.godaddy.vps4.web.snapshot.SnapshotResource;
 import com.godaddy.vps4.web.vm.VmSnapshotResource;
 import com.google.inject.AbstractModule;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
 import com.google.inject.Provides;
-import org.junit.After;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
 
-import javax.inject.Inject;
-import javax.sql.DataSource;
-import javax.ws.rs.NotFoundException;
-import java.lang.reflect.Method;
-import java.time.Instant;
-import java.util.List;
-import java.util.UUID;
+import gdg.hfs.orchestration.CommandGroupSpec;
+import gdg.hfs.orchestration.CommandService;
+import gdg.hfs.orchestration.CommandState;
+import gdg.hfs.vhfs.vm.Vm;
+import gdg.hfs.vhfs.vm.VmService;
 
 public class SnapshotResourceTest {
-    @Inject
-    Vps4UserService userService;
-    @Inject
-    DataSource dataSource;
+    @Inject Vps4UserService userService;
+    @Inject DataSource dataSource;
 
     private GDUser user;
+    private CreditService creditService = Mockito.mock(CreditService.class);
+    private Vm hfsVm;
+    private long hfsVmId = 98765;
 
     private Injector injector = Guice.createInjector(
             new DatabaseModule(),
@@ -49,8 +61,26 @@ public class SnapshotResourceTest {
             new SnapshotModule(),
             new Phase2ExternalsModule(),
             new AbstractModule() {
+
                 @Override
                 public void configure() {
+                    bind(CreditService.class).toInstance(creditService);
+
+                    // HFS services
+                    hfsVm = new Vm();
+                    hfsVm.status = "ACTIVE";
+                    hfsVm.vmId = hfsVmId;
+                    VmService vmService = Mockito.mock(VmService.class);
+                    Mockito.when(vmService.getVm(Mockito.anyLong())).thenReturn(hfsVm);
+                    bind(VmService.class).toInstance(vmService);
+
+                    // Command Service
+                    CommandService commandService = Mockito.mock(CommandService.class);
+                    CommandState commandState = new CommandState();
+                    commandState.commandId = UUID.randomUUID();
+                    Mockito.when(commandService.executeCommand(Mockito.any(CommandGroupSpec.class)))
+                            .thenReturn(commandState);
+                    bind(CommandService.class).toInstance(commandService);
                 }
 
                 @Provides
@@ -230,4 +260,43 @@ public class SnapshotResourceTest {
         user = GDUserMock.createShopper("shopperX");
         testGetSnapshotByVmId();
     }
+
+    // === destroySnapshot Tests ===
+    public void testDestroySnapshot() {
+        Snapshot snapshot = createTestSnapshot();
+
+        SnapshotAction snapshotAction = getSnapshotResource().destroySnapshot(snapshot.id);
+        Assert.assertNotNull(snapshotAction.commandId);
+
+        try {
+            snapshot = getSnapshotResource().getSnapshot(snapshot.id);
+            Assert.fail();
+        } catch (NotFoundException e) {
+            Assert.assertEquals("Unknown snapshot", e.getMessage());
+        }
+    }
+
+    @Test
+    public void testShopperDestroyVm() {
+        testDestroySnapshot();
+    }
+
+    @Test(expected=AuthorizationException.class)
+    public void testUnauthorizedShopperDestroySnapshot() {
+        user = GDUserMock.createShopper("shopperX");
+        testDestroySnapshot();
+    }
+
+    @Test
+    public void testAdminDestroySnapshot() {
+        user = GDUserMock.createAdmin();
+        testDestroySnapshot();
+    }
+
+    @Test
+    public void testE2SDestroySnapshot() {
+        user = GDUserMock.createEmployee2Shopper();
+        testDestroySnapshot();
+    }
+
 }

@@ -5,6 +5,7 @@ import static com.godaddy.vps4.web.util.RequestValidation.validateSnapshotName;
 import static com.godaddy.vps4.web.util.RequestValidation.ensureHasShopperAccess;
 import static com.godaddy.vps4.web.util.RequestValidation.verifyUserPrivilegeToProject;
 
+import com.godaddy.vps4.orchestration.snapshot.Vps4DestroySnapshot;
 import com.godaddy.vps4.orchestration.snapshot.Vps4SnapshotVm;
 import com.godaddy.vps4.security.PrivilegeService;
 import com.godaddy.vps4.security.Vps4User;
@@ -137,6 +138,28 @@ public class SnapshotResource {
         verifyPrivilege(snapshot);
 
         return snapshot;
+    }
+
+    @DELETE
+    @Path("/{snapshotId}")
+    public SnapshotAction destroySnapshot(@PathParam("snapshotId") UUID snapshotId) {
+        SnapshotWithDetails snapshot = getSnapshotWithDetails(snapshotId);
+
+        long vps4UserId = virtualMachineService.getUserIdByVmId(snapshot.vmId);
+        long actionId = actionService.createAction(snapshotId,  ActionType.DESTROY_SNAPSHOT,
+                new JSONObject().toJSONString(), vps4UserId);
+
+        Vps4DestroySnapshot.Request request = new Vps4DestroySnapshot.Request();
+        request.hfsSnapshotId = snapshot.hfsSnapshotId;
+        request.actionId = actionId;
+
+        CommandState command = Commands.execute(commandService, actionService, "Vps4DestroySnapshot", request);
+        logger.info("Destroying snapshot {}:{} for vps4 vm {} with command {}:{}",
+                snapshotId, snapshot.name, snapshot.vmId, actionId, command.commandId);
+
+        snapshotService.markSnapshotDestroyed(snapshotId);
+
+        return new SnapshotAction(actionService.getAction(actionId));
     }
 
     @AdminOnly
