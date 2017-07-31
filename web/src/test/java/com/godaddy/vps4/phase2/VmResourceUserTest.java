@@ -325,7 +325,6 @@ public class VmResourceUserTest {
             getVmResource().stopVm(vm.vmId);
             Assert.fail("Exception not thrown");
         } catch (Vps4Exception e) {
-            System.out.println(e.getId());
             Assert.assertNotNull(vmAction.commandId);
         }
     }

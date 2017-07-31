@@ -89,6 +89,14 @@ public class JdbcSnapshotService implements SnapshotService {
     }
 
     @Override
+    public List<SnapshotWithDetails> getSnapshotsByOrionGuid(UUID orionGuid) {
+        return Sql.with(dataSource).exec(selectSnapshotQuery
+                        + "JOIN virtual_machine v ON s.vm_id = v.vm_id "
+                        + "WHERE v.orion_guid = ?;",
+                Sql.listOf(this::mapSnapshotWithDetails), orionGuid);
+    }
+
+    @Override
     public Snapshot getSnapshot(UUID id) {
         return Sql.with(dataSource).exec(selectSnapshotQuery + "WHERE s.id=?",
                 Sql.nextOrNull(this::mapSnapshot), id);

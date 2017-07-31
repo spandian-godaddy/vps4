@@ -20,8 +20,8 @@ public class VirtualMachine {
     public final String hostname;
     public final AccountStatus accountStatus;
 
-    public VirtualMachine(UUID id,
-            long vmId,
+    public VirtualMachine(UUID vmId,
+            long hfsVmId,
             UUID orionGuid,
             long projectId,
             VirtualMachineSpec spec,
@@ -32,8 +32,8 @@ public class VirtualMachine {
             Instant validUntil,
             String hostname,
             AccountStatus accountStatus) {
-        this.vmId = id;
-        this.hfsVmId = vmId;
+        this.vmId = vmId;
+        this.hfsVmId = hfsVmId;
         this.orionGuid = orionGuid;
         this.projectId = projectId;
         this.spec = spec;

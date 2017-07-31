@@ -16,7 +16,6 @@ import com.godaddy.hfs.jdbc.Sql;
 import com.godaddy.vps4.network.IpAddress;
 import com.godaddy.vps4.network.jdbc.IpAddressMapper;
 import com.godaddy.vps4.vm.AccountStatus;
-import com.godaddy.vps4.vm.DataCenter;
 import com.godaddy.vps4.vm.Image;
 import com.godaddy.vps4.vm.Image.ControlPanel;
 import com.godaddy.vps4.vm.Image.OperatingSystem;
@@ -63,12 +62,6 @@ public class JdbcVirtualMachineService implements VirtualMachineService {
     public VirtualMachine getVirtualMachine(long hfsVmId) {
         return Sql.with(dataSource)
                 .exec(selectVirtualMachineQuery + "WHERE vm.hfs_vm_id=?", Sql.nextOrNull(this::mapVirtualMachine), hfsVmId);
-    }
-
-    @Override
-    public VirtualMachine getVirtualMachineByOrionGuid(UUID orionGuid) {
-        return Sql.with(dataSource)
-                .exec(selectVirtualMachineQuery + "WHERE vm.orion_guid=?", Sql.nextOrNull(this::mapVirtualMachine), orionGuid);
     }
 
     @Override

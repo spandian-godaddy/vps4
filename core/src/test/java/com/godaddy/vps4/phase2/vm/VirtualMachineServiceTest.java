@@ -116,9 +116,6 @@ public class VirtualMachineServiceTest {
 
         vm = virtualMachineService.getVirtualMachine(hfsVmId);
         verifyVm(name, specId, hfsVmId, vm);
-
-        vm = virtualMachineService.getVirtualMachineByOrionGuid(orionGuid);
-        verifyVm(name, specId, hfsVmId, vm);
     }
 
     private void verifyVm(String name, int specId, long hfsVmId, VirtualMachine vm) {
