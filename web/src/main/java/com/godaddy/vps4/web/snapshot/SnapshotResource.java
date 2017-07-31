@@ -151,13 +151,12 @@ public class SnapshotResource {
 
         Vps4DestroySnapshot.Request request = new Vps4DestroySnapshot.Request();
         request.hfsSnapshotId = snapshot.hfsSnapshotId;
+        request.vps4SnapshotId = snapshot.id;
         request.actionId = actionId;
 
         CommandState command = Commands.execute(commandService, actionService, "Vps4DestroySnapshot", request);
         logger.info("Destroying snapshot {}:{} for vps4 vm {} with command {}:{}",
                 snapshotId, snapshot.name, snapshot.vmId, actionId, command.commandId);
-
-        snapshotService.markSnapshotDestroyed(snapshotId);
 
         return new SnapshotAction(actionService.getAction(actionId));
     }

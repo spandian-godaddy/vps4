@@ -239,13 +239,6 @@ public class SnapshotResourceTest {
 
         SnapshotAction snapshotAction = getSnapshotResource().destroySnapshot(snapshot.id);
         Assert.assertNotNull(snapshotAction.commandId);
-
-        try {
-            snapshot = getSnapshotResource().getSnapshot(snapshot.id);
-            Assert.fail();
-        } catch (NotFoundException e) {
-            Assert.assertEquals("Unknown snapshot", e.getMessage());
-        }
     }
 
     @Test
