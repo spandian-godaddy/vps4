@@ -150,9 +150,23 @@ public class SnapshotCreateResourceTest {
 
     @Test(expected = Vps4Exception.class)
     public void weCantSnapshotWhenOverQuota() {
+        // if all the snapshots that have filled up the slots aren't yet LIVE
         user = us;
         getSnapshotResource().createSnapshot(getRequestPayload(ourVmId, SqlTestData.TEST_SNAPSHOT_NAME));
         getSnapshotResource().createSnapshot(getRequestPayload(ourVmId, SqlTestData.TEST_SNAPSHOT_NAME));
+    }
+
+    @Test
+    public void additionalSnapshotDeprecatesOldestSnapshot() {
+        user = us;
+        SnapshotAction action1 = getSnapshotResource()
+                .createSnapshot(getRequestPayload(ourVmId, SqlTestData.TEST_SNAPSHOT_NAME));
+        vps4SnapshotService.markSnapshotLive(action1.snapshotId);
+        SnapshotAction action2 = getSnapshotResource()
+                .createSnapshot(getRequestPayload(ourVmId, SqlTestData.TEST_SNAPSHOT_NAME));
+
+        Assert.assertEquals(SnapshotStatus.DEPRECATING, vps4SnapshotService.getSnapshot(action1.snapshotId).status);
+        Assert.assertEquals(SnapshotStatus.NEW, vps4SnapshotService.getSnapshot(action2.snapshotId).status);
     }
 
     @Test(expected = Vps4Exception.class)

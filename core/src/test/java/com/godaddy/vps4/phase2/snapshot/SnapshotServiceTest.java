@@ -19,52 +19,38 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.fail;
+import static org.hamcrest.Matchers.containsInAnyOrder;
+import static org.junit.Assert.*;
 
 
 public class SnapshotServiceTest {
 
+    static final String snapshotName = "core-snapshot";
     private SnapshotService snapshotService;
     private Injector injector = Guice.createInjector(new DatabaseModule());
 
     private UUID orionGuid = UUID.randomUUID();
     private DataSource dataSource;
     private VirtualMachine vm;
-    private List<Snapshot> snapshots;
-    private List<SnapshotWithDetails> snapshotsWithDetails;
+    private List<UUID> snapshotIds;
 
     @Before
     public void setupService() {
         dataSource = injector.getInstance(DataSource.class);
         snapshotService = new JdbcSnapshotService(dataSource);
         vm = SqlTestData.insertTestVm(orionGuid, dataSource);
-        snapshots = new ArrayList<>();
-        snapshotsWithDetails = new ArrayList<>();
-        for (int i = 0; i < 3; i++) {
-            SnapshotWithDetails testSnapshot = new SnapshotWithDetails(
-                    UUID.randomUUID(),
-                    "test",
-                    vm.projectId,
-                    (int) (Math.random() * 100000),
-                    vm.vmId,
-                    "test-snapshot",
-                    SnapshotStatus.COMPLETE,
-                    Instant.now(),
-                    null
-            );
-            snapshots.add(new Snapshot(
-                    testSnapshot.id,
-                    testSnapshot.projectId,
-                    testSnapshot.vmId,
-                    testSnapshot.name,
-                    testSnapshot.status,
-                    Instant.now(),
-                    null
-            ));
-            snapshotsWithDetails.add(testSnapshot);
+        snapshotIds = new ArrayList<>();
+    }
+
+    private void insertTestSnapshots(int count, SnapshotStatus status) {
+        for (int i = 0; i < count; i++) {
+            SnapshotWithDetails testSnapshot = new SnapshotWithDetails(UUID.randomUUID(), "test",
+                    vm.projectId, (int) (Math.random() * 100000), vm.vmId, snapshotName,
+                    status, Instant.now(), null );
             SqlTestData.insertTestSnapshot(testSnapshot, dataSource);
+            snapshotIds.add(testSnapshot.id);
         }
     }
 
@@ -75,35 +61,153 @@ public class SnapshotServiceTest {
 
     @Test
     public void testSnapshotsForUser() {
-        String test = snapshotService.getSnapshotsForUser(1).toString();
-        for (Snapshot snapshot : snapshots) {
-            if (!test.contains(snapshot.id.toString()))
-                fail();
-        }
+        insertTestSnapshots(3, SnapshotStatus.LIVE);
+        List<UUID> actualSnapshotIds = snapshotService
+                .getSnapshotsForUser(1)
+                .stream()
+                .map(s -> s.id)
+                .collect(Collectors.toList());
+        assertThat(actualSnapshotIds, containsInAnyOrder(snapshotIds.toArray()));
     }
 
     @Test
     public void testGetSnapshot() {
-        for (Snapshot snapshot : snapshots) {
-            Snapshot test = snapshotService.getSnapshot(snapshot.id);
-            assertEquals(snapshot.id, test.id);
+        insertTestSnapshots(1, SnapshotStatus.LIVE);
+        for (UUID snapshotId : snapshotIds) {
+            Snapshot test = snapshotService.getSnapshot(snapshotId);
+            assertEquals(snapshotId, test.id);
         }
     }
 
     @Test
     public void testGetSnapshotWithDetails() {
-        for (SnapshotWithDetails snapshot : snapshotsWithDetails) {
-            SnapshotWithDetails testWithDetails = snapshotService.getSnapshotWithDetails(snapshot.id);
-            assertEquals(snapshot.id, testWithDetails.id);
+        insertTestSnapshots(1, SnapshotStatus.LIVE);
+        for (UUID snapshotId : snapshotIds) {
+            SnapshotWithDetails testWithDetails = snapshotService.getSnapshotWithDetails(snapshotId);
+            assertEquals(snapshotId, testWithDetails.id);
         }
     }
 
     @Test
     public void testSnapshotsForVm() {
-        String test = snapshotService.getSnapshotsForVm(vm.vmId).toString();
-        for (Snapshot snapshot : snapshots) {
-            if (!test.contains(snapshot.id.toString()))
-                fail();
-        }
+        insertTestSnapshots(3, SnapshotStatus.LIVE);
+        List<UUID> actualSnapshotIds = snapshotService
+                .getSnapshotsForVm(vm.vmId)
+                .stream()
+                .map(s -> s.id)
+                .collect(Collectors.toList());
+        assertThat(actualSnapshotIds, containsInAnyOrder(snapshotIds.toArray()));
+    }
+
+    @Test
+    public void testCreateSnapshot() {
+        UUID snapshotId = snapshotService.createSnapshot(vm.projectId, vm.vmId, snapshotName);
+        List<UUID> actualSnapshotIds = snapshotService
+                .getSnapshotsForVm(vm.vmId)
+                .stream()
+                .map(s -> s.id)
+                .collect(Collectors.toList());
+        assertTrue(actualSnapshotIds.contains(snapshotId));
+        assertEquals(SnapshotStatus.NEW, snapshotService.getSnapshot(snapshotId).status);
+    }
+
+    @Test
+    public void isNotOverQuotaWhenAllExistingSnapshotsAreLive() {
+        // When all the existing snapshot linked to an orion guid are LIVE then the oldest can be deprecated.
+        // Hence, quota test should return as false i.e. isOverQuota? = false
+        insertTestSnapshots(1, SnapshotStatus.LIVE);
+        assertFalse(snapshotService.isOverQuota(orionGuid));
+    }
+
+    @Test
+    public void erroredSnapshotsDontCountTowardsQuotaCheck() {
+        insertTestSnapshots(1, SnapshotStatus.ERROR);
+        assertFalse(snapshotService.isOverQuota(orionGuid));
+    }
+
+    @Test
+    public void destroyedSnapshotsDontCountTowardsQuotaCheck() {
+        insertTestSnapshots(1, SnapshotStatus.DESTROYED);
+        assertFalse(snapshotService.isOverQuota(orionGuid));
+    }
+
+    @Test
+    public void isOverQuotaWhenAnyExistingSnapshotIsInNew() {
+        // When any existing snapshot linked to an orion guid is not LIVE then the customer is over quota.
+        // Hence, quota test should return as not true i.e. isOverQuota? = true
+        insertTestSnapshots(1, SnapshotStatus.NEW);
+        assertTrue(snapshotService.isOverQuota(orionGuid));
+    }
+
+    @Test
+    public void isOverQuotaWhenAnyExistingSnapshotIsInDeprecating() {
+        // When any existing snapshot linked to an orion guid is not LIVE then the customer is over quota.
+        // Hence, quota test should return as not true i.e. isOverQuota? = true
+        insertTestSnapshots(1, SnapshotStatus.DEPRECATING);
+        assertTrue(snapshotService.isOverQuota(orionGuid));
+    }
+
+    @Test
+    public void isOverQuotaWhenAnyExistingSnapshotIsInDeprecated() {
+        // When any existing snapshot linked to an orion guid is not LIVE then the customer is over quota.
+        // Hence, quota test should return as not true i.e. isOverQuota? = true
+        insertTestSnapshots(1, SnapshotStatus.DEPRECATED);
+        assertTrue(snapshotService.isOverQuota(orionGuid));
+    }
+
+    @Test
+    public void changeSnapshotStatusToInProgress() {
+        insertTestSnapshots(1, SnapshotStatus.NEW);
+        UUID snapshotId = snapshotIds.get(0);
+        snapshotService.markSnapshotInProgress(snapshotId);
+        assertEquals(SnapshotStatus.IN_PROGRESS, snapshotService.getSnapshot(snapshotId).status);
+    }
+
+    @Test
+    public void changeSnapshotStatusToLive() {
+        insertTestSnapshots(1, SnapshotStatus.NEW);
+        UUID snapshotId = snapshotIds.get(0);
+        snapshotService.markSnapshotLive(snapshotId);
+        assertEquals(SnapshotStatus.LIVE, snapshotService.getSnapshot(snapshotId).status);
+    }
+
+    @Test
+    public void changeSnapshotStatusToErrored() {
+        insertTestSnapshots(1, SnapshotStatus.NEW);
+        UUID snapshotId = snapshotIds.get(0);
+        snapshotService.markSnapshotErrored(snapshotId);
+        assertEquals(SnapshotStatus.ERROR, snapshotService.getSnapshot(snapshotId).status);
+    }
+
+    @Test
+    public void changeSnapshotStatusToDestroyed() {
+        insertTestSnapshots(1, SnapshotStatus.NEW);
+        UUID snapshotId = snapshotIds.get(0);
+        snapshotService.markSnapshotDestroyed(snapshotId);
+        assertEquals(SnapshotStatus.DESTROYED, snapshotService.getSnapshot(snapshotId).status);
+    }
+
+    @Test
+    public void changeSnapshotStatusToDeprecated() {
+        insertTestSnapshots(1, SnapshotStatus.NEW);
+        UUID snapshotId = snapshotIds.get(0);
+        snapshotService.markSnapshotAsDeprecated(snapshotId);
+        assertEquals(SnapshotStatus.DEPRECATED, snapshotService.getSnapshot(snapshotId).status);
+    }
+
+    @Test
+    public void changeSnapshotStatusToDeprecating() {
+        insertTestSnapshots(1, SnapshotStatus.LIVE);
+        UUID snapshotId = snapshotIds.get(0);
+        snapshotService.markOldestSnapshotForDeprecation(orionGuid);
+        assertEquals(SnapshotStatus.DEPRECATING, snapshotService.getSnapshot(snapshotId).status);
+    }
+
+    @Test
+    public void changeSnapshotStatusToDeprecatingNoOps() {
+        insertTestSnapshots(1, SnapshotStatus.NEW);
+        UUID snapshotId = snapshotIds.get(0);
+        snapshotService.markOldestSnapshotForDeprecation(orionGuid);
+        assertEquals(SnapshotStatus.NEW, snapshotService.getSnapshot(snapshotId).status);
     }
 }

@@ -13,8 +13,10 @@ import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.util.List;
 import java.util.UUID;
+import java.util.stream.Stream;
 
 public class JdbcSnapshotService implements SnapshotService {
+    private static final long OPEN_SLOTS_PER_CREDIT = 1;
     private final DataSource dataSource;
     private String selectSnapshotQuery = "SELECT s.id, s.hfs_image_id, s.project_id, s.hfs_snapshot_id, s.vm_id, s.name, ss.status, s.created_at, s.modified_at FROM snapshot s JOIN snapshot_status ss ON s.status = ss.status_id ";
 
@@ -32,15 +34,68 @@ public class JdbcSnapshotService implements SnapshotService {
     }
 
     @Override
-    public boolean isOverQuota(UUID vmId) {
-        return Sql.with(dataSource).exec(
-                "SELECT COUNT(*) FROM SNAPSHOT JOIN snapshot_status ON snapshot.status = snapshot_status.status_id "
-                + " WHERE vm_id = ? AND snapshot_status.status NOT IN ('ERROR', 'DESTROYED')",
-                this::isOverQuotaMapper, vmId);
+    public boolean isOverQuota(UUID orionGuid) {
+        return !(hasOpenSlots(orionGuid) || isSnapshotAvailableForDeprecation(orionGuid));
     }
 
-    private boolean isOverQuotaMapper(ResultSet rs) throws SQLException {
-        return rs.next() && rs.getLong("count") > 0;
+    private boolean hasOpenSlots(UUID orionGuid) {
+        // check if number of snapshots (not in error and not destroyed) linked to the credit is over the number
+        // of open slots available. Right now the number of open slots is hard coded to 1 but this might change in
+        // the future as HEG and MT get on-boarded.
+        return Sql.with(dataSource).exec(
+                "SELECT COUNT(*) FROM SNAPSHOT s JOIN SNAPSHOT_STATUS ss ON s.status = ss.status_id "
+                        + "JOIN VIRTUAL_MACHINE v ON s.vm_id = v.vm_id "
+                        + "WHERE v.orion_guid = ? AND ss.status NOT IN ('ERROR', 'DESTROYED');",
+                this::hasOpenSlotsMapper, orionGuid);
+    }
+
+    private boolean hasOpenSlotsMapper(ResultSet rs) throws SQLException {
+        return rs.next() && rs.getLong("count") < OPEN_SLOTS_PER_CREDIT;
+    }
+
+    private boolean isSnapshotAvailableForDeprecation(UUID orionGuid) {
+        List<StatusCount> statusCounts = Sql.with(dataSource).exec(
+                "SELECT ss.status, COUNT(*) FROM SNAPSHOT s JOIN snapshot_status ss ON s.status = ss.status_id "
+                        + "JOIN VIRTUAL_MACHINE v ON s.vm_id = v.vm_id "
+                        + "WHERE v.orion_guid = ? "
+                        + "AND ss.status NOT IN ('ERROR', 'DESTROYED') "
+                        + "GROUP BY ss.status;",
+                Sql.listOf(this::mapStatusCount), orionGuid);
+        long numInNew = getCountForStatus(statusCounts, SnapshotStatus.NEW);
+        long numInProgress = getCountForStatus(statusCounts, SnapshotStatus.IN_PROGRESS);
+        long numLive = getCountForStatus(statusCounts, SnapshotStatus.LIVE);
+        long numDeprecating = getCountForStatus(statusCounts, SnapshotStatus.DEPRECATING);
+        long numDeprecated = getCountForStatus(statusCounts, SnapshotStatus.DEPRECATED);
+
+        // If we have all the available slots filled up by snapshots that are 'LIVE', then we can deprecate the oldest
+        // Right now the number of open slots is hard coded to 1 but this might change in
+        // the future as HEG and MT get on-boarded.
+        return (numLive == OPEN_SLOTS_PER_CREDIT)
+                && (numInNew == 0)
+                && (numInProgress == 0)
+                && (numDeprecating == 0)
+                && (numDeprecated == 0);
+    }
+
+    private long getCountForStatus(List<StatusCount> statusCounts, SnapshotStatus status) {
+        Stream<StatusCount> statusCountStream = statusCounts.stream().filter(sc -> sc.status.equals(status));
+        return statusCountStream.findFirst().orElse(new StatusCount(status, 0)).count;
+    }
+
+    private class StatusCount {
+        final SnapshotStatus status;
+        final long count;
+
+        private StatusCount(SnapshotStatus status, long count) {
+            this.status = status;
+            this.count = count;
+        }
+    }
+
+    private StatusCount mapStatusCount(ResultSet rs) throws SQLException {
+        return new StatusCount(
+                SnapshotStatus.valueOf(rs.getString("status")),
+                rs.getLong("count"));
     }
 
     @Override
@@ -57,26 +112,65 @@ public class JdbcSnapshotService implements SnapshotService {
 
     @Override
     public void markSnapshotInProgress(UUID snapshotId) {
-        Sql.with(dataSource).exec("UPDATE snapshot SET modified_at=NOW(), status=? "
-                + " WHERE id=?", null, SnapshotStatus.IN_PROGRESS.getSnapshotStatusId(), snapshotId);
+        updateSnapshotStatus(snapshotId, SnapshotStatus.IN_PROGRESS);
     }
 
     @Override
-    public void markSnapshotComplete(UUID snapshotId) {
-        Sql.with(dataSource).exec("UPDATE snapshot SET modified_at=NOW(), status=? "
-                + " WHERE id=?", null, SnapshotStatus.COMPLETE.getSnapshotStatusId(), snapshotId);
+    public void markSnapshotLive(UUID snapshotId) {
+        updateSnapshotStatus(snapshotId, SnapshotStatus.LIVE);
     }
 
     @Override
     public void markSnapshotErrored(UUID snapshotId) {
-        Sql.with(dataSource).exec("UPDATE snapshot SET modified_at=NOW(), status=? "
-                + " WHERE id=?", null, SnapshotStatus.ERROR.getSnapshotStatusId(), snapshotId);
+        updateSnapshotStatus(snapshotId, SnapshotStatus.ERROR);
     }
 
     @Override
     public void markSnapshotDestroyed(UUID snapshotId) {
+        updateSnapshotStatus(snapshotId, SnapshotStatus.DESTROYED);
+    }
+
+    @Override
+    public void markSnapshotAsDeprecated(UUID snapshotId) {
+        updateSnapshotStatus(snapshotId, SnapshotStatus.DEPRECATED);
+    }
+
+    private void markSnapshotForDeprecation(UUID snapshotId) {
+        updateSnapshotStatus(snapshotId, SnapshotStatus.DEPRECATING);
+    }
+
+    private UUID getOldestSnapshot(UUID orionGuid) {
+        return Sql.with(dataSource).exec(
+                "SELECT s.id FROM SNAPSHOT s JOIN SNAPSHOT_STATUS ss ON s.status = ss.status_id "
+                        + "JOIN VIRTUAL_MACHINE v ON s.vm_id = v.vm_id "
+                        + "WHERE v.orion_guid = ? AND ss.status IN ('LIVE') "
+                        + "ORDER BY s.created_at LIMIT 1;",
+                Sql.nextOrNull(rs -> UUID.fromString(rs.getString("id"))), orionGuid);
+    }
+
+    @Override
+    public void reverseSnapshotDeprecation(UUID snapshotId) {
+        // Reversing deprecation just sets a snapshot back to live
+        markSnapshotLive(snapshotId);
+    }
+
+    @Override
+    public void updateSnapshotStatus(UUID snapshotId, SnapshotStatus status) {
         Sql.with(dataSource).exec("UPDATE snapshot SET modified_at=NOW(), status=? "
-                + " WHERE id=?", null, SnapshotStatus.DESTROYED.getSnapshotStatusId(), snapshotId);
+                + " WHERE id=?", null, status.getSnapshotStatusId(), snapshotId);
+    }
+
+    @Override
+    public UUID markOldestSnapshotForDeprecation(UUID orionGuid) {
+        if (isSnapshotAvailableForDeprecation(orionGuid)) {
+            UUID snapshotId = getOldestSnapshot(orionGuid);
+            if (snapshotId != null) {
+                markSnapshotForDeprecation(snapshotId);
+                return snapshotId;
+            }
+        }
+
+        return null;
     }
 
     @Override

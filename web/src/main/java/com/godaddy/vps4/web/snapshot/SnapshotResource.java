@@ -10,10 +10,7 @@ import com.godaddy.vps4.orchestration.snapshot.Vps4SnapshotVm;
 import com.godaddy.vps4.security.PrivilegeService;
 import com.godaddy.vps4.security.Vps4User;
 import com.godaddy.vps4.security.Vps4UserService;
-import com.godaddy.vps4.snapshot.Snapshot;
-import com.godaddy.vps4.snapshot.SnapshotService;
-import com.godaddy.vps4.snapshot.SnapshotStatus;
-import com.godaddy.vps4.snapshot.SnapshotWithDetails;
+import com.godaddy.vps4.snapshot.*;
 import com.godaddy.vps4.vm.*;
 import com.godaddy.vps4.web.Vps4Api;
 import com.godaddy.vps4.web.Vps4NoShopperException;
@@ -56,7 +53,7 @@ public class SnapshotResource {
     private final Vps4UserService userService;
 
     @Inject
-    public SnapshotResource(@Named("Snapshot_action") ActionService actionService, CommandService commandService,
+    public SnapshotResource(@SnapshotActionService ActionService actionService, CommandService commandService,
                             GDUser user, PrivilegeService privilegeService, SnapshotService snapshotService,
                             VirtualMachineService virtualMachineService, VmResource vmResource,
                             Vps4UserService userService) {
@@ -89,15 +86,21 @@ public class SnapshotResource {
     @Path("/")
     public SnapshotAction createSnapshot(SnapshotRequest snapshotRequest) {
         VirtualMachine vm = vmResource.getVm(snapshotRequest.vmId);
-        validateCreation(vm.vmId, snapshotRequest.name);
+        validateCreation(vm.orionGuid, snapshotRequest.name);
+        UUID snapshotIdToBeDeprecated = snapshotService.markOldestSnapshotForDeprecation(vm.orionGuid);
         Action action = createSnapshotAndActionEntries(vm, snapshotRequest.name);
-        kickoffSnapshotCreation(vm.vmId, snapshotRequest.name, vm.hfsVmId, action);
+        kickoffSnapshotCreation(vm.vmId, snapshotRequest.name, vm.hfsVmId, action, snapshotIdToBeDeprecated);
         return new SnapshotAction(actionService.getAction(action.id));
     }
 
-    private void validateCreation(UUID vmId, String name) {
+    public static class SnapshotRequest {
+        public String name;
+        public UUID vmId;
+    }
+
+    private void validateCreation(UUID orionGuid, String name) {
         ensureHasShopperAccess(user);
-        validateIfSnapshotOverQuota(snapshotService, vmId);
+        validateIfSnapshotOverQuota(snapshotService, orionGuid);
         validateSnapshotName(name);
     }
 
@@ -110,18 +113,16 @@ public class SnapshotResource {
         return actionService.getAction(actionId);
     }
 
-    public static class SnapshotRequest {
-        public String name;
-        public UUID vmId;
-    }
-
-    private void kickoffSnapshotCreation(UUID vmId, String snapshotName, long hfsVmId, Action action) {
+    private void kickoffSnapshotCreation(UUID vmId, String snapshotName, long hfsVmId,
+                                         Action action, UUID snapshotIdToBeDeprecated) {
         UUID snapshotId = action.resourceId; // the resourceId refers to the associated snapshotId
         Vps4SnapshotVm.Request commandRequest = new Vps4SnapshotVm.Request();
         commandRequest.hfsVmId = hfsVmId;
         commandRequest.snapshotName = snapshotName;
         commandRequest.vps4SnapshotId = snapshotId;
         commandRequest.actionId = action.id;
+        commandRequest.snapshotIdToBeDeprecated = snapshotIdToBeDeprecated;
+        commandRequest.vps4UserId = action.vps4UserId;
 
         CommandState command = Commands.execute(
                 commandService, actionService, "Vps4SnapshotVm", commandRequest);

@@ -5,6 +5,7 @@ import static com.godaddy.vps4.web.util.RequestValidation.verifyUserPrivilegeToP
 import com.godaddy.vps4.security.PrivilegeService;
 import com.godaddy.vps4.security.Vps4UserService;
 import com.godaddy.vps4.snapshot.Snapshot;
+import com.godaddy.vps4.snapshot.SnapshotActionService;
 import com.godaddy.vps4.snapshot.SnapshotService;
 import com.godaddy.vps4.snapshot.SnapshotStatus;
 import com.godaddy.vps4.vm.Action;
@@ -45,7 +46,7 @@ public class SnapshotActionResource {
     private final Vps4UserService userService;
 
     @Inject
-    public SnapshotActionResource(@Named("Snapshot_action") ActionService actionService,
+    public SnapshotActionResource(@SnapshotActionService ActionService actionService,
                                   PrivilegeService privilegeService, SnapshotService snapshotService,
                                   Vps4UserService userService, CommandService commandService, GDUser user) {
         this.actionService = actionService;
