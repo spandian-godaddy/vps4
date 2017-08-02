@@ -6,6 +6,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.godaddy.vps4.network.IpAddress;
+import com.godaddy.vps4.orchestration.hfs.mailrelay.SetMailRelayQuota;
 import com.godaddy.vps4.orchestration.hfs.network.ReleaseIp;
 import com.godaddy.vps4.orchestration.hfs.network.UnbindIp;
 import com.godaddy.vps4.orchestration.hfs.plesk.WaitForPleskAction;
@@ -16,7 +17,6 @@ import gdg.hfs.orchestration.Command;
 import gdg.hfs.orchestration.CommandContext;
 import gdg.hfs.vhfs.cpanel.CPanelService;
 import gdg.hfs.vhfs.mailrelay.MailRelayService;
-import gdg.hfs.vhfs.mailrelay.MailRelayUpdate;
 import gdg.hfs.vhfs.network.NetworkService;
 import gdg.hfs.vhfs.plesk.PleskAction;
 import gdg.hfs.vhfs.plesk.PleskService;
@@ -32,7 +32,7 @@ public class Vps4DestroyIpAddress implements Command<Vps4DestroyIpAddress.Reques
     final MailRelayService mailRelayService;
 
     @Inject
-    public Vps4DestroyIpAddress(NetworkService networkService, VirtualMachineService virtualMachineService, 
+    public Vps4DestroyIpAddress(NetworkService networkService, VirtualMachineService virtualMachineService,
                             CPanelService cpanelService, PleskService pleskService, MailRelayService mailRelayService) {
         this.networkService = networkService;
         this.virtualMachineService = virtualMachineService;
@@ -54,16 +54,14 @@ public class Vps4DestroyIpAddress implements Command<Vps4DestroyIpAddress.Reques
 
         return null;
     }
-    
+
     private void disableMailRelay(CommandContext context, String ipAddress) {
-        MailRelayUpdate relayUpdate = new MailRelayUpdate();
-        relayUpdate.quota = 0;
-        context.execute("DisableMailRelay", ctx -> {
-            mailRelayService.setRelayQuota(ipAddress, relayUpdate);
-            return null;
-        });
+        SetMailRelayQuota.Request hfsRequest = new SetMailRelayQuota.Request();
+        hfsRequest.ipAddress = ipAddress;
+        hfsRequest.mailRelayQuota = 0;
+        context.execute(SetMailRelayQuota.class, hfsRequest);
     }
-    
+
     private void releaseControlPanelLicense(CommandContext context, VirtualMachine vm, String ipAddress) {
         if(virtualMachineService.virtualMachineHasCpanel(vm.vmId)){
             // TODO update this when the cpanel vertical service's remove license is fixed
@@ -75,15 +73,15 @@ public class Vps4DestroyIpAddress implements Command<Vps4DestroyIpAddress.Reques
             context.execute(WaitForPleskAction.class, action);
         }
     }
-    
+
     public static class Request{
         public IpAddress ipAddress;
         public VirtualMachine vm;
-        
+
         public Request(IpAddress ipAddress, VirtualMachine vm){
             this.ipAddress = ipAddress;
             this.vm = vm;
         }
-        
+
     }
 }

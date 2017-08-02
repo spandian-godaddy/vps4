@@ -11,6 +11,7 @@ import org.slf4j.LoggerFactory;
 import com.godaddy.vps4.network.IpAddress.IpAddressType;
 import com.godaddy.vps4.network.NetworkService;
 import com.godaddy.vps4.orchestration.ActionCommand;
+import com.godaddy.vps4.orchestration.hfs.mailrelay.SetMailRelayQuota;
 import com.godaddy.vps4.orchestration.hfs.network.AllocateIp;
 import com.godaddy.vps4.orchestration.hfs.network.BindIp;
 import com.godaddy.vps4.orchestration.hfs.network.BindIp.BindIpRequest;
@@ -53,6 +54,7 @@ public class Vps4AddIpAddress extends ActionCommand<Vps4AddIpAddress.Request, Vo
         VirtualMachine virtualMachine = virtualMachineService.getVirtualMachine(request.hfsVmId);
         IpAddress ip = allocateIp(context, request);
         addIpToDatabase(context, ip, virtualMachine.vmId);
+        disableMailRelays(context, ip);
         bindIp(context, ip, virtualMachine.hfsVmId);
         logger.info("Completed adding IP {} to vm with Id {} and hfsVmId {}", ip.address, virtualMachine.vmId, request.hfsVmId);
 
@@ -76,6 +78,13 @@ public class Vps4AddIpAddress extends ActionCommand<Vps4AddIpAddress.Request, Vo
              networkService.createIpAddress(ip.addressId, vmId, ip.address, IpAddressType.SECONDARY);
              return null;
         });
+    }
+
+    private void disableMailRelays(CommandContext context, IpAddress ip) {
+        SetMailRelayQuota.Request hfsRequest = new SetMailRelayQuota.Request();
+        hfsRequest.ipAddress = ip.address;
+        hfsRequest.mailRelayQuota = 0;
+        context.execute(SetMailRelayQuota.class, hfsRequest);
     }
 
     private void bindIp(CommandContext context, IpAddress ip, long hfsVmId) {

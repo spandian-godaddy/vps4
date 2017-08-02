@@ -1,5 +1,6 @@
 package com.godaddy.vps4.orchestration.sysadmin;
 
+import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.mock;
@@ -35,6 +36,7 @@ import com.google.inject.Injector;
 import gdg.hfs.orchestration.CommandContext;
 import gdg.hfs.orchestration.GuiceCommandProvider;
 import gdg.hfs.vhfs.cpanel.CPanelService;
+import gdg.hfs.vhfs.mailrelay.MailRelay;
 import gdg.hfs.vhfs.mailrelay.MailRelayService;
 import gdg.hfs.vhfs.mailrelay.MailRelayUpdate;
 import gdg.hfs.vhfs.network.AddressAction;
@@ -121,6 +123,9 @@ public class Vps4DestroyVmTest {
         PleskAction action = new PleskAction();
         action.status = PleskAction.Status.COMPLETE;
         when(pleskService.licenseRelease(this.vm.hfsVmId)).thenReturn(action);
+        MailRelay mailRelay = new MailRelay();
+        mailRelay.quota = 0;
+        when(mailRelayService.setRelayQuota(eq("1.2.3.4"), any(MailRelayUpdate.class))).thenReturn(mailRelay);
         command.execute(context, this.request);
         verify(pleskService, times(1)).licenseRelease(this.request.hfsVmId);
         verify(nodePingService, times(1)).deleteCheck(request.pingCheckAccountId, primaryIp.pingCheckId);

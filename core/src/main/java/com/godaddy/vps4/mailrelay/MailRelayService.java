@@ -18,24 +18,20 @@ import gdg.hfs.vhfs.mailrelay.MailRelayHistory;
 public class MailRelayService {
 
     final gdg.hfs.vhfs.mailrelay.MailRelayService relayService;
-    private final Cache<String, CachedMailRelayUsage> mailRelayUsageCache;
     private final Cache<String, CachedMailRelayHistory> mailRelayHistoryCache;
 
     @Inject
     public  MailRelayService(gdg.hfs.vhfs.mailrelay.MailRelayService relayService, CacheManager cacheManager){
         this.relayService = relayService;
-        this.mailRelayUsageCache = cacheManager.getCache(CacheName.MAIL_RELAY_USAGE, String.class, CachedMailRelayUsage.class);
         this.mailRelayHistoryCache = cacheManager.getCache(CacheName.MAIL_RELAY_HISTORY, String.class, CachedMailRelayHistory.class);
     }
 
     public MailRelay getMailRelay(String ipAddress){
-        CachedMailRelayUsage cachedUsage = mailRelayUsageCache.get(ipAddress);
-        if(cachedUsage == null){
-            MailRelay newUsage = relayService.getMailRelay(ipAddress);
-            cachedUsage = new CachedMailRelayUsage(newUsage);
-            mailRelayUsageCache.put(ipAddress, cachedUsage);
-        }
-        return cachedUsage.relayUsage;
+        return relayService.getMailRelay(ipAddress);
+    }
+
+    public void resetMailRelayHistoryCache(String ipAddress){
+        mailRelayHistoryCache.remove(ipAddress);
     }
 
     public List<MailRelayHistory> getMailRelayHistory(String ipAddress){

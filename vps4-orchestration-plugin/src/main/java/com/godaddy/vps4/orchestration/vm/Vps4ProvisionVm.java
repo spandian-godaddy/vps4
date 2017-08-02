@@ -15,6 +15,7 @@ import com.godaddy.vps4.orchestration.ActionCommand;
 import com.godaddy.vps4.orchestration.ActionRequest;
 import com.godaddy.vps4.orchestration.hfs.cpanel.ConfigureCpanel;
 import com.godaddy.vps4.orchestration.hfs.cpanel.ConfigureCpanel.ConfigureCpanelRequest;
+import com.godaddy.vps4.orchestration.hfs.mailrelay.SetMailRelayQuota;
 import com.godaddy.vps4.orchestration.hfs.network.AllocateIp;
 import com.godaddy.vps4.orchestration.hfs.network.BindIp;
 import com.godaddy.vps4.orchestration.hfs.network.BindIp.BindIpRequest;
@@ -38,9 +39,7 @@ import com.godaddy.vps4.vm.VmUserService;
 
 import gdg.hfs.orchestration.CommandContext;
 import gdg.hfs.orchestration.CommandMetadata;
-import gdg.hfs.vhfs.mailrelay.MailRelay;
 import gdg.hfs.vhfs.mailrelay.MailRelayService;
-import gdg.hfs.vhfs.mailrelay.MailRelayUpdate;
 import gdg.hfs.vhfs.network.IpAddress;
 import gdg.hfs.vhfs.nodeping.CheckType;
 import gdg.hfs.vhfs.nodeping.CreateCheckRequest;
@@ -234,13 +233,10 @@ public class Vps4ProvisionVm extends ActionCommand<Vps4ProvisionVm.Request, Vps4
 
         setStep(CreateVmStep.RequestingMailRelay);
 
-        MailRelayUpdate mailRelayUpdate = new MailRelayUpdate();
-        mailRelayUpdate.quota = request.vmInfo.mailRelayQuota;
-        MailRelay relay = mailRelayService.setRelayQuota(ip.address, mailRelayUpdate);
-        if (relay == null || relay.quota != mailRelayUpdate.quota) {
-            throw new RuntimeException(String
-                    .format("Failed to create mail relay for ip %s. Provision will not continue, please fix the mailRelay", ip.address));
-        }
+        SetMailRelayQuota.Request hfsRequest = new SetMailRelayQuota.Request();
+        hfsRequest.ipAddress = ip.address;
+        hfsRequest.mailRelayQuota = request.vmInfo.mailRelayQuota;
+        context.execute(SetMailRelayQuota.class, hfsRequest);
     }
 
     private SetPassword.Request createSetRootPasswordRequest(Request request, Vm hfsVm) {

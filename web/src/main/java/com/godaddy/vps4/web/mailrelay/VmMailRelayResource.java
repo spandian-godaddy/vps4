@@ -18,11 +18,20 @@ import javax.ws.rs.core.MediaType;
 import com.godaddy.vps4.mailrelay.MailRelayService;
 import com.godaddy.vps4.network.IpAddress;
 import com.godaddy.vps4.network.NetworkService;
+import com.godaddy.vps4.orchestration.mailrelay.Vps4SetMailRelayQuota;
+import com.godaddy.vps4.vm.Action;
+import com.godaddy.vps4.vm.ActionService;
+import com.godaddy.vps4.vm.ActionType;
 import com.godaddy.vps4.vm.VirtualMachine;
+import com.godaddy.vps4.vm.VirtualMachineService;
+import com.godaddy.vps4.web.PATCH;
 import com.godaddy.vps4.web.Vps4Api;
+import com.godaddy.vps4.web.security.AdminOnly;
+import com.godaddy.vps4.web.util.Commands;
 import com.godaddy.vps4.web.vm.VmResource;
 import com.google.inject.Inject;
 
+import gdg.hfs.orchestration.CommandService;
 import gdg.hfs.vhfs.mailrelay.MailRelay;
 import gdg.hfs.vhfs.mailrelay.MailRelayHistory;
 import io.swagger.annotations.Api;
@@ -40,12 +49,20 @@ public class VmMailRelayResource {
     private final MailRelayService mailRelayService;
     private final NetworkService networkService;
     private final VmResource vmResource;
+    private final CommandService commandService;
+    private final ActionService actionService;
+    private final VirtualMachineService virtualMachineService;
 
     @Inject
     public VmMailRelayResource(MailRelayService mailRelayService,
-            NetworkService networkService, VmResource vmResource) {
+            NetworkService networkService, CommandService commandService,
+            ActionService actionService, VirtualMachineService virtualMachineService,
+            VmResource vmResource) {
         this.mailRelayService = mailRelayService;
         this.networkService = networkService;
+        this.commandService = commandService;
+        this.actionService = actionService;
+        this.virtualMachineService = virtualMachineService;
         this.vmResource = vmResource;
     }
 
@@ -83,6 +100,29 @@ public class VmMailRelayResource {
         LocalDateTime ldt = LocalDateTime.ofInstant(i, ZoneOffset.UTC);
         return LocalDate.of(ldt.getYear(), ldt.getMonth(), ldt.getDayOfMonth());
 
+    }
+
+    public static class MailRelayQuotaPatch {
+        public int quota;
+    }
+
+    @AdminOnly
+    @PATCH
+    @Path("{vmId}/mailRelay")
+    @Produces({ "application/json" })
+    @ApiOperation(httpMethod = "PATCH",
+                  value = "Reset the mail relay quota for the primary IP of the given vm",
+                  notes = "Reset the mail relay quota for the primary IP of the given vm")
+    public Action updateMailRelayQuota(@ApiParam(value = "The ID of the selected server", required = true) @PathParam("vmId") UUID vmId,
+            MailRelayQuotaPatch quotaPatch) {
+        vmResource.getVm(vmId);
+        long vps4UserId = virtualMachineService.getUserIdByVmId(vmId);
+        IpAddress ipAddress = networkService.getVmPrimaryAddress(vmId);
+        Vps4SetMailRelayQuota.Request request = new Vps4SetMailRelayQuota.Request(ipAddress.ipAddress, quotaPatch.quota);
+        long actionId = actionService.createAction(vmId, ActionType.UPDATE_MAILRELAY_QUOTA, request.toJSONString(), vps4UserId);
+        request.actionId = actionId;
+        Commands.execute(commandService, actionService, "Vps4SetMailRelayQuota", request);
+        return actionService.getAction(actionId);
     }
 
 }

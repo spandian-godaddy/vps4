@@ -13,8 +13,8 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectMapper.DefaultTyping;
-import com.fasterxml.jackson.datatype.jsr310.JSR310Module;
 import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.datatype.jsr310.JSR310Module;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.EvictionPolicy;
 import com.hazelcast.config.GlobalSerializerConfig;
@@ -79,13 +79,12 @@ public class HazelcastProvider implements Provider<HazelcastInstance> {
         //
         for (String cacheName : new String[]{CacheName.CPANEL_ACCESSHASH,
                                              CacheName.VM_USAGE,
-                                             CacheName.MAIL_RELAY_USAGE,
                                              CacheName.MAIL_RELAY_HISTORY}) {
             config.getMapConfig(cacheName)
                   .setEvictionPolicy(EvictionPolicy.LRU)
                   .setMaxSizeConfig(new MaxSizeConfig(10000, MaxSizePolicy.PER_NODE));
         }
-        
+
         //
         // configure discovery
         //

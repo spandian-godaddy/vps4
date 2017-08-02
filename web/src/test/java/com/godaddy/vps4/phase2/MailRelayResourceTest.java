@@ -165,5 +165,25 @@ public class MailRelayResourceTest {
         Mockito.verify(mailRelayService, Mockito.times(1)).getMailRelayHistory("127.0.0.1", startTime, 30);
     }
 
+ // === updateMailRelayQuota Tests ===
+    private VmMailRelayResource.MailRelayQuotaPatch getQuotaPatch(){
+        VmMailRelayResource.MailRelayQuotaPatch patch = new VmMailRelayResource.MailRelayQuotaPatch();
+        patch.quota = 1234;
+        return patch;
+    }
+
+
+    @Test(expected=AuthorizationException.class)
+    public void testUnauthorizedShopperUpdateMailRelayQuota(){
+        user = GDUserMock.createShopper("shopperX");
+        getMailRelayResource().updateMailRelayQuota(vm.vmId, getQuotaPatch());
+    }
+
+    @Test
+    public void testAdminUpdateMailRelayQuota(){
+        user = GDUserMock.createAdmin();
+        getMailRelayResource().updateMailRelayQuota(vm.vmId, getQuotaPatch());
+    }
+
 
 }
