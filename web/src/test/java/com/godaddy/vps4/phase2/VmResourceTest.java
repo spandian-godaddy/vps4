@@ -7,7 +7,6 @@ import javax.inject.Inject;
 import javax.sql.DataSource;
 import javax.ws.rs.NotFoundException;
 
-import com.godaddy.vps4.web.vm.VmAction;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -22,6 +21,7 @@ import com.godaddy.vps4.security.SecurityModule;
 import com.godaddy.vps4.security.Vps4User;
 import com.godaddy.vps4.security.Vps4UserService;
 import com.godaddy.vps4.security.jdbc.AuthorizationException;
+import com.godaddy.vps4.vm.AccountStatus;
 import com.godaddy.vps4.vm.VirtualMachine;
 import com.godaddy.vps4.vm.VmModule;
 import com.godaddy.vps4.web.Vps4Exception;
@@ -29,6 +29,7 @@ import com.godaddy.vps4.web.Vps4NoShopperException;
 import com.godaddy.vps4.web.security.GDUser;
 import com.godaddy.vps4.web.vm.VirtualMachineDetails;
 import com.godaddy.vps4.web.vm.VirtualMachineWithDetails;
+import com.godaddy.vps4.web.vm.VmAction;
 import com.godaddy.vps4.web.vm.VmResource;
 import com.google.inject.AbstractModule;
 import com.google.inject.Guice;
@@ -41,13 +42,14 @@ import gdg.hfs.orchestration.CommandState;
 import gdg.hfs.vhfs.vm.Vm;
 import gdg.hfs.vhfs.vm.VmService;
 
-public class VmResourceUserTest {
+public class VmResourceTest {
 
     @Inject Vps4UserService userService;
     @Inject DataSource dataSource;
 
     private GDUser user;
     private CreditService creditService = Mockito.mock(CreditService.class);
+    private VirtualMachineCredit credit;
     private Vm hfsVm;
     private long hfsVmId = 98765;
 
@@ -59,6 +61,10 @@ public class VmResourceUserTest {
 
                 @Override
                 public void configure() {
+                    // Credit Service
+                    credit = new VirtualMachineCredit(UUID.randomUUID(), 10, 0, 1, "linux", "myh",
+                            null, null, GDUserMock.DEFAULT_SHOPPER, AccountStatus.ACTIVE, null,null);
+                    Mockito.when(creditService.getVirtualMachineCredit(Mockito.any())).thenReturn(credit);
                     bind(CreditService.class).toInstance(creditService);
 
                     // HFS services
@@ -434,8 +440,6 @@ public class VmResourceUserTest {
     // === getVmWithDetails Tests ===
     public void testGetVmWithDetails() {
         VirtualMachine vm = createTestVm();
-        VirtualMachineCredit credit = Mockito.mock(VirtualMachineCredit.class);
-        Mockito.when(creditService.getVirtualMachineCredit(vm.orionGuid)).thenReturn(credit);
 
         VirtualMachineWithDetails detailedVm = getVmResource().getVirtualMachineWithDetails(vm.vmId);
         Assert.assertEquals(detailedVm.orionGuid, vm.orionGuid);

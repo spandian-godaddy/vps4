@@ -15,7 +15,6 @@ import com.godaddy.hfs.config.Config;
 import com.godaddy.vps4.credit.CreditService;
 import com.godaddy.vps4.credit.VirtualMachineCredit;
 import com.godaddy.vps4.security.GDUserMock;
-import com.godaddy.vps4.security.PrivilegeService;
 import com.godaddy.vps4.security.Vps4UserService;
 import com.godaddy.vps4.vm.AccountStatus;
 import com.godaddy.vps4.vm.DataCenter;
@@ -36,7 +35,6 @@ public class GetVirtualMachineTest {
     @Before
     public void setupTest() {
         GDUser user = GDUserMock.createShopper("testshopper");
-        PrivilegeService privilegeService = Mockito.mock(PrivilegeService.class);
         Vps4UserService userService = Mockito.mock(Vps4UserService.class);
         long hfsVmId = 1234;
         hfsVm = new Vm();
@@ -61,7 +59,7 @@ public class GetVirtualMachineTest {
         Config config = Mockito.mock(Config.class);
         when(config.get(Mockito.anyString(), Mockito.anyString())).thenReturn("0");
         when(config.get(Mockito.anyString())).thenReturn("0");
-        vmResource = new VmResource(privilegeService, user, vmService, userService, virtualMachineService, creditService,
+        vmResource = new VmResource(user, vmService, userService, virtualMachineService, creditService,
                 null, null, null, null, config);
     }
 
