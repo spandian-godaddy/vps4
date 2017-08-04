@@ -4,6 +4,7 @@ import com.godaddy.vps4.orchestration.ActionCommand;
 import com.godaddy.vps4.orchestration.ActionRequest;
 import com.godaddy.vps4.snapshot.SnapshotActionService;
 import com.godaddy.vps4.snapshot.SnapshotService;
+import com.godaddy.vps4.snapshot.SnapshotWithDetails;
 import com.godaddy.vps4.vm.ActionService;
 import com.godaddy.vps4.vm.ActionType;
 import gdg.hfs.orchestration.CommandContext;
@@ -27,6 +28,7 @@ public class Vps4SnapshotVm extends ActionCommand<Vps4SnapshotVm.Request, Vps4Sn
 
     private final gdg.hfs.vhfs.snapshot.SnapshotService hfsSnapshotService;
     private final SnapshotService vps4SnapshotService;
+    private UUID snapshotIdToBeDeprecated;
 
     @Inject
     public Vps4SnapshotVm(@SnapshotActionService ActionService actionService,
@@ -39,8 +41,9 @@ public class Vps4SnapshotVm extends ActionCommand<Vps4SnapshotVm.Request, Vps4Sn
 
     @Override
     protected Response executeWithAction(CommandContext context, Vps4SnapshotVm.Request request) throws Exception {
+        snapshotIdToBeDeprecated = vps4SnapshotService.markOldestSnapshotForDeprecation(request.orionGuid);
         SnapshotAction hfsAction = createAndWaitForSnapshotCompletion(context, request);
-        deprecateOldSnapshot(context, request.snapshotIdToBeDeprecated, request.vps4UserId);
+        deprecateOldSnapshot(context, request.vps4UserId);
         return generateResponse(hfsAction);
     }
 
@@ -58,41 +61,42 @@ public class Vps4SnapshotVm extends ActionCommand<Vps4SnapshotVm.Request, Vps4Sn
         return hfsAction;
     }
 
-    private void deprecateOldSnapshot(CommandContext context, UUID vps4SnapshotId, long vps4UserId) {
-        if (vps4SnapshotId != null) {
-            logger.info("Deprecate snapshot with id: {}", vps4SnapshotId);
-            vps4SnapshotService.markSnapshotAsDeprecated(vps4SnapshotId);
-            com.godaddy.vps4.snapshot.SnapshotWithDetails vps4Snapshot =
-                    vps4SnapshotService.getSnapshotWithDetails(vps4SnapshotId);
+    private void deprecateOldSnapshot(CommandContext context, long vps4UserId) {
+        if (snapshotIdToBeDeprecated != null) {
+            logger.info("Deprecate snapshot with id: {}", snapshotIdToBeDeprecated);
+            vps4SnapshotService.markSnapshotAsDeprecated(snapshotIdToBeDeprecated);
+            SnapshotWithDetails vps4Snapshot =
+                    vps4SnapshotService.getSnapshotWithDetails(snapshotIdToBeDeprecated);
 
             try {
                 // now destroy the deprecated snapshot
-                destroyOldSnapshot(context, vps4SnapshotId, vps4UserId, vps4Snapshot.hfsSnapshotId);
+                destroyOldSnapshot(context, vps4UserId, vps4Snapshot.hfsSnapshotId);
             } catch (Exception e) {
                 // Squelch any exceptions because we cant really do anything about it?
-                logger.info("Deprecation/Destroy failure for snapshot with id: {}", vps4SnapshotId);
+                logger.info("Deprecation/Destroy failure for snapshot with id: {}", snapshotIdToBeDeprecated);
             }
         }
     }
 
-    private void destroyOldSnapshot(CommandContext context, UUID vps4SnapshotId, long vps4UserId, long hfsSnapshotId) {
+    private void destroyOldSnapshot(CommandContext context, long vps4UserId, long hfsSnapshotId) {
         long delActionId = actionService.createAction(
-                vps4SnapshotId,  ActionType.DESTROY_SNAPSHOT, new JSONObject().toJSONString(), vps4UserId);
+                snapshotIdToBeDeprecated,  ActionType.DESTROY_SNAPSHOT, new JSONObject().toJSONString(), vps4UserId);
 
         Vps4DestroySnapshot.Request req = new Vps4DestroySnapshot.Request();
         req.hfsSnapshotId = hfsSnapshotId;
-        req.vps4SnapshotId = vps4SnapshotId;
+        req.vps4SnapshotId = snapshotIdToBeDeprecated;
         req.actionId = delActionId;
         context.execute(Vps4DestroySnapshot.class, req);
     }
 
-    private SnapshotAction WaitForSnapshotCompletion(CommandContext context, Request request, SnapshotAction hfsAction) {
+    private SnapshotAction WaitForSnapshotCompletion(CommandContext context, Request request,
+                                                     SnapshotAction hfsAction) {
         try {
             hfsAction = context.execute(WaitForSnapshotAction.class, hfsAction);
         } catch (Exception e) {
             logger.info("Snapshot creation error (waitForAction) for snapshot with id: {}", request.vps4SnapshotId);
             vps4SnapshotService.markSnapshotErrored(request.vps4SnapshotId);
-            reverseSnapshotDeprecation(request.snapshotIdToBeDeprecated);
+            reverseSnapshotDeprecation();
             throw new RuntimeException(e);
         }
 
@@ -116,15 +120,15 @@ public class Vps4SnapshotVm extends ActionCommand<Vps4SnapshotVm.Request, Vps4Sn
         } catch (Exception e) {
             logger.info("Snapshot creation error for VPS4 snapshot with id: {}", request.vps4SnapshotId);
             vps4SnapshotService.markSnapshotErrored(request.vps4SnapshotId);
-            reverseSnapshotDeprecation(request.snapshotIdToBeDeprecated);
+            reverseSnapshotDeprecation();
             throw new RuntimeException(e);
         }
     }
 
-    private void reverseSnapshotDeprecation(UUID snapshotId) {
-        if (snapshotId != null)
-            logger.info("Reverse deprecation of VPS4 snapshot with id: {}", snapshotId);
-            vps4SnapshotService.reverseSnapshotDeprecation(snapshotId);
+    private void reverseSnapshotDeprecation() {
+        if (snapshotIdToBeDeprecated != null)
+            logger.info("Reverse deprecation of VPS4 snapshot with id: {}", snapshotIdToBeDeprecated);
+            vps4SnapshotService.reverseSnapshotDeprecation(snapshotIdToBeDeprecated);
     }
 
     private void updateHfsSnapshotId(UUID vps4SnapshotId, long hfsSnapshotId) {
@@ -147,7 +151,7 @@ public class Vps4SnapshotVm extends ActionCommand<Vps4SnapshotVm.Request, Vps4Sn
         public long hfsVmId;
         public String snapshotName;
         public UUID vps4SnapshotId;
-        public UUID snapshotIdToBeDeprecated;
+        public UUID orionGuid;
         public long vps4UserId;
 
         @Override

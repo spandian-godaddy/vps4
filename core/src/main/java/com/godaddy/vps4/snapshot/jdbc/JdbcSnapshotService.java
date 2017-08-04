@@ -35,7 +35,7 @@ public class JdbcSnapshotService implements SnapshotService {
 
     @Override
     public boolean isOverQuota(UUID orionGuid) {
-        return !(hasOpenSlots(orionGuid) || isSnapshotAvailableForDeprecation(orionGuid));
+        return !(hasOpenSlots(orionGuid) || allSlotsFilledOnlyByLiveSnapshots(orionGuid));
     }
 
     private boolean hasOpenSlots(UUID orionGuid) {
@@ -53,7 +53,7 @@ public class JdbcSnapshotService implements SnapshotService {
         return rs.next() && rs.getLong("count") < OPEN_SLOTS_PER_CREDIT;
     }
 
-    private boolean isSnapshotAvailableForDeprecation(UUID orionGuid) {
+    private boolean allSlotsFilledOnlyByLiveSnapshots(UUID orionGuid) {
         List<StatusCount> statusCounts = Sql.with(dataSource).exec(
                 "SELECT ss.status, COUNT(*) FROM SNAPSHOT s JOIN snapshot_status ss ON s.status = ss.status_id "
                         + "JOIN VIRTUAL_MACHINE v ON s.vm_id = v.vm_id "
@@ -98,6 +98,20 @@ public class JdbcSnapshotService implements SnapshotService {
                 rs.getLong("count"));
     }
 
+    private boolean shouldDeprecateSnapshot(UUID orionGuid) {
+        // we should be deprecating a snapshot only if the number of LIVE snapshot is
+        // equal to the max number of slots for the account (orionGuid)
+        return Sql.with(dataSource).exec(
+                "SELECT COUNT(*) FROM SNAPSHOT s JOIN SNAPSHOT_STATUS ss ON s.status = ss.status_id "
+                        + "JOIN VIRTUAL_MACHINE v ON s.vm_id = v.vm_id "
+                        + "WHERE v.orion_guid = ? AND ss.status IN ('LIVE');",
+                this::shouldDeprecateMapper, orionGuid);
+    }
+
+    private boolean shouldDeprecateMapper(ResultSet rs) throws SQLException {
+        return rs.next() && rs.getLong("count") == OPEN_SLOTS_PER_CREDIT;
+    }
+
     @Override
     public void updateHfsSnapshotId(UUID snapshotId, long hfsSnapshotId) {
         Sql.with(dataSource).exec("UPDATE snapshot SET modified_at=NOW(), hfs_snapshot_id=? "
@@ -139,7 +153,7 @@ public class JdbcSnapshotService implements SnapshotService {
         updateSnapshotStatus(snapshotId, SnapshotStatus.DEPRECATING);
     }
 
-    private UUID getOldestSnapshot(UUID orionGuid) {
+    private UUID getOldestLiveSnapshot(UUID orionGuid) {
         return Sql.with(dataSource).exec(
                 "SELECT s.id FROM SNAPSHOT s JOIN SNAPSHOT_STATUS ss ON s.status = ss.status_id "
                         + "JOIN VIRTUAL_MACHINE v ON s.vm_id = v.vm_id "
@@ -162,8 +176,8 @@ public class JdbcSnapshotService implements SnapshotService {
 
     @Override
     public UUID markOldestSnapshotForDeprecation(UUID orionGuid) {
-        if (isSnapshotAvailableForDeprecation(orionGuid)) {
-            UUID snapshotId = getOldestSnapshot(orionGuid);
+        if (shouldDeprecateSnapshot(orionGuid)) {
+            UUID snapshotId = getOldestLiveSnapshot(orionGuid);
             if (snapshotId != null) {
                 markSnapshotForDeprecation(snapshotId);
                 return snapshotId;

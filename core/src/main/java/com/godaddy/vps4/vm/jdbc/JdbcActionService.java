@@ -71,7 +71,7 @@ public class JdbcActionService implements ActionService {
     }
 
     @Override
-    public Action getVmAction(UUID vmId, long actionId) {
+    public Action getAction(UUID vmId, long actionId) {
         return Sql.with(dataSource).exec("SELECT * FROM vm_action "
                 + " JOIN action_status on vm_action.status_id = action_status.status_id"
                 + " JOIN action_type on vm_action.action_type_id = action_type.type_id"

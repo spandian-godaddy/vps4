@@ -20,7 +20,6 @@ import io.swagger.annotations.Api;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.inject.Named;
 import javax.ws.rs.*;
 import javax.ws.rs.core.MediaType;
 import java.util.List;
@@ -78,7 +77,7 @@ public class SnapshotActionResource {
 
     private Action getSnapshotActionFromCore(UUID snapshotId, long actionId) {
         verifyPrivilege(snapshotId);
-        Action action = actionService.getSnapshotAction(snapshotId, actionId);
+        Action action = actionService.getAction(snapshotId, actionId);
         if (action == null) {
             throw new NotFoundException("actionId " + actionId + " not found");
         }

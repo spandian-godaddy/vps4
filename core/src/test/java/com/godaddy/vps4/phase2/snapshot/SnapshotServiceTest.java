@@ -196,9 +196,21 @@ public class SnapshotServiceTest {
     }
 
     @Test
-    public void changeSnapshotStatusToDeprecating() {
+    public void changeSnapshotStatusToDeprecatingCase1() {
         insertTestSnapshots(1, SnapshotStatus.LIVE);
         UUID snapshotId = snapshotIds.get(0);
+        snapshotService.markOldestSnapshotForDeprecation(orionGuid);
+        assertEquals(SnapshotStatus.DEPRECATING, snapshotService.getSnapshot(snapshotId).status);
+    }
+
+    @Test
+    public void changeSnapshotStatusToDeprecatingCase2() {
+        // Over here we have 2 snapshots in the DB, however the number of LIVE snapshots
+        // equals the number of slots for the account/orionGuid. Hence, we deprecate the
+        // LIVE one
+        insertTestSnapshots(1, SnapshotStatus.LIVE);
+        UUID snapshotId = snapshotIds.get(0);
+        insertTestSnapshots(1, SnapshotStatus.NEW);
         snapshotService.markOldestSnapshotForDeprecation(orionGuid);
         assertEquals(SnapshotStatus.DEPRECATING, snapshotService.getSnapshot(snapshotId).status);
     }

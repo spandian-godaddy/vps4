@@ -12,11 +12,7 @@ public interface ActionService {
 
     Action getAction(long actionId);
 
-    Action getVmAction(UUID vmId, long actionId);
-
-    default Action getSnapshotAction(UUID snapshotId, long actionId) {
-        throw new UnsupportedOperationException("Not implemented, yet");
-    }
+    Action getAction(UUID resourceId, long actionId);
 
     default List<Action> getActions(UUID resourceId) {
         throw new UnsupportedOperationException("Not implemented, yet");

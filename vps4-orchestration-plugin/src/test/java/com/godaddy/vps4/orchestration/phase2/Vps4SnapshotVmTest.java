@@ -39,6 +39,7 @@ public class Vps4SnapshotVmTest {
     private Vps4SnapshotVm.Request request;
     private gdg.hfs.vhfs.snapshot.SnapshotAction hfsAction;
     private gdg.hfs.vhfs.snapshot.Snapshot hfsSnapshot;
+    private UUID orionGuid;
     private UUID vps4SnapshotId;
     private long vps4UserId;
     private UUID vps4SnapshotIdToBeDeprecated;
@@ -81,7 +82,7 @@ public class Vps4SnapshotVmTest {
         req.actionId = vps4SnapshotActionId;
         req.vps4SnapshotId = vps4SnapshotId;
         req.snapshotName = "test-1";
-        req.snapshotIdToBeDeprecated = vps4SnapshotIdToBeDeprecated;
+        req.orionGuid = orionGuid;
         req.vps4UserId = vps4UserId;
         return req;
     }
@@ -109,9 +110,10 @@ public class Vps4SnapshotVmTest {
         vps4UserId = SqlTestData.insertUser(vps4UserService).getId();
         Project project = SqlTestData.insertProject(projectService, vps4UserService);
         VirtualMachine vm = SqlTestData.insertVm(virtualMachineService, vps4UserService);
+        orionGuid = vm.orionGuid;
         vps4SnapshotId = SqlTestData.insertSnapshot(snapshotService, vm.vmId, project.getProjectId());
         vps4SnapshotIdToBeDeprecated = SqlTestData.insertSnapshotWithStatus(
-                snapshotService, vm.vmId, project.getProjectId(), SnapshotStatus.DEPRECATING);
+                snapshotService, vm.vmId, project.getProjectId(), SnapshotStatus.LIVE);
         vps4SnapshotActionId = SqlTestData.insertSnapshotAction(actionService, vps4UserService, vps4SnapshotId);
     }
 
@@ -119,6 +121,13 @@ public class Vps4SnapshotVmTest {
     public void teardownTest() {
         SqlTestData.cleanupSqlTestData(
                 injector.getInstance(DataSource.class), injector.getInstance(Vps4UserService.class));
+    }
+
+    @Test
+    public void marksTheOldSnapshotStatusToDeprecating() {
+        command.execute(context, request);
+        verify(spySnapshotService, times(1))
+                .markOldestSnapshotForDeprecation(eq(orionGuid));
     }
 
     @Test

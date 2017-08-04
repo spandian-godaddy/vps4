@@ -87,9 +87,8 @@ public class SnapshotResource {
     public SnapshotAction createSnapshot(SnapshotRequest snapshotRequest) {
         VirtualMachine vm = vmResource.getVm(snapshotRequest.vmId);
         validateCreation(vm.orionGuid, snapshotRequest.name);
-        UUID snapshotIdToBeDeprecated = snapshotService.markOldestSnapshotForDeprecation(vm.orionGuid);
         Action action = createSnapshotAndActionEntries(vm, snapshotRequest.name);
-        kickoffSnapshotCreation(vm.vmId, snapshotRequest.name, vm.hfsVmId, action, snapshotIdToBeDeprecated);
+        kickoffSnapshotCreation(vm.vmId, snapshotRequest.name, vm.hfsVmId, action, vm.orionGuid);
         return new SnapshotAction(actionService.getAction(action.id));
     }
 
@@ -113,15 +112,15 @@ public class SnapshotResource {
         return actionService.getAction(actionId);
     }
 
-    private void kickoffSnapshotCreation(UUID vmId, String snapshotName, long hfsVmId,
-                                         Action action, UUID snapshotIdToBeDeprecated) {
+    private void kickoffSnapshotCreation(UUID vmId, String snapshotName,
+                                         long hfsVmId, Action action, UUID orionGuid) {
         UUID snapshotId = action.resourceId; // the resourceId refers to the associated snapshotId
         Vps4SnapshotVm.Request commandRequest = new Vps4SnapshotVm.Request();
         commandRequest.hfsVmId = hfsVmId;
         commandRequest.snapshotName = snapshotName;
         commandRequest.vps4SnapshotId = snapshotId;
         commandRequest.actionId = action.id;
-        commandRequest.snapshotIdToBeDeprecated = snapshotIdToBeDeprecated;
+        commandRequest.orionGuid = orionGuid;
         commandRequest.vps4UserId = action.vps4UserId;
 
         CommandState command = Commands.execute(
