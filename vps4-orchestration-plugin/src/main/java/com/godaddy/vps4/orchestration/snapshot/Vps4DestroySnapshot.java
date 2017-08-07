@@ -8,6 +8,7 @@ import javax.inject.Named;
 import com.godaddy.vps4.orchestration.ActionCommand;
 import com.godaddy.vps4.orchestration.ActionRequest;
 import com.godaddy.vps4.orchestration.hfs.snapshot.DestroySnapshot;
+import com.godaddy.vps4.snapshot.SnapshotActionService;
 import com.godaddy.vps4.snapshot.SnapshotService;
 import com.godaddy.vps4.vm.ActionService;
 
@@ -24,7 +25,7 @@ public class Vps4DestroySnapshot extends ActionCommand<Vps4DestroySnapshot.Reque
     final SnapshotService snapshotService;
 
     @Inject
-    public Vps4DestroySnapshot(@Named("Snapshot_action") ActionService actionService,
+    public Vps4DestroySnapshot(@SnapshotActionService ActionService actionService,
             SnapshotService snapshotService) {
         super(actionService);
         this.snapshotService = snapshotService;

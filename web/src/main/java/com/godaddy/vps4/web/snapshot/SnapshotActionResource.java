@@ -5,6 +5,7 @@ import static com.godaddy.vps4.web.util.RequestValidation.verifyUserPrivilegeToP
 import com.godaddy.vps4.security.PrivilegeService;
 import com.godaddy.vps4.security.Vps4UserService;
 import com.godaddy.vps4.snapshot.Snapshot;
+import com.godaddy.vps4.snapshot.SnapshotActionService;
 import com.godaddy.vps4.snapshot.SnapshotService;
 import com.godaddy.vps4.snapshot.SnapshotStatus;
 import com.godaddy.vps4.vm.Action;
@@ -19,7 +20,6 @@ import io.swagger.annotations.Api;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.inject.Named;
 import javax.ws.rs.*;
 import javax.ws.rs.core.MediaType;
 import java.util.List;
@@ -45,7 +45,7 @@ public class SnapshotActionResource {
     private final Vps4UserService userService;
 
     @Inject
-    public SnapshotActionResource(@Named("Snapshot_action") ActionService actionService,
+    public SnapshotActionResource(@SnapshotActionService ActionService actionService,
                                   PrivilegeService privilegeService, SnapshotService snapshotService,
                                   Vps4UserService userService, CommandService commandService, GDUser user) {
         this.actionService = actionService;
@@ -77,7 +77,7 @@ public class SnapshotActionResource {
 
     private Action getSnapshotActionFromCore(UUID snapshotId, long actionId) {
         verifyPrivilege(snapshotId);
-        Action action = actionService.getSnapshotAction(snapshotId, actionId);
+        Action action = actionService.getAction(snapshotId, actionId);
         if (action == null) {
             throw new NotFoundException("actionId " + actionId + " not found");
         }

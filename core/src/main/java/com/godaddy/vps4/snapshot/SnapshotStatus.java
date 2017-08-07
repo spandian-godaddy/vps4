@@ -8,9 +8,11 @@ import static java.util.stream.Collectors.toMap;
 public enum SnapshotStatus {
     NEW(1),
     IN_PROGRESS(2),
-    COMPLETE(3),
+    LIVE(3),
     ERROR(4),
-    DESTROYED(5);
+    DESTROYED(5),
+    DEPRECATING(6),
+    DEPRECATED(7);
 
     private final int typeId;
 

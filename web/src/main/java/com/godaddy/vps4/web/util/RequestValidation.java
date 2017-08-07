@@ -48,8 +48,8 @@ public class RequestValidation {
         }
     }
 
-    public static void validateIfSnapshotOverQuota(SnapshotService snapshotService, UUID vmId) {
-        if (snapshotService.isOverQuota(vmId))
+    public static void validateIfSnapshotOverQuota(SnapshotService snapshotService, UUID orionGuid) {
+        if (snapshotService.isOverQuota(orionGuid))
             throw new Vps4Exception("SNAPSHOT_OVER_QUOTA", "Snapshot creation rejected as quota exceeded");
     }
 

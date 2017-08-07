@@ -65,12 +65,7 @@ public class JdbcSnapshotActionService implements ActionService {
     }
 
     @Override
-    public Action getVmAction(UUID vmId, long actionId) {
-        throw new UnsupportedOperationException("Not implemented, yet");
-    }
-
-    @Override
-    public Action getSnapshotAction(UUID snapshotId, long actionId) {
+    public Action getAction(UUID snapshotId, long actionId) {
         return Sql.with(dataSource).exec("SELECT * FROM snapshot_action "
                         + " JOIN action_status on snapshot_action.status_id = action_status.status_id"
                         + " JOIN action_type on snapshot_action.action_type_id = action_type.type_id"

@@ -99,7 +99,7 @@ public class VmActionResource {
         if (user.isShopper())
             verifyUserPrivilege(vmId);
 
-        Action action = actionService.getVmAction(vmId, actionId);
+        Action action = actionService.getAction(vmId, actionId);
         if (action == null) {
             throw new NotFoundException("actionId " + actionId + " not found");
         }

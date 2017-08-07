@@ -6,6 +6,7 @@ import java.util.stream.Collectors;
 
 import javax.inject.Named;
 
+import com.godaddy.vps4.snapshot.SnapshotActionService;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
@@ -49,7 +50,7 @@ public class Vps4MessageHandler implements MessageHandler {
             SnapshotService snapshotService,
             CreditService creditService,
             ActionService vmActionService,
-            @Named("Snapshot_action") ActionService snapshotActionService,
+            @SnapshotActionService ActionService snapshotActionService,
             CommandService commandService,
             Config config) {
         this.virtualMachineService = virtualMachineService;

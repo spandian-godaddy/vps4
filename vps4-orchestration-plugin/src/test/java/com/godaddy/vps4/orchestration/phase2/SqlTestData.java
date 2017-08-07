@@ -6,6 +6,7 @@ import com.godaddy.vps4.project.ProjectService;
 import com.godaddy.vps4.security.Vps4User;
 import com.godaddy.vps4.security.Vps4UserService;
 import com.godaddy.vps4.snapshot.SnapshotService;
+import com.godaddy.vps4.snapshot.SnapshotStatus;
 import com.godaddy.vps4.vm.*;
 import com.godaddy.vps4.vm.VirtualMachineService.ProvisionVirtualMachineParameters;
 import org.json.simple.JSONObject;
@@ -45,6 +46,14 @@ public class SqlTestData {
 
     public static UUID insertSnapshot(SnapshotService snapshotService, UUID vmId, long projectId) {
         return snapshotService.createSnapshot(projectId, vmId, TEST_SNAPSHOT_NAME);
+    }
+
+    public static UUID insertSnapshotWithStatus(SnapshotService snapshotService, UUID vmId,
+                                      long projectId, SnapshotStatus status) {
+        UUID snapshotId = insertSnapshot(snapshotService, vmId, projectId);
+        snapshotService.updateSnapshotStatus(snapshotId, status);
+        snapshotService.updateHfsSnapshotId(snapshotId, 123456);
+        return snapshotId;
     }
 
     public static long insertSnapshotAction(ActionService actionService, Vps4UserService userService, UUID snapshotId) {

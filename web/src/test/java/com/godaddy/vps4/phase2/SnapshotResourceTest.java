@@ -91,7 +91,7 @@ public class SnapshotResourceTest {
                 (int) (Math.random() * 100000),
                 testVm.vmId,
                 "test-snapshot",
-                SnapshotStatus.COMPLETE,
+                SnapshotStatus.LIVE,
                 Instant.now(),
                 null
         );

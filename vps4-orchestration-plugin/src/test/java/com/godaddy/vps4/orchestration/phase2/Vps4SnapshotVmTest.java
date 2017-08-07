@@ -5,22 +5,24 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
 import com.godaddy.vps4.jdbc.DatabaseModule;
+import com.godaddy.vps4.orchestration.snapshot.Vps4DestroySnapshot;
 import com.godaddy.vps4.orchestration.snapshot.Vps4SnapshotVm;
 import com.godaddy.vps4.orchestration.snapshot.WaitForSnapshotAction;
 import com.godaddy.vps4.project.Project;
 import com.godaddy.vps4.project.ProjectService;
 import com.godaddy.vps4.security.SecurityModule;
 import com.godaddy.vps4.security.Vps4UserService;
+import com.godaddy.vps4.snapshot.SnapshotActionService;
 import com.godaddy.vps4.snapshot.SnapshotModule;
 import com.godaddy.vps4.snapshot.SnapshotService;
 import com.godaddy.vps4.snapshot.SnapshotStatus;
 import com.godaddy.vps4.vm.ActionService;
+import com.godaddy.vps4.vm.ActionType;
 import com.godaddy.vps4.vm.VirtualMachine;
 import com.godaddy.vps4.vm.VirtualMachineService;
 import com.google.inject.Guice;
 import com.google.inject.Inject;
 import com.google.inject.Injector;
-import com.google.inject.name.Named;
 import gdg.hfs.orchestration.CommandContext;
 import org.junit.*;
 
@@ -37,7 +39,10 @@ public class Vps4SnapshotVmTest {
     private Vps4SnapshotVm.Request request;
     private gdg.hfs.vhfs.snapshot.SnapshotAction hfsAction;
     private gdg.hfs.vhfs.snapshot.Snapshot hfsSnapshot;
+    private UUID orionGuid;
     private UUID vps4SnapshotId;
+    private long vps4UserId;
+    private UUID vps4SnapshotIdToBeDeprecated;
     private long vps4SnapshotActionId;
     private long hfsActionId = 12345L;
     private long hfsSnapshotId = 4567L;
@@ -49,7 +54,7 @@ public class Vps4SnapshotVmTest {
     @Inject VirtualMachineService virtualMachineService;
     @Inject SnapshotService snapshotService;
     @Inject gdg.hfs.vhfs.snapshot.SnapshotService hfsSnapshotService;
-    @Inject @Named("Snapshot_action") ActionService actionService;
+    @Inject @SnapshotActionService ActionService actionService;
 
     @BeforeClass
     public static void newInjector() {
@@ -77,6 +82,8 @@ public class Vps4SnapshotVmTest {
         req.actionId = vps4SnapshotActionId;
         req.vps4SnapshotId = vps4SnapshotId;
         req.snapshotName = "test-1";
+        req.orionGuid = orionGuid;
+        req.vps4UserId = vps4UserId;
         return req;
     }
 
@@ -100,10 +107,13 @@ public class Vps4SnapshotVmTest {
     }
 
     private void addTestSqlData() {
-        SqlTestData.insertUser(vps4UserService);
+        vps4UserId = SqlTestData.insertUser(vps4UserService).getId();
         Project project = SqlTestData.insertProject(projectService, vps4UserService);
         VirtualMachine vm = SqlTestData.insertVm(virtualMachineService, vps4UserService);
+        orionGuid = vm.orionGuid;
         vps4SnapshotId = SqlTestData.insertSnapshot(snapshotService, vm.vmId, project.getProjectId());
+        vps4SnapshotIdToBeDeprecated = SqlTestData.insertSnapshotWithStatus(
+                snapshotService, vm.vmId, project.getProjectId(), SnapshotStatus.LIVE);
         vps4SnapshotActionId = SqlTestData.insertSnapshotAction(actionService, vps4UserService, vps4SnapshotId);
     }
 
@@ -111,6 +121,13 @@ public class Vps4SnapshotVmTest {
     public void teardownTest() {
         SqlTestData.cleanupSqlTestData(
                 injector.getInstance(DataSource.class), injector.getInstance(Vps4UserService.class));
+    }
+
+    @Test
+    public void marksTheOldSnapshotStatusToDeprecating() {
+        command.execute(context, request);
+        verify(spySnapshotService, times(1))
+                .markOldestSnapshotForDeprecation(eq(orionGuid));
     }
 
     @Test
@@ -141,8 +158,8 @@ public class Vps4SnapshotVmTest {
     @Test
     public void marksSnapshotStatusAsComplete() {
         command.execute(context, request);
-        verify(spySnapshotService, times(1)).markSnapshotComplete(eq(vps4SnapshotId));
-        Assert.assertEquals(snapshotService.getSnapshot(vps4SnapshotId).status, SnapshotStatus.COMPLETE);;
+        verify(spySnapshotService, times(1)).markSnapshotLive(eq(vps4SnapshotId));
+        Assert.assertEquals(snapshotService.getSnapshot(vps4SnapshotId).status, SnapshotStatus.LIVE);
     }
 
     @Test
@@ -158,13 +175,36 @@ public class Vps4SnapshotVmTest {
                 .updateHfsImageId(eq(vps4SnapshotId), eq(hfsImageId));
     }
 
+    @Test
+    public void marksTheOldSnapshotAsDeprecated() {
+        command.execute(context, request);
+        verify(spySnapshotService, times(1))
+                .markSnapshotAsDeprecated(eq(vps4SnapshotIdToBeDeprecated));
+    }
+
+    @Test
+    public void createsActionToTrackOldSnapshotDestroy() {
+        command.execute(context, request);
+        // When we created this snapshot (the one to be deprecated) we did add a create action,
+        // hence getting and comparing the action at the first index works in this test
+        Assert.assertEquals(
+                ActionType.DESTROY_SNAPSHOT, actionService.getActions(vps4SnapshotIdToBeDeprecated).get(0).type);
+    }
+
+    @Test
+    public void destroysTheOldSnapshot() {
+        command.execute(context, request);
+        verify(context, times(1))
+            .execute(eq(Vps4DestroySnapshot.class), any(Vps4DestroySnapshot.Request.class));
+    }
+
     @Test(expected = RuntimeException.class)
     public void errorInInitialRequestSetsStatusToError() {
         when(context.execute(eq("Vps4SnapshotVm"), any())).thenThrow(new Exception("Error in initial request"));
         command.execute(context, request);
 
         verify(spySnapshotService, times(1)).markSnapshotErrored(eq(vps4SnapshotId));
-        Assert.assertEquals(snapshotService.getSnapshot(vps4SnapshotId).status, SnapshotStatus.ERROR);;
+        Assert.assertEquals(snapshotService.getSnapshot(vps4SnapshotId).status, SnapshotStatus.ERROR);
     }
 
     @Test(expected = RuntimeException.class)
@@ -174,6 +214,6 @@ public class Vps4SnapshotVmTest {
         command.execute(context, request);
 
         verify(spySnapshotService, times(1)).markSnapshotErrored(eq(vps4SnapshotId));
-        Assert.assertEquals(snapshotService.getSnapshot(vps4SnapshotId).status, SnapshotStatus.ERROR);;
+        Assert.assertEquals(snapshotService.getSnapshot(vps4SnapshotId).status, SnapshotStatus.ERROR);
     }
 }
