@@ -13,19 +13,24 @@ import java.util.UUID;
 import javax.inject.Inject;
 import javax.sql.DataSource;
 
-import com.godaddy.vps4.vm.*;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import org.mockito.Mockito;
 
 import com.godaddy.vps4.jdbc.DatabaseModule;
 import com.godaddy.vps4.security.GDUserMock;
-import com.godaddy.vps4.security.PrivilegeService;
 import com.godaddy.vps4.security.SecurityModule;
 import com.godaddy.vps4.security.Vps4User;
 import com.godaddy.vps4.security.Vps4UserService;
 import com.godaddy.vps4.security.jdbc.AuthorizationException;
-import com.godaddy.vps4.security.jdbc.JdbcPrivilegeService;
+import com.godaddy.vps4.vm.Action;
+import com.godaddy.vps4.vm.ActionService;
+import com.godaddy.vps4.vm.ActionStatus;
+import com.godaddy.vps4.vm.ActionType;
+import com.godaddy.vps4.vm.ImageService;
+import com.godaddy.vps4.vm.VirtualMachine;
+import com.godaddy.vps4.vm.VirtualMachineService;
 import com.godaddy.vps4.vm.jdbc.JdbcVirtualMachineService;
 import com.godaddy.vps4.web.security.GDUser;
 import com.godaddy.vps4.web.vm.VmPatchResource;
@@ -34,7 +39,6 @@ import com.google.inject.AbstractModule;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
 import com.google.inject.Provides;
-import org.mockito.Mockito;
 
 public class VmPatchResourceTest {
 
@@ -50,6 +54,7 @@ public class VmPatchResourceTest {
     private Injector injector = Guice.createInjector(
             new DatabaseModule(),
             new SecurityModule(),
+            new Phase2ExternalsModule(),
             new AbstractModule() {
 
                 @Override
@@ -61,9 +66,8 @@ public class VmPatchResourceTest {
                     Mockito.when(actionService.getAction(Mockito.anyLong()))
                             .thenReturn(coreVmAction);
                     bind(ActionService.class).toInstance(actionService);
-
-                    bind(PrivilegeService.class).to(JdbcPrivilegeService.class);
                     bind(VirtualMachineService.class).to(JdbcVirtualMachineService.class);
+                    bind(ImageService.class).toInstance(Mockito.mock(ImageService.class));
                 }
 
                 @Provides

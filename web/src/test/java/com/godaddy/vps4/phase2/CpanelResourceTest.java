@@ -13,14 +13,13 @@ import org.mockito.Mockito;
 
 import com.godaddy.vps4.cpanel.CpanelTimeoutException;
 import com.godaddy.vps4.cpanel.Vps4CpanelService;
-import com.godaddy.vps4.credit.CreditService;
-import com.godaddy.vps4.hfs.HfsMockModule;
 import com.godaddy.vps4.jdbc.DatabaseModule;
 import com.godaddy.vps4.security.GDUserMock;
 import com.godaddy.vps4.security.SecurityModule;
 import com.godaddy.vps4.security.Vps4User;
 import com.godaddy.vps4.security.Vps4UserService;
 import com.godaddy.vps4.security.jdbc.AuthorizationException;
+import com.godaddy.vps4.vm.AccountStatus;
 import com.godaddy.vps4.vm.VirtualMachine;
 import com.godaddy.vps4.vm.VmModule;
 import com.godaddy.vps4.web.Vps4Exception;
@@ -31,8 +30,6 @@ import com.google.inject.Guice;
 import com.google.inject.Inject;
 import com.google.inject.Injector;
 import com.google.inject.Provides;
-
-import gdg.hfs.orchestration.CommandService;
 
 public class CpanelResourceTest {
 
@@ -47,19 +44,13 @@ public class CpanelResourceTest {
     Injector injector = Guice.createInjector(new DatabaseModule(),
             new SecurityModule(),
             new VmModule(),
-            new HfsMockModule(),
+            new Phase2ExternalsModule(),
             new AbstractModule() {
 
                 @Override
                 protected void configure() {
                     cpServ = Mockito.mock(Vps4CpanelService.class);
                     bind(Vps4CpanelService.class).toInstance(cpServ);
-
-                    CreditService creditService = Mockito.mock(CreditService.class);
-                    bind(CreditService.class).toInstance(creditService);
-
-                    CommandService commandService = Mockito.mock(CommandService.class);
-                    bind(CommandService.class).toInstance(commandService);
                 }
 
                 @Provides
@@ -201,6 +192,17 @@ public class CpanelResourceTest {
         Mockito.when(cpServ.listCpanelAccounts(Mockito.anyLong()))
                 .thenThrow(new CpanelTimeoutException("Timed out"));
         Assert.assertNull(getCpanelResource().listCpanelAccounts(vm.vmId));
+    }
+
+    @Test
+    public void testListCpanelAccountsSuspended() {
+        Phase2ExternalsModule.mockVmCredit(AccountStatus.SUSPENDED);
+        try {
+            getCpanelResource().listCpanelAccounts(centVm.vmId);
+            Assert.fail("Exception not thrown");
+        } catch (Vps4Exception e) {
+            Assert.assertEquals("ACCOUNT_SUSPENDED", e.getId());
+        }
     }
 
 }

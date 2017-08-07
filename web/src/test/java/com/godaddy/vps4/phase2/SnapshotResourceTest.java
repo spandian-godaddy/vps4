@@ -12,6 +12,7 @@ import javax.ws.rs.NotFoundException;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import com.godaddy.vps4.jdbc.DatabaseModule;
@@ -24,8 +25,10 @@ import com.godaddy.vps4.snapshot.Snapshot;
 import com.godaddy.vps4.snapshot.SnapshotModule;
 import com.godaddy.vps4.snapshot.SnapshotStatus;
 import com.godaddy.vps4.snapshot.SnapshotWithDetails;
+import com.godaddy.vps4.vm.AccountStatus;
 import com.godaddy.vps4.vm.VirtualMachine;
 import com.godaddy.vps4.vm.VmModule;
+import com.godaddy.vps4.web.Vps4Exception;
 import com.godaddy.vps4.web.Vps4NoShopperException;
 import com.godaddy.vps4.web.security.AdminOnly;
 import com.godaddy.vps4.web.security.GDUser;
@@ -185,6 +188,19 @@ public class SnapshotResourceTest {
     public void testE2SGetSnapshot() {
         user = GDUserMock.createEmployee2Shopper();
         testGetSnapshot();
+    }
+
+    @Ignore("Snapshots need rework, snapshot api should not work if vm suspended")
+    @Test
+    public void testShopperGetSnapshotFailsIfSuspended() {
+        Phase2ExternalsModule.mockVmCredit(AccountStatus.SUSPENDED);
+        user = GDUserMock.createShopper();
+        try {
+            testGetSnapshot();
+            Assert.fail("Exception not thrown");
+        } catch (Vps4Exception e) {
+            Assert.assertEquals("ACCOUNT_SUSPENDED", e.getId());
+        }
     }
 
     // === getSnapshotWithDetails Tests ===

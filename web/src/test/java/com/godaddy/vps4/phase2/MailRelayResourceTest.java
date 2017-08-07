@@ -9,11 +9,11 @@ import javax.inject.Inject;
 import javax.sql.DataSource;
 
 import org.junit.After;
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mockito;
 
-import com.godaddy.vps4.credit.CreditService;
 import com.godaddy.vps4.jdbc.DatabaseModule;
 import com.godaddy.vps4.mailrelay.MailRelayService;
 import com.godaddy.vps4.network.IpAddress.IpAddressType;
@@ -23,20 +23,16 @@ import com.godaddy.vps4.security.SecurityModule;
 import com.godaddy.vps4.security.Vps4User;
 import com.godaddy.vps4.security.Vps4UserService;
 import com.godaddy.vps4.security.jdbc.AuthorizationException;
+import com.godaddy.vps4.vm.AccountStatus;
 import com.godaddy.vps4.vm.VirtualMachine;
 import com.godaddy.vps4.vm.VmModule;
+import com.godaddy.vps4.web.Vps4Exception;
 import com.godaddy.vps4.web.mailrelay.VmMailRelayResource;
 import com.godaddy.vps4.web.security.GDUser;
 import com.google.inject.AbstractModule;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
 import com.google.inject.Provides;
-
-import gdg.hfs.orchestration.CommandGroupSpec;
-import gdg.hfs.orchestration.CommandService;
-import gdg.hfs.orchestration.CommandState;
-import gdg.hfs.vhfs.vm.Vm;
-import gdg.hfs.vhfs.vm.VmService;
 
 public class MailRelayResourceTest {
 
@@ -48,37 +44,17 @@ public class MailRelayResourceTest {
     private GDUser user;
     private VirtualMachine vm;
 
-    private Vm hfsVm;
-    private long hfsVmId = 98765;
-
-
     private Injector injector = Guice.createInjector(
             new DatabaseModule(),
             new SecurityModule(),
             new VmModule(),
+            new Phase2ExternalsModule(),
             new AbstractModule() {
 
                 @Override
                 protected void configure() {
                     mailRelayService = Mockito.mock(MailRelayService.class);
                     bind(MailRelayService.class).toInstance(mailRelayService);
-
-                    CreditService creditService = Mockito.mock(CreditService.class);
-                    bind(CreditService.class).toInstance(creditService);
-
-                    CommandService commandService = Mockito.mock(CommandService.class);
-                    CommandState commandState = new CommandState();
-                    commandState.commandId = UUID.randomUUID();
-                    Mockito.when(commandService.executeCommand(Mockito.any(CommandGroupSpec.class)))
-                            .thenReturn(commandState);
-                    bind(CommandService.class).toInstance(commandService);
-
-                    hfsVm = new Vm();
-                    hfsVm.status = "ACTIVE";
-                    hfsVm.vmId = hfsVmId;
-                    VmService vmService = Mockito.mock(VmService.class);
-                    Mockito.when(vmService.getVm(Mockito.anyLong())).thenReturn(hfsVm);
-                    bind(VmService.class).toInstance(vmService);
                 }
 
                 @Provides
@@ -129,6 +105,17 @@ public class MailRelayResourceTest {
         getMailRelayResource().getCurrentMailRelayUsage(vm.vmId);
     }
 
+    @Test
+    public void testShopperGetMailRelayUsageFailsIfSuspended() {
+        Phase2ExternalsModule.mockVmCredit(AccountStatus.SUSPENDED);
+        try {
+            getMailRelayResource().getCurrentMailRelayUsage(vm.vmId);
+            Assert.fail("Exception not thrown");
+        } catch(Vps4Exception e) {
+            Assert.assertEquals("ACCOUNT_SUSPENDED", e.getId());
+        }
+    }
+
     // === getMailRelayHistory Tests ===
     @Test
     public void testShopperGetMailRelayHistory(){
@@ -165,13 +152,12 @@ public class MailRelayResourceTest {
         Mockito.verify(mailRelayService, Mockito.times(1)).getMailRelayHistory("127.0.0.1", startTime, 30);
     }
 
- // === updateMailRelayQuota Tests ===
+    // === updateMailRelayQuota Tests ===
     private VmMailRelayResource.MailRelayQuotaPatch getQuotaPatch(){
         VmMailRelayResource.MailRelayQuotaPatch patch = new VmMailRelayResource.MailRelayQuotaPatch();
         patch.quota = 1234;
         return patch;
     }
-
 
     @Test(expected=AuthorizationException.class)
     public void testUnauthorizedShopperUpdateMailRelayQuota(){
@@ -184,6 +170,5 @@ public class MailRelayResourceTest {
         user = GDUserMock.createAdmin();
         getMailRelayResource().updateMailRelayQuota(vm.vmId, getQuotaPatch());
     }
-
 
 }

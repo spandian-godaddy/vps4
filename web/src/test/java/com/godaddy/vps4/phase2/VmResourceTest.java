@@ -11,10 +11,7 @@ import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
-import org.mockito.Mockito;
 
-import com.godaddy.vps4.credit.CreditService;
-import com.godaddy.vps4.credit.VirtualMachineCredit;
 import com.godaddy.vps4.jdbc.DatabaseModule;
 import com.godaddy.vps4.security.GDUserMock;
 import com.godaddy.vps4.security.SecurityModule;
@@ -36,11 +33,7 @@ import com.google.inject.Guice;
 import com.google.inject.Injector;
 import com.google.inject.Provides;
 
-import gdg.hfs.orchestration.CommandGroupSpec;
-import gdg.hfs.orchestration.CommandService;
-import gdg.hfs.orchestration.CommandState;
 import gdg.hfs.vhfs.vm.Vm;
-import gdg.hfs.vhfs.vm.VmService;
 
 public class VmResourceTest {
 
@@ -48,40 +41,17 @@ public class VmResourceTest {
     @Inject DataSource dataSource;
 
     private GDUser user;
-    private CreditService creditService = Mockito.mock(CreditService.class);
-    private VirtualMachineCredit credit;
-    private Vm hfsVm;
     private long hfsVmId = 98765;
 
     private Injector injector = Guice.createInjector(
             new DatabaseModule(),
             new SecurityModule(),
             new VmModule(),
+            new Phase2ExternalsModule(),
             new AbstractModule() {
 
                 @Override
                 public void configure() {
-                    // Credit Service
-                    credit = new VirtualMachineCredit(UUID.randomUUID(), 10, 0, 1, "linux", "myh",
-                            null, null, GDUserMock.DEFAULT_SHOPPER, AccountStatus.ACTIVE, null,null);
-                    Mockito.when(creditService.getVirtualMachineCredit(Mockito.any())).thenReturn(credit);
-                    bind(CreditService.class).toInstance(creditService);
-
-                    // HFS services
-                    hfsVm = new Vm();
-                    hfsVm.status = "ACTIVE";
-                    hfsVm.vmId = hfsVmId;
-                    VmService vmService = Mockito.mock(VmService.class);
-                    Mockito.when(vmService.getVm(Mockito.anyLong())).thenReturn(hfsVm);
-                    bind(VmService.class).toInstance(vmService);
-
-                    // Command Service
-                    CommandService commandService = Mockito.mock(CommandService.class);
-                    CommandState commandState = new CommandState();
-                    commandState.commandId = UUID.randomUUID();
-                    Mockito.when(commandService.executeCommand(Mockito.any(CommandGroupSpec.class)))
-                            .thenReturn(commandState);
-                    bind(CommandService.class).toInstance(commandService);
                 }
 
                 @Provides
@@ -132,6 +102,20 @@ public class VmResourceTest {
         getVmResource().getVm(vm.vmId);
     }
 
+    @Test
+    public void testShopperGetSuspendedVm() {
+        Phase2ExternalsModule.mockVmCredit(AccountStatus.SUSPENDED);
+        VirtualMachine vm = createTestVm();
+
+        user = GDUserMock.createShopper();
+        try {
+            getVmResource().getVm(vm.vmId);
+            Assert.fail("Exception not thrown");
+        } catch (Vps4Exception e) {
+            Assert.assertEquals("ACCOUNT_SUSPENDED", e.getId());
+        }
+    }
+
     @Test(expected = NotFoundException.class)
     public void testNoVmGetVm() {
         user = GDUserMock.createShopper();
@@ -179,21 +163,21 @@ public class VmResourceTest {
 
     @Test
     public void testShopperStartVm() {
-        hfsVm.status = "STOPPED";
+        Phase2ExternalsModule.mockHfsVm("STOPPED");
         startVm();
     }
 
     @Test(expected=AuthorizationException.class)
     public void testUnauthorizedShopperStartVm() {
         user = GDUserMock.createShopper("shopperX");
-        hfsVm.status = "STOPPED";
+        Phase2ExternalsModule.mockHfsVm("STOPPED");
         startVm();
     }
 
     @Test
     public void testAdminStartVm() {
         user = GDUserMock.createAdmin();
-        hfsVm.status = "STOPPED";
+        Phase2ExternalsModule.mockHfsVm("STOPPED");
         startVm();
     }
 
@@ -209,7 +193,7 @@ public class VmResourceTest {
 
     @Test
     public void testDoubleStartVm() {
-        hfsVm.status = "STOPPED";
+        Phase2ExternalsModule.mockHfsVm("STOPPED");
         VirtualMachine vm = createTestVm();
         getVmResource().startVm(vm.vmId);
         try {
@@ -247,7 +231,7 @@ public class VmResourceTest {
 
     @Test
     public void testStopInactiveVm() {
-        hfsVm.status = "STOPPED";
+        Phase2ExternalsModule.mockHfsVm("STOPPED");
         try {
             testStopVm();
         } catch (Vps4Exception e) {
@@ -300,7 +284,7 @@ public class VmResourceTest {
 
     @Test
     public void testRestartInactiveVm() {
-        hfsVm.status = "STOPPED";
+        Phase2ExternalsModule.mockHfsVm("STOPPED");
         try {
             testRestartVm();
             Assert.fail();
@@ -444,7 +428,6 @@ public class VmResourceTest {
         VirtualMachineWithDetails detailedVm = getVmResource().getVirtualMachineWithDetails(vm.vmId);
         Assert.assertEquals(detailedVm.orionGuid, vm.orionGuid);
         Assert.assertEquals(detailedVm.virtualMachineDetails.vmId.longValue(), hfsVmId);
-        Assert.assertEquals(detailedVm.dataCenter, credit.dataCenter);
     }
 
     @Test

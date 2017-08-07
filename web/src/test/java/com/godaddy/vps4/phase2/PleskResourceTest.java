@@ -14,8 +14,6 @@ import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mockito;
 
-import com.godaddy.vps4.credit.CreditService;
-import com.godaddy.vps4.hfs.HfsMockModule;
 import com.godaddy.vps4.jdbc.DatabaseModule;
 import com.godaddy.vps4.plesk.Vps4PleskService;
 import com.godaddy.vps4.security.GDUserMock;
@@ -24,6 +22,7 @@ import com.godaddy.vps4.security.Vps4User;
 import com.godaddy.vps4.security.Vps4UserService;
 import com.godaddy.vps4.security.jdbc.AuthorizationException;
 import com.godaddy.vps4.util.PollerTimedOutException;
+import com.godaddy.vps4.vm.AccountStatus;
 import com.godaddy.vps4.vm.VirtualMachine;
 import com.godaddy.vps4.vm.VmModule;
 import com.godaddy.vps4.web.Vps4Exception;
@@ -34,8 +33,6 @@ import com.google.inject.Guice;
 import com.google.inject.Inject;
 import com.google.inject.Injector;
 import com.google.inject.Provides;
-
-import gdg.hfs.orchestration.CommandService;
 
 
 public class PleskResourceTest {
@@ -52,19 +49,13 @@ public class PleskResourceTest {
             new DatabaseModule(),
             new SecurityModule(),
             new VmModule(),
-            new HfsMockModule(),
+            new Phase2ExternalsModule(),
             new AbstractModule() {
 
                 @Override
                 protected void configure() {
                     pleskServ = Mockito.mock(Vps4PleskService.class);
                     bind(Vps4PleskService.class).toInstance(pleskServ);
-
-                    CreditService creditService = Mockito.mock(CreditService.class);
-                    bind(CreditService.class).toInstance(creditService);
-
-                    CommandService commandService = Mockito.mock(CommandService.class);
-                    bind(CommandService.class).toInstance(commandService);
                 }
 
                 @Provides
@@ -79,6 +70,7 @@ public class PleskResourceTest {
         user = GDUserMock.createShopper();
         vm = createTestVm("hfs-windows-2012r2-plesk-17");
         winVm = createTestVm("hfs-windows-2012r2");
+
     }
 
     private VirtualMachine createTestVm(String imageName) {
@@ -194,5 +186,16 @@ public class PleskResourceTest {
         Mockito.when(pleskServ.listPleskAccounts(Mockito.anyLong()))
                 .thenThrow(new PollerTimedOutException("Timed out"));
         Assert.assertNull(getPleskResource().listPleskAccounts(vm.vmId));
+    }
+
+    @Test
+    public void testGetPleskAccountsSuspended() {
+        Phase2ExternalsModule.mockVmCredit(AccountStatus.SUSPENDED);
+        try {
+            getPleskResource().listPleskAccounts(winVm.vmId);
+            Assert.fail("Exception not thrown");
+        } catch (Vps4Exception e) {
+            Assert.assertEquals("ACCOUNT_SUSPENDED", e.getId());
+        }
     }
 }

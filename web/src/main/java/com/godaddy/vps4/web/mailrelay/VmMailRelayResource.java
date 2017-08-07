@@ -72,7 +72,7 @@ public class VmMailRelayResource {
     public MailRelay getCurrentMailRelayUsage(
             @ApiParam(value = "The ID of the selected server", required = true) @PathParam("vmId") UUID vmId) {
 
-        VirtualMachine vm = vmResource.getVm(vmId);
+        vmResource.getVm(vmId);
         IpAddress ipAddress = networkService.getVmPrimaryAddress(vmId);
         return mailRelayService.getMailRelay(ipAddress.ipAddress);
     }

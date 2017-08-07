@@ -10,9 +10,7 @@ import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
-import org.mockito.Mockito;
 
-import com.godaddy.vps4.credit.CreditService;
 import com.godaddy.vps4.jdbc.DatabaseModule;
 import com.godaddy.vps4.network.IpAddress;
 import com.godaddy.vps4.network.IpAddress.IpAddressType;
@@ -21,9 +19,11 @@ import com.godaddy.vps4.security.SecurityModule;
 import com.godaddy.vps4.security.Vps4User;
 import com.godaddy.vps4.security.Vps4UserService;
 import com.godaddy.vps4.security.jdbc.AuthorizationException;
+import com.godaddy.vps4.vm.AccountStatus;
 import com.godaddy.vps4.vm.Action;
 import com.godaddy.vps4.vm.VirtualMachine;
 import com.godaddy.vps4.vm.VmModule;
+import com.godaddy.vps4.web.Vps4Exception;
 import com.godaddy.vps4.web.network.NetworkResource;
 import com.godaddy.vps4.web.security.GDUser;
 import com.google.inject.AbstractModule;
@@ -31,47 +31,22 @@ import com.google.inject.Guice;
 import com.google.inject.Injector;
 import com.google.inject.Provides;
 
-import gdg.hfs.orchestration.CommandGroupSpec;
-import gdg.hfs.orchestration.CommandService;
-import gdg.hfs.orchestration.CommandState;
-import gdg.hfs.vhfs.vm.Vm;
-import gdg.hfs.vhfs.vm.VmService;
-
 public class NetworkResourceUserTest {
 
     @Inject Vps4UserService userService;
     @Inject DataSource dataSource;
 
     private GDUser user;
-    private CreditService creditService = Mockito.mock(CreditService.class);
-    private Vm hfsVm;
-    private long hfsVmId = 98765;
 
     private Injector injector = Guice.createInjector(
             new DatabaseModule(),
             new SecurityModule(),
             new VmModule(),
+            new Phase2ExternalsModule(),
             new AbstractModule() {
 
                 @Override
                 public void configure() {
-                    bind(CreditService.class).toInstance(creditService);
-
-                    // HFS services
-                    hfsVm = new Vm();
-                    hfsVm.status = "ACTIVE";
-                    hfsVm.vmId = hfsVmId;
-                    VmService vmService = Mockito.mock(VmService.class);
-                    Mockito.when(vmService.getVm(Mockito.anyLong())).thenReturn(hfsVm);
-                    bind(VmService.class).toInstance(vmService);
-
-                    // Command Service
-                    CommandService commandService = Mockito.mock(CommandService.class);
-                    CommandState commandState = new CommandState();
-                    commandState.commandId = UUID.randomUUID();
-                    Mockito.when(commandService.executeCommand(Mockito.any(CommandGroupSpec.class)))
-                            .thenReturn(commandState);
-                    bind(CommandService.class).toInstance(commandService);
                 }
 
                 @Provides
@@ -91,10 +66,6 @@ public class NetworkResourceUserTest {
     public void teardownTest() {
         SqlTestData.cleanupSqlTestData(dataSource);
     }
-
-//    private VmResource getNetworkResource() {
-//        return injector.getInstance(VmResource.class);
-//    }
 
     private VirtualMachine createTestVm() {
         UUID orionGuid = UUID.randomUUID();
@@ -174,7 +145,7 @@ public class NetworkResourceUserTest {
         VirtualMachine vm = createTestVm();
         NetworkResource resource = injector.getInstance(NetworkResource.class);
 
-        IpAddress ip = createSecondaryIp(vm.vmId);
+        createSecondaryIp(vm.vmId);
 
         List<IpAddress> ips = resource.getIpAddresses(vm.vmId);
 
@@ -229,6 +200,18 @@ public class NetworkResourceUserTest {
     public void testEmployeeGetIp() {
         user = GDUserMock.createEmployee();
         testGet1Ip();
+    }
+
+    @Test
+    public void testShopperGetIpFailsIfSuspended() {
+        Phase2ExternalsModule.mockVmCredit(AccountStatus.SUSPENDED);
+        try {
+            testGet1Ip();
+            Assert.fail("Exception not thrown");
+        } catch (Vps4Exception e) {
+            Assert.assertEquals("ACCOUNT_SUSPENDED", e.getId());
+        }
+
     }
 
 }
