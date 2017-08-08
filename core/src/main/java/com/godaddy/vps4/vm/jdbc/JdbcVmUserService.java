@@ -45,11 +45,15 @@ public class JdbcVmUserService implements VmUserService{
     }
 
     @Override
-    public List<VmUser> listUsers(UUID vmId){
-        return Sql.with(dataSource)
-                .exec("SELECT u.name, u.vm_id, u.admin_enabled, ut.type_name"
-                        + " FROM vm_user u JOIN vm_user_type ut ON u.vm_user_type_id = ut.type_id"
-                        + " WHERE u.vm_id=?", Sql.listOf(this::mapUser), vmId);
+    public List<VmUser> listUsers(UUID vmId, VmUserType type){
+        String base = "SELECT u.name, u.vm_id, u.admin_enabled, ut.type_name"
+                + " FROM vm_user u JOIN vm_user_type ut ON u.vm_user_type_id = ut.type_id"
+                + " WHERE u.vm_id=?";
+        if (type == null) {
+            return Sql.with(dataSource).exec(base, Sql.listOf(this::mapUser), vmId);
+        } else {
+            return Sql.with(dataSource).exec(base + " AND ut.type_name=?", Sql.listOf(this::mapUser), vmId, type.name());
+        }
     }
 
     @Override

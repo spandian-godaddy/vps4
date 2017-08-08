@@ -4,17 +4,10 @@ import java.util.List;
 import java.util.UUID;
 
 import javax.inject.Inject;
-import javax.ws.rs.Consumes;
-import javax.ws.rs.GET;
-import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.Produces;
+import javax.ws.rs.*;
 import javax.ws.rs.core.MediaType;
 
-import com.godaddy.vps4.vm.VirtualMachine;
-import com.godaddy.vps4.vm.VirtualMachineService;
-import com.godaddy.vps4.vm.VmUser;
-import com.godaddy.vps4.vm.VmUserService;
+import com.godaddy.vps4.vm.*;
 import com.godaddy.vps4.web.Vps4Api;
 
 import io.swagger.annotations.Api;
@@ -27,18 +20,18 @@ import io.swagger.annotations.Api;
 @Consumes(MediaType.APPLICATION_JSON)
 public class UserResource {
     final VmUserService userService;
-    final VirtualMachineService vmService;
+    final VmResource vmResource;
 
     @Inject
-    public UserResource(VmUserService userService, VirtualMachineService vmService){
+    public UserResource(VmUserService userService, VirtualMachineService vmService, VmResource vmResource) {
         this.userService = userService;
-        this.vmService = vmService;
+        this.vmResource = vmResource;
     }
 
     @GET
     @Path("/{vmId}/users")
-    public List<VmUser> getUsers(@PathParam("vmId") UUID vmId) {
-        VirtualMachine vm = vmService.getVirtualMachine(vmId);
-        return userService.listUsers(vm.vmId);
+    public List<VmUser> getUsers(@PathParam("vmId") UUID vmId, @QueryParam("type") VmUserType type) {
+        VirtualMachine vm = vmResource.getVm(vmId);
+        return userService.listUsers(vm.vmId, type);
     }
 }

@@ -50,7 +50,7 @@ public class JdbcVmUserServiceTest {
     public void testCreateUser() throws SQLException {
         VmUserService service = new JdbcVmUserService(dataSource);
         service.createUser(username, vm.vmId, true, VmUserType.CUSTOMER);
-        List<VmUser> ul = service.listUsers(vm.vmId);
+        List<VmUser> ul = service.listUsers(vm.vmId, null);
         assertEquals(1, ul.size());
         VmUser usr = ul.get(0);
         assertEquals(username, usr.username);
@@ -63,7 +63,7 @@ public class JdbcVmUserServiceTest {
     public void testCreateUserNoAdmin() throws SQLException {
         VmUserService service = new JdbcVmUserService(dataSource);
         service.createUser(username, vm.vmId, false);
-        List<VmUser> ul = service.listUsers(vm.vmId);
+        List<VmUser> ul = service.listUsers(vm.vmId, null);
         assertEquals(1, ul.size());
         assertEquals(1, ul.size());
         VmUser usr = ul.get(0);
@@ -77,7 +77,7 @@ public class JdbcVmUserServiceTest {
         VmUserService service = new JdbcVmUserService(dataSource);
         service.createUser(username, vm.vmId, false);
         service.createUser("testuser2", vm.vmId, false);
-        List<VmUser> ul = service.listUsers(vm.vmId);
+        List<VmUser> ul = service.listUsers(vm.vmId, null);
         assertEquals(2, ul.size());
     }
 
@@ -93,11 +93,11 @@ public class JdbcVmUserServiceTest {
     public void testUpdateUserAdminAccess() {
         VmUserService service = new JdbcVmUserService(dataSource);
         service.createUser(username, vm.vmId, false);
-        List<VmUser> ul = service.listUsers(vm.vmId);
+        List<VmUser> ul = service.listUsers(vm.vmId, null);
         VmUser u = ul.get(0);
         assertFalse(u.adminEnabled);
         service.updateUserAdminAccess(username, vm.vmId, true);
-        ul = service.listUsers(vm.vmId);
+        ul = service.listUsers(vm.vmId, null);
         u = ul.get(0);
         assertTrue(u.adminEnabled);
     }
@@ -106,11 +106,25 @@ public class JdbcVmUserServiceTest {
     public void testDeleteUser() {
         VmUserService service = new JdbcVmUserService(dataSource);
         service.createUser(username, vm.vmId, true);
-        List<VmUser> ul = service.listUsers(vm.vmId);
+        List<VmUser> ul = service.listUsers(vm.vmId, null);
         assertEquals(1, ul.size());
         service.deleteUser(username, vm.vmId);
-        ul = service.listUsers(vm.vmId);
+        ul = service.listUsers(vm.vmId, null);
         assertEquals(0, ul.size());
     }
 
+    @Test
+    public void getUsersWithType() {
+        VmUserService service = new JdbcVmUserService(dataSource);
+        service.createUser(username + "1", vm.vmId, true, VmUserType.CUSTOMER);
+        service.createUser(username + "2", vm.vmId, true, VmUserType.SUPPORT);
+        List<VmUser> ul = service.listUsers(vm.vmId, null);
+        assertEquals(2, ul.size());
+        ul = service.listUsers(vm.vmId, VmUserType.CUSTOMER);
+        assertEquals(1, ul.size());
+        assertEquals(username + "1", ul.get(0).username);
+        ul = service.listUsers(vm.vmId, VmUserType.SUPPORT);
+        assertEquals(1, ul.size());
+        assertEquals(username + "2", ul.get(0).username);
+    }
 }

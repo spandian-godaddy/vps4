@@ -8,7 +8,7 @@ public interface VmUserService {
 	void createUser(String username, UUID vmId, boolean adminEnabled);
 	void createUser(String username, UUID vmId);
 	
-	List<VmUser> listUsers(UUID vmId);
+	List<VmUser> listUsers(UUID vmId, VmUserType type);
 
 	VmUser getSupportUser(UUID vmId);
 	

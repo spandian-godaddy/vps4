@@ -4,6 +4,7 @@ import java.util.UUID;
 
 import javax.sql.DataSource;
 
+import com.godaddy.vps4.vm.*;
 import org.json.simple.JSONObject;
 
 import com.godaddy.hfs.jdbc.Sql;
@@ -12,11 +13,6 @@ import com.godaddy.vps4.network.IpAddress.IpAddressType;
 import com.godaddy.vps4.network.NetworkService;
 import com.godaddy.vps4.network.jdbc.JdbcNetworkService;
 import com.godaddy.vps4.snapshot.SnapshotWithDetails;
-import com.godaddy.vps4.vm.Action;
-import com.godaddy.vps4.vm.ActionService;
-import com.godaddy.vps4.vm.ActionType;
-import com.godaddy.vps4.vm.VirtualMachine;
-import com.godaddy.vps4.vm.VirtualMachineService;
 import com.godaddy.vps4.vm.VirtualMachineService.ProvisionVirtualMachineParameters;
 import com.godaddy.vps4.vm.jdbc.JdbcActionService;
 import com.godaddy.vps4.vm.jdbc.JdbcVirtualMachineService;
@@ -71,6 +67,19 @@ public class SqlTestData {
         virtualMachineService.destroyVirtualMachine(vm.hfsVmId);
     }
 
+    public static void insertTestSnapshot(SnapshotWithDetails snapshot, DataSource dataSource) {
+        Sql.with(dataSource).exec("INSERT INTO snapshot (id, hfs_image_id, project_id, hfs_snapshot_id, vm_id, name) VALUES (?, ?, ?, ?, ?, ?)",
+                null, snapshot.id, snapshot.hfsSnapshotId, snapshot.projectId, snapshot.hfsSnapshotId, snapshot.vmId, snapshot.name);
+    }
+
+    public static void invalidateTestSnapshot(UUID id, DataSource dataSource) {
+        Sql.with(dataSource).exec("UPDATE snapshot SET status = 5 WHERE id = '" + id + "'", null);
+    }
+
+    public static void insertTestUser(VmUser user, DataSource dataSource) {
+        Sql.with(dataSource).exec("INSERT INTO vm_user (name, admin_enabled, vm_id, vm_user_type_id) VALUES (?, ?, ?, ?)", null, user.username, user.adminEnabled, user.vmId, user.vmUserType.getVmUserTypeId());
+    }
+
     public static void cleanupSqlTestData(DataSource dataSource) {
         String test_vm_condition = "v.name='" + TEST_VM_NAME + "'";
         String test_snapshot_condition = "s.name='" + TEST_SNAPSHOT_NAME + "'";
@@ -84,24 +93,5 @@ public class SqlTestData {
         Sql.with(dataSource).exec("DELETE FROM virtual_machine v USING project p WHERE v.project_id = p.project_id AND " + test_sgid_condition, null);
         Sql.with(dataSource).exec("DELETE FROM user_project_privilege uvp USING project p WHERE uvp.project_id = p.project_id AND " + test_sgid_condition, null);
         Sql.with(dataSource).exec("DELETE FROM project p WHERE " + test_sgid_condition, null);
-    }
-
-    public static void insertTestSnapshot(SnapshotWithDetails snapshot, DataSource dataSource) {
-        Sql.with(dataSource).exec("INSERT INTO snapshot (id, hfs_image_id, project_id, hfs_snapshot_id, vm_id, name) VALUES (?, ?, ?, ?, ?, ?)",
-                null, snapshot.id, snapshot.hfsSnapshotId, snapshot.projectId, snapshot.hfsSnapshotId, snapshot.vmId, snapshot.name);
-    }
-
-    public static void invalidateTestSnapshot(UUID id, DataSource dataSource) {
-        Sql.with(dataSource).exec("UPDATE snapshot SET status = 5 WHERE id = '" + id + "'", null);
-    }
-
-    public static void cleanupTestSnapshot(DataSource dataSource, String snapshotName) {
-        String test_snapshot_condition = "s.name='" + snapshotName + "'";
-        String test_vm_condition = "v.name='" + TEST_VM_NAME + "'";
-
-        Sql.with(dataSource).exec("DELETE FROM snapshot_action a USING snapshot s WHERE a.snapshot_id = s.id AND "
-                + test_snapshot_condition, null);
-        Sql.with(dataSource).exec("DELETE FROM snapshot a USING virtual_machine v WHERE a.vm_id = v.vm_id AND "
-                + test_vm_condition + " AND " + test_snapshot_condition, null);
     }
 }
