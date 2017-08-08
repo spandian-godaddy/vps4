@@ -11,7 +11,6 @@ import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mockito;
 
-import com.godaddy.vps4.credit.CreditService;
 import com.godaddy.vps4.jdbc.DatabaseModule;
 import com.godaddy.vps4.security.GDUserMock;
 import com.godaddy.vps4.security.SecurityModule;
@@ -29,8 +28,6 @@ import com.google.inject.Guice;
 import com.google.inject.Injector;
 import com.google.inject.Provides;
 
-import gdg.hfs.orchestration.CommandService;
-import gdg.hfs.vhfs.vm.VmService;
 import junit.framework.Assert;
 
 public class UsageStatsResourceTest {
@@ -39,7 +36,6 @@ public class UsageStatsResourceTest {
     @Inject DataSource dataSource;
     private VmUsageService vmUsageService;
 
-
     private GDUser user;
     private VirtualMachine vm;
 
@@ -47,21 +43,13 @@ public class UsageStatsResourceTest {
             new DatabaseModule(),
             new SecurityModule(),
             new VmModule(),
+            new Phase2ExternalsModule(),
             new AbstractModule() {
 
                 @Override
                 protected void configure() {
                     vmUsageService = Mockito.mock(VmUsageService.class);
                     bind(VmUsageService.class).toInstance(vmUsageService);
-
-                    CreditService creditService = Mockito.mock(CreditService.class);
-                    bind(CreditService.class).toInstance(creditService);
-
-                    VmService vmService = Mockito.mock(VmService.class);
-                    bind(VmService.class).toInstance(vmService);
-
-                    CommandService commandService = Mockito.mock(CommandService.class);
-                    bind(CommandService.class).toInstance(commandService);
                 }
 
                 @Provides

@@ -125,7 +125,6 @@ public class VirtualMachineServiceTest {
         assertEquals(specId, vm.spec.specId);
         assertEquals("centos-7", vm.image.hfsName);
         assertEquals("CentOS 7", vm.image.imageName);
-        assertEquals(AccountStatus.ACTIVE, vm.accountStatus);
     }
 
     @Test

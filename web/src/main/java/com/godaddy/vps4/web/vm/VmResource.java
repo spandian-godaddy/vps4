@@ -32,10 +32,10 @@ import com.godaddy.vps4.orchestration.vm.Vps4DestroyVm;
 import com.godaddy.vps4.orchestration.vm.Vps4ProvisionVm;
 import com.godaddy.vps4.project.Project;
 import com.godaddy.vps4.project.ProjectService;
-import com.godaddy.vps4.security.PrivilegeService;
 import com.godaddy.vps4.security.Vps4User;
 import com.godaddy.vps4.security.Vps4UserService;
 import com.godaddy.vps4.security.jdbc.AuthorizationException;
+import com.godaddy.vps4.vm.AccountStatus;
 import com.godaddy.vps4.vm.ActionService;
 import com.godaddy.vps4.vm.ActionType;
 import com.godaddy.vps4.vm.DataCenter;
@@ -72,7 +72,6 @@ public class VmResource {
     private final VirtualMachineService virtualMachineService;
     private final Vps4UserService userService;
     private final CreditService creditService;
-    private final PrivilegeService privilegeService;
     private final VmService vmService;
     private final ProjectService projectService;
     private final ImageService imageService;
@@ -84,8 +83,7 @@ public class VmResource {
     private final long pingCheckAccountId;
 
     @Inject
-    public VmResource(PrivilegeService privilegeService,
-            GDUser user, VmService vmService,
+    public VmResource(GDUser user, VmService vmService,
             Vps4UserService userService,
             VirtualMachineService virtualMachineService,
             CreditService creditService,
@@ -99,7 +97,6 @@ public class VmResource {
         this.virtualMachineService = virtualMachineService;
         this.userService = userService;
         this.creditService = creditService;
-        this.privilegeService = privilegeService;
         this.vmService = vmService;
         this.projectService = projectService;
         this.imageService = imageService;
@@ -111,23 +108,18 @@ public class VmResource {
         pingCheckAccountId = Long.parseLong(this.config.get("nodeping.accountid"));
     }
 
-    private void verifyUserPrivilege(VirtualMachine vm) {
-        Vps4User vps4User = userService.getOrCreateUserForShopper(user.getShopperId());
-        privilegeService.requireAnyPrivilegeToProjectId(vps4User, vm.projectId);
-    }
-
     @GET
     @Path("/{vmId}")
     public VirtualMachine getVm(@PathParam("vmId") UUID vmId) {
         logger.info("getting vm with id {}", vmId);
-
         VirtualMachine virtualMachine = virtualMachineService.getVirtualMachine(vmId);
+
         if (virtualMachine == null || virtualMachine.validUntil.isBefore(Instant.now()))
             throw new NotFoundException("Unknown VM ID: " + vmId);
 
         logger.info(String.format("VM valid until: %s | %s", virtualMachine.validUntil, Instant.now()));
         if (user.isShopper())
-            verifyUserPrivilege(virtualMachine);
+            verifyUserHasAccessToCredit(virtualMachine.orionGuid);
 
         return virtualMachine;
     }
@@ -199,6 +191,9 @@ public class VmResource {
 
         logger.info("provisioning vm with orionGuid {}", provisionRequest.orionGuid);
         VirtualMachineCredit vmCredit = verifyUserHasAccessToCredit(provisionRequest.orionGuid);
+        if (vmCredit.provisionDate != null)
+            throw new Vps4Exception("CREDIT_ALREADY_IN_USE",
+                    String.format("The virtual machine credit for orion guid %s is already provisioned'", vmCredit.orionGuid));
 
         if(imageService.getImages(vmCredit.operatingSystem, vmCredit.controlPanel, provisionRequest.image).size() == 0){
             // verify that the image matches the request (control panel, managed level, OS)
@@ -244,7 +239,17 @@ public class VmResource {
 
 
     private VirtualMachineCredit verifyUserHasAccessToCredit(UUID orionGuid) {
-        VirtualMachineCredit vmCredit = getVmCreditToProvision(orionGuid);
+        VirtualMachineCredit vmCredit = creditService.getVirtualMachineCredit(orionGuid);
+        if (vmCredit == null) {
+            throw new Vps4Exception("CREDIT_NOT_FOUND",
+                    String.format("The virtual machine credit for orion guid %s was not found", orionGuid));
+        }
+
+        if (vmCredit.accountStatus == AccountStatus.SUSPENDED ||
+                vmCredit.accountStatus == AccountStatus.ABUSE_SUSPENDED) {
+           throw new Vps4Exception("ACCOUNT_SUSPENDED",
+                    String.format("The virtual machine account for orion guid %s was SUSPENDED", orionGuid));
+        }
 
         if (!(user.getShopperId().equals(vmCredit.shopperId))) {
             throw new AuthorizationException(
@@ -275,19 +280,6 @@ public class VmResource {
         return hfsProvisionRequest;
     }
 
-    private VirtualMachineCredit getVmCreditToProvision(UUID orionGuid) {
-        VirtualMachineCredit credit = creditService.getVirtualMachineCredit(orionGuid);
-        if (credit == null) {
-            throw new Vps4Exception("CREDIT_NOT_FOUND",
-                    String.format("The virtual machine credit for orion guid %s was not found", orionGuid));
-        }
-        if (credit.provisionDate != null)
-            throw new Vps4Exception("CREDIT_ALREADY_IN_USE",
-                    String.format("The virtual machine credit for orion guid %s is already provisioned'", orionGuid));
-
-        return credit;
-    }
-
     @DELETE
     @Path("/{vmId}")
     public VmAction destroyVm(@PathParam("vmId") UUID vmId) {
@@ -315,7 +307,6 @@ public class VmResource {
         if (user.getShopperId() == null)
             throw new Vps4NoShopperException();
         Vps4User vps4User = userService.getOrCreateUserForShopper(user.getShopperId());
-//        Vps4User vps4User = userService.getUser(user.getShopperId());
 
         List<VirtualMachine> vms = virtualMachineService.getVirtualMachinesForUser(vps4User.getId());
         return vms.stream().filter(vm -> vm.validUntil.isAfter(Instant.now())).collect(Collectors.toList());

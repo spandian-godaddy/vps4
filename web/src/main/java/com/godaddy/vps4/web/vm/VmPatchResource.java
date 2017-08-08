@@ -14,15 +14,11 @@ import org.json.simple.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.godaddy.vps4.security.PrivilegeService;
-import com.godaddy.vps4.security.Vps4User;
-import com.godaddy.vps4.security.Vps4UserService;
 import com.godaddy.vps4.vm.ActionService;
 import com.godaddy.vps4.vm.ActionType;
 import com.godaddy.vps4.vm.VirtualMachineService;
 import com.godaddy.vps4.web.PATCH;
 import com.godaddy.vps4.web.Vps4Api;
-import com.godaddy.vps4.web.security.GDUser;
 import com.google.inject.Inject;
 
 import io.swagger.annotations.Api;
@@ -38,28 +34,17 @@ public class VmPatchResource {
 
     private static final Logger logger = LoggerFactory.getLogger(VmPatchResource.class);
 
-    final VirtualMachineService virtualMachineService;
-    final PrivilegeService privilegeService;
-    final ActionService actionService;
-    final Vps4UserService userService;
-    final GDUser user;
+    private final VirtualMachineService virtualMachineService;
+    private final ActionService actionService;
+    private final VmResource vmResource;
 
     @Inject
     public VmPatchResource(VirtualMachineService virtualMachineService,
-                           GDUser user,
-                           PrivilegeService privilegeService,
                            ActionService actionService,
-                           Vps4UserService userService) {
+                           VmResource vmResource) {
         this.virtualMachineService = virtualMachineService;
-        this.privilegeService = privilegeService;
         this.actionService = actionService;
-        this.user = user;
-        this.userService = userService;
-    }
-
-    private void verifyUserPrivilege(UUID vmId) {
-        Vps4User vps4User = userService.getOrCreateUserForShopper(user.getShopperId());
-        privilegeService.requireAnyPrivilegeToVmId(vps4User, vmId);
+        this.vmResource = vmResource;
     }
 
     public static class VmPatch {
@@ -71,8 +56,7 @@ public class VmPatchResource {
     @Produces({ "application/json" })
     @ApiOperation(value = "Update VM Attributes", httpMethod = "PATCH")
     public VmAction updateVm(@PathParam("vmId") UUID vmId, VmPatch vmPatch) {
-        if (user.isShopper())
-            verifyUserPrivilege(vmId);
+        vmResource.getVm(vmId);
 
         Map<String, Object> vmPatchMap = new HashMap<>();
         StringBuilder notes = new StringBuilder();

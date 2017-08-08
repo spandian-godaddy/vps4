@@ -8,9 +8,7 @@ import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
-import org.mockito.Mockito;
 
-import com.godaddy.vps4.credit.CreditService;
 import com.godaddy.vps4.jdbc.DatabaseModule;
 import com.godaddy.vps4.security.GDUserMock;
 import com.godaddy.vps4.security.SecurityModule;
@@ -32,12 +30,6 @@ import com.google.inject.Inject;
 import com.google.inject.Injector;
 import com.google.inject.Provides;
 
-import gdg.hfs.orchestration.CommandGroupSpec;
-import gdg.hfs.orchestration.CommandService;
-import gdg.hfs.orchestration.CommandState;
-import gdg.hfs.vhfs.vm.Vm;
-import gdg.hfs.vhfs.vm.VmService;
-
 public class SysAdminResourceTest {
 
     @Inject Vps4UserService userService;
@@ -47,32 +39,16 @@ public class SysAdminResourceTest {
     private GDUser user;
     private String username = "fakeUser";
     private VirtualMachine vm;
-    private Vm hfsVm;
 
     private Injector injector = Guice.createInjector(
             new DatabaseModule(),
             new SecurityModule(),
             new VmModule(),
+            new Phase2ExternalsModule(),
             new AbstractModule() {
 
                 @Override
                 protected void configure() {
-                    // HFS Vm Service
-                    hfsVm = new Vm();
-                    hfsVm.status = "ACTIVE";
-                    VmService vmService = Mockito.mock(VmService.class);
-                    Mockito.when(vmService.getVm(Mockito.anyLong())).thenReturn(hfsVm);
-                    bind(VmService.class).toInstance(vmService);
-
-                    CreditService creditService = Mockito.mock(CreditService.class);
-                    bind(CreditService.class).toInstance(creditService);
-
-                    // CommandService
-                    CommandService commandService = Mockito.mock(CommandService.class);
-                    CommandState commandState = new CommandState();
-                    commandState.commandId = UUID.randomUUID();
-                    Mockito.when(commandService.executeCommand(Mockito.any(CommandGroupSpec.class))).thenReturn(commandState);
-                    bind(CommandService.class).toInstance(commandService);
                 }
 
                 @Provides
@@ -162,7 +138,7 @@ public class SysAdminResourceTest {
 
     @Test
     public void testSetPasswordWhileStopped(){
-        hfsVm.status = "STOPPED";
+        Phase2ExternalsModule.mockHfsVm("STOPPED");
         UpdatePasswordRequest request = new UpdatePasswordRequest();
         request.username = username;
 
@@ -232,7 +208,7 @@ public class SysAdminResourceTest {
 
     @Test
     public void testSetHostnameWhileStopped(){
-        hfsVm.status = "STOPPED";
+        Phase2ExternalsModule.mockHfsVm("STOPPED");
         SetHostnameRequest request = new SetHostnameRequest();
         request.hostname = "newhostname.test.tst";
 
@@ -302,7 +278,7 @@ public class SysAdminResourceTest {
 
     @Test
     public void testEnableUserAdminWhileStopped(){
-        hfsVm.status = "STOPPED";
+        Phase2ExternalsModule.mockHfsVm("STOPPED");
         SetAdminRequest request = new SetAdminRequest();
         request.username = username;
 
@@ -359,7 +335,7 @@ public class SysAdminResourceTest {
 
     @Test
     public void testDisableUserAdminWhileStopped(){
-        hfsVm.status = "STOPPED";
+        Phase2ExternalsModule.mockHfsVm("STOPPED");
         SetAdminRequest request = new SetAdminRequest();
         request.username = username;
 

@@ -11,6 +11,7 @@ import com.godaddy.vps4.security.Vps4User;
 import com.godaddy.vps4.security.Vps4UserService;
 import com.godaddy.vps4.security.jdbc.AuthorizationException;
 import com.godaddy.vps4.snapshot.*;
+import com.godaddy.vps4.vm.AccountStatus;
 import com.godaddy.vps4.vm.VirtualMachine;
 import com.godaddy.vps4.vm.VmModule;
 import com.godaddy.vps4.web.Vps4Exception;
@@ -181,6 +182,18 @@ public class SnapshotCreateResourceTest {
     public void theyCantSnapshotOurVM() {
         user = them;
         getSnapshotResource().createSnapshot(getRequestPayload(ourVmId, SqlTestData.TEST_SNAPSHOT_NAME));
+    }
+
+    @Test
+    public void weCantSnapshotIfSuspended() {
+        user = us;
+        Phase2ExternalsModule.mockVmCredit(AccountStatus.SUSPENDED);
+        try {
+            verifySuccessfulSnapshotCreation();
+            Assert.fail("Exception not thrown");
+        } catch(Vps4Exception e) {
+            Assert.assertEquals("ACCOUNT_SUSPENDED", e.getId());
+        }
     }
 
     // === Employee Tests ===

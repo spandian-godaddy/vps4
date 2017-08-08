@@ -1,10 +1,32 @@
 package com.godaddy.vps4.phase2;
 
-import com.godaddy.vps4.credit.CreditService;
+import java.lang.reflect.Method;
+import java.util.UUID;
+
+import javax.inject.Inject;
+import javax.sql.DataSource;
+
+import org.junit.After;
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.Test;
+import org.mockito.Mockito;
+
 import com.godaddy.vps4.jdbc.DatabaseModule;
-import com.godaddy.vps4.security.*;
+import com.godaddy.vps4.security.GDUserMock;
+import com.godaddy.vps4.security.PrivilegeService;
+import com.godaddy.vps4.security.SecurityModule;
+import com.godaddy.vps4.security.Vps4User;
+import com.godaddy.vps4.security.Vps4UserService;
 import com.godaddy.vps4.security.jdbc.JdbcPrivilegeService;
-import com.godaddy.vps4.vm.*;
+import com.godaddy.vps4.vm.ActionService;
+import com.godaddy.vps4.vm.ActionType;
+import com.godaddy.vps4.vm.ImageService;
+import com.godaddy.vps4.vm.VirtualMachine;
+import com.godaddy.vps4.vm.VirtualMachineService;
+import com.godaddy.vps4.vm.VmUser;
+import com.godaddy.vps4.vm.VmUserService;
+import com.godaddy.vps4.vm.VmUserType;
 import com.godaddy.vps4.vm.jdbc.JdbcActionService;
 import com.godaddy.vps4.vm.jdbc.JdbcImageService;
 import com.godaddy.vps4.vm.jdbc.JdbcVirtualMachineService;
@@ -16,28 +38,11 @@ import com.google.inject.AbstractModule;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
 import com.google.inject.Provides;
-import gdg.hfs.orchestration.CommandGroupSpec;
-import gdg.hfs.orchestration.CommandService;
-import gdg.hfs.orchestration.CommandState;
-import gdg.hfs.vhfs.vm.VmService;
-import org.junit.After;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
-import org.mockito.Mockito;
-
-import javax.inject.Inject;
-import javax.sql.DataSource;
-import java.lang.reflect.Method;
-import java.util.UUID;
 
 public class VmSupportUserResourceTest {
 
-    @Inject
-    Vps4UserService userService;
-
-    @Inject
-    DataSource dataSource;
+    @Inject Vps4UserService userService;
+    @Inject DataSource dataSource;
 
     VmUserService vmUserService = Mockito.mock(VmUserService.class);
 
@@ -47,26 +52,12 @@ public class VmSupportUserResourceTest {
     private Injector injector = Guice.createInjector(
             new DatabaseModule(),
             new SecurityModule(),
+            new Phase2ExternalsModule(),
             new AbstractModule() {
 
                 @Override
                 public void configure() {
-                    VmService vmService = Mockito.mock(VmService.class);
-                    bind(VmService.class).toInstance(vmService);
-
-                    CreditService creditService = Mockito.mock(CreditService.class);
-                    bind(CreditService.class).toInstance(creditService);
-
                     bind(VmUserService.class).toInstance(vmUserService);
-
-                    // Command Service
-                    CommandService commandService = Mockito.mock(CommandService.class);
-                    CommandState commandState = new CommandState();
-                    commandState.commandId = UUID.randomUUID();
-                    Mockito.when(commandService.executeCommand(Mockito.any(CommandGroupSpec.class)))
-                            .thenReturn(commandState);
-                    bind(CommandService.class).toInstance(commandService);
-
                     bind(ActionService.class).to(JdbcActionService.class);
                     bind(ImageService.class).to(JdbcImageService.class);
                     bind(PrivilegeService.class).to(JdbcPrivilegeService.class); // TODO break out to security module

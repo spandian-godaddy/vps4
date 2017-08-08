@@ -18,7 +18,6 @@ public class VirtualMachine {
     public final Instant validOn;
     public final Instant validUntil;
     public final String hostname;
-    public final AccountStatus accountStatus;
 
     public VirtualMachine(UUID vmId,
             long hfsVmId,
@@ -43,7 +42,6 @@ public class VirtualMachine {
         this.validOn = validOn;
         this.validUntil = validUntil;
         this.hostname = hostname;
-        this.accountStatus = accountStatus;
     }
 
     public VirtualMachine(VirtualMachine virtualMachine) {
@@ -58,7 +56,6 @@ public class VirtualMachine {
         this.validOn = virtualMachine.validOn;
         this.validUntil = virtualMachine.validUntil;
         this.hostname = virtualMachine.hostname;
-        this.accountStatus = virtualMachine.accountStatus;
     }
 
     @Override
@@ -66,7 +63,6 @@ public class VirtualMachine {
         return String.format(
                 "VirtualMachine [vmId=%s, hfsVmId=%d, orionGuid=%s, projectId=%d, spec=%s, name=%s, hostname=%s, image=%s, primaryIpAddress=%s, accountStatus=%s, validOn=%s, validUntil=%s]",
                 vmId, hfsVmId, orionGuid, projectId, spec.name, name, hostname, image == null ? "" : image.imageName,
-                primaryIpAddress == null ? "" : primaryIpAddress.ipAddress,
-                accountStatus.toString(), validOn, validUntil);
+                primaryIpAddress == null ? "" : primaryIpAddress.ipAddress, validOn, validUntil);
     }
 }

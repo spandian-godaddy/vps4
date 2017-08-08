@@ -20,10 +20,10 @@ import com.godaddy.vps4.security.SecurityModule;
 import com.godaddy.vps4.security.jdbc.AuthorizationException;
 import com.godaddy.vps4.vm.AccountStatus;
 import com.godaddy.vps4.vm.VmModule;
-import com.godaddy.vps4.web.vm.VmAction;
 import com.godaddy.vps4.web.Vps4Exception;
 import com.godaddy.vps4.web.Vps4NoShopperException;
 import com.godaddy.vps4.web.security.GDUser;
+import com.godaddy.vps4.web.vm.VmAction;
 import com.godaddy.vps4.web.vm.VmResource;
 import com.godaddy.vps4.web.vm.VmResource.ProvisionVmRequest;
 import com.google.inject.AbstractModule;
@@ -31,38 +31,22 @@ import com.google.inject.Guice;
 import com.google.inject.Injector;
 import com.google.inject.Provides;
 
-import gdg.hfs.orchestration.CommandGroupSpec;
-import gdg.hfs.orchestration.CommandService;
-import gdg.hfs.orchestration.CommandState;
-import gdg.hfs.vhfs.vm.VmService;
-
 public class VmResourceProvisionTest {
 
     @Inject DataSource dataSource;
 
     private GDUser user;
-    private CreditService creditService = Mockito.mock(CreditService.class);
+    private CreditService creditService;
 
     private Injector injector = Guice.createInjector(
             new DatabaseModule(),
             new SecurityModule(),
             new VmModule(),
+            new Phase2ExternalsModule(),
             new AbstractModule() {
 
                 @Override
                 public void configure() {
-                    bind(CreditService.class).toInstance(creditService);
-
-                    VmService vmService = Mockito.mock(VmService.class);
-                    bind(VmService.class).toInstance(vmService);
-
-                    // Command Service
-                    CommandService commandService = Mockito.mock(CommandService.class);
-                    CommandState commandState = new CommandState();
-                    commandState.commandId = UUID.randomUUID();
-                    Mockito.when(commandService.executeCommand(Mockito.any(CommandGroupSpec.class)))
-                            .thenReturn(commandState);
-                    bind(CommandService.class).toInstance(commandService);
                 }
 
                 @Provides
@@ -75,6 +59,7 @@ public class VmResourceProvisionTest {
     public void setupTest() {
         System.setProperty("hfs.sgid.prefix", SqlTestData.TEST_VM_SGID);
         injector.injectMembers(this);
+        creditService = injector.getInstance(CreditService.class);
         user = GDUserMock.createShopper();
     }
 
