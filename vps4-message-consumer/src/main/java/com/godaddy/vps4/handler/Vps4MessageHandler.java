@@ -18,6 +18,7 @@ import com.godaddy.vps4.credit.CreditService;
 import com.godaddy.vps4.credit.VirtualMachineCredit;
 import com.godaddy.vps4.handler.util.Commands;
 import com.godaddy.vps4.orchestration.snapshot.Vps4DestroySnapshot;
+import com.godaddy.vps4.orchestration.vm.VmActionRequest;
 import com.godaddy.vps4.orchestration.vm.Vps4DestroyVm;
 import com.godaddy.vps4.snapshot.SnapshotService;
 import com.godaddy.vps4.snapshot.SnapshotStatus;
@@ -88,24 +89,22 @@ public class Vps4MessageHandler implements MessageHandler {
 
         switch (credit.accountStatus) {
         case ABUSE_SUSPENDED:
-            // TODO: Call suspend when implemented
+        case SUSPENDED:
+            stopVm(credit.productId);
             break;
         case ACTIVE:
-            // TODO: Call unsuspend when implemented
+            // Do nothing. On reinstate customer will need to manually restart their VM.
             break;
         case REMOVED:
             destroyAccount(credit);
             break;
-        case SUSPENDED:
-            // TODO: Call suspend when implemented
-            break;
         default:
             break;
-
         }
     }
 
     private void destroyAccount(VirtualMachineCredit credit) {
+        logger.info("Vps4 account cancelled: {} - Destroying vm and snapshots", credit.orionGuid);
         destroyVm(credit.productId);
         destroySnapshots(credit.orionGuid);
     }
@@ -127,6 +126,7 @@ public class Vps4MessageHandler implements MessageHandler {
         request.actionId = actionId;
         request.pingCheckAccountId = pingCheckAccountId;
 
+        logger.info("Destroying vm: {} - actionId: {}", vmId, actionId);
         Commands.execute(commandService, vmActionService, "Vps4DestroyVm", request);
     }
 
@@ -142,14 +142,35 @@ public class Vps4MessageHandler implements MessageHandler {
         long vps4UserId = virtualMachineService.getUserIdByVmId(snapshots.get(0).vmId);
 
         for (SnapshotWithDetails snapshot: snapshots) {
-            long actionId = snapshotActionService.createAction(snapshot.id, ActionType.DESTROY_SNAPSHOT, new JSONObject().toJSONString(), vps4UserId);
+            long actionId = snapshotActionService.createAction(snapshot.id, ActionType.DESTROY_SNAPSHOT,
+                    new JSONObject().toJSONString(), vps4UserId);
 
             Vps4DestroySnapshot.Request request = new Vps4DestroySnapshot.Request();
             request.hfsSnapshotId = snapshot.hfsSnapshotId;
             request.actionId = actionId;
 
+            logger.info("Destroying snapshot: {} - actionId: {}", snapshot.id, actionId);
             Commands.execute(commandService, snapshotActionService, "Vps4DestroySnapshot", request);
         }
 
+    }
+
+    private void stopVm(UUID vmId) {
+        if (vmId == null) {
+            logger.info("No active vm found for credit");
+            return;
+        }
+
+        VirtualMachine vm = virtualMachineService.getVirtualMachine(vmId);
+        long vps4UserId = virtualMachineService.getUserIdByVmId(vmId);
+        long actionId = vmActionService.createAction(vmId, ActionType.STOP_VM,
+                new JSONObject().toJSONString(), vps4UserId);
+
+        VmActionRequest request = new VmActionRequest();
+        request.hfsVmId = vm.hfsVmId;
+        request.actionId = actionId;
+
+        logger.info("Stopping suspended vm: {} - actionId: {}", vmId, actionId);
+        Commands.execute(commandService, vmActionService, "Vps4StopVm", request);
     }
 }

@@ -103,43 +103,16 @@ public class Vps4MessageHandlerTest {
         handler.handleMessage(message);
     }
 
-    @Test
-    public void testHandleMessageAddedCausesNoChange() throws MessageHandlerException {
-        mockVmCredit(AccountStatus.ACTIVE, null);
-        callHandleMessage(createTestKafkaMessage("added"));
-
-        verify(creditServiceMock, times(1)).getVirtualMachineCredit(anyObject());
-        verify(commandServiceMock, times(0)).executeCommand(anyObject());
+    @Test(expected = MessageHandlerException.class)
+    public void testHandleMessageBadJson() throws MessageHandlerException {
+        callHandleMessage("bad json");
     }
 
-    @Test
-    // TODO: Not yet implemented
-    public void testHandleMessageSuspended() throws MessageHandlerException {
-        mockVmCredit(AccountStatus.SUSPENDED, null);
-        callHandleMessage(createTestKafkaMessage("suspended"));
-
-        verify(creditServiceMock, times(1)).getVirtualMachineCredit(anyObject());
-        verify(commandServiceMock, never()).executeCommand(anyObject());
-    }
-
-    @Test
-    // TODO: Not yet implemented
-    public void testHandleMessageAbuseSuspended() throws MessageHandlerException {
-        mockVmCredit(AccountStatus.ABUSE_SUSPENDED, null);
-        callHandleMessage(createTestKafkaMessage("suspended"));
-
-        verify(creditServiceMock, times(1)).getVirtualMachineCredit(anyObject());
-        verify(commandServiceMock, never()).executeCommand(anyObject());
-    }
-
-    @Test
-    // TODO: Not yet implemented
-    public void testHandleMessageReinstated() throws MessageHandlerException {
-        mockVmCredit(AccountStatus.ACTIVE, null);
-        callHandleMessage(createTestKafkaMessage("reinstated"));
-
-        verify(creditServiceMock, times(1)).getVirtualMachineCredit(anyObject());
-        verify(commandServiceMock, never()).executeCommand(anyObject());
+    @Test(expected = MessageHandlerException.class)
+    public void testHandleMessageBadValues() throws MessageHandlerException {
+        callHandleMessage("{\"id\":\"not a guid\","
+                + "\"notification\":{\"type\":[\"added\"],"
+                + "\"account_guid\":\"e36b4412-ec52-420f-86fd-cf5332cf0c88\"}}");
     }
 
     @Test
@@ -152,24 +125,59 @@ public class Vps4MessageHandlerTest {
     }
 
     @Test
+    public void testHandleMessageAddedCausesNoChange() throws MessageHandlerException {
+        mockVmCredit(AccountStatus.ACTIVE, null);
+        callHandleMessage(createTestKafkaMessage("added"));
+
+        verify(creditServiceMock, times(1)).getVirtualMachineCredit(anyObject());
+        verify(commandServiceMock, times(0)).executeCommand(anyObject());
+    }
+
+    @Test
+    public void testHandleMessageSuspendedNoProductId() throws MessageHandlerException {
+        mockVmCredit(AccountStatus.SUSPENDED, null);
+        callHandleMessage(createTestKafkaMessage("suspended"));
+
+        verify(creditServiceMock, times(1)).getVirtualMachineCredit(anyObject());
+        verify(commandServiceMock, never()).executeCommand(anyObject());
+    }
+
+    @Test
+    public void testHandleMessageSuspended() throws MessageHandlerException {
+        mockVmCredit(AccountStatus.SUSPENDED, vm.vmId);
+        callHandleMessage(createTestKafkaMessage("suspended"));
+
+        ArgumentCaptor<CommandGroupSpec> argument = ArgumentCaptor.forClass(CommandGroupSpec.class);
+        verify(commandServiceMock, times(1)).executeCommand(argument.capture());
+        assertEquals("Vps4StopVm", argument.getValue().commands.get(0).command);
+    }
+
+    @Test
+    public void testHandleMessageAbuseSuspended() throws MessageHandlerException {
+        mockVmCredit(AccountStatus.ABUSE_SUSPENDED, vm.vmId);
+        callHandleMessage(createTestKafkaMessage("suspended"));
+
+        ArgumentCaptor<CommandGroupSpec> argument = ArgumentCaptor.forClass(CommandGroupSpec.class);
+        verify(commandServiceMock, times(1)).executeCommand(argument.capture());
+        assertEquals("Vps4StopVm", argument.getValue().commands.get(0).command);
+    }
+
+    @Test
+    public void testHandleMessageReinstatedCausesNoChange() throws MessageHandlerException {
+        mockVmCredit(AccountStatus.ACTIVE, vm.vmId);
+        callHandleMessage(createTestKafkaMessage("reinstated"));
+
+        verify(creditServiceMock, times(1)).getVirtualMachineCredit(anyObject());
+        verify(commandServiceMock, never()).executeCommand(anyObject());
+    }
+
+    @Test
     public void testHandleMessageRemovedNoProductId() throws MessageHandlerException {
         mockVmCredit(AccountStatus.REMOVED, null);
         callHandleMessage(createTestKafkaMessage("removed"));
 
         verify(creditServiceMock, times(1)).getVirtualMachineCredit(anyObject());
         verify(commandServiceMock, never()).executeCommand(anyObject());
-    }
-
-    @Test(expected = MessageHandlerException.class)
-    public void testHandleMessageBadJson() throws MessageHandlerException {
-        callHandleMessage("bad json");
-    }
-
-    @Test(expected = MessageHandlerException.class)
-    public void testHandleMessageBadValues() throws MessageHandlerException {
-        callHandleMessage("{\"id\":\"not a guid\","
-                + "\"notification\":{\"type\":[\"added\"],"
-                + "\"account_guid\":\"e36b4412-ec52-420f-86fd-cf5332cf0c88\"}}");
     }
 
     @Test
