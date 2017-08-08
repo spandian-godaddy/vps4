@@ -1,5 +1,16 @@
 package com.godaddy.vps4.phase2;
 
+import java.util.List;
+import java.util.UUID;
+
+import javax.inject.Inject;
+import javax.sql.DataSource;
+
+import org.junit.After;
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.Test;
+
 import com.godaddy.vps4.jdbc.DatabaseModule;
 import com.godaddy.vps4.security.GDUserMock;
 import com.godaddy.vps4.security.SecurityModule;
@@ -11,18 +22,10 @@ import com.godaddy.vps4.vm.VmUser;
 import com.godaddy.vps4.vm.VmUserType;
 import com.godaddy.vps4.web.security.GDUser;
 import com.godaddy.vps4.web.vm.UserResource;
+import com.google.inject.AbstractModule;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
 import com.google.inject.Provides;
-import org.junit.After;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
-
-import javax.inject.Inject;
-import javax.sql.DataSource;
-import java.util.List;
-import java.util.UUID;
 
 public class UserResourceTest {
     @Inject Vps4UserService userService;
@@ -39,7 +42,8 @@ public class UserResourceTest {
             new DatabaseModule(),
             new SecurityModule(),
             new VmModule(),
-            new Phase2ExternalsModule() {
+            new Phase2ExternalsModule(),
+            new AbstractModule() {
 
                 @Override
                 public void configure() {
