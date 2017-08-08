@@ -31,6 +31,10 @@ public class UserResourceTest {
     private GDUser user;
     private VirtualMachine testVm;
 
+    private VmUser testUser;
+    private VmUser testSupportUser1;
+    private VmUser testSupportUser2;
+
     private Injector injector = Guice.createInjector(
             new DatabaseModule(),
             new SecurityModule(),
@@ -56,9 +60,9 @@ public class UserResourceTest {
         injector.injectMembers(this);
         user = GDUserMock.createShopper();
         testVm = createTestVm();
-        VmUser testUser = new VmUser("testUser", testVm.vmId, true, VmUserType.CUSTOMER);
-        VmUser testSupportUser1 = new VmUser("testSupportUser1", testVm.vmId, true, VmUserType.SUPPORT);
-        VmUser testSupportUser2 = new VmUser("testSupportUser2", testVm.vmId, true, VmUserType.SUPPORT);
+        testUser = new VmUser("testUser", testVm.vmId, true, VmUserType.CUSTOMER);
+        testSupportUser1 = new VmUser("testSupportUser1", testVm.vmId, true, VmUserType.SUPPORT);
+        testSupportUser2 = new VmUser("testSupportUser2", testVm.vmId, true, VmUserType.SUPPORT);
         SqlTestData.insertTestUser(testUser, dataSource);
         SqlTestData.insertTestUser(testSupportUser1, dataSource);
         SqlTestData.insertTestUser(testSupportUser2, dataSource);
@@ -80,23 +84,23 @@ public class UserResourceTest {
     public void testGetUsers() {
         List<VmUser> users = getUserResource().getUsers(testVm.vmId, null);
         Assert.assertEquals(3, users.size());
-        Assert.assertEquals("testUser", users.get(0).username);
-        Assert.assertEquals("testSupportUser1", users.get(1).username);
-        Assert.assertEquals("testSupportUser2", users.get(2).username);
+        Assert.assertTrue(users.stream().anyMatch(o -> o.username.equals(testUser.username)));
+        Assert.assertTrue(users.stream().anyMatch(o -> o.username.equals(testSupportUser1.username)));
+        Assert.assertTrue(users.stream().anyMatch(o -> o.username.equals(testSupportUser2.username)));
     }
 
     @Test
     public void testGetCustomerUsers() {
         List<VmUser> users = getUserResource().getUsers(testVm.vmId, VmUserType.CUSTOMER);
         Assert.assertEquals(1, users.size());
-        Assert.assertEquals("testUser", users.get(0).username);
+        Assert.assertTrue(users.stream().anyMatch(o -> o.username.equals(testUser.username)));
     }
 
     @Test
     public void testGetSupportUsers() {
         List<VmUser> users = getUserResource().getUsers(testVm.vmId, VmUserType.SUPPORT);
         Assert.assertEquals(2, users.size());
-        Assert.assertEquals("testSupportUser1", users.get(0).username);
-        Assert.assertEquals("testSupportUser2", users.get(1).username);
+        Assert.assertTrue(users.stream().anyMatch(o -> o.username.equals(testSupportUser1.username)));
+        Assert.assertTrue(users.stream().anyMatch(o -> o.username.equals(testSupportUser2.username)));
     }
 }
