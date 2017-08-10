@@ -212,4 +212,10 @@ public class JdbcVirtualMachineService implements VirtualMachineService {
                 + "JOIN user_project_privilege upp ON v.project_id = upp.project_id "
                 + "WHERE v.vm_id=?;", Sql.nextOrNull(rs -> rs.getLong("vps4_user_id")), vmId);
     }
+
+    @Override
+    public UUID getOrionGuidByVmId(UUID vmId) {
+        return Sql.with(dataSource).exec("SELECT orion_guid FROM virtual_machine WHERE vm_id=?;",
+                Sql.nextOrNull(rs -> UUID.fromString(rs.getString("orion_guid"))), vmId);
+    }
 }

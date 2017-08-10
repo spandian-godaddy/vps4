@@ -1,8 +1,11 @@
 package com.godaddy.vps4.web.vm;
 
+import static com.godaddy.vps4.web.util.RequestValidation.getAndValidateUserAccountCredit;
+import static com.godaddy.vps4.web.util.RequestValidation.validateCreditIsNotInUse;
 import static com.godaddy.vps4.web.util.RequestValidation.validateNoConflictingActions;
 import static com.godaddy.vps4.web.util.RequestValidation.validateServerIsActive;
 import static com.godaddy.vps4.web.util.RequestValidation.validateServerIsStopped;
+import static com.godaddy.vps4.web.util.RequestValidation.validateUserIsShopper;
 
 import java.time.Instant;
 import java.util.List;
@@ -34,8 +37,6 @@ import com.godaddy.vps4.project.Project;
 import com.godaddy.vps4.project.ProjectService;
 import com.godaddy.vps4.security.Vps4User;
 import com.godaddy.vps4.security.Vps4UserService;
-import com.godaddy.vps4.security.jdbc.AuthorizationException;
-import com.godaddy.vps4.vm.AccountStatus;
 import com.godaddy.vps4.vm.ActionService;
 import com.godaddy.vps4.vm.ActionType;
 import com.godaddy.vps4.vm.DataCenter;
@@ -119,7 +120,7 @@ public class VmResource {
 
         logger.info(String.format("VM valid until: %s | %s", virtualMachine.validUntil, Instant.now()));
         if (user.isShopper())
-            verifyUserHasAccessToCredit(virtualMachine.orionGuid);
+            getAndValidateUserAccountCredit(creditService, virtualMachine.orionGuid, user.getShopperId());
 
         return virtualMachine;
     }
@@ -185,15 +186,12 @@ public class VmResource {
     @POST
     @Path("/")
     public VmAction provisionVm(ProvisionVmRequest provisionRequest) throws InterruptedException {
-        if (user.getShopperId() == null)
-            throw new Vps4NoShopperException();
-        Vps4User vps4User = userService.getOrCreateUserForShopper(user.getShopperId());
-
         logger.info("provisioning vm with orionGuid {}", provisionRequest.orionGuid);
-        VirtualMachineCredit vmCredit = verifyUserHasAccessToCredit(provisionRequest.orionGuid);
-        if (vmCredit.provisionDate != null)
-            throw new Vps4Exception("CREDIT_ALREADY_IN_USE",
-                    String.format("The virtual machine credit for orion guid %s is already provisioned'", vmCredit.orionGuid));
+
+        validateUserIsShopper(user);
+        VirtualMachineCredit vmCredit = getAndValidateUserAccountCredit(creditService,
+                provisionRequest.orionGuid, user.getShopperId());
+        validateCreditIsNotInUse(vmCredit);
 
         if(imageService.getImages(vmCredit.operatingSystem, vmCredit.controlPanel, provisionRequest.image).size() == 0){
             // verify that the image matches the request (control panel, managed level, OS)
@@ -203,6 +201,7 @@ public class VmResource {
 
         ProvisionVirtualMachineParameters params;
         VirtualMachine virtualMachine;
+        Vps4User vps4User = userService.getOrCreateUserForShopper(user.getShopperId());
         try {
             params = new ProvisionVirtualMachineParameters(vps4User.getId(), provisionRequest.dataCenterId,
                     sgidPrefix, provisionRequest.orionGuid, provisionRequest.name, vmCredit.tier, vmCredit.managedLevel,
@@ -235,27 +234,6 @@ public class VmResource {
         logger.info("provisioning VM in {}", command.commandId);
 
         return new VmAction(actionService.getAction(actionId));
-    }
-
-
-    private VirtualMachineCredit verifyUserHasAccessToCredit(UUID orionGuid) {
-        VirtualMachineCredit vmCredit = creditService.getVirtualMachineCredit(orionGuid);
-        if (vmCredit == null) {
-            throw new Vps4Exception("CREDIT_NOT_FOUND",
-                    String.format("The virtual machine credit for orion guid %s was not found", orionGuid));
-        }
-
-        if (vmCredit.accountStatus == AccountStatus.SUSPENDED ||
-                vmCredit.accountStatus == AccountStatus.ABUSE_SUSPENDED) {
-           throw new Vps4Exception("ACCOUNT_SUSPENDED",
-                    String.format("The virtual machine account for orion guid %s was SUSPENDED", orionGuid));
-        }
-
-        if (!(user.getShopperId().equals(vmCredit.shopperId))) {
-            throw new AuthorizationException(
-                    user.getShopperId() + " does not have privilege for vm request with orion guid " + vmCredit.orionGuid);
-        }
-        return vmCredit;
     }
 
     private Vps4ProvisionVm.Request createProvisionVmRequest(CreateVMWithFlavorRequest hfsRequest,

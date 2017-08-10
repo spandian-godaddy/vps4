@@ -7,7 +7,6 @@ import static org.junit.Assert.assertTrue;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.sql.Statement;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -16,11 +15,9 @@ import javax.sql.DataSource;
 
 import org.junit.After;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 
 import com.godaddy.vps4.jdbc.DatabaseModule;
-import com.godaddy.hfs.jdbc.Sql;
 import com.godaddy.vps4.project.Project;
 import com.godaddy.vps4.project.ProjectService;
 import com.godaddy.vps4.project.jdbc.JdbcProjectService;
@@ -67,7 +64,6 @@ public class JdbcProjectServiceTest {
         if (dataSource == null) {
             dataSource = injector.getInstance(DataSource.class);
         }
-        ProjectService ps = new JdbcProjectService(dataSource);
         try (Connection conn = dataSource.getConnection()) {
             try (Statement statement = conn.createStatement()) {
                 for(Vps4User user: users.values()){

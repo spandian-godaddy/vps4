@@ -102,6 +102,7 @@ public class Vps4ApiClient {
         return primaryIp.get("ipAddress").toString();
     }
 
+    @SuppressWarnings("unchecked")
     public String setHostname(UUID vmId, String hostname){
         JSONObject body = new JSONObject();
         body.put("hostname", hostname);
@@ -112,6 +113,7 @@ public class Vps4ApiClient {
 
     }
 
+    @SuppressWarnings("unchecked")
     public UUID createVmCredit(String shopperId, String osType, String controlPanel,
                                 int managedLevel, int tier){
         JSONObject body = new JSONObject();
@@ -142,7 +144,7 @@ public class Vps4ApiClient {
         return null;
     }
 
-
+    @SuppressWarnings("unchecked")
     public JSONObject provisionVm(String name, UUID orionGuid,
                       String imageName, int dcId,
                       String username, String password){

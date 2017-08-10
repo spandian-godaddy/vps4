@@ -12,7 +12,6 @@ import javax.ws.rs.NotFoundException;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -199,7 +198,6 @@ public class SnapshotResourceTest {
         testGetSnapshot();
     }
 
-    @Ignore("Snapshots need rework, snapshot api should not work if vm suspended")
     @Test
     public void testShopperGetSnapshotFailsIfSuspended() {
         Phase2ExternalsModule.mockVmCredit(AccountStatus.SUSPENDED);

@@ -1,9 +1,8 @@
 package com.godaddy.vps4.web.snapshot;
 
-import static com.godaddy.vps4.web.util.RequestValidation.ensureHasShopperAccess;
 import static com.godaddy.vps4.web.util.RequestValidation.validateIfSnapshotOverQuota;
 import static com.godaddy.vps4.web.util.RequestValidation.validateSnapshotName;
-import static com.godaddy.vps4.web.util.RequestValidation.verifyUserPrivilegeToProject;
+import static com.godaddy.vps4.web.util.RequestValidation.validateUserIsShopper;
 
 import java.util.List;
 import java.util.UUID;
@@ -27,7 +26,6 @@ import org.slf4j.LoggerFactory;
 import com.fasterxml.jackson.annotation.JsonView;
 import com.godaddy.vps4.orchestration.snapshot.Vps4DestroySnapshot;
 import com.godaddy.vps4.orchestration.snapshot.Vps4SnapshotVm;
-import com.godaddy.vps4.security.PrivilegeService;
 import com.godaddy.vps4.security.Views;
 import com.godaddy.vps4.security.Vps4User;
 import com.godaddy.vps4.security.Vps4UserService;
@@ -64,7 +62,6 @@ public class SnapshotResource {
     private final ActionService actionService;
     private final CommandService commandService;
     private final GDUser user;
-    private final PrivilegeService privilegeService;
     private final SnapshotService snapshotService;
     private final VirtualMachineService virtualMachineService;
     private final VmResource vmResource;
@@ -72,20 +69,19 @@ public class SnapshotResource {
 
     @Inject
     public SnapshotResource(@SnapshotActionService ActionService actionService, CommandService commandService,
-                            GDUser user, PrivilegeService privilegeService, SnapshotService snapshotService,
+                            GDUser user, SnapshotService snapshotService,
                             VirtualMachineService virtualMachineService, VmResource vmResource,
                             Vps4UserService userService) {
         this.actionService = actionService;
         this.commandService = commandService;
         this.user = user;
-        this.privilegeService = privilegeService;
         this.snapshotService = snapshotService;
         this.virtualMachineService = virtualMachineService;
         this.vmResource = vmResource;
         this.userService = userService;
     }
 
-
+    @AdminOnly
     @GET
     @Path("/")
     @JsonView(Views.Public.class)
@@ -101,6 +97,7 @@ public class SnapshotResource {
                 .collect(Collectors.toList());
     }
 
+    @AdminOnly
     @POST
     @Path("/")
     public SnapshotAction createSnapshot(SnapshotRequest snapshotRequest) {
@@ -117,7 +114,7 @@ public class SnapshotResource {
     }
 
     private void validateCreation(UUID orionGuid, String name) {
-        ensureHasShopperAccess(user);
+        validateUserIsShopper(user);
         validateIfSnapshotOverQuota(snapshotService, orionGuid);
         validateSnapshotName(name);
     }
@@ -150,16 +147,20 @@ public class SnapshotResource {
         );
     }
 
+    @AdminOnly
     @GET
     @Path("/{snapshotId}")
     @JsonView(Views.Public.class)
     public Snapshot getSnapshot(@PathParam("snapshotId") UUID snapshotId) {
         Snapshot snapshot = snapshotService.getSnapshot(snapshotId);
-        verifyPrivilege(snapshot);
+        if (snapshot == null || snapshot.status == SnapshotStatus.DESTROYED)
+            throw new NotFoundException("Unknown snapshot");
 
+        vmResource.getVm(snapshot.vmId);  // auth/vmcredit validation TODO:refactor
         return snapshot;
     }
 
+    @AdminOnly
     @DELETE
     @Path("/{snapshotId}")
     public SnapshotAction destroySnapshot(@PathParam("snapshotId") UUID snapshotId) {
@@ -189,11 +190,4 @@ public class SnapshotResource {
         return getSnapshot(snapshotId);
     }
 
-    private void verifyPrivilege(Snapshot snapshot) {
-        if (snapshot == null || snapshot.status == SnapshotStatus.DESTROYED)
-            throw new NotFoundException("Unknown snapshot");
-
-        if (user.isShopper())
-            verifyUserPrivilegeToProject(userService, privilegeService, user.getShopperId(), snapshot.projectId);
-    }
 }
