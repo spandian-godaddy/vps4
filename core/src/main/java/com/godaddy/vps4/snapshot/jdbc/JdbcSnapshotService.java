@@ -1,19 +1,19 @@
 package com.godaddy.vps4.snapshot.jdbc;
 
-import com.godaddy.hfs.jdbc.Sql;
-import com.godaddy.vps4.snapshot.Snapshot;
-import com.godaddy.vps4.snapshot.SnapshotService;
-import com.godaddy.vps4.snapshot.SnapshotStatus;
-import com.godaddy.vps4.snapshot.SnapshotWithDetails;
-
-import javax.inject.Inject;
-import javax.sql.DataSource;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Stream;
+
+import javax.inject.Inject;
+import javax.sql.DataSource;
+
+import com.godaddy.hfs.jdbc.Sql;
+import com.godaddy.vps4.snapshot.Snapshot;
+import com.godaddy.vps4.snapshot.SnapshotService;
+import com.godaddy.vps4.snapshot.SnapshotStatus;
 
 public class JdbcSnapshotService implements SnapshotService {
     private static final long OPEN_SLOTS_PER_CREDIT = 1;
@@ -197,23 +197,17 @@ public class JdbcSnapshotService implements SnapshotService {
     }
 
     @Override
-    public List<SnapshotWithDetails> getSnapshotsByOrionGuid(UUID orionGuid) {
+    public List<Snapshot> getSnapshotsByOrionGuid(UUID orionGuid) {
         return Sql.with(dataSource).exec(selectSnapshotQuery
                         + "JOIN virtual_machine v ON s.vm_id = v.vm_id "
                         + "WHERE v.orion_guid = ?;",
-                Sql.listOf(this::mapSnapshotWithDetails), orionGuid);
+                Sql.listOf(this::mapSnapshot), orionGuid);
     }
 
     @Override
     public Snapshot getSnapshot(UUID id) {
         return Sql.with(dataSource).exec(selectSnapshotQuery + "WHERE s.id=?",
                 Sql.nextOrNull(this::mapSnapshot), id);
-    }
-
-    @Override
-    public SnapshotWithDetails getSnapshotWithDetails(UUID id) {
-        return Sql.with(dataSource).exec(selectSnapshotQuery + "WHERE s.id=?",
-                Sql.nextOrNull(this::mapSnapshotWithDetails), id);
     }
 
     @Override
@@ -231,22 +225,10 @@ public class JdbcSnapshotService implements SnapshotService {
                 rs.getString("name"),
                 SnapshotStatus.valueOf(rs.getString("status")),
                 rs.getTimestamp("created_at").toInstant(),
-                modifiedAt != null ? modifiedAt.toInstant() : null
+                modifiedAt != null ? modifiedAt.toInstant() : null,
+                rs.getString("hfs_image_id"),
+                rs.getLong("hfs_snapshot_id")
         );
     }
 
-    private SnapshotWithDetails mapSnapshotWithDetails(ResultSet rs) throws SQLException {
-        Timestamp modifiedAt = rs.getTimestamp("modified_at");
-        return new SnapshotWithDetails(
-                UUID.fromString(rs.getString("id")),
-                rs.getString("hfs_image_id"),
-                rs.getLong("project_id"),
-                rs.getLong("hfs_snapshot_id"),
-                UUID.fromString(rs.getString("vm_id")),
-                rs.getString("name"),
-                SnapshotStatus.valueOf(rs.getString("status")),
-                rs.getTimestamp("created_at").toInstant(),
-                modifiedAt != null ? modifiedAt.toInstant() : null
-        );
-    }
 }

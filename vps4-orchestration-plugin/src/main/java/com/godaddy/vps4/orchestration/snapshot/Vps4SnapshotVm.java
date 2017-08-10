@@ -4,13 +4,12 @@ import com.godaddy.vps4.orchestration.ActionCommand;
 import com.godaddy.vps4.orchestration.ActionRequest;
 import com.godaddy.vps4.snapshot.SnapshotActionService;
 import com.godaddy.vps4.snapshot.SnapshotService;
-import com.godaddy.vps4.snapshot.SnapshotWithDetails;
+import com.godaddy.vps4.snapshot.Snapshot;
 import com.godaddy.vps4.vm.ActionService;
 import com.godaddy.vps4.vm.ActionType;
 import gdg.hfs.orchestration.CommandContext;
 import gdg.hfs.orchestration.CommandMetadata;
 import gdg.hfs.vhfs.snapshot.SnapshotAction;
-import gdg.hfs.vhfs.snapshot.Snapshot;
 import org.json.simple.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -65,8 +64,7 @@ public class Vps4SnapshotVm extends ActionCommand<Vps4SnapshotVm.Request, Vps4Sn
         if (snapshotIdToBeDeprecated != null) {
             logger.info("Deprecate snapshot with id: {}", snapshotIdToBeDeprecated);
             vps4SnapshotService.markSnapshotAsDeprecated(snapshotIdToBeDeprecated);
-            SnapshotWithDetails vps4Snapshot =
-                    vps4SnapshotService.getSnapshotWithDetails(snapshotIdToBeDeprecated);
+            Snapshot vps4Snapshot = vps4SnapshotService.getSnapshot(snapshotIdToBeDeprecated);
 
             try {
                 // now destroy the deprecated snapshot
@@ -137,7 +135,7 @@ public class Vps4SnapshotVm extends ActionCommand<Vps4SnapshotVm.Request, Vps4Sn
     }
 
     private void updateHfsImageId(CommandContext context, UUID vps4SnapshotId, long hfsSnapshotId) {
-        Snapshot hfsSnapshot = context.execute(
+        gdg.hfs.vhfs.snapshot.Snapshot hfsSnapshot = context.execute(
                 "GetHFSSnapshot",
                 ctx -> hfsSnapshotService.getSnapshot(hfsSnapshotId)
         );

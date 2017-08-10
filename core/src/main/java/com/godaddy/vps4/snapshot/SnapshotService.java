@@ -6,11 +6,9 @@ import java.util.UUID;
 public interface SnapshotService {
     List<Snapshot> getSnapshotsForUser(long vps4UserId);
 
-    List<SnapshotWithDetails> getSnapshotsByOrionGuid(UUID orionGuid);
+    List<Snapshot> getSnapshotsByOrionGuid(UUID orionGuid);
 
     Snapshot getSnapshot(UUID id);
-
-    SnapshotWithDetails getSnapshotWithDetails(UUID id);
 
     List<Snapshot> getSnapshotsForVm(UUID vmId);
 

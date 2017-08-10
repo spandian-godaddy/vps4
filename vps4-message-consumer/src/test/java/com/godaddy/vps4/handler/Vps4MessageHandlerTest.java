@@ -20,9 +20,9 @@ import org.mockito.ArgumentCaptor;
 import com.godaddy.hfs.config.Config;
 import com.godaddy.vps4.credit.CreditService;
 import com.godaddy.vps4.credit.VirtualMachineCredit;
+import com.godaddy.vps4.snapshot.Snapshot;
 import com.godaddy.vps4.snapshot.SnapshotService;
 import com.godaddy.vps4.snapshot.SnapshotStatus;
-import com.godaddy.vps4.snapshot.SnapshotWithDetails;
 import com.godaddy.vps4.vm.AccountStatus;
 import com.godaddy.vps4.vm.ActionService;
 import com.godaddy.vps4.vm.DataCenter;
@@ -196,7 +196,7 @@ public class Vps4MessageHandlerTest {
     public void testHandleMessageRemovedWithSnapshots() throws MessageHandlerException {
         mockVmCredit(AccountStatus.REMOVED, vm.vmId);
 
-        SnapshotWithDetails snapshot = mock(SnapshotWithDetails.class);
+        Snapshot snapshot = mock(Snapshot.class);
         when(snapshotServiceMock.getSnapshotsByOrionGuid(orionGuid)).thenReturn(Arrays.asList(snapshot));
         callHandleMessage(createTestKafkaMessage("removed"));
 
@@ -209,8 +209,8 @@ public class Vps4MessageHandlerTest {
     public void testHandleMessageRemovedWithDestroyedSnapshots() throws MessageHandlerException {
         mockVmCredit(AccountStatus.REMOVED, null);
 
-        SnapshotWithDetails snapshot = new SnapshotWithDetails(null, null, 0, 0, null, null,
-                SnapshotStatus.DESTROYED, null, null);
+        Snapshot snapshot = new Snapshot(null, 0, null, null,
+                SnapshotStatus.DESTROYED, null, null, null, 0);
         when(snapshotServiceMock.getSnapshotsByOrionGuid(orionGuid)).thenReturn(Arrays.asList(snapshot));
         callHandleMessage(createTestKafkaMessage("removed"));
 
