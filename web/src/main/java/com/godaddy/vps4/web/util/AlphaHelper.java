@@ -22,6 +22,7 @@ public class AlphaHelper {
     private boolean isStagingOrProductionEnv() {
         return ((Environment.CURRENT == Environment.STAGE) ||
                 (Environment.CURRENT == Environment.PROD) ||
+                (Environment.CURRENT == Environment.PROD_SIN2) ||
                 (Environment.CURRENT == Environment.PROD_PHX3) ? true : false);
     }
 

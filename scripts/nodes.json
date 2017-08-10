@@ -83,5 +83,22 @@
       "consumer": [
         "p3plvps4kafka01.cloud.phx3.gdg"
       ]
+  },
+  "prod_sin2": {
+      "app": [
+        "sg2plvps4app01.cloud.sin2.gdg",
+        "sg2plvps4app02.cloud.sin2.gdg"
+      ],
+      "orchestration": [
+        "sg2plvps4app01.cloud.sin2.gdg"
+      ],
+      "zookeeper": [
+        "sg2plvps4zk01.cloud.sin2.gdg",
+        "sg2plvps4zk02.cloud.sin2.gdg",
+        "sg2plvps4zk03.cloud.sin2.gdg"
+      ],
+      "consumer": [
+        "sg2plvps4kafka01.cloud.sin2.gdg"
+      ]
   }
 }
