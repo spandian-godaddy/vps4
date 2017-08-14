@@ -50,7 +50,7 @@ public class SnapshotServiceTest {
                     vm.projectId,
                     vm.vmId,
                     snapshotName,
-                    SnapshotStatus.LIVE,
+                    status,
                     Instant.now(),
                     null,
                     "test-imageid",
