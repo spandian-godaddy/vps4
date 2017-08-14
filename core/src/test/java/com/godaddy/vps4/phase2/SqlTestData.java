@@ -7,7 +7,6 @@ import javax.sql.DataSource;
 
 import com.godaddy.hfs.jdbc.Sql;
 import com.godaddy.vps4.snapshot.Snapshot;
-import com.godaddy.vps4.snapshot.SnapshotWithDetails;
 import com.godaddy.vps4.vm.ActionType;
 import com.godaddy.vps4.vm.VirtualMachine;
 import com.godaddy.vps4.vm.VirtualMachineService;
@@ -58,7 +57,7 @@ public class SqlTestData {
                 null, vmId, actionType.getActionTypeId(), created, userId);
     }
 
-    public static void insertTestSnapshot(SnapshotWithDetails snapshot, DataSource dataSource) {
+    public static void insertTestSnapshot(Snapshot snapshot, DataSource dataSource) {
         Sql.with(dataSource).exec("INSERT INTO snapshot (id, hfs_image_id, project_id, hfs_snapshot_id, vm_id, name, status) VALUES (?, ?, ?, ?, ?, ?, ?)",
                 null, snapshot.id, snapshot.hfsImageId, snapshot.projectId, snapshot.hfsSnapshotId, snapshot.vmId, snapshot.name, snapshot.status.getSnapshotStatusId());
     }

@@ -2,10 +2,7 @@ package com.godaddy.vps4.web;
 
 import static org.junit.Assert.assertEquals;
 
-import com.godaddy.vps4.web.Version;
 import org.junit.Test;
-import org.mockito.Mock;
-import org.mockito.Mockito;
 
 public class VersionTest {
     @Test

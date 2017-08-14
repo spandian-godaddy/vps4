@@ -20,9 +20,9 @@ import com.godaddy.vps4.handler.util.Commands;
 import com.godaddy.vps4.orchestration.snapshot.Vps4DestroySnapshot;
 import com.godaddy.vps4.orchestration.vm.VmActionRequest;
 import com.godaddy.vps4.orchestration.vm.Vps4DestroyVm;
+import com.godaddy.vps4.snapshot.Snapshot;
 import com.godaddy.vps4.snapshot.SnapshotService;
 import com.godaddy.vps4.snapshot.SnapshotStatus;
-import com.godaddy.vps4.snapshot.SnapshotWithDetails;
 import com.godaddy.vps4.vm.ActionService;
 import com.godaddy.vps4.vm.ActionType;
 import com.godaddy.vps4.vm.VirtualMachine;
@@ -131,7 +131,7 @@ public class Vps4MessageHandler implements MessageHandler {
     }
 
     private void destroySnapshots(UUID orionGuid) {
-        List<SnapshotWithDetails> snapshots = snapshotService.getSnapshotsByOrionGuid(orionGuid)
+        List<Snapshot> snapshots = snapshotService.getSnapshotsByOrionGuid(orionGuid)
                 .stream()
                 .filter(s -> s.status != SnapshotStatus.DESTROYED)
                 .collect(Collectors.toList());
@@ -141,7 +141,7 @@ public class Vps4MessageHandler implements MessageHandler {
 
         long vps4UserId = virtualMachineService.getUserIdByVmId(snapshots.get(0).vmId);
 
-        for (SnapshotWithDetails snapshot: snapshots) {
+        for (Snapshot snapshot: snapshots) {
             long actionId = snapshotActionService.createAction(snapshot.id, ActionType.DESTROY_SNAPSHOT,
                     new JSONObject().toJSONString(), vps4UserId);
 

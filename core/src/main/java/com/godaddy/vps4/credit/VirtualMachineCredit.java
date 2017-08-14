@@ -38,6 +38,20 @@ public class VirtualMachineCredit {
         this.productId = vmId;
     }
 
+    public boolean isAccountSuspended() {
+        return accountStatus == AccountStatus.SUSPENDED ||
+                accountStatus == AccountStatus.ABUSE_SUSPENDED;
+    }
+
+    public boolean isOwnedByShopper(String ssoShopperId) {
+        return ssoShopperId.equals(shopperId);
+    }
+
+    public boolean isUsable() {
+        return provisionDate == null;
+
+    }
+
     @Override
     public String toString() {
         return "VirtualMachineRequest [orionGuid: " + orionGuid + " tier: " + tier +

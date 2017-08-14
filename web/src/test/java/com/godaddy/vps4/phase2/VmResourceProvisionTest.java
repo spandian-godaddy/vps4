@@ -72,11 +72,12 @@ public class VmResourceProvisionTest {
         return injector.getInstance(VmResource.class);
     }
 
-    private VirtualMachineCredit createVmCredit(String controlPanel, boolean claimed) {
+    private VirtualMachineCredit createVmCredit(String controlPanel,
+            boolean claimed, AccountStatus accountStatus) {
         UUID newGuid = UUID.randomUUID();
         Instant provisionDate = claimed ? Instant.now() : null;
         return new VirtualMachineCredit(newGuid, 10, 1, 0, "linux", controlPanel, null,
-                provisionDate, GDUserMock.DEFAULT_SHOPPER, AccountStatus.ACTIVE, null, null);
+                provisionDate, GDUserMock.DEFAULT_SHOPPER, accountStatus, null, null);
     }
 
     private ProvisionVmRequest createProvisionVmRequest(UUID orionGuid) {
@@ -89,7 +90,7 @@ public class VmResourceProvisionTest {
     }
 
     public void testProvisionVm() throws InterruptedException {
-        VirtualMachineCredit credit = createVmCredit("myh", false);
+        VirtualMachineCredit credit = createVmCredit("myh", false, AccountStatus.ACTIVE);
         ProvisionVmRequest request = createProvisionVmRequest(credit.orionGuid);
         Mockito.when(creditService.getVirtualMachineCredit(credit.orionGuid)).thenReturn(credit);
 
@@ -124,7 +125,7 @@ public class VmResourceProvisionTest {
     @Test
     public void testProvisionVmInvalidCredit() throws InterruptedException {
         // Credit doesn't match provision request image
-        VirtualMachineCredit credit = createVmCredit("cpanel", false);
+        VirtualMachineCredit credit = createVmCredit("cpanel", false, AccountStatus.ACTIVE);
         ProvisionVmRequest request = createProvisionVmRequest(credit.orionGuid);
         Mockito.when(creditService.getVirtualMachineCredit(credit.orionGuid)).thenReturn(credit);
 
@@ -152,7 +153,7 @@ public class VmResourceProvisionTest {
 
     @Test
     public void testProvisionVmCreditClaimed() throws InterruptedException {
-        VirtualMachineCredit credit = createVmCredit("cpanel", true);
+        VirtualMachineCredit credit = createVmCredit("cpanel", true, AccountStatus.ACTIVE);
         ProvisionVmRequest request = createProvisionVmRequest(credit.orionGuid);
         Mockito.when(creditService.getVirtualMachineCredit(credit.orionGuid)).thenReturn(credit);
 
@@ -161,6 +162,20 @@ public class VmResourceProvisionTest {
             Assert.fail();
         } catch (Vps4Exception e) {
             Assert.assertEquals("CREDIT_ALREADY_IN_USE", e.getId());
+        }
+    }
+
+    @Test
+    public void testSuspendedShopperProvisionVm() throws InterruptedException {
+        VirtualMachineCredit credit = createVmCredit("myh", false, AccountStatus.SUSPENDED);
+        ProvisionVmRequest request = createProvisionVmRequest(credit.orionGuid);
+        Mockito.when(creditService.getVirtualMachineCredit(credit.orionGuid)).thenReturn(credit);
+
+        try {
+            getVmResource().provisionVm(request);
+            Assert.fail();
+        } catch (Vps4Exception e) {
+            Assert.assertEquals("ACCOUNT_SUSPENDED", e.getId());
         }
     }
 }

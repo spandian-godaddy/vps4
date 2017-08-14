@@ -100,4 +100,6 @@ public interface VirtualMachineService {
     boolean virtualMachineHasPlesk(UUID vmId);
 
     long getUserIdByVmId(UUID vmId);
+
+    UUID getOrionGuidByVmId(UUID vmId);
 }

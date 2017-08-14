@@ -12,19 +12,20 @@ import javax.ws.rs.NotFoundException;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.godaddy.vps4.jdbc.DatabaseModule;
 import com.godaddy.vps4.security.GDUserMock;
 import com.godaddy.vps4.security.SecurityModule;
+import com.godaddy.vps4.security.Views;
 import com.godaddy.vps4.security.Vps4User;
 import com.godaddy.vps4.security.Vps4UserService;
 import com.godaddy.vps4.security.jdbc.AuthorizationException;
 import com.godaddy.vps4.snapshot.Snapshot;
 import com.godaddy.vps4.snapshot.SnapshotModule;
 import com.godaddy.vps4.snapshot.SnapshotStatus;
-import com.godaddy.vps4.snapshot.SnapshotWithDetails;
 import com.godaddy.vps4.vm.AccountStatus;
 import com.godaddy.vps4.vm.VirtualMachine;
 import com.godaddy.vps4.vm.VmModule;
@@ -84,26 +85,25 @@ public class SnapshotResourceTest {
         return injector.getInstance(VmSnapshotResource.class);
     }
 
-    private SnapshotWithDetails createTestSnapshot() {
+    private Snapshot createTestSnapshot() {
         Vps4User vps4User = userService.getOrCreateUserForShopper(GDUserMock.DEFAULT_SHOPPER);
         VirtualMachine testVm = SqlTestData.insertTestVm(UUID.randomUUID(), vps4User.getId(), dataSource);
-        SnapshotWithDetails testSnapshot = new SnapshotWithDetails(
+        Snapshot testSnapshot = new Snapshot(
                 UUID.randomUUID(),
-                "test",
                 testVm.projectId,
-                (int) (Math.random() * 100000),
                 testVm.vmId,
                 "test-snapshot",
                 SnapshotStatus.LIVE,
                 Instant.now(),
-                null
+                null,
+                "test-imageid",
+                (int) (Math.random() * 100000)
         );
         SqlTestData.insertTestSnapshot(testSnapshot, dataSource);
         return testSnapshot;
     }
 
     // === getSnapshotList Tests ===
-
     private void testGetSnapshotList() {
         Snapshot snapshot = createTestSnapshot();
 
@@ -119,7 +119,7 @@ public class SnapshotResourceTest {
     }
 
     @Test(expected = Vps4NoShopperException.class)
-    public void testAdminFailsGetSnapshotList() throws InterruptedException {
+    public void testAdminFailsGetSnapshotList() {
         user = GDUserMock.createAdmin();
         testGetSnapshotList();
     }
@@ -134,13 +134,21 @@ public class SnapshotResourceTest {
     }
 
     // === getSnapshot Tests ===
-
     private void testGetSnapshot() {
         Snapshot snapshot = createTestSnapshot();
         UUID expectedVmId = snapshot.vmId;
 
         snapshot = getSnapshotResource().getSnapshot(snapshot.id);
         Assert.assertEquals(expectedVmId, snapshot.vmId);
+    }
+
+    @Test
+    public void testGetSnapshotInternalFieldsHidden() throws JsonProcessingException {
+        Snapshot snapshot = createTestSnapshot();
+
+        ObjectMapper mapper = new ObjectMapper();
+        String result = mapper.writerWithView(Views.Public.class).writeValueAsString(snapshot);
+        Assert.assertFalse(result.contains("hfsImageId"));
     }
 
     @Test
@@ -190,7 +198,6 @@ public class SnapshotResourceTest {
         testGetSnapshot();
     }
 
-    @Ignore("Snapshots need rework, snapshot api should not work if vm suspended")
     @Test
     public void testShopperGetSnapshotFailsIfSuspended() {
         Phase2ExternalsModule.mockVmCredit(AccountStatus.SUSPENDED);
@@ -204,10 +211,9 @@ public class SnapshotResourceTest {
     }
 
     // === getSnapshotWithDetails Tests ===
-
     @Test
     public void testEmployeeGetSnapshotWithDetails() {
-        SnapshotWithDetails snapshot = createTestSnapshot();
+        Snapshot snapshot = createTestSnapshot();
         UUID expectedVmId = snapshot.vmId;
         long expectedHfsSnapshotId = snapshot.hfsSnapshotId;
 
@@ -227,8 +233,16 @@ public class SnapshotResourceTest {
         }
     }
 
-    // === getSnapshotByVmId Tests ===
+    @Test
+    public void testGetSnapshotWithDetailsInternalFieldsShown() throws JsonProcessingException {
+        Snapshot snapshot = createTestSnapshot();
 
+        ObjectMapper mapper = new ObjectMapper();
+        String result = mapper.writerWithView(Views.Internal.class).writeValueAsString(snapshot);
+        Assert.assertTrue(result.contains("hfsImageId"));
+    }
+
+    // === getSnapshotByVmId Tests ===
     private void testGetSnapshotByVmId() {
         Snapshot snapshot = createTestSnapshot();
 
@@ -258,7 +272,7 @@ public class SnapshotResourceTest {
     }
 
     @Test
-    public void testShopperDestroyVm() {
+    public void testShopperDestroySnapshot() {
         testDestroySnapshot();
     }
 

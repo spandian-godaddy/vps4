@@ -12,7 +12,12 @@ import com.godaddy.vps4.network.IpAddress;
 import com.godaddy.vps4.network.IpAddress.IpAddressType;
 import com.godaddy.vps4.network.NetworkService;
 import com.godaddy.vps4.network.jdbc.JdbcNetworkService;
-import com.godaddy.vps4.snapshot.SnapshotWithDetails;
+import com.godaddy.vps4.snapshot.Snapshot;
+import com.godaddy.vps4.vm.Action;
+import com.godaddy.vps4.vm.ActionService;
+import com.godaddy.vps4.vm.ActionType;
+import com.godaddy.vps4.vm.VirtualMachine;
+import com.godaddy.vps4.vm.VirtualMachineService;
 import com.godaddy.vps4.vm.VirtualMachineService.ProvisionVirtualMachineParameters;
 import com.godaddy.vps4.vm.jdbc.JdbcActionService;
 import com.godaddy.vps4.vm.jdbc.JdbcVirtualMachineService;
@@ -67,7 +72,7 @@ public class SqlTestData {
         virtualMachineService.destroyVirtualMachine(vm.hfsVmId);
     }
 
-    public static void insertTestSnapshot(SnapshotWithDetails snapshot, DataSource dataSource) {
+    public static void insertTestSnapshot(Snapshot snapshot, DataSource dataSource) {
         Sql.with(dataSource).exec("INSERT INTO snapshot (id, hfs_image_id, project_id, hfs_snapshot_id, vm_id, name) VALUES (?, ?, ?, ?, ?, ?)",
                 null, snapshot.id, snapshot.hfsSnapshotId, snapshot.projectId, snapshot.hfsSnapshotId, snapshot.vmId, snapshot.name);
     }
@@ -94,4 +99,5 @@ public class SqlTestData {
         Sql.with(dataSource).exec("DELETE FROM user_project_privilege uvp USING project p WHERE uvp.project_id = p.project_id AND " + test_sgid_condition, null);
         Sql.with(dataSource).exec("DELETE FROM project p WHERE " + test_sgid_condition, null);
     }
+
 }

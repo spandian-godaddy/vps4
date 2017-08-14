@@ -1,24 +1,41 @@
 package com.godaddy.vps4.web.vm;
 
-import static com.godaddy.vps4.web.util.RequestValidation.verifyUserPrivilegeToVm;
+import java.util.List;
+import java.util.UUID;
 
+import javax.ws.rs.Consumes;
+import javax.ws.rs.DELETE;
+import javax.ws.rs.GET;
+import javax.ws.rs.POST;
+import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
+import javax.ws.rs.Produces;
+import javax.ws.rs.core.MediaType;
+
+import java.util.List;
+import java.util.UUID;
+
+import javax.ws.rs.Consumes;
+import javax.ws.rs.GET;
+import javax.ws.rs.POST;
+import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
+import javax.ws.rs.Produces;
+import javax.ws.rs.core.MediaType;
+
+import com.fasterxml.jackson.annotation.JsonView;
 import com.godaddy.vps4.security.PrivilegeService;
+import com.godaddy.vps4.security.Views;
 import com.godaddy.vps4.security.Vps4UserService;
 import com.godaddy.vps4.snapshot.Snapshot;
 import com.godaddy.vps4.snapshot.SnapshotService;
-import com.godaddy.vps4.snapshot.SnapshotWithDetails;
 import com.godaddy.vps4.web.Vps4Api;
 import com.godaddy.vps4.web.security.AdminOnly;
-import com.godaddy.vps4.web.security.GDUser;
 import com.godaddy.vps4.web.snapshot.SnapshotAction;
 import com.godaddy.vps4.web.snapshot.SnapshotResource;
 import com.google.inject.Inject;
-import io.swagger.annotations.Api;
 
-import javax.ws.rs.*;
-import javax.ws.rs.core.MediaType;
-import java.util.List;
-import java.util.UUID;
+import io.swagger.annotations.Api;
 
 @Vps4Api
 @Api(tags = {"vms"})
@@ -28,29 +45,24 @@ import java.util.UUID;
 @Consumes(MediaType.APPLICATION_JSON)
 
 public class VmSnapshotResource {
-    private final GDUser user;
-    private final Vps4UserService userService;
     private final SnapshotService snapshotService;
     private final SnapshotResource snapshotResource;
-    private final PrivilegeService privilegeService;
+    private final VmResource vmResource;
 
     @Inject
-    public VmSnapshotResource(GDUser user,
-                              Vps4UserService userService,
-                              SnapshotResource snapshotResource,
+    public VmSnapshotResource(SnapshotResource snapshotResource,
                               SnapshotService snapshotService,
-                              PrivilegeService privilegeService) {
-        this.user = user;
-        this.userService = userService;
+                              VmResource vmResource) {
         this.snapshotResource = snapshotResource;
         this.snapshotService = snapshotService;
-        this.privilegeService = privilegeService;
+        this.vmResource = vmResource;
     }
 
     @GET
     @Path("/{vmId}/snapshots")
+    @JsonView(Views.Public.class)
     public List<Snapshot> getSnapshotsForVM(@PathParam("vmId") UUID vmId) {
-        verifyUserPrivilege(vmId);
+        vmResource.getVm(vmId); // for vm auth
         return snapshotService.getSnapshotsForVm(vmId);
     }
 
@@ -61,8 +73,6 @@ public class VmSnapshotResource {
     @POST
     @Path("/{vmId}/snapshots")
     public SnapshotAction createSnapshot(@PathParam("vmId") UUID vmId, VmSnapshotRequest vmSnapshotRequest) {
-        verifyUserPrivilege(vmId);
-
         SnapshotResource.SnapshotRequest request = new SnapshotResource.SnapshotRequest();
         request.vmId = vmId;
         request.name = vmSnapshotRequest.name;
@@ -71,24 +81,26 @@ public class VmSnapshotResource {
 
     @GET
     @Path("/{vmId}/snapshots/{snapshotId}")
+    @JsonView(Views.Public.class)
     public Snapshot getSnapshot(
             @PathParam("vmId") UUID vmId, @PathParam("snapshotId") UUID snapshotId) {
-        verifyUserPrivilege(vmId);
         return snapshotResource.getSnapshot(snapshotId);
     }
 
     @AdminOnly
     @GET
     @Path("/{vmId}/snapshots/{snapshotId}/withDetails")
-    public SnapshotWithDetails getSnapshotWithDetails(
+    @JsonView(Views.Internal.class)
+    public Snapshot getSnapshotWithDetails(
             @PathParam("vmId") UUID vmId, @PathParam("snapshotId") UUID snapshotId) {
-        verifyUserPrivilege(vmId);
-        return snapshotResource.getSnapshotWithDetails(snapshotId);
+        return getSnapshot(vmId, snapshotId);
     }
 
-    private void verifyUserPrivilege(UUID vmId) {
-        if (user.isShopper()) {
-            verifyUserPrivilegeToVm(userService, privilegeService, user.getShopperId(), vmId);
-        }
+    @DELETE
+    @Path("/{vmId}/snapshots/{snapshotId}")
+    public SnapshotAction deleteSnapshot(
+            @PathParam("vmId") UUID vmId, @PathParam("snapshotId") UUID snapshotId) {
+        return snapshotResource.destroySnapshot(snapshotId);
     }
+
 }

@@ -5,7 +5,6 @@ import com.godaddy.vps4.phase2.SqlTestData;
 import com.godaddy.vps4.snapshot.Snapshot;
 import com.godaddy.vps4.snapshot.SnapshotService;
 import com.godaddy.vps4.snapshot.SnapshotStatus;
-import com.godaddy.vps4.snapshot.SnapshotWithDetails;
 import com.godaddy.vps4.vm.VirtualMachine;
 import com.godaddy.vps4.snapshot.jdbc.JdbcSnapshotService;
 import com.google.inject.Guice;
@@ -46,9 +45,17 @@ public class SnapshotServiceTest {
 
     private void insertTestSnapshots(int count, SnapshotStatus status) {
         for (int i = 0; i < count; i++) {
-            SnapshotWithDetails testSnapshot = new SnapshotWithDetails(UUID.randomUUID(), "test",
-                    vm.projectId, (int) (Math.random() * 100000), vm.vmId, snapshotName,
-                    status, Instant.now(), null );
+            Snapshot testSnapshot = new Snapshot(
+                    UUID.randomUUID(),
+                    vm.projectId,
+                    vm.vmId,
+                    snapshotName,
+                    SnapshotStatus.LIVE,
+                    Instant.now(),
+                    null,
+                    "test-imageid",
+                    (int) (Math.random() * 100000)
+            );
             SqlTestData.insertTestSnapshot(testSnapshot, dataSource);
             snapshotIds.add(testSnapshot.id);
         }
@@ -76,15 +83,6 @@ public class SnapshotServiceTest {
         for (UUID snapshotId : snapshotIds) {
             Snapshot test = snapshotService.getSnapshot(snapshotId);
             assertEquals(snapshotId, test.id);
-        }
-    }
-
-    @Test
-    public void testGetSnapshotWithDetails() {
-        insertTestSnapshots(1, SnapshotStatus.LIVE);
-        for (UUID snapshotId : snapshotIds) {
-            SnapshotWithDetails testWithDetails = snapshotService.getSnapshotWithDetails(snapshotId);
-            assertEquals(snapshotId, testWithDetails.id);
         }
     }
 
