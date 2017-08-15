@@ -112,7 +112,7 @@ public class JdbcSnapshotService implements SnapshotService {
                 "SELECT COUNT(*) FROM SNAPSHOT s JOIN snapshot_status ss ON s.status = ss.status_id "
                         + "JOIN VIRTUAL_MACHINE v ON s.vm_id = v.vm_id "
                         + "WHERE v.orion_guid = ? "
-                        + "AND ss.status NOT IN ('ERROR', 'DESTROYED');",
+                        + "AND ss.status NOT IN ('LIVE', 'ERROR', 'DESTROYED');",
                 Sql.nextOrNull(this::mapCountRows), orionGuid);
 
 //        // No 2 backups for the same vm should ever be in progress at the same time
