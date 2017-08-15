@@ -26,6 +26,7 @@ import com.godaddy.vps4.security.jdbc.AuthorizationException;
 import com.godaddy.vps4.snapshot.Snapshot;
 import com.godaddy.vps4.snapshot.SnapshotModule;
 import com.godaddy.vps4.snapshot.SnapshotStatus;
+import com.godaddy.vps4.snapshot.SnapshotType;
 import com.godaddy.vps4.vm.AccountStatus;
 import com.godaddy.vps4.vm.VirtualMachine;
 import com.godaddy.vps4.vm.VmModule;
@@ -97,7 +98,8 @@ public class SnapshotResourceTest {
                 Instant.now(),
                 null,
                 "test-imageid",
-                (int) (Math.random() * 100000)
+                (int) (Math.random() * 100000),
+                SnapshotType.ON_DEMAND
         );
         SqlTestData.insertTestSnapshot(testSnapshot, dataSource);
         return testSnapshot;

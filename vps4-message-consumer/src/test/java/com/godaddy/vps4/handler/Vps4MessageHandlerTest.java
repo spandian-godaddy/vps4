@@ -23,6 +23,7 @@ import com.godaddy.vps4.credit.VirtualMachineCredit;
 import com.godaddy.vps4.snapshot.Snapshot;
 import com.godaddy.vps4.snapshot.SnapshotService;
 import com.godaddy.vps4.snapshot.SnapshotStatus;
+import com.godaddy.vps4.snapshot.SnapshotType;
 import com.godaddy.vps4.vm.AccountStatus;
 import com.godaddy.vps4.vm.ActionService;
 import com.godaddy.vps4.vm.DataCenter;
@@ -210,7 +211,7 @@ public class Vps4MessageHandlerTest {
         mockVmCredit(AccountStatus.REMOVED, null);
 
         Snapshot snapshot = new Snapshot(null, 0, null, null,
-                SnapshotStatus.DESTROYED, null, null, null, 0);
+                SnapshotStatus.DESTROYED, null, null, null, 0, SnapshotType.ON_DEMAND);
         when(snapshotServiceMock.getSnapshotsByOrionGuid(orionGuid)).thenReturn(Arrays.asList(snapshot));
         callHandleMessage(createTestKafkaMessage("removed"));
 

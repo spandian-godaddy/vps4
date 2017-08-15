@@ -1,8 +1,22 @@
 package com.godaddy.vps4.orchestration.phase2;
 
-import static org.mockito.Mockito.any;
+import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.eq;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
+import java.util.UUID;
+
+import javax.sql.DataSource;
+
+import org.junit.After;
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.BeforeClass;
+import org.junit.Test;
 
 import com.godaddy.vps4.jdbc.DatabaseModule;
 import com.godaddy.vps4.orchestration.snapshot.Vps4DestroySnapshot;
@@ -16,6 +30,7 @@ import com.godaddy.vps4.snapshot.SnapshotActionService;
 import com.godaddy.vps4.snapshot.SnapshotModule;
 import com.godaddy.vps4.snapshot.SnapshotService;
 import com.godaddy.vps4.snapshot.SnapshotStatus;
+import com.godaddy.vps4.snapshot.SnapshotType;
 import com.godaddy.vps4.vm.ActionService;
 import com.godaddy.vps4.vm.ActionType;
 import com.godaddy.vps4.vm.VirtualMachine;
@@ -23,13 +38,8 @@ import com.godaddy.vps4.vm.VirtualMachineService;
 import com.google.inject.Guice;
 import com.google.inject.Inject;
 import com.google.inject.Injector;
+
 import gdg.hfs.orchestration.CommandContext;
-import org.junit.*;
-
-import javax.sql.DataSource;
-import java.util.UUID;
-
-import static org.mockito.Mockito.*;
 
 public class Vps4SnapshotVmTest {
 
@@ -84,6 +94,7 @@ public class Vps4SnapshotVmTest {
         req.snapshotName = "test-1";
         req.orionGuid = orionGuid;
         req.vps4UserId = vps4UserId;
+        req.snapshotType = SnapshotType.ON_DEMAND;
         return req;
     }
 
@@ -111,9 +122,9 @@ public class Vps4SnapshotVmTest {
         Project project = SqlTestData.insertProject(projectService, vps4UserService);
         VirtualMachine vm = SqlTestData.insertVm(virtualMachineService, vps4UserService);
         orionGuid = vm.orionGuid;
-        vps4SnapshotId = SqlTestData.insertSnapshot(snapshotService, vm.vmId, project.getProjectId());
+        vps4SnapshotId = SqlTestData.insertSnapshot(snapshotService, vm.vmId, project.getProjectId(), SnapshotType.ON_DEMAND);
         vps4SnapshotIdToBeDeprecated = SqlTestData.insertSnapshotWithStatus(
-                snapshotService, vm.vmId, project.getProjectId(), SnapshotStatus.LIVE);
+                snapshotService, vm.vmId, project.getProjectId(), SnapshotStatus.LIVE, SnapshotType.ON_DEMAND);
         vps4SnapshotActionId = SqlTestData.insertSnapshotAction(actionService, vps4UserService, vps4SnapshotId);
     }
 
@@ -127,7 +138,7 @@ public class Vps4SnapshotVmTest {
     public void marksTheOldSnapshotStatusToDeprecating() {
         command.execute(context, request);
         verify(spySnapshotService, times(1))
-                .markOldestSnapshotForDeprecation(eq(orionGuid));
+                .markOldestSnapshotForDeprecation(orionGuid, SnapshotType.ON_DEMAND);
     }
 
     @Test
@@ -179,6 +190,16 @@ public class Vps4SnapshotVmTest {
     public void marksTheOldSnapshotAsDeprecated() {
         command.execute(context, request);
         verify(spySnapshotService, times(1))
+                .markSnapshotAsDeprecated(eq(vps4SnapshotIdToBeDeprecated));
+    }
+
+    @Test
+    public void onlyMarksSameTypeOfSnapshotDeprecated() {
+        request.snapshotType = SnapshotType.AUTOMATIC;
+        command.execute(context, request);
+        // vps4SnapshotIdToBeDeprecated is an On Demand backup, and should not be
+        // deprecated to make way for an Automatic backup.
+        verify(spySnapshotService, times(0))
                 .markSnapshotAsDeprecated(eq(vps4SnapshotIdToBeDeprecated));
     }
 

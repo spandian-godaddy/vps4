@@ -1,6 +1,7 @@
 package com.godaddy.vps4.web.snapshot;
 
 import static com.godaddy.vps4.web.util.RequestValidation.validateIfSnapshotOverQuota;
+import static com.godaddy.vps4.web.util.RequestValidation.validateNoOtherSnapshotsInProgress;
 import static com.godaddy.vps4.web.util.RequestValidation.validateSnapshotName;
 import static com.godaddy.vps4.web.util.RequestValidation.validateUserIsShopper;
 
@@ -33,6 +34,7 @@ import com.godaddy.vps4.snapshot.Snapshot;
 import com.godaddy.vps4.snapshot.SnapshotActionService;
 import com.godaddy.vps4.snapshot.SnapshotService;
 import com.godaddy.vps4.snapshot.SnapshotStatus;
+import com.godaddy.vps4.snapshot.SnapshotType;
 import com.godaddy.vps4.vm.Action;
 import com.godaddy.vps4.vm.ActionService;
 import com.godaddy.vps4.vm.ActionType;
@@ -102,34 +104,36 @@ public class SnapshotResource {
     @Path("/")
     public SnapshotAction createSnapshot(SnapshotRequest snapshotRequest) {
         VirtualMachine vm = vmResource.getVm(snapshotRequest.vmId);
-        validateCreation(vm.orionGuid, snapshotRequest.name);
-        Action action = createSnapshotAndActionEntries(vm, snapshotRequest.name);
-        kickoffSnapshotCreation(vm.vmId, snapshotRequest.name, vm.hfsVmId, action, vm.orionGuid);
+        validateCreation(vm.orionGuid, vm.vmId, snapshotRequest.name, snapshotRequest.snapshotType);
+        Action action = createSnapshotAndActionEntries(vm, snapshotRequest.name, snapshotRequest.snapshotType);
+        kickoffSnapshotCreation(vm.vmId, snapshotRequest.name, vm.hfsVmId, action, vm.orionGuid, snapshotRequest.snapshotType);
         return new SnapshotAction(actionService.getAction(action.id));
     }
 
     public static class SnapshotRequest {
         public String name;
         public UUID vmId;
+        public SnapshotType snapshotType;
     }
 
-    private void validateCreation(UUID orionGuid, String name) {
+    private void validateCreation(UUID orionGuid, UUID vmId, String name, SnapshotType snapshotType) {
         validateUserIsShopper(user);
-        validateIfSnapshotOverQuota(snapshotService, orionGuid);
+        validateIfSnapshotOverQuota(snapshotService, orionGuid, snapshotType);
+        validateNoOtherSnapshotsInProgress(snapshotService, orionGuid);
         validateSnapshotName(name);
     }
 
-    private Action createSnapshotAndActionEntries(VirtualMachine vm, String snapshotName) {
+    private Action createSnapshotAndActionEntries(VirtualMachine vm, String snapshotName, SnapshotType snapshotType) {
         long vps4UserId = virtualMachineService.getUserIdByVmId(vm.vmId);
-        UUID snapshotId = snapshotService.createSnapshot(vm.projectId, vm.vmId, snapshotName);
+        UUID snapshotId = snapshotService.createSnapshot(vm.projectId, vm.vmId, snapshotName, snapshotType);
         long actionId = actionService.createAction(
                 snapshotId, ActionType.CREATE_SNAPSHOT, new JSONObject().toJSONString(), vps4UserId);
         logger.info("Creating db entries for snapshot creation. Snapshot Action ID: {}, Snapshot ID: {}", actionId, snapshotId);
         return actionService.getAction(actionId);
     }
 
-    private void kickoffSnapshotCreation(UUID vmId, String snapshotName,
-                                         long hfsVmId, Action action, UUID orionGuid) {
+    private void kickoffSnapshotCreation(UUID vmId, String snapshotName, long hfsVmId,
+            Action action, UUID orionGuid, SnapshotType snapshotType) {
         UUID snapshotId = action.resourceId; // the resourceId refers to the associated snapshotId
         Vps4SnapshotVm.Request commandRequest = new Vps4SnapshotVm.Request();
         commandRequest.hfsVmId = hfsVmId;
@@ -138,6 +142,7 @@ public class SnapshotResource {
         commandRequest.actionId = action.id;
         commandRequest.orionGuid = orionGuid;
         commandRequest.vps4UserId = action.vps4UserId;
+        commandRequest.snapshotType = snapshotType;
 
         CommandState command = Commands.execute(
                 commandService, actionService, "Vps4SnapshotVm", commandRequest);

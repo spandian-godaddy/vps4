@@ -12,9 +12,11 @@ public interface SnapshotService {
 
     List<Snapshot> getSnapshotsForVm(UUID vmId);
 
-    UUID createSnapshot(long projectId, UUID vmId, String name);
+    UUID createSnapshot(long projectId, UUID vmId, String name, SnapshotType snapshotType);
 
-    boolean isOverQuota(UUID orionGuid);
+    boolean isOverQuota(UUID orionGuid, SnapshotType snapshotType);
+
+    boolean otherBackupsInProgress(UUID orionGuid);
 
     void updateHfsSnapshotId(UUID snapshotId, long hfsSnapshotId);
 
@@ -28,7 +30,7 @@ public interface SnapshotService {
 
     void markSnapshotDestroyed(UUID snapshotId);
 
-    UUID markOldestSnapshotForDeprecation(UUID orionGuid);
+    UUID markOldestSnapshotForDeprecation(UUID orionGuid, SnapshotType snapshotType);
 
     void markSnapshotAsDeprecated(UUID snapshotId);
 

@@ -1,5 +1,11 @@
 package com.godaddy.vps4.orchestration.phase2;
 
+import java.util.UUID;
+
+import javax.sql.DataSource;
+
+import org.json.simple.JSONObject;
+
 import com.godaddy.hfs.jdbc.Sql;
 import com.godaddy.vps4.project.Project;
 import com.godaddy.vps4.project.ProjectService;
@@ -7,12 +13,12 @@ import com.godaddy.vps4.security.Vps4User;
 import com.godaddy.vps4.security.Vps4UserService;
 import com.godaddy.vps4.snapshot.SnapshotService;
 import com.godaddy.vps4.snapshot.SnapshotStatus;
-import com.godaddy.vps4.vm.*;
+import com.godaddy.vps4.snapshot.SnapshotType;
+import com.godaddy.vps4.vm.ActionService;
+import com.godaddy.vps4.vm.ActionType;
+import com.godaddy.vps4.vm.VirtualMachine;
+import com.godaddy.vps4.vm.VirtualMachineService;
 import com.godaddy.vps4.vm.VirtualMachineService.ProvisionVirtualMachineParameters;
-import org.json.simple.JSONObject;
-
-import javax.sql.DataSource;
-import java.util.UUID;
 
 
 public class SqlTestData {
@@ -44,13 +50,13 @@ public class SqlTestData {
         return virtualMachineService.getVirtualMachine(virtualMachine.vmId);
     }
 
-    public static UUID insertSnapshot(SnapshotService snapshotService, UUID vmId, long projectId) {
-        return snapshotService.createSnapshot(projectId, vmId, TEST_SNAPSHOT_NAME);
+    public static UUID insertSnapshot(SnapshotService snapshotService, UUID vmId, long projectId, SnapshotType snapshotType) {
+        return snapshotService.createSnapshot(projectId, vmId, TEST_SNAPSHOT_NAME, snapshotType);
     }
 
     public static UUID insertSnapshotWithStatus(SnapshotService snapshotService, UUID vmId,
-                                      long projectId, SnapshotStatus status) {
-        UUID snapshotId = insertSnapshot(snapshotService, vmId, projectId);
+                                      long projectId, SnapshotStatus status, SnapshotType snapshotType) {
+        UUID snapshotId = insertSnapshot(snapshotService, vmId, projectId, snapshotType);
         snapshotService.updateSnapshotStatus(snapshotId, status);
         snapshotService.updateHfsSnapshotId(snapshotId, 123456);
         return snapshotId;

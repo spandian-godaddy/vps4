@@ -13,6 +13,7 @@ import com.godaddy.vps4.security.Vps4User;
 import com.godaddy.vps4.security.Vps4UserService;
 import com.godaddy.vps4.security.jdbc.AuthorizationException;
 import com.godaddy.vps4.snapshot.SnapshotService;
+import com.godaddy.vps4.snapshot.SnapshotType;
 import com.godaddy.vps4.util.validators.Validator;
 import com.godaddy.vps4.util.validators.ValidatorRegistry;
 import com.godaddy.vps4.vm.Action;
@@ -52,9 +53,15 @@ public class RequestValidation {
         }
     }
 
-    public static void validateIfSnapshotOverQuota(SnapshotService snapshotService, UUID orionGuid) {
-        if (snapshotService.isOverQuota(orionGuid))
+    public static void validateIfSnapshotOverQuota(SnapshotService snapshotService, UUID orionGuid, SnapshotType snapshotType) {
+        if (snapshotService.isOverQuota(orionGuid, snapshotType))
             throw new Vps4Exception("SNAPSHOT_OVER_QUOTA", "Snapshot creation rejected as quota exceeded");
+    }
+
+    public static void validateNoOtherSnapshotsInProgress(SnapshotService snapshotService, UUID orionGuid){
+        if (snapshotService.otherBackupsInProgress(orionGuid)){
+            throw new Vps4Exception("SNAPSHOT_ALREADY_IN_PROGRESS", "Snapshot creation rejected as snapshot already in progress");
+        }
     }
 
     public static void validateUserIsShopper(GDUser user) {

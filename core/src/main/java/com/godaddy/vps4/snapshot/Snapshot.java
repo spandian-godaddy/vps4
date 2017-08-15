@@ -14,6 +14,7 @@ public class Snapshot {
     public final SnapshotStatus status;
     public final Instant createdAt;
     public final Instant modifiedAt;
+    public final SnapshotType snapshotType;
 
     @JsonView(Views.Internal.class)
     public final String hfsImageId;
@@ -28,7 +29,8 @@ public class Snapshot {
                     Instant createdAt,
                     Instant modifiedAt,
                     String hfsImageId,
-                    long hfsSnapshotId) {
+                    long hfsSnapshotId,
+                    SnapshotType snapshotType) {
         this.id = id;
         this.projectId = projectId;
         this.vmId = vmId;
@@ -38,12 +40,13 @@ public class Snapshot {
         this.modifiedAt = modifiedAt;
         this.hfsImageId = hfsImageId;
         this.hfsSnapshotId = hfsSnapshotId;
+        this.snapshotType = snapshotType;
     }
 
     @Override
     public String toString() {
         return "Snapshot [id=" + id + ", projectId=" + projectId + ", vmId=" + vmId + ", name=" + name + ", status="
                 + status + ", createdAt=" + createdAt + ", modifiedAt=" + modifiedAt + ", hfsImageId=" + hfsImageId
-                + ", hfsSnapshotId=" + hfsSnapshotId + "]";
+                + ", hfsSnapshotId=" + hfsSnapshotId + ", type=" + snapshotType + "]";
     }
 }

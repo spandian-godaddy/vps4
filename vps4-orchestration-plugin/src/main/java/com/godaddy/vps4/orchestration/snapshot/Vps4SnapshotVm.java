@@ -1,21 +1,25 @@
 package com.godaddy.vps4.orchestration.snapshot;
 
-import com.godaddy.vps4.orchestration.ActionCommand;
-import com.godaddy.vps4.orchestration.ActionRequest;
-import com.godaddy.vps4.snapshot.SnapshotActionService;
-import com.godaddy.vps4.snapshot.SnapshotService;
-import com.godaddy.vps4.snapshot.Snapshot;
-import com.godaddy.vps4.vm.ActionService;
-import com.godaddy.vps4.vm.ActionType;
-import gdg.hfs.orchestration.CommandContext;
-import gdg.hfs.orchestration.CommandMetadata;
-import gdg.hfs.vhfs.snapshot.SnapshotAction;
+import java.util.UUID;
+
+import javax.inject.Inject;
+
 import org.json.simple.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.inject.Inject;
-import java.util.UUID;
+import com.godaddy.vps4.orchestration.ActionCommand;
+import com.godaddy.vps4.orchestration.ActionRequest;
+import com.godaddy.vps4.snapshot.Snapshot;
+import com.godaddy.vps4.snapshot.SnapshotActionService;
+import com.godaddy.vps4.snapshot.SnapshotService;
+import com.godaddy.vps4.snapshot.SnapshotType;
+import com.godaddy.vps4.vm.ActionService;
+import com.godaddy.vps4.vm.ActionType;
+
+import gdg.hfs.orchestration.CommandContext;
+import gdg.hfs.orchestration.CommandMetadata;
+import gdg.hfs.vhfs.snapshot.SnapshotAction;
 
 @CommandMetadata(
         name="Vps4SnapshotVm",
@@ -40,7 +44,7 @@ public class Vps4SnapshotVm extends ActionCommand<Vps4SnapshotVm.Request, Vps4Sn
 
     @Override
     protected Response executeWithAction(CommandContext context, Vps4SnapshotVm.Request request) throws Exception {
-        snapshotIdToBeDeprecated = vps4SnapshotService.markOldestSnapshotForDeprecation(request.orionGuid);
+        snapshotIdToBeDeprecated = vps4SnapshotService.markOldestSnapshotForDeprecation(request.orionGuid, request.snapshotType);
         SnapshotAction hfsAction = createAndWaitForSnapshotCompletion(context, request);
         deprecateOldSnapshot(context, request.vps4UserId);
         return generateResponse(hfsAction);
@@ -151,6 +155,7 @@ public class Vps4SnapshotVm extends ActionCommand<Vps4SnapshotVm.Request, Vps4Sn
         public UUID vps4SnapshotId;
         public UUID orionGuid;
         public long vps4UserId;
+        public SnapshotType snapshotType;
 
         @Override
         public long getActionId() {

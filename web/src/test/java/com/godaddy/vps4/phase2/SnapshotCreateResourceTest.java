@@ -1,8 +1,21 @@
 package com.godaddy.vps4.phase2;
 
-import static org.mockito.Mockito.any;
+import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
+
+import java.util.List;
+import java.util.UUID;
+
+import javax.inject.Inject;
+import javax.sql.DataSource;
+import javax.ws.rs.NotFoundException;
+
+import org.junit.After;
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.BeforeClass;
+import org.junit.Test;
 
 import com.godaddy.vps4.jdbc.DatabaseModule;
 import com.godaddy.vps4.security.GDUserMock;
@@ -10,7 +23,11 @@ import com.godaddy.vps4.security.SecurityModule;
 import com.godaddy.vps4.security.Vps4User;
 import com.godaddy.vps4.security.Vps4UserService;
 import com.godaddy.vps4.security.jdbc.AuthorizationException;
-import com.godaddy.vps4.snapshot.*;
+import com.godaddy.vps4.snapshot.Snapshot;
+import com.godaddy.vps4.snapshot.SnapshotModule;
+import com.godaddy.vps4.snapshot.SnapshotService;
+import com.godaddy.vps4.snapshot.SnapshotStatus;
+import com.godaddy.vps4.snapshot.SnapshotType;
 import com.godaddy.vps4.vm.AccountStatus;
 import com.godaddy.vps4.vm.VirtualMachine;
 import com.godaddy.vps4.vm.VmModule;
@@ -19,19 +36,14 @@ import com.godaddy.vps4.web.Vps4NoShopperException;
 import com.godaddy.vps4.web.security.GDUser;
 import com.godaddy.vps4.web.snapshot.SnapshotAction;
 import com.godaddy.vps4.web.snapshot.SnapshotResource;
+import com.godaddy.vps4.web.snapshot.SnapshotResource.SnapshotRequest;
 import com.google.inject.AbstractModule;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
 import com.google.inject.Provides;
+
 import gdg.hfs.orchestration.CommandGroupSpec;
 import gdg.hfs.orchestration.CommandService;
-import org.junit.*;
-
-import javax.inject.Inject;
-import javax.sql.DataSource;
-import javax.ws.rs.NotFoundException;
-import java.util.List;
-import java.util.UUID;
 
 public class SnapshotCreateResourceTest {
     private static GDUser us;
@@ -112,6 +124,7 @@ public class SnapshotCreateResourceTest {
         SnapshotResource.SnapshotRequest snapshotRequest = new SnapshotResource.SnapshotRequest();
         snapshotRequest.name = name;
         snapshotRequest.vmId = vmId;
+        snapshotRequest.snapshotType = SnapshotType.ON_DEMAND;
         return snapshotRequest;
     }
 
@@ -170,6 +183,17 @@ public class SnapshotCreateResourceTest {
 
         Assert.assertEquals(SnapshotStatus.LIVE, vps4SnapshotService.getSnapshot(action1.snapshotId).status);
         Assert.assertEquals(SnapshotStatus.NEW, vps4SnapshotService.getSnapshot(action2.snapshotId).status);
+    }
+
+    @Test
+    public void weCanCreateAnAutomaticSnapshot() {
+        user = us;
+        SnapshotRequest request = getRequestPayload(ourVmId, SqlTestData.TEST_SNAPSHOT_NAME);
+        request.snapshotType = SnapshotType.AUTOMATIC;
+        SnapshotAction action1 = getSnapshotResource().createSnapshot(request);
+        vps4SnapshotService.markSnapshotLive(action1.snapshotId);
+        Assert.assertEquals(SnapshotType.AUTOMATIC, vps4SnapshotService.getSnapshot(action1.snapshotId).snapshotType);
+
     }
 
     @Test(expected = Vps4Exception.class)

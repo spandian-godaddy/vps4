@@ -58,7 +58,7 @@ public class SqlTestData {
     }
 
     public static void insertTestSnapshot(Snapshot snapshot, DataSource dataSource) {
-        Sql.with(dataSource).exec("INSERT INTO snapshot (id, hfs_image_id, project_id, hfs_snapshot_id, vm_id, name, status) VALUES (?, ?, ?, ?, ?, ?, ?)",
-                null, snapshot.id, snapshot.hfsImageId, snapshot.projectId, snapshot.hfsSnapshotId, snapshot.vmId, snapshot.name, snapshot.status.getSnapshotStatusId());
+        Sql.with(dataSource).exec("INSERT INTO snapshot (id, hfs_image_id, project_id, hfs_snapshot_id, vm_id, name, status, snapshot_type_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+                null, snapshot.id, snapshot.hfsImageId, snapshot.projectId, snapshot.hfsSnapshotId, snapshot.vmId, snapshot.name, snapshot.status.getSnapshotStatusId(), snapshot.snapshotType.getSnapshotTypeId());
     }
 }

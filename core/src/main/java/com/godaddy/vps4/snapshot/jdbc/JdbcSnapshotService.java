@@ -14,11 +14,15 @@ import com.godaddy.hfs.jdbc.Sql;
 import com.godaddy.vps4.snapshot.Snapshot;
 import com.godaddy.vps4.snapshot.SnapshotService;
 import com.godaddy.vps4.snapshot.SnapshotStatus;
+import com.godaddy.vps4.snapshot.SnapshotType;
 
 public class JdbcSnapshotService implements SnapshotService {
     private static final long OPEN_SLOTS_PER_CREDIT = 1;
     private final DataSource dataSource;
-    private String selectSnapshotQuery = "SELECT s.id, s.hfs_image_id, s.project_id, s.hfs_snapshot_id, s.vm_id, s.name, ss.status, s.created_at, s.modified_at FROM snapshot s JOIN snapshot_status ss ON s.status = ss.status_id ";
+    private String selectSnapshotQuery = "SELECT s.id, s.hfs_image_id, s.project_id, "
+            + "s.hfs_snapshot_id, s.vm_id, s.name, ss.status, s.created_at, s.modified_at, st.snapshot_type "
+            + "FROM snapshot s JOIN snapshot_status ss ON s.status = ss.status_id "
+            + "JOIN snapshot_type st  USING(snapshot_type_id)";
 
     @Inject
     public JdbcSnapshotService(DataSource dataSource) {
@@ -26,41 +30,45 @@ public class JdbcSnapshotService implements SnapshotService {
     }
 
     @Override
-    public UUID createSnapshot(long projectId, UUID vmId, String name) {
+    public UUID createSnapshot(long projectId, UUID vmId, String name, SnapshotType type) {
         UUID snapshotId = UUID.randomUUID();
-        Sql.with(dataSource).exec("INSERT INTO snapshot (id, name, project_id, vm_id) "
-                        + "VALUES (?, ?, ?, ?);", null, snapshotId, name, projectId, vmId);
+        int snapshotTypeId = type.getSnapshotTypeId();
+        Sql.with(dataSource).exec("INSERT INTO snapshot (id, name, project_id, vm_id, snapshot_type_id) "
+                        + "VALUES (?, ?, ?, ?, ?);", null, snapshotId, name, projectId, vmId, snapshotTypeId);
         return snapshotId;
     }
 
     @Override
-    public boolean isOverQuota(UUID orionGuid) {
-        return !(hasOpenSlots(orionGuid) || allSlotsFilledOnlyByLiveSnapshots(orionGuid));
+    public boolean isOverQuota(UUID orionGuid, SnapshotType snapshotType) {
+        return !(hasOpenSlots(orionGuid, snapshotType) ||
+                allSlotsFilledOnlyByLiveSnapshots(orionGuid, snapshotType));
     }
 
-    private boolean hasOpenSlots(UUID orionGuid) {
+    private boolean hasOpenSlots(UUID orionGuid, SnapshotType snapshotType) {
         // check if number of snapshots (not in error and not destroyed) linked to the credit is over the number
         // of open slots available. Right now the number of open slots is hard coded to 1 but this might change in
         // the future as HEG and MT get on-boarded.
         return Sql.with(dataSource).exec(
                 "SELECT COUNT(*) FROM SNAPSHOT s JOIN SNAPSHOT_STATUS ss ON s.status = ss.status_id "
                         + "JOIN VIRTUAL_MACHINE v ON s.vm_id = v.vm_id "
-                        + "WHERE v.orion_guid = ? AND ss.status NOT IN ('ERROR', 'DESTROYED');",
-                this::hasOpenSlotsMapper, orionGuid);
+                        + "WHERE v.orion_guid = ? AND ss.status NOT IN ('ERROR', 'DESTROYED') "
+                        + "AND s.snapshot_type_id = ?;",
+                this::hasOpenSlotsMapper, orionGuid, snapshotType.getSnapshotTypeId());
     }
 
     private boolean hasOpenSlotsMapper(ResultSet rs) throws SQLException {
         return rs.next() && rs.getLong("count") < OPEN_SLOTS_PER_CREDIT;
     }
 
-    private boolean allSlotsFilledOnlyByLiveSnapshots(UUID orionGuid) {
+    private boolean allSlotsFilledOnlyByLiveSnapshots(UUID orionGuid, SnapshotType snapshotType) {
         List<StatusCount> statusCounts = Sql.with(dataSource).exec(
                 "SELECT ss.status, COUNT(*) FROM SNAPSHOT s JOIN snapshot_status ss ON s.status = ss.status_id "
                         + "JOIN VIRTUAL_MACHINE v ON s.vm_id = v.vm_id "
                         + "WHERE v.orion_guid = ? "
                         + "AND ss.status NOT IN ('ERROR', 'DESTROYED') "
+                        + "AND snapshot_type_id = ?"
                         + "GROUP BY ss.status;",
-                Sql.listOf(this::mapStatusCount), orionGuid);
+                Sql.listOf(this::mapStatusCount), orionGuid, snapshotType.getSnapshotTypeId());
         long numInNew = getCountForStatus(statusCounts, SnapshotStatus.NEW);
         long numInProgress = getCountForStatus(statusCounts, SnapshotStatus.IN_PROGRESS);
         long numLive = getCountForStatus(statusCounts, SnapshotStatus.LIVE);
@@ -98,14 +106,33 @@ public class JdbcSnapshotService implements SnapshotService {
                 rs.getLong("count"));
     }
 
-    private boolean shouldDeprecateSnapshot(UUID orionGuid) {
+    @Override
+    public boolean otherBackupsInProgress(UUID orionGuid) {
+        int numOfRows = Sql.with(dataSource).exec(
+                "SELECT COUNT(*) FROM SNAPSHOT s JOIN snapshot_status ss ON s.status = ss.status_id "
+                        + "JOIN VIRTUAL_MACHINE v ON s.vm_id = v.vm_id "
+                        + "WHERE v.orion_guid = ? "
+                        + "AND ss.status NOT IN ('ERROR', 'DESTROYED');",
+                Sql.nextOrNull(this::mapCountRows), orionGuid);
+
+//        // No 2 backups for the same vm should ever be in progress at the same time
+        return numOfRows > 0;
+    }
+
+    private int mapCountRows(ResultSet rs) throws SQLException {
+        return rs.getInt("count");
+    }
+
+
+    private boolean shouldDeprecateSnapshot(UUID orionGuid, SnapshotType snapshotType) {
         // we should be deprecating a snapshot only if the number of LIVE snapshot is
         // equal to the max number of slots for the account (orionGuid)
         return Sql.with(dataSource).exec(
                 "SELECT COUNT(*) FROM SNAPSHOT s JOIN SNAPSHOT_STATUS ss ON s.status = ss.status_id "
                         + "JOIN VIRTUAL_MACHINE v ON s.vm_id = v.vm_id "
-                        + "WHERE v.orion_guid = ? AND ss.status IN ('LIVE');",
-                this::shouldDeprecateMapper, orionGuid);
+                        + "WHERE v.orion_guid = ? AND ss.status IN ('LIVE') "
+                        + "AND s.snapshot_type_id = ?;",
+                this::shouldDeprecateMapper, orionGuid, snapshotType.getSnapshotTypeId());
     }
 
     private boolean shouldDeprecateMapper(ResultSet rs) throws SQLException {
@@ -153,13 +180,14 @@ public class JdbcSnapshotService implements SnapshotService {
         updateSnapshotStatus(snapshotId, SnapshotStatus.DEPRECATING);
     }
 
-    private UUID getOldestLiveSnapshot(UUID orionGuid) {
+    private UUID getOldestLiveSnapshot(UUID orionGuid, SnapshotType type) {
         return Sql.with(dataSource).exec(
                 "SELECT s.id FROM SNAPSHOT s JOIN SNAPSHOT_STATUS ss ON s.status = ss.status_id "
                         + "JOIN VIRTUAL_MACHINE v ON s.vm_id = v.vm_id "
                         + "WHERE v.orion_guid = ? AND ss.status IN ('LIVE') "
+                        + "AND s.snapshot_type_id = ? "
                         + "ORDER BY s.created_at LIMIT 1;",
-                Sql.nextOrNull(rs -> UUID.fromString(rs.getString("id"))), orionGuid);
+                Sql.nextOrNull(rs -> UUID.fromString(rs.getString("id"))), orionGuid, type.getSnapshotTypeId());
     }
 
     @Override
@@ -175,9 +203,9 @@ public class JdbcSnapshotService implements SnapshotService {
     }
 
     @Override
-    public UUID markOldestSnapshotForDeprecation(UUID orionGuid) {
-        if (shouldDeprecateSnapshot(orionGuid)) {
-            UUID snapshotId = getOldestLiveSnapshot(orionGuid);
+    public UUID markOldestSnapshotForDeprecation(UUID orionGuid, SnapshotType snapshotType) {
+        if (shouldDeprecateSnapshot(orionGuid, snapshotType)) {
+            UUID snapshotId = getOldestLiveSnapshot(orionGuid, snapshotType);
             if (snapshotId != null) {
                 markSnapshotForDeprecation(snapshotId);
                 return snapshotId;
@@ -227,7 +255,8 @@ public class JdbcSnapshotService implements SnapshotService {
                 rs.getTimestamp("created_at").toInstant(),
                 modifiedAt != null ? modifiedAt.toInstant() : null,
                 rs.getString("hfs_image_id"),
-                rs.getLong("hfs_snapshot_id")
+                rs.getLong("hfs_snapshot_id"),
+                SnapshotType.valueOf(rs.getString("snapshot_type"))
         );
     }
 
