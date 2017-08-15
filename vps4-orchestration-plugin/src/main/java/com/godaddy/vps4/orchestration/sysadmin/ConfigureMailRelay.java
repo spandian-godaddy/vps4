@@ -39,6 +39,8 @@ public class ConfigureMailRelay implements Command<ConfigureMailRelayRequest, Vo
         public long vmId;
         public String controlPanel;
 
+        public ConfigureMailRelayRequest(){}
+
         public ConfigureMailRelayRequest(long vmId, String controlPanel) {
             this.vmId = vmId;
             this.controlPanel = controlPanel;
