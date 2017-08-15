@@ -40,6 +40,7 @@ import com.godaddy.vps4.vm.ActionService;
 import com.godaddy.vps4.vm.ActionType;
 import com.godaddy.vps4.vm.VirtualMachine;
 import com.godaddy.vps4.vm.VirtualMachineService;
+import com.godaddy.vps4.web.PATCH;
 import com.godaddy.vps4.web.Vps4Api;
 import com.godaddy.vps4.web.Vps4NoShopperException;
 import com.godaddy.vps4.web.security.AdminOnly;
@@ -194,5 +195,30 @@ public class SnapshotResource {
     public Snapshot getSnapshotWithDetails(@PathParam("snapshotId") UUID snapshotId) {
         return getSnapshot(snapshotId);
     }
+
+
+    public static class SnapshotRenameRequest {
+        public String name;
+    }
+
+    @AdminOnly
+    @PATCH
+    @Path("/{snapshotId}")
+    public SnapshotAction renameSnapshot(@PathParam("snapshotId") UUID snapshotId,
+            SnapshotRenameRequest request) {
+
+        Snapshot snapshot = getSnapshot(snapshotId);
+        validateSnapshotName(request.name);
+        String notes = String.format("Old name = %s, New Name = %s", snapshot.name, request.name);
+
+        long vps4UserId = virtualMachineService.getUserIdByVmId(snapshot.vmId);
+        long actionId = actionService.createAction(snapshotId,  ActionType.RENAME_SNAPSHOT,  new JSONObject().toJSONString(), vps4UserId);
+
+        snapshotService.renameSnapshot(snapshotId, request.name);
+        actionService.completeAction(actionId, new JSONObject().toJSONString(), notes);
+
+        return new SnapshotAction(actionService.getAction(actionId));
+    }
+
 
 }

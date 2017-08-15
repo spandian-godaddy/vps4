@@ -38,6 +38,11 @@ public class JdbcSnapshotService implements SnapshotService {
         return snapshotId;
     }
 
+    public void renameSnapshot(UUID snapshotId, String name) {
+        Sql.with(dataSource).exec("UPDATE snapshot SET name = ? WHERE id = ?;",
+                null, name, snapshotId);
+    }
+
     @Override
     public boolean isOverQuota(UUID orionGuid, SnapshotType snapshotType) {
         return !(hasOpenSlots(orionGuid, snapshotType) ||

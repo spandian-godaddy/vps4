@@ -94,6 +94,8 @@ public class SqlTestData {
         Sql.with(dataSource).exec("DELETE FROM vm_user u USING virtual_machine v WHERE u.vm_id = v.vm_id AND " + test_vm_condition, null);
         Sql.with(dataSource).exec("DELETE FROM vm_action a USING virtual_machine v WHERE a.vm_id = v.vm_id AND " + test_vm_condition, null);
         Sql.with(dataSource).exec("DELETE FROM snapshot_action sa USING snapshot s WHERE sa.snapshot_id = s.id AND " + test_snapshot_condition, null);
+        Sql.with(dataSource).exec("DELETE FROM snapshot_action sa USING virtual_machine v, snapshot s "
+                + "WHERE sa.snapshot_id = s.id AND s.vm_id=v.vm_id AND " + test_vm_condition, null);
         Sql.with(dataSource).exec("DELETE FROM snapshot s USING virtual_machine v WHERE s.vm_id = v.vm_id AND " + test_vm_condition, null);
         Sql.with(dataSource).exec("DELETE FROM virtual_machine v USING project p WHERE v.project_id = p.project_id AND " + test_sgid_condition, null);
         Sql.with(dataSource).exec("DELETE FROM user_project_privilege uvp USING project p WHERE uvp.project_id = p.project_id AND " + test_sgid_condition, null);

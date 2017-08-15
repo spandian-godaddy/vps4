@@ -17,7 +17,6 @@ import javax.cache.Cache;
 import javax.cache.CacheManager;
 
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 
 import com.godaddy.vps4.cache.CacheName;
