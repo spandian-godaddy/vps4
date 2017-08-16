@@ -21,6 +21,7 @@ import javax.ws.rs.client.ClientResponseContext;
 import javax.ws.rs.client.ClientResponseFilter;
 import javax.ws.rs.core.Response;
 
+import com.godaddy.vps4.util.KeyManagerBuilder;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.client.HttpClient;
 import org.apache.http.config.RegistryBuilder;
@@ -48,6 +49,10 @@ public class HfsClientProvider<T> implements Provider<T> {
 
     static volatile KeyManager keyManager;
 
+    private static final String CLIENT_CERTIFICATE_KEY_PATH = "hfs.client.keyPath";
+
+    private static final String CLIENT_CERTIFICATE_PATH = "hfs.client.certPath";
+
     @Inject
     Config config;
 
@@ -70,7 +75,10 @@ public class HfsClientProvider<T> implements Provider<T> {
 
             if (baseUrl.startsWith("https")) {
                 if (keyManager == null) {
-                    keyManager = HfsKeyManagerBuilder.newKeyManager(config);
+                    keyManager = KeyManagerBuilder.newKeyManager(
+                            config,
+                            CLIENT_CERTIFICATE_KEY_PATH,
+                            CLIENT_CERTIFICATE_PATH);
                 }
                 // we're connecting to an SSL endpoint, and we have
                 // client certificates, so wire that up
