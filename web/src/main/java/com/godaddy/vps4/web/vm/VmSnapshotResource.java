@@ -12,23 +12,11 @@ import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
 
-import java.util.List;
-import java.util.UUID;
-
-import javax.ws.rs.Consumes;
-import javax.ws.rs.GET;
-import javax.ws.rs.POST;
-import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.Produces;
-import javax.ws.rs.core.MediaType;
-
 import com.fasterxml.jackson.annotation.JsonView;
-import com.godaddy.vps4.security.PrivilegeService;
 import com.godaddy.vps4.security.Views;
-import com.godaddy.vps4.security.Vps4UserService;
 import com.godaddy.vps4.snapshot.Snapshot;
 import com.godaddy.vps4.snapshot.SnapshotService;
+import com.godaddy.vps4.snapshot.SnapshotType;
 import com.godaddy.vps4.web.Vps4Api;
 import com.godaddy.vps4.web.security.AdminOnly;
 import com.godaddy.vps4.web.snapshot.SnapshotAction;
@@ -68,6 +56,7 @@ public class VmSnapshotResource {
 
     public static class VmSnapshotRequest {
         public String name;
+        public SnapshotType snapshotType = SnapshotType.ON_DEMAND;
     }
 
     @POST
@@ -76,6 +65,8 @@ public class VmSnapshotResource {
         SnapshotResource.SnapshotRequest request = new SnapshotResource.SnapshotRequest();
         request.vmId = vmId;
         request.name = vmSnapshotRequest.name;
+        request.snapshotType = vmSnapshotRequest.snapshotType;
+
         return snapshotResource.createSnapshot(request);
     }
 
