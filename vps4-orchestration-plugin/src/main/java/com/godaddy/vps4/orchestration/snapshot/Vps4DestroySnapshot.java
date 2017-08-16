@@ -3,7 +3,6 @@ package com.godaddy.vps4.orchestration.snapshot;
 import java.util.UUID;
 
 import javax.inject.Inject;
-import javax.inject.Named;
 
 import com.godaddy.vps4.orchestration.ActionCommand;
 import com.godaddy.vps4.orchestration.ActionRequest;

@@ -16,11 +16,12 @@ import com.fasterxml.jackson.annotation.JsonView;
 import com.godaddy.vps4.security.Views;
 import com.godaddy.vps4.snapshot.Snapshot;
 import com.godaddy.vps4.snapshot.SnapshotService;
+import com.godaddy.vps4.web.PATCH;
 import com.godaddy.vps4.snapshot.SnapshotType;
 import com.godaddy.vps4.web.Vps4Api;
-import com.godaddy.vps4.web.security.AdminOnly;
 import com.godaddy.vps4.web.snapshot.SnapshotAction;
 import com.godaddy.vps4.web.snapshot.SnapshotResource;
+import com.godaddy.vps4.web.snapshot.SnapshotResource.SnapshotRenameRequest;
 import com.google.inject.Inject;
 
 import io.swagger.annotations.Api;
@@ -78,7 +79,6 @@ public class VmSnapshotResource {
         return snapshotResource.getSnapshot(snapshotId);
     }
 
-    @AdminOnly
     @GET
     @Path("/{vmId}/snapshots/{snapshotId}/withDetails")
     @JsonView(Views.Internal.class)
@@ -89,9 +89,17 @@ public class VmSnapshotResource {
 
     @DELETE
     @Path("/{vmId}/snapshots/{snapshotId}")
-    public SnapshotAction deleteSnapshot(
+    public SnapshotAction destroySnapshot(
             @PathParam("vmId") UUID vmId, @PathParam("snapshotId") UUID snapshotId) {
         return snapshotResource.destroySnapshot(snapshotId);
     }
+
+    @PATCH
+    @Path("/{vmId}/snapshots/{snapshotId}")
+    public SnapshotAction renameSnapshot(@PathParam("vmId") UUID vmId, @PathParam("snapshotId") UUID snapshotId,
+            SnapshotRenameRequest request) {
+        return snapshotResource.renameSnapshot(snapshotId, request);
+    }
+
 
 }

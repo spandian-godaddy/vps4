@@ -4,6 +4,7 @@ import java.util.UUID;
 
 import javax.inject.Inject;
 
+import org.apache.commons.lang3.RandomStringUtils;
 import org.json.simple.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -109,11 +110,15 @@ public class Vps4SnapshotVm extends ActionCommand<Vps4SnapshotVm.Request, Vps4Sn
     private SnapshotAction createSnapshot(CommandContext context, Request request) {
         long vmId = request.hfsVmId;
         String version = "1.0.0";
+        //  random snapshot name to hfs layer
+        String name = String.format("vps4-%s-%s",
+                request.snapshotType.name().toLowerCase().substring(0, 4),
+                RandomStringUtils.randomAlphabetic(8));
 
         try {
             SnapshotAction hfsAction = context.execute(
                     "Vps4SnapshotVm",
-                    ctx -> hfsSnapshotService.createSnapshot(vmId, request.snapshotName, version, true, false)
+                    ctx -> hfsSnapshotService.createSnapshot(vmId, name, version, true, false)
             );
 
             logger.info("HFS snapshot create request returned action: {}", hfsAction);
@@ -151,7 +156,6 @@ public class Vps4SnapshotVm extends ActionCommand<Vps4SnapshotVm.Request, Vps4Sn
     public static class Request implements ActionRequest {
         public long actionId;
         public long hfsVmId;
-        public String snapshotName;
         public UUID vps4SnapshotId;
         public UUID orionGuid;
         public long vps4UserId;

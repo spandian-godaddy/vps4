@@ -2,6 +2,7 @@ package com.godaddy.vps4.phase2;
 
 import java.lang.reflect.Method;
 import java.time.Instant;
+import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
 
@@ -28,6 +29,7 @@ import com.godaddy.vps4.snapshot.SnapshotModule;
 import com.godaddy.vps4.snapshot.SnapshotStatus;
 import com.godaddy.vps4.snapshot.SnapshotType;
 import com.godaddy.vps4.vm.AccountStatus;
+import com.godaddy.vps4.vm.ActionStatus;
 import com.godaddy.vps4.vm.VirtualMachine;
 import com.godaddy.vps4.vm.VmModule;
 import com.godaddy.vps4.web.Vps4Exception;
@@ -36,6 +38,7 @@ import com.godaddy.vps4.web.security.AdminOnly;
 import com.godaddy.vps4.web.security.GDUser;
 import com.godaddy.vps4.web.snapshot.SnapshotAction;
 import com.godaddy.vps4.web.snapshot.SnapshotResource;
+import com.godaddy.vps4.web.snapshot.SnapshotResource.SnapshotRenameRequest;
 import com.godaddy.vps4.web.vm.VmSnapshotResource;
 import com.google.inject.AbstractModule;
 import com.google.inject.Guice;
@@ -47,6 +50,7 @@ public class SnapshotResourceTest {
     @Inject DataSource dataSource;
 
     private GDUser user;
+    private VirtualMachine testVm;
 
     private Injector injector = Guice.createInjector(
             new DatabaseModule(),
@@ -88,7 +92,7 @@ public class SnapshotResourceTest {
 
     private Snapshot createTestSnapshot() {
         Vps4User vps4User = userService.getOrCreateUserForShopper(GDUserMock.DEFAULT_SHOPPER);
-        VirtualMachine testVm = SqlTestData.insertTestVm(UUID.randomUUID(), vps4User.getId(), dataSource);
+        testVm = SqlTestData.insertTestVm(UUID.randomUUID(), vps4User.getId(), dataSource);
         Snapshot testSnapshot = new Snapshot(
                 UUID.randomUUID(),
                 testVm.projectId,
@@ -220,7 +224,7 @@ public class SnapshotResourceTest {
         long expectedHfsSnapshotId = snapshot.hfsSnapshotId;
 
         user = GDUserMock.createEmployee();
-        snapshot = getSnapshotResource().getSnapshotWithDetails(snapshot.id);
+        snapshot = getVmSnapshotResource().getSnapshotWithDetails(testVm.vmId, snapshot.id);
         Assert.assertEquals(expectedVmId, snapshot.vmId);
         Assert.assertEquals(expectedHfsSnapshotId, snapshot.hfsSnapshotId);
     }
@@ -269,7 +273,7 @@ public class SnapshotResourceTest {
     public void testDestroySnapshot() {
         Snapshot snapshot = createTestSnapshot();
 
-        SnapshotAction snapshotAction = getSnapshotResource().destroySnapshot(snapshot.id);
+        SnapshotAction snapshotAction = getVmSnapshotResource().destroySnapshot(testVm.vmId, snapshot.id);
         Assert.assertNotNull(snapshotAction.commandId);
     }
 
@@ -294,6 +298,76 @@ public class SnapshotResourceTest {
     public void testE2SDestroySnapshot() {
         user = GDUserMock.createEmployee2Shopper();
         testDestroySnapshot();
+    }
+
+    // === renameSnapshot Tests ===
+    public void testRenameSnapshot() {
+        testRenameSnapshot("snappy");
+    }
+
+    public void testRenameSnapshot(String name) {
+        Snapshot snapshot = createTestSnapshot();
+
+        SnapshotRenameRequest req= new SnapshotRenameRequest();
+        req.name = name;
+        SnapshotAction action = getVmSnapshotResource().renameSnapshot(testVm.vmId, snapshot.id, req);
+        Assert.assertEquals(ActionStatus.COMPLETE, action.status);
+
+        snapshot = getSnapshotResource().getSnapshot(snapshot.id);
+        Assert.assertEquals(req.name,  snapshot.name);
+    }
+
+    @Test
+    public void testShopperRenameSnapshot() {
+        testRenameSnapshot();
+    }
+
+    @Test
+    public void testRenameSnapshotWithInvalidName() {
+        List<String> invalidNames = Arrays.asList(
+                "snap",         // too short
+                "f*ing-snap",   // no special chars
+                "my snap",      // no spaces
+                "mySnap",       // no caps
+                "my_long_snap-name"  // too long
+                );
+        for (String name: invalidNames) {
+            try {
+                testRenameSnapshot(name);
+                Assert.fail("Exception not thrown");
+            } catch (Vps4Exception e) {
+                Assert.assertEquals("INVALID_SNAPSHOT_NAME", e.getId());
+            }
+        }
+    }
+
+    @Test(expected=AuthorizationException.class)
+    public void testUnauthorizedShopperRenameSnapshot() {
+        user = GDUserMock.createShopper("shopperX");
+        testRenameSnapshot();
+    }
+
+    @Test
+    public void testSuspendedShopperRenameSnapshot() {
+        Phase2ExternalsModule.mockVmCredit(AccountStatus.SUSPENDED);
+        try {
+            testRenameSnapshot();
+            Assert.fail("Exception not thrown");
+        } catch (Vps4Exception e) {
+            Assert.assertEquals("ACCOUNT_SUSPENDED", e.getId());
+        }
+    }
+
+    @Test
+    public void testAdminRenameSnapshot() {
+        user = GDUserMock.createAdmin();
+        testRenameSnapshot();
+    }
+
+    @Test
+    public void testE2SRenameSnapshot() {
+        user = GDUserMock.createEmployee2Shopper();
+        testRenameSnapshot();
     }
 
 }

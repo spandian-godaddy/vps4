@@ -18,6 +18,8 @@ public interface SnapshotService {
 
     boolean otherBackupsInProgress(UUID orionGuid);
 
+    void renameSnapshot(UUID snapshotId, String name);
+
     void updateHfsSnapshotId(UUID snapshotId, long hfsSnapshotId);
 
     void updateHfsImageId(UUID snapshotId, String hfsImageId);
