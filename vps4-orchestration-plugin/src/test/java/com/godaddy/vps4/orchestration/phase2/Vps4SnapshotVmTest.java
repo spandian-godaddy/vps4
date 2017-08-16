@@ -91,7 +91,6 @@ public class Vps4SnapshotVmTest {
         Vps4SnapshotVm.Request req = new Vps4SnapshotVm.Request();
         req.actionId = vps4SnapshotActionId;
         req.vps4SnapshotId = vps4SnapshotId;
-        req.snapshotName = "test-1";
         req.orionGuid = orionGuid;
         req.vps4UserId = vps4UserId;
         req.snapshotType = SnapshotType.ON_DEMAND;

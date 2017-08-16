@@ -107,7 +107,7 @@ public class SnapshotResource {
         VirtualMachine vm = vmResource.getVm(snapshotRequest.vmId);
         validateCreation(vm.orionGuid, vm.vmId, snapshotRequest.name, snapshotRequest.snapshotType);
         Action action = createSnapshotAndActionEntries(vm, snapshotRequest.name, snapshotRequest.snapshotType);
-        kickoffSnapshotCreation(vm.vmId, snapshotRequest.name, vm.hfsVmId, action, vm.orionGuid, snapshotRequest.snapshotType);
+        kickoffSnapshotCreation(vm.vmId, vm.hfsVmId, action, vm.orionGuid, snapshotRequest.snapshotType);
         return new SnapshotAction(actionService.getAction(action.id));
     }
 
@@ -133,12 +133,10 @@ public class SnapshotResource {
         return actionService.getAction(actionId);
     }
 
-    private void kickoffSnapshotCreation(UUID vmId, String snapshotName, long hfsVmId,
-            Action action, UUID orionGuid, SnapshotType snapshotType) {
+    private void kickoffSnapshotCreation(UUID vmId, long hfsVmId, Action action, UUID orionGuid, SnapshotType snapshotType) {
         UUID snapshotId = action.resourceId; // the resourceId refers to the associated snapshotId
         Vps4SnapshotVm.Request commandRequest = new Vps4SnapshotVm.Request();
         commandRequest.hfsVmId = hfsVmId;
-        commandRequest.snapshotName = snapshotName;
         commandRequest.vps4SnapshotId = snapshotId;
         commandRequest.actionId = action.id;
         commandRequest.orionGuid = orionGuid;
@@ -148,8 +146,8 @@ public class SnapshotResource {
         CommandState command = Commands.execute(
                 commandService, actionService, "Vps4SnapshotVm", commandRequest);
         logger.info(
-                "Creating snapshot {}:{} for vps4 vm {} with command {}:{}",
-                snapshotId, snapshotName, vmId, action.id, command.commandId
+                "Creating snapshot {} for vps4 vm {} with command {}:{}",
+                snapshotId, vmId, action.id, command.commandId
         );
     }
 

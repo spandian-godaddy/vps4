@@ -38,6 +38,7 @@ public class JdbcSnapshotService implements SnapshotService {
         return snapshotId;
     }
 
+    @Override
     public void renameSnapshot(UUID snapshotId, String name) {
         Sql.with(dataSource).exec("UPDATE snapshot SET name = ? WHERE id = ?;",
                 null, name, snapshotId);
