@@ -30,7 +30,7 @@ public class CommandClientModuleTest {
         try {
             Method m = cmdClientModule.getClass().getDeclaredMethod("provideCommandService", Config.class);
             m.setAccessible(true);
-            HttpCommandService commandService = (HttpCommandService)m.invoke(cmdClientModule.getClass(), mockConfig);
+            HttpCommandService commandService = (HttpCommandService)m.invoke(cmdClientModule, mockConfig);
         }
         catch (Exception ex) {
             Assert.fail(ex.toString());
