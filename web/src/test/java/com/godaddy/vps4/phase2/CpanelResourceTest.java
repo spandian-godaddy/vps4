@@ -1,5 +1,9 @@
 package com.godaddy.vps4.phase2;
 
+import static org.mockito.Matchers.eq;
+
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 
 import javax.sql.DataSource;
@@ -11,6 +15,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mockito;
 
+import com.godaddy.vps4.cpanel.CpanelInvalidUserException;
 import com.godaddy.vps4.cpanel.CpanelTimeoutException;
 import com.godaddy.vps4.cpanel.Vps4CpanelService;
 import com.godaddy.vps4.jdbc.DatabaseModule;
@@ -205,4 +210,63 @@ public class CpanelResourceTest {
         }
     }
 
+    // list add on domains test
+    @Test
+    public void testShopperListAddonDomains(){
+        getCpanelResource().listAddOnDomains(vm.vmId, "fakeuser");
+    }
+
+    @Test(expected=AuthorizationException.class)
+    public void testUnauthorizedShopperListAddonDomains(){
+        user = GDUserMock.createShopper("shopperX");
+        getCpanelResource().listAddOnDomains(vm.vmId, "fakeuser");
+    }
+
+    @Test
+    public void testAdminListAddonDomains(){
+        user = GDUserMock.createAdmin();
+        getCpanelResource().listAddOnDomains(vm.vmId, "fakeUser");
+    }
+
+    @Test
+    public void testListAddonDomainsInvalidImage(){
+        try {
+            getCpanelResource().listAddOnDomains(centVm.vmId, "fakeuser");
+            Assert.fail();
+        }
+        catch (Vps4Exception e) {
+            Assert.assertEquals("INVALID_IMAGE", e.getId());
+        }
+    }
+
+    @Test(expected=NotFoundException.class)
+    public void testListAddonDomainsVmIdDoesntExist(){
+        getCpanelResource().listAddOnDomains(UUID.randomUUID(), "fakeuser");
+    }
+
+    @Test
+    public void testListAddonDomainsIgnoresCpanelServiceException() throws Exception {
+        Mockito.when(cpServ.listAddOnDomains(Mockito.anyLong(), eq("fakeuser")))
+                .thenThrow(new CpanelTimeoutException("Timed out"));
+        Assert.assertNull(getCpanelResource().listAddOnDomains(vm.vmId, "fakeuser"));
+    }
+
+    @Test(expected=Vps4Exception.class)
+    public void testThrowsExceptionForInvalidUsername() throws Exception{
+        List<String> returnVal = new ArrayList<String>();
+        Mockito.when(cpServ.listAddOnDomains(Mockito.anyLong(), eq("fakeuser2"))).thenThrow(new CpanelInvalidUserException(""));
+        getCpanelResource().listAddOnDomains(vm.vmId, "fakeuser2");
+    }
+
+
+    @Test
+    public void testListAddonDomainsSuspended() {
+        Phase2ExternalsModule.mockVmCredit(AccountStatus.SUSPENDED);
+        try {
+            getCpanelResource().listAddOnDomains(vm.vmId, "fakeuser");
+            Assert.fail("Exception not thrown");
+        } catch (Vps4Exception e) {
+            Assert.assertEquals("ACCOUNT_SUSPENDED", e.getId());
+        }
+    }
 }

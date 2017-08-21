@@ -18,10 +18,12 @@ import org.slf4j.LoggerFactory;
 import com.godaddy.vps4.cpanel.CPanelAccount;
 import com.godaddy.vps4.cpanel.CPanelSession;
 import com.godaddy.vps4.cpanel.CpanelClient.CpanelServiceType;
+import com.godaddy.vps4.cpanel.CpanelInvalidUserException;
 import com.godaddy.vps4.cpanel.Vps4CpanelService;
 import com.godaddy.vps4.vm.Image.ControlPanel;
 import com.godaddy.vps4.vm.VirtualMachine;
 import com.godaddy.vps4.web.Vps4Api;
+import com.godaddy.vps4.web.Vps4Exception;
 import com.godaddy.vps4.web.controlPanel.ControlPanelRequestValidation;
 import com.godaddy.vps4.web.vm.VmResource;
 
@@ -109,6 +111,31 @@ public class CPanelResource {
 //        } catch (IOException e) {
         } catch (Exception e) {
             logger.warn("Could not provide cpanel accounts for vmId {} , Exception: {} ", vmId, e);
+        }
+        return null;
+    }
+
+    @GET
+    @Path("/{vmId}/cpanel/{username}/addOnDomains")
+    public List<String> listAddOnDomains(@PathParam("vmId") UUID vmId, @PathParam("username") String username) {
+
+        logger.info("GET listAddOnDomains for user {} on VM: {}", username, vmId);
+
+        VirtualMachine vm = resolveVirtualMachine(vmId);
+
+        try {
+            return cpanelService.listAddOnDomains(vm.hfsVmId, username);
+//        } catch (CpanelAccessDeniedException e) {
+//            // TODO bubble a more specific error to the client
+//            // (UI can show a "Authentication issue" error
+//            // instead of just generic "something happened")
+//        } catch (CpanelTimeoutException e) {
+//        } catch (IOException e) {
+        } catch (CpanelInvalidUserException e) {
+            throw new Vps4Exception("INVALID_CPANEL_USER", e.getMessage());
+        }
+        catch (Exception e) {
+            logger.warn("Could not provide cpanel add on domains for user {} on vmId {} , Exception: {} ", username, vmId, e);
         }
         return null;
     }

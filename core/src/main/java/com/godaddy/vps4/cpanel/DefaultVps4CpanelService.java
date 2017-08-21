@@ -52,6 +52,10 @@ public class DefaultVps4CpanelService implements Vps4CpanelService {
                 throws CpanelAccessDeniedException, CpanelTimeoutException, IOException;
     }
 
+    protected CpanelClient getCpanelClient(String publicIp, String accessHash){
+        return new CpanelClient(publicIp, accessHash);
+    }
+
     <T> T withAccessHash(long hfsVmId, CpanelClientHandler<T> handler)
             throws CpanelAccessDeniedException, CpanelTimeoutException, IOException {
 
@@ -60,11 +64,9 @@ public class DefaultVps4CpanelService implements Vps4CpanelService {
         Exception lastThrown = null;
 
         while (Instant.now().isBefore(timeoutAt)) {
-
             // TODO remove the hardcoded values for IP
             String fromIp = getOriginatorIp();
             String publicIp = getVmIp(hfsVmId);
-
             String accessHash = accessHashService.getAccessHash(hfsVmId, publicIp, fromIp, timeoutAt);
             if (accessHash == null) {
                 // we couldn't get the access hash, so no point in even
@@ -76,9 +78,7 @@ public class DefaultVps4CpanelService implements Vps4CpanelService {
 
             // TODO make sure we're still within timeoutAt to actually
             //      make the call to the VM
-
-            CpanelClient cPanelClient = new CpanelClient(publicIp, accessHash);
-
+            CpanelClient cPanelClient = getCpanelClient(publicIp, accessHash);
             try {
                 // need to configure read timeout in HTTP client
                 return handler.handle(cPanelClient);
@@ -145,6 +145,43 @@ public class DefaultVps4CpanelService implements Vps4CpanelService {
 
                 return domains;
             } catch (ParseException e) {
+                throw new IOException("Error parsing cPanel account list response", e);
+            }
+        });
+    }
+
+    @Override
+    public List<String> listAddOnDomains(long hfsVmId, String username)
+            throws CpanelAccessDeniedException, CpanelTimeoutException, IOException {
+        return withAccessHash(hfsVmId, cPanelClient -> {
+            JSONParser parser = new JSONParser();
+            String sitesJson = cPanelClient.listAddOnDomains(username);
+            try {
+                List<String> domains = new ArrayList<>();
+                JSONObject jsonObject = (JSONObject) parser.parse(sitesJson);
+                JSONObject cpanelResult = (JSONObject) jsonObject.get("cpanelresult");
+                if (cpanelResult != null) {
+                    JSONArray data;
+                    try{
+                        data = (JSONArray) cpanelResult.get("data");
+                    } catch (ClassCastException e){
+                        String error = (String) cpanelResult.get("error");
+                        if (error != null && error.equals("User parameter is invalid or was not supplied")){
+                            // cpanel will still return a 200 return status even if there's an error,
+                            //  so checking the error value is the next best way to detect this error.
+                            throw new CpanelInvalidUserException("User parameter ("+username+") is invalid or was not supplied");
+                        }
+                        throw e;
+                    }
+
+                    for (Object object : data) {
+                        JSONObject addOnDomain = (JSONObject) object;
+                        String domain = (String) addOnDomain.get("domain");
+                        domains.add(domain);
+                    }
+                }
+                return domains;
+            } catch (ParseException | ClassCastException e) {
                 throw new IOException("Error parsing cPanel account list response", e);
             }
         });
