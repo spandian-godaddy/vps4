@@ -26,10 +26,8 @@ import com.godaddy.vps4.vm.VirtualMachineService;
 import com.godaddy.vps4.web.Vps4Exception;
 
 /**
- * Examine a request using authenticators, attach the first authenticated user found to the a request attribute.
- *
- * No additional action is taken if an authenticated user is _not_ found, since all downstream actions may not necessarily require
- * authentication, it's up to downstream to take that action (like, for example, redirect to the SSO login page).
+ * If a VM API request includes a vmId, then verify that there are no active snapshot actions for that VM.
+ * Return 400 response if snapshot action pending, otherwise allow the request to continue.
  */
 public class VmActiveSnapshotFilter implements Filter {
 
