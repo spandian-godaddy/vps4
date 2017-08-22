@@ -45,6 +45,16 @@ public class VmActiveSnapshotFilterTest {
     }
 
     @Test
+    public void testVmApiListRequest() throws Exception {
+        when(jdbcVmService.getPendingSnapshotActionIdByVmId(vmid)).thenReturn(null);
+        when(request.getRequestURI()).thenReturn("/api/vms/");
+
+        filter.doFilter(request, response, chain);
+        verify(jdbcVmService, never()).getPendingSnapshotActionIdByVmId(any());
+        verify(chain).doFilter(request, response);
+    }
+
+    @Test
     public void testVmApiWithoutPendingSnapshot() throws Exception {
         when(jdbcVmService.getPendingSnapshotActionIdByVmId(vmid)).thenReturn(null);
         when(request.getRequestURI()).thenReturn("/api/vms/" + vmid);

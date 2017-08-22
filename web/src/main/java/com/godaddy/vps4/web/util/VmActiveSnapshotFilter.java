@@ -71,7 +71,7 @@ public class VmActiveSnapshotFilter implements Filter {
     }
 
     private void validateIfVmApiRequest(HttpServletRequest request) {
-        String pattern = "/api/vms/(?<vmid>[0-9a-f-]*)/?.*";
+        String pattern = "/api/vms/(?<vmid>[0-9a-f-]+)/?.*";
         Matcher m = Pattern.compile(pattern).matcher(request.getRequestURI());
         if (m.matches()) {
             String vmId = m.group("vmid");
