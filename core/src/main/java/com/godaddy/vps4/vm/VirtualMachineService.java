@@ -102,4 +102,6 @@ public interface VirtualMachineService {
     long getUserIdByVmId(UUID vmId);
 
     UUID getOrionGuidByVmId(UUID vmId);
+
+    Long getPendingSnapshotActionIdByVmId(UUID vmId);
 }
