@@ -4,6 +4,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -22,7 +23,11 @@ import com.godaddy.vps4.phase2.SqlTestData;
 import com.godaddy.vps4.project.ProjectService;
 import com.godaddy.vps4.project.jdbc.JdbcProjectService;
 import com.godaddy.vps4.security.Vps4User;
-import com.godaddy.vps4.vm.AccountStatus;
+import com.godaddy.vps4.snapshot.Snapshot;
+import com.godaddy.vps4.snapshot.SnapshotStatus;
+import com.godaddy.vps4.snapshot.SnapshotType;
+import com.godaddy.vps4.vm.ActionStatus;
+import com.godaddy.vps4.vm.ActionType;
 import com.godaddy.vps4.vm.ImageService;
 import com.godaddy.vps4.vm.VirtualMachine;
 import com.godaddy.vps4.vm.VirtualMachineService;
@@ -141,6 +146,39 @@ public class VirtualMachineServiceTest {
         for (UUID vm : createdVms)
             assertTrue(vmGuids.contains(vm));
         assertEquals(virtualMachines.size(), vms.size());
+    }
+
+    @Test
+    public void testGetPendingSnapshotActionIdByVmId() {
+        virtualMachines.add(SqlTestData.insertTestVm(orionGuid, dataSource));
+        VirtualMachine testVm = virtualMachines.get(0);
+
+        // No snapshots
+        Assert.assertNull(virtualMachineService.getPendingSnapshotActionIdByVmId(testVm.vmId));
+
+        Snapshot testSnapshot = new Snapshot(
+                UUID.randomUUID(),
+                testVm.projectId,
+                testVm.vmId,
+                "test-snapshot",
+                SnapshotStatus.LIVE,
+                Instant.now(),
+                null,
+                "test-imageid",
+                (int) (Math.random() * 100000),
+                SnapshotType.ON_DEMAND
+        );
+        SqlTestData.insertTestSnapshot(testSnapshot, dataSource);
+
+        // Snapshot with completed create action - not pending
+        SqlTestData.insertTestSnapshotAction(testSnapshot.id, ActionType.CREATE_SNAPSHOT,
+                vps4User.getId(), ActionStatus.COMPLETE, dataSource);
+        Assert.assertNull(virtualMachineService.getPendingSnapshotActionIdByVmId(testVm.vmId));
+
+        // Snapshot with pending create action
+        SqlTestData.insertTestSnapshotAction(testSnapshot.id, ActionType.CREATE_SNAPSHOT,
+                vps4User.getId(), ActionStatus.IN_PROGRESS, dataSource);
+        Assert.assertNotNull(virtualMachineService.getPendingSnapshotActionIdByVmId(testVm.vmId));
     }
 
 }

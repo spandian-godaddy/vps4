@@ -5,7 +5,6 @@ import java.util.List;
 
 import javax.inject.Singleton;
 
-import com.godaddy.vps4.snapshot.SnapshotModule;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -27,6 +26,7 @@ import com.godaddy.vps4.jdbc.DatabaseModule;
 import com.godaddy.vps4.mailrelay.MailRelayModule;
 import com.godaddy.vps4.plesk.PleskModule;
 import com.godaddy.vps4.security.SecurityModule;
+import com.godaddy.vps4.snapshot.SnapshotModule;
 import com.godaddy.vps4.sso.SsoModule;
 import com.godaddy.vps4.sysadmin.SysAdminModule;
 import com.godaddy.vps4.vm.VmModule;
@@ -34,6 +34,7 @@ import com.godaddy.vps4.web.network.NetworkModule;
 import com.godaddy.vps4.web.security.GDUserModule;
 import com.godaddy.vps4.web.security.SsoAuthenticationFilter;
 import com.godaddy.vps4.web.util.RequestIdFilter;
+import com.godaddy.vps4.web.util.VmActiveSnapshotFilter;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
 import com.google.inject.Module;
@@ -101,6 +102,9 @@ public class Vps4Injector {
 
                 bind(SsoAuthenticationFilter.class).in(Singleton.class);
                 filter("/api/*").through(SsoAuthenticationFilter.class);
+
+                bind(VmActiveSnapshotFilter.class).in(Singleton.class);
+                filter("/api/vms/*").through(VmActiveSnapshotFilter.class);
 
                 Multibinder.newSetBinder(binder(), SwaggerClassFilter.class)
                     .addBinding().toInstance(resourceClass ->

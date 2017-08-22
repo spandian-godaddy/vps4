@@ -218,4 +218,17 @@ public class JdbcVirtualMachineService implements VirtualMachineService {
         return Sql.with(dataSource).exec("SELECT orion_guid FROM virtual_machine WHERE vm_id=?;",
                 Sql.nextOrNull(rs -> UUID.fromString(rs.getString("orion_guid"))), vmId);
     }
+
+    @Override
+    public Long getPendingSnapshotActionIdByVmId(UUID vmId) {
+        return Sql.with(dataSource).exec("SELECT sa.id FROM virtual_machine v"
+                + " JOIN snapshot s ON v.vm_id = s.vm_id"
+                + " JOIN snapshot_action sa ON s.id = sa.snapshot_id"
+                + " JOIN action_status stat ON sa.status_id = stat.status_id"
+                + " JOIN action_type a ON a.type_id = sa.action_type_id"
+                + " WHERE a.type IN ('CREATE_SNAPSHOT')"
+                + " AND stat.status IN ('NEW', 'IN_PROGRESS')"
+                + " AND v.vm_id=?;",
+                Sql.nextOrNull(rs -> rs.getLong("id")), vmId);
+    }
 }
