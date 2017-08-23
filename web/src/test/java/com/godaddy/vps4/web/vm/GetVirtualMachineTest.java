@@ -60,7 +60,7 @@ public class GetVirtualMachineTest {
         when(config.get(Mockito.anyString(), Mockito.anyString())).thenReturn("0");
         when(config.get(Mockito.anyString())).thenReturn("0");
         vmResource = new VmResource(user, vmService, userService, virtualMachineService, creditService,
-                null, null, null, null, config);
+                null, null, null, null, null, config);
     }
 
     @Test

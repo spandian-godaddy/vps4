@@ -10,11 +10,6 @@ import javax.inject.Inject;
 import javax.sql.DataSource;
 import javax.ws.rs.NotFoundException;
 
-import org.junit.After;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
-
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.godaddy.vps4.jdbc.DatabaseModule;
@@ -39,11 +34,14 @@ import com.godaddy.vps4.web.security.GDUser;
 import com.godaddy.vps4.web.snapshot.SnapshotAction;
 import com.godaddy.vps4.web.snapshot.SnapshotResource;
 import com.godaddy.vps4.web.snapshot.SnapshotResource.SnapshotRenameRequest;
-import com.godaddy.vps4.web.vm.VmSnapshotResource;
 import com.google.inject.AbstractModule;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
 import com.google.inject.Provides;
+import org.junit.After;
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.Test;
 
 public class SnapshotResourceTest {
     @Inject Vps4UserService userService;
@@ -84,10 +82,6 @@ public class SnapshotResourceTest {
 
     private SnapshotResource getSnapshotResource() {
         return injector.getInstance(SnapshotResource.class);
-    }
-
-    private VmSnapshotResource getVmSnapshotResource() {
-        return injector.getInstance(VmSnapshotResource.class);
     }
 
     private Snapshot createTestSnapshot() {
@@ -224,7 +218,7 @@ public class SnapshotResourceTest {
         long expectedHfsSnapshotId = snapshot.hfsSnapshotId;
 
         user = GDUserMock.createEmployee();
-        snapshot = getVmSnapshotResource().getSnapshotWithDetails(testVm.vmId, snapshot.id);
+        snapshot = getSnapshotResource().getSnapshotWithDetails(snapshot.id);
         Assert.assertEquals(expectedVmId, snapshot.vmId);
         Assert.assertEquals(expectedHfsSnapshotId, snapshot.hfsSnapshotId);
     }
@@ -248,32 +242,11 @@ public class SnapshotResourceTest {
         Assert.assertTrue(result.contains("hfsImageId"));
     }
 
-    // === getSnapshotByVmId Tests ===
-    private void testGetSnapshotByVmId() {
-        Snapshot snapshot = createTestSnapshot();
-
-        List<Snapshot> snapshots = getVmSnapshotResource().getSnapshotsForVM(snapshot.vmId);
-        Assert.assertEquals(1, snapshots.size());
-        Assert.assertEquals(snapshots.get(0).vmId, snapshot.vmId);
-    }
-
-    @Test
-    public void testShopperGetSnapshotByVmId() {
-        user = GDUserMock.createShopper();
-        testGetSnapshotByVmId();
-    }
-
-    @Test(expected = AuthorizationException.class)
-    public void testUnauthorizedShopperGetSnapshotByVmId() {
-        user = GDUserMock.createShopper("shopperX");
-        testGetSnapshotByVmId();
-    }
-
     // === destroySnapshot Tests ===
     public void testDestroySnapshot() {
         Snapshot snapshot = createTestSnapshot();
 
-        SnapshotAction snapshotAction = getVmSnapshotResource().destroySnapshot(testVm.vmId, snapshot.id);
+        SnapshotAction snapshotAction = getSnapshotResource().destroySnapshot(snapshot.id);
         Assert.assertNotNull(snapshotAction.commandId);
     }
 
@@ -310,7 +283,7 @@ public class SnapshotResourceTest {
 
         SnapshotRenameRequest req= new SnapshotRenameRequest();
         req.name = name;
-        SnapshotAction action = getVmSnapshotResource().renameSnapshot(testVm.vmId, snapshot.id, req);
+        SnapshotAction action = getSnapshotResource().renameSnapshot(snapshot.id, req);
         Assert.assertEquals(ActionStatus.COMPLETE, action.status);
 
         snapshot = getSnapshotResource().getSnapshot(snapshot.id);

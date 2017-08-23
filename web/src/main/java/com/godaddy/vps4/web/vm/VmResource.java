@@ -6,6 +6,7 @@ import static com.godaddy.vps4.web.util.RequestValidation.validateNoConflictingA
 import static com.godaddy.vps4.web.util.RequestValidation.validateServerIsActive;
 import static com.godaddy.vps4.web.util.RequestValidation.validateServerIsStopped;
 import static com.godaddy.vps4.web.util.RequestValidation.validateUserIsShopper;
+import static com.godaddy.vps4.web.util.RequestValidation.validateVmExists;
 
 import java.time.Instant;
 import java.util.List;
@@ -16,16 +17,11 @@ import javax.inject.Inject;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
-import javax.ws.rs.NotFoundException;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
-
-import org.json.simple.JSONObject;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import com.godaddy.hfs.config.Config;
 import com.godaddy.vps4.credit.CreditService;
@@ -37,6 +33,7 @@ import com.godaddy.vps4.project.Project;
 import com.godaddy.vps4.project.ProjectService;
 import com.godaddy.vps4.security.Vps4User;
 import com.godaddy.vps4.security.Vps4UserService;
+import com.godaddy.vps4.snapshot.Snapshot;
 import com.godaddy.vps4.vm.ActionService;
 import com.godaddy.vps4.vm.ActionType;
 import com.godaddy.vps4.vm.DataCenter;
@@ -51,16 +48,18 @@ import com.godaddy.vps4.web.Vps4Exception;
 import com.godaddy.vps4.web.Vps4NoShopperException;
 import com.godaddy.vps4.web.security.GDUser;
 import com.godaddy.vps4.web.util.Commands;
-
 import gdg.hfs.orchestration.CommandService;
 import gdg.hfs.orchestration.CommandState;
 import gdg.hfs.vhfs.vm.CreateVMWithFlavorRequest;
 import gdg.hfs.vhfs.vm.Vm;
 import gdg.hfs.vhfs.vm.VmService;
 import io.swagger.annotations.Api;
+import org.json.simple.JSONObject;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @Vps4Api
-@Api(tags = { "vms" })
+@Api(tags = {"vms"})
 
 @Path("/api/vms")
 @Produces(MediaType.APPLICATION_JSON)
@@ -78,13 +77,15 @@ public class VmResource {
     private final ImageService imageService;
     private final ActionService actionService;
     private final CommandService commandService;
+    private final VmSnapshotResource vmSnapshotResource;
     private final Config config;
     private final String sgidPrefix;
     private final int mailRelayQuota;
     private final long pingCheckAccountId;
 
     @Inject
-    public VmResource(GDUser user, VmService vmService,
+    public VmResource(
+            GDUser user, VmService vmService,
             Vps4UserService userService,
             VirtualMachineService virtualMachineService,
             CreditService creditService,
@@ -92,7 +93,9 @@ public class VmResource {
             ImageService imageService,
             ActionService actionService,
             CommandService commandService,
-            Config config) {
+            VmSnapshotResource vmSnapshotResource,
+            Config config
+    ) {
 
         this.user = user;
         this.virtualMachineService = virtualMachineService;
@@ -103,6 +106,7 @@ public class VmResource {
         this.imageService = imageService;
         this.actionService = actionService;
         this.commandService = commandService;
+        this.vmSnapshotResource = vmSnapshotResource;
         this.config = config;
         sgidPrefix = this.config.get("hfs.sgid.prefix", "vps4-undefined-");
         mailRelayQuota = Integer.parseInt(this.config.get("mailrelay.quota", "5000"));
@@ -115,10 +119,9 @@ public class VmResource {
         logger.info("getting vm with id {}", vmId);
         VirtualMachine virtualMachine = virtualMachineService.getVirtualMachine(vmId);
 
-        if (virtualMachine == null || virtualMachine.validUntil.isBefore(Instant.now()))
-            throw new NotFoundException("Unknown VM ID: " + vmId);
-
+        validateVmExists(vmId, virtualMachine);
         logger.info(String.format("VM valid until: %s | %s", virtualMachine.validUntil, Instant.now()));
+
         if (user.isShopper())
             getAndValidateUserAccountCredit(creditService, virtualMachine.orionGuid, user.getShopperId());
 
@@ -193,7 +196,7 @@ public class VmResource {
                 provisionRequest.orionGuid, user.getShopperId());
         validateCreditIsNotInUse(vmCredit);
 
-        if(imageService.getImages(vmCredit.operatingSystem, vmCredit.controlPanel, provisionRequest.image).size() == 0){
+        if (imageService.getImages(vmCredit.operatingSystem, vmCredit.controlPanel, provisionRequest.image).size() == 0) {
             // verify that the image matches the request (control panel, managed level, OS)
             String message = String.format("The image %s is not valid for this credit.", provisionRequest.image);
             throw new Vps4Exception("INVALID_IMAGE", message);
@@ -208,8 +211,7 @@ public class VmResource {
                     provisionRequest.image);
             virtualMachine = virtualMachineService.provisionVirtualMachine(params);
             creditService.claimVirtualMachineCredit(provisionRequest.orionGuid, provisionRequest.dataCenterId, virtualMachine.vmId);
-        }
-        catch (Exception e) {
+        } catch (Exception e) {
             throw new Vps4Exception("PROVISION_VM_FAILED", e.getMessage(), e);
         }
 
@@ -237,8 +239,8 @@ public class VmResource {
     }
 
     private Vps4ProvisionVm.Request createProvisionVmRequest(CreateVMWithFlavorRequest hfsRequest,
-                                                         long actionId,
-                                                         ProvisionVmInfo vmInfo) {
+                                                             long actionId,
+                                                             ProvisionVmInfo vmInfo) {
         Vps4ProvisionVm.Request request = new Vps4ProvisionVm.Request();
         request.actionId = actionId;
         request.hfsRequest = hfsRequest;
@@ -247,7 +249,7 @@ public class VmResource {
     }
 
     private CreateVMWithFlavorRequest createHfsProvisionVmRequest(String image, String username,
-            String password, Project project, VirtualMachineSpec spec) {
+                                                                  String password, Project project, VirtualMachineSpec spec) {
         CreateVMWithFlavorRequest hfsProvisionRequest = new CreateVMWithFlavorRequest();
         hfsProvisionRequest.rawFlavor = spec.specName;
         hfsProvisionRequest.sgid = project.getVhfsSgid();
@@ -273,6 +275,11 @@ public class VmResource {
 
         // The request has been created successfully.
         // Detach the user from the vm, and we'll handle the delete from here.
+        // delete all snapshots associated with the VM
+        List<Snapshot> snapshots = vmSnapshotResource.getSnapshotsForVM(vmId);
+        for(Snapshot snapshot: snapshots) {
+           vmSnapshotResource.destroySnapshot(vmId, snapshot.id);
+        }
         creditService.unclaimVirtualMachineCredit(vm.orionGuid);
         virtualMachineService.destroyVirtualMachine(vm.hfsVmId);
 
@@ -308,8 +315,7 @@ public class VmResource {
     public Vm getVmFromVmVertical(long vmId) {
         try {
             return vmService.getVm(vmId);
-        }
-        catch (Exception e) {
+        } catch (Exception e) {
             logger.warn("Cannot find VM ID {} in vm vertical", vmId);
             return null;
         }

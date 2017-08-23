@@ -4,6 +4,7 @@ import java.util.UUID;
 
 import javax.sql.DataSource;
 
+import com.godaddy.vps4.snapshot.SnapshotModule;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -44,6 +45,7 @@ public class SysAdminResourceTest {
             new DatabaseModule(),
             new SecurityModule(),
             new VmModule(),
+            new SnapshotModule(),
             new Phase2ExternalsModule(),
             new AbstractModule() {
 

@@ -1,9 +1,12 @@
 package com.godaddy.vps4.web.util;
 
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
+
+import javax.ws.rs.NotFoundException;
 
 import com.godaddy.vps4.credit.CreditService;
 import com.godaddy.vps4.credit.VirtualMachineCredit;
@@ -19,10 +22,10 @@ import com.godaddy.vps4.util.validators.ValidatorRegistry;
 import com.godaddy.vps4.vm.Action;
 import com.godaddy.vps4.vm.ActionService;
 import com.godaddy.vps4.vm.ActionType;
+import com.godaddy.vps4.vm.VirtualMachine;
 import com.godaddy.vps4.web.Vps4Exception;
 import com.godaddy.vps4.web.Vps4NoShopperException;
 import com.godaddy.vps4.web.security.GDUser;
-
 import gdg.hfs.vhfs.vm.Vm;
 
 public class RequestValidation {
@@ -30,6 +33,7 @@ public class RequestValidation {
         if (!vm.status.equals("ACTIVE"))
             throw new Vps4Exception("INVALID_STATUS", "This action must be run while the server is running");
     }
+
     public static void validateServerIsStopped(Vm vm) {
         if (!vm.status.equals("STOPPED"))
             throw new Vps4Exception("INVALID_STATUS", "This action must be run while the server is stopped");
@@ -71,8 +75,14 @@ public class RequestValidation {
 
     public static void validateSnapshotName(String name) {
         Validator validator = ValidatorRegistry.getInstance().get("snapshot-name");
-        if (!validator.isValid(name)){
+        if (!validator.isValid(name)) {
             throw new Vps4Exception("INVALID_SNAPSHOT_NAME", String.format("%s is an invalid snapshot name", name));
+        }
+    }
+
+    public static void validateVmExists(UUID vmId, VirtualMachine virtualMachine) {
+        if (virtualMachine == null || virtualMachine.validUntil.isBefore(Instant.now())) {
+            throw new NotFoundException("Unknown VM ID: " + vmId);
         }
     }
 
@@ -86,7 +96,7 @@ public class RequestValidation {
         }
 
         if (vmCredit.isAccountSuspended()) {
-           throw new Vps4Exception("ACCOUNT_SUSPENDED",
+            throw new Vps4Exception("ACCOUNT_SUSPENDED",
                     String.format("The virtual machine account for orion guid %s was SUSPENDED", orionGuid));
         }
 

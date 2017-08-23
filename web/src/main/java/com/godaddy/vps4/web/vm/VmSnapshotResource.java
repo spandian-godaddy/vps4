@@ -1,5 +1,8 @@
 package com.godaddy.vps4.web.vm;
 
+import static com.godaddy.vps4.web.util.RequestValidation.getAndValidateUserAccountCredit;
+import static com.godaddy.vps4.web.util.RequestValidation.validateVmExists;
+
 import java.util.List;
 import java.util.UUID;
 
@@ -13,17 +16,20 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
 
 import com.fasterxml.jackson.annotation.JsonView;
+import com.godaddy.vps4.credit.CreditService;
 import com.godaddy.vps4.security.Views;
 import com.godaddy.vps4.snapshot.Snapshot;
 import com.godaddy.vps4.snapshot.SnapshotService;
-import com.godaddy.vps4.web.PATCH;
 import com.godaddy.vps4.snapshot.SnapshotType;
+import com.godaddy.vps4.vm.VirtualMachine;
+import com.godaddy.vps4.vm.VirtualMachineService;
+import com.godaddy.vps4.web.PATCH;
 import com.godaddy.vps4.web.Vps4Api;
+import com.godaddy.vps4.web.security.GDUser;
 import com.godaddy.vps4.web.snapshot.SnapshotAction;
 import com.godaddy.vps4.web.snapshot.SnapshotResource;
 import com.godaddy.vps4.web.snapshot.SnapshotResource.SnapshotRenameRequest;
 import com.google.inject.Inject;
-
 import io.swagger.annotations.Api;
 
 @Vps4Api
@@ -34,24 +40,37 @@ import io.swagger.annotations.Api;
 @Consumes(MediaType.APPLICATION_JSON)
 
 public class VmSnapshotResource {
+    private final GDUser user;
+    private final CreditService creditService;
     private final SnapshotService snapshotService;
     private final SnapshotResource snapshotResource;
-    private final VmResource vmResource;
+    private final VirtualMachineService virtualMachineService;
 
     @Inject
-    public VmSnapshotResource(SnapshotResource snapshotResource,
+    public VmSnapshotResource(GDUser user,
+                              CreditService creditService,
+                              SnapshotResource snapshotResource,
                               SnapshotService snapshotService,
-                              VmResource vmResource) {
+                              VirtualMachineService virtualMachineService
+                              ) {
+        this.user = user;
+        this.creditService = creditService;
         this.snapshotResource = snapshotResource;
         this.snapshotService = snapshotService;
-        this.vmResource = vmResource;
+        this.virtualMachineService = virtualMachineService;
     }
 
     @GET
     @Path("/{vmId}/snapshots")
     @JsonView(Views.Public.class)
     public List<Snapshot> getSnapshotsForVM(@PathParam("vmId") UUID vmId) {
-        vmResource.getVm(vmId); // for vm auth
+        // check to ensure snapshot belongs to vm and vm exists
+        VirtualMachine virtualMachine = virtualMachineService.getVirtualMachine(vmId);
+        validateVmExists(vmId, virtualMachine);
+        if (user.isShopper()) {
+            getAndValidateUserAccountCredit(creditService, virtualMachine.orionGuid, user.getShopperId());
+        }
+
         return snapshotService.getSnapshotsForVm(vmId);
     }
 
