@@ -1,10 +1,15 @@
 package com.godaddy.vps4.orchestration.vm;
 
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.util.Arrays;
 import java.util.UUID;
 
 import javax.inject.Inject;
 
+import com.godaddy.hfs.config.Config;
+import com.godaddy.vps4.messaging.Vps4MessagingService;
+import com.godaddy.vps4.security.Vps4User;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -71,6 +76,8 @@ public class Vps4ProvisionVm extends ActionCommand<Vps4ProvisionVm.Request, Vps4
 
     final NodePingService monitoringService;
 
+    final Vps4MessagingService messagingService;
+
     Request request;
 
     ActionState state;
@@ -80,13 +87,18 @@ public class Vps4ProvisionVm extends ActionCommand<Vps4ProvisionVm.Request, Vps4
     CommandContext context;
 
     @Inject
-    public Vps4ProvisionVm(ActionService actionService,
-                    VmService vmService,
-                    VirtualMachineService virtualMachineService,
-                    VmUserService vmUserService,
+    Config vps4Config;
+
+    @Inject
+    public Vps4ProvisionVm(
+            ActionService actionService,
+            VmService vmService,
+            VirtualMachineService virtualMachineService,
+            VmUserService vmUserService,
             NetworkService networkService,
             MailRelayService mailRelayService,
-            NodePingService monitoringService) {
+            NodePingService monitoringService,
+            Vps4MessagingService messagingService) {
         super(actionService);
         this.vmService = vmService;
         this.virtualMachineService = virtualMachineService;
@@ -94,6 +106,7 @@ public class Vps4ProvisionVm extends ActionCommand<Vps4ProvisionVm.Request, Vps4
         this.networkService = networkService;
         this.mailRelayService = mailRelayService;
         this.monitoringService = monitoringService;
+        this.messagingService = messagingService;
     }
 
     @Override
@@ -126,6 +139,8 @@ public class Vps4ProvisionVm extends ActionCommand<Vps4ProvisionVm.Request, Vps4
         configureMailRelay(hfsVm);
 
         configureNodePing(ip);
+
+        sendSetupEmail(request, ip.address);
 
         setStep(CreateVmStep.SetupComplete);
         logger.info("provision vm finished: {}", hfsVm);
@@ -306,6 +321,21 @@ public class Vps4ProvisionVm extends ActionCommand<Vps4ProvisionVm.Request, Vps4
         }
     }
 
+    private void sendSetupEmail(Request request, String ipAddress) {
+        String shopperId = new String();
+
+        try {
+            shopperId = request.vps4User.getShopperId();
+            String diskSpace = Integer.toString(request.vmInfo.diskGib);
+            String messageId = messagingService.sendSetupEmail(shopperId, hostname, ipAddress, diskSpace);
+            logger.info(String.format("Setup email sent for shopper %s. Message id: %s", shopperId, messageId));
+        }
+        catch (Exception ex) {
+            logger.error(String.format("Failed sending setup email for shopper %s: %s",
+                    shopperId, ex.getMessage()), ex);
+        }
+    }
+
     protected void setStep(CreateVmStep step) {
         state.step = step;
         try {
@@ -318,6 +348,7 @@ public class Vps4ProvisionVm extends ActionCommand<Vps4ProvisionVm.Request, Vps4
     public static class Request implements ActionRequest {
         public CreateVMWithFlavorRequest hfsRequest;
         public ProvisionVmInfo vmInfo;
+        public Vps4User vps4User;
         public long actionId;
 
         @Override

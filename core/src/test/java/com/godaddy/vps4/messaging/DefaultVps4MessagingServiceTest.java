@@ -1,5 +1,6 @@
 package com.godaddy.vps4.messaging;
 
+import com.godaddy.hfs.config.Config;
 import com.godaddy.vps4.messaging.models.Message;
 import com.godaddy.vps4.messaging.models.MessagingMessageId;
 import com.godaddy.vps4.messaging.models.ShopperMessage;
@@ -9,10 +10,13 @@ import org.apache.http.client.methods.HttpPost;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
+import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.internal.matchers.apachecommons.ReflectionEquals;
 
+import java.io.IOException;
 import java.lang.reflect.Method;
+import java.util.EnumMap;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
@@ -20,11 +24,11 @@ import java.util.UUID;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-public class MessagingClientTest {
+public class DefaultVps4MessagingServiceTest {
 
     private SecureHttpClient secureHttpClient;
     private Message mockResultMessage;
-    private MessagingClient messagingClient;
+    private DefaultVps4MessagingService messagingService;
     private MessagingMessageId mockMessageId;
     private String shopperId;
     private String accountName;
@@ -44,23 +48,23 @@ public class MessagingClientTest {
         mockMessageId.messageId = UUID.randomUUID().toString();
 
         baseUrl = UUID.randomUUID().toString();
-        messagingClient = new MessagingClient(baseUrl, secureHttpClient);
+        messagingService = new DefaultVps4MessagingService(baseUrl, secureHttpClient);
     }
 
     @Test
-    public void testGetMessageById() {
+    public void testGetMessageById() throws IOException {
         String messageId = UUID.randomUUID().toString();
 
         when(secureHttpClient.executeHttp(Mockito.any(HttpGet.class), Mockito.any())).thenReturn(mockResultMessage);
-        Message actualMessage = messagingClient.getMessageById(messageId);
+        Message actualMessage = messagingService.getMessageById(messageId);
         Assert.assertNotNull(actualMessage);
         Assert.assertThat(mockResultMessage, new ReflectionEquals(actualMessage));
     }
 
     @Test
-    public void testSendSetupEmail() {
+    public void testSendSetupEmail() throws IOException {
         when(secureHttpClient.executeHttp(Mockito.any(HttpPost.class), Mockito.any())).thenReturn(mockMessageId);
-        String actualMessageId = messagingClient.sendSetupEmail(shopperId, accountName, ipAddress, diskSpace);
+        String actualMessageId = messagingService.sendSetupEmail(shopperId, accountName, ipAddress, diskSpace);
         Assert.assertNotNull(actualMessageId);
         Assert.assertEquals(mockMessageId.messageId, actualMessageId);
     }
@@ -72,9 +76,9 @@ public class MessagingClientTest {
             String expectedResult = String.format("%s%s", baseUrl, uriPath);
 
             Class[] args = new Class[] {String.class};
-            Method buidApiUri = messagingClient.getClass().getDeclaredMethod("buildApiUri", args);
+            Method buidApiUri = messagingService.getClass().getDeclaredMethod("buildApiUri", args);
             buidApiUri.setAccessible(true);
-            String apiUriResult = (String)buidApiUri.invoke(messagingClient, uriPath);
+            String apiUriResult = (String)buidApiUri.invoke(messagingService, uriPath);
             Assert.assertEquals(expectedResult, apiUriResult);
         }
         catch (Exception ex) {
@@ -90,19 +94,20 @@ public class MessagingClientTest {
             String ipAddress = UUID.randomUUID().toString();
             String diskSpace = UUID.randomUUID().toString();
             ShopperMessage shopperMessage = new ShopperMessage();
-            shopperMessage.templateNamespaceKey = MessagingClient.TEMPLATE_NAMESPACE_KEY;
-            shopperMessage.templateTypeKey = MessagingClient.EmailTemplates.VirtualPrivateHostingProvisioned4.toString();
+            shopperMessage.templateNamespaceKey = DefaultVps4MessagingService.TEMPLATE_NAMESPACE_KEY;
+            shopperMessage.templateTypeKey = DefaultVps4MessagingService.EmailTemplates.VirtualPrivateHostingProvisioned4.toString();
 
-            Map<String, String> substitutionValues = new HashMap<>();
-            substitutionValues.put(MessagingClient.SetupEmailSubstitutionValues.ACCOUNTNAME.name(), accountName);
-            substitutionValues.put(MessagingClient.SetupEmailSubstitutionValues.IPADDRESS.name(), ipAddress);
-            substitutionValues.put(MessagingClient.SetupEmailSubstitutionValues.DISKSPACE.name(), diskSpace);
+            EnumMap<DefaultVps4MessagingService.EmailSubstitutions, String> substitutionValues =
+                    new EnumMap<>(DefaultVps4MessagingService.EmailSubstitutions.class);
+            substitutionValues.put(DefaultVps4MessagingService.EmailSubstitutions.ACCOUNTNAME, accountName);
+            substitutionValues.put(DefaultVps4MessagingService.EmailSubstitutions.IPADDRESS, ipAddress);
+            substitutionValues.put(DefaultVps4MessagingService.EmailSubstitutions.DISKSPACE, diskSpace);
             shopperMessage.substitutionValues = substitutionValues;
 
             Class[] args = new Class[] {String.class, String.class, String.class};
-            Method buildShopperMessageJson = messagingClient.getClass().getDeclaredMethod("buildShopperMessageJson", args);
+            Method buildShopperMessageJson = messagingService.getClass().getDeclaredMethod("buildShopperMessageJson", args);
             buildShopperMessageJson.setAccessible(true);
-            String shopperMessageJsonResult = (String)buildShopperMessageJson.invoke(messagingClient,
+            String shopperMessageJsonResult = (String)buildShopperMessageJson.invoke(messagingService,
                     accountName, ipAddress, diskSpace);
             Assert.assertEquals(SecureHttpClient.createJSONFromObject(shopperMessage), shopperMessageJsonResult);
         }

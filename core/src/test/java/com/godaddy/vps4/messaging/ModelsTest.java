@@ -5,6 +5,7 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
+import java.util.EnumMap;
 import java.util.UUID;
 import java.util.ArrayList;
 import java.util.Map;
@@ -26,6 +27,11 @@ public class ModelsTest {
     private String diskSpace;
     private String transformData1;
     private String transformData2;
+
+    private enum UnitTestEnum {
+        TEST1,
+        TEST2
+    }
 
     @Before
     public void setUp() throws Exception {
@@ -66,16 +72,18 @@ public class ModelsTest {
         ipAddress = UUID.randomUUID().toString();
         diskSpace = UUID.randomUUID().toString();
 
-        Map<String, String> substitutionValues = new HashMap<>();
-        substitutionValues.put(MessagingClient.SetupEmailSubstitutionValues.ACCOUNTNAME.name(), accountName);
-        substitutionValues.put(MessagingClient.SetupEmailSubstitutionValues.IPADDRESS.name(), ipAddress);
-        substitutionValues.put(MessagingClient.SetupEmailSubstitutionValues.DISKSPACE.name(), diskSpace);
+        EnumMap<DefaultVps4MessagingService.EmailSubstitutions, String> substitutionValues =
+                new EnumMap<>(DefaultVps4MessagingService.EmailSubstitutions.class);
+        substitutionValues.put(DefaultVps4MessagingService.EmailSubstitutions.ACCOUNTNAME, accountName);
+        substitutionValues.put(DefaultVps4MessagingService.EmailSubstitutions.IPADDRESS, ipAddress);
+        substitutionValues.put(DefaultVps4MessagingService.EmailSubstitutions.DISKSPACE, diskSpace);
         shopperMessage.substitutionValues = substitutionValues;
+
         transformData1 = UUID.randomUUID().toString();
         transformData2 = UUID.randomUUID().toString();
-        Map<String, String> transformationData = new HashMap<>();
-        transformationData.put("transformData1", transformData1);
-        transformationData.put("transformData2", transformData2);
+        EnumMap<UnitTestEnum, String> transformationData = new EnumMap<>(UnitTestEnum.class);
+        transformationData.put(UnitTestEnum.TEST1, transformData1);
+        transformationData.put(UnitTestEnum.TEST2, transformData2);
         shopperMessage.transformationData = transformationData;
 
         email = new MessagingEmail();

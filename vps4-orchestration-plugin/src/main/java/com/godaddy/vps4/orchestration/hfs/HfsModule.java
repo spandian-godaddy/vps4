@@ -7,6 +7,8 @@ import com.fasterxml.jackson.datatype.jsr310.JSR310Module;
 import com.fasterxml.jackson.jaxrs.json.JacksonJaxbJsonProvider;
 import com.fasterxml.jackson.jaxrs.json.JacksonJsonProvider;
 import com.godaddy.vps4.hfs.HfsClientProvider;
+import com.godaddy.vps4.messaging.MessagingProvider;
+import com.godaddy.vps4.messaging.Vps4MessagingService;
 import com.google.inject.AbstractModule;
 import gdg.hfs.vhfs.cpanel.CPanelService;
 import gdg.hfs.vhfs.ecomm.ECommService;
@@ -33,6 +35,7 @@ public class HfsModule extends AbstractModule {
         bind(ECommService.class).toProvider(new HfsClientProvider<ECommService>(ECommService.class)).in(Singleton.class);
         bind(NodePingService.class).toProvider(new HfsClientProvider<NodePingService>(NodePingService.class)).in(Singleton.class);
         bind(SnapshotService.class).toProvider(new HfsClientProvider<>(SnapshotService.class)).in(Singleton.class);
+        bind(Vps4MessagingService.class).toProvider(MessagingProvider.class).in(Singleton.class);
 
         // hook Jackson into Jersey as the POJO <-> JSON mapper
         ObjectMapper mapper = new ObjectMapper();

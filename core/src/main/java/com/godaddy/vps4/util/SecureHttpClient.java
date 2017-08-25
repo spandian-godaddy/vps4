@@ -1,6 +1,5 @@
 package com.godaddy.vps4.util;
 import com.godaddy.hfs.config.Config;
-import com.godaddy.vps4.cpanel.CpanelClient;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -38,7 +37,7 @@ import java.util.Map;
 
 public class SecureHttpClient {
 
-    private static final Logger logger = LoggerFactory.getLogger(CpanelClient.class);
+    private static final Logger logger = LoggerFactory.getLogger(SecureHttpClient.class);
 
     protected final CloseableHttpClient client;
 
@@ -54,15 +53,10 @@ public class SecureHttpClient {
         client = createHttpClient(config, clientCertKeyPath, clientCertPath);
     }
 
-    public <T> T executeHttp(HttpUriRequest request, Class<T> deserializeInto) {
-        try {
-            logger.debug(String.format("Calling api: %s", request.getURI()));
-            HttpResponse response = client.execute(request);
-            return deserializeResponse(response.getEntity().getContent(), deserializeInto);
-        }
-        catch (IOException e) {
-            throw new RuntimeException(e);
-        }
+    public <T> T executeHttp(HttpUriRequest request, Class<T> deserializeInto) throws IOException {
+        logger.debug(String.format("Calling api: %s", request.getURI()));
+        HttpResponse response = client.execute(request);
+        return deserializeResponse(response.getEntity().getContent(), deserializeInto);
     }
 
     protected <T> T deserializeResponse(InputStream inputStream, Class<T> deserializeInto) throws IOException {

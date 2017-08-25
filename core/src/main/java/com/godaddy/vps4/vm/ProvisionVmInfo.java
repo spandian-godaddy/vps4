@@ -11,17 +11,20 @@ public class ProvisionVmInfo {
     public Image image;
     public int mailRelayQuota;
     public long pingCheckAccountId;
+    public int diskGib;
 
     public ProvisionVmInfo() {        
     }
     
-    public ProvisionVmInfo(UUID vmId, int managedLevel, Image image, String sgid, int mailRelayQuota, long pingCheckAccountId) {
+    public ProvisionVmInfo(UUID vmId, int managedLevel, Image image, String sgid, int mailRelayQuota,
+                           long pingCheckAccountId, int diskGib) {
         this.vmId = vmId;
         this.sgid = sgid;
         this.managedLevel = managedLevel;
         this.image = image;
         this.mailRelayQuota = mailRelayQuota;
         this.pingCheckAccountId = pingCheckAccountId;
+        this.diskGib = diskGib;
     }
 
     public String toString() {

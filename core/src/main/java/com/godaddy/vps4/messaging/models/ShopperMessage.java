@@ -1,5 +1,6 @@
 package com.godaddy.vps4.messaging.models;
 
+import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
 
@@ -12,8 +13,8 @@ public class ShopperMessage {
     public String templateTypeKey;
     public ShopperOverride shopperOverride;
     public List<EmailRecipient> additionalRecipients = null;
-    public Map<String, String> substitutionValues;
-    public Map<String, String> transformationData;
+    public EnumMap<?, String> substitutionValues;
+    public EnumMap<?, String> transformationData;
     public Boolean sendToShopper;
     public ShopperNote shopperNote;
 

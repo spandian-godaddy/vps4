@@ -9,6 +9,10 @@ import java.util.Random;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
+import com.godaddy.hfs.config.Config;
+import com.godaddy.vps4.messaging.DefaultVps4MessagingService;
+import com.godaddy.vps4.messaging.Vps4MessagingService;
+import com.godaddy.vps4.messaging.models.Message;
 import com.google.inject.Provides;
 import gdg.hfs.request.CompleteResponse;
 import gdg.hfs.vhfs.cpanel.CPanelAction;
@@ -32,6 +36,7 @@ import gdg.hfs.vhfs.vm.VmAction;
 import gdg.hfs.vhfs.vm.VmAddress;
 import gdg.hfs.vhfs.vm.VmList;
 import gdg.hfs.vhfs.vm.VmService;
+import org.joda.time.DateTime;
 import org.mockito.Mockito;
 
 import com.google.inject.AbstractModule;
@@ -73,6 +78,7 @@ public class HfsMockModule extends AbstractModule {
     private static final Map<Long, List<AddressAction>> addressActionList;
     private static final Map<Long, AddressActionEntry> addressActions;
     private static final Map<Long, CPanelAction> cPanelActions;
+    private static final Map<String, Message> gdMessagingServiceMessages;
 
     static {
         customerSnapshots = new HashMap<>();
@@ -92,6 +98,7 @@ public class HfsMockModule extends AbstractModule {
         addressActionList = new HashMap<>();
         addressActions = new HashMap<>();
         cPanelActions = new HashMap<>();
+        gdMessagingServiceMessages = new HashMap<>();
     }
 
     @Override
@@ -314,6 +321,45 @@ public class HfsMockModule extends AbstractModule {
                 // NOTE: do nothing, Implement when needed
                 throw new UnsupportedOperationException("Not implemented, yet");
 
+            }
+        };
+    }
+
+    @Provides
+    public Vps4MessagingService provideMessagingService(Config vps4Config) {
+        return new Vps4MessagingService() {
+            @Override
+            public Message getMessageById(String messageId) {
+                if (!gdMessagingServiceMessages.containsKey(messageId)) {
+                    throw new NotFoundException(String.format("Messaging id not found: %s", messageId));
+                }
+
+                return gdMessagingServiceMessages.get(messageId);
+            }
+
+            private Message createMessage(String shopperId, String messageId) {
+                Message message = new Message();
+                message.messageId = messageId;
+                message.shopperId = shopperId;
+                message.templateTypeKey = DefaultVps4MessagingService.EmailTemplates.VirtualPrivateHostingProvisioned4.toString();
+                message.templateNamespaceKey = DefaultVps4MessagingService.TEMPLATE_NAMESPACE_KEY;
+                message.privateLabelId = 1;
+                message.createdAt = DateTime.now().toString();
+
+                return message;
+            }
+
+            private void storeMessage(Message message) {
+                gdMessagingServiceMessages.put(message.messageId, message);
+            }
+
+            @Override
+            public String sendSetupEmail(String shopperId, String accountName, String ipAddress, String diskSpace) {
+                String messageId = UUID.randomUUID().toString();
+                Message setupMessage = createMessage(shopperId, messageId);
+                storeMessage(setupMessage);
+
+                return messageId;
             }
         };
     }

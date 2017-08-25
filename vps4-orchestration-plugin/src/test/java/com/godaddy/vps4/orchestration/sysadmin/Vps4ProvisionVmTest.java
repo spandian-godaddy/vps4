@@ -2,6 +2,7 @@ package com.godaddy.vps4.orchestration.sysadmin;
 
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyLong;
+import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -9,8 +10,13 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import java.io.IOException;
+import java.util.Random;
 import java.util.UUID;
 
+import com.godaddy.vps4.messaging.Vps4MessagingService;
+import com.godaddy.vps4.security.Vps4User;
+import com.godaddy.vps4.vm.HostnameGenerator;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -64,9 +70,11 @@ public class Vps4ProvisionVmTest {
     ToggleAdmin toggleAdmin = mock(ToggleAdmin.class);
     ConfigureMailRelay configureMailRelay = mock(ConfigureMailRelay.class);
     NodePingService nodePingService = mock(NodePingService.class);
+    Vps4MessagingService messagingService = mock(Vps4MessagingService.class);
 
     Vps4ProvisionVm command = new Vps4ProvisionVm(actionService, vmService,
-            virtualMachineService, vmUserService, networkService, mailRelayService, nodePingService);
+            virtualMachineService, vmUserService, networkService, mailRelayService, nodePingService,
+            messagingService);
 
     Injector injector = Guice.createInjector(binder -> {
         binder.bind(ActionService.class).toInstance(actionService);
@@ -83,6 +91,7 @@ public class Vps4ProvisionVmTest {
         binder.bind(ConfigureMailRelay.class).toInstance(configureMailRelay);
         binder.bind(PleskService.class).toInstance(mock(PleskService.class));
         binder.bind(ConfigurePlesk.class).toInstance(mock(ConfigurePlesk.class));
+        binder.bind(Vps4MessagingService.class).toInstance(messagingService);
     });
 
     CommandContext context = new TestCommandContext(new GuiceCommandProvider(injector));
@@ -90,14 +99,17 @@ public class Vps4ProvisionVmTest {
     VirtualMachine vm;
     Vps4ProvisionVm.Request request;
     IpAddress primaryIp;
+    String expectedHostname;
     MailRelayUpdate mrUpdate;
     String username = "tester";
     UUID vmId = UUID.randomUUID();
     Image image;
     ProvisionVmInfo vmInfo;
+    String shopperId;
+    int diskGib;
 
     @Before
-    public void setupTest(){
+    public void setupTest() throws Exception {
         long hfsVmId = 42;
         this.image = new Image();
         image.operatingSystem = Image.OperatingSystem.WINDOWS;
@@ -122,20 +134,30 @@ public class Vps4ProvisionVmTest {
         this.vmInfo.mailRelayQuota = 5000;
         this.vmInfo.pingCheckAccountId = 0;
         this.vmInfo.sgid = "";
+        diskGib = new Random().nextInt(100);
+        this.vmInfo.diskGib = diskGib;
 
         request = new Vps4ProvisionVm.Request();
         request.actionId = 12;
         request.hfsRequest = hfsProvisionRequest;
         request.vmInfo = vmInfo;
+        Vps4User mockVps4User = mock(Vps4User.class);
+        shopperId = UUID.randomUUID().toString();
+        when(mockVps4User.getShopperId()).thenReturn(shopperId);
+        request.vps4User = mockVps4User;
 
-        IpAddress ip = new IpAddress();
-        ip.address = "1.2.3.4";
+        String messagedId = UUID.randomUUID().toString();
+        when(messagingService.sendSetupEmail(anyString(), anyString(), anyString(), anyString()))
+                .thenReturn(messagedId);
 
-        when(allocateIp.execute(any(CommandContext.class), any(AllocateIp.Request.class))).thenReturn(ip);
+        primaryIp = new IpAddress();
+        primaryIp.address = "1.2.3.4";
+        when(allocateIp.execute(any(CommandContext.class), any(AllocateIp.Request.class))).thenReturn(primaryIp);
+        expectedHostname = HostnameGenerator.getHostname(primaryIp.address);
 
         MailRelay relay = new MailRelay();
         relay.quota = vmInfo.mailRelayQuota;
-        when(mailRelayService.setRelayQuota(eq(ip.address), any(MailRelayUpdate.class))).thenReturn(relay);
+        when(mailRelayService.setRelayQuota(eq(primaryIp.address), any(MailRelayUpdate.class))).thenReturn(relay);
 
         VmAction vmAction = new VmAction();
         vmAction.vmId = hfsVmId;
@@ -177,4 +199,20 @@ public class Vps4ProvisionVmTest {
         verify(nodePingService, times(1)).createCheck(eq(1L), any(CreateCheckRequest.class));
     }
 
+    @Test
+    public void testSendSetupEmail() throws IOException {
+        command.execute(context, this.request);
+        verify(messagingService, times(1)).sendSetupEmail(shopperId, expectedHostname,
+                primaryIp.address, Integer.toString(diskGib));
+    }
+
+    @Test
+    public void testSendSetupEmailDoesNotThrowException() throws IOException {
+        when(messagingService.sendSetupEmail(anyString(), anyString(), anyString(), anyString()))
+                .thenThrow(new RuntimeException("Unit test exception"));
+
+        command.execute(context, this.request);
+        verify(messagingService, times(1)).sendSetupEmail(anyString(), anyString(),
+                anyString(), anyString());
+    }
 }

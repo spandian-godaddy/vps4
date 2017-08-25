@@ -5,6 +5,7 @@ import java.util.List;
 
 import javax.inject.Singleton;
 
+import com.godaddy.vps4.messaging.MessagingModule;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -87,6 +88,7 @@ public class Vps4Injector {
         modules.add(new MailRelayModule());
         modules.add(new CpanelModule());
         modules.add(new PleskModule());
+        modules.add(new MessagingModule());
         modules.add(new CommandClientModule());
         modules.add(binder -> {binder.bind(ObjectMapper.class).toProvider(ObjectMapperProvider.class);});
         modules.add(new ServletModule() {

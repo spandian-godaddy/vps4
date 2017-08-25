@@ -4,7 +4,7 @@ import com.godaddy.hfs.config.Config;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.godaddy.vps4.config.Configs;
-import com.godaddy.vps4.messaging.MessagingClient;
+import com.godaddy.vps4.messaging.DefaultVps4MessagingService;
 import com.godaddy.vps4.messaging.models.Message;
 import org.apache.http.Header;
 import org.apache.http.client.methods.HttpGet;
@@ -25,8 +25,8 @@ public class SecureHttpClientTest {
         Config config = Configs.getInstance();
         CloseableHttpClient client = SecureHttpClient.createHttpClient(
                 config,
-                MessagingClient.CLIENT_CERTIFICATE_KEY_PATH,
-                MessagingClient.CLIENT_CERTIFICATE_PATH);
+                DefaultVps4MessagingService.CLIENT_CERTIFICATE_KEY_PATH,
+                DefaultVps4MessagingService.CLIENT_CERTIFICATE_PATH);
         Assert.assertNotNull(client);
     }
 

@@ -1,6 +1,6 @@
 package com.godaddy.vps4.util;
 
-import com.godaddy.vps4.messaging.MessagingClient;
+import com.godaddy.vps4.messaging.DefaultVps4MessagingService;
 import com.godaddy.vps4.util.KeyManagerBuilder.CertificateKeyManager;
 import com.godaddy.hfs.config.Config;
 import com.godaddy.vps4.config.Configs;
@@ -40,8 +40,8 @@ public class KeyManagerBuilderTest {
 
         KeyManager keyManager = KeyManagerBuilder.newKeyManager(
                 config,
-                MessagingClient.CLIENT_CERTIFICATE_KEY_PATH,
-                MessagingClient.CLIENT_CERTIFICATE_PATH);
+                DefaultVps4MessagingService.CLIENT_CERTIFICATE_KEY_PATH,
+                DefaultVps4MessagingService.CLIENT_CERTIFICATE_PATH);
         Assert.assertNotNull(keyManager);
         Assert.assertEquals(CertificateKeyManager.class, keyManager.getClass());
     }
@@ -52,8 +52,8 @@ public class KeyManagerBuilderTest {
 
         CertificateKeyManager keyManager = (CertificateKeyManager)KeyManagerBuilder.newKeyManager(
                 config,
-                MessagingClient.CLIENT_CERTIFICATE_KEY_PATH,
-                MessagingClient.CLIENT_CERTIFICATE_PATH);
+                DefaultVps4MessagingService.CLIENT_CERTIFICATE_KEY_PATH,
+                DefaultVps4MessagingService.CLIENT_CERTIFICATE_PATH);
         Assert.assertEquals("vertical-client", keyManager.chooseClientAlias(null, null, null));
     }
 
@@ -63,8 +63,8 @@ public class KeyManagerBuilderTest {
 
         CertificateKeyManager keyManager = (CertificateKeyManager)KeyManagerBuilder.newKeyManager(
                 config,
-                MessagingClient.CLIENT_CERTIFICATE_KEY_PATH,
-                MessagingClient.CLIENT_CERTIFICATE_PATH);
+                DefaultVps4MessagingService.CLIENT_CERTIFICATE_KEY_PATH,
+                DefaultVps4MessagingService.CLIENT_CERTIFICATE_PATH);
         Assert.assertNull(keyManager.chooseServerAlias(null, null, null));
     }
 
@@ -74,8 +74,8 @@ public class KeyManagerBuilderTest {
 
         CertificateKeyManager keyManager = (CertificateKeyManager)KeyManagerBuilder.newKeyManager(
                 config,
-                MessagingClient.CLIENT_CERTIFICATE_KEY_PATH,
-                MessagingClient.CLIENT_CERTIFICATE_PATH);
+                DefaultVps4MessagingService.CLIENT_CERTIFICATE_KEY_PATH,
+                DefaultVps4MessagingService.CLIENT_CERTIFICATE_PATH);
         Assert.assertNull(keyManager.getClientAliases(null, null));
     }
 
@@ -85,8 +85,8 @@ public class KeyManagerBuilderTest {
 
         CertificateKeyManager keyManager = (CertificateKeyManager)KeyManagerBuilder.newKeyManager(
                 config,
-                MessagingClient.CLIENT_CERTIFICATE_KEY_PATH,
-                MessagingClient.CLIENT_CERTIFICATE_PATH);
+                DefaultVps4MessagingService.CLIENT_CERTIFICATE_KEY_PATH,
+                DefaultVps4MessagingService.CLIENT_CERTIFICATE_PATH);
         Assert.assertNull(keyManager.getServerAliases(null, null));
     }
 }
