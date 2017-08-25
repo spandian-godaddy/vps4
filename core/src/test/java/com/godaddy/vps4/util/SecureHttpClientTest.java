@@ -31,6 +31,16 @@ public class SecureHttpClientTest {
     }
 
     @Test
+    public void testConstructor() {
+        Config config = Configs.getInstance();
+        SecureHttpClient client = new SecureHttpClient(
+                config,
+                DefaultVps4MessagingService.CLIENT_CERTIFICATE_KEY_PATH,
+                DefaultVps4MessagingService.CLIENT_CERTIFICATE_PATH);
+        Assert.assertNotNull(client);
+    }
+
+    @Test
     public void testCreateJSONFromObject() {
         Message message = new Message();
         message.messageId = UUID.randomUUID().toString();
