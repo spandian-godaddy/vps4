@@ -322,16 +322,14 @@ public class Vps4ProvisionVm extends ActionCommand<Vps4ProvisionVm.Request, Vps4
     }
 
     private void sendSetupEmail(Request request, String ipAddress) {
-        String shopperId = new String();
-
         try {
             String diskSpace = Integer.toString(request.vmInfo.diskGib);
             String messageId = messagingService.sendSetupEmail(request.shopperId, hostname, ipAddress, diskSpace);
-            logger.info(String.format("Setup email sent for shopper %s. Message id: %s", shopperId, messageId));
+            logger.info(String.format("Setup email sent for shopper %s. Message id: %s", request.shopperId, messageId));
         }
         catch (Exception ex) {
             logger.error(String.format("Failed sending setup email for shopper %s: %s",
-                    shopperId, ex.getMessage()), ex);
+                    request.shopperId, ex.getMessage()), ex);
         }
     }
 
