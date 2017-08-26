@@ -36,10 +36,8 @@ public class SecureHttpClientTest {
 
     private Config setupConfig() {
         Config config = mock(Config.class);
-        byte[] expectedKey = new byte[] { (byte) 129, (byte) 130, (byte) 131};
-        byte[] expectedCert = new byte[] { (byte) 123, (byte) 131, (byte) 141};
-        when(config.getData(anyString())).thenReturn(expectedKey);
-        when(config.getData(anyString())).thenReturn(expectedCert);
+        byte[] fakeByteArray = new byte[] { (byte) 129, (byte) 130, (byte) 131};
+        when(config.getData(anyString())).thenReturn(fakeByteArray);
 
         return config;
     }
