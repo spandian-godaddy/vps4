@@ -3,7 +3,6 @@ import com.godaddy.hfs.config.Config;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.godaddy.vps4.config.Configs;
 import com.godaddy.vps4.messaging.DefaultVps4MessagingService;
 import com.godaddy.vps4.messaging.models.Message;
 import org.apache.http.Header;
