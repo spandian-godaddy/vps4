@@ -41,12 +41,9 @@ public class SecureHttpClient {
 
     protected final CloseableHttpClient client;
 
-    @Inject
-    Config config;
-
     private static final ObjectMapper payloadMapper = new ObjectMapper();
 
-    public SecureHttpClient(String clientCertKeyPath, String clientCertPath) {
+    public SecureHttpClient(Config config, String clientCertKeyPath, String clientCertPath) {
         payloadMapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
         payloadMapper.configure(DeserializationFeature.ACCEPT_EMPTY_ARRAY_AS_NULL_OBJECT, true);
 

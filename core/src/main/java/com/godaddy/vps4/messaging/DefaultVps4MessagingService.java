@@ -45,7 +45,9 @@ public class DefaultVps4MessagingService implements Vps4MessagingService {
 
     @Inject
     public DefaultVps4MessagingService (Config config) {
-        this(config.get("messaging.api.url"), new SecureHttpClient(CLIENT_CERTIFICATE_KEY_PATH,
+        this(config.get("messaging.api.url"), new SecureHttpClient(
+                config,
+                CLIENT_CERTIFICATE_KEY_PATH,
                 CLIENT_CERTIFICATE_PATH));
     }
 
