@@ -141,10 +141,8 @@ public class Vps4ProvisionVmTest {
         request.actionId = 12;
         request.hfsRequest = hfsProvisionRequest;
         request.vmInfo = vmInfo;
-        Vps4User mockVps4User = mock(Vps4User.class);
         shopperId = UUID.randomUUID().toString();
-        when(mockVps4User.getShopperId()).thenReturn(shopperId);
-        request.vps4User = mockVps4User;
+        request.shopperId = shopperId;
 
         String messagedId = UUID.randomUUID().toString();
         when(messagingService.sendSetupEmail(anyString(), anyString(), anyString(), anyString()))

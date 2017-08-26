@@ -325,9 +325,8 @@ public class Vps4ProvisionVm extends ActionCommand<Vps4ProvisionVm.Request, Vps4
         String shopperId = new String();
 
         try {
-            shopperId = request.vps4User.getShopperId();
             String diskSpace = Integer.toString(request.vmInfo.diskGib);
-            String messageId = messagingService.sendSetupEmail(shopperId, hostname, ipAddress, diskSpace);
+            String messageId = messagingService.sendSetupEmail(request.shopperId, hostname, ipAddress, diskSpace);
             logger.info(String.format("Setup email sent for shopper %s. Message id: %s", shopperId, messageId));
         }
         catch (Exception ex) {
@@ -348,7 +347,7 @@ public class Vps4ProvisionVm extends ActionCommand<Vps4ProvisionVm.Request, Vps4
     public static class Request implements ActionRequest {
         public CreateVMWithFlavorRequest hfsRequest;
         public ProvisionVmInfo vmInfo;
-        public Vps4User vps4User;
+        public String shopperId;
         public long actionId;
 
         @Override
