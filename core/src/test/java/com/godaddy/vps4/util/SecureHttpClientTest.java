@@ -18,11 +18,15 @@ import java.util.Arrays;
 import java.util.Map;
 import java.util.HashMap;
 
+import static org.mockito.Matchers.anyString;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+
 public class SecureHttpClientTest {
 
     @Test
     public void testCreateHttpClient() {
-        Config config = Configs.getInstance();
+        Config config = setupConfig();
         CloseableHttpClient client = SecureHttpClient.createHttpClient(
                 config,
                 DefaultVps4MessagingService.CLIENT_CERTIFICATE_KEY_PATH,
@@ -30,9 +34,19 @@ public class SecureHttpClientTest {
         Assert.assertNotNull(client);
     }
 
+    private Config setupConfig() {
+        Config config = mock(Config.class);
+        byte[] expectedKey = new byte[] { (byte) 129, (byte) 130, (byte) 131};
+        byte[] expectedCert = new byte[] { (byte) 123, (byte) 131, (byte) 141};
+        when(config.getData(anyString())).thenReturn(expectedKey);
+        when(config.getData(anyString())).thenReturn(expectedCert);
+
+        return config;
+    }
+
     @Test
     public void testConstructor() {
-        Config config = Configs.getInstance();
+        Config config = setupConfig();
         SecureHttpClient client = new SecureHttpClient(
                 config,
                 DefaultVps4MessagingService.CLIENT_CERTIFICATE_KEY_PATH,

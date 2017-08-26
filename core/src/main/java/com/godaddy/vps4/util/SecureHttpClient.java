@@ -41,17 +41,13 @@ public class SecureHttpClient {
 
     protected final CloseableHttpClient client;
 
-    @Inject
-    Config config;
-
     private static final ObjectMapper payloadMapper = new ObjectMapper();
 
     public SecureHttpClient(Config config, String clientCertKeyPath, String clientCertPath) {
-        this.config = config;
         payloadMapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
         payloadMapper.configure(DeserializationFeature.ACCEPT_EMPTY_ARRAY_AS_NULL_OBJECT, true);
 
-        client = createHttpClient(this.config, clientCertKeyPath, clientCertPath);
+        client = createHttpClient(config, clientCertKeyPath, clientCertPath);
     }
 
     public <T> T executeHttp(HttpUriRequest request, Class<T> deserializeInto) throws IOException {
