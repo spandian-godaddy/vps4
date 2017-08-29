@@ -62,11 +62,21 @@ public class DefaultVps4MessagingServiceTest {
     }
 
     @Test
-    public void testSendSetupEmail() throws IOException {
+    public void testSendSetupEmail() throws MissingShopperIdException, IOException {
         when(secureHttpClient.executeHttp(Mockito.any(HttpPost.class), Mockito.any())).thenReturn(mockMessageId);
         String actualMessageId = messagingService.sendSetupEmail(shopperId, accountName, ipAddress, diskSpace);
         Assert.assertNotNull(actualMessageId);
         Assert.assertEquals(mockMessageId.messageId, actualMessageId);
+    }
+
+    @Test(expected = MissingShopperIdException.class)
+    public void testSendSetupEmailThrowsMissingShopperIdExceptionWhenEmpty() throws MissingShopperIdException, IOException {
+        messagingService.sendSetupEmail("", accountName, ipAddress, diskSpace);
+    }
+
+    @Test(expected = MissingShopperIdException.class)
+    public void testSendSetupEmailThrowsMissingShopperIdExceptionWhenNull() throws MissingShopperIdException, IOException {
+        messagingService.sendSetupEmail(null, accountName, ipAddress, diskSpace);
     }
 
     @Test

@@ -14,8 +14,8 @@ import java.io.IOException;
 import java.util.Random;
 import java.util.UUID;
 
+import com.godaddy.vps4.messaging.MissingShopperIdException;
 import com.godaddy.vps4.messaging.Vps4MessagingService;
-import com.godaddy.vps4.security.Vps4User;
 import com.godaddy.vps4.vm.HostnameGenerator;
 import org.junit.Before;
 import org.junit.Test;
@@ -99,7 +99,7 @@ public class Vps4ProvisionVmTest {
     VirtualMachine vm;
     Vps4ProvisionVm.Request request;
     IpAddress primaryIp;
-    String expectedHostname;
+    String expectedServerName;
     MailRelayUpdate mrUpdate;
     String username = "tester";
     UUID vmId = UUID.randomUUID();
@@ -114,8 +114,9 @@ public class Vps4ProvisionVmTest {
         this.image = new Image();
         image.operatingSystem = Image.OperatingSystem.WINDOWS;
         image.controlPanel = ControlPanel.MYH;
+        expectedServerName = "VM Name";
         this.vm = new VirtualMachine(UUID.randomUUID(), hfsVmId, UUID.randomUUID(), 1,
-                null, "VM Name",
+                null, expectedServerName,
                 image, null, null, null,
                 "fake.host.name", AccountStatus.ACTIVE);
 
@@ -143,6 +144,7 @@ public class Vps4ProvisionVmTest {
         request.vmInfo = vmInfo;
         shopperId = UUID.randomUUID().toString();
         request.shopperId = shopperId;
+        request.serverName = expectedServerName;
 
         String messagedId = UUID.randomUUID().toString();
         when(messagingService.sendSetupEmail(anyString(), anyString(), anyString(), anyString()))
@@ -151,7 +153,6 @@ public class Vps4ProvisionVmTest {
         primaryIp = new IpAddress();
         primaryIp.address = "1.2.3.4";
         when(allocateIp.execute(any(CommandContext.class), any(AllocateIp.Request.class))).thenReturn(primaryIp);
-        expectedHostname = HostnameGenerator.getHostname(primaryIp.address);
 
         MailRelay relay = new MailRelay();
         relay.quota = vmInfo.mailRelayQuota;
@@ -198,14 +199,14 @@ public class Vps4ProvisionVmTest {
     }
 
     @Test
-    public void testSendSetupEmail() throws IOException {
+    public void testSendSetupEmail() throws MissingShopperIdException, IOException {
         command.execute(context, this.request);
-        verify(messagingService, times(1)).sendSetupEmail(shopperId, expectedHostname,
+        verify(messagingService, times(1)).sendSetupEmail(shopperId, expectedServerName,
                 primaryIp.address, Integer.toString(diskGib));
     }
 
     @Test
-    public void testSendSetupEmailDoesNotThrowException() throws IOException {
+    public void testSendSetupEmailDoesNotThrowException() throws MissingShopperIdException, IOException {
         when(messagingService.sendSetupEmail(anyString(), anyString(), anyString(), anyString()))
                 .thenThrow(new RuntimeException("Unit test exception"));
 

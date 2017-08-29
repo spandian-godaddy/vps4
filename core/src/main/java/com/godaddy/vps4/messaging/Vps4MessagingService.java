@@ -11,5 +11,5 @@ public interface Vps4MessagingService {
             throws IOException;
 
     String sendSetupEmail(String shopperId, String accountName, String ipAddress, String diskSpace)
-            throws IOException;
+            throws MissingShopperIdException, IOException;
 }

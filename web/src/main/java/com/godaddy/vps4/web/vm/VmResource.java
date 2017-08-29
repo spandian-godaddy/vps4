@@ -231,7 +231,8 @@ public class VmResource {
                 ifMonitoringThenMonitoringAccountId, virtualMachine.spec.diskGib);
         logger.info("vmInfo: {}", vmInfo.toString());
 
-        Vps4ProvisionVm.Request request = createProvisionVmRequest(hfsRequest, actionId, vmInfo, user.getShopperId());
+        Vps4ProvisionVm.Request request = createProvisionVmRequest(hfsRequest, actionId, vmInfo,
+                user.getShopperId(), provisionRequest.name);
 
         CommandState command = Commands.execute(commandService, actionService, "ProvisionVm", request);
         logger.info("provisioning VM in {}", command.commandId);
@@ -242,12 +243,14 @@ public class VmResource {
     private Vps4ProvisionVm.Request createProvisionVmRequest(CreateVMWithFlavorRequest hfsRequest,
                                                              long actionId,
                                                              ProvisionVmInfo vmInfo,
-                                                             String shopperId) {
+                                                             String shopperId,
+                                                             String serverName) {
         Vps4ProvisionVm.Request request = new Vps4ProvisionVm.Request();
         request.actionId = actionId;
         request.hfsRequest = hfsRequest;
         request.vmInfo = vmInfo;
         request.shopperId = shopperId;
+        request.serverName = serverName;
         return request;
     }
 

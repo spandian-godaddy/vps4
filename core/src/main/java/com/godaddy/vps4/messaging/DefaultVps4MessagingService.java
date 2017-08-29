@@ -15,13 +15,10 @@ import java.util.HashMap;
 import java.io.IOException;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import javax.inject.Inject;
 
 public class DefaultVps4MessagingService implements Vps4MessagingService {
-    private static final Logger logger = LoggerFactory.getLogger(DefaultVps4MessagingService.class);
 
     private final String baseUrl;
 
@@ -82,9 +79,15 @@ public class DefaultVps4MessagingService implements Vps4MessagingService {
         return SecureHttpClient.createJSONFromObject(shopperMessage);
     }
 
+    private void VerifyShopperId(String shopperId) throws MissingShopperIdException {
+        if (shopperId == null || shopperId.isEmpty()) {
+            throw new MissingShopperIdException("Shopper id is a required parameter.");
+        }
+    }
+
     public String sendSetupEmail(String shopperId, String accountName, String ipAddress, String diskSpace)
-            throws IOException {
-        logger.info(String.format("Sending setup email for shopper: %s", shopperId));
+            throws MissingShopperIdException, IOException {
+        VerifyShopperId(shopperId);
         String uriPath = "/v1/messaging/messages";
         String uri = buildApiUri(uriPath);
         Map<String, String> headers = new HashMap<>();
@@ -94,8 +97,6 @@ public class DefaultVps4MessagingService implements Vps4MessagingService {
         String shopperMessageJson = buildShopperMessageJson(accountName, ipAddress, diskSpace);
         httpPost.setEntity(new StringEntity(shopperMessageJson));
         MessagingMessageId messageId = this.client.executeHttp(httpPost, MessagingMessageId.class);
-        logger.info(String.format("Setup email sent for shopper: %s. Message id: %s",
-                shopperId, messageId.messageId));
 
         return messageId.messageId;
     }
