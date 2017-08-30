@@ -22,7 +22,7 @@ public class KafkaConfiguration {
         this.numberOfConsumers = Integer.parseInt(vps4Config.get("vps4.kafka.consumer.count", "1"));
         
         kafkaConsumerProps = new Properties();
-        kafkaConsumerProps.put("bootstrap.servers", vps4Config.get("vps4.kafka.bootstrap.servers", "p3dlvps4kafka01.cloud.phx3.gdg:9092"));
+        kafkaConsumerProps.put("bootstrap.servers", vps4Config.get("vps4.kafka.bootstrap.servers", "p3dlkckafka01.cloud.phx3.gdg:9092"));
         kafkaConsumerProps.put("group.id", vps4Config.get("vps4.kafka.group.id", "vps4-consumer-group-01"));
         kafkaConsumerProps.put("enable.auto.commit", Boolean.parseBoolean(vps4Config.get("vps4.kafka.enable.auto.commit", "true")));
         kafkaConsumerProps.put("auto.commit.interval.ms", Integer.parseInt(vps4Config.get("vps4.kafka.auto.commit.interval.ms", "1000")));

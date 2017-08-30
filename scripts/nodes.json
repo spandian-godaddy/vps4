@@ -1,104 +1,113 @@
 {
-  "dev": {
-      "app": [
-        "p3dlvps4app01.cloud.phx3.gdg",
-        "p3dlvps4app02.cloud.phx3.gdg"
-      ],
-      "orchestration": [
-        "p3dlvps4app01.cloud.phx3.gdg"
-      ],
-      "zookeeper": [
-        "p3dlvps4zk01.cloud.phx3.gdg",
-        "p3dlvps4zk02.cloud.phx3.gdg",
-        "p3dlvps4zk03.cloud.phx3.gdg"
-      ],
-      "consumer": [
-        "p3dlvps4kafka01.cloud.phx3.gdg"
-      ]
-  },
-  "test": {
-      "app": [
-        "p3tlvps4app01.cloud.phx3.gdg",
-        "p3tlvps4app02.cloud.phx3.gdg"
-      ],
-      "orchestration": [
-        "p3tlvps4app01.cloud.phx3.gdg"
-      ],
-      "zookeeper": [
-        "p3tlvps4zk01.cloud.phx3.gdg",
-        "p3tlvps4zk02.cloud.phx3.gdg",
-        "p3tlvps4zk03.cloud.phx3.gdg"
-      ],
-      "consumer": [
-        "p3tlvps4kafka01.cloud.phx3.gdg"
-      ]
-  },
-  "stage": {
-      "app": [
-        "p3slvps4app01.cloud.phx3.gdg",
-        "p3slvps4app02.cloud.phx3.gdg"
-      ],
-      "orchestration": [
-        "p3slvps4app01.cloud.phx3.gdg"
-      ],
-      "zookeeper": [
-        "p3slvps4zk01.cloud.phx3.gdg",
-        "p3slvps4zk02.cloud.phx3.gdg",
-        "p3slvps4zk03.cloud.phx3.gdg"
-      ],
-      "consumer": [
-        "p3slvps4kafka01.cloud.phx3.gdg"
-      ]
-  },
-  "prod": {
-      "app": [
-        "a2plvps4app01.cloud.iad2.gdg",
-        "a2plvps4app02.cloud.iad2.gdg"
-      ],
-      "orchestration": [
-        "a2plvps4app01.cloud.iad2.gdg"
-      ],
-      "zookeeper": [
-        "a2plvps4zk01.cloud.iad2.gdg",
-        "a2plvps4zk02.cloud.iad2.gdg",
-        "a2plvps4zk03.cloud.iad2.gdg"
-      ],
-      "consumer": [
-        "a2plvps4kafka01.cloud.iad2.gdg"
-      ]
-  },
-  "prod_phx3": {
-      "app": [
-        "p3plvps4app01.cloud.phx3.gdg",
-        "p3plvps4app02.cloud.phx3.gdg"
-      ],
-      "orchestration": [
-        "p3plvps4app01.cloud.phx3.gdg"
-      ],
-      "zookeeper": [
-        "p3plvps4zk01.cloud.phx3.gdg",
-        "p3plvps4zk02.cloud.phx3.gdg",
-        "p3plvps4zk03.cloud.phx3.gdg"
-      ],
-      "consumer": [
-        "p3plvps4kafka01.cloud.phx3.gdg"
-      ]
-  },
-  "prod_sin2": {
-      "app": [
-        "sg2plvps4app01.cloud.sin2.gdg",
-        "sg2plvps4app02.cloud.sin2.gdg"
-      ],
-      "orchestration": [
-        "sg2plvps4app01.cloud.sin2.gdg"
-      ],
-      "zookeeper": [
-        "sg2plvps4zk01.cloud.sin2.gdg",
-        "sg2plvps4zk02.cloud.sin2.gdg",
-        "sg2plvps4zk03.cloud.sin2.gdg"
-      ],
-      "consumer": [
-        "sg2plvps4kafka01.cloud.sin2.gdg"
-      ]
-  }
+    "dev": {
+        "app": [
+            "p3dlvps4app01.cloud.phx3.gdg",
+            "p3dlvps4app02.cloud.phx3.gdg"
+        ],
+        "orchestration": [
+            "p3dlvps4app01.cloud.phx3.gdg"
+        ],
+        "zookeeper": [
+            "p3dlvps4zk01.cloud.phx3.gdg",
+            "p3dlvps4zk02.cloud.phx3.gdg",
+            "p3dlvps4zk03.cloud.phx3.gdg",
+            "p3dlvps4zk04.cloud.phx3.gdg"
+        ],
+        "consumer": [
+            "p3dlvps4app03.cloud.phx3.gdg"
+        ]
+    },
+    "test": {
+        "app": [
+            "p3tlvps4app01.cloud.phx3.gdg",
+            "p3tlvps4app02.cloud.phx3.gdg"
+        ],
+        "orchestration": [
+            "p3tlvps4app01.cloud.phx3.gdg"
+        ],
+        "zookeeper": [
+            "p3tlvps4zk01.cloud.phx3.gdg",
+            "p3tlvps4zk02.cloud.phx3.gdg",
+            "p3tlvps4zk03.cloud.phx3.gdg",
+            "p3tlvps4zk04.cloud.phx3.gdg"
+        ],
+        "consumer": [
+            "p3tlvps4app03.cloud.phx3.gdg"
+        ]
+    },
+    "stage": {
+        "app": [
+            "p3slvps4app01.cloud.phx3.gdg",
+            "p3slvps4app02.cloud.phx3.gdg"
+        ],
+        "orchestration": [
+            "p3slvps4app01.cloud.phx3.gdg"
+        ],
+        "zookeeper": [
+            "p3slvps4zk01.cloud.phx3.gdg",
+            "p3slvps4zk02.cloud.phx3.gdg",
+            "p3slvps4zk03.cloud.phx3.gdg",
+            "p3slvps4zk04.cloud.phx3.gdg"
+        ],
+        "consumer": [
+            "p3slvps4app03.cloud.phx3.gdg"
+        ]
+    },
+    "prod": {
+        "app": [
+            "a2plvps4app01.cloud.iad2.gdg",
+            "a2plvps4app02.cloud.iad2.gdg"
+        ],
+        "orchestration": [
+            "a2plvps4app01.cloud.iad2.gdg"
+        ],
+        "zookeeper": [
+            "a2plvps4zk01.cloud.iad2.gdg",
+            "a2plvps4zk02.cloud.iad2.gdg",
+            "a2plvps4zk03.cloud.iad2.gdg",
+            "a2plvps4zk04.cloud.iad2.gdg",
+            "a2plvps4zk05.cloud.iad2.gdg"
+        ],
+        "consumer": [
+            "a2plvps4app03.cloud.iad2.gdg"
+        ]
+    },
+    "prod_phx3": {
+        "app": [
+            "p3plvps4app01.cloud.phx3.gdg",
+            "p3plvps4app02.cloud.phx3.gdg"
+        ],
+        "orchestration": [
+            "p3plvps4app01.cloud.phx3.gdg"
+        ],
+        "zookeeper": [
+            "p3plvps4zk01.cloud.phx3.gdg",
+            "p3plvps4zk02.cloud.phx3.gdg",
+            "p3plvps4zk03.cloud.phx3.gdg",
+            "p3plvps4zk04.cloud.phx3.gdg",
+            "p3plvps4zk05.cloud.phx3.gdg"
+        ],
+        "consumer": [
+            "p3plvps4app03.cloud.phx3.gdg"
+        ]
+    },
+    "prod_sin2": {
+        "app": [
+            "sg2plvps4app01.cloud.sin2.gdg",
+            "sg2plvps4app02.cloud.sin2.gdg"
+        ],
+        "orchestration": [
+            "sg2plvps4app01.cloud.sin2.gdg"
+        ],
+        "zookeeper": [
+            "sg2plvps4zk01.cloud.sin2.gdg",
+            "sg2plvps4zk02.cloud.sin2.gdg",
+            "sg2plvps4zk03.cloud.sin2.gdg",
+            "sg2plvps4zk04.cloud.sin2.gdg",
+            "sg2plvps4zk05.cloud.sin2.gdg"
+        ],
+        "consumer": [
+            "sg2plvps4app03.cloud.sin2.gdg"
+        ]
+    }
 }
