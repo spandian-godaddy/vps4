@@ -104,7 +104,7 @@ public class NetworkServiceTest {
     }
 
     @Test
-    public void TestDuplicatePrimaryFails() {
+    public void testDuplicatePrimaryFails() {
         long primaryId = 125;
         String primaryAddress = "192.168.1.1";
 
@@ -118,7 +118,7 @@ public class NetworkServiceTest {
     }
 
     @Test
-    public void TestDuplicateIpAddress() {
+    public void testDuplicateIpAddress() {
         long addressId = 123;
         long primaryId = 125;
         String primaryAddress = "192.168.1.1";
@@ -136,7 +136,7 @@ public class NetworkServiceTest {
     }
 
     @Test
-    public void TestReuseOfPrimaryIp() {
+    public void testReuseOfPrimaryIp() {
         long primaryId = 125;
         String primaryAddress = "192.168.1.1";
 
@@ -147,7 +147,7 @@ public class NetworkServiceTest {
     }
 
     @Test(expected=RuntimeException.class)
-    public void TestReuseOfActiveIpFails() {
+    public void testReuseOfActiveIpFails() {
         long primaryId = 125;
         String primaryAddress = "192.168.1.1";
 
