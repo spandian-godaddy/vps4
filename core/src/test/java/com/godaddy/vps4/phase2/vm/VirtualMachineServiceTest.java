@@ -32,6 +32,7 @@ import com.godaddy.vps4.vm.ImageService;
 import com.godaddy.vps4.vm.VirtualMachine;
 import com.godaddy.vps4.vm.VirtualMachineService;
 import com.godaddy.vps4.vm.VirtualMachineService.ProvisionVirtualMachineParameters;
+import com.godaddy.vps4.vm.VirtualMachineSpec;
 import com.godaddy.vps4.vm.jdbc.JdbcImageService;
 import com.godaddy.vps4.vm.jdbc.JdbcVirtualMachineService;
 import com.google.inject.Guice;
@@ -101,10 +102,11 @@ public class VirtualMachineServiceTest {
     @Test
     public void testService() throws InterruptedException {
         String name = "testServer";
-        int specId = 1;
+        int tier = 10;
+        int specId = virtualMachineService.getSpec(tier).specId;
 
         ProvisionVirtualMachineParameters params = new ProvisionVirtualMachineParameters(vps4User.getId(), 1, "vps4-testing-",
-                orionGuid, name, 10, 1, "centos-7");
+                orionGuid, name, tier, 1, "centos-7");
 
         virtualMachineService.provisionVirtualMachine(params);
         List<VirtualMachine> vms = virtualMachineService.getVirtualMachinesForUser(vps4User.getId());
