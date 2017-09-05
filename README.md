@@ -153,13 +153,16 @@ Creating VM Test Credits
 =======================
 Oh, you want to test creating a VM?  You'll need a VM credit for that.
 
-- Login to CRM of the desired test environment using your shopperID
-    - Create one in dev/test if you don't have one.
-- Go to Catalog in the drop down box on the left sidebar.
-- Browse to Misc and search for VPS4. (products will move out of Misc when CRM updates them)
-- Select the desired product
-- Select Add to Cart and then Checkout
-- For dev/test use the test credit card number: 4111111111111111
+You can create a credit via the following link:
+ - http://intl.api.int.godaddy.com/ItemPurchase/Purchase.htm
+ - Enter desired test environment: dev or test (sorry can't use in prod)
+ - Enter shopperId and password
+ - Enter the pfid for the vps4 product you want followed by any of the pfids for any addon features you want (Follow the examples)
+   - Confluence link for current pfids:  https://confluence.godaddy.com/pages/viewpage.action?pageId=58980006
+   
+   
+CRM Links
+==============
 
 | Env   |   API                              |
 | ----  | ---------------------------------- |
