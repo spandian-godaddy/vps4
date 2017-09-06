@@ -58,11 +58,15 @@ public class CreditResourceTest {
         return injector.getInstance(CreditResource.class);
     }
 
+    private VirtualMachineCredit createVmCredit(AccountStatus accountStatus) {
+        return new VirtualMachineCredit(orionGuid, 10, 1, 0, "linux", "cPanel", null,
+                null, user.getShopperId(), accountStatus, null, null);
+    }
+
     @Before
     public void setupTest() {
         user = GDUserMock.createShopper();
-        vmCredit = new VirtualMachineCredit(orionGuid, 10, 1, 0, "linux", "cPanel",
-                null, null, user.getShopperId(), AccountStatus.ACTIVE, null, null);
+        vmCredit = createVmCredit(AccountStatus.ACTIVE);
         when(creditService.getVirtualMachineCredit(orionGuid)).thenReturn(vmCredit);
         when(creditService.getUnclaimedVirtualMachineCredits("validUserShopperId"))
                      .thenReturn(Arrays.asList(vmCredit));
@@ -112,6 +116,15 @@ public class CreditResourceTest {
         user = GDUserMock.createShopper("otherShopperId");
         List<VirtualMachineCredit> credits = getCreditResource().getCredits(false);
         Assert.assertTrue(credits.isEmpty());
+    }
+
+    @Test
+    public void testGetSuspendedCredits() {
+        VirtualMachineCredit suspendedCredit = createVmCredit(AccountStatus.SUSPENDED);
+        when(creditService.getVirtualMachineCredits(GDUserMock.DEFAULT_SHOPPER))
+                .thenReturn(Arrays.asList(suspendedCredit));
+        List<VirtualMachineCredit> credits = getCreditResource().getCredits(true);
+        Assert.assertTrue(credits.contains(suspendedCredit));
     }
 
     @Test(expected=Vps4NoShopperException.class)
@@ -204,7 +217,7 @@ public class CreditResourceTest {
         VirtualMachineCredit[] credits = {fakeCredit};
 
         user = GDUserMock.createShopper("omg");
-        when(creditService.getActiveVirtualMachineCredits("omg")).thenReturn(Arrays.asList(credits));
+        when(creditService.getVirtualMachineCredits("omg")).thenReturn(Arrays.asList(credits));
 
         try{
             getCreditResource().createTrialCredit();

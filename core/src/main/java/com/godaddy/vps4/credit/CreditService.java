@@ -12,7 +12,7 @@ public interface CreditService {
 
     List<VirtualMachineCredit> getUnclaimedVirtualMachineCredits(String shopperId);
 
-    List<VirtualMachineCredit> getActiveVirtualMachineCredits(String shopperId);
+    List<VirtualMachineCredit> getVirtualMachineCredits(String shopperId);
 
     void claimVirtualMachineCredit(UUID orionGuid, int dataCenterId, UUID productId);
 

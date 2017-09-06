@@ -3,6 +3,7 @@ package com.godaddy.vps4.credit;
 import java.time.Instant;
 import java.util.UUID;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.godaddy.vps4.vm.AccountStatus;
 import com.godaddy.vps4.vm.DataCenter;
 
@@ -38,15 +39,18 @@ public class VirtualMachineCredit {
         this.productId = vmId;
     }
 
+    @JsonIgnore
     public boolean isAccountSuspended() {
         return accountStatus == AccountStatus.SUSPENDED ||
                 accountStatus == AccountStatus.ABUSE_SUSPENDED;
     }
 
+    @JsonIgnore
     public boolean isOwnedByShopper(String ssoShopperId) {
         return ssoShopperId.equals(shopperId);
     }
 
+    @JsonIgnore
     public boolean isUsable() {
         return provisionDate == null;
 

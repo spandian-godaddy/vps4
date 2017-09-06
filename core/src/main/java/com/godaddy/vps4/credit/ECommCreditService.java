@@ -56,7 +56,7 @@ public class ECommCreditService implements CreditService {
             Account account = ecommService.getAccount(orionGuid.toString());
             credit = mapVirtualMachineCredit(account);
         } catch(Exception ex) {
-            logger.error("Error retrieving VPS4 credit for account guid {}", orionGuid.toString());
+            logger.error("Error retrieving VPS4 credit for account guid {} : Exception :", orionGuid.toString(), ex);
         }
 
         return credit;
@@ -103,17 +103,17 @@ public class ECommCreditService implements CreditService {
     public List<VirtualMachineCredit> getUnclaimedVirtualMachineCredits(String shopperId) {
         List<Account> accounts = ecommService.getAccounts(shopperId);
         return accounts.stream()
-                .filter(a -> a.status == Account.Status.active)
+                .filter(a -> a.status != Account.Status.removed)
                 .filter(a -> !a.product_meta.containsKey(ProductMeta.DATA_CENTER))
                 .map(this::mapVirtualMachineCredit)
                 .collect(Collectors.toList());
     }
 
     @Override
-    public List<VirtualMachineCredit> getActiveVirtualMachineCredits(String shopperId) {
+    public List<VirtualMachineCredit> getVirtualMachineCredits(String shopperId) {
         List<Account> accounts = ecommService.getAccounts(shopperId);
         return accounts.stream()
-                .filter(a -> a.status == Account.Status.active)
+                .filter(a -> a.status != Account.Status.removed)
                 .map(this::mapVirtualMachineCredit)
                 .collect(Collectors.toList());
     }
