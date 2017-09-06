@@ -66,7 +66,7 @@ public class CreditResource {
             throw new Vps4NoShopperException();
         logger.debug("Getting credits for shopper {}", user.getShopperId());
         if(showClaimed){
-            return creditService.getActiveVirtualMachineCredits(user.getShopperId());
+            return creditService.getVirtualMachineCredits(user.getShopperId());
         }
         return creditService.getUnclaimedVirtualMachineCredits(user.getShopperId());
     }
@@ -77,7 +77,7 @@ public class CreditResource {
         if(!user.isShopper()){
             throw new Vps4NoShopperException();
         }
-        List<VirtualMachineCredit> existingCredits = creditService.getActiveVirtualMachineCredits(user.getShopperId());
+        List<VirtualMachineCredit> existingCredits = creditService.getVirtualMachineCredits(user.getShopperId());
         if (!existingCredits.isEmpty()){
             // only one credit at a time
             throw new Vps4Exception("CREDIT_ALREADY_EXISTS", "This shopper already has existing credits");

@@ -110,7 +110,7 @@ public class ECommCreditService implements CreditService {
     }
 
     @Override
-    public List<VirtualMachineCredit> getActiveVirtualMachineCredits(String shopperId) {
+    public List<VirtualMachineCredit> getVirtualMachineCredits(String shopperId) {
         List<Account> accounts = ecommService.getAccounts(shopperId);
         return accounts.stream()
                 .filter(a -> a.status != Account.Status.removed)

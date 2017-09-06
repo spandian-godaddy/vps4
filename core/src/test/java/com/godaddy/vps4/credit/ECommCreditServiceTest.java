@@ -151,7 +151,7 @@ public class ECommCreditServiceTest {
 
     @Test
     public void testGetActiveCreditsCallsGetAccounts() throws Exception {
-        assertTrue(creditService.getActiveVirtualMachineCredits(account.shopper_id).isEmpty());
+        assertTrue(creditService.getVirtualMachineCredits(account.shopper_id).isEmpty());
         verify(ecommService).getAccounts(eq(account.shopper_id));
     }
 
@@ -159,11 +159,11 @@ public class ECommCreditServiceTest {
     public void testGetActiveCreditsFiltersActive() throws Exception {
         when(ecommService.getAccounts(account.shopper_id)).thenReturn(Arrays.asList(account));
 
-        List<VirtualMachineCredit> credits = creditService.getActiveVirtualMachineCredits(account.shopper_id);
+        List<VirtualMachineCredit> credits = creditService.getVirtualMachineCredits(account.shopper_id);
         assertEquals(1, credits.size());
 
         account.status = Account.Status.removed;
-        credits = creditService.getActiveVirtualMachineCredits(account.shopper_id);
+        credits = creditService.getVirtualMachineCredits(account.shopper_id);
         assertEquals(0, credits.size());
     }
 
@@ -171,11 +171,11 @@ public class ECommCreditServiceTest {
     public void testGetActiveCreditsDoesntFilterUnclaimed() throws Exception {
         when(ecommService.getAccounts(account.shopper_id)).thenReturn(Arrays.asList(account));
 
-        List<VirtualMachineCredit> credits = creditService.getActiveVirtualMachineCredits(account.shopper_id);
+        List<VirtualMachineCredit> credits = creditService.getVirtualMachineCredits(account.shopper_id);
         assertEquals(1, credits.size());
 
         account.product_meta.put("data_center", "1");
-        credits = creditService.getActiveVirtualMachineCredits(account.shopper_id);
+        credits = creditService.getVirtualMachineCredits(account.shopper_id);
         assertEquals(1, credits.size());
     }
 
