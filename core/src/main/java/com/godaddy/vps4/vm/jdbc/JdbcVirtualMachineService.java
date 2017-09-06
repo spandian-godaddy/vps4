@@ -47,8 +47,8 @@ public class JdbcVirtualMachineService implements VirtualMachineService {
     public VirtualMachineSpec getSpec(String name) {
 
         return Sql.with(dataSource)
-                .exec("SELECT spec_id, name as \"spec_vps4_name\", spec_name, tier, cpu_core_count, memory_mib, disk_gib, valid_on as \"spec_valid_on\", "
-                        + "valid_until as \"spec_valid_until\" FROM virtual_machine_spec WHERE spec_name=? ",
+                .exec("SELECT spec_id, name as spec_vps4_name, spec_name, tier, cpu_core_count, memory_mib, disk_gib, valid_on as spec_valid_on, "
+                        + "valid_until as spec_valid_until FROM virtual_machine_spec WHERE spec_name=? ",
                         Sql.nextOrNull(this::mapVirtualMachineSpec), name);
     }
 
@@ -56,8 +56,8 @@ public class JdbcVirtualMachineService implements VirtualMachineService {
     @Override
     public VirtualMachineSpec getSpec(int tier) {
         return Sql.with(dataSource)
-                .exec("SELECT spec_id, name as \"spec_vps4_name\", spec_name, tier, cpu_core_count, memory_mib, disk_gib, valid_on as \"spec_valid_on\", "
-                        + "valid_until as \"spec_valid_until\" FROM virtual_machine_spec WHERE valid_until > NOW() AND tier=? ",
+                .exec("SELECT spec_id, name as spec_vps4_name, spec_name, tier, cpu_core_count, memory_mib, disk_gib, valid_on as spec_valid_on, "
+                        + "valid_until as spec_valid_until FROM virtual_machine_spec WHERE valid_until > NOW() AND tier=? ",
                         Sql.nextOrNull(this::mapVirtualMachineSpec), tier);
     }
 
