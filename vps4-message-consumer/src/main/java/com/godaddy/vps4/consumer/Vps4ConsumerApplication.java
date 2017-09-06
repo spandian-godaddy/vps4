@@ -73,7 +73,6 @@ public class Vps4ConsumerApplication {
 
         while (!pool.isTerminated()) {
             try {
-                logger.info("pool not terminated, waiting for termination");
                 pool.awaitTermination(100, TimeUnit.MILLISECONDS);
             } catch (InterruptedException e) {
                 logger.info("Vps4ConsumerGroup pool termination was interrupted. ", e);
