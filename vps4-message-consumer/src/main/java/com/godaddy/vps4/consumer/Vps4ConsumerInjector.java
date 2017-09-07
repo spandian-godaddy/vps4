@@ -3,6 +3,7 @@ package com.godaddy.vps4.consumer;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.godaddy.vps4.config.ConfigModule;
 import com.godaddy.vps4.credit.CreditModule;
 import com.godaddy.vps4.jdbc.DatabaseModule;
@@ -12,6 +13,7 @@ import com.godaddy.vps4.vm.VmModule;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
 import com.google.inject.Module;
+import gdg.hfs.orchestration.jackson.ObjectMapperProvider;
 
 public class Vps4ConsumerInjector {
 
@@ -31,6 +33,7 @@ public class Vps4ConsumerInjector {
         modules.add(new SnapshotModule());
         modules.add(new SecurityModule());
         modules.add(new DatabaseModule());
+        modules.add(binder -> {binder.bind(ObjectMapper.class).toProvider(ObjectMapperProvider.class);});
         modules.add(new HfsClientModule());
         modules.add(new CreditModule());
         modules.add(new CommandClientModule());

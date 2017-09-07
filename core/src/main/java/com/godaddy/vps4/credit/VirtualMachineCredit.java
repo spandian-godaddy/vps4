@@ -4,11 +4,9 @@ import java.time.Instant;
 import java.util.UUID;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.godaddy.vps4.vm.AccountStatus;
 import com.godaddy.vps4.vm.DataCenter;
 
-@JsonIgnoreProperties(ignoreUnknown=true)
 public class VirtualMachineCredit {
 
     public final UUID orionGuid;
@@ -65,6 +63,6 @@ public class VirtualMachineCredit {
                 " operatingSystem: " + operatingSystem + " controlPanel: " + controlPanel +
                 " createDate: " + createDate + " provisionDate: " + provisionDate +
                 " shopperId: " + shopperId + " accountStatus: " + accountStatus +
-                " dataCenter: " + dataCenter.toString() + " productId: " + productId +"]";
+                " dataCenter: " + dataCenter.toString() + " productId: " + productId + "]";
     }
 }
