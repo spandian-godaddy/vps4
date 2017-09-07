@@ -9,11 +9,11 @@ import com.godaddy.vps4.credit.CreditModule;
 import com.godaddy.vps4.jdbc.DatabaseModule;
 import com.godaddy.vps4.security.SecurityModule;
 import com.godaddy.vps4.snapshot.SnapshotModule;
+import com.godaddy.vps4.util.ObjectMapperProvider;
 import com.godaddy.vps4.vm.VmModule;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
 import com.google.inject.Module;
-import gdg.hfs.orchestration.jackson.ObjectMapperProvider;
 
 public class Vps4ConsumerInjector {
 

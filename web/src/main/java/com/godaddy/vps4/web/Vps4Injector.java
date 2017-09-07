@@ -6,6 +6,7 @@ import java.util.List;
 import javax.inject.Singleton;
 
 import com.godaddy.vps4.messaging.MessagingModule;
+import com.godaddy.vps4.util.ObjectMapperProvider;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
