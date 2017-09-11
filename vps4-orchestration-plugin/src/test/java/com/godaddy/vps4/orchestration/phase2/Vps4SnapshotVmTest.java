@@ -9,6 +9,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.util.UUID;
+import java.util.function.Function;
 
 import javax.sql.DataSource;
 
@@ -17,6 +18,9 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import org.mockito.ArgumentCaptor;
+import org.mockito.Captor;
+import org.mockito.MockitoAnnotations;
 
 import com.godaddy.vps4.jdbc.DatabaseModule;
 import com.godaddy.vps4.orchestration.snapshot.Vps4DestroySnapshot;
@@ -66,6 +70,9 @@ public class Vps4SnapshotVmTest {
     @Inject gdg.hfs.vhfs.snapshot.SnapshotService hfsSnapshotService;
     @Inject @SnapshotActionService ActionService actionService;
 
+    @Captor
+    ArgumentCaptor<Function<CommandContext, Void>> snapshotCaptor;
+
     @BeforeClass
     public static void newInjector() {
         injector = Guice.createInjector(
@@ -78,6 +85,7 @@ public class Vps4SnapshotVmTest {
 
     @Before
     public void setUpTest() {
+        MockitoAnnotations.initMocks(this);
         injector.injectMembers(this);
 
         spySnapshotService = spy(snapshotService);
@@ -106,6 +114,7 @@ public class Vps4SnapshotVmTest {
         hfsAction.snapshotId = hfsSnapshotId;
 
         when(mockContext.execute(eq("Vps4SnapshotVm"), any())).thenReturn(hfsAction);
+        when(mockContext.execute(eq("MarkOldestSnapshotForDeprecation" + orionGuid), any())).thenReturn(vps4SnapshotIdToBeDeprecated);
         when(mockContext.execute(eq(WaitForSnapshotAction.class), eq(hfsAction))).thenReturn(hfsAction);
 
         hfsSnapshot = new gdg.hfs.vhfs.snapshot.Snapshot();
@@ -136,8 +145,12 @@ public class Vps4SnapshotVmTest {
     @Test
     public void marksTheOldSnapshotStatusToDeprecating() {
         command.execute(context, request);
-        verify(spySnapshotService, times(1))
-                .markOldestSnapshotForDeprecation(orionGuid, SnapshotType.ON_DEMAND);
+        verify(context, times(1)).execute(eq("MarkOldestSnapshotForDeprecation" + request.orionGuid),
+                snapshotCaptor.capture());
+        
+        Function<CommandContext, Void> lambda = snapshotCaptor.getValue();
+        lambda.apply(context);
+        verify(spySnapshotService, times(1)).markOldestSnapshotForDeprecation(request.orionGuid, SnapshotType.ON_DEMAND);
     }
 
     @Test
@@ -149,14 +162,21 @@ public class Vps4SnapshotVmTest {
     @Test
     public void changesSnapshotStatusToInProgress() {
         command.execute(context, request);
+        verify(context, times(1)).execute(eq("MarkSnapshotInProgress" + vps4SnapshotId), snapshotCaptor.capture());
+
+        Function<CommandContext, Void> lambda = snapshotCaptor.getValue();
+        lambda.apply(context);
         verify(spySnapshotService, times(1)).markSnapshotInProgress(eq(vps4SnapshotId));
     }
 
     @Test
     public void updatesTheSnapshotWithTheHfsSnapshotId() {
         command.execute(context, request);
-        verify(spySnapshotService, times(1))
-                .updateHfsSnapshotId(eq(vps4SnapshotId), eq(hfsSnapshotId));
+        verify(context, times(1)).execute(eq("UpdateHfsSnapshotId" + request.vps4SnapshotId), snapshotCaptor.capture());
+
+        Function<CommandContext, Void> lambda = snapshotCaptor.getValue();
+        lambda.apply(context);
+        verify(spySnapshotService, times(1)).updateHfsSnapshotId(eq(vps4SnapshotId), eq(hfsSnapshotId));
     }
 
     @Test
@@ -168,8 +188,11 @@ public class Vps4SnapshotVmTest {
     @Test
     public void marksSnapshotStatusAsComplete() {
         command.execute(context, request);
-        verify(spySnapshotService, times(1)).markSnapshotLive(eq(vps4SnapshotId));
-        Assert.assertEquals(snapshotService.getSnapshot(vps4SnapshotId).status, SnapshotStatus.LIVE);
+        verify(context, times(1)).execute(eq("MarkSnapshotLive" + vps4SnapshotId), snapshotCaptor.capture());
+
+        Function<CommandContext, Void> lambda = snapshotCaptor.getValue();
+        lambda.apply(context);
+        Assert.assertEquals(SnapshotStatus.LIVE, snapshotService.getSnapshot(vps4SnapshotId).status);
     }
 
     @Test
@@ -181,20 +204,27 @@ public class Vps4SnapshotVmTest {
     @Test
     public void updatesTheSnapshotWithTheHfsImageId() {
         command.execute(context, request);
-        verify(spySnapshotService, times(1))
-                .updateHfsImageId(eq(vps4SnapshotId), eq(hfsImageId));
+        verify(context, times(1)).execute(eq("UpdateHfsImageId" + vps4SnapshotId), snapshotCaptor.capture());
+
+        Function<CommandContext, Void> lambda = snapshotCaptor.getValue();
+        lambda.apply(context);
+        verify(spySnapshotService, times(1)).updateHfsImageId(eq(vps4SnapshotId), eq(hfsImageId));
     }
 
     @Test
     public void marksTheOldSnapshotAsDeprecated() {
         command.execute(context, request);
-        verify(spySnapshotService, times(1))
-                .markSnapshotAsDeprecated(eq(vps4SnapshotIdToBeDeprecated));
+        verify(context, times(1)).execute(eq("MarkOldestSnapshotForDeprecation" + request.orionGuid), snapshotCaptor.capture());
+
+        Function<CommandContext, Void> lambda = snapshotCaptor.getValue();
+        lambda.apply(context);
+        verify(spySnapshotService, times(1)).markOldestSnapshotForDeprecation(request.orionGuid, SnapshotType.ON_DEMAND);
     }
 
     @Test
     public void onlyMarksSameTypeOfSnapshotDeprecated() {
         request.snapshotType = SnapshotType.AUTOMATIC;
+        when(context.execute(eq("MarkOldestSnapshotForDeprecation" + orionGuid), any())).thenReturn((UUID) null);
         command.execute(context, request);
         // vps4SnapshotIdToBeDeprecated is an On Demand backup, and should not be
         // deprecated to make way for an Automatic backup.
@@ -203,19 +233,17 @@ public class Vps4SnapshotVmTest {
     }
 
     @Test
-    public void createsActionToTrackOldSnapshotDestroy() {
-        command.execute(context, request);
-        // When we created this snapshot (the one to be deprecated) we did add a create action,
-        // hence getting and comparing the action at the first index works in this test
-        Assert.assertEquals(
-                ActionType.DESTROY_SNAPSHOT, actionService.getActions(vps4SnapshotIdToBeDeprecated).get(0).type);
-    }
-
-    @Test
     public void destroysTheOldSnapshot() {
         command.execute(context, request);
         verify(context, times(1))
             .execute(eq(Vps4DestroySnapshot.class), any(Vps4DestroySnapshot.Request.class));
+    }
+
+    @Test
+    public void createsActionToTrackOldSnapshotDestroy() {
+        command.execute(context, request);
+        Assert.assertEquals(
+                ActionType.DESTROY_SNAPSHOT, actionService.getActions(vps4SnapshotIdToBeDeprecated).get(0).type);
     }
 
     @Test(expected = RuntimeException.class)

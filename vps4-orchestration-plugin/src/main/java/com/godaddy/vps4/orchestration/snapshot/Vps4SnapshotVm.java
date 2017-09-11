@@ -45,7 +45,8 @@ public class Vps4SnapshotVm extends ActionCommand<Vps4SnapshotVm.Request, Vps4Sn
 
     @Override
     protected Response executeWithAction(CommandContext context, Vps4SnapshotVm.Request request) throws Exception {
-        snapshotIdToBeDeprecated = vps4SnapshotService.markOldestSnapshotForDeprecation(request.orionGuid, request.snapshotType);
+        snapshotIdToBeDeprecated = context.execute("MarkOldestSnapshotForDeprecation" + request.orionGuid,
+                ctx -> vps4SnapshotService.markOldestSnapshotForDeprecation(request.orionGuid, request.snapshotType));
         SnapshotAction hfsAction = createAndWaitForSnapshotCompletion(context, request);
         deprecateOldSnapshot(context, request.vps4UserId);
         return generateResponse(hfsAction);
@@ -59,7 +60,7 @@ public class Vps4SnapshotVm extends ActionCommand<Vps4SnapshotVm.Request, Vps4Sn
 
     private SnapshotAction createAndWaitForSnapshotCompletion(CommandContext context, Request request) {
         SnapshotAction hfsAction = createSnapshot(context, request);
-        updateHfsSnapshotId(request.vps4SnapshotId, hfsAction.snapshotId);
+        updateHfsSnapshotId(context, request.vps4SnapshotId, hfsAction.snapshotId);
         hfsAction = WaitForSnapshotCompletion(context, request, hfsAction);
         updateHfsImageId(context, request.vps4SnapshotId, hfsAction.snapshotId);
         return hfsAction;
@@ -68,7 +69,10 @@ public class Vps4SnapshotVm extends ActionCommand<Vps4SnapshotVm.Request, Vps4Sn
     private void deprecateOldSnapshot(CommandContext context, long vps4UserId) {
         if (snapshotIdToBeDeprecated != null) {
             logger.info("Deprecate snapshot with id: {}", snapshotIdToBeDeprecated);
-            vps4SnapshotService.markSnapshotAsDeprecated(snapshotIdToBeDeprecated);
+            context.execute("MarkSnapshotAsDeprecated" + snapshotIdToBeDeprecated, ctx -> {
+                vps4SnapshotService.markSnapshotAsDeprecated(snapshotIdToBeDeprecated);
+                return null;
+            });
             Snapshot vps4Snapshot = vps4SnapshotService.getSnapshot(snapshotIdToBeDeprecated);
 
             try {
@@ -99,11 +103,14 @@ public class Vps4SnapshotVm extends ActionCommand<Vps4SnapshotVm.Request, Vps4Sn
         } catch (Exception e) {
             logger.info("Snapshot creation error (waitForAction) for snapshot with id: {}", request.vps4SnapshotId);
             vps4SnapshotService.markSnapshotErrored(request.vps4SnapshotId);
-            reverseSnapshotDeprecation();
+            reverseSnapshotDeprecation(context);
             throw new RuntimeException(e);
         }
 
-        vps4SnapshotService.markSnapshotLive(request.vps4SnapshotId);
+        context.execute("MarkSnapshotLive" + request.vps4SnapshotId, ctx -> {
+            vps4SnapshotService.markSnapshotLive(request.vps4SnapshotId);
+            return null;
+        });
         return hfsAction;
     }
 
@@ -122,25 +129,36 @@ public class Vps4SnapshotVm extends ActionCommand<Vps4SnapshotVm.Request, Vps4Sn
             );
 
             logger.info("HFS snapshot create request returned action: {}", hfsAction);
-            vps4SnapshotService.markSnapshotInProgress(request.vps4SnapshotId);
+            context.execute("MarkSnapshotInProgress" + request.vps4SnapshotId, ctx -> {
+                vps4SnapshotService.markSnapshotInProgress(request.vps4SnapshotId);
+                return null;
+            });
             return hfsAction;
         } catch (Exception e) {
             logger.info("Snapshot creation error for VPS4 snapshot with id: {}", request.vps4SnapshotId);
             vps4SnapshotService.markSnapshotErrored(request.vps4SnapshotId);
-            reverseSnapshotDeprecation();
+            reverseSnapshotDeprecation(context);
             throw new RuntimeException(e);
         }
     }
 
-    private void reverseSnapshotDeprecation() {
+    private void reverseSnapshotDeprecation(CommandContext context) {
         if (snapshotIdToBeDeprecated != null)
+        {
             logger.info("Reverse deprecation of VPS4 snapshot with id: {}", snapshotIdToBeDeprecated);
+            context.execute("ReverseSnapshotDeprecation" + snapshotIdToBeDeprecated, ctx -> {
             vps4SnapshotService.reverseSnapshotDeprecation(snapshotIdToBeDeprecated);
+            return null;
+            });
+        }
     }
 
-    private void updateHfsSnapshotId(UUID vps4SnapshotId, long hfsSnapshotId) {
+    private void updateHfsSnapshotId(CommandContext context, UUID vps4SnapshotId, long hfsSnapshotId) {
         logger.info("Update VPS4 snapshot [{}] with HFS snapshot id: {}", vps4SnapshotId, hfsSnapshotId);
-        vps4SnapshotService.updateHfsSnapshotId(vps4SnapshotId, hfsSnapshotId);
+        context.execute("UpdateHfsSnapshotId" + vps4SnapshotId, ctx -> {
+            vps4SnapshotService.updateHfsSnapshotId(vps4SnapshotId, hfsSnapshotId);
+            return null;
+        });
     }
 
     private void updateHfsImageId(CommandContext context, UUID vps4SnapshotId, long hfsSnapshotId) {
@@ -150,7 +168,11 @@ public class Vps4SnapshotVm extends ActionCommand<Vps4SnapshotVm.Request, Vps4Sn
         );
 
         logger.info("Update VPS4 snapshot [{}] with Nocfox image id: {}", vps4SnapshotId, hfsSnapshot.imageId);
-        vps4SnapshotService.updateHfsImageId(vps4SnapshotId, hfsSnapshot.imageId);
+
+        context.execute("UpdateHfsImageId" + vps4SnapshotId, ctx -> {
+            vps4SnapshotService.updateHfsImageId(vps4SnapshotId, hfsSnapshot.imageId);
+            return null;
+        });
     }
 
     public static class Request implements ActionRequest {
