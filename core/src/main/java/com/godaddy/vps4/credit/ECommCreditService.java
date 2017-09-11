@@ -25,17 +25,17 @@ import gdg.hfs.vhfs.ecomm.MetadataUpdate;
 public class ECommCreditService implements CreditService {
 
     private interface ProductMeta{
-        public static final String DATA_CENTER = "data_center";
-        public static final String PRODUCT_ID = "product_id";
+        String DATA_CENTER = "data_center";
+        String PRODUCT_ID = "product_id";
     }
 
     private interface PlanFeatures{
-        public static final String TIER = "tier";
-        public static final String MANAGED_LEVEL = "managed_level";
-        public static final String MONITORING = "monitoring";
-        public static final String OPERATING_SYSTEM = "operatingsystem";
-        public static final String CONTROL_PANEL_TYPE = "control_panel_type";
-        public static final String PROVISION_DATE = "provision_date";
+        String TIER = "tier";
+        String MANAGED_LEVEL = "managed_level";
+        String MONITORING = "monitoring";
+        String OPERATING_SYSTEM = "operatingsystem";
+        String CONTROL_PANEL_TYPE = "control_panel_type";
+        String PROVISION_DATE = "provision_date";
     }
 
     private static final Logger logger = LoggerFactory.getLogger(ECommCreditService.class);

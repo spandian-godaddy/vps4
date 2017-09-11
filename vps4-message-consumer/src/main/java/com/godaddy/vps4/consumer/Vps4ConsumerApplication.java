@@ -93,7 +93,7 @@ public class Vps4ConsumerApplication {
         } catch (InterruptedException e) {
             logger.warn("Caught InterruptedException exception while getting future: ", e);
         } catch (ExecutionException e) {
-            logger.warn("Caught exceution exception: ", e);
+            logger.warn("Caught execution exception: ", e);
         } finally {
             try {
                 logger.info("Un-registering with zookeeper...");
