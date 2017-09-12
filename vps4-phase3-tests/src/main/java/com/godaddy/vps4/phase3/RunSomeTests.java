@@ -1,8 +1,11 @@
 package com.godaddy.vps4.phase3;
 
 import java.security.SecureRandom;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
@@ -13,11 +16,13 @@ import org.apache.commons.cli.DefaultParser;
 import org.apache.commons.cli.Option;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
+import org.json.simple.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.godaddy.vps4.phase3.api.SsoClient;
 import com.godaddy.vps4.phase3.api.Vps4ApiClient;
+import com.godaddy.vps4.phase3.api.Vps4ApiClient.Vps4JsonResponse;
 import com.godaddy.vps4.phase3.tests.ChangeHostnameTest;
 import com.godaddy.vps4.phase3.tests.StopStartVmTest;
 import com.godaddy.vps4.phase3.virtualmachine.VirtualMachinePool;
@@ -51,6 +56,8 @@ public class RunSomeTests {
 
         String vps4AuthHeader = ssoClient.getVps4SsoToken(vps4ShopperId, vps4Password);
         Vps4ApiClient vps4ApiClient = new Vps4ApiClient(URL, vps4AuthHeader);
+
+        DeleteAnyExistingVms(vps4ApiClient);
 
         ExecutorService threadPool = Executors.newCachedThreadPool();
 
@@ -93,6 +100,32 @@ public class RunSomeTests {
 
         vmPool.destroyAll();
         printResults(testGroupExecution);
+    }
+
+    private static void DeleteAnyExistingVms(Vps4ApiClient vps4ApiClient) {
+        List<UUID> vmsToDelete = vps4ApiClient.getListOfExistingVmIds();
+        if (!vmsToDelete.isEmpty()) {
+            System.out.println(String.format("Found %d existing VMs, deleting before running tests", vmsToDelete.size()));
+            List<CompletableFuture<Void>> futures = new ArrayList<>();
+            for (UUID vmId : vmsToDelete) {
+                futures.add(CompletableFuture.runAsync(() -> deleteVm(vps4ApiClient, vmId)));
+            }
+            try {
+                CompletableFuture.allOf(futures.toArray(new CompletableFuture[futures.size()])).get();
+            }
+            catch (Exception e) {
+                e.printStackTrace();
+                System.out
+                        .println("Exception while deleting existing VMS, tests will continue to run but may fail due to lack of credits.");
+            }
+        }
+    }
+
+    private static void deleteVm(Vps4ApiClient vps4ApiClient, UUID vmId) {
+        System.out.println("Deleting VM " + vmId);
+        Vps4JsonResponse<JSONObject> result = vps4ApiClient.deleteVm(vmId);
+        long actionId = (long)result.jsonResponse.get("id");
+        vps4ApiClient.pollForVmActionComplete(vmId, actionId);
     }
 
     private static CommandLine parseCliArgs(String[] args) throws ParseException {
@@ -140,5 +173,4 @@ public class RunSomeTests {
         }
         return sb.toString();
      }
-
 }

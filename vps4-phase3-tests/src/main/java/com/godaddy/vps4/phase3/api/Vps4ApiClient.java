@@ -4,6 +4,8 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.time.Instant;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 
 import org.apache.http.HttpResponse;
@@ -103,13 +105,13 @@ public class Vps4ApiClient {
     }
 
     @SuppressWarnings("unchecked")
-    public String setHostname(UUID vmId, String hostname){
+    public long setHostname(UUID vmId, String hostname) {
         JSONObject body = new JSONObject();
         body.put("hostname", hostname);
         Vps4JsonResponse<JSONObject> setHostnameResponse = sendPost("api/vms/" + vmId.toString() + "/setHostname", body);
         assert(setHostnameResponse.statusCode == 200);
         JSONObject setHostnameJsonResult = setHostnameResponse.jsonResponse;
-        return setHostnameJsonResult.get("id").toString();
+        return (long) setHostnameJsonResult.get("id");
 
     }
 
@@ -144,6 +146,22 @@ public class Vps4ApiClient {
         return null;
     }
 
+    public Vps4JsonResponse<JSONArray> getVms() {
+        Vps4JsonResponse<JSONArray> getVmsResponse = sendGetList("/api/vms");
+        assert (getVmsResponse.statusCode == 200);
+        return getVmsResponse;
+    }
+
+    public List<UUID> getListOfExistingVmIds() {
+        Vps4JsonResponse<JSONArray> getVmsResponse = getVms();
+        List<UUID> vmIds = new ArrayList<>();
+        for (Object vmJson : getVmsResponse.jsonResponse) {
+            JSONObject vm = (JSONObject) vmJson;
+            vmIds.add(UUID.fromString(vm.get("vmId").toString()));
+        }
+        return vmIds;
+    }
+
     @SuppressWarnings("unchecked")
     public JSONObject provisionVm(String name, UUID orionGuid,
                       String imageName, int dcId,
@@ -160,32 +178,32 @@ public class Vps4ApiClient {
         return provisionVmResponse.jsonResponse;
     }
 
-    public String restartVm(UUID vmId){
+    public long restartVm(UUID vmId) {
         Vps4JsonResponse<JSONObject> restartRequestResponse = sendPost("api/vms/"+ vmId + "/restart");
         assert(restartRequestResponse.statusCode == 200);
         JSONObject resartJsonResult = restartRequestResponse.jsonResponse;
-        return resartJsonResult.get("id").toString();
+        return (long)resartJsonResult.get("id");
     }
 
-    public String stopVm(UUID vmId){
+    public long stopVm(UUID vmId) {
         Vps4JsonResponse<JSONObject> restartRequestResponse = sendPost("api/vms/"+ vmId + "/stop");
         assert(restartRequestResponse.statusCode == 200);
         JSONObject resartJsonResult = restartRequestResponse.jsonResponse;
-        return resartJsonResult.get("id").toString();
+        return (long)resartJsonResult.get("id");
     }
 
-    public String startVm(UUID vmId){
+    public long startVm(UUID vmId) {
         Vps4JsonResponse<JSONObject> restartRequestResponse = sendPost("api/vms/"+ vmId + "/start");
         assert(restartRequestResponse.statusCode == 200);
         JSONObject resartJsonResult = restartRequestResponse.jsonResponse;
-        return resartJsonResult.get("id").toString();
+        return (long)resartJsonResult.get("id");
     }
 
-    public void pollForVmActionComplete(UUID vmId, String actionId){
+    public void pollForVmActionComplete(UUID vmId, long actionId) {
         this.pollForVmActionComplete(vmId, actionId, 60);
     }
 
-    public void pollForVmActionComplete(UUID vmId, String actionId, long timeoutSeconds){
+    public void pollForVmActionComplete(UUID vmId, long actionId, long timeoutSeconds) {
         String urlAppendix = "api/vms/"+vmId.toString()+"/actions/"+actionId;
         Vps4ApiClient.Vps4JsonResponse<JSONObject> result = sendGetObject(urlAppendix);
         long tries = 0;
@@ -204,13 +222,15 @@ public class Vps4ApiClient {
         }
     }
 
-    public Result deleteVm(UUID vmId){
+    public Vps4JsonResponse<JSONObject> deleteVm(UUID vmId) {
         String url = baseUrl  + "api/vms/"+ vmId.toString();
 
         HttpClient client = getHttpClient();
         HttpDelete request = new HttpDelete(url);
 
-        return callApi(client, request);
+        Result result = callApi(client, request);
+        JSONObject jsonResponse = convertToJSONObject(result.result.toString());
+        return new Vps4JsonResponse<JSONObject>(result.statusCode, jsonResponse);
     }
 
 

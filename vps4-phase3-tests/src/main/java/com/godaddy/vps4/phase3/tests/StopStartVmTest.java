@@ -22,14 +22,14 @@ public class StopStartVmTest implements VmTest {
     public void execute(VirtualMachine vm) {
         Vps4ApiClient vps4Client = vm.getClient();
 
-        String stopVmActionId = vps4Client.stopVm(vm.vmId);
+        long stopVmActionId = vps4Client.stopVm(vm.vmId);
         logger.debug("Wait for shutdown on vm {}", vm);
         vps4Client.pollForVmActionComplete(vm.vmId, stopVmActionId, 240);
 
         Vps4SshClient sshClient = vm.ssh();
         assert(!sshClient.checkConnection(vm.vmId));
 
-        String startVmActionId = vps4Client.startVm(vm.vmId);
+        long startVmActionId = vps4Client.startVm(vm.vmId);
         logger.debug("Wait for startup on vm {}", vm);
         vps4Client.pollForVmActionComplete(vm.vmId, startVmActionId, 240);
         

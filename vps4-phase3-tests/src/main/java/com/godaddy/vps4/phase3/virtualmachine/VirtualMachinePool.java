@@ -238,7 +238,7 @@ public class VirtualMachinePool {
 
             UUID vmId = UUID.fromString(provisionResult.get("virtualMachineId").toString());
 
-            String actionId = provisionResult.get("id").toString();
+            long actionId = (long)provisionResult.get("id");
             apiClient.pollForVmActionComplete(vmId, actionId, maxVmWaitSeconds);
             return vmId;
         }

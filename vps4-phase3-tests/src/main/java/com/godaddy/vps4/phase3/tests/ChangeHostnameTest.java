@@ -14,6 +14,9 @@ public class ChangeHostnameTest implements VmTest {
     
     final String newHostname;
 
+    private int HOSTNAME_TIMEOUT_SECONDS = 120;
+    private int RESTART_TIMEOUT_SECONDS = 240;
+
     public ChangeHostnameTest(String newHostname) {
         this.newHostname = newHostname;
     }
@@ -22,13 +25,13 @@ public class ChangeHostnameTest implements VmTest {
     public void execute(VirtualMachine vm){
         Vps4ApiClient vps4Client = vm.getClient();
 
-        String setHostnameActionId = vps4Client.setHostname(vm.vmId, newHostname);
+        long setHostnameActionId = vps4Client.setHostname(vm.vmId, newHostname);
         logger.debug("Wait for change hostname on vm {}", vm);
-        vps4Client.pollForVmActionComplete(vm.vmId, setHostnameActionId);
+        vps4Client.pollForVmActionComplete(vm.vmId, setHostnameActionId, HOSTNAME_TIMEOUT_SECONDS);
 
-        String restartVmActionId = vps4Client.restartVm(vm.vmId);
+        long restartVmActionId = vps4Client.restartVm(vm.vmId);
         logger.debug("Wait for restart on vm {}", vm);
-        vps4Client.pollForVmActionComplete(vm.vmId, restartVmActionId, 240);
+        vps4Client.pollForVmActionComplete(vm.vmId, restartVmActionId, RESTART_TIMEOUT_SECONDS);
 
         Vps4SshClient sshClient = vm.ssh();
         sshClient.assertCommandResult(vm.vmId, newHostname, "hostname;");
@@ -38,5 +41,4 @@ public class ChangeHostnameTest implements VmTest {
     public String toString(){
         return "Change Hostname Test";
     }
-
 }
