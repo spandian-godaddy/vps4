@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import javax.inject.Inject;
 
@@ -101,20 +102,24 @@ public class ECommCreditService implements CreditService {
 
     @Override
     public List<VirtualMachineCredit> getUnclaimedVirtualMachineCredits(String shopperId) {
-        List<Account> accounts = ecommService.getAccounts(shopperId);
-        return accounts.stream()
-                .filter(a -> a.status != Account.Status.removed)
-                .filter(a -> !a.product_meta.containsKey(ProductMeta.DATA_CENTER))
-                .map(this::mapVirtualMachineCredit)
-                .collect(Collectors.toList());
+        return getVirtualMachineCredits(shopperId, true);
     }
 
     @Override
     public List<VirtualMachineCredit> getVirtualMachineCredits(String shopperId) {
+        return getVirtualMachineCredits(shopperId, false);
+    }
+
+    public List<VirtualMachineCredit> getVirtualMachineCredits(String shopperId, boolean showClaimed) {
         List<Account> accounts = ecommService.getAccounts(shopperId);
-        return accounts.stream()
-                .filter(a -> a.status != Account.Status.removed)
-                .map(this::mapVirtualMachineCredit)
+        Stream<Account> stream = accounts.stream()
+                .filter(a -> a.product.equals("vps4"))
+                .filter(a -> a.status != Account.Status.removed);
+
+        if (showClaimed)
+            stream = stream.filter(a -> !a.product_meta.containsKey(ProductMeta.DATA_CENTER));
+
+        return stream.map(this::mapVirtualMachineCredit)
                 .collect(Collectors.toList());
     }
 
