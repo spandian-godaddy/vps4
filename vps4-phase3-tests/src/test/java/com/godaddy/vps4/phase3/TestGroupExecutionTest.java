@@ -27,10 +27,8 @@ public class TestGroupExecutionTest {
 
     @Test
     public void testGroupExecution() throws InterruptedException {
-        // Mock available credit
         when(apiClient.getVmCredit(any(), any(), any()))
             .thenAnswer(invocation -> UUID.randomUUID());
-            //  .thenReturn(null);
 
         runPhase3Tests();
     }
@@ -39,7 +37,6 @@ public class TestGroupExecutionTest {
     public void testNoCreditsAvailable() throws InterruptedException {
         // Test no credit available
         when(apiClient.getVmCredit(any(), any(), any())).thenReturn(null);
-
         runPhase3Tests();
     }
 
@@ -47,12 +44,14 @@ public class TestGroupExecutionTest {
 
         ExecutorService threadPool = Executors.newCachedThreadPool();
 
+        when(apiClient.getListOfExistingVmIds()).thenReturn(new ArrayList<UUID>());
+
         // provisionVm params: String name, UUID orionGuid, String imageName, int dcId, String username, String password
         when(apiClient.provisionVm(any(), any(), any(), anyInt(), any(), any()))
             .thenAnswer(invocation -> {
                 JSONObject json = new JSONObject();
                 json.put("virtualMachineId", UUID.randomUUID());
-                json.put("id", "action-id");
+                json.put("id", "123456");
                 return json;
             });
 

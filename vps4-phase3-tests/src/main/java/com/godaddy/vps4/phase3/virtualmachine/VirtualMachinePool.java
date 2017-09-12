@@ -235,10 +235,8 @@ public class VirtualMachinePool {
         public UUID provisionVm(UUID orionGuid){
             JSONObject provisionResult = apiClient.provisionVm("VPS4 Phase 3 Test VM",
                     orionGuid, imageName, 1, username, password);
-
             UUID vmId = UUID.fromString(provisionResult.get("virtualMachineId").toString());
-
-            long actionId = (long)provisionResult.get("id");
+            long actionId = Long.parseLong((String)provisionResult.get("id"));
             apiClient.pollForVmActionComplete(vmId, actionId, maxVmWaitSeconds);
             return vmId;
         }
