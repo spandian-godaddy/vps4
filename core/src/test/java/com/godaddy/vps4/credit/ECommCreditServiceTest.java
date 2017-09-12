@@ -150,13 +150,13 @@ public class ECommCreditServiceTest {
     }
 
     @Test
-    public void testGetActiveCreditsCallsGetAccounts() throws Exception {
+    public void testGetCreditsCallsGetAccounts() throws Exception {
         assertTrue(creditService.getVirtualMachineCredits(account.shopper_id).isEmpty());
         verify(ecommService).getAccounts(eq(account.shopper_id));
     }
 
     @Test
-    public void testGetActiveCreditsFiltersActive() throws Exception {
+    public void testGetCreditsFiltersRemoved() throws Exception {
         when(ecommService.getAccounts(account.shopper_id)).thenReturn(Arrays.asList(account));
 
         List<VirtualMachineCredit> credits = creditService.getVirtualMachineCredits(account.shopper_id);
@@ -168,7 +168,7 @@ public class ECommCreditServiceTest {
     }
 
     @Test
-    public void testGetActiveCreditsDoesntFilterUnclaimed() throws Exception {
+    public void testGetCreditsDoesntFilterUnclaimed() throws Exception {
         when(ecommService.getAccounts(account.shopper_id)).thenReturn(Arrays.asList(account));
 
         List<VirtualMachineCredit> credits = creditService.getVirtualMachineCredits(account.shopper_id);
@@ -178,6 +178,22 @@ public class ECommCreditServiceTest {
         credits = creditService.getVirtualMachineCredits(account.shopper_id);
         assertEquals(1, credits.size());
     }
+
+    @Test
+    public void testGetCreditsFiltersOtherProducts() {
+        account.product = "mwp2";
+        account.plan_features = new HashMap<>();
+        account.plan_features.put("plan_type", "pro5");
+        account.plan_features.put("max_sites", "5");
+        when(ecommService.getAccounts(account.shopper_id)).thenReturn(Arrays.asList(account));
+
+        List<VirtualMachineCredit> credits = creditService.getVirtualMachineCredits(account.shopper_id);
+        assertEquals(0, credits.size());
+
+        credits = creditService.getUnclaimedVirtualMachineCredits(account.shopper_id);
+        assertEquals(0, credits.size());
+    }
+
 
     @Test
     public void testCreateCreditCallsCreateAccount() throws Exception {

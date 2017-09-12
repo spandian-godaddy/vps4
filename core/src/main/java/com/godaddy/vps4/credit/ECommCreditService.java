@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import javax.inject.Inject;
 
@@ -23,6 +24,8 @@ import gdg.hfs.vhfs.ecomm.MetadataUpdate;
 
 @Singleton
 public class ECommCreditService implements CreditService {
+
+    public static final String PRODUCT_NAME = "vps4";
 
     private interface ProductMeta{
         String DATA_CENTER = "data_center";
@@ -101,20 +104,24 @@ public class ECommCreditService implements CreditService {
 
     @Override
     public List<VirtualMachineCredit> getUnclaimedVirtualMachineCredits(String shopperId) {
-        List<Account> accounts = ecommService.getAccounts(shopperId);
-        return accounts.stream()
-                .filter(a -> a.status != Account.Status.removed)
-                .filter(a -> !a.product_meta.containsKey(ProductMeta.DATA_CENTER))
-                .map(this::mapVirtualMachineCredit)
-                .collect(Collectors.toList());
+        return getVirtualMachineCredits(shopperId, false);
     }
 
     @Override
     public List<VirtualMachineCredit> getVirtualMachineCredits(String shopperId) {
+        return getVirtualMachineCredits(shopperId, true);
+    }
+
+    public List<VirtualMachineCredit> getVirtualMachineCredits(String shopperId, boolean showClaimed) {
         List<Account> accounts = ecommService.getAccounts(shopperId);
-        return accounts.stream()
-                .filter(a -> a.status != Account.Status.removed)
-                .map(this::mapVirtualMachineCredit)
+        Stream<Account> stream = accounts.stream()
+                .filter(a -> a.product.equals(PRODUCT_NAME))
+                .filter(a -> a.status != Account.Status.removed);
+
+        if (!showClaimed)
+            stream = stream.filter(a -> !a.product_meta.containsKey(ProductMeta.DATA_CENTER));
+
+        return stream.map(this::mapVirtualMachineCredit)
                 .collect(Collectors.toList());
     }
 
@@ -131,7 +138,7 @@ public class ECommCreditService implements CreditService {
         Account account = new Account();
         account.shopper_id = shopperId;
         account.account_guid = orionGuid.toString();
-        account.product = "vps4";
+        account.product = PRODUCT_NAME;
         account.status = Account.Status.active;
         account.plan_features = planFeatures;
 
