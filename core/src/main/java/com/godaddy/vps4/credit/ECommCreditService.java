@@ -25,6 +25,8 @@ import gdg.hfs.vhfs.ecomm.MetadataUpdate;
 @Singleton
 public class ECommCreditService implements CreditService {
 
+    public static final String PRODUCT_NAME = "vps4";
+
     private interface ProductMeta{
         String DATA_CENTER = "data_center";
         String PRODUCT_ID = "product_id";
@@ -102,21 +104,21 @@ public class ECommCreditService implements CreditService {
 
     @Override
     public List<VirtualMachineCredit> getUnclaimedVirtualMachineCredits(String shopperId) {
-        return getVirtualMachineCredits(shopperId, true);
+        return getVirtualMachineCredits(shopperId, false);
     }
 
     @Override
     public List<VirtualMachineCredit> getVirtualMachineCredits(String shopperId) {
-        return getVirtualMachineCredits(shopperId, false);
+        return getVirtualMachineCredits(shopperId, true);
     }
 
     public List<VirtualMachineCredit> getVirtualMachineCredits(String shopperId, boolean showClaimed) {
         List<Account> accounts = ecommService.getAccounts(shopperId);
         Stream<Account> stream = accounts.stream()
-                .filter(a -> a.product.equals("vps4"))
+                .filter(a -> a.product.equals(PRODUCT_NAME))
                 .filter(a -> a.status != Account.Status.removed);
 
-        if (showClaimed)
+        if (!showClaimed)
             stream = stream.filter(a -> !a.product_meta.containsKey(ProductMeta.DATA_CENTER));
 
         return stream.map(this::mapVirtualMachineCredit)
@@ -136,7 +138,7 @@ public class ECommCreditService implements CreditService {
         Account account = new Account();
         account.shopper_id = shopperId;
         account.account_guid = orionGuid.toString();
-        account.product = "vps4";
+        account.product = PRODUCT_NAME;
         account.status = Account.Status.active;
         account.plan_features = planFeatures;
 
