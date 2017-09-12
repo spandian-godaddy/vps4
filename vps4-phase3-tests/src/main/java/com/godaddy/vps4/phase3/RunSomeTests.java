@@ -124,7 +124,7 @@ public class RunSomeTests {
     private static void deleteVm(Vps4ApiClient vps4ApiClient, UUID vmId) {
         System.out.println("Deleting VM " + vmId);
         Vps4JsonResponse<JSONObject> result = vps4ApiClient.deleteVm(vmId);
-        long actionId = Long.parseLong((String)result.jsonResponse.get("id"));
+        long actionId = Long.parseLong(result.jsonResponse.get("id").toString());
         vps4ApiClient.pollForVmActionComplete(vmId, actionId);
     }
 
