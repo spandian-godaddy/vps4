@@ -1,5 +1,12 @@
 package com.godaddy.vps4.consumer;
 
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+
 import ch.qos.logback.classic.Level;
 import com.godaddy.hfs.zookeeper.ZooKeeperClient;
 import com.godaddy.vps4.consumer.config.KafkaConfiguration;
@@ -9,8 +16,6 @@ import com.godaddy.vps4.handler.util.ZkAppRegistrationService;
 import com.google.inject.Injector;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.util.concurrent.*;
 
 public class Vps4ConsumerApplication {
 
