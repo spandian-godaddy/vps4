@@ -5,6 +5,7 @@ import static com.godaddy.vps4.web.util.RequestValidation.validateVmExists;
 
 import java.util.List;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
@@ -20,6 +21,7 @@ import com.godaddy.vps4.credit.CreditService;
 import com.godaddy.vps4.security.Views;
 import com.godaddy.vps4.snapshot.Snapshot;
 import com.godaddy.vps4.snapshot.SnapshotService;
+import com.godaddy.vps4.snapshot.SnapshotStatus;
 import com.godaddy.vps4.snapshot.SnapshotType;
 import com.godaddy.vps4.vm.VirtualMachine;
 import com.godaddy.vps4.vm.VirtualMachineService;
@@ -30,6 +32,7 @@ import com.godaddy.vps4.web.snapshot.SnapshotAction;
 import com.godaddy.vps4.web.snapshot.SnapshotResource;
 import com.godaddy.vps4.web.snapshot.SnapshotResource.SnapshotRenameRequest;
 import com.google.inject.Inject;
+
 import io.swagger.annotations.Api;
 
 @Vps4Api
@@ -71,7 +74,10 @@ public class VmSnapshotResource {
             getAndValidateUserAccountCredit(creditService, virtualMachine.orionGuid, user.getShopperId());
         }
 
-        return snapshotService.getSnapshotsForVm(vmId);
+        return snapshotService.getSnapshotsForVm(vmId)
+                .stream()
+                .filter(snapshot -> snapshot.status != SnapshotStatus.DESTROYED)
+                .collect(Collectors.toList());
     }
 
     public static class VmSnapshotRequest {
