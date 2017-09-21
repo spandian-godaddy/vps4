@@ -1,5 +1,21 @@
 package com.godaddy.vps4.sysadmin;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.mockito.Matchers.eq;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.text.ParseException;
+import java.time.Duration;
+import java.time.Instant;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
+
 import javax.cache.Cache;
 import javax.cache.CacheManager;
 import javax.ws.rs.core.Response;
@@ -11,23 +27,13 @@ import org.junit.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mockito;
 
-import static org.junit.Assert.*;
-
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.eq;
-
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.time.Duration;
-import java.time.Instant;
-
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.godaddy.hfs.config.Config;
 import com.godaddy.hfs.io.Charsets;
 import com.godaddy.vps4.cache.CacheName;
 import com.godaddy.vps4.cache.HazelcastProvider;
 import com.godaddy.vps4.sysadmin.VmUsageService.CachedVmUsage;
+import com.godaddy.vps4.util.TimeStamp;
 
 import gdg.hfs.vhfs.sysadmin.SysAdminAction;
 import gdg.hfs.vhfs.sysadmin.SysAdminService;
@@ -52,8 +58,9 @@ public class VmUsageServiceTest {
         CacheManager cacheManager = mock(CacheManager.class);
         cache = mock(Cache.class);
         when(cacheManager.getCache(CacheName.VM_USAGE, Long.class, CachedVmUsage.class)).thenReturn(cache);
-
-        vmUsageService = new VmUsageService(sysAdminService, cacheManager);
+        Config config = mock(Config.class);
+        when(config.get("hfs.sysadmin.secondsToWaitForStatsUpdate")).thenReturn("300");
+        vmUsageService = new VmUsageService(config, sysAdminService, cacheManager);
 
         // read some test data
         try (InputStream is = VmUsageParserTest.class.getResourceAsStream("usage_stats_linux.json")) {
@@ -234,5 +241,34 @@ public class VmUsageServiceTest {
         verify(sysAdminService).usageStatsResults(42, null, null);
     }
 
+    @Test
+    public void testHfsActionNotCompleting() throws ParseException {
+        when(cache.get(42L)).thenReturn(new CachedVmUsage(null, 1));
 
+        Response response = mock(Response.class);
+        when(response.getStatus()).thenReturn(202);
+
+        String jsonResponse = "{\"data\": \"has not completed\"}";
+        when(response.readEntity(String.class)).thenReturn(jsonResponse);
+        when(sysAdminService.usageStatsResults(42, null, null)).thenReturn(response);
+
+        SysAdminAction beforeAction = new SysAdminAction();
+        beforeAction.vmId = 42;
+        beforeAction.sysAdminActionId = 1;
+        beforeAction.status = SysAdminAction.Status.IN_PROGRESS;
+        beforeAction.createdAt = ZonedDateTime.now(ZoneId.of("UTC")).minusMinutes(6).format(TimeStamp.hfsActionTimestampFormat);
+
+        SysAdminAction afterAction = new SysAdminAction();
+        afterAction.vmId = 42;
+        afterAction.status = SysAdminAction.Status.IN_PROGRESS;
+        afterAction.sysAdminActionId = 12;
+        afterAction.createdAt = ZonedDateTime.now(ZoneId.of("UTC")).format(TimeStamp.hfsActionTimestampFormat);
+
+        when(sysAdminService.getSysAdminAction(1)).thenReturn(beforeAction);
+        when(sysAdminService.usageStatsUpdate(42, 1)).thenReturn(afterAction);
+
+        VmUsage usage = vmUsageService.getUsage(42);
+
+        verify(sysAdminService).usageStatsUpdate(42, 1);
+    }
 }

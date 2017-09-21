@@ -2,6 +2,7 @@ package com.godaddy.vps4.sysadmin;
 
 import java.time.Duration;
 import java.time.Instant;
+import java.time.ZonedDateTime;
 
 import javax.cache.Cache;
 import javax.cache.CacheManager;
@@ -14,7 +15,9 @@ import org.json.simple.parser.ParseException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.godaddy.hfs.config.Config;
 import com.godaddy.vps4.cache.CacheName;
+import com.godaddy.vps4.util.TimeStamp;
 
 import gdg.hfs.vhfs.sysadmin.SysAdminAction;
 import gdg.hfs.vhfs.sysadmin.SysAdminService;
@@ -27,10 +30,13 @@ public class VmUsageService {
 
     final Cache<Long, CachedVmUsage> cache;
 
+    final int secondsToWaitForHfsAction;
+
     @Inject
-    public VmUsageService(SysAdminService sysAdminService, CacheManager cacheManager) {
+    public VmUsageService(Config config, SysAdminService sysAdminService, CacheManager cacheManager) {
         this.sysAdminService = sysAdminService;
         this.cache = cacheManager.getCache(CacheName.VM_USAGE, Long.class, CachedVmUsage.class);
+        this.secondsToWaitForHfsAction = Integer.parseInt(config.get("hfs.sysadmin.secondsToWaitForStatsUpdate"));
     }
 
     public VmUsage getUsage(long hfsVmId) throws java.text.ParseException {
@@ -110,13 +116,17 @@ public class VmUsageService {
             // Check on the request to see if we need to send another one
             SysAdminAction updateAction = sysAdminService.getSysAdminAction(cachedUsage.updateActionId);
 
+            Instant createdAt = ZonedDateTime.parse(updateAction.createdAt, TimeStamp.hfsActionTimestampFormat).toInstant();
+
             if (updateAction.status == SysAdminAction.Status.COMPLETE
-                || updateAction.status == SysAdminAction.Status.FAILED) {
+                    || updateAction.status == SysAdminAction.Status.FAILED
+                    || Instant.now().isAfter(createdAt.plusSeconds(secondsToWaitForHfsAction))) {
                 // if the action we sent has completed, but we still aren't getting updated data,
-                // then send another request
+                // then send another request. Also if it has been more than 5 minutes since the last request was sent.
                 return true;
 
-            } else {
+            }
+            else {
                 // otherwise, assume there are issues on the HFS side that are keeping
                 // the sysadmin requests from completing, and don't flood them with requests
                 // (wait for the existing action to go through to a terminal state)
