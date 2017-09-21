@@ -14,7 +14,7 @@ public class ChangeHostnameTest implements VmTest {
     
     final String newHostname;
 
-    private int HOSTNAME_TIMEOUT_SECONDS = 120;
+    private int HOSTNAME_TIMEOUT_SECONDS = 240;
     private int RESTART_TIMEOUT_SECONDS = 240;
 
     public ChangeHostnameTest(String newHostname) {
