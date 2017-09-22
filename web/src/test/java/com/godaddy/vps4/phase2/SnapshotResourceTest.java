@@ -1,7 +1,6 @@
 package com.godaddy.vps4.phase2;
 
 import java.lang.reflect.Method;
-import java.time.Instant;
 import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
@@ -21,7 +20,7 @@ import com.godaddy.vps4.security.Vps4UserService;
 import com.godaddy.vps4.security.jdbc.AuthorizationException;
 import com.godaddy.vps4.snapshot.Snapshot;
 import com.godaddy.vps4.snapshot.SnapshotModule;
-import com.godaddy.vps4.snapshot.SnapshotStatus;
+import com.godaddy.vps4.snapshot.SnapshotService;
 import com.godaddy.vps4.snapshot.SnapshotType;
 import com.godaddy.vps4.vm.AccountStatus;
 import com.godaddy.vps4.vm.ActionStatus;
@@ -46,6 +45,7 @@ import org.junit.Test;
 public class SnapshotResourceTest {
     @Inject Vps4UserService userService;
     @Inject DataSource dataSource;
+    @Inject SnapshotService snapshotService;
 
     private GDUser user;
     private VirtualMachine testVm;
@@ -87,20 +87,7 @@ public class SnapshotResourceTest {
     private Snapshot createTestSnapshot() {
         Vps4User vps4User = userService.getOrCreateUserForShopper(GDUserMock.DEFAULT_SHOPPER);
         testVm = SqlTestData.insertTestVm(UUID.randomUUID(), vps4User.getId(), dataSource);
-        Snapshot testSnapshot = new Snapshot(
-                UUID.randomUUID(),
-                testVm.projectId,
-                testVm.vmId,
-                "test-snapshot",
-                SnapshotStatus.LIVE,
-                Instant.now(),
-                null,
-                "test-imageid",
-                (int) (Math.random() * 100000),
-                SnapshotType.ON_DEMAND
-        );
-        SqlTestData.insertTestSnapshot(testSnapshot, dataSource);
-        return testSnapshot;
+        return SqlTestData.insertSnapshot(snapshotService, testVm.vmId, testVm.projectId, SnapshotType.ON_DEMAND);
     }
 
     // === getSnapshotList Tests ===
@@ -174,7 +161,7 @@ public class SnapshotResourceTest {
     @Test(expected = NotFoundException.class)
     public void testNoLongerValidGetSnapshot() {
         Snapshot snapshot = createTestSnapshot();
-        SqlTestData.invalidateTestSnapshot(snapshot.id, dataSource);
+        SqlTestData.invalidateSnapshot(snapshotService, snapshot.id);
 
         user = GDUserMock.createShopper();
         getSnapshotResource().getSnapshot(snapshot.id);

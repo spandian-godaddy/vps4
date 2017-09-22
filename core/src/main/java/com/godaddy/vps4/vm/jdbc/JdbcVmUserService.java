@@ -56,6 +56,18 @@ public class JdbcVmUserService implements VmUserService{
         }
     }
 
+    // Right now we only have one user (of type customer) per vm so returning the first user returned by the query works
+    // In the future we may need to possibly tag users of type customer
+    @Override
+    public VmUser getPrimaryCustomer(UUID vmId) {
+        VmUserType userType = VmUserType.CUSTOMER;
+        String query = "SELECT u.name, u.vm_id, u.admin_enabled, ut.type_name"
+                + " FROM vm_user u JOIN vm_user_type ut ON u.vm_user_type_id = ut.type_id"
+                + " WHERE u.vm_id=? AND ut.type_name=?";
+        List<VmUser> customers = Sql.with(dataSource).exec(query, Sql.listOf(this::mapUser), vmId, userType.name());
+        return customers.get(0);
+    }
+
     @Override
     public VmUser getSupportUser(UUID vmId) {
         return Sql.with(dataSource)

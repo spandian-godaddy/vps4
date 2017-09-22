@@ -4,6 +4,9 @@ import java.util.UUID;
 
 import javax.sql.DataSource;
 
+import com.godaddy.vps4.snapshot.SnapshotService;
+import com.godaddy.vps4.snapshot.SnapshotStatus;
+import com.godaddy.vps4.snapshot.SnapshotType;
 import com.godaddy.vps4.vm.*;
 import org.json.simple.JSONObject;
 
@@ -27,6 +30,8 @@ public class SqlTestData {
     public final static String TEST_VM_NAME = "testVirtualMachine";
     public final static String TEST_SNAPSHOT_NAME = "test-snapshot";
     public final static String TEST_VM_SGID = "vps4-testing-";
+    public final static long hfsSnapshotId = 123;
+    public final static String nfImageId = "test-imageid";
 
     public static long getNextHfsVmId(DataSource dataSource) {
         return Sql.with(dataSource).exec("SELECT max(hfs_vm_id) as hfs_vm_id FROM virtual_machine",
@@ -72,13 +77,22 @@ public class SqlTestData {
         virtualMachineService.destroyVirtualMachine(vm.hfsVmId);
     }
 
-    public static void insertTestSnapshot(Snapshot snapshot, DataSource dataSource) {
-        Sql.with(dataSource).exec("INSERT INTO snapshot (id, hfs_image_id, project_id, hfs_snapshot_id, vm_id, name) VALUES (?, ?, ?, ?, ?, ?)",
-                null, snapshot.id, snapshot.hfsSnapshotId, snapshot.projectId, snapshot.hfsSnapshotId, snapshot.vmId, snapshot.name);
+    public static Snapshot insertSnapshot(SnapshotService snapshotService, UUID vmId, long projectId, SnapshotType snapshotType) {
+        UUID snapshotId = snapshotService.createSnapshot(projectId, vmId, TEST_SNAPSHOT_NAME, snapshotType);
+        return snapshotService.getSnapshot(snapshotId);
     }
 
-    public static void invalidateTestSnapshot(UUID id, DataSource dataSource) {
-        Sql.with(dataSource).exec("UPDATE snapshot SET status = 5 WHERE id = '" + id + "'", null);
+    public static Snapshot insertSnapshotWithStatus(SnapshotService snapshotService, UUID vmId,
+                                                long projectId, SnapshotStatus status, SnapshotType snapshotType) {
+        Snapshot snapshot = insertSnapshot(snapshotService, vmId, projectId, snapshotType);
+        snapshotService.updateSnapshotStatus(snapshot.id, status);
+        snapshotService.updateHfsSnapshotId(snapshot.id, hfsSnapshotId);
+        snapshotService.updateHfsImageId(snapshot.id, nfImageId);
+        return snapshot;
+    }
+
+    public static void invalidateSnapshot(SnapshotService snapshotService, UUID snapshotId) {
+        snapshotService.markSnapshotDestroyed(snapshotId);
     }
 
     public static void insertTestUser(VmUser user, DataSource dataSource) {

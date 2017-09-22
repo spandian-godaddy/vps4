@@ -10,11 +10,5 @@ public class Vps4SnapshotTestModule extends AbstractModule {
     @Override
     public void configure() {
         bind(VirtualMachineService.class).to(JdbcVirtualMachineService.class);
-        bind(gdg.hfs.vhfs.snapshot.SnapshotService.class)
-                .toInstance(createMockHfsSnapshotService());
-    }
-
-    private gdg.hfs.vhfs.snapshot.SnapshotService createMockHfsSnapshotService() {
-        return mock(gdg.hfs.vhfs.snapshot.SnapshotService.class);
     }
 }

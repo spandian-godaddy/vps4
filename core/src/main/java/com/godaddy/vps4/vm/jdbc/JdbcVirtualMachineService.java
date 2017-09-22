@@ -8,6 +8,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import javax.inject.Inject;
 import javax.sql.DataSource;
@@ -231,5 +233,29 @@ public class JdbcVirtualMachineService implements VirtualMachineService {
                 + " AND stat.status IN ('NEW', 'IN_PROGRESS')"
                 + " AND v.vm_id=?;",
                 Sql.nextOrNull(rs -> rs.getLong("id")), vmId);
+    }
+
+    @Override
+    public String getOSDistro(UUID vmId) {
+        String hfsName = Sql.with(dataSource).exec(
+                "SELECT image.hfs_name FROM virtual_machine v "
+                + "JOIN image ON image.image_id=v.image_id "
+                + "WHERE v.vm_id=?;", Sql.nextOrNull(rs -> rs.getString("hfs_name")), vmId);
+
+        String pattern = "(?:hfs-)?(?<osdistro>\\w+-\\w+)(?:-\\w+-\\w+)?";
+        Matcher m = Pattern.compile(pattern).matcher(hfsName);
+        m.matches();
+        return m.group("osdistro");
+    }
+
+    @Override
+    public boolean isLinux(UUID vmId) {
+        return getVirtualMachine(vmId).image.operatingSystem == Image.OperatingSystem.LINUX;
+    }
+
+    @Override
+    public boolean hasControlPanel(UUID vmId) {
+        VirtualMachine vm = getVirtualMachine(vmId);
+        return vm.image.controlPanel == ControlPanel.CPANEL || vm.image.controlPanel == ControlPanel.PLESK;
     }
 }

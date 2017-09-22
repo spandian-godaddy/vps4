@@ -25,7 +25,8 @@ public enum ActionType {
     ADD_IP(16),
     DESTROY_IP(17),
     UPDATE_MAILRELAY_QUOTA(18),
-    RENAME_SNAPSHOT(19);
+    RENAME_SNAPSHOT(19),
+    RESTORE_VM(20);
 
 
     private final int typeId;

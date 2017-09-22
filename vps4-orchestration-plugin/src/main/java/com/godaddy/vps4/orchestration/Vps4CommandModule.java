@@ -14,6 +14,7 @@ import com.godaddy.vps4.orchestration.vm.Vps4DestroyIpAddressAction;
 import com.godaddy.vps4.orchestration.vm.Vps4DestroyVm;
 import com.godaddy.vps4.orchestration.vm.Vps4ProvisionVm;
 import com.godaddy.vps4.orchestration.vm.Vps4RestartVm;
+import com.godaddy.vps4.orchestration.vm.Vps4RestoreVm;
 import com.godaddy.vps4.orchestration.vm.Vps4StartVm;
 import com.godaddy.vps4.orchestration.vm.Vps4StopVm;
 import com.godaddy.vps4.orchestration.vm.Vps4TestCommand;
@@ -40,5 +41,6 @@ public class Vps4CommandModule extends AbstractModule {
         bind(Vps4SnapshotVm.class);
         bind(Vps4DestroySnapshot.class);
         bind(Vps4SetMailRelayQuota.class);
+        bind(Vps4RestoreVm.class);
     }
 }

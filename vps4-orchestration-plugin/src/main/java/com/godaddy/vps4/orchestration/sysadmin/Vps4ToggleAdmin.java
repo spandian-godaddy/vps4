@@ -67,6 +67,11 @@ public class Vps4ToggleAdmin extends ActionCommand<Vps4ToggleAdmin.Request, Void
         public long getActionId() {
             return actionId;
         }
+
+        @Override
+        public void setActionId(long actionId) {
+            this.actionId = actionId;
+        }
     }
     public static class Response {
         public long hfsVmId;

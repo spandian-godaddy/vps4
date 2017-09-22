@@ -353,6 +353,11 @@ public class Vps4ProvisionVm extends ActionCommand<Vps4ProvisionVm.Request, Vps4
         public long getActionId() {
             return actionId;
         }
+
+        @Override
+        public void setActionId(long actionId) {
+            this.actionId = actionId;
+        }
     }
 
     public static class Response {

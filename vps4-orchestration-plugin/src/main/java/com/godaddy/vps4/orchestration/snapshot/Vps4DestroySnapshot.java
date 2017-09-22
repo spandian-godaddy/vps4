@@ -47,6 +47,11 @@ public class Vps4DestroySnapshot extends ActionCommand<Vps4DestroySnapshot.Reque
         public long getActionId() {
             return actionId;
         }
+
+        @Override
+        public void setActionId(long actionId) {
+            this.actionId = actionId;
+        }
     }
 
 }

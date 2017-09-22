@@ -24,6 +24,7 @@ public class WebModule extends AbstractModule {
         bind(StatusResource.class);
 
         bind(VmResource.class);
+        bind(VmRestoreResource.class);
         bind(VmActionResource.class);
         bind(VmFlavorResource.class);
         bind(VmPatchResource.class);

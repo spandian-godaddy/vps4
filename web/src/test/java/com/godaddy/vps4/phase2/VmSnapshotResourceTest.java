@@ -75,20 +75,7 @@ public class VmSnapshotResourceTest {
     private Snapshot createTestSnapshot() {
         Vps4User vps4User = userService.getOrCreateUserForShopper(GDUserMock.DEFAULT_SHOPPER);
         testVm = SqlTestData.insertTestVm(UUID.randomUUID(), vps4User.getId(), dataSource);
-        Snapshot testSnapshot = new Snapshot(
-                UUID.randomUUID(),
-                testVm.projectId,
-                testVm.vmId,
-                "test-snapshot",
-                SnapshotStatus.LIVE,
-                Instant.now(),
-                null,
-                "test-imageid",
-                (int) (Math.random() * 100000),
-                SnapshotType.ON_DEMAND
-        );
-        SqlTestData.insertTestSnapshot(testSnapshot, dataSource);
-        return testSnapshot;
+        return SqlTestData.insertSnapshot(snapshotService, testVm.vmId, testVm.projectId, SnapshotType.ON_DEMAND);
     }
 
     private VmSnapshotResource getVmSnapshotResource() {

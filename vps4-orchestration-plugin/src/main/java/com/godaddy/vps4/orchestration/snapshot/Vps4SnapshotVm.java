@@ -187,6 +187,11 @@ public class Vps4SnapshotVm extends ActionCommand<Vps4SnapshotVm.Request, Vps4Sn
         public long getActionId() {
             return actionId;
         }
+
+        @Override
+        public void setActionId(long actionId) {
+            this.actionId = actionId;
+        }
     }
 
     public static class Response {

@@ -85,7 +85,7 @@ public class SysAdminResource {
         VirtualMachine vm = vmResource.getVm(vmId);
 
         validateServerIsActive(vmResource.getVmFromVmVertical(vm.hfsVmId));
-        validateNoConflictingActions(vmId, actionService, ActionType.SET_PASSWORD);
+        validateNoConflictingActions(vmId, actionService, ActionType.SET_PASSWORD, ActionType.RESTORE_VM);
 
         if (!vmUserService.userExists(updatePasswordRequest.username, vm.vmId)) {
             String message = String.format("Cannot find user %s for vm %s",  updatePasswordRequest.username, vmId);
@@ -179,7 +179,7 @@ public class SysAdminResource {
 
         ActionType actionType = shouldEnable ? ActionType.ENABLE_ADMIN_ACCESS : ActionType.DISABLE_ADMIN_ACCESS;
         validateServerIsActive(vmResource.getVmFromVmVertical(vm.hfsVmId));
-        validateNoConflictingActions(vmId, actionService, actionType);
+        validateNoConflictingActions(vmId, actionService, actionType, ActionType.RESTORE_VM);
 
         if (!vmUserService.userExists(username, vm.vmId)) {
             throw new Vps4Exception("VM_USER_NOT_FOUND", "User not found on virtual machine.");

@@ -87,6 +87,11 @@ public class Vps4SetHostname extends ActionCommand<Vps4SetHostname.Request, Void
         public long getActionId() {
             return actionId;
         }
+
+        @Override
+        public void setActionId(long actionId) {
+            this.actionId = actionId;
+        }
     }
 
     public static class Response {

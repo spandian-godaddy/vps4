@@ -7,6 +7,7 @@ import static com.godaddy.vps4.web.util.RequestValidation.validateServerIsActive
 import static com.godaddy.vps4.web.util.RequestValidation.validateServerIsStopped;
 import static com.godaddy.vps4.web.util.RequestValidation.validateUserIsShopper;
 import static com.godaddy.vps4.web.util.RequestValidation.validateVmExists;
+import static com.godaddy.vps4.web.util.VmHelper.createActionAndExecute;
 
 import java.time.Instant;
 import java.util.List;
@@ -22,6 +23,10 @@ import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
+
+import org.json.simple.JSONObject;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.godaddy.hfs.config.Config;
 import com.godaddy.vps4.credit.CreditService;
@@ -54,9 +59,6 @@ import gdg.hfs.vhfs.vm.CreateVMWithFlavorRequest;
 import gdg.hfs.vhfs.vm.Vm;
 import gdg.hfs.vhfs.vm.VmService;
 import io.swagger.annotations.Api;
-import org.json.simple.JSONObject;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 @Vps4Api
 @Api(tags = {"vms"})
@@ -70,7 +72,7 @@ public class VmResource {
 
     private final GDUser user;
     private final VirtualMachineService virtualMachineService;
-    private final Vps4UserService userService;
+    private final Vps4UserService vps4UserService;
     private final CreditService creditService;
     private final VmService vmService;
     private final ProjectService projectService;
@@ -86,7 +88,7 @@ public class VmResource {
     @Inject
     public VmResource(
             GDUser user, VmService vmService,
-            Vps4UserService userService,
+            Vps4UserService vps4UserService,
             VirtualMachineService virtualMachineService,
             CreditService creditService,
             ProjectService projectService,
@@ -99,7 +101,7 @@ public class VmResource {
 
         this.user = user;
         this.virtualMachineService = virtualMachineService;
-        this.userService = userService;
+        this.vps4UserService = vps4UserService;
         this.creditService = creditService;
         this.vmService = vmService;
         this.projectService = projectService;
@@ -124,18 +126,7 @@ public class VmResource {
 
         if (user.isShopper())
             getAndValidateUserAccountCredit(creditService, virtualMachine.orionGuid, user.getShopperId());
-
         return virtualMachine;
-    }
-
-    private VmAction createActionAndExecute(UUID vmId, ActionType actionType, VmActionRequest request, String commandName) {
-        long vps4UserId = virtualMachineService.getUserIdByVmId(vmId);
-        long actionId = actionService.createAction(vmId, actionType, new JSONObject().toJSONString(), vps4UserId);
-        request.setActionId(actionId);
-
-        CommandState command = Commands.execute(commandService, actionService, commandName, request);
-        logger.info("managing vm {} with command {}:{}", vmId, actionType, command.commandId);
-        return new VmAction(actionService.getAction(actionId));
     }
 
     @POST
@@ -143,12 +134,14 @@ public class VmResource {
     public VmAction startVm(@PathParam("vmId") UUID vmId) {
         VirtualMachine vm = getVm(vmId);
         validateNoConflictingActions(vmId, actionService,
-                ActionType.START_VM, ActionType.STOP_VM, ActionType.RESTART_VM);
+                ActionType.START_VM, ActionType.STOP_VM, ActionType.RESTART_VM, ActionType.RESTORE_VM);
         validateServerIsStopped(vmService.getVm(vm.hfsVmId));
 
         VmActionRequest startRequest = new VmActionRequest();
         startRequest.hfsVmId = vm.hfsVmId;
-        return createActionAndExecute(vm.vmId, ActionType.START_VM, startRequest, "Vps4StartVm");
+        return createActionAndExecute(
+            actionService, commandService, virtualMachineService,
+            vm.vmId, ActionType.START_VM, startRequest, "Vps4StartVm");
     }
 
     @POST
@@ -156,12 +149,14 @@ public class VmResource {
     public VmAction stopVm(@PathParam("vmId") UUID vmId) {
         VirtualMachine vm = getVm(vmId);
         validateNoConflictingActions(vmId, actionService,
-                ActionType.START_VM, ActionType.STOP_VM, ActionType.RESTART_VM);
+                ActionType.START_VM, ActionType.STOP_VM, ActionType.RESTART_VM, ActionType.RESTORE_VM);
         validateServerIsActive(vmService.getVm(vm.hfsVmId));
 
         VmActionRequest stopRequest = new VmActionRequest();
         stopRequest.hfsVmId = vm.hfsVmId;
-        return createActionAndExecute(vm.vmId, ActionType.STOP_VM, stopRequest, "Vps4StopVm");
+        return createActionAndExecute(
+            actionService, commandService, virtualMachineService,
+            vm.vmId, ActionType.STOP_VM, stopRequest, "Vps4StopVm");
     }
 
     @POST
@@ -169,12 +164,14 @@ public class VmResource {
     public VmAction restartVm(@PathParam("vmId") UUID vmId) {
         VirtualMachine vm = getVm(vmId);
         validateNoConflictingActions(vmId, actionService,
-                ActionType.START_VM, ActionType.STOP_VM, ActionType.RESTART_VM);
+                ActionType.START_VM, ActionType.STOP_VM, ActionType.RESTART_VM, ActionType.RESTORE_VM);
         validateServerIsActive(vmService.getVm(vm.hfsVmId));
 
         VmActionRequest restartRequest = new VmActionRequest();
         restartRequest.hfsVmId = vm.hfsVmId;
-        return createActionAndExecute(vm.vmId, ActionType.RESTART_VM, restartRequest, "Vps4RestartVm");
+        return createActionAndExecute(
+            actionService, commandService, virtualMachineService,
+            vm.vmId, ActionType.RESTART_VM, restartRequest, "Vps4RestartVm");
     }
 
     public static class ProvisionVmRequest {
@@ -204,7 +201,7 @@ public class VmResource {
 
         ProvisionVirtualMachineParameters params;
         VirtualMachine virtualMachine;
-        Vps4User vps4User = userService.getOrCreateUserForShopper(user.getShopperId());
+        Vps4User vps4User = vps4UserService.getOrCreateUserForShopper(user.getShopperId());
         try {
             params = new ProvisionVirtualMachineParameters(vps4User.getId(), provisionRequest.dataCenterId,
                     sgidPrefix, provisionRequest.orionGuid, provisionRequest.name, vmCredit.tier, vmCredit.managedLevel,
@@ -270,14 +267,17 @@ public class VmResource {
     @Path("/{vmId}")
     public VmAction destroyVm(@PathParam("vmId") UUID vmId) {
         VirtualMachine vm = getVm(vmId);
-        validateNoConflictingActions(vmId, actionService,
-                ActionType.START_VM, ActionType.STOP_VM, ActionType.RESTART_VM, ActionType.CREATE_VM);
+        validateNoConflictingActions(
+                vmId, actionService, ActionType.START_VM, ActionType.STOP_VM,
+                ActionType.RESTART_VM, ActionType.CREATE_VM, ActionType.RESTORE_VM);
 
         Vps4DestroyVm.Request destroyRequest = new Vps4DestroyVm.Request();
         destroyRequest.hfsVmId = vm.hfsVmId;
         destroyRequest.pingCheckAccountId = pingCheckAccountId;
 
-        VmAction deleteAction = createActionAndExecute(vm.vmId, ActionType.DESTROY_VM, destroyRequest, "Vps4DestroyVm");
+        VmAction deleteAction = createActionAndExecute(
+            actionService, commandService, virtualMachineService,
+            vm.vmId, ActionType.DESTROY_VM, destroyRequest, "Vps4DestroyVm");
 
         // The request has been created successfully.
         // Detach the user from the vm, and we'll handle the delete from here.
@@ -297,7 +297,7 @@ public class VmResource {
     public List<VirtualMachine> getVirtualMachines() {
         if (user.getShopperId() == null)
             throw new Vps4NoShopperException();
-        Vps4User vps4User = userService.getOrCreateUserForShopper(user.getShopperId());
+        Vps4User vps4User = vps4UserService.getOrCreateUserForShopper(user.getShopperId());
 
         List<VirtualMachine> vms = virtualMachineService.getVirtualMachinesForUser(vps4User.getId());
         return vms.stream().filter(vm -> vm.validUntil.isAfter(Instant.now())).collect(Collectors.toList());

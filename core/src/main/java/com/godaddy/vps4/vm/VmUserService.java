@@ -17,4 +17,6 @@ public interface VmUserService {
 	boolean userExists(String username, UUID vmId);
 
     void deleteUser(String username, UUID vmId);
+
+    VmUser getPrimaryCustomer(UUID vmId);
 }

@@ -183,4 +183,14 @@ public class VirtualMachineServiceTest {
         Assert.assertNotNull(virtualMachineService.getPendingSnapshotActionIdByVmId(testVm.vmId));
     }
 
+    @Test
+    public void testVmOsDistro() {
+        ProvisionVirtualMachineParameters params = new ProvisionVirtualMachineParameters(vps4User.getId(), 1, "vps4-testing-",
+                orionGuid, "testServer", 10, 1, "hfs-centos-7-cpanel-11");
+        VirtualMachine vm = virtualMachineService.provisionVirtualMachine(params);
+        virtualMachines.add(vm);
+
+        Assert.assertEquals( "centos-7", virtualMachineService.getOSDistro(vm.vmId));
+    }
+
 }

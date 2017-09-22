@@ -59,8 +59,10 @@ public class GetVirtualMachineTest {
         Config config = Mockito.mock(Config.class);
         when(config.get(Mockito.anyString(), Mockito.anyString())).thenReturn("0");
         when(config.get(Mockito.anyString())).thenReturn("0");
-        vmResource = new VmResource(user, vmService, userService, virtualMachineService, creditService,
-                null, null, null, null, null, config);
+        vmResource = new VmResource(
+            user, vmService, userService, virtualMachineService,
+                creditService, null, null, null, null,
+                null, config);
     }
 
     @Test

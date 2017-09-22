@@ -20,6 +20,7 @@ import com.godaddy.vps4.orchestration.hfs.sysadmin.SetPassword;
 import com.godaddy.vps4.orchestration.hfs.sysadmin.ToggleAdmin;
 import com.godaddy.vps4.orchestration.hfs.sysadmin.WaitForSysAdminAction;
 import com.godaddy.vps4.orchestration.hfs.vm.CreateVm;
+import com.godaddy.vps4.orchestration.hfs.vm.CreateVmFromSnapshot;
 import com.godaddy.vps4.orchestration.hfs.vm.DestroyVm;
 import com.godaddy.vps4.orchestration.hfs.vm.RestartVm;
 import com.godaddy.vps4.orchestration.hfs.vm.StartVm;
@@ -37,6 +38,7 @@ public class HfsCommandModule extends AbstractModule {
 
         // VM
         bind(CreateVm.class);
+        bind(CreateVmFromSnapshot.class);
         bind(DestroyVm.class);
         bind(RestartVm.class);
         bind(StartVm.class);

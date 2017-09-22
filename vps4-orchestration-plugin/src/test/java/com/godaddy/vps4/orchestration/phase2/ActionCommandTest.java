@@ -40,6 +40,10 @@ public class ActionCommandTest {
             public long getActionId() {
                 return 7;
             }
+
+            @Override
+            public void setActionId(long actionId) {
+            }
         };
 
         ActionCommand<ActionRequest, String> command = new ActionCommand<ActionRequest, String>(actionService) {

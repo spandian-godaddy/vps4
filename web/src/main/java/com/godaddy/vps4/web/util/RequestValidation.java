@@ -16,6 +16,7 @@ import com.godaddy.vps4.security.Vps4User;
 import com.godaddy.vps4.security.Vps4UserService;
 import com.godaddy.vps4.security.jdbc.AuthorizationException;
 import com.godaddy.vps4.snapshot.SnapshotService;
+import com.godaddy.vps4.snapshot.SnapshotStatus;
 import com.godaddy.vps4.snapshot.SnapshotType;
 import com.godaddy.vps4.util.validators.Validator;
 import com.godaddy.vps4.util.validators.ValidatorRegistry;
@@ -23,6 +24,7 @@ import com.godaddy.vps4.vm.Action;
 import com.godaddy.vps4.vm.ActionService;
 import com.godaddy.vps4.vm.ActionType;
 import com.godaddy.vps4.vm.VirtualMachine;
+import com.godaddy.vps4.vm.VirtualMachineService;
 import com.godaddy.vps4.web.Vps4Exception;
 import com.godaddy.vps4.web.Vps4NoShopperException;
 import com.godaddy.vps4.web.security.GDUser;
@@ -86,6 +88,13 @@ public class RequestValidation {
         }
     }
 
+    public static void validatePassword(String password) {
+        Validator validator = ValidatorRegistry.getInstance().get("password");
+        if (!validator.isValid(password)){
+            throw new Vps4Exception("INVALID_PASSWORD", String.format("%s is an invalid password", password));
+        }
+    }
+
     public static VirtualMachineCredit getAndValidateUserAccountCredit(
             CreditService creditService, UUID orionGuid, String ssoShopperId) {
 
@@ -125,5 +134,25 @@ public class RequestValidation {
             Vps4UserService userService, PrivilegeService privilegeService, String shopperId, UUID vmId) {
         Vps4User vps4User = userService.getOrCreateUserForShopper(shopperId);
         privilegeService.requireAnyPrivilegeToVmId(vps4User, vmId);
+    }
+
+    public static void validateIfSnapshotExists(SnapshotService snapshotService, UUID snapshotId){
+        if (snapshotService.getSnapshot(snapshotId) == null){
+            throw new Vps4Exception("SNAPSHOT_NOT_FOUND", "Snapshot does not exist");
+        }
+    }
+
+    public static void validateIfSnapshotIsLive(SnapshotService snapshotService, UUID snapshotId){
+        if (snapshotService.getSnapshot(snapshotId).status != SnapshotStatus.LIVE){
+            throw new Vps4Exception("SNAPSHOT_NOT_LIVE", "Snapshot is not LIVE");
+        }
+    }
+
+    public static void validateIfSnapshotFromVm(VirtualMachineService vmService,
+                                                SnapshotService snapshotService,
+                                                UUID vmId, UUID snapshotId){
+        if (!snapshotService.getSnapshot(snapshotId).vmId.equals(vmService.getVirtualMachine(vmId).vmId)){
+            throw new Vps4Exception("SNAPSHOT_NOT_FROM_VM", "Snapshot is not from the vm");
+        }
     }
 }

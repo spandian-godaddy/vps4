@@ -16,7 +16,8 @@ import com.godaddy.vps4.security.SecurityModule;
 import com.godaddy.vps4.security.Vps4User;
 import com.godaddy.vps4.security.Vps4UserService;
 import com.godaddy.vps4.snapshot.Snapshot;
-import com.godaddy.vps4.snapshot.SnapshotStatus;
+import com.godaddy.vps4.snapshot.SnapshotModule;
+import com.godaddy.vps4.snapshot.SnapshotService;
 import com.godaddy.vps4.snapshot.SnapshotType;
 import com.godaddy.vps4.vm.VirtualMachine;
 import com.godaddy.vps4.vm.VmModule;
@@ -35,11 +36,9 @@ import org.junit.Test;
 import org.mockito.Mockito;
 
 public class VmDestroyTest {
-    @Inject
-    Vps4UserService userService;
-    @Inject
-    DataSource dataSource;
-
+    @Inject Vps4UserService userService;
+    @Inject DataSource dataSource;
+    @Inject SnapshotService snapshotService;
 
     private GDUser user;
     private VmSnapshotResource vmSnapshotResource;
@@ -48,6 +47,7 @@ public class VmDestroyTest {
             new DatabaseModule(),
             new SecurityModule(),
             new VmModule(),
+            new SnapshotModule(),
             new Phase2ExternalsModule(),
             new AbstractModule() {
 
@@ -64,28 +64,11 @@ public class VmDestroyTest {
                 }
             });
 
-    private Snapshot createSnapshot(VirtualMachine vm) {
-        Snapshot testSnapshot = new Snapshot(
-                UUID.randomUUID(),
-                vm.projectId,
-                vm.vmId,
-                "test-snapshot",
-                SnapshotStatus.LIVE,
-                Instant.now(),
-                null,
-                "fake-imageid",
-                (int) (Math.random() * 100000),
-                SnapshotType.ON_DEMAND
-        );
-        return testSnapshot;
-    }
-
     private List<Snapshot> createSnapshots(int numberOfSnapshots, VirtualMachine vm) {
         List<Snapshot> snapshots = new ArrayList<>();
         while (numberOfSnapshots > 0) {
-            Snapshot snapshot = createSnapshot(vm);
+            Snapshot snapshot = SqlTestData.insertSnapshot(snapshotService, vm.vmId, vm.projectId, SnapshotType.ON_DEMAND);
             snapshots.add(snapshot);
-            SqlTestData.insertTestSnapshot(createSnapshot(vm), dataSource);
             numberOfSnapshots--;
         }
         return snapshots;

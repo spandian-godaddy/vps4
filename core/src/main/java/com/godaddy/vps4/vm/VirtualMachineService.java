@@ -104,4 +104,10 @@ public interface VirtualMachineService {
     UUID getOrionGuidByVmId(UUID vmId);
 
     Long getPendingSnapshotActionIdByVmId(UUID vmId);
+
+    String getOSDistro(UUID vmId);
+
+    boolean isLinux(UUID vmId);
+
+    boolean hasControlPanel(UUID vmId);
 }

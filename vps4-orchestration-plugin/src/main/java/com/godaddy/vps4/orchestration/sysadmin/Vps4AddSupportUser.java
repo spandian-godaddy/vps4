@@ -40,6 +40,11 @@ public class Vps4AddSupportUser extends ActionCommand<Vps4AddSupportUser.Request
         public long getActionId() {
             return actionId;
         }
+
+        @Override
+        public void setActionId(long actionId) {
+            this.actionId = actionId;
+        }
     }
 
     @Override

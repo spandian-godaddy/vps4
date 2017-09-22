@@ -14,6 +14,8 @@ import javax.inject.Inject;
 import javax.sql.DataSource;
 
 import com.godaddy.vps4.snapshot.SnapshotModule;
+import com.godaddy.vps4.vm.VmUserService;
+import com.godaddy.vps4.vm.jdbc.JdbcVmUserService;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -70,6 +72,7 @@ public class VmPatchResourceTest {
                     bind(ActionService.class).toInstance(actionService);
                     bind(VirtualMachineService.class).to(JdbcVirtualMachineService.class);
                     bind(ImageService.class).toInstance(Mockito.mock(ImageService.class));
+                    bind(VmUserService.class).to(JdbcVmUserService.class);
                 }
 
                 @Provides

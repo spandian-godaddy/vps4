@@ -37,6 +37,11 @@ public class Vps4RemoveUser extends ActionCommand<Vps4RemoveUser.Request, Void> 
         public long getActionId() {
             return actionId;
         }
+
+        @Override
+        public void setActionId(long actionId) {
+            this.actionId = actionId;
+        }
     }
 
     @Override

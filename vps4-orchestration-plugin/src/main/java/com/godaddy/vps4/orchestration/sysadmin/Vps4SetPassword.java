@@ -53,6 +53,11 @@ public class Vps4SetPassword extends ActionCommand<Vps4SetPassword.Request, Void
         public long getActionId() {
             return actionId;
         }
+
+        @Override
+        public void setActionId(long actionId) {
+            this.actionId = actionId;
+        }
     }
 
 }

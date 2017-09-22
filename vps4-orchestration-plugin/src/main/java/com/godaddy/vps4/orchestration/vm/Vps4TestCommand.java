@@ -35,5 +35,10 @@ public class Vps4TestCommand extends ActionCommand<Vps4TestCommand.TestRequest, 
         public long getActionId() {
             return actionId;
         }
+
+        @Override
+        public void setActionId(long actionId) {
+            this.actionId = actionId;
+        }
     }
 }

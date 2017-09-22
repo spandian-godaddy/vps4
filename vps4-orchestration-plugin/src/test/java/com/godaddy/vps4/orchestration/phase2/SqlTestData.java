@@ -1,9 +1,15 @@
 package com.godaddy.vps4.orchestration.phase2;
 
+import java.util.List;
+import java.util.Random;
 import java.util.UUID;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 import javax.sql.DataSource;
 
+import com.godaddy.vps4.network.IpAddress;
+import com.godaddy.vps4.network.NetworkService;
 import org.json.simple.JSONObject;
 
 import com.godaddy.hfs.jdbc.Sql;
@@ -27,6 +33,10 @@ public class SqlTestData {
     public final static String TEST_VM_NAME = "orchtestVirtualMachine";
     public final static String TEST_SNAPSHOT_NAME = "orch-snapshot";
     public final static String TEST_SGID = "orch-vps4-testing-";
+    public final static long hfsVmId = 145;
+    public final static long hfsSnapshotId = 123;
+    public final static String nfImageId = "nocfox-id";
+    public final static String IMAGE_NAME = "hfs-centos-7";
 
     public static Vps4User insertUser(Vps4UserService userService) {
         return userService.getOrCreateUserForShopper(TEST_SHOPPER_ID);
@@ -38,9 +48,8 @@ public class SqlTestData {
     }
 
     public static VirtualMachine insertVm(VirtualMachineService virtualMachineService, Vps4UserService userService) {
-        long hfsVmId = 145L;
         UUID orionGuid = UUID.randomUUID();
-        String imageName = "centos-7";
+        String imageName = IMAGE_NAME;
         long userId = userService.getUser(TEST_SHOPPER_ID).getId();
 
         ProvisionVirtualMachineParameters params = new ProvisionVirtualMachineParameters(
@@ -48,6 +57,12 @@ public class SqlTestData {
         VirtualMachine virtualMachine = virtualMachineService.provisionVirtualMachine(params);
         virtualMachineService.addHfsVmIdToVirtualMachine(virtualMachine.vmId, hfsVmId);
         return virtualMachineService.getVirtualMachine(virtualMachine.vmId);
+    }
+
+    public static long insertVmAction(ActionService actionService, Vps4UserService userService, UUID vmId) {
+        long userId = userService.getUser(TEST_SHOPPER_ID).getId();
+        return actionService.createAction(
+                vmId, ActionType.RESTORE_VM, new JSONObject().toJSONString(), userId);
     }
 
     public static UUID insertSnapshot(SnapshotService snapshotService, UUID vmId, long projectId, SnapshotType snapshotType) {
@@ -58,7 +73,8 @@ public class SqlTestData {
                                       long projectId, SnapshotStatus status, SnapshotType snapshotType) {
         UUID snapshotId = insertSnapshot(snapshotService, vmId, projectId, snapshotType);
         snapshotService.updateSnapshotStatus(snapshotId, status);
-        snapshotService.updateHfsSnapshotId(snapshotId, 123456);
+        snapshotService.updateHfsSnapshotId(snapshotId, hfsSnapshotId);
+        snapshotService.updateHfsImageId(snapshotId, nfImageId);
         return snapshotId;
     }
 
@@ -66,6 +82,28 @@ public class SqlTestData {
         long userId = userService.getUser(TEST_SHOPPER_ID).getId();
         return actionService.createAction(
                 snapshotId, ActionType.CREATE_SNAPSHOT, new JSONObject().toJSONString(), userId);
+    }
+
+    private static String generateRandomIpAddress() {
+        Random r = new Random();
+        return String.format(
+                "%d.%d.%d.%d", r.nextInt(256), r.nextInt(256),
+                r.nextInt(256), r.nextInt(256));
+    }
+
+    private static long getRandomLong() {
+        return UUID.randomUUID().getMostSignificantBits() & Long.MAX_VALUE;
+    }
+
+    public static List<IpAddress> insertIpAddresses(NetworkService networkService, UUID vmId,
+                                         int count, IpAddress.IpAddressType addressType) {
+        IntStream.range(0, count)
+                .forEach(i -> networkService.createIpAddress(
+                        getRandomLong(), vmId, generateRandomIpAddress(), addressType));
+        return networkService.getVmIpAddresses(vmId)
+                .stream()
+                .filter(ia -> ia.ipAddressType.equals(addressType))
+                .collect(Collectors.toList());
     }
 
     public static void cleanupSqlTestData(DataSource dataSource, Vps4UserService userService) {
@@ -81,6 +119,12 @@ public class SqlTestData {
                 null);
         Sql.with(dataSource).exec(
                 "DELETE FROM snapshot a USING virtual_machine v WHERE a.vm_id = v.vm_id AND " + test_vm_condition,
+                null);
+        Sql.with(dataSource).exec(
+                "DELETE FROM ip_address a USING virtual_machine v WHERE a.vm_id = v.vm_id AND " + test_vm_condition,
+                null);
+        Sql.with(dataSource).exec(
+                "DELETE FROM vm_action a USING virtual_machine v WHERE a.vm_id = v.vm_id AND " + test_vm_condition,
                 null);
         Sql.with(dataSource).exec(
                 "DELETE FROM virtual_machine v USING project p WHERE v.project_id = p.project_id AND " + test_sgid_condition,

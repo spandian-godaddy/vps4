@@ -79,6 +79,7 @@ public class Vps4SnapshotVmTest {
                 new DatabaseModule(),
                 new SecurityModule(),
                 new SnapshotModule(),
+                new Vps4ExternalsModule(),
                 new Vps4SnapshotTestModule()
         );
     }
