@@ -114,7 +114,10 @@ public class Vps4RestoreVm extends ActionCommand<Vps4RestoreVm.Request, Vps4Rest
         setStep(RestoreVmStep.UnbindingIPAddress);
         for (IpAddress ipAddress: ipAddresses) {
             logger.info("Unbind public ip address {} from VM {}", ipAddress.ipAddress, vps4VmId);
-            context.execute(String.format("UnbindIP-%d", ipAddress.ipAddressId), UnbindIp.class, ipAddress.ipAddressId);
+            UnbindIp.Request unbindIpRequest = new UnbindIp.Request();
+            unbindIpRequest.addressId = ipAddress.ipAddressId;
+            unbindIpRequest.forceIfVmInaccessible = true;
+            context.execute(String.format("UnbindIP-%d", ipAddress.ipAddressId), UnbindIp.class, unbindIpRequest);
         }
     }
 

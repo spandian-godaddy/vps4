@@ -96,6 +96,7 @@ public class Vps4RestoreVmTest {
     @Captor private ArgumentCaptor<CreateVMWithFlavorRequest> flavorRequestArgumentCaptor;
     @Captor private ArgumentCaptor<SetPassword.Request> setPasswordArgumentCaptor;
     @Captor private ArgumentCaptor<ToggleAdmin.Request> toggleAdminArgumentCaptor;
+    @Captor private ArgumentCaptor<UnbindIp.Request> unbindIpArgumentCaptor;
 
     @BeforeClass
     public static void newInjector() {
@@ -219,8 +220,11 @@ public class Vps4RestoreVmTest {
                 .execute(
                     eq(String.format("UnbindIP-%d", ipAddress.ipAddressId)),
                     eq(UnbindIp.class),
-                    eq(ipAddress.ipAddressId)
+                    unbindIpArgumentCaptor.capture()
                 );
+            UnbindIp.Request unbindIpRequest = unbindIpArgumentCaptor.getValue();
+            Assert.assertTrue(unbindIpRequest.forceIfVmInaccessible);
+            Assert.assertEquals(ipAddress.ipAddressId, (long) unbindIpRequest.addressId);
         }
     }
 
