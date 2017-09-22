@@ -13,6 +13,7 @@ import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
 
 import org.json.simple.JSONObject;
@@ -39,6 +40,7 @@ import com.google.inject.Inject;
 
 import gdg.hfs.orchestration.CommandService;
 import io.swagger.annotations.Api;
+import io.swagger.annotations.ApiParam;
 
 @Vps4Api
 @Api(tags = { "vms" })
@@ -134,7 +136,8 @@ public class NetworkResource {
 
     @DELETE
     @Path("/{vmId}/ipAddresses/{ipAddressId}")
-    public Action destroyIpAddress(@PathParam("vmId") UUID vmId, @PathParam("ipAddressId") long ipAddressId){
+    public Action destroyIpAddress(@PathParam("vmId") UUID vmId, @PathParam("ipAddressId") long ipAddressId,
+            @ApiParam(value = "Force the operation to complete if the VM is not accessible to unbind the IP", defaultValue = "false", required = true) @QueryParam("forceIfVmInaccessible") boolean forceIfVmInaccessible) {
         VirtualMachine virtualMachine = vmResource.getVm(vmId);
         long vps4UserId = virtualMachineService.getUserIdByVmId(vmId);
 
@@ -151,6 +154,7 @@ public class NetworkResource {
         request.ipAddressId = ipAddressId;
         request.hfsVmId = virtualMachine.hfsVmId;
         request.setActionId(actionId);
+        request.forceIfVmInaccessible = forceIfVmInaccessible;
 
         Commands.execute(commandService, actionService, "Vps4DestroyIpAddressAction", request);
 

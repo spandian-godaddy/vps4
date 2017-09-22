@@ -6,7 +6,6 @@ import java.util.UUID;
 import javax.inject.Inject;
 import javax.sql.DataSource;
 
-import com.godaddy.vps4.snapshot.SnapshotModule;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -20,6 +19,7 @@ import com.godaddy.vps4.security.SecurityModule;
 import com.godaddy.vps4.security.Vps4User;
 import com.godaddy.vps4.security.Vps4UserService;
 import com.godaddy.vps4.security.jdbc.AuthorizationException;
+import com.godaddy.vps4.snapshot.SnapshotModule;
 import com.godaddy.vps4.vm.AccountStatus;
 import com.godaddy.vps4.vm.Action;
 import com.godaddy.vps4.vm.VirtualMachine;
@@ -119,7 +119,7 @@ public class NetworkResourceUserTest {
 
         IpAddress ip = createSecondaryIp(vm.vmId);
 
-        Action action = resource.destroyIpAddress(vm.vmId, ip.ipAddressId);
+        Action action = resource.destroyIpAddress(vm.vmId, ip.ipAddressId, false);
         Assert.assertNotNull(action);
     }
 

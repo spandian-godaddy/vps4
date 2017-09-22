@@ -10,7 +10,8 @@ import gdg.hfs.orchestration.CommandContext;
 import gdg.hfs.vhfs.network.AddressAction;
 import gdg.hfs.vhfs.network.NetworkService;
 
-public class UnbindIp implements Command<Long, Void> {
+
+public class UnbindIp implements Command<UnbindIp.Request, Void> {
 
     private static final Logger logger = LoggerFactory.getLogger(UnbindIp.class);
 
@@ -22,11 +23,11 @@ public class UnbindIp implements Command<Long, Void> {
     }
 
     @Override
-    public Void execute(CommandContext context, Long addressId) {
-        logger.info("sending HFS request to unbind addressId {}", addressId);
+    public Void execute(CommandContext context, Request request) {
+        logger.info("sending HFS request to unbind addressId {}", request.addressId);
 
         AddressAction hfsAction = context.execute("RequestFromHFS",  ctx -> {
-            return networkService.unbindIp(addressId);
+            return networkService.unbindIp(request.addressId, request.forceIfVmInaccessible);
         });
 
         context.execute(WaitForAddressAction.class, hfsAction);
@@ -39,6 +40,11 @@ public class UnbindIp implements Command<Long, Void> {
 //            action.status = ActionStatus.COMPLETE;
 //        }
         return null;
+    }
+
+    public static class Request {
+        public Long addressId;
+        public boolean forceIfVmInaccessible;
     }
 
 }

@@ -117,14 +117,14 @@ public class NetworkResourceTest {
         IpAddress ip = new IpAddress(1111, vmId, "1.2.3.4", IpAddressType.SECONDARY,
                 null, Instant.now(), Instant.now().plus(24, ChronoUnit.HOURS));
         when(networkService.getIpAddress(1111)).thenReturn(ip);
-        Action returnAction = resource.destroyIpAddress(vmId, 1111);
+        Action returnAction = resource.destroyIpAddress(vmId, 1111, false);
         Assert.assertEquals(action, returnAction);
     }
 
     @Test(expected=NotFoundException.class)
     public void testDestroyIpNotFound(){
         when(networkService.getIpAddress(1111)).thenReturn(null);
-        resource.destroyIpAddress(vmId, 1111);
+        resource.destroyIpAddress(vmId, 1111, false);
     }
 
     @Test(expected=NotFoundException.class)
@@ -133,7 +133,7 @@ public class NetworkResourceTest {
                 null, Instant.now(), Instant.now().plus(24, ChronoUnit.HOURS));
 
         when(networkService.getIpAddress(1111)).thenReturn(ip);
-        resource.destroyIpAddress(vmId, 1111);
+        resource.destroyIpAddress(vmId, 1111, false);
     }
 
     @Test(expected=NotFoundException.class)
@@ -142,7 +142,7 @@ public class NetworkResourceTest {
                 null, Instant.now(), Instant.now().minus(24, ChronoUnit.HOURS));
 
         when(networkService.getIpAddress(1111)).thenReturn(ip);
-        resource.destroyIpAddress(vmId, 1111);
+        resource.destroyIpAddress(vmId, 1111, false);
     }
 
     @Test(expected=Vps4Exception.class)
@@ -151,7 +151,7 @@ public class NetworkResourceTest {
                null, Instant.now(), Instant.now().plus(24, ChronoUnit.HOURS));
 
        when(networkService.getIpAddress(1111)).thenReturn(ip);
-       resource.destroyIpAddress(vmId, 1111);
+        resource.destroyIpAddress(vmId, 1111, false);
     }
 
     @Test

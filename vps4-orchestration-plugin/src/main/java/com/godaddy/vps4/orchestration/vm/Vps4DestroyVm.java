@@ -86,7 +86,8 @@ public class Vps4DestroyVm extends ActionCommand<Vps4DestroyVm.Request, Vps4Dest
                 monitoringService.deleteCheck(request.pingCheckAccountId, address.pingCheckId);
             }
 
-            context.execute("DeleteIpAddress-"+address.ipAddressId, Vps4DestroyIpAddress.class, new Vps4DestroyIpAddress.Request(address, vm));
+            context.execute("DeleteIpAddress-" + address.ipAddressId, Vps4DestroyIpAddress.class,
+                    new Vps4DestroyIpAddress.Request(address, vm, true));
             context.execute("Destroy-"+address.ipAddressId, ctx -> {networkService.destroyIpAddress(address.ipAddressId);
                                                                     return null;});
         }

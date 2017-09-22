@@ -49,7 +49,12 @@ public class Vps4DestroyIpAddress implements Command<Vps4DestroyIpAddress.Reques
             releaseControlPanelLicense(context, request.vm, address.ipAddress);
             disableMailRelay(context, address.ipAddress);
         }
-        context.execute(UnbindIp.class, address.ipAddressId);
+
+        UnbindIp.Request unbindIpRequest = new UnbindIp.Request();
+        unbindIpRequest.addressId = address.ipAddressId;
+        unbindIpRequest.forceIfVmInaccessible = request.forceIfVmInaccessible;
+
+        context.execute(UnbindIp.class, unbindIpRequest);
         context.execute(ReleaseIp.class, address.ipAddressId);
 
         return null;
@@ -77,10 +82,12 @@ public class Vps4DestroyIpAddress implements Command<Vps4DestroyIpAddress.Reques
     public static class Request{
         public IpAddress ipAddress;
         public VirtualMachine vm;
+        public boolean forceIfVmInaccessible;
 
-        public Request(IpAddress ipAddress, VirtualMachine vm){
+        public Request(IpAddress ipAddress, VirtualMachine vm, boolean forceIfVmInaccessible) {
             this.ipAddress = ipAddress;
             this.vm = vm;
+            this.forceIfVmInaccessible = forceIfVmInaccessible;
         }
 
     }

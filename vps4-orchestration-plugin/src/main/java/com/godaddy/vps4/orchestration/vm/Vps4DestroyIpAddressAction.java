@@ -45,7 +45,7 @@ public class Vps4DestroyIpAddressAction extends ActionCommand<Vps4DestroyIpAddre
     protected Void executeWithAction(CommandContext context, Vps4DestroyIpAddressAction.Request request) throws Exception {
         VirtualMachine virtualMachine = virtualMachineService.getVirtualMachine(request.hfsVmId);
         IpAddress ip = networkService.getIpAddress(request.ipAddressId);
-        Vps4DestroyIpAddress.Request req = new Vps4DestroyIpAddress.Request(ip, virtualMachine);
+        Vps4DestroyIpAddress.Request req = new Vps4DestroyIpAddress.Request(ip, virtualMachine, request.forceIfVmInaccessible);
 
         context.execute(Vps4DestroyIpAddress.class, req);
 
@@ -58,7 +58,8 @@ public class Vps4DestroyIpAddressAction extends ActionCommand<Vps4DestroyIpAddre
     }
 
     public static class Request extends VmActionRequest{
-      public long ipAddressId;
+        public long ipAddressId;
+        public boolean forceIfVmInaccessible;
     }
 
 }

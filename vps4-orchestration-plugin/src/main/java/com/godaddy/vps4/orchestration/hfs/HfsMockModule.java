@@ -9,24 +9,46 @@ import java.util.Random;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
+import javax.ws.rs.NotFoundException;
+import javax.ws.rs.core.Response;
+
+import org.joda.time.DateTime;
+import org.mockito.Mockito;
+
 import com.godaddy.hfs.config.Config;
 import com.godaddy.vps4.messaging.DefaultVps4MessagingService;
 import com.godaddy.vps4.messaging.Vps4MessagingService;
 import com.godaddy.vps4.messaging.models.Message;
+import com.google.inject.AbstractModule;
 import com.google.inject.Provides;
+
 import gdg.hfs.request.CompleteResponse;
 import gdg.hfs.vhfs.cpanel.CPanelAction;
+import gdg.hfs.vhfs.cpanel.CPanelService;
 import gdg.hfs.vhfs.ecomm.Account;
 import gdg.hfs.vhfs.ecomm.ECommService;
 import gdg.hfs.vhfs.ecomm.MetadataUpdate;
+import gdg.hfs.vhfs.mailrelay.MailRelay;
+import gdg.hfs.vhfs.mailrelay.MailRelayHistory;
+import gdg.hfs.vhfs.mailrelay.MailRelayService;
 import gdg.hfs.vhfs.mailrelay.MailRelayUpdate;
+import gdg.hfs.vhfs.network.AddressAction;
+import gdg.hfs.vhfs.network.IpAddress;
+import gdg.hfs.vhfs.network.NetworkService;
 import gdg.hfs.vhfs.nodeping.CreateCheckRequest;
 import gdg.hfs.vhfs.nodeping.NodePingAccount;
 import gdg.hfs.vhfs.nodeping.NodePingCheck;
 import gdg.hfs.vhfs.nodeping.NodePingEvent;
 import gdg.hfs.vhfs.nodeping.NodePingService;
 import gdg.hfs.vhfs.nodeping.NodePingUptimeRecord;
+import gdg.hfs.vhfs.plesk.PleskAction;
+import gdg.hfs.vhfs.plesk.PleskService;
+import gdg.hfs.vhfs.snapshot.Snapshot;
+import gdg.hfs.vhfs.snapshot.SnapshotAction;
+import gdg.hfs.vhfs.snapshot.SnapshotService;
+import gdg.hfs.vhfs.sysadmin.SysAdminAction;
 import gdg.hfs.vhfs.sysadmin.SysAdminInstallable;
+import gdg.hfs.vhfs.sysadmin.SysAdminService;
 import gdg.hfs.vhfs.vm.CreateVMRequest;
 import gdg.hfs.vhfs.vm.CreateVMWithFlavorRequest;
 import gdg.hfs.vhfs.vm.FlavorList;
@@ -36,28 +58,6 @@ import gdg.hfs.vhfs.vm.VmAction;
 import gdg.hfs.vhfs.vm.VmAddress;
 import gdg.hfs.vhfs.vm.VmList;
 import gdg.hfs.vhfs.vm.VmService;
-import org.joda.time.DateTime;
-import org.mockito.Mockito;
-
-import com.google.inject.AbstractModule;
-
-import gdg.hfs.vhfs.cpanel.CPanelService;
-import gdg.hfs.vhfs.mailrelay.MailRelay;
-import gdg.hfs.vhfs.mailrelay.MailRelayHistory;
-import gdg.hfs.vhfs.mailrelay.MailRelayService;
-import gdg.hfs.vhfs.network.AddressAction;
-import gdg.hfs.vhfs.network.IpAddress;
-import gdg.hfs.vhfs.network.NetworkService;
-import gdg.hfs.vhfs.plesk.PleskAction;
-import gdg.hfs.vhfs.plesk.PleskService;
-import gdg.hfs.vhfs.sysadmin.SysAdminAction;
-import gdg.hfs.vhfs.sysadmin.SysAdminService;
-import gdg.hfs.vhfs.snapshot.SnapshotService;
-import gdg.hfs.vhfs.snapshot.Snapshot;
-import gdg.hfs.vhfs.snapshot.SnapshotAction;
-
-import javax.ws.rs.NotFoundException;
-import javax.ws.rs.core.Response;
 
 public class HfsMockModule extends AbstractModule {
 
@@ -845,7 +845,7 @@ public class HfsMockModule extends AbstractModule {
             }
 
             @Override
-            public AddressAction bindIp(long addressId, long vmId) {
+            public AddressAction bindIp(long addressId, long vmId, Boolean force) {
                 if (!customerAddresses.containsKey(addressId)
                         || !addressActionList.containsKey(addressId)
                         || this.isAddressReleased(addressId)) {
@@ -858,7 +858,7 @@ public class HfsMockModule extends AbstractModule {
             }
 
             @Override
-            public AddressAction unbindIp(long addressId) {
+            public AddressAction unbindIp(long addressId, Boolean force) {
                 if (!customerAddresses.containsKey(addressId)
                         || !addressActionList.containsKey(addressId)
                         || this.isAddressReleased(addressId)) {
@@ -922,6 +922,12 @@ public class HfsMockModule extends AbstractModule {
 
             @Override
             public void onComplete(CompleteResponse completeResponse) {
+                // NOTE: do nothing, Implement when needed
+                throw new UnsupportedOperationException("Not implemented, yet");
+            }
+
+            @Override
+            public List<IpAddress> getServerAddressIds(long arg0) {
                 // NOTE: do nothing, Implement when needed
                 throw new UnsupportedOperationException("Not implemented, yet");
             }

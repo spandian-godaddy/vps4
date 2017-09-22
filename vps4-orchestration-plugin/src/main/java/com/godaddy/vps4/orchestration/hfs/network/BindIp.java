@@ -5,7 +5,6 @@ import javax.inject.Inject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-
 import gdg.hfs.orchestration.Command;
 import gdg.hfs.orchestration.CommandContext;
 import gdg.hfs.vhfs.network.AddressAction;
@@ -27,7 +26,7 @@ public class BindIp implements Command<BindIp.BindIpRequest, Void> {
 
         logger.info("sending HFS request to bind addressId {} to vmId {}", action.addressId, action.vmId);
 
-        AddressAction hfsAction = context.execute("BindIpHfs", ctx -> networkService.bindIp(action.addressId, action.vmId));
+        AddressAction hfsAction = context.execute("BindIpHfs", ctx -> networkService.bindIp(action.addressId, action.vmId, false));
 
         context.execute(WaitForAddressAction.class, hfsAction);
 

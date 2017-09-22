@@ -112,7 +112,7 @@ public class Vps4DestroyVmTest {
         when(vmService.destroyVm(eq(this.request.hfsVmId))).thenReturn(vmAction);
         when(vmService.getVmAction(Mockito.anyLong(), Mockito.anyLong())).thenReturn(vmAction);
         when(networkService.getVmIpAddresses(this.vm.vmId)).thenReturn(addresses);
-        when(hfsNetworkService.unbindIp(Mockito.anyLong())).thenReturn(addressAction);
+        when(hfsNetworkService.unbindIp(Mockito.anyLong(), Mockito.eq(true))).thenReturn(addressAction);
         when(hfsNetworkService.releaseIp(Mockito.anyLong())).thenReturn(addressAction);
         doNothing().when(nodePingService).deleteCheck(request.pingCheckAccountId, primaryIp.pingCheckId);
     }
