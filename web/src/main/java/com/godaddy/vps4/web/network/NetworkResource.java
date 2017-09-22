@@ -34,6 +34,7 @@ import com.godaddy.vps4.vm.VirtualMachine;
 import com.godaddy.vps4.vm.VirtualMachineService;
 import com.godaddy.vps4.web.Vps4Api;
 import com.godaddy.vps4.web.Vps4Exception;
+import com.godaddy.vps4.web.security.AdminOnly;
 import com.godaddy.vps4.web.util.Commands;
 import com.godaddy.vps4.web.vm.VmResource;
 import com.google.inject.Inject;
@@ -102,6 +103,7 @@ public class NetworkResource {
         return ipAddresses;
     }
 
+    @AdminOnly
     @POST
     @Path("/{vmId}/ipAddresses")
     public Action addIpAddress(@PathParam("vmId") UUID vmId) {
