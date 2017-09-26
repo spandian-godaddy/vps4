@@ -6,6 +6,8 @@ import java.util.UUID;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.godaddy.vps4.vm.AccountStatus;
 import com.godaddy.vps4.vm.DataCenter;
+import org.apache.commons.lang3.builder.ReflectionToStringBuilder;
+import org.apache.commons.lang3.builder.ToStringStyle;
 
 public class VirtualMachineCredit {
 
@@ -58,11 +60,6 @@ public class VirtualMachineCredit {
 
     @Override
     public String toString() {
-        return "VirtualMachineRequest [orionGuid: " + orionGuid + " tier: " + tier +
-                " managedLevel: " + managedLevel + " monitoring: " + monitoring +
-                " operatingSystem: " + operatingSystem + " controlPanel: " + controlPanel +
-                " createDate: " + createDate + " provisionDate: " + provisionDate +
-                " shopperId: " + shopperId + " accountStatus: " + accountStatus +
-                " dataCenter: " + dataCenter.toString() + " productId: " + productId + "]";
+        return ReflectionToStringBuilder.toString(this, ToStringStyle.MULTI_LINE_STYLE);
     }
 }

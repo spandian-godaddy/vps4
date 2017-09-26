@@ -25,7 +25,7 @@ import gdg.hfs.vhfs.ecomm.MetadataUpdate;
 @Singleton
 public class ECommCreditService implements CreditService {
 
-    public static final String PRODUCT_NAME = "vps4";
+    private static final String PRODUCT_NAME = "vps4";
 
     private interface ProductMeta{
         String DATA_CENTER = "data_center";
@@ -43,8 +43,8 @@ public class ECommCreditService implements CreditService {
 
     private static final Logger logger = LoggerFactory.getLogger(ECommCreditService.class);
 
-    final ECommService ecommService;
-    final DataCenterService dataCenterService;
+    private final ECommService ecommService;
+    private final DataCenterService dataCenterService;
 
     @Inject
     public  ECommCreditService(ECommService ecommService, DataCenterService dataCenterService) {
@@ -55,12 +55,18 @@ public class ECommCreditService implements CreditService {
     @Override
     public VirtualMachineCredit getVirtualMachineCredit(UUID orionGuid) {
         VirtualMachineCredit credit = null;
+        Account account = null;
         try {
-            Account account = ecommService.getAccount(orionGuid.toString());
+            account = ecommService.getAccount(orionGuid.toString());
+            logger.info("Account: {}", account);
+        } catch(Exception ex) {
+            logger.error("Error retrieving VPS4 credit for account guid {} : Exception :", orionGuid.toString(), ex);
+        }
+        try {
             credit = mapVirtualMachineCredit(account);
             logger.info("Credit: {}", credit.toString());
         } catch(Exception ex) {
-            logger.error("Error retrieving VPS4 credit for account guid {} : Exception :", orionGuid.toString(), ex);
+            logger.error("Error mapping VPS4 credit for account guid {} : Exception :", orionGuid.toString(), ex);
         }
 
         return credit;
@@ -113,7 +119,7 @@ public class ECommCreditService implements CreditService {
         return getVirtualMachineCredits(shopperId, true);
     }
 
-    public List<VirtualMachineCredit> getVirtualMachineCredits(String shopperId, boolean showClaimed) {
+    private List<VirtualMachineCredit> getVirtualMachineCredits(String shopperId, boolean showClaimed) {
         List<Account> accounts = ecommService.getAccounts(shopperId);
         Stream<Account> stream = accounts.stream()
                 .filter(a -> a.product.equals(PRODUCT_NAME))

@@ -9,10 +9,11 @@ public class Vps4Message {
 
     public UUID id;
     public UUID accountGuid;
+    String typePreFormat;
 
     public Vps4Message(JSONObject object) {
         id = UUID.fromString(object.get("id").toString());
-        String typePreFormat = ((JSONObject) object.get("notification")).get("type").toString();
+        typePreFormat = ((JSONObject) object.get("notification")).get("type").toString();
         accountGuid = UUID.fromString(((JSONObject) object.get("notification")).get("account_guid").toString());
     }
 
