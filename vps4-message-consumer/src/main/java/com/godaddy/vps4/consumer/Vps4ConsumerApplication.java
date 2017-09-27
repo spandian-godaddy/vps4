@@ -31,7 +31,6 @@ public class Vps4ConsumerApplication {
 
         Injector injector = Vps4ConsumerInjector.newInstance();
 
-
         ZookeeperConfig zkConfig = injector.getInstance(ZookeeperConfig.class);
         // get a handle to the zookeeper registration service
         ZkAppRegistrationService zkAppRegistrationService =
@@ -85,7 +84,7 @@ public class Vps4ConsumerApplication {
         }
     }
 
-    public static void runZkServiceRegistration(ZkAppRegistrationService zkAppRegistrationService, Runnable vps4ConsumerGroup) {
+    private static void runZkServiceRegistration(ZkAppRegistrationService zkAppRegistrationService, Runnable vps4ConsumerGroup) {
 
         // register with zookeeper
         zkAppRegistrationService.register();

@@ -52,6 +52,7 @@ public class Vps4MessageHandler implements MessageHandler {
             @SnapshotActionService ActionService snapshotActionService,
             CommandService commandService,
             Config config) {
+
         this.virtualMachineService = virtualMachineService;
         this.snapshotService = snapshotService;
         this.creditService = creditService;
