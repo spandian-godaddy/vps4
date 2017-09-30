@@ -159,6 +159,10 @@ You can create a credit via the following link:
  - Enter shopperId and password
  - Enter the pfid for the vps4 product you want followed by any of the pfids for any addon features you want (Follow the examples)
    - Confluence link for current pfids:  https://confluence.godaddy.com/pages/viewpage.action?pageId=58980006
+   - Examples 
+     - {1066863} creates a linux prime container with no add ons.
+     - {1066863:1068243} creates a linux prime container with a control panel
+     - {1066863:1068243|1068247} creates a linux prime container with a control panel and monitoring
    
    
 CRM Links
