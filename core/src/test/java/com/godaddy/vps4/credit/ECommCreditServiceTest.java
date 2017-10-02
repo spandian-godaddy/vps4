@@ -25,6 +25,7 @@ import com.google.inject.Guice;
 import com.google.inject.Injector;
 
 import gdg.hfs.vhfs.ecomm.Account;
+import gdg.hfs.vhfs.ecomm.ECommDataCache;
 import gdg.hfs.vhfs.ecomm.ECommService;
 import gdg.hfs.vhfs.ecomm.MetadataUpdate;
 
@@ -242,5 +243,13 @@ public class ECommCreditServiceTest {
         assertEquals(provisionDate, newProdMeta.from.get("provision_date"));
         assertNull(newProdMeta.to.get("data_center"));
         assertNull(newProdMeta.to.get("provision_date"));
+    }
+
+    @Test
+    public void testSetCommonNameCallsSetCommonName() throws Exception {
+        creditService.setCommonName(orionGuid, "New Common Name");
+        ECommDataCache dc = new ECommDataCache();
+        dc.common_name = "New Common Name";
+        verify(ecommService).setCommonName(orionGuid.toString(), dc);
     }
 }

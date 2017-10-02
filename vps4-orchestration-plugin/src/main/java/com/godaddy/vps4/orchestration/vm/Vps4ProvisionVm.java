@@ -1,19 +1,17 @@
 package com.godaddy.vps4.orchestration.vm;
 
-import java.io.PrintWriter;
-import java.io.StringWriter;
 import java.util.Arrays;
 import java.util.UUID;
 
 import javax.inject.Inject;
 
-import com.godaddy.hfs.config.Config;
-import com.godaddy.vps4.messaging.Vps4MessagingService;
-import com.godaddy.vps4.security.Vps4User;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.godaddy.hfs.config.Config;
+import com.godaddy.vps4.credit.CreditService;
+import com.godaddy.vps4.messaging.Vps4MessagingService;
 import com.godaddy.vps4.network.IpAddress.IpAddressType;
 import com.godaddy.vps4.network.NetworkService;
 import com.godaddy.vps4.orchestration.ActionCommand;
@@ -78,6 +76,8 @@ public class Vps4ProvisionVm extends ActionCommand<Vps4ProvisionVm.Request, Vps4
 
     final Vps4MessagingService messagingService;
 
+    final CreditService creditService;
+
     Request request;
 
     ActionState state;
@@ -98,7 +98,8 @@ public class Vps4ProvisionVm extends ActionCommand<Vps4ProvisionVm.Request, Vps4
             NetworkService networkService,
             MailRelayService mailRelayService,
             NodePingService monitoringService,
-            Vps4MessagingService messagingService) {
+            Vps4MessagingService messagingService,
+            CreditService creditService) {
         super(actionService);
         this.vmService = vmService;
         this.virtualMachineService = virtualMachineService;
@@ -107,6 +108,7 @@ public class Vps4ProvisionVm extends ActionCommand<Vps4ProvisionVm.Request, Vps4
         this.mailRelayService = mailRelayService;
         this.monitoringService = monitoringService;
         this.messagingService = messagingService;
+        this.creditService = creditService;
     }
 
     @Override
@@ -139,6 +141,8 @@ public class Vps4ProvisionVm extends ActionCommand<Vps4ProvisionVm.Request, Vps4
         configureMailRelay(hfsVm);
 
         configureNodePing(ip);
+
+        setEcommCommonName(request.orionGuid, request.serverName);
 
         sendSetupEmail(request, ip.address);
 
@@ -321,6 +325,13 @@ public class Vps4ProvisionVm extends ActionCommand<Vps4ProvisionVm.Request, Vps4
         }
     }
 
+    private void setEcommCommonName(UUID orionGuid, String commonName){
+        context.execute("SetCommonName", ctx -> {
+            creditService.setCommonName(orionGuid, commonName);
+            return null;
+        });
+    }
+
     private void sendSetupEmail(Request request, String ipAddress) {
         try {
             String diskSpace = Integer.toString(request.vmInfo.diskGib);
@@ -348,6 +359,7 @@ public class Vps4ProvisionVm extends ActionCommand<Vps4ProvisionVm.Request, Vps4
         public String shopperId;
         public String serverName;
         public long actionId;
+        public UUID orionGuid;
 
         @Override
         public long getActionId() {

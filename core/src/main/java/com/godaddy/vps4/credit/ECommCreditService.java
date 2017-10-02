@@ -19,6 +19,7 @@ import com.godaddy.vps4.vm.DataCenterService;
 import com.google.inject.Singleton;
 
 import gdg.hfs.vhfs.ecomm.Account;
+import gdg.hfs.vhfs.ecomm.ECommDataCache;
 import gdg.hfs.vhfs.ecomm.ECommService;
 import gdg.hfs.vhfs.ecomm.MetadataUpdate;
 
@@ -189,5 +190,12 @@ public class ECommCreditService implements CreditService {
         prodMeta.to = to;
 
         ecommService.updateProductMetadata(orionGuid.toString(), prodMeta);
+    }
+
+    @Override
+    public void setCommonName(UUID orionGuid, String newName){
+        ECommDataCache edc = new ECommDataCache();
+        edc.common_name = newName;
+        ecommService.setCommonName(orionGuid.toString(), edc);
     }
 }

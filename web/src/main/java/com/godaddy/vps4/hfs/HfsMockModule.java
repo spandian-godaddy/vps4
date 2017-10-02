@@ -1,11 +1,28 @@
 package com.godaddy.vps4.hfs;
 
+import static org.mockito.Matchers.anyInt;
+import static org.mockito.Matchers.anyLong;
+import static org.mockito.Matchers.anyString;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Random;
+
+import javax.ws.rs.core.Response;
+
+import org.joda.time.DateTime;
+import org.mockito.Mockito;
+
 import com.google.inject.AbstractModule;
 import com.google.inject.Provides;
+
 import gdg.hfs.request.CompleteResponse;
 import gdg.hfs.vhfs.cpanel.CPanelAction;
 import gdg.hfs.vhfs.cpanel.CPanelService;
 import gdg.hfs.vhfs.ecomm.Account;
+import gdg.hfs.vhfs.ecomm.ECommDataCache;
 import gdg.hfs.vhfs.ecomm.ECommService;
 import gdg.hfs.vhfs.ecomm.MetadataUpdate;
 import gdg.hfs.vhfs.mailrelay.MailRelay;
@@ -18,13 +35,16 @@ import gdg.hfs.vhfs.nodeping.NodePingUptimeRecord;
 import gdg.hfs.vhfs.plesk.PleskService;
 import gdg.hfs.vhfs.sysadmin.SysAdminAction;
 import gdg.hfs.vhfs.sysadmin.SysAdminService;
-import gdg.hfs.vhfs.vm.*;
-import org.joda.time.DateTime;
-import org.mockito.Mockito;
-
-import java.util.*;
-
-import static org.mockito.Matchers.*;
+import gdg.hfs.vhfs.vm.CreateVMRequest;
+import gdg.hfs.vhfs.vm.CreateVMWithFlavorRequest;
+import gdg.hfs.vhfs.vm.FlavorList;
+import gdg.hfs.vhfs.vm.ImageList;
+import gdg.hfs.vhfs.vm.Vm;
+import gdg.hfs.vhfs.vm.VmAction;
+import gdg.hfs.vhfs.vm.VmAddress;
+import gdg.hfs.vhfs.vm.VmList;
+import gdg.hfs.vhfs.vm.VmOSInfo;
+import gdg.hfs.vhfs.vm.VmService;
 
 public class HfsMockModule extends AbstractModule {
 
@@ -360,6 +380,25 @@ public class HfsMockModule extends AbstractModule {
                 }
 
                 return null;
+            }
+
+            @Override
+            public void deleteAccount(String arg0) {
+                // TODO Auto-generated method stub
+                throw new UnsupportedOperationException("Not implemented, yet");
+            }
+
+            @Override
+            public Response setCommonName(String arg0, ECommDataCache arg1) {
+                // TODO Auto-generated method stub
+                throw new UnsupportedOperationException("Not implemented, yet");
+            }
+
+            @Override
+            public Account updateAccountStatusAndPlanFeatures(String arg0,
+                    Account arg1) {
+                // TODO Auto-generated method stub
+                throw new UnsupportedOperationException("Not implemented, yet");
             }
         };
     }

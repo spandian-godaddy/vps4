@@ -13,20 +13,19 @@ import java.util.UUID;
 import javax.inject.Inject;
 import javax.sql.DataSource;
 
-import com.godaddy.vps4.snapshot.SnapshotModule;
-import com.godaddy.vps4.vm.VmUserService;
-import com.godaddy.vps4.vm.jdbc.JdbcVmUserService;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mockito;
 
+import com.godaddy.vps4.credit.CreditService;
 import com.godaddy.vps4.jdbc.DatabaseModule;
 import com.godaddy.vps4.security.GDUserMock;
 import com.godaddy.vps4.security.SecurityModule;
 import com.godaddy.vps4.security.Vps4User;
 import com.godaddy.vps4.security.Vps4UserService;
 import com.godaddy.vps4.security.jdbc.AuthorizationException;
+import com.godaddy.vps4.snapshot.SnapshotModule;
 import com.godaddy.vps4.vm.Action;
 import com.godaddy.vps4.vm.ActionService;
 import com.godaddy.vps4.vm.ActionStatus;
@@ -34,7 +33,9 @@ import com.godaddy.vps4.vm.ActionType;
 import com.godaddy.vps4.vm.ImageService;
 import com.godaddy.vps4.vm.VirtualMachine;
 import com.godaddy.vps4.vm.VirtualMachineService;
+import com.godaddy.vps4.vm.VmUserService;
 import com.godaddy.vps4.vm.jdbc.JdbcVirtualMachineService;
+import com.godaddy.vps4.vm.jdbc.JdbcVmUserService;
 import com.godaddy.vps4.web.security.GDUser;
 import com.godaddy.vps4.web.vm.VmPatchResource;
 import com.godaddy.vps4.web.vm.VmPatchResource.VmPatch;
@@ -48,6 +49,7 @@ public class VmPatchResourceTest {
     @Inject Vps4UserService userService;
     @Inject DataSource dataSource;
     @Inject VirtualMachineService virtualMachineService;
+    @Inject CreditService creditService;
     ActionService actionService = mock(ActionService.class);
 
     private GDUser user;
@@ -152,6 +154,13 @@ public class VmPatchResourceTest {
     @Test
     public void testNonAlphabetical(){
         testValidServerName("º∂å∑¬˚∆´");
+    }
+
+    @Test
+    public void testSetsEcommCommonName(){
+        testValidServerName("NewVmName");
+        VirtualMachine vm = virtualMachineService.getVirtualMachine(virtualMachine.vmId);
+        verify(creditService, times(1)).setCommonName(vm.orionGuid, "NewVmName");
     }
 
     @Test
