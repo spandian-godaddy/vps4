@@ -53,6 +53,7 @@ import com.godaddy.vps4.web.Vps4Exception;
 import com.godaddy.vps4.web.Vps4NoShopperException;
 import com.godaddy.vps4.web.security.GDUser;
 import com.godaddy.vps4.web.util.Commands;
+
 import gdg.hfs.orchestration.CommandService;
 import gdg.hfs.orchestration.CommandState;
 import gdg.hfs.vhfs.vm.CreateVMWithFlavorRequest;
@@ -229,7 +230,7 @@ public class VmResource {
         logger.info("vmInfo: {}", vmInfo.toString());
 
         Vps4ProvisionVm.Request request = createProvisionVmRequest(hfsRequest, actionId, vmInfo,
-                user.getShopperId(), provisionRequest.name);
+                user.getShopperId(), provisionRequest.name, provisionRequest.orionGuid);
 
         CommandState command = Commands.execute(commandService, actionService, "ProvisionVm", request);
         logger.info("provisioning VM in {}", command.commandId);
@@ -241,13 +242,15 @@ public class VmResource {
                                                              long actionId,
                                                              ProvisionVmInfo vmInfo,
                                                              String shopperId,
-                                                             String serverName) {
+                                                             String serverName,
+                                                             UUID orionGuid) {
         Vps4ProvisionVm.Request request = new Vps4ProvisionVm.Request();
         request.actionId = actionId;
         request.hfsRequest = hfsRequest;
         request.vmInfo = vmInfo;
         request.shopperId = shopperId;
         request.serverName = serverName;
+        request.orionGuid = orionGuid;
         return request;
     }
 
