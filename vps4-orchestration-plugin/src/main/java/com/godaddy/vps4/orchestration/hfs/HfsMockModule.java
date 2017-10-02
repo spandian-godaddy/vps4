@@ -26,6 +26,7 @@ import gdg.hfs.request.CompleteResponse;
 import gdg.hfs.vhfs.cpanel.CPanelAction;
 import gdg.hfs.vhfs.cpanel.CPanelService;
 import gdg.hfs.vhfs.ecomm.Account;
+import gdg.hfs.vhfs.ecomm.ECommDataCache;
 import gdg.hfs.vhfs.ecomm.ECommService;
 import gdg.hfs.vhfs.ecomm.MetadataUpdate;
 import gdg.hfs.vhfs.mailrelay.MailRelay;
@@ -1128,6 +1129,25 @@ public class HfsMockModule extends AbstractModule {
                 }
 
                 return null;
+            }
+
+            @Override
+            public void deleteAccount(String arg0) {
+                // TODO Auto-generated method stub
+                throw new UnsupportedOperationException("Not implemented, yet");
+            }
+
+            @Override
+            public Response setCommonName(String arg0, ECommDataCache arg1) {
+                // TODO Auto-generated method stub
+                throw new UnsupportedOperationException("Not implemented, yet");
+            }
+
+            @Override
+            public Account updateAccountStatusAndPlanFeatures(String arg0,
+                    Account arg1) {
+                // TODO Auto-generated method stub
+                throw new UnsupportedOperationException("Not implemented, yet");
             }
         };
     }

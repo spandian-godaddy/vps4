@@ -17,4 +17,6 @@ public interface CreditService {
     void claimVirtualMachineCredit(UUID orionGuid, int dataCenterId, UUID productId);
 
     void unclaimVirtualMachineCredit(UUID orionGuid);
+
+    void setCommonName(UUID orionGuid, String newName);
 }

@@ -14,12 +14,12 @@ import java.io.IOException;
 import java.util.Random;
 import java.util.UUID;
 
-import com.godaddy.vps4.messaging.MissingShopperIdException;
-import com.godaddy.vps4.messaging.Vps4MessagingService;
-import com.godaddy.vps4.vm.HostnameGenerator;
 import org.junit.Before;
 import org.junit.Test;
 
+import com.godaddy.vps4.credit.CreditService;
+import com.godaddy.vps4.messaging.MissingShopperIdException;
+import com.godaddy.vps4.messaging.Vps4MessagingService;
 import com.godaddy.vps4.network.NetworkService;
 import com.godaddy.vps4.orchestration.TestCommandContext;
 import com.godaddy.vps4.orchestration.hfs.network.AllocateIp;
@@ -71,10 +71,11 @@ public class Vps4ProvisionVmTest {
     ConfigureMailRelay configureMailRelay = mock(ConfigureMailRelay.class);
     NodePingService nodePingService = mock(NodePingService.class);
     Vps4MessagingService messagingService = mock(Vps4MessagingService.class);
+    CreditService creditService = mock(CreditService.class);
 
     Vps4ProvisionVm command = new Vps4ProvisionVm(actionService, vmService,
             virtualMachineService, vmUserService, networkService, mailRelayService, nodePingService,
-            messagingService);
+            messagingService, creditService);
 
     Injector injector = Guice.createInjector(binder -> {
         binder.bind(ActionService.class).toInstance(actionService);
@@ -92,6 +93,7 @@ public class Vps4ProvisionVmTest {
         binder.bind(PleskService.class).toInstance(mock(PleskService.class));
         binder.bind(ConfigurePlesk.class).toInstance(mock(ConfigurePlesk.class));
         binder.bind(Vps4MessagingService.class).toInstance(messagingService);
+        binder.bind(CreditService.class).toInstance(creditService);
     });
 
     CommandContext context = new TestCommandContext(new GuiceCommandProvider(injector));
@@ -213,5 +215,11 @@ public class Vps4ProvisionVmTest {
         command.execute(context, this.request);
         verify(messagingService, times(1)).sendSetupEmail(anyString(), anyString(),
                 anyString(), anyString());
+    }
+
+    @Test
+    public void testSetEcommCommonName() {
+        command.execute(context, this.request);
+        verify(creditService, times(1)).setCommonName(this.request.orionGuid, this.request.serverName);
     }
 }
