@@ -127,6 +127,9 @@ public class Vps4MessageHandler implements MessageHandler {
 
         logger.info("Destroying vm: {} - actionId: {}", vmId, actionId);
         Commands.execute(commandService, vmActionService, "Vps4DestroyVm", request);
+
+        logger.info("Setting vm valid_until date to now.");
+        virtualMachineService.destroyVirtualMachine(vm.hfsVmId);
     }
 
     private void destroySnapshots(UUID orionGuid) {

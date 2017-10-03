@@ -1,6 +1,7 @@
 package com.godaddy.vps4.handler;
 
 import static org.junit.Assert.assertEquals;
+import static org.mockito.Matchers.anyLong;
 import static org.mockito.Matchers.anyObject;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -8,14 +9,8 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.UUID;
-
-import org.json.simple.JSONObject;
-import org.junit.Before;
-import org.junit.Test;
-import org.mockito.ArgumentCaptor;
 
 import com.godaddy.hfs.config.Config;
 import com.godaddy.vps4.credit.CreditService;
@@ -30,25 +25,27 @@ import com.godaddy.vps4.vm.DataCenter;
 import com.godaddy.vps4.vm.DataCenterService;
 import com.godaddy.vps4.vm.VirtualMachine;
 import com.godaddy.vps4.vm.VirtualMachineService;
-
 import gdg.hfs.orchestration.CommandGroupSpec;
 import gdg.hfs.orchestration.CommandService;
 import gdg.hfs.orchestration.CommandState;
+import org.json.simple.JSONObject;
+import org.junit.Before;
+import org.junit.Test;
+import org.mockito.ArgumentCaptor;
 
 public class Vps4MessageHandlerTest {
 
-    VirtualMachineService vmServiceMock = mock(VirtualMachineService.class);
-    SnapshotService snapshotServiceMock = mock(SnapshotService.class);
-    CreditService creditServiceMock = mock(CreditService.class);
-    ActionService vmActionServiceMock = mock(ActionService.class);
-    ActionService snapshotActionServiceMock = mock(ActionService.class);
-    CommandService commandServiceMock = mock(CommandService.class);
-    DataCenterService dcService = mock(DataCenterService.class);
-    Config configMock = mock(Config.class);
+    private VirtualMachineService vmServiceMock = mock(VirtualMachineService.class);
+    private SnapshotService snapshotServiceMock = mock(SnapshotService.class);
+    private CreditService creditServiceMock = mock(CreditService.class);
+    private ActionService vmActionServiceMock = mock(ActionService.class);
+    private ActionService snapshotActionServiceMock = mock(ActionService.class);
+    private CommandService commandServiceMock = mock(CommandService.class);
+    private DataCenterService dcService = mock(DataCenterService.class);
+    private Config configMock = mock(Config.class);
 
-    UUID orionGuid;
-    VirtualMachine vm;
-    VirtualMachineCredit vmCredit;
+    private UUID orionGuid;
+    private VirtualMachine vm;
 
     @Before
     public void setupTest() {
@@ -64,10 +61,12 @@ public class Vps4MessageHandlerTest {
         CommandState command = new CommandState();
         command.commandId = UUID.randomUUID();
         when(commandServiceMock.executeCommand(anyObject())).thenReturn(command);
+
     }
 
     private void mockVmCredit(AccountStatus accountStatus, UUID productId) {
         DataCenter dc = dcService.getDataCenter(5);
+        VirtualMachineCredit vmCredit;
         vmCredit = new VirtualMachineCredit(orionGuid, 10, 0, 1, "linux", "myh",
                 null, null, "TestShopper", accountStatus, dc, productId);
         when(creditServiceMock.getVirtualMachineCredit(orionGuid)).thenReturn(vmCredit);
@@ -75,7 +74,8 @@ public class Vps4MessageHandlerTest {
 
     @SuppressWarnings("unchecked")
     private String createTestKafkaMessage(String type) {
-        /** Sample:
+        /*
+         * Sample:
          *  {"id": "a82c9629-3e19-4b3a-a870-edc0059eebe5",
          *   "notification": {
          *      "type": ["added"],
@@ -191,6 +191,7 @@ public class Vps4MessageHandlerTest {
         ArgumentCaptor<CommandGroupSpec> argument = ArgumentCaptor.forClass(CommandGroupSpec.class);
         verify(commandServiceMock, times(1)).executeCommand(argument.capture());
         assertEquals("Vps4DestroyVm", argument.getValue().commands.get(0).command);
+        verify(vmServiceMock, times(1)).destroyVirtualMachine(anyLong());
     }
 
     @Test
@@ -198,12 +199,13 @@ public class Vps4MessageHandlerTest {
         mockVmCredit(AccountStatus.REMOVED, vm.vmId);
 
         Snapshot snapshot = mock(Snapshot.class);
-        when(snapshotServiceMock.getSnapshotsByOrionGuid(orionGuid)).thenReturn(Arrays.asList(snapshot));
+        when(snapshotServiceMock.getSnapshotsByOrionGuid(orionGuid)).thenReturn(Collections.singletonList(snapshot));
         callHandleMessage(createTestKafkaMessage("removed"));
 
         ArgumentCaptor<CommandGroupSpec> argument = ArgumentCaptor.forClass(CommandGroupSpec.class);
         verify(commandServiceMock, times(2)).executeCommand(argument.capture());
         assertEquals("Vps4DestroySnapshot", argument.getValue().commands.get(0).command);
+        verify(vmServiceMock, times(1)).destroyVirtualMachine(anyLong());
     }
 
     @Test
@@ -212,11 +214,12 @@ public class Vps4MessageHandlerTest {
 
         Snapshot snapshot = new Snapshot(null, 0, null, null,
                 SnapshotStatus.DESTROYED, null, null, null, 0, SnapshotType.ON_DEMAND);
-        when(snapshotServiceMock.getSnapshotsByOrionGuid(orionGuid)).thenReturn(Arrays.asList(snapshot));
+        when(snapshotServiceMock.getSnapshotsByOrionGuid(orionGuid)).thenReturn(Collections.singletonList(snapshot));
         callHandleMessage(createTestKafkaMessage("removed"));
 
         verify(creditServiceMock, times(1)).getVirtualMachineCredit(anyObject());
         verify(commandServiceMock, never()).executeCommand(anyObject());
+        verify(vmServiceMock, times(0)).destroyVirtualMachine(anyLong());
     }
 
 }

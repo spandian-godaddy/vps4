@@ -4,11 +4,15 @@ import javax.inject.Inject;
 
 import com.godaddy.vps4.orchestration.ActionCommand;
 import com.godaddy.vps4.vm.ActionService;
-
 import gdg.hfs.orchestration.CommandContext;
 import gdg.hfs.orchestration.CommandMetadata;
 import gdg.hfs.vhfs.vm.VmAction;
 import gdg.hfs.vhfs.vm.VmService;
+import org.apache.commons.lang3.builder.ReflectionToStringBuilder;
+import org.apache.commons.lang3.builder.ToStringStyle;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 
 @CommandMetadata(
         name="Vps4StopVm",
@@ -16,6 +20,8 @@ import gdg.hfs.vhfs.vm.VmService;
         responseType=Vps4StopVm.Response.class
     )
 public class Vps4StopVm extends ActionCommand<VmActionRequest, Vps4StopVm.Response> {
+
+    private final Logger logger = LoggerFactory.getLogger(Vps4StopVm.class);
 
     final ActionService actionService;
     final VmService vmService;
@@ -29,8 +35,10 @@ public class Vps4StopVm extends ActionCommand<VmActionRequest, Vps4StopVm.Respon
 
     @Override
     protected Response executeWithAction(CommandContext context, VmActionRequest request) throws Exception {
-        long vmId = request.hfsVmId;
 
+        logger.info("Request: {}", request);
+
+        long vmId = request.hfsVmId;
         VmAction hfsAction = context.execute("Vps4StopVm", ctx -> {
             return vmService.stopVm(vmId);
         });
@@ -40,12 +48,18 @@ public class Vps4StopVm extends ActionCommand<VmActionRequest, Vps4StopVm.Respon
         Vps4StopVm.Response response = new Vps4StopVm.Response();
         response.vmId = vmId;
         response.hfsAction = hfsAction;
+        logger.info("Response: {}", response);
         return response;
     }
 
     public static class Response {
         public long vmId;
         public VmAction hfsAction;
+
+        @Override
+        public String toString() {
+            return ReflectionToStringBuilder.toString(this, ToStringStyle.MULTI_LINE_STYLE);
+        }
     }
 
 }

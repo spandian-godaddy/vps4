@@ -58,7 +58,7 @@ public class WaitForVmAction implements Command<VmAction, VmAction> {
             hfsAction = vmService.getVmAction(hfsAction.vmId, hfsAction.vmActionId);
         }
         if (!(hfsAction.state == VmAction.Status.COMPLETE)) {
-            throw new RuntimeException(String.format("failed to provision VM, action: %s", hfsAction));
+            throw new RuntimeException(String.format("failed to complete VM action: %s", hfsAction));
         }
         return hfsAction;
     }
