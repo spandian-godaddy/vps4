@@ -7,26 +7,25 @@ import java.util.stream.Collectors;
 
 import javax.inject.Inject;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import com.godaddy.vps4.credit.CreditService;
 import com.godaddy.vps4.network.IpAddress;
 import com.godaddy.vps4.network.NetworkService;
 import com.godaddy.vps4.orchestration.ActionCommand;
 import com.godaddy.vps4.orchestration.hfs.cpanel.WaitForCpanelAction;
-import com.godaddy.vps4.orchestration.hfs.vm.DestroyVm;
+import com.godaddy.vps4.orchestration.hfs.vm.WaitForVmAction;
 import com.godaddy.vps4.vm.ActionService;
 import com.godaddy.vps4.vm.VirtualMachine;
 import com.godaddy.vps4.vm.VirtualMachineService;
-
 import gdg.hfs.orchestration.CommandContext;
 import gdg.hfs.orchestration.CommandMetadata;
 import gdg.hfs.vhfs.cpanel.CPanelAction;
 import gdg.hfs.vhfs.cpanel.CPanelService;
 import gdg.hfs.vhfs.nodeping.NodePingService;
 import gdg.hfs.vhfs.vm.Vm;
+import gdg.hfs.vhfs.vm.VmAction;
 import gdg.hfs.vhfs.vm.VmService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @CommandMetadata(
         name="Vps4DestroyVm",
@@ -37,17 +36,19 @@ public class Vps4DestroyVm extends ActionCommand<Vps4DestroyVm.Request, Vps4Dest
 
     private static final Logger logger = LoggerFactory.getLogger(Vps4DestroyVm.class);
 
-    final NetworkService networkService;
+    private final ActionService actionService;
 
-    final VirtualMachineService virtualMachineService;
+    private final NetworkService networkService;
 
-    final CreditService creditService;
+    private final VirtualMachineService virtualMachineService;
 
-    final VmService vmService;
+    private final CreditService creditService;
 
-    final CPanelService cpanelService;
+    private final VmService vmService;
 
-    final NodePingService monitoringService;
+    private final CPanelService cpanelService;
+
+    private final NodePingService monitoringService;
 
     @Inject
     public Vps4DestroyVm(ActionService actionService,
@@ -58,6 +59,7 @@ public class Vps4DestroyVm extends ActionCommand<Vps4DestroyVm.Request, Vps4Dest
             CPanelService cpanelService,
             NodePingService monitoringService) {
         super(actionService);
+        this.actionService = actionService;
         this.networkService = networkService;
         this.virtualMachineService = virtualMachineService;
         this.creditService = creditService;
@@ -92,10 +94,16 @@ public class Vps4DestroyVm extends ActionCommand<Vps4DestroyVm.Request, Vps4Dest
                                                                     return null;});
         }
 
-        context.execute("DestroyVmHfs", DestroyVm.class, hfsVmId);
+        VmAction hfsAction = context.execute("DestroyVmHfs", ctx -> vmService.destroyVm(hfsVmId));
+
+        hfsAction = context.execute(WaitForVmAction.class, hfsAction);
 
         logger.info("Completed destroying VM {} with hfsVmId {}", vm.vmId, hfsVmId);
-        return null;
+
+        Vps4DestroyVm.Response response = new Vps4DestroyVm.Response();
+        response.vmId = hfsVmId;
+        response.hfsAction = hfsAction;
+        return response;
     }
 
     private void unlicenseCpanel(CommandContext context, final long hfsVmId, UUID vmId) {
@@ -114,6 +122,7 @@ public class Vps4DestroyVm extends ActionCommand<Vps4DestroyVm.Request, Vps4Dest
 
     public static class Response {
         public long vmId;
+        public VmAction hfsAction;
     }
 
 }
