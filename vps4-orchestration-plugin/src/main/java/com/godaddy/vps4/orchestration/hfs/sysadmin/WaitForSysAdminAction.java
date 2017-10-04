@@ -33,7 +33,9 @@ public class WaitForSysAdminAction implements Command<SysAdminAction, SysAdminAc
             sysAction = sysAdminService.getSysAdminAction(sysAction.sysAdminActionId);
         }
 
-        if (!sysAction.status.equals(SysAdminAction.Status.COMPLETE)) {
+        if(sysAction.status == SysAdminAction.Status.COMPLETE) {
+            logger.info("System Admin Action completed. {} ", sysAction );
+        } else {
             throw new ActionNotCompletedException(sysAction);
         }
 
