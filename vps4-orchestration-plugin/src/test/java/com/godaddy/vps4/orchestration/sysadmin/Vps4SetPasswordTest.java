@@ -1,5 +1,6 @@
 package com.godaddy.vps4.orchestration.sysadmin;
 
+import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.doReturn;
@@ -18,6 +19,7 @@ import com.godaddy.vps4.orchestration.TestCommandContext;
 import com.godaddy.vps4.orchestration.hfs.plesk.UpdateAdminPassword;
 import com.godaddy.vps4.orchestration.hfs.sysadmin.SetPassword;
 import com.godaddy.vps4.orchestration.hfs.sysadmin.WaitForSysAdminAction;
+import com.godaddy.vps4.util.Cryptography;
 import com.godaddy.vps4.vm.ActionService;
 import com.godaddy.vps4.vm.Image.ControlPanel;
 import com.godaddy.vps4.vm.VmUserService;
@@ -35,6 +37,7 @@ public class Vps4SetPasswordTest {
     ActionService actionService = mock(ActionService.class);
     SysAdminService sysAdminService = mock(SysAdminService.class);
     VmUserService userService = mock(VmUserService.class);
+    Cryptography cryptography = mock(Cryptography.class);
 
     Vps4SetPassword command = spy(new Vps4SetPassword(actionService));
 
@@ -42,17 +45,19 @@ public class Vps4SetPasswordTest {
         binder.bind(SetPassword.class);
         binder.bind(WaitForSysAdminAction.class);
         binder.bind(SysAdminService.class).toInstance(sysAdminService);
+        binder.bind(Cryptography.class).toInstance(cryptography);
     });
 
     CommandContext context = new TestCommandContext(new GuiceCommandProvider(injector));
 
     @Test
     public void testSetPassword() throws Exception {
+        String password = "somenewpassword";
 
         SetPassword.Request setPasswordRequest = new SetPassword.Request();
         setPasswordRequest.hfsVmId = 42;
         setPasswordRequest.usernames = Arrays.asList("user1", "user2", "user3");
-        setPasswordRequest.password = "somenewpassword";
+        setPasswordRequest.encryptedPassword = "somenewpassword".getBytes();
 
         Vps4SetPassword.Request request = new Vps4SetPassword.Request();
         request.actionId = 12;
@@ -64,14 +69,15 @@ public class Vps4SetPasswordTest {
         action.sysAdminActionId = 73;
         action.status = Status.COMPLETE;
 
-        when(sysAdminService.changePassword(eq(setPasswordRequest.hfsVmId), anyString(), eq(setPasswordRequest.password))).thenReturn(action);
+        when(sysAdminService.changePassword(eq(setPasswordRequest.hfsVmId), anyString(), eq(password))).thenReturn(action);
         when(sysAdminService.getSysAdminAction(action.sysAdminActionId)).thenReturn(action);
+        when(cryptography.decrypt(any())).thenReturn(password);
 
         command.execute(context, request);
 
         for (String username : setPasswordRequest.usernames) {
             verify(sysAdminService, times(1))
-                .changePassword(42, username, "somenewpassword");
+                    .changePassword(42, username, password);
         }
     }
 

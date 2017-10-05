@@ -4,7 +4,6 @@ import java.util.UUID;
 
 import javax.sql.DataSource;
 
-import com.godaddy.vps4.snapshot.SnapshotModule;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -16,6 +15,9 @@ import com.godaddy.vps4.security.SecurityModule;
 import com.godaddy.vps4.security.Vps4User;
 import com.godaddy.vps4.security.Vps4UserService;
 import com.godaddy.vps4.security.jdbc.AuthorizationException;
+import com.godaddy.vps4.snapshot.SnapshotModule;
+import com.godaddy.vps4.util.Cryptography;
+import com.godaddy.vps4.util.UtilsModule;
 import com.godaddy.vps4.vm.VirtualMachine;
 import com.godaddy.vps4.vm.VmModule;
 import com.godaddy.vps4.vm.VmUserService;
@@ -37,6 +39,8 @@ public class SysAdminResourceTest {
     @Inject VmUserService vmUserService;
     @Inject DataSource dataSource;
 
+    Cryptography cryptography;
+
     private GDUser user;
     private String username = "fakeUser";
     private VirtualMachine vm;
@@ -47,6 +51,7 @@ public class SysAdminResourceTest {
             new VmModule(),
             new SnapshotModule(),
             new Phase2ExternalsModule(),
+            new UtilsModule(),
             new AbstractModule() {
 
                 @Override
@@ -88,6 +93,7 @@ public class SysAdminResourceTest {
     public void testShopperSetPassword(){
         UpdatePasswordRequest request = new UpdatePasswordRequest();
         request.username = username;
+        request.password = "newPassword1!";
 
         getSysAdminResource().setPassword(vm.vmId, request);
     }
@@ -96,6 +102,7 @@ public class SysAdminResourceTest {
     public void testAdminSetPassword(){
         UpdatePasswordRequest request = new UpdatePasswordRequest();
         request.username = username;
+        request.password = "newPassword1!";
 
         user = GDUserMock.createAdmin();
         getSysAdminResource().setPassword(vm.vmId, request);
@@ -127,6 +134,7 @@ public class SysAdminResourceTest {
     public void testDoubleSetPassword(){
         UpdatePasswordRequest request = new UpdatePasswordRequest();
         request.username = username;
+        request.password = "newPassword1!";
 
         getSysAdminResource().setPassword(vm.vmId, request);
         try{

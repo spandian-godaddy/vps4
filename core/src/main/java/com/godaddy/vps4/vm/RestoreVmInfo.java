@@ -1,8 +1,8 @@
 package com.godaddy.vps4.vm;
 
-import org.apache.commons.lang3.builder.ToStringBuilder;
-
 import java.util.UUID;
+
+import org.apache.commons.lang3.builder.ToStringBuilder;
 
 public class RestoreVmInfo {
 
@@ -12,21 +12,21 @@ public class RestoreVmInfo {
     public String hostname;
     public String rawFlavor;
     public String username;
-    public String password;
+    public byte[] encryptedPassword;
     public String zone;
 
     public RestoreVmInfo() {
     }
 
     public RestoreVmInfo(UUID vmId, UUID snapshotId, String sgid, String hostname,
-                         String rawFlavor, String username, String password, String zone) {
+            String rawFlavor, String username, byte[] encryptedPassword, String zone) {
         this.vmId = vmId;
         this.snapshotId = snapshotId;
         this.sgid = sgid;
         this.hostname = hostname;
         this.rawFlavor = rawFlavor;
         this.username = username;
-        this.password = password;
+        this.encryptedPassword = encryptedPassword;
         this.zone = zone;
     }
 

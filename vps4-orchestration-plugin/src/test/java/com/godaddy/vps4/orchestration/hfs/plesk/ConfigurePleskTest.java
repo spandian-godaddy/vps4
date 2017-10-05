@@ -3,6 +3,8 @@
  */
 package com.godaddy.vps4.orchestration.hfs.plesk;
 
+import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -14,6 +16,7 @@ import org.junit.Test;
 
 import com.godaddy.vps4.orchestration.TestCommandContext;
 import com.godaddy.vps4.orchestration.hfs.plesk.ConfigurePlesk.ConfigurePleskRequest;
+import com.godaddy.vps4.util.Cryptography;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
 
@@ -33,6 +36,7 @@ public class ConfigurePleskTest {
     PleskService pleskService;
     ConfigurePlesk command;
     CommandContext context;
+    Cryptography cryptography;
     Injector injector;
 
     /**
@@ -42,11 +46,13 @@ public class ConfigurePleskTest {
     public void setup() throws Exception {
 
         pleskService = mock(PleskService.class);
-        command = new ConfigurePlesk(pleskService);
+        cryptography = mock(Cryptography.class);
+        command = new ConfigurePlesk(pleskService, cryptography);
         injector = Guice.createInjector(binder -> {
             binder.bind(ConfigurePlesk.class);
             binder.bind(WaitForPleskAction.class);
             binder.bind(PleskService.class).toInstance(pleskService);
+            binder.bind(Cryptography.class).toInstance(cryptography);
         });
         context = new TestCommandContext(new GuiceCommandProvider(injector));
     }
@@ -67,26 +73,28 @@ public class ConfigurePleskTest {
      */
     @Test
     public void testExecuteSuccess() {
-        ConfigurePleskRequest request = new ConfigurePleskRequest(777L, "fake-user", "super-secret-password");
+        String password = "super-secret-password";
+        when(cryptography.decrypt(any())).thenReturn(password);
+        ConfigurePleskRequest request = new ConfigurePleskRequest(777L, "fake-user", password.getBytes());
 
         PleskAction pleskAction = new PleskAction();
         pleskAction.actionId = 555;
         pleskAction.status = Status.COMPLETE;
 
-        when(pleskService.imageConfig(request.vmId, request.username, request.password)).thenReturn(pleskAction);
+        when(pleskService.imageConfig(request.vmId, request.username, password)).thenReturn(pleskAction);
         when(pleskService.getAction(pleskAction.actionId)).thenReturn(pleskAction);
 
         command.execute(context, request);
 
-        verify(pleskService, times(1)).imageConfig(request.vmId, request.username, request.password);
+        verify(pleskService, times(1)).imageConfig(request.vmId, request.username, password);
     }
 
     @Test(expected = RuntimeException.class)
     public void failPleskImageConfig() throws Exception {
-        ConfigurePleskRequest request = new ConfigurePleskRequest(777L, "fake-user", "super-secret-password");
+        ConfigurePleskRequest request = new ConfigurePleskRequest(777L, "fake-user", "super-secret-password".getBytes());
 
         // if HFS throws an exception on pleskService, the command should fail
-        when(pleskService.imageConfig(request.vmId, request.username, request.password)).thenThrow(new RuntimeException("Faked an HFS failure"));
+        when(pleskService.imageConfig(request.vmId, request.username, anyString())).thenThrow(new RuntimeException("Faked an HFS failure"));
 
         command.execute(context, request);
     }

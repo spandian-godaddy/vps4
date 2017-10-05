@@ -5,8 +5,6 @@ import java.util.List;
 
 import javax.inject.Singleton;
 
-import com.godaddy.vps4.messaging.MessagingModule;
-import com.godaddy.vps4.util.ObjectMapperProvider;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -26,11 +24,14 @@ import com.godaddy.vps4.hfs.HfsClientModule;
 import com.godaddy.vps4.hfs.HfsMockModule;
 import com.godaddy.vps4.jdbc.DatabaseModule;
 import com.godaddy.vps4.mailrelay.MailRelayModule;
+import com.godaddy.vps4.messaging.MessagingModule;
 import com.godaddy.vps4.plesk.PleskModule;
 import com.godaddy.vps4.security.SecurityModule;
 import com.godaddy.vps4.snapshot.SnapshotModule;
 import com.godaddy.vps4.sso.SsoModule;
 import com.godaddy.vps4.sysadmin.SysAdminModule;
+import com.godaddy.vps4.util.ObjectMapperProvider;
+import com.godaddy.vps4.util.UtilsModule;
 import com.godaddy.vps4.vm.VmModule;
 import com.godaddy.vps4.web.network.NetworkModule;
 import com.godaddy.vps4.web.security.GDUserModule;
@@ -80,6 +81,7 @@ public class Vps4Injector {
         modules.add(new WebModule());
         modules.add(new SecurityModule());
         modules.add(new SsoModule());
+        modules.add(new UtilsModule());
 
         modules.add(new CreditModule());
         modules.add(new VmModule());
