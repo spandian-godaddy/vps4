@@ -108,6 +108,8 @@ public class Vps4ProvisionVm extends ActionCommand<Vps4ProvisionVm.Request, Vps4
 
         IpAddress ip = allocateIp();
 
+        hostname = HostnameGenerator.getHostname(ip.address);
+
         createMailRelay(ip);
 
         Vm hfsVm = createVm(ip);
@@ -212,7 +214,7 @@ public class Vps4ProvisionVm extends ActionCommand<Vps4ProvisionVm.Request, Vps4
         setStep(CreateVmStep.GeneratingHostname);
 
         CreateVm.Request createVmRequest = new CreateVm.Request();
-        createVmRequest.hostname = HostnameGenerator.getHostname(ip.address);
+        createVmRequest.hostname = hostname;
         createVmRequest.image_name = request.image_name;
         createVmRequest.rawFlavor = request.rawFlavor;
         createVmRequest.sgid = request.sgid;
