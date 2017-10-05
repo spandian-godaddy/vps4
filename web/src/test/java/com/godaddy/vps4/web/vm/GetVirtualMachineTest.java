@@ -16,7 +16,6 @@ import com.godaddy.vps4.credit.CreditService;
 import com.godaddy.vps4.credit.VirtualMachineCredit;
 import com.godaddy.vps4.security.GDUserMock;
 import com.godaddy.vps4.security.Vps4UserService;
-import com.godaddy.vps4.util.Cryptography;
 import com.godaddy.vps4.vm.AccountStatus;
 import com.godaddy.vps4.vm.DataCenter;
 import com.godaddy.vps4.vm.VirtualMachine;
@@ -58,14 +57,12 @@ public class GetVirtualMachineTest {
         when(creditService.getVirtualMachineCredit(vm.orionGuid)).thenReturn(credit);
 
         Config config = Mockito.mock(Config.class);
-        Cryptography cryptography = Mockito.mock(Cryptography.class);
         when(config.get(Mockito.anyString(), Mockito.anyString())).thenReturn("0");
         when(config.get(Mockito.anyString())).thenReturn("0");
-        when(config.getData(Mockito.anyString())).thenReturn("cxPTMJetZeRW5ofrsUp0wecvNKsjf1/NHwllp0JllBM=".getBytes());
         vmResource = new VmResource(
             user, vmService, userService, virtualMachineService,
                 creditService, null, null, null, null,
-                null, config, cryptography);
+                null, config);
     }
 
     @Test

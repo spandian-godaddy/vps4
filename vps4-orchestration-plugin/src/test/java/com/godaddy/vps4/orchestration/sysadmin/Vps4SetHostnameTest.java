@@ -14,7 +14,6 @@ import com.godaddy.vps4.orchestration.TestCommandContext;
 import com.godaddy.vps4.orchestration.hfs.sysadmin.SetHostname;
 import com.godaddy.vps4.orchestration.hfs.sysadmin.SetPassword;
 import com.godaddy.vps4.orchestration.hfs.sysadmin.WaitForSysAdminAction;
-import com.godaddy.vps4.util.Cryptography;
 import com.godaddy.vps4.vm.ActionService;
 import com.godaddy.vps4.vm.VirtualMachineService;
 import com.google.inject.Guice;
@@ -32,7 +31,6 @@ public class Vps4SetHostnameTest {
     ActionService actionService = mock(ActionService.class);
     SysAdminService sysAdminService = mock(SysAdminService.class);
     VirtualMachineService virtualMachineService = mock(VirtualMachineService.class);
-    Cryptography cryptography = mock(Cryptography.class);
 
     Vps4SetHostname command = new Vps4SetHostname(actionService, virtualMachineService);
 
@@ -40,7 +38,6 @@ public class Vps4SetHostnameTest {
         binder.bind(SetPassword.class);
         binder.bind(WaitForSysAdminAction.class);
         binder.bind(SysAdminService.class).toInstance(sysAdminService);
-        binder.bind(Cryptography.class).toInstance(cryptography);
     });
 
     CommandContext context = new TestCommandContext(new GuiceCommandProvider(injector));

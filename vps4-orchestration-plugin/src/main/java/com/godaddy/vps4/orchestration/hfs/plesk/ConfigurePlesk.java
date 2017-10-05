@@ -5,8 +5,6 @@ import javax.inject.Inject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.godaddy.vps4.util.Cryptography;
-
 import gdg.hfs.orchestration.Command;
 import gdg.hfs.orchestration.CommandContext;
 import gdg.hfs.vhfs.plesk.PleskAction;
@@ -17,23 +15,18 @@ public class ConfigurePlesk implements Command<ConfigurePlesk.ConfigurePleskRequ
     private static final Logger logger = LoggerFactory.getLogger(ConfigurePlesk.class);
 
     final PleskService pleskService;
-
-    private final Cryptography cryptography;
     
     @Inject
-    public ConfigurePlesk(PleskService pleskService, Cryptography cryptography) {
+    public ConfigurePlesk(PleskService pleskService) {
         this.pleskService = pleskService;
-        this.cryptography = cryptography;
     }
     
     @Override
     public Void execute(CommandContext context, ConfigurePleskRequest request) {
         logger.info("sending HFS request to config Plesk image for vmId {}", request.vmId);
 
-        String password = cryptography.decrypt(request.encryptedPassword);
-
         PleskAction hfsAction = context.execute("RequestFromHFS", ctx -> {
-            return pleskService.imageConfig(request.vmId, request.username, password);
+            return pleskService.imageConfig(request.vmId, request.username, request.password);
         });
 
         context.execute(WaitForPleskAction.class, hfsAction);
@@ -45,12 +38,12 @@ public class ConfigurePlesk implements Command<ConfigurePlesk.ConfigurePleskRequ
     public static class ConfigurePleskRequest {
         long vmId;
         String username;
-        byte[] encryptedPassword;
+        String password;
         
-        public ConfigurePleskRequest(long vmId, String username, byte[] encryptedPassword) {
+        public ConfigurePleskRequest(long vmId, String username, String password) {
             this.vmId = vmId;
             this.username = username;
-            this.encryptedPassword = encryptedPassword;
+            this.password = password;
         }
     }
 

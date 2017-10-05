@@ -9,6 +9,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.godaddy.hfs.config.Config;
 import com.godaddy.vps4.credit.CreditService;
 import com.godaddy.vps4.messaging.Vps4MessagingService;
 import com.godaddy.vps4.network.IpAddress.IpAddressType;
@@ -41,11 +42,13 @@ import com.godaddy.vps4.vm.VmUserService;
 
 import gdg.hfs.orchestration.CommandContext;
 import gdg.hfs.orchestration.CommandMetadata;
+import gdg.hfs.vhfs.mailrelay.MailRelayService;
 import gdg.hfs.vhfs.network.IpAddress;
 import gdg.hfs.vhfs.nodeping.CheckType;
 import gdg.hfs.vhfs.nodeping.CreateCheckRequest;
 import gdg.hfs.vhfs.nodeping.NodePingCheck;
 import gdg.hfs.vhfs.nodeping.NodePingService;
+import gdg.hfs.vhfs.vm.CreateVMWithFlavorRequest;
 import gdg.hfs.vhfs.vm.Vm;
 import gdg.hfs.vhfs.vm.VmAction;
 import gdg.hfs.vhfs.vm.VmService;
@@ -58,13 +61,22 @@ import gdg.hfs.vhfs.vm.VmService;
 public class Vps4ProvisionVm extends ActionCommand<Vps4ProvisionVm.Request, Vps4ProvisionVm.Response> {
 
     private static final Logger logger = LoggerFactory.getLogger(Vps4ProvisionVm.class);
-    private final VmService vmService;
-    private final VirtualMachineService virtualMachineService;
-    private final VmUserService vmUserService;
-    private final NetworkService networkService;
-    private final NodePingService monitoringService;
-    private final Vps4MessagingService messagingService;
-    private final CreditService creditService;
+
+    final VmService vmService;
+
+    final VirtualMachineService virtualMachineService;
+
+    final VmUserService vmUserService;
+
+    final NetworkService networkService;
+
+    final MailRelayService mailRelayService;
+
+    final NodePingService monitoringService;
+
+    final Vps4MessagingService messagingService;
+
+    final CreditService creditService;
 
     Request request;
 
@@ -74,6 +86,8 @@ public class Vps4ProvisionVm extends ActionCommand<Vps4ProvisionVm.Request, Vps4
 
     CommandContext context;
 
+    @Inject
+    Config vps4Config;
 
     @Inject
     public Vps4ProvisionVm(
@@ -82,6 +96,7 @@ public class Vps4ProvisionVm extends ActionCommand<Vps4ProvisionVm.Request, Vps4
             VirtualMachineService virtualMachineService,
             VmUserService vmUserService,
             NetworkService networkService,
+            MailRelayService mailRelayService,
             NodePingService monitoringService,
             Vps4MessagingService messagingService,
             CreditService creditService) {
@@ -90,6 +105,7 @@ public class Vps4ProvisionVm extends ActionCommand<Vps4ProvisionVm.Request, Vps4
         this.virtualMachineService = virtualMachineService;
         this.vmUserService = vmUserService;
         this.networkService = networkService;
+        this.mailRelayService = mailRelayService;
         this.monitoringService = monitoringService;
         this.messagingService = messagingService;
         this.creditService = creditService;
@@ -159,7 +175,7 @@ public class Vps4ProvisionVm extends ActionCommand<Vps4ProvisionVm.Request, Vps4
             setStep(CreateVmStep.ConfiguringPlesk);
 
             // configure Plesk on the vm
-            ConfigurePleskRequest pleskRequest = createConfigurePleskRequest(hfsVm);
+            ConfigurePleskRequest pleskRequest = createConfigurePleskRequest(hfsVm, request);
             context.execute(ConfigurePlesk.class, pleskRequest);
         }
     }
@@ -195,36 +211,30 @@ public class Vps4ProvisionVm extends ActionCommand<Vps4ProvisionVm.Request, Vps4
     private void setupUsers(Vm hfsVm) {
         // associate the Vm with the user that created it
         context.execute("CreateVps4User", ctx -> {
-            vmUserService.createUser(request.username, request.vmInfo.vmId);
+            vmUserService.createUser(request.hfsRequest.username, request.vmInfo.vmId);
             return null;
         });
 
         // set the root password to the same as the user password (LINUX ONLY)
         VirtualMachine vm = virtualMachineService.getVirtualMachine(request.vmInfo.vmId);
         if(vm.image.operatingSystem == Image.OperatingSystem.LINUX) {
-            SetPassword.Request setRootPasswordRequest = createSetRootPasswordRequest(hfsVm);
+            SetPassword.Request setRootPasswordRequest = createSetRootPasswordRequest(request, hfsVm);
             context.execute(SetPassword.class, setRootPasswordRequest);
         }
     }
 
     private Vm createVm(IpAddress ip) {
+        CreateVMWithFlavorRequest hfsRequest = request.hfsRequest;
+
         // Generate a new hostname from the allocated ip
         setStep(CreateVmStep.GeneratingHostname);
-
-        CreateVm.Request createVmRequest = new CreateVm.Request();
-        createVmRequest.hostname = HostnameGenerator.getHostname(ip.address);
-        createVmRequest.image_name = request.image_name;
-        createVmRequest.rawFlavor = request.rawFlavor;
-        createVmRequest.sgid = request.sgid;
-        createVmRequest.username = request.username;
-        createVmRequest.zone = request.zone;
-        createVmRequest.encryptedPassword = request.encryptedPassword;
-
-        virtualMachineService.setHostname(request.vmInfo.vmId, createVmRequest.hostname);
+        hostname = HostnameGenerator.getHostname(ip.address);
+        hfsRequest.hostname = hostname;
+        virtualMachineService.setHostname(request.vmInfo.vmId, hfsRequest.hostname);
 
         // Create the VM
         setStep(CreateVmStep.RequestingServer);
-        VmAction vmAction = context.execute(CreateVm.class, createVmRequest);
+        VmAction vmAction = context.execute(CreateVm.class, hfsRequest);
 
         // Get the hfs vm
         Vm hfsVm = context.execute("GetVmAfterCreate", ctx -> vmService.getVm(vmAction.vmId));
@@ -248,18 +258,18 @@ public class Vps4ProvisionVm extends ActionCommand<Vps4ProvisionVm.Request, Vps4
         context.execute(SetMailRelayQuota.class, hfsRequest);
     }
 
-    private SetPassword.Request createSetRootPasswordRequest(Vm hfsVm) {
+    private SetPassword.Request createSetRootPasswordRequest(Request request, Vm hfsVm) {
         SetPassword.Request setPasswordRequest = new SetPassword.Request();
         setPasswordRequest.hfsVmId = hfsVm.vmId;
         String[] usernames = {"root"};
         setPasswordRequest.usernames = Arrays.asList(usernames);
-        setPasswordRequest.encryptedPassword = request.encryptedPassword;
+        setPasswordRequest.password = request.hfsRequest.password;
         return setPasswordRequest;
     }
 
     private void configureAdminUser(Vm hfsVm, UUID vmId) {
         boolean adminEnabled = request.vmInfo.image.controlPanel == ControlPanel.MYH;
-        String username = request.username;
+        String username = request.hfsRequest.username;
         ToggleAdmin.Request toggleAdminRequest = new ToggleAdmin.Request();
         toggleAdminRequest.enabled = adminEnabled;
         toggleAdminRequest.vmId = hfsVm.vmId;
@@ -277,8 +287,8 @@ public class Vps4ProvisionVm extends ActionCommand<Vps4ProvisionVm.Request, Vps4
         return cpanelRequest;
     }
 
-    private ConfigurePleskRequest createConfigurePleskRequest(Vm hfsVm) {
-        ConfigurePleskRequest pleskRequest = new ConfigurePleskRequest(hfsVm.vmId, request.username, request.encryptedPassword);
+    private ConfigurePleskRequest createConfigurePleskRequest(Vm hfsVm, Request request) {
+        ConfigurePleskRequest pleskRequest = new ConfigurePleskRequest(hfsVm.vmId, request.hfsRequest.username, request.hfsRequest.password);
         return pleskRequest;
     }
 
@@ -288,7 +298,7 @@ public class Vps4ProvisionVm extends ActionCommand<Vps4ProvisionVm.Request, Vps4
 
         AllocateIp.Request allocateIpRequest = new AllocateIp.Request();
         allocateIpRequest.sgid = request.vmInfo.sgid;
-        allocateIpRequest.zone = request.zone;
+        allocateIpRequest.zone = request.hfsRequest.zone;
 
         return context.execute(AllocateIp.class, allocateIpRequest);
     }
@@ -344,17 +354,12 @@ public class Vps4ProvisionVm extends ActionCommand<Vps4ProvisionVm.Request, Vps4
     }
 
     public static class Request implements ActionRequest {
+        public CreateVMWithFlavorRequest hfsRequest;
         public ProvisionVmInfo vmInfo;
         public String shopperId;
         public String serverName;
-        public byte[] encryptedPassword;
         public long actionId;
         public UUID orionGuid;
-        public String sgid;
-        public String image_name;
-        public String rawFlavor;
-        public String username;
-        public String zone;
 
         @Override
         public long getActionId() {

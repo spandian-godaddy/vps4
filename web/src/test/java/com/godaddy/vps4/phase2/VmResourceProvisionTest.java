@@ -6,6 +6,7 @@ import java.util.UUID;
 import javax.inject.Inject;
 import javax.sql.DataSource;
 
+import com.godaddy.vps4.snapshot.SnapshotModule;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -18,7 +19,6 @@ import com.godaddy.vps4.jdbc.DatabaseModule;
 import com.godaddy.vps4.security.GDUserMock;
 import com.godaddy.vps4.security.SecurityModule;
 import com.godaddy.vps4.security.jdbc.AuthorizationException;
-import com.godaddy.vps4.snapshot.SnapshotModule;
 import com.godaddy.vps4.vm.AccountStatus;
 import com.godaddy.vps4.vm.VmModule;
 import com.godaddy.vps4.web.Vps4Exception;
@@ -88,7 +88,6 @@ public class VmResourceProvisionTest {
         request.dataCenterId = 1;
         request.image = "hfs-centos-7";
         request.name = SqlTestData.TEST_VM_NAME;
-        request.password = "Password1!";
         return request;
     }
 

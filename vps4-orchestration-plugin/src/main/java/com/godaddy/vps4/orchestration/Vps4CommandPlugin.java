@@ -1,5 +1,6 @@
 package com.godaddy.vps4.orchestration;
 
+import com.godaddy.vps4.snapshot.SnapshotModule;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -8,8 +9,6 @@ import com.godaddy.vps4.jdbc.DatabaseModule;
 import com.godaddy.vps4.orchestration.hfs.HfsCommandModule;
 import com.godaddy.vps4.orchestration.hfs.HfsMockModule;
 import com.godaddy.vps4.orchestration.hfs.HfsModule;
-import com.godaddy.vps4.snapshot.SnapshotModule;
-import com.godaddy.vps4.util.UtilsModule;
 import com.godaddy.vps4.vm.VmModule;
 import com.google.inject.AbstractModule;
 import com.google.inject.Guice;
@@ -49,8 +48,7 @@ public class Vps4CommandPlugin implements CommandPlugin {
                 new VmModule(),
                 new CreditModule(),
                 new SnapshotModule(),
-                new Vps4CommandModule(),
-                new UtilsModule()
+                new Vps4CommandModule()
                 );
 
         return new GuiceCommandProvider(injector);
