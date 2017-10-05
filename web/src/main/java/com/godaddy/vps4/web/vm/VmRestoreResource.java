@@ -8,22 +8,7 @@ import static com.godaddy.vps4.web.util.RequestValidation.validatePassword;
 import static com.godaddy.vps4.web.util.RequestValidation.validateUserIsShopper;
 import static com.godaddy.vps4.web.util.VmHelper.createActionAndExecute;
 
-import com.godaddy.hfs.config.Config;
-import com.godaddy.vps4.orchestration.vm.Vps4RestoreVm;
-import com.godaddy.vps4.project.ProjectService;
-import com.godaddy.vps4.snapshot.SnapshotService;
-import com.godaddy.vps4.vm.ActionService;
-import com.godaddy.vps4.vm.ActionType;
-import com.godaddy.vps4.vm.RestoreVmInfo;
-import com.godaddy.vps4.vm.VirtualMachine;
-import com.godaddy.vps4.vm.VirtualMachineService;
-import com.godaddy.vps4.vm.VmUserService;
-import com.godaddy.vps4.web.Vps4Api;
-import com.godaddy.vps4.web.security.GDUser;
-import gdg.hfs.orchestration.CommandService;
-import io.swagger.annotations.Api;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import java.util.UUID;
 
 import javax.inject.Inject;
 import javax.ws.rs.Consumes;
@@ -32,7 +17,26 @@ import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
-import java.util.UUID;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import com.godaddy.hfs.config.Config;
+import com.godaddy.vps4.orchestration.vm.Vps4RestoreVm;
+import com.godaddy.vps4.project.ProjectService;
+import com.godaddy.vps4.snapshot.SnapshotService;
+import com.godaddy.vps4.util.Cryptography;
+import com.godaddy.vps4.vm.ActionService;
+import com.godaddy.vps4.vm.ActionType;
+import com.godaddy.vps4.vm.RestoreVmInfo;
+import com.godaddy.vps4.vm.VirtualMachine;
+import com.godaddy.vps4.vm.VirtualMachineService;
+import com.godaddy.vps4.vm.VmUserService;
+import com.godaddy.vps4.web.Vps4Api;
+import com.godaddy.vps4.web.security.GDUser;
+
+import gdg.hfs.orchestration.CommandService;
+import io.swagger.annotations.Api;
 
 @Vps4Api
 @Api(tags = {"vms"})
@@ -52,6 +56,7 @@ public class VmRestoreResource {
     private final CommandService commandService;
     private final VmResource vmResource;
     private final Config config;
+    private final Cryptography cryptography;
 
     @Inject
     public VmRestoreResource(
@@ -63,7 +68,8 @@ public class VmRestoreResource {
             ActionService actionService,
             CommandService commandService,
             VmResource vmResource,
-            Config config
+            Config config,
+            Cryptography cryptography
     ) {
 
         this.user = user;
@@ -75,6 +81,7 @@ public class VmRestoreResource {
         this.commandService = commandService;
         this.vmResource = vmResource;
         this.config = config;
+        this.cryptography = cryptography;
     }
 
     public static class RestoreVmRequest {
@@ -110,7 +117,7 @@ public class VmRestoreResource {
             VirtualMachine vm, UUID snapshotId, String password) {
         RestoreVmInfo restoreVmInfo = new RestoreVmInfo();
         restoreVmInfo.hostname = vm.hostname;
-        restoreVmInfo.password = password;
+        restoreVmInfo.encryptedPassword = cryptography.encrypt(password);
         restoreVmInfo.rawFlavor = vm.spec.specName;
         restoreVmInfo.sgid = projectService.getProject(vm.projectId).getVhfsSgid();
         restoreVmInfo.snapshotId = snapshotId;

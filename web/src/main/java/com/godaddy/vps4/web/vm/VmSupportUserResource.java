@@ -25,6 +25,7 @@ import com.godaddy.vps4.orchestration.sysadmin.Vps4SetPassword;
 import com.godaddy.vps4.security.Vps4User;
 import com.godaddy.vps4.security.Vps4UserService;
 import com.godaddy.vps4.sysadmin.UsernamePasswordGenerator;
+import com.godaddy.vps4.util.Cryptography;
 import com.godaddy.vps4.vm.Action;
 import com.godaddy.vps4.vm.ActionService;
 import com.godaddy.vps4.vm.ActionType;
@@ -55,17 +56,20 @@ public class VmSupportUserResource {
     private final VmUserService vmUserService;
     private final Vps4User supportUser;
     private final String SupportUserName = "Support";
+    private final Cryptography cryptography;
 
     @Inject
     public VmSupportUserResource(VmResource vmResource,
-                                 Vps4UserService vps4UserService,
-                                 ActionService actionService,
-                                 CommandService commandService,
-                                 VmUserService vmUserService) {
+            Vps4UserService vps4UserService,
+            ActionService actionService,
+            CommandService commandService,
+            VmUserService vmUserService,
+            Cryptography cryptography) {
         this.vmResource = vmResource;
         this.actionService = actionService;
         this.commandService = commandService;
         this.vmUserService = vmUserService;
+        this.cryptography = cryptography;
         supportUser = vps4UserService.getUser(SupportUserName);
     }
 
@@ -130,7 +134,7 @@ public class VmSupportUserResource {
 
             SetPassword.Request request = new SetPassword.Request();
             request.usernames = usernames;
-            request.password = password;
+            request.encryptedPassword = cryptography.encrypt(password);
             request.hfsVmId = vm.hfsVmId;
 
             Vps4SetPassword.Request vps4Request = new Vps4SetPassword.Request();

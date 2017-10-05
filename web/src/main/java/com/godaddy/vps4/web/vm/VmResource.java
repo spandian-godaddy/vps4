@@ -39,6 +39,7 @@ import com.godaddy.vps4.project.ProjectService;
 import com.godaddy.vps4.security.Vps4User;
 import com.godaddy.vps4.security.Vps4UserService;
 import com.godaddy.vps4.snapshot.Snapshot;
+import com.godaddy.vps4.util.Cryptography;
 import com.godaddy.vps4.vm.ActionService;
 import com.godaddy.vps4.vm.ActionType;
 import com.godaddy.vps4.vm.DataCenter;
@@ -56,7 +57,6 @@ import com.godaddy.vps4.web.util.Commands;
 
 import gdg.hfs.orchestration.CommandService;
 import gdg.hfs.orchestration.CommandState;
-import gdg.hfs.vhfs.vm.CreateVMWithFlavorRequest;
 import gdg.hfs.vhfs.vm.Vm;
 import gdg.hfs.vhfs.vm.VmService;
 import io.swagger.annotations.Api;
@@ -85,6 +85,8 @@ public class VmResource {
     private final String sgidPrefix;
     private final int mailRelayQuota;
     private final long pingCheckAccountId;
+    private final Cryptography cryptography;
+    private final String openStackZone;
 
     @Inject
     public VmResource(
@@ -97,9 +99,8 @@ public class VmResource {
             ActionService actionService,
             CommandService commandService,
             VmSnapshotResource vmSnapshotResource,
-            Config config
-    ) {
-
+            Config config,
+            Cryptography cryptography) {
         this.user = user;
         this.virtualMachineService = virtualMachineService;
         this.vps4UserService = vps4UserService;
@@ -114,6 +115,8 @@ public class VmResource {
         sgidPrefix = this.config.get("hfs.sgid.prefix", "vps4-undefined-");
         mailRelayQuota = Integer.parseInt(this.config.get("mailrelay.quota", "5000"));
         pingCheckAccountId = Long.parseLong(this.config.get("nodeping.accountid"));
+        this.cryptography = cryptography;
+        openStackZone = config.get("openstack.zone");
     }
 
     @GET
@@ -186,7 +189,7 @@ public class VmResource {
 
     @POST
     @Path("/")
-    public VmAction provisionVm(ProvisionVmRequest provisionRequest) throws InterruptedException {
+    public VmAction provisionVm(ProvisionVmRequest provisionRequest) {
         logger.info("provisioning vm with orionGuid {}", provisionRequest.orionGuid);
 
         validateUserIsShopper(user);
@@ -215,9 +218,6 @@ public class VmResource {
 
         Project project = projectService.getProject(virtualMachine.projectId);
 
-        CreateVMWithFlavorRequest hfsRequest = createHfsProvisionVmRequest(provisionRequest.image, provisionRequest.username,
-                provisionRequest.password, project, virtualMachine.spec);
-
         long actionId = actionService.createAction(virtualMachine.vmId, ActionType.CREATE_VM, new JSONObject().toJSONString(),
                 vps4User.getId());
         logger.info("VmAction id: {}", actionId);
@@ -229,8 +229,10 @@ public class VmResource {
                 ifMonitoringThenMonitoringAccountId, virtualMachine.spec.diskGib);
         logger.info("vmInfo: {}", vmInfo.toString());
 
-        Vps4ProvisionVm.Request request = createProvisionVmRequest(hfsRequest, actionId, vmInfo,
-                user.getShopperId(), provisionRequest.name, provisionRequest.orionGuid);
+        byte[] encryptedPassword = cryptography.encrypt(provisionRequest.password);
+        Vps4ProvisionVm.Request request = createProvisionVmRequest(provisionRequest.image, provisionRequest.username,
+                project, virtualMachine.spec, actionId, vmInfo, user.getShopperId(), provisionRequest.name, provisionRequest.orionGuid,
+                encryptedPassword);
 
         CommandState command = Commands.execute(commandService, actionService, "ProvisionVm", request);
         logger.info("provisioning VM in {}", command.commandId);
@@ -238,32 +240,29 @@ public class VmResource {
         return new VmAction(actionService.getAction(actionId));
     }
 
-    private Vps4ProvisionVm.Request createProvisionVmRequest(CreateVMWithFlavorRequest hfsRequest,
-                                                             long actionId,
-                                                             ProvisionVmInfo vmInfo,
-                                                             String shopperId,
-                                                             String serverName,
-                                                             UUID orionGuid) {
+    private Vps4ProvisionVm.Request createProvisionVmRequest(String image,
+            String username,
+            Project project,
+            VirtualMachineSpec spec,
+            long actionId,
+            ProvisionVmInfo vmInfo,
+            String shopperId,
+            String serverName,
+            UUID orionGuid,
+            byte[] encryptedPassword) {
         Vps4ProvisionVm.Request request = new Vps4ProvisionVm.Request();
         request.actionId = actionId;
-        request.hfsRequest = hfsRequest;
+        request.image_name = image;
+        request.username = username;
+        request.sgid = project.getVhfsSgid();
+        request.rawFlavor = spec.specName;
         request.vmInfo = vmInfo;
         request.shopperId = shopperId;
         request.serverName = serverName;
         request.orionGuid = orionGuid;
+        request.encryptedPassword = encryptedPassword;
+        request.zone = openStackZone;
         return request;
-    }
-
-    private CreateVMWithFlavorRequest createHfsProvisionVmRequest(String image, String username,
-                                                                  String password, Project project, VirtualMachineSpec spec) {
-        CreateVMWithFlavorRequest hfsProvisionRequest = new CreateVMWithFlavorRequest();
-        hfsProvisionRequest.rawFlavor = spec.specName;
-        hfsProvisionRequest.sgid = project.getVhfsSgid();
-        hfsProvisionRequest.image_name = image;
-        hfsProvisionRequest.username = username;
-        hfsProvisionRequest.password = password;
-        hfsProvisionRequest.zone = config.get("openstack.zone", null);
-        return hfsProvisionRequest;
     }
 
     @DELETE

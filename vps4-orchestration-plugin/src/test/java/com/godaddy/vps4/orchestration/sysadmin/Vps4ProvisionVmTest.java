@@ -50,7 +50,6 @@ import gdg.hfs.vhfs.nodeping.CreateCheckRequest;
 import gdg.hfs.vhfs.nodeping.NodePingCheck;
 import gdg.hfs.vhfs.nodeping.NodePingService;
 import gdg.hfs.vhfs.plesk.PleskService;
-import gdg.hfs.vhfs.vm.CreateVMWithFlavorRequest;
 import gdg.hfs.vhfs.vm.Vm;
 import gdg.hfs.vhfs.vm.VmAction;
 import gdg.hfs.vhfs.vm.VmService;
@@ -74,7 +73,7 @@ public class Vps4ProvisionVmTest {
     CreditService creditService = mock(CreditService.class);
 
     Vps4ProvisionVm command = new Vps4ProvisionVm(actionService, vmService,
-            virtualMachineService, vmUserService, networkService, mailRelayService, nodePingService,
+            virtualMachineService, vmUserService, networkService, nodePingService,
             messagingService, creditService);
 
     Injector injector = Guice.createInjector(binder -> {
@@ -122,15 +121,6 @@ public class Vps4ProvisionVmTest {
                 image, null, null, null,
                 "fake.host.name", AccountStatus.ACTIVE);
 
-
-        CreateVMWithFlavorRequest hfsProvisionRequest = new CreateVMWithFlavorRequest();
-        hfsProvisionRequest.rawFlavor = "";
-        hfsProvisionRequest.sgid = "";
-        hfsProvisionRequest.image_name = "";
-        hfsProvisionRequest.username = this.username;
-        hfsProvisionRequest.password = "sweeTT3st!";
-        hfsProvisionRequest.zone = null;
-
         this.vmInfo = new ProvisionVmInfo();
         this.vmInfo.vmId = this.vmId;
         this.vmInfo.image = image;
@@ -141,8 +131,13 @@ public class Vps4ProvisionVmTest {
         this.vmInfo.diskGib = diskGib;
 
         request = new Vps4ProvisionVm.Request();
+        request.rawFlavor = "";
+        request.sgid = "";
+        request.image_name = "";
+        request.username = username;
+        request.encryptedPassword = "sweeTT3st!".getBytes();
+        request.zone = null;
         request.actionId = 12;
-        request.hfsRequest = hfsProvisionRequest;
         request.vmInfo = vmInfo;
         shopperId = UUID.randomUUID().toString();
         request.shopperId = shopperId;
@@ -162,7 +157,7 @@ public class Vps4ProvisionVmTest {
 
         VmAction vmAction = new VmAction();
         vmAction.vmId = hfsVmId;
-        when(createVm.execute(any(CommandContext.class), any(CreateVMWithFlavorRequest.class))).thenReturn(vmAction);
+        when(createVm.execute(any(CommandContext.class), any(CreateVm.Request.class))).thenReturn(vmAction);
         Vm hfsVm = new Vm();
         hfsVm.vmId = hfsVmId;
         when(vmService.getVm(hfsVmId)).thenReturn(hfsVm);

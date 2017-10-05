@@ -39,10 +39,10 @@ public class Vps4SetPassword extends ActionCommand<Vps4SetPassword.Request, Void
     }
 
     UpdateAdminPassword.Request makeUpdateAdminRequest(Request req) {
-        UpdateAdminPassword.Request uapReq = new UpdateAdminPassword.Request();
-        uapReq.vmId = req.setPasswordRequest.hfsVmId;
-        uapReq.password = req.setPasswordRequest.password;
-        return uapReq;
+        UpdateAdminPassword.Request updateAdminPasswordRequest = new UpdateAdminPassword.Request();
+        updateAdminPasswordRequest.vmId = req.setPasswordRequest.hfsVmId;
+        updateAdminPasswordRequest.encryptedPassword = req.setPasswordRequest.encryptedPassword;
+        return updateAdminPasswordRequest;
     }
 
     public static class Request implements ActionRequest {

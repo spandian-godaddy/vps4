@@ -15,7 +15,6 @@ import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
 
-import com.godaddy.vps4.web.vm.VmAction;
 import org.json.simple.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -25,6 +24,7 @@ import com.godaddy.vps4.orchestration.hfs.sysadmin.SetPassword;
 import com.godaddy.vps4.orchestration.sysadmin.Vps4SetHostname;
 import com.godaddy.vps4.orchestration.sysadmin.Vps4SetPassword;
 import com.godaddy.vps4.orchestration.sysadmin.Vps4ToggleAdmin;
+import com.godaddy.vps4.util.Cryptography;
 import com.godaddy.vps4.util.validators.Validator;
 import com.godaddy.vps4.util.validators.ValidatorRegistry;
 import com.godaddy.vps4.vm.ActionService;
@@ -37,6 +37,7 @@ import com.godaddy.vps4.web.Vps4Api;
 import com.godaddy.vps4.web.Vps4Exception;
 import com.godaddy.vps4.web.security.GDUser;
 import com.godaddy.vps4.web.util.Commands;
+import com.godaddy.vps4.web.vm.VmAction;
 import com.godaddy.vps4.web.vm.VmResource;
 
 import gdg.hfs.orchestration.CommandService;
@@ -58,6 +59,7 @@ public class SysAdminResource {
     final CommandService commandService;
     final VirtualMachineService virtualMachineService;
     final GDUser user;
+    private final Cryptography cryptography;
 
     @Inject
     public SysAdminResource(VmResource vmResource,
@@ -65,13 +67,15 @@ public class SysAdminResource {
                             ActionService actionService,
                             CommandService commandService,
                             GDUser user,
-                            VirtualMachineService virtualMachineService) {
+                            VirtualMachineService virtualMachineService,
+                            Cryptography cryptography) {
         this.vmResource = vmResource;
         this.vmUserService = userService;
         this.actionService = actionService;
         this.commandService = commandService;
         this.user = user;
         this.virtualMachineService = virtualMachineService;
+        this.cryptography = cryptography;
     }
 
     public static class UpdatePasswordRequest{
@@ -106,7 +110,7 @@ public class SysAdminResource {
 
         SetPassword.Request request = new SetPassword.Request();
         request.usernames = usernames;
-        request.password = updatePasswordRequest.password;
+        request.encryptedPassword = cryptography.encrypt(updatePasswordRequest.password);
         request.hfsVmId = vm.hfsVmId;
 
         Vps4SetPassword.Request vps4Request = new Vps4SetPassword.Request();

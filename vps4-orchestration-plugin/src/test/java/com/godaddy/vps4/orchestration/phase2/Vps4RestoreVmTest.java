@@ -1,7 +1,7 @@
 package com.godaddy.vps4.orchestration.phase2;
 
-import static org.junit.Assert.assertThat;
 import static org.hamcrest.Matchers.containsInAnyOrder;
+import static org.junit.Assert.assertThat;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Matchers.startsWith;
@@ -11,6 +11,24 @@ import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.UUID;
+import java.util.function.Function;
+import java.util.stream.Collectors;
+
+import javax.sql.DataSource;
+
+import org.junit.After;
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.BeforeClass;
+import org.junit.Test;
+import org.mockito.ArgumentCaptor;
+import org.mockito.Captor;
+import org.mockito.MockitoAnnotations;
 
 import com.godaddy.vps4.jdbc.DatabaseModule;
 import com.godaddy.vps4.network.IpAddress;
@@ -30,6 +48,7 @@ import com.godaddy.vps4.snapshot.SnapshotModule;
 import com.godaddy.vps4.snapshot.SnapshotService;
 import com.godaddy.vps4.snapshot.SnapshotStatus;
 import com.godaddy.vps4.snapshot.SnapshotType;
+import com.godaddy.vps4.util.Cryptography;
 import com.godaddy.vps4.vm.ActionService;
 import com.godaddy.vps4.vm.RestoreVmInfo;
 import com.godaddy.vps4.vm.VirtualMachine;
@@ -39,26 +58,11 @@ import com.godaddy.vps4.vm.VmUserService;
 import com.google.inject.Guice;
 import com.google.inject.Inject;
 import com.google.inject.Injector;
+
 import gdg.hfs.orchestration.CommandContext;
 import gdg.hfs.vhfs.vm.CreateVMWithFlavorRequest;
 import gdg.hfs.vhfs.vm.Vm;
 import gdg.hfs.vhfs.vm.VmService;
-import org.junit.After;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Test;
-import org.mockito.ArgumentCaptor;
-import org.mockito.Captor;
-import org.mockito.MockitoAnnotations;
-
-import javax.sql.DataSource;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.UUID;
-import java.util.function.Function;
-import java.util.stream.Collectors;
 
 public class Vps4RestoreVmTest {
     static Injector injector;
@@ -86,6 +90,7 @@ public class Vps4RestoreVmTest {
     @Inject NetworkService vps4NetworkService;
     @Inject ActionService actionService;
     @Inject VmUserService vmUserService;
+    @Inject Cryptography cryptography;
 
     @Captor private ArgumentCaptor<Function<CommandContext, Long>> getHfsVmIdLambdaCaptor;
     @Captor private ArgumentCaptor<Function<CommandContext, String>> getVmOSDistroLambdaCaptor;
@@ -116,7 +121,7 @@ public class Vps4RestoreVmTest {
 
         spyVps4VmService = spy(vps4VmService);
         command = new Vps4RestoreVm(actionService, hfsVmService, spyVps4VmService,
-                vps4NetworkService, vps4SnapshotService, vmUserService);
+                vps4NetworkService, vps4SnapshotService, vmUserService, cryptography);
         addTestSqlData();
         context = setupMockContext();
         request = getCommandRequest();
@@ -178,7 +183,7 @@ public class Vps4RestoreVmTest {
         req.restoreVmInfo.snapshotId = vps4SnapshotId;
         req.restoreVmInfo.hostname = "foobar";
         req.restoreVmInfo.username = username;
-        req.restoreVmInfo.password = password;
+        req.restoreVmInfo.encryptedPassword = cryptography.encrypt(password);
         req.restoreVmInfo.zone = "zone-1";
         req.restoreVmInfo.rawFlavor = "rawflavor";
         req.restoreVmInfo.sgid = vps4Project.getVhfsSgid();
@@ -277,7 +282,7 @@ public class Vps4RestoreVmTest {
                 .execute(eq("SetRootUserPassword"), eq(SetPassword.class), setPasswordArgumentCaptor.capture());
 
         SetPassword.Request request = setPasswordArgumentCaptor.getValue();
-        Assert.assertEquals(password, request.password);
+        Assert.assertNotNull(request.encryptedPassword);
         Assert.assertEquals(hfsNewVmId, request.hfsVmId);
         assertThat(
                 Arrays.asList("root"),

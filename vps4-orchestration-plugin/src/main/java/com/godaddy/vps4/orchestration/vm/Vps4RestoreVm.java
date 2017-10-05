@@ -1,6 +1,13 @@
 package com.godaddy.vps4.orchestration.vm;
 
 
+import java.util.Arrays;
+import java.util.List;
+import java.util.UUID;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.godaddy.vps4.network.IpAddress;
 import com.godaddy.vps4.network.NetworkService;
@@ -14,24 +21,20 @@ import com.godaddy.vps4.orchestration.hfs.sysadmin.ToggleAdmin;
 import com.godaddy.vps4.orchestration.hfs.vm.CreateVmFromSnapshot;
 import com.godaddy.vps4.orchestration.hfs.vm.DestroyVm;
 import com.godaddy.vps4.snapshot.SnapshotService;
+import com.godaddy.vps4.util.Cryptography;
 import com.godaddy.vps4.vm.ActionService;
 import com.godaddy.vps4.vm.RestoreVmInfo;
 import com.godaddy.vps4.vm.RestoreVmStep;
 import com.godaddy.vps4.vm.VirtualMachineService;
 import com.godaddy.vps4.vm.VmUserService;
 import com.google.inject.Inject;
+
 import gdg.hfs.orchestration.CommandContext;
 import gdg.hfs.orchestration.CommandMetadata;
 import gdg.hfs.vhfs.vm.CreateVMWithFlavorRequest;
 import gdg.hfs.vhfs.vm.Vm;
 import gdg.hfs.vhfs.vm.VmAction;
 import gdg.hfs.vhfs.vm.VmService;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import java.util.Arrays;
-import java.util.List;
-import java.util.UUID;
 
 @CommandMetadata(
         name="Vps4RestoreVm",
@@ -41,37 +44,29 @@ import java.util.UUID;
 public class Vps4RestoreVm extends ActionCommand<Vps4RestoreVm.Request, Vps4RestoreVm.Response> {
 
     private static final Logger logger = LoggerFactory.getLogger(Vps4RestoreVm.class);
-
-    final VmService vmService;
-
+    private final VmService vmService;
     private final VirtualMachineService virtualMachineService;
-
     private final SnapshotService vps4SnapshotService;
-
     private final NetworkService vps4NetworkService;
-
     private final VmUserService vmUserService;
-
+    private final Cryptography cryptography;
     private Request request;
-
     private ActionState state;
-
     private CommandContext context;
-
     private UUID vps4VmId;
-
     private UUID vps4SnapshotId;
 
     @Inject
-    public Vps4RestoreVm(ActionService actionService, VmService vmService,
-                         VirtualMachineService virtualMachineService, NetworkService vps4NetworkService,
-                         SnapshotService vps4SnapshotService, VmUserService vmUserService) {
+    public Vps4RestoreVm(ActionService actionService, VmService vmService, VirtualMachineService virtualMachineService,
+            NetworkService vps4NetworkService, SnapshotService vps4SnapshotService, VmUserService vmUserService,
+            Cryptography cryptography) {
         super(actionService);
         this.vmService = vmService;
         this.virtualMachineService = virtualMachineService;
         this.vps4NetworkService = vps4NetworkService;
         this.vps4SnapshotService = vps4SnapshotService;
         this.vmUserService = vmUserService;
+        this.cryptography = cryptography;
     }
 
     @Override
@@ -136,7 +131,7 @@ public class Vps4RestoreVm extends ActionCommand<Vps4RestoreVm.Request, Vps4Rest
         hfsProvisionRequest.image_id = getNocfoxImageIdForSnapshot(vps4SnapshotId);
         hfsProvisionRequest.os = getVmOSDistro();
         hfsProvisionRequest.username = request.restoreVmInfo.username;
-        hfsProvisionRequest.password = request.restoreVmInfo.password;
+        hfsProvisionRequest.password = cryptography.decrypt(request.restoreVmInfo.encryptedPassword);
         hfsProvisionRequest.zone = request.restoreVmInfo.zone;
         hfsProvisionRequest.hostname = request.restoreVmInfo.hostname;
         hfsProvisionRequest.ignore_whitelist = "True";
@@ -174,7 +169,7 @@ public class Vps4RestoreVm extends ActionCommand<Vps4RestoreVm.Request, Vps4Rest
         setPasswordRequest.hfsVmId = hfsVmId;
         String[] usernames = {"root"};
         setPasswordRequest.usernames = Arrays.asList(usernames);
-        setPasswordRequest.password = request.restoreVmInfo.password;
+        setPasswordRequest.encryptedPassword = request.restoreVmInfo.encryptedPassword;
         return setPasswordRequest;
     }
 

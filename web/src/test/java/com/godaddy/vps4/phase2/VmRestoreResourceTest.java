@@ -1,5 +1,24 @@
 package com.godaddy.vps4.phase2;
 
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+
+import java.util.UUID;
+
+import javax.inject.Inject;
+import javax.sql.DataSource;
+import javax.ws.rs.NotFoundException;
+
+import org.json.simple.JSONObject;
+import org.junit.After;
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.BeforeClass;
+import org.junit.Test;
+import org.mockito.ArgumentCaptor;
+import org.mockito.Captor;
+import org.mockito.MockitoAnnotations;
+
 import com.godaddy.vps4.jdbc.DatabaseModule;
 import com.godaddy.vps4.orchestration.vm.Vps4RestoreVm;
 import com.godaddy.vps4.security.GDUserMock;
@@ -23,32 +42,16 @@ import com.godaddy.vps4.web.Vps4Exception;
 import com.godaddy.vps4.web.Vps4NoShopperException;
 import com.godaddy.vps4.web.security.GDUser;
 import com.godaddy.vps4.web.vm.VmAction;
-import com.godaddy.vps4.web.vm.VmRestoreResource.RestoreVmRequest;
 import com.godaddy.vps4.web.vm.VmRestoreResource;
+import com.godaddy.vps4.web.vm.VmRestoreResource.RestoreVmRequest;
 import com.google.inject.AbstractModule;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
 import com.google.inject.Provides;
+
 import gdg.hfs.orchestration.CommandGroupSpec;
 import gdg.hfs.orchestration.CommandService;
 import gdg.hfs.orchestration.CommandSpec;
-import org.json.simple.JSONObject;
-import org.junit.After;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Test;
-import org.mockito.ArgumentCaptor;
-import org.mockito.Captor;
-import org.mockito.MockitoAnnotations;
-
-import javax.inject.Inject;
-import javax.sql.DataSource;
-import javax.ws.rs.NotFoundException;
-import java.util.UUID;
-
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
 
 public class VmRestoreResourceTest {
     private static GDUser us;
@@ -65,6 +68,7 @@ public class VmRestoreResourceTest {
     @Inject DataSource dataSource;
     @Inject SnapshotService vps4SnapshotService;
     @Inject ActionService actionService;
+
 
     private GDUser user;
     private VirtualMachine ourVm;
@@ -172,7 +176,7 @@ public class VmRestoreResourceTest {
         Vps4RestoreVm.Request commandRequest = (Vps4RestoreVm.Request) commandSpec.request;
 
         Assert.assertEquals("Vps4RestoreVm", commandSpec.command);
-        Assert.assertEquals(commandRequest.restoreVmInfo.password, password);
+        Assert.assertNotNull(commandRequest.restoreVmInfo.encryptedPassword);
         Assert.assertEquals(commandRequest.restoreVmInfo.vmId, vm.vmId);
         Assert.assertEquals(commandRequest.restoreVmInfo.hostname, vm.hostname);
         Assert.assertEquals(commandRequest.restoreVmInfo.snapshotId, snapshotId);
