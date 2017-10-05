@@ -3,7 +3,6 @@ package com.godaddy.vps4.orchestration.phase2;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.junit.Assert.assertThat;
 import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Matchers.startsWith;
 import static org.mockito.Mockito.doReturn;
@@ -29,7 +28,6 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
-import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
 import com.godaddy.vps4.jdbc.DatabaseModule;
@@ -51,7 +49,6 @@ import com.godaddy.vps4.snapshot.SnapshotService;
 import com.godaddy.vps4.snapshot.SnapshotStatus;
 import com.godaddy.vps4.snapshot.SnapshotType;
 import com.godaddy.vps4.util.Cryptography;
-import com.godaddy.vps4.util.UtilsModule;
 import com.godaddy.vps4.vm.ActionService;
 import com.godaddy.vps4.vm.RestoreVmInfo;
 import com.godaddy.vps4.vm.VirtualMachine;
@@ -93,7 +90,7 @@ public class Vps4RestoreVmTest {
     @Inject NetworkService vps4NetworkService;
     @Inject ActionService actionService;
     @Inject VmUserService vmUserService;
-    @Mock Cryptography cryptography;
+    @Inject Cryptography cryptography;
 
     @Captor private ArgumentCaptor<Function<CommandContext, Long>> getHfsVmIdLambdaCaptor;
     @Captor private ArgumentCaptor<Function<CommandContext, String>> getVmOSDistroLambdaCaptor;
@@ -113,8 +110,7 @@ public class Vps4RestoreVmTest {
                 new SecurityModule(),
                 new VmModule(),
                 new SnapshotModule(),
-                new Vps4ExternalsModule(),
-                new UtilsModule()
+                new Vps4ExternalsModule()
         );
     }
 
@@ -129,9 +125,6 @@ public class Vps4RestoreVmTest {
         addTestSqlData();
         context = setupMockContext();
         request = getCommandRequest();
-
-        when(cryptography.encrypt(anyString())).thenReturn(password.getBytes());
-        when(cryptography.decrypt(any())).thenReturn(password);
     }
 
     @After
@@ -190,7 +183,7 @@ public class Vps4RestoreVmTest {
         req.restoreVmInfo.snapshotId = vps4SnapshotId;
         req.restoreVmInfo.hostname = "foobar";
         req.restoreVmInfo.username = username;
-        req.restoreVmInfo.encryptedPassword = password.getBytes();
+        req.restoreVmInfo.encryptedPassword = cryptography.encrypt(password);
         req.restoreVmInfo.zone = "zone-1";
         req.restoreVmInfo.rawFlavor = "rawflavor";
         req.restoreVmInfo.sgid = vps4Project.getVhfsSgid();
@@ -289,7 +282,7 @@ public class Vps4RestoreVmTest {
                 .execute(eq("SetRootUserPassword"), eq(SetPassword.class), setPasswordArgumentCaptor.capture());
 
         SetPassword.Request request = setPasswordArgumentCaptor.getValue();
-        Assert.assertArrayEquals(password.getBytes(), request.encryptedPassword);
+        Assert.assertNotNull(request.encryptedPassword);
         Assert.assertEquals(hfsNewVmId, request.hfsVmId);
         assertThat(
                 Arrays.asList("root"),
