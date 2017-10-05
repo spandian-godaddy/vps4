@@ -51,6 +51,7 @@ import com.godaddy.vps4.snapshot.SnapshotService;
 import com.godaddy.vps4.snapshot.SnapshotStatus;
 import com.godaddy.vps4.snapshot.SnapshotType;
 import com.godaddy.vps4.util.Cryptography;
+import com.godaddy.vps4.util.UtilsModule;
 import com.godaddy.vps4.vm.ActionService;
 import com.godaddy.vps4.vm.RestoreVmInfo;
 import com.godaddy.vps4.vm.VirtualMachine;
@@ -112,7 +113,8 @@ public class Vps4RestoreVmTest {
                 new SecurityModule(),
                 new VmModule(),
                 new SnapshotModule(),
-                new Vps4ExternalsModule()
+                new Vps4ExternalsModule(),
+                new UtilsModule()
         );
     }
 
