@@ -1,19 +1,14 @@
 package com.godaddy.vps4.handler;
 
+import static com.godaddy.vps4.handler.util.Commands.execute;
+
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
-import org.json.simple.JSONObject;
-import org.json.simple.parser.JSONParser;
-import org.json.simple.parser.ParseException;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import com.godaddy.hfs.config.Config;
 import com.godaddy.vps4.credit.CreditService;
 import com.godaddy.vps4.credit.VirtualMachineCredit;
-import com.godaddy.vps4.handler.util.Commands;
 import com.godaddy.vps4.orchestration.snapshot.Vps4DestroySnapshot;
 import com.godaddy.vps4.orchestration.vm.VmActionRequest;
 import com.godaddy.vps4.orchestration.vm.Vps4DestroyVm;
@@ -26,8 +21,12 @@ import com.godaddy.vps4.vm.ActionType;
 import com.godaddy.vps4.vm.VirtualMachine;
 import com.godaddy.vps4.vm.VirtualMachineService;
 import com.google.inject.Inject;
-
 import gdg.hfs.orchestration.CommandService;
+import org.json.simple.JSONObject;
+import org.json.simple.parser.JSONParser;
+import org.json.simple.parser.ParseException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class Vps4MessageHandler implements MessageHandler {
 
@@ -42,7 +41,6 @@ public class Vps4MessageHandler implements MessageHandler {
     private final ActionService snapshotActionService;
     private final CommandService commandService;
     private final Config config;
-    private final long pingCheckAccountId;
 
     @Inject
     public Vps4MessageHandler(VirtualMachineService virtualMachineService,
@@ -61,7 +59,6 @@ public class Vps4MessageHandler implements MessageHandler {
         this.commandService = commandService;
         this.config = config;
 
-        pingCheckAccountId = Long.parseLong(this.config.get("nodeping.accountid"));
     }
 
     @Override
@@ -80,10 +77,16 @@ public class Vps4MessageHandler implements MessageHandler {
             throw new MessageHandlerException("Message values are the wrong type", e);
         }
 
-        VirtualMachineCredit credit = creditService.getVirtualMachineCredit(vps4Message.accountGuid);
-        if (credit == null) {
-            logger.info("Account {} not found, message handling will not continue", vps4Message.accountGuid);
-            return;
+        VirtualMachineCredit credit;
+        try {
+            credit = creditService.getVirtualMachineCredit(vps4Message.accountGuid);
+            if (credit == null) {
+                logger.info("Account {} not found, message handling will not continue", vps4Message.accountGuid);
+                return;
+            }
+        } catch (Exception ex) {
+            logger.error("Unable to locate account credit for Virtual Machine using account guid {}", vps4Message.accountGuid);
+            throw new MessageHandlerException(ex);
         }
 
         switch (credit.accountStatus) {
@@ -102,78 +105,101 @@ public class Vps4MessageHandler implements MessageHandler {
         }
     }
 
-    private void destroyAccount(VirtualMachineCredit credit) {
+    private void destroyAccount(VirtualMachineCredit credit) throws MessageHandlerException {
         logger.info("Vps4 account cancelled: {} - Destroying vm and snapshots", credit.orionGuid);
         destroyVm(credit.productId);
         destroySnapshots(credit.orionGuid);
     }
 
-    private void destroyVm(UUID vmId) {
+    private void destroyVm(UUID vmId) throws MessageHandlerException {
         if (vmId == null) {
             logger.info("No existing vm found on credit or vm already destroyed");
             return;
         }
 
-        VirtualMachine vm = virtualMachineService.getVirtualMachine(vmId);
-        long vps4UserId = virtualMachineService.getUserIdByVmId(vmId);
+        try {
+            VirtualMachine vm = virtualMachineService.getVirtualMachine(vmId);
+            long vps4UserId = virtualMachineService.getUserIdByVmId(vmId);
 
-        long actionId = vmActionService.createAction(vm.vmId, ActionType.DESTROY_VM,
-                new JSONObject().toJSONString(), vps4UserId);
-
-        Vps4DestroyVm.Request request = new Vps4DestroyVm.Request();
-        request.hfsVmId = vm.hfsVmId;
-        request.actionId = actionId;
-        request.pingCheckAccountId = pingCheckAccountId;
-
-        logger.info("Setting vm valid_until date to now.");
-        virtualMachineService.destroyVirtualMachine(vm.hfsVmId);
-
-        logger.info("Destroying vm: {} - actionId: {}", vmId, actionId);
-        Commands.execute(commandService, vmActionService, "Vps4DestroyVm", request);
-
-    }
-
-    private void destroySnapshots(UUID orionGuid) {
-        List<Snapshot> snapshots = snapshotService.getSnapshotsByOrionGuid(orionGuid)
-                .stream()
-                .filter(s -> s.status != SnapshotStatus.DESTROYED)
-                .collect(Collectors.toList());
-
-        if (snapshots.isEmpty())
-            return;
-
-        long vps4UserId = virtualMachineService.getUserIdByVmId(snapshots.get(0).vmId);
-
-        for (Snapshot snapshot: snapshots) {
-            long actionId = snapshotActionService.createAction(snapshot.id, ActionType.DESTROY_SNAPSHOT,
+            long actionId = vmActionService.createAction(vm.vmId, ActionType.DESTROY_VM,
                     new JSONObject().toJSONString(), vps4UserId);
 
-            Vps4DestroySnapshot.Request request = new Vps4DestroySnapshot.Request();
-            request.hfsSnapshotId = snapshot.hfsSnapshotId;
-            request.actionId = actionId;
+            long pingCheckAccountId = Long.parseLong(config.get("nodeping.accountid"));
 
-            logger.info("Destroying snapshot: {} - actionId: {}", snapshot.id, actionId);
-            Commands.execute(commandService, snapshotActionService, "Vps4DestroySnapshot", request);
+            Vps4DestroyVm.Request request = new Vps4DestroyVm.Request();
+            request.hfsVmId = vm.hfsVmId;
+            request.actionId = actionId;
+            request.pingCheckAccountId = pingCheckAccountId;
+
+            logger.info("Setting vm valid_until date to now.");
+            virtualMachineService.destroyVirtualMachine(vm.hfsVmId);
+
+            logger.info("Destroying vm: {} - actionId: {}", vmId, actionId);
+            execute(commandService, vmActionService, "Vps4DestroyVm", request);
+
+        } catch (Exception ex) {
+            logger.error("Error: Could not destroy the vm for vmId: {}", vmId);
+            throw new MessageHandlerException(ex);
         }
 
     }
 
-    private void stopVm(UUID vmId) {
+    private void destroySnapshots(UUID orionGuid) throws MessageHandlerException {
+
+        try {
+            List<Snapshot> snapshots = snapshotService.getSnapshotsByOrionGuid(orionGuid)
+                    .stream()
+                    .filter(s -> s.status != SnapshotStatus.DESTROYED)
+                    .collect(Collectors.toList());
+
+            if (snapshots.isEmpty()) {
+                logger.info("No snapshots found for account {}", orionGuid);
+                return;
+            }
+
+            long vps4UserId = virtualMachineService.getUserIdByVmId(snapshots.get(0).vmId);
+
+            for (Snapshot snapshot : snapshots) {
+                long actionId = snapshotActionService.createAction(snapshot.id, ActionType.DESTROY_SNAPSHOT,
+                        new JSONObject().toJSONString(), vps4UserId);
+
+                Vps4DestroySnapshot.Request request = new Vps4DestroySnapshot.Request();
+                request.hfsSnapshotId = snapshot.hfsSnapshotId;
+                request.actionId = actionId;
+
+                logger.info("Destroying snapshot: {} - actionId: {}", snapshot.id, actionId);
+                execute(commandService, snapshotActionService, "Vps4DestroySnapshot", request);
+
+            }
+        } catch (Exception ex) {
+            logger.error("Error: Could not perform destroy snapshots operation for account {}", orionGuid);
+            throw new MessageHandlerException(ex);
+        }
+
+    }
+
+    private void stopVm(UUID vmId) throws MessageHandlerException {
         if (vmId == null) {
             logger.info("No active vm found for credit");
             return;
         }
 
-        VirtualMachine vm = virtualMachineService.getVirtualMachine(vmId);
-        long vps4UserId = virtualMachineService.getUserIdByVmId(vmId);
-        long actionId = vmActionService.createAction(vmId, ActionType.STOP_VM,
-                new JSONObject().toJSONString(), vps4UserId);
+        try {
+            VirtualMachine vm = virtualMachineService.getVirtualMachine(vmId);
+            long vps4UserId = virtualMachineService.getUserIdByVmId(vmId);
+            long actionId = vmActionService.createAction(vmId, ActionType.STOP_VM,
+                    new JSONObject().toJSONString(), vps4UserId);
 
-        VmActionRequest request = new VmActionRequest();
-        request.hfsVmId = vm.hfsVmId;
-        request.actionId = actionId;
+            VmActionRequest request = new VmActionRequest();
+            request.hfsVmId = vm.hfsVmId;
+            request.actionId = actionId;
 
-        logger.info("Stopping suspended vm: {} - actionId: {}", vmId, actionId);
-        Commands.execute(commandService, vmActionService, "Vps4StopVm", request);
+            logger.info("Stopping suspended vm: {} - actionId: {}", vmId, actionId);
+            execute(commandService, vmActionService, "Vps4StopVm", request);
+
+        } catch (Exception ex) {
+            logger.error("Could not perform the stop VM operation for vmId {}.", vmId);
+            throw new MessageHandlerException(ex);
+        }
     }
 }
