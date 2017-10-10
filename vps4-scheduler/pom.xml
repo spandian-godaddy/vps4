@@ -15,7 +15,7 @@
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <vps4.scheduler.env>local</vps4.scheduler.env>
+        <vps4.env>local</vps4.env>
         <vps4.scheduler.configBasePath>src/main/resources/com/godaddy/vps4/scheduler/config</vps4.scheduler.configBasePath>
     </properties>
 
@@ -36,7 +36,7 @@
                             <quiet>true</quiet>
                             <files>
                                 <file>${vps4.scheduler.configBasePath}/base/config.properties</file>
-                                <file>${vps4.scheduler.configBasePath}/${vps4.scheduler.env}/config.properties</file>
+                                <file>${vps4.scheduler.configBasePath}/${vps4.env}/config.properties</file>
                             </files>
                         </configuration>
                     </execution>
@@ -54,8 +54,8 @@
                             <mainClass>com.godaddy.hfs.crypto.tools.EncryptionConfig</mainClass>
                             <arguments>
                                 <argument>encrypt</argument>
-                                <argument>${project.basedir}/${vps4.scheduler.configBasePath}/${vps4.scheduler.env}</argument>
-                                <argument>${project.basedir}/src/main/resources/vps4.${vps4.scheduler.env}.key</argument>
+                                <argument>${project.basedir}/${vps4.scheduler.configBasePath}/${vps4.env}</argument>
+                                <argument>${project.basedir}/src/main/resources/vps4.${vps4.env}.key</argument>
                             </arguments>
                         </configuration>
                         <goals>
@@ -68,8 +68,8 @@
                             <mainClass>com.godaddy.hfs.crypto.tools.EncryptionConfig</mainClass>
                             <arguments>
                                 <argument>decrypt</argument>
-                                <argument>${project.basedir}/${vps4.scheduler.configBasePath}/${vps4.scheduler.env}</argument>
-                                <argument>${project.basedir}/src/main/resources/vps4.${vps4.scheduler.env}.key</argument>
+                                <argument>${project.basedir}/${vps4.scheduler.configBasePath}/${vps4.env}</argument>
+                                <argument>${project.basedir}/src/main/resources/vps4.${vps4.env}.key</argument>
                             </arguments>
                         </configuration>
                         <goals>
@@ -84,7 +84,7 @@
                                 <!-- Note: hfs.zk.hosts needs to be set -->
                                 <argument>/config/vps4/scheduler</argument>
                                 <argument>${project.basedir}/${vps4.scheduler.configBasePath}/base</argument>
-                                <argument>${project.basedir}/${vps4.scheduler.configBasePath}/${vps4.scheduler.env}</argument>
+                                <argument>${project.basedir}/${vps4.scheduler.configBasePath}/${vps4.env}</argument>
                             </arguments>
                         </configuration>
                         <goals>
