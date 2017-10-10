@@ -17,7 +17,7 @@
             "p3dlvps4app03.cloud.phx3.gdg"
         ],
         "scheduler": [
-            "p3dlvps4app04.cloud.phx3.gdg"
+            "p3dlvps4app03.cloud.phx3.gdg"
         ]
     },
     "test": {
@@ -38,7 +38,7 @@
             "p3tlvps4app03.cloud.phx3.gdg"
         ],
         "scheduler": [
-            "p3tlvps4app04.cloud.phx3.gdg"
+            "p3tlvps4app03.cloud.phx3.gdg"
         ]
     },
     "stage": {
@@ -59,7 +59,7 @@
             "p3slvps4app03.cloud.phx3.gdg"
         ],
         "scheduler": [
-            "p3slvps4app04.cloud.phx3.gdg"
+            "p3slvps4app03.cloud.phx3.gdg"
         ]
     },
     "prod": {
@@ -81,7 +81,7 @@
             "a2plvps4app03.cloud.iad2.gdg"
         ],
         "scheduler": [
-            "a2plvps4app04.cloud.iad2.gdg"
+            "a2plvps4app03.cloud.iad2.gdg"
         ]
     },
     "prod_phx3": {
@@ -103,7 +103,7 @@
             "p3plvps4app03.cloud.phx3.gdg"
         ],
         "scheduler": [
-            "p3plvps4app04.cloud.phx3.gdg"
+            "p3plvps4app03.cloud.phx3.gdg"
         ]
     },
     "prod_sin2": {
