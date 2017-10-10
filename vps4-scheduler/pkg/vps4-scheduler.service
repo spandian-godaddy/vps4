@@ -1,0 +1,19 @@
+[Unit]
+Description=GD VPS4-Web
+After=network.target
+
+[Service]
+User=vps4
+SyslogIdentifier=vps4
+WorkingDirectory=/var/log/vps4-scheduler
+EnvironmentFile=/etc/sysconfig/vps4
+ExecStart=/usr/bin/java $JVM_OPTS -jar /opt/vps4/vps4-scheduler/vps4-scheduler.jar start
+ExecStop=/usr/bin/java $JVM_OPTS -jar /opt/vps4/vps4-scheduler/vps4-scheduler.jar stop
+
+User=vps4
+Group=vps4
+Restart=always
+RestartSec=20
+
+[Install]
+WantedBy=multi-user.target

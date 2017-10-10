@@ -5,16 +5,15 @@ import java.util.List;
 
 import javax.inject.Singleton;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.godaddy.hfs.servicediscovery.HfsServiceMetadata;
 import com.godaddy.hfs.servicediscovery.ZkServiceRegistrationModule;
 import com.godaddy.hfs.swagger.SwaggerClassFilter;
 import com.godaddy.hfs.swagger.SwaggerModule;
 import com.godaddy.hfs.web.CorsFilter;
 import com.godaddy.hfs.web.GuiceFilterModule;
-import com.godaddy.hfs.web.SimpleWebServerModule;
+import com.godaddy.hfs.web.HttpModule;
+import com.godaddy.hfs.web.ServerModule;
 import com.godaddy.hfs.zookeeper.ZooKeeperModule;
 import com.godaddy.vps4.cache.CacheModule;
 import com.godaddy.vps4.cache.HazelcastCacheModule;
@@ -42,7 +41,10 @@ import com.google.inject.Guice;
 import com.google.inject.Injector;
 import com.google.inject.Module;
 import com.google.inject.multibindings.Multibinder;
+import com.google.inject.multibindings.OptionalBinder;
 import com.google.inject.servlet.ServletModule;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class Vps4Injector {
 
@@ -56,8 +58,15 @@ public class Vps4Injector {
 
     static Injector newInstance() {
         List<Module> modules = new ArrayList<>();
+        // use this when upgrading to newer version of hfs-web
+        HfsServiceMetadata metadata = new HfsServiceMetadata("vps4-web", HfsServiceMetadata.ServiceType.WEB, "/api/");
+        modules.add(binder -> {
+            binder.bind(HfsServiceMetadata.class).toInstance(metadata);
+            OptionalBinder.newOptionalBinder(binder, HfsServiceMetadata.class);
+        });
 
-        modules.add(new SimpleWebServerModule());
+        modules.add(new ServerModule());
+        modules.add(new HttpModule());
         modules.add(new GuiceFilterModule(
                 "/api/*",
                 "/",
@@ -71,8 +80,7 @@ public class Vps4Injector {
         if (System.getProperty("vps4.hfs.mock", "false").equals("true")) {
             modules.add(new HfsMockModule());
             logger.info("USING MOCK HFS");
-        }
-        else{
+        } else {
             modules.add(new HfsClientModule());
         }
 
@@ -93,7 +101,9 @@ public class Vps4Injector {
         modules.add(new PleskModule());
         modules.add(new MessagingModule());
         modules.add(new CommandClientModule());
-        modules.add(binder -> {binder.bind(ObjectMapper.class).toProvider(ObjectMapperProvider.class);});
+        modules.add(binder -> {
+            binder.bind(ObjectMapper.class).toProvider(ObjectMapperProvider.class);
+        });
         modules.add(new ServletModule() {
             @Override
             public void configureServlets() {
@@ -112,7 +122,7 @@ public class Vps4Injector {
                 filter("/api/vms/*").through(VmActiveSnapshotFilter.class);
 
                 Multibinder.newSetBinder(binder(), SwaggerClassFilter.class)
-                    .addBinding().toInstance(resourceClass ->
+                        .addBinding().toInstance(resourceClass ->
                         resourceClass.isAnnotationPresent(Vps4Api.class));
             }
         });

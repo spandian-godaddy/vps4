@@ -1,4 +1,4 @@
-package com.godaddy.vps4.consumer;
+package com.godaddy.vps4.util;
 
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;

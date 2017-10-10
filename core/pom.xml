@@ -136,32 +136,32 @@
         <dependency>
             <groupId>com.godaddy.hfs</groupId>
             <artifactId>hfs-config</artifactId>
-            <version>0.5.0</version>
+            <version>0.8.2-7</version>
         </dependency>
 
         <dependency>
             <groupId>com.godaddy.hfs</groupId>
             <artifactId>hfs-config-zookeeper</artifactId>
-            <version>0.5.0</version>
+            <version>0.8.2-7</version>
         </dependency>
 
         <dependency>
             <groupId>com.godaddy.hfs</groupId>
             <artifactId>hfs-crypto</artifactId>
-            <version>0.5.0</version>
+            <version>0.8.2-7</version>
         </dependency>
 
         <dependency>
             <groupId>com.godaddy.hfs</groupId>
             <artifactId>hfs-jdbc</artifactId>
-            <version>0.5.0</version>
+            <version>0.8.2-7</version>
         </dependency>
 
         <!-- https://mvnrepository.com/artifact/org.apache.commons/commons-lang3 -->
         <dependency>
             <groupId>org.apache.commons</groupId>
             <artifactId>commons-lang3</artifactId>
-            <version>3.0</version>
+            <version>3.6</version>
         </dependency>
 
         <!-- JAX-RS extensions -->
@@ -203,7 +203,7 @@
             <artifactId>guice-multibindings</artifactId>
             <version>4.1.0</version>
         </dependency>
-        
+
         <dependency>
             <groupId>org.passay</groupId>
             <artifactId>passay</artifactId>
@@ -388,5 +388,6 @@
             </build>
 
         </profile>
+
     </profiles>
 </project>

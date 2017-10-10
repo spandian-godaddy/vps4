@@ -1,0 +1,387 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <artifactId>vps4-project</artifactId>
+        <groupId>com.godaddy.vps4</groupId>
+        <version>0.0.1-SNAPSHOT</version>
+    </parent>
+
+    <artifactId>vps4-scheduler</artifactId>
+    <packaging>jar</packaging>
+    <name>VPS4 Job Scheduler</name>
+    <url>http://maven.apache.org</url>
+
+    <properties>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <vps4.scheduler.env>local</vps4.scheduler.env>
+        <vps4.scheduler.configBasePath>src/main/resources/com/godaddy/vps4/scheduler/config</vps4.scheduler.configBasePath>
+    </properties>
+
+    <build>
+        <plugins>
+
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>properties-maven-plugin</artifactId>
+                <version>1.0.0</version>
+                <executions>
+                    <execution>
+                        <phase>initialize</phase>
+                        <goals>
+                            <goal>read-project-properties</goal>
+                        </goals>
+                        <configuration>
+                            <quiet>true</quiet>
+                            <files>
+                                <file>${vps4.scheduler.configBasePath}/base/config.properties</file>
+                                <file>${vps4.scheduler.configBasePath}/${vps4.scheduler.env}/config.properties</file>
+                            </files>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>exec-maven-plugin</artifactId>
+                <version>1.5.0</version>
+                <executions>
+                    <execution>
+                        <id>encrypt-config</id>
+                        <configuration>
+                            <mainClass>com.godaddy.hfs.crypto.tools.EncryptionConfig</mainClass>
+                            <arguments>
+                                <argument>encrypt</argument>
+                                <argument>${project.basedir}/${vps4.scheduler.configBasePath}/${vps4.scheduler.env}</argument>
+                                <argument>${project.basedir}/src/main/resources/vps4.${vps4.scheduler.env}.key</argument>
+                            </arguments>
+                        </configuration>
+                        <goals>
+                            <goal>java</goal>
+                        </goals>
+                    </execution>
+                    <execution>
+                        <id>decrypt-config</id>
+                        <configuration>
+                            <mainClass>com.godaddy.hfs.crypto.tools.EncryptionConfig</mainClass>
+                            <arguments>
+                                <argument>decrypt</argument>
+                                <argument>${project.basedir}/${vps4.scheduler.configBasePath}/${vps4.scheduler.env}</argument>
+                                <argument>${project.basedir}/src/main/resources/vps4.${vps4.scheduler.env}.key</argument>
+                            </arguments>
+                        </configuration>
+                        <goals>
+                            <goal>java</goal>
+                        </goals>
+                    </execution>
+                    <execution>
+                        <id>zk-init</id>
+                        <configuration>
+                            <mainClass>com.godaddy.hfs.tools.ZkInit</mainClass>
+                            <arguments>
+                                <!-- Note: hfs.zk.hosts needs to be set -->
+                                <argument>/config/vps4/scheduler</argument>
+                                <argument>${project.basedir}/${vps4.scheduler.configBasePath}/base</argument>
+                                <argument>${project.basedir}/${vps4.scheduler.configBasePath}/${vps4.scheduler.env}</argument>
+                            </arguments>
+                        </configuration>
+                        <goals>
+                            <goal>java</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-shade-plugin</artifactId>
+                <version>3.0.0</version>
+                <executions>
+                    <execution>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>shade</goal>
+                        </goals>
+                        <configuration>
+                            <createDependencyReducedPom>false</createDependencyReducedPom>
+                            <transformers>
+                                <transformer
+                                        implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
+                                    <manifestEntries>
+                                        <Main-Class>com.godaddy.vps4.scheduler.Vps4SchedulerMain</Main-Class>
+                                        <Implementation-Title>com.godaddy.hosting.vps4.scheduler</Implementation-Title>
+                                        <Implementation-Version>${project.version}</Implementation-Version>
+                                    </manifestEntries>
+                                </transformer>
+                            </transformers>
+                            <filters>
+                                <filter>
+                                    <artifact>*:*</artifact>
+                                    <excludes>
+                                        <exclude>META-INF/*.SF</exclude>
+                                        <exclude>META-INF/*.DSA</exclude>
+                                        <exclude>META-INF/*.RSA</exclude>
+                                    </excludes>
+                                </filter>
+                            </filters>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>build-helper-maven-plugin</artifactId>
+                <version>3.0.0</version>
+                <executions>
+                    <execution>
+                        <phase>initialize</phase>
+                        <id>parse-version</id>
+                        <goals>
+                            <goal>parse-version</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>rpm-maven-plugin</artifactId>
+                <version>2.1.5</version>
+                <configuration>
+                    <distribution>Go Daddy 2017</distribution>
+                    <group>VPS4</group>
+                    <projversion>${parsedVersion.majorVersion}.${parsedVersion.minorVersion}.${parsedVersion.incrementalVersion}</projversion>
+                    <release>${parsedVersion.buildNumber}</release>
+                    <packager>rpm</packager>
+                    <changelogFile>src/changelog</changelogFile>
+                    <defineStatements>
+                        <defineStatement>_unpackaged_files_terminate_build 0</defineStatement>
+                    </defineStatements>
+                    <mappings>
+                        <mapping>
+                            <directory>/opt/vps4/vps4-scheduler</directory>
+                            <filemode>755</filemode>
+                            <username>root</username>
+                            <groupname>root</groupname>
+                        </mapping>
+                        <mapping>
+                            <directory>/var/log/vps4/vps4-scheduler</directory>
+                            <filemode>755</filemode>
+                            <username>vps4</username>
+                            <groupname>vps4</groupname>
+                        </mapping>
+                        <mapping>
+                            <directory>/usr/lib/systemd/system</directory>
+                            <directoryIncluded>false</directoryIncluded>
+                            <filemode>644</filemode>
+                            <username>root</username>
+                            <groupname>root</groupname>
+                            <sources>
+                                <source>
+                                    <location>pkg/vps4-scheduler.service</location>
+                                </source>
+                            </sources>
+                        </mapping>
+                        <mapping>
+                            <directory>/opt/vps4/vps4-scheduler</directory>
+                            <filemode>644</filemode>
+                            <username>root</username>
+                            <groupname>root</groupname>
+                            <sources>
+                                <source>
+                                    <location>target/${project.artifactId}-${project.version}.jar</location>
+                                </source>
+                                <softlinkSource>
+                                    <location>${project.artifactId}-${project.version}.jar</location>
+                                    <destination>${project.artifactId}.jar</destination>
+                                </softlinkSource>
+                            </sources>
+                        </mapping>
+                    </mappings>
+                    <preinstallScriptlet>
+                        <scriptFile>pkg/preinstallScript</scriptFile>
+                    </preinstallScriptlet>
+                    <postinstallScriptlet>
+                        <scriptFile>pkg/postinstallScript</scriptFile>
+                    </postinstallScriptlet>
+                    <preremoveScriptlet>
+                        <scriptFile>pkg/preremoveScript</scriptFile>
+                    </preremoveScriptlet>
+                    <postremoveScriptlet>
+                        <scriptFile>pkg/postremoveScript</scriptFile>
+                    </postremoveScriptlet>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
+
+    <dependencies>
+        <!-- Internal dependencies -->
+        <dependency>
+            <groupId>com.godaddy.hfs</groupId>
+            <artifactId>hfs-web</artifactId>
+            <version>0.8.2-7</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>javax.ws.rs</groupId>
+                    <artifactId>jsr311-api</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+
+        <dependency>
+            <groupId>com.godaddy.vps4</groupId>
+            <artifactId>vps4-core</artifactId>
+            <version>0.0.1-SNAPSHOT</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.godaddy.hfs</groupId>
+            <artifactId>hfs-sso</artifactId>
+            <version>0.8.2-7</version>
+        </dependency>
+
+        <!-- External dependencies -->
+        <!-- JAX-RS spec, only use the 2.0 version  -->
+        <dependency>
+            <groupId>javax.ws.rs</groupId>
+            <artifactId>javax.ws.rs-api</artifactId>
+            <version>2.0</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.quartz-scheduler</groupId>
+            <artifactId>quartz</artifactId>
+            <version>2.2.1</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-lang3</artifactId>
+            <version>3.6</version>
+        </dependency>
+
+        <!-- https://mvnrepository.com/artifact/org.hamcrest/hamcrest-all -->
+        <dependency>
+            <groupId>org.hamcrest</groupId>
+            <artifactId>hamcrest-all</artifactId>
+            <version>1.3</version>
+            <scope>test</scope>
+        </dependency>
+
+        <!-- Added to remove following error
+        [main] WARN  org.jboss.resteasy.resteasy_jaxrs.i18n - RESTEASY002145: NoClassDefFoundError: Unable to load
+        builtin provider org.jboss.resteasy.plugins.providers.InputStreamProvider from
+        jar:file:/Users/ashetty/.m2/repository/org/jboss/resteasy/resteasy-jaxrs/3.0.19.Final/resteasy-jaxrs-3.0.19.Final.jar!/META-INF/services/javax.ws.rs.ext.Providers
+        java.lang.NoClassDefFoundError: javax/annotation/Priority
+         -->
+        <dependency>
+            <groupId>javax.annotation</groupId>
+            <artifactId>javax.annotation-api</artifactId>
+            <version>1.2</version>
+        </dependency>
+
+    </dependencies>
+
+    <profiles>
+        <profile>
+            <id>rebuild-scheduler-db</id>
+            <activation>
+                <activeByDefault>false</activeByDefault>
+            </activation>
+            <build>
+                <plugins>
+
+                    <plugin>
+                        <artifactId>maven-antrun-plugin</artifactId>
+                        <version>1.8</version>
+                        <executions>
+                            <execution>
+                                <phase>initialize</phase>
+                                <goals>
+                                    <goal>run</goal>
+                                </goals>
+                                <configuration>
+                                    <target>
+                                        <echo>Connection details: jdbc:postgresql://${db.vps4.scheduler.server}:${db.vps4.scheduler.port}/${db.vps4.scheduler.bootstrap.database}</echo>
+                                        <echo>Username: ${db.vps4.scheduler.bootstrap.username}</echo>
+                                        <echo>Password: ${db.vps4.scheduler.bootstrap.password}</echo>
+                                    </target>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+
+                    <plugin>
+                        <groupId>org.codehaus.mojo</groupId>
+                        <artifactId>sql-maven-plugin</artifactId>
+                        <version>1.5</version>
+
+                        <dependencies>
+                            <dependency>
+                                <groupId>org.postgresql</groupId>
+                                <artifactId>postgresql</artifactId>
+                                <version>9.4-1201-jdbc4</version>
+                            </dependency>
+                        </dependencies>
+
+                        <configuration>
+                            <driver>org.postgresql.Driver</driver>
+                        </configuration>
+
+                        <executions>
+                            <execution>
+                                <id>drop-create-scheduler-database</id>
+                                <phase>initialize</phase>
+                                <goals>
+                                    <goal>execute</goal>
+                                </goals>
+                                <configuration>
+                                    <url>jdbc:postgresql://${db.vps4.scheduler.server}:${db.vps4.scheduler.port}/${db.vps4.scheduler.bootstrap.database}</url>
+                                    <username>${db.vps4.scheduler.bootstrap.username}</username>
+                                    <password>${db.vps4.scheduler.bootstrap.password}</password>
+                                    <autocommit>true</autocommit>
+                                    <delimiterType>row</delimiterType>
+                                    <enableFiltering>true</enableFiltering>
+                                    <srcFiles>
+                                        <srcFile>${project.basedir}/sql/scheduler_bootstrap/drop_scheduler_db.sql</srcFile>
+                                        <srcFile>${project.basedir}/sql/scheduler_bootstrap/create_scheduler_db.sql</srcFile>
+                                    </srcFiles>
+                                </configuration>
+                            </execution>
+
+                            <execution>
+                                <id>create_scheduler_tables</id>
+                                <phase>initialize</phase>
+                                <goals>
+                                    <goal>execute</goal>
+                                </goals>
+                                <configuration>
+                                    <url>jdbc:postgresql://${db.vps4.scheduler.server}:${db.vps4.scheduler.port}/${db.vps4.scheduler.database}</url>
+                                    <username>${db.vps4.scheduler.username}</username>
+                                    <password>${db.vps4.scheduler.password}</password>
+                                    <autocommit>true</autocommit>
+                                    <delimiterType>row</delimiterType>
+                                    <enableFiltering>true</enableFiltering>
+                                    <orderFile>ascending</orderFile>
+                                    <fileset>
+                                        <basedir>${project.basedir}</basedir>
+                                        <includes>
+                                            <include>sql/scheduler_bootstrap/tables_postgres.sql</include>
+                                        </includes>
+                                    </fileset>
+                                </configuration>
+                            </execution>
+                        </executions>
+
+                    </plugin>
+                </plugins>
+            </build>
+
+        </profile>
+    </profiles>
+
+</project>

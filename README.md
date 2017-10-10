@@ -164,6 +164,13 @@ You can create a credit via the following link:
      - {1066863:1068243} creates a linux prime container with a control panel
      - {1066863:1068243|1068247} creates a linux prime container with a control panel and monitoring
    
+
+Scheduler setup
+=======================
+To build a database to setup the jobs for automated / on-demand backup, patching or for support user related things, run the following command on your localhost from the core project module.
+
+    mvn initialize sql:execute@drop-create-scheduler-database sql:execute@create_scheduler_tables -Prebuild-scheduler-db
+
    
 CRM Links
 ==============

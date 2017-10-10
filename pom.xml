@@ -13,12 +13,38 @@
     <name>VPS4</name>
     <packaging>pom</packaging>
 
+    <dependencyManagement>
+        <dependencies>
+            <dependency>
+                <groupId>com.godaddy.hfs</groupId>
+                <artifactId>hfs-web</artifactId>
+                <version>0.8.2-7</version>
+            </dependency>
+            <dependency>
+                <groupId>com.godaddy.hfs</groupId>
+                <artifactId>hfs-config</artifactId>
+                <version>0.8.2-7</version>
+            </dependency>
+            <dependency>
+                <groupId>com.godaddy.hfs</groupId>
+                <artifactId>hfs-crypto</artifactId>
+                <version>0.8.2-7</version>
+            </dependency>
+            <dependency>
+                <groupId>org.jboss.resteasy</groupId>
+                <artifactId>jaxrs-api</artifactId>
+                <version>3.0.19.Final</version>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
+
     <modules>
         <module>core</module>
         <module>web</module>
         <module>vps4-orchestration-plugin</module>
         <module>vps4-message-consumer</module>
         <module>vps4-phase3-tests</module>
+        <module>vps4-scheduler</module>
     </modules>
 
 </project>

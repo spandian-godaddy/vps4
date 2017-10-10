@@ -1,0 +1,10 @@
+getent group vps4 >/dev/null || groupadd -r vps4
+getent passwd vps4 >/dev/null || useradd -r -g vps4 -s /sbin/nologin -c "vps4 service account" vps4
+
+if [ $1 = 2 ]; then
+    # upgrade
+  
+    # stop the service if its running
+    /usr/bin/systemctl stop vps4-scheduler.service > /dev/null 2>&1 || :
+  
+fi
