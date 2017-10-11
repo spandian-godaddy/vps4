@@ -108,13 +108,13 @@ public class VmUsageServiceTest {
         action.vmId = 42;
         action.status = SysAdminAction.Status.COMPLETE;
 
-        when(sysAdminService.usageStatsUpdate(42, 1)).thenReturn(action);
+        when(sysAdminService.usageStatsUpdate(42, 0)).thenReturn(action);
 
         VmUsage usage = vmUsageService.getUsage(42);
         usage = vmUsageService.getUsage(42);
 
         // we should have kicked off the usage stats update...
-        verify(sysAdminService, Mockito.times(2)).usageStatsUpdate(42, 1);
+        verify(sysAdminService, Mockito.times(2)).usageStatsUpdate(42, 0);
 
         // ... but still returned an empty since we want to return
         // immediately since usage stats take a little while to gather
@@ -135,13 +135,13 @@ public class VmUsageServiceTest {
         action.vmId = 42;
         action.status = SysAdminAction.Status.COMPLETE;
 
-        when(sysAdminService.usageStatsUpdate(42, 1)).thenReturn(action);
+        when(sysAdminService.usageStatsUpdate(42, 0)).thenReturn(action);
         when(sysAdminService.usageStatsResults(42, null, null)).thenReturn(response);
 
         VmUsage usage = vmUsageService.getUsage(42);
 
         // we should have kicked off the usage stats update...
-        verify(sysAdminService).usageStatsUpdate(42, 1);
+        verify(sysAdminService).usageStatsUpdate(42, 0);
 
         // ... but still returned an empty since we want to return
         // immediately since usage stats take a little while to gather
@@ -183,7 +183,7 @@ public class VmUsageServiceTest {
         action.vmId = 42;
         action.status = SysAdminAction.Status.COMPLETE;
 
-        when(sysAdminService.usageStatsUpdate(42, 1)).thenReturn(action);
+        when(sysAdminService.usageStatsUpdate(42, 0)).thenReturn(action);
 
         VmUsage usage = vmUsageService.getUsage(42);
 
@@ -223,7 +223,7 @@ public class VmUsageServiceTest {
         action.vmId = 42;
         action.status = SysAdminAction.Status.COMPLETE;
 
-        when(sysAdminService.usageStatsUpdate(42, 1)).thenReturn(action);
+        when(sysAdminService.usageStatsUpdate(42, 0)).thenReturn(action);
 
         VmUsage usage = vmUsageService.getUsage(42);
 
@@ -265,10 +265,10 @@ public class VmUsageServiceTest {
         afterAction.createdAt = ZonedDateTime.now(ZoneId.of("UTC")).format(TimeStamp.hfsActionTimestampFormat);
 
         when(sysAdminService.getSysAdminAction(1)).thenReturn(beforeAction);
-        when(sysAdminService.usageStatsUpdate(42, 1)).thenReturn(afterAction);
+        when(sysAdminService.usageStatsUpdate(42, 0)).thenReturn(afterAction);
 
         VmUsage usage = vmUsageService.getUsage(42);
 
-        verify(sysAdminService).usageStatsUpdate(42, 1);
+        verify(sysAdminService).usageStatsUpdate(42, 0);
     }
 }

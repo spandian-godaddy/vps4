@@ -72,7 +72,7 @@ public class VmUsageService {
 
                 if (shouldSendUpdateRequest(cachedUsage)) {
                     logger.debug("HFS data is old or missing (hfsVmId={}), requesting refresh", hfsVmId);
-                    SysAdminAction updateAction = sysAdminService.usageStatsUpdate(hfsVmId, 1);
+                    SysAdminAction updateAction = sysAdminService.usageStatsUpdate(hfsVmId, 0);
                     logger.info("updating usage stats with action: {}", updateAction);
 
                     // update our cache to show that we've requested
@@ -122,7 +122,7 @@ public class VmUsageService {
                     || updateAction.status == SysAdminAction.Status.FAILED
                     || Instant.now().isAfter(createdAt.plusSeconds(secondsToWaitForHfsAction))) {
                 // if the action we sent has completed, but we still aren't getting updated data,
-                // then send another request. Also if it has been more than 5 minutes since the last request was sent.
+                // then send another request. Also if it has been more than configured time since the last request.
                 return true;
 
             }
