@@ -26,7 +26,7 @@ public class ConfigureCpanel implements Command<ConfigureCpanel.ConfigureCpanelR
         logger.info("sending HFS request to config cpanel image for vmId {}", action.vmId);
 
         CPanelAction hfsAction = context.execute("RequestFromHFS", ctx -> {
-            return cPanelService.imageConfig(action.vmId, action.publicIp);
+            return cPanelService.imageConfig(action.vmId);
         }, CPanelAction.class);
 
         context.execute(WaitForCpanelAction.class, hfsAction);
@@ -45,6 +45,5 @@ public class ConfigureCpanel implements Command<ConfigureCpanel.ConfigureCpanelR
 
     public static class ConfigureCpanelRequest {
         public long vmId;
-        public String publicIp;
     }
 }

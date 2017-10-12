@@ -151,12 +151,6 @@ public class HfsMockModule extends AbstractModule {
             }
 
             @Override
-            public CPanelAction requestSiteList(long l, String s, String s1) {
-                // NOTE: do nothing, Implement when needed
-                throw new UnsupportedOperationException("Not implemented, yet");
-            }
-
-            @Override
             public CPanelAction getAction(long actionId) {
                 if (!cPanelActions.containsKey(actionId)) {
                     throw new NotFoundException("CPanel action not present");
@@ -172,7 +166,7 @@ public class HfsMockModule extends AbstractModule {
             }
 
             @Override
-            public CPanelAction imageConfig(long vmId, String publicIp) {
+            public CPanelAction imageConfig(long vmId) {
                 return this.createAndStoreCPanelAction(
                         vmId, CPanelAction.ActionType.ImageConfig, CPanelAction.Status.COMPLETE);
             }
@@ -184,13 +178,13 @@ public class HfsMockModule extends AbstractModule {
             }
 
             @Override
-            public CPanelAction licenseActivate(long l, String s) {
+            public CPanelAction licenseActivate(long l) {
                 // NOTE: do nothing, Implement when needed
                 throw new UnsupportedOperationException("Not implemented, yet");
             }
 
             @Override
-            public CPanelAction licenseRelease(long vmId, String publicIp) {
+            public CPanelAction licenseRelease(long vmId) {
                 return this.createAndStoreCPanelAction(
                         vmId, CPanelAction.ActionType.LicenseRelease, CPanelAction.Status.COMPLETE);
             }
@@ -205,6 +199,18 @@ public class HfsMockModule extends AbstractModule {
             public void onComplete(CompleteResponse completeResponse) {
                 // NOTE: do nothing, Implement when needed
                 throw new UnsupportedOperationException("Not implemented, yet");
+            }
+
+            @Override
+            public CPanelAction getcPanelPublicIp(long arg0) {
+                // TODO Auto-generated method stub
+                return null;
+            }
+
+            @Override
+            public CPanelAction requestSiteList(long arg0, String arg1) {
+                // TODO Auto-generated method stub
+                return null;
             }
         };
     }

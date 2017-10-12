@@ -266,7 +266,7 @@ public class HfsMockModule extends AbstractModule {
             }
 
             @Override
-            public CPanelAction licenseActivate(long arg0, String arg1) {
+            public CPanelAction licenseActivate(long arg0) {
                 // NOTE: do nothing, Implement when needed
                 throw new UnsupportedOperationException("Not implemented, yet");
             }
@@ -278,7 +278,7 @@ public class HfsMockModule extends AbstractModule {
             }
 
             @Override
-            public CPanelAction licenseRelease(long arg0, String arg1) {
+            public CPanelAction licenseRelease(long arg0) {
                 // NOTE: do nothing, Implement when needed
                 throw new UnsupportedOperationException("Not implemented, yet");
             }
@@ -296,15 +296,21 @@ public class HfsMockModule extends AbstractModule {
             }
 
             @Override
-            public CPanelAction requestSiteList(long arg0, String arg1, String arg2) {
+            public CPanelAction imageConfig(long arg0) {
                 // NOTE: do nothing, Implement when needed
                 throw new UnsupportedOperationException("Not implemented, yet");
             }
 
             @Override
-            public CPanelAction imageConfig(long arg0, String arg1) {
-                // NOTE: do nothing, Implement when needed
-                throw new UnsupportedOperationException("Not implemented, yet");
+            public CPanelAction getcPanelPublicIp(long arg0) {
+                // TODO Auto-generated method stub
+                return null;
+            }
+
+            @Override
+            public CPanelAction requestSiteList(long arg0, String arg1) {
+                // TODO Auto-generated method stub
+                return null;
             }
         };
     }

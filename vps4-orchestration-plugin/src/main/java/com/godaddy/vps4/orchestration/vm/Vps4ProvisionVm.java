@@ -153,7 +153,7 @@ public class Vps4ProvisionVm extends ActionCommand<Vps4ProvisionVm.Request, Vps4
             setStep(CreateVmStep.ConfiguringCPanel);
 
             // configure cpanel on the vm
-            ConfigureCpanelRequest cpanelRequest = createConfigureCpanelRequest(hfsVm);
+            ConfigureCpanelRequest cpanelRequest = createConfigureCpanelRequest(hfsVm.vmId);
             context.execute(ConfigureCpanel.class, cpanelRequest);
 
         } else if (request.vmInfo.image.controlPanel == ControlPanel.PLESK) {
@@ -272,10 +272,9 @@ public class Vps4ProvisionVm extends ActionCommand<Vps4ProvisionVm.Request, Vps4
         vmUserService.updateUserAdminAccess(username, vmId, adminEnabled);
     }
 
-    private ConfigureCpanelRequest createConfigureCpanelRequest(Vm hfsVm) {
+    private ConfigureCpanelRequest createConfigureCpanelRequest(long vmId) {
         ConfigureCpanelRequest cpanelRequest = new ConfigureCpanelRequest();
-        cpanelRequest.vmId = hfsVm.vmId;
-        cpanelRequest.publicIp = hfsVm.address.ip_address;
+        cpanelRequest.vmId = vmId;
         return cpanelRequest;
     }
 
