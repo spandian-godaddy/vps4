@@ -27,7 +27,7 @@ public class ConfigureCpanel implements Command<ConfigureCpanel.ConfigureCpanelR
 
         CPanelAction hfsAction = context.execute("RequestFromHFS", ctx -> {
             return cPanelService.imageConfig(action.vmId, action.publicIp);
-        });
+        }, CPanelAction.class);
 
         context.execute(WaitForCpanelAction.class, hfsAction);
 

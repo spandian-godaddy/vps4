@@ -50,7 +50,7 @@ public class Vps4DestroyIpAddressAction extends ActionCommand<Vps4DestroyIpAddre
         context.execute(Vps4DestroyIpAddress.class, req);
 
         context.execute("Destroy-"+ip.ipAddressId, ctx -> {networkService.destroyIpAddress(ip.ipAddressId);
-        return null;});
+        return null;}, Void.class);
 
         logger.info("Completed removing IP from vm {}", virtualMachine.vmId);
 

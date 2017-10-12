@@ -38,7 +38,7 @@ public class CreateVm implements Command<CreateVm.Request, VmAction> {
         hfsRequest.password = cryptography.decrypt(request.encryptedPassword);
         hfsRequest.hostname = request.hostname;
 
-        VmAction vmAction = context.execute("CreateVmHfs", ctx -> vmService.createVmWithFlavor(hfsRequest));
+        VmAction vmAction = context.execute("CreateVmHfs", ctx -> vmService.createVmWithFlavor(hfsRequest), VmAction.class);
 
         context.execute(WaitForVmAction.class, vmAction);
 

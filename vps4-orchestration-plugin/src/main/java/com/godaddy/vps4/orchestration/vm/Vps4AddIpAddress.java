@@ -77,7 +77,7 @@ public class Vps4AddIpAddress extends ActionCommand<Vps4AddIpAddress.Request, Vo
         context.execute("Create-" + ip.addressId, ctx -> {
              networkService.createIpAddress(ip.addressId, vmId, ip.address, IpAddressType.SECONDARY);
              return null;
-        });
+        }, Void.class);
     }
 
     private void disableMailRelays(CommandContext context, IpAddress ip) {

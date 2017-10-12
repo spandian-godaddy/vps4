@@ -27,7 +27,9 @@ public class ConfigureMailRelay implements Command<ConfigureMailRelayRequest, Vo
     public Void execute(CommandContext context, ConfigureMailRelayRequest action) {
         logger.info("sending HFS request to configMta for to vmId {}", action.vmId);
 
-        SysAdminAction hfsAction = context.execute("ConfigureMta", ctx -> sysAdminService.configureMTA(action.vmId, action.controlPanel));
+        SysAdminAction hfsAction = context.execute("ConfigureMta",
+                ctx -> sysAdminService.configureMTA(action.vmId, action.controlPanel),
+                SysAdminAction.class);
 
         context.execute(WaitForSysAdminAction.class, hfsAction);
 

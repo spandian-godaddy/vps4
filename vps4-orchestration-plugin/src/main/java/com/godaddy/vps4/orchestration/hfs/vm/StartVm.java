@@ -21,7 +21,7 @@ public class StartVm implements Command<Long, Void> {
     @Override
     public Void execute(CommandContext context, Long vmId) {
 
-        VmAction action = context.execute("StartVmHfs", ctx -> vmService.startVm(vmId));
+        VmAction action = context.execute("StartVmHfs", ctx -> vmService.startVm(vmId), VmAction.class);
 
         context.execute(WaitForManageVmAction.class, action);
 

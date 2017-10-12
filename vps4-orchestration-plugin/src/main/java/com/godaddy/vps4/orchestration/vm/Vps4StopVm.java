@@ -2,16 +2,18 @@ package com.godaddy.vps4.orchestration.vm;
 
 import javax.inject.Inject;
 
-import com.godaddy.vps4.orchestration.ActionCommand;
-import com.godaddy.vps4.vm.ActionService;
-import gdg.hfs.orchestration.CommandContext;
-import gdg.hfs.orchestration.CommandMetadata;
-import gdg.hfs.vhfs.vm.VmAction;
-import gdg.hfs.vhfs.vm.VmService;
 import org.apache.commons.lang3.builder.ReflectionToStringBuilder;
 import org.apache.commons.lang3.builder.ToStringStyle;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import com.godaddy.vps4.orchestration.ActionCommand;
+import com.godaddy.vps4.vm.ActionService;
+
+import gdg.hfs.orchestration.CommandContext;
+import gdg.hfs.orchestration.CommandMetadata;
+import gdg.hfs.vhfs.vm.VmAction;
+import gdg.hfs.vhfs.vm.VmService;
 
 
 @CommandMetadata(
@@ -41,7 +43,7 @@ public class Vps4StopVm extends ActionCommand<VmActionRequest, Vps4StopVm.Respon
         long vmId = request.hfsVmId;
         VmAction hfsAction = context.execute("Vps4StopVm", ctx -> {
             return vmService.stopVm(vmId);
-        });
+        }, VmAction.class);
 
         hfsAction = context.execute(WaitForManageVmAction.class, hfsAction);
 

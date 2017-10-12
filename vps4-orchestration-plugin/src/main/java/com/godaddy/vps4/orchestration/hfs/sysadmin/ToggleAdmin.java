@@ -30,12 +30,16 @@ public class ToggleAdmin implements Command<Request, Void> {
             // Paul Tanganelli [10/28/16] (HFS) Looks like calling disableAdmin before enableAdmin causes problems.
             logger.debug("Setting admin access to {} for user {} in vm {}", request.enabled, request.username, request.vmId);
 
-            SysAdminAction enableAction = context.execute("EnabledAdminHfs", ctx -> sysAdminService.enableAdmin(request.vmId, request.username));
+            SysAdminAction enableAction = context.execute("EnabledAdminHfs",
+                    ctx -> sysAdminService.enableAdmin(request.vmId, request.username),
+                    SysAdminAction.class);
 
             context.execute("WaitForEnableAction", WaitForSysAdminAction.class, enableAction);
 
             if (!request.enabled) {
-                SysAdminAction disableAction = context.execute("DisableAdminHfs", ctx -> sysAdminService.disableAdmin(request.vmId, request.username));
+                SysAdminAction disableAction = context.execute("DisableAdminHfs",
+                        ctx -> sysAdminService.disableAdmin(request.vmId, request.username),
+                        SysAdminAction.class);
 
                 context.execute("WaitForDisableAction", WaitForSysAdminAction.class, disableAction);
             }

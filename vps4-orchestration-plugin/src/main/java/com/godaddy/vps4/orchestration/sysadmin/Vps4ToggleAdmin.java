@@ -45,8 +45,8 @@ public class Vps4ToggleAdmin extends ActionCommand<Vps4ToggleAdmin.Request, Void
         logger.info("Setting admin access to {} for user {} in vm {}", request.enabled, request.username, request.hfsVmId);
 
         SysAdminAction sysAdminHfsAction = request.enabled
-                ? context.execute("EnableAdminHfs", ctx -> sysAdminService.enableAdmin(request.hfsVmId, request.username))
-                : context.execute("DisableAdminHfs", ctx -> sysAdminService.disableAdmin(request.hfsVmId, request.username));
+                ? context.execute("EnableAdminHfs", ctx -> sysAdminService.enableAdmin(request.hfsVmId, request.username), SysAdminAction.class)
+                : context.execute("DisableAdminHfs", ctx -> sysAdminService.disableAdmin(request.hfsVmId, request.username), SysAdminAction.class);
 
         context.execute(WaitForSysAdminAction.class, sysAdminHfsAction);
 

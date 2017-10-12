@@ -72,7 +72,7 @@ public class TestVps4DestroyIpAddressAction {
         }
         verify(context, times(1)).execute(eq(Vps4DestroyIpAddress.class), any(Vps4DestroyIpAddress.Request.class));
 
-        verify(context, times(1)).execute(eq("Destroy-3425"), any(Function.class));
+        verify(context, times(1)).execute(eq("Destroy-3425"), any(Function.class), eq(Void.class));
     }
 
 

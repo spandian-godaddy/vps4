@@ -22,7 +22,8 @@ public class DestroySnapshot implements Command<Long, Void> {
     public Void execute(CommandContext context, Long snapshotId) {
 
         SnapshotAction hfsAction = context.execute("DestroySnapshotHfs",
-                ctx -> hfsSnapshotService.destroySnapshot(snapshotId));
+                ctx -> hfsSnapshotService.destroySnapshot(snapshotId),
+                SnapshotAction.class);
 
         context.execute(WaitForSnapshotAction.class, hfsAction);
 

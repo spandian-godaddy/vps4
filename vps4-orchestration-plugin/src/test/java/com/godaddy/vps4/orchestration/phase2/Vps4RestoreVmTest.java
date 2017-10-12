@@ -3,6 +3,7 @@ package com.godaddy.vps4.orchestration.phase2;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.junit.Assert.assertThat;
 import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.anyObject;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Matchers.startsWith;
@@ -157,11 +158,11 @@ public class Vps4RestoreVmTest {
         CommandContext mockContext = mock(CommandContext.class);
         when(mockContext.getId()).thenReturn(UUID.randomUUID());
 
-        when(mockContext.execute(eq("GetHfsVmId"), any())).thenReturn(SqlTestData.hfsVmId);
-        when(mockContext.execute(eq("GetPublicIpAdresses"), any())).thenReturn(ipAddresses);
+        when(mockContext.execute(eq("GetHfsVmId"), any(Function.class), eq(long.class))).thenReturn(SqlTestData.hfsVmId);
+        when(mockContext.execute(eq("GetPublicIpAdresses"), any(Function.class), eq(List.class))).thenReturn(ipAddresses);
         when(mockContext.execute(startsWith("UnbindIP-"), eq(UnbindIp.class), any())).thenReturn(null);
-        when(mockContext.execute(eq("GetNocfoxImageId"), any())).thenReturn(SqlTestData.nfImageId);
-        when(mockContext.execute(eq("GetVmOSDistro"), any())).thenReturn(SqlTestData.IMAGE_NAME);
+        when(mockContext.execute(eq("GetNocfoxImageId"), any(Function.class), eq(String.class))).thenReturn(SqlTestData.nfImageId);
+        when(mockContext.execute(eq("GetVmOSDistro"), any(Function.class), eq(String.class))).thenReturn(SqlTestData.IMAGE_NAME);
 
         hfsAction = new gdg.hfs.vhfs.vm.VmAction();
         hfsAction.vmActionId = hfsRestoreActionId;
@@ -172,9 +173,9 @@ public class Vps4RestoreVmTest {
 
         hfsVm = new Vm();
         hfsVm.vmId = hfsNewVmId;
-        when(mockContext.execute(eq("GetVmAfterCreate"), any())).thenReturn(hfsVm);
+        when(mockContext.execute(eq("GetVmAfterCreate"), any(Function.class), eq(Vm.class))).thenReturn(hfsVm);
 
-        when(mockContext.execute(eq("UpdateHfsVmId"), any())).thenReturn(null);
+        when(mockContext.execute(eq("UpdateHfsVmId"), any(Function.class), eq(Void.class))).thenReturn(null);
         when(mockContext.execute(startsWith("BindIP-"), eq(BindIp.class), any())).thenReturn(null);
         when(mockContext.execute(eq("DestroyVmHfs"), eq(DestroyVm.class), eq(hfsNewVmId))).thenReturn(null);
         return mockContext;
@@ -199,7 +200,7 @@ public class Vps4RestoreVmTest {
     public void getsHfsVmIdOfTheCurrentVm() {
         command.execute(context, request);
         verify(context, times(1))
-            .execute(eq("GetHfsVmId"), getHfsVmIdLambdaCaptor.capture());
+            .execute(eq("GetHfsVmId"), getHfsVmIdLambdaCaptor.capture(), eq(long.class));
 
         // Verify that the lambda is returning what we expect
         Function<CommandContext, Long> lambda = getHfsVmIdLambdaCaptor.getValue();
@@ -210,8 +211,9 @@ public class Vps4RestoreVmTest {
     @Test
     public void getsTheListOfBoundIpAddresses() {
         command.execute(context, request);
+        List<IpAddress> x = new ArrayList<IpAddress>();
         verify(context, times(1))
-                .execute(eq("GetPublicIpAdresses"), getIpAddressesLambdaCaptor.capture());
+                .execute(eq("GetPublicIpAdresses"), getIpAddressesLambdaCaptor.capture(), anyObject());
 
         // Verify that the lambda is returning what we expect
         Function<CommandContext, List<IpAddress>> lambda = getIpAddressesLambdaCaptor.getValue();
@@ -242,7 +244,7 @@ public class Vps4RestoreVmTest {
     public void getsVmOSDistro() {
         command.execute(context, request);
         verify(context, times(1))
-                .execute(eq("GetVmOSDistro"), getVmOSDistroLambdaCaptor.capture());
+                .execute(eq("GetVmOSDistro"), getVmOSDistroLambdaCaptor.capture(), eq(String.class));
 
         // Verify that the lambda is returning what we expect
         Function<CommandContext, String> lambda = getVmOSDistroLambdaCaptor.getValue();
@@ -270,7 +272,7 @@ public class Vps4RestoreVmTest {
         when(hfsVmService.getVm(eq(hfsNewVmId))).thenReturn(hfsVm);
         command.execute(context, request);
         verify(context, times(1))
-                .execute(eq("GetVmAfterCreate"), getHfsVmLambdaCaptor.capture());
+                .execute(eq("GetVmAfterCreate"), getHfsVmLambdaCaptor.capture(), eq(Vm.class));
 
         // Verify that the lambda is returning what we expect
         Function<CommandContext, Vm> lambda = getHfsVmLambdaCaptor.getValue();
@@ -337,7 +339,7 @@ public class Vps4RestoreVmTest {
     public void updatesHfsVmIdWithTheNewId() {
         command.execute(context, request);
         verify(context, times(1))
-                .execute(eq("UpdateHfsVmId"), updateHfsVmIdLambdaCaptor.capture());
+                .execute(eq("UpdateHfsVmId"), updateHfsVmIdLambdaCaptor.capture(), eq(Void.class));
 
         // Verify that the lambda is returning what we expect
         Function<CommandContext, Void> lambda = updateHfsVmIdLambdaCaptor.getValue();

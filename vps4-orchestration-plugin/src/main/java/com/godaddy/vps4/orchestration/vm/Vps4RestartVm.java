@@ -33,13 +33,13 @@ public class Vps4RestartVm extends ActionCommand<VmActionRequest, Vps4RestartVm.
 
         VmAction hfsAction = context.execute("Vps4StopVm", ctx -> {
             return vmService.stopVm(vmId);
-        });
+        }, VmAction.class);
 
         hfsAction = context.execute("WaitForStop", WaitForManageVmAction.class, hfsAction);
 
         hfsAction = context.execute("Vps4StartVm", ctx -> {
             return vmService.startVm(vmId);
-        });
+        }, VmAction.class);
 
         hfsAction = context.execute("WaitForStart", WaitForManageVmAction.class, hfsAction);
 

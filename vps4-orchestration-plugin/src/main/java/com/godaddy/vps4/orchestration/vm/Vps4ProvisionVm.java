@@ -179,7 +179,7 @@ public class Vps4ProvisionVm extends ActionCommand<Vps4ProvisionVm.Request, Vps4
         context.execute("Create-" + ip.addressId, ctx -> {
             networkService.createIpAddress(ip.addressId, request.vmInfo.vmId, ip.address, IpAddressType.PRIMARY);
             return null;
-        });
+        }, Void.class);
     }
 
     private void configureMailRelay(Vm hfsVm) {
@@ -199,7 +199,7 @@ public class Vps4ProvisionVm extends ActionCommand<Vps4ProvisionVm.Request, Vps4
         context.execute("CreateVps4User", ctx -> {
             vmUserService.createUser(request.username, request.vmInfo.vmId);
             return null;
-        });
+        }, Void.class);
 
         // set the root password to the same as the user password (LINUX ONLY)
         VirtualMachine vm = virtualMachineService.getVirtualMachine(request.vmInfo.vmId);
@@ -229,13 +229,13 @@ public class Vps4ProvisionVm extends ActionCommand<Vps4ProvisionVm.Request, Vps4
         VmAction vmAction = context.execute(CreateVm.class, createVmRequest);
 
         // Get the hfs vm
-        Vm hfsVm = context.execute("GetVmAfterCreate", ctx -> vmService.getVm(vmAction.vmId));
+        Vm hfsVm = context.execute("GetVmAfterCreate", ctx -> vmService.getVm(vmAction.vmId), Vm.class);
 
         // VPS4 VM bookeeping (Add hfs vmid to the virtual_machine db row)
         context.execute("Vps4ProvisionVm", ctx -> {
             virtualMachineService.addHfsVmIdToVirtualMachine(request.vmInfo.vmId, hfsVm.vmId);
             return null;
-        });
+        }, Void.class);
 
         return hfsVm;
     }
@@ -313,7 +313,7 @@ public class Vps4ProvisionVm extends ActionCommand<Vps4ProvisionVm.Request, Vps4
             context.execute("AddCheckIdToIp-" + ipAddress.address, ctx -> {
                 networkService.updateIpWithCheckId(ipAddress.addressId, check.checkId);
                 return null;
-            });
+            }, Void.class);
         }
     }
 
@@ -321,7 +321,7 @@ public class Vps4ProvisionVm extends ActionCommand<Vps4ProvisionVm.Request, Vps4
         context.execute("SetCommonName", ctx -> {
             creditService.setCommonName(orionGuid, commonName);
             return null;
-        });
+        }, Void.class);
     }
 
     private void sendSetupEmail(Request request, String ipAddress) {

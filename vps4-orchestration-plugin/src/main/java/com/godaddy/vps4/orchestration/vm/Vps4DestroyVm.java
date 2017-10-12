@@ -7,6 +7,9 @@ import java.util.stream.Collectors;
 
 import javax.inject.Inject;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.godaddy.vps4.credit.CreditService;
 import com.godaddy.vps4.network.IpAddress;
 import com.godaddy.vps4.network.NetworkService;
@@ -16,6 +19,7 @@ import com.godaddy.vps4.orchestration.hfs.vm.WaitForVmAction;
 import com.godaddy.vps4.vm.ActionService;
 import com.godaddy.vps4.vm.VirtualMachine;
 import com.godaddy.vps4.vm.VirtualMachineService;
+
 import gdg.hfs.orchestration.CommandContext;
 import gdg.hfs.orchestration.CommandMetadata;
 import gdg.hfs.vhfs.cpanel.CPanelAction;
@@ -24,8 +28,6 @@ import gdg.hfs.vhfs.nodeping.NodePingService;
 import gdg.hfs.vhfs.vm.Vm;
 import gdg.hfs.vhfs.vm.VmAction;
 import gdg.hfs.vhfs.vm.VmService;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 @CommandMetadata(
         name="Vps4DestroyVm",
@@ -91,10 +93,10 @@ public class Vps4DestroyVm extends ActionCommand<Vps4DestroyVm.Request, Vps4Dest
             context.execute("DeleteIpAddress-" + address.ipAddressId, Vps4DestroyIpAddress.class,
                     new Vps4DestroyIpAddress.Request(address, vm, true));
             context.execute("Destroy-"+address.ipAddressId, ctx -> {networkService.destroyIpAddress(address.ipAddressId);
-                                                                    return null;});
+                                                                    return null;}, Void.class);
         }
 
-        VmAction hfsAction = context.execute("DestroyVmHfs", ctx -> vmService.destroyVm(hfsVmId));
+        VmAction hfsAction = context.execute("DestroyVmHfs", ctx -> vmService.destroyVm(hfsVmId), VmAction.class);
 
         hfsAction = context.execute(WaitForVmAction.class, hfsAction);
 
@@ -111,7 +113,7 @@ public class Vps4DestroyVm extends ActionCommand<Vps4DestroyVm.Request, Vps4Dest
             Vm hfsVm = vmService.getVm(hfsVmId);
             CPanelAction action = context.execute("Unlicense-Cpanel", ctx -> {
                 return cpanelService.licenseRelease(hfsVmId, hfsVm.address.ip_address);
-            });
+            }, CPanelAction.class);
             context.execute(WaitForCpanelAction.class, action);
         }
     }

@@ -1,9 +1,9 @@
 package com.godaddy.vps4.orchestration.hfs.sysadmin;
 
-import com.google.inject.Inject;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import com.google.inject.Inject;
 
 import gdg.hfs.orchestration.Command;
 import gdg.hfs.orchestration.CommandContext;
@@ -43,7 +43,9 @@ public class SetHostname implements Command<SetHostname.Request, Void> {
     public Void execute(CommandContext context, Request request){
         logger.debug("Setting hostname to {} for hfs vm {}", request.hostname, request.hfsVmId);
 
-        SysAdminAction hfsSysAction = context.execute("SetHostname", ctx -> sysAdminService.changeHostname(request.hfsVmId, request.hostname, request.controlPanel));
+        SysAdminAction hfsSysAction = context.execute("SetHostname",
+                ctx -> sysAdminService.changeHostname(request.hfsVmId, request.hostname, request.controlPanel),
+                SysAdminAction.class);
 
         context.execute("WaitForSetHostname", WaitForSysAdminAction.class, hfsSysAction);
 

@@ -74,7 +74,7 @@ public class Vps4DestroyIpAddress implements Command<Vps4DestroyIpAddress.Reques
         else if(virtualMachineService.virtualMachineHasPlesk(vm.vmId)){
             PleskAction action = context.execute("Unlicense-Plesk", ctx -> {
                 return pleskService.licenseRelease(vm.hfsVmId);
-            });
+            }, PleskAction.class);
             context.execute(WaitForPleskAction.class, action);
         }
     }

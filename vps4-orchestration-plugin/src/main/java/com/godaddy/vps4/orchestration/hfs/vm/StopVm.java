@@ -19,7 +19,7 @@ public class StopVm implements Command<Long, Void> {
     @Override
     public Void execute(CommandContext context, Long vmId) {
 
-        VmAction action = context.execute("StopVmHfs", ctx -> vmService.stopVm(vmId));
+        VmAction action = context.execute("StopVmHfs", ctx -> vmService.stopVm(vmId), VmAction.class);
 
         context.execute(WaitForVmAction.class, action);
 

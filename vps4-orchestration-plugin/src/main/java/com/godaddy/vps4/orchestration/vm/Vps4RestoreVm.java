@@ -97,12 +97,13 @@ public class Vps4RestoreVm extends ActionCommand<Vps4RestoreVm.Request, Vps4Rest
     }
 
     private long getOldHfsVmId() {
-        return context.execute("GetHfsVmId", ctx -> virtualMachineService.getVirtualMachine(vps4VmId).hfsVmId);
+        return context.execute("GetHfsVmId", ctx -> virtualMachineService.getVirtualMachine(vps4VmId).hfsVmId, long.class);
     }
 
+    @SuppressWarnings("unchecked")
     private List<IpAddress> getPublicIpAddresses() {
         return context.execute(
-                "GetPublicIpAdresses", ctx -> vps4NetworkService.getVmIpAddresses(vps4VmId));
+                "GetPublicIpAdresses", ctx -> vps4NetworkService.getVmIpAddresses(vps4VmId), List.class);
     }
 
     private void unbindPublicIpAddresses(List<IpAddress> ipAddresses) {
@@ -117,11 +118,11 @@ public class Vps4RestoreVm extends ActionCommand<Vps4RestoreVm.Request, Vps4Rest
     }
 
     private String getNocfoxImageIdForSnapshot(UUID snapshotId) {
-        return context.execute("GetNocfoxImageId", ctx -> vps4SnapshotService.getSnapshot(snapshotId).hfsImageId);
+        return context.execute("GetNocfoxImageId", ctx -> vps4SnapshotService.getSnapshot(snapshotId).hfsImageId, String.class);
     }
 
     private String getVmOSDistro() {
-        return context.execute("GetVmOSDistro", ctx -> virtualMachineService.getOSDistro(vps4VmId));
+        return context.execute("GetVmOSDistro", ctx -> virtualMachineService.getOSDistro(vps4VmId), String.class);
     }
 
     private CreateVMWithFlavorRequest createHfsRequest() {
@@ -146,14 +147,14 @@ public class Vps4RestoreVm extends ActionCommand<Vps4RestoreVm.Request, Vps4Rest
         VmAction vmAction = context.execute("CreateVmFromSnapshot", CreateVmFromSnapshot.class, hfsRequest);
 
         // Get the hfs vm
-        return context.execute("GetVmAfterCreate", ctx -> vmService.getVm(vmAction.vmId));
+        return context.execute("GetVmAfterCreate", ctx -> vmService.getVm(vmAction.vmId), Vm.class);
     }
 
     private void updateHfsVmId(long hfsVmId) {
         context.execute("UpdateHfsVmId", ctx -> {
             virtualMachineService.addHfsVmIdToVirtualMachine(vps4VmId, hfsVmId);
             return null;
-        });
+        }, Void.class);
     }
 
     private void setRootUserPassword(long hfsVmId) {
@@ -185,7 +186,7 @@ public class Vps4RestoreVm extends ActionCommand<Vps4RestoreVm.Request, Vps4Rest
         context.execute("UpdateVps4AdminUser", ctx -> {
             vmUserService.updateUserAdminAccess(username, vps4VmId, adminEnabled);
             return null;
-        });
+        }, Void.class);
     }
 
     private void bindPublicIpAddress(long hfsVmId, List<IpAddress> ipAddresses) {

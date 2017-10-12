@@ -26,7 +26,9 @@ public class BindIp implements Command<BindIp.BindIpRequest, Void> {
 
         logger.info("sending HFS request to bind addressId {} to vmId {}", action.addressId, action.vmId);
 
-        AddressAction hfsAction = context.execute("BindIpHfs", ctx -> networkService.bindIp(action.addressId, action.vmId, false));
+        AddressAction hfsAction = context.execute("BindIpHfs",
+                ctx -> networkService.bindIp(action.addressId, action.vmId, false),
+                AddressAction.class);
 
         context.execute(WaitForAddressAction.class, hfsAction);
 

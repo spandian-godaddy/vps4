@@ -46,7 +46,8 @@ public class Vps4SnapshotVm extends ActionCommand<Vps4SnapshotVm.Request, Vps4Sn
     @Override
     protected Response executeWithAction(CommandContext context, Vps4SnapshotVm.Request request) throws Exception {
         snapshotIdToBeDeprecated = context.execute("MarkOldestSnapshotForDeprecation" + request.orionGuid,
-                ctx -> vps4SnapshotService.markOldestSnapshotForDeprecation(request.orionGuid, request.snapshotType));
+                ctx -> vps4SnapshotService.markOldestSnapshotForDeprecation(request.orionGuid, request.snapshotType),
+                UUID.class);
         SnapshotAction hfsAction = createAndWaitForSnapshotCompletion(context, request);
         deprecateOldSnapshot(context, request.vps4UserId);
         return generateResponse(hfsAction);
@@ -72,7 +73,7 @@ public class Vps4SnapshotVm extends ActionCommand<Vps4SnapshotVm.Request, Vps4Sn
             context.execute("MarkSnapshotAsDeprecated" + snapshotIdToBeDeprecated, ctx -> {
                 vps4SnapshotService.markSnapshotAsDeprecated(snapshotIdToBeDeprecated);
                 return null;
-            });
+            }, Void.class);
             Snapshot vps4Snapshot = vps4SnapshotService.getSnapshot(snapshotIdToBeDeprecated);
 
             try {
@@ -110,7 +111,7 @@ public class Vps4SnapshotVm extends ActionCommand<Vps4SnapshotVm.Request, Vps4Sn
         context.execute("MarkSnapshotLive" + request.vps4SnapshotId, ctx -> {
             vps4SnapshotService.markSnapshotLive(request.vps4SnapshotId);
             return null;
-        });
+        }, Void.class);
         return hfsAction;
     }
 
@@ -125,14 +126,15 @@ public class Vps4SnapshotVm extends ActionCommand<Vps4SnapshotVm.Request, Vps4Sn
         try {
             SnapshotAction hfsAction = context.execute(
                     "Vps4SnapshotVm",
-                    ctx -> hfsSnapshotService.createSnapshot(vmId, name, version, true, false)
+                    ctx -> hfsSnapshotService.createSnapshot(vmId, name, version, true, false),
+                    SnapshotAction.class
             );
 
             logger.info("HFS snapshot create request returned action: {}", hfsAction);
             context.execute("MarkSnapshotInProgress" + request.vps4SnapshotId, ctx -> {
                 vps4SnapshotService.markSnapshotInProgress(request.vps4SnapshotId);
                 return null;
-            });
+            }, Void.class);
             return hfsAction;
         } catch (Exception e) {
             logger.info("Snapshot creation error for VPS4 snapshot with id: {}", request.vps4SnapshotId);
@@ -149,7 +151,7 @@ public class Vps4SnapshotVm extends ActionCommand<Vps4SnapshotVm.Request, Vps4Sn
             context.execute("ReverseSnapshotDeprecation" + snapshotIdToBeDeprecated, ctx -> {
             vps4SnapshotService.reverseSnapshotDeprecation(snapshotIdToBeDeprecated);
             return null;
-            });
+            }, Void.class);
         }
     }
 
@@ -158,13 +160,14 @@ public class Vps4SnapshotVm extends ActionCommand<Vps4SnapshotVm.Request, Vps4Sn
         context.execute("UpdateHfsSnapshotId" + vps4SnapshotId, ctx -> {
             vps4SnapshotService.updateHfsSnapshotId(vps4SnapshotId, hfsSnapshotId);
             return null;
-        });
+        }, Void.class);
     }
 
     private void updateHfsImageId(CommandContext context, UUID vps4SnapshotId, long hfsSnapshotId) {
         gdg.hfs.vhfs.snapshot.Snapshot hfsSnapshot = context.execute(
                 "GetHFSSnapshot",
-                ctx -> hfsSnapshotService.getSnapshot(hfsSnapshotId)
+                ctx -> hfsSnapshotService.getSnapshot(hfsSnapshotId),
+                gdg.hfs.vhfs.snapshot.Snapshot.class
         );
 
         logger.info("Update VPS4 snapshot [{}] with Nocfox image id: {}", vps4SnapshotId, hfsSnapshot.imageId);
@@ -172,7 +175,7 @@ public class Vps4SnapshotVm extends ActionCommand<Vps4SnapshotVm.Request, Vps4Sn
         context.execute("UpdateHfsImageId" + vps4SnapshotId, ctx -> {
             vps4SnapshotService.updateHfsImageId(vps4SnapshotId, hfsSnapshot.imageId);
             return null;
-        });
+        }, Void.class);
     }
 
     public static class Request implements ActionRequest {

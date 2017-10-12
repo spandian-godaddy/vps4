@@ -33,6 +33,7 @@ public class SetPassword implements Command<SetPassword.Request, Void> {
         this.cryptography = cryptography;
     }
 
+    @Override
     public Void execute(CommandContext context, Request request) {
 
         logger.debug("Setting passwords for users {} on vm {}", request.usernames.toString(), request.hfsVmId);
@@ -40,7 +41,8 @@ public class SetPassword implements Command<SetPassword.Request, Void> {
         for(String username : request.usernames){
 
             SysAdminAction hfsSysAction = context.execute("SetPassword-" + username,
-                    ctx -> sysAdminService.changePassword(request.hfsVmId, username, password));
+                    ctx -> sysAdminService.changePassword(request.hfsVmId, username, password),
+                    SysAdminAction.class);
 
             context.execute("WaitForSet-"+username, WaitForSysAdminAction.class, hfsSysAction);
         }

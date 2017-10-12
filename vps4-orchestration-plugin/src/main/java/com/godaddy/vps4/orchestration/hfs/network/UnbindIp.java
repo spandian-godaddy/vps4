@@ -28,7 +28,7 @@ public class UnbindIp implements Command<UnbindIp.Request, Void> {
 
         AddressAction hfsAction = context.execute("RequestFromHFS",  ctx -> {
             return networkService.unbindIp(request.addressId, request.forceIfVmInaccessible);
-        });
+        }, AddressAction.class);
 
         context.execute(WaitForAddressAction.class, hfsAction);
 

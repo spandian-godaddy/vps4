@@ -34,7 +34,8 @@ public class RemoveUser implements Command<RemoveUser.Request, Void> {
         logger.info("Calling HFS to remove user {} from vm {}", request.username, request.hfsVmId);
 
         SysAdminAction hfsSysAdminAction = context.execute("RemoveUser-" + request.username,
-                ctx -> sysAdminService.removeUser(request.hfsVmId, request.username));
+                ctx -> sysAdminService.removeUser(request.hfsVmId, request.username),
+                SysAdminAction.class);
         context.execute("WaitForRemove-" + request.username, WaitForSysAdminAction.class, hfsSysAdminAction);
 
         return null;

@@ -7,14 +7,9 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import com.godaddy.vps4.orchestration.phase2.Vps4ExternalsModule;
-import com.google.inject.Guice;
-import com.google.inject.Inject;
-import com.google.inject.Injector;
-import gdg.hfs.orchestration.CommandContext;
-import gdg.hfs.vhfs.vm.CreateVMWithFlavorRequest;
-import gdg.hfs.vhfs.vm.VmAction;
-import gdg.hfs.vhfs.vm.VmService;
+import java.util.UUID;
+import java.util.function.Function;
+
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.BeforeClass;
@@ -23,8 +18,15 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
 import org.mockito.MockitoAnnotations;
 
-import java.util.UUID;
-import java.util.function.Function;
+import com.godaddy.vps4.orchestration.phase2.Vps4ExternalsModule;
+import com.google.inject.Guice;
+import com.google.inject.Inject;
+import com.google.inject.Injector;
+
+import gdg.hfs.orchestration.CommandContext;
+import gdg.hfs.vhfs.vm.CreateVMWithFlavorRequest;
+import gdg.hfs.vhfs.vm.VmAction;
+import gdg.hfs.vhfs.vm.VmService;
 
 public class CreateVmFromSnapshotTest {
     static Injector injector;
@@ -65,7 +67,7 @@ public class CreateVmFromSnapshotTest {
         hfsAction.vmActionId = 12345;
         hfsAction.vmId = 4567;
 
-        when(mockContext.execute(eq("CreateVmHfs"), any())).thenReturn(hfsAction);
+        when(mockContext.execute(eq("CreateVmHfs"), any(Function.class), eq(VmAction.class))).thenReturn(hfsAction);
         when(mockContext.execute(eq(WaitForVmAction.class), eq(hfsAction))).thenReturn(null);
         return mockContext;
     }
@@ -74,7 +76,7 @@ public class CreateVmFromSnapshotTest {
     public void callsHfsVmVerticalToCreateTheVm() {
         command.execute(context, request);
         verify(context, times(1))
-                .execute(eq("CreateVmHfs"), createVmLambdaCaptor.capture());
+                .execute(eq("CreateVmHfs"), createVmLambdaCaptor.capture(), eq(VmAction.class));
 
         // Verify that the lambda is returning what we expect
         Function<CommandContext, VmAction> lambda = createVmLambdaCaptor.getValue();

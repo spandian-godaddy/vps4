@@ -27,7 +27,7 @@ public class ReleaseIp implements Command<Long, Void> {
         AddressAction action = context.execute("ReleaseIpHfs", ctx -> {
             logger.info("sending HFS request to release addressId {}", addressId);
             return networkService.releaseIp(addressId);
-        });
+        }, AddressAction.class);
 
         context.execute(WaitForAddressAction.class, action);
 

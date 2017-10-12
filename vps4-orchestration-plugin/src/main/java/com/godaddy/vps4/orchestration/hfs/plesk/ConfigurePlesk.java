@@ -19,13 +19,13 @@ public class ConfigurePlesk implements Command<ConfigurePlesk.ConfigurePleskRequ
     final PleskService pleskService;
 
     private final Cryptography cryptography;
-    
+
     @Inject
     public ConfigurePlesk(PleskService pleskService, Cryptography cryptography) {
         this.pleskService = pleskService;
         this.cryptography = cryptography;
     }
-    
+
     @Override
     public Void execute(CommandContext context, ConfigurePleskRequest request) {
         logger.info("sending HFS request to config Plesk image for vmId {}", request.vmId);
@@ -34,7 +34,7 @@ public class ConfigurePlesk implements Command<ConfigurePlesk.ConfigurePleskRequ
 
         PleskAction hfsAction = context.execute("RequestFromHFS", ctx -> {
             return pleskService.imageConfig(request.vmId, request.username, password);
-        });
+        }, PleskAction.class);
 
         context.execute(WaitForPleskAction.class, hfsAction);
 
@@ -46,7 +46,7 @@ public class ConfigurePlesk implements Command<ConfigurePlesk.ConfigurePleskRequ
         long vmId;
         String username;
         byte[] encryptedPassword;
-        
+
         public ConfigurePleskRequest(long vmId, String username, byte[] encryptedPassword) {
             this.vmId = vmId;
             this.username = username;
