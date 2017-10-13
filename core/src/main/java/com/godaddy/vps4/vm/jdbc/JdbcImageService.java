@@ -68,7 +68,7 @@ public class JdbcImageService implements ImageService {
                                            " FROM " + tableName + " AS image" +
                                            " JOIN control_panel AS cp ON image.control_panel_id = cp.control_panel_id" +
                                            " JOIN os_type AS os ON image.os_type_id = os.os_type_id" +
-                                           " WHERE image.valid_until > NOW()" +
+                                           " WHERE image.valid_until > now_utc()" +
                                            " AND   (?::text is null or LOWER(os.name) = LOWER(?))" +
                                            " AND   (?::text is null or LOWER(cp.name) = LOWER(?))" +
                                            " AND   (?::text is null or LOWER(image.hfs_name) = LOWER(?))",

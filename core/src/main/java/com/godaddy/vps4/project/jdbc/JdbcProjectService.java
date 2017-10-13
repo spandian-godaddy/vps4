@@ -14,6 +14,7 @@ import com.godaddy.hfs.jdbc.Sql;
 
 import com.godaddy.vps4.project.Project;
 import com.godaddy.vps4.project.ProjectService;
+import com.godaddy.vps4.util.TimestampUtils;
 
 public class JdbcProjectService implements ProjectService {
 
@@ -40,7 +41,7 @@ public class JdbcProjectService implements ProjectService {
                     + "p.valid_until "
                     + "FROM project p "
                     + "INNER JOIN user_project_privilege upp ON p.project_id = upp.project_id "
-                    + "WHERE upp.vps4_user_id = ? AND p.valid_until > NOW()",
+                    + "WHERE upp.vps4_user_id = ? AND p.valid_until > now_utc()",
                     Sql.listOf(this::mapProject),
                     userId);
 
@@ -66,8 +67,8 @@ public class JdbcProjectService implements ProjectService {
         return new Project(rs.getLong("project_id"),
                 rs.getString("project_name"),
                 rs.getString("vhfs_sgid"),
-                rs.getTimestamp("valid_on").toInstant(),
-                rs.getTimestamp("valid_until").toInstant());
+                rs.getTimestamp("valid_on", TimestampUtils.utcCalendar).toInstant(),
+                rs.getTimestamp("valid_until", TimestampUtils.utcCalendar).toInstant());
     }
 
     @Override

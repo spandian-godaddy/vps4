@@ -17,6 +17,7 @@ import javax.sql.DataSource;
 import com.godaddy.hfs.jdbc.Sql;
 import com.godaddy.vps4.network.IpAddress;
 import com.godaddy.vps4.network.jdbc.IpAddressMapper;
+import com.godaddy.vps4.util.TimestampUtils;
 import com.godaddy.vps4.vm.AccountStatus;
 import com.godaddy.vps4.vm.Image;
 import com.godaddy.vps4.vm.Image.ControlPanel;
@@ -59,7 +60,7 @@ public class JdbcVirtualMachineService implements VirtualMachineService {
     public VirtualMachineSpec getSpec(int tier) {
         return Sql.with(dataSource)
                 .exec("SELECT spec_id, name as spec_vps4_name, spec_name, tier, cpu_core_count, memory_mib, disk_gib, valid_on as spec_valid_on, "
-                        + "valid_until as spec_valid_until FROM virtual_machine_spec WHERE valid_until > NOW() AND tier=? ",
+                        + "valid_until as spec_valid_until FROM virtual_machine_spec WHERE valid_until > now_utc() AND tier=? ",
                         Sql.nextOrNull(this::mapVirtualMachineSpec), tier);
     }
 
@@ -82,7 +83,7 @@ public class JdbcVirtualMachineService implements VirtualMachineService {
     }
 
     protected VirtualMachine mapVirtualMachine(ResultSet rs) throws SQLException {
-        Timestamp validUntil = rs.getTimestamp("vm_valid_until");
+        Timestamp validUntil = rs.getTimestamp("vm_valid_until", TimestampUtils.utcCalendar);
         VirtualMachineSpec spec = mapVirtualMachineSpec(rs);
         UUID vmId = java.util.UUID.fromString(rs.getString("vm_id"));
         IpAddress ipAddress = mapIpAddress(rs);
@@ -93,7 +94,7 @@ public class JdbcVirtualMachineService implements VirtualMachineService {
                 rs.getLong("project_id"),
                 spec, rs.getString("vm_name"),
                 image, ipAddress,
-                rs.getTimestamp("vm_valid_on").toInstant(),
+                rs.getTimestamp("vm_valid_on", TimestampUtils.utcCalendar).toInstant(),
                 validUntil != null ? validUntil.toInstant() : null,
                 rs.getString("hostname"),
                 AccountStatus.valueOf(rs.getInt("account_status_id")));
@@ -120,16 +121,16 @@ public class JdbcVirtualMachineService implements VirtualMachineService {
     }
 
     protected VirtualMachineSpec mapVirtualMachineSpec(ResultSet rs) throws SQLException {
-        Timestamp validUntil = rs.getTimestamp("spec_valid_until");
+        Timestamp validUntil = rs.getTimestamp("spec_valid_until", TimestampUtils.utcCalendar);
 
         return new VirtualMachineSpec(rs.getInt("spec_id"), rs.getString("spec_vps4_name"), rs.getString("spec_name"), rs.getInt("tier"),
-                rs.getInt("cpu_core_count"), rs.getInt("memory_mib"), rs.getInt("disk_gib"), rs.getTimestamp("spec_valid_on").toInstant(),
+                rs.getInt("cpu_core_count"), rs.getInt("memory_mib"), rs.getInt("disk_gib"), rs.getTimestamp("spec_valid_on", TimestampUtils.utcCalendar).toInstant(),
                 validUntil != null ? validUntil.toInstant() : null);
     }
 
     @Override
     public void destroyVirtualMachine(long vmId) {
-        Sql.with(dataSource).exec("UPDATE virtual_machine vm SET valid_until=NOW() WHERE hfs_vm_id=?", null, vmId);
+        Sql.with(dataSource).exec("UPDATE virtual_machine vm SET valid_until=now_utc() WHERE hfs_vm_id=?", null, vmId);
     }
 
     @Override

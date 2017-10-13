@@ -17,7 +17,7 @@ import org.slf4j.LoggerFactory;
 
 import com.godaddy.hfs.config.Config;
 import com.godaddy.vps4.cache.CacheName;
-import com.godaddy.vps4.util.TimeStamp;
+import com.godaddy.vps4.util.TimestampUtils;
 
 import gdg.hfs.vhfs.sysadmin.SysAdminAction;
 import gdg.hfs.vhfs.sysadmin.SysAdminService;
@@ -116,7 +116,7 @@ public class VmUsageService {
             // Check on the request to see if we need to send another one
             SysAdminAction updateAction = sysAdminService.getSysAdminAction(cachedUsage.updateActionId);
 
-            Instant createdAt = ZonedDateTime.parse(updateAction.createdAt, TimeStamp.hfsActionTimestampFormat).toInstant();
+            Instant createdAt = ZonedDateTime.parse(updateAction.createdAt, TimestampUtils.hfsActionTimestampFormat).toInstant();
 
             if (updateAction.status == SysAdminAction.Status.COMPLETE
                     || updateAction.status == SysAdminAction.Status.FAILED

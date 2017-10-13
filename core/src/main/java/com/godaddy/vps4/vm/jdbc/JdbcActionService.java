@@ -15,6 +15,7 @@ import javax.sql.DataSource;
 
 import com.godaddy.hfs.jdbc.Sql;
 import com.godaddy.vps4.jdbc.ResultSubset;
+import com.godaddy.vps4.util.TimestampUtils;
 import com.godaddy.vps4.vm.Action;
 import com.godaddy.vps4.vm.ActionService;
 import com.godaddy.vps4.vm.ActionStatus;
@@ -187,7 +188,7 @@ public class JdbcActionService implements ActionService {
 
         return new Action(rs.getLong("id"), vmid, type, rs.getLong("vps4_user_id"),
                 rs.getString("request"), rs.getString("state"), rs.getString("response"), status,
-                rs.getTimestamp("created").toInstant(), rs.getString("note"), commandId);
+                rs.getTimestamp("created", TimestampUtils.utcCalendar).toInstant(), rs.getString("note"), commandId);
     }
 
     @Override

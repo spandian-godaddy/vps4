@@ -46,7 +46,7 @@ public class JdbcPrivilegeService implements PrivilegeService {
                                              "ON virtual_machine.project_id = user_project_privilege.project_id " +
                                          "WHERE user_project_privilege.vps4_user_id = ? " +
                                             "AND virtual_machine.vm_id = ? " +
-                                            "AND NOW() < virtual_machine.valid_until;",
+                                            "AND now_utc() < virtual_machine.valid_until;",
                                         Sql.nextOrNull(rs -> rs.getInt(1) > 0),
                                         user.getId(), id)) {
             throw new AuthorizationException(user.getShopperId() + " does not have privilege for vm " + id);

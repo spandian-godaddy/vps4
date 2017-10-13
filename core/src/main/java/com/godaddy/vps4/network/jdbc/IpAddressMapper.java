@@ -5,6 +5,7 @@ import java.sql.SQLException;
 import java.util.UUID;
 
 import com.godaddy.vps4.network.IpAddress;
+import com.godaddy.vps4.util.TimestampUtils;
 
 public class IpAddressMapper {
 
@@ -17,7 +18,7 @@ public class IpAddressMapper {
                 rs.getString("ip_address"),
                 IpAddress.IpAddressType.valueOf(rs.getInt("ip_address_type_id")),
                 pingCheckId == 0 ? null : pingCheckId,
-                rs.getTimestamp("valid_on").toInstant(),
-                rs.getTimestamp("valid_until").toInstant());
+                rs.getTimestamp("valid_on", TimestampUtils.utcCalendar).toInstant(),
+                rs.getTimestamp("valid_until", TimestampUtils.utcCalendar).toInstant());
     }
 }

@@ -15,6 +15,7 @@ import com.godaddy.vps4.snapshot.Snapshot;
 import com.godaddy.vps4.snapshot.SnapshotService;
 import com.godaddy.vps4.snapshot.SnapshotStatus;
 import com.godaddy.vps4.snapshot.SnapshotType;
+import com.godaddy.vps4.util.TimestampUtils;
 
 public class JdbcSnapshotService implements SnapshotService {
     private static final long OPEN_SLOTS_PER_CREDIT = 1;
@@ -147,13 +148,13 @@ public class JdbcSnapshotService implements SnapshotService {
 
     @Override
     public void updateHfsSnapshotId(UUID snapshotId, long hfsSnapshotId) {
-        Sql.with(dataSource).exec("UPDATE snapshot SET modified_at=NOW(), hfs_snapshot_id=? "
+        Sql.with(dataSource).exec("UPDATE snapshot SET modified_at=now_utc(), hfs_snapshot_id=? "
                 + " WHERE id=?", null, hfsSnapshotId, snapshotId);
     }
 
     @Override
     public void updateHfsImageId(UUID snapshotId, String hfsImageId) {
-        Sql.with(dataSource).exec("UPDATE snapshot SET modified_at=NOW(), hfs_image_id=? "
+        Sql.with(dataSource).exec("UPDATE snapshot SET modified_at=now_utc(), hfs_image_id=? "
                 + " WHERE id=?", null, hfsImageId, snapshotId);
     }
 
@@ -204,7 +205,7 @@ public class JdbcSnapshotService implements SnapshotService {
 
     @Override
     public void updateSnapshotStatus(UUID snapshotId, SnapshotStatus status) {
-        Sql.with(dataSource).exec("UPDATE snapshot SET modified_at=NOW(), status=? "
+        Sql.with(dataSource).exec("UPDATE snapshot SET modified_at=now_utc(), status=? "
                 + " WHERE id=?", null, status.getSnapshotStatusId(), snapshotId);
     }
 
@@ -251,14 +252,14 @@ public class JdbcSnapshotService implements SnapshotService {
     }
 
     private Snapshot mapSnapshot(ResultSet rs) throws SQLException {
-        Timestamp modifiedAt = rs.getTimestamp("modified_at");
+        Timestamp modifiedAt = rs.getTimestamp("modified_at", TimestampUtils.utcCalendar);
         return new Snapshot(
                 UUID.fromString(rs.getString("id")),
                 rs.getLong("project_id"),
                 UUID.fromString(rs.getString("vm_id")),
                 rs.getString("name"),
                 SnapshotStatus.valueOf(rs.getString("status")),
-                rs.getTimestamp("created_at").toInstant(),
+                rs.getTimestamp("created_at", TimestampUtils.utcCalendar).toInstant(),
                 modifiedAt != null ? modifiedAt.toInstant() : null,
                 rs.getString("hfs_image_id"),
                 rs.getLong("hfs_snapshot_id"),

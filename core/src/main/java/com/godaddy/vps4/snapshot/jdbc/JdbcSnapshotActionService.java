@@ -16,6 +16,7 @@ import com.godaddy.vps4.vm.ActionService;
 import com.godaddy.vps4.vm.ActionStatus;
 import com.godaddy.vps4.vm.ActionType;
 
+import com.godaddy.vps4.util.TimestampUtils;
 
 public class JdbcSnapshotActionService implements ActionService {
 
@@ -118,7 +119,7 @@ public class JdbcSnapshotActionService implements ActionService {
 
         return new Action(rs.getLong("id"), snapshotId, type, rs.getLong("vps4_user_id"),
                 rs.getString("request"), rs.getString("state"), rs.getString("response"), status,
-                rs.getTimestamp("created").toInstant(), rs.getString("note"), commandId);
+                rs.getTimestamp("created", TimestampUtils.utcCalendar).toInstant(), rs.getString("note"), commandId);
     }
 
     @Override
