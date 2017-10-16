@@ -1,5 +1,10 @@
 package com.godaddy.vps4.handler.util;
 
+import java.net.InetAddress;
+import java.net.UnknownHostException;
+import java.time.OffsetDateTime;
+import java.util.UUID;
+
 import com.godaddy.hfs.io.Charsets;
 import org.apache.curator.framework.CuratorFramework;
 import org.apache.curator.framework.state.ConnectionState;
@@ -8,9 +13,6 @@ import org.apache.zookeeper.CreateMode;
 import org.json.simple.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.time.OffsetDateTime;
-import java.util.UUID;
 
 public class ZkAppRegistrationService {
 
@@ -75,6 +77,11 @@ public class ZkAppRegistrationService {
         json.put("name", serviceName);
         json.put("id", id.toString());
         json.put("registrationTimeUTC", OffsetDateTime.now().toEpochSecond());
+        json.put("address", resolveHostname());
+        // TODO: add the fields below for service registration
+        /*
+        json.put("locations", serviceRegistration.locations);
+        */
 
         String jsonString = json.toJSONString();
         byte[] data = jsonString.getBytes(Charsets.UTF8);
@@ -108,6 +115,15 @@ public class ZkAppRegistrationService {
 
     protected String nodePath() {
         return this.basePath + serviceName + "/" + id.toString();
+    }
+
+    protected String resolveHostname() {
+        try {
+            return InetAddress.getLocalHost().getHostName();
+        }
+        catch (UnknownHostException e) {
+            throw new RuntimeException("Unable to determine local hostname", e);
+        }
     }
 
 }
