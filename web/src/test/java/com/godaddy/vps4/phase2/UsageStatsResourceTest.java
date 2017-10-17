@@ -6,7 +6,6 @@ import java.util.UUID;
 import javax.inject.Inject;
 import javax.sql.DataSource;
 
-import com.godaddy.vps4.snapshot.SnapshotModule;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -18,6 +17,7 @@ import com.godaddy.vps4.security.SecurityModule;
 import com.godaddy.vps4.security.Vps4User;
 import com.godaddy.vps4.security.Vps4UserService;
 import com.godaddy.vps4.security.jdbc.AuthorizationException;
+import com.godaddy.vps4.snapshot.SnapshotModule;
 import com.godaddy.vps4.sysadmin.VmUsageService;
 import com.godaddy.vps4.vm.VirtualMachine;
 import com.godaddy.vps4.vm.VmModule;
@@ -112,5 +112,4 @@ public class UsageStatsResourceTest {
             Assert.assertEquals("BAD_USAGE_DATA", e.getId());
         }
     }
-
 }

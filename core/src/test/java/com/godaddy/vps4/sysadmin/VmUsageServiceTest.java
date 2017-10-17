@@ -15,6 +15,7 @@ import java.time.Duration;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
 
 import javax.cache.Cache;
 import javax.cache.CacheManager;
@@ -33,7 +34,6 @@ import com.godaddy.hfs.io.Charsets;
 import com.godaddy.vps4.cache.CacheName;
 import com.godaddy.vps4.cache.HazelcastProvider;
 import com.godaddy.vps4.sysadmin.VmUsageService.CachedVmUsage;
-import com.godaddy.vps4.util.TimestampUtils;
 
 import gdg.hfs.vhfs.sysadmin.SysAdminAction;
 import gdg.hfs.vhfs.sysadmin.SysAdminService;
@@ -252,17 +252,19 @@ public class VmUsageServiceTest {
         when(response.readEntity(String.class)).thenReturn(jsonResponse);
         when(sysAdminService.usageStatsResults(42, null, null)).thenReturn(response);
 
+        DateTimeFormatter hfsActionTimestampFormat = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss").withZone(ZoneId.of("UTC"));
+
         SysAdminAction beforeAction = new SysAdminAction();
         beforeAction.vmId = 42;
         beforeAction.sysAdminActionId = 1;
         beforeAction.status = SysAdminAction.Status.IN_PROGRESS;
-        beforeAction.createdAt = ZonedDateTime.now(ZoneId.of("UTC")).minusMinutes(6).format(TimestampUtils.hfsActionTimestampFormat);
+        beforeAction.createdAt = ZonedDateTime.now(ZoneId.of("UTC")).minusMinutes(6).format(hfsActionTimestampFormat);
 
         SysAdminAction afterAction = new SysAdminAction();
         afterAction.vmId = 42;
         afterAction.status = SysAdminAction.Status.IN_PROGRESS;
         afterAction.sysAdminActionId = 12;
-        afterAction.createdAt = ZonedDateTime.now(ZoneId.of("UTC")).format(TimestampUtils.hfsActionTimestampFormat);
+        afterAction.createdAt = ZonedDateTime.now(ZoneId.of("UTC")).format(hfsActionTimestampFormat);
 
         when(sysAdminService.getSysAdminAction(1)).thenReturn(beforeAction);
         when(sysAdminService.usageStatsUpdate(42, 0)).thenReturn(afterAction);

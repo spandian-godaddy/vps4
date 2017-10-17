@@ -1,13 +1,13 @@
 package com.godaddy.vps4.util;
 
-import java.time.ZoneId;
-import java.time.format.DateTimeFormatter;
+import java.time.Instant;
 import java.util.Calendar;
 import java.util.TimeZone;
 
 public class TimestampUtils {
-    public static DateTimeFormatter hfsActionTimestampFormat = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.SSSSSS")
-            .withZone(ZoneId.of("UTC"));
+    public static Instant parseHfsTimestamp(String hfsTimestamp) {
+        return Instant.parse(hfsTimestamp.replace(' ', 'T').concat("Z"));
+    }
 
     public static Calendar utcCalendar = Calendar.getInstance(TimeZone.getTimeZone("GMT"));
 }

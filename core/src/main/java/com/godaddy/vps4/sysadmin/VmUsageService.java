@@ -2,7 +2,6 @@ package com.godaddy.vps4.sysadmin;
 
 import java.time.Duration;
 import java.time.Instant;
-import java.time.ZonedDateTime;
 
 import javax.cache.Cache;
 import javax.cache.CacheManager;
@@ -116,7 +115,7 @@ public class VmUsageService {
             // Check on the request to see if we need to send another one
             SysAdminAction updateAction = sysAdminService.getSysAdminAction(cachedUsage.updateActionId);
 
-            Instant createdAt = ZonedDateTime.parse(updateAction.createdAt, TimestampUtils.hfsActionTimestampFormat).toInstant();
+            Instant createdAt = TimestampUtils.parseHfsTimestamp(updateAction.createdAt);
 
             if (updateAction.status == SysAdminAction.Status.COMPLETE
                     || updateAction.status == SysAdminAction.Status.FAILED
