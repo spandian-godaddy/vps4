@@ -1,16 +1,21 @@
 package com.godaddy.vps4.scheduler.web.scheduler;
 
 
+import com.godaddy.vps4.scheduler.core.JobRequest;
 import com.godaddy.vps4.scheduler.core.SchedulerJobDetail;
 import com.godaddy.vps4.scheduler.core.SchedulerService;
 import com.godaddy.vps4.scheduler.web.Vps4SchedulerApi;
 import com.godaddy.vps4.scheduler.web.Vps4SchedulerException;
 import com.google.inject.Inject;
 import io.swagger.annotations.Api;
+import io.swagger.annotations.ApiImplicitParam;
+import io.swagger.annotations.ApiImplicitParams;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
 import io.swagger.annotations.ApiResponse;
 import io.swagger.annotations.ApiResponses;
+import io.swagger.annotations.Example;
+import io.swagger.annotations.ExampleProperty;
 import io.swagger.jaxrs.PATCH;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -60,10 +65,22 @@ public class SchedulerResource {
     @ApiResponses(value = {
         @ApiResponse(code = 409, message = "Could not create job, possible validation error")
     })
+    @ApiImplicitParams({
+        @ApiImplicitParam(
+            name = "body",
+            value = "Job request data",
+            required = true,
+            dataTypeClass = JobRequest.class,
+            paramType = "body",
+            examples = @Example(value = {
+                @ExampleProperty(mediaType="application/json", value="{\"when\": \"2017-10-12T23:21:04Z\"}")
+            })
+        )
+    })
     public SchedulerJobDetail submitJobToGroup(
         @ApiParam(value = "The product, example 'vps4'", required = true) @PathParam("product") String product,
         @ApiParam(value = "The job group, example 'backups'", required = true) @PathParam("jobGroup") String jobGroup,
-        String requestJson) {
+        @ApiParam(hidden = true) String requestJson) {
         try {
             return schedulerService.createJob(product, jobGroup, requestJson);
         }
@@ -100,11 +117,23 @@ public class SchedulerResource {
     @ApiResponses(value = {
         @ApiResponse(code = 409, message = "Could not update job, possible validation error")
     })
+    @ApiImplicitParams({
+            @ApiImplicitParam(
+                    name = "body",
+                    value = "Job update data",
+                    required = true,
+                    dataTypeClass = JobRequest.class,
+                    paramType = "body",
+                    examples = @Example(value = {
+                            @ExampleProperty(mediaType="application/json", value="{\"when\": \"2017-10-12T23:21:04Z\"}")
+                    })
+            )
+    })
     public SchedulerJobDetail rescheduleJob(
         @ApiParam(value = "The product, example 'vps4'", required = true) @PathParam("product") String product,
         @ApiParam(value = "The job group, example 'backups'", required = true) @PathParam("jobGroup") String jobGroup,
         @ApiParam(value = "The id of the job", required = true) @PathParam("jobId") UUID jobId,
-        String requestJson) {
+        @ApiParam(hidden = true) String requestJson) {
         try {
             return schedulerService.updateJobSchedule(product, jobGroup, jobId, requestJson);
         }

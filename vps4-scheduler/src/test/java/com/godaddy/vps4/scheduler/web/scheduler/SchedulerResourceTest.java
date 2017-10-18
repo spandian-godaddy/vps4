@@ -9,6 +9,7 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import com.godaddy.vps4.scheduler.core.JobRequest;
 import com.godaddy.vps4.scheduler.core.SchedulerJobDetail;
 import com.godaddy.vps4.scheduler.core.SchedulerService;
 import com.google.inject.AbstractModule;
@@ -101,7 +102,7 @@ public class SchedulerResourceTest {
         IntStream
             .range(1, 10)
             .forEach(i -> {
-                schedulerJobDetailList.add(new SchedulerJobDetail(UUID.randomUUID(), Instant.now().plusSeconds(15)));
+                schedulerJobDetailList.add(new SchedulerJobDetail(UUID.randomUUID(), Instant.now().plusSeconds(15), new JobRequest()));
             });
     }
 

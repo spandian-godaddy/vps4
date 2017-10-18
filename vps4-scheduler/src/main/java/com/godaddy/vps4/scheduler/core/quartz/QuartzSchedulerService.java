@@ -8,6 +8,7 @@ import static org.quartz.impl.matchers.GroupMatcher.jobGroupEquals;
 import static org.quartz.impl.matchers.GroupMatcher.triggerGroupEquals;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.godaddy.vps4.scheduler.core.JobType;
 import com.godaddy.vps4.scheduler.core.SchedulerJobDetail;
 import com.godaddy.vps4.scheduler.core.JobRequest;
 import com.godaddy.vps4.scheduler.core.SchedulerService;
@@ -16,10 +17,12 @@ import com.godaddy.vps4.scheduler.core.utils.Utils;
 import com.google.inject.Inject;
 import org.quartz.Job;
 import org.quartz.JobBuilder;
+import org.quartz.JobDataMap;
 import org.quartz.JobDetail;
 import org.quartz.JobKey;
 import org.quartz.Scheduler;
 import org.quartz.SchedulerException;
+import org.quartz.SimpleScheduleBuilder;
 import org.quartz.Trigger;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -36,7 +39,6 @@ import java.util.stream.Collectors;
 
 public class QuartzSchedulerService implements SchedulerService {
     private static final Logger logger = LoggerFactory.getLogger(QuartzSchedulerService.class);
-    private static final int JOB_SCHEDULE_LEAD_TIME_WINDOW = 60; // 60 seconds
 
     private final Scheduler scheduler;
     private final ObjectMapper objectMapper;
@@ -77,35 +79,59 @@ public class QuartzSchedulerService implements SchedulerService {
         return jobBuilder.build();
     }
 
-    private Trigger buildTrigger(String groupName, Instant when) {
+    private Trigger buildTrigger(String groupName, JobRequest jobRequest) {
         String triggerName = UUID.randomUUID().toString();
+        SimpleScheduleBuilder schedule = buildTriggerSchedule(jobRequest);
         return newTrigger()
            .withIdentity(triggerName, groupName)
-           .startAt(Date.from(when))
-           .withSchedule(simpleSchedule()
-               .withRepeatCount(0)
-               .withMisfireHandlingInstructionFireNow())  // Instructs the Scheduler that upon a mis-fire situation, the trigger wants to be fired now by Scheduler.
+           .startAt(Date.from(jobRequest.when))
+           .withSchedule(schedule)
            .build();
+    }
+
+    private SimpleScheduleBuilder buildTriggerSchedule(JobRequest jobRequest) {
+        SimpleScheduleBuilder schedule = simpleSchedule();
+
+        if (jobRequest.jobType.equals(JobType.ONE_TIME)) {
+            schedule = schedule.withRepeatCount(0);
+        }
+        else {
+            schedule = jobRequest.repeatCount != null
+                ? schedule.withRepeatCount(jobRequest.repeatCount)
+                : schedule.repeatForever();
+            schedule = schedule.withIntervalInHours(jobRequest.repeatIntervalInDays * 24);
+        }
+
+        // Instructs the Scheduler that upon a mis-fire situation, the trigger wants to be fired now by Scheduler.
+        schedule = schedule.withMisfireHandlingInstructionFireNow();
+        return schedule;
     }
 
     private SchedulerJobDetail scheduleJob(String product, String jobGroup,
                                            Class<? extends Job> jobClass,
                                            String jobDataJson,
-                                           Instant when)
+                                           JobRequest jobRequest)
         throws Exception
     {
         String jobGroupId = Utils.getJobGroupId(product, jobGroup);
         JobDetail jobDetail = buildJob(jobGroupId, jobClass, jobDataJson);
-        Trigger trigger = buildTrigger(jobGroupId, when);
+        Trigger trigger = buildTrigger(jobGroupId, jobRequest);
         scheduler.scheduleJob(jobDetail, trigger);
 
         return getSchedulerJobDetail(jobDetail.getKey());
     }
 
-    private SchedulerJobDetail getSchedulerJobDetail(JobKey jobKey) throws SchedulerException {
+    private SchedulerJobDetail getSchedulerJobDetail(JobKey jobKey) throws Exception {
         Trigger trigger = getExistingTriggerForJob(jobKey);
-        Instant when = trigger.getNextFireTime().toInstant();
-        return new SchedulerJobDetail(UUID.fromString(jobKey.getName()), when);
+        Instant nextRun = trigger.getNextFireTime().toInstant();
+
+        // Get the job request data
+        JobDataMap jobDataMap = scheduler.getJobDetail(jobKey).getJobDataMap();
+        String jobDataJson = jobDataMap.getString("jobDataJson");
+        Class<? extends Job> jobClass = getJobClassForGroup(jobKey.getGroup());
+        JobRequest jobRequest = objectMapper.readValue(jobDataJson, getJobRequestClass(jobClass));
+
+        return new SchedulerJobDetail(UUID.fromString(jobKey.getName()), nextRun, jobRequest);
     }
 
     private boolean isJobPresent(String product, String jobGroup, UUID jobId) throws SchedulerException {
@@ -125,13 +151,9 @@ public class QuartzSchedulerService implements SchedulerService {
         return scheduler.getTriggersOfJob(jobKey).get(0);
     }
 
-    private boolean validateJobSchedule(Instant when) {
-        return when.isAfter(Instant.now().plusSeconds(JOB_SCHEDULE_LEAD_TIME_WINDOW));
-    }
-
-    private void replaceJobTrigger(Instant toWhen, String jobGroupId, JobKey jobKey) throws SchedulerException {
+    private void replaceJobTrigger(JobRequest jobRequest, String jobGroupId, JobKey jobKey) throws SchedulerException {
         Trigger oldTrigger = getExistingTriggerForJob(jobKey);
-        Trigger newTrigger = buildTrigger(jobGroupId, toWhen);
+        Trigger newTrigger = buildTrigger(jobGroupId, jobRequest);
         scheduler.rescheduleJob(oldTrigger.getKey(), newTrigger);
     }
 
@@ -139,16 +161,14 @@ public class QuartzSchedulerService implements SchedulerService {
     public SchedulerJobDetail createJob(String product, String jobGroup, String requestJson) throws Exception {
         String jobGroupId = Utils.getJobGroupId(product, jobGroup);
         if (hasJobClassBeenRegisteredForJobGroup(jobGroupId)) {
-            JobRequest jobRequest = objectMapper.readValue(requestJson, JobRequest.class);
-            if (validateJobSchedule(jobRequest.when)) {
-                Class<? extends Job> jobClass = getJobClassForGroup(jobGroupId);
-                return scheduleJob(product, jobGroup, jobClass, requestJson, jobRequest.when);
+            Class<? extends Job> jobClass = getJobClassForGroup(jobGroupId);
+            JobRequest jobRequest = objectMapper.readValue(requestJson, getJobRequestClass(jobClass));
+            if (jobRequest.isValid()) {
+                return scheduleJob(product, jobGroup, jobClass, requestJson, jobRequest);
             }
             else {
-                logger.info("Job creation validation checks failed");
-                throw new Exception(
-                    String.format("Job can be scheduled to run only after: %s",
-                        Instant.now().plusSeconds(JOB_SCHEDULE_LEAD_TIME_WINDOW)));
+                logger.info("Job creation validation checks failed: {}", jobRequest.getExceptions());
+                throw new Exception("Job creation validation checks failed");
             }
         }
 
@@ -160,8 +180,13 @@ public class QuartzSchedulerService implements SchedulerService {
         List<SchedulerJobDetail> jobs = new ArrayList<>();
         try {
             for (JobKey jobKey: scheduler.getJobKeys(jobGroupEquals(Utils.getJobGroupId(product, jobGroup)))) {
-                SchedulerJobDetail schedulerJobDetail = getSchedulerJobDetail(jobKey);
-                jobs.add(schedulerJobDetail);
+                try {
+                    SchedulerJobDetail schedulerJobDetail = getSchedulerJobDetail(jobKey);
+                    jobs.add(schedulerJobDetail);
+                }
+                catch (Exception e) {
+                    logger.error("Error while listing jobs for group {}: {}", jobKey.getName(), e);
+                }
             }
 
             return jobs;
@@ -179,18 +204,17 @@ public class QuartzSchedulerService implements SchedulerService {
         if (isJobPresent(product, jobGroup, jobId)) {
             try {
                 JobRequest jobRequest = objectMapper.readValue(requestJson, JobRequest.class);
-                validateJobSchedule(jobRequest.when);
-                if (validateJobSchedule(jobRequest.when)) {
+                if (jobRequest.isValid()) {
                     String jobGroupId = Utils.getJobGroupId(product, jobGroup);
                     JobDetail jobDetail = scheduler.getJobDetail(
                             jobKey(jobId.toString(), Utils.getJobGroupId(product, jobGroup)));
-                    replaceJobTrigger(jobRequest.when, jobGroupId, jobDetail.getKey());
+                    replaceJobTrigger(jobRequest, jobGroupId, jobDetail.getKey());
                     return getSchedulerJobDetail(jobDetail.getKey());
                 }
                 else {
                     logger.info("Job schedule update validation checks failed for ID: {}", jobId);
-                    throw new Exception(String.format("Job can be scheduled to run only after: %s",
-                        Instant.now().plusSeconds(JOB_SCHEDULE_LEAD_TIME_WINDOW)));
+                    logger.error("Job update validation check failed: {}", jobRequest.getExceptions());
+                    throw new Exception("Job update validation checks failed");
                 }
             }
             catch (SchedulerException e) {

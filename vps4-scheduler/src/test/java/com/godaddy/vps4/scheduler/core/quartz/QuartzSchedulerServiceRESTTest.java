@@ -8,6 +8,8 @@ import static org.quartz.TriggerBuilder.newTrigger;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.godaddy.vps4.scheduler.core.JobRequest;
+import com.godaddy.vps4.scheduler.core.JobType;
+import com.godaddy.vps4.scheduler.core.Required;
 import com.godaddy.vps4.scheduler.core.SchedulerJob;
 import com.godaddy.vps4.scheduler.core.SchedulerJobDetail;
 import com.godaddy.vps4.scheduler.core.SchedulerService;
@@ -80,7 +82,16 @@ public class QuartzSchedulerServiceRESTTest {
             throws Exception {
         String jobId = UUID.randomUUID().toString();
         JobBuilder jobBuilder = newJob(jobClass).withIdentity(jobId, groupId);
+        String jobDataJson = getJobRequestData();
+        jobBuilder.usingJobData("jobDataJson", jobDataJson);
         return jobBuilder.build();
+    }
+
+    private String getJobRequestData() throws JsonProcessingException {
+        JobRequest request = new JobRequest();
+        request.when = Instant.now().plusSeconds(180);
+        request.jobType = JobType.ONE_TIME;
+        return objectMapper.writeValueAsString(request);
     }
 
     private Trigger buildTrigger(String groupName) {
@@ -129,6 +140,7 @@ public class QuartzSchedulerServiceRESTTest {
         TestJob.TestRequest request = new TestJob.TestRequest();
         request.vmId = UUID.randomUUID();
         request.when = Instant.now().plusSeconds(180); // make sure we are outside the window
+        request.jobType = JobType.ONE_TIME;
         try {
             String requestJson = objectMapper.writeValueAsString(request);
             schedulerService.createJob(product, jobGroup, requestJson);
@@ -144,6 +156,7 @@ public class QuartzSchedulerServiceRESTTest {
         TestJob.TestRequest request = new TestJob.TestRequest();
         request.vmId = UUID.randomUUID();
         request.when = Instant.now().plusSeconds(30);
+        request.jobType = JobType.ONE_TIME;
         try {
             String requestJson = objectMapper.writeValueAsString(request);
             schedulerService.createJob(product, jobGroup, requestJson);
@@ -161,6 +174,7 @@ public class QuartzSchedulerServiceRESTTest {
             Assert.assertEquals(
                     jobKey.getName(),
                     jobDetail.id.toString());
+            Assert.assertEquals(JobType.ONE_TIME, jobDetail.jobRequest.jobType); // We are only defining one time jobs in this test
         }
         catch (Exception e) {
             fail("There should be no exception!!");
@@ -178,6 +192,7 @@ public class QuartzSchedulerServiceRESTTest {
         TestJob.TestRequest request = new TestJob.TestRequest();
         request.vmId = UUID.randomUUID();
         request.when = Instant.now().plusSeconds(180); // make sure we are outside the window
+        request.jobType = JobType.ONE_TIME;
         try {
             String requestJson = objectMapper.writeValueAsString(request);
             schedulerService.updateJobSchedule(product, jobGroup, UUID.fromString(jobKey.getName()), requestJson);
@@ -194,6 +209,7 @@ public class QuartzSchedulerServiceRESTTest {
         TestJob.TestRequest request = new TestJob.TestRequest();
         request.vmId = UUID.randomUUID();
         request.when = Instant.now().plusSeconds(30);
+        request.jobType = JobType.ONE_TIME;
         try {
             String requestJson = objectMapper.writeValueAsString(request);
             schedulerService.updateJobSchedule(product, jobGroup, UUID.fromString(jobKey.getName()), requestJson);
@@ -226,7 +242,7 @@ public class QuartzSchedulerServiceRESTTest {
         }
 
         public static class TestRequest extends JobRequest {
-            UUID vmId;
+            @Required public UUID vmId;
         }
     }
 }

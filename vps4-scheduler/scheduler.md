@@ -57,6 +57,64 @@ part of the job creation (via the REST api) payload. The scheduler injects this 
 executing a job.
 
 
+JobRequest
+==========
+JobRequest represents the data that's submitted as part of the job creation and is passed on to the the job when it is 
+executed (refer to the previous section for details about this).
+When a plugin defines a Job, it can define the job request call that the Job expects by embedding it as an inner class of
+the Job class. The request class should inherit from the JobRequest class (see previous section for an example).
+
+The JobRequest class supports validation during job creation time i.e. when a POST request is submitted to the job creation
+endpoint. The JobRequest class supports 3 types of validation.
+1. Mandatory/Required field validation: A job request class can use the annotation @_Required_ to identify fields that are 
+   required and that should be provided when a job is being created (via the POST). A job request can also mark a field as 
+   @_Optional_ but this is not compulsory. i.e. any field not annotated as @_Required_ is assumed to be @Optional.
+2. Field level validation: A job request class can define a method with the following signature
+   _**private void validateFieldNameOne() throws Vps4JobRequestValidationException {}_** to run validation checks for a field
+   called 'fieldNameOne' on the request class.
+3. Object level validation: A job request class can override the method called _**validate**_ to run object level checks.
+   NOTE: This method should first delegate to the base validate method before run its own checks.
+
+> An example JobRequest might look something like:
+
+    public class JobRequestOne extends JobRequest {
+        private static final Logger logger = LoggerFactory.getLogger(JobRequestOne.class);
+
+        @Required public Integer jobParamOne;
+        @Optional public UUID jobParamTwo;
+        @Optional public String jobParamThree;
+
+        private void validateJobParamOne() throws Vps4JobRequestValidationException {
+            if (jobParamOne == 2) {
+                throw new Vps4JobRequestValidationException("INVALID_PARAM_ONE", "Invalid value");
+            }
+        }
+
+        private void validateJobParamThree() throws Vps4JobRequestValidationException {
+            if (jobParamThree.equals("hello")) {
+                throw new Vps4JobRequestValidationException("INVALID_PARAM_THREE", "Invalid value");
+            }
+        }
+
+        @Override
+        protected void validate() throws Exception {
+            super.validate();
+            if(jobParamOne == 3 && jobParamThree.equals("fail")) {
+                throw new Vps4JobRequestValidationException(
+                        "OBJ_LVL_FAIL",
+                        "Object level validation failed");
+            }
+        }
+    }
+
+In the example above, jobParamOne is defined as a required field. If this field is not provided during job creation then
+the job creation (POST request) will fail.
+The request class defines two field level validations for fields 'jobParamOne' and 'jobParamThree'. No field level
+validation is run for the field 'jobParamTwo'.
+Finally, the request class also defines object level validation by overriding the method 'validate'.
+
+
+
 TriggerListener
 ===============
 The TriggerListener (which represents the a JIT check to see "if a job ready to be run should actually be run") provides 
@@ -131,8 +189,13 @@ The REST api provides the following CRUD functionality:
    
        curl -X POST --header "Content-Type: application/json" --header "Accept: application/json" -d "{
          \"vmId\": \"79bfd10c-1529-42de-bd68-1a6e084ee13d\",
-         \"when\": \"2017-09-21T23:58:16.797Z\"
+         \"when\": \"2017-09-21T23:58:16.797Z\",
+         \"jobType\": \ONE_TIME\"
        }" "http://localhost:8089/api/scheduler/vps4/backups/jobs"
+       
+   **NOTE**: For recurring jobs pass jobType as 'RECURRING'. Also, field 'repeatIntervalInDays is required. Field 'repeatCount'
+   is optional.
+   
    
 3. **GET** /api/schedulers/{product}/{jobGroup}/jobs/{jobId}
 
@@ -186,7 +249,7 @@ How it works
 As part of the SchedulerService startup the following happens to get everything wired up
 1. As part of the guice injector creation (in Vps4SchedulerInjector), implementations of the Vps4SchedulerPluginModule 
 are added to the the injector being created. NOTE: In the future this will be converted to a JVM ServiceLoader style registration mechanism.
-2. A servlet context listener (SchedulerContextListener) is added to the injector being created in Vps4SchedulerInjector.
+2. A servlet context listener (SchedulerContextListener) is registered as part of the injector creation in Vps4SchedulerInjector.
 3. Once the servlet container is ready, the SchedulerContextListener's 'contextInitialized' method is called by the servlet container.
    a. The SchedulerContextListener's 'contextInitialized' method then introspects the guice bindings registered looking for 
    plugin implementations of Job/TriggerListener and registers them with the scheduler service.

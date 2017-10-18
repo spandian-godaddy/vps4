@@ -5,15 +5,17 @@ import java.util.UUID;
 
 public class SchedulerJobDetail {
     public final UUID id;
-    public final Instant when;
+    public final Instant nextRun;
+    public final JobRequest jobRequest;
 
-    public SchedulerJobDetail(UUID id, Instant when) {
+    public SchedulerJobDetail(UUID id, Instant nextRun, JobRequest jobRequest) {
         this.id = id;
-        this.when = when;
+        this.nextRun = nextRun;
+        this.jobRequest = jobRequest;
     }
 
     @Override
     public String toString() {
-        return String.format("Scheduler job detail [id=%s, when=%s]", id, when);
+        return String.format("Scheduler job detail [id=%s, nextRun=%s, jobRequest=%s]", id, nextRun, jobRequest.toString());
     }
 }
