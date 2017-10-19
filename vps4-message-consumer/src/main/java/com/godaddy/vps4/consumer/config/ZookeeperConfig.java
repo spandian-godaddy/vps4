@@ -13,7 +13,7 @@ public class ZookeeperConfig {
     @Inject
     public ZookeeperConfig(Config vps4Config) {
 
-        this.serviceName = vps4Config.get("servicediscovery.zk.serviceName", "vps4KafkaConsumer");
+        this.serviceName = vps4Config.get("servicediscovery.zk.serviceName", "vps4-message-consumer");
         this.path = vps4Config.get("servicediscovery.zk.path", "/service/vps4/vps4-message-consumer/");
     }
 
