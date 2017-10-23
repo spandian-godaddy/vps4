@@ -1,5 +1,8 @@
 package com.godaddy.vps4.scheduler.core;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 import java.time.Instant;
 import java.util.UUID;
 
@@ -8,7 +11,10 @@ public class SchedulerJobDetail {
     public final Instant nextRun;
     public final JobRequest jobRequest;
 
-    public SchedulerJobDetail(UUID id, Instant nextRun, JobRequest jobRequest) {
+    @JsonCreator
+    public SchedulerJobDetail(@JsonProperty("id") UUID id,
+                              @JsonProperty("nextRun") Instant nextRun,
+                              @JsonProperty("jobRequest") JobRequest jobRequest) {
         this.id = id;
         this.nextRun = nextRun;
         this.jobRequest = jobRequest;
