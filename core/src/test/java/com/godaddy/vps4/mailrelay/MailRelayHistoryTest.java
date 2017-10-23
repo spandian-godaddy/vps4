@@ -64,39 +64,6 @@ public class MailRelayHistoryTest {
         Assert.assertEquals(0, result.size());
     }
 
-    private void testGetCachedMailRelayWithTimeLimit(LocalDate startDate){
-        List<MailRelayHistory> history = new ArrayList<MailRelayHistory>();
-        MailRelayHistory oldHistory = new MailRelayHistory();
-        oldHistory.date = "2017-07-22";
-        MailRelayHistory newHistory = new MailRelayHistory();
-        newHistory.date = "2017-07-23";
-        history.add(oldHistory);
-        history.add(newHistory);
-        CachedMailRelayHistory cachedHistory = new CachedMailRelayHistory();
-        cachedHistory.relayHistory = history;
-        when(mailRelayHistoryCache.get(this.ipAddress)).thenReturn(cachedHistory);
-//        LocalDate startDate = LocalDate.parse(newHistory.date);
-        List<MailRelayHistory> result = relayService.getMailRelayHistory(this.ipAddress, startDate);
-        verify(hfsRelayService, times(0)).getRelayHistory(this.ipAddress);
-        Assert.assertEquals(1, result.size());
-    }
-
-    @Test
-    public void testGetCachedMailRelayWithTimeLimitLastMinuteOfDay(){
-        Instant i = Instant.parse("2017-07-23T23:59:59.00Z");
-        LocalDateTime ldt = LocalDateTime.ofInstant(i, ZoneOffset.UTC);
-        LocalDate ld = LocalDate.of(ldt.getYear(), ldt.getMonth(), ldt.getDayOfMonth());
-        testGetCachedMailRelayWithTimeLimit(ld);
-    }
-
-    @Test
-    public void testGetCachedMailRelayWithTimeLimitFirstMinuteOfDay(){
-        Instant i = Instant.parse("2017-07-23T00:00:00.00Z");
-        LocalDateTime ldt = LocalDateTime.ofInstant(i, ZoneOffset.UTC);
-        LocalDate ld = LocalDate.of(ldt.getYear(), ldt.getMonth(), ldt.getDayOfMonth());
-        testGetCachedMailRelayWithTimeLimit(ld);
-    }
-
     private void testGetCachedMailRelayWithDaysLimit(int days){
         List<MailRelayHistory> history = new ArrayList<MailRelayHistory>();
         MailRelayHistory twoDaysAgoHistory = new MailRelayHistory();
