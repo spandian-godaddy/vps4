@@ -11,6 +11,7 @@ import static org.mockito.Mockito.when;
 
 import java.io.IOException;
 import java.util.Collections;
+import java.util.Map;
 import java.util.UUID;
 
 import org.json.simple.JSONObject;
@@ -18,6 +19,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mockito;
+import org.mockito.ArgumentMatcher;
 
 import com.godaddy.hfs.config.Config;
 import com.godaddy.vps4.credit.CreditService;
@@ -63,7 +65,7 @@ public class Vps4MessageHandlerTest {
         orionGuid = UUID.randomUUID();
 
         vm = new VirtualMachine(UUID.randomUUID(), 123L, orionGuid,
-                321L, null, "TestVm", null, null, null, null, null, AccountStatus.ACTIVE);
+                321L, null, "TestVm", null, null, null, null, null, 0);
         when(vmServiceMock.getVirtualMachine(vm.vmId)).thenReturn(vm);
 
         CommandState command = new CommandState();
@@ -149,17 +151,27 @@ public class Vps4MessageHandlerTest {
     }
     
     @Test
-    public void testSendFullyManagedEmail() throws MessageHandlerException, MissingShopperIdException, IOException {
-        mockFullManagedVmCredit(AccountStatus.ACTIVE, null);
+    public void testFullyManagedCredit() throws MessageHandlerException, MissingShopperIdException, IOException {
+        mockFullManagedVmCredit(AccountStatus.ACTIVE, vm.vmId);
         when(messagingServiceMock.sendFullyManagedEmail("TestShopper", "cpanel")).thenReturn("messageId");
         when(configMock.get("vps4MessageHandler.processFullyManagedEmails")).thenReturn("true");
         Mockito.doNothing().when(creditServiceMock).updateProductMeta(orionGuid, ProductMetaField.FULLY_MANAGED_EMAIL_SENT, "true");
+        Mockito.doNothing().when(vmServiceMock).updateVirtualMachine(Mockito.eq(vm.vmId), Mockito.anyMap());
         
         callHandleMessage(createTestKafkaMessage("added"));
 
         verify(creditServiceMock, times(1)).getVirtualMachineCredit(anyObject());
         verify(messagingServiceMock, times(1)).sendFullyManagedEmail("TestShopper", "cpanel");
         verify(creditServiceMock, times(1)).updateProductMeta(orionGuid, ProductMetaField.FULLY_MANAGED_EMAIL_SENT, "true");
+        ArgumentMatcher<Map<String, Object>> matchesFullyManaged = new ArgumentMatcher<Map<String, Object>>() {
+            @Override
+            public boolean matches(Object argument) {
+                @SuppressWarnings("unchecked")
+                int newManagedLevel = (int)(((Map<String, Object>)argument).get("managed_level"));
+                return newManagedLevel == 2;
+            }
+        };
+        verify(vmServiceMock, times(1)).updateVirtualMachine(Mockito.eq(vm.vmId), Mockito.argThat(matchesFullyManaged));
     }
 
     @Test

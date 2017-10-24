@@ -18,6 +18,7 @@ public class VirtualMachine {
     public final Instant validOn;
     public final Instant validUntil;
     public final String hostname;
+    public final int managedLevel;
 
     public VirtualMachine(UUID vmId,
             long hfsVmId,
@@ -30,7 +31,7 @@ public class VirtualMachine {
             Instant validOn,
             Instant validUntil,
             String hostname,
-            AccountStatus accountStatus) {
+            int managedLevel) {
         this.vmId = vmId;
         this.hfsVmId = hfsVmId;
         this.orionGuid = orionGuid;
@@ -42,27 +43,29 @@ public class VirtualMachine {
         this.validOn = validOn;
         this.validUntil = validUntil;
         this.hostname = hostname;
+        this.managedLevel = managedLevel;
     }
 
     public VirtualMachine(VirtualMachine virtualMachine) {
-        this.vmId = virtualMachine.vmId;
-        this.hfsVmId = virtualMachine.hfsVmId;
-        this.orionGuid = virtualMachine.orionGuid;
-        this.projectId = virtualMachine.projectId;
-        this.spec = virtualMachine.spec;
-        this.name = virtualMachine.name;
-        this.image = virtualMachine.image;
-        this.primaryIpAddress = virtualMachine.primaryIpAddress;
-        this.validOn = virtualMachine.validOn;
-        this.validUntil = virtualMachine.validUntil;
-        this.hostname = virtualMachine.hostname;
+        vmId = virtualMachine.vmId;
+        hfsVmId = virtualMachine.hfsVmId;
+        orionGuid = virtualMachine.orionGuid;
+        projectId = virtualMachine.projectId;
+        spec = virtualMachine.spec;
+        name = virtualMachine.name;
+        image = virtualMachine.image;
+        primaryIpAddress = virtualMachine.primaryIpAddress;
+        validOn = virtualMachine.validOn;
+        validUntil = virtualMachine.validUntil;
+        hostname = virtualMachine.hostname;
+        managedLevel = virtualMachine.managedLevel;
     }
 
     @Override
     public String toString() {
         return String.format(
-                "VirtualMachine [vmId=%s, hfsVmId=%d, orionGuid=%s, projectId=%d, spec=%s, name=%s, hostname=%s, image=%s, primaryIpAddress=%s, accountStatus=%s, validOn=%s, validUntil=%s]",
+                "VirtualMachine [vmId=%s, hfsVmId=%d, orionGuid=%s, projectId=%d, spec=%s, name=%s, hostname=%s, image=%s, primaryIpAddress=%s, managedLevel=%d, validOn=%s, validUntil=%s]",
                 vmId, hfsVmId, orionGuid, projectId, spec.name, name, hostname, image == null ? "" : image.imageName,
-                primaryIpAddress == null ? "" : primaryIpAddress.ipAddress, validOn, validUntil);
+                primaryIpAddress == null ? "" : primaryIpAddress.ipAddress, managedLevel, validOn, validUntil);
     }
 }

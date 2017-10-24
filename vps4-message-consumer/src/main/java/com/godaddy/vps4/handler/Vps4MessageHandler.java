@@ -3,7 +3,9 @@ package com.godaddy.vps4.handler;
 import static com.godaddy.vps4.handler.util.Commands.execute;
 
 import java.io.IOException;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -88,7 +90,6 @@ public class Vps4MessageHandler implements MessageHandler {
         catch (IllegalArgumentException e) {
             throw new MessageHandlerException("Message values are the wrong type", e);
         }
-
         VirtualMachineCredit credit;
         try {
             credit = creditService.getVirtualMachineCredit(vps4Message.accountGuid);
@@ -109,6 +110,7 @@ public class Vps4MessageHandler implements MessageHandler {
             break;
         case ACTIVE:
             sendFullyManagedWelcomeEmail(credit);
+            UpdateVirtualMachineManagedLevel(credit);
             break;
         case REMOVED:
             destroyAccount(credit);
@@ -126,6 +128,17 @@ public class Vps4MessageHandler implements MessageHandler {
             }
             catch (MissingShopperIdException | IOException e) {
                 logger.warn("Failed to send fully managed welcome email", e);
+            }
+        }
+    }
+
+    private void UpdateVirtualMachineManagedLevel(VirtualMachineCredit credit) {
+        if(credit.productId != null) {
+            VirtualMachine vm = virtualMachineService.getVirtualMachine(credit.productId);
+            if(vm.managedLevel != credit.managedLevel) {
+                Map<String, Object> paramsToUpdate = new HashMap<>();
+                paramsToUpdate.put("managed_level", credit.managedLevel);
+                virtualMachineService.updateVirtualMachine(credit.productId, paramsToUpdate);
             }
         }
     }

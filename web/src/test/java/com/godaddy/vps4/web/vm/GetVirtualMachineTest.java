@@ -47,7 +47,7 @@ public class GetVirtualMachineTest {
         VirtualMachine vm = new VirtualMachine(vmId, hfsVmId, UUID.randomUUID(),
                 1, null, "Unit Test Vm", null, null,
                 Instant.now(), Instant.now().plus(24, ChronoUnit.HOURS),
-                null, AccountStatus.ACTIVE);
+                null, 0);
         when(virtualMachineService.getVirtualMachine(vmId)).thenReturn(vm);
 
         dc = new DataCenter(5, "testDc");

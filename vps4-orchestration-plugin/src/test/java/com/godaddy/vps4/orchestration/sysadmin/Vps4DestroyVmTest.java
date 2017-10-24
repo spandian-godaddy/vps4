@@ -87,7 +87,7 @@ public class Vps4DestroyVmTest {
         this.vm = new VirtualMachine(UUID.randomUUID(), 42, UUID.randomUUID(), 1,
                 null, "VM Name",
                 null, null, null, null,
-                "fake.host.name", AccountStatus.ACTIVE);
+                "fake.host.name", 0);
 
         request = new Vps4DestroyVm.Request();
         request.hfsVmId = 42;

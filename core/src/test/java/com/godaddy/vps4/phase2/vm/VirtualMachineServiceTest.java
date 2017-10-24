@@ -6,7 +6,9 @@ import static org.junit.Assert.assertTrue;
 
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -16,6 +18,7 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
+import com.godaddy.hfs.jdbc.Sql;
 import com.godaddy.vps4.jdbc.DatabaseModule;
 import com.godaddy.vps4.network.NetworkService;
 import com.godaddy.vps4.network.jdbc.JdbcNetworkService;
@@ -191,6 +194,21 @@ public class VirtualMachineServiceTest {
         virtualMachines.add(vm);
 
         Assert.assertEquals( "centos-7", virtualMachineService.getOSDistro(vm.vmId));
+    }
+    
+    @Test 
+    public void testUpdateManagedLevel() {
+        VirtualMachine vm = SqlTestData.insertTestVm(orionGuid, dataSource);
+        virtualMachines.add(vm);
+        
+        Assert.assertEquals(0,  vm.managedLevel);
+
+        Map<String, Object> paramsToUpdate = new HashMap<>();
+        paramsToUpdate.put("managed_level", 2);
+        virtualMachineService.updateVirtualMachine(vm.vmId, paramsToUpdate);
+        vm = virtualMachineService.getVirtualMachine(vm.vmId);
+        
+        Assert.assertEquals(2,  vm.managedLevel);
     }
 
 }

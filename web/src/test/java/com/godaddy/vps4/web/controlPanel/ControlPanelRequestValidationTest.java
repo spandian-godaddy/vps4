@@ -38,7 +38,7 @@ public class ControlPanelRequestValidationTest {
                 null,               // validOn
                 null,               // validUntil
                 "omg.host.name",    // hostname
-                AccountStatus.ACTIVE // status
+                0                   // managed level
                 );
     }
 

@@ -54,7 +54,7 @@ public class VmMonitoringResourceTests {
         vmResource = mock(VmResource.class);
         config = mock(Config.class);
         IpAddress ipAddress = new IpAddress(0, null, null, null, 123L, null, null);
-        vm = new VirtualMachine(UUID.randomUUID(), 1L, null, 1L, null, null, null, ipAddress, Instant.now().minus(Duration.ofDays(5)), null, null, null);
+        vm = new VirtualMachine(UUID.randomUUID(), 1L, null, 1L, null, null, null, ipAddress, Instant.now().minus(Duration.ofDays(5)), null, null, 0);
         when(vmResource.getVm(vm.vmId)).thenReturn(vm);
         when(config.get("nodeping.accountid")).thenReturn("12");
         parser = new JSONParser();
