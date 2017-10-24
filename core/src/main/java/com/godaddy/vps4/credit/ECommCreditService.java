@@ -28,9 +28,13 @@ public class ECommCreditService implements CreditService {
 
     private static final String PRODUCT_NAME = "vps4";
 
-    private interface ProductMeta{
-        String DATA_CENTER = "data_center";
-        String PRODUCT_ID = "product_id";
+    public enum ProductMetaField {
+        DATA_CENTER, PRODUCT_ID, PROVISION_DATE, FULLY_MANAGED_EMAIL_SENT;
+
+        @Override
+        public String toString() {
+            return name().toLowerCase();
+        }
     }
 
     private interface PlanFeatures{
@@ -39,7 +43,6 @@ public class ECommCreditService implements CreditService {
         String MONITORING = "monitoring";
         String OPERATING_SYSTEM = "operatingsystem";
         String CONTROL_PANEL_TYPE = "control_panel_type";
-        String PROVISION_DATE = "provision_date";
     }
 
     private static final Logger logger = LoggerFactory.getLogger(ECommCreditService.class);
@@ -80,15 +83,15 @@ public class ECommCreditService implements CreditService {
                 Integer.parseInt(account.plan_features.getOrDefault(PlanFeatures.MONITORING, "0")),
                 account.plan_features.get(PlanFeatures.OPERATING_SYSTEM),
                 account.plan_features.get(PlanFeatures.CONTROL_PANEL_TYPE),
-                null, // create date was in credit table but not in ecomm account
-                stringToInstant(account.product_meta.get(PlanFeatures.PROVISION_DATE)),
+                stringToInstant(account.product_meta.get(ProductMetaField.PROVISION_DATE.toString())),
                 account.shopper_id,
                 AccountStatus.valueOf(account.status.name().toUpperCase()),
-                getDataCenter(account), getProductId(account));
+                getDataCenter(account), getProductId(account),
+                Boolean.parseBoolean(account.product_meta.get(ProductMetaField.FULLY_MANAGED_EMAIL_SENT.toString())));
     }
 
     private UUID getProductId(Account account) {
-        String productIdStr = account.product_meta.get(ProductMeta.PRODUCT_ID);
+        String productIdStr = account.product_meta.get(ProductMetaField.PRODUCT_ID.toString());
         UUID productId = null;
         if (productIdStr != null){
             productId = UUID.fromString(productIdStr);
@@ -97,8 +100,8 @@ public class ECommCreditService implements CreditService {
     }
 
     private DataCenter getDataCenter(Account account) {
-        if(account.product_meta.containsKey(ProductMeta.DATA_CENTER)){
-            int dcId = Integer.valueOf(account.product_meta.get(ProductMeta.DATA_CENTER));
+        if (account.product_meta.containsKey(ProductMetaField.DATA_CENTER.toString())) {
+            int dcId = Integer.valueOf(account.product_meta.get(ProductMetaField.DATA_CENTER.toString()));
             return this.dataCenterService.getDataCenter(dcId);
         }
         return null;
@@ -127,7 +130,7 @@ public class ECommCreditService implements CreditService {
                 .filter(a -> a.status != Account.Status.removed);
 
         if (!showClaimed)
-            stream = stream.filter(a -> !a.product_meta.containsKey(ProductMeta.DATA_CENTER));
+            stream = stream.filter(a -> !a.product_meta.containsKey(ProductMetaField.DATA_CENTER.toString()));
 
         return stream.map(this::mapVirtualMachineCredit)
                 .collect(Collectors.toList());
@@ -155,41 +158,31 @@ public class ECommCreditService implements CreditService {
 
     @Override
     public void claimVirtualMachineCredit(UUID orionGuid, int dataCenterId, UUID productId) {
-        Map<String,String> from = new HashMap<>();
-        from.put(ProductMeta.DATA_CENTER, null);
-        from.put(PlanFeatures.PROVISION_DATE, null);
-        from.put(ProductMeta.PRODUCT_ID, null);
+        Map<ProductMetaField, String> to = new HashMap<>();
 
-        Map<String,String> to = new HashMap<>();
-        to.put(ProductMeta.DATA_CENTER, String.valueOf(dataCenterId));
-        to.put(PlanFeatures.PROVISION_DATE, Instant.now().toString());
-        to.put(ProductMeta.PRODUCT_ID, productId.toString());
+        to.put(ProductMetaField.DATA_CENTER, String.valueOf(dataCenterId));
+        to.put(ProductMetaField.PROVISION_DATE, Instant.now().toString());
+        to.put(ProductMetaField.PRODUCT_ID, productId.toString());
 
-        MetadataUpdate prodMeta = new MetadataUpdate();
-        prodMeta.from = from;
-        prodMeta.to = to;
-
-        ecommService.updateProductMetadata(orionGuid.toString(), prodMeta);
+        updateProductMeta(orionGuid, to);
     }
 
     @Override
     public void unclaimVirtualMachineCredit(UUID orionGuid) {
+        Map<ProductMetaField, String> to = new HashMap<>();
+        
+        to.put(ProductMetaField.DATA_CENTER, null);
+        to.put(ProductMetaField.PROVISION_DATE, null);
+        to.put(ProductMetaField.PRODUCT_ID, null);
+
+        updateProductMeta(orionGuid, to);
+    }
+
+    private Map<String, String> GetCurrentProductMeta(UUID orionGuid) {
         Account account = ecommService.getAccount(orionGuid.toString());
         Map<String,String> from = new HashMap<>();
-        from.put(ProductMeta.DATA_CENTER, account.product_meta.get(ProductMeta.DATA_CENTER));
-        from.put(PlanFeatures.PROVISION_DATE, account.product_meta.get(PlanFeatures.PROVISION_DATE));
-        from.put(ProductMeta.PRODUCT_ID, account.product_meta.get(ProductMeta.PRODUCT_ID));
-
-        Map<String,String> to = new HashMap<>();
-        to.put(ProductMeta.DATA_CENTER, null);
-        to.put(PlanFeatures.PROVISION_DATE, null);
-        to.put(ProductMeta.PRODUCT_ID, null);
-
-        MetadataUpdate prodMeta = new MetadataUpdate();
-        prodMeta.from = from;
-        prodMeta.to = to;
-
-        ecommService.updateProductMetadata(orionGuid.toString(), prodMeta);
+        Stream.of(ProductMetaField.values()).forEach(field -> from.put(field.toString(), account.product_meta.get(field.toString())));
+        return from;
     }
 
     @Override
@@ -197,5 +190,29 @@ public class ECommCreditService implements CreditService {
         ECommDataCache edc = new ECommDataCache();
         edc.common_name = newName;
         ecommService.setCommonName(orionGuid.toString(), edc);
+    }
+
+    @Override
+    public void updateProductMeta(UUID orionGuid, Map<ProductMetaField, String> updates) {
+        MetadataUpdate prodMeta = new MetadataUpdate();
+        prodMeta.from = GetCurrentProductMeta(orionGuid);
+        prodMeta.to = new HashMap<>(prodMeta.from);
+
+        for (Map.Entry<ProductMetaField, String> update : updates.entrySet()) {
+            prodMeta.to.put(update.getKey().toString(), update.getValue());
+        }
+
+        ecommService.updateProductMetadata(orionGuid.toString(), prodMeta);
+    }
+
+    @Override
+    public void updateProductMeta(UUID orionGuid, ProductMetaField field, String value) {
+        MetadataUpdate prodMeta = new MetadataUpdate();
+        prodMeta.from = GetCurrentProductMeta(orionGuid);
+        prodMeta.to = new HashMap<>(prodMeta.from);
+
+        prodMeta.to.put(field.toString(), value);
+
+        ecommService.updateProductMetadata(orionGuid.toString(), prodMeta);
     }
 }

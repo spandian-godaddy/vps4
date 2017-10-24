@@ -1,6 +1,7 @@
 package com.godaddy.vps4.orchestration.hfs;
 
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -17,6 +18,7 @@ import org.mockito.Mockito;
 
 import com.godaddy.hfs.config.Config;
 import com.godaddy.vps4.messaging.DefaultVps4MessagingService;
+import com.godaddy.vps4.messaging.MissingShopperIdException;
 import com.godaddy.vps4.messaging.Vps4MessagingService;
 import com.godaddy.vps4.messaging.models.Message;
 import com.google.inject.AbstractModule;
@@ -367,6 +369,12 @@ public class HfsMockModule extends AbstractModule {
                 storeMessage(setupMessage);
 
                 return messageId;
+            }
+
+            @Override
+            public String sendFullyManagedEmail(String shopperId, String controlPanel) throws MissingShopperIdException, IOException {
+                // TODO Auto-generated method stub
+                return null;
             }
         };
     }

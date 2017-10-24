@@ -2,13 +2,23 @@ package com.godaddy.vps4.handler;
 
 import static com.godaddy.vps4.handler.util.Commands.execute;
 
+import java.io.IOException;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
+import org.json.simple.JSONObject;
+import org.json.simple.parser.JSONParser;
+import org.json.simple.parser.ParseException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.godaddy.hfs.config.Config;
 import com.godaddy.vps4.credit.CreditService;
+import com.godaddy.vps4.credit.ECommCreditService.ProductMetaField;
 import com.godaddy.vps4.credit.VirtualMachineCredit;
+import com.godaddy.vps4.messaging.MissingShopperIdException;
+import com.godaddy.vps4.messaging.Vps4MessagingService;
 import com.godaddy.vps4.orchestration.snapshot.Vps4DestroySnapshot;
 import com.godaddy.vps4.orchestration.vm.VmActionRequest;
 import com.godaddy.vps4.orchestration.vm.Vps4DestroyVm;
@@ -21,12 +31,8 @@ import com.godaddy.vps4.vm.ActionType;
 import com.godaddy.vps4.vm.VirtualMachine;
 import com.godaddy.vps4.vm.VirtualMachineService;
 import com.google.inject.Inject;
+
 import gdg.hfs.orchestration.CommandService;
-import org.json.simple.JSONObject;
-import org.json.simple.parser.JSONParser;
-import org.json.simple.parser.ParseException;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public class Vps4MessageHandler implements MessageHandler {
 
@@ -41,6 +47,9 @@ public class Vps4MessageHandler implements MessageHandler {
     private final ActionService snapshotActionService;
     private final CommandService commandService;
     private final Config config;
+    private final boolean processFullyManagedEmails;
+    private final Vps4MessagingService messagingService;
+    private final int FULLY_MANAGED_LEVEL = 2;
 
     @Inject
     public Vps4MessageHandler(VirtualMachineService virtualMachineService,
@@ -49,6 +58,7 @@ public class Vps4MessageHandler implements MessageHandler {
             ActionService vmActionService,
             @SnapshotActionService ActionService snapshotActionService,
             CommandService commandService,
+            Vps4MessagingService messagingService,
             Config config) {
 
         this.virtualMachineService = virtualMachineService;
@@ -58,6 +68,8 @@ public class Vps4MessageHandler implements MessageHandler {
         this.snapshotActionService = snapshotActionService;
         this.commandService = commandService;
         this.config = config;
+        this.messagingService = messagingService;
+        processFullyManagedEmails = Boolean.parseBoolean(config.get("vps4MessageHandler.processFullyManagedEmails"));
 
     }
 
@@ -89,19 +101,32 @@ public class Vps4MessageHandler implements MessageHandler {
             throw new MessageHandlerException(ex);
         }
 
+
         switch (credit.accountStatus) {
         case ABUSE_SUSPENDED:
         case SUSPENDED:
             stopVm(credit.productId);
             break;
         case ACTIVE:
-            // Do nothing. On reinstate customer will need to manually restart their VM.
+            sendFullyManagedWelcomeEmail(credit);
             break;
         case REMOVED:
             destroyAccount(credit);
             break;
         default:
             break;
+        }
+    }
+
+    private void sendFullyManagedWelcomeEmail(VirtualMachineCredit credit) {
+        if (processFullyManagedEmails && credit.managedLevel == FULLY_MANAGED_LEVEL && !credit.fullyManagedEmailSent) {
+            try {
+                messagingService.sendFullyManagedEmail(credit.shopperId, credit.controlPanel);
+                creditService.updateProductMeta(credit.orionGuid, ProductMetaField.FULLY_MANAGED_EMAIL_SENT, "true");
+            }
+            catch (MissingShopperIdException | IOException e) {
+                logger.warn("Failed to send fully managed welcome email", e);
+            }
         }
     }
 

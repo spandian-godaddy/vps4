@@ -1,6 +1,8 @@
 package com.godaddy.vps4.messaging;
 
 import com.godaddy.hfs.config.Config;
+import com.godaddy.vps4.messaging.DefaultVps4MessagingService.EmailSubstitutions;
+import com.godaddy.vps4.messaging.DefaultVps4MessagingService.EmailTemplates;
 import com.godaddy.vps4.messaging.models.Message;
 import com.godaddy.vps4.messaging.models.MessagingMessageId;
 import com.godaddy.vps4.messaging.models.ShopperMessage;
@@ -64,6 +66,14 @@ public class DefaultVps4MessagingServiceTest {
     @Test
     public void testSendSetupEmail() throws MissingShopperIdException, IOException {
         when(secureHttpClient.executeHttp(Mockito.any(HttpPost.class), Mockito.any())).thenReturn(mockMessageId);
+        String actualMessageId = messagingService.sendFullyManagedEmail(shopperId, "cpanel");
+        Assert.assertNotNull(actualMessageId);
+        Assert.assertEquals(mockMessageId.messageId, actualMessageId);
+    }
+    
+    @Test
+    public void testSendFullyManagedEmail() throws MissingShopperIdException, IOException {
+        when(secureHttpClient.executeHttp(Mockito.any(HttpPost.class), Mockito.any())).thenReturn(mockMessageId);
         String actualMessageId = messagingService.sendSetupEmail(shopperId, accountName, ipAddress, diskSpace);
         Assert.assertNotNull(actualMessageId);
         Assert.assertEquals(mockMessageId.messageId, actualMessageId);
@@ -114,11 +124,11 @@ public class DefaultVps4MessagingServiceTest {
             substitutionValues.put(DefaultVps4MessagingService.EmailSubstitutions.DISKSPACE, diskSpace);
             shopperMessage.substitutionValues = substitutionValues;
 
-            Class[] args = new Class[] {String.class, String.class, String.class};
+            Class[] args = new Class[] {EmailTemplates.class, EnumMap.class};
             Method buildShopperMessageJson = messagingService.getClass().getDeclaredMethod("buildShopperMessageJson", args);
             buildShopperMessageJson.setAccessible(true);
             String shopperMessageJsonResult = (String)buildShopperMessageJson.invoke(messagingService,
-                    accountName, ipAddress, diskSpace);
+                    DefaultVps4MessagingService.EmailTemplates.VirtualPrivateHostingProvisioned4, substitutionValues);
             Assert.assertEquals(SecureHttpClient.createJSONFromObject(shopperMessage), shopperMessageJsonResult);
         }
         catch (Exception ex) {

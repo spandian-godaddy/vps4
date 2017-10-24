@@ -96,7 +96,6 @@ public class ECommCreditServiceTest {
         assertEquals(Integer.parseInt(account.plan_features.get("managed_level")), credit.managedLevel);
         assertEquals(account.plan_features.get("operatingsystem"), credit.operatingSystem);
         assertEquals(account.plan_features.get("control_panel_type"), credit.controlPanel);
-        assertEquals(null, credit.createDate);
         assertEquals(null, credit.provisionDate);
         assertEquals(account.shopper_id, credit.shopperId);
     }
@@ -215,6 +214,7 @@ public class ECommCreditServiceTest {
     public void testClaimCreditCallsUpdateProdMeta() throws Exception {
         int phx3 = 1;
         UUID vmId = UUID.randomUUID();
+        when(ecommService.getAccount(orionGuid.toString())).thenReturn(account);
         creditService.claimVirtualMachineCredit(orionGuid, phx3, vmId);
 
         ArgumentCaptor<MetadataUpdate> argument = ArgumentCaptor.forClass(MetadataUpdate.class);

@@ -59,8 +59,8 @@ public class CreditResourceTest {
     }
 
     private VirtualMachineCredit createVmCredit(AccountStatus accountStatus) {
-        return new VirtualMachineCredit(orionGuid, 10, 1, 0, "linux", "cPanel", null,
-                null, user.getShopperId(), accountStatus, null, null);
+        return new VirtualMachineCredit(orionGuid, 10, 1, 0, "linux", "cPanel", null, user.getShopperId(), accountStatus, null, null,
+                false);
     }
 
     @Before
@@ -199,9 +199,8 @@ public class CreditResourceTest {
 
     @Test
     public void testCreate3LetterCreditSuccess() throws Exception{
-        VirtualMachineCredit fakeCredit = new VirtualMachineCredit(UUID.randomUUID(),
-                10, 1, 1, "Linux", "MYH", null, null, "omg", AccountStatus.ACTIVE,
-                null, UUID.randomUUID());
+        VirtualMachineCredit fakeCredit = new VirtualMachineCredit(UUID.randomUUID(), 10, 1, 1, "Linux", "MYH", null, "omg",
+                AccountStatus.ACTIVE, null, UUID.randomUUID(), false);
         when(creditService.getVirtualMachineCredit(any(UUID.class))).thenReturn(fakeCredit);
 
         user = GDUserMock.createShopper("omg");
@@ -211,9 +210,8 @@ public class CreditResourceTest {
 
     @Test
     public void testCreate3LetterCreditAlreadyExists(){
-        VirtualMachineCredit fakeCredit = new VirtualMachineCredit(UUID.randomUUID(),
-                10, 1, 1, "Linux", "MYH", null, null, "omg", AccountStatus.ACTIVE,
-                null, UUID.randomUUID());
+        VirtualMachineCredit fakeCredit = new VirtualMachineCredit(UUID.randomUUID(), 10, 1, 1, "Linux", "MYH", null, "omg",
+                AccountStatus.ACTIVE, null, UUID.randomUUID(), false);
         VirtualMachineCredit[] credits = {fakeCredit};
 
         user = GDUserMock.createShopper("omg");

@@ -2,17 +2,19 @@ package com.godaddy.vps4.phase2;
 
 import java.util.UUID;
 
+import org.mockito.Mockito;
+
 import com.godaddy.vps4.credit.CreditService;
 import com.godaddy.vps4.credit.VirtualMachineCredit;
 import com.godaddy.vps4.security.GDUserMock;
 import com.godaddy.vps4.vm.AccountStatus;
 import com.google.inject.AbstractModule;
+
 import gdg.hfs.orchestration.CommandGroupSpec;
 import gdg.hfs.orchestration.CommandService;
 import gdg.hfs.orchestration.CommandState;
 import gdg.hfs.vhfs.vm.Vm;
 import gdg.hfs.vhfs.vm.VmService;
-import org.mockito.Mockito;
 
 public class Phase2ExternalsModule extends AbstractModule {
     private final static CreditService creditService = Mockito.mock(CreditService.class);
@@ -38,8 +40,8 @@ public class Phase2ExternalsModule extends AbstractModule {
 
     public static void mockVmCredit(AccountStatus accountStatus) {
         UUID orionGuid = UUID.randomUUID();
-        VirtualMachineCredit credit = new VirtualMachineCredit(orionGuid, 10, 0, 1, "linux", "myh",
-                null, null, GDUserMock.DEFAULT_SHOPPER, accountStatus, null, null);
+        VirtualMachineCredit credit = new VirtualMachineCredit(orionGuid, 10, 0, 1, "linux", "myh", null, GDUserMock.DEFAULT_SHOPPER,
+                accountStatus, null, null, false);
         Mockito.when(creditService.getVirtualMachineCredit(Mockito.any())).thenReturn(credit);
     }
 

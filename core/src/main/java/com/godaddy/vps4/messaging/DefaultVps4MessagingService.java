@@ -1,22 +1,23 @@
 package com.godaddy.vps4.messaging;
 
+import java.io.IOException;
+import java.io.UnsupportedEncodingException;
+import java.util.EnumMap;
+import java.util.HashMap;
+import java.util.Map;
+
+import javax.inject.Inject;
+
+import org.apache.http.client.methods.HttpGet;
+import org.apache.http.client.methods.HttpPost;
+import org.apache.http.entity.StringEntity;
+
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.godaddy.hfs.config.Config;
 import com.godaddy.vps4.messaging.models.Message;
 import com.godaddy.vps4.messaging.models.MessagingMessageId;
 import com.godaddy.vps4.messaging.models.ShopperMessage;
 import com.godaddy.vps4.util.SecureHttpClient;
-import org.apache.http.client.methods.HttpPost;
-import org.apache.http.entity.StringEntity;
-import org.apache.http.client.methods.HttpGet;
-
-import java.util.EnumMap;
-import java.util.Map;
-import java.util.HashMap;
-import java.io.IOException;
-
-import com.fasterxml.jackson.core.JsonProcessingException;
-
-import javax.inject.Inject;
 
 public class DefaultVps4MessagingService implements Vps4MessagingService {
 
@@ -31,7 +32,7 @@ public class DefaultVps4MessagingService implements Vps4MessagingService {
     public static final String CLIENT_CERTIFICATE_PATH = "messaging.api.certPath";
 
     public enum EmailTemplates {
-        VirtualPrivateHostingProvisioned4
+        VirtualPrivateHostingProvisioned4, VPSWelcomePlesk, VPSWelcomeCpanel
     }
 
     public enum EmailSubstitutions {
@@ -65,15 +66,12 @@ public class DefaultVps4MessagingService implements Vps4MessagingService {
         return this.client.executeHttp(httpGet, Message.class);
     }
 
-    private String buildShopperMessageJson(String accountName, String ipAddress, String diskSpace)
+    private String buildShopperMessageJson(EmailTemplates template, EnumMap<EmailSubstitutions, String> substitutionValues)
             throws JsonProcessingException {
         ShopperMessage shopperMessage = new ShopperMessage();
         shopperMessage.templateNamespaceKey = TEMPLATE_NAMESPACE_KEY;
-        shopperMessage.templateTypeKey = EmailTemplates.VirtualPrivateHostingProvisioned4.toString();
-        EnumMap<EmailSubstitutions, String> substitutionValues = new EnumMap<>(EmailSubstitutions.class);
-        substitutionValues.put(EmailSubstitutions.ACCOUNTNAME, accountName);
-        substitutionValues.put(EmailSubstitutions.IPADDRESS, ipAddress);
-        substitutionValues.put(EmailSubstitutions.DISKSPACE, diskSpace);
+        shopperMessage.templateTypeKey = template.toString();
+
         shopperMessage.substitutionValues = substitutionValues;
 
         return SecureHttpClient.createJSONFromObject(shopperMessage);
@@ -87,6 +85,17 @@ public class DefaultVps4MessagingService implements Vps4MessagingService {
 
     public String sendSetupEmail(String shopperId, String accountName, String ipAddress, String diskSpace)
             throws MissingShopperIdException, IOException {
+        EnumMap<EmailSubstitutions, String> substitutionValues = new EnumMap<>(EmailSubstitutions.class);
+        substitutionValues.put(EmailSubstitutions.ACCOUNTNAME, accountName);
+        substitutionValues.put(EmailSubstitutions.IPADDRESS, ipAddress);
+        substitutionValues.put(EmailSubstitutions.DISKSPACE, diskSpace);
+
+        String shopperMessageJson = buildShopperMessageJson(EmailTemplates.VirtualPrivateHostingProvisioned4, substitutionValues);
+        return sendMessage(shopperId, shopperMessageJson);
+    }
+
+    private String sendMessage(String shopperId, String shopperMessageJson)
+            throws MissingShopperIdException, UnsupportedEncodingException, IOException {
         VerifyShopperId(shopperId);
         String uriPath = "/v1/messaging/messages";
         String uri = buildApiUri(uriPath);
@@ -94,10 +103,26 @@ public class DefaultVps4MessagingService implements Vps4MessagingService {
         headers.put("X-Shopper-Id", shopperId);
 
         HttpPost httpPost = SecureHttpClient.createJsonHttpPostWithHeaders(uri, headers);
-        String shopperMessageJson = buildShopperMessageJson(accountName, ipAddress, diskSpace);
         httpPost.setEntity(new StringEntity(shopperMessageJson));
         MessagingMessageId messageId = this.client.executeHttp(httpPost, MessagingMessageId.class);
 
         return messageId.messageId;
+    }
+
+    public String sendFullyManagedEmail(String shopperId, String controlPanel) throws MissingShopperIdException, IOException {
+        EnumMap<EmailSubstitutions, String> substitutionValues = new EnumMap<>(EmailSubstitutions.class);
+        String shopperMessageJson = null;
+        switch (controlPanel.trim().toLowerCase()) {
+        case "cpanel":
+            shopperMessageJson = buildShopperMessageJson(EmailTemplates.VPSWelcomeCpanel, substitutionValues);
+            break;
+        case "plesk":
+            shopperMessageJson = buildShopperMessageJson(EmailTemplates.VPSWelcomePlesk, substitutionValues);
+            break;
+        default:
+            throw new IllegalArgumentException("Specified control panel not supported for fully managed email.");
+        }
+        return sendMessage(shopperId, shopperMessageJson);
+
     }
 }

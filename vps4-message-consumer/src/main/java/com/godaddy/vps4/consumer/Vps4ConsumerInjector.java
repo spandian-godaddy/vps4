@@ -7,6 +7,7 @@ import com.godaddy.vps4.config.ConfigModule;
 import com.godaddy.vps4.credit.CreditModule;
 import com.godaddy.vps4.hfs.HfsClientModule;
 import com.godaddy.vps4.jdbc.DatabaseModule;
+import com.godaddy.vps4.messaging.MessagingModule;
 import com.godaddy.vps4.security.SecurityModule;
 import com.godaddy.vps4.snapshot.SnapshotModule;
 import com.godaddy.vps4.util.ObjectMapperModule;
@@ -41,6 +42,7 @@ public class Vps4ConsumerInjector {
         modules.add(new CreditModule());
         modules.add(new CommandClientModule());
         modules.add(new Vps4ConsumerModule());
+        modules.add(new MessagingModule());
         return Guice.createInjector(modules);
     }
 

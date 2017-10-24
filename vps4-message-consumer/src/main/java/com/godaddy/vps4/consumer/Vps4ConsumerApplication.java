@@ -25,20 +25,27 @@ public class Vps4ConsumerApplication {
 
     public static void main(String[] args) {
 
-        // Added Ability to set log level for kafka pacakges to debug issues if any.
+        // Added Ability to set log level for kafka packges to debug issues if any.
         ch.qos.logback.classic.Logger root = (ch.qos.logback.classic.Logger) org.slf4j.LoggerFactory.getLogger("org.apache.kafka");
         root.setLevel(Level.INFO);
 
         Injector injector = Vps4ConsumerInjector.newInstance();
-
-        ZookeeperConfig zkConfig = injector.getInstance(ZookeeperConfig.class);
-        // get a handle to the zookeeper registration service
-        ZkAppRegistrationService zkAppRegistrationService =
-                new ZkAppRegistrationService(zkConfig.getPath(), zkConfig.getServiceName(),
-                        ZooKeeperClient.getInstance());
-
-        runZkServiceRegistration(zkAppRegistrationService,
-                (() -> runVps4ConsumerGroup(injector)));
+        
+        boolean skipZkRegistration = Boolean.parseBoolean(System.getProperty("SkipZkRegistration"));
+        
+        if(skipZkRegistration){
+            runVps4ConsumerGroup(injector);
+        }
+        else {
+            ZookeeperConfig zkConfig = injector.getInstance(ZookeeperConfig.class);
+            // get a handle to the zookeeper registration service
+            ZkAppRegistrationService zkAppRegistrationService =
+                    new ZkAppRegistrationService(zkConfig.getPath(), zkConfig.getServiceName(),
+                            ZooKeeperClient.getInstance());
+    
+            runZkServiceRegistration(zkAppRegistrationService,
+                    (() -> runVps4ConsumerGroup(injector)));
+        }
 
     }
 
