@@ -1,7 +1,5 @@
 package com.godaddy.vps4.messaging;
 
-import com.godaddy.hfs.config.Config;
-import com.godaddy.vps4.messaging.DefaultVps4MessagingService.EmailSubstitutions;
 import com.godaddy.vps4.messaging.DefaultVps4MessagingService.EmailTemplates;
 import com.godaddy.vps4.messaging.models.Message;
 import com.godaddy.vps4.messaging.models.MessagingMessageId;
@@ -12,15 +10,12 @@ import org.apache.http.client.methods.HttpPost;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
-import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.internal.matchers.apachecommons.ReflectionEquals;
 
 import java.io.IOException;
 import java.lang.reflect.Method;
 import java.util.EnumMap;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.UUID;
 
 import static org.mockito.Mockito.mock;
@@ -35,7 +30,8 @@ public class DefaultVps4MessagingServiceTest {
     private String shopperId;
     private String accountName;
     private String ipAddress;
-    private String diskSpace;
+    private String orionId;
+    private Boolean isFullyManaged;
     private String baseUrl;
 
     @Before
@@ -43,7 +39,8 @@ public class DefaultVps4MessagingServiceTest {
         shopperId = UUID.randomUUID().toString();
         accountName = UUID.randomUUID().toString();
         ipAddress = UUID.randomUUID().toString();
-        diskSpace = UUID.randomUUID().toString();
+        orionId = UUID.randomUUID().toString();
+        isFullyManaged = false;
         secureHttpClient = mock(SecureHttpClient.class);
         mockResultMessage = mock(Message.class);
         mockMessageId = mock(MessagingMessageId.class);
@@ -64,29 +61,30 @@ public class DefaultVps4MessagingServiceTest {
     }
 
     @Test
-    public void testSendSetupEmail() throws MissingShopperIdException, IOException {
+    public void testSendFullyManagedEmail() throws MissingShopperIdException, IOException {
         when(secureHttpClient.executeHttp(Mockito.any(HttpPost.class), Mockito.any())).thenReturn(mockMessageId);
         String actualMessageId = messagingService.sendFullyManagedEmail(shopperId, "cpanel");
         Assert.assertNotNull(actualMessageId);
         Assert.assertEquals(mockMessageId.messageId, actualMessageId);
     }
-    
+
     @Test
-    public void testSendFullyManagedEmail() throws MissingShopperIdException, IOException {
+    public void testSendSetupEmail() throws MissingShopperIdException, IOException {
         when(secureHttpClient.executeHttp(Mockito.any(HttpPost.class), Mockito.any())).thenReturn(mockMessageId);
-        String actualMessageId = messagingService.sendSetupEmail(shopperId, accountName, ipAddress, diskSpace);
+        String actualMessageId = messagingService.sendSetupEmail(shopperId, accountName, ipAddress,
+                orionId, isFullyManaged);
         Assert.assertNotNull(actualMessageId);
         Assert.assertEquals(mockMessageId.messageId, actualMessageId);
     }
 
     @Test(expected = MissingShopperIdException.class)
     public void testSendSetupEmailThrowsMissingShopperIdExceptionWhenEmpty() throws MissingShopperIdException, IOException {
-        messagingService.sendSetupEmail("", accountName, ipAddress, diskSpace);
+        messagingService.sendSetupEmail("", accountName, ipAddress, orionId, isFullyManaged);
     }
 
     @Test(expected = MissingShopperIdException.class)
     public void testSendSetupEmailThrowsMissingShopperIdExceptionWhenNull() throws MissingShopperIdException, IOException {
-        messagingService.sendSetupEmail(null, accountName, ipAddress, diskSpace);
+        messagingService.sendSetupEmail(null, accountName, ipAddress, orionId, isFullyManaged);
     }
 
     @Test
@@ -112,7 +110,8 @@ public class DefaultVps4MessagingServiceTest {
         try {
             String accountName = UUID.randomUUID().toString();
             String ipAddress = UUID.randomUUID().toString();
-            String diskSpace = UUID.randomUUID().toString();
+            String orionId = UUID.randomUUID().toString();
+            Boolean isFullyManaged = false;
             ShopperMessage shopperMessage = new ShopperMessage();
             shopperMessage.templateNamespaceKey = DefaultVps4MessagingService.TEMPLATE_NAMESPACE_KEY;
             shopperMessage.templateTypeKey = DefaultVps4MessagingService.EmailTemplates.VirtualPrivateHostingProvisioned4.toString();
@@ -121,7 +120,9 @@ public class DefaultVps4MessagingServiceTest {
                     new EnumMap<>(DefaultVps4MessagingService.EmailSubstitutions.class);
             substitutionValues.put(DefaultVps4MessagingService.EmailSubstitutions.ACCOUNTNAME, accountName);
             substitutionValues.put(DefaultVps4MessagingService.EmailSubstitutions.IPADDRESS, ipAddress);
-            substitutionValues.put(DefaultVps4MessagingService.EmailSubstitutions.DISKSPACE, diskSpace);
+            substitutionValues.put(DefaultVps4MessagingService.EmailSubstitutions.ORION_ID, orionId);
+            substitutionValues.put(DefaultVps4MessagingService.EmailSubstitutions.ISMANAGEDSUPPORT,
+                    Boolean.toString(isFullyManaged));
             shopperMessage.substitutionValues = substitutionValues;
 
             Class[] args = new Class[] {EmailTemplates.class, EnumMap.class};

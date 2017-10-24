@@ -38,7 +38,8 @@ public class DefaultVps4MessagingService implements Vps4MessagingService {
     public enum EmailSubstitutions {
         ACCOUNTNAME,
         IPADDRESS,
-        DISKSPACE
+        ORION_ID,
+        ISMANAGEDSUPPORT
     }
 
     @Inject
@@ -83,12 +84,14 @@ public class DefaultVps4MessagingService implements Vps4MessagingService {
         }
     }
 
-    public String sendSetupEmail(String shopperId, String accountName, String ipAddress, String diskSpace)
+    public String sendSetupEmail(String shopperId, String accountName, String ipAddress, String orionGuid,
+                                 boolean isFullyManaged)
             throws MissingShopperIdException, IOException {
         EnumMap<EmailSubstitutions, String> substitutionValues = new EnumMap<>(EmailSubstitutions.class);
         substitutionValues.put(EmailSubstitutions.ACCOUNTNAME, accountName);
         substitutionValues.put(EmailSubstitutions.IPADDRESS, ipAddress);
-        substitutionValues.put(EmailSubstitutions.DISKSPACE, diskSpace);
+        substitutionValues.put(EmailSubstitutions.ORION_ID, orionGuid);
+        substitutionValues.put(EmailSubstitutions.ISMANAGEDSUPPORT, Boolean.toString(isFullyManaged));
 
         String shopperMessageJson = buildShopperMessageJson(EmailTemplates.VirtualPrivateHostingProvisioned4, substitutionValues);
         return sendMessage(shopperId, shopperMessageJson);

@@ -12,6 +12,7 @@ public class ProvisionVmInfo {
     public int mailRelayQuota;
     public long pingCheckAccountId;
     public int diskGib;
+    public static final int FULLY_MANAGED_LEVEL = 2;
 
     public ProvisionVmInfo() {        
     }
@@ -29,5 +30,9 @@ public class ProvisionVmInfo {
 
     public String toString() {
         return ToStringBuilder.reflectionToString(this);
+    }
+
+    public boolean isFullyManaged() {
+        return this.managedLevel == FULLY_MANAGED_LEVEL;
     }
 }

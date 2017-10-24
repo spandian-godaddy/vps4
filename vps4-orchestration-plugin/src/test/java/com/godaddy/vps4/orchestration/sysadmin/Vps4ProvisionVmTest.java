@@ -1,6 +1,7 @@
 package com.godaddy.vps4.orchestration.sysadmin;
 
 import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.anyBoolean;
 import static org.mockito.Matchers.anyLong;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.eq;
@@ -108,6 +109,7 @@ public class Vps4ProvisionVmTest {
     ProvisionVmInfo vmInfo;
     String shopperId;
     int diskGib;
+    UUID orionGuid = UUID.randomUUID();
 
     @Before
     public void setupTest() throws Exception {
@@ -129,6 +131,7 @@ public class Vps4ProvisionVmTest {
         this.vmInfo.sgid = "";
         diskGib = new Random().nextInt(100);
         this.vmInfo.diskGib = diskGib;
+        this.vmInfo.managedLevel = 0;
 
         request = new Vps4ProvisionVm.Request();
         request.rawFlavor = "";
@@ -142,9 +145,10 @@ public class Vps4ProvisionVmTest {
         shopperId = UUID.randomUUID().toString();
         request.shopperId = shopperId;
         request.serverName = expectedServerName;
+        request.orionGuid = orionGuid;
 
         String messagedId = UUID.randomUUID().toString();
-        when(messagingService.sendSetupEmail(anyString(), anyString(), anyString(), anyString()))
+        when(messagingService.sendSetupEmail(anyString(), anyString(), anyString(), anyString(), anyBoolean()))
                 .thenReturn(messagedId);
 
         primaryIp = new IpAddress();
@@ -199,17 +203,17 @@ public class Vps4ProvisionVmTest {
     public void testSendSetupEmail() throws MissingShopperIdException, IOException {
         command.execute(context, this.request);
         verify(messagingService, times(1)).sendSetupEmail(shopperId, expectedServerName,
-                primaryIp.address, Integer.toString(diskGib));
+                primaryIp.address, orionGuid.toString(), this.vmInfo.isFullyManaged());
     }
 
     @Test
     public void testSendSetupEmailDoesNotThrowException() throws MissingShopperIdException, IOException {
-        when(messagingService.sendSetupEmail(anyString(), anyString(), anyString(), anyString()))
+        when(messagingService.sendSetupEmail(anyString(), anyString(), anyString(), anyString(), anyBoolean()))
                 .thenThrow(new RuntimeException("Unit test exception"));
 
         command.execute(context, this.request);
         verify(messagingService, times(1)).sendSetupEmail(anyString(), anyString(),
-                anyString(), anyString());
+                anyString(), anyString(), anyBoolean());
     }
 
     @Test

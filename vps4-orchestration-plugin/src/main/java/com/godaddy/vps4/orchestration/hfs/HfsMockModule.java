@@ -363,7 +363,8 @@ public class HfsMockModule extends AbstractModule {
             }
 
             @Override
-            public String sendSetupEmail(String shopperId, String accountName, String ipAddress, String diskSpace) {
+            public String sendSetupEmail(String shopperId, String accountName, String ipAddress, String orionId,
+                                         boolean isFullyManaged) {
                 String messageId = UUID.randomUUID().toString();
                 Message setupMessage = createMessage(shopperId, messageId);
                 storeMessage(setupMessage);

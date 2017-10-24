@@ -8,8 +8,6 @@ import org.junit.Test;
 import java.util.EnumMap;
 import java.util.UUID;
 import java.util.ArrayList;
-import java.util.Map;
-import java.util.HashMap;
 import java.util.Arrays;
 
 public class ModelsTest {
@@ -24,7 +22,8 @@ public class ModelsTest {
     private ShopperOverride shopperOverride;
     private String accountName;
     private String ipAddress;
-    private String diskSpace;
+    private String orionId;
+    private String isFullyManaged;
     private String transformData1;
     private String transformData2;
 
@@ -70,13 +69,15 @@ public class ModelsTest {
         shopperMessage.templateTypeKey = UUID.randomUUID().toString();
         accountName = UUID.randomUUID().toString();
         ipAddress = UUID.randomUUID().toString();
-        diskSpace = UUID.randomUUID().toString();
+        orionId = UUID.randomUUID().toString();
+        isFullyManaged = "false";
 
         EnumMap<DefaultVps4MessagingService.EmailSubstitutions, String> substitutionValues =
                 new EnumMap<>(DefaultVps4MessagingService.EmailSubstitutions.class);
         substitutionValues.put(DefaultVps4MessagingService.EmailSubstitutions.ACCOUNTNAME, accountName);
         substitutionValues.put(DefaultVps4MessagingService.EmailSubstitutions.IPADDRESS, ipAddress);
-        substitutionValues.put(DefaultVps4MessagingService.EmailSubstitutions.DISKSPACE, diskSpace);
+        substitutionValues.put(DefaultVps4MessagingService.EmailSubstitutions.ORION_ID, orionId);
+        substitutionValues.put(DefaultVps4MessagingService.EmailSubstitutions.ISMANAGEDSUPPORT, isFullyManaged);
         shopperMessage.substitutionValues = substitutionValues;
 
         transformData1 = UUID.randomUUID().toString();
