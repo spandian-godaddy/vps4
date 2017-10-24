@@ -5,6 +5,7 @@ import com.godaddy.vps4.client.ClientCertAuthenticatedServiceProvider;
 import com.godaddy.vps4.client.SsoJwtAuth;
 import com.godaddy.vps4.client.SsoJwtAuthenticatedServiceProvider;
 import com.godaddy.vps4.client.SsoTokenServiceModule;
+import com.godaddy.vps4.client.Vps4ClientModule;
 import com.google.inject.AbstractModule;
 
 import javax.inject.Singleton;
@@ -13,7 +14,7 @@ public class VmSnapshotServiceClientModule extends AbstractModule {
 
     @Override
     public void configure() {
-        install(new SsoTokenServiceModule());
+        install(new Vps4ClientModule());
 
         bind(VmSnapshotService.class)
             .annotatedWith(SsoJwtAuth.class)

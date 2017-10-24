@@ -262,3 +262,19 @@ are added to the the injector being created. NOTE: In the future this will be co
 Example flow (automatic backup creation)
 ======================================================
 ![Automatic backup creation flow](vps4SchedulerFlow.png "Backup flow")
+
+
+Interacting with the Vps4 api
+=============================
+The vps4 web module currently provides a client (for the Vm snapshot resource for the time being) with bindings for 
+a Client cert based authentication and a SSO jwt based authentication. There is also support for injecting a Shopper id
+into a 'X-Shopper-Id' header.
+> An example of the usage is shown below
+
+        String shopperId = "959998";
+        UUID vmId = UUID.fromString("09022e35-6b2d-48c6-b293-d8cdb5207b19");
+        UUID snapshotId = UUID.fromString("89111e35-6b2d-48c6-b293-d8cdb5207b19");
+
+        Snapshot snapshot = withShopperId(shopperId, () -> {
+            return vmSnapshotService.getSnapshot(vmId, snapshotId);
+        }, Snapshot.class);

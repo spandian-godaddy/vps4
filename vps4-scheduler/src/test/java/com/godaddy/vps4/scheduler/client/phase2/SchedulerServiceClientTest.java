@@ -1,5 +1,7 @@
 package com.godaddy.vps4.scheduler.client.phase2;
 
+import static com.godaddy.vps4.client.ClientUtils.withShopperId;
+
 import com.godaddy.vps4.client.ClientCertAuth;
 import com.godaddy.vps4.scheduler.core.JobRequest;
 import com.godaddy.vps4.scheduler.web.client.SchedulerServiceClientModule;
@@ -22,6 +24,7 @@ import javax.ws.rs.ClientErrorException;
 import javax.ws.rs.NotFoundException;
 import javax.ws.rs.core.Response;
 import java.time.Instant;
+import java.util.List;
 import java.util.UUID;
 
 import static org.junit.Assert.fail;
@@ -81,6 +84,18 @@ public class SchedulerServiceClientTest {
     }
 
     @Test
+    public void getGroupJobsWithShopperIdInjected() throws Exception {
+        // This test just shows shopper id being injected into a request being made to the scheduler service.
+        // Scheduler has no concept of shoppers or roles, so this test servers merely as an example for shopper id
+        // injection into a request that uses client cert auth.
+        @SuppressWarnings("unchecked")
+        List<SchedulerJobDetail> groupJobs = withShopperId("959998", () -> {
+            return schedulerService.getGroupJobs(product, jobGroup);
+        }, List.class);
+        Assert.assertEquals(0, groupJobs.size());
+    }
+
+    @Test
     public void submitJobToGroup() throws Exception {
         Vps4BackupJob.Request request = new Vps4BackupJob.Request();
         request.vmId = vmId;
@@ -111,6 +126,17 @@ public class SchedulerServiceClientTest {
         SchedulerJobDetail jobDetail = createJob();
         Assert.assertEquals(
                 jobDetail.nextRun, schedulerService.getJob(product, jobGroup, jobDetail.id).nextRun);
+    }
+
+    @Test
+    public void getJobWithShopperIdInjected() throws Exception {
+        SchedulerJobDetail jobDetail = createJob();
+
+        @SuppressWarnings("unchecked")
+        SchedulerJobDetail getJobDetail = withShopperId("959998", () -> {
+            return schedulerService.getJob(product, jobGroup, jobDetail.id);
+        }, SchedulerJobDetail.class);
+        Assert.assertEquals(jobDetail.nextRun, getJobDetail.nextRun);
     }
 
     @Test(expected = NotFoundException.class)
