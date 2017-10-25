@@ -59,7 +59,7 @@ public class Vps4Injector {
     static Injector newInstance() {
         List<Module> modules = new ArrayList<>();
         // use this when upgrading to newer version of hfs-web
-        HfsServiceMetadata metadata = new HfsServiceMetadata("vps4-web", HfsServiceMetadata.ServiceType.WEB, "/api/");
+        HfsServiceMetadata metadata = new HfsServiceMetadata("vps4-web", HfsServiceMetadata.ServiceType.OTHER, "/api/");
         modules.add(binder -> {
             binder.bind(HfsServiceMetadata.class).toInstance(metadata);
             OptionalBinder.newOptionalBinder(binder, HfsServiceMetadata.class);

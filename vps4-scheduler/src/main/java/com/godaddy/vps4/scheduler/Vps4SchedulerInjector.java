@@ -38,7 +38,7 @@ public class Vps4SchedulerInjector {
         List<Module> modules = new ArrayList<>();
 
         /* use this when upgrading to newer version of hfs-web */
-        HfsServiceMetadata metadata = new HfsServiceMetadata("vps4-scheduler", HfsServiceMetadata.ServiceType.WEB, "/scheduler/");
+        HfsServiceMetadata metadata = new HfsServiceMetadata("vps4-scheduler", HfsServiceMetadata.ServiceType.OTHER, "/scheduler/");
         modules.add(binder -> {
             binder.requireExplicitBindings();
             binder.bind(HfsServiceMetadata.class).toInstance(metadata);
