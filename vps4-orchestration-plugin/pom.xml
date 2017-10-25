@@ -62,6 +62,9 @@
                     <projversion>${parsedVersion.majorVersion}.${parsedVersion.minorVersion}.${parsedVersion.incrementalVersion}</projversion>
                     <release>${parsedVersion.buildNumber}</release>
                     <packager>rpm</packager>
+                    <requires>
+                        <require>hfs-engine&gt;= 0.5.1-25</require>
+                    </requires>
                     <changelogFile>src/changelog</changelogFile>
                     <defineStatements>
                         <defineStatement>_unpackaged_files_terminate_build 0</defineStatement>
