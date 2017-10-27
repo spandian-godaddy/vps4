@@ -23,21 +23,20 @@ zk_hosts = {
 }
 
 zk_config_node = "/mcp/config/service"
-zk_service_node = "/mcp/service"
 DEPLOYMENT_TIMEOUT = 1500
-
 
 def main(argv):
     """ product_stamp_zk_cicd.py """
     vps4_mode = ''
     rpm_name = ''
     product_service = ''
+    zk_service_node = '/mcp/service'
     verbose = False
     try:
-        opts, args = getopt.getopt(argv, "he:n:p:v", ["env=", "name=", "product=", "verbose="])
+        opts, args = getopt.getopt(argv, "he:n:p:z:v", ["env=", "name=", "product=", "zkservicenode=", "verbose="])
     except getopt.GetoptError:
         print("Invalid arguments provided")
-        print("project_stamp_zk_cicd.py -e <environment> -n <rpm name> -p product_service -v")
+        print("project_stamp_zk_cicd.py -e <environment> -n <rpm name> -p <product_service> -z <zkservicenode> -v <verbose>")
         sys.exit(2)
 
     for opt, arg in opts:
@@ -56,6 +55,9 @@ def main(argv):
         elif opt in ("-p", "--product"):
             print("Processing '-p' product_service=%s" % arg)
             product_service = arg
+        elif opt in ("-z", "--zkservicenode"):
+            print("Processing '-z' zk_service_node=%s" % arg)
+            zk_service_node = arg
 
     # ENABLE LOGGING LEVEL
     if verbose:
@@ -68,6 +70,10 @@ def main(argv):
     if vps4_mode == '' or rpm_name == '' or product_service == '':
         log.error("project_stamp_zk_cicd.py -e <environment> -n <rpm name> -p product_service -v")
         sys.exit()
+
+    if zk_service_node == '' or zk_service_node == null:
+        log.info("defaulting --zkservicenode to /mcp/service")
+        zk_service_node = "/mcp/service"
 
     log.info("#########################################################")
     log.info("#########################################################")
@@ -84,7 +90,7 @@ def main(argv):
 
     zk = KazooClient(hosts=zookeeper_nodes, read_only=False)
     zk.start()
-    poke_zookeeper(zk, rpm_name, product_service)
+    poke_zookeeper(zk, rpm_name, product_service, zk_service_node)
     zk.stop()
     log.info("#########################################################")
     log.info("#########################################################")
@@ -110,7 +116,7 @@ def deployment_timeout():
     log.basicConfig()
 
 
-def is_service_deployed(zk, service_name, cicd_ver_json):
+def is_service_deployed(zk, service_name, cicd_ver_json, zk_service_node):
     """
     Tests to see if the expected version of a vertical service is deployed
     """
@@ -139,7 +145,7 @@ def get_zk_count(svc_data):
     return svc_json[u'count']
 
 
-def poke_zookeeper(zk, rpm_name, product_service):
+def poke_zookeeper(zk, rpm_name, product_service, zk_service_node):
     """
     Update Zookeeper(s) with new vertical service version information
     """
@@ -222,7 +228,7 @@ def poke_zookeeper(zk, rpm_name, product_service):
                 product_service_element_json = json.loads(product_service_element)
                 if deployed_service in product_service_element_json:
                     is_deployed = is_service_deployed(zk, deployed_service
-                                                      , product_service_element_json[deployed_service]["version"])
+                                                      , product_service_element_json[deployed_service]["version"], zk_service_node)
                     if is_deployed is False:
                         still_deploying = True
 
