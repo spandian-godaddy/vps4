@@ -71,10 +71,6 @@ def main(argv):
         log.error("project_stamp_zk_cicd.py -e <environment> -n <rpm name> -p product_service -v")
         sys.exit()
 
-    if zk_service_node == '' or zk_service_node == null:
-        log.info("defaulting --zkservicenode to /mcp/service")
-        zk_service_node = "/mcp/service"
-
     log.info("#########################################################")
     log.info("#########################################################")
     log.info("Zookeeper update and MCP deployment starting")
