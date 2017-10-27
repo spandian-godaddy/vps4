@@ -5,6 +5,7 @@ import java.util.UUID;
 
 import javax.inject.Inject;
 
+import com.godaddy.vps4.orchestration.scheduler.SetupAutomaticBackupSchedule;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -132,10 +133,34 @@ public class Vps4ProvisionVm extends ActionCommand<Vps4ProvisionVm.Request, Vps4
 
         sendSetupEmail(request, ip.address);
 
+        // TODO: keeps this commented until we have the nginx configured to setup client cert based auth for
+        // vps4 inter microservice communication.
+//        setupAutomaticBackupSchedule(request.vmInfo.vmId);
+
         setStep(CreateVmStep.SetupComplete);
         logger.info("provision vm finished: {}", hfsVm);
 
         return null;
+    }
+
+    private void setupAutomaticBackupSchedule(UUID vps4VmId) {
+        setStep(CreateVmStep.SetupAutomaticBackupSchedule);
+        SetupAutomaticBackupSchedule.Request req = new SetupAutomaticBackupSchedule.Request();
+        req.vmId = vps4VmId;
+        req.backupName = "autoBackup";
+        try {
+            UUID backupJobId = context.execute(SetupAutomaticBackupSchedule.class, req);
+            context.execute("AddBackupJobIdToVM", ctx -> {
+                virtualMachineService.setBackupJobId(vps4VmId, backupJobId);
+                return null;
+            }, Void.class);
+
+        }
+        catch (RuntimeException e) {
+            // squelch this for now. dont fail a vm provisioning just because we couldn't create an auto backup schedule
+            // TODO: should this behaviour be changed?
+            logger.error("Automatic backup job creation failed");
+        }
     }
 
     private void setHostname(Vm hfsVm){

@@ -1154,8 +1154,7 @@ public class HfsMockModule extends AbstractModule {
 
             @Override
             public Response setCommonName(String arg0, ECommDataCache arg1) {
-                // TODO Auto-generated method stub
-                throw new UnsupportedOperationException("Not implemented, yet");
+                return null;
             }
 
             @Override

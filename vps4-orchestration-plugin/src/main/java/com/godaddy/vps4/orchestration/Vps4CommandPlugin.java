@@ -1,5 +1,8 @@
 package com.godaddy.vps4.orchestration;
 
+import com.godaddy.vps4.orchestration.scheduler.SchedulerModule;
+import com.godaddy.vps4.scheduler.web.client.SchedulerServiceClientModule;
+import com.godaddy.vps4.util.ObjectMapperModule;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -42,7 +45,7 @@ public class Vps4CommandPlugin implements CommandPlugin {
          }
 
         Injector injector = Guice.createInjector(
-
+                new ObjectMapperModule(),
                 hfsModule,
                 new HfsCommandModule(),
                 new DatabaseModule(),
@@ -50,8 +53,10 @@ public class Vps4CommandPlugin implements CommandPlugin {
                 new CreditModule(),
                 new SnapshotModule(),
                 new Vps4CommandModule(),
-                new UtilsModule()
-                );
+                new UtilsModule(),
+                new SchedulerServiceClientModule(),
+                new SchedulerModule()
+        );
 
         return new GuiceCommandProvider(injector);
     }

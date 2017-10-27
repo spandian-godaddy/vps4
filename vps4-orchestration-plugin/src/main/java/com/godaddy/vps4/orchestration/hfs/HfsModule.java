@@ -1,11 +1,5 @@
 package com.godaddy.vps4.orchestration.hfs;
 
-import com.fasterxml.jackson.databind.DeserializationFeature;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.SerializationFeature;
-import com.fasterxml.jackson.datatype.jsr310.JSR310Module;
-import com.fasterxml.jackson.jaxrs.json.JacksonJaxbJsonProvider;
-import com.fasterxml.jackson.jaxrs.json.JacksonJsonProvider;
 import com.godaddy.vps4.hfs.HfsClientProvider;
 import com.godaddy.vps4.messaging.MessagingProvider;
 import com.godaddy.vps4.messaging.Vps4MessagingService;
@@ -36,16 +30,5 @@ public class HfsModule extends AbstractModule {
         bind(NodePingService.class).toProvider(new HfsClientProvider<NodePingService>(NodePingService.class)).in(Singleton.class);
         bind(SnapshotService.class).toProvider(new HfsClientProvider<>(SnapshotService.class)).in(Singleton.class);
         bind(Vps4MessagingService.class).toProvider(MessagingProvider.class).in(Singleton.class);
-
-        // hook Jackson into Jersey as the POJO <-> JSON mapper
-        ObjectMapper mapper = new ObjectMapper();
-        mapper.registerModule(new JSR310Module());
-        mapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
-        mapper.disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
-
-        JacksonJsonProvider jsonProvider = new JacksonJaxbJsonProvider(mapper, JacksonJaxbJsonProvider.DEFAULT_ANNOTATIONS);
-//      jsonProvider.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
-
-        bind(JacksonJsonProvider.class).toInstance(jsonProvider);
     }
 }

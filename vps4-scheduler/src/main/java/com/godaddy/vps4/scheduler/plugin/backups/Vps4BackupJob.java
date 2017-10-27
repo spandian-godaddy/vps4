@@ -3,6 +3,7 @@ package com.godaddy.vps4.scheduler.plugin.backups;
 import com.godaddy.vps4.scheduler.core.JobGroup;
 import com.godaddy.vps4.scheduler.core.JobRequest;
 import com.godaddy.vps4.scheduler.core.Product;
+import com.godaddy.vps4.scheduler.core.Required;
 import com.godaddy.vps4.scheduler.core.SchedulerJob;
 import org.quartz.JobExecutionContext;
 import org.quartz.JobExecutionException;
@@ -38,6 +39,7 @@ public class Vps4BackupJob extends SchedulerJob {
     }
 
     public static class Request extends JobRequest {
-        public UUID vmId;
+        @Required public UUID vmId;
+        @Required public String backupName;
     }
 }

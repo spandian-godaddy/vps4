@@ -259,4 +259,11 @@ public class JdbcVirtualMachineService implements VirtualMachineService {
         VirtualMachine vm = getVirtualMachine(vmId);
         return vm.image.controlPanel == ControlPanel.CPANEL || vm.image.controlPanel == ControlPanel.PLESK;
     }
+
+    @Override
+    public void setBackupJobId(UUID vmId, UUID backupJobId) {
+        Map<String, Object> vmPatchMap = new HashMap<>();
+        vmPatchMap.put("backup_job_id", backupJobId);
+        updateVirtualMachine(vmId, vmPatchMap);
+    }
 }

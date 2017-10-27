@@ -91,6 +91,8 @@ public interface VirtualMachineService {
 
     void setHostname(UUID vmId, String hostname);
 
+    void setBackupJobId(UUID vmId, UUID backupJobId);
+
     void updateVirtualMachine(UUID vmId, Map<String, Object> paramsToUpdate);
 
     List<VirtualMachine> getVirtualMachinesForUser(long vps4UserId);
