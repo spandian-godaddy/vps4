@@ -31,7 +31,7 @@ public class JdbcVirtualMachineService implements VirtualMachineService {
     private final DataSource dataSource;
 
     private String selectVirtualMachineQuery = "SELECT vm.vm_id, vm.hfs_vm_id, vm.orion_guid, vm.project_id, vm.name as \"vm_name\", "
-            + "vm.hostname, vm.account_status_id, vm.valid_on as \"vm_valid_on\", vm.valid_until as \"vm_valid_until\", vm.managed_level, "
+            + "vm.hostname, vm.account_status_id, vm.backup_job_id, vm.valid_on as \"vm_valid_on\", vm.valid_until as \"vm_valid_until\", vm.managed_level, "
             + "vms.spec_id, vms.spec_name, vms.tier, vms.cpu_core_count, vms.memory_mib, vms.disk_gib, vms.valid_on as \"spec_valid_on\", "
             + "vms.valid_until as \"spec_valid_until\", vms.name as \"spec_vps4_name\", "
             + "image.name, image.hfs_name, image.image_id, image.control_panel_id, image.os_type_id, "
@@ -88,6 +88,7 @@ public class JdbcVirtualMachineService implements VirtualMachineService {
         UUID vmId = java.util.UUID.fromString(rs.getString("vm_id"));
         IpAddress ipAddress = mapIpAddress(rs);
         Image image = mapImage(rs);
+        String backupJobId = rs.getString("backup_job_id");
 
         return new VirtualMachine(vmId, rs.getLong("hfs_vm_id"),
                 java.util.UUID.fromString(rs.getString("orion_guid")),
@@ -97,7 +98,8 @@ public class JdbcVirtualMachineService implements VirtualMachineService {
                 rs.getTimestamp("vm_valid_on", TimestampUtils.utcCalendar).toInstant(),
                 validUntil != null ? validUntil.toInstant() : null,
                 rs.getString("hostname"),
-                rs.getInt("managed_level"));
+                rs.getInt("managed_level"),
+                backupJobId != null? java.util.UUID.fromString(backupJobId) : null);
     }
 
     protected IpAddress mapIpAddress(ResultSet rs) throws SQLException {

@@ -7,6 +7,7 @@ import java.util.stream.Collectors;
 
 import javax.inject.Inject;
 
+import com.godaddy.vps4.orchestration.scheduler.DeleteAutomaticBackupSchedule;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -52,6 +53,8 @@ public class Vps4DestroyVm extends ActionCommand<Vps4DestroyVm.Request, Vps4Dest
 
     private final NodePingService monitoringService;
 
+    CommandContext context;
+
     @Inject
     public Vps4DestroyVm(ActionService actionService,
             NetworkService networkService,
@@ -73,11 +76,13 @@ public class Vps4DestroyVm extends ActionCommand<Vps4DestroyVm.Request, Vps4Dest
 
     @Override
     public Response executeWithAction(CommandContext context, Vps4DestroyVm.Request request) {
+        this.context = context;
+
         final long hfsVmId = request.hfsVmId;
         VirtualMachine vm = this.virtualMachineService.getVirtualMachine(hfsVmId);
         logger.info("Destroying VM {} with hfsVmId {}", vm.vmId, hfsVmId);
 
-        unlicenseCpanel(context, hfsVmId, vm.vmId);
+        unlicenseCpanel(hfsVmId, vm.vmId);
 
         List<IpAddress> addresses = networkService.getVmIpAddresses(vm.vmId);
         if (addresses != null){
@@ -96,6 +101,10 @@ public class Vps4DestroyVm extends ActionCommand<Vps4DestroyVm.Request, Vps4Dest
                                                                     return null;}, Void.class);
         }
 
+        if (hasAutomaticBackupJobScheduled(vm)) {
+            deleteAutomaticBackupSchedule(vm.backupJobId);
+        }
+
         VmAction hfsAction = context.execute("DestroyVmHfs", ctx -> vmService.destroyVm(hfsVmId), VmAction.class);
 
         hfsAction = context.execute(WaitForVmAction.class, hfsAction);
@@ -108,7 +117,22 @@ public class Vps4DestroyVm extends ActionCommand<Vps4DestroyVm.Request, Vps4Dest
         return response;
     }
 
-    private void unlicenseCpanel(CommandContext context, final long hfsVmId, UUID vmId) {
+    private boolean hasAutomaticBackupJobScheduled(VirtualMachine vm) {
+        return vm.backupJobId != null;
+    }
+
+    private void deleteAutomaticBackupSchedule(UUID backupJobId) {
+        try {
+            context.execute(DeleteAutomaticBackupSchedule.class, backupJobId);
+        }
+        catch (RuntimeException e) {
+            // squelch this for now. dont fail a vm deletion just because we couldn't delete an auto backup schedule
+            // TODO: should this behaviour be changed?
+            logger.error("Automatic backup job schedule deletion failed");
+        }
+    }
+
+    private void unlicenseCpanel(final long hfsVmId, UUID vmId) {
         if(this.virtualMachineService.virtualMachineHasCpanel(vmId)){
             Vm hfsVm = vmService.getVm(hfsVmId);
             CPanelAction action = context.execute("Unlicense-Cpanel", ctx -> {

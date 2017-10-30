@@ -19,6 +19,7 @@ public class VirtualMachine {
     public final Instant validUntil;
     public final String hostname;
     public final int managedLevel;
+    public final UUID backupJobId;
 
     public VirtualMachine(UUID vmId,
             long hfsVmId,
@@ -31,7 +32,8 @@ public class VirtualMachine {
             Instant validOn,
             Instant validUntil,
             String hostname,
-            int managedLevel) {
+            int managedLevel,
+            UUID backupJobId) {
         this.vmId = vmId;
         this.hfsVmId = hfsVmId;
         this.orionGuid = orionGuid;
@@ -44,6 +46,7 @@ public class VirtualMachine {
         this.validUntil = validUntil;
         this.hostname = hostname;
         this.managedLevel = managedLevel;
+        this.backupJobId = backupJobId;
     }
 
     public VirtualMachine(VirtualMachine virtualMachine) {
@@ -59,6 +62,7 @@ public class VirtualMachine {
         validUntil = virtualMachine.validUntil;
         hostname = virtualMachine.hostname;
         managedLevel = virtualMachine.managedLevel;
+        backupJobId = virtualMachine.backupJobId;
     }
 
     @Override
