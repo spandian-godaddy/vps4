@@ -28,7 +28,7 @@
             <dependency>
                 <groupId>com.godaddy.hfs</groupId>
                 <artifactId>hfs-crypto</artifactId>
-                <version>0.5.0</version>
+                <version>0.8.2-7</version>
             </dependency>
             <dependency>
                 <groupId>org.jboss.resteasy</groupId>
