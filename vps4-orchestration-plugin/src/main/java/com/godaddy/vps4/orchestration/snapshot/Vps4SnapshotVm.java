@@ -1,9 +1,19 @@
 package com.godaddy.vps4.orchestration.snapshot;
 
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.UUID;
 
 import javax.inject.Inject;
 
+import com.godaddy.hfs.config.Config;
+import com.godaddy.vps4.client.ClientCertAuth;
+import com.godaddy.vps4.client.SsoJwtAuth;
+import com.godaddy.vps4.orchestration.NoRetryException;
+import com.godaddy.vps4.orchestration.scheduler.ScheduleAutomaticBackupRetry;
+import com.godaddy.vps4.scheduler.core.JobType;
+import com.godaddy.vps4.scheduler.plugin.backups.Vps4BackupJob;
+import com.godaddy.vps4.scheduler.web.client.SchedulerService;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.json.simple.JSONObject;
 import org.slf4j.Logger;
@@ -33,14 +43,20 @@ public class Vps4SnapshotVm extends ActionCommand<Vps4SnapshotVm.Request, Vps4Sn
     private final gdg.hfs.vhfs.snapshot.SnapshotService hfsSnapshotService;
     private final SnapshotService vps4SnapshotService;
     private UUID snapshotIdToBeDeprecated;
+    private SchedulerService schedulerService;
+    private final Config config;
 
     @Inject
     public Vps4SnapshotVm(@SnapshotActionService ActionService actionService,
                           gdg.hfs.vhfs.snapshot.SnapshotService hfsSnapshotService,
-                          SnapshotService vps4SnapshotService) {
+                          SnapshotService vps4SnapshotService,
+                          Config config,
+                          @ClientCertAuth SchedulerService schedulerService) {
         super(actionService);
         this.hfsSnapshotService = hfsSnapshotService;
         this.vps4SnapshotService = vps4SnapshotService;
+        this.config = config;
+        this.schedulerService = schedulerService;
     }
 
     @Override
@@ -105,6 +121,7 @@ public class Vps4SnapshotVm extends ActionCommand<Vps4SnapshotVm.Request, Vps4Sn
             logger.info("Snapshot creation error (waitForAction) for snapshot with id: {}", request.vps4SnapshotId);
             vps4SnapshotService.markSnapshotErrored(request.vps4SnapshotId);
             reverseSnapshotDeprecation(context);
+            rescheduleAutomaticSnapshot(context, request.vps4SnapshotId, e);
             throw new RuntimeException(e);
         }
 
@@ -113,6 +130,18 @@ public class Vps4SnapshotVm extends ActionCommand<Vps4SnapshotVm.Request, Vps4Sn
             return null;
         }, Void.class);
         return hfsAction;
+    }
+
+    private void rescheduleAutomaticSnapshot(CommandContext context, UUID vps4SnapshotId, Exception e) {
+        Snapshot failedSnapshot = vps4SnapshotService.getSnapshot(vps4SnapshotId);
+        if(failedSnapshot.snapshotType.equals(SnapshotType.AUTOMATIC)){
+            // If an automatic snapshot fails, schedule another one in a
+            // configurable number of hours
+            ScheduleAutomaticBackupRetry.Request req = new ScheduleAutomaticBackupRetry.Request();
+            req.vmId = failedSnapshot.vmId;
+            context.execute(ScheduleAutomaticBackupRetry.class, req);
+            throw new NoRetryException("Exception while running an automatic backup for vmId " + failedSnapshot.vmId, e);
+        }
     }
 
     private SnapshotAction createSnapshot(CommandContext context, Request request) {
@@ -140,6 +169,7 @@ public class Vps4SnapshotVm extends ActionCommand<Vps4SnapshotVm.Request, Vps4Sn
             logger.info("Snapshot creation error for VPS4 snapshot with id: {}", request.vps4SnapshotId);
             vps4SnapshotService.markSnapshotErrored(request.vps4SnapshotId);
             reverseSnapshotDeprecation(context);
+            rescheduleAutomaticSnapshot(context, request.vps4SnapshotId, e);
             throw new RuntimeException(e);
         }
     }

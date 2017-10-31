@@ -7,6 +7,6 @@ public class SchedulerModule extends AbstractModule {
     @Override
     public void configure() {
         bind(SetupAutomaticBackupSchedule.class);
-        bind(DeleteAutomaticBackupSchedule.class);
+        bind(ScheduleAutomaticBackupRetry.class);
     }
 }

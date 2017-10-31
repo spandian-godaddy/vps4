@@ -22,22 +22,17 @@ import org.mockito.MockitoAnnotations;
 import java.util.UUID;
 import java.util.function.Function;
 
-import static org.mockito.Mockito.any;
-import static org.mockito.Mockito.eq;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
-public class SetupAutomaticBackupScheduleTest {
+public class ScheduleAutomaticBackupRetryTest {
     static Injector injector;
 
     private CommandContext context;
-    private SetupAutomaticBackupSchedule.Request request;
+    private ScheduleAutomaticBackupRetry.Request request;
     private UUID jobId = UUID.randomUUID();
     private SchedulerJobDetail jobDetail;
 
-    @Inject SetupAutomaticBackupSchedule command;
+    @Inject ScheduleAutomaticBackupRetry command;
     @Inject @ClientCertAuth SchedulerService schedulerService;
 
     @Captor private ArgumentCaptor<Function<CommandContext, SchedulerJobDetail>> createJobCaptor;
@@ -72,20 +67,20 @@ public class SetupAutomaticBackupScheduleTest {
     }
 
     private void setCommandRequest() {
-        request = new SetupAutomaticBackupSchedule.Request();
+        request = new ScheduleAutomaticBackupRetry.Request();
     }
 
     @Test
     public void callsSchedulerServiceToCreateJobSchedule() throws Exception {
         jobDetail = new SchedulerJobDetail(jobId, null, null);
-        when(context.execute(eq("Create schedule"), any(Function.class), eq(SchedulerJobDetail.class)))
+        when(context.execute(eq("Retry Scheduled Backup"), any(Function.class), eq(SchedulerJobDetail.class)))
                 .thenReturn(jobDetail);
 
         command.execute(context, request);
 
         // verify call to the scheduler service is wrapped in a context.execute method
         verify(context, times(1))
-            .execute(eq("Create schedule"), createJobCaptor.capture(), eq(SchedulerJobDetail.class));
+            .execute(eq("Retry Scheduled Backup"), createJobCaptor.capture(), eq(SchedulerJobDetail.class));
 
         // Verify that the lambda is calling the appropriate scheduler service method
         Function<CommandContext, SchedulerJobDetail> lambda = createJobCaptor.getValue();
@@ -96,15 +91,14 @@ public class SetupAutomaticBackupScheduleTest {
         // verify the job creation payload data
         Vps4BackupJob.Request jobRequestData = schedulerJobCreationDataCaptor.getValue();
         Assert.assertEquals(request.vmId, jobRequestData.vmId);
-        Assert.assertEquals(request.backupName, jobRequestData.backupName);
-        Assert.assertEquals(JobType.RECURRING, jobRequestData.jobType);
-        Assert.assertEquals(7, (long) jobRequestData.repeatIntervalInDays);
+        Assert.assertEquals(JobType.ONE_TIME, jobRequestData.jobType);
+        Assert.assertEquals(null, jobRequestData.repeatIntervalInDays);
     }
 
     @Test(expected = RuntimeException.class)
     public void errorInSchedulerJobCreation() {
-        when(context.execute(eq("Create schedule"), any(Function.class), eq(SchedulerJobDetail.class)))
-                .thenThrow(new RuntimeException("Error"));
+        when(context.execute(eq("Retry Scheduled Backup"), any(Function.class), eq(SchedulerJobDetail.class)))
+                .thenThrow(new RuntimeException("Unit Test Error"));
         command.execute(context, request);
     }
 

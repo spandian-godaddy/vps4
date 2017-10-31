@@ -13,6 +13,16 @@ import java.util.function.Function;
 
 import javax.sql.DataSource;
 
+import com.godaddy.hfs.config.Config;
+import com.godaddy.vps4.orchestration.TestCommandContext;
+import com.godaddy.vps4.orchestration.scheduler.ScheduleAutomaticBackupRetry;
+import com.godaddy.vps4.scheduler.core.SchedulerJobDetail;
+import com.godaddy.vps4.scheduler.plugin.Vps4SchedulerJobModule;
+import com.godaddy.vps4.scheduler.plugin.backups.Vps4BackupJob;
+import com.godaddy.vps4.scheduler.web.client.SchedulerService;
+
+import com.godaddy.vps4.scheduler.web.client.SchedulerServiceClientModule;
+import gdg.hfs.orchestration.GuiceCommandProvider;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -52,17 +62,21 @@ public class Vps4SnapshotVmTest {
     private Vps4SnapshotVm command;
     private CommandContext context;
     private Vps4SnapshotVm.Request request;
+    private Vps4SnapshotVm.Request automaticRequest;
     private gdg.hfs.vhfs.snapshot.SnapshotAction hfsAction;
     private gdg.hfs.vhfs.snapshot.Snapshot hfsSnapshot;
     private UUID orionGuid;
     private UUID vps4SnapshotId;
+    private UUID vps4AutomaticSnapshotId;
     private long vps4UserId;
     private UUID vps4SnapshotIdToBeDeprecated;
     private long vps4SnapshotActionId;
+    private long vps4AutomaticSnapshotActionId;
     private long hfsActionId = 12345L;
     private long hfsSnapshotId = 4567L;
     private String hfsImageId = "nocfoxid";
     private SnapshotService spySnapshotService;
+
 
     @Inject Vps4UserService vps4UserService;
     @Inject ProjectService projectService;
@@ -70,20 +84,27 @@ public class Vps4SnapshotVmTest {
     @Inject SnapshotService snapshotService;
     @Inject gdg.hfs.vhfs.snapshot.SnapshotService hfsSnapshotService;
     @Inject @SnapshotActionService ActionService actionService;
+    @Inject Config config;
+    @Inject SchedulerService schedulerService;
 
     @Captor ArgumentCaptor<Function<CommandContext, Void>> snapshotCaptor;
     @Captor ArgumentCaptor<Function<CommandContext, UUID>> markOldestSnapshotCaptor;
     @Captor ArgumentCaptor<Function<CommandContext, SnapshotAction>> snapshotActionCaptor;
     @Captor ArgumentCaptor<Function<CommandContext, gdg.hfs.vhfs.snapshot.Snapshot>> hfsSnapshotCaptor;
+    @Captor ArgumentCaptor<Function<CommandContext, SchedulerJobDetail>> submitJobCaptor;
 
     @BeforeClass
     public static void newInjector() {
+        SchedulerService sc = mock(SchedulerService.class);
         injector = Guice.createInjector(
                 new DatabaseModule(),
                 new SecurityModule(),
                 new SnapshotModule(),
                 new Vps4ExternalsModule(),
-                new Vps4SnapshotTestModule()
+                new Vps4SnapshotTestModule(),
+                binder -> {
+                    binder.bind(SchedulerService.class).toInstance(sc);
+                }
         );
     }
 
@@ -93,19 +114,20 @@ public class Vps4SnapshotVmTest {
         injector.injectMembers(this);
 
         spySnapshotService = spy(snapshotService);
-        command = new Vps4SnapshotVm(actionService, hfsSnapshotService, spySnapshotService);
+        command = new Vps4SnapshotVm(actionService, hfsSnapshotService, spySnapshotService, config, schedulerService);
         addTestSqlData();
         context = setupMockContext();
-        request = getCommandRequest();
+        request = getCommandRequest(vps4SnapshotActionId, vps4SnapshotId, SnapshotType.ON_DEMAND);
+        automaticRequest = getCommandRequest(vps4AutomaticSnapshotActionId, vps4AutomaticSnapshotId, SnapshotType.AUTOMATIC);
     }
 
-    private Vps4SnapshotVm.Request getCommandRequest() {
+    private Vps4SnapshotVm.Request getCommandRequest(long snapshotActionId, UUID snapshotId, SnapshotType snapshotType) {
         Vps4SnapshotVm.Request req = new Vps4SnapshotVm.Request();
-        req.actionId = vps4SnapshotActionId;
-        req.vps4SnapshotId = vps4SnapshotId;
+        req.actionId = snapshotActionId;
+        req.vps4SnapshotId = snapshotId;
         req.orionGuid = orionGuid;
         req.vps4UserId = vps4UserId;
-        req.snapshotType = SnapshotType.ON_DEMAND;
+        req.snapshotType = snapshotType;
         return req;
     }
 
@@ -135,9 +157,11 @@ public class Vps4SnapshotVmTest {
         VirtualMachine vm = SqlTestData.insertVm(virtualMachineService, vps4UserService);
         orionGuid = vm.orionGuid;
         vps4SnapshotId = SqlTestData.insertSnapshot(snapshotService, vm.vmId, project.getProjectId(), SnapshotType.ON_DEMAND);
+        vps4AutomaticSnapshotId = SqlTestData.insertSnapshot(snapshotService, vm.vmId, project.getProjectId(), SnapshotType.AUTOMATIC);
         vps4SnapshotIdToBeDeprecated = SqlTestData.insertSnapshotWithStatus(
                 snapshotService, vm.vmId, project.getProjectId(), SnapshotStatus.LIVE, SnapshotType.ON_DEMAND);
         vps4SnapshotActionId = SqlTestData.insertSnapshotAction(actionService, vps4UserService, vps4SnapshotId);
+        vps4AutomaticSnapshotActionId = SqlTestData.insertSnapshotAction(actionService, vps4UserService, vps4AutomaticSnapshotId);
     }
 
     @After
@@ -228,7 +252,7 @@ public class Vps4SnapshotVmTest {
 
     @Test
     public void onlyMarksSameTypeOfSnapshotDeprecated() {
-        request.snapshotType = SnapshotType.AUTOMATIC;
+
         when(context.execute(eq("MarkOldestSnapshotForDeprecation" + orionGuid), any())).thenReturn((UUID) null);
         command.execute(context, request);
         // vps4SnapshotIdToBeDeprecated is an On Demand backup, and should not be
@@ -251,22 +275,58 @@ public class Vps4SnapshotVmTest {
                 ActionType.DESTROY_SNAPSHOT, actionService.getActions(vps4SnapshotIdToBeDeprecated).get(0).type);
     }
 
-    @Test(expected = RuntimeException.class)
+    @Test
     public void errorInInitialRequestSetsStatusToError() {
-        when(context.execute(eq("Vps4SnapshotVm"), any())).thenThrow(new Exception("Error in initial request"));
-        command.execute(context, request);
+        when(context.execute(eq("Vps4SnapshotVm"), any(Function.class), eq(SnapshotAction.class))).thenThrow(new RuntimeException("Error in initial request"));
+        try {
+            command.execute(context, request);
+            Assert.fail("Should have thrown a runtime exception");
+        }catch(RuntimeException rte){}
 
         verify(spySnapshotService, times(1)).markSnapshotErrored(eq(vps4SnapshotId));
         Assert.assertEquals(snapshotService.getSnapshot(vps4SnapshotId).status, SnapshotStatus.ERROR);
     }
 
-    @Test(expected = RuntimeException.class)
+    @Test
+    public void errorInInitialRequestSchedulesAnotherBackup() {
+        when(context.execute(eq("Vps4SnapshotVm"), any(Function.class), eq(SnapshotAction.class))).thenThrow(new RuntimeException("Error in initial request"));
+        try {
+            command.execute(context, automaticRequest);
+        }catch(RuntimeException rte){
+            // Automatic backups throw a NoRetryException which is not raised through
+            // the orchestration engine.
+            Assert.fail("Should not have thrown a runtime exception");
+        }
+        verify(context, times(1)).execute(eq(ScheduleAutomaticBackupRetry.class), any(ScheduleAutomaticBackupRetry.Request.class));
+
+//        verify(schedulerService, times(1)).submitJobToGroup(eq("vps4"), eq("backups"), any(Vps4BackupJob.Request.class));
+    }
+
+    @Test
     public void errorInCreationProcessSetsStatusToError() {
-        when(context.execute(eq(WaitForSnapshotAction.class), hfsAction))
-                .thenThrow(new Exception("Error in initial request"));
-        command.execute(context, request);
+        when(context.execute(eq(WaitForSnapshotAction.class), eq(hfsAction)))
+                .thenThrow(new RuntimeException("Error in initial request"));
+        try {
+            command.execute(context, request);
+            Assert.fail("Should have thrown a runtime exception");
+        }catch(RuntimeException rte){}
 
         verify(spySnapshotService, times(1)).markSnapshotErrored(eq(vps4SnapshotId));
         Assert.assertEquals(snapshotService.getSnapshot(vps4SnapshotId).status, SnapshotStatus.ERROR);
+    }
+
+    @Test
+    public void errorInCreationProcessSchedulesAnotherBackup() {
+        when(context.execute(eq(WaitForSnapshotAction.class), eq(hfsAction)))
+                .thenThrow(new RuntimeException("Error in initial request"));
+        try {
+            command.execute(context, automaticRequest);
+        }catch(RuntimeException rte){
+            // Automatic backups throw a NoRetryException which is not raised through
+            // the orchestration engine.
+            Assert.fail("Should not have thrown a runtime exception");
+        }
+
+        verify(context, times(1)).execute(eq(ScheduleAutomaticBackupRetry.class), any(ScheduleAutomaticBackupRetry.Request.class));
     }
 }
