@@ -1,12 +1,11 @@
-package com.godaddy.vps4.scheduler.core;
+package com.godaddy.vps4.scheduler.api.core;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
-@Target(ElementType.TYPE)
+@Target(ElementType.FIELD)
 @Retention(RetentionPolicy.RUNTIME)
-public @interface Product {
-    String value();
+public @interface Optional {
 }

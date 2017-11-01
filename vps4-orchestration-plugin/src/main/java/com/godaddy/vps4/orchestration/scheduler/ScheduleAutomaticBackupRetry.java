@@ -2,11 +2,11 @@ package com.godaddy.vps4.orchestration.scheduler;
 
 import com.godaddy.hfs.config.Config;
 import com.godaddy.vps4.client.ClientCertAuth;
-import com.godaddy.vps4.scheduler.core.JobType;
-import com.godaddy.vps4.scheduler.core.SchedulerJobDetail;
-import com.godaddy.vps4.scheduler.core.utils.Utils;
-import com.godaddy.vps4.scheduler.plugin.backups.Vps4BackupJob;
-import com.godaddy.vps4.scheduler.web.client.SchedulerService;
+import com.godaddy.vps4.scheduler.api.core.JobType;
+import com.godaddy.vps4.scheduler.api.core.SchedulerJobDetail;
+import com.godaddy.vps4.scheduler.api.core.utils.Utils;
+import com.godaddy.vps4.scheduler.api.plugin.Vps4BackupJobRequest;
+import com.godaddy.vps4.scheduler.api.web.SchedulerWebService;
 import gdg.hfs.orchestration.Command;
 import gdg.hfs.orchestration.CommandContext;
 import org.slf4j.Logger;
@@ -21,20 +21,20 @@ public class ScheduleAutomaticBackupRetry implements Command<ScheduleAutomaticBa
 
     private static final Logger logger = LoggerFactory.getLogger(ScheduleAutomaticBackupRetry.class);
 
-    private final SchedulerService schedulerService;
+    private final SchedulerWebService schedulerService;
     private final Config config;
 
     @Inject
-    public ScheduleAutomaticBackupRetry(@ClientCertAuth SchedulerService schedulerService, Config config) {
+    public ScheduleAutomaticBackupRetry(@ClientCertAuth SchedulerWebService schedulerService, Config config) {
         this.schedulerService = schedulerService;
         this.config = config;
     }
 
     @Override
     public UUID execute(CommandContext context, ScheduleAutomaticBackupRetry.Request request) {
-        String product = Utils.getProductForJobClass(Vps4BackupJob.class);
-        String jobGroup = Utils.getJobGroupForJobClass(Vps4BackupJob.class);
-        Vps4BackupJob.Request backupRequest = getJobRequestData(request);
+        String product = Utils.getProductForJobRequestClass(Vps4BackupJobRequest.class);
+        String jobGroup = Utils.getJobGroupForJobRequestClass(Vps4BackupJobRequest.class);
+        Vps4BackupJobRequest backupRequest = getJobRequestData(request);
 
         try {
             SchedulerJobDetail jobDetail = context.execute(
@@ -48,8 +48,8 @@ public class ScheduleAutomaticBackupRetry implements Command<ScheduleAutomaticBa
         }
     }
 
-    private Vps4BackupJob.Request getJobRequestData(Request request) {
-        Vps4BackupJob.Request backupRequest = new Vps4BackupJob.Request();
+    private Vps4BackupJobRequest getJobRequestData(Request request) {
+        Vps4BackupJobRequest backupRequest = new Vps4BackupJobRequest();
         backupRequest.vmId = request.vmId;
         backupRequest.backupName = "autoBackup";
         backupRequest.jobType = JobType.ONE_TIME;

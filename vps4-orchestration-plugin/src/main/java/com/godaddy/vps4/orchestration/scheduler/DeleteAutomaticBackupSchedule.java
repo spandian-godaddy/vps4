@@ -1,9 +1,9 @@
 package com.godaddy.vps4.orchestration.scheduler;
 
 import com.godaddy.vps4.client.ClientCertAuth;
-import com.godaddy.vps4.scheduler.core.utils.Utils;
-import com.godaddy.vps4.scheduler.plugin.backups.Vps4BackupJob;
-import com.godaddy.vps4.scheduler.web.client.SchedulerService;
+import com.godaddy.vps4.scheduler.api.core.utils.Utils;
+import com.godaddy.vps4.scheduler.api.plugin.Vps4BackupJobRequest;
+import com.godaddy.vps4.scheduler.api.web.SchedulerWebService;
 import gdg.hfs.orchestration.Command;
 import gdg.hfs.orchestration.CommandContext;
 import org.slf4j.Logger;
@@ -16,23 +16,23 @@ public class DeleteAutomaticBackupSchedule implements Command<UUID, Void> {
 
     private static final Logger logger = LoggerFactory.getLogger(DeleteAutomaticBackupSchedule.class);
 
-    private final SchedulerService schedulerService;
+    private final SchedulerWebService schedulerWebService;
 
     @Inject
-    public DeleteAutomaticBackupSchedule(@ClientCertAuth SchedulerService schedulerService) {
-        this.schedulerService = schedulerService;
+    public DeleteAutomaticBackupSchedule(@ClientCertAuth SchedulerWebService schedulerWebService) {
+        this.schedulerWebService = schedulerWebService;
     }
 
     @Override
     public Void execute(CommandContext context, UUID backupJobId) {
-        String product = Utils.getProductForJobClass(Vps4BackupJob.class);
-        String jobGroup = Utils.getJobGroupForJobClass(Vps4BackupJob.class);
+        String product = Utils.getProductForJobRequestClass(Vps4BackupJobRequest.class);
+        String jobGroup = Utils.getJobGroupForJobRequestClass(Vps4BackupJobRequest.class);
 
         try {
             context.execute(
                 "Delete schedule",
                 ctx -> {
-                    schedulerService.deleteJob(product, jobGroup, backupJobId);
+                    schedulerWebService.deleteJob(product, jobGroup, backupJobId);
                     return null;
                 },
                 Void.class);

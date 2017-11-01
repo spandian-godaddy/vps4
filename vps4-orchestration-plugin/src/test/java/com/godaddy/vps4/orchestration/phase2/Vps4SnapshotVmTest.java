@@ -14,15 +14,7 @@ import java.util.function.Function;
 import javax.sql.DataSource;
 
 import com.godaddy.hfs.config.Config;
-import com.godaddy.vps4.orchestration.TestCommandContext;
 import com.godaddy.vps4.orchestration.scheduler.ScheduleAutomaticBackupRetry;
-import com.godaddy.vps4.scheduler.core.SchedulerJobDetail;
-import com.godaddy.vps4.scheduler.plugin.Vps4SchedulerJobModule;
-import com.godaddy.vps4.scheduler.plugin.backups.Vps4BackupJob;
-import com.godaddy.vps4.scheduler.web.client.SchedulerService;
-
-import com.godaddy.vps4.scheduler.web.client.SchedulerServiceClientModule;
-import gdg.hfs.orchestration.GuiceCommandProvider;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -85,26 +77,20 @@ public class Vps4SnapshotVmTest {
     @Inject gdg.hfs.vhfs.snapshot.SnapshotService hfsSnapshotService;
     @Inject @SnapshotActionService ActionService actionService;
     @Inject Config config;
-    @Inject SchedulerService schedulerService;
 
     @Captor ArgumentCaptor<Function<CommandContext, Void>> snapshotCaptor;
     @Captor ArgumentCaptor<Function<CommandContext, UUID>> markOldestSnapshotCaptor;
     @Captor ArgumentCaptor<Function<CommandContext, SnapshotAction>> snapshotActionCaptor;
     @Captor ArgumentCaptor<Function<CommandContext, gdg.hfs.vhfs.snapshot.Snapshot>> hfsSnapshotCaptor;
-    @Captor ArgumentCaptor<Function<CommandContext, SchedulerJobDetail>> submitJobCaptor;
 
     @BeforeClass
     public static void newInjector() {
-        SchedulerService sc = mock(SchedulerService.class);
         injector = Guice.createInjector(
                 new DatabaseModule(),
                 new SecurityModule(),
                 new SnapshotModule(),
                 new Vps4ExternalsModule(),
-                new Vps4SnapshotTestModule(),
-                binder -> {
-                    binder.bind(SchedulerService.class).toInstance(sc);
-                }
+                new Vps4SnapshotTestModule()
         );
     }
 
@@ -114,7 +100,7 @@ public class Vps4SnapshotVmTest {
         injector.injectMembers(this);
 
         spySnapshotService = spy(snapshotService);
-        command = new Vps4SnapshotVm(actionService, hfsSnapshotService, spySnapshotService, config, schedulerService);
+        command = new Vps4SnapshotVm(actionService, hfsSnapshotService, spySnapshotService, config);
         addTestSqlData();
         context = setupMockContext();
         request = getCommandRequest(vps4SnapshotActionId, vps4SnapshotId, SnapshotType.ON_DEMAND);

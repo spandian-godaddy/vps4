@@ -7,11 +7,12 @@ import static org.quartz.TriggerBuilder.newTrigger;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.godaddy.vps4.scheduler.core.JobRequest;
-import com.godaddy.vps4.scheduler.core.JobType;
-import com.godaddy.vps4.scheduler.core.Required;
+import com.godaddy.vps4.scheduler.api.core.JobRequest;
+import com.godaddy.vps4.scheduler.api.core.JobType;
+import com.godaddy.vps4.scheduler.api.core.Required;
+import com.godaddy.vps4.scheduler.api.core.SchedulerJobDetail;
+import com.godaddy.vps4.scheduler.core.JobMetadata;
 import com.godaddy.vps4.scheduler.core.SchedulerJob;
-import com.godaddy.vps4.scheduler.core.SchedulerJobDetail;
 import com.godaddy.vps4.scheduler.core.SchedulerService;
 import com.godaddy.vps4.scheduler.core.quartz.memory.QuartzMemoryModule;
 import com.godaddy.vps4.scheduler.core.utils.Utils;
@@ -236,6 +237,11 @@ public class QuartzSchedulerServiceRESTTest {
         schedulerService.deleteJob(product, jobGroup, UUID.randomUUID());
     }
 
+    @JobMetadata(
+        product = "vps4",
+        jobGroup = "backups",
+        jobRequestType = TestJob.TestRequest.class
+    )
     public static class TestJob extends SchedulerJob {
         @Override
         public void execute(JobExecutionContext jobExecutionContext) throws JobExecutionException {

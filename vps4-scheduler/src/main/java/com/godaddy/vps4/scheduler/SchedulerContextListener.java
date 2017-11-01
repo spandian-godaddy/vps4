@@ -1,10 +1,10 @@
 package com.godaddy.vps4.scheduler;
 
-import com.godaddy.vps4.scheduler.core.JobGroup;
-import com.godaddy.vps4.scheduler.core.Product;
+import com.godaddy.vps4.scheduler.core.JobMetadata;
 import com.godaddy.vps4.scheduler.core.SchedulerJob;
 import com.godaddy.vps4.scheduler.core.SchedulerService;
 import com.godaddy.vps4.scheduler.core.SchedulerTriggerListener;
+import com.godaddy.vps4.scheduler.core.TriggerListenerMetadata;
 import com.godaddy.vps4.scheduler.core.utils.Utils;
 import com.google.inject.Binding;
 import com.google.inject.Inject;
@@ -50,14 +50,14 @@ public class SchedulerContextListener implements ServletContextListener {
             .stream()
             .map(entry -> entry.getKey().getTypeLiteral().getRawType())
             .filter(cls -> schedulerClassType.isAssignableFrom(cls)
-                    && cls.isAnnotationPresent(Product.class)
-                    && cls.isAnnotationPresent(JobGroup.class))
+                    && (cls.isAnnotationPresent(JobMetadata.class)
+                    || cls.isAnnotationPresent(TriggerListenerMetadata.class)))
             .collect(Collectors.toList());
     }
 
     private void registerJobClassWithSchedulerService(Class<? extends SchedulerJob> jobClass) {
-        String product = jobClass.getAnnotation(Product.class).value();
-        String jobGroup = jobClass.getAnnotation(JobGroup.class).value();
+        String product = Utils.getProductForJobClass(jobClass);
+        String jobGroup = Utils.getJobGroupForJobClass(jobClass);
         String jobGroupId = Utils.getJobGroupId(product, jobGroup);
         logger.info("******* Job Group: {} --> Job Class: {} ***********", jobGroupId, jobClass);
         schedulerService.registerJobClassForJobGroup(jobGroupId, jobClass);
@@ -77,8 +77,8 @@ public class SchedulerContextListener implements ServletContextListener {
     }
 
     private void registerTriggerClassWithSchedulerService(Class<SchedulerTriggerListener> triggerClass) {
-        String product = triggerClass.getAnnotation(Product.class).value();
-        String jobGroup = triggerClass.getAnnotation(JobGroup.class).value();
+        String product = Utils.getProductForTriggerListenerClass(triggerClass);
+        String jobGroup = Utils.getJobGroupForTriggerListenerClass(triggerClass);
         String jobGroupId = Utils.getJobGroupId(product, jobGroup);
         logger.info("******* Job Group: {} --> Trigger Class: {} ***********", jobGroupId, triggerClass);
         try {

@@ -1,8 +1,7 @@
 package com.godaddy.vps4.scheduler.plugin.patch;
 
-import com.godaddy.vps4.scheduler.core.JobGroup;
-import com.godaddy.vps4.scheduler.core.JobRequest;
-import com.godaddy.vps4.scheduler.core.Product;
+import com.godaddy.vps4.scheduler.api.plugin.Vps4PatchJobRequest;
+import com.godaddy.vps4.scheduler.core.JobMetadata;
 import com.godaddy.vps4.scheduler.core.SchedulerJob;
 import org.quartz.JobExecutionContext;
 import org.quartz.JobExecutionException;
@@ -10,14 +9,15 @@ import org.quartz.JobKey;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.UUID;
-
-@Product("vps4")
-@JobGroup("patch")
+@JobMetadata(
+        product = "vps4",
+        jobGroup = "patch",
+        jobRequestType = Vps4PatchJobRequest.class
+)
 public class Vps4PatchJob extends SchedulerJob {
     private static final Logger logger = LoggerFactory.getLogger(Vps4PatchJob.class);
 
-    Request request;
+    Vps4PatchJobRequest request;
 
     @Override
     public void execute(JobExecutionContext context) throws JobExecutionException {
@@ -33,11 +33,7 @@ public class Vps4PatchJob extends SchedulerJob {
         }
     }
 
-    public void setRequest(Request request) {
+    public void setRequest(Vps4PatchJobRequest request) {
         this.request = request;
-    }
-
-    public static class Request extends JobRequest {
-        public UUID vmId;
     }
 }

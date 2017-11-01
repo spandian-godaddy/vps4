@@ -1,6 +1,6 @@
-package com.godaddy.vps4.scheduler.core;
+package com.godaddy.vps4.scheduler.api.core;
 
-import com.godaddy.vps4.scheduler.core.jobRequests.JobRequestOne;
+import com.godaddy.vps4.scheduler.api.core.jobRequests.JobRequestOne;
 import org.junit.Assert;
 import org.junit.Test;
 import org.slf4j.Logger;
@@ -8,8 +8,6 @@ import org.slf4j.LoggerFactory;
 
 import java.time.Instant;
 import java.util.List;
-
-import static org.junit.Assert.*;
 
 public class JobRequestTest {
     private static final Logger logger = LoggerFactory.getLogger(JobRequestTest.class);

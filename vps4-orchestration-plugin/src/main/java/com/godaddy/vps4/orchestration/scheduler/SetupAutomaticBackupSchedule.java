@@ -2,11 +2,11 @@ package com.godaddy.vps4.orchestration.scheduler;
 
 import com.godaddy.hfs.config.Config;
 import com.godaddy.vps4.client.ClientCertAuth;
-import com.godaddy.vps4.scheduler.core.JobType;
-import com.godaddy.vps4.scheduler.core.SchedulerJobDetail;
-import com.godaddy.vps4.scheduler.core.utils.Utils;
-import com.godaddy.vps4.scheduler.plugin.backups.Vps4BackupJob;
-import com.godaddy.vps4.scheduler.web.client.SchedulerService;
+import com.godaddy.vps4.scheduler.api.core.JobType;
+import com.godaddy.vps4.scheduler.api.core.SchedulerJobDetail;
+import com.godaddy.vps4.scheduler.api.core.utils.Utils;
+import com.godaddy.vps4.scheduler.api.plugin.Vps4BackupJobRequest;
+import com.godaddy.vps4.scheduler.api.web.SchedulerWebService;
 import gdg.hfs.orchestration.Command;
 import gdg.hfs.orchestration.CommandContext;
 import org.slf4j.Logger;
@@ -21,25 +21,25 @@ public class SetupAutomaticBackupSchedule implements Command<SetupAutomaticBacku
 
     private static final Logger logger = LoggerFactory.getLogger(SetupAutomaticBackupSchedule.class);
 
-    private final SchedulerService schedulerService;
+    private final SchedulerWebService schedulerWebService;
     private final Config config;
 
     @Inject
-    public SetupAutomaticBackupSchedule(@ClientCertAuth SchedulerService schedulerService, Config config) {
-        this.schedulerService = schedulerService;
+    public SetupAutomaticBackupSchedule(@ClientCertAuth SchedulerWebService schedulerWebService, Config config) {
+        this.schedulerWebService = schedulerWebService;
         this.config = config;
     }
 
     @Override
     public UUID execute(CommandContext context, SetupAutomaticBackupSchedule.Request request) {
-        String product = Utils.getProductForJobClass(Vps4BackupJob.class);
-        String jobGroup = Utils.getJobGroupForJobClass(Vps4BackupJob.class);
-        Vps4BackupJob.Request backupRequest = getJobRequestData(request);
+        String product = Utils.getProductForJobRequestClass(Vps4BackupJobRequest.class);
+        String jobGroup = Utils.getJobGroupForJobRequestClass(Vps4BackupJobRequest.class);
+        Vps4BackupJobRequest backupRequest = getJobRequestData(request);
 
         try {
             SchedulerJobDetail jobDetail = context.execute(
                     "Create schedule",
-                    ctx -> schedulerService.submitJobToGroup(product, jobGroup, backupRequest),
+                    ctx -> schedulerWebService.submitJobToGroup(product, jobGroup, backupRequest),
                     SchedulerJobDetail.class);
             return jobDetail.id;
         } catch (Exception e) {
@@ -48,8 +48,8 @@ public class SetupAutomaticBackupSchedule implements Command<SetupAutomaticBacku
         }
     }
 
-    private Vps4BackupJob.Request getJobRequestData(Request request) {
-        Vps4BackupJob.Request backupRequest = new Vps4BackupJob.Request();
+    private Vps4BackupJobRequest getJobRequestData(Request request) {
+        Vps4BackupJobRequest backupRequest = new Vps4BackupJobRequest();
         backupRequest.vmId = request.vmId;
         backupRequest.backupName = request.backupName;
         backupRequest.jobType = JobType.RECURRING;

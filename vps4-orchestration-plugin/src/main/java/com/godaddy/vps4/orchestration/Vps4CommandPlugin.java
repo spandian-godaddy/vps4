@@ -1,7 +1,7 @@
 package com.godaddy.vps4.orchestration;
 
 import com.godaddy.vps4.orchestration.scheduler.SchedulerModule;
-import com.godaddy.vps4.scheduler.web.client.SchedulerServiceClientModule;
+import com.godaddy.vps4.scheduler.api.client.SchedulerServiceClientModule;
 import com.godaddy.vps4.util.ObjectMapperModule;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

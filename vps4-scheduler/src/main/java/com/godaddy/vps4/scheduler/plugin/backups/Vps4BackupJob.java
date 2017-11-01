@@ -1,45 +1,56 @@
 package com.godaddy.vps4.scheduler.plugin.backups;
 
-import com.godaddy.vps4.scheduler.core.JobGroup;
-import com.godaddy.vps4.scheduler.core.JobRequest;
-import com.godaddy.vps4.scheduler.core.Product;
-import com.godaddy.vps4.scheduler.core.Required;
+import com.godaddy.vps4.client.SsoJwtAuth;
+import com.godaddy.vps4.scheduler.api.plugin.Vps4BackupJobRequest;
+import com.godaddy.vps4.scheduler.core.JobMetadata;
 import com.godaddy.vps4.scheduler.core.SchedulerJob;
+import com.godaddy.vps4.snapshot.SnapshotType;
+import com.godaddy.vps4.web.client.VmSnapshotService;
+import com.godaddy.vps4.web.snapshot.SnapshotAction;
+import com.godaddy.vps4.web.vm.VmSnapshotResource;
+import com.google.inject.Inject;
 import org.quartz.JobExecutionContext;
 import org.quartz.JobExecutionException;
-import org.quartz.JobKey;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.UUID;
 
-@Product("vps4")
-@JobGroup("backups")
+@JobMetadata(
+    product = "vps4",
+    jobGroup = "backups",
+    jobRequestType = Vps4BackupJobRequest.class
+)
 public class Vps4BackupJob extends SchedulerJob {
     private static final Logger logger = LoggerFactory.getLogger(Vps4BackupJob.class);
 
-    Request request;
+    @Inject @SsoJwtAuth VmSnapshotService vmSnapshotService;
+
+    Vps4BackupJobRequest request;
 
     @Override
     public void execute(JobExecutionContext context) throws JobExecutionException {
-        logger.info("******** Executing backup job *********");
-        JobKey key = context.getJobDetail().getKey();
-
         try {
-            logger.info("*********** request data: {} **********", this.request.vmId);
-            logger.info("*********** doing work ***********");
+            createAutomaticBackup(request.vmId, request.backupName);
         }
         catch (Exception e) {
-            logger.error("Error while processing backup job ({}) for request: {}", key, request);
+            logger.error("Error while processing backup job for vm {}. {}", request.vmId, e);
+            // don't set flag to reschedule immediately
+            // Rescheduling a failed backup creation should be handled in a JobListener (Quartz)
+            throw new JobExecutionException(e);
         }
     }
 
-    public void setRequest(Request request) {
-        this.request = request;
+    private void createAutomaticBackup(UUID vmId, String backupName) {
+        VmSnapshotResource.VmSnapshotRequest vmSnapshotRequest = new VmSnapshotResource.VmSnapshotRequest();
+        vmSnapshotRequest.name = backupName;
+        vmSnapshotRequest.snapshotType = SnapshotType.AUTOMATIC;
+        logger.info("Creating backup for vm {}", vmId);
+        SnapshotAction action = vmSnapshotService.createSnapshot(vmId, vmSnapshotRequest);
+        logger.info("Automatic backup {} created for vm {}, ", action.snapshotId, vmId);
     }
 
-    public static class Request extends JobRequest {
-        @Required public UUID vmId;
-        @Required public String backupName;
+    public void setRequest(Vps4BackupJobRequest request) {
+        this.request = request;
     }
 }

@@ -1,4 +1,4 @@
-package com.godaddy.vps4.scheduler.core;
+package com.godaddy.vps4.scheduler.api.core;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;

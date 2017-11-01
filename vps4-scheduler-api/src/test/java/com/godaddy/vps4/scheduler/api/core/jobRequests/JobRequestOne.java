@@ -1,9 +1,9 @@
-package com.godaddy.vps4.scheduler.core.jobRequests;
+package com.godaddy.vps4.scheduler.api.core.jobRequests;
 
-import com.godaddy.vps4.scheduler.core.JobRequest;
-import com.godaddy.vps4.scheduler.core.Optional;
-import com.godaddy.vps4.scheduler.core.Required;
-import com.godaddy.vps4.scheduler.core.Vps4JobRequestValidationException;
+import com.godaddy.vps4.scheduler.api.core.JobRequest;
+import com.godaddy.vps4.scheduler.api.core.Optional;
+import com.godaddy.vps4.scheduler.api.core.Required;
+import com.godaddy.vps4.scheduler.api.core.Vps4JobRequestValidationException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

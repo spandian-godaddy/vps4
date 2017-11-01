@@ -1,19 +1,12 @@
 package com.godaddy.vps4.orchestration.snapshot;
 
-import java.time.Instant;
-import java.time.temporal.ChronoUnit;
 import java.util.UUID;
 
 import javax.inject.Inject;
 
 import com.godaddy.hfs.config.Config;
-import com.godaddy.vps4.client.ClientCertAuth;
-import com.godaddy.vps4.client.SsoJwtAuth;
 import com.godaddy.vps4.orchestration.NoRetryException;
 import com.godaddy.vps4.orchestration.scheduler.ScheduleAutomaticBackupRetry;
-import com.godaddy.vps4.scheduler.core.JobType;
-import com.godaddy.vps4.scheduler.plugin.backups.Vps4BackupJob;
-import com.godaddy.vps4.scheduler.web.client.SchedulerService;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.json.simple.JSONObject;
 import org.slf4j.Logger;
@@ -43,20 +36,17 @@ public class Vps4SnapshotVm extends ActionCommand<Vps4SnapshotVm.Request, Vps4Sn
     private final gdg.hfs.vhfs.snapshot.SnapshotService hfsSnapshotService;
     private final SnapshotService vps4SnapshotService;
     private UUID snapshotIdToBeDeprecated;
-    private SchedulerService schedulerService;
     private final Config config;
 
     @Inject
     public Vps4SnapshotVm(@SnapshotActionService ActionService actionService,
                           gdg.hfs.vhfs.snapshot.SnapshotService hfsSnapshotService,
                           SnapshotService vps4SnapshotService,
-                          Config config,
-                          @ClientCertAuth SchedulerService schedulerService) {
+                          Config config) {
         super(actionService);
         this.hfsSnapshotService = hfsSnapshotService;
         this.vps4SnapshotService = vps4SnapshotService;
         this.config = config;
-        this.schedulerService = schedulerService;
     }
 
     @Override

@@ -2,10 +2,10 @@ package com.godaddy.vps4.orchestration.scheduler;
 
 import com.godaddy.vps4.client.ClientCertAuth;
 import com.godaddy.vps4.config.ConfigModule;
-import com.godaddy.vps4.scheduler.core.JobType;
-import com.godaddy.vps4.scheduler.core.SchedulerJobDetail;
-import com.godaddy.vps4.scheduler.plugin.backups.Vps4BackupJob;
-import com.godaddy.vps4.scheduler.web.client.SchedulerService;
+import com.godaddy.vps4.scheduler.api.core.JobType;
+import com.godaddy.vps4.scheduler.api.core.SchedulerJobDetail;
+import com.godaddy.vps4.scheduler.api.plugin.Vps4BackupJobRequest;
+import com.godaddy.vps4.scheduler.api.web.SchedulerWebService;
 import com.google.inject.AbstractModule;
 import com.google.inject.Guice;
 import com.google.inject.Inject;
@@ -38,10 +38,10 @@ public class SetupAutomaticBackupScheduleTest {
     private SchedulerJobDetail jobDetail;
 
     @Inject SetupAutomaticBackupSchedule command;
-    @Inject @ClientCertAuth SchedulerService schedulerService;
+    @Inject @ClientCertAuth SchedulerWebService schedulerWebService;
 
     @Captor private ArgumentCaptor<Function<CommandContext, SchedulerJobDetail>> createJobCaptor;
-    @Captor private ArgumentCaptor<Vps4BackupJob.Request> schedulerJobCreationDataCaptor;
+    @Captor private ArgumentCaptor<Vps4BackupJobRequest> schedulerJobCreationDataCaptor;
 
     @BeforeClass
     public static void newInjector() {
@@ -50,10 +50,10 @@ public class SetupAutomaticBackupScheduleTest {
             new AbstractModule() {
                 @Override
                 protected void configure() {
-                    SchedulerService mockSchedulerService = mock(SchedulerService.class);
-                    bind(SchedulerService.class)
+                    SchedulerWebService mockSchedulerWebService = mock(SchedulerWebService.class);
+                    bind(SchedulerWebService.class)
                         .annotatedWith(ClientCertAuth.class)
-                        .toInstance(mockSchedulerService);
+                        .toInstance(mockSchedulerWebService);
                 }
             }
         );
@@ -90,11 +90,11 @@ public class SetupAutomaticBackupScheduleTest {
         // Verify that the lambda is calling the appropriate scheduler service method
         Function<CommandContext, SchedulerJobDetail> lambda = createJobCaptor.getValue();
         SchedulerJobDetail ret = lambda.apply(context);
-        verify(schedulerService, times(1))
+        verify(schedulerWebService, times(1))
             .submitJobToGroup(eq("vps4"), eq("backups"), schedulerJobCreationDataCaptor.capture());
 
         // verify the job creation payload data
-        Vps4BackupJob.Request jobRequestData = schedulerJobCreationDataCaptor.getValue();
+        Vps4BackupJobRequest jobRequestData = schedulerJobCreationDataCaptor.getValue();
         Assert.assertEquals(request.vmId, jobRequestData.vmId);
         Assert.assertEquals(request.backupName, jobRequestData.backupName);
         Assert.assertEquals(JobType.RECURRING, jobRequestData.jobType);

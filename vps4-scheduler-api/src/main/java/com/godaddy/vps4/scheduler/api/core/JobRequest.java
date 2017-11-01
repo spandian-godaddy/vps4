@@ -1,4 +1,4 @@
-package com.godaddy.vps4.scheduler.core;
+package com.godaddy.vps4.scheduler.api.core;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

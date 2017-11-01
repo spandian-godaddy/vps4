@@ -1,33 +1,27 @@
 package com.godaddy.vps4.scheduler.web.scheduler.jobs;
 
-import com.godaddy.vps4.scheduler.core.JobGroup;
-import com.godaddy.vps4.scheduler.core.JobRequest;
-import com.godaddy.vps4.scheduler.core.Product;
+import com.godaddy.vps4.scheduler.api.core.JobRequest;
+import com.godaddy.vps4.scheduler.core.JobMetadata;
 import com.godaddy.vps4.scheduler.core.SchedulerJob;
 import org.quartz.JobExecutionContext;
 import org.quartz.JobExecutionException;
-import org.quartz.JobKey;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.UUID;
-
-@Product("product1")
-@JobGroup("group1")
+@JobMetadata(
+    product = "product1",
+    jobGroup = "group1"
+)
 public class TestJobOne extends SchedulerJob {
     private static final Logger logger = LoggerFactory.getLogger(TestJobOne.class);
 
-    Request request;
+    JobRequest request;
 
     @Override
     public void execute(JobExecutionContext context) throws JobExecutionException {
     }
 
-    public void setRequest(Request request) {
+    public void setRequest(JobRequest request) {
         this.request = request;
-    }
-
-    public static class Request extends JobRequest {
-        public UUID vmId;
     }
 }

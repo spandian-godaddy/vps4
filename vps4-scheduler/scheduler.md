@@ -18,18 +18,23 @@ The Job (which represents the work to be done) is just a class that extends the 
 The scheduler will call the 'execute' method of the Job class when it is time to run the job.
 Inside the 'execute' method the Job can call/execute any code including api's exposed by other
 micro-services.
-A Job should be annotated with two annotations,
-1. @Product: represents the product that this job is associated with
-2. @JobGroup: represents the job group that this job is associated with
+A Job should be annotated with the @JobMetadata annotation.
+The @JobMetadata annotation has 3 elements, which are described below
+1. product: represents the product that this job is associated with
+2. jobGroup: represents the jobGroup that this job is associated with
+3. jobRequestType: represents the Job request data class that is associated with this job class
 
 > An example Job might look something like:
 
-    @Product("vps4")
-    @JobGroup("backups")
+    @JobMetadata(
+        product = "vps4",
+        jobGroup = "backups",
+        jobRequestType = Vps4BackupJobRequest.class
+    )
     public class Vps4BackupJob extends SchedulerJob {
         private static final Logger logger = LoggerFactory.getLogger(Vps4BackupJob.class);
 
-        Request request;
+        Vps4BackupJobRequest request;
 
         @Override
         public void execute(JobExecutionContext context) throws JobExecutionException {
@@ -43,12 +48,8 @@ A Job should be annotated with two annotations,
             }
         }
 
-        public void setRequest(Request request) {
+        public void setRequest(Vps4BackupJobRequest request) {
             this.request = request;
-        }
-
-        public static class Request extends JobRequest {
-            public UUID vmId;
         }
     }
 
@@ -61,8 +62,11 @@ JobRequest
 ==========
 JobRequest represents the data that's submitted as part of the job creation and is passed on to the the job when it is 
 executed (refer to the previous section for details about this).
-When a plugin defines a Job, it can define the job request call that the Job expects by embedding it as an inner class of
-the Job class. The request class should inherit from the JobRequest class (see previous section for an example).
+When a plugin defines a Job, it can define the job request class that the Job expects by using the annotation @JobMetadata.
+The request class should inherit from the JobRequest class.
+The request class **should be** annotated with 2 annotations,
+1. @Product: represents the product that this job request class is associated with
+2. @JobGroup: represents the jobGroup that this job request class is associated with
 
 The JobRequest class supports validation during job creation time i.e. when a POST request is submitted to the job creation
 endpoint. The JobRequest class supports 3 types of validation.
@@ -125,10 +129,17 @@ A TriggerListener should be annotated with two annotations,
 1. @Product: represents the product that this TriggerListener is associated with
 2. @JobGroup: represents the job group that this TriggerListener is associated with
 
+A TriggerListener should be annotated with the @TriggerListenerMetadata annotation.
+The @TriggerListenerMetadata annotation has 3 elements, which are described below
+1. product: represents the product that this job is associated with
+2. jobGroup: represents the jobGroup that this job is associated with
+
 > An example TriggerListener might look something like:
 
-    @Product("vps4")
-    @JobGroup("backups")
+    @TriggerListenerMetadata(
+        product = "vps4",
+        jobGroup = "backups"
+    )
     public class Vps4BackupTriggerListener extends SchedulerTriggerListener {
         private static final Logger logger = LoggerFactory.getLogger(Vps4BackupTriggerListener.class);
 
@@ -253,7 +264,7 @@ are added to the the injector being created. NOTE: In the future this will be co
 3. Once the servlet container is ready, the SchedulerContextListener's 'contextInitialized' method is called by the servlet container.
    a. The SchedulerContextListener's 'contextInitialized' method then introspects the guice bindings registered looking for 
    plugin implementations of Job/TriggerListener and registers them with the scheduler service.
-   b. It then starts the scheduler via a call to the schedulerService's startScheduler method.
+   b. It then starts the scheduler via a call to the schedulerWebService's startScheduler method.
 4. The web module receives calls for job creation which in turn uses the Scheduler service's exposed methods to actually schedule jobs.
 5. When it is time to actually run a job, the scheduler first confirms if a job should be run by calling the vetoJobExecution method of
    the registered trigger listener. If the job execution is not vetoed, the scheduler goes on to run the job by calling the Job classes 'execute' method.

@@ -1,4 +1,4 @@
-package com.godaddy.vps4.scheduler.core;
+package com.godaddy.vps4.scheduler.api.core;
 
 import org.apache.commons.lang3.builder.MultilineRecursiveToStringStyle;
 import org.apache.commons.lang3.builder.ReflectionToStringBuilder;

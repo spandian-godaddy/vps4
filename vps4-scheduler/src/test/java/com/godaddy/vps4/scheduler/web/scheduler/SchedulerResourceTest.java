@@ -9,8 +9,8 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import com.godaddy.vps4.scheduler.core.JobRequest;
-import com.godaddy.vps4.scheduler.core.SchedulerJobDetail;
+import com.godaddy.vps4.scheduler.api.core.JobRequest;
+import com.godaddy.vps4.scheduler.api.core.SchedulerJobDetail;
 import com.godaddy.vps4.scheduler.core.SchedulerService;
 import com.google.inject.AbstractModule;
 import com.google.inject.Guice;
@@ -29,8 +29,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.IntStream;
-
-import static org.junit.Assert.*;
 
 public class SchedulerResourceTest {
 

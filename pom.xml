@@ -45,6 +45,7 @@
         <module>vps4-message-consumer</module>
         <module>vps4-phase3-tests</module>
         <module>vps4-scheduler</module>
+        <module>vps4-scheduler-api</module>
     </modules>
 
 </project>

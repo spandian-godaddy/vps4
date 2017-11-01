@@ -8,14 +8,14 @@ import static org.quartz.impl.matchers.GroupMatcher.jobGroupEquals;
 import static org.quartz.impl.matchers.GroupMatcher.triggerGroupEquals;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.godaddy.vps4.scheduler.core.JobType;
-import com.godaddy.vps4.scheduler.core.SchedulerJobDetail;
-import com.godaddy.vps4.scheduler.core.JobRequest;
+import com.godaddy.vps4.scheduler.api.core.JobRequest;
+import com.godaddy.vps4.scheduler.api.core.JobType;
+import com.godaddy.vps4.scheduler.api.core.SchedulerJobDetail;
+import com.godaddy.vps4.scheduler.core.SchedulerJob;
 import com.godaddy.vps4.scheduler.core.SchedulerService;
 import com.godaddy.vps4.scheduler.core.SchedulerTriggerListener;
 import com.godaddy.vps4.scheduler.core.utils.Utils;
 import com.google.inject.Inject;
-import org.quartz.Job;
 import org.quartz.JobBuilder;
 import org.quartz.JobDataMap;
 import org.quartz.JobDetail;
@@ -30,19 +30,17 @@ import org.slf4j.LoggerFactory;
 import java.sql.Date;
 import java.time.Instant;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
 public class QuartzSchedulerService implements SchedulerService {
     private static final Logger logger = LoggerFactory.getLogger(QuartzSchedulerService.class);
 
     private final Scheduler scheduler;
     private final ObjectMapper objectMapper;
-    private static final Map<String, Class<? extends Job>> jobGroupToClassMapping;
+    private static final Map<String, Class<? extends SchedulerJob>> jobGroupToClassMapping;
 
     static {
        jobGroupToClassMapping = new HashMap<>();
@@ -54,23 +52,11 @@ public class QuartzSchedulerService implements SchedulerService {
         this.scheduler = scheduler;
     }
 
-    private Class<? extends JobRequest> getJobRequestClass(Class<? extends Job> jobClass) throws Exception {
-        Class<?>[] declaredClasses = jobClass.getDeclaredClasses();
-
-        @SuppressWarnings("unchecked")
-        List<Class<JobRequest>> jobRequestClasses
-            = Arrays.stream(declaredClasses)
-                .filter(JobRequest.class::isAssignableFrom)
-                .map(o -> (Class<JobRequest>)o)
-                .collect(Collectors.toList());
-
-        if (!jobRequestClasses.isEmpty())
-            return jobRequestClasses.get(0);
-
-        throw new Exception("No job request class present");
+    private Class<? extends JobRequest> getJobRequestClass(Class<? extends SchedulerJob> jobClass) throws Exception {
+        return Utils.getRequestClassForJobClass(jobClass);
     }
 
-    private JobDetail buildJob(String groupId, Class<? extends Job> jobClass, String jobDataJson)
+    private JobDetail buildJob(String groupId, Class<? extends SchedulerJob> jobClass, String jobDataJson)
             throws Exception {
         String jobId = UUID.randomUUID().toString();
         JobBuilder jobBuilder = newJob(jobClass).withIdentity(jobId, groupId);
@@ -108,7 +94,7 @@ public class QuartzSchedulerService implements SchedulerService {
     }
 
     private SchedulerJobDetail scheduleJob(String product, String jobGroup,
-                                           Class<? extends Job> jobClass,
+                                           Class<? extends SchedulerJob> jobClass,
                                            String jobDataJson,
                                            JobRequest jobRequest)
         throws Exception
@@ -128,7 +114,7 @@ public class QuartzSchedulerService implements SchedulerService {
         // Get the job request data
         JobDataMap jobDataMap = scheduler.getJobDetail(jobKey).getJobDataMap();
         String jobDataJson = jobDataMap.getString("jobDataJson");
-        Class<? extends Job> jobClass = getJobClassForGroup(jobKey.getGroup());
+        Class<? extends SchedulerJob> jobClass = getJobClassForGroup(jobKey.getGroup());
         JobRequest jobRequest = objectMapper.readValue(jobDataJson, getJobRequestClass(jobClass));
 
         return new SchedulerJobDetail(UUID.fromString(jobKey.getName()), nextRun, jobRequest);
@@ -143,7 +129,7 @@ public class QuartzSchedulerService implements SchedulerService {
         return jobGroupToClassMapping.containsKey(jobGroupId);
     }
 
-    private Class<? extends Job> getJobClassForGroup(String jobGroupId) {
+    private Class<? extends SchedulerJob> getJobClassForGroup(String jobGroupId) {
         return jobGroupToClassMapping.get(jobGroupId);
     }
 
@@ -161,7 +147,7 @@ public class QuartzSchedulerService implements SchedulerService {
     public SchedulerJobDetail createJob(String product, String jobGroup, String requestJson) throws Exception {
         String jobGroupId = Utils.getJobGroupId(product, jobGroup);
         if (hasJobClassBeenRegisteredForJobGroup(jobGroupId)) {
-            Class<? extends Job> jobClass = getJobClassForGroup(jobGroupId);
+            Class<? extends SchedulerJob> jobClass = getJobClassForGroup(jobGroupId);
             JobRequest jobRequest = objectMapper.readValue(requestJson, getJobRequestClass(jobClass));
             if (jobRequest.isValid()) {
                 return scheduleJob(product, jobGroup, jobClass, requestJson, jobRequest);
@@ -267,7 +253,7 @@ public class QuartzSchedulerService implements SchedulerService {
     }
 
     @Override
-    public void registerJobClassForJobGroup(String jobGroupId, Class<? extends Job> jobClass) {
+    public void registerJobClassForJobGroup(String jobGroupId, Class<? extends SchedulerJob> jobClass) {
         jobGroupToClassMapping.put(jobGroupId, jobClass);
     }
 

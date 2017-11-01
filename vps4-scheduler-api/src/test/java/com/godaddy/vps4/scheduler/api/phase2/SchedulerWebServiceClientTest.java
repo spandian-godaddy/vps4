@@ -1,15 +1,15 @@
-package com.godaddy.vps4.scheduler.client.phase2;
+package com.godaddy.vps4.scheduler.api.phase2;
 
 import static com.godaddy.vps4.client.ClientUtils.withShopperId;
 
 import com.godaddy.vps4.client.ClientCertAuth;
-import com.godaddy.vps4.scheduler.core.JobRequest;
-import com.godaddy.vps4.scheduler.web.client.SchedulerServiceClientModule;
-import com.godaddy.vps4.scheduler.core.JobType;
-import com.godaddy.vps4.scheduler.core.SchedulerJobDetail;
-import com.godaddy.vps4.scheduler.core.config.ConfigModule;
-import com.godaddy.vps4.scheduler.plugin.backups.Vps4BackupJob;
-import com.godaddy.vps4.scheduler.web.client.SchedulerService;
+import com.godaddy.vps4.config.ConfigModule;
+import com.godaddy.vps4.scheduler.api.client.SchedulerServiceClientModule;
+import com.godaddy.vps4.scheduler.api.core.JobRequest;
+import com.godaddy.vps4.scheduler.api.core.JobType;
+import com.godaddy.vps4.scheduler.api.core.SchedulerJobDetail;
+import com.godaddy.vps4.scheduler.api.plugin.Vps4BackupJobRequest;
+import com.godaddy.vps4.scheduler.api.web.SchedulerWebService;
 import com.godaddy.vps4.util.ObjectMapperModule;
 import com.google.inject.Guice;
 import com.google.inject.Inject;
@@ -27,8 +27,6 @@ import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 
-import static org.junit.Assert.fail;
-
 
 /**
  * This is not a unit test. The test methods in this class actually exercise the code and not just the behaviour.
@@ -38,10 +36,11 @@ import static org.junit.Assert.fail;
  * The scheduler server can also be run from the command line and the tests can then be run against the server.
  */
 @Ignore
-public class SchedulerServiceClientTest {
+public class SchedulerWebServiceClientTest {
 
     private Injector injector;
-    @Inject @ClientCertAuth SchedulerService schedulerService;
+    @Inject @ClientCertAuth
+    SchedulerWebService schedulerWebService;
     private final String product = "vps4";
     private final String jobGroup = "backups";
     private UUID jobId;
@@ -61,18 +60,19 @@ public class SchedulerServiceClientTest {
     @After
     public void tearDown() throws Exception {
         try {
-            schedulerService.deleteJob(product, jobGroup, jobId);
+            schedulerWebService.deleteJob(product, jobGroup, jobId);
         }
         catch (Exception e) {
         }
     }
 
     private SchedulerJobDetail createJob() {
-        Vps4BackupJob.Request request = new Vps4BackupJob.Request();
+        Vps4BackupJobRequest request = new Vps4BackupJobRequest();
         request.vmId = vmId;
+        request.backupName = "backup123";
         request.when = Instant.now().plusSeconds(180);
         request.jobType = JobType.ONE_TIME;
-        SchedulerJobDetail jobDetail = schedulerService.submitJobToGroup(product, jobGroup, request);
+        SchedulerJobDetail jobDetail = schedulerWebService.submitJobToGroup(product, jobGroup, request);
         jobId = jobDetail.id;
 
         return jobDetail;
@@ -80,7 +80,7 @@ public class SchedulerServiceClientTest {
 
     @Test
     public void getGroupJobs() throws Exception {
-        Assert.assertEquals(0, schedulerService.getGroupJobs(product, jobGroup).size());
+        Assert.assertEquals(0, schedulerWebService.getGroupJobs(product, jobGroup).size());
     }
 
     @Test
@@ -90,18 +90,19 @@ public class SchedulerServiceClientTest {
         // injection into a request that uses client cert auth.
         @SuppressWarnings("unchecked")
         List<SchedulerJobDetail> groupJobs = withShopperId("959998", () -> {
-            return schedulerService.getGroupJobs(product, jobGroup);
+            return schedulerWebService.getGroupJobs(product, jobGroup);
         }, List.class);
         Assert.assertEquals(0, groupJobs.size());
     }
 
     @Test
     public void submitJobToGroup() throws Exception {
-        Vps4BackupJob.Request request = new Vps4BackupJob.Request();
+        Vps4BackupJobRequest request = new Vps4BackupJobRequest();
         request.vmId = vmId;
+        request.backupName = "backup123";
         request.when = Instant.now().plusSeconds(180);
         request.jobType = JobType.ONE_TIME;
-        SchedulerJobDetail jobDetail = schedulerService.submitJobToGroup(product, jobGroup, request);
+        SchedulerJobDetail jobDetail = schedulerWebService.submitJobToGroup(product, jobGroup, request);
         jobId = jobDetail.id;
 
         Assert.assertEquals(vmId, request.vmId);
@@ -109,12 +110,13 @@ public class SchedulerServiceClientTest {
 
     @Test
     public void submitJobBeforeLeadTimeFails() throws Exception {
-        Vps4BackupJob.Request request = new Vps4BackupJob.Request();
+        Vps4BackupJobRequest request = new Vps4BackupJobRequest();
         request.vmId = vmId;
+        request.backupName = "backup123";
         request.when = Instant.now().plusSeconds(JobRequest.JOB_SCHEDULE_LEAD_TIME_WINDOW - 1);
         request.jobType = JobType.ONE_TIME;
         try {
-            schedulerService.submitJobToGroup(product, jobGroup, request);
+            schedulerWebService.submitJobToGroup(product, jobGroup, request);
         }
         catch (ClientErrorException e) {
             Assert.assertEquals(Response.Status.CONFLICT.getStatusCode(), e.getResponse().getStatus());
@@ -125,7 +127,7 @@ public class SchedulerServiceClientTest {
     public void getJob() throws Exception {
         SchedulerJobDetail jobDetail = createJob();
         Assert.assertEquals(
-                jobDetail.nextRun, schedulerService.getJob(product, jobGroup, jobDetail.id).nextRun);
+                jobDetail.nextRun, schedulerWebService.getJob(product, jobGroup, jobDetail.id).nextRun);
     }
 
     @Test
@@ -134,40 +136,42 @@ public class SchedulerServiceClientTest {
 
         @SuppressWarnings("unchecked")
         SchedulerJobDetail getJobDetail = withShopperId("959998", () -> {
-            return schedulerService.getJob(product, jobGroup, jobDetail.id);
+            return schedulerWebService.getJob(product, jobGroup, jobDetail.id);
         }, SchedulerJobDetail.class);
         Assert.assertEquals(jobDetail.nextRun, getJobDetail.nextRun);
     }
 
     @Test(expected = NotFoundException.class)
     public void getNonExistentJobFails() throws Exception {
-        schedulerService.getJob(product, jobGroup, UUID.randomUUID());
+        schedulerWebService.getJob(product, jobGroup, UUID.randomUUID());
     }
 
     @Test
     public void updateJob() throws Exception {
         SchedulerJobDetail jobDetail = createJob();
 
-        Vps4BackupJob.Request modifyRequest = new Vps4BackupJob.Request();
+        Vps4BackupJobRequest modifyRequest = new Vps4BackupJobRequest();
         modifyRequest.vmId = vmId;
+        modifyRequest.backupName = "backup123";
         modifyRequest.when = Instant.now().plusSeconds(120);
         modifyRequest.jobType = JobType.ONE_TIME;
-        Assert.assertEquals(modifyRequest.when, schedulerService.rescheduleJob(product, jobGroup, jobDetail.id, modifyRequest).nextRun);
+        Assert.assertEquals(modifyRequest.when, schedulerWebService.rescheduleJob(product, jobGroup, jobDetail.id, modifyRequest).nextRun);
     }
 
     @Test
     public void deleteJob() throws Exception {
-        Vps4BackupJob.Request request = new Vps4BackupJob.Request();
+        Vps4BackupJobRequest request = new Vps4BackupJobRequest();
         request.vmId = UUID.randomUUID();
+        request.backupName = "backup123";
         request.when = Instant.now().plusSeconds(180);
         request.jobType = JobType.ONE_TIME;
-        SchedulerJobDetail jobDetail = schedulerService.submitJobToGroup(product, jobGroup, request);
+        SchedulerJobDetail jobDetail = schedulerWebService.submitJobToGroup(product, jobGroup, request);
 
         try {
-            schedulerService.deleteJob("vps4", "backups", jobDetail.id);
+            schedulerWebService.deleteJob("vps4", "backups", jobDetail.id);
         }
         catch (Exception e) {
-            fail("Deletion failed");
+            Assert.fail("Deletion failed");
         }
     }
 }

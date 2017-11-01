@@ -1,7 +1,7 @@
 package com.godaddy.vps4.orchestration.scheduler;
 
 import com.godaddy.vps4.client.ClientCertAuth;
-import com.godaddy.vps4.scheduler.web.client.SchedulerService;
+import com.godaddy.vps4.scheduler.api.web.SchedulerWebService;
 import com.google.inject.AbstractModule;
 import com.google.inject.Guice;
 import com.google.inject.Inject;
@@ -31,7 +31,8 @@ public class DeleteAutomaticBackupScheduleTest {
     private UUID backupJobId = UUID.randomUUID();
 
     @Inject DeleteAutomaticBackupSchedule command;
-    @Inject @ClientCertAuth SchedulerService schedulerService;
+    @Inject @ClientCertAuth
+    SchedulerWebService schedulerWebService;
 
     @Captor private ArgumentCaptor<Function<CommandContext, Void>> deleteJobCaptor;
 
@@ -41,10 +42,10 @@ public class DeleteAutomaticBackupScheduleTest {
             new AbstractModule() {
                 @Override
                 protected void configure() {
-                    SchedulerService mockSchedulerService = mock(SchedulerService.class);
-                    bind(SchedulerService.class)
+                    SchedulerWebService mockSchedulerWebService = mock(SchedulerWebService.class);
+                    bind(SchedulerWebService.class)
                         .annotatedWith(ClientCertAuth.class)
-                        .toInstance(mockSchedulerService);
+                        .toInstance(mockSchedulerWebService);
                 }
             }
         );
@@ -75,7 +76,7 @@ public class DeleteAutomaticBackupScheduleTest {
         // Verify that the lambda is calling the appropriate scheduler service method
         Function<CommandContext, Void> lambda = deleteJobCaptor.getValue();
         lambda.apply(context);
-        verify(schedulerService, times(1))
+        verify(schedulerWebService, times(1))
             .deleteJob(eq("vps4"), eq("backups"), eq(backupJobId));
     }
 

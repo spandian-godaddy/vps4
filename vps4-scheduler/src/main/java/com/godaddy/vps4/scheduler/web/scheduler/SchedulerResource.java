@@ -1,8 +1,8 @@
 package com.godaddy.vps4.scheduler.web.scheduler;
 
 
-import com.godaddy.vps4.scheduler.core.JobRequest;
-import com.godaddy.vps4.scheduler.core.SchedulerJobDetail;
+import com.godaddy.vps4.scheduler.api.core.JobRequest;
+import com.godaddy.vps4.scheduler.api.core.SchedulerJobDetail;
 import com.godaddy.vps4.scheduler.core.SchedulerService;
 import com.godaddy.vps4.scheduler.web.Vps4SchedulerApi;
 import com.godaddy.vps4.scheduler.web.Vps4SchedulerException;
@@ -37,6 +37,13 @@ import java.util.UUID;
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
 public class SchedulerResource {
+    // NOTE: This server side resource represent the implementation of the SchedulerWebService interface.
+    // The reason this class doesn't explicitly 'implement(s)' that interface is because
+    // 1. The methods don't inherit the overridden super class method annotations, so there is a lot of annotation duplication
+    // 2. The type signature of the @POST and @PATCH method handlers differ in the last argument. On the interface
+    //    the data type is "JobRequest" and in the implementation here it is "String". The reason is jackson (which the MessageReader provider)
+    //    has no way to tell which subclass of JobRequest to use while de-serializing the payload. We (in the QuartzSchedulerService)
+    //    use the product and the jobGroup to infer the subclass to use to explicitly deserialize.
 
     private static final Logger logger = LoggerFactory.getLogger(SchedulerResource.class);
 

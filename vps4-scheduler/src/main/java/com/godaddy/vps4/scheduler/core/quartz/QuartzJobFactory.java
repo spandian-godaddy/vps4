@@ -1,7 +1,7 @@
 package com.godaddy.vps4.scheduler.core.quartz;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.godaddy.vps4.scheduler.core.JobRequest;
+import com.godaddy.vps4.scheduler.api.core.JobRequest;
 import com.google.inject.Inject;
 import com.google.inject.Injector;
 import org.quartz.Job;

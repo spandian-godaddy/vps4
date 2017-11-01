@@ -244,6 +244,22 @@
             <version>0.8.2-7</version>
         </dependency>
 
+        <dependency>
+            <groupId>com.godaddy.vps4</groupId>
+            <artifactId>vps4-web</artifactId>
+            <version>0.0.1-SNAPSHOT</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.slf4j</groupId>
+                    <artifactId>*</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>com.godaddy.hfs</groupId>
+                    <artifactId>hfs-crypto</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+
         <!-- External dependencies -->
         <!-- JAX-RS spec, only use the 2.0 version  -->
         <dependency>
@@ -282,6 +298,11 @@
             <groupId>javax.annotation</groupId>
             <artifactId>javax.annotation-api</artifactId>
             <version>1.2</version>
+        </dependency>
+        <dependency>
+            <groupId>com.godaddy.vps4</groupId>
+            <artifactId>vps4-scheduler-api</artifactId>
+            <version>0.0.1-SNAPSHOT</version>
         </dependency>
 
     </dependencies>

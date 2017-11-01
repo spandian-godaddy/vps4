@@ -7,7 +7,7 @@ import static org.quartz.JobBuilder.newJob;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.godaddy.vps4.scheduler.core.JobRequest;
+import com.godaddy.vps4.scheduler.api.core.JobRequest;
 import com.godaddy.vps4.scheduler.core.quartz.QuartzJobFactory;
 import com.godaddy.vps4.util.ObjectMapperModule;
 import com.google.inject.AbstractModule;
@@ -99,12 +99,12 @@ public class QuartzJobFactoryTest {
 
     @Test
     public void createsNewJobAndSetsRequestField() throws Exception {
-        JobClassWithRequestAndSetter.Request request = new JobClassWithRequestAndSetter.Request();
+        JobRequestOne request = new JobRequestOne();
         request.vmId = UUID.randomUUID();
         request.when = Instant.now().plusSeconds(180);
         String jobRequestJson = getRequestJson(request);
         when(mockTriggerFiredBundle.getJobDetail())
-            .thenReturn(buildJob(JobClassWithRequestAndSetter.class, JobClassWithRequestAndSetter.Request.class, jobRequestJson));
+            .thenReturn(buildJob(JobClassWithRequestAndSetter.class, JobRequestOne.class, jobRequestJson));
 
         Job job = quartzJobFactory.newJob(mockTriggerFiredBundle, mockScheduer);
         Assert.assertTrue(JobClassWithRequestAndSetter.class.isInstance(job));
@@ -123,7 +123,7 @@ public class QuartzJobFactoryTest {
 
     @Test(expected = SchedulerException.class)
     public void jobCreationWithRequestDataButNoJobRequestClassThrowsException() throws Exception {
-        JobClassWithRequestAndSetter.Request request = new JobClassWithRequestAndSetter.Request();
+        JobRequestOne request = new JobRequestOne();
         request.vmId = UUID.randomUUID();
         request.when = Instant.now().plusSeconds(180);
         String jobRequestJson = getRequestJson(request);
@@ -135,7 +135,7 @@ public class QuartzJobFactoryTest {
 
     @Test(expected = SchedulerException.class)
     public void jobCreationWithRequestDataButNoSetterThrowsException() throws Exception {
-        JobClassWithNoSetter.Request request = new JobClassWithNoSetter.Request();
+        JobRequestOne request = new JobRequestOne();
         request.vmId = UUID.randomUUID();
         request.when = Instant.now().plusSeconds(180);
         String jobRequestJson = getRequestJson(request);
