@@ -24,6 +24,7 @@ import com.godaddy.vps4.messaging.Vps4MessagingService;
 import com.godaddy.vps4.orchestration.snapshot.Vps4DestroySnapshot;
 import com.godaddy.vps4.orchestration.vm.VmActionRequest;
 import com.godaddy.vps4.orchestration.vm.Vps4DestroyVm;
+import com.godaddy.vps4.orchestration.vm.Vps4PlanChange;
 import com.godaddy.vps4.snapshot.Snapshot;
 import com.godaddy.vps4.snapshot.SnapshotActionService;
 import com.godaddy.vps4.snapshot.SnapshotService;
@@ -110,7 +111,7 @@ public class Vps4MessageHandler implements MessageHandler {
             break;
         case ACTIVE:
             sendFullyManagedWelcomeEmail(credit);
-            UpdateVirtualMachineManagedLevel(credit);
+            processPlanChange(credit);
             break;
         case REMOVED:
             destroyAccount(credit);
@@ -132,13 +133,14 @@ public class Vps4MessageHandler implements MessageHandler {
         }
     }
 
-    private void UpdateVirtualMachineManagedLevel(VirtualMachineCredit credit) {
+    private void processPlanChange(VirtualMachineCredit credit) {
         if(credit.productId != null) {
             VirtualMachine vm = virtualMachineService.getVirtualMachine(credit.productId);
-            if(vm.managedLevel != credit.managedLevel) {
-                Map<String, Object> paramsToUpdate = new HashMap<>();
-                paramsToUpdate.put("managed_level", credit.managedLevel);
-                virtualMachineService.updateVirtualMachine(credit.productId, paramsToUpdate);
+            if(vm != null) {
+                Vps4PlanChange.Request request = new Vps4PlanChange.Request();
+                request.credit = credit;
+                request.vm = vm;
+                execute(commandService, vmActionService, "Vps4PlanChange", request);
             }
         }
     }

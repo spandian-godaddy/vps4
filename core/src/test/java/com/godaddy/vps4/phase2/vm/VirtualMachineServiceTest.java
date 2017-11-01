@@ -210,5 +210,11 @@ public class VirtualMachineServiceTest {
         
         Assert.assertEquals(2,  vm.managedLevel);
     }
+    
+    @Test
+    public void testVmNotExistsReturnsNull() {
+        VirtualMachine vm = virtualMachineService.getVirtualMachine(UUID.randomUUID());
+        Assert.assertNull(vm);
+    }
 
 }

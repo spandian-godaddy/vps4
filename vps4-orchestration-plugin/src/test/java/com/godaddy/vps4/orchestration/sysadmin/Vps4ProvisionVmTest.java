@@ -127,7 +127,7 @@ public class Vps4ProvisionVmTest {
         this.vmInfo.vmId = this.vmId;
         this.vmInfo.image = image;
         this.vmInfo.mailRelayQuota = 5000;
-        this.vmInfo.pingCheckAccountId = 0;
+        this.vmInfo.monitoringAccountId = 0;
         this.vmInfo.sgid = "";
         diskGib = new Random().nextInt(100);
         this.vmInfo.diskGib = diskGib;
@@ -193,7 +193,7 @@ public class Vps4ProvisionVmTest {
         NodePingCheck check = mock(NodePingCheck.class);
         check.checkId = 1;
         when(nodePingService.createCheck(anyLong(), any())).thenReturn(check);
-        this.vmInfo.pingCheckAccountId = 1;
+        this.vmInfo.monitoringAccountId = 1;
 
         command.execute(context, this.request);
         verify(nodePingService, times(1)).createCheck(eq(1L), any(CreateCheckRequest.class));

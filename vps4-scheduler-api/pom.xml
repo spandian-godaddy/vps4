@@ -10,7 +10,7 @@
     <artifactId>vps4-scheduler-api</artifactId>
     <packaging>jar</packaging>
 
-    <name>vps4-scheduler-api</name>
+    <name>VPS4 Scheduler API</name>
     <url>http://maven.apache.org</url>
 
     <properties>

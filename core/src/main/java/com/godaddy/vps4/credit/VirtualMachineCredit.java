@@ -12,19 +12,22 @@ import com.godaddy.vps4.vm.DataCenter;
 
 public class VirtualMachineCredit {
 
-    public final UUID orionGuid;
-    public final int tier;
-    public final int managedLevel;
-    public final String operatingSystem;
-    public final String controlPanel;
-    public final Instant provisionDate;
-    public final String shopperId;
-    public final int monitoring;
-    public final AccountStatus accountStatus;
-    public final DataCenter dataCenter;
-    public final UUID productId;
-    public final boolean fullyManagedEmailSent;
+    public UUID orionGuid;
+    public int tier;
+    public int managedLevel;
+    public String operatingSystem;
+    public String controlPanel;
+    public Instant provisionDate;
+    public String shopperId;
+    public int monitoring;
+    public AccountStatus accountStatus;
+    public DataCenter dataCenter;
+    public UUID productId;
+    public boolean fullyManagedEmailSent;
 
+    public VirtualMachineCredit(){
+    }
+    
     public VirtualMachineCredit(UUID orionGuid, int tier, int managedLevel, int monitoring, String operatingSystem, String controlPanel,
             Instant provisionDate, String shopperId, AccountStatus accountStatus, DataCenter dataCenter, UUID vmId,
             boolean fullyManagedEmailSent) {

@@ -7,19 +7,22 @@ import com.godaddy.vps4.network.IpAddress;
 
 public class VirtualMachine {
 
-    public final UUID vmId;
-    public final long hfsVmId;
-    public final UUID orionGuid;
-    public final long projectId;
-    public final VirtualMachineSpec spec;
-    public final String name;
-    public final Image image;
-    public final IpAddress primaryIpAddress;
-    public final Instant validOn;
-    public final Instant validUntil;
-    public final String hostname;
-    public final int managedLevel;
-    public final UUID backupJobId;
+    public UUID vmId;
+    public long hfsVmId;
+    public UUID orionGuid;
+    public long projectId;
+    public VirtualMachineSpec spec;
+    public String name;
+    public Image image;
+    public IpAddress primaryIpAddress;
+    public Instant validOn;
+    public Instant validUntil;
+    public String hostname;
+    public int managedLevel;
+    public UUID backupJobId;
+	
+    public VirtualMachine() {
+    }
 
     public VirtualMachine(UUID vmId,
             long hfsVmId,

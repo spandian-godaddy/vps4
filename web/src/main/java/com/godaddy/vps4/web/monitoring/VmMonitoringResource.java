@@ -24,6 +24,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.godaddy.hfs.config.Config;
+import com.godaddy.vps4.util.Monitoring;
 import com.godaddy.vps4.vm.VirtualMachine;
 import com.godaddy.vps4.web.PaginatedResult;
 import com.godaddy.vps4.web.Vps4Api;
@@ -46,17 +47,14 @@ public class VmMonitoringResource {
     private static final Logger logger = LoggerFactory.getLogger(VmMonitoringResource.class);
 
     private final NodePingService monitoringService;
-    private final long monitoringAccountId;
     private final VmResource vmResource;
-    private final Config config;
+    private final Monitoring monitoring;
 
     @Inject
-    public VmMonitoringResource(NodePingService monitoringService, VmResource vmResource,
-            Config config) {
+    public VmMonitoringResource(NodePingService monitoringService, VmResource vmResource, Monitoring monitoring) {
         this.monitoringService = monitoringService;
         this.vmResource = vmResource;
-        this.config = config;
-        monitoringAccountId = Long.parseLong(this.config.get("nodeping.accountid"));
+        this.monitoring = monitoring;
     }
 
     @GET
@@ -72,7 +70,7 @@ public class VmMonitoringResource {
 
         String end = LocalDate.now().plusDays(1).toString(); // the end date in the nodeping api is non-inclusive
 
-        List<NodePingUptimeRecord> nodepingRecords = monitoringService.getCheckUptime(monitoringAccountId,
+        List<NodePingUptimeRecord> nodepingRecords = monitoringService.getCheckUptime(monitoring.getAccountId(vm),
                 vm.primaryIpAddress.pingCheckId,
                 "days",
                 startStr,
@@ -116,7 +114,7 @@ public class VmMonitoringResource {
         int scrubbedLimit = Math.max(limit, 0);
         int scrubbedOffset = Math.max(offset, 0);
 
-        List<NodePingEvent> sourceEvents = monitoringService.getCheckEvents(monitoringAccountId,
+        List<NodePingEvent> sourceEvents = monitoringService.getCheckEvents(monitoring.getAccountId(vm),
                 vm.primaryIpAddress.pingCheckId, 0);
 
         // only events from past "days" days

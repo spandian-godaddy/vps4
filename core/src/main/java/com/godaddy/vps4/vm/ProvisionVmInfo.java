@@ -10,7 +10,7 @@ public class ProvisionVmInfo {
     public int managedLevel;
     public Image image;
     public int mailRelayQuota;
-    public long pingCheckAccountId;
+    public long monitoringAccountId;
     public int diskGib;
     public static final int FULLY_MANAGED_LEVEL = 2;
 
@@ -24,7 +24,7 @@ public class ProvisionVmInfo {
         this.managedLevel = managedLevel;
         this.image = image;
         this.mailRelayQuota = mailRelayQuota;
-        this.pingCheckAccountId = pingCheckAccountId;
+        this.monitoringAccountId = pingCheckAccountId;
         this.diskGib = diskGib;
     }
 

@@ -24,12 +24,16 @@ import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
 import org.junit.Before;
 import org.junit.Test;
+import org.mockito.Mockito;
 
 import com.godaddy.hfs.config.Config;
 import com.godaddy.vps4.network.IpAddress;
+import com.godaddy.vps4.util.Monitoring;
 import com.godaddy.vps4.vm.VirtualMachine;
 import com.godaddy.vps4.web.PaginatedResult;
 import com.godaddy.vps4.web.vm.VmResource;
+import com.google.inject.Guice;
+import com.google.inject.Injector;
 
 import gdg.hfs.vhfs.nodeping.NodePingEvent;
 import gdg.hfs.vhfs.nodeping.NodePingService;
@@ -39,24 +43,22 @@ public class VmMonitoringResourceTests {
 
     VmMonitoringResource resource;
     VmResource vmResource;
-    Config config;
     NodePingService monitoringService;
     VirtualMachine vm;
     long monitoringAccountId = 12;
     JSONParser parser;
     UriInfo uriInfo;
-
-
-
+    Monitoring monitoring;
+    
     @Before
     public void setup() {
         monitoringService = mock(NodePingService.class);
         vmResource = mock(VmResource.class);
-        config = mock(Config.class);
+        monitoring = mock(Monitoring.class);
         IpAddress ipAddress = new IpAddress(0, null, null, null, 123L, null, null);
         vm = new VirtualMachine(UUID.randomUUID(), 1L, null, 1L, null, null, null, ipAddress, Instant.now().minus(Duration.ofDays(5)), null, null, 0, UUID.randomUUID());
         when(vmResource.getVm(vm.vmId)).thenReturn(vm);
-        when(config.get("nodeping.accountid")).thenReturn("12");
+        when(monitoring.getAccountId(Mockito.any())).thenReturn(12L);
         parser = new JSONParser();
         setupUri();
     }
@@ -86,7 +88,7 @@ public class VmMonitoringResourceTests {
                 anyString()))
                 .thenReturn(npRecords);
 
-        resource = new VmMonitoringResource(monitoringService, vmResource, config);
+        resource = new VmMonitoringResource(monitoringService, vmResource, monitoring);
         List<MonitoringUptimeRecord> records = resource.getVmUptime(vm.vmId, 30);
 
         assertEquals(3, records.size());
@@ -114,7 +116,7 @@ public class VmMonitoringResourceTests {
 
         when(monitoringService.getCheckEvents(monitoringAccountId, vm.primaryIpAddress.pingCheckId, 0)).thenReturn(npEvents);
 
-        resource = new VmMonitoringResource(monitoringService, vmResource, config);
+        resource = new VmMonitoringResource(monitoringService, vmResource, monitoring);
         PaginatedResult<MonitoringEvent> events = resource.getVmMonitoringEvents(vm.vmId, Integer.valueOf(30),
                 Integer.valueOf(10), Integer.valueOf(0), uriInfo);
 

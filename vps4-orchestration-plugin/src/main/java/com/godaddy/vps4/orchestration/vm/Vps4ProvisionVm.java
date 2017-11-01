@@ -127,7 +127,7 @@ public class Vps4ProvisionVm extends ActionCommand<Vps4ProvisionVm.Request, Vps4
 
         configureMailRelay(hfsVm);
 
-        configureNodePing(ip);
+        configureMonitoring(ip);
 
         setEcommCommonName(request.orionGuid, request.serverName);
 
@@ -319,8 +319,8 @@ public class Vps4ProvisionVm extends ActionCommand<Vps4ProvisionVm.Request, Vps4
         return context.execute(AllocateIp.class, allocateIpRequest);
     }
 
-    private void configureNodePing(IpAddress ipAddress) {
-        if (request.vmInfo.pingCheckAccountId > 0) {
+    private void configureMonitoring(IpAddress ipAddress) {
+        if (request.vmInfo.monitoringAccountId > 0) {
             setStep(CreateVmStep.ConfigureNodeping);
             CreateCheckRequest checkRequest = new CreateCheckRequest();
             checkRequest.target = ipAddress.address;
@@ -330,7 +330,7 @@ public class Vps4ProvisionVm extends ActionCommand<Vps4ProvisionVm.Request, Vps4
             // TODO: Make this hfs callback useful - notify support?
             checkRequest.webhookUrl = "http://www.godaddy.com";
 
-            NodePingCheck check = monitoringService.createCheck(request.vmInfo.pingCheckAccountId, checkRequest);
+            NodePingCheck check = monitoringService.createCheck(request.vmInfo.monitoringAccountId, checkRequest);
             logger.debug("CheckId: {}", check.checkId);
 
             // Add the checkId to the IpAddress

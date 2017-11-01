@@ -60,7 +60,7 @@ public class Vps4MessageHandlerTest {
     @Before
     public void setupTest() {
         when(dcService.getDataCenter(5)).thenReturn(new DataCenter(5,"testDataCenter"));
-        when(configMock.get("nodeping.accountid")).thenReturn("1");
+        when(configMock.get("nodeping.accountid")).thenReturn("0");
 
         orionGuid = UUID.randomUUID();
 
@@ -76,7 +76,7 @@ public class Vps4MessageHandlerTest {
 
     private void mockVmCredit(AccountStatus accountStatus, UUID productId) {
         DataCenter dc = dcService.getDataCenter(5);
-        VirtualMachineCredit vmCredit = new VirtualMachineCredit(orionGuid, 10, 0, 1, "linux", "myh", null, "TestShopper", accountStatus, dc, productId, false);
+        VirtualMachineCredit vmCredit = new VirtualMachineCredit(orionGuid, 10, 0, 0, "linux", "myh", null, "TestShopper", accountStatus, dc, productId, false);
         when(creditServiceMock.getVirtualMachineCredit(orionGuid)).thenReturn(vmCredit);
     }
     
@@ -156,22 +156,16 @@ public class Vps4MessageHandlerTest {
         when(messagingServiceMock.sendFullyManagedEmail("TestShopper", "cpanel")).thenReturn("messageId");
         when(configMock.get("vps4MessageHandler.processFullyManagedEmails")).thenReturn("true");
         Mockito.doNothing().when(creditServiceMock).updateProductMeta(orionGuid, ProductMetaField.FULLY_MANAGED_EMAIL_SENT, "true");
-        Mockito.doNothing().when(vmServiceMock).updateVirtualMachine(Mockito.eq(vm.vmId), Mockito.anyMap());
         
         callHandleMessage(createTestKafkaMessage("added"));
 
         verify(creditServiceMock, times(1)).getVirtualMachineCredit(anyObject());
         verify(messagingServiceMock, times(1)).sendFullyManagedEmail("TestShopper", "cpanel");
         verify(creditServiceMock, times(1)).updateProductMeta(orionGuid, ProductMetaField.FULLY_MANAGED_EMAIL_SENT, "true");
-        ArgumentMatcher<Map<String, Object>> matchesFullyManaged = new ArgumentMatcher<Map<String, Object>>() {
-            @Override
-            public boolean matches(Object argument) {
-                @SuppressWarnings("unchecked")
-                int newManagedLevel = (int)(((Map<String, Object>)argument).get("managed_level"));
-                return newManagedLevel == 2;
-            }
-        };
-        verify(vmServiceMock, times(1)).updateVirtualMachine(Mockito.eq(vm.vmId), Mockito.argThat(matchesFullyManaged));
+        
+        ArgumentCaptor<CommandGroupSpec> argument = ArgumentCaptor.forClass(CommandGroupSpec.class);
+        verify(commandServiceMock, times(1)).executeCommand(argument.capture());
+        assertEquals("Vps4PlanChange", argument.getValue().commands.get(0).command);
     }
 
     @Test
@@ -231,12 +225,12 @@ public class Vps4MessageHandlerTest {
     }
 
     @Test
-    public void testHandleMessageReinstatedCausesNoChange() throws MessageHandlerException {
+    public void testHandleMessageCausesPlanChange() throws MessageHandlerException {
         mockVmCredit(AccountStatus.ACTIVE, vm.vmId);
         callHandleMessage(createTestKafkaMessage("reinstated"));
 
         verify(creditServiceMock, times(1)).getVirtualMachineCredit(anyObject());
-        verify(commandServiceMock, never()).executeCommand(anyObject());
+        verify(commandServiceMock, times(1)).executeCommand(anyObject());
     }
 
     @Test

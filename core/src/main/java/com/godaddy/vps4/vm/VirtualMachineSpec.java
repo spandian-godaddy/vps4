@@ -4,18 +4,21 @@ import java.time.Instant;
 
 public class VirtualMachineSpec {
 
-    public final int specId;
+    public int specId;
 
-    public final String name;
-    public final String specName;
-    public final int tier;
+    public String name;
+    public String specName;
+    public int tier;
 
-    public final int cpuCoreCount;
-    public final int memoryMib;
-    public final int diskGib;
+    public int cpuCoreCount;
+    public int memoryMib;
+    public int diskGib;
 
-    public final Instant validOn;
-    public final Instant validUntil;
+    public Instant validOn;
+    public Instant validUntil;
+    
+    public VirtualMachineSpec() {
+    }
 
     public VirtualMachineSpec(int specId, String name, String specName, int tier, int cpuCoreCount, int memoryMib,
             int diskGib, Instant validOn, Instant validUntil) {

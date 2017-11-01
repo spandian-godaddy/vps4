@@ -12,9 +12,9 @@ public class IpAddress {
     public enum IpAddressType {
         PRIMARY(1), SECONDARY(2);
 
-        private final int id;
+        private int id;
 
-        private final static Map<Integer, IpAddressType> map = stream(IpAddressType.values())
+        private static Map<Integer, IpAddressType> map = stream(IpAddressType.values())
                 .collect(toMap(ipType -> ipType.id, ipType -> ipType));
 
         IpAddressType(int id) {
@@ -30,14 +30,17 @@ public class IpAddress {
         }
     }
 
-    public final long ipAddressId;
-    public final UUID vmId;
-    public final String ipAddress;
-    public final IpAddressType ipAddressType;
-    public final Long pingCheckId;
-    public final Instant validOn;
-    public final Instant validUntil;
+    public long ipAddressId;
+    public UUID vmId;
+    public String ipAddress;
+    public IpAddressType ipAddressType;
+    public Long pingCheckId;
+    public Instant validOn;
+    public Instant validUntil;
 
+    public IpAddress() {
+    }
+    
     public IpAddress(long ipAddressId, UUID vmId, String ipAddress, IpAddressType ipAddressType, Long pingCheckId, Instant validOn,
             Instant validUntil) {
         this.ipAddressId = ipAddressId;

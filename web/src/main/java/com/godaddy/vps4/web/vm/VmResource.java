@@ -84,7 +84,9 @@ public class VmResource {
     private final Config config;
     private final String sgidPrefix;
     private final int mailRelayQuota;
-    private final long pingCheckAccountId;
+    private final long monitoringAccountId;
+    private final long fullyManagedMonitoringAccountId;
+    private final int FULLY_MANAGED=2;
     private final Cryptography cryptography;
     private final String openStackZone;
 
@@ -114,7 +116,8 @@ public class VmResource {
         this.config = config;
         sgidPrefix = this.config.get("hfs.sgid.prefix", "vps4-undefined-");
         mailRelayQuota = Integer.parseInt(this.config.get("mailrelay.quota", "5000"));
-        pingCheckAccountId = Long.parseLong(this.config.get("nodeping.accountid"));
+        monitoringAccountId = Long.parseLong(this.config.get("nodeping.accountid"));
+        fullyManagedMonitoringAccountId = Long.parseLong(this.config.get("nodeping.fullyManaged.accountid"));
         this.cryptography = cryptography;
         openStackZone = config.get("openstack.zone");
     }
@@ -222,11 +225,14 @@ public class VmResource {
                 vps4User.getId());
         logger.info("VmAction id: {}", actionId);
 
-        long ifMonitoringThenMonitoringAccountId = vmCredit.monitoring == 1 ? pingCheckAccountId : 0;
+        long ifMonitoringEnabledThenAccountId = 0;
+        if(vmCredit.monitoring == 1) {
+            ifMonitoringEnabledThenAccountId = virtualMachine.managedLevel==FULLY_MANAGED ? fullyManagedMonitoringAccountId: monitoringAccountId;
+        }
 
         ProvisionVmInfo vmInfo = new ProvisionVmInfo(virtualMachine.vmId, vmCredit.managedLevel,
                 virtualMachine.image, project.getVhfsSgid(), mailRelayQuota,
-                ifMonitoringThenMonitoringAccountId, virtualMachine.spec.diskGib);
+                ifMonitoringEnabledThenAccountId, virtualMachine.spec.diskGib);
         logger.info("vmInfo: {}", vmInfo.toString());
 
         byte[] encryptedPassword = cryptography.encrypt(provisionRequest.password);
@@ -275,8 +281,7 @@ public class VmResource {
 
         Vps4DestroyVm.Request destroyRequest = new Vps4DestroyVm.Request();
         destroyRequest.hfsVmId = vm.hfsVmId;
-        destroyRequest.pingCheckAccountId = pingCheckAccountId;
-
+        destroyRequest.pingCheckAccountId = vm.managedLevel==FULLY_MANAGED ? fullyManagedMonitoringAccountId : monitoringAccountId;
         VmAction deleteAction = createActionAndExecute(
             actionService, commandService, virtualMachineService,
             vm.vmId, ActionType.DESTROY_VM, destroyRequest, "Vps4DestroyVm");

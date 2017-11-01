@@ -2,8 +2,11 @@ package com.godaddy.vps4.vm;
 
 public class DataCenter {
 
-    public final int dataCenterId;
-    public final String dataCenterName;
+    public int dataCenterId;
+    public String dataCenterName;
+    
+    public DataCenter() {
+    }
     
     public DataCenter(int dataCenterId, String dataCenterName) {
         this.dataCenterId = dataCenterId;
