@@ -9,11 +9,14 @@ import static org.mockito.Mockito.when;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.util.HashSet;
+import java.util.Set;
 
 import javax.servlet.FilterChain;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import com.godaddy.vps4.web.security.RequestAuthenticator;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 import org.junit.Test;
@@ -21,10 +24,12 @@ import org.mockito.Mockito;
 
 import com.godaddy.vps4.web.Vps4Exception;
 import com.godaddy.vps4.web.security.GDUser;
-import com.godaddy.vps4.web.security.SsoAuthenticationFilter;
+import com.godaddy.vps4.web.security.AuthenticationFilter;
 import com.godaddy.vps4.web.security.SsoRequestAuthenticator;
 
-public class SsoAuthenticationFilterTest {
+public class AuthenticationFilterTest {
+
+    Set<RequestAuthenticator<GDUser>> auths = new HashSet<RequestAuthenticator<GDUser>>();
 
     @Test
     public void testAuthenticated() throws Exception {
@@ -32,7 +37,9 @@ public class SsoAuthenticationFilterTest {
         SsoRequestAuthenticator auth = mock(SsoRequestAuthenticator.class);
         when(auth.authenticate(any(HttpServletRequest.class))).thenReturn(gdUser);
 
-        SsoAuthenticationFilter filter = new SsoAuthenticationFilter(auth);
+        auths.add(auth);
+
+        AuthenticationFilter filter = new AuthenticationFilter(auths);
 
         HttpServletRequest request = mock(HttpServletRequest.class);
         HttpServletResponse response = mock(HttpServletResponse.class);
@@ -50,8 +57,9 @@ public class SsoAuthenticationFilterTest {
 
         SsoRequestAuthenticator auth = mock(SsoRequestAuthenticator.class);
         when(auth.authenticate(any(HttpServletRequest.class))).thenReturn(gdUser);
+        auths.add(auth);
 
-        SsoAuthenticationFilter filter = new SsoAuthenticationFilter(auth);
+        AuthenticationFilter filter = new AuthenticationFilter(auths);
 
         HttpServletRequest request = mock(HttpServletRequest.class);
         HttpServletResponse response = mock(HttpServletResponse.class);
@@ -75,7 +83,9 @@ public class SsoAuthenticationFilterTest {
         SsoRequestAuthenticator auth = mock(SsoRequestAuthenticator.class);
         when(auth.authenticate(any(HttpServletRequest.class))).thenReturn(gdUser);
 
-        SsoAuthenticationFilter filter = new SsoAuthenticationFilter(auth);
+        auths.add(auth);
+
+        AuthenticationFilter filter = new AuthenticationFilter(auths);
 
         HttpServletRequest request = mock(HttpServletRequest.class);
         HttpServletResponse response = mock(HttpServletResponse.class);
@@ -99,7 +109,9 @@ public class SsoAuthenticationFilterTest {
         SsoRequestAuthenticator auth = mock(SsoRequestAuthenticator.class);
         when(auth.authenticate(any(HttpServletRequest.class))).thenReturn(gdUser);
 
-        SsoAuthenticationFilter filter = new SsoAuthenticationFilter(auth);
+        auths.add(auth);
+
+        AuthenticationFilter filter = new AuthenticationFilter(auths);
 
         HttpServletRequest request = mock(HttpServletRequest.class);
         HttpServletResponse response = mock(HttpServletResponse.class);

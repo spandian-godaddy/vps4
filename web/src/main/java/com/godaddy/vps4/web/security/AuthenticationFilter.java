@@ -2,6 +2,7 @@ package com.godaddy.vps4.web.security;
 
 import java.io.IOException;
 import java.io.Writer;
+import java.util.Set;
 
 import javax.inject.Inject;
 import javax.servlet.Filter;
@@ -25,17 +26,17 @@ import com.godaddy.vps4.web.Vps4Exception;
  * No additional action is taken if an authenticated user is _not_ found, since all downstream actions may not necessarily require
  * authentication, it's up to downstream to take that action (like, for example, redirect to the SSO login page).
  */
-public class SsoAuthenticationFilter implements Filter {
+public class AuthenticationFilter implements Filter {
 
-    private static final Logger logger = LoggerFactory.getLogger(SsoAuthenticationFilter.class);
+    private static final Logger logger = LoggerFactory.getLogger(AuthenticationFilter.class);
 
     public static final String USER_ATTRIBUTE_NAME = "sso-user";
 
-    final RequestAuthenticator<GDUser> authenticator;
+    final Set<RequestAuthenticator<GDUser>> authenticators;
 
     @Inject
-    public SsoAuthenticationFilter(SsoRequestAuthenticator authenticator) {
-        this.authenticator = authenticator;
+    public AuthenticationFilter(Set<RequestAuthenticator<GDUser>> authenticators) {
+        this.authenticators = authenticators;
     }
 
     @Override
@@ -49,13 +50,14 @@ public class SsoAuthenticationFilter implements Filter {
             throws IOException, ServletException {
 
         HttpServletRequest request = (HttpServletRequest) req;
-
         try {
-            GDUser user = authenticator.authenticate(request);
-            if (user != null) {
-                request.setAttribute(USER_ATTRIBUTE_NAME, user);
-                chain.doFilter(req, res);
-                return;
+            for (RequestAuthenticator<GDUser> authenticator : authenticators ) {
+                GDUser user = authenticator.authenticate(request);
+                if (user != null) {
+                    request.setAttribute(USER_ATTRIBUTE_NAME, user);
+                    chain.doFilter(req, res);
+                    return;
+                }
             }
 
             if (res instanceof HttpServletResponse) {

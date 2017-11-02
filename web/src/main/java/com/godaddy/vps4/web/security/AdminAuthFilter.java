@@ -21,7 +21,7 @@ public class AdminAuthFilter implements ContainerRequestFilter {
 
     @Override
     public void filter(ContainerRequestContext requestContext) throws IOException {
-        GDUser user = (GDUser) request.getAttribute(SsoAuthenticationFilter.USER_ATTRIBUTE_NAME);
+        GDUser user = (GDUser) request.getAttribute(AuthenticationFilter.USER_ATTRIBUTE_NAME);
         if (resourceInfo.getResourceMethod().isAnnotationPresent(AdminOnly.class) && !user.isAdmin())
             requestContext.abortWith(Response.status(Response.Status.FORBIDDEN).build());
     }

@@ -34,7 +34,7 @@ import com.godaddy.vps4.util.UtilsModule;
 import com.godaddy.vps4.vm.VmModule;
 import com.godaddy.vps4.web.network.NetworkModule;
 import com.godaddy.vps4.web.security.GDUserModule;
-import com.godaddy.vps4.web.security.SsoAuthenticationFilter;
+import com.godaddy.vps4.web.security.AuthenticationFilter;
 import com.godaddy.vps4.web.util.RequestIdFilter;
 import com.godaddy.vps4.web.util.VmActiveSnapshotFilter;
 import com.google.inject.Guice;
@@ -115,8 +115,8 @@ public class Vps4Injector {
                 bind(RequestIdFilter.class).in(Singleton.class);
                 filter("/api/*").through(RequestIdFilter.class);
 
-                bind(SsoAuthenticationFilter.class).in(Singleton.class);
-                filter("/api/*").through(SsoAuthenticationFilter.class);
+                bind(AuthenticationFilter.class).in(Singleton.class);
+                filter("/api/*").through(AuthenticationFilter.class);
 
                 bind(VmActiveSnapshotFilter.class).in(Singleton.class);
                 filter("/api/vms/*").through(VmActiveSnapshotFilter.class);

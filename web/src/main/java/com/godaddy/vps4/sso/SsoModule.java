@@ -4,6 +4,11 @@ import java.time.Duration;
 
 import javax.inject.Singleton;
 
+import com.godaddy.vps4.web.security.GDUser;
+import com.godaddy.vps4.web.security.XCertSubjectHeaderAuthenticator;
+import com.godaddy.vps4.web.security.RequestAuthenticator;
+import com.google.inject.TypeLiteral;
+import com.google.inject.multibindings.Multibinder;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -22,7 +27,10 @@ public class SsoModule extends AbstractModule {
 
     @Override
     public void configure() {
-        bind(SsoRequestAuthenticator.class);
+        Multibinder<RequestAuthenticator<GDUser>> authBinder = Multibinder.newSetBinder(binder(),
+                new TypeLiteral<RequestAuthenticator<GDUser>>() {});
+        authBinder.addBinding().to(SsoRequestAuthenticator.class);
+        authBinder.addBinding().to(XCertSubjectHeaderAuthenticator.class);
     }
 
     @Provides @Singleton
