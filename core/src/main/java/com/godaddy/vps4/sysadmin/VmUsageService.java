@@ -1,8 +1,5 @@
 package com.godaddy.vps4.sysadmin;
 
-import java.time.Duration;
-import java.time.Instant;
-
 import javax.cache.Cache;
 import javax.cache.CacheManager;
 import javax.inject.Inject;
@@ -14,7 +11,6 @@ import org.json.simple.parser.ParseException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.godaddy.hfs.config.Config;
 import com.godaddy.vps4.cache.CacheName;
 import com.godaddy.vps4.util.TimestampUtils;
 
@@ -24,145 +20,39 @@ import gdg.hfs.vhfs.sysadmin.SysAdminService;
 public class VmUsageService {
 
     private static final Logger logger = LoggerFactory.getLogger(VmUsageService.class);
-
     final SysAdminService sysAdminService;
-
-    final Cache<Long, CachedVmUsage> cache;
-
-    final int secondsToWaitForHfsAction;
+    final Cache<Long, VmUsage> cache;
 
     @Inject
-    public VmUsageService(Config config, SysAdminService sysAdminService, CacheManager cacheManager) {
+    public VmUsageService(SysAdminService sysAdminService, CacheManager cacheManager) {
         this.sysAdminService = sysAdminService;
-        this.cache = cacheManager.getCache(CacheName.VM_USAGE, Long.class, CachedVmUsage.class);
-        this.secondsToWaitForHfsAction = Integer.parseInt(config.get("hfs.sysadmin.secondsToWaitForStatsUpdate"));
+        this.cache = cacheManager.getCache(CacheName.VM_USAGE, Long.class, VmUsage.class);
     }
 
-    public VmUsage getUsage(long hfsVmId) throws java.text.ParseException {
-
-        // usage has three possible storage locations:
-        // 1. VPS4 cache
-        // 2. HFS cache
-        // 3. HFS uncached (stored on VM, but not pulled off to off-VM storage)
-        //
-        // possible scenarios
-        // 1. VPS4 has cached usage, but it's expired
-        //     => call HFS for usage
-        // 2. HFS has cached usage, but it's expired
-        //    OR
-        // 3. usage has never been run for a VM
-        //     => post to /usageStatsUpdate with daysToRetrieve=1,
-        //        then return the cached usage
-        //    (in either case, put something in our cache indicating whether
-        //     or not we've already sent the 'update' request to HFS, so we
-        //     don't hammer HFS with update requests)
-        //    (consequently, when we have an expired VPS4-cached usage and
-        //     hit HFS and the initial GET is an updated usage,
-        //
-
-        CachedVmUsage cachedUsage = cache.get(hfsVmId);
-        if (cachedUsage == null
-            || shouldRefresh(cachedUsage.usage)) {
-
-            logger.debug("VPS4 cache empty (hfsVmId={}), replenishing from HFS", hfsVmId);
-            VmUsage usage = fetchUsageFromHfs(hfsVmId);
-
-            if (shouldRefresh(usage)) {
-
-                if (shouldSendUpdateRequest(cachedUsage)) {
-                    logger.debug("HFS data is old or missing (hfsVmId={}), requesting refresh", hfsVmId);
-                    SysAdminAction updateAction = sysAdminService.usageStatsUpdate(hfsVmId, 0);
-                    logger.info("updating usage stats with action: {}", updateAction);
-
-                    // update our cache to show that we've requested
-                    cachedUsage = new CachedVmUsage(usage, updateAction.sysAdminActionId);
-                    cache.put(hfsVmId, cachedUsage);
-                }
-
-            } else {
-                logger.debug("HFS responded with newer data (hfsVmId={}), caching", hfsVmId);
-                cachedUsage = new CachedVmUsage(usage, -1);
-                cache.put(hfsVmId, cachedUsage);
-            }
-        }
-        VmUsage usage = cachedUsage.usage;
-        if (usage == null) {
+    public VmUsage getUsage(Long hfsVmId) throws java.text.ParseException {
+        VmUsage usage = cache.get(hfsVmId);
+        if (usage == null)
             usage = new VmUsage();
+
+        if (usage.isRefreshInProgress()) {
+            SysAdminAction updateAction = sysAdminService.getSysAdminAction(usage.pendingHfsActionId);
+            if (updateAction.status == SysAdminAction.Status.COMPLETE || updateAction.status == SysAdminAction.Status.FAILED) {
+                usage.markRefreshCompleted(TimestampUtils.parseHfsTimestamp(updateAction.completedAt));
+                usage.updateUsageStats(fetchUsageStatsFromHfs(hfsVmId));
+            }
+        } else if (usage.canRefresh()) {
+            SysAdminAction updateAction = sysAdminService.usageStatsUpdate(hfsVmId, 0);
+            usage.pendingHfsActionId = updateAction.sysAdminActionId;
         }
+
+        cache.put(hfsVmId, usage);
         return usage;
     }
 
-    /**
-     * If our usage data is stale, determine if we need to make a request to HFS
-     * to update the usage data
-     *
-     * @param cachedUsage
-     * @return
-     */
-    boolean shouldSendUpdateRequest(CachedVmUsage cachedUsage) {
-
-        if (cachedUsage == null) {
-            // we have no cached usage, trigger update
-            return true;
-
-        }
-        else if (cachedUsage.updateActionId <= 0) {
-            // we have no active request to HFS, so go ahead and create a new request
-            return true;
-
-        } else if (cachedUsage.updateActionId > 0) {
-            // the data needs to be refreshed, but we've already sent a request to HFS.
-            // Check on the request to see if we need to send another one
-            SysAdminAction updateAction = sysAdminService.getSysAdminAction(cachedUsage.updateActionId);
-
-            Instant createdAt = TimestampUtils.parseHfsTimestamp(updateAction.createdAt);
-
-            if (updateAction.status == SysAdminAction.Status.COMPLETE
-                    || updateAction.status == SysAdminAction.Status.FAILED
-                    || Instant.now().isAfter(createdAt.plusSeconds(secondsToWaitForHfsAction))) {
-                // if the action we sent has completed, but we still aren't getting updated data,
-                // then send another request. Also if it has been more than configured time since the last request.
-                return true;
-
-            }
-            else {
-                // otherwise, assume there are issues on the HFS side that are keeping
-                // the sysadmin requests from completing, and don't flood them with requests
-                // (wait for the existing action to go through to a terminal state)
-            }
-        }
-        return false;
-    }
-
-    boolean shouldRefresh(VmUsage usage) {
-
-        Instant oldestAccepted = Instant.now().minus(Duration.ofHours(12));
-
-        return usage == null
-            || usage.cpu == null
-            || usage.cpu.timestamp.isBefore(oldestAccepted)
-
-            || usage.disk == null
-            || usage.disk.timestamp.isBefore(oldestAccepted)
-
-            || usage.io == null
-            || usage.io.timestamp.isBefore(oldestAccepted)
-
-            || usage.mem == null
-            || usage.mem.timestamp.isBefore(oldestAccepted)
-            ;
-    }
-
-    VmUsage fetchUsageFromHfs(long hfsVmId) throws java.text.ParseException {
-
+    JSONObject fetchUsageStatsFromHfs(long hfsVmId) throws java.text.ParseException {
         Response response = sysAdminService.usageStatsResults(hfsVmId, null, null);
 
-        // TODO HFS is responding with a 202, but it's giving us an immediate response
-        //      without any background work.
-        //      This may have been a holdover from the previous usage stats behavior.
-        //
-        if (response.getStatus() == 202) {
-
+        if (response.getStatusInfo().getFamily().equals(Response.Status.Family.SUCCESSFUL)) {
             String json = response.readEntity(String.class);
 
             try {
@@ -174,7 +64,7 @@ public class VmUsageService {
                     // usage stats hasn't been run for this VM
                     return null;
                 }
-                return new VmUsageParser().parse(jsonObject);
+                return jsonObject;
 
             } catch (ParseException e) {
                 throw new java.text.ParseException("Unable to parse usage", 0);
@@ -184,24 +74,5 @@ public class VmUsageService {
                     hfsVmId, response.getStatus());
         }
         return null;
-    }
-
-    public static class CachedVmUsage {
-        /**
-         * whether VPS4 has already requested a 'usage stats update' from HFS
-         * for this cache entry
-         */
-        public long updateActionId;
-
-        public VmUsage usage;
-
-        public CachedVmUsage() {
-
-        }
-
-        public CachedVmUsage(VmUsage usage, long updateActionId) {
-            this.usage = usage;
-            this.updateActionId = updateActionId;
-        }
     }
 }

@@ -6,7 +6,7 @@ import javax.cache.expiry.AccessedExpiryPolicy;
 import javax.cache.expiry.Duration;
 
 import com.godaddy.vps4.mailrelay.MailRelayService.CachedMailRelayHistory;
-import com.godaddy.vps4.sysadmin.VmUsageService.CachedVmUsage;
+import com.godaddy.vps4.sysadmin.VmUsage;
 
 public class CacheSettings {
 
@@ -29,9 +29,9 @@ public class CacheSettings {
                     .setStatisticsEnabled(false));
 
         cacheManager.createCache(CacheName.VM_USAGE,
-                new MutableConfiguration<Long, CachedVmUsage>()
+                new MutableConfiguration<Long, VmUsage>()
                     .setStoreByValue(true)
-                    .setTypes(Long.class, CachedVmUsage.class)
+                    .setTypes(Long.class, VmUsage.class)
                     .setExpiryPolicyFactory(
                             AccessedExpiryPolicy.factoryOf(Duration.ETERNAL))
                     .setStatisticsEnabled(false));
