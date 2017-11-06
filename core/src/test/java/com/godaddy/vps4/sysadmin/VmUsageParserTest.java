@@ -22,9 +22,9 @@ public class VmUsageParserTest {
 
             JSONObject json = (JSONObject)JSONValue.parse(new InputStreamReader(is, Charsets.UTF8));
 
-            VmUsageParser parser = new VmUsageParser();
+            VmUsageParser parser = new VmUsageParser(json);
 
-            VmUsage usage = parser.parse(json);
+            VmUsage usage = parser.parse();
 
             assertNotNull(usage);
 
@@ -55,9 +55,9 @@ public class VmUsageParserTest {
 
             JSONObject json = (JSONObject)JSONValue.parse(new InputStreamReader(is, Charsets.UTF8));
 
-            VmUsageParser parser = new VmUsageParser();
+            VmUsageParser parser = new VmUsageParser(json);
 
-            VmUsage usage = parser.parse(json);
+            VmUsage usage = parser.parse();
 
             assertNotNull(usage);
 
@@ -93,9 +93,9 @@ public class VmUsageParserTest {
 
             JSONObject json = (JSONObject)JSONValue.parse(new InputStreamReader(is, Charsets.UTF8));
 
-            VmUsageParser parser = new VmUsageParser();
+            VmUsageParser parser = new VmUsageParser(json);
 
-            VmUsage usage = parser.parse(json);
+            VmUsage usage = parser.parse();
 
             assertNotNull(usage);
 

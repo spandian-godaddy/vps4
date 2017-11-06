@@ -40,16 +40,17 @@ public class VmUsage {
         public long mibMemUsed;
     }
 
-    public Instant refreshedAt = Instant.now();
+    public Instant refreshedAt;
     public long pendingHfsActionId;
 
     @JsonProperty
     public Instant canRefreshAgainAt() {
-        return refreshedAt.plus(HFS_MIN_REFRESH_INTERVAL);
+        return (refreshedAt != null) ? refreshedAt.plus(HFS_MIN_REFRESH_INTERVAL): null;
     }
 
     public boolean canRefresh() {
-        return !isRefreshInProgress() && Instant.now().isAfter(canRefreshAgainAt());
+        return !isRefreshInProgress() &&
+                (refreshedAt == null || Instant.now().isAfter(canRefreshAgainAt()));
     }
 
     public boolean isRefreshInProgress() {
@@ -66,6 +67,7 @@ public class VmUsage {
         cpu = parser.parseCpu();
         disk = parser.parseDisk();
         mem = parser.parseMemory();
+        io = parser.parseIo();
     }
 
     @Override
