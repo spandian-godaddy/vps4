@@ -60,7 +60,7 @@ public class Vps4PlanChange implements Command<Vps4PlanChange.Request, Void>{
         if(req.vm.managedLevel != req.credit.managedLevel) {
             logger.info("Processing managed level change for account {} to level {}", req.vm.vmId, req.credit.managedLevel);
             
-            if(req.credit.managedLevel == FULLY_MANAGED_LEVEL) {
+            if(monitoring.hasFullyManagedMonitoring(req.credit)) {
                 removeExistingMonitoringCheck(context, req);
                 
                 NodePingCheck check = addNewMonitoringCheck(context, req);

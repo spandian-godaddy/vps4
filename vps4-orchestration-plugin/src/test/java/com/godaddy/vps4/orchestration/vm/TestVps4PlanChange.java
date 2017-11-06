@@ -85,6 +85,7 @@ public class TestVps4PlanChange {
         when(context.execute(contains("AddCheckIdToIp"), any(Function.class), eq(Void.class))).thenReturn(null);
         when(monitoring.getAccountId(any(VirtualMachine.class))).thenReturn(123L);
         when(monitoring.getAccountId(2)).thenReturn(234L);
+        when(monitoring.hasFullyManagedMonitoring(any(VirtualMachineCredit.class))).thenReturn(true);
         
         try {
             command.execute(context, request);
