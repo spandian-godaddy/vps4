@@ -40,7 +40,6 @@ import com.godaddy.vps4.security.Vps4User;
 import com.godaddy.vps4.security.Vps4UserService;
 import com.godaddy.vps4.snapshot.Snapshot;
 import com.godaddy.vps4.util.Cryptography;
-import com.godaddy.vps4.util.Monitoring;
 import com.godaddy.vps4.vm.ActionService;
 import com.godaddy.vps4.vm.ActionType;
 import com.godaddy.vps4.vm.DataCenter;
@@ -83,9 +82,10 @@ public class VmResource {
     private final CommandService commandService;
     private final VmSnapshotResource vmSnapshotResource;
     private final Config config;
-    private final Monitoring monitoring;
     private final String sgidPrefix;
     private final int mailRelayQuota;
+    private final long monitoringAccountId;
+    private final long fullyManagedMonitoringAccountId;
     private final int FULLY_MANAGED=2;
     private final Cryptography cryptography;
     private final String openStackZone;
@@ -102,8 +102,7 @@ public class VmResource {
             CommandService commandService,
             VmSnapshotResource vmSnapshotResource,
             Config config,
-            Cryptography cryptography,
-            Monitoring monitoring) {
+            Cryptography cryptography) {
         this.user = user;
         this.virtualMachineService = virtualMachineService;
         this.vps4UserService = vps4UserService;
@@ -115,9 +114,10 @@ public class VmResource {
         this.commandService = commandService;
         this.vmSnapshotResource = vmSnapshotResource;
         this.config = config;
-        this.monitoring = monitoring;
         sgidPrefix = this.config.get("hfs.sgid.prefix", "vps4-undefined-");
         mailRelayQuota = Integer.parseInt(this.config.get("mailrelay.quota", "5000"));
+        monitoringAccountId = Long.parseLong(this.config.get("nodeping.accountid"));
+        fullyManagedMonitoringAccountId = Long.parseLong(this.config.get("nodeping.fullyManaged.accountid"));
         this.cryptography = cryptography;
         openStackZone = config.get("openstack.zone");
     }
@@ -226,8 +226,8 @@ public class VmResource {
         logger.info("VmAction id: {}", actionId);
 
         long ifMonitoringEnabledThenAccountId = 0;
-        if(monitoring.hasMonitoring(vmCredit)) {
-            ifMonitoringEnabledThenAccountId = monitoring.getAccountId(virtualMachine);
+        if(vmCredit.monitoring == 1) {
+            ifMonitoringEnabledThenAccountId = virtualMachine.managedLevel==FULLY_MANAGED ? fullyManagedMonitoringAccountId: monitoringAccountId;
         }
 
         ProvisionVmInfo vmInfo = new ProvisionVmInfo(virtualMachine.vmId, vmCredit.managedLevel,
@@ -281,7 +281,7 @@ public class VmResource {
 
         Vps4DestroyVm.Request destroyRequest = new Vps4DestroyVm.Request();
         destroyRequest.hfsVmId = vm.hfsVmId;
-        destroyRequest.pingCheckAccountId = monitoring.getAccountId(vm);
+        destroyRequest.pingCheckAccountId = vm.managedLevel==FULLY_MANAGED ? fullyManagedMonitoringAccountId : monitoringAccountId;
         VmAction deleteAction = createActionAndExecute(
             actionService, commandService, virtualMachineService,
             vm.vmId, ActionType.DESTROY_VM, destroyRequest, "Vps4DestroyVm");
