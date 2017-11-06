@@ -333,12 +333,15 @@ public class Vps4ProvisionVm extends ActionCommand<Vps4ProvisionVm.Request, Vps4
             NodePingCheck check = monitoringService.createCheck(request.vmInfo.monitoringAccountId, checkRequest);
             logger.debug("CheckId: {}", check.checkId);
 
-            // Add the checkId to the IpAddress
-            context.execute("AddCheckIdToIp-" + ipAddress.address, ctx -> {
-                networkService.updateIpWithCheckId(ipAddress.addressId, check.checkId);
-                return null;
-            }, Void.class);
+            addCheckIdToIp(ipAddress, check);
         }
+    }
+
+    private void addCheckIdToIp(IpAddress ipAddress, NodePingCheck check) {
+        context.execute("AddCheckIdToIp-" + ipAddress.address, ctx -> {
+            networkService.updateIpWithCheckId(ipAddress.addressId, check.checkId);
+            return null;
+        }, Void.class);
     }
 
     private void setEcommCommonName(UUID orionGuid, String commonName){

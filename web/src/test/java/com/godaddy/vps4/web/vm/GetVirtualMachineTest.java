@@ -17,6 +17,7 @@ import com.godaddy.vps4.credit.VirtualMachineCredit;
 import com.godaddy.vps4.security.GDUserMock;
 import com.godaddy.vps4.security.Vps4UserService;
 import com.godaddy.vps4.util.Cryptography;
+import com.godaddy.vps4.util.Monitoring;
 import com.godaddy.vps4.vm.AccountStatus;
 import com.godaddy.vps4.vm.DataCenter;
 import com.godaddy.vps4.vm.VirtualMachine;
@@ -51,7 +52,7 @@ public class GetVirtualMachineTest {
         when(virtualMachineService.getVirtualMachine(vmId)).thenReturn(vm);
 
         dc = new DataCenter(5, "testDc");
-        VirtualMachineCredit credit = new VirtualMachineCredit(vm.orionGuid, 10, 0, 0, "linux", "myh", null, user.getShopperId(),
+        VirtualMachineCredit credit = new VirtualMachineCredit(vm.orionGuid, 10, 2, 0, "linux", "myh", null, user.getShopperId(),
                 AccountStatus.ACTIVE, dc, vmId, false);
 
         CreditService creditService = Mockito.mock(CreditService.class);
@@ -59,13 +60,17 @@ public class GetVirtualMachineTest {
 
         Config config = Mockito.mock(Config.class);
         Cryptography cryptography = Mockito.mock(Cryptography.class);
+        Monitoring monitoring = Mockito.mock(Monitoring.class);
         when(config.get(Mockito.anyString(), Mockito.anyString())).thenReturn("0");
         when(config.get(Mockito.anyString())).thenReturn("0");
         when(config.getData(Mockito.anyString())).thenReturn("cxPTMJetZeRW5ofrsUp0wecvNKsjf1/NHwllp0JllBM=".getBytes());
+        when(monitoring.getAccountId(0)).thenReturn(1L);
+        when(monitoring.getAccountId(2)).thenReturn(2L);
+        when(monitoring.getAccountId(Mockito.any(VirtualMachine.class))).thenReturn(3L);
         vmResource = new VmResource(
             user, vmService, userService, virtualMachineService,
                 creditService, null, null, null, null,
-                null, config, cryptography);
+                null, config, cryptography, monitoring);
     }
 
     @Test
