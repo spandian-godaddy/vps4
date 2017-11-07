@@ -49,7 +49,7 @@ public class Vps4BackupJobTest {
             new AbstractModule() {
                 @Override
                 protected void configure() {
-                    bind(VmSnapshotService.class).annotatedWith(SsoJwtAuth.class).toInstance(mockVmSnapshotService);
+                    bind(VmSnapshotService.class).toInstance(mockVmSnapshotService);
                 }
             }
         );

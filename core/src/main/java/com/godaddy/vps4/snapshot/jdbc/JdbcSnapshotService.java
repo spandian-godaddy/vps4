@@ -47,6 +47,7 @@ public class JdbcSnapshotService implements SnapshotService {
 
     @Override
     public boolean isOverQuota(UUID orionGuid, SnapshotType snapshotType) {
+        // If there is not an open slot or there is a snapshot that isn't live then it's over quota
         return !(hasOpenSlots(orionGuid, snapshotType) ||
                 allSlotsFilledOnlyByLiveSnapshots(orionGuid, snapshotType));
     }

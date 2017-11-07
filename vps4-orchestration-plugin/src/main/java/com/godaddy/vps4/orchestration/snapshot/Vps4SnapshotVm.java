@@ -111,7 +111,7 @@ public class Vps4SnapshotVm extends ActionCommand<Vps4SnapshotVm.Request, Vps4Sn
             logger.info("Snapshot creation error (waitForAction) for snapshot with id: {}", request.vps4SnapshotId);
             vps4SnapshotService.markSnapshotErrored(request.vps4SnapshotId);
             reverseSnapshotDeprecation(context);
-            rescheduleAutomaticSnapshot(context, request.vps4SnapshotId, e);
+            rescheduleAutomaticSnapshot(context, request, e);
             throw new RuntimeException(e);
         }
 
@@ -122,13 +122,16 @@ public class Vps4SnapshotVm extends ActionCommand<Vps4SnapshotVm.Request, Vps4Sn
         return hfsAction;
     }
 
-    private void rescheduleAutomaticSnapshot(CommandContext context, UUID vps4SnapshotId, Exception e) {
-        Snapshot failedSnapshot = vps4SnapshotService.getSnapshot(vps4SnapshotId);
+    private void rescheduleAutomaticSnapshot(CommandContext context, Request request, Exception e) {
+        Snapshot failedSnapshot = vps4SnapshotService.getSnapshot(request.vps4SnapshotId);
         if(failedSnapshot.snapshotType.equals(SnapshotType.AUTOMATIC)){
             // If an automatic snapshot fails, schedule another one in a
             // configurable number of hours
             ScheduleAutomaticBackupRetry.Request req = new ScheduleAutomaticBackupRetry.Request();
             req.vmId = failedSnapshot.vmId;
+            req.shopperId = request.shopperId;
+
+
             context.execute(ScheduleAutomaticBackupRetry.class, req);
             throw new NoRetryException("Exception while running an automatic backup for vmId " + failedSnapshot.vmId, e);
         }
@@ -159,7 +162,7 @@ public class Vps4SnapshotVm extends ActionCommand<Vps4SnapshotVm.Request, Vps4Sn
             logger.info("Snapshot creation error for VPS4 snapshot with id: {}", request.vps4SnapshotId);
             vps4SnapshotService.markSnapshotErrored(request.vps4SnapshotId);
             reverseSnapshotDeprecation(context);
-            rescheduleAutomaticSnapshot(context, request.vps4SnapshotId, e);
+            rescheduleAutomaticSnapshot(context, request, e);
             throw new RuntimeException(e);
         }
     }
@@ -205,6 +208,7 @@ public class Vps4SnapshotVm extends ActionCommand<Vps4SnapshotVm.Request, Vps4Sn
         public UUID orionGuid;
         public long vps4UserId;
         public SnapshotType snapshotType;
+        public String shopperId;
 
         @Override
         public long getActionId() {

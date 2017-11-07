@@ -114,7 +114,7 @@ public class SnapshotResource {
         }
         validateCreation(vm.orionGuid, vm.vmId, snapshotRequest.name, snapshotRequest.snapshotType);
         Action action = createSnapshotAndActionEntries(vm, snapshotRequest.name, snapshotRequest.snapshotType);
-        kickoffSnapshotCreation(vm.vmId, vm.hfsVmId, action, vm.orionGuid, snapshotRequest.snapshotType);
+        kickoffSnapshotCreation(vm.vmId, vm.hfsVmId, action, vm.orionGuid, snapshotRequest.snapshotType, user.getShopperId());
         return new SnapshotAction(actionService.getAction(action.id));
     }
 
@@ -140,7 +140,8 @@ public class SnapshotResource {
         return actionService.getAction(actionId);
     }
 
-    private void kickoffSnapshotCreation(UUID vmId, long hfsVmId, Action action, UUID orionGuid, SnapshotType snapshotType) {
+    private void kickoffSnapshotCreation(UUID vmId, long hfsVmId, Action action,
+                                         UUID orionGuid, SnapshotType snapshotType, String shopperId) {
         UUID snapshotId = action.resourceId; // the resourceId refers to the associated snapshotId
         Vps4SnapshotVm.Request commandRequest = new Vps4SnapshotVm.Request();
         commandRequest.hfsVmId = hfsVmId;
@@ -149,6 +150,7 @@ public class SnapshotResource {
         commandRequest.orionGuid = orionGuid;
         commandRequest.vps4UserId = action.vps4UserId;
         commandRequest.snapshotType = snapshotType;
+        commandRequest.shopperId = shopperId;
 
         CommandState command = Commands.execute(
                 commandService, actionService, "Vps4SnapshotVm", commandRequest);

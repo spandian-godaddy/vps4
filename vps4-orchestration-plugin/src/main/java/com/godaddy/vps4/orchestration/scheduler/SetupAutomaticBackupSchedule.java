@@ -53,6 +53,7 @@ public class SetupAutomaticBackupSchedule implements Command<SetupAutomaticBacku
         backupRequest.vmId = request.vmId;
         backupRequest.backupName = request.backupName;
         backupRequest.jobType = JobType.RECURRING;
+        backupRequest.shopperId = request.shopperId;
         long firstTime = Long.parseLong(config.get("vps4.autobackup.initial"));
         backupRequest.when = Instant.now().plus(firstTime, ChronoUnit.DAYS);
         int repeatInterval = Integer.parseInt(config.get("vps4.autobackup.repeatInterval"));
@@ -63,5 +64,6 @@ public class SetupAutomaticBackupSchedule implements Command<SetupAutomaticBacku
     public static class Request {
         public UUID vmId;
         public String backupName;
+        public String shopperId;
     }
 }

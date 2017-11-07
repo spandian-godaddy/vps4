@@ -135,7 +135,7 @@ public class Vps4ProvisionVm extends ActionCommand<Vps4ProvisionVm.Request, Vps4
 
         // TODO: keeps this commented until we have the nginx configured to setup client cert based auth for
         // vps4 inter microservice communication.
-//        setupAutomaticBackupSchedule(request.vmInfo.vmId);
+//        setupAutomaticBackupSchedule(request.vmInfo.vmId, request.shopperId);
 
         setStep(CreateVmStep.SetupComplete);
         logger.info("provision vm finished: {}", hfsVm);
@@ -143,11 +143,12 @@ public class Vps4ProvisionVm extends ActionCommand<Vps4ProvisionVm.Request, Vps4
         return null;
     }
 
-    private void setupAutomaticBackupSchedule(UUID vps4VmId) {
+    private void setupAutomaticBackupSchedule(UUID vps4VmId, String shopperId) {
         setStep(CreateVmStep.SetupAutomaticBackupSchedule);
         SetupAutomaticBackupSchedule.Request req = new SetupAutomaticBackupSchedule.Request();
         req.vmId = vps4VmId;
         req.backupName = "autoBackup";
+        req.shopperId = shopperId;
         try {
             UUID backupJobId = context.execute(SetupAutomaticBackupSchedule.class, req);
             context.execute("AddBackupJobIdToVM", ctx -> {

@@ -12,4 +12,5 @@ import java.util.UUID;
 public class Vps4BackupJobRequest extends JobRequest {
     @Required public UUID vmId;
     @Required public String backupName;
+    @Required public String shopperId;
 }

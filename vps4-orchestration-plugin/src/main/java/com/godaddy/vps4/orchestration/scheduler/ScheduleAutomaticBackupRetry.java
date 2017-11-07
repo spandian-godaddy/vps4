@@ -53,6 +53,7 @@ public class ScheduleAutomaticBackupRetry implements Command<ScheduleAutomaticBa
         backupRequest.vmId = request.vmId;
         backupRequest.backupName = "autoBackup";
         backupRequest.jobType = JobType.ONE_TIME;
+        backupRequest.shopperId = request.shopperId;
         int hoursToWait = Integer.valueOf(config.get("vps4.autobackup.rescheduleFailedBackupWaitHours", "4"));
         backupRequest.when = Instant.now().plus(hoursToWait, ChronoUnit.HOURS);
         return backupRequest;
@@ -60,5 +61,6 @@ public class ScheduleAutomaticBackupRetry implements Command<ScheduleAutomaticBa
 
     public static class Request {
         public UUID vmId;
+        public String shopperId;
     }
 }
