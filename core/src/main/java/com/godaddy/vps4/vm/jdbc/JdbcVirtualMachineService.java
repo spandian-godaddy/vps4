@@ -3,6 +3,9 @@ package com.godaddy.vps4.vm.jdbc;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Timestamp;
+import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -131,8 +134,8 @@ public class JdbcVirtualMachineService implements VirtualMachineService {
     }
 
     @Override
-    public void destroyVirtualMachine(long vmId) {
-        Sql.with(dataSource).exec("UPDATE virtual_machine vm SET valid_until=now_utc() WHERE hfs_vm_id=?", null, vmId);
+    public void setValidUntil(UUID vmId, Instant validUntil) {
+        Sql.with(dataSource).exec("UPDATE virtual_machine vm SET valid_until=? WHERE vm_id=?", null, LocalDateTime.ofInstant(validUntil, ZoneOffset.UTC), vmId);
     }
 
     @Override

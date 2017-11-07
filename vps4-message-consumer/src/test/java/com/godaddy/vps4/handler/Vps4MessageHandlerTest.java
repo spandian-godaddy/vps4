@@ -2,6 +2,7 @@ package com.godaddy.vps4.handler;
 
 import static org.junit.Assert.assertEquals;
 import static org.mockito.Matchers.anyLong;
+import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyObject;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -10,6 +11,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.io.IOException;
+import java.time.Instant;
 import java.util.Collections;
 import java.util.Map;
 import java.util.UUID;
@@ -252,7 +254,7 @@ public class Vps4MessageHandlerTest {
         ArgumentCaptor<CommandGroupSpec> argument = ArgumentCaptor.forClass(CommandGroupSpec.class);
         verify(commandServiceMock, times(1)).executeCommand(argument.capture());
         assertEquals("Vps4DestroyVm", argument.getValue().commands.get(0).command);
-        verify(vmServiceMock, times(1)).destroyVirtualMachine(anyLong());
+        verify(vmServiceMock, times(1)).setValidUntil(any(UUID.class), any(Instant.class));
     }
 
     @Test
@@ -266,7 +268,7 @@ public class Vps4MessageHandlerTest {
         ArgumentCaptor<CommandGroupSpec> argument = ArgumentCaptor.forClass(CommandGroupSpec.class);
         verify(commandServiceMock, times(2)).executeCommand(argument.capture());
         assertEquals("Vps4DestroySnapshot", argument.getValue().commands.get(0).command);
-        verify(vmServiceMock, times(1)).destroyVirtualMachine(anyLong());
+        verify(vmServiceMock, times(1)).setValidUntil(any(UUID.class), any(Instant.class));
     }
 
     @Test
@@ -280,6 +282,6 @@ public class Vps4MessageHandlerTest {
 
         verify(creditServiceMock, times(1)).getVirtualMachineCredit(anyObject());
         verify(commandServiceMock, never()).executeCommand(anyObject());
-        verify(vmServiceMock, times(0)).destroyVirtualMachine(anyLong());
+        verify(vmServiceMock, times(0)).setValidUntil(any(UUID.class), any(Instant.class));
     }
 }

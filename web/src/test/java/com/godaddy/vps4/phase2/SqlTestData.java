@@ -1,5 +1,6 @@
 package com.godaddy.vps4.phase2;
 
+import java.time.Instant;
 import java.util.UUID;
 
 import javax.sql.DataSource;
@@ -74,7 +75,7 @@ public class SqlTestData {
     public static void invalidateTestVm(UUID vmId, DataSource dataSource) {
         VirtualMachineService virtualMachineService = new JdbcVirtualMachineService(dataSource);
         VirtualMachine vm = virtualMachineService.getVirtualMachine(vmId);
-        virtualMachineService.destroyVirtualMachine(vm.hfsVmId);
+        virtualMachineService.setValidUntil(vm.vmId, Instant.now());
     }
 
     public static Snapshot insertSnapshot(SnapshotService snapshotService, UUID vmId, long projectId, SnapshotType snapshotType) {

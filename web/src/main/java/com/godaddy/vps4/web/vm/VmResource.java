@@ -294,7 +294,7 @@ public class VmResource {
            vmSnapshotResource.destroySnapshot(vmId, snapshot.id);
         }
         creditService.unclaimVirtualMachineCredit(vm.orionGuid);
-        virtualMachineService.destroyVirtualMachine(vm.hfsVmId);
+        virtualMachineService.setValidUntil(vm.vmId, Instant.now());
 
         return deleteAction;
     }

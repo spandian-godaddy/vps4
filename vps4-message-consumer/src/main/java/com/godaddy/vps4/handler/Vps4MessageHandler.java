@@ -3,6 +3,7 @@ package com.godaddy.vps4.handler;
 import static com.godaddy.vps4.handler.util.Commands.execute;
 
 import java.io.IOException;
+import java.time.Instant;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -172,7 +173,7 @@ public class Vps4MessageHandler implements MessageHandler {
             request.pingCheckAccountId = pingCheckAccountId;
 
             logger.info("Setting vm valid_until date to now.");
-            virtualMachineService.destroyVirtualMachine(vm.hfsVmId);
+            virtualMachineService.setValidUntil(vm.vmId, Instant.now());
 
             logger.info("Destroying vm: {} - actionId: {}", vmId, actionId);
             execute(commandService, vmActionService, "Vps4DestroyVm", request);

@@ -1,8 +1,6 @@
 package com.godaddy.vps4.phase2.vm;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 
 import java.time.Instant;
 import java.util.ArrayList;
@@ -215,6 +213,20 @@ public class VirtualMachineServiceTest {
     public void testVmNotExistsReturnsNull() {
         VirtualMachine vm = virtualMachineService.getVirtualMachine(UUID.randomUUID());
         Assert.assertNull(vm);
+    }
+    
+    @Test
+    public void testDestroyVm() {
+        VirtualMachine expectedVm = SqlTestData.insertTestVm(orionGuid, dataSource);
+        virtualMachines.add(expectedVm);
+        
+        VirtualMachine actualVm = virtualMachineService.getVirtualMachine(expectedVm.vmId);
+        assertTrue(expectedVm.vmId.equals(actualVm.vmId));
+        
+        Instant validUntil = Instant.now();
+        virtualMachineService.setValidUntil(actualVm.vmId, validUntil);
+        actualVm = virtualMachineService.getVirtualMachine(expectedVm.vmId);
+        assertTrue(validUntil.equals(actualVm.validUntil));
     }
 
 }

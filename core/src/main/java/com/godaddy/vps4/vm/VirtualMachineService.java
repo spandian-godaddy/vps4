@@ -1,5 +1,6 @@
 package com.godaddy.vps4.vm;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -27,7 +28,7 @@ public interface VirtualMachineService {
 
     // updateStatus(long vmId, int newStatus)
 
-    void destroyVirtualMachine(long vmId); // (just updates status/sets validUntil, destroy is accomplished on backend)
+    void setValidUntil(UUID vmId, Instant validUntil);
 
     VirtualMachine provisionVirtualMachine(ProvisionVirtualMachineParameters vmProvisionParameters);
 
