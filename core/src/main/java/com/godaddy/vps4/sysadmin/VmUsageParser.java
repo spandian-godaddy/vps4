@@ -20,18 +20,18 @@ public class VmUsageParser {
 
     private static final Logger logger = LoggerFactory.getLogger(VmUsageParser.class);
 
-    public VmUsage parse(JSONObject json) {
+    private JSONObject json;
 
+    public VmUsageParser(JSONObject json) {
+        this.json = json;
+    }
+
+    public VmUsage parse() {
         VmUsage usage = new VmUsage();
-
-        usage.disk = parseDisk((JSONObject)json.get("hdd"));
-
-        usage.cpu = parseCpu((JSONObject)json.get("cpu"));
-
-        usage.mem = parseMemory((JSONObject)json.get("mem"));
-
-        usage.io = parseIo((JSONObject)json.get("io"));
-
+        usage.disk = parseDisk();
+        usage.cpu = parseCpu();
+        usage.mem = parseMemory();
+        usage.io = parseIo();
         return usage;
     }
 
@@ -98,13 +98,18 @@ public class VmUsageParser {
         return row;
     }
 
-    protected IoUsage parseIo(JSONObject json) {
+    protected IoUsage parseIo() {
 
         if (json == null) {
             return null;
         }
 
-        Row row = readMostRecentRow(json);
+        JSONObject ioJson = (JSONObject)json.get("io");
+        if (ioJson == null) {
+            return null;
+        }
+
+        Row row = readMostRecentRow(ioJson);
         if (row == null) {
             return null;
         }
@@ -131,13 +136,18 @@ public class VmUsageParser {
         return usage;
     }
 
-    protected DiskUsage parseDisk(JSONObject json) {
+    protected DiskUsage parseDisk() {
 
         if (json == null) {
             return null;
         }
 
-        Row row = readMostRecentRow(json);
+        JSONObject diskJson = (JSONObject)json.get("hdd");
+        if (diskJson == null) {
+            return null;
+        }
+
+        Row row = readMostRecentRow(diskJson);
         if (row == null) {
             return null;
         }
@@ -166,13 +176,18 @@ public class VmUsageParser {
         return usage;
     }
 
-    protected CpuUsage parseCpu(JSONObject json) {
+    protected CpuUsage parseCpu() {
 
         if (json == null) {
             return null;
         }
 
-        Row row = readMostRecentRow(json);
+        JSONObject cpuJson = (JSONObject)json.get("cpu");
+        if (cpuJson == null) {
+            return null;
+        }
+
+        Row row = readMostRecentRow(cpuJson);
         if (row == null) {
             return null;
         }
@@ -198,12 +213,17 @@ public class VmUsageParser {
         return usage;
     }
 
-    protected MemUsage parseMemory(JSONObject json) {
+    protected MemUsage parseMemory() {
         if (json == null) {
             return null;
         }
 
-        Row row = readMostRecentRow(json);
+        JSONObject memJson = (JSONObject)json.get("mem");
+        if (memJson == null) {
+            return null;
+        }
+
+        Row row = readMostRecentRow(memJson);
         if (row == null) {
             return null;
         }

@@ -59,7 +59,6 @@ public class VirtualMachineCredit {
     @JsonIgnore
     public boolean isUsable() {
         return provisionDate == null;
-
     }
 
     @Override
