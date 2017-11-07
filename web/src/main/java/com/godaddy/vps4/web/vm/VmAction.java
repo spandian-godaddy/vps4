@@ -9,17 +9,17 @@ import java.util.UUID;
 
 public class VmAction {
 
-    public final long id;
-    public final UUID virtualMachineId;
-    public final ActionType type;
-    public final long vps4UserId;
-    public final String request;
-    public final String state;
-    public final String response;
-    public final ActionStatus status;
-    public final Instant created;
-    public final String note;
-    public final UUID commandId;
+    public long id;
+    public UUID virtualMachineId;
+    public ActionType type;
+    public long vps4UserId;
+    public String request;
+    public String state;
+    public String response;
+    public ActionStatus status;
+    public Instant created;
+    public String note;
+    public UUID commandId;
 
     public VmAction(Action a){
         this.id = a.id;
@@ -33,6 +33,10 @@ public class VmAction {
         this.created = a.created;
         this.note = a.note;
         this.commandId = a.commandId;
+    }
+
+    // This is for jackson so it can deserialize
+    public VmAction() {
     }
 
     @Override

@@ -43,4 +43,16 @@ public class ClientUtils {
             }
         };
     }
+
+    public static <T> SsoJwtAuthenticatedServiceProvider<T> getSsoAuthServiceProvider(Class<T> serviceClass,
+                                                                                      String baseUrlConfigPropName) {
+        return new SsoJwtAuthenticatedServiceProvider<>(baseUrlConfigPropName, serviceClass);
+    }
+
+    public static <T> ClientCertAuthenticatedServiceProvider<T> getClientCertAuthServiceProvider(Class<T> serviceClass,
+                                                                                                 String baseUrlConfigPropName,
+                                                                                                 String clientCertKeyPath,
+                                                                                                 String clientCertPath) {
+        return new ClientCertAuthenticatedServiceProvider<>(baseUrlConfigPropName, serviceClass, clientCertKeyPath, clientCertPath);
+    }
 }

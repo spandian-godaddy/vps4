@@ -6,7 +6,7 @@ import com.godaddy.vps4.config.ConfigModule;
 import com.godaddy.vps4.snapshot.Snapshot;
 import com.godaddy.vps4.util.ObjectMapperModule;
 import com.godaddy.vps4.web.client.VmSnapshotService;
-import com.godaddy.vps4.web.client.SsoVmSnapshotServiceClientModule;
+import com.godaddy.vps4.web.client.Vps4ApiWithSSOAuthClientModule;
 import com.google.inject.Guice;
 import com.google.inject.Inject;
 import com.google.inject.Injector;
@@ -40,7 +40,7 @@ public class VmSnapshotServiceClientTest {
         injector = Guice.createInjector(
                 new ConfigModule(),
                 new ObjectMapperModule(),
-                new SsoVmSnapshotServiceClientModule()
+                new Vps4ApiWithSSOAuthClientModule()
         );
 
         injector.injectMembers(this);
