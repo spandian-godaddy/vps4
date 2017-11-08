@@ -33,7 +33,7 @@ import java.util.UUID;
 
 @Vps4SchedulerApi
 @Api(tags = {"scheduler"})
-@Path("/api/scheduler")
+@Path("/scheduler")
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
 public class SchedulerResource {

@@ -49,7 +49,7 @@ public class Vps4SchedulerInjector {
         modules.add(new ServerModule());
         modules.add(new HttpModule());
         modules.add(new GuiceFilterModule(
-                "/api/scheduler/*",
+                "/scheduler/*",
                 "/",
                 "/swagger.json"
         ));

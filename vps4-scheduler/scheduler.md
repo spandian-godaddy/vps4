@@ -176,18 +176,18 @@ create job(s) related to 'automatic backup creation' under the job group 'backup
 
 The REST api provides the following CRUD functionality:
 
-1. **GET**  /api/schedulers/{product}/{jobGroup}/jobs
+1. **GET**  /scheduler/{product}/{jobGroup}/jobs
    > The jobs (that haven't as yet been run) under a product job group can be listed by submitting
-   a _GET_ request to /api/schedulers/{product}/{jobGroup}/jobs endpoint.
+   a _GET_ request to /scheduler/{product}/{jobGroup}/jobs endpoint.
    
    > For example, the request below will get the list of jobs under the Vps4 backups group.
    
-       curl -X GET --header "Accept: application/json" "http://localhost:8089/api/scheduler/vps4/backups/jobs"
+       curl -X GET --header "Accept: application/json" "http://localhost:8089/scheduler/vps4/backups/jobs"
     
-2. **POST** /api/schedulers/{_product_}/{_jobGroup_}/jobs
+2. **POST** /scheduler/{_product_}/{_jobGroup_}/jobs
 
    > A new job can be scheduled to run at a particular time by submitting a _POST_ request to
-   /api/schedulers/{_product_}/{_jobGroup_}/jobs endpoint. The endpoint takes a JSON encoded
+   /scheduler/{_product_}/{_jobGroup_}/jobs endpoint. The endpoint takes a JSON encoded
    payload as part of the request body. The only required key that needs to be included as part
    of the JSON encoded payload is 'when', which takes a ISO 8601 formatted string, that represents
    the time for when the newly created job should be scheduled to run.
@@ -202,26 +202,26 @@ The REST api provides the following CRUD functionality:
          \"vmId\": \"79bfd10c-1529-42de-bd68-1a6e084ee13d\",
          \"when\": \"2017-09-21T23:58:16.797Z\",
          \"jobType\": \ONE_TIME\"
-       }" "http://localhost:8089/api/scheduler/vps4/backups/jobs"
+       }" "http://localhost:8089/scheduler/vps4/backups/jobs"
        
    **NOTE**: For recurring jobs pass jobType as 'RECURRING'. Also, field 'repeatIntervalInDays is required. Field 'repeatCount'
    is optional.
    
    
-3. **GET** /api/schedulers/{product}/{jobGroup}/jobs/{jobId}
+3. **GET** /scheduler/{product}/{jobGroup}/jobs/{jobId}
 
    > The details of a particular job can be obtained by submitting a _GET_ request to
-   the /api/schedulers/{product}/{jobGroup}/jobs/{jobId} endpoint.
+   the /scheduler/{product}/{jobGroup}/jobs/{jobId} endpoint.
    
    > For example, the request below would fetch details about a job with jobId "5348dfe6-c87d-4f86-8b61-1d22f47c607e".
    
        curl -X GET --header "Accept: application/json"
-       "http://localhost:8089/api/scheduler/vps4/backups/jobs/5348dfe6-c87d-4f86-8b61-1d22f47c607e"
+       "http://localhost:8089/scheduler/vps4/backups/jobs/5348dfe6-c87d-4f86-8b61-1d22f47c607e"
 
    
-4. **PATCH** /api/schedulers/{product}/{jobGroup}/jobs/{jobId}
+4. **PATCH** /scheduler/{product}/{jobGroup}/jobs/{jobId}
 
-   > An existing job can be rescheduled by submitting a _PATCH_ request to the /api/schedulers/{product}/{jobGroup}/jobs/{jobId}
+   > An existing job can be rescheduled by submitting a _PATCH_ request to the /scheduler/{product}/{jobGroup}/jobs/{jobId}
    endpoint. The endpoint takes a JSON encoded payload as part of the request body. The only required key that needs to be included
    as part of the JSON encoded payload is 'when', which takes a ISO 8601 formatted string, that represents
    the new time to when the existing job should be re-scheduled to run.
@@ -230,14 +230,14 @@ The REST api provides the following CRUD functionality:
    
        curl -X PATCH --header "Content-Type: application/json" --header "Accept: application/json" -d "{
          \"when\": \"2017-09-21T22:16:36.797Z\"
-       }" "http://localhost:8089/api/scheduler/vps4/backups/jobs/5f60a394-190c-41bc-8f75-89627c03943a"
-5. **DELETE** /api/schedulers/{product}/{jobGroup}/jobs/{jobId}
-   > An existing job can be deleted by submitting a _DELETE_ request to the /api/schedulers/{product}/{jobGroup}/jobs/{jobId}
+       }" "http://localhost:8089/scheduler/vps4/backups/jobs/5f60a394-190c-41bc-8f75-89627c03943a"
+5. **DELETE** /scheduler/{product}/{jobGroup}/jobs/{jobId}
+   > An existing job can be deleted by submitting a _DELETE_ request to the /scheduler/{product}/{jobGroup}/jobs/{jobId}
       endpoint.
       
    > For example, the request below will delete a job with jobId "5f60a394-190c-41bc-8f75-89627c03943a".
    
-       curl -X DELETE --header "Accept: application/json" "http://localhost:8089/api/scheduler/vps4/backups/jobs/5348dfe6-c87d-4f86-8b61-1d22f47c607e"
+       curl -X DELETE --header "Accept: application/json" "http://localhost:8089/scheduler/vps4/backups/jobs/5348dfe6-c87d-4f86-8b61-1d22f47c607e"
 
 
 Plugins
