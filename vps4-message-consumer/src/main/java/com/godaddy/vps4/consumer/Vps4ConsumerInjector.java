@@ -3,6 +3,7 @@ package com.godaddy.vps4.consumer;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.godaddy.hfs.zookeeper.ZooKeeperModule;
 import com.godaddy.vps4.config.ConfigModule;
 import com.godaddy.vps4.credit.CreditModule;
 import com.godaddy.vps4.hfs.HfsClientModule;
@@ -15,11 +16,16 @@ import com.godaddy.vps4.vm.VmModule;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
 import com.google.inject.Module;
+import gdg.hfs.orchestration.cluster.ClusterClientModule;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class Vps4ConsumerInjector {
 
 
-//    private static final Logger logger = LoggerFactory.getLogger(Vps4ConsumerInjector.class);
+    private static final Logger logger = LoggerFactory.getLogger(Vps4ConsumerInjector.class);
+
+    private static final boolean isOrchestrationEngineClustered =  Boolean.parseBoolean(System.getProperty("orchestration.engine.clustered", "true"));
 
     private static final Injector INJECTOR = newInstance();
 
@@ -40,7 +46,18 @@ public class Vps4ConsumerInjector {
         modules.add(new SecurityModule());
         modules.add(new DatabaseModule());
         modules.add(new CreditModule());
-        modules.add(new CommandClientModule());
+
+        logger.info("Orchestration engine clustered: {}", isOrchestrationEngineClustered);
+        if(isOrchestrationEngineClustered) {
+            logger.info("Using ClusterClientModule for orchestration engine.");
+            // the zookeeper module is added here since it provides the CuratorFramework Binding
+            // to the LeaderLatchProvider which is used in the ClusterModule bound to the ClusterClientModule
+            modules.add(new ZooKeeperModule());
+            modules.add(new ClusterClientModule());
+        } else {
+            modules.add(new CommandClientModule());
+        }
+
         modules.add(new Vps4ConsumerModule());
         modules.add(new MessagingModule());
         return Guice.createInjector(modules);
