@@ -182,3 +182,13 @@ CRM Links
 | Stage | unknown                            |
 | Prod  | https://crm.int.godaddy.com        |
 
+Local Environment
+==================
+
+To start the vps4 web application in local environment 
+without using clustered orchestration engine, 
+specify the following property 
+in your local IDE run configuration using the -D flag. 
+
+    orchestration.engine.clustered=false 
+

@@ -33,8 +33,8 @@ import com.godaddy.vps4.util.ObjectMapperProvider;
 import com.godaddy.vps4.util.UtilsModule;
 import com.godaddy.vps4.vm.VmModule;
 import com.godaddy.vps4.web.network.NetworkModule;
-import com.godaddy.vps4.web.security.GDUserModule;
 import com.godaddy.vps4.web.security.AuthenticationFilter;
+import com.godaddy.vps4.web.security.GDUserModule;
 import com.godaddy.vps4.web.util.RequestIdFilter;
 import com.godaddy.vps4.web.util.VmActiveSnapshotFilter;
 import com.google.inject.Guice;
@@ -43,12 +43,15 @@ import com.google.inject.Module;
 import com.google.inject.multibindings.Multibinder;
 import com.google.inject.multibindings.OptionalBinder;
 import com.google.inject.servlet.ServletModule;
+import gdg.hfs.orchestration.cluster.ClusterClientModule;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class Vps4Injector {
 
     private static final Logger logger = LoggerFactory.getLogger(Vps4Injector.class);
+
+    private static final boolean isOrchestrationEngineClustered =  Boolean.parseBoolean(System.getProperty("orchestration.engine.clustered", "true"));
 
     private static final Injector INJECTOR = newInstance();
 
@@ -100,10 +103,18 @@ public class Vps4Injector {
         modules.add(new CpanelModule());
         modules.add(new PleskModule());
         modules.add(new MessagingModule());
-        modules.add(new CommandClientModule());
         modules.add(binder -> {
             binder.bind(ObjectMapper.class).toProvider(ObjectMapperProvider.class);
         });
+
+        logger.info("Orchestration engine clustered: {}", isOrchestrationEngineClustered);
+        if(isOrchestrationEngineClustered) {
+            logger.info("Using ClusterClientModule for orchestration engine.");
+            modules.add(new ClusterClientModule());
+        } else {
+            modules.add(new CommandClientModule());
+        }
+
         modules.add(new ServletModule() {
             @Override
             public void configureServlets() {
