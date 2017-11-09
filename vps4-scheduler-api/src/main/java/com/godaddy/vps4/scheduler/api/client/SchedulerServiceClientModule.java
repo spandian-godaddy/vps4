@@ -23,7 +23,7 @@ public class SchedulerServiceClientModule extends AbstractModule {
         return new ClientCertAuthenticatedServiceProvider<>(
             "vps4.scheduler.url",
             SchedulerWebService.class,
-            "hfs.client.keyPath", // TODO: change this to the scheduler client key path
-            "hfs.client.certPath"); // TODO: change this to the scheduler client cert path
+            "scheduler.api.certPath",
+            "scheduler.api.keyPath");
     }
 }

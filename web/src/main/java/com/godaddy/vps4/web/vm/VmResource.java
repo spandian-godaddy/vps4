@@ -268,6 +268,7 @@ public class VmResource {
         request.orionGuid = orionGuid;
         request.encryptedPassword = encryptedPassword;
         request.zone = openStackZone;
+        request.scheduleBackup = config.get("schedule.backup.onProvision", "false").equalsIgnoreCase("true");
         return request;
     }
 

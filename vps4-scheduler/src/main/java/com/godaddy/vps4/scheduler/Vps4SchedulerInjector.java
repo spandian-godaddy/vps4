@@ -14,13 +14,17 @@ import com.godaddy.vps4.scheduler.core.config.ConfigModule;
 import com.godaddy.vps4.scheduler.core.quartz.jdbc.QuartzDatabaseModule;
 import com.godaddy.vps4.scheduler.core.quartz.memory.QuartzMemoryModule;
 import com.godaddy.vps4.scheduler.plugin.Vps4SchedulerPluginModule;
+import com.godaddy.vps4.scheduler.security.AuthenticationFilter;
+import com.godaddy.vps4.scheduler.security.SecurityModule;
 import com.godaddy.vps4.scheduler.util.GuiceFilterModule;
 import com.godaddy.vps4.scheduler.web.WebModule;
 import com.godaddy.vps4.util.ObjectMapperModule;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
 import com.google.inject.Module;
+import com.google.inject.Singleton;
 import com.google.inject.multibindings.OptionalBinder;
+import com.google.inject.servlet.ServletModule;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -54,7 +58,7 @@ public class Vps4SchedulerInjector {
                 "/swagger.json"
         ));
         modules.add(new SwaggerModule());
-
+        modules.add(new SecurityModule());
         modules.add(new ZooKeeperModule());
         modules.add(new ZkServiceRegistrationModule());
         modules.add(new ConfigModule());
@@ -67,6 +71,14 @@ public class Vps4SchedulerInjector {
             logger.info("Using JDBC based job store");
             modules.add(new QuartzDatabaseModule());
         }
+
+        modules.add(new ServletModule() {
+           @Override
+           public void configureServlets() {
+               bind(AuthenticationFilter.class).in(Singleton.class);
+               filter("/scheduler/*").through(AuthenticationFilter.class);
+           }
+        });
 
         modules.add(new CoreModule());
         modules.add(new SchedulerContextListenerModule());
