@@ -134,7 +134,7 @@ public class JdbcVirtualMachineService implements VirtualMachineService {
 
     @Override
     public void setValidUntil(UUID vmId, Instant validUntil) {
-        Sql.with(dataSource).exec("UPDATE virtual_machine vm SET valid_until=? WHERE vm_id=?", null, LocalDateTime.ofInstant(validUntil, ZoneOffset.UTC), vmId);
+        Sql.with(dataSource).exec("UPDATE virtual_machine vm SET valid_until=? WHERE vm_id=?", null, Timestamp.from(validUntil), vmId);
     }
 
     @Override
