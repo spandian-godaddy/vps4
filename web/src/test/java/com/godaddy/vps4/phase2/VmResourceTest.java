@@ -1,5 +1,7 @@
 package com.godaddy.vps4.phase2;
 
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.UUID;
 
@@ -21,6 +23,7 @@ import com.godaddy.vps4.security.Vps4UserService;
 import com.godaddy.vps4.security.jdbc.AuthorizationException;
 import com.godaddy.vps4.vm.AccountStatus;
 import com.godaddy.vps4.vm.VirtualMachine;
+import com.godaddy.vps4.vm.VirtualMachineService;
 import com.godaddy.vps4.vm.VmModule;
 import com.godaddy.vps4.web.Vps4Exception;
 import com.godaddy.vps4.web.Vps4NoShopperException;
@@ -40,6 +43,7 @@ public class VmResourceTest {
 
     @Inject Vps4UserService userService;
     @Inject DataSource dataSource;
+    @Inject VirtualMachineService virtualMachineService;
 
     private GDUser user;
     private long hfsVmId = 98765;
@@ -359,6 +363,17 @@ public class VmResourceTest {
 
         user = GDUserMock.createShopper();
         List<VirtualMachine> vms = getVmResource().getVirtualMachines();
+        Assert.assertEquals(1, vms.size());
+        Assert.assertEquals(vms.get(0).orionGuid, vm.orionGuid);
+    }
+    
+    @Test
+    public void testShopperGetZombieVirtualMachines() {
+        VirtualMachine vm = createTestVm();
+        virtualMachineService.setValidUntil(vm.vmId, Instant.now().plus(2, ChronoUnit.DAYS));
+
+        user = GDUserMock.createShopper();
+        List<VirtualMachine> vms = getVmResource().getZombieVirtualMachines();
         Assert.assertEquals(1, vms.size());
         Assert.assertEquals(vms.get(0).orionGuid, vm.orionGuid);
     }

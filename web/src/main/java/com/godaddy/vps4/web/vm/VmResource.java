@@ -53,6 +53,7 @@ import com.godaddy.vps4.vm.VirtualMachineSpec;
 import com.godaddy.vps4.web.Vps4Api;
 import com.godaddy.vps4.web.Vps4Exception;
 import com.godaddy.vps4.web.Vps4NoShopperException;
+import com.godaddy.vps4.web.security.AdminOnly;
 import com.godaddy.vps4.web.security.GDUser;
 import com.godaddy.vps4.web.util.Commands;
 
@@ -307,8 +308,18 @@ public class VmResource {
             throw new Vps4NoShopperException();
         Vps4User vps4User = vps4UserService.getOrCreateUserForShopper(user.getShopperId());
 
-        List<VirtualMachine> vms = virtualMachineService.getVirtualMachinesForUser(vps4User.getId());
-        return vms.stream().filter(vm -> vm.validUntil.isAfter(Instant.now())).collect(Collectors.toList());
+        return virtualMachineService.getVirtualMachinesForUser(vps4User.getId());
+    }
+
+    @AdminOnly
+    @GET
+    @Path("/zombies")
+    public List<VirtualMachine> getZombieVirtualMachines() {
+        if (user.getShopperId() == null)
+            throw new Vps4NoShopperException();
+        Vps4User vps4User = vps4UserService.getOrCreateUserForShopper(user.getShopperId());
+
+        return virtualMachineService.getZombieVirtualMachinesForUser(vps4User.getId());
     }
 
     @GET

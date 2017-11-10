@@ -98,6 +98,8 @@ public interface VirtualMachineService {
 
     List<VirtualMachine> getVirtualMachinesForUser(long vps4UserId);
 
+    List<VirtualMachine> getZombieVirtualMachinesForUser(long vps4UserId);
+
     boolean virtualMachineHasCpanel(UUID vmId);
 
     boolean virtualMachineHasPlesk(UUID vmId);

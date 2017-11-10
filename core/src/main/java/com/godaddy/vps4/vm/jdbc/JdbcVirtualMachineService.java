@@ -21,7 +21,6 @@ import com.godaddy.hfs.jdbc.Sql;
 import com.godaddy.vps4.network.IpAddress;
 import com.godaddy.vps4.network.jdbc.IpAddressMapper;
 import com.godaddy.vps4.util.TimestampUtils;
-import com.godaddy.vps4.vm.AccountStatus;
 import com.godaddy.vps4.vm.Image;
 import com.godaddy.vps4.vm.Image.ControlPanel;
 import com.godaddy.vps4.vm.Image.OperatingSystem;
@@ -193,7 +192,16 @@ public class JdbcVirtualMachineService implements VirtualMachineService {
         return Sql.with(dataSource).exec(selectVirtualMachineQuery
                 + "JOIN user_project_privilege up ON up.project_id = vm.project_id "
                 + "JOIN vps4_user u ON up.vps4_user_id = u.vps4_user_id "
-                + "WHERE u.vps4_user_id = ?",
+                + "WHERE u.vps4_user_id = ? AND vm.valid_until = 'infinity'",
+                Sql.listOf(this::mapVirtualMachine), vps4UserId);
+    }
+
+    @Override
+    public List<VirtualMachine> getZombieVirtualMachinesForUser(long vps4UserId) {
+        return Sql.with(dataSource).exec(selectVirtualMachineQuery
+                + "JOIN user_project_privilege up ON up.project_id = vm.project_id "
+                + "JOIN vps4_user u ON up.vps4_user_id = u.vps4_user_id "
+                + "WHERE u.vps4_user_id = ? AND vm.valid_until < 'infinity' AND vm.valid_until > now_utc()",
                 Sql.listOf(this::mapVirtualMachine), vps4UserId);
     }
 

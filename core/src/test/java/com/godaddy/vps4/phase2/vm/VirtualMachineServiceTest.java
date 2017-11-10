@@ -3,6 +3,7 @@ package com.godaddy.vps4.phase2.vm;
 import static org.junit.Assert.*;
 
 import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -33,7 +34,6 @@ import com.godaddy.vps4.vm.ImageService;
 import com.godaddy.vps4.vm.VirtualMachine;
 import com.godaddy.vps4.vm.VirtualMachineService;
 import com.godaddy.vps4.vm.VirtualMachineService.ProvisionVirtualMachineParameters;
-import com.godaddy.vps4.vm.VirtualMachineSpec;
 import com.godaddy.vps4.vm.jdbc.JdbcImageService;
 import com.godaddy.vps4.vm.jdbc.JdbcVirtualMachineService;
 import com.google.inject.Guice;
@@ -138,17 +138,39 @@ public class VirtualMachineServiceTest {
     @Test
     public void testGetVirtualMachines() {
         List<UUID> createdVms = new ArrayList<>();
-        for(int i = 0; i < 2; i++) {
+        for(int i = 0; i < 3; i++) {
             createdVms.add(UUID.randomUUID());
             virtualMachines.add(SqlTestData.insertTestVm(createdVms.get(i), vps4User.getId(), dataSource));
             vmCredits.add(UUID.randomUUID());
         }
+        virtualMachineService.setValidUntil(virtualMachines.get(1).vmId, Instant.now());
+        createdVms.remove(virtualMachines.get(1).orionGuid);
+
 
         List<VirtualMachine> vms = virtualMachineService.getVirtualMachinesForUser(vps4User.getId());
         List<UUID> vmGuids = vms.stream().map(vm -> vm.orionGuid).collect(Collectors.toList());
         for (UUID vm : createdVms)
             assertTrue(vmGuids.contains(vm));
-        assertEquals(virtualMachines.size(), vms.size());
+        assertEquals(virtualMachines.size()-1, vms.size());
+    }
+
+    @Test
+    public void testGetZombieVirtualMachines() {
+        List<UUID> createdVms = new ArrayList<>();
+        for(int i = 0; i < 4; i++) {
+            createdVms.add(UUID.randomUUID());
+            virtualMachines.add(SqlTestData.insertTestVm(createdVms.get(i), vps4User.getId(), dataSource));
+            vmCredits.add(UUID.randomUUID());
+        }
+        virtualMachineService.setValidUntil(virtualMachines.get(1).vmId, Instant.now());
+        virtualMachineService.setValidUntil(virtualMachines.get(0).vmId, Instant.now().plus(7, ChronoUnit.DAYS));
+        virtualMachineService.setValidUntil(virtualMachines.get(2).vmId, Instant.now().plus(7, ChronoUnit.DAYS));
+
+
+        List<VirtualMachine> vms = virtualMachineService.getZombieVirtualMachinesForUser(vps4User.getId());
+        List<UUID> vmGuids = vms.stream().map(vm -> vm.vmId).collect(Collectors.toList());
+        assertTrue(vmGuids.contains(virtualMachines.get(0).vmId));
+        assertTrue(vmGuids.contains(virtualMachines.get(2).vmId));
     }
 
     @Test
