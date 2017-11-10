@@ -135,8 +135,7 @@ public class Vps4ProvisionVm extends ActionCommand<Vps4ProvisionVm.Request, Vps4
 
         // TODO: keeps this commented until we have the nginx configured to setup client cert based auth for
         // vps4 inter microservice communication.
-        if(request.scheduleBackup)
-            setupAutomaticBackupSchedule(request.vmInfo.vmId, request.shopperId);
+        setupAutomaticBackupSchedule(request.vmInfo.vmId, request.shopperId);
 
         setStep(CreateVmStep.SetupComplete);
         logger.info("provision vm finished: {}", hfsVm);
@@ -386,7 +385,6 @@ public class Vps4ProvisionVm extends ActionCommand<Vps4ProvisionVm.Request, Vps4
         public String rawFlavor;
         public String username;
         public String zone;
-        public boolean scheduleBackup;
 
         @Override
         public long getActionId() {
