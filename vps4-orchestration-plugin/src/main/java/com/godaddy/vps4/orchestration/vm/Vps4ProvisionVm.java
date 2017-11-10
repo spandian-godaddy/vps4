@@ -160,7 +160,7 @@ public class Vps4ProvisionVm extends ActionCommand<Vps4ProvisionVm.Request, Vps4
         catch (RuntimeException e) {
             // squelch this for now. dont fail a vm provisioning just because we couldn't create an auto backup schedule
             // TODO: should this behaviour be changed?
-            logger.error("Automatic backup job creation failed");
+            logger.error("Automatic backup job creation failed {}", e);
         }
     }
 
