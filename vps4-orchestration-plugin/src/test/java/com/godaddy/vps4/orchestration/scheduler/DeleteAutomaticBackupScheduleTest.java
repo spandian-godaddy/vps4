@@ -1,6 +1,5 @@
 package com.godaddy.vps4.orchestration.scheduler;
 
-import com.godaddy.vps4.client.ClientCertAuth;
 import com.godaddy.vps4.scheduler.api.web.SchedulerWebService;
 import com.google.inject.AbstractModule;
 import com.google.inject.Guice;
@@ -31,7 +30,7 @@ public class DeleteAutomaticBackupScheduleTest {
     private UUID backupJobId = UUID.randomUUID();
 
     @Inject DeleteAutomaticBackupSchedule command;
-    @Inject @ClientCertAuth
+    @Inject
     SchedulerWebService schedulerWebService;
 
     @Captor private ArgumentCaptor<Function<CommandContext, Void>> deleteJobCaptor;
@@ -44,7 +43,6 @@ public class DeleteAutomaticBackupScheduleTest {
                 protected void configure() {
                     SchedulerWebService mockSchedulerWebService = mock(SchedulerWebService.class);
                     bind(SchedulerWebService.class)
-                        .annotatedWith(ClientCertAuth.class)
                         .toInstance(mockSchedulerWebService);
                 }
             }

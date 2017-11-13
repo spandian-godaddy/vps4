@@ -1,7 +1,6 @@
 package com.godaddy.vps4.orchestration.scheduler;
 
 import com.godaddy.hfs.config.Config;
-import com.godaddy.vps4.client.ClientCertAuth;
 import com.godaddy.vps4.scheduler.api.core.JobType;
 import com.godaddy.vps4.scheduler.api.core.SchedulerJobDetail;
 import com.godaddy.vps4.scheduler.api.core.utils.Utils;
@@ -25,7 +24,7 @@ public class SetupAutomaticBackupSchedule implements Command<SetupAutomaticBacku
     private final Config config;
 
     @Inject
-    public SetupAutomaticBackupSchedule(@ClientCertAuth SchedulerWebService schedulerWebService, Config config) {
+    public SetupAutomaticBackupSchedule(SchedulerWebService schedulerWebService, Config config) {
         this.schedulerWebService = schedulerWebService;
         this.config = config;
     }

@@ -2,7 +2,6 @@ package com.godaddy.vps4.scheduler.api.phase2;
 
 import static com.godaddy.vps4.client.ClientUtils.withShopperId;
 
-import com.godaddy.vps4.client.ClientCertAuth;
 import com.godaddy.vps4.config.ConfigModule;
 import com.godaddy.vps4.scheduler.api.client.SchedulerServiceClientModule;
 import com.godaddy.vps4.scheduler.api.core.JobRequest;
@@ -39,8 +38,7 @@ import java.util.UUID;
 public class SchedulerWebServiceClientTest {
 
     private Injector injector;
-    @Inject @ClientCertAuth
-    SchedulerWebService schedulerWebService;
+    @Inject SchedulerWebService schedulerWebService;
     private final String product = "vps4";
     private final String jobGroup = "backups";
     private UUID jobId;

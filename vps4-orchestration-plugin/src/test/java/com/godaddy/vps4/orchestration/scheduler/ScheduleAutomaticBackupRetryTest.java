@@ -1,6 +1,5 @@
 package com.godaddy.vps4.orchestration.scheduler;
 
-import com.godaddy.vps4.client.ClientCertAuth;
 import com.godaddy.vps4.config.ConfigModule;
 import com.godaddy.vps4.scheduler.api.core.JobType;
 import com.godaddy.vps4.scheduler.api.core.SchedulerJobDetail;
@@ -33,7 +32,7 @@ public class ScheduleAutomaticBackupRetryTest {
     private SchedulerJobDetail jobDetail;
 
     @Inject ScheduleAutomaticBackupRetry command;
-    @Inject @ClientCertAuth SchedulerWebService schedulerService;
+    @Inject SchedulerWebService schedulerService;
 
     @Captor private ArgumentCaptor<Function<CommandContext, SchedulerJobDetail>> createJobCaptor;
     @Captor private ArgumentCaptor<Vps4BackupJobRequest> schedulerJobCreationDataCaptor;
@@ -47,7 +46,6 @@ public class ScheduleAutomaticBackupRetryTest {
                 protected void configure() {
                     SchedulerWebService mockSchedulerService = mock(SchedulerWebService.class);
                     bind(SchedulerWebService.class)
-                        .annotatedWith(ClientCertAuth.class)
                         .toInstance(mockSchedulerService);
                 }
             }

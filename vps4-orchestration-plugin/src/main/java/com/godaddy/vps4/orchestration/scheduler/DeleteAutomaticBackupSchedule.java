@@ -1,6 +1,5 @@
 package com.godaddy.vps4.orchestration.scheduler;
 
-import com.godaddy.vps4.client.ClientCertAuth;
 import com.godaddy.vps4.scheduler.api.core.utils.Utils;
 import com.godaddy.vps4.scheduler.api.plugin.Vps4BackupJobRequest;
 import com.godaddy.vps4.scheduler.api.web.SchedulerWebService;
@@ -19,7 +18,7 @@ public class DeleteAutomaticBackupSchedule implements Command<UUID, Void> {
     private final SchedulerWebService schedulerWebService;
 
     @Inject
-    public DeleteAutomaticBackupSchedule(@ClientCertAuth SchedulerWebService schedulerWebService) {
+    public DeleteAutomaticBackupSchedule(SchedulerWebService schedulerWebService) {
         this.schedulerWebService = schedulerWebService;
     }
 

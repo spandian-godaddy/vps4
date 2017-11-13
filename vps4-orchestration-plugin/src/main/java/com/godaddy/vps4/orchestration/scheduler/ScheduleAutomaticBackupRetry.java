@@ -1,7 +1,6 @@
 package com.godaddy.vps4.orchestration.scheduler;
 
 import com.godaddy.hfs.config.Config;
-import com.godaddy.vps4.client.ClientCertAuth;
 import com.godaddy.vps4.scheduler.api.core.JobType;
 import com.godaddy.vps4.scheduler.api.core.SchedulerJobDetail;
 import com.godaddy.vps4.scheduler.api.core.utils.Utils;
@@ -25,7 +24,7 @@ public class ScheduleAutomaticBackupRetry implements Command<ScheduleAutomaticBa
     private final Config config;
 
     @Inject
-    public ScheduleAutomaticBackupRetry(@ClientCertAuth SchedulerWebService schedulerService, Config config) {
+    public ScheduleAutomaticBackupRetry(SchedulerWebService schedulerService, Config config) {
         this.schedulerService = schedulerService;
         this.config = config;
     }
