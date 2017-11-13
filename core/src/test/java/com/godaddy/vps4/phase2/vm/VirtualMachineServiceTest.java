@@ -15,6 +15,7 @@ import javax.sql.DataSource;
 
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import com.godaddy.hfs.jdbc.Sql;
@@ -237,6 +238,7 @@ public class VirtualMachineServiceTest {
         Assert.assertNull(vm);
     }
     
+    @Ignore
     @Test
     public void testDestroyVm() {
         VirtualMachine expectedVm = SqlTestData.insertTestVm(orionGuid, dataSource);
