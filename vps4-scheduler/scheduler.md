@@ -289,3 +289,10 @@ into a 'X-Shopper-Id' header.
         Snapshot snapshot = withShopperId(shopperId, () -> {
             return vmSnapshotService.getSnapshot(vmId, snapshotId);
         }, Snapshot.class);
+        
+        
+Authentication
+==============
+By default the scheduler service is configured for mutual authentication (although the mutual auth handshake is really done by the nginx loadbalancer).
+The scheduler service in this mode looks for a header called "X-Cert-Subject-DN".
+To turn off mutual authentication add -Dscheduler.useMutualAuth=false to the VM arguments in scheduler run configurations.

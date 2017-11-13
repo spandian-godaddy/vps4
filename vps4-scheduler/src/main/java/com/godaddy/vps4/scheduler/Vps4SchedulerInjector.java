@@ -72,13 +72,17 @@ public class Vps4SchedulerInjector {
             modules.add(new QuartzDatabaseModule());
         }
 
-        modules.add(new ServletModule() {
-           @Override
-           public void configureServlets() {
-               bind(AuthenticationFilter.class).in(Singleton.class);
-               filter("/scheduler/*").through(AuthenticationFilter.class);
-           }
-        });
+        // Mutual auth is on by default and routes requests to the scheduler resource via the auth filter
+        if (Boolean.parseBoolean(System.getProperty("scheduler.useMutualAuth", "true"))) {
+            logger.info("Configuring mutual authentication");
+            modules.add(new ServletModule() {
+                @Override
+                public void configureServlets() {
+                    bind(AuthenticationFilter.class).in(Singleton.class);
+                    filter("/scheduler/*").through(AuthenticationFilter.class);
+                }
+            });
+        }
 
         modules.add(new CoreModule());
         modules.add(new SchedulerContextListenerModule());
