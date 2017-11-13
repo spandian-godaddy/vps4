@@ -101,6 +101,12 @@
             <artifactId>orchestration-web</artifactId>
             <version>0.5.1-25</version>
             <scope>runtime</scope>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.postgresql</groupId>
+                    <artifactId>postgresql</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
         
         <dependency>
@@ -145,11 +151,13 @@
         </dependency>
 
         <!-- External dependencies -->
+
         <dependency>
             <groupId>javax.ws.rs</groupId>
             <artifactId>javax.ws.rs-api</artifactId>
             <version>2.0</version>
         </dependency>
+
         <dependency>
           <groupId>joda-time</groupId>
           <artifactId>joda-time</artifactId>

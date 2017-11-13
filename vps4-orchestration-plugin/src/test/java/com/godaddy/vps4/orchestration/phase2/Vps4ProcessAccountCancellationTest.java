@@ -1,0 +1,213 @@
+package com.godaddy.vps4.orchestration.phase2;
+
+import static org.mockito.Mockito.any;
+import static org.mockito.Mockito.eq;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
+import com.godaddy.vps4.credit.VirtualMachineCredit;
+import com.godaddy.vps4.jdbc.DatabaseModule;
+import com.godaddy.vps4.orchestration.account.Vps4ProcessAccountCancellation;
+import com.godaddy.vps4.orchestration.scheduler.ScheduleZombieVmCleanup;
+import com.godaddy.vps4.orchestration.vm.VmActionRequest;
+import com.godaddy.vps4.orchestration.vm.Vps4StopVm;
+import com.godaddy.vps4.project.ProjectService;
+import com.godaddy.vps4.security.SecurityModule;
+import com.godaddy.vps4.security.Vps4UserService;
+import com.godaddy.vps4.vm.ActionService;
+import com.godaddy.vps4.vm.ActionType;
+import com.godaddy.vps4.vm.VirtualMachine;
+import com.godaddy.vps4.vm.VirtualMachineService;
+import com.godaddy.vps4.vm.jdbc.JdbcActionService;
+import com.godaddy.vps4.vm.jdbc.JdbcVirtualMachineService;
+import com.google.inject.AbstractModule;
+import com.google.inject.Guice;
+import com.google.inject.Inject;
+import com.google.inject.Injector;
+import gdg.hfs.orchestration.Command;
+import gdg.hfs.orchestration.CommandContext;
+
+import javax.sql.DataSource;
+
+import org.junit.After;
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.BeforeClass;
+import org.junit.Ignore;
+import org.junit.Test;
+import org.mockito.ArgumentCaptor;
+import org.mockito.Captor;
+import org.mockito.MockitoAnnotations;
+
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
+import java.util.UUID;
+import java.util.function.Function;
+
+public class Vps4ProcessAccountCancellationTest {
+    static Injector injector;
+    Instant validUntil = Instant.now();
+    private CommandContext context;
+    private UUID vps4VmId;
+    private UUID orionGuid;
+    private VirtualMachine vm;
+    private long hfsVmId = 4567;
+    private long stopActionId = 1234;
+    private VirtualMachineCredit virtualMachineCredit;
+
+    @Inject Vps4UserService vps4UserService;
+    @Inject ProjectService projectService;
+    @Inject VirtualMachineService vps4VmService;
+    @Inject ActionService actionService;
+    @Inject Vps4ProcessAccountCancellation command;
+
+    @Captor private ArgumentCaptor<Function<CommandContext, Instant>> calculateValidUntilLambdaCaptor;
+    @Captor private ArgumentCaptor<Function<CommandContext, Long>> createStopVmActionLambdaCaptor;
+    @Captor private ArgumentCaptor<Function<CommandContext, Long>> getHfsVmIdLambdaCaptor;
+    @Captor private ArgumentCaptor<VmActionRequest> actionRequestArgumentCaptor;
+    @Captor private ArgumentCaptor<Function<CommandContext, Void>> markZombieLambdaCaptor;
+    @Captor private ArgumentCaptor<ScheduleZombieVmCleanup.Request> zombieCleanupArgumentCaptor;
+
+    @BeforeClass
+    public static void newInjector() {
+        injector = Guice.createInjector(
+                new DatabaseModule(),
+                new SecurityModule(),
+                new AbstractModule() {
+                    @Override
+                    protected void configure() {
+                        bind(ActionService.class).to(JdbcActionService.class);
+                        bind(VirtualMachineService.class).to(JdbcVirtualMachineService.class);
+                    }
+                }
+        );
+    }
+
+    @Before
+    public void setUpTest() {
+        injector.injectMembers(this);
+        MockitoAnnotations.initMocks(this);
+        addTestSqlData();
+        context = setupMockContext();
+        virtualMachineCredit = getVirtualMachineCredit();
+    }
+
+    @After
+    public void teardownTest() {
+        SqlTestData.cleanupSqlTestData(
+                injector.getInstance(DataSource.class), injector.getInstance(Vps4UserService.class));
+    }
+
+    private VirtualMachineCredit getVirtualMachineCredit() {
+        VirtualMachineCredit credit = new VirtualMachineCredit();
+        credit.productId = vps4VmId;
+        credit.orionGuid = orionGuid;
+        return credit;
+    }
+
+    private void addTestSqlData() {
+        SqlTestData.insertUser(vps4UserService).getId();
+        SqlTestData.insertProject(projectService, vps4UserService);
+        vm = SqlTestData.insertVm(vps4VmService, vps4UserService);
+        vps4VmId = vm.vmId;
+        orionGuid = vm.orionGuid;
+        hfsVmId = vm.hfsVmId;
+    }
+
+    private CommandContext setupMockContext() {
+        CommandContext mockContext = mock(CommandContext.class);
+
+        when(mockContext.execute(eq("CalculateValidUntil"), any(Function.class), eq(Instant.class)))
+                .thenReturn(validUntil);
+        when(mockContext.execute(eq("GetHfsVmId"), any(Function.class), eq(long.class)))
+            .thenReturn(SqlTestData.hfsVmId);
+        when(mockContext.execute(eq("CreateVmStopAction"), any(Function.class), eq(long.class)))
+                .thenReturn(stopActionId);
+        return mockContext;
+    }
+
+    @Test
+    public void calculatesValidUntilWhenAccountCancellationIsProcessed() {
+        Instant now = Instant.now();
+        command.execute(context, virtualMachineCredit);
+        verify(context, times(1))
+                .execute(eq("CalculateValidUntil"), calculateValidUntilLambdaCaptor.capture(), eq(Instant.class));
+
+        // Verify that the lambda is returning a date 7 days out
+        Function<CommandContext, Instant> lambda = calculateValidUntilLambdaCaptor.getValue();
+        Instant calculatedValidUntil = lambda.apply(context);
+        Assert.assertEquals(7, ChronoUnit.DAYS.between(now, calculatedValidUntil));
+    }
+
+    @Test
+    public void createsStopVmActionWhenAccountCancellationIsProcessed() {
+        command.execute(context, virtualMachineCredit);
+        verify(context, times(1))
+            .execute(eq("CreateVmStopAction"), createStopVmActionLambdaCaptor.capture(), eq(long.class));
+
+        // Verify that the lambda is creating a stop vm action
+        Function<CommandContext, Long> lambda = createStopVmActionLambdaCaptor.getValue();
+        long actionId = lambda.apply(context);
+        Assert.assertEquals(ActionType.STOP_VM, actionService.getAction(actionId).type);
+    }
+
+    @Test
+    public void getsHfsVmIdWhenAccountCancellationIsProcessed() {
+        command.execute(context, virtualMachineCredit);
+        verify(context, times(1))
+                .execute(eq("GetHfsVmId"), getHfsVmIdLambdaCaptor.capture(), eq(long.class));
+
+        // Verify that the lambda is returning what we expect
+        Function<CommandContext, Long> lambda = getHfsVmIdLambdaCaptor.getValue();
+        long getHfsVmId = lambda.apply(context);
+        Assert.assertEquals(getHfsVmId, hfsVmId);
+    }
+
+    @Test
+    public void kicksOffStopVmCommandWhenAccountCancellationIsProcessed() {
+        command.execute(context, virtualMachineCredit);
+        verify(context, times(1))
+            .execute(eq(Vps4StopVm.class), actionRequestArgumentCaptor.capture());
+
+        VmActionRequest request = actionRequestArgumentCaptor.getValue();
+        Assert.assertEquals(stopActionId, request.actionId);
+        Assert.assertEquals(hfsVmId, request.hfsVmId);
+    }
+
+    @Ignore("Ignore test till the validUntil issue is fixed")
+    @Test
+    public void marksVmAsZombieWhenAccountCancellationIsProcessed() {
+        // Marking a vm as zombie for now involves setting the validUntil column to a date in the future (7 days)
+        command.execute(context, virtualMachineCredit);
+        verify(context, times(1))
+                .execute(eq("MarkVmAsZombie"), markZombieLambdaCaptor.capture(), eq(void.class));
+
+        // Verify that the lambda is returning what we expect
+        Function<CommandContext, Void> lambda = markZombieLambdaCaptor.getValue();
+        lambda.apply(context);
+        Instant setValidUntil = vps4VmService.getVirtualMachine(vps4VmId).validUntil;
+        Assert.assertEquals(validUntil, setValidUntil);
+    }
+
+    @Test
+    public void schedulesZombieVmCleanupJobWhenAccountCancellationIsProcessed() {
+        command.execute(context, virtualMachineCredit);
+        verify(context, times(1))
+                .execute(eq(ScheduleZombieVmCleanup.class), zombieCleanupArgumentCaptor.capture());
+
+        // Verify the request sent to the ScheduleZombieVmCleanup command
+        ScheduleZombieVmCleanup.Request req = zombieCleanupArgumentCaptor.getValue();
+        Assert.assertEquals(vps4VmId, req.vmId);
+        Assert.assertEquals(validUntil, req.when);
+    }
+
+    @Test
+    public void noOpWhenAnUnclaimedAccountCancellationIsProcessed() {
+        virtualMachineCredit.productId = null;
+        command.execute(context, virtualMachineCredit);
+        verify(context, times(0)).execute(any(), any(Function.class), any());
+        verify(context, times(0)).execute(any(Class.class), any());
+    }
+}

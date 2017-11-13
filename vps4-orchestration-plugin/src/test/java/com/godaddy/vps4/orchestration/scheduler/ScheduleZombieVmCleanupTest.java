@@ -72,12 +72,16 @@ public class ScheduleZombieVmCleanupTest {
 
     @Test
     public void callsSchedulerServiceToCreateJobSchedule() throws Exception {
+        ScheduleZombieVmCleanup.Request request = new ScheduleZombieVmCleanup.Request();
+        request.vmId = vmId;
+        request.when = Instant.now();
+
         jobDetail = new SchedulerJobDetail(jobId, null, null);
         when(context.execute(eq("Cleanup Zombie VM"), any(Function.class), eq(SchedulerJobDetail.class)))
                 .thenReturn(jobDetail);
 
         Instant now = Instant.now();
-        command.execute(context, vmId);
+        command.execute(context, request);
 
         // verify call to the scheduler service is wrapped in a context.execute method
         verify(context, times(1))
@@ -93,14 +97,17 @@ public class ScheduleZombieVmCleanupTest {
         Vps4ZombieCleanupJobRequest jobRequestData = schedulerJobCreationDataCaptor.getValue();
         Assert.assertEquals(vmId, jobRequestData.vmId);
         Assert.assertEquals(JobType.ONE_TIME, jobRequestData.jobType);
-        // Slightly round about way of verifying that the cleanup job is scheduled to be 7 days out
-        Assert.assertEquals(7, ChronoUnit.DAYS.between(now, jobRequestData.when));
+        Assert.assertEquals(request.when, jobRequestData.when);
     }
 
     @Test(expected = RuntimeException.class)
     public void errorInSchedulerJobCreation() {
+        ScheduleZombieVmCleanup.Request request = new ScheduleZombieVmCleanup.Request();
+        request.vmId = vmId;
+        request.when = Instant.now();
+
         when(context.execute(eq("Cleanup Zombie VM"), any(Function.class), eq(SchedulerJobDetail.class)))
                 .thenThrow(new RuntimeException("Error"));
-        command.execute(context, vmId);
+        command.execute(context, request);
     }
 }

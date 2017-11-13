@@ -237,8 +237,8 @@ public class VirtualMachineServiceTest {
         VirtualMachine vm = virtualMachineService.getVirtualMachine(UUID.randomUUID());
         Assert.assertNull(vm);
     }
-    
-    @Ignore
+
+    @Ignore("Ignore test till the validUntil issue is fixed")
     @Test
     public void testDestroyVm() {
         VirtualMachine expectedVm = SqlTestData.insertTestVm(orionGuid, dataSource);
