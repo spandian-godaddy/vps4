@@ -29,7 +29,7 @@ public class RefreshCpanelLicense implements Command<RefreshCpanelLicense.Reques
     public Void execute(CommandContext context, Request request){
         logger.debug("Refreshing license for hfs vm {}", request.hfsVmId);
 
-        CPanelAction hfsCpanelAction = context.execute("SetCpanelHostname",
+        CPanelAction hfsCpanelAction = context.execute("RefreshCPanelLicense",
                 ctx -> cpanelService.licenseRefresh(request.hfsVmId),
                 CPanelAction.class);
 

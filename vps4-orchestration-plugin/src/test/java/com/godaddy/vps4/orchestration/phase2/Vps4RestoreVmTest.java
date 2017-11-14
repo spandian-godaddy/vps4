@@ -23,6 +23,14 @@ import java.util.stream.Collectors;
 
 import javax.sql.DataSource;
 
+import com.godaddy.vps4.orchestration.hfs.cpanel.RefreshCpanelLicense;
+import com.godaddy.vps4.vm.ActionService;
+import com.godaddy.vps4.vm.VirtualMachine;
+import com.godaddy.vps4.vm.VirtualMachineService;
+import com.godaddy.vps4.vm.VmUserService;
+import com.godaddy.vps4.vm.VmModule;
+import com.godaddy.vps4.vm.Image;
+import com.godaddy.vps4.vm.RestoreVmInfo;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -52,12 +60,6 @@ import com.godaddy.vps4.snapshot.SnapshotService;
 import com.godaddy.vps4.snapshot.SnapshotStatus;
 import com.godaddy.vps4.snapshot.SnapshotType;
 import com.godaddy.vps4.util.Cryptography;
-import com.godaddy.vps4.vm.ActionService;
-import com.godaddy.vps4.vm.RestoreVmInfo;
-import com.godaddy.vps4.vm.VirtualMachine;
-import com.godaddy.vps4.vm.VirtualMachineService;
-import com.godaddy.vps4.vm.VmModule;
-import com.godaddy.vps4.vm.VmUserService;
 import com.google.inject.Guice;
 import com.google.inject.Inject;
 import com.google.inject.Injector;
@@ -81,6 +83,7 @@ public class Vps4RestoreVmTest {
     private long hfsRestoreActionId = 12345;
     private long hfsNewVmId = 4567;
     private Vm hfsVm;
+    private VirtualMachine vps4Vm;
     private VirtualMachineService spyVps4VmService;
     static final String username = "jdoe";
     static final String password = "P@$$w0rd1";
@@ -105,6 +108,7 @@ public class Vps4RestoreVmTest {
     @Captor private ArgumentCaptor<SetPassword.Request> setPasswordArgumentCaptor;
     @Captor private ArgumentCaptor<ToggleAdmin.Request> toggleAdminArgumentCaptor;
     @Captor private ArgumentCaptor<UnbindIp.Request> unbindIpArgumentCaptor;
+    @Captor private ArgumentCaptor<RefreshCpanelLicense.Request> refreshLicenseCaptor;
 
     @BeforeClass
     public static void newInjector() {
@@ -142,10 +146,10 @@ public class Vps4RestoreVmTest {
     private void addTestSqlData() {
         SqlTestData.insertUser(vps4UserService).getId();
         vps4Project = SqlTestData.insertProject(projectService, vps4UserService);
-        VirtualMachine vm = SqlTestData.insertVm(vps4VmService, vps4UserService);
-        vps4VmId = vm.vmId;
+        vps4Vm = SqlTestData.insertVm(vps4VmService, vps4UserService);
+        vps4VmId = vps4Vm.vmId;
         vps4SnapshotId = SqlTestData.insertSnapshotWithStatus(
-                vps4SnapshotService, vm.vmId, vps4Project.getProjectId(), SnapshotStatus.LIVE, SnapshotType.ON_DEMAND);
+                vps4SnapshotService, vps4Vm.vmId, vps4Project.getProjectId(), SnapshotStatus.LIVE, SnapshotType.ON_DEMAND);
         restoreActionId = SqlTestData.insertVmAction(actionService, vps4UserService, vps4VmId);
         ipAddresses = new ArrayList<>();
         ipAddresses.addAll(
@@ -159,6 +163,7 @@ public class Vps4RestoreVmTest {
         when(mockContext.getId()).thenReturn(UUID.randomUUID());
 
         when(mockContext.execute(eq("GetHfsVmId"), any(Function.class), eq(long.class))).thenReturn(SqlTestData.hfsVmId);
+        when(mockContext.execute(eq("GetVirtualMachine"), any(Function.class), eq(VirtualMachine.class))).thenReturn(vps4Vm);
         when(mockContext.execute(eq("GetPublicIpAdresses"), any(Function.class), eq(List.class))).thenReturn(ipAddresses);
         when(mockContext.execute(startsWith("UnbindIP-"), eq(UnbindIp.class), any())).thenReturn(null);
         when(mockContext.execute(eq("GetNocfoxImageId"), any(Function.class), eq(String.class))).thenReturn(SqlTestData.nfImageId);
@@ -372,5 +377,18 @@ public class Vps4RestoreVmTest {
         // SqlTestData.hfsVmId is the ID of the old hfs vm
         verify(context, times(1))
             .execute(eq("DestroyVmHfs"), eq(DestroyVm.class), eq(SqlTestData.hfsVmId));
+    }
+
+    @Test
+    public void refreshesCpanelLicense() {
+        vps4Vm.image = new Image();
+        vps4Vm.image.controlPanel = Image.ControlPanel.CPANEL;
+        command.execute(context, request);
+
+        verify(context, times(1))
+                .execute(eq("RefreshCPanelLicense"), eq(RefreshCpanelLicense.class), refreshLicenseCaptor.capture());
+
+        RefreshCpanelLicense.Request refreshRequest = refreshLicenseCaptor.getValue();
+        Assert.assertEquals(vps4Vm.hfsVmId, refreshRequest.hfsVmId);
     }
 }
