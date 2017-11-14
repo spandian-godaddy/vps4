@@ -99,7 +99,7 @@
         <dependency>
             <groupId>com.godaddy.hosting</groupId>
             <artifactId>orchestration-web</artifactId>
-            <version>0.5.1-25</version>
+            <version>0.5.1-26</version>
             <scope>runtime</scope>
             <exclusions>
                 <exclusion>
