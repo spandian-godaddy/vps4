@@ -85,7 +85,6 @@ public class JdbcVirtualMachineService implements VirtualMachineService {
     }
 
     protected VirtualMachine mapVirtualMachine(ResultSet rs) throws SQLException {
-        Timestamp validUntil = rs.getTimestamp("vm_valid_until", TimestampUtils.utcCalendar);
         VirtualMachineSpec spec = mapVirtualMachineSpec(rs);
         UUID vmId = java.util.UUID.fromString(rs.getString("vm_id"));
         IpAddress ipAddress = mapIpAddress(rs);
@@ -98,7 +97,7 @@ public class JdbcVirtualMachineService implements VirtualMachineService {
                 spec, rs.getString("vm_name"),
                 image, ipAddress,
                 rs.getTimestamp("vm_valid_on", TimestampUtils.utcCalendar).toInstant(),
-                validUntil != null ? validUntil.toInstant() : null,
+                rs.getTimestamp("vm_valid_until", TimestampUtils.utcCalendar).toInstant(),
                 rs.getString("hostname"),
                 rs.getInt("managed_level"),
                 backupJobId != null? java.util.UUID.fromString(backupJobId) : null);
@@ -134,7 +133,7 @@ public class JdbcVirtualMachineService implements VirtualMachineService {
 
     @Override
     public void setValidUntil(UUID vmId, Instant validUntil) {
-        Sql.with(dataSource).exec("UPDATE virtual_machine vm SET valid_until=? WHERE vm_id=?", null, Timestamp.from(validUntil), vmId);
+        Sql.with(dataSource).exec("UPDATE virtual_machine vm SET valid_until=? WHERE vm_id=?", null, LocalDateTime.ofInstant(validUntil, ZoneOffset.UTC), vmId);
     }
 
     @Override

@@ -176,7 +176,6 @@ public class Vps4ProcessAccountCancellationTest {
         Assert.assertEquals(hfsVmId, request.hfsVmId);
     }
 
-    @Ignore("Ignore test till the validUntil issue is fixed")
     @Test
     public void marksVmAsZombieWhenAccountCancellationIsProcessed() {
         // Marking a vm as zombie for now involves setting the validUntil column to a date in the future (7 days)
