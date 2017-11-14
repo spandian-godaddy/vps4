@@ -147,7 +147,7 @@ public class Vps4ProvisionVm extends ActionCommand<Vps4ProvisionVm.Request, Vps4
         setStep(CreateVmStep.SetupAutomaticBackupSchedule);
         SetupAutomaticBackupSchedule.Request req = new SetupAutomaticBackupSchedule.Request();
         req.vmId = vps4VmId;
-        req.backupName = "autoBackup";
+        req.backupName = "auto-backup";
         req.shopperId = shopperId;
         try {
             UUID backupJobId = context.execute(SetupAutomaticBackupSchedule.class, req);
