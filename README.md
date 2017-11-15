@@ -163,7 +163,20 @@ You can create a credit via the following link:
      - {1066863} creates a linux prime container with no add ons.
      - {1066863:1068243} creates a linux prime container with a control panel
      - {1066863:1068243|1068247} creates a linux prime container with a control panel and monitoring
-   
+     
+Cancelling VM Credits
+======================
+Use the cancellation service to initiate VPS4 account removal
+https://confluence.godaddy.com/pages/viewpage.action?spaceKey=EPW&title=Cancellation+SOAP+API
+
+```
+Vicki McAtee [2:40 PM] 
+you shouldn't remove an account via oat
+call the cancellation service
+it will remove the billing and flow through to orion and create events to you
+```   
+
+Once the Orion event is created, the HFS orion listener will be notified and will create a remove message in the appropriate kafka environement for the VPS4 Message Consumer to consume.  
 
 Scheduler setup
 =======================
