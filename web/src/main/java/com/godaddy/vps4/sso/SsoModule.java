@@ -3,6 +3,7 @@ package com.godaddy.vps4.sso;
 import java.time.Duration;
 
 import javax.inject.Singleton;
+import javax.servlet.http.HttpServletRequest;
 
 import com.godaddy.vps4.web.security.GDUser;
 import com.godaddy.vps4.web.security.XCertSubjectHeaderAuthenticator;
@@ -17,6 +18,7 @@ import com.godaddy.hfs.config.Config;
 import com.godaddy.hfs.sso.HttpKeyService;
 import com.godaddy.hfs.sso.KeyService;
 import com.godaddy.hfs.sso.SsoTokenExtractor;
+import com.godaddy.hfs.sso.token.SsoToken;
 import com.godaddy.vps4.web.security.SsoRequestAuthenticator;
 import com.google.inject.AbstractModule;
 import com.google.inject.Provides;
@@ -49,6 +51,13 @@ public class SsoModule extends AbstractModule {
                                 String.valueOf(Duration.ofHours(24).getSeconds())))).toMillis();
         logger.info("JWT timeout: {}", sessionTimeoutMs);
 
-        return new SsoTokenExtractor(keyService, sessionTimeoutMs);
+        return new SsoTokenExtractor(keyService, sessionTimeoutMs) {
+
+            @Override
+            public SsoToken extractToken(HttpServletRequest request) {
+                // extract jwt from auth header only, does not lookup auth_idp cookie for CSRF protection
+                return extractAuthorizationHeaderToken(request);
+            }
+        };
     }
 }
