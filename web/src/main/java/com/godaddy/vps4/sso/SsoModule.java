@@ -55,7 +55,7 @@ public class SsoModule extends AbstractModule {
 
             @Override
             public SsoToken extractToken(HttpServletRequest request) {
-                // extract jwt from auth header only, prevents auth_idp cookie lookup for CSRF protection
+                // extract jwt from auth header only, does not lookup auth_idp cookie for CSRF protection
                 return extractAuthorizationHeaderToken(request);
             }
         };
