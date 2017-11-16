@@ -6,16 +6,15 @@ import java.util.List;
 import javax.inject.Inject;
 import javax.inject.Provider;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectMapper.DefaultTyping;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jsr310.JSR310Module;
+import com.godaddy.vps4.Environment;
 import com.hazelcast.config.Config;
+import com.hazelcast.config.DiscoveryStrategyConfig;
 import com.hazelcast.config.EvictionPolicy;
 import com.hazelcast.config.GlobalSerializerConfig;
 import com.hazelcast.config.JoinConfig;
@@ -25,12 +24,17 @@ import com.hazelcast.config.NetworkConfig;
 import com.hazelcast.config.SerializationConfig;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.spi.properties.GroupProperty;
+import com.hazelcast.zookeeper.ZookeeperDiscoveryProperties;
+import com.hazelcast.zookeeper.ZookeeperDiscoveryStrategyFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class HazelcastProvider implements Provider<HazelcastInstance> {
 
     private static final Logger logger = LoggerFactory.getLogger(HazelcastProvider.class);
 
-    final com.godaddy.hfs.config.Config vps4Config;
+    private final com.godaddy.hfs.config.Config vps4Config;
 
     @Inject
     public HazelcastProvider(com.godaddy.hfs.config.Config vps4Config) {
@@ -40,10 +44,8 @@ public class HazelcastProvider implements Provider<HazelcastInstance> {
     @Override
     public HazelcastInstance get() {
 
-        List<String> nodes = Arrays.asList(vps4Config.get("vps4.nodes").split(";"));
-        logger.info("cluster nodes: {}", nodes);
+        return Hazelcast.newHazelcastInstance(newConfig());
 
-        return Hazelcast.getOrCreateHazelcastInstance(newConfig(nodes));
     }
 
     public static ObjectMapper newObjectMapper() {
@@ -56,13 +58,12 @@ public class HazelcastProvider implements Provider<HazelcastInstance> {
         return mapper;
     }
 
-    public Config newConfig(List<String> nodes) {
+    public Config newConfig() {
+
         Config config = new Config();
         config.setInstanceName("vps4");
 
-        //
         // configure serialization
-        //
         ObjectMapper mapper = newObjectMapper();
 
         GlobalSerializerConfig globalSerializerConfig = new GlobalSerializerConfig()
@@ -74,9 +75,7 @@ public class HazelcastProvider implements Provider<HazelcastInstance> {
 
         config.setSerializationConfig(serializationConfig);
 
-        //
         // configure eviction policy per map
-        //
         for (String cacheName : new String[]{CacheName.CPANEL_ACCESSHASH,
                                              CacheName.VM_USAGE,
                                              CacheName.MAIL_RELAY_HISTORY}) {
@@ -85,18 +84,46 @@ public class HazelcastProvider implements Provider<HazelcastInstance> {
                   .setMaxSizeConfig(new MaxSizeConfig(10000, MaxSizePolicy.PER_NODE));
         }
 
-        //
-        // configure discovery
-        //
-        NetworkConfig networkConfig = config.getNetworkConfig();
-        JoinConfig joinConfig = networkConfig.getJoin();
+        if(performServiceDiscovery()) {
 
-        joinConfig.getMulticastConfig().setEnabled(false);
+            logger.info("Performing Service Discovery for hazelcast nodes in {} env.", getCurrentEnvironment());
 
-        joinConfig.getTcpIpConfig()
+            // configure discovery
+            String zookeeperURL = vps4Config.get("vps4.zk.node");
+            logger.info("vps4.zk.node: {}", zookeeperURL);
+            config.getNetworkConfig().getJoin().getMulticastConfig().setEnabled(false);
+            config.setProperty(GroupProperty.DISCOVERY_SPI_ENABLED.getName(), "true");
+
+            DiscoveryStrategyConfig discoveryStrategyConfig = new DiscoveryStrategyConfig(new ZookeeperDiscoveryStrategyFactory());
+            discoveryStrategyConfig.addProperty(ZookeeperDiscoveryProperties.ZOOKEEPER_URL.key(), zookeeperURL);
+            discoveryStrategyConfig.addProperty(ZookeeperDiscoveryProperties.ZOOKEEPER_PATH.key(), "/service/vps4/vps4-web");
+            discoveryStrategyConfig.addProperty(ZookeeperDiscoveryProperties.GROUP.key(), "vps4-" + getCurrentEnvironment() + "-hazelcast-cluster");
+            config.getNetworkConfig().getJoin().getDiscoveryConfig().addDiscoveryStrategyConfig(discoveryStrategyConfig);
+
+        } else {
+
+            List<String> nodes = Arrays.asList(vps4Config.get("vps4.nodes").split(";"));
+            logger.info("Using nodes in {} environment for hazelcast.", getCurrentEnvironment());
+            logger.info("cluster nodes: {}", nodes);
+
+            NetworkConfig networkConfig = config.getNetworkConfig();
+            JoinConfig joinConfig = networkConfig.getJoin();
+            joinConfig.getMulticastConfig().setEnabled(false);
+            joinConfig.getTcpIpConfig()
                     .setEnabled(true)
                     .setMembers(nodes);
 
+        }
+
         return config;
+    }
+
+    private String getCurrentEnvironment() {
+        return vps4Config.get("vps4.env", Environment.LOCAL.getLocalName());
+    }
+
+    private boolean performServiceDiscovery() {
+        // use service discovery for all environments except local.
+        return Environment.valueOf(getCurrentEnvironment().toUpperCase()) == Environment.LOCAL ?  false: true;
     }
 }

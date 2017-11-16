@@ -198,6 +198,14 @@
             <artifactId>hazelcast</artifactId>
             <version>3.8</version>
         </dependency>
+
+        <!-- Hazelcast zookeeper plugin -->
+        <dependency>
+            <groupId>com.hazelcast</groupId>
+            <artifactId>hazelcast-zookeeper</artifactId>
+            <version>3.6.1</version>
+        </dependency>
+
         <dependency>
             <groupId>com.google.inject.extensions</groupId>
             <artifactId>guice-multibindings</artifactId>
