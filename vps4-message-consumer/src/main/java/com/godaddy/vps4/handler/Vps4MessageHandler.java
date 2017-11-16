@@ -3,12 +3,7 @@ package com.godaddy.vps4.handler;
 import static com.godaddy.vps4.handler.util.Commands.execute;
 
 import java.io.IOException;
-import java.time.Instant;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
@@ -22,14 +17,10 @@ import com.godaddy.vps4.credit.ECommCreditService.ProductMetaField;
 import com.godaddy.vps4.credit.VirtualMachineCredit;
 import com.godaddy.vps4.messaging.MissingShopperIdException;
 import com.godaddy.vps4.messaging.Vps4MessagingService;
-import com.godaddy.vps4.orchestration.snapshot.Vps4DestroySnapshot;
 import com.godaddy.vps4.orchestration.vm.VmActionRequest;
-import com.godaddy.vps4.orchestration.vm.Vps4DestroyVm;
 import com.godaddy.vps4.orchestration.vm.Vps4PlanChange;
-import com.godaddy.vps4.snapshot.Snapshot;
 import com.godaddy.vps4.snapshot.SnapshotActionService;
 import com.godaddy.vps4.snapshot.SnapshotService;
-import com.godaddy.vps4.snapshot.SnapshotStatus;
 import com.godaddy.vps4.vm.ActionService;
 import com.godaddy.vps4.vm.ActionType;
 import com.godaddy.vps4.vm.VirtualMachine;
@@ -115,7 +106,7 @@ public class Vps4MessageHandler implements MessageHandler {
             processPlanChange(credit);
             break;
         case REMOVED:
-            destroyAccount(credit);
+            handleAccountCancellation(credit);
             break;
         default:
             break;
@@ -146,77 +137,9 @@ public class Vps4MessageHandler implements MessageHandler {
         }
     }
 
-    private void destroyAccount(VirtualMachineCredit credit) throws MessageHandlerException {
-        logger.info("Vps4 account cancelled: {} - Destroying vm and snapshots", credit.orionGuid);
-        destroyVm(credit.productId);
-        destroySnapshots(credit.orionGuid);
-    }
-
-    private void destroyVm(UUID vmId) throws MessageHandlerException {
-        if (vmId == null) {
-            logger.info("No existing vm found on credit or vm already destroyed");
-            return;
-        }
-
-        try {
-            VirtualMachine vm = virtualMachineService.getVirtualMachine(vmId);
-            long vps4UserId = virtualMachineService.getUserIdByVmId(vmId);
-
-            long actionId = vmActionService.createAction(vm.vmId, ActionType.DESTROY_VM,
-                    new JSONObject().toJSONString(), vps4UserId);
-
-            long pingCheckAccountId = Long.parseLong(config.get("nodeping.accountid"));
-
-            Vps4DestroyVm.Request request = new Vps4DestroyVm.Request();
-            request.hfsVmId = vm.hfsVmId;
-            request.actionId = actionId;
-            request.pingCheckAccountId = pingCheckAccountId;
-
-            logger.info("Setting vm valid_until date to now.");
-            virtualMachineService.setValidUntil(vm.vmId, Instant.now());
-
-            logger.info("Destroying vm: {} - actionId: {}", vmId, actionId);
-            execute(commandService, vmActionService, "Vps4DestroyVm", request);
-
-        } catch (Exception ex) {
-            logger.error("Error: Could not destroy the vm for vmId: {}", vmId);
-            throw new MessageHandlerException(ex);
-        }
-
-    }
-
-    private void destroySnapshots(UUID orionGuid) throws MessageHandlerException {
-
-        try {
-            List<Snapshot> snapshots = snapshotService.getSnapshotsByOrionGuid(orionGuid)
-                    .stream()
-                    .filter(s -> s.status != SnapshotStatus.DESTROYED)
-                    .collect(Collectors.toList());
-
-            if (snapshots.isEmpty()) {
-                logger.info("No snapshots found for account {}", orionGuid);
-                return;
-            }
-
-            long vps4UserId = virtualMachineService.getUserIdByVmId(snapshots.get(0).vmId);
-
-            for (Snapshot snapshot : snapshots) {
-                long actionId = snapshotActionService.createAction(snapshot.id, ActionType.DESTROY_SNAPSHOT,
-                        new JSONObject().toJSONString(), vps4UserId);
-
-                Vps4DestroySnapshot.Request request = new Vps4DestroySnapshot.Request();
-                request.hfsSnapshotId = snapshot.hfsSnapshotId;
-                request.actionId = actionId;
-
-                logger.info("Destroying snapshot: {} - actionId: {}", snapshot.id, actionId);
-                execute(commandService, snapshotActionService, "Vps4DestroySnapshot", request);
-
-            }
-        } catch (Exception ex) {
-            logger.error("Error: Could not perform destroy snapshots operation for account {}", orionGuid);
-            throw new MessageHandlerException(ex);
-        }
-
+    private void handleAccountCancellation(VirtualMachineCredit credit) throws MessageHandlerException {
+        logger.info("Vps4 account cancelled: {} - queueing account cancellation command", credit.orionGuid);
+        execute(commandService, "Vps4ProcessAccountCancellation", credit);
     }
 
     private void stopVm(UUID vmId) throws MessageHandlerException {

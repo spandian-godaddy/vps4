@@ -8,5 +8,7 @@ public class SchedulerModule extends AbstractModule {
     public void configure() {
         bind(SetupAutomaticBackupSchedule.class);
         bind(ScheduleAutomaticBackupRetry.class);
+        bind(DeleteAutomaticBackupSchedule.class);
+        bind(ScheduleZombieVmCleanup.class);
     }
 }

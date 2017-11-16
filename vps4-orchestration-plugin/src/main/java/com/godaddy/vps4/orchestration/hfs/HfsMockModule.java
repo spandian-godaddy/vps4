@@ -1147,9 +1147,11 @@ public class HfsMockModule extends AbstractModule {
             }
 
             @Override
-            public void deleteAccount(String arg0) {
-                // TODO Auto-generated method stub
-                throw new UnsupportedOperationException("Not implemented, yet");
+            public void deleteAccount(String accountGuid) {
+                if (eCommAccounts.containsKey(accountGuid)) {
+                    Account account = eCommAccounts.get(accountGuid);
+                    account.status = Account.Status.removed;
+                }
             }
 
             @Override

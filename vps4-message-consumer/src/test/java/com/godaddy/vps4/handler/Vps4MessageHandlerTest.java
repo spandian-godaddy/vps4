@@ -16,6 +16,7 @@ import java.util.Collections;
 import java.util.Map;
 import java.util.UUID;
 
+import gdg.hfs.orchestration.CommandSpec;
 import org.json.simple.JSONObject;
 import org.junit.Before;
 import org.junit.Test;
@@ -236,52 +237,14 @@ public class Vps4MessageHandlerTest {
     }
 
     @Test
-    public void testHandleMessageRemovedNoProductId() throws MessageHandlerException {
-        mockVmCredit(AccountStatus.REMOVED, null);
-        callHandleMessage(createTestKafkaMessage("removed"));
-
-        verify(creditServiceMock, times(1)).getVirtualMachineCredit(anyObject());
-        verify(commandServiceMock, never()).executeCommand(anyObject());
-    }
-
-    @Test
-    public void testHandleMessageRemovedNoSnapshots() throws MessageHandlerException {
+    public void testHandleMessageRemovedWithSnapshots() throws MessageHandlerException {
         mockVmCredit(AccountStatus.REMOVED, vm.vmId);
 
-        when(snapshotServiceMock.getSnapshotsByOrionGuid(orionGuid)).thenReturn(Collections.emptyList());
         callHandleMessage(createTestKafkaMessage("removed"));
 
         ArgumentCaptor<CommandGroupSpec> argument = ArgumentCaptor.forClass(CommandGroupSpec.class);
         verify(commandServiceMock, times(1)).executeCommand(argument.capture());
-        assertEquals("Vps4DestroyVm", argument.getValue().commands.get(0).command);
-        verify(vmServiceMock, times(1)).setValidUntil(any(UUID.class), any(Instant.class));
-    }
-
-    @Test
-    public void testHandleMessageRemovedWithSnapshots() throws MessageHandlerException {
-        mockVmCredit(AccountStatus.REMOVED, vm.vmId);
-
-        Snapshot snapshot = mock(Snapshot.class);
-        when(snapshotServiceMock.getSnapshotsByOrionGuid(orionGuid)).thenReturn(Collections.singletonList(snapshot));
-        callHandleMessage(createTestKafkaMessage("removed"));
-
-        ArgumentCaptor<CommandGroupSpec> argument = ArgumentCaptor.forClass(CommandGroupSpec.class);
-        verify(commandServiceMock, times(2)).executeCommand(argument.capture());
-        assertEquals("Vps4DestroySnapshot", argument.getValue().commands.get(0).command);
-        verify(vmServiceMock, times(1)).setValidUntil(any(UUID.class), any(Instant.class));
-    }
-
-    @Test
-    public void testHandleMessageRemovedWithDestroyedSnapshots() throws MessageHandlerException {
-        mockVmCredit(AccountStatus.REMOVED, null);
-
-        Snapshot snapshot = new Snapshot(null, 0, null, null,
-                SnapshotStatus.DESTROYED, null, null, null, 0, SnapshotType.ON_DEMAND);
-        when(snapshotServiceMock.getSnapshotsByOrionGuid(orionGuid)).thenReturn(Collections.singletonList(snapshot));
-        callHandleMessage(createTestKafkaMessage("removed"));
-
-        verify(creditServiceMock, times(1)).getVirtualMachineCredit(anyObject());
-        verify(commandServiceMock, never()).executeCommand(anyObject());
-        verify(vmServiceMock, times(0)).setValidUntil(any(UUID.class), any(Instant.class));
+        CommandSpec commandSpec = argument.getValue().commands.get(0);
+        assertEquals("Vps4ProcessAccountCancellation", commandSpec.command);
     }
 }

@@ -69,10 +69,11 @@ public class Vps4ProcessAccountCancellation implements Command<VirtualMachineCre
     }
 
     private Instant calculateValidUntil() {
-        return context.execute("CalculateValidUntil", ctx -> {
+        long waitUntil = context.execute("CalculateValidUntil", ctx -> {
             int waitTime = Integer.valueOf(config.get("vps4.zombie.cleanup.waittime"));
-            return Instant.now().plus(waitTime, ChronoUnit.DAYS);
-        }, Instant.class);
+            return Instant.now().plus(waitTime, ChronoUnit.DAYS).toEpochMilli();
+        }, long.class);
+        return Instant.ofEpochMilli(waitUntil);
     }
 
     private void stopVirtualMachine(UUID vmId) {

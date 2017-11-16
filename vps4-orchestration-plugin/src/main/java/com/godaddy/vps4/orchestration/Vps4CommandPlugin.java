@@ -1,5 +1,6 @@
 package com.godaddy.vps4.orchestration;
 
+import com.godaddy.vps4.orchestration.account.AccountModule;
 import com.godaddy.vps4.orchestration.scheduler.SchedulerModule;
 import com.godaddy.vps4.scheduler.api.client.SchedulerServiceClientModule;
 import com.godaddy.vps4.util.ObjectMapperModule;
@@ -55,7 +56,8 @@ public class Vps4CommandPlugin implements CommandPlugin {
                 new Vps4CommandModule(),
                 new UtilsModule(),
                 new SchedulerServiceClientModule(),
-                new SchedulerModule()
+                new SchedulerModule(),
+                new AccountModule()
         );
 
         return new GuiceCommandProvider(injector);

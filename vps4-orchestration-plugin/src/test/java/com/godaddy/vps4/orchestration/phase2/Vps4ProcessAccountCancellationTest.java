@@ -63,7 +63,7 @@ public class Vps4ProcessAccountCancellationTest {
     @Inject ActionService actionService;
     @Inject Vps4ProcessAccountCancellation command;
 
-    @Captor private ArgumentCaptor<Function<CommandContext, Instant>> calculateValidUntilLambdaCaptor;
+    @Captor private ArgumentCaptor<Function<CommandContext, Long>> calculateValidUntilLambdaCaptor;
     @Captor private ArgumentCaptor<Function<CommandContext, Long>> createStopVmActionLambdaCaptor;
     @Captor private ArgumentCaptor<Function<CommandContext, Long>> getHfsVmIdLambdaCaptor;
     @Captor private ArgumentCaptor<VmActionRequest> actionRequestArgumentCaptor;
@@ -119,8 +119,8 @@ public class Vps4ProcessAccountCancellationTest {
     private CommandContext setupMockContext() {
         CommandContext mockContext = mock(CommandContext.class);
 
-        when(mockContext.execute(eq("CalculateValidUntil"), any(Function.class), eq(Instant.class)))
-                .thenReturn(validUntil);
+        when(mockContext.execute(eq("CalculateValidUntil"), any(Function.class), eq(long.class)))
+                .thenReturn(validUntil.toEpochMilli());
         when(mockContext.execute(eq("GetHfsVmId"), any(Function.class), eq(long.class)))
             .thenReturn(SqlTestData.hfsVmId);
         when(mockContext.execute(eq("CreateVmStopAction"), any(Function.class), eq(long.class)))
@@ -133,12 +133,12 @@ public class Vps4ProcessAccountCancellationTest {
         Instant now = Instant.now();
         command.execute(context, virtualMachineCredit);
         verify(context, times(1))
-                .execute(eq("CalculateValidUntil"), calculateValidUntilLambdaCaptor.capture(), eq(Instant.class));
+                .execute(eq("CalculateValidUntil"), calculateValidUntilLambdaCaptor.capture(), eq(long.class));
 
         // Verify that the lambda is returning a date 7 days out
-        Function<CommandContext, Instant> lambda = calculateValidUntilLambdaCaptor.getValue();
-        Instant calculatedValidUntil = lambda.apply(context);
-        Assert.assertEquals(7, ChronoUnit.DAYS.between(now, calculatedValidUntil));
+        Function<CommandContext, Long> lambda = calculateValidUntilLambdaCaptor.getValue();
+        long calculatedValidUntil = lambda.apply(context);
+        Assert.assertEquals(7, ChronoUnit.DAYS.between(now, Instant.ofEpochMilli(calculatedValidUntil)));
     }
 
     @Test

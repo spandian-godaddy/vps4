@@ -9,6 +9,7 @@ import com.godaddy.vps4.credit.CreditModule;
 import com.godaddy.vps4.hfs.HfsClientModule;
 import com.godaddy.vps4.jdbc.DatabaseModule;
 import com.godaddy.vps4.messaging.MessagingModule;
+import com.godaddy.vps4.orchestration.hfs.HfsMockModule;
 import com.godaddy.vps4.security.SecurityModule;
 import com.godaddy.vps4.snapshot.SnapshotModule;
 import com.godaddy.vps4.util.ObjectMapperModule;
@@ -39,7 +40,17 @@ public class Vps4ConsumerInjector {
             binder.requireExplicitBindings();
         });
         modules.add(new ObjectMapperModule());
-        modules.add(new HfsClientModule());
+
+        if (System.getProperty("vps4.hfs.mock", "false").equals("true")) {
+            // the HFSMockModule also provides bindings for the messaging service
+            logger.info("USING MOCK HFS");
+            modules.add(new HfsMockModule());
+        }
+        else{
+            modules.add(new MessagingModule());
+            modules.add(new HfsClientModule());
+        }
+
         modules.add(new ConfigModule());
         modules.add(new VmModule());
         modules.add(new SnapshotModule());
@@ -59,7 +70,6 @@ public class Vps4ConsumerInjector {
         }
 
         modules.add(new Vps4ConsumerModule());
-        modules.add(new MessagingModule());
         return Guice.createInjector(modules);
     }
 
