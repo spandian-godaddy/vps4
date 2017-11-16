@@ -10,6 +10,8 @@ import static org.mockito.Mockito.when;
 import java.util.UUID;
 import java.util.function.Function;
 
+import com.godaddy.vps4.util.Cryptography;
+import com.google.inject.AbstractModule;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.BeforeClass;
@@ -35,7 +37,7 @@ public class CreateVmFromSnapshotTest {
 
     private CreateVmFromSnapshot command;
     private CommandContext context;
-    private CreateVMWithFlavorRequest request;
+    private CreateVmFromSnapshot.Request request;
     private VmAction hfsAction;
 
     @Captor
@@ -44,7 +46,14 @@ public class CreateVmFromSnapshotTest {
     @BeforeClass
     public static void newInjector() {
         injector = Guice.createInjector(
-                new Vps4ExternalsModule()
+                new Vps4ExternalsModule(),
+                new AbstractModule() {
+                    @Override
+                    protected void configure() {
+                        Cryptography cryptography = mock(Cryptography.class);
+                        bind(Cryptography.class).toInstance(cryptography);
+                    }
+                }
         );
     }
 
@@ -52,9 +61,9 @@ public class CreateVmFromSnapshotTest {
     public void setUpTest() {
         injector.injectMembers(this);
         MockitoAnnotations.initMocks(this);
-        command = new CreateVmFromSnapshot(vmService);
+        command = new CreateVmFromSnapshot(vmService, mock(Cryptography.class));
         context = setupMockContext();
-        request = new CreateVMWithFlavorRequest();
+        request = new CreateVmFromSnapshot.Request();
 
         when(vmService.createVmWithFlavor(any(CreateVMWithFlavorRequest.class))).thenReturn(hfsAction);
     }

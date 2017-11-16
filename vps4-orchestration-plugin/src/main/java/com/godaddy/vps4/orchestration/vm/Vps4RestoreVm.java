@@ -34,7 +34,6 @@ import com.google.inject.Inject;
 
 import gdg.hfs.orchestration.CommandContext;
 import gdg.hfs.orchestration.CommandMetadata;
-import gdg.hfs.vhfs.vm.CreateVMWithFlavorRequest;
 import gdg.hfs.vhfs.vm.Vm;
 import gdg.hfs.vhfs.vm.VmAction;
 import gdg.hfs.vhfs.vm.VmService;
@@ -130,26 +129,26 @@ public class Vps4RestoreVm extends ActionCommand<Vps4RestoreVm.Request, Vps4Rest
         return context.execute("GetVmOSDistro", ctx -> virtualMachineService.getOSDistro(vps4VmId), String.class);
     }
 
-    private CreateVMWithFlavorRequest createHfsRequest() {
-        CreateVMWithFlavorRequest hfsProvisionRequest = new CreateVMWithFlavorRequest();
-        hfsProvisionRequest.rawFlavor = request.restoreVmInfo.rawFlavor;
-        hfsProvisionRequest.sgid = request.restoreVmInfo.sgid;
-        hfsProvisionRequest.image_id = getNocfoxImageIdForSnapshot(vps4SnapshotId);
-        hfsProvisionRequest.os = getVmOSDistro();
-        hfsProvisionRequest.username = request.restoreVmInfo.username;
-        hfsProvisionRequest.password = cryptography.decrypt(request.restoreVmInfo.encryptedPassword);
-        hfsProvisionRequest.zone = request.restoreVmInfo.zone;
-        hfsProvisionRequest.hostname = request.restoreVmInfo.hostname;
-        hfsProvisionRequest.ignore_whitelist = "True";
-        return hfsProvisionRequest;
+    private CreateVmFromSnapshot.Request createHfsRequest() {
+        CreateVmFromSnapshot.Request createVmFromSnapshotRequest = new CreateVmFromSnapshot.Request();
+        createVmFromSnapshotRequest.rawFlavor = request.restoreVmInfo.rawFlavor;
+        createVmFromSnapshotRequest.sgid = request.restoreVmInfo.sgid;
+        createVmFromSnapshotRequest.image_id = getNocfoxImageIdForSnapshot(vps4SnapshotId);
+        createVmFromSnapshotRequest.os = getVmOSDistro();
+        createVmFromSnapshotRequest.username = request.restoreVmInfo.username;
+        createVmFromSnapshotRequest.encryptedPassword = request.restoreVmInfo.encryptedPassword;
+        createVmFromSnapshotRequest.zone = request.restoreVmInfo.zone;
+        createVmFromSnapshotRequest.hostname = request.restoreVmInfo.hostname;
+        createVmFromSnapshotRequest.ignore_whitelist = "True";
+        return createVmFromSnapshotRequest;
     }
 
     private Vm createVmFromSnapshot() {
         setStep(RestoreVmStep.RequestingServer);
         logger.info("create vm from snapshot");
 
-        CreateVMWithFlavorRequest hfsRequest = createHfsRequest();
-        VmAction vmAction = context.execute("CreateVmFromSnapshot", CreateVmFromSnapshot.class, hfsRequest);
+        CreateVmFromSnapshot.Request createVmFromSnapshotRequest = createHfsRequest();
+        VmAction vmAction = context.execute("CreateVmFromSnapshot", CreateVmFromSnapshot.class, createVmFromSnapshotRequest);
 
         // Get the hfs vm
         return context.execute("GetVmAfterCreate", ctx -> vmService.getVm(vmAction.vmId), Vm.class);

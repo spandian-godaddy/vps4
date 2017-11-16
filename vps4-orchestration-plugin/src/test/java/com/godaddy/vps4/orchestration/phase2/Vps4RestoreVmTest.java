@@ -104,7 +104,7 @@ public class Vps4RestoreVmTest {
     @Captor private ArgumentCaptor<Function<CommandContext, Vm>> getHfsVmLambdaCaptor;
     @Captor private ArgumentCaptor<Function<CommandContext, Void>> updateHfsVmIdLambdaCaptor;
     @Captor private ArgumentCaptor<BindIp.BindIpRequest> bindIpRequestArgumentCaptor;
-    @Captor private ArgumentCaptor<CreateVMWithFlavorRequest> flavorRequestArgumentCaptor;
+    @Captor private ArgumentCaptor<CreateVmFromSnapshot.Request> flavorRequestArgumentCaptor;
     @Captor private ArgumentCaptor<SetPassword.Request> setPasswordArgumentCaptor;
     @Captor private ArgumentCaptor<ToggleAdmin.Request> toggleAdminArgumentCaptor;
     @Captor private ArgumentCaptor<UnbindIp.Request> unbindIpArgumentCaptor;
@@ -266,7 +266,7 @@ public class Vps4RestoreVmTest {
                 flavorRequestArgumentCaptor.capture()
             );
 
-        CreateVMWithFlavorRequest flavorRequest = flavorRequestArgumentCaptor.getValue();
+        CreateVmFromSnapshot.Request flavorRequest = flavorRequestArgumentCaptor.getValue();
         Assert.assertEquals( "True", flavorRequest.ignore_whitelist);
         Assert.assertEquals(SqlTestData.nfImageId, flavorRequest.image_id);
         Assert.assertEquals(SqlTestData.IMAGE_NAME, flavorRequest.os);
