@@ -36,10 +36,10 @@ public class HostnameValidatorTest {
     public void sectionLength() {
         // Less than 16 characters per section
         
-        assertTrue(validator.isValid("fake12345678901.User-name101234.test12341234123")); //15 characters per section
-        assertFalse(validator.isValid("fake12345678901a.User-name101234.test12341234123")); //16 characters in first section
-        assertFalse(validator.isValid("fake12345678901.User-name101234a.test12341234123")); //16 characters in second section
-        assertFalse(validator.isValid("fake12345678901.User-name101234.test12341234123a")); //16 characters in third section
+        assertTrue(validator.isValid("s123-123-123-123.User-name1012345.test123412341234")); //16 characters per section
+        assertFalse(validator.isValid("fake123456789012a.User-name101234.test12341234123")); //17 characters in first section
+        assertFalse(validator.isValid("fake12345678901.User-name1012345a.test12341234123")); //17 characters in second section
+        assertFalse(validator.isValid("fake12345678901.User-name101234.test123412341234a")); //17 characters in third section
     }
     
     @Test
