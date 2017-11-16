@@ -6,7 +6,6 @@ import java.util.UUID;
 import javax.inject.Inject;
 import javax.sql.DataSource;
 
-import com.godaddy.vps4.snapshot.SnapshotModule;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -20,6 +19,7 @@ import com.godaddy.vps4.security.SecurityModule;
 import com.godaddy.vps4.security.Vps4User;
 import com.godaddy.vps4.security.Vps4UserService;
 import com.godaddy.vps4.security.jdbc.JdbcPrivilegeService;
+import com.godaddy.vps4.snapshot.SnapshotModule;
 import com.godaddy.vps4.vm.ActionService;
 import com.godaddy.vps4.vm.ActionType;
 import com.godaddy.vps4.vm.ImageService;
@@ -31,7 +31,7 @@ import com.godaddy.vps4.vm.VmUserType;
 import com.godaddy.vps4.vm.jdbc.JdbcActionService;
 import com.godaddy.vps4.vm.jdbc.JdbcImageService;
 import com.godaddy.vps4.vm.jdbc.JdbcVirtualMachineService;
-import com.godaddy.vps4.web.security.AdminOnly;
+import com.godaddy.vps4.web.security.EmployeeOnly;
 import com.godaddy.vps4.web.security.GDUser;
 import com.godaddy.vps4.web.vm.VmActionWithDetails;
 import com.godaddy.vps4.web.vm.VmSupportUserResource;
@@ -97,9 +97,9 @@ public class VmSupportUserResourceTest {
     }
 
     @Test
-    public void testAddSupportUserAdminOnly() throws NoSuchMethodException {
+    public void testAddSupportUserEmployeeOnly() throws NoSuchMethodException {
         Method method = VmSupportUserResource.class.getMethod("addSupportUser", UUID.class);
-        Assert.assertTrue(method.isAnnotationPresent(AdminOnly.class));
+        Assert.assertTrue(method.isAnnotationPresent(EmployeeOnly.class));
     }
 
     @Test
@@ -131,9 +131,9 @@ public class VmSupportUserResourceTest {
     }
 
     @Test
-    public void testRemoveSupportUserAdminOnly() throws NoSuchMethodException {
+    public void testRemoveSupportUserEmployeeOnly() throws NoSuchMethodException {
         Method method = VmSupportUserResource.class.getMethod("removeSupportUser", UUID.class);
-        Assert.assertTrue(method.isAnnotationPresent(AdminOnly.class));
+        Assert.assertTrue(method.isAnnotationPresent(EmployeeOnly.class));
     }
 
     @Test

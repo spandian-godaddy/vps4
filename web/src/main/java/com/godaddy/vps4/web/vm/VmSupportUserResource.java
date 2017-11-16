@@ -33,7 +33,7 @@ import com.godaddy.vps4.vm.VirtualMachine;
 import com.godaddy.vps4.vm.VmUser;
 import com.godaddy.vps4.vm.VmUserService;
 import com.godaddy.vps4.web.Vps4Api;
-import com.godaddy.vps4.web.security.AdminOnly;
+import com.godaddy.vps4.web.security.EmployeeOnly;
 import com.godaddy.vps4.web.util.Commands;
 import com.google.inject.Inject;
 
@@ -82,14 +82,14 @@ public class VmSupportUserResource {
         if (user == null) {
             logger.info("No support user found in vm {}", vmId);
             throw new NotFoundException("No support user found");
-        } else {
-            logger.info("Found support user {} on vm {}", user.username, vmId);
-            return user;
         }
+
+        logger.info("Found support user {} on vm {}", user.username, vmId);
+        return user;
     }
 
     @SuppressWarnings("unchecked")
-    @AdminOnly
+    @EmployeeOnly
     @POST
     @Path("/{vmId}/supportUser")
     public VmActionWithDetails addSupportUser(@PathParam("vmId") UUID vmId) {
@@ -153,7 +153,7 @@ public class VmSupportUserResource {
     }
 
     @SuppressWarnings("unchecked")
-    @AdminOnly
+    @EmployeeOnly
     @DELETE
     @Path("/{vmId}/supportUser")
     public VmActionWithDetails removeSupportUser(@PathParam("vmId") UUID vmId) {

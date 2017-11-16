@@ -1,6 +1,7 @@
 package com.godaddy.vps4.web.security;
 
 import java.io.IOException;
+import java.lang.reflect.Method;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.container.ContainerRequestContext;
@@ -22,7 +23,10 @@ public class AdminAuthFilter implements ContainerRequestFilter {
     @Override
     public void filter(ContainerRequestContext requestContext) throws IOException {
         GDUser user = (GDUser) request.getAttribute(AuthenticationFilter.USER_ATTRIBUTE_NAME);
-        if (resourceInfo.getResourceMethod().isAnnotationPresent(AdminOnly.class) && !user.isAdmin())
+        Method resourceMethod = resourceInfo.getResourceMethod();
+
+        if ((resourceMethod.isAnnotationPresent(EmployeeOnly.class) && !user.isEmployee()) ||
+            (resourceMethod.isAnnotationPresent(AdminOnly.class) && !user.isAdmin()))
             requestContext.abortWith(Response.status(Response.Status.FORBIDDEN).build());
     }
 }
