@@ -44,11 +44,11 @@ public class HazelcastProvider implements Provider<HazelcastInstance> {
     @Override
     public HazelcastInstance get() {
 
-        return Hazelcast.newHazelcastInstance(newConfig());
+        return Hazelcast.getOrCreateHazelcastInstance(newConfig());
 
     }
 
-    public static ObjectMapper newObjectMapper() {
+    private static ObjectMapper newObjectMapper() {
         ObjectMapper mapper = new ObjectMapper();
         mapper.enableDefaultTyping(DefaultTyping.NON_FINAL, JsonTypeInfo.As.PROPERTY);
         mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
@@ -58,7 +58,7 @@ public class HazelcastProvider implements Provider<HazelcastInstance> {
         return mapper;
     }
 
-    public Config newConfig() {
+    private Config newConfig() {
 
         Config config = new Config();
         config.setInstanceName("vps4");
@@ -124,6 +124,6 @@ public class HazelcastProvider implements Provider<HazelcastInstance> {
 
     private boolean performServiceDiscovery() {
         // use service discovery for all environments except local.
-        return Environment.valueOf(getCurrentEnvironment().toUpperCase()) == Environment.LOCAL ?  false: true;
+        return Environment.valueOf(getCurrentEnvironment().toUpperCase()) != Environment.LOCAL;
     }
 }
