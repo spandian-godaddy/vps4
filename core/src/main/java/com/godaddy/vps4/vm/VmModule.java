@@ -16,13 +16,13 @@ public class VmModule extends AbstractModule {
 
 	@Override
 	protected void configure() {
-		bind(PrivilegeService.class).to(JdbcPrivilegeService.class); // TODO break out to security module
-		bind(VirtualMachineService.class).to(JdbcVirtualMachineService.class);
-		bind(ControlPanelService.class).to(JdbcControlPanelService.class);
-        bind(ImageService.class).to(JdbcImageService.class);
-        bind(VmUserService.class).to(JdbcVmUserService.class);
-		bind(ActionService.class).to(JdbcActionService.class);
-		bind(NetworkService.class).to(JdbcNetworkService.class);
-		bind(DataCenterService.class).to(JdbcDataCenterService.class);
+                bind(PrivilegeService.class).to(JdbcPrivilegeService.class); // TODO break out to security module
+                bind(VirtualMachineService.class).to(JdbcVirtualMachineService.class);
+                bind(ControlPanelService.class).to(JdbcControlPanelService.class);
+                bind(ImageService.class).to(JdbcImageService.class);
+                bind(VmUserService.class).to(JdbcVmUserService.class);
+                bind(ActionService.class).to(JdbcActionService.class);
+                bind(NetworkService.class).to(JdbcNetworkService.class);
+                bind(DataCenterService.class).to(JdbcDataCenterService.class);
 	}
 }

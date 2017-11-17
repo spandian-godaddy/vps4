@@ -50,6 +50,11 @@ public class VirtualMachineCredit {
         return accountStatus == AccountStatus.SUSPENDED ||
                 accountStatus == AccountStatus.ABUSE_SUSPENDED;
     }
+    
+    @JsonIgnore
+    public boolean isAccountRemoved() {
+        return accountStatus == AccountStatus.REMOVED;
+    }
 
     @JsonIgnore
     public boolean isOwnedByShopper(String ssoShopperId) {

@@ -10,6 +10,7 @@ import static com.godaddy.vps4.web.util.RequestValidation.validateVmExists;
 import static com.godaddy.vps4.web.util.VmHelper.createActionAndExecute;
 
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -17,11 +18,13 @@ import java.util.stream.Collectors;
 import javax.inject.Inject;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
+import javax.ws.rs.DefaultValue;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
 
 import org.json.simple.JSONObject;
@@ -53,7 +56,6 @@ import com.godaddy.vps4.vm.VirtualMachineSpec;
 import com.godaddy.vps4.web.Vps4Api;
 import com.godaddy.vps4.web.Vps4Exception;
 import com.godaddy.vps4.web.Vps4NoShopperException;
-import com.godaddy.vps4.web.security.AdminOnly;
 import com.godaddy.vps4.web.security.GDUser;
 import com.godaddy.vps4.web.util.Commands;
 
@@ -62,6 +64,7 @@ import gdg.hfs.orchestration.CommandState;
 import gdg.hfs.vhfs.vm.Vm;
 import gdg.hfs.vhfs.vm.VmService;
 import io.swagger.annotations.Api;
+import io.swagger.annotations.ApiParam;
 
 @Vps4Api
 @Api(tags = {"vms"})
@@ -87,7 +90,6 @@ public class VmResource {
     private final Monitoring monitoring;
     private final String sgidPrefix;
     private final int mailRelayQuota;
-    private final int FULLY_MANAGED=2;
     private final Cryptography cryptography;
     private final String openStackZone;
 
@@ -302,23 +304,22 @@ public class VmResource {
 
     @GET
     @Path("/")
-    public List<VirtualMachine> getVirtualMachines() {
+    public List<VirtualMachine> getVirtualMachines(
+            @ApiParam(value = "The type of VMs to return", required = false) @DefaultValue("ACTIVE") @QueryParam("type") VirtualMachineType type) {
         if (user.getShopperId() == null)
             throw new Vps4NoShopperException();
         Vps4User vps4User = vps4UserService.getOrCreateUserForShopper(user.getShopperId());
-
-        return virtualMachineService.getVirtualMachinesForUser(vps4User.getId());
-    }
-
-    @AdminOnly
-    @GET
-    @Path("/zombies")
-    public List<VirtualMachine> getZombieVirtualMachines() {
-        if (user.getShopperId() == null)
-            throw new Vps4NoShopperException();
-        Vps4User vps4User = vps4UserService.getOrCreateUserForShopper(user.getShopperId());
-
-        return virtualMachineService.getZombieVirtualMachinesForUser(vps4User.getId());
+        
+//        VirtualMachineType vmType = type == null?VirtualMachineType.ACTIVE:type;
+        
+        switch (type) {
+        case ACTIVE:
+            return virtualMachineService.getVirtualMachinesForUser(vps4User.getId());
+        case ZOMBIE:
+            return virtualMachineService.getZombieVirtualMachinesForUser(vps4User.getId());
+        default:
+            return new ArrayList<VirtualMachine> ();
+        }
     }
 
     @GET

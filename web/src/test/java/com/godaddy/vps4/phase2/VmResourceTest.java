@@ -29,6 +29,7 @@ import com.godaddy.vps4.web.Vps4Exception;
 import com.godaddy.vps4.web.Vps4NoShopperException;
 import com.godaddy.vps4.web.security.GDUser;
 import com.godaddy.vps4.web.vm.VirtualMachineDetails;
+import com.godaddy.vps4.web.vm.VirtualMachineType;
 import com.godaddy.vps4.web.vm.VirtualMachineWithDetails;
 import com.godaddy.vps4.web.vm.VmAction;
 import com.godaddy.vps4.web.vm.VmResource;
@@ -362,7 +363,7 @@ public class VmResourceTest {
         VirtualMachine vm = createTestVm();
 
         user = GDUserMock.createShopper();
-        List<VirtualMachine> vms = getVmResource().getVirtualMachines();
+        List<VirtualMachine> vms = getVmResource().getVirtualMachines(VirtualMachineType.ACTIVE);
         Assert.assertEquals(1, vms.size());
         Assert.assertEquals(vms.get(0).orionGuid, vm.orionGuid);
     }
@@ -370,10 +371,10 @@ public class VmResourceTest {
     @Test
     public void testShopperGetZombieVirtualMachines() {
         VirtualMachine vm = createTestVm();
-        virtualMachineService.setValidUntil(vm.vmId, Instant.now().plus(2, ChronoUnit.DAYS));
+        virtualMachineService.setValidUntil(vm.vmId, Instant.now().plus(3, ChronoUnit.DAYS));
 
         user = GDUserMock.createShopper();
-        List<VirtualMachine> vms = getVmResource().getZombieVirtualMachines();
+        List<VirtualMachine> vms = getVmResource().getVirtualMachines(VirtualMachineType.ZOMBIE);
         Assert.assertEquals(1, vms.size());
         Assert.assertEquals(vms.get(0).orionGuid, vm.orionGuid);
     }
@@ -381,7 +382,7 @@ public class VmResourceTest {
     @Test
     public void testShopperGetVirtualMachinesEmpty() {
         user = GDUserMock.createShopper();
-        List<VirtualMachine> vms = getVmResource().getVirtualMachines();
+        List<VirtualMachine> vms = getVmResource().getVirtualMachines(VirtualMachineType.ACTIVE);
         Assert.assertTrue(vms.isEmpty());
     }
 
@@ -390,7 +391,7 @@ public class VmResourceTest {
         createTestVm();
 
         user = GDUserMock.createShopper("shopperX");
-        List<VirtualMachine> vms = getVmResource().getVirtualMachines();
+        List<VirtualMachine> vms = getVmResource().getVirtualMachines(VirtualMachineType.ACTIVE);
         Assert.assertTrue(vms.isEmpty());
     }
 
@@ -399,7 +400,7 @@ public class VmResourceTest {
         createTestVm();
 
         user = GDUserMock.createAdmin();
-        getVmResource().getVirtualMachines();
+        getVmResource().getVirtualMachines(null);
     }
 
     @Test
@@ -407,7 +408,7 @@ public class VmResourceTest {
         VirtualMachine vm = createTestVm();
 
         user = GDUserMock.createEmployee2Shopper();
-        List<VirtualMachine> vms = getVmResource().getVirtualMachines();
+        List<VirtualMachine> vms = getVmResource().getVirtualMachines(VirtualMachineType.ACTIVE);
         Assert.assertEquals(1, vms.size());
         Assert.assertEquals(vms.get(0).orionGuid, vm.orionGuid);
     }

@@ -115,4 +115,6 @@ public interface VirtualMachineService {
     boolean isLinux(UUID vmId);
 
     boolean hasControlPanel(UUID vmId);
+
+    void setValidUntilInfinity(UUID vmId);
 }
