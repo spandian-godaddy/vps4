@@ -16,9 +16,9 @@ zk_hosts = {
     'dev': 'p3dlvps4zk01.cloud.phx3.gdg:2181',
     'test': 'p3tlvps4zk01.cloud.phx3.gdg:2181',
     'stage': 'p3slvps4zk01.cloud.phx3.gdg:2181',
-    'phx3_prod': 'p3plvps4zk01.cloud.phx3.gdg:2181',
-    'a2-prod': 'a2plvps4zk01.cloud.iad2.gdg:2181',
-    'sg2-prod': 'sg2plvps4zk01.cloud.sin2.gdg:2181',
+    'prod_phx3': 'p3plvps4zk01.cloud.phx3.gdg:2181',
+    'prod_a2': 'a2plvps4zk01.cloud.iad2.gdg:2181',
+    'prod_sin2': 'sg2plvps4zk01.cloud.sin2.gdg:2181',
     'default': 'localhost:2181',
 }
 
