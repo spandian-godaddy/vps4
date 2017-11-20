@@ -17,8 +17,8 @@ public class XCertSubjectHeaderAuthenticatorTest {
     HttpServletResponse response = mock(HttpServletResponse.class);
 
     @Test
-    public void authenticatesWithHeader() throws Exception{
-        when(config.get("vps4.api.certCN")).thenReturn("VPS4 Scheduler Client (MOCK)");
+    public void authenticatesWithSchedulerHeader() throws Exception{
+        when(config.get("vps4.api.schedulerCertCN")).thenReturn("VPS4 Scheduler Client (MOCK)");
         XCertSubjectHeaderAuthenticator authenticator = new XCertSubjectHeaderAuthenticator(config);
 
         when(request.getHeader("X-Cert-Subject-DN")).thenReturn("CN=VPS4 Scheduler Client (MOCK)," +
@@ -28,8 +28,8 @@ public class XCertSubjectHeaderAuthenticatorTest {
     }
 
     @Test
-    public void rejectsWithBadCnValue() throws Exception{
-        when(config.get("vps4.api.certCN")).thenReturn("VPS4 Scheduler Client (MOCK)");
+    public void rejectsSchedulerWithBadCnValue() throws Exception{
+        when(config.get("vps4.api.schedulerCertCN")).thenReturn("VPS4 Scheduler Client (MOCK)");
         XCertSubjectHeaderAuthenticator authenticator = new XCertSubjectHeaderAuthenticator(config);
 
         when(request.getHeader("X-Cert-Subject-DN")).thenReturn("CN=BAD CN VALUE," +
@@ -39,8 +39,8 @@ public class XCertSubjectHeaderAuthenticatorTest {
     }
 
     @Test
-    public void rejectsWithBadHeaderValue() throws Exception{
-        when(config.get("vps4.api.certCN")).thenReturn("VPS4 Scheduler Client (MOCK)");
+    public void rejectsSchedulerWithBadHeaderValue() throws Exception{
+        when(config.get("vps4.api.schedulerCertCN")).thenReturn("VPS4 Scheduler Client (MOCK)");
         XCertSubjectHeaderAuthenticator authenticator = new XCertSubjectHeaderAuthenticator(config);
 
         when(request.getHeader("X-Cert-Subject-DN")).thenReturn("This is a bad header value");
@@ -49,8 +49,50 @@ public class XCertSubjectHeaderAuthenticatorTest {
     }
 
     @Test
-    public void rejectsWithNoHeader() throws Exception{
-        when(config.get("vps4.api.certCN")).thenReturn("VPS4 Scheduler Client (MOCK)");
+    public void rejectsSchedulerWithNoHeader() throws Exception{
+        when(config.get("vps4.api.schedulerCertCN")).thenReturn("VPS4 Scheduler Client (MOCK)");
+        XCertSubjectHeaderAuthenticator authenticator = new XCertSubjectHeaderAuthenticator(config);
+
+        when(request.getHeader("X-Cert-Subject-DN")).thenReturn(null);
+
+        Assert.assertFalse(authenticator.authenticate(request));
+    }
+
+    @Test
+    public void authenticatesWithDeveloperHeader() throws Exception{
+        when(config.get("vps4.api.developerCertCN")).thenReturn("VPS4 Web Developer (MOCK)");
+        XCertSubjectHeaderAuthenticator authenticator = new XCertSubjectHeaderAuthenticator(config);
+
+        when(request.getHeader("X-Cert-Subject-DN")).thenReturn("CN=VPS4 Web Developer (MOCK)," +
+                "OU=Hosting Foundation Services,O=GoDaddy.com\\, Inc.,L=Scottsdale,ST=Arizona,C=US");
+
+        Assert.assertTrue(authenticator.authenticate(request));
+    }
+
+    @Test
+    public void rejectsDeveloperWithBadCnValue() throws Exception{
+        when(config.get("vps4.api.developerCertCN")).thenReturn("VPS4 Web Developer (MOCK)");
+        XCertSubjectHeaderAuthenticator authenticator = new XCertSubjectHeaderAuthenticator(config);
+
+        when(request.getHeader("X-Cert-Subject-DN")).thenReturn("CN=BAD CN VALUE," +
+                "OU=Hosting Foundation Services,O=GoDaddy.com\\, Inc.,L=Scottsdale,ST=Arizona,C=US");
+
+        Assert.assertFalse(authenticator.authenticate(request));
+    }
+
+    @Test
+    public void rejectsDeveloperWithBadHeaderValue() throws Exception{
+        when(config.get("vps4.api.developerCertCN")).thenReturn("VPS4 Web Developer (MOCK)");
+        XCertSubjectHeaderAuthenticator authenticator = new XCertSubjectHeaderAuthenticator(config);
+
+        when(request.getHeader("X-Cert-Subject-DN")).thenReturn("This is a bad header value");
+
+        Assert.assertFalse(authenticator.authenticate(request));
+    }
+
+    @Test
+    public void rejectsDeveloperWithNoHeader() throws Exception{
+        when(config.get("vps4.api.developerCertCN")).thenReturn("VPS4 Web Developer (MOCK))");
         XCertSubjectHeaderAuthenticator authenticator = new XCertSubjectHeaderAuthenticator(config);
 
         when(request.getHeader("X-Cert-Subject-DN")).thenReturn(null);

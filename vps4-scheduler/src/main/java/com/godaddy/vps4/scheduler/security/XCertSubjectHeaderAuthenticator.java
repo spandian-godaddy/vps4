@@ -32,10 +32,27 @@ public class XCertSubjectHeaderAuthenticator implements RequestAuthenticator<Boo
 
             // nginx validated a cert auth and has sent us this header.
             // authentication succeeds the cert's CN matches the one in configuration
-            result = cnField != null && cnField.equals(config.get("vps4.api.certCN"));
+            result = cnField != null && (authenticatesDevCert(cnField) || authenticatesSchedulerCert(cnField));
         }
         return result;
     }
+
+    private boolean authenticatesSchedulerCert(String cnField){
+        boolean result = cnField.equals(config.get("vps4.api.schedulerCertCN"));
+        if(result){
+            logger.debug("Validated scheduler cert");
+        }
+        return result;
+    }
+
+    private boolean authenticatesDevCert(String cnField){
+        boolean result = cnField.equals(config.get("vps4.api.developerCertCN"));
+        if(result){
+            logger.debug("Validated developer cert");
+        }
+        return result;
+    }
+
 
     private String getCNFieldFromHeader(String header){
         try {
