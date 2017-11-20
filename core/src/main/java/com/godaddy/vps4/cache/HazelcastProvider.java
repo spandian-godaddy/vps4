@@ -96,7 +96,7 @@ public class HazelcastProvider implements Provider<HazelcastInstance> {
 
             DiscoveryStrategyConfig discoveryStrategyConfig = new DiscoveryStrategyConfig(new ZookeeperDiscoveryStrategyFactory());
             discoveryStrategyConfig.addProperty(ZookeeperDiscoveryProperties.ZOOKEEPER_URL.key(), zookeeperURL);
-            discoveryStrategyConfig.addProperty(ZookeeperDiscoveryProperties.ZOOKEEPER_PATH.key(), "/service/vps4/vps4-web");
+            discoveryStrategyConfig.addProperty(ZookeeperDiscoveryProperties.ZOOKEEPER_PATH.key(), "/service/registrations");
             discoveryStrategyConfig.addProperty(ZookeeperDiscoveryProperties.GROUP.key(), "vps4-" + getCurrentEnvironment() + "-hazelcast-cluster");
             config.getNetworkConfig().getJoin().getDiscoveryConfig().addDiscoveryStrategyConfig(discoveryStrategyConfig);
 
