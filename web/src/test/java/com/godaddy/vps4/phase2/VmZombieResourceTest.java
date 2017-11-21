@@ -64,6 +64,8 @@ public class VmZombieResourceTest {
             });
     
     
+    private VmZombieResource vmZombieResource;
+
     private GDUser user;
 
     @Before
@@ -91,7 +93,7 @@ public class VmZombieResourceTest {
     @Test
     public void testReviveZombieVm() {
         VirtualMachine testVm = createTestVm();
-        virtualMachineService.setValidUntil(testVm.vmId, Instant.now().plus(2, ChronoUnit.DAYS));
+        virtualMachineService.setVmZombie(testVm.vmId);
         Mockito.when(vmResource.getVm(testVm.vmId)).thenReturn(virtualMachineService.getVirtualMachine(testVm.vmId));
 
         VirtualMachineCredit oldCredit = new VirtualMachineCredit();

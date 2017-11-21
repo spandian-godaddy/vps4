@@ -1,20 +1,22 @@
 package com.godaddy.vps4.orchestration.scheduler;
 
-import com.godaddy.hfs.config.Config;
+import java.time.Instant;
+import java.util.UUID;
+
+import javax.inject.Inject;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.godaddy.vps4.scheduler.api.core.JobType;
 import com.godaddy.vps4.scheduler.api.core.SchedulerJobDetail;
 import com.godaddy.vps4.scheduler.api.core.utils.Utils;
 import com.godaddy.vps4.scheduler.api.plugin.Vps4ZombieCleanupJobRequest;
 import com.godaddy.vps4.scheduler.api.web.SchedulerWebService;
+
 import gdg.hfs.orchestration.Command;
 import gdg.hfs.orchestration.CommandContext;
 import gdg.hfs.orchestration.CommandMetadata;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import javax.inject.Inject;
-import java.time.Instant;
-import java.util.UUID;
 
 
 @CommandMetadata(

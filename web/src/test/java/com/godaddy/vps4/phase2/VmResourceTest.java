@@ -371,7 +371,7 @@ public class VmResourceTest {
     @Test
     public void testShopperGetZombieVirtualMachines() {
         VirtualMachine vm = createTestVm();
-        virtualMachineService.setValidUntil(vm.vmId, Instant.now().plus(3, ChronoUnit.DAYS));
+        virtualMachineService.setVmZombie(vm.vmId);
 
         user = GDUserMock.createShopper();
         List<VirtualMachine> vms = getVmResource().getVirtualMachines(VirtualMachineType.ZOMBIE);

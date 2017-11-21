@@ -138,7 +138,7 @@ public class Vps4MessageHandler implements MessageHandler {
     }
 
     private void handleAccountCancellation(VirtualMachineCredit credit) throws MessageHandlerException {
-        logger.info("Vps4 account cancelled: {} - queueing account cancellation command", credit.orionGuid);
+        logger.info("Vps4 account canceled: {} - queueing account cancellation command", credit.orionGuid);
         execute(commandService, "Vps4ProcessAccountCancellation", credit);
     }
 
@@ -167,3 +167,4 @@ public class Vps4MessageHandler implements MessageHandler {
         }
     }
 }
+  

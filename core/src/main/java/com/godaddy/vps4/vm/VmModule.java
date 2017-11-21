@@ -2,6 +2,8 @@ package com.godaddy.vps4.vm;
 
 import com.godaddy.vps4.network.NetworkService;
 import com.godaddy.vps4.network.jdbc.JdbcNetworkService;
+import com.godaddy.vps4.scheduledJob.ScheduledJobService;
+import com.godaddy.vps4.scheduledJob.jdbc.JdbcScheduledJobService;
 import com.godaddy.vps4.security.PrivilegeService;
 import com.godaddy.vps4.security.jdbc.JdbcPrivilegeService;
 import com.godaddy.vps4.vm.jdbc.JdbcActionService;
@@ -24,5 +26,6 @@ public class VmModule extends AbstractModule {
                 bind(ActionService.class).to(JdbcActionService.class);
                 bind(NetworkService.class).to(JdbcNetworkService.class);
                 bind(DataCenterService.class).to(JdbcDataCenterService.class);
+                bind(ScheduledJobService.class).to(JdbcScheduledJobService.class);
 	}
 }

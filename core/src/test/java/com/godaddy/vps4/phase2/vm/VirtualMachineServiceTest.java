@@ -144,7 +144,7 @@ public class VirtualMachineServiceTest {
             virtualMachines.add(SqlTestData.insertTestVm(createdVms.get(i), vps4User.getId(), dataSource));
             vmCredits.add(UUID.randomUUID());
         }
-        virtualMachineService.setValidUntil(virtualMachines.get(1).vmId, Instant.now());
+        virtualMachineService.setVmRemoved(virtualMachines.get(1).vmId);
         createdVms.remove(virtualMachines.get(1).orionGuid);
 
 
@@ -163,9 +163,9 @@ public class VirtualMachineServiceTest {
             virtualMachines.add(SqlTestData.insertTestVm(createdVms.get(i), vps4User.getId(), dataSource));
             vmCredits.add(UUID.randomUUID());
         }
-        virtualMachineService.setValidUntil(virtualMachines.get(1).vmId, Instant.now());
-        virtualMachineService.setValidUntil(virtualMachines.get(0).vmId, Instant.now().plus(7, ChronoUnit.DAYS));
-        virtualMachineService.setValidUntil(virtualMachines.get(2).vmId, Instant.now().plus(7, ChronoUnit.DAYS));
+        virtualMachineService.setVmRemoved(virtualMachines.get(1).vmId);
+        virtualMachineService.setVmZombie(virtualMachines.get(0).vmId);
+        virtualMachineService.setVmZombie(virtualMachines.get(2).vmId);
 
 
         List<VirtualMachine> vms = virtualMachineService.getZombieVirtualMachinesForUser(vps4User.getId());
@@ -245,11 +245,13 @@ public class VirtualMachineServiceTest {
         
         VirtualMachine actualVm = virtualMachineService.getVirtualMachine(expectedVm.vmId);
         assertTrue(expectedVm.vmId.equals(actualVm.vmId));
-        
-        Instant validUntil = Instant.now();
-        virtualMachineService.setValidUntil(actualVm.vmId, validUntil);
+        Instant before = Instant.now();
+        virtualMachineService.setVmZombie(actualVm.vmId);
+        virtualMachineService.setVmRemoved(actualVm.vmId);
+        Instant after = Instant.now();
         actualVm = virtualMachineService.getVirtualMachine(expectedVm.vmId);
-        assertTrue(validUntil.equals(actualVm.validUntil));
+        assertTrue(before.isBefore(actualVm.canceled) && after.isAfter(actualVm.canceled));
+        assertTrue(before.isBefore(actualVm.validUntil) && after.isAfter(actualVm.validUntil));
     }
 
 }

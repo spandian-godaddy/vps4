@@ -72,7 +72,7 @@ public class TestVps4PlanChange {
                 Instant.now(), "someShopper", AccountStatus.ACTIVE, null, UUID.randomUUID(), false);
         IpAddress primaryIpAddress = new IpAddress(0, credit.productId, "1.2.3.4", IpAddressType.PRIMARY, 123L, null, null);
         VirtualMachine vm = new VirtualMachine(credit.productId, 1234, credit.orionGuid, 1, null, "testVm", null, 
-                primaryIpAddress, null, null, null, 0, null);
+                primaryIpAddress, null, null, null, null, 0, null);
         Vps4PlanChange.Request request = new Vps4PlanChange.Request();
         request.vm = vm;
         request.credit = credit;

@@ -69,8 +69,8 @@ public class VmZombieResource {
     @AdminOnly
     @POST
     @Path("/{vmId}/revive")
-    @ApiOperation(value = "Revive a zombie vm whose account has been cancelled but the server has not yet been deleted", 
-        notes = "Revive a zombie vm whose account has been cancelled but the server has not yet been deleted")
+    @ApiOperation(value = "Revive a zombie vm whose account has been canceled but the server has not yet been deleted", 
+        notes = "Revive a zombie vm whose account has been canceled but the server has not yet been deleted")
     public VirtualMachine reviveZombieVm(
             @ApiParam(value = "The ID of the server to revive", required = true) @PathParam("vmId") UUID vmId,
             @ApiParam(value = "The ID of the new credit to which the VM will be linked") @QueryParam("newCreditId") UUID newCreditId) {
@@ -91,10 +91,7 @@ public class VmZombieResource {
     }
 
     private void updateVirtualMachineRecord(UUID vmId, UUID newCreditId) {
-        Map<String, Object> paramsToUpdate = new HashMap<>();
-        paramsToUpdate.put("orion_guid", newCreditId);
-        virtualMachineService.updateVirtualMachine(vmId, paramsToUpdate);
-        virtualMachineService.setValidUntilInfinity(vmId);
+        virtualMachineService.reviveZombieVm(vmId, newCreditId);
     }
 
     private void verifyCreditsMatch(VirtualMachineCredit oldCredit, VirtualMachineCredit newCredit) {

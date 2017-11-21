@@ -5,6 +5,8 @@ import com.godaddy.vps4.credit.VirtualMachineCredit;
 import com.godaddy.vps4.orchestration.scheduler.ScheduleZombieVmCleanup;
 import com.godaddy.vps4.orchestration.vm.VmActionRequest;
 import com.godaddy.vps4.orchestration.vm.Vps4StopVm;
+import com.godaddy.vps4.scheduledJob.ScheduledJobService;
+import com.godaddy.vps4.scheduledJob.ScheduledJob.ScheduledJobType;
 import com.godaddy.vps4.vm.ActionService;
 import com.godaddy.vps4.vm.ActionType;
 import com.godaddy.vps4.vm.VirtualMachineService;
@@ -32,14 +34,17 @@ public class Vps4ProcessAccountCancellation implements Command<VirtualMachineCre
 
     final ActionService vmActionService;
     private final VirtualMachineService virtualMachineService;
+    private final ScheduledJobService scheduledJobService;
     private final Config config;
 
     @Inject
     public Vps4ProcessAccountCancellation(ActionService vmActionService,
                                           VirtualMachineService virtualMachineService,
+                                          ScheduledJobService scheduledJobService,
                                           Config config) {
         this.vmActionService = vmActionService;
         this.virtualMachineService = virtualMachineService;
+        this.scheduledJobService = scheduledJobService;
         this.config = config;
     }
 
@@ -52,7 +57,8 @@ public class Vps4ProcessAccountCancellation implements Command<VirtualMachineCre
                 Instant validUntil = calculateValidUntil();
                 stopVirtualMachine(vmId);
                 markVmAsZombie(vmId, validUntil);
-                scheduleZombieVmCleanup(vmId, validUntil);
+                UUID jobId = scheduleZombieVmCleanup(vmId, validUntil);
+                recordJobId(vmId, jobId);
             }
         } catch (Exception e) {
             logger.error(
@@ -93,15 +99,22 @@ public class Vps4ProcessAccountCancellation implements Command<VirtualMachineCre
 
     private void markVmAsZombie(UUID vmId, Instant validUntil) {
         context.execute("MarkVmAsZombie", ctx -> {
-            virtualMachineService.setValidUntil(vmId, validUntil);
+            virtualMachineService.setVmZombie(vmId);
             return null;
         }, void.class);
     }
 
-    private void scheduleZombieVmCleanup(UUID vmId, Instant validUntil) {
+    private UUID scheduleZombieVmCleanup(UUID vmId, Instant validUntil) {
         ScheduleZombieVmCleanup.Request req = new ScheduleZombieVmCleanup.Request();
         req.vmId = vmId;
         req.when = validUntil;
-        context.execute(ScheduleZombieVmCleanup.class, req);
+        return context.execute(ScheduleZombieVmCleanup.class, req);
+    }
+
+    private void recordJobId(UUID vmId, UUID jobId) {
+        context.execute("RecordScheduledJobId", ctx -> {
+            scheduledJobService.insertScheduledJob(jobId, vmId, ScheduledJobType.ZOMBIE);
+            return null;
+        }, void.class);
     }
 }

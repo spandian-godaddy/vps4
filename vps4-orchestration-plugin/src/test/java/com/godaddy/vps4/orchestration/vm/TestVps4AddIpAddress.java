@@ -66,7 +66,7 @@ public class TestVps4AddIpAddress {
 
         VirtualMachine virtualMachine = new VirtualMachine(UUID.randomUUID(),
                 request.hfsVmId, UUID.randomUUID(), 0, null, "fakeName", null, null,
-                Instant.now(), null, "fake.hostname.com", 0, UUID.randomUUID());
+                Instant.now(), null, null, "fake.hostname.com", 0, UUID.randomUUID());
         when(virtualMachineService.getVirtualMachine(request.hfsVmId)).thenReturn(virtualMachine);
 
         try{

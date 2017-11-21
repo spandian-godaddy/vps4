@@ -64,7 +64,7 @@ public class NetworkResourceTest {
 
         vm = new VirtualMachine(vmId, hfsVmId, UUID.randomUUID(),
                 1, null, "Unit Test Vm", null, null,
-                Instant.now(), Instant.now().plus(24, ChronoUnit.HOURS),
+                Instant.now(), Instant.now().plus(24, ChronoUnit.HOURS), Instant.now().plus(24, ChronoUnit.HOURS),
                 null, 0, UUID.randomUUID());
 
         vps4User = new Vps4User(112, user.getShopperId());
@@ -88,7 +88,7 @@ public class NetworkResourceTest {
     public void testAddIpVmNotTiedToHfs(){
         VirtualMachine vm = new VirtualMachine(vmId, 0, UUID.randomUUID(),
                 1, null, "Unit Test Vm", null, null,
-                Instant.now(), Instant.now().plus(24, ChronoUnit.HOURS),
+                Instant.now(), Instant.now().plus(24, ChronoUnit.HOURS), Instant.now().plus(24, ChronoUnit.HOURS),
                 null, 0, UUID.randomUUID());
         when(vmResource.getVm(vmId)).thenReturn(vm);
         resource.addIpAddress(vmId);

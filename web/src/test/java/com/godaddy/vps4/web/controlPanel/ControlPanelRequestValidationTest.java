@@ -36,6 +36,7 @@ public class ControlPanelRequestValidationTest {
                 image,              // Image
                 null,               // IpAddress
                 null,               // validOn
+                null,               // canceled                          
                 null,               // validUntil
                 "omg.host.name",    // hostname
                 0,                   // managed level

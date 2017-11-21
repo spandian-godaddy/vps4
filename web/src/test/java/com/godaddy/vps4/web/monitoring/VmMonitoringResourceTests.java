@@ -56,7 +56,7 @@ public class VmMonitoringResourceTests {
         vmResource = mock(VmResource.class);
         monitoring = mock(Monitoring.class);
         IpAddress ipAddress = new IpAddress(0, null, null, null, 123L, null, null);
-        vm = new VirtualMachine(UUID.randomUUID(), 1L, null, 1L, null, null, null, ipAddress, Instant.now().minus(Duration.ofDays(5)), null, null, 0, UUID.randomUUID());
+        vm = new VirtualMachine(UUID.randomUUID(), 1L, null, 1L, null, null, null, ipAddress, Instant.now().minus(Duration.ofDays(5)), null, null, null, 0, UUID.randomUUID());
         when(vmResource.getVm(vm.vmId)).thenReturn(vm);
         when(monitoring.getAccountId(Mockito.any())).thenReturn(12L);
         parser = new JSONParser();

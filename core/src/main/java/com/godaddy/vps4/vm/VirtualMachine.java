@@ -16,6 +16,7 @@ public class VirtualMachine {
     public Image image;
     public IpAddress primaryIpAddress;
     public Instant validOn;
+    public Instant canceled;
     public Instant validUntil;
     public String hostname;
     public int managedLevel;
@@ -33,6 +34,7 @@ public class VirtualMachine {
             Image image,
             IpAddress primaryIpAddress,
             Instant validOn,
+            Instant canceled,
             Instant validUntil,
             String hostname,
             int managedLevel,
@@ -46,6 +48,7 @@ public class VirtualMachine {
         this.image = image;
         this.primaryIpAddress = primaryIpAddress;
         this.validOn = validOn;
+        this.canceled = canceled;
         this.validUntil = validUntil;
         this.hostname = hostname;
         this.managedLevel = managedLevel;
@@ -62,6 +65,7 @@ public class VirtualMachine {
         image = virtualMachine.image;
         primaryIpAddress = virtualMachine.primaryIpAddress;
         validOn = virtualMachine.validOn;
+        canceled = virtualMachine.canceled;
         validUntil = virtualMachine.validUntil;
         hostname = virtualMachine.hostname;
         managedLevel = virtualMachine.managedLevel;
@@ -71,8 +75,8 @@ public class VirtualMachine {
     @Override
     public String toString() {
         return String.format(
-                "VirtualMachine [vmId=%s, hfsVmId=%d, orionGuid=%s, projectId=%d, spec=%s, name=%s, hostname=%s, image=%s, primaryIpAddress=%s, managedLevel=%d, validOn=%s, validUntil=%s]",
+                "VirtualMachine [vmId=%s, hfsVmId=%d, orionGuid=%s, projectId=%d, spec=%s, name=%s, hostname=%s, image=%s, primaryIpAddress=%s, managedLevel=%d, validOn=%s, canceled=%s, validUntil=%s]",
                 vmId, hfsVmId, orionGuid, projectId, spec.name, name, hostname, image == null ? "" : image.imageName,
-                primaryIpAddress == null ? "" : primaryIpAddress.ipAddress, managedLevel, validOn, validUntil);
+                primaryIpAddress == null ? "" : primaryIpAddress.ipAddress, managedLevel, validOn, canceled, validUntil);
     }
 }

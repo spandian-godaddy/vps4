@@ -40,12 +40,13 @@ public class SqlTestData {
         VirtualMachineService virtualMachineService = new JdbcVirtualMachineService(dataSource);
         VirtualMachine vm = virtualMachineService.getVirtualMachine(vmId);
 
-        Sql.with(dataSource).exec("DELETE FROM ip_address WHERE vm_id = ?", null, vm.vmId);
-        Sql.with(dataSource).exec("DELETE FROM vm_user WHERE vm_id = ?", null, vm.vmId);
-        Sql.with(dataSource).exec("DELETE FROM vm_action WHERE vm_id = ?", null, vm.vmId);
+        Sql.with(dataSource).exec("DELETE FROM ip_address WHERE vm_id = ?", null, vmId);
+        Sql.with(dataSource).exec("DELETE FROM vm_user WHERE vm_id = ?", null, vmId);
+        Sql.with(dataSource).exec("DELETE FROM vm_action WHERE vm_id = ?", null, vmId);
         Sql.with(dataSource).exec("DELETE FROM snapshot_action sa USING snapshot s"
-                + " WHERE sa.snapshot_id = s.id AND s.vm_id = ?", null, vm.vmId);
-        Sql.with(dataSource).exec("DELETE FROM snapshot WHERE vm_id = ?", null, vm.vmId);
+                + " WHERE sa.snapshot_id = s.id AND s.vm_id = ?", null, vmId);
+        Sql.with(dataSource).exec("DELETE FROM snapshot WHERE vm_id = ?", null, vmId);
+        Sql.with(dataSource).exec("DELETE FROM scheduled_job WHERE vm_id = ?", null, vmId);
         Sql.with(dataSource).exec("DELETE FROM virtual_machine WHERE vm_id = ?", null, vmId);
         Sql.with(dataSource).exec("DELETE FROM user_project_privilege WHERE project_id = ?", null, vm.projectId);
         Sql.with(dataSource).exec("DELETE FROM project WHERE project_id = ?", null, vm.projectId);

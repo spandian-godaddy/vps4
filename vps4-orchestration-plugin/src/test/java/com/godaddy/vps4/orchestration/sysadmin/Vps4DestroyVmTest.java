@@ -86,7 +86,7 @@ public class Vps4DestroyVmTest {
     public void setupTest(){
         this.vm = new VirtualMachine(UUID.randomUUID(), 42, UUID.randomUUID(), 1,
                 null, "VM Name",
-                null, null, null, null,
+                null, null, null, null, null,
                 "fake.host.name", 0, UUID.randomUUID());
 
         request = new Vps4DestroyVm.Request();

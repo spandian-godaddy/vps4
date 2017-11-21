@@ -297,7 +297,7 @@ public class VmResource {
            vmSnapshotResource.destroySnapshot(vmId, snapshot.id);
         }
         creditService.unclaimVirtualMachineCredit(vm.orionGuid);
-        virtualMachineService.setValidUntil(vm.vmId, Instant.now());
+        virtualMachineService.setVmRemoved(vm.vmId);
 
         return deleteAction;
     }
@@ -309,8 +309,6 @@ public class VmResource {
         if (user.getShopperId() == null)
             throw new Vps4NoShopperException();
         Vps4User vps4User = vps4UserService.getOrCreateUserForShopper(user.getShopperId());
-        
-//        VirtualMachineType vmType = type == null?VirtualMachineType.ACTIVE:type;
         
         switch (type) {
         case ACTIVE:

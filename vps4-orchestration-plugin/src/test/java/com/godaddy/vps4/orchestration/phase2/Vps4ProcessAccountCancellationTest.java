@@ -14,6 +14,8 @@ import com.godaddy.vps4.orchestration.scheduler.ScheduleZombieVmCleanup;
 import com.godaddy.vps4.orchestration.vm.VmActionRequest;
 import com.godaddy.vps4.orchestration.vm.Vps4StopVm;
 import com.godaddy.vps4.project.ProjectService;
+import com.godaddy.vps4.scheduledJob.ScheduledJobService;
+import com.godaddy.vps4.scheduledJob.jdbc.JdbcScheduledJobService;
 import com.godaddy.vps4.security.SecurityModule;
 import com.godaddy.vps4.security.Vps4UserService;
 import com.godaddy.vps4.vm.ActionService;
@@ -80,6 +82,7 @@ public class Vps4ProcessAccountCancellationTest {
                     protected void configure() {
                         bind(ActionService.class).to(JdbcActionService.class);
                         bind(VirtualMachineService.class).to(JdbcVirtualMachineService.class);
+                        bind(ScheduledJobService.class).to(JdbcScheduledJobService.class);
                     }
                 }
         );
@@ -178,7 +181,7 @@ public class Vps4ProcessAccountCancellationTest {
 
     @Test
     public void marksVmAsZombieWhenAccountCancellationIsProcessed() {
-        // Marking a vm as zombie for now involves setting the validUntil column to a date in the future (7 days)
+        Instant before = Instant.now();
         command.execute(context, virtualMachineCredit);
         verify(context, times(1))
                 .execute(eq("MarkVmAsZombie"), markZombieLambdaCaptor.capture(), eq(void.class));
@@ -186,8 +189,9 @@ public class Vps4ProcessAccountCancellationTest {
         // Verify that the lambda is returning what we expect
         Function<CommandContext, Void> lambda = markZombieLambdaCaptor.getValue();
         lambda.apply(context);
-        Instant setValidUntil = vps4VmService.getVirtualMachine(vps4VmId).validUntil;
-        Assert.assertEquals(validUntil, setValidUntil);
+        Instant setcanceled = vps4VmService.getVirtualMachine(vps4VmId).canceled;
+        Instant after = Instant.now();
+        Assert.assertTrue(before.isBefore(setcanceled) && after.isAfter(setcanceled));
     }
 
     @Test

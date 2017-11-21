@@ -28,7 +28,7 @@ public interface VirtualMachineService {
 
     // updateStatus(long vmId, int newStatus)
 
-    void setValidUntil(UUID vmId, Instant validUntil);
+    void setVmRemoved(UUID vmId);
 
     VirtualMachine provisionVirtualMachine(ProvisionVirtualMachineParameters vmProvisionParameters);
 
@@ -116,5 +116,7 @@ public interface VirtualMachineService {
 
     boolean hasControlPanel(UUID vmId);
 
-    void setValidUntilInfinity(UUID vmId);
+    void setVmZombie(UUID vmId);
+
+    void reviveZombieVm(UUID vmId, UUID newOrionGuid);
 }

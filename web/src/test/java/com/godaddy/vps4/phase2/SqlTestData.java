@@ -75,7 +75,7 @@ public class SqlTestData {
     public static void invalidateTestVm(UUID vmId, DataSource dataSource) {
         VirtualMachineService virtualMachineService = new JdbcVirtualMachineService(dataSource);
         VirtualMachine vm = virtualMachineService.getVirtualMachine(vmId);
-        virtualMachineService.setValidUntil(vm.vmId, Instant.now());
+        virtualMachineService.setVmRemoved(vm.vmId);
     }
 
     public static Snapshot insertSnapshot(SnapshotService snapshotService, UUID vmId, long projectId, SnapshotType snapshotType) {
