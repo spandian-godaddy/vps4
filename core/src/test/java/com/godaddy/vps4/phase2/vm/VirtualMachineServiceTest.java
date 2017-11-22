@@ -1,9 +1,10 @@
 package com.godaddy.vps4.phase2.vm;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 
 import java.time.Instant;
-import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -15,10 +16,8 @@ import javax.sql.DataSource;
 
 import org.junit.After;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 
-import com.godaddy.hfs.jdbc.Sql;
 import com.godaddy.vps4.jdbc.DatabaseModule;
 import com.godaddy.vps4.network.NetworkService;
 import com.godaddy.vps4.network.jdbc.JdbcNetworkService;
@@ -252,6 +251,33 @@ public class VirtualMachineServiceTest {
         actualVm = virtualMachineService.getVirtualMachine(expectedVm.vmId);
         assertTrue(before.isBefore(actualVm.canceled) && after.isAfter(actualVm.canceled));
         assertTrue(before.isBefore(actualVm.validUntil) && after.isAfter(actualVm.validUntil));
+    }
+
+    @Test
+    public void testSetVmZombie() {
+        VirtualMachine expectedVm = SqlTestData.insertTestVm(orionGuid, dataSource);
+        virtualMachines.add(expectedVm);
+
+        Instant before = Instant.now();
+        virtualMachineService.setVmZombie(expectedVm.vmId);
+        Instant after = Instant.now();
+        VirtualMachine actualVm = virtualMachineService.getVirtualMachine(expectedVm.vmId);
+
+        Assert.assertTrue(before.isBefore(actualVm.canceled) && after.isAfter(actualVm.canceled));
+    }
+
+    @Test
+    public void testReviveZombie() {
+        VirtualMachine expectedVm = SqlTestData.insertTestVm(orionGuid, dataSource);
+        virtualMachineService.setVmZombie(expectedVm.vmId);
+        virtualMachines.add(expectedVm);
+
+        UUID newOrionGuid = UUID.randomUUID();
+        virtualMachineService.reviveZombieVm(expectedVm.vmId, newOrionGuid);
+        VirtualMachine actualVm = virtualMachineService.getVirtualMachine(expectedVm.vmId);
+
+        Assert.assertEquals("+292278994-08-16T23:00:00Z", actualVm.canceled.toString());
+        Assert.assertEquals(newOrionGuid, actualVm.orionGuid);
     }
 
 }

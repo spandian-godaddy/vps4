@@ -10,5 +10,6 @@ public class SchedulerModule extends AbstractModule {
         bind(ScheduleAutomaticBackupRetry.class);
         bind(DeleteAutomaticBackupSchedule.class);
         bind(ScheduleZombieVmCleanup.class);
+        bind(DeleteScheduledJob.class);
     }
 }

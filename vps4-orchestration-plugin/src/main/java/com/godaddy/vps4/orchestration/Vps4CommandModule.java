@@ -16,6 +16,7 @@ import com.godaddy.vps4.orchestration.vm.Vps4PlanChange;
 import com.godaddy.vps4.orchestration.vm.Vps4ProvisionVm;
 import com.godaddy.vps4.orchestration.vm.Vps4RestartVm;
 import com.godaddy.vps4.orchestration.vm.Vps4RestoreVm;
+import com.godaddy.vps4.orchestration.vm.Vps4ReviveZombieVm;
 import com.godaddy.vps4.orchestration.vm.Vps4StartVm;
 import com.godaddy.vps4.orchestration.vm.Vps4StopVm;
 import com.godaddy.vps4.orchestration.vm.Vps4TestCommand;
@@ -44,5 +45,6 @@ public class Vps4CommandModule extends AbstractModule {
         bind(Vps4SetMailRelayQuota.class);
         bind(Vps4RestoreVm.class);
         bind(Vps4PlanChange.class);
+        bind(Vps4ReviveZombieVm.class);
     }
 }

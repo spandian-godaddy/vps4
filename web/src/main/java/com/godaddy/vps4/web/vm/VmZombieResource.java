@@ -22,6 +22,7 @@ import org.slf4j.LoggerFactory;
 
 import com.godaddy.vps4.credit.CreditService;
 import com.godaddy.vps4.credit.VirtualMachineCredit;
+import com.godaddy.vps4.orchestration.vm.Vps4ReviveZombieVm;
 import com.godaddy.vps4.security.Vps4User;
 import com.godaddy.vps4.security.Vps4UserService;
 import com.godaddy.vps4.vm.VirtualMachine;
@@ -31,8 +32,10 @@ import com.godaddy.vps4.web.Vps4Exception;
 import com.godaddy.vps4.web.Vps4NoShopperException;
 import com.godaddy.vps4.web.security.AdminOnly;
 import com.godaddy.vps4.web.security.GDUser;
+import com.godaddy.vps4.web.util.Commands;
 import com.google.inject.Inject;
 
+import gdg.hfs.orchestration.CommandService;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
@@ -48,22 +51,22 @@ public class VmZombieResource {
     private static final Logger logger = LoggerFactory.getLogger(VmZombieResource.class);
 
     private final GDUser user;
-    private final Vps4UserService vps4UserService;
     private final VirtualMachineService virtualMachineService;
     private final VmResource vmResource;
     private final CreditService creditService;
+    private final CommandService commandService;
     
     @Inject
     public VmZombieResource(GDUser user,
             VirtualMachineService virtualMachineService,
-            Vps4UserService vps4UserService,
             VmResource vmResource,
-            CreditService creditService) {
+            CreditService creditService,
+            CommandService commandService) {
         this.user = user;
-        this.vps4UserService = vps4UserService;
         this.virtualMachineService = virtualMachineService;
         this.vmResource = vmResource;
         this.creditService = creditService;
+        this.commandService = commandService;
     }
     
     @AdminOnly
@@ -79,22 +82,22 @@ public class VmZombieResource {
         VirtualMachineCredit oldCredit = creditService.getVirtualMachineCredit(vm.orionGuid);
         validateOldAccountIsRemoved(vmId, oldCredit);
         
-        VirtualMachineCredit newCredit = getAndValidateUserAccountCredit(creditService,
-                newCreditId, user.getShopperId());
+        VirtualMachineCredit newCredit = getAndValidateUserAccountCredit(creditService, newCreditId, user.getShopperId());
         validateCreditIsNotInUse(newCredit);
         
-        verifyCreditsMatch(oldCredit, newCredit);
+        validateCreditsMatch(oldCredit, newCredit);
         
-        updateVirtualMachineRecord(vmId, newCreditId);
+        logger.info("Revive zombie vm: {}", vmId);
+        
+        Vps4ReviveZombieVm.Request request = new Vps4ReviveZombieVm.Request();
+        request.vmId = vmId;
+        request.newCreditId = newCreditId;
+        Commands.execute(commandService, "Vps4ReviveZombieVm", request);
         
         return virtualMachineService.getVirtualMachine(vmId);
     }
 
-    private void updateVirtualMachineRecord(UUID vmId, UUID newCreditId) {
-        virtualMachineService.reviveZombieVm(vmId, newCreditId);
-    }
-
-    private void verifyCreditsMatch(VirtualMachineCredit oldCredit, VirtualMachineCredit newCredit) {
+    private void validateCreditsMatch(VirtualMachineCredit oldCredit, VirtualMachineCredit newCredit) {
         if(!oldCredit.controlPanel.equalsIgnoreCase(newCredit.controlPanel)) {
             throw new Vps4Exception("CONTROL_PANEL_MISMATCH", "Control panel of old and new credits do not match");
         }

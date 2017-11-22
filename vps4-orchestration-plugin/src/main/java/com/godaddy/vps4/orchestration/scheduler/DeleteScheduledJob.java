@@ -43,7 +43,7 @@ public class DeleteScheduledJob implements Command<DeleteScheduledJob.Request, V
         }
     }
     
-    public class Request {
+    public static class Request {
         public UUID jobId;
         public Class<? extends JobRequest> jobRequestClass;
     }
