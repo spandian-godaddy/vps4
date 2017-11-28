@@ -86,6 +86,7 @@ public class VmZombieResource {
         Vps4ReviveZombieVm.Request request = new Vps4ReviveZombieVm.Request();
         request.vmId = vmId;
         request.newCreditId = newCreditId;
+        request.oldCreditId = oldCredit.orionGuid;
         Commands.execute(commandService, "Vps4ReviveZombieVm", request);
         
         return virtualMachineService.getVirtualMachine(vmId);
