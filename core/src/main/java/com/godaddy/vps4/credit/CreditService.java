@@ -26,4 +26,6 @@ public interface CreditService {
     public void updateProductMeta(UUID orionGuid, Map<ProductMetaField, String> updates);
 
     void updateProductMeta(UUID orionGuid, ProductMetaField field, String value);
+
+    Map<ProductMetaField, String> getProductMeta(UUID orionGuid);
 }

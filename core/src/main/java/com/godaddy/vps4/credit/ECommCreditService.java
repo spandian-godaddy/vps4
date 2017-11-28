@@ -178,7 +178,20 @@ public class ECommCreditService implements CreditService {
         updateProductMeta(orionGuid, to);
     }
 
-    private Map<String, String> GetCurrentProductMeta(UUID orionGuid) {
+    @Override
+    public Map<ProductMetaField, String> getProductMeta(UUID orionGuid) {
+        Map<String, String> currentProductMeta = getCurrentProductMeta(orionGuid);
+        Map<ProductMetaField, String> productMeta = new HashMap<>();
+
+        for (String field : currentProductMeta.keySet()) {
+            productMeta.put(ProductMetaField.valueOf(field.toUpperCase()), currentProductMeta.get(field));
+        }
+
+        
+        return productMeta;
+    }
+
+    private Map<String, String> getCurrentProductMeta(UUID orionGuid) {
         Account account = ecommService.getAccount(orionGuid.toString());
         Map<String,String> from = new HashMap<>();
         Stream.of(ProductMetaField.values()).forEach(field -> from.put(field.toString(), account.product_meta.get(field.toString())));
@@ -195,7 +208,7 @@ public class ECommCreditService implements CreditService {
     @Override
     public void updateProductMeta(UUID orionGuid, Map<ProductMetaField, String> updates) {
         MetadataUpdate prodMeta = new MetadataUpdate();
-        prodMeta.from = GetCurrentProductMeta(orionGuid);
+        prodMeta.from = getCurrentProductMeta(orionGuid);
         prodMeta.to = new HashMap<>(prodMeta.from);
 
         for (Map.Entry<ProductMetaField, String> update : updates.entrySet()) {
@@ -208,7 +221,7 @@ public class ECommCreditService implements CreditService {
     @Override
     public void updateProductMeta(UUID orionGuid, ProductMetaField field, String value) {
         MetadataUpdate prodMeta = new MetadataUpdate();
-        prodMeta.from = GetCurrentProductMeta(orionGuid);
+        prodMeta.from = getCurrentProductMeta(orionGuid);
         prodMeta.to = new HashMap<>(prodMeta.from);
 
         prodMeta.to.put(field.toString(), value);

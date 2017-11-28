@@ -13,12 +13,14 @@ import java.time.Instant;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
 
+import com.godaddy.vps4.credit.ECommCreditService.ProductMetaField;
 import com.godaddy.vps4.vm.DataCenter;
 import com.godaddy.vps4.vm.DataCenterService;
 import com.google.inject.Guice;
@@ -57,6 +59,7 @@ public class ECommCreditServiceTest {
         account.plan_features.put("operatingsystem", "linux");
         account.plan_features.put("control_panel_type", "cpanel");
         account.product_meta = new HashMap<>();
+        account.product_meta.put(ProductMetaField.PRODUCT_ID.toString(), UUID.randomUUID().toString());
     }
 
     @Test
@@ -251,5 +254,12 @@ public class ECommCreditServiceTest {
         ECommDataCache dc = new ECommDataCache();
         dc.common_name = "New Common Name";
         verify(ecommService).setCommonName(orionGuid.toString(), dc);
+    }
+
+    @Test
+    public void testGetProductMeta() {
+        when(ecommService.getAccount(orionGuid.toString())).thenReturn(account);
+        Map<ProductMetaField, String> productMeta = creditService.getProductMeta(orionGuid);
+        assertEquals(account.product_meta.get(ProductMetaField.PRODUCT_ID.toString()), productMeta.get(ProductMetaField.PRODUCT_ID));
     }
 }
