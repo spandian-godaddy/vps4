@@ -247,7 +247,7 @@ public class VirtualMachineServiceTest {
         Instant before = Instant.now();
         virtualMachineService.setVmZombie(actualVm.vmId);
         virtualMachineService.setVmRemoved(actualVm.vmId);
-        Instant after = Instant.now();
+        Instant after = Instant.now().plusSeconds(120);
         actualVm = virtualMachineService.getVirtualMachine(expectedVm.vmId);
 
         System.out.println("before:\t\t" + before.toString());
@@ -266,7 +266,7 @@ public class VirtualMachineServiceTest {
 
         Instant before = Instant.now();
         virtualMachineService.setVmZombie(expectedVm.vmId);
-        Instant after = Instant.now();
+        Instant after = Instant.now().plusSeconds(120);
         VirtualMachine actualVm = virtualMachineService.getVirtualMachine(expectedVm.vmId);
 
         System.out.println("before:\t\t" + before.toString());
