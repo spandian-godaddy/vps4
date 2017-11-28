@@ -71,29 +71,6 @@ public class CreditResource {
         return creditService.getUnclaimedVirtualMachineCredits(user.getShopperId());
     }
 
-    @POST
-    @Path("/trialCredit")
-    public VirtualMachineCredit createTrialCredit(){
-        if(!user.isShopper()){
-            throw new Vps4NoShopperException();
-        }
-        List<VirtualMachineCredit> existingCredits = creditService.getVirtualMachineCredits(user.getShopperId());
-        if (!existingCredits.isEmpty()){
-            // only one credit at a time
-            throw new Vps4Exception("CREDIT_ALREADY_EXISTS", "This shopper already has existing credits");
-        }
-
-        UUID orionGuid = UUID.randomUUID();
-        String os = "Linux";
-        String cp = ControlPanel.CPANEL.toString();
-        int tier = 20;
-        int managedLevel = 2;
-        int monitoring = 1;
-        creditService.createVirtualMachineCredit(orionGuid, os, cp, tier, managedLevel, monitoring, user.getShopperId());
-        VirtualMachineCredit credit = creditService.getVirtualMachineCredit(orionGuid);
-        return credit;
-    }
-
     @AdminOnly
     @POST
     @Path("/")

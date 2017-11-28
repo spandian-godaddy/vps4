@@ -7,9 +7,6 @@ import java.util.List;
 
 import javax.servlet.http.HttpServletRequest;
 
-import org.junit.Test;
-import org.mockito.Mockito;
-
 import com.godaddy.hfs.sso.SsoTokenExtractor;
 import com.godaddy.hfs.sso.token.IdpSsoToken;
 import com.godaddy.hfs.sso.token.JomaxSsoToken;
@@ -17,16 +14,15 @@ import com.godaddy.hfs.sso.token.SsoToken;
 import com.godaddy.vps4.web.Vps4Exception;
 import com.godaddy.vps4.web.security.GDUser;
 import com.godaddy.vps4.web.security.SsoRequestAuthenticator;
-import com.godaddy.vps4.web.util.AlphaHelper;
-
 import junit.framework.Assert;
+import org.junit.Test;
+import org.mockito.Mockito;
 
 public class SsoRequestAuthenticatorTest {
 
     SsoTokenExtractor tokenExtractor = Mockito.mock(SsoTokenExtractor.class);
-    AlphaHelper alphaHelper = Mockito.mock(AlphaHelper.class);
     HttpServletRequest request = Mockito.mock(HttpServletRequest.class);
-    SsoRequestAuthenticator authenticator = new SsoRequestAuthenticator(tokenExtractor, alphaHelper);
+    SsoRequestAuthenticator authenticator = new SsoRequestAuthenticator(tokenExtractor);
 
     public SsoToken mockIdpToken(String shopperId) {
         IdpSsoToken token = Mockito.mock(IdpSsoToken.class);

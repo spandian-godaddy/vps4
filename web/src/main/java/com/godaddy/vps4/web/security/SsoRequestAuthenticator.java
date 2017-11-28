@@ -3,15 +3,13 @@ package com.godaddy.vps4.web.security;
 import javax.inject.Inject;
 import javax.servlet.http.HttpServletRequest;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import com.godaddy.hfs.sso.SsoTokenExtractor;
 import com.godaddy.hfs.sso.token.IdpSsoToken;
 import com.godaddy.hfs.sso.token.JomaxSsoToken;
 import com.godaddy.hfs.sso.token.SsoToken;
 import com.godaddy.vps4.web.Vps4Exception;
-import com.godaddy.vps4.web.util.AlphaHelper;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class SsoRequestAuthenticator implements RequestAuthenticator<GDUser> {
 
@@ -20,13 +18,10 @@ public class SsoRequestAuthenticator implements RequestAuthenticator<GDUser> {
     private final String VPS4_TEAM = "Dev-VPS4";
 
     private final SsoTokenExtractor tokenExtractor;
-    private final AlphaHelper alphaHelper;
 
     @Inject
-    public SsoRequestAuthenticator(SsoTokenExtractor tokenExtractor,
-            AlphaHelper alphaHelper) {
+    public SsoRequestAuthenticator(SsoTokenExtractor tokenExtractor) {
         this.tokenExtractor = tokenExtractor;
-        this.alphaHelper = alphaHelper;
     }
 
     @Override
@@ -38,10 +33,6 @@ public class SsoRequestAuthenticator implements RequestAuthenticator<GDUser> {
         }
 
         GDUser gdUser = createGDUser(token, request);
-        if (gdUser.isShopper()) {
-            alphaHelper.verifyValidAlphaUser(gdUser.getShopperId());
-        }
-
         logger.info("GD User authenticated: {}, URI: {}", gdUser.toString(), request.getRequestURI());
 
         return gdUser;

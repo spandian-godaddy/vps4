@@ -197,32 +197,4 @@ public class CreditResourceTest {
                 creditService.getVirtualMachineCredit(creditGuid), freeCredit);
     }
 
-    @Test
-    public void testCreate3LetterCreditSuccess() throws Exception{
-        VirtualMachineCredit fakeCredit = new VirtualMachineCredit(UUID.randomUUID(), 10, 1, 1, "Linux", "MYH", null, "omg",
-                AccountStatus.ACTIVE, null, UUID.randomUUID(), false);
-        when(creditService.getVirtualMachineCredit(any(UUID.class))).thenReturn(fakeCredit);
-
-        user = GDUserMock.createShopper("omg");
-        VirtualMachineCredit credit = getCreditResource().createTrialCredit();
-        Assert.assertNotNull(credit.orionGuid);
-    }
-
-    @Test
-    public void testCreate3LetterCreditAlreadyExists(){
-        VirtualMachineCredit fakeCredit = new VirtualMachineCredit(UUID.randomUUID(), 10, 1, 1, "Linux", "MYH", null, "omg",
-                AccountStatus.ACTIVE, null, UUID.randomUUID(), false);
-        VirtualMachineCredit[] credits = {fakeCredit};
-
-        user = GDUserMock.createShopper("omg");
-        when(creditService.getVirtualMachineCredits("omg")).thenReturn(Arrays.asList(credits));
-
-        try{
-            getCreditResource().createTrialCredit();
-            Assert.fail();
-        }catch(Vps4Exception e){
-            Assert.assertEquals("CREDIT_ALREADY_EXISTS", e.getId());
-        }
-    }
-
 }

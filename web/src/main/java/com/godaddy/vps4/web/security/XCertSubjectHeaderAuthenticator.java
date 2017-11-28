@@ -1,28 +1,25 @@
 package com.godaddy.vps4.web.security;
 
-import com.godaddy.vps4.web.util.AlphaHelper;
-import com.godaddy.hfs.config.Config;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import javax.inject.Inject;
-import javax.servlet.http.HttpServletRequest;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
+
+import javax.inject.Inject;
+import javax.servlet.http.HttpServletRequest;
+
+import com.godaddy.hfs.config.Config;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class XCertSubjectHeaderAuthenticator implements RequestAuthenticator<GDUser> {
 
     private static final Logger logger = LoggerFactory.getLogger(XCertSubjectHeaderAuthenticator.class);
 
     private final Config config;
-    private final AlphaHelper alphaHelper;
 
     @Inject
-    public XCertSubjectHeaderAuthenticator(Config config,
-                                           AlphaHelper alphaHelper) {
+    public XCertSubjectHeaderAuthenticator(Config config) {
         this.config = config;
-        this.alphaHelper = alphaHelper;
     }
 
     @Override
@@ -39,7 +36,6 @@ public class XCertSubjectHeaderAuthenticator implements RequestAuthenticator<GDU
                 // authentication succeeds if the use can be created correctly
                 gdUser = createGDUser(request);
                 if (gdUser.isShopper()) {
-                    alphaHelper.verifyValidAlphaUser(gdUser.getShopperId());
                     logger.info("GD User authenticated: {}, URI: {}", gdUser.toString(), request.getRequestURI());
                 }
             }
