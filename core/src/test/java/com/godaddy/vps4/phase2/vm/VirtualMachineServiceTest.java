@@ -244,10 +244,10 @@ public class VirtualMachineServiceTest {
         
         VirtualMachine actualVm = virtualMachineService.getVirtualMachine(expectedVm.vmId);
         assertTrue(expectedVm.vmId.equals(actualVm.vmId));
-        Instant before = Instant.now();
+        Instant before = Instant.now().minusSeconds(60);
         virtualMachineService.setVmZombie(actualVm.vmId);
         virtualMachineService.setVmRemoved(actualVm.vmId);
-        Instant after = Instant.now();
+        Instant after = Instant.now().plusSeconds(120);
         actualVm = virtualMachineService.getVirtualMachine(expectedVm.vmId);
         assertTrue(before.isBefore(actualVm.canceled) && after.isAfter(actualVm.canceled));
         assertTrue(before.isBefore(actualVm.validUntil) && after.isAfter(actualVm.validUntil));
@@ -258,9 +258,9 @@ public class VirtualMachineServiceTest {
         VirtualMachine expectedVm = SqlTestData.insertTestVm(orionGuid, dataSource);
         virtualMachines.add(expectedVm);
 
-        Instant before = Instant.now();
+        Instant before = Instant.now().minusSeconds(60);
         virtualMachineService.setVmZombie(expectedVm.vmId);
-        Instant after = Instant.now();
+        Instant after = Instant.now().plusSeconds(120);
         VirtualMachine actualVm = virtualMachineService.getVirtualMachine(expectedVm.vmId);
 
         Assert.assertTrue(before.isBefore(actualVm.canceled) && after.isAfter(actualVm.canceled));
