@@ -6,13 +6,11 @@ import static org.junit.Assert.assertTrue;
 import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
-
 import javax.sql.DataSource;
 
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
-
 import com.godaddy.vps4.jdbc.DatabaseModule;
 import com.godaddy.vps4.phase2.SqlTestData;
 import com.godaddy.vps4.scheduledJob.ScheduledJob;
@@ -52,7 +50,7 @@ public class ScheduledJobServiceTest {
         assertEquals(jobId, job.id);
         assertEquals(vm1.vmId, job.vmId);
         assertEquals(ScheduledJob.ScheduledJobType.ZOMBIE, job.type);
-        assertTrue(Instant.now().plusSeconds(120).isAfter(job.created));
+        assertTrue(Instant.now().isAfter(job.created));
     }
     
     @Test
