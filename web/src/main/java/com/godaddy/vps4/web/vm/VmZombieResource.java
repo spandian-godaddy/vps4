@@ -2,6 +2,7 @@ package com.godaddy.vps4.web.vm;
 
 import static com.godaddy.vps4.web.util.RequestValidation.getAndValidateUserAccountCredit;
 import static com.godaddy.vps4.web.util.RequestValidation.validateCreditIsNotInUse;
+import static com.godaddy.vps4.web.util.RequestValidation.validateVmExists;
 
 import java.util.UUID;
 
@@ -45,19 +46,16 @@ public class VmZombieResource {
 
     private final GDUser user;
     private final VirtualMachineService virtualMachineService;
-    private final VmResource vmResource;
     private final CreditService creditService;
     private final CommandService commandService;
     
     @Inject
     public VmZombieResource(GDUser user,
             VirtualMachineService virtualMachineService,
-            VmResource vmResource,
             CreditService creditService,
             CommandService commandService) {
         this.user = user;
         this.virtualMachineService = virtualMachineService;
-        this.vmResource = vmResource;
         this.creditService = creditService;
         this.commandService = commandService;
     }
@@ -71,8 +69,11 @@ public class VmZombieResource {
             @ApiParam(value = "The ID of the server to revive", required = true) @PathParam("vmId") UUID vmId,
             @ApiParam(value = "The ID of the new credit to which the VM will be linked",
                     required = true) @QueryParam("newCreditId") UUID newCreditId) {
-        VirtualMachine vm = vmResource.getVm(vmId);
         
+        logger.info("getting vm with id {}", vmId);
+        VirtualMachine vm = virtualMachineService.getVirtualMachine(vmId);
+        validateVmExists(vmId, vm);
+
         VirtualMachineCredit oldCredit = creditService.getVirtualMachineCredit(vm.orionGuid);
         validateOldAccountIsRemoved(vmId, oldCredit);
         

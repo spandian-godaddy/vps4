@@ -1,7 +1,5 @@
 package com.godaddy.vps4.phase2;
 
-import java.time.Instant;
-import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.UUID;
 
@@ -9,7 +7,6 @@ import javax.inject.Inject;
 import javax.sql.DataSource;
 import javax.ws.rs.NotFoundException;
 
-import com.godaddy.vps4.snapshot.SnapshotModule;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -21,6 +18,7 @@ import com.godaddy.vps4.security.SecurityModule;
 import com.godaddy.vps4.security.Vps4User;
 import com.godaddy.vps4.security.Vps4UserService;
 import com.godaddy.vps4.security.jdbc.AuthorizationException;
+import com.godaddy.vps4.snapshot.SnapshotModule;
 import com.godaddy.vps4.vm.AccountStatus;
 import com.godaddy.vps4.vm.VirtualMachine;
 import com.godaddy.vps4.vm.VirtualMachineService;
@@ -120,6 +118,20 @@ public class VmResourceTest {
             Assert.fail("Exception not thrown");
         } catch (Vps4Exception e) {
             Assert.assertEquals("ACCOUNT_SUSPENDED", e.getId());
+        }
+    }
+
+    @Test
+    public void testShopperGetRemovedVm() {
+        Phase2ExternalsModule.mockVmCredit(AccountStatus.REMOVED);
+        VirtualMachine vm = createTestVm();
+
+        user = GDUserMock.createShopper();
+        try {
+            getVmResource().getVm(vm.vmId);
+            Assert.fail("Exception not thrown");
+        } catch (Vps4Exception e) {
+            Assert.assertEquals("ACCOUNT_REMOVED", e.getId());
         }
     }
 

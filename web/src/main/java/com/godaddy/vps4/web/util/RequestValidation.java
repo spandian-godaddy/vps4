@@ -28,6 +28,7 @@ import com.godaddy.vps4.vm.VirtualMachineService;
 import com.godaddy.vps4.web.Vps4Exception;
 import com.godaddy.vps4.web.Vps4NoShopperException;
 import com.godaddy.vps4.web.security.GDUser;
+
 import gdg.hfs.vhfs.vm.Vm;
 
 public class RequestValidation {
@@ -109,11 +110,16 @@ public class RequestValidation {
                     String.format("The virtual machine account for orion guid %s was SUSPENDED", orionGuid));
         }
 
+        if (vmCredit.isAccountRemoved()) {
+            throw new Vps4Exception("ACCOUNT_REMOVED", String.format("The virtual machine account for orion guid %s was REMOVED", orionGuid));
+        }
+        
         if (!vmCredit.isOwnedByShopper(ssoShopperId)) {
             throw new AuthorizationException(
                     String.format("Shopper %s does not have privilege for vm request with orion guid %s",
                             ssoShopperId, vmCredit.orionGuid));
         }
+        
         return vmCredit;
     }
 

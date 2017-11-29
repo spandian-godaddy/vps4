@@ -28,7 +28,6 @@ import gdg.hfs.orchestration.CommandState;
 public class VmZombieResourceTest {
 
     VirtualMachineService virtualMachineService = mock(VirtualMachineService.class);
-    VmResource vmResource = mock(VmResource.class);
     CreditService creditService = mock(CreditService.class);
     CommandService commandService = mock(CommandService.class);
     
@@ -48,7 +47,7 @@ public class VmZombieResourceTest {
         testVm.vmId = UUID.randomUUID();
         testVm.orionGuid = UUID.randomUUID();
         testVm.canceled = Instant.now().plus(7, ChronoUnit.DAYS);
-        when(vmResource.getVm(testVm.vmId)).thenReturn(testVm);
+        testVm.validUntil = Instant.MAX;
         when(virtualMachineService.getVirtualMachine(testVm.vmId)).thenReturn(testVm);
 
         oldCredit = createOldCredit(testVm);
@@ -58,7 +57,7 @@ public class VmZombieResourceTest {
         newCredit = createNewCredit(oldCredit, newOrionGuid);
         when(creditService.getVirtualMachineCredit(newOrionGuid)).thenReturn(newCredit);
         
-        vmZombieResource = new VmZombieResource(user, virtualMachineService, vmResource, creditService, commandService);
+        vmZombieResource = new VmZombieResource(user, virtualMachineService, creditService, commandService);
     }
 
     private VirtualMachineCredit createNewCredit(VirtualMachineCredit oldCredit, UUID newOrionGuid) {
