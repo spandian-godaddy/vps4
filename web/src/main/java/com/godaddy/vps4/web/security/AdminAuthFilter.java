@@ -34,7 +34,7 @@ public class AdminAuthFilter implements ContainerRequestFilter {
 
         boolean adminRequired = resourceMethod.isAnnotationPresent(AdminOnly.class);
 
-        if ((!user.isEmployee && employeeRequired) || (!user.isAdmin() && adminRequired)) {
+        if ((employeeRequired && !user.isEmployee) || (adminRequired && !user.isAdmin())) {
             requestContext.abortWith(Response.status(Response.Status.FORBIDDEN).build());
         }
     }
