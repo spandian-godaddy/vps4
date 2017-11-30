@@ -9,6 +9,9 @@ import com.godaddy.hfs.zookeeper.ZooKeeperClient;
 import com.godaddy.vps4.cache.CacheLifecycleListener;
 import com.google.inject.Injector;
 
+import gdg.hfs.orchestration.web.CommandsResource;
+import gdg.hfs.orchestration.web.CommandsViewResource;
+
 public class Vps4Application extends HfsWebApplication {
 
     @Override
@@ -25,7 +28,10 @@ public class Vps4Application extends HfsWebApplication {
 
         listeners.addEventListener(new GuiceResteasyBootstrap(
                 beanClass -> beanClass.isAnnotationPresent(Vps4Api.class)
+                            || beanClass.isAssignableFrom(CommandsResource.class)
+                            || beanClass.isAssignableFrom(CommandsViewResource.class)
                             || beanClass.getName().startsWith("io.swagger")
+
         ));
 
         // conditionally add service registration last, since the service

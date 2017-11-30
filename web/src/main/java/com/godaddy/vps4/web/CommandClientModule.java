@@ -29,5 +29,4 @@ public class CommandClientModule extends AbstractModule {
         return new HttpCommandService(baseUrl, client, mapper);
 
     }
-
 }

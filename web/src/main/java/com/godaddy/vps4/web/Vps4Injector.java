@@ -40,10 +40,14 @@ import com.godaddy.vps4.web.util.VmActiveSnapshotFilter;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
 import com.google.inject.Module;
+import com.google.inject.PrivateModule;
 import com.google.inject.multibindings.Multibinder;
 import com.google.inject.multibindings.OptionalBinder;
 import com.google.inject.servlet.ServletModule;
+import gdg.hfs.orchestration.CommandService;
 import gdg.hfs.orchestration.cluster.ClusterClientModule;
+import gdg.hfs.orchestration.web.CommandsResource;
+import gdg.hfs.orchestration.web.CommandsViewResource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -62,7 +66,8 @@ public class Vps4Injector {
     static Injector newInstance() {
         List<Module> modules = new ArrayList<>();
         // use this when upgrading to newer version of hfs-web
-        HfsServiceMetadata metadata = new HfsServiceMetadata("vps4-web", HfsServiceMetadata.ServiceType.OTHER, "/api/");
+        HfsServiceMetadata metadata = new HfsServiceMetadata("vps4-web",
+                HfsServiceMetadata.ServiceType.OTHER, "/api/");
         modules.add(binder -> {
             binder.bind(HfsServiceMetadata.class).toInstance(metadata);
             OptionalBinder.newOptionalBinder(binder, HfsServiceMetadata.class);
@@ -73,6 +78,7 @@ public class Vps4Injector {
         modules.add(new GuiceFilterModule(
                 "/api/*",
                 "/",
+                "/commands/*",
                 "/swagger.json"
         ));
         modules.add(new SwaggerModule());
@@ -110,7 +116,14 @@ public class Vps4Injector {
         logger.info("Orchestration engine clustered: {}", isOrchestrationEngineClustered);
         if(isOrchestrationEngineClustered) {
             logger.info("Using ClusterClientModule for orchestration engine.");
-            modules.add(new ClusterClientModule());
+            modules.add(new PrivateModule() {
+                @Override
+                public void configure() {
+                    install(new ClusterClientModule());
+
+                    expose(CommandService.class);
+                }
+            });
         } else {
             modules.add(new CommandClientModule());
         }
@@ -128,13 +141,13 @@ public class Vps4Injector {
 
                 bind(AuthenticationFilter.class).in(Singleton.class);
                 filter("/api/*").through(AuthenticationFilter.class);
+                filter("/commands/*").through(AuthenticationFilter.class);
 
                 bind(VmActiveSnapshotFilter.class).in(Singleton.class);
                 filter("/api/vms/*").through(VmActiveSnapshotFilter.class);
 
                 Multibinder.newSetBinder(binder(), SwaggerClassFilter.class)
-                        .addBinding().toInstance(resourceClass ->
-                        resourceClass.isAnnotationPresent(Vps4Api.class));
+                        .addBinding().toInstance(resourceClass -> isResourceSwaggerVisible(resourceClass));
             }
         });
         modules.add(new CacheModule());
@@ -142,4 +155,15 @@ public class Vps4Injector {
 
         return Guice.createInjector(modules);
     }
+
+    protected static boolean isResourceSwaggerVisible(Class<?> resourceClass) {
+
+        boolean vps4Api = resourceClass.isAnnotationPresent(Vps4Api.class);
+
+        boolean command = resourceClass.isAssignableFrom(CommandsResource.class)
+                || resourceClass.isAssignableFrom(CommandsViewResource.class);
+
+        return vps4Api || command;
+    }
+
 }

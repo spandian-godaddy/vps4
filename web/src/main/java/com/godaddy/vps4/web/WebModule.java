@@ -26,6 +26,9 @@ import com.godaddy.vps4.web.vm.VmSupportUserResource;
 import com.godaddy.vps4.web.vm.VmZombieResource;
 import com.google.inject.AbstractModule;
 
+import gdg.hfs.orchestration.web.CommandsResource;
+import gdg.hfs.orchestration.web.CommandsViewResource;
+
 public class WebModule extends AbstractModule {
 
     @Override
@@ -58,6 +61,9 @@ public class WebModule extends AbstractModule {
         bind(VmSnapshotActionResource.class);
         bind(Vps4ExceptionMapper.class);
         bind(AdminAuthFilter.class);
+
+        bind(CommandsResource.class);
+        bind(CommandsViewResource.class);
     }
 }
 
