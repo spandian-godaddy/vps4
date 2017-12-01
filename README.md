@@ -8,6 +8,8 @@ Environments
 | Test  | https://vps4.api.test-godaddy.com/ | https://vps4.myh.test-godaddy.com/           |
 | Stage | https://vps4.api.stg-godaddy.com/  | https://vps4.myh.stg-godaddy.com/            |
 | Prod  | https://vps4.api.iad2.godaddy.com/ | https://myh.godaddy.com/#/hosting/vps4/index |
+| Prod-PHX | https://vps4.api.phx3.godaddy.com/ | https://myh.godaddy.com/#/hosting/vps4/index |
+| Prod-SG2 | https://vps4.api.sin2.godaddy.com/ | https://myh.godaddy.com/#/hosting/vps4/index |
 
 Note: Stage HUI apparently points at prod API, so (for now) 'prod' HUI is only visible through stage
 
