@@ -186,6 +186,20 @@ To build a database to setup the jobs for automated / on-demand backup, patching
 
     mvn initialize sql:execute@drop-create-scheduler-database sql:execute@create_scheduler_tables -Prebuild-scheduler-db
 
+Scheduler Commands in VPS4 Swagger
+=======================
+The scheduler commands are only available with certificate authentication.  You will need the vps4_end_web_developer.p12 in your browser to authenticate these commands.
+
+Links
+
+| Env     |   URL                                             |
+| ------  | ------------------------------------------------- |
+| Dev     | https://vps4-cca.api.dev-godaddy.com/#/scheduler  |
+| Test    | https://vps4-cca.api.test-godaddy.com/#/scheduler |
+| Stage   | https://vps4-cca.api.stg-godaddy.com/#/scheduler  |
+| Prod-A2 | https://vps4-cca.api.iad2.godaddy.com/#/scheduler |
+| Prod-PHX| https://vps4-cca.api.phx3.godaddy.com/#/scheduler |
+| Prod-SG2| https://vps4-cca.api.sin2.godaddy.com/#/scheduler |
    
 CRM Links
 ==============
@@ -207,3 +221,25 @@ in your local IDE run configuration using the -D flag.
 
     orchestration.engine.clustered=false 
 
+Orchestration Commands in VPS4 Swagger
+==================
+
+The orchestration api is exposed through the vps4 swagger in the "commands" section.  To authenticate the for the commands api calls, you must impersonate any shopper.  The commands are set to EmployeeOnly level impersonation.
+
+Things to note:
+ - the possible queue names for /api/queue/{queueName} are "active" and "failed"
+ - POST: /api/commands{commandId}/enqueue manually retries a command.
+ - Failed commands will automatically retry on a scheduled interval.
+ 
+ Finding App Servers in MCP
+==================
+Run this command to get a list of the current app servers, and what version of vps4 they're running.
+
+| Env     |   Command                                         |
+| ------  | ------------------------------------------------- |
+| Dev     | ssh p3dlvps4mcp.cloud.phx3.gdg "mcpctl status"    |
+| Test    | ssh p3tlvps4mcp.cloud.phx3.gdg "mcpctl status"    |
+| Stage   | ssh p3slvps4mcp.cloud.phx3.gdg "mcpctl status"    |
+| Prod-A2 | ssh a2plvps4mcp.cloud.iad2.gdg "mcpctl status"    |
+| Prod-PHX| ssh p3plvps4mcp.cloud.phx3.gdg "mcpctl status"    |
+| Prod-SG2| ssh sg2plvps4mcp.cloud.sin2.gdg "mcpctl status"   |
