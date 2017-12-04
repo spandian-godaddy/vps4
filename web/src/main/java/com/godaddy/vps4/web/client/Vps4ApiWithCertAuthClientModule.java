@@ -2,10 +2,10 @@ package com.godaddy.vps4.web.client;
 
 import static com.godaddy.vps4.client.ClientUtils.getClientCertAuthServiceProvider;
 
+import javax.inject.Singleton;
+
 import com.godaddy.vps4.client.Vps4ClientModule;
 import com.google.inject.AbstractModule;
-
-import javax.inject.Singleton;
 
 public class Vps4ApiWithCertAuthClientModule extends AbstractModule {
 
@@ -19,18 +19,16 @@ public class Vps4ApiWithCertAuthClientModule extends AbstractModule {
 
         // VM Snapshot endpoint
         bind(VmSnapshotService.class)
-            .toProvider(getClientCertAuthServiceProvider(VmSnapshotService.class,
-                    baseUrlConfigPropName,
-                    clientCertKeyPath,
-                    clientCertPath))
-            .in(Singleton.class);
+                .toProvider(getClientCertAuthServiceProvider(VmSnapshotService.class, baseUrlConfigPropName, clientCertKeyPath, clientCertPath))
+                .in(Singleton.class);
 
         // VM endpoint
-        bind(VmService.class)
-            .toProvider(getClientCertAuthServiceProvider(VmService.class,
-                    baseUrlConfigPropName,
-                    clientCertKeyPath,
-                    clientCertPath))
-            .in(Singleton.class);
+        bind(VmService.class).toProvider(getClientCertAuthServiceProvider(VmService.class, baseUrlConfigPropName, clientCertKeyPath, clientCertPath))
+                .in(Singleton.class);
+
+        // VM Support User endpoint
+        bind(VmSupportUserService.class)
+                .toProvider(getClientCertAuthServiceProvider(VmSupportUserService.class, baseUrlConfigPropName, clientCertKeyPath, clientCertPath))
+                .in(Singleton.class);
     }
 }

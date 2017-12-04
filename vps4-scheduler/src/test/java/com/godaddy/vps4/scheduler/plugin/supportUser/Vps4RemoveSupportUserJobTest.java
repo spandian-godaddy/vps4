@@ -1,4 +1,4 @@
-package com.godaddy.vps4.scheduler.plugin.zombie;
+package com.godaddy.vps4.scheduler.plugin.supportUser;
 
 import static org.junit.Assert.fail;
 import static org.mockito.Matchers.eq;
@@ -18,8 +18,8 @@ import org.junit.Test;
 import org.quartz.JobExecutionContext;
 import org.quartz.JobExecutionException;
 
-import com.godaddy.vps4.scheduler.api.plugin.Vps4ZombieCleanupJobRequest;
-import com.godaddy.vps4.web.client.VmService;
+import com.godaddy.vps4.scheduler.api.plugin.Vps4RemoveSupportUserJobRequest;
+import com.godaddy.vps4.web.client.VmSupportUserService;
 import com.godaddy.vps4.web.vm.VmAction;
 import com.google.inject.AbstractModule;
 import com.google.inject.Guice;
@@ -27,21 +27,22 @@ import com.google.inject.Inject;
 import com.google.inject.Injector;
 
 
-public class Vps4ZombieCleanupJobTest {
+public class Vps4RemoveSupportUserJobTest {
     static Injector injector;
-    static VmService mockVmService;
+    static VmSupportUserService mockVmSupportUserService;
     private final JobExecutionContext context = mock(JobExecutionContext.class);
 
-    @Inject Vps4ZombieCleanupJob vps4ZombieCleanupJob;
+    @Inject
+    Vps4RemoveSupportUserJob vps4RemoveSupportUserJob;
 
     @BeforeClass
     public static void newInjector() {
-        mockVmService = mock(VmService.class);
+        mockVmSupportUserService = mock(VmSupportUserService.class);
         injector = Guice.createInjector(
                 new AbstractModule() {
                     @Override
                     protected void configure() {
-                        bind(VmService.class).toInstance(mockVmService);
+                        bind(VmSupportUserService.class).toInstance(mockVmSupportUserService);
                     }
                 }
         );
@@ -58,21 +59,21 @@ public class Vps4ZombieCleanupJobTest {
     }
 
     private void initJobRequest() {
-        Vps4ZombieCleanupJobRequest request = new Vps4ZombieCleanupJobRequest();
+        Vps4RemoveSupportUserJobRequest request = new Vps4RemoveSupportUserJobRequest();
         request.vmId = UUID.randomUUID();
-        vps4ZombieCleanupJob.setRequest(request);
+        vps4RemoveSupportUserJob.setRequest(request);
     }
 
     @Test
-    public void callsVmDestroyEndpointToCleanupZombieVm() {
+    public void callsRemoveSupportUser() {
         VmAction action = new VmAction();
         action.id = 1234;
-        when(mockVmService.destroyVm(eq(vps4ZombieCleanupJob.request.vmId))).thenReturn(action);
+        when(mockVmSupportUserService.removeSupportUser(eq(vps4RemoveSupportUserJob.request.vmId))).thenReturn(action);
 
         try {
-            vps4ZombieCleanupJob.execute(context);
+            vps4RemoveSupportUserJob.execute(context);
 
-            verify(mockVmService, times(1)).destroyVm(eq(vps4ZombieCleanupJob.request.vmId));
+            verify(mockVmSupportUserService, times(1)).removeSupportUser(eq(vps4RemoveSupportUserJob.request.vmId));
 
         }
         catch (JobExecutionException e) {
@@ -81,10 +82,10 @@ public class Vps4ZombieCleanupJobTest {
     }
 
     @Test(expected = JobExecutionException.class)
-    public void throwsJobExecutionExceptionInCaseOfErrorWhileDestroyingVm() throws JobExecutionException {
-        when(mockVmService.destroyVm(eq(vps4ZombieCleanupJob.request.vmId)))
+    public void throwsJobExecutionExceptionInCaseOfErrorRemovingSupportUser() throws JobExecutionException {
+        when(mockVmSupportUserService.removeSupportUser(eq(vps4RemoveSupportUserJob.request.vmId)))
            .thenThrow(new WebApplicationException("Boom!!"));
 
-        vps4ZombieCleanupJob.execute(context);
+        vps4RemoveSupportUserJob.execute(context);
     }
 }
