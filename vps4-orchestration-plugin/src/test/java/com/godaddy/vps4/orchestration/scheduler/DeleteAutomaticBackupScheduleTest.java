@@ -30,8 +30,7 @@ public class DeleteAutomaticBackupScheduleTest {
     private UUID backupJobId = UUID.randomUUID();
 
     @Inject DeleteAutomaticBackupSchedule command;
-    @Inject
-    SchedulerWebService schedulerWebService;
+    @Inject SchedulerWebService schedulerWebService;
 
     @Captor private ArgumentCaptor<Function<CommandContext, Void>> deleteJobCaptor;
 
