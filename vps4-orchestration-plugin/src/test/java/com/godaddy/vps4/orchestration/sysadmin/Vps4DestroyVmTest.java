@@ -13,6 +13,7 @@ import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.UUID;
 
+import com.godaddy.vps4.scheduledJob.ScheduledJobService;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
@@ -59,6 +60,7 @@ public class Vps4DestroyVmTest {
     MailRelayService mailRelayService = mock(MailRelayService.class);
     VmService vmService = mock(VmService.class);
     NodePingService nodePingService = mock(NodePingService.class);
+    ScheduledJobService scheduledJobService = mock(ScheduledJobService.class);
 
     Vps4DestroyVm command = new Vps4DestroyVm(actionService, networkService, virtualMachineService,
             creditService, vmService, cpanelService, nodePingService);
@@ -73,6 +75,7 @@ public class Vps4DestroyVmTest {
         binder.bind(PleskService.class).toInstance(pleskService);
         binder.bind(MailRelayService.class).toInstance(mailRelayService);
         binder.bind(NodePingService.class).toInstance(nodePingService);
+        binder.bind(ScheduledJobService.class).toInstance(scheduledJobService);
     });
 
     CommandContext context = new TestCommandContext(new GuiceCommandProvider(injector));
