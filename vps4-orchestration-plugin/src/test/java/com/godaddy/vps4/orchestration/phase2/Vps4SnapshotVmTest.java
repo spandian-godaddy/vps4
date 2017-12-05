@@ -15,6 +15,8 @@ import javax.sql.DataSource;
 
 import com.godaddy.hfs.config.Config;
 import com.godaddy.vps4.orchestration.scheduler.ScheduleAutomaticBackupRetry;
+import com.godaddy.vps4.orchestration.vm.Vps4RecordScheduledJobForVm;
+import com.godaddy.vps4.scheduledJob.ScheduledJob;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -82,6 +84,7 @@ public class Vps4SnapshotVmTest {
     @Captor ArgumentCaptor<Function<CommandContext, UUID>> markOldestSnapshotCaptor;
     @Captor ArgumentCaptor<Function<CommandContext, SnapshotAction>> snapshotActionCaptor;
     @Captor ArgumentCaptor<Function<CommandContext, gdg.hfs.vhfs.snapshot.Snapshot>> hfsSnapshotCaptor;
+    @Captor private ArgumentCaptor<Vps4RecordScheduledJobForVm.Request> recordJobArgumentCaptor;
 
     @BeforeClass
     public static void newInjector() {
@@ -305,6 +308,7 @@ public class Vps4SnapshotVmTest {
     public void errorInCreationProcessSchedulesAnotherBackup() {
         when(context.execute(eq(WaitForSnapshotAction.class), eq(hfsAction)))
                 .thenThrow(new RuntimeException("Error in initial request"));
+
         try {
             command.execute(context, automaticRequest);
         }catch(RuntimeException rte){
@@ -314,5 +318,28 @@ public class Vps4SnapshotVmTest {
         }
 
         verify(context, times(1)).execute(eq(ScheduleAutomaticBackupRetry.class), any(ScheduleAutomaticBackupRetry.Request.class));
+    }
+
+    @Test
+    public void errorInCreationRecordsScheduledJobId() {
+        UUID retryJobId = UUID.randomUUID();
+        when(context.execute(eq(WaitForSnapshotAction.class), eq(hfsAction)))
+                .thenThrow(new RuntimeException("Error in initial request"));
+        when(context.execute(eq(ScheduleAutomaticBackupRetry.class), any(ScheduleAutomaticBackupRetry.Request.class)))
+                .thenReturn(retryJobId);
+
+        try {
+            command.execute(context, automaticRequest);
+        }catch(RuntimeException rte){
+            // Automatic backups throw a NoRetryException which is not raised through
+            // the orchestration engine.
+            Assert.fail("Should not have thrown a runtime exception");
+        }
+
+        verify(context, times(1))
+                .execute(eq("RecordScheduledJobId"), eq(Vps4RecordScheduledJobForVm.class), recordJobArgumentCaptor.capture());
+        Vps4RecordScheduledJobForVm.Request req = recordJobArgumentCaptor.getValue();
+        Assert.assertEquals(retryJobId, req.jobId);
+        Assert.assertEquals(ScheduledJob.ScheduledJobType.BACKUPS, req.jobType);
     }
 }

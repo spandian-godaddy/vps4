@@ -12,8 +12,10 @@ import com.godaddy.vps4.jdbc.DatabaseModule;
 import com.godaddy.vps4.orchestration.account.Vps4ProcessAccountCancellation;
 import com.godaddy.vps4.orchestration.scheduler.ScheduleZombieVmCleanup;
 import com.godaddy.vps4.orchestration.vm.VmActionRequest;
+import com.godaddy.vps4.orchestration.vm.Vps4RecordScheduledJobForVm;
 import com.godaddy.vps4.orchestration.vm.Vps4StopVm;
 import com.godaddy.vps4.project.ProjectService;
+import com.godaddy.vps4.scheduledJob.ScheduledJob;
 import com.godaddy.vps4.scheduledJob.ScheduledJobService;
 import com.godaddy.vps4.scheduledJob.jdbc.JdbcScheduledJobService;
 import com.godaddy.vps4.security.SecurityModule;
@@ -28,7 +30,6 @@ import com.google.inject.AbstractModule;
 import com.google.inject.Guice;
 import com.google.inject.Inject;
 import com.google.inject.Injector;
-import gdg.hfs.orchestration.Command;
 import gdg.hfs.orchestration.CommandContext;
 
 import javax.sql.DataSource;
@@ -37,7 +38,6 @@ import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.BeforeClass;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
@@ -71,6 +71,7 @@ public class Vps4ProcessAccountCancellationTest {
     @Captor private ArgumentCaptor<VmActionRequest> actionRequestArgumentCaptor;
     @Captor private ArgumentCaptor<Function<CommandContext, Void>> markZombieLambdaCaptor;
     @Captor private ArgumentCaptor<ScheduleZombieVmCleanup.Request> zombieCleanupArgumentCaptor;
+    @Captor private ArgumentCaptor<Vps4RecordScheduledJobForVm.Request> recordJobArgumentCaptor;
 
     @BeforeClass
     public static void newInjector() {
@@ -204,6 +205,21 @@ public class Vps4ProcessAccountCancellationTest {
         ScheduleZombieVmCleanup.Request req = zombieCleanupArgumentCaptor.getValue();
         Assert.assertEquals(vps4VmId, req.vmId);
         Assert.assertEquals(validUntil, req.when);
+    }
+
+    @Test
+    public void recordsJobIdWhenAccountCancellationIsProcessed() {
+        UUID retryJobId = UUID.randomUUID();
+        when(context.execute(eq(ScheduleZombieVmCleanup.class), any(ScheduleZombieVmCleanup.Request.class)))
+                .thenReturn(retryJobId);
+
+        command.execute(context, virtualMachineCredit);
+
+        verify(context, times(1))
+                .execute(eq("RecordScheduledJobId"), eq(Vps4RecordScheduledJobForVm.class), recordJobArgumentCaptor.capture());
+        Vps4RecordScheduledJobForVm.Request req = recordJobArgumentCaptor.getValue();
+        Assert.assertEquals(retryJobId, req.jobId);
+        Assert.assertEquals(ScheduledJob.ScheduledJobType.ZOMBIE, req.jobType);
     }
 
     @Test

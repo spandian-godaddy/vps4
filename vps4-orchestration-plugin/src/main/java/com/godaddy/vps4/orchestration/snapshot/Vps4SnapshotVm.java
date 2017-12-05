@@ -7,6 +7,8 @@ import javax.inject.Inject;
 import com.godaddy.hfs.config.Config;
 import com.godaddy.vps4.orchestration.NoRetryException;
 import com.godaddy.vps4.orchestration.scheduler.ScheduleAutomaticBackupRetry;
+import com.godaddy.vps4.orchestration.vm.Vps4RecordScheduledJobForVm;
+import com.godaddy.vps4.scheduledJob.ScheduledJob;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.json.simple.JSONObject;
 import org.slf4j.Logger;
@@ -111,8 +113,7 @@ public class Vps4SnapshotVm extends ActionCommand<Vps4SnapshotVm.Request, Vps4Sn
             logger.info("Snapshot creation error (waitForAction) for snapshot with id: {}", request.vps4SnapshotId);
             vps4SnapshotService.markSnapshotErrored(request.vps4SnapshotId);
             reverseSnapshotDeprecation(context);
-            rescheduleAutomaticSnapshot(context, request, e);
-            throw new RuntimeException(e);
+            retrySnapshotCreation(context, request, e);
         }
 
         context.execute("MarkSnapshotLive" + request.vps4SnapshotId, ctx -> {
@@ -122,19 +123,32 @@ public class Vps4SnapshotVm extends ActionCommand<Vps4SnapshotVm.Request, Vps4Sn
         return hfsAction;
     }
 
-    private void rescheduleAutomaticSnapshot(CommandContext context, Request request, Exception e) {
+    private void retrySnapshotCreation(CommandContext context, Request request, Exception e) {
         Snapshot failedSnapshot = vps4SnapshotService.getSnapshot(request.vps4SnapshotId);
         if(failedSnapshot.snapshotType.equals(SnapshotType.AUTOMATIC)){
-            // If an automatic snapshot fails, schedule another one in a
-            // configurable number of hours
+            // If an automatic snapshot fails, schedule another one in a configurable number of hours
             ScheduleAutomaticBackupRetry.Request req = new ScheduleAutomaticBackupRetry.Request();
             req.vmId = failedSnapshot.vmId;
             req.shopperId = request.shopperId;
 
+            UUID retryJobId = context.execute(ScheduleAutomaticBackupRetry.class, req);
+            recordJobId(context, failedSnapshot.vmId, retryJobId);
 
-            context.execute(ScheduleAutomaticBackupRetry.class, req);
+            // this is so that orch engine does not auto rerun this command
             throw new NoRetryException("Exception while running an automatic backup for vmId " + failedSnapshot.vmId, e);
         }
+        else {
+            // Orch engine is going to auto rerun a failed command
+            throw new RuntimeException(e);
+        }
+    }
+
+    private void recordJobId(CommandContext context, UUID vmId, UUID jobId) {
+        Vps4RecordScheduledJobForVm.Request req = new Vps4RecordScheduledJobForVm.Request();
+        req.jobId = jobId;
+        req.vmId = vmId;
+        req.jobType = ScheduledJob.ScheduledJobType.BACKUPS;
+        context.execute("RecordScheduledJobId", Vps4RecordScheduledJobForVm.class, req);
     }
 
     private SnapshotAction createSnapshot(CommandContext context, Request request) {
@@ -162,8 +176,11 @@ public class Vps4SnapshotVm extends ActionCommand<Vps4SnapshotVm.Request, Vps4Sn
             logger.info("Snapshot creation error for VPS4 snapshot with id: {}", request.vps4SnapshotId);
             vps4SnapshotService.markSnapshotErrored(request.vps4SnapshotId);
             reverseSnapshotDeprecation(context);
-            rescheduleAutomaticSnapshot(context, request, e);
-            throw new RuntimeException(e);
+            retrySnapshotCreation(context, request, e);
+
+            // this statement is never really hit as retrySnapshotCreation throws an exception always.
+            // this return is here to only satisfy the compiler
+            return null;
         }
     }
 

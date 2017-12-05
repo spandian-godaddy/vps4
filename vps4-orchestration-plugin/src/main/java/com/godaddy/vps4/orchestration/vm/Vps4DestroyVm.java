@@ -105,6 +105,8 @@ public class Vps4DestroyVm extends ActionCommand<Vps4DestroyVm.Request, Vps4Dest
             deleteAutomaticBackupSchedule(vm.backupJobId);
         }
 
+        context.execute("DestroyAllScheduledJobsForVm", Vps4DeleteAllScheduledJobsForVm.class, vm.vmId);
+
         VmAction hfsAction = context.execute("DestroyVmHfs", ctx -> vmService.destroyVm(hfsVmId), VmAction.class);
 
         hfsAction = context.execute(WaitForVmAction.class, hfsAction);

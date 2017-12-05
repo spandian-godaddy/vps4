@@ -4,6 +4,7 @@ import com.godaddy.hfs.config.Config;
 import com.godaddy.vps4.credit.VirtualMachineCredit;
 import com.godaddy.vps4.orchestration.scheduler.ScheduleZombieVmCleanup;
 import com.godaddy.vps4.orchestration.vm.VmActionRequest;
+import com.godaddy.vps4.orchestration.vm.Vps4RecordScheduledJobForVm;
 import com.godaddy.vps4.orchestration.vm.Vps4StopVm;
 import com.godaddy.vps4.scheduledJob.ScheduledJobService;
 import com.godaddy.vps4.scheduledJob.ScheduledJob.ScheduledJobType;
@@ -112,9 +113,10 @@ public class Vps4ProcessAccountCancellation implements Command<VirtualMachineCre
     }
 
     private void recordJobId(UUID vmId, UUID jobId) {
-        context.execute("RecordScheduledJobId", ctx -> {
-            scheduledJobService.insertScheduledJob(jobId, vmId, ScheduledJobType.ZOMBIE);
-            return null;
-        }, void.class);
+        Vps4RecordScheduledJobForVm.Request req = new Vps4RecordScheduledJobForVm.Request();
+        req.jobId = jobId;
+        req.vmId = vmId;
+        req.jobType = ScheduledJobType.ZOMBIE;
+        context.execute("RecordScheduledJobId", Vps4RecordScheduledJobForVm.class, req);
     }
 }
