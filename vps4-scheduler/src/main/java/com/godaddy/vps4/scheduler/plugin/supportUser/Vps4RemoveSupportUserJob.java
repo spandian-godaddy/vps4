@@ -15,7 +15,7 @@ import com.godaddy.vps4.web.vm.VmAction;
 import com.google.inject.Inject;
 
 @JobMetadata(
-    product = "vps4",
+        product = "vps4",
         jobGroup = "removeSupportUser",
         jobRequestType = Vps4RemoveSupportUserJobRequest.class
 )
