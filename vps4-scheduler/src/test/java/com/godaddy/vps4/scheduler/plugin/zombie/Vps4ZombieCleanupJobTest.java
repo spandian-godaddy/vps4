@@ -71,9 +71,7 @@ public class Vps4ZombieCleanupJobTest {
 
         try {
             vps4ZombieCleanupJob.execute(context);
-
             verify(mockVmService, times(1)).destroyVm(eq(vps4ZombieCleanupJob.request.vmId));
-
         }
         catch (JobExecutionException e) {
             fail("This shouldn't happen!!");

@@ -11,14 +11,15 @@ import static org.mockito.Mockito.when;
 
 import java.util.UUID;
 
-import com.godaddy.vps4.vm.VmUserType;
 import org.junit.Before;
 import org.junit.Test;
 
 import com.godaddy.vps4.orchestration.hfs.sysadmin.AddUser;
 import com.godaddy.vps4.orchestration.hfs.sysadmin.ToggleAdmin;
+import com.godaddy.vps4.orchestration.scheduler.ScheduleSupportUserRemoval;
 import com.godaddy.vps4.vm.ActionService;
 import com.godaddy.vps4.vm.VmUserService;
+import com.godaddy.vps4.vm.VmUserType;
 
 import gdg.hfs.orchestration.CommandContext;
 
@@ -42,6 +43,7 @@ public class Vps4AddSupportUserTest {
     public void testVps4AddSupportUser() {
         doReturn(null).when(context).execute(eq(AddUser.class), anyObject());
         doReturn(null).when(context).execute(eq(ToggleAdmin.class), anyObject());
+        doReturn(null).when(context).execute(eq(ScheduleSupportUserRemoval.class), anyObject());
 
         Vps4AddSupportUser.Request req = new Vps4AddSupportUser.Request();
         req.hfsVmId = 123;
@@ -55,6 +57,7 @@ public class Vps4AddSupportUserTest {
 
         verify(context, times(1)).execute(eq(AddUser.class), anyObject());
         verify(context, times(1)).execute(eq(ToggleAdmin.class), anyObject());
+        verify(context, times(1)).execute(eq(ScheduleSupportUserRemoval.class), anyObject());
         verify(vmUserService, times(1)).createUser(req.username, req.vmId, true, VmUserType.SUPPORT);
     }
 }

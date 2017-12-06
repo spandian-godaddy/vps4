@@ -6,6 +6,7 @@ import com.godaddy.vps4.orchestration.ActionCommand;
 import com.godaddy.vps4.orchestration.ActionRequest;
 import com.godaddy.vps4.orchestration.hfs.sysadmin.AddUser;
 import com.godaddy.vps4.orchestration.hfs.sysadmin.ToggleAdmin;
+import com.godaddy.vps4.orchestration.scheduler.ScheduleSupportUserRemoval;
 import com.godaddy.vps4.vm.ActionService;
 import com.godaddy.vps4.vm.VmUserService;
 import com.godaddy.vps4.vm.VmUserType;
@@ -63,7 +64,10 @@ public class Vps4AddSupportUser extends ActionCommand<Vps4AddSupportUser.Request
         context.execute(ToggleAdmin.class, toggleAdminRequest);
 
         vmUserService.createUser(req.username, req.vmId, true, VmUserType.SUPPORT);
-        // TODO: Add scheduled task to remove this user when scheduler is available.
+
+        ScheduleSupportUserRemoval.Request removeSupportUserRequest = new ScheduleSupportUserRemoval.Request();
+        removeSupportUserRequest.vmId = req.vmId;
+        context.execute(ScheduleSupportUserRemoval.class, removeSupportUserRequest);
 
         return null;
     }

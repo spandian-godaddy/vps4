@@ -23,7 +23,7 @@ public class Vps4RemoveSupportUserJob extends SchedulerJob {
     private static final Logger logger = LoggerFactory.getLogger(Vps4RemoveSupportUserJob.class);
 
     @Inject
-    VmSupportUserService vmService;
+    VmSupportUserService vmSupportUserService;
 
     Vps4RemoveSupportUserJobRequest request;
 
@@ -40,7 +40,7 @@ public class Vps4RemoveSupportUserJob extends SchedulerJob {
 
     private void removeSupportUser(UUID vmId) {
         logger.debug("Removing support user from vm {}.", request.vmId);
-        VmAction action = vmService.removeSupportUser(vmId);
+        VmAction action = vmSupportUserService.removeSupportUser(vmId);
         logger.info("Remove support user from vm {} action submitted. Action: {}", request.vmId, action.id);
         
     }
