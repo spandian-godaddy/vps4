@@ -19,6 +19,7 @@ import org.mockito.Captor;
 import org.mockito.MockitoAnnotations;
 
 import com.godaddy.vps4.config.ConfigModule;
+import com.godaddy.vps4.orchestration.vm.Vps4RecordScheduledJobForVm;
 import com.godaddy.vps4.scheduler.api.core.JobType;
 import com.godaddy.vps4.scheduler.api.core.SchedulerJobDetail;
 import com.godaddy.vps4.scheduler.api.plugin.Vps4RemoveSupportUserJobRequest;
@@ -44,6 +45,7 @@ public class ScheduleSupportUserRemovalTest {
 
     @Captor private ArgumentCaptor<Function<CommandContext, SchedulerJobDetail>> createJobCaptor;
     @Captor private ArgumentCaptor<Vps4RemoveSupportUserJobRequest> schedulerJobCreationDataCaptor;
+    @Captor private ArgumentCaptor<Vps4RecordScheduledJobForVm.Request> recordJobArgumentCaptor;
 
     @BeforeClass
     public static void newInjector() {
@@ -104,6 +106,19 @@ public class ScheduleSupportUserRemovalTest {
         when(context.execute(eq("Create schedule"), any(Function.class), eq(SchedulerJobDetail.class)))
                 .thenThrow(new RuntimeException("Error"));
         command.execute(context, request);
+    }
+
+    @Test
+    public void callsRecordJobId() {
+        CommandContext mockContext = mock(CommandContext.class);
+        when(mockContext.getId()).thenReturn(UUID.randomUUID());
+
+        jobDetail = new SchedulerJobDetail(jobId, null, null);
+        when(context.execute(eq("Create schedule"), any(Function.class), eq(SchedulerJobDetail.class))).thenReturn(jobDetail);
+
+        command.execute(context, request);
+
+        verify(context, times(1)).execute(eq("RecordScheduledJobId"), eq(Vps4RecordScheduledJobForVm.class), recordJobArgumentCaptor.capture());
     }
 
 }

@@ -1,27 +1,29 @@
 package com.godaddy.vps4.orchestration.account;
 
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
+import java.util.UUID;
+
+import javax.inject.Inject;
+
+import org.json.simple.JSONObject;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.godaddy.hfs.config.Config;
 import com.godaddy.vps4.credit.VirtualMachineCredit;
 import com.godaddy.vps4.orchestration.scheduler.ScheduleZombieVmCleanup;
 import com.godaddy.vps4.orchestration.vm.VmActionRequest;
 import com.godaddy.vps4.orchestration.vm.Vps4RecordScheduledJobForVm;
 import com.godaddy.vps4.orchestration.vm.Vps4StopVm;
-import com.godaddy.vps4.scheduledJob.ScheduledJobService;
 import com.godaddy.vps4.scheduledJob.ScheduledJob.ScheduledJobType;
 import com.godaddy.vps4.vm.ActionService;
 import com.godaddy.vps4.vm.ActionType;
 import com.godaddy.vps4.vm.VirtualMachineService;
+
 import gdg.hfs.orchestration.Command;
 import gdg.hfs.orchestration.CommandContext;
 import gdg.hfs.orchestration.CommandMetadata;
-import org.json.simple.JSONObject;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import javax.inject.Inject;
-import java.time.Instant;
-import java.time.temporal.ChronoUnit;
-import java.util.UUID;
 
 
 @CommandMetadata(
@@ -35,17 +37,14 @@ public class Vps4ProcessAccountCancellation implements Command<VirtualMachineCre
 
     final ActionService vmActionService;
     private final VirtualMachineService virtualMachineService;
-    private final ScheduledJobService scheduledJobService;
     private final Config config;
 
     @Inject
     public Vps4ProcessAccountCancellation(ActionService vmActionService,
                                           VirtualMachineService virtualMachineService,
-                                          ScheduledJobService scheduledJobService,
                                           Config config) {
         this.vmActionService = vmActionService;
         this.virtualMachineService = virtualMachineService;
-        this.scheduledJobService = scheduledJobService;
         this.config = config;
     }
 
