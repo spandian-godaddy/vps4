@@ -8,6 +8,7 @@ import org.slf4j.LoggerFactory;
 import com.godaddy.vps4.orchestration.ActionCommand;
 import com.godaddy.vps4.orchestration.ActionRequest;
 import com.godaddy.vps4.orchestration.NoRetryException;
+import com.godaddy.vps4.orchestration.hfs.ActionNotCompletedException;
 import com.godaddy.vps4.orchestration.hfs.sysadmin.RemoveUser;
 import com.godaddy.vps4.orchestration.scheduler.ScheduleSupportUserRemoval;
 import com.godaddy.vps4.vm.ActionService;
@@ -18,7 +19,7 @@ import gdg.hfs.orchestration.CommandContext;
 import gdg.hfs.orchestration.CommandMetadata;
 
 @CommandMetadata(
-        name = "Vps4RemoveUser",
+        name = "Vps4RemoveSupportUser",
         requestType = Vps4RemoveSupportUser.Request.class,
         responseType = Void.class
 )
@@ -61,11 +62,13 @@ public class Vps4RemoveSupportUser extends ActionCommand<Vps4RemoveSupportUser.R
         try {
             context.execute(RemoveUser.class, removeUserRequest);
             vmUserService.deleteUser(request.username, request.vmId);
-        } catch (NoRetryException e) {
-            logger.info("Remove support user from VM {} failed, scheduling retry.", e, request.vmId);
+        } catch (ActionNotCompletedException e) {
+            String errorMessage = String.format("Remove support user from VM %s failed, scheduling retry.", request.vmId);
+            logger.warn(errorMessage, e);
             ScheduleSupportUserRemoval.Request removeSupportUserRequest = new ScheduleSupportUserRemoval.Request();
             removeSupportUserRequest.vmId = request.vmId;
             context.execute(ScheduleSupportUserRemoval.class, removeSupportUserRequest);
+            throw new NoRetryException(errorMessage, e);
         }
 
 
