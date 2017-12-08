@@ -174,7 +174,7 @@ public class VmActionResourceTest {
         Action action1 = createTestVmAction(vm.vmId, ActionType.CREATE_VM);
         Action action2 = createTestVmAction(vm.vmId, ActionType.STOP_VM);
 
-        List<VmAction> vmActions = getVmActionResource().getActions(vm.vmId, 10, 0, null, uri).results;
+        List<VmAction> vmActions = getVmActionResource().getActions(vm.vmId, 10, 0, null, null, uri).results;
         Assert.assertEquals(2, vmActions.size());
 
         List<UUID> commandIds = vmActions.stream().map(a -> a.commandId).collect(Collectors.toList());
@@ -188,14 +188,14 @@ public class VmActionResourceTest {
         createTestVmAction(vm.vmId, ActionType.CREATE_VM);
 
         user = GDUserMock.createShopper("shopperX");
-        getVmActionResource().getActions(vm.vmId, 10, 0, null, uri);
+        getVmActionResource().getActions(vm.vmId, 10, 0, null, null, uri);
     }
 
     @Test
     public void testNoActionsListActions() {
         VirtualMachine vm = createTestVm(user.getShopperId());
 
-        List<VmAction> vmActions = getVmActionResource().getActions(vm.vmId, 10, 0, null, uri).results;
+        List<VmAction> vmActions = getVmActionResource().getActions(vm.vmId, 10, 0, null, null, uri).results;
         Assert.assertTrue(vmActions.isEmpty());
     }
 
@@ -205,7 +205,7 @@ public class VmActionResourceTest {
         Action action = createTestVmAction(vm.vmId, ActionType.CREATE_VM);
 
         user = GDUserMock.createAdmin();
-        List<VmAction> vmActions = getVmActionResource().getActions(vm.vmId, 10, 0, null, uri).results;
+        List<VmAction> vmActions = getVmActionResource().getActions(vm.vmId, 10, 0, null, null, uri).results;
         Assert.assertEquals(vmActions.get(0).commandId, action.commandId);
     }
 
@@ -215,12 +215,24 @@ public class VmActionResourceTest {
         createTestVmAction(vm.vmId, ActionType.CREATE_VM);
         List<String> statusList = Arrays.asList("NEW");
 
-        List<VmAction> vmActions = getVmActionResource().getActions(vm.vmId, 10, 0, statusList, uri).results;
+        List<VmAction> vmActions = getVmActionResource().getActions(vm.vmId, 10, 0, statusList, null, uri).results;
         Assert.assertEquals(1, vmActions.size());
 
         statusList = Arrays.asList("COMPLETE");
-        vmActions = getVmActionResource().getActions(vm.vmId, 10, 0, statusList, uri).results;
+        vmActions = getVmActionResource().getActions(vm.vmId, 10, 0, statusList, null, uri).results;
         Assert.assertTrue(vmActions.isEmpty());
+    }
+
+    @Test
+    public void testGetActionListByActionType() {
+        VirtualMachine vm = createTestVm(user.getShopperId());
+        createTestVmAction(vm.vmId, ActionType.CREATE_VM);
+        createTestVmAction(vm.vmId, ActionType.START_VM);
+        createTestVmAction(vm.vmId, ActionType.STOP_VM);
+
+        List<VmAction> vmActions = getVmActionResource().getActions(vm.vmId, 10, 0, null, ActionType.CREATE_VM, uri).results;
+        Assert.assertEquals(1, vmActions.size());
+        Assert.assertEquals(ActionType.CREATE_VM, vmActions.get(0).type);
     }
 
     @Test

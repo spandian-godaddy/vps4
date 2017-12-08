@@ -18,6 +18,8 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.UriInfo;
 
 import com.godaddy.vps4.vm.Action;
+import com.godaddy.vps4.vm.ActionType;
+import io.swagger.annotations.ApiParam;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -70,17 +72,25 @@ public class VmActionResource {
 
     @GET
     @Path("{vmId}/actions")
-    public PaginatedResult<VmAction> getActions(@PathParam("vmId") UUID vmId,
-                                                @DefaultValue("10") @QueryParam("limit") long limit,
-                                                @DefaultValue("0") @QueryParam("offset") long offset,
-                                                @QueryParam("status") List<String> status,
-                                                @Context UriInfo uri) {
+    public PaginatedResult<VmAction> getActions(
+        @PathParam("vmId") UUID vmId,
+        @DefaultValue("10") @QueryParam("limit") long limit,
+        @DefaultValue("0") @QueryParam("offset") long offset,
+        @ApiParam(value = "A list of status to filter the actions by. This parameter is incompatible with 'actionType'", required = false) @QueryParam("status") List<String> status,
+        @ApiParam(value = "A type of action to filter the actions by. This parameter is incompatible with 'status'", required = false) @QueryParam("actionType") ActionType actionType,
+        @Context UriInfo uri) {
 
         if (user.isShopper())
             verifyUserPrivilege(vmId);
 
         ResultSubset<Action> actions;
-        actions = actionService.getActions(vmId, limit, offset, status);
+        // For now we will support listing by either actionType or actionStatus but not both
+        if (actionType != null) {
+            actions = actionService.getActions(vmId, limit, offset, actionType);
+        }
+        else {
+            actions = actionService.getActions(vmId, limit, offset, status);
+        }
 
         long totalRows = 0;
         List<VmAction> vmActionList = new ArrayList<>();

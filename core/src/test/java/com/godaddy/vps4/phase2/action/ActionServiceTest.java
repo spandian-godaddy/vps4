@@ -68,7 +68,20 @@ public class ActionServiceTest {
         actions = actionService.getActions(vm.vmId, 100, 0, null, null, null);
         assertEquals(1, actions.results.size());
     }
-    
+
+    @Test
+    public void testGetActionsByTypeForVmId(){
+        ResultSubset<Action> actions = actionService.getActions(vm.vmId, 100, 0, null, null, null);
+        assertEquals(null, actions);
+
+        actionService.createAction(vm.vmId, ActionType.CREATE_VM, "{}", vps4User.getId());
+        actionService.createAction(vm.vmId, ActionType.STOP_VM, "{}", vps4User.getId());
+        actionService.createAction(vm.vmId, ActionType.START_VM, "{}", vps4User.getId());
+
+        actions = actionService.getActions(vm.vmId, 100, 0, ActionType.CREATE_VM);
+        assertEquals(1, actions.results.size());
+    }
+
     @Test
     public void testGetActionsInDateRange(){
         SqlTestData.createActionWithDate(vm.vmId, ActionType.SET_HOSTNAME, Timestamp.from(Instant.now().minus(Duration.ofHours(12))), vps4User.getId(), dataSource);
