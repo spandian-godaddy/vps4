@@ -56,7 +56,7 @@ public class ValidatorRegistry {
 
     static Validator getSnapshotNameValidator() {
         return (new Validator(Arrays.asList(
-                new Rule("Only Alpha-Numeric Values and _ and - characters", "[a-z0-9_-]*"),
+                new Rule("Only Alpha-Numeric Values and _ and - characters", "[a-zA-Z0-9_-]*"),
                 new Rule("Between 5 and 16 characters", ".{5,16}")
         )));
     }
