@@ -9,6 +9,11 @@ import javax.inject.Inject;
 import javax.sql.DataSource;
 import javax.ws.rs.NotFoundException;
 
+import org.junit.After;
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.Test;
+
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.godaddy.vps4.jdbc.DatabaseModule;
@@ -37,10 +42,6 @@ import com.google.inject.AbstractModule;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
 import com.google.inject.Provides;
-import org.junit.After;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
 
 public class SnapshotResourceTest {
     @Inject Vps4UserService userService;
@@ -288,7 +289,6 @@ public class SnapshotResourceTest {
                 "snap",         // too short
                 "f*ing-snap",   // no special chars
                 "my snap",      // no spaces
-                "mySnap",       // no caps
                 "my_long_snap-name"  // too long
                 );
         for (String name: invalidNames) {
