@@ -14,7 +14,7 @@ import java.util.UUID;
 import org.junit.Before;
 import org.junit.Test;
 
-import com.godaddy.vps4.orchestration.NoRetryException;
+import com.godaddy.vps4.orchestration.hfs.ActionNotCompletedException;
 import com.godaddy.vps4.orchestration.hfs.sysadmin.AddUser;
 import com.godaddy.vps4.orchestration.hfs.sysadmin.RemoveUser;
 import com.godaddy.vps4.orchestration.scheduler.ScheduleSupportUserRemoval;
@@ -59,7 +59,7 @@ public class Vps4RemoveSupportUserTest {
     @Test
     public void testVps4RemoveSupportUserRescheduleOnError() {
         doReturn(null).when(context).execute(eq(AddUser.class), anyObject());
-        when(context.execute(eq(RemoveUser.class), anyObject())).thenThrow(new NoRetryException("Test exception", null));
+        when(context.execute(eq(RemoveUser.class), anyObject())).thenThrow(new ActionNotCompletedException("Test exception"));
 
         Vps4RemoveSupportUser.Request req = new Vps4RemoveSupportUser.Request();
         req.hfsVmId = 123;
