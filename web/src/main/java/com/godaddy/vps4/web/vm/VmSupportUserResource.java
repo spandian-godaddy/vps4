@@ -20,7 +20,7 @@ import org.slf4j.LoggerFactory;
 
 import com.godaddy.vps4.orchestration.hfs.sysadmin.SetPassword;
 import com.godaddy.vps4.orchestration.sysadmin.Vps4AddSupportUser;
-import com.godaddy.vps4.orchestration.sysadmin.Vps4RemoveSupportUser;
+import com.godaddy.vps4.orchestration.sysadmin.Vps4RemoveUser;
 import com.godaddy.vps4.orchestration.sysadmin.Vps4SetPassword;
 import com.godaddy.vps4.security.Vps4User;
 import com.godaddy.vps4.security.Vps4UserService;
@@ -171,7 +171,7 @@ public class VmSupportUserResource {
 
             long actionId = actionService.createAction(vmId, ActionType.REMOVE_SUPPORT_USER, removeUserJson.toJSONString(), supportUser.getId());
 
-            Vps4RemoveSupportUser.Request request = new Vps4RemoveSupportUser.Request();
+            Vps4RemoveUser.Request request = new Vps4RemoveUser.Request();
             request.hfsVmId = vm.hfsVmId;
             request.username = user.username;
             request.actionId = actionId;

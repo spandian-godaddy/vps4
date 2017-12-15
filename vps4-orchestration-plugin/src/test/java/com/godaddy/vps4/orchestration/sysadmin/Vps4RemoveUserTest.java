@@ -14,19 +14,17 @@ import java.util.UUID;
 import org.junit.Before;
 import org.junit.Test;
 
-import com.godaddy.vps4.orchestration.NoRetryException;
 import com.godaddy.vps4.orchestration.hfs.sysadmin.AddUser;
 import com.godaddy.vps4.orchestration.hfs.sysadmin.RemoveUser;
-import com.godaddy.vps4.orchestration.scheduler.ScheduleSupportUserRemoval;
 import com.godaddy.vps4.vm.ActionService;
 import com.godaddy.vps4.vm.VmUserService;
 
 import gdg.hfs.orchestration.CommandContext;
 
-public class Vps4RemoveSupportUserTest {
+public class Vps4RemoveUserTest {
 
     ActionService actionService;
-    Vps4RemoveSupportUser command;
+    Vps4RemoveUser command;
     CommandContext context;
     VmUserService vmUserService;
 
@@ -34,16 +32,16 @@ public class Vps4RemoveSupportUserTest {
     public void setup() {
         actionService = mock(ActionService.class);
         vmUserService = mock(VmUserService.class);
-        command = new Vps4RemoveSupportUser(actionService, vmUserService);
+        command = new Vps4RemoveUser(actionService, vmUserService);
         context = mock(CommandContext.class);
         when(context.getId()).thenReturn(UUID.randomUUID());
     }
 
     @Test
-    public void testVps4RemoveSupportUser() {
+    public void testVps4RemoveUser() {
         doReturn(null).when(context).execute(eq(AddUser.class), anyObject());
 
-        Vps4RemoveSupportUser.Request req = new Vps4RemoveSupportUser.Request();
+        Vps4RemoveUser.Request req = new Vps4RemoveUser.Request();
         req.hfsVmId = 123;
         req.username = "testuser";
         req.vmId = UUID.randomUUID();
@@ -54,20 +52,5 @@ public class Vps4RemoveSupportUserTest {
 
         verify(context, times(1)).execute(eq(RemoveUser.class), anyObject());
         verify(vmUserService, times(1)).deleteUser(req.username, req.vmId);
-    }
-
-    @Test
-    public void testVps4RemoveSupportUserRescheduleOnError() {
-        doReturn(null).when(context).execute(eq(AddUser.class), anyObject());
-        when(context.execute(eq(RemoveUser.class), anyObject())).thenThrow(new NoRetryException("Test exception", null));
-
-        Vps4RemoveSupportUser.Request req = new Vps4RemoveSupportUser.Request();
-        req.hfsVmId = 123;
-        req.username = "testuser";
-        req.vmId = UUID.randomUUID();
-
-        command.execute(context, req);
-
-        verify(context, times(1)).execute(eq(ScheduleSupportUserRemoval.class), anyObject());
     }
 }
