@@ -7,9 +7,10 @@ import java.util.stream.Collectors;
 import javax.inject.Inject;
 import javax.servlet.http.HttpServletRequest;
 
-import com.godaddy.hfs.config.Config;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import com.godaddy.hfs.config.Config;
 
 public class XCertSubjectHeaderAuthenticator implements RequestAuthenticator<GDUser> {
 
@@ -64,7 +65,7 @@ public class XCertSubjectHeaderAuthenticator implements RequestAuthenticator<GDU
 
         GDUser gdUser = new GDUser();
         gdUser.shopperId = shopperId;
-        gdUser.isEmployee = false;
+        gdUser.isEmployee = true;
         gdUser.isAdmin = false;
         return gdUser;
     }

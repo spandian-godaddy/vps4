@@ -20,9 +20,13 @@ import com.godaddy.vps4.vm.Action;
 import com.godaddy.vps4.vm.ActionService;
 import com.godaddy.vps4.vm.ActionStatus;
 import com.godaddy.vps4.vm.ActionType;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 
 public class JdbcActionService implements ActionService {
+
+    private static final Logger logger = LoggerFactory.getLogger(JdbcActionService.class);
 
     private final DataSource dataSource;
 
@@ -83,18 +87,29 @@ public class JdbcActionService implements ActionService {
 
     @Override
     public ResultSubset<Action> getActions(UUID vmId, long limit, long offset){
-        return getActions(vmId, limit, offset, null, null, null);
+        return getActionsHelper(vmId, limit, offset, null, null, null, null);
+    }
+
+    @Override
+    public ResultSubset<Action> getActions(UUID vmId, long limit, long offset, ActionType actionType){
+        return getActionsHelper(vmId, limit, offset, null, actionType, null, null);
     }
 
     @Override
     public ResultSubset<Action> getActions(UUID vmId, long limit, long offset, List<String> statusList){
-        return getActions(vmId, limit, offset, statusList, null, null);
+        return getActionsHelper(vmId, limit, offset, statusList, null, null, null);
     }
 
     @Override
-    public ResultSubset<Action> getActions(UUID vmId, long limit, long offset, List<String> statusList, Date beginDate, Date endDate){
+    public ResultSubset<Action> getActions(UUID vmId, long limit, long offset, List<String> statusList, Date beginDate, Date endDate) {
+        return getActionsHelper(vmId, limit, offset, statusList, null, beginDate, endDate);
+    }
+
+    private ResultSubset<Action> getActionsHelper(UUID vmId, long limit, long offset, List<String> statusList,
+                                                  ActionType actionType, Date beginDate, Date endDate) {
         Map<String, Object> filterParams = new HashMap<String, Object>();
         if (vmId != null){
+            logger.info("In getActionHelper, vmId: [{}]", vmId);
             filterParams.put("vm_id", vmId);
         }
 
@@ -113,28 +128,43 @@ public class JdbcActionService implements ActionService {
 
         buildStatusList(statusList, filterValues, actionsQuery);
 
-        buidDateQuery(beginDate, endDate, filterValues, actionsQuery);
+        buildActionTypeQuery(actionType, filterValues, actionsQuery);
+
+        buildDateQuery(beginDate, endDate, filterValues, actionsQuery);
 
         actionsQuery.append(" ORDER BY created DESC ");
         if (limit >= 0) {
+            logger.info("In getActionHelper, limit: [{}]", limit);
             actionsQuery.append("LIMIT ? ");
             filterValues.add(limit);
         }
         actionsQuery.append("OFFSET ?;");
         filterValues.add(offset);
 
+        logger.info("In getActionHelper, Query: [{}]", actionsQuery.toString());
         return Sql.with(dataSource).exec(actionsQuery.toString(),
                 Sql.nextOrNull(this::mapActionWithTotal),
                 filterValues.toArray());
     }
 
-    private void buidDateQuery(Date beginDate, Date endDate,
-            ArrayList<Object> filterValues, StringBuilder actionsQuery) {
+    private void buildActionTypeQuery(ActionType actionType, ArrayList<Object> filterValues,
+                                      StringBuilder actionsQuery) {
+        if (actionType != null){
+            logger.info("In getActionHelper, action type: [{}]", actionType.name());
+            actionsQuery.append(" and action_type.type = ?");
+            filterValues.add(actionType.name());
+        }
+    }
+
+    private void buildDateQuery(Date beginDate, Date endDate,
+                                ArrayList<Object> filterValues, StringBuilder actionsQuery) {
         if (beginDate != null){
+            logger.info("In getActionHelper, begin date: [{}]", beginDate);
             actionsQuery.append(" and created >= ?");
             filterValues.add(new Timestamp(beginDate.getTime()));
         }
         if (endDate != null){
+            logger.info("In getActionHelper, end date: [{}]", endDate);
             actionsQuery.append(" and created <= ?");
             filterValues.add(new Timestamp(endDate.getTime()));
         }
@@ -144,6 +174,7 @@ public class JdbcActionService implements ActionService {
             ArrayList<Object> filterValues, StringBuilder actionsQuery) {
         if (statusList != null && !statusList.isEmpty())
         {
+            logger.info("In getActionHelper, status list: [{}]", statusList);
             actionsQuery.append(" and (");
             boolean first = true;
             for(String status : statusList){

@@ -20,6 +20,8 @@ public interface ActionService {
 
     ResultSubset<Action> getActions(UUID resourceId, long limit, long offset);
 
+    ResultSubset<Action> getActions(UUID resourceId, long limit, long offset, ActionType actionType);
+
     ResultSubset<Action> getActions(UUID resourceId, long limit, long offset, List<String> statusList);
 
     ResultSubset<Action> getActions(UUID resourceId, long limit, long offset, List<String> statusList, Date beginDate, Date endDate);
