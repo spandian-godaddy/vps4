@@ -4,7 +4,7 @@ import com.godaddy.vps4.orchestration.mailrelay.Vps4SetMailRelayQuota;
 import com.godaddy.vps4.orchestration.snapshot.Vps4DestroySnapshot;
 import com.godaddy.vps4.orchestration.snapshot.Vps4SnapshotVm;
 import com.godaddy.vps4.orchestration.sysadmin.Vps4AddSupportUser;
-import com.godaddy.vps4.orchestration.sysadmin.Vps4RemoveUser;
+import com.godaddy.vps4.orchestration.sysadmin.Vps4RemoveSupportUser;
 import com.godaddy.vps4.orchestration.sysadmin.Vps4SetHostname;
 import com.godaddy.vps4.orchestration.sysadmin.Vps4SetPassword;
 import com.godaddy.vps4.orchestration.sysadmin.Vps4ToggleAdmin;
@@ -41,7 +41,7 @@ public class Vps4CommandModule extends AbstractModule {
         bind(Vps4DestroyIpAddressAction.class);
         bind(Vps4AddIpAddress.class);
         bind(Vps4AddSupportUser.class);
-        bind(Vps4RemoveUser.class);
+        bind(Vps4RemoveSupportUser.class);
         bind(Vps4SnapshotVm.class);
         bind(Vps4DestroySnapshot.class);
         bind(Vps4SetMailRelayQuota.class);
