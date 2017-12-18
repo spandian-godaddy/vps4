@@ -8,7 +8,6 @@ import com.google.inject.Inject;
 public class Monitoring {
         
     private final long accountId;
-    private final long fullyManagedAccountId;
     private final static int FULLY_MANAGED_LEVEL = 2;
     private final static int MONITORING_LEVEL = 1;
     
@@ -16,7 +15,6 @@ public class Monitoring {
     public Monitoring(Config config)
     {
         accountId = Long.parseLong(config.get("nodeping.accountid"));
-        fullyManagedAccountId = Long.parseLong(config.get("nodeping.fullyManaged.accountid"));
     }
     
     public Long getAccountId(VirtualMachine vm) {
@@ -24,7 +22,7 @@ public class Monitoring {
     }
     
     public Long getAccountId(int managedLevel) {
-        return managedLevel == FULLY_MANAGED_LEVEL ? fullyManagedAccountId : accountId; 
+        return accountId; 
     }
     
     public boolean hasMonitoring(VirtualMachineCredit credit) {
