@@ -107,13 +107,13 @@ public class JdbcActionService implements ActionService {
 
     private ResultSubset<Action> getActionsHelper(UUID vmId, long limit, long offset, List<String> statusList,
                                                   ActionType actionType, Date beginDate, Date endDate) {
-        Map<String, Object> filterParams = new HashMap<String, Object>();
+        Map<String, Object> filterParams = new HashMap<>();
         if (vmId != null){
             logger.info("In getActionHelper, vmId: [{}]", vmId);
             filterParams.put("vm_id", vmId);
         }
 
-        ArrayList<Object> filterValues = new ArrayList<Object>();
+        ArrayList<Object> filterValues = new ArrayList<>();
         StringBuilder actionsQuery = new StringBuilder();
         actionsQuery.append("SELECT *, count(*) over() as total_rows FROM vm_action "
                 + " JOIN action_status on vm_action.status_id = action_status.status_id"
