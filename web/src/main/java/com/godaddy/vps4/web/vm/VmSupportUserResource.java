@@ -177,7 +177,7 @@ public class VmSupportUserResource {
             request.actionId = actionId;
             request.vmId = vmId;
 
-            CommandState command = Commands.execute(commandService, actionService, "Vps4RemoveUser", request);
+            CommandState command = Commands.execute(commandService, actionService, "Vps4RemoveSupportUser", request);
 
             Action action = actionService.getAction(actionId);
 
