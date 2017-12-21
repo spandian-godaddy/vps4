@@ -32,9 +32,9 @@ public class XCertSubjectHeaderAuthenticator implements RequestAuthenticator<GDU
         if (xCertHeader != null) {
             String cnField = getCNFieldFromHeader(xCertHeader);
 
-            if(validateCNFieldFromScheduler(cnField)) {
-                // nginx validated a cert auth from the scheduler and has sent us this header.
-                // authentication succeeds if the use can be created correctly
+            if(validateCNFieldFromScheduler(cnField) || validateCNFieldFromDeveloper(cnField)) {
+                // nginx validated a cert auth from the scheduler or developer and has sent us this header.
+                // authentication succeeds if the user can be created correctly
                 gdUser = createGDUser(request);
                 if (gdUser.isShopper()) {
                     logger.info("GD User authenticated: {}, URI: {}", gdUser.toString(), request.getRequestURI());
@@ -58,6 +58,10 @@ public class XCertSubjectHeaderAuthenticator implements RequestAuthenticator<GDU
 
     private boolean validateCNFieldFromScheduler(String cnField){
         return cnField != null && cnField.equals(config.get("vps4.scheduler.certCN"));
+    }
+
+    private boolean validateCNFieldFromDeveloper(String cnField){
+        return cnField != null && cnField.equals(config.get("vps4.developer.certCN"));
     }
 
     private GDUser createGDUser(HttpServletRequest request) {
