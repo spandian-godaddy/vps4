@@ -71,10 +71,7 @@ public class Vps4ReviveZombieVm implements Command<Vps4ReviveZombieVm.Request, V
 
 
     private void removeScheduledCleanupJobs(CommandContext context, Request request) {
-        @SuppressWarnings("unchecked")
-        List<ScheduledJob> jobs = context.execute("getZombieCleanupJob", ctx -> {
-            return scheduledJobService.getScheduledJobsByType(request.vmId, ScheduledJobType.ZOMBIE);
-        }, List.class);
+        List<ScheduledJob> jobs = scheduledJobService.getScheduledJobsByType(request.vmId, ScheduledJobType.ZOMBIE);
         
         for(ScheduledJob job : jobs) {
             DeleteScheduledJob.Request req = new DeleteScheduledJob.Request();

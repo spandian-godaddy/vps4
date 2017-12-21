@@ -100,7 +100,6 @@ public class Vps4RestoreVmTest {
 
     @Captor private ArgumentCaptor<Function<CommandContext, Long>> getHfsVmIdLambdaCaptor;
     @Captor private ArgumentCaptor<Function<CommandContext, String>> getVmOSDistroLambdaCaptor;
-    @Captor private ArgumentCaptor<Function<CommandContext, List<IpAddress>>> getIpAddressesLambdaCaptor;
     @Captor private ArgumentCaptor<Function<CommandContext, Vm>> getHfsVmLambdaCaptor;
     @Captor private ArgumentCaptor<Function<CommandContext, Void>> updateHfsVmIdLambdaCaptor;
     @Captor private ArgumentCaptor<BindIp.BindIpRequest> bindIpRequestArgumentCaptor;
@@ -164,7 +163,6 @@ public class Vps4RestoreVmTest {
 
         when(mockContext.execute(eq("GetHfsVmId"), any(Function.class), eq(long.class))).thenReturn(SqlTestData.hfsVmId);
         when(mockContext.execute(eq("GetVirtualMachine"), any(Function.class), eq(VirtualMachine.class))).thenReturn(vps4Vm);
-        when(mockContext.execute(eq("GetPublicIpAdresses"), any(Function.class), eq(List.class))).thenReturn(ipAddresses);
         when(mockContext.execute(startsWith("UnbindIP-"), eq(UnbindIp.class), any())).thenReturn(null);
         when(mockContext.execute(eq("GetNocfoxImageId"), any(Function.class), eq(String.class))).thenReturn(SqlTestData.nfImageId);
         when(mockContext.execute(eq("GetVmOSDistro"), any(Function.class), eq(String.class))).thenReturn(SqlTestData.IMAGE_NAME);
@@ -211,22 +209,6 @@ public class Vps4RestoreVmTest {
         Function<CommandContext, Long> lambda = getHfsVmIdLambdaCaptor.getValue();
         long oldHfsVmId = lambda.apply(context);
         Assert.assertEquals(oldHfsVmId, SqlTestData.hfsVmId);
-    }
-
-    @Test
-    public void getsTheListOfBoundIpAddresses() {
-        command.execute(context, request);
-        List<IpAddress> x = new ArrayList<IpAddress>();
-        verify(context, times(1))
-                .execute(eq("GetPublicIpAdresses"), getIpAddressesLambdaCaptor.capture(), anyObject());
-
-        // Verify that the lambda is returning what we expect
-        Function<CommandContext, List<IpAddress>> lambda = getIpAddressesLambdaCaptor.getValue();
-        List<IpAddress> actualIpAddresses = lambda.apply(context);
-        assertThat(
-                actualIpAddresses.stream().map(ia -> ia.ipAddressId).collect(Collectors.toList()),
-                containsInAnyOrder(ipAddresses.stream().map(ia -> ia.ipAddressId).collect(Collectors.toList()).toArray())
-        );
     }
 
     @Test

@@ -44,8 +44,7 @@ public class Vps4DeleteAllScheduledJobsForVm implements Command<UUID, Void> {
 
     private void deleteAllScheduledJobs() {
         @SuppressWarnings("unchecked")
-        List<ScheduledJob> jobs = context.execute(
-            "getScheduledJobs", ctx -> scheduledJobService.getScheduledJobs(vmId), List.class);
+        List<ScheduledJob> jobs =  scheduledJobService.getScheduledJobs(vmId);
         
         for(ScheduledJob job : jobs) {
             deleteJob(job);

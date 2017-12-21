@@ -106,8 +106,7 @@ public class Vps4RestoreVm extends ActionCommand<Vps4RestoreVm.Request, Vps4Rest
 
     @SuppressWarnings("unchecked")
     private List<IpAddress> getPublicIpAddresses() {
-        return context.execute(
-                "GetPublicIpAdresses", ctx -> vps4NetworkService.getVmIpAddresses(vps4VmId), List.class);
+        return vps4NetworkService.getVmIpAddresses(vps4VmId);
     }
 
     private void unbindPublicIpAddresses(List<IpAddress> ipAddresses) {

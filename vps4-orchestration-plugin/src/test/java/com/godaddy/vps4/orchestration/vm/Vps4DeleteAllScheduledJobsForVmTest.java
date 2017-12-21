@@ -74,21 +74,13 @@ public class Vps4DeleteAllScheduledJobsForVmTest {
 
     private void setupMockContext() {
         context = mock(CommandContext.class);
-        when(context.execute(eq("getScheduledJobs"), any(Function.class), eq(List.class)))
-                .thenReturn(scheduledJobs);
+        when(scheduledJobService.getScheduledJobs(vmId)).thenReturn(scheduledJobs);
     }
 
     @Test
     public void callsScheduledJobServiceToGetAListOfVmJobs() throws Exception {
         command.execute(context, vmId);
 
-        // verify call to the scheduler service is wrapped in a context.execute method
-        verify(context, times(1))
-                .execute(eq("getScheduledJobs"), getScheduledJobsCaptor.capture(), eq(List.class));
-
-        // Verify that the lambda is calling the appropriate scheduler service method
-        Function<CommandContext, List> lambda = getScheduledJobsCaptor.getValue();
-        lambda.apply(context);
         verify(scheduledJobService, times(1)).getScheduledJobs(eq(vmId));
     }
 
