@@ -3,7 +3,8 @@ package com.godaddy.vps4.orchestration.monitoring;
 import gdg.hfs.orchestration.Command;
 import gdg.hfs.orchestration.CommandContext;
 import javax.inject.Inject;
-
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import com.godaddy.vps4.credit.CreditService;
 import com.godaddy.vps4.credit.VirtualMachineCredit;
 import com.godaddy.vps4.monitoring.MonitoringNotificationService;
@@ -12,6 +13,8 @@ import com.godaddy.vps4.vm.AccountStatus;
 import com.godaddy.vps4.vm.VirtualMachine;
 
 public class HandleMonitoringDownEvent implements Command<VirtualMachine, Void> {
+
+    private static final Logger logger = LoggerFactory.getLogger(HandleMonitoringDownEvent.class);
 
     private final MonitoringNotificationService monitoringNotificationService;
     private final Monitoring monitoring;
@@ -28,7 +31,8 @@ public class HandleMonitoringDownEvent implements Command<VirtualMachine, Void> 
     @Override
     public Void execute(CommandContext context, VirtualMachine vm) {
         if (shouldSendNotification(vm)) {
-            monitoringNotificationService.sendServerDownEventNotification(vm);
+            long irisIncidentId = monitoringNotificationService.sendServerDownEventNotification(vm);
+            logger.info("Down Event Notification sent for vmId {}, Iris Incident {} created", vm.vmId, irisIncidentId);
         }
 
         return null;
