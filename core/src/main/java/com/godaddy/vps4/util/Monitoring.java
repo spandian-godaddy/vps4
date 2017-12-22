@@ -14,7 +14,7 @@ public class Monitoring {
     @Inject
     public Monitoring(Config config)
     {
-        accountId = Long.parseLong(config.get("nodeping.accountid"));
+        accountId = Long.parseLong(config.get("monitoring.nodeping.account.id"));
     }
     
     public Long getAccountId(VirtualMachine vm) {

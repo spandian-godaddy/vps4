@@ -63,7 +63,7 @@ public class Vps4MessageHandlerTest {
     @Before
     public void setupTest() {
         when(dcService.getDataCenter(5)).thenReturn(new DataCenter(5,"testDataCenter"));
-        when(configMock.get("nodeping.accountid")).thenReturn("0");
+        when(configMock.get("monitoring.nodeping.account.id")).thenReturn("0");
 
         orionGuid = UUID.randomUUID();
 
