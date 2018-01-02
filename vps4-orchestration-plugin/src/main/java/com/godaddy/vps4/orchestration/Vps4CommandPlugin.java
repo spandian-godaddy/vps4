@@ -9,6 +9,7 @@ import com.godaddy.vps4.orchestration.hfs.HfsMockModule;
 import com.godaddy.vps4.orchestration.hfs.HfsModule;
 import com.godaddy.vps4.orchestration.scheduler.SchedulerModule;
 import com.godaddy.vps4.scheduler.api.client.SchedulerServiceClientModule;
+import com.godaddy.vps4.security.SecurityModule;
 import com.godaddy.vps4.snapshot.SnapshotModule;
 import com.godaddy.vps4.util.ObjectMapperModule;
 import com.godaddy.vps4.util.UtilsModule;
@@ -59,6 +60,7 @@ public class Vps4CommandPlugin implements CommandPlugin {
                 new SchedulerServiceClientModule(),
                 new SchedulerModule(),
                 new AccountModule(),
+                new SecurityModule(),
                 new MonitoringModule()
         );
 
