@@ -134,5 +134,22 @@ public class ActionServiceTest {
         actions = actionService.getActions(vm.vmId, 100, 0, statusList);
         assertEquals(null, actions);
     }
+
+    @Test
+    public void testCompleteActionPopulatesCompletedColumn(){
+        SqlTestData.createActionWithDate(vm.vmId, ActionType.SET_HOSTNAME, Timestamp.from(Instant.now().minus(Duration.ofHours(12))), vps4User.getId(), dataSource);
+
+        ResultSubset<Action> actions = actionService.getActions(vm.vmId, 100, 0);
+        assertEquals(1, actions.results.size());
+        Action testAction = actions.results.get(0);
+        assertNull(testAction.completed);
+
+        actionService.completeAction(testAction.id, "{}", "");
+
+        actions = actionService.getActions(vm.vmId, 100, 0);
+        assertEquals(1, actions.results.size());
+        testAction = actions.results.get(0);
+        assertNotNull(testAction.completed);
+    }
     
 }

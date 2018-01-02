@@ -18,6 +18,7 @@ public class VmAction {
     public String response;
     public ActionStatus status;
     public Instant created;
+    public Instant completed;
     public String note;
     public UUID commandId;
 
@@ -31,6 +32,7 @@ public class VmAction {
         this.response = a.response;
         this.status = a.status;
         this.created = a.created;
+        this.completed = a.completed;
         this.note = a.note;
         this.commandId = a.commandId;
     }
@@ -50,6 +52,7 @@ public class VmAction {
                 + " response: " + response
                 + " status: " + status
                 + " created: " + created
+                + " completed: " + completed
                 + " note: " + note
                 + " commandId: " + commandId + "]";
     }

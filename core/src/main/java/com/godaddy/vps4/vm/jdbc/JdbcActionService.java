@@ -3,6 +3,7 @@ package com.godaddy.vps4.vm.jdbc;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Timestamp;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
@@ -44,8 +45,8 @@ public class JdbcActionService implements ActionService {
 
     @Override
     public void completeAction(long actionId, String response, String notes) {
-        Sql.with(dataSource).exec("UPDATE vm_action SET status_id=3, response=?::json, note=? WHERE id=?",
-                null, response, notes, actionId);
+        Sql.with(dataSource).exec("UPDATE vm_action SET status_id=3, response=?::json, note=?, completed=now_utc() WHERE id=?",
+                null, response, notes, actionId );
     }
 
     @Override
@@ -217,9 +218,16 @@ public class JdbcActionService implements ActionService {
             commandId = UUID.fromString(commandIdStr);
         }
 
+        Timestamp completedTs = rs.getTimestamp("completed", TimestampUtils.utcCalendar);
+        Instant completed = null;
+        if (completedTs != null){
+            completed = completedTs.toInstant();
+        }
+
         return new Action(rs.getLong("id"), vmid, type, rs.getLong("vps4_user_id"),
                 rs.getString("request"), rs.getString("state"), rs.getString("response"), status,
-                rs.getTimestamp("created", TimestampUtils.utcCalendar).toInstant(), rs.getString("note"), commandId);
+                rs.getTimestamp("created", TimestampUtils.utcCalendar).toInstant(),
+                completed, rs.getString("note"), commandId);
     }
 
     @Override
