@@ -10,7 +10,6 @@ import static org.mockito.Mockito.when;
 import java.util.UUID;
 
 import org.junit.Before;
-import org.junit.BeforeClass;
 import org.junit.Test;
 import org.mockito.MockitoAnnotations;
 
@@ -43,8 +42,8 @@ public class HandleMonitoringDownEventTest {
     @Inject
     Monitoring monitoring;
 
-    @BeforeClass
-    public static void newInjector() {
+    @Before
+    public void setUp() {
         injector = Guice.createInjector(new AbstractModule() {
             @Override
             protected void configure() {
@@ -58,10 +57,7 @@ public class HandleMonitoringDownEventTest {
                 bind(CreditService.class).toInstance(creditService);
             }
         });
-    }
 
-    @Before
-    public void setUp() {
         injector.injectMembers(this);
         MockitoAnnotations.initMocks(this);
         context = mock(CommandContext.class);
