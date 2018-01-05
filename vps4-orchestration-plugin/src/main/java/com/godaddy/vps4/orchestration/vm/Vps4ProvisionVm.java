@@ -200,12 +200,6 @@ public class Vps4ProvisionVm extends ActionCommand<Vps4ProvisionVm.Request, Vps4
         bindRequest.addressId = ip.addressId;
         bindRequest.vmId = hfsVm.vmId;
         context.execute(BindIp.class, bindRequest);
-
-        // Add the ip to the database
-        context.execute("Create-" + ip.addressId, ctx -> {
-            networkService.createIpAddress(ip.addressId, request.vmInfo.vmId, ip.address, IpAddressType.PRIMARY);
-            return null;
-        }, Void.class);
     }
 
     private void configureMailRelay(Vm hfsVm) {
@@ -317,7 +311,15 @@ public class Vps4ProvisionVm extends ActionCommand<Vps4ProvisionVm.Request, Vps4
         allocateIpRequest.sgid = request.vmInfo.sgid;
         allocateIpRequest.zone = request.zone;
 
-        return context.execute(AllocateIp.class, allocateIpRequest);
+        IpAddress ip = context.execute(AllocateIp.class, allocateIpRequest);
+
+        // Add the ip to the database
+        context.execute("Create-" + ip.addressId, ctx -> {
+            networkService.createIpAddress(ip.addressId, request.vmInfo.vmId, ip.address, IpAddressType.PRIMARY);
+            return null;
+        }, Void.class);
+
+        return ip;
     }
 
     private void configureMonitoring(IpAddress ipAddress) {
