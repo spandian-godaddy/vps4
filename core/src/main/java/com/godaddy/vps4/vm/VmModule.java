@@ -1,7 +1,7 @@
 package com.godaddy.vps4.vm;
 
-import com.godaddy.vps4.monitors.MonitorService;
-import com.godaddy.vps4.monitors.jdbc.JdbcMonitorService;
+import com.godaddy.vps4.appmonitors.MonitorService;
+import com.godaddy.vps4.appmonitors.jdbc.JdbcMonitorService;
 import com.godaddy.vps4.network.NetworkService;
 import com.godaddy.vps4.network.jdbc.JdbcNetworkService;
 import com.godaddy.vps4.scheduledJob.ScheduledJobService;

@@ -1,4 +1,4 @@
-package com.godaddy.vps4.phase2.monitors;
+package com.godaddy.vps4.phase2.appmonitors;
 
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
@@ -12,9 +12,9 @@ import java.util.UUID;
 import javax.sql.DataSource;
 
 import com.godaddy.hfs.jdbc.Sql;
+import com.godaddy.vps4.appmonitors.MonitorService;
+import com.godaddy.vps4.appmonitors.jdbc.JdbcMonitorService;
 import com.godaddy.vps4.jdbc.DatabaseModule;
-import com.godaddy.vps4.monitors.MonitorService;
-import com.godaddy.vps4.monitors.jdbc.JdbcMonitorService;
 import com.godaddy.vps4.phase2.SqlTestData;
 import com.godaddy.vps4.security.Vps4User;
 import com.godaddy.vps4.security.Vps4UserService;

@@ -1,4 +1,4 @@
-package com.godaddy.vps4.monitors;
+package com.godaddy.vps4.appmonitors;
 
 import java.util.List;
 import java.util.UUID;

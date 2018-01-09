@@ -1,4 +1,4 @@
-package com.godaddy.vps4.monitors.jdbc;
+package com.godaddy.vps4.appmonitors.jdbc;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -8,7 +8,7 @@ import java.util.UUID;
 import javax.sql.DataSource;
 
 import com.godaddy.hfs.jdbc.Sql;
-import com.godaddy.vps4.monitors.MonitorService;
+import com.godaddy.vps4.appmonitors.MonitorService;
 import com.godaddy.vps4.vm.ActionStatus;
 import com.godaddy.vps4.vm.ActionType;
 import com.google.inject.Inject;

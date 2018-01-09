@@ -142,7 +142,7 @@ public class Vps4Injector {
                 bind(AuthenticationFilter.class).in(Singleton.class);
                 filter("/api/*").through(AuthenticationFilter.class);
                 filter("/commands/*").through(AuthenticationFilter.class);
-                filter("/monitors/*").through(AuthenticationFilter.class);
+                filter("/appmonitors/*").through(AuthenticationFilter.class);
 
                 bind(VmActiveSnapshotFilter.class).in(Singleton.class);
                 filter("/api/vms/*").through(VmActiveSnapshotFilter.class);
