@@ -41,7 +41,8 @@ public class VmActionsMonitorResourceTest {
     @Test
     public void testGetStartPendingVms() {
         when(monitorService.getVmsByActions(ActionType.START_VM, ActionStatus.IN_PROGRESS, 15L)).thenReturn(randomUUUIDs);
-        List<UUID> actualUUIDs = provisioningMonitorResource.getProvisioningPendingVms(15L);
+        List<UUID> actualUUIDs = provisioningMonitorResource.getStartPendingVms(15L);
+
         Assert.assertNotNull(actualUUIDs);
         Assert.assertEquals(randomUUUIDs.size(), actualUUIDs.size());
     }
@@ -49,7 +50,7 @@ public class VmActionsMonitorResourceTest {
     @Test
     public void testGetStopPendingVms() {
         when(monitorService.getVmsByActions(ActionType.STOP_VM, ActionStatus.IN_PROGRESS, 15L)).thenReturn(randomUUUIDs);
-        List<UUID> actualUUIDs = provisioningMonitorResource.getProvisioningPendingVms(15L);
+        List<UUID> actualUUIDs = provisioningMonitorResource.getStopPendingVms(15L);
         Assert.assertNotNull(actualUUIDs);
         Assert.assertEquals(randomUUUIDs.size(), actualUUIDs.size());
     }
@@ -57,7 +58,7 @@ public class VmActionsMonitorResourceTest {
     @Test
     public void testGetRestartPendingVms() {
         when(monitorService.getVmsByActions(ActionType.RESTART_VM, ActionStatus.IN_PROGRESS, 15L)).thenReturn(randomUUUIDs);
-        List<UUID> actualUUIDs = provisioningMonitorResource.getProvisioningPendingVms(15L);
+        List<UUID> actualUUIDs = provisioningMonitorResource.getRestartPendingVms(15L);
         Assert.assertNotNull(actualUUIDs);
         Assert.assertEquals(randomUUUIDs.size(), actualUUIDs.size());
     }
