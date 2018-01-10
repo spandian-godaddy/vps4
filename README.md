@@ -243,3 +243,35 @@ Run this command to get a list of the current app servers, and what version of v
 | Prod-A2 | ssh a2plvps4mcp.cloud.iad2.gdg "mcpctl status"    |
 | Prod-PHX| ssh p3plvps4mcp.cloud.phx3.gdg "mcpctl status"    |
 | Prod-SG2| ssh sg2plvps4mcp.cloud.sin2.gdg "mcpctl status"   |
+
+Application Monitoring
+==================
+
+The application monitoring api is exposed through the vps4 swagger in the "appmonitors" section. The commands are set to EmployeeOnly level impersonation.
+The appropriate SSL certificates will need to be placed in the directory where the script is set to run. 
+[TBD] At the moment, we have set it up under the user `abhoite` but should soon be moved to a different `<vps4_user>`. 
+The monitoring scripts are setup manually and invoked using a cron scheduler on a separate server in each DC for the production environment.
+
+| DC Env    |   Server                              |
+| -------   | ------------------------------------- |
+| P3 Prod   | p3plvps4rprt01.cloud.phx3.gdg         |
+| A2 Prod   | TBD                                   |
+| SG2 Prod  | TBD                                   |
+
+Process to setup a cron job:
+* Edit the crontab and ensure the jobs are entered as below.
+    ```
+    [root@p3plvps4rprt01 ~]# crontab -e
+    */30 * * * * root cd /home/abhoite;/home/abhoite/monitor_prov_pending_servers_prod_p3.sh > /dev/null 2>&1
+    */20 * * * * root cd /home/abhoite;/home/abhoite/monitor_start_pending_servers_prod_p3.sh > /dev/null 2>&1
+    */21 * * * * root cd /home/abhoite;/home/abhoite/monitor_stop_pending_servers_prod_p3.sh > /dev/null 2>&1
+    */22 * * * * root cd /home/abhoite;/home/abhoite/monitor_restart_pending_servers_prod_p3.sh > /dev/null 2>&1
+    ```
+
+* Restart the crond service.
+    ```
+    [root@p3plvps4rprt01 ~]# sudo systemctl restart crond.service
+    ```
+
+
+ 
