@@ -266,6 +266,8 @@ Process to setup a cron job:
     */20 * * * * root cd /home/abhoite;/home/abhoite/monitor_start_pending_servers_prod_p3.sh > /dev/null 2>&1
     */21 * * * * root cd /home/abhoite;/home/abhoite/monitor_stop_pending_servers_prod_p3.sh > /dev/null 2>&1
     */22 * * * * root cd /home/abhoite;/home/abhoite/monitor_restart_pending_servers_prod_p3.sh > /dev/null 2>&1
+    */23 * * * * root cd /home/abhoite;/home/abhoite/monitor_backup_pending_servers_prod_p3.sh > /dev/null 2>&1
+    */24 * * * * root cd /home/abhoite;/home/abhoite/monitor_restore_pending_servers_prod_p3.sh > /dev/null 2>&1
     ```
 
 * Restart the crond service.

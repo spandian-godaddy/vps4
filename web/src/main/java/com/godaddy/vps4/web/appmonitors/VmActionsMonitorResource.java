@@ -75,4 +75,22 @@ public class VmActionsMonitorResource {
         return monitorService.getVmsByActions(ActionType.RESTART_VM, ActionStatus.IN_PROGRESS, thresholdInMinutes);
     }
 
+    @EmployeeOnly
+    @GET
+    @Path("/pending/backupvm")
+    @ApiOperation(value = "Find all VM id's that are pending backup vm action for longer than m minutes, default 2 hours",
+            notes = "Find all VM id's that are pending backup vm action for longer than m minutes, default 2 hours")
+    public List<UUID> getBackupPendingVms(@QueryParam("thresholdInMinutes") @DefaultValue("120") Long thresholdInMinutes) {
+        return monitorService.getVmsByActions(ActionType.CREATE_SNAPSHOT, ActionStatus.IN_PROGRESS, thresholdInMinutes);
+    }
+
+    @EmployeeOnly
+    @GET
+    @Path("/pending/restorevm")
+    @ApiOperation(value = "Find all VM id's that are pending restore vm action for longer than m minutes, default 2 hours",
+            notes = "Find all VM id's that are pending restore vm action for longer than m minutes, default 2 hours")
+    public List<UUID> getRestorePendingVms(@QueryParam("thresholdInMinutes") @DefaultValue("120") Long thresholdInMinutes) {
+        return monitorService.getVmsByActions(ActionType.RESTORE_VM, ActionStatus.IN_PROGRESS, thresholdInMinutes);
+    }
+
 }

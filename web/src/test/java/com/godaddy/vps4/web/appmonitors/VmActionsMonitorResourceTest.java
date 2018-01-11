@@ -62,4 +62,20 @@ public class VmActionsMonitorResourceTest {
         Assert.assertNotNull(actualUUIDs);
         Assert.assertEquals(randomUUUIDs.size(), actualUUIDs.size());
     }
+
+    @Test
+    public void testGetBackupPendingVms() {
+        when(monitorService.getVmsByActions(ActionType.CREATE_SNAPSHOT, ActionStatus.IN_PROGRESS, 120L)).thenReturn(randomUUUIDs);
+        List<UUID> actualUUIDs = provisioningMonitorResource.getBackupPendingVms(120L);
+        Assert.assertNotNull(actualUUIDs);
+        Assert.assertEquals(randomUUUIDs.size(), actualUUIDs.size());
+    }
+
+    @Test
+    public void testGetRestorePendingVms() {
+        when(monitorService.getVmsByActions(ActionType.RESTORE_VM, ActionStatus.IN_PROGRESS, 120L)).thenReturn(randomUUUIDs);
+        List<UUID> actualUUIDs = provisioningMonitorResource.getRestorePendingVms(120L);
+        Assert.assertNotNull(actualUUIDs);
+        Assert.assertEquals(randomUUUIDs.size(), actualUUIDs.size());
+    }
 }
