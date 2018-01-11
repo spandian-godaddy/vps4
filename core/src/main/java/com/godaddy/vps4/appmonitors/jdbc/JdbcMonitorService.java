@@ -19,14 +19,14 @@ public class JdbcMonitorService implements MonitorService {
 
     private final static String selectVmsByActionAndDuration = "SELECT vma.vm_id\n" +
             "FROM vm_action vma\n" +
-            "WHERE vma.created < now()\n" +
+            "WHERE vma.created < now_utc()\n" +
             "AND vma.action_type_id = (\n" +
             "  SELECT type_id FROM action_type WHERE type = ?\n" +
             ")\n" +
             "AND vma.status_id = (\n" +
             "  SELECT status_id FROM action_status WHERE status = ?\n" +
             ")\n" +
-            "AND now() - vma.created >= ";
+            "AND now_utc() - vma.created >= ";
 
     private final static String orderby = "ORDER BY vma.created ASC;\n";
 
