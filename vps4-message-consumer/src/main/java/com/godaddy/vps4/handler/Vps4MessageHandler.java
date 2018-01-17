@@ -19,8 +19,6 @@ import com.godaddy.vps4.messaging.MissingShopperIdException;
 import com.godaddy.vps4.messaging.Vps4MessagingService;
 import com.godaddy.vps4.orchestration.vm.VmActionRequest;
 import com.godaddy.vps4.orchestration.vm.Vps4PlanChange;
-import com.godaddy.vps4.snapshot.SnapshotActionService;
-import com.godaddy.vps4.snapshot.SnapshotService;
 import com.godaddy.vps4.vm.ActionService;
 import com.godaddy.vps4.vm.ActionType;
 import com.godaddy.vps4.vm.VirtualMachine;
@@ -36,33 +34,25 @@ public class Vps4MessageHandler implements MessageHandler {
     private JSONParser parser = new JSONParser();
 
     private final VirtualMachineService virtualMachineService;
-    private final SnapshotService snapshotService;
     private final CreditService creditService;
     private final ActionService vmActionService;
-    private final ActionService snapshotActionService;
     private final CommandService commandService;
-    private final Config config;
     private final boolean processFullyManagedEmails;
     private final Vps4MessagingService messagingService;
     private final int FULLY_MANAGED_LEVEL = 2;
 
     @Inject
     public Vps4MessageHandler(VirtualMachineService virtualMachineService,
-            SnapshotService snapshotService,
             CreditService creditService,
             ActionService vmActionService,
-            @SnapshotActionService ActionService snapshotActionService,
             CommandService commandService,
             Vps4MessagingService messagingService,
             Config config) {
 
         this.virtualMachineService = virtualMachineService;
-        this.snapshotService = snapshotService;
         this.creditService = creditService;
         this.vmActionService = vmActionService;
-        this.snapshotActionService = snapshotActionService;
         this.commandService = commandService;
-        this.config = config;
         this.messagingService = messagingService;
         processFullyManagedEmails = Boolean.parseBoolean(config.get("vps4MessageHandler.processFullyManagedEmails"));
 

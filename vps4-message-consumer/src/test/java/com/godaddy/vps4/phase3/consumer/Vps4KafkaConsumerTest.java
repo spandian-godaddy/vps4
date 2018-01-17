@@ -3,6 +3,8 @@ package com.godaddy.vps4.phase3.consumer;
 import static org.junit.Assert.assertEquals;
 
 import java.time.Instant;
+import java.util.Arrays;
+import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
@@ -14,6 +16,7 @@ import org.junit.Test;
 import com.godaddy.vps4.consumer.Vps4ConsumerGroup;
 import com.godaddy.vps4.consumer.Vps4ConsumerInjector;
 import com.godaddy.vps4.consumer.config.KafkaConfiguration;
+import com.godaddy.vps4.consumer.config.Vps4ConsumerConfiguration;
 import com.godaddy.vps4.handler.BasicMessageHandler;
 import com.godaddy.vps4.phase3.producer.Vps4ProducerStub;
 import com.google.inject.Injector;
@@ -42,8 +45,10 @@ public class Vps4KafkaConsumerTest {
 
         BasicMessageHandler messageHandler = new BasicMessageHandler();
 
+        List<Vps4ConsumerConfiguration> configs = Arrays.asList(new Vps4ConsumerConfiguration(kafkaConfig, messageHandler));
+        
         // create the consumer group
-        Vps4ConsumerGroup consumerGroup = Vps4ConsumerGroup.build(kafkaConfig, messageHandler);
+        Vps4ConsumerGroup consumerGroup = Vps4ConsumerGroup.build(configs);
 
         consumerGroup.submit(pool);
 

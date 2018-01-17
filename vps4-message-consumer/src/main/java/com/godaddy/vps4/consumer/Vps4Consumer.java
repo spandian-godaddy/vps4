@@ -3,6 +3,7 @@ package com.godaddy.vps4.consumer;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.Properties;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import javax.inject.Inject;
@@ -17,6 +18,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.godaddy.vps4.consumer.config.KafkaConfiguration;
+import com.godaddy.vps4.consumer.config.Vps4ConsumerConfiguration;
 import com.godaddy.vps4.handler.MessageHandler;
 import com.godaddy.vps4.handler.MessageHandlerException;
 
@@ -33,9 +35,9 @@ public class Vps4Consumer implements Runnable {
     private volatile KafkaConsumer<String, String> kafkaConsumer;
 
     @Inject
-    public Vps4Consumer(KafkaConfiguration kafkaConfig, MessageHandler messageHandler) {
-        this.kafkaConfig = kafkaConfig;
-        this.messageHandler = messageHandler;
+    public Vps4Consumer(Vps4ConsumerConfiguration consumerConfig) {
+        this.kafkaConfig = consumerConfig.kafkaConfiguration;
+        this.messageHandler = consumerConfig.messageHandler;
     }
 
 
@@ -47,14 +49,13 @@ public class Vps4Consumer implements Runnable {
 
         try {
 
-            List<String> topics = Arrays.asList(kafkaConfig.getTopic());
-            logger.info("Topics: {}", topics);
+            logger.info("Topic: {}", kafkaConfig.getTopic());
 
             // Create a kafka consumer
             kafkaConsumer = new KafkaConsumer<>(kafkaConfig.getKafkaConsumerProps());
 
             // kafka consumer should subscribe to the topic
-            kafkaConsumer.subscribe(topics);
+            kafkaConsumer.subscribe(Arrays.asList(kafkaConfig.getTopic()));
 
             while (!closed.get()) {
 

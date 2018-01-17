@@ -1,5 +1,7 @@
 package com.godaddy.vps4.consumer;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
@@ -7,15 +9,21 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
-import ch.qos.logback.classic.Level;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import com.godaddy.hfs.config.Config;
 import com.godaddy.hfs.zookeeper.ZooKeeperClient;
 import com.godaddy.vps4.consumer.config.KafkaConfiguration;
+import com.godaddy.vps4.consumer.config.Vps4ConsumerConfiguration;
 import com.godaddy.vps4.consumer.config.ZookeeperConfig;
 import com.godaddy.vps4.handler.MessageHandler;
 import com.godaddy.vps4.handler.util.ZkAppRegistrationService;
 import com.google.inject.Injector;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import com.google.inject.Key;
+import com.google.inject.name.Names;
+
+import ch.qos.logback.classic.Level;
 
 public class Vps4ConsumerApplication {
 
@@ -50,13 +58,10 @@ public class Vps4ConsumerApplication {
     }
 
     private static void runVps4ConsumerGroup(Injector injector) {
-        // get the kafka configuration
-        KafkaConfiguration kafkaConfig = injector.getInstance(KafkaConfiguration.class);
-
-        MessageHandler messageHandler = injector.getInstance(MessageHandler.class);
+        List<Vps4ConsumerConfiguration> configs = getVps4ConsumerConfigs(injector);
 
         // create kafka consumers and start listening to messages on the topic
-        Vps4ConsumerGroup consumerGroup = Vps4ConsumerGroup.build(kafkaConfig, messageHandler);
+        Vps4ConsumerGroup consumerGroup = Vps4ConsumerGroup.build(configs);
 
         ExecutorService pool = Executors.newCachedThreadPool();
 
@@ -90,6 +95,23 @@ public class Vps4ConsumerApplication {
             }
         }
     }
+
+	private static List<Vps4ConsumerConfiguration> getVps4ConsumerConfigs(Injector injector) {
+        Config config = injector.getInstance(Config.class);
+        String[] consumerNames = config.get("vps4.kafka.consumer.names", "Account,Monitoring").split(",");
+
+        List<Vps4ConsumerConfiguration> configs = new ArrayList<>();
+        for(String name : consumerNames){
+            configs.add(getVps4ConsumerConfig(injector, name));
+        }
+		return configs;
+	}
+
+	private static Vps4ConsumerConfiguration getVps4ConsumerConfig(Injector injector, String name) {
+		KafkaConfiguration monitoringKafkaConfig = injector.getInstance(Key.get(KafkaConfiguration.class, Names.named(name)));
+        MessageHandler monitoringMessageHandler = injector.getInstance(Key.get(MessageHandler.class, Names.named(name)));
+        return new Vps4ConsumerConfiguration(monitoringKafkaConfig, monitoringMessageHandler);
+	}
 
     private static void runZkServiceRegistration(ZkAppRegistrationService zkAppRegistrationService, Runnable vps4ConsumerGroup) {
 

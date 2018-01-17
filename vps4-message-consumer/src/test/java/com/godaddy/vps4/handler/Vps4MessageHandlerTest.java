@@ -1,8 +1,6 @@
 package com.godaddy.vps4.handler;
 
 import static org.junit.Assert.assertEquals;
-import static org.mockito.Matchers.anyLong;
-import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyObject;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -11,29 +9,20 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.io.IOException;
-import java.time.Instant;
-import java.util.Collections;
-import java.util.Map;
 import java.util.UUID;
 
-import gdg.hfs.orchestration.CommandSpec;
 import org.json.simple.JSONObject;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mockito;
-import org.mockito.ArgumentMatcher;
 
 import com.godaddy.hfs.config.Config;
 import com.godaddy.vps4.credit.CreditService;
-import com.godaddy.vps4.credit.VirtualMachineCredit;
 import com.godaddy.vps4.credit.ECommCreditService.ProductMetaField;
+import com.godaddy.vps4.credit.VirtualMachineCredit;
 import com.godaddy.vps4.messaging.MissingShopperIdException;
 import com.godaddy.vps4.messaging.Vps4MessagingService;
-import com.godaddy.vps4.snapshot.Snapshot;
-import com.godaddy.vps4.snapshot.SnapshotService;
-import com.godaddy.vps4.snapshot.SnapshotStatus;
-import com.godaddy.vps4.snapshot.SnapshotType;
 import com.godaddy.vps4.vm.AccountStatus;
 import com.godaddy.vps4.vm.ActionService;
 import com.godaddy.vps4.vm.DataCenter;
@@ -43,15 +32,14 @@ import com.godaddy.vps4.vm.VirtualMachineService;
 
 import gdg.hfs.orchestration.CommandGroupSpec;
 import gdg.hfs.orchestration.CommandService;
+import gdg.hfs.orchestration.CommandSpec;
 import gdg.hfs.orchestration.CommandState;
 
 public class Vps4MessageHandlerTest {
 
     private VirtualMachineService vmServiceMock = mock(VirtualMachineService.class);
-    private SnapshotService snapshotServiceMock = mock(SnapshotService.class);
     private CreditService creditServiceMock = mock(CreditService.class);
     private ActionService vmActionServiceMock = mock(ActionService.class);
-    private ActionService snapshotActionServiceMock = mock(ActionService.class);
     private CommandService commandServiceMock = mock(CommandService.class);
     private DataCenterService dcService = mock(DataCenterService.class);
     private Config configMock = mock(Config.class);
@@ -112,10 +100,8 @@ public class Vps4MessageHandlerTest {
 
     private void callHandleMessage(String message) throws MessageHandlerException {
         MessageHandler handler = new Vps4MessageHandler(vmServiceMock,
-                snapshotServiceMock,
                 creditServiceMock,
                 vmActionServiceMock,
-                snapshotActionServiceMock,
                 commandServiceMock,
                 messagingServiceMock,
                 configMock);
