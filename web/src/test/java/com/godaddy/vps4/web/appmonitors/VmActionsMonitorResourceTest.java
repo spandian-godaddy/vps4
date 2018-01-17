@@ -8,6 +8,8 @@ import java.util.List;
 import java.util.UUID;
 
 import com.godaddy.vps4.appmonitors.MonitorService;
+import com.godaddy.vps4.appmonitors.SnapshotActionData;
+import com.godaddy.vps4.appmonitors.VmActionData;
 import com.godaddy.vps4.vm.ActionStatus;
 import com.godaddy.vps4.vm.ActionType;
 import org.junit.Assert;
@@ -18,64 +20,98 @@ public class VmActionsMonitorResourceTest {
 
     private VmActionsMonitorResource provisioningMonitorResource;
     private MonitorService monitorService = mock(MonitorService.class);
-    private List<UUID> randomUUUIDs;
+    private List<VmActionData> expectedVmActionData;
+    private List<SnapshotActionData> expectedSnapshotActionData;
 
     @Before
     public void setupTest() {
-        randomUUUIDs = new ArrayList<>();
-        randomUUUIDs.add(UUID.randomUUID());
-        randomUUUIDs.add(UUID.randomUUID());
-        randomUUUIDs.add(UUID.randomUUID());
+        expectedVmActionData = new ArrayList<>();
+        VmActionData vmActionData = new VmActionData();
+        vmActionData.actionId = "fake-action-id-1";
+        vmActionData.commandId = UUID.randomUUID();
+        vmActionData.vmId = UUID.randomUUID();
+        expectedVmActionData.add(vmActionData);
+
+        vmActionData = new VmActionData();
+        vmActionData.actionId = "fake-action-id-2";
+        vmActionData.commandId = UUID.randomUUID();
+        vmActionData.vmId = UUID.randomUUID();
+        expectedVmActionData.add(vmActionData);
+
+        vmActionData = new VmActionData();
+        vmActionData.actionId = "fake-action-id-3";
+        vmActionData.commandId = UUID.randomUUID();
+        vmActionData.vmId = UUID.randomUUID();
+        expectedVmActionData.add(vmActionData);
+
+        expectedSnapshotActionData = new ArrayList<>();
+        SnapshotActionData snapshotActionData = new SnapshotActionData();
+        snapshotActionData.actionId = "fake-action-id-1";
+        snapshotActionData.commandId = UUID.randomUUID();
+        snapshotActionData.snapshotId = UUID.randomUUID();
+        expectedSnapshotActionData.add(snapshotActionData);
+
+        snapshotActionData = new SnapshotActionData();
+        snapshotActionData.actionId = "fake-action-id-2";
+        snapshotActionData.commandId = UUID.randomUUID();
+        snapshotActionData.snapshotId = UUID.randomUUID();
+        expectedSnapshotActionData.add(snapshotActionData);
+
+        snapshotActionData = new SnapshotActionData();
+        snapshotActionData.actionId = "fake-action-id-3";
+        snapshotActionData.commandId = UUID.randomUUID();
+        snapshotActionData.snapshotId = UUID.randomUUID();
+        expectedSnapshotActionData.add(snapshotActionData);
 
         provisioningMonitorResource = new VmActionsMonitorResource(monitorService);
     }
 
     @Test
     public void testGetProvisioningPendingVms() {
-        when(monitorService.getVmsByActions(ActionType.CREATE_VM, ActionStatus.IN_PROGRESS, 60L)).thenReturn(randomUUUIDs);
-        List<UUID> actualUUIDs = provisioningMonitorResource.getProvisioningPendingVms(60L);
-        Assert.assertNotNull(actualUUIDs);
-        Assert.assertEquals(randomUUUIDs.size(), actualUUIDs.size());
+        when(monitorService.getVmsByActions(ActionType.CREATE_VM, ActionStatus.IN_PROGRESS, 60L)).thenReturn(expectedVmActionData);
+        List<VmActionData> actualVmActionData = provisioningMonitorResource.getProvisioningPendingVms(60L);
+        Assert.assertNotNull(actualVmActionData);
+        Assert.assertEquals(expectedVmActionData.size(), actualVmActionData.size());
     }
 
     @Test
     public void testGetStartPendingVms() {
-        when(monitorService.getVmsByActions(ActionType.START_VM, ActionStatus.IN_PROGRESS, 15L)).thenReturn(randomUUUIDs);
-        List<UUID> actualUUIDs = provisioningMonitorResource.getStartPendingVms(15L);
+        when(monitorService.getVmsByActions(ActionType.START_VM, ActionStatus.IN_PROGRESS, 15L)).thenReturn(expectedVmActionData);
+        List<VmActionData> actualVmActionData = provisioningMonitorResource.getStartPendingVms(15L);
 
-        Assert.assertNotNull(actualUUIDs);
-        Assert.assertEquals(randomUUUIDs.size(), actualUUIDs.size());
+        Assert.assertNotNull(actualVmActionData);
+        Assert.assertEquals(expectedVmActionData.size(), actualVmActionData.size());
     }
 
     @Test
     public void testGetStopPendingVms() {
-        when(monitorService.getVmsByActions(ActionType.STOP_VM, ActionStatus.IN_PROGRESS, 15L)).thenReturn(randomUUUIDs);
-        List<UUID> actualUUIDs = provisioningMonitorResource.getStopPendingVms(15L);
-        Assert.assertNotNull(actualUUIDs);
-        Assert.assertEquals(randomUUUIDs.size(), actualUUIDs.size());
+        when(monitorService.getVmsByActions(ActionType.STOP_VM, ActionStatus.IN_PROGRESS, 15L)).thenReturn(expectedVmActionData);
+        List<VmActionData> actualVmActionData = provisioningMonitorResource.getStopPendingVms(15L);
+        Assert.assertNotNull(actualVmActionData);
+        Assert.assertEquals(expectedVmActionData.size(), actualVmActionData.size());
     }
 
     @Test
     public void testGetRestartPendingVms() {
-        when(monitorService.getVmsByActions(ActionType.RESTART_VM, ActionStatus.IN_PROGRESS, 15L)).thenReturn(randomUUUIDs);
-        List<UUID> actualUUIDs = provisioningMonitorResource.getRestartPendingVms(15L);
-        Assert.assertNotNull(actualUUIDs);
-        Assert.assertEquals(randomUUUIDs.size(), actualUUIDs.size());
+        when(monitorService.getVmsByActions(ActionType.RESTART_VM, ActionStatus.IN_PROGRESS, 15L)).thenReturn(expectedVmActionData);
+        List<VmActionData> actualVmActionData = provisioningMonitorResource.getRestartPendingVms(15L);
+        Assert.assertNotNull(actualVmActionData);
+        Assert.assertEquals(expectedVmActionData.size(), actualVmActionData.size());
     }
 
     @Test
-    public void testGetBackupPendingVms() {
-        when(monitorService.getVmsByActions(ActionType.CREATE_SNAPSHOT, ActionStatus.IN_PROGRESS, 120L)).thenReturn(randomUUUIDs);
-        List<UUID> actualUUIDs = provisioningMonitorResource.getBackupPendingVms(120L);
-        Assert.assertNotNull(actualUUIDs);
-        Assert.assertEquals(randomUUUIDs.size(), actualUUIDs.size());
+    public void testGetBackupPendingActions() {
+        when(monitorService.getVmsBySnapshotActions(ActionType.CREATE_SNAPSHOT, ActionStatus.IN_PROGRESS, 120L)).thenReturn(expectedSnapshotActionData);
+        List<SnapshotActionData> actualSnapshotActionData = provisioningMonitorResource.getBackupPendingActions(120L);
+        Assert.assertNotNull(actualSnapshotActionData);
+        Assert.assertEquals(expectedSnapshotActionData.size(), actualSnapshotActionData.size());
     }
 
     @Test
     public void testGetRestorePendingVms() {
-        when(monitorService.getVmsByActions(ActionType.RESTORE_VM, ActionStatus.IN_PROGRESS, 120L)).thenReturn(randomUUUIDs);
-        List<UUID> actualUUIDs = provisioningMonitorResource.getRestorePendingVms(120L);
-        Assert.assertNotNull(actualUUIDs);
-        Assert.assertEquals(randomUUUIDs.size(), actualUUIDs.size());
+        when(monitorService.getVmsByActions(ActionType.RESTORE_VM, ActionStatus.IN_PROGRESS, 120L)).thenReturn(expectedVmActionData);
+        List<VmActionData> actualVmActionData = provisioningMonitorResource.getRestorePendingVms(120L);
+        Assert.assertNotNull(actualVmActionData);
+        Assert.assertEquals(expectedVmActionData.size(), actualVmActionData.size());
     }
 }
