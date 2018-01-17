@@ -233,8 +233,12 @@ public class VmUsageParser {
 
         if (row.containsHeader("kbcommit")) {
             // linux
-            usage.mibMemFree = parseLong(row.getValue("kbmemfree"), "kbmemfree") / 1024L;
-            usage.mibMemUsed = parseLong(row.getValue("kbmemused"), "kbmemused") / 1024L;
+            long kbMemFree = parseLong(row.getValue("kbmemfree"), "kbmemfree");
+            long kbMemUsed = parseLong(row.getValue("kbmemused"), "kbmemused");
+            long kbCached = parseLong(row.getValue("kbcached"), "kbcached");
+            long kbBuffers = parseLong(row.getValue("kbbuffers"), "kbmbuffers");
+            usage.mibMemFree = (kbMemFree + kbCached + kbBuffers) / 1024L;
+            usage.mibMemUsed = (kbMemUsed - kbCached - kbBuffers) / 1024L;
 
         } else if (row.containsHeader("Available KBytes")) {
             // windows

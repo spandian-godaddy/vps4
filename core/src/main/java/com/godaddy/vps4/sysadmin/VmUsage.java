@@ -38,6 +38,8 @@ public class VmUsage {
         public Instant timestamp;
         public long mibMemFree;
         public long mibMemUsed;
+        public long mibMemCached;
+        public long mibMemBuffered;
     }
 
     public Instant refreshedAt;

@@ -42,8 +42,8 @@ public class VmUsageParserTest {
             assertEquals(0.8d, usage.io.writeTps, 0d);
 
             assertNotNull(usage.mem);
-            assertEquals(251d, usage.mem.mibMemFree, 0d);
-            assertEquals(1588d, usage.mem.mibMemUsed, 0d);
+            assertEquals(1244d, usage.mem.mibMemFree, 0d);
+            assertEquals(596d, usage.mem.mibMemUsed, 0d);
         }
     }
 
