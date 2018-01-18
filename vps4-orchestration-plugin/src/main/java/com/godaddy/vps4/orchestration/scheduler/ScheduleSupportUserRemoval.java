@@ -60,7 +60,7 @@ public class ScheduleSupportUserRemoval implements Command<ScheduleSupportUserRe
         Vps4RemoveSupportUserJobRequest userRequest = new Vps4RemoveSupportUserJobRequest();
         userRequest.vmId = request.vmId;
         userRequest.jobType = JobType.ONE_TIME;
-        int waitTime = Integer.parseInt(config.get("vps4.setupUser.removalWaitHours"));
+        int waitTime = Integer.parseInt(config.get("vps4.supportUser.removalWaitHours"));
         userRequest.when = Instant.now().plus(waitTime, ChronoUnit.HOURS);
         return userRequest;
     }
