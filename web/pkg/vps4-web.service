@@ -6,8 +6,7 @@ After=network.target
 User=vps4
 SyslogIdentifier=vps4
 WorkingDirectory=/var/log/vps4-web
-ExecStart=/usr/bin/java $JVM_OPTS -jar /opt/vps4/vps4-web/vps4-web.jar start
-ExecStop=/usr/bin/java $JVM_OPTS -jar /opt/vps4/vps4-web/vps4-web.jar stop
+ExecStart=/usr/bin/java $JVM_OPTS -jar /opt/vps4/vps4-web/vps4-web.jar
 
 User=vps4
 Group=vps4
