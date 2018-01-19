@@ -109,7 +109,7 @@ public class VmSupportUserResource {
             Vps4AddSupportUser.Request addUserRequest = new Vps4AddSupportUser.Request();
             addUserRequest.hfsVmId = vm.hfsVmId;
             addUserRequest.username = username;
-            addUserRequest.password = password;
+            addUserRequest.encryptedPassword = cryptography.encrypt(password);
             addUserRequest.actionId = actionId;
             addUserRequest.vmId = vm.vmId;
 

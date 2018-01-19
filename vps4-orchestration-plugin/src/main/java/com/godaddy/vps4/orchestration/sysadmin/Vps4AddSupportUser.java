@@ -35,7 +35,7 @@ public class Vps4AddSupportUser extends ActionCommand<Vps4AddSupportUser.Request
         public long hfsVmId;
         public UUID vmId;
         public String username;
-        public String password;
+        public byte[] encryptedPassword;
 
         @Override
         public long getActionId() {
@@ -54,7 +54,7 @@ public class Vps4AddSupportUser extends ActionCommand<Vps4AddSupportUser.Request
         AddUser.Request addUserRequest = new AddUser.Request();
         addUserRequest.hfsVmId = req.hfsVmId;
         addUserRequest.username = req.username;
-        addUserRequest.password = req.password;
+        addUserRequest.encryptedPassword = req.encryptedPassword;
         context.execute(AddUser.class, addUserRequest);
 
         ToggleAdmin.Request toggleAdminRequest = new ToggleAdmin.Request();

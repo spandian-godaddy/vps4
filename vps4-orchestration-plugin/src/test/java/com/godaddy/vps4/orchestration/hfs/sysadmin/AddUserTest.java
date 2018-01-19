@@ -1,5 +1,6 @@
 package com.godaddy.vps4.orchestration.hfs.sysadmin;
 
+import static org.mockito.Matchers.anyObject;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -9,6 +10,7 @@ import org.junit.Before;
 import org.junit.Test;
 
 import com.godaddy.vps4.orchestration.TestCommandContext;
+import com.godaddy.vps4.util.Cryptography;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
 
@@ -24,15 +26,19 @@ public class AddUserTest {
     AddUser command;
     CommandContext context;
     Injector injector;
+    String password = "testpass";
 
     @Before
     public void setup() {
         sysAdminService = mock(SysAdminService.class);
-        command = new AddUser(sysAdminService);
+        Cryptography cryptography = mock(Cryptography.class);
+        when(cryptography.decrypt(anyObject())).thenReturn(password);
+        command = new AddUser(sysAdminService, cryptography);
         injector = Guice.createInjector(binder -> {
-            binder.bind(AddUser.class);
+            binder.bind(AddUser.class).toInstance(command);
             binder.bind(WaitForSysAdminAction.class);
             binder.bind(SysAdminService.class).toInstance(sysAdminService);
+            binder.bind(Cryptography.class).toInstance(cryptography);
         });
         context = new TestCommandContext(new GuiceCommandProvider(injector));
     }
@@ -42,18 +48,18 @@ public class AddUserTest {
         AddUser.Request request = new AddUser.Request();
         request.hfsVmId = 123L;
         request.username = "testuser";
-        request.password = "testpass";
+        request.encryptedPassword = password.getBytes();
         
         SysAdminAction action = new SysAdminAction();
         action.sysAdminActionId = 321;
         action.status = Status.COMPLETE;
         
-        when(sysAdminService.addUser(request.hfsVmId, request.username, request.password)).thenReturn(action);
+        when(sysAdminService.addUser(request.hfsVmId, request.username, password)).thenReturn(action);
         when(sysAdminService.getSysAdminAction(action.sysAdminActionId)).thenReturn(action);
 
         command.execute(context, request);
 
-        verify(sysAdminService, times(1)).addUser(request.hfsVmId, request.username, request.password);
+        verify(sysAdminService, times(1)).addUser(request.hfsVmId, request.username, password);
     }
 
 }

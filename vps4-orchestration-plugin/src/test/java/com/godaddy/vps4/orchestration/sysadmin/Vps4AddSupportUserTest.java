@@ -49,7 +49,7 @@ public class Vps4AddSupportUserTest {
         req.hfsVmId = 123;
         req.vmId = UUID.randomUUID();
         req.username = "testuser";
-        req.password = "testpw";
+        req.encryptedPassword = "testpw".getBytes();
 
         doNothing().when(vmUserService).createUser(req.username, req.vmId, true);
 
