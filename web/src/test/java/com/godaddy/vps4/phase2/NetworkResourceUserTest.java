@@ -6,7 +6,7 @@ import java.util.UUID;
 import javax.inject.Inject;
 import javax.sql.DataSource;
 
-import com.godaddy.vps4.scheduler.api.client.SchedulerServiceClientModule;
+import com.godaddy.vps4.scheduler.api.web.SchedulerWebService;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -32,6 +32,7 @@ import com.google.inject.AbstractModule;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
 import com.google.inject.Provides;
+import org.mockito.Mockito;
 
 public class NetworkResourceUserTest {
 
@@ -45,12 +46,13 @@ public class NetworkResourceUserTest {
             new SecurityModule(),
             new VmModule(),
             new SnapshotModule(),
-            new SchedulerServiceClientModule(),
             new Phase2ExternalsModule(),
             new AbstractModule() {
 
                 @Override
                 public void configure() {
+                    SchedulerWebService swServ = Mockito.mock(SchedulerWebService.class);
+                    bind(SchedulerWebService.class).toInstance(swServ);
                 }
 
                 @Provides

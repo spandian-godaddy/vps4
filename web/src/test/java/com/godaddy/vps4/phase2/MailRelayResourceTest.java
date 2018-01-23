@@ -8,7 +8,7 @@ import java.util.UUID;
 import javax.inject.Inject;
 import javax.sql.DataSource;
 
-import com.godaddy.vps4.scheduler.api.client.SchedulerServiceClientModule;
+import com.godaddy.vps4.scheduler.api.web.SchedulerWebService;
 import com.godaddy.vps4.snapshot.SnapshotModule;
 import org.junit.After;
 import org.junit.Assert;
@@ -52,13 +52,14 @@ public class MailRelayResourceTest {
             new VmModule(),
             new SnapshotModule(),
             new Phase2ExternalsModule(),
-            new SchedulerServiceClientModule(),
             new AbstractModule() {
 
                 @Override
                 protected void configure() {
                     mailRelayService = Mockito.mock(MailRelayService.class);
                     bind(MailRelayService.class).toInstance(mailRelayService);
+                    SchedulerWebService swServ = Mockito.mock(SchedulerWebService.class);
+                    bind(SchedulerWebService.class).toInstance(swServ);
                 }
 
                 @Provides

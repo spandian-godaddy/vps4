@@ -9,7 +9,7 @@ import javax.inject.Inject;
 import javax.sql.DataSource;
 import javax.ws.rs.NotFoundException;
 
-import com.godaddy.vps4.scheduler.api.client.SchedulerServiceClientModule;
+import com.godaddy.vps4.scheduler.api.web.SchedulerWebService;
 import org.json.simple.JSONObject;
 import org.junit.After;
 import org.junit.Assert;
@@ -18,6 +18,7 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
+import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 
 import com.godaddy.vps4.jdbc.DatabaseModule;
@@ -88,11 +89,12 @@ public class VmRestoreResourceTest {
             new SecurityModule(),
             new VmModule(),
             new SnapshotModule(),
-            new SchedulerServiceClientModule(),
             new Phase2ExternalsModule(),
             new AbstractModule() {
                 @Override
                 public void configure() {
+                    SchedulerWebService swServ = Mockito.mock(SchedulerWebService.class);
+                    bind(SchedulerWebService.class).toInstance(swServ);
                 }
 
                 @Provides

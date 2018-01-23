@@ -13,7 +13,7 @@ import java.util.UUID;
 import javax.inject.Inject;
 import javax.sql.DataSource;
 
-import com.godaddy.vps4.scheduler.api.client.SchedulerServiceClientModule;
+import com.godaddy.vps4.scheduler.api.web.SchedulerWebService;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -61,7 +61,6 @@ public class VmPatchResourceTest {
             new DatabaseModule(),
             new SecurityModule(),
             new SnapshotModule(),
-            new SchedulerServiceClientModule(),
             new Phase2ExternalsModule(),
             new AbstractModule() {
 
@@ -77,6 +76,8 @@ public class VmPatchResourceTest {
                     bind(VirtualMachineService.class).to(JdbcVirtualMachineService.class);
                     bind(ImageService.class).toInstance(Mockito.mock(ImageService.class));
                     bind(VmUserService.class).to(JdbcVmUserService.class);
+                    SchedulerWebService swServ = Mockito.mock(SchedulerWebService.class);
+                    bind(SchedulerWebService.class).toInstance(swServ);
                 }
 
                 @Provides

@@ -8,7 +8,7 @@ import javax.sql.DataSource;
 import javax.ws.rs.NotAcceptableException;
 import javax.ws.rs.core.HttpHeaders;
 
-import com.godaddy.vps4.scheduler.api.client.SchedulerServiceClientModule;
+import com.godaddy.vps4.scheduler.api.web.SchedulerWebService;
 import com.godaddy.vps4.snapshot.SnapshotModule;
 import org.junit.After;
 import org.junit.Assert;
@@ -52,7 +52,6 @@ public class PleskResourceTest {
             new SecurityModule(),
             new VmModule(),
             new SnapshotModule(),
-            new SchedulerServiceClientModule(),
             new Phase2ExternalsModule(),
             new AbstractModule() {
 
@@ -60,6 +59,8 @@ public class PleskResourceTest {
                 protected void configure() {
                     pleskServ = Mockito.mock(Vps4PleskService.class);
                     bind(Vps4PleskService.class).toInstance(pleskServ);
+                    SchedulerWebService swServ = Mockito.mock(SchedulerWebService.class);
+                    bind(SchedulerWebService.class).toInstance(swServ);
                 }
 
                 @Provides
