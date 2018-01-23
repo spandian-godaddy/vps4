@@ -7,6 +7,7 @@ import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.UUID;
 
+import com.godaddy.vps4.scheduler.api.web.SchedulerWebService;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mockito;
@@ -61,6 +62,7 @@ public class GetVirtualMachineTest {
         Config config = Mockito.mock(Config.class);
         Cryptography cryptography = Mockito.mock(Cryptography.class);
         Monitoring monitoring = Mockito.mock(Monitoring.class);
+        SchedulerWebService schedulerWebService = Mockito.mock(SchedulerWebService.class);
         when(config.get(Mockito.anyString(), Mockito.anyString())).thenReturn("0");
         when(config.get(Mockito.anyString())).thenReturn("0");
         when(config.getData(Mockito.anyString())).thenReturn("cxPTMJetZeRW5ofrsUp0wecvNKsjf1/NHwllp0JllBM=".getBytes());
@@ -70,7 +72,7 @@ public class GetVirtualMachineTest {
         vmResource = new VmResource(
             user, vmService, userService, virtualMachineService,
                 creditService, null, null, null, null,
-                null, config, cryptography, monitoring);
+                null, config, cryptography, monitoring, schedulerWebService);
     }
 
     @Test

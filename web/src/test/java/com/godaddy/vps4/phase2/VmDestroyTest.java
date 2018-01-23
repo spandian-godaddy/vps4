@@ -11,6 +11,7 @@ import javax.inject.Inject;
 import javax.sql.DataSource;
 
 import com.godaddy.vps4.jdbc.DatabaseModule;
+import com.godaddy.vps4.scheduler.api.client.SchedulerServiceClientModule;
 import com.godaddy.vps4.security.GDUserMock;
 import com.godaddy.vps4.security.SecurityModule;
 import com.godaddy.vps4.security.Vps4User;
@@ -48,6 +49,7 @@ public class VmDestroyTest {
             new SecurityModule(),
             new VmModule(),
             new SnapshotModule(),
+            new SchedulerServiceClientModule(),
             new Phase2ExternalsModule(),
             new AbstractModule() {
 

@@ -1,5 +1,6 @@
 package com.godaddy.vps4.phase2;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 
@@ -7,6 +8,10 @@ import javax.inject.Inject;
 import javax.sql.DataSource;
 import javax.ws.rs.NotFoundException;
 
+import com.godaddy.vps4.scheduler.api.client.SchedulerServiceClientModule;
+import com.godaddy.vps4.scheduler.api.core.JobRequest;
+import com.godaddy.vps4.scheduler.api.core.SchedulerJobDetail;
+import com.godaddy.vps4.scheduler.api.web.SchedulerWebService;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -37,6 +42,7 @@ import com.google.inject.Injector;
 import com.google.inject.Provides;
 
 import gdg.hfs.vhfs.vm.Vm;
+import org.mockito.Mockito;
 
 public class VmResourceTest {
 
@@ -46,6 +52,7 @@ public class VmResourceTest {
 
     private GDUser user;
     private long hfsVmId = 98765;
+    private SchedulerWebService schedulerWebService = Mockito.mock(SchedulerWebService.class);
 
     private Injector injector = Guice.createInjector(
             new DatabaseModule(),
@@ -57,6 +64,7 @@ public class VmResourceTest {
 
                 @Override
                 public void configure() {
+                    bind(SchedulerWebService.class).toInstance(schedulerWebService);
                 }
 
                 @Provides
@@ -476,6 +484,44 @@ public class VmResourceTest {
         user = GDUserMock.createAdmin();
         testGetVmWithDetails();
     }
+
+    @Test
+    public void testNoScheduledBackupId(){
+        VirtualMachine vm = createTestVm();
+        VirtualMachineWithDetails detailedVm = getVmResource().getVirtualMachineWithDetails(vm.vmId);
+        Assert.assertEquals(0, detailedVm.autoSnapshots.copiesToRetain);
+        Assert.assertEquals(0, detailedVm.autoSnapshots.repeatIntervalInDays);
+        Assert.assertEquals(null, detailedVm.autoSnapshots.nextAt);
+    }
+
+    @Test
+    public void testNoScheduledBackupJob(){
+        VirtualMachine vm = createTestVm();
+        UUID jobId = UUID.randomUUID();
+        virtualMachineService.setBackupJobId(vm.vmId, jobId);
+        Mockito.when(schedulerWebService.getJob("vps4", "backups", jobId)).thenReturn(null);
+        VirtualMachineWithDetails detailedVm = getVmResource().getVirtualMachineWithDetails(vm.vmId);
+        Assert.assertEquals(0, detailedVm.autoSnapshots.copiesToRetain);
+        Assert.assertEquals(0, detailedVm.autoSnapshots.repeatIntervalInDays);
+        Assert.assertEquals(null, detailedVm.autoSnapshots.nextAt);
+    }
+
+    @Test
+    public void testAutoBackupScheduled(){
+        Instant nextRun = Instant.now();
+        JobRequest jobRequest = new JobRequest();
+        jobRequest.repeatIntervalInDays = 7;
+        SchedulerJobDetail jobDetail = new SchedulerJobDetail(UUID.randomUUID(), nextRun, jobRequest);
+        VirtualMachine vm = createTestVm();
+        virtualMachineService.setBackupJobId(vm.vmId, jobDetail.id);
+        Mockito.when(schedulerWebService.getJob("vps4", "backups", jobDetail.id)).thenReturn(jobDetail);
+        VirtualMachineWithDetails detailedVm = getVmResource().getVirtualMachineWithDetails(vm.vmId);
+        Assert.assertEquals(1, detailedVm.autoSnapshots.copiesToRetain);
+        Assert.assertEquals(7, detailedVm.autoSnapshots.repeatIntervalInDays);
+        Assert.assertEquals(nextRun, detailedVm.autoSnapshots.nextAt);
+    }
+
+
 
     // === getHfsDetails Tests ===
     @Test

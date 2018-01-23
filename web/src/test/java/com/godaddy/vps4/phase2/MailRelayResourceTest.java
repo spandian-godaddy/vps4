@@ -8,6 +8,7 @@ import java.util.UUID;
 import javax.inject.Inject;
 import javax.sql.DataSource;
 
+import com.godaddy.vps4.scheduler.api.client.SchedulerServiceClientModule;
 import com.godaddy.vps4.snapshot.SnapshotModule;
 import org.junit.After;
 import org.junit.Assert;
@@ -51,6 +52,7 @@ public class MailRelayResourceTest {
             new VmModule(),
             new SnapshotModule(),
             new Phase2ExternalsModule(),
+            new SchedulerServiceClientModule(),
             new AbstractModule() {
 
                 @Override

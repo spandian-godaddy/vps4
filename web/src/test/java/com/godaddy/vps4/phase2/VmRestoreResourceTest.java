@@ -9,6 +9,7 @@ import javax.inject.Inject;
 import javax.sql.DataSource;
 import javax.ws.rs.NotFoundException;
 
+import com.godaddy.vps4.scheduler.api.client.SchedulerServiceClientModule;
 import org.json.simple.JSONObject;
 import org.junit.After;
 import org.junit.Assert;
@@ -87,6 +88,7 @@ public class VmRestoreResourceTest {
             new SecurityModule(),
             new VmModule(),
             new SnapshotModule(),
+            new SchedulerServiceClientModule(),
             new Phase2ExternalsModule(),
             new AbstractModule() {
                 @Override

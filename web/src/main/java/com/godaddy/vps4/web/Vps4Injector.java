@@ -25,6 +25,7 @@ import com.godaddy.vps4.jdbc.DatabaseModule;
 import com.godaddy.vps4.mailrelay.MailRelayModule;
 import com.godaddy.vps4.messaging.MessagingModule;
 import com.godaddy.vps4.plesk.PleskModule;
+import com.godaddy.vps4.scheduler.api.client.SchedulerServiceClientModule;
 import com.godaddy.vps4.security.SecurityModule;
 import com.godaddy.vps4.snapshot.SnapshotModule;
 import com.godaddy.vps4.sso.SsoModule;
@@ -154,6 +155,7 @@ public class Vps4Injector {
         });
         modules.add(new CacheModule());
         modules.add(new HazelcastCacheModule());
+        modules.add(new SchedulerServiceClientModule());
 
         return Guice.createInjector(modules);
     }

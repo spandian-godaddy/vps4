@@ -6,6 +6,7 @@ import java.util.UUID;
 import javax.inject.Inject;
 import javax.sql.DataSource;
 
+import com.godaddy.vps4.scheduler.api.client.SchedulerServiceClientModule;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -54,6 +55,7 @@ public class VmSupportUserResourceTest {
             new DatabaseModule(),
             new SecurityModule(),
             new SnapshotModule(),
+            new SchedulerServiceClientModule(),
             new Phase2ExternalsModule(),
             new AbstractModule() {
 

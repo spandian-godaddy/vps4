@@ -27,6 +27,8 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
 
+import com.godaddy.vps4.scheduler.api.core.SchedulerJobDetail;
+import com.godaddy.vps4.scheduler.api.web.SchedulerWebService;
 import org.json.simple.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -92,6 +94,7 @@ public class VmResource {
     private final int mailRelayQuota;
     private final Cryptography cryptography;
     private final String openStackZone;
+    private final SchedulerWebService schedulerWebService;
 
     @Inject
     public VmResource(
@@ -106,7 +109,8 @@ public class VmResource {
             VmSnapshotResource vmSnapshotResource,
             Config config,
             Cryptography cryptography,
-            Monitoring monitoring) {
+            Monitoring monitoring,
+            SchedulerWebService schedulerWebService) {
         this.user = user;
         this.virtualMachineService = virtualMachineService;
         this.vps4UserService = vps4UserService;
@@ -119,6 +123,7 @@ public class VmResource {
         this.vmSnapshotResource = vmSnapshotResource;
         this.config = config;
         this.monitoring = monitoring;
+        this.schedulerWebService = schedulerWebService;
         sgidPrefix = this.config.get("hfs.sgid.prefix", "vps4-undefined-");
         mailRelayQuota = Integer.parseInt(this.config.get("mailrelay.quota", "5000"));
         this.cryptography = cryptography;
@@ -350,6 +355,16 @@ public class VmResource {
         VirtualMachine virtualMachine = getVm(vmId);
         DataCenter dc = creditService.getVirtualMachineCredit(virtualMachine.orionGuid).dataCenter;
         Vm vm = getVmFromVmVertical(virtualMachine.hfsVmId);
-        return new VirtualMachineWithDetails(virtualMachine, new VirtualMachineDetails(vm), dc);
+        SnapshotSchedule snapshotSchedule = new SnapshotSchedule();
+        if(virtualMachine.backupJobId != null) {
+            SchedulerJobDetail job = schedulerWebService.getJob("vps4", "backups", virtualMachine.backupJobId);
+            if(job != null) {
+                Instant nextRun = job.nextRun;
+                int repeatIntervalInDays = job.jobRequest.repeatIntervalInDays;
+                int copiesToRetain = 1;
+                snapshotSchedule = new SnapshotSchedule(nextRun, copiesToRetain, repeatIntervalInDays);
+            }
+        }
+        return new VirtualMachineWithDetails(virtualMachine, new VirtualMachineDetails(vm), dc, snapshotSchedule);
     }
 }
