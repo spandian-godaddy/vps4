@@ -45,6 +45,15 @@ public class JdbcMonitorService implements MonitorService {
 
     private final static String orderBySnapshotCreated = "ORDER BY sna.created ASC; ";
 
+    private final static String selectByActionStatusAndDuration = "SELECT vma.id, vma.command_id, vma.vm_id, action_type.type " +
+            "FROM vm_action vma, action_type " +
+            "WHERE vma.created < now_utc() " +
+            "AND vma.action_type_id = action_type.type_id " +
+            "AND vma.status_id = ( " +
+            "  SELECT status_id FROM action_status WHERE status = ? " +
+            ") " +
+            "AND now_utc() - vma.created >= ";
+
     @Inject
     public JdbcMonitorService(DataSource dataSource) {
         this.dataSource = dataSource;
@@ -57,17 +66,14 @@ public class JdbcMonitorService implements MonitorService {
         return Sql.with(dataSource)
                 .exec(selectDateOrderedVmsByActionAndDuration, Sql.listOf(this::mapVmActionData), type.name(), status.name());
     }
+
     private VmActionData mapVmActionData(ResultSet rs) throws SQLException {
 
         String actionId = rs.getString("id");
         UUID commandId = java.util.UUID.fromString(rs.getString("command_id"));
         UUID vmId = java.util.UUID.fromString(rs.getString("vm_id"));
 
-        VmActionData vmActionData = new VmActionData();
-        vmActionData.actionId = actionId;
-        vmActionData.commandId = commandId;
-        vmActionData.vmId = vmId;
-
+        VmActionData vmActionData = new VmActionData(actionId, commandId, vmId);
         return vmActionData;
     }
 
@@ -84,11 +90,27 @@ public class JdbcMonitorService implements MonitorService {
         UUID commandId = java.util.UUID.fromString(rs.getString("command_id"));
         UUID snapshotId = java.util.UUID.fromString(rs.getString("snapshot_id"));
 
-        SnapshotActionData snapshotActionData = new SnapshotActionData();
-        snapshotActionData.actionId = actionId;
-        snapshotActionData.commandId = commandId;
-        snapshotActionData.snapshotId = snapshotId;
-
+        SnapshotActionData snapshotActionData = new SnapshotActionData(actionId, commandId, snapshotId);
         return snapshotActionData;
     }
+
+    @Override
+    public List<VmActionData> getVmsByActionStatus(ActionStatus status, long thresholdInMinutes) {
+        String interval = "INTERVAL '" + thresholdInMinutes + " minutes'  ";
+        String selectDateOrderedVmsByActionStatusAndDuration = selectByActionStatusAndDuration + interval + orderby;
+        return Sql.with(dataSource)
+                .exec(selectDateOrderedVmsByActionStatusAndDuration, Sql.listOf(this::mapVmActionDataWithActionType), status.name());
+    }
+
+    private VmActionData mapVmActionDataWithActionType(ResultSet rs) throws SQLException {
+
+        String actionId = rs.getString("id");
+        UUID commandId = java.util.UUID.fromString(rs.getString("command_id"));
+        UUID vmId = java.util.UUID.fromString(rs.getString("vm_id"));
+        String actionType = ActionType.valueOf(rs.getString("type")).name();
+
+        VmActionData vmActionData = new VmActionData(actionId, commandId, vmId, actionType);
+        return vmActionData;
+    }
+
 }

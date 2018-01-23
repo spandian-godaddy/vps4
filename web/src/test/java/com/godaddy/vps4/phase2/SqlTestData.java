@@ -1,15 +1,8 @@
 package com.godaddy.vps4.phase2;
 
-import java.time.Instant;
 import java.util.UUID;
 
 import javax.sql.DataSource;
-
-import com.godaddy.vps4.snapshot.SnapshotService;
-import com.godaddy.vps4.snapshot.SnapshotStatus;
-import com.godaddy.vps4.snapshot.SnapshotType;
-import com.godaddy.vps4.vm.*;
-import org.json.simple.JSONObject;
 
 import com.godaddy.hfs.jdbc.Sql;
 import com.godaddy.vps4.network.IpAddress;
@@ -17,14 +10,19 @@ import com.godaddy.vps4.network.IpAddress.IpAddressType;
 import com.godaddy.vps4.network.NetworkService;
 import com.godaddy.vps4.network.jdbc.JdbcNetworkService;
 import com.godaddy.vps4.snapshot.Snapshot;
+import com.godaddy.vps4.snapshot.SnapshotService;
+import com.godaddy.vps4.snapshot.SnapshotStatus;
+import com.godaddy.vps4.snapshot.SnapshotType;
 import com.godaddy.vps4.vm.Action;
 import com.godaddy.vps4.vm.ActionService;
 import com.godaddy.vps4.vm.ActionType;
 import com.godaddy.vps4.vm.VirtualMachine;
 import com.godaddy.vps4.vm.VirtualMachineService;
 import com.godaddy.vps4.vm.VirtualMachineService.ProvisionVirtualMachineParameters;
+import com.godaddy.vps4.vm.VmUser;
 import com.godaddy.vps4.vm.jdbc.JdbcActionService;
 import com.godaddy.vps4.vm.jdbc.JdbcVirtualMachineService;
+import org.json.simple.JSONObject;
 
 
 public class SqlTestData {

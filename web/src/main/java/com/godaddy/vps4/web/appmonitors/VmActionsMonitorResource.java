@@ -94,4 +94,13 @@ public class VmActionsMonitorResource {
         return monitorService.getVmsByActions(ActionType.RESTORE_VM, ActionStatus.IN_PROGRESS, thresholdInMinutes);
     }
 
+    @EmployeeOnly
+    @GET
+    @Path("/pending/newactions")
+    @ApiOperation(value = "Find all vm actions pending in new status for longer than m minutes, default 2 hours",
+            notes = "Find all VM actions that are pending in new status for longer than m minutes, default 2 hours")
+    public List<VmActionData> getVmsWithPendingNewActions(@QueryParam("thresholdInMinutes") @DefaultValue("120") Long thresholdInMinutes) {
+        return monitorService.getVmsByActionStatus(ActionStatus.NEW, thresholdInMinutes);
+    }
+
 }

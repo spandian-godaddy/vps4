@@ -40,7 +40,7 @@ public class MonitorServiceTest {
     MonitorService provisioningMonitorService = new JdbcMonitorService(dataSource);
 
     private UUID orionGuid = UUID.randomUUID();
-    private VirtualMachine vm1, vm2, vm3, vm4, vm5, vm6, vm7;
+    private VirtualMachine vm1, vm2, vm3, vm4, vm5, vm6, vm7, vm8;
     private Vps4User vps4User;
     private Vps4UserService vps4UserService;
     private Snapshot testSnapshotVm6, testSnapshotVm7;
@@ -51,19 +51,14 @@ public class MonitorServiceTest {
         vps4User = vps4UserService.getOrCreateUserForShopper("FakeShopper");
         vm1 = SqlTestData.insertTestVm(orionGuid, dataSource);
         createActionWithDate(vm1.vmId, ActionType.CREATE_VM, ActionStatus.IN_PROGRESS, Instant.now().minus(Duration.ofMinutes(61)), vps4User.getId(), dataSource);
-        System.out.println("VM ID1: " + vm1.vmId);
         vm2 = SqlTestData.insertTestVm(orionGuid, dataSource);
         createActionWithDate(vm2.vmId, ActionType.CREATE_VM, ActionStatus.IN_PROGRESS, Instant.now().minus(Duration.ofMinutes(10)), vps4User.getId(), dataSource);
-        System.out.println("VM ID2: " + vm2.vmId);
         vm3 = SqlTestData.insertTestVm(orionGuid, dataSource);
         createActionWithDate(vm3.vmId, ActionType.CREATE_VM, ActionStatus.IN_PROGRESS, Instant.now().minus(Duration.ofMinutes(90)), vps4User.getId(), dataSource);
-        System.out.println("VM ID3: " + vm3.vmId);
         vm4 = SqlTestData.insertTestVm(orionGuid, dataSource);
         createActionWithDate(vm4.vmId, ActionType.ENABLE_ADMIN_ACCESS, ActionStatus.IN_PROGRESS, Instant.now().minus(Duration.ofMinutes(90)), vps4User.getId(), dataSource);
-        System.out.println("VM ID4: " + vm4.vmId);
         vm5 = SqlTestData.insertTestVm(orionGuid, dataSource);
         createActionWithDate(vm5.vmId, ActionType.CREATE_VM, ActionStatus.ERROR, Instant.now().minus(Duration.ofMinutes(90)), vps4User.getId(), dataSource);
-        System.out.println("VM ID5: " + vm5.vmId);
         vm6 = SqlTestData.insertTestVm(orionGuid, dataSource);
         testSnapshotVm6 = new Snapshot(
                 UUID.randomUUID(),
@@ -79,7 +74,6 @@ public class MonitorServiceTest {
         );
         SqlTestData.insertTestSnapshot(testSnapshotVm6, dataSource);
         createSnapshotActionWithDate(testSnapshotVm6.id, ActionType.CREATE_SNAPSHOT, ActionStatus.IN_PROGRESS, Instant.now().minus(Duration.ofMinutes(125)), vps4User.getId(), dataSource);
-        System.out.println("Snapshot ID6: " + testSnapshotVm6.id);
         vm7 = SqlTestData.insertTestVm(orionGuid, dataSource);
         testSnapshotVm7 = new Snapshot(
                 UUID.randomUUID(),
@@ -95,7 +89,8 @@ public class MonitorServiceTest {
         );
         SqlTestData.insertTestSnapshot(testSnapshotVm7, dataSource);
         createSnapshotActionWithDate(testSnapshotVm7.id, ActionType.CREATE_SNAPSHOT, ActionStatus.IN_PROGRESS, Instant.now().minus(Duration.ofMinutes(60)), vps4User.getId(), dataSource);
-        System.out.println("Snapshot ID7: " + testSnapshotVm7.id);
+        vm8 = SqlTestData.insertTestVm(orionGuid, dataSource);
+        createActionWithDate(vm8.vmId, ActionType.CREATE_VM, ActionStatus.NEW, Instant.now().minus(Duration.ofMinutes(125)), vps4User.getId(), dataSource);
     }
 
     @After
@@ -107,6 +102,7 @@ public class MonitorServiceTest {
         SqlTestData.cleanupTestVmAndRelatedData(vm5.vmId, dataSource);
         SqlTestData.cleanupTestVmAndRelatedData(vm6.vmId, dataSource);
         SqlTestData.cleanupTestVmAndRelatedData(vm7.vmId, dataSource);
+        SqlTestData.cleanupTestVmAndRelatedData(vm8.vmId, dataSource);
         SqlTestData.deleteVps4User(vps4User.getId(), dataSource);
     }
 
@@ -126,14 +122,9 @@ public class MonitorServiceTest {
     public void testGetVmsByActions() {
         List<VmActionData> problemVms = provisioningMonitorService.getVmsByActions(ActionType.CREATE_VM, ActionStatus.IN_PROGRESS, 60);
         assertNotNull(problemVms);
-        for(VmActionData vm : problemVms) {
-            System.out.println("problem VM ID: " + vm.vmId);
-        }
         // TODO: change the size to equal 2 when we move to newer version of jdbc driver, utc does not work as timestamp is not set with timezone
         assertTrue(String.format("Expected count of problem VM's does not match actual count of {%s} VM's.", problemVms.size()), problemVms.size() == 3);
-        System.out.println("VM1 ID: " + vm1.vmId);
         assertTrue("Expected vm id not present in list of problem VM's.", problemVms.stream().anyMatch(vm -> (vm.vmId.compareTo(vm1.vmId) == 0)));
-        System.out.println("VM3 ID: " + vm3.vmId);
         assertTrue("Expected vm id not present in list of problem VM's.", problemVms.stream().anyMatch(vm -> (vm.vmId.compareTo(vm3.vmId) == 0)));
     }
 
@@ -141,12 +132,18 @@ public class MonitorServiceTest {
     public void testGetVmsBySnapshotActions() {
         List<SnapshotActionData> problemVms = provisioningMonitorService.getVmsBySnapshotActions(ActionType.CREATE_SNAPSHOT, ActionStatus.IN_PROGRESS, 120);
         assertNotNull(problemVms);
-        for(SnapshotActionData vm : problemVms) {
-            System.out.println("problem VM ID: " + vm.snapshotId);
-        }
         // TODO: change the size to equal 1 when we move to newer version of jdbc driver, utc does not work as timestamp is not set with timezone
         assertTrue(String.format("Expected count of problem VM's does not match actual count of {%s} VM's.", problemVms.size()), problemVms.size() == 2);
-        assertTrue("Expected snapshot id not present in list of problem VM's.", problemVms.stream().anyMatch(vm -> (vm.snapshotId.compareTo(testSnapshotVm6.id) == 0)));
+        assertTrue("Expected vm id not present in list of problem VM's.", problemVms.stream().anyMatch(vm -> (vm.snapshotId.compareTo(testSnapshotVm6.id) == 0)));
+    }
+
+    @Test
+    public void testGetVmsPendingNewActions() {
+        List<VmActionData> problemVms = provisioningMonitorService.getVmsByActionStatus(ActionStatus.NEW, 120);
+        assertNotNull(problemVms);
+        // TODO: change the size to equal 1 when we move to newer version of jdbc driver, utc does not work as timestamp is not set with timezone
+        assertTrue(String.format("Expected count of problem VM's does not match actual count of {%s} VM's.", problemVms.size()), problemVms.size() == 1);
+        assertTrue("Expected vm id not present in list of problem VM's.", problemVms.stream().anyMatch(vm -> (vm.vmId.compareTo(vm8.vmId) == 0)));
     }
 
 }

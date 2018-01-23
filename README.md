@@ -256,23 +256,34 @@ The monitoring scripts are setup manually and invoked using a cron scheduler on 
 | -------   | ------------------------------------- |
 | P3 Prod   | p3plvps4rprt01.cloud.phx3.gdg         |
 | A2 Prod   | TBD                                   |
-| SG2 Prod  | TBD                                   |
+| SG2 Prod  | sg2plvps4rprt01.cloud.sin2.gdg                                   |
 
 Process to setup a cron job:
 * Edit the crontab and ensure the jobs are entered as below.
     ```
     [root@p3plvps4rprt01 ~]# crontab -e
-    */30 * * * * root cd /home/abhoite;/home/abhoite/monitor_prov_pending_servers_prod_p3.sh > /dev/null 2>&1
-    */20 * * * * root cd /home/abhoite;/home/abhoite/monitor_start_pending_servers_prod_p3.sh > /dev/null 2>&1
-    */21 * * * * root cd /home/abhoite;/home/abhoite/monitor_stop_pending_servers_prod_p3.sh > /dev/null 2>&1
-    */22 * * * * root cd /home/abhoite;/home/abhoite/monitor_restart_pending_servers_prod_p3.sh > /dev/null 2>&1
-    */23 * * * * root cd /home/abhoite;/home/abhoite/monitor_backup_pending_servers_prod_p3.sh > /dev/null 2>&1
-    */24 * * * * root cd /home/abhoite;/home/abhoite/monitor_restore_pending_servers_prod_p3.sh > /dev/null 2>&1
+    */40 * * * * root cd /home/abhoite;/home/abhoite/monitor_pending_actions.sh https://vps4-cca.api.phx3.godaddy.com/api/appmonitors/pending/backupactions?thresholdInMinutes=120 PROD P3 Backup > /dev/null 2>&1
+    */30 * * * * root cd /home/abhoite;/home/abhoite/monitor_pending_actions.sh https://vps4-cca.api.phx3.godaddy.com/api/appmonitors/pending/provision?thresholdInMinutes=60 PROD P3 Provision > /dev/null 2>&1
+    */20 * * * * root cd /home/abhoite;/home/abhoite/monitor_pending_actions.sh https://vps4-cca.api.phx3.godaddy.com/api/appmonitors/pending/restartvm?thresholdInMinutes=15 PROD P3 Restart > /dev/null 2>&1
+    */35 * * * * root cd /home/abhoite;/home/abhoite/monitor_pending_actions.sh https://vps4-cca.api.phx3.godaddy.com/api/appmonitors/pending/restorevm?thresholdInMinutes=120 PROD P3 Restore > /dev/null 2>&1
+    */21 * * * * root cd /home/abhoite;/home/abhoite/monitor_pending_actions.sh https://vps4-cca.api.phx3.godaddy.com/api/appmonitors/pending/startvm?thresholdInMinutes=15 PROD P3 Start > /dev/null 2>&1
+    */22 * * * * root cd /home/abhoite;/home/abhoite/monitor_pending_actions.sh https://vps4-cca.api.phx3.godaddy.com/api/appmonitors/pending/stopvm?thresholdInMinutes=15 PROD P3 Stop > /dev/null 2>&1
     ```
 
 * Restart the crond service.
     ```
     [root@p3plvps4rprt01 ~]# sudo systemctl restart crond.service
+    ```
+
+* Similarly for SG2 with different url and parameters
+    ```
+    [root@sg2plvps4rprt01 ~]# crontab -l
+    */40 * * * * root cd /home/abhoite;/home/abhoite/monitor_pending_actions.sh https://vps4-cca.api.sin2.godaddy.com/api/appmonitors/pending/backupactions?thresholdInMinutes=120 PROD SG2 Backup > /dev/null 2>&1
+    */30 * * * * root cd /home/abhoite;/home/abhoite/monitor_pending_actions.sh https://vps4-cca.api.sin2.godaddy.com/api/appmonitors/pending/provision?thresholdInMinutes=60 PROD SG2 Provision > /dev/null 2>&1
+    */20 * * * * root cd /home/abhoite;/home/abhoite/monitor_pending_actions.sh https://vps4-cca.api.sin2.godaddy.com/api/appmonitors/pending/restartvm?thresholdInMinutes=15 PROD SG2 Restart > /dev/null 2>&1
+    */35 * * * * root cd /home/abhoite;/home/abhoite/monitor_pending_actions.sh https://vps4-cca.api.sin2.godaddy.com/api/appmonitors/pending/restorevm?thresholdInMinutes=120 PROD SG2 Restore > /dev/null 2>&1
+    */21 * * * * root cd /home/abhoite;/home/abhoite/monitor_pending_actions.sh https://vps4-cca.api.sin2.godaddy.com/api/appmonitors/pending/startvm?thresholdInMinutes=15 PROD SG2 Start > /dev/null 2>&1
+    */22 * * * * root cd /home/abhoite;/home/abhoite/monitor_pending_actions.sh https://vps4-cca.api.sin2.godaddy.com/api/appmonitors/pending/stopvm?thresholdInMinutes=15 PROD SG2 Stop > /dev/null 2>&1
     ```
 
 

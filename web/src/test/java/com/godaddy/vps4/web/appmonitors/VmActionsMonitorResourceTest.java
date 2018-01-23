@@ -26,41 +26,24 @@ public class VmActionsMonitorResourceTest {
     @Before
     public void setupTest() {
         expectedVmActionData = new ArrayList<>();
-        VmActionData vmActionData = new VmActionData();
-        vmActionData.actionId = "fake-action-id-1";
-        vmActionData.commandId = UUID.randomUUID();
-        vmActionData.vmId = UUID.randomUUID();
+        VmActionData vmActionData = new VmActionData("fake-action-id-1", UUID.randomUUID(), UUID.randomUUID());
         expectedVmActionData.add(vmActionData);
 
-        vmActionData = new VmActionData();
-        vmActionData.actionId = "fake-action-id-2";
-        vmActionData.commandId = UUID.randomUUID();
-        vmActionData.vmId = UUID.randomUUID();
+        vmActionData = new VmActionData("fake-action-id-2", UUID.randomUUID(), UUID.randomUUID());
         expectedVmActionData.add(vmActionData);
 
-        vmActionData = new VmActionData();
-        vmActionData.actionId = "fake-action-id-3";
-        vmActionData.commandId = UUID.randomUUID();
-        vmActionData.vmId = UUID.randomUUID();
+        vmActionData = new VmActionData("fake-action-id-3", UUID.randomUUID(), UUID.randomUUID());
         expectedVmActionData.add(vmActionData);
 
         expectedSnapshotActionData = new ArrayList<>();
-        SnapshotActionData snapshotActionData = new SnapshotActionData();
-        snapshotActionData.actionId = "fake-action-id-1";
-        snapshotActionData.commandId = UUID.randomUUID();
-        snapshotActionData.snapshotId = UUID.randomUUID();
+
+        SnapshotActionData snapshotActionData = new SnapshotActionData("fake-action-id-1", UUID.randomUUID(), UUID.randomUUID());
         expectedSnapshotActionData.add(snapshotActionData);
 
-        snapshotActionData = new SnapshotActionData();
-        snapshotActionData.actionId = "fake-action-id-2";
-        snapshotActionData.commandId = UUID.randomUUID();
-        snapshotActionData.snapshotId = UUID.randomUUID();
+        snapshotActionData = new SnapshotActionData("fake-action-id-2", UUID.randomUUID(), UUID.randomUUID());
         expectedSnapshotActionData.add(snapshotActionData);
 
-        snapshotActionData = new SnapshotActionData();
-        snapshotActionData.actionId = "fake-action-id-3";
-        snapshotActionData.commandId = UUID.randomUUID();
-        snapshotActionData.snapshotId = UUID.randomUUID();
+        snapshotActionData = new SnapshotActionData("fake-action-id-3", UUID.randomUUID(), UUID.randomUUID());
         expectedSnapshotActionData.add(snapshotActionData);
 
         provisioningMonitorResource = new VmActionsMonitorResource(monitorService);

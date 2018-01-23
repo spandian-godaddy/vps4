@@ -9,4 +9,5 @@ public interface MonitorService {
 
     List<VmActionData> getVmsByActions(ActionType type, ActionStatus status, long thresholdInMinutes);
     List<SnapshotActionData> getVmsBySnapshotActions(ActionType type, ActionStatus status, long thresholdInMinutes);
+    List<VmActionData> getVmsByActionStatus(ActionStatus status, long thresholdInMinutes);
 }
