@@ -42,7 +42,6 @@ public class SsoRequestAuthenticator implements RequestAuthenticator<GDUser> {
         String shopperOverride = request.getHeader("X-Shopper-Id");
         GDUser gdUser = new GDUser();
         gdUser.token = token;
-        gdUser.username = token.getUsername();
         if (token instanceof JomaxSsoToken) {
             gdUser.shopperId = shopperOverride;
             gdUser.isEmployee = true;

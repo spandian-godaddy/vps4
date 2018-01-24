@@ -8,7 +8,6 @@ public class GDUser {
     String shopperId;
     boolean isEmployee;
     boolean isAdmin;
-    String username;
 
     public String getShopperId() {
         return shopperId;
@@ -28,8 +27,8 @@ public class GDUser {
 
     @Override
     public String toString() {
-        return "GDUser [token=" + token + ", shopperId=" + shopperId + ", username=" + username + ", isShopper()="
-                + isShopper() + ", isEmployee()=" + isEmployee() + ", isAdmin()=" + isAdmin() + "]";
+        return "GDUser [token=" + token + ", shopperId=" + shopperId + ", isEmployee=" + isEmployee + ", isAdmin="
+                + isAdmin + ", isShopper()=" + isShopper() + "]";
     }
 
 }
