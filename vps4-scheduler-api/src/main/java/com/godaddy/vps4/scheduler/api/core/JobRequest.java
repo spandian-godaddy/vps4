@@ -1,5 +1,6 @@
 package com.godaddy.vps4.scheduler.api.core;
 
+import io.swagger.annotations.ApiModelProperty;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -10,7 +11,14 @@ public class JobRequest extends JobRequestBase {
     private static final Logger logger = LoggerFactory.getLogger(JobRequest.class);
     public static final int JOB_SCHEDULE_LEAD_TIME_WINDOW = 60; // 60 seconds
 
-    @Required public Instant when;
+    @ApiModelProperty(
+        value = "This is an ISO 8601 formatted date string",
+        dataType = "java.lang.String",
+        example = "2018-01-24T16:52:55Z",
+        required = true)
+    @Required
+    public Instant when;
+
     @Required public JobType jobType;
     @Optional public Integer repeatCount;
     @Optional public Integer repeatIntervalInDays;
