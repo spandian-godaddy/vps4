@@ -17,6 +17,7 @@ import com.godaddy.vps4.appmonitors.SnapshotActionData;
 import com.godaddy.vps4.appmonitors.VmActionData;
 import com.godaddy.vps4.appmonitors.jdbc.JdbcMonitorService;
 import com.godaddy.vps4.jdbc.DatabaseModule;
+import com.godaddy.vps4.jdbc.Vps4ReportsDataSource;
 import com.godaddy.vps4.phase2.SqlTestData;
 import com.godaddy.vps4.security.Vps4User;
 import com.godaddy.vps4.security.Vps4UserService;
@@ -29,6 +30,7 @@ import com.godaddy.vps4.vm.ActionType;
 import com.godaddy.vps4.vm.VirtualMachine;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
+import com.google.inject.Key;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -36,8 +38,8 @@ import org.junit.Test;
 public class MonitorServiceTest {
 
     Injector injector = Guice.createInjector(new DatabaseModule());
-    DataSource dataSource = injector.getInstance(DataSource.class);
-    MonitorService provisioningMonitorService = new JdbcMonitorService(dataSource);
+    DataSource reportsDataSource = injector.getInstance(Key.get(DataSource.class, Vps4ReportsDataSource.class));
+    MonitorService provisioningMonitorService = new JdbcMonitorService(reportsDataSource);
 
     private UUID orionGuid = UUID.randomUUID();
     private VirtualMachine vm1, vm2, vm3, vm4, vm5, vm6, vm7, vm8;
@@ -47,19 +49,19 @@ public class MonitorServiceTest {
 
     @Before
     public void setupService() {
-        vps4UserService = new JdbcVps4UserService(dataSource);
+        vps4UserService = new JdbcVps4UserService(reportsDataSource);
         vps4User = vps4UserService.getOrCreateUserForShopper("FakeShopper");
-        vm1 = SqlTestData.insertTestVm(orionGuid, dataSource);
-        createActionWithDate(vm1.vmId, ActionType.CREATE_VM, ActionStatus.IN_PROGRESS, Instant.now().minus(Duration.ofMinutes(61)), vps4User.getId(), dataSource);
-        vm2 = SqlTestData.insertTestVm(orionGuid, dataSource);
-        createActionWithDate(vm2.vmId, ActionType.CREATE_VM, ActionStatus.IN_PROGRESS, Instant.now().minus(Duration.ofMinutes(10)), vps4User.getId(), dataSource);
-        vm3 = SqlTestData.insertTestVm(orionGuid, dataSource);
-        createActionWithDate(vm3.vmId, ActionType.CREATE_VM, ActionStatus.IN_PROGRESS, Instant.now().minus(Duration.ofMinutes(90)), vps4User.getId(), dataSource);
-        vm4 = SqlTestData.insertTestVm(orionGuid, dataSource);
-        createActionWithDate(vm4.vmId, ActionType.ENABLE_ADMIN_ACCESS, ActionStatus.IN_PROGRESS, Instant.now().minus(Duration.ofMinutes(90)), vps4User.getId(), dataSource);
-        vm5 = SqlTestData.insertTestVm(orionGuid, dataSource);
-        createActionWithDate(vm5.vmId, ActionType.CREATE_VM, ActionStatus.ERROR, Instant.now().minus(Duration.ofMinutes(90)), vps4User.getId(), dataSource);
-        vm6 = SqlTestData.insertTestVm(orionGuid, dataSource);
+        vm1 = SqlTestData.insertTestVm(orionGuid, reportsDataSource);
+        createActionWithDate(vm1.vmId, ActionType.CREATE_VM, ActionStatus.IN_PROGRESS, Instant.now().minus(Duration.ofMinutes(61)), vps4User.getId(), reportsDataSource);
+        vm2 = SqlTestData.insertTestVm(orionGuid, reportsDataSource);
+        createActionWithDate(vm2.vmId, ActionType.CREATE_VM, ActionStatus.IN_PROGRESS, Instant.now().minus(Duration.ofMinutes(10)), vps4User.getId(), reportsDataSource);
+        vm3 = SqlTestData.insertTestVm(orionGuid, reportsDataSource);
+        createActionWithDate(vm3.vmId, ActionType.CREATE_VM, ActionStatus.IN_PROGRESS, Instant.now().minus(Duration.ofMinutes(90)), vps4User.getId(), reportsDataSource);
+        vm4 = SqlTestData.insertTestVm(orionGuid, reportsDataSource);
+        createActionWithDate(vm4.vmId, ActionType.ENABLE_ADMIN_ACCESS, ActionStatus.IN_PROGRESS, Instant.now().minus(Duration.ofMinutes(90)), vps4User.getId(), reportsDataSource);
+        vm5 = SqlTestData.insertTestVm(orionGuid, reportsDataSource);
+        createActionWithDate(vm5.vmId, ActionType.CREATE_VM, ActionStatus.ERROR, Instant.now().minus(Duration.ofMinutes(90)), vps4User.getId(), reportsDataSource);
+        vm6 = SqlTestData.insertTestVm(orionGuid, reportsDataSource);
         testSnapshotVm6 = new Snapshot(
                 UUID.randomUUID(),
                 vm6.projectId,
@@ -72,9 +74,9 @@ public class MonitorServiceTest {
                 (int) (Math.random() * 100000),
                 SnapshotType.AUTOMATIC
         );
-        SqlTestData.insertTestSnapshot(testSnapshotVm6, dataSource);
-        createSnapshotActionWithDate(testSnapshotVm6.id, ActionType.CREATE_SNAPSHOT, ActionStatus.IN_PROGRESS, Instant.now().minus(Duration.ofMinutes(125)), vps4User.getId(), dataSource);
-        vm7 = SqlTestData.insertTestVm(orionGuid, dataSource);
+        SqlTestData.insertTestSnapshot(testSnapshotVm6, reportsDataSource);
+        createSnapshotActionWithDate(testSnapshotVm6.id, ActionType.CREATE_SNAPSHOT, ActionStatus.IN_PROGRESS, Instant.now().minus(Duration.ofMinutes(125)), vps4User.getId(), reportsDataSource);
+        vm7 = SqlTestData.insertTestVm(orionGuid, reportsDataSource);
         testSnapshotVm7 = new Snapshot(
                 UUID.randomUUID(),
                 vm7.projectId,
@@ -87,32 +89,32 @@ public class MonitorServiceTest {
                 (int) (Math.random() * 100000),
                 SnapshotType.AUTOMATIC
         );
-        SqlTestData.insertTestSnapshot(testSnapshotVm7, dataSource);
-        createSnapshotActionWithDate(testSnapshotVm7.id, ActionType.CREATE_SNAPSHOT, ActionStatus.IN_PROGRESS, Instant.now().minus(Duration.ofMinutes(60)), vps4User.getId(), dataSource);
-        vm8 = SqlTestData.insertTestVm(orionGuid, dataSource);
-        createActionWithDate(vm8.vmId, ActionType.CREATE_VM, ActionStatus.NEW, Instant.now().minus(Duration.ofMinutes(125)), vps4User.getId(), dataSource);
+        SqlTestData.insertTestSnapshot(testSnapshotVm7, reportsDataSource);
+        createSnapshotActionWithDate(testSnapshotVm7.id, ActionType.CREATE_SNAPSHOT, ActionStatus.IN_PROGRESS, Instant.now().minus(Duration.ofMinutes(60)), vps4User.getId(), reportsDataSource);
+        vm8 = SqlTestData.insertTestVm(orionGuid, reportsDataSource);
+        createActionWithDate(vm8.vmId, ActionType.CREATE_VM, ActionStatus.NEW, Instant.now().minus(Duration.ofMinutes(125)), vps4User.getId(), reportsDataSource);
     }
 
     @After
     public void cleanupService() {
-        SqlTestData.cleanupTestVmAndRelatedData(vm1.vmId, dataSource);
-        SqlTestData.cleanupTestVmAndRelatedData(vm2.vmId, dataSource);
-        SqlTestData.cleanupTestVmAndRelatedData(vm3.vmId, dataSource);
-        SqlTestData.cleanupTestVmAndRelatedData(vm4.vmId, dataSource);
-        SqlTestData.cleanupTestVmAndRelatedData(vm5.vmId, dataSource);
-        SqlTestData.cleanupTestVmAndRelatedData(vm6.vmId, dataSource);
-        SqlTestData.cleanupTestVmAndRelatedData(vm7.vmId, dataSource);
-        SqlTestData.cleanupTestVmAndRelatedData(vm8.vmId, dataSource);
-        SqlTestData.deleteVps4User(vps4User.getId(), dataSource);
+        SqlTestData.cleanupTestVmAndRelatedData(vm1.vmId, reportsDataSource);
+        SqlTestData.cleanupTestVmAndRelatedData(vm2.vmId, reportsDataSource);
+        SqlTestData.cleanupTestVmAndRelatedData(vm3.vmId, reportsDataSource);
+        SqlTestData.cleanupTestVmAndRelatedData(vm4.vmId, reportsDataSource);
+        SqlTestData.cleanupTestVmAndRelatedData(vm5.vmId, reportsDataSource);
+        SqlTestData.cleanupTestVmAndRelatedData(vm6.vmId, reportsDataSource);
+        SqlTestData.cleanupTestVmAndRelatedData(vm7.vmId, reportsDataSource);
+        SqlTestData.cleanupTestVmAndRelatedData(vm8.vmId, reportsDataSource);
+        SqlTestData.deleteVps4User(vps4User.getId(), reportsDataSource);
     }
 
-    private static void createActionWithDate(UUID vmId, ActionType actionType, ActionStatus status, Instant created, long userId, DataSource dataSource) {
+    private static void createActionWithDate(UUID vmId, ActionType actionType, ActionStatus status, Instant created, long userId, @Vps4ReportsDataSource DataSource dataSource) {
         //TODO: when we convert to using the latest jdbc driver, the sql should allow taking java instant.
         Sql.with(dataSource).exec("INSERT INTO vm_action (vm_id, action_type_id, status_id, created, vps4_user_id, command_id) VALUES (?, ?, ?, ?, ?, ?)",
                 null, vmId, actionType.getActionTypeId(), status.getStatusId(), Timestamp.from(created), userId, UUID.randomUUID());
     }
 
-    private static void createSnapshotActionWithDate(UUID snapshotId, ActionType actionType, ActionStatus status, Instant created, long userId, DataSource dataSource) {
+    private static void createSnapshotActionWithDate(UUID snapshotId, ActionType actionType, ActionStatus status, Instant created, long userId, @Vps4ReportsDataSource DataSource dataSource) {
         //TODO: when we convert to using the latest jdbc driver, the sql should allow taking java instant.
         Sql.with(dataSource).exec("INSERT INTO snapshot_action (snapshot_id, action_type_id, status_id, created, vps4_user_id, command_id) VALUES (?, ?, ?, ?, ?, ?)",
                 null, snapshotId, actionType.getActionTypeId(), status.getStatusId(), Timestamp.from(created), userId, UUID.randomUUID());

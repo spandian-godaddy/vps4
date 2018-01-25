@@ -1,5 +1,9 @@
 package com.godaddy.vps4.phase2.action;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+
 import java.sql.Date;
 import java.sql.Timestamp;
 import java.time.Duration;
@@ -9,10 +13,6 @@ import java.util.List;
 import java.util.UUID;
 
 import javax.sql.DataSource;
-
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
 
 import com.godaddy.vps4.jdbc.DatabaseModule;
 import com.godaddy.vps4.jdbc.ResultSubset;
@@ -28,7 +28,9 @@ import com.godaddy.vps4.vm.VirtualMachine;
 import com.godaddy.vps4.vm.jdbc.JdbcActionService;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
-import static org.junit.Assert.*;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
 
 
 public class ActionServiceTest {

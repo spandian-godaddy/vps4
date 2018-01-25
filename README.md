@@ -249,7 +249,7 @@ Application Monitoring
 
 The application monitoring api is exposed through the vps4 swagger in the "appmonitors" section. The commands are set to EmployeeOnly level impersonation.
 The appropriate SSL certificates will need to be placed in the directory where the script is set to run. 
-[TBD] At the moment, we have set it up under the user `abhoite` but should soon be moved to a different `<vps4_user>`. 
+The jobs are setup under the user **vps4monitor** and the password is available from the vps4 development team. 
 The monitoring scripts are setup manually and invoked using a cron scheduler on a separate server in each DC for the production environment.
 
 | DC Env    |   Server                              |
@@ -262,12 +262,12 @@ Process to setup a cron job:
 * Edit the crontab and ensure the jobs are entered as below.
     ```
     [root@p3plvps4rprt01 ~]# crontab -e
-    */40 * * * * root cd /home/abhoite;/home/abhoite/monitor_pending_actions.sh https://vps4-cca.api.phx3.godaddy.com/api/appmonitors/pending/backupactions?thresholdInMinutes=120 PROD P3 Backup > /dev/null 2>&1
-    */30 * * * * root cd /home/abhoite;/home/abhoite/monitor_pending_actions.sh https://vps4-cca.api.phx3.godaddy.com/api/appmonitors/pending/provision?thresholdInMinutes=60 PROD P3 Provision > /dev/null 2>&1
-    */20 * * * * root cd /home/abhoite;/home/abhoite/monitor_pending_actions.sh https://vps4-cca.api.phx3.godaddy.com/api/appmonitors/pending/restartvm?thresholdInMinutes=15 PROD P3 Restart > /dev/null 2>&1
-    */35 * * * * root cd /home/abhoite;/home/abhoite/monitor_pending_actions.sh https://vps4-cca.api.phx3.godaddy.com/api/appmonitors/pending/restorevm?thresholdInMinutes=120 PROD P3 Restore > /dev/null 2>&1
-    */21 * * * * root cd /home/abhoite;/home/abhoite/monitor_pending_actions.sh https://vps4-cca.api.phx3.godaddy.com/api/appmonitors/pending/startvm?thresholdInMinutes=15 PROD P3 Start > /dev/null 2>&1
-    */22 * * * * root cd /home/abhoite;/home/abhoite/monitor_pending_actions.sh https://vps4-cca.api.phx3.godaddy.com/api/appmonitors/pending/stopvm?thresholdInMinutes=15 PROD P3 Stop > /dev/null 2>&1
+    */40 * * * * root cd /home/vps4monitor;/home/vps4monitor/monitor_pending_actions.sh https://vps4-cca.api.phx3.godaddy.com/api/appmonitors/pending/backupactions?thresholdInMinutes=120 PROD P3 Backup > /dev/null 2>&1
+    */30 * * * * root cd /home/vps4monitor;/home/vps4monitor/monitor_pending_actions.sh https://vps4-cca.api.phx3.godaddy.com/api/appmonitors/pending/provision?thresholdInMinutes=60 PROD P3 Provision > /dev/null 2>&1
+    */20 * * * * root cd /home/vps4monitor;/home/vps4monitor/monitor_pending_actions.sh https://vps4-cca.api.phx3.godaddy.com/api/appmonitors/pending/restartvm?thresholdInMinutes=15 PROD P3 Restart > /dev/null 2>&1
+    */35 * * * * root cd /home/vps4monitor;/home/vps4monitor/monitor_pending_actions.sh https://vps4-cca.api.phx3.godaddy.com/api/appmonitors/pending/restorevm?thresholdInMinutes=120 PROD P3 Restore > /dev/null 2>&1
+    */21 * * * * root cd /home/vps4monitor;/home/vps4monitor/monitor_pending_actions.sh https://vps4-cca.api.phx3.godaddy.com/api/appmonitors/pending/startvm?thresholdInMinutes=15 PROD P3 Start > /dev/null 2>&1
+    */22 * * * * root cd /home/vps4monitor;/home/vps4monitor/monitor_pending_actions.sh https://vps4-cca.api.phx3.godaddy.com/api/appmonitors/pending/stopvm?thresholdInMinutes=15 PROD P3 Stop > /dev/null 2>&1
     ```
 
 * Restart the crond service.
@@ -278,12 +278,12 @@ Process to setup a cron job:
 * Similarly for SG2 with different url and parameters
     ```
     [root@sg2plvps4rprt01 ~]# crontab -l
-    */40 * * * * root cd /home/abhoite;/home/abhoite/monitor_pending_actions.sh https://vps4-cca.api.sin2.godaddy.com/api/appmonitors/pending/backupactions?thresholdInMinutes=120 PROD SG2 Backup > /dev/null 2>&1
-    */30 * * * * root cd /home/abhoite;/home/abhoite/monitor_pending_actions.sh https://vps4-cca.api.sin2.godaddy.com/api/appmonitors/pending/provision?thresholdInMinutes=60 PROD SG2 Provision > /dev/null 2>&1
-    */20 * * * * root cd /home/abhoite;/home/abhoite/monitor_pending_actions.sh https://vps4-cca.api.sin2.godaddy.com/api/appmonitors/pending/restartvm?thresholdInMinutes=15 PROD SG2 Restart > /dev/null 2>&1
-    */35 * * * * root cd /home/abhoite;/home/abhoite/monitor_pending_actions.sh https://vps4-cca.api.sin2.godaddy.com/api/appmonitors/pending/restorevm?thresholdInMinutes=120 PROD SG2 Restore > /dev/null 2>&1
-    */21 * * * * root cd /home/abhoite;/home/abhoite/monitor_pending_actions.sh https://vps4-cca.api.sin2.godaddy.com/api/appmonitors/pending/startvm?thresholdInMinutes=15 PROD SG2 Start > /dev/null 2>&1
-    */22 * * * * root cd /home/abhoite;/home/abhoite/monitor_pending_actions.sh https://vps4-cca.api.sin2.godaddy.com/api/appmonitors/pending/stopvm?thresholdInMinutes=15 PROD SG2 Stop > /dev/null 2>&1
+    */40 * * * * root cd /home/vps4monitor;/home/vps4monitor/monitor_pending_actions.sh https://vps4-cca.api.sin2.godaddy.com/api/appmonitors/pending/backupactions?thresholdInMinutes=120 PROD SG2 Backup > /dev/null 2>&1
+    */30 * * * * root cd /home/vps4monitor;/home/vps4monitor/monitor_pending_actions.sh https://vps4-cca.api.sin2.godaddy.com/api/appmonitors/pending/provision?thresholdInMinutes=60 PROD SG2 Provision > /dev/null 2>&1
+    */20 * * * * root cd /home/vps4monitor;/home/vps4monitor/monitor_pending_actions.sh https://vps4-cca.api.sin2.godaddy.com/api/appmonitors/pending/restartvm?thresholdInMinutes=15 PROD SG2 Restart > /dev/null 2>&1
+    */35 * * * * root cd /home/vps4monitor;/home/vps4monitor/monitor_pending_actions.sh https://vps4-cca.api.sin2.godaddy.com/api/appmonitors/pending/restorevm?thresholdInMinutes=120 PROD SG2 Restore > /dev/null 2>&1
+    */21 * * * * root cd /home/vps4monitor;/home/vps4monitor/monitor_pending_actions.sh https://vps4-cca.api.sin2.godaddy.com/api/appmonitors/pending/startvm?thresholdInMinutes=15 PROD SG2 Start > /dev/null 2>&1
+    */22 * * * * root cd /home/vps4monitor;/home/vps4monitor/monitor_pending_actions.sh https://vps4-cca.api.sin2.godaddy.com/api/appmonitors/pending/stopvm?thresholdInMinutes=15 PROD SG2 Stop > /dev/null 2>&1
     ```
 
 

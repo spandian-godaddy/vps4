@@ -11,13 +11,14 @@ import com.godaddy.hfs.jdbc.Sql;
 import com.godaddy.vps4.appmonitors.MonitorService;
 import com.godaddy.vps4.appmonitors.SnapshotActionData;
 import com.godaddy.vps4.appmonitors.VmActionData;
+import com.godaddy.vps4.jdbc.Vps4ReportsDataSource;
 import com.godaddy.vps4.vm.ActionStatus;
 import com.godaddy.vps4.vm.ActionType;
 import com.google.inject.Inject;
 
 public class JdbcMonitorService implements MonitorService {
 
-    private final DataSource dataSource;
+    private final DataSource reportsDataSource;
 
     private final static String selectVmsByActionAndDuration = "SELECT vma.id, vma.command_id, vma.vm_id " +
             "FROM vm_action vma " +
@@ -55,15 +56,15 @@ public class JdbcMonitorService implements MonitorService {
             "AND now_utc() - vma.created >= ";
 
     @Inject
-    public JdbcMonitorService(DataSource dataSource) {
-        this.dataSource = dataSource;
+    public JdbcMonitorService(@Vps4ReportsDataSource DataSource reportsDataSource) {
+        this.reportsDataSource = reportsDataSource;
     }
 
     @Override
     public List<VmActionData> getVmsByActions(ActionType type, ActionStatus status, long thresholdInMinutes) {
         String interval = "INTERVAL '" + thresholdInMinutes + " minutes'";
         String selectDateOrderedVmsByActionAndDuration = selectVmsByActionAndDuration + interval + orderby;
-        return Sql.with(dataSource)
+        return Sql.with(reportsDataSource)
                 .exec(selectDateOrderedVmsByActionAndDuration, Sql.listOf(this::mapVmActionData), type.name(), status.name());
     }
 
@@ -81,7 +82,7 @@ public class JdbcMonitorService implements MonitorService {
     public List<SnapshotActionData> getVmsBySnapshotActions(ActionType type, ActionStatus status, long thresholdInMinutes) {
         String interval = "INTERVAL '" + thresholdInMinutes + " minutes'  ";
         String selectDateOrderedVmsBySnapshotActionAndDuration = selectVmsBySnapshotActionAndDuration + interval + orderBySnapshotCreated;
-        return Sql.with(dataSource)
+        return Sql.with(reportsDataSource)
                 .exec(selectDateOrderedVmsBySnapshotActionAndDuration, Sql.listOf(this::mapSnapshotActionData), type.name(), status.name());
     }
 
@@ -98,7 +99,7 @@ public class JdbcMonitorService implements MonitorService {
     public List<VmActionData> getVmsByActionStatus(ActionStatus status, long thresholdInMinutes) {
         String interval = "INTERVAL '" + thresholdInMinutes + " minutes'  ";
         String selectDateOrderedVmsByActionStatusAndDuration = selectByActionStatusAndDuration + interval + orderby;
-        return Sql.with(dataSource)
+        return Sql.with(reportsDataSource)
                 .exec(selectDateOrderedVmsByActionStatusAndDuration, Sql.listOf(this::mapVmActionDataWithActionType), status.name());
     }
 
