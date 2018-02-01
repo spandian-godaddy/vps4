@@ -81,6 +81,7 @@ public class Vps4SnapshotVmTest {
     @Inject Config config;
 
     @Captor ArgumentCaptor<Function<CommandContext, Void>> snapshotCaptor;
+    @Captor ArgumentCaptor<Function<CommandContext, Void>> cancelSnapshotCaptor;
     @Captor ArgumentCaptor<Function<CommandContext, UUID>> markOldestSnapshotCaptor;
     @Captor ArgumentCaptor<Function<CommandContext, SnapshotAction>> snapshotActionCaptor;
     @Captor ArgumentCaptor<Function<CommandContext, gdg.hfs.vhfs.snapshot.Snapshot>> hfsSnapshotCaptor;
@@ -169,6 +170,17 @@ public class Vps4SnapshotVmTest {
         Function<CommandContext, UUID> lambda = markOldestSnapshotCaptor.getValue();
         lambda.apply(context);
         verify(spySnapshotService, times(1)).markOldestSnapshotForDeprecation(request.orionGuid, SnapshotType.ON_DEMAND);
+    }
+
+    @Test
+    public void cancelsOldErroredSnapshots() {
+        command.execute(context, request);
+        verify(context, times(1)).execute(eq("CancelErroredSnapshots"), cancelSnapshotCaptor.capture(), eq(Void.class));
+
+        Function<CommandContext, Void> lambda = cancelSnapshotCaptor.getValue();
+        lambda.apply(context);
+        verify(spySnapshotService, times(1)).cancelErroredSnapshots(request.orionGuid, SnapshotType.ON_DEMAND);
+
     }
 
     @Test

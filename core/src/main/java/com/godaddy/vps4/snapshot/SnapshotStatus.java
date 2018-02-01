@@ -12,7 +12,8 @@ public enum SnapshotStatus {
     ERROR(4),
     DESTROYED(5),
     DEPRECATING(6),
-    DEPRECATED(7);
+    DEPRECATED(7),
+    CANCELLED(8);
 
     private final int typeId;
 

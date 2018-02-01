@@ -39,4 +39,6 @@ public interface SnapshotService {
     void reverseSnapshotDeprecation(UUID snapshotId);
 
     void updateSnapshotStatus(UUID snapshotId, SnapshotStatus status);
+
+    void cancelErroredSnapshots(UUID orionGuid, SnapshotType snapshotType);
 }

@@ -59,7 +59,7 @@ public class JdbcSnapshotService implements SnapshotService {
         return Sql.with(dataSource).exec(
                 "SELECT COUNT(*) FROM SNAPSHOT s JOIN SNAPSHOT_STATUS ss ON s.status = ss.status_id "
                         + "JOIN VIRTUAL_MACHINE v ON s.vm_id = v.vm_id "
-                        + "WHERE v.orion_guid = ? AND ss.status NOT IN ('ERROR', 'DESTROYED') "
+                        + "WHERE v.orion_guid = ? AND ss.status NOT IN ('ERROR', 'DESTROYED', 'CANCELLED') "
                         + "AND s.snapshot_type_id = ?;",
                 this::hasOpenSlotsMapper, orionGuid, snapshotType.getSnapshotTypeId());
     }
@@ -73,7 +73,7 @@ public class JdbcSnapshotService implements SnapshotService {
                 "SELECT ss.status, COUNT(*) FROM SNAPSHOT s JOIN snapshot_status ss ON s.status = ss.status_id "
                         + "JOIN VIRTUAL_MACHINE v ON s.vm_id = v.vm_id "
                         + "WHERE v.orion_guid = ? "
-                        + "AND ss.status NOT IN ('ERROR', 'DESTROYED') "
+                        + "AND ss.status NOT IN ('ERROR', 'DESTROYED', 'CANCELLED') "
                         + "AND snapshot_type_id = ?"
                         + "GROUP BY ss.status;",
                 Sql.listOf(this::mapStatusCount), orionGuid, snapshotType.getSnapshotTypeId());
@@ -120,7 +120,7 @@ public class JdbcSnapshotService implements SnapshotService {
                 "SELECT COUNT(*) FROM SNAPSHOT s JOIN snapshot_status ss ON s.status = ss.status_id "
                         + "JOIN VIRTUAL_MACHINE v ON s.vm_id = v.vm_id "
                         + "WHERE v.orion_guid = ? "
-                        + "AND ss.status NOT IN ('LIVE', 'ERROR', 'DESTROYED');",
+                        + "AND ss.status NOT IN ('LIVE', 'ERROR', 'DESTROYED', 'CANCELLED');",
                 Sql.nextOrNull(this::mapCountRows), orionGuid);
 
 //        // No 2 backups for the same vm should ever be in progress at the same time
@@ -266,6 +266,36 @@ public class JdbcSnapshotService implements SnapshotService {
                 rs.getLong("hfs_snapshot_id"),
                 SnapshotType.valueOf(rs.getString("snapshot_type"))
         );
+    }
+
+    private UUID mapSnapshotIds(ResultSet rs) throws SQLException {
+        return UUID.fromString(rs.getString("id"));
+    }
+
+    @Override
+    public void cancelErroredSnapshots(UUID orionGuid, SnapshotType snapshotType){
+        List<UUID> ids = Sql.with(dataSource).exec(selectSnapshotQuery
+                        + " JOIN virtual_machine v ON s.vm_id = v.vm_id"
+                        + " WHERE v.orion_guid = ?"
+                        + " AND s.snapshot_type_id = ?"
+                        + " AND s.status = ?;",
+                Sql.listOf(this::mapSnapshotIds),
+                orionGuid, snapshotType.getSnapshotTypeId(), SnapshotStatus.ERROR.getSnapshotStatusId());
+        markSnapshotCancelled(ids);
+    }
+
+    private void markSnapshotCancelled(List<UUID> snapshotIds){
+        if(snapshotIds.isEmpty()){
+            return;
+        }
+
+        // transform [uuid, uuid] to ('uuid', 'uuid')
+        String ids = snapshotIds.toString().replace("[","('");
+        ids = ids.replace("]", "')");
+        ids = ids.replace(", ", "', '");
+
+        Sql.with(dataSource).exec("UPDATE snapshot SET modified_at=now_utc(), status=? "
+                + " WHERE id IN " + ids, null, SnapshotStatus.CANCELLED.getSnapshotStatusId());
     }
 
 }

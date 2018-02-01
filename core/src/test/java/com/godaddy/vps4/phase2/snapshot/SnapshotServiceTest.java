@@ -73,6 +73,22 @@ public class SnapshotServiceTest {
         SqlTestData.cleanupTestVmAndRelatedData(vm.vmId, dataSource);
     }
 
+
+    @Test
+    public void testCancelErroredSnapshots() {
+        insertTestSnapshots(1, SnapshotStatus.ERROR, SnapshotType.AUTOMATIC);
+        Snapshot testSnapshot = snapshotService.getSnapshotsByOrionGuid(vm.orionGuid).get(0);
+        insertTestSnapshots(1, SnapshotStatus.ERROR, SnapshotType.ON_DEMAND);
+        insertTestSnapshots(1, SnapshotStatus.LIVE, SnapshotType.AUTOMATIC);
+        snapshotService.cancelErroredSnapshots(vm.orionGuid, SnapshotType.AUTOMATIC);
+        testSnapshot = snapshotService.getSnapshot(testSnapshot.id);
+        assertEquals(SnapshotStatus.CANCELLED, testSnapshot.status);
+        List<Snapshot> snapshots = snapshotService.getSnapshotsByOrionGuid(vm.orionGuid);
+        assertEquals(3, snapshots.size());
+        assertEquals(1, snapshots.stream().filter(snapshot -> snapshot.status == SnapshotStatus.ERROR).collect(Collectors.toList()).size());
+        assertEquals(1, snapshots.stream().filter(snapshot -> snapshot.status == SnapshotStatus.LIVE).collect(Collectors.toList()).size());
+    }
+
     @Test
     public void testSnapshotsForUser() {
         insertTestSnapshots(3, SnapshotStatus.LIVE, SnapshotType.ON_DEMAND);

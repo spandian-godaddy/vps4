@@ -98,7 +98,7 @@ public class SnapshotResource {
         List<Snapshot> snapshots = snapshotService.getSnapshotsForUser(vps4User.getId());
         return snapshots
                 .stream()
-                .filter(snapshot -> snapshot.status != SnapshotStatus.DESTROYED)
+                .filter(snapshot -> snapshot.status != SnapshotStatus.DESTROYED && snapshot.status != SnapshotStatus.CANCELLED)
                 .collect(Collectors.toList());
     }
 
@@ -166,7 +166,7 @@ public class SnapshotResource {
     @JsonView(Views.Public.class)
     public Snapshot getSnapshot(@PathParam("snapshotId") UUID snapshotId) {
         Snapshot snapshot = snapshotService.getSnapshot(snapshotId);
-        if (snapshot == null || snapshot.status == SnapshotStatus.DESTROYED)
+        if (snapshot == null || snapshot.status == SnapshotStatus.DESTROYED || snapshot.status == SnapshotStatus.CANCELLED)
             throw new NotFoundException("Unknown snapshot");
 
         // check to ensure snapshot belongs to vm and vm exists

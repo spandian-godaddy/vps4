@@ -56,6 +56,10 @@ public class Vps4SnapshotVm extends ActionCommand<Vps4SnapshotVm.Request, Vps4Sn
         snapshotIdToBeDeprecated = context.execute("MarkOldestSnapshotForDeprecation" + request.orionGuid,
                 ctx -> vps4SnapshotService.markOldestSnapshotForDeprecation(request.orionGuid, request.snapshotType),
                 UUID.class);
+        context.execute("CancelErroredSnapshots", ctx -> {
+            vps4SnapshotService.cancelErroredSnapshots(request.orionGuid, request.snapshotType);
+            return null;
+        }, Void.class);
         SnapshotAction hfsAction = createAndWaitForSnapshotCompletion(context, request);
         deprecateOldSnapshot(context, request.vps4UserId);
         return generateResponse(hfsAction);
