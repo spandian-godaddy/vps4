@@ -76,7 +76,7 @@ public class VmSnapshotResource {
 
         return snapshotService.getSnapshotsForVm(vmId)
                 .stream()
-                .filter(snapshot -> snapshot.status != SnapshotStatus.DESTROYED)
+                .filter(snapshot -> snapshot.status != SnapshotStatus.DESTROYED && snapshot.status != SnapshotStatus.CANCELLED)
                 .collect(Collectors.toList());
     }
 

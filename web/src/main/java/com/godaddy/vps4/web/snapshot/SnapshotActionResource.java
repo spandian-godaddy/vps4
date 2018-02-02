@@ -58,7 +58,7 @@ public class SnapshotActionResource {
 
     private void verifyPrivilege(UUID snapshotId) {
         Snapshot snapshot = snapshotService.getSnapshot(snapshotId);
-        if (snapshot == null || snapshot.status == SnapshotStatus.DESTROYED)
+        if (snapshot == null || snapshot.status == SnapshotStatus.DESTROYED || snapshot.status == SnapshotStatus.CANCELLED)
             throw new NotFoundException("Unknown snapshot ID: " + snapshotId);
 
         if (user.isShopper())

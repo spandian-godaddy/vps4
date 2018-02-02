@@ -111,4 +111,13 @@ public class VmSnapshotResourceTest {
         List<Snapshot> snapshots = getVmSnapshotResource().getSnapshotsForVM(snapshot.vmId);
         Assert.assertEquals(0, snapshots.size());
     }
+
+    @Test
+    public void testGetSnapshotsFiltersCancelled() {
+        Snapshot snapshot = createTestSnapshot();
+        snapshotService.updateSnapshotStatus(snapshot.id, SnapshotStatus.CANCELLED);
+
+        List<Snapshot> snapshots = getVmSnapshotResource().getSnapshotsForVM(snapshot.vmId);
+        Assert.assertEquals(0, snapshots.size());
+    }
 }
