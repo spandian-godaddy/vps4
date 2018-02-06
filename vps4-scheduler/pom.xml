@@ -223,7 +223,7 @@
         <dependency>
             <groupId>com.godaddy.hfs</groupId>
             <artifactId>hfs-web</artifactId>
-            <version>0.8.2-7</version>
+            <version>0.8.5</version>
             <exclusions>
                 <exclusion>
                     <groupId>javax.ws.rs</groupId>
@@ -252,10 +252,6 @@
                 <exclusion>
                     <groupId>org.slf4j</groupId>
                     <artifactId>*</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>com.godaddy.hfs</groupId>
-                    <artifactId>hfs-crypto</artifactId>
                 </exclusion>
             </exclusions>
         </dependency>

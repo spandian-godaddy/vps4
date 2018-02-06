@@ -130,10 +130,6 @@
                     <groupId>org.slf4j</groupId>
                     <artifactId>*</artifactId>
                 </exclusion>
-                <exclusion>
-                    <groupId>com.godaddy.hfs</groupId>
-                    <artifactId>hfs-crypto</artifactId>
-                </exclusion>
             </exclusions>
         </dependency>
         

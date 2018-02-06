@@ -1,7 +1,5 @@
 package com.godaddy.vps4.util;
 
-import javax.net.ssl.KeyManager;
-import javax.net.ssl.X509KeyManager;
 import java.io.ByteArrayInputStream;
 import java.io.InputStreamReader;
 import java.net.Socket;
@@ -10,10 +8,11 @@ import java.security.PrivateKey;
 import java.security.cert.X509Certificate;
 import java.util.Objects;
 
-import com.godaddy.hfs.io.Charsets;
-import com.godaddy.hfs.config.Config;
-import com.godaddy.hfs.crypto.PEMFile;
+import javax.net.ssl.KeyManager;
+import javax.net.ssl.X509KeyManager;
 
+import com.godaddy.hfs.config.Config;
+import com.godaddy.hfs.io.Charsets;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

@@ -163,7 +163,7 @@
         <dependency>
             <groupId>com.godaddy.hfs</groupId>
             <artifactId>hfs-web</artifactId>
-            <version>0.8.2-7</version>
+            <version>0.8.5</version>
             <exclusions>
             	<exclusion>
             		<groupId>org.glassfish.jersey.core</groupId>
@@ -200,7 +200,7 @@
         <dependency>
             <groupId>com.godaddy.hosting</groupId>
             <artifactId>orchestration-web</artifactId>
-            <version>0.5.1-25</version>
+            <version>0.5.1-27</version>
             <exclusions>
                 <exclusion>
                     <groupId>org.jboss.resteasy</groupId>

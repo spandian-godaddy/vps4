@@ -8,7 +8,6 @@ import com.godaddy.hfs.web.resteasy.GuiceResteasyBootstrap;
 import com.godaddy.hfs.zookeeper.ZooKeeperClient;
 import com.godaddy.vps4.cache.CacheLifecycleListener;
 import com.google.inject.Injector;
-
 import gdg.hfs.orchestration.web.CommandsResource;
 import gdg.hfs.orchestration.web.CommandsViewResource;
 

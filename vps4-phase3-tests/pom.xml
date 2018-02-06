@@ -70,7 +70,7 @@
 		<dependency>
 			<groupId>com.godaddy.hfs</groupId>
 			<artifactId>hfs-crypto</artifactId>
-			<version>0.5.0</version>
+			<version>0.8.5</version>
 		</dependency>
 		<dependency>
 			<groupId>org.jboss.resteasy</groupId>
@@ -86,7 +86,7 @@
 		<dependency>
             <groupId>com.godaddy.hosting</groupId>
             <artifactId>orchestration-web</artifactId>
-            <version>0.0.1-35</version>
+            <version>0.5.1-27</version>
             <scope>provided</scope>
         </dependency>
         <dependency>
