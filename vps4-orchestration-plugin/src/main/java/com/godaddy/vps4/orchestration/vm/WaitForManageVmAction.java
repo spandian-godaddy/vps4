@@ -28,7 +28,7 @@ public class WaitForManageVmAction implements Command<VmAction, VmAction> {
                 || hfsAction.state == VmAction.Status.REQUESTED
                 || hfsAction.state == VmAction.Status.IN_PROGRESS) {
 
-            logger.info("waiting for vm action to complete: {}", hfsAction);
+            logger.debug("waiting for vm action to complete: {}", hfsAction);
 
             context.sleep(2000);
 

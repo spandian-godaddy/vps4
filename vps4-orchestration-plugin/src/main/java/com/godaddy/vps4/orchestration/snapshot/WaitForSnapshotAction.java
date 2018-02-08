@@ -26,7 +26,7 @@ public class WaitForSnapshotAction implements Command<SnapshotAction, SnapshotAc
         while (hfsAction.status == SnapshotAction.Status.NEW
                 || hfsAction.status == SnapshotAction.Status.IN_PROGRESS) {
 
-            logger.info("waiting for snapshot action to complete: {}", hfsAction);
+            logger.debug("waiting for snapshot action to complete: {}", hfsAction);
 
             context.sleep(2000);
 

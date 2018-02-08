@@ -27,7 +27,7 @@ public class WaitForPleskAction implements Command<PleskAction, Void> {
         while (hfsAction.status != PleskAction.Status.COMPLETE
                 && hfsAction.status != PleskAction.Status.FAILED) {
 
-            logger.info("waiting on plesk config image: {}", hfsAction);
+            logger.debug("waiting on plesk config image: {}", hfsAction);
 
             context.sleep(2000);
 

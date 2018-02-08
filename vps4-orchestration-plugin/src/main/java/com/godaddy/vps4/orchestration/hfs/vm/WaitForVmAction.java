@@ -37,7 +37,7 @@ public class WaitForVmAction implements Command<VmAction, VmAction> {
                 || hfsAction.state == VmAction.Status.REQUESTED
                 || hfsAction.state == VmAction.Status.IN_PROGRESS) {
 
-            logger.info("waiting for action to complete: {}", hfsAction);
+            logger.debug("waiting for action to complete: {}", hfsAction);
 
             if (hfsAction.state == VmAction.Status.IN_PROGRESS) {
                 // FIXME update the state of the action to include the vm

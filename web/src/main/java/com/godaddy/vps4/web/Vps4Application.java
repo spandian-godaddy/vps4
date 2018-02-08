@@ -7,7 +7,9 @@ import com.godaddy.hfs.web.ListenerRegistration;
 import com.godaddy.hfs.web.resteasy.GuiceResteasyBootstrap;
 import com.godaddy.hfs.zookeeper.ZooKeeperClient;
 import com.godaddy.vps4.cache.CacheLifecycleListener;
+import com.godaddy.vps4.web.log.LogLevelListener;
 import com.google.inject.Injector;
+
 import gdg.hfs.orchestration.web.CommandsResource;
 import gdg.hfs.orchestration.web.CommandsViewResource;
 
@@ -20,6 +22,8 @@ public class Vps4Application extends HfsWebApplication {
 
     @Override
     public void registerListeners(ListenerRegistration listeners) {
+
+        listeners.addEventListener(LogLevelListener.class);
 
         listeners.addEventListener(CacheLifecycleListener.class);
 

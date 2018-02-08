@@ -1,5 +1,7 @@
 package com.godaddy.vps4.orchestration;
 
+import ch.qos.logback.classic.Level;
+import com.godaddy.hfs.config.Config;
 import com.godaddy.vps4.credit.CreditModule;
 import com.godaddy.vps4.jdbc.DatabaseModule;
 import com.godaddy.vps4.monitoring.MonitoringModule;
@@ -24,6 +26,7 @@ import org.slf4j.LoggerFactory;
 import gdg.hfs.orchestration.CommandPlugin;
 import gdg.hfs.orchestration.CommandProvider;
 import gdg.hfs.orchestration.GuiceCommandProvider;
+import com.godaddy.vps4.config.ConfigModule;
 
 public class Vps4CommandPlugin implements CommandPlugin {
 
@@ -35,36 +38,55 @@ public class Vps4CommandPlugin implements CommandPlugin {
     }
 
     @Override
+    public void start() {
+        Injector injector = Guice.createInjector(
+            new ConfigModule()
+        );
+
+        Config config = injector.getInstance(Config.class);
+        setLogLevel(config);
+    }
+
+    @Override
     public CommandProvider newCommandProvider() {
 
+        
         AbstractModule hfsModule = null;
-
+        
         if (System.getProperty("vps4.hfs.mock", "false").equals("true")) {
             hfsModule = new HfsMockModule();
             logger.info("USING MOCK HFS");
-         }
-         else{
-             hfsModule = new HfsModule();
-         }
-
+        }
+        else{
+            hfsModule = new HfsModule();
+        }
+        
         Injector injector = Guice.createInjector(
-                new ObjectMapperModule(),
-                hfsModule,
-                new HfsCommandModule(),
-                new DatabaseModule(),
-                new VmModule(),
-                new CreditModule(),
-                new SnapshotModule(),
-                new Vps4CommandModule(),
-                new UtilsModule(),
-                new SchedulerServiceClientModule(),
-                new SchedulerModule(),
-                new AccountModule(),
-                new SecurityModule(),
-                new MonitoringModule()
-        );
-
+            new ObjectMapperModule(),
+            hfsModule,
+            new HfsCommandModule(),
+            new DatabaseModule(),
+            new VmModule(),
+            new CreditModule(),
+            new SnapshotModule(),
+            new Vps4CommandModule(),
+            new UtilsModule(),
+            new SchedulerServiceClientModule(),
+            new SchedulerModule(),
+            new AccountModule(),
+            new SecurityModule(),
+            new MonitoringModule()
+            );
+            
         return new GuiceCommandProvider(injector);
+    }
+
+    private static void setLogLevel(Config config)
+    {
+        ch.qos.logback.classic.Logger root = (ch.qos.logback.classic.Logger) org.slf4j.LoggerFactory
+                .getLogger(ch.qos.logback.classic.Logger.ROOT_LOGGER_NAME);
+        Level level = Level.toLevel(config.get("vps4.log.level.orchestration"), Level.INFO);
+        root.setLevel(level);
     }
 
 }

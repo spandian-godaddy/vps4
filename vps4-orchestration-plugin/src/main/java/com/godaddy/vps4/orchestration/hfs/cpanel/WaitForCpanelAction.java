@@ -27,7 +27,7 @@ public class WaitForCpanelAction implements Command<CPanelAction, Void> {
         while (!hfsAction.status.equals(CPanelAction.Status.COMPLETE)
                 && !hfsAction.status.equals(CPanelAction.Status.FAILED)) {
 
-            logger.info("waiting on config image: {}", hfsAction);
+            logger.debug("waiting on config image: {}", hfsAction);
 
             context.sleep(2000);
 

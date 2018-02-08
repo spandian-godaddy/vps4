@@ -33,6 +33,7 @@ import com.godaddy.vps4.sysadmin.SysAdminModule;
 import com.godaddy.vps4.util.ObjectMapperProvider;
 import com.godaddy.vps4.util.UtilsModule;
 import com.godaddy.vps4.vm.VmModule;
+import com.godaddy.vps4.web.log.LogModule;
 import com.godaddy.vps4.web.network.NetworkModule;
 import com.godaddy.vps4.web.security.AuthenticationFilter;
 import com.godaddy.vps4.web.security.GDUserModule;
@@ -153,6 +154,7 @@ public class Vps4Injector {
                         .addBinding().toInstance(resourceClass -> isResourceSwaggerVisible(resourceClass));
             }
         });
+        modules.add(new LogModule());
         modules.add(new CacheModule());
         modules.add(new HazelcastCacheModule());
         modules.add(new SchedulerServiceClientModule());
