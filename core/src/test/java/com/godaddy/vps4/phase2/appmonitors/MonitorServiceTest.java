@@ -25,6 +25,7 @@ import com.godaddy.vps4.security.jdbc.JdbcVps4UserService;
 import com.godaddy.vps4.snapshot.Snapshot;
 import com.godaddy.vps4.snapshot.SnapshotStatus;
 import com.godaddy.vps4.snapshot.SnapshotType;
+import com.godaddy.vps4.vm.Action;
 import com.godaddy.vps4.vm.ActionStatus;
 import com.godaddy.vps4.vm.ActionType;
 import com.godaddy.vps4.vm.VirtualMachine;
@@ -122,7 +123,7 @@ public class MonitorServiceTest {
 
     @Test
     public void testGetVmsByActions() {
-        List<VmActionData> problemVms = provisioningMonitorService.getVmsByActions(ActionType.CREATE_VM, ActionStatus.IN_PROGRESS, 60);
+        List<VmActionData> problemVms = provisioningMonitorService.getVmsByActions(60, ActionType.CREATE_VM, ActionStatus.IN_PROGRESS);
         assertNotNull(problemVms);
         // TODO: change the size to equal 2 when we move to newer version of jdbc driver, utc does not work as timestamp is not set with timezone
         assertTrue(String.format("Expected count of problem VM's does not match actual count of {%s} VM's.", problemVms.size()), problemVms.size() == 3);
@@ -132,7 +133,7 @@ public class MonitorServiceTest {
 
     @Test
     public void testGetVmsBySnapshotActions() {
-        List<SnapshotActionData> problemVms = provisioningMonitorService.getVmsBySnapshotActions(ActionType.CREATE_SNAPSHOT, ActionStatus.IN_PROGRESS, 120);
+        List<SnapshotActionData> problemVms = provisioningMonitorService.getVmsBySnapshotActions(120, ActionStatus.IN_PROGRESS, ActionStatus.ERROR);
         assertNotNull(problemVms);
         // TODO: change the size to equal 1 when we move to newer version of jdbc driver, utc does not work as timestamp is not set with timezone
         assertTrue(String.format("Expected count of problem VM's does not match actual count of {%s} VM's.", problemVms.size()), problemVms.size() == 2);
@@ -141,7 +142,7 @@ public class MonitorServiceTest {
 
     @Test
     public void testGetVmsPendingNewActions() {
-        List<VmActionData> problemVms = provisioningMonitorService.getVmsByActionStatus(ActionStatus.NEW, 120);
+        List<VmActionData> problemVms = provisioningMonitorService.getVmsByActionStatus(120, ActionStatus.NEW);
         assertNotNull(problemVms);
         // TODO: change the size to equal 1 when we move to newer version of jdbc driver, utc does not work as timestamp is not set with timezone
         assertTrue(String.format("Expected count of problem VM's does not match actual count of {%s} VM's.", problemVms.size()), problemVms.size() == 1);

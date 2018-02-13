@@ -6,10 +6,16 @@ public class SnapshotActionData {
     public String actionId;
     public UUID commandId;
     public UUID snapshotId;
+    public String actionType;
+    public String actionStatus;
+    public String createdDate;
 
-    public SnapshotActionData(String actionId, UUID commandId, UUID snapshotId) {
+    public SnapshotActionData(String actionId, UUID commandId, UUID snapshotId, String actionType, String actionStatus, String createdDate) {
         this.actionId = actionId;
         this.commandId = commandId;
         this.snapshotId = snapshotId;
+        this.actionType = actionType;
+        this.actionStatus = actionStatus;
+        this.createdDate = createdDate;
     }
 }

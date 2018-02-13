@@ -3,6 +3,9 @@ package com.godaddy.vps4.web.appmonitors;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
+import java.time.temporal.TemporalUnit;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -37,13 +40,13 @@ public class VmActionsMonitorResourceTest {
 
         expectedSnapshotActionData = new ArrayList<>();
 
-        SnapshotActionData snapshotActionData = new SnapshotActionData("fake-action-id-1", UUID.randomUUID(), UUID.randomUUID());
+        SnapshotActionData snapshotActionData = new SnapshotActionData("fake-action-id-1", UUID.randomUUID(), UUID.randomUUID(), ActionType.CREATE_SNAPSHOT.name(), ActionStatus.IN_PROGRESS.name(), Instant.now().minus(10, ChronoUnit.MINUTES).toString());
         expectedSnapshotActionData.add(snapshotActionData);
 
-        snapshotActionData = new SnapshotActionData("fake-action-id-2", UUID.randomUUID(), UUID.randomUUID());
+        snapshotActionData = new SnapshotActionData("fake-action-id-2", UUID.randomUUID(), UUID.randomUUID(), ActionType.CREATE_SNAPSHOT.name(), ActionStatus.IN_PROGRESS.name(), Instant.now().minus(10, ChronoUnit.MINUTES).toString());
         expectedSnapshotActionData.add(snapshotActionData);
 
-        snapshotActionData = new SnapshotActionData("fake-action-id-3", UUID.randomUUID(), UUID.randomUUID());
+        snapshotActionData = new SnapshotActionData("fake-action-id-3", UUID.randomUUID(), UUID.randomUUID(), ActionType.CREATE_SNAPSHOT.name(), ActionStatus.IN_PROGRESS.name(), Instant.now().minus(10, ChronoUnit.MINUTES).toString());
         expectedSnapshotActionData.add(snapshotActionData);
 
         provisioningMonitorResource = new VmActionsMonitorResource(monitorService);
@@ -51,7 +54,7 @@ public class VmActionsMonitorResourceTest {
 
     @Test
     public void testGetProvisioningPendingVms() {
-        when(monitorService.getVmsByActions(ActionType.CREATE_VM, ActionStatus.IN_PROGRESS, 60L)).thenReturn(expectedVmActionData);
+        when(monitorService.getVmsByActions(60L, ActionType.CREATE_VM, ActionStatus.IN_PROGRESS)).thenReturn(expectedVmActionData);
         List<VmActionData> actualVmActionData = provisioningMonitorResource.getProvisioningPendingVms(60L);
         Assert.assertNotNull(actualVmActionData);
         Assert.assertEquals(expectedVmActionData.size(), actualVmActionData.size());
@@ -59,7 +62,7 @@ public class VmActionsMonitorResourceTest {
 
     @Test
     public void testGetStartPendingVms() {
-        when(monitorService.getVmsByActions(ActionType.START_VM, ActionStatus.IN_PROGRESS, 15L)).thenReturn(expectedVmActionData);
+        when(monitorService.getVmsByActions(15L, ActionType.START_VM, ActionStatus.IN_PROGRESS)).thenReturn(expectedVmActionData);
         List<VmActionData> actualVmActionData = provisioningMonitorResource.getStartPendingVms(15L);
 
         Assert.assertNotNull(actualVmActionData);
@@ -68,7 +71,7 @@ public class VmActionsMonitorResourceTest {
 
     @Test
     public void testGetStopPendingVms() {
-        when(monitorService.getVmsByActions(ActionType.STOP_VM, ActionStatus.IN_PROGRESS, 15L)).thenReturn(expectedVmActionData);
+        when(monitorService.getVmsByActions(15L, ActionType.STOP_VM, ActionStatus.IN_PROGRESS)).thenReturn(expectedVmActionData);
         List<VmActionData> actualVmActionData = provisioningMonitorResource.getStopPendingVms(15L);
         Assert.assertNotNull(actualVmActionData);
         Assert.assertEquals(expectedVmActionData.size(), actualVmActionData.size());
@@ -76,7 +79,7 @@ public class VmActionsMonitorResourceTest {
 
     @Test
     public void testGetRestartPendingVms() {
-        when(monitorService.getVmsByActions(ActionType.RESTART_VM, ActionStatus.IN_PROGRESS, 15L)).thenReturn(expectedVmActionData);
+        when(monitorService.getVmsByActions(15L, ActionType.RESTART_VM, ActionStatus.IN_PROGRESS)).thenReturn(expectedVmActionData);
         List<VmActionData> actualVmActionData = provisioningMonitorResource.getRestartPendingVms(15L);
         Assert.assertNotNull(actualVmActionData);
         Assert.assertEquals(expectedVmActionData.size(), actualVmActionData.size());
@@ -84,7 +87,7 @@ public class VmActionsMonitorResourceTest {
 
     @Test
     public void testGetBackupPendingActions() {
-        when(monitorService.getVmsBySnapshotActions(ActionType.CREATE_SNAPSHOT, ActionStatus.IN_PROGRESS, 120L)).thenReturn(expectedSnapshotActionData);
+        when(monitorService.getVmsBySnapshotActions(120L, ActionStatus.IN_PROGRESS, ActionStatus.NEW, ActionStatus.ERROR)).thenReturn(expectedSnapshotActionData);
         List<SnapshotActionData> actualSnapshotActionData = provisioningMonitorResource.getBackupPendingActions(120L);
         Assert.assertNotNull(actualSnapshotActionData);
         Assert.assertEquals(expectedSnapshotActionData.size(), actualSnapshotActionData.size());
@@ -92,7 +95,7 @@ public class VmActionsMonitorResourceTest {
 
     @Test
     public void testGetRestorePendingVms() {
-        when(monitorService.getVmsByActions(ActionType.RESTORE_VM, ActionStatus.IN_PROGRESS, 120L)).thenReturn(expectedVmActionData);
+        when(monitorService.getVmsByActions(120L, ActionType.RESTORE_VM, ActionStatus.IN_PROGRESS)).thenReturn(expectedVmActionData);
         List<VmActionData> actualVmActionData = provisioningMonitorResource.getRestorePendingVms(120L);
         Assert.assertNotNull(actualVmActionData);
         Assert.assertEquals(expectedVmActionData.size(), actualVmActionData.size());

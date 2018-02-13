@@ -1,5 +1,7 @@
 package com.godaddy.vps4.appmonitors.jdbc;
 
+import static java.util.Arrays.stream;
+
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.List;
@@ -33,20 +35,24 @@ public class JdbcMonitorService implements MonitorService {
 
     private final static String orderby = "ORDER BY vma.created ASC; ";
 
-    private final static String selectVmsBySnapshotActionAndDuration = "SELECT sna.id, sna.command_id, sna.snapshot_id " +
+    private final static String selectVmsBySnapshotActionAndDuration =
+            "SELECT sna.id, sna.command_id, sna.snapshot_id, action_type.type as action_type, " +
+            "action_status.status as action_status, sna.created as action_created_date " +
             "FROM snapshot_action sna " +
+            "JOIN action_type ON sna.action_type_id=action_type.type_id " +
+            "JOIN action_status ON sna.status_id=action_status.status_id " +
+            "JOIN snapshot ON sna.snapshot_id=snapshot.id " + 
             "WHERE sna.created < now_utc() " +
-            "AND sna.action_type_id = ( " +
-            "  SELECT type_id FROM action_type WHERE type = ? " +
-            ") " +
-            "AND sna.status_id = ( " +
-            "  SELECT status_id FROM action_status WHERE status = ? " +
+            "AND sna.status_id IN ( " +
+            "  SELECT status_id FROM action_status WHERE status INCLAUSE " +
+            ") AND snapshot.status NOT IN ( " +
+            "  SELECT snapshot_status.status_id FROM snapshot_status WHERE snapshot_status.status = 'CANCELLED' " +
             ") " +
             "AND now_utc() - sna.created >= ";
 
     private final static String orderBySnapshotCreated = "ORDER BY sna.created ASC; ";
 
-    private final static String selectByActionStatusAndDuration = "SELECT vma.id, vma.command_id, vma.vm_id, action_type.type " +
+    private final static String selectVmsByActionStatusAndDuration = "SELECT vma.id, vma.command_id, vma.vm_id, action_type.type " +
             "FROM vm_action vma, action_type " +
             "WHERE vma.created < now_utc() " +
             "AND vma.action_type_id = action_type.type_id " +
@@ -61,7 +67,7 @@ public class JdbcMonitorService implements MonitorService {
     }
 
     @Override
-    public List<VmActionData> getVmsByActions(ActionType type, ActionStatus status, long thresholdInMinutes) {
+    public List<VmActionData> getVmsByActions(long thresholdInMinutes, ActionType type, ActionStatus status) {
         String interval = "INTERVAL '" + thresholdInMinutes + " minutes'";
         String selectDateOrderedVmsByActionAndDuration = selectVmsByActionAndDuration + interval + orderby;
         return Sql.with(reportsDataSource)
@@ -70,48 +76,69 @@ public class JdbcMonitorService implements MonitorService {
 
     private VmActionData mapVmActionData(ResultSet rs) throws SQLException {
 
-        String actionId = rs.getString("id");
-        UUID commandId = java.util.UUID.fromString(rs.getString("command_id"));
-        UUID vmId = java.util.UUID.fromString(rs.getString("vm_id"));
+        try {
+            String actionId = rs.getString("id");
+            UUID commandId = rs.getString("command_id") == null ? null : java.util.UUID.fromString(rs.getString("command_id"));
+            UUID vmId = rs.getString("vm_id") == null ? null : java.util.UUID.fromString(rs.getString("vm_id"));
 
-        VmActionData vmActionData = new VmActionData(actionId, commandId, vmId);
-        return vmActionData;
+            VmActionData vmActionData = new VmActionData(actionId, commandId, vmId);
+            return vmActionData;
+        }catch (IllegalArgumentException iax) {
+            throw new IllegalArgumentException("Could not map response. ", iax);
+        }
     }
 
     @Override
-    public List<SnapshotActionData> getVmsBySnapshotActions(ActionType type, ActionStatus status, long thresholdInMinutes) {
+    public List<SnapshotActionData> getVmsBySnapshotActions(long thresholdInMinutes, ActionStatus... status) {
         String interval = "INTERVAL '" + thresholdInMinutes + " minutes'  ";
-        String selectDateOrderedVmsBySnapshotActionAndDuration = selectVmsBySnapshotActionAndDuration + interval + orderBySnapshotCreated;
+        String[] actionStatuses = stream(status).map(ActionStatus::name).toArray(String[]::new);
+        String inClause = "IN ('" + String.join("','", actionStatuses) + "')";
+        String selectVmsBySnapshotActionAndDurationWithInClause = selectVmsBySnapshotActionAndDuration.replaceFirst("INCLAUSE", inClause);
+        String selectDateOrderedVmsBySnapshotActionAndDuration = selectVmsBySnapshotActionAndDurationWithInClause + interval + orderBySnapshotCreated;
         return Sql.with(reportsDataSource)
-                .exec(selectDateOrderedVmsBySnapshotActionAndDuration, Sql.listOf(this::mapSnapshotActionData), type.name(), status.name());
+                .exec(selectDateOrderedVmsBySnapshotActionAndDuration, Sql.listOf(this::mapSnapshotActionData));
     }
 
     private SnapshotActionData mapSnapshotActionData(ResultSet rs) throws SQLException {
-        String actionId = rs.getString("id");
-        UUID commandId = java.util.UUID.fromString(rs.getString("command_id"));
-        UUID snapshotId = java.util.UUID.fromString(rs.getString("snapshot_id"));
 
-        SnapshotActionData snapshotActionData = new SnapshotActionData(actionId, commandId, snapshotId);
-        return snapshotActionData;
+        try {
+            String actionId = rs.getString("id");
+            UUID commandId = rs.getString("command_id") == null ? null : java.util.UUID.fromString(rs.getString("command_id"));
+            UUID snapshotId = rs.getString("snapshot_id") == null ? null : java.util.UUID.fromString(rs.getString("snapshot_id"));
+            String actionType = ActionType.valueOf(rs.getString("action_type")).name();
+            String actionStatus = ActionStatus.valueOf(rs.getString("action_status")).name();
+            String createdDate = rs.getString("action_created_date");
+
+            SnapshotActionData snapshotActionData = new SnapshotActionData(actionId, commandId, snapshotId, actionType, actionStatus, createdDate);
+            return snapshotActionData;
+
+        } catch (IllegalArgumentException iax) {
+            throw new IllegalArgumentException("Could not map response. ", iax);
+        }
     }
 
     @Override
-    public List<VmActionData> getVmsByActionStatus(ActionStatus status, long thresholdInMinutes) {
+    public List<VmActionData> getVmsByActionStatus(long thresholdInMinutes, ActionStatus status) {
         String interval = "INTERVAL '" + thresholdInMinutes + " minutes'  ";
-        String selectDateOrderedVmsByActionStatusAndDuration = selectByActionStatusAndDuration + interval + orderby;
+        String selectDateOrderedVmsByActionStatusAndDuration = selectVmsByActionStatusAndDuration + interval + orderby;
         return Sql.with(reportsDataSource)
                 .exec(selectDateOrderedVmsByActionStatusAndDuration, Sql.listOf(this::mapVmActionDataWithActionType), status.name());
     }
 
     private VmActionData mapVmActionDataWithActionType(ResultSet rs) throws SQLException {
 
-        String actionId = rs.getString("id");
-        UUID commandId = java.util.UUID.fromString(rs.getString("command_id"));
-        UUID vmId = java.util.UUID.fromString(rs.getString("vm_id"));
-        String actionType = ActionType.valueOf(rs.getString("type")).name();
+        try {
+            String actionId = rs.getString("id");
+            UUID commandId = rs.getString("command_id") == null ? null : java.util.UUID.fromString(rs.getString("command_id"));
+            UUID vmId = rs.getString("vm_id") == null ? null : java.util.UUID.fromString(rs.getString("vm_id"));
+            String actionType = rs.getString("type") == null ? null : ActionType.valueOf(rs.getString("type")).name();
 
-        VmActionData vmActionData = new VmActionData(actionId, commandId, vmId, actionType);
-        return vmActionData;
+            VmActionData vmActionData = new VmActionData(actionId, commandId, vmId, actionType);
+            return vmActionData;
+        } catch (IllegalArgumentException iax) {
+            throw new IllegalArgumentException("Could not map response. ", iax);
+        }
     }
+
 
 }
