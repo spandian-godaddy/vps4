@@ -23,7 +23,8 @@ public class JdbcSnapshotService implements SnapshotService {
     private String selectSnapshotQuery = "SELECT s.id, s.hfs_image_id, s.project_id, "
             + "s.hfs_snapshot_id, s.vm_id, s.name, ss.status, s.created_at, s.modified_at, st.snapshot_type "
             + "FROM snapshot s JOIN snapshot_status ss ON s.status = ss.status_id "
-            + "JOIN snapshot_type st  USING(snapshot_type_id)";
+            + "JOIN snapshot_type st  USING(snapshot_type_id) ";
+    private String orderByCompletedDateDesc = "ORDER BY modified_at DESC ";
 
     @Inject
     public JdbcSnapshotService(DataSource dataSource) {
@@ -248,7 +249,7 @@ public class JdbcSnapshotService implements SnapshotService {
 
     @Override
     public List<Snapshot> getSnapshotsForVm(UUID vmId) {
-        return Sql.with(dataSource).exec(selectSnapshotQuery + "WHERE s.vm_id=?",
+        return Sql.with(dataSource).exec(selectSnapshotQuery + "WHERE s.vm_id=? " + orderByCompletedDateDesc,
                 Sql.listOf(this::mapSnapshot), vmId);
     }
 

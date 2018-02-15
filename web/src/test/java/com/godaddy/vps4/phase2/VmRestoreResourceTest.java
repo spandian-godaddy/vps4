@@ -9,20 +9,9 @@ import javax.inject.Inject;
 import javax.sql.DataSource;
 import javax.ws.rs.NotFoundException;
 
-import com.godaddy.vps4.scheduler.api.web.SchedulerWebService;
-import org.json.simple.JSONObject;
-import org.junit.After;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Test;
-import org.mockito.ArgumentCaptor;
-import org.mockito.Captor;
-import org.mockito.Mockito;
-import org.mockito.MockitoAnnotations;
-
 import com.godaddy.vps4.jdbc.DatabaseModule;
 import com.godaddy.vps4.orchestration.vm.Vps4RestoreVm;
+import com.godaddy.vps4.scheduler.api.web.SchedulerWebService;
 import com.godaddy.vps4.security.GDUserMock;
 import com.godaddy.vps4.security.SecurityModule;
 import com.godaddy.vps4.security.Vps4User;
@@ -41,7 +30,6 @@ import com.godaddy.vps4.vm.VmModule;
 import com.godaddy.vps4.vm.VmUser;
 import com.godaddy.vps4.vm.VmUserType;
 import com.godaddy.vps4.web.Vps4Exception;
-import com.godaddy.vps4.web.Vps4NoShopperException;
 import com.godaddy.vps4.web.security.GDUser;
 import com.godaddy.vps4.web.vm.VmAction;
 import com.godaddy.vps4.web.vm.VmRestoreResource;
@@ -50,10 +38,19 @@ import com.google.inject.AbstractModule;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
 import com.google.inject.Provides;
-
 import gdg.hfs.orchestration.CommandGroupSpec;
 import gdg.hfs.orchestration.CommandService;
 import gdg.hfs.orchestration.CommandSpec;
+import org.json.simple.JSONObject;
+import org.junit.After;
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.BeforeClass;
+import org.junit.Test;
+import org.mockito.ArgumentCaptor;
+import org.mockito.Captor;
+import org.mockito.Mockito;
+import org.mockito.MockitoAnnotations;
 
 public class VmRestoreResourceTest {
     private static GDUser us;
@@ -161,6 +158,15 @@ public class VmRestoreResourceTest {
 
     // === Shopper Tests ===
 
+    private void verifySuccessfulVmRestorationByAdmin() {
+        VmAction vmAction = getVmRestoreResource().restore(ourVm.vmId, getRequestPayload(null, null));
+
+        Assert.assertEquals(vmAction.vps4UserId, ourVps4User.getId());
+        Assert.assertEquals(vmAction.type, ActionType.RESTORE_VM);
+        Assert.assertEquals(vmAction.virtualMachineId, ourVm.vmId);
+        verifyCommandRequestParams(ourVm, ourSnapshot.id, goodPassword);
+    }
+
     private void verifySuccessfulVmRestoration() {
         VmAction vmAction = getVmRestoreResource().restore(ourVm.vmId, getRequestPayload(ourSnapshot.id, goodPassword));
 
@@ -184,6 +190,18 @@ public class VmRestoreResourceTest {
         Assert.assertEquals(commandRequest.restoreVmInfo.vmId, vm.vmId);
         Assert.assertEquals(commandRequest.restoreVmInfo.hostname, vm.hostname);
         Assert.assertEquals(commandRequest.restoreVmInfo.snapshotId, snapshotId);
+    }
+
+    @Test
+    public void verifyAdminRestoreVm() {
+        user = admin;
+        verifySuccessfulVmRestorationByAdmin();
+    }
+
+    @Test(expected = AuthorizationException.class)
+    public void failRestoreVmForNonAdminUsers() {
+        user = them;
+        verifySuccessfulVmRestoration();
     }
 
     @Test
@@ -283,8 +301,8 @@ public class VmRestoreResourceTest {
 
     // === Employee Tests ===
 
-    @Test(expected = Vps4NoShopperException.class)
-    public void anEmployeeCantRestoreOurVM() {
+    @Test
+    public void anEmployeeCanRestoreOurVM() {
         user = employee;
         getVmRestoreResource().restore(ourVm.vmId, getRequestPayload(ourSnapshot.id, goodPassword));
     }
@@ -300,11 +318,11 @@ public class VmRestoreResourceTest {
     @Test
     public void anAdminWithShopperHeaderSetCanRestoreOurVm() {
         user = adminWithShopperHeader;
-        verifySuccessfulVmRestoration();
+        verifySuccessfulVmRestorationByAdmin();
     }
 
-    @Test(expected = Vps4NoShopperException.class)
-    public void anAdminWithoutShopperHeaderCantRestoreOurVM() {
+    @Test
+    public void anAdminWithoutShopperHeaderCanRestoreOurVM() {
         user = admin;
         getVmRestoreResource().restore(ourVm.vmId, getRequestPayload(ourSnapshot.id, goodPassword));
     }
