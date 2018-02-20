@@ -127,17 +127,27 @@ public class Vps4SnapshotVm extends ActionCommand<Vps4SnapshotVm.Request, Vps4Sn
         return hfsAction;
     }
 
+    private boolean shouldRetryAgain(UUID vmId){
+        int numOfFailedSnapshots = vps4SnapshotService.failedBackupsSinceSuccess(vmId, SnapshotType.AUTOMATIC);
+        int retryLimit = Integer.valueOf(config.get("vps4.autobackup.failedBackupRetryLimit"));
+        return numOfFailedSnapshots <= retryLimit;
+    }
+
     private void retrySnapshotCreation(CommandContext context, Request request, Exception e) {
         Snapshot failedSnapshot = vps4SnapshotService.getSnapshot(request.vps4SnapshotId);
         if(failedSnapshot.snapshotType.equals(SnapshotType.AUTOMATIC)){
-            // If an automatic snapshot fails, schedule another one in a configurable number of hours
-            ScheduleAutomaticBackupRetry.Request req = new ScheduleAutomaticBackupRetry.Request();
-            req.vmId = failedSnapshot.vmId;
-            req.shopperId = request.shopperId;
+            if(shouldRetryAgain(failedSnapshot.vmId)) {
+                // If an automatic snapshot fails, schedule another one in a configurable number of hours
+                ScheduleAutomaticBackupRetry.Request req = new ScheduleAutomaticBackupRetry.Request();
+                req.vmId = failedSnapshot.vmId;
+                req.shopperId = request.shopperId;
 
-            UUID retryJobId = context.execute(ScheduleAutomaticBackupRetry.class, req);
-            recordJobId(context, failedSnapshot.vmId, retryJobId);
-
+                UUID retryJobId = context.execute(ScheduleAutomaticBackupRetry.class, req);
+                recordJobId(context, failedSnapshot.vmId, retryJobId);
+                logger.info("Rescheduled automatic snapshot for vm {} with retry job id: {}", failedSnapshot.vmId, retryJobId);
+            }else{
+                logger.warn("Max retries exceeded for automatic snapshot on vm: {}  Will not retry again.", failedSnapshot.vmId);
+            }
             // this is so that orch engine does not auto rerun this command
             throw new NoRetryException("Exception while running an automatic backup for vmId " + failedSnapshot.vmId, e);
         }

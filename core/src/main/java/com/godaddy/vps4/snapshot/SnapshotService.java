@@ -41,4 +41,6 @@ public interface SnapshotService {
     void updateSnapshotStatus(UUID snapshotId, SnapshotStatus status);
 
     void cancelErroredSnapshots(UUID orionGuid, SnapshotType snapshotType);
+
+    int failedBackupsSinceSuccess(UUID vmId, SnapshotType snapshotType);
 }

@@ -319,4 +319,61 @@ public class SnapshotServiceTest {
         snapshotService.markOldestSnapshotForDeprecation(orionGuid, SnapshotType.ON_DEMAND);
         assertEquals(SnapshotStatus.NEW, snapshotService.getSnapshot(snapshotId).status);
     }
+
+    //////////////////////////////////
+    // failedBackupsSinceSuccess tests
+    //////////////////////////////////
+
+    @Test
+    public void noBackups() {
+        int numOfFailedBackups = snapshotService.failedBackupsSinceSuccess(vm.vmId, SnapshotType.AUTOMATIC);
+        assertEquals(0, numOfFailedBackups);
+    }
+
+    @Test
+    public void noFailedBackups() {
+        insertTestSnapshots(1, SnapshotStatus.LIVE, SnapshotType.AUTOMATIC);
+        int numOfFailedBackups = snapshotService.failedBackupsSinceSuccess(vm.vmId, SnapshotType.AUTOMATIC);
+        assertEquals(0, numOfFailedBackups);
+    }
+
+    @Test
+    public void onlyOneErroredBackupNoSuccess() {
+        insertTestSnapshots(1, SnapshotStatus.ERROR, SnapshotType.AUTOMATIC);
+        int numOfFailedBackups = snapshotService.failedBackupsSinceSuccess(vm.vmId, SnapshotType.AUTOMATIC);
+        assertEquals(1, numOfFailedBackups);
+    }
+
+    @Test
+    public void onlyOneCancelledBackupNoSuccess() {
+        insertTestSnapshots(1, SnapshotStatus.CANCELLED, SnapshotType.AUTOMATIC);
+        int numOfFailedBackups = snapshotService.failedBackupsSinceSuccess(vm.vmId, SnapshotType.AUTOMATIC);
+        assertEquals(1, numOfFailedBackups);
+    }
+
+    @Test
+    public void liveBackupIsMostRecent() {
+        insertTestSnapshots(1, SnapshotStatus.CANCELLED, SnapshotType.AUTOMATIC);
+        insertTestSnapshots(1, SnapshotStatus.ERROR, SnapshotType.AUTOMATIC);
+        insertTestSnapshots(1, SnapshotStatus.LIVE, SnapshotType.AUTOMATIC);
+        int numOfFailedBackups = snapshotService.failedBackupsSinceSuccess(vm.vmId, SnapshotType.AUTOMATIC);
+        assertEquals(0, numOfFailedBackups);
+    }
+
+    @Test
+    public void otherTypeOfBackupHasError() {
+        insertTestSnapshots(1, SnapshotStatus.LIVE, SnapshotType.AUTOMATIC);
+        insertTestSnapshots(1, SnapshotStatus.ERROR, SnapshotType.ON_DEMAND);
+        int numOfFailedBackups = snapshotService.failedBackupsSinceSuccess(vm.vmId, SnapshotType.AUTOMATIC);
+        assertEquals(0, numOfFailedBackups);
+    }
+
+    @Test
+    public void multipleLiveBackupsWithErrorsMixedIn() {
+        insertTestSnapshots(1, SnapshotStatus.LIVE, SnapshotType.AUTOMATIC);
+        insertTestSnapshots(1, SnapshotStatus.ERROR, SnapshotType.AUTOMATIC);
+        insertTestSnapshots(1, SnapshotStatus.LIVE, SnapshotType.AUTOMATIC);
+        int numOfFailedBackups = snapshotService.failedBackupsSinceSuccess(vm.vmId, SnapshotType.AUTOMATIC);
+        assertEquals(0, numOfFailedBackups);
+    }
 }

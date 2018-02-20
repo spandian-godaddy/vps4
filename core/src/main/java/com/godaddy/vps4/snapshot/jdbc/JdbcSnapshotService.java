@@ -299,4 +299,26 @@ public class JdbcSnapshotService implements SnapshotService {
                 + " WHERE id IN " + ids, null, SnapshotStatus.CANCELLED.getSnapshotStatusId());
     }
 
+    @Override
+    public int failedBackupsSinceSuccess(UUID vmId, SnapshotType snapshotType){
+        // count the rows of ERRORed and CANCELLED backups since the last successful backup
+        // 01/02/03 is an arbitrary time earlier than any backup recorded in this system.  It is used for
+        // the case when there are no 'LIVE' backups recorded for the vm yet.
+        return Sql.with(dataSource).exec("SELECT COUNT(id) AS numOfIds " +
+                "FROM snapshot " +
+                "JOIN snapshot_status on snapshot.status = snapshot_status.status_id " +
+                "WHERE vm_id = ? " +
+                "AND snapshot_status.status in ('ERROR', 'CANCELLED') " +
+                "AND snapshot_type_id = ?" +
+                "AND created_at > " +
+                    "(GREATEST((SELECT MAX(created_at) AS latestLive " +
+                      "FROM snapshot " +
+                      "JOIN snapshot_status on snapshot.status = snapshot_status.status_id " +
+                      "WHERE vm_id = ? " +
+                      "AND snapshot_status.status = 'LIVE' " +
+                      "AND snapshot_type_id = ?), '01/02/03'::timestamp));",
+                Sql.nextOrNull(rs -> rs.getInt("numOfIds")),
+                vmId, snapshotType.getSnapshotTypeId(), vmId, snapshotType.getSnapshotTypeId());
+    }
+
 }

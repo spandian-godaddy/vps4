@@ -2,6 +2,7 @@ package com.godaddy.vps4.orchestration.phase2;
 
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.eq;
+import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
@@ -288,8 +289,7 @@ public class Vps4SnapshotVmTest {
         Assert.assertEquals(snapshotService.getSnapshot(vps4SnapshotId).status, SnapshotStatus.ERROR);
     }
 
-    @Test
-    public void errorInInitialRequestSchedulesAnotherBackup() {
+    private void verifyBackupRescheduled(int numOfTimesCalled){
         when(context.execute(eq("Vps4SnapshotVm"), any(Function.class), eq(SnapshotAction.class))).thenThrow(new RuntimeException("Error in initial request"));
         try {
             command.execute(context, automaticRequest);
@@ -298,9 +298,19 @@ public class Vps4SnapshotVmTest {
             // the orchestration engine.
             Assert.fail("Should not have thrown a runtime exception");
         }
-        verify(context, times(1)).execute(eq(ScheduleAutomaticBackupRetry.class), any(ScheduleAutomaticBackupRetry.Request.class));
+        verify(context, times(numOfTimesCalled)).execute(eq(ScheduleAutomaticBackupRetry.class), any(ScheduleAutomaticBackupRetry.Request.class));
+    }
 
-//        verify(schedulerService, times(1)).submitJobToGroup(eq("vps4"), eq("backups"), any(Vps4BackupJob.Request.class));
+    @Test
+    public void rescheduleWhenAutoSnapshotFails() {
+        verifyBackupRescheduled(1);
+    }
+
+    @Test
+    public void dontRescheduleWhenAutoSnapshotFailsAndAboveRetryLimit() {
+        int retryLimit = Integer.valueOf(config.get("vps4.autobackup.failedBackupRetryLimit"));
+        doReturn(retryLimit + 1).when(spySnapshotService).failedBackupsSinceSuccess(any(UUID.class), eq(SnapshotType.AUTOMATIC));
+        verifyBackupRescheduled(0);
     }
 
     @Test
