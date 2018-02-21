@@ -11,9 +11,9 @@ import static com.godaddy.vps4.web.util.VmHelper.createActionAndExecute;
 
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
 import javax.inject.Inject;
 import javax.ws.rs.Consumes;
@@ -27,8 +27,6 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
 
-import com.godaddy.vps4.scheduler.api.core.SchedulerJobDetail;
-import com.godaddy.vps4.scheduler.api.web.SchedulerWebService;
 import org.json.simple.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -41,6 +39,8 @@ import com.godaddy.vps4.orchestration.vm.Vps4DestroyVm;
 import com.godaddy.vps4.orchestration.vm.Vps4ProvisionVm;
 import com.godaddy.vps4.project.Project;
 import com.godaddy.vps4.project.ProjectService;
+import com.godaddy.vps4.scheduler.api.core.SchedulerJobDetail;
+import com.godaddy.vps4.scheduler.api.web.SchedulerWebService;
 import com.godaddy.vps4.security.Vps4User;
 import com.godaddy.vps4.security.Vps4UserService;
 import com.godaddy.vps4.snapshot.Snapshot;
@@ -55,6 +55,7 @@ import com.godaddy.vps4.vm.VirtualMachine;
 import com.godaddy.vps4.vm.VirtualMachineService;
 import com.godaddy.vps4.vm.VirtualMachineService.ProvisionVirtualMachineParameters;
 import com.godaddy.vps4.vm.VirtualMachineSpec;
+import com.godaddy.vps4.vm.VirtualMachineType;
 import com.godaddy.vps4.web.Vps4Api;
 import com.godaddy.vps4.web.Vps4Exception;
 import com.godaddy.vps4.web.Vps4NoShopperException;
@@ -66,6 +67,7 @@ import gdg.hfs.orchestration.CommandState;
 import gdg.hfs.vhfs.vm.Vm;
 import gdg.hfs.vhfs.vm.VmService;
 import io.swagger.annotations.Api;
+import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
 
 @Vps4Api
@@ -309,23 +311,43 @@ public class VmResource {
 
     @GET
     @Path("/")
+    @ApiOperation(value = "Get VMs")
     public List<VirtualMachine> getVirtualMachines(
-            @ApiParam(value = "The type of VMs to return", required = false) @DefaultValue("ACTIVE") @QueryParam("type") VirtualMachineType type) {
+            @ApiParam(value = "The type of VMs to return", required = false) @DefaultValue("ACTIVE") @QueryParam("type") VirtualMachineType type,
+            @ApiParam(value = "Shopper ID of the user", required = false) @QueryParam("shopper_id") String shopperId,
+            @ApiParam(value = "IP Address of the desired VM", required = false) @QueryParam("ipAddress") String ipAddress,
+            @ApiParam(value = "Orion Guid associated with the VM", required = false) @QueryParam("orionguid") UUID orionGuid,
+            @ApiParam(value = "HFS VM ID associated with the VM", required = false) @QueryParam("hfsVmId") Long hfsVmId) {
+        if(user.isEmployee()) {
+            return getVmsForAdmin(type, shopperId, ipAddress, orionGuid, hfsVmId);
+        }
+        else {
+            return getVmsForVps4User(type);
+        }
+    }
+    
+    private List<VirtualMachine> getVmsForAdmin(VirtualMachineType type, String shopperId, String ipAddress,
+			UUID orionGuid, Long hfsVmId) {
+        Long vps4UserId = null;
+        if(shopperId != null) {
+            Vps4User vps4User = vps4UserService.getUser(shopperId);
+            if(vps4User == null) {
+                throw new Vps4Exception("SHOPPER_NOT_FOUND", "Shopper ID " + shopperId + " not found.");
+            }
+            vps4UserId = vps4User.getId();
+        }
+		return virtualMachineService.getVirtualMachines(type, vps4UserId, ipAddress, orionGuid, hfsVmId);
+	}
+
+	private List<VirtualMachine> getVmsForVps4User(VirtualMachineType type) {
         if (user.getShopperId() == null)
             throw new Vps4NoShopperException();
         Vps4User vps4User = vps4UserService.getOrCreateUserForShopper(user.getShopperId());
-        
-        switch (type) {
-        case ACTIVE:
-            return virtualMachineService.getVirtualMachinesForUser(vps4User.getId());
-        case ZOMBIE:
-            return virtualMachineService.getZombieVirtualMachinesForUser(vps4User.getId());
-        default:
-            return new ArrayList<VirtualMachine> ();
-        }
+
+        return virtualMachineService.getVirtualMachines(type, vps4User.getId(), null, null, null);
     }
 
-    @GET
+	@GET
     @Path("/{vmId}/details")
     public VirtualMachineDetails getVirtualMachineDetails(@PathParam("vmId") UUID vmId) {
         VirtualMachine virtualMachine = getVm(vmId);

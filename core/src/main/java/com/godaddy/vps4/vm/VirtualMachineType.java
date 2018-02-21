@@ -1,4 +1,4 @@
-package com.godaddy.vps4.web.vm;
+package com.godaddy.vps4.vm;
 
 public enum VirtualMachineType {
     ACTIVE, ZOMBIE;

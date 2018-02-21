@@ -4,6 +4,8 @@ import java.util.UUID;
 
 import javax.sql.DataSource;
 
+import org.json.simple.JSONObject;
+
 import com.godaddy.hfs.jdbc.Sql;
 import com.godaddy.vps4.network.IpAddress;
 import com.godaddy.vps4.network.IpAddress.IpAddressType;
@@ -22,7 +24,6 @@ import com.godaddy.vps4.vm.VirtualMachineService.ProvisionVirtualMachineParamete
 import com.godaddy.vps4.vm.VmUser;
 import com.godaddy.vps4.vm.jdbc.JdbcActionService;
 import com.godaddy.vps4.vm.jdbc.JdbcVirtualMachineService;
-import org.json.simple.JSONObject;
 
 
 public class SqlTestData {
@@ -35,6 +36,11 @@ public class SqlTestData {
     public static long getNextHfsVmId(DataSource dataSource) {
         return Sql.with(dataSource).exec("SELECT max(hfs_vm_id) as hfs_vm_id FROM virtual_machine",
                 Sql.nextOrNull(rs -> rs.isAfterLast() ? 0 : rs.getLong("hfs_vm_id"))) + 1;
+    }
+
+    public static long getNextIpAddressId(DataSource dataSource) {
+        return Sql.with(dataSource).exec("SELECT max(ip_address_id) as ip_address_id FROM ip_address",
+                Sql.nextOrNull(rs -> rs.isAfterLast() ? 0 : rs.getLong("ip_address_id"))) + 1;
     }
 
     public static VirtualMachine insertTestVm(UUID orionGuid, DataSource dataSource) {

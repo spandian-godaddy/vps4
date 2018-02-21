@@ -1,6 +1,5 @@
 package com.godaddy.vps4.vm;
 
-import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -96,10 +95,6 @@ public interface VirtualMachineService {
 
     void updateVirtualMachine(UUID vmId, Map<String, Object> paramsToUpdate);
 
-    List<VirtualMachine> getVirtualMachinesForUser(long vps4UserId);
-
-    List<VirtualMachine> getZombieVirtualMachinesForUser(long vps4UserId);
-
     boolean virtualMachineHasCpanel(UUID vmId);
 
     boolean virtualMachineHasPlesk(UUID vmId);
@@ -119,4 +114,7 @@ public interface VirtualMachineService {
     void setVmZombie(UUID vmId);
 
     void reviveZombieVm(UUID vmId, UUID newOrionGuid);
+
+	List<VirtualMachine> getVirtualMachines(VirtualMachineType type, Long vps4UserId, String ipAddress, UUID orionGuid,
+			Long hfsVmId);
 }

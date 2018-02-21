@@ -24,6 +24,7 @@ import com.godaddy.vps4.vm.Image.OperatingSystem;
 import com.godaddy.vps4.vm.VirtualMachine;
 import com.godaddy.vps4.vm.VirtualMachineService;
 import com.godaddy.vps4.vm.VirtualMachineSpec;
+import com.godaddy.vps4.vm.VirtualMachineType;
 
 public class JdbcVirtualMachineService implements VirtualMachineService {
 
@@ -39,7 +40,8 @@ public class JdbcVirtualMachineService implements VirtualMachineService {
             + "JOIN virtual_machine_spec vms ON vms.spec_id=vm.spec_id "
             + "JOIN image ON image.image_id=vm.image_id "
             + "JOIN project prj ON prj.project_id=vm.project_id "
-            + "LEFT JOIN ip_address ip ON ip.vm_id = vm.vm_id AND ip.ip_address_type_id = 1";
+            + "LEFT JOIN ip_address ip ON ip.vm_id = vm.vm_id AND ip.ip_address_type_id = 1 ";
+
     @Inject
     public JdbcVirtualMachineService(DataSource dataSource) {
         this.dataSource = dataSource;
@@ -48,37 +50,36 @@ public class JdbcVirtualMachineService implements VirtualMachineService {
     @Override
     public VirtualMachineSpec getSpec(String name) {
 
-        return Sql.with(dataSource)
-                .exec("SELECT spec_id, name as spec_vps4_name, spec_name, tier, cpu_core_count, memory_mib, disk_gib, valid_on as spec_valid_on, "
+        return Sql.with(dataSource).exec(
+                "SELECT spec_id, name as spec_vps4_name, spec_name, tier, cpu_core_count, memory_mib, disk_gib, valid_on as spec_valid_on, "
                         + "valid_until as spec_valid_until FROM virtual_machine_spec WHERE spec_name=? ",
-                        Sql.nextOrNull(this::mapVirtualMachineSpec), name);
+                Sql.nextOrNull(this::mapVirtualMachineSpec), name);
     }
-
 
     @Override
     public VirtualMachineSpec getSpec(int tier) {
-        return Sql.with(dataSource)
-                .exec("SELECT spec_id, name as spec_vps4_name, spec_name, tier, cpu_core_count, memory_mib, disk_gib, valid_on as spec_valid_on, "
+        return Sql.with(dataSource).exec(
+                "SELECT spec_id, name as spec_vps4_name, spec_name, tier, cpu_core_count, memory_mib, disk_gib, valid_on as spec_valid_on, "
                         + "valid_until as spec_valid_until FROM virtual_machine_spec WHERE valid_until > now_utc() AND tier=? ",
-                        Sql.nextOrNull(this::mapVirtualMachineSpec), tier);
+                Sql.nextOrNull(this::mapVirtualMachineSpec), tier);
     }
 
     @Override
     public List<VirtualMachine> getVirtualMachinesForProject(long projectId) {
-        return Sql.with(dataSource)
-                .exec(selectVirtualMachineQuery + "WHERE vm.project_id=?", Sql.listOf(this::mapVirtualMachine), projectId);
+        return Sql.with(dataSource).exec(selectVirtualMachineQuery + "WHERE vm.project_id=?",
+                Sql.listOf(this::mapVirtualMachine), projectId);
     }
 
     @Override
     public VirtualMachine getVirtualMachine(long hfsVmId) {
-        return Sql.with(dataSource)
-                .exec(selectVirtualMachineQuery + "WHERE vm.hfs_vm_id=?", Sql.nextOrNull(this::mapVirtualMachine), hfsVmId);
+        return Sql.with(dataSource).exec(selectVirtualMachineQuery + "WHERE vm.hfs_vm_id=?",
+                Sql.nextOrNull(this::mapVirtualMachine), hfsVmId);
     }
 
     @Override
     public VirtualMachine getVirtualMachine(UUID vmId) {
-        return Sql.with(dataSource)
-                .exec(selectVirtualMachineQuery + "WHERE vm.vm_id=?", Sql.nextOrNull(this::mapVirtualMachine), vmId);
+        return Sql.with(dataSource).exec(selectVirtualMachineQuery + "WHERE vm.vm_id=?",
+                Sql.nextOrNull(this::mapVirtualMachine), vmId);
     }
 
     protected VirtualMachine mapVirtualMachine(ResultSet rs) throws SQLException {
@@ -88,17 +89,12 @@ public class JdbcVirtualMachineService implements VirtualMachineService {
         Image image = mapImage(rs);
         String backupJobId = rs.getString("backup_job_id");
 
-        return new VirtualMachine(vmId, rs.getLong("hfs_vm_id"),
-                java.util.UUID.fromString(rs.getString("orion_guid")),
-                rs.getLong("project_id"),
-                spec, rs.getString("vm_name"),
-                image, ipAddress,
+        return new VirtualMachine(vmId, rs.getLong("hfs_vm_id"), java.util.UUID.fromString(rs.getString("orion_guid")),
+                rs.getLong("project_id"), spec, rs.getString("vm_name"), image, ipAddress,
                 rs.getTimestamp("vm_valid_on", TimestampUtils.utcCalendar).toInstant(),
                 rs.getTimestamp("vm_canceled", TimestampUtils.utcCalendar).toInstant(),
-                rs.getTimestamp("vm_valid_until", TimestampUtils.utcCalendar).toInstant(),
-                rs.getString("hostname"),
-                rs.getInt("managed_level"),
-                backupJobId != null? java.util.UUID.fromString(backupJobId) : null);
+                rs.getTimestamp("vm_valid_until", TimestampUtils.utcCalendar).toInstant(), rs.getString("hostname"),
+                rs.getInt("managed_level"), backupJobId != null ? java.util.UUID.fromString(backupJobId) : null);
     }
 
     protected IpAddress mapIpAddress(ResultSet rs) throws SQLException {
@@ -124,8 +120,9 @@ public class JdbcVirtualMachineService implements VirtualMachineService {
     protected VirtualMachineSpec mapVirtualMachineSpec(ResultSet rs) throws SQLException {
         Timestamp validUntil = rs.getTimestamp("spec_valid_until", TimestampUtils.utcCalendar);
 
-        return new VirtualMachineSpec(rs.getInt("spec_id"), rs.getString("spec_vps4_name"), rs.getString("spec_name"), rs.getInt("tier"),
-                rs.getInt("cpu_core_count"), rs.getInt("memory_mib"), rs.getInt("disk_gib"), rs.getTimestamp("spec_valid_on", TimestampUtils.utcCalendar).toInstant(),
+        return new VirtualMachineSpec(rs.getInt("spec_id"), rs.getString("spec_vps4_name"), rs.getString("spec_name"),
+                rs.getInt("tier"), rs.getInt("cpu_core_count"), rs.getInt("memory_mib"), rs.getInt("disk_gib"),
+                rs.getTimestamp("spec_valid_on", TimestampUtils.utcCalendar).toInstant(),
                 validUntil != null ? validUntil.toInstant() : null);
     }
 
@@ -133,20 +130,20 @@ public class JdbcVirtualMachineService implements VirtualMachineService {
     public void setVmRemoved(UUID vmId) {
         Sql.with(dataSource).exec("UPDATE virtual_machine vm SET valid_until=now_utc() WHERE vm_id=?", null, vmId);
     }
-    
+
     @Override
     public void setVmZombie(UUID vmId) {
         Sql.with(dataSource).exec("UPDATE virtual_machine vm SET canceled=now_utc() WHERE vm_id=?", null, vmId);
     }
-    
+
     @Override
     public void reviveZombieVm(UUID vmId, UUID newOrionGuid) {
-        Sql.with(dataSource).exec("UPDATE virtual_machine vm SET canceled = 'infinity', orion_guid = ? WHERE vm_id=?", null, newOrionGuid, vmId);
+        Sql.with(dataSource).exec("UPDATE virtual_machine vm SET canceled = 'infinity', orion_guid = ? WHERE vm_id=?",
+                null, newOrionGuid, vmId);
     }
 
     @Override
-    public VirtualMachine provisionVirtualMachine(ProvisionVirtualMachineParameters vmProvisionParameters)
-    {
+    public VirtualMachine provisionVirtualMachine(ProvisionVirtualMachineParameters vmProvisionParameters) {
         UUID vmId = UUID.randomUUID();
         Sql.with(dataSource).exec("SELECT * FROM virtual_machine_provision(?, ?, ?, ?, ?, ?, ?, ?)",
                 null,
@@ -162,14 +159,14 @@ public class JdbcVirtualMachineService implements VirtualMachineService {
     }
 
     @Override
-    public void addHfsVmIdToVirtualMachine(UUID vmId, long hfsVmId){
+    public void addHfsVmIdToVirtualMachine(UUID vmId, long hfsVmId) {
         Map<String, Object> vmPatchMap = new HashMap<>();
         vmPatchMap.put("hfs_vm_id", hfsVmId);
         updateVirtualMachine(vmId, vmPatchMap);
     }
 
     @Override
-    public void setHostname(UUID vmId, String hostname){
+    public void setHostname(UUID vmId, String hostname) {
         Map<String, Object> vmPatchMap = new HashMap<>();
         vmPatchMap.put("hostname", hostname);
         updateVirtualMachine(vmId, vmPatchMap);
@@ -194,39 +191,58 @@ public class JdbcVirtualMachineService implements VirtualMachineService {
         Sql.with(dataSource).exec(nameSets.toString(), null, values.toArray());
     }
 
-    @Override
-    public List<VirtualMachine> getVirtualMachinesForUser(long vps4UserId) {
-        return Sql.with(dataSource).exec(selectVirtualMachineQuery
-                + "JOIN user_project_privilege up ON up.project_id = vm.project_id "
-                + "JOIN vps4_user u ON up.vps4_user_id = u.vps4_user_id "
-                + "WHERE u.vps4_user_id = ? AND vm.canceled = 'infinity' AND vm.valid_until = 'infinity'",
-                Sql.listOf(this::mapVirtualMachine), vps4UserId);
+	@Override
+    public List<VirtualMachine> getVirtualMachines(VirtualMachineType type, Long vps4UserId, String ipAddress,
+            UUID orionGuid, Long hfsVmId) {
+        List<Object> args = new ArrayList<>();
+        StringBuilder queryAddition = new StringBuilder();
+        if(vps4UserId != null){
+            queryAddition.append("JOIN user_project_privilege upp on upp.project_id = prj.project_id "
+            + "JOIN vps4_user on vps4_user.vps4_user_id = upp.vps4_user_id AND vps4_user.vps4_user_id = ? ");
+            args.add(vps4UserId);
+        }
+        queryAddition.append("WHERE 1=1");
+        if(type != null) {
+            if(type == VirtualMachineType.ACTIVE) {
+                queryAddition.append(" AND vm.canceled = 'infinity' AND vm.valid_until = 'infinity' ");
+            }
+            else if(type == VirtualMachineType.ZOMBIE) {
+                queryAddition.append(" AND vm.canceled < 'infinity' AND vm.valid_until = 'infinity' ");
+            }
+        }
+        if(ipAddress != null) {
+            queryAddition.append(" AND ip.ip_address=?");
+            args.add(ipAddress);
+        }
+        if(orionGuid != null) {
+            queryAddition.append(" AND vm.orion_guid=?");
+            args.add(orionGuid);
+        }
+        if(hfsVmId != null) {
+            queryAddition.append(" AND vm.hfs_vm_id=?");
+            args.add(hfsVmId);
+        }
+        String query = selectVirtualMachineQuery + queryAddition.toString();
+        return Sql.with(dataSource)
+                .exec(query, Sql.listOf(this::mapVirtualMachine), args.toArray());
     }
 
-    @Override
-    public List<VirtualMachine> getZombieVirtualMachinesForUser(long vps4UserId) {
-        return Sql.with(dataSource).exec(selectVirtualMachineQuery
-                + "JOIN user_project_privilege up ON up.project_id = vm.project_id "
-                + "JOIN vps4_user u ON up.vps4_user_id = u.vps4_user_id "
-                + "WHERE u.vps4_user_id = ? AND vm.canceled < 'infinity' AND vm.valid_until = 'infinity'",
-                Sql.listOf(this::mapVirtualMachine), vps4UserId);
-    }
-
-    private boolean virtualMachineHasControlPanel(UUID vmId, String controlPanel){
-        List<VirtualMachine> vms = Sql.with(dataSource).exec(selectVirtualMachineQuery
-                + "JOIN control_panel ON image.control_panel_id = control_panel.control_panel_id "
-                + "where control_panel.name = ? "
-                + "and vm.vm_id = ?;", Sql.listOf(this::mapVirtualMachine), controlPanel, vmId);
+    private boolean virtualMachineHasControlPanel(UUID vmId, String controlPanel) {
+        List<VirtualMachine> vms = Sql.with(dataSource)
+                .exec(selectVirtualMachineQuery
+                        + "JOIN control_panel ON image.control_panel_id = control_panel.control_panel_id "
+                        + "where control_panel.name = ? " 
+                        + "and vm.vm_id = ?;", Sql.listOf(this::mapVirtualMachine), controlPanel, vmId);
         return vms.size() > 0;
     }
 
     @Override
-    public boolean virtualMachineHasCpanel(UUID vmId){
+    public boolean virtualMachineHasCpanel(UUID vmId) {
         return virtualMachineHasControlPanel(vmId, "cpanel");
     }
 
     @Override
-    public boolean virtualMachineHasPlesk(UUID vmId){
+    public boolean virtualMachineHasPlesk(UUID vmId) {
         return virtualMachineHasControlPanel(vmId, "plesk");
     }
 
@@ -258,10 +274,9 @@ public class JdbcVirtualMachineService implements VirtualMachineService {
 
     @Override
     public String getOSDistro(UUID vmId) {
-        String hfsName = Sql.with(dataSource).exec(
-                "SELECT image.hfs_name FROM virtual_machine v "
-                + "JOIN image ON image.image_id=v.image_id "
-                + "WHERE v.vm_id=?;", Sql.nextOrNull(rs -> rs.getString("hfs_name")), vmId);
+        String hfsName = Sql.with(dataSource).exec("SELECT image.hfs_name FROM virtual_machine v "
+                + "JOIN image ON image.image_id=v.image_id WHERE v.vm_id=?;",
+                Sql.nextOrNull(rs -> rs.getString("hfs_name")), vmId);
 
         String pattern = "(?:hfs-)?(?<osdistro>\\w+-\\w+)(?:-\\w+-\\w+)?";
         Matcher m = Pattern.compile(pattern).matcher(hfsName);

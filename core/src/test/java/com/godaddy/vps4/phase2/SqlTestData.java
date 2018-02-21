@@ -6,6 +6,7 @@ import java.util.UUID;
 import javax.sql.DataSource;
 
 import com.godaddy.hfs.jdbc.Sql;
+import com.godaddy.vps4.credit.VirtualMachineCredit;
 import com.godaddy.vps4.snapshot.Snapshot;
 import com.godaddy.vps4.vm.ActionStatus;
 import com.godaddy.vps4.vm.ActionType;
@@ -22,8 +23,18 @@ public class SqlTestData {
                 Sql.nextOrNull(rs -> rs.isAfterLast() ? 0 : rs.getLong("hfs_vm_id"))) + 1;
     }
 
+    public static long getNextIpAddressId(DataSource dataSource) {
+        return Sql.with(dataSource).exec("SELECT max(ip_address_id) as ip_address_id FROM ip_address",
+                Sql.nextOrNull(rs -> rs.isAfterLast() ? 0 : rs.getLong("ip_address_id"))) + 1;
+    }
+
     public static VirtualMachine insertTestVm(UUID orionGuid, DataSource dataSource) {
         return insertTestVm(orionGuid, 1, dataSource);
+    }
+
+    public static VirtualMachine insertTestVmWithIp(UUID orionGuid, DataSource dataSource) {
+        VirtualMachine virtualMachine = insertTestVm(orionGuid, 1, dataSource);
+        return addIpToTestVm(dataSource, virtualMachine);
     }
 
     public static VirtualMachine insertTestVm(UUID orionGuid, long vps4UserId, DataSource dataSource) {
@@ -33,8 +44,18 @@ public class SqlTestData {
                 "testVirtualMachine", 10, 0, "centos-7");
         VirtualMachine virtualMachine = virtualMachineService.provisionVirtualMachine(params);
         virtualMachineService.addHfsVmIdToVirtualMachine(virtualMachine.vmId, hfsVmId);
+        virtualMachine = virtualMachineService.getVirtualMachine(virtualMachine.vmId);
         return virtualMachine;
     }
+
+	private static VirtualMachine addIpToTestVm(DataSource dataSource, VirtualMachine virtualMachine) {
+		long ipAddressId = getNextIpAddressId(dataSource);
+        String ipAddress = "127.0.0." + ipAddressId;
+        Sql.with(dataSource).exec("INSERT INTO ip_address (ip_address_id, ip_address, ip_address_type_id, vm_id) VALUES (?, ?, 1, ?)", null,
+                ipAddressId, ipAddress, virtualMachine.vmId);
+        VirtualMachineService virtualMachineService = new JdbcVirtualMachineService(dataSource);
+        return virtualMachineService.getVirtualMachine(virtualMachine.vmId);
+	}
 
     public static void cleanupTestVmAndRelatedData(UUID vmId, DataSource dataSource) {
         VirtualMachineService virtualMachineService = new JdbcVirtualMachineService(dataSource);

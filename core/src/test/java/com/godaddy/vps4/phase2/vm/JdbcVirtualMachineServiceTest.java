@@ -33,6 +33,7 @@ import com.godaddy.vps4.vm.ActionType;
 import com.godaddy.vps4.vm.ImageService;
 import com.godaddy.vps4.vm.VirtualMachine;
 import com.godaddy.vps4.vm.VirtualMachineService;
+import com.godaddy.vps4.vm.VirtualMachineType;
 import com.godaddy.vps4.vm.VirtualMachineService.ProvisionVirtualMachineParameters;
 import com.godaddy.vps4.vm.jdbc.JdbcImageService;
 import com.godaddy.vps4.vm.jdbc.JdbcVirtualMachineService;
@@ -41,7 +42,7 @@ import com.google.inject.Injector;
 
 import junit.framework.Assert;
 
-public class VirtualMachineServiceTest {
+public class JdbcVirtualMachineServiceTest {
 
     Injector injector = Guice.createInjector(new DatabaseModule());
     DataSource dataSource = injector.getInstance(DataSource.class);
@@ -61,7 +62,7 @@ public class VirtualMachineServiceTest {
 
     @Before
     public void setup() {
-        List<VirtualMachine> oldVms = virtualMachineService.getVirtualMachinesForUser(vps4User.getId());
+        List<VirtualMachine> oldVms = virtualMachineService.getVirtualMachines(VirtualMachineType.ACTIVE, vps4User.getId(), null, null, null);
         for (VirtualMachine oldVm : oldVms) {
             SqlTestData.cleanupTestVmAndRelatedData(oldVm.vmId, dataSource);
         }
@@ -84,7 +85,7 @@ public class VirtualMachineServiceTest {
 
         virtualMachineService.provisionVirtualMachine(params);
 
-        VirtualMachine vm = virtualMachineService.getVirtualMachinesForUser(vps4User.getId()).get(0);
+        VirtualMachine vm = virtualMachineService.getVirtualMachines(VirtualMachineType.ACTIVE, vps4User.getId(), null, null, null).get(0);
         virtualMachines.add(vm);
         Assert.assertTrue(virtualMachineService.virtualMachineHasCpanel(vm.vmId));
     }
@@ -95,7 +96,7 @@ public class VirtualMachineServiceTest {
                 orionGuid, "testServer", 10, 1, "windows-2012r2-plesk-12.5");
 
         virtualMachineService.provisionVirtualMachine(params);
-        VirtualMachine vm = virtualMachineService.getVirtualMachinesForUser(vps4User.getId()).get(0);
+        VirtualMachine vm = virtualMachineService.getVirtualMachines(VirtualMachineType.ACTIVE, vps4User.getId(), null, null, null).get(0);
         virtualMachines.add(vm);
         Assert.assertTrue(virtualMachineService.virtualMachineHasPlesk(vm.vmId));
     }
@@ -110,7 +111,7 @@ public class VirtualMachineServiceTest {
                 orionGuid, name, tier, 1, "centos-7");
 
         virtualMachineService.provisionVirtualMachine(params);
-        List<VirtualMachine> vms = virtualMachineService.getVirtualMachinesForUser(vps4User.getId());
+        List<VirtualMachine> vms = virtualMachineService.getVirtualMachines(VirtualMachineType.ACTIVE, vps4User.getId(), null, null, null);
         assertEquals(1, vms.size());
 
         VirtualMachine vm = vms.get(0);
@@ -136,6 +137,55 @@ public class VirtualMachineServiceTest {
     }
 
     @Test
+    public void testGetVirtualMachineByOrionGuid() {
+        UUID orionGuid = UUID.randomUUID();
+        VirtualMachine testVm = SqlTestData.insertTestVm(orionGuid, dataSource);
+        virtualMachines.add(testVm);
+        VirtualMachine actualVm = virtualMachineService.getVirtualMachines(null, null, null, orionGuid, null).get(0);
+        assertEquals(testVm.vmId, actualVm.vmId);
+    }
+
+    @Test
+    public void testGetVirtualMachineByHfsVmId() {
+        VirtualMachine testVm = SqlTestData.insertTestVm(UUID.randomUUID(), dataSource);
+        virtualMachines.add(testVm);
+        VirtualMachine actualVm = virtualMachineService.getVirtualMachine(testVm.hfsVmId);
+        assertEquals(testVm.hfsVmId, actualVm.hfsVmId);
+    }
+    
+    @Test
+    public void testGetVirtualMachineByIpAddress() {
+        UUID orionGuid = UUID.randomUUID();
+        VirtualMachine testVm = SqlTestData.insertTestVmWithIp(orionGuid, dataSource);
+        virtualMachines.add(testVm);
+        VirtualMachine actualVm = virtualMachineService.getVirtualMachines(null, null, testVm.primaryIpAddress.ipAddress, null, null).get(0);
+        assertEquals(testVm.hfsVmId, actualVm.hfsVmId);
+    }
+
+    @Test
+    public void testGetVirtualMachinesByShopperId() {
+        for (int i = 0; i < 3; i++) {
+            VirtualMachine testVm = SqlTestData.insertTestVm(UUID.randomUUID(), dataSource);
+            virtualMachines.add(testVm);
+        }
+        List<VirtualMachine> actualVms = virtualMachineService.getVirtualMachines(null, vps4User.getId(), null, null, null);
+        assertEquals(virtualMachines.size(), actualVms.size());
+    }
+
+    @Test
+    public void testProvisionVmCreatesId() {
+        VirtualMachine virtualMachine = SqlTestData.insertTestVm(orionGuid, dataSource);
+        assertNotNull(virtualMachine);
+        assertEquals(UUID.class, virtualMachine.vmId.getClass());
+    }
+
+    @Test
+    public void testProvisionVmUsesValidSpec() {
+        VirtualMachine virtualMachine = SqlTestData.insertTestVm(orionGuid, dataSource);
+        assertTrue(virtualMachine.spec.validUntil.isAfter(Instant.now()));
+    }
+
+    @Test
     public void testGetVirtualMachines() {
         List<UUID> createdVms = new ArrayList<>();
         for(int i = 0; i < 3; i++) {
@@ -147,7 +197,7 @@ public class VirtualMachineServiceTest {
         createdVms.remove(virtualMachines.get(1).orionGuid);
 
 
-        List<VirtualMachine> vms = virtualMachineService.getVirtualMachinesForUser(vps4User.getId());
+        List<VirtualMachine> vms = virtualMachineService.getVirtualMachines(VirtualMachineType.ACTIVE, vps4User.getId(), null, null, null);
         List<UUID> vmGuids = vms.stream().map(vm -> vm.orionGuid).collect(Collectors.toList());
         for (UUID vm : createdVms)
             assertTrue(vmGuids.contains(vm));
@@ -167,7 +217,7 @@ public class VirtualMachineServiceTest {
         virtualMachineService.setVmZombie(virtualMachines.get(2).vmId);
 
 
-        List<VirtualMachine> vms = virtualMachineService.getZombieVirtualMachinesForUser(vps4User.getId());
+        List<VirtualMachine> vms = virtualMachineService.getVirtualMachines(VirtualMachineType.ZOMBIE, vps4User.getId(), null, null, null);
         List<UUID> vmGuids = vms.stream().map(vm -> vm.vmId).collect(Collectors.toList());
         assertTrue(vmGuids.contains(virtualMachines.get(0).vmId));
         assertTrue(vmGuids.contains(virtualMachines.get(2).vmId));
