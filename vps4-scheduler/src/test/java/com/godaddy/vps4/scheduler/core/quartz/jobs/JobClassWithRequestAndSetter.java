@@ -4,8 +4,6 @@ import com.godaddy.vps4.scheduler.core.JobMetadata;
 import com.godaddy.vps4.scheduler.core.SchedulerJob;
 import org.quartz.JobExecutionContext;
 import org.quartz.JobExecutionException;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 @JobMetadata(
         product = "product1",
@@ -13,8 +11,6 @@ import org.slf4j.LoggerFactory;
         jobRequestType = JobRequestOne.class
 )
 public class JobClassWithRequestAndSetter extends SchedulerJob {
-    private static final Logger logger = LoggerFactory.getLogger(JobClassWithRequestAndSetter.class);
-
     JobRequestOne request;
 
     @Override

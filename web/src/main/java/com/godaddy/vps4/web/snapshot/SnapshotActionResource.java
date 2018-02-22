@@ -2,6 +2,18 @@ package com.godaddy.vps4.web.snapshot;
 
 import static com.godaddy.vps4.web.util.RequestValidation.verifyUserPrivilegeToProject;
 
+import java.util.List;
+import java.util.UUID;
+import java.util.stream.Collectors;
+
+import javax.ws.rs.Consumes;
+import javax.ws.rs.GET;
+import javax.ws.rs.NotFoundException;
+import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
+import javax.ws.rs.Produces;
+import javax.ws.rs.core.MediaType;
+
 import com.godaddy.vps4.security.PrivilegeService;
 import com.godaddy.vps4.security.Vps4UserService;
 import com.godaddy.vps4.snapshot.Snapshot;
@@ -14,17 +26,10 @@ import com.godaddy.vps4.web.Vps4Api;
 import com.godaddy.vps4.web.security.AdminOnly;
 import com.godaddy.vps4.web.security.GDUser;
 import com.google.inject.Inject;
+
 import gdg.hfs.orchestration.CommandService;
 import gdg.hfs.orchestration.CommandState;
 import io.swagger.annotations.Api;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import javax.ws.rs.*;
-import javax.ws.rs.core.MediaType;
-import java.util.List;
-import java.util.UUID;
-import java.util.stream.Collectors;
 
 @Vps4Api
 @Api(tags = { "snapshots" })
@@ -34,8 +39,6 @@ import java.util.stream.Collectors;
 @Consumes(MediaType.APPLICATION_JSON)
 
 public class SnapshotActionResource {
-
-    private static final Logger logger = LoggerFactory.getLogger(SnapshotActionResource.class);
 
     private final ActionService actionService;
     private final CommandService commandService;

@@ -1,6 +1,5 @@
 package com.godaddy.vps4.scheduler;
 
-import ch.qos.logback.classic.Level;
 import com.godaddy.hfs.servicediscovery.ZkServiceRegistrationContextListener;
 import com.godaddy.hfs.swagger.SwaggerContextListener;
 import com.godaddy.hfs.web.HfsWebApplication;
@@ -9,12 +8,10 @@ import com.godaddy.hfs.web.resteasy.GuiceResteasyBootstrap;
 import com.godaddy.hfs.zookeeper.ZooKeeperClient;
 import com.godaddy.vps4.scheduler.web.Vps4SchedulerApi;
 import com.google.inject.Injector;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+
+import ch.qos.logback.classic.Level;
 
 public class Vps4SchedulerMain extends HfsWebApplication {
-
-    private static final Logger logger = LoggerFactory.getLogger(Vps4SchedulerMain.class);
 
     @Override
     public Injector newInjector() {

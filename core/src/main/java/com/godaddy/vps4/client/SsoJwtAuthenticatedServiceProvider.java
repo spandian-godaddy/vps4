@@ -3,17 +3,15 @@ package com.godaddy.vps4.client;
 import static com.godaddy.vps4.client.ClientUtils.getShopperIdInjectionFilter;
 import static com.godaddy.vps4.client.ClientUtils.getSsoJwtInjectionFilter;
 
-import com.google.inject.Provider;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import java.util.List;
 
 import javax.inject.Inject;
 import javax.ws.rs.client.ClientRequestFilter;
-import java.util.List;
+
+import com.google.inject.Provider;
 
 public class SsoJwtAuthenticatedServiceProvider<T> extends HttpServiceProvider<T> implements Provider<T> {
 
-    private static final Logger logger = LoggerFactory.getLogger(SsoJwtAuthenticatedServiceProvider.class);
     @Inject SsoTokenService ssoTokenService;
     @Inject @ShopperId Provider<String> shopperIdProvider;
 

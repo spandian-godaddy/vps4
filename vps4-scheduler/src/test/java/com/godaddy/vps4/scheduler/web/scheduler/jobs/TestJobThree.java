@@ -5,16 +5,12 @@ import com.godaddy.vps4.scheduler.core.JobMetadata;
 import com.godaddy.vps4.scheduler.core.SchedulerJob;
 import org.quartz.JobExecutionContext;
 import org.quartz.JobExecutionException;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 @JobMetadata(
     product = "product2",
     jobGroup = "group1"
 )
 public class TestJobThree extends SchedulerJob {
-    private static final Logger logger = LoggerFactory.getLogger(TestJobThree.class);
-
     JobRequest request;
 
     @Override

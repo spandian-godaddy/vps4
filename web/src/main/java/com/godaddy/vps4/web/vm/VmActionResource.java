@@ -17,17 +17,13 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.UriInfo;
 
-import com.godaddy.vps4.vm.Action;
-import com.godaddy.vps4.vm.ActionType;
-import io.swagger.annotations.ApiParam;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import com.godaddy.vps4.jdbc.ResultSubset;
 import com.godaddy.vps4.security.PrivilegeService;
 import com.godaddy.vps4.security.Vps4User;
 import com.godaddy.vps4.security.Vps4UserService;
+import com.godaddy.vps4.vm.Action;
 import com.godaddy.vps4.vm.ActionService;
+import com.godaddy.vps4.vm.ActionType;
 import com.godaddy.vps4.web.PaginatedResult;
 import com.godaddy.vps4.web.Vps4Api;
 import com.godaddy.vps4.web.security.AdminOnly;
@@ -37,6 +33,7 @@ import com.google.inject.Inject;
 import gdg.hfs.orchestration.CommandService;
 import gdg.hfs.orchestration.CommandState;
 import io.swagger.annotations.Api;
+import io.swagger.annotations.ApiParam;
 
 @Vps4Api
 @Api(tags = { "vms" })
@@ -46,8 +43,6 @@ import io.swagger.annotations.Api;
 @Consumes(MediaType.APPLICATION_JSON)
 
 public class VmActionResource {
-
-    private static final Logger logger = LoggerFactory.getLogger(VmActionResource.class);
 
     private final PrivilegeService privilegeService;
     private final ActionService actionService;

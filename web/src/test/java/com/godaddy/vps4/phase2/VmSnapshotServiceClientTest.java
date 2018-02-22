@@ -1,6 +1,11 @@
 package com.godaddy.vps4.phase2;
 import static com.godaddy.vps4.client.ClientUtils.withShopperId;
 
+import java.util.List;
+import java.util.UUID;
+
+import javax.ws.rs.NotFoundException;
+
 import com.godaddy.vps4.client.SsoJwtAuth;
 import com.godaddy.vps4.config.ConfigModule;
 import com.godaddy.vps4.snapshot.Snapshot;
@@ -10,17 +15,12 @@ import com.godaddy.vps4.web.client.Vps4ApiWithSSOAuthClientModule;
 import com.google.inject.Guice;
 import com.google.inject.Inject;
 import com.google.inject.Injector;
+
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import javax.ws.rs.NotFoundException;
-import java.util.List;
-import java.util.UUID;
 
 
 /**
@@ -30,8 +30,6 @@ import java.util.UUID;
  */
 @Ignore
 public class VmSnapshotServiceClientTest {
-    private static final Logger logger = LoggerFactory.getLogger(VmSnapshotServiceClientTest.class);
-
     private Injector injector;
     @Inject @SsoJwtAuth VmSnapshotService vmSnapshotService;
 

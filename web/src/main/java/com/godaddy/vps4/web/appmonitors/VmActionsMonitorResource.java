@@ -18,10 +18,9 @@ import com.godaddy.vps4.vm.ActionType;
 import com.godaddy.vps4.web.Vps4Api;
 import com.godaddy.vps4.web.security.EmployeeOnly;
 import com.google.inject.Inject;
+
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 @Vps4Api
 @Api(tags = { "appmonitors" })
@@ -30,8 +29,6 @@ import org.slf4j.LoggerFactory;
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
 public class VmActionsMonitorResource {
-
-    private static final Logger logger = LoggerFactory.getLogger(VmActionsMonitorResource.class);
 
     private final MonitorService monitorService;
 

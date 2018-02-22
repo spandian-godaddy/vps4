@@ -24,12 +24,9 @@ import org.quartz.JobExecutionContext;
 import org.quartz.JobExecutionException;
 import org.quartz.ListenerManager;
 import org.quartz.Scheduler;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public class QuartzSchedulerServiceActionsTest {
 
-    private static final Logger logger = LoggerFactory.getLogger(QuartzSchedulerServiceActionsTest.class);
     static Injector injector;
     static Scheduler mockScheduler;
 

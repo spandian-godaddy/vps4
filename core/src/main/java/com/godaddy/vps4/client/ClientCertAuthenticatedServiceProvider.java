@@ -2,19 +2,17 @@ package com.godaddy.vps4.client;
 
 import static com.godaddy.vps4.client.ClientUtils.getShopperIdInjectionFilter;
 
-import com.godaddy.vps4.util.KeyManagerBuilder;
-import com.google.inject.Inject;
-import com.google.inject.Provider;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import java.util.List;
 
 import javax.net.ssl.KeyManager;
 import javax.ws.rs.client.ClientRequestFilter;
-import java.util.List;
+
+import com.godaddy.vps4.util.KeyManagerBuilder;
+import com.google.inject.Inject;
+import com.google.inject.Provider;
 
 public class ClientCertAuthenticatedServiceProvider<T> extends HttpServiceProvider<T> implements Provider<T> {
 
-    private static final Logger logger = LoggerFactory.getLogger(ClientCertAuthenticatedServiceProvider.class);
     static volatile KeyManager keyManager;
     private final String clientCertificateKeyPath;
     private final String clientCertificatePath;

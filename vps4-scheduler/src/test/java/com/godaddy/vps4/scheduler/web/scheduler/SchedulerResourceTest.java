@@ -1,13 +1,19 @@
 package com.godaddy.vps4.scheduler.web.scheduler;
 
-import static org.junit.Assert.assertThat;
 import static org.hamcrest.Matchers.containsInAnyOrder;
+import static org.junit.Assert.assertThat;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+
+import java.time.Instant;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.UUID;
+import java.util.stream.IntStream;
 
 import com.godaddy.vps4.scheduler.api.core.JobRequest;
 import com.godaddy.vps4.scheduler.api.core.SchedulerJobDetail;
@@ -16,23 +22,15 @@ import com.google.inject.AbstractModule;
 import com.google.inject.Guice;
 import com.google.inject.Inject;
 import com.google.inject.Injector;
+
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import java.time.Instant;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.UUID;
-import java.util.stream.IntStream;
 
 public class SchedulerResourceTest {
 
-    private static final Logger logger = LoggerFactory.getLogger(SchedulerResourceTest.class);
     static Injector injector;
     static SchedulerService mockSchedulerService;
 

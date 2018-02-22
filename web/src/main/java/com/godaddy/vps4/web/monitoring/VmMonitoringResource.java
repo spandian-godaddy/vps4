@@ -18,18 +18,15 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.UriInfo;
 
-import org.joda.time.DateTime;
-import org.joda.time.LocalDate;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import com.godaddy.hfs.config.Config;
 import com.godaddy.vps4.util.Monitoring;
 import com.godaddy.vps4.vm.VirtualMachine;
 import com.godaddy.vps4.web.PaginatedResult;
 import com.godaddy.vps4.web.Vps4Api;
 import com.godaddy.vps4.web.vm.VmResource;
 import com.google.inject.Inject;
+
+import org.joda.time.DateTime;
+import org.joda.time.LocalDate;
 
 import gdg.hfs.vhfs.nodeping.NodePingEvent;
 import gdg.hfs.vhfs.nodeping.NodePingService;
@@ -43,8 +40,6 @@ import io.swagger.annotations.Api;
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
 public class VmMonitoringResource {
-
-    private static final Logger logger = LoggerFactory.getLogger(VmMonitoringResource.class);
 
     private final NodePingService monitoringService;
     private final VmResource vmResource;
