@@ -314,9 +314,9 @@ public class VmResource {
     @ApiOperation(value = "Get VMs")
     public List<VirtualMachine> getVirtualMachines(
             @ApiParam(value = "The type of VMs to return", required = false) @DefaultValue("ACTIVE") @QueryParam("type") VirtualMachineType type,
-            @ApiParam(value = "Shopper ID of the user", required = false) @QueryParam("shopper_id") String shopperId,
+            @ApiParam(value = "Shopper ID of the user", required = false) @QueryParam("shopperId") String shopperId,
             @ApiParam(value = "IP Address of the desired VM", required = false) @QueryParam("ipAddress") String ipAddress,
-            @ApiParam(value = "Orion Guid associated with the VM", required = false) @QueryParam("orionguid") UUID orionGuid,
+            @ApiParam(value = "Orion Guid associated with the VM", required = false) @QueryParam("orionGuid") UUID orionGuid,
             @ApiParam(value = "HFS VM ID associated with the VM", required = false) @QueryParam("hfsVmId") Long hfsVmId) {
         if(user.isEmployee()) {
             return getVmsForAdmin(type, shopperId, ipAddress, orionGuid, hfsVmId);

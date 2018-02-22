@@ -56,6 +56,7 @@ public class JdbcVirtualMachineServiceTest {
     String os = "linux";
     String controlPanel = "cpanel";
     Vps4User vps4User = new Vps4User(1, "TestUser");
+    Vps4User vps4User2 = new Vps4User(2, "TestUser2");
     int tier = 10;
     int managedLevel = 0;
     int monitoring = 0;
@@ -170,6 +171,37 @@ public class JdbcVirtualMachineServiceTest {
         }
         List<VirtualMachine> actualVms = virtualMachineService.getVirtualMachines(null, vps4User.getId(), null, null, null);
         assertEquals(virtualMachines.size(), actualVms.size());
+    }
+
+    @Test
+    public void testGetVirtualMachineByIpAndHfsVmId() {
+        VirtualMachine testVm = null;
+        for (int i = 0; i < 3; i++) {
+            testVm = SqlTestData.insertTestVmWithIp(UUID.randomUUID(), dataSource);
+            virtualMachines.add(testVm);
+        }
+        List<VirtualMachine> actualVms = virtualMachineService.getVirtualMachines(null, null, testVm.primaryIpAddress.ipAddress, null, testVm.hfsVmId+1);
+        assertEquals(0, actualVms.size());
+    }
+
+    @Test
+    public void testGetVirtualMachinesByHfsVmIdAndUserId() {
+        VirtualMachine testVm = null;
+        for (int i = 0; i < 3; i++) {
+            testVm = SqlTestData.insertTestVmWithIp(UUID.randomUUID(), dataSource);
+            virtualMachines.add(testVm);
+        }
+        virtualMachines.add(SqlTestData.insertTestVm(UUID.randomUUID(), vps4User2.getId(), dataSource));
+
+
+        List<VirtualMachine> actualVms = virtualMachineService.getVirtualMachines(null, vps4User2.getId(),
+                null, null, testVm.hfsVmId);
+        assertEquals(0, actualVms.size());
+
+        actualVms = virtualMachineService.getVirtualMachines(null, vps4User.getId(), null, null,
+                testVm.hfsVmId);
+        assertEquals(1, actualVms.size());
+        assertEquals(testVm.vmId, actualVms.get(0).vmId);
     }
 
     @Test

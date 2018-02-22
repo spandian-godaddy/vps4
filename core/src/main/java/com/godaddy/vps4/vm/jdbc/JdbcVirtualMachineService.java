@@ -198,10 +198,13 @@ public class JdbcVirtualMachineService implements VirtualMachineService {
         StringBuilder queryAddition = new StringBuilder();
         if(vps4UserId != null){
             queryAddition.append("JOIN user_project_privilege upp on upp.project_id = prj.project_id "
-            + "JOIN vps4_user on vps4_user.vps4_user_id = upp.vps4_user_id AND vps4_user.vps4_user_id = ? ");
-            args.add(vps4UserId);
+            + "JOIN vps4_user on vps4_user.vps4_user_id = upp.vps4_user_id ");
         }
         queryAddition.append("WHERE 1=1");
+        if(vps4UserId != null) {
+            queryAddition.append(" AND vps4_user.vps4_user_id = ? ");
+            args.add(vps4UserId);
+        }
         if(type != null) {
             if(type == VirtualMachineType.ACTIVE) {
                 queryAddition.append(" AND vm.canceled = 'infinity' AND vm.valid_until = 'infinity' ");
