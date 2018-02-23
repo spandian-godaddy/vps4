@@ -1,6 +1,5 @@
 package com.godaddy.vps4.scheduler.api.client;
 
-import com.godaddy.vps4.client.ClientCertAuthenticatedServiceProvider;
 import com.godaddy.vps4.client.Vps4ClientModule;
 import com.godaddy.vps4.scheduler.api.web.SchedulerWebService;
 import com.google.inject.AbstractModule;

@@ -1,7 +1,6 @@
 package com.godaddy.vps4.messaging;
 
 import com.google.inject.AbstractModule;
-import com.google.inject.Scopes;
 
 public class MessagingModule extends AbstractModule {
 

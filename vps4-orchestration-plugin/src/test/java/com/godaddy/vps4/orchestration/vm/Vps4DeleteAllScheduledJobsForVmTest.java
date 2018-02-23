@@ -1,6 +1,5 @@
 package com.godaddy.vps4.orchestration.vm;
 
-import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
@@ -29,8 +28,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 import java.util.function.Function;
-
-import static org.junit.Assert.*;
 
 public class Vps4DeleteAllScheduledJobsForVmTest {
     static Injector injector;

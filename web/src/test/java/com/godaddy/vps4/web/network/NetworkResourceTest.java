@@ -24,7 +24,6 @@ import com.godaddy.vps4.project.Project;
 import com.godaddy.vps4.project.ProjectService;
 import com.godaddy.vps4.security.GDUserMock;
 import com.godaddy.vps4.security.Vps4User;
-import com.godaddy.vps4.vm.AccountStatus;
 import com.godaddy.vps4.vm.Action;
 import com.godaddy.vps4.vm.ActionService;
 import com.godaddy.vps4.vm.ActionStatus;

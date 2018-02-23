@@ -7,7 +7,6 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import com.godaddy.vps4.client.SsoJwtAuth;
 import com.godaddy.vps4.scheduler.api.plugin.Vps4BackupJobRequest;
 import com.godaddy.vps4.snapshot.SnapshotType;
 import com.godaddy.vps4.web.client.VmSnapshotService;

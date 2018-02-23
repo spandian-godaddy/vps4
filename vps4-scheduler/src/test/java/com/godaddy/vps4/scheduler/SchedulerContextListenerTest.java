@@ -23,8 +23,6 @@ import org.junit.Test;
 
 import javax.servlet.ServletContextEvent;
 
-import static org.junit.Assert.*;
-
 public class SchedulerContextListenerTest {
 
     Injector injector;

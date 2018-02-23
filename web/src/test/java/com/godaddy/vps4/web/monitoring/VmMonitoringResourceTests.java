@@ -26,14 +26,11 @@ import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mockito;
 
-import com.godaddy.hfs.config.Config;
 import com.godaddy.vps4.network.IpAddress;
 import com.godaddy.vps4.util.Monitoring;
 import com.godaddy.vps4.vm.VirtualMachine;
 import com.godaddy.vps4.web.PaginatedResult;
 import com.godaddy.vps4.web.vm.VmResource;
-import com.google.inject.Guice;
-import com.google.inject.Injector;
 
 import gdg.hfs.vhfs.nodeping.NodePingEvent;
 import gdg.hfs.vhfs.nodeping.NodePingService;

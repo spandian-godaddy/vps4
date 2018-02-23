@@ -4,7 +4,6 @@ import com.godaddy.vps4.consumer.Vps4ConsumerInjector;
 import gdg.hfs.vhfs.ecomm.Account;
 import gdg.hfs.vhfs.ecomm.ECommService;
 import org.junit.Assert;
-import org.junit.Test;
 
 public class ObjectMapperProviderTest {
 

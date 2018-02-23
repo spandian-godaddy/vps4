@@ -19,9 +19,7 @@ import org.slf4j.LoggerFactory;
 
 import com.godaddy.vps4.credit.CreditService;
 import com.godaddy.vps4.credit.VirtualMachineCredit;
-import com.godaddy.vps4.vm.Image.ControlPanel;
 import com.godaddy.vps4.web.Vps4Api;
-import com.godaddy.vps4.web.Vps4Exception;
 import com.godaddy.vps4.web.Vps4NoShopperException;
 import com.godaddy.vps4.web.security.AdminOnly;
 import com.godaddy.vps4.web.security.GDUser;

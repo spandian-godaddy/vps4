@@ -6,7 +6,6 @@ import java.util.UUID;
 import javax.sql.DataSource;
 
 import com.godaddy.hfs.jdbc.Sql;
-import com.godaddy.vps4.credit.VirtualMachineCredit;
 import com.godaddy.vps4.snapshot.Snapshot;
 import com.godaddy.vps4.vm.ActionStatus;
 import com.godaddy.vps4.vm.ActionType;

@@ -2,7 +2,6 @@ package com.godaddy.vps4.messaging.models;
 
 import java.util.EnumMap;
 import java.util.List;
-import java.util.Map;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 

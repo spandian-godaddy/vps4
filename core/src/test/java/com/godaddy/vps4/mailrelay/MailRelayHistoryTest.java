@@ -5,10 +5,7 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import java.time.Instant;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.time.ZoneOffset;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
@@ -16,11 +13,11 @@ import java.util.List;
 import javax.cache.Cache;
 import javax.cache.CacheManager;
 
-import org.junit.Before;
-import org.junit.Test;
-
 import com.godaddy.vps4.cache.CacheName;
 import com.godaddy.vps4.mailrelay.MailRelayService.CachedMailRelayHistory;
+
+import org.junit.Before;
+import org.junit.Test;
 
 import gdg.hfs.vhfs.mailrelay.MailRelayHistory;
 import junit.framework.Assert;

@@ -1,7 +1,5 @@
 package com.godaddy.vps4.orchestration.phase2;
 
-import static org.mockito.Mockito.mock;
-
 import com.godaddy.vps4.vm.VirtualMachineService;
 import com.godaddy.vps4.vm.jdbc.JdbcVirtualMachineService;
 import com.google.inject.AbstractModule;

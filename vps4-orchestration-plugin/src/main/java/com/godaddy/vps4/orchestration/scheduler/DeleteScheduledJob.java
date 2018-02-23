@@ -2,7 +2,6 @@ package com.godaddy.vps4.orchestration.scheduler;
 
 import com.godaddy.vps4.scheduler.api.core.JobRequest;
 import com.godaddy.vps4.scheduler.api.core.utils.Utils;
-import com.godaddy.vps4.scheduler.api.plugin.Vps4ZombieCleanupJobRequest;
 import com.godaddy.vps4.scheduler.api.web.SchedulerWebService;
 import gdg.hfs.orchestration.Command;
 import gdg.hfs.orchestration.CommandContext;

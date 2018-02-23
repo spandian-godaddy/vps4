@@ -1,7 +1,6 @@
 package com.godaddy.vps4.scheduler.core;
 
 import com.godaddy.vps4.scheduler.api.core.SchedulerJobDetail;
-import org.quartz.Job;
 
 import java.util.List;
 import java.util.UUID;

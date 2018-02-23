@@ -2,21 +2,17 @@ package com.godaddy.vps4.orchestration.vm;
 
 import java.util.HashMap;
 import java.util.Map;
-import java.util.UUID;
 
 import javax.inject.Inject;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import com.godaddy.hfs.config.Config;
 import com.godaddy.vps4.credit.VirtualMachineCredit;
 import com.godaddy.vps4.network.NetworkService;
-import com.godaddy.vps4.orchestration.ActionCommand;
 import com.godaddy.vps4.util.Monitoring;
-import com.godaddy.vps4.vm.ActionService;
 import com.godaddy.vps4.vm.VirtualMachine;
 import com.godaddy.vps4.vm.VirtualMachineService;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import gdg.hfs.orchestration.Command;
 import gdg.hfs.orchestration.CommandContext;
