@@ -64,8 +64,7 @@ public class VmSnapshotServiceClientTest {
     public void getSnapshotsForANonExistentVmFails() throws Exception {
         UUID vmId = UUID.randomUUID();
 
-        @SuppressWarnings("unchecked")
-        List<Snapshot> snapshots = withShopperId("959998", () -> {
+        withShopperId("959998", () -> {
             return vmSnapshotService.getSnapshotsForVM(vmId);
         }, List.class);
     }

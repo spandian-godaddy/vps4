@@ -91,7 +91,7 @@ public class ScheduleSupportUserRemovalTest {
 
         // Verify that the lambda is calling the appropriate scheduler service method
         Function<CommandContext, SchedulerJobDetail> lambda = createJobCaptor.getValue();
-        SchedulerJobDetail ret = lambda.apply(context);
+        lambda.apply(context);
         verify(schedulerWebService, times(1))
                 .submitJobToGroup(eq("vps4"), eq("removeSupportUser"), schedulerJobCreationDataCaptor.capture());
 

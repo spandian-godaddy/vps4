@@ -125,7 +125,7 @@ public class SchedulerResourceTest {
     @Test(expected = Exception.class)
     public void submitJobToUnRegisteredGroupThrowsException() throws Exception {
         String requestJson = "";
-        SchedulerJobDetail jobDetail = schedulerResource.submitJobToGroup(product, unRegisteredJobGroup, requestJson);
+        schedulerResource.submitJobToGroup(product, unRegisteredJobGroup, requestJson);
         verify(mockSchedulerService, times(1))
                 .createJob(eq(product), eq(unRegisteredJobGroup), eq(requestJson));
     }
@@ -140,7 +140,7 @@ public class SchedulerResourceTest {
 
     @Test(expected = Exception.class)
     public void getNonExistentJobThrowsException() throws Exception {
-        SchedulerJobDetail jobDetail = schedulerResource.getJob(product, jobGroup, nonExistentJobId);
+        schedulerResource.getJob(product, jobGroup, nonExistentJobId);
         verify(mockSchedulerService, times(1))
                 .getJob(eq(product), eq(jobGroup), eq(nonExistentJobId));
     }
@@ -158,8 +158,7 @@ public class SchedulerResourceTest {
     @Test(expected = Exception.class)
     public void rescheduleNonExistentJobThrowsException() throws Exception {
         String requestJson = "";
-        SchedulerJobDetail jobDetail
-                = schedulerResource.rescheduleJob(product, jobGroup, nonExistentJobId, requestJson);
+    schedulerResource.rescheduleJob(product, jobGroup, nonExistentJobId, requestJson);
         verify(mockSchedulerService, times(1))
                 .updateJobSchedule(eq(product), eq(jobGroup), eq(nonExistentJobId), eq(requestJson));
     }

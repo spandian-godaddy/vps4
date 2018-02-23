@@ -96,10 +96,6 @@ public class GetVirtualMachineTest {
         vm = new VirtualMachine(vmId, hfsVmId, orionGuid, 1, null, "Unit Test Vm", null, ipAddress,
                 Instant.now(), Instant.now().plus(24, ChronoUnit.HOURS), Instant.now().plus(24, ChronoUnit.HOURS), null,
                 0, UUID.randomUUID());
-        VirtualMachine zombieVm = new VirtualMachine(zombieVmId, hfsVmId + 1, UUID.randomUUID(), 1, null,
-                "Unit Test Vm", null, null, Instant.now().minus(23, ChronoUnit.HOURS),
-                Instant.now().minus(1, ChronoUnit.HOURS), Instant.now().plus(24, ChronoUnit.HOURS), null, 0,
-                UUID.randomUUID());
 
         when(virtualMachineService.getVirtualMachine(vmId)).thenReturn(vm);
         when(virtualMachineService.getVirtualMachines(Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any())).thenReturn(Arrays.asList(vm));

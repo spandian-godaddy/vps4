@@ -136,7 +136,7 @@ public class Vps4DestroyVm extends ActionCommand<Vps4DestroyVm.Request, Vps4Dest
 
     private void unlicenseCpanel(final long hfsVmId, UUID vmId) {
         if(this.virtualMachineService.virtualMachineHasCpanel(vmId)){
-            Vm hfsVm = vmService.getVm(hfsVmId);
+            vmService.getVm(hfsVmId);
             CPanelAction action = context.execute("Unlicense-Cpanel", ctx -> {
                 return cpanelService.licenseRelease(hfsVmId);
             }, CPanelAction.class);
