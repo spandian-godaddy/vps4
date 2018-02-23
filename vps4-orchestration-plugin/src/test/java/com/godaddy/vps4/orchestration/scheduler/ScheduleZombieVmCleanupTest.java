@@ -80,7 +80,6 @@ public class ScheduleZombieVmCleanupTest {
         when(context.execute(eq("Cleanup Zombie VM"), any(Function.class), eq(SchedulerJobDetail.class)))
                 .thenReturn(jobDetail);
 
-        Instant now = Instant.now();
         command.execute(context, request);
 
         // verify call to the scheduler service is wrapped in a context.execute method
@@ -89,7 +88,7 @@ public class ScheduleZombieVmCleanupTest {
 
         // Verify that the lambda is calling the appropriate scheduler service method
         Function<CommandContext, SchedulerJobDetail> lambda = createJobCaptor.getValue();
-        SchedulerJobDetail ret = lambda.apply(context);
+        lambda.apply(context);
         verify(schedulerWebService, times(1))
                 .submitJobToGroup(eq("vps4"), eq("zombie"), schedulerJobCreationDataCaptor.capture());
 

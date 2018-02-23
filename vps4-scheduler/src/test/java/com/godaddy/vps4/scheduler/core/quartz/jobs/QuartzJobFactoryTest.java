@@ -130,7 +130,7 @@ public class QuartzJobFactoryTest {
         when(mockTriggerFiredBundle.getJobDetail())
                 .thenReturn(buildJob(JobClassWithRequestAndSetter.class, jobRequestJson));
 
-        Job job = quartzJobFactory.newJob(mockTriggerFiredBundle, mockScheduer);
+        quartzJobFactory.newJob(mockTriggerFiredBundle, mockScheduer);
     }
 
     @Test(expected = SchedulerException.class)
@@ -141,6 +141,6 @@ public class QuartzJobFactoryTest {
         String jobRequestJson = getRequestJson(request);
         when(mockTriggerFiredBundle.getJobDetail()).thenReturn(buildJob(JobClassWithNoSetter.class, jobRequestJson));
 
-        Job job = quartzJobFactory.newJob(mockTriggerFiredBundle, mockScheduer);
+        quartzJobFactory.newJob(mockTriggerFiredBundle, mockScheduer);
     }
 }

@@ -60,7 +60,6 @@ public class SecureHttpClient {
         ByteArrayOutputStream backupOfResponse = new ByteArrayOutputStream();
 
         try {
-            InputStream theStream = inputStream;
             T deserialized = payloadMapper.readValue(new InputStreamReader(inputStream, "UTF-8"), deserializeInto);
             return deserialized;
         }

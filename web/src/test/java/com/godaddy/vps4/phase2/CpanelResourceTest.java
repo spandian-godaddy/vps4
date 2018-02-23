@@ -258,7 +258,6 @@ public class CpanelResourceTest {
 
     @Test(expected=Vps4Exception.class)
     public void testThrowsExceptionForInvalidUsername() throws Exception{
-        List<String> returnVal = new ArrayList<String>();
         Mockito.when(cpServ.listAddOnDomains(Mockito.anyLong(), eq("fakeuser2"))).thenThrow(new CpanelInvalidUserException(""));
         getCpanelResource().listAddOnDomains(vm.vmId, "fakeuser2");
     }

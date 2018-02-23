@@ -28,9 +28,9 @@ public class CommandClientModuleTest {
 
         CommandClientModule cmdClientModule = new CommandClientModule();
         try {
-            Method m = cmdClientModule.getClass().getDeclaredMethod("provideCommandService", Config.class);
-            m.setAccessible(true);
-            HttpCommandService commandService = (HttpCommandService)m.invoke(cmdClientModule, mockConfig);
+            Method method = cmdClientModule.getClass().getDeclaredMethod("provideCommandService", Config.class);
+            method.setAccessible(true);
+            method.invoke(cmdClientModule, mockConfig);
         }
         catch (Exception ex) {
             Assert.fail(ex.toString());

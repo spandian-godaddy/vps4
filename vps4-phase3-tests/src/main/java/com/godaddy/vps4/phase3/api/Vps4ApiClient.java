@@ -206,13 +206,11 @@ public class Vps4ApiClient {
     public void pollForVmActionComplete(UUID vmId, long actionId, long timeoutSeconds) {
         String urlAppendix = "api/vms/"+vmId.toString()+"/actions/"+actionId;
         Vps4ApiClient.Vps4JsonResponse<JSONObject> result = sendGetObject(urlAppendix);
-        long tries = 0;
-        Instant timout = Instant.now().plusSeconds(timeoutSeconds);
-        while(! result.jsonResponse.get("status").equals("COMPLETE") && Instant.now().isBefore(timout)){
+        Instant timeout = Instant.now().plusSeconds(timeoutSeconds);
+        while(! result.jsonResponse.get("status").equals("COMPLETE") && Instant.now().isBefore(timeout)){
             result = sendGetObject(urlAppendix);
             try{
                 Thread.sleep(1000);
-                tries++;
             }catch(InterruptedException e){
                 throw new RuntimeException(e);
             }
@@ -275,4 +273,3 @@ public class Vps4ApiClient {
       }
 
 }
-

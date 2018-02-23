@@ -82,7 +82,7 @@ public class ScheduleAutomaticBackupRetryTest {
 
         // Verify that the lambda is calling the appropriate scheduler service method
         Function<CommandContext, SchedulerJobDetail> lambda = createJobCaptor.getValue();
-        SchedulerJobDetail ret = lambda.apply(context);
+        lambda.apply(context);
         verify(schedulerService, times(1))
             .submitJobToGroup(eq("vps4"), eq("backups"), schedulerJobCreationDataCaptor.capture());
 
