@@ -1,16 +1,13 @@
 package com.godaddy.vps4.scheduler.api.core.jobRequests;
 
+import java.util.UUID;
+
 import com.godaddy.vps4.scheduler.api.core.JobRequest;
 import com.godaddy.vps4.scheduler.api.core.Optional;
 import com.godaddy.vps4.scheduler.api.core.Required;
 import com.godaddy.vps4.scheduler.api.core.Vps4JobRequestValidationException;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import java.util.UUID;
 
 public class JobRequestOne extends JobRequest {
-    private static final Logger logger = LoggerFactory.getLogger(JobRequestOne.class);
 
     @Required public Integer jobParamOne;
     @Optional public UUID jobParamTwo;

@@ -1,18 +1,20 @@
 package com.godaddy.vps4.orchestration.vm;
 
+import java.util.List;
+import java.util.UUID;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.godaddy.vps4.orchestration.scheduler.DeleteScheduledJob;
 import com.godaddy.vps4.orchestration.scheduler.Utils;
 import com.godaddy.vps4.scheduledJob.ScheduledJob;
 import com.godaddy.vps4.scheduledJob.ScheduledJobService;
 import com.google.inject.Inject;
+
 import gdg.hfs.orchestration.Command;
 import gdg.hfs.orchestration.CommandContext;
 import gdg.hfs.orchestration.CommandMetadata;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import java.util.List;
-import java.util.UUID;
 
 @CommandMetadata(
             name="Vps4DeleteAllScheduledJobsForVm",
@@ -43,7 +45,6 @@ public class Vps4DeleteAllScheduledJobsForVm implements Command<UUID, Void> {
     }
 
     private void deleteAllScheduledJobs() {
-        @SuppressWarnings("unchecked")
         List<ScheduledJob> jobs =  scheduledJobService.getScheduledJobs(vmId);
         
         for(ScheduledJob job : jobs) {

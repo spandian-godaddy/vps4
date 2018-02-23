@@ -5,14 +5,14 @@ import java.util.Map;
 
 import javax.inject.Inject;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.godaddy.vps4.credit.VirtualMachineCredit;
 import com.godaddy.vps4.network.NetworkService;
 import com.godaddy.vps4.util.Monitoring;
 import com.godaddy.vps4.vm.VirtualMachine;
 import com.godaddy.vps4.vm.VirtualMachineService;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import gdg.hfs.orchestration.Command;
 import gdg.hfs.orchestration.CommandContext;
@@ -32,7 +32,6 @@ public class Vps4PlanChange implements Command<Vps4PlanChange.Request, Void>{
     private final NodePingService monitoringService;
     private final NetworkService networkService;
     private final Monitoring monitoring;
-    private final int FULLY_MANAGED_LEVEL = 2;
     
     @Inject
     public Vps4PlanChange(VirtualMachineService virtualMachineService,

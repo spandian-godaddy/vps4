@@ -7,7 +7,6 @@ import java.util.stream.Collectors;
 
 import javax.inject.Inject;
 
-import com.godaddy.vps4.orchestration.scheduler.DeleteAutomaticBackupSchedule;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -17,6 +16,7 @@ import com.godaddy.vps4.network.NetworkService;
 import com.godaddy.vps4.orchestration.ActionCommand;
 import com.godaddy.vps4.orchestration.hfs.cpanel.WaitForCpanelAction;
 import com.godaddy.vps4.orchestration.hfs.vm.WaitForVmAction;
+import com.godaddy.vps4.orchestration.scheduler.DeleteAutomaticBackupSchedule;
 import com.godaddy.vps4.vm.ActionService;
 import com.godaddy.vps4.vm.VirtualMachine;
 import com.godaddy.vps4.vm.VirtualMachineService;
@@ -26,7 +26,6 @@ import gdg.hfs.orchestration.CommandMetadata;
 import gdg.hfs.vhfs.cpanel.CPanelAction;
 import gdg.hfs.vhfs.cpanel.CPanelService;
 import gdg.hfs.vhfs.nodeping.NodePingService;
-import gdg.hfs.vhfs.vm.Vm;
 import gdg.hfs.vhfs.vm.VmAction;
 import gdg.hfs.vhfs.vm.VmService;
 
@@ -39,13 +38,9 @@ public class Vps4DestroyVm extends ActionCommand<Vps4DestroyVm.Request, Vps4Dest
 
     private static final Logger logger = LoggerFactory.getLogger(Vps4DestroyVm.class);
 
-    private final ActionService actionService;
-
     private final NetworkService networkService;
 
     private final VirtualMachineService virtualMachineService;
-
-    private final CreditService creditService;
 
     private final VmService vmService;
 
@@ -59,15 +54,12 @@ public class Vps4DestroyVm extends ActionCommand<Vps4DestroyVm.Request, Vps4Dest
     public Vps4DestroyVm(ActionService actionService,
             NetworkService networkService,
             VirtualMachineService virtualMachineService,
-            CreditService creditService,
             VmService vmService,
             CPanelService cpanelService,
             NodePingService monitoringService) {
         super(actionService);
-        this.actionService = actionService;
         this.networkService = networkService;
         this.virtualMachineService = virtualMachineService;
-        this.creditService = creditService;
         this.vmService = vmService;
         this.cpanelService = cpanelService;
         this.monitoringService = monitoringService;

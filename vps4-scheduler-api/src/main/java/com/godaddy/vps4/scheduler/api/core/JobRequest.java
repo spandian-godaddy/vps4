@@ -1,14 +1,11 @@
 package com.godaddy.vps4.scheduler.api.core;
 
-import io.swagger.annotations.ApiModelProperty;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.time.Instant;
+
+import io.swagger.annotations.ApiModelProperty;
 
 public class JobRequest extends JobRequestBase {
 
-    private static final Logger logger = LoggerFactory.getLogger(JobRequest.class);
     public static final int JOB_SCHEDULE_LEAD_TIME_WINDOW = 60; // 60 seconds
 
     @ApiModelProperty(

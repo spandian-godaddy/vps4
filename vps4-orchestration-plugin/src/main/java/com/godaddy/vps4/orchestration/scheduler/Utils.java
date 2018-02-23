@@ -10,7 +10,7 @@ import com.godaddy.vps4.scheduler.api.plugin.Vps4RemoveSupportUserJobRequest;
 import com.godaddy.vps4.scheduler.api.plugin.Vps4ZombieCleanupJobRequest;
 
 public class Utils {
-    private static final Map<ScheduledJob.ScheduledJobType, Class<? extends JobRequest>> typeClassMap = new HashMap();
+    private static final Map<ScheduledJob.ScheduledJobType, Class<? extends JobRequest>> typeClassMap = new HashMap<>();
 
     static {
         typeClassMap.put(ScheduledJob.ScheduledJobType.BACKUPS, Vps4BackupJobRequest.class);

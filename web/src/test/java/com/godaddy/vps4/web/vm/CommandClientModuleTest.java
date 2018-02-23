@@ -1,16 +1,14 @@
 package com.godaddy.vps4.web.vm;
 
-import com.godaddy.vps4.web.CommandClientModule;
+import java.lang.reflect.Method;
+import java.util.UUID;
+
 import org.junit.Assert;
 import org.junit.Test;
 import org.mockito.Mockito;
 
 import com.godaddy.hfs.config.Config;
-
-import gdg.hfs.orchestration.client.HttpCommandService;
-
-import java.lang.reflect.Method;
-import java.util.UUID;
+import com.godaddy.vps4.web.CommandClientModule;
 
 public class CommandClientModuleTest {
 

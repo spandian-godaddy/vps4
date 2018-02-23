@@ -5,14 +5,6 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
 
-import com.godaddy.vps4.orchestration.hfs.cpanel.RefreshCpanelLicense;
-import com.godaddy.vps4.vm.ActionService;
-import com.godaddy.vps4.vm.Image;
-import com.godaddy.vps4.vm.RestoreVmInfo;
-import com.godaddy.vps4.vm.RestoreVmStep;
-import com.godaddy.vps4.vm.VirtualMachine;
-import com.godaddy.vps4.vm.VirtualMachineService;
-import com.godaddy.vps4.vm.VmUserService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -21,6 +13,7 @@ import com.godaddy.vps4.network.IpAddress;
 import com.godaddy.vps4.network.NetworkService;
 import com.godaddy.vps4.orchestration.ActionCommand;
 import com.godaddy.vps4.orchestration.ActionRequest;
+import com.godaddy.vps4.orchestration.hfs.cpanel.RefreshCpanelLicense;
 import com.godaddy.vps4.orchestration.hfs.network.BindIp;
 import com.godaddy.vps4.orchestration.hfs.network.BindIp.BindIpRequest;
 import com.godaddy.vps4.orchestration.hfs.network.UnbindIp;
@@ -29,7 +22,13 @@ import com.godaddy.vps4.orchestration.hfs.sysadmin.ToggleAdmin;
 import com.godaddy.vps4.orchestration.hfs.vm.CreateVmFromSnapshot;
 import com.godaddy.vps4.orchestration.hfs.vm.DestroyVm;
 import com.godaddy.vps4.snapshot.SnapshotService;
-import com.godaddy.vps4.util.Cryptography;
+import com.godaddy.vps4.vm.ActionService;
+import com.godaddy.vps4.vm.Image;
+import com.godaddy.vps4.vm.RestoreVmInfo;
+import com.godaddy.vps4.vm.RestoreVmStep;
+import com.godaddy.vps4.vm.VirtualMachine;
+import com.godaddy.vps4.vm.VirtualMachineService;
+import com.godaddy.vps4.vm.VmUserService;
 import com.google.inject.Inject;
 
 import gdg.hfs.orchestration.CommandContext;
@@ -51,7 +50,6 @@ public class Vps4RestoreVm extends ActionCommand<Vps4RestoreVm.Request, Vps4Rest
     private final SnapshotService vps4SnapshotService;
     private final NetworkService vps4NetworkService;
     private final VmUserService vmUserService;
-    private final Cryptography cryptography;
     private Request request;
     private ActionState state;
     private CommandContext context;
@@ -60,15 +58,13 @@ public class Vps4RestoreVm extends ActionCommand<Vps4RestoreVm.Request, Vps4Rest
 
     @Inject
     public Vps4RestoreVm(ActionService actionService, VmService vmService, VirtualMachineService virtualMachineService,
-                         NetworkService vps4NetworkService, SnapshotService vps4SnapshotService, VmUserService vmUserService,
-                         Cryptography cryptography) {
+                         NetworkService vps4NetworkService, SnapshotService vps4SnapshotService, VmUserService vmUserService) {
         super(actionService);
         this.vmService = vmService;
         this.virtualMachineService = virtualMachineService;
         this.vps4NetworkService = vps4NetworkService;
         this.vps4SnapshotService = vps4SnapshotService;
         this.vmUserService = vmUserService;
-        this.cryptography = cryptography;
     }
 
     @Override
@@ -104,7 +100,6 @@ public class Vps4RestoreVm extends ActionCommand<Vps4RestoreVm.Request, Vps4Rest
     }
 
 
-    @SuppressWarnings("unchecked")
     private List<IpAddress> getPublicIpAddresses() {
         return vps4NetworkService.getVmIpAddresses(vps4VmId);
     }

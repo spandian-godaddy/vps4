@@ -1,5 +1,6 @@
 package com.godaddy.vps4.scheduler.plugin.backups;
 
+import static org.junit.Assert.fail;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.mock;
@@ -7,15 +8,10 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import com.godaddy.vps4.scheduler.api.plugin.Vps4BackupJobRequest;
-import com.godaddy.vps4.snapshot.SnapshotType;
-import com.godaddy.vps4.web.client.VmSnapshotService;
-import com.godaddy.vps4.web.snapshot.SnapshotAction;
-import com.godaddy.vps4.web.vm.VmSnapshotResource;
-import com.google.inject.AbstractModule;
-import com.google.inject.Guice;
-import com.google.inject.Inject;
-import com.google.inject.Injector;
+import java.util.UUID;
+
+import javax.ws.rs.WebApplicationException;
+
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -27,15 +23,19 @@ import org.mockito.MockitoAnnotations;
 import org.quartz.JobExecutionContext;
 import org.quartz.JobExecutionException;
 
-import javax.ws.rs.WebApplicationException;
-import java.util.UUID;
-
-import static org.junit.Assert.*;
+import com.godaddy.vps4.scheduler.api.plugin.Vps4BackupJobRequest;
+import com.godaddy.vps4.snapshot.SnapshotType;
+import com.godaddy.vps4.web.client.VmSnapshotService;
+import com.godaddy.vps4.web.snapshot.SnapshotAction;
+import com.godaddy.vps4.web.vm.VmSnapshotResource;
+import com.google.inject.AbstractModule;
+import com.google.inject.Guice;
+import com.google.inject.Inject;
+import com.google.inject.Injector;
 
 public class Vps4BackupJobTest {
     static Injector injector;
     static VmSnapshotService mockVmSnapshotService;
-    private Vps4BackupJobRequest request;
     private final JobExecutionContext context = mock(JobExecutionContext.class);
 
     @Inject Vps4BackupJob vps4BackupJob;

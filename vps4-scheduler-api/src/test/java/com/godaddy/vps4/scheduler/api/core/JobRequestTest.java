@@ -1,16 +1,14 @@
 package com.godaddy.vps4.scheduler.api.core;
 
-import com.godaddy.vps4.scheduler.api.core.jobRequests.JobRequestOne;
-import org.junit.Assert;
-import org.junit.Test;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.time.Instant;
 import java.util.List;
 
+import org.junit.Assert;
+import org.junit.Test;
+
+import com.godaddy.vps4.scheduler.api.core.jobRequests.JobRequestOne;
+
 public class JobRequestTest {
-    private static final Logger logger = LoggerFactory.getLogger(JobRequestTest.class);
 
     @Test
     public void jobRequestWithoutJobTypeFails() throws Exception {

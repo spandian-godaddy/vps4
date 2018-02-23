@@ -3,7 +3,6 @@ package com.godaddy.vps4.orchestration.phase2;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.junit.Assert.assertThat;
 import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Matchers.startsWith;
 import static org.mockito.Mockito.doReturn;
@@ -20,6 +19,15 @@ import java.util.UUID;
 import java.util.function.Function;
 
 import javax.sql.DataSource;
+
+import org.junit.After;
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.BeforeClass;
+import org.junit.Test;
+import org.mockito.ArgumentCaptor;
+import org.mockito.Captor;
+import org.mockito.MockitoAnnotations;
 
 import com.godaddy.vps4.jdbc.DatabaseModule;
 import com.godaddy.vps4.network.IpAddress;
@@ -40,7 +48,6 @@ import com.godaddy.vps4.snapshot.SnapshotModule;
 import com.godaddy.vps4.snapshot.SnapshotService;
 import com.godaddy.vps4.snapshot.SnapshotStatus;
 import com.godaddy.vps4.snapshot.SnapshotType;
-import com.godaddy.vps4.util.Cryptography;
 import com.godaddy.vps4.vm.ActionService;
 import com.godaddy.vps4.vm.Image;
 import com.godaddy.vps4.vm.RestoreVmInfo;
@@ -51,16 +58,6 @@ import com.godaddy.vps4.vm.VmUserService;
 import com.google.inject.Guice;
 import com.google.inject.Inject;
 import com.google.inject.Injector;
-
-import org.junit.After;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Test;
-import org.mockito.ArgumentCaptor;
-import org.mockito.Captor;
-import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
 
 import gdg.hfs.orchestration.CommandContext;
 import gdg.hfs.vhfs.vm.Vm;
@@ -93,7 +90,6 @@ public class Vps4RestoreVmTest {
     @Inject NetworkService vps4NetworkService;
     @Inject ActionService actionService;
     @Inject VmUserService vmUserService;
-    @Mock Cryptography cryptography;
 
     @Captor private ArgumentCaptor<Function<CommandContext, Long>> getHfsVmIdLambdaCaptor;
     @Captor private ArgumentCaptor<Function<CommandContext, String>> getVmOSDistroLambdaCaptor;
@@ -124,13 +120,10 @@ public class Vps4RestoreVmTest {
 
         spyVps4VmService = spy(vps4VmService);
         command = new Vps4RestoreVm(actionService, hfsVmService, spyVps4VmService,
-                vps4NetworkService, vps4SnapshotService, vmUserService, cryptography);
+                vps4NetworkService, vps4SnapshotService, vmUserService);
         addTestSqlData();
         context = setupMockContext();
         request = getCommandRequest();
-
-        when(cryptography.encrypt(anyString())).thenReturn(password.getBytes());
-        when(cryptography.decrypt(any())).thenReturn(password);
     }
 
     @After

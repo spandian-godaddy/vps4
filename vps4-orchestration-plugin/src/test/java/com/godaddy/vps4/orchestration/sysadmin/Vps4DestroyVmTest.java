@@ -13,7 +13,6 @@ import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.UUID;
 
-import com.godaddy.vps4.scheduledJob.ScheduledJobService;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
@@ -27,7 +26,7 @@ import com.godaddy.vps4.orchestration.TestCommandContext;
 import com.godaddy.vps4.orchestration.hfs.network.ReleaseIp;
 import com.godaddy.vps4.orchestration.hfs.network.UnbindIp;
 import com.godaddy.vps4.orchestration.vm.Vps4DestroyVm;
-import com.godaddy.vps4.vm.AccountStatus;
+import com.godaddy.vps4.scheduledJob.ScheduledJobService;
 import com.godaddy.vps4.vm.ActionService;
 import com.godaddy.vps4.vm.VirtualMachine;
 import com.godaddy.vps4.vm.VirtualMachineService;
@@ -53,7 +52,6 @@ public class Vps4DestroyVmTest {
     ActionService actionService = mock(ActionService.class);
     NetworkService networkService = mock(NetworkService.class);
     VirtualMachineService virtualMachineService = mock(VirtualMachineService.class);
-    CreditService creditService = mock(CreditService.class);
     gdg.hfs.vhfs.network.NetworkService hfsNetworkService = mock(gdg.hfs.vhfs.network.NetworkService.class);
     CPanelService cpanelService = mock(CPanelService.class);
     PleskService pleskService = mock(PleskService.class);
@@ -63,7 +61,7 @@ public class Vps4DestroyVmTest {
     ScheduledJobService scheduledJobService = mock(ScheduledJobService.class);
 
     Vps4DestroyVm command = new Vps4DestroyVm(actionService, networkService, virtualMachineService,
-            creditService, vmService, cpanelService, nodePingService);
+            vmService, cpanelService, nodePingService);
 
     Injector injector = Guice.createInjector(binder -> {
         binder.bind(UnbindIp.class);

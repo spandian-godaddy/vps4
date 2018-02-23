@@ -7,7 +7,14 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.quartz.impl.matchers.GroupMatcher.triggerGroupEquals;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import org.junit.Before;
+import org.junit.BeforeClass;
+import org.junit.Test;
+import org.quartz.JobExecutionContext;
+import org.quartz.JobExecutionException;
+import org.quartz.ListenerManager;
+import org.quartz.Scheduler;
+
 import com.godaddy.vps4.scheduler.core.SchedulerJob;
 import com.godaddy.vps4.scheduler.core.SchedulerService;
 import com.godaddy.vps4.scheduler.core.SchedulerTriggerListener;
@@ -17,13 +24,6 @@ import com.google.inject.Guice;
 import com.google.inject.Inject;
 import com.google.inject.Injector;
 import com.google.inject.Scopes;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Test;
-import org.quartz.JobExecutionContext;
-import org.quartz.JobExecutionException;
-import org.quartz.ListenerManager;
-import org.quartz.Scheduler;
 
 public class QuartzSchedulerServiceActionsTest {
 
@@ -32,7 +32,6 @@ public class QuartzSchedulerServiceActionsTest {
 
     @Inject private SchedulerService schedulerService;
     @Inject private Scheduler scheduler;
-    @Inject private ObjectMapper objectMapper;
     String product;
     String jobGroup;
 

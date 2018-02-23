@@ -2,6 +2,20 @@ package com.godaddy.vps4.scheduler.api.phase2;
 
 import static com.godaddy.vps4.client.ClientUtils.withShopperId;
 
+import java.time.Instant;
+import java.util.List;
+import java.util.UUID;
+
+import javax.ws.rs.ClientErrorException;
+import javax.ws.rs.NotFoundException;
+import javax.ws.rs.core.Response;
+
+import org.junit.After;
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.Ignore;
+import org.junit.Test;
+
 import com.godaddy.vps4.config.ConfigModule;
 import com.godaddy.vps4.scheduler.api.client.SchedulerServiceClientModule;
 import com.godaddy.vps4.scheduler.api.core.JobRequest;
@@ -13,18 +27,6 @@ import com.godaddy.vps4.util.ObjectMapperModule;
 import com.google.inject.Guice;
 import com.google.inject.Inject;
 import com.google.inject.Injector;
-import org.junit.After;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Ignore;
-import org.junit.Test;
-
-import javax.ws.rs.ClientErrorException;
-import javax.ws.rs.NotFoundException;
-import javax.ws.rs.core.Response;
-import java.time.Instant;
-import java.util.List;
-import java.util.UUID;
 
 
 /**
@@ -132,7 +134,6 @@ public class SchedulerWebServiceClientTest {
     public void getJobWithShopperIdInjected() throws Exception {
         SchedulerJobDetail jobDetail = createJob();
 
-        @SuppressWarnings("unchecked")
         SchedulerJobDetail getJobDetail = withShopperId("959998", () -> {
             return schedulerWebService.getJob(product, jobGroup, jobDetail.id);
         }, SchedulerJobDetail.class);
