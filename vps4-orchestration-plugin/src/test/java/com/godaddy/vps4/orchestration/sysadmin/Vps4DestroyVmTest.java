@@ -85,13 +85,13 @@ public class Vps4DestroyVmTest {
 
     @Before
     public void setupTest(){
-        this.vm = new VirtualMachine(UUID.randomUUID(), 42, UUID.randomUUID(), 1,
+        vm = new VirtualMachine(UUID.randomUUID(), 42, UUID.randomUUID(), 1,
                 null, "VM Name",
                 null, null, null, null, null,
                 "fake.host.name", 0, UUID.randomUUID());
 
         request = new Vps4DestroyVm.Request();
-        request.hfsVmId = 42;
+        request.virtualMachine = vm;
         request.actionId = 12;
         request.pingCheckAccountId = 123;
 
@@ -101,18 +101,19 @@ public class Vps4DestroyVmTest {
         AddressAction addressAction = new AddressAction();
         addressAction.status = AddressAction.Status.COMPLETE;
 
-        this.primaryIp = new IpAddress(123, UUID.randomUUID(), "1.2.3.4", IpAddressType.PRIMARY, 5522L,
+        primaryIp = new IpAddress(123, UUID.randomUUID(), "1.2.3.4", IpAddressType.PRIMARY, 5522L,
                 Instant.now(), Instant.now().plus(24, ChronoUnit.HOURS));
         ArrayList<IpAddress> addresses = new ArrayList<IpAddress>();
-        addresses.add(this.primaryIp);
+        addresses.add(primaryIp);
 
         mrUpdate = new MailRelayUpdate();
         mrUpdate.quota = 0;
 
-        when(virtualMachineService.getVirtualMachine(eq(this.request.hfsVmId))).thenReturn(this.vm);
-        when(vmService.destroyVm(eq(this.request.hfsVmId))).thenReturn(vmAction);
+        when(virtualMachineService.getVirtualMachine(eq(request.virtualMachine.vmId))).thenReturn(vm);
+        when(virtualMachineService.getVirtualMachine(eq(request.virtualMachine.hfsVmId))).thenReturn(vm);
+        when(vmService.destroyVm(eq(request.virtualMachine.hfsVmId))).thenReturn(vmAction);
         when(vmService.getVmAction(Mockito.anyLong(), Mockito.anyLong())).thenReturn(vmAction);
-        when(networkService.getVmIpAddresses(this.vm.vmId)).thenReturn(addresses);
+        when(networkService.getVmIpAddresses(vm.vmId)).thenReturn(addresses);
         when(hfsNetworkService.unbindIp(Mockito.anyLong(), Mockito.eq(true))).thenReturn(addressAction);
         when(hfsNetworkService.releaseIp(Mockito.anyLong())).thenReturn(addressAction);
         doNothing().when(nodePingService).deleteCheck(request.pingCheckAccountId, primaryIp.pingCheckId);
@@ -128,7 +129,7 @@ public class Vps4DestroyVmTest {
         mailRelay.quota = 0;
         when(mailRelayService.setRelayQuota(eq("1.2.3.4"), any(MailRelayUpdate.class))).thenReturn(mailRelay);
         command.execute(context, this.request);
-        verify(pleskService, times(1)).licenseRelease(this.request.hfsVmId);
+        verify(pleskService, times(1)).licenseRelease(this.request.virtualMachine.hfsVmId);
         verify(nodePingService, times(1)).deleteCheck(request.pingCheckAccountId, primaryIp.pingCheckId);
 
         verifyMailRelay();

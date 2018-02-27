@@ -2,7 +2,8 @@ package com.godaddy.vps4.vm;
 
 import java.time.Instant;
 import java.util.UUID;
-
+import org.apache.commons.lang3.builder.ReflectionToStringBuilder;
+import org.apache.commons.lang3.builder.ToStringStyle;
 import com.godaddy.vps4.network.IpAddress;
 
 public class VirtualMachine {
@@ -74,9 +75,6 @@ public class VirtualMachine {
 
     @Override
     public String toString() {
-        return String.format(
-                "VirtualMachine [vmId=%s, hfsVmId=%d, orionGuid=%s, projectId=%d, spec=%s, name=%s, hostname=%s, image=%s, primaryIpAddress=%s, managedLevel=%d, validOn=%s, canceled=%s, validUntil=%s]",
-                vmId, hfsVmId, orionGuid, projectId, spec.name, name, hostname, image == null ? "" : image.imageName,
-                primaryIpAddress == null ? "" : primaryIpAddress.ipAddress, managedLevel, validOn, canceled, validUntil);
+        return ReflectionToStringBuilder.toString(this, ToStringStyle.MULTI_LINE_STYLE);
     }
 }

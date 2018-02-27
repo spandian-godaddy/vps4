@@ -50,13 +50,13 @@ public class Vps4AddIpAddress extends ActionCommand<Vps4AddIpAddress.Request, Vo
 
     @Override
     protected Void executeWithAction(CommandContext context, Vps4AddIpAddress.Request request) throws Exception {
-        logger.info("Add an IP to vm with hfsVmId {}", request.hfsVmId);
-        VirtualMachine virtualMachine = virtualMachineService.getVirtualMachine(request.hfsVmId);
+        logger.info("Add an IP to vm {}", request.virtualMachine.vmId);
+        VirtualMachine virtualMachine = request.virtualMachine;
         IpAddress ip = allocateIp(context, request);
         addIpToDatabase(context, ip, virtualMachine.vmId);
         disableMailRelays(context, ip);
         bindIp(context, ip, virtualMachine.hfsVmId);
-        logger.info("Completed adding IP {} to vm with Id {} and hfsVmId {}", ip.address, virtualMachine.vmId, request.hfsVmId);
+        logger.info("Completed adding IP {} to vm {}", ip.address, virtualMachine.vmId);
 
         return null;
     }
@@ -101,9 +101,7 @@ public class Vps4AddIpAddress extends ActionCommand<Vps4AddIpAddress.Request, Vo
 
       @Override
       public String toString(){
-          return ("HfsVmId: " + hfsVmId + ", sgid:"+sgid+", zone:"+zone);
+          return ("VirtualMachine: " + virtualMachine.toString() + ", sgid:"+sgid+", zone:"+zone);
       }
-
   }
-
 }

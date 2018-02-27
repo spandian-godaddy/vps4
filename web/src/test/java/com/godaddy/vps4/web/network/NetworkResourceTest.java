@@ -99,6 +99,7 @@ public class NetworkResourceTest {
                 111, "{}", "NEW", "{}", ActionStatus.NEW, Instant.now(), null, "", UUID.randomUUID());
         when(actionService.createAction(vm.vmId, ActionType.ADD_IP, new JSONObject().toJSONString(), vps4User.getId())).thenReturn(action.id);
         when(actionService.getAction(123)).thenReturn(action);
+        when(virtualMachineService.getVirtualMachine(vmId)).thenReturn(vm);
 
         Action returnAction = resource.addIpAddress(vmId);
 

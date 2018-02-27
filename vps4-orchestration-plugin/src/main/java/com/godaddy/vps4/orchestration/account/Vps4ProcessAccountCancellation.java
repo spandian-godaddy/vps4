@@ -19,6 +19,7 @@ import com.godaddy.vps4.orchestration.vm.Vps4StopVm;
 import com.godaddy.vps4.scheduledJob.ScheduledJob.ScheduledJobType;
 import com.godaddy.vps4.vm.ActionService;
 import com.godaddy.vps4.vm.ActionType;
+import com.godaddy.vps4.vm.VirtualMachine;
 import com.godaddy.vps4.vm.VirtualMachineService;
 
 import gdg.hfs.orchestration.Command;
@@ -88,11 +89,11 @@ public class Vps4ProcessAccountCancellation implements Command<VirtualMachineCre
         "CreateVmStopAction",
             ctx -> vmActionService.createAction(vmId, ActionType.STOP_VM, new JSONObject().toJSONString(), vps4UserId),
             long.class);
-        long hfsVmId = context.execute(
-         "GetHfsVmId", ctx -> virtualMachineService.getVirtualMachine(vmId).hfsVmId, long.class);
+        VirtualMachine vm = context.execute(
+         "GetVirtualMachine", ctx -> virtualMachineService.getVirtualMachine(vmId), VirtualMachine.class);
 
         VmActionRequest request = new VmActionRequest();
-        request.hfsVmId = hfsVmId;
+        request.virtualMachine = vm;
         request.actionId = actionId;
         context.execute(Vps4StopVm.class, request);
     }

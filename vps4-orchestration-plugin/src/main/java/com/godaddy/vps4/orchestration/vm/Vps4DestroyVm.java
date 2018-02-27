@@ -70,11 +70,10 @@ public class Vps4DestroyVm extends ActionCommand<Vps4DestroyVm.Request, Vps4Dest
     public Response executeWithAction(CommandContext context, Vps4DestroyVm.Request request) {
         this.context = context;
 
-        final long hfsVmId = request.hfsVmId;
-        VirtualMachine vm = this.virtualMachineService.getVirtualMachine(hfsVmId);
-        logger.info("Destroying VM {} with hfsVmId {}", vm.vmId, hfsVmId);
+        logger.info("Destroying VM {}", request.virtualMachine.vmId);
+        VirtualMachine vm = request.virtualMachine;
 
-        unlicenseCpanel(hfsVmId, vm.vmId);
+        unlicenseCpanel(vm.hfsVmId, vm.vmId);
 
         List<IpAddress> addresses = networkService.getVmIpAddresses(vm.vmId);
         if (addresses != null){
@@ -99,14 +98,14 @@ public class Vps4DestroyVm extends ActionCommand<Vps4DestroyVm.Request, Vps4Dest
 
         context.execute("DestroyAllScheduledJobsForVm", Vps4DeleteAllScheduledJobsForVm.class, vm.vmId);
 
-        VmAction hfsAction = context.execute("DestroyVmHfs", ctx -> vmService.destroyVm(hfsVmId), VmAction.class);
+        VmAction hfsAction = context.execute("DestroyVmHfs", ctx -> vmService.destroyVm(vm.hfsVmId), VmAction.class);
 
         hfsAction = context.execute(WaitForVmAction.class, hfsAction);
 
-        logger.info("Completed destroying VM {} with hfsVmId {}", vm.vmId, hfsVmId);
+        logger.info("Completed destroying VM {}", vm.vmId);
 
         Vps4DestroyVm.Response response = new Vps4DestroyVm.Response();
-        response.vmId = hfsVmId;
+        response.vmId = vm.vmId;
         response.hfsAction = hfsAction;
         return response;
     }
@@ -141,7 +140,7 @@ public class Vps4DestroyVm extends ActionCommand<Vps4DestroyVm.Request, Vps4Dest
     }
 
     public static class Response {
-        public long vmId;
+        public UUID vmId;
         public VmAction hfsAction;
     }
 

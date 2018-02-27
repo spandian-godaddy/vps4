@@ -145,7 +145,7 @@ public class Vps4MessageHandler implements MessageHandler {
                     new JSONObject().toJSONString(), vps4UserId);
 
             VmActionRequest request = new VmActionRequest();
-            request.hfsVmId = vm.hfsVmId;
+            request.virtualMachine = vm;
             request.actionId = actionId;
 
             logger.info("Stopping suspended vm: {} - actionId: {}", vmId, actionId);
@@ -157,4 +157,3 @@ public class Vps4MessageHandler implements MessageHandler {
         }
     }
 }
-  

@@ -53,7 +53,10 @@ public class TestVps4AddIpAddress {
     @Test
     public void testAddIpAllocatesAndBinds() {
         Vps4AddIpAddress.Request request = new Vps4AddIpAddress.Request();
-        request.hfsVmId = 1111;
+        VirtualMachine virtualMachine = new VirtualMachine(UUID.randomUUID(),
+                1111, UUID.randomUUID(), 0, null, "fakeName", null, null,
+                Instant.now(), null, null, "fake.hostname.com", 0, UUID.randomUUID());
+        request.virtualMachine = virtualMachine;
         request.zone = "vps4-phx3";
         request.sgid = "vps4-unittest-1234";
 
@@ -62,11 +65,6 @@ public class TestVps4AddIpAddress {
         ip.addressId = 3425;
 
         when(context.execute(eq(AllocateIp.class), any(AllocateIp.Request.class))).thenReturn(ip);
-
-        VirtualMachine virtualMachine = new VirtualMachine(UUID.randomUUID(),
-                request.hfsVmId, UUID.randomUUID(), 0, null, "fakeName", null, null,
-                Instant.now(), null, null, "fake.hostname.com", 0, UUID.randomUUID());
-        when(virtualMachineService.getVirtualMachine(request.hfsVmId)).thenReturn(virtualMachine);
 
         try{
             command.executeWithAction(context, request);

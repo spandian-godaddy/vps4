@@ -29,16 +29,14 @@ public class Vps4StartVm extends ActionCommand<VmActionRequest, Vps4StartVm.Resp
 
     @Override
     protected Response executeWithAction(CommandContext context, VmActionRequest request) throws Exception {
-        long vmId = request.hfsVmId;
-
         VmAction hfsAction = context.execute("Vps4StartVm", ctx -> {
-            return vmService.startVm(vmId);
+            return vmService.startVm(request.virtualMachine.hfsVmId);
         }, VmAction.class);
 
         hfsAction = context.execute(WaitForManageVmAction.class, hfsAction);
 
         Vps4StartVm.Response response = new Vps4StartVm.Response();
-        response.vmId = vmId;
+        response.vmId = request.virtualMachine.hfsVmId;
         response.hfsAction = hfsAction;
         return response;
     }

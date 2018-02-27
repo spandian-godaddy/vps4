@@ -153,7 +153,7 @@ public class VmResource {
         validateServerIsStopped(vmService.getVm(vm.hfsVmId));
 
         VmActionRequest startRequest = new VmActionRequest();
-        startRequest.hfsVmId = vm.hfsVmId;
+        startRequest.virtualMachine = vm;
         return createActionAndExecute(
             actionService, commandService, virtualMachineService,
             vm.vmId, ActionType.START_VM, startRequest, "Vps4StartVm");
@@ -168,7 +168,7 @@ public class VmResource {
         validateServerIsActive(vmService.getVm(vm.hfsVmId));
 
         VmActionRequest stopRequest = new VmActionRequest();
-        stopRequest.hfsVmId = vm.hfsVmId;
+        stopRequest.virtualMachine = vm;
         return createActionAndExecute(
             actionService, commandService, virtualMachineService,
             vm.vmId, ActionType.STOP_VM, stopRequest, "Vps4StopVm");
@@ -183,7 +183,7 @@ public class VmResource {
         validateServerIsActive(vmService.getVm(vm.hfsVmId));
 
         VmActionRequest restartRequest = new VmActionRequest();
-        restartRequest.hfsVmId = vm.hfsVmId;
+        restartRequest.virtualMachine = vm;
         return createActionAndExecute(
             actionService, commandService, virtualMachineService,
             vm.vmId, ActionType.RESTART_VM, restartRequest, "Vps4RestartVm");
@@ -288,7 +288,7 @@ public class VmResource {
                 ActionType.RESTART_VM, ActionType.CREATE_VM, ActionType.RESTORE_VM);
 
         Vps4DestroyVm.Request destroyRequest = new Vps4DestroyVm.Request();
-        destroyRequest.hfsVmId = vm.hfsVmId;
+        destroyRequest.virtualMachine = vm;
         destroyRequest.pingCheckAccountId = monitoring.getAccountId(vm);
         VmAction deleteAction = createActionAndExecute(
             actionService, commandService, virtualMachineService,

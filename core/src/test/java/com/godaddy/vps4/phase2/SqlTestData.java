@@ -1,6 +1,7 @@
 package com.godaddy.vps4.phase2;
 
 import java.sql.Timestamp;
+import java.util.Random;
 import java.util.UUID;
 
 import javax.sql.DataSource;
@@ -48,8 +49,9 @@ public class SqlTestData {
     }
 
 	private static VirtualMachine addIpToTestVm(DataSource dataSource, VirtualMachine virtualMachine) {
-		long ipAddressId = getNextIpAddressId(dataSource);
-        String ipAddress = "127.0.0." + ipAddressId;
+        long ipAddressId = getNextIpAddressId(dataSource);
+        Random random = new Random();
+        String ipAddress = random.nextInt(255) + "." + random.nextInt(255) + "." + random.nextInt(255) + "." + random.nextInt(255);
         Sql.with(dataSource).exec("INSERT INTO ip_address (ip_address_id, ip_address, ip_address_type_id, vm_id) VALUES (?, ?, 1, ?)", null,
                 ipAddressId, ipAddress, virtualMachine.vmId);
         VirtualMachineService virtualMachineService = new JdbcVirtualMachineService(dataSource);

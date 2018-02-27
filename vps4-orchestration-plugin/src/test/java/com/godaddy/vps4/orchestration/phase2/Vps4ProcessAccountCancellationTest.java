@@ -1,11 +1,27 @@
 package com.godaddy.vps4.orchestration.phase2;
 
-import static org.mockito.Mockito.any;
-import static org.mockito.Mockito.eq;
+import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
+import java.util.UUID;
+import java.util.function.Function;
+
+import javax.sql.DataSource;
+
+import org.junit.After;
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.BeforeClass;
+import org.junit.Test;
+import org.mockito.ArgumentCaptor;
+import org.mockito.Captor;
+import org.mockito.MockitoAnnotations;
 
 import com.godaddy.vps4.credit.VirtualMachineCredit;
 import com.godaddy.vps4.jdbc.DatabaseModule;
@@ -30,23 +46,8 @@ import com.google.inject.AbstractModule;
 import com.google.inject.Guice;
 import com.google.inject.Inject;
 import com.google.inject.Injector;
+
 import gdg.hfs.orchestration.CommandContext;
-
-import javax.sql.DataSource;
-
-import org.junit.After;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Test;
-import org.mockito.ArgumentCaptor;
-import org.mockito.Captor;
-import org.mockito.MockitoAnnotations;
-
-import java.time.Instant;
-import java.time.temporal.ChronoUnit;
-import java.util.UUID;
-import java.util.function.Function;
 
 public class Vps4ProcessAccountCancellationTest {
     static Injector injector;
@@ -67,7 +68,7 @@ public class Vps4ProcessAccountCancellationTest {
 
     @Captor private ArgumentCaptor<Function<CommandContext, Long>> calculateValidUntilLambdaCaptor;
     @Captor private ArgumentCaptor<Function<CommandContext, Long>> createStopVmActionLambdaCaptor;
-    @Captor private ArgumentCaptor<Function<CommandContext, Long>> getHfsVmIdLambdaCaptor;
+    @Captor private ArgumentCaptor<Function<CommandContext, VirtualMachine>> getVirtualMachineLambdaCaptor;
     @Captor private ArgumentCaptor<VmActionRequest> actionRequestArgumentCaptor;
     @Captor private ArgumentCaptor<Function<CommandContext, Void>> markZombieLambdaCaptor;
     @Captor private ArgumentCaptor<ScheduleZombieVmCleanup.Request> zombieCleanupArgumentCaptor;
@@ -120,13 +121,14 @@ public class Vps4ProcessAccountCancellationTest {
         hfsVmId = vm.hfsVmId;
     }
 
+    @SuppressWarnings("unchecked")
     private CommandContext setupMockContext() {
         CommandContext mockContext = mock(CommandContext.class);
 
         when(mockContext.execute(eq("CalculateValidUntil"), any(Function.class), eq(long.class)))
                 .thenReturn(validUntil.toEpochMilli());
-        when(mockContext.execute(eq("GetHfsVmId"), any(Function.class), eq(long.class)))
-            .thenReturn(SqlTestData.hfsVmId);
+        when(mockContext.execute(eq("GetVirtualMachine"), any(Function.class), eq(VirtualMachine.class)))
+            .thenReturn(vm);
         when(mockContext.execute(eq("CreateVmStopAction"), any(Function.class), eq(long.class)))
                 .thenReturn(stopActionId);
         return mockContext;
@@ -161,12 +163,12 @@ public class Vps4ProcessAccountCancellationTest {
     public void getsHfsVmIdWhenAccountCancellationIsProcessed() {
         command.execute(context, virtualMachineCredit);
         verify(context, times(1))
-                .execute(eq("GetHfsVmId"), getHfsVmIdLambdaCaptor.capture(), eq(long.class));
+                .execute(eq("GetVirtualMachine"), getVirtualMachineLambdaCaptor.capture(), eq(VirtualMachine.class));
 
         // Verify that the lambda is returning what we expect
-        Function<CommandContext, Long> lambda = getHfsVmIdLambdaCaptor.getValue();
-        long getHfsVmId = lambda.apply(context);
-        Assert.assertEquals(getHfsVmId, hfsVmId);
+        Function<CommandContext, VirtualMachine> lambda = getVirtualMachineLambdaCaptor.getValue();
+        VirtualMachine getVirtualMachine = lambda.apply(context);
+        Assert.assertEquals(vm.vmId, getVirtualMachine.vmId);
     }
 
     @Test
@@ -177,12 +179,12 @@ public class Vps4ProcessAccountCancellationTest {
 
         VmActionRequest request = actionRequestArgumentCaptor.getValue();
         Assert.assertEquals(stopActionId, request.actionId);
-        Assert.assertEquals(hfsVmId, request.hfsVmId);
+        Assert.assertEquals(hfsVmId, request.virtualMachine.hfsVmId);
     }
 
     @Test
     public void marksVmAsZombieWhenAccountCancellationIsProcessed() {
-        Instant before = Instant.now();
+        Instant before = Instant.now().minusSeconds(60);
         command.execute(context, virtualMachineCredit);
         verify(context, times(1))
                 .execute(eq("MarkVmAsZombie"), markZombieLambdaCaptor.capture(), eq(void.class));
@@ -191,7 +193,7 @@ public class Vps4ProcessAccountCancellationTest {
         Function<CommandContext, Void> lambda = markZombieLambdaCaptor.getValue();
         lambda.apply(context);
         Instant setcanceled = vps4VmService.getVirtualMachine(vps4VmId).canceled;
-        Instant after = Instant.now();
+        Instant after = Instant.now().plusSeconds(69);
         Assert.assertTrue(before.isBefore(setcanceled) && after.isAfter(setcanceled));
     }
 
@@ -223,6 +225,7 @@ public class Vps4ProcessAccountCancellationTest {
     }
 
     @Test
+    @SuppressWarnings("unchecked")
     public void noOpWhenAnUnclaimedAccountCancellationIsProcessed() {
         virtualMachineCredit.productId = null;
         command.execute(context, virtualMachineCredit);

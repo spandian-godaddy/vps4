@@ -39,16 +39,14 @@ public class Vps4StopVm extends ActionCommand<VmActionRequest, Vps4StopVm.Respon
     protected Response executeWithAction(CommandContext context, VmActionRequest request) throws Exception {
 
         logger.info("Request: {}", request);
-
-        long vmId = request.hfsVmId;
         VmAction hfsAction = context.execute("Vps4StopVm", ctx -> {
-            return vmService.stopVm(vmId);
+            return vmService.stopVm(request.virtualMachine.hfsVmId);
         }, VmAction.class);
 
         hfsAction = context.execute(WaitForManageVmAction.class, hfsAction);
 
         Vps4StopVm.Response response = new Vps4StopVm.Response();
-        response.vmId = vmId;
+        response.vmId = request.virtualMachine.hfsVmId;
         response.hfsAction = hfsAction;
         logger.info("Response: {}", response);
         return response;

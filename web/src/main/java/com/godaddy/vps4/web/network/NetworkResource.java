@@ -126,7 +126,7 @@ public class NetworkResource {
 
         Vps4AddIpAddress.Request request = new Vps4AddIpAddress.Request();
         request.setActionId(actionId);
-        request.hfsVmId = virtualMachine.hfsVmId;
+        request.virtualMachine = virtualMachine;
         request.zone = zone;
         request.sgid = sgid;
 
@@ -154,7 +154,7 @@ public class NetworkResource {
 
         Vps4DestroyIpAddressAction.Request request = new Vps4DestroyIpAddressAction.Request();
         request.ipAddressId = ipAddressId;
-        request.hfsVmId = virtualMachine.hfsVmId;
+        request.virtualMachine = virtualMachine;
         request.setActionId(actionId);
         request.forceIfVmInaccessible = forceIfVmInaccessible;
 
