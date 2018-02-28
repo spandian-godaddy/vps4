@@ -16,6 +16,7 @@ import com.godaddy.vps4.network.IpAddress.IpAddressType;
 import com.godaddy.vps4.network.NetworkService;
 import com.godaddy.vps4.orchestration.ActionCommand;
 import com.godaddy.vps4.orchestration.ActionRequest;
+import com.godaddy.vps4.orchestration.NoRetryException;
 import com.godaddy.vps4.orchestration.hfs.cpanel.ConfigureCpanel;
 import com.godaddy.vps4.orchestration.hfs.cpanel.ConfigureCpanel.ConfigureCpanelRequest;
 import com.godaddy.vps4.orchestration.hfs.mailrelay.SetMailRelayQuota;
@@ -107,6 +108,7 @@ public class Vps4ProvisionVm extends ActionCommand<Vps4ProvisionVm.Request, Vps4
 
         logger.info("begin provision vm for request: {}", request);
 
+        try {
         IpAddress ip = allocateIp();
 
         hostname = HostnameGenerator.getHostname(ip.address);
@@ -139,7 +141,9 @@ public class Vps4ProvisionVm extends ActionCommand<Vps4ProvisionVm.Request, Vps4
 
         setStep(CreateVmStep.SetupComplete);
         logger.info("provision vm finished: {}", hfsVm);
-
+        } catch (Exception e) {
+            throw new NoRetryException("Exception during provision of vmId " + request.vmInfo.vmId, e);
+        }
         return null;
     }
 
