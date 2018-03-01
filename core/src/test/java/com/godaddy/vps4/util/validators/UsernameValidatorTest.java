@@ -45,8 +45,11 @@ public class UsernameValidatorTest {
     	assertFalse(validator.isValid("user"));
     	assertFalse(validator.isValid("system"));
     	assertFalse(validator.isValid("group"));
+    	assertFalse(validator.isValid("cpaneldemo"));
 
     	assertTrue(validator.isValid("root1"));
+    	assertTrue(validator.isValid("1root"));
+    	assertTrue(validator.isValid("1root1"));
     }
 
 

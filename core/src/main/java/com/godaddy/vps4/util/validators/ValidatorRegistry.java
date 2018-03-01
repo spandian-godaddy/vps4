@@ -26,7 +26,16 @@ public class ValidatorRegistry {
         return (new Validator(Arrays.asList(
             new Rule("Only Alpha-Numeric Values and _ and - characters", "[a-z0-9_-]*"),
             new Rule("Between 5 and 16 characters", ".{5,16}"),
-            new Rule("Not a reserved word", "^(?!(root|admin|administrator|users|user|system|group)$).*")
+            new Rule("Not a reserved word", "^(?!(" +
+                    "admin|administrator|root|users|user|system|group|" +
+                    "_apt|abrt|adm|avahi|avahi-autoipd|backup|bin|cpanel|cpanelcabcache|cpanelconnecttrack|" +
+                    "cpaneleximfilter|cpaneleximscanner|cpanellogin|cpaneldemo|cpanelphpmyadmin|" +
+                    "cpanelphppgadmin|cpanelroundcube|cpanelrrdtool|cpses|daemon|dbus|Debian-exim|dovecot|" +
+                    "dovenull|ftp|games|gnats|gopher|haldaemon|halt|irc|list|lp|mail|mailman|mailnull|man|" +
+                    "messagebus|mysql|named|news|nobody|nscd|ntp|nydus|operator|polkitd|postfix|proxy|root|" +
+                    "rpc|saslauth|shutdown|smmsp|smmta|sshd|statd|sync|sys|syslog|systemd-bus-proxy|" +
+                    "systemd-network|systemd-resolve|systemd-timesync|tcpdump|tss|uucp|uuidd|vcsa|www-data|" +
+                    "cloudbase-init|psaadm)$).*")
         )));
     }
 
