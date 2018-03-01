@@ -24,17 +24,15 @@ public class XCertSubjectHeaderAuthenticator implements RequestAuthenticator<Boo
     @Override
     public Boolean authenticate(HttpServletRequest request) {
 
-        Boolean result = false;
-
         String xCertHeader = request.getHeader("X-Cert-Subject-DN");
-        if (xCertHeader != null) {
-            String cnField = getCNFieldFromHeader(xCertHeader);
-
-            // nginx validated a cert auth and has sent us this header.
-            // authentication succeeds the cert's CN matches the one in configuration
-            result = cnField != null && (authenticatesDevCert(cnField) || authenticatesSchedulerCert(cnField));
+        if(xCertHeader == null) {
+            return false;
         }
-        return result;
+
+        // nginx validated a cert auth and has sent us this header.
+        // authentication succeeds if the cert's CN matches the one in our configuration
+        String cnField = getCNFieldFromHeader(xCertHeader);
+        return cnField != null && (authenticatesDevCert(cnField) || authenticatesSchedulerCert(cnField));
     }
 
     private boolean authenticatesSchedulerCert(String cnField){
