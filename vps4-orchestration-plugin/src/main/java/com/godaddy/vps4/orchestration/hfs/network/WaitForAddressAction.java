@@ -33,10 +33,7 @@ public class WaitForAddressAction implements Command<AddressAction, AddressActio
         }
 
         if (!hfsAction.status.equals(AddressAction.Status.COMPLETE)) {
-            // FIXME update action status
-            //action.status = ActionStatus.ERROR;
-            //throw new Vps4Exception("BIND_IP_FAILED",
-            //        String.format("Bind IP %d failed for VM %d", action.getAddressId(), action.getVmId()));
+            throw new RuntimeException(String.format("failed to complete address action: %s", hfsAction));
         }
 
         return hfsAction;
