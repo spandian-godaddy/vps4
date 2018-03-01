@@ -25,6 +25,10 @@ public class GDUser {
         return isAdmin;
     }
 
+    public boolean isEmployeeToShopper() {
+        return isEmployee() && isShopper();
+    }
+
     @Override
     public String toString() {
         return "GDUser [token=" + token + ", shopperId=" + shopperId + ", isEmployee=" + isEmployee + ", isAdmin="

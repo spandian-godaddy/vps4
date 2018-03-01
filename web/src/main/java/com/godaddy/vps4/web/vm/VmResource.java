@@ -25,6 +25,7 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
 
+import org.apache.commons.lang3.StringUtils;
 import org.json.simple.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -69,7 +70,7 @@ import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
 
 @Vps4Api
-@Api(tags = {"vms"})
+@Api(tags = { "vms" })
 
 @Path("/api/vms")
 @Produces(MediaType.APPLICATION_JSON)
@@ -97,19 +98,10 @@ public class VmResource {
     private final SchedulerWebService schedulerWebService;
 
     @Inject
-    public VmResource(
-            GDUser user, VmService vmService,
-            Vps4UserService vps4UserService,
-            VirtualMachineService virtualMachineService,
-            CreditService creditService,
-            ProjectService projectService,
-            ImageService imageService,
-            ActionService actionService,
-            CommandService commandService,
-            VmSnapshotResource vmSnapshotResource,
-            Config config,
-            Cryptography cryptography,
-            Monitoring monitoring,
+    public VmResource(GDUser user, VmService vmService, Vps4UserService vps4UserService,
+            VirtualMachineService virtualMachineService, CreditService creditService, ProjectService projectService,
+            ImageService imageService, ActionService actionService, CommandService commandService,
+            VmSnapshotResource vmSnapshotResource, Config config, Cryptography cryptography, Monitoring monitoring,
             SchedulerWebService schedulerWebService) {
         this.user = user;
         this.virtualMachineService = virtualMachineService;
@@ -148,45 +140,42 @@ public class VmResource {
     @Path("{vmId}/start")
     public VmAction startVm(@PathParam("vmId") UUID vmId) {
         VirtualMachine vm = getVm(vmId);
-        validateNoConflictingActions(vmId, actionService,
-                ActionType.START_VM, ActionType.STOP_VM, ActionType.RESTART_VM, ActionType.RESTORE_VM);
+        validateNoConflictingActions(vmId, actionService, ActionType.START_VM, ActionType.STOP_VM,
+                ActionType.RESTART_VM, ActionType.RESTORE_VM);
         validateServerIsStopped(vmService.getVm(vm.hfsVmId));
 
         VmActionRequest startRequest = new VmActionRequest();
         startRequest.virtualMachine = vm;
-        return createActionAndExecute(
-            actionService, commandService, virtualMachineService,
-            vm.vmId, ActionType.START_VM, startRequest, "Vps4StartVm");
+        return createActionAndExecute(actionService, commandService, virtualMachineService, vm.vmId,
+                ActionType.START_VM, startRequest, "Vps4StartVm");
     }
 
     @POST
     @Path("{vmId}/stop")
     public VmAction stopVm(@PathParam("vmId") UUID vmId) {
         VirtualMachine vm = getVm(vmId);
-        validateNoConflictingActions(vmId, actionService,
-                ActionType.START_VM, ActionType.STOP_VM, ActionType.RESTART_VM, ActionType.RESTORE_VM);
+        validateNoConflictingActions(vmId, actionService, ActionType.START_VM, ActionType.STOP_VM,
+                ActionType.RESTART_VM, ActionType.RESTORE_VM);
         validateServerIsActive(vmService.getVm(vm.hfsVmId));
 
         VmActionRequest stopRequest = new VmActionRequest();
         stopRequest.virtualMachine = vm;
-        return createActionAndExecute(
-            actionService, commandService, virtualMachineService,
-            vm.vmId, ActionType.STOP_VM, stopRequest, "Vps4StopVm");
+        return createActionAndExecute(actionService, commandService, virtualMachineService, vm.vmId, ActionType.STOP_VM,
+                stopRequest, "Vps4StopVm");
     }
 
     @POST
     @Path("{vmId}/restart")
     public VmAction restartVm(@PathParam("vmId") UUID vmId) {
         VirtualMachine vm = getVm(vmId);
-        validateNoConflictingActions(vmId, actionService,
-                ActionType.START_VM, ActionType.STOP_VM, ActionType.RESTART_VM, ActionType.RESTORE_VM);
+        validateNoConflictingActions(vmId, actionService, ActionType.START_VM, ActionType.STOP_VM,
+                ActionType.RESTART_VM, ActionType.RESTORE_VM);
         validateServerIsActive(vmService.getVm(vm.hfsVmId));
 
         VmActionRequest restartRequest = new VmActionRequest();
         restartRequest.virtualMachine = vm;
-        return createActionAndExecute(
-            actionService, commandService, virtualMachineService,
-            vm.vmId, ActionType.RESTART_VM, restartRequest, "Vps4RestartVm");
+        return createActionAndExecute(actionService, commandService, virtualMachineService, vm.vmId,
+                ActionType.RESTART_VM, restartRequest, "Vps4RestartVm");
     }
 
     public static class ProvisionVmRequest {
@@ -204,11 +193,12 @@ public class VmResource {
         logger.info("provisioning vm with orionGuid {}", provisionRequest.orionGuid);
 
         validateUserIsShopper(user);
-        VirtualMachineCredit vmCredit = getAndValidateUserAccountCredit(creditService,
-                provisionRequest.orionGuid, user.getShopperId());
+        VirtualMachineCredit vmCredit = getAndValidateUserAccountCredit(creditService, provisionRequest.orionGuid,
+                user.getShopperId());
         validateCreditIsNotInUse(vmCredit);
 
-        if (imageService.getImages(vmCredit.operatingSystem, vmCredit.controlPanel, provisionRequest.image).size() == 0) {
+        if (imageService.getImages(vmCredit.operatingSystem, vmCredit.controlPanel, provisionRequest.image)
+                .size() == 0) {
             // verify that the image matches the request (control panel, managed level, OS)
             String message = String.format("The image %s is not valid for this credit.", provisionRequest.image);
             throw new Vps4Exception("INVALID_IMAGE", message);
@@ -218,35 +208,35 @@ public class VmResource {
         VirtualMachine virtualMachine;
         Vps4User vps4User = vps4UserService.getOrCreateUserForShopper(user.getShopperId());
         try {
-            params = new ProvisionVirtualMachineParameters(vps4User.getId(), provisionRequest.dataCenterId,
-                    sgidPrefix, provisionRequest.orionGuid, provisionRequest.name, vmCredit.tier, vmCredit.managedLevel,
+            params = new ProvisionVirtualMachineParameters(vps4User.getId(), provisionRequest.dataCenterId, sgidPrefix,
+                    provisionRequest.orionGuid, provisionRequest.name, vmCredit.tier, vmCredit.managedLevel,
                     provisionRequest.image);
             virtualMachine = virtualMachineService.provisionVirtualMachine(params);
-            creditService.claimVirtualMachineCredit(provisionRequest.orionGuid, provisionRequest.dataCenterId, virtualMachine.vmId);
+            creditService.claimVirtualMachineCredit(provisionRequest.orionGuid, provisionRequest.dataCenterId,
+                    virtualMachine.vmId);
         } catch (Exception e) {
             throw new Vps4Exception("PROVISION_VM_FAILED", e.getMessage(), e);
         }
 
         Project project = projectService.getProject(virtualMachine.projectId);
 
-        long actionId = actionService.createAction(virtualMachine.vmId, ActionType.CREATE_VM, new JSONObject().toJSONString(),
-                vps4User.getId());
+        long actionId = actionService.createAction(virtualMachine.vmId, ActionType.CREATE_VM,
+                new JSONObject().toJSONString(), vps4User.getId());
         logger.info("VmAction id: {}", actionId);
 
         long monitoringAccountId = 0;
-        if(monitoring.hasMonitoring(vmCredit)) {
+        if (monitoring.hasMonitoring(vmCredit)) {
             monitoringAccountId = monitoring.getAccountId(virtualMachine);
         }
 
-        ProvisionVmInfo vmInfo = new ProvisionVmInfo(virtualMachine.vmId, vmCredit.managedLevel,
-                virtualMachine.image, project.getVhfsSgid(), mailRelayQuota,
-                monitoringAccountId, virtualMachine.spec.diskGib);
+        ProvisionVmInfo vmInfo = new ProvisionVmInfo(virtualMachine.vmId, vmCredit.managedLevel, virtualMachine.image,
+                project.getVhfsSgid(), mailRelayQuota, monitoringAccountId, virtualMachine.spec.diskGib);
         logger.info("vmInfo: {}", vmInfo.toString());
 
         byte[] encryptedPassword = cryptography.encrypt(provisionRequest.password);
         Vps4ProvisionVm.Request request = createProvisionVmRequest(provisionRequest.image, provisionRequest.username,
-                project, virtualMachine.spec, actionId, vmInfo, user.getShopperId(), provisionRequest.name, provisionRequest.orionGuid,
-                encryptedPassword);
+                project, virtualMachine.spec, actionId, vmInfo, user.getShopperId(), provisionRequest.name,
+                provisionRequest.orionGuid, encryptedPassword);
 
         CommandState command = Commands.execute(commandService, actionService, "ProvisionVm", request);
         logger.info("provisioning VM in {}", command.commandId);
@@ -254,16 +244,9 @@ public class VmResource {
         return new VmAction(actionService.getAction(actionId));
     }
 
-    private Vps4ProvisionVm.Request createProvisionVmRequest(String image,
-            String username,
-            Project project,
-            VirtualMachineSpec spec,
-            long actionId,
-            ProvisionVmInfo vmInfo,
-            String shopperId,
-            String serverName,
-            UUID orionGuid,
-            byte[] encryptedPassword) {
+    private Vps4ProvisionVm.Request createProvisionVmRequest(String image, String username, Project project,
+            VirtualMachineSpec spec, long actionId, ProvisionVmInfo vmInfo, String shopperId, String serverName,
+            UUID orionGuid, byte[] encryptedPassword) {
         Vps4ProvisionVm.Request request = new Vps4ProvisionVm.Request();
         request.actionId = actionId;
         request.image_name = image;
@@ -283,23 +266,21 @@ public class VmResource {
     @Path("/{vmId}")
     public VmAction destroyVm(@PathParam("vmId") UUID vmId) {
         VirtualMachine vm = getVm(vmId);
-        validateNoConflictingActions(
-                vmId, actionService, ActionType.START_VM, ActionType.STOP_VM,
+        validateNoConflictingActions(vmId, actionService, ActionType.START_VM, ActionType.STOP_VM,
                 ActionType.RESTART_VM, ActionType.CREATE_VM, ActionType.RESTORE_VM);
 
         Vps4DestroyVm.Request destroyRequest = new Vps4DestroyVm.Request();
         destroyRequest.virtualMachine = vm;
         destroyRequest.pingCheckAccountId = monitoring.getAccountId(vm);
-        VmAction deleteAction = createActionAndExecute(
-            actionService, commandService, virtualMachineService,
-            vm.vmId, ActionType.DESTROY_VM, destroyRequest, "Vps4DestroyVm");
+        VmAction deleteAction = createActionAndExecute(actionService, commandService, virtualMachineService, vm.vmId,
+                ActionType.DESTROY_VM, destroyRequest, "Vps4DestroyVm");
 
         // The request has been created successfully.
         // Detach the user from the vm, and we'll handle the delete from here.
         // delete all snapshots associated with the VM
         List<Snapshot> snapshots = vmSnapshotResource.getSnapshotsForVM(vmId);
-        for(Snapshot snapshot: snapshots) {
-           vmSnapshotResource.destroySnapshot(vmId, snapshot.id);
+        for (Snapshot snapshot : snapshots) {
+            vmSnapshotResource.destroySnapshot(vmId, snapshot.id);
         }
         creditService.unclaimVirtualMachineCredit(vm.orionGuid);
         virtualMachineService.setVmRemoved(vm.vmId);
@@ -316,36 +297,45 @@ public class VmResource {
             @ApiParam(value = "IP Address of the desired VM", required = false) @QueryParam("ipAddress") String ipAddress,
             @ApiParam(value = "Orion Guid associated with the VM", required = false) @QueryParam("orionGuid") UUID orionGuid,
             @ApiParam(value = "HFS VM ID associated with the VM", required = false) @QueryParam("hfsVmId") Long hfsVmId) {
-        if(user.isEmployee()) {
-            return getVmsForAdmin(type, shopperId, ipAddress, orionGuid, hfsVmId);
+        if (user.isEmployee()) {
+            return getVmsForEmployee(type, shopperId, ipAddress, orionGuid, hfsVmId);
         }
-        else {
-            return getVmsForVps4User(type);
-        }
+        return getVmsForVps4User(type);
     }
-    
-    private List<VirtualMachine> getVmsForAdmin(VirtualMachineType type, String shopperId, String ipAddress,
-			UUID orionGuid, Long hfsVmId) {
-        Long vps4UserId = null;
-        if(shopperId != null) {
-            Vps4User vps4User = vps4UserService.getUser(shopperId);
-            if(vps4User == null) {
-                throw new Vps4Exception("SHOPPER_NOT_FOUND", "Shopper ID " + shopperId + " not found.");
-            }
-            vps4UserId = vps4User.getId();
-        }
-		return virtualMachineService.getVirtualMachines(type, vps4UserId, ipAddress, orionGuid, hfsVmId);
-	}
 
-	private List<VirtualMachine> getVmsForVps4User(VirtualMachineType type) {
-        if (user.getShopperId() == null)
+    private List<VirtualMachine> getVmsForEmployee(VirtualMachineType type, String shopperId, String ipAddress,
+            UUID orionGuid, Long hfsVmId) {
+        Long vps4UserId = getUserId(shopperId);
+        return virtualMachineService.getVirtualMachines(type, vps4UserId, ipAddress, orionGuid, hfsVmId);
+    }
+
+    private Long getUserId(String shopperId) {
+        //Shopper ID from impersonation takes priority over the Shopper ID query parameter.
+        if (user.isEmployeeToShopper()) {
+            return getVps4UserIdByShopperId(user.getShopperId());
+        } else if (!StringUtils.isBlank(shopperId)) {
+            return getVps4UserIdByShopperId(shopperId);
+        }
+        return null;
+    }
+
+    private Long getVps4UserIdByShopperId(String shopperId) {
+        Vps4User vps4User = vps4UserService.getUser(shopperId);
+        if (vps4User == null) {
+            throw new Vps4Exception("USER_NOT_FOUND_FOR_SHOPPER_ID", "User not found for Shopper ID: " + shopperId);
+        }
+        return vps4User.getId();
+    }
+
+    private List<VirtualMachine> getVmsForVps4User(VirtualMachineType type) {
+        if (StringUtils.isBlank(user.getShopperId()))
             throw new Vps4NoShopperException();
         Vps4User vps4User = vps4UserService.getOrCreateUserForShopper(user.getShopperId());
 
         return virtualMachineService.getVirtualMachines(type, vps4User.getId(), null, null, null);
     }
 
-	@GET
+    @GET
     @Path("/{vmId}/details")
     public VirtualMachineDetails getVirtualMachineDetails(@PathParam("vmId") UUID vmId) {
         VirtualMachine virtualMachine = getVm(vmId);
@@ -376,9 +366,9 @@ public class VmResource {
         DataCenter dc = creditService.getVirtualMachineCredit(virtualMachine.orionGuid).dataCenter;
         Vm vm = getVmFromVmVertical(virtualMachine.hfsVmId);
         SnapshotSchedule snapshotSchedule = new SnapshotSchedule();
-        if(virtualMachine.backupJobId != null) {
+        if (virtualMachine.backupJobId != null) {
             SchedulerJobDetail job = schedulerWebService.getJob("vps4", "backups", virtualMachine.backupJobId);
-            if(job != null) {
+            if (job != null) {
                 Instant nextRun = job.nextRun;
                 int repeatIntervalInDays = job.jobRequest.repeatIntervalInDays;
                 int copiesToRetain = 1;

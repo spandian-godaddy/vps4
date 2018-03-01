@@ -447,11 +447,14 @@ public class VmResourceTest {
     @Test
     public void testE2SGetVirtualMachines() {
         VirtualMachine vm = createTestVm();
+        VirtualMachine vm2 = createTestVm();
+        SqlTestData.insertTestVm(UUID.randomUUID(), dataSource);
 
         user = GDUserMock.createEmployee2Shopper();
-        List<VirtualMachine> vms = getVmResource().getVirtualMachines(VirtualMachineType.ACTIVE, user.getShopperId(), null, null, null);
-        Assert.assertEquals(1, vms.size());
-        Assert.assertEquals(vms.get(0).orionGuid, vm.orionGuid);
+        List<VirtualMachine> vms = getVmResource().getVirtualMachines(VirtualMachineType.ACTIVE, null, null, null, null);
+        Assert.assertEquals(2, vms.size());
+        Assert.assertEquals(vm.orionGuid, vms.get(0).orionGuid);
+        Assert.assertEquals(vm2.orionGuid, vms.get(1).orionGuid);
     }
 
     // === getVmDetails Tests ===

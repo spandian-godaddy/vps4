@@ -22,8 +22,10 @@ public class JdbcMonitorService implements MonitorService {
 
     private final DataSource reportsDataSource;
 
-    private final static String selectVmsByActionAndDuration = "SELECT vma.id, vma.command_id, vma.vm_id " +
+    private final static String selectVmsByActionAndDuration =
+            "SELECT vma.id, vma.command_id, vma.vm_id, action_type.type as action_type " +
             "FROM vm_action vma " +
+            "JOIN action_type ON vma.action_type_id = action_type.type_id " +
             "WHERE vma.created < now_utc() " +
             "AND vma.action_type_id = ( " +
             "  SELECT type_id FROM action_type WHERE type = ? " +

@@ -1,13 +1,23 @@
 package com.godaddy.vps4.orchestration.vm;
 
+import static com.godaddy.vps4.vm.CreateVmStep.ConfigureMailRelay;
+import static com.godaddy.vps4.vm.CreateVmStep.ConfigureNodeping;
+import static com.godaddy.vps4.vm.CreateVmStep.ConfiguringCPanel;
+import static com.godaddy.vps4.vm.CreateVmStep.ConfiguringNetwork;
+import static com.godaddy.vps4.vm.CreateVmStep.ConfiguringPlesk;
+import static com.godaddy.vps4.vm.CreateVmStep.GeneratingHostname;
+import static com.godaddy.vps4.vm.CreateVmStep.RequestingIPAddress;
+import static com.godaddy.vps4.vm.CreateVmStep.RequestingMailRelay;
+import static com.godaddy.vps4.vm.CreateVmStep.RequestingServer;
+import static com.godaddy.vps4.vm.CreateVmStep.SetHostname;
+import static com.godaddy.vps4.vm.CreateVmStep.SetupAutomaticBackupSchedule;
+import static com.godaddy.vps4.vm.CreateVmStep.SetupComplete;
+import static com.godaddy.vps4.vm.CreateVmStep.StartingServerSetup;
+
 import java.util.Arrays;
 import java.util.UUID;
 
 import javax.inject.Inject;
-
-import com.godaddy.vps4.orchestration.scheduler.SetupAutomaticBackupSchedule;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.godaddy.vps4.credit.CreditService;
@@ -29,6 +39,8 @@ import com.godaddy.vps4.orchestration.hfs.sysadmin.SetHostname;
 import com.godaddy.vps4.orchestration.hfs.sysadmin.SetPassword;
 import com.godaddy.vps4.orchestration.hfs.sysadmin.ToggleAdmin;
 import com.godaddy.vps4.orchestration.hfs.vm.CreateVm;
+import com.godaddy.vps4.orchestration.hfs.vm.WaitForVmAction;
+import com.godaddy.vps4.orchestration.scheduler.SetupAutomaticBackupSchedule;
 import com.godaddy.vps4.orchestration.sysadmin.ConfigureMailRelay;
 import com.godaddy.vps4.orchestration.sysadmin.ConfigureMailRelay.ConfigureMailRelayRequest;
 import com.godaddy.vps4.vm.ActionService;
@@ -40,7 +52,6 @@ import com.godaddy.vps4.vm.ProvisionVmInfo;
 import com.godaddy.vps4.vm.VirtualMachine;
 import com.godaddy.vps4.vm.VirtualMachineService;
 import com.godaddy.vps4.vm.VmUserService;
-
 import gdg.hfs.orchestration.CommandContext;
 import gdg.hfs.orchestration.CommandMetadata;
 import gdg.hfs.vhfs.network.IpAddress;
@@ -51,6 +62,8 @@ import gdg.hfs.vhfs.nodeping.NodePingService;
 import gdg.hfs.vhfs.vm.Vm;
 import gdg.hfs.vhfs.vm.VmAction;
 import gdg.hfs.vhfs.vm.VmService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @CommandMetadata(
     name="ProvisionVm",
@@ -68,13 +81,13 @@ public class Vps4ProvisionVm extends ActionCommand<Vps4ProvisionVm.Request, Vps4
     private final Vps4MessagingService messagingService;
     private final CreditService creditService;
 
-    Request request;
+    private Request request;
 
-    ActionState state;
+    private ActionState state;
 
-    String hostname;
+    private String hostname;
 
-    CommandContext context;
+    private CommandContext context;
 
 
     @Inject
@@ -98,36 +111,36 @@ public class Vps4ProvisionVm extends ActionCommand<Vps4ProvisionVm.Request, Vps4
     }
 
     @Override
-    public Response executeWithAction(CommandContext context, Request request) throws Exception {
+    public Response executeWithAction(CommandContext context, Request request) {
 
         this.request = request;
         this.context = context;
         this.state = new ActionState();
 
-        setStep(CreateVmStep.StartingServerSetup);
+        setStep(StartingServerSetup);
 
         logger.info("begin provision vm for request: {}", request);
 
         try {
         IpAddress ip = allocateIp();
 
-        hostname = HostnameGenerator.getHostname(ip.address);
-
         createMailRelay(ip);
+        
+        generateHostname(ip);
 
-        Vm hfsVm = createVm(ip);
+        long hfsVmId = createVm();
 
-        setupUsers(hfsVm);
+        setupUsers(hfsVmId);
 
-        bindIp(hfsVm, ip);
+        bindIp(hfsVmId, ip);
 
-        configureControlPanel(hfsVm);
+        configureControlPanel(hfsVmId);
 
-        setHostname(hfsVm);
+        setHostname(hfsVmId);
 
-        configureAdminUser(hfsVm, request.vmInfo.vmId);
+        configureAdminUser(hfsVmId, request.vmInfo.vmId);
 
-        configureMailRelay(hfsVm);
+        configureMailRelay(hfsVmId);
 
         configureMonitoring(ip);
 
@@ -139,16 +152,21 @@ public class Vps4ProvisionVm extends ActionCommand<Vps4ProvisionVm.Request, Vps4
         // vps4 inter microservice communication.
         setupAutomaticBackupSchedule(request.vmInfo.vmId, request.shopperId);
 
-        setStep(CreateVmStep.SetupComplete);
-        logger.info("provision vm finished: {}", hfsVm);
+        setStep(SetupComplete);
+        logger.info("provision vm finished: {}", request.vmInfo.vmId);
         } catch (Exception e) {
             throw new NoRetryException("Exception during provision of vmId " + request.vmInfo.vmId, e);
         }
         return null;
     }
 
+	private void generateHostname(IpAddress ip) {
+        setStep(GeneratingHostname);
+        hostname = HostnameGenerator.getHostname(ip.address);
+	}
+
     private void setupAutomaticBackupSchedule(UUID vps4VmId, String shopperId) {
-        setStep(CreateVmStep.SetupAutomaticBackupSchedule);
+        setStep(SetupAutomaticBackupSchedule);
         SetupAutomaticBackupSchedule.Request req = new SetupAutomaticBackupSchedule.Request();
         req.vmId = vps4VmId;
         req.backupName = "auto-backup";
@@ -168,57 +186,57 @@ public class Vps4ProvisionVm extends ActionCommand<Vps4ProvisionVm.Request, Vps4
         }
     }
 
-    private void setHostname(Vm hfsVm){
-        setStep(CreateVmStep.SetHostname);
+    private void setHostname(long hfsVmId){
+        setStep(SetHostname);
 
-        SetHostname.Request hfsRequest = new SetHostname.Request(hfsVm.vmId, hostname,
+        SetHostname.Request hfsRequest = new SetHostname.Request(hfsVmId, hostname,
                                                 request.vmInfo.image.controlPanel.toString());
 
         context.execute(SetHostname.class, hfsRequest);
     }
 
-    private void configureControlPanel(Vm hfsVm) {
+    private void configureControlPanel(long hfsVmId) {
         if (request.vmInfo.image.controlPanel == ControlPanel.CPANEL) {
             // VM with cPanel
-            setStep(CreateVmStep.ConfiguringCPanel);
+            setStep(ConfiguringCPanel);
 
             // configure cpanel on the vm
-            ConfigureCpanelRequest cpanelRequest = createConfigureCpanelRequest(hfsVm.vmId);
+            ConfigureCpanelRequest cpanelRequest = createConfigureCpanelRequest(hfsVmId);
             context.execute(ConfigureCpanel.class, cpanelRequest);
 
         } else if (request.vmInfo.image.controlPanel == ControlPanel.PLESK) {
             // VM with Plesk image
-            setStep(CreateVmStep.ConfiguringPlesk);
+            setStep(ConfiguringPlesk);
 
             // configure Plesk on the vm
-            ConfigurePleskRequest pleskRequest = createConfigurePleskRequest(hfsVm);
+            ConfigurePleskRequest pleskRequest = createConfigurePleskRequest(hfsVmId);
             context.execute(ConfigurePlesk.class, pleskRequest);
         }
     }
 
-    private void bindIp(Vm hfsVm, IpAddress ip) {
+    private void bindIp(long hfsVmId, IpAddress ip) {
         // bind IP to the VM
-        setStep(CreateVmStep.ConfiguringNetwork);
+        setStep(ConfiguringNetwork);
 
         BindIpRequest bindRequest = new BindIpRequest();
         bindRequest.addressId = ip.addressId;
-        bindRequest.vmId = hfsVm.vmId;
+        bindRequest.vmId = hfsVmId;
         context.execute(BindIp.class, bindRequest);
     }
 
-    private void configureMailRelay(Vm hfsVm) {
-        setStep(CreateVmStep.ConfigureMailRelay);
+    private void configureMailRelay(long hfsVmId) {
+        setStep(ConfigureMailRelay);
 
         String controlPanel = request.vmInfo.image.controlPanel.equals(ControlPanel.MYH) ? null
                 : request.vmInfo.image.controlPanel.name().toLowerCase();
 
-        ConfigureMailRelayRequest configureMailRelayRequest = new ConfigureMailRelayRequest(hfsVm.vmId,
+        ConfigureMailRelayRequest configureMailRelayRequest = new ConfigureMailRelayRequest(hfsVmId,
                 controlPanel);
         context.execute(ConfigureMailRelay.class, configureMailRelayRequest);
 
     }
 
-    private void setupUsers(Vm hfsVm) {
+    private void setupUsers(long hfsVmId) {
         // associate the Vm with the user that created it
         context.execute("CreateVps4User", ctx -> {
             vmUserService.createUser(request.username, request.vmInfo.vmId);
@@ -228,15 +246,13 @@ public class Vps4ProvisionVm extends ActionCommand<Vps4ProvisionVm.Request, Vps4
         // set the root password to the same as the user password (LINUX ONLY)
         VirtualMachine vm = virtualMachineService.getVirtualMachine(request.vmInfo.vmId);
         if(vm.image.operatingSystem == Image.OperatingSystem.LINUX) {
-            SetPassword.Request setRootPasswordRequest = createSetRootPasswordRequest(hfsVm);
+            SetPassword.Request setRootPasswordRequest = createSetRootPasswordRequest(hfsVmId);
             context.execute(SetPassword.class, setRootPasswordRequest);
         }
     }
 
-    private Vm createVm(IpAddress ip) {
-        // Generate a new hostname from the allocated ip
-        setStep(CreateVmStep.GeneratingHostname);
-
+    private long createVm() {
+        setStep(RequestingServer);
         CreateVm.Request createVmRequest = new CreateVm.Request();
         createVmRequest.hostname = hostname;
         createVmRequest.image_name = request.image_name;
@@ -248,25 +264,25 @@ public class Vps4ProvisionVm extends ActionCommand<Vps4ProvisionVm.Request, Vps4
 
         virtualMachineService.setHostname(request.vmInfo.vmId, createVmRequest.hostname);
 
-        // Create the VM
-        setStep(CreateVmStep.RequestingServer);
         VmAction vmAction = context.execute(CreateVm.class, createVmRequest);
+        
+        addHfsVmIdToVmInVps4Db(vmAction);
+        
+        context.execute(WaitForVmAction.class, vmAction);
 
-        // Get the hfs vm
-        Vm hfsVm = context.execute("GetVmAfterCreate", ctx -> vmService.getVm(vmAction.vmId), Vm.class);
+        return vmAction.vmId;
+    }
 
-        // VPS4 VM bookeeping (Add hfs vmid to the virtual_machine db row)
-        context.execute("Vps4ProvisionVm", ctx -> {
-            virtualMachineService.addHfsVmIdToVirtualMachine(request.vmInfo.vmId, hfsVm.vmId);
+	private void addHfsVmIdToVmInVps4Db(VmAction vmAction) {
+		context.execute("Vps4ProvisionVm", ctx -> {
+            virtualMachineService.addHfsVmIdToVirtualMachine(request.vmInfo.vmId, vmAction.vmId);
             return null;
         }, Void.class);
-
-        return hfsVm;
-    }
+	}
 
     private void createMailRelay(IpAddress ip) {
 
-        setStep(CreateVmStep.RequestingMailRelay);
+        setStep(RequestingMailRelay);
 
         SetMailRelayQuota.Request hfsRequest = new SetMailRelayQuota.Request();
         hfsRequest.ipAddress = ip.address;
@@ -274,21 +290,21 @@ public class Vps4ProvisionVm extends ActionCommand<Vps4ProvisionVm.Request, Vps4
         context.execute(SetMailRelayQuota.class, hfsRequest);
     }
 
-    private SetPassword.Request createSetRootPasswordRequest(Vm hfsVm) {
+    private SetPassword.Request createSetRootPasswordRequest(long hfsVmId) {
         SetPassword.Request setPasswordRequest = new SetPassword.Request();
-        setPasswordRequest.hfsVmId = hfsVm.vmId;
+        setPasswordRequest.hfsVmId = hfsVmId;
         String[] usernames = {"root"};
         setPasswordRequest.usernames = Arrays.asList(usernames);
         setPasswordRequest.encryptedPassword = request.encryptedPassword;
         return setPasswordRequest;
     }
 
-    private void configureAdminUser(Vm hfsVm, UUID vmId) {
+    private void configureAdminUser(long hfsVmId, UUID vmId) {
         boolean adminEnabled = request.vmInfo.image.controlPanel == ControlPanel.MYH;
         String username = request.username;
         ToggleAdmin.Request toggleAdminRequest = new ToggleAdmin.Request();
         toggleAdminRequest.enabled = adminEnabled;
-        toggleAdminRequest.vmId = hfsVm.vmId;
+        toggleAdminRequest.vmId = hfsVmId;
         toggleAdminRequest.username = username;
 
         context.execute(ToggleAdmin.class, toggleAdminRequest);
@@ -302,14 +318,13 @@ public class Vps4ProvisionVm extends ActionCommand<Vps4ProvisionVm.Request, Vps4
         return cpanelRequest;
     }
 
-    private ConfigurePleskRequest createConfigurePleskRequest(Vm hfsVm) {
-        ConfigurePleskRequest pleskRequest = new ConfigurePleskRequest(hfsVm.vmId, request.username, request.encryptedPassword);
-        return pleskRequest;
+    private ConfigurePleskRequest createConfigurePleskRequest(long hfsVmId) {
+        return new ConfigurePleskRequest(hfsVmId, request.username, request.encryptedPassword);
     }
 
     private IpAddress allocateIp() {
 
-        setStep(CreateVmStep.RequestingIPAddress);
+        setStep(RequestingIPAddress);
 
         AllocateIp.Request allocateIpRequest = new AllocateIp.Request();
         allocateIpRequest.sgid = request.vmInfo.sgid;
@@ -328,13 +343,12 @@ public class Vps4ProvisionVm extends ActionCommand<Vps4ProvisionVm.Request, Vps4
 
     private void configureMonitoring(IpAddress ipAddress) {
         if (request.vmInfo.monitoringAccountId > 0) {
-            setStep(CreateVmStep.ConfigureNodeping);
+            setStep(ConfigureNodeping);
             CreateCheckRequest checkRequest = new CreateCheckRequest();
             checkRequest.target = ipAddress.address;
             checkRequest.label = ipAddress.address;
             checkRequest.interval = 1;
             checkRequest.type = CheckType.PING;
-            // TODO: Make this hfs callback useful - notify support?
             checkRequest.webhookUrl = "http://www.godaddy.com";
 
             NodePingCheck check = monitoringService.createCheck(request.vmInfo.monitoringAccountId, checkRequest);
@@ -370,7 +384,7 @@ public class Vps4ProvisionVm extends ActionCommand<Vps4ProvisionVm.Request, Vps4
         }
     }
 
-    protected void setStep(CreateVmStep step) {
+    private void setStep(CreateVmStep step) {
         state.step = step;
         try {
             actionService.updateActionState(request.getActionId(), mapper.writeValueAsString(state));

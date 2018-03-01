@@ -1,7 +1,8 @@
 package com.godaddy.vps4.security;
 
-import org.mockito.Mockito;
 import static org.mockito.Mockito.when;
+
+import org.mockito.Mockito;
 
 import com.godaddy.vps4.web.security.GDUser;
 
@@ -42,6 +43,7 @@ public class GDUserMock {
         when(gdUser.isEmployee()).thenReturn(isEmployee);
         when(gdUser.isAdmin()).thenReturn(isAdmin);
         when(gdUser.getShopperId()).thenReturn(shopperId);
+        when(gdUser.isEmployeeToShopper()).thenReturn(isEmployee && shopperId != null);
         return gdUser;
     }
 }
