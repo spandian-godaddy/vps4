@@ -40,8 +40,6 @@ public class CreateVm implements Command<CreateVm.Request, VmAction> {
 
         VmAction vmAction = context.execute("CreateVmHfs", ctx -> vmService.createVmWithFlavor(hfsRequest), VmAction.class);
 
-        context.execute(WaitForVmAction.class, vmAction);
-
         return vmAction;
     }
 

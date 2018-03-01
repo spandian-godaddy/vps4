@@ -15,9 +15,6 @@ import java.io.IOException;
 import java.util.Random;
 import java.util.UUID;
 
-import org.junit.Before;
-import org.junit.Test;
-
 import com.godaddy.vps4.credit.CreditService;
 import com.godaddy.vps4.messaging.MissingShopperIdException;
 import com.godaddy.vps4.messaging.Vps4MessagingService;
@@ -40,6 +37,9 @@ import com.godaddy.vps4.vm.VmUserService;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
 
+import org.junit.Before;
+import org.junit.Test;
+
 import gdg.hfs.orchestration.CommandContext;
 import gdg.hfs.orchestration.GuiceCommandProvider;
 import gdg.hfs.vhfs.mailrelay.MailRelay;
@@ -50,8 +50,8 @@ import gdg.hfs.vhfs.nodeping.CreateCheckRequest;
 import gdg.hfs.vhfs.nodeping.NodePingCheck;
 import gdg.hfs.vhfs.nodeping.NodePingService;
 import gdg.hfs.vhfs.plesk.PleskService;
-import gdg.hfs.vhfs.vm.Vm;
 import gdg.hfs.vhfs.vm.VmAction;
+import gdg.hfs.vhfs.vm.VmAction.Status;
 import gdg.hfs.vhfs.vm.VmService;
 
 public class Vps4ProvisionVmTest {
@@ -160,10 +160,9 @@ public class Vps4ProvisionVmTest {
 
         VmAction vmAction = new VmAction();
         vmAction.vmId = hfsVmId;
+        vmAction.state = Status.COMPLETE;
         when(createVm.execute(any(CommandContext.class), any(CreateVm.Request.class))).thenReturn(vmAction);
-        Vm hfsVm = new Vm();
-        hfsVm.vmId = hfsVmId;
-        when(vmService.getVm(hfsVmId)).thenReturn(hfsVm);
+        when(vmService.getVmAction(hfsVmId, vmAction.vmActionId)).thenReturn(vmAction);
 
         when(virtualMachineService.getVirtualMachine(vmInfo.vmId)).thenReturn(this.vm);
     }
