@@ -32,7 +32,7 @@ public class WaitForAddressAction implements Command<AddressAction, AddressActio
             hfsAction = networkService.getAddressAction(hfsAction.addressId, hfsAction.addressActionId);
         }
 
-        if (hfsAction.status == AddressAction.Status.COMPLETE) {
+        if (hfsAction.status != AddressAction.Status.COMPLETE) {
             throw new RuntimeException(String.format("failed to complete address action: %s", hfsAction));
         }
 
