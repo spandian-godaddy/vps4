@@ -18,15 +18,15 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.UriInfo;
 
-import com.godaddy.vps4.util.Monitoring;
+import org.joda.time.DateTime;
+import org.joda.time.LocalDate;
+
+import com.godaddy.vps4.util.MonitoringMeta;
 import com.godaddy.vps4.vm.VirtualMachine;
 import com.godaddy.vps4.web.PaginatedResult;
 import com.godaddy.vps4.web.Vps4Api;
 import com.godaddy.vps4.web.vm.VmResource;
 import com.google.inject.Inject;
-
-import org.joda.time.DateTime;
-import org.joda.time.LocalDate;
 
 import gdg.hfs.vhfs.nodeping.NodePingEvent;
 import gdg.hfs.vhfs.nodeping.NodePingService;
@@ -43,13 +43,13 @@ public class VmMonitoringResource {
 
     private final NodePingService monitoringService;
     private final VmResource vmResource;
-    private final Monitoring monitoring;
+    private final MonitoringMeta monitoringMeta;
 
     @Inject
-    public VmMonitoringResource(NodePingService monitoringService, VmResource vmResource, Monitoring monitoring) {
+    public VmMonitoringResource(NodePingService monitoringService, VmResource vmResource, MonitoringMeta monitoringMeta) {
         this.monitoringService = monitoringService;
         this.vmResource = vmResource;
-        this.monitoring = monitoring;
+        this.monitoringMeta = monitoringMeta;
     }
 
     @GET
@@ -65,7 +65,7 @@ public class VmMonitoringResource {
 
         String end = LocalDate.now().plusDays(1).toString(); // the end date in the nodeping api is non-inclusive
 
-        List<NodePingUptimeRecord> nodepingRecords = monitoringService.getCheckUptime(monitoring.getAccountId(vm),
+        List<NodePingUptimeRecord> nodepingRecords = monitoringService.getCheckUptime(monitoringMeta.getAccountId(),
                 vm.primaryIpAddress.pingCheckId,
                 "days",
                 startStr,
@@ -109,7 +109,7 @@ public class VmMonitoringResource {
         int scrubbedLimit = Math.max(limit, 0);
         int scrubbedOffset = Math.max(offset, 0);
 
-        List<NodePingEvent> sourceEvents = monitoringService.getCheckEvents(monitoring.getAccountId(vm),
+        List<NodePingEvent> sourceEvents = monitoringService.getCheckEvents(monitoringMeta.getAccountId(),
                 vm.primaryIpAddress.pingCheckId, 0);
 
         // only events from past "days" days

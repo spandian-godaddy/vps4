@@ -10,7 +10,7 @@ import org.slf4j.LoggerFactory;
 
 import com.godaddy.vps4.credit.VirtualMachineCredit;
 import com.godaddy.vps4.network.NetworkService;
-import com.godaddy.vps4.util.Monitoring;
+import com.godaddy.vps4.util.MonitoringMeta;
 import com.godaddy.vps4.vm.VirtualMachine;
 import com.godaddy.vps4.vm.VirtualMachineService;
 
@@ -31,17 +31,17 @@ public class Vps4PlanChange implements Command<Vps4PlanChange.Request, Void>{
     private final VirtualMachineService virtualMachineService;
     private final NodePingService monitoringService;
     private final NetworkService networkService;
-    private final Monitoring monitoring;
-    
+    private final MonitoringMeta monitoringMeta;
+
     @Inject
     public Vps4PlanChange(VirtualMachineService virtualMachineService,
             NodePingService monitoringService,
             NetworkService networkService,
-            Monitoring monitoring) {
+            MonitoringMeta monitoringMeta) {
         this.virtualMachineService = virtualMachineService;
         this.monitoringService = monitoringService;
         this.networkService = networkService;
-        this.monitoring = monitoring;
+        this.monitoringMeta = monitoringMeta;
     }
 
     public static class Request extends VmActionRequest {
@@ -54,12 +54,11 @@ public class Vps4PlanChange implements Command<Vps4PlanChange.Request, Void>{
     public Void execute(CommandContext context, Request req) {
         if(req.vm.managedLevel != req.credit.managedLevel) {
             logger.info("Processing managed level change for account {} to level {}", req.vm.vmId, req.credit.managedLevel);
-            
-            if(monitoring.hasFullyManagedMonitoring(req.credit)) {
-                removeExistingMonitoringCheck(context, req);
-                
-                NodePingCheck check = addNewMonitoringCheck(context, req);
 
+            if(req.credit.isFullyManaged()) {
+                // TODO: re-evaluate: is any of this needed anymore.  No separate checkIds for fully managed vs regular monitoring
+                removeExistingMonitoringCheck(context, req);
+                NodePingCheck check = addNewMonitoringCheck(context, req);
                 addNewMonitoringCheckIdToIp(context, req, check);
             }
 
@@ -82,8 +81,8 @@ public class Vps4PlanChange implements Command<Vps4PlanChange.Request, Void>{
         checkRequest.interval = 1;
         checkRequest.type = CheckType.PING;
         checkRequest.webhookUrl = "http://www.godaddy.com";
-        long fullyManagedMonitoringAccountId = monitoring.getAccountId(req.credit.managedLevel);
-        NodePingCheck check = context.execute("CreateMonitoringCheckForVm-" + req.vm.vmId, 
+        long fullyManagedMonitoringAccountId = monitoringMeta.getAccountId();
+        NodePingCheck check = context.execute("CreateMonitoringCheckForVm-" + req.vm.vmId,
                 ctx -> monitoringService.createCheck(fullyManagedMonitoringAccountId, checkRequest), NodePingCheck.class);
         logger.info("Created monitoring check {} for vmId {}", check.checkId, req.vm.vmId);
         return check;
@@ -92,8 +91,8 @@ public class Vps4PlanChange implements Command<Vps4PlanChange.Request, Void>{
     private void removeExistingMonitoringCheck(CommandContext context, Request req) {
         if(req.vm.primaryIpAddress.pingCheckId != null) {
             logger.info("Remove existing monitoring account {} from vmId {}", req.vm.primaryIpAddress.pingCheckId, req.vm.vmId);
-            context.execute("DeleteMonitoringAccount-" + req.vm.primaryIpAddress.pingCheckId, 
-                    ctx -> {monitoringService.deleteCheck(monitoring.getAccountId(req.vm), req.vm.primaryIpAddress.pingCheckId);
+            context.execute("DeleteMonitoringAccount-" + req.vm.primaryIpAddress.pingCheckId,
+                    ctx -> {monitoringService.deleteCheck(monitoringMeta.getAccountId(), req.vm.primaryIpAddress.pingCheckId);
                     return null;
                     }, Void.class);
         }

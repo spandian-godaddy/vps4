@@ -16,7 +16,6 @@ import org.mockito.MockitoAnnotations;
 import com.godaddy.vps4.credit.CreditService;
 import com.godaddy.vps4.credit.VirtualMachineCredit;
 import com.godaddy.vps4.monitoring.MonitoringNotificationService;
-import com.godaddy.vps4.util.Monitoring;
 import com.godaddy.vps4.vm.AccountStatus;
 import com.godaddy.vps4.vm.VirtualMachine;
 import com.google.inject.AbstractModule;
@@ -33,14 +32,9 @@ public class HandleMonitoringDownEventTest {
     VirtualMachine testVm = new VirtualMachine();
     VirtualMachineCredit credit = new VirtualMachineCredit();
 
-    @Inject
-    HandleMonitoringDownEvent command;
-    @Inject
-    MonitoringNotificationService monitoringNotificationService;
-    @Inject
-    CreditService creditService;
-    @Inject
-    Monitoring monitoring;
+    @Inject HandleMonitoringDownEvent command;
+    @Inject MonitoringNotificationService monitoringNotificationService;
+    @Inject CreditService creditService;
 
     @Before
     public void setUp() {
@@ -49,9 +43,6 @@ public class HandleMonitoringDownEventTest {
             protected void configure() {
                 MonitoringNotificationService monitoringNotificationService = mock(MonitoringNotificationService.class);
                 bind(MonitoringNotificationService.class).toInstance(monitoringNotificationService);
-
-                Monitoring monitoring = mock(Monitoring.class);
-                bind(Monitoring.class).toInstance(monitoring);
 
                 CreditService creditService = mock(CreditService.class);
                 bind(CreditService.class).toInstance(creditService);
@@ -73,7 +64,6 @@ public class HandleMonitoringDownEventTest {
     public void testHandleMonitoringDownEvent() {
         when(monitoringNotificationService.sendServerDownEventNotification(testVm)).thenReturn(123L);
         when(creditService.getVirtualMachineCredit(credit.orionGuid)).thenReturn(credit);
-        when(monitoring.hasFullyManagedMonitoring(credit)).thenReturn(true);
 
         command.execute(context, testVm);
 
@@ -84,7 +74,6 @@ public class HandleMonitoringDownEventTest {
     public void testHandleMonitoringDownEventAccountNotActive() {
         credit.accountStatus = AccountStatus.REMOVED;
         when(creditService.getVirtualMachineCredit(credit.orionGuid)).thenReturn(credit);
-        when(monitoring.hasFullyManagedMonitoring(credit)).thenReturn(true);
 
         command.execute(context, testVm);
 
@@ -93,7 +82,7 @@ public class HandleMonitoringDownEventTest {
 
     @Test
     public void testHandleMonitoringDownEventAccountNotFullyManaged() {
-        when(monitoring.hasFullyManagedMonitoring(credit)).thenReturn(false);
+        credit.managedLevel = 0;
         when(creditService.getVirtualMachineCredit(credit.orionGuid)).thenReturn(credit);
 
         command.execute(context, testVm);

@@ -23,7 +23,6 @@ import com.godaddy.vps4.security.GDUserMock;
 import com.godaddy.vps4.security.Vps4User;
 import com.godaddy.vps4.security.Vps4UserService;
 import com.godaddy.vps4.util.Cryptography;
-import com.godaddy.vps4.util.Monitoring;
 import com.godaddy.vps4.vm.AccountStatus;
 import com.godaddy.vps4.vm.DataCenter;
 import com.godaddy.vps4.vm.VirtualMachine;
@@ -53,21 +52,12 @@ public class GetVirtualMachineTest {
         VirtualMachineService virtualMachineService = getMockedVvirtualMachineService();
         CreditService creditService = getMockedCreditService();
         Config config = getMockedConfig();
-        Monitoring monitoring = getMockedMonitoring();
         Cryptography cryptography = Mockito.mock(Cryptography.class);
         SchedulerWebService schedulerWebService = Mockito.mock(SchedulerWebService.class);
-        
-        vmResource = new VmResource(user, vmService, userService, virtualMachineService, creditService, null, null,
-                null, null, null, config, cryptography, monitoring, schedulerWebService);
-    }
 
-    private Monitoring getMockedMonitoring() {
-        Monitoring monitoring = Mockito.mock(Monitoring.class);
-        when(monitoring.getAccountId(0)).thenReturn(1L);
-        when(monitoring.getAccountId(2)).thenReturn(2L);
-        when(monitoring.getAccountId(Mockito.any(VirtualMachine.class))).thenReturn(3L);
-        return monitoring;
-	}
+        vmResource = new VmResource(user, vmService, userService, virtualMachineService, creditService, null, null,
+                null, null, null, config, cryptography, schedulerWebService);
+    }
 
     private Config getMockedConfig() {
         Config config = Mockito.mock(Config.class);

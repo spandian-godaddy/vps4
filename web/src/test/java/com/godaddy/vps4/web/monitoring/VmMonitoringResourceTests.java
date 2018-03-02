@@ -24,10 +24,9 @@ import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
 import org.junit.Before;
 import org.junit.Test;
-import org.mockito.Mockito;
 
 import com.godaddy.vps4.network.IpAddress;
-import com.godaddy.vps4.util.Monitoring;
+import com.godaddy.vps4.util.MonitoringMeta;
 import com.godaddy.vps4.vm.VirtualMachine;
 import com.godaddy.vps4.web.PaginatedResult;
 import com.godaddy.vps4.web.vm.VmResource;
@@ -45,17 +44,17 @@ public class VmMonitoringResourceTests {
     long monitoringAccountId = 12;
     JSONParser parser;
     UriInfo uriInfo;
-    Monitoring monitoring;
-    
+    MonitoringMeta monitoringMeta;
+
     @Before
     public void setup() {
         monitoringService = mock(NodePingService.class);
         vmResource = mock(VmResource.class);
-        monitoring = mock(Monitoring.class);
+        monitoringMeta = mock(MonitoringMeta.class);
         IpAddress ipAddress = new IpAddress(0, null, null, null, 123L, null, null);
         vm = new VirtualMachine(UUID.randomUUID(), 1L, null, 1L, null, null, null, ipAddress, Instant.now().minus(Duration.ofDays(5)), null, null, null, 0, UUID.randomUUID());
         when(vmResource.getVm(vm.vmId)).thenReturn(vm);
-        when(monitoring.getAccountId(Mockito.any())).thenReturn(12L);
+        when(monitoringMeta.getAccountId()).thenReturn(12L);
         parser = new JSONParser();
         setupUri();
     }
@@ -85,7 +84,7 @@ public class VmMonitoringResourceTests {
                 anyString()))
                 .thenReturn(npRecords);
 
-        resource = new VmMonitoringResource(monitoringService, vmResource, monitoring);
+        resource = new VmMonitoringResource(monitoringService, vmResource, monitoringMeta);
         List<MonitoringUptimeRecord> records = resource.getVmUptime(vm.vmId, 30);
 
         assertEquals(3, records.size());
@@ -113,7 +112,7 @@ public class VmMonitoringResourceTests {
 
         when(monitoringService.getCheckEvents(monitoringAccountId, vm.primaryIpAddress.pingCheckId, 0)).thenReturn(npEvents);
 
-        resource = new VmMonitoringResource(monitoringService, vmResource, monitoring);
+        resource = new VmMonitoringResource(monitoringService, vmResource, monitoringMeta);
         PaginatedResult<MonitoringEvent> events = resource.getVmMonitoringEvents(vm.vmId, Integer.valueOf(30),
                 Integer.valueOf(10), Integer.valueOf(0), uriInfo);
 

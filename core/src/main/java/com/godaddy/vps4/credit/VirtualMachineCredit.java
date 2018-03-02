@@ -12,6 +12,9 @@ import com.godaddy.vps4.vm.DataCenter;
 
 public class VirtualMachineCredit {
 
+    private final int FULLY_MANAGED_LEVEL = 2;
+    private final int MONITORING_ENABLED = 1;
+
     public UUID orionGuid;
     public int tier;
     public int managedLevel;
@@ -27,7 +30,7 @@ public class VirtualMachineCredit {
 
     public VirtualMachineCredit(){
     }
-    
+
     public VirtualMachineCredit(UUID orionGuid, int tier, int managedLevel, int monitoring, String operatingSystem, String controlPanel,
             Instant provisionDate, String shopperId, AccountStatus accountStatus, DataCenter dataCenter, UUID vmId,
             boolean fullyManagedEmailSent) {
@@ -50,7 +53,7 @@ public class VirtualMachineCredit {
         return accountStatus == AccountStatus.SUSPENDED ||
                 accountStatus == AccountStatus.ABUSE_SUSPENDED;
     }
-    
+
     @JsonIgnore
     public boolean isAccountRemoved() {
         return accountStatus == AccountStatus.REMOVED;
@@ -64,6 +67,16 @@ public class VirtualMachineCredit {
     @JsonIgnore
     public boolean isUsable() {
         return provisionDate == null;
+    }
+
+    @JsonIgnore
+    public boolean hasMonitoring() {
+        return monitoring == MONITORING_ENABLED || isFullyManaged();
+    }
+
+    @JsonIgnore
+    public boolean isFullyManaged() {
+        return managedLevel == FULLY_MANAGED_LEVEL;
     }
 
     @Override
