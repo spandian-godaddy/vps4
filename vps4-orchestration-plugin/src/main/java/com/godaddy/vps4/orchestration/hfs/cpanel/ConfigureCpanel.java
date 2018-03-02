@@ -31,10 +31,10 @@ public class ConfigureCpanel implements Command<ConfigureCpanel.ConfigureCpanelR
 
         context.execute(WaitForCpanelAction.class, hfsAction);
 
-       if (hfsAction.status != CPanelAction.Status.COMPLETE) {
-           logger.warn("failed to config cpanel image {}", hfsAction);
-           throw new RuntimeException("CPanel image config failed");
-       }
+        if (hfsAction.status != CPanelAction.Status.COMPLETE) {
+            logger.warn("failed to config cpanel image {}", hfsAction);
+            throw new RuntimeException("CPanel image config failed");
+        }
 
         return null;
     }
