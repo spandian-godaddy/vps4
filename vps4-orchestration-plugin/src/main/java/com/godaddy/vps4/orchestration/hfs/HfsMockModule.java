@@ -13,6 +13,7 @@ import java.util.stream.Collectors;
 import javax.ws.rs.NotFoundException;
 import javax.ws.rs.core.Response;
 
+import gdg.hfs.vhfs.vm.Console;
 import org.joda.time.DateTime;
 import org.mockito.Mockito;
 
@@ -684,6 +685,13 @@ public class HfsMockModule extends AbstractModule {
 
             private Boolean isVmDestroyed(long vmId) {
                 return vmActionList.get(vmId).stream().anyMatch(va -> va.actionType.equals("DESTROYED"));
+            }
+
+            @Override
+            public Console getConsole(long vmId) {
+                Console console = new Console();
+                console.url = "https://console.phx-public.cloud.secureserver.net:443/spice_auto.html?token=394f9629-4081-421d-a2e3-30b7aa950843";
+                return console;
             }
 
             @Override
