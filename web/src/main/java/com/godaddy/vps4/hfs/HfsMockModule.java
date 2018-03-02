@@ -12,6 +12,7 @@ import java.util.Random;
 
 import javax.ws.rs.core.Response;
 
+import gdg.hfs.vhfs.vm.Console;
 import org.joda.time.DateTime;
 import org.mockito.Mockito;
 
@@ -162,6 +163,14 @@ public class HfsMockModule extends AbstractModule {
             public VmAction createVmWithFlavor(CreateVMWithFlavorRequest arg0) {
                 // NOTE: do nothing, Implement when needed
                 throw new UnsupportedOperationException("Not implemented, yet");
+            }
+
+
+            @Override
+            public Console getConsole(long vmId) {
+                Console console = new Console();
+                console.url = "https://console.phx-public.cloud.secureserver.net:443/spice_auto.html?token=394f9629-4081-421d-a2e3-30b7aa950843";
+                return console;
             }
 
             @Override

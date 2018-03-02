@@ -17,6 +17,7 @@ import com.godaddy.hfs.web.ServerModule;
 import com.godaddy.hfs.zookeeper.ZooKeeperModule;
 import com.godaddy.vps4.cache.CacheModule;
 import com.godaddy.vps4.cache.HazelcastCacheModule;
+import com.godaddy.vps4.console.ConsoleModule;
 import com.godaddy.vps4.cpanel.CpanelModule;
 import com.godaddy.vps4.credit.CreditModule;
 import com.godaddy.vps4.hfs.HfsClientModule;
@@ -158,6 +159,7 @@ public class Vps4Injector {
         modules.add(new CacheModule());
         modules.add(new HazelcastCacheModule());
         modules.add(new SchedulerServiceClientModule());
+        modules.add(new ConsoleModule());
 
         return Guice.createInjector(modules);
     }
