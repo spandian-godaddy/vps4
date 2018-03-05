@@ -194,6 +194,7 @@ public class Vps4ProvisionVmTest {
         check.checkId = 1;
         when(nodePingService.createCheck(anyLong(), any())).thenReturn(check);
         when(monitoringMeta.getAccountId()).thenReturn(1L);
+        when(monitoringMeta.getGeoRegion()).thenReturn("nam");
         this.vmInfo.hasMonitoring = true;
 
         command.execute(context, this.request);

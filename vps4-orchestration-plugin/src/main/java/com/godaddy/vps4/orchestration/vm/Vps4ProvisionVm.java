@@ -63,6 +63,7 @@ import gdg.hfs.vhfs.network.IpAddress;
 import gdg.hfs.vhfs.nodeping.CheckType;
 import gdg.hfs.vhfs.nodeping.CreateCheckRequest;
 import gdg.hfs.vhfs.nodeping.NodePingCheck;
+import gdg.hfs.vhfs.nodeping.NodePingLocation;
 import gdg.hfs.vhfs.nodeping.NodePingService;
 import gdg.hfs.vhfs.vm.VmAction;
 import gdg.hfs.vhfs.vm.VmService;
@@ -342,10 +343,15 @@ public class Vps4ProvisionVm extends ActionCommand<Vps4ProvisionVm.Request, Vps4
             CreateCheckRequest checkRequest = new CreateCheckRequest();
             checkRequest.target = ipAddress.address;
             checkRequest.label = ipAddress.address;
-            checkRequest.interval = 1;  // how often check is run in minutes
-            checkRequest.notificationDelay = 5;  // minutes delay to wait for recovery before alerting
+            // how often check is run in minutes
+            checkRequest.interval = 1;
+            // minutes delay to wait for recovery before alerting
+            checkRequest.notificationDelay = 5;
             checkRequest.type = CheckType.PING;
-            checkRequest.notificationTopic = monitoringMeta.getNotificationTopic();  // kafka topic to consume for alerts
+            // geographical region where probe server should be located
+            checkRequest.location = NodePingLocation.valueOf(monitoringMeta.getGeoRegion().toUpperCase());
+            // kafka topic to consume for alerts
+            checkRequest.notificationTopic = monitoringMeta.getNotificationTopic();
 
             NodePingCheck check = monitoringService.createCheck(monitoringMeta.getAccountId(), checkRequest);
             logger.debug("CheckId: {}", check.checkId);

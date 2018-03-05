@@ -1,7 +1,6 @@
 package com.godaddy.vps4.orchestration.vm;
 
 import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.contains;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
@@ -17,54 +16,22 @@ import org.junit.Test;
 import com.godaddy.vps4.credit.VirtualMachineCredit;
 import com.godaddy.vps4.network.IpAddress;
 import com.godaddy.vps4.network.IpAddress.IpAddressType;
-import com.godaddy.vps4.network.NetworkService;
-import com.godaddy.vps4.util.MonitoringMeta;
 import com.godaddy.vps4.vm.AccountStatus;
-import com.godaddy.vps4.vm.ActionService;
 import com.godaddy.vps4.vm.VirtualMachine;
 import com.godaddy.vps4.vm.VirtualMachineService;
 
 import gdg.hfs.orchestration.CommandContext;
-import gdg.hfs.vhfs.nodeping.NodePingCheck;
-import gdg.hfs.vhfs.nodeping.NodePingService;
 
 public class Vps4PlanChangeTest {
-    ActionService actionService = mock(ActionService.class);
     VirtualMachineService virtualMachineService = mock(VirtualMachineService.class);
-    NetworkService networkService = mock(NetworkService.class);
-    NodePingService nodePingService = mock(NodePingService.class);
-    MonitoringMeta monitoringMeta = mock(MonitoringMeta.class);
-
-    Vps4PlanChange command = new Vps4PlanChange(virtualMachineService, null, networkService, monitoringMeta);
-
     CommandContext context = mock(CommandContext.class);
+    Vps4PlanChange command = new Vps4PlanChange(virtualMachineService);
 
     @SuppressWarnings("unchecked")
     @Test
     public void testChangePlanCallsUpdateVmManagedLevel() {
         runChangeManagedLevelToManagedTest();
         verify(context, times(1)).execute(eq("UpdateVmManagedLevel"), any(Function.class), eq(Void.class));
-    }
-
-    @SuppressWarnings("unchecked")
-    @Test
-    public void testChangePlanCallsDeleteMonitoringAccount() {
-        runChangeManagedLevelToManagedTest();
-        verify(context, times(1)).execute(contains("DeleteMonitoringAccount"), any(Function.class), eq(Void.class));
-    }
-
-    @SuppressWarnings("unchecked")
-    @Test
-    public void testChangePlanCallsCreateMonitoringCheckForVm() {
-        runChangeManagedLevelToManagedTest();
-        verify(context, times(1)).execute(contains("CreateMonitoringCheckForVm"), any(Function.class), eq(NodePingCheck.class));
-    }
-
-    @SuppressWarnings("unchecked")
-    @Test
-    public void testChangePlanCallsAddCheckIdToIp() {
-        runChangeManagedLevelToManagedTest();
-        verify(context, times(1)).execute(contains("AddCheckIdToIp"), any(Function.class), eq(Void.class));
     }
 
     @SuppressWarnings("unchecked")
@@ -79,12 +46,6 @@ public class Vps4PlanChangeTest {
         request.credit = credit;
 
         when(context.execute(eq("UpdateVmManagedLevel"), any(Function.class), eq(Void.class))).thenReturn(null);
-        when(context.execute(contains("DeleteMonitoringAccount"), any(Function.class), eq(Void.class))).thenReturn(null);
-        NodePingCheck check = new NodePingCheck();
-        check.checkId = 321;
-        when(context.execute(contains("CreateMonitoringCheckForVm"), any(Function.class), eq(NodePingCheck.class))).thenReturn(check);
-        when(context.execute(contains("AddCheckIdToIp"), any(Function.class), eq(Void.class))).thenReturn(null);
-        when(monitoringMeta.getAccountId()).thenReturn(123L);
 
         try {
             command.execute(context, request);

@@ -7,11 +7,13 @@ public class MonitoringMeta {
 
     private final long accountId;
     private final String kafkaTopic;
+    private final String geoRegion;
 
     @Inject
     public MonitoringMeta(Config config)
     {
         accountId = Long.parseLong(config.get("monitoring.nodeping.account.id"));
+        geoRegion = config.get("monitoring.nodeping.geoRegion", "nam");
         kafkaTopic = config.get("vps4.monitoring.kafka.topic");
     }
 
@@ -21,5 +23,9 @@ public class MonitoringMeta {
 
     public String getNotificationTopic() {
         return kafkaTopic;
+    }
+
+    public String getGeoRegion() {
+        return geoRegion;
     }
 }
