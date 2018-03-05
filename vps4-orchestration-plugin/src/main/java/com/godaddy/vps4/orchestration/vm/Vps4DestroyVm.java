@@ -11,6 +11,7 @@ import com.godaddy.vps4.network.IpAddress;
 import com.godaddy.vps4.network.NetworkService;
 import com.godaddy.vps4.orchestration.ActionCommand;
 import com.godaddy.vps4.orchestration.hfs.cpanel.WaitForCpanelAction;
+import com.godaddy.vps4.orchestration.hfs.plesk.WaitForPleskAction;
 import com.godaddy.vps4.orchestration.hfs.vm.WaitForVmAction;
 import com.godaddy.vps4.orchestration.scheduler.DeleteAutomaticBackupSchedule;
 import com.godaddy.vps4.vm.ActionService;
@@ -25,6 +26,8 @@ import gdg.hfs.orchestration.CommandMetadata;
 import gdg.hfs.vhfs.cpanel.CPanelAction;
 import gdg.hfs.vhfs.cpanel.CPanelService;
 import gdg.hfs.vhfs.nodeping.NodePingService;
+import gdg.hfs.vhfs.plesk.PleskAction;
+import gdg.hfs.vhfs.plesk.PleskService;
 import gdg.hfs.vhfs.vm.VmAction;
 import gdg.hfs.vhfs.vm.VmService;
 
@@ -32,29 +35,25 @@ import gdg.hfs.vhfs.vm.VmService;
 public class Vps4DestroyVm extends ActionCommand<Vps4DestroyVm.Request, Vps4DestroyVm.Response> {
 
     private static final Logger logger = LoggerFactory.getLogger(Vps4DestroyVm.class);
-
     private final NetworkService networkService;
-
     private final VirtualMachineService virtualMachineService;
-
     private final VmService vmService;
-
     private final CPanelService cpanelService;
-
+    private final PleskService pleskService;
     private final NodePingService monitoringService;
-
     CommandContext context;
 
     @Inject
     public Vps4DestroyVm(ActionService actionService, NetworkService networkService,
             VirtualMachineService virtualMachineService, VmService vmService, CPanelService cpanelService,
-            NodePingService monitoringService) {
+            NodePingService monitoringService, PleskService pleskService) {
         super(actionService);
         this.networkService = networkService;
         this.virtualMachineService = virtualMachineService;
         this.vmService = vmService;
         this.cpanelService = cpanelService;
         this.monitoringService = monitoringService;
+        this.pleskService = pleskService;
     }
 
     @Override
@@ -64,7 +63,7 @@ public class Vps4DestroyVm extends ActionCommand<Vps4DestroyVm.Request, Vps4Dest
         logger.info("Destroying VM {}", request.virtualMachine.vmId);
         VirtualMachine vm = request.virtualMachine;
 
-        unlicenseCpanel(vm);
+        unlicenseControlPanel(vm);
         releaseIps(context, request, vm);
         deleteAutomaticBackupSchedule(vm);
         deleteAllScheduledJobsForVm(context, vm);
@@ -78,21 +77,21 @@ public class Vps4DestroyVm extends ActionCommand<Vps4DestroyVm.Request, Vps4Dest
         return response;
     }
 
-	private VmAction deleteVmInHfs(CommandContext context, VirtualMachine vm) {
-        if(vm.hfsVmId != 0) {
-            VmAction hfsAction = context.execute("DestroyVmHfs", ctx -> vmService.destroyVm(vm.hfsVmId), VmAction.class);
+    private VmAction deleteVmInHfs(CommandContext context, VirtualMachine vm) {
+        if (vm.hfsVmId != 0) {
+            VmAction hfsAction = context.execute("DestroyVmHfs", ctx -> vmService.destroyVm(vm.hfsVmId),
+                    VmAction.class);
 
             hfsAction = context.execute(WaitForVmAction.class, hfsAction);
             return hfsAction;
-        }
-        else {
+        } else {
             return null;
         }
-	}
+    }
 
-	private void deleteAllScheduledJobsForVm(CommandContext context, VirtualMachine vm) {
-		context.execute("DestroyAllScheduledJobsForVm", Vps4DeleteAllScheduledJobsForVm.class, vm.vmId);
-	}
+    private void deleteAllScheduledJobsForVm(CommandContext context, VirtualMachine vm) {
+        context.execute("DestroyAllScheduledJobsForVm", Vps4DeleteAllScheduledJobsForVm.class, vm.vmId);
+    }
 
     private void releaseIps(CommandContext context, Vps4DestroyVm.Request request, VirtualMachine vm) {
         List<IpAddress> activeAddresses = networkService.getVmIpAddresses(vm.vmId).stream()
@@ -128,13 +127,8 @@ public class Vps4DestroyVm extends ActionCommand<Vps4DestroyVm.Request, Vps4Dest
         return vm.backupJobId != null;
     }
 
-    private void unlicenseCpanel(VirtualMachine vm) {
-        if (vm.hfsVmId > 0 && virtualMachineService.virtualMachineHasCpanel(vm.vmId)) {
-            CPanelAction action = context.execute("Unlicense-Cpanel", ctx -> {
-                return cpanelService.licenseRelease(vm.hfsVmId);
-            }, CPanelAction.class);
-            context.execute(WaitForCpanelAction.class, action);
-        }
+    private void unlicenseControlPanel(VirtualMachine vm) {
+        context.execute(UnlicenseControlPanel.class, vm);
     }
 
     public static class Request extends VmActionRequest {

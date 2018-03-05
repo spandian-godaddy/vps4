@@ -62,7 +62,7 @@ public class Vps4DestroyVmTest {
     ScheduledJobService scheduledJobService = mock(ScheduledJobService.class);
 
     Vps4DestroyVm command = new Vps4DestroyVm(actionService, networkService, virtualMachineService, vmService,
-            cpanelService, nodePingService);
+            cpanelService, nodePingService, pleskService);
 
     Injector injector = Guice.createInjector(binder -> {
         binder.bind(UnbindIp.class);
@@ -152,7 +152,7 @@ public class Vps4DestroyVmTest {
         command.execute(context, request);
         verify(cpanelService, times(1)).licenseRelease(request.virtualMachine.hfsVmId);
     }
-    
+
     @Test
     public void destroyVmNoHfsVmTest() throws Exception {
         when(virtualMachineService.virtualMachineHasCpanel(vm.vmId)).thenReturn(true);

@@ -33,7 +33,7 @@ public class Vps4DestroyIpAddress implements Command<Vps4DestroyIpAddress.Reques
 
     @Inject
     public Vps4DestroyIpAddress(NetworkService networkService, VirtualMachineService virtualMachineService,
-                            CPanelService cpanelService, PleskService pleskService, MailRelayService mailRelayService) {
+            CPanelService cpanelService, PleskService pleskService, MailRelayService mailRelayService) {
         this.networkService = networkService;
         this.virtualMachineService = virtualMachineService;
         this.cpanelService = cpanelService;
@@ -45,8 +45,7 @@ public class Vps4DestroyIpAddress implements Command<Vps4DestroyIpAddress.Reques
     public Void execute(CommandContext context, Vps4DestroyIpAddress.Request request) {
         IpAddress address = request.ipAddress;
         logger.info("Deleting IP Adddress with addressId {}", address.ipAddressId);
-        if(address.ipAddressType.equals(IpAddress.IpAddressType.PRIMARY)){
-            releaseControlPanelLicense(context, request.vm, address.ipAddress);
+        if (address.ipAddressType.equals(IpAddress.IpAddressType.PRIMARY)) {
             disableMailRelay(context, address.ipAddress);
         }
 
@@ -67,19 +66,7 @@ public class Vps4DestroyIpAddress implements Command<Vps4DestroyIpAddress.Reques
         context.execute(SetMailRelayQuota.class, hfsRequest);
     }
 
-    private void releaseControlPanelLicense(CommandContext context, VirtualMachine vm, String ipAddress) {
-        if(virtualMachineService.virtualMachineHasCpanel(vm.vmId)){
-            // TODO update this when the cpanel vertical service's remove license is fixed
-        }
-        else if(virtualMachineService.virtualMachineHasPlesk(vm.vmId)){
-            PleskAction action = context.execute("Unlicense-Plesk", ctx -> {
-                return pleskService.licenseRelease(vm.hfsVmId);
-            }, PleskAction.class);
-            context.execute(WaitForPleskAction.class, action);
-        }
-    }
-
-    public static class Request{
+    public static class Request {
         public IpAddress ipAddress;
         public VirtualMachine vm;
         public boolean forceIfVmInaccessible;
