@@ -20,8 +20,10 @@ import com.godaddy.vps4.network.NetworkService;
 import com.godaddy.vps4.orchestration.TestCommandContext;
 import com.godaddy.vps4.orchestration.hfs.network.ReleaseIp;
 import com.godaddy.vps4.orchestration.hfs.network.UnbindIp;
+import com.godaddy.vps4.orchestration.vm.VmActionRequest;
 import com.godaddy.vps4.orchestration.vm.Vps4DestroyVm;
 import com.godaddy.vps4.scheduledJob.ScheduledJobService;
+import com.godaddy.vps4.util.MonitoringMeta;
 import com.godaddy.vps4.vm.ActionService;
 import com.godaddy.vps4.vm.VirtualMachine;
 import com.godaddy.vps4.vm.VirtualMachineService;
@@ -60,9 +62,10 @@ public class Vps4DestroyVmTest {
     VmService vmService = mock(VmService.class);
     NodePingService nodePingService = mock(NodePingService.class);
     ScheduledJobService scheduledJobService = mock(ScheduledJobService.class);
+    MonitoringMeta monitoringMeta = mock(MonitoringMeta.class);
 
-    Vps4DestroyVm command = new Vps4DestroyVm(actionService, networkService, virtualMachineService, vmService,
-            cpanelService, nodePingService, pleskService);
+    Vps4DestroyVm command = new Vps4DestroyVm(actionService, networkService, virtualMachineService,
+            vmService, cpanelService, nodePingService, pleskService, monitoringMeta);
 
     Injector injector = Guice.createInjector(binder -> {
         binder.bind(UnbindIp.class);
@@ -75,23 +78,24 @@ public class Vps4DestroyVmTest {
         binder.bind(MailRelayService.class).toInstance(mailRelayService);
         binder.bind(NodePingService.class).toInstance(nodePingService);
         binder.bind(ScheduledJobService.class).toInstance(scheduledJobService);
+        binder.bind(MonitoringMeta.class).toInstance(monitoringMeta);
     });
 
     CommandContext context = new TestCommandContext(new GuiceCommandProvider(injector));
 
     VirtualMachine vm;
-    Vps4DestroyVm.Request request;
+    VmActionRequest request;
     IpAddress primaryIp;
+    long nodePingAccountId = 123L;
 
     @Before
     public void setupTest() {
         vm = new VirtualMachine(UUID.randomUUID(), 42, UUID.randomUUID(), 1, null, "VM Name", null, null, null, null,
                 null, "fake.host.name", 0, UUID.randomUUID());
 
-        request = new Vps4DestroyVm.Request();
+        request = new VmActionRequest();
         request.virtualMachine = vm;
         request.actionId = 12;
-        request.pingCheckAccountId = 123;
 
         VmAction vmAction = new VmAction();
         vmAction.state = VmAction.Status.COMPLETE;
@@ -111,7 +115,8 @@ public class Vps4DestroyVmTest {
         when(networkService.getVmIpAddresses(vm.vmId)).thenReturn(addresses);
         when(hfsNetworkService.unbindIp(Mockito.anyLong(), Mockito.eq(true))).thenReturn(addressAction);
         when(hfsNetworkService.releaseIp(Mockito.anyLong())).thenReturn(addressAction);
-        doNothing().when(nodePingService).deleteCheck(request.pingCheckAccountId, primaryIp.pingCheckId);
+        doNothing().when(nodePingService).deleteCheck(nodePingAccountId, primaryIp.pingCheckId);
+        when(monitoringMeta.getAccountId()).thenReturn(nodePingAccountId);
 
         MailRelay mailRelay = new MailRelay();
         mailRelay.quota = 0;
@@ -127,9 +132,9 @@ public class Vps4DestroyVmTest {
         MailRelay mailRelay = new MailRelay();
         mailRelay.quota = 0;
         when(mailRelayService.setRelayQuota(eq("1.2.3.4"), any(MailRelayUpdate.class))).thenReturn(mailRelay);
-        command.execute(context, request);
-        verify(pleskService, times(1)).licenseRelease(request.virtualMachine.hfsVmId);
-        verify(nodePingService, times(1)).deleteCheck(request.pingCheckAccountId, primaryIp.pingCheckId);
+        command.execute(context, this.request);
+        verify(pleskService, times(1)).licenseRelease(this.request.virtualMachine.hfsVmId);
+        verify(nodePingService, times(1)).deleteCheck(nodePingAccountId, primaryIp.pingCheckId);
 
         verifyMailRelay();
     }

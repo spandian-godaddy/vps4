@@ -34,7 +34,6 @@ import com.godaddy.hfs.config.Config;
 import com.godaddy.vps4.credit.CreditService;
 import com.godaddy.vps4.credit.VirtualMachineCredit;
 import com.godaddy.vps4.orchestration.vm.VmActionRequest;
-import com.godaddy.vps4.orchestration.vm.Vps4DestroyVm;
 import com.godaddy.vps4.orchestration.vm.Vps4ProvisionVm;
 import com.godaddy.vps4.project.Project;
 import com.godaddy.vps4.project.ProjectService;
@@ -44,7 +43,6 @@ import com.godaddy.vps4.security.Vps4User;
 import com.godaddy.vps4.security.Vps4UserService;
 import com.godaddy.vps4.snapshot.Snapshot;
 import com.godaddy.vps4.util.Cryptography;
-import com.godaddy.vps4.util.Monitoring;
 import com.godaddy.vps4.vm.ActionService;
 import com.godaddy.vps4.vm.ActionType;
 import com.godaddy.vps4.vm.DataCenter;
@@ -90,7 +88,6 @@ public class VmResource {
     private final CommandService commandService;
     private final VmSnapshotResource vmSnapshotResource;
     private final Config config;
-    private final Monitoring monitoring;
     private final String sgidPrefix;
     private final int mailRelayQuota;
     private final Cryptography cryptography;
@@ -101,7 +98,7 @@ public class VmResource {
     public VmResource(GDUser user, VmService vmService, Vps4UserService vps4UserService,
             VirtualMachineService virtualMachineService, CreditService creditService, ProjectService projectService,
             ImageService imageService, ActionService actionService, CommandService commandService,
-            VmSnapshotResource vmSnapshotResource, Config config, Cryptography cryptography, Monitoring monitoring,
+            VmSnapshotResource vmSnapshotResource, Config config, Cryptography cryptography,
             SchedulerWebService schedulerWebService) {
         this.user = user;
         this.virtualMachineService = virtualMachineService;
@@ -114,7 +111,6 @@ public class VmResource {
         this.commandService = commandService;
         this.vmSnapshotResource = vmSnapshotResource;
         this.config = config;
-        this.monitoring = monitoring;
         this.schedulerWebService = schedulerWebService;
         sgidPrefix = this.config.get("hfs.sgid.prefix", "vps4-undefined-");
         mailRelayQuota = Integer.parseInt(this.config.get("mailrelay.quota", "5000"));
@@ -224,13 +220,8 @@ public class VmResource {
                 new JSONObject().toJSONString(), vps4User.getId());
         logger.info("VmAction id: {}", actionId);
 
-        long monitoringAccountId = 0;
-        if (monitoring.hasMonitoring(vmCredit)) {
-            monitoringAccountId = monitoring.getAccountId(virtualMachine);
-        }
-
-        ProvisionVmInfo vmInfo = new ProvisionVmInfo(virtualMachine.vmId, vmCredit.managedLevel, virtualMachine.image,
-                project.getVhfsSgid(), mailRelayQuota, monitoringAccountId, virtualMachine.spec.diskGib);
+        ProvisionVmInfo vmInfo = new ProvisionVmInfo(virtualMachine.vmId, vmCredit.managedLevel, vmCredit.hasMonitoring(),
+                virtualMachine.image, project.getVhfsSgid(), mailRelayQuota, virtualMachine.spec.diskGib);
         logger.info("vmInfo: {}", vmInfo.toString());
 
         byte[] encryptedPassword = cryptography.encrypt(provisionRequest.password);
@@ -269,9 +260,8 @@ public class VmResource {
         validateNoConflictingActions(vmId, actionService, ActionType.START_VM, ActionType.STOP_VM,
                 ActionType.RESTART_VM, ActionType.CREATE_VM, ActionType.RESTORE_VM);
 
-        Vps4DestroyVm.Request destroyRequest = new Vps4DestroyVm.Request();
+        VmActionRequest destroyRequest = new VmActionRequest();
         destroyRequest.virtualMachine = vm;
-        destroyRequest.pingCheckAccountId = monitoring.getAccountId(vm);
         VmAction deleteAction = createActionAndExecute(actionService, commandService, virtualMachineService, vm.vmId,
                 ActionType.DESTROY_VM, destroyRequest, "Vps4DestroyVm");
 

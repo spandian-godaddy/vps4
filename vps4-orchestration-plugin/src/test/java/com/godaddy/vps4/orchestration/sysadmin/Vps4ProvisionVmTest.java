@@ -15,6 +15,9 @@ import java.io.IOException;
 import java.util.Random;
 import java.util.UUID;
 
+import org.junit.Before;
+import org.junit.Test;
+
 import com.godaddy.vps4.credit.CreditService;
 import com.godaddy.vps4.messaging.MissingShopperIdException;
 import com.godaddy.vps4.messaging.Vps4MessagingService;
@@ -27,6 +30,7 @@ import com.godaddy.vps4.orchestration.hfs.sysadmin.SetHostname;
 import com.godaddy.vps4.orchestration.hfs.sysadmin.ToggleAdmin;
 import com.godaddy.vps4.orchestration.hfs.vm.CreateVm;
 import com.godaddy.vps4.orchestration.vm.Vps4ProvisionVm;
+import com.godaddy.vps4.util.MonitoringMeta;
 import com.godaddy.vps4.vm.ActionService;
 import com.godaddy.vps4.vm.Image;
 import com.godaddy.vps4.vm.Image.ControlPanel;
@@ -36,9 +40,6 @@ import com.godaddy.vps4.vm.VirtualMachineService;
 import com.godaddy.vps4.vm.VmUserService;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
-
-import org.junit.Before;
-import org.junit.Test;
 
 import gdg.hfs.orchestration.CommandContext;
 import gdg.hfs.orchestration.GuiceCommandProvider;
@@ -69,12 +70,13 @@ public class Vps4ProvisionVmTest {
     ToggleAdmin toggleAdmin = mock(ToggleAdmin.class);
     ConfigureMailRelay configureMailRelay = mock(ConfigureMailRelay.class);
     NodePingService nodePingService = mock(NodePingService.class);
+    MonitoringMeta monitoringMeta = mock(MonitoringMeta.class);
     Vps4MessagingService messagingService = mock(Vps4MessagingService.class);
     CreditService creditService = mock(CreditService.class);
 
     Vps4ProvisionVm command = new Vps4ProvisionVm(actionService, vmService,
             virtualMachineService, vmUserService, networkService, nodePingService,
-            messagingService, creditService);
+            monitoringMeta, messagingService, creditService);
 
     Injector injector = Guice.createInjector(binder -> {
         binder.bind(ActionService.class).toInstance(actionService);
@@ -126,7 +128,7 @@ public class Vps4ProvisionVmTest {
         this.vmInfo.vmId = this.vmId;
         this.vmInfo.image = image;
         this.vmInfo.mailRelayQuota = 5000;
-        this.vmInfo.monitoringAccountId = 0;
+        this.vmInfo.hasMonitoring = false;
         this.vmInfo.sgid = "";
         diskGib = new Random().nextInt(100);
         this.vmInfo.diskGib = diskGib;
@@ -191,7 +193,9 @@ public class Vps4ProvisionVmTest {
         NodePingCheck check = mock(NodePingCheck.class);
         check.checkId = 1;
         when(nodePingService.createCheck(anyLong(), any())).thenReturn(check);
-        this.vmInfo.monitoringAccountId = 1;
+        when(monitoringMeta.getAccountId()).thenReturn(1L);
+        when(monitoringMeta.getGeoRegion()).thenReturn("nam");
+        this.vmInfo.hasMonitoring = true;
 
         command.execute(context, this.request);
         verify(nodePingService, times(1)).createCheck(eq(1L), any(CreateCheckRequest.class));

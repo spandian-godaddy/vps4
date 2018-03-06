@@ -19,6 +19,9 @@ import java.util.UUID;
 
 import javax.inject.Inject;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.godaddy.vps4.credit.CreditService;
 import com.godaddy.vps4.messaging.Vps4MessagingService;
@@ -43,6 +46,7 @@ import com.godaddy.vps4.orchestration.hfs.vm.WaitForVmAction;
 import com.godaddy.vps4.orchestration.scheduler.SetupAutomaticBackupSchedule;
 import com.godaddy.vps4.orchestration.sysadmin.ConfigureMailRelay;
 import com.godaddy.vps4.orchestration.sysadmin.ConfigureMailRelay.ConfigureMailRelayRequest;
+import com.godaddy.vps4.util.MonitoringMeta;
 import com.godaddy.vps4.vm.ActionService;
 import com.godaddy.vps4.vm.CreateVmStep;
 import com.godaddy.vps4.vm.HostnameGenerator;
@@ -53,15 +57,13 @@ import com.godaddy.vps4.vm.VirtualMachine;
 import com.godaddy.vps4.vm.VirtualMachineService;
 import com.godaddy.vps4.vm.VmUserService;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import gdg.hfs.orchestration.CommandContext;
 import gdg.hfs.orchestration.CommandMetadata;
 import gdg.hfs.vhfs.network.IpAddress;
 import gdg.hfs.vhfs.nodeping.CheckType;
 import gdg.hfs.vhfs.nodeping.CreateCheckRequest;
 import gdg.hfs.vhfs.nodeping.NodePingCheck;
+import gdg.hfs.vhfs.nodeping.NodePingLocation;
 import gdg.hfs.vhfs.nodeping.NodePingService;
 import gdg.hfs.vhfs.vm.VmAction;
 import gdg.hfs.vhfs.vm.VmService;
@@ -75,27 +77,33 @@ public class Vps4ProvisionVm extends ActionCommand<Vps4ProvisionVm.Request, Vps4
     private final VmUserService vmUserService;
     private final NetworkService networkService;
     private final NodePingService monitoringService;
+    private final MonitoringMeta monitoringMeta;
     private final Vps4MessagingService messagingService;
     private final CreditService creditService;
 
     private Request request;
-
     private ActionState state;
-
     private String hostname;
-
     private CommandContext context;
 
     @Inject
-    public Vps4ProvisionVm(ActionService actionService, VmService vmService,
-            VirtualMachineService virtualMachineService, VmUserService vmUserService, NetworkService networkService,
-            NodePingService monitoringService, Vps4MessagingService messagingService, CreditService creditService) {
+    public Vps4ProvisionVm(
+            ActionService actionService,
+            VmService vmService,
+            VirtualMachineService virtualMachineService,
+            VmUserService vmUserService,
+            NetworkService networkService,
+            NodePingService monitoringService,
+            MonitoringMeta monitoringMeta,
+            Vps4MessagingService messagingService,
+            CreditService creditService) {
         super(actionService);
         this.vmService = vmService;
         this.virtualMachineService = virtualMachineService;
         this.vmUserService = vmUserService;
         this.networkService = networkService;
         this.monitoringService = monitoringService;
+        this.monitoringMeta = monitoringMeta;
         this.messagingService = messagingService;
         this.creditService = creditService;
     }
@@ -330,16 +338,22 @@ public class Vps4ProvisionVm extends ActionCommand<Vps4ProvisionVm.Request, Vps4
     }
 
     private void configureMonitoring(IpAddress ipAddress) {
-        if (request.vmInfo.monitoringAccountId > 0) {
+        if (request.vmInfo.hasMonitoring) {
             setStep(ConfigureNodeping);
             CreateCheckRequest checkRequest = new CreateCheckRequest();
             checkRequest.target = ipAddress.address;
             checkRequest.label = ipAddress.address;
+            // how often check is run in minutes
             checkRequest.interval = 1;
+            // minutes delay to wait for recovery before alerting
+            checkRequest.notificationDelay = 5;
             checkRequest.type = CheckType.PING;
-            checkRequest.webhookUrl = "http://www.godaddy.com";
+            // geographical region where probe server should be located
+            checkRequest.location = NodePingLocation.valueOf(monitoringMeta.getGeoRegion().toUpperCase());
+            // kafka topic to consume for alerts
+            checkRequest.notificationTopic = monitoringMeta.getNotificationTopic();
 
-            NodePingCheck check = monitoringService.createCheck(request.vmInfo.monitoringAccountId, checkRequest);
+            NodePingCheck check = monitoringService.createCheck(monitoringMeta.getAccountId(), checkRequest);
             logger.debug("CheckId: {}", check.checkId);
 
             addCheckIdToIp(ipAddress, check);

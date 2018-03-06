@@ -43,6 +43,7 @@ import gdg.hfs.vhfs.nodeping.CreateCheckRequest;
 import gdg.hfs.vhfs.nodeping.NodePingAccount;
 import gdg.hfs.vhfs.nodeping.NodePingCheck;
 import gdg.hfs.vhfs.nodeping.NodePingEvent;
+import gdg.hfs.vhfs.nodeping.NodePingNotification;
 import gdg.hfs.vhfs.nodeping.NodePingService;
 import gdg.hfs.vhfs.nodeping.NodePingUptimeRecord;
 import gdg.hfs.vhfs.plesk.PleskAction;
@@ -326,8 +327,7 @@ public class HfsMockModule extends AbstractModule {
             }
 
             @Override
-            public void getNotification(String s, String s1, String s2, String s3, String s4, String s5, String s6,
-                                        int i, long l, long l1, long l2, String s7, boolean b, String s8) {
+            public Response sendNotification(NodePingNotification notification) {
                 // NOTE: do nothing, Implement when needed
                 throw new UnsupportedOperationException("Not implemented, yet");
 
