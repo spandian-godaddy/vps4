@@ -10,7 +10,7 @@ import gdg.hfs.orchestration.CommandContext;
 import gdg.hfs.vhfs.cpanel.CPanelAction;
 import gdg.hfs.vhfs.cpanel.CPanelService;
 
-public class WaitForCpanelAction implements Command<CPanelAction, Void> {
+public class WaitForCpanelAction implements Command<CPanelAction, CPanelAction> {
 
     private static final Logger logger = LoggerFactory.getLogger(WaitForCpanelAction.class);
 
@@ -22,7 +22,7 @@ public class WaitForCpanelAction implements Command<CPanelAction, Void> {
     }
 
     @Override
-    public Void execute(CommandContext context, CPanelAction hfsAction) {
+    public CPanelAction execute(CommandContext context, CPanelAction hfsAction) {
 
         while (!hfsAction.status.equals(CPanelAction.Status.COMPLETE)
                 && !hfsAction.status.equals(CPanelAction.Status.FAILED)) {
@@ -34,7 +34,7 @@ public class WaitForCpanelAction implements Command<CPanelAction, Void> {
             hfsAction = cPanelService.getAction(hfsAction.actionId);
         }
 
-        return null;
+        return hfsAction;
     }
 
 }

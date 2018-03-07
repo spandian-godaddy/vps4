@@ -29,7 +29,7 @@ public class ConfigureCpanel implements Command<ConfigureCpanel.ConfigureCpanelR
             return cPanelService.imageConfig(action.vmId);
         }, CPanelAction.class);
 
-        context.execute(WaitForCpanelAction.class, hfsAction);
+        hfsAction = context.execute(WaitForCpanelAction.class, hfsAction);
 
         if (hfsAction.status != CPanelAction.Status.COMPLETE) {
             logger.warn("failed to config cpanel image {}", hfsAction);

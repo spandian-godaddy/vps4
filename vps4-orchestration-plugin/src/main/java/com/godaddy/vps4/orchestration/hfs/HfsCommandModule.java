@@ -2,6 +2,7 @@ package com.godaddy.vps4.orchestration.hfs;
 
 import com.godaddy.vps4.orchestration.hfs.cpanel.ConfigureCpanel;
 import com.godaddy.vps4.orchestration.hfs.cpanel.RefreshCpanelLicense;
+import com.godaddy.vps4.orchestration.hfs.cpanel.UnlicenseCpanel;
 import com.godaddy.vps4.orchestration.hfs.cpanel.WaitForCpanelAction;
 import com.godaddy.vps4.orchestration.hfs.mailrelay.SetMailRelayQuota;
 import com.godaddy.vps4.orchestration.hfs.network.AllocateIp;
@@ -10,6 +11,7 @@ import com.godaddy.vps4.orchestration.hfs.network.ReleaseIp;
 import com.godaddy.vps4.orchestration.hfs.network.UnbindIp;
 import com.godaddy.vps4.orchestration.hfs.network.WaitForAddressAction;
 import com.godaddy.vps4.orchestration.hfs.plesk.ConfigurePlesk;
+import com.godaddy.vps4.orchestration.hfs.plesk.UnlicensePlesk;
 import com.godaddy.vps4.orchestration.hfs.plesk.UpdateAdminPassword;
 import com.godaddy.vps4.orchestration.hfs.plesk.WaitForPleskAction;
 import com.godaddy.vps4.orchestration.hfs.snapshot.DestroySnapshot;
@@ -66,11 +68,13 @@ public class HfsCommandModule extends AbstractModule {
         bind(ConfigureCpanel.class);
         bind(RefreshCpanelLicense.class);
         bind(WaitForCpanelAction.class);
+        bind(UnlicenseCpanel.class);
 
         // Plesk
         bind(ConfigurePlesk.class);
         bind(UpdateAdminPassword.class);
         bind(WaitForPleskAction.class);
+        bind(UnlicensePlesk.class);
 
         // Snapshot
         bind(WaitForSnapshotAction.class);
