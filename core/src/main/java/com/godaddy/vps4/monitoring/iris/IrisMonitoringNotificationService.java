@@ -50,7 +50,7 @@ public class IrisMonitoringNotificationService implements MonitoringNotification
         StringBuilder note = new StringBuilder();
         note.append("Server Down event received\n");
         note.append("Hostname: " + vm.hostname + "\n");
-        note.append("IP Addres: " + vm.primaryIpAddress.ipAddress + "\n");
+        note.append("IP Address: " + vm.primaryIpAddress.ipAddress + "\n");
         note.append("Shopper ID: " + user.getShopperId() + "\n");
         note.append("Server ID: " + vm.vmId + "\n");
         note.append("Orion GUID: " + vm.orionGuid + "\n");

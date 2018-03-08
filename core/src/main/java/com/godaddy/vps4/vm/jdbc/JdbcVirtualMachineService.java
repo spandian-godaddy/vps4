@@ -82,6 +82,12 @@ public class JdbcVirtualMachineService implements VirtualMachineService {
                 Sql.nextOrNull(this::mapVirtualMachine), vmId);
     }
 
+    @Override
+    public VirtualMachine getVirtualMachineByCheckId(long nodePingCheckId) {
+        return Sql.with(dataSource).exec(selectVirtualMachineQuery + "WHERE ip.ping_check_id=?",
+                Sql.nextOrNull(this::mapVirtualMachine), nodePingCheckId);
+    }
+
     protected VirtualMachine mapVirtualMachine(ResultSet rs) throws SQLException {
         VirtualMachineSpec spec = mapVirtualMachineSpec(rs);
         UUID vmId = java.util.UUID.fromString(rs.getString("vm_id"));
@@ -234,7 +240,7 @@ public class JdbcVirtualMachineService implements VirtualMachineService {
         List<VirtualMachine> vms = Sql.with(dataSource)
                 .exec(selectVirtualMachineQuery
                         + "JOIN control_panel ON image.control_panel_id = control_panel.control_panel_id "
-                        + "where control_panel.name = ? " 
+                        + "where control_panel.name = ? "
                         + "and vm.vm_id = ?;", Sql.listOf(this::mapVirtualMachine), controlPanel, vmId);
         return vms.size() > 0;
     }
