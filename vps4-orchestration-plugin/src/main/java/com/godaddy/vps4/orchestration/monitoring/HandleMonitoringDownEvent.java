@@ -35,7 +35,7 @@ public class HandleMonitoringDownEvent implements Command<Long, Void> {
     public Void execute(CommandContext context, Long nodePingCheckId) {
         VirtualMachine vm = virtualMachineService.getVirtualMachineByCheckId(nodePingCheckId);
         if (vm == null) {
-            logger.warn("No VM found for alerting NodePing checkId: {}", nodePingCheckId);
+            logger.info("No VM found for alerting NodePing checkId: {}", nodePingCheckId);
         } else if (shouldSendNotification(vm)) {
             long irisIncidentId = monitoringNotificationService.sendServerDownEventNotification(vm);
             logger.info("VM-Down Event Notification sent for vmId {}, Iris Incident {} created", vm.vmId, irisIncidentId);
