@@ -39,6 +39,8 @@ public class HandleMonitoringDownEvent implements Command<Long, Void> {
         } else if (shouldSendNotification(vm)) {
             long irisIncidentId = monitoringNotificationService.sendServerDownEventNotification(vm);
             logger.info("VM-Down Event Notification sent for vmId {}, Iris Incident {} created", vm.vmId, irisIncidentId);
+        } else {
+            logger.info("VM-Down Event Ignored -  vmId {}", vm.vmId);
         }
 
         return null;
