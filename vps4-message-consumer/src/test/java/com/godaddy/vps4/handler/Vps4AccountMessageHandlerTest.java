@@ -11,6 +11,7 @@ import static org.mockito.Mockito.when;
 import java.io.IOException;
 import java.util.UUID;
 
+import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.json.simple.JSONObject;
 import org.junit.Before;
 import org.junit.Test;
@@ -35,7 +36,7 @@ import gdg.hfs.orchestration.CommandService;
 import gdg.hfs.orchestration.CommandSpec;
 import gdg.hfs.orchestration.CommandState;
 
-public class Vps4MessageHandlerTest {
+public class Vps4AccountMessageHandlerTest {
 
     private VirtualMachineService vmServiceMock = mock(VirtualMachineService.class);
     private CreditService creditServiceMock = mock(CreditService.class);
@@ -70,13 +71,13 @@ public class Vps4MessageHandlerTest {
         VirtualMachineCredit vmCredit = new VirtualMachineCredit(orionGuid, 10, 0, 0, "linux", "myh", null, "TestShopper", accountStatus, dc, productId, false);
         when(creditServiceMock.getVirtualMachineCredit(orionGuid)).thenReturn(vmCredit);
     }
-    
+
     private void mockFullManagedVmCredit(AccountStatus accountStatus, UUID productId) {
         DataCenter dc = dcService.getDataCenter(5);
         VirtualMachineCredit vmCredit = new VirtualMachineCredit(orionGuid, 10, 2, 1, "linux", "cpanel", null, "TestShopper", accountStatus, dc, productId, false);
         when(creditServiceMock.getVirtualMachineCredit(orionGuid)).thenReturn(vmCredit);
     }
-    
+
     @SuppressWarnings("unchecked")
     private String createTestKafkaMessage(String type) {
         /*
@@ -98,14 +99,17 @@ public class Vps4MessageHandlerTest {
         return kafkaMsg.toJSONString();
     }
 
+    @SuppressWarnings("unchecked")
     private void callHandleMessage(String message) throws MessageHandlerException {
-        MessageHandler handler = new Vps4MessageHandler(vmServiceMock,
+        ConsumerRecord<String, String> record = mock(ConsumerRecord.class);
+        when(record.value()).thenReturn(message);
+        MessageHandler handler = new Vps4AccountMessageHandler(vmServiceMock,
                 creditServiceMock,
                 vmActionServiceMock,
                 commandServiceMock,
                 messagingServiceMock,
                 configMock);
-        handler.handleMessage(message);
+        handler.handleMessage(record);
     }
 
     @Test(expected = MessageHandlerException.class)
@@ -113,7 +117,7 @@ public class Vps4MessageHandlerTest {
         callHandleMessage("bad json");
     }
 
-    @Test(expected = MessageHandlerException.class)
+    @Test(expected = IllegalArgumentException.class)
     public void testHandleMessageBadValues() throws MessageHandlerException {
         callHandleMessage("{\"id\":\"not a guid\","
                 + "\"notification\":{\"type\":[\"added\"],"
@@ -138,20 +142,20 @@ public class Vps4MessageHandlerTest {
         verify(commandServiceMock, times(0)).executeCommand(anyObject());
         verify(messagingServiceMock, never()).sendFullyManagedEmail(Mockito.anyString(), Mockito.anyString());
     }
-    
+
     @Test
     public void testFullyManagedCredit() throws MessageHandlerException, MissingShopperIdException, IOException {
         mockFullManagedVmCredit(AccountStatus.ACTIVE, vm.vmId);
         when(messagingServiceMock.sendFullyManagedEmail("TestShopper", "cpanel")).thenReturn("messageId");
         when(configMock.get("vps4MessageHandler.processFullyManagedEmails")).thenReturn("true");
         Mockito.doNothing().when(creditServiceMock).updateProductMeta(orionGuid, ProductMetaField.FULLY_MANAGED_EMAIL_SENT, "true");
-        
+
         callHandleMessage(createTestKafkaMessage("added"));
 
         verify(creditServiceMock, times(1)).getVirtualMachineCredit(anyObject());
         verify(messagingServiceMock, times(1)).sendFullyManagedEmail("TestShopper", "cpanel");
         verify(creditServiceMock, times(1)).updateProductMeta(orionGuid, ProductMetaField.FULLY_MANAGED_EMAIL_SENT, "true");
-        
+
         ArgumentCaptor<CommandGroupSpec> argument = ArgumentCaptor.forClass(CommandGroupSpec.class);
         verify(commandServiceMock, times(1)).executeCommand(argument.capture());
         assertEquals("Vps4PlanChange", argument.getValue().commands.get(0).command);
@@ -162,13 +166,13 @@ public class Vps4MessageHandlerTest {
         mockFullManagedVmCredit(AccountStatus.ACTIVE, null);
         when(messagingServiceMock.sendFullyManagedEmail("TestShopper", "cpanel")).thenReturn("messageId");
         when(configMock.get("vps4MessageHandler.processFullyManagedEmails")).thenReturn("false");
-        
+
         callHandleMessage(createTestKafkaMessage("added"));
 
         verify(creditServiceMock, times(1)).getVirtualMachineCredit(anyObject());
         verify(messagingServiceMock, never()).sendFullyManagedEmail(Mockito.anyString(), Mockito.anyString());
     }
-    
+
     @Test
     public void testFullyManagedEmailAlreadySent() throws MessageHandlerException, MissingShopperIdException, IOException {
         DataCenter dc = dcService.getDataCenter(5);
@@ -177,7 +181,7 @@ public class Vps4MessageHandlerTest {
         when(creditServiceMock.getVirtualMachineCredit(orionGuid)).thenReturn(vmCredit);
         when(messagingServiceMock.sendFullyManagedEmail("TestShopper", "cpanel")).thenReturn("messageId");
         when(configMock.get("vps4MessageHandler.processFullyManagedEmails")).thenReturn("true");
-        
+
         callHandleMessage(createTestKafkaMessage("added"));
 
         verify(creditServiceMock, times(1)).getVirtualMachineCredit(anyObject());

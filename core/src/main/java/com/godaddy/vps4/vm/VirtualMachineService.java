@@ -12,6 +12,8 @@ public interface VirtualMachineService {
 
     VirtualMachine getVirtualMachine(UUID vmId);
 
+    VirtualMachine getVirtualMachineByCheckId(long nodePingcheckId);
+
     VirtualMachineSpec getSpec(String name);
 
     VirtualMachineSpec getSpec(int tier);

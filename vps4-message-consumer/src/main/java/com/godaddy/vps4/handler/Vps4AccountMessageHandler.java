@@ -5,9 +5,8 @@ import static com.godaddy.vps4.handler.util.Commands.execute;
 import java.io.IOException;
 import java.util.UUID;
 
+import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.json.simple.JSONObject;
-import org.json.simple.parser.JSONParser;
-import org.json.simple.parser.ParseException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -27,11 +26,9 @@ import com.google.inject.Inject;
 
 import gdg.hfs.orchestration.CommandService;
 
-public class Vps4MessageHandler implements MessageHandler {
+public class Vps4AccountMessageHandler implements MessageHandler {
 
-    private static final Logger logger = LoggerFactory.getLogger(Vps4MessageHandler.class);
-
-    private JSONParser parser = new JSONParser();
+    private static final Logger logger = LoggerFactory.getLogger(Vps4AccountMessageHandler.class);
 
     private final VirtualMachineService virtualMachineService;
     private final CreditService creditService;
@@ -42,7 +39,7 @@ public class Vps4MessageHandler implements MessageHandler {
     private final int FULLY_MANAGED_LEVEL = 2;
 
     @Inject
-    public Vps4MessageHandler(VirtualMachineService virtualMachineService,
+    public Vps4AccountMessageHandler(VirtualMachineService virtualMachineService,
             CreditService creditService,
             ActionService vmActionService,
             CommandService commandService,
@@ -59,20 +56,10 @@ public class Vps4MessageHandler implements MessageHandler {
     }
 
     @Override
-    public void handleMessage(String message) throws MessageHandlerException {
-        logger.info("Consumed message: {} ", message);
-        Vps4Message vps4Message;
+    public void handleMessage(ConsumerRecord<String, String> message) throws MessageHandlerException {
+        logger.info("Consumed message: {} ", message.value());
+        Vps4AccountMessage vps4Message = new Vps4AccountMessage(message);
 
-        try {
-            JSONObject obj = (JSONObject) parser.parse(message);
-            vps4Message = new Vps4Message(obj);
-        }
-        catch (ParseException e) {
-            throw new MessageHandlerException("Can't parse message JSON", e);
-        }
-        catch (IllegalArgumentException e) {
-            throw new MessageHandlerException("Message values are the wrong type", e);
-        }
         VirtualMachineCredit credit;
         try {
             credit = creditService.getVirtualMachineCredit(vps4Message.accountGuid);

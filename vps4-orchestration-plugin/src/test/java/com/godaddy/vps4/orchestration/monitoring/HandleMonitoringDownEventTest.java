@@ -18,6 +18,7 @@ import com.godaddy.vps4.credit.VirtualMachineCredit;
 import com.godaddy.vps4.monitoring.MonitoringNotificationService;
 import com.godaddy.vps4.vm.AccountStatus;
 import com.godaddy.vps4.vm.VirtualMachine;
+import com.godaddy.vps4.vm.VirtualMachineService;
 import com.google.inject.AbstractModule;
 import com.google.inject.Guice;
 import com.google.inject.Inject;
@@ -29,22 +30,29 @@ public class HandleMonitoringDownEventTest {
     static Injector injector;
 
     private CommandContext context;
+    Long dummyCheckId = 123L;
+    Long dummyIrisId = 456L;
     VirtualMachine testVm = new VirtualMachine();
     VirtualMachineCredit credit = new VirtualMachineCredit();
 
     @Inject HandleMonitoringDownEvent command;
-    @Inject MonitoringNotificationService monitoringNotificationService;
-    @Inject CreditService creditService;
+
+    private VirtualMachineService virtualMachineService;
+    private MonitoringNotificationService monitoringNotificationService;
+    private CreditService creditService;
 
     @Before
     public void setUp() {
         injector = Guice.createInjector(new AbstractModule() {
             @Override
             protected void configure() {
-                MonitoringNotificationService monitoringNotificationService = mock(MonitoringNotificationService.class);
+                virtualMachineService = mock(VirtualMachineService.class);
+                bind(VirtualMachineService.class).toInstance(virtualMachineService);
+
+                monitoringNotificationService = mock(MonitoringNotificationService.class);
                 bind(MonitoringNotificationService.class).toInstance(monitoringNotificationService);
 
-                CreditService creditService = mock(CreditService.class);
+                creditService = mock(CreditService.class);
                 bind(CreditService.class).toInstance(creditService);
             }
         });
@@ -62,30 +70,41 @@ public class HandleMonitoringDownEventTest {
 
     @Test
     public void testHandleMonitoringDownEvent() {
-        when(monitoringNotificationService.sendServerDownEventNotification(testVm)).thenReturn(123L);
+        when(virtualMachineService.getVirtualMachineByCheckId(dummyCheckId)).thenReturn(testVm);
+        when(monitoringNotificationService.sendServerDownEventNotification(testVm)).thenReturn(dummyIrisId);
         when(creditService.getVirtualMachineCredit(credit.orionGuid)).thenReturn(credit);
 
-        command.execute(context, testVm);
+        command.execute(context, dummyCheckId);
 
         verify(monitoringNotificationService, times(1)).sendServerDownEventNotification(testVm);
     }
 
     @Test
+    public void testHandleMonitoringDownEventNoCheckIdFound() {
+        when(virtualMachineService.getVirtualMachineByCheckId(dummyCheckId)).thenReturn(null);
+        command.execute(context, dummyCheckId);
+
+        verify(monitoringNotificationService, never()).sendServerDownEventNotification(any());
+    }
+
+    @Test
     public void testHandleMonitoringDownEventAccountNotActive() {
+        when(virtualMachineService.getVirtualMachineByCheckId(dummyCheckId)).thenReturn(testVm);
         credit.accountStatus = AccountStatus.REMOVED;
         when(creditService.getVirtualMachineCredit(credit.orionGuid)).thenReturn(credit);
 
-        command.execute(context, testVm);
+        command.execute(context, dummyCheckId);
 
         verify(monitoringNotificationService, never()).sendServerDownEventNotification(any(VirtualMachine.class));
     }
 
     @Test
     public void testHandleMonitoringDownEventAccountNotFullyManaged() {
+        when(virtualMachineService.getVirtualMachineByCheckId(dummyCheckId)).thenReturn(testVm);
         credit.managedLevel = 0;
         when(creditService.getVirtualMachineCredit(credit.orionGuid)).thenReturn(credit);
 
-        command.execute(context, testVm);
+        command.execute(context, dummyCheckId);
 
         verify(monitoringNotificationService, never()).sendServerDownEventNotification(any(VirtualMachine.class));
     }

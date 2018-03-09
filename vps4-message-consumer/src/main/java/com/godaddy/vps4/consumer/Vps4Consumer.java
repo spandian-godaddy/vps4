@@ -66,7 +66,7 @@ public class Vps4Consumer implements Runnable {
                     logger.info("Message handler {} will handle this message now... ", messageHandler.getClass().getName());
 
                     // handle the message
-                    messageHandler.handleMessage(record.value());
+                    messageHandler.handleMessage(record);
 
                     logger.info("offset: {}", record.offset());
                 }
