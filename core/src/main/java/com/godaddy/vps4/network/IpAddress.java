@@ -7,6 +7,8 @@ import java.time.Instant;
 import java.util.Map;
 import java.util.UUID;
 
+import org.apache.commons.lang3.builder.ReflectionToStringBuilder;
+
 public class IpAddress {
 
     public enum IpAddressType {
@@ -40,7 +42,7 @@ public class IpAddress {
 
     public IpAddress() {
     }
-    
+
     public IpAddress(long ipAddressId, UUID vmId, String ipAddress, IpAddressType ipAddressType, Long pingCheckId, Instant validOn,
             Instant validUntil) {
         this.ipAddressId = ipAddressId;
@@ -54,16 +56,6 @@ public class IpAddress {
 
     @Override
     public String toString() {
-        StringBuilder result = new StringBuilder();
-        result.append("IpAddress [ipAddressId=");
-        result.append(ipAddressId);
-        result.append(" vmId=");
-        result.append(vmId);
-        result.append(" validOn=");
-        result.append(validOn);
-        result.append(" validUntil");
-        result.append(validUntil);
-        result.append("]");
-        return result.toString();
+        return ReflectionToStringBuilder.toString(this);
     }
 }

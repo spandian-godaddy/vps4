@@ -6,6 +6,7 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 
 import javax.inject.Inject;
+import javax.ws.rs.NotFoundException;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -106,9 +107,7 @@ public class Vps4DestroyVm extends ActionCommand<VmActionRequest, Vps4DestroyVm.
                 .filter(address -> address.validUntil.isAfter(Instant.now())).collect(Collectors.toList());
 
         for (IpAddress address : activeAddresses) {
-            if (address.pingCheckId != null) {
-                monitoringService.deleteCheck(monitoringMeta.getAccountId(), address.pingCheckId);
-            }
+            deleteIpMonitoring(address);
 
             context.execute("DeleteIpAddress-" + address.ipAddressId, Vps4DestroyIpAddress.class,
                     new Vps4DestroyIpAddress.Request(address, vm, true));
@@ -116,6 +115,16 @@ public class Vps4DestroyVm extends ActionCommand<VmActionRequest, Vps4DestroyVm.
                 networkService.destroyIpAddress(address.ipAddressId);
                 return null;
             }, Void.class);
+        }
+    }
+
+    private void deleteIpMonitoring(IpAddress address) {
+        if (address.pingCheckId != null) {
+            try {
+                monitoringService.deleteCheck(monitoringMeta.getAccountId(), address.pingCheckId);
+            } catch (NotFoundException ex) {
+                logger.info("Monitoring check {} was not found", address.pingCheckId, ex);
+            }
         }
     }
 

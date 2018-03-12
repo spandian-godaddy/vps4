@@ -1,8 +1,10 @@
 package com.godaddy.vps4.orchestration.vm;
 
 import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.anyLong;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
@@ -12,7 +14,15 @@ import static org.mockito.Mockito.when;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.UUID;
+
+import javax.ws.rs.NotFoundException;
+
+import org.junit.Before;
+import org.junit.Test;
+import org.mockito.ArgumentCaptor;
+import org.mockito.Mockito;
 
 import com.godaddy.vps4.network.IpAddress;
 import com.godaddy.vps4.network.IpAddress.IpAddressType;
@@ -20,8 +30,6 @@ import com.godaddy.vps4.network.NetworkService;
 import com.godaddy.vps4.orchestration.TestCommandContext;
 import com.godaddy.vps4.orchestration.hfs.network.ReleaseIp;
 import com.godaddy.vps4.orchestration.hfs.network.UnbindIp;
-import com.godaddy.vps4.orchestration.vm.VmActionRequest;
-import com.godaddy.vps4.orchestration.vm.Vps4DestroyVm;
 import com.godaddy.vps4.scheduledJob.ScheduledJobService;
 import com.godaddy.vps4.util.MonitoringMeta;
 import com.godaddy.vps4.vm.ActionService;
@@ -29,11 +37,6 @@ import com.godaddy.vps4.vm.VirtualMachine;
 import com.godaddy.vps4.vm.VirtualMachineService;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
-
-import org.junit.Before;
-import org.junit.Test;
-import org.mockito.ArgumentCaptor;
-import org.mockito.Mockito;
 
 import gdg.hfs.orchestration.CommandContext;
 import gdg.hfs.orchestration.GuiceCommandProvider;
@@ -103,8 +106,9 @@ public class Vps4DestroyVmTest {
         AddressAction addressAction = new AddressAction();
         addressAction.status = AddressAction.Status.COMPLETE;
 
-        primaryIp = new IpAddress(123, UUID.randomUUID(), "1.2.3.4", IpAddressType.PRIMARY, 5522L, Instant.now(),
-                Instant.now().plus(24, ChronoUnit.HOURS));
+        long dummyCheckId = 5522L;
+        primaryIp = new IpAddress(123, UUID.randomUUID(), "1.2.3.4", IpAddressType.PRIMARY, dummyCheckId,
+                Instant.now(), Instant.now().plus(24, ChronoUnit.HOURS));
         ArrayList<IpAddress> addresses = new ArrayList<IpAddress>();
         addresses.add(primaryIp);
 
@@ -166,5 +170,20 @@ public class Vps4DestroyVmTest {
         command.execute(context, request);
         verify(cpanelService, never()).licenseRelease(request.virtualMachine.hfsVmId);
         verify(vmService, never()).destroyVm(Mockito.anyLong());
+    }
+
+    @Test
+    public void testDeleteIpMonitoringWithNullCheckId() throws Exception {
+        primaryIp.pingCheckId = null;
+        when(networkService.getVmIpAddresses(vm.vmId)).thenReturn(Arrays.asList(primaryIp));
+        command.execute(context, request);
+        verify(nodePingService, never()).deleteCheck(anyLong(), anyLong());
+    }
+
+    @Test
+    public void testDeleteIpMonitoringIgnoresNotFoundException() throws Exception {
+        doThrow(new NotFoundException()).when(nodePingService).deleteCheck(nodePingAccountId, primaryIp.pingCheckId);
+        command.execute(context, request);
+        verify(nodePingService, times(1)).deleteCheck(nodePingAccountId, primaryIp.pingCheckId);
     }
 }
