@@ -1,0 +1,12 @@
+{
+    "checks": {
+        "check_app_monitor": {
+            "command": "/etc/sensu/conf.d/team/plugins/monitor_sin2_pending_starts.sh",
+            "handlers": [ "team_notification_default" ],
+            "interval": 3600,
+            "timeout": 120,
+            "documentid": 1000694,
+            "standalone": true
+        }
+    }
+}
