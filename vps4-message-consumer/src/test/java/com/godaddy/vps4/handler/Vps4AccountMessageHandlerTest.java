@@ -218,6 +218,15 @@ public class Vps4AccountMessageHandlerTest {
     }
 
     @Test
+    public void testHandleMessageAbuseSuspendedVmNotFound() throws MessageHandlerException {
+        mockVmCredit(AccountStatus.ABUSE_SUSPENDED, UUID.randomUUID());
+        callHandleMessage(createTestKafkaMessage("suspended"));
+
+        ArgumentCaptor<CommandGroupSpec> argument = ArgumentCaptor.forClass(CommandGroupSpec.class);
+        verify(commandServiceMock, times(0)).executeCommand(argument.capture());
+    }
+
+    @Test
     public void testHandleMessageCausesPlanChange() throws MessageHandlerException {
         mockVmCredit(AccountStatus.ACTIVE, vm.vmId);
         callHandleMessage(createTestKafkaMessage("reinstated"));
@@ -236,5 +245,18 @@ public class Vps4AccountMessageHandlerTest {
         verify(commandServiceMock, times(1)).executeCommand(argument.capture());
         CommandSpec commandSpec = argument.getValue().commands.get(0);
         assertEquals("Vps4ProcessAccountCancellation", commandSpec.command);
+    }
+
+    @Test
+    public void testHandleMessageRemovedWithSnapshotsWrongDC() throws MessageHandlerException {
+        DataCenter dc = dcService.getDataCenter(1);
+        UUID vmId = UUID.randomUUID();
+        VirtualMachineCredit vmCredit = new VirtualMachineCredit(orionGuid, 10, 0, 0, "linux", "myh", null, "TestShopper", AccountStatus.REMOVED, dc, vmId, false);
+        when(creditServiceMock.getVirtualMachineCredit(orionGuid)).thenReturn(vmCredit);
+
+        callHandleMessage(createTestKafkaMessage("removed"));
+
+        ArgumentCaptor<CommandGroupSpec> argument = ArgumentCaptor.forClass(CommandGroupSpec.class);
+        verify(commandServiceMock, times(0)).executeCommand(argument.capture());
     }
 }
