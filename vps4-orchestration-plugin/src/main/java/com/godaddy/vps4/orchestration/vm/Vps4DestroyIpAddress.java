@@ -71,6 +71,10 @@ public class Vps4DestroyIpAddress implements Command<Vps4DestroyIpAddress.Reques
         public VirtualMachine vm;
         public boolean forceIfVmInaccessible;
 
+        public Request(){
+            // Default constructor used by orchestration engine to deserialize the request
+        }
+
         public Request(IpAddress ipAddress, VirtualMachine vm, boolean forceIfVmInaccessible) {
             this.ipAddress = ipAddress;
             this.vm = vm;
