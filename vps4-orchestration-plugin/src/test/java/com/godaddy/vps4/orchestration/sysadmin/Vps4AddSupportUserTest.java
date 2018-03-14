@@ -1,5 +1,6 @@
 package com.godaddy.vps4.orchestration.sysadmin;
 
+import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyObject;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.doNothing;
@@ -10,7 +11,9 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.util.UUID;
+import java.util.function.Function;
 
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -22,6 +25,9 @@ import com.godaddy.vps4.vm.VmUserService;
 import com.godaddy.vps4.vm.VmUserType;
 
 import gdg.hfs.orchestration.CommandContext;
+import org.mockito.ArgumentCaptor;
+import org.mockito.Captor;
+import org.mockito.MockitoAnnotations;
 
 public class Vps4AddSupportUserTest {
 
@@ -29,14 +35,17 @@ public class Vps4AddSupportUserTest {
     VmUserService vmUserService;
     Vps4AddSupportUser command;
     CommandContext context;
+    @Captor private ArgumentCaptor<Function<CommandContext, Void>> addUserToDatabaseCaptor;
 
     @Before
     public void setup() {
+        MockitoAnnotations.initMocks(this);
         actionService = mock(ActionService.class);
         vmUserService = mock(VmUserService.class);
         command = new Vps4AddSupportUser(actionService, vmUserService);
         context = mock(CommandContext.class);
         when(context.getId()).thenReturn(UUID.randomUUID());
+        when(context.execute(eq("AddSupportUserToDatabase"), any(Function.class), eq(Void.class))).thenReturn(null);
     }
 
     @Test
@@ -58,6 +67,9 @@ public class Vps4AddSupportUserTest {
         verify(context, times(1)).execute(eq(AddUser.class), anyObject());
         verify(context, times(1)).execute(eq(ToggleAdmin.class), anyObject());
         verify(context, times(1)).execute(eq(ScheduleSupportUserRemoval.class), anyObject());
+        verify(context, times(1)).execute(eq("AddSupportUserToDatabase"), addUserToDatabaseCaptor.capture(), eq(Void.class));
+        Function<CommandContext, Void> lambda = addUserToDatabaseCaptor.getValue();
+        lambda.apply(context);
         verify(vmUserService, times(1)).createUser(req.username, req.vmId, true, VmUserType.SUPPORT);
     }
 }

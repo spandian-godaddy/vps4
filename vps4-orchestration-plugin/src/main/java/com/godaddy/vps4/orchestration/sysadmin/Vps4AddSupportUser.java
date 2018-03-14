@@ -63,7 +63,10 @@ public class Vps4AddSupportUser extends ActionCommand<Vps4AddSupportUser.Request
         toggleAdminRequest.enabled = true;
         context.execute(ToggleAdmin.class, toggleAdminRequest);
 
-        vmUserService.createUser(req.username, req.vmId, true, VmUserType.SUPPORT);
+        context.execute("AddSupportUserToDatabase", ctx -> {
+            vmUserService.createUser(req.username, req.vmId, true, VmUserType.SUPPORT);
+            return null;
+        }, Void.class);
 
         ScheduleSupportUserRemoval.Request removeSupportUserRequest = new ScheduleSupportUserRemoval.Request();
         removeSupportUserRequest.vmId = req.vmId;
