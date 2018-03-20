@@ -24,6 +24,8 @@ public class IrisMonitoringNotificationService implements MonitoringNotification
     private final VirtualMachineService virtualMachineService;
     private final Vps4UserService vps4UserService;
 
+    private String DUMMY_EMAIL = "alert@nodeping.com";
+
     @Inject
     IrisMonitoringNotificationService(Config config, VirtualMachineService virtualMachineService,
             Vps4UserService vps4UserService, IrisWebServiceSoap irisWebServiceSoap) {
@@ -35,6 +37,9 @@ public class IrisMonitoringNotificationService implements MonitoringNotification
 
     @Override
     public long sendServerDownEventNotification(VirtualMachine vm) {
+        long userId = virtualMachineService.getUserIdByVmId(vm.vmId);
+        Vps4User user = vps4UserService.getUser(userId);
+
         CreateIncidentInput input = new CreateIncidentInput();
         input.setSubscriberId(SUBSCRIBER_ID);
         input.setServiceId(SERVICE_ID);
@@ -43,9 +48,10 @@ public class IrisMonitoringNotificationService implements MonitoringNotification
         input.setPriorityId(PRIORITY_ID);
         input.setCreatedBy(CREATED_BY);
         input.setSubject(String.format("Host %s Down : PING %s", vm.hostname, vm.primaryIpAddress.ipAddress));
-
-        long userId = virtualMachineService.getUserIdByVmId(vm.vmId);
-        Vps4User user = vps4UserService.getUser(userId);
+        input.setShopperId(user.getShopperId());
+        //IRIS has trouble if you don't set an email address.
+        //we don't have the customer email address so we were asked by managed services to use this address to be consistent with other nodeping events.
+        input.setCustomerEmailAddress(DUMMY_EMAIL);
 
         StringBuilder note = new StringBuilder();
         note.append("Server Down event received\n");
