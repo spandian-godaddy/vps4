@@ -32,7 +32,7 @@ public class AuthenticationFilter implements Filter {
 
     public static final String USER_ATTRIBUTE_NAME = "sso-user";
 
-    final Set<RequestAuthenticator<GDUser>> authenticators;
+    private final Set<RequestAuthenticator<GDUser>> authenticators;
 
     @Inject
     public AuthenticationFilter(Set<RequestAuthenticator<GDUser>> authenticators) {
@@ -40,14 +40,14 @@ public class AuthenticationFilter implements Filter {
     }
 
     @Override
-    public void init(FilterConfig filterConfig) throws ServletException {
+    public void init(FilterConfig filterConfig) {
 
     }
 
     @Override
     @SuppressWarnings("unchecked")
     public void doFilter(ServletRequest req, ServletResponse res, FilterChain chain)
-            throws IOException, ServletException {
+            throws IOException {
 
         HttpServletRequest request = (HttpServletRequest) req;
         try {

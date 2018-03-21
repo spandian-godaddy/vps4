@@ -3,6 +3,7 @@ package com.godaddy.vps4.web.security;
 import javax.inject.Inject;
 import javax.servlet.http.HttpServletRequest;
 
+import com.godaddy.hfs.config.Config;
 import com.godaddy.hfs.sso.SsoTokenExtractor;
 import com.godaddy.hfs.sso.token.IdpSsoToken;
 import com.godaddy.hfs.sso.token.JomaxSsoToken;
@@ -19,9 +20,12 @@ public class SsoRequestAuthenticator implements RequestAuthenticator<GDUser> {
 
     private final SsoTokenExtractor tokenExtractor;
 
+    private Config config;
+
     @Inject
-    public SsoRequestAuthenticator(SsoTokenExtractor tokenExtractor) {
+    public SsoRequestAuthenticator(SsoTokenExtractor tokenExtractor, Config config) {
         this.tokenExtractor = tokenExtractor;
+        this.config = config;
     }
 
     @Override
@@ -35,7 +39,36 @@ public class SsoRequestAuthenticator implements RequestAuthenticator<GDUser> {
         GDUser gdUser = createGDUser(token, request);
         logger.info("GD User authenticated: {}, URI: {}", gdUser.toString(), request.getRequestURI());
 
+        // deny users API access to Inactive Datacenter unless they are a 3 letter shopper id.
+        if(denyAccessToInactiveDc(gdUser)) {
+            logger.info("User {} does not have an account with 3 letter shopper id. Denying access to API in INACTIVE Datacenter. ", gdUser.toString());
+            return null;
+        }
+
         return gdUser;
+    }
+
+    /**
+     * deny API access to inactive Datacenter for all gd users unless they are a 3 letter account.
+     * @param gdUser
+     * @return true if DC is inactive and user is 3 letter account, false otherwise.
+     */
+    private boolean denyAccessToInactiveDc(GDUser gdUser) {
+        try {
+            return Boolean.parseBoolean(config.get("vps4.is.dc.inactive"))
+                    && (!is3LetterAccount(gdUser.getShopperId()));
+        } catch (Exception ex) {
+            return false;
+        }
+    }
+
+    /**
+     * Return true if shopper id is 3 letter account.
+     * @param shopperId
+     * @return true if shopper id is 3 letter account
+     */
+    private boolean is3LetterAccount(String shopperId) {
+        return shopperId.length() == 3;
     }
 
     private GDUser createGDUser(SsoToken token, HttpServletRequest request) {

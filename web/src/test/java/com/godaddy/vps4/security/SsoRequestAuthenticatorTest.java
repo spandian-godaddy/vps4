@@ -1,12 +1,14 @@
 package com.godaddy.vps4.security;
 
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 
 import javax.servlet.http.HttpServletRequest;
 
+import com.godaddy.hfs.config.Config;
 import com.godaddy.hfs.sso.SsoTokenExtractor;
 import com.godaddy.hfs.sso.token.IdpSsoToken;
 import com.godaddy.hfs.sso.token.JomaxSsoToken;
@@ -14,24 +16,38 @@ import com.godaddy.hfs.sso.token.SsoToken;
 import com.godaddy.vps4.web.Vps4Exception;
 import com.godaddy.vps4.web.security.GDUser;
 import com.godaddy.vps4.web.security.SsoRequestAuthenticator;
+import com.google.inject.Guice;
+import com.google.inject.Injector;
 import junit.framework.Assert;
 import org.junit.Test;
-import org.mockito.Mockito;
 
 public class SsoRequestAuthenticatorTest {
 
-    SsoTokenExtractor tokenExtractor = Mockito.mock(SsoTokenExtractor.class);
-    HttpServletRequest request = Mockito.mock(HttpServletRequest.class);
-    SsoRequestAuthenticator authenticator = new SsoRequestAuthenticator(tokenExtractor);
+    private SsoTokenExtractor tokenExtractor = mock(SsoTokenExtractor.class);
+    private HttpServletRequest request = mock(HttpServletRequest.class);
+    private Config config = mock(Config.class);
 
-    public SsoToken mockIdpToken(String shopperId) {
-        IdpSsoToken token = Mockito.mock(IdpSsoToken.class);
+    private final Injector injector;
+    {
+        injector = Guice.createInjector(
+                binder -> {
+                    binder.bind(Config.class).toInstance(config);
+                    binder.bind(SsoTokenExtractor.class).toInstance(tokenExtractor);
+                    binder.bind(HttpServletRequest.class).toInstance(request);
+                }
+        );
+    }
+
+    private SsoRequestAuthenticator authenticator = injector.getInstance(SsoRequestAuthenticator.class);
+
+    private SsoToken mockIdpToken(String shopperId) {
+        IdpSsoToken token = mock(IdpSsoToken.class);
         when(token.getShopperId()).thenReturn(shopperId);
         return token;
     }
 
-    public SsoToken mockJomaxToken(List<String> groups) {
-        JomaxSsoToken token = Mockito.mock(JomaxSsoToken.class);
+    private SsoToken mockJomaxToken(List<String> groups) {
+        JomaxSsoToken token = mock(JomaxSsoToken.class);
         when(token.getGroups()).thenReturn(groups);
         return token;
     }
@@ -70,7 +86,7 @@ public class SsoRequestAuthenticatorTest {
 
     @Test
     public void testAdmin() {
-        SsoToken token = mockJomaxToken(Arrays.asList("Dev-VPS4"));
+        SsoToken token = mockJomaxToken(Collections.singletonList("Dev-VPS4"));
         when(tokenExtractor.extractToken(request)).thenReturn(token);
 
         GDUser user = authenticator.authenticate(request);
@@ -83,7 +99,7 @@ public class SsoRequestAuthenticatorTest {
     @Test
     public void testAdminWithShopperOverride() {
         when(request.getHeader("X-Shopper-Id")).thenReturn("shopperX");
-        SsoToken token = mockJomaxToken(Arrays.asList("Dev-VPS4"));
+        SsoToken token = mockJomaxToken(Collections.singletonList("Dev-VPS4"));
         when(tokenExtractor.extractToken(request)).thenReturn(token);
 
         GDUser user = authenticator.authenticate(request);
@@ -95,7 +111,7 @@ public class SsoRequestAuthenticatorTest {
 
     @Test
     public void testEmployee() {
-        SsoToken token = mockJomaxToken(Arrays.asList("Development"));
+        SsoToken token = mockJomaxToken(Collections.singletonList("Development"));
         when(tokenExtractor.extractToken(request)).thenReturn(token);
 
         GDUser user = authenticator.authenticate(request);
@@ -108,7 +124,7 @@ public class SsoRequestAuthenticatorTest {
     @Test
     public void testEmployeeToShopper() {
         SsoToken token = mockIdpToken("shopperid");
-        token.employeeUser = mockJomaxToken(Arrays.asList("Development"));
+        token.employeeUser = mockJomaxToken(Collections.singletonList("Development"));
         when(tokenExtractor.extractToken(request)).thenReturn(token);
 
         GDUser user = authenticator.authenticate(request);
@@ -120,9 +136,51 @@ public class SsoRequestAuthenticatorTest {
 
     @Test(expected=Vps4Exception.class)
     public void testUnknownSsoTokenType() {
-        SsoToken token = Mockito.mock(SsoToken.class);
+        SsoToken token = mock(SsoToken.class);
         when(tokenExtractor.extractToken(request)).thenReturn(token);
 
         authenticator.authenticate(request);
+    }
+
+    @Test
+    public void test3LetterAccountAllowedAccessToInactiveDC() {
+        SsoToken token = mockIdpToken("fak");
+        token.employeeUser = mockJomaxToken(Collections.singletonList("Development"));
+        when(tokenExtractor.extractToken(request)).thenReturn(token);
+        when(config.get("vps4.is.dc.inactive")).thenReturn("true");
+
+        GDUser user = authenticator.authenticate(request);
+        Assert.assertNotNull(user);
+        Assert.assertEquals("fak", user.getShopperId());
+        Assert.assertEquals(true, user.isShopper());
+        Assert.assertEquals(false, user.isAdmin());
+        Assert.assertEquals(true,  user.isEmployee());
+
+    }
+
+    @Test
+    public void testShopperDeniedAccessToInactiveDC() {
+    SsoToken token = mockIdpToken("random-shopperid");
+        when(tokenExtractor.extractToken(request)).thenReturn(token);
+        when(config.get("vps4.is.dc.inactive")).thenReturn("true");
+
+        GDUser user = authenticator.authenticate(request);
+        Assert.assertNull(user);
+
+    }
+
+    @Test
+    public void testShopperAllowedAccessToActiveDC() {
+        SsoToken token = mockIdpToken("another-random-shopperid");
+        when(tokenExtractor.extractToken(request)).thenReturn(token);
+        when(config.get("vps4.is.dc.inactive")).thenReturn("false");
+
+        GDUser user = authenticator.authenticate(request);
+        Assert.assertNotNull(user);
+        Assert.assertEquals("another-random-shopperid", user.getShopperId());
+        Assert.assertEquals(true, user.isShopper());
+        Assert.assertEquals(false, user.isAdmin());
+        Assert.assertEquals(false,  user.isEmployee());
+
     }
 }

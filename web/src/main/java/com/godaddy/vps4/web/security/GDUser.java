@@ -1,5 +1,6 @@
 package com.godaddy.vps4.web.security;
 
+
 import com.godaddy.hfs.sso.token.SsoToken;
 
 public class GDUser {

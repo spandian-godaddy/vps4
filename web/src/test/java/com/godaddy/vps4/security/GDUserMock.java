@@ -2,9 +2,8 @@ package com.godaddy.vps4.security;
 
 import static org.mockito.Mockito.when;
 
-import org.mockito.Mockito;
-
 import com.godaddy.vps4.web.security.GDUser;
+import org.mockito.Mockito;
 
 public class GDUserMock {
     public final static String DEFAULT_SHOPPER = "validUserShopperId";
