@@ -18,12 +18,12 @@ import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.BeforeClass;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
 import org.mockito.MockitoAnnotations;
 
+import com.godaddy.hfs.config.Config;
 import com.godaddy.vps4.credit.VirtualMachineCredit;
 import com.godaddy.vps4.jdbc.DatabaseModule;
 import com.godaddy.vps4.orchestration.account.Vps4ProcessAccountCancellation;
@@ -135,12 +135,11 @@ public class Vps4ProcessAccountCancellationTest {
         return mockContext;
     }
 
-    //This is ignored because the wait duration is a config value, but this test only checks for 7.
-    //This test needs to look up the config value rather to verify rather than card code a specific number.
-    @Ignore
     @Test
     public void calculatesValidUntilWhenAccountCancellationIsProcessed() {
         Instant now = Instant.now();
+        Config config = injector.getInstance(Config.class);
+        long zombieWaitDuration = Long.parseLong(config.get("vps4.zombie.cleanup.waittime"));
         command.execute(context, virtualMachineCredit);
         verify(context, times(1))
                 .execute(eq("CalculateValidUntil"), calculateValidUntilLambdaCaptor.capture(), eq(long.class));
@@ -148,7 +147,7 @@ public class Vps4ProcessAccountCancellationTest {
         // Verify that the lambda is returning a date 7 days out
         Function<CommandContext, Long> lambda = calculateValidUntilLambdaCaptor.getValue();
         long calculatedValidUntil = lambda.apply(context);
-        Assert.assertEquals(7, ChronoUnit.DAYS.between(now, Instant.ofEpochMilli(calculatedValidUntil)));
+        Assert.assertEquals(zombieWaitDuration, ChronoUnit.DAYS.between(now, Instant.ofEpochMilli(calculatedValidUntil)));
     }
 
     @Test
