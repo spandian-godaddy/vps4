@@ -32,13 +32,10 @@ public class Vps4ConsumerApplication {
     private final static CountDownLatch shutdownLatch = new CountDownLatch(1);
 
     public static void main(String[] args) {
-
-        // Added Ability to set log level for kafka packges to debug issues if any.
-        ch.qos.logback.classic.Logger root = (ch.qos.logback.classic.Logger) org.slf4j.LoggerFactory.getLogger("org.apache.kafka");
-        root.setLevel(Level.INFO);
-
         Injector injector = Vps4ConsumerInjector.newInstance();
-        
+
+        setApplicationLogLevels(injector.getInstance(Config.class));
+
         boolean skipZkRegistration = Boolean.parseBoolean(System.getProperty("SkipZkRegistration"));
         
         if(skipZkRegistration){
@@ -56,6 +53,22 @@ public class Vps4ConsumerApplication {
         }
 
     }
+
+	private static void setApplicationLogLevels(Config config) {
+		// Set the application log level.
+        ch.qos.logback.classic.Logger root = (ch.qos.logback.classic.Logger) org.slf4j.LoggerFactory
+                .getLogger(ch.qos.logback.classic.Logger.ROOT_LOGGER_NAME);
+        Level level = Level.toLevel(config.get("vps4.log.level.messageConsumer"), Level.INFO);
+        root.setLevel(level);
+
+        root.warn("Log level set to {}", level.levelStr);
+
+        // Added Ability to set log level for kafka packges to debug issues if any.
+        ch.qos.logback.classic.Logger kafkaRootLogger = (ch.qos.logback.classic.Logger) org.slf4j.LoggerFactory
+                .getLogger("org.apache.kafka");
+        Level kafkaLevel = Level.toLevel(config.get("vps4.log.level.kafka"), Level.INFO);
+        kafkaRootLogger.setLevel(kafkaLevel);
+	}
 
     private static void runVps4ConsumerGroup(Injector injector) {
         List<Vps4ConsumerConfiguration> configs = getVps4ConsumerConfigs(injector);
