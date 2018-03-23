@@ -114,7 +114,7 @@ public class VmPatchResourceTest {
     private void testValidServerName(String newName){
         VirtualMachine vm = updateVmName(newName);
         assertEquals(newName, vm.name);
-        verify(actionService, times(1)).completeAction(anyLong(), eq("{}"), eq("Name = "+newName));
+        verify(actionService, times(1)).completeAction(anyLong(), eq("{}"), eq(newName));
     }
 
     private VirtualMachine updateVmName(String newName) {

@@ -67,7 +67,7 @@ public class VmPatchResource {
         StringBuilder notes = new StringBuilder();
         if (vmPatch.name != null && !vmPatch.name.equals("")){
             vmPatchMap.put("name", vmPatch.name);
-            notes.append("Name = " + vmPatch.name);
+            notes.append(vmPatch.name);
         }
         logger.info("Updating vm {}'s with {} ", vmId, vmPatchMap.toString());
 
