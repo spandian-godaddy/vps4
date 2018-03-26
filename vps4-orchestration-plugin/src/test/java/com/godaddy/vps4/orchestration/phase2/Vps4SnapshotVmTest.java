@@ -51,6 +51,7 @@ import com.google.inject.Injector;
 import gdg.hfs.orchestration.CommandContext;
 import gdg.hfs.vhfs.snapshot.SnapshotAction;
 
+@SuppressWarnings("unchecked")
 public class Vps4SnapshotVmTest {
 
     static Injector injector;
@@ -279,11 +280,9 @@ public class Vps4SnapshotVmTest {
 
     @Test
     public void errorInInitialRequestSetsStatusToError() {
-        when(context.execute(eq("Vps4SnapshotVm"), any(Function.class), eq(SnapshotAction.class))).thenThrow(new RuntimeException("Error in initial request"));
-        try {
-            command.execute(context, request);
-            Assert.fail("Should have thrown a runtime exception");
-        }catch(RuntimeException rte){}
+        SnapshotAction execute = context.execute(eq("Vps4SnapshotVm"), any(Function.class), eq(SnapshotAction.class));
+		when(execute).thenThrow(new RuntimeException("Error in initial request"));
+        command.execute(context, request);
 
         verify(spySnapshotService, times(1)).markSnapshotErrored(eq(vps4SnapshotId));
         Assert.assertEquals(snapshotService.getSnapshot(vps4SnapshotId).status, SnapshotStatus.ERROR);
@@ -317,10 +316,7 @@ public class Vps4SnapshotVmTest {
     public void errorInCreationProcessSetsStatusToError() {
         when(context.execute(eq(WaitForSnapshotAction.class), eq(hfsAction)))
                 .thenThrow(new RuntimeException("Error in initial request"));
-        try {
-            command.execute(context, request);
-            Assert.fail("Should have thrown a runtime exception");
-        }catch(RuntimeException rte){}
+        command.execute(context, request);
 
         verify(spySnapshotService, times(1)).markSnapshotErrored(eq(vps4SnapshotId));
         Assert.assertEquals(snapshotService.getSnapshot(vps4SnapshotId).status, SnapshotStatus.ERROR);

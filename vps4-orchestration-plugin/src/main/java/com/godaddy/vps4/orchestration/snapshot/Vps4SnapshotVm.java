@@ -117,7 +117,7 @@ public class Vps4SnapshotVm extends ActionCommand<Vps4SnapshotVm.Request, Vps4Sn
             logger.info("Snapshot creation error (waitForAction) for snapshot with id: {}", request.vps4SnapshotId);
             vps4SnapshotService.markSnapshotErrored(request.vps4SnapshotId);
             reverseSnapshotDeprecation(context);
-            retrySnapshotCreation(context, request, e);
+            handleSnapshotCreationError(context, request, e);
         }
 
         context.execute("MarkSnapshotLive" + request.vps4SnapshotId, ctx -> {
@@ -133,7 +133,7 @@ public class Vps4SnapshotVm extends ActionCommand<Vps4SnapshotVm.Request, Vps4Sn
         return numOfFailedSnapshots <= retryLimit;
     }
 
-    private void retrySnapshotCreation(CommandContext context, Request request, Exception e) {
+    private void handleSnapshotCreationError(CommandContext context, Request request, Exception e) {
         Snapshot failedSnapshot = vps4SnapshotService.getSnapshot(request.vps4SnapshotId);
         if(failedSnapshot.snapshotType.equals(SnapshotType.AUTOMATIC)){
             if(shouldRetryAgain(failedSnapshot.vmId)) {
@@ -148,13 +148,9 @@ public class Vps4SnapshotVm extends ActionCommand<Vps4SnapshotVm.Request, Vps4Sn
             }else{
                 logger.warn("Max retries exceeded for automatic snapshot on vm: {}  Will not retry again.", failedSnapshot.vmId);
             }
-            // this is so that orch engine does not auto rerun this command
-            throw new NoRetryException("Exception while running an automatic backup for vmId " + failedSnapshot.vmId, e);
         }
-        else {
-            // Orch engine is going to auto rerun a failed command
-            throw new RuntimeException(e);
-        }
+        //Prevent the orchestration engine from retrying this snapshot.
+        throw new NoRetryException("Exception while running backup for vmId " + failedSnapshot.vmId, e);
     }
 
     private void recordJobId(CommandContext context, UUID vmId, UUID jobId) {
@@ -190,7 +186,7 @@ public class Vps4SnapshotVm extends ActionCommand<Vps4SnapshotVm.Request, Vps4Sn
             logger.info("Snapshot creation error for VPS4 snapshot with id: {}", request.vps4SnapshotId);
             vps4SnapshotService.markSnapshotErrored(request.vps4SnapshotId);
             reverseSnapshotDeprecation(context);
-            retrySnapshotCreation(context, request, e);
+            handleSnapshotCreationError(context, request, e);
 
             // this statement is never really hit as retrySnapshotCreation throws an exception always.
             // this return is here to only satisfy the compiler
