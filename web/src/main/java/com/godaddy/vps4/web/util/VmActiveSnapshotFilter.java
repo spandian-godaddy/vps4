@@ -91,7 +91,7 @@ public class VmActiveSnapshotFilter implements Filter {
 
     private void validateHttpMethodAllowedDuringSnapshot(HttpServletRequest request, Long actionId) {
         String httpMethod = request.getMethod();
-        List<String> disallowedHttpMethods = Arrays.asList("POST", "PUT", "PATCH", "DELETE");
+        List<String> disallowedHttpMethods = Arrays.asList("POST", "PUT", "PATCH");
         if (disallowedHttpMethods.contains(httpMethod)) {
             String errorMsg = "Request not allowed while snapshot action running";
             logger.info(errorMsg + String.format(", action: %s, request: %s %s",
