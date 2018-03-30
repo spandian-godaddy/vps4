@@ -257,8 +257,6 @@ public class VmResource {
     @Path("/{vmId}")
     public VmAction destroyVm(@PathParam("vmId") UUID vmId) {
         VirtualMachine vm = getVm(vmId);
-        validateNoConflictingActions(vmId, actionService, ActionType.START_VM, ActionType.STOP_VM,
-                ActionType.RESTART_VM, ActionType.CREATE_VM, ActionType.RESTORE_VM);
 
         VmActionRequest destroyRequest = new VmActionRequest();
         destroyRequest.virtualMachine = vm;
