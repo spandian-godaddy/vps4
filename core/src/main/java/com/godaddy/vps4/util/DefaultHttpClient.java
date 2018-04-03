@@ -41,7 +41,7 @@ public class DefaultHttpClient {
 
     static CloseableHttpClient initHttpClient() {
         try {
-            SSLContext sslContext = SSLContext.getInstance("TLSv1");
+            SSLContext sslContext = SSLContext.getInstance("TLSv1.2");
             sslContext.init(
                     new KeyManager[] {},
                     new TrustManager[] { TRUST_MANAGER },
