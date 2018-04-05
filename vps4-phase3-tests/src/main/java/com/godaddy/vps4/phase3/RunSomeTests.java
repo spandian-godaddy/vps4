@@ -44,6 +44,8 @@ public class RunSomeTests {
         int maxPerImageVm = Integer.parseInt(cmd.getOptionValue("pool-size"));
         int maxVmWaitSeconds = Integer.parseInt(cmd.getOptionValue("vm-timeout"));
 
+        String imagesToTest = cmd.getOptionValue("images");
+
         SsoClient ssoClient = new SsoClient(ssoUrl);
 
         Vps4ApiClient adminClient = null;
@@ -71,13 +73,14 @@ public class RunSomeTests {
 
         TestGroup vps4 = new TestGroup("VPS4 Phase3 Tests");
 
-        ImageTestGroup centos7 = new ImageTestGroup("hfs-centos-7");
-        centos7.addTests(tests);
-        vps4.add(centos7);
+        String[] images = imagesToTest.split(",");
 
-        ImageTestGroup centos7cPanel = new ImageTestGroup("hfs-centos-7-cpanel-11");
-        centos7cPanel.addTests(tests);
-        vps4.add(centos7cPanel);
+        for (String image : images) {
+            ImageTestGroup imageTestGroup = new ImageTestGroup(image);
+            imageTestGroup.addTests(tests);
+            vps4.add(imageTestGroup);
+
+        }
 
         TestGroupExecution testGroupExecution = vps4.execute(threadPool, vmPool);
 
@@ -123,9 +126,7 @@ public class RunSomeTests {
 
     private static void deleteVm(Vps4ApiClient vps4ApiClient, UUID vmId) {
         System.out.println("Deleting VM " + vmId);
-        Vps4JsonResponse<JSONObject> result = vps4ApiClient.deleteVm(vmId);
-        long actionId = Long.parseLong(result.jsonResponse.get("id").toString());
-        vps4ApiClient.pollForVmActionComplete(vmId, actionId);
+        vps4ApiClient.deleteVm(vmId);
     }
 
     private static CommandLine parseCliArgs(String[] args) throws ParseException {
@@ -141,6 +142,7 @@ public class RunSomeTests {
         options.addOption( "m", "max-vms", true, "maximum number of vms to create");
         options.addOption( "p", "pool-size", true, "maximum number of vms per image type");
         options.addOption( "t", "vm-timeout", true, "maximum time in seconds a test will wait for a VM");
+        options.addOption( "i", "images", true, "hfs images to test");
 
         CommandLine cmd = parser.parse(options, args);
         for (Option option : cmd.getOptions())

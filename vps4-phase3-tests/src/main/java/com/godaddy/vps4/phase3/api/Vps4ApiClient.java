@@ -207,8 +207,13 @@ public class Vps4ApiClient {
         String urlAppendix = "api/vms/"+vmId.toString()+"/actions/"+actionId;
         Vps4ApiClient.Vps4JsonResponse<JSONObject> result = sendGetObject(urlAppendix);
         Instant timeout = Instant.now().plusSeconds(timeoutSeconds);
-        while(! result.jsonResponse.get("status").equals("COMPLETE") && Instant.now().isBefore(timeout)){
+        while(!result.jsonResponse.get("status").equals("COMPLETE") && Instant.now().isBefore(timeout)){
             result = sendGetObject(urlAppendix);
+
+            if(result.jsonResponse.get("status").equals("ERROR")) {
+                throw new RuntimeException("VM action "+ actionId +" for vm " + vmId + " failed.");
+            }
+
             try{
                 Thread.sleep(1000);
             }catch(InterruptedException e){

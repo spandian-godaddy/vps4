@@ -209,26 +209,6 @@ public class VirtualMachinePool {
             return apiClient.getVmCredit(shopperId,  os,  panel);
         }
 
-//        public UUID createVmCredit(){
-//            // credits should no longer be created via vps4 api, but instead should now be
-//            // created in Orion -> HFS Orion Listener -> Cassandra and retrieved thru ecomm api
-//            // However, hfs ecomm api does allow creating credits if necessary (eg. staging)
-//
-//            String controlPanel = "MYH";
-//            if(imageName.toUpperCase().contains("CPANEL")){
-//                controlPanel = "cPanel";
-//            }
-//            else if(imageName.toUpperCase().contains("PLESK")){
-//                controlPanel = "Plesk";
-//            }
-//
-//            String os = "Linux";
-//            if(imageName.toUpperCase().contains("WIN")){
-//                os = "windows";
-//            }
-//            return adminClient.createVmCredit(shopperId, os, controlPanel, 0, 10);
-//        }
-
         static final String username = "vpstester";
         static final String password = "thisvps4TEST!";
 
@@ -237,6 +217,7 @@ public class VirtualMachinePool {
                     orionGuid, imageName, 1, username, password);
             UUID vmId = UUID.fromString(provisionResult.get("virtualMachineId").toString());
             long actionId = Long.parseLong(provisionResult.get("id").toString());
+            logger.debug("Creating vmId {} for orionGuid {} with actionId {}", vmId, orionGuid, actionId);
             apiClient.pollForVmActionComplete(vmId, actionId, maxVmWaitSeconds);
             return vmId;
         }
