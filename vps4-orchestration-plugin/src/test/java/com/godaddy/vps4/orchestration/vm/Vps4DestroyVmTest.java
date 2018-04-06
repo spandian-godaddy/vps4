@@ -46,6 +46,7 @@ import gdg.hfs.vhfs.mailrelay.MailRelay;
 import gdg.hfs.vhfs.mailrelay.MailRelayService;
 import gdg.hfs.vhfs.mailrelay.MailRelayUpdate;
 import gdg.hfs.vhfs.network.AddressAction;
+import gdg.hfs.vhfs.network.IpAddress.Status;
 import gdg.hfs.vhfs.nodeping.NodePingService;
 import gdg.hfs.vhfs.plesk.PleskAction;
 import gdg.hfs.vhfs.plesk.PleskService;
@@ -112,11 +113,16 @@ public class Vps4DestroyVmTest {
         ArrayList<IpAddress> addresses = new ArrayList<IpAddress>();
         addresses.add(primaryIp);
 
+        gdg.hfs.vhfs.network.IpAddress hfsIpAddress = new gdg.hfs.vhfs.network.IpAddress();
+        hfsIpAddress.addressId = primaryIp.ipAddressId;
+        hfsIpAddress.status = Status.BOUND;
+
         when(virtualMachineService.getVirtualMachine(eq(request.virtualMachine.vmId))).thenReturn(vm);
         when(virtualMachineService.getVirtualMachine(eq(request.virtualMachine.hfsVmId))).thenReturn(vm);
         when(vmService.destroyVm(eq(request.virtualMachine.hfsVmId))).thenReturn(vmAction);
         when(vmService.getVmAction(Mockito.anyLong(), Mockito.anyLong())).thenReturn(vmAction);
         when(networkService.getVmIpAddresses(vm.vmId)).thenReturn(addresses);
+        when(hfsNetworkService.getAddress(primaryIp.ipAddressId)).thenReturn(hfsIpAddress);
         when(hfsNetworkService.unbindIp(Mockito.anyLong(), Mockito.eq(true))).thenReturn(addressAction);
         when(hfsNetworkService.releaseIp(Mockito.anyLong())).thenReturn(addressAction);
         doNothing().when(nodePingService).deleteCheck(nodePingAccountId, primaryIp.pingCheckId);
