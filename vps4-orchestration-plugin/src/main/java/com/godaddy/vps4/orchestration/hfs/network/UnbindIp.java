@@ -8,7 +8,9 @@ import org.slf4j.LoggerFactory;
 import gdg.hfs.orchestration.Command;
 import gdg.hfs.orchestration.CommandContext;
 import gdg.hfs.vhfs.network.AddressAction;
+import gdg.hfs.vhfs.network.IpAddress;
 import gdg.hfs.vhfs.network.NetworkService;
+import gdg.hfs.vhfs.network.IpAddress.Status;
 
 
 public class UnbindIp implements Command<UnbindIp.Request, Void> {
@@ -24,6 +26,12 @@ public class UnbindIp implements Command<UnbindIp.Request, Void> {
 
     @Override
     public Void execute(CommandContext context, Request request) {
+        IpAddress ipAddress = networkService.getAddress(request.addressId);
+        if(ipAddress.status != Status.BOUND) {
+            logger.info("IP Address {} is {}, no need to unbind", request.addressId, ipAddress.status);
+            return null;
+        }
+
         logger.info("sending HFS request to unbind addressId {}", request.addressId);
 
         AddressAction hfsAction = context.execute("RequestFromHFS",  ctx -> {
@@ -32,13 +40,6 @@ public class UnbindIp implements Command<UnbindIp.Request, Void> {
 
         context.execute(WaitForAddressAction.class, hfsAction);
 
-//        if (!hfsAction.status.equals(AddressAction.Status.COMPLETE)) {
-//            action.status = ActionStatus.ERROR;
-//            throw new Vps4Exception("UNBIND_IP_FAILED", String.format("Unbind IP %d failed", action.addressId));
-//        }
-//        else {
-//            action.status = ActionStatus.COMPLETE;
-//        }
         return null;
     }
 
