@@ -7,18 +7,15 @@ public class VirtualMachineWithDetails extends VirtualMachine {
 
     public VirtualMachineDetails virtualMachineDetails;
     public DataCenter dataCenter;
+    public String shopperId;
     public SnapshotSchedule autoSnapshots;
 
-    public VirtualMachineWithDetails(VirtualMachine virtualMachine, VirtualMachineDetails virtualMachineDetails, DataCenter dataCenter) {
-        super(virtualMachine);
-        this.virtualMachineDetails = virtualMachineDetails;
-        this.dataCenter = dataCenter;
-    }
     public VirtualMachineWithDetails(VirtualMachine virtualMachine, VirtualMachineDetails virtualMachineDetails,
-                                     DataCenter dataCenter, SnapshotSchedule autoSnapshots) {
+                                     DataCenter dataCenter, String shopperId, SnapshotSchedule autoSnapshots) {
         super(virtualMachine);
         this.virtualMachineDetails = virtualMachineDetails;
         this.dataCenter = dataCenter;
+        this.shopperId = shopperId;
         this.autoSnapshots = autoSnapshots;
     }
 }

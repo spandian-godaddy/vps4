@@ -45,7 +45,6 @@ import com.godaddy.vps4.snapshot.Snapshot;
 import com.godaddy.vps4.util.Cryptography;
 import com.godaddy.vps4.vm.ActionService;
 import com.godaddy.vps4.vm.ActionType;
-import com.godaddy.vps4.vm.DataCenter;
 import com.godaddy.vps4.vm.ImageService;
 import com.godaddy.vps4.vm.ProvisionVmInfo;
 import com.godaddy.vps4.vm.VirtualMachine;
@@ -351,7 +350,7 @@ public class VmResource {
     @Path("/{vmId}/withDetails")
     public VirtualMachineWithDetails getVirtualMachineWithDetails(@PathParam("vmId") UUID vmId) {
         VirtualMachine virtualMachine = getVm(vmId);
-        DataCenter dc = creditService.getVirtualMachineCredit(virtualMachine.orionGuid).dataCenter;
+        VirtualMachineCredit credit = creditService.getVirtualMachineCredit(virtualMachine.orionGuid);
         Vm vm = getVmFromVmVertical(virtualMachine.hfsVmId);
         SnapshotSchedule snapshotSchedule = new SnapshotSchedule();
         if (virtualMachine.backupJobId != null) {
@@ -363,6 +362,6 @@ public class VmResource {
                 snapshotSchedule = new SnapshotSchedule(nextRun, copiesToRetain, repeatIntervalInDays);
             }
         }
-        return new VirtualMachineWithDetails(virtualMachine, new VirtualMachineDetails(vm), dc, snapshotSchedule);
+        return new VirtualMachineWithDetails(virtualMachine, new VirtualMachineDetails(vm), credit.dataCenter, credit.shopperId, snapshotSchedule);
     }
 }
