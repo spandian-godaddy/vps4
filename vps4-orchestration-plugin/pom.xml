@@ -31,6 +31,9 @@
                                         <exclude>META-INF/*.SF</exclude>
                                         <exclude>META-INF/*.DSA</exclude>
                                         <exclude>META-INF/*.RSA</exclude>
+                                        <exclude>gdg/hfs/orchestration/**</exclude>
+                                        <exclude>javax/inject/**</exclude>
+                                        <exclude>com/google/**</exclude>
                                     </excludes>
                                 </filter>
                             </filters>
@@ -93,7 +96,7 @@
             <groupId>com.godaddy.hosting</groupId>
             <artifactId>orchestration-api</artifactId>
             <version>0.5.1-34</version>
-            <scope>compile</scope>
+            <scope>provided</scope>
         </dependency>
         
         <dependency>
