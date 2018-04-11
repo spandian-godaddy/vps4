@@ -10,6 +10,7 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
 
+import com.godaddy.vps4.appmonitors.BackupJobAuditData;
 import com.godaddy.vps4.appmonitors.MonitorService;
 import com.godaddy.vps4.appmonitors.SnapshotActionData;
 import com.godaddy.vps4.appmonitors.VmActionData;
@@ -98,6 +99,15 @@ public class VmActionsMonitorResource {
             notes = "Find all VM actions that are pending in new status for longer than m minutes, default 2 hours")
     public List<VmActionData> getVmsWithPendingNewActions(@QueryParam("thresholdInMinutes") @DefaultValue("120") Long thresholdInMinutes) {
         return monitorService.getVmsByActionStatus(thresholdInMinutes, ActionStatus.NEW);
+    }
+
+    @EmployeeOnly
+    @GET
+    @Path("/missing_backup_jobs")
+    @ApiOperation(value = "Find all active vms that do not have a backup job id, meaning scheduler create job failed",
+            notes = "Find all active vms that do not have a backup job id, meaning scheduler create job failed")
+    public List<BackupJobAuditData> getVmsWithoutBackupJob() {
+        return monitorService.getVmsFilteredByNullBackupJob();
     }
 
 }

@@ -4,16 +4,19 @@ import static java.util.Arrays.stream;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 
 import javax.sql.DataSource;
 
 import com.godaddy.hfs.jdbc.Sql;
+import com.godaddy.vps4.appmonitors.BackupJobAuditData;
 import com.godaddy.vps4.appmonitors.MonitorService;
 import com.godaddy.vps4.appmonitors.SnapshotActionData;
 import com.godaddy.vps4.appmonitors.VmActionData;
 import com.godaddy.vps4.jdbc.Vps4ReportsDataSource;
+import com.godaddy.vps4.util.TimestampUtils;
 import com.godaddy.vps4.vm.ActionStatus;
 import com.godaddy.vps4.vm.ActionType;
 import com.google.inject.Inject;
@@ -43,7 +46,7 @@ public class JdbcMonitorService implements MonitorService {
             "FROM snapshot_action sna " +
             "JOIN action_type ON sna.action_type_id=action_type.type_id " +
             "JOIN action_status ON sna.status_id=action_status.status_id " +
-            "JOIN snapshot ON sna.snapshot_id=snapshot.id " + 
+            "JOIN snapshot ON sna.snapshot_id=snapshot.id " +
             "WHERE sna.created < now_utc() " +
             "AND sna.status_id IN ( " +
             "  SELECT status_id FROM action_status WHERE status INCLAUSE " +
@@ -62,6 +65,10 @@ public class JdbcMonitorService implements MonitorService {
             "  SELECT status_id FROM action_status WHERE status = ? " +
             ") " +
             "AND now_utc() - vma.created >= ";
+
+    private final static String selectVmsFilteredByNullBackupJob = "SELECT vm_id, valid_on FROM virtual_machine " +
+            "WHERE valid_until = 'infinity' " +
+            "AND backup_job_id IS NULL";
 
     @Inject
     public JdbcMonitorService(@Vps4ReportsDataSource DataSource reportsDataSource) {
@@ -142,5 +149,22 @@ public class JdbcMonitorService implements MonitorService {
         }
     }
 
+    @Override
+    public List<BackupJobAuditData> getVmsFilteredByNullBackupJob() {
+        return Sql.with(reportsDataSource)
+                .exec(selectVmsFilteredByNullBackupJob, Sql.listOf(this::mapVmId));
+    }
+
+    private BackupJobAuditData mapVmId(ResultSet rs) throws SQLException {
+        try {
+            UUID vmId = UUID.fromString(rs.getString("vm_id"));
+            Instant validOn = rs.getTimestamp("valid_on", TimestampUtils.utcCalendar).toInstant();
+
+            BackupJobAuditData auditData = new BackupJobAuditData(vmId, validOn);
+            return auditData;
+        } catch (IllegalArgumentException iax) {
+            throw new IllegalArgumentException("Could not map response. ", iax);
+        }
+    }
 
 }
