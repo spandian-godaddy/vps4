@@ -10,6 +10,7 @@ import static com.godaddy.vps4.web.util.RequestValidation.validateVmExists;
 import static com.godaddy.vps4.web.util.VmHelper.createActionAndExecute;
 
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
@@ -18,6 +19,7 @@ import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
 import javax.ws.rs.DefaultValue;
 import javax.ws.rs.GET;
+import javax.ws.rs.NotFoundException;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
@@ -201,7 +203,7 @@ public class VmResource {
 
         ProvisionVirtualMachineParameters params;
         VirtualMachine virtualMachine;
-        Vps4User vps4User = vps4UserService.getOrCreateUserForShopper(user.getShopperId());
+        Vps4User vps4User = vps4UserService.getOrCreateUserForShopper(user.getShopperId(), vmCredit.resellerId);
         try {
             params = new ProvisionVirtualMachineParameters(vps4User.getId(), provisionRequest.dataCenterId, sgidPrefix,
                     provisionRequest.orionGuid, provisionRequest.name, vmCredit.tier, vmCredit.managedLevel,
@@ -317,7 +319,10 @@ public class VmResource {
     private List<VirtualMachine> getVmsForVps4User(VirtualMachineType type) {
         if (StringUtils.isBlank(user.getShopperId()))
             throw new Vps4NoShopperException();
-        Vps4User vps4User = vps4UserService.getOrCreateUserForShopper(user.getShopperId());
+        Vps4User vps4User = vps4UserService.getUser(user.getShopperId());
+        if(vps4User == null) {
+            return new ArrayList<VirtualMachine>();
+        }
 
         return virtualMachineService.getVirtualMachines(type, vps4User.getId(), null, null, null);
     }

@@ -88,7 +88,7 @@ public class VmActionResourceTest {
 
     private VirtualMachine createTestVm(String shopperId) {
         UUID orionGuid = UUID.randomUUID();
-        Vps4User vps4User = userService.getOrCreateUserForShopper(shopperId);
+        Vps4User vps4User = userService.getOrCreateUserForShopper(shopperId, "1");
         return SqlTestData.insertTestVm(orionGuid, vps4User.getId(), dataSource);
     }
 
@@ -260,4 +260,3 @@ public class VmActionResourceTest {
         Assert.assertEquals(detailedAction.orchestrationCommand, command);
     }
 }
-

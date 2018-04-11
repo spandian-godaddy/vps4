@@ -7,6 +7,7 @@ import static com.godaddy.vps4.web.util.RequestValidation.validateSnapshotName;
 import static com.godaddy.vps4.web.util.RequestValidation.validateUserIsShopper;
 import static com.godaddy.vps4.web.util.RequestValidation.validateVmExists;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -93,7 +94,9 @@ public class SnapshotResource {
     public List<Snapshot> getSnapshotsForUser() {
         if (user.getShopperId() == null)
             throw new Vps4NoShopperException();
-        Vps4User vps4User = userService.getOrCreateUserForShopper(user.getShopperId());
+        Vps4User vps4User = userService.getUser(user.getShopperId());
+        if(vps4User == null)
+            return new ArrayList<Snapshot>();
 
         List<Snapshot> snapshots = snapshotService.getSnapshotsForUser(vps4User.getId());
         return snapshots

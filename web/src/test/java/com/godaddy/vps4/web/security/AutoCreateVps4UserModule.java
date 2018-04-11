@@ -21,7 +21,7 @@ public class AutoCreateVps4UserModule extends AbstractModule {
     @Provides
     protected Vps4User provideUser(Vps4UserService userService) {
 
-        return userService.getOrCreateUserForShopper(shopperId);
+        return userService.getOrCreateUserForShopper(shopperId, "1");
     }
 
 }

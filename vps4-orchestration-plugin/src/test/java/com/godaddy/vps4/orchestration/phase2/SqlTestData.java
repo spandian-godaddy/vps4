@@ -39,7 +39,7 @@ public class SqlTestData {
     public final static String IMAGE_NAME = "hfs-centos-7";
 
     public static Vps4User insertUser(Vps4UserService userService) {
-        return userService.getOrCreateUserForShopper(TEST_SHOPPER_ID);
+        return userService.getOrCreateUserForShopper(TEST_SHOPPER_ID, "1");
     }
 
     public static Project insertProject(ProjectService projectService, Vps4UserService userService) {

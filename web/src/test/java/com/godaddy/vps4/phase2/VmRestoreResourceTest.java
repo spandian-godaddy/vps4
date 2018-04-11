@@ -117,8 +117,8 @@ public class VmRestoreResourceTest {
     public void setupTest() {
         MockitoAnnotations.initMocks(this);
 
-        ourVps4User = userService.getOrCreateUserForShopper(us.getShopperId());
-        theirVps4User = userService.getOrCreateUserForShopper(them.getShopperId());
+        ourVps4User = userService.getOrCreateUserForShopper(us.getShopperId(), "1");
+        theirVps4User = userService.getOrCreateUserForShopper(them.getShopperId(), "1");
         ourVm = createVm(ourVps4User.getId());
         theirVm = createVm(theirVps4User.getId());
         ourSnapshot = createSnapshot(ourVm.vmId, ourVm.projectId);

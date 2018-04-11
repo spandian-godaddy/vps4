@@ -50,7 +50,7 @@ public class ActionServiceTest {
         actionService = new JdbcActionService(dataSource);
         vps4UserService = new JdbcVps4UserService(dataSource);
         vm = SqlTestData.insertTestVm(orionGuid, dataSource);
-        vps4User = vps4UserService.getOrCreateUserForShopper("FakeShopper");
+        vps4User = vps4UserService.getOrCreateUserForShopper("FakeShopper", "1");
     }
     
     @After

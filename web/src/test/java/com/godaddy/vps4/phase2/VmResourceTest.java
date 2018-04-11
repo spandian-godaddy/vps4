@@ -90,7 +90,7 @@ public class VmResourceTest {
 
     private VirtualMachine createTestVm() {
         UUID orionGuid = UUID.randomUUID();
-        Vps4User vps4User = userService.getOrCreateUserForShopper(GDUserMock.DEFAULT_SHOPPER);
+        Vps4User vps4User = userService.getOrCreateUserForShopper(GDUserMock.DEFAULT_SHOPPER, "1");
         VirtualMachine vm = SqlTestData.insertTestVm(orionGuid, vps4User.getId(), dataSource);
         long ipAddressId = SqlTestData.getNextIpAddressId(dataSource);
         SqlTestData.insertTestIp(ipAddressId, vm.vmId, "127.0.0." + ipAddressId, IpAddressType.PRIMARY, dataSource);

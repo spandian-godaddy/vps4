@@ -28,6 +28,7 @@ import com.godaddy.vps4.web.PaginatedResult;
 import com.godaddy.vps4.web.Vps4Api;
 import com.godaddy.vps4.web.security.AdminOnly;
 import com.godaddy.vps4.web.security.GDUser;
+import com.godaddy.vps4.web.util.RequestValidation;
 import com.google.inject.Inject;
 
 import gdg.hfs.orchestration.CommandService;
@@ -60,11 +61,6 @@ public class VmActionResource {
         this.user = user;
     }
 
-    private void verifyUserPrivilege(UUID vmId) {
-        Vps4User vps4User = userService.getOrCreateUserForShopper(user.getShopperId());
-        privilegeService.requireAnyPrivilegeToVmId(vps4User, vmId);
-    }
-
     @GET
     @Path("{vmId}/actions")
     public PaginatedResult<VmAction> getActions(
@@ -76,7 +72,7 @@ public class VmActionResource {
         @Context UriInfo uri) {
 
         if (user.isShopper())
-            verifyUserPrivilege(vmId);
+            RequestValidation.verifyUserPrivilegeToVm(userService, privilegeService, user.getShopperId(), vmId);
 
         ResultSubset<Action> actions;
         // For now we will support listing by either actionType or actionStatus but not both
@@ -102,7 +98,7 @@ public class VmActionResource {
 
     private Action getVmActionFromCore(UUID vmId, long actionId) {
         if (user.isShopper())
-            verifyUserPrivilege(vmId);
+            RequestValidation.verifyUserPrivilegeToVm(userService, privilegeService, user.getShopperId(), vmId);
 
         Action action = actionService.getAction(vmId, actionId);
         if (action == null) {

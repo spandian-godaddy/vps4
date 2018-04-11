@@ -50,7 +50,7 @@ public class MonitorServiceTest {
     @Before
     public void setupService() {
         vps4UserService = new JdbcVps4UserService(reportsDataSource);
-        vps4User = vps4UserService.getOrCreateUserForShopper("FakeShopper");
+        vps4User = vps4UserService.getOrCreateUserForShopper("FakeShopper", "1");
         vm1 = SqlTestData.insertTestVm(orionGuid, reportsDataSource);
         createActionWithDate(vm1.vmId, ActionType.CREATE_VM, ActionStatus.IN_PROGRESS, Instant.now().minus(Duration.ofMinutes(61)), vps4User.getId(), reportsDataSource);
         vm2 = SqlTestData.insertTestVm(orionGuid, reportsDataSource);

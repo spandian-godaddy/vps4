@@ -48,8 +48,8 @@ public class JdbcProjectServiceTest {
 
         try (Connection conn = dataSource.getConnection()) {
             try (Statement statement = conn.createStatement()) {
-                users.put("user1", vps4UserService.getOrCreateUserForShopper("testuser1"));
-                users.put("user2", vps4UserService.getOrCreateUserForShopper("testuser2"));
+                users.put("user1", vps4UserService.getOrCreateUserForShopper("testuser1", "1"));
+                users.put("user2", vps4UserService.getOrCreateUserForShopper("testuser2", "1"));
                 projects.put("project4", ps.createProject("project4", users.get("user1").getId(), "unit-test"));
                 projects.put("project3", ps.createProject("project3", users.get("user1").getId(), "unit-test"));
                 projects.put("project2", ps.createProject("project2", users.get("user2").getId(), "unit-test"));

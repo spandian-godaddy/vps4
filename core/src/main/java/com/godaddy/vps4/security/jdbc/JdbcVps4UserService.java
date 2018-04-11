@@ -40,13 +40,13 @@ public class JdbcVps4UserService implements Vps4UserService {
     }
 
     @Override
-    public Vps4User getOrCreateUserForShopper(String shopperId) {
+    public Vps4User getOrCreateUserForShopper(String shopperId, String resellerId) {
 
         // if the user doesn't exist yet, create it
         Vps4User user = Sql.with(dataSource).exec(
-                  " SELECT * FROM get_or_create_user(?)",
+                  " SELECT * FROM get_or_create_user(?, ?)",
                   Sql.nextOrNull(this::mapUser),
-                shopperId);
+                shopperId, resellerId);
 
         if (user == null) {
             throw new IllegalStateException("Unable to lazily create user for shopper " + shopperId);

@@ -68,9 +68,9 @@ public class GetVirtualMachineTest {
     }
 
 	private CreditService getMockedCreditService() {
-		dc = new DataCenter(5, "testDc");
+        dc = new DataCenter(5, "testDc");
         VirtualMachineCredit credit = new VirtualMachineCredit(vm.orionGuid, 10, 2, 0, "linux", "myh", null,
-                user.getShopperId(), AccountStatus.ACTIVE, dc, vmId, false);
+                user.getShopperId(), AccountStatus.ACTIVE, dc, vmId, false, "1");
         CreditService creditService = Mockito.mock(CreditService.class);
         when(creditService.getVirtualMachineCredit(vm.orionGuid)).thenReturn(credit);
         return creditService;
@@ -104,7 +104,7 @@ public class GetVirtualMachineTest {
         Vps4UserService userService = Mockito.mock(Vps4UserService.class);
         Vps4User vps4User = Mockito.mock(Vps4User.class);
         when(vps4User.getId()).thenReturn(1L);
-        when(userService.getOrCreateUserForShopper(user.getShopperId())).thenReturn(vps4User);
+        when(userService.getOrCreateUserForShopper(user.getShopperId(), "1")).thenReturn(vps4User);
         when(userService.getUser(user.getShopperId())).thenReturn(vps4User);
         return userService;
 	}

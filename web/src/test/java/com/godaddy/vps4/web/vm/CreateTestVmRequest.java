@@ -54,7 +54,7 @@ public class CreateTestVmRequest {
         // normally we would get this from HFS
         long hfsVmId = new Random().nextInt(1000000);
 
-        Vps4User user = userService.getOrCreateUserForShopper(shopperId);
+        Vps4User user = userService.getOrCreateUserForShopper(shopperId, "1");
 
         ProvisionVirtualMachineParameters params = new ProvisionVirtualMachineParameters(user.getId(), 1, "vps4-testing-", orionGuid,
                 "SomeNewVm", 1, 1, operatingSystem);

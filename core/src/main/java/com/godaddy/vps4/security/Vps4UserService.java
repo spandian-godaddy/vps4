@@ -6,6 +6,6 @@ public interface Vps4UserService {
 
     Vps4User getUser(long userId);
 
-    Vps4User getOrCreateUserForShopper(String shopperId);
+    Vps4User getOrCreateUserForShopper(String shopperId, String resellerId);
 
 }

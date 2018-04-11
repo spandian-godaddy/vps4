@@ -37,11 +37,11 @@ public class JdbcUserServiceTest {
     public void getOrCreateUserForShopperTest() {
         Vps4UserService userService = new JdbcVps4UserService(dataSource);
 
-        Vps4User user1 = userService.getOrCreateUserForShopper(shopperId);
+        Vps4User user1 = userService.getOrCreateUserForShopper(shopperId, "1");
         assertEquals(shopperId, user1.getShopperId());
         long user1Id = user1.getId();
 
-        Vps4User user2 = userService.getOrCreateUserForShopper(shopperId);
+        Vps4User user2 = userService.getOrCreateUserForShopper(shopperId, "1");
         assertEquals(user1.getId(), user2.getId());
 
         Vps4User user3 = userService.getUser(user1Id);

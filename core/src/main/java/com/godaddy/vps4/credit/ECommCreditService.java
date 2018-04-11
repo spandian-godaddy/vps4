@@ -87,7 +87,8 @@ public class ECommCreditService implements CreditService {
                 account.shopper_id,
                 AccountStatus.valueOf(account.status.name().toUpperCase()),
                 getDataCenter(account), getProductId(account),
-                Boolean.parseBoolean(account.product_meta.get(ProductMetaField.FULLY_MANAGED_EMAIL_SENT.toString())));
+                Boolean.parseBoolean(account.product_meta.get(ProductMetaField.FULLY_MANAGED_EMAIL_SENT.toString())),
+                account.reseller_id);
     }
 
     private UUID getProductId(Account account) {

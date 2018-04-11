@@ -37,7 +37,7 @@ public class Vps4PlanChangeTest {
     @SuppressWarnings("unchecked")
     private void runChangeManagedLevelToManagedTest() {
         VirtualMachineCredit credit = new VirtualMachineCredit(UUID.randomUUID(), 10, 2, 0, "linux", "cpanel",
-                Instant.now(), "someShopper", AccountStatus.ACTIVE, null, UUID.randomUUID(), false);
+                Instant.now(), "someShopper", AccountStatus.ACTIVE, null, UUID.randomUUID(), false, "1");
         IpAddress primaryIpAddress = new IpAddress(0, credit.productId, "1.2.3.4", IpAddressType.PRIMARY, 123L, null, null);
         VirtualMachine vm = new VirtualMachine(credit.productId, 1234, credit.orionGuid, 1, null, "testVm", null,
                 primaryIpAddress, null, null, null, null, 0, null);

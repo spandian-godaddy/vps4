@@ -41,7 +41,7 @@ public class Phase2ExternalsModule extends AbstractModule {
     public static void mockVmCredit(AccountStatus accountStatus) {
         UUID orionGuid = UUID.randomUUID();
         VirtualMachineCredit credit = new VirtualMachineCredit(orionGuid, 10, 0, 1, "linux", "myh", null, GDUserMock.DEFAULT_SHOPPER,
-                accountStatus, null, null, false);
+                accountStatus, null, null, false, "1");
         Mockito.when(creditService.getVirtualMachineCredit(Mockito.any())).thenReturn(credit);
     }
 
@@ -55,4 +55,3 @@ public class Phase2ExternalsModule extends AbstractModule {
 
 
 }
-

@@ -68,13 +68,13 @@ public class Vps4AccountMessageHandlerTest {
 
     private void mockVmCredit(AccountStatus accountStatus, UUID productId) {
         DataCenter dc = dcService.getDataCenter(5);
-        VirtualMachineCredit vmCredit = new VirtualMachineCredit(orionGuid, 10, 0, 0, "linux", "myh", null, "TestShopper", accountStatus, dc, productId, false);
+        VirtualMachineCredit vmCredit = new VirtualMachineCredit(orionGuid, 10, 0, 0, "linux", "myh", null, "TestShopper", accountStatus, dc, productId, false, "1");
         when(creditServiceMock.getVirtualMachineCredit(orionGuid)).thenReturn(vmCredit);
     }
 
     private void mockFullManagedVmCredit(AccountStatus accountStatus, UUID productId) {
         DataCenter dc = dcService.getDataCenter(5);
-        VirtualMachineCredit vmCredit = new VirtualMachineCredit(orionGuid, 10, 2, 1, "linux", "cpanel", null, "TestShopper", accountStatus, dc, productId, false);
+        VirtualMachineCredit vmCredit = new VirtualMachineCredit(orionGuid, 10, 2, 1, "linux", "cpanel", null, "TestShopper", accountStatus, dc, productId, false, "1");
         when(creditServiceMock.getVirtualMachineCredit(orionGuid)).thenReturn(vmCredit);
     }
 
@@ -176,7 +176,7 @@ public class Vps4AccountMessageHandlerTest {
     @Test
     public void testFullyManagedEmailAlreadySent() throws MessageHandlerException, MissingShopperIdException, IOException {
         DataCenter dc = dcService.getDataCenter(5);
-        VirtualMachineCredit vmCredit = new VirtualMachineCredit(orionGuid, 10, 2, 1, "linux", "cpanel", null, "TestShopper", AccountStatus.ACTIVE, dc, null, true);
+        VirtualMachineCredit vmCredit = new VirtualMachineCredit(orionGuid, 10, 2, 1, "linux", "cpanel", null, "TestShopper", AccountStatus.ACTIVE, dc, null, true, "1");
 
         when(creditServiceMock.getVirtualMachineCredit(orionGuid)).thenReturn(vmCredit);
         when(messagingServiceMock.sendFullyManagedEmail("TestShopper", "cpanel")).thenReturn("messageId");
@@ -251,7 +251,7 @@ public class Vps4AccountMessageHandlerTest {
     public void testHandleMessageRemovedWithSnapshotsWrongDC() throws MessageHandlerException {
         DataCenter dc = dcService.getDataCenter(1);
         UUID vmId = UUID.randomUUID();
-        VirtualMachineCredit vmCredit = new VirtualMachineCredit(orionGuid, 10, 0, 0, "linux", "myh", null, "TestShopper", AccountStatus.REMOVED, dc, vmId, false);
+        VirtualMachineCredit vmCredit = new VirtualMachineCredit(orionGuid, 10, 0, 0, "linux", "myh", null, "TestShopper", AccountStatus.REMOVED, dc, vmId, false, "1");
         when(creditServiceMock.getVirtualMachineCredit(orionGuid)).thenReturn(vmCredit);
 
         callHandleMessage(createTestKafkaMessage("removed"));

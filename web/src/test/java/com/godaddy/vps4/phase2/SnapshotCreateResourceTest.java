@@ -97,7 +97,7 @@ public class SnapshotCreateResourceTest {
             });
 
         injector.injectMembers(this);
-        ourVps4User = userService.getOrCreateUserForShopper(GDUserMock.DEFAULT_SHOPPER);
+        ourVps4User = userService.getOrCreateUserForShopper(GDUserMock.DEFAULT_SHOPPER, "1");
     }
 
 

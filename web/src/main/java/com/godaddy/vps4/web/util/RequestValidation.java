@@ -130,15 +130,21 @@ public class RequestValidation {
 
     }
 
-    public static void verifyUserPrivilegeToProject(
-            Vps4UserService userService, PrivilegeService privilegeService, String shopperId, long projectId) {
-        Vps4User vps4User = userService.getOrCreateUserForShopper(shopperId);
+    public static void verifyUserPrivilegeToProject(Vps4UserService userService, PrivilegeService privilegeService,
+            String shopperId, long projectId) {
+        Vps4User vps4User = userService.getUser(shopperId);
+        if (vps4User == null) {
+            throw new AuthorizationException(shopperId + " does not have privilege on service group " + projectId);
+        }
         privilegeService.requireAnyPrivilegeToProjectId(vps4User, projectId);
     }
 
-    public static void verifyUserPrivilegeToVm(
-            Vps4UserService userService, PrivilegeService privilegeService, String shopperId, UUID vmId) {
-        Vps4User vps4User = userService.getOrCreateUserForShopper(shopperId);
+    public static void verifyUserPrivilegeToVm(Vps4UserService userService, PrivilegeService privilegeService,
+            String shopperId, UUID vmId) {
+        Vps4User vps4User = userService.getUser(shopperId);
+        if (vps4User == null) {
+            throw new AuthorizationException(shopperId + "does not have privilege for vm " + vmId);
+        }
         privilegeService.requireAnyPrivilegeToVmId(vps4User, vmId);
     }
 
