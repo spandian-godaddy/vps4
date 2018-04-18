@@ -2,6 +2,7 @@ package com.godaddy.vps4.orchestration.hfs;
 
 
 import java.io.IOException;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -363,9 +364,7 @@ public class HfsMockModule extends AbstractModule {
                 gdMessagingServiceMessages.put(message.messageId, message);
             }
 
-            @Override
-            public String sendSetupEmail(String shopperId, String accountName, String ipAddress, String orionId,
-                                         boolean isFullyManaged) {
+            private String createFakeMessage(String shopperId) {
                 String messageId = UUID.randomUUID().toString();
                 Message setupMessage = createMessage(shopperId, messageId);
                 storeMessage(setupMessage);
@@ -374,9 +373,41 @@ public class HfsMockModule extends AbstractModule {
             }
 
             @Override
-            public String sendFullyManagedEmail(String shopperId, String controlPanel) throws MissingShopperIdException, IOException {
-                // TODO Auto-generated method stub
-                return null;
+            public String sendSetupEmail(String shopperId, String accountName, String ipAddress, String orionId,
+                                         boolean isFullyManaged) throws MissingShopperIdException, IOException {
+                return createFakeMessage(shopperId);
+            }
+
+            @Override
+            public String sendFullyManagedEmail(String shopperId, String controlPanel)
+                    throws MissingShopperIdException, IOException {
+                return createFakeMessage(shopperId);
+            }
+
+            @Override
+            public String sendScheduledPatchingEmail(String shopperId, String serverName, Instant startTime,
+                                                     long durationMinutes, boolean isFullyManaged)
+                    throws MissingShopperIdException, IOException {
+                return createFakeMessage(shopperId);
+            }
+
+            @Override
+            public String sendUnexpectedButScheduledMaintenanceEmail(String shopperId, String serverName, Instant startTime,
+                                                                     long durationMinutes, boolean isFullyManaged)
+                    throws MissingShopperIdException, IOException {
+                return createFakeMessage(shopperId);
+            }
+
+            @Override
+            public String sendSystemDownFailoverEmail(String shopperId, String serverName, boolean isFullyManaged)
+                    throws MissingShopperIdException, IOException {
+                return createFakeMessage(shopperId);
+            }
+
+            @Override
+            public String sendFailoverCompletedEmail(String shopperId, String serverName, boolean isFullyManaged)
+                    throws MissingShopperIdException, IOException {
+                return createFakeMessage(shopperId);
             }
         };
     }

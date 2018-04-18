@@ -6,4 +6,6 @@ public class NoRetryException extends RuntimeException {
     public NoRetryException(String message, Throwable e) {
         super(message, e);
     }
+
+    public NoRetryException(String message) { super(message); }
 }

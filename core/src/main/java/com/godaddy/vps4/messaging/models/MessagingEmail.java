@@ -7,12 +7,14 @@ public class MessagingEmail {
 
     public Integer emailId;
     public Integer templateId;
+    public String templateName;
     public String to;
     public String status;
     public String createdAt;
     public String currency;
     public String marketId;
     public String emailFormat;
+    public String code;
     public String failureReason;
 
     @Override

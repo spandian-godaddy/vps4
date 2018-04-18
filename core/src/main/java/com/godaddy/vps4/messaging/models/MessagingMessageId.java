@@ -1,14 +1,28 @@
 package com.godaddy.vps4.messaging.models;
 
+import java.util.List;
+
 import com.fasterxml.jackson.annotation.JsonInclude;
+import org.apache.commons.lang3.StringUtils;
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class MessagingMessageId {
 
     public String messageId;
 
+    // Error response
+    public String message;
+    public String code;
+    public List<String> stack;
+    public List<MessagingErrorFields> fields;
+
     @Override
     public String toString() {
-        return "MessagingMessageId [messageId: " + messageId + "]";
+        if (StringUtils.isEmpty(code)) {
+            return "MessagingMessageId [messageId: " + messageId + "]";
+        }
+        else {
+            return "Error message response [code: " + code + " message: " + message + "]";
+        }
     }
 }

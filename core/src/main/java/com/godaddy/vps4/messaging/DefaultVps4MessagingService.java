@@ -5,6 +5,11 @@ import java.io.UnsupportedEncodingException;
 import java.util.EnumMap;
 import java.util.HashMap;
 import java.util.Map;
+import java.time.ZoneId;
+import java.time.Instant;
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
+import java.time.temporal.ChronoUnit;
 
 import javax.inject.Inject;
 
@@ -31,27 +36,41 @@ public class DefaultVps4MessagingService implements Vps4MessagingService {
 
     public static final String CLIENT_CERTIFICATE_PATH = "messaging.api.certPath";
 
+    private final String timezoneForDateParams;
+
+    private final String dateTimePattern;
+
     public enum EmailTemplates {
-        VirtualPrivateHostingProvisioned4, VPSWelcomePlesk, VPSWelcomeCpanel
+        VirtualPrivateHostingProvisioned4,
+        VPSWelcomePlesk,
+        VPSWelcomeCpanel,
+        VPS4ScheduledPatching,
+        VPS4UnexpectedbutScheduledMaintenance,
+        VPS4SystemDownFailover,
+        VPS4UnexpectedschedmaintFailoveriscompleted
     }
 
     public enum EmailSubstitutions {
         ACCOUNTNAME,
         IPADDRESS,
         ORION_ID,
-        ISMANAGEDSUPPORT
+        ISMANAGEDSUPPORT,
+        START_DATE_TIME,
+        END_DATE_TIME
     }
 
     @Inject
     public DefaultVps4MessagingService (Config config) {
-        this(config.get("messaging.api.url"), new SecureHttpClient(
+        this(config, new SecureHttpClient(
                 config,
                 CLIENT_CERTIFICATE_KEY_PATH,
                 CLIENT_CERTIFICATE_PATH));
     }
 
-    protected DefaultVps4MessagingService(String baseUrl, SecureHttpClient httpClient) {
-        this.baseUrl = baseUrl;
+    protected DefaultVps4MessagingService(Config config, SecureHttpClient httpClient) {
+        this.baseUrl = config.get("messaging.api.url");
+        this.timezoneForDateParams = config.get("messaging.timezone");
+        this.dateTimePattern = config.get("messaging.datetime.pattern");
         this.client = httpClient;
     }
 
@@ -127,5 +146,68 @@ public class DefaultVps4MessagingService implements Vps4MessagingService {
         }
         return sendMessage(shopperId, shopperMessageJson);
 
+    }
+
+    private String formatDateTime(Instant dateTime) {
+        ZonedDateTime zonedDateTime = dateTime.atZone(ZoneId.of(this.timezoneForDateParams));
+        DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern(this.dateTimePattern);
+
+        return dateTimeFormatter.format(zonedDateTime);
+    }
+
+    private String buildScheduledMaintenanceJson(EmailTemplates emailTemplate, String accountName, Instant startTime,
+                                                 long durationMinutes, boolean isFullyManaged) throws IOException {
+        EnumMap<EmailSubstitutions, String> substitutionValues = new EnumMap<>(EmailSubstitutions.class);
+        substitutionValues.put(EmailSubstitutions.ACCOUNTNAME, accountName);
+        String startDateTime = formatDateTime(startTime);
+        substitutionValues.put(EmailSubstitutions.START_DATE_TIME, startDateTime);
+        String endDateTime = formatDateTime(startTime.plus(durationMinutes, ChronoUnit.MINUTES));
+        substitutionValues.put(EmailSubstitutions.END_DATE_TIME, endDateTime);
+        substitutionValues.put(EmailSubstitutions.ISMANAGEDSUPPORT, Boolean.toString(isFullyManaged));
+
+        return buildShopperMessageJson(emailTemplate, substitutionValues);
+    }
+
+    public String sendScheduledPatchingEmail(String shopperId, String accountName, Instant startTime,
+                                             long durationMinutes, boolean isFullyManaged)
+            throws MissingShopperIdException, IOException {
+        String shopperMessageJson = buildScheduledMaintenanceJson(EmailTemplates.VPS4ScheduledPatching, accountName,
+                startTime, durationMinutes, isFullyManaged);
+
+        return sendMessage(shopperId, shopperMessageJson);
+    }
+
+    public String sendUnexpectedButScheduledMaintenanceEmail(String shopperId, String accountName, Instant startTime,
+                                                             long durationMinutes, boolean isFullyManaged)
+            throws MissingShopperIdException, IOException {
+        String shopperMessageJson = buildScheduledMaintenanceJson(EmailTemplates.VPS4UnexpectedbutScheduledMaintenance,
+                accountName, startTime, durationMinutes, isFullyManaged);
+
+        return sendMessage(shopperId, shopperMessageJson);
+    }
+
+    private String buildFailoverJson(EmailTemplates emailTemplate, String accountName, boolean isFullyManaged)
+            throws IOException {
+        EnumMap<EmailSubstitutions, String> substitutionValues = new EnumMap<>(EmailSubstitutions.class);
+        substitutionValues.put(EmailSubstitutions.ACCOUNTNAME, accountName);
+        substitutionValues.put(EmailSubstitutions.ISMANAGEDSUPPORT, Boolean.toString(isFullyManaged));
+
+        return buildShopperMessageJson(emailTemplate, substitutionValues);
+    }
+
+    public String sendSystemDownFailoverEmail(String shopperId, String accountName, boolean isFullyManaged)
+            throws MissingShopperIdException, IOException {
+        String shopperMessageJson = buildFailoverJson(EmailTemplates.VPS4SystemDownFailover, accountName,
+                isFullyManaged);
+
+        return sendMessage(shopperId, shopperMessageJson);
+    }
+
+    public String sendFailoverCompletedEmail(String shopperId, String accountName, boolean isFullyManaged)
+            throws MissingShopperIdException, IOException {
+        String shopperMessageJson = buildFailoverJson(EmailTemplates.VPS4UnexpectedschedmaintFailoveriscompleted,
+                accountName, isFullyManaged);
+
+        return sendMessage(shopperId, shopperMessageJson);
     }
 }
