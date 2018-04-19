@@ -7,6 +7,7 @@ import com.godaddy.vps4.web.controlPanel.cpanel.CPanelResource;
 import com.godaddy.vps4.web.controlPanel.plesk.PleskResource;
 import com.godaddy.vps4.web.credit.CreditResource;
 import com.godaddy.vps4.web.mailrelay.VmMailRelayResource;
+import com.godaddy.vps4.web.messaging.VmMessagingResource;
 import com.godaddy.vps4.web.monitoring.VmMonitoringResource;
 import com.godaddy.vps4.web.network.NetworkResource;
 import com.godaddy.vps4.web.security.AdminAuthFilter;
@@ -65,9 +66,9 @@ public class WebModule extends AbstractModule {
         bind(AdminAuthFilter.class);
         bind(VmActionsMonitorResource.class);
         bind(ConsoleResource.class);
+        bind(VmMessagingResource.class);
 
         bind(CommandsResource.class);
         bind(CommandsViewResource.class);
     }
 }
-

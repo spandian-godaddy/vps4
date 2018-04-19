@@ -8,6 +8,9 @@ import com.godaddy.vps4.network.IpAddress;
 
 public class VirtualMachine {
 
+
+    public static final int FULLY_MANAGED_LEVEL = 2;
+
     public UUID vmId;
     public long hfsVmId;
     public UUID orionGuid;
@@ -76,5 +79,9 @@ public class VirtualMachine {
     @Override
     public String toString() {
         return ReflectionToStringBuilder.toString(this, ToStringStyle.MULTI_LINE_STYLE);
+    }
+
+    public boolean isFullyManaged() {
+        return this.managedLevel == FULLY_MANAGED_LEVEL;
     }
 }
