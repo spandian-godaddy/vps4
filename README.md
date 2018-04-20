@@ -262,12 +262,14 @@ Process to setup a cron job:
 * Edit the crontab and ensure the jobs are entered as below.
     ```
     [root@p3plvps4rprt01 ~]# crontab -e
-    */40 * * * * root cd /home/vps4monitor;/home/vps4monitor/monitor_pending_actions.sh https://vps4-cca.api.phx3.godaddy.com/api/appmonitors/pending/backupactions?thresholdInMinutes=120 PROD P3 Backup > /dev/null 2>&1
-    */30 * * * * root cd /home/vps4monitor;/home/vps4monitor/monitor_pending_actions.sh https://vps4-cca.api.phx3.godaddy.com/api/appmonitors/pending/provision?thresholdInMinutes=60 PROD P3 Provision > /dev/null 2>&1
-    */20 * * * * root cd /home/vps4monitor;/home/vps4monitor/monitor_pending_actions.sh https://vps4-cca.api.phx3.godaddy.com/api/appmonitors/pending/restartvm?thresholdInMinutes=15 PROD P3 Restart > /dev/null 2>&1
-    */35 * * * * root cd /home/vps4monitor;/home/vps4monitor/monitor_pending_actions.sh https://vps4-cca.api.phx3.godaddy.com/api/appmonitors/pending/restorevm?thresholdInMinutes=120 PROD P3 Restore > /dev/null 2>&1
-    */21 * * * * root cd /home/vps4monitor;/home/vps4monitor/monitor_pending_actions.sh https://vps4-cca.api.phx3.godaddy.com/api/appmonitors/pending/startvm?thresholdInMinutes=15 PROD P3 Start > /dev/null 2>&1
-    */22 * * * * root cd /home/vps4monitor;/home/vps4monitor/monitor_pending_actions.sh https://vps4-cca.api.phx3.godaddy.com/api/appmonitors/pending/stopvm?thresholdInMinutes=15 PROD P3 Stop > /dev/null 2>&1
+    0 8-17 * * * root cd /home/vps4monitor;/home/vps4monitor/monitor_pending_actions.sh https://vps4-cca.api.phx3.godaddy.com/api/appmonitors/pending/backupactions?thresholdInMinutes=120 PROD P3 Backup > /dev/null 2>&1
+    0 8-17 * * * root cd /home/vps4monitor;/home/vps4monitor/monitor_pending_actions.sh https://vps4-cca.api.phx3.godaddy.com/api/appmonitors/pending/provision?thresholdInMinutes=60 PROD P3 Provision > /dev/null 2>&1
+    0 8-17 * * * root cd /home/vps4monitor;/home/vps4monitor/monitor_pending_actions.sh https://vps4-cca.api.phx3.godaddy.com/api/appmonitors/pending/restartvm?thresholdInMinutes=15 PROD P3 Restart > /dev/null 2>&1
+    0 8-17 * * * root cd /home/vps4monitor;/home/vps4monitor/monitor_pending_actions.sh https://vps4-cca.api.phx3.godaddy.com/api/appmonitors/pending/restorevm?thresholdInMinutes=120 PROD P3 Restore > /dev/null 2>&1
+    0 8-17 * * * root cd /home/vps4monitor;/home/vps4monitor/monitor_pending_actions.sh https://vps4-cca.api.phx3.godaddy.com/api/appmonitors/pending/startvm?thresholdInMinutes=15 PROD P3 Start > /dev/null 2>&1
+    0 8-17 * * * root cd /home/vps4monitor;/home/vps4monitor/monitor_pending_actions.sh https://vps4-cca.api.phx3.godaddy.com/api/appmonitors/pending/stopvm?thresholdInMinutes=15 PROD P3 Stop > /dev/null 2>&1
+    0 8-17 * * * root cd /home/vps4monitor;/home/vps4monitor/monitor_pending_actions.sh https://vps4-cca.api.phx3.godaddy.com/api/appmonitors/pending/newactions?thresholdInMinutes=120 PROD P3 All > /dev/null 2>&1
+    0 8-17 * * * root cd /home/vps4monitor;/home/vps4monitor/monitor_pending_actions.sh https://vps4-cca.api.phx3.godaddy.com/api/appmonitors/missing_backup_jobs PROD P3 'Missing Backup Jobs' > /dev/null 2>&1
     ```
 
 * Restart the crond service.
@@ -278,12 +280,14 @@ Process to setup a cron job:
 * Similarly for SG2 with different url and parameters
     ```
     [root@sg2plvps4rprt01 ~]# crontab -l
-    */40 * * * * root cd /home/vps4monitor;/home/vps4monitor/monitor_pending_actions.sh https://vps4-cca.api.sin2.godaddy.com/api/appmonitors/pending/backupactions?thresholdInMinutes=120 PROD SG2 Backup > /dev/null 2>&1
-    */30 * * * * root cd /home/vps4monitor;/home/vps4monitor/monitor_pending_actions.sh https://vps4-cca.api.sin2.godaddy.com/api/appmonitors/pending/provision?thresholdInMinutes=60 PROD SG2 Provision > /dev/null 2>&1
-    */20 * * * * root cd /home/vps4monitor;/home/vps4monitor/monitor_pending_actions.sh https://vps4-cca.api.sin2.godaddy.com/api/appmonitors/pending/restartvm?thresholdInMinutes=15 PROD SG2 Restart > /dev/null 2>&1
-    */35 * * * * root cd /home/vps4monitor;/home/vps4monitor/monitor_pending_actions.sh https://vps4-cca.api.sin2.godaddy.com/api/appmonitors/pending/restorevm?thresholdInMinutes=120 PROD SG2 Restore > /dev/null 2>&1
-    */21 * * * * root cd /home/vps4monitor;/home/vps4monitor/monitor_pending_actions.sh https://vps4-cca.api.sin2.godaddy.com/api/appmonitors/pending/startvm?thresholdInMinutes=15 PROD SG2 Start > /dev/null 2>&1
-    */22 * * * * root cd /home/vps4monitor;/home/vps4monitor/monitor_pending_actions.sh https://vps4-cca.api.sin2.godaddy.com/api/appmonitors/pending/stopvm?thresholdInMinutes=15 PROD SG2 Stop > /dev/null 2>&1
+    0 8-17 * * * root cd /home/vps4monitor;/home/vps4monitor/monitor_pending_actions.sh https://vps4-cca.api.sin2.godaddy.com/api/appmonitors/pending/backupactions?thresholdInMinutes=120 PROD SG2 Backup > /dev/null 2>&1
+    0 8-17 * * * root cd /home/vps4monitor;/home/vps4monitor/monitor_pending_actions.sh https://vps4-cca.api.sin2.godaddy.com/api/appmonitors/pending/provision?thresholdInMinutes=60 PROD SG2 Provision > /dev/null 2>&1
+    0 8-17 * * * root cd /home/vps4monitor;/home/vps4monitor/monitor_pending_actions.sh https://vps4-cca.api.sin2.godaddy.com/api/appmonitors/pending/restartvm?thresholdInMinutes=15 PROD SG2 Restart > /dev/null 2>&1
+    0 8-17 * * * root cd /home/vps4monitor;/home/vps4monitor/monitor_pending_actions.sh https://vps4-cca.api.sin2.godaddy.com/api/appmonitors/pending/restorevm?thresholdInMinutes=120 PROD SG2 Restore > /dev/null 2>&1
+    0 8-17 * * * root cd /home/vps4monitor;/home/vps4monitor/monitor_pending_actions.sh https://vps4-cca.api.sin2.godaddy.com/api/appmonitors/pending/startvm?thresholdInMinutes=15 PROD SG2 Start > /dev/null 2>&1
+    0 8-17 * * * root cd /home/vps4monitor;/home/vps4monitor/monitor_pending_actions.sh https://vps4-cca.api.sin2.godaddy.com/api/appmonitors/pending/stopvm?thresholdInMinutes=15 PROD SG2 Stop > /dev/null 2>&1
+    0 8-17 * * * root cd /home/vps4monitor;/home/vps4monitor/monitor_pending_actions.sh https://vps4-cca.api.sin2.godaddy.com/api/appmonitors/pending/newactions?thresholdInMinutes=15 PROD SG2 All > /dev/null 2>&1
+    0 8-17 * * * root cd /home/vps4monitor;/home/vps4monitor/monitor_pending_actions.sh https://vps4-cca.api.sin2.godaddy.com/api/appmonitors/missing_backup_jobs PROD SG2 'Missing Backup Jobs' > /dev/null 2>&1
     ```
 
 
