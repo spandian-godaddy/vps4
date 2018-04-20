@@ -7,6 +7,6 @@ public class AccountKafkaConfiguration extends KafkaConfiguration {
     
     @Inject
     public AccountKafkaConfiguration(Config vps4Config) {
-        super(vps4Config, "vps4.account.kafka.topic", "vps4.account.kafka.client.id");
+        super(vps4Config, "vps4.account.kafka.topic", "vps4.account.kafka.client.id", "vps4.account.kafka.bootstrap.servers");
     }
 }
