@@ -7,6 +7,6 @@ public class MonitoringKafkaConfiguration extends KafkaConfiguration {
     
     @Inject
     public MonitoringKafkaConfiguration(Config vps4Config) {
-        super(vps4Config, "vps4.monitoring.kafka.topic", "vps4.monitoring.kafka.client.id", "vps4.monitoring.kafka.bootstrap.servers");
+        super(vps4Config, "vps4.monitoring.kafka.topic", "vps4.monitoring.kafka.client.id");
     }
 }
