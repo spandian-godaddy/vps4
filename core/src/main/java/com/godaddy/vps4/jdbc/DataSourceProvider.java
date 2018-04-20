@@ -7,6 +7,9 @@ import javax.sql.DataSource;
 import com.godaddy.hfs.config.Config;
 import com.godaddy.hfs.jdbc.DataSources;
 
+import java.sql.DriverManager;
+import java.sql.SQLException;
+
 public class DataSourceProvider implements Provider<DataSource> {
 
     private final Config config;
@@ -42,6 +45,12 @@ public class DataSourceProvider implements Provider<DataSource> {
 
         String username = config.get("db.vps4.username");
         String password = config.get("db.vps4.password");
+
+        try {
+            DriverManager.registerDriver(new org.postgresql.Driver());
+        } catch (SQLException e){
+            throw new RuntimeException(e);
+        }
 
         return DataSources.getDataSource(jdbcUrl, username, password);
     }

@@ -31,6 +31,28 @@
                                         <exclude>META-INF/*.SF</exclude>
                                         <exclude>META-INF/*.DSA</exclude>
                                         <exclude>META-INF/*.RSA</exclude>
+                                        <!--Do not include the orchestration engine classes-->
+                                        <exclude>gdg/hfs/orchestration/C*.class</exclude>
+                                        <exclude>gdg/hfs/orchestration/client/**</exclude>
+                                        <exclude>gdg/hfs/orchestration/engine/**</exclude>
+                                        <exclude>gdg/hfs/orchestration/web/**</exclude>
+                                        <!--Use the javax classes from the orchestration engine-->
+                                        <exclude>javax/**</exclude>
+                                        <!--Exclude the resteasy-guice and resteasy-jaxrs packages-->
+                                        <exclude>org/jboss/resteasy/plugins/**</exclude>
+                                        <exclude>org/jboss/resteasy/annotations/**</exclude>
+                                        <exclude>org/jboss/resteasy/client/cache/**</exclude>
+                                        <exclude>org/jboss/resteasy/client/core/**</exclude>
+                                        <exclude>org/jboss/resteasy/client/exception/**</exclude>
+                                        <exclude>org/jboss/resteasy/client/C*</exclude>
+                                        <exclude>org/jboss/resteasy/client/E*</exclude>
+                                        <exclude>org/jboss/resteasy/client/P*</exclude>
+                                        <exclude>org/jboss/resteasy/core/**</exclude>
+                                        <exclude>org/jboss/resteasy/logging/**</exclude>
+                                        <exclude>org/jboss/resteasy/plugins/**</exclude>
+                                        <exclude>org/jboss/resteasy/specimpl/**</exclude>
+                                        <exclude>org/jboss/resteasy/spi/**</exclude>
+                                        <exclude>org/jboss/resteasy/util/**</exclude>
                                     </excludes>
                                 </filter>
                             </filters>
@@ -92,14 +114,14 @@
         <dependency>
             <groupId>com.godaddy.hosting</groupId>
             <artifactId>orchestration-api</artifactId>
-            <version>0.5.1-27</version>
+            <version>0.5.1-34</version>
             <scope>provided</scope>
         </dependency>
         
         <dependency>
             <groupId>com.godaddy.hosting</groupId>
             <artifactId>orchestration-web</artifactId>
-            <version>0.5.1-27</version>
+            <version>0.5.1-34</version>
             <scope>runtime</scope>
             <exclusions>
                 <exclusion>
@@ -141,7 +163,7 @@
         <dependency>
             <groupId>hfs</groupId>
             <artifactId>vhfs-network-common-lib</artifactId>
-            <version>1.0.0.31706</version>
+            <version>1.0.0.32658</version>
             <exclusions>
                 <exclusion>
                     <groupId>*</groupId>
