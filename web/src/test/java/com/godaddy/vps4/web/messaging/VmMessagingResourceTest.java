@@ -79,7 +79,7 @@ public class VmMessagingResourceTest {
         assertEquals(vm.isFullyManaged(), request.isFullyManaged);
         assertEquals(user.getShopperId(), request.shopperId);
         assertEquals(startTime, request.startTime);
-        assertEquals(EmailTemplates.VPS4ScheduledPatching, request.template);
+        assertEquals(EmailTemplates.VPS4ScheduledPatchingV2, request.template);
     }
 
     @Test(expected = Vps4Exception.class)
@@ -123,7 +123,7 @@ public class VmMessagingResourceTest {
         assertEquals(vm.isFullyManaged(), request.isFullyManaged);
         assertEquals(user.getShopperId(), request.shopperId);
         assertEquals(startTime, request.startTime);
-        assertEquals(EmailTemplates.VPS4UnexpectedbutScheduledMaintenance, request.template);
+        assertEquals(EmailTemplates.VPS4UnexpectedbutScheduledMaintenanceV2, request.template);
     }
 
     @Test
@@ -137,7 +137,7 @@ public class VmMessagingResourceTest {
         assertEquals(vm.name, request.accountName);
         assertEquals(vm.isFullyManaged(), request.isFullyManaged);
         assertEquals(user.getShopperId(), request.shopperId);
-        assertEquals(EmailTemplates.VPS4SystemDownFailover, request.template);
+        assertEquals(EmailTemplates.VPS4SystemDownFailoverV2, request.template);
     }
 
     @Test
@@ -151,7 +151,7 @@ public class VmMessagingResourceTest {
         assertEquals(vm.name, request.accountName);
         assertEquals(vm.isFullyManaged(), request.isFullyManaged);
         assertEquals(user.getShopperId(), request.shopperId);
-        assertEquals(EmailTemplates.VPS4UnexpectedschedmaintFailoveriscompleted, request.template);
+        assertEquals(EmailTemplates.VPS4UnexpectedscheduledmaintenanceFailoveriscompleted, request.template);
     }
 
 }

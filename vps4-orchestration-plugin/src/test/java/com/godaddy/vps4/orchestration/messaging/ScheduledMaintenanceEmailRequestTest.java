@@ -47,7 +47,7 @@ public class ScheduledMaintenanceEmailRequestTest {
     public void testSendScheduledPatchingEmail()  {
         try {
             scheduledMaintenanceEmailRequest = new ScheduledMaintenanceEmailRequest(
-                    EmailTemplates.VPS4ScheduledPatching, shopperId, accountName, isFullyManaged, startTime,
+                    EmailTemplates.VPS4ScheduledPatchingV2, shopperId, accountName, isFullyManaged, startTime,
                     durationMinutes);
             when(messagingService.sendScheduledPatchingEmail(shopperId, accountName, startTime, durationMinutes,
                     isFullyManaged)).thenReturn(messageId);
@@ -65,7 +65,7 @@ public class ScheduledMaintenanceEmailRequestTest {
     public void testSendUnexpectedButScheduledMaintenanceEmail()  {
         try {
             scheduledMaintenanceEmailRequest = new ScheduledMaintenanceEmailRequest(
-                    EmailTemplates.VPS4UnexpectedbutScheduledMaintenance, shopperId, accountName, isFullyManaged,
+                    EmailTemplates.VPS4UnexpectedbutScheduledMaintenanceV2, shopperId, accountName, isFullyManaged,
                     startTime, durationMinutes);
             when(messagingService.sendUnexpectedButScheduledMaintenanceEmail(shopperId, accountName, startTime,
                     durationMinutes, isFullyManaged)).thenReturn(messageId);
@@ -82,7 +82,7 @@ public class ScheduledMaintenanceEmailRequestTest {
     @Test(expected = UnknownEmailTemplateException.class)
     public void testUnknownEmailTemplateException()  {
         scheduledMaintenanceEmailRequest = new ScheduledMaintenanceEmailRequest(
-                EmailTemplates.VPS4SystemDownFailover, shopperId, accountName, isFullyManaged,
+                EmailTemplates.VPS4SystemDownFailoverV2, shopperId, accountName, isFullyManaged,
                 startTime, durationMinutes);
 
         sendMessagingEmailCmd.execute(context, scheduledMaintenanceEmailRequest);

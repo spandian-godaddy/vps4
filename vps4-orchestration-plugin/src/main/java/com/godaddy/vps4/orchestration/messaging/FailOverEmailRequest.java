@@ -20,11 +20,11 @@ public class FailOverEmailRequest extends EmailRequest {
         String messageId = "";
 
         switch (this.template) {
-            case VPS4SystemDownFailover:
+            case VPS4SystemDownFailoverV2:
                 messageId = messagingService.sendSystemDownFailoverEmail(this.shopperId, this.accountName,
                         this.isFullyManaged);
                 break;
-            case VPS4UnexpectedschedmaintFailoveriscompleted:
+            case VPS4UnexpectedscheduledmaintenanceFailoveriscompleted:
                 messageId = messagingService.sendFailoverCompletedEmail(this.shopperId, this.accountName,
                         this.isFullyManaged);
                 break;

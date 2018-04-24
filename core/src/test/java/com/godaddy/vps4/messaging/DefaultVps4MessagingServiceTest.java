@@ -201,7 +201,7 @@ public class DefaultVps4MessagingServiceTest {
     @Test
     public void testBuildScheduledMaintenanceJson() {
         try {
-            EmailTemplates emailTemplate = EmailTemplates.VPS4ScheduledPatching;
+            EmailTemplates emailTemplate = EmailTemplates.VPS4ScheduledPatchingV2;
             String accountName = UUID.randomUUID().toString();
             Instant startTime = Instant.now();
             long durationMinutes = 1440;
@@ -209,7 +209,7 @@ public class DefaultVps4MessagingServiceTest {
             Method formatDateTime = getFormatDateTimeMethod();
             ShopperMessage shopperMessage = new ShopperMessage();
             shopperMessage.templateNamespaceKey = DefaultVps4MessagingService.TEMPLATE_NAMESPACE_KEY;
-            shopperMessage.templateTypeKey = EmailTemplates.VPS4ScheduledPatching.toString();
+            shopperMessage.templateTypeKey = EmailTemplates.VPS4ScheduledPatchingV2.toString();
 
             EnumMap<DefaultVps4MessagingService.EmailSubstitutions, String> substitutionValues =
                     new EnumMap<>(DefaultVps4MessagingService.EmailSubstitutions.class);
@@ -268,12 +268,12 @@ public class DefaultVps4MessagingServiceTest {
     @Test
     public void testBuildFailoverJson() {
         try {
-            EmailTemplates emailTemplate = EmailTemplates.VPS4SystemDownFailover;
+            EmailTemplates emailTemplate = EmailTemplates.VPS4SystemDownFailoverV2;
             String accountName = UUID.randomUUID().toString();
             Boolean isFullyManaged = false;
             ShopperMessage shopperMessage = new ShopperMessage();
             shopperMessage.templateNamespaceKey = DefaultVps4MessagingService.TEMPLATE_NAMESPACE_KEY;
-            shopperMessage.templateTypeKey = EmailTemplates.VPS4SystemDownFailover.toString();
+            shopperMessage.templateTypeKey = EmailTemplates.VPS4SystemDownFailoverV2.toString();
 
             EnumMap<DefaultVps4MessagingService.EmailSubstitutions, String> substitutionValues =
                     new EnumMap<>(DefaultVps4MessagingService.EmailSubstitutions.class);

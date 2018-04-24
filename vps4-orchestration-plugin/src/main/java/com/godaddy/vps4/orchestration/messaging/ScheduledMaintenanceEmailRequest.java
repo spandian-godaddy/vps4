@@ -26,11 +26,11 @@ public class ScheduledMaintenanceEmailRequest extends EmailRequest {
         String messageId = "";
 
         switch (this.template) {
-            case VPS4ScheduledPatching:
+            case VPS4ScheduledPatchingV2:
                 messageId = messagingService.sendScheduledPatchingEmail(this.shopperId, this.accountName,
                         this.startTime, this.durationMinutes, this.isFullyManaged);
                 break;
-            case VPS4UnexpectedbutScheduledMaintenance:
+            case VPS4UnexpectedbutScheduledMaintenanceV2:
                 messageId = messagingService.sendUnexpectedButScheduledMaintenanceEmail(this.shopperId, this.accountName,
                         this.startTime, this.durationMinutes, this.isFullyManaged);
                 break;

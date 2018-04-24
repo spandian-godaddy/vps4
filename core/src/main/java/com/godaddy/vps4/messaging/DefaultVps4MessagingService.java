@@ -44,10 +44,10 @@ public class DefaultVps4MessagingService implements Vps4MessagingService {
         VirtualPrivateHostingProvisioned4,
         VPSWelcomePlesk,
         VPSWelcomeCpanel,
-        VPS4ScheduledPatching,
-        VPS4UnexpectedbutScheduledMaintenance,
-        VPS4SystemDownFailover,
-        VPS4UnexpectedschedmaintFailoveriscompleted
+        VPS4ScheduledPatchingV2,
+        VPS4UnexpectedbutScheduledMaintenanceV2,
+        VPS4SystemDownFailoverV2,
+        VPS4UnexpectedscheduledmaintenanceFailoveriscompleted
     }
 
     public enum EmailSubstitutions {
@@ -171,7 +171,7 @@ public class DefaultVps4MessagingService implements Vps4MessagingService {
     public String sendScheduledPatchingEmail(String shopperId, String accountName, Instant startTime,
                                              long durationMinutes, boolean isFullyManaged)
             throws MissingShopperIdException, IOException {
-        String shopperMessageJson = buildScheduledMaintenanceJson(EmailTemplates.VPS4ScheduledPatching, accountName,
+        String shopperMessageJson = buildScheduledMaintenanceJson(EmailTemplates.VPS4ScheduledPatchingV2, accountName,
                 startTime, durationMinutes, isFullyManaged);
 
         return sendMessage(shopperId, shopperMessageJson);
@@ -180,7 +180,7 @@ public class DefaultVps4MessagingService implements Vps4MessagingService {
     public String sendUnexpectedButScheduledMaintenanceEmail(String shopperId, String accountName, Instant startTime,
                                                              long durationMinutes, boolean isFullyManaged)
             throws MissingShopperIdException, IOException {
-        String shopperMessageJson = buildScheduledMaintenanceJson(EmailTemplates.VPS4UnexpectedbutScheduledMaintenance,
+        String shopperMessageJson = buildScheduledMaintenanceJson(EmailTemplates.VPS4UnexpectedbutScheduledMaintenanceV2,
                 accountName, startTime, durationMinutes, isFullyManaged);
 
         return sendMessage(shopperId, shopperMessageJson);
@@ -197,7 +197,7 @@ public class DefaultVps4MessagingService implements Vps4MessagingService {
 
     public String sendSystemDownFailoverEmail(String shopperId, String accountName, boolean isFullyManaged)
             throws MissingShopperIdException, IOException {
-        String shopperMessageJson = buildFailoverJson(EmailTemplates.VPS4SystemDownFailover, accountName,
+        String shopperMessageJson = buildFailoverJson(EmailTemplates.VPS4SystemDownFailoverV2, accountName,
                 isFullyManaged);
 
         return sendMessage(shopperId, shopperMessageJson);
@@ -205,7 +205,7 @@ public class DefaultVps4MessagingService implements Vps4MessagingService {
 
     public String sendFailoverCompletedEmail(String shopperId, String accountName, boolean isFullyManaged)
             throws MissingShopperIdException, IOException {
-        String shopperMessageJson = buildFailoverJson(EmailTemplates.VPS4UnexpectedschedmaintFailoveriscompleted,
+        String shopperMessageJson = buildFailoverJson(EmailTemplates.VPS4UnexpectedscheduledmaintenanceFailoveriscompleted,
                 accountName, isFullyManaged);
 
         return sendMessage(shopperId, shopperMessageJson);

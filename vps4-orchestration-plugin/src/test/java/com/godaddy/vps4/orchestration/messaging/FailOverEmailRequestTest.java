@@ -41,7 +41,7 @@ public class FailOverEmailRequestTest {
     @Test
     public void testSendSystemDownFailoverEmail()  {
         try {
-            failOverEmailRequest = new FailOverEmailRequest(EmailTemplates.VPS4SystemDownFailover, shopperId,
+            failOverEmailRequest = new FailOverEmailRequest(EmailTemplates.VPS4SystemDownFailoverV2, shopperId,
                     accountName, isFullyManaged);
             when(messagingService.sendSystemDownFailoverEmail(shopperId, accountName, isFullyManaged))
                     .thenReturn(messageId);
@@ -58,7 +58,7 @@ public class FailOverEmailRequestTest {
     @Test
     public void testSendFailoverCompletedEmail()  {
         try {
-            failOverEmailRequest = new FailOverEmailRequest(EmailTemplates.VPS4UnexpectedschedmaintFailoveriscompleted,
+            failOverEmailRequest = new FailOverEmailRequest(EmailTemplates.VPS4UnexpectedscheduledmaintenanceFailoveriscompleted,
                     shopperId, accountName, isFullyManaged);
             when(messagingService.sendFailoverCompletedEmail(shopperId, accountName, isFullyManaged))
                     .thenReturn(messageId);
@@ -74,7 +74,7 @@ public class FailOverEmailRequestTest {
 
     @Test(expected = UnknownEmailTemplateException.class)
     public void testUnknownEmailTemplateException()  {
-        failOverEmailRequest = new FailOverEmailRequest(EmailTemplates.VPS4ScheduledPatching,
+        failOverEmailRequest = new FailOverEmailRequest(EmailTemplates.VPS4ScheduledPatchingV2,
                 shopperId, accountName, isFullyManaged);
 
         sendMessagingEmailCmd.execute(context, failOverEmailRequest);
