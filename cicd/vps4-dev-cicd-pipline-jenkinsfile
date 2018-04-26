@@ -1,0 +1,91 @@
+import hudson.model.*
+import groovy.transform.Field
+
+@Field def VPS4_VERSION
+@Library('ECM@master') _
+node("vps4-test-slave") {
+    try {
+        properties([
+                parameters([
+                        string(name: 'branch', defaultValue: 'master', description: '***ONLY VALID FOR DEV_DEPLOY***, others will always use master. Specifies the branch that will be built and deployed to dev.')
+                ]),
+                buildDiscarder(logRotator(artifactDaysToKeepStr: '7', artifactNumToKeepStr: '', daysToKeepStr: '28', numToKeepStr: '')),
+        ])
+        setNextStage("DEV_BRANCH_BUILD")
+        echo "Starting on step ${nextStage}"
+        stage('Dev Branch Build') {
+            if (nextStage == "DEV_BRANCH_BUILD") {
+                git credentialsId: 'd12d30ba-3f92-43a2-9c0d-0682c9bc6da9', url: 'git@github.secureserver.net:vps4/vps4.git'
+                build job: 'vps4-build-dev', parameters: [string(name: 'branch', value: params.branch)]
+                load("/home/jenkins/vps4_latest_version.properties")
+                echo "vps4 version: ${VPS4_VERSION}"
+
+                setNextStage("DEV_BRANCH_DEPLOY")
+                slackSend(color: '#00CD48', message: "VPS4 DEV Build of branch ${params.branch} was SUCCESSFUL. Job '${env.JOB_NAME} [${VPS4_VERSION}]' (${env.BUILD_URL})")
+            }
+        }
+        stage('Deploy Branch to Dev') {
+            if (nextStage == "DEV_BRANCH_DEPLOY") {
+                build job: 'dev-deploy-branch', parameters: [string(name: 'VPS4_VERSION', value: VPS4_VERSION)]
+                // preDeployToEnv("dev", "${VPS4_VERSION}")
+                productStampZk("dev", "vps4-web-${VPS4_VERSION}.noarch", "vps4-web")
+                productStampZk("dev", "vps4-message-consumer-${VPS4_VERSION}.noarch", "vps4-message-consumer")
+                productStampZk("dev", "vps4-orchestration-plugin-${VPS4_VERSION}.noarch", "hfs-engine", "/orchestration/serviceapi")
+                productStampZk("dev", "vps4-scheduler-${VPS4_VERSION}.noarch", "vps4-scheduler")
+                setNextStage("DONE")
+                slackSend(color: '#00CD48', message: "VPS4 Deploy to Dev of branch ${params.branch} was SUCCESSFUL. Job '${env.JOB_NAME} [${VPS4_VERSION}]' (${env.BUILD_URL})")
+            }
+        }
+        stage("Done") {
+            if (nextStage == "DONE") {
+                slackSend(color: '#00CD48', message: "VPS4 Deployment Complete. Job '${env.JOB_NAME} [${VPS4_VERSION}]' (${env.BUILD_URL})")
+            }
+        }
+    }
+    catch (AssertionError e) {
+        slackSend(color: '#ff0000', message: "ERROR: ASSERTION: Job '${env.JOB_NAME} [${VPS4_VERSION}]' (${env.BUILD_URL}): ${e.getMessage()}")
+        error(e.getMessage())
+    }
+    finally {
+        cleanupEnvironment()
+    }
+}
+
+private void setNextStage(java.lang.String nextStageName) {
+    nextStage = nextStageName
+}
+
+private void cleanupEnvironment() {
+    if (currentBuild.currentResult == 'SUCCESS') {
+        cleanWs cleanWhenAborted: false, cleanWhenFailure: false, cleanWhenNotBuilt: false, cleanWhenUnstable: false
+    } else {
+        echo "Skipping workspace cleanup due to errors in build"
+    }
+}
+
+private void preDeployToEnv(String targetEnv, String version) {
+    echo "targetEnv: ${targetEnv}, version: ${version}"
+    shell("chmod +x ./cicd/pre_deploy.sh ")
+    shell("./cicd/pre_deploy.sh -e ${targetEnv} -v ${version}")
+}
+
+private void productStampZk(String targetEnv, String rpmName, String product) {
+    echo "targetEnv: ${targetEnv}, rpmName: ${rpmName}, product: ${product}"
+    shell("/usr/bin/python ./cicd/vps4_zk_cicd.py -e ${targetEnv} -n ${rpmName} -p ${product}")
+}
+
+private void productStampZk(String targetEnv, String rpmName, String product, String zkServiceNode) {
+    echo "targetEnv: ${targetEnv}, rpmName: ${rpmName}, product: ${product}, zkServiceNode: ${zkServiceNode}"
+    shell("/usr/bin/python ./cicd/vps4_zk_cicd.py -e ${targetEnv} -n ${rpmName} -p ${product} -z ${zkServiceNode}")
+}
+
+private void shell(GString script) {
+    if (this.sh(returnStatus: true, script: script)) {
+        this.currentBuild.result = 'ERROR'
+        this.error("Error running shell script")
+    }
+}
+
+private void shell(String script) {
+    this.shell("${script}")
+}
