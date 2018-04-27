@@ -32,7 +32,7 @@ import com.godaddy.vps4.vm.VmUserType;
 import com.godaddy.vps4.vm.jdbc.JdbcActionService;
 import com.godaddy.vps4.vm.jdbc.JdbcImageService;
 import com.godaddy.vps4.vm.jdbc.JdbcVirtualMachineService;
-import com.godaddy.vps4.web.security.EmployeeOnly;
+import com.godaddy.vps4.web.security.StaffOnly;
 import com.godaddy.vps4.web.security.GDUser;
 import com.godaddy.vps4.web.vm.VmActionWithDetails;
 import com.godaddy.vps4.web.vm.VmSupportUserResource;
@@ -100,9 +100,9 @@ public class VmSupportUserResourceTest {
     }
 
     @Test
-    public void testAddSupportUserEmployeeOnly() throws NoSuchMethodException {
+    public void testAddSupportUserStaffOnly() throws NoSuchMethodException {
         Method method = VmSupportUserResource.class.getMethod("addSupportUser", UUID.class);
-        Assert.assertTrue(method.isAnnotationPresent(EmployeeOnly.class));
+        Assert.assertTrue(method.isAnnotationPresent(StaffOnly.class));
     }
 
     @Test
@@ -134,9 +134,9 @@ public class VmSupportUserResourceTest {
     }
 
     @Test
-    public void testRemoveSupportUserEmployeeOnly() throws NoSuchMethodException {
+    public void testRemoveSupportUserStaffOnly() throws NoSuchMethodException {
         Method method = VmSupportUserResource.class.getMethod("removeSupportUser", UUID.class);
-        Assert.assertTrue(method.isAnnotationPresent(EmployeeOnly.class));
+        Assert.assertTrue(method.isAnnotationPresent(StaffOnly.class));
     }
 
     @Test

@@ -8,6 +8,7 @@ public class GDUser {
     SsoToken token;
     String shopperId;
     boolean isEmployee;
+    boolean isStaff;
     boolean isAdmin;
 
     public String getShopperId() {
@@ -26,14 +27,18 @@ public class GDUser {
         return isAdmin;
     }
 
+    public boolean isStaff() {
+        return isStaff;
+    }
+
     public boolean isEmployeeToShopper() {
         return isEmployee() && isShopper();
     }
 
     @Override
     public String toString() {
-        return "GDUser [token=" + token + ", shopperId=" + shopperId + ", isEmployee=" + isEmployee + ", isAdmin="
-                + isAdmin + ", isShopper()=" + isShopper() + "]";
+        return "GDUser [token=" + token + ", shopperId=" + shopperId + ", isEmployee=" + isEmployee + ", isStaff="
+                + isStaff + ", isAdmin=" + isAdmin + ", isShopper()=" + isShopper() + "]";
     }
 
 }

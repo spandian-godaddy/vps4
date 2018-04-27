@@ -69,6 +69,7 @@ public class SsoRequestAuthenticatorTest {
         Assert.assertEquals(true, user.isShopper());
         Assert.assertEquals(false, user.isAdmin());
         Assert.assertEquals(false, user.isEmployee());
+        Assert.assertEquals(false, user.isStaff());
     }
 
     @Test
@@ -82,6 +83,7 @@ public class SsoRequestAuthenticatorTest {
         Assert.assertEquals(true, user.isShopper());
         Assert.assertEquals(false, user.isAdmin());
         Assert.assertEquals(false, user.isEmployee());
+        Assert.assertEquals(false, user.isStaff());
     }
 
     @Test
@@ -94,6 +96,20 @@ public class SsoRequestAuthenticatorTest {
         Assert.assertEquals(false, user.isShopper());
         Assert.assertEquals(true, user.isAdmin());
         Assert.assertEquals(true, user.isEmployee());
+        Assert.assertEquals(true, user.isStaff());
+    }
+
+    @Test
+    public void testStaff() {
+        SsoToken token = mockJomaxToken(Collections.singletonList("C3-Hosting Support"));
+        when(tokenExtractor.extractToken(request)).thenReturn(token);
+
+        GDUser user = authenticator.authenticate(request);
+        Assert.assertEquals(null, user.getShopperId());
+        Assert.assertEquals(false, user.isShopper());
+        Assert.assertEquals(false, user.isAdmin());
+        Assert.assertEquals(true, user.isEmployee());
+        Assert.assertEquals(true, user.isStaff());
     }
 
     @Test
@@ -119,6 +135,7 @@ public class SsoRequestAuthenticatorTest {
         Assert.assertEquals(false, user.isShopper());
         Assert.assertEquals(false, user.isAdmin());
         Assert.assertEquals(true,  user.isEmployee());
+        Assert.assertEquals(false, user.isStaff());
     }
 
     @Test
@@ -132,6 +149,7 @@ public class SsoRequestAuthenticatorTest {
         Assert.assertEquals(true, user.isShopper());
         Assert.assertEquals(false, user.isAdmin());
         Assert.assertEquals(true,  user.isEmployee());
+        Assert.assertEquals(false, user.isStaff());
     }
 
     @Test(expected=Vps4Exception.class)

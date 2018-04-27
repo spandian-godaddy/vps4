@@ -176,4 +176,10 @@ public class MailRelayResourceTest {
         getMailRelayResource().updateMailRelayQuota(vm.vmId, getQuotaPatch());
     }
 
+    @Test
+    public void testStaffUpdateMailRelayQuota(){
+        user = GDUserMock.createStaff();
+        getMailRelayResource().updateMailRelayQuota(vm.vmId, getQuotaPatch());
+    }
+
 }

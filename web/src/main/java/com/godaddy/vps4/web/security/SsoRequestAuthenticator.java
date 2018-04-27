@@ -1,7 +1,12 @@
 package com.godaddy.vps4.web.security;
 
+import java.util.List;
+
 import javax.inject.Inject;
 import javax.servlet.http.HttpServletRequest;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.godaddy.hfs.config.Config;
 import com.godaddy.hfs.sso.SsoTokenExtractor;
@@ -9,14 +14,13 @@ import com.godaddy.hfs.sso.token.IdpSsoToken;
 import com.godaddy.hfs.sso.token.JomaxSsoToken;
 import com.godaddy.hfs.sso.token.SsoToken;
 import com.godaddy.vps4.web.Vps4Exception;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public class SsoRequestAuthenticator implements RequestAuthenticator<GDUser> {
 
     private static final Logger logger = LoggerFactory.getLogger(SsoRequestAuthenticator.class);
 
     private final String VPS4_TEAM = "Dev-VPS4";
+    private final String C3_HOSTING_SUPPORT = "C3-Hosting Support";
 
     private final SsoTokenExtractor tokenExtractor;
 
@@ -78,19 +82,27 @@ public class SsoRequestAuthenticator implements RequestAuthenticator<GDUser> {
         if (token instanceof JomaxSsoToken) {
             gdUser.shopperId = shopperOverride;
             gdUser.isEmployee = true;
-            gdUser.isAdmin = ((JomaxSsoToken) token).getGroups().contains(VPS4_TEAM);
+            setPrivilegeByGroups(gdUser, ((JomaxSsoToken) token).getGroups());
         }
         else if (token instanceof IdpSsoToken) {
             gdUser.shopperId = ((IdpSsoToken) token).getShopperId();
             if (token.employeeUser != null) {
                 gdUser.isEmployee = true;
-                gdUser.isAdmin = ((JomaxSsoToken) token.employeeUser)
-                        .getGroups().contains(VPS4_TEAM);
+                setPrivilegeByGroups(gdUser, ((JomaxSsoToken) token.employeeUser).getGroups());
             }
         }
         else
             throw new Vps4Exception("AUTHORIZATION_ERROR", "Unknown SSO Token Type!");
 
         return gdUser;
+    }
+
+    private void setPrivilegeByGroups(GDUser gdUser, List<String> groups) {
+        if (groups.contains(VPS4_TEAM)) {
+            gdUser.isAdmin = true;
+            gdUser.isStaff = true;
+        } else if (groups.contains(C3_HOSTING_SUPPORT)) {
+            gdUser.isStaff = true;
+        }
     }
 }
