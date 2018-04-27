@@ -28,13 +28,13 @@ public class AdminAuthFilter implements ContainerRequestFilter {
         GDUser user = (GDUser) request.getAttribute(AuthenticationFilter.USER_ATTRIBUTE_NAME);
         Method resourceMethod = resourceInfo.getResourceMethod();
 
-        boolean employeeRequired =(resourceInfo.getResourceClass().isAssignableFrom(CommandsResource.class) ||
-                                   resourceInfo.getResourceClass().isAssignableFrom(CommandsViewResource.class) ||
-                                   resourceMethod.isAnnotationPresent(EmployeeOnly.class));
+        boolean staffRequired = (resourceInfo.getResourceClass().isAssignableFrom(CommandsResource.class) ||
+                                 resourceInfo.getResourceClass().isAssignableFrom(CommandsViewResource.class) ||
+                                 resourceMethod.isAnnotationPresent(StaffOnly.class));
 
         boolean adminRequired = resourceMethod.isAnnotationPresent(AdminOnly.class);
 
-        if ((employeeRequired && !user.isEmployee) || (adminRequired && !user.isAdmin())) {
+        if ((staffRequired && !user.isStaff) || (adminRequired && !user.isAdmin())) {
             requestContext.abortWith(Response.status(Response.Status.FORBIDDEN).build());
         }
     }

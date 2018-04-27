@@ -33,7 +33,7 @@ import com.godaddy.vps4.vm.VirtualMachine;
 import com.godaddy.vps4.vm.VmUser;
 import com.godaddy.vps4.vm.VmUserService;
 import com.godaddy.vps4.web.Vps4Api;
-import com.godaddy.vps4.web.security.EmployeeOnly;
+import com.godaddy.vps4.web.security.StaffOnly;
 import com.godaddy.vps4.web.util.Commands;
 import com.google.inject.Inject;
 
@@ -89,7 +89,7 @@ public class VmSupportUserResource {
     }
 
     @SuppressWarnings("unchecked")
-    @EmployeeOnly
+    @StaffOnly
     @POST
     @Path("/{vmId}/supportUser")
     public VmActionWithDetails addSupportUser(@PathParam("vmId") UUID vmId) {
@@ -153,7 +153,7 @@ public class VmSupportUserResource {
     }
 
     @SuppressWarnings("unchecked")
-    @EmployeeOnly
+    @StaffOnly
     @DELETE
     @Path("/{vmId}/supportUser")
     public VmActionWithDetails removeSupportUser(@PathParam("vmId") UUID vmId) {

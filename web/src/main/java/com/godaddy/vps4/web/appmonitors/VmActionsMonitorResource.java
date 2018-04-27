@@ -17,7 +17,7 @@ import com.godaddy.vps4.appmonitors.VmActionData;
 import com.godaddy.vps4.vm.ActionStatus;
 import com.godaddy.vps4.vm.ActionType;
 import com.godaddy.vps4.web.Vps4Api;
-import com.godaddy.vps4.web.security.EmployeeOnly;
+import com.godaddy.vps4.web.security.StaffOnly;
 import com.google.inject.Inject;
 
 import io.swagger.annotations.Api;
@@ -38,7 +38,7 @@ public class VmActionsMonitorResource {
         this.monitorService = monitorService;
     }
 
-    @EmployeeOnly
+    @StaffOnly
     @GET
     @Path("/pending/provision")
     @ApiOperation(value = "Find all VM id's that are pending provisioning for longer than m minutes, default 60 minutes",
@@ -47,7 +47,7 @@ public class VmActionsMonitorResource {
         return monitorService.getVmsByActions(thresholdInMinutes, ActionType.CREATE_VM, ActionStatus.IN_PROGRESS);
     }
 
-    @EmployeeOnly
+    @StaffOnly
     @GET
     @Path("/pending/startvm")
     @ApiOperation(value = "Find all VM id's that are pending start vm action for longer than m minutes, default 15 minutes",
@@ -56,7 +56,7 @@ public class VmActionsMonitorResource {
         return monitorService.getVmsByActions( thresholdInMinutes, ActionType.START_VM, ActionStatus.IN_PROGRESS);
     }
 
-    @EmployeeOnly
+    @StaffOnly
     @GET
     @Path("/pending/stopvm")
     @ApiOperation(value = "Find all VM id's that are pending stop vm action for longer than m minutes, default 15 minutes",
@@ -65,7 +65,7 @@ public class VmActionsMonitorResource {
         return monitorService.getVmsByActions(thresholdInMinutes, ActionType.STOP_VM, ActionStatus.IN_PROGRESS);
     }
 
-    @EmployeeOnly
+    @StaffOnly
     @GET
     @Path("/pending/restartvm")
     @ApiOperation(value = "Find all VM id's that are pending restart vm action for longer than m minutes, default 15 minutes",
@@ -74,7 +74,7 @@ public class VmActionsMonitorResource {
         return monitorService.getVmsByActions(thresholdInMinutes, ActionType.RESTART_VM, ActionStatus.IN_PROGRESS);
     }
 
-    @EmployeeOnly
+    @StaffOnly
     @GET
     @Path("/pending/backupactions")
     @ApiOperation(value = "Find all snapshot ids that are pending backup vm action for longer than m minutes, default 2 hours",
@@ -83,7 +83,7 @@ public class VmActionsMonitorResource {
         return monitorService.getVmsBySnapshotActions(thresholdInMinutes, ActionStatus.IN_PROGRESS, ActionStatus.NEW, ActionStatus.ERROR);
     }
 
-    @EmployeeOnly
+    @StaffOnly
     @GET
     @Path("/pending/restorevm")
     @ApiOperation(value = "Find all VM id's that are pending restore vm action for longer than m minutes, default 2 hours",
@@ -92,7 +92,7 @@ public class VmActionsMonitorResource {
         return monitorService.getVmsByActions(thresholdInMinutes, ActionType.RESTORE_VM, ActionStatus.IN_PROGRESS);
     }
 
-    @EmployeeOnly
+    @StaffOnly
     @GET
     @Path("/pending/newactions")
     @ApiOperation(value = "Find all vm actions pending in new status for longer than m minutes, default 2 hours",
@@ -101,7 +101,7 @@ public class VmActionsMonitorResource {
         return monitorService.getVmsByActionStatus(thresholdInMinutes, ActionStatus.NEW);
     }
 
-    @EmployeeOnly
+    @StaffOnly
     @GET
     @Path("/missing_backup_jobs")
     @ApiOperation(value = "Find all active vms that do not have a backup job id, meaning scheduler create job failed",

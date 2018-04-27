@@ -26,7 +26,7 @@ import com.godaddy.vps4.vm.VirtualMachine;
 import com.godaddy.vps4.vm.VirtualMachineService;
 import com.godaddy.vps4.web.PATCH;
 import com.godaddy.vps4.web.Vps4Api;
-import com.godaddy.vps4.web.security.AdminOnly;
+import com.godaddy.vps4.web.security.StaffOnly;
 import com.godaddy.vps4.web.util.Commands;
 import com.godaddy.vps4.web.vm.VmResource;
 import com.google.inject.Inject;
@@ -106,7 +106,7 @@ public class VmMailRelayResource {
         public int quota;
     }
 
-    @AdminOnly
+    @StaffOnly
     @PATCH
     @Path("{vmId}/mailRelay")
     @Produces({ "application/json" })
