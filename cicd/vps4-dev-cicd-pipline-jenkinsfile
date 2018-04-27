@@ -7,22 +7,11 @@ node("vps4-test-slave") {
     try {
         properties([
                 parameters([
-                        string(name: 'branch', defaultValue: 'master', description: '***ONLY VALID FOR DEV_DEPLOY***, others will always use master. Specifies the branch that will be built and deployed to dev.'),
-                        choice(choices: ["TRUE", "FALSE",].join("\n"),
-                                defaultValue: "false",
-                                description: "Set to true is you want to build and deploy to dev.",
-                                name: "shouldBuildAndDeploy"
-                        )
+                        string(name: 'branch', defaultValue: 'master', description: '***ONLY VALID FOR DEV_DEPLOY***, others will always use master. Specifies the branch that will be built and deployed to dev.')
                 ]),
                 buildDiscarder(logRotator(artifactDaysToKeepStr: '7', artifactNumToKeepStr: '', daysToKeepStr: '28', numToKeepStr: '')),
         ])
-        if(params.shouldBuildAndDeploy ==  "TRUE") {
-            setNextStage("DEV_BRANCH_BUILD")
-        } else {
-            setNextStage("DONE")
-        }
-           
-
+        setNextStage("DEV_BRANCH_BUILD")
         echo "Starting on step ${nextStage}"
         stage('Dev Branch Build') {
             if (nextStage == "DEV_BRANCH_BUILD") {
