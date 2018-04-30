@@ -1,7 +1,10 @@
 package com.godaddy.vps4.orchestration;
 
 import com.godaddy.vps4.orchestration.mailrelay.Vps4SetMailRelayQuota;
-import com.godaddy.vps4.orchestration.messaging.SendMessagingEmail;
+import com.godaddy.vps4.orchestration.messaging.SendScheduledPatchingEmail;
+import com.godaddy.vps4.orchestration.messaging.SendUnexpectedButScheduledMaintenanceEmail;
+import com.godaddy.vps4.orchestration.messaging.SendSystemDownFailoverEmail;
+import com.godaddy.vps4.orchestration.messaging.SendFailoverCompletedEmail;
 import com.godaddy.vps4.orchestration.snapshot.Vps4DestroySnapshot;
 import com.godaddy.vps4.orchestration.snapshot.Vps4SnapshotVm;
 import com.godaddy.vps4.orchestration.sysadmin.Vps4AddSupportUser;
@@ -53,6 +56,9 @@ public class Vps4CommandModule extends AbstractModule {
         bind(Vps4DeleteAllScheduledJobsForVm.class);
         bind(Vps4RecordScheduledJobForVm.class);
         bind(UnlicenseControlPanel.class);
-        bind(SendMessagingEmail.class);
+        bind(SendScheduledPatchingEmail.class);
+        bind(SendUnexpectedButScheduledMaintenanceEmail.class);
+        bind(SendSystemDownFailoverEmail.class);
+        bind(SendFailoverCompletedEmail.class);
     }
 }

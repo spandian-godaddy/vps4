@@ -1,6 +1,5 @@
 package com.godaddy.vps4.orchestration.messaging;
 
-import com.godaddy.vps4.messaging.MissingShopperIdException;
 import com.godaddy.vps4.messaging.Vps4MessagingService;
 import com.godaddy.vps4.messaging.models.Message;
 import com.godaddy.vps4.orchestration.NoRetryException;
@@ -21,7 +20,7 @@ import static org.mockito.Mockito.times;
 public class WaitForMessageCompleteTest {
     Vps4MessagingService messagingService;
     CommandContext context;
-    EmailRequest emailRequest;
+    ScheduledMaintenanceEmailRequest emailRequest;
     WaitForMessageComplete waitForMsgCompleteCmd;
     Message emailMessage;
     String messageId;
@@ -31,7 +30,7 @@ public class WaitForMessageCompleteTest {
         messageId = UUID.randomUUID().toString();
         messagingService = mock(Vps4MessagingService.class);
         context = mock(CommandContext.class);
-        emailRequest = mock(EmailRequest.class);
+        emailRequest = mock(ScheduledMaintenanceEmailRequest.class);
         emailMessage = mock(Message.class);
         waitForMsgCompleteCmd = new WaitForMessageComplete(messagingService);
     }

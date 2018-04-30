@@ -13,7 +13,6 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
 
-import com.godaddy.vps4.messaging.DefaultVps4MessagingService.EmailTemplates;
 import com.godaddy.vps4.orchestration.messaging.FailOverEmailRequest;
 import com.godaddy.vps4.orchestration.messaging.ScheduledMaintenanceEmailRequest;
 import com.godaddy.vps4.security.Vps4UserService;
@@ -55,19 +54,19 @@ public class VmMessagingResource {
     public void messagePatching(@PathParam("vmId") UUID vmId,
             @ApiParam(value = "The start time of the patching window in GMT", required = true) @QueryParam("startTime") String startTime,
             @ApiParam(value = "The duration of the patching window in minutes", required = true) @QueryParam("duration") long durationMinutes) {
-        ScheduledMaintenanceEmailRequest request = CreateMessagingRequest(vmId, startTime, durationMinutes,
-                EmailTemplates.VPS4ScheduledPatchingV2);
-        Commands.execute(commandService, "SendMessagingEmail", request);
+
+        ScheduledMaintenanceEmailRequest request = CreateScheduledMaintenanceEmailRequest(vmId, startTime, durationMinutes);
+        Commands.execute(commandService, "SendScheduledPatchingEmail", request);
     }
 
-	private ScheduledMaintenanceEmailRequest CreateMessagingRequest(UUID vmId, String startTime, long durationMinutes, EmailTemplates template) {
+	private ScheduledMaintenanceEmailRequest CreateScheduledMaintenanceEmailRequest(UUID vmId, String startTime, long durationMinutes) {
 		Instant startTimeInstant = validateStartTime(startTime);
         validateDuration(durationMinutes);
 
         VirtualMachine vm = getAndValidateVm(vmId);
         String shopperId = getShopperId(vm);
 
-        return new ScheduledMaintenanceEmailRequest(template, shopperId, vm.name, vm.isFullyManaged(), startTimeInstant, durationMinutes);
+        return new ScheduledMaintenanceEmailRequest(shopperId, vm.name, vm.isFullyManaged(), startTimeInstant, durationMinutes);
 	}
 
 	private VirtualMachine getAndValidateVm(UUID vmId) {
@@ -98,24 +97,24 @@ public class VmMessagingResource {
     public void messageScheduledMaintenance(@PathParam("vmId") UUID vmId,
             @ApiParam(value = "The start time of the maintenance window in GMT, example: 2007-12-03T10:15:30.00Z", required = true) @QueryParam("startTime") String startTime,
             @ApiParam(value = "The duration of the maintenance window in minutes", required = true) @QueryParam("duration") long durationMinutes) {
-        ScheduledMaintenanceEmailRequest request = CreateMessagingRequest(vmId, startTime, durationMinutes,
-                EmailTemplates.VPS4UnexpectedbutScheduledMaintenanceV2);
-        Commands.execute(commandService, "SendMessagingEmail", request);
+
+        ScheduledMaintenanceEmailRequest request = CreateScheduledMaintenanceEmailRequest(vmId, startTime, durationMinutes);
+        Commands.execute(commandService, "SendUnexpectedButScheduledMaintenanceEmail", request);
     }
 
     @AdminOnly
     @POST
     @Path("/{vmId}/messaging/failover")
     public void messageFailover(@PathParam("vmId") UUID vmId) {
-        FailOverEmailRequest request = CreateEmailRequest(vmId, EmailTemplates.VPS4SystemDownFailoverV2);
-        Commands.execute(commandService, "SendMessagingEmail", request);
+        FailOverEmailRequest request = CreateEmailRequest(vmId);
+        Commands.execute(commandService, "SendSystemDownFailoverEmail", request);
     }
 
-    private FailOverEmailRequest CreateEmailRequest(UUID vmId, EmailTemplates template) {
+    private FailOverEmailRequest CreateEmailRequest(UUID vmId) {
 		VirtualMachine vm = getAndValidateVm(vmId);
         String shopperId = getShopperId(vm);
 
-        return new FailOverEmailRequest(template, shopperId, vm.name, vm.isFullyManaged());
+        return new FailOverEmailRequest(shopperId, vm.name, vm.isFullyManaged());
 	}
 
 	private String getShopperId(VirtualMachine vm) {
@@ -128,7 +127,7 @@ public class VmMessagingResource {
     @POST
     @Path("/{vmId}/messaging/failoverComplete")
     public void messageFailoverComplete(@PathParam("vmId") UUID vmId) {
-        FailOverEmailRequest request = CreateEmailRequest(vmId, EmailTemplates.VPS4UnexpectedscheduledmaintenanceFailoveriscompleted);
-        Commands.execute(commandService, "SendMessagingEmail", request);
+        FailOverEmailRequest request = CreateEmailRequest(vmId);
+        Commands.execute(commandService, "SendFailoverCompletedEmail", request);
     }
 }
