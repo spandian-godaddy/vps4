@@ -33,6 +33,9 @@ public class VmActiveSnapshotFilter implements Filter {
 
     private static final Logger logger = LoggerFactory.getLogger(VmActiveSnapshotFilter.class);
 
+    private static final String MATCH_PATTERN = "/api/vms/(?<vmid>[0-9a-f-]+)/?.*";
+    private static final String EXCLUDE_PATTERN = "/api/vms/(?<vmid>[0-9a-f-]+)/messaging/?.*";
+
     final VirtualMachineService virtualMachineService;
 
     @Inject
@@ -71,13 +74,22 @@ public class VmActiveSnapshotFilter implements Filter {
     }
 
     private void validateIfVmApiRequest(HttpServletRequest request) {
-        String pattern = "/api/vms/(?<vmid>[0-9a-f-]+)/?.*";
-        Matcher m = Pattern.compile(pattern).matcher(request.getRequestURI());
+        String requestUri = request.getRequestURI();
+
+        if(shouldEndpointBeExcluded(requestUri)) {
+            return;
+        }
+
+        Matcher m = Pattern.compile(MATCH_PATTERN).matcher(requestUri);
         if (m.matches()) {
             String vmId = m.group("vmid");
             validateIfVmHasActiveSnapshotAction(request, vmId);
         }
     }
+
+	private boolean shouldEndpointBeExcluded(String requestUri) {
+		return Pattern.matches(EXCLUDE_PATTERN, requestUri);
+	}
 
     private void validateIfVmHasActiveSnapshotAction(HttpServletRequest request, String vmId) {
         Long snapshotActionId = getPendingSnapshotAction(UUID.fromString(vmId));

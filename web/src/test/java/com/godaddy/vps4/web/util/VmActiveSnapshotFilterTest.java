@@ -104,6 +104,19 @@ public class VmActiveSnapshotFilterTest {
         Assert.assertEquals("SNAPSHOT_ACTION_IN_PROGRESS", json.get("id"));
    }
 
+    @Test
+    public void testVmMessagingApiPostWithPendingSnapshot() throws Exception {
+        StringWriter writer = new StringWriter();
+        when(response.getWriter()).thenReturn(new PrintWriter(writer));
+
+        when(jdbcVmService.getPendingSnapshotActionIdByVmId(vmid)).thenReturn(snapshotActionId);
+        when(request.getRequestURI()).thenReturn("/api/vms/" + vmid + "/messaging/failover");
+        when(request.getMethod()).thenReturn("POST");
+
+        filter.doFilter(request, response, chain);
+        verify(chain).doFilter(request, response);
+    }
+
    @Test
    public void initDoesNothing() throws Exception {
        FilterConfig fc = mock(FilterConfig.class);

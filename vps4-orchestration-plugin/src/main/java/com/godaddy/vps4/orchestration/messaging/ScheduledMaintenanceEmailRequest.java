@@ -10,6 +10,8 @@ public class ScheduledMaintenanceEmailRequest {
     public long durationMinutes;
     public boolean isFullyManaged;
 
+    public ScheduledMaintenanceEmailRequest() {
+    }
     public ScheduledMaintenanceEmailRequest(String shopperId, String accountName, boolean isFullyManaged,
                                             Instant startTime, long durationMinutes) {
         this.shopperId = shopperId;
