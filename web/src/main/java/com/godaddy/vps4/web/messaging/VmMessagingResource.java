@@ -52,10 +52,10 @@ public class VmMessagingResource {
     @POST
     @Path("/{vmId}/messaging/patching")
     public void messagePatching(@PathParam("vmId") UUID vmId,
-            @ApiParam(value = "The start time of the patching window in GMT", required = true) @QueryParam("startTime") String startTime,
-            @ApiParam(value = "The duration of the patching window in minutes", required = true) @QueryParam("duration") long durationMinutes) {
+            @ApiParam(value = "startTime in GMT, Example: 2007-12-03T10:15:30.00Z. duration is in minutes.", required = true) ScheduledMessagingResourceRequest messageRequest) {
 
-        ScheduledMaintenanceEmailRequest request = CreateScheduledMaintenanceEmailRequest(vmId, startTime, durationMinutes);
+        ScheduledMaintenanceEmailRequest request = CreateScheduledMaintenanceEmailRequest(vmId,
+                messageRequest.startTime, messageRequest.durationMinutes);
         Commands.execute(commandService, "SendScheduledPatchingEmail", request);
     }
 
@@ -89,16 +89,16 @@ public class VmMessagingResource {
             throw new Vps4Exception("START_TIME_NOT_VALID", "The provided start time is not a valid java Instant");
         }
         return startTimeInstant;
-	}
+    }
 
     @AdminOnly
     @POST
     @Path("/{vmId}/messaging/scheduledMaintenance")
     public void messageScheduledMaintenance(@PathParam("vmId") UUID vmId,
-            @ApiParam(value = "The start time of the maintenance window in GMT, example: 2007-12-03T10:15:30.00Z", required = true) @QueryParam("startTime") String startTime,
-            @ApiParam(value = "The duration of the maintenance window in minutes", required = true) @QueryParam("duration") long durationMinutes) {
+            @ApiParam(value = "startTime in GMT, Example: 2007-12-03T10:15:30.00Z. duration is in minutes.", required = true) ScheduledMessagingResourceRequest messageRequest) {
 
-        ScheduledMaintenanceEmailRequest request = CreateScheduledMaintenanceEmailRequest(vmId, startTime, durationMinutes);
+        ScheduledMaintenanceEmailRequest request = CreateScheduledMaintenanceEmailRequest(vmId,
+                messageRequest.startTime, messageRequest.durationMinutes);
         Commands.execute(commandService, "SendUnexpectedButScheduledMaintenanceEmail", request);
     }
 

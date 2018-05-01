@@ -18,6 +18,7 @@ import com.godaddy.vps4.security.Vps4UserService;
 import com.godaddy.vps4.vm.VirtualMachine;
 import com.godaddy.vps4.vm.VirtualMachineService;
 import com.godaddy.vps4.web.Vps4Exception;
+
 import javax.ws.rs.NotFoundException;
 
 import org.junit.Before;
@@ -67,7 +68,9 @@ public class VmMessagingResourceTest {
     public void testMessagePatching() {
         long duration = 24L * 60L;
         Instant startTime = Instant.now();
-        resource.messagePatching(vm.vmId, startTime.toString(), duration);
+        ScheduledMessagingResourceRequest messagingRequest = new ScheduledMessagingResourceRequest(startTime.toString(),
+                duration);
+        resource.messagePatching(vm.vmId, messagingRequest);
 
         ArgumentCaptor<CommandGroupSpec> argument = ArgumentCaptor.forClass(CommandGroupSpec.class);
         verify(commandService, times(1)).executeCommand(argument.capture());
@@ -84,7 +87,9 @@ public class VmMessagingResourceTest {
     public void testMessageInvalidDuration() {
         long duration = -1L;
         Instant startTime = Instant.now();
-        resource.messagePatching(vm.vmId, startTime.toString(), duration);
+        ScheduledMessagingResourceRequest messagingRequest = new ScheduledMessagingResourceRequest(startTime.toString(),
+                duration);
+        resource.messagePatching(vm.vmId, messagingRequest);
 
         verify(commandService, never()).executeCommand(any());
     }
@@ -93,7 +98,9 @@ public class VmMessagingResourceTest {
     public void testMessageInvalidStartTime() {
         long duration = 1L;
         String startTime = "bad time";
-        resource.messagePatching(vm.vmId, startTime, duration);
+        ScheduledMessagingResourceRequest messagingRequest = new ScheduledMessagingResourceRequest(startTime,
+                duration);
+        resource.messagePatching(vm.vmId, messagingRequest);
 
         verify(commandService, never()).executeCommand(any());
     }
@@ -103,14 +110,17 @@ public class VmMessagingResourceTest {
         long duration = 24L * 60L;
         Instant startTime = Instant.now();
         when(virtualMachineService.getVirtualMachine(vm.vmId)).thenReturn(null);
-        resource.messagePatching(vm.vmId, startTime.toString(), duration);
+        ScheduledMessagingResourceRequest messagingRequest = new ScheduledMessagingResourceRequest(startTime.toString(),
+                duration);
+        resource.messagePatching(vm.vmId, messagingRequest);
     }
 
     @Test
     public void testMessageMaintenance() {
         long duration = 24L * 60L;
         Instant startTime = Instant.now();
-        resource.messageScheduledMaintenance(vm.vmId, startTime.toString(), duration);
+        ScheduledMessagingResourceRequest messagingRequest = new ScheduledMessagingResourceRequest(startTime.toString(), duration);
+        resource.messageScheduledMaintenance(vm.vmId, messagingRequest);
 
         ArgumentCaptor<CommandGroupSpec> argument = ArgumentCaptor.forClass(CommandGroupSpec.class);
         verify(commandService, times(1)).executeCommand(argument.capture());
