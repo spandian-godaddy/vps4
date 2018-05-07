@@ -251,6 +251,7 @@ The application monitoring api is exposed through the vps4 swagger in the "appmo
 The appropriate SSL certificates will need to be placed in the directory where the script is set to run. 
 The jobs are setup under the user **vps4monitor** and the password is available from the vps4 development team. 
 The monitoring scripts are setup manually and invoked using a cron scheduler on a separate server in each DC for the production environment.
+The monitoring scripts will update the *vps4-monitoring* slack channel with alerts.
 
 | DC Env    |   Server                              |
 | -------   | ------------------------------------- |
@@ -290,5 +291,57 @@ Process to setup a cron job:
     0 8-17 * * * root cd /home/vps4monitor;/home/vps4monitor/monitor_pending_actions.sh https://vps4-cca.api.sin2.godaddy.com/api/appmonitors/missing_backup_jobs PROD SG2 'Missing Backup Jobs' > /dev/null 2>&1
     ```
 
+### Sensu Alert setup for application monitoring
+In addition to alerting in the slack channel, there will also be a sensu notification generated which in turn, creates a service-now ticket for any monitoring alerts in the production environment.
+TODO: Eventually need to puppetize this process below.
 
+* Install the sensu packages
+    ```
+      yum install -y  sensu-enterprise-plugins.noarch
+      yum install -y sensu-team-plugins-vps4.noarch
+    ```
+* Ensure the following:
+  - Sensu checks are located under /etc/sensu/conf.d/team/checks
+  - Sensu plugins are located under /etc/sensu/conf.d/team/plugins
+  - SSL Certificates are located in /etc/sensu/ssl
+  - Client.json and rabbitmq.json are specific to VPS4 and are located in /etc/sensu/conf.d
+  - VPS4 sensu repository is located [here: https://vps4.sensu.prod.phx3.secureserver.net/#/checks](https://vps4.sensu.prod.phx3.secureserver.net/#/checks) 
  
+ ```
+ Client.json
+ {
+   "client": {
+     "name": "p3plvps4rprt01",
+     "address": "10.32.65.48",
+     "site": "p3",
+     "environment": "prod",
+     "environment_filter": true,
+     "project": "vps4",
+     "playbook": "https://confluence.int.godaddy.com/display/HPLAT/vps4app#vps4app-prod",
+     "subscriptions": [ "p3plvps4rprt01", "vps4app", "prod_p3", "vps4", "linuxhost" ]
+   }
+ }
+ ```
+ 
+ ```
+ rabbitmq.json
+ {
+   "rabbitmq": {
+     "port": 5671,
+     "host": "vps4.rmq.sensu.prod.phx3.secureserver.net",
+     "user": "sensuvps4",
+     "vhost": "/sensu-vps4",
+     "password": "6460567d252a8b7e2602f289dd0e91b26ef04c8d",
+     "ssl": {
+       "private_key_file": "/etc/sensu/ssl/key.pem",
+       "cert_chain_file": "/etc/sensu/ssl/cert.pem"
+     }
+   }
+ }
+```
+ 
+* Re-start sensu and tail logs
+    ```
+    service sensu-client start
+    tail -50f /var/log/sensu/sensu-client.log
+    ```
