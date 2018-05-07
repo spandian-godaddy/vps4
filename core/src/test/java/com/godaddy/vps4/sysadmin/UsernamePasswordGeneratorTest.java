@@ -49,20 +49,29 @@ public class UsernamePasswordGeneratorTest {
     @Test
     public void testGenerateUsername() {
         int length = 12;
-        String username = UsernamePasswordGenerator.generateUsername(length);
+        String prefix = "support_";
+        String username = UsernamePasswordGenerator.generateUsername(prefix, length);
         assertEquals(length, username.length());
 
         PasswordValidator validator = new PasswordValidator(Arrays.asList(
                 new LengthRule(length, length),
 
-                // all lower-case character
-                new CharacterRule(EnglishCharacterData.LowerCase, length),
+                // all lower-case character with an underscore
+                new CharacterRule(EnglishCharacterData.LowerCase, length-1),
+                new CharacterRule(EnglishCharacterData.Special, 1),
 
                 // no whitespace
                 new WhitespaceRule()));
 
         RuleResult result = validator.validate(new PasswordData(username));
         assertTrue(result.isValid());
+    }
+
+    @Test(expected = RuntimeException.class)
+    public void testGenerateUsernamePrefixTooLong() {
+        int length = 12;
+        String prefix = "support_1234";
+        UsernamePasswordGenerator.generateUsername(prefix, length);
     }
 
 }

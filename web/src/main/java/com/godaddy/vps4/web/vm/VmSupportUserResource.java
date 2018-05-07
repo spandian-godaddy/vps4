@@ -18,6 +18,7 @@ import org.json.simple.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.godaddy.hfs.config.Config;
 import com.godaddy.vps4.orchestration.hfs.sysadmin.SetPassword;
 import com.godaddy.vps4.orchestration.sysadmin.Vps4AddSupportUser;
 import com.godaddy.vps4.orchestration.sysadmin.Vps4RemoveSupportUser;
@@ -57,6 +58,7 @@ public class VmSupportUserResource {
     private final Vps4User supportUser;
     private final String SupportUserName = "Support";
     private final Cryptography cryptography;
+    private final Config config;
 
     @Inject
     public VmSupportUserResource(VmResource vmResource,
@@ -64,13 +66,15 @@ public class VmSupportUserResource {
             ActionService actionService,
             CommandService commandService,
             VmUserService vmUserService,
-            Cryptography cryptography) {
+            Cryptography cryptography,
+            Config config) {
         this.vmResource = vmResource;
         this.actionService = actionService;
         this.commandService = commandService;
         this.vmUserService = vmUserService;
         this.cryptography = cryptography;
         supportUser = vps4UserService.getUser(SupportUserName);
+        this.config = config;
     }
 
     @GET
@@ -99,7 +103,8 @@ public class VmSupportUserResource {
 
         if (user == null) {
             logger.info("Adding an admin user to vm {} from the support api", vmId);
-            String username = UsernamePasswordGenerator.generateUsername(12);
+            String usernamePrefix = config.get("vps4.supportUser.namePrefix", "support_");
+            String username = UsernamePasswordGenerator.generateUsername(usernamePrefix, 12);
 
             JSONObject addUserJson = new JSONObject();
             addUserJson.put("username", username);

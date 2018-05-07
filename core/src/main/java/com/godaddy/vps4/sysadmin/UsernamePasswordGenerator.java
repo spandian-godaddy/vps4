@@ -3,6 +3,8 @@ package com.godaddy.vps4.sysadmin;
 import java.util.ArrayList;
 import java.util.List;
 
+import javax.management.RuntimeErrorException;
+
 import org.passay.CharacterData;
 import org.passay.CharacterRule;
 import org.passay.EnglishCharacterData;
@@ -23,13 +25,17 @@ public class UsernamePasswordGenerator {
         }
     };
     
-    public static String generateUsername(int length) {
+    public static String generateUsername(String usernamePrefix, int totalLength) {
+        int lengthDifference = totalLength - usernamePrefix.length();
+        if(lengthDifference < 1) {
+            throw new RuntimeException("Usernames are restricted to 12 characters. Please configure a prefix that is 11 characters or less.");
+        }
 
         List<CharacterRule> rules = new ArrayList<>();
         rules.add(new CharacterRule(EnglishCharacterData.LowerCase, 1));
 
         PasswordGenerator pwGenerator = new PasswordGenerator();
-        return pwGenerator.generatePassword(length, rules);
+        return usernamePrefix + pwGenerator.generatePassword(lengthDifference, rules);
     }
     
     public static String generatePassword(int length) {
