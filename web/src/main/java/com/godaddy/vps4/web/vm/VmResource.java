@@ -57,6 +57,7 @@ import com.godaddy.vps4.vm.VirtualMachineSpec;
 import com.godaddy.vps4.vm.VirtualMachineType;
 import com.godaddy.vps4.web.Vps4Api;
 import com.godaddy.vps4.web.Vps4Exception;
+import com.godaddy.vps4.web.Vps4UserNotFound;
 import com.godaddy.vps4.web.Vps4NoShopperException;
 import com.godaddy.vps4.web.security.GDUser;
 import com.godaddy.vps4.web.util.Commands;
@@ -295,11 +296,18 @@ public class VmResource {
 
     private List<VirtualMachine> getVmsForEmployee(VirtualMachineType type, String shopperId, String ipAddress,
             UUID orionGuid, Long hfsVmId) {
-        Long vps4UserId = getUserId(shopperId);
-        return virtualMachineService.getVirtualMachines(type, vps4UserId, ipAddress, orionGuid, hfsVmId);
+        List<VirtualMachine> vmList = new ArrayList<>();
+        try {
+            Long vps4UserId = getUserId(shopperId);
+            vmList = virtualMachineService.getVirtualMachines(type, vps4UserId, ipAddress, orionGuid, hfsVmId);
+        } catch (Vps4UserNotFound ex) {
+            logger.warn("Shopper not found", ex);
+        }
+
+        return vmList;
     }
 
-    private Long getUserId(String shopperId) {
+    private Long getUserId(String shopperId) throws Vps4UserNotFound {
         //Shopper ID from impersonation takes priority over the Shopper ID query parameter.
         if (user.isEmployeeToShopper()) {
             return getVps4UserIdByShopperId(user.getShopperId());
@@ -309,10 +317,10 @@ public class VmResource {
         return null;
     }
 
-    private Long getVps4UserIdByShopperId(String shopperId) {
+    private Long getVps4UserIdByShopperId(String shopperId) throws Vps4UserNotFound {
         Vps4User vps4User = vps4UserService.getUser(shopperId);
         if (vps4User == null) {
-            throw new Vps4Exception("USER_NOT_FOUND_FOR_SHOPPER_ID", "User not found for Shopper ID: " + shopperId);
+            throw new Vps4UserNotFound("User not found for Shopper ID: " + shopperId);
         }
         return vps4User.getId();
     }

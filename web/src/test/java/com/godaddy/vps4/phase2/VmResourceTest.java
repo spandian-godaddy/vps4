@@ -13,6 +13,7 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mockito;
+import static org.mockito.Mockito.when;
 
 import com.godaddy.vps4.jdbc.DatabaseModule;
 import com.godaddy.vps4.network.IpAddress.IpAddressType;
@@ -399,6 +400,22 @@ public class VmResourceTest {
         List<VirtualMachine> vms = getVmResource().getVirtualMachines(VirtualMachineType.ZOMBIE, user.getShopperId(), null, null, null);
         Assert.assertEquals(1, vms.size());
         Assert.assertEquals(vms.get(0).orionGuid, vm.orionGuid);
+    }
+
+    @Test
+    public void testEmployeeShopperGetVirtualMachinesEmpty() {
+        user = GDUserMock.createEmployee();
+        List<VirtualMachine> vms = getVmResource().getVirtualMachines(VirtualMachineType.ACTIVE, user.getShopperId(), null, null, null);
+        Assert.assertTrue(vms.isEmpty());
+    }
+
+    @Test
+    public void testEmployeeFakeShopperGetVirtualMachinesEmpty() {
+        user = GDUserMock.createEmployee();
+        String shopperId = "FakeShopper";
+        when(userService.getUser(user.getShopperId())).thenReturn(null);
+        List<VirtualMachine> vms = getVmResource().getVirtualMachines(VirtualMachineType.ACTIVE, shopperId, null, null, null);
+        Assert.assertTrue(vms.isEmpty());
     }
 
     @Test
