@@ -27,6 +27,7 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
 
+import com.godaddy.vps4.web.util.ResellerConfigHelper;
 import org.apache.commons.lang3.StringUtils;
 import org.json.simple.JSONObject;
 import org.slf4j.Logger;
@@ -90,7 +91,6 @@ public class VmResource {
     private final VmSnapshotResource vmSnapshotResource;
     private final Config config;
     private final String sgidPrefix;
-    private final int mailRelayQuota;
     private final Cryptography cryptography;
     private final String openStackZone;
     private final SchedulerWebService schedulerWebService;
@@ -114,7 +114,6 @@ public class VmResource {
         this.config = config;
         this.schedulerWebService = schedulerWebService;
         sgidPrefix = this.config.get("hfs.sgid.prefix", "vps4-undefined-");
-        mailRelayQuota = Integer.parseInt(this.config.get("mailrelay.quota", "5000"));
         this.cryptography = cryptography;
         openStackZone = config.get("openstack.zone");
     }
@@ -220,6 +219,8 @@ public class VmResource {
         long actionId = actionService.createAction(virtualMachine.vmId, ActionType.CREATE_VM,
                 new JSONObject().toJSONString(), vps4User.getId());
         logger.info("VmAction id: {}", actionId);
+
+        int mailRelayQuota =  Integer.parseInt(ResellerConfigHelper.getResellerConfig(config, vmCredit.resellerId, "mailrelay.quota", "5000"));
 
         ProvisionVmInfo vmInfo = new ProvisionVmInfo(virtualMachine.vmId, vmCredit.managedLevel, vmCredit.hasMonitoring(),
                 virtualMachine.image, project.getVhfsSgid(), mailRelayQuota, virtualMachine.spec.diskGib);
