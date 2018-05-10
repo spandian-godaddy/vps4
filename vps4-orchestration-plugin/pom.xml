@@ -31,6 +31,7 @@
                                         <exclude>META-INF/*.SF</exclude>
                                         <exclude>META-INF/*.DSA</exclude>
                                         <exclude>META-INF/*.RSA</exclude>
+                                        <exclude>gdg/hfs/orchestration/C*.class</exclude>
                                     </excludes>
                                 </filter>
                             </filters>
@@ -63,7 +64,7 @@
                     <release>${parsedVersion.buildNumber}</release>
                     <packager>rpm</packager>
                     <requires>
-                        <require>hfs-engine &gt;= 0.5.1-25</require>
+                        <require>hfs-engine == 0.5.1-25</require>
                     </requires>
                     <changelogFile>src/changelog</changelogFile>
                     <defineStatements>
@@ -92,14 +93,14 @@
         <dependency>
             <groupId>com.godaddy.hosting</groupId>
             <artifactId>orchestration-api</artifactId>
-            <version>0.5.1-27</version>
+            <version>0.5.1-25</version>
             <scope>provided</scope>
         </dependency>
         
         <dependency>
             <groupId>com.godaddy.hosting</groupId>
             <artifactId>orchestration-web</artifactId>
-            <version>0.5.1-27</version>
+            <version>0.5.1-25</version>
             <scope>runtime</scope>
             <exclusions>
                 <exclusion>
