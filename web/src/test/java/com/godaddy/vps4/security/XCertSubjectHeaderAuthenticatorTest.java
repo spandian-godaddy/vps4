@@ -29,6 +29,7 @@ public class XCertSubjectHeaderAuthenticatorTest {
         GDUser user = authenticator.authenticate(request);
 
         Assert.assertNotNull(user);
+        Assert.assertEquals(true, user.isStaff());
     }
 
     @Test
