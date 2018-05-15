@@ -5,7 +5,7 @@ import java.util.UUID;
 import javax.inject.Inject;
 
 import com.godaddy.vps4.orchestration.ActionCommand;
-import com.godaddy.vps4.orchestration.ActionRequest;
+import com.godaddy.vps4.orchestration.Vps4ActionRequest;
 import com.godaddy.vps4.orchestration.hfs.snapshot.DestroySnapshot;
 import com.godaddy.vps4.snapshot.SnapshotActionService;
 import com.godaddy.vps4.snapshot.SnapshotService;
@@ -38,20 +38,9 @@ public class Vps4DestroySnapshot extends ActionCommand<Vps4DestroySnapshot.Reque
         return null;
     }
 
-    public static class Request implements ActionRequest {
-        public long actionId;
+    public static class Request extends Vps4ActionRequest {
         public long hfsSnapshotId;
         public UUID vps4SnapshotId;
-
-        @Override
-        public long getActionId() {
-            return actionId;
-        }
-
-        @Override
-        public void setActionId(long actionId) {
-            this.actionId = actionId;
-        }
     }
 
 }

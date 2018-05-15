@@ -1,14 +1,12 @@
 package com.godaddy.vps4.orchestration.sysadmin;
 
-import java.util.UUID;
-
 import javax.inject.Inject;
 
+import com.godaddy.vps4.orchestration.Vps4ActionRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.godaddy.vps4.orchestration.ActionCommand;
-import com.godaddy.vps4.orchestration.ActionRequest;
 import com.godaddy.vps4.orchestration.hfs.sysadmin.WaitForSysAdminAction;
 import com.godaddy.vps4.vm.ActionService;
 import com.godaddy.vps4.vm.VmUserService;
@@ -56,22 +54,10 @@ public class Vps4ToggleAdmin extends ActionCommand<Vps4ToggleAdmin.Request, Void
 
     }
 
-    public static class Request implements ActionRequest {
+    public static class Request extends Vps4ActionRequest {
         public boolean enabled;
         public long hfsVmId;
-        public UUID vmId;
         public String username;
-        public long actionId;
-
-        @Override
-        public long getActionId() {
-            return actionId;
-        }
-
-        @Override
-        public void setActionId(long actionId) {
-            this.actionId = actionId;
-        }
     }
     public static class Response {
         public long hfsVmId;

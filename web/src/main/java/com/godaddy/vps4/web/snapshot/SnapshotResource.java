@@ -147,6 +147,7 @@ public class SnapshotResource {
                                          UUID orionGuid, SnapshotType snapshotType, String shopperId) {
         UUID snapshotId = action.resourceId; // the resourceId refers to the associated snapshotId
         Vps4SnapshotVm.Request commandRequest = new Vps4SnapshotVm.Request();
+        commandRequest.vmId = vmId;
         commandRequest.hfsVmId = hfsVmId;
         commandRequest.vps4SnapshotId = snapshotId;
         commandRequest.actionId = action.id;
@@ -195,6 +196,7 @@ public class SnapshotResource {
         request.hfsSnapshotId = snapshot.hfsSnapshotId;
         request.vps4SnapshotId = snapshot.id;
         request.actionId = actionId;
+        request.vmId = snapshot.vmId;
 
         CommandState command = Commands.execute(commandService, actionService, "Vps4DestroySnapshot", request);
         logger.info("Destroying snapshot {}:{} for vps4 vm {} with command {}:{}",

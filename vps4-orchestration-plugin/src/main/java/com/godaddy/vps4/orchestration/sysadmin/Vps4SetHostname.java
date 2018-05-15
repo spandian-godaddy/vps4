@@ -1,16 +1,14 @@
 package com.godaddy.vps4.orchestration.sysadmin;
 
-import java.util.UUID;
-
 import javax.inject.Inject;
 
+import com.godaddy.vps4.orchestration.Vps4ActionRequest;
 import org.json.simple.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.godaddy.vps4.orchestration.ActionCommand;
-import com.godaddy.vps4.orchestration.ActionRequest;
 import com.godaddy.vps4.orchestration.hfs.cpanel.RefreshCpanelLicense;
 import com.godaddy.vps4.orchestration.hfs.sysadmin.SetHostname;
 import com.godaddy.vps4.vm.ActionService;
@@ -77,21 +75,9 @@ public class Vps4SetHostname extends ActionCommand<Vps4SetHostname.Request, Void
         actionService.updateActionState(actionId, mapper.writeValueAsString(state));
     }
 
-    public static class Request implements ActionRequest {
+    public static class Request extends Vps4ActionRequest {
         public SetHostname.Request setHostnameRequest;
-        public UUID vmId;
-        public long actionId;
         public String oldHostname;
-
-        @Override
-        public long getActionId() {
-            return actionId;
-        }
-
-        @Override
-        public void setActionId(long actionId) {
-            this.actionId = actionId;
-        }
     }
 
     public static class Response {

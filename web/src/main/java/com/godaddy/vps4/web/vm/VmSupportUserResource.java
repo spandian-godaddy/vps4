@@ -144,6 +144,7 @@ public class VmSupportUserResource {
 
             Vps4SetPassword.Request vps4Request = new Vps4SetPassword.Request();
             vps4Request.actionId = actionId;
+            vps4Request.vmId = vm.vmId;
             vps4Request.setPasswordRequest = request;
             vps4Request.controlPanel = vm.image.controlPanel;
 

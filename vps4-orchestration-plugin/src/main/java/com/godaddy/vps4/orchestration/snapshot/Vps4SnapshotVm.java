@@ -6,6 +6,7 @@ import javax.inject.Inject;
 
 import com.godaddy.hfs.config.Config;
 import com.godaddy.vps4.orchestration.NoRetryException;
+import com.godaddy.vps4.orchestration.Vps4ActionRequest;
 import com.godaddy.vps4.orchestration.scheduler.ScheduleAutomaticBackupRetry;
 import com.godaddy.vps4.orchestration.vm.Vps4RecordScheduledJobForVm;
 import com.godaddy.vps4.scheduledJob.ScheduledJob;
@@ -15,7 +16,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.godaddy.vps4.orchestration.ActionCommand;
-import com.godaddy.vps4.orchestration.ActionRequest;
 import com.godaddy.vps4.snapshot.Snapshot;
 import com.godaddy.vps4.snapshot.SnapshotActionService;
 import com.godaddy.vps4.snapshot.SnapshotService;
@@ -228,24 +228,13 @@ public class Vps4SnapshotVm extends ActionCommand<Vps4SnapshotVm.Request, Vps4Sn
         }, Void.class);
     }
 
-    public static class Request implements ActionRequest {
-        public long actionId;
+    public static class Request extends Vps4ActionRequest {
         public long hfsVmId;
         public UUID vps4SnapshotId;
         public UUID orionGuid;
         public long vps4UserId;
         public SnapshotType snapshotType;
         public String shopperId;
-
-        @Override
-        public long getActionId() {
-            return actionId;
-        }
-
-        @Override
-        public void setActionId(long actionId) {
-            this.actionId = actionId;
-        }
     }
 
     public static class Response {

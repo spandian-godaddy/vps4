@@ -1,12 +1,10 @@
 package com.godaddy.vps4.orchestration.sysadmin;
 
-import java.util.UUID;
-
+import com.godaddy.vps4.orchestration.Vps4ActionRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.godaddy.vps4.orchestration.ActionCommand;
-import com.godaddy.vps4.orchestration.ActionRequest;
 import com.godaddy.vps4.orchestration.NoRetryException;
 import com.godaddy.vps4.orchestration.hfs.ActionNotCompletedException;
 import com.godaddy.vps4.orchestration.hfs.sysadmin.RemoveUser;
@@ -34,21 +32,9 @@ public class Vps4RemoveSupportUser extends ActionCommand<Vps4RemoveSupportUser.R
         this.vmUserService = vmUserService;
     }
 
-    public static class Request implements ActionRequest {
-        public long actionId;
+    public static class Request extends Vps4ActionRequest {
         public long hfsVmId;
-        public UUID vmId;
         public String username;
-
-        @Override
-        public long getActionId() {
-            return actionId;
-        }
-
-        @Override
-        public void setActionId(long actionId) {
-            this.actionId = actionId;
-        }
     }
 
     @Override

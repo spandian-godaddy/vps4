@@ -3,7 +3,7 @@ package com.godaddy.vps4.orchestration.sysadmin;
 import javax.inject.Inject;
 
 import com.godaddy.vps4.orchestration.ActionCommand;
-import com.godaddy.vps4.orchestration.ActionRequest;
+import com.godaddy.vps4.orchestration.Vps4ActionRequest;
 import com.godaddy.vps4.orchestration.hfs.plesk.UpdateAdminPassword;
 import com.godaddy.vps4.orchestration.hfs.sysadmin.SetPassword;
 import com.godaddy.vps4.vm.ActionService;
@@ -45,19 +45,9 @@ public class Vps4SetPassword extends ActionCommand<Vps4SetPassword.Request, Void
         return updateAdminPasswordRequest;
     }
 
-    public static class Request implements ActionRequest {
+    public static class Request extends Vps4ActionRequest {
         public SetPassword.Request setPasswordRequest;
-        public long actionId;
         public ControlPanel controlPanel;
-
-        public long getActionId() {
-            return actionId;
-        }
-
-        @Override
-        public void setActionId(long actionId) {
-            this.actionId = actionId;
-        }
     }
 
 }

@@ -405,7 +405,7 @@ public class VmResourceTest {
     @Test
     public void testEmployeeShopperGetVirtualMachinesEmpty() {
         user = GDUserMock.createEmployee();
-        List<VirtualMachine> vms = getVmResource().getVirtualMachines(VirtualMachineType.ACTIVE, user.getShopperId(), null, null, null);
+        List<VirtualMachine> vms = getVmResource().getVirtualMachines(VirtualMachineType.ACTIVE, user.getShopperId(), "0.2.0.1", null, null);
         Assert.assertTrue(vms.isEmpty());
     }
 

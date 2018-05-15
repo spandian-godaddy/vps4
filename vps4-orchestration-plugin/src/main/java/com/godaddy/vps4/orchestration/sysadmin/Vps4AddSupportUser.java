@@ -1,9 +1,7 @@
 package com.godaddy.vps4.orchestration.sysadmin;
 
-import java.util.UUID;
-
 import com.godaddy.vps4.orchestration.ActionCommand;
-import com.godaddy.vps4.orchestration.ActionRequest;
+import com.godaddy.vps4.orchestration.Vps4ActionRequest;
 import com.godaddy.vps4.orchestration.hfs.sysadmin.AddUser;
 import com.godaddy.vps4.orchestration.hfs.sysadmin.ToggleAdmin;
 import com.godaddy.vps4.orchestration.scheduler.ScheduleSupportUserRemoval;
@@ -30,22 +28,10 @@ public class Vps4AddSupportUser extends ActionCommand<Vps4AddSupportUser.Request
         this.vmUserService = vmUserService;
     }
 
-    public static class Request implements ActionRequest {
-        public long actionId;
+    public static class Request extends Vps4ActionRequest {
         public long hfsVmId;
-        public UUID vmId;
         public String username;
         public byte[] encryptedPassword;
-
-        @Override
-        public long getActionId() {
-            return actionId;
-        }
-
-        @Override
-        public void setActionId(long actionId) {
-            this.actionId = actionId;
-        }
     }
 
     @Override
