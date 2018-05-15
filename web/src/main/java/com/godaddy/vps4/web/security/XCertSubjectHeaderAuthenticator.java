@@ -70,6 +70,7 @@ public class XCertSubjectHeaderAuthenticator implements RequestAuthenticator<GDU
         GDUser gdUser = new GDUser();
         gdUser.shopperId = shopperId;
         gdUser.isEmployee = true;
+        gdUser.isStaff = true;
         gdUser.isAdmin = false;
         return gdUser;
     }
