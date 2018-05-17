@@ -19,7 +19,6 @@ import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
 import javax.ws.rs.DefaultValue;
 import javax.ws.rs.GET;
-import javax.ws.rs.NotFoundException;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
@@ -27,7 +26,6 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
 
-import com.godaddy.vps4.web.util.ResellerConfigHelper;
 import org.apache.commons.lang3.StringUtils;
 import org.json.simple.JSONObject;
 import org.slf4j.Logger;
@@ -50,6 +48,7 @@ import com.godaddy.vps4.vm.ActionService;
 import com.godaddy.vps4.vm.ActionType;
 import com.godaddy.vps4.vm.ImageService;
 import com.godaddy.vps4.vm.ProvisionVmInfo;
+import com.godaddy.vps4.vm.TroubleshootInfo;
 import com.godaddy.vps4.vm.VirtualMachine;
 import com.godaddy.vps4.vm.VirtualMachineService;
 import com.godaddy.vps4.vm.VirtualMachineService.ProvisionVirtualMachineParameters;
@@ -57,10 +56,12 @@ import com.godaddy.vps4.vm.VirtualMachineSpec;
 import com.godaddy.vps4.vm.VirtualMachineType;
 import com.godaddy.vps4.web.Vps4Api;
 import com.godaddy.vps4.web.Vps4Exception;
-import com.godaddy.vps4.web.Vps4UserNotFound;
 import com.godaddy.vps4.web.Vps4NoShopperException;
+import com.godaddy.vps4.web.Vps4UserNotFound;
 import com.godaddy.vps4.web.security.GDUser;
 import com.godaddy.vps4.web.util.Commands;
+import com.godaddy.vps4.web.util.ResellerConfigHelper;
+import com.godaddy.vps4.web.util.TroubleshootVmHelper;
 
 import gdg.hfs.orchestration.CommandService;
 import gdg.hfs.orchestration.CommandState;
@@ -378,4 +379,5 @@ public class VmResource {
         }
         return new VirtualMachineWithDetails(virtualMachine, new VirtualMachineDetails(vm), credit.dataCenter, credit.shopperId, snapshotSchedule);
     }
+
 }
