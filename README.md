@@ -244,6 +244,43 @@ Run this command to get a list of the current app servers, and what version of v
 | Prod-PHX| ssh p3plvps4mcp.cloud.phx3.gdg "mcpctl status"    |
 | Prod-SG2| ssh sg2plvps4mcp.cloud.sin2.gdg "mcpctl status"   |
 
+MCP Setup
+============
+
+MCP add service commands.
+
+    $>mcpctl addservice vps4app “/service/vps4/vps4-web” vps4-web vps4-web;
+
+    $>mcpctl addservice vps4app "/orchestration/serviceapi" vps4-orchestration-plugin hfs-engine;
+
+    $>mcpctl addservice vps4app “/service/vps4/vps4-message-consumer“ vps4-message-consumer vps4-message-consumer;
+
+    $>mcpctl addservice vps4app /service/vps4/vps4-scheduler vps4-scheduler vps4-scheduler;
+
+Setup server count for each application.
+
+    $>mcpctl count vps4-web 1;
+
+    $>mcpctl count hfs-engine 1;
+
+    $>mcpctl count vps4-message-consumer 1;
+
+    $>mcpctl count vps4-scheduler 1;
+
+Show mcp status.
+
+    $>mcpctl status;
+
+Cleanup failed deployments
+
+    $>mcpctl prune
+
+    $>mcpctl prune delete
+
+Show all available and in use resources. (spares + in use)
+    
+    $>mcpctl resources
+
 Application Monitoring
 ==================
 
