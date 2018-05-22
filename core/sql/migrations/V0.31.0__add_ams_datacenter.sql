@@ -1,0 +1,1 @@
+INSERT INTO data_center (data_center_id, description) VALUES (4, 'ams3');
