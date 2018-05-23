@@ -11,7 +11,8 @@ public enum Environment {
     STAGE,
     PROD,
     PROD_PHX3,
-    PROD_SIN2;
+    PROD_SIN2,
+    PROD_AMS3;
 
     private final String localName;
 
