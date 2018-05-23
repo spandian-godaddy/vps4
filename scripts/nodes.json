@@ -127,5 +127,14 @@
         "scheduler": [
             "sg2plvps4app03.cloud.sin2.gdg"
         ]
+    },
+    "prod_ams3": {
+        "zookeeper": [
+            "n3plvps4zk01.cloud.ams3.gdg",
+            "n3plvps4zk02.cloud.ams3.gdg",
+            "n3plvps4zk03.cloud.ams3.gdg",
+            "n3plvps4zk04.cloud.ams3.gdg",
+            "n3plvps4zk05.cloud.ams3.gdg"
+        ]
     }
 }
