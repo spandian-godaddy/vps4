@@ -19,6 +19,7 @@ zk_hosts = {
     'prod_phx3': 'p3plvps4zk01.cloud.phx3.gdg:2181',
     'prod_a2': 'a2plvps4zk01.cloud.iad2.gdg:2181',
     'prod_sin2': 'sg2plvps4zk01.cloud.sin2.gdg:2181',
+    'prod_ams3': 'n3plvps4zk01.cloud.ams3.gdg:2181',
     'default': 'localhost:2181',
 }
 
