@@ -19,4 +19,11 @@ public class TroubleshootInfo {
                status.isPortOpen2223 &&
                status.isPortOpen2224;
     }
+
+    @Override
+    public String toString() {
+        return "[canPing: " + status.canPing
+                + ", isPortOpen2223: " + status.isPortOpen2223
+                + ", isPortOpen2223: " + status.isPortOpen2223 + "]";
+    }
 }
