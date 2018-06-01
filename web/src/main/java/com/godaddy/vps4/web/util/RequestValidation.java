@@ -134,6 +134,7 @@ public class RequestValidation {
 
     public static void validateResellerCredit(DataCenterService dcService, String resellerId, int requestedDcId) {
         List<DataCenter> resellerDataCenters = dcService.getDataCentersByReseller(resellerId);
+        // no data centers found for the reseller means the reseller is not restricted to any particular data center
         if (resellerDataCenters.size() > 0) {
             boolean resellerAllowsDc = resellerDataCenters.stream().anyMatch(dc -> dc.dataCenterId == requestedDcId);
             if (!resellerAllowsDc)

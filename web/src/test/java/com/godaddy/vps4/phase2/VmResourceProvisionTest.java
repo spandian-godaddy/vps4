@@ -192,6 +192,8 @@ public class VmResourceProvisionTest {
 
     @Test
     public void testProvisionVmUnsupportedResellerDc() throws InterruptedException {
+        // HEG Reseller is restricted in the reseller_datacenters table to dataCenterID==4
+        // VM Create attempts to use dataCenterId=1, so test should fail
         String HEG_RESELLER_ID = "525847";
         VirtualMachineCredit credit = createVmCredit("myh", false, AccountStatus.ACTIVE, HEG_RESELLER_ID);
         ProvisionVmRequest request = createProvisionVmRequest(credit.orionGuid);
@@ -207,6 +209,7 @@ public class VmResourceProvisionTest {
 
     @Test
     public void testProvisionVmSupportedResellerDc() throws InterruptedException {
+        // MT Reseller is restricted in the reseller_datacenters table to dataCenterID==1, so test should succeed
         String MT_RESELLER_ID = "495469";
         VirtualMachineCredit credit = createVmCredit("myh", false, AccountStatus.ACTIVE, MT_RESELLER_ID);
         ProvisionVmRequest request = createProvisionVmRequest(credit.orionGuid);
