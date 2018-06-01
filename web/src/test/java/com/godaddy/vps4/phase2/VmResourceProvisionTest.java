@@ -79,10 +79,15 @@ public class VmResourceProvisionTest {
 
     private VirtualMachineCredit createVmCredit(String controlPanel,
             boolean claimed, AccountStatus accountStatus) {
+        return createVmCredit(controlPanel, claimed, accountStatus, "1");
+    }
+
+    private VirtualMachineCredit createVmCredit(String controlPanel, boolean claimed,
+            AccountStatus accountStatus, String resellerId) {
         UUID newGuid = UUID.randomUUID();
         Instant provisionDate = claimed ? Instant.now() : null;
         return new VirtualMachineCredit(newGuid, 10, 1, 0, "linux", controlPanel, provisionDate,
-                GDUserMock.DEFAULT_SHOPPER, accountStatus, null, null, false, "1");
+                GDUserMock.DEFAULT_SHOPPER, accountStatus, null, null, false, resellerId);
     }
 
     private ProvisionVmRequest createProvisionVmRequest(UUID orionGuid) {
@@ -183,5 +188,31 @@ public class VmResourceProvisionTest {
         } catch (Vps4Exception e) {
             Assert.assertEquals("ACCOUNT_SUSPENDED", e.getId());
         }
+    }
+
+    @Test
+    public void testProvisionVmUnsupportedResellerDc() throws InterruptedException {
+        String HEG_RESELLER_ID = "525847";
+        VirtualMachineCredit credit = createVmCredit("myh", false, AccountStatus.ACTIVE, HEG_RESELLER_ID);
+        ProvisionVmRequest request = createProvisionVmRequest(credit.orionGuid);
+        Mockito.when(creditService.getVirtualMachineCredit(credit.orionGuid)).thenReturn(credit);
+
+        try {
+            getVmResource().provisionVm(request);
+            Assert.fail();
+        } catch (Vps4Exception e) {
+            Assert.assertEquals("DATACENTER_UNSUPPORTED", e.getId());
+        }
+    }
+
+    @Test
+    public void testProvisionVmSupportedResellerDc() throws InterruptedException {
+        String MT_RESELLER_ID = "495469";
+        VirtualMachineCredit credit = createVmCredit("myh", false, AccountStatus.ACTIVE, MT_RESELLER_ID);
+        ProvisionVmRequest request = createProvisionVmRequest(credit.orionGuid);
+        Mockito.when(creditService.getVirtualMachineCredit(credit.orionGuid)).thenReturn(credit);
+
+        VmAction vmAction = getVmResource().provisionVm(request);
+        Assert.assertNotNull(vmAction.commandId);
     }
 }
