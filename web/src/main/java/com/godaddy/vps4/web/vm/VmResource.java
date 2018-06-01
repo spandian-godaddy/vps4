@@ -3,6 +3,7 @@ package com.godaddy.vps4.web.vm;
 import static com.godaddy.vps4.web.util.RequestValidation.getAndValidateUserAccountCredit;
 import static com.godaddy.vps4.web.util.RequestValidation.validateCreditIsNotInUse;
 import static com.godaddy.vps4.web.util.RequestValidation.validateNoConflictingActions;
+import static com.godaddy.vps4.web.util.RequestValidation.validateResellerCredit;
 import static com.godaddy.vps4.web.util.RequestValidation.validateServerIsActive;
 import static com.godaddy.vps4.web.util.RequestValidation.validateServerIsStopped;
 import static com.godaddy.vps4.web.util.RequestValidation.validateUserIsShopper;
@@ -46,9 +47,9 @@ import com.godaddy.vps4.snapshot.Snapshot;
 import com.godaddy.vps4.util.Cryptography;
 import com.godaddy.vps4.vm.ActionService;
 import com.godaddy.vps4.vm.ActionType;
+import com.godaddy.vps4.vm.DataCenterService;
 import com.godaddy.vps4.vm.ImageService;
 import com.godaddy.vps4.vm.ProvisionVmInfo;
-import com.godaddy.vps4.vm.TroubleshootInfo;
 import com.godaddy.vps4.vm.VirtualMachine;
 import com.godaddy.vps4.vm.VirtualMachineService;
 import com.godaddy.vps4.vm.VirtualMachineService.ProvisionVirtualMachineParameters;
@@ -61,7 +62,6 @@ import com.godaddy.vps4.web.Vps4UserNotFound;
 import com.godaddy.vps4.web.security.GDUser;
 import com.godaddy.vps4.web.util.Commands;
 import com.godaddy.vps4.web.util.ResellerConfigHelper;
-import com.godaddy.vps4.web.util.TroubleshootVmHelper;
 
 import gdg.hfs.orchestration.CommandService;
 import gdg.hfs.orchestration.CommandState;
@@ -96,13 +96,14 @@ public class VmResource {
     private final Cryptography cryptography;
     private final String openStackZone;
     private final SchedulerWebService schedulerWebService;
+    private final DataCenterService dcService;
 
     @Inject
     public VmResource(GDUser user, VmService vmService, Vps4UserService vps4UserService,
             VirtualMachineService virtualMachineService, CreditService creditService, ProjectService projectService,
             ImageService imageService, ActionService actionService, CommandService commandService,
             VmSnapshotResource vmSnapshotResource, Config config, Cryptography cryptography,
-            SchedulerWebService schedulerWebService) {
+            SchedulerWebService schedulerWebService, DataCenterService dcService) {
         this.user = user;
         this.virtualMachineService = virtualMachineService;
         this.vps4UserService = vps4UserService;
@@ -115,6 +116,7 @@ public class VmResource {
         this.vmSnapshotResource = vmSnapshotResource;
         this.config = config;
         this.schedulerWebService = schedulerWebService;
+        this.dcService = dcService;
         sgidPrefix = this.config.get("hfs.sgid.prefix", "vps4-undefined-");
         this.cryptography = cryptography;
         openStackZone = config.get("openstack.zone");
@@ -194,6 +196,7 @@ public class VmResource {
         VirtualMachineCredit vmCredit = getAndValidateUserAccountCredit(creditService, provisionRequest.orionGuid,
                 user.getShopperId());
         validateCreditIsNotInUse(vmCredit);
+        validateResellerCredit(dcService, vmCredit.resellerId, provisionRequest.dataCenterId);
 
         if (imageService.getImages(vmCredit.operatingSystem, vmCredit.controlPanel, provisionRequest.image)
                 .size() == 0) {
