@@ -6,7 +6,6 @@ import java.util.UUID;
 import javax.inject.Inject;
 import javax.sql.DataSource;
 
-import com.godaddy.vps4.scheduler.api.web.SchedulerWebService;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -14,6 +13,7 @@ import org.junit.Test;
 import org.mockito.Mockito;
 
 import com.godaddy.vps4.jdbc.DatabaseModule;
+import com.godaddy.vps4.scheduler.api.web.SchedulerWebService;
 import com.godaddy.vps4.security.GDUserMock;
 import com.godaddy.vps4.security.PrivilegeService;
 import com.godaddy.vps4.security.SecurityModule;
@@ -23,6 +23,7 @@ import com.godaddy.vps4.security.jdbc.JdbcPrivilegeService;
 import com.godaddy.vps4.snapshot.SnapshotModule;
 import com.godaddy.vps4.vm.ActionService;
 import com.godaddy.vps4.vm.ActionType;
+import com.godaddy.vps4.vm.DataCenterService;
 import com.godaddy.vps4.vm.ImageService;
 import com.godaddy.vps4.vm.VirtualMachine;
 import com.godaddy.vps4.vm.VirtualMachineService;
@@ -30,10 +31,11 @@ import com.godaddy.vps4.vm.VmUser;
 import com.godaddy.vps4.vm.VmUserService;
 import com.godaddy.vps4.vm.VmUserType;
 import com.godaddy.vps4.vm.jdbc.JdbcActionService;
+import com.godaddy.vps4.vm.jdbc.JdbcDataCenterService;
 import com.godaddy.vps4.vm.jdbc.JdbcImageService;
 import com.godaddy.vps4.vm.jdbc.JdbcVirtualMachineService;
-import com.godaddy.vps4.web.security.StaffOnly;
 import com.godaddy.vps4.web.security.GDUser;
+import com.godaddy.vps4.web.security.StaffOnly;
 import com.godaddy.vps4.web.vm.VmActionWithDetails;
 import com.godaddy.vps4.web.vm.VmSupportUserResource;
 import com.google.inject.AbstractModule;
@@ -67,6 +69,7 @@ public class VmSupportUserResourceTest {
                     bind(VirtualMachineService.class).to(JdbcVirtualMachineService.class);
                     SchedulerWebService swServ = Mockito.mock(SchedulerWebService.class);
                     bind(SchedulerWebService.class).toInstance(swServ);
+                    bind(DataCenterService.class).to(JdbcDataCenterService.class);
                 }
 
                 @Provides

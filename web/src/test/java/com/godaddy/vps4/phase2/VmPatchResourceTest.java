@@ -13,7 +13,6 @@ import java.util.UUID;
 import javax.inject.Inject;
 import javax.sql.DataSource;
 
-import com.godaddy.vps4.scheduler.api.web.SchedulerWebService;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -21,6 +20,7 @@ import org.mockito.Mockito;
 
 import com.godaddy.vps4.credit.CreditService;
 import com.godaddy.vps4.jdbc.DatabaseModule;
+import com.godaddy.vps4.scheduler.api.web.SchedulerWebService;
 import com.godaddy.vps4.security.GDUserMock;
 import com.godaddy.vps4.security.SecurityModule;
 import com.godaddy.vps4.security.Vps4User;
@@ -31,10 +31,12 @@ import com.godaddy.vps4.vm.Action;
 import com.godaddy.vps4.vm.ActionService;
 import com.godaddy.vps4.vm.ActionStatus;
 import com.godaddy.vps4.vm.ActionType;
+import com.godaddy.vps4.vm.DataCenterService;
 import com.godaddy.vps4.vm.ImageService;
 import com.godaddy.vps4.vm.VirtualMachine;
 import com.godaddy.vps4.vm.VirtualMachineService;
 import com.godaddy.vps4.vm.VmUserService;
+import com.godaddy.vps4.vm.jdbc.JdbcDataCenterService;
 import com.godaddy.vps4.vm.jdbc.JdbcVirtualMachineService;
 import com.godaddy.vps4.vm.jdbc.JdbcVmUserService;
 import com.godaddy.vps4.web.security.GDUser;
@@ -78,6 +80,7 @@ public class VmPatchResourceTest {
                     bind(VmUserService.class).to(JdbcVmUserService.class);
                     SchedulerWebService swServ = Mockito.mock(SchedulerWebService.class);
                     bind(SchedulerWebService.class).toInstance(swServ);
+                    bind(DataCenterService.class).to(JdbcDataCenterService.class);
                 }
 
                 @Provides

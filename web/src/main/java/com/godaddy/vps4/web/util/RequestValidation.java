@@ -23,6 +23,8 @@ import com.godaddy.vps4.util.validators.ValidatorRegistry;
 import com.godaddy.vps4.vm.Action;
 import com.godaddy.vps4.vm.ActionService;
 import com.godaddy.vps4.vm.ActionType;
+import com.godaddy.vps4.vm.DataCenter;
+import com.godaddy.vps4.vm.DataCenterService;
 import com.godaddy.vps4.vm.VirtualMachine;
 import com.godaddy.vps4.vm.VirtualMachineService;
 import com.godaddy.vps4.web.Vps4Exception;
@@ -113,13 +115,13 @@ public class RequestValidation {
         if (vmCredit.isAccountRemoved()) {
             throw new Vps4Exception("ACCOUNT_REMOVED", String.format("The virtual machine account for orion guid %s was REMOVED", orionGuid));
         }
-        
+
         if (!vmCredit.isOwnedByShopper(ssoShopperId)) {
             throw new AuthorizationException(
                     String.format("Shopper %s does not have privilege for vm request with orion guid %s",
                             ssoShopperId, vmCredit.orionGuid));
         }
-        
+
         return vmCredit;
     }
 
@@ -128,6 +130,15 @@ public class RequestValidation {
             throw new Vps4Exception("CREDIT_ALREADY_IN_USE",
                     String.format("The virtual machine credit for orion guid %s is already provisioned'", credit.orionGuid));
 
+    }
+
+    public static void validateResellerCredit(DataCenterService dcService, String resellerId, int requestedDcId) {
+        List<DataCenter> resellerDataCenters = dcService.getDataCentersByReseller(resellerId);
+        if (resellerDataCenters.size() > 0) {
+            boolean resellerAllowsDc = resellerDataCenters.stream().anyMatch(dc -> dc.dataCenterId == requestedDcId);
+            if (!resellerAllowsDc)
+                throw new Vps4Exception("DATACENTER_UNSUPPORTED", "Data Center provided is not supported: " + requestedDcId);
+        }
     }
 
     public static void verifyUserPrivilegeToProject(Vps4UserService userService, PrivilegeService privilegeService,

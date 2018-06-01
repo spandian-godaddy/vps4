@@ -25,6 +25,7 @@ import com.godaddy.vps4.security.Vps4UserService;
 import com.godaddy.vps4.util.Cryptography;
 import com.godaddy.vps4.vm.AccountStatus;
 import com.godaddy.vps4.vm.DataCenter;
+import com.godaddy.vps4.vm.DataCenterService;
 import com.godaddy.vps4.vm.VirtualMachine;
 import com.godaddy.vps4.vm.VirtualMachineService;
 import com.godaddy.vps4.vm.VirtualMachineType;
@@ -54,9 +55,10 @@ public class GetVirtualMachineTest {
         Config config = getMockedConfig();
         Cryptography cryptography = Mockito.mock(Cryptography.class);
         SchedulerWebService schedulerWebService = Mockito.mock(SchedulerWebService.class);
+        DataCenterService dcService = Mockito.mock(DataCenterService.class);
 
         vmResource = new VmResource(user, vmService, userService, virtualMachineService, creditService, null, null,
-                null, null, null, config, cryptography, schedulerWebService);
+                null, null, null, config, cryptography, schedulerWebService, dcService);
     }
 
     private Config getMockedConfig() {
