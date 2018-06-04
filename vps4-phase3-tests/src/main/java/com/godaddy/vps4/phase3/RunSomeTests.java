@@ -24,6 +24,7 @@ import com.godaddy.vps4.phase3.api.SsoClient;
 import com.godaddy.vps4.phase3.api.Vps4ApiClient;
 import com.godaddy.vps4.phase3.api.Vps4ApiClient.Vps4JsonResponse;
 import com.godaddy.vps4.phase3.tests.ChangeHostnameTest;
+import com.godaddy.vps4.phase3.tests.SnapshotTest;
 import com.godaddy.vps4.phase3.tests.StopStartVmTest;
 import com.godaddy.vps4.phase3.virtualmachine.VirtualMachinePool;
 
@@ -68,7 +69,8 @@ public class RunSomeTests {
 
         List<VmTest> tests = Arrays.asList(
                 new ChangeHostnameTest(randomHostname()),
-                new StopStartVmTest()
+                new StopStartVmTest(),
+                new SnapshotTest()
         );
 
         TestGroup vps4 = new TestGroup("VPS4 Phase3 Tests");

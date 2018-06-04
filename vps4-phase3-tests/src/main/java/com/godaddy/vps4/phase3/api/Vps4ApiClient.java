@@ -21,6 +21,7 @@ import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
 
+@SuppressWarnings("unchecked")
 public class Vps4ApiClient {
 
     private String baseUrl;
@@ -104,7 +105,6 @@ public class Vps4ApiClient {
         return primaryIp.get("ipAddress").toString();
     }
 
-    @SuppressWarnings("unchecked")
     public long setHostname(UUID vmId, String hostname) {
         JSONObject body = new JSONObject();
         body.put("hostname", hostname);
@@ -115,7 +115,6 @@ public class Vps4ApiClient {
 
     }
 
-    @SuppressWarnings("unchecked")
     public UUID createVmCredit(String shopperId, String osType, String controlPanel,
                                 int managedLevel, int tier){
         JSONObject body = new JSONObject();
@@ -162,7 +161,6 @@ public class Vps4ApiClient {
         return vmIds;
     }
 
-    @SuppressWarnings("unchecked")
     public JSONObject provisionVm(String name, UUID orionGuid,
                       String imageName, int dcId,
                       String username, String password){
@@ -199,30 +197,33 @@ public class Vps4ApiClient {
         return (long)resartJsonResult.get("id");
     }
 
-    public void pollForVmActionComplete(UUID vmId, long actionId) {
-        this.pollForVmActionComplete(vmId, actionId, 60);
-    }
-
-    public void pollForVmActionComplete(UUID vmId, long actionId, long timeoutSeconds) {
-        String urlAppendix = "api/vms/"+vmId.toString()+"/actions/"+actionId;
+    private void pollForActionComplete(UUID vmId, long actionId, long timeoutSeconds, String urlAppendix) {
         Vps4ApiClient.Vps4JsonResponse<JSONObject> result = sendGetObject(urlAppendix);
         Instant timeout = Instant.now().plusSeconds(timeoutSeconds);
-        while(!result.jsonResponse.get("status").equals("COMPLETE") && Instant.now().isBefore(timeout)){
+        while (!result.jsonResponse.get("status").equals("COMPLETE") && Instant.now().isBefore(timeout)) {
             result = sendGetObject(urlAppendix);
-
-            if(result.jsonResponse.get("status").equals("ERROR")) {
-                throw new RuntimeException("VM action "+ actionId +" for vm " + vmId + " failed.");
+            if (result.jsonResponse.get("status").equals("ERROR")) {
+                throw new RuntimeException("VM action " + actionId + " for vm " + vmId + " failed.");
             }
-
-            try{
+            try {
                 Thread.sleep(1000);
-            }catch(InterruptedException e){
+            } catch (InterruptedException e) {
                 throw new RuntimeException(e);
             }
         }
-        if(!result.jsonResponse.get("status").equals("COMPLETE")){
+        if (!result.jsonResponse.get("status").equals("COMPLETE")) {
             throw new RuntimeException("Couldn't complete action " + actionId + "in time " + timeoutSeconds + "s");
         }
+    }
+
+    public void pollForVmActionComplete(UUID vmId, long actionId, long timeoutSeconds) {
+        String urlAppendix = "api/vms/" + vmId.toString() + "/actions/" + actionId;
+        pollForActionComplete(vmId, actionId, timeoutSeconds, urlAppendix);
+    }
+
+    public void pollForSnapshotActionComplete(UUID vmId, UUID snapshotId, long actionId, long timeoutSeconds) {
+        String urlAppendix = "api/vms/" + vmId.toString() + "/snapshots/" + snapshotId.toString() + "/actions/" + actionId;
+        pollForActionComplete(vmId, actionId, timeoutSeconds, urlAppendix);
     }
 
     public Vps4JsonResponse<JSONObject> deleteVm(UUID vmId) {
@@ -272,9 +273,27 @@ public class Vps4ApiClient {
         JSONParser parser = new JSONParser();
         try{
             return (JSONObject) parser.parse(jsonString);
-        }catch(ParseException e){
+        }catch(ParseException e) {
             throw new RuntimeException(e.getMessage(), e.getCause());
         }
-      }
+    }
 
+    public JSONObject snanpshotVm(UUID vmId) {
+        JSONObject body = new JSONObject();
+        body.put("name", "t" + System.currentTimeMillis());
+
+        body.put("snapshotType", "ON_DEMAND");
+
+        Vps4JsonResponse<JSONObject> snapshotVmResponse = sendPost("api/vms/" + vmId + "/snapshots", body);
+        assert (snapshotVmResponse.statusCode == 200);
+        return snapshotVmResponse.jsonResponse;
+
+    }
+
+    public String getSnapshotStatus(UUID vmId, UUID snapshotId){
+        Vps4JsonResponse<JSONObject> getSnapshotResponse = sendGetObject("api/vms/" + vmId + "/snapshots/" + snapshotId);
+        assert(getSnapshotResponse.statusCode == 200);
+        JSONObject snapshot = getSnapshotResponse.jsonResponse;
+        return snapshot.get("status").toString();
+    }
 }
