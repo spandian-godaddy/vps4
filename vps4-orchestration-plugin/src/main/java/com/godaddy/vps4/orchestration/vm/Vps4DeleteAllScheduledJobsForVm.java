@@ -65,7 +65,7 @@ public class Vps4DeleteAllScheduledJobsForVm implements Command<UUID, Void> {
             // Squelch this as this might be a valid exception as the job we are trying
             // to delete may no longer exist. this is because, right now we only track jobs when they are created
             // but we don't untrack them, ex: in case of a one_time jobs after it has fired.
-            logger.info("They was an error while deleting job id: [{}] for vm: [{}]. {}", job.id, vmId, e);
+            logger.info("There was an error while deleting job id: [{}] for vm: [{}]. This may be expected behavior if the job no longer exists. {}", job.id, vmId, e);
         }
     }
 }
