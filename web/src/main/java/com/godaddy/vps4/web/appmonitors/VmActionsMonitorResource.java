@@ -103,6 +103,15 @@ public class VmActionsMonitorResource {
 
     @StaffOnly
     @GET
+    @Path("/pending/allactions")
+    @ApiOperation(value = "Find all vm actions in pending 'in_progress' status for longer than m minutes, default 2 hours",
+            notes = "Find all VM actions that are in pending 'in_progress' status for longer than m minutes, default 2 hours")
+    public List<VmActionData> getVmsWithAllPendingActions(@QueryParam("thresholdInMinutes") @DefaultValue("120") Long thresholdInMinutes) {
+        return monitorService.getVmsByActionStatus(thresholdInMinutes, ActionStatus.IN_PROGRESS);
+    }
+
+    @StaffOnly
+    @GET
     @Path("/missing_backup_jobs")
     @ApiOperation(value = "Find all active vms that do not have a backup job id, meaning scheduler create job failed",
             notes = "Find all active vms that do not have a backup job id, meaning scheduler create job failed")

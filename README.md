@@ -308,6 +308,7 @@ Process to setup a cron job:
     0 8-17 * * * root cd /home/vps4monitor;/home/vps4monitor/monitor_pending_actions.sh https://vps4-cca.api.phx3.godaddy.com/api/appmonitors/pending/stopvm?thresholdInMinutes=15 PROD P3 Stop > /dev/null 2>&1
     0 8-17 * * * root cd /home/vps4monitor;/home/vps4monitor/monitor_pending_actions.sh https://vps4-cca.api.phx3.godaddy.com/api/appmonitors/pending/newactions?thresholdInMinutes=120 PROD P3 All > /dev/null 2>&1
     0 8-17 * * * root cd /home/vps4monitor;/home/vps4monitor/monitor_pending_actions.sh https://vps4-cca.api.phx3.godaddy.com/api/appmonitors/missing_backup_jobs PROD P3 'Missing Backup Jobs' > /dev/null 2>&1
+    0 8-17 * * * root cd /home/vps4monitor;/home/vps4monitor/monitor_pending_actions.sh https://vps4-cca.api.phx3.godaddy.com/api/appmonitors/pending/allactions PROD P3 'All Pending Actions' > /dev/null 2>&1
     ```
 
 * Restart the crond service.
@@ -326,6 +327,7 @@ Process to setup a cron job:
     0 8-17 * * * root cd /home/vps4monitor;/home/vps4monitor/monitor_pending_actions.sh https://vps4-cca.api.sin2.godaddy.com/api/appmonitors/pending/stopvm?thresholdInMinutes=15 PROD SG2 Stop > /dev/null 2>&1
     0 8-17 * * * root cd /home/vps4monitor;/home/vps4monitor/monitor_pending_actions.sh https://vps4-cca.api.sin2.godaddy.com/api/appmonitors/pending/newactions?thresholdInMinutes=15 PROD SG2 All > /dev/null 2>&1
     0 8-17 * * * root cd /home/vps4monitor;/home/vps4monitor/monitor_pending_actions.sh https://vps4-cca.api.sin2.godaddy.com/api/appmonitors/missing_backup_jobs PROD SG2 'Missing Backup Jobs' > /dev/null 2>&1
+    0 8-17 * * * root cd /home/vps4monitor;/home/vps4monitor/monitor_pending_actions.sh https://vps4-cca.api.sin2.godaddy.com/api/appmonitors/pending/allactions PROD SG2 'All Pending Actions' > /dev/null 2>&1
     ```
 
 ### Sensu Alert setup for application monitoring
