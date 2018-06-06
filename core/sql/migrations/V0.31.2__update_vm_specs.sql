@@ -1,4 +1,4 @@
--- Create new vm specs for partners HEG and MT
+-- Update vm specs for existing tiers to include oversubscription, mark inactive via valid_until flag until ready
 INSERT INTO virtual_machine_spec
 (tier, spec_name, cpu_core_count, memory_mib, disk_gib, name, ip_address_count, valid_until)
 VALUES
