@@ -42,7 +42,6 @@ public class Vps4RemoveSupportUserJob extends SchedulerJob {
         logger.debug("Removing support user from vm {}.", request.vmId);
         VmAction action = vmSupportUserService.removeSupportUser(vmId);
         logger.info("Remove support user from vm {} action submitted. Action: {}", request.vmId, action.id);
-        
     }
 
     public void setRequest(Vps4RemoveSupportUserJobRequest request) {

@@ -69,6 +69,18 @@ public class JdbcVmUserService implements VmUserService{
     }
 
     @Override
+    public List<VmUser> getSupportUsers(UUID vmId) {
+        return Sql.with(dataSource)
+                .exec("SELECT u.name, u.vm_id, u.admin_enabled, ut.type_name"
+                        + " FROM vm_user u JOIN vm_user_type ut ON u.vm_user_type_id = ut.type_id"
+                        + " WHERE ut.type_name='SUPPORT' AND u.vm_id=?", Sql.listOf(this::mapUser), vmId);
+    }
+
+    /**
+     * @deprecated this will be replaced with {@link #getSupportUsers(UUID)}.
+     */
+    @Deprecated
+    @Override
     public VmUser getSupportUser(UUID vmId) {
         return Sql.with(dataSource)
                 .exec("SELECT u.name, u.vm_id, u.admin_enabled, ut.type_name"

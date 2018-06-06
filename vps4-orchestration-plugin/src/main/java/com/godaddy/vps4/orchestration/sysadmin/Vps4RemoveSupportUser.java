@@ -21,8 +21,8 @@ import gdg.hfs.orchestration.CommandMetadata;
         requestType = Vps4RemoveSupportUser.Request.class,
         responseType = Void.class
 )
-public class Vps4RemoveSupportUser extends ActionCommand<Vps4RemoveSupportUser.Request, Void> {
 
+public class Vps4RemoveSupportUser extends ActionCommand<Vps4RemoveSupportUser.Request, Void> {
     private final VmUserService vmUserService;
     private static final Logger logger = LoggerFactory.getLogger(Vps4RemoveSupportUser.class);
 
@@ -38,7 +38,7 @@ public class Vps4RemoveSupportUser extends ActionCommand<Vps4RemoveSupportUser.R
     }
 
     @Override
-    protected Void executeWithAction(CommandContext context, Request request) throws Exception {
+    protected Void executeWithAction(CommandContext context, Request request) {
 
         RemoveUser.Request removeUserRequest = new RemoveUser.Request();
         removeUserRequest.hfsVmId = request.hfsVmId;
@@ -57,8 +57,6 @@ public class Vps4RemoveSupportUser extends ActionCommand<Vps4RemoveSupportUser.R
             throw new NoRetryException(errorMessage, e);
         }
 
-
         return null;
     }
-
 }

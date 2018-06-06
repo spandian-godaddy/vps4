@@ -1,57 +1,45 @@
 package com.godaddy.vps4.phase2;
 
-import java.lang.reflect.Method;
-import java.util.UUID;
-
-import javax.inject.Inject;
-import javax.sql.DataSource;
-
-import org.junit.After;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
-import org.mockito.Mockito;
-
 import com.godaddy.vps4.jdbc.DatabaseModule;
 import com.godaddy.vps4.scheduler.api.web.SchedulerWebService;
-import com.godaddy.vps4.security.GDUserMock;
-import com.godaddy.vps4.security.PrivilegeService;
-import com.godaddy.vps4.security.SecurityModule;
-import com.godaddy.vps4.security.Vps4User;
-import com.godaddy.vps4.security.Vps4UserService;
+import com.godaddy.vps4.security.*;
 import com.godaddy.vps4.security.jdbc.JdbcPrivilegeService;
 import com.godaddy.vps4.snapshot.SnapshotModule;
-import com.godaddy.vps4.vm.ActionService;
-import com.godaddy.vps4.vm.ActionType;
-import com.godaddy.vps4.vm.DataCenterService;
-import com.godaddy.vps4.vm.ImageService;
-import com.godaddy.vps4.vm.VirtualMachine;
-import com.godaddy.vps4.vm.VirtualMachineService;
-import com.godaddy.vps4.vm.VmUser;
-import com.godaddy.vps4.vm.VmUserService;
-import com.godaddy.vps4.vm.VmUserType;
+import com.godaddy.vps4.vm.*;
 import com.godaddy.vps4.vm.jdbc.JdbcActionService;
 import com.godaddy.vps4.vm.jdbc.JdbcDataCenterService;
 import com.godaddy.vps4.vm.jdbc.JdbcImageService;
 import com.godaddy.vps4.vm.jdbc.JdbcVirtualMachineService;
-import com.godaddy.vps4.web.security.GDUser;
 import com.godaddy.vps4.web.security.StaffOnly;
 import com.godaddy.vps4.web.vm.VmActionWithDetails;
 import com.godaddy.vps4.web.vm.VmSupportUserResource;
 import com.google.inject.AbstractModule;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
-import com.google.inject.Provides;
+import org.junit.After;
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.Test;
+import org.mockito.Mockito;
+
+import javax.inject.Inject;
+import javax.sql.DataSource;
+import javax.ws.rs.NotFoundException;
+import java.lang.reflect.Method;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.UUID;
 
 public class VmSupportUserResourceTest {
 
-    @Inject Vps4UserService userService;
-    @Inject DataSource dataSource;
+    @Inject
+    Vps4UserService userService;
+    @Inject
+    DataSource dataSource;
 
     VmUserService vmUserService = Mockito.mock(VmUserService.class);
 
-    private GDUser user;
-    private VmUser supportUser;
+    private List<VmUser> supportUsers = new ArrayList<>();
 
     private Injector injector = Guice.createInjector(
             new DatabaseModule(),
@@ -71,18 +59,12 @@ public class VmSupportUserResourceTest {
                     bind(SchedulerWebService.class).toInstance(swServ);
                     bind(DataCenterService.class).to(JdbcDataCenterService.class);
                 }
-
-                @Provides
-                public GDUser provideUser() {
-                    return user;
-                }
             });
 
 
     @Before
     public void setupTest() {
         injector.injectMembers(this);
-        user = GDUserMock.createShopper();
     }
 
     @After
@@ -91,7 +73,7 @@ public class VmSupportUserResourceTest {
     }
 
     private VmSupportUserResource getVmSupportUserResource() {
-        Mockito.when(vmUserService.getSupportUser(Mockito.any(UUID.class))).thenReturn(supportUser);
+        Mockito.when(vmUserService.getSupportUsers(Mockito.any(UUID.class))).thenReturn(supportUsers);
         return injector.getInstance(VmSupportUserResource.class);
     }
 
@@ -109,12 +91,11 @@ public class VmSupportUserResourceTest {
     }
 
     @Test
-    public void testAddSupportUser() {
+    public void testAddSupportUsers() {
         VirtualMachine vm = createTestVm();
-        supportUser = null;
 
-        VmActionWithDetails action = getVmSupportUserResource().addSupportUser(vm.vmId);
-        Assert.assertEquals(action.type, ActionType.ADD_SUPPORT_USER);
+        VmActionWithDetails action = getVmSupportUserResource().addSupportUsers(vm.vmId);
+        Assert.assertEquals(ActionType.ADD_SUPPORT_USER, action.type);
         Assert.assertNotNull(action.commandId);
         Assert.assertNotNull(action.orchestrationCommand);
         Assert.assertNotNull(action.message);
@@ -123,37 +104,48 @@ public class VmSupportUserResourceTest {
     }
 
     @Test
-    public void testAddSecondSupportUser() {
+    public void testAddAdditionalSupportUsers() {
         VirtualMachine vm = createTestVm();
-        supportUser = new VmUser("random-username", UUID.randomUUID(), true, VmUserType.SUPPORT);
 
-        VmActionWithDetails action = getVmSupportUserResource().addSupportUser(vm.vmId);
-        Assert.assertEquals(action.type, ActionType.SET_PASSWORD);
-        Assert.assertNotNull(action.commandId);
-        Assert.assertNotNull(action.orchestrationCommand);
-        Assert.assertNotNull(action.message);
-        Assert.assertTrue(action.message.contains("Username"));
-        Assert.assertTrue(action.message.contains("Password"));
+        for (int i = 0; i < 3; i++) {
+            VmActionWithDetails action = getVmSupportUserResource().addSupportUsers(vm.vmId);
+            Assert.assertEquals(ActionType.ADD_SUPPORT_USER, action.type);
+            Assert.assertNotNull(action.commandId);
+            Assert.assertNotNull(action.orchestrationCommand);
+            Assert.assertNotNull(action.message);
+            Assert.assertTrue(action.message.contains("Username"));
+            Assert.assertTrue(action.message.contains("Password"));
+        }
     }
 
     @Test
     public void testRemoveSupportUserStaffOnly() throws NoSuchMethodException {
-        Method method = VmSupportUserResource.class.getMethod("removeSupportUser", UUID.class);
+        Method method = VmSupportUserResource.class.getMethod("removeSupportUsers", UUID.class, String.class);
         Assert.assertTrue(method.isAnnotationPresent(StaffOnly.class));
     }
 
     @Test
-    public void testRemoveSupportUser() {
+    public void testRemoveSupportUsers() {
         VirtualMachine vm = createTestVm();
-        supportUser = new VmUser("random-username", UUID.randomUUID(), true, VmUserType.SUPPORT);
+        supportUsers = new ArrayList<>();
+        supportUsers.add(new VmUser("support_test", UUID.randomUUID(), true, VmUserType.SUPPORT));
 
-        VmActionWithDetails action = getVmSupportUserResource().removeSupportUser(vm.vmId);
-        Assert.assertEquals(action.type, ActionType.REMOVE_SUPPORT_USER);
+        VmActionWithDetails action = getVmSupportUserResource().removeSupportUsers(vm.vmId, "support_test");
+        Assert.assertEquals(ActionType.REMOVE_SUPPORT_USER, action.type);
         Assert.assertNotNull(action.commandId);
         Assert.assertNotNull(action.orchestrationCommand);
         Assert.assertNull(action.message);
 
         // Test that class overrides toString
         Assert.assertTrue(action.toString().contains("VmActionWithDetails"));
+    }
+
+    @Test(expected = NotFoundException.class)
+    public void testRemoveSupportUser404() {
+        VirtualMachine vm = createTestVm();
+        supportUsers = new ArrayList<>();
+        supportUsers.add(new VmUser("support_test", UUID.randomUUID(), true, VmUserType.SUPPORT));
+
+        getVmSupportUserResource().removeSupportUsers(vm.vmId, "support_404");
     }
 }

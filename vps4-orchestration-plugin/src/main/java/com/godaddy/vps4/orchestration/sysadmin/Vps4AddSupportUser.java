@@ -35,25 +35,28 @@ public class Vps4AddSupportUser extends ActionCommand<Vps4AddSupportUser.Request
     }
 
     @Override
-    protected Void executeWithAction(CommandContext context, Request req) throws Exception {
-
+    protected Void executeWithAction(CommandContext context, Request req) {
+        // adds the user through HFS
         AddUser.Request addUserRequest = new AddUser.Request();
         addUserRequest.hfsVmId = req.hfsVmId;
         addUserRequest.username = req.username;
         addUserRequest.encryptedPassword = req.encryptedPassword;
         context.execute(AddUser.class, addUserRequest);
 
+        // makes the user an admin
         ToggleAdmin.Request toggleAdminRequest = new ToggleAdmin.Request();
         toggleAdminRequest.vmId = req.hfsVmId;
         toggleAdminRequest.username = req.username;
         toggleAdminRequest.enabled = true;
         context.execute(ToggleAdmin.class, toggleAdminRequest);
 
+        // add user to VPS4 database
         context.execute("AddSupportUserToDatabase", ctx -> {
             vmUserService.createUser(req.username, req.vmId, true, VmUserType.SUPPORT);
             return null;
         }, Void.class);
 
+        // schedule removal of support user
         ScheduleSupportUserRemoval.Request removeSupportUserRequest = new ScheduleSupportUserRemoval.Request();
         removeSupportUserRequest.vmId = req.vmId;
         context.execute(ScheduleSupportUserRemoval.class, removeSupportUserRequest);
