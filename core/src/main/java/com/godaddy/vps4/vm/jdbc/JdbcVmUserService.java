@@ -21,6 +21,17 @@ public class JdbcVmUserService implements VmUserService{
         this.dataSource = dataSource;
     }
 
+    private VmUser mapUser(ResultSet rs) throws SQLException{
+        return new VmUser(rs.getString("name"),
+                UUID.fromString(rs.getString("vm_id")),
+                rs.getBoolean("admin_enabled"),
+                VmUserType.valueOf(rs.getString("type_name")));
+    }
+
+    private boolean mapUserExists(ResultSet rs) throws SQLException {
+        return rs.next() && rs.getLong("count") > 0;
+    }
+
     @Override
     public void createUser(String username, UUID vmId, boolean adminEnabled, VmUserType vmUserType) {
         Sql.with(dataSource).exec("INSERT INTO vm_user (name, admin_enabled, vm_id, vm_user_type_id) VALUES (?, ?, ?, ?)",
@@ -68,16 +79,8 @@ public class JdbcVmUserService implements VmUserService{
         return customers.get(0);
     }
 
-    @Override
-    public List<VmUser> getSupportUsers(UUID vmId) {
-        return Sql.with(dataSource)
-                .exec("SELECT u.name, u.vm_id, u.admin_enabled, ut.type_name"
-                        + " FROM vm_user u JOIN vm_user_type ut ON u.vm_user_type_id = ut.type_id"
-                        + " WHERE ut.type_name='SUPPORT' AND u.vm_id=?", Sql.listOf(this::mapUser), vmId);
-    }
-
     /**
-     * @deprecated this will be replaced with {@link #getSupportUsers(UUID)}.
+     * @deprecated this will be replaced with {@link JdbcVmUserService#listUsers(java.util.UUID, com.godaddy.vps4.vm.VmUserType)}.
      */
     @Deprecated
     @Override
@@ -93,20 +96,19 @@ public class JdbcVmUserService implements VmUserService{
         Sql.with(dataSource).exec("UPDATE vm_user SET admin_enabled=? WHERE name=? AND vm_id=?", null, adminEnabled, username, vmId);
     }
 
-    protected VmUser mapUser(ResultSet rs) throws SQLException{
-        return new VmUser(rs.getString("name"),
-                UUID.fromString(rs.getString("vm_id")),
-                rs.getBoolean("admin_enabled"),
-                VmUserType.valueOf(rs.getString("type_name")));
+    @Override
+    public boolean userExists(String username, UUID vmId) {
+        return Sql.with(dataSource).exec(
+                "SELECT Count(*)"
+                + " FROM vm_user u JOIN vm_user_type ut ON u.vm_user_type_id = ut.type_id"
+                + " WHERE u.vm_id=? AND u.name=?", this::mapUserExists, vmId, username);
     }
 
     @Override
-    public boolean userExists(String username, UUID vmId){
-        List<VmUser> users = Sql.with(dataSource)
-                .exec("SELECT u.name, u.vm_id, u.admin_enabled, ut.type_name"
-                        + " FROM vm_user u JOIN vm_user_type ut ON u.vm_user_type_id = ut.type_id"
-                        + " WHERE u.vm_id=? AND u.name=?", Sql.listOf(this::mapUser), vmId, username);
-        return users.size() > 0;
+    public boolean supportUserExists(String username, UUID vmId) {
+        return Sql.with(dataSource).exec(
+                "SELECT Count(*)"
+                + " FROM vm_user u JOIN vm_user_type ut ON u.vm_user_type_id = ut.type_id"
+                + " WHERE u.vm_id=? AND u.name=? AND ut.type_name = 'SUPPORT'", this::mapUserExists, vmId, username);
     }
-
 }

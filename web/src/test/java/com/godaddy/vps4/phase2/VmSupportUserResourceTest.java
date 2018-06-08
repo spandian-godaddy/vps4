@@ -12,6 +12,7 @@ import com.godaddy.vps4.vm.jdbc.JdbcImageService;
 import com.godaddy.vps4.vm.jdbc.JdbcVirtualMachineService;
 import com.godaddy.vps4.web.security.StaffOnly;
 import com.godaddy.vps4.web.vm.VmActionWithDetails;
+import com.godaddy.vps4.web.vm.VmResource;
 import com.godaddy.vps4.web.vm.VmSupportUserResource;
 import com.google.inject.AbstractModule;
 import com.google.inject.Guice;
@@ -37,9 +38,11 @@ public class VmSupportUserResourceTest {
     @Inject
     DataSource dataSource;
 
-    VmUserService vmUserService = Mockito.mock(VmUserService.class);
+    private VmUserService vmUserService = Mockito.mock(VmUserService.class);
+    private VmResource vmResource = Mockito.mock(VmResource.class);
 
-    private List<VmUser> supportUsers = new ArrayList<>();
+    private VirtualMachine vm;
+    private List<VmUser> supportUsers;
 
     private Injector injector = Guice.createInjector(
             new DatabaseModule(),
@@ -50,6 +53,7 @@ public class VmSupportUserResourceTest {
 
                 @Override
                 public void configure() {
+                    bind(VmResource.class).toInstance(vmResource);
                     bind(VmUserService.class).toInstance(vmUserService);
                     bind(ActionService.class).to(JdbcActionService.class);
                     bind(ImageService.class).to(JdbcImageService.class);
@@ -61,10 +65,11 @@ public class VmSupportUserResourceTest {
                 }
             });
 
-
     @Before
     public void setupTest() {
         injector.injectMembers(this);
+        vm = createTestVm();
+        supportUsers = new ArrayList<>();
     }
 
     @After
@@ -73,7 +78,11 @@ public class VmSupportUserResourceTest {
     }
 
     private VmSupportUserResource getVmSupportUserResource() {
-        Mockito.when(vmUserService.getSupportUsers(Mockito.any(UUID.class))).thenReturn(supportUsers);
+        Mockito.when(vmUserService.supportUserExists(Mockito.any(String.class), Mockito.any(UUID.class))).thenAnswer(args -> {
+            String username = (String) args.getArguments()[0];
+            return supportUsers.stream().anyMatch(u -> u.username.equals(username));
+        });
+        Mockito.when(vmResource.getVm(vm.vmId)).thenReturn(vm);
         return injector.getInstance(VmSupportUserResource.class);
     }
 
@@ -84,6 +93,8 @@ public class VmSupportUserResourceTest {
         return vm;
     }
 
+    // add support user tests
+
     @Test
     public void testAddSupportUserStaffOnly() throws NoSuchMethodException {
         Method method = VmSupportUserResource.class.getMethod("addSupportUser", UUID.class);
@@ -92,8 +103,6 @@ public class VmSupportUserResourceTest {
 
     @Test
     public void testAddSupportUsers() {
-        VirtualMachine vm = createTestVm();
-
         VmActionWithDetails action = getVmSupportUserResource().addSupportUsers(vm.vmId);
         Assert.assertEquals(ActionType.ADD_SUPPORT_USER, action.type);
         Assert.assertNotNull(action.commandId);
@@ -101,12 +110,12 @@ public class VmSupportUserResourceTest {
         Assert.assertNotNull(action.message);
         Assert.assertTrue(action.message.contains("Username"));
         Assert.assertTrue(action.message.contains("Password"));
+
+        Mockito.verify(vmResource, Mockito.times(1)).getVm(Mockito.any(UUID.class));
     }
 
     @Test
     public void testAddAdditionalSupportUsers() {
-        VirtualMachine vm = createTestVm();
-
         for (int i = 0; i < 3; i++) {
             VmActionWithDetails action = getVmSupportUserResource().addSupportUsers(vm.vmId);
             Assert.assertEquals(ActionType.ADD_SUPPORT_USER, action.type);
@@ -116,7 +125,11 @@ public class VmSupportUserResourceTest {
             Assert.assertTrue(action.message.contains("Username"));
             Assert.assertTrue(action.message.contains("Password"));
         }
+
+        Mockito.verify(vmResource, Mockito.times(3)).getVm(Mockito.any(UUID.class));
     }
+
+    // remove support user tests
 
     @Test
     public void testRemoveSupportUserStaffOnly() throws NoSuchMethodException {
@@ -126,8 +139,6 @@ public class VmSupportUserResourceTest {
 
     @Test
     public void testRemoveSupportUsers() {
-        VirtualMachine vm = createTestVm();
-        supportUsers = new ArrayList<>();
         supportUsers.add(new VmUser("support_test", UUID.randomUUID(), true, VmUserType.SUPPORT));
 
         VmActionWithDetails action = getVmSupportUserResource().removeSupportUsers(vm.vmId, "support_test");
@@ -138,14 +149,37 @@ public class VmSupportUserResourceTest {
 
         // Test that class overrides toString
         Assert.assertTrue(action.toString().contains("VmActionWithDetails"));
+        Mockito.verify(vmResource, Mockito.times(1)).getVm(Mockito.any(UUID.class));
     }
 
     @Test(expected = NotFoundException.class)
     public void testRemoveSupportUser404() {
-        VirtualMachine vm = createTestVm();
-        supportUsers = new ArrayList<>();
         supportUsers.add(new VmUser("support_test", UUID.randomUUID(), true, VmUserType.SUPPORT));
 
         getVmSupportUserResource().removeSupportUsers(vm.vmId, "support_404");
+    }
+
+    // change support user password tests
+
+    @Test
+    public void testChangePassword() {
+        supportUsers.add(new VmUser("support-test", UUID.randomUUID(), true, VmUserType.SUPPORT));
+
+        VmActionWithDetails action = getVmSupportUserResource().changeSupportUsersPassword(vm.vmId, "support-test");
+        Assert.assertEquals(action.type, ActionType.SET_PASSWORD);
+        Assert.assertNotNull(action.commandId);
+        Assert.assertNotNull(action.orchestrationCommand);
+        Assert.assertNotNull(action.message);
+        Assert.assertTrue(action.message.contains("Username"));
+        Assert.assertTrue(action.message.contains("Password"));
+
+        Mockito.verify(vmResource, Mockito.times(1)).getVm(Mockito.any(UUID.class));
+    }
+
+    @Test(expected = NotFoundException.class)
+    public void testChangePassword404() {
+        supportUsers.add(new VmUser("support-test", UUID.randomUUID(), true, VmUserType.SUPPORT));
+
+        getVmSupportUserResource().changeSupportUsersPassword(vm.vmId, "support-404");
     }
 }
