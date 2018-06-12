@@ -67,6 +67,9 @@ public class JdbcMonitorService implements MonitorService {
             "AND now_utc() - vma.created >= ";
 
     private final static String selectVmsFilteredByNullBackupJob = "SELECT vm_id, valid_on FROM virtual_machine " +
+            "JOIN vm_action USING (vm_id) " +
+            "JOIN action_status ON action_status.status_id = vm_action.status_id AND status = 'COMPLETE' " +
+            "JOIN action_type ON action_type.type_id = vm_action.action_type_id AND type = 'CREATE_VM'  " +
             "WHERE valid_until = 'infinity' " +
             "AND backup_job_id IS NULL";
 
