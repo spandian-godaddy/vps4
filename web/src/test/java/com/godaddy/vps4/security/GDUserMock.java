@@ -2,8 +2,9 @@ package com.godaddy.vps4.security;
 
 import static org.mockito.Mockito.when;
 
-import com.godaddy.vps4.web.security.GDUser;
 import org.mockito.Mockito;
+
+import com.godaddy.vps4.web.security.GDUser;
 
 public class GDUserMock {
     public final static String DEFAULT_SHOPPER = "validUserShopperId";
@@ -48,6 +49,7 @@ public class GDUserMock {
         when(gdUser.isAdmin()).thenReturn(isAdmin);
         when(gdUser.getShopperId()).thenReturn(shopperId);
         when(gdUser.isEmployeeToShopper()).thenReturn(isEmployee && shopperId != null);
+        when(gdUser.getUsername()).thenReturn("tester");
         return gdUser;
     }
 }
