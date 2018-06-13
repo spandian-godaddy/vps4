@@ -25,7 +25,7 @@ public class Vps4SchedulerException extends RuntimeException {
 
     @Override
     public String toString() {
-        return ReflectionToStringBuilder.toString(this, MultilineRecursiveToStringStyle.MULTI_LINE_STYLE);
+        return ReflectionToStringBuilder.toString(this, MultilineRecursiveToStringStyle.SHORT_PREFIX_STYLE);
     }
 
 }

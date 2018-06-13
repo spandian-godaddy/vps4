@@ -20,7 +20,7 @@ public class VmActionRequest implements ActionRequest {
     }
 
     public String toString() {
-        return ReflectionToStringBuilder.toString(this, ToStringStyle.MULTI_LINE_STYLE);
+        return ReflectionToStringBuilder.toString(this, ToStringStyle.SHORT_PREFIX_STYLE);
     }
 
 }

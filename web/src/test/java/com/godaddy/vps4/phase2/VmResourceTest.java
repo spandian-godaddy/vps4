@@ -35,7 +35,7 @@ import com.godaddy.vps4.web.Vps4Exception;
 import com.godaddy.vps4.web.security.GDUser;
 import com.godaddy.vps4.web.vm.VirtualMachineDetails;
 import com.godaddy.vps4.web.vm.VirtualMachineWithDetails;
-import com.godaddy.vps4.web.vm.VmAction;
+import com.godaddy.vps4.vm.VmAction;
 import com.godaddy.vps4.web.vm.VmResource;
 import com.google.inject.AbstractModule;
 import com.google.inject.Guice;

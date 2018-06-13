@@ -25,7 +25,7 @@ import com.godaddy.vps4.vm.ActionService;
 import com.godaddy.vps4.vm.ActionStatus;
 import com.godaddy.vps4.vm.ActionType;
 import com.godaddy.vps4.vm.VirtualMachine;
-import com.godaddy.vps4.vm.jdbc.JdbcActionService;
+import com.godaddy.vps4.vm.jdbc.JdbcVmActionService;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
 import org.junit.After;
@@ -47,7 +47,7 @@ public class ActionServiceTest {
     @Before
     public void setupService() {
         dataSource = injector.getInstance(DataSource.class);
-        actionService = new JdbcActionService(dataSource);
+        actionService = new JdbcVmActionService(dataSource);
         vps4UserService = new JdbcVps4UserService(dataSource);
         vm = SqlTestData.insertTestVm(orionGuid, dataSource);
         vps4User = vps4UserService.getOrCreateUserForShopper("FakeShopper", "1");
@@ -65,7 +65,7 @@ public class ActionServiceTest {
         ResultSubset<Action> actions = actionService.getActions(vm.vmId, 100, 0, null, null, null);
         assertEquals(null, actions);
         
-        actionService.createAction(vm.vmId, ActionType.CREATE_VM, "{}", vps4User.getId());
+        actionService.createAction(vm.vmId, ActionType.CREATE_VM, "{}", vps4User.getId(), "tester");
         
         actions = actionService.getActions(vm.vmId, 100, 0, null, null, null);
         assertEquals(1, actions.results.size());
@@ -76,9 +76,9 @@ public class ActionServiceTest {
         ResultSubset<Action> actions = actionService.getActions(vm.vmId, 100, 0, null, null, null);
         assertEquals(null, actions);
 
-        actionService.createAction(vm.vmId, ActionType.CREATE_VM, "{}", vps4User.getId());
-        actionService.createAction(vm.vmId, ActionType.STOP_VM, "{}", vps4User.getId());
-        actionService.createAction(vm.vmId, ActionType.START_VM, "{}", vps4User.getId());
+        actionService.createAction(vm.vmId, ActionType.CREATE_VM, "{}", vps4User.getId(), "tester");
+        actionService.createAction(vm.vmId, ActionType.STOP_VM, "{}", vps4User.getId(), "tester");
+        actionService.createAction(vm.vmId, ActionType.START_VM, "{}", vps4User.getId(), "tester");
 
         actions = actionService.getActions(vm.vmId, 100, 0, ActionType.CREATE_VM);
         assertEquals(1, actions.results.size());

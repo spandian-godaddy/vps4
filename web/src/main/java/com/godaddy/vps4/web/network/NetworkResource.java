@@ -35,6 +35,7 @@ import com.godaddy.vps4.vm.VirtualMachineService;
 import com.godaddy.vps4.web.Vps4Api;
 import com.godaddy.vps4.web.Vps4Exception;
 import com.godaddy.vps4.web.security.AdminOnly;
+import com.godaddy.vps4.web.security.GDUser;
 import com.godaddy.vps4.web.util.Commands;
 import com.godaddy.vps4.web.vm.VmResource;
 import com.google.inject.Inject;
@@ -60,10 +61,11 @@ public class NetworkResource {
     private final CommandService commandService;
     private final VmResource vmResource;
     private final Config config;
+	private final GDUser user;
 
 
     @Inject
-    public NetworkResource(NetworkService networkService, ActionService actionService,
+    public NetworkResource(GDUser user, NetworkService networkService, ActionService actionService,
             VirtualMachineService virtualMachineService, ProjectService projectService,
             CommandService commandService, VmResource vmResource, Config config){
         this.networkService = networkService;
@@ -73,6 +75,7 @@ public class NetworkResource {
         this.commandService = commandService;
         this.vmResource = vmResource;
         this.config = config;
+        this.user = user;
     }
 
     private IpAddress getIpAddressInternal(UUID vmId, long ipAddressId){
@@ -112,7 +115,7 @@ public class NetworkResource {
         long vps4UserId = virtualMachineService.getUserIdByVmId(vmId);
 
         long actionId = actionService.createAction(virtualMachine.vmId, ActionType.ADD_IP,
-                new JSONObject().toJSONString(), vps4UserId);
+                new JSONObject().toJSONString(), vps4UserId, user.getUsername());
 
         Project project = projectService.getProject(virtualMachine.projectId);
         String sgid = project.getVhfsSgid();
@@ -150,7 +153,7 @@ public class NetworkResource {
         }
 
         long actionId = actionService.createAction(virtualMachine.vmId, ActionType.DESTROY_IP,
-                new JSONObject().toJSONString(), vps4UserId);
+                new JSONObject().toJSONString(), vps4UserId, user.getUsername());
 
         Vps4DestroyIpAddressAction.Request request = new Vps4DestroyIpAddressAction.Request();
         request.ipAddressId = ipAddressId;

@@ -31,6 +31,7 @@ import com.godaddy.vps4.security.Views;
 import com.godaddy.vps4.security.Vps4User;
 import com.godaddy.vps4.security.Vps4UserService;
 import com.godaddy.vps4.snapshot.Snapshot;
+import com.godaddy.vps4.snapshot.SnapshotAction;
 import com.godaddy.vps4.snapshot.SnapshotActionService;
 import com.godaddy.vps4.snapshot.SnapshotService;
 import com.godaddy.vps4.snapshot.SnapshotStatus;
@@ -118,7 +119,7 @@ public class SnapshotResource {
         validateCreation(vm.orionGuid, vm.vmId, snapshotRequest.name, snapshotRequest.snapshotType);
         Action action = createSnapshotAndActionEntries(vm, snapshotRequest.name, snapshotRequest.snapshotType);
         kickoffSnapshotCreation(vm.vmId, vm.hfsVmId, action, vm.orionGuid, snapshotRequest.snapshotType, user.getShopperId());
-        return new SnapshotAction(actionService.getAction(action.id));
+        return new SnapshotAction(actionService.getAction(action.id), user.isEmployee());
     }
 
     public static class SnapshotRequest {
@@ -138,7 +139,7 @@ public class SnapshotResource {
         long vps4UserId = virtualMachineService.getUserIdByVmId(vm.vmId);
         UUID snapshotId = snapshotService.createSnapshot(vm.projectId, vm.vmId, snapshotName, snapshotType);
         long actionId = actionService.createAction(
-                snapshotId, ActionType.CREATE_SNAPSHOT, new JSONObject().toJSONString(), vps4UserId);
+                snapshotId, ActionType.CREATE_SNAPSHOT, new JSONObject().toJSONString(), vps4UserId, user.getUsername());
         logger.info("Creating db entries for snapshot creation. Snapshot Action ID: {}, Snapshot ID: {}", actionId, snapshotId);
         return actionService.getAction(actionId);
     }
@@ -190,7 +191,7 @@ public class SnapshotResource {
 
         long vps4UserId = virtualMachineService.getUserIdByVmId(snapshot.vmId);
         long actionId = actionService.createAction(snapshotId,  ActionType.DESTROY_SNAPSHOT,
-                new JSONObject().toJSONString(), vps4UserId);
+                new JSONObject().toJSONString(), vps4UserId, user.getUsername());
 
         Vps4DestroySnapshot.Request request = new Vps4DestroySnapshot.Request();
         request.hfsSnapshotId = snapshot.hfsSnapshotId;
@@ -202,7 +203,7 @@ public class SnapshotResource {
         logger.info("Destroying snapshot {}:{} for vps4 vm {} with command {}:{}",
                 snapshotId, snapshot.name, snapshot.vmId, actionId, command.commandId);
 
-        return new SnapshotAction(actionService.getAction(actionId));
+        return new SnapshotAction(actionService.getAction(actionId), user.isEmployee());
     }
 
     @AdminOnly
@@ -229,12 +230,12 @@ public class SnapshotResource {
         String notes = String.format("Old name = %s, New Name = %s", snapshot.name, request.name);
 
         long vps4UserId = virtualMachineService.getUserIdByVmId(snapshot.vmId);
-        long actionId = actionService.createAction(snapshotId,  ActionType.RENAME_SNAPSHOT,  new JSONObject().toJSONString(), vps4UserId);
+        long actionId = actionService.createAction(snapshotId,  ActionType.RENAME_SNAPSHOT,  new JSONObject().toJSONString(), vps4UserId, user.getUsername());
 
         snapshotService.renameSnapshot(snapshotId, request.name);
         actionService.completeAction(actionId, new JSONObject().toJSONString(), notes);
 
-        return new SnapshotAction(actionService.getAction(actionId));
+        return new SnapshotAction(actionService.getAction(actionId), user.isEmployee());
     }
 
 

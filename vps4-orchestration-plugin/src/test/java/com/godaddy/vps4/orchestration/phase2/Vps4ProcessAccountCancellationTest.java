@@ -41,8 +41,8 @@ import com.godaddy.vps4.vm.ActionService;
 import com.godaddy.vps4.vm.ActionType;
 import com.godaddy.vps4.vm.VirtualMachine;
 import com.godaddy.vps4.vm.VirtualMachineService;
-import com.godaddy.vps4.vm.jdbc.JdbcActionService;
 import com.godaddy.vps4.vm.jdbc.JdbcVirtualMachineService;
+import com.godaddy.vps4.vm.jdbc.JdbcVmActionService;
 import com.google.inject.AbstractModule;
 import com.google.inject.Guice;
 import com.google.inject.Inject;
@@ -83,7 +83,7 @@ public class Vps4ProcessAccountCancellationTest {
                 new AbstractModule() {
                     @Override
                     protected void configure() {
-                        bind(ActionService.class).to(JdbcActionService.class);
+                        bind(ActionService.class).to(JdbcVmActionService.class);
                         bind(VirtualMachineService.class).to(JdbcVirtualMachineService.class);
                         bind(ScheduledJobService.class).to(JdbcScheduledJobService.class);
                     }

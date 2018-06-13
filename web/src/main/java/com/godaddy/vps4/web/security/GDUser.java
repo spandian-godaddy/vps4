@@ -10,6 +10,7 @@ public class GDUser {
     boolean isEmployee;
     boolean isStaff;
     boolean isAdmin;
+    String username;
 
     public String getShopperId() {
         return shopperId;
@@ -35,10 +36,14 @@ public class GDUser {
         return isEmployee() && isShopper();
     }
 
+    public String getUsername() {
+        return username;
+    }
+
     @Override
     public String toString() {
         return "GDUser [token=" + token + ", shopperId=" + shopperId + ", isEmployee=" + isEmployee + ", isStaff="
-                + isStaff + ", isAdmin=" + isAdmin + ", isShopper()=" + isShopper() + "]";
+                + isStaff + ", isAdmin=" + isAdmin + ", isShopper()=" + isShopper() + ", username=" + username + "]";
     }
 
 }

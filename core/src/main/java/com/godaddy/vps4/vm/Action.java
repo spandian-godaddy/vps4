@@ -3,6 +3,9 @@ package com.godaddy.vps4.vm;
 import java.time.Instant;
 import java.util.UUID;
 
+import org.apache.commons.lang3.builder.ReflectionToStringBuilder;
+import org.apache.commons.lang3.builder.ToStringStyle;
+
 public class Action {
 
     public final long id;
@@ -17,10 +20,11 @@ public class Action {
     public final Instant completed;
     public final String note;
     public final UUID commandId;
+    public final String initiatedBy;
 
     public Action(long id, UUID resourceId, ActionType type, long vps4UserId,
                   String request, String state, String response, ActionStatus status,
-                  Instant created, Instant completed, String note, UUID commandId){
+                  Instant created, Instant completed, String note, UUID commandId, String initiatedBy){
         this.id = id;
         this.resourceId = resourceId;
         this.type = type;
@@ -33,22 +37,12 @@ public class Action {
         this.completed = completed;
         this.note = note;
         this.commandId = commandId;
+        this.initiatedBy = initiatedBy;
     }
 
 
     public String toString(){
-        return "Action [id: " + id
-                + " resourceId: " + resourceId
-                + " actionType: " + type
-                + " vps4UserId: " + vps4UserId
-                + " request: " + request
-                + " state: " + state
-                + " response: " + response
-                + " status: " + status
-                + " created: " + created
-                + " completed: " + completed
-                + " note: " + note
-                + " commandId: " + commandId + "]";
+        return ReflectionToStringBuilder.toString(this, ToStringStyle.SHORT_PREFIX_STYLE);
     }
 
 }

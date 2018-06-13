@@ -1,12 +1,18 @@
-package com.godaddy.vps4.web.vm;
+package com.godaddy.vps4.vm;
 
+import com.fasterxml.jackson.annotation.JsonFilter;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.godaddy.vps4.vm.Action;
 import com.godaddy.vps4.vm.ActionStatus;
 import com.godaddy.vps4.vm.ActionType;
 
+import org.apache.commons.lang3.builder.ReflectionToStringBuilder;
+import org.apache.commons.lang3.builder.ToStringStyle;
+
 import java.time.Instant;
 import java.util.UUID;
 
+@JsonFilter("actionInitiatedByFilter")
 public class VmAction {
 
     public long id;
@@ -21,8 +27,11 @@ public class VmAction {
     public Instant completed;
     public String note;
     public UUID commandId;
+    public String initiatedBy;
+    @JsonIgnore
+    public boolean isRequesterEmployee;
 
-    public VmAction(Action a){
+    public VmAction(Action a, boolean isUserEmployee){
         this.id = a.id;
         this.virtualMachineId = a.resourceId;
         this.type = a.type;
@@ -35,6 +44,8 @@ public class VmAction {
         this.completed = a.completed;
         this.note = a.note;
         this.commandId = a.commandId;
+        this.initiatedBy = a.initiatedBy;
+        this.isRequesterEmployee = isUserEmployee;
     }
 
     // This is for jackson so it can deserialize
@@ -43,18 +54,7 @@ public class VmAction {
 
     @Override
     public String toString(){
-        return "VmAction [id: " + id
-                + " virtualMachineId: " + virtualMachineId
-                + " actionType: " + type
-                + " vps4UserId: " + vps4UserId
-                + " request: " + request
-                + " state: " + state
-                + " response: " + response
-                + " status: " + status
-                + " created: " + created
-                + " completed: " + completed
-                + " note: " + note
-                + " commandId: " + commandId + "]";
+        return ReflectionToStringBuilder.toString(this, ToStringStyle.SHORT_PREFIX_STYLE);
     }
 
 }

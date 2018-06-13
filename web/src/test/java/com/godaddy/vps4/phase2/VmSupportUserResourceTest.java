@@ -6,10 +6,10 @@ import com.godaddy.vps4.security.*;
 import com.godaddy.vps4.security.jdbc.JdbcPrivilegeService;
 import com.godaddy.vps4.snapshot.SnapshotModule;
 import com.godaddy.vps4.vm.*;
-import com.godaddy.vps4.vm.jdbc.JdbcActionService;
 import com.godaddy.vps4.vm.jdbc.JdbcDataCenterService;
 import com.godaddy.vps4.vm.jdbc.JdbcImageService;
 import com.godaddy.vps4.vm.jdbc.JdbcVirtualMachineService;
+import com.godaddy.vps4.vm.jdbc.JdbcVmActionService;
 import com.godaddy.vps4.web.security.StaffOnly;
 import com.godaddy.vps4.web.vm.VmActionWithDetails;
 import com.godaddy.vps4.web.vm.VmResource;
@@ -55,7 +55,7 @@ public class VmSupportUserResourceTest {
                 public void configure() {
                     bind(VmResource.class).toInstance(vmResource);
                     bind(VmUserService.class).toInstance(vmUserService);
-                    bind(ActionService.class).to(JdbcActionService.class);
+                    bind(ActionService.class).to(JdbcVmActionService.class);
                     bind(ImageService.class).to(JdbcImageService.class);
                     bind(PrivilegeService.class).to(JdbcPrivilegeService.class); // TODO break out to security module
                     bind(VirtualMachineService.class).to(JdbcVirtualMachineService.class);

@@ -1,6 +1,6 @@
 package com.godaddy.vps4.web.client;
 
-import com.godaddy.vps4.web.vm.VmAction;
+import com.godaddy.vps4.vm.VmAction;
 
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;

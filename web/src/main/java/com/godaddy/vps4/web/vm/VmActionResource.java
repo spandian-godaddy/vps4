@@ -24,6 +24,7 @@ import com.godaddy.vps4.security.Vps4UserService;
 import com.godaddy.vps4.vm.Action;
 import com.godaddy.vps4.vm.ActionService;
 import com.godaddy.vps4.vm.ActionType;
+import com.godaddy.vps4.vm.VmAction;
 import com.godaddy.vps4.web.PaginatedResult;
 import com.godaddy.vps4.web.Vps4Api;
 import com.godaddy.vps4.web.security.AdminOnly;
@@ -87,9 +88,8 @@ public class VmActionResource {
         List<VmAction> vmActionList = new ArrayList<>();
         if (actions != null) {
             totalRows = actions.totalRows;
-            vmActionList = actions.results
-                    .stream()
-                    .map(VmAction::new)
+            vmActionList = actions.results.stream()
+                    .map(action -> new VmAction(action, user.isEmployee()))
                     .collect(Collectors.toList());
         }
 
@@ -111,7 +111,7 @@ public class VmActionResource {
     @GET
     @Path("{vmId}/actions/{actionId}")
     public VmAction getVmAction(@PathParam("vmId") UUID vmId, @PathParam("actionId") long actionId) {
-        return new VmAction(this.getVmActionFromCore(vmId, actionId));
+        return new VmAction(this.getVmActionFromCore(vmId, actionId), user.isEmployee());
     }
 
     @AdminOnly
@@ -121,6 +121,6 @@ public class VmActionResource {
                                                       @PathParam("actionId") long actionId) {
         Action action = this.getVmActionFromCore(vmId, actionId);
         CommandState commandState = this.commandService.getCommand(action.commandId);
-        return new VmActionWithDetails(action, commandState);
+        return new VmActionWithDetails(action, commandState, user.isEmployee());
     }
 }

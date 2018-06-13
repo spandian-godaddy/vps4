@@ -5,7 +5,7 @@ import com.godaddy.vps4.security.Vps4UserService;
 import com.godaddy.vps4.web.Vps4Api;
 import com.godaddy.vps4.web.security.AdminOnly;
 import com.godaddy.vps4.web.security.GDUser;
-import com.godaddy.vps4.web.snapshot.SnapshotAction;
+import com.godaddy.vps4.snapshot.SnapshotAction;
 import com.godaddy.vps4.web.snapshot.SnapshotActionResource;
 import com.godaddy.vps4.web.snapshot.SnapshotActionWithDetails;
 import com.google.inject.Inject;

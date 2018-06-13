@@ -43,9 +43,9 @@ public class SsoRequestAuthenticator implements RequestAuthenticator<GDUser> {
         GDUser gdUser = createGDUser(token, request);
         logger.info("GD User authenticated: {}, URI: {}", gdUser.toString(), request.getRequestURI());
 
-        // deny users API access to Inactive Datacenter unless they are a 3 letter shopper id.
+        // deny users API access to inactive data center unless they are a 3 letter shopper id.
         if(denyAccessToInactiveDc(gdUser)) {
-            logger.info("User {} does not have an account with 3 letter shopper id. Denying access to API in INACTIVE Datacenter. ", gdUser.toString());
+            logger.info("User {} does not have an account with 3 letter shopper id. Denying access to API in INACTIVE Data Center. ", gdUser.toString());
             return null;
         }
 
@@ -53,7 +53,7 @@ public class SsoRequestAuthenticator implements RequestAuthenticator<GDUser> {
     }
 
     /**
-     * deny API access to inactive Datacenter for all gd users unless they are a 3 letter account.
+     * deny API access to inactive data center for all gd users unless they are a 3 letter account.
      * @param gdUser
      * @return true if DC is inactive and user is 3 letter account, false otherwise.
      */
@@ -80,6 +80,7 @@ public class SsoRequestAuthenticator implements RequestAuthenticator<GDUser> {
         GDUser gdUser = new GDUser();
         gdUser.token = token;
         if (token instanceof JomaxSsoToken) {
+            gdUser.username = ((JomaxSsoToken) token).getUsername();
             gdUser.shopperId = shopperOverride;
             gdUser.isEmployee = true;
             setPrivilegeByGroups(gdUser, ((JomaxSsoToken) token).getGroups());
@@ -89,6 +90,9 @@ public class SsoRequestAuthenticator implements RequestAuthenticator<GDUser> {
             if (token.employeeUser != null) {
                 gdUser.isEmployee = true;
                 setPrivilegeByGroups(gdUser, ((JomaxSsoToken) token.employeeUser).getGroups());
+                gdUser.username = ((JomaxSsoToken) token.employeeUser).getUsername();
+            } else {
+                gdUser.username = "Customer";
             }
         }
         else

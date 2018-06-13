@@ -35,7 +35,7 @@ import com.godaddy.vps4.web.Vps4Exception;
 import com.godaddy.vps4.web.Vps4NoShopperException;
 import com.godaddy.vps4.web.security.AdminOnly;
 import com.godaddy.vps4.web.security.GDUser;
-import com.godaddy.vps4.web.snapshot.SnapshotAction;
+import com.godaddy.vps4.snapshot.SnapshotAction;
 import com.godaddy.vps4.web.snapshot.SnapshotResource;
 import com.godaddy.vps4.web.snapshot.SnapshotResource.SnapshotRenameRequest;
 import com.google.inject.AbstractModule;

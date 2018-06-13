@@ -16,8 +16,6 @@ import javax.sql.DataSource;
 import javax.ws.rs.NotFoundException;
 import javax.ws.rs.core.UriInfo;
 
-import com.godaddy.vps4.vm.Action;
-import com.godaddy.vps4.web.vm.VmAction;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -29,13 +27,15 @@ import com.godaddy.vps4.security.SecurityModule;
 import com.godaddy.vps4.security.Vps4User;
 import com.godaddy.vps4.security.Vps4UserService;
 import com.godaddy.vps4.security.jdbc.AuthorizationException;
+import com.godaddy.vps4.vm.Action;
 import com.godaddy.vps4.vm.ActionType;
 import com.godaddy.vps4.vm.VirtualMachine;
+import com.godaddy.vps4.vm.VmAction;
 import com.godaddy.vps4.vm.VmModule;
 import com.godaddy.vps4.web.security.AdminOnly;
 import com.godaddy.vps4.web.security.GDUser;
-import com.godaddy.vps4.web.vm.VmActionWithDetails;
 import com.godaddy.vps4.web.vm.VmActionResource;
+import com.godaddy.vps4.web.vm.VmActionWithDetails;
 import com.google.inject.AbstractModule;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
@@ -105,6 +105,7 @@ public class VmActionResourceTest {
 
         VmAction vmAction = getVmActionResource().getVmAction(vm.vmId, coreVMAction.id);
         Assert.assertEquals(expectedGuid, vmAction.commandId);
+        Assert.assertEquals(false, vmAction.isRequesterEmployee);
     }
 
     @Test(expected=AuthorizationException.class)
@@ -143,6 +144,7 @@ public class VmActionResourceTest {
         user = GDUserMock.createEmployee();
         VmAction vmAction = getVmActionResource().getVmAction(vm.vmId, coreVMAction.id);
         Assert.assertEquals(expectedGuid, vmAction.commandId);
+        Assert.assertEquals(true, vmAction.isRequesterEmployee);
     }
 
     @Test
@@ -154,6 +156,7 @@ public class VmActionResourceTest {
         user = GDUserMock.createEmployee2Shopper();
         VmAction vmAction = getVmActionResource().getVmAction(vm.vmId, coreVMAction.id);
         Assert.assertEquals(expectedGuid, vmAction.commandId);
+        Assert.assertEquals(true, vmAction.isRequesterEmployee);
     }
 
     @Test
@@ -165,6 +168,7 @@ public class VmActionResourceTest {
         user = GDUserMock.createAdmin();
         VmAction vmAction = getVmActionResource().getVmAction(vm.vmId, coreVMAction.id);
         Assert.assertEquals(expectedGuid, vmAction.commandId);
+        Assert.assertEquals(true, vmAction.isRequesterEmployee);
     }
 
 

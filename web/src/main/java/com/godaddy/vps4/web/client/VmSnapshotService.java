@@ -2,7 +2,7 @@ package com.godaddy.vps4.web.client;
 
 import com.godaddy.vps4.snapshot.Snapshot;
 import com.godaddy.vps4.web.PATCH;
-import com.godaddy.vps4.web.snapshot.SnapshotAction;
+import com.godaddy.vps4.snapshot.SnapshotAction;
 import com.godaddy.vps4.web.snapshot.SnapshotResource.SnapshotRenameRequest;
 import com.godaddy.vps4.web.vm.VmSnapshotResource.VmSnapshotRequest;
 

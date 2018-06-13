@@ -26,7 +26,7 @@ import org.quartz.JobExecutionException;
 import com.godaddy.vps4.scheduler.api.plugin.Vps4BackupJobRequest;
 import com.godaddy.vps4.snapshot.SnapshotType;
 import com.godaddy.vps4.web.client.VmSnapshotService;
-import com.godaddy.vps4.web.snapshot.SnapshotAction;
+import com.godaddy.vps4.snapshot.SnapshotAction;
 import com.godaddy.vps4.web.vm.VmSnapshotResource;
 import com.google.inject.AbstractModule;
 import com.google.inject.Guice;

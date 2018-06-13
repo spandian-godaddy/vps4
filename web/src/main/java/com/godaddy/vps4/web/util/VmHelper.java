@@ -4,7 +4,9 @@ import com.godaddy.vps4.orchestration.ActionRequest;
 import com.godaddy.vps4.vm.ActionService;
 import com.godaddy.vps4.vm.ActionType;
 import com.godaddy.vps4.vm.VirtualMachineService;
-import com.godaddy.vps4.web.vm.VmAction;
+import com.godaddy.vps4.vm.VmAction;
+import com.godaddy.vps4.web.security.GDUser;
+
 import gdg.hfs.orchestration.CommandService;
 import gdg.hfs.orchestration.CommandState;
 import org.json.simple.JSONObject;
@@ -20,13 +22,14 @@ public class VmHelper {
                                                   CommandService commandService,
                                                   VirtualMachineService virtualMachineService,
                                                   UUID vmId, ActionType actionType,
-                                                  ActionRequest request, String commandName) {
+                                                  ActionRequest request, String commandName,
+                                                  GDUser user) {
         long vps4UserId = virtualMachineService.getUserIdByVmId(vmId);
-        long actionId = actionService.createAction(vmId, actionType, new JSONObject().toJSONString(), vps4UserId);
+        long actionId = actionService.createAction(vmId, actionType, new JSONObject().toJSONString(), vps4UserId, user.getUsername());
         request.setActionId(actionId);
 
         CommandState command = Commands.execute(commandService, actionService, commandName, request);
         logger.info("managing vm {} with command {}:{}", vmId, actionType, command.commandId);
-        return new VmAction(actionService.getAction(actionId));
+        return new VmAction(actionService.getAction(actionId), user.isEmployee());
     }
 }

@@ -1,5 +1,24 @@
 package com.godaddy.vps4.web.vm;
 
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.UUID;
+
+import javax.ws.rs.Consumes;
+import javax.ws.rs.DELETE;
+import javax.ws.rs.GET;
+import javax.ws.rs.NotFoundException;
+import javax.ws.rs.POST;
+import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
+import javax.ws.rs.Produces;
+import javax.ws.rs.core.MediaType;
+
+import org.json.simple.JSONObject;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.godaddy.hfs.config.Config;
 import com.godaddy.vps4.orchestration.hfs.sysadmin.SetPassword;
 import com.godaddy.vps4.orchestration.sysadmin.Vps4AddSupportUser;
@@ -9,22 +28,22 @@ import com.godaddy.vps4.security.Vps4User;
 import com.godaddy.vps4.security.Vps4UserService;
 import com.godaddy.vps4.sysadmin.UsernamePasswordGenerator;
 import com.godaddy.vps4.util.Cryptography;
-import com.godaddy.vps4.vm.*;
+import com.godaddy.vps4.vm.Action;
+import com.godaddy.vps4.vm.ActionService;
+import com.godaddy.vps4.vm.ActionType;
+import com.godaddy.vps4.vm.VirtualMachine;
+import com.godaddy.vps4.vm.VmUser;
+import com.godaddy.vps4.vm.VmUserService;
 import com.godaddy.vps4.web.Vps4Api;
+import com.godaddy.vps4.web.security.GDUser;
 import com.godaddy.vps4.web.security.StaffOnly;
 import com.godaddy.vps4.web.util.Commands;
 import com.google.inject.Inject;
+
 import gdg.hfs.orchestration.CommandService;
 import gdg.hfs.orchestration.CommandState;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
-import org.json.simple.JSONObject;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import javax.ws.rs.*;
-import javax.ws.rs.core.MediaType;
-import java.util.*;
 
 @Vps4Api
 @Api(tags = {"vms"})
@@ -43,9 +62,11 @@ public class VmSupportUserResource {
     private final String SupportUserName = "Support";
     private final Cryptography cryptography;
     private final Config config;
+    private final GDUser gdUser;
 
     @Inject
-    public VmSupportUserResource(VmResource vmResource,
+    public VmSupportUserResource(GDUser user, 
+                                 VmResource vmResource,
                                  Vps4UserService vps4UserService,
                                  ActionService actionService,
                                  CommandService commandService,
@@ -59,6 +80,7 @@ public class VmSupportUserResource {
         this.cryptography = cryptography;
         supportUser = vps4UserService.getUser(SupportUserName);
         this.config = config;
+        this.gdUser = user;
     }
 
     @SuppressWarnings("unchecked")
@@ -76,7 +98,7 @@ public class VmSupportUserResource {
 
         JSONObject addUserJson = new JSONObject();
         addUserJson.put("username", username);
-        long actionId = actionService.createAction(vm.vmId, ActionType.ADD_SUPPORT_USER, addUserJson.toJSONString(), supportUser.getId());
+        long actionId = actionService.createAction(vm.vmId, ActionType.ADD_SUPPORT_USER, addUserJson.toJSONString(), supportUser.getId(), gdUser.getUsername());
 
         Vps4AddSupportUser.Request addUserRequest = new Vps4AddSupportUser.Request();
         addUserRequest.hfsVmId = vm.hfsVmId;
@@ -92,7 +114,7 @@ public class VmSupportUserResource {
         JSONObject message = new JSONObject();
         message.put("Username", username);
         message.put("Password", password);
-        return new VmActionWithDetails(action, command, message.toString());
+        return new VmActionWithDetails(action, command, message.toString(), gdUser.isEmployee());
     }
 
     @SuppressWarnings("unchecked")
@@ -106,7 +128,7 @@ public class VmSupportUserResource {
         if (vmUserService.supportUserExists(username, vmId)) {
             JSONObject removeUserJson = new JSONObject();
             removeUserJson.put("username", username);
-            long actionId = actionService.createAction(vmId, ActionType.REMOVE_SUPPORT_USER, removeUserJson.toJSONString(), supportUser.getId());
+            long actionId = actionService.createAction(vmId, ActionType.REMOVE_SUPPORT_USER, removeUserJson.toJSONString(), supportUser.getId(), gdUser.getUsername());
 
             Vps4RemoveSupportUser.Request request = new Vps4RemoveSupportUser.Request();
             request.hfsVmId = vm.hfsVmId;
@@ -118,7 +140,7 @@ public class VmSupportUserResource {
             logger.info("Removed support user {} from vm {}", username, vmId);
 
             Action action = actionService.getAction(actionId);
-            return new VmActionWithDetails(action, command);
+            return new VmActionWithDetails(action, command, gdUser.isEmployee());
         } else {
             logger.info("Support user {} not found in vm {}", username, vmId);
             throw new NotFoundException("Support user not found");
@@ -138,7 +160,8 @@ public class VmSupportUserResource {
 
             JSONObject setPasswordJson = new JSONObject();
             setPasswordJson.put("username", username);
-            long actionId = actionService.createAction(vm.vmId, ActionType.SET_PASSWORD, setPasswordJson.toJSONString(), supportUser.getId());
+            long actionId = actionService.createAction(vm.vmId, ActionType.SET_PASSWORD, setPasswordJson.toJSONString(), supportUser.getId(),
+                    gdUser.getUsername());
 
             SetPassword.Request setPasswordRequest = new SetPassword.Request();
             setPasswordRequest.hfsVmId = vm.hfsVmId;
@@ -158,7 +181,7 @@ public class VmSupportUserResource {
             JSONObject message = new JSONObject();
             message.put("Username", username);
             message.put("Password", password);
-            return new VmActionWithDetails(action, command, message.toString());
+            return new VmActionWithDetails(action, command, message.toString(), gdUser.isEmployee());
         } else {
             logger.info("Support user {} not found in vm {}", username, vmId);
             throw new NotFoundException("Support user not found");
@@ -205,7 +228,7 @@ public class VmSupportUserResource {
             JSONObject addUserJson = new JSONObject();
             addUserJson.put("username", username);
 
-            long actionId = actionService.createAction(vm.vmId, ActionType.ADD_SUPPORT_USER, addUserJson.toJSONString(), supportUser.getId());
+            long actionId = actionService.createAction(vm.vmId, ActionType.ADD_SUPPORT_USER, addUserJson.toJSONString(), supportUser.getId(), gdUser.getUsername());
 
             Vps4AddSupportUser.Request addUserRequest = new Vps4AddSupportUser.Request();
             addUserRequest.hfsVmId = vm.hfsVmId;
@@ -220,14 +243,14 @@ public class VmSupportUserResource {
             message.put("Username", username);
             message.put("Password", password);
 
-            return new VmActionWithDetails(action, command, message.toString());
+            return new VmActionWithDetails(action, command, message.toString(), gdUser.isEmployee());
         } else {
             logger.info("Changing password for admin user on vm {} from the support api", vmId);
             String username = user.username;
 
             JSONObject setPasswordJson = new JSONObject();
             setPasswordJson.put("username", username);
-            long actionId = actionService.createAction(vm.vmId, ActionType.SET_PASSWORD, setPasswordJson.toJSONString(), supportUser.getId());
+            long actionId = actionService.createAction(vm.vmId, ActionType.SET_PASSWORD, setPasswordJson.toJSONString(), supportUser.getId(), gdUser.getUsername());
 
             List<String> usernames = new ArrayList<>();
             usernames.add(username);
@@ -249,7 +272,7 @@ public class VmSupportUserResource {
             message.put("Username", username);
             message.put("Password", password);
 
-            return new VmActionWithDetails(action, command, message.toString());
+            return new VmActionWithDetails(action, command, message.toString(), gdUser.isEmployee());
         }
     }
 
@@ -263,22 +286,22 @@ public class VmSupportUserResource {
     @Path("/{vmId}/supportUser")
     public VmActionWithDetails removeSupportUser(@PathParam("vmId") UUID vmId) {
         VirtualMachine vm = vmResource.getVm(vmId);
-        VmUser user = vmUserService.getSupportUser(vmId);
+        VmUser vmUser = vmUserService.getSupportUser(vmId);
 
-        if (user == null) {
+        if (vmUser == null) {
             logger.info("No support user found in vm {}", vmId);
             throw new NotFoundException("No support user found");
         } else {
-            logger.info("Removing user {} from vm {}", user.username, vmId);
+            logger.info("Removing user {} from vm {}", vmUser.username, vmId);
 
             JSONObject removeUserJson = new JSONObject();
-            removeUserJson.put("username", user.username);
+            removeUserJson.put("username", vmUser.username);
 
-            long actionId = actionService.createAction(vmId, ActionType.REMOVE_SUPPORT_USER, removeUserJson.toJSONString(), supportUser.getId());
+            long actionId = actionService.createAction(vmId, ActionType.REMOVE_SUPPORT_USER, removeUserJson.toJSONString(), supportUser.getId(), gdUser.getUsername());
 
             Vps4RemoveSupportUser.Request request = new Vps4RemoveSupportUser.Request();
             request.hfsVmId = vm.hfsVmId;
-            request.username = user.username;
+            request.username = vmUser.username;
             request.actionId = actionId;
             request.vmId = vmId;
 
@@ -286,7 +309,7 @@ public class VmSupportUserResource {
 
             Action action = actionService.getAction(actionId);
 
-            return new VmActionWithDetails(action, command);
+            return new VmActionWithDetails(action, command, gdUser.isEmployee());
         }
     }
 }

@@ -78,7 +78,7 @@ public class NetworkResourceTest {
 
         when(vmResource.getVm(vmId)).thenReturn(vm);
 
-        resource = new NetworkResource(networkService, actionService, virtualMachineService,
+        resource = new NetworkResource(user, networkService, actionService, virtualMachineService,
                 projectService, commandService, vmResource, config);
 
     }
@@ -96,8 +96,9 @@ public class NetworkResourceTest {
     @Test
     public void testReturnsAction(){
         Action action = new Action(123, UUID.randomUUID(), ActionType.ADD_IP,
-                111, "{}", "NEW", "{}", ActionStatus.NEW, Instant.now(), null, "", UUID.randomUUID());
-        when(actionService.createAction(vm.vmId, ActionType.ADD_IP, new JSONObject().toJSONString(), vps4User.getId())).thenReturn(action.id);
+                111, "{}", "NEW", "{}", ActionStatus.NEW, Instant.now(), null, "", UUID.randomUUID(), "tester");
+        when(actionService.createAction(vm.vmId, ActionType.ADD_IP, new JSONObject().toJSONString(), vps4User.getId(),
+                action.initiatedBy)).thenReturn(action.id);
         when(actionService.getAction(123)).thenReturn(action);
         when(virtualMachineService.getVirtualMachine(vmId)).thenReturn(vm);
 
@@ -110,8 +111,8 @@ public class NetworkResourceTest {
     @Test
     public void testDestroyIp(){
         Action action = new Action(123, UUID.randomUUID(), ActionType.DESTROY_IP,
-                111, "{}", "NEW", "{}", ActionStatus.NEW, Instant.now(), null, "", UUID.randomUUID());
-        when(actionService.createAction(vm.vmId, ActionType.DESTROY_IP, new JSONObject().toJSONString(), vps4User.getId())).thenReturn(action.id);
+                111, "{}", "NEW", "{}", ActionStatus.NEW, Instant.now(), null, "", UUID.randomUUID(), "tester");
+        when(actionService.createAction(vm.vmId, ActionType.DESTROY_IP, new JSONObject().toJSONString(), vps4User.getId(), action.initiatedBy)).thenReturn(action.id);
         when(actionService.getAction(action.id)).thenReturn(action);
 
         IpAddress ip = new IpAddress(1111, vmId, "1.2.3.4", IpAddressType.SECONDARY,

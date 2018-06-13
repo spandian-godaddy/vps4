@@ -55,6 +55,7 @@ import com.godaddy.vps4.vm.VirtualMachineService;
 import com.godaddy.vps4.vm.VirtualMachineService.ProvisionVirtualMachineParameters;
 import com.godaddy.vps4.vm.VirtualMachineSpec;
 import com.godaddy.vps4.vm.VirtualMachineType;
+import com.godaddy.vps4.vm.VmAction;
 import com.godaddy.vps4.web.Vps4Api;
 import com.godaddy.vps4.web.Vps4Exception;
 import com.godaddy.vps4.web.Vps4NoShopperException;
@@ -147,7 +148,7 @@ public class VmResource {
         VmActionRequest startRequest = new VmActionRequest();
         startRequest.virtualMachine = vm;
         return createActionAndExecute(actionService, commandService, virtualMachineService, vm.vmId,
-                ActionType.START_VM, startRequest, "Vps4StartVm");
+                ActionType.START_VM, startRequest, "Vps4StartVm", user);
     }
 
     @POST
@@ -161,7 +162,7 @@ public class VmResource {
         VmActionRequest stopRequest = new VmActionRequest();
         stopRequest.virtualMachine = vm;
         return createActionAndExecute(actionService, commandService, virtualMachineService, vm.vmId, ActionType.STOP_VM,
-                stopRequest, "Vps4StopVm");
+                stopRequest, "Vps4StopVm", user);
     }
 
     @POST
@@ -175,7 +176,7 @@ public class VmResource {
         VmActionRequest restartRequest = new VmActionRequest();
         restartRequest.virtualMachine = vm;
         return createActionAndExecute(actionService, commandService, virtualMachineService, vm.vmId,
-                ActionType.RESTART_VM, restartRequest, "Vps4RestartVm");
+                ActionType.RESTART_VM, restartRequest, "Vps4RestartVm", user);
     }
 
     public static class ProvisionVmRequest {
@@ -222,7 +223,7 @@ public class VmResource {
         Project project = projectService.getProject(virtualMachine.projectId);
 
         long actionId = actionService.createAction(virtualMachine.vmId, ActionType.CREATE_VM,
-                new JSONObject().toJSONString(), vps4User.getId());
+                new JSONObject().toJSONString(), vps4User.getId(), user.getUsername());
         logger.info("VmAction id: {}", actionId);
 
         int mailRelayQuota =  Integer.parseInt(ResellerConfigHelper.getResellerConfig(config, vmCredit.resellerId, "mailrelay.quota", "5000"));
@@ -239,7 +240,7 @@ public class VmResource {
         CommandState command = Commands.execute(commandService, actionService, "ProvisionVm", request);
         logger.info("provisioning VM in {}", command.commandId);
 
-        return new VmAction(actionService.getAction(actionId));
+        return new VmAction(actionService.getAction(actionId), user.isEmployee());
     }
 
     private Vps4ProvisionVm.Request createProvisionVmRequest(String image, String username, Project project,
@@ -268,7 +269,7 @@ public class VmResource {
         VmActionRequest destroyRequest = new VmActionRequest();
         destroyRequest.virtualMachine = vm;
         VmAction deleteAction = createActionAndExecute(actionService, commandService, virtualMachineService, vm.vmId,
-                ActionType.DESTROY_VM, destroyRequest, "Vps4DestroyVm");
+                ActionType.DESTROY_VM, destroyRequest, "Vps4DestroyVm", user);
 
         // The request has been created successfully.
         // Detach the user from the vm, and we'll handle the delete from here.

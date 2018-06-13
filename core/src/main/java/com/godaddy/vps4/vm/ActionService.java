@@ -8,7 +8,7 @@ import com.godaddy.vps4.jdbc.ResultSubset;
 
 public interface ActionService {
 
-    long createAction(UUID resourceId, ActionType actionType, String request, long userId);
+    long createAction(UUID resourceId, ActionType actionType, String request, long userId, String initiatedBy);
 
     Action getAction(long actionId);
 

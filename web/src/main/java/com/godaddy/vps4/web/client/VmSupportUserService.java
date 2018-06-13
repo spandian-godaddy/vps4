@@ -9,7 +9,7 @@ import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
 
-import com.godaddy.vps4.web.vm.VmAction;
+import com.godaddy.vps4.vm.VmAction;
 
 @Path("/api/vms")
 @Produces(MediaType.APPLICATION_JSON)

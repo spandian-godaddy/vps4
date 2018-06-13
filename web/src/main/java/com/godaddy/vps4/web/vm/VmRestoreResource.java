@@ -30,6 +30,7 @@ import com.godaddy.vps4.vm.ActionType;
 import com.godaddy.vps4.vm.RestoreVmInfo;
 import com.godaddy.vps4.vm.VirtualMachine;
 import com.godaddy.vps4.vm.VirtualMachineService;
+import com.godaddy.vps4.vm.VmAction;
 import com.godaddy.vps4.vm.VmUserService;
 import com.godaddy.vps4.web.Vps4Api;
 import com.godaddy.vps4.web.Vps4Exception;
@@ -103,7 +104,7 @@ public class VmRestoreResource {
                 vm, restoreVmRequest.backupId, restoreVmRequest.password);
         VmAction restoreAction = createActionAndExecute(
             actionService, commandService, virtualMachineService,
-            vm.vmId, ActionType.RESTORE_VM, commandRequest, "Vps4RestoreVm");
+            vm.vmId, ActionType.RESTORE_VM, commandRequest, "Vps4RestoreVm", user);
         return restoreAction;
     }
 

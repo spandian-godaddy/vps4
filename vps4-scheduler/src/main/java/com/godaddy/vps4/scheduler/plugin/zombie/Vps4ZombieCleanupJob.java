@@ -4,7 +4,7 @@ import com.godaddy.vps4.scheduler.api.plugin.Vps4ZombieCleanupJobRequest;
 import com.godaddy.vps4.scheduler.core.JobMetadata;
 import com.godaddy.vps4.scheduler.core.SchedulerJob;
 import com.godaddy.vps4.web.client.VmService;
-import com.godaddy.vps4.web.vm.VmAction;
+import com.godaddy.vps4.vm.VmAction;
 import com.google.inject.Inject;
 import org.quartz.JobExecutionContext;
 import org.quartz.JobExecutionException;

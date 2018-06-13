@@ -17,6 +17,7 @@ import javax.ws.rs.core.MediaType;
 import com.godaddy.vps4.security.PrivilegeService;
 import com.godaddy.vps4.security.Vps4UserService;
 import com.godaddy.vps4.snapshot.Snapshot;
+import com.godaddy.vps4.snapshot.SnapshotAction;
 import com.godaddy.vps4.snapshot.SnapshotActionService;
 import com.godaddy.vps4.snapshot.SnapshotService;
 import com.godaddy.vps4.snapshot.SnapshotStatus;
@@ -74,7 +75,7 @@ public class SnapshotActionResource {
         verifyPrivilege(snapshotId);
         return actionService.getActions(snapshotId)
                 .stream()
-                .map(SnapshotAction::new)
+                .map(action -> new SnapshotAction(action, user.isEmployee()))
                 .collect(Collectors.toList());
     }
 
@@ -93,7 +94,7 @@ public class SnapshotActionResource {
     public SnapshotAction getSnapshotAction(
             @PathParam("snapshotId") UUID snapshotId,
             @PathParam("actionId") long actionId) {
-        return new SnapshotAction(this.getSnapshotActionFromCore(snapshotId, actionId));
+        return new SnapshotAction(this.getSnapshotActionFromCore(snapshotId, actionId), user.isEmployee());
     }
 
     @AdminOnly
@@ -104,6 +105,6 @@ public class SnapshotActionResource {
             @PathParam("actionId") long actionId) {
         Action action = this.getSnapshotActionFromCore(snapshotId, actionId);
         CommandState commandState = this.commandService.getCommand(action.commandId);
-        return new SnapshotActionWithDetails(action, commandState);
+        return new SnapshotActionWithDetails(action, commandState, user.isEmployee());
     }
 }

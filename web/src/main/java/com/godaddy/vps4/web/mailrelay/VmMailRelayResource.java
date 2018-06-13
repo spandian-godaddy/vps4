@@ -26,6 +26,7 @@ import com.godaddy.vps4.vm.VirtualMachine;
 import com.godaddy.vps4.vm.VirtualMachineService;
 import com.godaddy.vps4.web.PATCH;
 import com.godaddy.vps4.web.Vps4Api;
+import com.godaddy.vps4.web.security.GDUser;
 import com.godaddy.vps4.web.security.StaffOnly;
 import com.godaddy.vps4.web.util.Commands;
 import com.godaddy.vps4.web.vm.VmResource;
@@ -52,9 +53,10 @@ public class VmMailRelayResource {
     private final CommandService commandService;
     private final ActionService actionService;
     private final VirtualMachineService virtualMachineService;
+    private final GDUser user;
 
     @Inject
-    public VmMailRelayResource(MailRelayService mailRelayService,
+    public VmMailRelayResource(GDUser user, MailRelayService mailRelayService,
             NetworkService networkService, CommandService commandService,
             ActionService actionService, VirtualMachineService virtualMachineService,
             VmResource vmResource) {
@@ -64,6 +66,7 @@ public class VmMailRelayResource {
         this.actionService = actionService;
         this.virtualMachineService = virtualMachineService;
         this.vmResource = vmResource;
+        this.user = user;
     }
 
     @GET
@@ -119,7 +122,7 @@ public class VmMailRelayResource {
         long vps4UserId = virtualMachineService.getUserIdByVmId(vmId);
         IpAddress ipAddress = networkService.getVmPrimaryAddress(vmId);
         Vps4SetMailRelayQuota.Request request = new Vps4SetMailRelayQuota.Request(ipAddress.ipAddress, quotaPatch.quota);
-        long actionId = actionService.createAction(vmId, ActionType.UPDATE_MAILRELAY_QUOTA, request.toJSONString(), vps4UserId);
+        long actionId = actionService.createAction(vmId, ActionType.UPDATE_MAILRELAY_QUOTA, request.toJSONString(), vps4UserId, user.getUsername());
         request.actionId = actionId;
         Commands.execute(commandService, actionService, "Vps4SetMailRelayQuota", request);
         return actionService.getAction(actionId);

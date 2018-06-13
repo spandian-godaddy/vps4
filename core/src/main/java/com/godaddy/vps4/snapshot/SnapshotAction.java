@@ -1,8 +1,12 @@
-package com.godaddy.vps4.web.snapshot;
+package com.godaddy.vps4.snapshot;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.godaddy.vps4.vm.Action;
 import com.godaddy.vps4.vm.ActionStatus;
 import com.godaddy.vps4.vm.ActionType;
+
+import org.apache.commons.lang3.builder.ReflectionToStringBuilder;
+import org.apache.commons.lang3.builder.ToStringStyle;
 
 import java.time.Instant;
 import java.util.UUID;
@@ -21,8 +25,11 @@ public class SnapshotAction {
     public Instant completed;
     public String note;
     public UUID commandId;
+    public String initiatedBy;
+    @JsonIgnore
+    public boolean isRequesterEmployee;
 
-    public SnapshotAction(Action a){
+    public SnapshotAction(Action a, boolean userIsEmployee){
         this.id = a.id;
         this.snapshotId = a.resourceId;
         this.type = a.type;
@@ -35,6 +42,8 @@ public class SnapshotAction {
         this.completed = a.completed;
         this.note = a.note;
         this.commandId = a.commandId;
+        this.initiatedBy = a.initiatedBy;
+        isRequesterEmployee = userIsEmployee;
     }
 
     // This is for jackson so it can deserialize
@@ -42,19 +51,8 @@ public class SnapshotAction {
     }
 
     @Override
-    public String toString(){
-        return "VmAction [id: " + id
-                + " snapshotId: " + snapshotId
-                + " actionType: " + type
-                + " vps4UserId: " + vps4UserId
-                + " request: " + request
-                + " state: " + state
-                + " response: " + response
-                + " status: " + status
-                + " created: " + created
-                + " completed: " + completed
-                + " note: " + note
-                + " commandId: " + commandId + "]";
+    public String toString() {
+        return ReflectionToStringBuilder.toString(this, ToStringStyle.SHORT_PREFIX_STYLE);
     }
 
 }

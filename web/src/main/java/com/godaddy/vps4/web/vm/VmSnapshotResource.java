@@ -28,7 +28,7 @@ import com.godaddy.vps4.vm.VirtualMachineService;
 import com.godaddy.vps4.web.PATCH;
 import com.godaddy.vps4.web.Vps4Api;
 import com.godaddy.vps4.web.security.GDUser;
-import com.godaddy.vps4.web.snapshot.SnapshotAction;
+import com.godaddy.vps4.snapshot.SnapshotAction;
 import com.godaddy.vps4.web.snapshot.SnapshotResource;
 import com.godaddy.vps4.web.snapshot.SnapshotResource.SnapshotRenameRequest;
 import com.google.inject.Inject;

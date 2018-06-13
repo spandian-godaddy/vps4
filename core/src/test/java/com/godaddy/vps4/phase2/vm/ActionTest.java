@@ -24,15 +24,15 @@ import com.godaddy.vps4.vm.ActionStatus;
 import com.godaddy.vps4.vm.ActionType;
 import com.godaddy.vps4.vm.VirtualMachine;
 import com.godaddy.vps4.vm.VirtualMachineService;
-import com.godaddy.vps4.vm.jdbc.JdbcActionService;
 import com.godaddy.vps4.vm.jdbc.JdbcVirtualMachineService;
+import com.godaddy.vps4.vm.jdbc.JdbcVmActionService;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
 
 public class ActionTest {
     Injector injector = Guice.createInjector(new DatabaseModule());
     DataSource dataSource = injector.getInstance(DataSource.class);
-    ActionService actionService = new JdbcActionService(dataSource);
+    ActionService actionService = new JdbcVmActionService(dataSource);
     ProjectService projectService = new JdbcProjectService(dataSource);
     VirtualMachineService vmService = new JdbcVirtualMachineService(dataSource);
 
@@ -55,7 +55,7 @@ public class ActionTest {
 
     @Test
     public void testCreate(){
-        long actionId = actionService.createAction(vm.vmId, type, new JSONObject().toJSONString(), 1);
+        long actionId = actionService.createAction(vm.vmId, type, new JSONObject().toJSONString(), 1, "tester");
         Action action = actionService.getAction(actionId);
         assertEquals("{}", action.request);
         assertEquals(vm.vmId, action.resourceId);
@@ -66,7 +66,7 @@ public class ActionTest {
 
     @Test
     public void testUpdateStatus(){
-        long actionId = actionService.createAction(vm.vmId, type, new JSONObject().toJSONString(), 1);
+        long actionId = actionService.createAction(vm.vmId, type, new JSONObject().toJSONString(), 1, "tester");
         Action action = actionService.getAction(actionId);
         assertEquals(ActionStatus.NEW, action.status);
 

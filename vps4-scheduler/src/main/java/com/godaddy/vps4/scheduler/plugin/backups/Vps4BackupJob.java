@@ -5,7 +5,7 @@ import com.godaddy.vps4.scheduler.core.JobMetadata;
 import com.godaddy.vps4.scheduler.core.SchedulerJob;
 import com.godaddy.vps4.snapshot.SnapshotType;
 import com.godaddy.vps4.web.client.VmSnapshotService;
-import com.godaddy.vps4.web.snapshot.SnapshotAction;
+import com.godaddy.vps4.snapshot.SnapshotAction;
 import com.godaddy.vps4.web.vm.VmSnapshotResource;
 import static com.godaddy.vps4.client.ClientUtils.withShopperId;
 import com.google.inject.Inject;

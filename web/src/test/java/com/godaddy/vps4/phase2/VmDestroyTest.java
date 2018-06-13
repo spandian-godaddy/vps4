@@ -28,7 +28,7 @@ import com.godaddy.vps4.snapshot.SnapshotType;
 import com.godaddy.vps4.vm.VirtualMachine;
 import com.godaddy.vps4.vm.VmModule;
 import com.godaddy.vps4.web.security.GDUser;
-import com.godaddy.vps4.web.vm.VmAction;
+import com.godaddy.vps4.vm.VmAction;
 import com.godaddy.vps4.web.vm.VmResource;
 import com.godaddy.vps4.web.vm.VmSnapshotResource;
 import com.google.inject.AbstractModule;

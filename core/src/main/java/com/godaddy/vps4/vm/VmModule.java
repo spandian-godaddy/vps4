@@ -8,11 +8,11 @@ import com.godaddy.vps4.scheduledJob.ScheduledJobService;
 import com.godaddy.vps4.scheduledJob.jdbc.JdbcScheduledJobService;
 import com.godaddy.vps4.security.PrivilegeService;
 import com.godaddy.vps4.security.jdbc.JdbcPrivilegeService;
-import com.godaddy.vps4.vm.jdbc.JdbcActionService;
 import com.godaddy.vps4.vm.jdbc.JdbcControlPanelService;
 import com.godaddy.vps4.vm.jdbc.JdbcDataCenterService;
 import com.godaddy.vps4.vm.jdbc.JdbcImageService;
 import com.godaddy.vps4.vm.jdbc.JdbcVirtualMachineService;
+import com.godaddy.vps4.vm.jdbc.JdbcVmActionService;
 import com.godaddy.vps4.vm.jdbc.JdbcVmUserService;
 import com.google.inject.AbstractModule;
 
@@ -25,7 +25,7 @@ public class VmModule extends AbstractModule {
                 bind(ControlPanelService.class).to(JdbcControlPanelService.class);
                 bind(ImageService.class).to(JdbcImageService.class);
                 bind(VmUserService.class).to(JdbcVmUserService.class);
-                bind(ActionService.class).to(JdbcActionService.class);
+                bind(ActionService.class).to(JdbcVmActionService.class);
                 bind(NetworkService.class).to(JdbcNetworkService.class);
                 bind(DataCenterService.class).to(JdbcDataCenterService.class);
                 bind(ScheduledJobService.class).to(JdbcScheduledJobService.class);

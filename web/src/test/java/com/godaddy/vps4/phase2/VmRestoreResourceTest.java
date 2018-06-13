@@ -31,7 +31,7 @@ import com.godaddy.vps4.vm.VmUser;
 import com.godaddy.vps4.vm.VmUserType;
 import com.godaddy.vps4.web.Vps4Exception;
 import com.godaddy.vps4.web.security.GDUser;
-import com.godaddy.vps4.web.vm.VmAction;
+import com.godaddy.vps4.vm.VmAction;
 import com.godaddy.vps4.web.vm.VmRestoreResource;
 import com.godaddy.vps4.web.vm.VmRestoreResource.RestoreVmRequest;
 import com.google.inject.AbstractModule;
@@ -245,7 +245,7 @@ public class VmRestoreResourceTest {
     public void weCantRestoreWhenAVmIsCurrentlyRestarting() {
         user = us;
         actionService.createAction(
-                ourVm.vmId, ActionType.RESTART_VM, new JSONObject().toJSONString(), ourVps4User.getId());
+                ourVm.vmId, ActionType.RESTART_VM, new JSONObject().toJSONString(), ourVps4User.getId(), "tester");
         getVmRestoreResource().restore(ourVm.vmId, getRequestPayload(ourSnapshot.id, goodPassword));
     }
 
@@ -253,7 +253,7 @@ public class VmRestoreResourceTest {
     public void weCantRestoreWhenAVmIsCurrentlyStopping() {
         user = us;
         actionService.createAction(
-                ourVm.vmId, ActionType.STOP_VM, new JSONObject().toJSONString(), ourVps4User.getId());
+                ourVm.vmId, ActionType.STOP_VM, new JSONObject().toJSONString(), ourVps4User.getId(), "tester");
         getVmRestoreResource().restore(ourVm.vmId, getRequestPayload(ourSnapshot.id, goodPassword));
     }
 
@@ -261,7 +261,7 @@ public class VmRestoreResourceTest {
     public void weCantRestoreWhenAVmIsCurrentlyStarting() {
         user = us;
         actionService.createAction(
-                ourVm.vmId, ActionType.START_VM, new JSONObject().toJSONString(), ourVps4User.getId());
+                ourVm.vmId, ActionType.START_VM, new JSONObject().toJSONString(), ourVps4User.getId(), "tester");
         getVmRestoreResource().restore(ourVm.vmId, getRequestPayload(ourSnapshot.id, goodPassword));
     }
 
@@ -269,7 +269,7 @@ public class VmRestoreResourceTest {
     public void weCantRestoreWhenAVmIsAlreadyRestoring() {
         user = us;
         actionService.createAction(
-                ourVm.vmId, ActionType.RESTORE_VM, new JSONObject().toJSONString(), ourVps4User.getId());
+                ourVm.vmId, ActionType.RESTORE_VM, new JSONObject().toJSONString(), ourVps4User.getId(), "tester");
         getVmRestoreResource().restore(ourVm.vmId, getRequestPayload(ourSnapshot.id, goodPassword));
     }
 
@@ -277,7 +277,7 @@ public class VmRestoreResourceTest {
     public void weCantRestoreWhenAVmIsStillBeingCreated() {
         user = us;
         actionService.createAction(
-                ourVm.vmId, ActionType.CREATE_VM, new JSONObject().toJSONString(), ourVps4User.getId());
+                ourVm.vmId, ActionType.CREATE_VM, new JSONObject().toJSONString(), ourVps4User.getId(), "tester");
         getVmRestoreResource().restore(ourVm.vmId, getRequestPayload(ourSnapshot.id, goodPassword));
     }
 

@@ -20,7 +20,7 @@ import org.quartz.JobExecutionException;
 
 import com.godaddy.vps4.scheduler.api.plugin.Vps4RemoveSupportUserJobRequest;
 import com.godaddy.vps4.web.client.VmSupportUserService;
-import com.godaddy.vps4.web.vm.VmAction;
+import com.godaddy.vps4.vm.VmAction;
 import com.google.inject.AbstractModule;
 import com.google.inject.Guice;
 import com.google.inject.Inject;

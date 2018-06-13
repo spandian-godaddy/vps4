@@ -17,6 +17,7 @@ public class XCertSubjectHeaderAuthenticator implements RequestAuthenticator<GDU
     private static final Logger logger = LoggerFactory.getLogger(XCertSubjectHeaderAuthenticator.class);
 
     private final Config config;
+    private final String username = "Certificate Authentication";
 
     @Inject
     public XCertSubjectHeaderAuthenticator(Config config) {
@@ -72,6 +73,7 @@ public class XCertSubjectHeaderAuthenticator implements RequestAuthenticator<GDU
         gdUser.isEmployee = true;
         gdUser.isStaff = true;
         gdUser.isAdmin = false;
+        gdUser.username = username;
         return gdUser;
     }
 }

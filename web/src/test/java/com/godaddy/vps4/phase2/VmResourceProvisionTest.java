@@ -25,7 +25,7 @@ import com.godaddy.vps4.vm.VmModule;
 import com.godaddy.vps4.web.Vps4Exception;
 import com.godaddy.vps4.web.Vps4NoShopperException;
 import com.godaddy.vps4.web.security.GDUser;
-import com.godaddy.vps4.web.vm.VmAction;
+import com.godaddy.vps4.vm.VmAction;
 import com.godaddy.vps4.web.vm.VmResource;
 import com.godaddy.vps4.web.vm.VmResource.ProvisionVmRequest;
 import com.google.inject.AbstractModule;

@@ -10,8 +10,8 @@ import org.slf4j.LoggerFactory;
 import com.godaddy.vps4.scheduler.api.plugin.Vps4RemoveSupportUserJobRequest;
 import com.godaddy.vps4.scheduler.core.JobMetadata;
 import com.godaddy.vps4.scheduler.core.SchedulerJob;
+import com.godaddy.vps4.vm.VmAction;
 import com.godaddy.vps4.web.client.VmSupportUserService;
-import com.godaddy.vps4.web.vm.VmAction;
 import com.google.inject.Inject;
 
 @JobMetadata(

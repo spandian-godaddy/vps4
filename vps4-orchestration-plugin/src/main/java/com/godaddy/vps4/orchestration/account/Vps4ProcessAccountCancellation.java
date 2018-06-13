@@ -39,6 +39,7 @@ public class Vps4ProcessAccountCancellation implements Command<VirtualMachineCre
     final ActionService vmActionService;
     private final VirtualMachineService virtualMachineService;
     private final Config config;
+    private final String ACCOUNT_MESSAGE_HANDLER_NAME = "AccountMessageHandler";
 
     @Inject
     public Vps4ProcessAccountCancellation(ActionService vmActionService,
@@ -87,7 +88,7 @@ public class Vps4ProcessAccountCancellation implements Command<VirtualMachineCre
         long vps4UserId = virtualMachineService.getUserIdByVmId(vmId);
         long actionId = context.execute(
         "CreateVmStopAction",
-            ctx -> vmActionService.createAction(vmId, ActionType.STOP_VM, new JSONObject().toJSONString(), vps4UserId),
+            ctx -> vmActionService.createAction(vmId, ActionType.STOP_VM, new JSONObject().toJSONString(), vps4UserId, ACCOUNT_MESSAGE_HANDLER_NAME),
             long.class);
         VirtualMachine vm = context.execute(
          "GetVirtualMachine", ctx -> virtualMachineService.getVirtualMachine(vmId), VirtualMachine.class);

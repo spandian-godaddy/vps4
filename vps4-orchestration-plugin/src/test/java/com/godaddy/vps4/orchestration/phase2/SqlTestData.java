@@ -37,6 +37,7 @@ public class SqlTestData {
     public final static long hfsSnapshotId = 123;
     public final static String nfImageId = "nocfox-id";
     public final static String IMAGE_NAME = "hfs-centos-7";
+    public final static String INITIATED_BY = "tester";
 
     public static Vps4User insertUser(Vps4UserService userService) {
         return userService.getOrCreateUserForShopper(TEST_SHOPPER_ID, "1");
@@ -62,7 +63,7 @@ public class SqlTestData {
     public static long insertVmAction(ActionService actionService, Vps4UserService userService, UUID vmId) {
         long userId = userService.getUser(TEST_SHOPPER_ID).getId();
         return actionService.createAction(
-                vmId, ActionType.RESTORE_VM, new JSONObject().toJSONString(), userId);
+                vmId, ActionType.RESTORE_VM, new JSONObject().toJSONString(), userId, INITIATED_BY);
     }
 
     public static UUID insertSnapshot(SnapshotService snapshotService, UUID vmId, long projectId, SnapshotType snapshotType) {
@@ -81,7 +82,7 @@ public class SqlTestData {
     public static long insertSnapshotAction(ActionService actionService, Vps4UserService userService, UUID snapshotId) {
         long userId = userService.getUser(TEST_SHOPPER_ID).getId();
         return actionService.createAction(
-                snapshotId, ActionType.CREATE_SNAPSHOT, new JSONObject().toJSONString(), userId);
+                snapshotId, ActionType.CREATE_SNAPSHOT, new JSONObject().toJSONString(), userId, INITIATED_BY);
     }
 
     private static String generateRandomIpAddress() {

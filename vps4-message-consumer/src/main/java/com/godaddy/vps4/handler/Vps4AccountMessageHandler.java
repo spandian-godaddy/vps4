@@ -38,6 +38,7 @@ public class Vps4AccountMessageHandler implements MessageHandler {
     private final boolean processFullyManagedEmails;
     private final Vps4MessagingService messagingService;
     private final int FULLY_MANAGED_LEVEL = 2;
+    private final String ACCOUNT_MESSAGE_HANDLER_NAME = "AccountMessageHandler";
 
     @Inject
     public Vps4AccountMessageHandler(VirtualMachineService virtualMachineService,
@@ -150,7 +151,7 @@ public class Vps4AccountMessageHandler implements MessageHandler {
         try {
             long vps4UserId = virtualMachineService.getUserIdByVmId(vm.vmId);
             long actionId = vmActionService.createAction(vm.vmId, ActionType.STOP_VM,
-                    new JSONObject().toJSONString(), vps4UserId);
+                    new JSONObject().toJSONString(), vps4UserId, ACCOUNT_MESSAGE_HANDLER_NAME);
 
             VmActionRequest request = new VmActionRequest();
             request.virtualMachine = vm;

@@ -37,7 +37,7 @@ import com.godaddy.vps4.web.Vps4Api;
 import com.godaddy.vps4.web.Vps4Exception;
 import com.godaddy.vps4.web.security.GDUser;
 import com.godaddy.vps4.web.util.Commands;
-import com.godaddy.vps4.web.vm.VmAction;
+import com.godaddy.vps4.vm.VmAction;
 import com.godaddy.vps4.web.vm.VmResource;
 
 import gdg.hfs.orchestration.CommandService;
@@ -101,7 +101,7 @@ public class SysAdminResource {
 
         long vps4UserId = virtualMachineService.getUserIdByVmId(vmId);
         long actionId = actionService.createAction(vm.vmId, ActionType.SET_PASSWORD,
-                pwRequest.toJSONString(), vps4UserId);
+                pwRequest.toJSONString(), vps4UserId, user.getUsername());
 
         List<String> usernames = new ArrayList<String>();
         usernames.add(updatePasswordRequest.username);
@@ -121,7 +121,7 @@ public class SysAdminResource {
 
         Commands.execute(commandService, actionService, "Vps4SetPassword", vps4Request);
 
-        return new VmAction(actionService.getAction(actionId));
+        return new VmAction(actionService.getAction(actionId), user.isEmployee());
     }
 
     public static class SetHostnameRequest{
@@ -146,7 +146,7 @@ public class SysAdminResource {
 
         long vps4UserId = virtualMachineService.getUserIdByVmId(vmId);
         long actionId = actionService.createAction(vmId, ActionType.SET_HOSTNAME,
-                hostnameJsonRequest.toJSONString(), vps4UserId);
+                hostnameJsonRequest.toJSONString(), vps4UserId, user.getUsername());
 
         SetHostname.Request hfsRequest = new SetHostname.Request(vm.hfsVmId, setHostnameRequest.hostname, vm.image.controlPanel.toString());
 
@@ -158,7 +158,7 @@ public class SysAdminResource {
 
         Commands.execute(commandService, actionService, "Vps4SetHostname", vps4Request);
 
-        return new VmAction(actionService.getAction(actionId));
+        return new VmAction(actionService.getAction(actionId), user.isEmployee());
 
     }
 
@@ -195,7 +195,8 @@ public class SysAdminResource {
         adminRequest.put("enabled", shouldEnable);
 
         long vps4UserId = virtualMachineService.getUserIdByVmId(vmId);
-        long actionId = actionService.createAction(vm.vmId, actionType, adminRequest.toJSONString(), vps4UserId);
+        long actionId = actionService.createAction(vm.vmId, actionType, adminRequest.toJSONString(), vps4UserId,
+                user.getUsername());
 
         Vps4ToggleAdmin.Request vps4Request = new Vps4ToggleAdmin.Request();
         vps4Request.actionId = actionId;
@@ -206,6 +207,6 @@ public class SysAdminResource {
 
         Commands.execute(commandService, actionService, "Vps4ToggleAdmin", vps4Request);
 
-        return new VmAction(actionService.getAction(actionId));
+        return new VmAction(actionService.getAction(actionId), user.isEmployee());
     }
 }

@@ -19,8 +19,10 @@ import com.godaddy.vps4.vm.ActionService;
 import com.godaddy.vps4.vm.ActionType;
 import com.godaddy.vps4.vm.VirtualMachine;
 import com.godaddy.vps4.vm.VirtualMachineService;
+import com.godaddy.vps4.vm.VmAction;
 import com.godaddy.vps4.web.PATCH;
 import com.godaddy.vps4.web.Vps4Api;
+import com.godaddy.vps4.web.security.GDUser;
 import com.google.inject.Inject;
 
 import io.swagger.annotations.Api;
@@ -40,9 +42,11 @@ public class VmPatchResource {
     private final ActionService actionService;
     private final CreditService creditService;
     private final VmResource vmResource;
+    private final GDUser user;
 
     @Inject
-    public VmPatchResource(VirtualMachineService virtualMachineService,
+    public VmPatchResource(GDUser user, 
+                           VirtualMachineService virtualMachineService,
                            ActionService actionService,
                            CreditService creditService,
                            VmResource vmResource) {
@@ -50,6 +54,7 @@ public class VmPatchResource {
         this.actionService = actionService;
         this.creditService = creditService;
         this.vmResource = vmResource;
+        this.user = user;
     }
 
     public static class VmPatch {
@@ -72,10 +77,10 @@ public class VmPatchResource {
         logger.info("Updating vm {}'s with {} ", vmId, vmPatchMap.toString());
 
         long vps4UserId = virtualMachineService.getUserIdByVmId(vmId);
-        long actionId = this.actionService.createAction(vmId, ActionType.UPDATE_SERVER, new JSONObject().toJSONString(), vps4UserId);
+        long actionId = this.actionService.createAction(vmId, ActionType.UPDATE_SERVER, new JSONObject().toJSONString(), vps4UserId, user.getUsername());
         virtualMachineService.updateVirtualMachine(vmId, vmPatchMap);
         creditService.setCommonName(vm.orionGuid, vmPatch.name);
         this.actionService.completeAction(actionId, new JSONObject().toJSONString(), notes.toString());
-        return new VmAction(this.actionService.getAction(actionId));
+        return new VmAction(this.actionService.getAction(actionId), user.isEmployee());
     }
 }

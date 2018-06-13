@@ -22,8 +22,8 @@ import com.godaddy.vps4.vm.VirtualMachine;
 import com.godaddy.vps4.vm.VirtualMachineService;
 import com.godaddy.vps4.vm.VirtualMachineService.ProvisionVirtualMachineParameters;
 import com.godaddy.vps4.vm.VmUser;
-import com.godaddy.vps4.vm.jdbc.JdbcActionService;
 import com.godaddy.vps4.vm.jdbc.JdbcVirtualMachineService;
+import com.godaddy.vps4.vm.jdbc.JdbcVmActionService;
 
 
 public class SqlTestData {
@@ -32,6 +32,7 @@ public class SqlTestData {
     public final static String TEST_VM_SGID = "vps4-testing-";
     public final static long hfsSnapshotId = 123;
     public final static String nfImageId = "test-imageid";
+    public final static String INITIATED_BY = "tester";
 
     public static long getNextHfsVmId(DataSource dataSource) {
         return Sql.with(dataSource).exec("SELECT max(hfs_vm_id) as hfs_vm_id FROM virtual_machine",
@@ -70,8 +71,8 @@ public class SqlTestData {
     public static Action insertTestVmAction(UUID commandId, UUID vmId, ActionType actionType, DataSource dataSource) {
         VirtualMachineService virtualMachineService = new JdbcVirtualMachineService(dataSource);
         long vps4UserId = virtualMachineService.getUserIdByVmId(vmId);
-        ActionService actionService = new JdbcActionService(dataSource);
-        long actionId = actionService.createAction(vmId, actionType, new JSONObject().toJSONString(), vps4UserId);
+        ActionService actionService = new JdbcVmActionService(dataSource);
+        long actionId = actionService.createAction(vmId, actionType, new JSONObject().toJSONString(), vps4UserId, INITIATED_BY);
         actionService.tagWithCommand(actionId, commandId);
         return actionService.getAction(actionId);
     }
