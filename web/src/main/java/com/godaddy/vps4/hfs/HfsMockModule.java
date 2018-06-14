@@ -12,6 +12,7 @@ import java.util.Random;
 
 import javax.ws.rs.core.Response;
 
+import gdg.hfs.vhfs.cpanel.CPanelLicense;
 import gdg.hfs.vhfs.vm.Console;
 import org.joda.time.DateTime;
 import org.mockito.Mockito;
@@ -288,6 +289,12 @@ public class HfsMockModule extends AbstractModule {
 
             @Override
             public CPanelAction licenseRelease(long arg0) {
+                // NOTE: do nothing, Implement when needed
+                throw new UnsupportedOperationException("Not implemented, yet");
+            }
+
+            @Override
+            public CPanelLicense getLicenseFromDb(long arg0) {
                 // NOTE: do nothing, Implement when needed
                 throw new UnsupportedOperationException("Not implemented, yet");
             }

@@ -1,16 +1,5 @@
 package com.godaddy.vps4.orchestration.vm;
 
-import java.time.Instant;
-import java.util.List;
-import java.util.UUID;
-import java.util.stream.Collectors;
-
-import javax.inject.Inject;
-import javax.ws.rs.NotFoundException;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import com.godaddy.vps4.network.IpAddress;
 import com.godaddy.vps4.network.NetworkService;
 import com.godaddy.vps4.orchestration.ActionCommand;
@@ -20,7 +9,7 @@ import com.godaddy.vps4.util.MonitoringMeta;
 import com.godaddy.vps4.vm.ActionService;
 import com.godaddy.vps4.vm.VirtualMachine;
 import com.godaddy.vps4.vm.VirtualMachineService;
-
+import com.hazelcast.util.StringUtil;
 import gdg.hfs.orchestration.CommandContext;
 import gdg.hfs.orchestration.CommandMetadata;
 import gdg.hfs.vhfs.cpanel.CPanelService;
@@ -28,6 +17,15 @@ import gdg.hfs.vhfs.nodeping.NodePingService;
 import gdg.hfs.vhfs.plesk.PleskService;
 import gdg.hfs.vhfs.vm.VmAction;
 import gdg.hfs.vhfs.vm.VmService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import javax.inject.Inject;
+import javax.ws.rs.NotFoundException;
+import java.time.Instant;
+import java.util.List;
+import java.util.UUID;
+import java.util.stream.Collectors;
 
 @CommandMetadata(
         name="Vps4DestroyVm",
@@ -145,7 +143,10 @@ public class Vps4DestroyVm extends ActionCommand<VmActionRequest, Vps4DestroyVm.
     }
 
     private void unlicenseControlPanel(VirtualMachine vm) {
-        context.execute(UnlicenseControlPanel.class, vm);
+        String licensedIp = cpanelService.getLicenseFromDb(vm.hfsVmId).licensedIp;
+        if (!StringUtil.isNullOrEmpty(licensedIp)) {
+            context.execute(UnlicenseControlPanel.class, vm);
+        }
     }
 
     public static class Response {

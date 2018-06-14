@@ -253,7 +253,7 @@
         <dependency>
             <groupId>hfs</groupId>
             <artifactId>vhfs-cpanel-common-lib</artifactId>
-            <version>1.1.0.31901</version>
+            <version>1.1.0.33077</version>
             <exclusions>
                 <exclusion>
                     <groupId>*</groupId>

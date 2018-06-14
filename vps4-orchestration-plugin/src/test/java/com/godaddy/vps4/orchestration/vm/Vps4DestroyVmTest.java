@@ -19,6 +19,7 @@ import java.util.UUID;
 
 import javax.ws.rs.NotFoundException;
 
+import gdg.hfs.vhfs.cpanel.CPanelLicense;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
@@ -90,6 +91,7 @@ public class Vps4DestroyVmTest {
     VirtualMachine vm;
     VmActionRequest request;
     IpAddress primaryIp;
+    CPanelLicense cPanelLicense;
     long nodePingAccountId = 123L;
 
     @Before
@@ -117,6 +119,10 @@ public class Vps4DestroyVmTest {
         hfsIpAddress.addressId = primaryIp.ipAddressId;
         hfsIpAddress.status = Status.BOUND;
 
+        cPanelLicense = new CPanelLicense();
+        cPanelLicense.vmId = vm.hfsVmId;
+        cPanelLicense.licensedIp = "1.2.3.4";
+
         when(virtualMachineService.getVirtualMachine(eq(request.virtualMachine.vmId))).thenReturn(vm);
         when(virtualMachineService.getVirtualMachine(eq(request.virtualMachine.hfsVmId))).thenReturn(vm);
         when(vmService.destroyVm(eq(request.virtualMachine.hfsVmId))).thenReturn(vmAction);
@@ -127,6 +133,8 @@ public class Vps4DestroyVmTest {
         when(hfsNetworkService.releaseIp(Mockito.anyLong())).thenReturn(addressAction);
         doNothing().when(nodePingService).deleteCheck(nodePingAccountId, primaryIp.pingCheckId);
         when(monitoringMeta.getAccountId()).thenReturn(nodePingAccountId);
+        when(cpanelService.getLicenseFromDb(eq(request.virtualMachine.hfsVmId))).thenReturn(cPanelLicense);
+        when(cpanelService.getLicenseFromDb(0)).thenReturn(new CPanelLicense());
 
         MailRelay mailRelay = new MailRelay();
         mailRelay.quota = 0;
@@ -166,6 +174,18 @@ public class Vps4DestroyVmTest {
 
         command.execute(context, request);
         verify(cpanelService, times(1)).licenseRelease(request.virtualMachine.hfsVmId);
+    }
+
+    @Test
+    public void destroyVmCpanelNotLicensedTest() throws Exception {
+        cPanelLicense.licensedIp = null;
+        when(virtualMachineService.virtualMachineHasCpanel(vm.vmId)).thenReturn(true);
+        CPanelAction action = new CPanelAction();
+        action.status = CPanelAction.Status.COMPLETE;
+        when(cpanelService.licenseRelease(vm.hfsVmId)).thenReturn(action);
+
+        command.execute(context, request);
+        verify(cpanelService, times(0)).licenseRelease(request.virtualMachine.hfsVmId);
     }
 
     @Test

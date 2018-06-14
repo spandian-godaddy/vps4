@@ -14,6 +14,7 @@ import java.util.stream.Collectors;
 import javax.ws.rs.NotFoundException;
 import javax.ws.rs.core.Response;
 
+import gdg.hfs.vhfs.cpanel.CPanelLicense;
 import gdg.hfs.vhfs.vm.Console;
 import org.joda.time.DateTime;
 import org.mockito.Mockito;
@@ -192,6 +193,12 @@ public class HfsMockModule extends AbstractModule {
             public CPanelAction licenseRelease(long vmId) {
                 return this.createAndStoreCPanelAction(
                         vmId, CPanelAction.ActionType.LicenseRelease, CPanelAction.Status.COMPLETE);
+            }
+
+            @Override
+            public CPanelLicense getLicenseFromDb(long l) {
+                // NOTE: do nothing, Implement when needed
+                throw new UnsupportedOperationException("Not implemented, yet");
             }
 
             @Override
