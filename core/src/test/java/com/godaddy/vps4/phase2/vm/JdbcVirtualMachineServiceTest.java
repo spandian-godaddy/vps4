@@ -279,12 +279,12 @@ public class JdbcVirtualMachineServiceTest {
 
         // Snapshot with completed create action - not pending
         SqlTestData.insertTestSnapshotAction(testSnapshot.id, ActionType.CREATE_SNAPSHOT,
-                vps4User.getId(), ActionStatus.COMPLETE, dataSource);
+                ActionStatus.COMPLETE, dataSource);
         Assert.assertNull(virtualMachineService.getPendingSnapshotActionIdByVmId(testVm.vmId));
 
         // Snapshot with pending create action
         SqlTestData.insertTestSnapshotAction(testSnapshot.id, ActionType.CREATE_SNAPSHOT,
-                vps4User.getId(), ActionStatus.IN_PROGRESS, dataSource);
+                ActionStatus.IN_PROGRESS, dataSource);
         Assert.assertNotNull(virtualMachineService.getPendingSnapshotActionIdByVmId(testVm.vmId));
     }
 

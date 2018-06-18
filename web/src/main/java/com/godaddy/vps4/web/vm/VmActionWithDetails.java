@@ -3,6 +3,9 @@ package com.godaddy.vps4.web.vm;
 import com.godaddy.vps4.vm.Action;
 import com.godaddy.vps4.vm.VmAction;
 
+import org.apache.commons.lang3.builder.ReflectionToStringBuilder;
+import org.apache.commons.lang3.builder.ToStringStyle;
+
 import gdg.hfs.orchestration.CommandState;
 
 public class VmActionWithDetails extends VmAction {
@@ -22,10 +25,7 @@ public class VmActionWithDetails extends VmAction {
 
     @Override
     public String toString() {
-        return "VmActionWithDetails [orchestrationCommand=" + orchestrationCommand + ", message=" + message + ", id=" + id
-                + ", virtualMachineId=" + virtualMachineId + ", type=" + type + ", vps4UserId=" + vps4UserId
-                + ", request=" + request + ", state=" + state + ", response=" + response + ", status=" + status
-                + ", created=" + created + ", note=" + note + ", commandId=" + commandId + "]";
+        return ReflectionToStringBuilder.toString(this, ToStringStyle.SHORT_PREFIX_STYLE);
     }
 
 }

@@ -134,7 +134,6 @@ public class SnapshotCreateResourceTest {
         SnapshotAction snapshotAction = getSnapshotResource()
                 .createSnapshot(getRequestPayload(ourVmId, SqlTestData.TEST_SNAPSHOT_NAME));
 
-        Assert.assertEquals(snapshotAction.vps4UserId, ourVps4User.getId());
         verifyActionAssociatedWithSnapshot(snapshotAction);
         verifyCommandExecution();
     }

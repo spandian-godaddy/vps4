@@ -65,7 +65,7 @@ public class ActionServiceTest {
         ResultSubset<Action> actions = actionService.getActions(vm.vmId, 100, 0, null, null, null);
         assertEquals(null, actions);
         
-        actionService.createAction(vm.vmId, ActionType.CREATE_VM, "{}", vps4User.getId(), "tester");
+        actionService.createAction(vm.vmId, ActionType.CREATE_VM, "{}", "tester");
         
         actions = actionService.getActions(vm.vmId, 100, 0, null, null, null);
         assertEquals(1, actions.results.size());
@@ -76,9 +76,9 @@ public class ActionServiceTest {
         ResultSubset<Action> actions = actionService.getActions(vm.vmId, 100, 0, null, null, null);
         assertEquals(null, actions);
 
-        actionService.createAction(vm.vmId, ActionType.CREATE_VM, "{}", vps4User.getId(), "tester");
-        actionService.createAction(vm.vmId, ActionType.STOP_VM, "{}", vps4User.getId(), "tester");
-        actionService.createAction(vm.vmId, ActionType.START_VM, "{}", vps4User.getId(), "tester");
+        actionService.createAction(vm.vmId, ActionType.CREATE_VM, "{}", "tester");
+        actionService.createAction(vm.vmId, ActionType.STOP_VM, "{}", "tester");
+        actionService.createAction(vm.vmId, ActionType.START_VM, "{}", "tester");
 
         actions = actionService.getActions(vm.vmId, 100, 0, ActionType.CREATE_VM);
         assertEquals(1, actions.results.size());

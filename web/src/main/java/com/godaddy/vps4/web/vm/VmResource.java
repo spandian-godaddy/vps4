@@ -223,7 +223,7 @@ public class VmResource {
         Project project = projectService.getProject(virtualMachine.projectId);
 
         long actionId = actionService.createAction(virtualMachine.vmId, ActionType.CREATE_VM,
-                new JSONObject().toJSONString(), vps4User.getId(), user.getUsername());
+                new JSONObject().toJSONString(), user.getUsername());
         logger.info("VmAction id: {}", actionId);
 
         int mailRelayQuota =  Integer.parseInt(ResellerConfigHelper.getResellerConfig(config, vmCredit.resellerId, "mailrelay.quota", "5000"));

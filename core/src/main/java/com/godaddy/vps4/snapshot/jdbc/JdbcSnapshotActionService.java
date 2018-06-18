@@ -30,10 +30,10 @@ public class JdbcSnapshotActionService implements ActionService {
     }
 
     @Override
-    public long createAction(UUID snapshotId, ActionType actionType, String request, long userId, String initiatedBy) {
-        return Sql.with(dataSource).exec("INSERT INTO snapshot_action (snapshot_id, action_type_id, request, vps4_user_id, initiated_by) "
-                + "VALUES (?, ?, ?::json, ?, ?) RETURNING id;",
-                Sql.nextOrNull(rs -> rs.getLong("id")), snapshotId, actionType.getActionTypeId(), request, userId, initiatedBy);
+    public long createAction(UUID snapshotId, ActionType actionType, String request, String initiatedBy) {
+        return Sql.with(dataSource).exec("INSERT INTO snapshot_action (snapshot_id, action_type_id, request, initiated_by) "
+                + "VALUES (?, ?, ?::json, ?) RETURNING id;",
+                Sql.nextOrNull(rs -> rs.getLong("id")), snapshotId, actionType.getActionTypeId(), request, initiatedBy);
     }
 
     @Override
@@ -130,10 +130,8 @@ public class JdbcSnapshotActionService implements ActionService {
             completed = completedTs.toInstant();
         }
 
-
-        return new Action(rs.getLong("id"), snapshotId, type, rs.getLong("vps4_user_id"),
-                rs.getString("request"), rs.getString("state"), rs.getString("response"), status,
-                rs.getTimestamp("created", TimestampUtils.utcCalendar).toInstant(),
+        return new Action(rs.getLong("id"), snapshotId, type, rs.getString("request"), rs.getString("state"),
+                rs.getString("response"), status, rs.getTimestamp("created", TimestampUtils.utcCalendar).toInstant(),
                 completed, rs.getString("note"), commandId, rs.getString("initiated_by"));
     }
 

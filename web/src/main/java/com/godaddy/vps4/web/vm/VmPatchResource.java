@@ -76,8 +76,7 @@ public class VmPatchResource {
         }
         logger.info("Updating vm {}'s with {} ", vmId, vmPatchMap.toString());
 
-        long vps4UserId = virtualMachineService.getUserIdByVmId(vmId);
-        long actionId = this.actionService.createAction(vmId, ActionType.UPDATE_SERVER, new JSONObject().toJSONString(), vps4UserId, user.getUsername());
+        long actionId = this.actionService.createAction(vmId, ActionType.UPDATE_SERVER, new JSONObject().toJSONString(), user.getUsername());
         virtualMachineService.updateVirtualMachine(vmId, vmPatchMap);
         creditService.setCommonName(vm.orionGuid, vmPatch.name);
         this.actionService.completeAction(actionId, new JSONObject().toJSONString(), notes.toString());

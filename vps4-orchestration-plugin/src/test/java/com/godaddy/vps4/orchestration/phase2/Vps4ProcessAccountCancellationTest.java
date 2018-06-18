@@ -114,7 +114,7 @@ public class Vps4ProcessAccountCancellationTest {
     }
 
     private void addTestSqlData() {
-        SqlTestData.insertUser(vps4UserService).getId();
+        SqlTestData.insertUser(vps4UserService);
         SqlTestData.insertProject(projectService, vps4UserService);
         vm = SqlTestData.insertVm(vps4VmService, vps4UserService);
         vps4VmId = vm.vmId;

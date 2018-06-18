@@ -24,8 +24,7 @@ public class VmHelper {
                                                   UUID vmId, ActionType actionType,
                                                   ActionRequest request, String commandName,
                                                   GDUser user) {
-        long vps4UserId = virtualMachineService.getUserIdByVmId(vmId);
-        long actionId = actionService.createAction(vmId, actionType, new JSONObject().toJSONString(), vps4UserId, user.getUsername());
+        long actionId = actionService.createAction(vmId, actionType, new JSONObject().toJSONString(), user.getUsername());
         request.setActionId(actionId);
 
         CommandState command = Commands.execute(commandService, actionService, commandName, request);

@@ -79,8 +79,8 @@ public class SqlTestData {
     }
 
     public static void createActionWithDate(UUID vmId, ActionType actionType, Timestamp created, long userId, DataSource dataSource){
-        Sql.with(dataSource).exec("INSERT INTO vm_action (vm_id, action_type_id, created, vps4_user_id) VALUES (?, ?, ?, ?)",
-                null, vmId, actionType.getActionTypeId(), created, userId);
+        Sql.with(dataSource).exec("INSERT INTO vm_action (vm_id, action_type_id, created, initiated_by) VALUES (?, ?, ?, ?)",
+                null, vmId, actionType.getActionTypeId(), created, "tester");
     }
 
     public static void insertTestSnapshot(Snapshot snapshot, DataSource dataSource) {
@@ -88,10 +88,10 @@ public class SqlTestData {
                 null, snapshot.id, snapshot.hfsImageId, snapshot.projectId, snapshot.hfsSnapshotId, snapshot.vmId, snapshot.name, snapshot.status.getSnapshotStatusId(), snapshot.snapshotType.getSnapshotTypeId());
     }
 
-    public static void insertTestSnapshotAction(UUID snapshotId, ActionType actionType, long userId, ActionStatus statusType, DataSource dataSource) {
+    public static void insertTestSnapshotAction(UUID snapshotId, ActionType actionType, ActionStatus statusType, DataSource dataSource) {
         Sql.with(dataSource).exec("INSERT  INTO snapshot_action"
-                + " (snapshot_id, action_type_id, vps4_user_id, status_id)"
+                + " (snapshot_id, action_type_id, initiated_by, status_id)"
                 + " VALUES (?, ?, ?, ?);",
-                null, snapshotId, actionType.getActionTypeId(), userId, statusType.ordinal()+1);
+                null, snapshotId, actionType.getActionTypeId(), "tester", statusType.ordinal()+1);
     }
 }

@@ -64,7 +64,6 @@ public class Vps4SnapshotVmTest {
     private UUID orionGuid;
     private UUID vps4SnapshotId;
     private UUID vps4AutomaticSnapshotId;
-    private long vps4UserId;
     private UUID vps4SnapshotIdToBeDeprecated;
     private long vps4SnapshotActionId;
     private long vps4AutomaticSnapshotActionId;
@@ -118,7 +117,6 @@ public class Vps4SnapshotVmTest {
         req.actionId = snapshotActionId;
         req.vps4SnapshotId = snapshotId;
         req.orionGuid = orionGuid;
-        req.vps4UserId = vps4UserId;
         req.snapshotType = snapshotType;
         return req;
     }
@@ -144,7 +142,7 @@ public class Vps4SnapshotVmTest {
     }
 
     private void addTestSqlData() {
-        vps4UserId = SqlTestData.insertUser(vps4UserService).getId();
+        SqlTestData.insertUser(vps4UserService);
         Project project = SqlTestData.insertProject(projectService, vps4UserService);
         VirtualMachine vm = SqlTestData.insertVm(virtualMachineService, vps4UserService);
         orionGuid = vm.orionGuid;

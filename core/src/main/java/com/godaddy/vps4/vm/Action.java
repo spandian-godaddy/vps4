@@ -11,7 +11,6 @@ public class Action {
     public final long id;
     public final UUID resourceId;
     public final ActionType type;
-    public final long vps4UserId;
     public final String request;
     public final String state;
     public final String response;
@@ -22,13 +21,11 @@ public class Action {
     public final UUID commandId;
     public final String initiatedBy;
 
-    public Action(long id, UUID resourceId, ActionType type, long vps4UserId,
-                  String request, String state, String response, ActionStatus status,
-                  Instant created, Instant completed, String note, UUID commandId, String initiatedBy){
+    public Action(long id, UUID resourceId, ActionType type, String request, String state, String response,
+            ActionStatus status, Instant created, Instant completed, String note, UUID commandId, String initiatedBy) {
         this.id = id;
         this.resourceId = resourceId;
         this.type = type;
-        this.vps4UserId = vps4UserId;
         this.request = request;
         this.state = state;
         this.response = response;
@@ -40,8 +37,7 @@ public class Action {
         this.initiatedBy = initiatedBy;
     }
 
-
-    public String toString(){
+    public String toString() {
         return ReflectionToStringBuilder.toString(this, ToStringStyle.SHORT_PREFIX_STYLE);
     }
 

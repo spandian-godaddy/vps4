@@ -61,9 +61,8 @@ public class SqlTestData {
     }
 
     public static long insertVmAction(ActionService actionService, Vps4UserService userService, UUID vmId) {
-        long userId = userService.getUser(TEST_SHOPPER_ID).getId();
         return actionService.createAction(
-                vmId, ActionType.RESTORE_VM, new JSONObject().toJSONString(), userId, INITIATED_BY);
+                vmId, ActionType.RESTORE_VM, new JSONObject().toJSONString(), INITIATED_BY);
     }
 
     public static UUID insertSnapshot(SnapshotService snapshotService, UUID vmId, long projectId, SnapshotType snapshotType) {
@@ -80,9 +79,8 @@ public class SqlTestData {
     }
 
     public static long insertSnapshotAction(ActionService actionService, Vps4UserService userService, UUID snapshotId) {
-        long userId = userService.getUser(TEST_SHOPPER_ID).getId();
         return actionService.createAction(
-                snapshotId, ActionType.CREATE_SNAPSHOT, new JSONObject().toJSONString(), userId, INITIATED_BY);
+                snapshotId, ActionType.CREATE_SNAPSHOT, new JSONObject().toJSONString(), INITIATED_BY);
     }
 
     private static String generateRandomIpAddress() {

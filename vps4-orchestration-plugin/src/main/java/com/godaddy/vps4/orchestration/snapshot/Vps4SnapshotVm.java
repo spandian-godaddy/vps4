@@ -61,7 +61,7 @@ public class Vps4SnapshotVm extends ActionCommand<Vps4SnapshotVm.Request, Vps4Sn
             return null;
         }, Void.class);
         SnapshotAction hfsAction = createAndWaitForSnapshotCompletion(context, request);
-        deprecateOldSnapshot(context, request.vps4UserId, request.initiatedBy);
+        deprecateOldSnapshot(context, request.initiatedBy);
         return generateResponse(hfsAction);
     }
 
@@ -79,7 +79,7 @@ public class Vps4SnapshotVm extends ActionCommand<Vps4SnapshotVm.Request, Vps4Sn
         return hfsAction;
     }
 
-    private void deprecateOldSnapshot(CommandContext context, long vps4UserId, String initiatedBy) {
+    private void deprecateOldSnapshot(CommandContext context, String initiatedBy) {
         if (snapshotIdToBeDeprecated != null) {
             logger.info("Deprecate snapshot with id: {}", snapshotIdToBeDeprecated);
             context.execute("MarkSnapshotAsDeprecated" + snapshotIdToBeDeprecated, ctx -> {
@@ -90,7 +90,7 @@ public class Vps4SnapshotVm extends ActionCommand<Vps4SnapshotVm.Request, Vps4Sn
 
             try {
                 // now destroy the deprecated snapshot
-                destroyOldSnapshot(context, vps4UserId, vps4Snapshot.hfsSnapshotId, initiatedBy);
+                destroyOldSnapshot(context, vps4Snapshot.hfsSnapshotId, initiatedBy);
             } catch (Exception e) {
                 // Squelch any exceptions because we cant really do anything about it?
                 logger.info("Deprecation/Destroy failure for snapshot with id: {}", snapshotIdToBeDeprecated);
@@ -98,9 +98,9 @@ public class Vps4SnapshotVm extends ActionCommand<Vps4SnapshotVm.Request, Vps4Sn
         }
     }
 
-    private void destroyOldSnapshot(CommandContext context, long vps4UserId, long hfsSnapshotId, String initiatedBy) {
+    private void destroyOldSnapshot(CommandContext context, long hfsSnapshotId, String initiatedBy) {
         long delActionId = actionService.createAction(
-                snapshotIdToBeDeprecated,  ActionType.DESTROY_SNAPSHOT, new JSONObject().toJSONString(), vps4UserId, initiatedBy);
+                snapshotIdToBeDeprecated,  ActionType.DESTROY_SNAPSHOT, new JSONObject().toJSONString(), initiatedBy);
 
         Vps4DestroySnapshot.Request req = new Vps4DestroySnapshot.Request();
         req.hfsSnapshotId = hfsSnapshotId;
@@ -232,7 +232,6 @@ public class Vps4SnapshotVm extends ActionCommand<Vps4SnapshotVm.Request, Vps4Sn
         public long hfsVmId;
         public UUID vps4SnapshotId;
         public UUID orionGuid;
-        public long vps4UserId;
         public SnapshotType snapshotType;
         public String shopperId;
         public String initiatedBy;

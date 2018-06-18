@@ -98,7 +98,7 @@ public class VmSupportUserResource {
 
         JSONObject addUserJson = new JSONObject();
         addUserJson.put("username", username);
-        long actionId = actionService.createAction(vm.vmId, ActionType.ADD_SUPPORT_USER, addUserJson.toJSONString(), supportUser.getId(), gdUser.getUsername());
+        long actionId = actionService.createAction(vm.vmId, ActionType.ADD_SUPPORT_USER, addUserJson.toJSONString(), gdUser.getUsername());
 
         Vps4AddSupportUser.Request addUserRequest = new Vps4AddSupportUser.Request();
         addUserRequest.hfsVmId = vm.hfsVmId;
@@ -128,7 +128,7 @@ public class VmSupportUserResource {
         if (vmUserService.supportUserExists(username, vmId)) {
             JSONObject removeUserJson = new JSONObject();
             removeUserJson.put("username", username);
-            long actionId = actionService.createAction(vmId, ActionType.REMOVE_SUPPORT_USER, removeUserJson.toJSONString(), supportUser.getId(), gdUser.getUsername());
+            long actionId = actionService.createAction(vmId, ActionType.REMOVE_SUPPORT_USER, removeUserJson.toJSONString(), gdUser.getUsername());
 
             Vps4RemoveSupportUser.Request request = new Vps4RemoveSupportUser.Request();
             request.hfsVmId = vm.hfsVmId;
@@ -160,7 +160,7 @@ public class VmSupportUserResource {
 
             JSONObject setPasswordJson = new JSONObject();
             setPasswordJson.put("username", username);
-            long actionId = actionService.createAction(vm.vmId, ActionType.SET_PASSWORD, setPasswordJson.toJSONString(), supportUser.getId(),
+            long actionId = actionService.createAction(vm.vmId, ActionType.SET_PASSWORD, setPasswordJson.toJSONString(),
                     gdUser.getUsername());
 
             SetPassword.Request setPasswordRequest = new SetPassword.Request();
@@ -228,7 +228,7 @@ public class VmSupportUserResource {
             JSONObject addUserJson = new JSONObject();
             addUserJson.put("username", username);
 
-            long actionId = actionService.createAction(vm.vmId, ActionType.ADD_SUPPORT_USER, addUserJson.toJSONString(), supportUser.getId(), gdUser.getUsername());
+            long actionId = actionService.createAction(vm.vmId, ActionType.ADD_SUPPORT_USER, addUserJson.toJSONString(), gdUser.getUsername());
 
             Vps4AddSupportUser.Request addUserRequest = new Vps4AddSupportUser.Request();
             addUserRequest.hfsVmId = vm.hfsVmId;
@@ -250,7 +250,7 @@ public class VmSupportUserResource {
 
             JSONObject setPasswordJson = new JSONObject();
             setPasswordJson.put("username", username);
-            long actionId = actionService.createAction(vm.vmId, ActionType.SET_PASSWORD, setPasswordJson.toJSONString(), supportUser.getId(), gdUser.getUsername());
+            long actionId = actionService.createAction(vm.vmId, ActionType.SET_PASSWORD, setPasswordJson.toJSONString(), gdUser.getUsername());
 
             List<String> usernames = new ArrayList<>();
             usernames.add(username);
@@ -297,7 +297,7 @@ public class VmSupportUserResource {
             JSONObject removeUserJson = new JSONObject();
             removeUserJson.put("username", vmUser.username);
 
-            long actionId = actionService.createAction(vmId, ActionType.REMOVE_SUPPORT_USER, removeUserJson.toJSONString(), supportUser.getId(), gdUser.getUsername());
+            long actionId = actionService.createAction(vmId, ActionType.REMOVE_SUPPORT_USER, removeUserJson.toJSONString(), gdUser.getUsername());
 
             Vps4RemoveSupportUser.Request request = new Vps4RemoveSupportUser.Request();
             request.hfsVmId = vm.hfsVmId;

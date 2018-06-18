@@ -112,10 +112,8 @@ public class NetworkResource {
     public Action addIpAddress(@PathParam("vmId") UUID vmId) {
         VirtualMachine virtualMachine = vmResource.getVm(vmId);
 
-        long vps4UserId = virtualMachineService.getUserIdByVmId(vmId);
-
         long actionId = actionService.createAction(virtualMachine.vmId, ActionType.ADD_IP,
-                new JSONObject().toJSONString(), vps4UserId, user.getUsername());
+                new JSONObject().toJSONString(), user.getUsername());
 
         Project project = projectService.getProject(virtualMachine.projectId);
         String sgid = project.getVhfsSgid();
@@ -144,7 +142,6 @@ public class NetworkResource {
     public Action destroyIpAddress(@PathParam("vmId") UUID vmId, @PathParam("ipAddressId") long ipAddressId,
             @ApiParam(value = "Force the operation to complete if the VM is not accessible to unbind the IP", defaultValue = "false", required = true) @QueryParam("forceIfVmInaccessible") boolean forceIfVmInaccessible) {
         VirtualMachine virtualMachine = vmResource.getVm(vmId);
-        long vps4UserId = virtualMachineService.getUserIdByVmId(vmId);
 
         IpAddress ipAddress = getIpAddressInternal(vmId, ipAddressId);
 
@@ -153,7 +150,7 @@ public class NetworkResource {
         }
 
         long actionId = actionService.createAction(virtualMachine.vmId, ActionType.DESTROY_IP,
-                new JSONObject().toJSONString(), vps4UserId, user.getUsername());
+                new JSONObject().toJSONString(), user.getUsername());
 
         Vps4DestroyIpAddressAction.Request request = new Vps4DestroyIpAddressAction.Request();
         request.ipAddressId = ipAddressId;

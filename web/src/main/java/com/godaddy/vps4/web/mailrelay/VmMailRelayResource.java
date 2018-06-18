@@ -119,10 +119,9 @@ public class VmMailRelayResource {
     public Action updateMailRelayQuota(@ApiParam(value = "The ID of the selected server", required = true) @PathParam("vmId") UUID vmId,
             MailRelayQuotaPatch quotaPatch) {
         vmResource.getVm(vmId);
-        long vps4UserId = virtualMachineService.getUserIdByVmId(vmId);
         IpAddress ipAddress = networkService.getVmPrimaryAddress(vmId);
         Vps4SetMailRelayQuota.Request request = new Vps4SetMailRelayQuota.Request(ipAddress.ipAddress, quotaPatch.quota);
-        long actionId = actionService.createAction(vmId, ActionType.UPDATE_MAILRELAY_QUOTA, request.toJSONString(), vps4UserId, user.getUsername());
+        long actionId = actionService.createAction(vmId, ActionType.UPDATE_MAILRELAY_QUOTA, request.toJSONString(), user.getUsername());
         request.actionId = actionId;
         Commands.execute(commandService, actionService, "Vps4SetMailRelayQuota", request);
         return actionService.getAction(actionId);

@@ -70,7 +70,7 @@ public class VmPatchResourceTest {
                 public void configure() {
                     // Action service
                     Action coreVmAction = new Action(123L, UUID.randomUUID(), ActionType.UPDATE_SERVER,
-                            123L, "", "", "", ActionStatus.COMPLETE,
+                            "", "", "", ActionStatus.COMPLETE,
                             Instant.now(), Instant.now(), "", UUID.randomUUID(), "tester");
                     Mockito.when(actionService.getAction(Mockito.anyLong()))
                             .thenReturn(coreVmAction);

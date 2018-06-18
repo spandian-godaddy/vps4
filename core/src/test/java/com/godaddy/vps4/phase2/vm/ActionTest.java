@@ -55,7 +55,7 @@ public class ActionTest {
 
     @Test
     public void testCreate(){
-        long actionId = actionService.createAction(vm.vmId, type, new JSONObject().toJSONString(), 1, "tester");
+        long actionId = actionService.createAction(vm.vmId, type, new JSONObject().toJSONString(), "tester");
         Action action = actionService.getAction(actionId);
         assertEquals("{}", action.request);
         assertEquals(vm.vmId, action.resourceId);
@@ -66,7 +66,7 @@ public class ActionTest {
 
     @Test
     public void testUpdateStatus(){
-        long actionId = actionService.createAction(vm.vmId, type, new JSONObject().toJSONString(), 1, "tester");
+        long actionId = actionService.createAction(vm.vmId, type, new JSONObject().toJSONString(), "tester");
         Action action = actionService.getAction(actionId);
         assertEquals(ActionStatus.NEW, action.status);
 

@@ -16,7 +16,6 @@ public class SnapshotAction {
     public long id;
     public UUID snapshotId;
     public ActionType type;
-    public long vps4UserId;
     public String request;
     public String state;
     public String response;
@@ -33,7 +32,6 @@ public class SnapshotAction {
         this.id = a.id;
         this.snapshotId = a.resourceId;
         this.type = a.type;
-        this.vps4UserId = a.vps4UserId;
         this.request = a.request;
         this.state = a.state;
         this.response = a.response;

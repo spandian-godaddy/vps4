@@ -2,6 +2,10 @@ package com.godaddy.vps4.web.snapshot;
 
 import com.godaddy.vps4.snapshot.SnapshotAction;
 import com.godaddy.vps4.vm.Action;
+
+import org.apache.commons.lang3.builder.ReflectionToStringBuilder;
+import org.apache.commons.lang3.builder.ToStringStyle;
+
 import gdg.hfs.orchestration.CommandState;
 
 public class SnapshotActionWithDetails extends SnapshotAction {
@@ -21,10 +25,7 @@ public class SnapshotActionWithDetails extends SnapshotAction {
 
     @Override
     public String toString() {
-        return "SnapshotActionWithDetails [orchestrationCommand=" + orchestrationCommand + ", message=" + message + ", id=" + id
-                + ", snapshotId=" + snapshotId + ", type=" + type + ", vps4UserId=" + vps4UserId
-                + ", request=" + request + ", state=" + state + ", response=" + response + ", status=" + status
-                + ", created=" + created + ", note=" + note + ", commandId=" + commandId + "]";
+        return ReflectionToStringBuilder.toString(this, ToStringStyle.SHORT_PREFIX_STYLE);
     }
 
 }

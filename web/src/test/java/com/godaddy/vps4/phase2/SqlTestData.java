@@ -69,10 +69,8 @@ public class SqlTestData {
     }
 
     public static Action insertTestVmAction(UUID commandId, UUID vmId, ActionType actionType, DataSource dataSource) {
-        VirtualMachineService virtualMachineService = new JdbcVirtualMachineService(dataSource);
-        long vps4UserId = virtualMachineService.getUserIdByVmId(vmId);
         ActionService actionService = new JdbcVmActionService(dataSource);
-        long actionId = actionService.createAction(vmId, actionType, new JSONObject().toJSONString(), vps4UserId, INITIATED_BY);
+        long actionId = actionService.createAction(vmId, actionType, new JSONObject().toJSONString(), INITIATED_BY);
         actionService.tagWithCommand(actionId, commandId);
         return actionService.getAction(actionId);
     }

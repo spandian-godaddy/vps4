@@ -18,7 +18,6 @@ public class VmAction {
     public long id;
     public UUID virtualMachineId;
     public ActionType type;
-    public long vps4UserId;
     public String request;
     public String state;
     public String response;
@@ -35,7 +34,6 @@ public class VmAction {
         this.id = a.id;
         this.virtualMachineId = a.resourceId;
         this.type = a.type;
-        this.vps4UserId = a.vps4UserId;
         this.request = a.request;
         this.state = a.state;
         this.response = a.response;

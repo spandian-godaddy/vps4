@@ -133,7 +133,7 @@ public class Vps4RestoreVmTest {
     }
 
     private void addTestSqlData() {
-        SqlTestData.insertUser(vps4UserService).getId();
+        SqlTestData.insertUser(vps4UserService);
         vps4Project = SqlTestData.insertProject(projectService, vps4UserService);
         vps4Vm = SqlTestData.insertVm(vps4VmService, vps4UserService);
         vps4VmId = vps4Vm.vmId;

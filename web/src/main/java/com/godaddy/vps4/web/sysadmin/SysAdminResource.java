@@ -99,9 +99,8 @@ public class SysAdminResource {
         JSONObject pwRequest = new JSONObject();
         pwRequest.put("username", updatePasswordRequest.username);
 
-        long vps4UserId = virtualMachineService.getUserIdByVmId(vmId);
         long actionId = actionService.createAction(vm.vmId, ActionType.SET_PASSWORD,
-                pwRequest.toJSONString(), vps4UserId, user.getUsername());
+                pwRequest.toJSONString(), user.getUsername());
 
         List<String> usernames = new ArrayList<String>();
         usernames.add(updatePasswordRequest.username);
@@ -144,9 +143,8 @@ public class SysAdminResource {
         JSONObject hostnameJsonRequest = new JSONObject();
         hostnameJsonRequest.put("hostname", setHostnameRequest.hostname);
 
-        long vps4UserId = virtualMachineService.getUserIdByVmId(vmId);
         long actionId = actionService.createAction(vmId, ActionType.SET_HOSTNAME,
-                hostnameJsonRequest.toJSONString(), vps4UserId, user.getUsername());
+                hostnameJsonRequest.toJSONString(), user.getUsername());
 
         SetHostname.Request hfsRequest = new SetHostname.Request(vm.hfsVmId, setHostnameRequest.hostname, vm.image.controlPanel.toString());
 
@@ -194,9 +192,7 @@ public class SysAdminResource {
         adminRequest.put("username", username);
         adminRequest.put("enabled", shouldEnable);
 
-        long vps4UserId = virtualMachineService.getUserIdByVmId(vmId);
-        long actionId = actionService.createAction(vm.vmId, actionType, adminRequest.toJSONString(), vps4UserId,
-                user.getUsername());
+        long actionId = actionService.createAction(vm.vmId, actionType, adminRequest.toJSONString(), user.getUsername());
 
         Vps4ToggleAdmin.Request vps4Request = new Vps4ToggleAdmin.Request();
         vps4Request.actionId = actionId;

@@ -149,9 +149,8 @@ public class Vps4AccountMessageHandler implements MessageHandler {
 
     private void stopVm(VirtualMachine vm) throws MessageHandlerException {
         try {
-            long vps4UserId = virtualMachineService.getUserIdByVmId(vm.vmId);
             long actionId = vmActionService.createAction(vm.vmId, ActionType.STOP_VM,
-                    new JSONObject().toJSONString(), vps4UserId, ACCOUNT_MESSAGE_HANDLER_NAME);
+                    new JSONObject().toJSONString(), ACCOUNT_MESSAGE_HANDLER_NAME);
 
             VmActionRequest request = new VmActionRequest();
             request.virtualMachine = vm;

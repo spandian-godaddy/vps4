@@ -136,10 +136,9 @@ public class SnapshotResource {
     }
 
     private Action createSnapshotAndActionEntries(VirtualMachine vm, String snapshotName, SnapshotType snapshotType) {
-        long vps4UserId = virtualMachineService.getUserIdByVmId(vm.vmId);
         UUID snapshotId = snapshotService.createSnapshot(vm.projectId, vm.vmId, snapshotName, snapshotType);
         long actionId = actionService.createAction(
-                snapshotId, ActionType.CREATE_SNAPSHOT, new JSONObject().toJSONString(), vps4UserId, user.getUsername());
+                snapshotId, ActionType.CREATE_SNAPSHOT, new JSONObject().toJSONString(), user.getUsername());
         logger.info("Creating db entries for snapshot creation. Snapshot Action ID: {}, Snapshot ID: {}", actionId, snapshotId);
         return actionService.getAction(actionId);
     }
@@ -153,9 +152,9 @@ public class SnapshotResource {
         commandRequest.vps4SnapshotId = snapshotId;
         commandRequest.actionId = action.id;
         commandRequest.orionGuid = orionGuid;
-        commandRequest.vps4UserId = action.vps4UserId;
         commandRequest.snapshotType = snapshotType;
         commandRequest.shopperId = shopperId;
+        commandRequest.initiatedBy = user.getUsername();
 
         CommandState command = Commands.execute(
                 commandService, actionService, "Vps4SnapshotVm", commandRequest);
@@ -189,9 +188,8 @@ public class SnapshotResource {
     public SnapshotAction destroySnapshot(@PathParam("snapshotId") UUID snapshotId) {
         Snapshot snapshot = getSnapshot(snapshotId);
 
-        long vps4UserId = virtualMachineService.getUserIdByVmId(snapshot.vmId);
         long actionId = actionService.createAction(snapshotId,  ActionType.DESTROY_SNAPSHOT,
-                new JSONObject().toJSONString(), vps4UserId, user.getUsername());
+                new JSONObject().toJSONString(), user.getUsername());
 
         Vps4DestroySnapshot.Request request = new Vps4DestroySnapshot.Request();
         request.hfsSnapshotId = snapshot.hfsSnapshotId;
@@ -229,8 +227,7 @@ public class SnapshotResource {
         validateSnapshotName(request.name);
         String notes = String.format("Old name = %s, New Name = %s", snapshot.name, request.name);
 
-        long vps4UserId = virtualMachineService.getUserIdByVmId(snapshot.vmId);
-        long actionId = actionService.createAction(snapshotId,  ActionType.RENAME_SNAPSHOT,  new JSONObject().toJSONString(), vps4UserId, user.getUsername());
+        long actionId = actionService.createAction(snapshotId,  ActionType.RENAME_SNAPSHOT,  new JSONObject().toJSONString(), user.getUsername());
 
         snapshotService.renameSnapshot(snapshotId, request.name);
         actionService.completeAction(actionId, new JSONObject().toJSONString(), notes);
