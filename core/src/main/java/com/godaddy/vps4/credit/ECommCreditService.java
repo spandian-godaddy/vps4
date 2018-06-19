@@ -84,11 +84,16 @@ public class ECommCreditService implements CreditService {
                 account.plan_features.get(PlanFeatures.OPERATING_SYSTEM),
                 account.plan_features.get(PlanFeatures.CONTROL_PANEL_TYPE),
                 stringToInstant(account.product_meta.get(ProductMetaField.PROVISION_DATE.toString())),
-                account.shopper_id,
+                getShopperId(account),
                 AccountStatus.valueOf(account.status.name().toUpperCase()),
                 getDataCenter(account), getProductId(account),
                 Boolean.parseBoolean(account.product_meta.get(ProductMetaField.FULLY_MANAGED_EMAIL_SENT.toString())),
                 account.reseller_id);
+    }
+
+    private String getShopperId(Account account) {
+        // Brand resellers will use sub_account_shopper_id, otherwise use shopper_id
+        return (account.sub_account_shopper_id != null) ? account.sub_account_shopper_id : account.shopper_id;
     }
 
     private UUID getProductId(Account account) {
@@ -171,7 +176,7 @@ public class ECommCreditService implements CreditService {
     @Override
     public void unclaimVirtualMachineCredit(UUID orionGuid) {
         Map<ProductMetaField, String> to = new HashMap<>();
-        
+
         to.put(ProductMetaField.DATA_CENTER, null);
         to.put(ProductMetaField.PROVISION_DATE, null);
         to.put(ProductMetaField.PRODUCT_ID, null);
@@ -188,7 +193,7 @@ public class ECommCreditService implements CreditService {
             productMeta.put(ProductMetaField.valueOf(field.toUpperCase()), currentProductMeta.get(field));
         }
 
-        
+
         return productMeta;
     }
 
