@@ -56,6 +56,12 @@ public class JdbcVmActionService implements ActionService {
     }
 
     @Override
+    public void cancelAction(long actionId, String response, String notes) {
+        Sql.with(dataSource).exec("UPDATE vm_action SET status_id=5, response=?::json, note=? WHERE id=?",
+                null, response, notes, actionId);
+    }
+
+    @Override
     public void markActionInProgress(long actionId) {
         Sql.with(dataSource).exec("UPDATE vm_action SET status_id=2 WHERE id=?",
                 null, actionId);

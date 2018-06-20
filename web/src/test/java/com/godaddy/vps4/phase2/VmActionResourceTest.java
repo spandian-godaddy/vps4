@@ -1,6 +1,9 @@
 package com.godaddy.vps4.phase2;
 
+import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.lang.reflect.Method;
@@ -8,6 +11,7 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -16,6 +20,13 @@ import javax.sql.DataSource;
 import javax.ws.rs.NotFoundException;
 import javax.ws.rs.core.UriInfo;
 
+import com.godaddy.vps4.vm.ActionService;
+import com.godaddy.vps4.vm.ActionStatus;
+import com.godaddy.vps4.web.Vps4Exception;
+import com.google.inject.multibindings.MapBinder;
+import gdg.hfs.orchestration.CommandGroupSpec;
+import gdg.hfs.orchestration.CommandSpec;
+import org.json.simple.JSONObject;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -43,20 +54,37 @@ import com.google.inject.Provides;
 
 import gdg.hfs.orchestration.CommandService;
 import gdg.hfs.orchestration.CommandState;
+import org.mockito.ArgumentCaptor;
+import org.mockito.Captor;
+import org.mockito.MockitoAnnotations;
 
 public class VmActionResourceTest {
 
     private GDUser user;
     private UriInfo uri = mock(UriInfo.class);
     private CommandService commandService = mock(CommandService.class);
+    private CommandState commandState = mock(CommandState.class);
 
     @Inject Vps4UserService userService;
     @Inject DataSource dataSource;
+    @Inject ActionService actionService;
+    @Inject Map<ActionType, String> actionTypeToCancelCmdNameMap;
+
+    @Captor private ArgumentCaptor<CommandGroupSpec> commandGroupSpecArgumentCaptor;
 
     private Injector injector = Guice.createInjector(
             new DatabaseModule(),
             new SecurityModule(),
             new VmModule(),
+            new AbstractModule() {
+                @Override
+                protected void configure() {
+                    MapBinder<ActionType, String> actionTypeToCancelCmdNameMapBinder
+                            = MapBinder.newMapBinder(binder(), ActionType.class, String.class);
+                    actionTypeToCancelCmdNameMapBinder.addBinding(ActionType.SET_HOSTNAME)
+                            .toInstance("SetHostnameCancelCommand");
+                }
+            },
             new AbstractModule() {
 
                 @Override
@@ -76,9 +104,12 @@ public class VmActionResourceTest {
 
     @Before
     public void setupTest() throws URISyntaxException {
+        MockitoAnnotations.initMocks(this);
         injector.injectMembers(this);
         user = GDUserMock.createShopper();
         when(uri.getAbsolutePath()).thenReturn(new URI("/vmid/actions"));
+        commandState.commandId = UUID.randomUUID();
+        when(commandService.executeCommand(any(CommandGroupSpec.class))).thenReturn(commandState);
     }
 
     @After
@@ -262,5 +293,100 @@ public class VmActionResourceTest {
                 .getVmActionWithDetails(vm.vmId, action.id);
         Assert.assertEquals(detailedAction.commandId, action.commandId);
         Assert.assertEquals(detailedAction.orchestrationCommand, command);
+    }
+
+    @Test
+    public void testCancelVmActionCancelsCorrespondingCommand() {
+        VirtualMachine vm = createTestVm(user.getShopperId());
+        Action action = createTestVmAction(vm.vmId, ActionType.CREATE_VM);
+        VmActionResource actionResource = getVmActionResource();
+        actionResource.cancelVmAction(vm.vmId, action.id);
+        verify(commandService, times(1)).cancel(action.commandId);
+    }
+
+    @Test
+    public void testQueuesNewCancelCommand() {
+        VirtualMachine vm = createTestVm(user.getShopperId());
+        // we create an action of type SET_HOSTNAME because in the injector above (test setup) we provide a
+        // cancel command to be run for SET_HOSTNAME only
+        Action action = createTestVmAction(vm.vmId, ActionType.SET_HOSTNAME);
+        VmActionResource actionResource = getVmActionResource();
+        actionResource.cancelVmAction(vm.vmId, action.id);
+
+        verify(commandService, times(1)).executeCommand(commandGroupSpecArgumentCaptor.capture());
+
+        CommandGroupSpec commandGroupSpec = commandGroupSpecArgumentCaptor.getValue();
+        CommandSpec commandSpec = commandGroupSpec.commands.get(0);
+        long actionId = (Long) commandSpec.request;
+
+        Assert.assertEquals(actionTypeToCancelCmdNameMap.get(ActionType.SET_HOSTNAME), commandSpec.command);
+        Assert.assertEquals(actionId, action.id);
+    }
+
+    @Test
+    public void testDoesNotQueueCancelCommandWhenNotSpecified() {
+        VirtualMachine vm = createTestVm(user.getShopperId());
+        Action action = createTestVmAction(vm.vmId, ActionType.CREATE_VM);
+        VmActionResource actionResource = getVmActionResource();
+        actionResource.cancelVmAction(vm.vmId, action.id);
+        verify(commandService, times(0)).executeCommand(any(CommandGroupSpec.class));
+    }
+
+    @Test
+    public void testMarksActionAsCancelled() {
+        VirtualMachine vm = createTestVm(user.getShopperId());
+        Action action = createTestVmAction(vm.vmId, ActionType.CREATE_VM);
+        VmActionResource actionResource = getVmActionResource();
+        actionResource.cancelVmAction(vm.vmId, action.id);
+
+        Action modifiedAction = actionService.getAction(action.id);
+        Assert.assertEquals(modifiedAction.status, ActionStatus.CANCELLED);
+    }
+
+    @Test
+    public void testAddsNoteToCancelledAction() {
+        VirtualMachine vm = createTestVm(user.getShopperId());
+        Action action = createTestVmAction(vm.vmId, ActionType.CREATE_VM);
+        VmActionResource actionResource = getVmActionResource();
+        actionResource.cancelVmAction(vm.vmId, action.id);
+
+        Action modifiedAction = actionService.getAction(action.id);
+        String expectedNote = "Action cancelled via api by tester"; // username is 'tester'
+        Assert.assertEquals(expectedNote, modifiedAction.note);
+    }
+
+    @Test
+    public void testAddsCancelCommandIdToNoteIfApplicable() {
+        VirtualMachine vm = createTestVm(user.getShopperId());
+        Action action = createTestVmAction(vm.vmId, ActionType.SET_HOSTNAME);
+        VmActionResource actionResource = getVmActionResource();
+        actionResource.cancelVmAction(vm.vmId, action.id);
+
+        Action modifiedAction = actionService.getAction(action.id);
+        String expectedNote = String.format(
+            "%s. Async cleanup queued: %s", "Action cancelled via api by tester", commandState.commandId.toString());
+        Assert.assertEquals(expectedNote, modifiedAction.note);
+    }
+
+    @Test
+    public void testOnlyOpenToAdmins() {
+        VmActionResource actionResource = getVmActionResource();
+        try {
+            Method m = actionResource.getClass().getMethod("cancelVmAction", UUID.class, long.class);
+            Assert.assertNotNull(m.getAnnotation(AdminOnly.class));
+        }
+        catch (NoSuchMethodException e) {
+            Assert.fail("Cancel action should only be available to an admin");
+        }
+    }
+
+    @Test(expected = Vps4Exception.class)
+    public void testNonCancellableActionThrowsAnException() {
+        VirtualMachine vm = createTestVm(user.getShopperId());
+        Action action = createTestVmAction(vm.vmId, ActionType.SET_HOSTNAME);
+        // a completed command cant be cancelled
+        actionService.completeAction(action.id, new JSONObject().toJSONString(), "");
+        VmActionResource actionResource = getVmActionResource();
+        actionResource.cancelVmAction(vm.vmId, action.id);
     }
 }

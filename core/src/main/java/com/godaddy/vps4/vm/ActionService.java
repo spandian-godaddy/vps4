@@ -35,4 +35,6 @@ public interface ActionService {
     void completeAction(long actionId, String response, String notes);
 
     void failAction(long actionId, String response, String notes);
+
+    void cancelAction(long actionId, String response, String notes);
 }

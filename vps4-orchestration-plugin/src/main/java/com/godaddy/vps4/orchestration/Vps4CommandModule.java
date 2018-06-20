@@ -15,6 +15,7 @@ import com.godaddy.vps4.orchestration.sysadmin.Vps4SetPassword;
 import com.godaddy.vps4.orchestration.sysadmin.Vps4ToggleAdmin;
 import com.godaddy.vps4.orchestration.vm.UnlicenseControlPanel;
 import com.godaddy.vps4.orchestration.vm.Vps4AddIpAddress;
+import com.godaddy.vps4.orchestration.vm.Vps4CancelAction;
 import com.godaddy.vps4.orchestration.vm.Vps4DeleteAllScheduledJobsForVm;
 import com.godaddy.vps4.orchestration.vm.Vps4DestroyIpAddress;
 import com.godaddy.vps4.orchestration.vm.Vps4DestroyIpAddressAction;
@@ -62,5 +63,6 @@ public class Vps4CommandModule extends AbstractModule {
         bind(SendSystemDownFailoverEmail.class);
         bind(SendFailoverCompletedEmail.class);
         bind(WaitForMessageComplete.class);
+        bind(Vps4CancelAction.class);
     }
 }
