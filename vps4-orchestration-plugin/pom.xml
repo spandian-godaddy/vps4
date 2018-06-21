@@ -64,7 +64,7 @@
                     <release>${parsedVersion.buildNumber}</release>
                     <packager>rpm</packager>
                     <requires>
-                        <require>hfs-engine == 0.5.1-38</require>
+                        <require>hfs-engine == 0.5.1-25</require>
                     </requires>
                     <changelogFile>src/changelog</changelogFile>
                     <defineStatements>
@@ -93,15 +93,15 @@
         <dependency>
             <groupId>com.godaddy.hosting</groupId>
             <artifactId>orchestration-api</artifactId>
-            <version>0.5.1-38</version>
-            <scope>runtime</scope>
+            <version>0.5.1-25</version>
+            <scope>provided</scope>
         </dependency>
         
         <dependency>
             <groupId>com.godaddy.hosting</groupId>
             <artifactId>orchestration-web</artifactId>
-            <version>0.5.1-38</version>
-            <scope>provided</scope>
+            <version>0.5.1-25</version>
+            <scope>runtime</scope>
             <exclusions>
                 <exclusion>
                     <groupId>org.postgresql</groupId>

@@ -11,12 +11,11 @@ import com.godaddy.vps4.vm.Image.ControlPanel;
 
 import gdg.hfs.orchestration.CommandContext;
 import gdg.hfs.orchestration.CommandMetadata;
-import gdg.hfs.orchestration.CommandRetryStrategy;
 
 @CommandMetadata(
     name = "Vps4SetPassword",
     requestType = Vps4SetPassword.Request.class,
-    retryStrategy = CommandRetryStrategy.NEVER
+    responseType = Void.class
 )
 public class Vps4SetPassword extends ActionCommand<Vps4SetPassword.Request, Void> {
 

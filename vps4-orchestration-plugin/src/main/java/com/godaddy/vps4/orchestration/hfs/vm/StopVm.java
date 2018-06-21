@@ -19,10 +19,8 @@ public class StopVm implements Command<Long, VmAction> {
     @Override
     public VmAction execute(CommandContext context, Long vmId) {
 
-        VmAction action =  vmService.stopVm(vmId);
-
+        VmAction action = vmService.stopVm(vmId);
         context.execute(WaitForVmAction.class, action);
-
         return action;
     }
 }

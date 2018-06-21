@@ -5,15 +5,13 @@ import com.google.inject.Inject;
 import gdg.hfs.orchestration.Command;
 import gdg.hfs.orchestration.CommandContext;
 import gdg.hfs.orchestration.CommandMetadata;
-import gdg.hfs.orchestration.CommandRetryStrategy;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 
 @CommandMetadata(
         name="Vps4CancelAction",
-        requestType=Long.class,
-        retryStrategy = CommandRetryStrategy.NEVER
+        requestType=Long.class
 )
 public class Vps4CancelAction implements Command<Long, Void> {
 
