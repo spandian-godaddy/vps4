@@ -19,7 +19,7 @@ public class DestroyVm implements Command<Long, Void> {
     @Override
     public Void execute(CommandContext context, Long vmId) {
 
-        VmAction hfsAction = context.execute("RequestDestroy", ctx -> vmService.destroyVm(vmId), VmAction.class);
+        VmAction hfsAction = vmService.destroyVm(vmId);
 
         context.execute(WaitForVmAction.class, hfsAction);
 

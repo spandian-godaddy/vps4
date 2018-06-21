@@ -9,7 +9,6 @@ import com.godaddy.vps4.util.MonitoringMeta;
 import com.godaddy.vps4.vm.ActionService;
 import com.godaddy.vps4.vm.VirtualMachine;
 import com.godaddy.vps4.vm.VirtualMachineService;
-import com.hazelcast.util.StringUtil;
 import gdg.hfs.orchestration.CommandContext;
 import gdg.hfs.orchestration.CommandMetadata;
 import gdg.hfs.vhfs.cpanel.CPanelService;
@@ -143,10 +142,7 @@ public class Vps4DestroyVm extends ActionCommand<VmActionRequest, Vps4DestroyVm.
     }
 
     private void unlicenseControlPanel(VirtualMachine vm) {
-        String licensedIp = cpanelService.getLicenseFromDb(vm.hfsVmId).licensedIp;
-        if (!StringUtil.isNullOrEmpty(licensedIp)) {
-            context.execute(UnlicenseControlPanel.class, vm);
-        }
+        context.execute(UnlicenseControlPanel.class, vm);
     }
 
     public static class Response {

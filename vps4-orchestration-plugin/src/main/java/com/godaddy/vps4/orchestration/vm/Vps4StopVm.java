@@ -2,6 +2,7 @@ package com.godaddy.vps4.orchestration.vm;
 
 import javax.inject.Inject;
 
+import com.godaddy.vps4.orchestration.hfs.vm.StopVm;
 import org.apache.commons.lang3.builder.ReflectionToStringBuilder;
 import org.apache.commons.lang3.builder.ToStringStyle;
 import org.slf4j.Logger;
@@ -38,12 +39,9 @@ public class Vps4StopVm extends ActionCommand<VmActionRequest, Vps4StopVm.Respon
     @Override
     protected Response executeWithAction(CommandContext context, VmActionRequest request) throws Exception {
 
-        logger.info("Request: {}", request);
-        VmAction hfsAction = context.execute("Vps4StopVm", ctx -> {
-            return vmService.stopVm(request.virtualMachine.hfsVmId);
-        }, VmAction.class);
+        logger.info("Vps4StopVm Request: {}", request);
 
-        hfsAction = context.execute(WaitForManageVmAction.class, hfsAction);
+        VmAction hfsAction = context.execute(StopVm.class, request.virtualMachine.hfsVmId);
 
         Vps4StopVm.Response response = new Vps4StopVm.Response();
         response.vmId = request.virtualMachine.hfsVmId;

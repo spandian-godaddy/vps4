@@ -6,6 +6,7 @@ import java.util.UUID;
 
 import javax.inject.Inject;
 
+import com.godaddy.vps4.orchestration.hfs.vm.StopVm;
 import org.json.simple.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -15,7 +16,6 @@ import com.godaddy.vps4.credit.VirtualMachineCredit;
 import com.godaddy.vps4.orchestration.scheduler.ScheduleZombieVmCleanup;
 import com.godaddy.vps4.orchestration.vm.VmActionRequest;
 import com.godaddy.vps4.orchestration.vm.Vps4RecordScheduledJobForVm;
-import com.godaddy.vps4.orchestration.vm.Vps4StopVm;
 import com.godaddy.vps4.scheduledJob.ScheduledJob.ScheduledJobType;
 import com.godaddy.vps4.vm.ActionService;
 import com.godaddy.vps4.vm.ActionType;
@@ -91,11 +91,7 @@ public class Vps4ProcessAccountCancellation implements Command<VirtualMachineCre
             long.class);
         VirtualMachine vm = context.execute(
          "GetVirtualMachine", ctx -> virtualMachineService.getVirtualMachine(vmId), VirtualMachine.class);
-
-        VmActionRequest request = new VmActionRequest();
-        request.virtualMachine = vm;
-        request.actionId = actionId;
-        context.execute(Vps4StopVm.class, request);
+        context.execute(StopVm.class, vm.hfsVmId);
     }
 
     private void markVmAsZombie(UUID vmId, Instant validUntil) {

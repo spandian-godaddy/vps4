@@ -35,9 +35,7 @@ public class AllocateIp implements Command<AllocateIp.Request, IpAddress> {
 
         logger.info("sending HFS request to allocate IP for hfsSgid: {}", request.sgid);
 
-        AddressAction hfsAction = context.execute("RequestFromHFS",
-                ctx -> networkService.acquireIp(request.sgid, request.zone),
-                AddressAction.class);
+        AddressAction hfsAction = networkService.acquireIp(request.sgid, request.zone);
 
         context.execute(WaitForAddressAction.class, hfsAction);
 

@@ -34,10 +34,7 @@ public class UnbindIp implements Command<UnbindIp.Request, Void> {
 
         logger.info("sending HFS request to unbind addressId {}", request.addressId);
 
-        AddressAction hfsAction = context.execute("RequestFromHFS",  ctx -> {
-            return networkService.unbindIp(request.addressId, request.forceIfVmInaccessible);
-        }, AddressAction.class);
-
+        AddressAction hfsAction = networkService.unbindIp(request.addressId, request.forceIfVmInaccessible);
         context.execute(WaitForAddressAction.class, hfsAction);
 
         return null;

@@ -33,8 +33,7 @@ public class CreateVmFromSnapshot implements Command<CreateVmFromSnapshot.Reques
 
         CreateVMWithFlavorRequest hfsRequest = createHfsRequest(request);
 
-        VmAction vmAction = context.execute("CreateVmHfs", ctx -> vmService.createVmWithFlavor(hfsRequest), VmAction.class);
-
+        VmAction vmAction = vmService.createVmWithFlavor(hfsRequest);
         context.execute(WaitForVmAction.class, vmAction);
 
         return vmAction;

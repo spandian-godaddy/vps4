@@ -21,8 +21,7 @@ import gdg.hfs.vhfs.sysadmin.SysAdminAction;
 
 @CommandMetadata(
     name = "Vps4SetHostname",
-    requestType = Vps4SetHostname.Request.class,
-    responseType = Void.class
+    requestType = Vps4SetHostname.Request.class
 )
 public class Vps4SetHostname extends ActionCommand<Vps4SetHostname.Request, Void> {
 

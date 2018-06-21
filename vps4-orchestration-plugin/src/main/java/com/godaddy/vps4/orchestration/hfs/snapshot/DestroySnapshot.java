@@ -20,13 +20,8 @@ public class DestroySnapshot implements Command<Long, Void> {
 
     @Override
     public Void execute(CommandContext context, Long snapshotId) {
-
-        SnapshotAction hfsAction = context.execute("DestroySnapshotHfs",
-                ctx -> hfsSnapshotService.destroySnapshot(snapshotId),
-                SnapshotAction.class);
-
+        SnapshotAction hfsAction = hfsSnapshotService.destroySnapshot(snapshotId);
         context.execute(WaitForSnapshotAction.class, hfsAction);
-
         return null;
     }
 

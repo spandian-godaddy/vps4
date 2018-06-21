@@ -28,11 +28,7 @@ public class RefreshCpanelLicense implements Command<RefreshCpanelLicense.Reques
     @Override
     public Void execute(CommandContext context, Request request){
         logger.debug("Refreshing license for hfs vm {}", request.hfsVmId);
-
-        CPanelAction hfsCpanelAction = context.execute("RefreshCPanelLicense",
-                ctx -> cpanelService.licenseRefresh(request.hfsVmId),
-                CPanelAction.class);
-
+        CPanelAction hfsCpanelAction = cpanelService.licenseRefresh(request.hfsVmId);
         context.execute("WaitForLicenseRefresh", WaitForCpanelAction.class, hfsCpanelAction);
 
         return null;

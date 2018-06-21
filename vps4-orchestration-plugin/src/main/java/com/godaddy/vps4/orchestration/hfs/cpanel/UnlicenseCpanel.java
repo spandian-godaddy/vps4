@@ -6,9 +6,12 @@ import gdg.hfs.orchestration.Command;
 import gdg.hfs.orchestration.CommandContext;
 import gdg.hfs.vhfs.cpanel.CPanelAction;
 import gdg.hfs.vhfs.cpanel.CPanelService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class UnlicenseCpanel implements Command<Long, Void> {
 
+    private static final Logger logger = LoggerFactory.getLogger(UnlicenseCpanel.class);
     private CPanelService cpanelService;
 
     @Inject
@@ -18,10 +21,19 @@ public class UnlicenseCpanel implements Command<Long, Void> {
 
     @Override
     public Void execute(CommandContext context, Long hfsVmId) {
-        CPanelAction action = context.execute("Unlicense-Cpanel", ctx -> {
-            return cpanelService.licenseRelease(hfsVmId);
-        }, CPanelAction.class);
+
+        if(!vmHasCpanelLicense(hfsVmId)) {
+            logger.warn("No license for vm {} found.", hfsVmId);
+            return null;
+        }
+
+        CPanelAction action = cpanelService.licenseRelease(hfsVmId);
         context.execute(WaitForCpanelAction.class, action);
+
         return null;
+    }
+
+    private boolean vmHasCpanelLicense(Long hfsVmId){
+        return cpanelService.getLicenseFromDb(hfsVmId).licensedIp != null;
     }
 }

@@ -23,19 +23,9 @@ public class BindIp implements Command<BindIp.BindIpRequest, Void> {
 
     @Override
     public Void execute(CommandContext context, BindIpRequest action) {
-
         logger.info("sending HFS request to bind addressId {} to vmId {}", action.addressId, action.vmId);
-
-        AddressAction hfsAction = context.execute("BindIpHfs",
-                ctx -> networkService.bindIp(action.addressId, action.vmId, false),
-                AddressAction.class);
-
+        AddressAction hfsAction = networkService.bindIp(action.addressId, action.vmId, false);
         context.execute(WaitForAddressAction.class, hfsAction);
-
-        //vps4NetworkService.createIpAddress(action.getAddressId(), action.getVmId(), action.getAddress(), action.getType());
-        //action.status = ActionStatus.COMPLETE;
-        //logger.info("bind ip complete: {}", hfsAction);
-
         return null;
     }
 

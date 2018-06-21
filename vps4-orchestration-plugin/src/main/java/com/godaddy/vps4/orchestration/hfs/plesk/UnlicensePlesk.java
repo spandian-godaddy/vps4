@@ -22,9 +22,7 @@ public class UnlicensePlesk implements Command<Long, Void> {
 
     @Override
     public Void execute(CommandContext context, Long hfsVmId) {
-        PleskAction action = context.execute("Unlicense-Plesk", ctx -> {
-            return pleskService.licenseRelease(hfsVmId);
-        }, PleskAction.class);
+        PleskAction action = pleskService.licenseRelease(hfsVmId);
         context.execute(WaitForPleskAction.class, action);
         return null;
     }

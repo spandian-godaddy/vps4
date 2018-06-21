@@ -14,6 +14,7 @@ import java.util.function.Function;
 
 import javax.sql.DataSource;
 
+import com.godaddy.vps4.orchestration.hfs.vm.StopVm;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -70,7 +71,7 @@ public class Vps4ProcessAccountCancellationTest {
     @Captor private ArgumentCaptor<Function<CommandContext, Long>> calculateValidUntilLambdaCaptor;
     @Captor private ArgumentCaptor<Function<CommandContext, Long>> createStopVmActionLambdaCaptor;
     @Captor private ArgumentCaptor<Function<CommandContext, VirtualMachine>> getVirtualMachineLambdaCaptor;
-    @Captor private ArgumentCaptor<VmActionRequest> actionRequestArgumentCaptor;
+    @Captor private ArgumentCaptor<Long> actionRequestArgumentCaptor;
     @Captor private ArgumentCaptor<Function<CommandContext, Void>> markZombieLambdaCaptor;
     @Captor private ArgumentCaptor<ScheduleZombieVmCleanup.Request> zombieCleanupArgumentCaptor;
     @Captor private ArgumentCaptor<Vps4RecordScheduledJobForVm.Request> recordJobArgumentCaptor;
@@ -178,11 +179,10 @@ public class Vps4ProcessAccountCancellationTest {
     public void kicksOffStopVmCommandWhenAccountCancellationIsProcessed() {
         command.execute(context, virtualMachineCredit);
         verify(context, times(1))
-            .execute(eq(Vps4StopVm.class), actionRequestArgumentCaptor.capture());
+            .execute(eq(StopVm.class), actionRequestArgumentCaptor.capture());
 
-        VmActionRequest request = actionRequestArgumentCaptor.getValue();
-        Assert.assertEquals(stopActionId, request.actionId);
-        Assert.assertEquals(hfsVmId, request.virtualMachine.hfsVmId);
+        Long requestHfsVmId = actionRequestArgumentCaptor.getValue();
+        Assert.assertEquals(Long.valueOf(hfsVmId), requestHfsVmId);
     }
 
     @Test

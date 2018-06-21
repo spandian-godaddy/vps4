@@ -7,7 +7,7 @@ import gdg.hfs.orchestration.CommandContext;
 import gdg.hfs.vhfs.vm.VmAction;
 import gdg.hfs.vhfs.vm.VmService;
 
-public class StopVm implements Command<Long, Void> {
+public class StopVm implements Command<Long, VmAction> {
 
     final VmService vmService;
 
@@ -17,12 +17,12 @@ public class StopVm implements Command<Long, Void> {
     }
 
     @Override
-    public Void execute(CommandContext context, Long vmId) {
+    public VmAction execute(CommandContext context, Long vmId) {
 
         VmAction action =  vmService.stopVm(vmId);
 
         context.execute(WaitForVmAction.class, action);
 
-        return null;
+        return action;
     }
 }
