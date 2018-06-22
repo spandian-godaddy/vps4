@@ -32,7 +32,9 @@ public class ConfigurePlesk implements Command<ConfigurePlesk.ConfigurePleskRequ
 
         String password = cryptography.decrypt(request.encryptedPassword);
 
-        PleskAction hfsAction = pleskService.imageConfig(request.vmId, request.username, password);
+        PleskAction hfsAction = context.execute("RequestFromHFS", ctx -> {
+            return pleskService.imageConfig(request.vmId, request.username, password);
+        }, PleskAction.class);
 
         context.execute(WaitForPleskAction.class, hfsAction);
 

@@ -9,7 +9,7 @@ import gdg.hfs.orchestration.CommandContext;
 import gdg.hfs.vhfs.vm.VmAction;
 import gdg.hfs.vhfs.vm.VmService;
 
-public class StartVm implements Command<Long, VmAction> {
+public class StartVm implements Command<Long, Void> {
 
     final VmService vmService;
 
@@ -19,12 +19,12 @@ public class StartVm implements Command<Long, VmAction> {
     }
 
     @Override
-    public VmAction execute(CommandContext context, Long vmId) {
+    public Void execute(CommandContext context, Long vmId) {
 
-        VmAction action = vmService.startVm(vmId);
+        VmAction action = context.execute("StartVmHfs", ctx -> vmService.startVm(vmId), VmAction.class);
 
         context.execute(WaitForManageVmAction.class, action);
 
-        return action;
+        return null;
     }
 }

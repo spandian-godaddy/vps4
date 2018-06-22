@@ -42,7 +42,11 @@ public class SetHostname implements Command<SetHostname.Request, Void> {
     @Override
     public Void execute(CommandContext context, Request request){
         logger.debug("Setting hostname to {} for hfs vm {}", request.hostname, request.hfsVmId);
-        SysAdminAction hfsSysAction = sysAdminService.changeHostname(request.hfsVmId, request.hostname, request.controlPanel);
+
+        SysAdminAction hfsSysAction = context.execute("SetHostname",
+                ctx -> sysAdminService.changeHostname(request.hfsVmId, request.hostname, request.controlPanel),
+                SysAdminAction.class);
+
         context.execute("WaitForSetHostname", WaitForSysAdminAction.class, hfsSysAction);
 
         return null;

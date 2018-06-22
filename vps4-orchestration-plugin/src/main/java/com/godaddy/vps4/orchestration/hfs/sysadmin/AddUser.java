@@ -35,8 +35,9 @@ public class AddUser implements Command<AddUser.Request, Void> {
     public Void execute(CommandContext context, Request request) {
         logger.info("Calling HFS to add user {} to vm {}", request.username, request.hfsVmId);
 
-        SysAdminAction hfsSysAdminAction = sysAdminService.addUser(request.hfsVmId, request.username,
-                cryptography.decrypt(request.encryptedPassword));
+        SysAdminAction hfsSysAdminAction = context.execute("AddUser-" + request.username,
+                ctx -> sysAdminService.addUser(request.hfsVmId, request.username, cryptography.decrypt(request.encryptedPassword)),
+                SysAdminAction.class);
         context.execute("WaitForAdd-" + request.username, WaitForSysAdminAction.class, hfsSysAdminAction);
 
         return null;

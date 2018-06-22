@@ -18,7 +18,8 @@ import gdg.hfs.vhfs.sysadmin.SysAdminService;
 
 @CommandMetadata(
     name = "Vps4ToggleAdmin",
-    requestType = Vps4ToggleAdmin.Request.class
+    requestType = Vps4ToggleAdmin.Request.class,
+    responseType = Void.class
 )
 public class Vps4ToggleAdmin extends ActionCommand<Vps4ToggleAdmin.Request, Void> {
 

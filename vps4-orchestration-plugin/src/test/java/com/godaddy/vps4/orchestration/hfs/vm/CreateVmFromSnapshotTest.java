@@ -41,7 +41,7 @@ public class CreateVmFromSnapshotTest {
     private VmAction hfsAction;
 
     @Captor
-    ArgumentCaptor<CreateVMWithFlavorRequest> createVmRequestCaptor;
+    ArgumentCaptor<Function<CommandContext, VmAction>> createVmLambdaCaptor;
 
     @BeforeClass
     public static void newInjector() {
@@ -64,7 +64,6 @@ public class CreateVmFromSnapshotTest {
         command = new CreateVmFromSnapshot(vmService, mock(Cryptography.class));
         context = setupMockContext();
         request = new CreateVmFromSnapshot.Request();
-        request.sgid = "test-sgid-4-me";
 
         when(vmService.createVmWithFlavor(any(CreateVMWithFlavorRequest.class))).thenReturn(hfsAction);
     }
@@ -85,11 +84,13 @@ public class CreateVmFromSnapshotTest {
     @Test
     public void callsHfsVmVerticalToCreateTheVm() {
         command.execute(context, request);
-        verify(vmService, times(1))
-                .createVmWithFlavor(createVmRequestCaptor.capture());
+        verify(context, times(1))
+                .execute(eq("CreateVmHfs"), createVmLambdaCaptor.capture(), eq(VmAction.class));
 
-        // Verify that the request is a passthrough
-        Assert.assertEquals(request.sgid, createVmRequestCaptor.getValue().sgid);
+        // Verify that the lambda is returning what we expect
+        Function<CommandContext, VmAction> lambda = createVmLambdaCaptor.getValue();
+        VmAction vmAction = lambda.apply(context);
+        Assert.assertEquals(vmAction, hfsAction);
     }
 
     @Test

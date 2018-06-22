@@ -29,7 +29,9 @@ public class UpdateAdminPassword implements Command<UpdateAdminPassword.Request,
         logger.info("sending HFS request to update Plesk admin password for vmId {}", request.vmId);
 
         String password = cryptography.decrypt(request.encryptedPassword);
-        PleskAction hfsAction = pleskService.adminPassUpdate(request.vmId, password);
+        PleskAction hfsAction = context.execute("adminPassUpdateHFS", ctx -> {
+            return pleskService.adminPassUpdate(request.vmId, password);
+        }, PleskAction.class);
 
         context.execute(WaitForPleskAction.class, hfsAction);
 

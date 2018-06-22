@@ -23,9 +23,14 @@ public class ReleaseIp implements Command<Long, Void> {
 
     @Override
     public Void execute(CommandContext context, Long addressId) {
-        logger.info("sending HFS request to release addressId {}", addressId);
-        AddressAction action = networkService.releaseIp(addressId);
+
+        AddressAction action = context.execute("ReleaseIpHfs", ctx -> {
+            logger.info("sending HFS request to release addressId {}", addressId);
+            return networkService.releaseIp(addressId);
+        }, AddressAction.class);
+
         context.execute(WaitForAddressAction.class, action);
+
         return null;
     }
 

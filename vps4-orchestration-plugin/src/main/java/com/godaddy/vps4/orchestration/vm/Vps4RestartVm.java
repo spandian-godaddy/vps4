@@ -3,8 +3,6 @@ package com.godaddy.vps4.orchestration.vm;
 import javax.inject.Inject;
 
 import com.godaddy.vps4.orchestration.ActionCommand;
-import com.godaddy.vps4.orchestration.hfs.vm.StartVm;
-import com.godaddy.vps4.orchestration.hfs.vm.StopVm;
 import com.godaddy.vps4.vm.ActionService;
 
 import gdg.hfs.orchestration.CommandContext;
@@ -32,9 +30,17 @@ public class Vps4RestartVm extends ActionCommand<VmActionRequest, Vps4RestartVm.
     @Override
     protected Response executeWithAction(CommandContext context, VmActionRequest request) throws Exception {
 
-        VmAction hfsAction = context.execute(StopVm.class, request.virtualMachine.hfsVmId);
+        VmAction hfsAction = context.execute("Vps4StopVm", ctx -> {
+            return vmService.stopVm(request.virtualMachine.hfsVmId);
+        }, VmAction.class);
 
-        hfsAction = context.execute(StartVm.class, request.virtualMachine.hfsVmId);
+        hfsAction = context.execute("WaitForStop", WaitForManageVmAction.class, hfsAction);
+
+        hfsAction = context.execute("Vps4StartVm", ctx -> {
+            return vmService.startVm(request.virtualMachine.hfsVmId);
+        }, VmAction.class);
+
+        hfsAction = context.execute("WaitForStart", WaitForManageVmAction.class, hfsAction);
 
         Vps4RestartVm.Response response = new Vps4RestartVm.Response();
         response.vmId = request.virtualMachine.hfsVmId;

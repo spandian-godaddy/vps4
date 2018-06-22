@@ -39,7 +39,11 @@ public class SetPassword implements Command<SetPassword.Request, Void> {
         logger.debug("Setting passwords for users {} on vm {}", request.usernames.toString(), request.hfsVmId);
         String password = cryptography.decrypt(request.encryptedPassword);
         for(String username : request.usernames){
-            SysAdminAction hfsSysAction = sysAdminService.changePassword(request.hfsVmId, username, password);
+
+            SysAdminAction hfsSysAction = context.execute("SetPassword-" + username,
+                    ctx -> sysAdminService.changePassword(request.hfsVmId, username, password),
+                    SysAdminAction.class);
+
             context.execute("WaitForSet-"+username, WaitForSysAdminAction.class, hfsSysAction);
         }
 

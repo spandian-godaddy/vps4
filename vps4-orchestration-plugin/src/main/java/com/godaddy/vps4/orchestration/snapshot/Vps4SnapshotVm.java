@@ -31,7 +31,7 @@ import gdg.hfs.vhfs.snapshot.SnapshotAction;
         name="Vps4SnapshotVm",
         requestType=Vps4SnapshotVm.Request.class,
         responseType=Vps4SnapshotVm.Response.class
-)
+    )
 public class Vps4SnapshotVm extends ActionCommand<Vps4SnapshotVm.Request, Vps4SnapshotVm.Response> {
     private static final Logger logger = LoggerFactory.getLogger(Vps4SnapshotVm.class);
 
@@ -74,7 +74,7 @@ public class Vps4SnapshotVm extends ActionCommand<Vps4SnapshotVm.Request, Vps4Sn
     private SnapshotAction createAndWaitForSnapshotCompletion(CommandContext context, Request request) {
         SnapshotAction hfsAction = createSnapshot(context, request);
         updateHfsSnapshotId(context, request.vps4SnapshotId, hfsAction.snapshotId);
-        hfsAction = waitForSnapshotCompletion(context, request, hfsAction);
+        hfsAction = WaitForSnapshotCompletion(context, request, hfsAction);
         updateHfsImageId(context, request.vps4SnapshotId, hfsAction.snapshotId);
         return hfsAction;
     }
@@ -109,7 +109,7 @@ public class Vps4SnapshotVm extends ActionCommand<Vps4SnapshotVm.Request, Vps4Sn
         context.execute(Vps4DestroySnapshot.class, req);
     }
 
-    private SnapshotAction waitForSnapshotCompletion(CommandContext context, Request request,
+    private SnapshotAction WaitForSnapshotCompletion(CommandContext context, Request request,
                                                      SnapshotAction hfsAction) {
         try {
             hfsAction = context.execute(WaitForSnapshotAction.class, hfsAction);
