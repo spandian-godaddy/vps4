@@ -152,12 +152,16 @@ public class VmActionResource {
         logger.info("Cancel request received for action {}", actionId);
         Commands.cancel(commandService, action.commandId);
         String note = String.format("Action cancelled via api by %s", user.getUsername());
-        if (actionTypeToCancelCmdNameMap.containsKey(action.type)) {
+        if (shouldQueueRollbackCommand(action.type)) {
             UUID commandId = queueRollbackCommand(action);
             note = String.format("%s. Async cleanup queued: %s", note, commandId.toString());
         }
 
         actionService.cancelAction(actionId, new JSONObject().toJSONString(), note);
+    }
+
+    private boolean shouldQueueRollbackCommand(ActionType actionType) {
+        return actionTypeToCancelCmdNameMap.containsKey(actionType);
     }
 
     private UUID queueRollbackCommand(Action action) {

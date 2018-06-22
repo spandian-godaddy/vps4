@@ -15,14 +15,16 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
-import javax.inject.Inject;
 import javax.sql.DataSource;
 import javax.ws.rs.NotFoundException;
 import javax.ws.rs.core.UriInfo;
 
+import com.godaddy.vps4.security.PrivilegeService;
+import com.godaddy.vps4.security.jdbc.JdbcPrivilegeService;
 import com.godaddy.vps4.vm.ActionService;
 import com.godaddy.vps4.vm.ActionStatus;
 import com.godaddy.vps4.web.Vps4Exception;
+import com.google.inject.Inject;
 import com.google.inject.multibindings.MapBinder;
 import gdg.hfs.orchestration.CommandGroupSpec;
 import gdg.hfs.orchestration.CommandSpec;
@@ -78,18 +80,13 @@ public class VmActionResourceTest {
             new VmModule(),
             new AbstractModule() {
                 @Override
-                protected void configure() {
+                public void configure() {
+                    bind(CommandService.class).toInstance(commandService);
+
                     MapBinder<ActionType, String> actionTypeToCancelCmdNameMapBinder
                             = MapBinder.newMapBinder(binder(), ActionType.class, String.class);
                     actionTypeToCancelCmdNameMapBinder.addBinding(ActionType.SET_HOSTNAME)
                             .toInstance("SetHostnameCancelCommand");
-                }
-            },
-            new AbstractModule() {
-
-                @Override
-                public void configure() {
-                    bind(CommandService.class).toInstance(commandService);
                 }
 
                 @Provides
@@ -373,7 +370,7 @@ public class VmActionResourceTest {
         VmActionResource actionResource = getVmActionResource();
         try {
             Method m = actionResource.getClass().getMethod("cancelVmAction", UUID.class, long.class);
-            Assert.assertNotNull(m.getAnnotation(AdminOnly.class));
+            Assert.assertTrue(m.isAnnotationPresent(AdminOnly.class));
         }
         catch (NoSuchMethodException e) {
             Assert.fail("Cancel action should only be available to an admin");

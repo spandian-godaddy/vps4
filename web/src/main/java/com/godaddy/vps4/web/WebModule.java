@@ -16,6 +16,8 @@ import com.godaddy.vps4.web.messaging.VmMessagingResource;
 import com.godaddy.vps4.web.monitoring.VmMonitoringResource;
 import com.godaddy.vps4.web.network.NetworkResource;
 import com.godaddy.vps4.web.security.AdminAuthFilter;
+import com.godaddy.vps4.web.security.TemporarilyDisabled;
+import com.godaddy.vps4.web.security.TemporarilyDisabledEndpointFilter;
 import com.godaddy.vps4.web.snapshot.SnapshotActionResource;
 import com.godaddy.vps4.web.snapshot.SnapshotResource;
 import com.godaddy.vps4.web.sysadmin.SysAdminResource;
@@ -84,5 +86,6 @@ public class WebModule extends AbstractModule {
         bind(CommandsViewResource.class);
 
         install(new ActionCancelModule());
+        bind(TemporarilyDisabledEndpointFilter.class);
     }
 }

@@ -6,6 +6,7 @@ import com.godaddy.vps4.web.Vps4Api;
 import com.godaddy.vps4.web.security.AdminOnly;
 import com.godaddy.vps4.web.security.GDUser;
 import com.godaddy.vps4.snapshot.SnapshotAction;
+import com.godaddy.vps4.web.security.TemporarilyDisabled;
 import com.godaddy.vps4.web.snapshot.SnapshotActionResource;
 import com.godaddy.vps4.web.snapshot.SnapshotActionWithDetails;
 import com.google.inject.Inject;
@@ -74,5 +75,17 @@ public class VmSnapshotActionResource {
         if (user.isShopper()) {
             verifyUserPrivilegeToVm(userService, privilegeService, user.getShopperId(), vmId);
         }
+    }
+
+    @AdminOnly
+    @TemporarilyDisabled
+    @POST
+    @Path("/{vmId}/snapshots/{snapshotId}/actions/{actionId}/cancel")
+    public void cancelSnapshotAction(
+            @PathParam("vmId") UUID vmId,
+            @PathParam("snapshotId") UUID snapshotId,
+            @PathParam("actionId") long actionId) {
+        verifyUserPrivilege(vmId);
+        snapshotActionResource.cancelSnapshotAction(snapshotId, actionId);
     }
 }

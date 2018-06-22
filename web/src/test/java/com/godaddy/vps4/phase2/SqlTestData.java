@@ -4,6 +4,7 @@ import java.util.UUID;
 
 import javax.sql.DataSource;
 
+import com.godaddy.vps4.snapshot.jdbc.JdbcSnapshotActionService;
 import org.json.simple.JSONObject;
 
 import com.godaddy.hfs.jdbc.Sql;
@@ -84,6 +85,14 @@ public class SqlTestData {
     public static Snapshot insertSnapshot(SnapshotService snapshotService, UUID vmId, long projectId, SnapshotType snapshotType) {
         UUID snapshotId = snapshotService.createSnapshot(projectId, vmId, TEST_SNAPSHOT_NAME, snapshotType);
         return snapshotService.getSnapshot(snapshotId);
+    }
+
+    public static Action insertTestSnapshotAction(ActionService snapshotActionService, UUID commandId,
+                                                  UUID snapshotId, ActionType actionType, DataSource dataSource) {
+        long actionId = snapshotActionService.createAction(
+            snapshotId, actionType, new JSONObject().toJSONString(), INITIATED_BY);
+        snapshotActionService.tagWithCommand(actionId, commandId);
+        return snapshotActionService.getAction(actionId);
     }
 
     public static Snapshot insertSnapshotWithStatus(SnapshotService snapshotService, UUID vmId,
