@@ -319,44 +319,44 @@ public class JdbcVirtualMachineServiceTest {
         Assert.assertNull(vm);
     }
 
-    @Test
-    public void testDestroyVm() {
-        VirtualMachine expectedVm = SqlTestData.insertTestVm(orionGuid, dataSource);
-        virtualMachines.add(expectedVm);
-        
-        VirtualMachine actualVm = virtualMachineService.getVirtualMachine(expectedVm.vmId);
-        assertTrue(expectedVm.vmId.equals(actualVm.vmId));
-        Instant before = Instant.now();
-        virtualMachineService.setVmZombie(actualVm.vmId);
-        virtualMachineService.setVmRemoved(actualVm.vmId);
-        Instant after = Instant.now().plusSeconds(120);
-        actualVm = virtualMachineService.getVirtualMachine(expectedVm.vmId);
-
-        System.out.println("before:\t\t" + before.toString());
-        System.out.println("canceled:\t" + actualVm.canceled.toString());
-        System.out.println("validUntil:\t" + actualVm.validUntil.toString());
-        System.out.println("after:\t\t" + after.toString());
-
-        assertTrue(before.isBefore(actualVm.canceled) && after.isAfter(actualVm.canceled));
-        assertTrue(before.isBefore(actualVm.validUntil) && after.isAfter(actualVm.validUntil));
-    }
-
-    @Test
-    public void testSetVmZombie() {
-        VirtualMachine expectedVm = SqlTestData.insertTestVm(orionGuid, dataSource);
-        virtualMachines.add(expectedVm);
-
-        Instant before = Instant.now();
-        virtualMachineService.setVmZombie(expectedVm.vmId);
-        Instant after = Instant.now().plusSeconds(120);
-        VirtualMachine actualVm = virtualMachineService.getVirtualMachine(expectedVm.vmId);
-
-        System.out.println("before:\t\t" + before.toString());
-        System.out.println("canceled:\t" + actualVm.canceled.toString());
-        System.out.println("after:\t\t" + after.toString());
-
-        Assert.assertTrue(before.isBefore(actualVm.canceled) && after.isAfter(actualVm.canceled));
-    }
+//    @Test
+//    public void testDestroyVm() {
+//        VirtualMachine expectedVm = SqlTestData.insertTestVm(orionGuid, dataSource);
+//        virtualMachines.add(expectedVm);
+//
+//        VirtualMachine actualVm = virtualMachineService.getVirtualMachine(expectedVm.vmId);
+//        assertTrue(expectedVm.vmId.equals(actualVm.vmId));
+//        Instant before = Instant.now();
+//        virtualMachineService.setVmZombie(actualVm.vmId);
+//        virtualMachineService.setVmRemoved(actualVm.vmId);
+//        Instant after = Instant.now().plusSeconds(120);
+//        actualVm = virtualMachineService.getVirtualMachine(expectedVm.vmId);
+//
+//        System.out.println("before:\t\t" + before.toString());
+//        System.out.println("canceled:\t" + actualVm.canceled.toString());
+//        System.out.println("validUntil:\t" + actualVm.validUntil.toString());
+//        System.out.println("after:\t\t" + after.toString());
+//
+//        assertTrue(before.isBefore(actualVm.canceled) && after.isAfter(actualVm.canceled));
+//        assertTrue(before.isBefore(actualVm.validUntil) && after.isAfter(actualVm.validUntil));
+//    }
+//
+//    @Test
+//    public void testSetVmZombie() {
+//        VirtualMachine expectedVm = SqlTestData.insertTestVm(orionGuid, dataSource);
+//        virtualMachines.add(expectedVm);
+//
+//        Instant before = Instant.now();
+//        virtualMachineService.setVmZombie(expectedVm.vmId);
+//        Instant after = Instant.now().plusSeconds(120);
+//        VirtualMachine actualVm = virtualMachineService.getVirtualMachine(expectedVm.vmId);
+//
+//        System.out.println("before:\t\t" + before.toString());
+//        System.out.println("canceled:\t" + actualVm.canceled.toString());
+//        System.out.println("after:\t\t" + after.toString());
+//
+//        Assert.assertTrue(before.isBefore(actualVm.canceled) && after.isAfter(actualVm.canceled));
+//    }
 
     @Test
     public void testReviveZombie() {
