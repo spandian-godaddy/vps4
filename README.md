@@ -20,6 +20,25 @@ Building
     -Prebuild-db   # activate 'rebuild-db' profile
 
 
+# Deploying
+
+Deploying to all environments is accomplished with the VPS4 Jenkins server - https://vps4.jenkins.int.godaddy.com/
+
+### Development
+
+The development environment for VPS4 can be used to test your changes on a specific branch.
+*Before using it, please announce in the #VPS4 slack channel that you are going to be using it and for roughly how long. When you are finished please deploy the Master branch to the Development environment and announce it in the #VPS4 channel.*
+
+To deploy to development, execute the **vps4-dev-pipeline** Jenkins job and provide your branch name as the parameter. This will initiate the vps4-build-dev job and then dev-deploy-branch.
+
+### Test/Stage
+
+Test and Stage deployment are triggered by a checkin to the master branch and does not require manual interaction.
+
+### Prod
+ 
+Execute the **vps4-cicd** job with **PROD_DEPLOY** specified in the deployToEnv parameter, leave mcpDeploy set to enabled. 
+
 
 Versioning
 ==========
