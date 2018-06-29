@@ -25,7 +25,6 @@ import com.godaddy.vps4.vm.VirtualMachineService;
 import com.godaddy.vps4.web.Vps4Api;
 import com.godaddy.vps4.web.Vps4Exception;
 import com.godaddy.vps4.web.security.AdminOnly;
-import com.godaddy.vps4.web.security.GDUser;
 import com.godaddy.vps4.web.util.Commands;
 import com.google.inject.Inject;
 
@@ -44,17 +43,14 @@ public class VmZombieResource {
     
     private static final Logger logger = LoggerFactory.getLogger(VmZombieResource.class);
 
-    private final GDUser user;
     private final VirtualMachineService virtualMachineService;
     private final CreditService creditService;
     private final CommandService commandService;
     
     @Inject
-    public VmZombieResource(GDUser user,
-            VirtualMachineService virtualMachineService,
+    public VmZombieResource(VirtualMachineService virtualMachineService,
             CreditService creditService,
             CommandService commandService) {
-        this.user = user;
         this.virtualMachineService = virtualMachineService;
         this.creditService = creditService;
         this.commandService = commandService;
@@ -75,9 +71,9 @@ public class VmZombieResource {
         validateVmExists(vmId, vm);
 
         VirtualMachineCredit oldCredit = creditService.getVirtualMachineCredit(vm.orionGuid);
-        validateOldAccountIsRemoved(vmId, oldCredit);
-        
-        VirtualMachineCredit newCredit = getAndValidateUserAccountCredit(creditService, newCreditId, user.getShopperId());
+        validateAccountIsRemoved(vmId, oldCredit);
+
+        VirtualMachineCredit newCredit = getAndValidateUserAccountCredit(creditService, newCreditId, oldCredit.shopperId);
         validateCreditIsNotInUse(newCredit);
         
         validateCreditsMatch(oldCredit, newCredit);
@@ -90,6 +86,25 @@ public class VmZombieResource {
         request.oldCreditId = oldCredit.orionGuid;
         Commands.execute(commandService, "Vps4ReviveZombieVm", request);
         
+        return virtualMachineService.getVirtualMachine(vmId);
+    }
+
+    @AdminOnly
+    @POST
+    @Path("/{vmId}/zombie")
+    @ApiOperation(value = "Zombie (stop and schedule deletion for) a VM whose account has been canceled",
+        notes = "Zombie (stop and schedule deletion for) a VM whose account has been canceled")
+    public VirtualMachine zombieVm(
+            @ApiParam(value = "The ID of the server to zombie", required = true) @PathParam("vmId") UUID vmId) {
+        VirtualMachine vm = virtualMachineService.getVirtualMachine(vmId);
+        validateVmExists(vmId, vm);
+
+        VirtualMachineCredit credit = creditService.getVirtualMachineCredit(vm.orionGuid);
+        validateAccountIsRemoved(vmId, credit);
+
+        logger.info("Zombie vm: {}", vmId);
+        Commands.execute(commandService, "Vps4ProcessAccountCancellation", credit);
+
         return virtualMachineService.getVirtualMachine(vmId);
     }
 
@@ -111,10 +126,9 @@ public class VmZombieResource {
         }
     }
 
-    private void validateOldAccountIsRemoved(UUID vmId, VirtualMachineCredit oldCredit) {
-        if(!oldCredit.isAccountRemoved()) {
-            throw new Vps4Exception("OLD_ACCOUNT_NOT_REMOVED", String.format("Cannot revive %s, old account %s is not removed.", vmId, oldCredit.orionGuid));
+    private void validateAccountIsRemoved(UUID vmId, VirtualMachineCredit credit) {
+        if(!credit.isAccountRemoved()) {
+            throw new Vps4Exception("ACCOUNT_STATUS_NOT_REMOVED", String.format("Cannot revive or zombie %s, account %s status is not removed.", vmId, credit.orionGuid));
         }
     }
-    
 }

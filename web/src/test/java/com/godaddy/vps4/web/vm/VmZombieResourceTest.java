@@ -10,6 +10,7 @@ import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.UUID;
 
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -57,7 +58,7 @@ public class VmZombieResourceTest {
         newCredit = createNewCredit(oldCredit, newOrionGuid);
         when(creditService.getVirtualMachineCredit(newOrionGuid)).thenReturn(newCredit);
         
-        vmZombieResource = new VmZombieResource(user, virtualMachineService, creditService, commandService);
+        vmZombieResource = new VmZombieResource(virtualMachineService, creditService, commandService);
     }
 
     private VirtualMachineCredit createNewCredit(VirtualMachineCredit oldCredit, UUID newOrionGuid) {
@@ -92,45 +93,97 @@ public class VmZombieResourceTest {
         verify(commandService, times(1)).executeCommand(anyObject());
     }
 
-    @Test(expected = Vps4Exception.class)
+    @Test
     public void testOldCreditNotRemoved() {
         oldCredit.accountStatus = AccountStatus.ACTIVE;
-        vmZombieResource.reviveZombieVm(testVm.vmId, newCredit.orionGuid);
+        try {
+            vmZombieResource.reviveZombieVm(testVm.vmId, newCredit.orionGuid);
+            Assert.fail();
+        } catch (Vps4Exception e) {
+            Assert.assertEquals("ACCOUNT_STATUS_NOT_REMOVED", e.getId());
+        }
     }
 
-    @Test(expected = Vps4Exception.class)
-    public void testNewCreditInUser() {
+    @Test
+    public void testNewCreditInUse() {
         newCredit.provisionDate = Instant.now();
-        vmZombieResource.reviveZombieVm(testVm.vmId, newCredit.orionGuid);
+        try {
+            vmZombieResource.reviveZombieVm(testVm.vmId, newCredit.orionGuid);
+            Assert.fail();
+        } catch (Vps4Exception e) {
+            Assert.assertEquals("CREDIT_ALREADY_IN_USE", e.getId());
+        }
     }
 
-    @Test(expected = Vps4Exception.class)
+    @Test
     public void testControlPanelsDontMatch() {
         newCredit.controlPanel = "myh";
-        vmZombieResource.reviveZombieVm(testVm.vmId, newCredit.orionGuid);
+        try {
+            vmZombieResource.reviveZombieVm(testVm.vmId, newCredit.orionGuid);
+            Assert.fail();
+        } catch (Vps4Exception e) {
+            Assert.assertEquals("CONTROL_PANEL_MISMATCH", e.getId());
+        }
     }
 
-    @Test(expected = Vps4Exception.class)
+    @Test
     public void testManagedLevelsDontMatch() {
         newCredit.managedLevel = 2;
-        vmZombieResource.reviveZombieVm(testVm.vmId, newCredit.orionGuid);
+        try {
+            vmZombieResource.reviveZombieVm(testVm.vmId, newCredit.orionGuid);
+            Assert.fail();
+        } catch (Vps4Exception e) {
+            Assert.assertEquals("MANAGED_LEVEL_MISMATCH", e.getId());
+        }
     }
 
-    @Test(expected = Vps4Exception.class)
+    @Test
     public void testMonitoringsDontMatch() {
         newCredit.monitoring = 0;
-        vmZombieResource.reviveZombieVm(testVm.vmId, newCredit.orionGuid);
+        try {
+            vmZombieResource.reviveZombieVm(testVm.vmId, newCredit.orionGuid);
+            Assert.fail();
+        } catch (Vps4Exception e) {
+            Assert.assertEquals("MONITORING_MISMATCH", e.getId());
+        }
     }
 
-    @Test(expected = Vps4Exception.class)
+    @Test
     public void testOperatingSystemsDontMatch() {
         newCredit.operatingSystem = "windows";
-        vmZombieResource.reviveZombieVm(testVm.vmId, newCredit.orionGuid);
+        try {
+            vmZombieResource.reviveZombieVm(testVm.vmId, newCredit.orionGuid);
+            Assert.fail();
+        } catch (Vps4Exception e) {
+            Assert.assertEquals("OPERATING_SYSTEM_MISMATCH", e.getId());
+        }
     }
 
-    @Test(expected = Vps4Exception.class)
+    @Test
     public void testTiersDontMatch() {
         newCredit.tier = 20;
-        vmZombieResource.reviveZombieVm(testVm.vmId, newCredit.orionGuid);
+        try {
+            vmZombieResource.reviveZombieVm(testVm.vmId, newCredit.orionGuid);
+            Assert.fail();
+        } catch (Vps4Exception e) {
+            Assert.assertEquals("TIER_MISMATCH", e.getId());
+        }
+    }
+
+    @Test
+    public void testZombieVm() {
+        vmZombieResource.zombieVm(testVm.vmId);
+        verify(commandService, times(1)).executeCommand(anyObject());
+    }
+
+    @Test
+    public void testCreditNotRemoved() {
+        oldCredit.accountStatus = AccountStatus.ACTIVE;
+        try {
+            vmZombieResource.zombieVm(testVm.vmId);
+            Assert.fail();
+        } catch (Vps4Exception e) {
+            Assert.assertEquals("ACCOUNT_STATUS_NOT_REMOVED", e.getId());
+        }
     }
 }
