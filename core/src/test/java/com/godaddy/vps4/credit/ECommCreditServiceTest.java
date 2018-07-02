@@ -210,7 +210,7 @@ public class ECommCreditServiceTest {
 
     @Test
     public void testCreateCreditCallsCreateAccount() throws Exception {
-        creditService.createVirtualMachineCredit(orionGuid, "linux", "cpanel", 10, 1, 0, account.shopper_id);
+        creditService.createVirtualMachineCredit(orionGuid, account.shopper_id, "linux", "cpanel", 10, 1, 0, 1);
 
         ArgumentCaptor<Account> argument = ArgumentCaptor.forClass(Account.class);
         verify(ecommService).createAccount(argument.capture());

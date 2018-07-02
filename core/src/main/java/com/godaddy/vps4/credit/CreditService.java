@@ -8,8 +8,8 @@ import com.godaddy.vps4.credit.ECommCreditService.ProductMetaField;
 
 public interface CreditService {
 
-    void createVirtualMachineCredit(UUID orionGuid, String osType, String controlPanel,
-            int tier, int managedLevel, int monitoring, String shopperId);
+    void createVirtualMachineCredit(UUID orionGuid, String shopperId, String osType, String controlPanel,
+            int tier, int managedLevel, int monitoring, int resellerId);
 
     VirtualMachineCredit getVirtualMachineCredit(UUID orionGuid);
 

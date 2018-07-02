@@ -143,8 +143,8 @@ public class ECommCreditService implements CreditService {
     }
 
     @Override
-    public void createVirtualMachineCredit(UUID orionGuid, String operatingSystem, String controlPanel,
-                                          int tier, int managedLevel, int monitoring, String shopperId) {
+    public void createVirtualMachineCredit(UUID orionGuid, String shopperId, String operatingSystem, String controlPanel,
+                                          int tier, int managedLevel, int monitoring, int resellerId) {
         Map<String, String> planFeatures = new HashMap<>();
         planFeatures.put(PlanFeatures.TIER, String.valueOf(tier));
         planFeatures.put(PlanFeatures.MANAGED_LEVEL, String.valueOf(managedLevel));
@@ -158,6 +158,7 @@ public class ECommCreditService implements CreditService {
         account.product = PRODUCT_NAME;
         account.status = Account.Status.active;
         account.plan_features = planFeatures;
+        account.reseller_id = String.valueOf(resellerId);
 
         ecommService.createAccount(account);
     }

@@ -75,21 +75,21 @@ public class CreditResource {
     public VirtualMachineCredit createCredit(CreateCreditRequest request){
         UUID orionGuid = UUID.randomUUID();
 
-        creditService.createVirtualMachineCredit(orionGuid,
-                request.operatingSystem, request.controlPanel,
-                request.tier, request.managedLevel, request.monitoring, request.shopperId);
+        creditService.createVirtualMachineCredit(orionGuid, request.shopperId, request.operatingSystem, request.controlPanel,
+                request.tier, request.managedLevel, request.monitoring, request.resellerId);
 
         VirtualMachineCredit credit = creditService.getVirtualMachineCredit(orionGuid);
         return credit;
     }
 
     public static class CreateCreditRequest {
+        public String shopperId;
+        public String operatingSystem;
+        public String controlPanel;
         public int tier;
         public int managedLevel;
         public int monitoring;
-        public String operatingSystem;
-        public String controlPanel;
-        public String shopperId;
+        public int resellerId;
     }
 
     @AdminOnly

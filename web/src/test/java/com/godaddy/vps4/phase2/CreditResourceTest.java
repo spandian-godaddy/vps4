@@ -158,14 +158,15 @@ public class CreditResourceTest {
         req.tier = 10;
         req.managedLevel = 0;
         req.monitoring = 0;
+        req.resellerId = 1;
         req.shopperId = "someShopperId";
 
         user = GDUserMock.createAdmin(null);
         VirtualMachineCredit newCredit = getCreditResource().createCredit(req);
 
         verify(creditService).createVirtualMachineCredit(
-                any(UUID.class), eq(req.operatingSystem), eq(req.controlPanel),
-                eq(req.tier), eq(req.managedLevel), eq(req.monitoring), eq(req.shopperId));
+                any(UUID.class), eq(req.shopperId), eq(req.operatingSystem), eq(req.controlPanel),
+                eq(req.tier), eq(req.managedLevel), eq(req.monitoring), eq(req.resellerId));
         verify(creditService).getVirtualMachineCredit(any(UUID.class));
 
         Assert.assertEquals(
