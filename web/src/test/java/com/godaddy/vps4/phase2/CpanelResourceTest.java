@@ -51,6 +51,7 @@ public class CpanelResourceTest {
             new VmModule(),
             new SnapshotModule(),
             new Phase2ExternalsModule(),
+            new CancelActionModule(),
             new AbstractModule() {
 
                 @Override

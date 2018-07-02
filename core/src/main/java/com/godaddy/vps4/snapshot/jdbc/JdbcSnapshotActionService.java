@@ -4,6 +4,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.UUID;
@@ -52,6 +53,15 @@ public class JdbcSnapshotActionService implements ActionService {
     public void cancelAction(long actionId, String response, String notes) {
         Sql.with(dataSource).exec("UPDATE snapshot_action SET status_id=5, response=?::json, note=? WHERE id=?",
                 null, response, notes, actionId);
+    }
+
+    @Override
+    public List<Action> getIncompleteActions(UUID snapshotId) {
+        return Sql.with(dataSource).exec("SELECT * FROM snapshot_action "
+                        + " JOIN action_status on snapshot_action.status_id = action_status.status_id"
+                        + " JOIN action_type on snapshot_action.action_type_id = action_type.type_id"
+                        + " where snapshot_action.snapshot_id = ? and action_status in ('NEW', 'IN_PROGRESS');",
+                Sql.listOf(this::mapAction), snapshotId);
     }
 
     @Override

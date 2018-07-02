@@ -46,6 +46,7 @@ public class VmResourceProvisionTest {
             new VmModule(),
             new SnapshotModule(),
             new Phase2ExternalsModule(),
+            new CancelActionModule(),
             new AbstractModule() {
 
                 @Override

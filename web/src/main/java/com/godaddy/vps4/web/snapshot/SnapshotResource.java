@@ -71,6 +71,7 @@ public class SnapshotResource {
     private final SnapshotService snapshotService;
     private final VirtualMachineService virtualMachineService;
     private final Vps4UserService userService;
+    private final SnapshotActionResource snapshotActionResource;
 
     @Inject
     public SnapshotResource(@SnapshotActionService ActionService actionService,
@@ -78,7 +79,8 @@ public class SnapshotResource {
                             GDUser user, CreditService creditService,
                             SnapshotService snapshotService,
                             VirtualMachineService virtualMachineService,
-                            Vps4UserService userService) {
+                            Vps4UserService userService,
+                            SnapshotActionResource snapshotActionResource) {
         this.actionService = actionService;
         this.commandService = commandService;
         this.user = user;
@@ -86,6 +88,7 @@ public class SnapshotResource {
         this.snapshotService = snapshotService;
         this.virtualMachineService = virtualMachineService;
         this.userService = userService;
+        this.snapshotActionResource = snapshotActionResource;
     }
 
     @AdminOnly
@@ -188,6 +191,9 @@ public class SnapshotResource {
     public SnapshotAction destroySnapshot(@PathParam("snapshotId") UUID snapshotId) {
         Snapshot snapshot = getSnapshot(snapshotId);
 
+        // We dont cancel any incomplete snapshot actions for now as it really doesnt do anything in the Openstack land
+        //cancelIncompleteSnapshotActions(snapshotId);
+
         long actionId = actionService.createAction(snapshotId,  ActionType.DESTROY_SNAPSHOT,
                 new JSONObject().toJSONString(), user.getUsername());
 
@@ -202,6 +208,13 @@ public class SnapshotResource {
                 snapshotId, snapshot.name, snapshot.vmId, actionId, command.commandId);
 
         return new SnapshotAction(actionService.getAction(actionId), user.isEmployee());
+    }
+
+    private void cancelIncompleteSnapshotActions(UUID snapshotId) {
+        List<Action> actions = actionService.getIncompleteActions(snapshotId);
+        for (Action action: actions) {
+            snapshotActionResource.cancelSnapshotAction(snapshotId, action.id);
+        }
     }
 
     @AdminOnly

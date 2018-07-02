@@ -49,6 +49,7 @@ public class VmSupportUserResourceTest {
             new SecurityModule(),
             new SnapshotModule(),
             new Phase2ExternalsModule(),
+            new CancelActionModule(),
             new AbstractModule() {
 
                 @Override

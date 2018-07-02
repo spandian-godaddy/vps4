@@ -57,6 +57,7 @@ public class SnapshotResourceTest {
             new VmModule(),
             new SnapshotModule(),
             new Phase2ExternalsModule(),
+            new CancelActionModule(),
             new AbstractModule() {
 
                 @Override

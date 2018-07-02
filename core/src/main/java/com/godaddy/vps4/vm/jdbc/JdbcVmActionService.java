@@ -62,6 +62,16 @@ public class JdbcVmActionService implements ActionService {
     }
 
     @Override
+    public List<Action> getIncompleteActions(UUID vmId) {
+        List<String> statusList = new ArrayList<>();
+        statusList.add(ActionStatus.NEW.toString());
+        statusList.add(ActionStatus.IN_PROGRESS.toString());
+        ResultSubset<Action> result = getActionsHelper(
+            vmId, -1, 0, statusList, null, null, null);
+        return result != null ? result.results : new ArrayList<>();
+    }
+
+    @Override
     public void markActionInProgress(long actionId) {
         Sql.with(dataSource).exec("UPDATE vm_action SET status_id=2 WHERE id=?",
                 null, actionId);

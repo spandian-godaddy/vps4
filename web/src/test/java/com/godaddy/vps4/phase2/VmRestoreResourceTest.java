@@ -87,6 +87,7 @@ public class VmRestoreResourceTest {
             new VmModule(),
             new SnapshotModule(),
             new Phase2ExternalsModule(),
+            new CancelActionModule(),
             new AbstractModule() {
                 @Override
                 public void configure() {

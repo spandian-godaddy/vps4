@@ -9,6 +9,10 @@ import java.util.UUID;
 import javax.inject.Inject;
 import javax.sql.DataSource;
 
+import com.godaddy.vps4.vm.Action;
+import com.godaddy.vps4.vm.ActionService;
+import com.godaddy.vps4.vm.ActionStatus;
+import com.godaddy.vps4.vm.ActionType;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -40,6 +44,7 @@ public class VmDestroyTest {
     @Inject Vps4UserService userService;
     @Inject DataSource dataSource;
     @Inject SnapshotService snapshotService;
+    @Inject ActionService vmActionService;
 
     private GDUser user;
     private VmSnapshotResource vmSnapshotResource;
@@ -50,6 +55,7 @@ public class VmDestroyTest {
             new VmModule(),
             new SnapshotModule(),
             new Phase2ExternalsModule(),
+            new CancelActionModule(),
             new AbstractModule() {
 
                 @Override
@@ -83,6 +89,13 @@ public class VmDestroyTest {
         return vm;
     }
 
+    private long createInProgressAction(UUID vmId, ActionType actionType) {
+        UUID commandId = randomUUID();
+        Action action = SqlTestData.insertTestVmAction(commandId, vmId, actionType, dataSource);
+        vmActionService.markActionInProgress(action.id);
+        return action.id;
+    }
+
     private VmResource getVmResource() {
         return injector.getInstance(VmResource.class);
     }
@@ -100,6 +113,17 @@ public class VmDestroyTest {
     @After
     public void teardownTest() {
         SqlTestData.cleanupSqlTestData(dataSource);
+    }
+
+    @Test
+    public void destroyCancelsInProgressActions() throws Exception {
+        VirtualMachine vm = createTestVm();
+        long inProgressActionId1 = createInProgressAction(vm.vmId, ActionType.STOP_VM);
+        long inProgressActionId2 = createInProgressAction(vm.vmId, ActionType.SET_HOSTNAME);
+
+        getVmResource().destroyVm(vm.vmId);
+        Assert.assertEquals(vmActionService.getAction(inProgressActionId1).status, ActionStatus.CANCELLED);
+        Assert.assertEquals(vmActionService.getAction(inProgressActionId2).status, ActionStatus.CANCELLED);
     }
 
     @Test

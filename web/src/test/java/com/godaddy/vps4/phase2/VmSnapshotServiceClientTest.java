@@ -38,7 +38,8 @@ public class VmSnapshotServiceClientTest {
         injector = Guice.createInjector(
                 new ConfigModule(),
                 new ObjectMapperModule(),
-                new Vps4ApiWithSSOAuthClientModule()
+                new Vps4ApiWithSSOAuthClientModule(),
+                new CancelActionModule()
         );
 
         injector.injectMembers(this);

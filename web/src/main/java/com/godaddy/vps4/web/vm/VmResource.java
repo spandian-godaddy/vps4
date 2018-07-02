@@ -27,6 +27,7 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
 
+import com.godaddy.vps4.vm.Action;
 import org.apache.commons.lang3.StringUtils;
 import org.json.simple.JSONObject;
 import org.slf4j.Logger;
@@ -98,13 +99,14 @@ public class VmResource {
     private final String openStackZone;
     private final SchedulerWebService schedulerWebService;
     private final DataCenterService dcService;
+    private final VmActionResource vmActionResource;
 
     @Inject
     public VmResource(GDUser user, VmService vmService, Vps4UserService vps4UserService,
             VirtualMachineService virtualMachineService, CreditService creditService, ProjectService projectService,
             ImageService imageService, ActionService actionService, CommandService commandService,
             VmSnapshotResource vmSnapshotResource, Config config, Cryptography cryptography,
-            SchedulerWebService schedulerWebService, DataCenterService dcService) {
+            SchedulerWebService schedulerWebService, DataCenterService dcService, VmActionResource vmActionResource) {
         this.user = user;
         this.virtualMachineService = virtualMachineService;
         this.vps4UserService = vps4UserService;
@@ -121,6 +123,7 @@ public class VmResource {
         sgidPrefix = this.config.get("hfs.sgid.prefix", "vps4-undefined-");
         this.cryptography = cryptography;
         openStackZone = config.get("openstack.zone");
+        this.vmActionResource = vmActionResource;
     }
 
     @GET
@@ -266,22 +269,31 @@ public class VmResource {
     public VmAction destroyVm(@PathParam("vmId") UUID vmId) {
         VirtualMachine vm = getVm(vmId);
 
-        VmActionRequest destroyRequest = new VmActionRequest();
-        destroyRequest.virtualMachine = vm;
-        VmAction deleteAction = createActionAndExecute(actionService, commandService, virtualMachineService, vm.vmId,
-                ActionType.DESTROY_VM, destroyRequest, "Vps4DestroyVm", user);
+        cancelIncompleteVmActions(vmId);
 
         // The request has been created successfully.
-        // Detach the user from the vm, and we'll handle the delete from here.
         // delete all snapshots associated with the VM
         List<Snapshot> snapshots = vmSnapshotResource.getSnapshotsForVM(vmId);
         for (Snapshot snapshot : snapshots) {
             vmSnapshotResource.destroySnapshot(vmId, snapshot.id);
         }
+
+        VmActionRequest destroyRequest = new VmActionRequest();
+        destroyRequest.virtualMachine = vm;
+        VmAction deleteAction = createActionAndExecute(actionService, commandService, virtualMachineService, vm.vmId,
+                ActionType.DESTROY_VM, destroyRequest, "Vps4DestroyVm", user);
+
         creditService.unclaimVirtualMachineCredit(vm.orionGuid);
         virtualMachineService.setVmRemoved(vm.vmId);
 
         return deleteAction;
+    }
+
+    private void cancelIncompleteVmActions(UUID vmId) {
+        List<Action> actions = actionService.getIncompleteActions(vmId);
+        for (Action action: actions) {
+            vmActionResource.cancelVmAction(vmId, action.id);
+        }
     }
 
     @GET

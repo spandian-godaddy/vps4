@@ -13,6 +13,8 @@ import java.util.UUID;
 import javax.inject.Inject;
 import javax.sql.DataSource;
 
+import com.godaddy.vps4.security.PrivilegeService;
+import com.godaddy.vps4.security.jdbc.JdbcPrivilegeService;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -64,6 +66,7 @@ public class VmPatchResourceTest {
             new SecurityModule(),
             new SnapshotModule(),
             new Phase2ExternalsModule(),
+            new CancelActionModule(),
             new AbstractModule() {
 
                 @Override
@@ -81,6 +84,7 @@ public class VmPatchResourceTest {
                     SchedulerWebService swServ = Mockito.mock(SchedulerWebService.class);
                     bind(SchedulerWebService.class).toInstance(swServ);
                     bind(DataCenterService.class).to(JdbcDataCenterService.class);
+                    bind(PrivilegeService.class).to(JdbcPrivilegeService.class);
                 }
 
                 @Provides

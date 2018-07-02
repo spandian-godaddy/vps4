@@ -40,6 +40,7 @@ public class CreditResourceTest {
 
 
     private Injector injector = Guice.createInjector(
+            new CancelActionModule(),
             new AbstractModule() {
 
                 @Override

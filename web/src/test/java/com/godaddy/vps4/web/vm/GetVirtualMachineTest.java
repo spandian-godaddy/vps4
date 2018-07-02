@@ -56,9 +56,10 @@ public class GetVirtualMachineTest {
         Cryptography cryptography = Mockito.mock(Cryptography.class);
         SchedulerWebService schedulerWebService = Mockito.mock(SchedulerWebService.class);
         DataCenterService dcService = Mockito.mock(DataCenterService.class);
+        VmActionResource vmActionResource = Mockito.mock(VmActionResource.class);
 
         vmResource = new VmResource(user, vmService, userService, virtualMachineService, creditService, null, null,
-                null, null, null, config, cryptography, schedulerWebService, dcService);
+                null, null, null, config, cryptography, schedulerWebService, dcService, vmActionResource);
     }
 
     private Config getMockedConfig() {

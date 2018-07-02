@@ -54,6 +54,7 @@ public class SysAdminResourceTest {
             new SnapshotModule(),
             new Phase2ExternalsModule(),
             new UtilsModule(),
+            new CancelActionModule(),
             new AbstractModule() {
 
                 @Override
