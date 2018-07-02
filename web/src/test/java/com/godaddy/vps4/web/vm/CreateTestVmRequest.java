@@ -49,7 +49,7 @@ public class CreateTestVmRequest {
     protected void provision(int tier, int managedLevel, int monitoring, String operatingSystem, String controlPanel, String shopperId, int resellerId) {
 
         UUID orionGuid = UUID.randomUUID();
-        creditService.createVirtualMachineCredit(orionGuid, operatingSystem, shopperId, controlPanel, tier, managedLevel, monitoring, resellerId);
+        creditService.createVirtualMachineCredit(orionGuid, shopperId, operatingSystem, controlPanel, tier, managedLevel, monitoring, resellerId);
 
         // normally we would get this from HFS
         long hfsVmId = new Random().nextInt(1000000);
