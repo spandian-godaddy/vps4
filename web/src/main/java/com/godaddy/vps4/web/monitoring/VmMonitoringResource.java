@@ -63,7 +63,7 @@ public class VmMonitoringResource {
 
         String startStr = start.toString();
 
-        String end = LocalDate.now().plusDays(1).toString(); // the end date in the nodeping api is non-inclusive
+        String end = Instant.now().plus(Duration.ofDays(1)).toString(); // the end date in the nodeping api is non-inclusive
 
         List<NodePingUptimeRecord> nodepingRecords = monitoringService.getCheckUptime(monitoringMeta.getAccountId(),
                 vm.primaryIpAddress.pingCheckId,
