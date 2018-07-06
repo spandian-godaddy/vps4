@@ -132,7 +132,7 @@ public class VmResource {
         logger.info("getting vm with id {}", vmId);
         VirtualMachine virtualMachine = virtualMachineService.getVirtualMachine(vmId);
 
-        validateVmExists(vmId, virtualMachine);
+        validateVmExists(vmId, virtualMachine, user);
         logger.info(String.format("VM valid until: %s | %s", virtualMachine.validUntil, Instant.now()));
 
         if (user.isShopper())

@@ -10,7 +10,6 @@ import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
-import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
 
 import com.godaddy.vps4.orchestration.messaging.FailOverEmailRequest;
@@ -21,6 +20,7 @@ import com.godaddy.vps4.vm.VirtualMachineService;
 import com.godaddy.vps4.web.Vps4Api;
 import com.godaddy.vps4.web.Vps4Exception;
 import com.godaddy.vps4.web.security.AdminOnly;
+import com.godaddy.vps4.web.security.GDUser;
 import com.godaddy.vps4.web.util.Commands;
 import com.godaddy.vps4.web.util.RequestValidation;
 
@@ -40,12 +40,15 @@ public class VmMessagingResource {
     private final VirtualMachineService virtualMachineService;
     private final Vps4UserService vps4UserService;
     private final CommandService commandService;
+    private final GDUser user;
 
     @Inject
-    public VmMessagingResource(VirtualMachineService virtualMachineService, Vps4UserService vps4UserService, CommandService commandService) {
+    public VmMessagingResource(VirtualMachineService virtualMachineService, Vps4UserService vps4UserService,
+            CommandService commandService, GDUser user) {
         this.virtualMachineService = virtualMachineService;
         this.vps4UserService = vps4UserService;
         this.commandService = commandService;
+        this.user = user;
     }
 
     @AdminOnly
@@ -71,7 +74,7 @@ public class VmMessagingResource {
 
 	private VirtualMachine getAndValidateVm(UUID vmId) {
 		VirtualMachine vm = virtualMachineService.getVirtualMachine(vmId);
-        RequestValidation.validateVmExists(vmId, vm);
+        RequestValidation.validateVmExists(vmId, vm, user);
         return vm;
 	}
 

@@ -25,6 +25,7 @@ import com.godaddy.vps4.vm.VirtualMachineService;
 import com.godaddy.vps4.web.Vps4Api;
 import com.godaddy.vps4.web.Vps4Exception;
 import com.godaddy.vps4.web.security.AdminOnly;
+import com.godaddy.vps4.web.security.GDUser;
 import com.godaddy.vps4.web.util.Commands;
 import com.google.inject.Inject;
 
@@ -40,52 +41,55 @@ import io.swagger.annotations.ApiParam;
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
 public class VmZombieResource {
-    
+
     private static final Logger logger = LoggerFactory.getLogger(VmZombieResource.class);
 
     private final VirtualMachineService virtualMachineService;
     private final CreditService creditService;
     private final CommandService commandService;
-    
+    private final GDUser user;
+
     @Inject
     public VmZombieResource(VirtualMachineService virtualMachineService,
             CreditService creditService,
-            CommandService commandService) {
+            CommandService commandService,
+            GDUser user) {
         this.virtualMachineService = virtualMachineService;
         this.creditService = creditService;
         this.commandService = commandService;
+        this.user = user;
     }
-    
+
     @AdminOnly
     @POST
     @Path("/{vmId}/revive")
-    @ApiOperation(value = "Revive a zombie vm whose account has been canceled but the server has not yet been deleted", 
+    @ApiOperation(value = "Revive a zombie vm whose account has been canceled but the server has not yet been deleted",
         notes = "Revive a zombie vm whose account has been canceled but the server has not yet been deleted")
     public VirtualMachine reviveZombieVm(
             @ApiParam(value = "The ID of the server to revive", required = true) @PathParam("vmId") UUID vmId,
             @ApiParam(value = "The ID of the new credit to which the VM will be linked",
                     required = true) @QueryParam("newCreditId") UUID newCreditId) {
-        
+
         logger.info("getting vm with id {}", vmId);
         VirtualMachine vm = virtualMachineService.getVirtualMachine(vmId);
-        validateVmExists(vmId, vm);
+        validateVmExists(vmId, vm, user);
 
         VirtualMachineCredit oldCredit = creditService.getVirtualMachineCredit(vm.orionGuid);
         validateAccountIsRemoved(vmId, oldCredit);
 
         VirtualMachineCredit newCredit = getAndValidateUserAccountCredit(creditService, newCreditId, oldCredit.shopperId);
         validateCreditIsNotInUse(newCredit);
-        
+
         validateCreditsMatch(oldCredit, newCredit);
-        
+
         logger.info("Revive zombie vm: {}", vmId);
-        
+
         Vps4ReviveZombieVm.Request request = new Vps4ReviveZombieVm.Request();
         request.vmId = vmId;
         request.newCreditId = newCreditId;
         request.oldCreditId = oldCredit.orionGuid;
         Commands.execute(commandService, "Vps4ReviveZombieVm", request);
-        
+
         return virtualMachineService.getVirtualMachine(vmId);
     }
 
@@ -97,7 +101,7 @@ public class VmZombieResource {
     public VirtualMachine zombieVm(
             @ApiParam(value = "The ID of the server to zombie", required = true) @PathParam("vmId") UUID vmId) {
         VirtualMachine vm = virtualMachineService.getVirtualMachine(vmId);
-        validateVmExists(vmId, vm);
+        validateVmExists(vmId, vm, user);
 
         VirtualMachineCredit credit = creditService.getVirtualMachineCredit(vm.orionGuid);
         validateAccountIsRemoved(vmId, credit);

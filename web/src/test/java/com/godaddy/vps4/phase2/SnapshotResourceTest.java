@@ -160,13 +160,29 @@ public class SnapshotResourceTest {
         getSnapshotResource().getSnapshot(noSuchSnapshotId);
     }
 
-    @Test(expected = NotFoundException.class)
-    public void testNoLongerValidGetSnapshot() {
+    @Test
+    public void testShopperGetDeletedSnapshot() {
         Snapshot snapshot = createTestSnapshot();
         SqlTestData.invalidateSnapshot(snapshotService, snapshot.id);
 
         user = GDUserMock.createShopper();
-        getSnapshotResource().getSnapshot(snapshot.id);
+        try {
+            getSnapshotResource().getSnapshot(snapshot.id);
+            Assert.fail("Exception not thrown");
+        } catch (Vps4Exception e) {
+            Assert.assertEquals("SNAPSHOT_DELETED", e.getId());
+        }
+    }
+
+    @Test
+    public void testAdminGetDeletedSnapshot() {
+        Snapshot snapshot = createTestSnapshot();
+        SqlTestData.invalidateSnapshot(snapshotService, snapshot.id);
+        UUID expectedVmId = snapshot.vmId;
+
+        user = GDUserMock.createAdmin();
+        snapshot = getSnapshotResource().getSnapshot(snapshot.id);
+        Assert.assertEquals(expectedVmId, snapshot.vmId);
     }
 
     @Test

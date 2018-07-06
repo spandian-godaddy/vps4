@@ -3,6 +3,7 @@ package com.godaddy.vps4.web.snapshot;
 import static com.godaddy.vps4.web.util.RequestValidation.getAndValidateUserAccountCredit;
 import static com.godaddy.vps4.web.util.RequestValidation.validateIfSnapshotOverQuota;
 import static com.godaddy.vps4.web.util.RequestValidation.validateNoOtherSnapshotsInProgress;
+import static com.godaddy.vps4.web.util.RequestValidation.validateSnapshotExists;
 import static com.godaddy.vps4.web.util.RequestValidation.validateSnapshotName;
 import static com.godaddy.vps4.web.util.RequestValidation.validateUserIsShopper;
 import static com.godaddy.vps4.web.util.RequestValidation.validateVmExists;
@@ -22,6 +23,10 @@ import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
+
+import org.json.simple.JSONObject;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.fasterxml.jackson.annotation.JsonView;
 import com.godaddy.vps4.credit.CreditService;
@@ -47,12 +52,10 @@ import com.godaddy.vps4.web.Vps4NoShopperException;
 import com.godaddy.vps4.web.security.AdminOnly;
 import com.godaddy.vps4.web.security.GDUser;
 import com.godaddy.vps4.web.util.Commands;
+
 import gdg.hfs.orchestration.CommandService;
 import gdg.hfs.orchestration.CommandState;
 import io.swagger.annotations.Api;
-import org.json.simple.JSONObject;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 @Vps4Api
 @Api(tags = {"snapshots"})
@@ -115,7 +118,7 @@ public class SnapshotResource {
     public SnapshotAction createSnapshot(SnapshotRequest snapshotRequest) {
         // check to ensure snapshot belongs to vm and vm exists
         VirtualMachine vm = virtualMachineService.getVirtualMachine(snapshotRequest.vmId);
-        validateVmExists(snapshotRequest.vmId, vm);
+        validateVmExists(snapshotRequest.vmId, vm, user);
         if (user.isShopper()) {
             getAndValidateUserAccountCredit(creditService, vm.orionGuid, user.getShopperId());
         }
@@ -173,12 +176,11 @@ public class SnapshotResource {
     @JsonView(Views.Public.class)
     public Snapshot getSnapshot(@PathParam("snapshotId") UUID snapshotId) {
         Snapshot snapshot = snapshotService.getSnapshot(snapshotId);
-        if (snapshot == null || snapshot.status == SnapshotStatus.DESTROYED || snapshot.status == SnapshotStatus.CANCELLED)
-            throw new NotFoundException("Unknown snapshot");
+        validateSnapshotExists(snapshotId, snapshot, user);
 
         // check to ensure snapshot belongs to vm and vm exists
         VirtualMachine virtualMachine = virtualMachineService.getVirtualMachine(snapshot.vmId);
-        validateVmExists(snapshot.vmId, virtualMachine);
+        validateVmExists(snapshot.vmId, virtualMachine, user);
         if (user.isShopper()) {
             getAndValidateUserAccountCredit(creditService, virtualMachine.orionGuid, user.getShopperId());
         }

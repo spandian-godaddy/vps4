@@ -31,7 +31,7 @@ public class VmZombieResourceTest {
     VirtualMachineService virtualMachineService = mock(VirtualMachineService.class);
     CreditService creditService = mock(CreditService.class);
     CommandService commandService = mock(CommandService.class);
-    
+
     VirtualMachine testVm;
     VirtualMachineCredit oldCredit;
     VirtualMachineCredit newCredit;
@@ -53,12 +53,12 @@ public class VmZombieResourceTest {
 
         oldCredit = createOldCredit(testVm);
         when(creditService.getVirtualMachineCredit(testVm.orionGuid)).thenReturn(oldCredit);
-        
+
         UUID newOrionGuid = UUID.randomUUID();
         newCredit = createNewCredit(oldCredit, newOrionGuid);
         when(creditService.getVirtualMachineCredit(newOrionGuid)).thenReturn(newCredit);
-        
-        vmZombieResource = new VmZombieResource(virtualMachineService, creditService, commandService);
+
+        vmZombieResource = new VmZombieResource(virtualMachineService, creditService, commandService, user);
     }
 
     private VirtualMachineCredit createNewCredit(VirtualMachineCredit oldCredit, UUID newOrionGuid) {
@@ -85,7 +85,7 @@ public class VmZombieResourceTest {
         oldCredit.operatingSystem = "linux";
         oldCredit.tier = 10;
         return oldCredit;
-    }   
+    }
 
     @Test
     public void testReviveZombieVm() {

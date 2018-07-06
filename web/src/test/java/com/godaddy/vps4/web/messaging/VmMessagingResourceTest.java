@@ -3,27 +3,29 @@ package com.godaddy.vps4.web.messaging;
 import static org.junit.Assert.assertEquals;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.time.Instant;
 import java.util.UUID;
 
-import com.godaddy.vps4.orchestration.messaging.FailOverEmailRequest;
-import com.godaddy.vps4.orchestration.messaging.ScheduledMaintenanceEmailRequest;
-import com.godaddy.vps4.security.Vps4User;
-import com.godaddy.vps4.security.Vps4UserService;
-import com.godaddy.vps4.vm.VirtualMachine;
-import com.godaddy.vps4.vm.VirtualMachineService;
-import com.godaddy.vps4.web.Vps4Exception;
-
 import javax.ws.rs.NotFoundException;
 
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
+
+import com.godaddy.vps4.orchestration.messaging.FailOverEmailRequest;
+import com.godaddy.vps4.orchestration.messaging.ScheduledMaintenanceEmailRequest;
+import com.godaddy.vps4.security.GDUserMock;
+import com.godaddy.vps4.security.Vps4User;
+import com.godaddy.vps4.security.Vps4UserService;
+import com.godaddy.vps4.vm.VirtualMachine;
+import com.godaddy.vps4.vm.VirtualMachineService;
+import com.godaddy.vps4.web.Vps4Exception;
+import com.godaddy.vps4.web.security.GDUser;
 
 import gdg.hfs.orchestration.CommandGroupSpec;
 import gdg.hfs.orchestration.CommandService;
@@ -38,6 +40,7 @@ public class VmMessagingResourceTest {
 
     VirtualMachine vm;
     Vps4User user;
+    GDUser gdUser;
 
     @Before
     public void setupMocks() {
@@ -52,6 +55,7 @@ public class VmMessagingResourceTest {
         vm.name = "testVmName";
 
         user = new Vps4User(1L, "testMessagingUser");
+        gdUser = GDUserMock.createShopper(user.getShopperId());
 
         CommandState command = new CommandState();
         command.commandId = UUID.randomUUID();
@@ -61,7 +65,7 @@ public class VmMessagingResourceTest {
         when(vps4UserService.getUser(1L)).thenReturn(user);
         when(commandService.executeCommand(any())).thenReturn(command);
 
-        resource = new VmMessagingResource(virtualMachineService, vps4UserService, commandService);
+        resource = new VmMessagingResource(virtualMachineService, vps4UserService, commandService, gdUser);
     }
 
     @Test

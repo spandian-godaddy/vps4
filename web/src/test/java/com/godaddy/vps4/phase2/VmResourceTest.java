@@ -134,7 +134,7 @@ public class VmResourceTest {
     }
 
     @Test
-    public void testShopperGetRemovedVm() {
+    public void testShopperGetRemovedAccountVm() {
         Phase2ExternalsModule.mockVmCredit(AccountStatus.REMOVED);
         VirtualMachine vm = createTestVm();
 
@@ -147,6 +147,17 @@ public class VmResourceTest {
         }
     }
 
+    @Test
+    public void testAdminGetRemovedAccountVm() {
+        Phase2ExternalsModule.mockVmCredit(AccountStatus.REMOVED);
+        VirtualMachine vm = createTestVm();
+        UUID expectedGuid = vm.orionGuid;
+
+        user = GDUserMock.createAdmin();
+        vm = getVmResource().getVm(vm.vmId);
+        Assert.assertEquals(expectedGuid, vm.orionGuid);
+    }
+
     @Test(expected = NotFoundException.class)
     public void testNoVmGetVm() {
         user = GDUserMock.createShopper();
@@ -155,13 +166,29 @@ public class VmResourceTest {
         getVmResource().getVm(noSuchVmId);
     }
 
-    @Test(expected = NotFoundException.class)
-    public void testNoLongerValidGetVm() {
+    @Test
+    public void testShopperGetDeletedVm() {
         VirtualMachine vm = createTestVm();
         SqlTestData.invalidateTestVm(vm.vmId, dataSource);
 
         user = GDUserMock.createShopper();
-        getVmResource().getVm(vm.vmId);
+        try {
+            getVmResource().getVm(vm.vmId);
+            Assert.fail("Exception not thrown");
+        } catch (Vps4Exception e) {
+            Assert.assertEquals("VM_DELETED", e.getId());
+        }
+    }
+
+    @Test
+    public void testAdminGetDeletedVm() {
+        VirtualMachine vm = createTestVm();
+        SqlTestData.invalidateTestVm(vm.vmId, dataSource);
+        UUID expectedGuid = vm.orionGuid;
+
+        user = GDUserMock.createAdmin();
+        vm = getVmResource().getVm(vm.vmId);
+        Assert.assertEquals(expectedGuid, vm.orionGuid);
     }
 
     @Test
@@ -391,7 +418,7 @@ public class VmResourceTest {
         Assert.assertEquals(1, vms.size());
         Assert.assertEquals(vms.get(0).orionGuid, vm.orionGuid);
     }
-    
+
     @Test
     public void testShopperGetZombieVirtualMachines() {
         VirtualMachine vm = createTestVm();

@@ -69,7 +69,7 @@ public class VmSnapshotResource {
     public List<Snapshot> getSnapshotsForVM(@PathParam("vmId") UUID vmId) {
         // check to ensure snapshot belongs to vm and vm exists
         VirtualMachine virtualMachine = virtualMachineService.getVirtualMachine(vmId);
-        validateVmExists(vmId, virtualMachine);
+        validateVmExists(vmId, virtualMachine, user);
         if (user.isShopper()) {
             getAndValidateUserAccountCredit(creditService, virtualMachine.orionGuid, user.getShopperId());
         }

@@ -15,6 +15,7 @@ import com.godaddy.vps4.security.PrivilegeService;
 import com.godaddy.vps4.security.Vps4User;
 import com.godaddy.vps4.security.Vps4UserService;
 import com.godaddy.vps4.security.jdbc.AuthorizationException;
+import com.godaddy.vps4.snapshot.Snapshot;
 import com.godaddy.vps4.snapshot.SnapshotService;
 import com.godaddy.vps4.snapshot.SnapshotStatus;
 import com.godaddy.vps4.snapshot.SnapshotType;
@@ -85,9 +86,26 @@ public class RequestValidation {
         }
     }
 
-    public static void validateVmExists(UUID vmId, VirtualMachine virtualMachine) {
-        if (virtualMachine == null || virtualMachine.validUntil.isBefore(Instant.now())) {
+    public static void validateVmExists(UUID vmId, VirtualMachine virtualMachine, GDUser user) {
+        if (virtualMachine == null) {
             throw new NotFoundException("Unknown VM ID: " + vmId);
+        }
+
+        // Allow admin user to access deleted VMs
+        if (virtualMachine.validUntil.isBefore(Instant.now()) && !user.isAdmin()) {
+            throw new Vps4Exception("VM_DELETED", String.format("The virtual machine %s was DELETED", virtualMachine.vmId));
+        }
+    }
+
+    public static void validateSnapshotExists(UUID snapshotId, Snapshot snapshot, GDUser user) {
+        if (snapshot == null) {
+            throw new NotFoundException("Unknown Snapshot ID: " + snapshotId);
+        }
+
+        // Allow admin user to access deleted Snapshots
+        if (!user.isAdmin() && (snapshot.status == SnapshotStatus.DESTROYED ||
+                snapshot.status == SnapshotStatus.CANCELLED)) {
+            throw new Vps4Exception("SNAPSHOT_DELETED", String.format("The snapshot %s was DELETED", snapshot.id));
         }
     }
 
