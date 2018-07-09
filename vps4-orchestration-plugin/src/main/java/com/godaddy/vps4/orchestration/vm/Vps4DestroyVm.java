@@ -143,10 +143,7 @@ public class Vps4DestroyVm extends ActionCommand<VmActionRequest, Vps4DestroyVm.
     }
 
     private void unlicenseControlPanel(VirtualMachine vm) {
-        String licensedIp = cpanelService.getLicenseFromDb(vm.hfsVmId).licensedIp;
-        if (!StringUtil.isNullOrEmpty(licensedIp)) {
             context.execute(UnlicenseControlPanel.class, vm);
-        }
     }
 
     public static class Response {
