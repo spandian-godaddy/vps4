@@ -1,6 +1,7 @@
 package com.godaddy.vps4.plesk;
 
 import java.util.List;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import javax.inject.Inject;
@@ -16,6 +17,7 @@ import org.slf4j.LoggerFactory;
 import com.godaddy.hfs.config.Config;
 import com.godaddy.vps4.util.PollerTimedOutException;
 import com.godaddy.vps4.util.Vps4Poller;
+import com.godaddy.vps4.network.NetworkService;
 
 import gdg.hfs.vhfs.plesk.PleskAction;
 import gdg.hfs.vhfs.plesk.PleskService;
@@ -25,18 +27,25 @@ public class DefaultVps4PleskService implements Vps4PleskService {
     private static final Logger logger = LoggerFactory.getLogger(DefaultVps4PleskService.class);
 
     private final PleskService pleskService;
+    private final NetworkService networkService;
+
     private final int timeoutValue;
     private Vps4Poller<PleskAction, Integer, String> pleskActionPoller;
 
     @Inject
-    public DefaultVps4PleskService(PleskService pleskService, Config config, Vps4Poller<PleskAction, Integer, String> pleskActionPoller) {
-        this(pleskService, Integer.parseInt(config.get("vps4.callable.timeout", "5000")), pleskActionPoller);
+    public DefaultVps4PleskService(PleskService pleskService, NetworkService networkService, Config config, Vps4Poller<PleskAction, Integer, String> pleskActionPoller) {
+        this(pleskService, networkService, Integer.parseInt(config.get("vps4.callable.timeout", "5000")), pleskActionPoller);
     }
 
-    public DefaultVps4PleskService(PleskService pleskService, Integer timeoutValue, Vps4Poller<PleskAction, Integer, String> pleskActionPoller) {
+    public DefaultVps4PleskService(PleskService pleskService, NetworkService networkService, Integer timeoutValue, Vps4Poller<PleskAction, Integer, String> pleskActionPoller) {
         this.pleskService = pleskService;
+        this.networkService = networkService;
         this.timeoutValue = timeoutValue;
         this.pleskActionPoller = pleskActionPoller;
+    }
+
+    private String getVmIp(long hfsVmId) {
+        return networkService.getVmPrimaryAddress(hfsVmId).ipAddress;
     }
 
     @Override
@@ -125,6 +134,11 @@ public class DefaultVps4PleskService implements Vps4PleskService {
                 String message = String.format("Error: Could not get plesk SSO Url for HFS vmId: {} ", hfsVmId);
                 throw new PleskUrlUnavailableException(message);
             }
+            logger.info("SSO URL from HFS: {} ", ssoUrl);
+            // replace hostname with IP. this is a temporary fix until HFS updates their API
+            String ip = getVmIp(hfsVmId);
+            Pattern p = Pattern.compile("(?<=https?://).*?(?=:8443)");
+            ssoUrl = p.matcher(ssoUrl).replaceFirst(ip);
             logger.info("SSO URL: {} ", ssoUrl);
             return new PleskSession(ssoUrl);
         }
