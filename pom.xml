@@ -98,5 +98,6 @@
         <module>vps4-phase3-tests</module>
         <module>vps4-scheduler</module>
         <module>vps4-scheduler-api</module>
+        <module>vps4-orchestration-runner</module>
     </modules>
 </project>

@@ -3,6 +3,7 @@ package com.godaddy.vps4.orchestration.sysadmin;
 import javax.inject.Inject;
 
 import com.godaddy.vps4.orchestration.Vps4ActionRequest;
+import gdg.hfs.orchestration.CommandRetryStrategy;
 import org.json.simple.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -22,7 +23,7 @@ import gdg.hfs.vhfs.sysadmin.SysAdminAction;
 @CommandMetadata(
     name = "Vps4SetHostname",
     requestType = Vps4SetHostname.Request.class,
-    responseType = Void.class
+    retryStrategy = CommandRetryStrategy.NEVER
 )
 public class Vps4SetHostname extends ActionCommand<Vps4SetHostname.Request, Void> {
 

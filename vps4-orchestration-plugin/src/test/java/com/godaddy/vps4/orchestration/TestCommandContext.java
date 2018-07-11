@@ -63,6 +63,11 @@ public class TestCommandContext implements CommandContext {
     }
 
     @Override
+    public void disableRetry() {
+
+    }
+
+    @Override
     public <Req, Res> Res execute(String alias,
             Function<CommandContext, Res> f, Class<Res> arg2) {
         CommandContext childContext = newChildContext(alias);

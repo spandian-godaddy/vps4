@@ -52,13 +52,14 @@
 - create Eclipse Run Configurations
     - Run -> Run configurations
     - Java Application, create New launch configurations
-        - Orchestration Engine
-            - Name: LocalOrchestrationEngine
+        - Orchestration Engine (**Refer to the readme in the vps4-orchestration-runner for instructions on setting up the run config for orch engine**)
+            - <s> Name: LocalOrchestrationEngine 
             - Project: Browse to project: vps4-orchestration-plugin
             - Main class: Search for OrchestrationWebApplication
             - Check box "Include inherited mains..."
             - Arguments tab: Add VM arguments: ```-Dorchestration.engine.mode=memory -Dvps4.config.mode=file -Dhfs.http.port=8088```
             - Apply
+            </s>
         - Web Server
             - Name: WebServer
             - Project: Browse to project: vps4-web
