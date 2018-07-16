@@ -51,7 +51,7 @@ public class ScheduleSupportUserRemoval implements Command<ScheduleSupportUserRe
             
             return jobDetail.id;
         } catch (Exception e) {
-            logger.error("Error while creating a scheduled job to remove support user from VM: {}. Error details: {}", request.vmId, e);
+            logger.error("Error while creating a scheduled job to remove support user {} from VM: {}. Error details: {}", request.username, request.vmId, e);
             throw new RuntimeException(e);
         }
     }
@@ -59,6 +59,7 @@ public class ScheduleSupportUserRemoval implements Command<ScheduleSupportUserRe
     private Vps4RemoveSupportUserJobRequest getJobRequest(Request request) {
         Vps4RemoveSupportUserJobRequest userRequest = new Vps4RemoveSupportUserJobRequest();
         userRequest.vmId = request.vmId;
+        userRequest.username = request.username;
         userRequest.jobType = JobType.ONE_TIME;
         int waitTime = Integer.parseInt(config.get("vps4.supportUser.removalWaitHours"));
         userRequest.when = Instant.now().plus(waitTime, ChronoUnit.HOURS);
@@ -75,5 +76,6 @@ public class ScheduleSupportUserRemoval implements Command<ScheduleSupportUserRe
 
     public static class Request {
         public UUID vmId;
+        public String username;
     }
 }

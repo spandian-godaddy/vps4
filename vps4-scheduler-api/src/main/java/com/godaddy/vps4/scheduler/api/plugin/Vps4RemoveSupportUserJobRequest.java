@@ -11,4 +11,5 @@ import java.util.UUID;
 @JobGroup("removeSupportUser")
 public class Vps4RemoveSupportUserJobRequest extends JobRequest {
     @Required public UUID vmId;
+    @Required public String username;
 }

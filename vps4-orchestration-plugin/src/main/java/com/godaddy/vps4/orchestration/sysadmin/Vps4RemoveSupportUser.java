@@ -49,10 +49,11 @@ public class Vps4RemoveSupportUser extends ActionCommand<Vps4RemoveSupportUser.R
             context.execute(RemoveUser.class, removeUserRequest);
             vmUserService.deleteUser(request.username, request.vmId);
         } catch (ActionNotCompletedException e) {
-            String errorMessage = String.format("Remove support user from VM %s failed, scheduling retry.", request.vmId);
+            String errorMessage = String.format("Remove support user %s from VM %s failed, scheduling retry.", request.username, request.vmId);
             logger.warn(errorMessage, e);
             ScheduleSupportUserRemoval.Request removeSupportUserRequest = new ScheduleSupportUserRemoval.Request();
             removeSupportUserRequest.vmId = request.vmId;
+            removeSupportUserRequest.username = request.username;
             context.execute(ScheduleSupportUserRemoval.class, removeSupportUserRequest);
             throw new NoRetryException(errorMessage, e);
         }

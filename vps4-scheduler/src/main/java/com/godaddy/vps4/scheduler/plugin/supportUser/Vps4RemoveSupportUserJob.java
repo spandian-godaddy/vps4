@@ -30,7 +30,7 @@ public class Vps4RemoveSupportUserJob extends SchedulerJob {
     @Override
     public void execute(JobExecutionContext context) throws JobExecutionException {
         try {
-            removeSupportUser(request.vmId);
+            removeSupportUsers(request.vmId, request.username);
         }
         catch (Exception e) {
             logger.error("Error while remove support user {} from vm {}. {}", request.vmId, e);
@@ -38,10 +38,10 @@ public class Vps4RemoveSupportUserJob extends SchedulerJob {
         }
     }
 
-    private void removeSupportUser(UUID vmId) {
-        logger.debug("Removing support user from vm {}.", request.vmId);
-        VmAction action = vmSupportUserService.removeSupportUser(vmId);
-        logger.info("Remove support user from vm {} action submitted. Action: {}", request.vmId, action.id);
+    private void removeSupportUsers(UUID vmId, String username) {
+        logger.debug("Removing support user {} from vm {}.", username, vmId);
+        VmAction action = vmSupportUserService.removeSupportUsers(vmId, username);
+        logger.info("Remove support user {} from vm {} action submitted. Action: {}", username, vmId, action.id);
     }
 
     public void setRequest(Vps4RemoveSupportUserJobRequest request) {

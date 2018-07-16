@@ -2,11 +2,7 @@ package com.godaddy.vps4.web.client;
 
 import java.util.UUID;
 
-import javax.ws.rs.Consumes;
-import javax.ws.rs.DELETE;
-import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.Produces;
+import javax.ws.rs.*;
 import javax.ws.rs.core.MediaType;
 
 import com.godaddy.vps4.vm.VmAction;
@@ -16,6 +12,7 @@ import com.godaddy.vps4.vm.VmAction;
 @Consumes(MediaType.APPLICATION_JSON)
 public interface VmSupportUserService {
     @DELETE
-    @Path("/{vmId}/supportUser")
-    VmAction removeSupportUser(@PathParam("vmId") UUID vmId);
+    @Path("/{vmId}/supportUsers/{supportUsername}")
+    VmAction removeSupportUsers(@PathParam("vmId") UUID vmId, @PathParam("supportUsername") String username)
+            throws WebApplicationException;
 }

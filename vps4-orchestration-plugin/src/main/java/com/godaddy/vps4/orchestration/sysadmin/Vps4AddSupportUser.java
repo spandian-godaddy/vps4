@@ -59,6 +59,7 @@ public class Vps4AddSupportUser extends ActionCommand<Vps4AddSupportUser.Request
         // schedule removal of support user
         ScheduleSupportUserRemoval.Request removeSupportUserRequest = new ScheduleSupportUserRemoval.Request();
         removeSupportUserRequest.vmId = req.vmId;
+        removeSupportUserRequest.username = req.username;
         context.execute(ScheduleSupportUserRemoval.class, removeSupportUserRequest);
 
         return null;

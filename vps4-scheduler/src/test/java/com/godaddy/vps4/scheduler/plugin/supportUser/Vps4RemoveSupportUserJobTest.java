@@ -61,6 +61,7 @@ public class Vps4RemoveSupportUserJobTest {
     private void initJobRequest() {
         Vps4RemoveSupportUserJobRequest request = new Vps4RemoveSupportUserJobRequest();
         request.vmId = UUID.randomUUID();
+        request.username = "support_test";
         vps4RemoveSupportUserJob.setRequest(request);
     }
 
@@ -68,12 +69,12 @@ public class Vps4RemoveSupportUserJobTest {
     public void callsRemoveSupportUser() {
         VmAction action = new VmAction();
         action.id = 1234;
-        when(mockVmSupportUserService.removeSupportUser(eq(vps4RemoveSupportUserJob.request.vmId))).thenReturn(action);
+        when(mockVmSupportUserService.removeSupportUsers(eq(vps4RemoveSupportUserJob.request.vmId), eq(vps4RemoveSupportUserJob.request.username))).thenReturn(action);
 
         try {
             vps4RemoveSupportUserJob.execute(context);
 
-            verify(mockVmSupportUserService, times(1)).removeSupportUser(eq(vps4RemoveSupportUserJob.request.vmId));
+            verify(mockVmSupportUserService, times(1)).removeSupportUsers(eq(vps4RemoveSupportUserJob.request.vmId), eq(vps4RemoveSupportUserJob.request.username));
 
         }
         catch (JobExecutionException e) {
@@ -83,7 +84,7 @@ public class Vps4RemoveSupportUserJobTest {
 
     @Test(expected = JobExecutionException.class)
     public void throwsJobExecutionExceptionInCaseOfErrorRemovingSupportUser() throws JobExecutionException {
-        when(mockVmSupportUserService.removeSupportUser(eq(vps4RemoveSupportUserJob.request.vmId)))
+        when(mockVmSupportUserService.removeSupportUsers(eq(vps4RemoveSupportUserJob.request.vmId), eq(vps4RemoveSupportUserJob.request.username)))
            .thenThrow(new WebApplicationException("Boom!!"));
 
         vps4RemoveSupportUserJob.execute(context);
