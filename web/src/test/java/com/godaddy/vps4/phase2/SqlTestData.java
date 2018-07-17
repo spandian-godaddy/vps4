@@ -4,7 +4,6 @@ import java.util.UUID;
 
 import javax.sql.DataSource;
 
-import com.godaddy.vps4.snapshot.jdbc.JdbcSnapshotActionService;
 import org.json.simple.JSONObject;
 
 import com.godaddy.hfs.jdbc.Sql;
@@ -127,6 +126,14 @@ public class SqlTestData {
         Sql.with(dataSource).exec("DELETE FROM virtual_machine v USING project p WHERE v.project_id = p.project_id AND " + test_sgid_condition, null);
         Sql.with(dataSource).exec("DELETE FROM user_project_privilege uvp USING project p WHERE uvp.project_id = p.project_id AND " + test_sgid_condition, null);
         Sql.with(dataSource).exec("DELETE FROM project p WHERE " + test_sgid_condition, null);
+    }
+
+    public static void markVmDeleted(UUID vmId, DataSource dataSource) {
+        Sql.with(dataSource).exec("UPDATE virtual_machine SET valid_until=now_utc() WHERE vm_id = ?", null, vmId);
+    }
+
+    public static void markSnapshotDestroyed(UUID snapshotId, DataSource dataSource) {
+        Sql.with(dataSource).exec("UPDATE snapshot SET status=5 WHERE id = ?",  null, snapshotId);
     }
 
 }

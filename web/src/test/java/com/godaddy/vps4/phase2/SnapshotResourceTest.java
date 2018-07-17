@@ -24,6 +24,7 @@ import com.godaddy.vps4.security.Vps4User;
 import com.godaddy.vps4.security.Vps4UserService;
 import com.godaddy.vps4.security.jdbc.AuthorizationException;
 import com.godaddy.vps4.snapshot.Snapshot;
+import com.godaddy.vps4.snapshot.SnapshotAction;
 import com.godaddy.vps4.snapshot.SnapshotModule;
 import com.godaddy.vps4.snapshot.SnapshotService;
 import com.godaddy.vps4.snapshot.SnapshotType;
@@ -35,9 +36,9 @@ import com.godaddy.vps4.web.Vps4Exception;
 import com.godaddy.vps4.web.Vps4NoShopperException;
 import com.godaddy.vps4.web.security.AdminOnly;
 import com.godaddy.vps4.web.security.GDUser;
-import com.godaddy.vps4.snapshot.SnapshotAction;
 import com.godaddy.vps4.web.snapshot.SnapshotResource;
 import com.godaddy.vps4.web.snapshot.SnapshotResource.SnapshotRenameRequest;
+import com.godaddy.vps4.web.snapshot.SnapshotResource.SnapshotRequest;
 import com.google.inject.AbstractModule;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
@@ -86,9 +87,13 @@ public class SnapshotResourceTest {
         return injector.getInstance(SnapshotResource.class);
     }
 
-    private Snapshot createTestSnapshot() {
+    private void createTestVm() {
         Vps4User vps4User = userService.getOrCreateUserForShopper(GDUserMock.DEFAULT_SHOPPER, "1");
         testVm = SqlTestData.insertTestVm(UUID.randomUUID(), vps4User.getId(), dataSource);
+    }
+
+    private Snapshot createTestSnapshot() {
+        createTestVm();
         return SqlTestData.insertSnapshot(snapshotService, testVm.vmId, testVm.projectId, SnapshotType.ON_DEMAND);
     }
 
@@ -345,6 +350,21 @@ public class SnapshotResourceTest {
     public void testE2SRenameSnapshot() {
         user = GDUserMock.createEmployee2Shopper();
         testRenameSnapshot();
+    }
+
+    @Test
+    public void testCreateSnapshotForDestroyedVm() {
+        createTestVm();
+        SqlTestData.markVmDeleted(testVm.vmId, dataSource);
+        SnapshotRequest request = new SnapshotRequest();
+        request.vmId = testVm.vmId;
+
+        try {
+            getSnapshotResource().createSnapshot(request);
+            Assert.fail("Expected Vps4Exception was not thrown");
+        } catch (Vps4Exception ex) {
+            Assert.assertEquals("VM_DELETED", ex.getId());
+        }
     }
 
 }

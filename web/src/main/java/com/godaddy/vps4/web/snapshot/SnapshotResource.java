@@ -17,7 +17,6 @@ import javax.inject.Inject;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
-import javax.ws.rs.NotFoundException;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
@@ -118,7 +117,7 @@ public class SnapshotResource {
     public SnapshotAction createSnapshot(SnapshotRequest snapshotRequest) {
         // check to ensure snapshot belongs to vm and vm exists
         VirtualMachine vm = virtualMachineService.getVirtualMachine(snapshotRequest.vmId);
-        validateVmExists(snapshotRequest.vmId, vm, user);
+        validateVmExists(snapshotRequest.vmId, vm, user, false);
         if (user.isShopper()) {
             getAndValidateUserAccountCredit(creditService, vm.orionGuid, user.getShopperId());
         }

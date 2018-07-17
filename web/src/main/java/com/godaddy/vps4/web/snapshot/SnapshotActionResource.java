@@ -1,5 +1,6 @@
 package com.godaddy.vps4.web.snapshot;
 
+import static com.godaddy.vps4.web.util.RequestValidation.validateSnapshotExists;
 import static com.godaddy.vps4.web.util.RequestValidation.verifyUserPrivilegeToProject;
 
 import java.util.List;
@@ -16,13 +17,16 @@ import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
 
+import org.json.simple.JSONObject;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.godaddy.vps4.security.PrivilegeService;
 import com.godaddy.vps4.security.Vps4UserService;
 import com.godaddy.vps4.snapshot.Snapshot;
 import com.godaddy.vps4.snapshot.SnapshotAction;
 import com.godaddy.vps4.snapshot.SnapshotActionService;
 import com.godaddy.vps4.snapshot.SnapshotService;
-import com.godaddy.vps4.snapshot.SnapshotStatus;
 import com.godaddy.vps4.vm.Action;
 import com.godaddy.vps4.vm.ActionService;
 import com.godaddy.vps4.vm.ActionStatus;
@@ -38,9 +42,6 @@ import com.google.inject.Inject;
 import gdg.hfs.orchestration.CommandService;
 import gdg.hfs.orchestration.CommandState;
 import io.swagger.annotations.Api;
-import org.json.simple.JSONObject;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 @Vps4Api
 @Api(tags = { "snapshots" })
@@ -77,8 +78,7 @@ public class SnapshotActionResource {
 
     private void verifyPrivilege(UUID snapshotId) {
         Snapshot snapshot = snapshotService.getSnapshot(snapshotId);
-        if (snapshot == null || snapshot.status == SnapshotStatus.DESTROYED || snapshot.status == SnapshotStatus.CANCELLED)
-            throw new NotFoundException("Unknown snapshot ID: " + snapshotId);
+        validateSnapshotExists(snapshotId, snapshot, user);
 
         if (user.isShopper())
             verifyUserPrivilegeToProject(userService, privilegeService, user.getShopperId(), snapshot.projectId);

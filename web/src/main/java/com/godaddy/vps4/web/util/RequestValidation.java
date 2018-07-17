@@ -87,12 +87,17 @@ public class RequestValidation {
     }
 
     public static void validateVmExists(UUID vmId, VirtualMachine virtualMachine, GDUser user) {
+        // Default is to allow admin user to access deleted VMs
+        validateVmExists(vmId, virtualMachine, user, true);
+    }
+
+    public static void validateVmExists(UUID vmId, VirtualMachine virtualMachine, GDUser user, boolean allowAdminOverride) {
         if (virtualMachine == null) {
             throw new NotFoundException("Unknown VM ID: " + vmId);
         }
 
-        // Allow admin user to access deleted VMs
-        if (virtualMachine.validUntil.isBefore(Instant.now()) && !user.isAdmin()) {
+        boolean adminOverride = user.isAdmin() && allowAdminOverride;
+        if (virtualMachine.validUntil.isBefore(Instant.now()) && !adminOverride) {
             throw new Vps4Exception("VM_DELETED", String.format("The virtual machine %s was DELETED", virtualMachine.vmId));
         }
     }
