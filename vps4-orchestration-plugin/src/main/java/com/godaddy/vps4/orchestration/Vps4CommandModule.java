@@ -17,6 +17,7 @@ import com.godaddy.vps4.orchestration.vm.UnlicenseControlPanel;
 import com.godaddy.vps4.orchestration.vm.Vps4AddIpAddress;
 import com.godaddy.vps4.orchestration.vm.Vps4CancelAction;
 import com.godaddy.vps4.orchestration.vm.Vps4DeleteAllScheduledJobsForVm;
+import com.godaddy.vps4.orchestration.vm.Vps4RemoveSupportUsersFromDatabase;
 import com.godaddy.vps4.orchestration.vm.Vps4DestroyIpAddress;
 import com.godaddy.vps4.orchestration.vm.Vps4DestroyIpAddressAction;
 import com.godaddy.vps4.orchestration.vm.Vps4DestroyVm;
@@ -29,6 +30,7 @@ import com.godaddy.vps4.orchestration.vm.Vps4ReviveZombieVm;
 import com.godaddy.vps4.orchestration.vm.Vps4StartVm;
 import com.godaddy.vps4.orchestration.vm.Vps4StopVm;
 import com.godaddy.vps4.orchestration.vm.Vps4TestCommand;
+import com.godaddy.vps4.vm.VmUserService;
 import com.google.inject.AbstractModule;
 
 public class Vps4CommandModule extends AbstractModule {
@@ -57,6 +59,7 @@ public class Vps4CommandModule extends AbstractModule {
         bind(Vps4ReviveZombieVm.class);
         bind(Vps4DeleteAllScheduledJobsForVm.class);
         bind(Vps4RecordScheduledJobForVm.class);
+        bind(Vps4RemoveSupportUsersFromDatabase.class);
         bind(UnlicenseControlPanel.class);
         bind(SendScheduledPatchingEmail.class);
         bind(SendUnexpectedButScheduledMaintenanceEmail.class);

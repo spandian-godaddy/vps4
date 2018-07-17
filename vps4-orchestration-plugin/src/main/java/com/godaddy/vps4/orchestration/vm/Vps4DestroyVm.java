@@ -74,6 +74,7 @@ public class Vps4DestroyVm extends ActionCommand<VmActionRequest, Vps4DestroyVm.
         releaseIps(context, request, vm);
         deleteAutomaticBackupSchedule(vm);
         deleteAllScheduledJobsForVm(context, vm);
+        deleteSupportUsersInDatabase(context, vm);
         VmAction hfsAction = deleteVmInHfs(context, vm);
 
         logger.info("Completed destroying VM {}", vm.vmId);
@@ -94,6 +95,10 @@ public class Vps4DestroyVm extends ActionCommand<VmActionRequest, Vps4DestroyVm.
         } else {
             return null;
         }
+    }
+
+    private void deleteSupportUsersInDatabase(CommandContext context, VirtualMachine vm) {
+        context.execute("DestroyAllSupportUsersForVm", Vps4RemoveSupportUsersFromDatabase.class, vm.vmId);
     }
 
     private void deleteAllScheduledJobsForVm(CommandContext context, VirtualMachine vm) {

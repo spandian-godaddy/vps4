@@ -19,6 +19,7 @@ import java.util.UUID;
 
 import javax.ws.rs.NotFoundException;
 
+import com.godaddy.vps4.vm.VmUserService;
 import gdg.hfs.vhfs.cpanel.CPanelLicense;
 import org.junit.Before;
 import org.junit.Test;
@@ -67,6 +68,7 @@ public class Vps4DestroyVmTest {
     VmService vmService = mock(VmService.class);
     NodePingService nodePingService = mock(NodePingService.class);
     ScheduledJobService scheduledJobService = mock(ScheduledJobService.class);
+    VmUserService vmUserService = mock(VmUserService.class);
     MonitoringMeta monitoringMeta = mock(MonitoringMeta.class);
 
     Vps4DestroyVm command = new Vps4DestroyVm(actionService, networkService, virtualMachineService,
@@ -83,6 +85,7 @@ public class Vps4DestroyVmTest {
         binder.bind(MailRelayService.class).toInstance(mailRelayService);
         binder.bind(NodePingService.class).toInstance(nodePingService);
         binder.bind(ScheduledJobService.class).toInstance(scheduledJobService);
+        binder.bind(VmUserService.class).toInstance(vmUserService);
         binder.bind(MonitoringMeta.class).toInstance(monitoringMeta);
     });
 
