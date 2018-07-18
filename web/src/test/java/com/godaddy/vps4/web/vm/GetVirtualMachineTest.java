@@ -9,6 +9,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
 
+import com.godaddy.vps4.snapshot.SnapshotService;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mockito;
@@ -57,9 +58,10 @@ public class GetVirtualMachineTest {
         SchedulerWebService schedulerWebService = Mockito.mock(SchedulerWebService.class);
         DataCenterService dcService = Mockito.mock(DataCenterService.class);
         VmActionResource vmActionResource = Mockito.mock(VmActionResource.class);
+        SnapshotService snapshotService = Mockito.mock(SnapshotService.class);
 
         vmResource = new VmResource(user, vmService, userService, virtualMachineService, creditService, null, null,
-                null, null, null, config, cryptography, schedulerWebService, dcService, vmActionResource);
+                null, null, null, config, cryptography, schedulerWebService, dcService, vmActionResource, snapshotService);
     }
 
     private Config getMockedConfig() {

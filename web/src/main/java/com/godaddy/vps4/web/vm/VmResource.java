@@ -14,6 +14,7 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 import javax.inject.Inject;
 import javax.ws.rs.Consumes;
@@ -27,6 +28,8 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
 
+import com.godaddy.vps4.snapshot.SnapshotService;
+import com.godaddy.vps4.snapshot.SnapshotStatus;
 import com.godaddy.vps4.vm.Action;
 import org.apache.commons.lang3.StringUtils;
 import org.json.simple.JSONObject;
@@ -100,13 +103,15 @@ public class VmResource {
     private final SchedulerWebService schedulerWebService;
     private final DataCenterService dcService;
     private final VmActionResource vmActionResource;
+    private final SnapshotService snapshotService;
 
     @Inject
     public VmResource(GDUser user, VmService vmService, Vps4UserService vps4UserService,
             VirtualMachineService virtualMachineService, CreditService creditService, ProjectService projectService,
             ImageService imageService, ActionService actionService, CommandService commandService,
             VmSnapshotResource vmSnapshotResource, Config config, Cryptography cryptography,
-            SchedulerWebService schedulerWebService, DataCenterService dcService, VmActionResource vmActionResource) {
+            SchedulerWebService schedulerWebService, DataCenterService dcService, VmActionResource vmActionResource,
+            SnapshotService snapshotService) {
         this.user = user;
         this.virtualMachineService = virtualMachineService;
         this.vps4UserService = vps4UserService;
@@ -124,6 +129,7 @@ public class VmResource {
         this.cryptography = cryptography;
         openStackZone = config.get("openstack.zone");
         this.vmActionResource = vmActionResource;
+        this.snapshotService = snapshotService;
     }
 
     @GET
@@ -271,12 +277,8 @@ public class VmResource {
 
         cancelIncompleteVmActions(vmId);
 
-        // The request has been created successfully.
         // delete all snapshots associated with the VM
-        List<Snapshot> snapshots = vmSnapshotResource.getSnapshotsForVM(vmId);
-        for (Snapshot snapshot : snapshots) {
-            vmSnapshotResource.destroySnapshot(vmId, snapshot.id);
-        }
+        destroyVmSnapshots(vmId);
 
         VmActionRequest destroyRequest = new VmActionRequest();
         destroyRequest.virtualMachine = vm;
@@ -287,6 +289,19 @@ public class VmResource {
         virtualMachineService.setVmRemoved(vm.vmId);
 
         return deleteAction;
+    }
+
+    private void destroyVmSnapshots(UUID vmId) {
+        List<Snapshot> snapshots = vmSnapshotResource.getSnapshotsForVM(vmId);
+        for (Snapshot snapshot : snapshots) {
+            if(snapshot.status == SnapshotStatus.NEW || snapshot.status == SnapshotStatus.ERROR){
+                // just mark snapshots as cancelled if they were new or errored
+                snapshotService.updateSnapshotStatus(snapshot.id, SnapshotStatus.CANCELLED);
+            }
+            else {
+                vmSnapshotResource.destroySnapshot(vmId, snapshot.id);
+            }
+        }
     }
 
     private void cancelIncompleteVmActions(UUID vmId) {
