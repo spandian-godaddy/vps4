@@ -79,18 +79,6 @@ public class JdbcVmUserService implements VmUserService{
         return customers.get(0);
     }
 
-    /**
-     * @deprecated this will be replaced with {@link JdbcVmUserService#listUsers(java.util.UUID, com.godaddy.vps4.vm.VmUserType)}.
-     */
-    @Deprecated
-    @Override
-    public VmUser getSupportUser(UUID vmId) {
-        return Sql.with(dataSource)
-                .exec("SELECT u.name, u.vm_id, u.admin_enabled, ut.type_name"
-                        + " FROM vm_user u JOIN vm_user_type ut ON u.vm_user_type_id = ut.type_id"
-                        + " WHERE ut.type_name='SUPPORT' AND u.vm_id=?", Sql.nextOrNull(this::mapUser), vmId);
-    }
-
     @Override
     public void updateUserAdminAccess(String username, UUID vmId, boolean adminEnabled){
         Sql.with(dataSource).exec("UPDATE vm_user SET admin_enabled=? WHERE name=? AND vm_id=?", null, adminEnabled, username, vmId);

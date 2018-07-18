@@ -10,12 +10,6 @@ public interface VmUserService {
 
 	List<VmUser> listUsers(UUID vmId, VmUserType type);
 
-	/**
-	 * @deprecated this will be replaced with {@link #supportUserExists(String, UUID)}.
-	 */
-	@Deprecated
-	VmUser getSupportUser(UUID vmId);
-
 	void updateUserAdminAccess(String username, UUID vmId, boolean adminEnabled);
 
 	boolean userExists(String username, UUID vmId);

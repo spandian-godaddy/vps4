@@ -98,7 +98,7 @@ public class VmSupportUserResourceTest {
 
     @Test
     public void testAddSupportUserStaffOnly() throws NoSuchMethodException {
-        Method method = VmSupportUserResource.class.getMethod("addSupportUser", UUID.class);
+        Method method = VmSupportUserResource.class.getMethod("addSupportUsers", UUID.class);
         Assert.assertTrue(method.isAnnotationPresent(StaffOnly.class));
     }
 
