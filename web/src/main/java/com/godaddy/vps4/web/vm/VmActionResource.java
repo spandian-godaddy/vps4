@@ -151,7 +151,7 @@ public class VmActionResource {
 
         logger.info("Cancel request received for action {}", actionId);
         Commands.cancel(commandService, action.commandId);
-        String note = String.format("Action cancelled via api by %s", user.getUsername());
+        String note = "Action cancelled via api by admin";
         if (shouldQueueRollbackCommand(action.type)) {
             UUID commandId = queueRollbackCommand(action);
             note = String.format("%s. Async cleanup queued: %s", note, commandId.toString());
