@@ -5,6 +5,7 @@ import static com.godaddy.vps4.handler.util.Commands.execute;
 import java.io.IOException;
 import java.util.UUID;
 
+import com.godaddy.vps4.orchestration.account.Vps4ProcessAccountCancellation;
 import com.godaddy.vps4.vm.AccountStatus;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.json.simple.JSONObject;
@@ -97,7 +98,7 @@ public class Vps4AccountMessageHandler implements MessageHandler {
             processPlanChange(credit, vm);
             break;
         case REMOVED:
-            handleAccountCancellation(credit);
+            handleAccountCancellation(vm, credit);
             break;
         default:
             break;
@@ -141,10 +142,15 @@ public class Vps4AccountMessageHandler implements MessageHandler {
         execute(commandService, vmActionService, "Vps4PlanChange", request);
     }
 
-    private void handleAccountCancellation(VirtualMachineCredit credit) throws MessageHandlerException {
+    private void handleAccountCancellation(VirtualMachine vm, VirtualMachineCredit credit) throws MessageHandlerException {
         logger.info("Vps4 account canceled: {} - queueing account cancellation command", credit.orionGuid);
-        execute(commandService, "Vps4ProcessAccountCancellation", credit);
-
+        long actionId = vmActionService.createAction(vm.vmId, ActionType.CANCEL_ACCOUNT,
+                new JSONObject().toJSONString(), ACCOUNT_MESSAGE_HANDLER_NAME);
+        Vps4ProcessAccountCancellation.Request request = new Vps4ProcessAccountCancellation.Request();
+        request.initiatedBy = ACCOUNT_MESSAGE_HANDLER_NAME;
+        request.virtualMachineCredit = credit;
+        request.setActionId(actionId);
+        execute(commandService, vmActionService, "Vps4ProcessAccountCancellation", request);
     }
 
     private void stopVm(VirtualMachine vm) throws MessageHandlerException {

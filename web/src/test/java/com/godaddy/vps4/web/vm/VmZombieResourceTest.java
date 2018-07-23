@@ -1,5 +1,6 @@
 package com.godaddy.vps4.web.vm;
 
+import static org.mockito.Matchers.anyLong;
 import static org.mockito.Matchers.anyObject;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
@@ -10,6 +11,7 @@ import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.UUID;
 
+import com.godaddy.vps4.vm.*;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -17,9 +19,6 @@ import org.junit.Test;
 import com.godaddy.vps4.credit.CreditService;
 import com.godaddy.vps4.credit.VirtualMachineCredit;
 import com.godaddy.vps4.security.GDUserMock;
-import com.godaddy.vps4.vm.AccountStatus;
-import com.godaddy.vps4.vm.VirtualMachine;
-import com.godaddy.vps4.vm.VirtualMachineService;
 import com.godaddy.vps4.web.Vps4Exception;
 import com.godaddy.vps4.web.security.GDUser;
 
@@ -31,6 +30,7 @@ public class VmZombieResourceTest {
     VirtualMachineService virtualMachineService = mock(VirtualMachineService.class);
     CreditService creditService = mock(CreditService.class);
     CommandService commandService = mock(CommandService.class);
+    ActionService actionService = mock(ActionService.class);
 
     VirtualMachine testVm;
     VirtualMachineCredit oldCredit;
@@ -58,7 +58,11 @@ public class VmZombieResourceTest {
         newCredit = createNewCredit(oldCredit, newOrionGuid);
         when(creditService.getVirtualMachineCredit(newOrionGuid)).thenReturn(newCredit);
 
-        vmZombieResource = new VmZombieResource(virtualMachineService, creditService, commandService, user);
+        Action testAction = new Action(123L, testVm.vmId, ActionType.CANCEL_ACCOUNT, null, null, null,
+                ActionStatus.COMPLETE, Instant.now(), Instant.now(), null, UUID.randomUUID(), null);
+
+        when(actionService.getAction(anyLong())).thenReturn(testAction);
+        vmZombieResource = new VmZombieResource(virtualMachineService, creditService, commandService, user, actionService);
     }
 
     private VirtualMachineCredit createNewCredit(VirtualMachineCredit oldCredit, UUID newOrionGuid) {

@@ -60,6 +60,7 @@ public class Vps4ProcessAccountCancellationTest {
     private long hfsVmId = 4567;
     private long stopActionId = 1234;
     private VirtualMachineCredit virtualMachineCredit;
+    private Vps4ProcessAccountCancellation.Request request;
 
     @Inject Vps4UserService vps4UserService;
     @Inject ProjectService projectService;
@@ -69,6 +70,7 @@ public class Vps4ProcessAccountCancellationTest {
 
     @Captor private ArgumentCaptor<Function<CommandContext, Long>> calculateValidUntilLambdaCaptor;
     @Captor private ArgumentCaptor<Function<CommandContext, Long>> createStopVmActionLambdaCaptor;
+    @Captor private ArgumentCaptor<Function<CommandContext, Long>> createCancelAccountActionLambdaCaptor;
     @Captor private ArgumentCaptor<Function<CommandContext, VirtualMachine>> getVirtualMachineLambdaCaptor;
     @Captor private ArgumentCaptor<VmActionRequest> actionRequestArgumentCaptor;
     @Captor private ArgumentCaptor<Function<CommandContext, Void>> markZombieLambdaCaptor;
@@ -98,6 +100,9 @@ public class Vps4ProcessAccountCancellationTest {
         addTestSqlData();
         context = setupMockContext();
         virtualMachineCredit = getVirtualMachineCredit();
+        request = new Vps4ProcessAccountCancellation.Request();
+        request.virtualMachineCredit = virtualMachineCredit;
+        request.setActionId(1);
     }
 
     @After
@@ -132,6 +137,7 @@ public class Vps4ProcessAccountCancellationTest {
             .thenReturn(vm);
         when(mockContext.execute(eq("CreateVmStopAction"), any(Function.class), eq(long.class)))
                 .thenReturn(stopActionId);
+        when(mockContext.getId()).thenReturn(UUID.randomUUID());
         return mockContext;
     }
 
@@ -140,7 +146,7 @@ public class Vps4ProcessAccountCancellationTest {
         Instant now = Instant.now();
         Config config = injector.getInstance(Config.class);
         long zombieWaitDuration = Long.parseLong(config.get("vps4.zombie.cleanup.waittime"));
-        command.execute(context, virtualMachineCredit);
+        command.execute(context, request);
         verify(context, times(1))
                 .execute(eq("CalculateValidUntil"), calculateValidUntilLambdaCaptor.capture(), eq(long.class));
 
@@ -152,7 +158,7 @@ public class Vps4ProcessAccountCancellationTest {
 
     @Test
     public void createsStopVmActionWhenAccountCancellationIsProcessed() {
-        command.execute(context, virtualMachineCredit);
+        command.execute(context, request);
         verify(context, times(1))
             .execute(eq("CreateVmStopAction"), createStopVmActionLambdaCaptor.capture(), eq(long.class));
 
@@ -164,7 +170,7 @@ public class Vps4ProcessAccountCancellationTest {
 
     @Test
     public void getsHfsVmIdWhenAccountCancellationIsProcessed() {
-        command.execute(context, virtualMachineCredit);
+        command.execute(context, request);
         verify(context, times(1))
                 .execute(eq("GetVirtualMachine"), getVirtualMachineLambdaCaptor.capture(), eq(VirtualMachine.class));
 
@@ -176,7 +182,7 @@ public class Vps4ProcessAccountCancellationTest {
 
     @Test
     public void kicksOffStopVmCommandWhenAccountCancellationIsProcessed() {
-        command.execute(context, virtualMachineCredit);
+        command.execute(context, request);
         verify(context, times(1))
             .execute(eq(Vps4StopVm.class), actionRequestArgumentCaptor.capture());
 
@@ -188,7 +194,7 @@ public class Vps4ProcessAccountCancellationTest {
     @Test
     public void marksVmAsZombieWhenAccountCancellationIsProcessed() {
         Instant before = Instant.now().minusSeconds(60);
-        command.execute(context, virtualMachineCredit);
+        command.execute(context, request);
         verify(context, times(1))
                 .execute(eq("MarkVmAsZombie"), markZombieLambdaCaptor.capture(), eq(void.class));
 
@@ -202,7 +208,7 @@ public class Vps4ProcessAccountCancellationTest {
 
     @Test
     public void schedulesZombieVmCleanupJobWhenAccountCancellationIsProcessed() {
-        command.execute(context, virtualMachineCredit);
+        command.execute(context, request);
         verify(context, times(1))
                 .execute(eq(ScheduleZombieVmCleanup.class), zombieCleanupArgumentCaptor.capture());
 
@@ -218,7 +224,7 @@ public class Vps4ProcessAccountCancellationTest {
         when(context.execute(eq(ScheduleZombieVmCleanup.class), any(ScheduleZombieVmCleanup.Request.class)))
                 .thenReturn(retryJobId);
 
-        command.execute(context, virtualMachineCredit);
+        command.execute(context, request);
 
         verify(context, times(1))
                 .execute(eq("RecordScheduledJobId"), eq(Vps4RecordScheduledJobForVm.class), recordJobArgumentCaptor.capture());
@@ -231,7 +237,7 @@ public class Vps4ProcessAccountCancellationTest {
     @SuppressWarnings("unchecked")
     public void noOpWhenAnUnclaimedAccountCancellationIsProcessed() {
         virtualMachineCredit.productId = null;
-        command.execute(context, virtualMachineCredit);
+        command.execute(context, request);
         verify(context, times(0)).execute(any(), any(Function.class), any());
         verify(context, times(0)).execute(any(Class.class), any());
     }

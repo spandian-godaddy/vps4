@@ -14,14 +14,16 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
 
+import com.godaddy.vps4.orchestration.account.Vps4ProcessAccountCancellation;
+import com.godaddy.vps4.vm.*;
+import com.godaddy.vps4.web.util.VmHelper;
+import org.json.simple.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.godaddy.vps4.credit.CreditService;
 import com.godaddy.vps4.credit.VirtualMachineCredit;
 import com.godaddy.vps4.orchestration.vm.Vps4ReviveZombieVm;
-import com.godaddy.vps4.vm.VirtualMachine;
-import com.godaddy.vps4.vm.VirtualMachineService;
 import com.godaddy.vps4.web.Vps4Api;
 import com.godaddy.vps4.web.Vps4Exception;
 import com.godaddy.vps4.web.security.AdminOnly;
@@ -48,16 +50,19 @@ public class VmZombieResource {
     private final CreditService creditService;
     private final CommandService commandService;
     private final GDUser user;
+    private final ActionService actionService;
 
     @Inject
     public VmZombieResource(VirtualMachineService virtualMachineService,
             CreditService creditService,
             CommandService commandService,
-            GDUser user) {
+            GDUser user,
+            ActionService actionService) {
         this.virtualMachineService = virtualMachineService;
         this.creditService = creditService;
         this.commandService = commandService;
         this.user = user;
+        this.actionService = actionService;
     }
 
     @AdminOnly
@@ -98,7 +103,7 @@ public class VmZombieResource {
     @Path("/{vmId}/zombie")
     @ApiOperation(value = "Zombie (stop and schedule deletion for) a VM whose account has been canceled",
         notes = "Zombie (stop and schedule deletion for) a VM whose account has been canceled")
-    public VirtualMachine zombieVm(
+    public VmAction zombieVm(
             @ApiParam(value = "The ID of the server to zombie", required = true) @PathParam("vmId") UUID vmId) {
         VirtualMachine vm = virtualMachineService.getVirtualMachine(vmId);
         validateVmExists(vmId, vm, user);
@@ -107,9 +112,11 @@ public class VmZombieResource {
         validateAccountIsRemoved(vmId, credit);
 
         logger.info("Zombie vm: {}", vmId);
-        Commands.execute(commandService, "Vps4ProcessAccountCancellation", credit);
-
-        return virtualMachineService.getVirtualMachine(vmId);
+        Vps4ProcessAccountCancellation.Request request = new Vps4ProcessAccountCancellation.Request();
+        request.virtualMachineCredit = credit;
+        request.initiatedBy = user.getUsername();
+        return VmHelper.createActionAndExecute(actionService, commandService, virtualMachineService, vm.vmId,
+                ActionType.CANCEL_ACCOUNT, request, "Vps4ProcessAccountCancellation", user);
     }
 
     private void validateCreditsMatch(VirtualMachineCredit oldCredit, VirtualMachineCredit newCredit) {

@@ -6,6 +6,8 @@ import java.util.UUID;
 
 import javax.inject.Inject;
 
+import com.godaddy.vps4.orchestration.ActionCommand;
+import com.godaddy.vps4.orchestration.ActionRequest;
 import org.json.simple.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -29,9 +31,9 @@ import gdg.hfs.orchestration.CommandMetadata;
 
 @CommandMetadata(
         name="Vps4ProcessAccountCancellation",
-        requestType=VirtualMachineCredit.class
+        requestType=Vps4ProcessAccountCancellation.Request.class
 )
-public class Vps4ProcessAccountCancellation implements Command<VirtualMachineCredit, Void> {
+public class Vps4ProcessAccountCancellation extends ActionCommand<Vps4ProcessAccountCancellation.Request,Void> {
 
     private static final Logger logger = LoggerFactory.getLogger(Vps4ProcessAccountCancellation.class);
     private CommandContext context;
@@ -39,25 +41,25 @@ public class Vps4ProcessAccountCancellation implements Command<VirtualMachineCre
     final ActionService vmActionService;
     private final VirtualMachineService virtualMachineService;
     private final Config config;
-    private final String ACCOUNT_MESSAGE_HANDLER_NAME = "AccountMessageHandler";
 
     @Inject
     public Vps4ProcessAccountCancellation(ActionService vmActionService,
                                           VirtualMachineService virtualMachineService,
                                           Config config) {
+        super(vmActionService);
         this.vmActionService = vmActionService;
         this.virtualMachineService = virtualMachineService;
         this.config = config;
     }
 
     @Override
-    public Void execute(CommandContext context, VirtualMachineCredit virtualMachineCredit) {
+    protected Void executeWithAction(CommandContext context, Request request) throws Exception {
         this.context = context;
         try {
-            if (hasAccountBeenClaimed(virtualMachineCredit)) {
-                UUID vmId = virtualMachineCredit.productId;
+            if (hasAccountBeenClaimed(request.virtualMachineCredit)) {
+                UUID vmId = request.virtualMachineCredit.productId;
                 Instant validUntil = calculateValidUntil();
-                stopVirtualMachine(vmId);
+                stopVirtualMachine(vmId, request.initiatedBy);
                 markVmAsZombie(vmId, validUntil);
                 UUID jobId = scheduleZombieVmCleanup(vmId, validUntil);
                 recordJobId(vmId, jobId);
@@ -65,7 +67,7 @@ public class Vps4ProcessAccountCancellation implements Command<VirtualMachineCre
         } catch (Exception e) {
             logger.error(
                 "Error while handling account cancellation for account: {}. Error details: {}",
-                virtualMachineCredit.orionGuid, e);
+                request.virtualMachineCredit.orionGuid, e);
             throw new RuntimeException(e);
         }
 
@@ -84,10 +86,10 @@ public class Vps4ProcessAccountCancellation implements Command<VirtualMachineCre
         return Instant.ofEpochMilli(waitUntil);
     }
 
-    private void stopVirtualMachine(UUID vmId) {
+    private void stopVirtualMachine(UUID vmId, String initiatedBy) {
         long actionId = context.execute(
         "CreateVmStopAction",
-            ctx -> vmActionService.createAction(vmId, ActionType.STOP_VM, new JSONObject().toJSONString(), ACCOUNT_MESSAGE_HANDLER_NAME),
+            ctx -> vmActionService.createAction(vmId, ActionType.STOP_VM, new JSONObject().toJSONString(), initiatedBy),
             long.class);
         VirtualMachine vm = context.execute(
          "GetVirtualMachine", ctx -> virtualMachineService.getVirtualMachine(vmId), VirtualMachine.class);
@@ -118,5 +120,21 @@ public class Vps4ProcessAccountCancellation implements Command<VirtualMachineCre
         req.vmId = vmId;
         req.jobType = ScheduledJobType.ZOMBIE;
         context.execute("RecordScheduledJobId", Vps4RecordScheduledJobForVm.class, req);
+    }
+
+    public static class Request implements ActionRequest {
+        public long actionId;
+        public VirtualMachineCredit virtualMachineCredit;
+        public String initiatedBy;
+
+        @Override
+        public long getActionId() {
+            return actionId;
+        }
+
+        @Override
+        public void setActionId(long actionId) {
+            this.actionId = actionId;
+        }
     }
 }

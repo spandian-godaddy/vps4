@@ -348,7 +348,7 @@ public class VmActionResourceTest {
         actionResource.cancelVmAction(vm.vmId, action.id);
 
         Action modifiedAction = actionService.getAction(action.id);
-        String expectedNote = "Action cancelled via api by tester"; // username is 'tester'
+        String expectedNote = "Action cancelled via api by admin";
         Assert.assertEquals(expectedNote, modifiedAction.note);
     }
 
@@ -361,7 +361,7 @@ public class VmActionResourceTest {
 
         Action modifiedAction = actionService.getAction(action.id);
         String expectedNote = String.format(
-            "%s. Async cleanup queued: %s", "Action cancelled via api by tester", commandState.commandId.toString());
+            "%s. Async cleanup queued: %s", "Action cancelled via api by admin", commandState.commandId.toString());
         Assert.assertEquals(expectedNote, modifiedAction.note);
     }
 
