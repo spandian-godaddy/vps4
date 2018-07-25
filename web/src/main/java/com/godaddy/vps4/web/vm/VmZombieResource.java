@@ -70,7 +70,7 @@ public class VmZombieResource {
     @Path("/{vmId}/revive")
     @ApiOperation(value = "Revive a zombie vm whose account has been canceled but the server has not yet been deleted",
         notes = "Revive a zombie vm whose account has been canceled but the server has not yet been deleted")
-    public VirtualMachine reviveZombieVm(
+    public VmAction reviveZombieVm(
             @ApiParam(value = "The ID of the server to revive", required = true) @PathParam("vmId") UUID vmId,
             @ApiParam(value = "The ID of the new credit to which the VM will be linked",
                     required = true) @QueryParam("newCreditId") UUID newCreditId) {
@@ -93,9 +93,9 @@ public class VmZombieResource {
         request.vmId = vmId;
         request.newCreditId = newCreditId;
         request.oldCreditId = oldCredit.orionGuid;
-        Commands.execute(commandService, "Vps4ReviveZombieVm", request);
 
-        return virtualMachineService.getVirtualMachine(vmId);
+        return VmHelper.createActionAndExecute(actionService, commandService, virtualMachineService, vm.vmId,
+                ActionType.RESTORE_ACCOUNT, request, "Vps4ReviveZombieVm", user);
     }
 
     @AdminOnly

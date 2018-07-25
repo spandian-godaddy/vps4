@@ -12,6 +12,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
+import com.godaddy.vps4.vm.ActionService;
+import com.google.inject.Inject;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -42,6 +44,7 @@ public class Vps4ReviveZombieVmTest{
     private ScheduledJob job;
     private Vps4ReviveZombieVm command;
     private SchedulerWebService schedulerWebService;
+    private ActionService actionService;
     
     @Before
     public void setup() {
@@ -49,6 +52,7 @@ public class Vps4ReviveZombieVmTest{
         schedulerWebService = mock(SchedulerWebService.class);
         scheduledJobService = mock(ScheduledJobService.class);
         creditService = mock(CreditService.class);
+        actionService = mock(ActionService.class);
         
         job = new ScheduledJob();
         job.id = UUID.randomUUID();
@@ -63,9 +67,10 @@ public class Vps4ReviveZombieVmTest{
             binder.bind(VirtualMachineService.class).toInstance(virtualMachineService);
             binder.bind(ScheduledJobService.class).toInstance(scheduledJobService);
             binder.bind(SchedulerWebService.class).toInstance(schedulerWebService);
+            binder.bind(ActionService.class).toInstance(actionService);
         });
         
-        command = new Vps4ReviveZombieVm(virtualMachineService, scheduledJobService, creditService);
+        command = new Vps4ReviveZombieVm(actionService, virtualMachineService, scheduledJobService, creditService);
         context = new TestCommandContext(new GuiceCommandProvider(injector));
     }
     

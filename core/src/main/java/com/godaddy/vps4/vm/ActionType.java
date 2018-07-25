@@ -27,7 +27,8 @@ public enum ActionType {
     UPDATE_MAILRELAY_QUOTA(18),
     RENAME_SNAPSHOT(19),
     RESTORE_VM(20),
-    CANCEL_ACCOUNT(21);
+    CANCEL_ACCOUNT(21),
+    RESTORE_ACCOUNT(22);
 
 
     private final int typeId;

@@ -4,6 +4,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
+import com.godaddy.vps4.orchestration.ActionCommand;
+import com.godaddy.vps4.orchestration.ActionRequest;
+import com.godaddy.vps4.vm.ActionService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -24,10 +27,9 @@ import gdg.hfs.orchestration.CommandMetadata;
 
 @CommandMetadata(
             name="Vps4ReviveZombieVm",
-            requestType=Vps4ReviveZombieVm.Request.class,
-            responseType=VirtualMachine.class
+            requestType=Vps4ReviveZombieVm.Request.class
 )
-public class Vps4ReviveZombieVm implements Command<Vps4ReviveZombieVm.Request, Void> {
+public class Vps4ReviveZombieVm extends ActionCommand<Vps4ReviveZombieVm.Request, Void> {
 
     private static final Logger logger = LoggerFactory.getLogger(Vps4ReviveZombieVm.class);
     private final VirtualMachineService virtualMachineService;
@@ -35,8 +37,9 @@ public class Vps4ReviveZombieVm implements Command<Vps4ReviveZombieVm.Request, V
     private final CreditService creditService;
 
     @Inject
-    public Vps4ReviveZombieVm(VirtualMachineService virtualMachineService,
-            ScheduledJobService scheduledJobService, CreditService creditService) {
+    public Vps4ReviveZombieVm(ActionService actionService, VirtualMachineService virtualMachineService,
+                              ScheduledJobService scheduledJobService, CreditService creditService) {
+        super(actionService);
         this.virtualMachineService = virtualMachineService;
         this.scheduledJobService = scheduledJobService;
         this.creditService = creditService;
@@ -44,7 +47,7 @@ public class Vps4ReviveZombieVm implements Command<Vps4ReviveZombieVm.Request, V
 
     
     @Override
-    public Void execute(CommandContext context, Request request) {
+    protected Void executeWithAction(CommandContext context, Request request) throws Exception {
         
         logger.info("Reviving Zombie VM with ID {}, new credit ID {}", request.vmId, request.newCreditId);
 
@@ -81,10 +84,21 @@ public class Vps4ReviveZombieVm implements Command<Vps4ReviveZombieVm.Request, V
         }
     }
     
-    public static class Request {
+    public static class Request implements ActionRequest {
+        public long actionId;
         public UUID vmId;
         public UUID newCreditId;
         public UUID oldCreditId;
+
+        @Override
+        public long getActionId() {
+            return actionId;
+        }
+
+        @Override
+        public void setActionId(long actionId) {
+            this.actionId = actionId;
+        }
     }
 
 

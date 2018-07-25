@@ -2,6 +2,7 @@ package com.godaddy.vps4.web.vm;
 
 import static org.mockito.Matchers.anyLong;
 import static org.mockito.Matchers.anyObject;
+import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -24,6 +25,7 @@ import com.godaddy.vps4.web.security.GDUser;
 
 import gdg.hfs.orchestration.CommandService;
 import gdg.hfs.orchestration.CommandState;
+import org.mockito.Matchers;
 
 public class VmZombieResourceTest {
 
@@ -95,6 +97,8 @@ public class VmZombieResourceTest {
     public void testReviveZombieVm() {
         vmZombieResource.reviveZombieVm(testVm.vmId, newCredit.orionGuid);
         verify(commandService, times(1)).executeCommand(anyObject());
+        verify(actionService, times(1)).createAction(Matchers.eq(testVm.vmId),
+                Matchers.eq(ActionType.RESTORE_ACCOUNT), anyObject(), anyString());
     }
 
     @Test
