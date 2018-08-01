@@ -128,9 +128,9 @@ public class Vps4ProvisionVm extends ActionCommand<Vps4ProvisionVm.Request, Vps4
 
             long hfsVmId = createVm();
 
-            setupUsers(hfsVmId);
-
             bindIp(hfsVmId, ip);
+
+            setupUsers(hfsVmId);
 
             configureControlPanel(hfsVmId);
 
