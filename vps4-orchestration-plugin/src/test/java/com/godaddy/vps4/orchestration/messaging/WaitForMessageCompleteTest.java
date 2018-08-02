@@ -37,78 +37,54 @@ public class WaitForMessageCompleteTest {
 
     @Test
     public void testExecuteWhenMsgAlreadySucceeded() {
-        try {
-            emailMessage.status = Message.Statuses.SUCCESS.toString();
-            when(messagingService.getMessageById(messageId)).thenReturn(emailMessage);
+        emailMessage.status = Message.Statuses.SUCCESS.toString();
+        when(messagingService.getMessageById(messageId)).thenReturn(emailMessage);
 
-            waitForMsgCompleteCmd.execute(context, messageId);
+        waitForMsgCompleteCmd.execute(context, messageId);
 
-            verify(messagingService, times(1)).getMessageById(messageId);
-        }
-        catch (Exception ex) {
-            throw new RuntimeException(ex);
-        }
+        verify(messagingService, times(1)).getMessageById(messageId);
     }
 
     @Test
     public void testExecuteWhenMsgPendingFirst() {
-        try {
-            emailMessage.status = Message.Statuses.PENDING.toString();
-            Message successMessage = mock(Message.class);
-            successMessage.status = Message.Statuses.SUCCESS.toString();
-            when(messagingService.getMessageById(messageId)).thenReturn(emailMessage).thenReturn(successMessage);
+        emailMessage.status = Message.Statuses.PENDING.toString();
+        Message successMessage = mock(Message.class);
+        successMessage.status = Message.Statuses.SUCCESS.toString();
+        when(messagingService.getMessageById(messageId)).thenReturn(emailMessage).thenReturn(successMessage);
 
-            waitForMsgCompleteCmd.execute(context, messageId);
+        waitForMsgCompleteCmd.execute(context, messageId);
 
-            verify(messagingService, times(2)).getMessageById(messageId);
-            verify(context, times(1)).sleep(3000);
-        }
-        catch (Exception ex) {
-            throw new RuntimeException(ex);
-        }
+        verify(messagingService, times(2)).getMessageById(messageId);
+        verify(context, times(1)).sleep(3000);
     }
 
     @Test
     public void testExecuteWhenMsgPurged() {
-        try {
-            emailMessage.status = Message.Statuses.PURGED.toString();
-            when(messagingService.getMessageById(messageId)).thenReturn(emailMessage);
+        emailMessage.status = Message.Statuses.PURGED.toString();
+        when(messagingService.getMessageById(messageId)).thenReturn(emailMessage);
 
-            waitForMsgCompleteCmd.execute(context, messageId);
+        waitForMsgCompleteCmd.execute(context, messageId);
 
-            verify(messagingService, times(1)).getMessageById(messageId);
-        }
-        catch (Exception ex) {
-            throw new RuntimeException(ex);
-        }
+        verify(messagingService, times(1)).getMessageById(messageId);
     }
 
     @Test(expected = NoRetryException.class)
     public void testExecuteWhenMsgFailed() {
-        try {
-            emailMessage.status = Message.Statuses.FAILED.toString();
-            emailMessage.failureReason = "Unit test failed message";
-            when(messagingService.getMessageById(messageId)).thenReturn(emailMessage);
+        emailMessage.status = Message.Statuses.FAILED.toString();
+        emailMessage.failureReason = "Unit test failed message";
+        when(messagingService.getMessageById(messageId)).thenReturn(emailMessage);
 
-            waitForMsgCompleteCmd.execute(context, messageId);
-        }
-        catch (IOException ex) {
-            // Assert fail for unexpected exception
-        }
-        Assert.fail("Expected RuntimeException");
+        waitForMsgCompleteCmd.execute(context, messageId);
+
+        Assert.fail("Expected NoRetryException");
     }
 
-    @Test(expected = RuntimeException.class)
+    @Test(expected = NoRetryException.class)
     public void testGetMessageByIdThrowsException() {
-        try {
-            IOException testIOException = mock(IOException.class);
-            when(messagingService.getMessageById(messageId)).thenThrow(testIOException);
+        when(messagingService.getMessageById(messageId)).thenThrow(new RuntimeException("Maybe a parse error"));
 
-            waitForMsgCompleteCmd.execute(context, messageId);
-        }
-        catch (IOException ex) {
-            // Assert fail for unexpected exception
-        }
-        Assert.fail("Expected RuntimeException");
+        waitForMsgCompleteCmd.execute(context, messageId);
+
+        Assert.fail("Expected NoRetryException");
     }
 }

@@ -1,19 +1,12 @@
 package com.godaddy.vps4.client;
 
-import com.fasterxml.jackson.jaxrs.json.JacksonJsonProvider;
-import com.godaddy.hfs.config.Config;
-import org.apache.http.client.HttpClient;
-import org.apache.http.config.RegistryBuilder;
-import org.apache.http.conn.socket.ConnectionSocketFactory;
-import org.apache.http.conn.socket.PlainConnectionSocketFactory;
-import org.apache.http.conn.ssl.SSLConnectionSocketFactory;
-import org.apache.http.impl.client.HttpClients;
-import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
-import org.jboss.resteasy.client.jaxrs.ResteasyClientBuilder;
-import org.jboss.resteasy.client.jaxrs.ResteasyWebTarget;
-import org.jboss.resteasy.client.jaxrs.engines.ApacheHttpClient4Engine;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import java.security.KeyManagementException;
+import java.security.NoSuchAlgorithmException;
+import java.security.SecureRandom;
+import java.security.cert.CertificateException;
+import java.security.cert.X509Certificate;
+import java.util.ArrayList;
+import java.util.List;
 
 import javax.inject.Inject;
 import javax.net.ssl.KeyManager;
@@ -23,13 +16,23 @@ import javax.net.ssl.X509TrustManager;
 import javax.ws.rs.client.Client;
 import javax.ws.rs.client.ClientRequestFilter;
 import javax.ws.rs.client.ClientResponseFilter;
-import java.security.KeyManagementException;
-import java.security.NoSuchAlgorithmException;
-import java.security.SecureRandom;
-import java.security.cert.CertificateException;
-import java.security.cert.X509Certificate;
-import java.util.ArrayList;
-import java.util.List;
+
+import org.apache.http.client.HttpClient;
+import org.apache.http.config.RegistryBuilder;
+import org.apache.http.conn.socket.ConnectionSocketFactory;
+import org.apache.http.conn.socket.PlainConnectionSocketFactory;
+import org.apache.http.conn.ssl.SSLConnectionSocketFactory;
+import org.apache.http.impl.client.HttpClients;
+import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
+import org.jboss.resteasy.client.jaxrs.ResteasyClient;
+import org.jboss.resteasy.client.jaxrs.ResteasyClientBuilder;
+import org.jboss.resteasy.client.jaxrs.ResteasyWebTarget;
+import org.jboss.resteasy.client.jaxrs.engines.ApacheHttpClient4Engine;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import com.fasterxml.jackson.jaxrs.json.JacksonJsonProvider;
+import com.godaddy.hfs.config.Config;
 
 
 abstract public class HttpServiceProvider<T> {
@@ -138,7 +141,7 @@ abstract public class HttpServiceProvider<T> {
         }
 
         HttpClient httpClient = getHttpClient(registryBuilder);
-        Client client = new ResteasyClientBuilder()
+        ResteasyClient client = new ResteasyClientBuilder()
                 .httpEngine(new ApacheHttpClient4Engine(httpClient))
                 .build();
 
@@ -147,7 +150,7 @@ abstract public class HttpServiceProvider<T> {
         client.register(jacksonJsonProvider);
         registerRequestFilters(client);
         registerResponseFilters(client);
-        ResteasyWebTarget target = (ResteasyWebTarget) client.target(baseUrl);
+        ResteasyWebTarget target = client.target(baseUrl);
 
         return target.proxyBuilder(serviceClass).classloader(getClass().getClassLoader()).build();
     }

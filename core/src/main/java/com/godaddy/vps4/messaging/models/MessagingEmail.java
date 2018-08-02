@@ -13,15 +13,12 @@ public class MessagingEmail {
     public String createdAt;
     public String currency;
     public String marketId;
-    public String emailFormat;
-    public String code;
     public String failureReason;
 
     @Override
     public String toString() {
-        return "MessagingEmail [emailId: " + emailId + " templateId: " + templateId +
-                " to: " + to + " status: " + status + " createdAt: " + createdAt +
-                " currency: " + currency + " marketId: " + marketId +
-                " emailFormat: " + emailFormat + " failureReason: " + failureReason +"]";
+        return "MessagingEmail [emailId=" + emailId + ", templateId=" + templateId + ", templateName=" + templateName
+                + ", to=" + to + ", status=" + status + ", createdAt=" + createdAt + ", currency=" + currency
+                + ", marketId=" + marketId + ", failureReason=" + failureReason + "]";
     }
 }

@@ -6,7 +6,7 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import org.apache.commons.lang3.StringUtils;
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
-public class MessagingMessageId {
+public class MessagingResponse {
 
     public String messageId;
 

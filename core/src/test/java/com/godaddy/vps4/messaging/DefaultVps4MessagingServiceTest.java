@@ -4,7 +4,7 @@ import com.godaddy.hfs.config.Config;
 import com.godaddy.vps4.config.Configs;
 import com.godaddy.vps4.messaging.DefaultVps4MessagingService.EmailTemplates;
 import com.godaddy.vps4.messaging.models.Message;
-import com.godaddy.vps4.messaging.models.MessagingMessageId;
+import com.godaddy.vps4.messaging.models.MessagingResponse;
 import com.godaddy.vps4.messaging.models.ShopperMessage;
 import com.godaddy.vps4.util.SecureHttpClient;
 import org.apache.http.client.methods.HttpGet;
@@ -33,7 +33,7 @@ public class DefaultVps4MessagingServiceTest {
     private SecureHttpClient secureHttpClient;
     private Message mockResultMessage;
     private DefaultVps4MessagingService messagingService;
-    private MessagingMessageId mockMessageId;
+    private MessagingResponse mockMessageId;
     private String shopperId;
     private String accountName;
     private String ipAddress;
@@ -54,7 +54,7 @@ public class DefaultVps4MessagingServiceTest {
         durationMinutes = 1440;
         secureHttpClient = mock(SecureHttpClient.class);
         mockResultMessage = mock(Message.class);
-        mockMessageId = mock(MessagingMessageId.class);
+        mockMessageId = mock(MessagingResponse.class);
         mockMessageId.messageId = UUID.randomUUID().toString();
 
         config = Configs.getInstance();
@@ -108,16 +108,6 @@ public class DefaultVps4MessagingServiceTest {
         Assert.assertEquals(mockMessageId.messageId, actualMessageId);
     }
 
-    @Test(expected = MissingShopperIdException.class)
-    public void testSendSetupEmailThrowsMissingShopperIdExceptionWhenEmpty() throws MissingShopperIdException, IOException {
-        messagingService.sendSetupEmail("", accountName, ipAddress, orionId, isFullyManaged);
-    }
-
-    @Test(expected = MissingShopperIdException.class)
-    public void testSendSetupEmailThrowsMissingShopperIdExceptionWhenNull() throws MissingShopperIdException, IOException {
-        messagingService.sendSetupEmail(null, accountName, ipAddress, orionId, isFullyManaged);
-    }
-
     @Test
     public void testBuildApiUri() {
         try {
@@ -162,7 +152,7 @@ public class DefaultVps4MessagingServiceTest {
             buildShopperMessageJson.setAccessible(true);
             String shopperMessageJsonResult = (String)buildShopperMessageJson.invoke(messagingService,
                     DefaultVps4MessagingService.EmailTemplates.VirtualPrivateHostingProvisioned4, substitutionValues);
-            Assert.assertEquals(SecureHttpClient.createJSONFromObject(shopperMessage), shopperMessageJsonResult);
+            Assert.assertEquals(SecureHttpClient.createJSONStringFromObject(shopperMessage), shopperMessageJsonResult);
         }
         catch (Exception ex) {
             ex.printStackTrace();
@@ -228,7 +218,7 @@ public class DefaultVps4MessagingServiceTest {
             buildScheduledMaintenanceJson.setAccessible(true);
             String shopperMessageJsonResult = (String)buildScheduledMaintenanceJson.invoke(messagingService,
                     emailTemplate, accountName, startTime, durationMinutes, isFullyManaged);
-            Assert.assertEquals(SecureHttpClient.createJSONFromObject(shopperMessage), shopperMessageJsonResult);
+            Assert.assertEquals(SecureHttpClient.createJSONStringFromObject(shopperMessage), shopperMessageJsonResult);
         } catch (Exception ex) {
             ex.printStackTrace();
             Assert.fail("Failed in calling buildScheduledMaintenanceJson");
@@ -242,18 +232,6 @@ public class DefaultVps4MessagingServiceTest {
                 durationMinutes, isFullyManaged);
         Assert.assertNotNull(actualMessageId);
         Assert.assertEquals(mockMessageId.messageId, actualMessageId);
-    }
-
-    @Test(expected = MissingShopperIdException.class)
-    public void testSendScheduledPatchingEmailShopperEmpty() throws MissingShopperIdException, IOException {
-        messagingService.sendScheduledPatchingEmail("", accountName, startTime, durationMinutes,
-                isFullyManaged);
-    }
-
-    @Test(expected = MissingShopperIdException.class)
-    public void testSendScheduledPatchingEmailShopperNull() throws MissingShopperIdException, IOException {
-        messagingService.sendScheduledPatchingEmail(null, accountName, startTime, durationMinutes,
-                isFullyManaged);
     }
 
     @Test
@@ -287,7 +265,7 @@ public class DefaultVps4MessagingServiceTest {
             buildFailoverJson.setAccessible(true);
             String shopperMessageJsonResult = (String)buildFailoverJson.invoke(messagingService,
                     emailTemplate, accountName, isFullyManaged);
-            Assert.assertEquals(SecureHttpClient.createJSONFromObject(shopperMessage), shopperMessageJsonResult);
+            Assert.assertEquals(SecureHttpClient.createJSONStringFromObject(shopperMessage), shopperMessageJsonResult);
         } catch (Exception ex) {
             ex.printStackTrace();
             Assert.fail("Failed in calling buildFailoverJson");

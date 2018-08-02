@@ -380,8 +380,7 @@ public class HfsMockModule extends AbstractModule {
             }
 
             @Override
-            public String sendSetupEmail(String shopperId, String accountName, String ipAddress, String orionId,
-                                         boolean isFullyManaged) throws MissingShopperIdException, IOException {
+            public String sendSetupEmail(String shopperId, String accountName, String ipAddress, String orionId, boolean isFullyManaged) {
                 return createFakeMessage(shopperId);
             }
 
@@ -393,27 +392,23 @@ public class HfsMockModule extends AbstractModule {
 
             @Override
             public String sendScheduledPatchingEmail(String shopperId, String serverName, Instant startTime,
-                                                     long durationMinutes, boolean isFullyManaged)
-                    throws MissingShopperIdException, IOException {
+                                                     long durationMinutes, boolean isFullyManaged) {
                 return createFakeMessage(shopperId);
             }
 
             @Override
             public String sendUnexpectedButScheduledMaintenanceEmail(String shopperId, String serverName, Instant startTime,
-                                                                     long durationMinutes, boolean isFullyManaged)
-                    throws MissingShopperIdException, IOException {
+                    long durationMinutes, boolean isFullyManaged) {
                 return createFakeMessage(shopperId);
             }
 
             @Override
-            public String sendSystemDownFailoverEmail(String shopperId, String serverName, boolean isFullyManaged)
-                    throws MissingShopperIdException, IOException {
+            public String sendSystemDownFailoverEmail(String shopperId, String serverName, boolean isFullyManaged) {
                 return createFakeMessage(shopperId);
             }
 
             @Override
-            public String sendFailoverCompletedEmail(String shopperId, String serverName, boolean isFullyManaged)
-                    throws MissingShopperIdException, IOException {
+            public String sendFailoverCompletedEmail(String shopperId, String serverName, boolean isFullyManaged) {
                 return createFakeMessage(shopperId);
             }
         };

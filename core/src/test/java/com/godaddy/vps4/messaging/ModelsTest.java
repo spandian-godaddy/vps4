@@ -13,7 +13,7 @@ import java.util.Arrays;
 public class ModelsTest {
     private EmailRecipient emailRecipient;
     private Contact contact;
-    private MessagingMessageId messageId;
+    private MessagingResponse messageId;
     private Message message;
     private MessagingEmail email;
     private Preference preference;
@@ -34,7 +34,7 @@ public class ModelsTest {
 
     @Before
     public void setUp() throws Exception {
-        messageId = new MessagingMessageId();
+        messageId = new MessagingResponse();
         messageId.messageId = UUID.randomUUID().toString();
 
         contact = new Contact();
@@ -90,7 +90,6 @@ public class ModelsTest {
         email = new MessagingEmail();
         email.createdAt = UUID.randomUUID().toString();
         email.currency = UUID.randomUUID().toString();
-        email.emailFormat = UUID.randomUUID().toString();
         email.emailId = 1;
         email.failureReason = UUID.randomUUID().toString();
         email.marketId = UUID.randomUUID().toString();
@@ -154,10 +153,10 @@ public class ModelsTest {
 
     @Test
     public void testMessagingEmail() {
-        String expectedToString = "MessagingEmail [emailId: " + email.emailId + " templateId: " + email.templateId +
-                " to: " + email.to + " status: " + email.status + " createdAt: " + email.createdAt +
-                " currency: " + email.currency + " marketId: " + email.marketId +
-                " emailFormat: " + email.emailFormat + " failureReason: " + email.failureReason +"]";
+        String expectedToString = "MessagingEmail [emailId=" + email.emailId + ", templateId=" + email.templateId +
+                ", templateName=" + email.templateName + ", to=" + email.to + ", status=" + email.status +
+                ", createdAt=" + email.createdAt + ", currency=" + email.currency + ", marketId=" + email.marketId +
+                ", failureReason=" + email.failureReason + "]";
         Assert.assertEquals(expectedToString, email.toString());
     }
 

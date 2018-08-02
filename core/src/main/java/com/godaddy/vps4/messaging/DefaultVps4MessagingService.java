@@ -1,30 +1,33 @@
 package com.godaddy.vps4.messaging;
 
 import java.io.IOException;
-import java.io.UnsupportedEncodingException;
-import java.util.EnumMap;
-import java.util.HashMap;
-import java.util.Map;
-import java.time.ZoneId;
 import java.time.Instant;
+import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
+import java.util.EnumMap;
+import java.util.HashMap;
+import java.util.Map;
 
 import javax.inject.Inject;
 
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
+import org.apache.http.entity.ContentType;
 import org.apache.http.entity.StringEntity;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.godaddy.hfs.config.Config;
 import com.godaddy.vps4.messaging.models.Message;
-import com.godaddy.vps4.messaging.models.MessagingMessageId;
+import com.godaddy.vps4.messaging.models.MessagingResponse;
 import com.godaddy.vps4.messaging.models.ShopperMessage;
 import com.godaddy.vps4.util.SecureHttpClient;
 
 public class DefaultVps4MessagingService implements Vps4MessagingService {
+
+    private static final Logger logger = LoggerFactory.getLogger(DefaultVps4MessagingService.class);
 
     private final String baseUrl;
 
@@ -78,34 +81,33 @@ public class DefaultVps4MessagingService implements Vps4MessagingService {
         return String.format("%s%s", baseUrl, uriPath);
     }
 
-    public Message getMessageById(String messageId) throws IOException {
+    @Override
+    public Message getMessageById(String messageId) {
         String uriPath = String.format("/v1/messaging/messages/%s", messageId);
         String uri = buildApiUri(uriPath);
         HttpGet httpGet = SecureHttpClient.createJsonHttpGet(uri);
 
-        return this.client.executeHttp(httpGet, Message.class);
+        try {
+            return this.client.executeHttp(httpGet, Message.class);
+        } catch (IOException e) {
+            logger.error("Exception getting messageId: {} from messaging api: ", messageId, e);
+            throw new RuntimeException(e);
+        }
     }
 
-    private String buildShopperMessageJson(EmailTemplates template, EnumMap<EmailSubstitutions, String> substitutionValues)
-            throws JsonProcessingException {
+    private String buildShopperMessageJson(EmailTemplates template, EnumMap<EmailSubstitutions, String> substitutionValues) {
         ShopperMessage shopperMessage = new ShopperMessage();
         shopperMessage.templateNamespaceKey = TEMPLATE_NAMESPACE_KEY;
         shopperMessage.templateTypeKey = template.toString();
 
         shopperMessage.substitutionValues = substitutionValues;
 
-        return SecureHttpClient.createJSONFromObject(shopperMessage);
+        return SecureHttpClient.createJSONStringFromObject(shopperMessage);
     }
 
-    private void VerifyShopperId(String shopperId) throws MissingShopperIdException {
-        if (shopperId == null || shopperId.isEmpty()) {
-            throw new MissingShopperIdException("Shopper id is a required parameter.");
-        }
-    }
-
+    @Override
     public String sendSetupEmail(String shopperId, String accountName, String ipAddress, String orionGuid,
-                                 boolean isFullyManaged)
-            throws MissingShopperIdException, IOException {
+                                 boolean isFullyManaged) {
         EnumMap<EmailSubstitutions, String> substitutionValues = new EnumMap<>(EmailSubstitutions.class);
         substitutionValues.put(EmailSubstitutions.ACCOUNTNAME, accountName);
         substitutionValues.put(EmailSubstitutions.IPADDRESS, ipAddress);
@@ -116,21 +118,27 @@ public class DefaultVps4MessagingService implements Vps4MessagingService {
         return sendMessage(shopperId, shopperMessageJson);
     }
 
-    private String sendMessage(String shopperId, String shopperMessageJson)
-            throws MissingShopperIdException, UnsupportedEncodingException, IOException {
-        VerifyShopperId(shopperId);
+    private String sendMessage(String shopperId, String shopperMessageJson) {
         String uriPath = "/v1/messaging/messages";
         String uri = buildApiUri(uriPath);
         Map<String, String> headers = new HashMap<>();
         headers.put("X-Shopper-Id", shopperId);
 
         HttpPost httpPost = SecureHttpClient.createJsonHttpPostWithHeaders(uri, headers);
-        httpPost.setEntity(new StringEntity(shopperMessageJson));
-        MessagingMessageId messageId = this.client.executeHttp(httpPost, MessagingMessageId.class);
+        httpPost.setEntity(new StringEntity(shopperMessageJson, ContentType.APPLICATION_JSON));
 
-        return messageId.messageId;
+        MessagingResponse response;
+        try {
+            response = this.client.executeHttp(httpPost, MessagingResponse.class);
+        } catch (IOException e) {
+            logger.error("Exception sending to messaging api: ", e);
+            throw new RuntimeException(e);
+        }
+
+        return response.messageId;
     }
 
+    @Override
     public String sendFullyManagedEmail(String shopperId, String controlPanel) throws MissingShopperIdException, IOException {
         EnumMap<EmailSubstitutions, String> substitutionValues = new EnumMap<>(EmailSubstitutions.class);
         String shopperMessageJson = null;
@@ -156,7 +164,7 @@ public class DefaultVps4MessagingService implements Vps4MessagingService {
     }
 
     private String buildScheduledMaintenanceJson(EmailTemplates emailTemplate, String accountName, Instant startTime,
-                                                 long durationMinutes, boolean isFullyManaged) throws IOException {
+                                                 long durationMinutes, boolean isFullyManaged) {
         EnumMap<EmailSubstitutions, String> substitutionValues = new EnumMap<>(EmailSubstitutions.class);
         substitutionValues.put(EmailSubstitutions.ACCOUNTNAME, accountName);
         String startDateTime = formatDateTime(startTime);
@@ -168,26 +176,25 @@ public class DefaultVps4MessagingService implements Vps4MessagingService {
         return buildShopperMessageJson(emailTemplate, substitutionValues);
     }
 
+    @Override
     public String sendScheduledPatchingEmail(String shopperId, String accountName, Instant startTime,
-                                             long durationMinutes, boolean isFullyManaged)
-            throws MissingShopperIdException, IOException {
+                                             long durationMinutes, boolean isFullyManaged) {
         String shopperMessageJson = buildScheduledMaintenanceJson(EmailTemplates.VPS4ScheduledPatchingV2, accountName,
                 startTime, durationMinutes, isFullyManaged);
 
         return sendMessage(shopperId, shopperMessageJson);
     }
 
+    @Override
     public String sendUnexpectedButScheduledMaintenanceEmail(String shopperId, String accountName, Instant startTime,
-                                                             long durationMinutes, boolean isFullyManaged)
-            throws MissingShopperIdException, IOException {
+                                                             long durationMinutes, boolean isFullyManaged) {
         String shopperMessageJson = buildScheduledMaintenanceJson(EmailTemplates.VPS4UnexpectedbutScheduledMaintenanceV2,
                 accountName, startTime, durationMinutes, isFullyManaged);
 
         return sendMessage(shopperId, shopperMessageJson);
     }
 
-    private String buildFailoverJson(EmailTemplates emailTemplate, String accountName, boolean isFullyManaged)
-            throws IOException {
+    private String buildFailoverJson(EmailTemplates emailTemplate, String accountName, boolean isFullyManaged) {
         EnumMap<EmailSubstitutions, String> substitutionValues = new EnumMap<>(EmailSubstitutions.class);
         substitutionValues.put(EmailSubstitutions.ACCOUNTNAME, accountName);
         substitutionValues.put(EmailSubstitutions.ISMANAGEDSUPPORT, Boolean.toString(isFullyManaged));
@@ -195,16 +202,16 @@ public class DefaultVps4MessagingService implements Vps4MessagingService {
         return buildShopperMessageJson(emailTemplate, substitutionValues);
     }
 
-    public String sendSystemDownFailoverEmail(String shopperId, String accountName, boolean isFullyManaged)
-            throws MissingShopperIdException, IOException {
+    @Override
+    public String sendSystemDownFailoverEmail(String shopperId, String accountName, boolean isFullyManaged) {
         String shopperMessageJson = buildFailoverJson(EmailTemplates.VPS4SystemDownFailoverV2, accountName,
                 isFullyManaged);
 
         return sendMessage(shopperId, shopperMessageJson);
     }
 
-    public String sendFailoverCompletedEmail(String shopperId, String accountName, boolean isFullyManaged)
-            throws MissingShopperIdException, IOException {
+    @Override
+    public String sendFailoverCompletedEmail(String shopperId, String accountName, boolean isFullyManaged) {
         String shopperMessageJson = buildFailoverJson(EmailTemplates.VPS4UnexpectedscheduledmaintenanceFailoveriscompleted,
                 accountName, isFullyManaged);
 

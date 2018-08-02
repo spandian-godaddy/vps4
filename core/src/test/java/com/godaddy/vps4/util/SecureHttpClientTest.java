@@ -1,35 +1,40 @@
 package com.godaddy.vps4.util;
-import com.godaddy.hfs.config.Config;
+import static org.mockito.Matchers.anyString;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.godaddy.vps4.messaging.DefaultVps4MessagingService;
-import com.godaddy.vps4.messaging.models.Message;
+import java.io.ByteArrayInputStream;
+import java.io.InputStream;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.UUID;
+
 import org.apache.http.Header;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.impl.client.CloseableHttpClient;
-import org.junit.Test;
+import org.json.simple.JSONObject;
 import org.junit.Assert;
+import org.junit.Test;
 
-import java.util.UUID;
-import java.util.Arrays;
-import java.util.Map;
-import java.util.HashMap;
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.godaddy.hfs.config.Config;
+import com.godaddy.vps4.messaging.DefaultVps4MessagingService;
+import com.godaddy.vps4.messaging.models.Message;
 
-import static org.mockito.Matchers.anyString;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 
 public class SecureHttpClientTest {
 
     @Test
     public void testCreateHttpClient() {
         Config config = setupConfig();
-        CloseableHttpClient client = SecureHttpClient.createHttpClient(
+        CloseableHttpClient client = new SecureHttpClient(
                 config,
                 DefaultVps4MessagingService.CLIENT_CERTIFICATE_KEY_PATH,
-                DefaultVps4MessagingService.CLIENT_CERTIFICATE_PATH);
+                DefaultVps4MessagingService.CLIENT_CERTIFICATE_PATH).createHttpClient();
         Assert.assertNotNull(client);
     }
 
@@ -41,14 +46,28 @@ public class SecureHttpClientTest {
         return config;
     }
 
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    public static class TestModel {
+        public String field;
+    }
+
     @Test
-    public void testConstructor() {
-        Config config = setupConfig();
-        SecureHttpClient client = new SecureHttpClient(
-                config,
-                DefaultVps4MessagingService.CLIENT_CERTIFICATE_KEY_PATH,
-                DefaultVps4MessagingService.CLIENT_CERTIFICATE_PATH);
-        Assert.assertNotNull(client);
+    @SuppressWarnings("unchecked")
+    public void testDeserializeResponseIgnoresUnknownProperties() {
+        CloseableHttpClient mockClient = mock(CloseableHttpClient.class);
+        SecureHttpClient client = new SecureHttpClient(null, null, null) {
+            @Override
+            CloseableHttpClient createHttpClient() {
+                return mockClient;
+            }
+        };
+
+        JSONObject testJson = new JSONObject();
+        testJson.put("field", "value");
+        testJson.put("unknown", "crash");
+        InputStream inputStream = new ByteArrayInputStream(testJson.toJSONString().getBytes());
+        TestModel testModel = client.deserializeResponse(inputStream, TestModel.class);
+        Assert.assertEquals("value", testModel.field);
     }
 
     @Test
@@ -61,7 +80,7 @@ public class SecureHttpClientTest {
 
         try {
             String expectedJson = objectMapper.writeValueAsString(message);
-            String actualJson = SecureHttpClient.createJSONFromObject(message);
+            String actualJson = SecureHttpClient.createJSONStringFromObject(message);
 
             Assert.assertEquals(expectedJson, actualJson);
         }
@@ -114,4 +133,5 @@ public class SecureHttpClientTest {
         Assert.assertEquals(header2, actualHttpPost.getHeaders("2")[0].getValue());
         Assert.assertEquals(header3, actualHttpPost.getHeaders("3")[0].getValue());
     }
+
 }
