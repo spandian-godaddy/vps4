@@ -83,10 +83,10 @@ public class Vps4RestoreVm extends ActionCommand<Vps4RestoreVm.Request, Vps4Rest
         long newHfsVmId = hfsVm.vmId;
 
         // Post creation reconfigure steps
-        setRootUserPassword(newHfsVmId);
-        configureAdminUser(newHfsVmId);
         updateHfsVmId(newHfsVmId);
         bindPublicIpAddress(newHfsVmId, ipAddresses);
+        setRootUserPassword(newHfsVmId);
+        configureAdminUser(newHfsVmId);
         refreshCpanelLicense();
 
         deleteOldVm(oldHfsVmId);
