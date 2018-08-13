@@ -57,7 +57,7 @@ public class CPanelResource {
         VirtualMachine vm = resolveVirtualMachine(vmId);
 
         try {
-            return cpanelService.createSession(vm.hfsVmId, "root", CpanelServiceType.whostmgrd);
+            return cpanelService.createSession(vm.hfsVmId, "root", vm.primaryIpAddress, CpanelServiceType.whostmgrd);
 //        } catch (CpanelAccessDeniedException e) {
 //            // TODO bubble a more specific error to the client
 //            // (UI can show a "Authentication issue" error
@@ -80,7 +80,7 @@ public class CPanelResource {
         VirtualMachine vm = resolveVirtualMachine(vmId);
 
         try {
-            return cpanelService.createSession(vm.hfsVmId, username, CpanelServiceType.cpaneld);
+            return cpanelService.createSession(vm.hfsVmId, username, vm.primaryIpAddress, CpanelServiceType.cpaneld);
 //        } catch (CpanelAccessDeniedException e) {
 //            // TODO bubble a more specific error to the client
 //            // (UI can show a "Authentication issue" error

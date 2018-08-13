@@ -7,6 +7,7 @@ import java.util.UUID;
 import javax.sql.DataSource;
 import javax.ws.rs.NotFoundException;
 
+import com.godaddy.vps4.network.IpAddress;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -122,7 +123,7 @@ public class CpanelResourceTest {
 
     @Test
     public void testGetWhmSessionIgnoresCpanelServiceException() throws Exception {
-        Mockito.when(cpServ.createSession(Mockito.anyLong(), Mockito.anyString(), Mockito.any()))
+        Mockito.when(cpServ.createSession(Mockito.anyLong(), Mockito.anyString(), Mockito.any(IpAddress.class), Mockito.any()))
                 .thenThrow(new CpanelTimeoutException("Timed out"));
         Assert.assertNull(getCpanelResource().getWHMSession(vm.vmId));
     }
@@ -157,7 +158,7 @@ public class CpanelResourceTest {
 
     @Test
     public void testGetCPanelSessionIgnoresCpanelServiceException() throws Exception {
-        Mockito.when(cpServ.createSession(Mockito.anyLong(), Mockito.anyString(), Mockito.any()))
+        Mockito.when(cpServ.createSession(Mockito.anyLong(), Mockito.anyString(), Mockito.any(IpAddress.class), Mockito.any()))
                 .thenThrow(new CpanelTimeoutException("Timed out"));
         Assert.assertNull(getCpanelResource().getCPanelSession(vm.vmId, "testuser"));
     }

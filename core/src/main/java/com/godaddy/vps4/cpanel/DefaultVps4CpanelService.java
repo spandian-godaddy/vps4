@@ -8,6 +8,7 @@ import java.util.List;
 
 import javax.inject.Inject;
 
+import com.godaddy.vps4.network.IpAddress;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
@@ -188,10 +189,10 @@ public class DefaultVps4CpanelService implements Vps4CpanelService {
     }
 
     @Override
-    public CPanelSession createSession(long hfsVmId, String username, CpanelServiceType serviceType)
+    public CPanelSession createSession(long hfsVmId, String username, IpAddress ip, CpanelServiceType serviceType)
             throws CpanelAccessDeniedException, CpanelTimeoutException, IOException {
 
-        return withAccessHash(hfsVmId, cPanelClient -> cPanelClient.createSession(username, serviceType));
+        return withAccessHash(hfsVmId, cPanelClient -> cPanelClient.createSession(username, ip.ipAddress, serviceType));
     }
 
 }
