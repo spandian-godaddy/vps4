@@ -10,6 +10,7 @@ Environments
 | Prod  | https://vps4.api.iad2.godaddy.com/ | https://myh.godaddy.com/#/hosting/vps4/index |
 | Prod-PHX | https://vps4.api.phx3.godaddy.com/ | https://myh.godaddy.com/#/hosting/vps4/index |
 | Prod-SG2 | https://vps4.api.sin2.godaddy.com/ | https://myh.godaddy.com/#/hosting/vps4/index |
+| Prod-AMS | https://vps4.api.ams3.godaddy.com/ | https://myh.godaddy.com/#/hosting/vps4/index |
 
 
 Building
@@ -217,6 +218,7 @@ Links
 | Prod-A2 | https://vps4-cca.api.iad2.godaddy.com/#/scheduler |
 | Prod-PHX| https://vps4-cca.api.phx3.godaddy.com/#/scheduler |
 | Prod-SG2| https://vps4-cca.api.sin2.godaddy.com/#/scheduler |
+| Prod-AMS| https://vps4-cca.api.ams3.godaddy.com/#/scheduler |
    
 CRM Links
 ==============
@@ -260,6 +262,7 @@ Run this command to get a list of the current app servers, and what version of v
 | Prod-A2 | ssh a2plvps4mcp.cloud.iad2.gdg "mcpctl status"    |
 | Prod-PHX| ssh p3plvps4mcp.cloud.phx3.gdg "mcpctl status"    |
 | Prod-SG2| ssh sg2plvps4mcp.cloud.sin2.gdg "mcpctl status"   |
+| Prod-AMS| ssh n3plvps4mcp.cloud.ams3.gdg "mcpctl status"   |
 
 MCP Setup
 ============
@@ -311,7 +314,8 @@ The monitoring scripts will update the *vps4-monitoring* slack channel with aler
 | -------   | ------------------------------------- |
 | P3 Prod   | p3plvps4rprt01.cloud.phx3.gdg         |
 | A2 Prod   | TBD                                   |
-| SG2 Prod  | sg2plvps4rprt01.cloud.sin2.gdg                                   |
+| SG2 Prod  | sg2plvps4rprt01.cloud.sin2.gdg        |
+| AMS Prod  | n3plvps4rprt01.cloud.ams3.gdg        |
 
 Process to setup a cron job:
 * Edit the crontab and ensure the jobs are entered as below.
