@@ -151,7 +151,7 @@ public class Vps4SnapshotVm extends ActionCommand<Vps4SnapshotVm.Request, Vps4Sn
             }
         }
 
-        throw new RuntimeException(e.getMessage(), e);
+        throw new RuntimeException("Exception while running backup for vmId " + failedSnapshot.vmId, e);
     }
 
     private void recordJobId(CommandContext context, UUID vmId, UUID jobId) {
