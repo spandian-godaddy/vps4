@@ -5,19 +5,12 @@ import org.slf4j.LoggerFactory;
 
 import com.godaddy.vps4.messaging.Vps4MessagingService;
 import com.godaddy.vps4.messaging.models.Message;
-import com.godaddy.vps4.orchestration.NoRetryException;
 import com.google.inject.Inject;
 
 import gdg.hfs.orchestration.Command;
 import gdg.hfs.orchestration.CommandContext;
-import gdg.hfs.orchestration.CommandMetadata;
-import gdg.hfs.orchestration.CommandRetryStrategy;
 
-@CommandMetadata(
-    name = "WaitForMessageComplete",
-    requestType = String.class,
-    retryStrategy = CommandRetryStrategy.NEVER
-)
+
 public class WaitForMessageComplete implements Command<String, Void> {
 
     private static final Logger logger = LoggerFactory.getLogger(WaitForMessageComplete.class);
@@ -44,7 +37,7 @@ public class WaitForMessageComplete implements Command<String, Void> {
         } else if (message.status.equalsIgnoreCase(Message.Statuses.FAILED.toString())) {
             String errorMessage = String.format("Message %s failed: %s", message.messageId, message.failureReason);
             logger.error(errorMessage);
-            throw new NoRetryException(errorMessage);
+            throw new RuntimeException(errorMessage);
         }
         else {
             logger.error("Message {} status: ", message.messageId, message.status);
@@ -59,8 +52,7 @@ public class WaitForMessageComplete implements Command<String, Void> {
         } catch (Exception e) {
             String exceptionMessage = String.format("Exception calling messagingService.getMessageById: %s",
                     e.getMessage());
-            throw new NoRetryException(exceptionMessage, e);
-
+            throw new RuntimeException(exceptionMessage, e);
         }
     }
 }

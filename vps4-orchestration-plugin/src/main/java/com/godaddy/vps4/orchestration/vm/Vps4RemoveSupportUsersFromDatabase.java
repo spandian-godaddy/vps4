@@ -1,10 +1,5 @@
 package com.godaddy.vps4.orchestration.vm;
 
-import com.godaddy.vps4.orchestration.scheduler.DeleteScheduledJob;
-import com.godaddy.vps4.orchestration.scheduler.Utils;
-import com.godaddy.vps4.scheduledJob.ScheduledJob;
-import com.godaddy.vps4.scheduledJob.ScheduledJobService;
-import com.godaddy.vps4.security.jdbc.JdbcVps4UserService;
 import com.godaddy.vps4.vm.VmUser;
 import com.godaddy.vps4.vm.VmUserService;
 import com.godaddy.vps4.vm.VmUserType;
@@ -12,6 +7,7 @@ import com.google.inject.Inject;
 import gdg.hfs.orchestration.Command;
 import gdg.hfs.orchestration.CommandContext;
 import gdg.hfs.orchestration.CommandMetadata;
+import gdg.hfs.orchestration.CommandRetryStrategy;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -21,7 +17,7 @@ import java.util.UUID;
 @CommandMetadata(
         name="Vps4RemoveSupportUsersFromDatabase",
         requestType=UUID.class,
-        responseType=Void.class
+        retryStrategy = CommandRetryStrategy.NEVER
 )
 public class Vps4RemoveSupportUsersFromDatabase implements Command<UUID, Void> {
 

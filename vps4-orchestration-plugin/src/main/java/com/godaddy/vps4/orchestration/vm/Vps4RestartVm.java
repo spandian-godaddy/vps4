@@ -7,14 +7,16 @@ import com.godaddy.vps4.vm.ActionService;
 
 import gdg.hfs.orchestration.CommandContext;
 import gdg.hfs.orchestration.CommandMetadata;
+import gdg.hfs.orchestration.CommandRetryStrategy;
 import gdg.hfs.vhfs.vm.VmAction;
 import gdg.hfs.vhfs.vm.VmService;
 
 @CommandMetadata(
         name="Vps4RestartVm",
         requestType=VmActionRequest.class,
-        responseType=Vps4RestartVm.Response.class
-    )
+        responseType=Vps4RestartVm.Response.class,
+        retryStrategy = CommandRetryStrategy.NEVER
+)
 public class Vps4RestartVm extends ActionCommand<VmActionRequest, Vps4RestartVm.Response> {
 
     final ActionService actionService;

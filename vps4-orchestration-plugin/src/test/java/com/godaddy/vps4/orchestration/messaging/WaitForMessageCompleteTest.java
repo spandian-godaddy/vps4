@@ -2,10 +2,8 @@ package com.godaddy.vps4.orchestration.messaging;
 
 import com.godaddy.vps4.messaging.Vps4MessagingService;
 import com.godaddy.vps4.messaging.models.Message;
-import com.godaddy.vps4.orchestration.NoRetryException;
 import gdg.hfs.orchestration.CommandContext;
 
-import java.io.IOException;
 import java.util.UUID;
 
 import org.junit.Assert;
@@ -68,7 +66,7 @@ public class WaitForMessageCompleteTest {
         verify(messagingService, times(1)).getMessageById(messageId);
     }
 
-    @Test(expected = NoRetryException.class)
+    @Test(expected = RuntimeException.class)
     public void testExecuteWhenMsgFailed() {
         emailMessage.status = Message.Statuses.FAILED.toString();
         emailMessage.failureReason = "Unit test failed message";
@@ -79,7 +77,7 @@ public class WaitForMessageCompleteTest {
         Assert.fail("Expected NoRetryException");
     }
 
-    @Test(expected = NoRetryException.class)
+    @Test(expected = RuntimeException.class)
     public void testGetMessageByIdThrowsException() {
         when(messagingService.getMessageById(messageId)).thenThrow(new RuntimeException("Maybe a parse error"));
 

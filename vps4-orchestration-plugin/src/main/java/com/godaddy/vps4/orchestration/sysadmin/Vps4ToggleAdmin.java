@@ -3,6 +3,7 @@ package com.godaddy.vps4.orchestration.sysadmin;
 import javax.inject.Inject;
 
 import com.godaddy.vps4.orchestration.Vps4ActionRequest;
+import gdg.hfs.orchestration.CommandRetryStrategy;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -19,7 +20,7 @@ import gdg.hfs.vhfs.sysadmin.SysAdminService;
 @CommandMetadata(
     name = "Vps4ToggleAdmin",
     requestType = Vps4ToggleAdmin.Request.class,
-    responseType = Void.class
+    retryStrategy = CommandRetryStrategy.NEVER
 )
 public class Vps4ToggleAdmin extends ActionCommand<Vps4ToggleAdmin.Request, Void> {
 

@@ -280,7 +280,12 @@ public class Vps4SnapshotVmTest {
     public void errorInInitialRequestSetsStatusToError() {
         SnapshotAction execute = context.execute(eq("Vps4SnapshotVm"), any(Function.class), eq(SnapshotAction.class));
 		when(execute).thenThrow(new RuntimeException("Error in initial request"));
-        command.execute(context, request);
+		try {
+            command.execute(context, request);
+            Assert.fail("RuntimeException should have been thrown");
+        }catch (RuntimeException e){
+            //ignore the exception that we forced it to throw.
+        }
 
         verify(spySnapshotService, times(1)).markSnapshotErrored(eq(vps4SnapshotId));
         Assert.assertEquals(snapshotService.getSnapshot(vps4SnapshotId).status, SnapshotStatus.ERROR);
@@ -290,10 +295,9 @@ public class Vps4SnapshotVmTest {
         when(context.execute(eq("Vps4SnapshotVm"), any(Function.class), eq(SnapshotAction.class))).thenThrow(new RuntimeException("Error in initial request"));
         try {
             command.execute(context, automaticRequest);
+            Assert.fail("RuntimeException should have been thrown");
         }catch(RuntimeException rte){
-            // Automatic backups throw a NoRetryException which is not raised through
-            // the orchestration engine.
-            Assert.fail("Should not have thrown a runtime exception");
+            // ignore the runtime exception
         }
         verify(context, times(numOfTimesCalled)).execute(eq(ScheduleAutomaticBackupRetry.class), any(ScheduleAutomaticBackupRetry.Request.class));
     }
@@ -314,7 +318,12 @@ public class Vps4SnapshotVmTest {
     public void errorInCreationProcessSetsStatusToError() {
         when(context.execute(eq(WaitForSnapshotAction.class), eq(hfsAction)))
                 .thenThrow(new RuntimeException("Error in initial request"));
-        command.execute(context, request);
+        try {
+            command.execute(context, request);
+            Assert.fail("RuntimeException should have been thrown");
+        }catch(RuntimeException e){
+            // ignore the runtime exception we forced it to throw
+        }
 
         verify(spySnapshotService, times(1)).markSnapshotErrored(eq(vps4SnapshotId));
         Assert.assertEquals(snapshotService.getSnapshot(vps4SnapshotId).status, SnapshotStatus.ERROR);
@@ -327,10 +336,9 @@ public class Vps4SnapshotVmTest {
 
         try {
             command.execute(context, automaticRequest);
+            Assert.fail("RuntimeException should have been thrown");
         }catch(RuntimeException rte){
-            // Automatic backups throw a NoRetryException which is not raised through
-            // the orchestration engine.
-            Assert.fail("Should not have thrown a runtime exception");
+            // Ignore the runtime exception
         }
 
         verify(context, times(1)).execute(eq(ScheduleAutomaticBackupRetry.class), any(ScheduleAutomaticBackupRetry.Request.class));
@@ -346,10 +354,9 @@ public class Vps4SnapshotVmTest {
 
         try {
             command.execute(context, automaticRequest);
+            Assert.fail("RuntimeException should have been thrown");
         }catch(RuntimeException rte){
-            // Automatic backups throw a NoRetryException which is not raised through
-            // the orchestration engine.
-            Assert.fail("Should not have thrown a runtime exception");
+            // Ignore the runtime exception
         }
 
         verify(context, times(1))

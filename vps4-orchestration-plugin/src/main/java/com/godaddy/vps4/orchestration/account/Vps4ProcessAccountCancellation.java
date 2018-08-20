@@ -8,6 +8,7 @@ import javax.inject.Inject;
 
 import com.godaddy.vps4.orchestration.ActionCommand;
 import com.godaddy.vps4.orchestration.ActionRequest;
+import gdg.hfs.orchestration.CommandRetryStrategy;
 import org.json.simple.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -31,7 +32,8 @@ import gdg.hfs.orchestration.CommandMetadata;
 
 @CommandMetadata(
         name="Vps4ProcessAccountCancellation",
-        requestType=Vps4ProcessAccountCancellation.Request.class
+        requestType=Vps4ProcessAccountCancellation.Request.class,
+        retryStrategy = CommandRetryStrategy.NEVER
 )
 public class Vps4ProcessAccountCancellation extends ActionCommand<Vps4ProcessAccountCancellation.Request,Void> {
 

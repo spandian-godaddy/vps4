@@ -12,11 +12,12 @@ import com.google.inject.Inject;
 
 import gdg.hfs.orchestration.CommandContext;
 import gdg.hfs.orchestration.CommandMetadata;
+import gdg.hfs.orchestration.CommandRetryStrategy;
 
 @CommandMetadata(
         name = "Vps4AddSupportUser",
         requestType = Vps4AddSupportUser.Request.class,
-        responseType = Void.class
+        retryStrategy = CommandRetryStrategy.NEVER
 )
 public class Vps4AddSupportUser extends ActionCommand<Vps4AddSupportUser.Request, Void> {
 

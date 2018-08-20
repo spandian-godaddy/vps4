@@ -40,14 +40,6 @@ public abstract class ActionCommand<Req extends ActionRequest, Res> implements C
 
             return response;
 
-        } catch (NoRetryException e) {
-            // If an exception is thrown, the orchestration engine will retry.
-            // Swallow the exception and set the action to failed.
-            logger.warn("NoRetryException swallowed in orchestration engine. Exception :", e);
-            JSONObject response = new JSONObject();
-            response.put("message", e.getMessage());
-            actionService.failAction(actionId, response.toJSONString(), null);
-            return null;
         }
         catch (Exception e) {
 

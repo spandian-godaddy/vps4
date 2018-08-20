@@ -5,6 +5,7 @@ import java.util.Map;
 
 import javax.inject.Inject;
 
+import gdg.hfs.orchestration.CommandRetryStrategy;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -18,7 +19,9 @@ import gdg.hfs.orchestration.CommandMetadata;
 
 @CommandMetadata(
         name="Vps4PlanChange",
-        requestType=Vps4PlanChange.Request.class)
+        requestType=Vps4PlanChange.Request.class,
+        retryStrategy = CommandRetryStrategy.NEVER
+)
 public class Vps4PlanChange implements Command<Vps4PlanChange.Request, Void>{
 
     private static final Logger logger = LoggerFactory.getLogger(Vps4PlanChange.class);

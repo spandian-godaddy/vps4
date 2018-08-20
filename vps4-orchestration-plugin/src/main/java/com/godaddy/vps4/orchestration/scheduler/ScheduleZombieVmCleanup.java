@@ -5,6 +5,7 @@ import java.util.UUID;
 
 import javax.inject.Inject;
 
+import gdg.hfs.orchestration.CommandRetryStrategy;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -22,7 +23,8 @@ import gdg.hfs.orchestration.CommandMetadata;
 @CommandMetadata(
         name="ScheduleZombieVmCleanup",
         requestType=ScheduleZombieVmCleanup.Request.class,
-        responseType=UUID.class
+        responseType=UUID.class,
+        retryStrategy = CommandRetryStrategy.NEVER
 )
 public class ScheduleZombieVmCleanup implements Command<ScheduleZombieVmCleanup.Request, UUID> {
 

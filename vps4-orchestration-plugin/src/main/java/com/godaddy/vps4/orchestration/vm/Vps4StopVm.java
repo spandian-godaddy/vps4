@@ -2,6 +2,7 @@ package com.godaddy.vps4.orchestration.vm;
 
 import javax.inject.Inject;
 
+import gdg.hfs.orchestration.CommandRetryStrategy;
 import org.apache.commons.lang3.builder.ReflectionToStringBuilder;
 import org.apache.commons.lang3.builder.ToStringStyle;
 import org.slf4j.Logger;
@@ -19,7 +20,8 @@ import gdg.hfs.vhfs.vm.VmService;
 @CommandMetadata(
         name="Vps4StopVm",
         requestType=VmActionRequest.class,
-        responseType=Vps4StopVm.Response.class
+        responseType=Vps4StopVm.Response.class,
+        retryStrategy = CommandRetryStrategy.NEVER
     )
 public class Vps4StopVm extends ActionCommand<VmActionRequest, Vps4StopVm.Response> {
 

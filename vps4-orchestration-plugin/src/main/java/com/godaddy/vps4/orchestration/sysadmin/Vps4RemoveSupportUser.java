@@ -1,11 +1,11 @@
 package com.godaddy.vps4.orchestration.sysadmin;
 
 import com.godaddy.vps4.orchestration.Vps4ActionRequest;
+import gdg.hfs.orchestration.CommandRetryStrategy;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.godaddy.vps4.orchestration.ActionCommand;
-import com.godaddy.vps4.orchestration.NoRetryException;
 import com.godaddy.vps4.orchestration.hfs.ActionNotCompletedException;
 import com.godaddy.vps4.orchestration.hfs.sysadmin.RemoveUser;
 import com.godaddy.vps4.orchestration.scheduler.ScheduleSupportUserRemoval;
@@ -19,7 +19,7 @@ import gdg.hfs.orchestration.CommandMetadata;
 @CommandMetadata(
         name = "Vps4RemoveSupportUser",
         requestType = Vps4RemoveSupportUser.Request.class,
-        responseType = Void.class
+        retryStrategy = CommandRetryStrategy.NEVER
 )
 
 public class Vps4RemoveSupportUser extends ActionCommand<Vps4RemoveSupportUser.Request, Void> {
@@ -55,7 +55,7 @@ public class Vps4RemoveSupportUser extends ActionCommand<Vps4RemoveSupportUser.R
             removeSupportUserRequest.vmId = request.vmId;
             removeSupportUserRequest.username = request.username;
             context.execute(ScheduleSupportUserRemoval.class, removeSupportUserRequest);
-            throw new NoRetryException(errorMessage, e);
+            throw new RuntimeException(errorMessage, e);
         }
 
         return null;

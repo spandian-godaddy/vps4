@@ -19,6 +19,7 @@ import java.util.UUID;
 
 import javax.inject.Inject;
 
+import gdg.hfs.orchestration.CommandRetryStrategy;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -29,7 +30,6 @@ import com.godaddy.vps4.network.IpAddress.IpAddressType;
 import com.godaddy.vps4.network.NetworkService;
 import com.godaddy.vps4.orchestration.ActionCommand;
 import com.godaddy.vps4.orchestration.ActionRequest;
-import com.godaddy.vps4.orchestration.NoRetryException;
 import com.godaddy.vps4.orchestration.hfs.cpanel.ConfigureCpanel;
 import com.godaddy.vps4.orchestration.hfs.cpanel.ConfigureCpanel.ConfigureCpanelRequest;
 import com.godaddy.vps4.orchestration.hfs.mailrelay.SetMailRelayQuota;
@@ -68,7 +68,12 @@ import gdg.hfs.vhfs.nodeping.NodePingService;
 import gdg.hfs.vhfs.vm.VmAction;
 import gdg.hfs.vhfs.vm.VmService;
 
-@CommandMetadata(name = "ProvisionVm", requestType = Vps4ProvisionVm.Request.class, responseType = Vps4ProvisionVm.Response.class)
+@CommandMetadata(
+        name = "ProvisionVm",
+        requestType = Vps4ProvisionVm.Request.class,
+        responseType = Vps4ProvisionVm.Response.class,
+        retryStrategy = CommandRetryStrategy.NEVER
+)
 public class Vps4ProvisionVm extends ActionCommand<Vps4ProvisionVm.Request, Vps4ProvisionVm.Response> {
 
     private static final Logger logger = LoggerFactory.getLogger(Vps4ProvisionVm.class);
@@ -119,42 +124,38 @@ public class Vps4ProvisionVm extends ActionCommand<Vps4ProvisionVm.Request, Vps4
 
         logger.info("begin provision vm for request: {}", request);
 
-        try {
-            IpAddress ip = allocateIp();
+        IpAddress ip = allocateIp();
 
-            createMailRelay(ip);
+        createMailRelay(ip);
 
-            generateHostname(ip);
+        generateHostname(ip);
 
-            long hfsVmId = createVm();
+        long hfsVmId = createVm();
 
-            bindIp(hfsVmId, ip);
+        bindIp(hfsVmId, ip);
 
-            setupUsers(hfsVmId);
+        setupUsers(hfsVmId);
 
-            configureControlPanel(hfsVmId);
+        configureControlPanel(hfsVmId);
 
-            setHostname(hfsVmId);
+        setHostname(hfsVmId);
 
-            configureAdminUser(hfsVmId, request.vmInfo.vmId);
+        configureAdminUser(hfsVmId, request.vmInfo.vmId);
 
-            configureMailRelay(hfsVmId);
+        configureMailRelay(hfsVmId);
 
-            configureMonitoring(ip);
+        configureMonitoring(ip);
 
-            setEcommCommonName(request.orionGuid, request.serverName);
+        setEcommCommonName(request.orionGuid, request.serverName);
 
-            sendSetupEmail(request, ip.address);
+        sendSetupEmail(request, ip.address);
 
-            // TODO: keeps this commented until we have the nginx configured to setup client cert based auth for
-            // vps4 inter microservice communication.
-            setupAutomaticBackupSchedule(request.vmInfo.vmId, request.shopperId);
+        // TODO: keeps this commented until we have the nginx configured to setup client cert based auth for
+        // vps4 inter microservice communication.
+        setupAutomaticBackupSchedule(request.vmInfo.vmId, request.shopperId);
 
-            setStep(SetupComplete);
-            logger.info("provision vm finished: {}", request.vmInfo.vmId);
-        } catch (Exception e) {
-            throw new NoRetryException("Exception during provision of vmId " + request.vmInfo.vmId, e);
-        }
+        setStep(SetupComplete);
+        logger.info("provision vm finished: {}", request.vmInfo.vmId);
         return null;
     }
 

@@ -3,6 +3,7 @@ package com.godaddy.vps4.orchestration.vm;
 
 import javax.inject.Inject;
 
+import gdg.hfs.orchestration.CommandRetryStrategy;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -20,7 +21,7 @@ import gdg.hfs.vhfs.vm.VmService;
 @CommandMetadata(
         name="Vps4DestroyIpAddressAction",
         requestType=Vps4DestroyIpAddressAction.Request.class,
-        responseType=Void.class
+        retryStrategy = CommandRetryStrategy.NEVER
     )
 public class Vps4DestroyIpAddressAction extends ActionCommand<Vps4DestroyIpAddressAction.Request, Void> {
 

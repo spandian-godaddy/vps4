@@ -5,6 +5,7 @@ import java.util.UUID;
 
 import javax.inject.Inject;
 
+import gdg.hfs.orchestration.CommandRetryStrategy;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -27,8 +28,8 @@ import gdg.hfs.vhfs.vm.VmService;
 @CommandMetadata(
         name="Vps4AddIpAddress",
         requestType=Vps4AddIpAddress.Request.class,
-        responseType=Void.class
-    )
+        retryStrategy = CommandRetryStrategy.NEVER
+)
 public class Vps4AddIpAddress extends ActionCommand<Vps4AddIpAddress.Request, Void> {
 
     private static final Logger logger = LoggerFactory.getLogger(Vps4AddIpAddress.class);

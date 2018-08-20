@@ -12,6 +12,7 @@ import com.godaddy.vps4.vm.VirtualMachineService;
 import com.hazelcast.util.StringUtil;
 import gdg.hfs.orchestration.CommandContext;
 import gdg.hfs.orchestration.CommandMetadata;
+import gdg.hfs.orchestration.CommandRetryStrategy;
 import gdg.hfs.vhfs.cpanel.CPanelService;
 import gdg.hfs.vhfs.nodeping.NodePingService;
 import gdg.hfs.vhfs.plesk.PleskService;
@@ -30,7 +31,8 @@ import java.util.stream.Collectors;
 @CommandMetadata(
         name="Vps4DestroyVm",
         requestType=VmActionRequest.class,
-        responseType=Vps4DestroyVm.Response.class
+        responseType=Vps4DestroyVm.Response.class,
+        retryStrategy = CommandRetryStrategy.NEVER
     )
 public class Vps4DestroyVm extends ActionCommand<VmActionRequest, Vps4DestroyVm.Response> {
 

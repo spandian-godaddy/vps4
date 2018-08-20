@@ -5,11 +5,11 @@ import java.util.UUID;
 import javax.inject.Inject;
 
 import com.godaddy.hfs.config.Config;
-import com.godaddy.vps4.orchestration.NoRetryException;
 import com.godaddy.vps4.orchestration.Vps4ActionRequest;
 import com.godaddy.vps4.orchestration.scheduler.ScheduleAutomaticBackupRetry;
 import com.godaddy.vps4.orchestration.vm.Vps4RecordScheduledJobForVm;
 import com.godaddy.vps4.scheduledJob.ScheduledJob;
+import gdg.hfs.orchestration.CommandRetryStrategy;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.json.simple.JSONObject;
 import org.slf4j.Logger;
@@ -30,8 +30,9 @@ import gdg.hfs.vhfs.snapshot.SnapshotAction;
 @CommandMetadata(
         name="Vps4SnapshotVm",
         requestType=Vps4SnapshotVm.Request.class,
-        responseType=Vps4SnapshotVm.Response.class
-    )
+        responseType=Vps4SnapshotVm.Response.class,
+        retryStrategy = CommandRetryStrategy.NEVER
+)
 public class Vps4SnapshotVm extends ActionCommand<Vps4SnapshotVm.Request, Vps4SnapshotVm.Response> {
     private static final Logger logger = LoggerFactory.getLogger(Vps4SnapshotVm.class);
 
@@ -149,8 +150,8 @@ public class Vps4SnapshotVm extends ActionCommand<Vps4SnapshotVm.Request, Vps4Sn
                 logger.warn("Max retries exceeded for automatic snapshot on vm: {}  Will not retry again.", failedSnapshot.vmId);
             }
         }
-        //Prevent the orchestration engine from retrying this snapshot.
-        throw new NoRetryException("Exception while running backup for vmId " + failedSnapshot.vmId, e);
+
+        throw new RuntimeException(e.getMessage(), e);
     }
 
     private void recordJobId(CommandContext context, UUID vmId, UUID jobId) {

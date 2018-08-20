@@ -7,6 +7,7 @@ import java.util.UUID;
 import com.godaddy.vps4.orchestration.ActionCommand;
 import com.godaddy.vps4.orchestration.ActionRequest;
 import com.godaddy.vps4.vm.ActionService;
+import gdg.hfs.orchestration.CommandRetryStrategy;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -27,7 +28,8 @@ import gdg.hfs.orchestration.CommandMetadata;
 
 @CommandMetadata(
             name="Vps4ReviveZombieVm",
-            requestType=Vps4ReviveZombieVm.Request.class
+            requestType=Vps4ReviveZombieVm.Request.class,
+            retryStrategy = CommandRetryStrategy.NEVER
 )
 public class Vps4ReviveZombieVm extends ActionCommand<Vps4ReviveZombieVm.Request, Void> {
 

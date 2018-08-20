@@ -13,11 +13,12 @@ import com.godaddy.vps4.vm.ActionService;
 
 import gdg.hfs.orchestration.CommandContext;
 import gdg.hfs.orchestration.CommandMetadata;
+import gdg.hfs.orchestration.CommandRetryStrategy;
 
 @CommandMetadata(
         name="Vps4DestroySnapshot",
         requestType=Vps4DestroySnapshot.Request.class,
-        responseType=Void.class
+        retryStrategy = CommandRetryStrategy.NEVER
     )
 public class Vps4DestroySnapshot extends ActionCommand<Vps4DestroySnapshot.Request, Void> {
 

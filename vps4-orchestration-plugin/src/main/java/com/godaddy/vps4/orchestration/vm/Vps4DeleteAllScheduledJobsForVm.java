@@ -3,6 +3,7 @@ package com.godaddy.vps4.orchestration.vm;
 import java.util.List;
 import java.util.UUID;
 
+import gdg.hfs.orchestration.CommandRetryStrategy;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -19,7 +20,7 @@ import gdg.hfs.orchestration.CommandMetadata;
 @CommandMetadata(
             name="Vps4DeleteAllScheduledJobsForVm",
             requestType=UUID.class,
-            responseType=Void.class
+            retryStrategy = CommandRetryStrategy.NEVER
 )
 public class Vps4DeleteAllScheduledJobsForVm implements Command<UUID, Void> {
 

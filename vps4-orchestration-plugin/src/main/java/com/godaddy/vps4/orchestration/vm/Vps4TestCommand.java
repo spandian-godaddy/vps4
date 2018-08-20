@@ -8,11 +8,13 @@ import com.godaddy.vps4.vm.ActionService;
 
 import gdg.hfs.orchestration.CommandContext;
 import gdg.hfs.orchestration.CommandMetadata;
+import gdg.hfs.orchestration.CommandRetryStrategy;
 
 @CommandMetadata(
     name="Vps4TestCommand",
     requestType=Vps4TestCommand.TestRequest.class,
-    responseType=Long.class
+    responseType=Long.class,
+    retryStrategy = CommandRetryStrategy.NEVER
 )
 public class Vps4TestCommand extends ActionCommand<Vps4TestCommand.TestRequest, Long> {
 

@@ -5,6 +5,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
 
+import gdg.hfs.orchestration.CommandRetryStrategy;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -40,7 +41,8 @@ import gdg.hfs.vhfs.vm.VmService;
 @CommandMetadata(
         name="Vps4RestoreVm",
         requestType=Vps4RestoreVm.Request.class,
-        responseType=Vps4RestoreVm.Response.class
+        responseType=Vps4RestoreVm.Response.class,
+        retryStrategy = CommandRetryStrategy.NEVER
 )
 public class Vps4RestoreVm extends ActionCommand<Vps4RestoreVm.Request, Vps4RestoreVm.Response> {
 

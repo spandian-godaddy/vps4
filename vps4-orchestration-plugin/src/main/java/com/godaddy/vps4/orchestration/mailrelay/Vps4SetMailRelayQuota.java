@@ -1,5 +1,6 @@
 package com.godaddy.vps4.orchestration.mailrelay;
 
+import gdg.hfs.orchestration.CommandRetryStrategy;
 import org.json.simple.JSONObject;
 
 import com.godaddy.vps4.orchestration.ActionCommand;
@@ -15,8 +16,8 @@ import gdg.hfs.orchestration.CommandMetadata;
 @CommandMetadata(
         name="Vps4SetMailRelayQuota",
         requestType=Vps4SetMailRelayQuota.Request.class,
-        responseType=Void.class
-    )
+        retryStrategy = CommandRetryStrategy.NEVER
+)
 public class Vps4SetMailRelayQuota extends ActionCommand<Vps4SetMailRelayQuota.Request, Void>{
 
 

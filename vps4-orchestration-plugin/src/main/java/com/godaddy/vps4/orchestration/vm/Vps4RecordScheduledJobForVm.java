@@ -6,13 +6,14 @@ import com.google.inject.Inject;
 import gdg.hfs.orchestration.Command;
 import gdg.hfs.orchestration.CommandContext;
 import gdg.hfs.orchestration.CommandMetadata;
+import gdg.hfs.orchestration.CommandRetryStrategy;
 
 import java.util.UUID;
 
 @CommandMetadata(
             name="Vps4RecordScheduledJobForVm",
             requestType=Vps4RecordScheduledJobForVm.Request.class,
-            responseType=Void.class
+            retryStrategy = CommandRetryStrategy.NEVER
 )
 public class Vps4RecordScheduledJobForVm implements Command<Vps4RecordScheduledJobForVm.Request, Void> {
 
