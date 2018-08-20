@@ -25,7 +25,14 @@ public class UnlicensePlesk implements Command<Long, Void> {
         PleskAction action = context.execute("Unlicense-Plesk", ctx -> {
             return pleskService.licenseRelease(hfsVmId);
         }, PleskAction.class);
-        context.execute(WaitForPleskAction.class, action);
+        try {
+            context.execute(WaitForPleskAction.class, action);
+        } catch (RuntimeException e) {
+            //If the exception is for failing to find the license then ignore the exception, the VM was never licensed.
+            if(!e.getMessage().contains("Failed to find license for VM")) {
+                throw e;
+            }
+        }
         return null;
     }
 }
