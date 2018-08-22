@@ -7,6 +7,7 @@ import javax.servlet.http.HttpServletRequest;
 
 import com.godaddy.hfs.config.Config;
 import com.godaddy.vps4.web.security.GDUser;
+import com.godaddy.vps4.web.security.GDUser.Role;
 import com.godaddy.vps4.web.security.XCertSubjectHeaderAuthenticator;
 import junit.framework.Assert;
 import org.junit.Test;
@@ -30,6 +31,7 @@ public class XCertSubjectHeaderAuthenticatorTest {
 
         Assert.assertNotNull(user);
         Assert.assertEquals(true, user.isStaff());
+        Assert.assertEquals(Role.ADMIN, user.role());
     }
 
     @Test

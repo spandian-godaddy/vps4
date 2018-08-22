@@ -1,10 +1,5 @@
 package com.godaddy.vps4.web;
 
-import com.godaddy.vps4.orchestration.sysadmin.Vps4AddSupportUser;
-import com.godaddy.vps4.orchestration.sysadmin.Vps4RemoveSupportUser;
-import com.godaddy.vps4.orchestration.sysadmin.Vps4SetHostname;
-import com.godaddy.vps4.orchestration.vm.Vps4CancelAction;
-import com.godaddy.vps4.vm.ActionType;
 import com.godaddy.vps4.web.appmonitors.VmActionsMonitorResource;
 import com.godaddy.vps4.web.cache.CacheResource;
 import com.godaddy.vps4.web.console.ConsoleResource;
@@ -16,7 +11,7 @@ import com.godaddy.vps4.web.messaging.VmMessagingResource;
 import com.godaddy.vps4.web.monitoring.VmMonitoringResource;
 import com.godaddy.vps4.web.network.NetworkResource;
 import com.godaddy.vps4.web.security.AdminAuthFilter;
-import com.godaddy.vps4.web.security.TemporarilyDisabled;
+import com.godaddy.vps4.web.security.RequiresRoleFilter;
 import com.godaddy.vps4.web.security.TemporarilyDisabledEndpointFilter;
 import com.godaddy.vps4.web.snapshot.SnapshotActionResource;
 import com.godaddy.vps4.web.snapshot.SnapshotResource;
@@ -38,9 +33,6 @@ import com.godaddy.vps4.web.vm.VmTroubleshootResource;
 import com.godaddy.vps4.web.vm.VmZombieResource;
 import com.google.inject.AbstractModule;
 
-import com.google.inject.multibindings.MapBinder;
-import gdg.hfs.orchestration.Command;
-import gdg.hfs.orchestration.CommandDescriptor;
 import gdg.hfs.orchestration.web.CommandsResource;
 import gdg.hfs.orchestration.web.CommandsViewResource;
 
@@ -78,6 +70,7 @@ public class WebModule extends AbstractModule {
         bind(VmSnapshotActionResource.class);
         bind(Vps4ExceptionMapper.class);
         bind(AdminAuthFilter.class);
+        bind(RequiresRoleFilter.class);
         bind(VmActionsMonitorResource.class);
         bind(ConsoleResource.class);
         bind(VmMessagingResource.class);

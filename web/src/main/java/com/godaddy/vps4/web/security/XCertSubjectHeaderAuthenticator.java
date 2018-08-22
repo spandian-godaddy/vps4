@@ -11,6 +11,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.godaddy.hfs.config.Config;
+import com.godaddy.vps4.web.security.GDUser.Role;
 
 public class XCertSubjectHeaderAuthenticator implements RequestAuthenticator<GDUser> {
 
@@ -74,6 +75,7 @@ public class XCertSubjectHeaderAuthenticator implements RequestAuthenticator<GDU
         gdUser.isStaff = true;
         gdUser.isAdmin = false;
         gdUser.username = username;
+        gdUser.role = Role.ADMIN; // If client cert authentication was used then the role assigned is that of admin
         return gdUser;
     }
 }

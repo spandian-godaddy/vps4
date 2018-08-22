@@ -5,6 +5,7 @@ import static org.mockito.Mockito.when;
 import org.mockito.Mockito;
 
 import com.godaddy.vps4.web.security.GDUser;
+import com.godaddy.vps4.web.security.GDUser.Role;
 
 public class GDUserMock {
     public final static String DEFAULT_SHOPPER = "validUserShopperId";
@@ -14,15 +15,15 @@ public class GDUserMock {
     }
 
     public static GDUser createShopper(String shopperId) {
-        return create(shopperId, false, false, false);
+        return create(shopperId, false, false, false, Role.CUSTOMER);
     }
 
     public static GDUser createEmployee() {
-        return create(null, true, false, false);
+        return create(null, true, false, false, Role.EMPLOYEE_OTHER);
     }
 
     public static GDUser createStaff() {
-        return create(null, true, false, true);
+        return create(null, true, false, true, Role.HS_AGENT);
     }
 
     public static GDUser createEmployee2Shopper() {
@@ -30,7 +31,7 @@ public class GDUserMock {
     }
 
     public static GDUser createEmployee2Shopper(String shopperId) {
-        return create(shopperId, true, false, false);
+        return create(shopperId, true, false, false, Role.EMPLOYEE_OTHER);
     }
 
     public static GDUser createAdmin() {
@@ -38,10 +39,10 @@ public class GDUserMock {
     }
 
     public static GDUser createAdmin(String shopperId) {
-        return create(shopperId, true, true, true);
+        return create(shopperId, true, true, true, Role.ADMIN);
     }
 
-    public static GDUser create(String shopperId, boolean isEmployee, boolean isAdmin, boolean isStaff) {
+    public static GDUser create(String shopperId, boolean isEmployee, boolean isAdmin, boolean isStaff, Role role) {
         GDUser gdUser = Mockito.mock(GDUser.class);
         when(gdUser.isShopper()).thenReturn(shopperId!=null);
         when(gdUser.isEmployee()).thenReturn(isEmployee);
@@ -50,6 +51,7 @@ public class GDUserMock {
         when(gdUser.getShopperId()).thenReturn(shopperId);
         when(gdUser.isEmployeeToShopper()).thenReturn(isEmployee && shopperId != null);
         when(gdUser.getUsername()).thenReturn("tester");
+        when(gdUser.role()).thenReturn(role);
         return gdUser;
     }
 }

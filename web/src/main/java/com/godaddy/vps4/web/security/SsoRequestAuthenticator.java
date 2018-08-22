@@ -14,6 +14,8 @@ import com.godaddy.hfs.sso.token.IdpSsoToken;
 import com.godaddy.hfs.sso.token.JomaxSsoToken;
 import com.godaddy.hfs.sso.token.SsoToken;
 import com.godaddy.vps4.web.Vps4Exception;
+import com.godaddy.vps4.web.security.GDUser.Role;
+
 
 public class SsoRequestAuthenticator implements RequestAuthenticator<GDUser> {
 
@@ -21,6 +23,7 @@ public class SsoRequestAuthenticator implements RequestAuthenticator<GDUser> {
 
     private final String VPS4_TEAM = "Dev-VPS4";
     private final String C3_HOSTING_SUPPORT = "C3-Hosting Support";
+    private final String C3_HOSTING_SUPPORT_LEAD = "HS_techleads";
 
     private final SsoTokenExtractor tokenExtractor;
 
@@ -102,11 +105,22 @@ public class SsoRequestAuthenticator implements RequestAuthenticator<GDUser> {
     }
 
     private void setPrivilegeByGroups(GDUser gdUser, List<String> groups) {
+        // The order of group check matters. This is because an employee could be part of different group but
+        // you want to assign a role corresponding to the group with the most privileges.
+        // For example: A hosting support supervisor may be part of both the hosting support teach leads group as
+        // well as the hosting support agents group. But we would want to assign them to a role of HS_LEAD.
         if (groups.contains(VPS4_TEAM)) {
             gdUser.isAdmin = true;
             gdUser.isStaff = true;
+            gdUser.role = Role.ADMIN;
+        } else if (groups.contains(C3_HOSTING_SUPPORT_LEAD)) {
+            gdUser.isStaff = true;
+            gdUser.role = Role.HS_LEAD;
         } else if (groups.contains(C3_HOSTING_SUPPORT)) {
             gdUser.isStaff = true;
+            gdUser.role = Role.HS_AGENT;
+        } else {
+            gdUser.role = Role.EMPLOYEE_OTHER;
         }
     }
 }

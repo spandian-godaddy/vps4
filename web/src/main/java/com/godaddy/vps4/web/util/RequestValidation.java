@@ -31,10 +31,14 @@ import com.godaddy.vps4.vm.VirtualMachineService;
 import com.godaddy.vps4.web.Vps4Exception;
 import com.godaddy.vps4.web.Vps4NoShopperException;
 import com.godaddy.vps4.web.security.GDUser;
+import com.godaddy.vps4.web.security.GDUser.Role;
 
 import gdg.hfs.vhfs.vm.Vm;
 
 public class RequestValidation {
+    static final int GODADDY_MAIL_RELAY_LIMIT = 10000;
+    static final int BRAND_RESELLER_MAIL_RELAY_LIMIT = 25000;
+
     public static void validateServerIsActive(Vm vm) {
         if (!vm.status.equals("ACTIVE"))
             throw new Vps4Exception("INVALID_STATUS", "This action must be run while the server is running");
@@ -118,6 +122,42 @@ public class RequestValidation {
         Validator validator = ValidatorRegistry.getInstance().get("password");
         if (!validator.isValid(password)){
             throw new Vps4Exception("INVALID_PASSWORD", String.format("%s is an invalid password", password));
+        }
+    }
+
+    private static boolean isBrandReseller(String resellerId) {
+        String[] brandResellers = {
+            "525848", // Heart Internet
+            "525847", // Host Europe GmbH
+            "525845", // Domain Factory GmbH
+            "525844", // 123 Reg
+            "495469"  // Media Temple
+        };
+
+        return Arrays.stream(brandResellers).anyMatch(rsId -> rsId.equals(resellerId));
+    }
+
+    public static void validateMailRelayUpdate(
+            CreditService creditService, UUID orionGuid, GDUser gdUser, int newQuota) {
+        VirtualMachineCredit vmCredit = creditService.getVirtualMachineCredit(orionGuid);
+
+        if (gdUser.role().equals(Role.HS_AGENT)) {
+            if (isBrandReseller(vmCredit.resellerId)) {
+                if (newQuota > BRAND_RESELLER_MAIL_RELAY_LIMIT) {
+                    throw new Vps4Exception(
+                        "EXCEEDS_LIMIT",
+                        String.format("New mail quota (%d) exceeds allowed limit. Limit is %d",
+                            newQuota, BRAND_RESELLER_MAIL_RELAY_LIMIT));
+                }
+            }
+            else {
+                if (newQuota > GODADDY_MAIL_RELAY_LIMIT) {
+                    throw new Vps4Exception(
+                            "EXCEEDS_LIMIT",
+                            String.format("New mail quota (%d) exceeds allowed limit. Limit is %d",
+                                newQuota, GODADDY_MAIL_RELAY_LIMIT));
+                }
+            }
         }
     }
 

@@ -15,6 +15,7 @@ import com.godaddy.hfs.sso.token.JomaxSsoToken;
 import com.godaddy.hfs.sso.token.SsoToken;
 import com.godaddy.vps4.web.Vps4Exception;
 import com.godaddy.vps4.web.security.GDUser;
+import com.godaddy.vps4.web.security.GDUser.Role;
 import com.godaddy.vps4.web.security.SsoRequestAuthenticator;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
@@ -70,6 +71,7 @@ public class SsoRequestAuthenticatorTest {
         Assert.assertEquals(false, user.isAdmin());
         Assert.assertEquals(false, user.isEmployee());
         Assert.assertEquals(false, user.isStaff());
+        Assert.assertEquals(Role.CUSTOMER, user.role());
     }
 
     @Test
@@ -97,10 +99,25 @@ public class SsoRequestAuthenticatorTest {
         Assert.assertEquals(true, user.isAdmin());
         Assert.assertEquals(true, user.isEmployee());
         Assert.assertEquals(true, user.isStaff());
+        Assert.assertEquals(Role.ADMIN, user.role());
     }
 
     @Test
-    public void testStaff() {
+    public void testHostingSupportLead() {
+        SsoToken token = mockJomaxToken(Collections.singletonList("HS_techleads"));
+        when(tokenExtractor.extractToken(request)).thenReturn(token);
+
+        GDUser user = authenticator.authenticate(request);
+        Assert.assertEquals(null, user.getShopperId());
+        Assert.assertEquals(false, user.isShopper());
+        Assert.assertEquals(false, user.isAdmin());
+        Assert.assertEquals(true, user.isEmployee());
+        Assert.assertEquals(true, user.isStaff());
+        Assert.assertEquals(Role.HS_LEAD, user.role());
+    }
+
+    @Test
+    public void testHostingSupportAgent() {
         SsoToken token = mockJomaxToken(Collections.singletonList("C3-Hosting Support"));
         when(tokenExtractor.extractToken(request)).thenReturn(token);
 
@@ -110,6 +127,7 @@ public class SsoRequestAuthenticatorTest {
         Assert.assertEquals(false, user.isAdmin());
         Assert.assertEquals(true, user.isEmployee());
         Assert.assertEquals(true, user.isStaff());
+        Assert.assertEquals(Role.HS_AGENT, user.role());
     }
 
     @Test
@@ -123,6 +141,7 @@ public class SsoRequestAuthenticatorTest {
         Assert.assertEquals(true, user.isShopper());
         Assert.assertEquals(true, user.isAdmin());
         Assert.assertEquals(true, user.isEmployee());
+        Assert.assertEquals(Role.ADMIN, user.role());
     }
 
     @Test
@@ -136,6 +155,7 @@ public class SsoRequestAuthenticatorTest {
         Assert.assertEquals(false, user.isAdmin());
         Assert.assertEquals(true,  user.isEmployee());
         Assert.assertEquals(false, user.isStaff());
+        Assert.assertEquals(Role.EMPLOYEE_OTHER, user.role());
     }
 
     @Test
@@ -150,6 +170,7 @@ public class SsoRequestAuthenticatorTest {
         Assert.assertEquals(false, user.isAdmin());
         Assert.assertEquals(true,  user.isEmployee());
         Assert.assertEquals(false, user.isStaff());
+        Assert.assertEquals(Role.EMPLOYEE_OTHER, user.role());
     }
 
     @Test(expected=Vps4Exception.class)

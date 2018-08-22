@@ -15,6 +15,7 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
 
+import com.godaddy.vps4.credit.CreditService;
 import com.godaddy.vps4.mailrelay.MailRelayService;
 import com.godaddy.vps4.network.IpAddress;
 import com.godaddy.vps4.network.NetworkService;
@@ -27,9 +28,10 @@ import com.godaddy.vps4.vm.VirtualMachineService;
 import com.godaddy.vps4.web.PATCH;
 import com.godaddy.vps4.web.Vps4Api;
 import com.godaddy.vps4.web.security.GDUser;
-import com.godaddy.vps4.web.security.StaffOnly;
+import com.godaddy.vps4.web.security.RequiresRole;
 import com.godaddy.vps4.web.util.Commands;
 import com.godaddy.vps4.web.vm.VmResource;
+import com.godaddy.vps4.web.security.GDUser.Role;
 import com.google.inject.Inject;
 
 import gdg.hfs.orchestration.CommandService;
@@ -38,6 +40,8 @@ import gdg.hfs.vhfs.mailrelay.MailRelayHistory;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
+
+import static com.godaddy.vps4.web.util.RequestValidation.validateMailRelayUpdate;
 
 @Vps4Api
 @Api(tags = { "vms" })
@@ -53,18 +57,20 @@ public class VmMailRelayResource {
     private final CommandService commandService;
     private final ActionService actionService;
     private final VirtualMachineService virtualMachineService;
+    private final CreditService creditService;
     private final GDUser user;
 
     @Inject
     public VmMailRelayResource(GDUser user, MailRelayService mailRelayService,
             NetworkService networkService, CommandService commandService,
             ActionService actionService, VirtualMachineService virtualMachineService,
-            VmResource vmResource) {
+            VmResource vmResource, CreditService creditService) {
         this.mailRelayService = mailRelayService;
         this.networkService = networkService;
         this.commandService = commandService;
         this.actionService = actionService;
         this.virtualMachineService = virtualMachineService;
+        this.creditService = creditService;
         this.vmResource = vmResource;
         this.user = user;
     }
@@ -109,16 +115,18 @@ public class VmMailRelayResource {
         public int quota;
     }
 
-    @StaffOnly
     @PATCH
     @Path("{vmId}/mailRelay")
     @Produces({ "application/json" })
     @ApiOperation(httpMethod = "PATCH",
                   value = "Reset the mail relay quota for the primary IP of the given vm",
                   notes = "Reset the mail relay quota for the primary IP of the given vm")
+    @RequiresRole(roles = {Role.ADMIN, Role.HS_AGENT, Role.HS_LEAD})
     public Action updateMailRelayQuota(@ApiParam(value = "The ID of the selected server", required = true) @PathParam("vmId") UUID vmId,
             MailRelayQuotaPatch quotaPatch) {
-        vmResource.getVm(vmId);
+        VirtualMachine vm = vmResource.getVm(vmId);
+        validateMailRelayUpdate(creditService, vm.orionGuid, user, quotaPatch.quota);
+
         IpAddress ipAddress = networkService.getVmPrimaryAddress(vmId);
         Vps4SetMailRelayQuota.Request request = new Vps4SetMailRelayQuota.Request(ipAddress.ipAddress, quotaPatch.quota);
         long actionId = actionService.createAction(vmId, ActionType.UPDATE_MAILRELAY_QUOTA, request.toJSONString(), user.getUsername());

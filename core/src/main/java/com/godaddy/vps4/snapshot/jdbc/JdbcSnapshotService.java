@@ -132,7 +132,6 @@ public class JdbcSnapshotService implements SnapshotService {
         return rs.getInt("count");
     }
 
-
     private boolean shouldDeprecateSnapshot(UUID orionGuid, SnapshotType snapshotType) {
         // we should be deprecating a snapshot only if the number of LIVE snapshot is
         // equal to the max number of slots for the account (orionGuid)
