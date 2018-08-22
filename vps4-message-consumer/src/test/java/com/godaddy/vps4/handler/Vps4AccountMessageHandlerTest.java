@@ -30,6 +30,7 @@ import com.godaddy.vps4.vm.DataCenter;
 import com.godaddy.vps4.vm.DataCenterService;
 import com.godaddy.vps4.vm.VirtualMachine;
 import com.godaddy.vps4.vm.VirtualMachineService;
+import com.godaddy.vps4.vm.VirtualMachineSpec;
 
 import gdg.hfs.orchestration.CommandGroupSpec;
 import gdg.hfs.orchestration.CommandService;
@@ -56,25 +57,29 @@ public class Vps4AccountMessageHandlerTest {
 
         orionGuid = UUID.randomUUID();
 
+        VirtualMachineSpec vmSpec = new VirtualMachineSpec();
+        vmSpec.tier = 10;
+
         vm = new VirtualMachine(UUID.randomUUID(), 123L, orionGuid,
-                321L, null, "TestVm", null, null, null, null, null, null, 0, UUID.randomUUID());
+                321L, vmSpec, "TestVm", null, null, null, null, null, null, 0, UUID.randomUUID());
         when(vmServiceMock.getVirtualMachine(vm.vmId)).thenReturn(vm);
 
         CommandState command = new CommandState();
         command.commandId = UUID.randomUUID();
         when(commandServiceMock.executeCommand(anyObject())).thenReturn(command);
-
     }
 
     private void mockVmCredit(AccountStatus accountStatus, UUID productId) {
-        DataCenter dc = dcService.getDataCenter(5);
-        VirtualMachineCredit vmCredit = new VirtualMachineCredit(orionGuid, 10, 0, 0, "linux", "myh", null, "TestShopper", accountStatus, dc, productId, false, "1");
-        when(creditServiceMock.getVirtualMachineCredit(orionGuid)).thenReturn(vmCredit);
+        mockVmCredit(accountStatus, productId, 10, 0, "myh");
     }
 
     private void mockFullManagedVmCredit(AccountStatus accountStatus, UUID productId) {
+        mockVmCredit(accountStatus, productId, 10, 2, "cpanel");
+    }
+
+    private void mockVmCredit(AccountStatus accountStatus, UUID productId, int tier, int managedLevel, String controlPanel) {
         DataCenter dc = dcService.getDataCenter(5);
-        VirtualMachineCredit vmCredit = new VirtualMachineCredit(orionGuid, 10, 2, 1, "linux", "cpanel", null, "TestShopper", accountStatus, dc, productId, false, "1");
+        VirtualMachineCredit vmCredit = new VirtualMachineCredit(orionGuid, tier, managedLevel, 0, "linux", controlPanel, null, "TestShopper", accountStatus, dc, productId, false, "1", false);
         when(creditServiceMock.getVirtualMachineCredit(orionGuid)).thenReturn(vmCredit);
     }
 
@@ -176,7 +181,7 @@ public class Vps4AccountMessageHandlerTest {
     @Test
     public void testFullyManagedEmailAlreadySent() throws MessageHandlerException, MissingShopperIdException, IOException {
         DataCenter dc = dcService.getDataCenter(5);
-        VirtualMachineCredit vmCredit = new VirtualMachineCredit(orionGuid, 10, 2, 1, "linux", "cpanel", null, "TestShopper", AccountStatus.ACTIVE, dc, null, true, "1");
+        VirtualMachineCredit vmCredit = new VirtualMachineCredit(orionGuid, 10, 2, 1, "linux", "cpanel", null, "TestShopper", AccountStatus.ACTIVE, dc, null, true, "1", false);
 
         when(creditServiceMock.getVirtualMachineCredit(orionGuid)).thenReturn(vmCredit);
         when(messagingServiceMock.sendFullyManagedEmail("TestShopper", "cpanel")).thenReturn("messageId");
@@ -251,12 +256,20 @@ public class Vps4AccountMessageHandlerTest {
     public void testHandleMessageRemovedWithSnapshotsWrongDC() throws MessageHandlerException {
         DataCenter dc = dcService.getDataCenter(1);
         UUID vmId = UUID.randomUUID();
-        VirtualMachineCredit vmCredit = new VirtualMachineCredit(orionGuid, 10, 0, 0, "linux", "myh", null, "TestShopper", AccountStatus.REMOVED, dc, vmId, false, "1");
+        VirtualMachineCredit vmCredit = new VirtualMachineCredit(orionGuid, 10, 0, 0, "linux", "myh", null, "TestShopper", AccountStatus.REMOVED, dc, vmId, false, "1", false);
         when(creditServiceMock.getVirtualMachineCredit(orionGuid)).thenReturn(vmCredit);
 
         callHandleMessage(createTestKafkaMessage("removed"));
 
         ArgumentCaptor<CommandGroupSpec> argument = ArgumentCaptor.forClass(CommandGroupSpec.class);
         verify(commandServiceMock, times(0)).executeCommand(argument.capture());
+    }
+
+    @Test
+    public void testHandleMessageCausesTierUpgradePending() throws MessageHandlerException {
+        mockVmCredit(AccountStatus.ACTIVE, vm.vmId, 20, 0, "myh");
+        callHandleMessage(createTestKafkaMessage("updated"));
+
+        verify(creditServiceMock, times(1)).updateProductMeta(orionGuid, ProductMetaField.PLAN_CHANGE_PENDING, "true");
     }
 }

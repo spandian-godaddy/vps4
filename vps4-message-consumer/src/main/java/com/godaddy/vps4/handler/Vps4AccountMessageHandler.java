@@ -55,7 +55,6 @@ public class Vps4AccountMessageHandler implements MessageHandler {
         this.commandService = commandService;
         this.messagingService = messagingService;
         processFullyManagedEmails = Boolean.parseBoolean(config.get("vps4MessageHandler.processFullyManagedEmails"));
-
     }
 
     @Override
@@ -134,8 +133,12 @@ public class Vps4AccountMessageHandler implements MessageHandler {
     }
 
     private void processPlanChange(VirtualMachineCredit credit, VirtualMachine vm) {
-        // Updates the managed level of a vm
+        if (credit.tier != vm.spec.tier) {
+            // Update credit that a tier upgrade is pending.  Customer will initiate manually as it will incur down time.
+            creditService.updateProductMeta(credit.orionGuid, ProductMetaField.PLAN_CHANGE_PENDING, "true");
+        }
 
+        // Updates the managed level of a vm
         Vps4PlanChange.Request request = new Vps4PlanChange.Request();
         request.credit = credit;
         request.vm = vm;

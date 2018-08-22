@@ -29,7 +29,7 @@ public class ECommCreditService implements CreditService {
     private static final String PRODUCT_NAME = "vps4";
 
     public enum ProductMetaField {
-        DATA_CENTER, PRODUCT_ID, PROVISION_DATE, FULLY_MANAGED_EMAIL_SENT;
+        DATA_CENTER, PRODUCT_ID, PROVISION_DATE, FULLY_MANAGED_EMAIL_SENT, PLAN_CHANGE_PENDING;
 
         @Override
         public String toString() {
@@ -88,7 +88,8 @@ public class ECommCreditService implements CreditService {
                 AccountStatus.valueOf(account.status.name().toUpperCase()),
                 getDataCenter(account), getProductId(account),
                 Boolean.parseBoolean(account.product_meta.get(ProductMetaField.FULLY_MANAGED_EMAIL_SENT.toString())),
-                account.reseller_id);
+                account.reseller_id,
+                Boolean.parseBoolean(account.product_meta.get(ProductMetaField.PLAN_CHANGE_PENDING.toString())));
     }
 
     private String getShopperId(Account account) {

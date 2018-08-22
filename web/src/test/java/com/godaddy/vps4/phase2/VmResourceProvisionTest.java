@@ -88,7 +88,7 @@ public class VmResourceProvisionTest {
         UUID newGuid = UUID.randomUUID();
         Instant provisionDate = claimed ? Instant.now() : null;
         return new VirtualMachineCredit(newGuid, 10, 1, 0, "linux", controlPanel, provisionDate,
-                GDUserMock.DEFAULT_SHOPPER, accountStatus, null, null, false, resellerId);
+                GDUserMock.DEFAULT_SHOPPER, accountStatus, null, null, false, resellerId, false);
     }
 
     private ProvisionVmRequest createProvisionVmRequest(UUID orionGuid) {
