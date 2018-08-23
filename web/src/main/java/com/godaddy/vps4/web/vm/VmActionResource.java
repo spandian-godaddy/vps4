@@ -150,7 +150,9 @@ public class VmActionResource {
         }
 
         logger.info("Cancel request received for action {}", actionId);
-        Commands.cancel(commandService, action.commandId);
+        if (action.commandId != null) {
+            Commands.cancel(commandService, action.commandId);
+        }
         String note = "Action cancelled via api by admin";
         if (shouldQueueRollbackCommand(action.type)) {
             UUID commandId = queueRollbackCommand(action);

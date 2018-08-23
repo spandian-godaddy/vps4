@@ -125,6 +125,11 @@ public class SnapshotActionResourceTest {
         return SqlTestData.insertTestSnapshotAction(actionService, commandId, snapshotId, actionType, dataSource);
     }
 
+    private Action createNullCommandIdTestSnapshotAction(UUID snapshotId, ActionType actionType) {
+        UUID commandId = null;
+        return SqlTestData.insertTestSnapshotAction(actionService, commandId, snapshotId, actionType, dataSource);
+    }
+
     @Test
     public void testCancelSnapshotActionCancelsCorrespondingCommand() {
         Snapshot snapshot = createTestSnapshot(user.getShopperId());
@@ -230,6 +235,16 @@ public class SnapshotActionResourceTest {
 
         SnapshotActionResource actionResource = getSnapshotActionResource();
         actionResource.cancelSnapshotAction(snapshot.id, action.id);
+    }
+
+    @Test
+    public void testNullCommandIdDoesNotCancelCommands() {
+        Snapshot snapshot = createTestSnapshot(user.getShopperId());
+        Action action = createNullCommandIdTestSnapshotAction(snapshot.id, ActionType.CREATE_SNAPSHOT);
+        SnapshotActionResource actionResource = getSnapshotActionResource();
+        Assert.assertNull(action.commandId);
+        actionResource.cancelSnapshotAction(snapshot.id, action.id);
+        verify(commandService, times(0)).cancel(action.commandId);
     }
 
     @Test

@@ -52,7 +52,7 @@
 - create Eclipse Run Configurations
     - Run -> Run configurations
     - Java Application, create New launch configurations
-        - Orchestration Engine (**Refer to the readme in the vps4-orchestration-runner for instructions on setting up the run config for orch engine**)
+        - Orchestration Engine (**Refer to the [readme in the vps4-orchestration-runner](../vps4-orchestration-runner/README.md) for instructions on setting up the run config for orch engine**)
             - <s> Name: LocalOrchestrationEngine 
             - Project: Browse to project: vps4-orchestration-plugin
             - Main class: Search for OrchestrationWebApplication
@@ -70,15 +70,12 @@
 - replace Java limited encryption jars if you’ve never done so
     - Download the unlimited jce jars and see the readme.txt for instructions: http://www.oracle.com/technetwork/java/javase/downloads/jce8-download-2133166.html
 
-- in `vps4/core` run migrations as necessary / after pulling any updates
-    - `mvn initialize flyway:migrate`
-
 - setup Postgres database
     - install postgresql locally or install vagrant
     - for Mac, one way to do it:
         - install homebrew
         - `brew install postgresql`
-		- `brew services start postgresql`
+        - `brew services start postgresql`
         - `createuser -s -r postgres`
         - test using cmd: `psql -U postgres postgres`
         - modify `/etc/hosts` to redirect domain vps4-local-dbserver.dev-godaddy.com
@@ -89,6 +86,10 @@
         mvn initialize sql:execute@drop-create-database -Prebuild-database
         mvn initialize flyway:migrate
         ```
+        - after the above initial setup, when needed / after pulling any updates run migrations as necessary in `vps4/core`
+            ```bash
+            mvn initialize flyway:migrate
+            ```
 
 - import HFS web developer client cert into browser (Chrome?) to use HFS swagger UI
     - ask HFS team for read collaborator access to the `hfs/Creds` repo, and then git clone it locally

@@ -141,7 +141,9 @@ public class SnapshotActionResource {
         }
 
         logger.info("Cancel request received for snapshot action {}", actionId);
-        Commands.cancel(commandService, action.commandId);
+        if (action.commandId != null) {
+            Commands.cancel(commandService, action.commandId);
+        }
         String note = String.format("Snapshot action cancelled via api by %s", user.getUsername());
         if (shouldQueueRollbackCommand(action.type)) {
             UUID commandId = queueRollbackCommand(action);

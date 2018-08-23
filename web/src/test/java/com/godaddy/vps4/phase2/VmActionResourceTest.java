@@ -19,8 +19,6 @@ import javax.sql.DataSource;
 import javax.ws.rs.NotFoundException;
 import javax.ws.rs.core.UriInfo;
 
-import com.godaddy.vps4.security.PrivilegeService;
-import com.godaddy.vps4.security.jdbc.JdbcPrivilegeService;
 import com.godaddy.vps4.vm.ActionService;
 import com.godaddy.vps4.vm.ActionStatus;
 import com.godaddy.vps4.web.Vps4Exception;
@@ -122,6 +120,11 @@ public class VmActionResourceTest {
 
     private Action createTestVmAction(UUID vmId, ActionType actionType) {
         UUID commandId = UUID.randomUUID();
+        return SqlTestData.insertTestVmAction(commandId, vmId, actionType, dataSource);
+    }
+
+    private Action createNullCommandIdTestVmAction(UUID vmId, ActionType actionType) {
+        UUID commandId = null;
         return SqlTestData.insertTestVmAction(commandId, vmId, actionType, dataSource);
     }
 
@@ -385,5 +388,15 @@ public class VmActionResourceTest {
         actionService.completeAction(action.id, new JSONObject().toJSONString(), "");
         VmActionResource actionResource = getVmActionResource();
         actionResource.cancelVmAction(vm.vmId, action.id);
+    }
+
+    @Test
+    public void testNullCommandIdDoesNotCancelCommands() {
+        VirtualMachine vm = createTestVm(user.getShopperId());
+        Action action = createNullCommandIdTestVmAction(vm.vmId, ActionType.SET_HOSTNAME);
+        VmActionResource actionResource = getVmActionResource();
+        Assert.assertNull(action.commandId);
+        actionResource.cancelVmAction(vm.vmId, action.id);
+        verify(commandService, times(0)).cancel(action.commandId);
     }
 }
