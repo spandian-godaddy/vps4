@@ -22,9 +22,7 @@ import javax.ws.rs.NotFoundException;
 import com.godaddy.vps4.vm.VmUserService;
 import gdg.hfs.vhfs.cpanel.CPanelLicense;
 import org.junit.Before;
-import org.junit.Rule;
 import org.junit.Test;
-import org.junit.rules.ExpectedException;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mockito;
 
@@ -98,9 +96,6 @@ public class Vps4DestroyVmTest {
     IpAddress primaryIp;
     CPanelLicense cPanelLicense;
     long nodePingAccountId = 123L;
-
-    @Rule
-    public ExpectedException thrown= ExpectedException.none();
 
     @Before
     public void setupTest() {
@@ -208,15 +203,13 @@ public class Vps4DestroyVmTest {
         verify(pleskService, times(1)).licenseRelease(request.virtualMachine.hfsVmId);
     }
 
-    @Test
+    @Test(expected = RuntimeException.class)
     public void destroyVmPleskFailedTest() throws Exception {
         when(virtualMachineService.virtualMachineHasPlesk(vm.vmId)).thenReturn(true);
         PleskAction action = new PleskAction();
         action.status = PleskAction.Status.FAILED;
         action.message = "Other Error";
         when(pleskService.licenseRelease(vm.hfsVmId)).thenReturn(action);
-
-        thrown.expect(RuntimeException.class);
 
         command.execute(context, request);
         verify(pleskService, times(0)).licenseRelease(request.virtualMachine.hfsVmId);

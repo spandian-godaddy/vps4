@@ -28,7 +28,8 @@ public enum ActionType {
     RENAME_SNAPSHOT(19),
     RESTORE_VM(20),
     CANCEL_ACCOUNT(21),
-    RESTORE_ACCOUNT(22);
+    RESTORE_ACCOUNT(22),
+    UPGRADE_VM(23);
 
 
     private final int typeId;
