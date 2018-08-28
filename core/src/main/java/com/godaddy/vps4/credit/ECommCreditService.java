@@ -233,6 +233,7 @@ public class ECommCreditService implements CreditService {
         prodMeta.to = new HashMap<>(prodMeta.from);
 
         prodMeta.to.put(field.toString(), value);
+        logger.info("Updating product meta for credit : {}, product_meta : {}", orionGuid, prodMeta);
 
         ecommService.updateProductMetadata(orionGuid.toString(), prodMeta);
     }
