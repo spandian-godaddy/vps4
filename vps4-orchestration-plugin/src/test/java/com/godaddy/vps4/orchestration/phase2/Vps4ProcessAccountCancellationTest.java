@@ -233,6 +233,20 @@ public class Vps4ProcessAccountCancellationTest {
         Assert.assertEquals(ScheduledJob.ScheduledJobType.ZOMBIE, req.jobType);
     }
 
+    @Test(expected = RuntimeException.class)
+    public void schedulesZombieVmCleanupJobIfStopFailsWhenAccountCancellationIsProcessed() {
+        when(context.execute(eq(Vps4StopVm.class), any())).thenThrow(new RuntimeException());
+
+        command.execute(context, request);
+        verify(context, times(1))
+                .execute(eq(ScheduleZombieVmCleanup.class), zombieCleanupArgumentCaptor.capture());
+
+        // Verify the request sent to the ScheduleZombieVmCleanup command
+        ScheduleZombieVmCleanup.Request req = zombieCleanupArgumentCaptor.getValue();
+        Assert.assertEquals(vps4VmId, req.vmId);
+        Assert.assertEquals(validUntil, req.when);
+    }
+
     @Test
     @SuppressWarnings("unchecked")
     public void noOpWhenAnUnclaimedAccountCancellationIsProcessed() {

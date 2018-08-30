@@ -61,10 +61,10 @@ public class Vps4ProcessAccountCancellation extends ActionCommand<Vps4ProcessAcc
             if (hasAccountBeenClaimed(request.virtualMachineCredit)) {
                 UUID vmId = request.virtualMachineCredit.productId;
                 Instant validUntil = calculateValidUntil();
-                stopVirtualMachine(vmId, request.initiatedBy);
                 markVmAsZombie(vmId, validUntil);
                 UUID jobId = scheduleZombieVmCleanup(vmId, validUntil);
                 recordJobId(vmId, jobId);
+                stopVirtualMachine(vmId, request.initiatedBy);
             }
         } catch (Exception e) {
             logger.error(
