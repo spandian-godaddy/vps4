@@ -16,13 +16,11 @@ import org.apache.commons.cli.DefaultParser;
 import org.apache.commons.cli.Option;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
-import org.json.simple.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.godaddy.vps4.phase3.api.SsoClient;
 import com.godaddy.vps4.phase3.api.Vps4ApiClient;
-import com.godaddy.vps4.phase3.api.Vps4ApiClient.Vps4JsonResponse;
 import com.godaddy.vps4.phase3.tests.ChangeHostnameTest;
 import com.godaddy.vps4.phase3.tests.SnapshotTest;
 import com.godaddy.vps4.phase3.tests.StopStartVmTest;
@@ -69,6 +67,7 @@ public class RunSomeTests {
 
         List<VmTest> tests = Arrays.asList(
                 new ChangeHostnameTest(randomHostname()),
+                new StopStartVmTest(),
                 new StopStartVmTest(),
                 new SnapshotTest()
         );

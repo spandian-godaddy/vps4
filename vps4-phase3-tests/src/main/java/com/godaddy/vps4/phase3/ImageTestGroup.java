@@ -12,7 +12,7 @@ import com.godaddy.vps4.phase3.virtualmachine.VirtualMachine;
 import com.godaddy.vps4.phase3.virtualmachine.VirtualMachinePool;
 
 public class ImageTestGroup extends TestGroup {
-    
+
     private static final Logger logger = LoggerFactory.getLogger(ImageTestGroup.class);
 
 
@@ -43,13 +43,16 @@ public class ImageTestGroup extends TestGroup {
             TestExecution execution = new TestExecution(test);
             try {
                 execution.future = threadPool.submit( () -> {
+                    logger.debug("Kicking off a new test thread : {}", test);
                     execution.status = TestStatus.RUNNING;
                     VirtualMachine vm = vmPool.getVm(this.imageName);
                     try {
                         logger.debug("Executing test {} on vm {}", test.toString(), vm.toString());
                         test.execute(vm);
+                        logger.debug("Test {} completed on vm {}", test, vm);
                     } finally {
                         vm.release();
+                        logger.debug("({}) released vm {}", test, vm);
                     }
                 } );
             } catch (Exception e) {

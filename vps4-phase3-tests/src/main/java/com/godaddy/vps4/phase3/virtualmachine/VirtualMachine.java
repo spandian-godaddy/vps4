@@ -8,15 +8,11 @@ import com.godaddy.vps4.phase3.ssh.Vps4SshClient;
 public class VirtualMachine {
 
     public final UUID vmId;
-
+    public final UUID orionGuid;;
     public final String imageName;
-
     final Vps4ApiClient apiClient;
-
     final VirtualMachinePool vmPool;
-
     final String defaultUsername;
-
     final String defaultPassword;
 
     public VirtualMachine(
@@ -25,13 +21,15 @@ public class VirtualMachine {
             String imageName,
             String defaultUsername,
             String defaultPassword,
-            UUID vmId){
+            UUID vmId,
+            UUID orionGuid){
         this.apiClient = apiClient;
         this.imageName = imageName;
         this.vmPool = vmPool;
         this.vmId = vmId;
         this.defaultUsername = defaultUsername;
         this.defaultPassword = defaultPassword;
+        this.orionGuid = orionGuid;
     }
 
     public Vps4ApiClient getClient() {
@@ -53,7 +51,8 @@ public class VirtualMachine {
     public void destroy() {
         vmPool.destroy(this);
     }
-    
+
+    @Override
     public String toString(){
         return "VMID: " + vmId + ", Image Name: " + imageName;
     }

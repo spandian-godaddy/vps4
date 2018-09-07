@@ -15,7 +15,7 @@ import com.godaddy.vps4.phase3.virtualmachine.VirtualMachine;
  *
  */
 public class StopStartVmTest implements VmTest {
-    
+
     private static final Logger logger = LoggerFactory.getLogger(StopStartVmTest.class);
 
     @Override
@@ -23,19 +23,27 @@ public class StopStartVmTest implements VmTest {
         Vps4ApiClient vps4Client = vm.getClient();
 
         long stopVmActionId = vps4Client.stopVm(vm.vmId);
-        logger.debug("Wait for shutdown on vm {}", vm);
+        logger.debug("Wait for shutdown on vm {}, via action id: {}", vm, stopVmActionId);
         vps4Client.pollForVmActionComplete(vm.vmId, stopVmActionId, 240);
 
         Vps4SshClient sshClient = vm.ssh();
         assert(!sshClient.checkConnection(vm.vmId));
 
         long startVmActionId = vps4Client.startVm(vm.vmId);
-        logger.debug("Wait for startup on vm {}", vm);
+        logger.debug("Wait for startup on vm {}, via action id: {}", vm, startVmActionId);
         vps4Client.pollForVmActionComplete(vm.vmId, startVmActionId, 240);
-        
+
+        try {
+            // A brief pause before trying ssh connection
+            Thread.sleep(5000);
+        } catch (InterruptedException e) {
+            logger.error("Error during start stop test sleeping, pre-ssh check", e);
+        }
+
+        logger.debug("Verify ssh connection on vm {}", vm);
         assert(sshClient.checkConnection(vm.vmId));
     }
-    
+
     @Override
     public String toString(){
         return "Stop/Start VM Test";

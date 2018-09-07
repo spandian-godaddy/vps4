@@ -2,7 +2,10 @@ package com.godaddy.vps4.phase3;
 
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyInt;
+import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.util.ArrayList;
@@ -40,6 +43,35 @@ public class TestGroupExecutionTest {
         runPhase3Tests();
     }
 
+    @Test
+    public void testCreditsNotReused() throws InterruptedException {
+        when(apiClient.getVmCredit(any(), any(), eq("cpanel")))
+            .thenAnswer(invocation -> UUID.randomUUID());
+        // Test simulates the api returning a credit that is already in process of being claimed, but not yet marked as claimed
+        UUID credit1 = UUID.randomUUID();
+        when(apiClient.getVmCredit(any(), any(), eq("MYH")))
+            .thenReturn(credit1)
+            .thenReturn(credit1)
+            .thenReturn(credit1)
+            .thenReturn(UUID.randomUUID());
+        runPhase3Tests();
+        verify(apiClient, times(4)).getVmCredit(any(), any(), eq("MYH"));
+        verify(apiClient, times(2)).getVmCredit(any(), any(), eq("cpanel"));
+    }
+
+    @Test
+    public void testMoreVmsThanCredits() throws InterruptedException {
+        // Test tries two vms per image. Limit one credit per image, force vm reuse
+        when(apiClient.getVmCredit(any(), any(), eq("MYH")))
+            .thenReturn(UUID.randomUUID())
+            .thenReturn(null);
+        when(apiClient.getVmCredit(any(), any(), eq("cpanel")))
+            .thenReturn(UUID.randomUUID())
+            .thenReturn(null);
+        runPhase3Tests();
+    }
+
+    @SuppressWarnings("unchecked")
     public void runPhase3Tests() throws InterruptedException {
 
         ExecutorService threadPool = Executors.newCachedThreadPool();
@@ -56,7 +88,7 @@ public class TestGroupExecutionTest {
             });
 
         VirtualMachinePool vmPool = new VirtualMachinePool(
-                4, 2, 1, apiClient,
+                4, 2, 5, apiClient,
                 Mockito.mock(Vps4ApiClient.class), "someuser", threadPool);
 
         TestGroup vps4 = new TestGroup("VPS4 Phase3 Tests");

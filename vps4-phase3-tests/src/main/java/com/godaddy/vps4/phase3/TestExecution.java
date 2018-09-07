@@ -3,9 +3,14 @@ package com.godaddy.vps4.phase3;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 public class TestExecution {
 
     final VmTest test;
+
+    private static final Logger logger = LoggerFactory.getLogger(TestExecution.class);
 
     volatile Future<?> future;
 
@@ -23,6 +28,7 @@ public class TestExecution {
         }
         catch (ExecutionException e) {
             this.exception = exception;
+            logger.error("Test aborted: ", e);
             throw new RuntimeException(e);
         }
     }

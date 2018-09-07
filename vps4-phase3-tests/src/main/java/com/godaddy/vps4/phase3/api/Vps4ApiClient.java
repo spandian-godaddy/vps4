@@ -20,12 +20,15 @@ import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @SuppressWarnings("unchecked")
 public class Vps4ApiClient {
 
     private String baseUrl;
     private String authHeader;
+    private static final Logger logger = LoggerFactory.getLogger(Vps4ApiClient.class);
 
     public Vps4ApiClient(String baseUrl, String authHeader){
       this.baseUrl = baseUrl;
@@ -200,14 +203,20 @@ public class Vps4ApiClient {
     private void pollForActionComplete(UUID vmId, long actionId, long timeoutSeconds, String urlAppendix) {
         Vps4ApiClient.Vps4JsonResponse<JSONObject> result = sendGetObject(urlAppendix);
         Instant timeout = Instant.now().plusSeconds(timeoutSeconds);
+        long secondsPassed = 0;
         while (!result.jsonResponse.get("status").equals("COMPLETE") && Instant.now().isBefore(timeout)) {
             result = sendGetObject(urlAppendix);
             if (result.jsonResponse.get("status").equals("ERROR")) {
                 throw new RuntimeException("VM action " + actionId + " for vm " + vmId + " failed.");
             }
             try {
-                Thread.sleep(1000);
+                Thread.sleep(5000);
+                secondsPassed+=5;
+                if (secondsPassed % 15 == 0) {
+                    logger.debug("{} seconds passed waiting for action {}", secondsPassed, actionId);
+                }
             } catch (InterruptedException e) {
+                logger.error("Test was interrupted: ", e);
                 throw new RuntimeException(e);
             }
         }

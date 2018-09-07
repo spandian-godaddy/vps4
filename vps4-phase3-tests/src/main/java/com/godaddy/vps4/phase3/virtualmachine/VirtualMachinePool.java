@@ -1,6 +1,8 @@
 package com.godaddy.vps4.phase3.virtualmachine;
 
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.BlockingDeque;
 import java.util.concurrent.ConcurrentHashMap;
@@ -20,6 +22,9 @@ import com.godaddy.vps4.phase3.api.Vps4ApiClient;
 public class VirtualMachinePool {
 
     private static final Logger logger = LoggerFactory.getLogger(VirtualMachinePool.class);
+
+    // Regex example: hfs-centos-7-cpanel-11, where <os> is centos, and <panel> is cpanel
+    private static final Pattern imageRegex = Pattern.compile("(?:hfs-)?(?<os>\\w*)-\\w*(?:-(?<panel>\\w*)-\\w*)?");
 
     final int maxTotalVmCount;
 
@@ -93,7 +98,7 @@ public class VirtualMachinePool {
 
         final String imageName;
         final BlockingDeque<VirtualMachine> pool;
-
+        final Set<UUID> claimedCredits = new HashSet<>();
         final Semaphore perImageLeases;
 
         public PerImagePool(String imageName) {
@@ -118,7 +123,7 @@ public class VirtualMachinePool {
                 // TODO Verify the deletions complete.
                 apiClient.deleteVm(vm.vmId);
             } finally {
-
+                claimedCredits.remove(vm.orionGuid);
                 vmLeases.release();
             }
 
@@ -178,7 +183,7 @@ public class VirtualMachinePool {
 
         public void createVm() {
             threadPool.submit(() -> {
-                UUID orionGuid = getVmCredit();
+                UUID orionGuid = getAndClaimVmCredit();
                 if (orionGuid == null) {
                     vmLeases.release();
                     logger.error("No credit available to create vm {}", imageName);
@@ -194,19 +199,57 @@ public class VirtualMachinePool {
                             this.imageName,
                             username,
                             password,
-                            vmId));
+                            vmId,
+                            orionGuid));
             }});
+        }
+
+        public UUID getAndClaimVmCredit() {
+            // get credit
+            // return if null
+            // try to claim
+            // return if claimed
+            // repeat
+            UUID credit = getVmCredit();
+            while (credit != null) {
+                if (canClaimCredit(credit)) {
+                    logger.info("Successfully claimed credit: {}", credit);
+                    return credit;
+                }
+                logger.debug("Another test already claimed the credit {}, will try again", credit);
+                try {
+                    Thread.sleep(1000);  // wait a few seconds before trying again, coz the api takes a bit
+                } catch (InterruptedException e) {
+                    logger.error("Waiting for new credit interrupted", e);
+                }
+                credit = getVmCredit();
+            }
+
+            logger.info("Other tests have claimed all available credits for image : " + imageName);
+            return null;
         }
 
         public UUID getVmCredit() {
             // Check if a vm credit is available for pool image via hfs ecomm api
             // Regex example: hfs-centos-7-cpanel-11, where <os> is centos, and <panel> is cpanel
-            String pattern = "(?:hfs-)?(?<os>\\w*)-\\w*(?:-(?<panel>\\w*)-\\w*)?";
-            Matcher m = Pattern.compile(pattern).matcher(imageName);
-            m.matches();
+            Matcher m = imageRegex.matcher(imageName);
+            if (!m.matches()) {
+                throw new RuntimeException("Invalid image requested: " +  imageName);
+            }
+
             String os = m.group("os").equals("windows") ? "windows" : "Linux";
             String panel = m.group("panel") != null ? m.group("panel") :  "MYH";
-            return apiClient.getVmCredit(shopperId,  os,  panel);
+            UUID vmCredit = apiClient.getVmCredit(shopperId,  os,  panel);
+            if (vmCredit == null && claimedCredits.isEmpty()) {
+                logger.error("There are no credits available to run tests for image : {}", imageName);
+                throw new RuntimeException();
+            }
+
+            return vmCredit;
+        }
+
+        public synchronized boolean canClaimCredit(UUID vmCredit) {
+            return (vmCredit==null) ? false : claimedCredits.add(vmCredit);
         }
 
         static final String username = "vpstester";
