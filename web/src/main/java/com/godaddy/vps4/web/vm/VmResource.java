@@ -104,6 +104,7 @@ public class VmResource {
     private final DataCenterService dcService;
     private final VmActionResource vmActionResource;
     private final SnapshotService snapshotService;
+    private final String autoBackupName;
 
     @Inject
     public VmResource(GDUser user, VmService vmService, Vps4UserService vps4UserService,
@@ -130,6 +131,7 @@ public class VmResource {
         openStackZone = config.get("openstack.zone");
         this.vmActionResource = vmActionResource;
         this.snapshotService = snapshotService;
+        autoBackupName = config.get("vps4.autobackup.backupName");
     }
 
     @GET
@@ -267,6 +269,7 @@ public class VmResource {
         request.orionGuid = orionGuid;
         request.encryptedPassword = encryptedPassword;
         request.zone = openStackZone;
+        request.autoBackupName = autoBackupName;
         return request;
     }
 

@@ -29,6 +29,7 @@ import com.godaddy.vps4.orchestration.vm.Vps4RestoreVm;
 import com.godaddy.vps4.orchestration.vm.Vps4ReviveZombieVm;
 import com.godaddy.vps4.orchestration.vm.Vps4StartVm;
 import com.godaddy.vps4.orchestration.vm.Vps4StopVm;
+import com.godaddy.vps4.orchestration.vm.Vps4UpgradeVm;
 import com.godaddy.vps4.orchestration.vm.Vps4TestCommand;
 import com.godaddy.vps4.vm.VmUserService;
 import com.google.inject.AbstractModule;
@@ -67,5 +68,6 @@ public class Vps4CommandModule extends AbstractModule {
         bind(SendFailoverCompletedEmail.class);
         bind(WaitForMessageComplete.class);
         bind(Vps4CancelAction.class);
+        bind(Vps4UpgradeVm.class);
     }
 }

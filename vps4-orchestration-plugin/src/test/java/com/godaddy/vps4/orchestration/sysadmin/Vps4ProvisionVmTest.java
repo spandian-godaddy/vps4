@@ -18,6 +18,7 @@ import java.util.UUID;
 import org.junit.Before;
 import org.junit.Test;
 
+import com.godaddy.hfs.config.Config;
 import com.godaddy.vps4.credit.CreditService;
 import com.godaddy.vps4.messaging.MissingShopperIdException;
 import com.godaddy.vps4.messaging.Vps4MessagingService;
