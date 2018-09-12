@@ -42,6 +42,8 @@ public class ActionServiceTest {
     private UUID orionGuid = UUID.randomUUID();
     private DataSource dataSource;
     private VirtualMachine vm;
+    private VirtualMachine vm1;
+    private VirtualMachine vm2;
     private Vps4User vps4User;
     
     @Before
@@ -50,6 +52,8 @@ public class ActionServiceTest {
         actionService = new JdbcVmActionService(dataSource);
         vps4UserService = new JdbcVps4UserService(dataSource);
         vm = SqlTestData.insertTestVm(orionGuid, dataSource);
+        vm1 = SqlTestData.insertTestVm(orionGuid, dataSource);
+        vm2 = SqlTestData.insertTestVm(orionGuid, dataSource);
         vps4User = vps4UserService.getOrCreateUserForShopper("FakeShopper", "1");
     }
     
@@ -57,6 +61,8 @@ public class ActionServiceTest {
     public void cleanup() {
         
         SqlTestData.cleanupTestVmAndRelatedData(vm.vmId, dataSource);
+        SqlTestData.cleanupTestVmAndRelatedData(vm1.vmId, dataSource);
+        SqlTestData.cleanupTestVmAndRelatedData(vm2.vmId, dataSource);
         SqlTestData.deleteVps4User(vps4User.getId(), dataSource);
     }
     
@@ -69,6 +75,34 @@ public class ActionServiceTest {
         
         actions = actionService.getActions(vm.vmId, 100, 0, null, null, null);
         assertEquals(1, actions.results.size());
+    }
+
+    @Test
+    public void testGetAllActions(){
+        ResultSubset<Action> actions = actionService.getActions(null, 100, 0, null, null, null, null);
+        assertEquals(null, actions);
+
+        actionService.createAction(vm.vmId, ActionType.CREATE_VM, "{}", "tester");
+        actionService.createAction(vm1.vmId, ActionType.CREATE_VM, "{}", "tester");
+        actionService.createAction(vm2.vmId, ActionType.CREATE_VM, "{}", "tester");
+        actionService.createAction(vm.vmId, ActionType.CREATE_VM, "{}", "tester");
+
+        actions = actionService.getActions(null, 100, 0, null, null, null, null);
+        assertEquals(4, actions.results.size());
+    }
+
+    @Test
+    public void testGetAllActionsByType(){
+        ResultSubset<Action> actions = actionService.getActions(null, 100, 0, null, null, null, null);
+        assertEquals(null, actions);
+
+        actionService.createAction(vm.vmId, ActionType.CREATE_VM, "{}", "tester");
+        actionService.createAction(vm1.vmId, ActionType.STOP_VM, "{}", "tester");
+        actionService.createAction(vm2.vmId, ActionType.START_VM, "{}", "tester");
+        actionService.createAction(vm.vmId, ActionType.CREATE_VM, "{}", "tester");
+
+        actions = actionService.getActions(null, 100, 0, null, null, null, ActionType.CREATE_VM);
+        assertEquals(2, actions.results.size());
     }
 
     @Test
@@ -91,23 +125,23 @@ public class ActionServiceTest {
         assertEquals(1, actions.results.size());
         
         // action created 1 hour before start filter
-        actions = actionService.getActions(vm.vmId, 100, 0, null, Date.from(Instant.now().minus(Duration.ofHours(11))), null);
+        actions = actionService.getActions(vm.vmId, 100, 0, null, Instant.now().minus(Duration.ofHours(11)), null);
         assertEquals(null, actions);
         
         // action created 1 hour after start filter
-        actions = actionService.getActions(vm.vmId, 100, 0, null, Date.from(Instant.now().minus(Duration.ofHours(13))), null);
+        actions = actionService.getActions(vm.vmId, 100, 0, null, Instant.now().minus(Duration.ofHours(13)), null);
         assertEquals(1, actions.results.size());
         
         // action created 1 hour after start filter, 1 hour before end filter
-        actions = actionService.getActions(vm.vmId, 100, 0, null, Date.from(Instant.now().minus(Duration.ofHours(13))), Date.from(Instant.now().minus(Duration.ofHours(11))));
+        actions = actionService.getActions(vm.vmId, 100, 0, null, Instant.now().minus(Duration.ofHours(13)), Instant.now().minus(Duration.ofHours(11)));
         assertEquals(1, actions.results.size());
         
         // action created  1 hour after end filter
-        actions = actionService.getActions(vm.vmId, 100, 0, null, null, Date.from(Instant.now().minus(Duration.ofHours(13))));
+        actions = actionService.getActions(vm.vmId, 100, 0, null, null, Instant.now().minus(Duration.ofHours(13)));
         assertEquals(null, actions);
         
         // action created  1 hour before end filter
-        actions = actionService.getActions(vm.vmId, 100, 0, null, null, Date.from(Instant.now().minus(Duration.ofHours(11))));
+        actions = actionService.getActions(vm.vmId, 100, 0, null, null, Instant.now().minus(Duration.ofHours(11)));
         assertEquals(1, actions.results.size());
     }
     

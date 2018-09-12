@@ -4,8 +4,6 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.time.Instant;
-import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
 import java.util.UUID;
 
@@ -120,7 +118,12 @@ public class JdbcSnapshotActionService implements ActionService {
     }
 
     @Override
-    public ResultSubset<Action> getActions(UUID snapshotId, long limit, long offset, List<String> statusList, Date beginDate, Date endDate){
+    public ResultSubset<Action> getActions(UUID snapshotId, long limit, long offset, List<String> statusList, Instant beginDate, Instant endDate){
+        throw new UnsupportedOperationException("Not implemented, yet");
+    }
+
+    @Override
+    public ResultSubset<Action> getActions(UUID resourceId, long limit, long offset, List<String> statusList, Instant beginDate, Instant endDate, ActionType actionType) {
         throw new UnsupportedOperationException("Not implemented, yet");
     }
 

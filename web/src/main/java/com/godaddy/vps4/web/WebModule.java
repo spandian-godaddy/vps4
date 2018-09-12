@@ -1,5 +1,6 @@
 package com.godaddy.vps4.web;
 
+import com.godaddy.vps4.web.action.ActionResource;
 import com.godaddy.vps4.web.appmonitors.VmActionsMonitorResource;
 import com.godaddy.vps4.web.cache.CacheResource;
 import com.godaddy.vps4.web.console.ConsoleResource;
@@ -80,6 +81,7 @@ public class WebModule extends AbstractModule {
         bind(ConsoleResource.class);
         bind(VmMessagingResource.class);
         bind(VmUpgradeResource.class);
+        bind(ActionResource.class);
 
         bind(CommandsResource.class);
         bind(CommandsViewResource.class);

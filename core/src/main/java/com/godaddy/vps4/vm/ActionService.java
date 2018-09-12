@@ -1,5 +1,6 @@
 package com.godaddy.vps4.vm;
 
+import java.time.Instant;
 import java.util.Date;
 import java.util.List;
 import java.util.UUID;
@@ -24,7 +25,9 @@ public interface ActionService {
 
     ResultSubset<Action> getActions(UUID resourceId, long limit, long offset, List<String> statusList);
 
-    ResultSubset<Action> getActions(UUID resourceId, long limit, long offset, List<String> statusList, Date beginDate, Date endDate);
+    ResultSubset<Action> getActions(UUID resourceId, long limit, long offset, List<String> statusList, Instant beginDate, Instant endDate);
+
+    ResultSubset<Action> getActions(UUID resourceId, long limit, long offset, List<String> statusList, Instant beginDate, Instant endDate, ActionType actionType);
 
     void tagWithCommand(long actionId, UUID commandId);
 

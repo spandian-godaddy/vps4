@@ -5,7 +5,6 @@ import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.time.Instant;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -118,12 +117,17 @@ public class JdbcVmActionService implements ActionService {
     }
 
     @Override
-    public ResultSubset<Action> getActions(UUID vmId, long limit, long offset, List<String> statusList, Date beginDate, Date endDate) {
+    public ResultSubset<Action> getActions(UUID vmId, long limit, long offset, List<String> statusList, Instant beginDate, Instant endDate) {
         return getActionsHelper(vmId, limit, offset, statusList, null, beginDate, endDate);
     }
 
+    @Override
+    public ResultSubset<Action> getActions(UUID resourceId, long limit, long offset, List<String> statusList, Instant beginDate, Instant endDate, ActionType actionType) {
+        return getActionsHelper(resourceId, limit, offset, statusList, actionType, beginDate, endDate);
+    }
+
     private ResultSubset<Action> getActionsHelper(UUID vmId, long limit, long offset, List<String> statusList,
-                                                  ActionType actionType, Date beginDate, Date endDate) {
+                                                  ActionType actionType, Instant beginDate, Instant endDate) {
         Map<String, Object> filterParams = new HashMap<>();
         if (vmId != null){
             logger.info("In getActionHelper, vmId: [{}]", vmId);
@@ -173,17 +177,17 @@ public class JdbcVmActionService implements ActionService {
         }
     }
 
-    private void buildDateQuery(Date beginDate, Date endDate,
+    private void buildDateQuery(Instant beginDate, Instant endDate,
                                 ArrayList<Object> filterValues, StringBuilder actionsQuery) {
         if (beginDate != null){
             logger.info("In getActionHelper, begin date: [{}]", beginDate);
             actionsQuery.append(" and created >= ?");
-            filterValues.add(new Timestamp(beginDate.getTime()));
+            filterValues.add(Timestamp.from(beginDate));
         }
         if (endDate != null){
             logger.info("In getActionHelper, end date: [{}]", endDate);
             actionsQuery.append(" and created <= ?");
-            filterValues.add(new Timestamp(endDate.getTime()));
+            filterValues.add(Timestamp.from(endDate));
         }
     }
 

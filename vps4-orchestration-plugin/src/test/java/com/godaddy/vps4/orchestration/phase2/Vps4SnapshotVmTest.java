@@ -242,16 +242,6 @@ public class Vps4SnapshotVmTest {
     }
 
     @Test
-    public void marksTheOldSnapshotAsDeprecated() {
-        command.execute(context, request);
-        verify(context, times(1)).execute(eq("MarkOldestSnapshotForDeprecation" + request.orionGuid), markOldestSnapshotCaptor.capture(), eq(UUID.class));
-
-        Function<CommandContext, UUID> lambda = markOldestSnapshotCaptor.getValue();
-        lambda.apply(context);
-        verify(spySnapshotService, times(1)).markOldestSnapshotForDeprecation(request.orionGuid, SnapshotType.ON_DEMAND);
-    }
-
-    @Test
     public void onlyMarksSameTypeOfSnapshotDeprecated() {
 
         when(context.execute(eq("MarkOldestSnapshotForDeprecation" + orionGuid), any())).thenReturn((UUID) null);
