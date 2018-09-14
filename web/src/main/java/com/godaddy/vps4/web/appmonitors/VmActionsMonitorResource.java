@@ -133,7 +133,8 @@ public class VmActionsMonitorResource {
     @RequiresRole(roles = {GDUser.Role.ADMIN})
     @GET
     @Path("/failedActionsPercent")
-    public List<ActionTypeErrorData> getFailedActionsForAllTypes(long windowSize) {
+    public List<ActionTypeErrorData> getFailedActionsForAllTypes(
+            @ApiParam(value = "The number of actions to use in the percentage calculation.", required = true) @QueryParam("Window Size") long windowSize) {
         List<ActionTypeErrorData> result = new ArrayList<>();
         for(ActionType type : ActionType.values()) {
             ResultSubset<Action> resultSubset = actionService.getActions(null, windowSize, 0, new ArrayList<>(), null, null, type);
