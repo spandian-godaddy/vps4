@@ -156,7 +156,7 @@ public class VmActionsMonitorResourceTest {
 
     @Test
     public void testCheckForFailingActionsEmpty() {
-        ResultSubset<Action> emptyResultSet = new ResultSubset<>(new ArrayList<>(), 0);
+        ResultSubset<Action> emptyResultSet = null;
 
         when(actionService.getActions(any(UUID.class), anyLong(), anyLong(), any(), any(Instant.class), any(Instant.class), any(ActionType.class))).thenReturn(emptyResultSet);
 

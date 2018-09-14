@@ -136,7 +136,8 @@ public class VmActionsMonitorResource {
     public List<ActionTypeErrorData> getFailedActionsForAllTypes(long windowSize) {
         List<ActionTypeErrorData> result = new ArrayList<>();
         for(ActionType type : ActionType.values()) {
-            List<Action> actions = actionService.getActions(null, windowSize, 0, new ArrayList<>(), null, null, type).results;
+            ResultSubset<Action> resultSubset = actionService.getActions(null, windowSize, 0, new ArrayList<>(), null, null, type);
+            List<Action> actions = resultSubset==null?new ArrayList<>():resultSubset.results;
             List<Action> errors = actions.stream().filter(a -> a.status==ActionStatus.ERROR).collect(Collectors.toList());
 
             if(!errors.isEmpty()) {
