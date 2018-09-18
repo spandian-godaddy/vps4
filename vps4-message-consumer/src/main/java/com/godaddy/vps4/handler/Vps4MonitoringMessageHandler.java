@@ -10,6 +10,9 @@ import com.godaddy.vps4.handler.util.Commands;
 
 import gdg.hfs.orchestration.CommandService;
 
+import static com.godaddy.vps4.handler.util.Utils.isOrchEngineDown;
+import static com.godaddy.vps4.handler.util.Utils.isDBError;
+
 public class Vps4MonitoringMessageHandler implements MessageHandler {
 
     private static final Logger logger = LoggerFactory.getLogger(Vps4MonitoringMessageHandler.class);
@@ -28,7 +31,13 @@ public class Vps4MonitoringMessageHandler implements MessageHandler {
         Vps4MonitoringMessage vps4Message = new Vps4MonitoringMessage(message);
 
         if (vps4Message.event.toLowerCase().equals(VM_DOWN)) {
-            Commands.execute(commandService, "HandleMonitoringDownEvent", vps4Message.hfsCheckId);
+            try {
+                Commands.execute(commandService, "HandleMonitoringDownEvent", vps4Message.hfsCheckId);
+            } catch (Exception ex) {
+                logger.error("Failed while handling monitoring message for check id {}", vps4Message.hfsCheckId);
+                boolean shouldRetry = isOrchEngineDown(ex) || isDBError(ex);
+                throw new MessageHandlerException(shouldRetry, ex);
+            }
         }
 
     }

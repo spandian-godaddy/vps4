@@ -65,12 +65,22 @@ public class ECommCreditService implements CreditService {
             logger.info("Account: {}", account);
         } catch(Exception ex) {
             logger.error("Error retrieving VPS4 credit for account guid {} : Exception :", orionGuid.toString(), ex);
+            return null; // return null since we can't find the credit. Keeps the semantics of this method consistent
         }
-        try {
-            credit = mapVirtualMachineCredit(account);
-            logger.info("Credit: {}", credit.toString());
-        } catch(Exception ex) {
-            logger.error("Error mapping VPS4 credit for account guid {} : Exception :", orionGuid.toString(), ex);
+
+        if (account != null) {
+            try {
+                credit = mapVirtualMachineCredit(account);
+                logger.info("Credit: {}", credit.toString());
+            } catch (RuntimeException ex) {
+                logger.error("Error mapping VPS4 credit for account guid {} : Exception :", orionGuid.toString(), ex);
+                if (ex.getMessage().startsWith("Sql.")) {
+                    // If this is a SQL exception then re-throw exception
+                    throw ex;
+                }
+            } catch (Exception ex) {
+                logger.error("Error mapping VPS4 credit for account guid {} : Exception :", orionGuid.toString(), ex);
+            }
         }
 
         return credit;

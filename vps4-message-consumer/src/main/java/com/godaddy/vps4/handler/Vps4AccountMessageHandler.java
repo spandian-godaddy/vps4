@@ -1,9 +1,10 @@
 package com.godaddy.vps4.handler;
 
 import static com.godaddy.vps4.handler.util.Commands.execute;
+import static com.godaddy.vps4.handler.util.Utils.isOrchEngineDown;
+import static com.godaddy.vps4.handler.util.Utils.isDBError;
 
 import java.io.IOException;
-import java.util.UUID;
 
 import com.godaddy.vps4.orchestration.account.Vps4ProcessAccountCancellation;
 import com.godaddy.vps4.vm.AccountStatus;
@@ -83,24 +84,33 @@ public class Vps4AccountMessageHandler implements MessageHandler {
                 return;
             }
         } catch (Exception ex) {
-            logger.error("Unable to locate account credit for Virtual Machine using account guid {}", vps4Message.accountGuid);
-            throw new MessageHandlerException(ex);
+            logger.error(
+                "Error while trying to locate account credit for Virtual Machine using account guid {}",
+                vps4Message.accountGuid);
+            boolean shouldRetry = isOrchEngineDown(ex) || isDBError(ex);
+            throw new MessageHandlerException(shouldRetry, ex);
         }
 
 
-        switch (credit.accountStatus) {
-        case ABUSE_SUSPENDED:
-        case SUSPENDED:
-            stopVm(vm);
-            break;
-        case ACTIVE:
-            processPlanChange(credit, vm);
-            break;
-        case REMOVED:
-            handleAccountCancellation(vm, credit);
-            break;
-        default:
-            break;
+        try {
+            switch (credit.accountStatus) {
+                case ABUSE_SUSPENDED:
+                case SUSPENDED:
+                    stopVm(vm);
+                    break;
+                case ACTIVE:
+                    processPlanChange(credit, vm);
+                    break;
+                case REMOVED:
+                    handleAccountCancellation(vm, credit);
+                    break;
+                default:
+                    break;
+            }
+        } catch (Exception ex) {
+            logger.error("Failed while handling message for account {} with exception {}", vps4Message.accountGuid, ex);
+            boolean shouldRetry = isOrchEngineDown(ex) || isDBError(ex);
+            throw new MessageHandlerException(shouldRetry, ex);
         }
     }
 
@@ -145,7 +155,7 @@ public class Vps4AccountMessageHandler implements MessageHandler {
         execute(commandService, vmActionService, "Vps4PlanChange", request);
     }
 
-    private void handleAccountCancellation(VirtualMachine vm, VirtualMachineCredit credit) throws MessageHandlerException {
+    private void handleAccountCancellation(VirtualMachine vm, VirtualMachineCredit credit) {
         logger.info("Vps4 account canceled: {} - queueing account cancellation command", credit.orionGuid);
         long actionId = vmActionService.createAction(vm.vmId, ActionType.CANCEL_ACCOUNT,
                 new JSONObject().toJSONString(), ACCOUNT_MESSAGE_HANDLER_NAME);
@@ -156,21 +166,15 @@ public class Vps4AccountMessageHandler implements MessageHandler {
         execute(commandService, vmActionService, "Vps4ProcessAccountCancellation", request);
     }
 
-    private void stopVm(VirtualMachine vm) throws MessageHandlerException {
-        try {
-            long actionId = vmActionService.createAction(vm.vmId, ActionType.STOP_VM,
-                    new JSONObject().toJSONString(), ACCOUNT_MESSAGE_HANDLER_NAME);
+    private void stopVm(VirtualMachine vm) {
+        long actionId = vmActionService.createAction(vm.vmId, ActionType.STOP_VM,
+                new JSONObject().toJSONString(), ACCOUNT_MESSAGE_HANDLER_NAME);
 
-            VmActionRequest request = new VmActionRequest();
-            request.virtualMachine = vm;
-            request.actionId = actionId;
+        VmActionRequest request = new VmActionRequest();
+        request.virtualMachine = vm;
+        request.actionId = actionId;
 
-            logger.info("Stopping suspended vm: {} - actionId: {}", vm.vmId, actionId);
-            execute(commandService, vmActionService, "Vps4StopVm", request);
-
-        } catch (Exception ex) {
-            logger.error("Could not perform the stop VM operation for vmId {}.", vm.vmId);
-            throw new MessageHandlerException(ex);
-        }
+        logger.info("Stopping suspended vm: {} - actionId: {}", vm.vmId, actionId);
+        execute(commandService, vmActionService, "Vps4StopVm", request);
     }
 }
