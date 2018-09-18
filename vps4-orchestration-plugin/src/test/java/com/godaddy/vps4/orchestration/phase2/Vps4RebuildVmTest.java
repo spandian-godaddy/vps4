@@ -108,7 +108,6 @@ public class Vps4RebuildVmTest {
     @Captor private ArgumentCaptor<RefreshCpanelLicense.Request> refreshLicenseCaptor;
     @Captor private ArgumentCaptor<ConfigureCpanel.ConfigureCpanelRequest> configureCpanelRequestArgumentCaptor;
     @Captor private ArgumentCaptor<ConfigurePlesk.ConfigurePleskRequest> configurePleskRequestArgumentCaptor;
-    @Captor private ArgumentCaptor<Function<CommandContext, Void>> commonNameArgumentLambdaCaptor;
 
     @BeforeClass
     public static void newInjector() {
@@ -201,7 +200,7 @@ public class Vps4RebuildVmTest {
     private Image setupImage() {
         Image image = new Image();
         image.operatingSystem = Image.OperatingSystem.LINUX;
-        image.imageName = "hfs-centos-7";
+        image.hfsName = "hfs-centos-7";
         image.controlPanel = Image.ControlPanel.CPANEL;
         return image;
     }

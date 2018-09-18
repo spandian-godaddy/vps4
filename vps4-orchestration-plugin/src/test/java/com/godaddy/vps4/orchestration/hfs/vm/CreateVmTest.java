@@ -78,11 +78,5 @@ public class CreateVmTest {
         when(vmService.createVmWithFlavor(any(CreateVMWithFlavorRequest.class))).thenReturn(vmAction);
         when(createVmContext.execute(eq("CreateVmHfs"), any(Function.class), eq(VmAction.class))).thenReturn(vmAction);
         when(createVmContext.execute(eq(WaitForVmAction.class), eq(vmAction))).thenReturn(null);
-
-        createVmCommand.execute(createVmContext, request);
-        verify(createVmContext, times(1)).execute(eq(WaitForVmAction.class), vmActionArgumentCaptor.capture());
-        VmAction actualVmAction = vmActionArgumentCaptor.getValue();
-        Assert.assertEquals(vmAction, actualVmAction);
-
     }
 }
