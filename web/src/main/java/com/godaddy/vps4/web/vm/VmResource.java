@@ -14,7 +14,6 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
 import javax.inject.Inject;
 import javax.ws.rs.Consumes;
@@ -28,14 +27,6 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
 
-import com.godaddy.vps4.snapshot.SnapshotService;
-import com.godaddy.vps4.snapshot.SnapshotStatus;
-import com.godaddy.vps4.vm.Action;
-import org.apache.commons.lang3.StringUtils;
-import org.json.simple.JSONObject;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import com.godaddy.hfs.config.Config;
 import com.godaddy.vps4.credit.CreditService;
 import com.godaddy.vps4.credit.VirtualMachineCredit;
@@ -48,7 +39,10 @@ import com.godaddy.vps4.scheduler.api.web.SchedulerWebService;
 import com.godaddy.vps4.security.Vps4User;
 import com.godaddy.vps4.security.Vps4UserService;
 import com.godaddy.vps4.snapshot.Snapshot;
+import com.godaddy.vps4.snapshot.SnapshotService;
+import com.godaddy.vps4.snapshot.SnapshotStatus;
 import com.godaddy.vps4.util.Cryptography;
+import com.godaddy.vps4.vm.Action;
 import com.godaddy.vps4.vm.ActionService;
 import com.godaddy.vps4.vm.ActionType;
 import com.godaddy.vps4.vm.DataCenterService;
@@ -67,7 +61,6 @@ import com.godaddy.vps4.web.Vps4UserNotFound;
 import com.godaddy.vps4.web.security.GDUser;
 import com.godaddy.vps4.web.util.Commands;
 import com.godaddy.vps4.web.util.ResellerConfigHelper;
-
 import gdg.hfs.orchestration.CommandService;
 import gdg.hfs.orchestration.CommandState;
 import gdg.hfs.vhfs.vm.Vm;
@@ -75,6 +68,10 @@ import gdg.hfs.vhfs.vm.VmService;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
+import org.apache.commons.lang3.StringUtils;
+import org.json.simple.JSONObject;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @Vps4Api
 @Api(tags = { "vms" })
@@ -158,7 +155,7 @@ public class VmResource {
 
         VmActionRequest startRequest = new VmActionRequest();
         startRequest.virtualMachine = vm;
-        return createActionAndExecute(actionService, commandService, virtualMachineService, vm.vmId,
+        return createActionAndExecute(actionService, commandService, vm.vmId,
                 ActionType.START_VM, startRequest, "Vps4StartVm", user);
     }
 
@@ -172,7 +169,7 @@ public class VmResource {
 
         VmActionRequest stopRequest = new VmActionRequest();
         stopRequest.virtualMachine = vm;
-        return createActionAndExecute(actionService, commandService, virtualMachineService, vm.vmId, ActionType.STOP_VM,
+        return createActionAndExecute(actionService, commandService, vm.vmId, ActionType.STOP_VM,
                 stopRequest, "Vps4StopVm", user);
     }
 
@@ -186,7 +183,7 @@ public class VmResource {
 
         VmActionRequest restartRequest = new VmActionRequest();
         restartRequest.virtualMachine = vm;
-        return createActionAndExecute(actionService, commandService, virtualMachineService, vm.vmId,
+        return createActionAndExecute(actionService, commandService, vm.vmId,
                 ActionType.RESTART_VM, restartRequest, "Vps4RestartVm", user);
     }
 
@@ -285,7 +282,7 @@ public class VmResource {
 
         VmActionRequest destroyRequest = new VmActionRequest();
         destroyRequest.virtualMachine = vm;
-        VmAction deleteAction = createActionAndExecute(actionService, commandService, virtualMachineService, vm.vmId,
+        VmAction deleteAction = createActionAndExecute(actionService, commandService, vm.vmId,
                 ActionType.DESTROY_VM, destroyRequest, "Vps4DestroyVm", user);
 
         creditService.unclaimVirtualMachineCredit(vm.orionGuid);

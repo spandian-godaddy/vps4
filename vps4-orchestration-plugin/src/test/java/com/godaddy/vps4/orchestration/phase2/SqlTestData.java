@@ -8,11 +8,9 @@ import java.util.stream.IntStream;
 
 import javax.sql.DataSource;
 
+import com.godaddy.hfs.jdbc.Sql;
 import com.godaddy.vps4.network.IpAddress;
 import com.godaddy.vps4.network.NetworkService;
-import org.json.simple.JSONObject;
-
-import com.godaddy.hfs.jdbc.Sql;
 import com.godaddy.vps4.project.Project;
 import com.godaddy.vps4.project.ProjectService;
 import com.godaddy.vps4.security.Vps4User;
@@ -25,6 +23,9 @@ import com.godaddy.vps4.vm.ActionType;
 import com.godaddy.vps4.vm.VirtualMachine;
 import com.godaddy.vps4.vm.VirtualMachineService;
 import com.godaddy.vps4.vm.VirtualMachineService.ProvisionVirtualMachineParameters;
+import com.godaddy.vps4.vm.VmUser;
+import com.godaddy.vps4.vm.VmUserService;
+import org.json.simple.JSONObject;
 
 
 public class SqlTestData {
@@ -38,6 +39,7 @@ public class SqlTestData {
     public final static String nfImageId = "nocfox-id";
     public final static String IMAGE_NAME = "hfs-centos-7";
     public final static String INITIATED_BY = "tester";
+    public final static String TEST_USER_NAME = "fake_vm_user";
 
     public static Vps4User insertUser(Vps4UserService userService) {
         return userService.getOrCreateUserForShopper(TEST_SHOPPER_ID, "1");
@@ -60,9 +62,9 @@ public class SqlTestData {
         return virtualMachineService.getVirtualMachine(virtualMachine.vmId);
     }
 
-    public static long insertVmAction(ActionService actionService, Vps4UserService userService, UUID vmId) {
+    public static long insertVmAction(ActionService actionService, UUID vmId, ActionType actionType) {
         return actionService.createAction(
-                vmId, ActionType.RESTORE_VM, new JSONObject().toJSONString(), INITIATED_BY);
+                vmId, actionType, new JSONObject().toJSONString(), INITIATED_BY);
     }
 
     public static UUID insertSnapshot(SnapshotService snapshotService, UUID vmId, long projectId, SnapshotType snapshotType) {
@@ -105,6 +107,10 @@ public class SqlTestData {
                 .collect(Collectors.toList());
     }
 
+    public static void insertVmUser(VmUser user, VmUserService vmUserService) {
+        vmUserService.createUser(user.username, user.vmId, user.adminEnabled, user.vmUserType);
+    }
+
     public static void cleanupSqlTestData(DataSource dataSource, Vps4UserService userService) {
         long userId = userService.getUser(TEST_SHOPPER_ID).getId();
         String test_vm_condition = "v.name='" + TEST_VM_NAME + "'";
@@ -112,6 +118,7 @@ public class SqlTestData {
         String test_sgid_condition = "p.vhfs_sgid like '" + TEST_SGID + "%'";
         String test_user_condition = "u.shopper_id = '" + TEST_SHOPPER_ID + "'";
         String test_privilege_condition = "p.vps4_user_id = " + userId + "";
+        String test_vmUser_name_condition = "u.name = '" + TEST_USER_NAME + "'";
 
         Sql.with(dataSource).exec(
                 "DELETE FROM snapshot_action a USING snapshot s WHERE a.snapshot_id = s.id AND " + test_snapshot_condition,
@@ -125,6 +132,7 @@ public class SqlTestData {
         Sql.with(dataSource).exec(
                 "DELETE FROM vm_action a USING virtual_machine v WHERE a.vm_id = v.vm_id AND " + test_vm_condition,
                 null);
+        Sql.with(dataSource).exec("DELETE FROM vm_user u WHERE " + test_vmUser_name_condition, null);
         Sql.with(dataSource).exec(
                 "DELETE FROM virtual_machine v USING project p WHERE v.project_id = p.project_id AND " + test_sgid_condition,
                 null);
@@ -133,4 +141,5 @@ public class SqlTestData {
         Sql.with(dataSource).exec("DELETE FROM project p WHERE " + test_sgid_condition, null);
         Sql.with(dataSource).exec("DELETE FROM vps4_user u WHERE " + test_user_condition, null);
     }
+
 }

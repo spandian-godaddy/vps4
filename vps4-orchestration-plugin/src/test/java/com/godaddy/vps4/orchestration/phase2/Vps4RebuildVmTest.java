@@ -3,6 +3,7 @@ package com.godaddy.vps4.orchestration.phase2;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.junit.Assert.assertThat;
 import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.anyLong;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Matchers.startsWith;
 import static org.mockito.Mockito.doReturn;
@@ -20,88 +21,94 @@ import java.util.function.Function;
 
 import javax.sql.DataSource;
 
+import com.godaddy.vps4.credit.CreditService;
+import com.godaddy.vps4.jdbc.DatabaseModule;
+import com.godaddy.vps4.network.IpAddress;
+import com.godaddy.vps4.network.NetworkService;
+import com.godaddy.vps4.orchestration.hfs.cpanel.ConfigureCpanel;
+import com.godaddy.vps4.orchestration.hfs.cpanel.RefreshCpanelLicense;
+import com.godaddy.vps4.orchestration.hfs.network.BindIp;
+import com.godaddy.vps4.orchestration.hfs.network.UnbindIp;
+import com.godaddy.vps4.orchestration.hfs.plesk.ConfigurePlesk;
+import com.godaddy.vps4.orchestration.hfs.sysadmin.SetPassword;
+import com.godaddy.vps4.orchestration.hfs.sysadmin.ToggleAdmin;
+import com.godaddy.vps4.orchestration.hfs.vm.CreateVm;
+import com.godaddy.vps4.orchestration.hfs.vm.DestroyVm;
+import com.godaddy.vps4.orchestration.vm.Vps4RebuildVm;
+import com.godaddy.vps4.project.Project;
+import com.godaddy.vps4.project.ProjectService;
+import com.godaddy.vps4.security.SecurityModule;
+import com.godaddy.vps4.security.Vps4UserService;
+import com.godaddy.vps4.vm.ActionService;
 import com.godaddy.vps4.vm.ActionType;
+import com.godaddy.vps4.vm.Image;
+import com.godaddy.vps4.vm.RebuildVmInfo;
+import com.godaddy.vps4.vm.VirtualMachine;
+import com.godaddy.vps4.vm.VirtualMachineService;
+import com.godaddy.vps4.vm.VmModule;
+import com.godaddy.vps4.vm.VmUser;
+import com.godaddy.vps4.vm.VmUserService;
+import com.godaddy.vps4.vm.VmUserType;
+import com.google.inject.AbstractModule;
+import com.google.inject.Guice;
+import com.google.inject.Inject;
+import com.google.inject.Injector;
+import com.google.inject.Provides;
+import gdg.hfs.orchestration.CommandContext;
+import gdg.hfs.vhfs.vm.Vm;
+import gdg.hfs.vhfs.vm.VmAction;
+import gdg.hfs.vhfs.vm.VmService;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
-import org.mockito.MockitoAnnotations;
+import org.mockito.runners.MockitoJUnitRunner;
 
-import com.godaddy.vps4.jdbc.DatabaseModule;
-import com.godaddy.vps4.network.IpAddress;
-import com.godaddy.vps4.network.NetworkService;
-import com.godaddy.vps4.orchestration.hfs.cpanel.RefreshCpanelLicense;
-import com.godaddy.vps4.orchestration.hfs.network.BindIp;
-import com.godaddy.vps4.orchestration.hfs.network.UnbindIp;
-import com.godaddy.vps4.orchestration.hfs.sysadmin.SetPassword;
-import com.godaddy.vps4.orchestration.hfs.sysadmin.ToggleAdmin;
-import com.godaddy.vps4.orchestration.hfs.vm.CreateVmFromSnapshot;
-import com.godaddy.vps4.orchestration.hfs.vm.DestroyVm;
-import com.godaddy.vps4.orchestration.vm.Vps4RestoreVm;
-import com.godaddy.vps4.project.Project;
-import com.godaddy.vps4.project.ProjectService;
-import com.godaddy.vps4.security.SecurityModule;
-import com.godaddy.vps4.security.Vps4UserService;
-import com.godaddy.vps4.snapshot.SnapshotModule;
-import com.godaddy.vps4.snapshot.SnapshotService;
-import com.godaddy.vps4.snapshot.SnapshotStatus;
-import com.godaddy.vps4.snapshot.SnapshotType;
-import com.godaddy.vps4.vm.ActionService;
-import com.godaddy.vps4.vm.Image;
-import com.godaddy.vps4.vm.RestoreVmInfo;
-import com.godaddy.vps4.vm.VirtualMachine;
-import com.godaddy.vps4.vm.VirtualMachineService;
-import com.godaddy.vps4.vm.VmModule;
-import com.godaddy.vps4.vm.VmUserService;
-import com.google.inject.Guice;
-import com.google.inject.Inject;
-import com.google.inject.Injector;
-
-import gdg.hfs.orchestration.CommandContext;
-import gdg.hfs.vhfs.vm.Vm;
-import gdg.hfs.vhfs.vm.VmService;
-
-public class Vps4RestoreVmTest {
+@RunWith(MockitoJUnitRunner.class)
+public class Vps4RebuildVmTest {
     static Injector injector;
-    private Vps4RestoreVm command;
+    private Vps4RebuildVm command;
     private CommandContext context;
-    private Vps4RestoreVm.Request request;
+    private Vps4RebuildVm.Request request;
+    private VmAction vmAction;
     private UUID vps4VmId;
-    private UUID vps4SnapshotId;
-    private long restoreActionId;
+    private long rebuildActionId;
     private Project vps4Project;
     private List<IpAddress> ipAddresses;
-    private gdg.hfs.vhfs.vm.VmAction hfsAction;
-    private long hfsRestoreActionId = 12345;
-    private long hfsNewVmId = 4567;
+    private long hfsNewVmId = 6789;
     private Vm hfsVm;
-    private VirtualMachine vps4Vm;
-    private VirtualMachineService spyVps4VmService;
-    static final String username = "jdoe";
-    static final String password = "P@$$w0rd1";
+    private VirtualMachine vps4Vm, vps4NewVm;
+    private static final String username = "fake_user";
+    private static final String password = "P@$$w0rd1";
 
     @Inject private Vps4UserService vps4UserService;
     @Inject private ProjectService projectService;
     @Inject private VmService hfsVmService;
     @Inject private VirtualMachineService vps4VmService;
-    @Inject private SnapshotService vps4SnapshotService;
     @Inject private NetworkService vps4NetworkService;
     @Inject private ActionService actionService;
+    @Inject private CreditService creditService;
     @Inject private VmUserService vmUserService;
 
+    VirtualMachineService spyVps4VmService;
+    VmUserService spyVmUserService;
+
     @Captor private ArgumentCaptor<Function<CommandContext, Long>> getHfsVmIdLambdaCaptor;
-    @Captor private ArgumentCaptor<Function<CommandContext, String>> getVmOSDistroLambdaCaptor;
     @Captor private ArgumentCaptor<Function<CommandContext, Vm>> getHfsVmLambdaCaptor;
     @Captor private ArgumentCaptor<Function<CommandContext, Void>> updateHfsVmIdLambdaCaptor;
     @Captor private ArgumentCaptor<BindIp.BindIpRequest> bindIpRequestArgumentCaptor;
-    @Captor private ArgumentCaptor<CreateVmFromSnapshot.Request> flavorRequestArgumentCaptor;
+    @Captor private ArgumentCaptor<CreateVm.Request> createVmRequestArgumentCaptor;
     @Captor private ArgumentCaptor<SetPassword.Request> setPasswordArgumentCaptor;
     @Captor private ArgumentCaptor<ToggleAdmin.Request> toggleAdminArgumentCaptor;
     @Captor private ArgumentCaptor<UnbindIp.Request> unbindIpArgumentCaptor;
     @Captor private ArgumentCaptor<RefreshCpanelLicense.Request> refreshLicenseCaptor;
+    @Captor private ArgumentCaptor<ConfigureCpanel.ConfigureCpanelRequest> configureCpanelRequestArgumentCaptor;
+    @Captor private ArgumentCaptor<ConfigurePlesk.ConfigurePleskRequest> configurePleskRequestArgumentCaptor;
+    @Captor private ArgumentCaptor<Function<CommandContext, Void>> commonNameArgumentLambdaCaptor;
 
     @BeforeClass
     public static void newInjector() {
@@ -109,20 +116,36 @@ public class Vps4RestoreVmTest {
                 new DatabaseModule(),
                 new SecurityModule(),
                 new VmModule(),
-                new SnapshotModule(),
-                new Vps4ExternalsModule()
+                new Vps4ExternalsModule(),
+                new AbstractModule() {
+                    @Override
+                    protected void configure() {
+                    }
+
+                    @Provides
+                    public CreditService createMockCreditService() {
+                        return mock(CreditService.class);
+                    }
+                }
         );
     }
 
     @Before
     public void setUpTest() {
         injector.injectMembers(this);
-        MockitoAnnotations.initMocks(this);
 
         spyVps4VmService = spy(vps4VmService);
-        command = new Vps4RestoreVm(actionService, hfsVmService, spyVps4VmService,
-                vps4NetworkService, vps4SnapshotService, vmUserService);
+        spyVmUserService = spy(vmUserService);
+
+        command = new Vps4RebuildVm(actionService, hfsVmService, spyVps4VmService,
+                vps4NetworkService, spyVmUserService, creditService);
         addTestSqlData();
+
+        vps4NewVm = mock(VirtualMachine.class);
+        when(spyVps4VmService.getVirtualMachine(anyLong())).thenReturn(vps4NewVm);
+        vps4NewVm.image = setupImage();
+        vps4NewVm.hfsVmId = hfsNewVmId;
+
         context = setupMockContext();
         request = getCommandRequest();
     }
@@ -138,14 +161,14 @@ public class Vps4RestoreVmTest {
         vps4Project = SqlTestData.insertProject(projectService, vps4UserService);
         vps4Vm = SqlTestData.insertVm(vps4VmService, vps4UserService);
         vps4VmId = vps4Vm.vmId;
-        vps4SnapshotId = SqlTestData.insertSnapshotWithStatus(
-                vps4SnapshotService, vps4Vm.vmId, vps4Project.getProjectId(), SnapshotStatus.LIVE, SnapshotType.ON_DEMAND);
-        restoreActionId = SqlTestData.insertVmAction(actionService, vps4VmId, ActionType.RESTORE_VM);
+        rebuildActionId = SqlTestData.insertVmAction(actionService, vps4VmId, ActionType.REBUILD_VM);
         ipAddresses = new ArrayList<>();
         ipAddresses.addAll(
                 SqlTestData.insertIpAddresses(vps4NetworkService, vps4VmId, 1, IpAddress.IpAddressType.PRIMARY));
         ipAddresses.addAll(
                 SqlTestData.insertIpAddresses(vps4NetworkService, vps4VmId, 2, IpAddress.IpAddressType.SECONDARY));
+        VmUser vmUser = new VmUser("fake_vm_user", vps4VmId, true, VmUserType.SUPPORT);
+        SqlTestData.insertVmUser(vmUser, vmUserService);
     }
 
     private CommandContext setupMockContext() {
@@ -158,35 +181,43 @@ public class Vps4RestoreVmTest {
         when(mockContext.execute(eq("GetNocfoxImageId"), any(Function.class), eq(String.class))).thenReturn(SqlTestData.nfImageId);
         when(mockContext.execute(eq("GetVmOSDistro"), any(Function.class), eq(String.class))).thenReturn(SqlTestData.IMAGE_NAME);
 
-        hfsAction = new gdg.hfs.vhfs.vm.VmAction();
-        hfsAction.vmActionId = hfsRestoreActionId;
-        hfsAction.vmId = hfsNewVmId;
-
-        when(mockContext.execute(eq("CreateVmFromSnapshot"), eq(CreateVmFromSnapshot.class), any()))
-                .thenReturn(hfsAction);
+        vmAction = mock(VmAction.class);
+        when(mockContext.execute(eq("CreateVm"), eq(CreateVm.class), any(CreateVm.Request.class)))
+                .thenReturn(vmAction);
+        vmAction.vmId = hfsNewVmId;
 
         hfsVm = new Vm();
         hfsVm.vmId = hfsNewVmId;
+
         when(mockContext.execute(eq("GetVmAfterCreate"), any(Function.class), eq(Vm.class))).thenReturn(hfsVm);
 
         when(mockContext.execute(eq("UpdateHfsVmId"), any(Function.class), eq(Void.class))).thenReturn(null);
         when(mockContext.execute(startsWith("BindIP-"), eq(BindIp.class), any())).thenReturn(null);
+        when(mockContext.execute(eq("SetCommonName"), any(Function.class))).thenReturn(null);
         when(mockContext.execute(eq("DestroyVmHfs"), eq(DestroyVm.class), eq(hfsNewVmId))).thenReturn(null);
         return mockContext;
     }
 
-    private Vps4RestoreVm.Request getCommandRequest() {
-        Vps4RestoreVm.Request req = new Vps4RestoreVm.Request();
-        req.actionId = restoreActionId;
-        req.restoreVmInfo = new RestoreVmInfo();
-        req.restoreVmInfo.vmId = vps4VmId;
-        req.restoreVmInfo.snapshotId = vps4SnapshotId;
-        req.restoreVmInfo.hostname = "foobar";
-        req.restoreVmInfo.username = username;
-        req.restoreVmInfo.encryptedPassword = password.getBytes();
-        req.restoreVmInfo.zone = "zone-1";
-        req.restoreVmInfo.rawFlavor = "rawflavor";
-        req.restoreVmInfo.sgid = vps4Project.getVhfsSgid();
+    private Image setupImage() {
+        Image image = new Image();
+        image.operatingSystem = Image.OperatingSystem.LINUX;
+        image.imageName = "hfs-centos-7";
+        image.controlPanel = Image.ControlPanel.CPANEL;
+        return image;
+    }
+
+    private Vps4RebuildVm.Request getCommandRequest() {
+        Vps4RebuildVm.Request req = new Vps4RebuildVm.Request();
+        req.actionId = rebuildActionId;
+        req.rebuildVmInfo = new RebuildVmInfo();
+        req.rebuildVmInfo.vmId = vps4VmId;
+        req.rebuildVmInfo.hostname = "foobar";
+        req.rebuildVmInfo.username = username;
+        req.rebuildVmInfo.encryptedPassword = password.getBytes();
+        req.rebuildVmInfo.zone = "zone-1";
+        req.rebuildVmInfo.rawFlavor = "rawflavor";
+        req.rebuildVmInfo.image = setupImage();
+        req.rebuildVmInfo.sgid = vps4Project.getVhfsSgid();
         return req;
     }
 
@@ -219,30 +250,16 @@ public class Vps4RestoreVmTest {
     }
 
     @Test
-    public void getsVmOSDistro() {
+    public void createsNewVm() {
         command.execute(context, request);
         verify(context, times(1))
-                .execute(eq("GetVmOSDistro"), getVmOSDistroLambdaCaptor.capture(), eq(String.class));
+                .execute(
+                        eq("CreateVm"), eq(CreateVm.class),
+                        createVmRequestArgumentCaptor.capture()
+                );
 
-        // Verify that the lambda is returning what we expect
-        Function<CommandContext, String> lambda = getVmOSDistroLambdaCaptor.getValue();
-        String osDistro = lambda.apply(context);
-        Assert.assertEquals("centos-7", osDistro); // This is because the image used is hfs-centos-7
-    }
-
-    @Test
-    public void createsVmFromSnapshot() {
-        command.execute(context, request);
-        verify(context, times(1))
-            .execute(
-                eq("CreateVmFromSnapshot"), eq(CreateVmFromSnapshot.class),
-                flavorRequestArgumentCaptor.capture()
-            );
-
-        CreateVmFromSnapshot.Request flavorRequest = flavorRequestArgumentCaptor.getValue();
-        Assert.assertEquals( "True", flavorRequest.ignore_whitelist);
-        Assert.assertEquals(SqlTestData.nfImageId, flavorRequest.image_id);
-        Assert.assertEquals(SqlTestData.IMAGE_NAME, flavorRequest.os);
+        CreateVm.Request createVmRequest = createVmRequestArgumentCaptor.getValue();
+        Assert.assertEquals(SqlTestData.IMAGE_NAME, createVmRequest.image_name );
     }
 
     @Test
@@ -259,7 +276,7 @@ public class Vps4RestoreVmTest {
     }
 
     @Test
-    public void setsRootUserPasswordForLinuxBasedSnapshot() {
+    public void setsRootUserPasswordForVm() {
         command.execute(context, request);
 
         verify(spyVps4VmService, times(1)).isLinux(eq(vps4VmId));
@@ -276,7 +293,7 @@ public class Vps4RestoreVmTest {
     }
 
     @Test
-    public void doesNotSetRootUserPasswordForNonLinuxBasedSnapshot() {
+    public void doesNotSetRootUserPasswordForNonLinuxBasedVm() {
         doReturn(false).when(spyVps4VmService).isLinux(vps4VmId);
         command.execute(context, request);
 
@@ -363,5 +380,45 @@ public class Vps4RestoreVmTest {
 
         RefreshCpanelLicense.Request refreshRequest = refreshLicenseCaptor.getValue();
         Assert.assertEquals(vps4Vm.hfsVmId, refreshRequest.hfsVmId);
+    }
+
+    @Test
+    public void configuresControlPanelForcPanelImage() {
+        vps4NewVm.image = new Image();
+        vps4NewVm.image.controlPanel = Image.ControlPanel.CPANEL;
+        command.execute(context, request);
+
+        verify(context, times(1))
+                .execute(eq(ConfigureCpanel.class), configureCpanelRequestArgumentCaptor.capture());
+
+        ConfigureCpanel.ConfigureCpanelRequest configureCpanelRequest = configureCpanelRequestArgumentCaptor.getValue();
+        Assert.assertEquals(vps4NewVm.hfsVmId, configureCpanelRequest.vmId);
+    }
+
+    @Test
+    public void configuresControlPanelForPleskImage() {
+        vps4NewVm.image = new Image();
+        vps4NewVm.image.controlPanel = Image.ControlPanel.PLESK;
+        command.execute(context, request);
+
+        verify(context, times(1))
+                .execute(eq(ConfigurePlesk.class), configurePleskRequestArgumentCaptor.capture());
+
+        ConfigurePlesk.ConfigurePleskRequest configurePleskRequest = configurePleskRequestArgumentCaptor.getValue();
+        Assert.assertEquals(vps4NewVm.hfsVmId, configurePleskRequest.vmId);
+    }
+
+    @Test
+    public void doesInvokeSetEcommCommonName() {
+        command.execute(context, request);
+        verify(context, times(1)).execute(eq("SetCommonName"), any(Function.class), eq(Void.class));
+    }
+
+    @Test
+    public void doesInvokeDeleteSupportUsers() {
+        command.execute(context, request);
+
+        verify(spyVmUserService, times(1)).listUsers(any(UUID.class), eq(VmUserType.SUPPORT));
+        verify(spyVmUserService, times(1)).deleteUser(any(String.class), any(UUID.class));
     }
 }

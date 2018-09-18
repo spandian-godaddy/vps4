@@ -1,11 +1,11 @@
 package com.godaddy.vps4.orchestration;
 
 import com.godaddy.vps4.orchestration.mailrelay.Vps4SetMailRelayQuota;
+import com.godaddy.vps4.orchestration.messaging.SendFailoverCompletedEmail;
 import com.godaddy.vps4.orchestration.messaging.SendScheduledPatchingEmail;
+import com.godaddy.vps4.orchestration.messaging.SendSystemDownFailoverEmail;
 import com.godaddy.vps4.orchestration.messaging.SendUnexpectedButScheduledMaintenanceEmail;
 import com.godaddy.vps4.orchestration.messaging.WaitForMessageComplete;
-import com.godaddy.vps4.orchestration.messaging.SendSystemDownFailoverEmail;
-import com.godaddy.vps4.orchestration.messaging.SendFailoverCompletedEmail;
 import com.godaddy.vps4.orchestration.snapshot.Vps4DestroySnapshot;
 import com.godaddy.vps4.orchestration.snapshot.Vps4SnapshotVm;
 import com.godaddy.vps4.orchestration.sysadmin.Vps4AddSupportUser;
@@ -17,13 +17,14 @@ import com.godaddy.vps4.orchestration.vm.UnlicenseControlPanel;
 import com.godaddy.vps4.orchestration.vm.Vps4AddIpAddress;
 import com.godaddy.vps4.orchestration.vm.Vps4CancelAction;
 import com.godaddy.vps4.orchestration.vm.Vps4DeleteAllScheduledJobsForVm;
-import com.godaddy.vps4.orchestration.vm.Vps4RemoveSupportUsersFromDatabase;
 import com.godaddy.vps4.orchestration.vm.Vps4DestroyIpAddress;
 import com.godaddy.vps4.orchestration.vm.Vps4DestroyIpAddressAction;
 import com.godaddy.vps4.orchestration.vm.Vps4DestroyVm;
 import com.godaddy.vps4.orchestration.vm.Vps4PlanChange;
 import com.godaddy.vps4.orchestration.vm.Vps4ProvisionVm;
+import com.godaddy.vps4.orchestration.vm.Vps4RebuildVm;
 import com.godaddy.vps4.orchestration.vm.Vps4RecordScheduledJobForVm;
+import com.godaddy.vps4.orchestration.vm.Vps4RemoveSupportUsersFromDatabase;
 import com.godaddy.vps4.orchestration.vm.Vps4RestartVm;
 import com.godaddy.vps4.orchestration.vm.Vps4RestoreVm;
 import com.godaddy.vps4.orchestration.vm.Vps4ReviveZombieVm;
@@ -31,7 +32,6 @@ import com.godaddy.vps4.orchestration.vm.Vps4StartVm;
 import com.godaddy.vps4.orchestration.vm.Vps4StopVm;
 import com.godaddy.vps4.orchestration.vm.Vps4UpgradeVm;
 import com.godaddy.vps4.orchestration.vm.Vps4TestCommand;
-import com.godaddy.vps4.vm.VmUserService;
 import com.google.inject.AbstractModule;
 
 public class Vps4CommandModule extends AbstractModule {
@@ -56,6 +56,7 @@ public class Vps4CommandModule extends AbstractModule {
         bind(Vps4DestroySnapshot.class);
         bind(Vps4SetMailRelayQuota.class);
         bind(Vps4RestoreVm.class);
+        bind(Vps4RebuildVm.class);
         bind(Vps4PlanChange.class);
         bind(Vps4ReviveZombieVm.class);
         bind(Vps4DeleteAllScheduledJobsForVm.class);

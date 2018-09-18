@@ -1,5 +1,24 @@
 package com.godaddy.vps4.orchestration.vm;
 
+import static com.godaddy.vps4.vm.CreateVmStep.ConfigureMailRelay;
+import static com.godaddy.vps4.vm.CreateVmStep.ConfigureNodeping;
+import static com.godaddy.vps4.vm.CreateVmStep.ConfiguringCPanel;
+import static com.godaddy.vps4.vm.CreateVmStep.ConfiguringNetwork;
+import static com.godaddy.vps4.vm.CreateVmStep.ConfiguringPlesk;
+import static com.godaddy.vps4.vm.CreateVmStep.GeneratingHostname;
+import static com.godaddy.vps4.vm.CreateVmStep.RequestingIPAddress;
+import static com.godaddy.vps4.vm.CreateVmStep.RequestingMailRelay;
+import static com.godaddy.vps4.vm.CreateVmStep.RequestingServer;
+import static com.godaddy.vps4.vm.CreateVmStep.SetHostname;
+import static com.godaddy.vps4.vm.CreateVmStep.SetupAutomaticBackupSchedule;
+import static com.godaddy.vps4.vm.CreateVmStep.SetupComplete;
+import static com.godaddy.vps4.vm.CreateVmStep.StartingServerSetup;
+
+import java.util.Arrays;
+import java.util.UUID;
+
+import javax.inject.Inject;
+
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.godaddy.vps4.credit.CreditService;
 import com.godaddy.vps4.messaging.Vps4MessagingService;
@@ -24,23 +43,28 @@ import com.godaddy.vps4.orchestration.scheduler.SetupAutomaticBackupSchedule;
 import com.godaddy.vps4.orchestration.sysadmin.ConfigureMailRelay;
 import com.godaddy.vps4.orchestration.sysadmin.ConfigureMailRelay.ConfigureMailRelayRequest;
 import com.godaddy.vps4.util.MonitoringMeta;
-import com.godaddy.vps4.vm.*;
+import com.godaddy.vps4.vm.ActionService;
+import com.godaddy.vps4.vm.CreateVmStep;
+import com.godaddy.vps4.vm.HostnameGenerator;
+import com.godaddy.vps4.vm.Image;
 import com.godaddy.vps4.vm.Image.ControlPanel;
+import com.godaddy.vps4.vm.ProvisionVmInfo;
+import com.godaddy.vps4.vm.VirtualMachine;
+import com.godaddy.vps4.vm.VirtualMachineService;
+import com.godaddy.vps4.vm.VmUserService;
 import gdg.hfs.orchestration.CommandContext;
 import gdg.hfs.orchestration.CommandMetadata;
 import gdg.hfs.orchestration.CommandRetryStrategy;
 import gdg.hfs.vhfs.network.IpAddress;
-import gdg.hfs.vhfs.nodeping.*;
+import gdg.hfs.vhfs.nodeping.CheckType;
+import gdg.hfs.vhfs.nodeping.CreateCheckRequest;
+import gdg.hfs.vhfs.nodeping.NodePingCheck;
+import gdg.hfs.vhfs.nodeping.NodePingLocation;
+import gdg.hfs.vhfs.nodeping.NodePingService;
 import gdg.hfs.vhfs.vm.VmAction;
 import gdg.hfs.vhfs.vm.VmService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import javax.inject.Inject;
-import java.util.Arrays;
-import java.util.UUID;
-
-import static com.godaddy.vps4.vm.CreateVmStep.*;
 
 @CommandMetadata(
         name = "ProvisionVm",
@@ -237,8 +261,12 @@ public class Vps4ProvisionVm extends ActionCommand<Vps4ProvisionVm.Request, Vps4
 
         VmAction vmAction = context.execute(CreateVm.class, createVmRequest);
 
+        // note: we want to update the HFS vm id in the vps4 database in the event
+        // that the provisioning failed on the HFS side.
+        // This makes tracking down the VM easier for us with an HFS vm id.
         addHfsVmIdToVmInVps4Db(vmAction);
 
+        // wait for the vm action to complete here
         context.execute(WaitForVmAction.class, vmAction);
 
         return vmAction.vmId;

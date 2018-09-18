@@ -39,7 +39,6 @@ public class VmUpgradeResource {
     private final CommandService commandService;
     private final GDUser user;
     private final Cryptography cryptography;
-    private final Config config;
     private final String autoBackupName;
     private final String openStackZone;
 
@@ -54,7 +53,6 @@ public class VmUpgradeResource {
         this.commandService = commandService;
         this.user = user;
         this.cryptography = cryptography;
-        this.config = config;
         autoBackupName = config.get("vps4.autobackup.backupName");
         openStackZone = config.get("openstack.zone");
     }
@@ -92,7 +90,7 @@ public class VmUpgradeResource {
         req.newTier = credit.tier;
         req.autoBackupName = autoBackupName;
         req.zone = openStackZone;
-        return VmHelper.createActionAndExecute(actionService, commandService, virtualMachineService, vmId,
+        return VmHelper.createActionAndExecute(actionService, commandService, vmId,
                 ActionType.UPGRADE_VM, req, "Vps4UpgradeVm", user);
 
     }

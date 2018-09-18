@@ -29,7 +29,8 @@ public enum ActionType {
     RESTORE_VM(20),
     CANCEL_ACCOUNT(21),
     RESTORE_ACCOUNT(22),
-    UPGRADE_VM(23);
+    UPGRADE_VM(23),
+    REBUILD_VM(24);
 
 
     private final int typeId;

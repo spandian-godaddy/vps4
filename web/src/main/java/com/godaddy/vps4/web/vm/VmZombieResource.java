@@ -94,7 +94,7 @@ public class VmZombieResource {
         request.newCreditId = newCreditId;
         request.oldCreditId = oldCredit.orionGuid;
 
-        return VmHelper.createActionAndExecute(actionService, commandService, virtualMachineService, vm.vmId,
+        return VmHelper.createActionAndExecute(actionService, commandService, vm.vmId,
                 ActionType.RESTORE_ACCOUNT, request, "Vps4ReviveZombieVm", user);
     }
 
@@ -115,7 +115,7 @@ public class VmZombieResource {
         Vps4ProcessAccountCancellation.Request request = new Vps4ProcessAccountCancellation.Request();
         request.virtualMachineCredit = credit;
         request.initiatedBy = user.getUsername();
-        return VmHelper.createActionAndExecute(actionService, commandService, virtualMachineService, vm.vmId,
+        return VmHelper.createActionAndExecute(actionService, commandService, vm.vmId,
                 ActionType.CANCEL_ACCOUNT, request, "Vps4ProcessAccountCancellation", user);
     }
 

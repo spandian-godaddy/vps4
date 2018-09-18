@@ -43,9 +43,9 @@ public class ConfigurePlesk implements Command<ConfigurePlesk.ConfigurePleskRequ
     }
 
     public static class ConfigurePleskRequest {
-        long vmId;
-        String username;
-        byte[] encryptedPassword;
+        public long vmId;
+        public String username;
+        public byte[] encryptedPassword;
 
         public ConfigurePleskRequest(long vmId, String username, byte[] encryptedPassword) {
             this.vmId = vmId;

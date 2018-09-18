@@ -32,7 +32,6 @@ import com.godaddy.vps4.web.Vps4Exception;
 import com.godaddy.vps4.web.Vps4NoShopperException;
 import com.godaddy.vps4.web.security.GDUser;
 import com.godaddy.vps4.web.security.GDUser.Role;
-
 import gdg.hfs.vhfs.vm.Vm;
 
 public class RequestValidation {

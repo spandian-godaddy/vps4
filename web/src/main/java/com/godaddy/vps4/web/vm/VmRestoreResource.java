@@ -103,8 +103,7 @@ public class VmRestoreResource {
         Vps4RestoreVm.Request commandRequest = generateRestoreVmOrchestrationRequest(
                 vm, restoreVmRequest.backupId, restoreVmRequest.password);
         VmAction restoreAction = createActionAndExecute(
-            actionService, commandService, virtualMachineService,
-            vm.vmId, ActionType.RESTORE_VM, commandRequest, "Vps4RestoreVm", user);
+            actionService, commandService, vm.vmId, ActionType.RESTORE_VM, commandRequest, "Vps4RestoreVm", user);
         return restoreAction;
     }
 

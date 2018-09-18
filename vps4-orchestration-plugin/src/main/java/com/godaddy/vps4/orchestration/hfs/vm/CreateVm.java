@@ -40,6 +40,11 @@ public class CreateVm implements Command<CreateVm.Request, VmAction> {
 
         VmAction vmAction = context.execute("CreateVmHfs", ctx -> vmService.createVmWithFlavor(hfsRequest), VmAction.class);
 
+        // note: we do not wait for the vm action to complete here
+        // since if the vm creation fails on the HFS side,
+        // we would still like to update the hfs vm ID
+        // in the vps4 database for debugging putposes.
+
         return vmAction;
     }
 
