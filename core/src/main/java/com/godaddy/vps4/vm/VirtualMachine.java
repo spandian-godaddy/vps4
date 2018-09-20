@@ -15,7 +15,7 @@ public class VirtualMachine {
     public long hfsVmId;
     public UUID orionGuid;
     public long projectId;
-    public VirtualMachineSpec spec;
+    public ServerSpec spec;
     public String name;
     public Image image;
     public IpAddress primaryIpAddress;
@@ -33,7 +33,7 @@ public class VirtualMachine {
             long hfsVmId,
             UUID orionGuid,
             long projectId,
-            VirtualMachineSpec spec,
+            ServerSpec spec,
             String name,
             Image image,
             IpAddress primaryIpAddress,

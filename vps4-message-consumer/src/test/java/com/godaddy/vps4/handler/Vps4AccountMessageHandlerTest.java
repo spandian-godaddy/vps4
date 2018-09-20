@@ -30,7 +30,7 @@ import com.godaddy.vps4.vm.DataCenter;
 import com.godaddy.vps4.vm.DataCenterService;
 import com.godaddy.vps4.vm.VirtualMachine;
 import com.godaddy.vps4.vm.VirtualMachineService;
-import com.godaddy.vps4.vm.VirtualMachineSpec;
+import com.godaddy.vps4.vm.ServerSpec;
 
 import gdg.hfs.orchestration.CommandGroupSpec;
 import gdg.hfs.orchestration.CommandService;
@@ -57,7 +57,7 @@ public class Vps4AccountMessageHandlerTest {
 
         orionGuid = UUID.randomUUID();
 
-        VirtualMachineSpec vmSpec = new VirtualMachineSpec();
+        ServerSpec vmSpec = new ServerSpec();
         vmSpec.tier = 10;
 
         vm = new VirtualMachine(UUID.randomUUID(), 123L, orionGuid,

@@ -30,7 +30,7 @@ public class ControlPanelRequestValidationTest {
                 1234,               // vmId
                 UUID.randomUUID(),  // orionGuid
                 1,                  // projectId
-                null,               // VirtualMachineSpec
+                null,               // ServerSpec
                 "fakeName",         // name
                 image,              // Image
                 null,               // IpAddress

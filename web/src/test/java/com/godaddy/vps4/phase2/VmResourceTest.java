@@ -1,7 +1,9 @@
 package com.godaddy.vps4.phase2;
 
 import java.time.Instant;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 
 import javax.inject.Inject;
@@ -494,12 +496,18 @@ public class VmResourceTest {
         VirtualMachine vm = createTestVm();
         VirtualMachine vm2 = createTestVm();
         SqlTestData.insertTestVm(UUID.randomUUID(), dataSource);
+        Set<UUID> expectedOrionGuids = new HashSet<>();
+        expectedOrionGuids.add(vm.orionGuid);
+        expectedOrionGuids.add(vm2.orionGuid);
 
         user = GDUserMock.createEmployee2Shopper();
         List<VirtualMachine> vms = getVmResource().getVirtualMachines(VirtualMachineType.ACTIVE, null, null, null, null);
         Assert.assertEquals(2, vms.size());
-        Assert.assertEquals(vm.orionGuid, vms.get(0).orionGuid);
-        Assert.assertEquals(vm2.orionGuid, vms.get(1).orionGuid);
+        Set<UUID> actualOrionGuids = new HashSet<>();
+        actualOrionGuids.add(vms.get(0).orionGuid);
+        actualOrionGuids.add(vms.get(1).orionGuid);
+
+        Assert.assertEquals(expectedOrionGuids, actualOrionGuids);
     }
 
     // === getVmDetails Tests ===

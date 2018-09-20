@@ -6,6 +6,7 @@ import org.slf4j.LoggerFactory;
 import java.util.Set;
 
 import javax.ws.rs.Consumes;
+import javax.ws.rs.DefaultValue;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
@@ -39,8 +40,9 @@ public class ImageResource {
     @GET
     @Path("/vmImages")
     public Set<Image> getImages(@QueryParam("os") String os,
-                                @QueryParam("controlPanel") String controlPanel) {
-        logger.info("getting images with os = {} and controlPanel = {}", os, controlPanel);
-        return imageService.getImages(os, controlPanel, null);
+                                @QueryParam("controlPanel") String controlPanel,
+                                @QueryParam("tier") int tier) {
+        logger.info("getting images with os = {} and controlPanel = {} available for tier {}", os, controlPanel, tier);
+        return imageService.getImages(os, controlPanel, null, tier);
     }
 }

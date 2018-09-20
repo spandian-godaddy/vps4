@@ -20,7 +20,6 @@ import org.mockito.Captor;
 import org.mockito.MockitoAnnotations;
 
 import java.time.Instant;
-import java.util.Map;
 import java.util.UUID;
 import java.util.function.Function;
 
@@ -96,7 +95,7 @@ public class Vps4UpgradeVmTest {
         Project project = new Project(123, "unitTestProject", "vps4-unittest-123", Instant.now(), null);
         when(projectService.getProject(eq(vm.projectId))).thenReturn(project);
 
-        VirtualMachineSpec spec = mock(VirtualMachineSpec.class);
+        ServerSpec spec = mock(ServerSpec.class);
         spec.specName = "hosting.c2.r4.d60";
         spec.specId = 6;
         when(virtualMachineService.getSpec(eq(request.newTier))).thenReturn(spec);

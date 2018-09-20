@@ -27,11 +27,21 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
 
+import com.godaddy.vps4.orchestration.vm.provision.ProvisionRequest;
+import com.godaddy.vps4.snapshot.SnapshotService;
+import com.godaddy.vps4.snapshot.SnapshotStatus;
+import com.godaddy.vps4.vm.Action;
+import com.godaddy.vps4.vm.ServerSpec;
+import org.apache.commons.lang3.StringUtils;
+import org.json.simple.JSONObject;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.godaddy.hfs.config.Config;
 import com.godaddy.vps4.credit.CreditService;
 import com.godaddy.vps4.credit.VirtualMachineCredit;
 import com.godaddy.vps4.orchestration.vm.VmActionRequest;
-import com.godaddy.vps4.orchestration.vm.Vps4ProvisionVm;
+
 import com.godaddy.vps4.project.Project;
 import com.godaddy.vps4.project.ProjectService;
 import com.godaddy.vps4.scheduler.api.core.SchedulerJobDetail;
@@ -39,10 +49,7 @@ import com.godaddy.vps4.scheduler.api.web.SchedulerWebService;
 import com.godaddy.vps4.security.Vps4User;
 import com.godaddy.vps4.security.Vps4UserService;
 import com.godaddy.vps4.snapshot.Snapshot;
-import com.godaddy.vps4.snapshot.SnapshotService;
-import com.godaddy.vps4.snapshot.SnapshotStatus;
 import com.godaddy.vps4.util.Cryptography;
-import com.godaddy.vps4.vm.Action;
 import com.godaddy.vps4.vm.ActionService;
 import com.godaddy.vps4.vm.ActionType;
 import com.godaddy.vps4.vm.DataCenterService;
@@ -51,7 +58,6 @@ import com.godaddy.vps4.vm.ProvisionVmInfo;
 import com.godaddy.vps4.vm.VirtualMachine;
 import com.godaddy.vps4.vm.VirtualMachineService;
 import com.godaddy.vps4.vm.VirtualMachineService.ProvisionVirtualMachineParameters;
-import com.godaddy.vps4.vm.VirtualMachineSpec;
 import com.godaddy.vps4.vm.VirtualMachineType;
 import com.godaddy.vps4.vm.VmAction;
 import com.godaddy.vps4.web.Vps4Api;
@@ -68,10 +74,6 @@ import gdg.hfs.vhfs.vm.VmService;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
-import org.apache.commons.lang3.StringUtils;
-import org.json.simple.JSONObject;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 @Vps4Api
 @Api(tags = { "vms" })
@@ -96,12 +98,10 @@ public class VmResource {
     private final Config config;
     private final String sgidPrefix;
     private final Cryptography cryptography;
-    private final String openStackZone;
     private final SchedulerWebService schedulerWebService;
     private final DataCenterService dcService;
     private final VmActionResource vmActionResource;
     private final SnapshotService snapshotService;
-    private final String autoBackupName;
 
     @Inject
     public VmResource(GDUser user, VmService vmService, Vps4UserService vps4UserService,
@@ -125,10 +125,8 @@ public class VmResource {
         this.dcService = dcService;
         sgidPrefix = this.config.get("hfs.sgid.prefix", "vps4-undefined-");
         this.cryptography = cryptography;
-        openStackZone = config.get("openstack.zone");
         this.vmActionResource = vmActionResource;
         this.snapshotService = snapshotService;
-        autoBackupName = config.get("vps4.autobackup.backupName");
     }
 
     @GET
@@ -207,7 +205,7 @@ public class VmResource {
         validateCreditIsNotInUse(vmCredit);
         validateResellerCredit(dcService, vmCredit.resellerId, provisionRequest.dataCenterId);
 
-        if (imageService.getImages(vmCredit.operatingSystem, vmCredit.controlPanel, provisionRequest.image)
+        if (imageService.getImages(vmCredit.operatingSystem, vmCredit.controlPanel, provisionRequest.image, vmCredit.tier)
                 .size() == 0) {
             // verify that the image matches the request (control panel, managed level, OS)
             String message = String.format("The image %s is not valid for this credit.", provisionRequest.image);
@@ -239,22 +237,24 @@ public class VmResource {
         ProvisionVmInfo vmInfo = new ProvisionVmInfo(virtualMachine.vmId, vmCredit.managedLevel, vmCredit.hasMonitoring(),
                 virtualMachine.image, project.getVhfsSgid(), mailRelayQuota, virtualMachine.spec.diskGib);
         logger.info("vmInfo: {}", vmInfo.toString());
-
         byte[] encryptedPassword = cryptography.encrypt(provisionRequest.password);
-        Vps4ProvisionVm.Request request = createProvisionVmRequest(provisionRequest.image, provisionRequest.username,
+
+        ProvisionRequest request = createProvisionRequest(provisionRequest.image, provisionRequest.username,
                 project, virtualMachine.spec, actionId, vmInfo, user.getShopperId(), provisionRequest.name,
                 provisionRequest.orionGuid, encryptedPassword);
 
-        CommandState command = Commands.execute(commandService, actionService, "ProvisionVm", request);
-        logger.info("provisioning VM in {}", command.commandId);
+        String provisionClassName = virtualMachine.spec.isVirtualMachine() ? "ProvisionVm" : "ProvisionDedicated";
+        CommandState command = Commands.execute(commandService, actionService, provisionClassName, request);
+        logger.info("running {} in {}", provisionClassName, command.commandId);
 
         return new VmAction(actionService.getAction(actionId), user.isEmployee());
     }
 
-    private Vps4ProvisionVm.Request createProvisionVmRequest(String image, String username, Project project,
-            VirtualMachineSpec spec, long actionId, ProvisionVmInfo vmInfo, String shopperId, String serverName,
-            UUID orionGuid, byte[] encryptedPassword) {
-        Vps4ProvisionVm.Request request = new Vps4ProvisionVm.Request();
+    private ProvisionRequest createProvisionRequest(String image, String username, Project project,
+                                                    ServerSpec spec, long actionId, ProvisionVmInfo vmInfo,
+                                                    String shopperId, String serverName,
+                                                    UUID orionGuid, byte[] encryptedPassword) {
+        ProvisionRequest request = new ProvisionRequest();
         request.actionId = actionId;
         request.image_name = image;
         request.username = username;
@@ -265,8 +265,7 @@ public class VmResource {
         request.serverName = serverName;
         request.orionGuid = orionGuid;
         request.encryptedPassword = encryptedPassword;
-        request.zone = openStackZone;
-        request.autoBackupName = autoBackupName;
+        request.zone = spec.isVirtualMachine() ? config.get("openstack.zone") : config.get("ovh.zone");
         return request;
     }
 

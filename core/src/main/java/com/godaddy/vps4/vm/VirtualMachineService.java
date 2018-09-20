@@ -14,9 +14,9 @@ public interface VirtualMachineService {
 
     VirtualMachine getVirtualMachineByCheckId(long nodePingcheckId);
 
-    VirtualMachineSpec getSpec(String name);
+    ServerSpec getSpec(String name);
 
-    VirtualMachineSpec getSpec(int tier);
+    ServerSpec getSpec(int tier);
 
     /**
      * @param vmId - the VM ID from the VM Vertical Service

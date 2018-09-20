@@ -1,4 +1,4 @@
-package com.godaddy.vps4.orchestration.vm;
+package com.godaddy.vps4.orchestration.vm.provision;
 
 import static com.godaddy.vps4.vm.CreateVmStep.ConfigureMailRelay;
 import static com.godaddy.vps4.vm.CreateVmStep.ConfigureNodeping;
@@ -14,18 +14,16 @@ import static com.godaddy.vps4.vm.CreateVmStep.SetupAutomaticBackupSchedule;
 import static com.godaddy.vps4.vm.CreateVmStep.SetupComplete;
 import static com.godaddy.vps4.vm.CreateVmStep.StartingServerSetup;
 
-import java.util.Arrays;
 import java.util.UUID;
 
 import javax.inject.Inject;
-
+import com.godaddy.hfs.config.Config;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.godaddy.vps4.credit.CreditService;
 import com.godaddy.vps4.messaging.Vps4MessagingService;
 import com.godaddy.vps4.network.IpAddress.IpAddressType;
 import com.godaddy.vps4.network.NetworkService;
 import com.godaddy.vps4.orchestration.ActionCommand;
-import com.godaddy.vps4.orchestration.ActionRequest;
 import com.godaddy.vps4.orchestration.hfs.cpanel.ConfigureCpanel;
 import com.godaddy.vps4.orchestration.hfs.cpanel.ConfigureCpanel.ConfigureCpanelRequest;
 import com.godaddy.vps4.orchestration.hfs.mailrelay.SetMailRelayQuota;
@@ -48,7 +46,6 @@ import com.godaddy.vps4.vm.CreateVmStep;
 import com.godaddy.vps4.vm.HostnameGenerator;
 import com.godaddy.vps4.vm.Image;
 import com.godaddy.vps4.vm.Image.ControlPanel;
-import com.godaddy.vps4.vm.ProvisionVmInfo;
 import com.godaddy.vps4.vm.VirtualMachine;
 import com.godaddy.vps4.vm.VirtualMachineService;
 import com.godaddy.vps4.vm.VmUserService;
@@ -56,10 +53,8 @@ import gdg.hfs.orchestration.CommandContext;
 import gdg.hfs.orchestration.CommandMetadata;
 import gdg.hfs.orchestration.CommandRetryStrategy;
 import gdg.hfs.vhfs.network.IpAddress;
-import gdg.hfs.vhfs.nodeping.CheckType;
 import gdg.hfs.vhfs.nodeping.CreateCheckRequest;
 import gdg.hfs.vhfs.nodeping.NodePingCheck;
-import gdg.hfs.vhfs.nodeping.NodePingLocation;
 import gdg.hfs.vhfs.nodeping.NodePingService;
 import gdg.hfs.vhfs.vm.VmAction;
 import gdg.hfs.vhfs.vm.VmService;
@@ -68,11 +63,11 @@ import org.slf4j.LoggerFactory;
 
 @CommandMetadata(
         name = "ProvisionVm",
-        requestType = Vps4ProvisionVm.Request.class,
+        requestType = ProvisionRequest.class,
         responseType = Vps4ProvisionVm.Response.class,
         retryStrategy = CommandRetryStrategy.NEVER
 )
-public class Vps4ProvisionVm extends ActionCommand<Vps4ProvisionVm.Request, Vps4ProvisionVm.Response> {
+public class Vps4ProvisionVm extends ActionCommand<ProvisionRequest, Vps4ProvisionVm.Response> {
 
     private static final Logger logger = LoggerFactory.getLogger(Vps4ProvisionVm.class);
     private final VmService vmService;
@@ -83,8 +78,9 @@ public class Vps4ProvisionVm extends ActionCommand<Vps4ProvisionVm.Request, Vps4
     private final MonitoringMeta monitoringMeta;
     private final Vps4MessagingService messagingService;
     private final CreditService creditService;
+    private final Config config;
 
-    private Request request;
+    private ProvisionRequest request;
     private ActionState state;
     private String hostname;
     private CommandContext context;
@@ -99,7 +95,8 @@ public class Vps4ProvisionVm extends ActionCommand<Vps4ProvisionVm.Request, Vps4
             NodePingService monitoringService,
             MonitoringMeta monitoringMeta,
             Vps4MessagingService messagingService,
-            CreditService creditService) {
+            CreditService creditService,
+            Config config) {
         super(actionService);
         this.vmService = vmService;
         this.virtualMachineService = virtualMachineService;
@@ -109,10 +106,11 @@ public class Vps4ProvisionVm extends ActionCommand<Vps4ProvisionVm.Request, Vps4
         this.monitoringMeta = monitoringMeta;
         this.messagingService = messagingService;
         this.creditService = creditService;
+        this.config = config;
     }
 
     @Override
-    public Response executeWithAction(CommandContext context, Request request) {
+    public Response executeWithAction(CommandContext context, ProvisionRequest request) {
 
         this.request = request;
         this.context = context;
@@ -166,7 +164,7 @@ public class Vps4ProvisionVm extends ActionCommand<Vps4ProvisionVm.Request, Vps4
         setStep(SetupAutomaticBackupSchedule);
         SetupAutomaticBackupSchedule.Request req = new SetupAutomaticBackupSchedule.Request();
         req.vmId = vps4VmId;
-        req.backupName = request.autoBackupName;
+        req.backupName = config.get("vps4.autobackup.backupName");
         req.shopperId = shopperId;
         try {
             UUID backupJobId = context.execute(SetupAutomaticBackupSchedule.class, req);
@@ -241,34 +239,22 @@ public class Vps4ProvisionVm extends ActionCommand<Vps4ProvisionVm.Request, Vps4
         // set the root password to the same as the user password (LINUX ONLY)
         VirtualMachine vm = virtualMachineService.getVirtualMachine(request.vmInfo.vmId);
         if (vm.image.operatingSystem == Image.OperatingSystem.LINUX) {
-            SetPassword.Request setRootPasswordRequest = createSetRootPasswordRequest(hfsVmId);
+            SetPassword.Request setRootPasswordRequest = ProvisionHelper.createSetRootPasswordRequest(hfsVmId, request.encryptedPassword);
             context.execute(SetPassword.class, setRootPasswordRequest);
         }
     }
 
     private long createVm() {
         setStep(RequestingServer);
-        CreateVm.Request createVmRequest = new CreateVm.Request();
-        createVmRequest.hostname = hostname;
-        createVmRequest.image_name = request.image_name;
-        createVmRequest.rawFlavor = request.rawFlavor;
-        createVmRequest.sgid = request.sgid;
-        createVmRequest.username = request.username;
-        createVmRequest.zone = request.zone;
-        createVmRequest.encryptedPassword = request.encryptedPassword;
-
+        CreateVm.Request createVmRequest = ProvisionHelper.getCreateVmRequest(request, hostname);
         virtualMachineService.setHostname(request.vmInfo.vmId, createVmRequest.hostname);
-
         VmAction vmAction = context.execute(CreateVm.class, createVmRequest);
-
         // note: we want to update the HFS vm id in the vps4 database in the event
         // that the provisioning failed on the HFS side.
         // This makes tracking down the VM easier for us with an HFS vm id.
         addHfsVmIdToVmInVps4Db(vmAction);
-
         // wait for the vm action to complete here
         context.execute(WaitForVmAction.class, vmAction);
-
         return vmAction.vmId;
     }
 
@@ -289,26 +275,10 @@ public class Vps4ProvisionVm extends ActionCommand<Vps4ProvisionVm.Request, Vps4
         context.execute(SetMailRelayQuota.class, hfsRequest);
     }
 
-    private SetPassword.Request createSetRootPasswordRequest(long hfsVmId) {
-        SetPassword.Request setPasswordRequest = new SetPassword.Request();
-        setPasswordRequest.hfsVmId = hfsVmId;
-        String[] usernames = { "root" };
-        setPasswordRequest.usernames = Arrays.asList(usernames);
-        setPasswordRequest.encryptedPassword = request.encryptedPassword;
-        return setPasswordRequest;
-    }
-
     private void configureAdminUser(long hfsVmId, UUID vmId) {
-        boolean adminEnabled = request.vmInfo.image.controlPanel == ControlPanel.MYH;
-        String username = request.username;
-        ToggleAdmin.Request toggleAdminRequest = new ToggleAdmin.Request();
-        toggleAdminRequest.enabled = adminEnabled;
-        toggleAdminRequest.vmId = hfsVmId;
-        toggleAdminRequest.username = username;
-
+        ToggleAdmin.Request toggleAdminRequest = ProvisionHelper.getToggleAdminRequest(request, hfsVmId);
         context.execute(ToggleAdmin.class, toggleAdminRequest);
-
-        vmUserService.updateUserAdminAccess(username, vmId, adminEnabled);
+        vmUserService.updateUserAdminAccess(toggleAdminRequest.username, vmId, toggleAdminRequest.enabled);
     }
 
     private ConfigureCpanelRequest createConfigureCpanelRequest(long vmId) {
@@ -343,22 +313,9 @@ public class Vps4ProvisionVm extends ActionCommand<Vps4ProvisionVm.Request, Vps4
     private void configureMonitoring(IpAddress ipAddress) {
         if (request.vmInfo.hasMonitoring) {
             setStep(ConfigureNodeping);
-            CreateCheckRequest checkRequest = new CreateCheckRequest();
-            checkRequest.target = ipAddress.address;
-            checkRequest.label = ipAddress.address;
-            // how often check is run in minutes
-            checkRequest.interval = 1;
-            // minutes delay to wait for recovery before alerting
-            checkRequest.notificationDelay = 5;
-            checkRequest.type = CheckType.PING;
-            // geographical region where probe server should be located
-            checkRequest.location = NodePingLocation.valueOf(monitoringMeta.getGeoRegion().toUpperCase());
-            // kafka topic to consume for alerts
-            checkRequest.notificationTopic = monitoringMeta.getNotificationTopic();
-
+            CreateCheckRequest checkRequest = ProvisionHelper.getCreateCheckRequest(ipAddress.address, monitoringMeta);
             NodePingCheck check = monitoringService.createCheck(monitoringMeta.getAccountId(), checkRequest);
             logger.debug("CheckId: {}", check.checkId);
-
             addCheckIdToIp(ipAddress, check);
         }
     }
@@ -377,7 +334,7 @@ public class Vps4ProvisionVm extends ActionCommand<Vps4ProvisionVm.Request, Vps4
         }, Void.class);
     }
 
-    private void sendSetupEmail(Request request, String ipAddress) {
+    private void sendSetupEmail(ProvisionRequest request, String ipAddress) {
         try {
             String messageId = messagingService.sendSetupEmail(request.shopperId, request.serverName, ipAddress,
                     request.orionGuid.toString(), request.vmInfo.isFullyManaged());
@@ -395,31 +352,6 @@ public class Vps4ProvisionVm extends ActionCommand<Vps4ProvisionVm.Request, Vps4
             actionService.updateActionState(request.getActionId(), mapper.writeValueAsString(state));
         } catch (JsonProcessingException e) {
             throw new RuntimeException(e);
-        }
-    }
-
-    public static class Request implements ActionRequest {
-        public ProvisionVmInfo vmInfo;
-        public String shopperId;
-        public String serverName;
-        public byte[] encryptedPassword;
-        public long actionId;
-        public UUID orionGuid;
-        public String sgid;
-        public String image_name;
-        public String rawFlavor;
-        public String username;
-        public String zone;
-        public String autoBackupName;
-
-        @Override
-        public long getActionId() {
-            return actionId;
-        }
-
-        @Override
-        public void setActionId(long actionId) {
-            this.actionId = actionId;
         }
     }
 

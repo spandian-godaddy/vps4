@@ -12,6 +12,7 @@ import com.godaddy.vps4.vm.Image;
 import com.godaddy.vps4.vm.Image.ControlPanel;
 import com.godaddy.vps4.vm.Image.OperatingSystem;
 import com.godaddy.vps4.vm.ImageService;
+import com.godaddy.vps4.vm.ServerType;
 
 public class JdbcImageService implements ImageService {
     private final DataSource dataSource;
@@ -58,27 +59,43 @@ public class JdbcImageService implements ImageService {
 
     @Override
     public Image getImage(String name) {
-        return Sql.with(dataSource).exec("SELECT image_id, name, hfs_name, control_panel_id, os_type_id FROM " + tableName + " WHERE hfs_name=?",
+        return Sql.with(dataSource).exec("SELECT image_id, name, hfs_name, control_panel_id, os_type_id," +
+                        "st.server_type_id, st.server_type, st.platform " +
+                        "FROM " + tableName + " AS image " +
+                        "JOIN server_type AS st USING(server_type_id)" +
+                        "WHERE hfs_name=?",
                 Sql.nextOrNull(this::mapImage), name);
     }
 
     @Override
-    public Set<Image> getImages(String os, String controlPanel, String hfsName) {
-        return Sql.with(dataSource).exec("SELECT image.image_id, image.name, image.hfs_name, image.control_panel_id, image.os_type_id" +
-                                           " FROM " + tableName + " AS image" +
-                                           " JOIN control_panel AS cp ON image.control_panel_id = cp.control_panel_id" +
-                                           " JOIN os_type AS os ON image.os_type_id = os.os_type_id" +
-                                           " WHERE image.valid_until > now_utc()" +
-                                           " AND   (?::text is null or LOWER(os.name) = LOWER(?))" +
-                                           " AND   (?::text is null or LOWER(cp.name) = LOWER(?))" +
-                                           " AND   (?::text is null or LOWER(image.hfs_name) = LOWER(?))",
-                                         Sql.setOf(this::mapImage), os, os, controlPanel, controlPanel, hfsName, hfsName);
+    public Set<Image> getImages(String os, String controlPanel, String hfsName, int tier) {
+        String tierQuery = (tier == 0) ? "" : " AND tier = " + tier;
+
+        return Sql.with(dataSource).exec("SELECT image.image_id, image.name, image.hfs_name, image.control_panel_id, image.os_type_id, "+
+                "st.server_type_id, st.server_type, st.platform " +
+                " FROM image AS image " +
+                " JOIN control_panel AS cp ON image.control_panel_id = cp.control_panel_id " +
+                " JOIN os_type AS os ON image.os_type_id = os.os_type_id " +
+                " JOIN server_type AS st ON image.server_type_id = st.server_type_id " +
+                " WHERE image.valid_until > now_utc() " +
+                " AND   (?::text is null or LOWER(os.name) = LOWER(?))" +
+                " AND   (?::text is null or LOWER(cp.name) = LOWER(?))" +
+                " AND   (?::text is null or LOWER(image.hfs_name) = LOWER(?))" +
+                " AND st.server_type_id in " +
+                    "(SELECT server_type_id " +
+                        "FROM virtual_machine_spec " +
+                        "WHERE valid_until = 'infinity' "+
+                        tierQuery +
+                        "GROUP BY server_type_id)",
+                Sql.setOf(this::mapImage),
+                os, os, controlPanel, controlPanel, hfsName, hfsName);
     }
 
     private Image mapImage(ResultSet rs) throws SQLException {
         if (rs == null)
             return null;
 
+        ServerType serverType = mapServerType(rs);
         Image image = new Image();
 
         image.imageName = rs.getString("name");
@@ -86,9 +103,18 @@ public class JdbcImageService implements ImageService {
         image.imageId = rs.getLong("image_id");
         image.controlPanel = ControlPanel.valueOf(rs.getInt("control_panel_id"));
         image.operatingSystem = OperatingSystem.valueOf(rs.getInt("os_type_id"));
+        image.serverType = serverType;
 
         return image;
 
+    }
+
+    protected ServerType mapServerType(ResultSet rs) throws SQLException {
+        ServerType serverType = new ServerType();
+        serverType.serverTypeId = rs.getInt("server_type_id");
+        serverType.serverType = ServerType.Type.valueOf(rs.getString("server_type"));
+        serverType.platform = ServerType.Platform.valueOf(rs.getString("platform"));
+        return serverType;
     }
 
 }

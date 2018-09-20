@@ -21,9 +21,10 @@ import com.godaddy.vps4.util.TimestampUtils;
 import com.godaddy.vps4.vm.Image;
 import com.godaddy.vps4.vm.Image.ControlPanel;
 import com.godaddy.vps4.vm.Image.OperatingSystem;
+import com.godaddy.vps4.vm.ServerSpec;
+import com.godaddy.vps4.vm.ServerType;
 import com.godaddy.vps4.vm.VirtualMachine;
 import com.godaddy.vps4.vm.VirtualMachineService;
-import com.godaddy.vps4.vm.VirtualMachineSpec;
 import com.godaddy.vps4.vm.VirtualMachineType;
 
 public class JdbcVirtualMachineService implements VirtualMachineService {
@@ -33,13 +34,14 @@ public class JdbcVirtualMachineService implements VirtualMachineService {
     private String selectVirtualMachineQuery = "SELECT vm.vm_id, vm.hfs_vm_id, vm.orion_guid, vm.project_id, vm.name as \"vm_name\", "
             + "vm.hostname, vm.account_status_id, vm.backup_job_id, vm.valid_on as \"vm_valid_on\", vm.canceled as \"vm_canceled\", vm.valid_until as \"vm_valid_until\", vm.managed_level, "
             + "vms.spec_id, vms.spec_name, vms.tier, vms.cpu_core_count, vms.memory_mib, vms.disk_gib, vms.valid_on as \"spec_valid_on\", "
-            + "vms.valid_until as \"spec_valid_until\", vms.name as \"spec_vps4_name\", "
+            + "vms.valid_until as \"spec_valid_until\", vms.name as \"spec_vps4_name\", st.server_type, st.server_type_id, st.platform, "
             + "image.name, image.hfs_name, image.image_id, image.control_panel_id, image.os_type_id, "
             + "ip.ip_address_id, ip.ip_address, ip.ip_address_type_id, ip.valid_on, ip.valid_until, ip.ping_check_id "
             + "FROM virtual_machine vm "
             + "JOIN virtual_machine_spec vms ON vms.spec_id=vm.spec_id "
             + "JOIN image ON image.image_id=vm.image_id "
             + "JOIN project prj ON prj.project_id=vm.project_id "
+            + "JOIN server_type st ON st.server_type_id = vms.server_type_id "
             + "LEFT JOIN ip_address ip ON ip.vm_id = vm.vm_id AND ip.ip_address_type_id = 1 ";
 
     @Inject
@@ -48,20 +50,28 @@ public class JdbcVirtualMachineService implements VirtualMachineService {
     }
 
     @Override
-    public VirtualMachineSpec getSpec(String name) {
+    public ServerSpec getSpec(String name) {
 
         return Sql.with(dataSource).exec(
-                "SELECT spec_id, name as spec_vps4_name, spec_name, tier, cpu_core_count, memory_mib, disk_gib, valid_on as spec_valid_on, "
-                        + "valid_until as spec_valid_until FROM virtual_machine_spec WHERE spec_name=? ",
-                Sql.nextOrNull(this::mapVirtualMachineSpec), name);
+                "SELECT spec_id, name as spec_vps4_name, spec_name, tier, cpu_core_count, memory_mib, disk_gib, " +
+                        "valid_on as spec_valid_on, valid_until as spec_valid_until, " +
+                        "st.server_type_id, st.server_type, st.platform " +
+                "FROM virtual_machine_spec " +
+                "JOIN server_type st USING(server_type_id)" +
+                "WHERE spec_name=? ",
+                Sql.nextOrNull(this::mapServerSpec), name);
     }
 
     @Override
-    public VirtualMachineSpec getSpec(int tier) {
+    public ServerSpec getSpec(int tier) {
         return Sql.with(dataSource).exec(
-                "SELECT spec_id, name as spec_vps4_name, spec_name, tier, cpu_core_count, memory_mib, disk_gib, valid_on as spec_valid_on, "
-                        + "valid_until as spec_valid_until FROM virtual_machine_spec WHERE valid_until > now_utc() AND tier=? ",
-                Sql.nextOrNull(this::mapVirtualMachineSpec), tier);
+                "SELECT spec_id, name as spec_vps4_name, spec_name, tier, cpu_core_count, memory_mib, disk_gib, " +
+                        "valid_on as spec_valid_on, valid_until as spec_valid_until, " +
+                        "st.server_type_id, st.server_type, st.platform " +
+                "FROM virtual_machine_spec " +
+                "JOIN server_type st USING(server_type_id)" +
+                "WHERE valid_until > now_utc() AND tier=? ",
+                Sql.nextOrNull(this::mapServerSpec), tier);
     }
 
     @Override
@@ -89,7 +99,7 @@ public class JdbcVirtualMachineService implements VirtualMachineService {
     }
 
     protected VirtualMachine mapVirtualMachine(ResultSet rs) throws SQLException {
-        VirtualMachineSpec spec = mapVirtualMachineSpec(rs);
+        ServerSpec spec = mapServerSpec(rs);
         UUID vmId = java.util.UUID.fromString(rs.getString("vm_id"));
         IpAddress ipAddress = mapIpAddress(rs);
         Image image = mapImage(rs);
@@ -112,6 +122,7 @@ public class JdbcVirtualMachineService implements VirtualMachineService {
     }
 
     private Image mapImage(ResultSet rs) throws SQLException {
+        ServerType serverType = mapServerType(rs);
         Image image = new Image();
 
         image.imageName = rs.getString("name");
@@ -119,17 +130,27 @@ public class JdbcVirtualMachineService implements VirtualMachineService {
         image.imageId = rs.getLong("image_id");
         image.controlPanel = ControlPanel.valueOf(rs.getInt("control_panel_id"));
         image.operatingSystem = OperatingSystem.valueOf(rs.getInt("os_type_id"));
+        image.serverType = serverType;
 
         return image;
     }
 
-    protected VirtualMachineSpec mapVirtualMachineSpec(ResultSet rs) throws SQLException {
+    protected ServerSpec mapServerSpec(ResultSet rs) throws SQLException {
+        ServerType serverType = mapServerType(rs);
         Timestamp validUntil = rs.getTimestamp("spec_valid_until", TimestampUtils.utcCalendar);
 
-        return new VirtualMachineSpec(rs.getInt("spec_id"), rs.getString("spec_vps4_name"), rs.getString("spec_name"),
+        return new ServerSpec(rs.getInt("spec_id"), rs.getString("spec_vps4_name"), rs.getString("spec_name"),
                 rs.getInt("tier"), rs.getInt("cpu_core_count"), rs.getInt("memory_mib"), rs.getInt("disk_gib"),
                 rs.getTimestamp("spec_valid_on", TimestampUtils.utcCalendar).toInstant(),
-                validUntil != null ? validUntil.toInstant() : null);
+                validUntil != null ? validUntil.toInstant() : null, serverType);
+    }
+
+    protected  ServerType mapServerType(ResultSet rs) throws SQLException {
+        ServerType serverType = new ServerType();
+        serverType.serverTypeId = rs.getInt("server_type_id");
+        serverType.serverType = ServerType.Type.valueOf(rs.getString("server_type"));
+        serverType.platform = ServerType.Platform.valueOf(rs.getString("platform"));
+        return serverType;
     }
 
     @Override

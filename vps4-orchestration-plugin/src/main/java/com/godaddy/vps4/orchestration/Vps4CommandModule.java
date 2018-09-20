@@ -21,7 +21,8 @@ import com.godaddy.vps4.orchestration.vm.Vps4DestroyIpAddress;
 import com.godaddy.vps4.orchestration.vm.Vps4DestroyIpAddressAction;
 import com.godaddy.vps4.orchestration.vm.Vps4DestroyVm;
 import com.godaddy.vps4.orchestration.vm.Vps4PlanChange;
-import com.godaddy.vps4.orchestration.vm.Vps4ProvisionVm;
+import com.godaddy.vps4.orchestration.vm.provision.Vps4ProvisionVm;
+import com.godaddy.vps4.orchestration.vm.provision.Vps4ProvisionDedicated;
 import com.godaddy.vps4.orchestration.vm.Vps4RebuildVm;
 import com.godaddy.vps4.orchestration.vm.Vps4RecordScheduledJobForVm;
 import com.godaddy.vps4.orchestration.vm.Vps4RemoveSupportUsersFromDatabase;
@@ -39,6 +40,7 @@ public class Vps4CommandModule extends AbstractModule {
     @Override
     public void configure() {
         bind(Vps4ProvisionVm.class);
+        bind(Vps4ProvisionDedicated.class);
         bind(Vps4ToggleAdmin.class);
         bind(Vps4SetPassword.class);
         bind(Vps4SetHostname.class);

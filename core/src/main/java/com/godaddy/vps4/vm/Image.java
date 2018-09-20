@@ -66,4 +66,9 @@ public class Image {
      * {@link VirtualMachineCredit#operatingSystem}.
      */
     public OperatingSystem operatingSystem;
+
+    /**
+     * The Server Type that this image is valid on (platform and server type)
+     */
+    public ServerType serverType;
 }

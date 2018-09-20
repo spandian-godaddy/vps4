@@ -20,4 +20,6 @@ public interface NetworkService {
     IpAddress getVmPrimaryAddress(long hfsVmId);
 
     void updateIpWithCheckId(long addressId, long checkId);
+
+    void updateIpWithCheckId(String ipAddress, long checkId);
 }

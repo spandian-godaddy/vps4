@@ -2,26 +2,24 @@ package com.godaddy.vps4.vm;
 
 import java.time.Instant;
 
-public class VirtualMachineSpec {
+public class ServerSpec {
 
     public int specId;
-
     public String name;
     public String specName;
     public int tier;
-
     public int cpuCoreCount;
     public int memoryMib;
     public int diskGib;
-
     public Instant validOn;
     public Instant validUntil;
-    
-    public VirtualMachineSpec() {
+    public ServerType serverType;
+
+    public ServerSpec() {
     }
 
-    public VirtualMachineSpec(int specId, String name, String specName, int tier, int cpuCoreCount, int memoryMib,
-            int diskGib, Instant validOn, Instant validUntil) {
+    public ServerSpec(int specId, String name, String specName, int tier, int cpuCoreCount, int memoryMib,
+                      int diskGib, Instant validOn, Instant validUntil, ServerType serverType) {
         this.specId = specId;
         this.name = name;
         this.specName = specName;
@@ -31,12 +29,16 @@ public class VirtualMachineSpec {
         this.diskGib = diskGib;
         this.validOn = validOn;
         this.validUntil = validUntil;
-        
+        this.serverType = serverType;
+    }
+
+    public boolean isVirtualMachine(){
+        return serverType.serverType == ServerType.Type.VIRTUAL;
     }
 
     @Override
     public String toString() {
-        return "VirtualMachineSpec [specId=" + specId + ", cpuCoreCount="
+        return "ServerSpec [specId=" + specId + ", cpuCoreCount="
                 + cpuCoreCount + ", memoryMib=" + memoryMib + ", diskGib="
                 + diskGib + ", validOn=" + validOn + ", validUntil="
                 + validUntil + "]";

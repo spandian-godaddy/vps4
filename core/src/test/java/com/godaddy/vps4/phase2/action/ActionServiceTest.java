@@ -65,57 +65,65 @@ public class ActionServiceTest {
         SqlTestData.cleanupTestVmAndRelatedData(vm2.vmId, dataSource);
         SqlTestData.deleteVps4User(vps4User.getId(), dataSource);
     }
+
+    private long getNumberOfExistingActions(ResultSubset<Action> actions){
+        long numberOfExistingActions = 0;
+        if (actions != null){
+            numberOfExistingActions = actions.results.size();
+        }
+        return numberOfExistingActions;
+    }
     
     @Test
     public void testGetAllActionsForVmId(){
         ResultSubset<Action> actions = actionService.getActions(vm.vmId, 100, 0, null, null, null);
-        assertEquals(null, actions);
-        
+        long numberOfExistingActions = getNumberOfExistingActions(actions);
+
         actionService.createAction(vm.vmId, ActionType.CREATE_VM, "{}", "tester");
         
         actions = actionService.getActions(vm.vmId, 100, 0, null, null, null);
-        assertEquals(1, actions.results.size());
+        assertEquals(numberOfExistingActions + 1, actions.results.size());
     }
 
     @Test
     public void testGetAllActions(){
-        ResultSubset<Action> actions = actionService.getActions(null, 100, 0, null, null, null, null);
-        assertEquals(null, actions);
+        ResultSubset<Action> actions = actionService.getActions(null, 1000, 0, null, null, null, null);
+        long numberOfExistingActions = getNumberOfExistingActions(actions);
 
         actionService.createAction(vm.vmId, ActionType.CREATE_VM, "{}", "tester");
         actionService.createAction(vm1.vmId, ActionType.CREATE_VM, "{}", "tester");
         actionService.createAction(vm2.vmId, ActionType.CREATE_VM, "{}", "tester");
         actionService.createAction(vm.vmId, ActionType.CREATE_VM, "{}", "tester");
 
-        actions = actionService.getActions(null, 100, 0, null, null, null, null);
-        assertEquals(4, actions.results.size());
+        actions = actionService.getActions(null, 1000, 0, null, null, null, null);
+        assertEquals(numberOfExistingActions + 4, actions.results.size());
     }
 
     @Test
     public void testGetAllActionsByType(){
-        ResultSubset<Action> actions = actionService.getActions(null, 100, 0, null, null, null, null);
-        assertEquals(null, actions);
+        ResultSubset<Action> actions = actionService.getActions(null, 1000, 0, null, null, null, ActionType.CREATE_VM);
+        long numberOfExistingActions = getNumberOfExistingActions(actions);
 
         actionService.createAction(vm.vmId, ActionType.CREATE_VM, "{}", "tester");
         actionService.createAction(vm1.vmId, ActionType.STOP_VM, "{}", "tester");
         actionService.createAction(vm2.vmId, ActionType.START_VM, "{}", "tester");
         actionService.createAction(vm.vmId, ActionType.CREATE_VM, "{}", "tester");
 
-        actions = actionService.getActions(null, 100, 0, null, null, null, ActionType.CREATE_VM);
-        assertEquals(2, actions.results.size());
+        actions = actionService.getActions(null, 1000, 0, null, null, null, ActionType.CREATE_VM);
+        assertEquals(numberOfExistingActions + 2, actions.results.size());
     }
 
     @Test
     public void testGetActionsByTypeForVmId(){
-        ResultSubset<Action> actions = actionService.getActions(vm.vmId, 100, 0, null, null, null);
-        assertEquals(null, actions);
+        ResultSubset<Action> actions = actionService.getActions(vm.vmId, 100, 0, ActionType.CREATE_VM);
+        long numberOfExistingActions = getNumberOfExistingActions(actions);
 
         actionService.createAction(vm.vmId, ActionType.CREATE_VM, "{}", "tester");
         actionService.createAction(vm.vmId, ActionType.STOP_VM, "{}", "tester");
         actionService.createAction(vm.vmId, ActionType.START_VM, "{}", "tester");
 
         actions = actionService.getActions(vm.vmId, 100, 0, ActionType.CREATE_VM);
-        assertEquals(1, actions.results.size());
+        assertEquals(numberOfExistingActions + 1, actions.results.size());
     }
 
     @Test

@@ -14,5 +14,5 @@ public interface ImageService {
 
     Image getImage(String name);
     
-    Set<Image> getImages(String os, String controlPanel, String hfsName);
+    Set<Image> getImages(String os, String controlPanel, String hfsName, int tier);
 }
