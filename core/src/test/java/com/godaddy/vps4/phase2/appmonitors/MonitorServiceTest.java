@@ -7,11 +7,14 @@ import java.sql.Timestamp;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
+import java.util.function.Predicate;
 
 import javax.sql.DataSource;
 
 import com.godaddy.hfs.jdbc.Sql;
+import com.godaddy.vps4.appmonitors.BackupJobAuditData;
 import com.godaddy.vps4.appmonitors.MonitorService;
 import com.godaddy.vps4.appmonitors.SnapshotActionData;
 import com.godaddy.vps4.appmonitors.VmActionData;
@@ -19,6 +22,7 @@ import com.godaddy.vps4.appmonitors.jdbc.JdbcMonitorService;
 import com.godaddy.vps4.jdbc.DatabaseModule;
 import com.godaddy.vps4.jdbc.Vps4ReportsDataSource;
 import com.godaddy.vps4.phase2.SqlTestData;
+import com.godaddy.vps4.scheduledJob.ScheduledJob;
 import com.godaddy.vps4.security.Vps4User;
 import com.godaddy.vps4.security.Vps4UserService;
 import com.godaddy.vps4.security.jdbc.JdbcVps4UserService;
@@ -42,7 +46,7 @@ public class MonitorServiceTest {
     MonitorService provisioningMonitorService = new JdbcMonitorService(reportsDataSource);
 
     private UUID orionGuid = UUID.randomUUID();
-    private VirtualMachine vm1, vm2, vm3, vm4, vm5, vm6, vm7, vm8;
+    private VirtualMachine vm1, vm2, vm3, vm4, vm5, vm6, vm7, vm8, vm9;
     private Vps4User vps4User;
     private Vps4UserService vps4UserService;
     private Snapshot testSnapshotVm6, testSnapshotVm7;
@@ -93,6 +97,12 @@ public class MonitorServiceTest {
         createSnapshotActionWithDate(testSnapshotVm7.id, ActionType.CREATE_SNAPSHOT, ActionStatus.IN_PROGRESS, Instant.now().minus(Duration.ofMinutes(60)), reportsDataSource);
         vm8 = SqlTestData.insertTestVm(orionGuid, reportsDataSource);
         createActionWithDate(vm8.vmId, ActionType.CREATE_VM, ActionStatus.NEW, Instant.now().minus(Duration.ofMinutes(125)), reportsDataSource);
+
+        Map<VirtualMachine, List<ScheduledJob>> vmJobMap = SqlTestData.insertTestVmWithScheduledBackup(orionGuid, reportsDataSource);
+        if(!vmJobMap.isEmpty()) {
+            Map.Entry<VirtualMachine, List<ScheduledJob>> entry = vmJobMap.entrySet().iterator().next();
+            vm9 = entry.getKey();
+        }
     }
 
     @After
@@ -105,6 +115,7 @@ public class MonitorServiceTest {
         SqlTestData.cleanupTestVmAndRelatedData(vm6.vmId, reportsDataSource);
         SqlTestData.cleanupTestVmAndRelatedData(vm7.vmId, reportsDataSource);
         SqlTestData.cleanupTestVmAndRelatedData(vm8.vmId, reportsDataSource);
+        SqlTestData.cleanupTestVmAndRelatedData(vm9.vmId, reportsDataSource);
         SqlTestData.deleteVps4User(vps4User.getId(), reportsDataSource);
     }
 
@@ -131,7 +142,7 @@ public class MonitorServiceTest {
     public void testGetVmsBySnapshotActions() {
         List<SnapshotActionData> problemVms = provisioningMonitorService.getVmsBySnapshotActions(120, ActionStatus.IN_PROGRESS, ActionStatus.ERROR);
         assertNotNull(problemVms);
-        assertTrue(String.format("Expected count of problem VM's does not match actual count of {%s} VM's.", problemVms.size()), problemVms.size() == 2);
+        assertTrue(String.format("Expected count of problem VM's does not match actual count of {%s} VM's.", problemVms.size()), problemVms.size() == 3);
         assertTrue("Expected vm id not present in list of problem VM's.", problemVms.stream().anyMatch(vm -> (vm.snapshotId.compareTo(testSnapshotVm6.id) == 0)));
     }
 
@@ -139,8 +150,16 @@ public class MonitorServiceTest {
     public void testGetVmsPendingNewActions() {
         List<VmActionData> problemVms = provisioningMonitorService.getVmsByActionStatus(120, ActionStatus.NEW);
         assertNotNull(problemVms);
-        assertTrue(String.format("Expected count of problem VM's does not match actual count of {%s} VM's.", problemVms.size()), problemVms.size() == 1);
+        assertTrue(String.format("Expected count of problem VM's does not match actual count of {%s} VM's.", problemVms.size()), problemVms.size() == 2);
         assertTrue("Expected vm id not present in list of problem VM's.", problemVms.stream().anyMatch(vm -> (vm.vmId.compareTo(vm8.vmId) == 0)));
     }
 
+    @Test
+    public void testGetVmsFilteredByNullBackupJob() {
+        List<BackupJobAuditData> vmsWithNoBackups = provisioningMonitorService.getVmsFilteredByNullBackupJob();
+        assertNotNull("Expected vm's with no backups, none found. ", vmsWithNoBackups);
+        assertTrue("VMs with no backups not found. ", vmsWithNoBackups.size() != 0);
+        Predicate<BackupJobAuditData> p = backup -> backup.vmId == vm9.vmId;
+        assertTrue("Expected vm to have backups but actual vm does not have backups. ", vmsWithNoBackups.stream().noneMatch(p));
+    }
 }

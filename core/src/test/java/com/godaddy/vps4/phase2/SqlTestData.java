@@ -1,12 +1,18 @@
 package com.godaddy.vps4.phase2;
 
 import java.sql.Timestamp;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.Random;
 import java.util.UUID;
 
 import javax.sql.DataSource;
 
 import com.godaddy.hfs.jdbc.Sql;
+import com.godaddy.vps4.scheduledJob.ScheduledJob;
+import com.godaddy.vps4.scheduledJob.ScheduledJobService;
+import com.godaddy.vps4.scheduledJob.jdbc.JdbcScheduledJobService;
 import com.godaddy.vps4.snapshot.Snapshot;
 import com.godaddy.vps4.vm.ActionStatus;
 import com.godaddy.vps4.vm.ActionType;
@@ -37,6 +43,14 @@ public class SqlTestData {
         return addIpToTestVm(dataSource, virtualMachine);
     }
 
+    public static Map<VirtualMachine, List<ScheduledJob>> insertTestVmWithScheduledBackup(UUID orionGuid, DataSource dataSource) {
+        VirtualMachine virtualMachine = insertTestVm(orionGuid, 1, dataSource);
+        List<ScheduledJob> scheduledJobs = addScheduledBackupToVm(dataSource, virtualMachine);
+        Map vmJobMap =  new HashMap<VirtualMachine, List<ScheduledJob>>();
+        vmJobMap.put(virtualMachine, scheduledJobs);
+        return vmJobMap;
+    }
+
     public static VirtualMachine insertTestVm(UUID orionGuid, long vps4UserId, DataSource dataSource) {
         VirtualMachineService virtualMachineService = new JdbcVirtualMachineService(dataSource);
         long hfsVmId = getNextHfsVmId(dataSource);
@@ -58,6 +72,13 @@ public class SqlTestData {
         return virtualMachineService.getVirtualMachine(virtualMachine.vmId);
 	}
 
+	private static List<ScheduledJob> addScheduledBackupToVm(DataSource dataSource, VirtualMachine virtualMachine) {
+        Sql.with(dataSource).exec("INSERT INTO scheduled_job(id, vm_id, scheduled_job_type_id, created) VALUES (?, ?, 1, NOW())", null,
+                UUID.randomUUID(), virtualMachine.vmId);
+        ScheduledJobService scheduledJobService = new JdbcScheduledJobService(dataSource);
+        return scheduledJobService.getScheduledJobs(virtualMachine.vmId);
+    }
+
     public static void cleanupTestVmAndRelatedData(UUID vmId, DataSource dataSource) {
         VirtualMachineService virtualMachineService = new JdbcVirtualMachineService(dataSource);
         VirtualMachine vm = virtualMachineService.getVirtualMachine(vmId);
@@ -72,6 +93,7 @@ public class SqlTestData {
         Sql.with(dataSource).exec("DELETE FROM virtual_machine WHERE vm_id = ?", null, vmId);
         Sql.with(dataSource).exec("DELETE FROM user_project_privilege WHERE project_id = ?", null, vm.projectId);
         Sql.with(dataSource).exec("DELETE FROM project WHERE project_id = ?", null, vm.projectId);
+        Sql.with(dataSource).exec("DELETE FROM scheduled_job WHERE scheduled_job_type_id=1 AND vm_id = ? ", null, vmId);
     }
 
     public static void deleteVps4User(long userId, DataSource dataSource){

@@ -66,12 +66,15 @@ public class JdbcMonitorService implements MonitorService {
             ") " +
             "AND now_utc() - vma.created >= ";
 
-    private final static String selectVmsFilteredByNullBackupJob = "SELECT vm_id, valid_on FROM virtual_machine " +
+    private final static String selectVmsFilteredByNullBackupJob = "SELECT vm.vm_id, vm.valid_on FROM virtual_machine vm " +
             "JOIN vm_action USING (vm_id) " +
+            "JOIN virtual_machine_spec vmspec USING (spec_id) " +
+            "JOIN server_type st USING (server_type_id) " +
             "JOIN action_status ON action_status.status_id = vm_action.status_id AND status = 'COMPLETE' " +
             "JOIN action_type ON action_type.type_id = vm_action.action_type_id AND type = 'CREATE_VM'  " +
-            "WHERE valid_until = 'infinity' " +
-            "AND backup_job_id IS NULL";
+            "WHERE vm.valid_until = 'infinity' " +
+            "AND backup_job_id IS NULL " +
+            "AND st.platform = 'OPENSTACK' ";  // ensure only VPS4 vms are filtered since DED does not have scheduled backups
 
     @Inject
     public JdbcMonitorService(@Vps4ReportsDataSource DataSource reportsDataSource) {
