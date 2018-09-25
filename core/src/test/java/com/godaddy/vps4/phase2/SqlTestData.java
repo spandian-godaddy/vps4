@@ -73,8 +73,11 @@ public class SqlTestData {
 	}
 
 	private static List<ScheduledJob> addScheduledBackupToVm(DataSource dataSource, VirtualMachine virtualMachine) {
+        UUID backupJobId = UUID.randomUUID();
         Sql.with(dataSource).exec("INSERT INTO scheduled_job(id, vm_id, scheduled_job_type_id, created) VALUES (?, ?, 1, NOW())", null,
-                UUID.randomUUID(), virtualMachine.vmId);
+                backupJobId, virtualMachine.vmId);
+        Sql.with(dataSource).exec("UPDATE virtual_machine SET backup_job_id = ? WHERE vm_id = ?", null,
+                backupJobId, virtualMachine.vmId);
         ScheduledJobService scheduledJobService = new JdbcScheduledJobService(dataSource);
         return scheduledJobService.getScheduledJobs(virtualMachine.vmId);
     }

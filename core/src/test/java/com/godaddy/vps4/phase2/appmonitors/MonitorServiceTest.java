@@ -1,5 +1,6 @@
 package com.godaddy.vps4.phase2.appmonitors;
 
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
@@ -46,7 +47,7 @@ public class MonitorServiceTest {
     MonitorService provisioningMonitorService = new JdbcMonitorService(reportsDataSource);
 
     private UUID orionGuid = UUID.randomUUID();
-    private VirtualMachine vm1, vm2, vm3, vm4, vm5, vm6, vm7, vm8, vm9;
+    private VirtualMachine vm1, vm2, vm3, vm4, vm5, vm6, vm7, vm8, vm9, vm10;
     private Vps4User vps4User;
     private Vps4UserService vps4UserService;
     private Snapshot testSnapshotVm6, testSnapshotVm7;
@@ -102,7 +103,11 @@ public class MonitorServiceTest {
         if(!vmJobMap.isEmpty()) {
             Map.Entry<VirtualMachine, List<ScheduledJob>> entry = vmJobMap.entrySet().iterator().next();
             vm9 = entry.getKey();
+            createActionWithDate(vm9.vmId, ActionType.CREATE_VM, ActionStatus.COMPLETE, Instant.now().minus(Duration.ofMinutes(90)), reportsDataSource);
         }
+
+        vm10 = SqlTestData.insertTestVm(orionGuid, reportsDataSource);
+        createActionWithDate(vm10.vmId, ActionType.CREATE_VM, ActionStatus.COMPLETE, Instant.now().minus(Duration.ofMinutes(90)), reportsDataSource);
     }
 
     @After
@@ -116,6 +121,7 @@ public class MonitorServiceTest {
         SqlTestData.cleanupTestVmAndRelatedData(vm7.vmId, reportsDataSource);
         SqlTestData.cleanupTestVmAndRelatedData(vm8.vmId, reportsDataSource);
         SqlTestData.cleanupTestVmAndRelatedData(vm9.vmId, reportsDataSource);
+        SqlTestData.cleanupTestVmAndRelatedData(vm10.vmId, reportsDataSource);
         SqlTestData.deleteVps4User(vps4User.getId(), reportsDataSource);
     }
 
@@ -142,7 +148,7 @@ public class MonitorServiceTest {
     public void testGetVmsBySnapshotActions() {
         List<SnapshotActionData> problemVms = provisioningMonitorService.getVmsBySnapshotActions(120, ActionStatus.IN_PROGRESS, ActionStatus.ERROR);
         assertNotNull(problemVms);
-        assertTrue(String.format("Expected count of problem VM's does not match actual count of {%s} VM's.", problemVms.size()), problemVms.size() == 3);
+        assertTrue(String.format("Expected count of problem VM's does not match actual count of {%s} VM's.", problemVms.size()), problemVms.size() == 2);
         assertTrue("Expected vm id not present in list of problem VM's.", problemVms.stream().anyMatch(vm -> (vm.snapshotId.compareTo(testSnapshotVm6.id) == 0)));
     }
 
@@ -150,15 +156,16 @@ public class MonitorServiceTest {
     public void testGetVmsPendingNewActions() {
         List<VmActionData> problemVms = provisioningMonitorService.getVmsByActionStatus(120, ActionStatus.NEW);
         assertNotNull(problemVms);
-        assertTrue(String.format("Expected count of problem VM's does not match actual count of {%s} VM's.", problemVms.size()), problemVms.size() == 2);
+        assertTrue(String.format("Expected count of problem VM's does not match actual count of {%s} VM's.", problemVms.size()), problemVms.size() == 1);
         assertTrue("Expected vm id not present in list of problem VM's.", problemVms.stream().anyMatch(vm -> (vm.vmId.compareTo(vm8.vmId) == 0)));
     }
 
     @Test
     public void testGetVmsFilteredByNullBackupJob() {
         List<BackupJobAuditData> vmsWithNoBackups = provisioningMonitorService.getVmsFilteredByNullBackupJob();
-        assertNotNull("Expected vm's with no backups, none found. ", vmsWithNoBackups);
-        assertTrue("VMs with no backups not found. ", vmsWithNoBackups.size() != 0);
+        assertNotNull("Expected VMs with no backups, found none. ", vmsWithNoBackups);
+        assertFalse("Expected VMs with no backups, found none. ", vmsWithNoBackups.isEmpty());
+        assertTrue("Expected VM's with no backups, found none. ", vmsWithNoBackups.size() != 0);
         Predicate<BackupJobAuditData> p = backup -> backup.vmId == vm9.vmId;
         assertTrue("Expected vm to have backups but actual vm does not have backups. ", vmsWithNoBackups.stream().noneMatch(p));
     }
