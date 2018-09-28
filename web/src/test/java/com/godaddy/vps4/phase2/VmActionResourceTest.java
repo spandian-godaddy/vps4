@@ -19,18 +19,14 @@ import javax.sql.DataSource;
 import javax.ws.rs.NotFoundException;
 import javax.ws.rs.core.UriInfo;
 
-import com.godaddy.vps4.vm.ActionService;
-import com.godaddy.vps4.vm.ActionStatus;
-import com.godaddy.vps4.web.Vps4Exception;
-import com.google.inject.Inject;
-import com.google.inject.multibindings.MapBinder;
-import gdg.hfs.orchestration.CommandGroupSpec;
-import gdg.hfs.orchestration.CommandSpec;
 import org.json.simple.JSONObject;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
+import org.mockito.ArgumentCaptor;
+import org.mockito.Captor;
+import org.mockito.MockitoAnnotations;
 
 import com.godaddy.vps4.jdbc.DatabaseModule;
 import com.godaddy.vps4.security.GDUserMock;
@@ -39,24 +35,30 @@ import com.godaddy.vps4.security.Vps4User;
 import com.godaddy.vps4.security.Vps4UserService;
 import com.godaddy.vps4.security.jdbc.AuthorizationException;
 import com.godaddy.vps4.vm.Action;
+import com.godaddy.vps4.vm.ActionService;
+import com.godaddy.vps4.vm.ActionStatus;
 import com.godaddy.vps4.vm.ActionType;
 import com.godaddy.vps4.vm.VirtualMachine;
 import com.godaddy.vps4.vm.VmAction;
 import com.godaddy.vps4.vm.VmModule;
+import com.godaddy.vps4.web.Vps4Exception;
 import com.godaddy.vps4.web.security.AdminOnly;
 import com.godaddy.vps4.web.security.GDUser;
+import com.godaddy.vps4.web.security.GDUser.Role;
+import com.godaddy.vps4.web.security.RequiresRole;
 import com.godaddy.vps4.web.vm.VmActionResource;
 import com.godaddy.vps4.web.vm.VmActionWithDetails;
 import com.google.inject.AbstractModule;
 import com.google.inject.Guice;
+import com.google.inject.Inject;
 import com.google.inject.Injector;
 import com.google.inject.Provides;
+import com.google.inject.multibindings.MapBinder;
 
+import gdg.hfs.orchestration.CommandGroupSpec;
 import gdg.hfs.orchestration.CommandService;
+import gdg.hfs.orchestration.CommandSpec;
 import gdg.hfs.orchestration.CommandState;
-import org.mockito.ArgumentCaptor;
-import org.mockito.Captor;
-import org.mockito.MockitoAnnotations;
 
 public class VmActionResourceTest {
 
@@ -274,7 +276,9 @@ public class VmActionResourceTest {
     public void testGetActionDetailsAdminOnly() {
         try {
             Method method = VmActionResource.class.getMethod("getVmActionWithDetails", UUID.class, long.class);
-            Assert.assertTrue(method.isAnnotationPresent(AdminOnly.class));
+            Assert.assertTrue(method.isAnnotationPresent(RequiresRole.class));
+            Role[] expectedRoles = new Role[] {Role.ADMIN, Role.HS_AGENT, Role.HS_LEAD};
+            Assert.assertArrayEquals(expectedRoles, method.getAnnotation(RequiresRole.class).roles());
         }
         catch(NoSuchMethodException ex) {
             Assert.fail();

@@ -19,6 +19,10 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.UriInfo;
 
+import org.json.simple.JSONObject;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.godaddy.vps4.jdbc.ResultSubset;
 import com.godaddy.vps4.security.PrivilegeService;
 import com.godaddy.vps4.security.Vps4UserService;
@@ -32,6 +36,8 @@ import com.godaddy.vps4.web.Vps4Api;
 import com.godaddy.vps4.web.Vps4Exception;
 import com.godaddy.vps4.web.security.AdminOnly;
 import com.godaddy.vps4.web.security.GDUser;
+import com.godaddy.vps4.web.security.GDUser.Role;
+import com.godaddy.vps4.web.security.RequiresRole;
 import com.godaddy.vps4.web.util.Commands;
 import com.godaddy.vps4.web.util.RequestValidation;
 import com.google.inject.Inject;
@@ -40,9 +46,6 @@ import gdg.hfs.orchestration.CommandService;
 import gdg.hfs.orchestration.CommandState;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiParam;
-import org.json.simple.JSONObject;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 @Vps4Api
 @Api(tags = { "vms" })
@@ -126,9 +129,9 @@ public class VmActionResource {
         return new VmAction(this.getVmActionFromCore(vmId, actionId), user.isEmployee());
     }
 
-    @AdminOnly
     @GET
     @Path("{vmId}/actions/{actionId}/withDetails")
+    @RequiresRole(roles = {Role.ADMIN, Role.HS_AGENT, Role.HS_LEAD})
     public VmActionWithDetails getVmActionWithDetails(@PathParam("vmId") UUID vmId,
                                                       @PathParam("actionId") long actionId) {
         Action action = this.getVmActionFromCore(vmId, actionId);
