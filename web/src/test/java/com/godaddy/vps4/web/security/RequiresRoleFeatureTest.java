@@ -60,6 +60,7 @@ public class RequiresRoleFeatureTest {
     public void filterNotAttachedToResourceMethodIfNotReqd() throws NoSuchMethodException{
         Method m = TestClass.class.getMethod("methodTwo");
         when(resourceInfo.getResourceMethod()).thenReturn(m);
+        when(resourceInfo.getResourceClass()).thenReturn((Class) TestClass.class);
         feature.configure(resourceInfo, featureContext);
 
         verify(featureContext, times(0)).register(any());
@@ -69,6 +70,7 @@ public class RequiresRoleFeatureTest {
     public void filterAttachedToResourceMethodIfAnnotationPresent() throws NoSuchMethodException{
         Method m = TestClass.class.getMethod("methodOne");
         when(resourceInfo.getResourceMethod()).thenReturn(m);
+        when(resourceInfo.getResourceClass()).thenReturn((Class) TestClass.class);
         feature.configure(resourceInfo, featureContext);
 
         verify(featureContext, times(1)).register(eq(requiresRoleFilter));
@@ -78,6 +80,7 @@ public class RequiresRoleFeatureTest {
     public void filterIsAssignedRolesToAllow() throws NoSuchMethodException{
         Method m = TestClass.class.getMethod("methodOne");
         when(resourceInfo.getResourceMethod()).thenReturn(m);
+        when(resourceInfo.getResourceClass()).thenReturn((Class) TestClass.class);
         feature.configure(resourceInfo, featureContext);
 
         Role[] expectedRoles = m.getAnnotation(RequiresRole.class).roles();
