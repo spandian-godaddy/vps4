@@ -1,26 +1,5 @@
 package com.godaddy.vps4.orchestration.phase2;
 
-import static org.hamcrest.Matchers.containsInAnyOrder;
-import static org.junit.Assert.assertThat;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyLong;
-import static org.mockito.Matchers.eq;
-import static org.mockito.Matchers.startsWith;
-import static org.mockito.Mockito.doReturn;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.spy;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
-
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.UUID;
-import java.util.function.Function;
-
-import javax.sql.DataSource;
-
 import com.godaddy.vps4.credit.CreditService;
 import com.godaddy.vps4.jdbc.DatabaseModule;
 import com.godaddy.vps4.network.IpAddress;
@@ -67,6 +46,21 @@ import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
 import org.mockito.runners.MockitoJUnitRunner;
+
+import static org.hamcrest.Matchers.containsInAnyOrder;
+import static org.junit.Assert.assertThat;
+import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.anyLong;
+import static org.mockito.Matchers.eq;
+import static org.mockito.Matchers.startsWith;
+import static org.mockito.Mock.*;
+import static org.mockito.Mockito.*;
+import javax.sql.DataSource;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.UUID;
+import java.util.function.Function;
 
 @RunWith(MockitoJUnitRunner.class)
 public class Vps4RebuildVmTest {
@@ -168,6 +162,8 @@ public class Vps4RebuildVmTest {
                 SqlTestData.insertIpAddresses(vps4NetworkService, vps4VmId, 2, IpAddress.IpAddressType.SECONDARY));
         VmUser vmUser = new VmUser("fake_vm_user", vps4VmId, true, VmUserType.SUPPORT);
         SqlTestData.insertVmUser(vmUser, vmUserService);
+        VmUser vmCustomer = new VmUser("fake_vm_customer", vps4VmId, true, VmUserType.CUSTOMER);
+        SqlTestData.insertVmUser(vmCustomer, vmUserService);
     }
 
     private CommandContext setupMockContext() {
@@ -272,6 +268,15 @@ public class Vps4RebuildVmTest {
         Function<CommandContext, Vm> lambda = getHfsVmLambdaCaptor.getValue();
         Vm newHfsVm = lambda.apply(context);
         Assert.assertEquals(newHfsVm.vmId, hfsNewVmId);
+    }
+
+    @Test
+    public void updatesUsernameForVm() {
+        command.execute(context, request);
+
+        verify(spyVmUserService, atLeastOnce()).listUsers(any(UUID.class), eq(VmUserType.CUSTOMER));
+        verify(spyVmUserService, atLeastOnce()).deleteUser(any(String.class), any(UUID.class));
+        verify(spyVmUserService, atLeastOnce()).createUser(any(String.class), any(UUID.class));
     }
 
     @Test
@@ -417,7 +422,7 @@ public class Vps4RebuildVmTest {
     public void doesInvokeDeleteSupportUsers() {
         command.execute(context, request);
 
-        verify(spyVmUserService, times(1)).listUsers(any(UUID.class), eq(VmUserType.SUPPORT));
-        verify(spyVmUserService, times(1)).deleteUser(any(String.class), any(UUID.class));
+        verify(spyVmUserService, atLeastOnce()).listUsers(any(UUID.class), eq(VmUserType.SUPPORT));
+        verify(spyVmUserService, atLeastOnce()).deleteUser(any(String.class), any(UUID.class));
     }
 }

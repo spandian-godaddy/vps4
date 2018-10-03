@@ -40,6 +40,7 @@ public class SqlTestData {
     public final static String IMAGE_NAME = "hfs-centos-7";
     public final static String INITIATED_BY = "tester";
     public final static String TEST_USER_NAME = "fake_vm_user";
+    public final static String TEST_CUSTOMER_NAME = "fake_vm_customer";
 
     public static Vps4User insertUser(Vps4UserService userService) {
         return userService.getOrCreateUserForShopper(TEST_SHOPPER_ID, "1");
@@ -119,6 +120,7 @@ public class SqlTestData {
         String test_user_condition = "u.shopper_id = '" + TEST_SHOPPER_ID + "'";
         String test_privilege_condition = "p.vps4_user_id = " + userId + "";
         String test_vmUser_name_condition = "u.name = '" + TEST_USER_NAME + "'";
+        String test_vmCustomer_name_condition = "u.name = '" + TEST_CUSTOMER_NAME + "'";
 
         Sql.with(dataSource).exec(
                 "DELETE FROM snapshot_action a USING snapshot s WHERE a.snapshot_id = s.id AND " + test_snapshot_condition,
@@ -133,6 +135,8 @@ public class SqlTestData {
                 "DELETE FROM vm_action a USING virtual_machine v WHERE a.vm_id = v.vm_id AND " + test_vm_condition,
                 null);
         Sql.with(dataSource).exec("DELETE FROM vm_user u WHERE " + test_vmUser_name_condition, null);
+        Sql.with(dataSource).exec("DELETE FROM vm_user u WHERE u.name = 'fake_user' ", null);
+        Sql.with(dataSource).exec("DELETE FROM vm_user u WHERE " + test_vmCustomer_name_condition, null);
         Sql.with(dataSource).exec(
                 "DELETE FROM virtual_machine v USING project p WHERE v.project_id = p.project_id AND " + test_sgid_condition,
                 null);

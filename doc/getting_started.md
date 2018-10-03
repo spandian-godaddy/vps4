@@ -10,6 +10,8 @@
 - download Java 8 SDK
 - download Eclipse IDE for Java Developers
     - you can choose to use another IDE, like IntelliJ IDEA (Community Edition should be sufficient & does not require a license), but these specific instructions are catered for Eclipse setup
+- download Intellij Idea Ultimate edition IDE if that is your choice of IDE
+    - you can get a godaddy license activation by logging into the jetbrains website with your godaddy email. This should provide you with a Toolbox subscription for several Jetbrains products.
 - create maven settings file (be sure to get the password for line 22):
 > File: ~/.m2/settings.xml
 ```xml
@@ -48,6 +50,11 @@
     - in project explorer, right click vps4-core -> Maven -> Update project
     - after updating project, there may still be three errors in the "Problems" tab of Eclipse
         - if the errors say "plugin execution not covered by lifecycle configuration", this can be fixed by right clicking each error and ignoring in Eclipse
+
+- import code into Intellij Idea
+    - Import project -> find the pom.xml for the vps4-project and open it. 
+    - go through the screens clicking "Next"
+    - Project should be opened in the editor once above steps are completed
 
 - create Eclipse Run Configurations
     - Run -> Run configurations

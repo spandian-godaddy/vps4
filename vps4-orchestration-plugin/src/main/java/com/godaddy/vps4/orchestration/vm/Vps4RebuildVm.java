@@ -1,12 +1,6 @@
 package com.godaddy.vps4.orchestration.vm;
 
 
-import static com.godaddy.vps4.vm.RebuildVmStep.RebuildComplete;
-
-import java.util.Arrays;
-import java.util.List;
-import java.util.UUID;
-
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.godaddy.vps4.credit.CreditService;
 import com.godaddy.vps4.network.IpAddress;
@@ -45,6 +39,12 @@ import gdg.hfs.vhfs.vm.VmAction;
 import gdg.hfs.vhfs.vm.VmService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.util.Arrays;
+import java.util.List;
+import java.util.UUID;
+
+import static com.godaddy.vps4.vm.RebuildVmStep.RebuildComplete;
 
 @CommandMetadata(
         name="Vps4RebuildVm",
@@ -93,15 +93,17 @@ public class Vps4RebuildVm extends ActionCommand<Vps4RebuildVm.Request, Vps4Rebu
             throw new  Exception("HFS Vm ID is not available. Expecting HFS VM ID.");
         }
 
+        VirtualMachine oldVm = virtualMachineService.getVirtualMachine(vps4VmId);
+
         unbindPublicIpAddresses(ipAddresses);
         bindPublicIpAddress(newHfsVmId, ipAddresses);
+        updateVmUser(request.rebuildVmInfo.username, oldVm.vmId, request.rebuildVmInfo.vmId);
         setRootUserPassword(newHfsVmId);
         configureControlPanel(newHfsVmId);
         setHostname(newHfsVmId);
         configureAdminUser(newHfsVmId);
         refreshCpanelLicense();
 
-        VirtualMachine oldVm = virtualMachineService.getVirtualMachine(vps4VmId);
         setEcommCommonName(oldVm.orionGuid, oldVm.name);
 
         // remove any support users on the old vm (or in the db)
@@ -170,6 +172,12 @@ public class Vps4RebuildVm extends ActionCommand<Vps4RebuildVm.Request, Vps4Rebu
             virtualMachineService.addHfsVmIdToVirtualMachine(vps4VmId, hfsVmId);
             return null;
         }, Void.class);
+    }
+
+    private void updateVmUser(String username, UUID oldVmId, UUID newVmId) {
+        vmUserService.listUsers(oldVmId, VmUserType.CUSTOMER).stream()
+                .forEach(user -> vmUserService.deleteUser(user.username, oldVmId));
+        vmUserService.createUser(username, newVmId);
     }
 
     private void setRootUserPassword(long hfsVmId) {
