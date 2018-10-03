@@ -11,10 +11,7 @@ import java.util.UUID;
 import javax.sql.DataSource;
 
 import com.godaddy.hfs.jdbc.Sql;
-import com.godaddy.vps4.appmonitors.BackupJobAuditData;
-import com.godaddy.vps4.appmonitors.MonitorService;
-import com.godaddy.vps4.appmonitors.SnapshotActionData;
-import com.godaddy.vps4.appmonitors.VmActionData;
+import com.godaddy.vps4.appmonitors.*;
 import com.godaddy.vps4.jdbc.Vps4ReportsDataSource;
 import com.godaddy.vps4.util.TimestampUtils;
 import com.godaddy.vps4.vm.ActionStatus;
@@ -23,7 +20,7 @@ import com.google.inject.Inject;
 
 public class JdbcMonitorService implements MonitorService {
 
-    private final DataSource reportsDataSource;
+    private final DataSource dataSource;
 
     private final static String selectVmsByActionAndDuration =
             "SELECT vma.id, vma.command_id, vma.vm_id, action_type.type as action_type " +
@@ -80,14 +77,14 @@ public class JdbcMonitorService implements MonitorService {
 
     @Inject
     public JdbcMonitorService(@Vps4ReportsDataSource DataSource reportsDataSource) {
-        this.reportsDataSource = reportsDataSource;
+        this.dataSource = reportsDataSource;
     }
 
     @Override
     public List<VmActionData> getVmsByActions(long thresholdInMinutes, ActionType type, ActionStatus status) {
         String interval = "INTERVAL '" + thresholdInMinutes + " minutes'";
         String selectDateOrderedVmsByActionAndDuration = selectVmsByActionAndDuration + interval + orderby;
-        return Sql.with(reportsDataSource)
+        return Sql.with(dataSource)
                 .exec(selectDateOrderedVmsByActionAndDuration, Sql.listOf(this::mapVmActionData), type.name(), status.name());
     }
 
@@ -112,7 +109,7 @@ public class JdbcMonitorService implements MonitorService {
         String inClause = "IN ('" + String.join("','", actionStatuses) + "')";
         String selectVmsBySnapshotActionAndDurationWithInClause = selectVmsBySnapshotActionAndDuration.replaceFirst("INCLAUSE", inClause);
         String selectDateOrderedVmsBySnapshotActionAndDuration = selectVmsBySnapshotActionAndDurationWithInClause + interval + orderBySnapshotCreated;
-        return Sql.with(reportsDataSource)
+        return Sql.with(dataSource)
                 .exec(selectDateOrderedVmsBySnapshotActionAndDuration, Sql.listOf(this::mapSnapshotActionData));
     }
 
@@ -138,7 +135,7 @@ public class JdbcMonitorService implements MonitorService {
     public List<VmActionData> getVmsByActionStatus(long thresholdInMinutes, ActionStatus status) {
         String interval = "INTERVAL '" + thresholdInMinutes + " minutes'  ";
         String selectDateOrderedVmsByActionStatusAndDuration = selectVmsByActionStatusAndDuration + interval + orderby;
-        return Sql.with(reportsDataSource)
+        return Sql.with(dataSource)
                 .exec(selectDateOrderedVmsByActionStatusAndDuration, Sql.listOf(this::mapVmActionDataWithActionType), status.name());
     }
 
@@ -159,8 +156,53 @@ public class JdbcMonitorService implements MonitorService {
 
     @Override
     public List<BackupJobAuditData> getVmsFilteredByNullBackupJob() {
-        return Sql.with(reportsDataSource)
+        return Sql.with(dataSource)
                 .exec(selectVmsFilteredByNullBackupJob, Sql.listOf(this::mapVmId));
+    }
+
+    @Override
+    public MonitoringCheckpoint getMonitoringCheckpoint(ActionType actionType) {
+        return Sql.with(dataSource).exec("SELECT * from monitoring_checkpoint where action_type_id = ?",
+                Sql.nextOrNull(this::mapActionCheckpoint),
+                actionType.getActionTypeId());
+    }
+
+    @Override
+    public MonitoringCheckpoint setMonitoringCheckpoint(ActionType actionType) {
+        MonitoringCheckpoint checkpoint = getMonitoringCheckpoint(actionType);
+        String upsertCheckpointQuery;
+        if (checkpoint == null) {
+            upsertCheckpointQuery = "INSERT INTO monitoring_checkpoint(action_type_id) VALUES(?) RETURNING *";
+        } else {
+            upsertCheckpointQuery = "UPDATE monitoring_checkpoint SET checkpoint = now_utc() WHERE action_type_id = ? RETURNING *";
+        }
+
+        return Sql.with(dataSource).exec(upsertCheckpointQuery,
+                Sql.nextOrNull(this::mapActionCheckpoint),
+                actionType.getActionTypeId());
+    }
+
+    @Override
+    public void deleteMonitoringCheckpoint(ActionType actionType) {
+        Sql.with(dataSource).exec("DELETE FROM monitoring_checkpoint WHERE action_type_id = ?", null,
+                actionType.getActionTypeId());
+    }
+
+    @Override
+    public List<MonitoringCheckpoint> getMonitoringCheckpoints() {
+        return Sql.with(dataSource).exec("SELECT * FROM monitoring_checkpoint", Sql.listOf(this::mapActionCheckpoint));
+    }
+
+    private MonitoringCheckpoint mapActionCheckpoint(ResultSet resultSet) throws SQLException {
+        if(resultSet == null) {
+            return null;
+        }
+
+        MonitoringCheckpoint checkpoint = new MonitoringCheckpoint();
+        checkpoint.actionType = ActionType.valueOf(resultSet.getInt("action_type_id"));
+        checkpoint.checkpoint = resultSet.getTimestamp("checkpoint", TimestampUtils.utcCalendar).toInstant();
+
+        return checkpoint;
     }
 
     private BackupJobAuditData mapVmId(ResultSet rs) throws SQLException {

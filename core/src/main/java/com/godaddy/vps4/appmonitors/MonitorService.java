@@ -11,4 +11,8 @@ public interface MonitorService {
     List<SnapshotActionData> getVmsBySnapshotActions(long thresholdInMinutes, ActionStatus... status);
     List<VmActionData> getVmsByActionStatus(long thresholdInMinutes, ActionStatus status);
     List<BackupJobAuditData> getVmsFilteredByNullBackupJob();
+    MonitoringCheckpoint getMonitoringCheckpoint(ActionType actionType);
+    MonitoringCheckpoint setMonitoringCheckpoint(ActionType actionType);
+    void deleteMonitoringCheckpoint(ActionType actionType);
+    List<MonitoringCheckpoint> getMonitoringCheckpoints();
 }

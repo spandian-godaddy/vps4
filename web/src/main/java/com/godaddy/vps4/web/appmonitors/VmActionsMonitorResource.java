@@ -3,21 +3,12 @@ package com.godaddy.vps4.web.appmonitors;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.UUID;
 import java.util.stream.Collectors;
 
-import javax.ws.rs.Consumes;
-import javax.ws.rs.DefaultValue;
-import javax.ws.rs.GET;
-import javax.ws.rs.Path;
-import javax.ws.rs.Produces;
-import javax.ws.rs.QueryParam;
+import javax.ws.rs.*;
 import javax.ws.rs.core.MediaType;
 
-import com.godaddy.vps4.appmonitors.BackupJobAuditData;
-import com.godaddy.vps4.appmonitors.MonitorService;
-import com.godaddy.vps4.appmonitors.SnapshotActionData;
-import com.godaddy.vps4.appmonitors.VmActionData;
+import com.godaddy.vps4.appmonitors.*;
 import com.godaddy.vps4.jdbc.ResultSubset;
 import com.godaddy.vps4.vm.Action;
 import com.godaddy.vps4.vm.ActionService;
@@ -134,10 +125,12 @@ public class VmActionsMonitorResource {
     @GET
     @Path("/failedActionsPercent")
     public List<ActionTypeErrorData> getFailedActionsForAllTypes(
-            @ApiParam(value = "The number of actions to use in the percentage calculation.", required = true) @QueryParam("Window Size") long windowSize) {
+            @ApiParam(value = "The number of actions to use in the percentage calculation.", required = true) @QueryParam("windowSize") long windowSize) {
         List<ActionTypeErrorData> result = new ArrayList<>();
         for(ActionType type : ActionType.values()) {
-            ResultSubset<Action> resultSubset = actionService.getActions(null, windowSize, 0, new ArrayList<>(), null, null, type);
+            MonitoringCheckpoint checkpoint = monitorService.getMonitoringCheckpoint(type);
+            Instant beginDate = checkpoint == null ? null : checkpoint.checkpoint;
+            ResultSubset<Action> resultSubset = actionService.getActions(null, windowSize, 0, new ArrayList<>(), beginDate, null, type);
             List<Action> actions = resultSubset==null?new ArrayList<>():resultSubset.results;
             List<Action> errors = actions.stream().filter(a -> a.status==ActionStatus.ERROR).collect(Collectors.toList());
 
@@ -148,5 +141,33 @@ public class VmActionsMonitorResource {
             }
         }
         return result;
+    }
+
+    @RequiresRole(roles = {GDUser.Role.ADMIN})
+    @POST
+    @Path("/checkpoints/{actionType}")
+    public MonitoringCheckpoint setMonitoringCheckpoint(@PathParam("actionType") ActionType actionType) {
+         return monitorService.setMonitoringCheckpoint(actionType);
+    }
+
+    @RequiresRole(roles = {GDUser.Role.ADMIN})
+    @GET
+    @Path("/checkpoints/{actionType}")
+    public MonitoringCheckpoint getMonitoringCheckpoint(@PathParam("actionType") ActionType actionType) {
+        return monitorService.getMonitoringCheckpoint(actionType);
+    }
+
+    @RequiresRole(roles = {GDUser.Role.ADMIN})
+    @GET
+    @Path("/checkpoints")
+    public List<MonitoringCheckpoint> getMonitoringCheckpoints() {
+        return monitorService.getMonitoringCheckpoints();
+    }
+
+    @RequiresRole(roles = {GDUser.Role.ADMIN})
+    @DELETE
+    @Path("/checkpoints/{actionType}")
+    public void deleteMonitoringCheckpoint(@PathParam("actionType") ActionType actionType) {
+        monitorService.deleteMonitoringCheckpoint(actionType);
     }
 }

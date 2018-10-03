@@ -1,6 +1,7 @@
 package com.godaddy.vps4.web.appmonitors;
 
 import com.godaddy.vps4.appmonitors.MonitorService;
+import com.godaddy.vps4.appmonitors.MonitoringCheckpoint;
 import com.godaddy.vps4.appmonitors.SnapshotActionData;
 import com.godaddy.vps4.appmonitors.VmActionData;
 import com.godaddy.vps4.jdbc.ResultSubset;
@@ -19,8 +20,7 @@ import java.util.List;
 import java.util.UUID;
 
 import static org.mockito.Matchers.*;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 public class VmActionsMonitorResourceTest {
 
@@ -138,6 +138,27 @@ public class VmActionsMonitorResourceTest {
     }
 
     @Test
+    public void testCheckForFailingActionsWithCheckpoint() {
+        ResultSubset<Action> resultSubset = getTestResultSet(5, ActionType.START_VM, ActionStatus.COMPLETE);
+        resultSubset = getTestResultSet(5, ActionType.START_VM, ActionStatus.ERROR, resultSubset.results);
+        ResultSubset<Action> emptyResultSet = new ResultSubset<>(new ArrayList<>(), 0);
+        MonitoringCheckpoint checkpoint = new MonitoringCheckpoint();
+        checkpoint.checkpoint = Instant.now().minus(1, ChronoUnit.DAYS);
+
+        when(monitorService.getMonitoringCheckpoint(ActionType.START_VM)).thenReturn(checkpoint);
+
+        when(actionService.getActions(any(UUID.class), anyLong(), anyLong(), any(), any(Instant.class), any(Instant.class), any(ActionType.class))).thenReturn(emptyResultSet);
+        when(actionService.getActions(null, 10, 0, new ArrayList<>(), checkpoint.checkpoint, null, ActionType.START_VM)).thenReturn(resultSubset);
+
+        List<ActionTypeErrorData> errorData = vmActionsMonitorResource.getFailedActionsForAllTypes(10);
+        Assert.assertEquals(1, errorData.size());
+        ActionTypeErrorData actionTypeErrorData = errorData.get(0);
+        Assert.assertEquals(5, actionTypeErrorData.failedActions.size());
+        Assert.assertEquals(ActionType.START_VM, actionTypeErrorData.actionType);
+        Assert.assertTrue(actionTypeErrorData.failurePercentage == 50.0);
+    }
+
+    @Test
     public void testCheckForFailingActionsNotFullWindow() {
         ResultSubset<Action> resultSubset = getTestResultSet(2, ActionType.START_VM, ActionStatus.COMPLETE);
         resultSubset = getTestResultSet(3, ActionType.START_VM, ActionStatus.ERROR, resultSubset.results);
@@ -162,5 +183,47 @@ public class VmActionsMonitorResourceTest {
 
         List<ActionTypeErrorData> errorData = vmActionsMonitorResource.getFailedActionsForAllTypes(10);
         Assert.assertEquals(0, errorData.size());
+    }
+
+    @Test
+    public void testGetCheckpoints() {
+        MonitoringCheckpoint checkpoint = new MonitoringCheckpoint();
+        checkpoint.checkpoint = Instant.now().minus(1, ChronoUnit.DAYS);
+        checkpoint.actionType = ActionType.CREATE_VM;
+        MonitoringCheckpoint checkpoint2 = new MonitoringCheckpoint();
+        checkpoint2.checkpoint = Instant.now().minus(1, ChronoUnit.DAYS);
+        checkpoint2.actionType = ActionType.STOP_VM;
+        List<MonitoringCheckpoint> checkpoints = new ArrayList<>();
+        checkpoints.add(checkpoint);
+        checkpoints.add(checkpoint2);
+
+        when(monitorService.getMonitoringCheckpoints()).thenReturn(checkpoints);
+
+        List<MonitoringCheckpoint> actualCheckpoints = vmActionsMonitorResource.getMonitoringCheckpoints();
+
+        Assert.assertEquals(2, actualCheckpoints.size());
+    }
+
+    @Test
+    public void testGetCheckpoint() {
+        MonitoringCheckpoint checkpoint = new MonitoringCheckpoint();
+        checkpoint.checkpoint = Instant.now();
+        checkpoint.actionType = ActionType.CREATE_VM;
+
+        when(monitorService.getMonitoringCheckpoint(ActionType.CREATE_VM)).thenReturn(checkpoint);
+
+        MonitoringCheckpoint actualCheckpoint = vmActionsMonitorResource.getMonitoringCheckpoint(ActionType.CREATE_VM);
+
+        Assert.assertEquals(checkpoint.actionType, actualCheckpoint.actionType);
+        Assert.assertEquals(checkpoint.checkpoint, actualCheckpoint.checkpoint);
+    }
+
+    @Test
+    public void testDeleteCheckpoint() {
+        doNothing().when(monitorService).deleteMonitoringCheckpoint(ActionType.CREATE_VM);
+
+        vmActionsMonitorResource.deleteMonitoringCheckpoint(ActionType.CREATE_VM);
+
+        verify(monitorService, times(1)).deleteMonitoringCheckpoint(ActionType.CREATE_VM);
     }
 }
