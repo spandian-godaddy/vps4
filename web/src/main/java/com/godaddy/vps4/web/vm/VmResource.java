@@ -77,7 +77,6 @@ import io.swagger.annotations.ApiParam;
 
 @Vps4Api
 @Api(tags = { "vms" })
-
 @Path("/api/vms")
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)

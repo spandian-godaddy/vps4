@@ -23,10 +23,12 @@ import com.godaddy.vps4.orchestration.mailrelay.Vps4SetMailRelayQuota;
 import com.godaddy.vps4.vm.Action;
 import com.godaddy.vps4.vm.ActionService;
 import com.godaddy.vps4.vm.ActionType;
+import com.godaddy.vps4.vm.ServerType.Type;
 import com.godaddy.vps4.vm.VirtualMachine;
 import com.godaddy.vps4.vm.VirtualMachineService;
 import com.godaddy.vps4.web.PATCH;
 import com.godaddy.vps4.web.Vps4Api;
+import com.godaddy.vps4.web.security.BlockServerType;
 import com.godaddy.vps4.web.security.GDUser;
 import com.godaddy.vps4.web.security.RequiresRole;
 import com.godaddy.vps4.web.util.Commands;
@@ -49,6 +51,7 @@ import static com.godaddy.vps4.web.util.RequestValidation.validateMailRelayUpdat
 @Path("/api/vms")
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
+@BlockServerType(serverTypes = {Type.DEDICATED})
 public class VmMailRelayResource {
 
     private final MailRelayService mailRelayService;

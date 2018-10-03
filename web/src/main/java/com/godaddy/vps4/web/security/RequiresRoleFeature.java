@@ -29,8 +29,11 @@ public class RequiresRoleFeature implements DynamicFeature {
         Method resourceMethod = resourceInfo.getResourceMethod();
 
         if (resourceMethod.isAnnotationPresent(RequiresRole.class)) {
-            logger.info(String.format("RequiresRole filter attached to method: %s", resourceMethod.getName()));
             RequiresRoleFilter filter = getRequiresRoleFilter(resourceMethod);
+            logger.info(String.format("Filter %s attached to resource class/method: [%s/%s]",
+                filter.getClass().getSimpleName(), resourceInfo.getResourceClass().getSimpleName(),
+                resourceInfo.getResourceMethod().getName()));
+
             featureContext.register(filter);
         }
     }

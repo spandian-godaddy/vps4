@@ -47,6 +47,10 @@ public class GDUser {
         return Arrays.stream(roles).anyMatch(r -> r.equals(this.role));
     }
 
+    public boolean isCustomer() {
+        return Role.CUSTOMER.equals(this.role);
+    }
+
     public boolean isEmployeeToShopper() {
         return isEmployee() && isShopper();
     }

@@ -1,5 +1,8 @@
 package com.godaddy.vps4.web.security;
 
+import static com.godaddy.vps4.web.security.Utils.REQUIRES_ROLE_FILTER_PRIORITY;
+
+import javax.annotation.Priority;
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.container.ContainerRequestContext;
 import javax.ws.rs.container.ContainerRequestFilter;
@@ -13,6 +16,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 
+@Priority(REQUIRES_ROLE_FILTER_PRIORITY)
 public class RequiresRoleFilter implements ContainerRequestFilter {
 
     private static final Logger logger = LoggerFactory.getLogger(RequiresRoleFilter.class);

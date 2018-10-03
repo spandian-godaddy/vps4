@@ -1,11 +1,14 @@
 package com.godaddy.vps4.web.security;
 
+import static com.godaddy.vps4.web.security.Utils.ADMIN_AUTH_FILTER_PRIORITY;
+
 import gdg.hfs.orchestration.web.CommandsResource;
 import gdg.hfs.orchestration.web.CommandsViewResource;
 
 import java.io.IOException;
 import java.lang.reflect.Method;
 
+import javax.annotation.Priority;
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.container.ContainerRequestContext;
 import javax.ws.rs.container.ContainerRequestFilter;
@@ -15,6 +18,7 @@ import javax.ws.rs.core.Response;
 import javax.ws.rs.ext.Provider;
 
 @Provider
+@Priority(ADMIN_AUTH_FILTER_PRIORITY)
 public class AdminAuthFilter implements ContainerRequestFilter {
 
     @Context

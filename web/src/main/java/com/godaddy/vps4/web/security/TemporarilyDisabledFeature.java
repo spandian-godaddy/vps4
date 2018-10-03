@@ -28,12 +28,12 @@ public class TemporarilyDisabledFeature implements DynamicFeature {
         Method resourceMethod = resourceInfo.getResourceMethod();
 
         if (isEndpointTemporarilyDisabled(resourceMethod)) {
-            logger.info(String.format(
-                "TemporarilyDisabled filter attached to resource/method: [%s/%s]",
-                resourceInfo.getResourceClass(), resourceMethod.getName()));
-
             TemporarilyDisabledEndpointFilter filter
                 = this.injector.getInstance(TemporarilyDisabledEndpointFilter.class);
+            logger.info(String.format("Filter %s attached to resource class/method: [%s/%s]",
+                    filter.getClass().getSimpleName(), resourceInfo.getResourceClass().getSimpleName(),
+                    resourceInfo.getResourceMethod().getName()));
+
             featureContext.register(filter);
         }
     }
