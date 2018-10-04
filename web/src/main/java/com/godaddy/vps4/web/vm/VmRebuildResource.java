@@ -95,6 +95,7 @@ public class VmRebuildResource {
     public static class RebuildVmRequest {
         public String username;
         public String hostname;
+        public String serverName;
         public String imageName;
         public String password;
     }
@@ -132,6 +133,7 @@ public class VmRebuildResource {
             VirtualMachine vm, ImageService imageService, RebuildVmRequest request) {
         RebuildVmInfo rebuildVmInfo = new RebuildVmInfo();
         rebuildVmInfo.hostname = StringUtils.isBlank(request.hostname) ? vm.hostname : request.hostname;
+        rebuildVmInfo.serverName = StringUtils.isBlank(request.serverName) ? vm.name : request.serverName;
         rebuildVmInfo.encryptedPassword = cryptography.encrypt(request.password);
         rebuildVmInfo.rawFlavor = vm.spec.specName;
         rebuildVmInfo.sgid = projectService.getProject(vm.projectId).getVhfsSgid();

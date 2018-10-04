@@ -196,8 +196,9 @@ public class Vps4RebuildVmTest {
     private Image setupImage() {
         Image image = new Image();
         image.operatingSystem = Image.OperatingSystem.LINUX;
-        image.hfsName = "hfs-centos-7";
-        image.controlPanel = Image.ControlPanel.CPANEL;
+        image.hfsName = "hfs-debian-8";
+        image.controlPanel = Image.ControlPanel.MYH;
+        image.imageId = 13;
         return image;
     }
 
@@ -213,6 +214,7 @@ public class Vps4RebuildVmTest {
         req.rebuildVmInfo.rawFlavor = "rawflavor";
         req.rebuildVmInfo.image = setupImage();
         req.rebuildVmInfo.sgid = vps4Project.getVhfsSgid();
+        req.rebuildVmInfo.serverName = SqlTestData.TEST_VM_NAME;
         return req;
     }
 
@@ -254,7 +256,7 @@ public class Vps4RebuildVmTest {
                 );
 
         CreateVm.Request createVmRequest = createVmRequestArgumentCaptor.getValue();
-        Assert.assertEquals(SqlTestData.IMAGE_NAME, createVmRequest.image_name );
+        Assert.assertEquals("hfs-debian-8", createVmRequest.image_name );
     }
 
     @Test
@@ -410,6 +412,16 @@ public class Vps4RebuildVmTest {
 
         ConfigurePlesk.ConfigurePleskRequest configurePleskRequest = configurePleskRequestArgumentCaptor.getValue();
         Assert.assertEquals(vps4NewVm.hfsVmId, configurePleskRequest.vmId);
+    }
+
+    @Test
+    public void updatesVirtualMachineDetails() {
+        command.execute(context, request);
+        Assert.assertEquals(request.rebuildVmInfo.image.imageId,
+                vps4VmService.getVirtualMachine(request.rebuildVmInfo.vmId).image.imageId);
+
+        Assert.assertEquals(request.rebuildVmInfo.serverName,
+                vps4VmService.getVirtualMachine(request.rebuildVmInfo.vmId).name);
     }
 
     @Test

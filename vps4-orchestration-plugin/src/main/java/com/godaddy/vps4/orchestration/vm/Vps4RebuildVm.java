@@ -41,7 +41,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 import static com.godaddy.vps4.vm.RebuildVmStep.RebuildComplete;
@@ -104,6 +106,7 @@ public class Vps4RebuildVm extends ActionCommand<Vps4RebuildVm.Request, Vps4Rebu
         configureAdminUser(newHfsVmId);
         refreshCpanelLicense();
 
+        updateServerDetails(request);
         setEcommCommonName(oldVm.orionGuid, oldVm.name);
 
         // remove any support users on the old vm (or in the db)
@@ -115,6 +118,16 @@ public class Vps4RebuildVm extends ActionCommand<Vps4RebuildVm.Request, Vps4Rebu
 
         logger.info("Completed VM Rebuild.");
         return null;
+    }
+
+    private void updateServerDetails(Request request) {
+        // Update the servers name and the image.
+        // Self managed customers can provision several different images
+        String serverName = request.rebuildVmInfo.serverName;
+        Map<String, Object> vmPatchMap = new HashMap<>();
+        vmPatchMap.put("name", serverName);
+        vmPatchMap.put("image_id", request.rebuildVmInfo.image.imageId);
+        virtualMachineService.updateVirtualMachine(this.vps4VmId, vmPatchMap);
     }
 
     private long getOldHfsVmId() {
