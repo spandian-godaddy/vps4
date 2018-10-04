@@ -111,11 +111,17 @@ public class VmActionsMonitorResourceTest {
     }
 
     private ResultSubset<Action> getTestResultSet(long size, ActionType actionType, ActionStatus actionStatus, List<Action> testActions) {
-        for(long i = 0; i < size; i++) {
-            Action action = new Action(i, UUID.randomUUID(), actionType, null, null, null,
+        Action action = new Action(0, UUID.randomUUID(), actionType, null, null, null,
+                actionStatus, Instant.now().minus(10, ChronoUnit.MINUTES), Instant.now(), null,
+                UUID.randomUUID(), "tester");
+        testActions.add(action);
+
+        UUID resourceId = UUID.randomUUID();
+        for(long i = 1; i < size; i++) {
+            Action action2 = new Action(i, resourceId, actionType, null, null, null,
                     actionStatus, Instant.now().minus(10, ChronoUnit.MINUTES), Instant.now(), null,
                     UUID.randomUUID(), "tester");
-            testActions.add(action);
+            testActions.add(action2);
         }
         return new ResultSubset<>(testActions, testActions.size());
     }
@@ -172,6 +178,7 @@ public class VmActionsMonitorResourceTest {
         ActionTypeErrorData actionTypeErrorData = errorData.get(0);
         Assert.assertEquals(3, actionTypeErrorData.failedActions.size());
         Assert.assertEquals(ActionType.START_VM, actionTypeErrorData.actionType);
+        Assert.assertEquals(2, actionTypeErrorData.affectedAccounts);
         Assert.assertTrue("Expected 60%, actual " + actionTypeErrorData.failurePercentage, actionTypeErrorData.failurePercentage == 60.0);
     }
 

@@ -13,15 +13,6 @@
 
 	<build>
 		<plugins>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-surefire-plugin</artifactId>
-                <configuration>
-                    <verbose>true</verbose>
-                    <fork>true</fork>
-                    <argLine>-XX:MaxPermSize=500M</argLine>
-                </configuration>
-            </plugin>
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-shade-plugin</artifactId>

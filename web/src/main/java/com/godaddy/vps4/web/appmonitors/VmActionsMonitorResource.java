@@ -3,6 +3,7 @@ package com.godaddy.vps4.web.appmonitors;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.logging.XMLFormatter;
 import java.util.stream.Collectors;
 
 import javax.ws.rs.*;
@@ -136,7 +137,8 @@ public class VmActionsMonitorResource {
 
             if(!errors.isEmpty()) {
                 double failurePercentage = ((double)errors.size()/actions.size())*100;
-                ActionTypeErrorData actionTypeError = new ActionTypeErrorData(type, failurePercentage, errors);
+                long affectedAccounts = errors.stream().map(x -> x.resourceId).distinct().count();
+                ActionTypeErrorData actionTypeError = new ActionTypeErrorData(type, failurePercentage, affectedAccounts, errors);
                 result.add(actionTypeError);
             }
         }
