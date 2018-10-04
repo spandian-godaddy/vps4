@@ -17,7 +17,9 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.UUID;
 
+import javax.ws.rs.ClientErrorException;
 import javax.ws.rs.NotFoundException;
+import javax.ws.rs.core.Response;
 
 import com.godaddy.vps4.vm.VmUserService;
 import gdg.hfs.vhfs.cpanel.CPanelLicense;
@@ -189,6 +191,21 @@ public class Vps4DestroyVmTest {
 
         command.execute(context, request);
         verify(cpanelService, times(0)).licenseRelease(request.virtualMachine.hfsVmId);
+    }
+
+    @Test
+    public void destroyVmCpanelCheckLicenseErrorTest() throws Exception {
+        // The actual error comes back as a 422, which client error exception can't
+        // map.  vmHasCpanelLicense will catch all ClientErrorExceptions
+        when(cpanelService.getLicenseFromDb(eq(request.virtualMachine.hfsVmId))).
+                thenThrow(new ClientErrorException(Response.Status.EXPECTATION_FAILED));
+        when(virtualMachineService.virtualMachineHasCpanel(vm.vmId)).thenReturn(true);
+        CPanelAction action = new CPanelAction();
+        action.status = CPanelAction.Status.COMPLETE;
+
+        command.execute(context, request);
+        verify(cpanelService, times(0)).licenseRelease(request.virtualMachine.hfsVmId);
+
     }
 
     @Test

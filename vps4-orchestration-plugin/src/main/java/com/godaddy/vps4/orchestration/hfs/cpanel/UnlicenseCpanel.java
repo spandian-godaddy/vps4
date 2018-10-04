@@ -9,6 +9,8 @@ import gdg.hfs.vhfs.cpanel.CPanelService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.ws.rs.ClientErrorException;
+
 public class UnlicenseCpanel implements Command<Long, Void> {
 
     private CPanelService cpanelService;
@@ -26,13 +28,21 @@ public class UnlicenseCpanel implements Command<Long, Void> {
             logger.warn("No license for vm {} found.", hfsVmId);
             return null;
         }
-        CPanelAction action = context.execute("Unlicense-Cpanel", ctx -> {
-            return cpanelService.licenseRelease(hfsVmId);
-        }, CPanelAction.class);
+        CPanelAction action = context.execute("Unlicense-Cpanel",
+                ctx -> cpanelService.licenseRelease(hfsVmId),
+                CPanelAction.class);
         context.execute(WaitForCpanelAction.class, action);
         return null;
     }
     private boolean vmHasCpanelLicense(Long hfsVmId){
-        return cpanelService.getLicenseFromDb(hfsVmId).licensedIp != null;
+        try {
+            return cpanelService.getLicenseFromDb(hfsVmId).licensedIp != null;
+        }
+        catch(ClientErrorException e){
+            // The only cases of exceptions we've seen is when hfs can't find an ip associated with
+            // the VM.  They then throw a 422 (VM does not have a resource ID associated with it)
+            logger.warn("Exception returned when checking for cpanel db license: {}", e);
+            return false;
+        }
     }
 }
