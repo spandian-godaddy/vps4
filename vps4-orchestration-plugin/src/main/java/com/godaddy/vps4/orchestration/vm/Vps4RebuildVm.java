@@ -107,7 +107,7 @@ public class Vps4RebuildVm extends ActionCommand<Vps4RebuildVm.Request, Vps4Rebu
         refreshCpanelLicense();
 
         updateServerDetails(request);
-        setEcommCommonName(oldVm.orionGuid, oldVm.name);
+        setEcommCommonName(oldVm.orionGuid, request.rebuildVmInfo.serverName);
 
         // remove any support users on the old vm (or in the db)
         removeSupportUsers(vps4VmId);
