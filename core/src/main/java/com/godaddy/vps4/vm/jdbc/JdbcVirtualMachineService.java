@@ -26,6 +26,7 @@ import com.godaddy.vps4.vm.ServerType;
 import com.godaddy.vps4.vm.VirtualMachine;
 import com.godaddy.vps4.vm.VirtualMachineService;
 import com.godaddy.vps4.vm.VirtualMachineType;
+import org.apache.commons.lang3.StringUtils;
 
 public class JdbcVirtualMachineService implements VirtualMachineService {
 
@@ -114,10 +115,11 @@ public class JdbcVirtualMachineService implements VirtualMachineService {
     }
 
     protected IpAddress mapIpAddress(ResultSet rs) throws SQLException {
-        long ipAddressId = rs.getLong("ip_address_id");
-        if (ipAddressId == 0) {
+        String ip = rs.getString("ip_address");
+        if (StringUtils.isEmpty(ip)){
             return null;
         }
+
         return IpAddressMapper.mapIpAddress(rs);
     }
 
