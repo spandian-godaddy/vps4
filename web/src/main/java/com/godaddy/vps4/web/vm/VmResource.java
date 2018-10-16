@@ -32,6 +32,7 @@ import com.godaddy.vps4.snapshot.SnapshotService;
 import com.godaddy.vps4.snapshot.SnapshotStatus;
 import com.godaddy.vps4.vm.Action;
 import com.godaddy.vps4.vm.ServerSpec;
+import com.godaddy.vps4.vm.ServerType;
 import org.apache.commons.lang3.StringUtils;
 import org.json.simple.JSONObject;
 import org.slf4j.Logger;
@@ -278,10 +279,12 @@ public class VmResource {
         // delete all snapshots associated with the VM
         destroyVmSnapshots(vmId);
 
+        String destroyMethod = vm.spec.serverType.serverType == ServerType.Type.DEDICATED ? "Vps4DestroyDedicated" : "Vps4DestroyVm";
+
         VmActionRequest destroyRequest = new VmActionRequest();
         destroyRequest.virtualMachine = vm;
         VmAction deleteAction = createActionAndExecute(actionService, commandService, vm.vmId,
-                ActionType.DESTROY_VM, destroyRequest, "Vps4DestroyVm", user);
+                ActionType.DESTROY_VM, destroyRequest, destroyMethod, user);
 
         creditService.unclaimVirtualMachineCredit(vm.orionGuid);
         virtualMachineService.setVmRemoved(vm.vmId);
