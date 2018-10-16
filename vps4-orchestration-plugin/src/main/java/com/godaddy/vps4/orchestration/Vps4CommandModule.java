@@ -17,6 +17,7 @@ import com.godaddy.vps4.orchestration.vm.UnlicenseControlPanel;
 import com.godaddy.vps4.orchestration.vm.Vps4AddIpAddress;
 import com.godaddy.vps4.orchestration.vm.Vps4CancelAction;
 import com.godaddy.vps4.orchestration.vm.Vps4DeleteAllScheduledJobsForVm;
+import com.godaddy.vps4.orchestration.vm.Vps4DestroyDedicated;
 import com.godaddy.vps4.orchestration.vm.Vps4DestroyIpAddress;
 import com.godaddy.vps4.orchestration.vm.Vps4DestroyIpAddressAction;
 import com.godaddy.vps4.orchestration.vm.Vps4DestroyVm;
@@ -46,6 +47,7 @@ public class Vps4CommandModule extends AbstractModule {
         bind(Vps4SetHostname.class);
         bind(Vps4TestCommand.class);
         bind(Vps4DestroyVm.class);
+        bind(Vps4DestroyDedicated.class);
         bind(Vps4StartVm.class);
         bind(Vps4StopVm.class);
         bind(Vps4RestartVm.class);
