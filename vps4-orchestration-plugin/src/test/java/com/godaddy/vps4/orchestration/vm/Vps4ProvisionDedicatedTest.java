@@ -9,6 +9,7 @@ import com.godaddy.vps4.orchestration.hfs.cpanel.ConfigureCpanel;
 import com.godaddy.vps4.orchestration.hfs.network.AllocateIp;
 import com.godaddy.vps4.orchestration.hfs.network.BindIp;
 import com.godaddy.vps4.orchestration.hfs.plesk.ConfigurePlesk;
+import com.godaddy.vps4.orchestration.hfs.sysadmin.AddUser;
 import com.godaddy.vps4.orchestration.hfs.sysadmin.SetHostname;
 import com.godaddy.vps4.orchestration.hfs.sysadmin.SetPassword;
 import com.godaddy.vps4.orchestration.hfs.sysadmin.ToggleAdmin;
@@ -70,6 +71,7 @@ public class Vps4ProvisionDedicatedTest {
     Vps4MessagingService messagingService = mock(Vps4MessagingService.class);
     CreditService creditService = mock(CreditService.class);
     ConfigureCpanel configureCpanel = mock(ConfigureCpanel.class);
+    AddUser addUser = mock(AddUser.class);
 
     Vps4ProvisionDedicated command = new Vps4ProvisionDedicated(actionService, vmService,
             virtualMachineService, vmUserService, networkService, nodePingService,
@@ -92,6 +94,7 @@ public class Vps4ProvisionDedicatedTest {
         binder.bind(CreditService.class).toInstance(creditService);
         binder.bind(SetPassword.class).toInstance(setPassword);
         binder.bind(ConfigureCpanel.class).toInstance(configureCpanel);
+        binder.bind(AddUser.class).toInstance(addUser);
     });
 
     CommandContext context = new TestCommandContext(new GuiceCommandProvider(injector));
@@ -178,11 +181,20 @@ public class Vps4ProvisionDedicatedTest {
         command.execute(context, this.request);
         verify(vmUserService, times(1)).updateUserAdminAccess(username, vmId, false);
     }
+
     @Test
     public void provisionVmTestPleskUserDoesntHaveAdminAccess() throws Exception {
         this.image.controlPanel = ControlPanel.PLESK;
         command.execute(context, this.request);
         verify(vmUserService, times(1)).updateUserAdminAccess(username, vmId, false);
+    }
+
+    @Test
+    public void provisionServerTestUserAdded() {
+        this.image.controlPanel = ControlPanel.MYH;
+        command.execute(context, this.request);
+        verify(addUser, times(1)).execute(any(CommandContext.class), any(AddUser.Request.class));
+        verify(vmUserService, times(1)).createUser(request.username, request.vmInfo.vmId);
     }
 
     @Test

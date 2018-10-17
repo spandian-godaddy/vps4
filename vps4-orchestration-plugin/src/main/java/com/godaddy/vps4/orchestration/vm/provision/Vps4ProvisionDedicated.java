@@ -10,6 +10,7 @@ import com.godaddy.vps4.orchestration.hfs.cpanel.ConfigureCpanel;
 import com.godaddy.vps4.orchestration.hfs.cpanel.ConfigureCpanel.ConfigureCpanelRequest;
 import com.godaddy.vps4.orchestration.hfs.plesk.ConfigurePlesk;
 import com.godaddy.vps4.orchestration.hfs.plesk.ConfigurePlesk.ConfigurePleskRequest;
+import com.godaddy.vps4.orchestration.hfs.sysadmin.AddUser;
 import com.godaddy.vps4.orchestration.hfs.sysadmin.SetHostname;
 import com.godaddy.vps4.orchestration.hfs.sysadmin.SetPassword;
 import com.godaddy.vps4.orchestration.hfs.sysadmin.ToggleAdmin;
@@ -174,20 +175,34 @@ public class Vps4ProvisionDedicated extends ActionCommand<ProvisionRequest, Vps4
     }
 
     private void setupUsers(long hfsVmId) {
-        // associate the server with the user that created it
+        addUserToServer(hfsVmId);
+        addUserToVps4();
+        setLinuxRootPassword(hfsVmId);
+    }
+
+    private void addUserToServer(long hfsVmId) {
+        AddUser.Request addUserRequest = new AddUser.Request();
+        addUserRequest.hfsVmId = hfsVmId;
+        addUserRequest.username = request.username;
+        addUserRequest.encryptedPassword = request.encryptedPassword;
+        context.execute(AddUser.class, addUserRequest);
+    }
+
+    private void addUserToVps4() {
         context.execute("CreateVps4User", ctx -> {
             vmUserService.createUser(request.username, request.vmInfo.vmId);
             return null;
         }, Void.class);
+    }
 
-        // set the root password to the same as the user password (LINUX ONLY)
+
+    private void setLinuxRootPassword(long hfsVmId) {
         VirtualMachine vm = virtualMachineService.getVirtualMachine(request.vmInfo.vmId);
         if (vm.image.operatingSystem == Image.OperatingSystem.LINUX) {
             SetPassword.Request setRootPasswordRequest = ProvisionHelper.createSetRootPasswordRequest(hfsVmId, request.encryptedPassword);
             context.execute(SetPassword.class, setRootPasswordRequest);
         }
     }
-
     private long createServer() {
         setStep(RequestingServer);
         CreateVm.Request createVmRequest = ProvisionHelper.getCreateVmRequest(request, hostname);
