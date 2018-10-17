@@ -21,6 +21,7 @@ import com.godaddy.vps4.orchestration.hfs.sysadmin.ToggleAdmin;
 import com.godaddy.vps4.orchestration.hfs.vm.CreateVm;
 import com.godaddy.vps4.orchestration.hfs.vm.DestroyVm;
 import com.godaddy.vps4.orchestration.hfs.vm.WaitForVmAction;
+import com.godaddy.vps4.orchestration.sysadmin.ConfigureMailRelay;
 import com.godaddy.vps4.vm.ActionService;
 import com.godaddy.vps4.vm.Image;
 import com.godaddy.vps4.vm.RebuildVmInfo;
@@ -30,6 +31,7 @@ import com.godaddy.vps4.vm.VirtualMachineService;
 import com.godaddy.vps4.vm.VmUser;
 import com.godaddy.vps4.vm.VmUserService;
 import com.godaddy.vps4.vm.VmUserType;
+import com.godaddy.vps4.orchestration.sysadmin.ConfigureMailRelay.ConfigureMailRelayRequest;
 import com.google.inject.Inject;
 import gdg.hfs.orchestration.CommandContext;
 import gdg.hfs.orchestration.CommandMetadata;
@@ -45,8 +47,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
-
-import static com.godaddy.vps4.vm.RebuildVmStep.RebuildComplete;
 
 @CommandMetadata(
         name="Vps4RebuildVm",
@@ -104,6 +104,7 @@ public class Vps4RebuildVm extends ActionCommand<Vps4RebuildVm.Request, Vps4Rebu
         configureControlPanel(newHfsVmId);
         setHostname(newHfsVmId);
         configureAdminUser(newHfsVmId);
+        configureMailRelay(newHfsVmId);
         refreshCpanelLicense();
 
         updateServerDetails(request);
@@ -114,10 +115,21 @@ public class Vps4RebuildVm extends ActionCommand<Vps4RebuildVm.Request, Vps4Rebu
         // delete the old vm
         deleteOldVm(oldHfsVmId);
 
-        setStep(RebuildComplete);
+        setStep(RebuildVmStep.RebuildComplete);
 
         logger.info("Completed VM Rebuild.");
         return null;
+    }
+
+    private void configureMailRelay(long hfsVmId) {
+        setStep(RebuildVmStep.ConfigureMailRelay);
+
+        String controlPanel = request.rebuildVmInfo.image.controlPanel.equals(Image.ControlPanel.MYH) ? null
+                : request.rebuildVmInfo.image.controlPanel.name().toLowerCase();
+
+        ConfigureMailRelayRequest configureMailRelayRequest = new ConfigureMailRelayRequest(hfsVmId, controlPanel);
+        context.execute(ConfigureMailRelay.class, configureMailRelayRequest);
+
     }
 
     private void updateServerDetails(Request request) {

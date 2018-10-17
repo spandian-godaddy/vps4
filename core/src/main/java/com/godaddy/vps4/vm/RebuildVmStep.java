@@ -14,6 +14,7 @@ public enum RebuildVmStep {
     VerifyingSetup,
     ConfiguringCPanel,
     ConfiguringPlesk,
+    ConfigureMailRelay,
     SetHostname,
     SetupAutomaticBackupSchedule,
     RebuildComplete,

@@ -13,6 +13,7 @@ import com.godaddy.vps4.orchestration.hfs.sysadmin.SetPassword;
 import com.godaddy.vps4.orchestration.hfs.sysadmin.ToggleAdmin;
 import com.godaddy.vps4.orchestration.hfs.vm.CreateVm;
 import com.godaddy.vps4.orchestration.hfs.vm.DestroyVm;
+import com.godaddy.vps4.orchestration.sysadmin.ConfigureMailRelay;
 import com.godaddy.vps4.orchestration.vm.Vps4RebuildVm;
 import com.godaddy.vps4.project.Project;
 import com.godaddy.vps4.project.ProjectService;
@@ -98,6 +99,7 @@ public class Vps4RebuildVmTest {
     @Captor private ArgumentCaptor<CreateVm.Request> createVmRequestArgumentCaptor;
     @Captor private ArgumentCaptor<SetPassword.Request> setPasswordArgumentCaptor;
     @Captor private ArgumentCaptor<ToggleAdmin.Request> toggleAdminArgumentCaptor;
+    @Captor private ArgumentCaptor<ConfigureMailRelay.ConfigureMailRelayRequest> configMTAArgumentCaptor;
     @Captor private ArgumentCaptor<UnbindIp.Request> unbindIpArgumentCaptor;
     @Captor private ArgumentCaptor<RefreshCpanelLicense.Request> refreshLicenseCaptor;
     @Captor private ArgumentCaptor<ConfigureCpanel.ConfigureCpanelRequest> configureCpanelRequestArgumentCaptor;
@@ -334,6 +336,25 @@ public class Vps4RebuildVmTest {
         Assert.assertEquals(username, request.username);
         Assert.assertEquals(hfsNewVmId, request.vmId);
         Assert.assertFalse(request.enabled);
+    }
+
+    @Test
+    public void configuresMailRelayWithNullControlPanel() {
+        command.execute(context, request);
+        verify(context, times(1)).execute(eq(ConfigureMailRelay.class), configMTAArgumentCaptor.capture());
+        ConfigureMailRelay.ConfigureMailRelayRequest mtaReq = configMTAArgumentCaptor.getValue();
+
+        Assert.assertNull(mtaReq.controlPanel);
+    }
+
+    @Test
+    public void configuresMailRelayWithcPanel() {
+        request.rebuildVmInfo.image.controlPanel= Image.ControlPanel.CPANEL;
+        command.execute(context, request);
+        verify(context, times(1)).execute(eq(ConfigureMailRelay.class), configMTAArgumentCaptor.capture());
+        ConfigureMailRelay.ConfigureMailRelayRequest mtaReq = configMTAArgumentCaptor.getValue();
+
+        Assert.assertEquals(Image.ControlPanel.CPANEL.toString().toLowerCase(), mtaReq.controlPanel);
     }
 
     @Test
