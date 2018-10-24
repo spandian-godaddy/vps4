@@ -9,6 +9,7 @@ import static org.mockito.Mockito.when;
 import java.lang.reflect.Method;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
@@ -66,6 +67,7 @@ public class VmActionResourceTest {
     private UriInfo uri = mock(UriInfo.class);
     private CommandService commandService = mock(CommandService.class);
     private CommandState commandState = mock(CommandState.class);
+    private List<String> emptyList = new ArrayList<>();
 
     @Inject Vps4UserService userService;
     @Inject DataSource dataSource;
@@ -204,14 +206,13 @@ public class VmActionResourceTest {
         Assert.assertEquals(true, vmAction.isRequesterEmployee);
     }
 
-
     @Test
     public void testShopperListActions() {
         VirtualMachine vm = createTestVm(user.getShopperId());
         Action action1 = createTestVmAction(vm.vmId, ActionType.CREATE_VM);
         Action action2 = createTestVmAction(vm.vmId, ActionType.STOP_VM);
 
-        List<VmAction> vmActions = getVmActionResource().getActions(vm.vmId, 10, 0, null, null, uri).results;
+        List<VmAction> vmActions = getVmActionResource().getVmActionList(vm.vmId, emptyList, emptyList, null, null, 10, 0, uri).results;
         Assert.assertEquals(2, vmActions.size());
 
         List<UUID> commandIds = vmActions.stream().map(a -> a.commandId).collect(Collectors.toList());
@@ -225,14 +226,14 @@ public class VmActionResourceTest {
         createTestVmAction(vm.vmId, ActionType.CREATE_VM);
 
         user = GDUserMock.createShopper("shopperX");
-        getVmActionResource().getActions(vm.vmId, 10, 0, null, null, uri);
+        getVmActionResource().getVmActionList(vm.vmId, emptyList, emptyList, null, null, 10, 0, uri);
     }
 
     @Test
     public void testNoActionsListActions() {
         VirtualMachine vm = createTestVm(user.getShopperId());
 
-        List<VmAction> vmActions = getVmActionResource().getActions(vm.vmId, 10, 0, null, null, uri).results;
+        List<VmAction> vmActions = getVmActionResource().getVmActionList(vm.vmId, emptyList, emptyList, null, null, 10, 0, uri).results;
         Assert.assertTrue(vmActions.isEmpty());
     }
 
@@ -242,22 +243,22 @@ public class VmActionResourceTest {
         Action action = createTestVmAction(vm.vmId, ActionType.CREATE_VM);
 
         user = GDUserMock.createAdmin();
-        List<VmAction> vmActions = getVmActionResource().getActions(vm.vmId, 10, 0, null, null, uri).results;
+        List<VmAction> vmActions = getVmActionResource().getVmActionList(vm.vmId, emptyList, emptyList, null, null, 10, 0, uri).results;
         Assert.assertEquals(vmActions.get(0).commandId, action.commandId);
     }
 
     @Test
     public void testGetActionListWithStatusFilter() {
         VirtualMachine vm = createTestVm(user.getShopperId());
-        createTestVmAction(vm.vmId, ActionType.CREATE_VM);
-        List<String> statusList = Arrays.asList("NEW");
+        Action action = createTestVmAction(vm.vmId, ActionType.CREATE_VM);
+        List<String> statusList = Arrays.asList("COMPLETE");
 
-        List<VmAction> vmActions = getVmActionResource().getActions(vm.vmId, 10, 0, statusList, null, uri).results;
+        List<VmAction> vmActions = getVmActionResource().getVmActionList(vm.vmId, statusList, emptyList, null, null, 10, 0, uri).results;
+        Assert.assertEquals(0, vmActions.size());
+
+        actionService.completeAction(action.id, null, null);
+        vmActions = getVmActionResource().getVmActionList(vm.vmId, statusList, emptyList, null, null, 10, 0, uri).results;
         Assert.assertEquals(1, vmActions.size());
-
-        statusList = Arrays.asList("COMPLETE");
-        vmActions = getVmActionResource().getActions(vm.vmId, 10, 0, statusList, null, uri).results;
-        Assert.assertTrue(vmActions.isEmpty());
     }
 
     @Test
@@ -266,8 +267,9 @@ public class VmActionResourceTest {
         createTestVmAction(vm.vmId, ActionType.CREATE_VM);
         createTestVmAction(vm.vmId, ActionType.START_VM);
         createTestVmAction(vm.vmId, ActionType.STOP_VM);
+        List<String> typeList = Arrays.asList("CREATE_VM");
 
-        List<VmAction> vmActions = getVmActionResource().getActions(vm.vmId, 10, 0, null, ActionType.CREATE_VM, uri).results;
+        List<VmAction> vmActions = getVmActionResource().getVmActionList(vm.vmId, emptyList, typeList, null, null, 10, 0, uri).results;
         Assert.assertEquals(1, vmActions.size());
         Assert.assertEquals(ActionType.CREATE_VM, vmActions.get(0).type);
     }

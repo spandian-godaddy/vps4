@@ -1,85 +1,107 @@
 package com.godaddy.vps4.web.action;
 
-import com.godaddy.vps4.jdbc.ResultSubset;
-import com.godaddy.vps4.vm.Action;
-import com.godaddy.vps4.vm.ActionService;
-import com.godaddy.vps4.vm.ActionStatus;
-import com.godaddy.vps4.vm.ActionType;
-import com.godaddy.vps4.web.Vps4Exception;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
+import static org.mockito.Matchers.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
+import java.time.Duration;
+import java.time.Instant;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.UUID;
+import java.util.stream.Collectors;
+
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
+import org.mockito.ArgumentCaptor;
 
-import java.time.Instant;
-import java.time.temporal.ChronoUnit;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.UUID;
-
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
+import com.godaddy.vps4.jdbc.ResultSubset;
+import com.godaddy.vps4.vm.Action;
+import com.godaddy.vps4.vm.ActionService;
+import com.godaddy.vps4.vm.ActionService.ActionListFilters;
+import com.godaddy.vps4.vm.ActionStatus;
+import com.godaddy.vps4.vm.ActionType;
+import com.godaddy.vps4.web.Vps4Exception;
 
 public class ActionResourceTest {
 
 
     private ActionService actionService = mock(ActionService.class);
     private ActionResource actionResource;
+    private List<String> emptyList = new ArrayList<>();
+    private ArgumentCaptor<ActionListFilters> argument = ArgumentCaptor.forClass(ActionListFilters.class);
 
     @Before
     public void setup() {
         actionResource = new ActionResource(actionService);
+        when(actionService.getActionList(any())).thenReturn(null);
     }
 
     @Test
-    public void testGetVmActionsEmpty() {
-        ResultSubset<Action> emptyResultSet = new ResultSubset<>(new ArrayList<>(), 0);
-        when(actionService.getActions(null, 100, 0, new ArrayList<>(), null, null, null)).thenReturn(emptyResultSet);
-        List<Action> actions = actionResource.getVmActions(null, null, 100, 0, null, null, null);
+    public void testGetVmActionListEmpty() {
+        List<Action> actions = actionResource.getVmActionList(null, emptyList, emptyList, null, null, 10, 0);
         Assert.assertEquals(0, actions.size());
     }
 
-    private ResultSubset<Action> getTestResultSet(long size, ActionType actionType, ActionStatus actionStatus) {
-        return getTestResultSet(size, actionType, actionStatus, new ArrayList<>());
-    }
+    @Test
+    public void testGetVmActionListNonEmpty() {
+        List<Action> testActions = Arrays.asList(mock(Action.class));
+        when(actionService.getActionList(any())).thenReturn(new ResultSubset<Action>(testActions, 1));
 
-    private ResultSubset<Action> getTestResultSet(long size, ActionType actionType, ActionStatus actionStatus, List<Action> testActions) {
-        for(long i = 0; i < size; i++) {
-            Action action = new Action(i, UUID.randomUUID(), actionType, null, null, null,
-                    actionStatus, Instant.now().minus(10, ChronoUnit.MINUTES), Instant.now(), null,
-                    UUID.randomUUID(), "tester");
-            testActions.add(action);
-        }
-        return new ResultSubset<>(testActions, testActions.size());
+        List<Action> actions = actionResource.getVmActionList(null, emptyList, emptyList, null, null, 10, 0);
+        Assert.assertEquals(1, actions.size());
     }
 
     @Test
-    public void testGetVmActionsNullParams() {
-        ResultSubset<Action> resultSubset = getTestResultSet(20, ActionType.CREATE_VM, ActionStatus.ERROR);
-        when(actionService.getActions(null, 100, 0, new ArrayList<>(), null, null, null)).thenReturn(resultSubset);
-        List<Action> actions = actionResource.getVmActions(null, null, 100, 0, null, null, null);
-        Assert.assertEquals(resultSubset.totalRows, actions.size());
+    public void testGetVmActionListNoFilters() {
+        actionResource.getVmActionList(null, emptyList, emptyList, null, null, 10, 0);
+        verify(actionService, times(1)).getActionList(argument.capture());
+
+        ActionListFilters actionFilters = argument.getValue();
+        assertNull(actionFilters.getVmId());
+        assertEquals(emptyList, actionFilters.getStatusList());
+        assertEquals(emptyList, actionFilters.getTypeList());
+        assertNull(actionFilters.getStart());
+        assertNull(actionFilters.getEnd());
+        assertEquals(10, actionFilters.getLimit());
+        assertEquals(0, actionFilters.getOffset());
     }
 
     @Test
-    public void testGetVmActions() {
-        ResultSubset<Action> resultSubset = getTestResultSet(20, ActionType.CREATE_VM, ActionStatus.ERROR);
-
+    public void testGetVmActionListWithFilters() {
         UUID testVmId = UUID.randomUUID();
-        ActionStatus testStatus = ActionStatus.ERROR;
-        Instant testBeginDate = Instant.now().minus(1, ChronoUnit.DAYS);
-        Instant testEndDate = Instant.now();
-        ActionType testActionType = ActionType.CREATE_VM;
+        List<String> testStatusList = Arrays.asList(ActionStatus.ERROR.toString(), ActionStatus.COMPLETE.toString());
+        List<String> testTypeList = Arrays.asList(ActionType.CREATE_VM.toString(), ActionType.DESTROY_VM.toString());
+        Instant testBeginDate = Instant.now().minus(Duration.ofHours(1));
+        Instant testEndDate = Instant.now().plus(Duration.ofHours(1));
+        long testLimit = 100;
+        long testOffset = 10;
 
-        List<String> listOfStatus = new ArrayList<>();
-        listOfStatus.add(testStatus.toString());
+        actionResource.getVmActionList(testVmId, testStatusList, testTypeList,
+                testBeginDate.toString(), testEndDate.toString(), testLimit, testOffset);
+        verify(actionService, times(1)).getActionList(argument.capture());
 
-        when(actionService.getActions(testVmId, 100, 0, listOfStatus, testBeginDate, testEndDate, testActionType)).thenReturn(resultSubset);
-        List<Action> actions = actionResource.getVmActions(testVmId, testActionType, 100, 0, testStatus, testBeginDate.toString(), testEndDate.toString());
-        Assert.assertEquals(resultSubset.totalRows, actions.size());
+        List<ActionStatus> expectedStatusList = testStatusList.stream().map(s -> ActionStatus.valueOf(s)).collect(Collectors.toList());
+        List<ActionType> expectedTypeList = testTypeList.stream().map(t -> ActionType.valueOf(t)).collect(Collectors.toList());
+
+        ActionListFilters actionFilters = argument.getValue();
+        assertEquals(testVmId, actionFilters.getVmId());
+        assertEquals(expectedStatusList, actionFilters.getStatusList());
+        assertEquals(expectedTypeList, actionFilters.getTypeList());
+        assertEquals(testBeginDate, actionFilters.getStart());
+        assertEquals(testEndDate, actionFilters.getEnd());
+        assertEquals(testLimit, actionFilters.getLimit());
+        assertEquals(testOffset, actionFilters.getOffset());
     }
 
     @Test(expected = Vps4Exception.class)
-    public void testGetVmActionsInvalidDate() {
-        actionResource.getVmActions(null, null, 100, 0, null, "hello", null);
+    public void testGetVmActionListInvalidDate() {
+        actionResource.getVmActionList(null, emptyList, emptyList, "not-a-date", null, 10, 0);
     }
 }

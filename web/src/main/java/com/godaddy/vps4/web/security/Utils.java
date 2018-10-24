@@ -12,7 +12,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public abstract class Utils {
-    private static final String VM_URI_PATTERN = "/api/vms/(?<vmid>[0-9a-f-]+)/?.*";
+    private static final String VM_URI_PATTERN = "/api/vms/(?<vmid>[0-9a-f-]+)(/.*)?";
     public static final Pattern vmPatternMatcher = Pattern.compile(VM_URI_PATTERN);
 
     // Jax-rs Request context property names
@@ -79,18 +79,22 @@ public abstract class Utils {
             this.family = Response.Status.Family.familyOf(statusCode);
         }
 
+        @Override
         public Response.Status.Family getFamily() {
             return this.family;
         }
 
+        @Override
         public int getStatusCode() {
             return this.code;
         }
 
+        @Override
         public String getReasonPhrase() {
             return this.toString();
         }
 
+        @Override
         public String toString() {
             return this.reason;
         }

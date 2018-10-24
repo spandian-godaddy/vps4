@@ -1,5 +1,9 @@
 package com.godaddy.vps4.web.vm;
 
+import static com.godaddy.vps4.web.util.RequestValidation.validateAndReturnDateInstant;
+import static com.godaddy.vps4.web.util.RequestValidation.validateAndReturnEnumValue;
+
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -28,6 +32,7 @@ import com.godaddy.vps4.security.PrivilegeService;
 import com.godaddy.vps4.security.Vps4UserService;
 import com.godaddy.vps4.vm.Action;
 import com.godaddy.vps4.vm.ActionService;
+import com.godaddy.vps4.vm.ActionService.ActionListFilters;
 import com.godaddy.vps4.vm.ActionStatus;
 import com.godaddy.vps4.vm.ActionType;
 import com.godaddy.vps4.vm.VmAction;
@@ -79,25 +84,40 @@ public class VmActionResource {
 
     @GET
     @Path("{vmId}/actions")
-    public PaginatedResult<VmAction> getActions(
+    public PaginatedResult<VmAction> getVmActionList(
         @PathParam("vmId") UUID vmId,
-        @DefaultValue("10") @QueryParam("limit") long limit,
-        @DefaultValue("0") @QueryParam("offset") long offset,
-        @ApiParam(value = "A list of status to filter the actions by. This parameter is incompatible with 'actionType'", required = false) @QueryParam("status") List<String> status,
-        @ApiParam(value = "A type of action to filter the actions by. This parameter is incompatible with 'status'", required = false) @QueryParam("actionType") ActionType actionType,
+        @ApiParam(value = "A list of status to filter the actions.") @QueryParam("status") List<String> statusList,
+        @ApiParam(value = "A list of actions to filter the actions.") @QueryParam("action") List<String> typeList,
+        @ApiParam(value = "begin date in UTC, Example: 2007-12-03T10:15:30.00Z") @QueryParam("beginDate") String beginDate,
+        @ApiParam(value = "end date in UTC, Example: 2007-12-03T10:15:30.00Z") @QueryParam("endDate") String endDate,
+        @ApiParam(value = "the maximum number of actions to return") @DefaultValue("10") @QueryParam("limit") long limit,
+        @ApiParam(value = "the number of actions to offset from the most recent") @DefaultValue("0") @QueryParam("offset") long offset,
         @Context UriInfo uri) {
 
         if (user.isShopper())
             RequestValidation.verifyUserPrivilegeToVm(userService, privilegeService, user.getShopperId(), vmId);
 
-        ResultSubset<Action> actions;
-        // For now we will support listing by either actionType or actionStatus but not both
-        if (actionType != null) {
-            actions = actionService.getActions(vmId, limit, offset, actionType);
-        }
-        else {
-            actions = actionService.getActions(vmId, limit, offset, status);
-        }
+        Instant start = validateAndReturnDateInstant(beginDate);
+        Instant end = validateAndReturnDateInstant(endDate);
+
+        List<ActionStatus> enumStatusList = statusList.stream()
+                .map(s -> validateAndReturnEnumValue(ActionStatus.class, s))
+                .collect(Collectors.toList());
+
+        List<ActionType> enumTypeList = typeList.stream()
+                .map(t -> validateAndReturnEnumValue(ActionType.class, t))
+                .collect(Collectors.toList());
+
+
+        ActionListFilters actionFilters = new ActionListFilters();
+        actionFilters.byVmId(vmId);
+        actionFilters.byStatus(enumStatusList);
+        actionFilters.byType(enumTypeList);
+        actionFilters.byDateRange(start, end);
+        actionFilters.setLimit(limit);
+        actionFilters.setOffset(offset);
+
+        ResultSubset<Action> actions = actionService.getActionList(actionFilters);
 
         long totalRows = 0;
         List<VmAction> vmActionList = new ArrayList<>();

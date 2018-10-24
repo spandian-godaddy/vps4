@@ -3,16 +3,28 @@ package com.godaddy.vps4.web.appmonitors;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.logging.XMLFormatter;
 import java.util.stream.Collectors;
 
-import javax.ws.rs.*;
+import javax.ws.rs.Consumes;
+import javax.ws.rs.DELETE;
+import javax.ws.rs.DefaultValue;
+import javax.ws.rs.GET;
+import javax.ws.rs.POST;
+import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
+import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
 
-import com.godaddy.vps4.appmonitors.*;
+import com.godaddy.vps4.appmonitors.BackupJobAuditData;
+import com.godaddy.vps4.appmonitors.MonitorService;
+import com.godaddy.vps4.appmonitors.MonitoringCheckpoint;
+import com.godaddy.vps4.appmonitors.SnapshotActionData;
+import com.godaddy.vps4.appmonitors.VmActionData;
 import com.godaddy.vps4.jdbc.ResultSubset;
 import com.godaddy.vps4.vm.Action;
 import com.godaddy.vps4.vm.ActionService;
+import com.godaddy.vps4.vm.ActionService.ActionListFilters;
 import com.godaddy.vps4.vm.ActionStatus;
 import com.godaddy.vps4.vm.ActionType;
 import com.godaddy.vps4.web.Vps4Api;
@@ -126,12 +138,19 @@ public class VmActionsMonitorResource {
     @GET
     @Path("/failedActionsPercent")
     public List<ActionTypeErrorData> getFailedActionsForAllTypes(
-            @ApiParam(value = "The number of actions to use in the percentage calculation.", required = true) @QueryParam("windowSize") long windowSize) {
+            @ApiParam(value = "Number of actions to use in percentage calculation.") @DefaultValue("10") @QueryParam("windowSize") long windowSize) {
         List<ActionTypeErrorData> result = new ArrayList<>();
+        ActionListFilters actionFilters = new ActionListFilters();
+        actionFilters.setLimit(windowSize);
+
         for(ActionType type : ActionType.values()) {
             MonitoringCheckpoint checkpoint = monitorService.getMonitoringCheckpoint(type);
             Instant beginDate = checkpoint == null ? null : checkpoint.checkpoint;
-            ResultSubset<Action> resultSubset = actionService.getActions(null, windowSize, 0, new ArrayList<>(), beginDate, null, type);
+
+            actionFilters.byDateRange(beginDate, null);
+            actionFilters.byType(type);
+
+            ResultSubset<Action> resultSubset = actionService.getActionList(actionFilters);
             List<Action> actions = resultSubset==null?new ArrayList<>():resultSubset.results;
             List<Action> errors = actions.stream().filter(a -> a.status==ActionStatus.ERROR).collect(Collectors.toList());
 

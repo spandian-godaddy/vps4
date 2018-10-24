@@ -29,7 +29,7 @@ public class TroubleshootVmHelper {
         try {
             InetAddress inetAddr = this.getInetAddress(ipAddress);
             InetSocketAddress socketAddress = new InetSocketAddress(inetAddr, port);
-            s.connect(socketAddress, ONE_SECOND);;
+            s.connect(socketAddress, ONE_SECOND);
             return true;
         } catch (IOException ex) {
             logger.info("Port {}:{} is not available", ipAddress, port, ex);

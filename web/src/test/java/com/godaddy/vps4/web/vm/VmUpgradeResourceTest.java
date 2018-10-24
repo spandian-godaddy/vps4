@@ -1,27 +1,35 @@
 package com.godaddy.vps4.web.vm;
 
-import com.godaddy.hfs.config.Config;
-import com.godaddy.vps4.credit.CreditService;
-import com.godaddy.vps4.credit.VirtualMachineCredit;
-import com.godaddy.vps4.jdbc.ResultSubset;
-import com.godaddy.vps4.security.GDUserMock;
-import com.godaddy.vps4.util.Cryptography;
-import com.godaddy.vps4.vm.*;
-import com.godaddy.vps4.web.Vps4Exception;
-import com.godaddy.vps4.web.security.GDUser;
-import com.godaddy.vps4.web.vm.VmUpgradeResource.UpgradeVmRequest;
-import gdg.hfs.orchestration.CommandService;
-import gdg.hfs.orchestration.CommandState;
-import org.junit.Before;
-import org.junit.Test;
-import org.mockito.Matchers;
+import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.anyLong;
+import static org.mockito.Matchers.anyObject;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 import java.time.Instant;
 import java.util.UUID;
 
-import static org.mockito.Matchers.*;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
+import org.junit.Before;
+import org.junit.Test;
+
+import com.godaddy.hfs.config.Config;
+import com.godaddy.vps4.credit.CreditService;
+import com.godaddy.vps4.credit.VirtualMachineCredit;
+import com.godaddy.vps4.security.GDUserMock;
+import com.godaddy.vps4.util.Cryptography;
+import com.godaddy.vps4.vm.AccountStatus;
+import com.godaddy.vps4.vm.Action;
+import com.godaddy.vps4.vm.ActionService;
+import com.godaddy.vps4.vm.ActionStatus;
+import com.godaddy.vps4.vm.ActionType;
+import com.godaddy.vps4.vm.VirtualMachine;
+import com.godaddy.vps4.vm.VirtualMachineService;
+import com.godaddy.vps4.web.Vps4Exception;
+import com.godaddy.vps4.web.security.GDUser;
+import com.godaddy.vps4.web.vm.VmUpgradeResource.UpgradeVmRequest;
+
+import gdg.hfs.orchestration.CommandService;
+import gdg.hfs.orchestration.CommandState;
 
 public class VmUpgradeResourceTest {
 
@@ -65,8 +73,7 @@ public class VmUpgradeResourceTest {
         when(commandService.executeCommand(anyObject())).thenReturn(new CommandState());
         when(virtualMachineService.getVirtualMachine(testVm.vmId)).thenReturn(testVm);
 
-        when(actionService.getActions(Matchers.eq(testVm.vmId), Matchers.eq(-1), Matchers.eq(0), anyList()))
-                .thenReturn(new ResultSubset<Action>(null, 0));
+        when(actionService.getActionList(any())).thenReturn(null);
 
         Action testAction = new Action(123L, testVm.vmId, ActionType.UPGRADE_VM, null, null, null,
                 ActionStatus.COMPLETE, Instant.now(), Instant.now(), null, UUID.randomUUID(), null);

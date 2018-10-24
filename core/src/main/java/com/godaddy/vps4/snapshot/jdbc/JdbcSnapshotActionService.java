@@ -103,27 +103,7 @@ public class JdbcSnapshotActionService implements ActionService {
     }
 
     @Override
-    public ResultSubset<Action> getActions(UUID snapshotId, long limit, long offset){
-        throw new UnsupportedOperationException("Not implemented, yet");
-    }
-
-    @Override
-    public ResultSubset<Action> getActions(UUID snapshotId, long limit, long offset, ActionType actionType){
-        throw new UnsupportedOperationException("Not implemented, yet");
-    }
-
-    @Override
-    public ResultSubset<Action> getActions(UUID snapshotId, long limit, long offset, List<String> statusList){
-        throw new UnsupportedOperationException("Not implemented, yet");
-    }
-
-    @Override
-    public ResultSubset<Action> getActions(UUID snapshotId, long limit, long offset, List<String> statusList, Instant beginDate, Instant endDate){
-        throw new UnsupportedOperationException("Not implemented, yet");
-    }
-
-    @Override
-    public ResultSubset<Action> getActions(UUID resourceId, long limit, long offset, List<String> statusList, Instant beginDate, Instant endDate, ActionType actionType) {
+    public ResultSubset<Action> getActionList(ActionListFilters actionFilters) {
         throw new UnsupportedOperationException("Not implemented, yet");
     }
 

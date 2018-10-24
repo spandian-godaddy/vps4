@@ -4,90 +4,84 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 
-import java.sql.Date;
-import java.sql.Timestamp;
 import java.time.Duration;
 import java.time.Instant;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.UUID;
 
 import javax.sql.DataSource;
 
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
+
 import com.godaddy.vps4.jdbc.DatabaseModule;
 import com.godaddy.vps4.jdbc.ResultSubset;
 import com.godaddy.vps4.phase2.SqlTestData;
-import com.godaddy.vps4.security.Vps4User;
-import com.godaddy.vps4.security.Vps4UserService;
-import com.godaddy.vps4.security.jdbc.JdbcVps4UserService;
 import com.godaddy.vps4.vm.Action;
 import com.godaddy.vps4.vm.ActionService;
+import com.godaddy.vps4.vm.ActionService.ActionListFilters;
 import com.godaddy.vps4.vm.ActionStatus;
 import com.godaddy.vps4.vm.ActionType;
 import com.godaddy.vps4.vm.VirtualMachine;
 import com.godaddy.vps4.vm.jdbc.JdbcVmActionService;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
 
 
 public class ActionServiceTest {
 
     private ActionService actionService;
-    private Vps4UserService vps4UserService;
     private Injector injector = Guice.createInjector(new DatabaseModule());
-    
+
     private UUID orionGuid = UUID.randomUUID();
     private DataSource dataSource;
     private VirtualMachine vm;
     private VirtualMachine vm1;
     private VirtualMachine vm2;
-    private Vps4User vps4User;
-    
+
     @Before
     public void setupService() {
         dataSource = injector.getInstance(DataSource.class);
         actionService = new JdbcVmActionService(dataSource);
-        vps4UserService = new JdbcVps4UserService(dataSource);
         vm = SqlTestData.insertTestVm(orionGuid, dataSource);
         vm1 = SqlTestData.insertTestVm(orionGuid, dataSource);
         vm2 = SqlTestData.insertTestVm(orionGuid, dataSource);
-        vps4User = vps4UserService.getOrCreateUserForShopper("FakeShopper", "1");
     }
-    
+
     @After
     public void cleanup() {
-        
         SqlTestData.cleanupTestVmAndRelatedData(vm.vmId, dataSource);
         SqlTestData.cleanupTestVmAndRelatedData(vm1.vmId, dataSource);
         SqlTestData.cleanupTestVmAndRelatedData(vm2.vmId, dataSource);
-        SqlTestData.deleteVps4User(vps4User.getId(), dataSource);
     }
 
-    private long getNumberOfExistingActions(ResultSubset<Action> actions){
+    private long getNumberOfExistingActions(ResultSubset<Action> actions) {
         long numberOfExistingActions = 0;
         if (actions != null){
             numberOfExistingActions = actions.results.size();
         }
         return numberOfExistingActions;
     }
-    
+
     @Test
-    public void testGetAllActionsForVmId(){
-        ResultSubset<Action> actions = actionService.getActions(vm.vmId, 100, 0, null, null, null);
+    public void testGetAllActionsForVmId() {
+        ActionListFilters actionFilters = new ActionListFilters();
+        actionFilters.byVmId(vm.vmId);
+
+        ResultSubset<Action> actions = actionService.getActionList(actionFilters);
         long numberOfExistingActions = getNumberOfExistingActions(actions);
 
         actionService.createAction(vm.vmId, ActionType.CREATE_VM, "{}", "tester");
-        
-        actions = actionService.getActions(vm.vmId, 100, 0, null, null, null);
+
+        actions = actionService.getActionList(actionFilters);
         assertEquals(numberOfExistingActions + 1, actions.results.size());
     }
 
     @Test
-    public void testGetAllActions(){
-        ResultSubset<Action> actions = actionService.getActions(null, 1000, 0, null, null, null, null);
+    public void testGetAllActions() {
+        ActionListFilters actionFilters = new ActionListFilters();
+
+        ResultSubset<Action> actions = actionService.getActionList(actionFilters);
         long numberOfExistingActions = getNumberOfExistingActions(actions);
 
         actionService.createAction(vm.vmId, ActionType.CREATE_VM, "{}", "tester");
@@ -95,105 +89,150 @@ public class ActionServiceTest {
         actionService.createAction(vm2.vmId, ActionType.CREATE_VM, "{}", "tester");
         actionService.createAction(vm.vmId, ActionType.CREATE_VM, "{}", "tester");
 
-        actions = actionService.getActions(null, 1000, 0, null, null, null, null);
+        actions = actionService.getActionList(actionFilters);
         assertEquals(numberOfExistingActions + 4, actions.results.size());
     }
 
     @Test
-    public void testGetAllActionsByType(){
-        ResultSubset<Action> actions = actionService.getActions(null, 1000, 0, null, null, null, ActionType.CREATE_VM);
+    public void testGetAllActionsByType() {
+        ActionListFilters actionFilters = new ActionListFilters();
+        actionFilters.byType(ActionType.CREATE_VM, ActionType.STOP_VM);
+
+        ResultSubset<Action> actions = actionService.getActionList(actionFilters);
         long numberOfExistingActions = getNumberOfExistingActions(actions);
 
         actionService.createAction(vm.vmId, ActionType.CREATE_VM, "{}", "tester");
         actionService.createAction(vm1.vmId, ActionType.STOP_VM, "{}", "tester");
-        actionService.createAction(vm2.vmId, ActionType.START_VM, "{}", "tester");
-        actionService.createAction(vm.vmId, ActionType.CREATE_VM, "{}", "tester");
+        actionService.createAction(vm2.vmId, ActionType.CREATE_VM, "{}", "tester");
+        actionService.createAction(vm.vmId, ActionType.START_VM, "{}", "tester");
 
-        actions = actionService.getActions(null, 1000, 0, null, null, null, ActionType.CREATE_VM);
-        assertEquals(numberOfExistingActions + 2, actions.results.size());
+        actions = actionService.getActionList(actionFilters);
+        assertEquals(numberOfExistingActions + 3, actions.results.size());
     }
 
     @Test
-    public void testGetActionsByTypeForVmId(){
-        ResultSubset<Action> actions = actionService.getActions(vm.vmId, 100, 0, ActionType.CREATE_VM);
+    public void testGetAllActionsByStatus() {
+        ActionListFilters actionFilters = new ActionListFilters();
+        actionFilters.byStatus(ActionStatus.NEW);
+
+        ResultSubset<Action> actions = actionService.getActionList(actionFilters);
+        long numberOfExistingActions = getNumberOfExistingActions(actions);
+
+        actionService.createAction(vm.vmId, ActionType.CREATE_VM, "{}", "tester");
+        actionService.createAction(vm1.vmId, ActionType.STOP_VM, "{}", "tester");
+        actionService.createAction(vm2.vmId, ActionType.CREATE_VM, "{}", "tester");
+        actionService.createAction(vm.vmId, ActionType.START_VM, "{}", "tester");
+
+        actions = actionService.getActionList(actionFilters);
+        assertEquals(numberOfExistingActions + 4, actions.results.size());
+    }
+
+    @Test
+    public void testGetActionsByTypeForVmId() {
+        ActionListFilters actionFilters = new ActionListFilters();
+        actionFilters.byVmId(vm.vmId);
+        actionFilters.byType(ActionType.CREATE_VM);
+
+        ResultSubset<Action> actions = actionService.getActionList(actionFilters);
         long numberOfExistingActions = getNumberOfExistingActions(actions);
 
         actionService.createAction(vm.vmId, ActionType.CREATE_VM, "{}", "tester");
         actionService.createAction(vm.vmId, ActionType.STOP_VM, "{}", "tester");
         actionService.createAction(vm.vmId, ActionType.START_VM, "{}", "tester");
 
-        actions = actionService.getActions(vm.vmId, 100, 0, ActionType.CREATE_VM);
+        actions = actionService.getActionList(actionFilters);
         assertEquals(numberOfExistingActions + 1, actions.results.size());
     }
 
     @Test
-    public void testGetActionsInDateRange(){
-        SqlTestData.createActionWithDate(vm.vmId, ActionType.SET_HOSTNAME, Timestamp.from(Instant.now().minus(Duration.ofHours(12))), vps4User.getId(), dataSource);
-        ResultSubset<Action> actions = actionService.getActions(vm.vmId, 100, 0, null, null, null);
+    public void testGetActionsInDateRange() {
+        Instant before = Instant.now().minus(Duration.ofMinutes(1));
+        actionService.createAction(vm.vmId, ActionType.SET_HOSTNAME, "{}", "tester");
+        Instant after = Instant.now().plus(Duration.ofMinutes(1));
+
+        ActionListFilters actionFilters = new ActionListFilters();
+        actionFilters.byVmId(vm.vmId);
+        actionFilters.byDateRange(before, after);
+
+        ResultSubset<Action> actions = actionService.getActionList(actionFilters);
         assertEquals(1, actions.results.size());
-        
-        // action created 1 hour before start filter
-        actions = actionService.getActions(vm.vmId, 100, 0, null, Instant.now().minus(Duration.ofHours(11)), null);
+
+        actionFilters.byDateRange(before, null);
+        actions = actionService.getActionList(actionFilters);
+        assertEquals(1, actions.results.size());
+
+        actionFilters.byDateRange(null, after);
+        actions = actionService.getActionList(actionFilters);
+        assertEquals(1, actions.results.size());
+
+        // No actions in range, date range ends before action
+        actionFilters.byDateRange(null, before);
+        actions = actionService.getActionList(actionFilters);
         assertEquals(null, actions);
-        
-        // action created 1 hour after start filter
-        actions = actionService.getActions(vm.vmId, 100, 0, null, Instant.now().minus(Duration.ofHours(13)), null);
-        assertEquals(1, actions.results.size());
-        
-        // action created 1 hour after start filter, 1 hour before end filter
-        actions = actionService.getActions(vm.vmId, 100, 0, null, Instant.now().minus(Duration.ofHours(13)), Instant.now().minus(Duration.ofHours(11)));
-        assertEquals(1, actions.results.size());
-        
-        // action created  1 hour after end filter
-        actions = actionService.getActions(vm.vmId, 100, 0, null, null, Instant.now().minus(Duration.ofHours(13)));
+
+        // No actions in range, date range starts after action
+        actionFilters.byDateRange(after, null);
+        actions = actionService.getActionList(actionFilters);
         assertEquals(null, actions);
-        
-        // action created  1 hour before end filter
-        actions = actionService.getActions(vm.vmId, 100, 0, null, null, Instant.now().minus(Duration.ofHours(11)));
-        assertEquals(1, actions.results.size());
     }
-    
+
     @Test
-    public void testStatusList(){
-        
-        SqlTestData.createActionWithDate(vm.vmId, ActionType.SET_HOSTNAME, Timestamp.from(Instant.now().minus(Duration.ofHours(12))), vps4User.getId(), dataSource);
-        
-        ResultSubset<Action> actions = actionService.getActions(vm.vmId, 100, 0);
+    public void testGetActionsByStatus() {
+        actionService.createAction(vm.vmId, ActionType.SET_HOSTNAME, "{}", "tester");
+
+        ActionListFilters actionFilters = new ActionListFilters();
+        actionFilters.byVmId(vm.vmId);
+        actionFilters.byStatus(ActionStatus.NEW);
+
+        ResultSubset<Action> actions = actionService.getActionList(actionFilters);
         assertEquals(1, actions.results.size());
-        
+
         Action action = actions.results.get(0);
         actionService.completeAction(action.id, null, null);
-        
-        actions = actionService.getActions(vm.vmId, 100, 0);
-        
-        List<String> statusList = new ArrayList<String>();
-        statusList.add(ActionStatus.COMPLETE.toString());
-        
-        actions = actionService.getActions(vm.vmId, 100, 0, statusList);
+
+        actionFilters.byStatus(ActionStatus.COMPLETE);
+        actions = actionService.getActionList(actionFilters);
         assertEquals(1, actions.results.size());
-        
-        statusList.remove(ActionStatus.COMPLETE.toString());
-        statusList.add(ActionStatus.NEW.toString());
-        
-        actions = actionService.getActions(vm.vmId, 100, 0, statusList);
-        assertEquals(null, actions);
     }
 
     @Test
-    public void testCompleteActionPopulatesCompletedColumn(){
-        SqlTestData.createActionWithDate(vm.vmId, ActionType.SET_HOSTNAME, Timestamp.from(Instant.now().minus(Duration.ofHours(12))), vps4User.getId(), dataSource);
+    public void testCompleteActionPopulatesCompletedColumn() {
+        actionService.createAction(vm.vmId, ActionType.SET_HOSTNAME, "{}", "tester");
 
-        ResultSubset<Action> actions = actionService.getActions(vm.vmId, 100, 0);
-        assertEquals(1, actions.results.size());
+        ActionListFilters actionFilters = new ActionListFilters();
+        actionFilters.byVmId(vm.vmId);
+
+        ResultSubset<Action> actions = actionService.getActionList(actionFilters);
         Action testAction = actions.results.get(0);
         assertNull(testAction.completed);
 
         actionService.completeAction(testAction.id, "{}", "");
 
-        actions = actionService.getActions(vm.vmId, 100, 0);
-        assertEquals(1, actions.results.size());
+        actions = actionService.getActionList(actionFilters);
         testAction = actions.results.get(0);
         assertNotNull(testAction.completed);
     }
-    
+
+    @Test
+    public void testGetActionsWithLimitAndOffset() {
+        ActionListFilters actionFilters = new ActionListFilters();
+        actionFilters.byVmId(vm.vmId);
+
+        actionService.createAction(vm.vmId, ActionType.CREATE_VM, "{}", "tester");
+        actionService.createAction(vm.vmId, ActionType.STOP_VM, "{}", "tester");
+        actionService.createAction(vm.vmId, ActionType.START_VM, "{}", "tester");
+
+        ResultSubset<Action> actions = actionService.getActionList(actionFilters);
+        assertEquals(3, actions.results.size());
+
+        actionFilters.setLimit(2);
+        actions = actionService.getActionList(actionFilters);
+        assertEquals(2, actions.results.size());
+
+        actionFilters.setOffset(2);
+        actionFilters.toString();
+        actions = actionService.getActionList(actionFilters);
+        assertEquals(1, actions.results.size());
+        assertEquals(ActionType.CREATE_VM, actions.results.get(0).type); // order by created desc
+    }
 }

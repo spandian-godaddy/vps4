@@ -1,7 +1,7 @@
 package com.godaddy.vps4.web.util;
 
 import java.time.Instant;
-import java.util.ArrayList;
+import java.time.format.DateTimeParseException;
 import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
@@ -23,6 +23,8 @@ import com.godaddy.vps4.util.validators.Validator;
 import com.godaddy.vps4.util.validators.ValidatorRegistry;
 import com.godaddy.vps4.vm.Action;
 import com.godaddy.vps4.vm.ActionService;
+import com.godaddy.vps4.vm.ActionService.ActionListFilters;
+import com.godaddy.vps4.vm.ActionStatus;
 import com.godaddy.vps4.vm.ActionType;
 import com.godaddy.vps4.vm.DataCenter;
 import com.godaddy.vps4.vm.DataCenterService;
@@ -32,6 +34,7 @@ import com.godaddy.vps4.web.Vps4Exception;
 import com.godaddy.vps4.web.Vps4NoShopperException;
 import com.godaddy.vps4.web.security.GDUser;
 import com.godaddy.vps4.web.security.GDUser.Role;
+
 import gdg.hfs.vhfs.vm.Vm;
 
 public class RequestValidation {
@@ -51,12 +54,10 @@ public class RequestValidation {
     public static void validateNoConflictingActions(UUID vmId,
                                                     ActionService actionService,
                                                     ActionType... conflictingActions) {
-        List<String> actionList = new ArrayList<>();
-        actionList.add("NEW");
-        actionList.add("IN_PROGRESS");
-        ResultSubset<Action> currentActions = actionService.getActions(
-                vmId, -1, 0, actionList
-        );
+        ActionListFilters actionFilters = new ActionListFilters();
+        actionFilters.byStatus(ActionStatus.NEW, ActionStatus.IN_PROGRESS);
+        actionFilters.byVmId(vmId);
+        ResultSubset<Action> currentActions = actionService.getActionList(actionFilters);
 
         if (currentActions != null) {
             long numOfConflictingActions = currentActions.results.stream()
@@ -239,6 +240,26 @@ public class RequestValidation {
                                                 UUID vmId, UUID snapshotId){
         if (!snapshotService.getSnapshot(snapshotId).vmId.equals(vmService.getVirtualMachine(vmId).vmId)){
             throw new Vps4Exception("SNAPSHOT_NOT_FROM_VM", "Snapshot is not from the vm");
+        }
+    }
+
+    public static Instant validateAndReturnDateInstant(String dateToValidate) {
+        Instant date = null;
+        if(dateToValidate != null) {
+            try {
+                date = Instant.parse(dateToValidate);
+            } catch (DateTimeParseException e) {
+                throw new Vps4Exception("INVALID_PARAMETER", String.format("Date %s has invalid format, use ISO-8601 format such as 2011-12-03T10:15:30Z", dateToValidate));
+            }
+        }
+        return date;
+    }
+
+    public static <E extends Enum<E>> E validateAndReturnEnumValue(Class<E> clazz, String name) {
+        try {
+            return Enum.valueOf(clazz, name);
+        } catch(IllegalArgumentException ex) {
+            throw new Vps4Exception("INVALID_PARAMETER", String.format("%s is an invalid %s", name, clazz.getSimpleName()));
         }
     }
 }

@@ -33,7 +33,7 @@ public class VmActiveSnapshotFilter implements Filter {
 
     private static final Logger logger = LoggerFactory.getLogger(VmActiveSnapshotFilter.class);
 
-    private static final String MATCH_PATTERN = "/api/vms/(?<vmid>[0-9a-f-]+)/?.*";
+    private static final String MATCH_PATTERN = "/api/vms/(?<vmid>[0-9a-f-]+)(/.*)?";
     private static final String EXCLUDE_PATTERN = "/api/vms/(?<vmid>[0-9a-f-]+)/messaging/?.*";
 
     final VirtualMachineService virtualMachineService;

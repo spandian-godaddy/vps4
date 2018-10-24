@@ -1,17 +1,12 @@
 package com.godaddy.vps4.web.appmonitors;
 
-import com.godaddy.vps4.appmonitors.MonitorService;
-import com.godaddy.vps4.appmonitors.MonitoringCheckpoint;
-import com.godaddy.vps4.appmonitors.SnapshotActionData;
-import com.godaddy.vps4.appmonitors.VmActionData;
-import com.godaddy.vps4.jdbc.ResultSubset;
-import com.godaddy.vps4.vm.Action;
-import com.godaddy.vps4.vm.ActionService;
-import com.godaddy.vps4.vm.ActionStatus;
-import com.godaddy.vps4.vm.ActionType;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
+import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.argThat;
+import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
@@ -19,8 +14,21 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
-import static org.mockito.Matchers.*;
-import static org.mockito.Mockito.*;
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.Test;
+import org.mockito.ArgumentMatcher;
+
+import com.godaddy.vps4.appmonitors.MonitorService;
+import com.godaddy.vps4.appmonitors.MonitoringCheckpoint;
+import com.godaddy.vps4.appmonitors.SnapshotActionData;
+import com.godaddy.vps4.appmonitors.VmActionData;
+import com.godaddy.vps4.jdbc.ResultSubset;
+import com.godaddy.vps4.vm.Action;
+import com.godaddy.vps4.vm.ActionService;
+import com.godaddy.vps4.vm.ActionService.ActionListFilters;
+import com.godaddy.vps4.vm.ActionStatus;
+import com.godaddy.vps4.vm.ActionType;
 
 public class VmActionsMonitorResourceTest {
 
@@ -132,8 +140,14 @@ public class VmActionsMonitorResourceTest {
         resultSubset = getTestResultSet(5, ActionType.START_VM, ActionStatus.ERROR, resultSubset.results);
         ResultSubset<Action> emptyResultSet = new ResultSubset<>(new ArrayList<>(), 0);
 
-        when(actionService.getActions(any(UUID.class), anyLong(), anyLong(), any(), any(Instant.class), any(Instant.class), any(ActionType.class))).thenReturn(emptyResultSet);
-        when(actionService.getActions(null, 10, 0, new ArrayList<>(), null, null, ActionType.START_VM)).thenReturn(resultSubset);
+        ArgumentMatcher<ActionListFilters> expectedActionFilters = new ArgumentMatcher<ActionListFilters>() {
+            @Override
+            public boolean matches(Object item) {
+                ActionListFilters actionFilters = (ActionListFilters)item;
+                return actionFilters.getTypeList().get(0).equals(ActionType.START_VM);
+            }
+        };
+        when(actionService.getActionList(argThat(expectedActionFilters))).thenReturn(resultSubset).thenReturn(emptyResultSet);
 
         List<ActionTypeErrorData> errorData = vmActionsMonitorResource.getFailedActionsForAllTypes(10);
         Assert.assertEquals(1, errorData.size());
@@ -153,8 +167,15 @@ public class VmActionsMonitorResourceTest {
 
         when(monitorService.getMonitoringCheckpoint(ActionType.START_VM)).thenReturn(checkpoint);
 
-        when(actionService.getActions(any(UUID.class), anyLong(), anyLong(), any(), any(Instant.class), any(Instant.class), any(ActionType.class))).thenReturn(emptyResultSet);
-        when(actionService.getActions(null, 10, 0, new ArrayList<>(), checkpoint.checkpoint, null, ActionType.START_VM)).thenReturn(resultSubset);
+        ArgumentMatcher<ActionListFilters> expectedActionFilters = new ArgumentMatcher<ActionListFilters>() {
+            @Override
+            public boolean matches(Object item) {
+                ActionListFilters actionFilters = (ActionListFilters)item;
+                return actionFilters.getTypeList().get(0).equals(ActionType.START_VM)
+                        && actionFilters.getStart().equals(checkpoint.checkpoint);
+            }
+        };
+        when(actionService.getActionList(argThat(expectedActionFilters))).thenReturn(resultSubset).thenReturn(emptyResultSet);
 
         List<ActionTypeErrorData> errorData = vmActionsMonitorResource.getFailedActionsForAllTypes(10);
         Assert.assertEquals(1, errorData.size());
@@ -170,8 +191,14 @@ public class VmActionsMonitorResourceTest {
         resultSubset = getTestResultSet(3, ActionType.START_VM, ActionStatus.ERROR, resultSubset.results);
         ResultSubset<Action> emptyResultSet = new ResultSubset<>(new ArrayList<>(), 0);
 
-        when(actionService.getActions(any(UUID.class), anyLong(), anyLong(), any(), any(Instant.class), any(Instant.class), any(ActionType.class))).thenReturn(emptyResultSet);
-        when(actionService.getActions(null, 10, 0, new ArrayList<>(), null, null, ActionType.START_VM)).thenReturn(resultSubset);
+        ArgumentMatcher<ActionListFilters> expectedActionFilters = new ArgumentMatcher<ActionListFilters>() {
+            @Override
+            public boolean matches(Object item) {
+                ActionListFilters actionFilters = (ActionListFilters)item;
+                return actionFilters.getTypeList().get(0).equals(ActionType.START_VM);
+            }
+        };
+        when(actionService.getActionList(argThat(expectedActionFilters))).thenReturn(resultSubset).thenReturn(emptyResultSet);
 
         List<ActionTypeErrorData> errorData = vmActionsMonitorResource.getFailedActionsForAllTypes(10);
         Assert.assertEquals(1, errorData.size());
@@ -184,9 +211,7 @@ public class VmActionsMonitorResourceTest {
 
     @Test
     public void testCheckForFailingActionsEmpty() {
-        ResultSubset<Action> emptyResultSet = null;
-
-        when(actionService.getActions(any(UUID.class), anyLong(), anyLong(), any(), any(Instant.class), any(Instant.class), any(ActionType.class))).thenReturn(emptyResultSet);
+        when(actionService.getActionList(any(ActionListFilters.class))).thenReturn(null);
 
         List<ActionTypeErrorData> errorData = vmActionsMonitorResource.getFailedActionsForAllTypes(10);
         Assert.assertEquals(0, errorData.size());
@@ -233,4 +258,5 @@ public class VmActionsMonitorResourceTest {
 
         verify(monitorService, times(1)).deleteMonitoringCheckpoint(ActionType.CREATE_VM);
     }
+
 }

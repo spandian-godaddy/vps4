@@ -4,14 +4,20 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 import javax.inject.Inject;
 import javax.sql.DataSource;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.godaddy.hfs.jdbc.Sql;
 import com.godaddy.vps4.jdbc.ResultSubset;
@@ -20,8 +26,6 @@ import com.godaddy.vps4.vm.Action;
 import com.godaddy.vps4.vm.ActionService;
 import com.godaddy.vps4.vm.ActionStatus;
 import com.godaddy.vps4.vm.ActionType;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 
 public class JdbcVmActionService implements ActionService {
@@ -62,11 +66,10 @@ public class JdbcVmActionService implements ActionService {
 
     @Override
     public List<Action> getIncompleteActions(UUID vmId) {
-        List<String> statusList = new ArrayList<>();
-        statusList.add(ActionStatus.NEW.toString());
-        statusList.add(ActionStatus.IN_PROGRESS.toString());
-        ResultSubset<Action> result = getActionsHelper(
-            vmId, -1, 0, statusList, null, null, null);
+        ActionListFilters actionFilters = new ActionListFilters();
+        actionFilters.byStatus(ActionStatus.NEW, ActionStatus.IN_PROGRESS);
+        actionFilters.byVmId(vmId);
+        ResultSubset<Action> result = getActionList(actionFilters);
         return result != null ? result.results : new ArrayList<>();
     }
 
@@ -102,33 +105,10 @@ public class JdbcVmActionService implements ActionService {
     }
 
     @Override
-    public ResultSubset<Action> getActions(UUID vmId, long limit, long offset){
-        return getActionsHelper(vmId, limit, offset, null, null, null, null);
-    }
+    public ResultSubset<Action> getActionList(ActionListFilters actionFilters) {
 
-    @Override
-    public ResultSubset<Action> getActions(UUID vmId, long limit, long offset, ActionType actionType){
-        return getActionsHelper(vmId, limit, offset, null, actionType, null, null);
-    }
-
-    @Override
-    public ResultSubset<Action> getActions(UUID vmId, long limit, long offset, List<String> statusList){
-        return getActionsHelper(vmId, limit, offset, statusList, null, null, null);
-    }
-
-    @Override
-    public ResultSubset<Action> getActions(UUID vmId, long limit, long offset, List<String> statusList, Instant beginDate, Instant endDate) {
-        return getActionsHelper(vmId, limit, offset, statusList, null, beginDate, endDate);
-    }
-
-    @Override
-    public ResultSubset<Action> getActions(UUID resourceId, long limit, long offset, List<String> statusList, Instant beginDate, Instant endDate, ActionType actionType) {
-        return getActionsHelper(resourceId, limit, offset, statusList, actionType, beginDate, endDate);
-    }
-
-    private ResultSubset<Action> getActionsHelper(UUID vmId, long limit, long offset, List<String> statusList,
-                                                  ActionType actionType, Instant beginDate, Instant endDate) {
         Map<String, Object> filterParams = new HashMap<>();
+        UUID vmId = actionFilters.getVmId();
         if (vmId != null){
             logger.info("In getActionHelper, vmId: [{}]", vmId);
             filterParams.put("vm_id", vmId);
@@ -147,34 +127,54 @@ public class JdbcVmActionService implements ActionService {
             filterValues.add(pair.getValue());
         }
 
-        buildStatusList(statusList, filterValues, actionsQuery);
-
-        buildActionTypeQuery(actionType, filterValues, actionsQuery);
-
-        buildDateQuery(beginDate, endDate, filterValues, actionsQuery);
+        addStatusFilter(actionFilters.getStatusList(), filterValues, actionsQuery);
+        addActionTypeFilter(actionFilters.getTypeList(), filterValues, actionsQuery);
+        buildDateQuery(actionFilters.getStart(), actionFilters.getEnd(), filterValues, actionsQuery);
 
         actionsQuery.append(" ORDER BY created DESC ");
+        long limit = actionFilters.getLimit();
         if (limit >= 0) {
             logger.info("In getActionHelper, limit: [{}]", limit);
             actionsQuery.append("LIMIT ? ");
             filterValues.add(limit);
         }
-        actionsQuery.append("OFFSET ?;");
-        filterValues.add(offset);
+        long offset = actionFilters.getOffset();
+        if (offset > 0 ) {
+            actionsQuery.append("OFFSET ?;");
+            filterValues.add(offset);
+        }
 
         logger.info("In getActionHelper, Query: [{}]", actionsQuery.toString());
+        logger.info("In getActionHelper, filter values: ({})", filterValues.toString());
         return Sql.with(dataSource).exec(actionsQuery.toString(),
                 Sql.nextOrNull(this::mapActionWithTotal),
                 filterValues.toArray());
     }
 
-    private void buildActionTypeQuery(ActionType actionType, ArrayList<Object> filterValues,
-                                      StringBuilder actionsQuery) {
-        if (actionType != null){
-            logger.info("In getActionHelper, action type: [{}]", actionType.name());
-            actionsQuery.append(" and action_type.type = ?");
-            filterValues.add(actionType.name());
-        }
+    private void addActionTypeFilter(List<ActionType> typeList, ArrayList<Object> filterValues, StringBuilder actionsQuery) {
+        if (typeList.isEmpty())
+            return;
+
+        logger.info("In getActionHelper, action list: [{}]", typeList);
+        String whereInClause = " AND action_type.type IN (%s)";
+        List<String> paramaterizedTokens = typeList.stream().map(t -> "?").collect(Collectors.toList());
+        whereInClause = String.format(whereInClause, String.join(",", paramaterizedTokens));
+
+        filterValues.addAll(typeList.stream().map(t -> t.toString()).collect(Collectors.toList()));
+        actionsQuery.append(whereInClause);
+    }
+
+    private void addStatusFilter(List<ActionStatus> statusList, ArrayList<Object> filterValues, StringBuilder actionsQuery) {
+        if (statusList.isEmpty())
+            return;
+
+        logger.info("In getActionHelper, action list: [{}]", statusList);
+        String whereInClause = " AND action_status.status IN (%s)";
+        List<String> paramaterizedTokens = statusList.stream().map(t -> "?").collect(Collectors.toList());
+        whereInClause = String.format(whereInClause, String.join(",", paramaterizedTokens));
+
+        filterValues.addAll(statusList.stream().map(s -> s.toString()).collect(Collectors.toList()));
+        actionsQuery.append(whereInClause);
     }
 
     private void buildDateQuery(Instant beginDate, Instant endDate,
@@ -182,33 +182,12 @@ public class JdbcVmActionService implements ActionService {
         if (beginDate != null){
             logger.info("In getActionHelper, begin date: [{}]", beginDate);
             actionsQuery.append(" and created >= ?");
-            filterValues.add(Timestamp.from(beginDate));
+            filterValues.add(LocalDateTime.ofInstant(beginDate, ZoneOffset.UTC));
         }
         if (endDate != null){
             logger.info("In getActionHelper, end date: [{}]", endDate);
             actionsQuery.append(" and created <= ?");
-            filterValues.add(Timestamp.from(endDate));
-        }
-    }
-
-    private void buildStatusList(List<String> statusList,
-            ArrayList<Object> filterValues, StringBuilder actionsQuery) {
-        if (statusList != null && !statusList.isEmpty())
-        {
-            logger.info("In getActionHelper, status list: [{}]", statusList);
-            actionsQuery.append(" and (");
-            boolean first = true;
-            for(String status : statusList){
-                if(first){
-                    actionsQuery.append("action_status.status = ? ");
-                    first = false;
-                }
-                else{
-                    actionsQuery.append(" OR action_status.status = ? ");
-                }
-                filterValues.add(status);
-            }
-            actionsQuery.append(")");
+            filterValues.add(LocalDateTime.ofInstant(endDate, ZoneOffset.UTC));
         }
     }
 
