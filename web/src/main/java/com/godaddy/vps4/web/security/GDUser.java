@@ -8,7 +8,7 @@ import java.util.Arrays;
 public class GDUser {
     // Role that this user is assigned in the Vps4 app
     public enum Role {
-        ADMIN, CUSTOMER, EMPLOYEE_OTHER, HS_AGENT, HS_LEAD
+        ADMIN, CUSTOMER, EMPLOYEE_OTHER, HS_AGENT, HS_LEAD, LEGAL
     };
 
     SsoToken token;

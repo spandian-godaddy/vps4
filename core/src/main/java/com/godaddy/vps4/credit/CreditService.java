@@ -5,6 +5,7 @@ import java.util.Map;
 import java.util.UUID;
 
 import com.godaddy.vps4.credit.ECommCreditService.ProductMetaField;
+import com.godaddy.vps4.vm.AccountStatus;
 
 public interface CreditService {
 
@@ -23,9 +24,11 @@ public interface CreditService {
 
     void setCommonName(UUID orionGuid, String newName);
 
-    public void updateProductMeta(UUID orionGuid, Map<ProductMetaField, String> updates);
+    void updateProductMeta(UUID orionGuid, Map<ProductMetaField, String> updates);
 
     void updateProductMeta(UUID orionGuid, ProductMetaField field, String value);
 
     Map<ProductMetaField, String> getProductMeta(UUID orionGuid);
+
+    void setStatus(UUID orionGuid, AccountStatus accountStatus);
 }

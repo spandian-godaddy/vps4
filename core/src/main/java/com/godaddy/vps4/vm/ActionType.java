@@ -30,8 +30,9 @@ public enum ActionType {
     CANCEL_ACCOUNT(21),
     RESTORE_ACCOUNT(22),
     UPGRADE_VM(23),
-    REBUILD_VM(24);
-
+    REBUILD_VM(24),
+    ABUSE_SUSPEND(25),
+    REINSTATE(26);
 
     private final int typeId;
 

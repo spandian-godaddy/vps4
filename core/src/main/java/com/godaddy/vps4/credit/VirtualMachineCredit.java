@@ -83,6 +83,9 @@ public class VirtualMachineCredit {
         return managedLevel == FULLY_MANAGED_LEVEL;
     }
 
+    @JsonIgnore
+    public boolean isAccountActive() { return accountStatus == AccountStatus.ACTIVE; }
+
     @Override
     public String toString() {
         return ReflectionToStringBuilder.toString(this, ToStringStyle.SHORT_PREFIX_STYLE);

@@ -247,4 +247,28 @@ public class ECommCreditService implements CreditService {
 
         ecommService.updateProductMetadata(orionGuid.toString(), prodMeta);
     }
+
+    @Override
+    public void setStatus(UUID orionGuid, AccountStatus accountStatus) {
+        Account account = ecommService.getAccount(orionGuid.toString());
+
+        account.status = getEcommAccountStatus(accountStatus);
+        logger.info("Updating status for credit {} to {}", orionGuid, accountStatus.toString().toLowerCase());
+        ecommService.updateAccount(orionGuid.toString(), account);
+    }
+
+    private Account.Status getEcommAccountStatus(AccountStatus accountStatus) {
+        switch (accountStatus) {
+            case ACTIVE:
+                return Account.Status.active;
+            case SUSPENDED:
+                return Account.Status.suspended;
+            case ABUSE_SUSPENDED:
+                return Account.Status.abuse_suspended;
+            case REMOVED:
+                return Account.Status.removed;
+        }
+        throw new IllegalArgumentException("Account status " + accountStatus.toString()
+                + " does not have a corresponding status in the ECommCreditService.");
+    }
 }

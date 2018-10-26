@@ -16,6 +16,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
+import com.godaddy.vps4.vm.AccountStatus;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
@@ -271,5 +272,13 @@ public class ECommCreditServiceTest {
         when(ecommService.getAccount(orionGuid.toString())).thenReturn(account);
         Map<ProductMetaField, String> productMeta = creditService.getProductMeta(orionGuid);
         assertEquals(account.product_meta.get(ProductMetaField.PRODUCT_ID.toString()), productMeta.get(ProductMetaField.PRODUCT_ID));
+    }
+
+    @Test
+    public void setStatusTest() {
+        when(ecommService.getAccount(orionGuid.toString())).thenReturn(account);
+        creditService.setStatus(orionGuid, AccountStatus.ABUSE_SUSPENDED);
+        account.status = Account.Status.abuse_suspended;
+        verify(ecommService).updateAccount(orionGuid.toString(), account);
     }
 }

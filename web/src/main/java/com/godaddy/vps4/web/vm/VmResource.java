@@ -136,7 +136,7 @@ public class VmResource {
         VirtualMachine virtualMachine = virtualMachineService.getVirtualMachine(vmId);
 
         validateVmExists(vmId, virtualMachine, user);
-        logger.info(String.format("VM valid until: %s | %s", virtualMachine.validUntil, Instant.now()));
+        logger.debug(String.format("VM valid until: %s | %s", virtualMachine.validUntil, Instant.now()));
 
         if (user.isShopper())
             getAndValidateUserAccountCredit(creditService, virtualMachine.orionGuid, user.getShopperId());

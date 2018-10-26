@@ -24,6 +24,7 @@ public class SsoRequestAuthenticator implements RequestAuthenticator<GDUser> {
     private final String VPS4_TEAM = "Dev-VPS4";
     private final String C3_HOSTING_SUPPORT = "C3-Hosting Support";
     private final String C3_HOSTING_SUPPORT_LEAD = "HS_techleads";
+    private final String LEGAL = "fs-Legal_IP_Claims";
 
     private final SsoTokenExtractor tokenExtractor;
 
@@ -119,6 +120,8 @@ public class SsoRequestAuthenticator implements RequestAuthenticator<GDUser> {
         } else if (groups.contains(C3_HOSTING_SUPPORT)) {
             gdUser.isStaff = true;
             gdUser.role = Role.HS_AGENT;
+        } else if (groups.contains(LEGAL)) {
+            gdUser.role = Role.LEGAL;
         } else {
             gdUser.role = Role.EMPLOYEE_OTHER;
         }

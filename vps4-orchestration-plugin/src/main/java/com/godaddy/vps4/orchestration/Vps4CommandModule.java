@@ -14,6 +14,7 @@ import com.godaddy.vps4.orchestration.sysadmin.Vps4SetHostname;
 import com.godaddy.vps4.orchestration.sysadmin.Vps4SetPassword;
 import com.godaddy.vps4.orchestration.sysadmin.Vps4ToggleAdmin;
 import com.godaddy.vps4.orchestration.vm.UnlicenseControlPanel;
+import com.godaddy.vps4.orchestration.vm.Vps4AbuseSuspendVm;
 import com.godaddy.vps4.orchestration.vm.Vps4AddIpAddress;
 import com.godaddy.vps4.orchestration.vm.Vps4CancelAction;
 import com.godaddy.vps4.orchestration.vm.Vps4DeleteAllScheduledJobsForVm;
@@ -22,8 +23,6 @@ import com.godaddy.vps4.orchestration.vm.Vps4DestroyIpAddress;
 import com.godaddy.vps4.orchestration.vm.Vps4DestroyIpAddressAction;
 import com.godaddy.vps4.orchestration.vm.Vps4DestroyVm;
 import com.godaddy.vps4.orchestration.vm.Vps4PlanChange;
-import com.godaddy.vps4.orchestration.vm.provision.Vps4ProvisionVm;
-import com.godaddy.vps4.orchestration.vm.provision.Vps4ProvisionDedicated;
 import com.godaddy.vps4.orchestration.vm.Vps4RebuildVm;
 import com.godaddy.vps4.orchestration.vm.Vps4RecordScheduledJobForVm;
 import com.godaddy.vps4.orchestration.vm.Vps4RemoveSupportUsersFromDatabase;
@@ -32,8 +31,10 @@ import com.godaddy.vps4.orchestration.vm.Vps4RestoreVm;
 import com.godaddy.vps4.orchestration.vm.Vps4ReviveZombieVm;
 import com.godaddy.vps4.orchestration.vm.Vps4StartVm;
 import com.godaddy.vps4.orchestration.vm.Vps4StopVm;
-import com.godaddy.vps4.orchestration.vm.Vps4UpgradeVm;
 import com.godaddy.vps4.orchestration.vm.Vps4TestCommand;
+import com.godaddy.vps4.orchestration.vm.Vps4UpgradeVm;
+import com.godaddy.vps4.orchestration.vm.provision.Vps4ProvisionVm;
+import com.godaddy.vps4.orchestration.vm.provision.Vps4ProvisionDedicated;
 import com.google.inject.AbstractModule;
 
 public class Vps4CommandModule extends AbstractModule {
@@ -74,5 +75,6 @@ public class Vps4CommandModule extends AbstractModule {
         bind(WaitForMessageComplete.class);
         bind(Vps4CancelAction.class);
         bind(Vps4UpgradeVm.class);
+        bind(Vps4AbuseSuspendVm.class);
     }
 }
