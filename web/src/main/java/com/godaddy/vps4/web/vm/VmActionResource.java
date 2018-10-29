@@ -87,7 +87,7 @@ public class VmActionResource {
     public PaginatedResult<VmAction> getVmActionList(
         @PathParam("vmId") UUID vmId,
         @ApiParam(value = "A list of status to filter the actions.") @QueryParam("status") List<String> statusList,
-        @ApiParam(value = "A list of actions to filter the actions.") @QueryParam("action") List<String> typeList,
+        @ApiParam(value = "A list of actions to filter the actions.") @QueryParam("actionType") List<String> typeList,
         @ApiParam(value = "begin date in UTC, Example: 2007-12-03T10:15:30.00Z") @QueryParam("beginDate") String beginDate,
         @ApiParam(value = "end date in UTC, Example: 2007-12-03T10:15:30.00Z") @QueryParam("endDate") String endDate,
         @ApiParam(value = "the maximum number of actions to return") @DefaultValue("10") @QueryParam("limit") long limit,
