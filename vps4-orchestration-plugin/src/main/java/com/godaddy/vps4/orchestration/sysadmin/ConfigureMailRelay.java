@@ -1,5 +1,6 @@
 package com.godaddy.vps4.orchestration.sysadmin;
 
+import com.godaddy.vps4.vm.Image.ControlPanel;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -43,9 +44,10 @@ public class ConfigureMailRelay implements Command<ConfigureMailRelayRequest, Vo
 
         public ConfigureMailRelayRequest(){}
 
-        public ConfigureMailRelayRequest(long vmId, String controlPanel) {
+        public ConfigureMailRelayRequest(long vmId, ControlPanel controlPanel) {
+            String panel = controlPanel.equals(ControlPanel.MYH) ? null : controlPanel.name().toLowerCase();
             this.vmId = vmId;
-            this.controlPanel = controlPanel;
+            this.controlPanel = panel;
         }
 
     }

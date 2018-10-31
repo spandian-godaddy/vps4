@@ -124,10 +124,7 @@ public class Vps4RebuildVm extends ActionCommand<Vps4RebuildVm.Request, Vps4Rebu
     private void configureMailRelay(long hfsVmId) {
         setStep(RebuildVmStep.ConfigureMailRelay);
 
-        String controlPanel = request.rebuildVmInfo.image.controlPanel.equals(Image.ControlPanel.MYH) ? null
-                : request.rebuildVmInfo.image.controlPanel.name().toLowerCase();
-
-        ConfigureMailRelayRequest configureMailRelayRequest = new ConfigureMailRelayRequest(hfsVmId, controlPanel);
+        ConfigureMailRelayRequest configureMailRelayRequest = new ConfigureMailRelayRequest(hfsVmId, request.rebuildVmInfo.image.controlPanel);
         context.execute(ConfigureMailRelay.class, configureMailRelayRequest);
 
     }

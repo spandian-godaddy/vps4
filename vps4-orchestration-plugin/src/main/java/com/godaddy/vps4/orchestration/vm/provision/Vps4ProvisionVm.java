@@ -221,10 +221,7 @@ public class Vps4ProvisionVm extends ActionCommand<ProvisionRequest, Vps4Provisi
     private void configureMailRelay(long hfsVmId) {
         setStep(ConfigureMailRelay);
 
-        String controlPanel = request.vmInfo.image.controlPanel.equals(ControlPanel.MYH) ? null
-                : request.vmInfo.image.controlPanel.name().toLowerCase();
-
-        ConfigureMailRelayRequest configureMailRelayRequest = new ConfigureMailRelayRequest(hfsVmId, controlPanel);
+        ConfigureMailRelayRequest configureMailRelayRequest = new ConfigureMailRelayRequest(hfsVmId, request.vmInfo.image.controlPanel);
         context.execute(ConfigureMailRelay.class, configureMailRelayRequest);
 
     }

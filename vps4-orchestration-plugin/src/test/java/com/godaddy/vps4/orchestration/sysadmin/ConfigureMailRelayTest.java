@@ -5,6 +5,7 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import com.godaddy.vps4.vm.Image.ControlPanel;
 import org.junit.Test;
 
 import com.godaddy.vps4.orchestration.TestCommandContext;
@@ -35,7 +36,7 @@ public class ConfigureMailRelayTest {
 
     @Test
     public void testExecuteConfigMailRelaySuccess() {
-        ConfigureMailRelayRequest request = new ConfigureMailRelayRequest(777L, "cpanel");
+        ConfigureMailRelayRequest request = new ConfigureMailRelayRequest(777L, ControlPanel.CPANEL);
 
         SysAdminAction sysAdminAction = new SysAdminAction();
         sysAdminAction.sysAdminActionId = 123;
@@ -51,7 +52,7 @@ public class ConfigureMailRelayTest {
 
     @Test(expected = RuntimeException.class)
     public void testExecuteConfigMailRelayFail() {
-        ConfigureMailRelayRequest request = new ConfigureMailRelayRequest(777L, "cpanel");
+        ConfigureMailRelayRequest request = new ConfigureMailRelayRequest(777L, ControlPanel.CPANEL);
         
         when(sysAdminService.configureMTA(request.vmId, request.controlPanel)).thenThrow(new RuntimeException("HFS Failed"));
         
