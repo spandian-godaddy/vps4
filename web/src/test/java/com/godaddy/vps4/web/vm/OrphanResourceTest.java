@@ -7,6 +7,8 @@ import com.godaddy.vps4.project.ProjectService;
 import com.godaddy.vps4.snapshot.Snapshot;
 import com.godaddy.vps4.util.MonitoringMeta;
 import com.godaddy.vps4.vm.Image;
+import com.godaddy.vps4.vm.ServerSpec;
+import com.godaddy.vps4.vm.ServerType;
 import com.godaddy.vps4.vm.VirtualMachine;
 import com.godaddy.vps4.web.Vps4Exception;
 import com.godaddy.vps4.web.action.Orphans;
@@ -46,6 +48,8 @@ public class OrphanResourceTest {
     private IpAddress primaryIp;
     private Project project;
 
+    private String SGID = "vps4-unit-test";
+
     @Before
     public void setupTest(){
         vm = new VirtualMachine();
@@ -56,8 +60,13 @@ public class OrphanResourceTest {
         vm.image.controlPanel = Image.ControlPanel.CPANEL;
         vm.hfsVmId = 1234;
 
+        ServerSpec spec = new ServerSpec();
+        spec.serverType = new ServerType();
+        spec.serverType.serverType = ServerType.Type.VIRTUAL;
+        vm.spec = spec;
+
         projectService = mock(ProjectService.class);
-        project = new Project(1111, "test project", "vsp4-unitest", null, null);
+        project = new Project(1111, "test project", SGID, null, null);
         when(projectService.getProject(1111)).thenReturn(project);
 
         vmResource = mock(VmResource.class);
@@ -141,16 +150,16 @@ public class OrphanResourceTest {
 
     @Test
     public void testGetOrphanedIpIpIsDedicated(){
+        vm.spec.serverType.serverType = ServerType.Type.DEDICATED;
         IpAddress ip = getPrimaryIp();
-        ip.ipAddressId = 0;             // IP is dedicated
         vm.primaryIpAddress = ip;
 
         gdg.hfs.vhfs.network.IpAddress hfsIp = new gdg.hfs.vhfs.network.IpAddress();
-        hfsIp.sgid = "vps4-unitest";
+        hfsIp.sgid = SGID;
         when(networkService.getAddress(4545)).thenReturn(hfsIp);
 
         Orphans items = resource.getOrphanedResources(vm.vmId);
-        assertEquals(null, items.ip);
+        assertNull(items.ip);
     }
 
     @Test
@@ -160,7 +169,7 @@ public class OrphanResourceTest {
         vm.primaryIpAddress = ip;
 
         gdg.hfs.vhfs.network.IpAddress hfsIp = new gdg.hfs.vhfs.network.IpAddress();
-        hfsIp.sgid = "vps4-unitest";
+        hfsIp.sgid = SGID;
         when(networkService.getAddress(4545)).thenReturn(hfsIp);
 
         Orphans items = resource.getOrphanedResources(vm.vmId);
@@ -173,7 +182,7 @@ public class OrphanResourceTest {
         vm.primaryIpAddress = ip;
 
         gdg.hfs.vhfs.network.IpAddress hfsIp = new gdg.hfs.vhfs.network.IpAddress();
-        hfsIp.sgid = "vps4-unitest";
+        hfsIp.sgid = SGID;
         when(networkService.getAddress(4545)).thenReturn(null);  //hfs IP is null
         Orphans items = resource.getOrphanedResources(vm.vmId);
         assertEquals(null, items.ip);
@@ -207,7 +216,7 @@ public class OrphanResourceTest {
         vm.primaryIpAddress = ip;
 
         gdg.hfs.vhfs.network.IpAddress hfsIp = new gdg.hfs.vhfs.network.IpAddress();
-        hfsIp.sgid = "vsp4-unitest";
+        hfsIp.sgid = SGID;
         when(networkService.getAddress(4545)).thenReturn(hfsIp);
         Orphans items = resource.getOrphanedResources(vm.vmId);
         assertEquals(hfsIp, items.ip);

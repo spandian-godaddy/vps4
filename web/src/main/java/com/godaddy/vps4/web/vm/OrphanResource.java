@@ -163,7 +163,7 @@ public class OrphanResource {
     }
 
     private void updateOrphanedNodepingAccount(IpAddress primaryIp, Orphans orphans) {
-        if(primaryIp.pingCheckId != null) {
+        if(primaryIp != null && primaryIp.pingCheckId != null) {
             try {
                 NodePingCheck pingCheck = hfsNodepingService.getCheck(monitoringMeta.getAccountId(), primaryIp.pingCheckId);
                 if (pingCheck != null &&
