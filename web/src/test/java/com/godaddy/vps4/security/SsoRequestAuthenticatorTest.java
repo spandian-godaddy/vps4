@@ -8,6 +8,8 @@ import java.util.List;
 
 import javax.servlet.http.HttpServletRequest;
 
+import org.junit.Test;
+
 import com.godaddy.hfs.config.Config;
 import com.godaddy.hfs.sso.SsoTokenExtractor;
 import com.godaddy.hfs.sso.token.IdpSsoToken;
@@ -19,8 +21,8 @@ import com.godaddy.vps4.web.security.GDUser.Role;
 import com.godaddy.vps4.web.security.SsoRequestAuthenticator;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
+
 import junit.framework.Assert;
-import org.junit.Test;
 
 public class SsoRequestAuthenticatorTest {
 
@@ -128,6 +130,20 @@ public class SsoRequestAuthenticatorTest {
         Assert.assertEquals(true, user.isEmployee());
         Assert.assertEquals(true, user.isStaff());
         Assert.assertEquals(Role.HS_AGENT, user.role());
+    }
+
+    @Test
+    public void testLegalRep() {
+        SsoToken token = mockJomaxToken(Collections.singletonList("fs-Legal_IP_Claims"));
+        when(tokenExtractor.extractToken(request)).thenReturn(token);
+
+        GDUser user = authenticator.authenticate(request);
+        Assert.assertEquals(null, user.getShopperId());
+        Assert.assertEquals(false, user.isShopper());
+        Assert.assertEquals(false, user.isAdmin());
+        Assert.assertEquals(true, user.isEmployee());
+        Assert.assertEquals(false, user.isStaff());
+        Assert.assertEquals(Role.LEGAL, user.role());
     }
 
     @Test

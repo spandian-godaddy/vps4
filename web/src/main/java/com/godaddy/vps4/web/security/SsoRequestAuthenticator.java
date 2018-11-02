@@ -27,7 +27,6 @@ public class SsoRequestAuthenticator implements RequestAuthenticator<GDUser> {
     private final String LEGAL = "fs-Legal_IP_Claims";
 
     private final SsoTokenExtractor tokenExtractor;
-
     private Config config;
 
     @Inject
@@ -38,7 +37,6 @@ public class SsoRequestAuthenticator implements RequestAuthenticator<GDUser> {
 
     @Override
     public GDUser authenticate(HttpServletRequest request) {
-
         SsoToken token = tokenExtractor.extractToken(request);
         if (token == null) {
             return null;
