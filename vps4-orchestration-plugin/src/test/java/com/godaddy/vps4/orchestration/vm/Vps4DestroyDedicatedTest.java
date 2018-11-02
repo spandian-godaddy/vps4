@@ -231,4 +231,11 @@ public class Vps4DestroyDedicatedTest {
         command.execute(context, request);
         verify(nodePingService, times(1)).deleteCheck(nodePingAccountId, primaryIp.pingCheckId);
     }
+
+    @Test
+    public void testDeleteIpMonitoringDoesntCallIfNoIp() throws Exception { doThrow(new NotFoundException()).when(nodePingService).deleteCheck(nodePingAccountId, primaryIp.pingCheckId);
+        request.virtualMachine.primaryIpAddress = null;
+        command.execute(context, request);
+        verify(nodePingService, times(0)).deleteCheck(anyLong(), anyLong());
+    }
 }

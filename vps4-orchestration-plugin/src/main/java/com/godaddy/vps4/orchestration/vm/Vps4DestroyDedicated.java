@@ -66,15 +66,15 @@ public class Vps4DestroyDedicated extends ActionCommand<VmActionRequest, Vps4Des
     }
 
     private VmAction deleteVmInHfs(CommandContext context, VirtualMachine vm) {
-        if (vm.hfsVmId != 0) {
-            VmAction hfsAction = context.execute("DestroyVmHfs", ctx -> vmService.destroyVm(vm.hfsVmId),
-                    VmAction.class);
-
-            hfsAction = context.execute(WaitForVmAction.class, hfsAction);
-            return hfsAction;
-        } else {
+        if (vm.hfsVmId == 0 ) {
+            // Don't do anything if there's no hfs vm
             return null;
         }
+        VmAction hfsAction = context.execute("DestroyVmHfs", ctx -> vmService.destroyVm(vm.hfsVmId),
+                    VmAction.class);
+
+        hfsAction = context.execute(WaitForVmAction.class, hfsAction);
+        return hfsAction;
     }
 
     private void deleteSupportUsersInDatabase(CommandContext context, VirtualMachine vm) {
@@ -86,12 +86,15 @@ public class Vps4DestroyDedicated extends ActionCommand<VmActionRequest, Vps4Des
     }
 
     private void deleteIpMonitoring(IpAddress address) {
-        if (address.pingCheckId != null) {
-            try {
-                monitoringService.deleteCheck(monitoringMeta.getAccountId(), address.pingCheckId);
-            } catch (NotFoundException ex) {
-                logger.info("Monitoring check {} was not found", address.pingCheckId, ex);
-            }
+        if (address == null || address.pingCheckId == null) {
+            // don't do anything if there's no address or ID.
+            return;
+        }
+
+        try {
+            monitoringService.deleteCheck(monitoringMeta.getAccountId(), address.pingCheckId);
+        } catch (NotFoundException ex) {
+            logger.info("Monitoring check {} was not found", address.pingCheckId, ex);
         }
     }
 
