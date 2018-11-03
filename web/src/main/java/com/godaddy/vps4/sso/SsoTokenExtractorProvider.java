@@ -54,7 +54,7 @@ public class SsoTokenExtractorProvider implements Provider<SsoTokenExtractor> {
 
     long getSsoTimeoutMs() {
         long ssoTimeout = Duration.ofHours(24).toMillis(); // Default 1 day
-        String configTimeout = config.get("auth.timeout.seconds");
+        String configTimeout = config.get("auth.timeout.seconds", null);
         if (configTimeout != null)
             ssoTimeout = Duration.ofSeconds(Long.parseLong(configTimeout)).toMillis();
         logger.info("JWT timeout ms: {}", ssoTimeout);

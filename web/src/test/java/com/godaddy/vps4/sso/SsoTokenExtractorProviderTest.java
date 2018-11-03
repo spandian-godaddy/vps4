@@ -67,7 +67,7 @@ public class SsoTokenExtractorProviderTest {
 
     @Test
     public void testGetSsoTimeoutMsWithConfig() {
-        when(mockConfig.get("auth.timeout.seconds")).thenReturn("8600");
+        when(mockConfig.get("auth.timeout.seconds", null)).thenReturn("8600");
 
         long expectedTimeout = Duration.ofSeconds(8600).toMillis();
         assertEquals(expectedTimeout, ssoTokenExtractorProvider.getSsoTimeoutMs());
@@ -75,7 +75,7 @@ public class SsoTokenExtractorProviderTest {
 
     @Test
     public void testGetSsoTimeoutMsDefault() {
-        when(mockConfig.get("auth.timeout.seconds")).thenReturn(null);
+        when(mockConfig.get("auth.timeout.seconds", null)).thenReturn(null);
 
         long expectedTimeout = Duration.ofHours(24).toMillis();
         assertEquals(expectedTimeout, ssoTokenExtractorProvider.getSsoTimeoutMs());
