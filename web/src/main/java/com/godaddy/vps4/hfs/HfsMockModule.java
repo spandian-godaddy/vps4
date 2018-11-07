@@ -251,6 +251,16 @@ public class HfsMockModule extends AbstractModule {
                 return stopVmAction;
             }
 
+            @Override
+            public VmAction rebootVm(long vmId) {
+                VmAction restartVmAction = new VmAction();
+                restartVmAction.vmActionId = new Random().nextInt(10000);
+                restartVmAction.vmId = vmId;
+                restartVmAction.state = VmAction.Status.COMPLETE;
+                restartVmAction.tickNum = 1;
+                return restartVmAction;
+            }
+
         };
     }
 

@@ -23,6 +23,7 @@ import com.godaddy.vps4.orchestration.vm.Vps4DestroyIpAddress;
 import com.godaddy.vps4.orchestration.vm.Vps4DestroyIpAddressAction;
 import com.godaddy.vps4.orchestration.vm.Vps4DestroyVm;
 import com.godaddy.vps4.orchestration.vm.Vps4PlanChange;
+import com.godaddy.vps4.orchestration.vm.Vps4RebootDedicated;
 import com.godaddy.vps4.orchestration.vm.Vps4RebuildVm;
 import com.godaddy.vps4.orchestration.vm.Vps4RecordScheduledJobForVm;
 import com.godaddy.vps4.orchestration.vm.Vps4RemoveSupportUsersFromDatabase;
@@ -33,8 +34,8 @@ import com.godaddy.vps4.orchestration.vm.Vps4StartVm;
 import com.godaddy.vps4.orchestration.vm.Vps4StopVm;
 import com.godaddy.vps4.orchestration.vm.Vps4TestCommand;
 import com.godaddy.vps4.orchestration.vm.Vps4UpgradeVm;
-import com.godaddy.vps4.orchestration.vm.provision.Vps4ProvisionVm;
 import com.godaddy.vps4.orchestration.vm.provision.Vps4ProvisionDedicated;
+import com.godaddy.vps4.orchestration.vm.provision.Vps4ProvisionVm;
 import com.google.inject.AbstractModule;
 
 public class Vps4CommandModule extends AbstractModule {
@@ -52,6 +53,7 @@ public class Vps4CommandModule extends AbstractModule {
         bind(Vps4StartVm.class);
         bind(Vps4StopVm.class);
         bind(Vps4RestartVm.class);
+        bind(Vps4RebootDedicated.class);
         bind(Vps4DestroyIpAddress.class);
         bind(Vps4DestroyIpAddressAction.class);
         bind(Vps4AddIpAddress.class);

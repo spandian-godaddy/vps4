@@ -93,13 +93,23 @@ public class VmResourceTest {
     }
 
     private VirtualMachine createTestVm() {
+        // virtual servers are any tier < 60
+        return createTestServer(10);
+    }
+
+    private VirtualMachine createTestDedicated() {
+        // dedicated servers are any tier >= 60
+        return createTestServer(60);
+    }
+
+    private VirtualMachine createTestServer(int tier) {
         UUID orionGuid = UUID.randomUUID();
         Vps4User vps4User = userService.getOrCreateUserForShopper(GDUserMock.DEFAULT_SHOPPER, "1");
-        VirtualMachine vm = SqlTestData.insertTestVm(orionGuid, vps4User.getId(), dataSource);
+        VirtualMachine server = SqlTestData.insertTestVm(orionGuid, vps4User.getId(), dataSource, "centos-7", tier);
         long ipAddressId = SqlTestData.getNextIpAddressId(dataSource);
-        SqlTestData.insertTestIp(ipAddressId, vm.vmId, "127.0.0." + ipAddressId, IpAddressType.PRIMARY, dataSource);
-        vm = virtualMachineService.getVirtualMachine(vm.vmId);
-        return vm;
+        SqlTestData.insertTestIp(ipAddressId, server.vmId, "127.0.0." + ipAddressId, IpAddressType.PRIMARY, dataSource);
+        server = virtualMachineService.getVirtualMachine(server.vmId);
+        return server;
     }
 
     // === GetVm Tests ===
@@ -378,6 +388,20 @@ public class VmResourceTest {
             Assert.assertNotNull(vmAction.commandId);
         }
     }
+
+    // === reboot Dedicated Vm Test ===
+    public void testRebootDedicatedVm() {
+        VirtualMachine vm = createTestDedicated();
+
+        VmAction vmAction = getVmResource().restartVm(vm.vmId);
+        Assert.assertNotNull(vmAction.commandId);
+    }
+
+    @Test
+    public void testShopperRebootDedicatedVm() {
+        testRebootDedicatedVm();
+    }
+
 
     // === destroyVm Tests ===
     public void testDestroyVm() {

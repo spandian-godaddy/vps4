@@ -181,8 +181,9 @@ public class VmResource {
 
         VmActionRequest restartRequest = new VmActionRequest();
         restartRequest.virtualMachine = vm;
+        String restartServerCommandClass = vm.spec.isVirtualMachine() ? "Vps4RestartVm" : "Vps4RestartDedVm";
         return createActionAndExecute(actionService, commandService, vm.vmId,
-                ActionType.RESTART_VM, restartRequest, "Vps4RestartVm", user);
+                ActionType.RESTART_VM, restartRequest, restartServerCommandClass, user);
     }
 
     public static class ProvisionVmRequest {

@@ -1,8 +1,9 @@
 package com.godaddy.vps4.vm;
 
-import java.util.UUID;
-
 import org.apache.commons.lang3.builder.ToStringBuilder;
+import org.apache.commons.lang3.builder.ToStringStyle;
+
+import java.util.UUID;
 
 public class ProvisionVmInfo {
     public UUID vmId;
@@ -30,7 +31,7 @@ public class ProvisionVmInfo {
 
     @Override
     public String toString() {
-        return ToStringBuilder.reflectionToString(this);
+        return ToStringBuilder.reflectionToString(this, ToStringStyle.MULTI_LINE_STYLE);
     }
 
     public boolean isFullyManaged() {

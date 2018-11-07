@@ -53,10 +53,14 @@ public class SqlTestData {
     }
 
     public static VirtualMachine insertTestVm(UUID orionGuid, long vps4UserId, DataSource dataSource, String imageName) {
+        return insertTestVm(orionGuid, vps4UserId, dataSource, imageName, 10);
+    }
+
+    public static VirtualMachine insertTestVm(UUID orionGuid, long vps4UserId, DataSource dataSource, String imageName, int tier) {
         VirtualMachineService virtualMachineService = new JdbcVirtualMachineService(dataSource);
         long hfsVmId = getNextHfsVmId(dataSource);
         ProvisionVirtualMachineParameters params = new ProvisionVirtualMachineParameters(vps4UserId, 1, TEST_VM_SGID, orionGuid,
-                TEST_VM_NAME, 10, 1, imageName);
+                TEST_VM_NAME, tier, 1, imageName);
         VirtualMachine virtualMachine = virtualMachineService.provisionVirtualMachine(params);
         virtualMachineService.addHfsVmIdToVirtualMachine(virtualMachine.vmId, hfsVmId);
         return virtualMachineService.getVirtualMachine(virtualMachine.vmId);
