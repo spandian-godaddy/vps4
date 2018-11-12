@@ -8,7 +8,7 @@ import org.json.simple.JSONObject;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 public class VmUsage {
-    private static final Duration HFS_MIN_REFRESH_INTERVAL = Duration.ofMinutes(10);
+    public static final Duration HFS_MIN_REFRESH_INTERVAL = Duration.ofMinutes(10);
 
     public DiskUsage disk;
     public IoUsage io;

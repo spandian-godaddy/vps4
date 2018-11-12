@@ -98,6 +98,29 @@ public class VmUsageServiceTest {
     }
 
     @Test
+    public void testGetUsageRefreshInProgressTimedOut() throws Exception {
+        VmUsage cachedUsage = new VmUsage();
+        cachedUsage.pendingHfsActionId = 42L;
+        when(cache.get(hfsVmId)).thenReturn(cachedUsage);
+
+        SysAdminAction hfsAction = mock(SysAdminAction.class);
+        hfsAction.status = SysAdminAction.Status.IN_PROGRESS;
+        hfsAction.createdAt = "2010-01-01 00:01:01.000001";  // a time long long ago to represent a timed out request in progress
+        when(sysAdminService.getSysAdminAction(cachedUsage.pendingHfsActionId)).thenReturn(hfsAction);
+        SysAdminAction hfsStatsUpdate = mock(SysAdminAction.class);
+        hfsStatsUpdate.sysAdminActionId = 123321;
+        when(sysAdminService.usageStatsUpdate(hfsVmId, 0)).thenReturn(hfsStatsUpdate);
+
+        VmUsage usage = vmUsageService.getUsage(hfsVmId);
+        verify(sysAdminService).usageStatsUpdate(hfsVmId, 0);
+        verify(sysAdminService, never()).usageStatsResults(hfsVmId, null, null);
+        verify(sysAdminService).getSysAdminAction(42L);
+        Assert.assertNull(usage.refreshedAt);
+        Assert.assertEquals(hfsStatsUpdate.sysAdminActionId, usage.pendingHfsActionId);
+        verify(cache).put(hfsVmId, usage);
+    }
+
+    @Test
     public void testGetUsageRefreshInProgress() throws Exception {
         VmUsage cachedUsage = new VmUsage();
         cachedUsage.pendingHfsActionId = 42L;
@@ -105,6 +128,7 @@ public class VmUsageServiceTest {
 
         SysAdminAction hfsAction = mock(SysAdminAction.class);
         hfsAction.status = SysAdminAction.Status.IN_PROGRESS;
+        hfsAction.createdAt = "2148-01-01 00:01:01.000001";  // a time when vps4 is long gone to represent an in progress request that hasn't timed out
         when(sysAdminService.getSysAdminAction(cachedUsage.pendingHfsActionId)).thenReturn(hfsAction);
 
         VmUsage usage = vmUsageService.getUsage(hfsVmId);

@@ -17,6 +17,9 @@ import com.godaddy.vps4.util.TimestampUtils;
 import gdg.hfs.vhfs.sysadmin.SysAdminAction;
 import gdg.hfs.vhfs.sysadmin.SysAdminService;
 
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
+
 public class VmUsageService {
 
     private static final Logger logger = LoggerFactory.getLogger(VmUsageService.class);
@@ -40,6 +43,11 @@ public class VmUsageService {
                 usage.markRefreshCompleted(TimestampUtils.parseHfsTimestamp(updateAction.completedAt));
                 usage.updateUsageStats(fetchUsageStatsFromHfs(hfsVmId));
             }
+            else if (shouldGiveUp(usage, updateAction)){
+                // if the action is in progress for longer than the VmUsage timeout, treat it as refreshable.
+                updateAction = sysAdminService.usageStatsUpdate(hfsVmId, 0);
+                usage.pendingHfsActionId = updateAction.sysAdminActionId;
+            }
         } else if (usage.canRefresh()) {
             SysAdminAction updateAction = sysAdminService.usageStatsUpdate(hfsVmId, 0);
             usage.pendingHfsActionId = updateAction.sysAdminActionId;
@@ -47,6 +55,13 @@ public class VmUsageService {
 
         cache.put(hfsVmId, usage);
         return usage;
+    }
+
+    private boolean shouldGiveUp(VmUsage usage, SysAdminAction updateAction) {
+        return updateAction.status == SysAdminAction.Status.IN_PROGRESS &&
+                TimestampUtils.parseHfsTimestamp(updateAction.createdAt)
+                        .plus(usage.HFS_MIN_REFRESH_INTERVAL.toMinutes(), ChronoUnit.MINUTES)
+                        .isBefore(Instant.now());
     }
 
     JSONObject fetchUsageStatsFromHfs(long hfsVmId) throws java.text.ParseException {
