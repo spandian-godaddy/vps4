@@ -32,7 +32,8 @@ public enum ActionType {
     UPGRADE_VM(23),
     REBUILD_VM(24),
     ABUSE_SUSPEND(25),
-    REINSTATE(26);
+    REINSTATE(26),
+    POWER_CYCLE(27);
 
     private final int typeId;
 

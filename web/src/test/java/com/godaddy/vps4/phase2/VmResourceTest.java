@@ -15,6 +15,9 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mockito;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 import static org.mockito.Mockito.when;
 
 import com.godaddy.vps4.jdbc.DatabaseModule;
@@ -29,6 +32,7 @@ import com.godaddy.vps4.security.Vps4UserService;
 import com.godaddy.vps4.security.jdbc.AuthorizationException;
 import com.godaddy.vps4.snapshot.SnapshotModule;
 import com.godaddy.vps4.vm.AccountStatus;
+import com.godaddy.vps4.vm.ActionType;
 import com.godaddy.vps4.vm.VirtualMachine;
 import com.godaddy.vps4.vm.VirtualMachineService;
 import com.godaddy.vps4.vm.VirtualMachineType;
@@ -326,7 +330,8 @@ public class VmResourceTest {
         VirtualMachine vm = createTestVm();
 
         VmAction vmAction = getVmResource().restartVm(vm.vmId);
-        Assert.assertNotNull(vmAction.commandId);
+        assertNotNull(vmAction.commandId);
+        assertEquals(ActionType.RESTART_VM, vmAction.type);
     }
 
     @Test
@@ -394,7 +399,8 @@ public class VmResourceTest {
         VirtualMachine vm = createTestDedicated();
 
         VmAction vmAction = getVmResource().restartVm(vm.vmId);
-        Assert.assertNotNull(vmAction.commandId);
+        assertNotNull(vmAction.commandId);
+        assertEquals(ActionType.POWER_CYCLE, vmAction.type);
     }
 
     @Test
