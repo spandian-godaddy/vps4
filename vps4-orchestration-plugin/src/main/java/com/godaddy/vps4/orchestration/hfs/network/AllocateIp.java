@@ -41,7 +41,6 @@ public class AllocateIp implements Command<AllocateIp.Request, IpAddress> {
 
         context.execute(WaitForAddressAction.class, hfsAction);
 
-        // FIXME get address
         IpAddress ipAddress = networkService.getAddress(hfsAction.addressId);
         IpAddressValidator.validateIpAddress(ipAddress.address);
 

@@ -81,9 +81,4 @@ public class Vps4SetHostname extends ActionCommand<Vps4SetHostname.Request, Void
         public String oldHostname;
     }
 
-    public static class Response {
-        public long hfsVmId;
-        public SysAdminAction hfsAction;
-    }
-
 }

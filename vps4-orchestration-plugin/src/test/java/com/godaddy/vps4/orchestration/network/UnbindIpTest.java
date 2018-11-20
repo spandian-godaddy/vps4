@@ -28,7 +28,7 @@ public class UnbindIpTest {
     CommandContext context = new TestCommandContext(new GuiceCommandProvider(injector));
 
     @Test
-    public void unbindIpAlreadyUnboudTest() {
+    public void unbindIpAlreadyUnboundTest() {
         IpAddress ipAddress = new IpAddress();
         ipAddress.status = Status.UNBOUND;
         ipAddress.addressId = 1L;
