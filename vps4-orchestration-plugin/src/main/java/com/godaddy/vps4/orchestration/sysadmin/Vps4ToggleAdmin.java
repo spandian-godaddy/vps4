@@ -60,9 +60,5 @@ public class Vps4ToggleAdmin extends ActionCommand<Vps4ToggleAdmin.Request, Void
         public long hfsVmId;
         public String username;
     }
-    public static class Response {
-        public long hfsVmId;
-        public SysAdminAction hfsAction;
-    }
 
 }

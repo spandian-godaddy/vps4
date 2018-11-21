@@ -43,13 +43,12 @@ public class Vps4SetMailRelayQuota extends ActionCommand<Vps4SetMailRelayQuota.R
         public int mailRelayQuota;
         public String ipAddress;
 
-        public Request(){}
-
         public Request(String ipAddress, int mailRelayQuota){
             this.ipAddress = ipAddress;
             this.mailRelayQuota = mailRelayQuota;
         }
 
+        @SuppressWarnings("unchecked")
         public String toJSONString(){
             JSONObject jsonRequest = new JSONObject();
             jsonRequest.put("IpAddress", ipAddress);
