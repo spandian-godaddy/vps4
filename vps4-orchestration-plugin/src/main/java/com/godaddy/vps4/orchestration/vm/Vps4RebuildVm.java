@@ -87,8 +87,15 @@ public class Vps4RebuildVm extends ActionCommand<Vps4RebuildVm.Request, Vps4Rebu
 
         long oldHfsVmId = getOldHfsVmId();
         List<IpAddress> ipAddresses = getPublicIpAddresses();
+        unbindPublicIpAddresses(ipAddresses);
 
-        Vm hfsVm = createVm();
+        Vm hfsVm;
+        try {
+            hfsVm = createVm();
+        } catch (RuntimeException e) {
+            bindPublicIpAddress(oldHfsVmId, ipAddresses);
+            throw e;
+        }
         long newHfsVmId = hfsVm.vmId;
 
         if(newHfsVmId == 0) {
@@ -97,7 +104,6 @@ public class Vps4RebuildVm extends ActionCommand<Vps4RebuildVm.Request, Vps4Rebu
 
         VirtualMachine oldVm = virtualMachineService.getVirtualMachine(vps4VmId);
 
-        unbindPublicIpAddresses(ipAddresses);
         bindPublicIpAddress(newHfsVmId, ipAddresses);
         updateVmUser(request.rebuildVmInfo.username, oldVm.vmId, request.rebuildVmInfo.vmId);
         setRootUserPassword(newHfsVmId);
