@@ -79,19 +79,13 @@ public class Vps4RestoreVm extends ActionCommand<Vps4RestoreVm.Request, Vps4Rest
 
         long oldHfsVmId = getOldHfsVmId();
         List<IpAddress> ipAddresses = getPublicIpAddresses();
-        unbindPublicIpAddresses(ipAddresses);
-        
-        Vm hfsVm;
-        try {
-            hfsVm = createVmFromSnapshot();
-        } catch (RuntimeException e) {
-            bindPublicIpAddress(oldHfsVmId, ipAddresses);
-            throw e;
-        }
+
+        Vm hfsVm = createVmFromSnapshot();
         long newHfsVmId = hfsVm.vmId;
 
         // Post creation reconfigure steps
         updateHfsVmId(newHfsVmId);
+        unbindPublicIpAddresses(ipAddresses);
         bindPublicIpAddress(newHfsVmId, ipAddresses);
         setRootUserPassword(newHfsVmId);
         configureAdminUser(newHfsVmId);

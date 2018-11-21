@@ -82,7 +82,6 @@ public class Vps4RestoreVmTest {
     private VirtualMachineService spyVps4VmService;
     static final String username = "jdoe";
     static final String password = "P@$$w0rd1";
-    private CommandContext mockContext;
 
     @Inject private Vps4UserService vps4UserService;
     @Inject private ProjectService projectService;
@@ -150,7 +149,7 @@ public class Vps4RestoreVmTest {
     }
 
     private CommandContext setupMockContext() {
-        mockContext = mock(CommandContext.class);
+        CommandContext mockContext = mock(CommandContext.class);
         when(mockContext.getId()).thenReturn(UUID.randomUUID());
 
         when(mockContext.execute(eq("GetHfsVmId"), any(Function.class), eq(long.class))).thenReturn(SqlTestData.hfsVmId);
@@ -340,26 +339,6 @@ public class Vps4RestoreVmTest {
             // verify parameter passed into the BindIp command is the right pair of hfsVmId and ipAddressId
             BindIp.BindIpRequest bindIpRequest = bindIpRequestArgumentCaptor.getValue();
             Assert.assertEquals(bindIpRequest.vmId, hfsNewVmId);
-            Assert.assertEquals(bindIpRequest.addressId, ipAddress.ipAddressId);
-        }
-    }
-
-    @Test (expected = RuntimeException.class)
-    public void bindsIpAddressesToOldHfsVmWhenCreateFails() {
-        when(context.execute(eq("CreateVmFromSnapshot"), eq(CreateVmFromSnapshot.class), any()))
-                .thenThrow(new RuntimeException("test create vm failed"));
-        command.execute(context, request);
-        for (IpAddress ipAddress: ipAddresses) {
-            verify(context, times(1))
-                    .execute(
-                            eq(String.format("BindIP-%d", ipAddress.ipAddressId)),
-                            eq(BindIp.class),
-                            bindIpRequestArgumentCaptor.capture()
-                    );
-
-            // verify parameter passed into the BindIp command is the right pair of hfsVmId and ipAddressId
-            BindIp.BindIpRequest bindIpRequest = bindIpRequestArgumentCaptor.getValue();
-            Assert.assertEquals(bindIpRequest.vmId, vps4Vm.hfsVmId);
             Assert.assertEquals(bindIpRequest.addressId, ipAddress.ipAddressId);
         }
     }
