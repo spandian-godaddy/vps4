@@ -28,6 +28,7 @@ public class DefaultVps4CpanelService implements Vps4CpanelService {
     final NetworkService networkService;
 
     final int timeoutVal;
+    private static final long SUCCESS = 1;
 
     @Inject
     public DefaultVps4CpanelService(CpanelAccessHashService accessHashService, NetworkService networkService, Config conf) {
@@ -51,6 +52,18 @@ public class DefaultVps4CpanelService implements Vps4CpanelService {
     interface CpanelClientHandler<T> {
         T handle(CpanelClient client)
                 throws CpanelAccessDeniedException, CpanelTimeoutException, IOException;
+    }
+
+    interface CpanelCall {
+        String handle() throws CpanelAccessDeniedException, IOException;
+    }
+
+    interface SuccessHandler<T> {
+        T handle(JSONObject dataJson);
+    }
+
+    interface ErrorHandler {
+        Void handle(String reason);
     }
 
     protected CpanelClient getCpanelClient(String publicIp, String accessHash){
@@ -195,4 +208,106 @@ public class DefaultVps4CpanelService implements Vps4CpanelService {
         return withAccessHash(hfsVmId, cPanelClient -> cPanelClient.createSession(username, ip.ipAddress, serviceType));
     }
 
+    private boolean didCallSucceed(JSONObject responseJson) {
+        JSONObject metadata = (JSONObject) responseJson.get("metadata");
+        // https://documentation.cpanel.net/display/DD/WHM+API+1+-+Return+Data
+        return metadata != null && ((Long) metadata.get("result") == SUCCESS);
+    }
+
+    private String getFailureReason(JSONObject responseJson) {
+        JSONObject metadata = (JSONObject) responseJson.get("metadata");
+        // https://documentation.cpanel.net/display/DD/WHM+API+1+-+Return+Data
+        return metadata != null ? ((String) metadata.get("reason")) : ("No reason provided");
+    }
+
+    private <T> T handleCpanelCall(String callName, CpanelCall callFn, SuccessHandler<T> successHandler,
+                                   ErrorHandler errorHandler) throws CpanelAccessDeniedException, IOException {
+
+        try {
+            String response = callFn.handle();
+            logger.debug("Response for call [{}]: {}", callName, response);
+
+            JSONParser parser = new JSONParser();
+            JSONObject responseJson = (JSONObject) parser.parse(response);
+            if (didCallSucceed(responseJson)) {
+                JSONObject data = (JSONObject) responseJson.get("data");
+                if (data != null) {
+                    return successHandler.handle(data);
+                }
+            }
+            else {
+                String reason = getFailureReason(responseJson);
+                errorHandler.handle(reason);
+
+            }
+
+            throw new RuntimeException("Error while handling response for call " + callName);
+        } catch (ParseException e) {
+            throw new IOException("Parse error while handling response for call " + callName, e);
+        }
+    }
+
+    @Override
+    public Long calculatePasswordStrength(long hfsVmId, String password)
+            throws CpanelAccessDeniedException, CpanelTimeoutException, IOException {
+        return withAccessHash(hfsVmId, cPanelClient -> {
+            // https://documentation.cpanel.net/display/DD/WHM+API+1+Functions+-+get_password_strength
+            return handleCpanelCall(
+                    "calculatePasswordStrength",
+                    () -> cPanelClient.calculatePasswordStrength(password),
+                    dataJson -> (Long) dataJson.get("strength"),
+                    reason -> {
+                        throw new RuntimeException("Password strength calculation failed due to reason: " + reason);
+                    }
+            );
+        });
+    }
+
+    @Override
+    public Void createAccount(long hfsVmId, String domainName, String username, String password, String plan)
+            throws CpanelAccessDeniedException, CpanelTimeoutException, IOException {
+        return withAccessHash(hfsVmId, cPanelClient -> {
+            // https://documentation.cpanel.net/display/DD/WHM+API+1+Functions+-+createacct
+            return handleCpanelCall(
+                    "createAccount",
+                    () -> cPanelClient.createAccount(domainName, username, password, plan),
+                    dataJson -> {
+                        return null;
+                    },
+                    reason -> {
+                        throw new RuntimeException("WHM account creation failed due to reason: " + reason);
+                    }
+            );
+        });
+    }
+
+    @Override
+    public List<String> listPackages(long hfsVmId) throws CpanelAccessDeniedException, CpanelTimeoutException, IOException {
+        return withAccessHash(hfsVmId, cPanelClient -> {
+            // https://documentation.cpanel.net/display/DD/WHM+API+1+Functions+-+listpkgs
+            return handleCpanelCall(
+                "listPackages",
+                    () -> cPanelClient.listPackages(),
+                    dataJson -> {
+                        JSONArray pkgsJson = (JSONArray) dataJson.get("pkg");
+                        if (pkgsJson != null) {
+                            List<String> packages = new ArrayList<>();
+                            for (Object object : pkgsJson) {
+                                JSONObject pkgJsonObj = (JSONObject) object;
+                                String pkg = (String) pkgJsonObj.get("name");
+                                if (pkg != null) {
+                                    packages.add(pkg);
+                                }
+                            }
+
+                            return packages;
+                        }
+                        throw new RuntimeException("No cpanel packages present");
+                    },
+                    reason -> {
+                        throw new RuntimeException("WHM list package failed due to reason: " + reason);
+                    }
+                );
+        });
+    }
 }

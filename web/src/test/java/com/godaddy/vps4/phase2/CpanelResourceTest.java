@@ -1,7 +1,10 @@
 package com.godaddy.vps4.phase2;
 
+import static org.mockito.Matchers.anyLong;
 import static org.mockito.Matchers.eq;
 
+import java.util.Arrays;
+import java.util.List;
 import java.util.UUID;
 
 import javax.sql.DataSource;
@@ -123,7 +126,7 @@ public class CpanelResourceTest {
 
     @Test
     public void testGetWhmSessionIgnoresCpanelServiceException() throws Exception {
-        Mockito.when(cpServ.createSession(Mockito.anyLong(), Mockito.anyString(), Mockito.any(IpAddress.class), Mockito.any()))
+        Mockito.when(cpServ.createSession(anyLong(), Mockito.anyString(), Mockito.any(IpAddress.class), Mockito.any()))
                 .thenThrow(new CpanelTimeoutException("Timed out"));
         Assert.assertNull(getCpanelResource().getWHMSession(vm.vmId));
     }
@@ -158,7 +161,7 @@ public class CpanelResourceTest {
 
     @Test
     public void testGetCPanelSessionIgnoresCpanelServiceException() throws Exception {
-        Mockito.when(cpServ.createSession(Mockito.anyLong(), Mockito.anyString(), Mockito.any(IpAddress.class), Mockito.any()))
+        Mockito.when(cpServ.createSession(anyLong(), Mockito.anyString(), Mockito.any(IpAddress.class), Mockito.any()))
                 .thenThrow(new CpanelTimeoutException("Timed out"));
         Assert.assertNull(getCpanelResource().getCPanelSession(vm.vmId, "testuser"));
     }
@@ -199,7 +202,7 @@ public class CpanelResourceTest {
 
     @Test
     public void testListCpanelAccountsIgnoresCpanelServiceException() throws Exception {
-        Mockito.when(cpServ.listCpanelAccounts(Mockito.anyLong()))
+        Mockito.when(cpServ.listCpanelAccounts(anyLong()))
                 .thenThrow(new CpanelTimeoutException("Timed out"));
         Assert.assertNull(getCpanelResource().listCpanelAccounts(vm.vmId));
     }
@@ -251,14 +254,14 @@ public class CpanelResourceTest {
 
     @Test
     public void testListAddonDomainsIgnoresCpanelServiceException() throws Exception {
-        Mockito.when(cpServ.listAddOnDomains(Mockito.anyLong(), eq("fakeuser")))
+        Mockito.when(cpServ.listAddOnDomains(anyLong(), eq("fakeuser")))
                 .thenThrow(new CpanelTimeoutException("Timed out"));
         Assert.assertNull(getCpanelResource().listAddOnDomains(vm.vmId, "fakeuser"));
     }
 
     @Test(expected=Vps4Exception.class)
     public void testThrowsExceptionForInvalidUsername() throws Exception{
-        Mockito.when(cpServ.listAddOnDomains(Mockito.anyLong(), eq("fakeuser2"))).thenThrow(new CpanelInvalidUserException(""));
+        Mockito.when(cpServ.listAddOnDomains(anyLong(), eq("fakeuser2"))).thenThrow(new CpanelInvalidUserException(""));
         getCpanelResource().listAddOnDomains(vm.vmId, "fakeuser2");
     }
 
@@ -271,6 +274,94 @@ public class CpanelResourceTest {
             Assert.fail("Exception not thrown");
         } catch (Vps4Exception e) {
             Assert.assertEquals("ACCOUNT_SUSPENDED", e.getId());
+        }
+    }
+
+    // Calculate password strength
+    @Test
+    public void calculatePasswordStrengthCallsCpanelService() throws Exception {
+        String password = "foobar";
+        Long expectedStrength = 31L;
+        Mockito.when(cpServ.calculatePasswordStrength(anyLong(), eq(password))).thenReturn(expectedStrength);
+        CPanelResource.PasswordStrengthRequest req = new CPanelResource.PasswordStrengthRequest();
+        req.password = password;
+        Long strength = getCpanelResource().calculatePasswordStrength(vm.vmId, req);
+        Assert.assertEquals(expectedStrength, strength);
+    }
+
+    @Test
+    public void calculatePasswordStrengthThrowsException() throws Exception {
+        String password = "foobar";
+        Mockito.when(cpServ.calculatePasswordStrength(anyLong(), eq(password))).thenThrow(new RuntimeException());
+        CPanelResource.PasswordStrengthRequest req = new CPanelResource.PasswordStrengthRequest();
+        req.password = password;
+        try {
+            getCpanelResource().calculatePasswordStrength(vm.vmId, req);
+        }
+        catch (Vps4Exception e) {
+            Assert.assertEquals("PASSWORD_STRENGTH_CALCULATION_FAILED", e.getId());
+        }
+    }
+
+    // Create cpanel account
+    @Test
+    public void createAccountCallsCpanelService() throws Exception {
+        String domainName = "domain";
+        String username = "user";
+        String password = "foobar";
+        String plan = "plan";
+
+        CPanelResource.CreateAccountRequest req = new CPanelResource.CreateAccountRequest();
+        req.domainName = domainName;
+        req.username = username;
+        req.plan = plan;
+        req.password = password;
+        try {
+            getCpanelResource().createAccount(vm.vmId, req);
+        }
+        catch (Exception e) {
+            Assert.fail("This test shouldn't fail");
+        }
+    }
+
+    @Test
+    public void createPasswordThrowsException() throws Exception {
+        String domainName = "domain";
+        String username = "user";
+        String password = "foobar";
+        String plan = "plan";
+        Mockito.when(cpServ.createAccount(vm.hfsVmId, domainName, username, password, plan))
+            .thenThrow(new RuntimeException());
+        try {
+            CPanelResource.CreateAccountRequest req = new CPanelResource.CreateAccountRequest();
+            req.domainName = domainName;
+            req.username = username;
+            req.plan = plan;
+            req.password = password;
+            getCpanelResource().createAccount(vm.vmId, req);
+        }
+        catch (Vps4Exception e) {
+            Assert.assertEquals("CREATE_CPANEL_ACCOUNT_FAILED", e.getId());
+        }
+    }
+
+    // List packages
+    @Test
+    public void listPackagesCallsCpanelService() throws Exception {
+        String[] expectedPackages = {"foobar", "helloworld"};
+        Mockito.when(cpServ.listPackages(anyLong())).thenReturn(Arrays.asList(expectedPackages));
+        List<String> packages = getCpanelResource().listPackages(vm.vmId);
+        Assert.assertArrayEquals(expectedPackages, packages.toArray());
+    }
+
+    @Test
+    public void listPackagesThrowsException() throws Exception {
+        Mockito.when(cpServ.listPackages(vm.hfsVmId)).thenThrow(new RuntimeException());
+        try {
+            getCpanelResource().listPackages(vm.vmId);
+        }
+        catch (Vps4Exception e) {
+            Assert.assertEquals("LIST_PACKAGES_FAILED", e.getId());
         }
     }
 }

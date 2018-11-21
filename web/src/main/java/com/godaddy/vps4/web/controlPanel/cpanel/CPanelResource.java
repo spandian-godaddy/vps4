@@ -6,6 +6,7 @@ import java.util.UUID;
 import javax.inject.Inject;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
+import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
@@ -31,7 +32,6 @@ import io.swagger.annotations.Api;
 
 @Vps4Api
 @Api(tags = { "vms" })
-
 @Path("/api/vms")
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
@@ -58,12 +58,6 @@ public class CPanelResource {
 
         try {
             return cpanelService.createSession(vm.hfsVmId, "root", vm.primaryIpAddress, CpanelServiceType.whostmgrd);
-//        } catch (CpanelAccessDeniedException e) {
-//            // TODO bubble a more specific error to the client
-//            // (UI can show a "Authentication issue" error
-//            // instead of just generic "something happened")
-//        } catch (CpanelTimeoutException e) {
-//        } catch (IOException e) {
         } catch (Exception e) {
             logger.warn("Could not provide WHM cpanel session for vmId {} , Exception: {} ", vmId, e);
         }
@@ -81,12 +75,6 @@ public class CPanelResource {
 
         try {
             return cpanelService.createSession(vm.hfsVmId, username, vm.primaryIpAddress, CpanelServiceType.cpaneld);
-//        } catch (CpanelAccessDeniedException e) {
-//            // TODO bubble a more specific error to the client
-//            // (UI can show a "Authentication issue" error
-//            // instead of just generic "something happened")
-//        } catch (CpanelTimeoutException e) {
-//        } catch (IOException e) {
         } catch (Exception e) {
             logger.warn("Could not provide cpanel session for vmId {} , Exception: {} ", vmId, e);
         }
@@ -103,12 +91,6 @@ public class CPanelResource {
 
         try {
             return cpanelService.listCpanelAccounts(vm.hfsVmId);
-//        } catch (CpanelAccessDeniedException e) {
-//            // TODO bubble a more specific error to the client
-//            // (UI can show a "Authentication issue" error
-//            // instead of just generic "something happened")
-//        } catch (CpanelTimeoutException e) {
-//        } catch (IOException e) {
         } catch (Exception e) {
             logger.warn("Could not provide cpanel accounts for vmId {} , Exception: {} ", vmId, e);
         }
@@ -125,12 +107,6 @@ public class CPanelResource {
 
         try {
             return cpanelService.listAddOnDomains(vm.hfsVmId, username);
-//        } catch (CpanelAccessDeniedException e) {
-//            // TODO bubble a more specific error to the client
-//            // (UI can show a "Authentication issue" error
-//            // instead of just generic "something happened")
-//        } catch (CpanelTimeoutException e) {
-//        } catch (IOException e) {
         } catch (CpanelInvalidUserException e) {
             throw new Vps4Exception("INVALID_CPANEL_USER", e.getMessage());
         }
@@ -138,6 +114,60 @@ public class CPanelResource {
             logger.warn("Could not provide cpanel add on domains for user {} on vmId {} , Exception: {} ", username, vmId, e);
         }
         return null;
+    }
+
+    public static class PasswordStrengthRequest {
+        public String password;
+    }
+
+    @POST
+    @Path("/{vmId}/cpanel/passwordStrength")
+    public Long calculatePasswordStrength(
+        @PathParam("vmId") UUID vmId, PasswordStrengthRequest passwordStrengthRequest) {
+        VirtualMachine vm = resolveVirtualMachine(vmId);
+
+        try {
+            return cpanelService.calculatePasswordStrength(vm.hfsVmId, passwordStrengthRequest.password);
+        } catch (Exception e) {
+            logger.warn("Could not calculate cpanel password strength for vmId {} , Exception: {} ", vmId, e);
+            throw new Vps4Exception("PASSWORD_STRENGTH_CALCULATION_FAILED", e.getMessage(), e);
+        }
+    }
+
+    public static class CreateAccountRequest {
+        public String domainName;
+        public String username;
+        public String password;
+        public String plan;
+    }
+
+    @POST
+    @Path("/{vmId}/cpanel/createAccount")
+    public void createAccount(
+            @PathParam("vmId") UUID vmId, CreateAccountRequest createAccountRequest) {
+        VirtualMachine vm = resolveVirtualMachine(vmId);
+
+        try {
+            cpanelService.createAccount(
+                vm.hfsVmId, createAccountRequest.domainName, createAccountRequest.username,
+                createAccountRequest.password, createAccountRequest.plan);
+        } catch (Exception e) {
+            logger.warn("Could not create cpanel account for vmId {} , Exception: {} ", vmId, e);
+            throw new Vps4Exception("CREATE_CPANEL_ACCOUNT_FAILED", e.getMessage(), e);
+        }
+    }
+
+    @GET
+    @Path("/{vmId}/cpanel/packages")
+    public List<String> listPackages(@PathParam("vmId") UUID vmId) {
+        VirtualMachine vm = resolveVirtualMachine(vmId);
+
+        try {
+            return cpanelService.listPackages(vm.hfsVmId);
+        } catch (Exception e) {
+            logger.warn("Could not list CPanel packages for vmId {} , Exception: {} ", vmId, e);
+            throw new Vps4Exception("LIST_PACKAGES_FAILED", e.getMessage(), e);
+        }
     }
 
     private VirtualMachine resolveVirtualMachine(UUID vmId) {

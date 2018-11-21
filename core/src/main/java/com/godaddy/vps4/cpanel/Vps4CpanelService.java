@@ -17,4 +17,13 @@ public interface Vps4CpanelService {
     CPanelSession createSession(long hfsVmId, String username, IpAddress ip, CpanelServiceType serviceType)
             throws CpanelAccessDeniedException, CpanelTimeoutException, IOException;
 
+    Long calculatePasswordStrength(long hfsVmId, String password)
+            throws CpanelAccessDeniedException, CpanelTimeoutException, IOException;
+
+    Void createAccount(long hfsVmId, String domainName, String username, String password, String plan)
+            throws CpanelAccessDeniedException, CpanelTimeoutException, IOException;
+
+    List<String> listPackages(long hfsVmId)
+            throws CpanelAccessDeniedException, CpanelTimeoutException, IOException;
+
 }

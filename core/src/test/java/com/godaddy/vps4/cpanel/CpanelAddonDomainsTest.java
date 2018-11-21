@@ -4,12 +4,16 @@ import static org.junit.Assert.assertEquals;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -17,6 +21,9 @@ import com.godaddy.hfs.config.Config;
 import com.godaddy.vps4.network.IpAddress;
 import com.godaddy.vps4.network.IpAddress.IpAddressType;
 import com.godaddy.vps4.network.NetworkService;
+import org.mockito.ArgumentCaptor;
+import org.mockito.Captor;
+import org.mockito.MockitoAnnotations;
 
 public class CpanelAddonDomainsTest {
 
@@ -25,6 +32,10 @@ public class CpanelAddonDomainsTest {
     NetworkService networkService = mock(NetworkService.class);
     Config config = mock(Config.class);
     CpanelClient cpClient = mock(CpanelClient.class);
+    @Captor private ArgumentCaptor<String> domainArgumentCaptor;
+    @Captor private ArgumentCaptor<String> usernameArgumentCaptor;
+    @Captor private ArgumentCaptor<String> passwordArgumentCaptor;
+    @Captor private ArgumentCaptor<String> planArgumentCaptor;
 
     long hfsVmId = 1234;
 
@@ -52,6 +63,7 @@ public class CpanelAddonDomainsTest {
         when(cpanelAccessHashService.getAccessHash(eq(hfsVmId), eq("123.0.0.1"), any(), any())).thenReturn("randomaccesshash");
 
         service = new TestDefaultVps4CpanelService(cpanelAccessHashService, networkService, 10);
+        MockitoAnnotations.initMocks(this);
     }
 
     @Test()
@@ -126,7 +138,228 @@ public class CpanelAddonDomainsTest {
         assertEquals(returnValue, service.listAddOnDomains(hfsVmId, "fakeUsername"));
     }
 
+    @Test
+    public void calculatePasswordStrengthUsesCpanelClient() throws Exception{
+        String password = "password123";
+        String returnVal = "{\"data\":{\"strength\":31},\"metadata\":{\"version\":1,"
+            + "\"command\":\"get_password_strength\",\"reason\":\"OK\",\"result\":1}}";
+        when(cpClient.calculatePasswordStrength(password)).thenReturn(returnVal);
+        service.calculatePasswordStrength(hfsVmId, password);
+        verify(cpClient, times(1)).calculatePasswordStrength(passwordArgumentCaptor.capture());
+        Assert.assertEquals(password, passwordArgumentCaptor.getValue());
+    }
 
+    @Test
+    public void returnsPasswordStrengthGotFromCpanelClient() throws Exception{
+        Long passwordStrength = 31L;
+        String password = "password123";
+        String returnVal = "{\"data\":{\"strength\":" + passwordStrength + "},\"metadata\":{\"version\":1,"
+                + "\"command\":\"get_password_strength\",\"reason\":\"OK\",\"result\":1}}";
+        when(cpClient.calculatePasswordStrength(password)).thenReturn(returnVal);
+        Long returnedStrength = service.calculatePasswordStrength(hfsVmId, password);
+        Assert.assertEquals(passwordStrength, returnedStrength);
+    }
 
+    @Test(expected=CpanelTimeoutException.class)
+    public void calculatePasswordStrengthParseException() throws Exception {
+        Long passwordStrength = 31L;
+        String password = "password123";
+        String returnVal = "{'not-valid': 'json'}";
+        when(cpClient.calculatePasswordStrength(password)).thenReturn(returnVal);
+        service.calculatePasswordStrength(hfsVmId, password);
+    }
 
+    @Test
+    public void calculatePasswordStrengthNoMetadata() throws Exception {
+        Long passwordStrength = 31L;
+        String password = "password123";
+        String returnVal = "{\"data\":{\"strength\":31}, \"metadata\": null}";
+        when(cpClient.calculatePasswordStrength(password)).thenReturn(returnVal);
+
+        try {
+            service.calculatePasswordStrength(hfsVmId, password);
+        }
+        catch (RuntimeException e) {
+            Assert.assertEquals("Password strength calculation failed due to reason: No reason provided", e.getMessage());
+        }
+    }
+
+    @Test
+    public void calculatePasswordStrengthResultNotOk() throws Exception {
+        Long passwordStrength = 31L;
+        String password = "password123";
+        String reason = "no-workie";
+        String returnVal = "{\"metadata\":{\"version\":1,\"reason\":\"" + reason + "\", \"result\":0}}";
+        when(cpClient.calculatePasswordStrength(password)).thenReturn(returnVal);
+
+        try {
+            service.calculatePasswordStrength(hfsVmId, password);
+        }
+        catch (RuntimeException e) {
+            Assert.assertEquals("Password strength calculation failed due to reason: " + reason, e.getMessage());
+        }
+    }
+
+    @Test
+    public void calculatePasswordStrengthNullData() throws Exception {
+        Long passwordStrength = 31L;
+        String password = "password123";
+        String returnVal = "{\"data\": null, \"metadata\":{\"version\":1,\"reason\":\"OK\", \"result\":1}}";
+        when(cpClient.calculatePasswordStrength(password)).thenReturn(returnVal);
+
+        try {
+            service.calculatePasswordStrength(hfsVmId, password);
+            Assert.fail("This test shouldn't get here");
+        }
+        catch (RuntimeException e) {
+            Assert.assertEquals("Error while handling response for call calculatePasswordStrength", e.getMessage());
+        }
+    }
+
+    @Test
+    public void createAccountUsesCpanelClient() throws Exception{
+        String domainName = "domain";
+        String username = "username";
+        String password = "password123";
+        String plan = "plan";
+        String returnVal = "{\"data\":{},\"metadata\":{\"version\":1,"
+                + "\"command\":\"get_password_strength\",\"reason\":\"OK\",\"result\":1}}";
+        when(cpClient.createAccount(domainName, username, password, plan)).thenReturn(returnVal);
+        service.createAccount(hfsVmId, domainName, username, password, plan);
+        verify(cpClient, times(1))
+            .createAccount(domainArgumentCaptor.capture(), usernameArgumentCaptor.capture(),
+                passwordArgumentCaptor.capture(), planArgumentCaptor.capture());
+        Assert.assertEquals(domainName, domainArgumentCaptor.getValue());
+        Assert.assertEquals(username, usernameArgumentCaptor.getValue());
+        Assert.assertEquals(password, passwordArgumentCaptor.getValue());
+        Assert.assertEquals(plan, planArgumentCaptor.getValue());
+    }
+
+    @Test
+    public void createAccountNoMetadata() throws Exception {
+        String domainName = "domain";
+        String username = "username";
+        String password = "password123";
+        String plan = "plan";
+        String returnVal = "{\"data\":{}, \"metadata\": null}";
+        when(cpClient.createAccount(domainName, username, password, plan)).thenReturn(returnVal);
+
+        try {
+            service.createAccount(hfsVmId, domainName, username, password, plan);
+        }
+        catch (RuntimeException e) {
+            Assert.assertEquals("WHM account creation failed due to reason: No reason provided", e.getMessage());
+        }
+    }
+
+    @Test
+    public void createAccountResultNotOk() throws Exception {
+        String domainName = "domain";
+        String username = "username";
+        String password = "password123";
+        String plan = "plan";
+        String reason = "no-workie";
+        String returnVal = "{\"metadata\":{\"version\":1,\"reason\":\"" + reason + "\", \"result\":0}}";
+        when(cpClient.createAccount(domainName, username, password, plan)).thenReturn(returnVal);
+
+        try {
+            service.createAccount(hfsVmId, domainName, username, password, plan);
+        }
+        catch (RuntimeException e) {
+            Assert.assertEquals("WHM account creation failed due to reason: " + reason, e.getMessage());
+        }
+    }
+
+    @Test
+    public void listPackagesUsesCpanelClient() throws Exception{
+        String returnVal = "{\"metadata\":{\"reason\":\"OK\",\"version\":1,\"result\":1,\"command\":\"listpkgs\"},"
+            + "\"data\":{\"pkg\":[{\"CPMOD\":\"paper_lantern\",\"IP\":\"n\",\"LANG\":\"en\",\"DIGESTAUTH\":\"n\","
+            + "\"FEATURELIST\":\"default\",\"name\":\"default\"},{\"QUOTA\":\"unlimited\","
+            + "\"MAX_EMAIL_PER_HOUR\":\"unlimited\",\"name\":\"test-package-1\",\"FEATURELIST\":\"default\","
+            + "\"CGI\":\"y\",\"MAX_DEFER_FAIL_PERCENTAGE\":\"unlimited\",\"MAXSQL\":\"unlimited\",\"MAXPARK\":\"0\""
+            + ",\"MAXADDON\":\"0\",\"HASSHELL\":\"n\",\"MAXLST\":\"unlimited\",\"_PACKAGE_EXTENSIONS\":\"\","
+            + "\"LANG\":\"en\",\"MAXFTP\":\"unlimited\",\"MAXPOP\":\"unlimited\",\"BWLIMIT\":\"unlimited\","
+            + "\"DIGESTAUTH\":\"n\",\"IP\":\"n\",\"CPMOD\":\"paper_lantern\",\"MAXSUB\":\"unlimited\"}]}}";
+        when(cpClient.listPackages()).thenReturn(returnVal);
+        service.listPackages(hfsVmId);
+        verify(cpClient, times(1)).listPackages();
+    }
+
+    @Test
+    public void returnsOnlyNameOfPackagesGotFromCpanelClient() throws Exception{
+        String returnVal = "{\"metadata\":{\"reason\":\"OK\",\"version\":1,\"result\":1,\"command\":\"listpkgs\"},"
+                + "\"data\":{\"pkg\":[{\"CPMOD\":\"paper_lantern\",\"IP\":\"n\",\"LANG\":\"en\",\"DIGESTAUTH\":\"n\","
+                + "\"FEATURELIST\":\"default\",\"name\":\"default\"},{\"QUOTA\":\"unlimited\","
+                + "\"MAX_EMAIL_PER_HOUR\":\"unlimited\",\"name\":\"test-package-1\",\"FEATURELIST\":\"default\","
+                + "\"CGI\":\"y\",\"MAX_DEFER_FAIL_PERCENTAGE\":\"unlimited\",\"MAXSQL\":\"unlimited\",\"MAXPARK\":\"0\""
+                + ",\"MAXADDON\":\"0\",\"HASSHELL\":\"n\",\"MAXLST\":\"unlimited\",\"_PACKAGE_EXTENSIONS\":\"\","
+                + "\"LANG\":\"en\",\"MAXFTP\":\"unlimited\",\"MAXPOP\":\"unlimited\",\"BWLIMIT\":\"unlimited\","
+                + "\"DIGESTAUTH\":\"n\",\"IP\":\"n\",\"CPMOD\":\"paper_lantern\",\"MAXSUB\":\"unlimited\"}]}}";
+        when(cpClient.listPackages()).thenReturn(returnVal);
+        List<String> packages = service.listPackages(hfsVmId);
+        String [] expectedPackages = new String[] {"default", "test-package-1"};
+        Assert.assertArrayEquals(expectedPackages, packages.toArray());
+    }
+
+    @Test(expected=CpanelTimeoutException.class)
+    public void listPackagesParseException() throws Exception {
+        String returnVal = "{'not-valid': 'json'}";
+        when(cpClient.listPackages()).thenReturn(returnVal);
+        service.listPackages(hfsVmId);
+    }
+
+    @Test
+    public void listPackagesNoMetadata() throws Exception {
+        String returnVal = "{\"data\":{\"blah\": \"foo\"}, \"metadata\": null}";
+        when(cpClient.listPackages()).thenReturn(returnVal);
+
+        try {
+            service.listPackages(hfsVmId);
+        }
+        catch (RuntimeException e) {
+            Assert.assertEquals("WHM list package failed due to reason: No reason provided", e.getMessage());
+        }
+    }
+
+    @Test
+    public void listPackagesResultNotOk() throws Exception {
+        String reason = "no-workie";
+        String returnVal = "{\"metadata\":{\"version\":1,\"reason\":\"" + reason + "\", \"result\":0}}";
+        when(cpClient.listPackages()).thenReturn(returnVal);
+
+        try {
+            service.listPackages(hfsVmId);
+        }
+        catch (RuntimeException e) {
+            Assert.assertEquals("WHM list package failed due to reason: " + reason, e.getMessage());
+        }
+    }
+
+    @Test
+    public void listPackagesNullData() throws Exception {
+        String returnVal = "{\"data\": null, \"metadata\":{\"version\":1,\"reason\":\"OK\", \"result\":1}}";
+        when(cpClient.listPackages()).thenReturn(returnVal);
+
+        try {
+            service.listPackages(hfsVmId);
+            Assert.fail("This test shouldn't get here");
+        }
+        catch (RuntimeException e) {
+            Assert.assertEquals("Error while handling response for call listPackages", e.getMessage());
+        }
+    }
+
+    @Test
+    public void listPackagesNullPackages() throws Exception {
+        String returnVal = "{\"data\": {\"pkg\": null}, \"metadata\":{\"version\":1,\"reason\":\"OK\", \"result\":1}}";
+        when(cpClient.listPackages()).thenReturn(returnVal);
+
+        try {
+            service.listPackages(hfsVmId);
+            Assert.fail("This test shouldn't get here");
+        }
+        catch (RuntimeException e) {
+            Assert.assertEquals("No cpanel packages present", e.getMessage());
+        }
+    }
 }
