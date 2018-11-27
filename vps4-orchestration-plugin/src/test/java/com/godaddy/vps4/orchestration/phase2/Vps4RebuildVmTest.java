@@ -54,7 +54,6 @@ import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyLong;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Matchers.startsWith;
-import static org.mockito.Mock.*;
 import static org.mockito.Mockito.*;
 import javax.sql.DataSource;
 import java.util.ArrayList;
@@ -383,6 +382,26 @@ public class Vps4RebuildVmTest {
             // verify parameter passed into the BindIp command is the right pair of hfsVmId and ipAddressId
             BindIp.BindIpRequest bindIpRequest = bindIpRequestArgumentCaptor.getValue();
             Assert.assertEquals(bindIpRequest.vmId, hfsNewVmId);
+            Assert.assertEquals(bindIpRequest.addressId, ipAddress.ipAddressId);
+        }
+    }
+
+    @Test (expected = RuntimeException.class)
+    public void bindsIpAddressesToOldHfsVmWhenCreateFails() {
+        when(context.execute(eq("CreateVm"), eq(CreateVm.class), any(CreateVm.Request.class)))
+                .thenThrow(new RuntimeException("test create vm failed"));
+        command.execute(context, request);
+        for (IpAddress ipAddress: ipAddresses) {
+            verify(context, times(1))
+                    .execute(
+                            eq(String.format("BindIP-%d", ipAddress.ipAddressId)),
+                            eq(BindIp.class),
+                            bindIpRequestArgumentCaptor.capture()
+                    );
+
+            // verify parameter passed into the BindIp command is the right pair of hfsVmId and ipAddressId
+            BindIp.BindIpRequest bindIpRequest = bindIpRequestArgumentCaptor.getValue();
+            Assert.assertEquals(bindIpRequest.vmId, vps4Vm.hfsVmId);
             Assert.assertEquals(bindIpRequest.addressId, ipAddress.ipAddressId);
         }
     }
