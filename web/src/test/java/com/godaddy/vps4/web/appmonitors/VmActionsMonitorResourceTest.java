@@ -1,23 +1,10 @@
 package com.godaddy.vps4.web.appmonitors;
 
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.argThat;
-import static org.mockito.Mockito.doNothing;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
-
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
-
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
-import org.mockito.ArgumentMatcher;
 
 import com.godaddy.vps4.appmonitors.MonitorService;
 import com.godaddy.vps4.appmonitors.MonitoringCheckpoint;
@@ -29,6 +16,18 @@ import com.godaddy.vps4.vm.ActionService;
 import com.godaddy.vps4.vm.ActionService.ActionListFilters;
 import com.godaddy.vps4.vm.ActionStatus;
 import com.godaddy.vps4.vm.ActionType;
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.Test;
+import org.mockito.ArgumentMatcher;
+
+import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.argThat;
+import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 public class VmActionsMonitorResourceTest {
 
@@ -91,10 +90,50 @@ public class VmActionsMonitorResourceTest {
 
     @Test
     public void testGetRestartPendingVms() {
-        when(monitorService.getVmsByActions(15L, ActionType.RESTART_VM, ActionStatus.IN_PROGRESS)).thenReturn(expectedVmActionData);
+        // setup the test to create a restart action in in-Progress status
+        Action action = new Action(0, UUID.randomUUID(), ActionType.RESTART_VM, null, null, null,
+                ActionStatus.IN_PROGRESS, Instant.now().minus(10, ChronoUnit.MINUTES), Instant.now(), null,
+                UUID.randomUUID(), "tester");
+        List<Action> testActions = new ArrayList<>();
+        testActions.add(action);
+        ResultSubset<Action> resultSubset = new ResultSubset<>(testActions, testActions.size());
+        ArgumentMatcher<ActionListFilters> expectedActionFilters = new ArgumentMatcher<ActionListFilters>() {
+            @Override
+            public boolean matches(Object item) {
+                ActionListFilters actionFilters = (ActionListFilters)item;
+                return actionFilters.getTypeList().stream()
+                        .anyMatch(f -> ActionType.valueOf(f.getActionTypeId()) == ActionType.RESTART_VM);
+            }
+        };
+
+        when(actionService.getActionList(argThat(expectedActionFilters))).thenReturn(resultSubset);
         List<VmActionData> actualVmActionData = vmActionsMonitorResource.getRestartPendingVms(15L);
         Assert.assertNotNull(actualVmActionData);
-        Assert.assertEquals(expectedVmActionData.size(), actualVmActionData.size());
+        Assert.assertEquals(1, actualVmActionData.size());
+    }
+
+    @Test
+    public void testGetRebootPendingVms() {
+        // setup the test to create a restart action in in-Progress status
+        Action action = new Action(0, UUID.randomUUID(), ActionType.POWER_CYCLE, null, null, null,
+                ActionStatus.IN_PROGRESS, Instant.now().minus(10, ChronoUnit.MINUTES), Instant.now(), null,
+                UUID.randomUUID(), "tester");
+        List<Action> testActions = new ArrayList<>();
+        testActions.add(action);
+        ResultSubset<Action> resultSubset = new ResultSubset<>(testActions, testActions.size());
+        ArgumentMatcher<ActionListFilters> expectedActionFilters = new ArgumentMatcher<ActionListFilters>() {
+            @Override
+            public boolean matches(Object item) {
+                ActionListFilters actionFilters = (ActionListFilters) item;
+                return actionFilters.getTypeList().stream()
+                        .anyMatch(f -> ActionType.valueOf(f.getActionTypeId()) == ActionType.POWER_CYCLE);
+            }
+        };
+
+        when(actionService.getActionList(argThat(expectedActionFilters))).thenReturn(resultSubset);
+        List<VmActionData> actualVmActionData = vmActionsMonitorResource.getRestartPendingVms(15L);
+        Assert.assertNotNull(actualVmActionData);
+        Assert.assertEquals(1, actualVmActionData.size());
     }
 
     @Test
@@ -112,7 +151,6 @@ public class VmActionsMonitorResourceTest {
         Assert.assertNotNull(actualVmActionData);
         Assert.assertEquals(expectedVmActionData.size(), actualVmActionData.size());
     }
-
 
     private ResultSubset<Action> getTestResultSet(long size, ActionType actionType, ActionStatus actionStatus) {
         return getTestResultSet(size, actionType, actionStatus, new ArrayList<>());

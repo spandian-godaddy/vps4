@@ -1,15 +1,5 @@
 package com.godaddy.vps4.web.vm;
 
-import static com.godaddy.vps4.web.util.RequestValidation.getAndValidateUserAccountCredit;
-import static com.godaddy.vps4.web.util.RequestValidation.validateCreditIsNotInUse;
-import static com.godaddy.vps4.web.util.RequestValidation.validateNoConflictingActions;
-import static com.godaddy.vps4.web.util.RequestValidation.validateResellerCredit;
-import static com.godaddy.vps4.web.util.RequestValidation.validateServerIsActive;
-import static com.godaddy.vps4.web.util.RequestValidation.validateServerIsStopped;
-import static com.godaddy.vps4.web.util.RequestValidation.validateUserIsShopper;
-import static com.godaddy.vps4.web.util.RequestValidation.validateVmExists;
-import static com.godaddy.vps4.web.util.VmHelper.createActionAndExecute;
-
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
@@ -27,22 +17,11 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
 
-import com.godaddy.vps4.orchestration.vm.provision.ProvisionRequest;
-import com.godaddy.vps4.snapshot.SnapshotService;
-import com.godaddy.vps4.snapshot.SnapshotStatus;
-import com.godaddy.vps4.vm.Action;
-import com.godaddy.vps4.vm.ServerSpec;
-import com.godaddy.vps4.vm.ServerType;
-import org.apache.commons.lang3.StringUtils;
-import org.json.simple.JSONObject;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import com.godaddy.hfs.config.Config;
 import com.godaddy.vps4.credit.CreditService;
 import com.godaddy.vps4.credit.VirtualMachineCredit;
 import com.godaddy.vps4.orchestration.vm.VmActionRequest;
-
+import com.godaddy.vps4.orchestration.vm.provision.ProvisionRequest;
 import com.godaddy.vps4.project.Project;
 import com.godaddy.vps4.project.ProjectService;
 import com.godaddy.vps4.scheduler.api.core.SchedulerJobDetail;
@@ -50,12 +29,17 @@ import com.godaddy.vps4.scheduler.api.web.SchedulerWebService;
 import com.godaddy.vps4.security.Vps4User;
 import com.godaddy.vps4.security.Vps4UserService;
 import com.godaddy.vps4.snapshot.Snapshot;
+import com.godaddy.vps4.snapshot.SnapshotService;
+import com.godaddy.vps4.snapshot.SnapshotStatus;
 import com.godaddy.vps4.util.Cryptography;
+import com.godaddy.vps4.vm.Action;
 import com.godaddy.vps4.vm.ActionService;
 import com.godaddy.vps4.vm.ActionType;
 import com.godaddy.vps4.vm.DataCenterService;
 import com.godaddy.vps4.vm.ImageService;
 import com.godaddy.vps4.vm.ProvisionVmInfo;
+import com.godaddy.vps4.vm.ServerSpec;
+import com.godaddy.vps4.vm.ServerType;
 import com.godaddy.vps4.vm.VirtualMachine;
 import com.godaddy.vps4.vm.VirtualMachineService;
 import com.godaddy.vps4.vm.VirtualMachineService.ProvisionVirtualMachineParameters;
@@ -75,6 +59,20 @@ import gdg.hfs.vhfs.vm.VmService;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
+import org.apache.commons.lang3.StringUtils;
+import org.json.simple.JSONObject;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import static com.godaddy.vps4.web.util.RequestValidation.getAndValidateUserAccountCredit;
+import static com.godaddy.vps4.web.util.RequestValidation.validateCreditIsNotInUse;
+import static com.godaddy.vps4.web.util.RequestValidation.validateNoConflictingActions;
+import static com.godaddy.vps4.web.util.RequestValidation.validateResellerCredit;
+import static com.godaddy.vps4.web.util.RequestValidation.validateServerIsActive;
+import static com.godaddy.vps4.web.util.RequestValidation.validateServerIsStopped;
+import static com.godaddy.vps4.web.util.RequestValidation.validateUserIsShopper;
+import static com.godaddy.vps4.web.util.RequestValidation.validateVmExists;
+import static com.godaddy.vps4.web.util.VmHelper.createActionAndExecute;
 
 @Vps4Api
 @Api(tags = { "vms" })
@@ -175,19 +173,25 @@ public class VmResource {
     @Path("{vmId}/restart")
     public VmAction restartVm(@PathParam("vmId") UUID vmId) {
         VirtualMachine vm = getVm(vmId);
-        validateNoConflictingActions(vmId, actionService, ActionType.START_VM, ActionType.STOP_VM,
-                ActionType.RESTART_VM, ActionType.RESTORE_VM);
-        validateServerIsActive(vmService.getVm(vm.hfsVmId));
 
         VmActionRequest restartRequest = new VmActionRequest();
         restartRequest.virtualMachine = vm;
+
+        // avoid sending restart request if other conflicting vm actions are in progress.
+        // for example: a restart/stop/start vm or restore/upgrade/rebuild vm action is already in progress
+        validateNoConflictingActions(vmId, actionService, ActionType.START_VM, ActionType.STOP_VM,
+                ActionType.RESTART_VM, ActionType.POWER_CYCLE, ActionType.RESTORE_VM, ActionType.UPGRADE_VM, ActionType.REBUILD_VM);
+        validateServerIsActive(vmService.getVm(vm.hfsVmId));
+
         if (vm.spec.isVirtualMachine()) {
+            // restart virtual machine if we pass all validations
             return createActionAndExecute(actionService, commandService, vm.vmId,
                     ActionType.RESTART_VM, restartRequest, "Vps4RestartVm", user);
+        } else {
+            // initiate dedicated vm reboot action
+            return createActionAndExecute(actionService, commandService, vm.vmId,
+                    ActionType.POWER_CYCLE, restartRequest, "Vps4RebootDedicated", user);
         }
-
-        return createActionAndExecute(actionService, commandService, vm.vmId,
-                ActionType.POWER_CYCLE, restartRequest, "Vps4RestartDedVm", user);
     }
 
     public static class ProvisionVmRequest {

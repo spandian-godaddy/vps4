@@ -11,7 +11,7 @@ import gdg.hfs.vhfs.vm.VmService;
 import javax.inject.Inject;
 
 @CommandMetadata(
-        name="Vps4RestartDedVm",
+        name="Vps4RebootDedicated",
         requestType= VmActionRequest.class,
         responseType= Vps4RebootDedicated.Response.class,
         retryStrategy = CommandRetryStrategy.NEVER
@@ -31,7 +31,7 @@ public class Vps4RebootDedicated extends ActionCommand<VmActionRequest, Vps4Rebo
     @Override
     protected Vps4RebootDedicated.Response executeWithAction(CommandContext context, VmActionRequest request) {
 
-        VmAction hfsAction = context.execute("Vps4RestartDed",
+        VmAction hfsAction = context.execute("Vps4RebootDedicated",
                 ctx -> vmService.rebootVm(request.virtualMachine.hfsVmId),
                 VmAction.class);
 

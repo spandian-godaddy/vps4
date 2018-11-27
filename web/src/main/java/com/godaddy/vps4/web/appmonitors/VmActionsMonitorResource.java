@@ -31,7 +31,6 @@ import com.godaddy.vps4.web.Vps4Api;
 import com.godaddy.vps4.web.security.GDUser;
 import com.godaddy.vps4.web.security.RequiresRole;
 import com.google.inject.Inject;
-
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
@@ -86,7 +85,27 @@ public class VmActionsMonitorResource {
     @ApiOperation(value = "Find all VM id's that are pending restart vm action for longer than m minutes, default 15 minutes",
             notes = "Find all VM id's that are pending restart vm action for longer than m minutes, default 15 minutes")
     public List<VmActionData> getRestartPendingVms(@QueryParam("thresholdInMinutes") @DefaultValue("15") Long thresholdInMinutes) {
-        return monitorService.getVmsByActions(thresholdInMinutes, ActionType.RESTART_VM, ActionStatus.IN_PROGRESS);
+        ActionListFilters actionListFilters = new ActionListFilters();
+        actionListFilters.byType(ActionType.RESTART_VM, ActionType.POWER_CYCLE);
+        actionListFilters.byStatus(ActionStatus.IN_PROGRESS);
+
+        ResultSubset<Action> resultSubset = actionService.getActionList(actionListFilters);
+        if(resultSubset == null) {
+            return new ArrayList<>();
+        }
+        List<Action> actions = resultSubset.results;
+        return mapActionsToVmActionData(actions);
+    }
+
+    private List<VmActionData> mapActionsToVmActionData(List<Action> actions) {
+        if(actions.isEmpty()) {
+            return  new ArrayList<>();
+        }
+        List<VmActionData> actionData = new ArrayList<>(actions.size());
+        actions.forEach(action -> {
+            actionData.add(new VmActionData(Long.toString(action.id), action.commandId, action.resourceId, action.type.toString()));
+        });
+        return actionData;
     }
 
     @RequiresRole(roles = {GDUser.Role.ADMIN})

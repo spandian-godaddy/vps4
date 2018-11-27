@@ -408,6 +408,17 @@ public class VmResourceTest {
         testRebootDedicatedVm();
     }
 
+    public void testDoubleRebootDedicatedVm() {
+        VirtualMachine vm = createTestDedicated();
+
+        VmAction vmAction = getVmResource().restartVm(vm.vmId);
+        try {
+            getVmResource().restartVm(vm.vmId);
+            Assert.fail();
+        } catch (Vps4Exception e) {
+            Assert.assertEquals("CONFLICTING_INCOMPLETE_ACTION", e.getId());
+        }
+    }
 
     // === destroyVm Tests ===
     public void testDestroyVm() {
