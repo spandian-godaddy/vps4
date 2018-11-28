@@ -4,8 +4,8 @@ import javax.inject.Inject;
 
 import gdg.hfs.orchestration.Command;
 import gdg.hfs.orchestration.CommandContext;
-import gdg.hfs.vhfs.vm.VmAction;
-import gdg.hfs.vhfs.vm.VmService;
+import com.godaddy.hfs.vm.VmAction;
+import com.godaddy.hfs.vm.VmService;
 
 public class DestroyVm implements Command<Long, Void> {
 

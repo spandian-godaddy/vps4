@@ -61,8 +61,8 @@ import com.google.inject.Inject;
 import com.google.inject.Injector;
 
 import gdg.hfs.orchestration.CommandContext;
-import gdg.hfs.vhfs.vm.Vm;
-import gdg.hfs.vhfs.vm.VmService;
+import com.godaddy.hfs.vm.Vm;
+import com.godaddy.hfs.vm.VmService;
 
 public class Vps4RestoreVmTest {
     static Injector injector;
@@ -74,7 +74,7 @@ public class Vps4RestoreVmTest {
     private long restoreActionId;
     private Project vps4Project;
     private List<IpAddress> ipAddresses;
-    private gdg.hfs.vhfs.vm.VmAction hfsAction;
+    private com.godaddy.hfs.vm.VmAction hfsAction;
     private long hfsRestoreActionId = 12345;
     private long hfsNewVmId = 4567;
     private Vm hfsVm;
@@ -158,7 +158,7 @@ public class Vps4RestoreVmTest {
         when(mockContext.execute(eq("GetNocfoxImageId"), any(Function.class), eq(String.class))).thenReturn(SqlTestData.nfImageId);
         when(mockContext.execute(eq("GetVmOSDistro"), any(Function.class), eq(String.class))).thenReturn(SqlTestData.IMAGE_NAME);
 
-        hfsAction = new gdg.hfs.vhfs.vm.VmAction();
+        hfsAction = new com.godaddy.hfs.vm.VmAction();
         hfsAction.vmActionId = hfsRestoreActionId;
         hfsAction.vmId = hfsNewVmId;
 

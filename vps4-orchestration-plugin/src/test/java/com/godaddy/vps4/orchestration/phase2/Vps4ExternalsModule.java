@@ -2,7 +2,7 @@ package com.godaddy.vps4.orchestration.phase2;
 
 import com.google.inject.AbstractModule;
 import gdg.hfs.vhfs.snapshot.SnapshotService;
-import gdg.hfs.vhfs.vm.VmService;
+import com.godaddy.hfs.vm.VmService;
 
 import static org.mockito.Mockito.mock;
 

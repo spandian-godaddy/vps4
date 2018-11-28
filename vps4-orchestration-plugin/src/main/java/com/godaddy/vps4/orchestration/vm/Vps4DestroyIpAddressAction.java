@@ -16,7 +16,7 @@ import com.godaddy.vps4.vm.VirtualMachineService;
 
 import gdg.hfs.orchestration.CommandContext;
 import gdg.hfs.orchestration.CommandMetadata;
-import gdg.hfs.vhfs.vm.VmService;
+import com.godaddy.hfs.vm.VmService;
 
 @CommandMetadata(
         name="Vps4DestroyIpAddressAction",

@@ -8,8 +8,8 @@ import com.godaddy.vps4.vm.ActionService;
 import gdg.hfs.orchestration.CommandContext;
 import gdg.hfs.orchestration.CommandMetadata;
 import gdg.hfs.orchestration.CommandRetryStrategy;
-import gdg.hfs.vhfs.vm.VmAction;
-import gdg.hfs.vhfs.vm.VmService;
+import com.godaddy.hfs.vm.VmAction;
+import com.godaddy.hfs.vm.VmService;
 
 @CommandMetadata(
         name="Vps4StartVm",

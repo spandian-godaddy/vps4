@@ -23,7 +23,7 @@ import com.google.inject.Guice;
 import com.google.inject.Injector;
 
 import gdg.hfs.orchestration.CommandContext;
-import gdg.hfs.vhfs.vm.VmService;
+import com.godaddy.hfs.vm.VmService;
 import junit.framework.Assert;
 
 public class TestVps4DestroyIpAddressAction {

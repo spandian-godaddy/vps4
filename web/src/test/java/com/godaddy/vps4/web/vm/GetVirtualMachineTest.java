@@ -32,8 +32,8 @@ import com.godaddy.vps4.vm.VirtualMachineService;
 import com.godaddy.vps4.vm.VirtualMachineType;
 import com.godaddy.vps4.web.security.GDUser;
 
-import gdg.hfs.vhfs.vm.Vm;
-import gdg.hfs.vhfs.vm.VmService;
+import com.godaddy.hfs.vm.Vm;
+import com.godaddy.hfs.vm.VmService;
 
 public class GetVirtualMachineTest {
 

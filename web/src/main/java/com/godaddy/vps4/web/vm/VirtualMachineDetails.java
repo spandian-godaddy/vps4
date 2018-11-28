@@ -1,6 +1,6 @@
 package com.godaddy.vps4.web.vm;
 
-import gdg.hfs.vhfs.vm.Vm;
+import com.godaddy.hfs.vm.Vm;
 
 public class VirtualMachineDetails {
 

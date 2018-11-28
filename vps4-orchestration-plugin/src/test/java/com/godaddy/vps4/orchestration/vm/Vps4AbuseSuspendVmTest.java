@@ -5,7 +5,7 @@ import com.godaddy.vps4.vm.*;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
 import gdg.hfs.orchestration.CommandContext;
-import gdg.hfs.vhfs.vm.VmService;
+import com.godaddy.hfs.vm.VmService;
 import org.junit.Test;
 
 import java.time.Instant;
@@ -43,8 +43,8 @@ public class Vps4AbuseSuspendVmTest {
         VmAction inProgress = new VmAction();
         inProgress.id = 12l;
         inProgress.status = ActionStatus.IN_PROGRESS;
-        when(context.execute(eq("Vps4StopVm"), (Function<CommandContext, Object>) any(), any())).thenReturn(new gdg.hfs.vhfs.vm.VmAction());
-        when(context.execute(eq(WaitForManageVmAction.class), any())).thenReturn(new gdg.hfs.vhfs.vm.VmAction());
+        when(context.execute(eq("Vps4StopVm"), (Function<CommandContext, Object>) any(), any())).thenReturn(new com.godaddy.hfs.vm.VmAction());
+        when(context.execute(eq(WaitForManageVmAction.class), any())).thenReturn(new com.godaddy.hfs.vm.VmAction());
 
         command.executeWithAction(context, request);
         verify(creditService, times(1)).setStatus(virtualMachine.orionGuid, AccountStatus.ABUSE_SUSPENDED);

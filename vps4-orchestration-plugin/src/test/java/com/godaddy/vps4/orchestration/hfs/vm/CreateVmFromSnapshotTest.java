@@ -26,9 +26,9 @@ import com.google.inject.Inject;
 import com.google.inject.Injector;
 
 import gdg.hfs.orchestration.CommandContext;
-import gdg.hfs.vhfs.vm.CreateVMWithFlavorRequest;
-import gdg.hfs.vhfs.vm.VmAction;
-import gdg.hfs.vhfs.vm.VmService;
+import com.godaddy.hfs.vm.CreateVMWithFlavorRequest;
+import com.godaddy.hfs.vm.VmAction;
+import com.godaddy.hfs.vm.VmService;
 
 public class CreateVmFromSnapshotTest {
     static Injector injector;

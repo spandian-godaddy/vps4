@@ -15,7 +15,7 @@ import javax.ws.rs.NotFoundException;
 import javax.ws.rs.core.Response;
 
 import gdg.hfs.vhfs.cpanel.CPanelLicense;
-import gdg.hfs.vhfs.vm.Console;
+import com.godaddy.hfs.vm.Console;
 import org.joda.time.DateTime;
 import org.mockito.Mockito;
 
@@ -34,10 +34,10 @@ import gdg.hfs.vhfs.ecomm.Account;
 import gdg.hfs.vhfs.ecomm.ECommDataCache;
 import gdg.hfs.vhfs.ecomm.ECommService;
 import gdg.hfs.vhfs.ecomm.MetadataUpdate;
-import gdg.hfs.vhfs.mailrelay.MailRelay;
-import gdg.hfs.vhfs.mailrelay.MailRelayHistory;
-import gdg.hfs.vhfs.mailrelay.MailRelayService;
-import gdg.hfs.vhfs.mailrelay.MailRelayUpdate;
+import com.godaddy.hfs.mailrelay.MailRelay;
+import com.godaddy.hfs.mailrelay.MailRelayHistory;
+import com.godaddy.hfs.mailrelay.MailRelayService;
+import com.godaddy.hfs.mailrelay.MailRelayUpdate;
 import gdg.hfs.vhfs.network.AddressAction;
 import gdg.hfs.vhfs.network.IpAddress;
 import gdg.hfs.vhfs.network.NetworkService;
@@ -56,15 +56,14 @@ import gdg.hfs.vhfs.snapshot.SnapshotService;
 import gdg.hfs.vhfs.sysadmin.SysAdminAction;
 import gdg.hfs.vhfs.sysadmin.SysAdminInstallable;
 import gdg.hfs.vhfs.sysadmin.SysAdminService;
-import gdg.hfs.vhfs.vm.CreateVMRequest;
-import gdg.hfs.vhfs.vm.CreateVMWithFlavorRequest;
-import gdg.hfs.vhfs.vm.FlavorList;
-import gdg.hfs.vhfs.vm.ImageList;
-import gdg.hfs.vhfs.vm.Vm;
-import gdg.hfs.vhfs.vm.VmAction;
-import gdg.hfs.vhfs.vm.VmAddress;
-import gdg.hfs.vhfs.vm.VmList;
-import gdg.hfs.vhfs.vm.VmService;
+import com.godaddy.hfs.vm.CreateVMRequest;
+import com.godaddy.hfs.vm.CreateVMWithFlavorRequest;
+import com.godaddy.hfs.vm.FlavorList;
+import com.godaddy.hfs.vm.Vm;
+import com.godaddy.hfs.vm.VmAction;
+import com.godaddy.hfs.vm.VmAddress;
+import com.godaddy.hfs.vm.VmList;
+import com.godaddy.hfs.vm.VmService;
 
 public class HfsMockModule extends AbstractModule {
 
@@ -792,12 +791,6 @@ public class HfsMockModule extends AbstractModule {
 
             @Override
             public VmList getVmsBulk(String s) {
-                // NOTE: do nothing, Implement when needed
-                throw new UnsupportedOperationException("Not implemented, yet");
-            }
-
-            @Override
-            public ImageList getImages(int i, int i1) {
                 // NOTE: do nothing, Implement when needed
                 throw new UnsupportedOperationException("Not implemented, yet");
             }

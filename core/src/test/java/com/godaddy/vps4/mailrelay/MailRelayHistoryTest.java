@@ -19,12 +19,12 @@ import com.godaddy.vps4.mailrelay.MailRelayService.CachedMailRelayHistory;
 import org.junit.Before;
 import org.junit.Test;
 
-import gdg.hfs.vhfs.mailrelay.MailRelayHistory;
+import com.godaddy.hfs.mailrelay.MailRelayHistory;
 import junit.framework.Assert;
 
 public class MailRelayHistoryTest {
 
-    gdg.hfs.vhfs.mailrelay.MailRelayService hfsRelayService;
+    com.godaddy.hfs.mailrelay.MailRelayService hfsRelayService;
     Cache<String, CachedMailRelayHistory> mailRelayHistoryCache;
     MailRelayService relayService;
     List<MailRelayHistory> relayHistory;
@@ -33,7 +33,7 @@ public class MailRelayHistoryTest {
     @Before
     public void setUp(){
         relayHistory = new ArrayList<>();
-        hfsRelayService = mock(gdg.hfs.vhfs.mailrelay.MailRelayService.class);
+        hfsRelayService = mock(com.godaddy.hfs.mailrelay.MailRelayService.class);
         when(hfsRelayService.getRelayHistory(this.ipAddress)).thenReturn (relayHistory);
         CacheManager cacheManager = mock(CacheManager.class);
         mailRelayHistoryCache = mock(Cache.class);

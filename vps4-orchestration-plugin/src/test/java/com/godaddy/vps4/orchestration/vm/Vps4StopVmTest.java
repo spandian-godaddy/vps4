@@ -18,8 +18,8 @@ import com.google.inject.Injector;
 
 import gdg.hfs.orchestration.CommandContext;
 import gdg.hfs.orchestration.GuiceCommandProvider;
-import gdg.hfs.vhfs.vm.VmAction;
-import gdg.hfs.vhfs.vm.VmService;
+import com.godaddy.hfs.vm.VmAction;
+import com.godaddy.hfs.vm.VmService;
 
 public class Vps4StopVmTest {
 

@@ -6,12 +6,12 @@ import com.godaddy.vps4.messaging.Vps4MessagingService;
 import com.google.inject.AbstractModule;
 import gdg.hfs.vhfs.cpanel.CPanelService;
 import gdg.hfs.vhfs.ecomm.ECommService;
-import gdg.hfs.vhfs.mailrelay.MailRelayService;
+import com.godaddy.hfs.mailrelay.MailRelayService;
 import gdg.hfs.vhfs.network.NetworkService;
 import gdg.hfs.vhfs.nodeping.NodePingService;
 import gdg.hfs.vhfs.plesk.PleskService;
 import gdg.hfs.vhfs.sysadmin.SysAdminService;
-import gdg.hfs.vhfs.vm.VmService;
+import com.godaddy.hfs.vm.VmService;
 import gdg.hfs.vhfs.snapshot.SnapshotService;
 
 import javax.inject.Singleton;

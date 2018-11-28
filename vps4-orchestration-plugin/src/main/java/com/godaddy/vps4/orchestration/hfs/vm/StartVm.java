@@ -6,8 +6,8 @@ import com.godaddy.vps4.orchestration.vm.WaitForManageVmAction;
 
 import gdg.hfs.orchestration.Command;
 import gdg.hfs.orchestration.CommandContext;
-import gdg.hfs.vhfs.vm.VmAction;
-import gdg.hfs.vhfs.vm.VmService;
+import com.godaddy.hfs.vm.VmAction;
+import com.godaddy.hfs.vm.VmService;
 
 public class StartVm implements Command<Long, Void> {
 

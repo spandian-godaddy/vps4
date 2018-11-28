@@ -9,7 +9,7 @@ import com.godaddy.vps4.vm.VirtualMachine;
 import com.godaddy.vps4.web.Vps4Exception;
 import com.godaddy.vps4.web.vm.VmResource;
 
-import gdg.hfs.vhfs.vm.Vm;
+import com.godaddy.hfs.vm.Vm;
 
 public interface ControlPanelRequestValidation {
 

@@ -9,9 +9,9 @@ import static org.mockito.Mockito.when;
 import org.junit.Test;
 
 import gdg.hfs.orchestration.CommandContext;
-import gdg.hfs.vhfs.vm.VmAction;
-import gdg.hfs.vhfs.vm.VmAction.Status;
-import gdg.hfs.vhfs.vm.VmService;
+import com.godaddy.hfs.vm.VmAction;
+import com.godaddy.hfs.vm.VmAction.Status;
+import com.godaddy.hfs.vm.VmService;
 
 public class WaitForManageVmActionTest {
 

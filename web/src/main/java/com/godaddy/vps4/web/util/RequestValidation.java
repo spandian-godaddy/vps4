@@ -35,7 +35,7 @@ import com.godaddy.vps4.web.Vps4NoShopperException;
 import com.godaddy.vps4.web.security.GDUser;
 import com.godaddy.vps4.web.security.GDUser.Role;
 
-import gdg.hfs.vhfs.vm.Vm;
+import com.godaddy.hfs.vm.Vm;
 
 public class RequestValidation {
     static final int GODADDY_MAIL_RELAY_LIMIT = 10000;

@@ -2,16 +2,16 @@ package com.godaddy.vps4.hfs;
 
 import javax.inject.Singleton;
 
+import com.godaddy.hfs.mailrelay.MailRelayService;
+import com.godaddy.hfs.vm.VmService;
 import com.google.inject.AbstractModule;
 
 import gdg.hfs.vhfs.cpanel.CPanelService;
 import gdg.hfs.vhfs.ecomm.ECommService;
-import gdg.hfs.vhfs.mailrelay.MailRelayService;
 import gdg.hfs.vhfs.network.NetworkService;
 import gdg.hfs.vhfs.nodeping.NodePingService;
 import gdg.hfs.vhfs.plesk.PleskService;
 import gdg.hfs.vhfs.sysadmin.SysAdminService;
-import gdg.hfs.vhfs.vm.VmService;
 
 public class HfsClientModule extends AbstractModule {
 

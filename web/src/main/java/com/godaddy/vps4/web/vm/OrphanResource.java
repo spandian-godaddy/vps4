@@ -17,7 +17,7 @@ import com.google.inject.Inject;
 import gdg.hfs.vhfs.network.NetworkService;
 import gdg.hfs.vhfs.nodeping.NodePingCheck;
 import gdg.hfs.vhfs.nodeping.NodePingService;
-import gdg.hfs.vhfs.vm.Vm;
+import com.godaddy.hfs.vm.Vm;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import org.slf4j.Logger;

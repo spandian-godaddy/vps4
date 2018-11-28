@@ -16,9 +16,9 @@ import com.google.inject.Injector;
 
 import gdg.hfs.orchestration.CommandContext;
 import gdg.hfs.orchestration.GuiceCommandProvider;
-import gdg.hfs.vhfs.mailrelay.MailRelay;
-import gdg.hfs.vhfs.mailrelay.MailRelayService;
-import gdg.hfs.vhfs.mailrelay.MailRelayUpdate;
+import com.godaddy.hfs.mailrelay.MailRelay;
+import com.godaddy.hfs.mailrelay.MailRelayService;
+import com.godaddy.hfs.mailrelay.MailRelayUpdate;
 
 public class Vps4MailRelayTest {
 

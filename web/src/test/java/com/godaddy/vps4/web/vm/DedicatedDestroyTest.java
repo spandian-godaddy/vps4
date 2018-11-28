@@ -38,7 +38,7 @@ import gdg.hfs.orchestration.CommandGroupSpec;
 import gdg.hfs.orchestration.CommandService;
 import gdg.hfs.orchestration.CommandSpec;
 import gdg.hfs.orchestration.CommandState;
-import gdg.hfs.vhfs.vm.VmService;
+import com.godaddy.hfs.vm.VmService;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;

@@ -13,12 +13,12 @@ import org.junit.Test;
 
 import com.godaddy.vps4.mailrelay.MailRelayService.CachedMailRelayUsage;
 
-import gdg.hfs.vhfs.mailrelay.MailRelay;
+import com.godaddy.hfs.mailrelay.MailRelay;
 import junit.framework.Assert;
 
 public class MailRelayUsageTest {
 
-    gdg.hfs.vhfs.mailrelay.MailRelayService hfsRelayService;
+    com.godaddy.hfs.mailrelay.MailRelayService hfsRelayService;
     Cache<String, CachedMailRelayUsage> mailRelayCache;
     MailRelayService relayService;
     MailRelay mailRelay;
@@ -30,7 +30,7 @@ public class MailRelayUsageTest {
         mailRelay.ipv4Address = this.ipAddress;
         mailRelay.quota = 5000;
         mailRelay.relays = 100;
-        hfsRelayService = mock(gdg.hfs.vhfs.mailrelay.MailRelayService.class);
+        hfsRelayService = mock(com.godaddy.hfs.mailrelay.MailRelayService.class);
         when(hfsRelayService.getMailRelay(this.ipAddress)).thenReturn (mailRelay);
         CacheManager cacheManager = mock(CacheManager.class);
         when(hfsRelayService.getMailRelay(ipAddress)).thenReturn(mailRelay);

@@ -16,7 +16,7 @@ import com.godaddy.vps4.web.credit.CreditResource;
 import gdg.hfs.vhfs.network.NetworkService;
 import gdg.hfs.vhfs.nodeping.NodePingCheck;
 import gdg.hfs.vhfs.nodeping.NodePingService;
-import gdg.hfs.vhfs.vm.Vm;
+import com.godaddy.hfs.vm.Vm;
 import org.junit.Before;
 import org.junit.Test;
 

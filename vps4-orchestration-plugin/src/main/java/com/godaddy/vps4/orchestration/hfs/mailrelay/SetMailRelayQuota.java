@@ -7,9 +7,9 @@ import com.google.inject.Inject;
 
 import gdg.hfs.orchestration.Command;
 import gdg.hfs.orchestration.CommandContext;
-import gdg.hfs.vhfs.mailrelay.MailRelay;
-import gdg.hfs.vhfs.mailrelay.MailRelayService;
-import gdg.hfs.vhfs.mailrelay.MailRelayUpdate;
+import com.godaddy.hfs.mailrelay.MailRelay;
+import com.godaddy.hfs.mailrelay.MailRelayService;
+import com.godaddy.hfs.mailrelay.MailRelayUpdate;
 
 public class SetMailRelayQuota implements Command<SetMailRelayQuota.Request, Void>{
 

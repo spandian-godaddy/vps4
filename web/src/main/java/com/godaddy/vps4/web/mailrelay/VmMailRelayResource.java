@@ -37,8 +37,8 @@ import com.godaddy.vps4.web.security.GDUser.Role;
 import com.google.inject.Inject;
 
 import gdg.hfs.orchestration.CommandService;
-import gdg.hfs.vhfs.mailrelay.MailRelay;
-import gdg.hfs.vhfs.mailrelay.MailRelayHistory;
+import com.godaddy.hfs.mailrelay.MailRelay;
+import com.godaddy.hfs.mailrelay.MailRelayHistory;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;

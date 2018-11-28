@@ -15,9 +15,9 @@ import org.slf4j.LoggerFactory;
 
 import com.godaddy.vps4.web.Vps4Api;
 
-import gdg.hfs.vhfs.vm.Flavor;
-import gdg.hfs.vhfs.vm.FlavorList;
-import gdg.hfs.vhfs.vm.VmService;
+import com.godaddy.hfs.vm.Flavor;
+import com.godaddy.hfs.vm.FlavorList;
+import com.godaddy.hfs.vm.VmService;
 import io.swagger.annotations.Api;
 
 @Vps4Api

@@ -16,8 +16,8 @@ import gdg.hfs.orchestration.CommandRetryStrategy;
 import gdg.hfs.vhfs.cpanel.CPanelService;
 import gdg.hfs.vhfs.nodeping.NodePingService;
 import gdg.hfs.vhfs.plesk.PleskService;
-import gdg.hfs.vhfs.vm.VmAction;
-import gdg.hfs.vhfs.vm.VmService;
+import com.godaddy.hfs.vm.VmAction;
+import com.godaddy.hfs.vm.VmService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

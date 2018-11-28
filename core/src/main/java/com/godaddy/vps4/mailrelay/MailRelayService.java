@@ -10,18 +10,17 @@ import javax.cache.Cache;
 import javax.cache.CacheManager;
 import javax.inject.Inject;
 
+import com.godaddy.hfs.mailrelay.MailRelay;
+import com.godaddy.hfs.mailrelay.MailRelayHistory;
 import com.godaddy.vps4.cache.CacheName;
-
-import gdg.hfs.vhfs.mailrelay.MailRelay;
-import gdg.hfs.vhfs.mailrelay.MailRelayHistory;
 
 public class MailRelayService {
 
-    final gdg.hfs.vhfs.mailrelay.MailRelayService relayService;
+    final com.godaddy.hfs.mailrelay.MailRelayService relayService;
     private final Cache<String, CachedMailRelayHistory> mailRelayHistoryCache;
 
     @Inject
-    public  MailRelayService(gdg.hfs.vhfs.mailrelay.MailRelayService relayService, CacheManager cacheManager){
+    public  MailRelayService(com.godaddy.hfs.mailrelay.MailRelayService relayService, CacheManager cacheManager){
         this.relayService = relayService;
         this.mailRelayHistoryCache = cacheManager.getCache(CacheName.MAIL_RELAY_HISTORY, String.class, CachedMailRelayHistory.class);
     }

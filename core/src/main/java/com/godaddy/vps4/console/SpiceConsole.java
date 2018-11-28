@@ -1,10 +1,11 @@
 package com.godaddy.vps4.console;
 
-import gdg.hfs.vhfs.vm.Console;
-import gdg.hfs.vhfs.vm.VmService;
 import org.apache.commons.lang3.StringUtils;
 
 import javax.inject.Inject;
+
+import com.godaddy.hfs.vm.Console;
+import com.godaddy.hfs.vm.VmService;
 
 public class SpiceConsole implements ConsoleService {
 

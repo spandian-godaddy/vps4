@@ -15,7 +15,7 @@ import org.slf4j.LoggerFactory;
 import gdg.hfs.orchestration.Command;
 import gdg.hfs.orchestration.CommandContext;
 import gdg.hfs.vhfs.cpanel.CPanelService;
-import gdg.hfs.vhfs.mailrelay.MailRelayService;
+import com.godaddy.hfs.mailrelay.MailRelayService;
 import gdg.hfs.vhfs.network.NetworkService;
 import gdg.hfs.vhfs.plesk.PleskService;
 
