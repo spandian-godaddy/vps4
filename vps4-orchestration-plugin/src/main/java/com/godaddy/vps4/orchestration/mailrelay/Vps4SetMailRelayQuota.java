@@ -43,6 +43,9 @@ public class Vps4SetMailRelayQuota extends ActionCommand<Vps4SetMailRelayQuota.R
         public int mailRelayQuota;
         public String ipAddress;
 
+        // Empty constructor required for Jackson
+        public Request(){}
+
         public Request(String ipAddress, int mailRelayQuota){
             this.ipAddress = ipAddress;
             this.mailRelayQuota = mailRelayQuota;

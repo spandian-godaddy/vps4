@@ -19,6 +19,9 @@ public class SetHostname implements Command<SetHostname.Request, Void> {
         public String hostname;
         public String controlPanel;
 
+        // Empty constructor required for Jackson
+        public Request(){}
+
         public Request(long hfsVmId, String hostname, String controlPanel){
             this.hfsVmId = hfsVmId;
             this.hostname = hostname;
