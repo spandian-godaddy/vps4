@@ -72,8 +72,8 @@ public class VmActionResource {
 
     @Inject
     public VmActionResource(PrivilegeService privilegeService, ActionService actionService,
-            Vps4UserService userService, CommandService commandService, GDUser user,
-            Map<ActionType, String> actionTypeToCancelCmdNameMap) {
+                            Vps4UserService userService, CommandService commandService, GDUser user,
+                            Map<ActionType, String> actionTypeToCancelCmdNameMap) {
         this.privilegeService = privilegeService;
         this.actionService = actionService;
         this.userService = userService;
@@ -85,14 +85,14 @@ public class VmActionResource {
     @GET
     @Path("{vmId}/actions")
     public PaginatedResult<VmAction> getVmActionList(
-        @PathParam("vmId") UUID vmId,
-        @ApiParam(value = "A list of status to filter the actions.") @QueryParam("status") List<String> statusList,
-        @ApiParam(value = "A list of actions to filter the actions.") @QueryParam("actionType") List<String> typeList,
-        @ApiParam(value = "begin date in UTC, Example: 2007-12-03T10:15:30.00Z") @QueryParam("beginDate") String beginDate,
-        @ApiParam(value = "end date in UTC, Example: 2007-12-03T10:15:30.00Z") @QueryParam("endDate") String endDate,
-        @ApiParam(value = "the maximum number of actions to return") @DefaultValue("10") @QueryParam("limit") long limit,
-        @ApiParam(value = "the number of actions to offset from the most recent") @DefaultValue("0") @QueryParam("offset") long offset,
-        @Context UriInfo uri) {
+            @PathParam("vmId") UUID vmId,
+            @ApiParam(value = "A list of status to filter the actions.") @QueryParam("status") List<String> statusList,
+            @ApiParam(value = "A list of actions to filter the actions.") @QueryParam("actionType") List<String> typeList,
+            @ApiParam(value = "begin date in UTC, Example: 2007-12-03T10:15:30.00Z") @QueryParam("beginDate") String beginDate,
+            @ApiParam(value = "end date in UTC, Example: 2007-12-03T10:15:30.00Z") @QueryParam("endDate") String endDate,
+            @ApiParam(value = "the maximum number of actions to return") @DefaultValue("10") @QueryParam("limit") long limit,
+            @ApiParam(value = "the number of actions to offset from the most recent") @DefaultValue("0") @QueryParam("offset") long offset,
+            @Context UriInfo uri) {
 
         if (user.isShopper())
             RequestValidation.verifyUserPrivilegeToVm(userService, privilegeService, user.getShopperId(), vmId);
@@ -155,7 +155,7 @@ public class VmActionResource {
     public VmActionWithDetails getVmActionWithDetails(@PathParam("vmId") UUID vmId,
                                                       @PathParam("actionId") long actionId) {
         Action action = this.getVmActionFromCore(vmId, actionId);
-        CommandState commandState = this.commandService.getCommand(action.commandId);
+        CommandState commandState = action.commandId != null? this.commandService.getCommand(action.commandId) : null;
         return new VmActionWithDetails(action, commandState, user.isEmployee());
     }
 

@@ -302,6 +302,18 @@ public class VmActionResourceTest {
     }
 
     @Test
+    public void testGetVmActionDetailsNoCommand() {
+        VirtualMachine vm = createTestVm(user.getShopperId());
+        Action action = SqlTestData.insertTestVmAction(null, vm.vmId, ActionType.REINSTATE, dataSource);
+
+        user = GDUserMock.createAdmin();
+        VmActionWithDetails detailedAction = getVmActionResource()
+                .getVmActionWithDetails(vm.vmId, action.id);
+        Assert.assertEquals(detailedAction.commandId, null);
+        Assert.assertEquals(detailedAction.orchestrationCommand, null);
+    }
+
+    @Test
     public void testCancelVmActionCancelsCorrespondingCommand() {
         VirtualMachine vm = createTestVm(user.getShopperId());
         Action action = createTestVmAction(vm.vmId, ActionType.CREATE_VM);
@@ -370,7 +382,7 @@ public class VmActionResourceTest {
 
         Action modifiedAction = actionService.getAction(action.id);
         String expectedNote = String.format(
-            "%s. Async cleanup queued: %s", "Action cancelled via api by admin", commandState.commandId.toString());
+                "%s. Async cleanup queued: %s", "Action cancelled via api by admin", commandState.commandId.toString());
         Assert.assertEquals(expectedNote, modifiedAction.note);
     }
 
