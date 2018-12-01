@@ -273,8 +273,14 @@ public class ECommCreditServiceTest {
         ArgumentCaptor<MetadataUpdate> argument = ArgumentCaptor.forClass(MetadataUpdate.class);
         verify(ecommService).updateProductMetadata(eq(orionGuid.toString()), argument.capture());
         MetadataUpdate newProdMeta = argument.getValue();
+        // verify same number fields in to and from
+        assertEquals(newProdMeta.from.size(), newProdMeta.to.size());
+        // from fields are null
+        assertNull(newProdMeta.from.get("product_id"));
         assertNull(newProdMeta.from.get("data_center"));
         assertNull(newProdMeta.from.get("provision_date"));
+        // to fields are set
+        assertEquals(vmId.toString(), newProdMeta.to.get("product_id"));
         assertEquals(String.valueOf(phx3), newProdMeta.to.get("data_center"));
         assertNotNull(newProdMeta.to.get("provision_date"));
     }

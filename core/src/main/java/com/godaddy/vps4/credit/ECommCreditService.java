@@ -222,7 +222,12 @@ public class ECommCreditService implements CreditService {
 
     private Map<String, String> getCurrentProductMeta(UUID orionGuid) {
         Account account = ecommService.getAccount(orionGuid.toString());
-        return account.product_meta;
+        // Important to add unset enum keys with null value in map or update calls to ecomm vertical will fail
+        Map<String, String> mapWithNullVals = new HashMap<>(account.product_meta);
+        Stream.of(ProductMetaField.values())
+            .map(ProductMetaField::toString)
+            .forEach(field -> mapWithNullVals.put(field, account.product_meta.get(field)));
+        return mapWithNullVals;
     }
 
     @Override
