@@ -1,5 +1,7 @@
 package com.godaddy.vps4.phase2;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.mock;
@@ -8,7 +10,9 @@ import static org.mockito.Mockito.when;
 
 import java.lang.reflect.Method;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 import javax.ws.rs.NotFoundException;
@@ -18,6 +22,7 @@ import org.junit.Before;
 import org.junit.Test;
 
 import com.godaddy.vps4.credit.CreditService;
+import com.godaddy.vps4.credit.ECommCreditService.ProductMetaField;
 import com.godaddy.vps4.credit.VirtualMachineCredit;
 import com.godaddy.vps4.security.GDUserMock;
 import com.godaddy.vps4.vm.AccountStatus;
@@ -170,15 +175,14 @@ public class CreditResourceTest {
                 eq(req.tier), eq(req.managedLevel), eq(req.monitoring), eq(req.resellerId));
         verify(creditService).getVirtualMachineCredit(any(UUID.class));
 
-        Assert.assertEquals(
-                creditService.getVirtualMachineCredit(any(UUID.class)), newCredit);
+        assertEquals(creditService.getVirtualMachineCredit(any(UUID.class)), newCredit);
     }
 
     @Test
     public void testReleaseCreditAdminOnly() {
         try {
             Method method = CreditResource.class.getMethod("releaseCredit", UUID.class);
-            Assert.assertTrue(method.isAnnotationPresent(AdminOnly.class));
+            assertTrue(method.isAnnotationPresent(AdminOnly.class));
         }
         catch(NoSuchMethodException ex) {
             Assert.fail();
@@ -189,13 +193,16 @@ public class CreditResourceTest {
     public void testReleaseCredit() {
         user = GDUserMock.createAdmin(null);
         UUID creditGuid = UUID.randomUUID();
+        UUID vmId = UUID.randomUUID();
+        Map<ProductMetaField, String> prodMeta = new HashMap<>();
+        prodMeta.put(ProductMetaField.PRODUCT_ID, vmId.toString());
+        when(creditService.getProductMeta(creditGuid)).thenReturn(prodMeta);
         VirtualMachineCredit freeCredit = getCreditResource().releaseCredit(creditGuid);
 
-        verify(creditService).unclaimVirtualMachineCredit(creditGuid);
+        verify(creditService).unclaimVirtualMachineCredit(creditGuid, vmId);
         verify(creditService).getVirtualMachineCredit(creditGuid);
 
-        Assert.assertEquals(
-                creditService.getVirtualMachineCredit(creditGuid), freeCredit);
+        assertEquals(creditService.getVirtualMachineCredit(creditGuid), freeCredit);
     }
 
 }

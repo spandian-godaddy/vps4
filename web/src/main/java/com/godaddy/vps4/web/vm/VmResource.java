@@ -295,7 +295,7 @@ public class VmResource {
         VmAction deleteAction = createActionAndExecute(actionService, commandService, vm.vmId,
                 ActionType.DESTROY_VM, destroyRequest, destroyMethod, user);
 
-        creditService.unclaimVirtualMachineCredit(vm.orionGuid);
+        creditService.unclaimVirtualMachineCredit(vm.orionGuid, vm.vmId);
         virtualMachineService.setVmRemoved(vm.vmId);
 
         return deleteAction;

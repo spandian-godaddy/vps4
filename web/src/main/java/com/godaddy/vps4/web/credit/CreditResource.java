@@ -18,6 +18,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.godaddy.vps4.credit.CreditService;
+import com.godaddy.vps4.credit.ECommCreditService.ProductMetaField;
 import com.godaddy.vps4.credit.VirtualMachineCredit;
 import com.godaddy.vps4.web.Vps4Api;
 import com.godaddy.vps4.web.Vps4NoShopperException;
@@ -96,7 +97,10 @@ public class CreditResource {
     @POST
     @Path("/{orionGuid}/release")
     public VirtualMachineCredit releaseCredit(@PathParam("orionGuid") UUID orionGuid) {
-        creditService.unclaimVirtualMachineCredit(orionGuid);
+        UUID vmId = UUID.fromString(
+                creditService.getProductMeta(orionGuid)
+                    .get(ProductMetaField.PRODUCT_ID));
+        creditService.unclaimVirtualMachineCredit(orionGuid, vmId);
 
         VirtualMachineCredit credit = creditService.getVirtualMachineCredit(orionGuid);
         return credit;

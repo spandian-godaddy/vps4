@@ -20,11 +20,13 @@ public interface CreditService {
 
     void claimVirtualMachineCredit(UUID orionGuid, int dataCenterId, UUID productId);
 
-    void unclaimVirtualMachineCredit(UUID orionGuid);
+    void unclaimVirtualMachineCredit(UUID orionGuid, UUID productId);
 
     void setCommonName(UUID orionGuid, String newName);
 
     void updateProductMeta(UUID orionGuid, Map<ProductMetaField, String> updates);
+
+    void updateProductMeta(UUID orionGuid, Map<ProductMetaField, String> requestedTo, Map<ProductMetaField, String> expectedFrom);
 
     void updateProductMeta(UUID orionGuid, ProductMetaField field, String value);
 

@@ -4,24 +4,31 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
+import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.anyInt;
 import static org.mockito.Matchers.eq;
+import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.time.Instant;
 import java.util.Arrays;
+import java.util.EnumMap;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
-import com.godaddy.vps4.vm.AccountStatus;
+import javax.ws.rs.WebApplicationException;
+
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
 
+import com.godaddy.vps4.credit.ECommCreditService.PlanFeatures;
 import com.godaddy.vps4.credit.ECommCreditService.ProductMetaField;
+import com.godaddy.vps4.vm.AccountStatus;
 import com.godaddy.vps4.vm.DataCenter;
 import com.godaddy.vps4.vm.DataCenterService;
 import com.google.inject.Guice;
@@ -45,6 +52,11 @@ public class ECommCreditServiceTest {
     private Account account;
     private UUID orionGuid;
 
+    // Initial product meta data
+    private UUID vmId = UUID.randomUUID();
+    private String provisionDate = Instant.now().toString();
+    private String dcId = "3";
+
     @Before
     public void setUp() throws Exception {
         orionGuid = UUID.randomUUID();
@@ -60,7 +72,12 @@ public class ECommCreditServiceTest {
         account.plan_features.put("operatingsystem", "linux");
         account.plan_features.put("control_panel_type", "cpanel");
         account.product_meta = new HashMap<>();
-        account.product_meta.put(ProductMetaField.PRODUCT_ID.toString(), UUID.randomUUID().toString());
+    }
+
+    private void markCreditClaimed() {
+        account.product_meta.put(ProductMetaField.PRODUCT_ID.toString(), vmId.toString());
+        account.product_meta.put(ProductMetaField.DATA_CENTER.toString(), dcId);
+        account.product_meta.put(ProductMetaField.PROVISION_DATE.toString(), provisionDate);
     }
 
     @Test
@@ -91,6 +108,28 @@ public class ECommCreditServiceTest {
     }
 
     @Test
+    public void testGetCreditNoAccountFoundReturnsNull() {
+        when(ecommService.getAccount(orionGuid.toString())).thenThrow(new WebApplicationException());
+        VirtualMachineCredit credit = creditService.getVirtualMachineCredit(orionGuid);
+        assertNull(credit);
+    }
+
+    @Test
+    public void testGetCreditExceptionSwallowedDuringCreditToVmMapping() {
+        account.plan_features.put(PlanFeatures.TIER.toString(), "nonInt");
+        when(ecommService.getAccount(orionGuid.toString())).thenReturn(account);
+        creditService.getVirtualMachineCredit(orionGuid);
+    }
+
+    @Test(expected=RuntimeException.class)
+    public void testGetCreditSqlExceptionThrown() {
+        markCreditClaimed();
+        when(ecommService.getAccount(orionGuid.toString())).thenReturn(account);
+        when(dcService.getDataCenter(anyInt())).thenThrow(new RuntimeException("Sql.exec exception"));
+        creditService.getVirtualMachineCredit(orionGuid);
+    }
+
+    @Test
     public void testGetCreditMapsAccount() throws Exception {
         when(ecommService.getAccount(orionGuid.toString())).thenReturn(account);
         VirtualMachineCredit credit = creditService.getVirtualMachineCredit(orionGuid);
@@ -100,7 +139,7 @@ public class ECommCreditServiceTest {
         assertEquals(Integer.parseInt(account.plan_features.get("managed_level")), credit.managedLevel);
         assertEquals(account.plan_features.get("operatingsystem"), credit.operatingSystem);
         assertEquals(account.plan_features.get("control_panel_type"), credit.controlPanel);
-        assertEquals(null, credit.provisionDate);
+        assertNull(credit.provisionDate);
         assertEquals(account.shopper_id, credit.shopperId);
     }
 
@@ -241,22 +280,35 @@ public class ECommCreditServiceTest {
     }
 
     @Test
-    public void testUnclaimCreditCallsUpdateProdMeta() throws Exception {
-        String phx3 = "1";
-        String provisionDate = Instant.now().toString();
-        account.product_meta.put("data_center", phx3);
-        account.product_meta.put("provision_date", provisionDate);
-
+    public void testUnclaimCreditCallsUpdateProdMeta() {
+        markCreditClaimed();
         when(ecommService.getAccount(orionGuid.toString())).thenReturn(account);
-        creditService.unclaimVirtualMachineCredit(orionGuid);
+        creditService.unclaimVirtualMachineCredit(orionGuid, vmId);
 
         ArgumentCaptor<MetadataUpdate> argument = ArgumentCaptor.forClass(MetadataUpdate.class);
         verify(ecommService).updateProductMetadata(eq(orionGuid.toString()), argument.capture());
         MetadataUpdate newProdMeta = argument.getValue();
-        assertEquals(phx3, newProdMeta.from.get("data_center"));
-        assertEquals(provisionDate, newProdMeta.from.get("provision_date"));
-        assertNull(newProdMeta.to.get("data_center"));
-        assertNull(newProdMeta.to.get("provision_date"));
+        assertEquals(dcId, newProdMeta.from.get(ProductMetaField.DATA_CENTER.toString()));
+        assertEquals(provisionDate, newProdMeta.from.get(ProductMetaField.PROVISION_DATE.toString()));
+        assertEquals(vmId.toString(), newProdMeta.from.get(ProductMetaField.PRODUCT_ID.toString()));
+        assertNull(newProdMeta.to.get(ProductMetaField.DATA_CENTER.toString()));
+        assertNull(newProdMeta.to.get(ProductMetaField.PROVISION_DATE.toString()));
+        assertNull(newProdMeta.to.get(ProductMetaField.PRODUCT_ID.toString()));
+    }
+
+    @Test
+    public void testUnclaimCreditWithNonMatchingVmId() {
+        markCreditClaimed();
+        when(ecommService.getAccount(orionGuid.toString())).thenReturn(account);
+        when(ecommService.updateProductMetadata(eq(orionGuid.toString()), any(MetadataUpdate.class)))
+            .thenThrow(new WebApplicationException());
+        UUID someVmId = UUID.randomUUID();
+        creditService.unclaimVirtualMachineCredit(orionGuid, someVmId);
+
+        ArgumentCaptor<MetadataUpdate> argument = ArgumentCaptor.forClass(MetadataUpdate.class);
+        verify(ecommService).updateProductMetadata(eq(orionGuid.toString()), argument.capture());
+        MetadataUpdate newProdMeta = argument.getValue();
+        assertEquals(someVmId.toString(), newProdMeta.from.get(ProductMetaField.PRODUCT_ID.toString()));
     }
 
     @Test
@@ -275,10 +327,35 @@ public class ECommCreditServiceTest {
     }
 
     @Test
+    public void testUpdateProductMetaSingleField() {
+        when(ecommService.getAccount(orionGuid.toString())).thenReturn(account);
+
+        ProductMetaField field = ProductMetaField.PLAN_CHANGE_PENDING;
+        creditService.updateProductMeta(orionGuid, field, "true");
+
+        ArgumentCaptor<MetadataUpdate> argument = ArgumentCaptor.forClass(MetadataUpdate.class);
+        verify(ecommService).updateProductMetadata(eq(orionGuid.toString()), argument.capture());
+        assertNull(argument.getValue().from.get(field.toString()));
+        assertEquals("true", argument.getValue().to.get(field.toString()));
+    }
+
+    @Test
     public void setStatusTest() {
         when(ecommService.getAccount(orionGuid.toString())).thenReturn(account);
-        creditService.setStatus(orionGuid, AccountStatus.ABUSE_SUSPENDED);
-        account.status = Account.Status.abuse_suspended;
-        verify(ecommService).updateAccount(orionGuid.toString(), account);
+
+        Map<AccountStatus, Account.Status> mapStatusToHfs = new EnumMap<>(AccountStatus.class);
+        mapStatusToHfs.put(AccountStatus.ABUSE_SUSPENDED, Account.Status.abuse_suspended);
+        mapStatusToHfs.put(AccountStatus.ACTIVE, Account.Status.active);
+        mapStatusToHfs.put(AccountStatus.REMOVED, Account.Status.removed);
+        mapStatusToHfs.put(AccountStatus.SUSPENDED, Account.Status.suspended);
+
+        ArgumentCaptor<Account> argument = ArgumentCaptor.forClass(Account.class);
+        mapStatusToHfs.forEach((k,v) -> {
+            creditService.setStatus(orionGuid, k);
+            verify(ecommService, atLeastOnce()).updateAccount(eq(orionGuid.toString()), argument.capture());
+            assertEquals(v, argument.getValue().status);
+        });
+
     }
+
 }
