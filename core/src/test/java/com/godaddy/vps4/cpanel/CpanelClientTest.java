@@ -105,9 +105,7 @@ public class CpanelClientTest {
     public void testAccessDenied() throws Exception {
         when(response.getStatusLine())
             .thenReturn(new BasicStatusLine(HttpVersion.HTTP_1_1, 403, ""));
-        CpanelAccessHashService accessHashService = new FakeCpanelModule()
-                .provideAccessHashService();
-        // should throw a CpanelAccessDeniedException
+        new FakeCpanelModule().provideAccessHashService();
         cpanelClient.listSites();
     }
 

@@ -14,22 +14,24 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
 
-import com.godaddy.vps4.orchestration.account.Vps4ProcessAccountCancellation;
-import com.godaddy.vps4.vm.*;
-import com.godaddy.vps4.web.util.VmHelper;
-import org.json.simple.JSONObject;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import com.godaddy.vps4.credit.CreditService;
 import com.godaddy.vps4.credit.VirtualMachineCredit;
+import com.godaddy.vps4.orchestration.account.Vps4ProcessAccountCancellation;
 import com.godaddy.vps4.orchestration.vm.Vps4ReviveZombieVm;
+import com.godaddy.vps4.vm.ActionService;
+import com.godaddy.vps4.vm.ActionType;
+import com.godaddy.vps4.vm.VirtualMachine;
+import com.godaddy.vps4.vm.VirtualMachineService;
+import com.godaddy.vps4.vm.VmAction;
 import com.godaddy.vps4.web.Vps4Api;
 import com.godaddy.vps4.web.Vps4Exception;
 import com.godaddy.vps4.web.security.AdminOnly;
 import com.godaddy.vps4.web.security.GDUser;
-import com.godaddy.vps4.web.util.Commands;
+import com.godaddy.vps4.web.util.VmHelper;
 import com.google.inject.Inject;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import gdg.hfs.orchestration.CommandService;
 import io.swagger.annotations.Api;
@@ -37,7 +39,7 @@ import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
 
 @Vps4Api
-@Api(tags = {"vms"})
+@Api(tags = { "vms" })
 
 @Path("/api/vms")
 @Produces(MediaType.APPLICATION_JSON)

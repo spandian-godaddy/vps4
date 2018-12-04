@@ -45,7 +45,6 @@ public class OrphanResourceTest {
 
     private UUID vmId = UUID.randomUUID();
     private VirtualMachine vm;
-    private IpAddress primaryIp;
     private Project project;
 
     private String SGID = "vps4-unit-test";
@@ -93,7 +92,7 @@ public class OrphanResourceTest {
         VirtualMachineCredit virtualMachineCredit = new VirtualMachineCredit();
         virtualMachineCredit.productId = vm.vmId;
         when(creditResource.getCredit(vm.orionGuid)).thenReturn(virtualMachineCredit);
-        Orphans items = resource.getOrphanedResources(vm.vmId);
+        resource.getOrphanedResources(vm.vmId);
     }
 
     @Test

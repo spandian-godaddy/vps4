@@ -56,7 +56,6 @@ public class NetworkResource {
 
     private final NetworkService networkService;
     private final ActionService actionService;
-    private final VirtualMachineService virtualMachineService;
     private final ProjectService projectService;
     private final CommandService commandService;
     private final VmResource vmResource;
@@ -70,7 +69,6 @@ public class NetworkResource {
             CommandService commandService, VmResource vmResource, Config config){
         this.networkService = networkService;
         this.actionService = actionService;
-        this.virtualMachineService = virtualMachineService;
         this.projectService = projectService;
         this.commandService = commandService;
         this.vmResource = vmResource;

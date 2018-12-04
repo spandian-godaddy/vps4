@@ -19,8 +19,6 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.UriInfo;
 
 import org.joda.time.DateTime;
-import org.joda.time.LocalDate;
-
 import com.godaddy.vps4.util.MonitoringMeta;
 import com.godaddy.vps4.vm.VirtualMachine;
 import com.godaddy.vps4.web.PaginatedResult;

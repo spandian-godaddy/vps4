@@ -8,7 +8,6 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -162,7 +161,6 @@ public class CpanelAddonDomainsTest {
 
     @Test(expected=CpanelTimeoutException.class)
     public void calculatePasswordStrengthParseException() throws Exception {
-        Long passwordStrength = 31L;
         String password = "password123";
         String returnVal = "{'not-valid': 'json'}";
         when(cpClient.calculatePasswordStrength(password)).thenReturn(returnVal);
@@ -171,7 +169,6 @@ public class CpanelAddonDomainsTest {
 
     @Test
     public void calculatePasswordStrengthNoMetadata() throws Exception {
-        Long passwordStrength = 31L;
         String password = "password123";
         String returnVal = "{\"data\":{\"strength\":31}, \"metadata\": null}";
         when(cpClient.calculatePasswordStrength(password)).thenReturn(returnVal);
@@ -186,7 +183,6 @@ public class CpanelAddonDomainsTest {
 
     @Test
     public void calculatePasswordStrengthResultNotOk() throws Exception {
-        Long passwordStrength = 31L;
         String password = "password123";
         String reason = "no-workie";
         String returnVal = "{\"metadata\":{\"version\":1,\"reason\":\"" + reason + "\", \"result\":0}}";
@@ -202,7 +198,6 @@ public class CpanelAddonDomainsTest {
 
     @Test
     public void calculatePasswordStrengthNullData() throws Exception {
-        Long passwordStrength = 31L;
         String password = "password123";
         String returnVal = "{\"data\": null, \"metadata\":{\"version\":1,\"reason\":\"OK\", \"result\":1}}";
         when(cpClient.calculatePasswordStrength(password)).thenReturn(returnVal);

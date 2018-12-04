@@ -192,7 +192,7 @@ public class SnapshotResource {
     public SnapshotAction destroySnapshot(@PathParam("snapshotId") UUID snapshotId) {
         Snapshot snapshot = getSnapshot(snapshotId);
 
-        // We dont cancel any incomplete snapshot actions for now as it really doesnt do anything in the Openstack land
+        // We dont cancel any incomplete snapshot actions for now as it really doesn't do anything in the Openstack land
         //cancelIncompleteSnapshotActions(snapshotId);
 
         long actionId = actionService.createAction(snapshotId,  ActionType.DESTROY_SNAPSHOT,

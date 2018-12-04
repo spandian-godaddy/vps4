@@ -1,31 +1,19 @@
 package com.godaddy.vps4.phase2;
 
 import static java.util.UUID.randomUUID;
+import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.eq;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
 
 import javax.inject.Inject;
 import javax.sql.DataSource;
-
-import com.godaddy.vps4.snapshot.SnapshotStatus;
-import com.godaddy.vps4.vm.Action;
-import com.godaddy.vps4.vm.ActionService;
-import com.godaddy.vps4.vm.ActionStatus;
-import com.godaddy.vps4.vm.ActionType;
-import org.junit.After;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
-import org.mockito.Mockito;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.eq;
-import static org.mockito.Mockito.any;
 
 import com.godaddy.vps4.jdbc.DatabaseModule;
 import com.godaddy.vps4.scheduler.api.web.SchedulerWebService;
@@ -35,11 +23,16 @@ import com.godaddy.vps4.security.Vps4User;
 import com.godaddy.vps4.security.Vps4UserService;
 import com.godaddy.vps4.snapshot.Snapshot;
 import com.godaddy.vps4.snapshot.SnapshotService;
+import com.godaddy.vps4.snapshot.SnapshotStatus;
 import com.godaddy.vps4.snapshot.SnapshotType;
+import com.godaddy.vps4.vm.Action;
+import com.godaddy.vps4.vm.ActionService;
+import com.godaddy.vps4.vm.ActionStatus;
+import com.godaddy.vps4.vm.ActionType;
 import com.godaddy.vps4.vm.VirtualMachine;
+import com.godaddy.vps4.vm.VmAction;
 import com.godaddy.vps4.vm.VmModule;
 import com.godaddy.vps4.web.security.GDUser;
-import com.godaddy.vps4.vm.VmAction;
 import com.godaddy.vps4.web.vm.VmResource;
 import com.godaddy.vps4.web.vm.VmSnapshotResource;
 import com.google.inject.AbstractModule;
@@ -47,22 +40,26 @@ import com.google.inject.Guice;
 import com.google.inject.Injector;
 import com.google.inject.Provides;
 
+import org.junit.After;
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.Test;
+import org.mockito.Mockito;
+
 public class VmDestroyTest {
-    @Inject Vps4UserService userService;
-    @Inject DataSource dataSource;
-    @Inject ActionService vmActionService;
+    @Inject
+    Vps4UserService userService;
+    @Inject
+    DataSource dataSource;
+    @Inject
+    ActionService vmActionService;
 
     private GDUser user;
     private VmSnapshotResource vmSnapshotResource = Mockito.mock(VmSnapshotResource.class);
     private SnapshotService snapshotService = Mockito.mock(SnapshotService.class);
 
-    private Injector injector = Guice.createInjector(
-            new DatabaseModule(),
-            new SecurityModule(),
-            new VmModule(),
-            new Phase2ExternalsModule(),
-            new CancelActionModule(),
-            new AbstractModule() {
+    private Injector injector = Guice.createInjector(new DatabaseModule(), new SecurityModule(), new VmModule(),
+            new Phase2ExternalsModule(), new CancelActionModule(), new AbstractModule() {
 
                 @Override
                 public void configure() {

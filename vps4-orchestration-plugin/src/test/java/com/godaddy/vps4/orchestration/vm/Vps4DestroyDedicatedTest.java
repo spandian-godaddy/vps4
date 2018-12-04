@@ -1,8 +1,32 @@
 package com.godaddy.vps4.orchestration.vm;
 
+import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.anyLong;
+import static org.mockito.Matchers.eq;
+import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
+import java.util.ArrayList;
+import java.util.UUID;
+
+import javax.ws.rs.ClientErrorException;
+import javax.ws.rs.NotFoundException;
+import javax.ws.rs.core.Response;
+
+import com.godaddy.hfs.mailrelay.MailRelay;
+import com.godaddy.hfs.mailrelay.MailRelayService;
+import com.godaddy.hfs.mailrelay.MailRelayUpdate;
+import com.godaddy.hfs.vm.VmAction;
+import com.godaddy.hfs.vm.VmService;
 import com.godaddy.vps4.network.IpAddress;
 import com.godaddy.vps4.network.IpAddress.IpAddressType;
-import com.godaddy.vps4.network.NetworkService;
 import com.godaddy.vps4.orchestration.TestCommandContext;
 import com.godaddy.vps4.orchestration.hfs.network.ReleaseIp;
 import com.godaddy.vps4.orchestration.hfs.network.UnbindIp;
@@ -14,40 +38,21 @@ import com.godaddy.vps4.vm.VirtualMachineService;
 import com.godaddy.vps4.vm.VmUserService;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
+
+import org.junit.Before;
+import org.junit.Test;
+import org.mockito.Mockito;
+
 import gdg.hfs.orchestration.CommandContext;
 import gdg.hfs.orchestration.GuiceCommandProvider;
 import gdg.hfs.vhfs.cpanel.CPanelAction;
 import gdg.hfs.vhfs.cpanel.CPanelLicense;
 import gdg.hfs.vhfs.cpanel.CPanelService;
-import com.godaddy.hfs.mailrelay.MailRelay;
-import com.godaddy.hfs.mailrelay.MailRelayService;
-import com.godaddy.hfs.mailrelay.MailRelayUpdate;
 import gdg.hfs.vhfs.network.AddressAction;
 import gdg.hfs.vhfs.network.IpAddress.Status;
 import gdg.hfs.vhfs.nodeping.NodePingService;
 import gdg.hfs.vhfs.plesk.PleskAction;
 import gdg.hfs.vhfs.plesk.PleskService;
-import com.godaddy.hfs.vm.VmAction;
-import com.godaddy.hfs.vm.VmService;
-import junit.framework.Assert;
-import org.junit.Before;
-import org.junit.Test;
-import org.mockito.ArgumentCaptor;
-import org.mockito.Mockito;
-
-import javax.ws.rs.ClientErrorException;
-import javax.ws.rs.NotFoundException;
-import javax.ws.rs.core.Response;
-import java.time.Instant;
-import java.time.temporal.ChronoUnit;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.UUID;
-
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyLong;
-import static org.mockito.Matchers.eq;
-import static org.mockito.Mockito.*;
 
 public class Vps4DestroyDedicatedTest {
 

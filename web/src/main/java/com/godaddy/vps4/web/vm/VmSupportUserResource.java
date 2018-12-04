@@ -21,7 +21,6 @@ import com.godaddy.vps4.orchestration.hfs.sysadmin.SetPassword;
 import com.godaddy.vps4.orchestration.sysadmin.Vps4AddSupportUser;
 import com.godaddy.vps4.orchestration.sysadmin.Vps4RemoveSupportUser;
 import com.godaddy.vps4.orchestration.sysadmin.Vps4SetPassword;
-import com.godaddy.vps4.security.Vps4User;
 import com.godaddy.vps4.security.Vps4UserService;
 import com.godaddy.vps4.sysadmin.UsernamePasswordGenerator;
 import com.godaddy.vps4.util.Cryptography;
@@ -54,8 +53,6 @@ public class VmSupportUserResource {
     private final ActionService actionService;
     private final CommandService commandService;
     private final VmUserService vmUserService;
-    private final Vps4User supportUser;
-    private final String SupportUserName = "Support";
     private final Cryptography cryptography;
     private final Config config;
     private final GDUser gdUser;
@@ -74,7 +71,6 @@ public class VmSupportUserResource {
         this.commandService = commandService;
         this.vmUserService = vmUserService;
         this.cryptography = cryptography;
-        supportUser = vps4UserService.getUser(SupportUserName);
         this.config = config;
         this.gdUser = user;
     }

@@ -29,7 +29,6 @@ import com.godaddy.vps4.handler.MessageHandlerException;
 public class Vps4Consumer implements Runnable {
 
     private static final Logger logger = LoggerFactory.getLogger(Vps4Consumer.class);
-    private static final int PAUSE_TIME = 5000; // milliseconds
     private static final long POLL_TIMEOUT = Long.MAX_VALUE; // milliseconds
 
     private final KafkaConfiguration kafkaConfig;

@@ -13,7 +13,6 @@ import java.util.Map;
 import java.util.UUID;
 
 import com.godaddy.vps4.vm.ActionService;
-import com.google.inject.Inject;
 import org.junit.Before;
 import org.junit.Test;
 

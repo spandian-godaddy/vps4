@@ -13,10 +13,6 @@ import static org.mockito.Mockito.when;
 import java.util.UUID;
 import java.util.function.Function;
 
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
-
 import com.godaddy.vps4.orchestration.hfs.sysadmin.AddUser;
 import com.godaddy.vps4.orchestration.hfs.sysadmin.ToggleAdmin;
 import com.godaddy.vps4.orchestration.scheduler.ScheduleSupportUserRemoval;
@@ -24,10 +20,13 @@ import com.godaddy.vps4.vm.ActionService;
 import com.godaddy.vps4.vm.VmUserService;
 import com.godaddy.vps4.vm.VmUserType;
 
-import gdg.hfs.orchestration.CommandContext;
+import org.junit.Before;
+import org.junit.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
 import org.mockito.MockitoAnnotations;
+
+import gdg.hfs.orchestration.CommandContext;
 
 public class Vps4AddSupportUserTest {
 
@@ -35,7 +34,8 @@ public class Vps4AddSupportUserTest {
     VmUserService vmUserService;
     Vps4AddSupportUser command;
     CommandContext context;
-    @Captor private ArgumentCaptor<Function<CommandContext, Void>> addUserToDatabaseCaptor;
+    @Captor
+    private ArgumentCaptor<Function<CommandContext, Void>> addUserToDatabaseCaptor;
 
     @Before
     public void setup() {

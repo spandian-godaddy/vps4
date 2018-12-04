@@ -38,10 +38,7 @@ public class Vps4DestroyVm extends ActionCommand<VmActionRequest, Vps4DestroyVm.
 
     private static final Logger logger = LoggerFactory.getLogger(Vps4DestroyVm.class);
     private final NetworkService networkService;
-    private final VirtualMachineService virtualMachineService;
     private final VmService vmService;
-    private final CPanelService cpanelService;
-    private final PleskService pleskService;
     private final NodePingService monitoringService;
     private final MonitoringMeta monitoringMeta;
     CommandContext context;
@@ -57,11 +54,8 @@ public class Vps4DestroyVm extends ActionCommand<VmActionRequest, Vps4DestroyVm.
             MonitoringMeta monitoringMeta) {
         super(actionService);
         this.networkService = networkService;
-        this.virtualMachineService = virtualMachineService;
         this.vmService = vmService;
-        this.cpanelService = cpanelService;
         this.monitoringService = monitoringService;
-        this.pleskService = pleskService;
         this.monitoringMeta = monitoringMeta;
     }
 
