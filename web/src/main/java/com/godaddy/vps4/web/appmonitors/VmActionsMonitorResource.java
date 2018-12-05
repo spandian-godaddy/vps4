@@ -1,5 +1,6 @@
 package com.godaddy.vps4.web.appmonitors;
 
+import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
@@ -88,6 +89,7 @@ public class VmActionsMonitorResource {
         ActionListFilters actionListFilters = new ActionListFilters();
         actionListFilters.byType(ActionType.RESTART_VM, ActionType.POWER_CYCLE);
         actionListFilters.byStatus(ActionStatus.IN_PROGRESS);
+        actionListFilters.byDateRange(null, Instant.now().minus(Duration.ofMinutes(thresholdInMinutes)));
 
         ResultSubset<Action> resultSubset = actionService.getActionList(actionListFilters);
         if(resultSubset == null) {
