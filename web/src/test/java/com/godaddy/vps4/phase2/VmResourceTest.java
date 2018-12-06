@@ -629,7 +629,7 @@ public class VmResourceTest {
         Instant nextRun = Instant.now();
         JobRequest jobRequest = new JobRequest();
         jobRequest.repeatIntervalInDays = 7;
-        SchedulerJobDetail jobDetail = new SchedulerJobDetail(UUID.randomUUID(), nextRun, jobRequest);
+        SchedulerJobDetail jobDetail = new SchedulerJobDetail(UUID.randomUUID(), nextRun, jobRequest, false);
         VirtualMachine vm = createTestVm();
         virtualMachineService.setBackupJobId(vm.vmId, jobDetail.id);
         Mockito.when(schedulerWebService.getJob("vps4", "backups", jobDetail.id)).thenReturn(jobDetail);

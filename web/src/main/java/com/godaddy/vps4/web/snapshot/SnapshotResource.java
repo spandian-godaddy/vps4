@@ -7,6 +7,7 @@ import static com.godaddy.vps4.web.util.RequestValidation.validateSnapshotExists
 import static com.godaddy.vps4.web.util.RequestValidation.validateSnapshotName;
 import static com.godaddy.vps4.web.util.RequestValidation.validateUserIsShopper;
 import static com.godaddy.vps4.web.util.RequestValidation.validateVmExists;
+import static com.godaddy.vps4.web.util.RequestValidation.validateSnapshotNotPaused;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -23,6 +24,7 @@ import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
 
+import com.godaddy.vps4.scheduler.api.web.SchedulerWebService;
 import org.json.simple.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -74,6 +76,7 @@ public class SnapshotResource {
     private final VirtualMachineService virtualMachineService;
     private final Vps4UserService userService;
     private final SnapshotActionResource snapshotActionResource;
+    private final SchedulerWebService schedulerWebService;
 
     @Inject
     public SnapshotResource(@SnapshotActionService ActionService actionService,
@@ -82,7 +85,8 @@ public class SnapshotResource {
                             SnapshotService snapshotService,
                             VirtualMachineService virtualMachineService,
                             Vps4UserService userService,
-                            SnapshotActionResource snapshotActionResource) {
+                            SnapshotActionResource snapshotActionResource,
+                            SchedulerWebService schedulerWebService) {
         this.actionService = actionService;
         this.commandService = commandService;
         this.user = user;
@@ -91,6 +95,7 @@ public class SnapshotResource {
         this.virtualMachineService = virtualMachineService;
         this.userService = userService;
         this.snapshotActionResource = snapshotActionResource;
+        this.schedulerWebService = schedulerWebService;
     }
 
     @AdminOnly
@@ -121,7 +126,7 @@ public class SnapshotResource {
         if (user.isShopper()) {
             getAndValidateUserAccountCredit(creditService, vm.orionGuid, user.getShopperId());
         }
-        validateCreation(vm.orionGuid, vm.vmId, snapshotRequest.name, snapshotRequest.snapshotType);
+        validateCreation(vm.orionGuid, vm.backupJobId, snapshotRequest.name, snapshotRequest.snapshotType);
         Action action = createSnapshotAndActionEntries(vm, snapshotRequest.name, snapshotRequest.snapshotType);
         kickoffSnapshotCreation(vm.vmId, vm.hfsVmId, action, vm.orionGuid, snapshotRequest.snapshotType, user.getShopperId());
         return new SnapshotAction(actionService.getAction(action.id), user.isEmployee());
@@ -133,11 +138,12 @@ public class SnapshotResource {
         public SnapshotType snapshotType;
     }
 
-    private void validateCreation(UUID orionGuid, UUID vmId, String name, SnapshotType snapshotType) {
+    private void validateCreation(UUID orionGuid, UUID backupJobId, String name, SnapshotType snapshotType) {
         validateUserIsShopper(user);
         validateIfSnapshotOverQuota(snapshotService, orionGuid, snapshotType);
         validateNoOtherSnapshotsInProgress(snapshotService, orionGuid);
         validateSnapshotName(name);
+        validateSnapshotNotPaused(schedulerWebService, backupJobId, snapshotType);
     }
 
     private Action createSnapshotAndActionEntries(VirtualMachine vm, String snapshotName, SnapshotType snapshotType) {

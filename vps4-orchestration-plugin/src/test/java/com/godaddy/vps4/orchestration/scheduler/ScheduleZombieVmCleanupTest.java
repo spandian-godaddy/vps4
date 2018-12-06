@@ -75,7 +75,7 @@ public class ScheduleZombieVmCleanupTest {
         request.vmId = vmId;
         request.when = Instant.now();
 
-        jobDetail = new SchedulerJobDetail(jobId, null, null);
+        jobDetail = new SchedulerJobDetail(jobId, null, null, false);
         when(context.execute(eq("Cleanup Zombie VM"), any(Function.class), eq(SchedulerJobDetail.class)))
                 .thenReturn(jobDetail);
 

@@ -11,6 +11,7 @@ import javax.ws.rs.NotFoundException;
 import com.godaddy.vps4.credit.CreditService;
 import com.godaddy.vps4.credit.VirtualMachineCredit;
 import com.godaddy.vps4.jdbc.ResultSubset;
+import com.godaddy.vps4.scheduler.api.web.SchedulerWebService;
 import com.godaddy.vps4.security.PrivilegeService;
 import com.godaddy.vps4.security.Vps4User;
 import com.godaddy.vps4.security.Vps4UserService;
@@ -103,6 +104,12 @@ public class RequestValidation {
         boolean adminOverride = user.isAdmin() && allowAdminOverride;
         if (virtualMachine.validUntil.isBefore(Instant.now()) && !adminOverride) {
             throw new Vps4Exception("VM_DELETED", String.format("The virtual machine %s was DELETED", virtualMachine.vmId));
+        }
+    }
+
+    public static void validateSnapshotNotPaused(SchedulerWebService schedulerWebService, UUID backupJobId, SnapshotType snapshotType) {
+        if(snapshotType.equals(SnapshotType.AUTOMATIC) && schedulerWebService.getJob("vps4", "backups", backupJobId).isPaused){
+            throw new Vps4Exception("AUTOMATIC_SNAPSHOTS_PAUSED", "Cannot take automatic snapshot while backup schedule is paused");
         }
     }
 

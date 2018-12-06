@@ -63,6 +63,7 @@ public class SqlTestData {
                 TEST_VM_NAME, tier, 1, imageName);
         VirtualMachine virtualMachine = virtualMachineService.provisionVirtualMachine(params);
         virtualMachineService.addHfsVmIdToVirtualMachine(virtualMachine.vmId, hfsVmId);
+        virtualMachineService.setBackupJobId(virtualMachine.vmId, UUID.randomUUID());
         return virtualMachineService.getVirtualMachine(virtualMachine.vmId);
     }
 

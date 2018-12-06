@@ -79,17 +79,19 @@ public class QuartzSchedulerService implements SchedulerService {
         SimpleScheduleBuilder schedule = simpleSchedule();
 
         if (jobRequest.jobType.equals(JobType.ONE_TIME)) {
-            schedule = schedule.withRepeatCount(0);
+            schedule = schedule.withRepeatCount(0)
+                        .withMisfireHandlingInstructionFireNow();
+            // upon a mis-fire situation, the trigger wants to be fired now by Scheduler
         }
         else {
             schedule = jobRequest.repeatCount != null
                 ? schedule.withRepeatCount(jobRequest.repeatCount)
                 : schedule.repeatForever();
-            schedule = schedule.withIntervalInHours(jobRequest.repeatIntervalInDays * 24);
+            schedule = schedule.withIntervalInHours(jobRequest.repeatIntervalInDays * 24)
+                                .withMisfireHandlingInstructionNextWithRemainingCount();
+            // upon a mis-fire situation, fire the trigger at the next scheduled time
         }
 
-        // Instructs the Scheduler that upon a mis-fire situation, the trigger wants to be fired now by Scheduler.
-        schedule = schedule.withMisfireHandlingInstructionFireNow();
         return schedule;
     }
 
@@ -110,14 +112,18 @@ public class QuartzSchedulerService implements SchedulerService {
     private SchedulerJobDetail getSchedulerJobDetail(JobKey jobKey) throws Exception {
         Trigger trigger = getExistingTriggerForJob(jobKey);
         Instant nextRun = trigger.getNextFireTime().toInstant();
-
+        boolean isTriggerPaused = isTriggerPaused(trigger);
         // Get the job request data
         JobDataMap jobDataMap = scheduler.getJobDetail(jobKey).getJobDataMap();
         String jobDataJson = jobDataMap.getString("jobDataJson");
         Class<? extends SchedulerJob> jobClass = getJobClassForGroup(jobKey.getGroup());
         JobRequest jobRequest = objectMapper.readValue(jobDataJson, getJobRequestClass(jobClass));
 
-        return new SchedulerJobDetail(UUID.fromString(jobKey.getName()), nextRun, jobRequest);
+        return new SchedulerJobDetail(UUID.fromString(jobKey.getName()), nextRun, jobRequest, isTriggerPaused);
+    }
+
+    private boolean isTriggerPaused(Trigger trigger) throws Exception{
+        return scheduler.getTriggerState(trigger.getKey()).equals(Trigger.TriggerState.PAUSED);
     }
 
     private boolean isJobPresent(String product, String jobGroup, UUID jobId) throws SchedulerException {
@@ -261,5 +267,15 @@ public class QuartzSchedulerService implements SchedulerService {
     public void registerTriggerListenerForJobGroup(String jobGroupId, SchedulerTriggerListener triggerListener)
             throws Exception {
         scheduler.getListenerManager().addTriggerListener(triggerListener, triggerGroupEquals(jobGroupId));
+    }
+
+    @Override
+    public void pauseJob(String product, String jobGroup, UUID jobId) throws Exception {
+        scheduler.pauseJob(jobKey(jobId.toString(), Utils.getJobGroupId(product, jobGroup)));
+    }
+
+    @Override
+    public void resumeJob(String product, String jobGroup, UUID jobId) throws Exception {
+        scheduler.resumeJob(jobKey(jobId.toString(), Utils.getJobGroupId(product, jobGroup)));
     }
 }

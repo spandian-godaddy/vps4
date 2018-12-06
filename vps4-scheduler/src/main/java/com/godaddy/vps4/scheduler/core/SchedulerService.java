@@ -15,4 +15,6 @@ public interface SchedulerService {
     List<SchedulerJobDetail> getGroupJobs(String product, String jobGroup);
     SchedulerJobDetail getJob(String product, String jobGroup, UUID jobId) throws Exception;
     void deleteJob(String product, String jobGroup, UUID jobId) throws Exception;
+    void pauseJob(String product, String jobGroup, UUID jobId) throws Exception;
+    void resumeJob(String product, String jobGroup, UUID jobId) throws Exception;
 }

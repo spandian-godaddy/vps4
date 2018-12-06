@@ -1,0 +1,1 @@
+INSERT INTO action_type(type_id, type) VALUES (28, 'PAUSE_AUTO_SNAPSHOT'), (29, 'RESUME_AUTO_SNAPSHOT');

@@ -415,7 +415,8 @@ public class VmResource {
                 Instant nextRun = job.nextRun;
                 int repeatIntervalInDays = job.jobRequest.repeatIntervalInDays;
                 int copiesToRetain = 1;
-                snapshotSchedule = new SnapshotSchedule(nextRun, copiesToRetain, repeatIntervalInDays);
+                boolean isPaused = job.isPaused;
+                snapshotSchedule = new SnapshotSchedule(nextRun, copiesToRetain, repeatIntervalInDays, isPaused);
             }
         }
         return new VirtualMachineWithDetails(virtualMachine, new VirtualMachineDetails(vm), credit.dataCenter, credit.shopperId, snapshotSchedule);

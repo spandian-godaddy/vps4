@@ -27,6 +27,15 @@ public interface SchedulerWebService {
     @Path("/{product}/{jobGroup}/jobs")
     SchedulerJobDetail submitJobToGroup(@PathParam("product") String product, @PathParam("jobGroup") String jobGroup, JobRequest requestJson) throws WebApplicationException;
 
+    @POST
+    @Path("/{product}/{jobGroup}/jobs/{jobId}/pause")
+    SchedulerJobDetail pauseJob(@PathParam("product") String product, @PathParam("jobGroup") String jobGroup, @PathParam("jobId") UUID jobId) throws WebApplicationException;
+
+    @POST
+    @Path("/{product}/{jobGroup}/jobs/{jobId}/resume")
+    SchedulerJobDetail resumeJob(@PathParam("product") String product, @PathParam("jobGroup") String jobGroup, @PathParam("jobId") UUID jobId) throws WebApplicationException;
+
+
     @GET
     @Path("/{product}/{jobGroup}/jobs/{jobId}")
     SchedulerJobDetail getJob(@PathParam("product") String product, @PathParam("jobGroup") String jobGroup, @PathParam("jobId") UUID jobId) throws WebApplicationException;

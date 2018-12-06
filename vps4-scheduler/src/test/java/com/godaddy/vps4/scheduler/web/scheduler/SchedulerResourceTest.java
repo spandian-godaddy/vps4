@@ -98,7 +98,7 @@ public class SchedulerResourceTest {
         IntStream
             .range(1, 10)
             .forEach(i -> {
-                schedulerJobDetailList.add(new SchedulerJobDetail(UUID.randomUUID(), Instant.now().plusSeconds(15), new JobRequest()));
+                schedulerJobDetailList.add(new SchedulerJobDetail(UUID.randomUUID(), Instant.now().plusSeconds(15), new JobRequest(), false));
             });
     }
 
@@ -168,5 +168,19 @@ public class SchedulerResourceTest {
         schedulerResource.deleteJob(product, jobGroup, getJobDetail.id);
         verify(mockSchedulerService, times(1))
                 .deleteJob(eq(product), eq(jobGroup), eq(getJobDetail.id));
+    }
+
+    @Test
+    public void pauseJob() throws Exception {
+        schedulerResource.pauseJob(product, jobGroup, getJobDetail.id);
+        verify(mockSchedulerService, times(1))
+                .pauseJob(eq(product), eq(jobGroup), eq(getJobDetail.id));
+    }
+
+    @Test
+    public void resumeJob() throws Exception {
+        schedulerResource.resumeJob(product, jobGroup, getJobDetail.id);
+        verify(mockSchedulerService, times(1))
+                .resumeJob(eq(product), eq(jobGroup), eq(getJobDetail.id));
     }
 }

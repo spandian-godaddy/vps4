@@ -168,4 +168,44 @@ public class SchedulerResource {
             throw new Vps4SchedulerException("JOB_DELETION_ERROR", "Could not delete job");
         }
     }
+
+    @POST
+    @Path("/{product}/{jobGroup}/jobs/{jobId}/pause")
+    @ApiOperation(value = "Pause a scheduled job without deleting it",
+            response = SchedulerJobDetail.class)
+    @ApiResponses(value = {
+            @ApiResponse(code = 404, message = "Job not found")
+    })
+    public void pauseJob(
+            @ApiParam(value = "The product, example 'vps4'", required = true) @PathParam("product") String product,
+            @ApiParam(value = "The job group, example 'backups'", required = true) @PathParam("jobGroup") String jobGroup,
+            @ApiParam(value = "The id of the job", required = true) @PathParam("jobId") UUID jobId) {
+        try {
+            schedulerService.pauseJob(product, jobGroup, jobId);
+        }
+        catch (Exception e) {
+            logger.info("******** ERROR ************: {}", e.getMessage());
+            throw new Vps4SchedulerException("NOT_FOUND", "Could not find job");
+        }
+    }
+
+    @POST
+    @Path("/{product}/{jobGroup}/jobs/{jobId}/resume")
+    @ApiOperation(value = "Pause a scheduled job without deleting it",
+            response = SchedulerJobDetail.class)
+    @ApiResponses(value = {
+            @ApiResponse(code = 404, message = "Job not found")
+    })
+    public void resumeJob(
+            @ApiParam(value = "The product, example 'vps4'", required = true) @PathParam("product") String product,
+            @ApiParam(value = "The job group, example 'backups'", required = true) @PathParam("jobGroup") String jobGroup,
+            @ApiParam(value = "The id of the job", required = true) @PathParam("jobId") UUID jobId) {
+        try {
+            schedulerService.resumeJob(product, jobGroup, jobId);
+        }
+        catch (Exception e) {
+            logger.info("******** ERROR ************: {}", e.getMessage());
+            throw new Vps4SchedulerException("NOT_FOUND", "Could not find job");
+        }
+    }
 }

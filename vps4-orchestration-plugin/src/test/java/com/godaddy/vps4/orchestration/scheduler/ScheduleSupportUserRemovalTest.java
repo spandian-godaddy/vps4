@@ -79,7 +79,7 @@ public class ScheduleSupportUserRemovalTest {
 
     @Test
     public void callsSchedulerServiceToCreateJobSchedule() throws Exception {
-        jobDetail = new SchedulerJobDetail(jobId, null, null);
+        jobDetail = new SchedulerJobDetail(jobId, null, null, false);
         when(context.execute(eq("Create schedule"), any(Function.class), eq(SchedulerJobDetail.class)))
                 .thenReturn(jobDetail);
 
@@ -113,7 +113,7 @@ public class ScheduleSupportUserRemovalTest {
         CommandContext mockContext = mock(CommandContext.class);
         when(mockContext.getId()).thenReturn(UUID.randomUUID());
 
-        jobDetail = new SchedulerJobDetail(jobId, null, null);
+        jobDetail = new SchedulerJobDetail(jobId, null, null, false);
         when(context.execute(eq("Create schedule"), any(Function.class), eq(SchedulerJobDetail.class))).thenReturn(jobDetail);
 
         command.execute(context, request);

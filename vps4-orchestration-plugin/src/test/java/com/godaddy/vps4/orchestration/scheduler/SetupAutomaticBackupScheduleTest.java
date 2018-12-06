@@ -74,7 +74,7 @@ public class SetupAutomaticBackupScheduleTest {
 
     @Test
     public void callsSchedulerServiceToCreateJobSchedule() throws Exception {
-        jobDetail = new SchedulerJobDetail(jobId, null, null);
+        jobDetail = new SchedulerJobDetail(jobId, null, null, false);
         when(context.execute(eq("Create schedule"), any(Function.class), eq(SchedulerJobDetail.class)))
                 .thenReturn(jobDetail);
 

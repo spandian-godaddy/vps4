@@ -168,6 +168,23 @@ public class QuartzSchedulerServiceRESTTest {
     }
 
     @Test
+    public void schedulingRecurringJobSucceeds() {
+        TestJob.TestRequest request = new TestJob.TestRequest();
+        request.vmId = UUID.randomUUID();
+        request.when = Instant.now().plusSeconds(180); // make sure we are outside the window
+        request.jobType = JobType.RECURRING;
+        request.repeatIntervalInDays = 1;
+        try {
+            String requestJson = objectMapper.writeValueAsString(request);
+            schedulerService.createJob(product, jobGroup, requestJson);
+            Assert.assertEquals(1, schedulerService.getGroupJobs(product, jobGroup).size());
+        }
+        catch (Exception e) {
+            fail("Error job creation");
+        }
+    }
+
+    @Test
     public void gettingAnExistingJobSucceeds() {
         JobKey jobKey = scheduleJob();
         try {
@@ -176,6 +193,26 @@ public class QuartzSchedulerServiceRESTTest {
                     jobKey.getName(),
                     jobDetail.id.toString());
             Assert.assertEquals(JobType.ONE_TIME, jobDetail.jobRequest.jobType); // We are only defining one time jobs in this test
+        }
+        catch (Exception e) {
+            fail("There should be no exception!!");
+        }
+    }
+
+    @Test
+    public void pauseAndResumeJobSetsJobState() {
+        JobKey jobKey = scheduleJob();
+        try {
+            schedulerService.pauseJob(product, jobGroup, UUID.fromString(jobKey.getName()));
+            SchedulerJobDetail jobDetail = schedulerService.getJob(product, jobGroup, UUID.fromString(jobKey.getName()));
+
+            Assert.assertEquals(true, jobDetail.isPaused);
+
+            schedulerService.resumeJob(product, jobGroup, UUID.fromString(jobKey.getName()));
+            jobDetail = schedulerService.getJob(product, jobGroup, UUID.fromString(jobKey.getName()));
+
+            Assert.assertEquals(false, jobDetail.isPaused);
+
         }
         catch (Exception e) {
             fail("There should be no exception!!");

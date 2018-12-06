@@ -6,11 +6,13 @@ public class SnapshotSchedule {
     public Instant nextAt;
     public int copiesToRetain;
     public int repeatIntervalInDays;
+    public boolean isPaused;
 
     public SnapshotSchedule(){}
-    public SnapshotSchedule(Instant nextAt, int copiesToRetain, int repeatIntervalInDays){
+    public SnapshotSchedule(Instant nextAt, int copiesToRetain, int repeatIntervalInDays, boolean isPaused){
         this.nextAt = nextAt;
         this.copiesToRetain = copiesToRetain;
         this.repeatIntervalInDays = repeatIntervalInDays;
+        this.isPaused = isPaused;
     }
 }

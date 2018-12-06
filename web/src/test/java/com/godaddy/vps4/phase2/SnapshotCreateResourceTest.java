@@ -1,8 +1,11 @@
 package com.godaddy.vps4.phase2;
 
 import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.eq;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 import java.util.List;
 import java.util.UUID;
@@ -11,6 +14,8 @@ import javax.inject.Inject;
 import javax.sql.DataSource;
 import javax.ws.rs.NotFoundException;
 
+import com.godaddy.vps4.scheduler.api.core.SchedulerJobDetail;
+import com.godaddy.vps4.scheduler.api.web.SchedulerWebService;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -75,6 +80,7 @@ public class SnapshotCreateResourceTest {
     private GDUser user;
     private UUID ourVmId;
     private Vps4User ourVps4User;
+    private SchedulerWebService schedulerWebService = mock(SchedulerWebService.class);
 
     private final Injector injector;
 
@@ -89,6 +95,7 @@ public class SnapshotCreateResourceTest {
             new AbstractModule() {
                 @Override
                 public void configure() {
+                    bind(SchedulerWebService.class).toInstance(schedulerWebService);
                 }
 
                 @Provides
@@ -105,6 +112,8 @@ public class SnapshotCreateResourceTest {
     @Before
     public void setupTest() {
         ourVmId = createOurVm();
+        SchedulerJobDetail jobDetail = new SchedulerJobDetail(UUID.randomUUID(), null, null, false);
+        when(schedulerWebService.getJob(eq("vps4"), eq("backups"),any(UUID.class) )).thenReturn(jobDetail);
     }
 
     @After
@@ -194,6 +203,29 @@ public class SnapshotCreateResourceTest {
         vps4SnapshotService.markSnapshotLive(action1.snapshotId);
         Assert.assertEquals(SnapshotType.AUTOMATIC, vps4SnapshotService.getSnapshot(action1.snapshotId).snapshotType);
 
+    }
+
+    @Test(expected = Vps4Exception.class)
+    public void weCannotCreateAutomaticSnapshotIfPaused() {
+        SchedulerJobDetail jobDetail = new SchedulerJobDetail(UUID.randomUUID(), null, null, true);
+        when(schedulerWebService.getJob(eq("vps4"), eq("backups"),any(UUID.class) )).thenReturn(jobDetail);
+        user = us;
+        SnapshotRequest request = getRequestPayload(ourVmId, SqlTestData.TEST_SNAPSHOT_NAME);
+        request.snapshotType = SnapshotType.AUTOMATIC;
+        getSnapshotResource().createSnapshot(request);
+
+    }
+
+    @Test
+    public void weCanCreateManualSnapshotIfPaused() {
+        SchedulerJobDetail jobDetail = new SchedulerJobDetail(UUID.randomUUID(), null, null, true);
+        when(schedulerWebService.getJob(eq("vps4"), eq("backups"),any(UUID.class) )).thenReturn(jobDetail);
+        user = us;
+        SnapshotRequest request = getRequestPayload(ourVmId, SqlTestData.TEST_SNAPSHOT_NAME);
+        request.snapshotType = SnapshotType.ON_DEMAND;
+        SnapshotAction action1 = getSnapshotResource().createSnapshot(request);
+        vps4SnapshotService.markSnapshotLive(action1.snapshotId);
+        Assert.assertEquals(SnapshotType.ON_DEMAND, vps4SnapshotService.getSnapshot(action1.snapshotId).snapshotType);
     }
 
     @Test(expected = Vps4Exception.class)

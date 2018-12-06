@@ -1,12 +1,12 @@
 package com.godaddy.vps4.phase2;
 
-
 import java.util.List;
 import java.util.UUID;
 
 import javax.inject.Inject;
 import javax.sql.DataSource;
 
+import com.godaddy.vps4.scheduler.api.web.SchedulerWebService;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -32,6 +32,8 @@ import com.google.inject.Guice;
 import com.google.inject.Injector;
 import com.google.inject.Provides;
 
+import static org.mockito.Mockito.mock;
+
 public class VmSnapshotResourceTest {
 
     @Inject Vps4UserService userService;
@@ -40,6 +42,8 @@ public class VmSnapshotResourceTest {
 
     private GDUser user;
     private VirtualMachine testVm;
+
+    private SchedulerWebService schedulerWebService = mock(SchedulerWebService.class);
 
     private Injector injector = Guice.createInjector(
             new DatabaseModule(),
@@ -52,6 +56,7 @@ public class VmSnapshotResourceTest {
 
                 @Override
                 public void configure() {
+                    bind(SchedulerWebService.class).toInstance(schedulerWebService);
                 }
 
                 @Provides

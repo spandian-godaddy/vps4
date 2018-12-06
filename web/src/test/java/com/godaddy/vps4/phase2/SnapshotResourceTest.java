@@ -5,10 +5,13 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
 
+import static org.mockito.Mockito.mock;
+
 import javax.inject.Inject;
 import javax.sql.DataSource;
 import javax.ws.rs.NotFoundException;
 
+import com.godaddy.vps4.scheduler.api.web.SchedulerWebService;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -51,6 +54,7 @@ public class SnapshotResourceTest {
 
     private GDUser user;
     private VirtualMachine testVm;
+    private SchedulerWebService schedulerWebService = mock(SchedulerWebService.class);
 
     private Injector injector = Guice.createInjector(
             new DatabaseModule(),
@@ -63,6 +67,7 @@ public class SnapshotResourceTest {
 
                 @Override
                 public void configure() {
+                    bind(SchedulerWebService.class).toInstance(schedulerWebService);
                 }
 
                 @Provides
