@@ -264,13 +264,14 @@ public class DefaultVps4CpanelService implements Vps4CpanelService {
     }
 
     @Override
-    public Void createAccount(long hfsVmId, String domainName, String username, String password, String plan)
+    public Void createAccount(long hfsVmId, String domainName, String username,
+                              String password, String plan, String contactEmail)
             throws CpanelAccessDeniedException, CpanelTimeoutException, IOException {
         return withAccessHash(hfsVmId, cPanelClient -> {
             // https://documentation.cpanel.net/display/DD/WHM+API+1+Functions+-+createacct
             return handleCpanelCall(
                     "createAccount",
-                    () -> cPanelClient.createAccount(domainName, username, password, plan),
+                    () -> cPanelClient.createAccount(domainName, username, password, plan, contactEmail),
                     dataJson -> {
                         return null;
                     },

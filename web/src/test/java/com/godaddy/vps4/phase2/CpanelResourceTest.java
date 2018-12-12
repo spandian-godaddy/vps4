@@ -310,12 +310,14 @@ public class CpanelResourceTest {
         String username = "user";
         String password = "foobar";
         String plan = "plan";
+        String email = "email@email.com";
 
         CPanelResource.CreateAccountRequest req = new CPanelResource.CreateAccountRequest();
         req.domainName = domainName;
         req.username = username;
         req.plan = plan;
         req.password = password;
+        req.contactEmail = email;
         try {
             getCpanelResource().createAccount(vm.vmId, req);
         }
@@ -330,7 +332,8 @@ public class CpanelResourceTest {
         String username = "user";
         String password = "foobar";
         String plan = "plan";
-        Mockito.when(cpServ.createAccount(vm.hfsVmId, domainName, username, password, plan))
+        String email = "email@email.com";
+        Mockito.when(cpServ.createAccount(vm.hfsVmId, domainName, username, password, plan, email))
             .thenThrow(new RuntimeException());
         try {
             CPanelResource.CreateAccountRequest req = new CPanelResource.CreateAccountRequest();
@@ -338,6 +341,7 @@ public class CpanelResourceTest {
             req.username = username;
             req.plan = plan;
             req.password = password;
+            req.contactEmail = email;
             getCpanelResource().createAccount(vm.vmId, req);
         }
         catch (Vps4Exception e) {

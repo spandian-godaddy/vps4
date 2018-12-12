@@ -139,6 +139,7 @@ public class CPanelResource {
         public String username;
         public String password;
         public String plan;
+        public String contactEmail;
     }
 
     @POST
@@ -150,7 +151,7 @@ public class CPanelResource {
         try {
             cpanelService.createAccount(
                 vm.hfsVmId, createAccountRequest.domainName, createAccountRequest.username,
-                createAccountRequest.password, createAccountRequest.plan);
+                createAccountRequest.password, createAccountRequest.plan, createAccountRequest.contactEmail);
         } catch (Exception e) {
             logger.warn("Could not create cpanel account for vmId {} , Exception: {} ", vmId, e);
             throw new Vps4Exception("CREATE_CPANEL_ACCOUNT_FAILED", e.getMessage(), e);

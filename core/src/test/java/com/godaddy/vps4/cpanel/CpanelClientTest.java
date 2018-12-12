@@ -71,13 +71,15 @@ public class CpanelClientTest {
         String username = "blahtoo";
         String password = "password";
         String plan = "what";
+        String email = "email@email.com";
         try {
-            cpanelClient.createAccount(domainName, username, password, plan);
+            cpanelClient.createAccount(domainName, username, password, plan, email);
 
             verify(httpClient, times(1)).execute(httpUriRequestArgumentCaptor.capture());
             HttpUriRequest capturedReq =  httpUriRequestArgumentCaptor.getValue();
             String expectedUri = "https://" + hostname + ":2087" + "/json-api/createacct?api.version=1&password="
-                    + password + "&domain=" + domainName + "&username=" + username + "&plan=" + plan;
+                    + password + "&domain=" + domainName + "&username="
+                    + username + "&plan=" + plan + "&contactemail=" + email;
             Assert.assertEquals(expectedUri, capturedReq.getURI().toString());
         }
         catch (CpanelAccessDeniedException | IOException e) {

@@ -35,6 +35,7 @@ public class CpanelAddonDomainsTest {
     @Captor private ArgumentCaptor<String> usernameArgumentCaptor;
     @Captor private ArgumentCaptor<String> passwordArgumentCaptor;
     @Captor private ArgumentCaptor<String> planArgumentCaptor;
+    @Captor private ArgumentCaptor<String> emailArgumentCaptor;
 
     long hfsVmId = 1234;
 
@@ -217,16 +218,18 @@ public class CpanelAddonDomainsTest {
         String username = "username";
         String password = "password123";
         String plan = "plan";
+        String email = "email@email.com";
         String returnVal = "{\"data\":{},\"metadata\":{\"version\":1,"
                 + "\"command\":\"get_password_strength\",\"reason\":\"OK\",\"result\":1}}";
-        when(cpClient.createAccount(domainName, username, password, plan)).thenReturn(returnVal);
-        service.createAccount(hfsVmId, domainName, username, password, plan);
+        when(cpClient.createAccount(domainName, username, password, plan, email)).thenReturn(returnVal);
+        service.createAccount(hfsVmId, domainName, username, password, plan, email);
         verify(cpClient, times(1))
             .createAccount(domainArgumentCaptor.capture(), usernameArgumentCaptor.capture(),
-                passwordArgumentCaptor.capture(), planArgumentCaptor.capture());
+                passwordArgumentCaptor.capture(), planArgumentCaptor.capture(), emailArgumentCaptor.capture());
         Assert.assertEquals(domainName, domainArgumentCaptor.getValue());
         Assert.assertEquals(username, usernameArgumentCaptor.getValue());
         Assert.assertEquals(password, passwordArgumentCaptor.getValue());
+        Assert.assertEquals(email, emailArgumentCaptor.getValue());
         Assert.assertEquals(plan, planArgumentCaptor.getValue());
     }
 
@@ -236,11 +239,12 @@ public class CpanelAddonDomainsTest {
         String username = "username";
         String password = "password123";
         String plan = "plan";
+        String email = "email@email.com";
         String returnVal = "{\"data\":{}, \"metadata\": null}";
-        when(cpClient.createAccount(domainName, username, password, plan)).thenReturn(returnVal);
+        when(cpClient.createAccount(domainName, username, password, plan, email)).thenReturn(returnVal);
 
         try {
-            service.createAccount(hfsVmId, domainName, username, password, plan);
+            service.createAccount(hfsVmId, domainName, username, password, plan, email);
         }
         catch (RuntimeException e) {
             Assert.assertEquals("WHM account creation failed due to reason: No reason provided", e.getMessage());
@@ -254,11 +258,12 @@ public class CpanelAddonDomainsTest {
         String password = "password123";
         String plan = "plan";
         String reason = "no-workie";
+        String email = "email@email.com";
         String returnVal = "{\"metadata\":{\"version\":1,\"reason\":\"" + reason + "\", \"result\":0}}";
-        when(cpClient.createAccount(domainName, username, password, plan)).thenReturn(returnVal);
+        when(cpClient.createAccount(domainName, username, password, plan, email)).thenReturn(returnVal);
 
         try {
-            service.createAccount(hfsVmId, domainName, username, password, plan);
+            service.createAccount(hfsVmId, domainName, username, password, plan, email);
         }
         catch (RuntimeException e) {
             Assert.assertEquals("WHM account creation failed due to reason: " + reason, e.getMessage());
