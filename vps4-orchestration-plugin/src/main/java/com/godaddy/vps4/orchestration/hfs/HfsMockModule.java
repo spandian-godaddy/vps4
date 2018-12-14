@@ -727,6 +727,13 @@ public class HfsMockModule extends AbstractModule {
             }
 
             @Override
+            public VmAction createConsoleUrl(long vmId) {
+                VmAction vmAction = this.createVmAction(vmId, "CREATE_CONSOLE", VmAction.Status.COMPLETE);
+                this.storeVmAction(vmId, vmAction);
+                return vmAction;
+            }
+
+            @Override
             public Vm getVm(long vmId) {
                 if (!customerVms.containsKey(vmId)) {
                     throw new NotFoundException("Vm not present");

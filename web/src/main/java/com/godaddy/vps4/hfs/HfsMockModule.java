@@ -174,6 +174,16 @@ public class HfsMockModule extends AbstractModule {
             }
 
             @Override
+            public VmAction createConsoleUrl(long vmId) {
+                VmAction consoleUrlAction = new VmAction();
+                consoleUrlAction.vmActionId = actionId;
+                consoleUrlAction.vmId = vmId;
+                consoleUrlAction.state = VmAction.Status.COMPLETE;
+                consoleUrlAction.tickNum = 1;
+                return consoleUrlAction;
+            }
+
+            @Override
             public VmAction destroyVm(long vmId) {
                 VmAction delAction = new VmAction();
                 delAction.vmActionId = 1111;
