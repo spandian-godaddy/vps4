@@ -25,6 +25,7 @@ public class SsoRequestAuthenticator implements RequestAuthenticator<GDUser> {
     private final String C3_HOSTING_SUPPORT = "C3-Hosting Support";
     private final String C3_HOSTING_SUPPORT_LEAD = "HS_techleads";
     private final String LEGAL = "fs-Legal_IP_Claims";
+    private final String HOSTING_OPERATIONS = "Hosting Ops";
 
     private final SsoTokenExtractor tokenExtractor;
     private Config config;
@@ -118,6 +119,8 @@ public class SsoRequestAuthenticator implements RequestAuthenticator<GDUser> {
         } else if (groups.contains(C3_HOSTING_SUPPORT)) {
             gdUser.isStaff = true;
             gdUser.role = Role.HS_AGENT;
+        } else if (groups.contains(HOSTING_OPERATIONS)) {
+            gdUser.role = Role.HS_OPS;
         } else if (groups.contains(LEGAL)) {
             gdUser.role = Role.LEGAL;
         } else {
