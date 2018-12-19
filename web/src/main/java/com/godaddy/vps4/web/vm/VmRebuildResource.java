@@ -29,11 +29,14 @@ import com.godaddy.vps4.vm.ActionType;
 import com.godaddy.vps4.vm.ImageService;
 import com.godaddy.vps4.vm.RebuildVmInfo;
 import com.godaddy.vps4.vm.VirtualMachine;
+import com.godaddy.vps4.vm.VirtualMachineService;
 import com.godaddy.vps4.vm.VmAction;
 import com.godaddy.vps4.vm.VmUserService;
 import com.godaddy.vps4.web.Vps4Api;
 import com.godaddy.vps4.web.security.GDUser;
+import com.godaddy.vps4.web.util.Commands;
 import gdg.hfs.orchestration.CommandService;
+import gdg.hfs.orchestration.CommandState;
 import io.swagger.annotations.Api;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
@@ -109,10 +112,15 @@ public class VmRebuildResource {
         logger.info("Processing rebuild on VM {}", vmId);
         logger.info("Cancelling any incomplete actions on VM {}", vmId);
         cancelIncompleteVmActions(vmId);
-        destroyVmSnapshots(vmId);
+
         Vps4RebuildVm.Request commandRequest = generateRebuildVmOrchestrationRequest(vm, imageService, rebuildVmRequest);
 
-        return createActionAndExecute(actionService, commandService, vm.vmId, ActionType.REBUILD_VM, commandRequest, "Vps4RebuildVm", user);
+        if(vm.spec.isVirtualMachine()) {
+            destroyVmSnapshots(vmId);
+        }
+
+        String rebuildClassName = vm.spec.isVirtualMachine() ? "Vps4RebuildVm" : "Vps4RebuildDedicated";
+        return createActionAndExecute(actionService, commandService, vm.vmId, ActionType.REBUILD_VM, commandRequest, rebuildClassName, user);
     }
 
     private RebuildVmRequest performAdminPrereqs(RebuildVmRequest rebuildVmRequest) {
@@ -131,6 +139,7 @@ public class VmRebuildResource {
 
     private Vps4RebuildVm.Request generateRebuildVmOrchestrationRequest(
             VirtualMachine vm, ImageService imageService, RebuildVmRequest request) {
+
         RebuildVmInfo rebuildVmInfo = new RebuildVmInfo();
         rebuildVmInfo.hostname = StringUtils.isBlank(request.hostname) ? vm.hostname : request.hostname;
         rebuildVmInfo.serverName = StringUtils.isBlank(request.serverName) ? vm.name : request.serverName;
@@ -141,7 +150,9 @@ public class VmRebuildResource {
         rebuildVmInfo.vmId = vm.vmId;
         rebuildVmInfo.image = StringUtils.isBlank(request.imageName) ? vm.image : imageService.getImage(request.imageName);
         rebuildVmInfo.ipAddress = vm.primaryIpAddress;
-        rebuildVmInfo.zone = config.get("openstack.zone", null);
+        rebuildVmInfo.zone = vm.spec.isVirtualMachine() ?
+                config.get("openstack.zone", null) :
+                config.get("ovh.zone", null);
 
         Vps4RebuildVm.Request req = new Vps4RebuildVm.Request();
         req.rebuildVmInfo = rebuildVmInfo;

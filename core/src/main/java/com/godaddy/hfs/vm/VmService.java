@@ -70,4 +70,8 @@ public interface VmService {
     @POST
     @Path("/{vmId}/reboot")
     VmAction rebootVm(@PathParam("vmId") long vmId);
+
+    @POST
+    @Path("/{vmId}/rebuild")
+    VmAction rebuildVm(@PathParam("vmId") long vmId);
 }

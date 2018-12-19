@@ -834,6 +834,17 @@ public class HfsMockModule extends AbstractModule {
 
                 return this.createAndStoreVmAction(vmId, "RESTART", VmAction.Status.NEW);
             }
+
+            @Override
+            public VmAction rebuildVm(long vmId) {
+                if (!customerVms.containsKey(vmId)
+                        || !vmActionList.containsKey(vmId)
+                        || this.isVmDestroyed(vmId)) {
+                    throw new NotFoundException("Vm not present or has already been destroyed");
+                }
+
+                return this.createAndStoreVmAction(vmId, "REBUILD", VmAction.Status.NEW);
+            }
         };
     }
 

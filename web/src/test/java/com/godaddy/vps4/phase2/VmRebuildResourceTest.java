@@ -1,8 +1,5 @@
 package com.godaddy.vps4.phase2;
 
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
-
 import java.util.UUID;
 
 import javax.inject.Inject;
@@ -48,6 +45,9 @@ import org.mockito.Captor;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+
 public class VmRebuildResourceTest {
     private static GDUser us;
     private static GDUser them;
@@ -67,6 +67,7 @@ public class VmRebuildResourceTest {
 
     private GDUser user;
     private VirtualMachine ourVm;
+    private VirtualMachine ourDedicated;
     private Vps4User ourVps4User;
     private final Injector injector;
 
@@ -112,7 +113,9 @@ public class VmRebuildResourceTest {
 
         ourVps4User = userService.getOrCreateUserForShopper(us.getShopperId(), "1");
         ourVm = createVm(ourVps4User.getId());
+        ourDedicated = createDedicatedVm(ourVps4User.getId());
         createVmUser(ourVm.vmId);
+        createVmUser(ourDedicated.vmId);
     }
 
     @After
@@ -122,6 +125,10 @@ public class VmRebuildResourceTest {
 
     private VirtualMachine createVm(long vps4UserId) {
         return SqlTestData.insertTestVm(UUID.randomUUID(), vps4UserId, dataSource);
+    }
+
+    private VirtualMachine createDedicatedVm(long vps4UserId) {
+        return SqlTestData.insertDedicatedTestVm(UUID.randomUUID(), dataSource);
     }
 
     private void createVmUser(UUID vmId) {
@@ -158,6 +165,20 @@ public class VmRebuildResourceTest {
         verifyCommandRequestParams(ourVm);
     }
 
+    private void verifySuccessfulDedicatedRebuildByAdmin() {
+        VmAction vmAction = getVmRebuildResource().rebuild(ourDedicated.vmId, getRequestPayload(null, null));
+
+        Assert.assertEquals(vmAction.type, ActionType.REBUILD_VM);
+        Assert.assertEquals(vmAction.virtualMachineId, ourDedicated.vmId);
+    }
+
+    private void verifySuccessfulDedicatedRebuild() {
+        VmAction vmAction = getVmRebuildResource().rebuild(ourDedicated.vmId, getRequestPayload(goodPassword, imageName));
+
+        Assert.assertEquals(vmAction.type, ActionType.REBUILD_VM);
+        Assert.assertEquals(vmAction.virtualMachineId, ourDedicated.vmId);
+    }
+
     private void verifyCommandRequestParams(VirtualMachine vm) {
         CommandService commandService = injector.getInstance(CommandService.class);
         verify(commandService, times(1))
@@ -171,6 +192,24 @@ public class VmRebuildResourceTest {
         Assert.assertNotNull(commandRequest.rebuildVmInfo.encryptedPassword);
         Assert.assertEquals(commandRequest.rebuildVmInfo.vmId, vm.vmId);
         Assert.assertEquals(commandRequest.rebuildVmInfo.hostname, vm.hostname);
+    }
+
+    @Test
+    public void verifyAdminRebuildDedicated() {
+        user = admin;
+        verifySuccessfulDedicatedRebuildByAdmin();
+    }
+
+    @Test(expected = AuthorizationException.class)
+    public void failRebuildDedicatedForNonAdminUsers() {
+        user = them;
+        verifySuccessfulDedicatedRebuild();
+    }
+
+    @Test
+    public void weCanRebuildOurDedicated() {
+        user = us;
+        verifySuccessfulDedicatedRebuild();
     }
 
     @Test

@@ -244,7 +244,7 @@ public class Vps4SnapshotVmTest {
     @Test
     public void onlyMarksSameTypeOfSnapshotDeprecated() {
 
-        when(context.execute(eq("MarkOldestSnapshotForDeprecation" + orionGuid), any())).thenReturn((UUID) null);
+        when(context.execute(eq("MarkOldestSnapshotForDeprecation" + orionGuid), any())).thenReturn((null));
         command.execute(context, request);
         // vps4SnapshotIdToBeDeprecated is an On Demand backup, and should not be
         // deprecated to make way for an Automatic backup.

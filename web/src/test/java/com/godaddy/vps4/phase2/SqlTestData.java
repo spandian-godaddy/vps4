@@ -44,6 +44,10 @@ public class SqlTestData {
                 Sql.nextOrNull(rs -> rs.isAfterLast() ? 0 : rs.getLong("ip_address_id"))) + 1;
     }
 
+    public static VirtualMachine insertDedicatedTestVm(UUID orionGuid, DataSource dataSource) {
+        return insertTestVm(orionGuid, 1, dataSource, "centos-7", 140);
+    }
+
     public static VirtualMachine insertTestVm(UUID orionGuid, DataSource dataSource) {
         return insertTestVm(orionGuid, 1, dataSource);
     }

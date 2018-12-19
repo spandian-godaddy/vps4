@@ -1,6 +1,13 @@
 package com.godaddy.vps4.orchestration.vm.provision;
 
+import java.util.Random;
+import java.util.UUID;
+
+import javax.inject.Inject;
+
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.godaddy.hfs.vm.VmAction;
+import com.godaddy.hfs.vm.VmService;
 import com.godaddy.vps4.credit.CreditService;
 import com.godaddy.vps4.messaging.Vps4MessagingService;
 import com.godaddy.vps4.network.IpAddress.IpAddressType;
@@ -10,7 +17,6 @@ import com.godaddy.vps4.orchestration.hfs.cpanel.ConfigureCpanel;
 import com.godaddy.vps4.orchestration.hfs.cpanel.ConfigureCpanel.ConfigureCpanelRequest;
 import com.godaddy.vps4.orchestration.hfs.plesk.ConfigurePlesk;
 import com.godaddy.vps4.orchestration.hfs.plesk.ConfigurePlesk.ConfigurePleskRequest;
-import com.godaddy.vps4.orchestration.hfs.sysadmin.AddUser;
 import com.godaddy.vps4.orchestration.hfs.sysadmin.SetHostname;
 import com.godaddy.vps4.orchestration.hfs.sysadmin.SetPassword;
 import com.godaddy.vps4.orchestration.hfs.sysadmin.ToggleAdmin;
@@ -30,16 +36,17 @@ import gdg.hfs.orchestration.CommandRetryStrategy;
 import gdg.hfs.vhfs.nodeping.CreateCheckRequest;
 import gdg.hfs.vhfs.nodeping.NodePingCheck;
 import gdg.hfs.vhfs.nodeping.NodePingService;
-import com.godaddy.hfs.vm.VmAction;
-import com.godaddy.hfs.vm.VmService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.inject.Inject;
-import java.util.Random;
-import java.util.UUID;
-
-import static com.godaddy.vps4.vm.CreateVmStep.*;
+import static com.godaddy.vps4.vm.CreateVmStep.ConfigureNodeping;
+import static com.godaddy.vps4.vm.CreateVmStep.ConfiguringCPanel;
+import static com.godaddy.vps4.vm.CreateVmStep.ConfiguringPlesk;
+import static com.godaddy.vps4.vm.CreateVmStep.GeneratingHostname;
+import static com.godaddy.vps4.vm.CreateVmStep.RequestingServer;
+import static com.godaddy.vps4.vm.CreateVmStep.SetHostname;
+import static com.godaddy.vps4.vm.CreateVmStep.SetupComplete;
+import static com.godaddy.vps4.vm.CreateVmStep.StartingServerSetup;
 
 @CommandMetadata(
         name = "ProvisionDedicated",
@@ -175,17 +182,8 @@ public class Vps4ProvisionDedicated extends ActionCommand<ProvisionRequest, Vps4
     }
 
     private void setupUsers(long hfsVmId) {
-        addUserToServer(hfsVmId);
         addUserToVps4();
         setLinuxRootPassword(hfsVmId);
-    }
-
-    private void addUserToServer(long hfsVmId) {
-        AddUser.Request addUserRequest = new AddUser.Request();
-        addUserRequest.hfsVmId = hfsVmId;
-        addUserRequest.username = request.username;
-        addUserRequest.encryptedPassword = request.encryptedPassword;
-        context.execute(AddUser.class, addUserRequest);
     }
 
     private void addUserToVps4() {
@@ -195,7 +193,6 @@ public class Vps4ProvisionDedicated extends ActionCommand<ProvisionRequest, Vps4
         }, Void.class);
     }
 
-
     private void setLinuxRootPassword(long hfsVmId) {
         VirtualMachine vm = virtualMachineService.getVirtualMachine(request.vmInfo.vmId);
         if (vm.image.operatingSystem == Image.OperatingSystem.LINUX) {
@@ -203,6 +200,7 @@ public class Vps4ProvisionDedicated extends ActionCommand<ProvisionRequest, Vps4
             context.execute(SetPassword.class, setRootPasswordRequest);
         }
     }
+
     private long createServer() {
         setStep(RequestingServer);
         CreateVm.Request createVmRequest = ProvisionHelper.getCreateVmRequest(request, hostname);

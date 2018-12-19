@@ -1,5 +1,15 @@
 package com.godaddy.vps4.orchestration.vm;
 
+import java.io.IOException;
+import java.util.Random;
+import java.util.UUID;
+
+import com.godaddy.hfs.mailrelay.MailRelayUpdate;
+import com.godaddy.hfs.vm.Vm;
+import com.godaddy.hfs.vm.VmAction;
+import com.godaddy.hfs.vm.VmAction.Status;
+import com.godaddy.hfs.vm.VmAddress;
+import com.godaddy.hfs.vm.VmService;
 import com.godaddy.vps4.credit.CreditService;
 import com.godaddy.vps4.messaging.MissingShopperIdException;
 import com.godaddy.vps4.messaging.Vps4MessagingService;
@@ -28,29 +38,23 @@ import com.google.inject.Guice;
 import com.google.inject.Injector;
 import gdg.hfs.orchestration.CommandContext;
 import gdg.hfs.orchestration.GuiceCommandProvider;
-import com.godaddy.hfs.mailrelay.MailRelayUpdate;
 import gdg.hfs.vhfs.nodeping.CreateCheckRequest;
 import gdg.hfs.vhfs.nodeping.NodePingCheck;
 import gdg.hfs.vhfs.nodeping.NodePingService;
 import gdg.hfs.vhfs.plesk.PleskService;
-import com.godaddy.hfs.vm.Vm;
-import com.godaddy.hfs.vm.VmAction;
-import com.godaddy.hfs.vm.VmAction.Status;
-import com.godaddy.hfs.vm.VmAddress;
-import com.godaddy.hfs.vm.VmService;
 import org.junit.Before;
 import org.junit.Test;
-
-import java.io.IOException;
-import java.util.Random;
-import java.util.UUID;
 
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyBoolean;
 import static org.mockito.Matchers.anyLong;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.eq;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 public class Vps4ProvisionDedicatedTest {
 
@@ -187,14 +191,6 @@ public class Vps4ProvisionDedicatedTest {
         this.image.controlPanel = ControlPanel.PLESK;
         command.execute(context, this.request);
         verify(vmUserService, times(1)).updateUserAdminAccess(username, vmId, false);
-    }
-
-    @Test
-    public void provisionServerTestUserAdded() {
-        this.image.controlPanel = ControlPanel.MYH;
-        command.execute(context, this.request);
-        verify(addUser, times(1)).execute(any(CommandContext.class), any(AddUser.Request.class));
-        verify(vmUserService, times(1)).createUser(request.username, request.vmInfo.vmId);
     }
 
     @Test

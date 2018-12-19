@@ -51,16 +51,26 @@ public class SqlTestData {
         return projectService.createProject(TEST_PROJECT_NAME, userId, TEST_SGID);
     }
 
-    public static VirtualMachine insertVm(VirtualMachineService virtualMachineService, Vps4UserService userService) {
+    public static VirtualMachine insertVm(VirtualMachineService virtualMachineService, Vps4UserService userService, int tier) {
         UUID orionGuid = UUID.randomUUID();
         String imageName = IMAGE_NAME;
         long userId = userService.getUser(TEST_SHOPPER_ID).getId();
 
         ProvisionVirtualMachineParameters params = new ProvisionVirtualMachineParameters(
-                userId, 1, TEST_SGID, orionGuid, TEST_VM_NAME, 10, 1, imageName);
+                userId, 1, TEST_SGID, orionGuid, TEST_VM_NAME, tier, 1, imageName);
         VirtualMachine virtualMachine = virtualMachineService.provisionVirtualMachine(params);
         virtualMachineService.addHfsVmIdToVirtualMachine(virtualMachine.vmId, hfsVmId);
         return virtualMachineService.getVirtualMachine(virtualMachine.vmId);
+    }
+
+    public static VirtualMachine insertVm(VirtualMachineService virtualMachineService, Vps4UserService userService) {
+        int tier = 10; // default to using vm tier 10
+        return insertVm(virtualMachineService, userService, tier);
+    }
+
+    public static VirtualMachine insertDedicatedVm(VirtualMachineService virtualMachineService, Vps4UserService userService) {
+        int tier = 140; // use tier 140 for dedicated vm
+        return insertVm(virtualMachineService, userService, tier);
     }
 
     public static long insertVmAction(ActionService actionService, UUID vmId, ActionType actionType) {
