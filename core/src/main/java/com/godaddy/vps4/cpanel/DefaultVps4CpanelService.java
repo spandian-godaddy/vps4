@@ -8,17 +8,16 @@ import java.util.List;
 
 import javax.inject.Inject;
 
+import com.godaddy.hfs.config.Config;
+import com.godaddy.vps4.cpanel.CpanelClient.CpanelServiceType;
 import com.godaddy.vps4.network.IpAddress;
+import com.godaddy.vps4.network.NetworkService;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import com.godaddy.hfs.config.Config;
-import com.godaddy.vps4.cpanel.CpanelClient.CpanelServiceType;
-import com.godaddy.vps4.network.NetworkService;
 
 public class DefaultVps4CpanelService implements Vps4CpanelService {
 

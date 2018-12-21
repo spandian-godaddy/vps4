@@ -1,8 +1,5 @@
 package com.godaddy.vps4.phase2;
 
-import static org.mockito.Matchers.anyLong;
-import static org.mockito.Matchers.eq;
-
 import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
@@ -10,17 +7,11 @@ import java.util.UUID;
 import javax.sql.DataSource;
 import javax.ws.rs.NotFoundException;
 
-import com.godaddy.vps4.network.IpAddress;
-import org.junit.After;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
-import org.mockito.Mockito;
-
 import com.godaddy.vps4.cpanel.CpanelInvalidUserException;
 import com.godaddy.vps4.cpanel.CpanelTimeoutException;
 import com.godaddy.vps4.cpanel.Vps4CpanelService;
 import com.godaddy.vps4.jdbc.DatabaseModule;
+import com.godaddy.vps4.network.IpAddress;
 import com.godaddy.vps4.scheduler.api.web.SchedulerWebService;
 import com.godaddy.vps4.security.GDUserMock;
 import com.godaddy.vps4.security.SecurityModule;
@@ -39,6 +30,14 @@ import com.google.inject.Guice;
 import com.google.inject.Inject;
 import com.google.inject.Injector;
 import com.google.inject.Provides;
+import org.junit.After;
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.Test;
+import org.mockito.Mockito;
+
+import static org.mockito.Matchers.anyLong;
+import static org.mockito.Matchers.eq;
 
 public class CpanelResourceTest {
 
@@ -368,4 +367,5 @@ public class CpanelResourceTest {
             Assert.assertEquals("LIST_PACKAGES_FAILED", e.getId());
         }
     }
+
 }

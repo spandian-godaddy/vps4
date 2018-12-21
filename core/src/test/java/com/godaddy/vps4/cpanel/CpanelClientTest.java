@@ -1,7 +1,9 @@
 package com.godaddy.vps4.cpanel;
 
 import java.io.IOException;
+import java.net.URLEncoder;
 
+import com.godaddy.hfs.io.Charsets;
 import org.apache.http.HttpVersion;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.CloseableHttpResponse;
@@ -11,13 +13,15 @@ import org.apache.http.message.BasicStatusLine;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
-
-import com.godaddy.hfs.io.Charsets;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
 import org.mockito.MockitoAnnotations;
 
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 public class CpanelClientTest {
     private HttpClient httpClient;
@@ -70,7 +74,7 @@ public class CpanelClientTest {
         String domainName = "blah";
         String username = "blahtoo";
         String password = "password";
-        String plan = "what";
+        String plan = "some fake plan";
         String email = "email@email.com";
         try {
             cpanelClient.createAccount(domainName, username, password, plan, email);
@@ -78,8 +82,11 @@ public class CpanelClientTest {
             verify(httpClient, times(1)).execute(httpUriRequestArgumentCaptor.capture());
             HttpUriRequest capturedReq =  httpUriRequestArgumentCaptor.getValue();
             String expectedUri = "https://" + hostname + ":2087" + "/json-api/createacct?api.version=1&password="
-                    + password + "&domain=" + domainName + "&username="
-                    + username + "&plan=" + plan + "&contactemail=" + email;
+                    + URLEncoder.encode(password, "UTF-8") +
+                    "&domain=" + URLEncoder.encode(domainName, "UTF-8")
+                    + "&username=" + URLEncoder.encode(username, "UTF-8")
+                    + "&plan=" + URLEncoder.encode(plan, "UTF-8")
+                    + "&contactemail=" + URLEncoder.encode(email, "UTF-8");
             Assert.assertEquals(expectedUri, capturedReq.getURI().toString());
         }
         catch (CpanelAccessDeniedException | IOException e) {
