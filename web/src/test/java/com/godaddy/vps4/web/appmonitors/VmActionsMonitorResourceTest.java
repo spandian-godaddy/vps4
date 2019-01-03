@@ -16,6 +16,8 @@ import com.godaddy.vps4.vm.ActionService;
 import com.godaddy.vps4.vm.ActionService.ActionListFilters;
 import com.godaddy.vps4.vm.ActionStatus;
 import com.godaddy.vps4.vm.ActionType;
+import com.godaddy.vps4.vm.VirtualMachine;
+import com.godaddy.vps4.vm.VirtualMachineService;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -34,6 +36,7 @@ public class VmActionsMonitorResourceTest {
     private VmActionsMonitorResource vmActionsMonitorResource;
     private MonitorService monitorService = mock(MonitorService.class);
     private ActionService actionService = mock(ActionService.class);
+    private VirtualMachineService virtualMachineService = mock(VirtualMachineService.class);
     private List<VmActionData> expectedVmActionData;
     private List<SnapshotActionData> expectedSnapshotActionData;
 
@@ -60,7 +63,12 @@ public class VmActionsMonitorResourceTest {
         snapshotActionData = new SnapshotActionData("fake-action-id-3", UUID.randomUUID(), UUID.randomUUID(), ActionType.CREATE_SNAPSHOT.name(), ActionStatus.IN_PROGRESS.name(), Instant.now().minus(10, ChronoUnit.MINUTES).toString());
         expectedSnapshotActionData.add(snapshotActionData);
 
-        vmActionsMonitorResource = new VmActionsMonitorResource(monitorService, actionService);
+        VirtualMachine virtualMachine = new VirtualMachine();
+        virtualMachine.orionGuid = UUID.randomUUID();
+        VirtualMachine virtualMachine2 = new VirtualMachine();
+        virtualMachine2.orionGuid = UUID.randomUUID();
+        when(virtualMachineService.getVirtualMachine(any())).thenReturn(virtualMachine).thenReturn(virtualMachine2);
+        vmActionsMonitorResource = new VmActionsMonitorResource(monitorService, actionService, virtualMachineService);
     }
 
     @Test
@@ -244,7 +252,7 @@ public class VmActionsMonitorResourceTest {
         Assert.assertEquals(3, actionTypeErrorData.failedActions.size());
         Assert.assertEquals(ActionType.START_VM, actionTypeErrorData.actionType);
         Assert.assertEquals(2, actionTypeErrorData.affectedAccounts);
-        Assert.assertTrue("Expected 60%, actual " + actionTypeErrorData.failurePercentage, actionTypeErrorData.failurePercentage == 60.0);
+        Assert.assertTrue("Expected 30, actual " + actionTypeErrorData.failurePercentage, actionTypeErrorData.failurePercentage == 30.0);
     }
 
     @Test

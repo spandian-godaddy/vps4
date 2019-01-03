@@ -3,7 +3,10 @@ package com.godaddy.vps4.web.appmonitors;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 import javax.ws.rs.Consumes;
@@ -28,6 +31,8 @@ import com.godaddy.vps4.vm.ActionService;
 import com.godaddy.vps4.vm.ActionService.ActionListFilters;
 import com.godaddy.vps4.vm.ActionStatus;
 import com.godaddy.vps4.vm.ActionType;
+import com.godaddy.vps4.vm.VirtualMachine;
+import com.godaddy.vps4.vm.VirtualMachineService;
 import com.godaddy.vps4.web.Vps4Api;
 import com.godaddy.vps4.web.security.GDUser;
 import com.godaddy.vps4.web.security.RequiresRole;
@@ -46,11 +51,13 @@ public class VmActionsMonitorResource {
 
     private final MonitorService monitorService;
     private final ActionService actionService;
+    private final VirtualMachineService virtualMachineService;
 
     @Inject
-    public VmActionsMonitorResource(MonitorService monitorService, ActionService actionService) {
+    public VmActionsMonitorResource(MonitorService monitorService, ActionService actionService, VirtualMachineService virtualMachineService) {
         this.monitorService = monitorService;
         this.actionService = actionService;
+        this.virtualMachineService = virtualMachineService;
     }
 
     @RequiresRole(roles = {GDUser.Role.ADMIN})
@@ -176,8 +183,8 @@ public class VmActionsMonitorResource {
             List<Action> errors = actions.stream().filter(a -> a.status==ActionStatus.ERROR).collect(Collectors.toList());
 
             if(!errors.isEmpty()) {
-                double failurePercentage = ((double)errors.size()/actions.size())*100;
-                long affectedAccounts = errors.stream().map(x -> x.resourceId).distinct().count();
+                double failurePercentage = ((double) errors.size() / windowSize) * 100;
+                long affectedAccounts = getCountOfAffectedAccounts(errors);
                 ActionTypeErrorData actionTypeError = new ActionTypeErrorData(type, failurePercentage, affectedAccounts, errors);
                 result.add(actionTypeError);
             }
@@ -185,7 +192,12 @@ public class VmActionsMonitorResource {
         return result;
     }
 
-    @RequiresRole(roles = {GDUser.Role.ADMIN})
+	private long getCountOfAffectedAccounts(List<Action> errors) {
+        Set<UUID> accounts = errors.stream().map(e -> virtualMachineService.getVirtualMachine(e.resourceId).orionGuid).collect(Collectors.toSet());
+        return accounts.size();
+    }
+
+    @RequiresRole(roles = { GDUser.Role.ADMIN })
     @POST
     @Path("/checkpoints/{actionType}")
     public MonitoringCheckpoint setMonitoringCheckpoint(@PathParam("actionType") ActionType actionType) {
