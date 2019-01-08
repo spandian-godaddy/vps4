@@ -48,7 +48,8 @@ public class ECommCreditService implements CreditService {
         MANAGED_LEVEL,
         MONITORING,
         OPERATINGSYSTEM,
-        CONTROL_PANEL_TYPE;
+        CONTROL_PANEL_TYPE,
+        PF_ID;
 
         @Override
         public String toString() {
@@ -101,7 +102,8 @@ public class ECommCreditService implements CreditService {
                 getDataCenter(account), getProductId(account),
                 Boolean.parseBoolean(account.product_meta.get(ProductMetaField.FULLY_MANAGED_EMAIL_SENT.toString())),
                 account.reseller_id,
-                Boolean.parseBoolean(account.product_meta.get(ProductMetaField.PLAN_CHANGE_PENDING.toString())));
+                Boolean.parseBoolean(account.product_meta.get(ProductMetaField.PLAN_CHANGE_PENDING.toString())),
+                Integer.parseInt(account.plan_features.getOrDefault(PlanFeatures.PF_ID.toString(), "0")));
             logger.info("Credit: {}", credit.toString());
             return credit;
         } catch (Exception ex) {

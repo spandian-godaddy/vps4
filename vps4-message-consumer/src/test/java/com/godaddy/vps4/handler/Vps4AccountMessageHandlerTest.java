@@ -79,7 +79,7 @@ public class Vps4AccountMessageHandlerTest {
 
     private void mockVmCredit(AccountStatus accountStatus, UUID productId, int tier, int managedLevel, String controlPanel) {
         DataCenter dc = dcService.getDataCenter(5);
-        VirtualMachineCredit vmCredit = new VirtualMachineCredit(orionGuid, tier, managedLevel, 0, "linux", controlPanel, null, "TestShopper", accountStatus, dc, productId, false, "1", false);
+        VirtualMachineCredit vmCredit = new VirtualMachineCredit(orionGuid, tier, managedLevel, 0, "linux", controlPanel, null, "TestShopper", accountStatus, dc, productId, false, "1", false, 0);
         when(creditServiceMock.getVirtualMachineCredit(orionGuid)).thenReturn(vmCredit);
     }
 
@@ -181,7 +181,7 @@ public class Vps4AccountMessageHandlerTest {
     @Test
     public void testFullyManagedEmailAlreadySent() throws MessageHandlerException, MissingShopperIdException, IOException {
         DataCenter dc = dcService.getDataCenter(5);
-        VirtualMachineCredit vmCredit = new VirtualMachineCredit(orionGuid, 10, 2, 1, "linux", "cpanel", null, "TestShopper", AccountStatus.ACTIVE, dc, null, true, "1", false);
+        VirtualMachineCredit vmCredit = new VirtualMachineCredit(orionGuid, 10, 2, 1, "linux", "cpanel", null, "TestShopper", AccountStatus.ACTIVE, dc, null, true, "1", false, 0);
 
         when(creditServiceMock.getVirtualMachineCredit(orionGuid)).thenReturn(vmCredit);
         when(messagingServiceMock.sendFullyManagedEmail("TestShopper", "cpanel")).thenReturn("messageId");
@@ -256,7 +256,7 @@ public class Vps4AccountMessageHandlerTest {
     public void testHandleMessageRemovedWithSnapshotsWrongDC() throws MessageHandlerException {
         DataCenter dc = dcService.getDataCenter(1);
         UUID vmId = UUID.randomUUID();
-        VirtualMachineCredit vmCredit = new VirtualMachineCredit(orionGuid, 10, 0, 0, "linux", "myh", null, "TestShopper", AccountStatus.REMOVED, dc, vmId, false, "1", false);
+        VirtualMachineCredit vmCredit = new VirtualMachineCredit(orionGuid, 10, 0, 0, "linux", "myh", null, "TestShopper", AccountStatus.REMOVED, dc, vmId, false, "1", false, 0);
         when(creditServiceMock.getVirtualMachineCredit(orionGuid)).thenReturn(vmCredit);
 
         callHandleMessage(createTestKafkaMessage("removed"));

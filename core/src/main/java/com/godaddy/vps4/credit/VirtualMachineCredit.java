@@ -29,13 +29,14 @@ public class VirtualMachineCredit {
     public boolean fullyManagedEmailSent;
     public String resellerId;
     public boolean planChangePending;
+    public int pfid;
 
     public VirtualMachineCredit(){
     }
 
     public VirtualMachineCredit(UUID orionGuid, int tier, int managedLevel, int monitoring, String operatingSystem,
             String controlPanel, Instant provisionDate, String shopperId, AccountStatus accountStatus,
-            DataCenter dataCenter, UUID vmId, boolean fullyManagedEmailSent, String resellerId, boolean planChangePending) {
+            DataCenter dataCenter, UUID vmId, boolean fullyManagedEmailSent, String resellerId, boolean planChangePending, int pfid) {
         this.orionGuid = orionGuid;
         this.tier = tier;
         this.managedLevel = managedLevel;
@@ -50,6 +51,7 @@ public class VirtualMachineCredit {
         this.fullyManagedEmailSent = fullyManagedEmailSent;
         this.resellerId = resellerId;
         this.planChangePending = planChangePending;
+        this.pfid = pfid;
     }
 
     @JsonIgnore

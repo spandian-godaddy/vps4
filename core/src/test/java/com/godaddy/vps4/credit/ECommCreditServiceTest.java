@@ -71,6 +71,7 @@ public class ECommCreditServiceTest {
         account.plan_features.put("monitoring", "0");
         account.plan_features.put("operatingsystem", "linux");
         account.plan_features.put("control_panel_type", "cpanel");
+        account.plan_features.put("pf_id", "1066866");
         account.product_meta = new HashMap<>();
     }
 
@@ -141,6 +142,17 @@ public class ECommCreditServiceTest {
         assertEquals(account.plan_features.get("control_panel_type"), credit.controlPanel);
         assertNull(credit.provisionDate);
         assertEquals(account.shopper_id, credit.shopperId);
+        assertEquals(Integer.parseInt(account.plan_features.get("pf_id")), credit.pfid);
+    }
+
+    @Test
+    public void testGetCreditHandlesMissingPfid() {
+        account.plan_features.remove("pf_id");
+        when(ecommService.getAccount(orionGuid.toString())).thenReturn(account);
+        VirtualMachineCredit credit = creditService.getVirtualMachineCredit(orionGuid);
+        int defaultPfid = 0;
+
+        assertEquals(defaultPfid, credit.pfid);
     }
 
     @Test

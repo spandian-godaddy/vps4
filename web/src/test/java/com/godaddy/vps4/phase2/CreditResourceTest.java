@@ -65,7 +65,7 @@ public class CreditResourceTest {
 
     private VirtualMachineCredit createVmCredit(AccountStatus accountStatus) {
         return new VirtualMachineCredit(orionGuid, 10, 1, 0, "linux", "cPanel", null, user.getShopperId(), accountStatus, null, null,
-                false, "1", false);
+                false, "1", false, 0);
     }
 
     @Before
