@@ -1,7 +1,6 @@
 package com.godaddy.vps4.web;
 
 import com.godaddy.vps4.web.action.ActionResource;
-import com.godaddy.vps4.web.vm.OrphanResource;
 import com.godaddy.vps4.web.appmonitors.VmActionsMonitorResource;
 import com.godaddy.vps4.web.cache.CacheResource;
 import com.godaddy.vps4.web.console.ConsoleResource;
@@ -12,6 +11,7 @@ import com.godaddy.vps4.web.mailrelay.VmMailRelayResource;
 import com.godaddy.vps4.web.messaging.VmMessagingResource;
 import com.godaddy.vps4.web.monitoring.VmMonitoringResource;
 import com.godaddy.vps4.web.network.NetworkResource;
+import com.godaddy.vps4.web.plan.PlanResource;
 import com.godaddy.vps4.web.security.Vps4ContainerRequestFilterModule;
 import com.godaddy.vps4.web.snapshot.SnapshotActionResource;
 import com.godaddy.vps4.web.snapshot.SnapshotResource;
@@ -20,6 +20,7 @@ import com.godaddy.vps4.web.sysadmin.UsageStatsResource;
 import com.godaddy.vps4.web.util.TroubleshootVmHelper;
 import com.godaddy.vps4.web.validator.ValidatorResource;
 import com.godaddy.vps4.web.vm.ImageResource;
+import com.godaddy.vps4.web.vm.OrphanResource;
 import com.godaddy.vps4.web.vm.SnapshotScheduleResource;
 import com.godaddy.vps4.web.vm.UserResource;
 import com.godaddy.vps4.web.vm.VmActionResource;
@@ -36,6 +37,7 @@ import com.godaddy.vps4.web.vm.VmTroubleshootResource;
 import com.godaddy.vps4.web.vm.VmUpgradeResource;
 import com.godaddy.vps4.web.vm.VmZombieResource;
 import com.google.inject.AbstractModule;
+
 import gdg.hfs.orchestration.web.CommandsResource;
 import gdg.hfs.orchestration.web.CommandsViewResource;
 
@@ -81,6 +83,7 @@ public class WebModule extends AbstractModule {
         bind(ActionResource.class);
         bind(VmSuspendResource.class);
         bind(OrphanResource.class);
+        bind(PlanResource.class);
 
         bind(CommandsResource.class);
         bind(CommandsViewResource.class);

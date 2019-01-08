@@ -408,10 +408,11 @@ public class VmResourceTest {
         testRebootDedicatedVm();
     }
 
+    @Test
     public void testDoubleRebootDedicatedVm() {
         VirtualMachine vm = createTestDedicated();
 
-        VmAction vmAction = getVmResource().restartVm(vm.vmId);
+        getVmResource().restartVm(vm.vmId);
         try {
             getVmResource().restartVm(vm.vmId);
             Assert.fail();

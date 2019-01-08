@@ -5,6 +5,9 @@ import java.util.List;
 
 import javax.inject.Singleton;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.godaddy.hfs.servicediscovery.HfsServiceMetadata;
 import com.godaddy.hfs.servicediscovery.ZkServiceRegistrationModule;
@@ -25,6 +28,7 @@ import com.godaddy.vps4.hfs.HfsMockModule;
 import com.godaddy.vps4.jdbc.DatabaseModule;
 import com.godaddy.vps4.mailrelay.MailRelayModule;
 import com.godaddy.vps4.messaging.MessagingModule;
+import com.godaddy.vps4.plan.PlanModule;
 import com.godaddy.vps4.plesk.PleskModule;
 import com.godaddy.vps4.scheduler.api.client.SchedulerServiceClientModule;
 import com.godaddy.vps4.security.SecurityModule;
@@ -47,12 +51,11 @@ import com.google.inject.PrivateModule;
 import com.google.inject.multibindings.Multibinder;
 import com.google.inject.multibindings.OptionalBinder;
 import com.google.inject.servlet.ServletModule;
+
 import gdg.hfs.orchestration.CommandService;
 import gdg.hfs.orchestration.cluster.ClusterClientModule;
 import gdg.hfs.orchestration.web.CommandsResource;
 import gdg.hfs.orchestration.web.CommandsViewResource;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public class Vps4Injector {
 
@@ -112,6 +115,7 @@ public class Vps4Injector {
         modules.add(new CpanelModule());
         modules.add(new PleskModule());
         modules.add(new MessagingModule());
+        modules.add(new PlanModule());
         modules.add(binder -> {
             binder.bind(ObjectMapper.class).toProvider(ObjectMapperProvider.class);
         });
