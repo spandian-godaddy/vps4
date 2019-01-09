@@ -36,10 +36,16 @@ public class PlanResourceTest {
     public void testGetPlan() {
         int pfid = 1066868;  // tier1, linux, 3mo
         String expectedPackageId = "vps4_linux_tier1_003mo";
+        int expectedCpus = 1;
+        int expectedMem = 2048;
+        int expectedDisk = 40;
         Plan plan = getPlanResource().getPlan(pfid);
 
         assertEquals(pfid, plan.pfid);
         assertEquals(expectedPackageId, plan.packageId);
+        assertEquals(expectedCpus, plan.cpuCoreCount);
+        assertEquals(expectedMem, plan.memoryMib);
+        assertEquals(expectedDisk, plan.diskGib);
     }
 
     @Test
