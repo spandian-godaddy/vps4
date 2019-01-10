@@ -1,5 +1,19 @@
 package com.godaddy.vps4.web.vm;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+
+import java.time.Instant;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.UUID;
+
+import org.junit.Before;
+import org.junit.Test;
+
+import com.godaddy.hfs.vm.Vm;
 import com.godaddy.vps4.credit.VirtualMachineCredit;
 import com.godaddy.vps4.network.IpAddress;
 import com.godaddy.vps4.project.Project;
@@ -13,23 +27,10 @@ import com.godaddy.vps4.vm.VirtualMachine;
 import com.godaddy.vps4.web.Vps4Exception;
 import com.godaddy.vps4.web.action.Orphans;
 import com.godaddy.vps4.web.credit.CreditResource;
-import gdg.hfs.vhfs.network.NetworkService;
+
+import gdg.hfs.vhfs.network.NetworkServiceV2;
 import gdg.hfs.vhfs.nodeping.NodePingCheck;
 import gdg.hfs.vhfs.nodeping.NodePingService;
-import com.godaddy.hfs.vm.Vm;
-import org.junit.Before;
-import org.junit.Test;
-
-import java.time.Instant;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.UUID;
-
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertEquals;
-
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 
 public class OrphanResourceTest {
     private OrphanResource resource;
@@ -39,7 +40,7 @@ public class OrphanResourceTest {
     private ProjectService projectService;
 
     private NodePingService hfsNodepingService;
-    private NetworkService networkService;
+    private NetworkServiceV2 networkService;
 
     private MonitoringMeta monitoringMeta;
 
@@ -75,7 +76,7 @@ public class OrphanResourceTest {
 
 
         hfsNodepingService = mock(NodePingService.class);
-        networkService = mock(NetworkService.class);
+        networkService = mock(NetworkServiceV2.class);
 
         monitoringMeta = mock(MonitoringMeta.class);
 

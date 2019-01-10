@@ -63,7 +63,7 @@ public class Vps4DestroyVmTest {
     ActionService actionService = mock(ActionService.class);
     NetworkService networkService = mock(NetworkService.class);
     VirtualMachineService virtualMachineService = mock(VirtualMachineService.class);
-    gdg.hfs.vhfs.network.NetworkService hfsNetworkService = mock(gdg.hfs.vhfs.network.NetworkService.class);
+    gdg.hfs.vhfs.network.NetworkServiceV2 hfsNetworkService = mock(gdg.hfs.vhfs.network.NetworkServiceV2.class);
     CPanelService cpanelService = mock(CPanelService.class);
     PleskService pleskService = mock(PleskService.class);
     MailRelayService mailRelayService = mock(MailRelayService.class);
@@ -79,7 +79,7 @@ public class Vps4DestroyVmTest {
     Injector injector = Guice.createInjector(binder -> {
         binder.bind(UnbindIp.class);
         binder.bind(ReleaseIp.class);
-        binder.bind(gdg.hfs.vhfs.network.NetworkService.class).toInstance(hfsNetworkService);
+        binder.bind(gdg.hfs.vhfs.network.NetworkServiceV2.class).toInstance(hfsNetworkService);
         binder.bind(VmService.class).toInstance(vmService);
         binder.bind(VirtualMachineService.class).toInstance(virtualMachineService);
         binder.bind(CPanelService.class).toInstance(cpanelService);

@@ -12,7 +12,7 @@ import gdg.hfs.orchestration.CommandContext;
 import gdg.hfs.vhfs.network.AddressAction;
 import gdg.hfs.vhfs.network.IpAddress;
 import gdg.hfs.vhfs.network.IpAddress.Status;
-import gdg.hfs.vhfs.network.NetworkService;
+import gdg.hfs.vhfs.network.NetworkServiceV2;
 
 public class AllocateIp implements Command<AllocateIp.Request, IpAddress> {
 
@@ -23,10 +23,10 @@ public class AllocateIp implements Command<AllocateIp.Request, IpAddress> {
         public String zone;
     }
 
-    final NetworkService networkService;
+    final NetworkServiceV2 networkService;
 
     @Inject
-    public AllocateIp(NetworkService networkService) {
+    public AllocateIp(NetworkServiceV2 networkService) {
         this.networkService = networkService;
     }
 

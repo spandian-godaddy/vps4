@@ -20,11 +20,11 @@ import gdg.hfs.orchestration.CommandContext;
 import gdg.hfs.orchestration.GuiceCommandProvider;
 import gdg.hfs.vhfs.network.AddressAction;
 import gdg.hfs.vhfs.network.IpAddress;
-import gdg.hfs.vhfs.network.NetworkService;
+import gdg.hfs.vhfs.network.NetworkServiceV2;
 
 public class AllocateIpTest {
 
-    NetworkService networkService = mock(NetworkService.class);
+    NetworkServiceV2 networkService = mock(NetworkServiceV2.class);
     WaitForAddressAction waitAction = mock(WaitForAddressAction.class);
 
     AllocateIp command = new AllocateIp(networkService);

@@ -1,5 +1,17 @@
 package com.godaddy.vps4.web.vm;
 
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
+import java.util.UUID;
+
+import javax.ws.rs.Consumes;
+import javax.ws.rs.GET;
+import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
+import javax.ws.rs.Produces;
+import javax.ws.rs.core.MediaType;
+
+import com.godaddy.hfs.vm.Vm;
 import com.godaddy.vps4.credit.VirtualMachineCredit;
 import com.godaddy.vps4.network.IpAddress;
 import com.godaddy.vps4.project.Project;
@@ -14,24 +26,13 @@ import com.godaddy.vps4.web.credit.CreditResource;
 import com.godaddy.vps4.web.security.GDUser;
 import com.godaddy.vps4.web.security.RequiresRole;
 import com.google.inject.Inject;
-import gdg.hfs.vhfs.network.NetworkService;
+import gdg.hfs.vhfs.network.NetworkServiceV2;
 import gdg.hfs.vhfs.nodeping.NodePingCheck;
 import gdg.hfs.vhfs.nodeping.NodePingService;
-import com.godaddy.hfs.vm.Vm;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import javax.ws.rs.Consumes;
-import javax.ws.rs.GET;
-import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.Produces;
-import javax.ws.rs.core.MediaType;
-import java.time.Instant;
-import java.time.temporal.ChronoUnit;
-import java.util.UUID;
 
 @Vps4Api
 @Api(tags = { "vms" })
@@ -49,14 +50,14 @@ public class OrphanResource {
     private final ProjectService projectService;
 
     private final NodePingService hfsNodepingService;
-    private final NetworkService networkService;
+    private final NetworkServiceV2 networkService;
 
     private final MonitoringMeta monitoringMeta;
 
     @Inject
     public OrphanResource(VmResource vmResource, CreditResource creditResource, VmSnapshotResource snapshotResource,
                           ProjectService projectService, NodePingService hfsNodepingService,
-                          NetworkService networkService, MonitoringMeta monitoringMeta) {
+                          NetworkServiceV2 networkService, MonitoringMeta monitoringMeta) {
         this.vmResource = vmResource;
         this.creditResource = creditResource;
         this.snapshotResource = snapshotResource;

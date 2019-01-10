@@ -14,12 +14,23 @@ import java.util.stream.Collectors;
 import javax.ws.rs.NotFoundException;
 import javax.ws.rs.core.Response;
 
-import gdg.hfs.vhfs.cpanel.CPanelLicense;
-import com.godaddy.hfs.vm.Console;
 import org.joda.time.DateTime;
 import org.mockito.Mockito;
 
 import com.godaddy.hfs.config.Config;
+import com.godaddy.hfs.mailrelay.MailRelay;
+import com.godaddy.hfs.mailrelay.MailRelayHistory;
+import com.godaddy.hfs.mailrelay.MailRelayService;
+import com.godaddy.hfs.mailrelay.MailRelayUpdate;
+import com.godaddy.hfs.vm.Console;
+import com.godaddy.hfs.vm.CreateVMRequest;
+import com.godaddy.hfs.vm.CreateVMWithFlavorRequest;
+import com.godaddy.hfs.vm.FlavorList;
+import com.godaddy.hfs.vm.Vm;
+import com.godaddy.hfs.vm.VmAction;
+import com.godaddy.hfs.vm.VmAddress;
+import com.godaddy.hfs.vm.VmList;
+import com.godaddy.hfs.vm.VmService;
 import com.godaddy.vps4.messaging.DefaultVps4MessagingService;
 import com.godaddy.vps4.messaging.MissingShopperIdException;
 import com.godaddy.vps4.messaging.Vps4MessagingService;
@@ -29,18 +40,17 @@ import com.google.inject.Provides;
 
 import gdg.hfs.request.CompleteResponse;
 import gdg.hfs.vhfs.cpanel.CPanelAction;
+import gdg.hfs.vhfs.cpanel.CPanelLicense;
 import gdg.hfs.vhfs.cpanel.CPanelService;
 import gdg.hfs.vhfs.ecomm.Account;
 import gdg.hfs.vhfs.ecomm.ECommDataCache;
 import gdg.hfs.vhfs.ecomm.ECommService;
 import gdg.hfs.vhfs.ecomm.MetadataUpdate;
-import com.godaddy.hfs.mailrelay.MailRelay;
-import com.godaddy.hfs.mailrelay.MailRelayHistory;
-import com.godaddy.hfs.mailrelay.MailRelayService;
-import com.godaddy.hfs.mailrelay.MailRelayUpdate;
 import gdg.hfs.vhfs.network.AddressAction;
+import gdg.hfs.vhfs.network.AddressActionList;
 import gdg.hfs.vhfs.network.IpAddress;
-import gdg.hfs.vhfs.network.NetworkService;
+import gdg.hfs.vhfs.network.IpAddressList;
+import gdg.hfs.vhfs.network.NetworkServiceV2;
 import gdg.hfs.vhfs.nodeping.CreateCheckRequest;
 import gdg.hfs.vhfs.nodeping.NodePingAccount;
 import gdg.hfs.vhfs.nodeping.NodePingCheck;
@@ -56,14 +66,6 @@ import gdg.hfs.vhfs.snapshot.SnapshotService;
 import gdg.hfs.vhfs.sysadmin.SysAdminAction;
 import gdg.hfs.vhfs.sysadmin.SysAdminInstallable;
 import gdg.hfs.vhfs.sysadmin.SysAdminService;
-import com.godaddy.hfs.vm.CreateVMRequest;
-import com.godaddy.hfs.vm.CreateVMWithFlavorRequest;
-import com.godaddy.hfs.vm.FlavorList;
-import com.godaddy.hfs.vm.Vm;
-import com.godaddy.hfs.vm.VmAction;
-import com.godaddy.hfs.vm.VmAddress;
-import com.godaddy.hfs.vm.VmList;
-import com.godaddy.hfs.vm.VmService;
 
 public class HfsMockModule extends AbstractModule {
 
@@ -859,8 +861,8 @@ public class HfsMockModule extends AbstractModule {
     }
 
     @Provides
-    public NetworkService provideMockNetworkService() {
-        return new NetworkService() {
+    public NetworkServiceV2 provideMockNetworkService() {
+        return new NetworkServiceV2() {
             private String generateRandomIpAddress() {
                 Random r = new Random();
                 return String.format(
@@ -963,7 +965,7 @@ public class HfsMockModule extends AbstractModule {
             }
 
             @Override
-            public List<IpAddress> listIps(String s) {
+            public IpAddressList listIps(String sgid, int offset, int limit, IpAddress.Status status, String ipAddress) {
                 // NOTE: do nothing, Implement when needed
                 throw new UnsupportedOperationException("Not implemented, yet");
             }
@@ -975,6 +977,18 @@ public class HfsMockModule extends AbstractModule {
                 }
 
                 return customerAddresses.get(addressId);
+            }
+
+            @Override
+            public IpAddressList getServerAddressIds(long addressId, int offset, int limit, IpAddress.Status status) {
+                // NOTE: do nothing, Implement when needed
+                throw new UnsupportedOperationException("Not implemented, yet");
+            }
+
+            @Override
+            public IpAddressList getAddressesForStatus(IpAddress.Status status, int offset, int limit) {
+                // NOTE: do nothing, Implement when needed
+                throw new UnsupportedOperationException("Not implemented, yet");
             }
 
             @Override
@@ -994,7 +1008,7 @@ public class HfsMockModule extends AbstractModule {
             }
 
             @Override
-            public List<AddressAction> getActions(long l) {
+            public AddressActionList getActions(long addressId, int offset, int limit) {
                 // NOTE: do nothing, Implement when needed
                 throw new UnsupportedOperationException("Not implemented, yet");
             }
@@ -1005,11 +1019,7 @@ public class HfsMockModule extends AbstractModule {
                 throw new UnsupportedOperationException("Not implemented, yet");
             }
 
-            @Override
-            public List<IpAddress> getServerAddressIds(long arg0) {
-                // NOTE: do nothing, Implement when needed
-                throw new UnsupportedOperationException("Not implemented, yet");
-            }
+
         };
     }
 

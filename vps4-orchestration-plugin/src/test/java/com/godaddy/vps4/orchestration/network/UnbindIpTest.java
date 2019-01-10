@@ -16,13 +16,13 @@ import gdg.hfs.orchestration.CommandContext;
 import gdg.hfs.orchestration.GuiceCommandProvider;
 import gdg.hfs.vhfs.network.IpAddress;
 import gdg.hfs.vhfs.network.IpAddress.Status;
-import gdg.hfs.vhfs.network.NetworkService;
+import gdg.hfs.vhfs.network.NetworkServiceV2;
 
 public class UnbindIpTest {
-    NetworkService networkService = mock(NetworkService.class);
+    NetworkServiceV2 networkService = mock(NetworkServiceV2.class);
 
     Injector injector = Guice.createInjector(binder -> {
-        binder.bind(gdg.hfs.vhfs.network.NetworkService.class).toInstance(networkService);
+        binder.bind(gdg.hfs.vhfs.network.NetworkServiceV2.class).toInstance(networkService);
     });
 
     CommandContext context = new TestCommandContext(new GuiceCommandProvider(injector));

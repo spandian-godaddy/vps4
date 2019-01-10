@@ -8,16 +8,16 @@ import org.slf4j.LoggerFactory;
 import gdg.hfs.orchestration.Command;
 import gdg.hfs.orchestration.CommandContext;
 import gdg.hfs.vhfs.network.AddressAction;
-import gdg.hfs.vhfs.network.NetworkService;
+import gdg.hfs.vhfs.network.NetworkServiceV2;
 
 public class WaitForAddressAction implements Command<AddressAction, AddressAction> {
 
     private static final Logger logger = LoggerFactory.getLogger(WaitForAddressAction.class);
 
-    final NetworkService networkService;
+    final NetworkServiceV2 networkService;
 
     @Inject
-    public WaitForAddressAction(NetworkService networkService) {
+    public WaitForAddressAction(NetworkServiceV2 networkService) {
         this.networkService = networkService;
     }
 

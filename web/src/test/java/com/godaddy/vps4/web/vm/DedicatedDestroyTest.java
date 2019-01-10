@@ -1,5 +1,11 @@
 package com.godaddy.vps4.web.vm;
 
+import java.time.Instant;
+import java.util.UUID;
+
+import javax.sql.DataSource;
+
+import com.godaddy.hfs.vm.VmService;
 import com.godaddy.vps4.appmonitors.MonitorService;
 import com.godaddy.vps4.credit.CreditService;
 import com.godaddy.vps4.credit.VirtualMachineCredit;
@@ -38,7 +44,6 @@ import gdg.hfs.orchestration.CommandGroupSpec;
 import gdg.hfs.orchestration.CommandService;
 import gdg.hfs.orchestration.CommandSpec;
 import gdg.hfs.orchestration.CommandState;
-import com.godaddy.hfs.vm.VmService;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -47,13 +52,12 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
 import org.mockito.MockitoAnnotations;
 
-import javax.sql.DataSource;
-import java.time.Instant;
-import java.util.UUID;
-
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.eq;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 public class DedicatedDestroyTest {
     private GDUser user;

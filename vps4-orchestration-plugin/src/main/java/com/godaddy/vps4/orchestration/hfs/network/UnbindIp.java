@@ -9,18 +9,18 @@ import gdg.hfs.orchestration.Command;
 import gdg.hfs.orchestration.CommandContext;
 import gdg.hfs.vhfs.network.AddressAction;
 import gdg.hfs.vhfs.network.IpAddress;
-import gdg.hfs.vhfs.network.NetworkService;
 import gdg.hfs.vhfs.network.IpAddress.Status;
+import gdg.hfs.vhfs.network.NetworkServiceV2;
 
 
 public class UnbindIp implements Command<UnbindIp.Request, Void> {
 
     private static final Logger logger = LoggerFactory.getLogger(UnbindIp.class);
 
-    final NetworkService networkService;
+    final NetworkServiceV2 networkService;
 
     @Inject
-    public UnbindIp(NetworkService networkService) {
+    public UnbindIp(NetworkServiceV2 networkService) {
         this.networkService = networkService;
     }
 

@@ -16,21 +16,21 @@ import gdg.hfs.orchestration.Command;
 import gdg.hfs.orchestration.CommandContext;
 import gdg.hfs.vhfs.cpanel.CPanelService;
 import com.godaddy.hfs.mailrelay.MailRelayService;
-import gdg.hfs.vhfs.network.NetworkService;
+import gdg.hfs.vhfs.network.NetworkServiceV2;
 import gdg.hfs.vhfs.plesk.PleskService;
 
 public class Vps4DestroyIpAddress implements Command<Vps4DestroyIpAddress.Request, Void> {
 
     private static final Logger logger = LoggerFactory.getLogger(Vps4DestroyIpAddress.class);
 
-    final NetworkService networkService;
+    final NetworkServiceV2 networkService;
     final VirtualMachineService virtualMachineService;
     final CPanelService cpanelService;
     final PleskService pleskService;
     final MailRelayService mailRelayService;
 
     @Inject
-    public Vps4DestroyIpAddress(NetworkService networkService, VirtualMachineService virtualMachineService,
+    public Vps4DestroyIpAddress(NetworkServiceV2 networkService, VirtualMachineService virtualMachineService,
             CPanelService cpanelService, PleskService pleskService, MailRelayService mailRelayService) {
         this.networkService = networkService;
         this.virtualMachineService = virtualMachineService;

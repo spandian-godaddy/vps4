@@ -13,11 +13,11 @@ import com.godaddy.vps4.orchestration.hfs.network.WaitForAddressAction;
 import gdg.hfs.orchestration.CommandContext;
 import gdg.hfs.vhfs.network.AddressAction;
 import gdg.hfs.vhfs.network.AddressAction.Status;
-import gdg.hfs.vhfs.network.NetworkService;
+import gdg.hfs.vhfs.network.NetworkServiceV2;
 
 public class WaitForAddressActionTest {
 
-    NetworkService networkService = mock(NetworkService.class);
+    NetworkServiceV2 networkService = mock(NetworkServiceV2.class);
     CommandContext context = mock(CommandContext.class);
 
     WaitForAddressAction command = new WaitForAddressAction(networkService);
