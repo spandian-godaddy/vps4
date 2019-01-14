@@ -60,7 +60,7 @@ public class VmSuspendResource {
 
     @POST
     @Path("{vmId}/abuseSuspend")
-    @RequiresRole(roles = {GDUser.Role.ADMIN, GDUser.Role.HS_LEAD, GDUser.Role.LEGAL, GDUser.Role.HS_OPS})
+    @RequiresRole(roles = {GDUser.Role.ADMIN, GDUser.Role.HS_LEAD, GDUser.Role.LEGAL, GDUser.Role.HS_OPS, GDUser.Role.DCU})
     public VmAction abuseSuspendVm(@PathParam("vmId") UUID vmId) {
         VirtualMachine virtualMachine = vmResource.getVm(vmId);
         VirtualMachineCredit credit = creditService.getVirtualMachineCredit(virtualMachine.orionGuid);
@@ -83,7 +83,7 @@ public class VmSuspendResource {
 
     @POST
     @Path("{vmId}/reinstate")
-    @RequiresRole(roles = {GDUser.Role.ADMIN, GDUser.Role.HS_LEAD, GDUser.Role.LEGAL, GDUser.Role.HS_OPS})
+    @RequiresRole(roles = {GDUser.Role.ADMIN, GDUser.Role.HS_LEAD, GDUser.Role.LEGAL, GDUser.Role.HS_OPS, GDUser.Role.DCU})
     public VmAction reinstateVm(@PathParam("vmId") UUID vmId) {
         VirtualMachine virtualMachine = virtualMachineService.getVirtualMachine(vmId);
         validateVmExists(vmId, virtualMachine, user);
