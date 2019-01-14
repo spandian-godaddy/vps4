@@ -3,6 +3,7 @@ package com.godaddy.vps4.orchestration.vm;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyLong;
 import static org.mockito.Matchers.eq;
+import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
@@ -20,6 +21,10 @@ import javax.ws.rs.ClientErrorException;
 import javax.ws.rs.NotFoundException;
 import javax.ws.rs.core.Response;
 
+import org.junit.Before;
+import org.junit.Test;
+import org.mockito.Mockito;
+
 import com.godaddy.hfs.mailrelay.MailRelay;
 import com.godaddy.hfs.mailrelay.MailRelayService;
 import com.godaddy.hfs.mailrelay.MailRelayUpdate;
@@ -27,6 +32,7 @@ import com.godaddy.hfs.vm.VmAction;
 import com.godaddy.hfs.vm.VmService;
 import com.godaddy.vps4.network.IpAddress;
 import com.godaddy.vps4.network.IpAddress.IpAddressType;
+import com.godaddy.vps4.network.NetworkService;
 import com.godaddy.vps4.orchestration.TestCommandContext;
 import com.godaddy.vps4.orchestration.hfs.network.ReleaseIp;
 import com.godaddy.vps4.orchestration.hfs.network.UnbindIp;
@@ -38,10 +44,6 @@ import com.godaddy.vps4.vm.VirtualMachineService;
 import com.godaddy.vps4.vm.VmUserService;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
-
-import org.junit.Before;
-import org.junit.Test;
-import org.mockito.Mockito;
 
 import gdg.hfs.orchestration.CommandContext;
 import gdg.hfs.orchestration.GuiceCommandProvider;
@@ -67,8 +69,9 @@ public class Vps4DestroyDedicatedTest {
     ScheduledJobService scheduledJobService = mock(ScheduledJobService.class);
     VmUserService vmUserService = mock(VmUserService.class);
     MonitoringMeta monitoringMeta = mock(MonitoringMeta.class);
+    NetworkService networkService = mock(NetworkService.class);
 
-    Vps4DestroyDedicated command = new Vps4DestroyDedicated(actionService, vmService, nodePingService, monitoringMeta);
+    Vps4DestroyDedicated command = new Vps4DestroyDedicated(actionService, vmService, networkService, nodePingService, monitoringMeta);
 
     Injector injector = Guice.createInjector(binder -> {
         binder.bind(UnbindIp.class);
@@ -83,6 +86,7 @@ public class Vps4DestroyDedicatedTest {
         binder.bind(ScheduledJobService.class).toInstance(scheduledJobService);
         binder.bind(VmUserService.class).toInstance(vmUserService);
         binder.bind(MonitoringMeta.class).toInstance(monitoringMeta);
+        binder.bind(NetworkService.class).toInstance(networkService);
     });
 
     CommandContext context = new TestCommandContext(new GuiceCommandProvider(injector));
@@ -135,6 +139,7 @@ public class Vps4DestroyDedicatedTest {
         when(vmService.getVmAction(Mockito.anyLong(), Mockito.anyLong())).thenReturn(vmAction);
         doNothing().when(nodePingService).deleteCheck(nodePingAccountId, primaryIp.pingCheckId);
         when(monitoringMeta.getAccountId()).thenReturn(nodePingAccountId);
+        when(networkService.getVmPrimaryAddress(any(UUID.class))).thenReturn(primaryIp);
         when(cpanelService.getLicenseFromDb(eq(request.virtualMachine.hfsVmId))).thenReturn(cPanelLicense);
         when(cpanelService.getLicenseFromDb(0)).thenReturn(new CPanelLicense());
 
@@ -238,9 +243,16 @@ public class Vps4DestroyDedicatedTest {
     }
 
     @Test
-    public void testDeleteIpMonitoringDoesntCallIfNoIp() throws Exception { doThrow(new NotFoundException()).when(nodePingService).deleteCheck(nodePingAccountId, primaryIp.pingCheckId);
+    public void testDeleteIpMonitoringDoesntCallIfNoIp() throws Exception {
+        doThrow(new NotFoundException()).when(nodePingService).deleteCheck(nodePingAccountId, primaryIp.pingCheckId);
         request.virtualMachine.primaryIpAddress = null;
         command.execute(context, request);
         verify(nodePingService, times(0)).deleteCheck(anyLong(), anyLong());
+    }
+
+    @Test
+    public void ensureIpAddressRecordUpdatedForDedDestroy() throws Exception {
+        command.execute(context, request);
+        verify(networkService, atLeastOnce()).destroyIpAddress(anyLong());
     }
 }

@@ -1,5 +1,18 @@
 package com.godaddy.vps4.orchestration.vm;
 
+import java.time.Instant;
+import java.util.List;
+import java.util.UUID;
+import java.util.stream.Collectors;
+
+import javax.inject.Inject;
+import javax.ws.rs.NotFoundException;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import com.godaddy.hfs.vm.VmAction;
+import com.godaddy.hfs.vm.VmService;
 import com.godaddy.vps4.network.IpAddress;
 import com.godaddy.vps4.network.NetworkService;
 import com.godaddy.vps4.orchestration.ActionCommand;
@@ -9,24 +22,13 @@ import com.godaddy.vps4.util.MonitoringMeta;
 import com.godaddy.vps4.vm.ActionService;
 import com.godaddy.vps4.vm.VirtualMachine;
 import com.godaddy.vps4.vm.VirtualMachineService;
-import com.hazelcast.util.StringUtil;
+
 import gdg.hfs.orchestration.CommandContext;
 import gdg.hfs.orchestration.CommandMetadata;
 import gdg.hfs.orchestration.CommandRetryStrategy;
 import gdg.hfs.vhfs.cpanel.CPanelService;
 import gdg.hfs.vhfs.nodeping.NodePingService;
 import gdg.hfs.vhfs.plesk.PleskService;
-import com.godaddy.hfs.vm.VmAction;
-import com.godaddy.hfs.vm.VmService;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import javax.inject.Inject;
-import javax.ws.rs.NotFoundException;
-import java.time.Instant;
-import java.util.List;
-import java.util.UUID;
-import java.util.stream.Collectors;
 
 @CommandMetadata(
         name="Vps4DestroyVm",
