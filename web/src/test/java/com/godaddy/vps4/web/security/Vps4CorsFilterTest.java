@@ -79,6 +79,8 @@ public class Vps4CorsFilterTest {
         goodList.add("https://myh.test-secureserver.net");
         goodList.add("https://myh.stg-secureserver.net");
         goodList.add("https://myh.ote-secureserver.net");
+        goodList.add("https://huidemo.dev-godaddy.com:3000");
+        goodList.add("https://local.gasket.dev-godaddy.com:8443");
         return goodList;
     }
 
