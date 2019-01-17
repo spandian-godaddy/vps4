@@ -13,7 +13,6 @@ import com.godaddy.hfs.servicediscovery.HfsServiceMetadata;
 import com.godaddy.hfs.servicediscovery.ZkServiceRegistrationModule;
 import com.godaddy.hfs.swagger.SwaggerClassFilter;
 import com.godaddy.hfs.swagger.SwaggerModule;
-import com.godaddy.hfs.web.CorsFilter;
 import com.godaddy.hfs.web.GuiceFilterModule;
 import com.godaddy.hfs.web.HttpModule;
 import com.godaddy.hfs.web.ServerModule;
@@ -42,6 +41,7 @@ import com.godaddy.vps4.web.log.LogModule;
 import com.godaddy.vps4.web.network.NetworkModule;
 import com.godaddy.vps4.web.security.AuthenticationFilter;
 import com.godaddy.vps4.web.security.GDUserModule;
+import com.godaddy.vps4.web.security.Vps4CorsFilter;
 import com.godaddy.vps4.web.util.RequestIdFilter;
 import com.godaddy.vps4.web.util.VmActiveSnapshotFilter;
 import com.google.inject.Guice;
@@ -139,8 +139,8 @@ public class Vps4Injector {
             @Override
             public void configureServlets() {
 
-                bind(CorsFilter.class).in(Singleton.class);
-                filter("/api/*").through(CorsFilter.class);
+                bind(Vps4CorsFilter.class).in(Singleton.class);
+                filter("/api/*").through(Vps4CorsFilter.class);
 
                 // attach a thread-local request ID
                 bind(RequestIdFilter.class).in(Singleton.class);
