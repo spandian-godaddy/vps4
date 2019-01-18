@@ -162,7 +162,7 @@ public class SsoRequestAuthenticatorTest {
 
     @Test
     public void testDigitalCrimesUnit() {
-        SsoToken token = mockJomaxToken(Collections.singletonList("ENG-DCU"));
+        SsoToken token = mockJomaxToken(Collections.singletonList("DCU-Phishstory"));
         when(tokenExtractor.extractToken(request)).thenReturn(token);
 
         GDUser user = authenticator.authenticate(request);

@@ -26,7 +26,7 @@ public class SsoRequestAuthenticator implements RequestAuthenticator<GDUser> {
     private final String C3_HOSTING_SUPPORT_LEAD = "HS_techleads";
     private final String LEGAL = "fs-Legal_IP_Claims";
     private final String HOSTING_OPERATIONS = "Hosting Ops";
-    private final String DIGITAL_CRIMES_UNIT = "ENG-DCU";
+    private final String DIGITAL_CRIMES_UNIT = "DCU-Phishstory";
 
     private final SsoTokenExtractor tokenExtractor;
     private Config config;
