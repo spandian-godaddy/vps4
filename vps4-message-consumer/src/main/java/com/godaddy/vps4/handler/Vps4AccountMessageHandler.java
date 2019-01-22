@@ -3,11 +3,12 @@ package com.godaddy.vps4.handler;
 import static com.godaddy.vps4.handler.util.Commands.execute;
 import static com.godaddy.vps4.handler.util.Utils.isOrchEngineDown;
 import static com.godaddy.vps4.handler.util.Utils.isDBError;
+import static com.godaddy.vps4.handler.util.Utils.isVps4ApiDown;
 
 import java.io.IOException;
 
-import com.godaddy.vps4.orchestration.account.Vps4ProcessAccountCancellation;
 import com.godaddy.vps4.vm.AccountStatus;
+import com.godaddy.vps4.web.client.VmZombieService;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.json.simple.JSONObject;
 import org.slf4j.Logger;
@@ -38,6 +39,7 @@ public class Vps4AccountMessageHandler implements MessageHandler {
     private final ActionService vmActionService;
     private final CommandService commandService;
     private final boolean processFullyManagedEmails;
+    private final VmZombieService vmZombieService;
     private final Vps4MessagingService messagingService;
     private final int FULLY_MANAGED_LEVEL = 2;
     private final String ACCOUNT_MESSAGE_HANDLER_NAME = "AccountMessageHandler";
@@ -48,6 +50,7 @@ public class Vps4AccountMessageHandler implements MessageHandler {
             ActionService vmActionService,
             CommandService commandService,
             Vps4MessagingService messagingService,
+            VmZombieService vmZombieService,
             Config config) {
 
         this.virtualMachineService = virtualMachineService;
@@ -55,6 +58,7 @@ public class Vps4AccountMessageHandler implements MessageHandler {
         this.vmActionService = vmActionService;
         this.commandService = commandService;
         this.messagingService = messagingService;
+        this.vmZombieService = vmZombieService;
         processFullyManagedEmails = Boolean.parseBoolean(config.get("vps4MessageHandler.processFullyManagedEmails"));
     }
 
@@ -108,8 +112,25 @@ public class Vps4AccountMessageHandler implements MessageHandler {
                     break;
             }
         } catch (Exception ex) {
+            boolean shouldRetry;
             logger.error("Failed while handling message for account {} with exception {}", vps4Message.accountGuid, ex);
-            boolean shouldRetry = isOrchEngineDown(ex) || isDBError(ex);
+
+            switch (credit.accountStatus) {
+                case ABUSE_SUSPENDED:
+                case SUSPENDED:
+                case ACTIVE:
+                    // These messages are handled by posting to orchestration engine
+                    shouldRetry = isOrchEngineDown(ex) || isDBError(ex);
+                    break;
+                case REMOVED:
+                    // These messages are handled by posting to vps4 api
+                    shouldRetry = isDBError(ex) || isVps4ApiDown(ex);
+                    break;
+                default:
+                    shouldRetry = isDBError(ex);
+                    break;
+            }
+
             throw new MessageHandlerException(shouldRetry, ex);
         }
     }
@@ -156,14 +177,8 @@ public class Vps4AccountMessageHandler implements MessageHandler {
     }
 
     private void handleAccountCancellation(VirtualMachine vm, VirtualMachineCredit credit) {
-        logger.info("Vps4 account canceled: {} - queueing account cancellation command", credit.orionGuid);
-        long actionId = vmActionService.createAction(vm.vmId, ActionType.CANCEL_ACCOUNT,
-                new JSONObject().toJSONString(), ACCOUNT_MESSAGE_HANDLER_NAME);
-        Vps4ProcessAccountCancellation.Request request = new Vps4ProcessAccountCancellation.Request();
-        request.initiatedBy = ACCOUNT_MESSAGE_HANDLER_NAME;
-        request.virtualMachineCredit = credit;
-        request.setActionId(actionId);
-        execute(commandService, vmActionService, "Vps4ProcessAccountCancellation", request);
+        logger.info("Vps4 account canceled: {} - Zombie'ing associated vm", credit.orionGuid);
+        this.vmZombieService.zombieVm(vm.vmId);
     }
 
     private void stopVm(VirtualMachine vm) {

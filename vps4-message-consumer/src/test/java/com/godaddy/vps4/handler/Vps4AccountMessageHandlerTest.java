@@ -1,7 +1,10 @@
 package com.godaddy.vps4.handler;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+import static org.mockito.Mockito.any;
 import static org.mockito.Matchers.anyObject;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
@@ -11,6 +14,8 @@ import static org.mockito.Mockito.when;
 import java.io.IOException;
 import java.util.UUID;
 
+import com.godaddy.vps4.web.client.VmZombieService;
+import org.apache.http.conn.HttpHostConnectException;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.json.simple.JSONObject;
 import org.junit.Before;
@@ -37,6 +42,10 @@ import gdg.hfs.orchestration.CommandService;
 import gdg.hfs.orchestration.CommandSpec;
 import gdg.hfs.orchestration.CommandState;
 
+import javax.ws.rs.InternalServerErrorException;
+import javax.ws.rs.ProcessingException;
+import javax.ws.rs.ServiceUnavailableException;
+
 public class Vps4AccountMessageHandlerTest {
 
     private VirtualMachineService vmServiceMock = mock(VirtualMachineService.class);
@@ -44,6 +53,7 @@ public class Vps4AccountMessageHandlerTest {
     private ActionService vmActionServiceMock = mock(ActionService.class);
     private CommandService commandServiceMock = mock(CommandService.class);
     private DataCenterService dcService = mock(DataCenterService.class);
+    private VmZombieService vmZombieService = mock(VmZombieService.class);
     private Config configMock = mock(Config.class);
     private Vps4MessagingService messagingServiceMock = mock(Vps4MessagingService.class);
 
@@ -113,6 +123,7 @@ public class Vps4AccountMessageHandlerTest {
                 vmActionServiceMock,
                 commandServiceMock,
                 messagingServiceMock,
+                vmZombieService,
                 configMock);
         handler.handleMessage(record);
     }
@@ -241,28 +252,78 @@ public class Vps4AccountMessageHandlerTest {
     }
 
     @Test
-    public void testHandleMessageRemovedWithSnapshots() throws MessageHandlerException {
+    public void accountRemovalZombiesAssociatedVm() throws MessageHandlerException {
         mockVmCredit(AccountStatus.REMOVED, vm.vmId);
-
         callHandleMessage(createTestKafkaMessage("removed"));
 
-        ArgumentCaptor<CommandGroupSpec> argument = ArgumentCaptor.forClass(CommandGroupSpec.class);
-        verify(commandServiceMock, times(1)).executeCommand(argument.capture());
-        CommandSpec commandSpec = argument.getValue().commands.get(0);
-        assertEquals("Vps4ProcessAccountCancellation", commandSpec.command);
+        verify(vmZombieService, times(1)).zombieVm(vm.vmId);
     }
 
     @Test
-    public void testHandleMessageRemovedWithSnapshotsWrongDC() throws MessageHandlerException {
+    public void handleAccountRemovalNoopIfVmPresentInDifferentDC() throws MessageHandlerException {
         DataCenter dc = dcService.getDataCenter(1);
         UUID vmId = UUID.randomUUID();
-        VirtualMachineCredit vmCredit = new VirtualMachineCredit(orionGuid, 10, 0, 0, "linux", "myh", null, "TestShopper", AccountStatus.REMOVED, dc, vmId, false, "1", false, 0);
+        VirtualMachineCredit vmCredit = new VirtualMachineCredit(
+            orionGuid, 10, 0, 0, "linux", "myh",
+            null, "TestShopper", AccountStatus.REMOVED, dc, vmId, false,
+            "1", false, 0);
         when(creditServiceMock.getVirtualMachineCredit(orionGuid)).thenReturn(vmCredit);
 
         callHandleMessage(createTestKafkaMessage("removed"));
 
-        ArgumentCaptor<CommandGroupSpec> argument = ArgumentCaptor.forClass(CommandGroupSpec.class);
-        verify(commandServiceMock, times(0)).executeCommand(argument.capture());
+        verify(vmZombieService, times(0)).zombieVm(vm.vmId);
+    }
+
+    @Test
+    public void accountRemovalThrowsRetryableExceptionWhenApiDown() {
+        mockVmCredit(AccountStatus.REMOVED, vm.vmId);
+        doThrow(new ProcessingException(mock(HttpHostConnectException.class))).when(vmZombieService).zombieVm(any(UUID.class));
+
+        try {
+            callHandleMessage(createTestKafkaMessage("removed"));
+        }
+        catch (MessageHandlerException ex) {
+            assertTrue(ex.shouldRetry());
+        }
+    }
+
+    @Test
+    public void accountRemovalThrowsRetryableExceptionWhenOrchestrationEngineIsDown() {
+        mockVmCredit(AccountStatus.REMOVED, vm.vmId);
+        doThrow(new InternalServerErrorException()).when(vmZombieService).zombieVm(any(UUID.class));
+
+        try {
+            callHandleMessage(createTestKafkaMessage("removed"));
+        }
+        catch (MessageHandlerException ex) {
+            assertTrue(ex.shouldRetry());
+        }
+    }
+
+    @Test
+    public void accountRemovalThrowsRetryableExceptionWhenApiServiceUnavailable() {
+        mockVmCredit(AccountStatus.REMOVED, vm.vmId);
+        doThrow(new ServiceUnavailableException()).when(vmZombieService).zombieVm(any(UUID.class));
+
+        try {
+            callHandleMessage(createTestKafkaMessage("removed"));
+        }
+        catch (MessageHandlerException ex) {
+            assertTrue(ex.shouldRetry());
+        }
+    }
+
+    @Test
+    public void accountRemovalThrowsRetryableExceptionIfDBIsDown() {
+        mockVmCredit(AccountStatus.REMOVED, vm.vmId);
+        doThrow(new RuntimeException("Sql.foobar")).when(vmZombieService).zombieVm(any(UUID.class));
+
+        try {
+            callHandleMessage(createTestKafkaMessage("removed"));
+        }
+        catch (MessageHandlerException ex) {
+            assertTrue(ex.shouldRetry());
+        }
     }
 
     @Test

@@ -20,8 +20,11 @@ public class Vps4ApiWithSSOAuthClientModule extends AbstractModule {
         // VM endpoint
         bind(VmService.class).toProvider(getSsoAuthServiceProvider(VmService.class, baseUrlConfigPropName)).in(Singleton.class);
 
-        // VM Support Userendpoint
+        // VM Support User endpoint
         bind(VmSupportUserService.class).toProvider(getSsoAuthServiceProvider(VmSupportUserService.class, baseUrlConfigPropName)).in(Singleton.class);
+
+        // VM Zombie resource endpoint
+        bind(VmZombieService.class).toProvider(getSsoAuthServiceProvider(VmZombieService.class, baseUrlConfigPropName)).in(Singleton.class);
 
     }
 }

@@ -14,6 +14,8 @@ import com.godaddy.vps4.security.SecurityModule;
 import com.godaddy.vps4.snapshot.SnapshotModule;
 import com.godaddy.vps4.util.ObjectMapperModule;
 import com.godaddy.vps4.vm.VmModule;
+import com.godaddy.vps4.web.client.Vps4ApiWithCertAuthClientModule;
+import com.godaddy.vps4.web.client.Vps4ApiWithSSOAuthClientModule;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
 import com.google.inject.Module;
@@ -49,6 +51,13 @@ public class Vps4ConsumerInjector {
         else{
             modules.add(new MessagingModule());
             modules.add(new HfsClientModule());
+        }
+
+        if (Boolean.parseBoolean(System.getProperty("vps4.web.useJwtAuth", "false"))) {
+            modules.add(new Vps4ApiWithSSOAuthClientModule());
+        }
+        else {
+            modules.add(new Vps4ApiWithCertAuthClientModule("consumer.client.keyPath", "consumer.client.certPath"));
         }
 
         modules.add(new ConfigModule());

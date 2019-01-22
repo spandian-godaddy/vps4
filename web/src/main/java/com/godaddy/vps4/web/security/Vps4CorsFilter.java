@@ -39,6 +39,7 @@ public class Vps4CorsFilter implements Filter {
 
             // Validate origin
             if (!allowedOriginRegex.matcher(origin).matches()) {
+                logger.info("Rejecting request as it fails CORS check. Origin: {}", origin);
                 response.setStatus(HttpServletResponse.SC_FORBIDDEN);
                 return;
             }

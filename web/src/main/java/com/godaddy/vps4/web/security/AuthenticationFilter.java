@@ -60,6 +60,7 @@ public class AuthenticationFilter implements Filter {
             }
 
             if (res instanceof HttpServletResponse) {
+                logger.info("Rejecting request as it is missing authentiation");
                 HttpServletResponse response = (HttpServletResponse) res;
 
                 JSONObject json = new JSONObject();

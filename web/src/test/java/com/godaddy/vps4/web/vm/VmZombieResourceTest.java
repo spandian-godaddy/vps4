@@ -1,8 +1,10 @@
 package com.godaddy.vps4.web.vm;
 
+import static org.mockito.Matchers.anyInt;
 import static org.mockito.Matchers.anyLong;
 import static org.mockito.Matchers.anyObject;
 import static org.mockito.Matchers.anyString;
+import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -10,6 +12,7 @@ import static org.mockito.Mockito.when;
 
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
+import java.util.Arrays;
 import java.util.UUID;
 
 import com.godaddy.vps4.vm.*;
@@ -33,6 +36,7 @@ public class VmZombieResourceTest {
     CreditService creditService = mock(CreditService.class);
     CommandService commandService = mock(CommandService.class);
     ActionService actionService = mock(ActionService.class);
+    VmActionResource vmActionResource = mock(VmActionResource.class);
 
     VirtualMachine testVm;
     VirtualMachineCredit oldCredit;
@@ -64,7 +68,7 @@ public class VmZombieResourceTest {
                 ActionStatus.COMPLETE, Instant.now(), Instant.now(), null, UUID.randomUUID(), null);
 
         when(actionService.getAction(anyLong())).thenReturn(testAction);
-        vmZombieResource = new VmZombieResource(virtualMachineService, creditService, commandService, user, actionService);
+        vmZombieResource = new VmZombieResource(virtualMachineService, creditService, commandService, user, actionService, vmActionResource);
     }
 
     private VirtualMachineCredit createNewCredit(VirtualMachineCredit oldCredit, UUID newOrionGuid) {
@@ -179,9 +183,24 @@ public class VmZombieResourceTest {
     }
 
     @Test
-    public void testZombieVm() {
+    public void zombieVmKicksoffOrchEngineCommand() {
         vmZombieResource.zombieVm(testVm.vmId);
         verify(commandService, times(1)).executeCommand(anyObject());
+    }
+
+    @Test
+    public void zombieVmGetsListOfCurretlyInProgressVmActions() {
+        vmZombieResource.zombieVm(testVm.vmId);
+        verify(actionService, times(1)).getIncompleteActions(testVm.vmId);
+    }
+
+    @Test
+    public void zombieVmCancelsInProgressVmActions() {
+        Action[] inCompleteActions = {mock(Action.class), mock(Action.class), mock(Action.class)};
+        when(actionService.getIncompleteActions(testVm.vmId)).thenReturn(Arrays.asList(inCompleteActions));
+
+        vmZombieResource.zombieVm(testVm.vmId);
+        verify(vmActionResource, times(3)).cancelVmAction(eq(testVm.vmId), anyInt());
     }
 
     @Test

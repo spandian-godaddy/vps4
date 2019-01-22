@@ -15,7 +15,7 @@ public class Vps4SchedulerPluginModule extends AbstractModule implements Schedul
             install(new Vps4ApiWithSSOAuthClientModule());
         }
         else {
-            install(new Vps4ApiWithCertAuthClientModule());
+            install(new Vps4ApiWithCertAuthClientModule("scheduler.client.keyPath", "scheduler.client.certPath"));
         }
 
         install(new Vps4SchedulerJobModule());

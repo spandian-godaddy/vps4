@@ -4,6 +4,7 @@ import static com.godaddy.vps4.web.util.RequestValidation.getAndValidateUserAcco
 import static com.godaddy.vps4.web.util.RequestValidation.validateCreditIsNotInUse;
 import static com.godaddy.vps4.web.util.RequestValidation.validateVmExists;
 
+import java.util.List;
 import java.util.UUID;
 
 import javax.ws.rs.Consumes;
@@ -18,6 +19,7 @@ import com.godaddy.vps4.credit.CreditService;
 import com.godaddy.vps4.credit.VirtualMachineCredit;
 import com.godaddy.vps4.orchestration.account.Vps4ProcessAccountCancellation;
 import com.godaddy.vps4.orchestration.vm.Vps4ReviveZombieVm;
+import com.godaddy.vps4.vm.Action;
 import com.godaddy.vps4.vm.ActionService;
 import com.godaddy.vps4.vm.ActionType;
 import com.godaddy.vps4.vm.VirtualMachine;
@@ -53,18 +55,21 @@ public class VmZombieResource {
     private final CommandService commandService;
     private final GDUser user;
     private final ActionService actionService;
+    private final VmActionResource vmActionResource;
 
     @Inject
     public VmZombieResource(VirtualMachineService virtualMachineService,
             CreditService creditService,
             CommandService commandService,
             GDUser user,
-            ActionService actionService) {
+            ActionService actionService,
+            VmActionResource vmActionResource) {
         this.virtualMachineService = virtualMachineService;
         this.creditService = creditService;
         this.commandService = commandService;
         this.user = user;
         this.actionService = actionService;
+        this.vmActionResource = vmActionResource;
     }
 
     @AdminOnly
@@ -114,11 +119,21 @@ public class VmZombieResource {
         validateAccountIsRemoved(vmId, credit);
 
         logger.info("Zombie vm: {}", vmId);
+
+        cancelIncompleteVmActions(vmId);
+
         Vps4ProcessAccountCancellation.Request request = new Vps4ProcessAccountCancellation.Request();
         request.virtualMachineCredit = credit;
         request.initiatedBy = user.getUsername();
         return VmHelper.createActionAndExecute(actionService, commandService, vm.vmId,
                 ActionType.CANCEL_ACCOUNT, request, "Vps4ProcessAccountCancellation", user);
+    }
+
+    private void cancelIncompleteVmActions(UUID vmId) {
+        List<Action> actions = actionService.getIncompleteActions(vmId);
+        for (Action action: actions) {
+            vmActionResource.cancelVmAction(vmId, action.id);
+        }
     }
 
     private void validateCreditsMatch(VirtualMachineCredit oldCredit, VirtualMachineCredit newCredit) {

@@ -18,12 +18,60 @@ public class XCertSubjectHeaderAuthenticatorTest {
     Config config = mock(Config.class);
 
     @Test
-    public void authenticatesWithHeader() throws Exception{
+    public void authenticationOkWhenClientIsScheduler() throws Exception {
+        String cn = "FOOBAR";
+        when(config.get("vps4.scheduler.certCN")).thenReturn(cn);
+        XCertSubjectHeaderAuthenticator authenticator = new XCertSubjectHeaderAuthenticator(config);
+
+        when(request.getHeader("X-Cert-Subject-DN")).thenReturn("CN=" + cn + "," +
+                    "OU=Hosting Foundation Services,O=GoDaddy.com\\, Inc.,L=Scottsdale,ST=Arizona,C=US");
+
+        GDUser user = authenticator.authenticate(request);
+        Assert.assertNotNull(user);
+        Assert.assertEquals(true, user.isStaff());
+        Assert.assertEquals(Role.ADMIN, user.role());
+        Assert.assertNull(user.getShopperId());
+    }
+
+    @Test
+    public void authenticationOkWhenClientIsDeveloper() throws Exception {
+        String cn = "FOOBAR";
+        when(config.get("vps4.developer.certCN")).thenReturn(cn);
+        XCertSubjectHeaderAuthenticator authenticator = new XCertSubjectHeaderAuthenticator(config);
+
+        when(request.getHeader("X-Cert-Subject-DN")).thenReturn("CN=" + cn + "," +
+                "OU=Hosting Foundation Services,O=GoDaddy.com\\, Inc.,L=Scottsdale,ST=Arizona,C=US");
+
+        GDUser user = authenticator.authenticate(request);
+        Assert.assertNotNull(user);
+        Assert.assertEquals(true, user.isStaff());
+        Assert.assertEquals(Role.ADMIN, user.role());
+        Assert.assertNull(user.getShopperId());
+    }
+
+    @Test
+    public void authenticationOkWhenClientIsMessageConsumer() throws Exception {
+        String cn = "FOOBAR";
+        when(config.get("vps4.consumer.certCN")).thenReturn(cn);
+        XCertSubjectHeaderAuthenticator authenticator = new XCertSubjectHeaderAuthenticator(config);
+
+        when(request.getHeader("X-Cert-Subject-DN")).thenReturn("CN=" + cn + "," +
+                "OU=Hosting Foundation Services,O=GoDaddy.com\\, Inc.,L=Scottsdale,ST=Arizona,C=US");
+
+        GDUser user = authenticator.authenticate(request);
+        Assert.assertNotNull(user);
+        Assert.assertEquals(true, user.isStaff());
+        Assert.assertEquals(Role.ADMIN, user.role());
+        Assert.assertNull(user.getShopperId());
+    }
+
+    @Test
+    public void authenticationWithShopperOverride() throws Exception{
         when(config.get("vps4.scheduler.certCN")).thenReturn("VPS4 Scheduler Client (MOCK)");
         XCertSubjectHeaderAuthenticator authenticator = new XCertSubjectHeaderAuthenticator(config);
 
         when(request.getHeader("X-Cert-Subject-DN")).thenReturn("CN=VPS4 Scheduler Client (MOCK)," +
-                    "OU=Hosting Foundation Services,O=GoDaddy.com\\, Inc.,L=Scottsdale,ST=Arizona,C=US");
+                "OU=Hosting Foundation Services,O=GoDaddy.com\\, Inc.,L=Scottsdale,ST=Arizona,C=US");
 
         when(request.getHeader("X-Shopper-Id")).thenReturn("12345");
 
@@ -32,6 +80,7 @@ public class XCertSubjectHeaderAuthenticatorTest {
         Assert.assertNotNull(user);
         Assert.assertEquals(true, user.isStaff());
         Assert.assertEquals(Role.ADMIN, user.role());
+        Assert.assertEquals("12345", user.getShopperId());
     }
 
     @Test

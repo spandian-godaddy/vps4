@@ -152,7 +152,13 @@
             <artifactId>vps4-core</artifactId>
             <version>0.0.1-SNAPSHOT</version>
         </dependency>
-        
+
+        <dependency>
+            <groupId>com.godaddy.vps4</groupId>
+            <artifactId>vps4-web</artifactId>
+            <version>0.0.1-SNAPSHOT</version>
+        </dependency>
+
         <dependency>
             <groupId>com.godaddy.vps4</groupId>
             <artifactId>vps4-orchestration-plugin</artifactId>

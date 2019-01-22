@@ -31,19 +31,25 @@ public class XCertSubjectHeaderAuthenticator implements RequestAuthenticator<GDU
         GDUser gdUser = null;
 
         String xCertHeader = request.getHeader("X-Cert-Subject-DN");
+        logger.info("Cert header: {}", xCertHeader);
         if (xCertHeader != null) {
             String cnField = getCNFieldFromHeader(xCertHeader);
+            logger.info("CN Field: {}", cnField);
 
-            if(validateCNFieldFromScheduler(cnField) || validateCNFieldFromDeveloper(cnField)) {
+            if(isTrustedClient(cnField)) {
                 // nginx validated a cert auth from the scheduler or developer and has sent us this header.
                 // authentication succeeds if the user can be created correctly
                 gdUser = createGDUser(request);
-                if (gdUser.isShopper()) {
-                    logger.info("GD User authenticated: {}, URI: {}", gdUser.toString(), request.getRequestURI());
-                }
+                logger.info("GD User authenticated: {}, URI: {}", gdUser.toString(), request.getRequestURI());
             }
         }
         return gdUser;
+    }
+
+    private boolean isTrustedClient(String cnField) {
+        return isVps4Scheduler(cnField)
+            || isVps4Developer(cnField)
+            || isVps4MessageConsumer(cnField);
     }
 
     private String getCNFieldFromHeader(String header){
@@ -58,12 +64,16 @@ public class XCertSubjectHeaderAuthenticator implements RequestAuthenticator<GDU
         }
     }
 
-    private boolean validateCNFieldFromScheduler(String cnField){
+    private boolean isVps4Scheduler(String cnField){
         return cnField != null && cnField.equals(config.get("vps4.scheduler.certCN"));
     }
 
-    private boolean validateCNFieldFromDeveloper(String cnField){
+    private boolean isVps4Developer(String cnField){
         return cnField != null && cnField.equals(config.get("vps4.developer.certCN"));
+    }
+
+    private boolean isVps4MessageConsumer(String cnField){
+        return cnField != null && cnField.equals(config.get("vps4.consumer.certCN"));
     }
 
     private GDUser createGDUser(HttpServletRequest request) {
@@ -73,7 +83,7 @@ public class XCertSubjectHeaderAuthenticator implements RequestAuthenticator<GDU
         gdUser.shopperId = shopperId;
         gdUser.isEmployee = true;
         gdUser.isStaff = true;
-        gdUser.isAdmin = false;
+        gdUser.isAdmin = true;
         gdUser.username = username;
         gdUser.role = Role.ADMIN; // If client cert authentication was used then the role assigned is that of admin
         return gdUser;
