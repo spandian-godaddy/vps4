@@ -13,9 +13,11 @@ public class Utils {
     private static final Map<ScheduledJob.ScheduledJobType, Class<? extends JobRequest>> typeClassMap = new HashMap<>();
 
     static {
-        typeClassMap.put(ScheduledJob.ScheduledJobType.BACKUPS, Vps4BackupJobRequest.class);
+        typeClassMap.put(ScheduledJob.ScheduledJobType.BACKUPS_RETRY, Vps4BackupJobRequest.class);
         typeClassMap.put(ScheduledJob.ScheduledJobType.ZOMBIE, Vps4ZombieCleanupJobRequest.class);
         typeClassMap.put(ScheduledJob.ScheduledJobType.REMOVE_SUPPORT_USER, Vps4RemoveSupportUserJobRequest.class);
+        typeClassMap.put(ScheduledJob.ScheduledJobType.BACKUPS_MANUAL, Vps4BackupJobRequest.class);
+        typeClassMap.put(ScheduledJob.ScheduledJobType.BACKUPS_AUTOMATIC, Vps4BackupJobRequest.class);
     }
 
     public static Class<? extends JobRequest> getJobRequestClassForType(ScheduledJob.ScheduledJobType scheduledJobType) {

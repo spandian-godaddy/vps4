@@ -50,4 +50,9 @@ public class JdbcScheduledJobService implements ScheduledJobService {
         Sql.with(dataSource).exec("INSERT INTO scheduled_job (id, vm_id, scheduled_job_type_id) VALUES (?,?,?)", null, id, vmId, type.getId());
     }
 
+    @Override
+    public void deleteScheduledJob(UUID id) {
+        Sql.with(dataSource).exec("DELETE FROM scheduled_job WHERE id = ?", null, id);
+    }
+
 }

@@ -1,18 +1,15 @@
 package com.godaddy.vps4.web.vm;
-import java.time.Instant;
+import com.godaddy.vps4.scheduledJob.ScheduledJob;
+import com.godaddy.vps4.scheduler.api.core.SchedulerJobDetail;
 
 public class SnapshotSchedule {
 
-    public Instant nextAt;
-    public int copiesToRetain;
-    public int repeatIntervalInDays;
-    public boolean isPaused;
+    public ScheduledJob.ScheduledJobType scheduledJobType;
+    public SchedulerJobDetail schedulerJobDetail;
 
     public SnapshotSchedule(){}
-    public SnapshotSchedule(Instant nextAt, int copiesToRetain, int repeatIntervalInDays, boolean isPaused){
-        this.nextAt = nextAt;
-        this.copiesToRetain = copiesToRetain;
-        this.repeatIntervalInDays = repeatIntervalInDays;
-        this.isPaused = isPaused;
+    public SnapshotSchedule(ScheduledJob.ScheduledJobType scheduledJobType, SchedulerJobDetail schedulerJobDetail){
+        this.scheduledJobType = scheduledJobType;
+        this.schedulerJobDetail = schedulerJobDetail;
     }
 }

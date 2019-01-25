@@ -353,6 +353,6 @@ public class Vps4SnapshotVmTest {
                 .execute(eq("RecordScheduledJobId"), eq(Vps4RecordScheduledJobForVm.class), recordJobArgumentCaptor.capture());
         Vps4RecordScheduledJobForVm.Request req = recordJobArgumentCaptor.getValue();
         Assert.assertEquals(retryJobId, req.jobId);
-        Assert.assertEquals(ScheduledJob.ScheduledJobType.BACKUPS, req.jobType);
+        Assert.assertEquals(ScheduledJob.ScheduledJobType.BACKUPS_RETRY, req.jobType);
     }
 }

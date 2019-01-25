@@ -67,7 +67,7 @@ public class Vps4DeleteAllScheduledJobsForVmTest {
     }
 
     private void setupScheduledJobs() {
-        scheduledJobs.add(new ScheduledJob(UUID.randomUUID(), vmId, ScheduledJob.ScheduledJobType.BACKUPS, Instant.now()));
+        scheduledJobs.add(new ScheduledJob(UUID.randomUUID(), vmId, ScheduledJob.ScheduledJobType.BACKUPS_RETRY, Instant.now()));
         scheduledJobs.add(new ScheduledJob(UUID.randomUUID(), vmId, ScheduledJob.ScheduledJobType.ZOMBIE, Instant.now()));
     }
 

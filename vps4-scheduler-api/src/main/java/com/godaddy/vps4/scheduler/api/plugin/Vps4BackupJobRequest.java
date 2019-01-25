@@ -1,5 +1,6 @@
 package com.godaddy.vps4.scheduler.api.plugin;
 
+import com.godaddy.vps4.scheduledJob.ScheduledJob;
 import com.godaddy.vps4.scheduler.api.core.JobGroup;
 import com.godaddy.vps4.scheduler.api.core.JobRequest;
 import com.godaddy.vps4.scheduler.api.core.Product;
@@ -13,4 +14,5 @@ public class Vps4BackupJobRequest extends JobRequest {
     @Required public UUID vmId;
     @Required public String backupName;
     @Required public String shopperId;
+    @Required public ScheduledJob.ScheduledJobType scheduledJobType;
 }

@@ -12,4 +12,6 @@ public interface ScheduledJobService {
     ScheduledJob getScheduledJob(UUID id);
     
     void insertScheduledJob(UUID id, UUID vmId, ScheduledJob.ScheduledJobType type);
+
+    void deleteScheduledJob(UUID id);
 }

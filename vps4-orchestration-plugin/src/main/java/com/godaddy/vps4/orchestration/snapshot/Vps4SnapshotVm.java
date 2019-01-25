@@ -158,7 +158,7 @@ public class Vps4SnapshotVm extends ActionCommand<Vps4SnapshotVm.Request, Vps4Sn
         Vps4RecordScheduledJobForVm.Request req = new Vps4RecordScheduledJobForVm.Request();
         req.jobId = jobId;
         req.vmId = vmId;
-        req.jobType = ScheduledJob.ScheduledJobType.BACKUPS;
+        req.jobType = ScheduledJob.ScheduledJobType.BACKUPS_RETRY;
         context.execute("RecordScheduledJobId", Vps4RecordScheduledJobForVm.class, req);
     }
 

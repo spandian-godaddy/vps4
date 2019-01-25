@@ -8,10 +8,10 @@ public class VirtualMachineWithDetails extends VirtualMachine {
     public VirtualMachineDetails virtualMachineDetails;
     public DataCenter dataCenter;
     public String shopperId;
-    public SnapshotSchedule autoSnapshots;
+    public AutomaticSnapshotSchedule autoSnapshots;
 
     public VirtualMachineWithDetails(VirtualMachine virtualMachine, VirtualMachineDetails virtualMachineDetails,
-                                     DataCenter dataCenter, String shopperId, SnapshotSchedule autoSnapshots) {
+                                     DataCenter dataCenter, String shopperId, AutomaticSnapshotSchedule autoSnapshots) {
         super(virtualMachine);
         this.virtualMachineDetails = virtualMachineDetails;
         this.dataCenter = dataCenter;

@@ -75,7 +75,7 @@ public class ScheduledJobServiceTest {
         UUID jobId3 = UUID.randomUUID();
         
         sjs.insertScheduledJob(jobId1, vm1.vmId, ScheduledJob.ScheduledJobType.ZOMBIE);
-        sjs.insertScheduledJob(jobId2, vm1.vmId, ScheduledJob.ScheduledJobType.BACKUPS);
+        sjs.insertScheduledJob(jobId2, vm1.vmId, ScheduledJob.ScheduledJobType.BACKUPS_RETRY);
         sjs.insertScheduledJob(jobId3, vm2.vmId, ScheduledJob.ScheduledJobType.ZOMBIE);
         
         UUID[] expectedJobs = new UUID[] {jobId1, jobId2};
@@ -95,7 +95,7 @@ public class ScheduledJobServiceTest {
         UUID jobId3 = UUID.randomUUID();
         
         sjs.insertScheduledJob(jobId1, vm1.vmId, ScheduledJob.ScheduledJobType.ZOMBIE);
-        sjs.insertScheduledJob(jobId2, vm1.vmId, ScheduledJob.ScheduledJobType.BACKUPS);
+        sjs.insertScheduledJob(jobId2, vm1.vmId, ScheduledJob.ScheduledJobType.BACKUPS_RETRY);
         sjs.insertScheduledJob(jobId3, vm2.vmId, ScheduledJob.ScheduledJobType.ZOMBIE);
         
         UUID[] expectedJobs = new UUID[] {jobId1};

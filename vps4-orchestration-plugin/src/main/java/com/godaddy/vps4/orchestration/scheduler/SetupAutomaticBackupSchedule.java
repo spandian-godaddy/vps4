@@ -1,6 +1,7 @@
 package com.godaddy.vps4.orchestration.scheduler;
 
 import com.godaddy.hfs.config.Config;
+import com.godaddy.vps4.scheduledJob.ScheduledJob;
 import com.godaddy.vps4.scheduler.api.core.JobType;
 import com.godaddy.vps4.scheduler.api.core.SchedulerJobDetail;
 import com.godaddy.vps4.scheduler.api.core.utils.Utils;
@@ -53,6 +54,7 @@ public class SetupAutomaticBackupSchedule implements Command<SetupAutomaticBacku
         backupRequest.backupName = request.backupName;
         backupRequest.jobType = JobType.RECURRING;
         backupRequest.shopperId = request.shopperId;
+        backupRequest.scheduledJobType = ScheduledJob.ScheduledJobType.BACKUPS_AUTOMATIC;
         long firstTime = Long.parseLong(config.get("vps4.autobackup.initial"));
         backupRequest.when = Instant.now().plus(firstTime, ChronoUnit.DAYS);
         int repeatInterval = Integer.parseInt(config.get("vps4.autobackup.repeatInterval"));

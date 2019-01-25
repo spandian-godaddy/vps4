@@ -1,6 +1,7 @@
 package com.godaddy.vps4.orchestration.scheduler;
 
 import com.godaddy.hfs.config.Config;
+import com.godaddy.vps4.scheduledJob.ScheduledJob;
 import com.godaddy.vps4.scheduler.api.core.JobType;
 import com.godaddy.vps4.scheduler.api.core.SchedulerJobDetail;
 import com.godaddy.vps4.scheduler.api.core.utils.Utils;
@@ -53,6 +54,7 @@ public class ScheduleAutomaticBackupRetry implements Command<ScheduleAutomaticBa
         backupRequest.backupName = "auto-backup";
         backupRequest.jobType = JobType.ONE_TIME;
         backupRequest.shopperId = request.shopperId;
+        backupRequest.scheduledJobType = ScheduledJob.ScheduledJobType.BACKUPS_RETRY;
         int hoursToWait = Integer.valueOf(config.get("vps4.autobackup.rescheduleFailedBackupWaitHours", "12"));
         backupRequest.when = Instant.now().plus(hoursToWait, ChronoUnit.HOURS);
         return backupRequest;

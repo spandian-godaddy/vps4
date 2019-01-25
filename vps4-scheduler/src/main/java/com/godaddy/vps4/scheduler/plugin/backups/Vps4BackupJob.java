@@ -1,5 +1,6 @@
 package com.godaddy.vps4.scheduler.plugin.backups;
 
+import com.godaddy.vps4.scheduledJob.ScheduledJob;
 import com.godaddy.vps4.scheduler.api.plugin.Vps4BackupJobRequest;
 import com.godaddy.vps4.scheduler.core.JobMetadata;
 import com.godaddy.vps4.scheduler.core.SchedulerJob;
@@ -31,7 +32,7 @@ public class Vps4BackupJob extends SchedulerJob {
     @Override
     public void execute(JobExecutionContext context) throws JobExecutionException {
         try {
-            createAutomaticBackup(request.vmId, request.backupName, request.shopperId);
+            createAutomaticBackup(request.vmId, request.backupName, request.shopperId, request.scheduledJobType);
         }
         catch (Exception e) {
             logger.error("Error while processing backup job for vm {}. {}", request.vmId, e);
@@ -41,15 +42,24 @@ public class Vps4BackupJob extends SchedulerJob {
         }
     }
 
-    private void createAutomaticBackup(UUID vmId, String backupName, String shopperId) {
+    private void createAutomaticBackup(UUID vmId, String backupName, String shopperId, ScheduledJob.ScheduledJobType scheduledJobType) {
         VmSnapshotResource.VmSnapshotRequest vmSnapshotRequest = new VmSnapshotResource.VmSnapshotRequest();
         vmSnapshotRequest.name = backupName;
-        vmSnapshotRequest.snapshotType = SnapshotType.AUTOMATIC;
+        vmSnapshotRequest.snapshotType = getSnapshotType(scheduledJobType);
         logger.info("Creating backup for vm {}", vmId);
         SnapshotAction action = withShopperId(shopperId,
                 () -> vmSnapshotService.createSnapshot(vmId, vmSnapshotRequest),
                 SnapshotAction.class);
         logger.info("Automatic backup {} created for vm {}, ", action.snapshotId, vmId);
+    }
+
+    private SnapshotType getSnapshotType(ScheduledJob.ScheduledJobType scheduledJobType){
+        if(ScheduledJob.ScheduledJobType.BACKUPS_MANUAL.equals(scheduledJobType)){
+            return SnapshotType.ON_DEMAND;
+        }
+        else{
+            return SnapshotType.AUTOMATIC;
+        }
     }
 
     public void setRequest(Vps4BackupJobRequest request) {

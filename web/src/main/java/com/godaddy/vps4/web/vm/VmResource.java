@@ -408,7 +408,7 @@ public class VmResource {
         VirtualMachine virtualMachine = getVm(vmId);
         VirtualMachineCredit credit = creditService.getVirtualMachineCredit(virtualMachine.orionGuid);
         Vm vm = getVmFromVmVertical(virtualMachine.hfsVmId);
-        SnapshotSchedule snapshotSchedule = new SnapshotSchedule();
+        AutomaticSnapshotSchedule automaticSnapshotSchedule = new AutomaticSnapshotSchedule();
         if (virtualMachine.backupJobId != null) {
             SchedulerJobDetail job = schedulerWebService.getJob("vps4", "backups", virtualMachine.backupJobId);
             if (job != null) {
@@ -416,10 +416,10 @@ public class VmResource {
                 int repeatIntervalInDays = job.jobRequest.repeatIntervalInDays;
                 int copiesToRetain = 1;
                 boolean isPaused = job.isPaused;
-                snapshotSchedule = new SnapshotSchedule(nextRun, copiesToRetain, repeatIntervalInDays, isPaused);
+                automaticSnapshotSchedule = new AutomaticSnapshotSchedule(nextRun, copiesToRetain, repeatIntervalInDays, isPaused);
             }
         }
-        return new VirtualMachineWithDetails(virtualMachine, new VirtualMachineDetails(vm), credit.dataCenter, credit.shopperId, snapshotSchedule);
+        return new VirtualMachineWithDetails(virtualMachine, new VirtualMachineDetails(vm), credit.dataCenter, credit.shopperId, automaticSnapshotSchedule);
     }
 
 }
