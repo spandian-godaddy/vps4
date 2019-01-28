@@ -35,7 +35,7 @@ public class ChangeHostnameTest implements VmTest {
 
         try {
             // A brief pause before trying ssh connections
-            Thread.sleep(5000);
+            Thread.sleep(15000);
         } catch (InterruptedException e) {
             logger.error("Error during start stop test sleeping, pre-ssh check", e);
         }
