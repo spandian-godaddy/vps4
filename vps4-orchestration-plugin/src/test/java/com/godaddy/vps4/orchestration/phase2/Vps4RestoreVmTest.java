@@ -340,6 +340,7 @@ public class Vps4RestoreVmTest {
             BindIp.BindIpRequest bindIpRequest = bindIpRequestArgumentCaptor.getValue();
             Assert.assertEquals(bindIpRequest.vmId, hfsNewVmId);
             Assert.assertEquals(bindIpRequest.addressId, ipAddress.ipAddressId);
+            Assert.assertFalse(bindIpRequest.shouldForce);
         }
     }
 
@@ -360,6 +361,7 @@ public class Vps4RestoreVmTest {
             BindIp.BindIpRequest bindIpRequest = bindIpRequestArgumentCaptor.getValue();
             Assert.assertEquals(bindIpRequest.vmId, vps4Vm.hfsVmId);
             Assert.assertEquals(bindIpRequest.addressId, ipAddress.ipAddressId);
+            Assert.assertTrue(bindIpRequest.shouldForce);
         }
     }
 

@@ -80,20 +80,22 @@ public class Vps4RestoreVm extends ActionCommand<Vps4RestoreVm.Request, Vps4Rest
         long oldHfsVmId = getOldHfsVmId();
         List<IpAddress> ipAddresses = getPublicIpAddresses();
         unbindPublicIpAddresses(ipAddresses);
-        
+
         Vm hfsVm;
         try {
             hfsVm = createVmFromSnapshot();
         } catch (RuntimeException e) {
             logger.info("Create VM failed during restore, binding ips back to vm {}", oldHfsVmId);
-            bindPublicIpAddress(oldHfsVmId, ipAddresses);
+            // Since the IP was already previously bound to oldHfsVmId, send true to force the IP bind
+            bindPublicIpAddress(oldHfsVmId, ipAddresses, true);
             throw e;
         }
         long newHfsVmId = hfsVm.vmId;
 
         // Post creation reconfigure steps
         updateHfsVmId(newHfsVmId);
-        bindPublicIpAddress(newHfsVmId, ipAddresses);
+        // The IP must be bound and configured on-box so do not force bind, set force to false.
+        bindPublicIpAddress(newHfsVmId, ipAddresses, false);
         setRootUserPassword(newHfsVmId);
         configureAdminUser(newHfsVmId);
         refreshCpanelLicense();
@@ -196,7 +198,7 @@ public class Vps4RestoreVm extends ActionCommand<Vps4RestoreVm.Request, Vps4Rest
         }, Void.class);
     }
 
-    private void bindPublicIpAddress(long hfsVmId, List<IpAddress> ipAddresses) {
+    private void bindPublicIpAddress(long hfsVmId, List<IpAddress> ipAddresses, boolean shouldForce) {
         setStep(RestoreVmStep.ConfiguringNetwork);
         logger.info("Bind public ip address");
 
@@ -206,6 +208,7 @@ public class Vps4RestoreVm extends ActionCommand<Vps4RestoreVm.Request, Vps4Rest
             BindIpRequest bindRequest = new BindIpRequest();
             bindRequest.addressId = ipAddress.ipAddressId;
             bindRequest.vmId = hfsVmId;
+            bindRequest.shouldForce = shouldForce;
             context.execute(String.format("BindIP-%d", ipAddress.ipAddressId), BindIp.class, bindRequest);
         }
     }

@@ -26,9 +26,8 @@ public class BindIp implements Command<BindIp.BindIpRequest, Void> {
 
         logger.info("sending HFS request to bind addressId {} to vmId {}", action.addressId, action.vmId);
 
-        boolean shouldForce = false;
         AddressAction hfsAction = context.execute("BindIpHfs",
-                ctx -> networkService.bindIp(action.addressId, action.vmId, shouldForce),
+                ctx -> networkService.bindIp(action.addressId, action.vmId, action.shouldForce),
                 AddressAction.class);
 
         context.execute(WaitForAddressAction.class, hfsAction);
@@ -39,5 +38,6 @@ public class BindIp implements Command<BindIp.BindIpRequest, Void> {
     public static class BindIpRequest {
         public long addressId;
         public long vmId;
+        public boolean shouldForce;
     }
 }

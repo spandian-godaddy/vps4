@@ -37,13 +37,13 @@ public class BindIpTest {
         BindIp.BindIpRequest request = new BindIp.BindIpRequest();
         request.addressId = 42;
         request.vmId = 23;
-        boolean shouldForce = false;
+        request.shouldForce = true;
 
         AddressAction waitingHfsAction = mock(AddressAction.class);
-        when(networkService.bindIp(request.addressId, request.vmId, shouldForce)).thenReturn(waitingHfsAction);
+        when(networkService.bindIp(request.addressId, request.vmId, request.shouldForce)).thenReturn(waitingHfsAction);
 
         assertNull(command.execute(context, request));
-        verify(networkService, times(1)).bindIp(request.addressId, request.vmId, shouldForce);
+        verify(networkService, times(1)).bindIp(request.addressId, request.vmId, request.shouldForce);
         verify(context, times(1)).execute(WaitForAddressAction.class, waitingHfsAction);
     }
 
