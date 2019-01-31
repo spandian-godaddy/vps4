@@ -41,7 +41,7 @@ public class SsoTokenExtractorProvider implements Provider<SsoTokenExtractor> {
     }
 
     SsoTokenExtractor getSsoTokenExtractor(KeyService keyService, long ssoTimeoutMs) {
-        return new SsoTokenExtractor(keyService, ssoTimeoutMs);
+        return new Vps4SsoTokenExtractor(keyService, ssoTimeoutMs);
     }
 
     SsoTokenExtractor getSsoTokenExtractor(KeyService keyService, long ssoTimeoutMs, SsoTokenExtractor fallbackExtractor) {

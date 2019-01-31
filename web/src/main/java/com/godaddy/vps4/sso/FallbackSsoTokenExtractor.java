@@ -9,7 +9,7 @@ import com.godaddy.hfs.sso.KeyService;
 import com.godaddy.hfs.sso.SsoTokenExtractor;
 import com.godaddy.hfs.sso.token.SsoToken;
 
-public class FallbackSsoTokenExtractor extends SsoTokenExtractor {
+public class FallbackSsoTokenExtractor extends Vps4SsoTokenExtractor {
 
     private static final Logger logger = LoggerFactory.getLogger(FallbackSsoTokenExtractor.class);
 
