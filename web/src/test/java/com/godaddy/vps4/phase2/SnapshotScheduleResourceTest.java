@@ -135,18 +135,6 @@ public class SnapshotScheduleResourceTest {
     }
 
     @Test
-    public void testPauseCallsScheduler() {
-        getSnapshotScheduleResource().pauseAutomaicSnapshots(testVm.vmId);
-        verify(schedulerWebService, times(1)).pauseJob("vps4", "backups", testVm.backupJobId);
-    }
-
-    @Test
-    public void testResumeCallsScheduler() {
-        getSnapshotScheduleResource().resumeAutomaticSnapshots(testVm.vmId);
-        verify(schedulerWebService, times(1)).resumeJob("vps4", "backups", testVm.backupJobId);
-    }
-
-    @Test
     public void testNewPauseCallsScheduler() {
         getSnapshotScheduleResource().newPauseAutomaicSnapshots(testVm.vmId, testVm.backupJobId);
         verify(schedulerWebService, times(1)).pauseJob("vps4", "backups", testVm.backupJobId);

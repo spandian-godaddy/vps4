@@ -12,7 +12,6 @@ import com.godaddy.vps4.vm.ActionService;
 import com.godaddy.vps4.vm.ActionType;
 import com.godaddy.vps4.vm.VirtualMachine;
 import com.godaddy.vps4.vm.VirtualMachineService;
-import com.godaddy.vps4.vm.VmAction;
 import com.godaddy.vps4.web.PATCH;
 import com.godaddy.vps4.web.Vps4Api;
 import com.godaddy.vps4.web.Vps4Exception;
@@ -143,36 +142,6 @@ public class SnapshotScheduleResource {
             getAndValidateUserAccountCredit(creditService, virtualMachine.orionGuid, user.getShopperId());
         }
         return virtualMachine;
-    }
-
-    @POST
-    @Path("/{vmId}/snapauseAutomaticSnapshots")
-    public VmAction pauseAutomaicSnapshots(@PathParam("vmId") UUID vmId) {
-        // deprecating this endpoint for consistency
-        VirtualMachine virtualMachine = getVirtualMachine(vmId);
-        if(virtualMachine.backupJobId == null){
-            throw new Vps4Exception("INVALID_BACKUP_JOB_ID", "No Backup Job assigned to this vm.");
-        }
-
-        schedulerWebService.pauseJob("vps4", "backups", virtualMachine.backupJobId);
-
-        long actionId = createNewAction(vmId, ActionType.PAUSE_AUTO_SNAPSHOT);
-        return new VmAction(this.actionService.getAction(actionId), user.isEmployee());    }
-
-    @POST
-    @Path("/{vmId}/resumeAutomaticSnapshots")
-    public VmAction resumeAutomaticSnapshots(@PathParam("vmId") UUID vmId) {
-        // deprecating this endpoint for consistency
-        VirtualMachine virtualMachine = getVirtualMachine(vmId);
-        if(virtualMachine.backupJobId == null){
-            throw new Vps4Exception("INVALID_BACKUP_JOB_ID", "No Backup Job assigned to this vm.");
-        }
-
-
-        schedulerWebService.resumeJob("vps4", "backups", virtualMachine.backupJobId);
-
-        long actionId = createNewAction(vmId, ActionType.RESUME_AUTO_SNAPSHOT);
-        return new VmAction(this.actionService.getAction(actionId), user.isEmployee());
     }
 
     @POST
