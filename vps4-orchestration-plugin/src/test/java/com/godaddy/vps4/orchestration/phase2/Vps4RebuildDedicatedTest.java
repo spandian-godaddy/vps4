@@ -15,6 +15,7 @@ import com.godaddy.vps4.credit.CreditService;
 import com.godaddy.vps4.jdbc.DatabaseModule;
 import com.godaddy.vps4.network.IpAddress;
 import com.godaddy.vps4.orchestration.hfs.cpanel.ConfigureCpanel;
+import com.godaddy.vps4.orchestration.hfs.cpanel.RefreshCpanelLicense;
 import com.godaddy.vps4.orchestration.hfs.plesk.ConfigurePlesk;
 import com.godaddy.vps4.orchestration.hfs.sysadmin.AddUser;
 import com.godaddy.vps4.orchestration.hfs.sysadmin.SetPassword;
@@ -50,7 +51,6 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
-import org.mockito.Matchers;
 import org.mockito.runners.MockitoJUnitRunner;
 
 import static org.hamcrest.Matchers.containsInAnyOrder;
@@ -99,9 +99,9 @@ public class Vps4RebuildDedicatedTest {
     @Captor private ArgumentCaptor<SetPassword.Request> setPasswordArgumentCaptor;
     @Captor private ArgumentCaptor<ToggleAdmin.Request> toggleAdminArgumentCaptor;
     @Captor private ArgumentCaptor<ConfigureMailRelay.ConfigureMailRelayRequest> configMTAArgumentCaptor;
+    @Captor private ArgumentCaptor<RefreshCpanelLicense.Request> refreshLicenseCaptor;
     @Captor private ArgumentCaptor<ConfigureCpanel.ConfigureCpanelRequest> configureCpanelRequestArgumentCaptor;
     @Captor private ArgumentCaptor<ConfigurePlesk.ConfigurePleskRequest> configurePleskRequestArgumentCaptor;
-    @Captor private ArgumentCaptor<RebuildDedicated.Request> rebuildDedRequestArgCaptor;
 
     @BeforeClass
     public static void newInjector() {
@@ -226,7 +226,6 @@ public class Vps4RebuildDedicatedTest {
         req.rebuildVmInfo.image = setupImage();
         req.rebuildVmInfo.sgid = vps4Project.getVhfsSgid();
         req.rebuildVmInfo.serverName = SqlTestData.TEST_VM_NAME;
-        req.rebuildVmInfo.privateLabelId = "1";
         return req;
     }
 
@@ -241,22 +240,6 @@ public class Vps4RebuildDedicatedTest {
         long oldHfsVmId = lambda.apply(context);
         Assert.assertEquals(oldHfsVmId, SqlTestData.hfsVmId);
     }
-
-    @Test
-    public void rebuildsDedicatedVmWithRequestParameters() {
-        command.execute(context, request);
-        verify(context, times(1))
-                .execute(
-                        eq("RebuildDedicated"), eq(RebuildDedicated.class),
-                        rebuildDedRequestArgCaptor.capture()
-                );
-
-        RebuildDedicated.Request request = rebuildDedRequestArgCaptor.getValue();
-        // TODO: add this assertion once HFS adds the ability to pass in the private label id for a dedicated rebuild.
-        //  Assert.assertEquals("1", request.privateLabelId);
-        Assert.assertEquals(SqlTestData.hfsVmId, request.vmId);
-    }
-
 
     @Test
     public void getNewHfsVmAfterRebuild() {
@@ -316,6 +299,8 @@ public class Vps4RebuildDedicatedTest {
 
     @Test
     public void enablesAdminAccessForSelfManagedVm() {
+        request.rebuildVmInfo.image = setupcPanelImage();
+
         command.execute(context, request);
 
         verify(context, times(1))
@@ -329,7 +314,7 @@ public class Vps4RebuildDedicatedTest {
 
     @Test
     public void disablesAdminAccessForFullyManagedVm() {
-        request.rebuildVmInfo.image = setupcPanelImage();
+
         command.execute(context, request);
 
         verify(context, times(1))

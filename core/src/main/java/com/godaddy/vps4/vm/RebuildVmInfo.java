@@ -17,7 +17,6 @@ public class RebuildVmInfo {
     public byte[] encryptedPassword;
     public String zone;
     public String serverName;
-    public String privateLabelId;
 
     public RebuildVmInfo() {
     }

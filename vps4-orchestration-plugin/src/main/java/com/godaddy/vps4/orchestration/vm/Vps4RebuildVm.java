@@ -1,19 +1,7 @@
 package com.godaddy.vps4.orchestration.vm;
 
 
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.godaddy.hfs.vm.Vm;
-import com.godaddy.hfs.vm.VmAction;
-import com.godaddy.hfs.vm.VmService;
 import com.godaddy.vps4.credit.CreditService;
 import com.godaddy.vps4.network.IpAddress;
 import com.godaddy.vps4.network.NetworkService;
@@ -34,7 +22,6 @@ import com.godaddy.vps4.orchestration.hfs.vm.CreateVm;
 import com.godaddy.vps4.orchestration.hfs.vm.DestroyVm;
 import com.godaddy.vps4.orchestration.hfs.vm.WaitForVmAction;
 import com.godaddy.vps4.orchestration.sysadmin.ConfigureMailRelay;
-import com.godaddy.vps4.orchestration.sysadmin.ConfigureMailRelay.ConfigureMailRelayRequest;
 import com.godaddy.vps4.vm.ActionService;
 import com.godaddy.vps4.vm.Image;
 import com.godaddy.vps4.vm.RebuildVmInfo;
@@ -44,11 +31,22 @@ import com.godaddy.vps4.vm.VirtualMachineService;
 import com.godaddy.vps4.vm.VmUser;
 import com.godaddy.vps4.vm.VmUserService;
 import com.godaddy.vps4.vm.VmUserType;
+import com.godaddy.vps4.orchestration.sysadmin.ConfigureMailRelay.ConfigureMailRelayRequest;
 import com.google.inject.Inject;
-
 import gdg.hfs.orchestration.CommandContext;
 import gdg.hfs.orchestration.CommandMetadata;
 import gdg.hfs.orchestration.CommandRetryStrategy;
+import com.godaddy.hfs.vm.Vm;
+import com.godaddy.hfs.vm.VmAction;
+import com.godaddy.hfs.vm.VmService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
 
 @CommandMetadata(
         name="Vps4RebuildVm",
@@ -176,7 +174,6 @@ public class Vps4RebuildVm extends ActionCommand<Vps4RebuildVm.Request, Vps4Rebu
         createVm.zone = request.rebuildVmInfo.zone;
         createVm.encryptedPassword = request.rebuildVmInfo.encryptedPassword;
         createVm.hostname = request.rebuildVmInfo.hostname;
-        createVm.privateLabelId = request.rebuildVmInfo.privateLabelId;
         return createVm;
     }
 

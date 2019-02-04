@@ -216,7 +216,6 @@ public class Vps4RebuildVmTest {
         req.rebuildVmInfo.image = setupImage();
         req.rebuildVmInfo.sgid = vps4Project.getVhfsSgid();
         req.rebuildVmInfo.serverName = SqlTestData.TEST_VM_NAME;
-        req.rebuildVmInfo.privateLabelId = "1";
         return req;
     }
 
@@ -259,7 +258,6 @@ public class Vps4RebuildVmTest {
 
         CreateVm.Request createVmRequest = createVmRequestArgumentCaptor.getValue();
         Assert.assertEquals("hfs-debian-8", createVmRequest.image_name );
-        Assert.assertEquals("1", createVmRequest.privateLabelId);
     }
 
     @Test

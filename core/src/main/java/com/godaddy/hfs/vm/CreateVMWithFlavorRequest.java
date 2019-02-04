@@ -1,9 +1,5 @@
 package com.godaddy.hfs.vm;
 
-
-import org.apache.commons.lang3.builder.ReflectionToStringBuilder;
-import org.apache.commons.lang3.builder.ToStringStyle;
-
 public class CreateVMWithFlavorRequest {
 
     public String sgid;
@@ -16,10 +12,11 @@ public class CreateVMWithFlavorRequest {
     public String image_id;
     public String ignore_whitelist;
     public String os;
-    public String private_label_id;
 
     @Override
     public String toString() {
-        return ReflectionToStringBuilder.toString(this, ToStringStyle.MULTI_LINE_STYLE);
+        return "CreateVMRequest [sgid=" + sgid + ", hostname=" + hostname + ", image_name=" + image_name
+                + ", rawFlavor=" + rawFlavor + ", username=" + username + ", password=" + password + ", zone=" + zone
+                + ", image_id=" + image_id + ", ignore_whitelist=" + ignore_whitelist + ", os=" + os + "]";
     }
 }

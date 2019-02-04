@@ -16,14 +16,9 @@ import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
 
-import org.apache.commons.lang3.StringUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import com.godaddy.hfs.config.Config;
 import com.godaddy.vps4.orchestration.vm.Vps4RebuildVm;
 import com.godaddy.vps4.project.ProjectService;
-import com.godaddy.vps4.security.Vps4UserService;
 import com.godaddy.vps4.snapshot.Snapshot;
 import com.godaddy.vps4.snapshot.SnapshotService;
 import com.godaddy.vps4.snapshot.SnapshotStatus;
@@ -34,14 +29,18 @@ import com.godaddy.vps4.vm.ActionType;
 import com.godaddy.vps4.vm.ImageService;
 import com.godaddy.vps4.vm.RebuildVmInfo;
 import com.godaddy.vps4.vm.VirtualMachine;
+import com.godaddy.vps4.vm.VirtualMachineService;
 import com.godaddy.vps4.vm.VmAction;
 import com.godaddy.vps4.vm.VmUserService;
 import com.godaddy.vps4.web.Vps4Api;
 import com.godaddy.vps4.web.security.GDUser;
-
+import com.godaddy.vps4.web.util.Commands;
 import gdg.hfs.orchestration.CommandService;
-
+import gdg.hfs.orchestration.CommandState;
 import io.swagger.annotations.Api;
+import org.apache.commons.lang3.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @Vps4Api
 @Api(tags = {"vms"})
@@ -54,7 +53,6 @@ public class VmRebuildResource {
 
     private final GDUser user;
     private final VmUserService vmUserService;
-    private final Vps4UserService vps4UserService;
     private final ProjectService projectService;
     private final ActionService actionService;
     private final CommandService commandService;
@@ -71,7 +69,6 @@ public class VmRebuildResource {
     public VmRebuildResource(
             GDUser user,
             VmUserService vmUserService,
-            Vps4UserService vps4UserService,
             ProjectService projectService,
             ActionService actionService,
             CommandService commandService,
@@ -86,7 +83,6 @@ public class VmRebuildResource {
 
         this.user = user;
         this.vmUserService = vmUserService;
-        this.vps4UserService = vps4UserService;
         this.projectService = projectService;
         this.actionService = actionService;
         this.commandService = commandService;
@@ -157,7 +153,6 @@ public class VmRebuildResource {
         rebuildVmInfo.zone = vm.spec.isVirtualMachine() ?
                 config.get("openstack.zone", null) :
                 config.get("ovh.zone", null);
-        rebuildVmInfo.privateLabelId = vps4UserService.getUser(user.getShopperId()).getResellerId();
 
         Vps4RebuildVm.Request req = new Vps4RebuildVm.Request();
         req.rebuildVmInfo = rebuildVmInfo;

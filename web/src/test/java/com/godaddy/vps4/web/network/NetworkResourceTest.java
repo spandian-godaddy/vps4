@@ -66,7 +66,7 @@ public class NetworkResourceTest {
                 Instant.now(), Instant.now().plus(24, ChronoUnit.HOURS), Instant.now().plus(24, ChronoUnit.HOURS),
                 null, 0, UUID.randomUUID());
 
-        vps4User = new Vps4User(112, user.getShopperId(), "1");
+        vps4User = new Vps4User(112, user.getShopperId());
         when(virtualMachineService.getUserIdByVmId(vmId)).thenReturn(vps4User.getId());
 
         Project project = new Project(123, "unitTestProject", "vps4-unittest-123", Instant.now(), null);

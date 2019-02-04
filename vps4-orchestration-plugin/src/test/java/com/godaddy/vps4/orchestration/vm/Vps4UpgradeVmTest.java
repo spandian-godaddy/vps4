@@ -1,22 +1,5 @@
 package com.godaddy.vps4.orchestration.vm;
 
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.eq;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
-
-import java.time.Instant;
-import java.util.UUID;
-import java.util.function.Function;
-
-import org.junit.Before;
-import org.junit.Test;
-import org.mockito.ArgumentCaptor;
-import org.mockito.Captor;
-import org.mockito.MockitoAnnotations;
-
 import com.godaddy.vps4.credit.CreditService;
 import com.godaddy.vps4.credit.ECommCreditService;
 import com.godaddy.vps4.orchestration.snapshot.Vps4SnapshotVm;
@@ -25,19 +8,24 @@ import com.godaddy.vps4.project.ProjectService;
 import com.godaddy.vps4.snapshot.SnapshotActionService;
 import com.godaddy.vps4.snapshot.SnapshotService;
 import com.godaddy.vps4.snapshot.SnapshotType;
-import com.godaddy.vps4.vm.ActionService;
-import com.godaddy.vps4.vm.ServerSpec;
-import com.godaddy.vps4.vm.VirtualMachine;
-import com.godaddy.vps4.vm.VirtualMachineService;
-import com.godaddy.vps4.vm.VmUser;
-import com.godaddy.vps4.vm.VmUserService;
-import com.godaddy.vps4.vm.VmUserType;
+import com.godaddy.vps4.vm.*;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
-
 import gdg.hfs.orchestration.CommandContext;
-
 import junit.framework.Assert;
+import org.junit.Before;
+import org.junit.Test;
+import org.mockito.ArgumentCaptor;
+import org.mockito.Captor;
+import org.mockito.MockitoAnnotations;
+
+import java.time.Instant;
+import java.util.UUID;
+import java.util.function.Function;
+
+import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.eq;
+import static org.mockito.Mockito.*;
 
 public class Vps4UpgradeVmTest {
     ActionService actionService = mock(ActionService.class);
@@ -160,7 +148,6 @@ public class Vps4UpgradeVmTest {
         Assert.assertEquals("hosting.c2.r4.d60", retRestoreReq.restoreVmInfo.rawFlavor);
         Assert.assertEquals("testUser", retRestoreReq.restoreVmInfo.username);
         Assert.assertEquals(request.zone, retRestoreReq.restoreVmInfo.zone);
-        Assert.assertEquals(request.privateLabelId, retRestoreReq.privateLabelId);
     }
 
     @Test

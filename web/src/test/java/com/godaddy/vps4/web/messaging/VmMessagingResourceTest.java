@@ -54,7 +54,7 @@ public class VmMessagingResourceTest {
         vm.validUntil = Instant.MAX;
         vm.name = "testVmName";
 
-        user = new Vps4User(1L, "testMessagingUser", "1");
+        user = new Vps4User(1L, "testMessagingUser");
         gdUser = GDUserMock.createShopper(user.getShopperId());
 
         CommandState command = new CommandState();

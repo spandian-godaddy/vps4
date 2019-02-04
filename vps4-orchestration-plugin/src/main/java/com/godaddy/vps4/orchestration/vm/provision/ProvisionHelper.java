@@ -34,7 +34,6 @@ public class ProvisionHelper {
         createVmRequest.username = request.username;
         createVmRequest.zone = request.zone;
         createVmRequest.encryptedPassword = request.encryptedPassword;
-        createVmRequest.privateLabelId = request.privateLabelId;
 
         return createVmRequest;
     }

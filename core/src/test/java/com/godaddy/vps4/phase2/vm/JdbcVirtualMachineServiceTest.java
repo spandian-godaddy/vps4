@@ -55,8 +55,8 @@ public class JdbcVirtualMachineServiceTest {
     List<UUID> vmCredits;
     String os = "linux";
     String controlPanel = "cpanel";
-    Vps4User vps4User = new Vps4User(1, "TestUser", "1");
-    Vps4User vps4User2 = new Vps4User(2, "TestUser2", "1");
+    Vps4User vps4User = new Vps4User(1, "TestUser");
+    Vps4User vps4User2 = new Vps4User(2, "TestUser2");
     int tier = 10;
     int managedLevel = 0;
     int monitoring = 0;

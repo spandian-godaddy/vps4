@@ -37,7 +37,6 @@ public class CreateVm implements Command<CreateVm.Request, VmAction> {
         hfsRequest.zone = request.zone;
         hfsRequest.password = cryptography.decrypt(request.encryptedPassword);
         hfsRequest.hostname = request.hostname;
-        hfsRequest.private_label_id = request.privateLabelId;
 
         VmAction vmAction = context.execute("CreateVmHfs", ctx -> vmService.createVmWithFlavor(hfsRequest), VmAction.class);
 
@@ -57,6 +56,5 @@ public class CreateVm implements Command<CreateVm.Request, VmAction> {
         public String zone;
         public byte[] encryptedPassword;
         public String hostname;
-        public String privateLabelId;
     }
 }

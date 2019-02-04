@@ -17,7 +17,6 @@ public class ProvisionRequest implements ActionRequest {
     public String rawFlavor;
     public String username;
     public String zone;
-    public String privateLabelId;
 
     @Override
     public long getActionId() {

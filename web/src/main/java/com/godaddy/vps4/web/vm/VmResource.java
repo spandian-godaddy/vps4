@@ -250,7 +250,7 @@ public class VmResource {
 
         ProvisionRequest request = createProvisionRequest(provisionRequest.image, provisionRequest.username,
                 project, virtualMachine.spec, actionId, vmInfo, user.getShopperId(), provisionRequest.name,
-                provisionRequest.orionGuid, encryptedPassword, vmCredit.resellerId);
+                provisionRequest.orionGuid, encryptedPassword);
 
         String provisionClassName = virtualMachine.spec.isVirtualMachine() ? "ProvisionVm" : "ProvisionDedicated";
         CommandState command = Commands.execute(commandService, actionService, provisionClassName, request);
@@ -262,8 +262,7 @@ public class VmResource {
     private ProvisionRequest createProvisionRequest(String image, String username, Project project,
                                                     ServerSpec spec, long actionId, ProvisionVmInfo vmInfo,
                                                     String shopperId, String serverName,
-                                                    UUID orionGuid, byte[] encryptedPassword,
-                                                    String resellerId) {
+                                                    UUID orionGuid, byte[] encryptedPassword) {
         ProvisionRequest request = new ProvisionRequest();
         request.actionId = actionId;
         request.image_name = image;
@@ -276,7 +275,6 @@ public class VmResource {
         request.orionGuid = orionGuid;
         request.encryptedPassword = encryptedPassword;
         request.zone = spec.isVirtualMachine() ? config.get("openstack.zone") : config.get("ovh.zone");
-        request.privateLabelId = resellerId;
         return request;
     }
 
