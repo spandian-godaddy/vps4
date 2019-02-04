@@ -39,7 +39,7 @@ public class ExampleDatabaseTest {
         }
 
         @SuppressWarnings("unused")
-        Vps4User user = new Vps4User(0, "ShopperId");
+        Vps4User user = new Vps4User(0, "ShopperId", "1");
 
         assertTrue(true);
     }

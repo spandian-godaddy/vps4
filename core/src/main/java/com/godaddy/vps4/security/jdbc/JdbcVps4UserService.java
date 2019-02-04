@@ -27,14 +27,14 @@ public class JdbcVps4UserService implements Vps4UserService {
 
     @Override
     public Vps4User getUser(String shopperId) {
-        return Sql.with(dataSource).exec("SELECT vps4_user_id, shopper_id FROM vps4_user WHERE shopper_id=?",
+        return Sql.with(dataSource).exec("SELECT vps4_user_id, shopper_id, reseller_id FROM vps4_user WHERE shopper_id=?",
                 Sql.nextOrNull(this::mapUser),
                 shopperId);
     }
 
     @Override
     public Vps4User getUser(long userId) {
-        return Sql.with(dataSource).exec("SELECT vps4_user_id, shopper_id FROM vps4_user WHERE vps4_user_id=?",
+        return Sql.with(dataSource).exec("SELECT vps4_user_id, shopper_id, reseller_id FROM vps4_user WHERE vps4_user_id=?",
                 Sql.nextOrNull(this::mapUser),
                 userId);
     }
@@ -60,8 +60,9 @@ public class JdbcVps4UserService implements Vps4UserService {
 
         long userId = rs.getLong("vps4_user_id");
         String shopperId = rs.getString("shopper_id");
+        String resellerId = rs.getString("reseller_id");
 
-        return new Vps4User(userId, shopperId);
+        return new Vps4User(userId, shopperId, resellerId);
     }
 
 }

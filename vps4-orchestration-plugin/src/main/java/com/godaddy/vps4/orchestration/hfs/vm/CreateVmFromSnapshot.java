@@ -51,6 +51,7 @@ public class CreateVmFromSnapshot implements Command<CreateVmFromSnapshot.Reques
         hfsProvisionRequest.zone = request.zone;
         hfsProvisionRequest.hostname = request.hostname;
         hfsProvisionRequest.ignore_whitelist = request.ignore_whitelist;
+        hfsProvisionRequest.private_label_id = request.privateLabelId;
         return hfsProvisionRequest;
     }
 
@@ -64,6 +65,7 @@ public class CreateVmFromSnapshot implements Command<CreateVmFromSnapshot.Reques
         public String ignore_whitelist;
         public byte[] encryptedPassword;
         public String hostname;
+        public String privateLabelId;
     }
 
 }

@@ -18,8 +18,12 @@ import java.util.UUID;
 import com.godaddy.hfs.config.Config;
 import com.godaddy.vps4.orchestration.sysadmin.ConfigureMailRelay;
 import com.godaddy.vps4.orchestration.vm.provision.ProvisionRequest;
+
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
+import org.mockito.ArgumentCaptor;
+import org.mockito.Captor;
 
 import com.godaddy.vps4.credit.CreditService;
 import com.godaddy.vps4.messaging.MissingShopperIdException;
@@ -152,6 +156,7 @@ public class Vps4ProvisionVmTest {
         request.shopperId = shopperId;
         request.serverName = expectedServerName;
         request.orionGuid = orionGuid;
+        request.privateLabelId = "1";
 
         String messagedId = UUID.randomUUID().toString();
         when(messagingService.sendSetupEmail(anyString(), anyString(), anyString(), anyString(), anyBoolean()))
@@ -228,4 +233,5 @@ public class Vps4ProvisionVmTest {
         command.execute(context, this.request);
         verify(creditService, times(1)).setCommonName(this.request.orionGuid, this.request.serverName);
     }
+
 }

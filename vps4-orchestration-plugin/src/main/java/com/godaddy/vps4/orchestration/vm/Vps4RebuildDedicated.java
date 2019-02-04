@@ -179,7 +179,7 @@ public class Vps4RebuildDedicated extends ActionCommand<Vps4RebuildDedicated.Req
     }
 
     private void configureAdminUser(long hfsVmId) {
-        boolean adminEnabled = doesRequestImageHaveControlPanel();
+        boolean adminEnabled = !(doesRequestImageHaveControlPanel());
         String username = request.rebuildVmInfo.username;
         ToggleAdmin.Request toggleAdminRequest = new ToggleAdmin.Request();
         toggleAdminRequest.enabled = adminEnabled;

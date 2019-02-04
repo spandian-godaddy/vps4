@@ -34,7 +34,7 @@ public class IrisMonitoringNotificationServiceTest {
         when(vmServiceMock.getUserIdByVmId(any(UUID.class))).thenReturn(1L);
 
         Vps4UserService userServiceMock = mock(Vps4UserService.class);
-        Vps4User testUser = new Vps4User(1, "yl9");
+        Vps4User testUser = new Vps4User(1, "yl9", "1");
         when(userServiceMock.getUser(anyLong())).thenReturn(testUser);
 
         IrisWebServiceSoap irisWebServiceSoapMock = mock(IrisWebServiceSoap.class);
