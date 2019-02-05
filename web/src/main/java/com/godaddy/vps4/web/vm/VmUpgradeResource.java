@@ -90,6 +90,7 @@ public class VmUpgradeResource {
         req.newTier = credit.tier;
         req.autoBackupName = autoBackupName;
         req.zone = openStackZone;
+        req.privateLabelId = credit.resellerId;
         return VmHelper.createActionAndExecute(actionService, commandService, vmId,
                 ActionType.UPGRADE_VM, req, "Vps4UpgradeVm", user);
 

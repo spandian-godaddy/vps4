@@ -1,5 +1,8 @@
 package com.godaddy.vps4.security;
 
+import org.apache.commons.lang3.builder.ReflectionToStringBuilder;
+import org.apache.commons.lang3.builder.ToStringStyle;
+
 public class Vps4User {
 
     private final long id;
@@ -20,7 +23,7 @@ public class Vps4User {
 
     @Override
     public String toString() {
-        return "User [id=" + id + ", shopperId=" + shopperId + "]";
+        return ReflectionToStringBuilder.toString(this, ToStringStyle.SHORT_PREFIX_STYLE);
     }
 
 }

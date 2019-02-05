@@ -187,6 +187,7 @@ public class Vps4RestoreVmTest {
         req.restoreVmInfo.zone = "zone-1";
         req.restoreVmInfo.rawFlavor = "rawflavor";
         req.restoreVmInfo.sgid = vps4Project.getVhfsSgid();
+        req.privateLabelId = "1";
         return req;
     }
 
@@ -243,6 +244,7 @@ public class Vps4RestoreVmTest {
         Assert.assertEquals( "True", flavorRequest.ignore_whitelist);
         Assert.assertEquals(SqlTestData.nfImageId, flavorRequest.image_id);
         Assert.assertEquals(SqlTestData.IMAGE_NAME, flavorRequest.os);
+        Assert.assertEquals("1", flavorRequest.privateLabelId);
     }
 
     @Test

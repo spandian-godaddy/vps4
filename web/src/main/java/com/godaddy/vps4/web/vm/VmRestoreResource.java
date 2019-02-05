@@ -18,9 +18,15 @@ import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
 
+import org.apache.commons.lang3.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.godaddy.hfs.config.Config;
+import com.godaddy.vps4.credit.CreditService;
 import com.godaddy.vps4.orchestration.vm.Vps4RestoreVm;
 import com.godaddy.vps4.project.ProjectService;
+import com.godaddy.vps4.security.Vps4UserService;
 import com.godaddy.vps4.snapshot.Snapshot;
 import com.godaddy.vps4.snapshot.SnapshotService;
 import com.godaddy.vps4.snapshot.SnapshotStatus;
@@ -35,11 +41,10 @@ import com.godaddy.vps4.vm.VmUserService;
 import com.godaddy.vps4.web.Vps4Api;
 import com.godaddy.vps4.web.Vps4Exception;
 import com.godaddy.vps4.web.security.GDUser;
+
 import gdg.hfs.orchestration.CommandService;
+
 import io.swagger.annotations.Api;
-import org.apache.commons.lang3.StringUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 @Vps4Api
 @Api(tags = {"vms"})
@@ -54,9 +59,11 @@ public class VmRestoreResource {
     private final VirtualMachineService virtualMachineService;
     private final SnapshotService snapshotService;
     private final VmUserService vmUserService;
+    private final Vps4UserService vps4UserService;
     private final ProjectService projectService;
     private final ActionService actionService;
     private final CommandService commandService;
+    private final CreditService creditService;
     private final VmResource vmResource;
     private final Config config;
     private final Cryptography cryptography;
@@ -66,11 +73,13 @@ public class VmRestoreResource {
     public VmRestoreResource(
             GDUser user,
             VmUserService vmUserService,
+            Vps4UserService vps4UserService,
             VirtualMachineService virtualMachineService,
             SnapshotService snapshotService,
             ProjectService projectService,
             ActionService actionService,
             CommandService commandService,
+            CreditService creditService,
             VmResource vmResource,
             Config config,
             Cryptography cryptography
@@ -80,9 +89,11 @@ public class VmRestoreResource {
         this.virtualMachineService = virtualMachineService;
         this.snapshotService = snapshotService;
         this.vmUserService = vmUserService;
+        this.vps4UserService = vps4UserService;
         this.projectService = projectService;
         this.actionService = actionService;
         this.commandService = commandService;
+        this.creditService = creditService;
         this.vmResource = vmResource;
         this.config = config;
         this.cryptography = cryptography;
@@ -154,6 +165,7 @@ public class VmRestoreResource {
 
         Vps4RestoreVm.Request req = new Vps4RestoreVm.Request();
         req.restoreVmInfo = restoreVmInfo;
+        req.privateLabelId = creditService.getVirtualMachineCredit(vm.orionGuid).resellerId;
         return req;
     }
 }

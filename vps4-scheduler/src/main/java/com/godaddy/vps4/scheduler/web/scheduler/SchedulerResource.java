@@ -191,7 +191,7 @@ public class SchedulerResource {
 
     @POST
     @Path("/{product}/{jobGroup}/jobs/{jobId}/resume")
-    @ApiOperation(value = "Pause a scheduled job without deleting it",
+    @ApiOperation(value = "Resume a paused job",
             response = SchedulerJobDetail.class)
     @ApiResponses(value = {
             @ApiResponse(code = 404, message = "Job not found")

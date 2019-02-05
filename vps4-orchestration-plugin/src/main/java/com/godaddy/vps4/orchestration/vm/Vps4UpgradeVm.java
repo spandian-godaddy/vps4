@@ -122,6 +122,7 @@ public class Vps4UpgradeVm extends ActionCommand<Vps4UpgradeVm.Request, Vps4Upgr
         restoreVmInfo.zone = request.zone;
         restoreReq.restoreVmInfo = restoreVmInfo;
         restoreReq.actionId = request.actionId;
+        restoreReq.privateLabelId = request.privateLabelId;
         logger.debug("restoreReq = {}", restoreReq);
         return restoreReq;
     }
@@ -145,6 +146,7 @@ public class Vps4UpgradeVm extends ActionCommand<Vps4UpgradeVm.Request, Vps4Upgr
         public int newTier;
         public String autoBackupName;
         public String zone;
+        public String privateLabelId;
 
         @Override
         public long getActionId() {

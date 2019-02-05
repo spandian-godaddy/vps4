@@ -5,11 +5,13 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
 
-import gdg.hfs.orchestration.CommandRetryStrategy;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.godaddy.hfs.vm.Vm;
+import com.godaddy.hfs.vm.VmAction;
+import com.godaddy.hfs.vm.VmService;
 import com.godaddy.vps4.network.IpAddress;
 import com.godaddy.vps4.network.NetworkService;
 import com.godaddy.vps4.orchestration.ActionCommand;
@@ -34,9 +36,7 @@ import com.google.inject.Inject;
 
 import gdg.hfs.orchestration.CommandContext;
 import gdg.hfs.orchestration.CommandMetadata;
-import com.godaddy.hfs.vm.Vm;
-import com.godaddy.hfs.vm.VmAction;
-import com.godaddy.hfs.vm.VmService;
+import gdg.hfs.orchestration.CommandRetryStrategy;
 
 @CommandMetadata(
         name="Vps4RestoreVm",
@@ -145,6 +145,7 @@ public class Vps4RestoreVm extends ActionCommand<Vps4RestoreVm.Request, Vps4Rest
         createVmFromSnapshotRequest.zone = request.restoreVmInfo.zone;
         createVmFromSnapshotRequest.hostname = request.restoreVmInfo.hostname;
         createVmFromSnapshotRequest.ignore_whitelist = "True";
+        createVmFromSnapshotRequest.privateLabelId = request.privateLabelId;
         return createVmFromSnapshotRequest;
     }
 
@@ -243,6 +244,7 @@ public class Vps4RestoreVm extends ActionCommand<Vps4RestoreVm.Request, Vps4Rest
 
     public static class Request implements ActionRequest {
         public RestoreVmInfo restoreVmInfo;
+        public String privateLabelId;
         public long actionId;
 
         @Override
