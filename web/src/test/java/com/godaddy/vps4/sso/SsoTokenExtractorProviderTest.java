@@ -20,7 +20,7 @@ import org.junit.Before;
 import org.junit.Test;
 
 import com.godaddy.hfs.config.Config;
-import com.godaddy.hfs.sso.KeyService;
+import com.godaddy.hfs.sso.SsoService;
 import com.godaddy.hfs.sso.SsoTokenExtractor;
 import com.godaddy.hfs.sso.token.SsoToken;
 
@@ -84,7 +84,7 @@ public class SsoTokenExtractorProviderTest {
     private SsoTokenExtractorProvider getPatchedSsoTokenExtractorProvider() {
         return new SsoTokenExtractorProvider(mockConfig) {
             @Override
-            SsoTokenExtractor getSsoTokenExtractor(KeyService keyService, long ssTimeoutMs) {
+            SsoTokenExtractor getSsoTokenExtractor(SsoService ssoService, long ssTimeoutMs) {
                 return mockOteSsoExtractor;
             }
         };

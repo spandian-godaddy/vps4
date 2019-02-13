@@ -8,7 +8,7 @@ import javax.servlet.http.HttpServletRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.godaddy.hfs.sso.KeyService;
+import com.godaddy.hfs.sso.SsoService;
 import com.godaddy.hfs.sso.SsoTokenExtractor;
 import com.godaddy.hfs.sso.TokenExpiredException;
 import com.godaddy.hfs.sso.VerificationException;
@@ -19,8 +19,8 @@ public class Vps4SsoTokenExtractor extends SsoTokenExtractor {
 
     private static final Logger logger = LoggerFactory.getLogger(Vps4SsoTokenExtractor.class);
 
-    public Vps4SsoTokenExtractor(KeyService keyService, long sessionTimeoutMs) {
-        super(keyService, sessionTimeoutMs);
+    public Vps4SsoTokenExtractor(SsoService ssoService, long sessionTimeoutMs) {
+        super(ssoService, sessionTimeoutMs);
     }
 
     /*

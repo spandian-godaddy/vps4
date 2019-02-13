@@ -10,8 +10,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.godaddy.hfs.config.Config;
-import com.godaddy.hfs.sso.HttpKeyService;
-import com.godaddy.hfs.sso.KeyService;
+import com.godaddy.hfs.sso.HttpSsoService;
+import com.godaddy.hfs.sso.SsoService;
 import com.godaddy.hfs.sso.SsoTokenExtractor;
 
 public class SsoTokenExtractorProvider implements Provider<SsoTokenExtractor> {
@@ -28,28 +28,28 @@ public class SsoTokenExtractorProvider implements Provider<SsoTokenExtractor> {
     @Override
     public SsoTokenExtractor get() {
         long ssoTimeoutMs = getSsoTimeoutMs();
-        KeyService keyService = getKeyService(config.get("sso.url"));
+        SsoService ssoService = getKeyService(config.get("sso.url"));
 
         String fallbackSsoUrl = config.get("sso.url.ote", null);
         if (fallbackSsoUrl == null) {
-            return getSsoTokenExtractor(keyService, ssoTimeoutMs);
+            return getSsoTokenExtractor(ssoService, ssoTimeoutMs);
         }
 
-        KeyService oteKeyService = getKeyService(fallbackSsoUrl);
-        SsoTokenExtractor oteSsoTokenExtractor = getSsoTokenExtractor(oteKeyService, ssoTimeoutMs);
-        return getSsoTokenExtractor(keyService, ssoTimeoutMs, oteSsoTokenExtractor);
+        SsoService oteSsoService = getKeyService(fallbackSsoUrl);
+        SsoTokenExtractor oteSsoTokenExtractor = getSsoTokenExtractor(oteSsoService, ssoTimeoutMs);
+        return getSsoTokenExtractor(ssoService, ssoTimeoutMs, oteSsoTokenExtractor);
     }
 
-    SsoTokenExtractor getSsoTokenExtractor(KeyService keyService, long ssoTimeoutMs) {
-        return new Vps4SsoTokenExtractor(keyService, ssoTimeoutMs);
+    SsoTokenExtractor getSsoTokenExtractor(SsoService ssoService, long ssoTimeoutMs) {
+        return new Vps4SsoTokenExtractor(ssoService, ssoTimeoutMs);
     }
 
-    SsoTokenExtractor getSsoTokenExtractor(KeyService keyService, long ssoTimeoutMs, SsoTokenExtractor fallbackExtractor) {
-        return new FallbackSsoTokenExtractor(keyService, ssoTimeoutMs, fallbackExtractor);
+    SsoTokenExtractor getSsoTokenExtractor(SsoService ssoService, long ssoTimeoutMs, SsoTokenExtractor fallbackExtractor) {
+        return new FallbackSsoTokenExtractor(ssoService, ssoTimeoutMs, fallbackExtractor);
     }
 
-    KeyService getKeyService(String ssoUrl) {
-        return new HttpKeyService(ssoUrl, HttpClientBuilder.create().build());
+    SsoService getKeyService(String ssoUrl) {
+        return new HttpSsoService(ssoUrl, HttpClientBuilder.create().build());
     }
 
     long getSsoTimeoutMs() {

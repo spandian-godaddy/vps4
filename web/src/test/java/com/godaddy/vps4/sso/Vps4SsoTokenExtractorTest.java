@@ -19,7 +19,7 @@ import javax.servlet.http.HttpServletRequest;
 import org.junit.Before;
 import org.junit.Test;
 
-import com.godaddy.hfs.sso.KeyService;
+import com.godaddy.hfs.sso.SsoService;
 import com.godaddy.hfs.sso.TokenExpiredException;
 import com.godaddy.hfs.sso.VerificationException;
 import com.godaddy.hfs.sso.token.IdpSsoToken;
@@ -32,7 +32,7 @@ public class Vps4SsoTokenExtractorTest {
     Cookie[] cookies = { mock(Cookie.class) };
     SsoToken idpToken = mock(IdpSsoToken.class);
     SsoToken jomaxToken = mock(JomaxSsoToken.class);
-    KeyService keyService = mock(KeyService.class);
+    SsoService ssoService = mock(SsoService.class);
     long sessionTimeoutMs = 1000;
 
     Vps4SsoTokenExtractor ssoTokExtractor;
@@ -40,7 +40,7 @@ public class Vps4SsoTokenExtractorTest {
     @Before
     public void setUp() throws Exception {
         when(request.getCookies()).thenReturn(cookies);
-        ssoTokExtractor = spy(new Vps4SsoTokenExtractor(keyService, sessionTimeoutMs));
+        ssoTokExtractor = spy(new Vps4SsoTokenExtractor(ssoService, sessionTimeoutMs));
         doNothing().when(ssoTokExtractor).validate(any(SsoToken.class));
     }
 

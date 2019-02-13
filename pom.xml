@@ -4,7 +4,7 @@
     <parent>
         <groupId>com.godaddy.hfs</groupId>
         <artifactId>hfs-base-project</artifactId>
-        <version>0.8.5</version>
+        <version>0.9.0</version>
     </parent>
 
     <groupId>com.godaddy.vps4</groupId>
@@ -18,17 +18,17 @@
             <dependency>
                 <groupId>com.godaddy.hfs</groupId>
                 <artifactId>hfs-web</artifactId>
-                <version>0.8.5</version>
+                <version>0.9.0</version>
             </dependency>
             <dependency>
                 <groupId>com.godaddy.hfs</groupId>
                 <artifactId>hfs-config</artifactId>
-                <version>0.8.5</version>
+                <version>0.9.0</version>
             </dependency>
             <dependency>
                 <groupId>com.godaddy.hfs</groupId>
                 <artifactId>hfs-crypto</artifactId>
-                <version>0.8.5</version>
+                <version>0.9.0</version>
             </dependency>
             <dependency>
                 <groupId>org.jboss.resteasy</groupId>

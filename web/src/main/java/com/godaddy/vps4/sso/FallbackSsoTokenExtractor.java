@@ -5,7 +5,7 @@ import javax.servlet.http.HttpServletRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.godaddy.hfs.sso.KeyService;
+import com.godaddy.hfs.sso.SsoService;
 import com.godaddy.hfs.sso.SsoTokenExtractor;
 import com.godaddy.hfs.sso.token.SsoToken;
 
@@ -15,8 +15,8 @@ public class FallbackSsoTokenExtractor extends Vps4SsoTokenExtractor {
 
     final SsoTokenExtractor fallbackExtractor;
 
-    public FallbackSsoTokenExtractor(KeyService keyService, long ssoTimeoutMs, SsoTokenExtractor fallbackExtractor) {
-        super(keyService, ssoTimeoutMs);
+    public FallbackSsoTokenExtractor(SsoService ssoService, long ssoTimeoutMs, SsoTokenExtractor fallbackExtractor) {
+        super(ssoService, ssoTimeoutMs);
         this.fallbackExtractor = fallbackExtractor;
     }
 
