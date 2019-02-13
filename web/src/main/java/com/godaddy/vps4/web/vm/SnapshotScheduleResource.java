@@ -145,13 +145,13 @@ public class SnapshotScheduleResource {
     }
 
     @POST
-    @Path("/{vmId}/snapshotSchedules/{snapshotId}/pause")
-    public SnapshotSchedule newPauseAutomaicSnapshots(@PathParam("vmId") UUID vmId, @PathParam("snapshotId") UUID snapshotId) {
+    @Path("/{vmId}/snapshotSchedules/{scheduleId}/pause")
+    public SnapshotSchedule newPauseAutomaicSnapshots(@PathParam("vmId") UUID vmId, @PathParam("scheduleId") UUID scheduleId) {
         VirtualMachine virtualMachine = getVirtualMachine(vmId);
         if(virtualMachine.backupJobId == null){
             throw new Vps4Exception("INVALID_BACKUP_JOB_ID", "No automatic backup job assigned to this vm.");
         }
-        if(!virtualMachine.backupJobId.equals(snapshotId)){
+        if(!virtualMachine.backupJobId.equals(scheduleId)){
             throw new Vps4Exception("INVALID_BACKUP_JOB_ID", "Can only pause VM's automatic backup schedule.");
         }
 
@@ -163,13 +163,13 @@ public class SnapshotScheduleResource {
     }
 
     @POST
-    @Path("/{vmId}/snapshotSchedules/{snapshotId}/resume")
-    public SnapshotSchedule newResumeAutomaticSnapshots(@PathParam("vmId") UUID vmId, @PathParam("snapshotId") UUID snapshotId) {
+    @Path("/{vmId}/snapshotSchedules/{scheduleId}/resume")
+    public SnapshotSchedule newResumeAutomaticSnapshots(@PathParam("vmId") UUID vmId, @PathParam("scheduleId") UUID scheduleId) {
         VirtualMachine virtualMachine = getVirtualMachine(vmId);
         if(virtualMachine.backupJobId == null){
             throw new Vps4Exception("INVALID_BACKUP_JOB_ID", "No Backup Job assigned to this vm.");
         }
-        if(!virtualMachine.backupJobId.equals(snapshotId)){
+        if(!virtualMachine.backupJobId.equals(scheduleId)){
             throw new Vps4Exception("INVALID_BACKUP_JOB_ID", "Can only resume VM's automatic backup schedule.");
         }
 
