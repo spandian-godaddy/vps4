@@ -14,3 +14,11 @@ run the `sql-reset-password` script if it exists.  That script will set the root
 MySQL password to a unique 16 character password for each VM.  The script will
 then remove itself so systemd will not run the service on future boots.
 
+When adding these scripts to the ispconfig hfs image, make sure to enable the ispconfig-init service in systemd:
+```bash
+systemctl enable ispconfig-init
+```
+Also, ensure the `sql-password-reset` script has execute permissions:
+```bash
+chmod 700 /usr/local/bin/sql-password-reset
+```
