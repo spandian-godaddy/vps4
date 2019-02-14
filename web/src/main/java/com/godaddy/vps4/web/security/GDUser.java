@@ -55,6 +55,14 @@ public class GDUser {
         return isEmployee() && isShopper();
     }
 
+    public boolean is3LetterAccount() {
+        return shopperId.length() == 3;
+    }
+
+    public boolean isPayingCustomer() {
+        return isCustomer() && !is3LetterAccount();
+    }
+
     public String getUsername() {
         return username;
     }

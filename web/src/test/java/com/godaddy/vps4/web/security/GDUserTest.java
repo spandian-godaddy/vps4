@@ -23,4 +23,27 @@ public class GDUserTest {
         Role[] roles = {Role.ADMIN, Role.EMPLOYEE_OTHER, Role.HS_AGENT};
         assertFalse(gdUser.anyRole(roles));
     }
+
+    @Test
+    public void isPayingCustomerReturnsTrue() throws Exception {
+        GDUser gdUser = new GDUser();
+        gdUser.role = Role.CUSTOMER;
+        gdUser.shopperId = "123435";
+        assertTrue(gdUser.isPayingCustomer());
+    }
+
+    @Test
+    public void isPayingCustomerReturnsFalseFor3LetterAccounts() throws Exception {
+        GDUser gdUser = new GDUser();
+        gdUser.role = Role.CUSTOMER;
+        gdUser.shopperId = "123";
+        assertFalse(gdUser.isPayingCustomer());
+    }
+
+    @Test
+    public void isPayingCustomerReturnsFalseForNonCustomer() throws Exception {
+        GDUser gdUser = new GDUser();
+        gdUser.role = Role.ADMIN;
+        assertFalse(gdUser.isPayingCustomer());
+    }
 }

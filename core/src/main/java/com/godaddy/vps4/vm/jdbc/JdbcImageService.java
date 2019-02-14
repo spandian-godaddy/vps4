@@ -14,6 +14,7 @@ import com.godaddy.vps4.vm.Image.OperatingSystem;
 import com.godaddy.vps4.vm.ImageService;
 import com.godaddy.vps4.vm.ServerType;
 
+
 public class JdbcImageService implements ImageService {
     private final DataSource dataSource;
 
