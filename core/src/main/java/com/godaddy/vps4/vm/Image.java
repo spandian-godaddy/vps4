@@ -6,6 +6,9 @@ import static java.util.stream.Collectors.toMap;
 import java.util.Map;
 
 public class Image {
+
+    public static final String ISPCONFIG = "ispconfig";
+
     public enum OperatingSystem {
         LINUX(1), WINDOWS(2);
 
@@ -63,7 +66,6 @@ public class Image {
      * The operating system this VM runs.
      *
      * In order to provision a VM, this must match the
-     * {@link VirtualMachineCredit#operatingSystem}.
      */
     public OperatingSystem operatingSystem;
 
@@ -71,4 +73,43 @@ public class Image {
      * The Server Type that this image is valid on (platform and server type)
      */
     public ServerType serverType;
+
+    public boolean hasCpanel() {
+        return this.controlPanel == ControlPanel.CPANEL;
+    }
+
+    public boolean hasPlesk() {
+        return this.controlPanel == ControlPanel.PLESK;
+    }
+
+    public boolean hasMYH() {
+        return this.controlPanel == ControlPanel.MYH;
+    }
+
+    public boolean hasIspConfig() {
+        return this.hasMYH() && this.hfsName.toLowerCase().contains(ISPCONFIG);
+    }
+
+    public boolean hasControlPanel() {
+        return this.hasPaidControlPanel() || this.hasFreeControlPanel();
+    }
+
+    public boolean hasPaidControlPanel() {
+        return this.hasCpanel() || this.hasPlesk();
+    }
+
+    public boolean hasFreeControlPanel() {
+        return this.hasIspConfig();
+    }
+
+    /**
+     * This method returns the actual control panel on the hfs image. This is used by hfs nydus and/or cnc workflow
+     * This is needed because ISPconfig (which is a free control panel) is represented as MYH
+     * @return
+     */
+    public String getImageControlPanel() {
+        return this.hasPaidControlPanel()
+            ? this.controlPanel.toString().toLowerCase()
+            : this.hasFreeControlPanel() ? ISPCONFIG : null;
+    }
 }

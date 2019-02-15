@@ -22,6 +22,7 @@ public class SetPassword implements Command<SetPassword.Request, Void> {
         public long hfsVmId;
         public List<String> usernames;
         public byte[] encryptedPassword;
+        public String controlPanel;
     }
 
     private final SysAdminService sysAdminService;
@@ -41,7 +42,7 @@ public class SetPassword implements Command<SetPassword.Request, Void> {
         for(String username : request.usernames){
 
             SysAdminAction hfsSysAction = context.execute("SetPassword-" + username,
-                    ctx -> sysAdminService.changePassword(request.hfsVmId, username, password),
+                    ctx -> sysAdminService.changePassword(request.hfsVmId, username, password, request.controlPanel),
                     SysAdminAction.class);
 
             context.execute("WaitForSet-"+username, WaitForSysAdminAction.class, hfsSysAction);

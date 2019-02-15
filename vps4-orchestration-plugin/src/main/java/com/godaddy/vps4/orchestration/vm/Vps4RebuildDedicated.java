@@ -175,6 +175,7 @@ public class Vps4RebuildDedicated extends ActionCommand<Vps4RebuildDedicated.Req
         String[] usernames = {"root"};
         setPasswordRequest.usernames = Arrays.asList(usernames);
         setPasswordRequest.encryptedPassword = request.rebuildVmInfo.encryptedPassword;
+        setPasswordRequest.controlPanel = request.rebuildVmInfo.image.getImageControlPanel();
         return setPasswordRequest;
     }
 
@@ -194,12 +195,11 @@ public class Vps4RebuildDedicated extends ActionCommand<Vps4RebuildDedicated.Req
     }
 
     private boolean doesRequestImageHaveControlPanel() {
-        return Image.ControlPanel.CPANEL == request.rebuildVmInfo.image.controlPanel ||
-                Image.ControlPanel.PLESK == request.rebuildVmInfo.image.controlPanel;
+        return request.rebuildVmInfo.image.hasPaidControlPanel();
     }
 
     private void configureControlPanel(long hfsVmId) {
-        if (Image.ControlPanel.CPANEL == request.rebuildVmInfo.image.controlPanel) {
+        if (request.rebuildVmInfo.image.hasCpanel()) {
             // VM with cPanel
             setStep(RebuildVmStep.ConfiguringCPanel);
 
@@ -207,7 +207,7 @@ public class Vps4RebuildDedicated extends ActionCommand<Vps4RebuildDedicated.Req
             ConfigureCpanelRequest cpanelRequest = createConfigureCpanelRequest(hfsVmId);
             context.execute(ConfigureCpanel.class, cpanelRequest);
 
-        } else if (Image.ControlPanel.PLESK == request.rebuildVmInfo.image.controlPanel) {
+        } else if (request.rebuildVmInfo.image.hasPlesk()) {
             // VM with Plesk image
             setStep(RebuildVmStep.ConfiguringPlesk);
 
@@ -232,7 +232,7 @@ public class Vps4RebuildDedicated extends ActionCommand<Vps4RebuildDedicated.Req
         setStep(RebuildVmStep.SetHostname);
 
         SetHostname.Request hfsRequest = new SetHostname.Request(hfsVmId, request.rebuildVmInfo.hostname,
-                request.rebuildVmInfo.image.controlPanel.toString());
+                request.rebuildVmInfo.image.getImageControlPanel());
 
         context.execute(SetHostname.class, hfsRequest);
     }

@@ -110,6 +110,7 @@ public class Vps4ProvisionVmUnitTest {
         image = new Image();
         image.operatingSystem = Image.OperatingSystem.LINUX;
         image.controlPanel = Image.ControlPanel.MYH;
+        image.hfsName = "foobar";
 
         vm = new VirtualMachine(UUID.randomUUID(), hfsVmId, UUID.randomUUID(), 1,
                 null, "fake_server",

@@ -53,11 +53,13 @@ public class Vps4SetPasswordTest {
     @Test
     public void testSetPassword() throws Exception {
         String password = "somenewpassword";
+        String controlPanel = "foobar";
 
         SetPassword.Request setPasswordRequest = new SetPassword.Request();
         setPasswordRequest.hfsVmId = 42;
         setPasswordRequest.usernames = Arrays.asList("user1", "user2", "user3");
         setPasswordRequest.encryptedPassword = "somenewpassword".getBytes();
+        setPasswordRequest.controlPanel = controlPanel;
 
         Vps4SetPassword.Request request = new Vps4SetPassword.Request();
         request.actionId = 12;
@@ -69,7 +71,7 @@ public class Vps4SetPasswordTest {
         action.sysAdminActionId = 73;
         action.status = Status.COMPLETE;
 
-        when(sysAdminService.changePassword(eq(setPasswordRequest.hfsVmId), anyString(), eq(password))).thenReturn(action);
+        when(sysAdminService.changePassword(eq(setPasswordRequest.hfsVmId), anyString(), eq(password), eq(controlPanel))).thenReturn(action);
         when(sysAdminService.getSysAdminAction(action.sysAdminActionId)).thenReturn(action);
         when(cryptography.decrypt(any())).thenReturn(password);
 
@@ -77,7 +79,7 @@ public class Vps4SetPasswordTest {
 
         for (String username : setPasswordRequest.usernames) {
             verify(sysAdminService, times(1))
-                    .changePassword(42, username, password);
+                    .changePassword(42, username, password, controlPanel);
         }
     }
 

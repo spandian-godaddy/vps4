@@ -324,7 +324,7 @@ public class JdbcVirtualMachineService implements VirtualMachineService {
     @Override
     public boolean hasControlPanel(UUID vmId) {
         VirtualMachine vm = getVirtualMachine(vmId);
-        return vm.image.controlPanel == ControlPanel.CPANEL || vm.image.controlPanel == ControlPanel.PLESK;
+        return vm.image.hasPaidControlPanel();
     }
 
     @Override

@@ -65,6 +65,7 @@ public class VmRebuildResource {
     private final VmResource vmResource;
     private final VmActionResource vmActionResource;
     private final VmSnapshotResource vmSnapshotResource;
+    private final ImageResource imageResource;
     private final Config config;
     private final Cryptography cryptography;
     private final int MAX_PASSWORD_LENGTH = 14;
@@ -84,7 +85,8 @@ public class VmRebuildResource {
             VmActionResource vmActionResource,
             VmSnapshotResource vmSnapshotResource,
             Config config,
-            Cryptography cryptography
+            Cryptography cryptography,
+            ImageResource imageResource
     ) {
 
         this.user = user;
@@ -101,6 +103,7 @@ public class VmRebuildResource {
         this.vmSnapshotResource = vmSnapshotResource;
         this.config = config;
         this.cryptography = cryptography;
+        this.imageResource = imageResource;
     }
 
     public static class RebuildVmRequest {
@@ -143,6 +146,10 @@ public class VmRebuildResource {
     private void isValidRebuildVmRequest(UUID vmId, RebuildVmRequest rebuildVmRequest) {
         validateNoConflictingActions(vmId, actionService, ActionType.RESTORE_VM, ActionType.CREATE_VM, ActionType.REBUILD_VM);
         validatePassword(rebuildVmRequest.password);
+        if (!StringUtils.isBlank(rebuildVmRequest.imageName)) {
+            // Validate image name passed in. This should throw a 404 if image is disabled (for env or role)
+            imageResource.getImage(rebuildVmRequest.imageName);
+        }
     }
 
     private Vps4RebuildVm.Request generateRebuildVmOrchestrationRequest(

@@ -184,13 +184,13 @@ public class Vps4ProvisionVm extends ActionCommand<ProvisionRequest, Vps4Provisi
         setStep(SetHostname);
 
         SetHostname.Request hfsRequest = new SetHostname.Request(hfsVmId, hostname,
-                request.vmInfo.image.controlPanel.toString());
+                request.vmInfo.image.getImageControlPanel());
 
         context.execute(SetHostname.class, hfsRequest);
     }
 
     private void configureControlPanel(long hfsVmId) {
-        if (request.vmInfo.image.controlPanel == ControlPanel.CPANEL) {
+        if (request.vmInfo.image.hasCpanel()) {
             // VM with cPanel
             setStep(ConfiguringCPanel);
 
@@ -198,7 +198,7 @@ public class Vps4ProvisionVm extends ActionCommand<ProvisionRequest, Vps4Provisi
             ConfigureCpanelRequest cpanelRequest = createConfigureCpanelRequest(hfsVmId);
             context.execute(ConfigureCpanel.class, cpanelRequest);
 
-        } else if (request.vmInfo.image.controlPanel == ControlPanel.PLESK) {
+        } else if (request.vmInfo.image.hasPlesk()) {
             // VM with Plesk image
             setStep(ConfiguringPlesk);
 
@@ -236,7 +236,8 @@ public class Vps4ProvisionVm extends ActionCommand<ProvisionRequest, Vps4Provisi
         // set the root password to the same as the user password (LINUX ONLY)
         VirtualMachine vm = virtualMachineService.getVirtualMachine(request.vmInfo.vmId);
         if (vm.image.operatingSystem == Image.OperatingSystem.LINUX) {
-            SetPassword.Request setRootPasswordRequest = ProvisionHelper.createSetRootPasswordRequest(hfsVmId, request.encryptedPassword);
+            SetPassword.Request setRootPasswordRequest
+                = ProvisionHelper.createSetRootPasswordRequest(hfsVmId, request.encryptedPassword, vm.image.getImageControlPanel());
             context.execute(SetPassword.class, setRootPasswordRequest);
         }
     }

@@ -3,6 +3,7 @@ package com.godaddy.vps4.orchestration.vm;
 import java.io.IOException;
 import java.util.Random;
 import java.util.UUID;
+import java.util.function.Function;
 
 import com.godaddy.hfs.mailrelay.MailRelayUpdate;
 import com.godaddy.hfs.vm.Vm;
@@ -44,7 +45,12 @@ import gdg.hfs.vhfs.nodeping.NodePingService;
 import gdg.hfs.vhfs.plesk.PleskService;
 import org.junit.Before;
 import org.junit.Test;
+import org.mockito.ArgumentCaptor;
+import org.mockito.Captor;
+import org.mockito.MockitoAnnotations;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyBoolean;
 import static org.mockito.Matchers.anyLong;
@@ -77,6 +83,10 @@ public class Vps4ProvisionDedicatedTest {
     ConfigureCpanel configureCpanel = mock(ConfigureCpanel.class);
     AddUser addUser = mock(AddUser.class);
 
+    @Captor private ArgumentCaptor<Function<CommandContext, Void>> setCommonNameLambdaCaptor;
+    @Captor private ArgumentCaptor<SetPassword.Request> setPasswordCaptor;
+    @Captor private ArgumentCaptor<SetHostname.Request> setHostnameArgumentCaptor;
+
     Vps4ProvisionDedicated command = new Vps4ProvisionDedicated(actionService, vmService,
             virtualMachineService, vmUserService, networkService, nodePingService,
             monitoringMeta, messagingService, creditService);
@@ -101,7 +111,7 @@ public class Vps4ProvisionDedicatedTest {
         binder.bind(AddUser.class).toInstance(addUser);
     });
 
-    CommandContext context = new TestCommandContext(new GuiceCommandProvider(injector));
+    CommandContext context = mock(CommandContext.class);
 
     VirtualMachine vm;
     Vm hfsVm;
@@ -116,13 +126,15 @@ public class Vps4ProvisionDedicatedTest {
     String shopperId;
     int diskGib;
     UUID orionGuid = UUID.randomUUID();
+    long hfsVmId = 42;
 
     @Before
     public void setupTest() throws Exception {
-        long hfsVmId = 42;
+        MockitoAnnotations.initMocks(this);
         this.image = new Image();
         image.operatingSystem = Image.OperatingSystem.LINUX;
         image.controlPanel = ControlPanel.CPANEL;
+        image.hfsName = "foobar";
         expectedServerName = "VM Name";
         this.vm = new VirtualMachine(UUID.randomUUID(), hfsVmId, UUID.randomUUID(), 1,
                 null, expectedServerName,
@@ -171,31 +183,33 @@ public class Vps4ProvisionDedicatedTest {
         when(vmService.getVmAction(hfsVmId, vmAction.vmActionId)).thenReturn(vmAction);
 
         when(virtualMachineService.getVirtualMachine(vmInfo.vmId)).thenReturn(this.vm);
+
+        when(context.execute(eq(CreateVm.class), any(CreateVm.Request.class))).thenReturn(vmAction);
     }
 
     @Test
     public void provisionVmTestUserHasAdminAccess() throws Exception {
         this.image.controlPanel = ControlPanel.MYH;
-        command.execute(context, this.request);
+        command.executeWithAction(context, this.request);
         verify(vmUserService, times(1)).updateUserAdminAccess(username, vmId, true);
     }
 
     @Test
     public void provisionVmTestUserDoesntHaveAdminAccess() throws Exception {
-        command.execute(context, this.request);
+        command.executeWithAction(context, this.request);
         verify(vmUserService, times(1)).updateUserAdminAccess(username, vmId, false);
     }
 
     @Test
     public void provisionVmTestPleskUserDoesntHaveAdminAccess() throws Exception {
         this.image.controlPanel = ControlPanel.PLESK;
-        command.execute(context, this.request);
+        command.executeWithAction(context, this.request);
         verify(vmUserService, times(1)).updateUserAdminAccess(username, vmId, false);
     }
 
     @Test
     public void testProvisionVmDoesntConfigureNodePing() {
-        command.execute(context, this.request);
+        command.executeWithAction(context, this.request);
         verify(nodePingService, never()).createCheck(anyLong(), any(CreateCheckRequest.class));
     }
 
@@ -208,13 +222,13 @@ public class Vps4ProvisionDedicatedTest {
         when(monitoringMeta.getGeoRegion()).thenReturn("nam");
         this.vmInfo.hasMonitoring = true;
 
-        command.execute(context, this.request);
+        command.executeWithAction(context, this.request);
         verify(nodePingService, times(1)).createCheck(eq(1L), any(CreateCheckRequest.class));
     }
 
     @Test
     public void testSendSetupEmail() throws MissingShopperIdException, IOException {
-        command.execute(context, this.request);
+        command.executeWithAction(context, this.request);
         verify(messagingService, times(1)).sendSetupEmail(shopperId, expectedServerName,
                 hfsIp.ip_address, orionGuid.toString(), this.vmInfo.isFullyManaged());
     }
@@ -224,14 +238,42 @@ public class Vps4ProvisionDedicatedTest {
         when(messagingService.sendSetupEmail(anyString(), anyString(), anyString(), anyString(), anyBoolean()))
                 .thenThrow(new RuntimeException("Unit test exception"));
 
-        command.execute(context, this.request);
+        command.executeWithAction(context, this.request);
         verify(messagingService, times(1)).sendSetupEmail(anyString(), anyString(),
                 anyString(), anyString(), anyBoolean());
     }
 
     @Test
     public void testSetEcommCommonName() {
-        command.execute(context, this.request);
+        command.executeWithAction(context, this.request);
+        verify(context, times(1))
+                .execute(eq("SetCommonName"), setCommonNameLambdaCaptor.capture(), eq(Void.class));
+
+        // Verify that the lambda is returning what we expect
+        Function<CommandContext, Void> lambda = setCommonNameLambdaCaptor.getValue();
+        lambda.apply(context);
         verify(creditService, times(1)).setCommonName(this.request.orionGuid, this.request.serverName);
+    }
+
+    @Test
+    public void setsTheRootPasswordToBeSameAsUserPassword() {
+        command.executeWithAction(context, this.request);
+        verify(context, times(1))
+                .execute(eq(SetPassword.class), setPasswordCaptor.capture());
+        SetPassword.Request req = setPasswordCaptor.getValue();
+        assertEquals(req.controlPanel, vm.image.getImageControlPanel());
+        assertEquals(req.encryptedPassword, request.encryptedPassword);
+        assertEquals(req.hfsVmId, hfsVmId);
+    }
+
+    @Test
+    public void setsHostname() {
+        command.executeWithAction(context, request);
+        verify(context, times(1)).execute(eq(SetHostname.class), setHostnameArgumentCaptor.capture());
+        SetHostname.Request req = setHostnameArgumentCaptor.getValue();
+        assertEquals(req.controlPanel, request.vmInfo.image.getImageControlPanel());
+        assertEquals(req.hfsVmId, hfsVmId);
+        assertTrue(req.hostname.startsWith("ded"));
+        assertTrue(req.hostname.endsWith(".secureserver.net"));
     }
 }

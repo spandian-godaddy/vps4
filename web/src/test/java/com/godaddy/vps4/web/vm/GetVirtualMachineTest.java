@@ -60,8 +60,9 @@ public class GetVirtualMachineTest {
         VmActionResource vmActionResource = Mockito.mock(VmActionResource.class);
         SnapshotService snapshotService = Mockito.mock(SnapshotService.class);
 
-        vmResource = new VmResource(user, vmService, userService, virtualMachineService, creditService, null, null,
-                null, null, null, config, cryptography, schedulerWebService, dcService, vmActionResource, snapshotService);
+        vmResource = new VmResource(user, vmService, userService, virtualMachineService, creditService, null,
+                null, null, null, null, config, cryptography,
+                schedulerWebService, dcService, vmActionResource, snapshotService, null);
     }
 
     private Config getMockedConfig() {

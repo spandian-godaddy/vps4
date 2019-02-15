@@ -39,18 +39,20 @@ public class ProvisionHelper {
         return createVmRequest;
     }
 
-    public static SetPassword.Request createSetRootPasswordRequest(long hfsVmId, byte[] encryptedPassword) {
+    public static SetPassword.Request createSetRootPasswordRequest(
+        long hfsVmId, byte[] encryptedPassword, String controlPanel) {
         SetPassword.Request setPasswordRequest = new SetPassword.Request();
         setPasswordRequest.hfsVmId = hfsVmId;
         String[] usernames = { "root" };
         setPasswordRequest.usernames = Arrays.asList(usernames);
         setPasswordRequest.encryptedPassword = encryptedPassword;
+        setPasswordRequest.controlPanel = controlPanel;
 
         return setPasswordRequest;
     }
 
     public static ToggleAdmin.Request getToggleAdminRequest(ProvisionRequest request, long hfsVmId) {
-        boolean adminEnabled = request.vmInfo.image.controlPanel == Image.ControlPanel.MYH;
+        boolean adminEnabled = !request.vmInfo.image.hasPaidControlPanel();
         String username = request.username;
         ToggleAdmin.Request toggleAdminRequest = new ToggleAdmin.Request();
         toggleAdminRequest.enabled = adminEnabled;

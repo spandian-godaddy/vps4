@@ -1,5 +1,7 @@
 package com.godaddy.vps4.orchestration.vm;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyBoolean;
 import static org.mockito.Matchers.anyLong;
@@ -14,16 +16,17 @@ import static org.mockito.Mockito.when;
 import java.io.IOException;
 import java.util.Random;
 import java.util.UUID;
+import java.util.function.Function;
 
 import com.godaddy.hfs.config.Config;
+import com.godaddy.vps4.orchestration.hfs.sysadmin.SetPassword;
+import com.godaddy.vps4.orchestration.scheduler.SetupAutomaticBackupSchedule;
 import com.godaddy.vps4.orchestration.sysadmin.ConfigureMailRelay;
 import com.godaddy.vps4.orchestration.vm.provision.ProvisionRequest;
 
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
-import org.mockito.ArgumentCaptor;
-import org.mockito.Captor;
 
 import com.godaddy.vps4.credit.CreditService;
 import com.godaddy.vps4.messaging.MissingShopperIdException;
@@ -61,6 +64,10 @@ import gdg.hfs.vhfs.plesk.PleskService;
 import com.godaddy.hfs.vm.VmAction;
 import com.godaddy.hfs.vm.VmAction.Status;
 import com.godaddy.hfs.vm.VmService;
+import org.mockito.ArgumentCaptor;
+import org.mockito.Captor;
+import org.mockito.MockitoAnnotations;
+
 
 public class Vps4ProvisionVmTest {
 
@@ -81,6 +88,9 @@ public class Vps4ProvisionVmTest {
     Vps4MessagingService messagingService = mock(Vps4MessagingService.class);
     CreditService creditService = mock(CreditService.class);
     Config config = mock(Config.class);
+    @Captor private ArgumentCaptor<Function<CommandContext, Void>> setCommonNameLambdaCaptor;
+    @Captor private ArgumentCaptor<SetPassword.Request> setPasswordCaptor;
+    @Captor private ArgumentCaptor<SetHostname.Request> setHostnameArgumentCaptor;
 
     Vps4ProvisionVm command = new Vps4ProvisionVm(actionService, vmService,
             virtualMachineService, vmUserService, networkService, nodePingService,
@@ -106,7 +116,7 @@ public class Vps4ProvisionVmTest {
         binder.bind(Config.class).toInstance(config);
     });
 
-    CommandContext context = new TestCommandContext(new GuiceCommandProvider(injector));
+    CommandContext context = mock(CommandContext.class);
 
     VirtualMachine vm;
     ProvisionRequest request;
@@ -120,13 +130,15 @@ public class Vps4ProvisionVmTest {
     String shopperId;
     int diskGib;
     UUID orionGuid = UUID.randomUUID();
+    long hfsVmId = 42;
 
     @Before
     public void setupTest() throws Exception {
-        long hfsVmId = 42;
+        MockitoAnnotations.initMocks(this);
         this.image = new Image();
-        image.operatingSystem = Image.OperatingSystem.WINDOWS;
+        image.operatingSystem = Image.OperatingSystem.LINUX;
         image.controlPanel = ControlPanel.MYH;
+        image.hfsName = "foobar";
         expectedServerName = "VM Name";
         this.vm = new VirtualMachine(UUID.randomUUID(), hfsVmId, UUID.randomUUID(), 1,
                 null, expectedServerName,
@@ -177,24 +189,29 @@ public class Vps4ProvisionVmTest {
         when(vmService.getVmAction(hfsVmId, vmAction.vmActionId)).thenReturn(vmAction);
 
         when(virtualMachineService.getVirtualMachine(vmInfo.vmId)).thenReturn(this.vm);
+
+        when(context.execute(eq(AllocateIp.class), any(AllocateIp.Request.class))).thenReturn(primaryIp);
+        when(context.execute(eq(SetupAutomaticBackupSchedule.class), any(SetupAutomaticBackupSchedule.Request.class)))
+            .thenReturn(UUID.randomUUID());
+        when(context.execute(eq(CreateVm.class), any(CreateVm.Request.class))).thenReturn(vmAction);
     }
 
     @Test
     public void provisionVmTestUserHasAdminAccess() throws Exception {
-        command.execute(context, this.request);
+        command.executeWithAction(context, this.request);
         verify(vmUserService, times(1)).updateUserAdminAccess(username, vmId, true);
     }
 
     @Test
     public void provisionVmTestUserDoesntHaveAdminAccess() throws Exception {
         this.image.controlPanel = Image.ControlPanel.PLESK;
-        command.execute(context, this.request);
+        command.executeWithAction(context, this.request);
         verify(vmUserService, times(1)).updateUserAdminAccess(username, vmId, false);
     }
 
     @Test
     public void testProvisionVmDoesntConfigureNodePing() {
-        command.execute(context, this.request);
+        command.executeWithAction(context, this.request);
         verify(nodePingService, never()).createCheck(anyLong(), any(CreateCheckRequest.class));
     }
 
@@ -207,13 +224,13 @@ public class Vps4ProvisionVmTest {
         when(monitoringMeta.getGeoRegion()).thenReturn("nam");
         this.vmInfo.hasMonitoring = true;
 
-        command.execute(context, this.request);
+        command.executeWithAction(context, this.request);
         verify(nodePingService, times(1)).createCheck(eq(1L), any(CreateCheckRequest.class));
     }
 
     @Test
     public void testSendSetupEmail() throws MissingShopperIdException, IOException {
-        command.execute(context, this.request);
+        command.executeWithAction(context, this.request);
         verify(messagingService, times(1)).sendSetupEmail(shopperId, expectedServerName,
                 primaryIp.address, orionGuid.toString(), this.vmInfo.isFullyManaged());
     }
@@ -223,15 +240,42 @@ public class Vps4ProvisionVmTest {
         when(messagingService.sendSetupEmail(anyString(), anyString(), anyString(), anyString(), anyBoolean()))
                 .thenThrow(new RuntimeException("Unit test exception"));
 
-        command.execute(context, this.request);
+        command.executeWithAction(context, this.request);
         verify(messagingService, times(1)).sendSetupEmail(anyString(), anyString(),
                 anyString(), anyString(), anyBoolean());
     }
 
     @Test
     public void testSetEcommCommonName() {
-        command.execute(context, this.request);
+        command.executeWithAction(context, this.request);
+        verify(context, times(1))
+            .execute(eq("SetCommonName"), setCommonNameLambdaCaptor.capture(), eq(Void.class));
+
+        // Verify that the lambda is returning what we expect
+        Function<CommandContext, Void> lambda = setCommonNameLambdaCaptor.getValue();
+        lambda.apply(context);
         verify(creditService, times(1)).setCommonName(this.request.orionGuid, this.request.serverName);
+    }
+
+    @Test
+    public void setsTheRootPasswordToBeSameAsUserPassword() {
+        command.executeWithAction(context, this.request);
+        verify(context, times(1))
+            .execute(eq(SetPassword.class), setPasswordCaptor.capture());
+        SetPassword.Request req = setPasswordCaptor.getValue();
+        assertEquals(req.controlPanel, vm.image.getImageControlPanel());
+        assertEquals(req.encryptedPassword, request.encryptedPassword);
+        assertEquals(req.hfsVmId, hfsVmId);
+    }
+
+    @Test
+    public void setsHostname() {
+        command.executeWithAction(context, request);
+        verify(context, times(1)).execute(eq(SetHostname.class), setHostnameArgumentCaptor.capture());
+        SetHostname.Request req = setHostnameArgumentCaptor.getValue();
+        assertEquals(req.hfsVmId, hfsVmId);
+        String expectedHostname = "s" + primaryIp.address.replace('.', '-') + ".secureserver.net";
+        assertEquals(expectedHostname, req.hostname);
     }
 
 }

@@ -110,6 +110,9 @@ public class Vps4RestoreVm extends ActionCommand<Vps4RestoreVm.Request, Vps4Rest
         return context.execute("GetHfsVmId", ctx -> virtualMachineService.getVirtualMachine(vps4VmId).hfsVmId, long.class);
     }
 
+    private Image getVmImageInfo() {
+        return context.execute("GetImageInfo", ctx -> virtualMachineService.getVirtualMachine(vps4VmId).image, Image.class);
+    }
 
     private List<IpAddress> getPublicIpAddresses() {
         return vps4NetworkService.getVmIpAddresses(vps4VmId);
@@ -181,6 +184,7 @@ public class Vps4RestoreVm extends ActionCommand<Vps4RestoreVm.Request, Vps4Rest
         String[] usernames = {"root"};
         setPasswordRequest.usernames = Arrays.asList(usernames);
         setPasswordRequest.encryptedPassword = request.restoreVmInfo.encryptedPassword;
+        setPasswordRequest.controlPanel = getVmImageInfo().getImageControlPanel();
         return setPasswordRequest;
     }
 
@@ -218,7 +222,8 @@ public class Vps4RestoreVm extends ActionCommand<Vps4RestoreVm.Request, Vps4Rest
         VirtualMachine vm = context.execute("GetVirtualMachine",
                 ctx -> virtualMachineService.getVirtualMachine(vps4VmId),
                 VirtualMachine.class);
-        if(vm.image.controlPanel.equals(Image.ControlPanel.CPANEL)){
+
+        if(vm.image.hasCpanel()){
             RefreshCpanelLicense.Request req = new RefreshCpanelLicense.Request();
             req.hfsVmId = vm.hfsVmId;
             context.execute("RefreshCPanelLicense", RefreshCpanelLicense.class, req);

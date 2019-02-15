@@ -16,14 +16,12 @@ import java.util.HashSet;
 import java.util.Set;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertThat;
 import static org.mockito.Matchers.anyInt;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
-import static org.hamcrest.Matchers.containsInAnyOrder;
 
 
 public class ImageResourceTest {
@@ -63,7 +61,7 @@ public class ImageResourceTest {
     @Test
     public void getImagesReturnsSetOfImagesFound(){
         Set<Image> retImages = resource.getImages(os, controlPanel, null, tier);
-        assertThat(new ArrayList<>(retImages), containsInAnyOrder(images));
+        assertEquals(retImages, new HashSet<>(Arrays.asList(images)));
     }
 
     @Test

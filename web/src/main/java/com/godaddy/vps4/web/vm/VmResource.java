@@ -100,6 +100,7 @@ public class VmResource {
     private final DataCenterService dcService;
     private final VmActionResource vmActionResource;
     private final SnapshotService snapshotService;
+    private final ImageResource imageResource;
 
     @Inject
     public VmResource(GDUser user, VmService vmService, Vps4UserService vps4UserService,
@@ -107,7 +108,7 @@ public class VmResource {
             ImageService imageService, ActionService actionService, CommandService commandService,
             VmSnapshotResource vmSnapshotResource, Config config, Cryptography cryptography,
             SchedulerWebService schedulerWebService, DataCenterService dcService, VmActionResource vmActionResource,
-            SnapshotService snapshotService) {
+            SnapshotService snapshotService, ImageResource imageResource) {
         this.user = user;
         this.virtualMachineService = virtualMachineService;
         this.vps4UserService = vps4UserService;
@@ -125,6 +126,7 @@ public class VmResource {
         this.cryptography = cryptography;
         this.vmActionResource = vmActionResource;
         this.snapshotService = snapshotService;
+        this.imageResource = imageResource;
     }
 
     @GET
@@ -214,7 +216,7 @@ public class VmResource {
         validateCreditIsNotInUse(vmCredit);
         validateResellerCredit(dcService, vmCredit.resellerId, provisionRequest.dataCenterId);
 
-        if (imageService.getImages(vmCredit.operatingSystem, vmCredit.controlPanel, provisionRequest.image, vmCredit.tier)
+        if (imageResource.getImages(vmCredit.operatingSystem, vmCredit.controlPanel, provisionRequest.image, vmCredit.tier)
                 .size() == 0) {
             // verify that the image matches the request (control panel, managed level, OS)
             String message = String.format("The image %s is not valid for this credit.", provisionRequest.image);

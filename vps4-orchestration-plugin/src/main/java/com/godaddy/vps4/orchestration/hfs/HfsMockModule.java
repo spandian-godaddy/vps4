@@ -502,7 +502,7 @@ public class HfsMockModule extends AbstractModule {
             }
 
             @Override
-            public SysAdminAction changePassword(long vmId, String username, String password) {
+            public SysAdminAction changePassword(long vmId, String username, String password, String controlPanel) {
                 return this.createAndStoreSysAdminAction(
                         vmId, SysAdminAction.Type.CHANGE_PASSWORD, SysAdminAction.Status.COMPLETE);
             }
@@ -652,6 +652,16 @@ public class HfsMockModule extends AbstractModule {
             public void onComplete(CompleteResponse completeResponse) {
                 // NOTE: do nothing, Implement when needed
                 throw new UnsupportedOperationException("Not implemented, yet");
+            }
+
+            @Override
+            public SysAdminAction installNydus(long l) {
+                return null;
+            }
+
+            @Override
+            public SysAdminAction removeNydus(long l) {
+                return null;
             }
         };
     }

@@ -95,6 +95,7 @@ public class Vps4RestoreVmTest {
     @Captor private ArgumentCaptor<Function<CommandContext, Long>> getHfsVmIdLambdaCaptor;
     @Captor private ArgumentCaptor<Function<CommandContext, String>> getVmOSDistroLambdaCaptor;
     @Captor private ArgumentCaptor<Function<CommandContext, Vm>> getHfsVmLambdaCaptor;
+    @Captor private ArgumentCaptor<Function<CommandContext, Image>> getImageLambdaCaptor;
     @Captor private ArgumentCaptor<Function<CommandContext, Void>> updateHfsVmIdLambdaCaptor;
     @Captor private ArgumentCaptor<BindIp.BindIpRequest> bindIpRequestArgumentCaptor;
     @Captor private ArgumentCaptor<CreateVmFromSnapshot.Request> flavorRequestArgumentCaptor;
@@ -154,6 +155,7 @@ public class Vps4RestoreVmTest {
 
         when(mockContext.execute(eq("GetHfsVmId"), any(Function.class), eq(long.class))).thenReturn(SqlTestData.hfsVmId);
         when(mockContext.execute(eq("GetVirtualMachine"), any(Function.class), eq(VirtualMachine.class))).thenReturn(vps4Vm);
+        when(mockContext.execute(eq("GetImageInfo"), any(Function.class), eq(Image.class))).thenReturn(vps4Vm.image);
         when(mockContext.execute(startsWith("UnbindIP-"), eq(UnbindIp.class), any())).thenReturn(null);
         when(mockContext.execute(eq("GetNocfoxImageId"), any(Function.class), eq(String.class))).thenReturn(SqlTestData.nfImageId);
         when(mockContext.execute(eq("GetVmOSDistro"), any(Function.class), eq(String.class))).thenReturn(SqlTestData.IMAGE_NAME);
@@ -261,9 +263,22 @@ public class Vps4RestoreVmTest {
     }
 
     @Test
+    public void getsImageInformation() {
+        command.execute(context, request);
+
+        verify(context, times(1)).execute(eq("GetImageInfo"), getImageLambdaCaptor.capture(), eq(Image.class));
+
+        // Verify that the lambda is returning what we expect
+        Function<CommandContext, Image> lambda = getImageLambdaCaptor.getValue();
+        Image image = lambda.apply(context);
+        Assert.assertEquals(image.imageId, vps4Vm.image.imageId);
+    }
+
+    @Test
     public void setsRootUserPasswordForLinuxBasedSnapshot() {
         command.execute(context, request);
 
+        verify(context, times(1)).execute(eq("GetImageInfo"), any(Function.class), eq(Image.class));
         verify(spyVps4VmService, times(1)).isLinux(eq(vps4VmId));
         verify(context, times(1))
                 .execute(eq("SetRootUserPassword"), eq(SetPassword.class), setPasswordArgumentCaptor.capture());
@@ -271,6 +286,7 @@ public class Vps4RestoreVmTest {
         SetPassword.Request request = setPasswordArgumentCaptor.getValue();
         Assert.assertArrayEquals(password.getBytes(), request.encryptedPassword);
         Assert.assertEquals(hfsNewVmId, request.hfsVmId);
+        Assert.assertEquals(vps4Vm.image.getImageControlPanel(), request.controlPanel);
         assertThat(
                 Arrays.asList("root"),
                 containsInAnyOrder(request.usernames.toArray())

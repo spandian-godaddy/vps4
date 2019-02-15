@@ -17,6 +17,7 @@ import com.godaddy.vps4.network.IpAddress;
 import com.godaddy.vps4.orchestration.hfs.cpanel.ConfigureCpanel;
 import com.godaddy.vps4.orchestration.hfs.plesk.ConfigurePlesk;
 import com.godaddy.vps4.orchestration.hfs.sysadmin.AddUser;
+import com.godaddy.vps4.orchestration.hfs.sysadmin.SetHostname;
 import com.godaddy.vps4.orchestration.hfs.sysadmin.SetPassword;
 import com.godaddy.vps4.orchestration.hfs.sysadmin.ToggleAdmin;
 import com.godaddy.vps4.orchestration.hfs.vm.RebuildDedicated;
@@ -54,6 +55,7 @@ import org.mockito.Matchers;
 import org.mockito.runners.MockitoJUnitRunner;
 
 import static org.hamcrest.Matchers.containsInAnyOrder;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThat;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyLong;
@@ -101,6 +103,7 @@ public class Vps4RebuildDedicatedTest {
     @Captor private ArgumentCaptor<ConfigureMailRelay.ConfigureMailRelayRequest> configMTAArgumentCaptor;
     @Captor private ArgumentCaptor<ConfigureCpanel.ConfigureCpanelRequest> configureCpanelRequestArgumentCaptor;
     @Captor private ArgumentCaptor<ConfigurePlesk.ConfigurePleskRequest> configurePleskRequestArgumentCaptor;
+    @Captor private ArgumentCaptor<SetHostname.Request> setHostnameArgumentCaptor;
     @Captor private ArgumentCaptor<RebuildDedicated.Request> rebuildDedRequestArgCaptor;
 
     @BeforeClass
@@ -299,6 +302,7 @@ public class Vps4RebuildDedicatedTest {
         SetPassword.Request request = setPasswordArgumentCaptor.getValue();
         Assert.assertArrayEquals(password.getBytes(), request.encryptedPassword);
         Assert.assertEquals(hfsNewVmId, request.hfsVmId);
+        Assert.assertEquals(vps4NewVm.image.getImageControlPanel(), request.controlPanel);
         assertThat(
                 Arrays.asList("root"),
                 containsInAnyOrder(request.usernames.toArray())
@@ -406,5 +410,15 @@ public class Vps4RebuildDedicatedTest {
 
         verify(spyVmUserService, atLeastOnce()).listUsers(any(UUID.class), eq(VmUserType.SUPPORT));
         verify(spyVmUserService, atLeastOnce()).deleteUser(any(String.class), any(UUID.class));
+    }
+
+    @Test
+    public void setsHostname() {
+        command.execute(context, request);
+        verify(context, times(1)).execute(eq(SetHostname.class), setHostnameArgumentCaptor.capture());
+        SetHostname.Request req = setHostnameArgumentCaptor.getValue();
+        assertEquals(req.controlPanel, null); // In this test control panel used was myh, hence check for null
+        assertEquals(req.hfsVmId, hfsNewVmId);
+        assertEquals(req.hostname, request.rebuildVmInfo.hostname);
     }
 }

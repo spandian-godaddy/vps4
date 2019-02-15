@@ -111,6 +111,7 @@ public class SysAdminResource {
         request.usernames = usernames;
         request.encryptedPassword = cryptography.encrypt(updatePasswordRequest.password);
         request.hfsVmId = vm.hfsVmId;
+        request.controlPanel = vm.image.getImageControlPanel();
 
         Vps4SetPassword.Request vps4Request = new Vps4SetPassword.Request();
         vps4Request.actionId = actionId;
@@ -146,7 +147,7 @@ public class SysAdminResource {
         long actionId = actionService.createAction(vmId, ActionType.SET_HOSTNAME,
                 hostnameJsonRequest.toJSONString(), user.getUsername());
 
-        SetHostname.Request hfsRequest = new SetHostname.Request(vm.hfsVmId, setHostnameRequest.hostname, vm.image.controlPanel.toString());
+        SetHostname.Request hfsRequest = new SetHostname.Request(vm.hfsVmId, setHostnameRequest.hostname, vm.image.getImageControlPanel());
 
         Vps4SetHostname.Request vps4Request = new Vps4SetHostname.Request();
         vps4Request.setHostnameRequest = hfsRequest;

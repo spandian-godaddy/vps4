@@ -25,11 +25,7 @@ public class SetHostname implements Command<SetHostname.Request, Void> {
         public Request(long hfsVmId, String hostname, String controlPanel){
             this.hfsVmId = hfsVmId;
             this.hostname = hostname;
-            if(controlPanel.toLowerCase().equals("myh")){
-                this.controlPanel = null;
-            }else{
-                this.controlPanel = controlPanel.toLowerCase();
-            }
+            this.controlPanel = controlPanel;
         }
     }
 

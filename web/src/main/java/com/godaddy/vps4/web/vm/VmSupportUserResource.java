@@ -155,6 +155,8 @@ public class VmSupportUserResource {
             long actionId = actionService.createAction(vm.vmId, ActionType.SET_PASSWORD, setPasswordJson.toJSONString(),
                     gdUser.getUsername());
 
+            // Dont set the controlPanel value on the request because this is the support user and not the
+            // primary user on this box.
             SetPassword.Request setPasswordRequest = new SetPassword.Request();
             setPasswordRequest.hfsVmId = vm.hfsVmId;
             setPasswordRequest.usernames = Collections.singletonList(username);

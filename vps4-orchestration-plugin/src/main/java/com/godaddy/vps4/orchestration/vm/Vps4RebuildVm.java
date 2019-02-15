@@ -226,6 +226,7 @@ public class Vps4RebuildVm extends ActionCommand<Vps4RebuildVm.Request, Vps4Rebu
         String[] usernames = {"root"};
         setPasswordRequest.usernames = Arrays.asList(usernames);
         setPasswordRequest.encryptedPassword = request.rebuildVmInfo.encryptedPassword;
+        setPasswordRequest.controlPanel = request.rebuildVmInfo.image.getImageControlPanel();
         return setPasswordRequest;
     }
 
@@ -246,7 +247,7 @@ public class Vps4RebuildVm extends ActionCommand<Vps4RebuildVm.Request, Vps4Rebu
 
     private void configureControlPanel(long hfsVmId) {
         Image image = virtualMachineService.getVirtualMachine(hfsVmId).image;
-        if (image.controlPanel == Image.ControlPanel.CPANEL) {
+        if (image.hasCpanel()) {
             // VM with cPanel
             setStep(RebuildVmStep.ConfiguringCPanel);
 
@@ -254,7 +255,7 @@ public class Vps4RebuildVm extends ActionCommand<Vps4RebuildVm.Request, Vps4Rebu
             ConfigureCpanelRequest cpanelRequest = createConfigureCpanelRequest(hfsVmId);
             context.execute(ConfigureCpanel.class, cpanelRequest);
 
-        } else if (image.controlPanel == Image.ControlPanel.PLESK) {
+        } else if (image.hasPlesk()) {
             // VM with Plesk image
             setStep(RebuildVmStep.ConfiguringPlesk);
 
@@ -279,7 +280,7 @@ public class Vps4RebuildVm extends ActionCommand<Vps4RebuildVm.Request, Vps4Rebu
         setStep(RebuildVmStep.SetHostname);
 
         SetHostname.Request hfsRequest = new SetHostname.Request(hfsVmId, request.rebuildVmInfo.hostname,
-                request.rebuildVmInfo.image.controlPanel.toString());
+                request.rebuildVmInfo.image.getImageControlPanel());
 
         context.execute(SetHostname.class, hfsRequest);
     }
@@ -309,7 +310,7 @@ public class Vps4RebuildVm extends ActionCommand<Vps4RebuildVm.Request, Vps4Rebu
         VirtualMachine vm = context.execute("GetVirtualMachine",
                 ctx -> virtualMachineService.getVirtualMachine(vps4VmId),
                 VirtualMachine.class);
-        if(vm.image.controlPanel.equals(Image.ControlPanel.CPANEL)){
+        if(vm.image.hasCpanel()){
             RefreshCpanelLicense.Request req = new RefreshCpanelLicense.Request();
             req.hfsVmId = vm.hfsVmId;
             context.execute("RefreshCPanelLicense", RefreshCpanelLicense.class, req);
