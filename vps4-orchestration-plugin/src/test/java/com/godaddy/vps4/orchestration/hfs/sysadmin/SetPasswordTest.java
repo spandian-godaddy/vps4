@@ -1,6 +1,7 @@
 package com.godaddy.vps4.orchestration.hfs.sysadmin;
 
 import com.godaddy.vps4.util.Cryptography;
+import com.godaddy.vps4.vm.Image;
 import com.google.inject.AbstractModule;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
@@ -34,7 +35,7 @@ public class SetPasswordTest {
     private Injector injector;
     private String dummyPassword = "foobar";
     private String username = "jdoe";
-    private String controlPanel = "myh";
+    private String controlPanel = Image.ISPCONFIG;
     private SysAdminAction dummyHfsAction = mock(SysAdminAction.class);
     private CommandContext context;
     private SetPassword.Request request;
@@ -74,6 +75,8 @@ public class SetPasswordTest {
             .thenReturn(dummyHfsAction);
         when(sysAdminService.changePassword(anyLong(), anyString(), anyString(), anyString()))
             .thenReturn(dummyHfsAction);
+        when(sysAdminService.changePassword(anyLong(), anyString(), anyString(), eq(null)))
+                .thenReturn(dummyHfsAction);
     }
 
     @Test

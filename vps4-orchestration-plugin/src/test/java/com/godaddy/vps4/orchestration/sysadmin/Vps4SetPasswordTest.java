@@ -13,9 +13,10 @@ import static org.mockito.Mockito.when;
 import java.util.Arrays;
 import java.util.UUID;
 
+import org.junit.Assert;
+import org.junit.Before;
 import org.junit.Test;
 
-import com.godaddy.vps4.orchestration.TestCommandContext;
 import com.godaddy.vps4.orchestration.hfs.plesk.UpdateAdminPassword;
 import com.godaddy.vps4.orchestration.hfs.sysadmin.SetPassword;
 import com.godaddy.vps4.orchestration.hfs.sysadmin.WaitForSysAdminAction;
@@ -27,10 +28,13 @@ import com.google.inject.Guice;
 import com.google.inject.Injector;
 
 import gdg.hfs.orchestration.CommandContext;
-import gdg.hfs.orchestration.GuiceCommandProvider;
 import gdg.hfs.vhfs.sysadmin.SysAdminAction;
 import gdg.hfs.vhfs.sysadmin.SysAdminAction.Status;
 import gdg.hfs.vhfs.sysadmin.SysAdminService;
+import org.mockito.ArgumentCaptor;
+import org.mockito.Captor;
+import org.mockito.MockitoAnnotations;
+
 
 public class Vps4SetPasswordTest {
 
@@ -38,6 +42,7 @@ public class Vps4SetPasswordTest {
     SysAdminService sysAdminService = mock(SysAdminService.class);
     VmUserService userService = mock(VmUserService.class);
     Cryptography cryptography = mock(Cryptography.class);
+    @Captor private ArgumentCaptor<SetPassword.Request> setPasswordRequestCaptor;
 
     Vps4SetPassword command = spy(new Vps4SetPassword(actionService));
 
@@ -48,7 +53,13 @@ public class Vps4SetPasswordTest {
         binder.bind(Cryptography.class).toInstance(cryptography);
     });
 
-    CommandContext context = new TestCommandContext(new GuiceCommandProvider(injector));
+    CommandContext context = mock(CommandContext.class);
+
+    @Before
+    public void setUp() throws Exception {
+        MockitoAnnotations.initMocks(this);
+    }
+
 
     @Test
     public void testSetPassword() throws Exception {
@@ -75,11 +86,12 @@ public class Vps4SetPasswordTest {
         when(sysAdminService.getSysAdminAction(action.sysAdminActionId)).thenReturn(action);
         when(cryptography.decrypt(any())).thenReturn(password);
 
-        command.execute(context, request);
+        command.executeWithAction(context, request);
 
         for (String username : setPasswordRequest.usernames) {
-            verify(sysAdminService, times(1))
-                    .changePassword(42, username, password, controlPanel);
+            verify(context, times(1)).execute(eq(SetPassword.class), setPasswordRequestCaptor.capture());
+            SetPassword.Request actualPasswordReq = setPasswordRequestCaptor.getValue();
+            Assert.assertEquals(request.setPasswordRequest, actualPasswordReq);
         }
     }
 
@@ -97,7 +109,7 @@ public class Vps4SetPasswordTest {
 
         doReturn(updateAdminReq).when(command).makeUpdateAdminRequest(eq(request));
 
-        command.execute(context, request);
+        command.executeWithAction(context, request);
 
         verify(context, times(1)).execute(SetPassword.class, setPasswordReq);
         verify(context, times(1)).execute(UpdateAdminPassword.class, updateAdminReq);
