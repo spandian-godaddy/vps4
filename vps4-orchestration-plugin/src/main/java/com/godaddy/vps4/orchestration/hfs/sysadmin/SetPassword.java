@@ -41,7 +41,9 @@ public class SetPassword implements Command<SetPassword.Request, Void> {
         logger.debug("Setting passwords for users {} on vm {}", request.usernames.toString(), request.hfsVmId);
         String password = cryptography.decrypt(request.encryptedPassword);
         // This is a temporary fix until HFS fixes the bug in the SetPassword nydus worker
-        String controlPanel = request.controlPanel.equals(Image.ISPCONFIG) ? request.controlPanel : null;
+        String controlPanel = request.controlPanel != null && request.controlPanel.equals(Image.ISPCONFIG)
+            ? request.controlPanel
+            : null;
         for(String username : request.usernames){
 
             SysAdminAction hfsSysAction = context.execute("SetPassword-" + username,

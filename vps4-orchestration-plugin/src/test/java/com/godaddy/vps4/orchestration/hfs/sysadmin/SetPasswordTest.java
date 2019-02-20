@@ -92,7 +92,7 @@ public class SetPasswordTest {
     }
 
     @Test
-    public void subCommandCallsHfsServiceToChangePassword() {
+    public void forIspconfigSubCommandCallsHfsServiceToChangePassword() {
         command.execute(context, request);
         verify(context, times(1))
             .execute(eq("SetPassword-" + username), changePasswordLambdaCaptor.capture(), eq(SysAdminAction.class));
@@ -101,6 +101,51 @@ public class SetPasswordTest {
         Function<CommandContext, SysAdminAction> lambda = changePasswordLambdaCaptor.getValue();
         SysAdminAction action = lambda.apply(context);
         verify(sysAdminService, times(1)).changePassword(hfsVmId, username, dummyPassword, controlPanel);
+        assertEquals(dummyHfsAction, action);
+    }
+
+    @Test
+    public void forCpanelSubCommandCallsHfsServiceToChangePassword() {
+        controlPanel = Image.ControlPanel.CPANEL.toString().toLowerCase();
+        request.controlPanel = controlPanel;
+        command.execute(context, request);
+        verify(context, times(1))
+                .execute(eq("SetPassword-" + username), changePasswordLambdaCaptor.capture(), eq(SysAdminAction.class));
+
+        // Verify that the lambda is returning what we expect
+        Function<CommandContext, SysAdminAction> lambda = changePasswordLambdaCaptor.getValue();
+        SysAdminAction action = lambda.apply(context);
+        verify(sysAdminService, times(1)).changePassword(hfsVmId, username, dummyPassword, null);
+        assertEquals(dummyHfsAction, action);
+    }
+
+    @Test
+    public void forPleskSubCommandCallsHfsServiceToChangePassword() {
+        controlPanel = Image.ControlPanel.PLESK.toString().toLowerCase();
+        request.controlPanel = controlPanel;
+        command.execute(context, request);
+        verify(context, times(1))
+                .execute(eq("SetPassword-" + username), changePasswordLambdaCaptor.capture(), eq(SysAdminAction.class));
+
+        // Verify that the lambda is returning what we expect
+        Function<CommandContext, SysAdminAction> lambda = changePasswordLambdaCaptor.getValue();
+        SysAdminAction action = lambda.apply(context);
+        verify(sysAdminService, times(1)).changePassword(hfsVmId, username, dummyPassword, null);
+        assertEquals(dummyHfsAction, action);
+    }
+
+    @Test
+    public void forNonControlPanelImageSubCommandCallsHfsServiceToChangePassword() {
+        controlPanel = null;
+        request.controlPanel = controlPanel;
+        command.execute(context, request);
+        verify(context, times(1))
+                .execute(eq("SetPassword-" + username), changePasswordLambdaCaptor.capture(), eq(SysAdminAction.class));
+
+        // Verify that the lambda is returning what we expect
+        Function<CommandContext, SysAdminAction> lambda = changePasswordLambdaCaptor.getValue();
+        SysAdminAction action = lambda.apply(context);
+        verify(sysAdminService, times(1)).changePassword(hfsVmId, username, dummyPassword, null);
         assertEquals(dummyHfsAction, action);
     }
 
