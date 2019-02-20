@@ -1,5 +1,8 @@
 package com.godaddy.vps4.sysadmin;
 
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
+
 import javax.cache.Cache;
 import javax.cache.CacheManager;
 import javax.inject.Inject;
@@ -17,9 +20,7 @@ import com.godaddy.vps4.util.TimestampUtils;
 import gdg.hfs.vhfs.sysadmin.SysAdminAction;
 import gdg.hfs.vhfs.sysadmin.SysAdminService;
 
-import java.time.Instant;
-import java.time.temporal.ChronoUnit;
-
+@Deprecated
 public class VmUsageService {
 
     private static final Logger logger = LoggerFactory.getLogger(VmUsageService.class);
@@ -32,6 +33,7 @@ public class VmUsageService {
         this.cache = cacheManager.getCache(CacheName.VM_USAGE, Long.class, VmUsage.class);
     }
 
+    @Deprecated
     public VmUsage getUsage(Long hfsVmId) throws java.text.ParseException {
         VmUsage usage = cache.get(hfsVmId);
         if (usage == null)
@@ -64,10 +66,10 @@ public class VmUsageService {
                         .isBefore(Instant.now());
     }
 
-    JSONObject fetchUsageStatsFromHfs(long hfsVmId) throws java.text.ParseException {
+    private JSONObject fetchUsageStatsFromHfs(long hfsVmId) throws java.text.ParseException {
         Response response = sysAdminService.usageStatsResults(hfsVmId, null, null);
 
-        if (response.getStatusInfo().getFamily().equals(Response.Status.Family.SUCCESSFUL)) {
+        if (response.getStatusInfo().getFamily() == Response.Status.Family.SUCCESSFUL) {
             String json = response.readEntity(String.class);
 
             try {

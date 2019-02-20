@@ -6,13 +6,13 @@ import java.util.UUID;
 import javax.inject.Inject;
 import javax.sql.DataSource;
 
-import com.godaddy.vps4.scheduler.api.web.SchedulerWebService;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mockito;
 
 import com.godaddy.vps4.jdbc.DatabaseModule;
+import com.godaddy.vps4.scheduler.api.web.SchedulerWebService;
 import com.godaddy.vps4.security.GDUserMock;
 import com.godaddy.vps4.security.SecurityModule;
 import com.godaddy.vps4.security.Vps4User;
@@ -32,6 +32,7 @@ import com.google.inject.Provides;
 
 import junit.framework.Assert;
 
+@Deprecated
 public class UsageStatsResourceTest {
 
     @Inject Vps4UserService userService;

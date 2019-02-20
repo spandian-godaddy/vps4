@@ -7,6 +7,7 @@ import org.json.simple.JSONObject;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 
+@Deprecated
 public class VmUsage {
     public static final Duration HFS_MIN_REFRESH_INTERVAL = Duration.ofMinutes(10);
 

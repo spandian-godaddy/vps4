@@ -6,15 +6,14 @@ import java.util.UUID;
 
 import javax.inject.Inject;
 
-import com.godaddy.vps4.orchestration.ActionCommand;
-import com.godaddy.vps4.orchestration.ActionRequest;
-import gdg.hfs.orchestration.CommandRetryStrategy;
 import org.json.simple.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.godaddy.hfs.config.Config;
 import com.godaddy.vps4.credit.VirtualMachineCredit;
+import com.godaddy.vps4.orchestration.ActionCommand;
+import com.godaddy.vps4.orchestration.ActionRequest;
 import com.godaddy.vps4.orchestration.scheduler.ScheduleZombieVmCleanup;
 import com.godaddy.vps4.orchestration.vm.VmActionRequest;
 import com.godaddy.vps4.orchestration.vm.Vps4RecordScheduledJobForVm;
@@ -25,9 +24,9 @@ import com.godaddy.vps4.vm.ActionType;
 import com.godaddy.vps4.vm.VirtualMachine;
 import com.godaddy.vps4.vm.VirtualMachineService;
 
-import gdg.hfs.orchestration.Command;
 import gdg.hfs.orchestration.CommandContext;
 import gdg.hfs.orchestration.CommandMetadata;
+import gdg.hfs.orchestration.CommandRetryStrategy;
 
 
 @CommandMetadata(
@@ -61,7 +60,7 @@ public class Vps4ProcessAccountCancellation extends ActionCommand<Vps4ProcessAcc
             if (hasAccountBeenClaimed(request.virtualMachineCredit)) {
                 UUID vmId = request.virtualMachineCredit.productId;
                 Instant validUntil = calculateValidUntil();
-                markVmAsZombie(vmId, validUntil);
+                markVmAsZombie(vmId);
                 UUID jobId = scheduleZombieVmCleanup(vmId, validUntil);
                 recordJobId(vmId, jobId);
                 stopVirtualMachine(vmId, request.initiatedBy);
@@ -102,7 +101,7 @@ public class Vps4ProcessAccountCancellation extends ActionCommand<Vps4ProcessAcc
         context.execute(Vps4StopVm.class, request);
     }
 
-    private void markVmAsZombie(UUID vmId, Instant validUntil) {
+    private void markVmAsZombie(UUID vmId) {
         context.execute("MarkVmAsZombie", ctx -> {
             virtualMachineService.setVmZombie(vmId);
             return null;

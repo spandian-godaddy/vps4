@@ -44,6 +44,7 @@ import com.godaddy.vps4.web.security.GDUserModule;
 import com.godaddy.vps4.web.security.Vps4CorsFilter;
 import com.godaddy.vps4.web.util.RequestIdFilter;
 import com.godaddy.vps4.web.util.VmActiveSnapshotFilter;
+import com.godaddy.vps4.web.vm.ServerUsageStatsModule;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
 import com.google.inject.Module;
@@ -116,6 +117,7 @@ public class Vps4Injector {
         modules.add(new PleskModule());
         modules.add(new MessagingModule());
         modules.add(new PlanModule());
+        modules.add(new ServerUsageStatsModule());
         modules.add(binder -> {
             binder.bind(ObjectMapper.class).toProvider(ObjectMapperProvider.class);
         });

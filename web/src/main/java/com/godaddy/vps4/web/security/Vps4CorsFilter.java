@@ -21,7 +21,7 @@ public class Vps4CorsFilter implements Filter {
 
     private static final Logger logger = LoggerFactory.getLogger(Vps4CorsFilter.class);
 
-    private final Pattern allowedOriginRegex = Pattern.compile(".*\\.(dev-|test-|stg-|ote-)?(godaddy\\.com|secureserver\\.net):?\\d*$");
+    private final Pattern allowedOriginRegex = Pattern.compile("(http://localhost:\\d*$)|(.*\\.(dev-|test-|stg-|ote-)?(godaddy\\.com|secureserver\\.net):?\\d*$)");
 
     @Override
     public void init(FilterConfig filterConfig) throws ServletException {

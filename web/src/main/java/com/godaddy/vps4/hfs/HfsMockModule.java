@@ -12,40 +12,41 @@ import java.util.Random;
 
 import javax.ws.rs.core.Response;
 
-import gdg.hfs.vhfs.cpanel.CPanelLicense;
-import com.godaddy.hfs.vm.Console;
 import org.joda.time.DateTime;
 import org.mockito.Mockito;
 
-import com.google.inject.AbstractModule;
-import com.google.inject.Provides;
-
-import gdg.hfs.request.CompleteResponse;
-import gdg.hfs.vhfs.cpanel.CPanelAction;
-import gdg.hfs.vhfs.cpanel.CPanelService;
-import gdg.hfs.vhfs.ecomm.Account;
-import gdg.hfs.vhfs.ecomm.ECommDataCache;
-import gdg.hfs.vhfs.ecomm.ECommService;
-import gdg.hfs.vhfs.ecomm.MetadataUpdate;
 import com.godaddy.hfs.mailrelay.MailRelay;
 import com.godaddy.hfs.mailrelay.MailRelayHistory;
 import com.godaddy.hfs.mailrelay.MailRelayService;
 import com.godaddy.hfs.mailrelay.MailRelayUpdate;
-import gdg.hfs.vhfs.nodeping.NodePingEvent;
-import gdg.hfs.vhfs.nodeping.NodePingService;
-import gdg.hfs.vhfs.nodeping.NodePingUptimeRecord;
-import gdg.hfs.vhfs.plesk.PleskService;
-import gdg.hfs.vhfs.sysadmin.SysAdminAction;
-import gdg.hfs.vhfs.sysadmin.SysAdminService;
+import com.godaddy.hfs.vm.Console;
 import com.godaddy.hfs.vm.CreateVMRequest;
 import com.godaddy.hfs.vm.CreateVMWithFlavorRequest;
 import com.godaddy.hfs.vm.FlavorList;
+import com.godaddy.hfs.vm.ServerUsageStats;
 import com.godaddy.hfs.vm.Vm;
 import com.godaddy.hfs.vm.VmAction;
 import com.godaddy.hfs.vm.VmAddress;
 import com.godaddy.hfs.vm.VmList;
 import com.godaddy.hfs.vm.VmOSInfo;
 import com.godaddy.hfs.vm.VmService;
+import com.google.inject.AbstractModule;
+import com.google.inject.Provides;
+
+import gdg.hfs.request.CompleteResponse;
+import gdg.hfs.vhfs.cpanel.CPanelAction;
+import gdg.hfs.vhfs.cpanel.CPanelLicense;
+import gdg.hfs.vhfs.cpanel.CPanelService;
+import gdg.hfs.vhfs.ecomm.Account;
+import gdg.hfs.vhfs.ecomm.ECommDataCache;
+import gdg.hfs.vhfs.ecomm.ECommService;
+import gdg.hfs.vhfs.ecomm.MetadataUpdate;
+import gdg.hfs.vhfs.nodeping.NodePingEvent;
+import gdg.hfs.vhfs.nodeping.NodePingService;
+import gdg.hfs.vhfs.nodeping.NodePingUptimeRecord;
+import gdg.hfs.vhfs.plesk.PleskService;
+import gdg.hfs.vhfs.sysadmin.SysAdminAction;
+import gdg.hfs.vhfs.sysadmin.SysAdminService;
 
 public class HfsMockModule extends AbstractModule {
 
@@ -272,6 +273,16 @@ public class HfsMockModule extends AbstractModule {
                 rebuildVmAction.state = VmAction.Status.COMPLETE;
                 rebuildVmAction.tickNum = 1;
                 return rebuildVmAction;
+            }
+
+            @Override
+            public ServerUsageStats updateServerUsageStats(long vmId) {
+                throw new UnsupportedOperationException("Not implemented, yet");
+            }
+
+            @Override
+            public ServerUsageStats getServerUsageStats(long vmId, long utilizationId) {
+                throw new UnsupportedOperationException("Not implemented, yet");
             }
         };
     }

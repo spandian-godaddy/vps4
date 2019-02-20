@@ -18,6 +18,7 @@ import com.godaddy.vps4.web.Vps4Exception;
 import com.godaddy.vps4.web.vm.VmResource;
 
 import io.swagger.annotations.Api;
+import io.swagger.annotations.ApiOperation;
 
 @Vps4Api
 @Api(tags = { "vms" })
@@ -25,6 +26,7 @@ import io.swagger.annotations.Api;
 @Path("/api/vms")
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
+@Deprecated
 public class UsageStatsResource {
 
     final VmResource vmResource;
@@ -38,6 +40,8 @@ public class UsageStatsResource {
 
     @GET
     @Path("{vmId}/usage")
+    @Deprecated
+    @ApiOperation(value = "Deprecated, please use the newer v2 version.")
     public VmUsage getUsage(@PathParam("vmId") UUID vmId) {
         VirtualMachine vm = vmResource.getVm(vmId);
         try {

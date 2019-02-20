@@ -74,4 +74,13 @@ public interface VmService {
     @POST
     @Path("/{vmId}/rebuild")
     VmAction rebuildVm(@PathParam("vmId") long vmId);
+
+    @POST
+    @Path("/{vmId}/utilization")
+    ServerUsageStats updateServerUsageStats(@PathParam("vmId") long vmId);
+
+    @GET
+    @Path("/{vmId}/utilization/{utilizationId}")
+    ServerUsageStats getServerUsageStats(@PathParam("vmId") long vmId, @PathParam("utilizationId") long utilizationId);
+
 }

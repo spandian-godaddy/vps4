@@ -14,6 +14,7 @@ import com.godaddy.vps4.sysadmin.VmUsage.DiskUsage;
 import com.godaddy.vps4.sysadmin.VmUsage.IoUsage;
 import com.godaddy.vps4.sysadmin.VmUsage.MemUsage;
 
+@Deprecated
 public class VmUsageParser {
 
     static final DateTimeFormatter FORMAT = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss z");

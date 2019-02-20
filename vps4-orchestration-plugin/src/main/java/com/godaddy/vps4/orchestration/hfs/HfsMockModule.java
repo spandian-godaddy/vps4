@@ -26,6 +26,7 @@ import com.godaddy.hfs.vm.Console;
 import com.godaddy.hfs.vm.CreateVMRequest;
 import com.godaddy.hfs.vm.CreateVMWithFlavorRequest;
 import com.godaddy.hfs.vm.FlavorList;
+import com.godaddy.hfs.vm.ServerUsageStats;
 import com.godaddy.hfs.vm.Vm;
 import com.godaddy.hfs.vm.VmAction;
 import com.godaddy.hfs.vm.VmAddress;
@@ -79,7 +80,7 @@ public class HfsMockModule extends AbstractModule {
     private static final Map<Long, VmActionEntry> vmActions;
     private static final Map<Long, SysAdminAction> sysAdminActions;
     private static final Map<Long, List<SysAdminAction>> sysAdminActionList;
-    private static final Map<String , MailRelay> mailRelays;
+    private static final Map<String, MailRelay> mailRelays;
     private static final Map<Long, NodePingCheck> nodePingChecks;
     private static final Map<Long, List<NodePingCheck>> accountNodePingChecksList;
     private static final Map<Long, IpAddress> customerAddresses;
@@ -119,7 +120,7 @@ public class HfsMockModule extends AbstractModule {
         PleskAction completeAction = new PleskAction();
         completeAction.status = PleskAction.Status.COMPLETE;
         PleskService pleskService = Mockito.mock(PleskService.class);
-        Mockito.when(pleskService.imageConfig(Mockito.anyLong(),  Mockito.anyString(), Mockito.anyString())).thenReturn(completeAction);
+        Mockito.when(pleskService.imageConfig(Mockito.anyLong(), Mockito.anyString(), Mockito.anyString())).thenReturn(completeAction);
         Mockito.when(pleskService.adminPassUpdate(Mockito.anyLong(), Mockito.anyString())).thenReturn(completeAction);
         return pleskService;
     }
@@ -128,8 +129,8 @@ public class HfsMockModule extends AbstractModule {
     public CPanelService provideCPanelService() {
         return new CPanelService() {
             private CPanelAction createCPanelAction(long vmId,
-                                                        CPanelAction.ActionType actionType,
-                                                        CPanelAction.Status status) {
+                                                    CPanelAction.ActionType actionType,
+                                                    CPanelAction.Status status) {
                 CPanelAction cPanelAction = new CPanelAction();
                 cPanelAction.actionId = UUID.randomUUID().getMostSignificantBits() & Long.MAX_VALUE;
                 cPanelAction.vmId = vmId;
@@ -144,8 +145,8 @@ public class HfsMockModule extends AbstractModule {
             }
 
             private CPanelAction createAndStoreCPanelAction(long vmId,
-                                                                CPanelAction.ActionType actionType,
-                                                                CPanelAction.Status status) {
+                                                            CPanelAction.ActionType actionType,
+                                                            CPanelAction.Status status) {
                 CPanelAction cPanelAction = this.createCPanelAction(vmId, actionType, status);
                 this.storeCPanelAction(cPanelAction);
                 return cPanelAction;
@@ -229,7 +230,7 @@ public class HfsMockModule extends AbstractModule {
     }
 
     @Provides
-    public  NodePingService provideNodePingService() {
+    public NodePingService provideNodePingService() {
         return new NodePingService() {
             @Override
             public NodePingAccount createAccount(String s, String s1, String s2) {
@@ -399,7 +400,7 @@ public class HfsMockModule extends AbstractModule {
 
             @Override
             public String sendUnexpectedButScheduledMaintenanceEmail(String shopperId, String serverName, Instant startTime,
-                    long durationMinutes, boolean isFullyManaged) {
+                                                                     long durationMinutes, boolean isFullyManaged) {
                 return createFakeMessage(shopperId);
             }
 
@@ -763,7 +764,7 @@ public class HfsMockModule extends AbstractModule {
                 VmActionEntry entry = vmActions.get(vmActionId);
                 entry.accessCount++;
                 // Mark the action as complete after 3 tries
-                entry.action.state =  entry.accessCount > 3
+                entry.action.state = entry.accessCount > 3
                         ? VmAction.Status.COMPLETE
                         : VmAction.Status.IN_PROGRESS;
 
@@ -856,6 +857,16 @@ public class HfsMockModule extends AbstractModule {
                 }
 
                 return this.createAndStoreVmAction(vmId, "REBUILD", VmAction.Status.NEW);
+            }
+
+            @Override
+            public ServerUsageStats updateServerUsageStats(long vmId) {
+                throw new UnsupportedOperationException("Not implemented, yet");
+            }
+
+            @Override
+            public ServerUsageStats getServerUsageStats(long vmId, long utilizationId) {
+                throw new UnsupportedOperationException("Not implemented, yet");
             }
         };
     }
@@ -1010,7 +1021,7 @@ public class HfsMockModule extends AbstractModule {
                 AddressActionEntry entry = addressActions.get(addressActionId);
                 entry.accessCount++;
                 // Mark the action as complete after 3 tries
-                entry.action.status =  entry.accessCount > 3
+                entry.action.status = entry.accessCount > 3
                         ? AddressAction.Status.COMPLETE
                         : AddressAction.Status.IN_PROGRESS;
 
@@ -1136,7 +1147,7 @@ public class HfsMockModule extends AbstractModule {
                 SnapshotActionEntry entry = snapshotActions.get(snapshotActionId);
                 entry.accessCount++;
                 // Mark the action as complete after 3 tries
-                entry.action.status =  entry.accessCount > 3
+                entry.action.status = entry.accessCount > 3
                         ? SnapshotAction.Status.COMPLETE
                         : SnapshotAction.Status.IN_PROGRESS;
 
@@ -1244,7 +1255,7 @@ public class HfsMockModule extends AbstractModule {
 
             @Override
             public Account updateAccountStatusAndPlanFeatures(String arg0,
-                    Account arg1) {
+                                                              Account arg1) {
                 // TODO Auto-generated method stub
                 throw new UnsupportedOperationException("Not implemented, yet");
             }
