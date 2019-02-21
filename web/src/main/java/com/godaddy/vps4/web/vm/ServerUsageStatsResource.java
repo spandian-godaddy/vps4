@@ -46,9 +46,12 @@ public class ServerUsageStatsResource {
 
     private UsageStats mapToUsageStats(ServerUsageStats serverUsageStats) {
         UsageStats stats = new UsageStats();
-        stats.lastRefreshedAt = (serverUsageStats.getCollected() != null) ?
-                serverUsageStats.getCollected().toInstant() :
+        stats.lastRefreshedAt = serverUsageStats.getCollected() != null ?
+                serverUsageStats.getCollected().toInstant():
                 serverUsageStats.getRequested().toInstant();
+        stats.status = serverUsageStats.pendingRefresh() ?
+                UsageStats.UsageStatsStatus.REQUESTED:
+                UsageStats.UsageStatsStatus.UPDATED;
         stats.utilizationId = serverUsageStats.getUtilizationId();
 
         stats.disk = new UsageStats.DiskUsage();
@@ -56,7 +59,7 @@ public class ServerUsageStatsResource {
         stats.disk.diskTotal = serverUsageStats.getDiskTotal();
 
         stats.cpu = new UsageStats.CpuUsage();
-        stats.cpu.cpuUsagePercent = serverUsageStats.getCpuUsagePercent();
+        stats.cpu.cpuUsagePercent = serverUsageStats.getCpuUsed();
 
         stats.mem = new UsageStats.MemUsage();
         stats.mem.memUsed = serverUsageStats.getMemoryUsed();

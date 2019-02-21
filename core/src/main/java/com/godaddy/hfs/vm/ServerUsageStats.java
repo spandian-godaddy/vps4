@@ -153,9 +153,6 @@ public class ServerUsageStats {
         this.cpuUsed = cpuUsed;
     }
 
-    public double getCpuUsagePercent() {
-        return getCpuUsed() * 100;
-    }
 
     public boolean requireRefresh() {
         if (getCollected() == null) {
@@ -167,10 +164,10 @@ public class ServerUsageStats {
     }
 
     public boolean pendingRefresh() {
-        if(getRequested() != null) {
-            return getRequested().toInstant().isAfter(Instant.now().minus(REFRESH_INTERVAL, ChronoUnit.MINUTES));
+        if(getCollected() != null && getRequested() != null ) {
+            return getRequested().toInstant().isAfter(getCollected().toInstant());
         }
-        return false;
+        return true;
     }
 
 

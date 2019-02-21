@@ -25,7 +25,12 @@ public class UsageStats {
         public long memTotal;
     }
 
+    public enum UsageStatsStatus {
+        UPDATED, REQUESTED
+    }
+
     public Instant lastRefreshedAt;
+    public UsageStatsStatus status;
     public long utilizationId;
 
     @Override
