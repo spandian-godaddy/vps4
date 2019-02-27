@@ -40,8 +40,8 @@ public class ServerUsageStats {
     private long memoryUsed;
     private double cpuUsed;
 
-    // refreshinterval in minutes
-    private final int REFRESH_INTERVAL = 1;
+    // cannot have a request pending for more than 5 minutes.
+    private final int PENDING_REFRESH_TIMEOUT = 5;
 
     public ServerUsageStats() {
     }
@@ -153,23 +153,9 @@ public class ServerUsageStats {
         this.cpuUsed = cpuUsed;
     }
 
-
-    public boolean requireRefresh() {
-        if (getCollected() == null) {
-            return true;
-        }
-        // stats collected more than a minute ago are stale; they need to be refreshed.
-        // (assuming refresh interval is set to one minute).
-        return getCollected().toInstant().isBefore(Instant.now().minus(REFRESH_INTERVAL, ChronoUnit.MINUTES));
+    public boolean areStale() {
+        return getRequested().toInstant().isBefore(Instant.now().minus(PENDING_REFRESH_TIMEOUT, ChronoUnit.MINUTES));
     }
-
-    public boolean pendingRefresh() {
-        if(getCollected() != null && getRequested() != null ) {
-            return getRequested().toInstant().isAfter(getCollected().toInstant());
-        }
-        return true;
-    }
-
 
     @Override
     public String toString() {

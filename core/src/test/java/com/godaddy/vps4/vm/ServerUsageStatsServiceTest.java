@@ -1,6 +1,7 @@
-package com.godaddy.vps4.web.vm;
+package com.godaddy.vps4.vm;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyLong;
 import static org.mockito.Matchers.eq;
@@ -29,7 +30,6 @@ import org.mockito.runners.MockitoJUnitRunner;
 import com.godaddy.hfs.vm.ServerUsageStats;
 import com.godaddy.hfs.vm.VmService;
 import com.godaddy.vps4.cache.CacheName;
-import com.godaddy.vps4.web.Vps4Exception;
 
 @RunWith(MockitoJUnitRunner.class)
 public class ServerUsageStatsServiceTest {
@@ -43,6 +43,7 @@ public class ServerUsageStatsServiceTest {
     @Before
     public void setUp() throws Exception {
         when(cacheManager.getCache(CacheName.SERVER_USAGE, Long.class, ServerUsageStats.class)).thenReturn(cache);
+        serverUsageStatsService = new ServerUsageStatsService(vmService, cacheManager, updateCacheExecutorService);
     }
 
     @After
@@ -96,6 +97,7 @@ public class ServerUsageStatsServiceTest {
     /**
      * Create a fake object instance for ServerUsageStats where collected time is null.
      * This forces a refresh of the stats from HFS. (underlying platform service that provides stats for the server)
+     *
      * @return ServerUsageStats object
      */
     private ServerUsageStats createForceWaitForStats() {
@@ -132,18 +134,19 @@ public class ServerUsageStatsServiceTest {
         assertEquals("Usage stats object does not match utilization id as expected. ", 100L, serverUsageStats.getUtilizationId());
     }
 
-    @Test(expected = Vps4Exception.class)
+    @Test
     public void failfastIfStatsCannotBeFetched() {
         serverUsageStatsService = new ServerUsageStatsService(vmService, cacheManager, updateCacheExecutorService);
 
         when(cache.get(anyLong())).thenReturn(null);
         when(vmService.updateServerUsageStats(anyLong())).thenReturn(null);
 
-        serverUsageStatsService.getServerUsage(1234L);
+        ServerUsageStats stats = serverUsageStatsService.getServerUsage(1234L);
 
         verify(vmService, atLeastOnce()).updateServerUsageStats(anyLong());
         verify(vmService, never()).getServerUsageStats(anyLong(), eq(100L));
         verify(cache, never()).put(anyLong(), any(ServerUsageStats.class));
+        assertTrue("Expected usage stats object to be null. ", stats == null);
     }
 
     private ServerUsageStats createStaleServerUsageStats() {
@@ -176,5 +179,34 @@ public class ServerUsageStatsServiceTest {
         verify(vmService, times(1)).updateServerUsageStats(anyLong());
         verify(cache, atLeastOnce()).put(anyLong(), eq(fakeServerUsageStats));
         verify(cache, never()).put(anyLong(), eq(staleServerUsageStats));
+    }
+
+    private ServerUsageStats createFailedRefreshUsageStats() {
+        ServerUsageStats failedRefreshUsageStats = new ServerUsageStats();
+        failedRefreshUsageStats.setVmId(1234L);
+        failedRefreshUsageStats.setCollected(ZonedDateTime.now().minus(10, ChronoUnit.MINUTES));
+        failedRefreshUsageStats.setRequested(ZonedDateTime.now().minus(6, ChronoUnit.MINUTES));
+        failedRefreshUsageStats.setDiskTotal(100);
+        failedRefreshUsageStats.setDiskUsed(90);
+        failedRefreshUsageStats.setMemoryTotal(100);
+        failedRefreshUsageStats.setMemoryUsed(90);
+        failedRefreshUsageStats.setCpuUsed(0.5);
+        failedRefreshUsageStats.setUtilizationId(100);
+        return failedRefreshUsageStats;
+    }
+
+    @Test
+    public void updatesStatsForPreviousRefreshTimeout() {
+        ServerUsageStats failedRefreshUsageStats = createFailedRefreshUsageStats();
+        ServerUsageStats fakeServerUsageStats = createFakeServerUsageStats();
+        when(cache.get(anyLong())).thenReturn(failedRefreshUsageStats);
+        when(vmService.updateServerUsageStats(anyLong())).thenReturn(fakeServerUsageStats);
+        when(vmService.getServerUsageStats(anyLong(), anyLong())).thenReturn(fakeServerUsageStats);
+        doNothing().when(cache).put(anyLong(), any(ServerUsageStats.class));
+
+        serverUsageStatsService.getServerUsage(1234L);
+
+        verify(vmService, times(1)).updateServerUsageStats(anyLong());
+        verify(cache, atLeastOnce()).put(anyLong(), eq(fakeServerUsageStats));
     }
 }

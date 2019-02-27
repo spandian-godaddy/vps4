@@ -1,4 +1,4 @@
-package com.godaddy.vps4.web.vm;
+package com.godaddy.vps4.vm;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
@@ -13,7 +13,6 @@ import org.slf4j.LoggerFactory;
 import com.godaddy.hfs.vm.ServerUsageStats;
 import com.godaddy.hfs.vm.VmService;
 import com.godaddy.vps4.cache.CacheName;
-import com.godaddy.vps4.web.Vps4Exception;
 
 public class ServerUsageStatsService {
 
@@ -32,13 +31,12 @@ public class ServerUsageStatsService {
     }
 
     public ServerUsageStats getServerUsage(long hfsVmId) {
-        ServerUsageStats usageStats = cache.get(hfsVmId);
 
+        ServerUsageStats usageStats = cache.get(hfsVmId);
         if (usageStats == null) {
             return refreshUsageStats(hfsVmId);
         }
-
-        if (usageStats.requireRefresh() && !usageStats.pendingRefresh()) {
+        if (usageStats.areStale()) {
             return refreshUsageStats(hfsVmId);
         }
 
@@ -48,10 +46,10 @@ public class ServerUsageStatsService {
     private ServerUsageStats refreshUsageStats(long hfsVmId) {
 
         ServerUsageStats serverUsageStats = vmService.updateServerUsageStats(hfsVmId);
-        // if we cannot request a fetch for the stats, we won't be able to get the stats. Bail!
-        if (serverUsageStats == null) {
-            throw new Vps4Exception("USAGE_STATS_UNAVAILABLE", "Usage stats are unavailable at the moment.");
+        if(serverUsageStats == null) {
+            return null;
         }
+
         // ensure cache is updated with the pending update record.
         cache.put(hfsVmId, serverUsageStats);
 
@@ -75,7 +73,7 @@ public class ServerUsageStatsService {
 
                 ServerUsageStats updatedServerUsageStats = vmService.getServerUsageStats(hfsVmId, serverUsageStats.getUtilizationId());
                 if (updatedServerUsageStats != null) {
-                    if (!updatedServerUsageStats.requireRefresh()) {
+                    if (updatedServerUsageStats.getCollected() != null) {
                         // success! we have refreshed stats; we should send them back to be put in the cache.
                         logger.info("Success! Stats refreshed: " + updatedServerUsageStats.toString());
                         return updatedServerUsageStats;
@@ -99,5 +97,4 @@ public class ServerUsageStatsService {
     private boolean hasNotTimedOut(long startTime) {
         return (System.currentTimeMillis() - startTime) < timeout;
     }
-
 }

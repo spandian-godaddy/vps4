@@ -3,7 +3,9 @@ package com.godaddy.vps4.web.vm;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyLong;
+import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -24,6 +26,7 @@ import com.godaddy.vps4.phase2.Phase2ExternalsModule;
 import com.godaddy.vps4.scheduler.api.web.SchedulerWebService;
 import com.godaddy.vps4.security.SecurityModule;
 import com.godaddy.vps4.snapshot.SnapshotModule;
+import com.godaddy.vps4.vm.ServerUsageStatsService;
 import com.godaddy.vps4.vm.VirtualMachine;
 import com.godaddy.vps4.vm.VmModule;
 import com.google.inject.AbstractModule;
@@ -35,7 +38,7 @@ public class ServerUsageStatsResourceTest {
 
     private VmResource vmResource = mock(VmResource.class);
     private ServerUsageStatsService serverUsageStatsService = mock(ServerUsageStatsService.class);
-    private ServerUsageStatsResource serverUsageStatsResource;
+    private ServerUsageStatsResource serverUsageStatsResource, spyResource;
     private VirtualMachine vm;
 
     private Injector injector = Guice.createInjector(
@@ -60,6 +63,7 @@ public class ServerUsageStatsResourceTest {
     public void setUp() throws Exception {
         injector.injectMembers(this);
         serverUsageStatsResource = injector.getInstance(ServerUsageStatsResource.class);
+        spyResource = spy(serverUsageStatsResource);
         vm = createTestVm();
     }
 
@@ -71,6 +75,7 @@ public class ServerUsageStatsResourceTest {
         serverUsageStats.setDiskUsed(0);
         serverUsageStats.setDiskTotal(0);
         serverUsageStats.setCollected(ZonedDateTime.now());
+        serverUsageStats.setRequested(ZonedDateTime.now());
         return serverUsageStats;
     }
 
@@ -88,11 +93,12 @@ public class ServerUsageStatsResourceTest {
     @Test
     public void getsServerUsage() {
         ServerUsageStats serverUsageStats = createDummyServerUsageStats();
+        doNothing().when(spyResource).verifyServerIsActive(anyLong());
         when(vmResource.getVm(any(UUID.class))).thenReturn(vm);
         when(serverUsageStatsService.getServerUsage(anyLong())).thenReturn(serverUsageStats);
         when(vmResource.getVm(any(UUID.class))).thenReturn(vm);
 
-        UsageStats stats = serverUsageStatsResource.getUsage(UUID.randomUUID());
+        UsageStats stats = spyResource.getUsage(UUID.randomUUID());
 
         verify(vmResource, times(1)).getVm(any(UUID.class));
         verify(serverUsageStatsService, times(1)).getServerUsage(anyLong());

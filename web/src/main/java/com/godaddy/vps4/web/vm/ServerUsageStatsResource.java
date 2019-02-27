@@ -11,14 +11,18 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
 
 import com.godaddy.hfs.vm.ServerUsageStats;
+import com.godaddy.hfs.vm.VmService;
+import com.godaddy.vps4.vm.ServerUsageStatsService;
 import com.godaddy.vps4.vm.VirtualMachine;
 import com.godaddy.vps4.web.Vps4Api;
+import com.godaddy.vps4.web.Vps4Exception;
+import com.godaddy.vps4.web.util.RequestValidation;
 
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 
 @Vps4Api
-@Api(tags = { "vms" })
+@Api(tags = {"vms"})
 
 @Path("/api/v2/vms")
 @Produces(MediaType.APPLICATION_JSON)
@@ -27,11 +31,13 @@ public class ServerUsageStatsResource {
 
     private final VmResource vmResource;
     private final ServerUsageStatsService serverUsageStatsService;
+    private final VmService vmService;
 
     @Inject
-    public ServerUsageStatsResource(VmResource vmResource, ServerUsageStatsService serverUsageStatsService) {
+    public ServerUsageStatsResource(VmResource vmResource, ServerUsageStatsService serverUsageStatsService, VmService vmService) {
         this.vmResource = vmResource;
         this.serverUsageStatsService = serverUsageStatsService;
+        this.vmService = vmService;
     }
 
     @GET
@@ -40,17 +46,28 @@ public class ServerUsageStatsResource {
             notes = "Get the usage stats for the specified server.")
     public UsageStats getUsage(@PathParam("vmId") UUID vmId) {
         VirtualMachine vm = vmResource.getVm(vmId);
+        verifyServerIsActive(vm.hfsVmId);
+
         ServerUsageStats serverUsageStats = serverUsageStatsService.getServerUsage(vm.hfsVmId);
+        if (serverUsageStats == null) {
+            throw new Vps4Exception("USAGE_STATS_UNAVAILABLE", "Usage stats are unavailable at the moment.");
+        }
         return mapToUsageStats(serverUsageStats);
+    }
+
+    void verifyServerIsActive(long hfsVmId) {
+        try {
+            RequestValidation.validateServerIsActive(vmService.getVm(hfsVmId));
+        } catch (Vps4Exception e) {
+            throw new Vps4Exception("USAGE_STATS_UNAVAILABLE", "Usage Stats can be collected for active servers.");
+        }
     }
 
     private UsageStats mapToUsageStats(ServerUsageStats serverUsageStats) {
         UsageStats stats = new UsageStats();
-        stats.lastRefreshedAt = serverUsageStats.getCollected() != null ?
-                serverUsageStats.getCollected().toInstant():
-                serverUsageStats.getRequested().toInstant();
-        stats.status = serverUsageStats.pendingRefresh() ?
-                UsageStats.UsageStatsStatus.REQUESTED:
+        stats.lastRefreshedAt = serverUsageStats.getRequested().toInstant();
+        stats.status = serverUsageStats.getCollected() == null ?
+                UsageStats.UsageStatsStatus.REQUESTED :
                 UsageStats.UsageStatsStatus.UPDATED;
         stats.utilizationId = serverUsageStats.getUtilizationId();
 
