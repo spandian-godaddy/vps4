@@ -50,3 +50,80 @@ chmod 700 /usr/local/bin/sql-password-reset
 1. history -c
 1. Get console and login as root and delete user
 ```userdel -fr <username>```
+
+
+# Changes made to the image
+1. Go to the server config page in ISPConfig and change the server name to "server"
+1. On the IP Address page in server config remove all IP Addresses (The customer will need to add in their correct IP address)
+1. SSH to the box and edit /var/www/roundcube/config/config.inc.php - find the line with ```$config['smtp_user'] = '%u';``` and update it to like this:
+```$config['smtp_user'] = '';```
+1. While still connected to the box, edit the file /etc/apache2/sites-available/roundcube.conf, erase the contents and replace with this block:
+
+```
+<VirtualHost *:80>
+  # Virtual host configuration + information (replicate changes to *:443 below)
+ # ServerAdmin webmaster@example.com
+ # ServerName 148.66.133.161
+  DocumentRoot /var/www/roundcube
+  ErrorLog /var/log/apache2/roundcube.error.log
+  CustomLog /var/log/apache2/roundcube.access.log combined
+
+  # Permanently redirect all HTTP requests to HTTPS
+  RewriteEngine on
+  RewriteCond %{SERVER_PORT} !^443$
+  RewriteRule ^/(.*) https://%{HTTP_HOST}/$1 [NC,R=301,L]
+
+  <Directory /var/www/roundcube>
+      Options +FollowSymLinks
+      DirectoryIndex index.php
+
+      <IfModule mod_php5.c>
+        AddType application/x-httpd-php .php
+
+        php_flag magic_quotes_gpc Off
+        php_flag track_vars On
+        php_flag register_globals Off
+        php_value include_path .:/usr/share/php
+      </IfModule>
+      Options -Indexes
+      AllowOverride All
+      Order allow,deny
+      allow from all
+  </Directory>
+</VirtualHost>
+
+<IfModule mod_ssl.c>
+<VirtualHost *:443>
+ # Virtual host configuration + information (replicate changes to *:80 above)
+ #ServerAdmin webmaster@example.com
+ #ServerName webmail.example.com
+  DocumentRoot /var/www/roundcube
+  ErrorLog /var/log/apache2/roundcube.error.log
+  CustomLog /var/log/apache2/roundcube.access.log combined
+
+ # SSL certificate + engine configuration
+  SSLEngine on
+  SSLCertificateFile /usr/local/ispconfig/interface/ssl/ispserver.crt
+  SSLCertificateKeyFile /usr/local/ispconfig/interface/ssl/ispserver.key
+
+ # Roundcube directory permissions + restrictions
+  <Directory /var/www/roundcube>
+    Options -Indexes
+    AllowOverride All
+  </Directory>
+  <Directory /var/www/roundcube/config>
+    Order Deny,Allow
+    Deny from All
+  </Directory>
+  <Directory /var/www/roundcube/temp>
+    Order Deny,Allow
+    Deny from All
+  </Directory>
+  <Directory /var/www/roundcube/logs>
+    Order Deny,Allow
+    Deny from All
+  </Directory>
+</VirtualHost>
+</IfModule>
+```  
+After completing these steps restart Apache: ```sudo systemctl restart apache2.service```
