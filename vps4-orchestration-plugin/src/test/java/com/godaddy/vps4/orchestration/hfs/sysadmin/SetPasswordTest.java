@@ -115,7 +115,7 @@ public class SetPasswordTest {
         // Verify that the lambda is returning what we expect
         Function<CommandContext, SysAdminAction> lambda = changePasswordLambdaCaptor.getValue();
         SysAdminAction action = lambda.apply(context);
-        verify(sysAdminService, times(1)).changePassword(hfsVmId, username, dummyPassword, null);
+        verify(sysAdminService, times(1)).changePassword(hfsVmId, username, dummyPassword, "cpanel");
         assertEquals(dummyHfsAction, action);
     }
 
@@ -130,7 +130,7 @@ public class SetPasswordTest {
         // Verify that the lambda is returning what we expect
         Function<CommandContext, SysAdminAction> lambda = changePasswordLambdaCaptor.getValue();
         SysAdminAction action = lambda.apply(context);
-        verify(sysAdminService, times(1)).changePassword(hfsVmId, username, dummyPassword, null);
+        verify(sysAdminService, times(1)).changePassword(hfsVmId, username, dummyPassword, "plesk");
         assertEquals(dummyHfsAction, action);
     }
 
