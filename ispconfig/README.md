@@ -32,7 +32,7 @@ chmod 700 /usr/local/bin/sql-password-reset
 1. Enable systemd ispconfig-init service
 1. Clean VM manually (See the next section)
 1. Stop VM
-1. Create snapshot without clean param
+1. Create snapshot without clean param - increment the version number from the previous image.
 1. Call hfs imageCreated in hfs vms/ api
 1. Call hfs imageTested
 1. Publish snapshot
