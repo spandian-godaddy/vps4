@@ -126,4 +126,7 @@ chmod 700 /usr/local/bin/sql-password-reset
 </VirtualHost>
 </IfModule>
 ```  
-After completing these steps restart Apache: ```sudo systemctl restart apache2.service```
+After completing these steps restart Apache: ```sudo systemctl restart apache2.service```  
+
+## Additional Information:
+- HFS Image Creation Documentation: https://confluence.godaddy.com/pages/viewpage.action?spaceKey=HPLAT&title=Creating+a+Custom+Image
