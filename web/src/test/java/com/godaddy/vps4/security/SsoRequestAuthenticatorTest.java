@@ -156,7 +156,7 @@ public class SsoRequestAuthenticatorTest {
         Assert.assertEquals(false, user.isShopper());
         Assert.assertEquals(false, user.isAdmin());
         Assert.assertEquals(true, user.isEmployee());
-        Assert.assertEquals(false, user.isStaff());
+        Assert.assertEquals(true, user.isStaff());
         Assert.assertEquals(Role.HS_OPS, user.role());
     }
 

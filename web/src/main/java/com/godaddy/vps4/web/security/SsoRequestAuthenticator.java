@@ -122,6 +122,7 @@ public class SsoRequestAuthenticator implements RequestAuthenticator<GDUser> {
             gdUser.role = Role.HS_AGENT;
         } else if (groups.contains(HOSTING_OPERATIONS)) {
             gdUser.role = Role.HS_OPS;
+            gdUser.isStaff = true;
         } else if (groups.contains(LEGAL)) {
             gdUser.role = Role.LEGAL;
         } else if (groups.contains(DIGITAL_CRIMES_UNIT)) {
