@@ -276,6 +276,15 @@ public class HfsMockModule extends AbstractModule {
             }
 
             @Override
+            public VmAction rescueVm(long vmId) {
+                VmAction rescueVmAction = new VmAction();
+                rescueVmAction.vmActionId = new Random().nextInt(10000);
+                rescueVmAction.vmId = vmId;
+                rescueVmAction.state = VmAction.Status.COMPLETE;
+                return rescueVmAction;
+            }
+
+            @Override
             public ServerUsageStats updateServerUsageStats(long vmId) {
                 throw new UnsupportedOperationException("Not implemented, yet");
             }

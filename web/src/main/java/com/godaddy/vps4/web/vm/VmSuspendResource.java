@@ -67,10 +67,11 @@ public class VmSuspendResource {
 
         validateCreditForAbuseSuspend(virtualMachine, credit);
 
+        String commandName = virtualMachine.spec.isVirtualMachine() ? "Vps4AbuseSuspendVm" : "Vps4AbuseSuspendDedicated";
         VmActionRequest request = new VmActionRequest();
         request.virtualMachine = virtualMachine;
         return createActionAndExecute(actionService, commandService, virtualMachine.vmId,
-                ActionType.ABUSE_SUSPEND, request, "Vps4AbuseSuspendVm", user);
+                ActionType.ABUSE_SUSPEND, request, commandName, user);
     }
 
     private void validateCreditForAbuseSuspend(VirtualMachine virtualMachine, VirtualMachineCredit credit) {

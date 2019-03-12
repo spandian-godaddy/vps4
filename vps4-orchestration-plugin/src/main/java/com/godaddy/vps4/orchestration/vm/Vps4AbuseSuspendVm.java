@@ -43,7 +43,7 @@ public class Vps4AbuseSuspendVm extends ActionCommand<VmActionRequest, Vps4Abuse
     protected Response executeWithAction(CommandContext context, VmActionRequest request) throws Exception {
         logger.info("Request: {}", request);
         setAccountStatusToAbuseSuspend(request);
-        VmAction hfsAction = stopVm(context, request);
+        VmAction hfsAction = suspendVm(context, request);
         return getResponse(request, hfsAction);
     }
 
@@ -51,7 +51,7 @@ public class Vps4AbuseSuspendVm extends ActionCommand<VmActionRequest, Vps4Abuse
         creditService.setStatus(request.virtualMachine.orionGuid, AccountStatus.ABUSE_SUSPENDED);
     }
 
-    private VmAction stopVm(CommandContext context, VmActionRequest request) {
+    protected VmAction suspendVm(CommandContext context, VmActionRequest request) {
         VmAction hfsAction = context.execute("Vps4StopVm", ctx -> vmService.stopVm(request.virtualMachine.hfsVmId), VmAction.class);
         hfsAction = context.execute(WaitForManageVmAction.class, hfsAction);
         return hfsAction;

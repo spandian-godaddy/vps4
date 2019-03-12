@@ -13,6 +13,10 @@ import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.UUID;
 
+import org.junit.Before;
+import org.junit.Test;
+import org.mockito.Matchers;
+
 import com.godaddy.vps4.credit.CreditService;
 import com.godaddy.vps4.credit.VirtualMachineCredit;
 import com.godaddy.vps4.security.GDUserMock;
@@ -21,14 +25,12 @@ import com.godaddy.vps4.vm.Action;
 import com.godaddy.vps4.vm.ActionService;
 import com.godaddy.vps4.vm.ActionStatus;
 import com.godaddy.vps4.vm.ActionType;
+import com.godaddy.vps4.vm.ServerSpec;
+import com.godaddy.vps4.vm.ServerType;
 import com.godaddy.vps4.vm.VirtualMachine;
 import com.godaddy.vps4.vm.VirtualMachineService;
 import com.godaddy.vps4.web.Vps4Exception;
 import com.godaddy.vps4.web.security.GDUser;
-
-import org.junit.Before;
-import org.junit.Test;
-import org.mockito.Matchers;
 
 import gdg.hfs.orchestration.CommandService;
 import gdg.hfs.orchestration.CommandState;
@@ -70,11 +72,16 @@ public class VmSuspendResourceTest {
     }
 
     private void createTestVm() {
+        ServerSpec testSpec = new ServerSpec();
+        testSpec.serverType = new ServerType();
+        testSpec.serverType.serverType = ServerType.Type.DEDICATED;
+
         testVm = new VirtualMachine();
         testVm.vmId = UUID.randomUUID();
         testVm.orionGuid = UUID.randomUUID();
         testVm.canceled = Instant.now().plus(7, ChronoUnit.DAYS);
         testVm.validUntil = Instant.MAX;
+        testVm.spec = testSpec;
         when(virtualMachineService.getVirtualMachine(testVm.vmId)).thenReturn(testVm);
     }
 
