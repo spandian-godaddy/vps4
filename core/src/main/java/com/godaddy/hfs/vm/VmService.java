@@ -80,6 +80,10 @@ public interface VmService {
     VmAction rescueVm(@PathParam("vmId") long vmId);
 
     @POST
+    @Path("/{vmId}/rescue/end")
+    VmAction endRescueVm(@PathParam("vmId") long vmId);
+
+    @POST
     @Path("/{vmId}/utilization")
     ServerUsageStats updateServerUsageStats(@PathParam("vmId") long vmId);
 

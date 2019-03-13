@@ -871,6 +871,17 @@ public class HfsMockModule extends AbstractModule {
             }
 
             @Override
+            public VmAction endRescueVm(long vmId) {
+                if (!customerVms.containsKey(vmId)
+                        || !vmActionList.containsKey(vmId)
+                        || this.isVmDestroyed(vmId)) {
+                    throw new NotFoundException("Vm not present or has already been destroyed");
+                }
+
+                return this.createAndStoreVmAction(vmId, "ENDRESCUE", VmAction.Status.NEW);
+            }
+
+            @Override
             public ServerUsageStats updateServerUsageStats(long vmId) {
                 throw new UnsupportedOperationException("Not implemented, yet");
             }
