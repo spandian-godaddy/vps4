@@ -4,19 +4,25 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
+import com.godaddy.hfs.vm.VmAction;
+import com.godaddy.hfs.vm.VmService;
 import com.godaddy.vps4.credit.CreditService;
 import com.godaddy.vps4.credit.ECommCreditService.ProductMetaField;
 import com.godaddy.vps4.orchestration.ActionCommand;
 import com.godaddy.vps4.orchestration.ActionRequest;
+import com.godaddy.vps4.orchestration.hfs.vm.EndRescueVm;
+import com.godaddy.vps4.orchestration.hfs.vm.StartVm;
 import com.godaddy.vps4.orchestration.scheduler.DeleteScheduledJob;
 import com.godaddy.vps4.scheduledJob.ScheduledJob;
 import com.godaddy.vps4.scheduledJob.ScheduledJob.ScheduledJobType;
 import com.godaddy.vps4.scheduledJob.ScheduledJobService;
 import com.godaddy.vps4.scheduler.api.plugin.Vps4ZombieCleanupJobRequest;
 import com.godaddy.vps4.vm.ActionService;
+import com.godaddy.vps4.vm.VirtualMachine;
 import com.godaddy.vps4.vm.VirtualMachineService;
 import com.google.inject.Inject;
 
+import gdg.hfs.orchestration.Command;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -29,14 +35,17 @@ public class Vps4ReviveZombieVm extends ActionCommand<Vps4ReviveZombieVm.Request
 
     private static final Logger logger = LoggerFactory.getLogger(Vps4ReviveZombieVm.class);
     private final VirtualMachineService virtualMachineService;
+    private final VmService vmService;
     private final ScheduledJobService scheduledJobService;
     private final CreditService creditService;
 
+
     @Inject
     public Vps4ReviveZombieVm(ActionService actionService, VirtualMachineService virtualMachineService,
-            ScheduledJobService scheduledJobService, CreditService creditService) {
+            VmService vmService, ScheduledJobService scheduledJobService, CreditService creditService) {
         super(actionService);
         this.virtualMachineService = virtualMachineService;
+        this.vmService = vmService;
         this.scheduledJobService = scheduledJobService;
         this.creditService = creditService;
     }
@@ -44,7 +53,7 @@ public class Vps4ReviveZombieVm extends ActionCommand<Vps4ReviveZombieVm.Request
     
     @Override
     protected Void executeWithAction(CommandContext context, Request request) throws Exception {
-        
+
         logger.info("Reviving Zombie VM with ID {}, new credit ID {}", request.vmId, request.newCreditId);
 
         transferProductMeta(request);
@@ -53,7 +62,18 @@ public class Vps4ReviveZombieVm extends ActionCommand<Vps4ReviveZombieVm.Request
         
         reviveInOurDb(context, request);
 
+        startServer(context, request);
+
         return null;
+    }
+
+    private void startServer(CommandContext context, Request request) {
+        VirtualMachine virtualMachine = virtualMachineService.getVirtualMachine(request.vmId);
+        if(virtualMachine.spec.isVirtualMachine()) {
+            context.execute(StartVm.class, virtualMachine.hfsVmId);
+        } else {
+            context.execute(EndRescueVm.class, virtualMachine.hfsVmId);
+        }
     }
 
     private void transferProductMeta(Request request) {

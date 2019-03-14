@@ -6,7 +6,8 @@ import java.util.UUID;
 
 import javax.inject.Inject;
 
-import org.json.simple.JSONObject;
+import com.godaddy.vps4.orchestration.hfs.vm.RescueVm;
+import com.godaddy.vps4.orchestration.hfs.vm.StopVm;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -15,14 +16,13 @@ import com.godaddy.vps4.credit.VirtualMachineCredit;
 import com.godaddy.vps4.orchestration.ActionCommand;
 import com.godaddy.vps4.orchestration.ActionRequest;
 import com.godaddy.vps4.orchestration.scheduler.ScheduleZombieVmCleanup;
-import com.godaddy.vps4.orchestration.vm.VmActionRequest;
 import com.godaddy.vps4.orchestration.vm.Vps4RecordScheduledJobForVm;
-import com.godaddy.vps4.orchestration.vm.Vps4StopVm;
 import com.godaddy.vps4.scheduledJob.ScheduledJob.ScheduledJobType;
 import com.godaddy.vps4.vm.ActionService;
-import com.godaddy.vps4.vm.ActionType;
 import com.godaddy.vps4.vm.VirtualMachine;
 import com.godaddy.vps4.vm.VirtualMachineService;
+import com.godaddy.hfs.vm.VmService;
+
 
 import gdg.hfs.orchestration.CommandContext;
 import gdg.hfs.orchestration.CommandMetadata;
@@ -42,15 +42,18 @@ public class Vps4ProcessAccountCancellation extends ActionCommand<Vps4ProcessAcc
     final ActionService vmActionService;
     private final VirtualMachineService virtualMachineService;
     private final Config config;
+    private final VmService vmService;
 
     @Inject
     public Vps4ProcessAccountCancellation(ActionService vmActionService,
                                           VirtualMachineService virtualMachineService,
-                                          Config config) {
+                                          Config config,
+                                          VmService vmService) {
         super(vmActionService);
         this.vmActionService = vmActionService;
         this.virtualMachineService = virtualMachineService;
         this.config = config;
+        this.vmService = vmService;
     }
 
     @Override
@@ -63,7 +66,7 @@ public class Vps4ProcessAccountCancellation extends ActionCommand<Vps4ProcessAcc
                 markVmAsZombie(vmId);
                 UUID jobId = scheduleZombieVmCleanup(vmId, validUntil);
                 recordJobId(vmId, jobId);
-                stopVirtualMachine(vmId, request.initiatedBy);
+                stopServer(request, vmId);
             }
         } catch (Exception e) {
             logger.error(
@@ -87,18 +90,15 @@ public class Vps4ProcessAccountCancellation extends ActionCommand<Vps4ProcessAcc
         return Instant.ofEpochMilli(waitUntil);
     }
 
-    private void stopVirtualMachine(UUID vmId, String initiatedBy) {
-        long actionId = context.execute(
-        "CreateVmStopAction",
-            ctx -> vmActionService.createAction(vmId, ActionType.STOP_VM, new JSONObject().toJSONString(), initiatedBy),
-            long.class);
-        VirtualMachine vm = context.execute(
-         "GetVirtualMachine", ctx -> virtualMachineService.getVirtualMachine(vmId), VirtualMachine.class);
+    private void stopServer(Request request, UUID vmId) {
+        VirtualMachine virtualMachine = context.execute(
+                "GetVirtualMachine", ctx -> virtualMachineService.getVirtualMachine(vmId), VirtualMachine.class);
 
-        VmActionRequest request = new VmActionRequest();
-        request.virtualMachine = vm;
-        request.actionId = actionId;
-        context.execute(Vps4StopVm.class, request);
+        if(virtualMachine.spec.isVirtualMachine()) {
+            context.execute(StopVm.class, virtualMachine.hfsVmId);
+        } else {
+            context.execute(RescueVm.class, virtualMachine.hfsVmId);
+        }
     }
 
     private void markVmAsZombie(UUID vmId) {

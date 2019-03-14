@@ -14,6 +14,10 @@ import java.util.function.Function;
 
 import javax.sql.DataSource;
 
+import com.godaddy.hfs.vm.VmAction;
+import com.godaddy.hfs.vm.VmService;
+import com.godaddy.vps4.orchestration.hfs.vm.RescueVm;
+import com.godaddy.vps4.orchestration.hfs.vm.StopVm;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -57,10 +61,13 @@ public class Vps4ProcessAccountCancellationTest {
     private UUID vps4VmId;
     private UUID orionGuid;
     private VirtualMachine vm;
+    private VirtualMachine dedicatedServer;
     private long hfsVmId = 4567;
     private long stopActionId = 1234;
     private VirtualMachineCredit virtualMachineCredit;
     private Vps4ProcessAccountCancellation.Request request;
+    private static VmService vmService = mock(VmService.class);
+    private VmAction rescueDedicatedVmAction;
 
     @Inject Vps4UserService vps4UserService;
     @Inject ProjectService projectService;
@@ -76,6 +83,7 @@ public class Vps4ProcessAccountCancellationTest {
     @Captor private ArgumentCaptor<Function<CommandContext, Void>> markZombieLambdaCaptor;
     @Captor private ArgumentCaptor<ScheduleZombieVmCleanup.Request> zombieCleanupArgumentCaptor;
     @Captor private ArgumentCaptor<Vps4RecordScheduledJobForVm.Request> recordJobArgumentCaptor;
+    @Captor private ArgumentCaptor<Function<CommandContext, VmAction>> stopDedicatedLambdaCaptor;
 
     @BeforeClass
     public static void newInjector() {
@@ -88,6 +96,7 @@ public class Vps4ProcessAccountCancellationTest {
                         bind(ActionService.class).to(JdbcVmActionService.class);
                         bind(VirtualMachineService.class).to(JdbcVirtualMachineService.class);
                         bind(ScheduledJobService.class).to(JdbcScheduledJobService.class);
+                        bind(VmService.class).toInstance(vmService);
                     }
                 }
         );
@@ -103,12 +112,20 @@ public class Vps4ProcessAccountCancellationTest {
         request = new Vps4ProcessAccountCancellation.Request();
         request.virtualMachineCredit = virtualMachineCredit;
         request.setActionId(1);
+        buildRescueDedicatedVmAction();
+        when(vmService.rescueVm(dedicatedServer.hfsVmId)).thenReturn(rescueDedicatedVmAction);
     }
 
     @After
     public void teardownTest() {
         SqlTestData.cleanupSqlTestData(
                 injector.getInstance(DataSource.class), injector.getInstance(Vps4UserService.class));
+    }
+
+    private void buildRescueDedicatedVmAction(){
+        rescueDedicatedVmAction = new VmAction();
+        rescueDedicatedVmAction.vmId = dedicatedServer.hfsVmId;
+        rescueDedicatedVmAction.state = VmAction.Status.COMPLETE;
     }
 
     private VirtualMachineCredit getVirtualMachineCredit() {
@@ -122,6 +139,7 @@ public class Vps4ProcessAccountCancellationTest {
         SqlTestData.insertUser(vps4UserService);
         SqlTestData.insertProject(projectService, vps4UserService);
         vm = SqlTestData.insertVm(vps4VmService, vps4UserService);
+        dedicatedServer = SqlTestData.insertDedicatedVm(vps4VmService, vps4UserService);
         vps4VmId = vm.vmId;
         orionGuid = vm.orionGuid;
         hfsVmId = vm.hfsVmId;
@@ -157,18 +175,6 @@ public class Vps4ProcessAccountCancellationTest {
     }
 
     @Test
-    public void createsStopVmActionWhenAccountCancellationIsProcessed() {
-        command.execute(context, request);
-        verify(context, times(1))
-            .execute(eq("CreateVmStopAction"), createStopVmActionLambdaCaptor.capture(), eq(long.class));
-
-        // Verify that the lambda is creating a stop vm action
-        Function<CommandContext, Long> lambda = createStopVmActionLambdaCaptor.getValue();
-        long actionId = lambda.apply(context);
-        Assert.assertEquals(ActionType.STOP_VM, actionService.getAction(actionId).type);
-    }
-
-    @Test
     public void getsHfsVmIdWhenAccountCancellationIsProcessed() {
         command.execute(context, request);
         verify(context, times(1))
@@ -181,14 +187,21 @@ public class Vps4ProcessAccountCancellationTest {
     }
 
     @Test
-    public void kicksOffStopVmCommandWhenAccountCancellationIsProcessed() {
+    public void stopsVmWhenAccountCancellationIsProcessed() {
         command.execute(context, request);
-        verify(context, times(1))
-            .execute(eq(Vps4StopVm.class), actionRequestArgumentCaptor.capture());
+        verify(context, times(1)).execute(eq(StopVm.class), eq(vm.hfsVmId));
+    }
 
-        VmActionRequest request = actionRequestArgumentCaptor.getValue();
-        Assert.assertEquals(stopActionId, request.actionId);
-        Assert.assertEquals(hfsVmId, request.virtualMachine.hfsVmId);
+    @Test
+    public void kicksOffStopVmCommandWhenAccountDedCancellationIsProcessed() {
+        when(context.execute(eq("GetVirtualMachine"), any(Function.class), eq(VirtualMachine.class)))
+                .thenReturn(dedicatedServer);
+        command.execute(context, request);
+
+        verify(context, times(1)).execute(eq(RescueVm.class), eq(vm.hfsVmId));
+
+        verify(context, times(0))
+                .execute(eq(Vps4StopVm.class), actionRequestArgumentCaptor.capture());
     }
 
     @Test
@@ -235,7 +248,7 @@ public class Vps4ProcessAccountCancellationTest {
 
     @Test(expected = RuntimeException.class)
     public void schedulesZombieVmCleanupJobIfStopFailsWhenAccountCancellationIsProcessed() {
-        when(context.execute(eq(Vps4StopVm.class), any())).thenThrow(new RuntimeException());
+        when(context.execute(eq(StopVm.class), eq(vm.hfsVmId))).thenThrow(new RuntimeException());
 
         command.execute(context, request);
         verify(context, times(1))

@@ -10,9 +10,15 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
 import java.util.UUID;
 
+import com.godaddy.hfs.vm.VmAction;
+import com.godaddy.hfs.vm.VmService;
 import com.godaddy.vps4.vm.ActionService;
+import com.godaddy.vps4.vm.ServerSpec;
+import com.godaddy.vps4.vm.ServerType;
+import com.godaddy.vps4.vm.VirtualMachine;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -37,6 +43,7 @@ public class Vps4ReviveZombieVmTest{
     static Injector injector;
     
     private VirtualMachineService virtualMachineService;
+    private VmService vmService;
     private ScheduledJobService scheduledJobService;
     private CreditService creditService;
     private CommandContext context;
@@ -44,10 +51,12 @@ public class Vps4ReviveZombieVmTest{
     private Vps4ReviveZombieVm command;
     private SchedulerWebService schedulerWebService;
     private ActionService actionService;
-    
+    private VirtualMachine vm;
+
     @Before
     public void setup() {
         virtualMachineService = mock(VirtualMachineService.class);
+        vmService = mock(VmService.class);
         schedulerWebService = mock(SchedulerWebService.class);
         scheduledJobService = mock(ScheduledJobService.class);
         creditService = mock(CreditService.class);
@@ -61,15 +70,31 @@ public class Vps4ReviveZombieVmTest{
         List<ScheduledJob> jobs = new ArrayList<ScheduledJob>();
         jobs.add(job);
         when(scheduledJobService.getScheduledJobsByType(job.vmId, ScheduledJobType.ZOMBIE)).thenReturn(jobs);
-        
+
+        vm = new VirtualMachine();
+        vm.hfsVmId = 1324;
+        vm.spec = new ServerSpec();
+        vm.spec.serverType = new ServerType();
+        vm.spec.serverType.serverType = ServerType.Type.VIRTUAL;
+        when(virtualMachineService.getVirtualMachine(job.vmId)).thenReturn(vm);
+
+        VmAction vma = new VmAction();
+        vma.vmActionId = 3323;
+        vma.vmId = vm.hfsVmId;
+        vma.state = VmAction.Status.COMPLETE;
+        when(vmService.endRescueVm(vm.hfsVmId)).thenReturn(vma);
+        when(vmService.startVm(vm.hfsVmId)).thenReturn(vma);
+        when(vmService.getVmAction(vma.vmId, vma.vmActionId)).thenReturn(vma);
+
         injector = Guice.createInjector(binder -> {
             binder.bind(VirtualMachineService.class).toInstance(virtualMachineService);
+            binder.bind(VmService.class).toInstance(vmService);
             binder.bind(ScheduledJobService.class).toInstance(scheduledJobService);
             binder.bind(SchedulerWebService.class).toInstance(schedulerWebService);
             binder.bind(ActionService.class).toInstance(actionService);
         });
         
-        command = new Vps4ReviveZombieVm(actionService, virtualMachineService, scheduledJobService, creditService);
+        command = new Vps4ReviveZombieVm(actionService, virtualMachineService, vmService, scheduledJobService, creditService);
         context = new TestCommandContext(new GuiceCommandProvider(injector));
     }
     
@@ -91,5 +116,30 @@ public class Vps4ReviveZombieVmTest{
         verify(virtualMachineService, times(1)).reviveZombieVm(request.vmId, request.newCreditId);
         verify(schedulerWebService, times(1)).deleteJob(product, group, job.id);
         verify(creditService, times(1)).updateProductMeta(request.newCreditId, productMeta);
+        verify(vmService, times(0)).endRescueVm(vm.hfsVmId);
+        verify(vmService, times(1)).startVm(vm.hfsVmId);
+    }
+
+    @Test
+    public void testReviveZombieDedicated() {
+        vm.spec.serverType.serverType = ServerType.Type.DEDICATED;
+        Vps4ReviveZombieVm.Request request = new Vps4ReviveZombieVm.Request();
+        request.vmId = job.vmId;
+        request.newCreditId = UUID.randomUUID();
+        request.oldCreditId = UUID.randomUUID();
+
+        Map<ProductMetaField, String> productMeta = new HashMap<>();
+        when(creditService.getProductMeta(request.oldCreditId)).thenReturn(productMeta);
+
+        command.execute(context, request);
+
+        String product = Utils.getProductForJobRequestClass(Vps4ZombieCleanupJobRequest.class);
+        String group = Utils.getJobGroupForJobRequestClass(Vps4ZombieCleanupJobRequest.class);
+
+        verify(virtualMachineService, times(1)).reviveZombieVm(request.vmId, request.newCreditId);
+        verify(schedulerWebService, times(1)).deleteJob(product, group, job.id);
+        verify(creditService, times(1)).updateProductMeta(request.newCreditId, productMeta);
+        verify(vmService, times(1)).endRescueVm(vm.hfsVmId);
+        verify(vmService, times(0)).startVm(vm.hfsVmId);
     }
 }
