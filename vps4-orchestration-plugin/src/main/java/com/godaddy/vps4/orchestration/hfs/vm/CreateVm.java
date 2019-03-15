@@ -44,7 +44,7 @@ public class CreateVm implements Command<CreateVm.Request, VmAction> {
         // note: we do not wait for the vm action to complete here
         // since if the vm creation fails on the HFS side,
         // we would still like to update the hfs vm ID
-        // in the vps4 database for debugging putposes.
+        // in the vps4 database for debugging purposes.
 
         return vmAction;
     }

@@ -24,7 +24,9 @@ import com.godaddy.vps4.orchestration.hfs.sysadmin.WaitForSysAdminAction;
 import com.godaddy.vps4.orchestration.hfs.vm.CreateVm;
 import com.godaddy.vps4.orchestration.hfs.vm.CreateVmFromSnapshot;
 import com.godaddy.vps4.orchestration.hfs.vm.DestroyVm;
+import com.godaddy.vps4.orchestration.hfs.vm.EndRescueVm;
 import com.godaddy.vps4.orchestration.hfs.vm.RebuildDedicated;
+import com.godaddy.vps4.orchestration.hfs.vm.RescueVm;
 import com.godaddy.vps4.orchestration.hfs.vm.RestartVm;
 import com.godaddy.vps4.orchestration.hfs.vm.StartVm;
 import com.godaddy.vps4.orchestration.hfs.vm.StopVm;
@@ -47,6 +49,8 @@ public class HfsCommandModule extends AbstractModule {
         bind(RestartVm.class);
         bind(StartVm.class);
         bind(StopVm.class);
+        bind(RescueVm.class);
+        bind(EndRescueVm.class);
         bind(RebuildDedicated.class);
         bind(WaitForVmAction.class);
         bind(WaitForManageVmAction.class);
