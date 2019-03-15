@@ -11,7 +11,7 @@ import gdg.hfs.orchestration.CommandMetadata;
 import gdg.hfs.orchestration.CommandRetryStrategy;
 
 @CommandMetadata(
-        name="Vps4AbuseSuspendDedicated",
+        name="Vps4ReinstateDedicated",
         requestType=VmActionRequest.class,
         responseType=Void.class,
         retryStrategy = CommandRetryStrategy.NEVER
