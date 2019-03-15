@@ -38,8 +38,8 @@ public class Vps4ReinstateVm extends ActionCommand<VmActionRequest, Void> {
     @Override
     protected Void executeWithAction(CommandContext context, VmActionRequest request) throws Exception {
         logger.info("Request: {}", request);
-        setAccountStatusToActive(request);
         reinstateVm(context, request);
+        setAccountStatusToActive(request);
         return null;
     }
 
