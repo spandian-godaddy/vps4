@@ -16,11 +16,9 @@ import javax.ws.rs.core.MediaType;
 import com.godaddy.vps4.credit.CreditService;
 import com.godaddy.vps4.credit.VirtualMachineCredit;
 import com.godaddy.vps4.orchestration.vm.VmActionRequest;
-import com.godaddy.vps4.vm.AccountStatus;
 import com.godaddy.vps4.vm.ActionService;
 import com.godaddy.vps4.vm.ActionType;
 import com.godaddy.vps4.vm.VirtualMachine;
-import com.godaddy.vps4.vm.VirtualMachineService;
 import com.godaddy.vps4.vm.VmAction;
 import com.godaddy.vps4.web.Vps4Api;
 import com.godaddy.vps4.web.Vps4Exception;
@@ -42,35 +40,31 @@ public class VmSuspendResource {
     private final CreditService creditService;
     private final ActionService actionService;
     private final CommandService commandService;
-    private final VmActionResource vmActionResource;
-    private final VirtualMachineService virtualMachineService;
 
     @Inject
     public VmSuspendResource(GDUser user, VmResource vmResource, CreditService creditService,
-            ActionService actionService, CommandService commandService, VmActionResource vmActionResource,
-            VirtualMachineService virtualMachineService) {
+            ActionService actionService, CommandService commandService) {
         this.user = user;
         this.vmResource = vmResource;
         this.creditService = creditService;
         this.actionService = actionService;
         this.commandService = commandService;
-        this.vmActionResource = vmActionResource;
-        this.virtualMachineService = virtualMachineService;
     }
 
     @POST
     @Path("{vmId}/abuseSuspend")
     @RequiresRole(roles = {GDUser.Role.ADMIN, GDUser.Role.HS_LEAD, GDUser.Role.LEGAL, GDUser.Role.HS_OPS, GDUser.Role.DCU})
     public VmAction abuseSuspendVm(@PathParam("vmId") UUID vmId) {
-        VirtualMachine virtualMachine = vmResource.getVm(vmId);
-        VirtualMachineCredit credit = creditService.getVirtualMachineCredit(virtualMachine.orionGuid);
+        VirtualMachine vm = vmResource.getVm(vmId);
+        VirtualMachineCredit credit = creditService.getVirtualMachineCredit(vm.orionGuid);
 
-        validateCreditForAbuseSuspend(virtualMachine, credit);
+        validateCreditForAbuseSuspend(vm, credit);
 
+        String commandName = vm.spec.isVirtualMachine() ? "Vps4AbuseSuspendVm" : "Vps4AbuseSuspendDedicated";
         VmActionRequest request = new VmActionRequest();
-        request.virtualMachine = virtualMachine;
-        return createActionAndExecute(actionService, commandService, virtualMachine.vmId,
-                ActionType.ABUSE_SUSPEND, request, "Vps4AbuseSuspendVm", user);
+        request.virtualMachine = vm;
+        return createActionAndExecute(actionService, commandService, vm.vmId,
+                ActionType.ABUSE_SUSPEND, request, commandName, user);
     }
 
     private void validateCreditForAbuseSuspend(VirtualMachine virtualMachine, VirtualMachineCredit credit) {
@@ -85,19 +79,17 @@ public class VmSuspendResource {
     @Path("{vmId}/reinstate")
     @RequiresRole(roles = {GDUser.Role.ADMIN, GDUser.Role.HS_LEAD, GDUser.Role.LEGAL, GDUser.Role.HS_OPS, GDUser.Role.DCU})
     public VmAction reinstateVm(@PathParam("vmId") UUID vmId) {
-        VirtualMachine virtualMachine = virtualMachineService.getVirtualMachine(vmId);
-        validateVmExists(vmId, virtualMachine, user);
+        VirtualMachine vm = vmResource.getVm(vmId);
+        validateVmExists(vmId, vm, user);
 
-        VirtualMachineCredit credit = creditService.getVirtualMachineCredit(virtualMachine.orionGuid);
-        validateCreditForReinstate(virtualMachine, credit);
+        VirtualMachineCredit credit = creditService.getVirtualMachineCredit(vm.orionGuid);
+        validateCreditForReinstate(vm, credit);
 
+        String commandName = vm.spec.isVirtualMachine() ? "Vps4ReinstateVm" : "Vps4ReinstateDedicated";
         VmActionRequest request = new VmActionRequest();
-        request.virtualMachine = virtualMachine;
-
-        long actionId = actionService.createAction(vmId, ActionType.REINSTATE, null, user.getUsername());
-        creditService.setStatus(virtualMachine.orionGuid, AccountStatus.ACTIVE);
-        actionService.completeAction(actionId, null, null);
-        return vmActionResource.getVmAction(vmId, actionId);
+        request.virtualMachine = vm;
+        return createActionAndExecute(actionService, commandService, vm.vmId,
+                ActionType.REINSTATE, request, commandName, user);
     }
 
     private void validateCreditForReinstate(VirtualMachine virtualMachine, VirtualMachineCredit credit) {

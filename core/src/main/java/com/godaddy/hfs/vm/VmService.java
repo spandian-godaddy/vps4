@@ -34,7 +34,7 @@ public interface VmService {
     @POST
     @Path("/")
     VmAction createVm(CreateVMRequest request);
-    
+
     @POST
     @Path("/withFlavor")
     VmAction createVmWithFlavor(CreateVMWithFlavorRequest request);
@@ -74,6 +74,14 @@ public interface VmService {
     @POST
     @Path("/{vmId}/rebuild")
     VmAction rebuildVm(@PathParam("vmId") long vmId);
+
+    @POST
+    @Path("/{vmId}/rescue")
+    VmAction rescueVm(@PathParam("vmId") long vmId);
+
+    @POST
+    @Path("/{vmId}/rescue/end")
+    VmAction endRescueVm(@PathParam("vmId") long vmId);
 
     @POST
     @Path("/{vmId}/utilization")
