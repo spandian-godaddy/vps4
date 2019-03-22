@@ -2,8 +2,9 @@ package com.godaddy.vps4.vm;
 
 import java.util.UUID;
 
-import com.godaddy.vps4.network.IpAddress;
 import org.apache.commons.lang3.builder.ToStringBuilder;
+
+import com.godaddy.vps4.network.IpAddress;
 
 public class RebuildVmInfo {
 

@@ -7,6 +7,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.godaddy.hfs.vm.Vm;
 import com.godaddy.hfs.vm.VmAction;
@@ -18,13 +21,12 @@ import com.godaddy.vps4.orchestration.hfs.cpanel.ConfigureCpanel;
 import com.godaddy.vps4.orchestration.hfs.cpanel.ConfigureCpanel.ConfigureCpanelRequest;
 import com.godaddy.vps4.orchestration.hfs.plesk.ConfigurePlesk;
 import com.godaddy.vps4.orchestration.hfs.plesk.ConfigurePlesk.ConfigurePleskRequest;
-import com.godaddy.vps4.orchestration.hfs.sysadmin.AddUser;
-import com.godaddy.vps4.orchestration.hfs.sysadmin.SetHostname;
 import com.godaddy.vps4.orchestration.hfs.sysadmin.SetPassword;
 import com.godaddy.vps4.orchestration.hfs.sysadmin.ToggleAdmin;
 import com.godaddy.vps4.orchestration.hfs.vm.RebuildDedicated;
 import com.godaddy.vps4.orchestration.sysadmin.ConfigureMailRelay;
 import com.godaddy.vps4.orchestration.sysadmin.ConfigureMailRelay.ConfigureMailRelayRequest;
+import com.godaddy.vps4.util.Cryptography;
 import com.godaddy.vps4.vm.ActionService;
 import com.godaddy.vps4.vm.Image;
 import com.godaddy.vps4.vm.RebuildVmInfo;
@@ -35,11 +37,10 @@ import com.godaddy.vps4.vm.VmUser;
 import com.godaddy.vps4.vm.VmUserService;
 import com.godaddy.vps4.vm.VmUserType;
 import com.google.inject.Inject;
+
 import gdg.hfs.orchestration.CommandContext;
 import gdg.hfs.orchestration.CommandMetadata;
 import gdg.hfs.orchestration.CommandRetryStrategy;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 @CommandMetadata(
         name="Vps4RebuildDedicated",
@@ -54,6 +55,7 @@ public class Vps4RebuildDedicated extends ActionCommand<Vps4RebuildDedicated.Req
     private final VirtualMachineService virtualMachineService;
     private final VmUserService vmUserService;
     private final CreditService creditService;
+    private final Cryptography cryptography;
     private Request request;
     private ActionState state;
     private CommandContext context;
@@ -61,12 +63,13 @@ public class Vps4RebuildDedicated extends ActionCommand<Vps4RebuildDedicated.Req
 
     @Inject
     public Vps4RebuildDedicated(ActionService actionService, VmService vmService, VirtualMachineService virtualMachineService,
-                                VmUserService vmUserService, CreditService creditService) {
+                                VmUserService vmUserService, CreditService creditService, Cryptography cryptography) {
         super(actionService);
         this.vmService = vmService;
         this.virtualMachineService = virtualMachineService;
         this.vmUserService = vmUserService;
         this.creditService = creditService;
+        this.cryptography = cryptography;
     }
 
     @Override
@@ -82,7 +85,7 @@ public class Vps4RebuildDedicated extends ActionCommand<Vps4RebuildDedicated.Req
 
         Vm hfsVm;
         try {
-            hfsVm = rebuildDedicated(oldHfsVmId);
+            hfsVm = rebuildDedicated(oldHfsVmId, request);
         } catch (RuntimeException e) {
             logger.info("Rebuild Dedicated vm failed for dedicated vm id: {}", oldHfsVmId);
             throw e;
@@ -96,11 +99,9 @@ public class Vps4RebuildDedicated extends ActionCommand<Vps4RebuildDedicated.Req
 
         VirtualMachine oldVm = virtualMachineService.getVirtualMachine(vps4VmId);
 
-        addUserToServer(newHfsVmId);
         updateVmUser(request.rebuildVmInfo.username, oldVm.vmId, request.rebuildVmInfo.vmId);
         setRootUserPassword(newHfsVmId);
         configureControlPanel(newHfsVmId);
-        setHostname(newHfsVmId);
         configureAdminUser(newHfsVmId);
         configureMailRelay(newHfsVmId);
 
@@ -135,13 +136,17 @@ public class Vps4RebuildDedicated extends ActionCommand<Vps4RebuildDedicated.Req
         return context.execute("GetHfsVmId", ctx -> virtualMachineService.getVirtualMachine(vps4VmId).hfsVmId, long.class);
     }
 
-    private Vm rebuildDedicated(long oldHfsVmId) {
+    private Vm rebuildDedicated(long oldHfsVmId, Request request) {
         setStep(RebuildVmStep.RequestingServer);
         logger.info("rebuild Dedicated vm process");
 
-        RebuildDedicated.Request rebuildDedicatedRequest = new RebuildDedicated.Request();
-        rebuildDedicatedRequest.vmId = oldHfsVmId;
-        VmAction vmAction = context.execute("RebuildDedicated", RebuildDedicated.class, rebuildDedicatedRequest);
+        RebuildDedicated.Request rebuildDedRequest = new RebuildDedicated.Request();
+        rebuildDedRequest.vmId = oldHfsVmId;
+        rebuildDedRequest.hostname = request.rebuildVmInfo.hostname;
+        rebuildDedRequest.image_name = request.rebuildVmInfo.image.hfsName;
+        rebuildDedRequest.username = request.rebuildVmInfo.username;
+        rebuildDedRequest.encryptedPassword = request.rebuildVmInfo.encryptedPassword;
+        VmAction vmAction = context.execute("RebuildDedicated", RebuildDedicated.class, rebuildDedRequest);
 
         // Get the hfs vm
         return context.execute("GetVmAfterCreate", ctx -> vmService.getVm(vmAction.vmId), Vm.class);
@@ -151,14 +156,6 @@ public class Vps4RebuildDedicated extends ActionCommand<Vps4RebuildDedicated.Req
         vmUserService.listUsers(oldVmId, VmUserType.CUSTOMER).stream()
                 .forEach(user -> vmUserService.deleteUser(user.username, oldVmId));
         vmUserService.createUser(username, newVmId);
-    }
-
-    private void addUserToServer(long hfsVmId) {
-        AddUser.Request addUserRequest = new AddUser.Request();
-        addUserRequest.hfsVmId = hfsVmId;
-        addUserRequest.username = request.rebuildVmInfo.username;
-        addUserRequest.encryptedPassword = request.rebuildVmInfo.encryptedPassword;
-        context.execute(AddUser.class, addUserRequest);
     }
 
     private void setRootUserPassword(long hfsVmId) {
@@ -225,16 +222,6 @@ public class Vps4RebuildDedicated extends ActionCommand<Vps4RebuildDedicated.Req
 
     private ConfigurePleskRequest createConfigurePleskRequest(long hfsVmId) {
         return new ConfigurePleskRequest(hfsVmId, request.rebuildVmInfo.username, request.rebuildVmInfo.encryptedPassword);
-    }
-
-
-    private void setHostname(long hfsVmId) {
-        setStep(RebuildVmStep.SetHostname);
-
-        SetHostname.Request hfsRequest = new SetHostname.Request(hfsVmId, request.rebuildVmInfo.hostname,
-                request.rebuildVmInfo.image.getImageControlPanel());
-
-        context.execute(SetHostname.class, hfsRequest);
     }
 
     private void setEcommCommonName(UUID orionGuid, String commonName) {

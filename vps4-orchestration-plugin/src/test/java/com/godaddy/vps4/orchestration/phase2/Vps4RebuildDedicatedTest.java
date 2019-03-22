@@ -1,5 +1,17 @@
 package com.godaddy.vps4.orchestration.phase2;
 
+import static org.hamcrest.Matchers.containsInAnyOrder;
+import static org.junit.Assert.assertThat;
+import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.anyLong;
+import static org.mockito.Matchers.eq;
+import static org.mockito.Mockito.atLeastOnce;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -7,6 +19,16 @@ import java.util.UUID;
 import java.util.function.Function;
 
 import javax.sql.DataSource;
+
+import org.junit.After;
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.BeforeClass;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.ArgumentCaptor;
+import org.mockito.Captor;
+import org.mockito.runners.MockitoJUnitRunner;
 
 import com.godaddy.hfs.vm.Vm;
 import com.godaddy.hfs.vm.VmAction;
@@ -16,8 +38,6 @@ import com.godaddy.vps4.jdbc.DatabaseModule;
 import com.godaddy.vps4.network.IpAddress;
 import com.godaddy.vps4.orchestration.hfs.cpanel.ConfigureCpanel;
 import com.godaddy.vps4.orchestration.hfs.plesk.ConfigurePlesk;
-import com.godaddy.vps4.orchestration.hfs.sysadmin.AddUser;
-import com.godaddy.vps4.orchestration.hfs.sysadmin.SetHostname;
 import com.godaddy.vps4.orchestration.hfs.sysadmin.SetPassword;
 import com.godaddy.vps4.orchestration.hfs.sysadmin.ToggleAdmin;
 import com.godaddy.vps4.orchestration.hfs.vm.RebuildDedicated;
@@ -27,6 +47,8 @@ import com.godaddy.vps4.project.Project;
 import com.godaddy.vps4.project.ProjectService;
 import com.godaddy.vps4.security.SecurityModule;
 import com.godaddy.vps4.security.Vps4UserService;
+import com.godaddy.vps4.util.Cryptography;
+import com.godaddy.vps4.util.UtilsModule;
 import com.godaddy.vps4.vm.ActionService;
 import com.godaddy.vps4.vm.ActionType;
 import com.godaddy.vps4.vm.Image;
@@ -42,30 +64,8 @@ import com.google.inject.Guice;
 import com.google.inject.Inject;
 import com.google.inject.Injector;
 import com.google.inject.Provides;
-import gdg.hfs.orchestration.CommandContext;
-import org.junit.After;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.mockito.ArgumentCaptor;
-import org.mockito.Captor;
-import org.mockito.Matchers;
-import org.mockito.runners.MockitoJUnitRunner;
 
-import static org.hamcrest.Matchers.containsInAnyOrder;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertThat;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyLong;
-import static org.mockito.Matchers.eq;
-import static org.mockito.Mockito.atLeastOnce;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.spy;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import gdg.hfs.orchestration.CommandContext;
 
 @RunWith(MockitoJUnitRunner.class)
 public class Vps4RebuildDedicatedTest {
@@ -91,19 +91,18 @@ public class Vps4RebuildDedicatedTest {
     @Inject private ActionService actionService;
     @Inject private CreditService creditService;
     @Inject private VmUserService vmUserService;
+    @Inject private Cryptography cryptography;
 
     VirtualMachineService spyVps4VmService;
     VmUserService spyVmUserService;
 
     @Captor private ArgumentCaptor<Function<CommandContext, Long>> getHfsVmIdLambdaCaptor;
     @Captor private ArgumentCaptor<Function<CommandContext, Vm>> getHfsVmLambdaCaptor;
-    @Captor private ArgumentCaptor<AddUser.Request> addUserToServerArgumentCaptor;
     @Captor private ArgumentCaptor<SetPassword.Request> setPasswordArgumentCaptor;
     @Captor private ArgumentCaptor<ToggleAdmin.Request> toggleAdminArgumentCaptor;
     @Captor private ArgumentCaptor<ConfigureMailRelay.ConfigureMailRelayRequest> configMTAArgumentCaptor;
     @Captor private ArgumentCaptor<ConfigureCpanel.ConfigureCpanelRequest> configureCpanelRequestArgumentCaptor;
     @Captor private ArgumentCaptor<ConfigurePlesk.ConfigurePleskRequest> configurePleskRequestArgumentCaptor;
-    @Captor private ArgumentCaptor<SetHostname.Request> setHostnameArgumentCaptor;
     @Captor private ArgumentCaptor<RebuildDedicated.Request> rebuildDedRequestArgCaptor;
 
     @BeforeClass
@@ -113,6 +112,7 @@ public class Vps4RebuildDedicatedTest {
                 new SecurityModule(),
                 new VmModule(),
                 new Vps4ExternalsModule(),
+                new UtilsModule(),
                 new AbstractModule() {
                     @Override
                     protected void configure() {
@@ -122,6 +122,7 @@ public class Vps4RebuildDedicatedTest {
                     public CreditService createMockCreditService() {
                         return mock(CreditService.class);
                     }
+
                 }
         );
     }
@@ -134,7 +135,7 @@ public class Vps4RebuildDedicatedTest {
         spyVmUserService = spy(vmUserService);
 
         command = new Vps4RebuildDedicated(actionService, hfsVmService, spyVps4VmService,
-                spyVmUserService, creditService);
+                spyVmUserService, creditService, cryptography);
         addTestSqlData();
 
         vps4NewVm = mock(VirtualMachine.class);
@@ -223,7 +224,7 @@ public class Vps4RebuildDedicatedTest {
         req.rebuildVmInfo.vmId = vps4VmId;
         req.rebuildVmInfo.hostname = "foobar";
         req.rebuildVmInfo.username = username;
-        req.rebuildVmInfo.encryptedPassword = password.getBytes();
+        req.rebuildVmInfo.encryptedPassword = cryptography.encrypt(password);
         req.rebuildVmInfo.zone = "ded-zone-1";
         req.rebuildVmInfo.rawFlavor = "rawflavor";
         req.rebuildVmInfo.image = setupImage();
@@ -275,15 +276,6 @@ public class Vps4RebuildDedicatedTest {
     }
 
     @Test
-    public void addsUserToServer() {
-        command.execute(context, request);
-
-        verify(context, times(1)).execute(eq(AddUser.class), addUserToServerArgumentCaptor.capture());
-        AddUser.Request request = addUserToServerArgumentCaptor.getValue();
-        Assert.assertEquals(username, request.username);
-    }
-
-    @Test
     public void updatesUsernameForVm() {
         command.execute(context, request);
 
@@ -300,7 +292,7 @@ public class Vps4RebuildDedicatedTest {
                 .execute(eq("SetRootUserPassword"), eq(SetPassword.class), setPasswordArgumentCaptor.capture());
 
         SetPassword.Request request = setPasswordArgumentCaptor.getValue();
-        Assert.assertArrayEquals(password.getBytes(), request.encryptedPassword);
+        Assert.assertEquals(password, cryptography.decrypt(request.encryptedPassword));
         Assert.assertEquals(hfsNewVmId, request.hfsVmId);
         Assert.assertEquals(vps4NewVm.image.getImageControlPanel(), request.controlPanel);
         assertThat(
@@ -412,13 +404,4 @@ public class Vps4RebuildDedicatedTest {
         verify(spyVmUserService, atLeastOnce()).deleteUser(any(String.class), any(UUID.class));
     }
 
-    @Test
-    public void setsHostname() {
-        command.execute(context, request);
-        verify(context, times(1)).execute(eq(SetHostname.class), setHostnameArgumentCaptor.capture());
-        SetHostname.Request req = setHostnameArgumentCaptor.getValue();
-        assertEquals(req.controlPanel, null); // In this test control panel used was myh, hence check for null
-        assertEquals(req.hfsVmId, hfsNewVmId);
-        assertEquals(req.hostname, request.rebuildVmInfo.hostname);
-    }
 }

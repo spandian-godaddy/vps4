@@ -26,6 +26,7 @@ import com.godaddy.hfs.vm.Console;
 import com.godaddy.hfs.vm.CreateVMRequest;
 import com.godaddy.hfs.vm.CreateVMWithFlavorRequest;
 import com.godaddy.hfs.vm.FlavorList;
+import com.godaddy.hfs.vm.RebuildDedicatedRequest;
 import com.godaddy.hfs.vm.ServerUsageStats;
 import com.godaddy.hfs.vm.Vm;
 import com.godaddy.hfs.vm.VmAction;
@@ -849,7 +850,7 @@ public class HfsMockModule extends AbstractModule {
             }
 
             @Override
-            public VmAction rebuildVm(long vmId) {
+            public VmAction rebuildVm(long vmId, RebuildDedicatedRequest request) {
                 if (!customerVms.containsKey(vmId)
                         || !vmActionList.containsKey(vmId)
                         || this.isVmDestroyed(vmId)) {

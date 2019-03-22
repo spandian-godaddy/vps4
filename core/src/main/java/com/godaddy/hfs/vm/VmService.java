@@ -73,7 +73,7 @@ public interface VmService {
 
     @POST
     @Path("/{vmId}/rebuild")
-    VmAction rebuildVm(@PathParam("vmId") long vmId);
+    VmAction rebuildVm(@PathParam("vmId") long vmId, RebuildDedicatedRequest request);
 
     @POST
     @Path("/{vmId}/rescue")
