@@ -19,6 +19,7 @@ import com.godaddy.vps4.orchestration.vm.VmActionRequest;
 import com.godaddy.vps4.vm.ActionService;
 import com.godaddy.vps4.vm.ActionType;
 import com.godaddy.vps4.vm.VirtualMachine;
+import com.godaddy.vps4.vm.VirtualMachineService;
 import com.godaddy.vps4.vm.VmAction;
 import com.godaddy.vps4.web.Vps4Api;
 import com.godaddy.vps4.web.Vps4Exception;
@@ -40,15 +41,17 @@ public class VmSuspendResource {
     private final CreditService creditService;
     private final ActionService actionService;
     private final CommandService commandService;
+    private final VirtualMachineService virtualMachineService;
 
     @Inject
     public VmSuspendResource(GDUser user, VmResource vmResource, CreditService creditService,
-            ActionService actionService, CommandService commandService) {
+            ActionService actionService, CommandService commandService, VirtualMachineService virtualMachineService) {
         this.user = user;
         this.vmResource = vmResource;
         this.creditService = creditService;
         this.actionService = actionService;
         this.commandService = commandService;
+        this.virtualMachineService = virtualMachineService;
     }
 
     @POST
@@ -79,7 +82,10 @@ public class VmSuspendResource {
     @Path("{vmId}/reinstate")
     @RequiresRole(roles = {GDUser.Role.ADMIN, GDUser.Role.HS_LEAD, GDUser.Role.LEGAL, GDUser.Role.HS_OPS, GDUser.Role.DCU})
     public VmAction reinstateVm(@PathParam("vmId") UUID vmId) {
-        VirtualMachine vm = vmResource.getVm(vmId);
+        // Cannot use vmResource.getVm as it returns 400 response if credit is suspended
+        // TODO: Needs refactor. The GET /vms/<vmid> call should work even if vm suspended, but probably many
+        //       api endpoints depend on this validation protection in getVm, so requires careful change
+        VirtualMachine vm = virtualMachineService.getVirtualMachine(vmId);
         validateVmExists(vmId, vm, user);
 
         VirtualMachineCredit credit = creditService.getVirtualMachineCredit(vm.orionGuid);

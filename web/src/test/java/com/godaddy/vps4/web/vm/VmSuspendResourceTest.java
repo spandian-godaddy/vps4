@@ -29,6 +29,7 @@ import com.godaddy.vps4.vm.ActionType;
 import com.godaddy.vps4.vm.ServerSpec;
 import com.godaddy.vps4.vm.ServerType;
 import com.godaddy.vps4.vm.VirtualMachine;
+import com.godaddy.vps4.vm.VirtualMachineService;
 import com.godaddy.vps4.web.Vps4Exception;
 import com.godaddy.vps4.web.security.GDUser;
 
@@ -43,6 +44,7 @@ public class VmSuspendResourceTest {
     CreditService creditService = mock(CreditService.class);
     ActionService actionService = mock(ActionService.class);
     CommandService commandService = mock(CommandService.class);
+    VirtualMachineService virtualMachineService = mock(VirtualMachineService.class);
     VirtualMachine testVm;
     VirtualMachineCredit credit;
     VmSuspendResource vmSuspendResource;
@@ -63,7 +65,7 @@ public class VmSuspendResourceTest {
         when(actionService.createAction(vmId, ActionType.REINSTATE, null, user.getUsername())).thenReturn(testAction.id);
         when(commandService.executeCommand(anyObject())).thenReturn(new CommandState());
 
-        vmSuspendResource = new VmSuspendResource(user, vmResource, creditService, actionService, commandService);
+        vmSuspendResource = new VmSuspendResource(user, vmResource, creditService, actionService, commandService, virtualMachineService);
     }
 
     private void createTestVm() {
@@ -82,6 +84,7 @@ public class VmSuspendResourceTest {
         testVm.validUntil = Instant.MAX;
         testVm.spec = testSpec;
         when(vmResource.getVm(testVm.vmId)).thenReturn(testVm);
+        when(virtualMachineService.getVirtualMachine(testVm.vmId)).thenReturn(testVm);
     }
 
     private VirtualMachineCredit createCredit() {
