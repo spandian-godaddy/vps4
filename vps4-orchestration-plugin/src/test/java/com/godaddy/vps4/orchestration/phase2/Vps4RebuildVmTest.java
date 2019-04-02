@@ -96,7 +96,7 @@ public class Vps4RebuildVmTest {
     @Captor private ArgumentCaptor<Function<CommandContext, Long>> getHfsVmIdLambdaCaptor;
     @Captor private ArgumentCaptor<Function<CommandContext, Vm>> getHfsVmLambdaCaptor;
     @Captor private ArgumentCaptor<Function<CommandContext, Void>> updateHfsVmIdLambdaCaptor;
-    @Captor private ArgumentCaptor<BindIp.BindIpRequest> bindIpRequestArgumentCaptor;
+    @Captor private ArgumentCaptor<BindIp.Request> bindIpRequestArgumentCaptor;
     @Captor private ArgumentCaptor<CreateVm.Request> createVmRequestArgumentCaptor;
     @Captor private ArgumentCaptor<SetPassword.Request> setPasswordArgumentCaptor;
     @Captor private ArgumentCaptor<ToggleAdmin.Request> toggleAdminArgumentCaptor;
@@ -247,7 +247,7 @@ public class Vps4RebuildVmTest {
                 );
             UnbindIp.Request unbindIpRequest = unbindIpArgumentCaptor.getValue();
             Assert.assertTrue(unbindIpRequest.forceIfVmInaccessible);
-            Assert.assertEquals(ipAddress.ipAddressId, (long) unbindIpRequest.addressId);
+            Assert.assertEquals(ipAddress.ipAddressId, unbindIpRequest.addressId);
         }
     }
 
@@ -386,8 +386,8 @@ public class Vps4RebuildVmTest {
                 );
 
             // verify parameter passed into the BindIp command is the right pair of hfsVmId and ipAddressId
-            BindIp.BindIpRequest bindIpRequest = bindIpRequestArgumentCaptor.getValue();
-            Assert.assertEquals(bindIpRequest.vmId, hfsNewVmId);
+            BindIp.Request bindIpRequest = bindIpRequestArgumentCaptor.getValue();
+            Assert.assertEquals(bindIpRequest.hfsVmId, hfsNewVmId);
             Assert.assertEquals(bindIpRequest.addressId, ipAddress.ipAddressId);
         }
     }
@@ -406,8 +406,8 @@ public class Vps4RebuildVmTest {
                     );
 
             // verify parameter passed into the BindIp command is the right pair of hfsVmId and ipAddressId
-            BindIp.BindIpRequest bindIpRequest = bindIpRequestArgumentCaptor.getValue();
-            Assert.assertEquals(bindIpRequest.vmId, vps4Vm.hfsVmId);
+            BindIp.Request bindIpRequest = bindIpRequestArgumentCaptor.getValue();
+            Assert.assertEquals(bindIpRequest.hfsVmId, vps4Vm.hfsVmId);
             Assert.assertEquals(bindIpRequest.addressId, ipAddress.ipAddressId);
         }
     }

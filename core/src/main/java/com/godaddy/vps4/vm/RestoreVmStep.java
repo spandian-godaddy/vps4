@@ -4,5 +4,6 @@ public enum RestoreVmStep {
     UnbindingIPAddress,
     RequestingServer,
     ConfiguringNetwork,
-    DeleteOldVm;
+    ConfiguringCPanel,
+    CleanupVm;
 }

@@ -102,6 +102,7 @@ public class VmRestoreResource {
     public static class RestoreVmRequest {
         public UUID backupId;
         public String password;
+        public boolean debugEnabled;  // Prevent VM cleanup for troubleshooting
     }
 
     @POST
@@ -112,7 +113,7 @@ public class VmRestoreResource {
         isValidRestoreVmRequest(vmId, restoreVmRequest);
         logger.info("Processing restore on VM {} using snapshot {}", vmId, restoreVmRequest.backupId);
         Vps4RestoreVm.Request commandRequest = generateRestoreVmOrchestrationRequest(
-                vm, restoreVmRequest.backupId, restoreVmRequest.password);
+                vm, restoreVmRequest.backupId, restoreVmRequest.password, restoreVmRequest.debugEnabled);
         VmAction restoreAction = createActionAndExecute(
             actionService, commandService, vm.vmId, ActionType.RESTORE_VM, commandRequest, "Vps4RestoreVm", user);
         return restoreAction;
@@ -152,7 +153,7 @@ public class VmRestoreResource {
     }
 
     private Vps4RestoreVm.Request generateRestoreVmOrchestrationRequest(
-            VirtualMachine vm, UUID snapshotId, String password) {
+            VirtualMachine vm, UUID snapshotId, String password, boolean debugEnabled) {
         RestoreVmInfo restoreVmInfo = new RestoreVmInfo();
         restoreVmInfo.hostname = vm.hostname;
         restoreVmInfo.encryptedPassword = cryptography.encrypt(password);
@@ -166,6 +167,7 @@ public class VmRestoreResource {
         Vps4RestoreVm.Request req = new Vps4RestoreVm.Request();
         req.restoreVmInfo = restoreVmInfo;
         req.privateLabelId = creditService.getVirtualMachineCredit(vm.orionGuid).resellerId;
+        req.debugEnabled = debugEnabled;
         return req;
     }
 }

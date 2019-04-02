@@ -29,7 +29,6 @@ import com.godaddy.vps4.orchestration.hfs.cpanel.ConfigureCpanel.ConfigureCpanel
 import com.godaddy.vps4.orchestration.hfs.mailrelay.SetMailRelayQuota;
 import com.godaddy.vps4.orchestration.hfs.network.AllocateIp;
 import com.godaddy.vps4.orchestration.hfs.network.BindIp;
-import com.godaddy.vps4.orchestration.hfs.network.BindIp.BindIpRequest;
 import com.godaddy.vps4.orchestration.hfs.plesk.ConfigurePlesk;
 import com.godaddy.vps4.orchestration.hfs.plesk.ConfigurePlesk.ConfigurePleskRequest;
 import com.godaddy.vps4.orchestration.hfs.sysadmin.SetHostname;
@@ -212,9 +211,9 @@ public class Vps4ProvisionVm extends ActionCommand<ProvisionRequest, Vps4Provisi
         // bind IP to the VM
         setStep(ConfiguringNetwork);
 
-        BindIpRequest bindRequest = new BindIpRequest();
+        BindIp.Request bindRequest = new BindIp.Request();
         bindRequest.addressId = ip.addressId;
-        bindRequest.vmId = hfsVmId;
+        bindRequest.hfsVmId = hfsVmId;
         context.execute(BindIp.class, bindRequest);
     }
 

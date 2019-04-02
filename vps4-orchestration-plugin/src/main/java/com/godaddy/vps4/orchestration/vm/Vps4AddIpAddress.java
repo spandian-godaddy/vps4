@@ -15,7 +15,6 @@ import com.godaddy.vps4.orchestration.ActionCommand;
 import com.godaddy.vps4.orchestration.hfs.mailrelay.SetMailRelayQuota;
 import com.godaddy.vps4.orchestration.hfs.network.AllocateIp;
 import com.godaddy.vps4.orchestration.hfs.network.BindIp;
-import com.godaddy.vps4.orchestration.hfs.network.BindIp.BindIpRequest;
 import com.godaddy.vps4.vm.ActionService;
 import com.godaddy.vps4.vm.VirtualMachine;
 import com.godaddy.vps4.vm.VirtualMachineService;
@@ -89,10 +88,10 @@ public class Vps4AddIpAddress extends ActionCommand<Vps4AddIpAddress.Request, Vo
     }
 
     private void bindIp(CommandContext context, IpAddress ip, long hfsVmId) {
-        BindIpRequest bindRequest = new BindIpRequest();
+        BindIp.Request bindRequest = new BindIp.Request();
         bindRequest.addressId = ip.addressId;
-        bindRequest.vmId = hfsVmId;
-        logger.info("Binding IP {} for vmId {}", bindRequest.addressId, bindRequest.vmId);
+        bindRequest.hfsVmId = hfsVmId;
+        logger.info("Binding IP {} for vmId {}", bindRequest.addressId, bindRequest.hfsVmId);
         context.execute(BindIp.class, bindRequest);
     }
 

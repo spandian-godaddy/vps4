@@ -23,7 +23,6 @@ import com.godaddy.vps4.orchestration.hfs.cpanel.ConfigureCpanel;
 import com.godaddy.vps4.orchestration.hfs.cpanel.ConfigureCpanel.ConfigureCpanelRequest;
 import com.godaddy.vps4.orchestration.hfs.cpanel.RefreshCpanelLicense;
 import com.godaddy.vps4.orchestration.hfs.network.BindIp;
-import com.godaddy.vps4.orchestration.hfs.network.BindIp.BindIpRequest;
 import com.godaddy.vps4.orchestration.hfs.network.UnbindIp;
 import com.godaddy.vps4.orchestration.hfs.plesk.ConfigurePlesk;
 import com.godaddy.vps4.orchestration.hfs.plesk.ConfigurePlesk.ConfigurePleskRequest;
@@ -299,9 +298,9 @@ public class Vps4RebuildVm extends ActionCommand<Vps4RebuildVm.Request, Vps4Rebu
         for (IpAddress ipAddress: ipAddresses) {
             logger.info("Bind public ip address {} to VM {}", ipAddress.ipAddress, vps4VmId);
 
-            BindIpRequest bindRequest = new BindIpRequest();
+            BindIp.Request bindRequest = new BindIp.Request();
             bindRequest.addressId = ipAddress.ipAddressId;
-            bindRequest.vmId = hfsVmId;
+            bindRequest.hfsVmId = hfsVmId;
             context.execute(String.format("BindIP-%d", ipAddress.ipAddressId), BindIp.class, bindRequest);
         }
     }

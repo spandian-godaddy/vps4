@@ -18,7 +18,6 @@ import com.godaddy.vps4.orchestration.ActionCommand;
 import com.godaddy.vps4.orchestration.ActionRequest;
 import com.godaddy.vps4.orchestration.hfs.cpanel.RefreshCpanelLicense;
 import com.godaddy.vps4.orchestration.hfs.network.BindIp;
-import com.godaddy.vps4.orchestration.hfs.network.BindIp.BindIpRequest;
 import com.godaddy.vps4.orchestration.hfs.network.UnbindIp;
 import com.godaddy.vps4.orchestration.hfs.sysadmin.SetPassword;
 import com.godaddy.vps4.orchestration.hfs.sysadmin.ToggleAdmin;
@@ -41,10 +40,10 @@ import gdg.hfs.orchestration.CommandRetryStrategy;
 @CommandMetadata(
         name="Vps4RestoreVm",
         requestType=Vps4RestoreVm.Request.class,
-        responseType=Vps4RestoreVm.Response.class,
+        responseType=Void.class,
         retryStrategy = CommandRetryStrategy.NEVER
 )
-public class Vps4RestoreVm extends ActionCommand<Vps4RestoreVm.Request, Vps4RestoreVm.Response> {
+public class Vps4RestoreVm extends ActionCommand<Vps4RestoreVm.Request, Void> {
 
     private static final Logger logger = LoggerFactory.getLogger(Vps4RestoreVm.class);
     private final VmService vmService;
@@ -56,7 +55,6 @@ public class Vps4RestoreVm extends ActionCommand<Vps4RestoreVm.Request, Vps4Rest
     private ActionState state;
     private CommandContext context;
     private UUID vps4VmId;
-    private UUID vps4SnapshotId;
 
     @Inject
     public Vps4RestoreVm(ActionService actionService, VmService vmService, VirtualMachineService virtualMachineService,
@@ -70,43 +68,52 @@ public class Vps4RestoreVm extends ActionCommand<Vps4RestoreVm.Request, Vps4Rest
     }
 
     @Override
-    public Response executeWithAction(CommandContext context, Request request) throws Exception {
+    public Void executeWithAction(CommandContext context, Request request) throws Exception {
         this.request = request;
         this.context = context;
         this.state = new ActionState();
         this.vps4VmId = request.restoreVmInfo.vmId;
-        this.vps4SnapshotId = request.restoreVmInfo.snapshotId;
 
-        long oldHfsVmId = getOldHfsVmId();
-        List<IpAddress> ipAddresses = getPublicIpAddresses();
-        unbindPublicIpAddresses(ipAddresses);
+        long originalHfsVmId = getOriginalHfsVmId();
+        Vm newHfsVm = createVmFromSnapshot();
 
-        Vm hfsVm;
         try {
-            hfsVm = createVmFromSnapshot();
+            configureNewVm(newHfsVm);
         } catch (RuntimeException e) {
-            logger.info("Create VM failed during restore, binding ips back to vm {}", oldHfsVmId);
-            // Since the IP was already previously bound to oldHfsVmId, send true to force the IP bind
-            bindPublicIpAddress(oldHfsVmId, ipAddresses, true);
+            cleanupAndRollback(newHfsVm);
             throw e;
         }
-        long newHfsVmId = hfsVm.vmId;
 
-        // Post creation reconfigure steps
-        updateHfsVmId(newHfsVmId);
-        // The IP must be bound and configured on-box so do not force bind, set force to false.
-        bindPublicIpAddress(newHfsVmId, ipAddresses, false);
-        setRootUserPassword(newHfsVmId);
-        configureAdminUser(newHfsVmId);
-        refreshCpanelLicense();
-
-        deleteOldVm(oldHfsVmId);
-
-        logger.info("vm restore finished");
+        updateHfsVmId(newHfsVm.vmId);
+        cleanupVm(originalHfsVmId);
+        logger.info("VM restore of vmId {} finished", vps4VmId);
         return null;
     }
 
-    private long getOldHfsVmId() {
+    private void configureNewVm(Vm newHfsVm) {
+        List<IpAddress> ipAddresses = getPublicIpAddresses();
+        unbindPublicIpAddresses(ipAddresses);
+        bindPublicIpAddress(newHfsVm.vmId, ipAddresses, false);
+
+        setRootUserPassword(newHfsVm.vmId);
+        configureAdminUser(newHfsVm.vmId);
+        refreshCpanelLicense();
+    }
+
+    private void cleanupAndRollback(Vm newHfsVm) {
+        long originalHfsVmId = getOriginalHfsVmId();
+        logger.info("Restore VM {} failed, binding ips back to HFS VM {} and destroying errored HFS VM {}", vps4VmId, originalHfsVmId, newHfsVm.vmId);
+
+        List<IpAddress> ipAddresses = getPublicIpAddresses();
+        // Use force=true, IP was already configured on originalHfsVmId
+        bindPublicIpAddress(originalHfsVmId, ipAddresses, true);
+
+        if (!request.debugEnabled) {
+            cleanupVm(newHfsVm.vmId);
+        }
+    }
+
+    private long getOriginalHfsVmId() {
         return context.execute("GetHfsVmId", ctx -> virtualMachineService.getVirtualMachine(vps4VmId).hfsVmId, long.class);
     }
 
@@ -141,7 +148,7 @@ public class Vps4RestoreVm extends ActionCommand<Vps4RestoreVm.Request, Vps4Rest
         CreateVmFromSnapshot.Request createVmFromSnapshotRequest = new CreateVmFromSnapshot.Request();
         createVmFromSnapshotRequest.rawFlavor = request.restoreVmInfo.rawFlavor;
         createVmFromSnapshotRequest.sgid = request.restoreVmInfo.sgid;
-        createVmFromSnapshotRequest.image_id = getNocfoxImageIdForSnapshot(vps4SnapshotId);
+        createVmFromSnapshotRequest.image_id = getNocfoxImageIdForSnapshot(request.restoreVmInfo.snapshotId);
         createVmFromSnapshotRequest.os = getVmOSDistro();
         createVmFromSnapshotRequest.username = request.restoreVmInfo.username;
         createVmFromSnapshotRequest.encryptedPassword = request.restoreVmInfo.encryptedPassword;
@@ -205,20 +212,22 @@ public class Vps4RestoreVm extends ActionCommand<Vps4RestoreVm.Request, Vps4Rest
 
     private void bindPublicIpAddress(long hfsVmId, List<IpAddress> ipAddresses, boolean shouldForce) {
         setStep(RestoreVmStep.ConfiguringNetwork);
-        logger.info("Bind public ip address");
 
         for (IpAddress ipAddress: ipAddresses) {
             logger.info("Bind public ip address {} to VM {}", ipAddress.ipAddress, vps4VmId);
 
-            BindIpRequest bindRequest = new BindIpRequest();
+            BindIp.Request bindRequest = new BindIp.Request();
             bindRequest.addressId = ipAddress.ipAddressId;
-            bindRequest.vmId = hfsVmId;
+            bindRequest.hfsVmId = hfsVmId;
             bindRequest.shouldForce = shouldForce;
-            context.execute(String.format("BindIP-%d", ipAddress.ipAddressId), BindIp.class, bindRequest);
+            String cmdName = String.format("%sBindIP-%d", (shouldForce) ? "Force" : "", ipAddress.ipAddressId);
+            context.execute(cmdName, BindIp.class, bindRequest);
         }
     }
 
     private void refreshCpanelLicense(){
+        setStep(RestoreVmStep.ConfiguringCPanel);
+
         VirtualMachine vm = context.execute("GetVirtualMachine",
                 ctx -> virtualMachineService.getVirtualMachine(vps4VmId),
                 VirtualMachine.class);
@@ -231,9 +240,9 @@ public class Vps4RestoreVm extends ActionCommand<Vps4RestoreVm.Request, Vps4Rest
 
     }
 
-    private void deleteOldVm(long hfsVmId) {
-        setStep(RestoreVmStep.DeleteOldVm);
-        logger.info("Delete old VM");
+    private void cleanupVm(long hfsVmId) {
+        setStep(RestoreVmStep.CleanupVm);
+        logger.info("Deleting VM: " + hfsVmId);
         context.execute("DestroyVmHfs", DestroyVm.class, hfsVmId);
     }
 
@@ -251,6 +260,7 @@ public class Vps4RestoreVm extends ActionCommand<Vps4RestoreVm.Request, Vps4Rest
         public RestoreVmInfo restoreVmInfo;
         public String privateLabelId;
         public long actionId;
+        public boolean debugEnabled;
 
         @Override
         public long getActionId() {
@@ -261,10 +271,6 @@ public class Vps4RestoreVm extends ActionCommand<Vps4RestoreVm.Request, Vps4Rest
         public void setActionId(long actionId) {
             this.actionId = actionId;
         }
-    }
-
-    public static class Response {
-        public long vmId;
     }
 
     public static class ActionState {

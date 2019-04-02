@@ -73,7 +73,7 @@ public class TestVps4AddIpAddress {
             Assert.fail();
         }
         verify(context, times(1)).execute(eq(AllocateIp.class), any(AllocateIp.Request.class));
-        verify(context, times(1)).execute(eq(BindIp.class), any(BindIp.BindIpRequest.class));
+        verify(context, times(1)).execute(eq(BindIp.class), any(BindIp.Request.class));
     }
 
 

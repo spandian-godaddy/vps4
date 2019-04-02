@@ -7,6 +7,7 @@ import static org.mockito.Matchers.eq;
 import static org.mockito.Matchers.startsWith;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -20,7 +21,6 @@ import java.util.function.Function;
 
 import javax.sql.DataSource;
 
-import com.godaddy.vps4.vm.ActionType;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -30,6 +30,8 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
 import org.mockito.MockitoAnnotations;
 
+import com.godaddy.hfs.vm.Vm;
+import com.godaddy.hfs.vm.VmService;
 import com.godaddy.vps4.jdbc.DatabaseModule;
 import com.godaddy.vps4.network.IpAddress;
 import com.godaddy.vps4.network.NetworkService;
@@ -50,6 +52,7 @@ import com.godaddy.vps4.snapshot.SnapshotService;
 import com.godaddy.vps4.snapshot.SnapshotStatus;
 import com.godaddy.vps4.snapshot.SnapshotType;
 import com.godaddy.vps4.vm.ActionService;
+import com.godaddy.vps4.vm.ActionType;
 import com.godaddy.vps4.vm.Image;
 import com.godaddy.vps4.vm.RestoreVmInfo;
 import com.godaddy.vps4.vm.VirtualMachine;
@@ -61,8 +64,6 @@ import com.google.inject.Inject;
 import com.google.inject.Injector;
 
 import gdg.hfs.orchestration.CommandContext;
-import com.godaddy.hfs.vm.Vm;
-import com.godaddy.hfs.vm.VmService;
 
 public class Vps4RestoreVmTest {
     static Injector injector;
@@ -97,7 +98,7 @@ public class Vps4RestoreVmTest {
     @Captor private ArgumentCaptor<Function<CommandContext, Vm>> getHfsVmLambdaCaptor;
     @Captor private ArgumentCaptor<Function<CommandContext, Image>> getImageLambdaCaptor;
     @Captor private ArgumentCaptor<Function<CommandContext, Void>> updateHfsVmIdLambdaCaptor;
-    @Captor private ArgumentCaptor<BindIp.BindIpRequest> bindIpRequestArgumentCaptor;
+    @Captor private ArgumentCaptor<BindIp.Request> bindIpRequestArgumentCaptor;
     @Captor private ArgumentCaptor<CreateVmFromSnapshot.Request> flavorRequestArgumentCaptor;
     @Captor private ArgumentCaptor<SetPassword.Request> setPasswordArgumentCaptor;
     @Captor private ArgumentCaptor<ToggleAdmin.Request> toggleAdminArgumentCaptor;
@@ -121,8 +122,8 @@ public class Vps4RestoreVmTest {
         MockitoAnnotations.initMocks(this);
 
         spyVps4VmService = spy(vps4VmService);
-        command = new Vps4RestoreVm(actionService, hfsVmService, spyVps4VmService,
-                vps4NetworkService, vps4SnapshotService, vmUserService);
+        command = new Vps4RestoreVm(actionService, hfsVmService, spyVps4VmService, vps4NetworkService,
+                vps4SnapshotService, vmUserService);
         addTestSqlData();
         context = setupMockContext();
         request = getCommandRequest();
@@ -130,8 +131,8 @@ public class Vps4RestoreVmTest {
 
     @After
     public void teardownTest() {
-        SqlTestData.cleanupSqlTestData(
-                injector.getInstance(DataSource.class), injector.getInstance(Vps4UserService.class));
+        SqlTestData.cleanupSqlTestData(injector.getInstance(DataSource.class),
+                injector.getInstance(Vps4UserService.class));
     }
 
     private void addTestSqlData() {
@@ -139,8 +140,8 @@ public class Vps4RestoreVmTest {
         vps4Project = SqlTestData.insertProject(projectService, vps4UserService);
         vps4Vm = SqlTestData.insertVm(vps4VmService, vps4UserService);
         vps4VmId = vps4Vm.vmId;
-        vps4SnapshotId = SqlTestData.insertSnapshotWithStatus(
-                vps4SnapshotService, vps4Vm.vmId, vps4Project.getProjectId(), SnapshotStatus.LIVE, SnapshotType.ON_DEMAND);
+        vps4SnapshotId = SqlTestData.insertSnapshotWithStatus(vps4SnapshotService, vps4Vm.vmId,
+                vps4Project.getProjectId(), SnapshotStatus.LIVE, SnapshotType.ON_DEMAND);
         restoreActionId = SqlTestData.insertVmAction(actionService, vps4VmId, ActionType.RESTORE_VM);
         ipAddresses = new ArrayList<>();
         ipAddresses.addAll(
@@ -153,12 +154,16 @@ public class Vps4RestoreVmTest {
         CommandContext mockContext = mock(CommandContext.class);
         when(mockContext.getId()).thenReturn(UUID.randomUUID());
 
-        when(mockContext.execute(eq("GetHfsVmId"), any(Function.class), eq(long.class))).thenReturn(SqlTestData.hfsVmId);
-        when(mockContext.execute(eq("GetVirtualMachine"), any(Function.class), eq(VirtualMachine.class))).thenReturn(vps4Vm);
+        when(mockContext.execute(eq("GetHfsVmId"), any(Function.class), eq(long.class)))
+                .thenReturn(SqlTestData.hfsVmId);
+        when(mockContext.execute(eq("GetVirtualMachine"), any(Function.class), eq(VirtualMachine.class)))
+                .thenReturn(vps4Vm);
         when(mockContext.execute(eq("GetImageInfo"), any(Function.class), eq(Image.class))).thenReturn(vps4Vm.image);
         when(mockContext.execute(startsWith("UnbindIP-"), eq(UnbindIp.class), any())).thenReturn(null);
-        when(mockContext.execute(eq("GetNocfoxImageId"), any(Function.class), eq(String.class))).thenReturn(SqlTestData.nfImageId);
-        when(mockContext.execute(eq("GetVmOSDistro"), any(Function.class), eq(String.class))).thenReturn(SqlTestData.IMAGE_NAME);
+        when(mockContext.execute(eq("GetNocfoxImageId"), any(Function.class), eq(String.class)))
+                .thenReturn(SqlTestData.nfImageId);
+        when(mockContext.execute(eq("GetVmOSDistro"), any(Function.class), eq(String.class)))
+                .thenReturn(SqlTestData.IMAGE_NAME);
 
         hfsAction = new com.godaddy.hfs.vm.VmAction();
         hfsAction.vmActionId = hfsRestoreActionId;
@@ -196,8 +201,7 @@ public class Vps4RestoreVmTest {
     @Test
     public void getsHfsVmIdOfTheCurrentVm() {
         command.execute(context, request);
-        verify(context, times(1))
-            .execute(eq("GetHfsVmId"), getHfsVmIdLambdaCaptor.capture(), eq(long.class));
+        verify(context, times(1)).execute(eq("GetHfsVmId"), getHfsVmIdLambdaCaptor.capture(), eq(long.class));
 
         // Verify that the lambda is returning what we expect
         Function<CommandContext, Long> lambda = getHfsVmIdLambdaCaptor.getValue();
@@ -208,24 +212,19 @@ public class Vps4RestoreVmTest {
     @Test
     public void unbindsExistingIpAddresses() {
         command.execute(context, request);
-        for (IpAddress ipAddress: ipAddresses) {
-            verify(context, times(1))
-                .execute(
-                    eq(String.format("UnbindIP-%d", ipAddress.ipAddressId)),
-                    eq(UnbindIp.class),
-                    unbindIpArgumentCaptor.capture()
-                );
+        for (IpAddress ipAddress : ipAddresses) {
+            verify(context, times(1)).execute(eq(String.format("UnbindIP-%d", ipAddress.ipAddressId)),
+                    eq(UnbindIp.class), unbindIpArgumentCaptor.capture());
             UnbindIp.Request unbindIpRequest = unbindIpArgumentCaptor.getValue();
             Assert.assertTrue(unbindIpRequest.forceIfVmInaccessible);
-            Assert.assertEquals(ipAddress.ipAddressId, (long) unbindIpRequest.addressId);
+            Assert.assertEquals(ipAddress.ipAddressId, unbindIpRequest.addressId);
         }
     }
 
     @Test
     public void getsVmOSDistro() {
         command.execute(context, request);
-        verify(context, times(1))
-                .execute(eq("GetVmOSDistro"), getVmOSDistroLambdaCaptor.capture(), eq(String.class));
+        verify(context, times(1)).execute(eq("GetVmOSDistro"), getVmOSDistroLambdaCaptor.capture(), eq(String.class));
 
         // Verify that the lambda is returning what we expect
         Function<CommandContext, String> lambda = getVmOSDistroLambdaCaptor.getValue();
@@ -236,14 +235,11 @@ public class Vps4RestoreVmTest {
     @Test
     public void createsVmFromSnapshot() {
         command.execute(context, request);
-        verify(context, times(1))
-            .execute(
-                eq("CreateVmFromSnapshot"), eq(CreateVmFromSnapshot.class),
-                flavorRequestArgumentCaptor.capture()
-            );
+        verify(context, times(1)).execute(eq("CreateVmFromSnapshot"), eq(CreateVmFromSnapshot.class),
+                flavorRequestArgumentCaptor.capture());
 
         CreateVmFromSnapshot.Request flavorRequest = flavorRequestArgumentCaptor.getValue();
-        Assert.assertEquals( "True", flavorRequest.ignore_whitelist);
+        Assert.assertEquals("True", flavorRequest.ignore_whitelist);
         Assert.assertEquals(SqlTestData.nfImageId, flavorRequest.image_id);
         Assert.assertEquals(SqlTestData.IMAGE_NAME, flavorRequest.os);
         Assert.assertEquals("1", flavorRequest.privateLabelId);
@@ -253,8 +249,7 @@ public class Vps4RestoreVmTest {
     public void getNewHfsVmAfterCreation() {
         when(hfsVmService.getVm(eq(hfsNewVmId))).thenReturn(hfsVm);
         command.execute(context, request);
-        verify(context, times(1))
-                .execute(eq("GetVmAfterCreate"), getHfsVmLambdaCaptor.capture(), eq(Vm.class));
+        verify(context, times(1)).execute(eq("GetVmAfterCreate"), getHfsVmLambdaCaptor.capture(), eq(Vm.class));
 
         // Verify that the lambda is returning what we expect
         Function<CommandContext, Vm> lambda = getHfsVmLambdaCaptor.getValue();
@@ -280,17 +275,14 @@ public class Vps4RestoreVmTest {
 
         verify(context, times(1)).execute(eq("GetImageInfo"), any(Function.class), eq(Image.class));
         verify(spyVps4VmService, times(1)).isLinux(eq(vps4VmId));
-        verify(context, times(1))
-                .execute(eq("SetRootUserPassword"), eq(SetPassword.class), setPasswordArgumentCaptor.capture());
+        verify(context, times(1)).execute(eq("SetRootUserPassword"), eq(SetPassword.class),
+                setPasswordArgumentCaptor.capture());
 
         SetPassword.Request request = setPasswordArgumentCaptor.getValue();
         Assert.assertArrayEquals(password.getBytes(), request.encryptedPassword);
         Assert.assertEquals(hfsNewVmId, request.hfsVmId);
         Assert.assertEquals(vps4Vm.image.getImageControlPanel(), request.controlPanel);
-        assertThat(
-                Arrays.asList("root"),
-                containsInAnyOrder(request.usernames.toArray())
-        );
+        assertThat(Arrays.asList("root"), containsInAnyOrder(request.usernames.toArray()));
     }
 
     @Test
@@ -299,8 +291,7 @@ public class Vps4RestoreVmTest {
         command.execute(context, request);
 
         verify(spyVps4VmService, times(1)).isLinux(eq(vps4VmId));
-        verify(context, times(0))
-                .execute(eq("SetRootUserPassword"), eq(SetPassword.class), any());
+        verify(context, times(0)).execute(eq("SetRootUserPassword"), eq(SetPassword.class), any());
     }
 
     @Test
@@ -308,8 +299,8 @@ public class Vps4RestoreVmTest {
         command.execute(context, request);
 
         verify(spyVps4VmService, times(1)).hasControlPanel(eq(vps4VmId));
-        verify(context, times(1))
-                .execute(eq("ConfigureAdminAccess"), eq(ToggleAdmin.class), toggleAdminArgumentCaptor.capture());
+        verify(context, times(1)).execute(eq("ConfigureAdminAccess"), eq(ToggleAdmin.class),
+                toggleAdminArgumentCaptor.capture());
 
         ToggleAdmin.Request request = toggleAdminArgumentCaptor.getValue();
         Assert.assertEquals(username, request.username);
@@ -322,8 +313,8 @@ public class Vps4RestoreVmTest {
         doReturn(true).when(spyVps4VmService).hasControlPanel(vps4VmId);
         command.execute(context, request);
 
-        verify(context, times(1))
-                .execute(eq("ConfigureAdminAccess"), eq(ToggleAdmin.class), toggleAdminArgumentCaptor.capture());
+        verify(context, times(1)).execute(eq("ConfigureAdminAccess"), eq(ToggleAdmin.class),
+                toggleAdminArgumentCaptor.capture());
 
         ToggleAdmin.Request request = toggleAdminArgumentCaptor.getValue();
         Assert.assertEquals(username, request.username);
@@ -334,8 +325,7 @@ public class Vps4RestoreVmTest {
     @Test
     public void updatesHfsVmIdWithTheNewId() {
         command.execute(context, request);
-        verify(context, times(1))
-                .execute(eq("UpdateHfsVmId"), updateHfsVmIdLambdaCaptor.capture(), eq(Void.class));
+        verify(context, times(1)).execute(eq("UpdateHfsVmId"), updateHfsVmIdLambdaCaptor.capture(), eq(Void.class));
 
         // Verify that the lambda is returning what we expect
         Function<CommandContext, Void> lambda = updateHfsVmIdLambdaCaptor.getValue();
@@ -346,40 +336,15 @@ public class Vps4RestoreVmTest {
     @Test
     public void bindsIpAddressesToNewHfsVm() {
         command.execute(context, request);
-        for (IpAddress ipAddress: ipAddresses) {
-            verify(context, times(1))
-                .execute(
-                    eq(String.format("BindIP-%d", ipAddress.ipAddressId)),
-                    eq(BindIp.class),
-                    bindIpRequestArgumentCaptor.capture()
-                );
+        for (IpAddress ipAddress : ipAddresses) {
+            verify(context, times(1)).execute(eq(String.format("BindIP-%d", ipAddress.ipAddressId)), eq(BindIp.class),
+                    bindIpRequestArgumentCaptor.capture());
 
             // verify parameter passed into the BindIp command is the right pair of hfsVmId and ipAddressId
-            BindIp.BindIpRequest bindIpRequest = bindIpRequestArgumentCaptor.getValue();
-            Assert.assertEquals(bindIpRequest.vmId, hfsNewVmId);
+            BindIp.Request bindIpRequest = bindIpRequestArgumentCaptor.getValue();
+            Assert.assertEquals(bindIpRequest.hfsVmId, hfsNewVmId);
             Assert.assertEquals(bindIpRequest.addressId, ipAddress.ipAddressId);
             Assert.assertFalse(bindIpRequest.shouldForce);
-        }
-    }
-
-    @Test (expected = RuntimeException.class)
-    public void bindsIpAddressesToOldHfsVmWhenCreateFails() {
-        when(context.execute(eq("CreateVmFromSnapshot"), eq(CreateVmFromSnapshot.class), any()))
-                .thenThrow(new RuntimeException("test create vm failed"));
-        command.execute(context, request);
-        for (IpAddress ipAddress: ipAddresses) {
-            verify(context, times(1))
-                    .execute(
-                            eq(String.format("BindIP-%d", ipAddress.ipAddressId)),
-                            eq(BindIp.class),
-                            bindIpRequestArgumentCaptor.capture()
-                    );
-
-            // verify parameter passed into the BindIp command is the right pair of hfsVmId and ipAddressId
-            BindIp.BindIpRequest bindIpRequest = bindIpRequestArgumentCaptor.getValue();
-            Assert.assertEquals(bindIpRequest.vmId, vps4Vm.hfsVmId);
-            Assert.assertEquals(bindIpRequest.addressId, ipAddress.ipAddressId);
-            Assert.assertTrue(bindIpRequest.shouldForce);
         }
     }
 
@@ -388,8 +353,7 @@ public class Vps4RestoreVmTest {
         command.execute(context, request);
 
         // SqlTestData.hfsVmId is the ID of the old hfs vm
-        verify(context, times(1))
-            .execute(eq("DestroyVmHfs"), eq(DestroyVm.class), eq(SqlTestData.hfsVmId));
+        verify(context, times(1)).execute(eq("DestroyVmHfs"), eq(DestroyVm.class), eq(SqlTestData.hfsVmId));
     }
 
     @Test
@@ -398,10 +362,56 @@ public class Vps4RestoreVmTest {
         vps4Vm.image.controlPanel = Image.ControlPanel.CPANEL;
         command.execute(context, request);
 
-        verify(context, times(1))
-                .execute(eq("RefreshCPanelLicense"), eq(RefreshCpanelLicense.class), refreshLicenseCaptor.capture());
+        verify(context, times(1)).execute(eq("RefreshCPanelLicense"), eq(RefreshCpanelLicense.class),
+                refreshLicenseCaptor.capture());
 
         RefreshCpanelLicense.Request refreshRequest = refreshLicenseCaptor.getValue();
         Assert.assertEquals(vps4Vm.hfsVmId, refreshRequest.hfsVmId);
     }
+
+    @Test(expected = RuntimeException.class)
+    public void throwsExceptionWhenCreateFromSnapshotFails() {
+        when(context.execute(eq("CreateVmFromSnapshot"), eq(CreateVmFromSnapshot.class), any()))
+                .thenThrow(new RuntimeException("test create vm failed"));
+        command.execute(context, request);
+    }
+
+    @Test
+    public void rollbackAndCleanupWhenConfigureVmFails() {
+        when(context.execute(eq("SetRootUserPassword"), eq(SetPassword.class), any()))
+                .thenThrow(new RuntimeException("Set password failed!"));
+
+        try {
+            command.execute(context, request);
+            Assert.fail();
+        } catch (RuntimeException ex) {
+            // Verify destroys newHfsVm and *force* binds IPs back to originalHfsVm
+            verify(context).execute(eq("DestroyVmHfs"), eq(DestroyVm.class), eq(hfsNewVmId));
+            for (IpAddress ipAddress : ipAddresses) {
+                verify(context).execute(eq(String.format("ForceBindIP-%d", ipAddress.ipAddressId)), eq(BindIp.class),
+                        bindIpRequestArgumentCaptor.capture());
+
+                BindIp.Request bindIpRequest = bindIpRequestArgumentCaptor.getValue();
+                Assert.assertEquals(bindIpRequest.hfsVmId, vps4Vm.hfsVmId);
+                Assert.assertEquals(bindIpRequest.addressId, ipAddress.ipAddressId);
+                Assert.assertTrue(bindIpRequest.shouldForce);
+            }
+        }
+    }
+
+    @Test
+    public void preventCleanupWithDebugEnabledWhenConfigureVmFails() {
+        request.debugEnabled = true;
+        when(context.execute(eq("SetRootUserPassword"), eq(SetPassword.class), any()))
+                .thenThrow(new RuntimeException("Set password failed!"));
+
+        try {
+            command.execute(context, request);
+            Assert.fail();
+        } catch (RuntimeException ex) {
+            // Verify destroys newHfsVm and *force* binds IPs back to originalHfsVm
+            verify(context, never()).execute(eq("DestroyVmHfs"), eq(DestroyVm.class), eq(hfsNewVmId));
+        }
+    }
+
 }
