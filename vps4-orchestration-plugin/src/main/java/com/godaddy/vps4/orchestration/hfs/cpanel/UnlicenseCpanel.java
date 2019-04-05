@@ -1,15 +1,17 @@
 package com.godaddy.vps4.orchestration.hfs.cpanel;
 
+import javax.ws.rs.ClientErrorException;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.google.inject.Inject;
 
 import gdg.hfs.orchestration.Command;
 import gdg.hfs.orchestration.CommandContext;
 import gdg.hfs.vhfs.cpanel.CPanelAction;
 import gdg.hfs.vhfs.cpanel.CPanelService;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
-import javax.ws.rs.ClientErrorException;
 
 public class UnlicenseCpanel implements Command<Long, Void> {
 
@@ -29,7 +31,7 @@ public class UnlicenseCpanel implements Command<Long, Void> {
             return null;
         }
         CPanelAction action = context.execute("Unlicense-Cpanel",
-                ctx -> cpanelService.licenseRelease(hfsVmId),
+                ctx -> cpanelService.licenseRelease(null, hfsVmId),
                 CPanelAction.class);
         context.execute(WaitForCpanelAction.class, action);
         return null;

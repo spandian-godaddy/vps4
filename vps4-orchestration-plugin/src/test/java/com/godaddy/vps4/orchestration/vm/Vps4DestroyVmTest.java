@@ -21,13 +21,16 @@ import javax.ws.rs.ClientErrorException;
 import javax.ws.rs.NotFoundException;
 import javax.ws.rs.core.Response;
 
-import com.godaddy.vps4.vm.VmUserService;
-import gdg.hfs.vhfs.cpanel.CPanelLicense;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mockito;
 
+import com.godaddy.hfs.mailrelay.MailRelay;
+import com.godaddy.hfs.mailrelay.MailRelayService;
+import com.godaddy.hfs.mailrelay.MailRelayUpdate;
+import com.godaddy.hfs.vm.VmAction;
+import com.godaddy.hfs.vm.VmService;
 import com.godaddy.vps4.network.IpAddress;
 import com.godaddy.vps4.network.IpAddress.IpAddressType;
 import com.godaddy.vps4.network.NetworkService;
@@ -39,23 +42,21 @@ import com.godaddy.vps4.util.MonitoringMeta;
 import com.godaddy.vps4.vm.ActionService;
 import com.godaddy.vps4.vm.VirtualMachine;
 import com.godaddy.vps4.vm.VirtualMachineService;
+import com.godaddy.vps4.vm.VmUserService;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
 
 import gdg.hfs.orchestration.CommandContext;
 import gdg.hfs.orchestration.GuiceCommandProvider;
 import gdg.hfs.vhfs.cpanel.CPanelAction;
+import gdg.hfs.vhfs.cpanel.CPanelLicense;
 import gdg.hfs.vhfs.cpanel.CPanelService;
-import com.godaddy.hfs.mailrelay.MailRelay;
-import com.godaddy.hfs.mailrelay.MailRelayService;
-import com.godaddy.hfs.mailrelay.MailRelayUpdate;
 import gdg.hfs.vhfs.network.AddressAction;
 import gdg.hfs.vhfs.network.IpAddress.Status;
 import gdg.hfs.vhfs.nodeping.NodePingService;
 import gdg.hfs.vhfs.plesk.PleskAction;
 import gdg.hfs.vhfs.plesk.PleskService;
-import com.godaddy.hfs.vm.VmAction;
-import com.godaddy.hfs.vm.VmService;
+
 import junit.framework.Assert;
 
 public class Vps4DestroyVmTest {
@@ -175,10 +176,10 @@ public class Vps4DestroyVmTest {
         when(virtualMachineService.virtualMachineHasCpanel(vm.vmId)).thenReturn(true);
         CPanelAction action = new CPanelAction();
         action.status = CPanelAction.Status.COMPLETE;
-        when(cpanelService.licenseRelease(vm.hfsVmId)).thenReturn(action);
+        when(cpanelService.licenseRelease(null, vm.hfsVmId)).thenReturn(action);
 
         command.execute(context, request);
-        verify(cpanelService, times(1)).licenseRelease(request.virtualMachine.hfsVmId);
+        verify(cpanelService, times(1)).licenseRelease(null, request.virtualMachine.hfsVmId);
     }
 
     @Test
@@ -187,10 +188,10 @@ public class Vps4DestroyVmTest {
         when(virtualMachineService.virtualMachineHasCpanel(vm.vmId)).thenReturn(true);
         CPanelAction action = new CPanelAction();
         action.status = CPanelAction.Status.COMPLETE;
-        when(cpanelService.licenseRelease(vm.hfsVmId)).thenReturn(action);
+        when(cpanelService.licenseRelease(null, vm.hfsVmId)).thenReturn(action);
 
         command.execute(context, request);
-        verify(cpanelService, times(0)).licenseRelease(request.virtualMachine.hfsVmId);
+        verify(cpanelService, times(0)).licenseRelease(null, request.virtualMachine.hfsVmId);
     }
 
     @Test
@@ -204,7 +205,7 @@ public class Vps4DestroyVmTest {
         action.status = CPanelAction.Status.COMPLETE;
 
         command.execute(context, request);
-        verify(cpanelService, times(0)).licenseRelease(request.virtualMachine.hfsVmId);
+        verify(cpanelService, times(0)).licenseRelease(null, request.virtualMachine.hfsVmId);
 
     }
 
@@ -238,7 +239,7 @@ public class Vps4DestroyVmTest {
         vm.hfsVmId = 0;
 
         command.execute(context, request);
-        verify(cpanelService, never()).licenseRelease(request.virtualMachine.hfsVmId);
+        verify(cpanelService, never()).licenseRelease(null, request.virtualMachine.hfsVmId);
         verify(vmService, never()).destroyVm(Mockito.anyLong());
     }
 

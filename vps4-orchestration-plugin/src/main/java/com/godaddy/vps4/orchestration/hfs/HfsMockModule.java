@@ -193,7 +193,7 @@ public class HfsMockModule extends AbstractModule {
             }
 
             @Override
-            public CPanelAction licenseRelease(long vmId) {
+            public CPanelAction licenseRelease(String ipAddress, long vmId) {
                 return this.createAndStoreCPanelAction(
                         vmId, CPanelAction.ActionType.LicenseRelease, CPanelAction.Status.COMPLETE);
             }

@@ -8,16 +8,17 @@ import java.util.List;
 
 import javax.inject.Inject;
 
-import com.godaddy.hfs.config.Config;
-import com.godaddy.vps4.cpanel.CpanelClient.CpanelServiceType;
-import com.godaddy.vps4.network.IpAddress;
-import com.godaddy.vps4.network.NetworkService;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import com.godaddy.hfs.config.Config;
+import com.godaddy.vps4.cpanel.CpanelClient.CpanelServiceType;
+import com.godaddy.vps4.network.IpAddress;
+import com.godaddy.vps4.network.NetworkService;
 
 public class DefaultVps4CpanelService implements Vps4CpanelService {
 
@@ -44,10 +45,6 @@ public class DefaultVps4CpanelService implements Vps4CpanelService {
         return networkService.getVmPrimaryAddress(hfsVmId).ipAddress;
     }
 
-    private String getOriginatorIp() {
-        return "172.19.46.185";
-    }
-
     interface CpanelClientHandler<T> {
         T handle(CpanelClient client)
                 throws CpanelAccessDeniedException, CpanelTimeoutException, IOException;
@@ -70,7 +67,7 @@ public class DefaultVps4CpanelService implements Vps4CpanelService {
     }
 
     <T> T withAccessHash(long hfsVmId, CpanelClientHandler<T> handler)
-            throws CpanelAccessDeniedException, CpanelTimeoutException, IOException {
+            throws CpanelAccessDeniedException, CpanelTimeoutException {
 
         Instant timeoutAt = Instant.now().plus(timeoutVal, ChronoUnit.MILLIS);
 
@@ -78,9 +75,8 @@ public class DefaultVps4CpanelService implements Vps4CpanelService {
 
         while (Instant.now().isBefore(timeoutAt)) {
             // TODO remove the hardcoded values for IP
-            String fromIp = getOriginatorIp();
             String publicIp = getVmIp(hfsVmId);
-            String accessHash = accessHashService.getAccessHash(hfsVmId, publicIp, fromIp, timeoutAt);
+            String accessHash = accessHashService.getAccessHash(hfsVmId, publicIp, timeoutAt);
             if (accessHash == null) {
                 // we couldn't get the access hash, so no point in even
                 // trying to contact the VM

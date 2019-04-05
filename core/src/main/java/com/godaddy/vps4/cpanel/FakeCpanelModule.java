@@ -49,7 +49,7 @@ public class FakeCpanelModule extends AbstractModule {
         return new CpanelAccessHashService() {
 
             @Override
-            public String getAccessHash(long vmId, String publicIp, String fromIp, Instant timeoutAt) {
+            public String getAccessHash(long vmId, String publicIp, Instant timeoutAt) {
                 return accessHash;
             }
 

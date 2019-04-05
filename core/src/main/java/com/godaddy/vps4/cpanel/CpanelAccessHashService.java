@@ -4,7 +4,7 @@ import java.time.Instant;
 
 public interface CpanelAccessHashService {
 
-    String getAccessHash(long vmId, String publicIp, String fromIp, Instant timeoutAt);
+    String getAccessHash(long vmId, String publicIp, Instant timeoutAt);
 
     void invalidAccessHash(long vmId, String accessHash);
 }

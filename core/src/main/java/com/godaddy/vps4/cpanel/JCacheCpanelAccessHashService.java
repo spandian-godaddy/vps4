@@ -26,14 +26,14 @@ public class JCacheCpanelAccessHashService implements CpanelAccessHashService {
     }
 
     @Override
-    public String getAccessHash(long vmId, String publicIp, String fromIp, Instant timeoutAt) {
+    public String getAccessHash(long vmId, String publicIp, Instant timeoutAt) {
 
         // first, try to get the access hash from the cache
         String accessHash = cache.get(vmId);
         if (accessHash == null) {
             logger.debug("cache not populated for vm {}, deferring to nested accesshash service", vmId);
 
-            accessHash = accessHashService.getAccessHash(vmId, publicIp, fromIp, timeoutAt);
+            accessHash = accessHashService.getAccessHash(vmId, publicIp, timeoutAt);
             if (accessHash != null) {
                 logger.debug("populating cache for vm {}", vmId);
                 cache.put(vmId, accessHash);

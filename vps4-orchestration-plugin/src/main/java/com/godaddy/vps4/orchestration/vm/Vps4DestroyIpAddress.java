@@ -2,6 +2,10 @@ package com.godaddy.vps4.orchestration.vm;
 
 import javax.inject.Inject;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import com.godaddy.hfs.mailrelay.MailRelayService;
 import com.godaddy.vps4.network.IpAddress;
 import com.godaddy.vps4.orchestration.hfs.mailrelay.SetMailRelayQuota;
 import com.godaddy.vps4.orchestration.hfs.network.ReleaseIp;
@@ -9,13 +13,9 @@ import com.godaddy.vps4.orchestration.hfs.network.UnbindIp;
 import com.godaddy.vps4.vm.VirtualMachine;
 import com.godaddy.vps4.vm.VirtualMachineService;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import gdg.hfs.orchestration.Command;
 import gdg.hfs.orchestration.CommandContext;
 import gdg.hfs.vhfs.cpanel.CPanelService;
-import com.godaddy.hfs.mailrelay.MailRelayService;
 import gdg.hfs.vhfs.network.NetworkServiceV2;
 import gdg.hfs.vhfs.plesk.PleskService;
 

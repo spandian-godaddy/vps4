@@ -1,15 +1,16 @@
 package com.godaddy.vps4.cpanel;
 
-import org.junit.Assert;
-import org.junit.Test;
-import org.junit.Before;
-import org.mockito.Mockito;
-
-import javax.cache.Cache;
-import javax.cache.CacheManager;
 import java.time.Instant;
 import java.util.Random;
 import java.util.UUID;
+
+import javax.cache.Cache;
+import javax.cache.CacheManager;
+
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.Test;
+import org.mockito.Mockito;
 
 public class JCacheCpanelAccessHashServiceTest {
 
@@ -50,7 +51,7 @@ public class JCacheCpanelAccessHashServiceTest {
         String accessHash = UUID.randomUUID().toString();
         Mockito.when(mockCache.get(vmId)).thenReturn(accessHash);
 
-        Assert.assertEquals(accessHash, spyHashService.getAccessHash(vmId, publicIp, fromIp, timeoutAt));
+        Assert.assertEquals(accessHash, spyHashService.getAccessHash(vmId, publicIp, timeoutAt));
         Mockito.verify(mockCache, Mockito.times(1)).get(vmId);
     }
 
@@ -64,11 +65,11 @@ public class JCacheCpanelAccessHashServiceTest {
         Instant timeoutAt = Instant.ofEpochSecond(epochSeconds);
         String accessHash = null;
         Mockito.when(mockCache.get(vmId)).thenReturn(accessHash);
-        Mockito.when(mockCpanelAccessHashService.getAccessHash(vmId, publicIp, fromIp, timeoutAt))
+        Mockito.when(mockCpanelAccessHashService.getAccessHash(vmId, publicIp, timeoutAt))
                 .thenReturn(accessHash);
 
-        Assert.assertEquals(accessHash, spyHashService.getAccessHash(vmId, publicIp, fromIp, timeoutAt));
+        Assert.assertEquals(accessHash, spyHashService.getAccessHash(vmId, publicIp, timeoutAt));
         Mockito.verify(mockCpanelAccessHashService, Mockito.times(1))
-                .getAccessHash(vmId, publicIp, fromIp, timeoutAt);
+                .getAccessHash(vmId, publicIp, timeoutAt);
     }
 }

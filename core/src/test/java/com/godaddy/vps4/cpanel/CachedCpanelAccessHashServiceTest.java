@@ -1,5 +1,14 @@
 package com.godaddy.vps4.cpanel;
 
+import static org.junit.Assert.assertEquals;
+import static org.mockito.Mockito.any;
+import static org.mockito.Mockito.anyString;
+import static org.mockito.Mockito.atMost;
+import static org.mockito.Mockito.eq;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
@@ -9,9 +18,6 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
 import org.junit.Test;
-import static org.junit.Assert.*;
-
-import static org.mockito.Mockito.*;
 
 public class CachedCpanelAccessHashServiceTest {
 
@@ -20,10 +26,10 @@ public class CachedCpanelAccessHashServiceTest {
 
         // wire the underlying access hash service the caching layer is hitting
         CpanelAccessHashService mockService = mock(CpanelAccessHashService.class);
-        when(mockService.getAccessHash(eq(7L), anyString(), anyString(), any(Instant.class)))
+        when(mockService.getAccessHash(eq(7L), anyString(), any(Instant.class)))
             .thenReturn("accesshash7");
 
-        when(mockService.getAccessHash(eq(8L), anyString(), anyString(), any(Instant.class)))
+        when(mockService.getAccessHash(eq(8L), anyString(), any(Instant.class)))
             .thenReturn("accesshash8");
 
         ExecutorService fetchPool = Executors.newCachedThreadPool();
@@ -37,7 +43,7 @@ public class CachedCpanelAccessHashServiceTest {
         for (int i=0; i<4; i++) {
             vm7Futures.add(workerPool.submit(
                     () -> accessHashService.getAccessHash(
-                        7, "1.2.3.4", "0.0.0.0", Instant.now().plusSeconds(10))));
+                        7, "1.2.3.4", Instant.now().plusSeconds(10))));
         }
 
         // launch threads requesting vmId=8
@@ -45,7 +51,7 @@ public class CachedCpanelAccessHashServiceTest {
         for (int i=0; i<4; i++) {
             vm8Futures.add(workerPool.submit(
                     () -> accessHashService.getAccessHash(
-                        8, "1.2.3.4", "0.0.0.0", Instant.now().plusSeconds(10))));
+                        8, "1.2.3.4", Instant.now().plusSeconds(10))));
         }
 
         workerPool.shutdown();
@@ -54,10 +60,10 @@ public class CachedCpanelAccessHashServiceTest {
         // the underlying access hash services should have only been
         // called once for each vmId
         verify(mockService, atMost(1))
-                .getAccessHash(eq(7), anyString(), anyString(), any(Instant.class));
+                .getAccessHash(eq(7), anyString(), any(Instant.class));
 
         verify(mockService, atMost(1))
-                .getAccessHash(eq(8), anyString(), anyString(), any(Instant.class));
+                .getAccessHash(eq(8), anyString(), any(Instant.class));
 
         // ensure all requestors got their respective access hashes
         for (Future<String> vm7Future : vm7Futures) {

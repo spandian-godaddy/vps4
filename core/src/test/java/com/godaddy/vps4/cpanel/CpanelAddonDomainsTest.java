@@ -15,14 +15,14 @@ import java.util.UUID;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
+import org.mockito.ArgumentCaptor;
+import org.mockito.Captor;
+import org.mockito.MockitoAnnotations;
 
 import com.godaddy.hfs.config.Config;
 import com.godaddy.vps4.network.IpAddress;
 import com.godaddy.vps4.network.IpAddress.IpAddressType;
 import com.godaddy.vps4.network.NetworkService;
-import org.mockito.ArgumentCaptor;
-import org.mockito.Captor;
-import org.mockito.MockitoAnnotations;
 
 public class CpanelAddonDomainsTest {
 
@@ -60,7 +60,7 @@ public class CpanelAddonDomainsTest {
         IpAddress ip = new IpAddress(1, ipId, "123.0.0.1", IpAddressType.PRIMARY, null, null, null);
         when(networkService.getVmPrimaryAddress(hfsVmId)).thenReturn(ip);
 
-        when(cpanelAccessHashService.getAccessHash(eq(hfsVmId), eq("123.0.0.1"), any(), any())).thenReturn("randomaccesshash");
+        when(cpanelAccessHashService.getAccessHash(eq(hfsVmId), eq("123.0.0.1"), any())).thenReturn("randomaccesshash");
 
         service = new TestDefaultVps4CpanelService(cpanelAccessHashService, networkService, 10);
         MockitoAnnotations.initMocks(this);

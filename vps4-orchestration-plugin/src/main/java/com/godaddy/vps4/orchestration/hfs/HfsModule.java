@@ -1,20 +1,21 @@
 package com.godaddy.vps4.orchestration.hfs;
 
+import javax.inject.Singleton;
+
+import com.godaddy.hfs.mailrelay.MailRelayService;
+import com.godaddy.hfs.vm.VmService;
 import com.godaddy.vps4.hfs.HfsClientProvider;
 import com.godaddy.vps4.messaging.MessagingProvider;
 import com.godaddy.vps4.messaging.Vps4MessagingService;
 import com.google.inject.AbstractModule;
+
 import gdg.hfs.vhfs.cpanel.CPanelService;
 import gdg.hfs.vhfs.ecomm.ECommService;
-import com.godaddy.hfs.mailrelay.MailRelayService;
 import gdg.hfs.vhfs.network.NetworkServiceV2;
 import gdg.hfs.vhfs.nodeping.NodePingService;
 import gdg.hfs.vhfs.plesk.PleskService;
-import gdg.hfs.vhfs.sysadmin.SysAdminService;
-import com.godaddy.hfs.vm.VmService;
 import gdg.hfs.vhfs.snapshot.SnapshotService;
-
-import javax.inject.Singleton;
+import gdg.hfs.vhfs.sysadmin.SysAdminService;
 
 public class HfsModule extends AbstractModule {
 

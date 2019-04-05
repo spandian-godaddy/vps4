@@ -43,7 +43,7 @@ public class CachedCpanelAccessHashService implements CpanelAccessHashService {
     }
 
     @Override
-    public String getAccessHash(long vmId, String publicIp, String fromIp, Instant timeoutAt) {
+    public String getAccessHash(long vmId, String publicIp, Instant timeoutAt) {
 
         CachedAccessHash cached = cache.get(vmId);
         if (cached == null) {
@@ -71,7 +71,7 @@ public class CachedCpanelAccessHashService implements CpanelAccessHashService {
 
             // we own fetching, spin off a thread
             Fetcher fetcher = new Fetcher(
-                    () -> accessHashService.getAccessHash(vmId, publicIp, fromIp, timeoutAt),
+                    () -> accessHashService.getAccessHash(vmId, publicIp, timeoutAt),
                     cached);
 
             threadPool.submit(fetcher);
@@ -188,10 +188,7 @@ public class CachedCpanelAccessHashService implements CpanelAccessHashService {
 
         /**
          * invalidate the cache at the current 'fetchedAt' time
-         *
-         * (if 'fetchedAt' has been updated, don't invalidate the newer cached value)
-         *
-         * @param fetchedAt
+         * @param accessHash
          */
         public void invalidate(String accessHash) {
             synchronized(lock) {

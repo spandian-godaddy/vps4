@@ -27,18 +27,18 @@ public class HfsCpanelAccessHashService implements CpanelAccessHashService {
     }
 
     @Override
-    public String getAccessHash(long vmId, String publicIp, String fromIp, Instant timeoutAt) {
+    public String getAccessHash(long vmId, String publicIp, Instant timeoutAt) {
         try {
-            return getAccessHashFromHFS(vmId, publicIp, fromIp, timeoutAt);
+            return getAccessHashFromHFS(vmId, publicIp, timeoutAt);
         }
         catch (Exception e) {
             throw new RuntimeException(e);
         }
     }
 
-    private String makeCallOutToCPanelVertical(long vmId, String publicIp, String fromIp, Instant timeoutAt) throws Exception {
+    private String makeCallOutToCPanelVertical(long vmId, String publicIp, Instant timeoutAt) throws Exception {
         logger.info("Sending access hash generation request to HFS for vm: {}", vmId);
-        CPanelAction hfsAction = this.cPanelService.requestAccess(vmId, publicIp, fromIp);
+        CPanelAction hfsAction = this.cPanelService.requestAccess(vmId, publicIp, null);
 
         while (!hfsAction.status.equals(CPanelAction.Status.COMPLETE)
                 && !hfsAction.status.equals(CPanelAction.Status.FAILED)
@@ -58,10 +58,10 @@ public class HfsCpanelAccessHashService implements CpanelAccessHashService {
         return hfsAction.responsePayload;
     }
 
-    private String getAccessHashFromHFS(long vmId, String publicIp, String fromIp, Instant timeoutAt) throws Exception {
+    private String getAccessHashFromHFS(long vmId, String publicIp, Instant timeoutAt) throws Exception {
         logger.info("sending HFS request to access cPanel VM (generate access hash) for vmId {}", vmId);
 
-        String payload = makeCallOutToCPanelVertical(vmId, publicIp, fromIp, timeoutAt);
+        String payload = makeCallOutToCPanelVertical(vmId, publicIp, timeoutAt);
         JSONParser parser = new JSONParser();
         JSONObject jsonObject = (JSONObject) parser.parse(payload);
         String accessHash = (String) jsonObject.get("cphash");

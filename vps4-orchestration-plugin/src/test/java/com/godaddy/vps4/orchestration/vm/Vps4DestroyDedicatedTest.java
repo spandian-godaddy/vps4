@@ -168,10 +168,10 @@ public class Vps4DestroyDedicatedTest {
         when(virtualMachineService.virtualMachineHasCpanel(vm.vmId)).thenReturn(true);
         CPanelAction action = new CPanelAction();
         action.status = CPanelAction.Status.COMPLETE;
-        when(cpanelService.licenseRelease(vm.hfsVmId)).thenReturn(action);
+        when(cpanelService.licenseRelease(null, vm.hfsVmId)).thenReturn(action);
 
         command.execute(context, request);
-        verify(cpanelService, times(1)).licenseRelease(request.virtualMachine.hfsVmId);
+        verify(cpanelService, times(1)).licenseRelease(null, request.virtualMachine.hfsVmId);
     }
 
     @Test
@@ -180,10 +180,10 @@ public class Vps4DestroyDedicatedTest {
         when(virtualMachineService.virtualMachineHasCpanel(vm.vmId)).thenReturn(true);
         CPanelAction action = new CPanelAction();
         action.status = CPanelAction.Status.COMPLETE;
-        when(cpanelService.licenseRelease(vm.hfsVmId)).thenReturn(action);
+        when(cpanelService.licenseRelease(null, vm.hfsVmId)).thenReturn(action);
 
         command.execute(context, request);
-        verify(cpanelService, times(0)).licenseRelease(request.virtualMachine.hfsVmId);
+        verify(cpanelService, times(0)).licenseRelease(null, request.virtualMachine.hfsVmId);
     }
 
     @Test
@@ -197,7 +197,7 @@ public class Vps4DestroyDedicatedTest {
         action.status = CPanelAction.Status.COMPLETE;
 
         command.execute(context, request);
-        verify(cpanelService, times(0)).licenseRelease(request.virtualMachine.hfsVmId);
+        verify(cpanelService, times(0)).licenseRelease(null, request.virtualMachine.hfsVmId);
 
     }
 
@@ -231,7 +231,7 @@ public class Vps4DestroyDedicatedTest {
         vm.hfsVmId = 0;
 
         command.execute(context, request);
-        verify(cpanelService, never()).licenseRelease(request.virtualMachine.hfsVmId);
+        verify(cpanelService, never()).licenseRelease(null, request.virtualMachine.hfsVmId);
         verify(vmService, never()).destroyVm(Mockito.anyLong());
     }
 

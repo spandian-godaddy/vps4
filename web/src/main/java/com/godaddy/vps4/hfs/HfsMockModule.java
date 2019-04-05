@@ -340,7 +340,7 @@ public class HfsMockModule extends AbstractModule {
             }
 
             @Override
-            public CPanelAction licenseRelease(long arg0) {
+            public CPanelAction licenseRelease(String arg0, long arg1) {
                 // NOTE: do nothing, Implement when needed
                 throw new UnsupportedOperationException("Not implemented, yet");
             }
