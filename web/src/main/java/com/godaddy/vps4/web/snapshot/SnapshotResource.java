@@ -112,7 +112,9 @@ public class SnapshotResource {
         List<Snapshot> snapshots = snapshotService.getSnapshotsForUser(vps4User.getId());
         return snapshots
                 .stream()
-                .filter(snapshot -> snapshot.status != SnapshotStatus.DESTROYED && snapshot.status != SnapshotStatus.CANCELLED)
+                .filter(snapshot -> snapshot.status != SnapshotStatus.DESTROYED
+                        && snapshot.status != SnapshotStatus.CANCELLED
+                        && snapshot.status != SnapshotStatus.ERROR_RESCHEDULED)
                 .collect(Collectors.toList());
     }
 

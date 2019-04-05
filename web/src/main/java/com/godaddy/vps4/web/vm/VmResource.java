@@ -308,7 +308,7 @@ public class VmResource {
     private void destroyVmSnapshots(UUID vmId) {
         List<Snapshot> snapshots = vmSnapshotResource.getSnapshotsForVM(vmId);
         for (Snapshot snapshot : snapshots) {
-            if(snapshot.status == SnapshotStatus.NEW || snapshot.status == SnapshotStatus.ERROR){
+            if(snapshot.status == SnapshotStatus.NEW || snapshot.status == SnapshotStatus.ERROR || snapshot.status == SnapshotStatus.ERROR_RESCHEDULED){
                 // just mark snapshots as cancelled if they were new or errored
                 snapshotService.updateSnapshotStatus(snapshot.id, SnapshotStatus.CANCELLED);
             }

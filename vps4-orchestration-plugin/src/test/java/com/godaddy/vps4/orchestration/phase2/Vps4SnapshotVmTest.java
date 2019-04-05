@@ -332,6 +332,7 @@ public class Vps4SnapshotVmTest {
         }
 
         verify(context, times(1)).execute(eq(ScheduleAutomaticBackupRetry.class), any(ScheduleAutomaticBackupRetry.Request.class));
+        Assert.assertEquals(snapshotService.getSnapshot(vps4AutomaticSnapshotId).status, SnapshotStatus.ERROR_RESCHEDULED);
     }
 
     @Test

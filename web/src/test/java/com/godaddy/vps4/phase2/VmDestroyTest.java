@@ -169,13 +169,14 @@ public class VmDestroyTest {
     }
 
     @Test
-    public void destroySkipsNewAndErroredSnapshots() throws Exception {
+    public void destroySkipsNewErroredAndRescheduledSnapshots() throws Exception {
         VirtualMachine vm = createTestVm();
 
         Snapshot erroredSnapshot = createSnapshot(vm.vmId, SnapshotStatus.ERROR);
         Snapshot newSnapshot = createSnapshot(vm.vmId, SnapshotStatus.NEW);
+        Snapshot rescheduledSnapshot = createSnapshot(vm.vmId, SnapshotStatus.ERROR_RESCHEDULED);
 
-        List<Snapshot> snapshots = Arrays.asList(erroredSnapshot, newSnapshot);
+        List<Snapshot> snapshots = Arrays.asList(erroredSnapshot, newSnapshot, rescheduledSnapshot);
 
         Mockito.when(getVmSnapshotResource().getSnapshotsForVM(Mockito.any())).thenReturn(snapshots);
 
@@ -190,8 +191,10 @@ public class VmDestroyTest {
 
         Snapshot erroredSnapshot = createSnapshot(vm.vmId, SnapshotStatus.ERROR);
         Snapshot newSnapshot = createSnapshot(vm.vmId, SnapshotStatus.NEW);
+        Snapshot rescheduledSnapshot = createSnapshot(vm.vmId, SnapshotStatus.ERROR_RESCHEDULED);
 
-        List<Snapshot> snapshots = Arrays.asList(erroredSnapshot, newSnapshot);
+
+        List<Snapshot> snapshots = Arrays.asList(erroredSnapshot, newSnapshot, rescheduledSnapshot);
 
         Mockito.when(getVmSnapshotResource().getSnapshotsForVM(Mockito.any())).thenReturn(snapshots);
 
@@ -199,6 +202,7 @@ public class VmDestroyTest {
         Assert.assertNotNull(vmAction.commandId);
         verify(snapshotService, times(1)).updateSnapshotStatus(newSnapshot.id, SnapshotStatus.CANCELLED);
         verify(snapshotService, times(1)).updateSnapshotStatus(erroredSnapshot.id, SnapshotStatus.CANCELLED);
+        verify(snapshotService, times(1)).updateSnapshotStatus(rescheduledSnapshot.id, SnapshotStatus.CANCELLED);
     }
 
 

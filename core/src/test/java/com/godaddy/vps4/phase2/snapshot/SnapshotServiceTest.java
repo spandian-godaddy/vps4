@@ -352,9 +352,16 @@ public class SnapshotServiceTest {
     }
 
     @Test
+    public void onlyOneRescheduledBackupNoSuccess() {
+        insertTestSnapshots(1, SnapshotStatus.ERROR_RESCHEDULED, SnapshotType.AUTOMATIC);
+        int numOfFailedBackups = snapshotService.failedBackupsSinceSuccess(vm.vmId, SnapshotType.AUTOMATIC);
+        assertEquals(1, numOfFailedBackups);
+    }
+
+    @Test
     public void liveBackupIsMostRecent() {
         insertTestSnapshots(1, SnapshotStatus.CANCELLED, SnapshotType.AUTOMATIC);
-        insertTestSnapshots(1, SnapshotStatus.ERROR, SnapshotType.AUTOMATIC);
+        insertTestSnapshots(1, SnapshotStatus.ERROR_RESCHEDULED, SnapshotType.AUTOMATIC);
         insertTestSnapshots(1, SnapshotStatus.LIVE, SnapshotType.AUTOMATIC);
         int numOfFailedBackups = snapshotService.failedBackupsSinceSuccess(vm.vmId, SnapshotType.AUTOMATIC);
         assertEquals(0, numOfFailedBackups);
@@ -375,5 +382,14 @@ public class SnapshotServiceTest {
         insertTestSnapshots(1, SnapshotStatus.LIVE, SnapshotType.AUTOMATIC);
         int numOfFailedBackups = snapshotService.failedBackupsSinceSuccess(vm.vmId, SnapshotType.AUTOMATIC);
         assertEquals(0, numOfFailedBackups);
+    }
+
+    @Test
+    public void countsMultipleRescheduled() {
+        insertTestSnapshots(1, SnapshotStatus.LIVE, SnapshotType.AUTOMATIC);
+        insertTestSnapshots(1, SnapshotStatus.ERROR_RESCHEDULED, SnapshotType.AUTOMATIC);
+        insertTestSnapshots(1, SnapshotStatus.ERROR_RESCHEDULED, SnapshotType.AUTOMATIC);
+        int numOfFailedBackups = snapshotService.failedBackupsSinceSuccess(vm.vmId, SnapshotType.AUTOMATIC);
+        assertEquals(2, numOfFailedBackups);
     }
 }

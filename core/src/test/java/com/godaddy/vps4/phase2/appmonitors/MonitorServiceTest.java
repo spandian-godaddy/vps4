@@ -1,9 +1,5 @@
 package com.godaddy.vps4.phase2.appmonitors;
 
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-
 import java.sql.Timestamp;
 import java.time.Duration;
 import java.time.Instant;
@@ -40,6 +36,8 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
+import static org.junit.Assert.*;
+
 public class MonitorServiceTest {
 
     Injector injector = Guice.createInjector(new DatabaseModule());
@@ -58,21 +56,26 @@ public class MonitorServiceTest {
         vps4User = vps4UserService.getOrCreateUserForShopper("FakeShopper", "1");
         vm1 = SqlTestData.insertTestVm(orionGuid, reportsDataSource);
         createActionWithDate(vm1.vmId, ActionType.CREATE_VM, ActionStatus.IN_PROGRESS, Instant.now().minus(Duration.ofMinutes(61)),  reportsDataSource);
+
         vm2 = SqlTestData.insertTestVm(orionGuid, reportsDataSource);
         createActionWithDate(vm2.vmId, ActionType.CREATE_VM, ActionStatus.IN_PROGRESS, Instant.now().minus(Duration.ofMinutes(10)), reportsDataSource);
+
         vm3 = SqlTestData.insertTestVm(orionGuid, reportsDataSource);
         createActionWithDate(vm3.vmId, ActionType.CREATE_VM, ActionStatus.IN_PROGRESS, Instant.now().minus(Duration.ofMinutes(90)), reportsDataSource);
+
         vm4 = SqlTestData.insertTestVm(orionGuid, reportsDataSource);
         createActionWithDate(vm4.vmId, ActionType.ENABLE_ADMIN_ACCESS, ActionStatus.IN_PROGRESS, Instant.now().minus(Duration.ofMinutes(90)), reportsDataSource);
+
         vm5 = SqlTestData.insertTestVm(orionGuid, reportsDataSource);
         createActionWithDate(vm5.vmId, ActionType.CREATE_VM, ActionStatus.ERROR, Instant.now().minus(Duration.ofMinutes(90)), reportsDataSource);
+
         vm6 = SqlTestData.insertTestVm(orionGuid, reportsDataSource);
         testSnapshotVm6 = new Snapshot(
                 UUID.randomUUID(),
                 vm6.projectId,
                 vm6.vmId,
                 "fake-snapshot-1",
-                SnapshotStatus.LIVE,
+                SnapshotStatus.IN_PROGRESS,
                 Instant.now(),
                 null,
                 "fake-imageid",
@@ -81,6 +84,7 @@ public class MonitorServiceTest {
         );
         SqlTestData.insertTestSnapshot(testSnapshotVm6, reportsDataSource);
         createSnapshotActionWithDate(testSnapshotVm6.id, ActionType.CREATE_SNAPSHOT, ActionStatus.IN_PROGRESS, Instant.now().minus(Duration.ofMinutes(125)), reportsDataSource);
+
         vm7 = SqlTestData.insertTestVm(orionGuid, reportsDataSource);
         testSnapshotVm7 = new Snapshot(
                 UUID.randomUUID(),
@@ -96,6 +100,7 @@ public class MonitorServiceTest {
         );
         SqlTestData.insertTestSnapshot(testSnapshotVm7, reportsDataSource);
         createSnapshotActionWithDate(testSnapshotVm7.id, ActionType.CREATE_SNAPSHOT, ActionStatus.IN_PROGRESS, Instant.now().minus(Duration.ofMinutes(60)), reportsDataSource);
+
         vm8 = SqlTestData.insertTestVm(orionGuid, reportsDataSource);
         createActionWithDate(vm8.vmId, ActionType.CREATE_VM, ActionStatus.NEW, Instant.now().minus(Duration.ofMinutes(125)), reportsDataSource);
 
@@ -168,5 +173,29 @@ public class MonitorServiceTest {
         assertTrue("Expected VM's with no backups, found none. ", vmsWithNoBackups.size() != 0);
         Predicate<BackupJobAuditData> p = backup -> backup.vmId == vm9.vmId;
         assertTrue("Expected vm to have backups but actual vm does not have backups. ", vmsWithNoBackups.stream().noneMatch(p));
+    }
+
+    @Test
+    public void testGetVmsBySnapshotActionsIgnoresRescheduledSnapshots() {
+        List<SnapshotActionData> problemVms = provisioningMonitorService.getVmsBySnapshotActions(120, ActionStatus.IN_PROGRESS, ActionStatus.ERROR);
+        assertEquals(2, problemVms.size());
+
+        Snapshot testSnapshot = new Snapshot(
+                UUID.randomUUID(),
+                vm4.projectId,
+                vm4.vmId,
+                "fake-snapshot-1",
+                SnapshotStatus.ERROR_RESCHEDULED,
+                Instant.now(),
+                null,
+                "fake-imageid",
+                (int) (Math.random() * 100000),
+                SnapshotType.AUTOMATIC
+        );
+        SqlTestData.insertTestSnapshot(testSnapshot, reportsDataSource);
+        createSnapshotActionWithDate(testSnapshot.id, ActionType.CREATE_SNAPSHOT, ActionStatus.ERROR, Instant.now().minus(Duration.ofMinutes(125)), reportsDataSource);
+
+        problemVms = provisioningMonitorService.getVmsBySnapshotActions(120, ActionStatus.IN_PROGRESS, ActionStatus.ERROR);
+        assertEquals(2, problemVms.size());
     }
 }

@@ -120,7 +120,8 @@ public class RequestValidation {
 
         // Allow admin user to access deleted Snapshots
         if (!user.isAdmin() && (snapshot.status == SnapshotStatus.DESTROYED ||
-                snapshot.status == SnapshotStatus.CANCELLED)) {
+                snapshot.status == SnapshotStatus.CANCELLED ||
+                snapshot.status == SnapshotStatus.ERROR_RESCHEDULED)) {
             throw new Vps4Exception("SNAPSHOT_DELETED", String.format("The snapshot %s was DELETED", snapshot.id));
         }
     }

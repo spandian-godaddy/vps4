@@ -30,6 +30,8 @@ public interface SnapshotService {
 
     void markSnapshotErrored(UUID snapshotId);
 
+    void markSnapshotRescheduled(UUID snapshotId);
+
     void markSnapshotDestroyed(UUID snapshotId);
 
     UUID markOldestSnapshotForDeprecation(UUID orionGuid, SnapshotType snapshotType);

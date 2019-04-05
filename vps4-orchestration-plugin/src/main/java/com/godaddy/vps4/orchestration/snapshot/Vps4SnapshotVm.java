@@ -145,6 +145,7 @@ public class Vps4SnapshotVm extends ActionCommand<Vps4SnapshotVm.Request, Vps4Sn
 
                 UUID retryJobId = context.execute(ScheduleAutomaticBackupRetry.class, req);
                 recordJobId(context, failedSnapshot.vmId, retryJobId);
+                vps4SnapshotService.markSnapshotRescheduled(failedSnapshot.id);
                 logger.info("Rescheduled automatic snapshot for vm {} with retry job id: {}", failedSnapshot.vmId, retryJobId);
             }else{
                 logger.warn("Max retries exceeded for automatic snapshot on vm: {}  Will not retry again.", failedSnapshot.vmId);

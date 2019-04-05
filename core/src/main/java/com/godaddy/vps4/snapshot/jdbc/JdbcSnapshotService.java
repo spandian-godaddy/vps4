@@ -175,6 +175,11 @@ public class JdbcSnapshotService implements SnapshotService {
     }
 
     @Override
+    public void markSnapshotRescheduled(UUID snapshotId) {
+        updateSnapshotStatus(snapshotId, SnapshotStatus.ERROR_RESCHEDULED);
+    }
+
+    @Override
     public void markSnapshotDestroyed(UUID snapshotId) {
         updateSnapshotStatus(snapshotId, SnapshotStatus.DESTROYED);
     }
@@ -278,9 +283,9 @@ public class JdbcSnapshotService implements SnapshotService {
                         + " JOIN virtual_machine v ON s.vm_id = v.vm_id"
                         + " WHERE v.orion_guid = ?"
                         + " AND s.snapshot_type_id = ?"
-                        + " AND s.status = ?;",
+                        + " AND s.status in (?, ?);",
                 Sql.listOf(this::mapSnapshotIds),
-                orionGuid, snapshotType.getSnapshotTypeId(), SnapshotStatus.ERROR.getSnapshotStatusId());
+                orionGuid, snapshotType.getSnapshotTypeId(), SnapshotStatus.ERROR.getSnapshotStatusId(), SnapshotStatus.ERROR_RESCHEDULED.getSnapshotStatusId());
         markSnapshotCancelled(ids);
     }
 
@@ -300,14 +305,14 @@ public class JdbcSnapshotService implements SnapshotService {
 
     @Override
     public int failedBackupsSinceSuccess(UUID vmId, SnapshotType snapshotType){
-        // count the rows of ERRORed and CANCELLED backups since the last successful backup
+        // count the rows of ERRORed, ERROR_RESCHEDULED, and CANCELLED backups since the last successful backup
         // 01/02/03 is an arbitrary time earlier than any backup recorded in this system.  It is used for
         // the case when there are no 'LIVE' backups recorded for the vm yet.
         return Sql.with(dataSource).exec("SELECT COUNT(id) AS numOfIds " +
                 "FROM snapshot " +
                 "JOIN snapshot_status on snapshot.status = snapshot_status.status_id " +
                 "WHERE vm_id = ? " +
-                "AND snapshot_status.status in ('ERROR', 'CANCELLED') " +
+                "AND snapshot_status.status in ('ERROR', 'CANCELLED', 'ERROR_RESCHEDULED') " +
                 "AND snapshot_type_id = ?" +
                 "AND created_at > " +
                     "(GREATEST((SELECT MAX(created_at) AS latestLive " +
