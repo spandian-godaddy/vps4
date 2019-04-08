@@ -34,6 +34,7 @@ import com.godaddy.vps4.orchestration.hfs.vm.WaitForVmAction;
 import com.godaddy.vps4.orchestration.monitoring.HandleMonitoringDownEvent;
 import com.godaddy.vps4.orchestration.snapshot.WaitForSnapshotAction;
 import com.godaddy.vps4.orchestration.sysadmin.ConfigureMailRelay;
+import com.godaddy.vps4.orchestration.vm.WaitForAndRecordVmAction;
 import com.godaddy.vps4.orchestration.vm.WaitForManageVmAction;
 import com.google.inject.AbstractModule;
 
@@ -54,6 +55,7 @@ public class HfsCommandModule extends AbstractModule {
         bind(RebuildDedicated.class);
         bind(WaitForVmAction.class);
         bind(WaitForManageVmAction.class);
+        bind(WaitForAndRecordVmAction.class);
 
         // Network
         bind(AllocateIp.class);

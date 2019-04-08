@@ -156,6 +156,8 @@ public class Vps4RestoreVm extends ActionCommand<Vps4RestoreVm.Request, Void> {
         createVmFromSnapshotRequest.hostname = request.restoreVmInfo.hostname;
         createVmFromSnapshotRequest.ignore_whitelist = "True";
         createVmFromSnapshotRequest.privateLabelId = request.privateLabelId;
+        createVmFromSnapshotRequest.vmId = request.restoreVmInfo.vmId;
+        createVmFromSnapshotRequest.orionGuid = request.restoreVmInfo.orionGuid;
         return createVmFromSnapshotRequest;
     }
 

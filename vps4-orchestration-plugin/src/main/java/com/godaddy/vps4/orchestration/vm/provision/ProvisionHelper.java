@@ -1,19 +1,16 @@
 package com.godaddy.vps4.orchestration.vm.provision;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import java.util.Arrays;
+
 import com.godaddy.vps4.orchestration.hfs.sysadmin.SetPassword;
 import com.godaddy.vps4.orchestration.hfs.sysadmin.ToggleAdmin;
 import com.godaddy.vps4.orchestration.hfs.vm.CreateVm;
 import com.godaddy.vps4.util.MonitoringMeta;
-import com.godaddy.vps4.vm.ActionService;
 import com.godaddy.vps4.vm.CreateVmStep;
-import com.godaddy.vps4.vm.Image;
+
 import gdg.hfs.vhfs.nodeping.CheckType;
 import gdg.hfs.vhfs.nodeping.CreateCheckRequest;
 import gdg.hfs.vhfs.nodeping.NodePingLocation;
-
-import java.util.Arrays;
 
 public class ProvisionHelper {
 
@@ -35,6 +32,8 @@ public class ProvisionHelper {
         createVmRequest.zone = request.zone;
         createVmRequest.encryptedPassword = request.encryptedPassword;
         createVmRequest.privateLabelId = request.privateLabelId;
+        createVmRequest.vmId = request.vmInfo.vmId;
+        createVmRequest.orionGuid = request.orionGuid;
 
         return createVmRequest;
     }

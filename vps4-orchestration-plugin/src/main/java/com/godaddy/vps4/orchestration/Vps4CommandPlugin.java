@@ -3,6 +3,7 @@ package com.godaddy.vps4.orchestration;
 import ch.qos.logback.classic.Level;
 import com.godaddy.hfs.config.Config;
 import com.godaddy.vps4.credit.CreditModule;
+import com.godaddy.vps4.hfs.HfsVmTrackingRecordModule;
 import com.godaddy.vps4.jdbc.DatabaseModule;
 import com.godaddy.vps4.monitoring.MonitoringModule;
 import com.godaddy.vps4.orchestration.account.AccountModule;
@@ -75,7 +76,8 @@ public class Vps4CommandPlugin implements CommandPlugin {
             new SchedulerModule(),
             new AccountModule(),
             new SecurityModule(),
-            new MonitoringModule()
+            new MonitoringModule(),
+            new HfsVmTrackingRecordModule()
             );
             
         return new GuiceCommandProvider(injector);

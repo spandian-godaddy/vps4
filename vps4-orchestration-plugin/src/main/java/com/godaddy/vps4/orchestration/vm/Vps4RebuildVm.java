@@ -31,7 +31,6 @@ import com.godaddy.vps4.orchestration.hfs.sysadmin.SetPassword;
 import com.godaddy.vps4.orchestration.hfs.sysadmin.ToggleAdmin;
 import com.godaddy.vps4.orchestration.hfs.vm.CreateVm;
 import com.godaddy.vps4.orchestration.hfs.vm.DestroyVm;
-import com.godaddy.vps4.orchestration.hfs.vm.WaitForVmAction;
 import com.godaddy.vps4.orchestration.sysadmin.ConfigureMailRelay;
 import com.godaddy.vps4.orchestration.sysadmin.ConfigureMailRelay.ConfigureMailRelayRequest;
 import com.godaddy.vps4.vm.ActionService;
@@ -176,6 +175,8 @@ public class Vps4RebuildVm extends ActionCommand<Vps4RebuildVm.Request, Vps4Rebu
         createVm.encryptedPassword = request.rebuildVmInfo.encryptedPassword;
         createVm.hostname = request.rebuildVmInfo.hostname;
         createVm.privateLabelId = request.rebuildVmInfo.privateLabelId;
+        createVm.vmId = request.rebuildVmInfo.vmId;
+        createVm.orionGuid = request.rebuildVmInfo.orionGuid;
         return createVm;
     }
 
@@ -192,7 +193,7 @@ public class Vps4RebuildVm extends ActionCommand<Vps4RebuildVm.Request, Vps4Rebu
         // Post creation reconfigure steps
         updateHfsVmId(vmAction.vmId);
 
-        context.execute(WaitForVmAction.class, vmAction);
+        context.execute(WaitForAndRecordVmAction.class, vmAction);
 
         // Get the hfs vm
         return context.execute("GetVmAfterCreate", ctx -> vmService.getVm(vmAction.vmId), Vm.class);

@@ -9,6 +9,7 @@ import static org.mockito.Mockito.when;
 
 import java.util.function.Function;
 
+import com.godaddy.vps4.hfs.HfsVmTrackingRecordService;
 import com.godaddy.vps4.util.Cryptography;
 import com.google.inject.Guice;
 import com.google.inject.Inject;
@@ -33,9 +34,11 @@ public class CreateVmTest {
     private CommandContext createVmContext;
     private CreateVm.Request request;
     private VmAction vmAction;
+    private HfsVmTrackingRecordService hfsVmService;
 
     @Captor private ArgumentCaptor<Function<CommandContext, VmAction>> createVmLambdaCaptor;
     @Captor private ArgumentCaptor<VmAction> vmActionArgumentCaptor;
+
 
     @Before
     public void setup () {
@@ -43,6 +46,7 @@ public class CreateVmTest {
         vmService = mock(VmService.class);
         cryptography = mock(Cryptography.class);
         createVmContext = mock(CommandContext.class);
+        hfsVmService = mock(HfsVmTrackingRecordService.class);
 
         vmAction = new VmAction();
         vmAction.vmActionId = 777;
@@ -53,7 +57,7 @@ public class CreateVmTest {
            binder.bind(Cryptography.class).toInstance(cryptography);
         });
 
-        createVmCommand = new CreateVm(vmService, cryptography);
+        createVmCommand = new CreateVm(vmService, cryptography, hfsVmService);
         request = new CreateVm.Request();
     }
 

@@ -13,10 +13,11 @@ import org.slf4j.LoggerFactory;
 
 import com.godaddy.hfs.vm.VmAction;
 import com.godaddy.hfs.vm.VmService;
+import com.godaddy.vps4.hfs.HfsVmTrackingRecordService;
 import com.godaddy.vps4.network.IpAddress;
 import com.godaddy.vps4.network.NetworkService;
 import com.godaddy.vps4.orchestration.ActionCommand;
-import com.godaddy.vps4.orchestration.hfs.vm.WaitForVmAction;
+import com.godaddy.vps4.orchestration.hfs.vm.DestroyVm;
 import com.godaddy.vps4.orchestration.scheduler.DeleteAutomaticBackupSchedule;
 import com.godaddy.vps4.util.MonitoringMeta;
 import com.godaddy.vps4.vm.ActionService;
@@ -40,7 +41,6 @@ public class Vps4DestroyVm extends ActionCommand<VmActionRequest, Vps4DestroyVm.
 
     private static final Logger logger = LoggerFactory.getLogger(Vps4DestroyVm.class);
     private final NetworkService networkService;
-    private final VmService vmService;
     private final NodePingService monitoringService;
     private final MonitoringMeta monitoringMeta;
     CommandContext context;
@@ -49,14 +49,12 @@ public class Vps4DestroyVm extends ActionCommand<VmActionRequest, Vps4DestroyVm.
     public Vps4DestroyVm(ActionService actionService,
             NetworkService networkService,
             VirtualMachineService virtualMachineService,
-            VmService vmService,
             CPanelService cpanelService,
             NodePingService monitoringService,
             PleskService pleskService,
             MonitoringMeta monitoringMeta) {
         super(actionService);
         this.networkService = networkService;
-        this.vmService = vmService;
         this.monitoringService = monitoringService;
         this.monitoringMeta = monitoringMeta;
     }
@@ -85,10 +83,8 @@ public class Vps4DestroyVm extends ActionCommand<VmActionRequest, Vps4DestroyVm.
 
     private VmAction deleteVmInHfs(CommandContext context, VirtualMachine vm) {
         if (vm.hfsVmId != 0) {
-            VmAction hfsAction = context.execute("DestroyVmHfs", ctx -> vmService.destroyVm(vm.hfsVmId),
-                    VmAction.class);
-
-            hfsAction = context.execute(WaitForVmAction.class, hfsAction);
+            VmAction hfsAction = context.execute("DestroyVmHfs", DestroyVm.class, vm.hfsVmId);
+            hfsAction = context.execute(WaitForAndRecordVmAction.class, hfsAction);
             return hfsAction;
         } else {
             return null;

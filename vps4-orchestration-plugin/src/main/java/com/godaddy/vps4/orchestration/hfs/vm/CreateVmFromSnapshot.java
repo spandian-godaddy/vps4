@@ -1,7 +1,11 @@
 package com.godaddy.vps4.orchestration.hfs.vm;
 
+import java.util.UUID;
+
 import javax.inject.Inject;
 
+import com.godaddy.vps4.hfs.HfsVmTrackingRecordService;
+import com.godaddy.vps4.orchestration.vm.WaitForAndRecordVmAction;
 import com.godaddy.vps4.util.Cryptography;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -18,12 +22,15 @@ public class CreateVmFromSnapshot implements Command<CreateVmFromSnapshot.Reques
 
     final VmService vmService;
     private final Cryptography cryptography;
+    private final HfsVmTrackingRecordService hfsVmTrackingRecordService;
 
     @Inject
     public CreateVmFromSnapshot(VmService vmService,
-                                Cryptography cryptography) {
+                                Cryptography cryptography, 
+                                HfsVmTrackingRecordService hfsVmTrackingRecordService) {
         this.cryptography = cryptography;
         this.vmService = vmService;
+        this.hfsVmTrackingRecordService = hfsVmTrackingRecordService;
     }
 
     @Override
@@ -35,7 +42,9 @@ public class CreateVmFromSnapshot implements Command<CreateVmFromSnapshot.Reques
 
         VmAction vmAction = context.execute("CreateVmHfs", ctx -> vmService.createVmWithFlavor(hfsRequest), VmAction.class);
 
-        context.execute(WaitForVmAction.class, vmAction);
+        hfsVmTrackingRecordService.createHfsVm(vmAction.vmId, request.vmId, request.orionGuid);
+
+        context.execute(WaitForAndRecordVmAction.class, vmAction);
 
         return vmAction;
     }
@@ -66,6 +75,8 @@ public class CreateVmFromSnapshot implements Command<CreateVmFromSnapshot.Reques
         public byte[] encryptedPassword;
         public String hostname;
         public String privateLabelId;
+        public UUID vmId;
+        public UUID orionGuid;
     }
 
 }

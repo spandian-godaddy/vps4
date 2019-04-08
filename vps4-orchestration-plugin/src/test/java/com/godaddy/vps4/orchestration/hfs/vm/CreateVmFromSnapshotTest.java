@@ -10,6 +10,7 @@ import static org.mockito.Mockito.when;
 import java.util.UUID;
 import java.util.function.Function;
 
+import com.godaddy.vps4.orchestration.vm.WaitForAndRecordVmAction;
 import com.godaddy.vps4.util.Cryptography;
 import com.google.inject.AbstractModule;
 import org.junit.Assert;
@@ -20,6 +21,7 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
 import org.mockito.MockitoAnnotations;
 
+import com.godaddy.vps4.hfs.HfsVmTrackingRecordService;
 import com.godaddy.vps4.orchestration.phase2.Vps4ExternalsModule;
 import com.google.inject.Guice;
 import com.google.inject.Inject;
@@ -33,7 +35,10 @@ import com.godaddy.hfs.vm.VmService;
 public class CreateVmFromSnapshotTest {
     static Injector injector;
 
-    @Inject VmService vmService;
+    @Inject
+    VmService vmService;
+    @Inject
+    HfsVmTrackingRecordService hfsVmTrackingRecordService;
 
     private CreateVmFromSnapshot command;
     private CommandContext context;
@@ -52,6 +57,8 @@ public class CreateVmFromSnapshotTest {
                     protected void configure() {
                         Cryptography cryptography = mock(Cryptography.class);
                         bind(Cryptography.class).toInstance(cryptography);
+                        HfsVmTrackingRecordService hfsVmTrackingRecordService = mock(HfsVmTrackingRecordService.class);
+                        bind(HfsVmTrackingRecordService.class).toInstance(hfsVmTrackingRecordService);
                     }
                 }
         );
@@ -61,7 +68,7 @@ public class CreateVmFromSnapshotTest {
     public void setUpTest() {
         injector.injectMembers(this);
         MockitoAnnotations.initMocks(this);
-        command = new CreateVmFromSnapshot(vmService, mock(Cryptography.class));
+        command = new CreateVmFromSnapshot(vmService, mock(Cryptography.class), hfsVmTrackingRecordService);
         context = setupMockContext();
         request = new CreateVmFromSnapshot.Request();
 
@@ -96,7 +103,7 @@ public class CreateVmFromSnapshotTest {
     @Test
     public void waitsForCompletionOfTheVmCreation() {
         command.execute(context, request);
-        verify(context, times(1)).execute(eq(WaitForVmAction.class), eq(hfsAction));
+        verify(context, times(1)).execute(eq(WaitForAndRecordVmAction.class), eq(hfsAction));
     }
 
     @Test

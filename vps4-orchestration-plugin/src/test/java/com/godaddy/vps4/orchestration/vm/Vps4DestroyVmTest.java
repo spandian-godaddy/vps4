@@ -21,6 +21,8 @@ import javax.ws.rs.ClientErrorException;
 import javax.ws.rs.NotFoundException;
 import javax.ws.rs.core.Response;
 
+import com.godaddy.vps4.hfs.HfsVmTrackingRecord;
+import com.godaddy.vps4.hfs.HfsVmTrackingRecordService;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
@@ -73,9 +75,10 @@ public class Vps4DestroyVmTest {
     ScheduledJobService scheduledJobService = mock(ScheduledJobService.class);
     VmUserService vmUserService = mock(VmUserService.class);
     MonitoringMeta monitoringMeta = mock(MonitoringMeta.class);
+    HfsVmTrackingRecordService hfsVmTrackingRecordService = mock(HfsVmTrackingRecordService.class);
 
     Vps4DestroyVm command = new Vps4DestroyVm(actionService, networkService, virtualMachineService,
-            vmService, cpanelService, nodePingService, pleskService, monitoringMeta);
+            cpanelService, nodePingService, pleskService, monitoringMeta);
 
     Injector injector = Guice.createInjector(binder -> {
         binder.bind(UnbindIp.class);
@@ -90,6 +93,7 @@ public class Vps4DestroyVmTest {
         binder.bind(ScheduledJobService.class).toInstance(scheduledJobService);
         binder.bind(VmUserService.class).toInstance(vmUserService);
         binder.bind(MonitoringMeta.class).toInstance(monitoringMeta);
+        binder.bind(HfsVmTrackingRecordService.class).toInstance(hfsVmTrackingRecordService);
     });
 
     CommandContext context = new TestCommandContext(new GuiceCommandProvider(injector));
@@ -111,6 +115,7 @@ public class Vps4DestroyVmTest {
 
         VmAction vmAction = new VmAction();
         vmAction.state = VmAction.Status.COMPLETE;
+        vmAction.actionType = "DESTROY";
 
         AddressAction addressAction = new AddressAction();
         addressAction.status = AddressAction.Status.COMPLETE;
@@ -129,6 +134,12 @@ public class Vps4DestroyVmTest {
         cPanelLicense.vmId = vm.hfsVmId;
         cPanelLicense.licensedIp = "1.2.3.4";
 
+        HfsVmTrackingRecord hfsVmTrackingRecord = new HfsVmTrackingRecord();
+        hfsVmTrackingRecord.hfsVmId = vm.hfsVmId;
+        hfsVmTrackingRecord.vmId = vm.vmId;
+        hfsVmTrackingRecord.orionGuid = vm.orionGuid;
+        hfsVmTrackingRecord.requested = Instant.now();
+
         when(virtualMachineService.getVirtualMachine(eq(request.virtualMachine.vmId))).thenReturn(vm);
         when(virtualMachineService.getVirtualMachine(eq(request.virtualMachine.hfsVmId))).thenReturn(vm);
         when(vmService.destroyVm(eq(request.virtualMachine.hfsVmId))).thenReturn(vmAction);
@@ -141,6 +152,7 @@ public class Vps4DestroyVmTest {
         when(monitoringMeta.getAccountId()).thenReturn(nodePingAccountId);
         when(cpanelService.getLicenseFromDb(eq(request.virtualMachine.hfsVmId))).thenReturn(cPanelLicense);
         when(cpanelService.getLicenseFromDb(0)).thenReturn(new CPanelLicense());
+        when(hfsVmTrackingRecordService.createHfsVm(anyLong(), any(), any())).thenReturn(hfsVmTrackingRecord);
 
         MailRelay mailRelay = new MailRelay();
         mailRelay.quota = 0;

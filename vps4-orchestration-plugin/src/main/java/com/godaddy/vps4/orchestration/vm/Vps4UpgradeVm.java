@@ -120,6 +120,7 @@ public class Vps4UpgradeVm extends ActionCommand<Vps4UpgradeVm.Request, Vps4Upgr
         restoreVmInfo.rawFlavor = virtualMachineService.getSpec(request.newTier).specName;
         restoreVmInfo.username = vmUserService.getPrimaryCustomer(request.vmId).username;
         restoreVmInfo.zone = request.zone;
+        restoreVmInfo.orionGuid = vm.orionGuid;
         restoreReq.restoreVmInfo = restoreVmInfo;
         restoreReq.actionId = request.actionId;
         restoreReq.privateLabelId = request.privateLabelId;

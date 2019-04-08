@@ -14,12 +14,13 @@ public class RestoreVmInfo {
     public String username;
     public byte[] encryptedPassword;
     public String zone;
+	public UUID orionGuid;
 
     public RestoreVmInfo() {
     }
 
     public RestoreVmInfo(UUID vmId, UUID snapshotId, String sgid, String hostname,
-            String rawFlavor, String username, byte[] encryptedPassword, String zone) {
+            String rawFlavor, String username, byte[] encryptedPassword, String zone, UUID orionGuid) {
         this.vmId = vmId;
         this.snapshotId = snapshotId;
         this.sgid = sgid;
@@ -28,6 +29,7 @@ public class RestoreVmInfo {
         this.username = username;
         this.encryptedPassword = encryptedPassword;
         this.zone = zone;
+        this.orionGuid = orionGuid;
     }
 
     public String toString() {

@@ -30,6 +30,7 @@ import com.godaddy.hfs.mailrelay.MailRelayService;
 import com.godaddy.hfs.mailrelay.MailRelayUpdate;
 import com.godaddy.hfs.vm.VmAction;
 import com.godaddy.hfs.vm.VmService;
+import com.godaddy.vps4.hfs.HfsVmTrackingRecordService;
 import com.godaddy.vps4.network.IpAddress;
 import com.godaddy.vps4.network.IpAddress.IpAddressType;
 import com.godaddy.vps4.network.NetworkService;
@@ -70,9 +71,10 @@ public class Vps4DestroyDedicatedTest {
     VmUserService vmUserService = mock(VmUserService.class);
     MonitoringMeta monitoringMeta = mock(MonitoringMeta.class);
     NetworkService networkService = mock(NetworkService.class);
+    HfsVmTrackingRecordService hfsVmTrackingRecordService = mock(HfsVmTrackingRecordService.class);
 
-    Vps4DestroyDedicated command = new Vps4DestroyDedicated(actionService, vmService, networkService, nodePingService, monitoringMeta);
-
+    Vps4DestroyDedicated command = new Vps4DestroyDedicated(actionService, networkService, nodePingService,
+            monitoringMeta, hfsVmTrackingRecordService);
     Injector injector = Guice.createInjector(binder -> {
         binder.bind(UnbindIp.class);
         binder.bind(ReleaseIp.class);
@@ -87,6 +89,7 @@ public class Vps4DestroyDedicatedTest {
         binder.bind(VmUserService.class).toInstance(vmUserService);
         binder.bind(MonitoringMeta.class).toInstance(monitoringMeta);
         binder.bind(NetworkService.class).toInstance(networkService);
+        binder.bind(HfsVmTrackingRecordService.class).toInstance(hfsVmTrackingRecordService);
     });
 
     CommandContext context = new TestCommandContext(new GuiceCommandProvider(injector));
@@ -114,6 +117,7 @@ public class Vps4DestroyDedicatedTest {
 
         VmAction vmAction = new VmAction();
         vmAction.state = VmAction.Status.COMPLETE;
+        vmAction.actionType = "DESTROY";
 
         AddressAction addressAction = new AddressAction();
         addressAction.status = AddressAction.Status.COMPLETE;

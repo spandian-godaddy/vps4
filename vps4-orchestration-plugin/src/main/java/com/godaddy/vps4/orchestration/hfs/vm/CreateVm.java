@@ -1,10 +1,13 @@
 package com.godaddy.vps4.orchestration.hfs.vm;
 
+import java.util.UUID;
+
 import javax.inject.Inject;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.godaddy.vps4.hfs.HfsVmTrackingRecordService;
 import com.godaddy.vps4.util.Cryptography;
 
 import gdg.hfs.orchestration.Command;
@@ -18,11 +21,13 @@ public class CreateVm implements Command<CreateVm.Request, VmAction> {
     private static final Logger logger = LoggerFactory.getLogger(CreateVm.class);
     private final Cryptography cryptography;
     private final VmService vmService;
+    private HfsVmTrackingRecordService hfsVmTrackingRecordService;
 
     @Inject
-    public CreateVm(VmService vmService, Cryptography cryptography) {
+    public CreateVm(VmService vmService, Cryptography cryptography, HfsVmTrackingRecordService hfsVmTrackingRecordService) {
         this.vmService = vmService;
         this.cryptography = cryptography;
+        this.hfsVmTrackingRecordService = hfsVmTrackingRecordService;
     }
 
     @Override
@@ -39,12 +44,14 @@ public class CreateVm implements Command<CreateVm.Request, VmAction> {
         hfsRequest.hostname = request.hostname;
         hfsRequest.private_label_id = request.privateLabelId;
 
-        VmAction vmAction = context.execute("CreateVmHfs", ctx -> vmService.createVmWithFlavor(hfsRequest), VmAction.class);
-
+        VmAction vmAction = context.execute("CreateVmHfs", ctx -> vmService.createVmWithFlavor(hfsRequest),
+                VmAction.class);
         // note: we do not wait for the vm action to complete here
         // since if the vm creation fails on the HFS side,
         // we would still like to update the hfs vm ID
         // in the vps4 database for debugging purposes.
+        
+        hfsVmTrackingRecordService.createHfsVm(vmAction.vmId, request.vmId, request.orionGuid);
 
         return vmAction;
     }
@@ -58,5 +65,7 @@ public class CreateVm implements Command<CreateVm.Request, VmAction> {
         public byte[] encryptedPassword;
         public String hostname;
         public String privateLabelId;
+        public UUID vmId;
+        public UUID orionGuid;
     }
 }

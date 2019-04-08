@@ -19,6 +19,7 @@ public class RebuildVmInfo {
     public String zone;
     public String serverName;
     public String privateLabelId;
+    public UUID orionGuid;
 
     public RebuildVmInfo() {
     }
