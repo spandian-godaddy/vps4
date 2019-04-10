@@ -4,7 +4,6 @@ import java.util.List;
 
 import javax.inject.Inject;
 
-import com.godaddy.vps4.vm.Image;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

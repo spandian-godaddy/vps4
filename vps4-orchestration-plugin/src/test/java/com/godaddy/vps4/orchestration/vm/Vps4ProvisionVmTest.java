@@ -1,7 +1,6 @@
 package com.godaddy.vps4.orchestration.vm;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyBoolean;
 import static org.mockito.Matchers.anyLong;
@@ -24,7 +23,6 @@ import com.godaddy.vps4.orchestration.scheduler.SetupAutomaticBackupSchedule;
 import com.godaddy.vps4.orchestration.sysadmin.ConfigureMailRelay;
 import com.godaddy.vps4.orchestration.vm.provision.ProvisionRequest;
 
-import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -32,7 +30,6 @@ import com.godaddy.vps4.credit.CreditService;
 import com.godaddy.vps4.messaging.MissingShopperIdException;
 import com.godaddy.vps4.messaging.Vps4MessagingService;
 import com.godaddy.vps4.network.NetworkService;
-import com.godaddy.vps4.orchestration.TestCommandContext;
 import com.godaddy.vps4.orchestration.hfs.network.AllocateIp;
 import com.godaddy.vps4.orchestration.hfs.network.BindIp;
 import com.godaddy.vps4.orchestration.hfs.plesk.ConfigurePlesk;
@@ -52,7 +49,6 @@ import com.google.inject.Guice;
 import com.google.inject.Injector;
 
 import gdg.hfs.orchestration.CommandContext;
-import gdg.hfs.orchestration.GuiceCommandProvider;
 import com.godaddy.hfs.mailrelay.MailRelay;
 import com.godaddy.hfs.mailrelay.MailRelayService;
 import com.godaddy.hfs.mailrelay.MailRelayUpdate;

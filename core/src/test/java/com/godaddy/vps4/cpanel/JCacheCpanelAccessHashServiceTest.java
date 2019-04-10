@@ -45,7 +45,6 @@ public class JCacheCpanelAccessHashServiceTest {
         Random random = new Random();
         long vmId = random.nextLong();
         String publicIp = UUID.randomUUID().toString();
-        String fromIp = UUID.randomUUID().toString();
         int epochSeconds = random.nextInt();
         Instant timeoutAt = Instant.ofEpochSecond(epochSeconds);
         String accessHash = UUID.randomUUID().toString();
@@ -60,7 +59,6 @@ public class JCacheCpanelAccessHashServiceTest {
         Random random = new Random();
         long vmId = random.nextLong();
         String publicIp = UUID.randomUUID().toString();
-        String fromIp = UUID.randomUUID().toString();
         int epochSeconds = random.nextInt();
         Instant timeoutAt = Instant.ofEpochSecond(epochSeconds);
         String accessHash = null;

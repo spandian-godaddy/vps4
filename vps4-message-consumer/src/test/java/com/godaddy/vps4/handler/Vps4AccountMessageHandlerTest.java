@@ -2,7 +2,7 @@ package com.godaddy.vps4.handler;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
-import static org.mockito.Mockito.any;
+import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyObject;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
@@ -14,14 +14,9 @@ import static org.mockito.Mockito.when;
 import java.io.IOException;
 import java.util.UUID;
 
-import com.godaddy.vps4.web.client.VmZombieService;
-import org.apache.http.conn.HttpHostConnectException;
-import org.apache.kafka.clients.consumer.ConsumerRecord;
-import org.json.simple.JSONObject;
-import org.junit.Before;
-import org.junit.Test;
-import org.mockito.ArgumentCaptor;
-import org.mockito.Mockito;
+import javax.ws.rs.InternalServerErrorException;
+import javax.ws.rs.ProcessingException;
+import javax.ws.rs.ServiceUnavailableException;
 
 import com.godaddy.hfs.config.Config;
 import com.godaddy.vps4.credit.CreditService;
@@ -33,18 +28,22 @@ import com.godaddy.vps4.vm.AccountStatus;
 import com.godaddy.vps4.vm.ActionService;
 import com.godaddy.vps4.vm.DataCenter;
 import com.godaddy.vps4.vm.DataCenterService;
+import com.godaddy.vps4.vm.ServerSpec;
 import com.godaddy.vps4.vm.VirtualMachine;
 import com.godaddy.vps4.vm.VirtualMachineService;
-import com.godaddy.vps4.vm.ServerSpec;
+import com.godaddy.vps4.web.client.VmZombieService;
+
+import org.apache.http.conn.HttpHostConnectException;
+import org.apache.kafka.clients.consumer.ConsumerRecord;
+import org.json.simple.JSONObject;
+import org.junit.Before;
+import org.junit.Test;
+import org.mockito.ArgumentCaptor;
+import org.mockito.Mockito;
 
 import gdg.hfs.orchestration.CommandGroupSpec;
 import gdg.hfs.orchestration.CommandService;
-import gdg.hfs.orchestration.CommandSpec;
 import gdg.hfs.orchestration.CommandState;
-
-import javax.ws.rs.InternalServerErrorException;
-import javax.ws.rs.ProcessingException;
-import javax.ws.rs.ServiceUnavailableException;
 
 public class Vps4AccountMessageHandlerTest {
 

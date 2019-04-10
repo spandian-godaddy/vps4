@@ -4,7 +4,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
-import com.godaddy.hfs.vm.VmAction;
 import com.godaddy.hfs.vm.VmService;
 import com.godaddy.vps4.credit.CreditService;
 import com.godaddy.vps4.credit.ECommCreditService.ProductMetaField;
@@ -22,7 +21,6 @@ import com.godaddy.vps4.vm.VirtualMachine;
 import com.godaddy.vps4.vm.VirtualMachineService;
 import com.google.inject.Inject;
 
-import gdg.hfs.orchestration.Command;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

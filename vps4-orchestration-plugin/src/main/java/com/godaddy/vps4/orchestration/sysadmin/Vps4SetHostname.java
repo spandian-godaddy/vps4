@@ -2,23 +2,22 @@ package com.godaddy.vps4.orchestration.sysadmin;
 
 import javax.inject.Inject;
 
-import com.godaddy.vps4.orchestration.Vps4ActionRequest;
-import gdg.hfs.orchestration.CommandRetryStrategy;
-import org.json.simple.JSONObject;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.godaddy.vps4.orchestration.ActionCommand;
+import com.godaddy.vps4.orchestration.Vps4ActionRequest;
 import com.godaddy.vps4.orchestration.hfs.cpanel.RefreshCpanelLicense;
 import com.godaddy.vps4.orchestration.hfs.sysadmin.SetHostname;
 import com.godaddy.vps4.vm.ActionService;
 import com.godaddy.vps4.vm.UpdateHostnameStep;
 import com.godaddy.vps4.vm.VirtualMachineService;
 
+import org.json.simple.JSONObject;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import gdg.hfs.orchestration.CommandContext;
 import gdg.hfs.orchestration.CommandMetadata;
-import gdg.hfs.vhfs.sysadmin.SysAdminAction;
+import gdg.hfs.orchestration.CommandRetryStrategy;
 
 @CommandMetadata(
     name = "Vps4SetHostname",

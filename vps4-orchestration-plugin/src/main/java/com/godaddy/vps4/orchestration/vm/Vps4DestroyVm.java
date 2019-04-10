@@ -8,12 +8,7 @@ import java.util.stream.Collectors;
 import javax.inject.Inject;
 import javax.ws.rs.NotFoundException;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import com.godaddy.hfs.vm.VmAction;
-import com.godaddy.hfs.vm.VmService;
-import com.godaddy.vps4.hfs.HfsVmTrackingRecordService;
 import com.godaddy.vps4.network.IpAddress;
 import com.godaddy.vps4.network.NetworkService;
 import com.godaddy.vps4.orchestration.ActionCommand;
@@ -23,6 +18,9 @@ import com.godaddy.vps4.util.MonitoringMeta;
 import com.godaddy.vps4.vm.ActionService;
 import com.godaddy.vps4.vm.VirtualMachine;
 import com.godaddy.vps4.vm.VirtualMachineService;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import gdg.hfs.orchestration.CommandContext;
 import gdg.hfs.orchestration.CommandMetadata;

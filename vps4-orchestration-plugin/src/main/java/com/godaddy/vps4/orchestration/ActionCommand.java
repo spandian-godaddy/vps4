@@ -1,19 +1,15 @@
 package com.godaddy.vps4.orchestration;
 
-import org.json.simple.JSONObject;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.godaddy.vps4.util.ThreadLocalRequestId;
 import com.godaddy.vps4.vm.ActionService;
+
+import org.json.simple.JSONObject;
 
 import gdg.hfs.orchestration.Command;
 import gdg.hfs.orchestration.CommandContext;
 
 public abstract class ActionCommand<Req extends ActionRequest, Res> implements Command<Req, Res> {
-
-    private static final Logger logger = LoggerFactory.getLogger(ActionCommand.class);
 
     protected static final ObjectMapper mapper = new ObjectMapper();
 

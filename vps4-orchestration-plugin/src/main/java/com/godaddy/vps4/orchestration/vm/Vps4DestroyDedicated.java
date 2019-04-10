@@ -9,7 +9,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.godaddy.hfs.vm.VmAction;
-import com.godaddy.hfs.vm.VmService;
 import com.godaddy.vps4.hfs.HfsVmTrackingRecordService;
 import com.godaddy.vps4.network.IpAddress;
 import com.godaddy.vps4.network.NetworkService;

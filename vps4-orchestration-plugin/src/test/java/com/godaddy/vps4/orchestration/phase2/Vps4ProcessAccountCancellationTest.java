@@ -42,7 +42,6 @@ import com.godaddy.vps4.scheduledJob.jdbc.JdbcScheduledJobService;
 import com.godaddy.vps4.security.SecurityModule;
 import com.godaddy.vps4.security.Vps4UserService;
 import com.godaddy.vps4.vm.ActionService;
-import com.godaddy.vps4.vm.ActionType;
 import com.godaddy.vps4.vm.VirtualMachine;
 import com.godaddy.vps4.vm.VirtualMachineService;
 import com.godaddy.vps4.vm.jdbc.JdbcVirtualMachineService;

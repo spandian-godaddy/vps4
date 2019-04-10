@@ -1,5 +1,14 @@
 package com.godaddy.vps4.orchestration.vm.provision;
 
+import static com.godaddy.vps4.vm.CreateVmStep.ConfigureNodeping;
+import static com.godaddy.vps4.vm.CreateVmStep.ConfiguringCPanel;
+import static com.godaddy.vps4.vm.CreateVmStep.ConfiguringPlesk;
+import static com.godaddy.vps4.vm.CreateVmStep.GeneratingHostname;
+import static com.godaddy.vps4.vm.CreateVmStep.RequestingServer;
+import static com.godaddy.vps4.vm.CreateVmStep.SetHostname;
+import static com.godaddy.vps4.vm.CreateVmStep.SetupComplete;
+import static com.godaddy.vps4.vm.CreateVmStep.StartingServerSetup;
+
 import java.util.Random;
 import java.util.UUID;
 
@@ -26,27 +35,19 @@ import com.godaddy.vps4.util.MonitoringMeta;
 import com.godaddy.vps4.vm.ActionService;
 import com.godaddy.vps4.vm.CreateVmStep;
 import com.godaddy.vps4.vm.Image;
-import com.godaddy.vps4.vm.Image.ControlPanel;
 import com.godaddy.vps4.vm.VirtualMachine;
 import com.godaddy.vps4.vm.VirtualMachineService;
 import com.godaddy.vps4.vm.VmUserService;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import gdg.hfs.orchestration.CommandContext;
 import gdg.hfs.orchestration.CommandMetadata;
 import gdg.hfs.orchestration.CommandRetryStrategy;
 import gdg.hfs.vhfs.nodeping.CreateCheckRequest;
 import gdg.hfs.vhfs.nodeping.NodePingCheck;
 import gdg.hfs.vhfs.nodeping.NodePingService;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import static com.godaddy.vps4.vm.CreateVmStep.ConfigureNodeping;
-import static com.godaddy.vps4.vm.CreateVmStep.ConfiguringCPanel;
-import static com.godaddy.vps4.vm.CreateVmStep.ConfiguringPlesk;
-import static com.godaddy.vps4.vm.CreateVmStep.GeneratingHostname;
-import static com.godaddy.vps4.vm.CreateVmStep.RequestingServer;
-import static com.godaddy.vps4.vm.CreateVmStep.SetHostname;
-import static com.godaddy.vps4.vm.CreateVmStep.SetupComplete;
-import static com.godaddy.vps4.vm.CreateVmStep.StartingServerSetup;
 
 @CommandMetadata(
         name = "ProvisionDedicated",
