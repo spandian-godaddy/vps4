@@ -44,6 +44,7 @@ import gdg.hfs.orchestration.CommandGroupSpec;
 import gdg.hfs.orchestration.CommandService;
 import gdg.hfs.orchestration.CommandSpec;
 import gdg.hfs.orchestration.CommandState;
+import gdg.hfs.vhfs.ecomm.Account;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -128,9 +129,10 @@ public class DedicatedDestroyTest {
         vm.spec = spec;
         when(virtualMachineService.getVirtualMachine(any(UUID.class))).thenReturn(vm);
 
-        VirtualMachineCredit credit = new VirtualMachineCredit();
-        credit.accountStatus = AccountStatus.ACTIVE;
-        credit.shopperId = "validUserShopperId";
+        VirtualMachineCredit credit = new VirtualMachineCredit.Builder(mock(DataCenterService.class))
+            .withAccountStatus(Account.Status.active)
+            .withShopperID("validUserShopperId")
+            .build();
         when(creditService.getVirtualMachineCredit(any(UUID.class))).thenReturn(credit);
 
         when(commandService.executeCommand(any(CommandGroupSpec.class))).thenReturn(commandState);

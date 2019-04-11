@@ -61,7 +61,7 @@ public class Vps4ProcessAccountCancellation extends ActionCommand<Vps4ProcessAcc
         this.context = context;
         try {
             if (hasAccountBeenClaimed(request.virtualMachineCredit)) {
-                UUID vmId = request.virtualMachineCredit.productId;
+                UUID vmId = request.virtualMachineCredit.getProductId();
                 Instant validUntil = calculateValidUntil();
                 markVmAsZombie(vmId);
                 UUID jobId = scheduleZombieVmCleanup(vmId, validUntil);
@@ -71,7 +71,7 @@ public class Vps4ProcessAccountCancellation extends ActionCommand<Vps4ProcessAcc
         } catch (Exception e) {
             logger.error(
                 "Error while handling account cancellation for account: {}. Error details: {}",
-                request.virtualMachineCredit.orionGuid, e);
+                    request.virtualMachineCredit.getOrionGuid(), e);
             throw new RuntimeException(e);
         }
 
@@ -79,7 +79,7 @@ public class Vps4ProcessAccountCancellation extends ActionCommand<Vps4ProcessAcc
     }
 
     private boolean hasAccountBeenClaimed(VirtualMachineCredit virtualMachineCredit) {
-        return virtualMachineCredit.productId != null;
+        return virtualMachineCredit.getProductId() != null;
     }
 
     private Instant calculateValidUntil() {

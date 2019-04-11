@@ -168,7 +168,7 @@ public class VmRebuildResource {
         rebuildVmInfo.zone = vm.spec.isVirtualMachine() ?
                 config.get("openstack.zone", null) :
                 config.get("ovh.zone", null);
-        rebuildVmInfo.privateLabelId = creditService.getVirtualMachineCredit(vm.orionGuid).resellerId;
+        rebuildVmInfo.privateLabelId = creditService.getVirtualMachineCredit(vm.orionGuid).getResellerId();
         rebuildVmInfo.orionGuid = vm.orionGuid;
 
         Vps4RebuildVm.Request req = new Vps4RebuildVm.Request();

@@ -1,12 +1,16 @@
 package com.godaddy.vps4.phase2;
 
 import java.time.Instant;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.UUID;
 
 import javax.inject.Inject;
 import javax.sql.DataSource;
 
 import com.godaddy.vps4.scheduler.api.web.SchedulerWebService;
+import com.godaddy.vps4.vm.DataCenterService;
+import gdg.hfs.vhfs.ecomm.Account;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -33,6 +37,8 @@ import com.google.inject.Guice;
 import com.google.inject.Injector;
 import com.google.inject.Provides;
 
+import static org.mockito.Mockito.mock;
+
 public class VmResourceProvisionTest {
 
     @Inject DataSource dataSource;
@@ -51,7 +57,7 @@ public class VmResourceProvisionTest {
 
                 @Override
                 public void configure() {
-                    SchedulerWebService swServ = Mockito.mock(SchedulerWebService.class);
+                    SchedulerWebService swServ = mock(SchedulerWebService.class);
                     bind(SchedulerWebService.class).toInstance(swServ);
                 }
 
@@ -85,10 +91,26 @@ public class VmResourceProvisionTest {
 
     private VirtualMachineCredit createVmCredit(String controlPanel, boolean claimed,
             AccountStatus accountStatus, String resellerId) {
-        UUID newGuid = UUID.randomUUID();
-        Instant provisionDate = claimed ? Instant.now() : null;
-        return new VirtualMachineCredit(newGuid, 10, 1, 0, "linux", controlPanel, provisionDate,
-                GDUserMock.DEFAULT_SHOPPER, accountStatus, null, null, false, resellerId, false, 0);
+        Map<String, String> planFeatures = new HashMap<>();
+        planFeatures.put("tier", String.valueOf(10));
+        planFeatures.put("managed_level", String.valueOf(1));
+        planFeatures.put("control_panel_type", String.valueOf(controlPanel));
+        planFeatures.put("monitoring", String.valueOf(0));
+        planFeatures.put("operatingsystem", "linux");
+
+        Map<String, String> productMeta = new HashMap<>();
+        if (claimed)
+            productMeta.put("provision_date", Instant.now().toString());
+
+        VirtualMachineCredit credit = new VirtualMachineCredit.Builder(mock(DataCenterService.class))
+            .withAccountGuid(UUID.randomUUID().toString())
+            .withAccountStatus(Account.Status.valueOf(accountStatus.toString().toLowerCase()))
+            .withShopperID(GDUserMock.DEFAULT_SHOPPER)
+            .withResellerID(resellerId)
+            .withProductMeta(productMeta)
+            .withPlanFeatures(planFeatures)
+            .build();
+        return credit;
     }
 
     private ProvisionVmRequest createProvisionVmRequest(UUID orionGuid) {
@@ -103,8 +125,8 @@ public class VmResourceProvisionTest {
 
     public void testProvisionVm() throws InterruptedException {
         VirtualMachineCredit credit = createVmCredit("myh", false, AccountStatus.ACTIVE);
-        ProvisionVmRequest request = createProvisionVmRequest(credit.orionGuid);
-        Mockito.when(creditService.getVirtualMachineCredit(credit.orionGuid)).thenReturn(credit);
+        ProvisionVmRequest request = createProvisionVmRequest(credit.getOrionGuid());
+        Mockito.when(creditService.getVirtualMachineCredit(credit.getOrionGuid())).thenReturn(credit);
 
         VmAction vmAction = getVmResource().provisionVm(request);
         Assert.assertNotNull(vmAction.commandId);
@@ -138,8 +160,8 @@ public class VmResourceProvisionTest {
     public void testProvisionVmInvalidCredit() throws InterruptedException {
         // Credit doesn't match provision request image
         VirtualMachineCredit credit = createVmCredit("cpanel", false, AccountStatus.ACTIVE);
-        ProvisionVmRequest request = createProvisionVmRequest(credit.orionGuid);
-        Mockito.when(creditService.getVirtualMachineCredit(credit.orionGuid)).thenReturn(credit);
+        ProvisionVmRequest request = createProvisionVmRequest(credit.getOrionGuid());
+        Mockito.when(creditService.getVirtualMachineCredit(credit.getOrionGuid())).thenReturn(credit);
 
         try {
             getVmResource().provisionVm(request);
@@ -166,8 +188,8 @@ public class VmResourceProvisionTest {
     @Test
     public void testProvisionVmCreditClaimed() throws InterruptedException {
         VirtualMachineCredit credit = createVmCredit("cpanel", true, AccountStatus.ACTIVE);
-        ProvisionVmRequest request = createProvisionVmRequest(credit.orionGuid);
-        Mockito.when(creditService.getVirtualMachineCredit(credit.orionGuid)).thenReturn(credit);
+        ProvisionVmRequest request = createProvisionVmRequest(credit.getOrionGuid());
+        Mockito.when(creditService.getVirtualMachineCredit(credit.getOrionGuid())).thenReturn(credit);
 
         try {
             getVmResource().provisionVm(request);
@@ -180,8 +202,8 @@ public class VmResourceProvisionTest {
     @Test
     public void testSuspendedShopperProvisionVm() throws InterruptedException {
         VirtualMachineCredit credit = createVmCredit("myh", false, AccountStatus.SUSPENDED);
-        ProvisionVmRequest request = createProvisionVmRequest(credit.orionGuid);
-        Mockito.when(creditService.getVirtualMachineCredit(credit.orionGuid)).thenReturn(credit);
+        ProvisionVmRequest request = createProvisionVmRequest(credit.getOrionGuid());
+        Mockito.when(creditService.getVirtualMachineCredit(credit.getOrionGuid())).thenReturn(credit);
 
         try {
             getVmResource().provisionVm(request);
@@ -197,8 +219,8 @@ public class VmResourceProvisionTest {
         // VM Create attempts to use dataCenterId=1, so test should fail
         String HEG_RESELLER_ID = "525847";
         VirtualMachineCredit credit = createVmCredit("myh", false, AccountStatus.ACTIVE, HEG_RESELLER_ID);
-        ProvisionVmRequest request = createProvisionVmRequest(credit.orionGuid);
-        Mockito.when(creditService.getVirtualMachineCredit(credit.orionGuid)).thenReturn(credit);
+        ProvisionVmRequest request = createProvisionVmRequest(credit.getOrionGuid());
+        Mockito.when(creditService.getVirtualMachineCredit(credit.getOrionGuid())).thenReturn(credit);
 
         try {
             getVmResource().provisionVm(request);
@@ -213,8 +235,8 @@ public class VmResourceProvisionTest {
         // MT Reseller is restricted in the reseller_datacenters table to dataCenterID==1, so test should succeed
         String MT_RESELLER_ID = "495469";
         VirtualMachineCredit credit = createVmCredit("myh", false, AccountStatus.ACTIVE, MT_RESELLER_ID);
-        ProvisionVmRequest request = createProvisionVmRequest(credit.orionGuid);
-        Mockito.when(creditService.getVirtualMachineCredit(credit.orionGuid)).thenReturn(credit);
+        ProvisionVmRequest request = createProvisionVmRequest(credit.getOrionGuid());
+        Mockito.when(creditService.getVirtualMachineCredit(credit.getOrionGuid())).thenReturn(credit);
 
         VmAction vmAction = getVmResource().provisionVm(request);
         Assert.assertNotNull(vmAction.commandId);

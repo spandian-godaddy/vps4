@@ -16,7 +16,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.godaddy.vps4.vm.AccountStatus;
-import com.godaddy.vps4.vm.DataCenter;
 import com.godaddy.vps4.vm.DataCenterService;
 import com.google.inject.Singleton;
 
@@ -90,20 +89,14 @@ public class ECommCreditService implements CreditService {
 
     private VirtualMachineCredit mapVirtualMachineCredit(Account account) {
         try {
-            VirtualMachineCredit credit = new VirtualMachineCredit(UUID.fromString(account.account_guid),
-                Integer.parseInt(account.plan_features.get(PlanFeatures.TIER.toString())),
-                Integer.parseInt(account.plan_features.get(PlanFeatures.MANAGED_LEVEL.toString())),
-                Integer.parseInt(account.plan_features.getOrDefault(PlanFeatures.MONITORING.toString(), "0")),
-                account.plan_features.get(PlanFeatures.OPERATINGSYSTEM.toString()),
-                account.plan_features.get(PlanFeatures.CONTROL_PANEL_TYPE.toString()),
-                stringToInstant(account.product_meta.get(ProductMetaField.PROVISION_DATE.toString())),
-                getShopperId(account),
-                AccountStatus.valueOf(account.status.name().toUpperCase()),
-                getDataCenter(account), getProductId(account),
-                Boolean.parseBoolean(account.product_meta.get(ProductMetaField.FULLY_MANAGED_EMAIL_SENT.toString())),
-                account.reseller_id,
-                Boolean.parseBoolean(account.product_meta.get(ProductMetaField.PLAN_CHANGE_PENDING.toString())),
-                Integer.parseInt(account.plan_features.getOrDefault(PlanFeatures.PF_ID.toString(), "0")));
+            VirtualMachineCredit credit = new VirtualMachineCredit.Builder(dataCenterService)
+                    .withPlanFeatures(account.plan_features)
+                    .withProductMeta(account.product_meta)
+                    .withAccountGuid(account.account_guid)
+                    .withAccountStatus(account.status)
+                    .withResellerID(account.reseller_id)
+                    .withShopperID(getShopperId(account))
+                    .build();
             logger.info("Credit: {}", credit.toString());
             return credit;
         } catch (Exception ex) {
@@ -120,29 +113,6 @@ public class ECommCreditService implements CreditService {
     private String getShopperId(Account account) {
         // Brand resellers will use sub_account_shopper_id, otherwise use shopper_id
         return (account.sub_account_shopper_id != null) ? account.sub_account_shopper_id : account.shopper_id;
-    }
-
-    private UUID getProductId(Account account) {
-        String productIdStr = account.product_meta.get(ProductMetaField.PRODUCT_ID.toString());
-        UUID productId = null;
-        if (productIdStr != null){
-            productId = UUID.fromString(productIdStr);
-        }
-        return productId;
-    }
-
-    private DataCenter getDataCenter(Account account) {
-        if (account.product_meta.containsKey(ProductMetaField.DATA_CENTER.toString())) {
-            int dcId = Integer.valueOf(account.product_meta.get(ProductMetaField.DATA_CENTER.toString()));
-            return this.dataCenterService.getDataCenter(dcId);
-        }
-        return null;
-    }
-
-    private Instant stringToInstant(String provisionDate) {
-        if (provisionDate != null)
-            return Instant.parse(provisionDate);
-        return null;
     }
 
     @Override

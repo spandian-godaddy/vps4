@@ -7,8 +7,12 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.UUID;
 
+import com.godaddy.vps4.vm.DataCenterService;
+import gdg.hfs.vhfs.ecomm.Account;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.MockitoAnnotations;
@@ -33,7 +37,7 @@ public class HandleMonitoringDownEventTest {
     Long dummyCheckId = 123L;
     Long dummyIrisId = 456L;
     VirtualMachine testVm = new VirtualMachine();
-    VirtualMachineCredit credit = new VirtualMachineCredit();
+    VirtualMachineCredit credit;
 
     @Inject HandleMonitoringDownEvent command;
 
@@ -62,17 +66,24 @@ public class HandleMonitoringDownEventTest {
         context = mock(CommandContext.class);
 
         testVm.orionGuid = UUID.randomUUID();
+    }
 
-        credit.accountStatus = AccountStatus.ACTIVE;
-        credit.managedLevel = 2;
-        credit.orionGuid = testVm.orionGuid;
+    private void setupCredit(int managedLevel, AccountStatus accountStatus) {
+        Map<String, String> planFeatures = new HashMap<>();
+        planFeatures.put("managed_level", String.valueOf(managedLevel));
+        credit = new VirtualMachineCredit.Builder(mock(DataCenterService.class))
+                .withAccountStatus(Account.Status.valueOf(accountStatus.toString().toLowerCase()))
+                .withAccountGuid(testVm.orionGuid.toString())
+                .withPlanFeatures(planFeatures)
+                .build();
     }
 
     @Test
     public void testHandleMonitoringDownEvent() {
+        setupCredit(2, AccountStatus.ACTIVE);
         when(virtualMachineService.getVirtualMachineByCheckId(dummyCheckId)).thenReturn(testVm);
         when(monitoringNotificationService.sendServerDownEventNotification(testVm)).thenReturn(dummyIrisId);
-        when(creditService.getVirtualMachineCredit(credit.orionGuid)).thenReturn(credit);
+        when(creditService.getVirtualMachineCredit(credit.getOrionGuid())).thenReturn(credit);
 
         command.execute(context, dummyCheckId);
 
@@ -81,6 +92,7 @@ public class HandleMonitoringDownEventTest {
 
     @Test
     public void testHandleMonitoringDownEventNoCheckIdFound() {
+        setupCredit(2, AccountStatus.ACTIVE);
         when(virtualMachineService.getVirtualMachineByCheckId(dummyCheckId)).thenReturn(null);
         command.execute(context, dummyCheckId);
 
@@ -89,9 +101,9 @@ public class HandleMonitoringDownEventTest {
 
     @Test
     public void testHandleMonitoringDownEventAccountNotActive() {
+        setupCredit(2, AccountStatus.REMOVED);
         when(virtualMachineService.getVirtualMachineByCheckId(dummyCheckId)).thenReturn(testVm);
-        credit.accountStatus = AccountStatus.REMOVED;
-        when(creditService.getVirtualMachineCredit(credit.orionGuid)).thenReturn(credit);
+        when(creditService.getVirtualMachineCredit(credit.getOrionGuid())).thenReturn(credit);
 
         command.execute(context, dummyCheckId);
 
@@ -100,9 +112,9 @@ public class HandleMonitoringDownEventTest {
 
     @Test
     public void testHandleMonitoringDownEventAccountNotFullyManaged() {
+        setupCredit(0, AccountStatus.ACTIVE);
         when(virtualMachineService.getVirtualMachineByCheckId(dummyCheckId)).thenReturn(testVm);
-        credit.managedLevel = 0;
-        when(creditService.getVirtualMachineCredit(credit.orionGuid)).thenReturn(credit);
+        when(creditService.getVirtualMachineCredit(credit.getOrionGuid())).thenReturn(credit);
 
         command.execute(context, dummyCheckId);
 

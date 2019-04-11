@@ -95,7 +95,7 @@ public class ECommCreditServiceTest {
         when(ecommService.getAccount(orionGuid.toString())).thenReturn(account);
         VirtualMachineCredit credit = creditService.getVirtualMachineCredit(orionGuid);
 
-        assertEquals(orionGuid, credit.orionGuid);
+        assertEquals(orionGuid, credit.getOrionGuid());
     }
 
     @Test
@@ -105,7 +105,7 @@ public class ECommCreditServiceTest {
         when(ecommService.getAccount(orionGuid.toString())).thenReturn(account);
         VirtualMachineCredit credit = creditService.getVirtualMachineCredit(orionGuid);
 
-        assertEquals(vmId, credit.productId);
+        assertEquals(vmId, credit.getProductId());
     }
 
     @Test
@@ -135,14 +135,14 @@ public class ECommCreditServiceTest {
         when(ecommService.getAccount(orionGuid.toString())).thenReturn(account);
         VirtualMachineCredit credit = creditService.getVirtualMachineCredit(orionGuid);
 
-        assertEquals(orionGuid, credit.orionGuid);
-        assertEquals(Integer.parseInt(account.plan_features.get("tier")), credit.tier);
-        assertEquals(Integer.parseInt(account.plan_features.get("managed_level")), credit.managedLevel);
-        assertEquals(account.plan_features.get("operatingsystem"), credit.operatingSystem);
-        assertEquals(account.plan_features.get("control_panel_type"), credit.controlPanel);
-        assertNull(credit.provisionDate);
-        assertEquals(account.shopper_id, credit.shopperId);
-        assertEquals(Integer.parseInt(account.plan_features.get("pf_id")), credit.pfid);
+        assertEquals(orionGuid, credit.getOrionGuid());
+        assertEquals(Integer.parseInt(account.plan_features.get("tier")), credit.getTier());
+        assertEquals(Integer.parseInt(account.plan_features.get("managed_level")), credit.getManagedLevel());
+        assertEquals(account.plan_features.get("operatingsystem"), credit.getOperatingSystem());
+        assertEquals(account.plan_features.get("control_panel_type"), credit.getControlPanel());
+        assertNull(credit.getProvisionDate());
+        assertEquals(account.shopper_id, credit.getShopperId());
+        assertEquals(Integer.parseInt(account.plan_features.get("pf_id")), credit.getPfid());
     }
 
     @Test
@@ -152,7 +152,7 @@ public class ECommCreditServiceTest {
         VirtualMachineCredit credit = creditService.getVirtualMachineCredit(orionGuid);
         int defaultPfid = 0;
 
-        assertEquals(defaultPfid, credit.pfid);
+        assertEquals(defaultPfid, credit.getPfid());
     }
 
     @Test
@@ -162,7 +162,7 @@ public class ECommCreditServiceTest {
         when(ecommService.getAccount(orionGuid.toString())).thenReturn(account);
         VirtualMachineCredit credit = creditService.getVirtualMachineCredit(orionGuid);
 
-        assertEquals(account.sub_account_shopper_id, credit.shopperId);
+        assertEquals(account.sub_account_shopper_id, credit.getShopperId());
     }
 
     @Test
@@ -172,7 +172,7 @@ public class ECommCreditServiceTest {
         when(ecommService.getAccount(orionGuid.toString())).thenReturn(account);
         VirtualMachineCredit credit = creditService.getVirtualMachineCredit(orionGuid);
 
-        assertEquals(testDate, credit.provisionDate);
+        assertEquals(testDate, credit.getProvisionDate());
     }
 
     @Test

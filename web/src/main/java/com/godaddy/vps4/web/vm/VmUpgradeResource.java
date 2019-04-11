@@ -75,7 +75,7 @@ public class VmUpgradeResource {
         VirtualMachineCredit credit = null;
         if (user.isShopper()) {
             credit = getAndValidateUserAccountCredit(creditService, virtualMachine.orionGuid, user.getShopperId());
-            if(!credit.planChangePending) {
+            if(!credit.isPlanChangePending()) {
                 throw new Vps4Exception("NO_PLAN_CHANGE_PENDING", "No plan change is pending for VM " + vmId);
             }
         }
@@ -87,10 +87,10 @@ public class VmUpgradeResource {
         req.shopperId = user.getShopperId();
         req.initiatedBy = user.getUsername();
         req.encryptedPassword = cryptography.encrypt(upgradeVmRequest.password);
-        req.newTier = credit.tier;
+        req.newTier = credit.getTier();
         req.autoBackupName = autoBackupName;
         req.zone = openStackZone;
-        req.privateLabelId = credit.resellerId;
+        req.privateLabelId = credit.getResellerId();
         return VmHelper.createActionAndExecute(actionService, commandService, vmId,
                 ActionType.UPGRADE_VM, req, "Vps4UpgradeVm", user);
 

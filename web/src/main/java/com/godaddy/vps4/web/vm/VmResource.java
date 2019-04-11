@@ -214,9 +214,9 @@ public class VmResource {
         VirtualMachineCredit vmCredit = getAndValidateUserAccountCredit(creditService, provisionRequest.orionGuid,
                 user.getShopperId());
         validateCreditIsNotInUse(vmCredit);
-        validateResellerCredit(dcService, vmCredit.resellerId, provisionRequest.dataCenterId);
+        validateResellerCredit(dcService, vmCredit.getResellerId(), provisionRequest.dataCenterId);
 
-        if (imageResource.getImages(vmCredit.operatingSystem, vmCredit.controlPanel, provisionRequest.image, vmCredit.tier)
+        if (imageResource.getImages(vmCredit.getOperatingSystem(), vmCredit.getControlPanel(), provisionRequest.image, vmCredit.getTier())
                 .size() == 0) {
             // verify that the image matches the request (control panel, managed level, OS)
             String message = String.format("The image %s is not valid for this credit.", provisionRequest.image);
@@ -225,10 +225,10 @@ public class VmResource {
 
         ProvisionVirtualMachineParameters params;
         VirtualMachine virtualMachine;
-        Vps4User vps4User = vps4UserService.getOrCreateUserForShopper(user.getShopperId(), vmCredit.resellerId);
+        Vps4User vps4User = vps4UserService.getOrCreateUserForShopper(user.getShopperId(), vmCredit.getResellerId());
         try {
             params = new ProvisionVirtualMachineParameters(vps4User.getId(), provisionRequest.dataCenterId, sgidPrefix,
-                    provisionRequest.orionGuid, provisionRequest.name, vmCredit.tier, vmCredit.managedLevel,
+                    provisionRequest.orionGuid, provisionRequest.name, vmCredit.getTier(), vmCredit.getManagedLevel(),
                     provisionRequest.image);
             virtualMachine = virtualMachineService.provisionVirtualMachine(params);
             creditService.claimVirtualMachineCredit(provisionRequest.orionGuid, provisionRequest.dataCenterId,
@@ -243,16 +243,16 @@ public class VmResource {
                 new JSONObject().toJSONString(), user.getUsername());
         logger.info("VmAction id: {}", actionId);
 
-        int mailRelayQuota =  Integer.parseInt(ResellerConfigHelper.getResellerConfig(config, vmCredit.resellerId, "mailrelay.quota", "5000"));
+        int mailRelayQuota =  Integer.parseInt(ResellerConfigHelper.getResellerConfig(config, vmCredit.getResellerId(), "mailrelay.quota", "5000"));
 
-        ProvisionVmInfo vmInfo = new ProvisionVmInfo(virtualMachine.vmId, vmCredit.managedLevel, vmCredit.hasMonitoring(),
+        ProvisionVmInfo vmInfo = new ProvisionVmInfo(virtualMachine.vmId, vmCredit.getManagedLevel(), vmCredit.hasMonitoring(),
                 virtualMachine.image, project.getVhfsSgid(), mailRelayQuota, virtualMachine.spec.diskGib);
         logger.info("vmInfo: {}", vmInfo.toString());
         byte[] encryptedPassword = cryptography.encrypt(provisionRequest.password);
 
         ProvisionRequest request = createProvisionRequest(provisionRequest.image, provisionRequest.username,
                 project, virtualMachine.spec, actionId, vmInfo, user.getShopperId(), provisionRequest.name,
-                provisionRequest.orionGuid, encryptedPassword, vmCredit.resellerId);
+                provisionRequest.orionGuid, encryptedPassword, vmCredit.getResellerId());
 
         String provisionClassName = virtualMachine.spec.isVirtualMachine() ? "ProvisionVm" : "ProvisionDedicated";
         CommandState command = Commands.execute(commandService, actionService, provisionClassName, request);
@@ -423,7 +423,7 @@ public class VmResource {
                 automaticSnapshotSchedule = new AutomaticSnapshotSchedule(nextRun, copiesToRetain, repeatIntervalInDays, isPaused);
             }
         }
-        return new VirtualMachineWithDetails(virtualMachine, new VirtualMachineDetails(vm), credit.dataCenter, credit.shopperId, automaticSnapshotSchedule);
+        return new VirtualMachineWithDetails(virtualMachine, new VirtualMachineDetails(vm), credit.getDataCenter(), credit.getShopperId(), automaticSnapshotSchedule);
     }
 
 }

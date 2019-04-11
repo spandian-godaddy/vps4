@@ -17,6 +17,8 @@ import java.util.UUID;
 
 import javax.ws.rs.NotFoundException;
 
+import com.godaddy.vps4.vm.DataCenterService;
+import gdg.hfs.vhfs.ecomm.Account;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -64,8 +66,12 @@ public class CreditResourceTest {
     }
 
     private VirtualMachineCredit createVmCredit(AccountStatus accountStatus) {
-        return new VirtualMachineCredit(orionGuid, 10, 1, 0, "linux", "cPanel", null, user.getShopperId(), accountStatus, null, null,
-                false, "1", false, 0);
+        VirtualMachineCredit credit = new VirtualMachineCredit.Builder(mock(DataCenterService.class))
+                .withAccountGuid(orionGuid.toString())
+                .withAccountStatus(Account.Status.valueOf(accountStatus.toString().toLowerCase()))
+                .withShopperID(user.getShopperId())
+                .build();
+        return credit;
     }
 
     @Before
@@ -80,14 +86,14 @@ public class CreditResourceTest {
     @Test
     public void testShopperGetCredit() {
         VirtualMachineCredit credit = getCreditResource().getCredit(orionGuid);
-        Assert.assertEquals(orionGuid, credit.orionGuid);
+        Assert.assertEquals(orionGuid, credit.getOrionGuid());
     }
 
     @Test
     public void testEmployeeGetCredit() {
         user = GDUserMock.createEmployee();
         VirtualMachineCredit credit = getCreditResource().getCredit(orionGuid);
-        Assert.assertEquals(orionGuid, credit.orionGuid);
+        Assert.assertEquals(orionGuid, credit.getOrionGuid());
 
     }
 
@@ -95,7 +101,7 @@ public class CreditResourceTest {
     public void testAdminGetCredit() {
         user = GDUserMock.createAdmin();
         VirtualMachineCredit credit = getCreditResource().getCredit(orionGuid);
-        Assert.assertEquals(orionGuid, credit.orionGuid);
+        Assert.assertEquals(orionGuid, credit.getOrionGuid());
     }
 
     @Test(expected=NotFoundException.class)

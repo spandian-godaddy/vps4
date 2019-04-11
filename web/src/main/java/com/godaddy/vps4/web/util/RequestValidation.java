@@ -150,7 +150,7 @@ public class RequestValidation {
         VirtualMachineCredit vmCredit = creditService.getVirtualMachineCredit(orionGuid);
 
         if (gdUser.role().equals(Role.HS_AGENT)) {
-            if (isBrandReseller(vmCredit.resellerId)) {
+            if (isBrandReseller(vmCredit.getResellerId())) {
                 if (newQuota > BRAND_RESELLER_MAIL_RELAY_LIMIT) {
                     throw new Vps4Exception(
                         "EXCEEDS_LIMIT",
@@ -190,7 +190,7 @@ public class RequestValidation {
         if (!vmCredit.isOwnedByShopper(ssoShopperId)) {
             throw new AuthorizationException(
                     String.format("Shopper %s does not have privilege for vm request with orion guid %s",
-                            ssoShopperId, vmCredit.orionGuid));
+                            ssoShopperId, vmCredit.getOrionGuid()));
         }
 
         return vmCredit;
@@ -199,7 +199,7 @@ public class RequestValidation {
     public static void validateCreditIsNotInUse(VirtualMachineCredit credit) {
         if (!credit.isUsable())
             throw new Vps4Exception("CREDIT_ALREADY_IN_USE",
-                    String.format("The virtual machine credit for orion guid %s is already provisioned'", credit.orionGuid));
+                    String.format("The virtual machine credit for orion guid %s is already provisioned'", credit.getOrionGuid()));
 
     }
 

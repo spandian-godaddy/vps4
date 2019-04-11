@@ -9,6 +9,8 @@ import static org.mockito.Mockito.when;
 
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.UUID;
 import java.util.function.Function;
 
@@ -18,6 +20,7 @@ import com.godaddy.hfs.vm.VmAction;
 import com.godaddy.hfs.vm.VmService;
 import com.godaddy.vps4.orchestration.hfs.vm.RescueVm;
 import com.godaddy.vps4.orchestration.hfs.vm.StopVm;
+import com.godaddy.vps4.vm.DataCenterService;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -107,7 +110,7 @@ public class Vps4ProcessAccountCancellationTest {
         MockitoAnnotations.initMocks(this);
         addTestSqlData();
         context = setupMockContext();
-        virtualMachineCredit = getVirtualMachineCredit();
+        virtualMachineCredit = getVirtualMachineCredit(vps4VmId);
         request = new Vps4ProcessAccountCancellation.Request();
         request.virtualMachineCredit = virtualMachineCredit;
         request.setActionId(1);
@@ -127,10 +130,15 @@ public class Vps4ProcessAccountCancellationTest {
         rescueDedicatedVmAction.state = VmAction.Status.COMPLETE;
     }
 
-    private VirtualMachineCredit getVirtualMachineCredit() {
-        VirtualMachineCredit credit = new VirtualMachineCredit();
-        credit.productId = vps4VmId;
-        credit.orionGuid = orionGuid;
+    private VirtualMachineCredit getVirtualMachineCredit(UUID productId) {
+        Map<String, String> productMeta = new HashMap<>();
+        if (productId != null)
+            productMeta.put("product_id", productId.toString());
+
+        VirtualMachineCredit credit = new VirtualMachineCredit.Builder(mock(DataCenterService.class))
+                .withAccountGuid(orionGuid.toString())
+                .withProductMeta(productMeta)
+                .build();
         return credit;
     }
 
@@ -262,7 +270,8 @@ public class Vps4ProcessAccountCancellationTest {
     @Test
     @SuppressWarnings("unchecked")
     public void noOpWhenAnUnclaimedAccountCancellationIsProcessed() {
-        virtualMachineCredit.productId = null;
+        virtualMachineCredit = getVirtualMachineCredit(null);
+        request.virtualMachineCredit = virtualMachineCredit;
         command.execute(context, request);
         verify(context, times(0)).execute(any(), any(Function.class), any());
         verify(context, times(0)).execute(any(Class.class), any());

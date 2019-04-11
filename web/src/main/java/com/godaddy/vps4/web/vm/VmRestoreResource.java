@@ -167,7 +167,7 @@ public class VmRestoreResource {
 
         Vps4RestoreVm.Request req = new Vps4RestoreVm.Request();
         req.restoreVmInfo = restoreVmInfo;
-        req.privateLabelId = creditService.getVirtualMachineCredit(vm.orionGuid).resellerId;
+        req.privateLabelId = creditService.getVirtualMachineCredit(vm.orionGuid).getResellerId();
         req.debugEnabled = debugEnabled;
         return req;
     }

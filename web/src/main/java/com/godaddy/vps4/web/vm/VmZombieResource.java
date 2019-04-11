@@ -89,7 +89,7 @@ public class VmZombieResource {
         VirtualMachineCredit oldCredit = creditService.getVirtualMachineCredit(vm.orionGuid);
         validateAccountIsRemoved(vmId, oldCredit);
 
-        VirtualMachineCredit newCredit = getAndValidateUserAccountCredit(creditService, newCreditId, oldCredit.shopperId);
+        VirtualMachineCredit newCredit = getAndValidateUserAccountCredit(creditService, newCreditId, oldCredit.getShopperId());
         validateCreditIsNotInUse(newCredit);
 
         validateCreditsMatch(oldCredit, newCredit);
@@ -99,7 +99,7 @@ public class VmZombieResource {
         Vps4ReviveZombieVm.Request request = new Vps4ReviveZombieVm.Request();
         request.vmId = vmId;
         request.newCreditId = newCreditId;
-        request.oldCreditId = oldCredit.orionGuid;
+        request.oldCreditId = oldCredit.getOrionGuid();
 
         return VmHelper.createActionAndExecute(actionService, commandService, vm.vmId,
                 ActionType.RESTORE_ACCOUNT, request, "Vps4ReviveZombieVm", user);
@@ -137,26 +137,26 @@ public class VmZombieResource {
     }
 
     private void validateCreditsMatch(VirtualMachineCredit oldCredit, VirtualMachineCredit newCredit) {
-        if(!oldCredit.controlPanel.equalsIgnoreCase(newCredit.controlPanel)) {
+        if(!oldCredit.getControlPanel().equalsIgnoreCase(newCredit.getControlPanel())) {
             throw new Vps4Exception("CONTROL_PANEL_MISMATCH", "Control panel of old and new credits do not match");
         }
-        if(oldCredit.managedLevel != newCredit.managedLevel) {
+        if(oldCredit.getManagedLevel() != newCredit.getManagedLevel()) {
             throw new Vps4Exception("MANAGED_LEVEL_MISMATCH", "Managed level of the old and new credits do not match");
         }
-        if(oldCredit.monitoring != newCredit.monitoring) {
+        if(oldCredit.getMonitoring() != newCredit.getMonitoring()) {
             throw new Vps4Exception("MONITORING_MISMATCH", "Monitoring of the old and new credits do not match");
         }
-        if(!oldCredit.operatingSystem.equalsIgnoreCase(newCredit.operatingSystem)) {
+        if(!oldCredit.getOperatingSystem().equalsIgnoreCase(newCredit.getOperatingSystem())) {
             throw new Vps4Exception("OPERATING_SYSTEM_MISMATCH", "Operating system of the old and new credits do not match");
         }
-        if(oldCredit.tier != newCredit.tier) {
+        if(oldCredit.getTier() != newCredit.getTier()) {
             throw new Vps4Exception("TIER_MISMATCH", "Tier of the old and new credits do not match");
         }
     }
 
     private void validateAccountIsRemoved(UUID vmId, VirtualMachineCredit credit) {
         if(!credit.isAccountRemoved()) {
-            throw new Vps4Exception("ACCOUNT_STATUS_NOT_REMOVED", String.format("Cannot revive or zombie %s, account %s status is not removed.", vmId, credit.orionGuid));
+            throw new Vps4Exception("ACCOUNT_STATUS_NOT_REMOVED", String.format("Cannot revive or zombie %s, account %s status is not removed.", vmId, credit.getOrionGuid()));
         }
     }
 }

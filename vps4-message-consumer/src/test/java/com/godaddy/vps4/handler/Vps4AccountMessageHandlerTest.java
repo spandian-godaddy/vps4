@@ -12,6 +12,8 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.UUID;
 
 import javax.ws.rs.InternalServerErrorException;
@@ -33,6 +35,7 @@ import com.godaddy.vps4.vm.VirtualMachine;
 import com.godaddy.vps4.vm.VirtualMachineService;
 import com.godaddy.vps4.web.client.VmZombieService;
 
+import gdg.hfs.vhfs.ecomm.Account;
 import org.apache.http.conn.HttpHostConnectException;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.json.simple.JSONObject;
@@ -87,8 +90,23 @@ public class Vps4AccountMessageHandlerTest {
     }
 
     private void mockVmCredit(AccountStatus accountStatus, UUID productId, int tier, int managedLevel, String controlPanel) {
-        DataCenter dc = dcService.getDataCenter(5);
-        VirtualMachineCredit vmCredit = new VirtualMachineCredit(orionGuid, tier, managedLevel, 0, "linux", controlPanel, null, "TestShopper", accountStatus, dc, productId, false, "1", false, 0);
+        Map<String, String> planFeatures = new HashMap<>();
+        planFeatures.put("tier", String.valueOf(tier));
+        planFeatures.put("managed_level", String.valueOf(managedLevel));
+        planFeatures.put("control_panel_type", String.valueOf(controlPanel));
+
+        Map<String, String> productMeta = new HashMap<>();
+        if (productId != null)
+            productMeta.put("product_id", productId.toString());
+        productMeta.put("data_center", String.valueOf(5));
+
+        VirtualMachineCredit vmCredit = new VirtualMachineCredit.Builder(mock(DataCenterService.class))
+            .withAccountGuid(orionGuid.toString())
+            .withAccountStatus(Account.Status.valueOf(accountStatus.toString().toLowerCase()))
+            .withShopperID("TestShopper")
+            .withProductMeta(productMeta)
+            .withPlanFeatures(planFeatures)
+            .build();
         when(creditServiceMock.getVirtualMachineCredit(orionGuid)).thenReturn(vmCredit);
     }
 
@@ -190,8 +208,7 @@ public class Vps4AccountMessageHandlerTest {
 
     @Test
     public void testFullyManagedEmailAlreadySent() throws MessageHandlerException, MissingShopperIdException, IOException {
-        DataCenter dc = dcService.getDataCenter(5);
-        VirtualMachineCredit vmCredit = new VirtualMachineCredit(orionGuid, 10, 2, 1, "linux", "cpanel", null, "TestShopper", AccountStatus.ACTIVE, dc, null, true, "1", false, 0);
+        VirtualMachineCredit vmCredit = new VirtualMachineCredit.Builder(dcService).build();
 
         when(creditServiceMock.getVirtualMachineCredit(orionGuid)).thenReturn(vmCredit);
         when(messagingServiceMock.sendFullyManagedEmail("TestShopper", "cpanel")).thenReturn("messageId");
@@ -260,12 +277,7 @@ public class Vps4AccountMessageHandlerTest {
 
     @Test
     public void handleAccountRemovalNoopIfVmPresentInDifferentDC() throws MessageHandlerException {
-        DataCenter dc = dcService.getDataCenter(1);
-        UUID vmId = UUID.randomUUID();
-        VirtualMachineCredit vmCredit = new VirtualMachineCredit(
-            orionGuid, 10, 0, 0, "linux", "myh",
-            null, "TestShopper", AccountStatus.REMOVED, dc, vmId, false,
-            "1", false, 0);
+        VirtualMachineCredit vmCredit = new VirtualMachineCredit.Builder(dcService).build();
         when(creditServiceMock.getVirtualMachineCredit(orionGuid)).thenReturn(vmCredit);
 
         callHandleMessage(createTestKafkaMessage("removed"));

@@ -7,9 +7,12 @@ import static org.mockito.Mockito.when;
 
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
+import com.godaddy.vps4.vm.DataCenterService;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -90,8 +93,12 @@ public class OrphanResourceTest {
 
     @Test(expected = Vps4Exception.class)
     public void testInvalidCreditStillAssignedToCredit() {
-        VirtualMachineCredit virtualMachineCredit = new VirtualMachineCredit();
-        virtualMachineCredit.productId = vm.vmId;
+        Map<String, String> productMeta = new HashMap<>();
+        productMeta.put("product_id", vm.vmId.toString());
+        VirtualMachineCredit virtualMachineCredit = new VirtualMachineCredit.Builder(mock(DataCenterService.class))
+            .withProductMeta(productMeta)
+            .build();
+
         when(creditResource.getCredit(vm.orionGuid)).thenReturn(virtualMachineCredit);
         resource.getOrphanedResources(vm.vmId);
     }

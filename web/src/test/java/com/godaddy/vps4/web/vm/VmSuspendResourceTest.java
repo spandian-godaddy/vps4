@@ -14,6 +14,8 @@ import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.UUID;
 
+import com.godaddy.vps4.vm.DataCenterService;
+import gdg.hfs.vhfs.ecomm.Account;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
@@ -56,7 +58,7 @@ public class VmSuspendResourceTest {
 
     @Before
     public void setupTest() {
-        credit = createCredit();
+        credit = createCredit(AccountStatus.ACTIVE);
         when(creditService.getVirtualMachineCredit(orionGuid)).thenReturn(credit);
 
         testAction = new Action(123L, vmId, ActionType.ABUSE_SUSPEND, null, null, null,
@@ -87,11 +89,12 @@ public class VmSuspendResourceTest {
         when(virtualMachineService.getVirtualMachine(testVm.vmId)).thenReturn(testVm);
     }
 
-    private VirtualMachineCredit createCredit() {
-        VirtualMachineCredit credit = new VirtualMachineCredit();
-        credit.orionGuid = orionGuid;
-        credit.accountStatus = AccountStatus.ACTIVE;
-        credit.shopperId = user.getShopperId();
+    private VirtualMachineCredit createCredit(AccountStatus accountStatus) {
+        VirtualMachineCredit credit = new VirtualMachineCredit.Builder(mock(DataCenterService.class))
+            .withAccountGuid(orionGuid.toString())
+            .withShopperID(user.getShopperId())
+            .withAccountStatus(Account.Status.valueOf(accountStatus.toString().toLowerCase()))
+            .build();
         return credit;
     }
 
@@ -125,15 +128,16 @@ public class VmSuspendResourceTest {
     @Test(expected = Vps4Exception.class)
     public void testAbuseSuspendVmCreditNotActive() {
         createTestVm();
-        credit.accountStatus = AccountStatus.SUSPENDED;
-        when(creditService.getVirtualMachineCredit(any())).thenReturn(credit);
+        VirtualMachineCredit creditTwo = createCredit(AccountStatus.SUSPENDED);
+        when(creditService.getVirtualMachineCredit(orionGuid)).thenReturn(creditTwo);
         vmSuspendResource.abuseSuspendVm(testVm.vmId);
     }
 
     @Test
     public void testReinstateVm() {
         createTestVm();
-        credit.accountStatus = AccountStatus.ABUSE_SUSPENDED;
+        VirtualMachineCredit creditTwo = createCredit(AccountStatus.ABUSE_SUSPENDED);
+        when(creditService.getVirtualMachineCredit(orionGuid)).thenReturn(creditTwo);
 
         vmSuspendResource.reinstateVm(testVm.vmId);
         ArgumentCaptor<CommandGroupSpec> argument = ArgumentCaptor.forClass(CommandGroupSpec.class);
@@ -145,7 +149,8 @@ public class VmSuspendResourceTest {
     @Test
     public void testReinstateDedicated() {
         createTestVm(ServerType.Type.DEDICATED);
-        credit.accountStatus = AccountStatus.ABUSE_SUSPENDED;
+        VirtualMachineCredit creditTwo = createCredit(AccountStatus.ABUSE_SUSPENDED);
+        when(creditService.getVirtualMachineCredit(orionGuid)).thenReturn(creditTwo);
 
         vmSuspendResource.reinstateVm(testVm.vmId);
         ArgumentCaptor<CommandGroupSpec> argument = ArgumentCaptor.forClass(CommandGroupSpec.class);

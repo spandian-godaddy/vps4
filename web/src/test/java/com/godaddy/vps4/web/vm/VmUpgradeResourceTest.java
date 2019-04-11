@@ -7,8 +7,12 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import java.time.Instant;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.UUID;
 
+import com.godaddy.vps4.vm.DataCenterService;
+import gdg.hfs.vhfs.ecomm.Account;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -49,19 +53,14 @@ public class VmUpgradeResourceTest {
     public void setupTest() {
         user = GDUserMock.createShopper();
 
-        testCredit = new VirtualMachineCredit();
-        testCredit.accountStatus = AccountStatus.ACTIVE;
-        testCredit.planChangePending = true;
-        testCredit.orionGuid = UUID.randomUUID();
-        testCredit.shopperId = user.getShopperId();
-        testCredit.tier = 40;
+        testCredit = setupCredit(Boolean.TRUE);
 
         testVm = new VirtualMachine();
         testVm.validOn = Instant.now();
         testVm.canceled = Instant.MAX;
         testVm.validUntil = Instant.MAX;
         testVm.vmId = UUID.randomUUID();
-        testVm.orionGuid = testCredit.orionGuid;
+        testVm.orionGuid = testCredit.getOrionGuid();
 
         virtualMachineService = mock(VirtualMachineService.class);
         creditService = mock(CreditService.class);
@@ -83,9 +82,25 @@ public class VmUpgradeResourceTest {
                                          cryptography, config);
     }
 
+    private VirtualMachineCredit setupCredit(Boolean planChangePending) {
+        Map<String, String> planFeatures = new HashMap<>();
+        planFeatures.put("tier", String.valueOf(40));
+
+        Map<String, String> productMeta = new HashMap<>();
+        productMeta.put("plan_change_pending", planChangePending.toString());
+
+        return new VirtualMachineCredit.Builder(mock(DataCenterService.class))
+            .withAccountGuid(UUID.randomUUID().toString())
+            .withAccountStatus(Account.Status.active)
+            .withShopperID(user.getShopperId())
+            .withProductMeta(productMeta)
+            .withPlanFeatures(planFeatures)
+            .build();
+    }
+
     @Test
     public void testUpgradeVm() {
-        when(creditService.getVirtualMachineCredit(testCredit.orionGuid)).thenReturn(testCredit);
+        when(creditService.getVirtualMachineCredit(testCredit.getOrionGuid())).thenReturn(testCredit);
         String password = "T0ta!1yRand0m";
         UpgradeVmRequest upgradeVmRequest= new UpgradeVmRequest();
         upgradeVmRequest.password = password;
@@ -95,8 +110,8 @@ public class VmUpgradeResourceTest {
 
     @Test(expected = Vps4Exception.class)
     public void testUpgradeVmNoPlanChangePending() {
-        testCredit.planChangePending = false;
-        when(creditService.getVirtualMachineCredit(testCredit.orionGuid)).thenReturn(testCredit);
+        testCredit = setupCredit(Boolean.FALSE);
+        when(creditService.getVirtualMachineCredit(testCredit.getOrionGuid())).thenReturn(testCredit);
         UpgradeVmRequest upgradeVmRequest= new UpgradeVmRequest();
         resource.upgradeVm(testVm.vmId, upgradeVmRequest);
     }

@@ -76,7 +76,7 @@ public class Vps4AccountMessageHandler implements MessageHandler {
                 return;
             }
 
-            if(credit.accountStatus == AccountStatus.ACTIVE) {
+            if(credit.getAccountStatus() == AccountStatus.ACTIVE) {
                 // this is pulled out of the switch block because it needs to happen whether there is an existing
                 // vm or not.  The sendFullyManagedWelcomeEmail method will check if this DC is
                 // configured to send the email.
@@ -97,7 +97,7 @@ public class Vps4AccountMessageHandler implements MessageHandler {
 
 
         try {
-            switch (credit.accountStatus) {
+            switch (credit.getAccountStatus()) {
                 case ABUSE_SUSPENDED:
                 case SUSPENDED:
                     stopVm(vm);
@@ -115,7 +115,7 @@ public class Vps4AccountMessageHandler implements MessageHandler {
             boolean shouldRetry;
             logger.error("Failed while handling message for account {} with exception {}", vps4Message.accountGuid, ex);
 
-            switch (credit.accountStatus) {
+            switch (credit.getAccountStatus()) {
                 case ABUSE_SUSPENDED:
                 case SUSPENDED:
                 case ACTIVE:
@@ -141,10 +141,10 @@ public class Vps4AccountMessageHandler implements MessageHandler {
         // associated with the credit when we want to send the email, and either all or no datacenters would send the
         // welcome email.
 
-        if (processFullyManagedEmails && credit.managedLevel == FULLY_MANAGED_LEVEL && !credit.fullyManagedEmailSent) {
+        if (processFullyManagedEmails && credit.getManagedLevel() == FULLY_MANAGED_LEVEL && !credit.isFullyManagedEmailSent()) {
             try {
-                messagingService.sendFullyManagedEmail(credit.shopperId, credit.controlPanel);
-                creditService.updateProductMeta(credit.orionGuid, ProductMetaField.FULLY_MANAGED_EMAIL_SENT, "true");
+                messagingService.sendFullyManagedEmail(credit.getShopperId(), credit.getControlPanel());
+                creditService.updateProductMeta(credit.getOrionGuid(), ProductMetaField.FULLY_MANAGED_EMAIL_SENT, "true");
             }
             catch (MissingShopperIdException | IOException e) {
                 logger.warn("Failed to send fully managed welcome email", e);
@@ -154,19 +154,19 @@ public class Vps4AccountMessageHandler implements MessageHandler {
 
     private VirtualMachine getVirtualMachine(VirtualMachineCredit credit){
         VirtualMachine vm = null;
-        if(credit.productId != null) {
-            vm = virtualMachineService.getVirtualMachine(credit.productId);
+        if(credit.getProductId() != null) {
+            vm = virtualMachineService.getVirtualMachine(credit.getProductId());
         }
         if(vm == null) {
-            logger.info("Could not find an active virtual machine with orion guid {}", credit.orionGuid);
+            logger.info("Could not find an active virtual machine with orion guid {}", credit.getOrionGuid());
         }
         return vm;
     }
 
     private void processPlanChange(VirtualMachineCredit credit, VirtualMachine vm) {
-        if (credit.tier != vm.spec.tier) {
+        if (credit.getTier() != vm.spec.tier) {
             // Update credit that a tier upgrade is pending.  Customer will initiate manually as it will incur down time.
-            creditService.updateProductMeta(credit.orionGuid, ProductMetaField.PLAN_CHANGE_PENDING, "true");
+            creditService.updateProductMeta(credit.getOrionGuid(), ProductMetaField.PLAN_CHANGE_PENDING, "true");
         }
 
         // Updates the managed level of a vm
@@ -177,7 +177,7 @@ public class Vps4AccountMessageHandler implements MessageHandler {
     }
 
     private void handleAccountCancellation(VirtualMachine vm, VirtualMachineCredit credit) {
-        logger.info("Vps4 account canceled: {} - Zombie'ing associated vm", credit.orionGuid);
+        logger.info("Vps4 account canceled: {} - Zombie'ing associated vm", credit.getOrionGuid());
         this.vmZombieService.zombieVm(vm.vmId);
     }
 

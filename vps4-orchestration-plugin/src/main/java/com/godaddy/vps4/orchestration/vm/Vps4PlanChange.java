@@ -40,8 +40,8 @@ public class Vps4PlanChange implements Command<Vps4PlanChange.Request, Void>{
 
     @Override
     public Void execute(CommandContext context, Request req) {
-        if(req.vm.managedLevel != req.credit.managedLevel) {
-            logger.info("Processing managed level change for account {} to level {}", req.vm.vmId, req.credit.managedLevel);
+        if(req.vm.managedLevel != req.credit.getManagedLevel()) {
+            logger.info("Processing managed level change for account {} to level {}", req.vm.vmId, req.credit.getManagedLevel());
             updateVirtualMachineManagedLevel(context, req);
         }
         return null;
@@ -49,9 +49,9 @@ public class Vps4PlanChange implements Command<Vps4PlanChange.Request, Void>{
 
     private void updateVirtualMachineManagedLevel(CommandContext context, Request req) {
         Map<String, Object> paramsToUpdate = new HashMap<>();
-        paramsToUpdate.put("managed_level", req.credit.managedLevel);
+        paramsToUpdate.put("managed_level", req.credit.getManagedLevel());
         context.execute("UpdateVmManagedLevel", ctx -> {
-            virtualMachineService.updateVirtualMachine(req.credit.productId, paramsToUpdate);
+            virtualMachineService.updateVirtualMachine(req.credit.getProductId(), paramsToUpdate);
             return null;
         }, Void.class);
     }

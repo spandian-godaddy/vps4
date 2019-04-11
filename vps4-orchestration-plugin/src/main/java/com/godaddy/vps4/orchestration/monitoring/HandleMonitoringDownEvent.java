@@ -50,7 +50,7 @@ public class HandleMonitoringDownEvent implements Command<Long, Void> {
         VirtualMachineCredit credit = creditService.getVirtualMachineCredit(vm.orionGuid);
 
         boolean isFullyManaged = credit.isFullyManaged();
-        boolean isAccountActive = credit.accountStatus == AccountStatus.ACTIVE;
+        boolean isAccountActive = credit.getAccountStatus() == AccountStatus.ACTIVE;
         //This is where I will check  any other conditions that would stop us from sending the notification.
         //those will be added in my next story.
 

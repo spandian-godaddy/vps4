@@ -100,7 +100,7 @@ public class OrphanResource {
     }
 
     private boolean isVmStillAssignedToCredit(VirtualMachine vm, VirtualMachineCredit vmCredit) {
-        return vmCredit.productId != null && vmCredit.productId.equals(vm.vmId);
+        return vmCredit.getProductId() != null && vmCredit.getProductId().equals(vm.vmId);
     }
 
     private void updateOrphanedVm(VirtualMachine vm, Orphans orphans) {

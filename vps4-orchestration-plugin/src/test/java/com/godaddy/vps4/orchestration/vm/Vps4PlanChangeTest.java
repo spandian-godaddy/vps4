@@ -7,16 +7,18 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import java.time.Instant;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.UUID;
 import java.util.function.Function;
 
+import com.godaddy.vps4.vm.DataCenterService;
+import gdg.hfs.vhfs.ecomm.Account;
 import org.junit.Test;
 
 import com.godaddy.vps4.credit.VirtualMachineCredit;
 import com.godaddy.vps4.network.IpAddress;
 import com.godaddy.vps4.network.IpAddress.IpAddressType;
-import com.godaddy.vps4.vm.AccountStatus;
 import com.godaddy.vps4.vm.VirtualMachine;
 import com.godaddy.vps4.vm.VirtualMachineService;
 
@@ -36,10 +38,22 @@ public class Vps4PlanChangeTest {
 
     @SuppressWarnings("unchecked")
     private void runChangeManagedLevelToManagedTest() {
-        VirtualMachineCredit credit = new VirtualMachineCredit(UUID.randomUUID(), 10, 2, 0, "linux", "cpanel",
-                Instant.now(), "someShopper", AccountStatus.ACTIVE, null, UUID.randomUUID(), false, "1", false, 0);
-        IpAddress primaryIpAddress = new IpAddress(0, credit.productId, "1.2.3.4", IpAddressType.PRIMARY, 123L, null, null);
-        VirtualMachine vm = new VirtualMachine(credit.productId, 1234, credit.orionGuid, 1, null, "testVm", null,
+        Map<String, String> planFeatures = new HashMap<>();
+        planFeatures.put("managed_level", String.valueOf(2));
+
+        Map<String, String> productMeta = new HashMap<>();
+        productMeta.put("product_id", UUID.randomUUID().toString());
+        productMeta.put("plan_change_pending", Boolean.FALSE.toString());
+
+        VirtualMachineCredit credit = new VirtualMachineCredit.Builder(mock(DataCenterService.class))
+                .withAccountGuid(UUID.randomUUID().toString())
+                .withAccountStatus(Account.Status.active)
+                .withShopperID("someShopper")
+                .withProductMeta(productMeta)
+                .withPlanFeatures(planFeatures)
+                .build();
+        IpAddress primaryIpAddress = new IpAddress(0, credit.getProductId(), "1.2.3.4", IpAddressType.PRIMARY, 123L, null, null);
+        VirtualMachine vm = new VirtualMachine(credit.getProductId(), 1234, credit.getOrionGuid(), 1, null, "testVm", null,
                 primaryIpAddress, null, null, null, null, 0, null);
         Vps4PlanChange.Request request = new Vps4PlanChange.Request();
         request.vm = vm;

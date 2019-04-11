@@ -1,7 +1,11 @@
 package com.godaddy.vps4.phase2;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.UUID;
 
+import com.godaddy.vps4.vm.DataCenterService;
+import gdg.hfs.vhfs.ecomm.Account;
 import org.mockito.Mockito;
 
 import com.godaddy.vps4.credit.CreditService;
@@ -16,9 +20,11 @@ import gdg.hfs.orchestration.CommandState;
 import com.godaddy.hfs.vm.Vm;
 import com.godaddy.hfs.vm.VmService;
 
+import static org.mockito.Mockito.mock;
+
 public class Phase2ExternalsModule extends AbstractModule {
-    private final static CreditService creditService = Mockito.mock(CreditService.class);
-    private final static VmService vmService = Mockito.mock(VmService.class);
+    private final static CreditService creditService = mock(CreditService.class);
+    private final static VmService vmService = mock(VmService.class);
 
     @Override
     public void configure() {
@@ -29,7 +35,7 @@ public class Phase2ExternalsModule extends AbstractModule {
         mockHfsVm("ACTIVE");
         bind(VmService.class).toInstance(vmService);
 
-        CommandService commandService = Mockito.mock(CommandService.class);
+        CommandService commandService = mock(CommandService.class);
         CommandState commandState = new CommandState();
         commandState.commandId = UUID.randomUUID();
         Mockito.when(commandService.executeCommand(Mockito.any(CommandGroupSpec.class)))
@@ -39,9 +45,20 @@ public class Phase2ExternalsModule extends AbstractModule {
     }
 
     public static void mockVmCredit(AccountStatus accountStatus) {
-        UUID orionGuid = UUID.randomUUID();
-        VirtualMachineCredit credit = new VirtualMachineCredit(orionGuid, 10, 0, 1, "linux", "myh", null, GDUserMock.DEFAULT_SHOPPER,
-                accountStatus, null, null, false, "1", false, 0);
+        Map<String, String> planFeatures = new HashMap<>();
+        planFeatures.put("tier", String.valueOf(10));
+        planFeatures.put("managed_level", String.valueOf(0));
+        planFeatures.put("control_panel_type", String.valueOf("myh"));
+        planFeatures.put("operatingsystem", String.valueOf("linux"));
+        planFeatures.put("monitoring", String.valueOf(1));
+
+        VirtualMachineCredit credit = new VirtualMachineCredit.Builder(mock(DataCenterService.class))
+                .withAccountGuid(UUID.randomUUID().toString())
+                .withAccountStatus(Account.Status.valueOf(accountStatus.toString().toLowerCase()))
+                .withShopperID(GDUserMock.DEFAULT_SHOPPER)
+                .withPlanFeatures(planFeatures)
+                .build();
+
         Mockito.when(creditService.getVirtualMachineCredit(Mockito.any())).thenReturn(credit);
     }
 
