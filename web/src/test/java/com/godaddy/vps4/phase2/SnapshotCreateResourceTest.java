@@ -195,6 +195,23 @@ public class SnapshotCreateResourceTest {
     }
 
     @Test
+    public void weCanSnapshotWhenSnapshotSetToErrorRescheduled() {
+        // created because there was a bug when error_rescheduled was introduced that rejected snapshot
+        // requests because "a snapshot was in progress" when a snapshot status was error_rescheduled.
+        user = us;
+        SnapshotAction action1 = getSnapshotResource()
+                .createSnapshot(getRequestPayload(ourVmId, SqlTestData.TEST_SNAPSHOT_NAME));
+        vps4SnapshotService.markSnapshotRescheduled(action1.snapshotId);
+
+        SnapshotAction action2 = getSnapshotResource()
+                .createSnapshot(getRequestPayload(ourVmId, SqlTestData.TEST_SNAPSHOT_NAME));
+
+        Assert.assertEquals(SnapshotStatus.ERROR_RESCHEDULED, vps4SnapshotService.getSnapshot(action1.snapshotId).status);
+        Assert.assertEquals(SnapshotStatus.NEW, vps4SnapshotService.getSnapshot(action2.snapshotId).status);
+
+    }
+
+    @Test
     public void weCanCreateAnAutomaticSnapshot() {
         user = us;
         SnapshotRequest request = getRequestPayload(ourVmId, SqlTestData.TEST_SNAPSHOT_NAME);

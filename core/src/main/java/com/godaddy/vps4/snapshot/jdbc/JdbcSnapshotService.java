@@ -54,13 +54,13 @@ public class JdbcSnapshotService implements SnapshotService {
     }
 
     private boolean hasOpenSlots(UUID orionGuid, SnapshotType snapshotType) {
-        // check if number of snapshots (not in error and not destroyed) linked to the credit is over the number
+        // check if number of snapshots (not in error, destroyed, cancelled, or error_rescheduled) linked to the credit is over the number
         // of open slots available. Right now the number of open slots is hard coded to 1 but this might change in
         // the future as HEG and MT get on-boarded.
         return Sql.with(dataSource).exec(
                 "SELECT COUNT(*) FROM SNAPSHOT s JOIN SNAPSHOT_STATUS ss ON s.status = ss.status_id "
                         + "JOIN VIRTUAL_MACHINE v ON s.vm_id = v.vm_id "
-                        + "WHERE v.orion_guid = ? AND ss.status NOT IN ('ERROR', 'DESTROYED', 'CANCELLED') "
+                        + "WHERE v.orion_guid = ? AND ss.status NOT IN ('ERROR', 'DESTROYED', 'CANCELLED', 'ERROR_RESCHEDULED') "
                         + "AND s.snapshot_type_id = ?;",
                 this::hasOpenSlotsMapper, orionGuid, snapshotType.getSnapshotTypeId());
     }
@@ -74,7 +74,7 @@ public class JdbcSnapshotService implements SnapshotService {
                 "SELECT ss.status, COUNT(*) FROM SNAPSHOT s JOIN snapshot_status ss ON s.status = ss.status_id "
                         + "JOIN VIRTUAL_MACHINE v ON s.vm_id = v.vm_id "
                         + "WHERE v.orion_guid = ? "
-                        + "AND ss.status NOT IN ('ERROR', 'DESTROYED', 'CANCELLED') "
+                        + "AND ss.status NOT IN ('ERROR', 'DESTROYED', 'CANCELLED', 'ERROR_RESCHEDULED') "
                         + "AND snapshot_type_id = ?"
                         + "GROUP BY ss.status;",
                 Sql.listOf(this::mapStatusCount), orionGuid, snapshotType.getSnapshotTypeId());
@@ -121,7 +121,7 @@ public class JdbcSnapshotService implements SnapshotService {
                 "SELECT COUNT(*) FROM SNAPSHOT s JOIN snapshot_status ss ON s.status = ss.status_id "
                         + "JOIN VIRTUAL_MACHINE v ON s.vm_id = v.vm_id "
                         + "WHERE v.orion_guid = ? "
-                        + "AND ss.status NOT IN ('LIVE', 'ERROR', 'DESTROYED', 'CANCELLED');",
+                        + "AND ss.status NOT IN ('LIVE', 'ERROR', 'DESTROYED', 'CANCELLED', 'ERROR_RESCHEDULED');",
                 Sql.nextOrNull(this::mapCountRows), orionGuid);
 
 //        // No 2 backups for the same vm should ever be in progress at the same time
