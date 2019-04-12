@@ -34,7 +34,8 @@ public class ECommCreditService implements CreditService {
         PRODUCT_ID,
         PROVISION_DATE,
         FULLY_MANAGED_EMAIL_SENT,
-        PLAN_CHANGE_PENDING;
+        PLAN_CHANGE_PENDING,
+        PURCHASED_AT;
 
         @Override
         public String toString() {
@@ -62,7 +63,7 @@ public class ECommCreditService implements CreditService {
     private final DataCenterService dataCenterService;
 
     @Inject
-    public  ECommCreditService(ECommService ecommService, DataCenterService dataCenterService) {
+    public ECommCreditService(ECommService ecommService, DataCenterService dataCenterService) {
         this.ecommService = ecommService;
         this.dataCenterService = dataCenterService;
     }
@@ -70,8 +71,9 @@ public class ECommCreditService implements CreditService {
     @Override
     public VirtualMachineCredit getVirtualMachineCredit(UUID orionGuid) {
         Account account = getHfsEcommAccount(orionGuid);
-        if (account == null)
+        if (account == null) {
             return null;
+        }
 
         return mapVirtualMachineCredit(account);
     }
@@ -81,7 +83,7 @@ public class ECommCreditService implements CreditService {
             Account account = ecommService.getAccount(orionGuid.toString());
             logger.info("Account: {}", account);
             return account;
-        } catch(Exception ex) {
+        } catch (Exception ex) {
             logger.error("Error retrieving VPS4 credit for account guid {} : Exception :", orionGuid.toString(), ex);
         }
         return null; // return null since we can't find the credit. Keeps the semantics of this method consistent
@@ -131,16 +133,18 @@ public class ECommCreditService implements CreditService {
                 .filter(a -> a.product.equals(PRODUCT_NAME))
                 .filter(a -> a.status != Account.Status.removed);
 
-        if (!showClaimed)
+        if (!showClaimed) {
             stream = stream.filter(a -> !a.product_meta.containsKey(ProductMetaField.DATA_CENTER.toString()));
+        }
 
         return stream.map(this::mapVirtualMachineCredit)
                 .collect(Collectors.toList());
     }
 
     @Override
-    public void createVirtualMachineCredit(UUID orionGuid, String shopperId, String operatingSystem, String controlPanel,
-                                          int tier, int managedLevel, int monitoring, int resellerId) {
+    public void createVirtualMachineCredit(UUID orionGuid, String shopperId, String operatingSystem,
+                                           String controlPanel,
+                                           int tier, int managedLevel, int monitoring, int resellerId) {
         Map<PlanFeatures, String> planFeatures = new EnumMap<>(PlanFeatures.class);
         planFeatures.put(PlanFeatures.TIER, String.valueOf(tier));
         planFeatures.put(PlanFeatures.MANAGED_LEVEL, String.valueOf(managedLevel));
@@ -197,20 +201,21 @@ public class ECommCreditService implements CreditService {
         // Important to add unset enum keys with null value in map or update calls to ecomm vertical will fail
         Map<String, String> mapWithNullVals = new HashMap<>(account.product_meta);
         Stream.of(ProductMetaField.values())
-            .map(ProductMetaField::toString)
-            .forEach(field -> mapWithNullVals.put(field, account.product_meta.get(field)));
+                .map(ProductMetaField::toString)
+                .forEach(field -> mapWithNullVals.put(field, account.product_meta.get(field)));
         return mapWithNullVals;
     }
 
     @Override
-    public void setCommonName(UUID orionGuid, String newName){
+    public void setCommonName(UUID orionGuid, String newName) {
         ECommDataCache edc = new ECommDataCache();
         edc.common_name = newName;
         ecommService.setCommonName(orionGuid.toString(), edc);
     }
 
     @Override
-    public void updateProductMeta(UUID orionGuid, Map<ProductMetaField, String> requestedTo, Map<ProductMetaField, String> expectedFrom) {
+    public void updateProductMeta(UUID orionGuid, Map<ProductMetaField, String> requestedTo,
+                                  Map<ProductMetaField, String> expectedFrom) {
         // initialize both to and from JSON objects to the current prodMeta of the ecomm credit
         MetadataUpdate metaUpdateReq = new MetadataUpdate();
         metaUpdateReq.to = getCurrentProductMeta(orionGuid);
@@ -224,13 +229,13 @@ public class ECommCreditService implements CreditService {
 
     private <K extends Enum<K>> Map<String, String> fromEnumMap(Map<K, String> enumMap) {
         Map<String, String> stringMap = new HashMap<>();
-        enumMap.forEach((k,v) -> stringMap.put(k.toString(), v));
+        enumMap.forEach((k, v) -> stringMap.put(k.toString(), v));
         return stringMap;
     }
 
     private <K extends Enum<K>> Map<K, String> toEnumMap(Class<K> clazz, Map<String, String> stringMap) {
         Map<K, String> enumMap = new EnumMap<>(clazz);
-        stringMap.forEach((k,v) -> enumMap.put(K.valueOf(clazz, k.toUpperCase()), v));
+        stringMap.forEach((k, v) -> enumMap.put(K.valueOf(clazz, k.toUpperCase()), v));
         return enumMap;
     }
 

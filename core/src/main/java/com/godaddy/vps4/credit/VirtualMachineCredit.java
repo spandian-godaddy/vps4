@@ -4,19 +4,22 @@ import java.time.Instant;
 import java.util.Map;
 import java.util.UUID;
 
-import com.godaddy.vps4.vm.DataCenterService;
-import gdg.hfs.vhfs.ecomm.Account;
 import org.apache.commons.lang3.builder.ReflectionToStringBuilder;
 import org.apache.commons.lang3.builder.ToStringStyle;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.godaddy.vps4.vm.AccountStatus;
-import com.godaddy.vps4.vm.DataCenter;
-
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.godaddy.vps4.credit.ECommCreditService.PlanFeatures;
 import com.godaddy.vps4.credit.ECommCreditService.ProductMetaField;
+import com.godaddy.vps4.vm.AccountStatus;
+import com.godaddy.vps4.vm.DataCenter;
+import com.godaddy.vps4.vm.DataCenterService;
+
+import gdg.hfs.vhfs.ecomm.Account;
 
 public class VirtualMachineCredit {
+    @JsonIgnore
+    private static final Instant HERITAGE_CUT_OVER_DATE = Instant.parse("2099-05-01T00:00:00Z");
 
     private final int FULLY_MANAGED_LEVEL = 2;
     private final int MONITORING_ENABLED = 1;
@@ -36,8 +39,9 @@ public class VirtualMachineCredit {
     private String resellerId;
     private boolean planChangePending;
     private int pfid;
+    private Instant purchasedAt;
 
-    private VirtualMachineCredit(){
+    private VirtualMachineCredit() {
     }
 
     @JsonIgnore
@@ -71,8 +75,21 @@ public class VirtualMachineCredit {
         return managedLevel == FULLY_MANAGED_LEVEL;
     }
 
+    @JsonProperty("isHeritage")
+    public boolean isHeritage() {
+        // Heritage accounts are accounts that existed (purchased) before Ecomm
+        // created separate pfids for self-managed vs managed accounts.
+        // We want to make this determination (heritage or otherwise) because we want
+        // to continue providing self-managed as well as managed customers from this
+        // set the same experience as the new managed and the same features.
+        return (purchasedAt == null) || (purchasedAt.isBefore(HERITAGE_CUT_OVER_DATE));
+    }
+
     @JsonIgnore
-    public boolean isAccountActive() { return accountStatus == AccountStatus.ACTIVE; }
+    public boolean isAccountActive() {
+        return accountStatus == AccountStatus.ACTIVE;
+    }
+
 
     @Override
     public String toString() {
@@ -193,8 +210,13 @@ public class VirtualMachineCredit {
 
         private UUID getProductId() {
             return productMeta.containsKey(ProductMetaField.PRODUCT_ID.toString())
-                ? UUID.fromString(productMeta.get(ProductMetaField.PRODUCT_ID.toString()))
-                : null;
+                    ? UUID.fromString(productMeta.get(ProductMetaField.PRODUCT_ID.toString()))
+                    : null;
+        }
+
+        private Instant getDateFromProductMeta(String metaFieldName) {
+            String date = productMeta.get(metaFieldName);
+            return (date != null) ? Instant.parse(date) : null;
         }
 
         public VirtualMachineCredit build() {
@@ -202,16 +224,18 @@ public class VirtualMachineCredit {
             credit.orionGuid = this.accountGuid;
             if (planFeatures != null) {
                 credit.tier = Integer.parseInt(planFeatures.getOrDefault(PlanFeatures.TIER.toString(), "10"));
-                credit.managedLevel = Integer.parseInt(planFeatures.getOrDefault(PlanFeatures.MANAGED_LEVEL.toString(), "0"));
-                credit.monitoring = Integer.parseInt(planFeatures.getOrDefault(PlanFeatures.MONITORING.toString(), "0"));
+                credit.managedLevel =
+                        Integer.parseInt(planFeatures.getOrDefault(PlanFeatures.MANAGED_LEVEL.toString(), "0"));
+                credit.monitoring =
+                        Integer.parseInt(planFeatures.getOrDefault(PlanFeatures.MONITORING.toString(), "0"));
                 credit.operatingSystem = planFeatures.get(PlanFeatures.OPERATINGSYSTEM.toString());
                 credit.controlPanel = planFeatures.get(PlanFeatures.CONTROL_PANEL_TYPE.toString());
                 credit.pfid = Integer.parseInt(planFeatures.getOrDefault(PlanFeatures.PF_ID.toString(), "0"));
             }
 
             if (productMeta != null) {
-                String provisionDate = productMeta.get(ProductMetaField.PROVISION_DATE.toString());
-                credit.provisionDate = (provisionDate != null) ? Instant.parse(provisionDate) : null;
+                credit.provisionDate = getDateFromProductMeta(ProductMetaField.PROVISION_DATE.toString());
+                credit.purchasedAt = getDateFromProductMeta(ProductMetaField.PURCHASED_AT.toString());
                 credit.fullyManagedEmailSent = Boolean.parseBoolean(
                         productMeta.get(ProductMetaField.FULLY_MANAGED_EMAIL_SENT.toString()));
                 credit.planChangePending = Boolean.parseBoolean(
@@ -227,4 +251,5 @@ public class VirtualMachineCredit {
             return credit;
         }
     }
+
 }
