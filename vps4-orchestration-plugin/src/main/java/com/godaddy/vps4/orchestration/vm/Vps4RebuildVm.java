@@ -87,24 +87,17 @@ public class Vps4RebuildVm extends ActionCommand<Vps4RebuildVm.Request, Vps4Rebu
 
         long oldHfsVmId = getOldHfsVmId();
         List<IpAddress> ipAddresses = getPublicIpAddresses();
-        unbindPublicIpAddresses(ipAddresses);
-
-        Vm hfsVm;
-        try {
-            hfsVm = createVm();
-        } catch (RuntimeException e) {
-            logger.info("Create VM failed during rebuild, binding ips back to vm {}", oldHfsVmId);
-            bindPublicIpAddress(oldHfsVmId, ipAddresses);
-            throw e;
-        }
+        
+        Vm hfsVm = createVm();
         long newHfsVmId = hfsVm.vmId;
-
+        
         if(newHfsVmId == 0) {
             throw new  Exception("HFS Vm ID is not available. Expecting HFS VM ID.");
         }
-
+        
         VirtualMachine oldVm = virtualMachineService.getVirtualMachine(vps4VmId);
-
+        
+        unbindPublicIpAddresses(ipAddresses);
         bindPublicIpAddress(newHfsVmId, ipAddresses);
         updateVmUser(request.rebuildVmInfo.username, oldVm.vmId, request.rebuildVmInfo.vmId);
         setRootUserPassword(newHfsVmId);
