@@ -1,115 +1,146 @@
 package com.godaddy.vps4.orchestration.vm;
 
+import static com.godaddy.vps4.credit.ECommCreditService.ProductMetaField.PLAN_CHANGE_PENDING;
+
+import java.util.Collections;
+import java.util.UUID;
+
+import javax.inject.Inject;
+
+import org.json.simple.JSONObject;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.godaddy.vps4.credit.CreditService;
-import com.godaddy.vps4.credit.ECommCreditService;
 import com.godaddy.vps4.orchestration.ActionCommand;
 import com.godaddy.vps4.orchestration.ActionRequest;
+import com.godaddy.vps4.orchestration.hfs.vm.StartVm;
+import com.godaddy.vps4.orchestration.hfs.vm.StopVm;
 import com.godaddy.vps4.orchestration.snapshot.Vps4SnapshotVm;
 import com.godaddy.vps4.project.ProjectService;
 import com.godaddy.vps4.snapshot.SnapshotActionService;
 import com.godaddy.vps4.snapshot.SnapshotService;
 import com.godaddy.vps4.snapshot.SnapshotType;
-import com.godaddy.vps4.vm.*;
+import com.godaddy.vps4.vm.ActionService;
+import com.godaddy.vps4.vm.ActionType;
+import com.godaddy.vps4.vm.RestoreVmInfo;
+import com.godaddy.vps4.vm.VirtualMachine;
+import com.godaddy.vps4.vm.VirtualMachineService;
+import com.godaddy.vps4.vm.VmUserService;
+
 import gdg.hfs.orchestration.CommandContext;
 import gdg.hfs.orchestration.CommandMetadata;
 import gdg.hfs.orchestration.CommandRetryStrategy;
-import org.json.simple.JSONObject;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import javax.inject.Inject;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.UUID;
 
 @CommandMetadata(
         name="Vps4UpgradeVm",
         requestType=Vps4UpgradeVm.Request.class,
-        responseType=Vps4UpgradeVm.Response.class,
+        responseType=Void.class,
         retryStrategy = CommandRetryStrategy.NEVER
 )
-public class Vps4UpgradeVm extends ActionCommand<Vps4UpgradeVm.Request, Vps4UpgradeVm.Response> {
+public class Vps4UpgradeVm extends ActionCommand<Vps4UpgradeVm.Request, Void> {
     private static final Logger logger = LoggerFactory.getLogger(Vps4UpgradeVm.class);
 
     private final VirtualMachineService virtualMachineService;
-    private final SnapshotService vps4SnapshotService;
+    private final SnapshotService snapshotService;
     private final VmUserService vmUserService;
     private final ProjectService projectService;
     private final ActionService snapshotActionService;
-    private UUID vps4VmId;
+    private final CreditService creditService;
     private CommandContext context;
     private Request request;
-    private CreditService creditService;
+    private UUID orionGuid;
 
     @Inject
     public Vps4UpgradeVm(@SnapshotActionService ActionService snapshotActionService,
                          ActionService actionService,
                          VirtualMachineService virtualMachineService,
-                         SnapshotService vps4SnapshotService,
+                         SnapshotService snapshotService,
                          VmUserService vmUserService,
                          ProjectService projectService,
                          CreditService creditService) {
         super(actionService);
         this.snapshotActionService = snapshotActionService;
         this.virtualMachineService = virtualMachineService;
-        this.vps4SnapshotService = vps4SnapshotService;
+        this.snapshotService = snapshotService;
         this.vmUserService = vmUserService;
         this.projectService = projectService;
         this.creditService = creditService;
     }
 
     @Override
-    protected Response executeWithAction(CommandContext context, Request request) {
-        this.request = request;
+    protected Void executeWithAction(CommandContext context, Request request) {
         this.context = context;
-        this.vps4VmId = request.vmId;
+        this.request = request;
+        VirtualMachine originalVm = getOriginalVm();
+        orionGuid = originalVm.orionGuid;
 
-        VirtualMachine vm = context.execute("GetVirtualMachine",
-                ctx -> virtualMachineService.getVirtualMachine(vps4VmId),
-                VirtualMachine.class);
-        long oldHfsVmId = vm.hfsVmId;
+        stopVm(originalVm.hfsVmId);
+        try {
+            UUID snapshotId = createSnapshotForUpgrade(originalVm);
+            createUpgradedVmFromSnapshot(snapshotId, originalVm);
+        } catch (RuntimeException e) {
+            // On failure, start the original VM back up
+            logger.warn("Upgrade failed to complete, re-starting VM {}", request.vmId);
+            startVm(originalVm.hfsVmId);
+            throw e;
+        }
 
-        logger.info("creating upgrade snapshot for vm {}", request.vmId);
-        Vps4SnapshotVm.Request snapshotReq = createVps4SnapshotVmRequest(oldHfsVmId, vm);
-        context.execute("Vps4SnapshotVm", Vps4SnapshotVm.class, snapshotReq);
-
-        logger.info("creating vm from snapshot for vm {}", request.vmId);
-        Vps4RestoreVm.Request restoreReq = createVps4RestoreVmRequest(snapshotReq.vps4SnapshotId, vm);
-        context.execute("Vps4RestoreVm", Vps4RestoreVm.class, restoreReq);
-
-        logger.info("updating vm spec in db for vm {}", request.vmId);
-        updateVirtualMachineTier();
-
-        logger.info("closing the pending upgrade in ecomm for vm {}", request.vmId);
-        creditService.updateProductMeta(vm.orionGuid, ECommCreditService.ProductMetaField.PLAN_CHANGE_PENDING, "false");
-
-        logger.info("upgrade finished for vm {}", request.vmId);
-
+        updateVmDetails();
+        logger.info("Upgrade action complete for vm {}", request.vmId);
         return null;
     }
 
-    private Vps4SnapshotVm.Request createVps4SnapshotVmRequest(long oldHfsVmId, VirtualMachine vm){
-        UUID snapshotId = context.execute("createSnapshot",
-                ctx -> vps4SnapshotService.createSnapshot(vm.projectId, vm.vmId, request.autoBackupName,
+    private VirtualMachine getOriginalVm() {
+        return context.execute("GetVmDetails",
+                ctx -> virtualMachineService.getVirtualMachine(request.vmId), VirtualMachine.class);
+    }
+
+    private void stopVm(long hfsVmId) {
+        context.execute(StopVm.class, hfsVmId);
+    }
+
+    private void startVm(long hfsVmId) {
+        context.execute(StartVm.class, hfsVmId);
+    }
+
+    private UUID createSnapshotForUpgrade(VirtualMachine vm) {
+        UUID snapshotId = createSnapshotRecord(vm.projectId, vm.vmId);
+        long snapshotActionId = createSnapshotAction(snapshotId);
+        snapshotVm(snapshotId, snapshotActionId, vm.hfsVmId);
+        return snapshotId;
+    }
+
+    private UUID createSnapshotRecord(long projectId, UUID vmId) {
+        return context.execute("CreateSnapshotRecord",
+                ctx -> snapshotService.createSnapshot(projectId, vmId, request.autoBackupName,
                         SnapshotType.AUTOMATIC),
                 UUID.class);
-        long actionId = context.execute("createSnapshotAction",
+    }
+
+    private long createSnapshotAction(UUID snapshotId) {
+        return context.execute("CreateSnapshotAction",
                 ctx -> snapshotActionService.createAction(snapshotId, ActionType.CREATE_SNAPSHOT,
                         new JSONObject().toJSONString(), request.initiatedBy),
                 long.class);
+    }
+
+    private void snapshotVm(UUID snapshotId, long actionId, long hfsVmId) {
         Vps4SnapshotVm.Request snapshotReq = new Vps4SnapshotVm.Request();
-        snapshotReq.hfsVmId = oldHfsVmId;  
         snapshotReq.vps4SnapshotId = snapshotId;
-        snapshotReq.orionGuid = vm.orionGuid;
+        snapshotReq.orionGuid = orionGuid;
+        snapshotReq.actionId = actionId;
+        snapshotReq.hfsVmId = hfsVmId;
         snapshotReq.snapshotType = SnapshotType.AUTOMATIC;
         snapshotReq.shopperId = request.shopperId;
         snapshotReq.initiatedBy = request.initiatedBy;
-        snapshotReq.actionId = actionId;
-        logger.debug("snapshotReq = {}", snapshotReq);
-        return snapshotReq;
+
+        logger.info("Creating snapshot-for-upgrade for VM {}", request.vmId);
+        context.execute("Vps4SnapshotVm", Vps4SnapshotVm.class, snapshotReq);
     }
 
-    private Vps4RestoreVm.Request createVps4RestoreVmRequest(UUID snapshotId, VirtualMachine vm){
+    private void createUpgradedVmFromSnapshot(UUID snapshotId, VirtualMachine vm) {
+        // RestoreVm can be reused here as command creates a new vm from snapshot
     	Vps4RestoreVm.Request restoreReq = new Vps4RestoreVm.Request();
         RestoreVmInfo restoreVmInfo = new RestoreVmInfo();
         restoreVmInfo.vmId = request.vmId;
@@ -120,30 +151,42 @@ public class Vps4UpgradeVm extends ActionCommand<Vps4UpgradeVm.Request, Vps4Upgr
         restoreVmInfo.rawFlavor = virtualMachineService.getSpec(request.newTier).specName;
         restoreVmInfo.username = vmUserService.getPrimaryCustomer(request.vmId).username;
         restoreVmInfo.zone = request.zone;
-        restoreVmInfo.orionGuid = vm.orionGuid;
+        restoreVmInfo.orionGuid = orionGuid;
         restoreReq.restoreVmInfo = restoreVmInfo;
         restoreReq.actionId = request.actionId;
         restoreReq.privateLabelId = request.privateLabelId;
-        logger.debug("restoreReq = {}", restoreReq);
-        return restoreReq;
+
+        logger.info("Creating upgraded-vm from snapshot for VM {}", request.vmId);
+        context.execute("Vps4RestoreVm", Vps4RestoreVm.class, restoreReq);
     }
 
-    private void updateVirtualMachineTier() {
-		  Map<String, Object> paramsToUpdate = new HashMap<>();
-		  int newSpecId = virtualMachineService.getSpec(request.newTier).specId;
-		  paramsToUpdate.put("spec_id", newSpecId);
-		  context.execute("UpdateVmTier", ctx -> {
-			  virtualMachineService.updateVirtualMachine(request.vmId, paramsToUpdate);
-			  return null;
-		  }, Void.class);
-	}
-	  
+    private void updateVmDetails() {
+        updateVmTierInDb();
+        updateEcommCredit();
+    }
+
+    private void updateVmTierInDb() {
+        logger.info("Updating tier to match new upgraded VM {}", request.vmId);
+
+        int newSpecId = virtualMachineService.getSpec(request.newTier).specId;
+        context.execute("UpdateVmTier", ctx -> {
+            virtualMachineService.updateVirtualMachine(request.vmId, Collections.singletonMap("spec_id", newSpecId));
+            return null;
+        }, Void.class);
+    }
+
+    private void updateEcommCredit() {
+        logger.info("Mark pending plan upgrade complete in credit for VM {}", request.vmId);
+        creditService.updateProductMeta(orionGuid, PLAN_CHANGE_PENDING, "false");
+    }
+
+
     public static class Request implements ActionRequest {
+        public long actionId;
         public UUID vmId;
         public String shopperId;
         public String initiatedBy;
         public byte[] encryptedPassword;
-        public long actionId;
         public int newTier;
         public String autoBackupName;
         public String zone;
@@ -158,10 +201,6 @@ public class Vps4UpgradeVm extends ActionCommand<Vps4UpgradeVm.Request, Vps4Upgr
         public void setActionId(long actionId) {
             this.actionId = actionId;
         }
-    }
-
-    public static class Response {
-        public long vmId;
     }
 
 }

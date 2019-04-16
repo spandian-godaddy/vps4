@@ -5,6 +5,8 @@ import static java.util.stream.Collectors.toMap;
 
 import java.util.Map;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 public class Image {
 
     public static final String ISPCONFIG = "ispconfig";
@@ -107,6 +109,7 @@ public class Image {
      * This is needed because ISPconfig (which is a free control panel) is represented as MYH
      * @return
      */
+    @JsonIgnore
     public String getImageControlPanel() {
         return this.hasPaidControlPanel()
             ? this.controlPanel.toString().toLowerCase()

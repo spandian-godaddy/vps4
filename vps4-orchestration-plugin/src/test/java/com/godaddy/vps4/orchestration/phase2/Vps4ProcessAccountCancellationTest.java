@@ -1,6 +1,7 @@
 package com.godaddy.vps4.orchestration.phase2;
 
 import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.anyLong;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
@@ -16,11 +17,6 @@ import java.util.function.Function;
 
 import javax.sql.DataSource;
 
-import com.godaddy.hfs.vm.VmAction;
-import com.godaddy.hfs.vm.VmService;
-import com.godaddy.vps4.orchestration.hfs.vm.RescueVm;
-import com.godaddy.vps4.orchestration.hfs.vm.StopVm;
-import com.godaddy.vps4.vm.DataCenterService;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -31,13 +27,16 @@ import org.mockito.Captor;
 import org.mockito.MockitoAnnotations;
 
 import com.godaddy.hfs.config.Config;
+import com.godaddy.hfs.vm.VmAction;
+import com.godaddy.hfs.vm.VmService;
 import com.godaddy.vps4.credit.VirtualMachineCredit;
 import com.godaddy.vps4.jdbc.DatabaseModule;
 import com.godaddy.vps4.orchestration.account.Vps4ProcessAccountCancellation;
+import com.godaddy.vps4.orchestration.hfs.vm.RescueVm;
+import com.godaddy.vps4.orchestration.hfs.vm.StopVm;
 import com.godaddy.vps4.orchestration.scheduler.ScheduleZombieVmCleanup;
 import com.godaddy.vps4.orchestration.vm.VmActionRequest;
 import com.godaddy.vps4.orchestration.vm.Vps4RecordScheduledJobForVm;
-import com.godaddy.vps4.orchestration.vm.Vps4StopVm;
 import com.godaddy.vps4.project.ProjectService;
 import com.godaddy.vps4.scheduledJob.ScheduledJob;
 import com.godaddy.vps4.scheduledJob.ScheduledJobService;
@@ -45,6 +44,7 @@ import com.godaddy.vps4.scheduledJob.jdbc.JdbcScheduledJobService;
 import com.godaddy.vps4.security.SecurityModule;
 import com.godaddy.vps4.security.Vps4UserService;
 import com.godaddy.vps4.vm.ActionService;
+import com.godaddy.vps4.vm.DataCenterService;
 import com.godaddy.vps4.vm.VirtualMachine;
 import com.godaddy.vps4.vm.VirtualMachineService;
 import com.godaddy.vps4.vm.jdbc.JdbcVirtualMachineService;
@@ -206,9 +206,7 @@ public class Vps4ProcessAccountCancellationTest {
         command.execute(context, request);
 
         verify(context, times(1)).execute(eq(RescueVm.class), eq(vm.hfsVmId));
-
-        verify(context, times(0))
-                .execute(eq(Vps4StopVm.class), actionRequestArgumentCaptor.capture());
+        verify(context, times(0)).execute(eq(StopVm.class), anyLong());
     }
 
     @Test

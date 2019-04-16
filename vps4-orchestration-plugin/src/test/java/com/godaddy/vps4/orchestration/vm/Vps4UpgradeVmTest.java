@@ -1,24 +1,31 @@
 package com.godaddy.vps4.orchestration.vm;
 
+import static com.godaddy.vps4.credit.ECommCreditService.ProductMetaField.PLAN_CHANGE_PENDING;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
 import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.anyLong;
+import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.eq;
+import static org.mockito.Mockito.atLeastOnce;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import java.time.Instant;
+import java.util.Collections;
+import java.util.Map;
 import java.util.UUID;
-import java.util.function.Function;
 
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
-import org.mockito.Captor;
-import org.mockito.MockitoAnnotations;
 
 import com.godaddy.vps4.credit.CreditService;
-import com.godaddy.vps4.credit.ECommCreditService;
+import com.godaddy.vps4.orchestration.TestCommandContext;
+import com.godaddy.vps4.orchestration.hfs.vm.StartVm;
+import com.godaddy.vps4.orchestration.hfs.vm.StopVm;
 import com.godaddy.vps4.orchestration.snapshot.Vps4SnapshotVm;
 import com.godaddy.vps4.project.Project;
 import com.godaddy.vps4.project.ProjectService;
@@ -26,154 +33,161 @@ import com.godaddy.vps4.snapshot.SnapshotActionService;
 import com.godaddy.vps4.snapshot.SnapshotService;
 import com.godaddy.vps4.snapshot.SnapshotType;
 import com.godaddy.vps4.vm.ActionService;
+import com.godaddy.vps4.vm.ActionType;
 import com.godaddy.vps4.vm.ServerSpec;
 import com.godaddy.vps4.vm.VirtualMachine;
 import com.godaddy.vps4.vm.VirtualMachineService;
 import com.godaddy.vps4.vm.VmUser;
 import com.godaddy.vps4.vm.VmUserService;
-import com.godaddy.vps4.vm.VmUserType;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
 
 import gdg.hfs.orchestration.CommandContext;
-
-import junit.framework.Assert;
+import gdg.hfs.orchestration.GuiceCommandProvider;
 
 public class Vps4UpgradeVmTest {
-    ActionService actionService = mock(ActionService.class);
     @SnapshotActionService ActionService snapshotActionService = mock(ActionService.class);
+    ActionService actionService = mock(ActionService.class);
     VirtualMachineService virtualMachineService = mock(VirtualMachineService.class);
-    SnapshotService vps4SnapshotService = mock(SnapshotService.class);
+    SnapshotService snapshotService = mock(SnapshotService.class);
     VmUserService vmUserService = mock(VmUserService.class);
     ProjectService projectService = mock(ProjectService.class);
     CreditService creditService = mock(CreditService.class);
-    long oldHfsVmId = 123L;
-    long actionId = 456L;
+
+    StopVm stopVm = mock(StopVm.class);
+    StartVm startVm = mock(StartVm.class);
+    Vps4SnapshotVm snapshotVm = mock(Vps4SnapshotVm.class);
+    Vps4RestoreVm restoreVm = mock(Vps4RestoreVm.class);
+
+    UUID originalVmId = UUID.randomUUID();
     UUID snapshotId = UUID.randomUUID();
     UUID orionGuid = UUID.randomUUID();
+    long originalHfsVmId = 123L;
+    long actionId = 456L;
+    long projectId = 23L;
 
     Vps4UpgradeVm.Request request;
     VirtualMachine vm;
-    UUID existingVMId = UUID.randomUUID();
-
-    Vps4UpgradeVm command;
-
-    @Captor
-    private ArgumentCaptor<Function<CommandContext, VirtualMachine>> getVirtualMachineLambdaCaptor;
-    @Captor
-    private ArgumentCaptor<Vps4SnapshotVm.Request> snapshotRequestCaptor;
-    @Captor
-    private ArgumentCaptor<Vps4RestoreVm.Request> restoreRequestCaptor;
 
     Injector injector = Guice.createInjector(binder -> {
-        binder.bind(Vps4UpgradeVm.class);
-        binder.bind(ActionService.class).annotatedWith(SnapshotActionService.class).toInstance(snapshotActionService);
-        binder.bind(ActionService.class).toInstance(actionService);
-        binder.bind(VirtualMachineService.class).toInstance(virtualMachineService);
-        binder.bind(SnapshotService.class).toInstance(vps4SnapshotService);
-        binder.bind(VmUserService.class).toInstance(vmUserService);
-        binder.bind(ProjectService.class).toInstance(projectService);
-        binder.bind(CreditService.class).toInstance(creditService);
+        binder.bind(StopVm.class).toInstance(stopVm);
+        binder.bind(StartVm.class).toInstance(startVm);
+        binder.bind(Vps4SnapshotVm.class).toInstance(snapshotVm);
+        binder.bind(Vps4RestoreVm.class).toInstance(restoreVm);
     });
+    CommandContext context = spy(new TestCommandContext(new GuiceCommandProvider(injector)));
 
-    CommandContext context;
+    Vps4UpgradeVm command = new Vps4UpgradeVm(snapshotActionService, actionService, virtualMachineService,
+            snapshotService, vmUserService, projectService, creditService);
 
     @Before
     public void setupTest() {
-        command = injector.getInstance(Vps4UpgradeVm.class);
-        request = mock(Vps4UpgradeVm.Request.class);
-        request.vmId = existingVMId;
+        request = new Vps4UpgradeVm.Request();
+        request.vmId = originalVmId;
         request.newTier = 40;
-        context = setupMockContext();
-        MockitoAnnotations.initMocks(this);
-    }
+        request.autoBackupName = "auto-backup";
+        request.initiatedBy = "Customer";
 
-    private CommandContext setupMockContext() {
         vm = mock(VirtualMachine.class);
-        vm.hfsVmId = oldHfsVmId;
+        vm.vmId = originalVmId;
+        vm.hfsVmId = originalHfsVmId;
         vm.orionGuid = orionGuid;
-        when(virtualMachineService.getVirtualMachine(eq(existingVMId))).thenReturn(vm);
+        vm.projectId = projectId;
+        when(virtualMachineService.getVirtualMachine(originalVmId)).thenReturn(vm);
+        when(snapshotService.createSnapshot(anyLong(), any(), anyString(), any())).thenReturn(snapshotId);
+        when(snapshotActionService.createAction(any(), any(), anyString(), anyString())).thenReturn(actionId);
 
-        CommandContext mockContext = mock(CommandContext.class);
-        when(mockContext.getId()).thenReturn(UUID.randomUUID());
-        when(mockContext.execute(eq("GetHfsVmId"), any(Function.class), eq(long.class))).thenReturn(oldHfsVmId);
-
-        when(mockContext.execute(eq("GetVirtualMachine"), any(Function.class), eq(VirtualMachine.class))).thenReturn(vm);
-
-        when(mockContext.execute(eq("createSnapshot"), any(Function.class), eq(UUID.class))).thenReturn(snapshotId);
-
-        when(mockContext.execute(eq("createSnapshotAction"), any(Function.class), eq(long.class))).thenReturn(actionId);
-
-        Project project = new Project(123, "unitTestProject", "vps4-unittest-123", Instant.now(), null);
-        when(projectService.getProject(eq(vm.projectId))).thenReturn(project);
+        Project project = mock(Project.class);
+        when(project.getVhfsSgid()).thenReturn("sgid-unittest");
+        when(projectService.getProject(projectId)).thenReturn(project);
 
         ServerSpec spec = mock(ServerSpec.class);
-        spec.specName = "hosting.c2.r4.d60";
-        spec.specId = 6;
-        when(virtualMachineService.getSpec(eq(request.newTier))).thenReturn(spec);
+        spec.specName = "flavor.unittest";
+        spec.specId = 7;
+        when(virtualMachineService.getSpec(request.newTier)).thenReturn(spec);
 
-        VmUser testUser = new VmUser("testUser", request.vmId, true, VmUserType.CUSTOMER);
-        when(vmUserService.getPrimaryCustomer(eq(request.vmId))).thenReturn(testUser);
-
-        return mockContext;
+        VmUser vmUser = mock(VmUser.class);
+        when(vmUserService.getPrimaryCustomer(originalVmId)).thenReturn(vmUser);
     }
 
     @Test
     public void getsVirtualMachineFromRequestVmId() {
         command.execute(context, request);
-        verify(context, times(1))
-                .execute(eq("GetVirtualMachine"), getVirtualMachineLambdaCaptor.capture(), eq(VirtualMachine.class));
-
-        Function<CommandContext, VirtualMachine> lambda = getVirtualMachineLambdaCaptor.getValue();
-        VirtualMachine retVm = lambda.apply(context);
-        verify(virtualMachineService, times(1)).getVirtualMachine(eq(existingVMId));
-        Assert.assertEquals(vm, retVm);
+        verify(virtualMachineService).getVirtualMachine(originalVmId);
     }
 
     @Test
-    public void createSnapshotForVm() {
+    public void stopsVmBeforeCreatingSnapshot() {
         command.execute(context, request);
-        verify(context, times(1))
-                .execute(eq("Vps4SnapshotVm"), eq(Vps4SnapshotVm.class), snapshotRequestCaptor.capture());
-        Vps4SnapshotVm.Request retSnapshotReq = snapshotRequestCaptor.getValue();
-        Assert.assertEquals(oldHfsVmId, retSnapshotReq.hfsVmId);
-        Assert.assertEquals(snapshotId, retSnapshotReq.vps4SnapshotId);
-        Assert.assertEquals(vm.orionGuid, retSnapshotReq.orionGuid);
-        Assert.assertEquals(SnapshotType.AUTOMATIC, retSnapshotReq.snapshotType);
-        Assert.assertEquals(request.shopperId, retSnapshotReq.shopperId);
-        Assert.assertEquals(request.initiatedBy, retSnapshotReq.initiatedBy);
-        Assert.assertEquals(actionId, retSnapshotReq.actionId);
+        verify(context).execute(StopVm.class, originalHfsVmId);
     }
 
     @Test
-    public void createVmFromSnapshot() {
+    public void createsDbSnapshotRecord() {
         command.execute(context, request);
-        verify(context, times(1))
-                .execute(eq("Vps4RestoreVm"), eq(Vps4RestoreVm.class), restoreRequestCaptor.capture());
-        Vps4RestoreVm.Request retRestoreReq = restoreRequestCaptor.getValue();
-        Assert.assertEquals(request.actionId, retRestoreReq.actionId);
-        Assert.assertEquals(request.vmId, retRestoreReq.restoreVmInfo.vmId);
-        Assert.assertEquals(snapshotId, retRestoreReq.restoreVmInfo.snapshotId);
-        Assert.assertEquals("vps4-unittest-123", retRestoreReq.restoreVmInfo.sgid);
-        Assert.assertEquals(vm.hostname, retRestoreReq.restoreVmInfo.hostname);
-        Assert.assertEquals(request.encryptedPassword, retRestoreReq.restoreVmInfo.encryptedPassword);
-        Assert.assertEquals("hosting.c2.r4.d60", retRestoreReq.restoreVmInfo.rawFlavor);
-        Assert.assertEquals("testUser", retRestoreReq.restoreVmInfo.username);
-        Assert.assertEquals(request.zone, retRestoreReq.restoreVmInfo.zone);
-        Assert.assertEquals(request.privateLabelId, retRestoreReq.privateLabelId);
+        verify(snapshotService).createSnapshot(projectId, originalVmId, "auto-backup", SnapshotType.AUTOMATIC);
     }
 
     @Test
-    public void updateVmSpecInDb() {
+    public void createsDbSnapshotAction() {
         command.execute(context, request);
-        verify(context, times(1))
-                .execute(eq("UpdateVmTier"), any(Function.class), eq(Void.class));
+        verify(snapshotActionService).createAction(snapshotId, ActionType.CREATE_SNAPSHOT, "{}", "Customer");
     }
 
     @Test
-    public void updateProductMetaInEcomm() {
+    public void executesSnapshotVmCommand() {
         command.execute(context, request);
-        verify(creditService, times(1))
-                .updateProductMeta(eq(vm.orionGuid), eq(ECommCreditService.ProductMetaField.PLAN_CHANGE_PENDING), eq("false"));
+        ArgumentCaptor<Vps4SnapshotVm.Request> argument = ArgumentCaptor.forClass(Vps4SnapshotVm.Request.class);
+        verify(context).execute(eq("Vps4SnapshotVm"), eq(Vps4SnapshotVm.class), argument.capture());
+        Vps4SnapshotVm.Request snapReq = argument.getValue();
+        assertEquals(snapshotId, snapReq.vps4SnapshotId);
+        assertEquals(orionGuid, snapReq.orionGuid);
+        assertEquals(actionId, snapReq.actionId);
+        assertEquals(originalHfsVmId, snapReq.hfsVmId);
+        assertEquals(SnapshotType.AUTOMATIC, snapReq.snapshotType);
+        assertEquals(request.shopperId, snapReq.shopperId);
+        assertEquals(request.initiatedBy, snapReq.initiatedBy);
     }
+
+    @Test
+    public void executesRestoreVmCommand() {
+        command.execute(context, request);
+        ArgumentCaptor<Vps4RestoreVm.Request> argument = ArgumentCaptor.forClass(Vps4RestoreVm.Request.class);
+        verify(context).execute(eq("Vps4RestoreVm"), eq(Vps4RestoreVm.class), argument.capture());
+        Vps4RestoreVm.Request restoreReq = argument.getValue();
+        assertEquals(originalVmId, restoreReq.restoreVmInfo.vmId);
+        assertEquals(snapshotId, restoreReq.restoreVmInfo.snapshotId);
+        assertEquals("sgid-unittest", restoreReq.restoreVmInfo.sgid);
+        assertEquals("flavor.unittest", restoreReq.restoreVmInfo.rawFlavor);
+        assertEquals(request.actionId, restoreReq.actionId);
+        assertEquals(orionGuid, restoreReq.restoreVmInfo.orionGuid);
+        verify(virtualMachineService, atLeastOnce()).getSpec(request.newTier);
+    }
+
+    @Test
+    public void startsVmOnUpgradeError() {
+        doThrow(new RuntimeException("upgrade failure!"))
+            .when(context).execute(eq("Vps4RestoreVm"), eq(Vps4RestoreVm.class), any());
+
+        try {
+            command.execute(context, request);
+            fail();
+        } catch (RuntimeException ex) {
+            verify(context).execute(StartVm.class, originalHfsVmId);
+        }
+    }
+
+    @Test
+    public void updatesVmTierInDb() {
+        command.execute(context, request);
+        Map<String, Object> expectedParams = Collections.singletonMap("spec_id", 7);
+        verify(virtualMachineService).updateVirtualMachine(originalVmId, expectedParams);
+    }
+
+    @Test
+    public void updatesProductMetaInEcomm() {
+        command.execute(context, request);
+        verify(creditService).updateProductMeta(orionGuid, PLAN_CHANGE_PENDING, "false");
+    }
+
 }

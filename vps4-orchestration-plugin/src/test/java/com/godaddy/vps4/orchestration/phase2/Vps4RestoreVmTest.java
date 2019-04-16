@@ -5,6 +5,7 @@ import static org.junit.Assert.assertThat;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Matchers.startsWith;
+import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -261,7 +262,7 @@ public class Vps4RestoreVmTest {
     public void getsImageInformation() {
         command.execute(context, request);
 
-        verify(context, times(1)).execute(eq("GetImageInfo"), getImageLambdaCaptor.capture(), eq(Image.class));
+        verify(context, atLeastOnce()).execute(eq("GetImageInfo"), getImageLambdaCaptor.capture(), eq(Image.class));
 
         // Verify that the lambda is returning what we expect
         Function<CommandContext, Image> lambda = getImageLambdaCaptor.getValue();
@@ -273,7 +274,7 @@ public class Vps4RestoreVmTest {
     public void setsRootUserPasswordForLinuxBasedSnapshot() {
         command.execute(context, request);
 
-        verify(context, times(1)).execute(eq("GetImageInfo"), any(Function.class), eq(Image.class));
+        verify(context, atLeastOnce()).execute(eq("GetImageInfo"), any(Function.class), eq(Image.class));
         verify(spyVps4VmService, times(1)).isLinux(eq(vps4VmId));
         verify(context, times(1)).execute(eq("SetRootUserPassword"), eq(SetPassword.class),
                 setPasswordArgumentCaptor.capture());
@@ -358,15 +359,14 @@ public class Vps4RestoreVmTest {
 
     @Test
     public void refreshesCpanelLicense() {
-        vps4Vm.image = new Image();
         vps4Vm.image.controlPanel = Image.ControlPanel.CPANEL;
         command.execute(context, request);
 
-        verify(context, times(1)).execute(eq("RefreshCPanelLicense"), eq(RefreshCpanelLicense.class),
+        verify(context).execute(eq("RefreshCPanelLicense"), eq(RefreshCpanelLicense.class),
                 refreshLicenseCaptor.capture());
 
         RefreshCpanelLicense.Request refreshRequest = refreshLicenseCaptor.getValue();
-        Assert.assertEquals(vps4Vm.hfsVmId, refreshRequest.hfsVmId);
+        Assert.assertEquals(hfsNewVmId, refreshRequest.hfsVmId);
     }
 
     @Test(expected = RuntimeException.class)

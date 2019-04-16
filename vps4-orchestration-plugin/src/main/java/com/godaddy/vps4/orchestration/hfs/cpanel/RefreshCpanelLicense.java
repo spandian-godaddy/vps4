@@ -33,7 +33,12 @@ public class RefreshCpanelLicense implements Command<RefreshCpanelLicense.Reques
                 ctx -> cpanelService.licenseRefresh(request.hfsVmId),
                 CPanelAction.class);
 
-        context.execute("WaitForLicenseRefresh", WaitForCpanelAction.class, hfsCpanelAction);
+        hfsCpanelAction = context.execute("WaitForLicenseRefresh", WaitForCpanelAction.class, hfsCpanelAction);
+
+        if (hfsCpanelAction.status != CPanelAction.Status.COMPLETE) {
+            logger.warn("Failed to refresh cpanel license {}", hfsCpanelAction);
+            throw new RuntimeException("CPanel license refresh failed");
+        }
 
         return null;
     }

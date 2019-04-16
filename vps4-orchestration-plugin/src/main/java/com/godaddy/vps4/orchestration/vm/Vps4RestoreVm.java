@@ -28,7 +28,6 @@ import com.godaddy.vps4.vm.ActionService;
 import com.godaddy.vps4.vm.Image;
 import com.godaddy.vps4.vm.RestoreVmInfo;
 import com.godaddy.vps4.vm.RestoreVmStep;
-import com.godaddy.vps4.vm.VirtualMachine;
 import com.godaddy.vps4.vm.VirtualMachineService;
 import com.godaddy.vps4.vm.VmUserService;
 import com.google.inject.Inject;
@@ -97,7 +96,7 @@ public class Vps4RestoreVm extends ActionCommand<Vps4RestoreVm.Request, Void> {
 
         setRootUserPassword(newHfsVm.vmId);
         configureAdminUser(newHfsVm.vmId);
-        refreshCpanelLicense();
+        refreshCpanelLicense(newHfsVm.vmId);
     }
 
     private void cleanupAndRollback(Vm newHfsVm) {
@@ -227,19 +226,14 @@ public class Vps4RestoreVm extends ActionCommand<Vps4RestoreVm.Request, Void> {
         }
     }
 
-    private void refreshCpanelLicense(){
+    private void refreshCpanelLicense(long hfsVmId){
         setStep(RestoreVmStep.ConfiguringCPanel);
 
-        VirtualMachine vm = context.execute("GetVirtualMachine",
-                ctx -> virtualMachineService.getVirtualMachine(vps4VmId),
-                VirtualMachine.class);
-
-        if(vm.image.hasCpanel()){
+        if(getVmImageInfo().hasCpanel()){
             RefreshCpanelLicense.Request req = new RefreshCpanelLicense.Request();
-            req.hfsVmId = vm.hfsVmId;
+            req.hfsVmId = hfsVmId;
             context.execute("RefreshCPanelLicense", RefreshCpanelLicense.class, req);
         }
-
     }
 
     private void cleanupVm(long hfsVmId) {
