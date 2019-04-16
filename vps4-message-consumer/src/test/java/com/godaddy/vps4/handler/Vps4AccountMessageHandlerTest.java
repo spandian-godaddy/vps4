@@ -4,6 +4,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyObject;
+import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -12,6 +13,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.io.IOException;
+import java.time.Instant;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
@@ -227,6 +229,14 @@ public class Vps4AccountMessageHandlerTest {
 
         verify(creditServiceMock, times(1)).getVirtualMachineCredit(anyObject());
         verify(commandServiceMock, never()).executeCommand(anyObject());
+    }
+
+    @Test
+    public void testHandleMessagePurchasedAtNotSet() throws MessageHandlerException {
+        mockVmCredit(AccountStatus.ACTIVE, null);
+        callHandleMessage(createTestKafkaMessage("added"));
+
+        verify(creditServiceMock, times(1)).updateProductMeta(eq(orionGuid), eq(ProductMetaField.PURCHASED_AT), any(String.class));
     }
 
     @Test

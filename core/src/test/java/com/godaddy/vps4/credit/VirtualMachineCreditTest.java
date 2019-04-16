@@ -4,6 +4,7 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
 
+import java.time.Instant;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -21,7 +22,7 @@ public class VirtualMachineCreditTest {
     @Test
     public void isGrandFatheredIfAccountPurchasedBeforeCutOverDate() throws Exception {
         Map<String, String> productMeta = new HashMap<>();
-        productMeta.put("purchased_at", "2019-04-01T00:00:00Z");
+        productMeta.put("purchased_at", Instant.MIN.toString());
 
         VirtualMachineCredit credit = new VirtualMachineCredit.Builder(mock(DataCenterService.class))
                 .withProductMeta(productMeta)
@@ -32,7 +33,7 @@ public class VirtualMachineCreditTest {
     @Test
     public void isNotGrandFatheredIfAccountPurchasedAfterCutOverDate() throws Exception {
         Map<String, String> productMeta = new HashMap<>();
-        productMeta.put("purchased_at", "2099-06-01T00:00:00Z");
+        productMeta.put("purchased_at", Instant.MAX.toString());
 
         VirtualMachineCredit credit = new VirtualMachineCredit.Builder(mock(DataCenterService.class))
                 .withProductMeta(productMeta)

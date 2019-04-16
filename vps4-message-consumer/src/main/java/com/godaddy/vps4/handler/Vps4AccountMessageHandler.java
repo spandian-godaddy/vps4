@@ -6,6 +6,7 @@ import static com.godaddy.vps4.handler.util.Utils.isDBError;
 import static com.godaddy.vps4.handler.util.Utils.isVps4ApiDown;
 
 import java.io.IOException;
+import java.time.Instant;
 
 import com.godaddy.vps4.vm.AccountStatus;
 import com.godaddy.vps4.web.client.VmZombieService;
@@ -74,6 +75,12 @@ public class Vps4AccountMessageHandler implements MessageHandler {
             if (credit == null) {
                 logger.info("Account {} not found, message handling will not continue", vps4Message.accountGuid);
                 return;
+            }
+
+            if(credit.getPurchasedAt() == null) {
+                // this is a new credit.  set the purchasedAt date to now.
+                // purchasedAt is primarily used for determining if this is a heritage account.
+                creditService.updateProductMeta(vps4Message.accountGuid, ProductMetaField.PURCHASED_AT, Instant.now().toString());
             }
 
             if(credit.getAccountStatus() == AccountStatus.ACTIVE) {

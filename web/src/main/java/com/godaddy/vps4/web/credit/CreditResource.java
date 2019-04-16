@@ -1,5 +1,6 @@
 package com.godaddy.vps4.web.credit;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 
@@ -21,9 +22,11 @@ import com.godaddy.vps4.credit.CreditService;
 import com.godaddy.vps4.credit.ECommCreditService.ProductMetaField;
 import com.godaddy.vps4.credit.VirtualMachineCredit;
 import com.godaddy.vps4.web.Vps4Api;
+import com.godaddy.vps4.web.Vps4Exception;
 import com.godaddy.vps4.web.Vps4NoShopperException;
 import com.godaddy.vps4.web.security.AdminOnly;
 import com.godaddy.vps4.web.security.GDUser;
+import com.godaddy.vps4.web.security.RequiresRole;
 import com.google.inject.Inject;
 
 import io.swagger.annotations.Api;
@@ -104,5 +107,15 @@ public class CreditResource {
 
         VirtualMachineCredit credit = creditService.getVirtualMachineCredit(orionGuid);
         return credit;
+    }
+
+    @RequiresRole(roles = {GDUser.Role.ADMIN})
+    @POST
+    @Path("/{orionGuid}/setPurchasedDate")
+    public VirtualMachineCredit setPurchasedDate(@PathParam("orionGuid") UUID orionGuid) {
+        // Remove this method after the backfill of all credits is complete.  It is only to be used by the
+        // backfill script.
+        creditService.updateProductMeta(orionGuid, ProductMetaField.PURCHASED_AT, Instant.now().toString());
+        return creditService.getVirtualMachineCredit(orionGuid);
     }
 }

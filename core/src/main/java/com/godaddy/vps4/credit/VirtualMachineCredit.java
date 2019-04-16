@@ -75,6 +75,9 @@ public class VirtualMachineCredit {
         return managedLevel == FULLY_MANAGED_LEVEL;
     }
 
+    @JsonIgnore
+    public Instant getPurchasedAt() { return purchasedAt; }
+
     @JsonProperty("isHeritage")
     public boolean isHeritage() {
         // Heritage accounts are accounts that existed (purchased) before Ecomm
