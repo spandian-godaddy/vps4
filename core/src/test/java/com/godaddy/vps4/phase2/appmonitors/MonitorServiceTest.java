@@ -175,8 +175,7 @@ public class MonitorServiceTest {
         assertTrue("Expected vm to have backups but actual vm does not have backups. ", vmsWithNoBackups.stream().noneMatch(p));
     }
 
-    @Test
-    public void testGetVmsBySnapshotActionsIgnoresRescheduledSnapshots() {
+    private void verifyIgnoreSnapshotStatus(SnapshotStatus snapshotStatus) {
         List<SnapshotActionData> problemVms = provisioningMonitorService.getVmsBySnapshotActions(120, ActionStatus.IN_PROGRESS, ActionStatus.ERROR);
         assertEquals(2, problemVms.size());
 
@@ -185,7 +184,7 @@ public class MonitorServiceTest {
                 vm4.projectId,
                 vm4.vmId,
                 "fake-snapshot-1",
-                SnapshotStatus.ERROR_RESCHEDULED,
+                snapshotStatus,
                 Instant.now(),
                 null,
                 "fake-imageid",
@@ -197,5 +196,20 @@ public class MonitorServiceTest {
 
         problemVms = provisioningMonitorService.getVmsBySnapshotActions(120, ActionStatus.IN_PROGRESS, ActionStatus.ERROR);
         assertEquals(2, problemVms.size());
+    }
+
+    @Test
+    public void testGetVmsBySnapshotActionsIgnoresCancelledSnapshots() {
+        verifyIgnoreSnapshotStatus(SnapshotStatus.CANCELLED);
+    }
+
+    @Test
+    public void testGetVmsBySnapshotActionsIgnoresRescheduledSnapshots() {
+        verifyIgnoreSnapshotStatus(SnapshotStatus.ERROR_RESCHEDULED);
+    }
+
+    @Test
+    public void testGetVmsBySnapshotActionsIgnoresDestroyedSnapshots() {
+        verifyIgnoreSnapshotStatus(SnapshotStatus.DESTROYED);
     }
 }
