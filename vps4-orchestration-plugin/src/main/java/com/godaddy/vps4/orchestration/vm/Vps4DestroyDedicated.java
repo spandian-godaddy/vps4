@@ -80,7 +80,7 @@ public class Vps4DestroyDedicated extends ActionCommand<VmActionRequest, Vps4Des
             return null;
         }
         VmAction hfsAction = context.execute("DestroyVmHfs", DestroyVm.class, vm.hfsVmId);
-        hfsVmTrackingRecordService.setHfsVmCanceled(vm.hfsVmId);
+        hfsVmTrackingRecordService.setCanceled(vm.hfsVmId);
 
         hfsAction = context.execute(WaitForVmAction.class, hfsAction);
         return hfsAction;

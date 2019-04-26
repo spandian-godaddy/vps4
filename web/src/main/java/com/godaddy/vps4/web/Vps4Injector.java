@@ -21,6 +21,7 @@ import com.godaddy.vps4.cpanel.CpanelModule;
 import com.godaddy.vps4.credit.CreditModule;
 import com.godaddy.vps4.hfs.HfsClientModule;
 import com.godaddy.vps4.hfs.HfsMockModule;
+import com.godaddy.vps4.hfs.HfsVmTrackingRecordModule;
 import com.godaddy.vps4.jdbc.DatabaseModule;
 import com.godaddy.vps4.mailrelay.MailRelayModule;
 import com.godaddy.vps4.messaging.MessagingModule;
@@ -109,6 +110,7 @@ public class Vps4Injector {
 
         modules.add(new CreditModule());
         modules.add(new VmModule());
+        modules.add(new HfsVmTrackingRecordModule());
         modules.add(new SnapshotModule());
         modules.add(new NetworkModule());
         modules.add(new SysAdminModule());

@@ -22,9 +22,9 @@ public class WaitForAndRecordVmAction implements Command<VmAction, VmAction> {
         hfsAction = context.execute(WaitForVmAction.class, hfsAction);
 
         if (hfsAction.actionType.equals("CREATE")) {
-            hfsVmTrackingRecordService.setHfsVmCreated(hfsAction.vmId);
+            hfsVmTrackingRecordService.setCreated(hfsAction.vmId);
         } else if (hfsAction.actionType.equals("DESTROY")) {
-            hfsVmTrackingRecordService.setHfsVmDestroyed(hfsAction.vmId);
+            hfsVmTrackingRecordService.setDestroyed(hfsAction.vmId);
         }
 
         return hfsAction;

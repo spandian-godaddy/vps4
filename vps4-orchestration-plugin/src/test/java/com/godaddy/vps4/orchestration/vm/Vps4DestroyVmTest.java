@@ -152,7 +152,7 @@ public class Vps4DestroyVmTest {
         when(monitoringMeta.getAccountId()).thenReturn(nodePingAccountId);
         when(cpanelService.getLicenseFromDb(eq(request.virtualMachine.hfsVmId))).thenReturn(cPanelLicense);
         when(cpanelService.getLicenseFromDb(0)).thenReturn(new CPanelLicense());
-        when(hfsVmTrackingRecordService.createHfsVm(anyLong(), any(), any())).thenReturn(hfsVmTrackingRecord);
+        when(hfsVmTrackingRecordService.create(anyLong(), any(), any())).thenReturn(hfsVmTrackingRecord);
 
         MailRelay mailRelay = new MailRelay();
         mailRelay.quota = 0;

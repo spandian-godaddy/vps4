@@ -51,7 +51,7 @@ public class CreateVm implements Command<CreateVm.Request, VmAction> {
         // we would still like to update the hfs vm ID
         // in the vps4 database for debugging purposes.
         
-        hfsVmTrackingRecordService.createHfsVm(vmAction.vmId, request.vmId, request.orionGuid);
+        hfsVmTrackingRecordService.create(vmAction.vmId, request.vmId, request.orionGuid);
 
         return vmAction;
     }

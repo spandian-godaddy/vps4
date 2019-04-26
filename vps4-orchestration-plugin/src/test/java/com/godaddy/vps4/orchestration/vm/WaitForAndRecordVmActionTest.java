@@ -32,7 +32,7 @@ public class WaitForAndRecordVmActionTest {
         VmAction newHfsAction = createMockVmAction("CREATE");
         when(context.execute(eq(WaitForVmAction.class), eq(newHfsAction))).thenReturn(newHfsAction);
         command.execute(context, newHfsAction);
-        verify(hfsVmTrackingRecordService, times(1)).setHfsVmCreated(newHfsAction.vmId);
+        verify(hfsVmTrackingRecordService, times(1)).setCreated(newHfsAction.vmId);
     }
 
     @Test
@@ -40,7 +40,7 @@ public class WaitForAndRecordVmActionTest {
         VmAction newHfsAction = createMockVmAction("DESTROY");
         when(context.execute(eq(WaitForVmAction.class), eq(newHfsAction))).thenReturn(newHfsAction);
         command.execute(context, newHfsAction);
-        verify(hfsVmTrackingRecordService, times(1)).setHfsVmDestroyed(newHfsAction.vmId);
+        verify(hfsVmTrackingRecordService, times(1)).setDestroyed(newHfsAction.vmId);
     }
 
 

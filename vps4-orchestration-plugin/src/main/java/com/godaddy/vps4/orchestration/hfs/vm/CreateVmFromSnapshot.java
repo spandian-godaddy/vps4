@@ -42,7 +42,7 @@ public class CreateVmFromSnapshot implements Command<CreateVmFromSnapshot.Reques
 
         VmAction vmAction = context.execute("CreateVmHfs", ctx -> vmService.createVmWithFlavor(hfsRequest), VmAction.class);
 
-        hfsVmTrackingRecordService.createHfsVm(vmAction.vmId, request.vmId, request.orionGuid);
+        hfsVmTrackingRecordService.create(vmAction.vmId, request.vmId, request.orionGuid);
 
         context.execute(WaitForAndRecordVmAction.class, vmAction);
 
