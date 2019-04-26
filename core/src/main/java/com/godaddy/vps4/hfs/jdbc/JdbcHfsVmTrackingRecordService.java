@@ -87,7 +87,7 @@ public class JdbcHfsVmTrackingRecordService implements HfsVmTrackingRecordServic
     @Override
     public List<HfsVmTrackingRecord> getRequested() {
         return Sql.with(dataSource).exec(
-                "select * from hfs_vm_tracking_record where requested is not null and created is null" +
+                "select * from hfs_vm_tracking_record where requested is not null and created is null " +
                         "and canceled is null and destroyed is null",
                 Sql.listOf(this::mapHfsVm));
     }

@@ -117,9 +117,9 @@ public class JdbcHfsVmTrackingRecordServiceTest {
         HfsVmTrackingRecord hfsVm3 = hfsVmService.create(1003, vm.vmId, vm.orionGuid);
         hfsVmService.setCreated(hfsVm2.hfsVmId);
         hfsVmService.setCanceled(hfsVm3.hfsVmId);
-        List<HfsVmTrackingRecord> result = hfsVmService.getCanceled();
+        List<HfsVmTrackingRecord> result = hfsVmService.getRequested();
         hfsVm = result.get(0);
-        assertNotNull(hfsVm.canceled);
+        assertNull(hfsVm.canceled);
         assertNull(hfsVm.destroyed);
         assertEquals(1, result.size());
     }
