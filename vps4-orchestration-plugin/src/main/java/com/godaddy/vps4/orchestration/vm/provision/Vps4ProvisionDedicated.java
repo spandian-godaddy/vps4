@@ -30,7 +30,7 @@ import com.godaddy.vps4.orchestration.hfs.sysadmin.SetHostname;
 import com.godaddy.vps4.orchestration.hfs.sysadmin.SetPassword;
 import com.godaddy.vps4.orchestration.hfs.sysadmin.ToggleAdmin;
 import com.godaddy.vps4.orchestration.hfs.vm.CreateVm;
-import com.godaddy.vps4.orchestration.hfs.vm.WaitForVmAction;
+import com.godaddy.vps4.orchestration.vm.WaitForAndRecordVmAction;
 import com.godaddy.vps4.util.MonitoringMeta;
 import com.godaddy.vps4.vm.ActionService;
 import com.godaddy.vps4.vm.CreateVmStep;
@@ -209,7 +209,7 @@ public class Vps4ProvisionDedicated extends ActionCommand<ProvisionRequest, Vps4
         virtualMachineService.setHostname(request.vmInfo.vmId, createVmRequest.hostname);
         VmAction vmAction = context.execute(CreateVm.class, createVmRequest);
         addHfsVmIdToVmInVps4Db(vmAction);
-        context.execute(WaitForVmAction.class, vmAction);
+        context.execute(WaitForAndRecordVmAction.class, vmAction);
         return vmAction.vmId;
     }
 
