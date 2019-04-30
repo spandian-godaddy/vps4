@@ -20,6 +20,8 @@ import org.junit.runner.RunWith;
 import org.mockito.runners.MockitoJUnitRunner;
 
 import com.godaddy.hfs.vm.ServerUsageStats;
+import com.godaddy.hfs.vm.Vm;
+import com.godaddy.hfs.vm.VmService;
 import com.godaddy.vps4.jdbc.DatabaseModule;
 import com.godaddy.vps4.phase2.CancelActionModule;
 import com.godaddy.vps4.phase2.Phase2ExternalsModule;
@@ -29,8 +31,10 @@ import com.godaddy.vps4.snapshot.SnapshotModule;
 import com.godaddy.vps4.vm.ServerUsageStatsService;
 import com.godaddy.vps4.vm.VirtualMachine;
 import com.godaddy.vps4.vm.VmModule;
+import com.godaddy.vps4.web.Vps4Exception;
 import com.google.inject.AbstractModule;
 import com.google.inject.Guice;
+import com.google.inject.Inject;
 import com.google.inject.Injector;
 
 @RunWith(MockitoJUnitRunner.class)
@@ -40,6 +44,10 @@ public class ServerUsageStatsResourceTest {
     private ServerUsageStatsService serverUsageStatsService = mock(ServerUsageStatsService.class);
     private ServerUsageStatsResource serverUsageStatsResource, spyResource;
     private VirtualMachine vm;
+
+    @Inject
+    private VmService vmService;
+
 
     private Injector injector = Guice.createInjector(
             new DatabaseModule(),
@@ -96,7 +104,6 @@ public class ServerUsageStatsResourceTest {
         doNothing().when(spyResource).verifyServerIsActive(anyLong());
         when(vmResource.getVm(any(UUID.class))).thenReturn(vm);
         when(serverUsageStatsService.getServerUsage(anyLong())).thenReturn(serverUsageStats);
-        when(vmResource.getVm(any(UUID.class))).thenReturn(vm);
 
         UsageStats stats = spyResource.getUsage(UUID.randomUUID());
 
@@ -104,4 +111,26 @@ public class ServerUsageStatsResourceTest {
         verify(serverUsageStatsService, times(1)).getServerUsage(anyLong());
         assertTrue("Stats cannot be null.", stats!= null);
     }
+
+    @Test(expected = Vps4Exception.class)
+    public void getsServerUsageInActiveVm() {
+        Vm inactiveVm = new Vm();
+        inactiveVm.status = "STOPPED";
+
+        ServerUsageStats serverUsageStats = createDummyServerUsageStats();
+        when(vmResource.getVm(any(UUID.class))).thenReturn(vm);
+        when(serverUsageStatsService.getServerUsage(anyLong())).thenReturn(serverUsageStats);
+        when(vmService.getVm(vm.hfsVmId)).thenReturn(inactiveVm);
+
+        spyResource.getUsage(UUID.randomUUID());
+    }
+
+    @Test(expected = Vps4Exception.class)
+    public void getsServerUsageNullStats() {
+        when(vmResource.getVm(any(UUID.class))).thenReturn(vm);
+        when(serverUsageStatsService.getServerUsage(anyLong())).thenReturn(null);
+
+        spyResource.getUsage(UUID.randomUUID());
+    }
+
 }

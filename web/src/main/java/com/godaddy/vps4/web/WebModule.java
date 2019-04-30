@@ -18,7 +18,6 @@ import com.godaddy.vps4.web.security.Vps4ContainerRequestFilterModule;
 import com.godaddy.vps4.web.snapshot.SnapshotActionResource;
 import com.godaddy.vps4.web.snapshot.SnapshotResource;
 import com.godaddy.vps4.web.sysadmin.SysAdminResource;
-import com.godaddy.vps4.web.sysadmin.UsageStatsResource;
 import com.godaddy.vps4.web.util.TroubleshootVmHelper;
 import com.godaddy.vps4.web.validator.ValidatorResource;
 import com.godaddy.vps4.web.vm.ImageResource;
@@ -69,7 +68,6 @@ public class WebModule extends AbstractModule {
         bind(UserResource.class);
         bind(CreditResource.class);
         bind(ImageResource.class);
-        bind(UsageStatsResource.class);
         bind(ServerUsageStatsResource.class);
         bind(CacheResource.class);
         bind(SnapshotResource.class);
