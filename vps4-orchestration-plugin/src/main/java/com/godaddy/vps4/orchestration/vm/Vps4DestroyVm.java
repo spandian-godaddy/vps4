@@ -8,6 +8,9 @@ import java.util.stream.Collectors;
 import javax.inject.Inject;
 import javax.ws.rs.NotFoundException;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.godaddy.hfs.vm.VmAction;
 import com.godaddy.vps4.network.IpAddress;
 import com.godaddy.vps4.network.NetworkService;
@@ -18,9 +21,6 @@ import com.godaddy.vps4.util.MonitoringMeta;
 import com.godaddy.vps4.vm.ActionService;
 import com.godaddy.vps4.vm.VirtualMachine;
 import com.godaddy.vps4.vm.VirtualMachineService;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import gdg.hfs.orchestration.CommandContext;
 import gdg.hfs.orchestration.CommandMetadata;
@@ -80,13 +80,7 @@ public class Vps4DestroyVm extends ActionCommand<VmActionRequest, Vps4DestroyVm.
     }
 
     private VmAction deleteVmInHfs(CommandContext context, VirtualMachine vm) {
-        if (vm.hfsVmId != 0) {
-            VmAction hfsAction = context.execute("DestroyVmHfs", DestroyVm.class, vm.hfsVmId);
-            hfsAction = context.execute(WaitForAndRecordVmAction.class, hfsAction);
-            return hfsAction;
-        } else {
-            return null;
-        }
+        return context.execute("DestroyVmHfs", DestroyVm.class, vm.hfsVmId);
     }
 
     private void deleteSupportUsersInDatabase(CommandContext context, VirtualMachine vm) {

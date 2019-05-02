@@ -14,7 +14,6 @@ import com.godaddy.vps4.network.IpAddress;
 import com.godaddy.vps4.network.NetworkService;
 import com.godaddy.vps4.orchestration.ActionCommand;
 import com.godaddy.vps4.orchestration.hfs.vm.DestroyVm;
-import com.godaddy.vps4.orchestration.hfs.vm.WaitForVmAction;
 import com.godaddy.vps4.util.MonitoringMeta;
 import com.godaddy.vps4.vm.ActionService;
 import com.godaddy.vps4.vm.VirtualMachine;
@@ -75,15 +74,7 @@ public class Vps4DestroyDedicated extends ActionCommand<VmActionRequest, Vps4Des
     }
 
     private VmAction deleteVmInHfs(CommandContext context, VirtualMachine vm) {
-        if (vm.hfsVmId == 0) {
-            // Don't do anything if there's no hfs vm
-            return null;
-        }
-        VmAction hfsAction = context.execute("DestroyVmHfs", DestroyVm.class, vm.hfsVmId);
-        hfsVmTrackingRecordService.setCanceled(vm.hfsVmId);
-
-        hfsAction = context.execute(WaitForVmAction.class, hfsAction);
-        return hfsAction;
+        return context.execute("DestroyVmHfs", DestroyVm.class, vm.hfsVmId);
     }
 
     private void deleteSupportUsersInDatabase(CommandContext context, VirtualMachine vm) {

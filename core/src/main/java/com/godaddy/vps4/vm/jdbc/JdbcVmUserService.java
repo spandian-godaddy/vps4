@@ -55,6 +55,12 @@ public class JdbcVmUserService implements VmUserService{
         Sql.with(dataSource).exec("DELETE FROM vm_user WHERE vm_id=? and name=?", null, vmId, username);
     }
 
+
+    @Override
+    public List<VmUser> listUsers(UUID vmId){
+        return listUsers(vmId, null);
+    }
+
     @Override
     public List<VmUser> listUsers(UUID vmId, VmUserType type){
         String base = "SELECT u.name, u.vm_id, u.admin_enabled, ut.type_name"

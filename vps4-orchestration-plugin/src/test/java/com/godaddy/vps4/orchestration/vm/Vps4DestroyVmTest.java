@@ -21,8 +21,6 @@ import javax.ws.rs.ClientErrorException;
 import javax.ws.rs.NotFoundException;
 import javax.ws.rs.core.Response;
 
-import com.godaddy.vps4.hfs.HfsVmTrackingRecord;
-import com.godaddy.vps4.hfs.HfsVmTrackingRecordService;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
@@ -33,12 +31,15 @@ import com.godaddy.hfs.mailrelay.MailRelayService;
 import com.godaddy.hfs.mailrelay.MailRelayUpdate;
 import com.godaddy.hfs.vm.VmAction;
 import com.godaddy.hfs.vm.VmService;
+import com.godaddy.vps4.hfs.HfsVmTrackingRecord;
+import com.godaddy.vps4.hfs.HfsVmTrackingRecordService;
 import com.godaddy.vps4.network.IpAddress;
 import com.godaddy.vps4.network.IpAddress.IpAddressType;
 import com.godaddy.vps4.network.NetworkService;
 import com.godaddy.vps4.orchestration.TestCommandContext;
 import com.godaddy.vps4.orchestration.hfs.network.ReleaseIp;
 import com.godaddy.vps4.orchestration.hfs.network.UnbindIp;
+import com.godaddy.vps4.orchestration.hfs.vm.DestroyVm;
 import com.godaddy.vps4.scheduledJob.ScheduledJobService;
 import com.godaddy.vps4.util.MonitoringMeta;
 import com.godaddy.vps4.vm.ActionService;
@@ -58,7 +59,6 @@ import gdg.hfs.vhfs.network.IpAddress.Status;
 import gdg.hfs.vhfs.nodeping.NodePingService;
 import gdg.hfs.vhfs.plesk.PleskAction;
 import gdg.hfs.vhfs.plesk.PleskService;
-
 import junit.framework.Assert;
 
 public class Vps4DestroyVmTest {
@@ -76,6 +76,7 @@ public class Vps4DestroyVmTest {
     VmUserService vmUserService = mock(VmUserService.class);
     MonitoringMeta monitoringMeta = mock(MonitoringMeta.class);
     HfsVmTrackingRecordService hfsVmTrackingRecordService = mock(HfsVmTrackingRecordService.class);
+    DestroyVm destroyVm = mock(DestroyVm.class);
 
     Vps4DestroyVm command = new Vps4DestroyVm(actionService, networkService, virtualMachineService,
             cpanelService, nodePingService, pleskService, monitoringMeta);
@@ -94,6 +95,7 @@ public class Vps4DestroyVmTest {
         binder.bind(VmUserService.class).toInstance(vmUserService);
         binder.bind(MonitoringMeta.class).toInstance(monitoringMeta);
         binder.bind(HfsVmTrackingRecordService.class).toInstance(hfsVmTrackingRecordService);
+        binder.bind(DestroyVm.class).toInstance(destroyVm);
     });
 
     CommandContext context = new TestCommandContext(new GuiceCommandProvider(injector));
@@ -243,16 +245,6 @@ public class Vps4DestroyVmTest {
 
         command.execute(context, request);
         verify(pleskService, times(0)).licenseRelease(request.virtualMachine.hfsVmId);
-    }
-
-    @Test
-    public void destroyVmNoHfsVmTest() throws Exception {
-        when(virtualMachineService.virtualMachineHasCpanel(vm.vmId)).thenReturn(true);
-        vm.hfsVmId = 0;
-
-        command.execute(context, request);
-        verify(cpanelService, never()).licenseRelease(null, request.virtualMachine.hfsVmId);
-        verify(vmService, never()).destroyVm(Mockito.anyLong());
     }
 
     @Test

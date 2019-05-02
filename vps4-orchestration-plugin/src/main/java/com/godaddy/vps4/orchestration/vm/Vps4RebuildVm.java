@@ -11,9 +11,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.godaddy.hfs.vm.Vm;
 import com.godaddy.hfs.vm.VmAction;
-import com.godaddy.hfs.vm.VmService;
 import com.godaddy.vps4.credit.CreditService;
 import com.godaddy.vps4.network.IpAddress;
 import com.godaddy.vps4.network.NetworkService;
@@ -21,7 +19,6 @@ import com.godaddy.vps4.orchestration.ActionCommand;
 import com.godaddy.vps4.orchestration.ActionRequest;
 import com.godaddy.vps4.orchestration.hfs.cpanel.ConfigureCpanel;
 import com.godaddy.vps4.orchestration.hfs.cpanel.ConfigureCpanel.ConfigureCpanelRequest;
-import com.godaddy.vps4.orchestration.hfs.cpanel.RefreshCpanelLicense;
 import com.godaddy.vps4.orchestration.hfs.network.BindIp;
 import com.godaddy.vps4.orchestration.hfs.network.UnbindIp;
 import com.godaddy.vps4.orchestration.hfs.plesk.ConfigurePlesk;
@@ -37,11 +34,9 @@ import com.godaddy.vps4.vm.ActionService;
 import com.godaddy.vps4.vm.Image;
 import com.godaddy.vps4.vm.RebuildVmInfo;
 import com.godaddy.vps4.vm.RebuildVmStep;
-import com.godaddy.vps4.vm.VirtualMachine;
 import com.godaddy.vps4.vm.VirtualMachineService;
 import com.godaddy.vps4.vm.VmUser;
 import com.godaddy.vps4.vm.VmUserService;
-import com.godaddy.vps4.vm.VmUserType;
 import com.google.inject.Inject;
 
 import gdg.hfs.orchestration.CommandContext;
@@ -51,27 +46,26 @@ import gdg.hfs.orchestration.CommandRetryStrategy;
 @CommandMetadata(
         name="Vps4RebuildVm",
         requestType=Vps4RebuildVm.Request.class,
-        responseType=Vps4RebuildVm.Response.class,
+        responseType=Void.class,
         retryStrategy = CommandRetryStrategy.NEVER
 )
-public class Vps4RebuildVm extends ActionCommand<Vps4RebuildVm.Request, Vps4RebuildVm.Response> {
+public class Vps4RebuildVm extends ActionCommand<Vps4RebuildVm.Request, Void> {
 
     private static final Logger logger = LoggerFactory.getLogger(Vps4RebuildVm.class);
-    private final VmService vmService;
     private final VirtualMachineService virtualMachineService;
     private final NetworkService vps4NetworkService;
     private final VmUserService vmUserService;
     private final CreditService creditService;
+
     private Request request;
     private ActionState state;
     private CommandContext context;
     private UUID vps4VmId;
 
     @Inject
-    public Vps4RebuildVm(ActionService actionService, VmService vmService, VirtualMachineService virtualMachineService,
+    public Vps4RebuildVm(ActionService actionService, VirtualMachineService virtualMachineService,
                          NetworkService vps4NetworkService, VmUserService vmUserService, CreditService creditService) {
         super(actionService);
-        this.vmService = vmService;
         this.virtualMachineService = virtualMachineService;
         this.vps4NetworkService = vps4NetworkService;
         this.vmUserService = vmUserService;
@@ -79,68 +73,27 @@ public class Vps4RebuildVm extends ActionCommand<Vps4RebuildVm.Request, Vps4Rebu
     }
 
     @Override
-    public Response executeWithAction(CommandContext context, Request request) throws Exception {
+    public Void executeWithAction(CommandContext context, Request request) throws Exception {
         this.request = request;
         this.context = context;
         this.state = new ActionState();
         this.vps4VmId = request.rebuildVmInfo.vmId;
 
-        long oldHfsVmId = getOldHfsVmId();
-        List<IpAddress> ipAddresses = getPublicIpAddresses();
-        
-        Vm hfsVm = createVm();
-        long newHfsVmId = hfsVm.vmId;
-        
-        if(newHfsVmId == 0) {
-            throw new  Exception("HFS Vm ID is not available. Expecting HFS VM ID.");
-        }
-        
-        VirtualMachine oldVm = virtualMachineService.getVirtualMachine(vps4VmId);
-        
-        unbindPublicIpAddresses(ipAddresses);
-        bindPublicIpAddress(newHfsVmId, ipAddresses);
-        updateVmUser(request.rebuildVmInfo.username, oldVm.vmId, request.rebuildVmInfo.vmId);
-        setRootUserPassword(newHfsVmId);
-        configureControlPanel(newHfsVmId);
-        setHostname(newHfsVmId);
-        configureAdminUser(newHfsVmId);
-        configureMailRelay(newHfsVmId);
-        refreshCpanelLicense();
-
-        updateServerDetails(request);
-        setEcommCommonName(oldVm.orionGuid, request.rebuildVmInfo.serverName);
-
-        // remove any support users on the old vm (or in the db)
-        removeSupportUsers(vps4VmId);
-        // delete the old vm
-        deleteOldVm(oldHfsVmId);
+        prepareForRebuild();
+        long hfsVmId = createVm();
+        configureNewVm(hfsVmId);
 
         setStep(RebuildVmStep.RebuildComplete);
-
-        logger.info("Completed VM Rebuild.");
+        logger.info("VM rebuild of vmId {} finished", vps4VmId);
         return null;
     }
 
-    private void configureMailRelay(long hfsVmId) {
-        setStep(RebuildVmStep.ConfigureMailRelay);
+    private void prepareForRebuild() {
+        List<IpAddress> ipAddresses = getPublicIpAddresses();
+        unbindPublicIpAddresses(ipAddresses);
 
-        ConfigureMailRelayRequest configureMailRelayRequest = new ConfigureMailRelayRequest(hfsVmId, request.rebuildVmInfo.image.controlPanel);
-        context.execute(ConfigureMailRelay.class, configureMailRelayRequest);
-
-    }
-
-    private void updateServerDetails(Request request) {
-        // Update the servers name and the image.
-        // Self managed customers can provision several different images
-        String serverName = request.rebuildVmInfo.serverName;
-        Map<String, Object> vmPatchMap = new HashMap<>();
-        vmPatchMap.put("name", serverName);
-        vmPatchMap.put("image_id", request.rebuildVmInfo.image.imageId);
-        virtualMachineService.updateVirtualMachine(this.vps4VmId, vmPatchMap);
-    }
-
-    private long getOldHfsVmId() {
-        return context.execute("GetHfsVmId", ctx -> virtualMachineService.getVirtualMachine(vps4VmId).hfsVmId, long.class);
+        deleteVmInHfs(getOriginalHfsVmId());
+        deleteVmUsersInDb(vps4VmId);
     }
 
     private List<IpAddress> getPublicIpAddresses() {
@@ -158,6 +111,41 @@ public class Vps4RebuildVm extends ActionCommand<Vps4RebuildVm.Request, Vps4Rebu
         }
     }
 
+    private long getOriginalHfsVmId() {
+        return context.execute("GetHfsVmId", ctx -> virtualMachineService.getVirtualMachine(vps4VmId).hfsVmId, long.class);
+    }
+
+    private void deleteVmInHfs(long hfsVmId) {
+        setStep(RebuildVmStep.DeleteOldVm);
+        logger.info("Deleting HFS VM {}", hfsVmId);
+        context.execute("DestroyVmHfs", DestroyVm.class, hfsVmId);
+    }
+
+    private void deleteVmUsersInDb(UUID oldVmId) {
+        for (VmUser user : vmUserService.listUsers(oldVmId)) {
+            vmUserService.deleteUser(user.username, oldVmId);
+        }
+    }
+
+    private long createVm() {
+        setStep(RebuildVmStep.RequestingServer);
+        logger.info("create vm for rebuild process");
+
+        CreateVm.Request createVmRequest = createHfsVmRequest();
+        VmAction vmAction = context.execute("CreateVm", CreateVm.class, createVmRequest);
+
+        // ensure the vm row is updated in the vps4 DB with the hfs vm id from the vm action.
+        // having the hfs vm id in the vps4 database helps to track down the VM
+        // in the event of a HFS VM provisioning failure.
+        // Post creation reconfigure steps
+        updateHfsVmId(vmAction.vmId);
+        updateServerDetails(request);
+
+        context.execute(WaitForAndRecordVmAction.class, vmAction);
+
+        return vmAction.vmId;
+    }
+
     private CreateVm.Request createHfsVmRequest() {
         CreateVm.Request createVm = new CreateVm.Request();
         createVm.sgid = request.rebuildVmInfo.sgid;
@@ -173,25 +161,6 @@ public class Vps4RebuildVm extends ActionCommand<Vps4RebuildVm.Request, Vps4Rebu
         return createVm;
     }
 
-    private Vm createVm() {
-        setStep(RebuildVmStep.RequestingServer);
-        logger.info("create vm for rebuild process");
-
-        CreateVm.Request createVmRequest = createHfsVmRequest();
-        VmAction vmAction = context.execute("CreateVm", CreateVm.class, createVmRequest);
-
-        // ensure the vm row is updated in the vps4 DB with the hfs vm id from the vm action.
-        // having the hfs vm id in the vps4 database helps to track down the VM
-        // in the event of a HFS VM provisioning failure.
-        // Post creation reconfigure steps
-        updateHfsVmId(vmAction.vmId);
-
-        context.execute(WaitForAndRecordVmAction.class, vmAction);
-
-        // Get the hfs vm
-        return context.execute("GetVmAfterCreate", ctx -> vmService.getVm(vmAction.vmId), Vm.class);
-    }
-
     private void updateHfsVmId(long hfsVmId) {
         context.execute("UpdateHfsVmId", ctx -> {
             virtualMachineService.addHfsVmIdToVirtualMachine(vps4VmId, hfsVmId);
@@ -199,10 +168,90 @@ public class Vps4RebuildVm extends ActionCommand<Vps4RebuildVm.Request, Vps4Rebu
         }, Void.class);
     }
 
-    private void updateVmUser(String username, UUID oldVmId, UUID newVmId) {
-        vmUserService.listUsers(oldVmId, VmUserType.CUSTOMER).stream()
-                .forEach(user -> vmUserService.deleteUser(user.username, oldVmId));
-        vmUserService.createUser(username, newVmId);
+    private void updateServerDetails(Request request) {
+        Map<String, Object> vmPatchMap = new HashMap<>();
+        vmPatchMap.put("name", request.rebuildVmInfo.serverName);
+        vmPatchMap.put("image_id", request.rebuildVmInfo.image.imageId);
+        context.execute("UpdateVmDetails", ctx -> {
+            virtualMachineService.updateVirtualMachine(this.vps4VmId, vmPatchMap);
+            return null;
+        }, Void.class);
+    }
+
+    private void configureNewVm(long newHfsVmId) {
+        List<IpAddress> ipAddresses = getPublicIpAddresses();
+        bindPublicIpAddress(newHfsVmId, ipAddresses);
+        configureControlPanel(newHfsVmId);
+        setHostname(newHfsVmId);
+        configureVmUser(newHfsVmId);
+        configureMailRelay(newHfsVmId);
+        setEcommCommonName(request.rebuildVmInfo.orionGuid, request.rebuildVmInfo.serverName);
+    }
+
+    private void bindPublicIpAddress(long hfsVmId, List<IpAddress> ipAddresses) {
+        setStep(RebuildVmStep.ConfiguringNetwork);
+
+        for (IpAddress ipAddress: ipAddresses) {
+            logger.info("Bind public ip address {} to VM {}", ipAddress.ipAddress, vps4VmId);
+
+            BindIp.Request bindRequest = new BindIp.Request();
+            bindRequest.addressId = ipAddress.ipAddressId;
+            bindRequest.hfsVmId = hfsVmId;
+            context.execute(String.format("BindIP-%d", ipAddress.ipAddressId), BindIp.class, bindRequest);
+        }
+    }
+
+    private void configureControlPanel(long hfsVmId) {
+        Image image = virtualMachineService.getVirtualMachine(vps4VmId).image;
+        if (image.hasCpanel()) {
+            setStep(RebuildVmStep.ConfiguringCPanel);
+            ConfigureCpanelRequest cpanelRequest = createConfigureCpanelRequest(hfsVmId);
+            context.execute(ConfigureCpanel.class, cpanelRequest);
+        } else if (image.hasPlesk()) {
+            setStep(RebuildVmStep.ConfiguringPlesk);
+            ConfigurePleskRequest pleskRequest = createConfigurePleskRequest(hfsVmId);
+            context.execute(ConfigurePlesk.class, pleskRequest);
+        }
+    }
+
+    private ConfigureCpanelRequest createConfigureCpanelRequest(long hfsVmId) {
+        ConfigureCpanelRequest cpanelRequest = new ConfigureCpanelRequest();
+        cpanelRequest.vmId = hfsVmId;
+        return cpanelRequest;
+    }
+
+    private ConfigurePleskRequest createConfigurePleskRequest(long hfsVmId) {
+        return new ConfigurePleskRequest(hfsVmId, request.rebuildVmInfo.username, request.rebuildVmInfo.encryptedPassword);
+    }
+
+    private void setHostname(long hfsVmId) {
+        setStep(RebuildVmStep.SetHostname);
+
+        SetHostname.Request hfsRequest = new SetHostname.Request(hfsVmId, request.rebuildVmInfo.hostname,
+                request.rebuildVmInfo.image.getImageControlPanel());
+        context.execute(SetHostname.class, hfsRequest);
+    }
+
+    private void configureVmUser(long hfsVmId) {
+        boolean enableAdmin = !virtualMachineService.hasControlPanel(vps4VmId);
+        if (enableAdmin) {
+            enableAdminAccess(hfsVmId);
+        }
+
+        createVmUserInDb(request.rebuildVmInfo.username, vps4VmId, enableAdmin);
+        setRootUserPassword(hfsVmId);
+    }
+
+    private void enableAdminAccess(long hfsVmId) {
+        ToggleAdmin.Request toggleAdminRequest = new ToggleAdmin.Request();
+        toggleAdminRequest.vmId = hfsVmId;
+        toggleAdminRequest.username = request.rebuildVmInfo.username;
+        toggleAdminRequest.enabled = true;
+        context.execute("ConfigureAdminAccess", ToggleAdmin.class, toggleAdminRequest);
+    }
+
+    private void createVmUserInDb(String username, UUID newVmId, boolean enableAdmin) {
+        vmUserService.createUser(username, newVmId, enableAdmin);
     }
 
     private void setRootUserPassword(long hfsVmId) {
@@ -216,113 +265,25 @@ public class Vps4RebuildVm extends ActionCommand<Vps4RebuildVm.Request, Vps4Rebu
     private SetPassword.Request createSetRootPasswordRequest(long hfsVmId) {
         SetPassword.Request setPasswordRequest = new SetPassword.Request();
         setPasswordRequest.hfsVmId = hfsVmId;
-        String[] usernames = {"root"};
-        setPasswordRequest.usernames = Arrays.asList(usernames);
+        setPasswordRequest.usernames = Arrays.asList("root");
         setPasswordRequest.encryptedPassword = request.rebuildVmInfo.encryptedPassword;
         setPasswordRequest.controlPanel = request.rebuildVmInfo.image.getImageControlPanel();
         return setPasswordRequest;
     }
 
-    private void configureAdminUser(long hfsVmId) {
-        boolean adminEnabled = !virtualMachineService.hasControlPanel(vps4VmId);
-        String username = request.rebuildVmInfo.username;
-        ToggleAdmin.Request toggleAdminRequest = new ToggleAdmin.Request();
-        toggleAdminRequest.enabled = adminEnabled;
-        toggleAdminRequest.vmId = hfsVmId;
-        toggleAdminRequest.username = username;
+    private void configureMailRelay(long hfsVmId) {
+        setStep(RebuildVmStep.ConfigureMailRelay);
 
-        context.execute("ConfigureAdminAccess", ToggleAdmin.class, toggleAdminRequest);
-        context.execute("UpdateVps4AdminUser", ctx -> {
-            vmUserService.updateUserAdminAccess(username, vps4VmId, adminEnabled);
-            return null;
-        }, Void.class);
+        ConfigureMailRelayRequest configureMailRelayRequest = new ConfigureMailRelayRequest(hfsVmId, request.rebuildVmInfo.image.controlPanel);
+        context.execute(ConfigureMailRelay.class, configureMailRelayRequest);
     }
 
-    private void configureControlPanel(long hfsVmId) {
-        Image image = virtualMachineService.getVirtualMachine(hfsVmId).image;
-        if (image.hasCpanel()) {
-            // VM with cPanel
-            setStep(RebuildVmStep.ConfiguringCPanel);
-
-            // configure cpanel on the vm
-            ConfigureCpanelRequest cpanelRequest = createConfigureCpanelRequest(hfsVmId);
-            context.execute(ConfigureCpanel.class, cpanelRequest);
-
-        } else if (image.hasPlesk()) {
-            // VM with Plesk image
-            setStep(RebuildVmStep.ConfiguringPlesk);
-
-            // configure Plesk on the vm
-            ConfigurePleskRequest pleskRequest = createConfigurePleskRequest(hfsVmId);
-            context.execute(ConfigurePlesk.class, pleskRequest);
-        }
-    }
-
-    private ConfigureCpanelRequest createConfigureCpanelRequest(long vmId) {
-        ConfigureCpanelRequest cpanelRequest = new ConfigureCpanelRequest();
-        cpanelRequest.vmId = vmId;
-        return cpanelRequest;
-    }
-
-    private ConfigurePleskRequest createConfigurePleskRequest(long hfsVmId) {
-        return new ConfigurePleskRequest(hfsVmId, request.rebuildVmInfo.username, request.rebuildVmInfo.encryptedPassword);
-    }
-
-
-    private void setHostname(long hfsVmId) {
-        setStep(RebuildVmStep.SetHostname);
-
-        SetHostname.Request hfsRequest = new SetHostname.Request(hfsVmId, request.rebuildVmInfo.hostname,
-                request.rebuildVmInfo.image.getImageControlPanel());
-
-        context.execute(SetHostname.class, hfsRequest);
-    }
-
+    // Sets the name customers see in MYA when launching into their server dashboard
     private void setEcommCommonName(UUID orionGuid, String commonName) {
         context.execute("SetCommonName", ctx -> {
             creditService.setCommonName(orionGuid, commonName);
             return null;
         }, Void.class);
-    }
-
-    private void bindPublicIpAddress(long hfsVmId, List<IpAddress> ipAddresses) {
-        setStep(RebuildVmStep.ConfiguringNetwork);
-        logger.info("Bind public ip address");
-
-        for (IpAddress ipAddress: ipAddresses) {
-            logger.info("Bind public ip address {} to VM {}", ipAddress.ipAddress, vps4VmId);
-
-            BindIp.Request bindRequest = new BindIp.Request();
-            bindRequest.addressId = ipAddress.ipAddressId;
-            bindRequest.hfsVmId = hfsVmId;
-            context.execute(String.format("BindIP-%d", ipAddress.ipAddressId), BindIp.class, bindRequest);
-        }
-    }
-
-    private void refreshCpanelLicense(){
-        VirtualMachine vm = context.execute("GetVirtualMachine",
-                ctx -> virtualMachineService.getVirtualMachine(vps4VmId),
-                VirtualMachine.class);
-        if(vm.image.hasCpanel()){
-            RefreshCpanelLicense.Request req = new RefreshCpanelLicense.Request();
-            req.hfsVmId = vm.hfsVmId;
-            context.execute("RefreshCPanelLicense", RefreshCpanelLicense.class, req);
-        }
-    }
-
-    private void removeSupportUsers(UUID vps4VmId) {
-        List<VmUser> users = vmUserService.listUsers(vps4VmId, VmUserType.SUPPORT);
-        for(VmUser user : users) {
-            if(user != null) {
-                vmUserService.deleteUser(user.username, vps4VmId);
-            }
-        }
-    }
-
-    private void deleteOldVm(long hfsVmId) {
-        setStep(RebuildVmStep.DeleteOldVm);
-        logger.info("Delete old VM");
-        context.execute("DestroyVmHfs", DestroyVm.class, hfsVmId);
     }
 
     protected void setStep(RebuildVmStep step) {
@@ -348,10 +309,6 @@ public class Vps4RebuildVm extends ActionCommand<Vps4RebuildVm.Request, Vps4Rebu
         public void setActionId(long actionId) {
             this.actionId = actionId;
         }
-    }
-
-    public static class Response {
-        public long vmId;
     }
 
     public static class ActionState {

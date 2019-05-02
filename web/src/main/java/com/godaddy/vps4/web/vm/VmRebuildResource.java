@@ -121,7 +121,6 @@ public class VmRebuildResource {
         VirtualMachine vm = vmResource.getVm(vmId);
         isValidRebuildVmRequest(vmId, rebuildVmRequest);
         logger.info("Processing rebuild on VM {}", vmId);
-        logger.info("Cancelling any incomplete actions on VM {}", vmId);
         cancelIncompleteVmActions(vmId);
 
         Vps4RebuildVm.Request commandRequest = generateRebuildVmOrchestrationRequest(vm, rebuildVmRequest);
@@ -177,6 +176,7 @@ public class VmRebuildResource {
     }
 
     private void cancelIncompleteVmActions(UUID vmId) {
+        logger.info("Cancelling any incomplete actions on VM {}", vmId);
         List<Action> actions = actionService.getIncompleteActions(vmId);
         for (Action action: actions) {
             vmActionResource.cancelVmAction(vmId, action.id);

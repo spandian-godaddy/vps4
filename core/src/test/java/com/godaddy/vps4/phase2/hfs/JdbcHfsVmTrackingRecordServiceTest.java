@@ -9,6 +9,10 @@ import java.util.UUID;
 
 import javax.sql.DataSource;
 
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
+
 import com.godaddy.vps4.hfs.HfsVmTrackingRecord;
 import com.godaddy.vps4.hfs.HfsVmTrackingRecordService;
 import com.godaddy.vps4.hfs.jdbc.JdbcHfsVmTrackingRecordService;
@@ -20,12 +24,8 @@ import com.godaddy.vps4.vm.jdbc.JdbcVirtualMachineService;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
 
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
-
 public class JdbcHfsVmTrackingRecordServiceTest {
-    
+
     Injector injector = Guice.createInjector(new DatabaseModule());
     DataSource dataSource = injector.getInstance(DataSource.class);
     HfsVmTrackingRecordService hfsVmService = new JdbcHfsVmTrackingRecordService(dataSource);
@@ -96,6 +96,7 @@ public class JdbcHfsVmTrackingRecordServiceTest {
 
     @Test
     public void testGetUnusedHfsVms() {
+        int startSize = hfsVmService.getUnused().size();
         HfsVmTrackingRecord hfsVm = hfsVmService.create(1001, vm.vmId, vm.orionGuid);
         HfsVmTrackingRecord hfsVm2 = hfsVmService.create(2002, vm.vmId, vm.orionGuid);
         HfsVmTrackingRecord hfsVm3 = hfsVmService.create(1002, vm.vmId, vm.orionGuid);
@@ -106,12 +107,13 @@ public class JdbcHfsVmTrackingRecordServiceTest {
         virtualMachineService.addHfsVmIdToVirtualMachine(vm.vmId, 2002);
         List<HfsVmTrackingRecord> result = hfsVmService.getUnused();
         hfsVm = result.get(0);
-        assertEquals(1, result.size());
+        assertEquals(1, result.size() - startSize);
         assertNotNull(hfsVm.requested);
     }
 
     @Test
     public void testGetRequestedHfsVms() {
+        int startSize = hfsVmService.getRequested().size();
         HfsVmTrackingRecord hfsVm = hfsVmService.create(1001, vm.vmId, vm.orionGuid);
         HfsVmTrackingRecord hfsVm2 = hfsVmService.create(1002, vm.vmId, vm.orionGuid);
         HfsVmTrackingRecord hfsVm3 = hfsVmService.create(1003, vm.vmId, vm.orionGuid);
@@ -121,7 +123,7 @@ public class JdbcHfsVmTrackingRecordServiceTest {
         hfsVm = result.get(0);
         assertNull(hfsVm.canceled);
         assertNull(hfsVm.destroyed);
-        assertEquals(1, result.size());
+        assertEquals(1, result.size() - startSize);
     }
 
 }

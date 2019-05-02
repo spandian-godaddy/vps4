@@ -7,7 +7,6 @@ import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -37,6 +36,7 @@ import com.godaddy.vps4.network.NetworkService;
 import com.godaddy.vps4.orchestration.TestCommandContext;
 import com.godaddy.vps4.orchestration.hfs.network.ReleaseIp;
 import com.godaddy.vps4.orchestration.hfs.network.UnbindIp;
+import com.godaddy.vps4.orchestration.hfs.vm.DestroyVm;
 import com.godaddy.vps4.scheduledJob.ScheduledJobService;
 import com.godaddy.vps4.util.MonitoringMeta;
 import com.godaddy.vps4.vm.ActionService;
@@ -72,6 +72,7 @@ public class Vps4DestroyDedicatedTest {
     MonitoringMeta monitoringMeta = mock(MonitoringMeta.class);
     NetworkService networkService = mock(NetworkService.class);
     HfsVmTrackingRecordService hfsVmTrackingRecordService = mock(HfsVmTrackingRecordService.class);
+    DestroyVm destroyVm = mock(DestroyVm.class);
 
     Vps4DestroyDedicated command = new Vps4DestroyDedicated(actionService, networkService, nodePingService,
             monitoringMeta, hfsVmTrackingRecordService);
@@ -90,6 +91,7 @@ public class Vps4DestroyDedicatedTest {
         binder.bind(MonitoringMeta.class).toInstance(monitoringMeta);
         binder.bind(NetworkService.class).toInstance(networkService);
         binder.bind(HfsVmTrackingRecordService.class).toInstance(hfsVmTrackingRecordService);
+        binder.bind(DestroyVm.class).toInstance(destroyVm);
     });
 
     CommandContext context = new TestCommandContext(new GuiceCommandProvider(injector));
@@ -227,16 +229,6 @@ public class Vps4DestroyDedicatedTest {
 
         command.execute(context, request);
         verify(pleskService, times(0)).licenseRelease(request.virtualMachine.hfsVmId);
-    }
-
-    @Test
-    public void destroyVmNoHfsVmTest() throws Exception {
-        when(virtualMachineService.virtualMachineHasCpanel(vm.vmId)).thenReturn(true);
-        vm.hfsVmId = 0;
-
-        command.execute(context, request);
-        verify(cpanelService, never()).licenseRelease(null, request.virtualMachine.hfsVmId);
-        verify(vmService, never()).destroyVm(Mockito.anyLong());
     }
 
     @Test
