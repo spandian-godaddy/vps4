@@ -233,10 +233,20 @@ public class Vps4AccountMessageHandlerTest {
 
     @Test
     public void testHandleMessagePurchasedAtNotSet() throws MessageHandlerException {
+        when(configMock.get("vps4MessageHandler.primaryMessageConsumerServer")).thenReturn("true");
         mockVmCredit(AccountStatus.ACTIVE, null);
         callHandleMessage(createTestKafkaMessage("added"));
 
         verify(creditServiceMock, times(1)).updateProductMeta(eq(orionGuid), eq(ProductMetaField.PURCHASED_AT), any(String.class));
+    }
+
+    @Test
+    public void testHandleMessagePurchasedAtNotSetNotPrimaryServer() throws MessageHandlerException {
+        when(configMock.get("vps4MessageHandler.primaryMessageConsumerServer")).thenReturn("false");
+        mockVmCredit(AccountStatus.ACTIVE, null);
+        callHandleMessage(createTestKafkaMessage("added"));
+
+        verify(creditServiceMock, never()).updateProductMeta(any(UUID.class), any(ProductMetaField.class), any(String.class));
     }
 
     @Test

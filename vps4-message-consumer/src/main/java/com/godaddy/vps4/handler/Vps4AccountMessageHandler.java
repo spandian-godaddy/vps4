@@ -40,6 +40,7 @@ public class Vps4AccountMessageHandler implements MessageHandler {
     private final ActionService vmActionService;
     private final CommandService commandService;
     private final boolean processFullyManagedEmails;
+    private final boolean primaryMessageConsumerServer;
     private final VmZombieService vmZombieService;
     private final Vps4MessagingService messagingService;
     private final int FULLY_MANAGED_LEVEL = 2;
@@ -61,6 +62,7 @@ public class Vps4AccountMessageHandler implements MessageHandler {
         this.messagingService = messagingService;
         this.vmZombieService = vmZombieService;
         processFullyManagedEmails = Boolean.parseBoolean(config.get("vps4MessageHandler.processFullyManagedEmails"));
+        primaryMessageConsumerServer = Boolean.parseBoolean(config.get("vps4MessageHandler.primaryMessageConsumerServer"));
     }
 
     @Override
@@ -77,7 +79,7 @@ public class Vps4AccountMessageHandler implements MessageHandler {
                 return;
             }
 
-            if(credit.getPurchasedAt() == null) {
+            if(primaryMessageConsumerServer && credit.getPurchasedAt() == null) {
                 // this is a new credit.  set the purchasedAt date to now.
                 // purchasedAt is primarily used for determining if this is a heritage account.
                 creditService.updateProductMeta(vps4Message.accountGuid, ProductMetaField.PURCHASED_AT, Instant.now().toString());
