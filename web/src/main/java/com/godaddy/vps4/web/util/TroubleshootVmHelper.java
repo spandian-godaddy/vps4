@@ -5,13 +5,28 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.Socket;
 
+import javax.inject.Inject;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import com.godaddy.hfs.vm.VmService;
 
 public class TroubleshootVmHelper {
 
     private static final Logger logger = LoggerFactory.getLogger(TroubleshootVmHelper.class);
     private final int ONE_SECOND = 1000;
+
+    private VmService hfsVmService;
+
+    @Inject
+    public TroubleshootVmHelper(VmService hfsVmService) {
+        this.hfsVmService = hfsVmService;
+    }
+
+    public String getHfsAgentStatus(long hfsVmId) {
+        return hfsVmService.getHfsAgentDetails(hfsVmId).agentStatus;
+    }
 
     public boolean canPingVm(String ipAddress) {
         try {

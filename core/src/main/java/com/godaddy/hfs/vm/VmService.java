@@ -91,4 +91,8 @@ public interface VmService {
     @Path("/{vmId}/utilization/{utilizationId}")
     ServerUsageStats getServerUsageStats(@PathParam("vmId") long vmId, @PathParam("utilizationId") long utilizationId);
 
+    @GET
+    @Path("/{vmId}/agent")
+    AgentDetails getHfsAgentDetails(@PathParam("vmId") long vmId);
+
 }

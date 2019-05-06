@@ -22,6 +22,7 @@ import com.godaddy.hfs.mailrelay.MailRelay;
 import com.godaddy.hfs.mailrelay.MailRelayHistory;
 import com.godaddy.hfs.mailrelay.MailRelayService;
 import com.godaddy.hfs.mailrelay.MailRelayUpdate;
+import com.godaddy.hfs.vm.AgentDetails;
 import com.godaddy.hfs.vm.Console;
 import com.godaddy.hfs.vm.CreateVMRequest;
 import com.godaddy.hfs.vm.CreateVMWithFlavorRequest;
@@ -889,6 +890,11 @@ public class HfsMockModule extends AbstractModule {
 
             @Override
             public ServerUsageStats getServerUsageStats(long vmId, long utilizationId) {
+                throw new UnsupportedOperationException("Not implemented, yet");
+            }
+
+            @Override
+            public AgentDetails getHfsAgentDetails(long vmId) {
                 throw new UnsupportedOperationException("Not implemented, yet");
             }
         };

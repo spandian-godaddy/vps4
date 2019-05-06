@@ -10,14 +10,15 @@ import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.godaddy.vps4.vm.TroubleshootInfo;
 import com.godaddy.vps4.vm.VirtualMachine;
 import com.godaddy.vps4.web.Vps4Api;
 import com.godaddy.vps4.web.util.TroubleshootVmHelper;
 
 import io.swagger.annotations.Api;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 @Vps4Api
 @Api(tags = {"vms"})
@@ -29,7 +30,7 @@ public class VmTroubleshootResource {
 
     private final VmResource vmResource;
     private final TroubleshootVmHelper troubleVmHelper;
-    private static final Logger troubleshootLogger = LoggerFactory.getLogger(VmTroubleshootResource.class);
+    private static final Logger logger = LoggerFactory.getLogger(VmTroubleshootResource.class);
 
     @Inject
     public VmTroubleshootResource(VmResource vmResource,
@@ -46,11 +47,11 @@ public class VmTroubleshootResource {
 
         TroubleshootInfo info = new TroubleshootInfo();
         info.status.canPing = troubleVmHelper.canPingVm(ip);
-        info.status.isPortOpen2223 = troubleVmHelper.isPortOpenOnVm(ip, 2223);
         info.status.isPortOpen2224 = troubleVmHelper.isPortOpenOnVm(ip, 2224);
+        info.status.hfsAgentStatus = troubleVmHelper.getHfsAgentStatus(virtualMachine.hfsVmId);
 
         if (!info.isOk()) {
-            troubleshootLogger.warn("Vm " + vmId + " troubleshooting status: " + info.toString());
+            logger.warn("Vm " + vmId + " troubleshooting status: " + info.toString());
         }
 
         return info;

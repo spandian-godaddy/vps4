@@ -1,13 +1,16 @@
 package com.godaddy.vps4.vm;
 
+import org.apache.commons.lang3.builder.ReflectionToStringBuilder;
+import org.apache.commons.lang3.builder.ToStringStyle;
+
 public class TroubleshootInfo {
 
     public StatusChecks status;
 
     public class StatusChecks {
         public boolean canPing;
-        public boolean isPortOpen2223;
         public boolean isPortOpen2224;
+        public String hfsAgentStatus;
     }
 
     public TroubleshootInfo() {
@@ -16,14 +19,12 @@ public class TroubleshootInfo {
 
     public boolean isOk() {
         return status.canPing &&
-               status.isPortOpen2223 &&
-               status.isPortOpen2224;
+               status.isPortOpen2224 &&
+               status.hfsAgentStatus.equals("OK");
     }
 
     @Override
     public String toString() {
-        return "[canPing: " + status.canPing
-                + ", isPortOpen2223: " + status.isPortOpen2223
-                + ", isPortOpen2223: " + status.isPortOpen2223 + "]";
+        return ReflectionToStringBuilder.toString(this, ToStringStyle.SHORT_PREFIX_STYLE);
     }
 }
