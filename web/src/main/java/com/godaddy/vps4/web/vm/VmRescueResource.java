@@ -66,7 +66,7 @@ public class VmRescueResource {
 
     private void validateServerInRescueMode(long hfsVmId) {
         Vm hfsVm = vmResource.getVmFromVmVertical(hfsVmId);
-        if (!hfsVm.status.equals("RESCUE")) {
+        if (!hfsVm.status.equals("RESCUED")) {
             throw new Vps4Exception("INVALID_STATUS", "The server is not in Rescue Mode");
         }
     }

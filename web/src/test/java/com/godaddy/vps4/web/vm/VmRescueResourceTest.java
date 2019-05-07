@@ -45,7 +45,7 @@ public class VmRescueResourceTest {
         when(vmResource.getVm(vps4VmId)).thenReturn(vm);
 
         hfsVm = mock(Vm.class);
-        hfsVm.status = "RESCUE";
+        hfsVm.status = "RESCUED";
         when(vmResource.getVmFromVmVertical(hfsVmId)).thenReturn(hfsVm);
 
         Action rescueAction = mock(Action.class);
