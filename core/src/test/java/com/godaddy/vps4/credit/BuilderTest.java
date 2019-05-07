@@ -1,35 +1,37 @@
 package com.godaddy.vps4.credit;
 
-import com.godaddy.vps4.vm.AccountStatus;
-import com.godaddy.vps4.vm.DataCenter;
-import com.godaddy.vps4.vm.DataCenterService;
-import gdg.hfs.vhfs.ecomm.Account;
-import org.junit.Before;
-import org.junit.Test;
+import static com.godaddy.vps4.credit.ECommCreditService.PlanFeatures;
+import static com.godaddy.vps4.credit.ECommCreditService.ProductMetaField;
+import static com.godaddy.vps4.credit.VirtualMachineCredit.Builder;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNull;
+import static org.mockito.Matchers.eq;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 import java.time.Instant;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
-import static org.junit.Assert.*;
-import static com.godaddy.vps4.credit.VirtualMachineCredit.Builder;
-import static org.mockito.Matchers.eq;
-import static org.mockito.Mockito.mock;
-import static com.godaddy.vps4.credit.ECommCreditService.PlanFeatures;
-import static com.godaddy.vps4.credit.ECommCreditService.ProductMetaField;
-import static org.mockito.Mockito.when;
+import org.junit.Before;
+import org.junit.Test;
+
+import com.godaddy.vps4.vm.AccountStatus;
+import com.godaddy.vps4.vm.DataCenter;
+import com.godaddy.vps4.vm.DataCenterService;
 
 
 public class BuilderTest {
     final private DataCenterService dataCenterService = mock(DataCenterService.class);
 
     private Map<String, String> planFeatures;
-    final int tier = 10;
-    final int managedLevel = 1;
-    final int monitoring = 1;
-    final String operatingSystem = "linux";
-    final String controlPanel = "cpanel";
+    private final int tier = 10;
+    private final int managedLevel = 1;
+    private final int monitoring = 1;
+    private final String operatingSystem = "linux";
+    private final String controlPanel = "cpanel";
 
     private Map<String, String> productMeta;
     private final int dcId = 1;
@@ -55,10 +57,12 @@ public class BuilderTest {
         productMeta.put(ProductMetaField.FULLY_MANAGED_EMAIL_SENT.toString(), fullyManagedEmailSent.toString());
         productMeta.put(ProductMetaField.PLAN_CHANGE_PENDING.toString(), planChangePending.toString());
         productMeta.put(ProductMetaField.PRODUCT_ID.toString(), productId.toString());
+        productMeta.put(ProductMetaField.ABUSE_SUSPENDED_FLAG.toString(), String.valueOf(false));
+        productMeta.put(ProductMetaField.BILLING_SUSPENDED_FLAG.toString(), String.valueOf(false));
     }
 
     @Test
-    public void withAccountGuid() throws Exception {
+    public void withAccountGuid() {
         UUID orionGuid = UUID.randomUUID();
         VirtualMachineCredit credit = new Builder(dataCenterService)
             .withAccountGuid(orionGuid.toString()).build();
@@ -66,13 +70,13 @@ public class BuilderTest {
     }
 
     @Test
-    public void withoutAccountGuid() throws Exception {
+    public void withoutAccountGuid() {
         VirtualMachineCredit credit = new Builder(dataCenterService).build();
         assertNull(credit.getOrionGuid());
     }
 
     @Test
-    public void withShopperID() throws Exception {
+    public void withShopperID() {
         String shopperId = "testShopper";
         VirtualMachineCredit credit = new Builder(dataCenterService)
             .withShopperID(shopperId).build();
@@ -80,13 +84,13 @@ public class BuilderTest {
     }
 
     @Test
-    public void withoutShopperID() throws Exception {
+    public void withoutShopperID() {
         VirtualMachineCredit credit = new Builder(dataCenterService).build();
         assertNull(credit.getShopperId());
     }
 
     @Test
-    public void withResellerID() throws Exception {
+    public void withResellerID() {
         String resellerId = "123";
         VirtualMachineCredit credit = new Builder(dataCenterService)
                 .withResellerID(resellerId).build();
@@ -94,27 +98,27 @@ public class BuilderTest {
     }
 
     @Test
-    public void withoutResellerID() throws Exception {
+    public void withoutResellerID() {
         VirtualMachineCredit credit = new Builder(dataCenterService).build();
         assertNull(credit.getResellerId());
     }
 
     @Test
-    public void havingAccountStatus() throws Exception {
-        Account.Status status = Account.Status.active;
+    public void havingAccountStatus() {
+        AccountStatus status = AccountStatus.ACTIVE;
         VirtualMachineCredit credit = new Builder(dataCenterService)
             .withAccountStatus(status).build();
         assertEquals(AccountStatus.ACTIVE, credit.getAccountStatus());
     }
 
     @Test
-    public void withoutAccountStatus() throws Exception {
+    public void withoutAccountStatus() {
         VirtualMachineCredit credit = new Builder(dataCenterService).build();
         assertNull(credit.getAccountStatus());
     }
 
     @Test
-    public void planFeatures() throws Exception {
+    public void planFeatures() {
         VirtualMachineCredit credit = new Builder(dataCenterService)
             .withPlanFeatures(planFeatures).build();
         assertEquals(tier, credit.getTier());
@@ -125,7 +129,7 @@ public class BuilderTest {
     }
 
     @Test
-    public void withProductMeta() throws Exception {
+    public void withProductMeta() {
         VirtualMachineCredit credit = new Builder(dataCenterService)
                 .withProductMeta(productMeta).build();
         assertEquals(dc, credit.getDataCenter());
@@ -133,6 +137,8 @@ public class BuilderTest {
         assertEquals(fullyManagedEmailSent, credit.isFullyManagedEmailSent());
         assertEquals(planChangePending, credit.isPlanChangePending());
         assertEquals(productId, credit.getProductId());
+        assertFalse(credit.isAbuseSuspendedFlagSet());
+        assertFalse(credit.isBillingSuspendedFlagSet());
     }
 
 

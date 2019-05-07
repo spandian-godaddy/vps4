@@ -1,5 +1,8 @@
 package com.godaddy.vps4.web.vm;
 
+import org.apache.commons.lang3.builder.ReflectionToStringBuilder;
+import org.apache.commons.lang3.builder.ToStringStyle;
+
 import com.godaddy.hfs.vm.Vm;
 
 public class VirtualMachineDetails {
@@ -26,7 +29,7 @@ public class VirtualMachineDetails {
 
     @Override
     public String toString() {
-        return "Vm [vmId=" + vmId + ", status=" + status + ", running=" + running + ", useable=" + useable + "]";
+        return ReflectionToStringBuilder.toString(this, ToStringStyle.MULTI_LINE_STYLE);
     }
 
 }

@@ -25,22 +25,34 @@ public class Vps4ApiWithCertAuthClientModule extends AbstractModule {
 
         // VM Snapshot endpoint
         bind(VmSnapshotService.class)
-            .toProvider(getClientCertAuthServiceProvider(VmSnapshotService.class, baseUrlConfigPropName, this.clientCertKeyPath, this.clientCertPath))
-            .in(Singleton.class);
+                .toProvider(getClientCertAuthServiceProvider(VmSnapshotService.class, baseUrlConfigPropName,
+                        this.clientCertKeyPath, this.clientCertPath))
+                .in(Singleton.class);
 
         // VM endpoint
         bind(VmService.class)
-            .toProvider(getClientCertAuthServiceProvider(VmService.class, baseUrlConfigPropName, this.clientCertKeyPath, this.clientCertPath))
-            .in(Singleton.class);
+                .toProvider(
+                        getClientCertAuthServiceProvider(VmService.class, baseUrlConfigPropName, this.clientCertKeyPath,
+                                this.clientCertPath))
+                .in(Singleton.class);
 
         // VM Support User endpoint
         bind(VmSupportUserService.class)
-            .toProvider(getClientCertAuthServiceProvider(VmSupportUserService.class, baseUrlConfigPropName, this.clientCertKeyPath, this.clientCertPath))
-            .in(Singleton.class);
+                .toProvider(getClientCertAuthServiceProvider(VmSupportUserService.class, baseUrlConfigPropName,
+                        this.clientCertKeyPath, this.clientCertPath))
+                .in(Singleton.class);
 
         // VM Zombie endpoint
         bind(VmZombieService.class)
-            .toProvider(getClientCertAuthServiceProvider(VmZombieService.class, baseUrlConfigPropName, this.clientCertKeyPath, this.clientCertPath))
-            .in(Singleton.class);
+                .toProvider(getClientCertAuthServiceProvider(VmZombieService.class, baseUrlConfigPropName,
+                        this.clientCertKeyPath, this.clientCertPath))
+                .in(Singleton.class);
+
+        // VM Suspend and Reinstate endpoint
+        bind(VmSuspendReinstateService.class)
+                .toProvider(getClientCertAuthServiceProvider(VmSuspendReinstateService.class, baseUrlConfigPropName,
+                        this.clientCertKeyPath, this.clientCertPath))
+                .in(Singleton.class);
+
     }
 }

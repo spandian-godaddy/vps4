@@ -11,8 +11,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
-import com.godaddy.vps4.vm.DataCenterService;
-import gdg.hfs.vhfs.ecomm.Account;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -26,6 +24,7 @@ import com.godaddy.vps4.vm.Action;
 import com.godaddy.vps4.vm.ActionService;
 import com.godaddy.vps4.vm.ActionStatus;
 import com.godaddy.vps4.vm.ActionType;
+import com.godaddy.vps4.vm.DataCenterService;
 import com.godaddy.vps4.vm.VirtualMachine;
 import com.godaddy.vps4.vm.VirtualMachineService;
 import com.godaddy.vps4.web.Vps4Exception;
@@ -91,7 +90,7 @@ public class VmUpgradeResourceTest {
 
         return new VirtualMachineCredit.Builder(mock(DataCenterService.class))
             .withAccountGuid(UUID.randomUUID().toString())
-            .withAccountStatus(Account.Status.active)
+            .withAccountStatus(AccountStatus.ACTIVE)
             .withShopperID(user.getShopperId())
             .withProductMeta(productMeta)
             .withPlanFeatures(planFeatures)

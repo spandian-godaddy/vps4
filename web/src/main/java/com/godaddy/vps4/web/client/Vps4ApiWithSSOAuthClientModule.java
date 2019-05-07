@@ -15,16 +15,26 @@ public class Vps4ApiWithSSOAuthClientModule extends AbstractModule {
         install(new Vps4ClientModule());
 
         // VM Snapshot endpoint
-        bind(VmSnapshotService.class).toProvider(getSsoAuthServiceProvider(VmSnapshotService.class, baseUrlConfigPropName)).in(Singleton.class);
+        bind(VmSnapshotService.class)
+                .toProvider(getSsoAuthServiceProvider(VmSnapshotService.class, baseUrlConfigPropName))
+                .in(Singleton.class);
 
         // VM endpoint
-        bind(VmService.class).toProvider(getSsoAuthServiceProvider(VmService.class, baseUrlConfigPropName)).in(Singleton.class);
+        bind(VmService.class).toProvider(getSsoAuthServiceProvider(VmService.class, baseUrlConfigPropName))
+                .in(Singleton.class);
 
         // VM Support User endpoint
-        bind(VmSupportUserService.class).toProvider(getSsoAuthServiceProvider(VmSupportUserService.class, baseUrlConfigPropName)).in(Singleton.class);
+        bind(VmSupportUserService.class)
+                .toProvider(getSsoAuthServiceProvider(VmSupportUserService.class, baseUrlConfigPropName))
+                .in(Singleton.class);
 
         // VM Zombie resource endpoint
-        bind(VmZombieService.class).toProvider(getSsoAuthServiceProvider(VmZombieService.class, baseUrlConfigPropName)).in(Singleton.class);
+        bind(VmZombieService.class).toProvider(getSsoAuthServiceProvider(VmZombieService.class, baseUrlConfigPropName))
+                .in(Singleton.class);
 
+        // VM Suspend Reinstate endpoint
+        bind(VmSuspendReinstateService.class)
+                .toProvider(getSsoAuthServiceProvider(VmSuspendReinstateService.class, baseUrlConfigPropName))
+                .in(Singleton.class);
     }
 }

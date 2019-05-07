@@ -11,8 +11,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
-import com.godaddy.vps4.vm.DataCenterService;
-import gdg.hfs.vhfs.ecomm.Account;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.MockitoAnnotations;
@@ -21,6 +19,7 @@ import com.godaddy.vps4.credit.CreditService;
 import com.godaddy.vps4.credit.VirtualMachineCredit;
 import com.godaddy.vps4.monitoring.MonitoringNotificationService;
 import com.godaddy.vps4.vm.AccountStatus;
+import com.godaddy.vps4.vm.DataCenterService;
 import com.godaddy.vps4.vm.VirtualMachine;
 import com.godaddy.vps4.vm.VirtualMachineService;
 import com.google.inject.AbstractModule;
@@ -72,7 +71,7 @@ public class HandleMonitoringDownEventTest {
         Map<String, String> planFeatures = new HashMap<>();
         planFeatures.put("managed_level", String.valueOf(managedLevel));
         credit = new VirtualMachineCredit.Builder(mock(DataCenterService.class))
-                .withAccountStatus(Account.Status.valueOf(accountStatus.toString().toLowerCase()))
+                .withAccountStatus(accountStatus)
                 .withAccountGuid(testVm.orionGuid.toString())
                 .withPlanFeatures(planFeatures)
                 .build();

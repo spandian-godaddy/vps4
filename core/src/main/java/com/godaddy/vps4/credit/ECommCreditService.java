@@ -35,7 +35,9 @@ public class ECommCreditService implements CreditService {
         PROVISION_DATE,
         FULLY_MANAGED_EMAIL_SENT,
         PLAN_CHANGE_PENDING,
-        PURCHASED_AT;
+        PURCHASED_AT,
+        ABUSE_SUSPENDED_FLAG,
+        BILLING_SUSPENDED_FLAG;
 
         @Override
         public String toString() {
@@ -43,7 +45,7 @@ public class ECommCreditService implements CreditService {
         }
     }
 
-    enum PlanFeatures {
+    public enum PlanFeatures {
         TIER,
         MANAGED_LEVEL,
         MONITORING,
@@ -95,7 +97,7 @@ public class ECommCreditService implements CreditService {
                     .withPlanFeatures(account.plan_features)
                     .withProductMeta(account.product_meta)
                     .withAccountGuid(account.account_guid)
-                    .withAccountStatus(account.status)
+                    .withAccountStatus(AccountStatus.valueOf(account.status.name().toUpperCase()))
                     .withResellerID(account.reseller_id)
                     .withShopperID(getShopperId(account))
                     .build();
@@ -268,6 +270,16 @@ public class ECommCreditService implements CreditService {
         account.status = getEcommAccountStatus(accountStatus);
         logger.info("Updating status for credit {} to {}", orionGuid, accountStatus.toString().toLowerCase());
         ecommService.updateAccount(orionGuid.toString(), account);
+    }
+
+    @Override
+    public void setAbuseSuspendedFlag(UUID orionGuid, boolean value) {
+        updateProductMeta(orionGuid, ProductMetaField.ABUSE_SUSPENDED_FLAG, String.valueOf(value));
+    }
+
+    @Override
+    public void setBillingSuspendedFlag(UUID orionGuid, boolean value) {
+        updateProductMeta(orionGuid, ProductMetaField.BILLING_SUSPENDED_FLAG, String.valueOf(value));
     }
 
     private Account.Status getEcommAccountStatus(AccountStatus accountStatus) {

@@ -12,6 +12,10 @@
     - you can choose to use another IDE, like IntelliJ IDEA (Community Edition should be sufficient & does not require a license), but these specific instructions are catered for Eclipse setup
 - download Intellij Idea Ultimate edition IDE if that is your choice of IDE
     - you can get a godaddy license activation by logging into the jetbrains website with your godaddy email. This should provide you with a Toolbox subscription for several Jetbrains products.
+- setup code style settings for Intellij Idea 
+    - download the file in the url shown here to a local directory on your mac https://github.secureserver.net/vps4/intellijSettings/blob/master/codestyles/Default.xml
+    - Open Intellij Idea and click on File -> Import Settings and import the file. This will enable your import settings to match with the teams' preferences.
+    - Alternatively, you can point your Intellij Idea to the repo located at https://github.secureserver.net/vps4/intellijSettings.git by choosing File -> Settings Repo and using the URL for the settings repo.  
 - create maven settings file (be sure to get the password for line 22):
 > File: ~/.m2/settings.xml
 ```xml

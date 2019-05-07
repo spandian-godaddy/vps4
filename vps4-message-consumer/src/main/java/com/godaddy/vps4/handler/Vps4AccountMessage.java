@@ -10,13 +10,14 @@ public class Vps4AccountMessage extends JsonMessage {
 
     public UUID id;
     public UUID accountGuid;
-    String typePreFormat;
+    MessageNotificationType notificationType;
 
     public Vps4AccountMessage(ConsumerRecord<String, String> message) throws MessageHandlerException {
         super(message);
         id = UUID.fromString(value.get("id").toString());
-        typePreFormat = ((JSONObject) value.get("notification")).get("type").toString();
         accountGuid = UUID.fromString(((JSONObject) value.get("notification")).get("account_guid").toString());
+        String typePreFormat = ((JSONObject) value.get("notification")).get("type").toString();
+        notificationType = MessageNotificationType.valueOf(typePreFormat.toUpperCase());
     }
 
     @Override

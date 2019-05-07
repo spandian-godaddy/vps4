@@ -35,7 +35,7 @@ import com.godaddy.vps4.web.vm.VmRestoreResource;
 import com.godaddy.vps4.web.vm.VmSnapshotActionResource;
 import com.godaddy.vps4.web.vm.VmSnapshotResource;
 import com.godaddy.vps4.web.vm.VmSupportUserResource;
-import com.godaddy.vps4.web.vm.VmSuspendResource;
+import com.godaddy.vps4.web.vm.VmSuspendReinstateResource;
 import com.godaddy.vps4.web.vm.VmTroubleshootResource;
 import com.godaddy.vps4.web.vm.VmUpgradeResource;
 import com.godaddy.vps4.web.vm.VmZombieResource;
@@ -83,7 +83,7 @@ public class WebModule extends AbstractModule {
         bind(VmMessagingResource.class);
         bind(VmUpgradeResource.class);
         bind(ActionResource.class);
-        bind(VmSuspendResource.class);
+        bind(VmSuspendReinstateResource.class);
         bind(OrphanResource.class);
         bind(PlanResource.class);
         bind(AuditHfsVmResource.class);

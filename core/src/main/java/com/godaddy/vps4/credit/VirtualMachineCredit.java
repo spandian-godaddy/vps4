@@ -15,8 +15,6 @@ import com.godaddy.vps4.vm.AccountStatus;
 import com.godaddy.vps4.vm.DataCenter;
 import com.godaddy.vps4.vm.DataCenterService;
 
-import gdg.hfs.vhfs.ecomm.Account;
-
 public class VirtualMachineCredit {
     @JsonIgnore
     private static final Instant HERITAGE_CUT_OVER_DATE = Instant.parse("2099-05-01T00:00:00Z");
@@ -41,6 +39,8 @@ public class VirtualMachineCredit {
     private boolean planChangePending;
     private int pfid;
     private Instant purchasedAt;
+    private boolean abuseSuspendedFlag;
+    private boolean billingSuspendedFlag;
 
     private VirtualMachineCredit() {
     }
@@ -49,6 +49,16 @@ public class VirtualMachineCredit {
     public boolean isAccountSuspended() {
         return accountStatus == AccountStatus.SUSPENDED ||
                 accountStatus == AccountStatus.ABUSE_SUSPENDED;
+    }
+
+    @JsonIgnore
+    public boolean isAccountAbuseSuspended() {
+        return accountStatus == AccountStatus.ABUSE_SUSPENDED;
+    }
+
+    @JsonIgnore
+    public boolean isAccountBillingSuspended() {
+        return accountStatus == AccountStatus.SUSPENDED;
     }
 
     @JsonIgnore
@@ -77,7 +87,9 @@ public class VirtualMachineCredit {
     }
 
     @JsonIgnore
-    public Instant getPurchasedAt() { return purchasedAt; }
+    public Instant getPurchasedAt() {
+        return purchasedAt;
+    }
 
     private boolean isHeritage() {
         return (purchasedAt == null || purchasedAt.isBefore(HERITAGE_CUT_OVER_DATE)) && !isFullyManaged();
@@ -107,7 +119,6 @@ public class VirtualMachineCredit {
     public boolean isAccountActive() {
         return accountStatus == AccountStatus.ACTIVE;
     }
-
 
     @Override
     public String toString() {
@@ -174,6 +185,14 @@ public class VirtualMachineCredit {
         return pfid;
     }
 
+    public boolean isAbuseSuspendedFlagSet() {
+        return abuseSuspendedFlag;
+    }
+
+    public boolean isBillingSuspendedFlagSet() {
+        return billingSuspendedFlag;
+    }
+
     public static class Builder {
         private Map<String, String> planFeatures;
         private Map<String, String> productMeta;
@@ -212,7 +231,7 @@ public class VirtualMachineCredit {
             return this;
         }
 
-        public Builder withAccountStatus(Account.Status accountStatus) {
+        public Builder withAccountStatus(AccountStatus accountStatus) {
             this.accountStatus = AccountStatus.valueOf(accountStatus.name().toUpperCase());
             return this;
         }
@@ -235,6 +254,11 @@ public class VirtualMachineCredit {
         private Instant getDateFromProductMeta(String metaFieldName) {
             String date = productMeta.get(metaFieldName);
             return (date != null) ? Instant.parse(date) : null;
+        }
+
+        private boolean getFlagFromProductMeta(String productMetaFieldName) {
+            return productMeta.containsKey(productMetaFieldName) &&
+                    Boolean.parseBoolean(productMeta.get(productMetaFieldName));
         }
 
         public VirtualMachineCredit build() {
@@ -260,6 +284,8 @@ public class VirtualMachineCredit {
                         productMeta.get(ProductMetaField.PLAN_CHANGE_PENDING.toString()));
                 credit.dataCenter = getDataCenter();
                 credit.productId = getProductId();
+                credit.abuseSuspendedFlag = getFlagFromProductMeta(ProductMetaField.ABUSE_SUSPENDED_FLAG.toString());
+                credit.billingSuspendedFlag = getFlagFromProductMeta(ProductMetaField.BILLING_SUSPENDED_FLAG.toString());
             }
 
             credit.shopperId = this.shopperId;

@@ -12,6 +12,7 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.function.Function;
 
+import com.godaddy.vps4.vm.AccountStatus;
 import com.godaddy.vps4.vm.DataCenterService;
 import gdg.hfs.vhfs.ecomm.Account;
 import org.junit.Test;
@@ -47,7 +48,7 @@ public class Vps4PlanChangeTest {
 
         VirtualMachineCredit credit = new VirtualMachineCredit.Builder(mock(DataCenterService.class))
                 .withAccountGuid(UUID.randomUUID().toString())
-                .withAccountStatus(Account.Status.active)
+                .withAccountStatus(AccountStatus.ACTIVE)
                 .withShopperID("someShopper")
                 .withProductMeta(productMeta)
                 .withPlanFeatures(planFeatures)

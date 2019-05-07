@@ -14,8 +14,9 @@ import com.godaddy.vps4.orchestration.sysadmin.Vps4SetHostname;
 import com.godaddy.vps4.orchestration.sysadmin.Vps4SetPassword;
 import com.godaddy.vps4.orchestration.sysadmin.Vps4ToggleAdmin;
 import com.godaddy.vps4.orchestration.vm.UnlicenseControlPanel;
-import com.godaddy.vps4.orchestration.vm.Vps4AbuseSuspendDedicated;
-import com.godaddy.vps4.orchestration.vm.Vps4AbuseSuspendVm;
+import com.godaddy.vps4.orchestration.vm.Vps4ReinstateServer;
+import com.godaddy.vps4.orchestration.vm.Vps4SuspendDedServer;
+import com.godaddy.vps4.orchestration.vm.Vps4SuspendServer;
 import com.godaddy.vps4.orchestration.vm.Vps4AddIpAddress;
 import com.godaddy.vps4.orchestration.vm.Vps4CancelAction;
 import com.godaddy.vps4.orchestration.vm.Vps4DeleteAllScheduledJobsForVm;
@@ -29,8 +30,7 @@ import com.godaddy.vps4.orchestration.vm.Vps4RebootDedicated;
 import com.godaddy.vps4.orchestration.vm.Vps4RebuildDedicated;
 import com.godaddy.vps4.orchestration.vm.Vps4RebuildVm;
 import com.godaddy.vps4.orchestration.vm.Vps4RecordScheduledJobForVm;
-import com.godaddy.vps4.orchestration.vm.Vps4ReinstateDedicated;
-import com.godaddy.vps4.orchestration.vm.Vps4ReinstateVm;
+import com.godaddy.vps4.orchestration.vm.Vps4ReinstateDedServer;
 import com.godaddy.vps4.orchestration.vm.Vps4RemoveSupportUsersFromDatabase;
 import com.godaddy.vps4.orchestration.vm.Vps4RestartVm;
 import com.godaddy.vps4.orchestration.vm.Vps4RestoreVm;
@@ -83,10 +83,10 @@ public class Vps4CommandModule extends AbstractModule {
         bind(WaitForMessageComplete.class);
         bind(Vps4CancelAction.class);
         bind(Vps4UpgradeVm.class);
-        bind(Vps4AbuseSuspendVm.class);
-        bind(Vps4AbuseSuspendDedicated.class);
-        bind(Vps4ReinstateVm.class);
-        bind(Vps4ReinstateDedicated.class);
         bind(Vps4EndRescue.class);
+        bind(Vps4SuspendServer.class);
+        bind(Vps4SuspendDedServer.class);
+        bind(Vps4ReinstateServer.class);
+        bind(Vps4ReinstateDedServer.class);
     }
 }

@@ -5,7 +5,6 @@ import java.util.Map;
 
 import javax.inject.Inject;
 
-import gdg.hfs.orchestration.CommandRetryStrategy;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -16,13 +15,14 @@ import com.godaddy.vps4.vm.VirtualMachineService;
 import gdg.hfs.orchestration.Command;
 import gdg.hfs.orchestration.CommandContext;
 import gdg.hfs.orchestration.CommandMetadata;
+import gdg.hfs.orchestration.CommandRetryStrategy;
 
 @CommandMetadata(
-        name="Vps4PlanChange",
-        requestType=Vps4PlanChange.Request.class,
+        name = "Vps4PlanChange",
+        requestType = Vps4PlanChange.Request.class,
         retryStrategy = CommandRetryStrategy.NEVER
 )
-public class Vps4PlanChange implements Command<Vps4PlanChange.Request, Void>{
+public class Vps4PlanChange implements Command<Vps4PlanChange.Request, Void> {
 
     private static final Logger logger = LoggerFactory.getLogger(Vps4PlanChange.class);
     private final VirtualMachineService virtualMachineService;
@@ -40,10 +40,13 @@ public class Vps4PlanChange implements Command<Vps4PlanChange.Request, Void>{
 
     @Override
     public Void execute(CommandContext context, Request req) {
-        if(req.vm.managedLevel != req.credit.getManagedLevel()) {
-            logger.info("Processing managed level change for account {} to level {}", req.vm.vmId, req.credit.getManagedLevel());
+        if (req.vm.managedLevel != req.credit.getManagedLevel()) {
+            logger.info("Processing managed level change for account {} to level {}", req.vm.vmId,
+                    req.credit.getManagedLevel());
             updateVirtualMachineManagedLevel(context, req);
         }
+        logger.info("Managed level {} for vm {} in request, matches managed level {} in credit. No action taken.",
+                req.vm.managedLevel, req.vm.vmId, req.credit.getManagedLevel());
         return null;
     }
 

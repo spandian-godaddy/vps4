@@ -89,7 +89,7 @@ public class ECommCreditServiceTest {
     }
 
     @Test
-    public void testGetCreditIncludesDataCenter(){
+    public void testGetCreditIncludesDataCenter() {
         DataCenter dc = new DataCenter(1, "phx3");
         account.product_meta.put("data_center", String.valueOf(dc.dataCenterId));
         when(ecommService.getAccount(orionGuid.toString())).thenReturn(account);
@@ -99,7 +99,7 @@ public class ECommCreditServiceTest {
     }
 
     @Test
-    public void testGetCreditIncludesProductId(){
+    public void testGetCreditIncludesProductId() {
         UUID vmId = UUID.randomUUID();
         account.product_meta.put("product_id", vmId.toString());
         when(ecommService.getAccount(orionGuid.toString())).thenReturn(account);
@@ -122,7 +122,7 @@ public class ECommCreditServiceTest {
         creditService.getVirtualMachineCredit(orionGuid);
     }
 
-    @Test(expected=RuntimeException.class)
+    @Test(expected = RuntimeException.class)
     public void testGetCreditSqlExceptionThrown() {
         markCreditClaimed();
         when(ecommService.getAccount(orionGuid.toString())).thenReturn(account);
@@ -178,7 +178,7 @@ public class ECommCreditServiceTest {
     @Test
     public void testGetCreditsForAccountNotFound() throws Exception {
         when(ecommService.getAccount(orionGuid.toString()))
-            .thenThrow(new RuntimeException("Fake account not found"));
+                .thenThrow(new RuntimeException("Fake account not found"));
         VirtualMachineCredit credit = creditService.getVirtualMachineCredit(orionGuid);
 
         assertNull(credit);
@@ -319,7 +319,7 @@ public class ECommCreditServiceTest {
         markCreditClaimed();
         when(ecommService.getAccount(orionGuid.toString())).thenReturn(account);
         when(ecommService.updateProductMetadata(eq(orionGuid.toString()), any(MetadataUpdate.class)))
-            .thenThrow(new WebApplicationException());
+                .thenThrow(new WebApplicationException());
         UUID someVmId = UUID.randomUUID();
         creditService.unclaimVirtualMachineCredit(orionGuid, someVmId);
 
@@ -341,7 +341,8 @@ public class ECommCreditServiceTest {
     public void testGetProductMeta() {
         when(ecommService.getAccount(orionGuid.toString())).thenReturn(account);
         Map<ProductMetaField, String> productMeta = creditService.getProductMeta(orionGuid);
-        assertEquals(account.product_meta.get(ProductMetaField.PRODUCT_ID.toString()), productMeta.get(ProductMetaField.PRODUCT_ID));
+        assertEquals(account.product_meta.get(ProductMetaField.PRODUCT_ID.toString()),
+                     productMeta.get(ProductMetaField.PRODUCT_ID));
     }
 
     @Test
@@ -368,12 +369,36 @@ public class ECommCreditServiceTest {
         mapStatusToHfs.put(AccountStatus.SUSPENDED, Account.Status.suspended);
 
         ArgumentCaptor<Account> argument = ArgumentCaptor.forClass(Account.class);
-        mapStatusToHfs.forEach((k,v) -> {
+        mapStatusToHfs.forEach((k, v) -> {
             creditService.setStatus(orionGuid, k);
             verify(ecommService, atLeastOnce()).updateAccount(eq(orionGuid.toString()), argument.capture());
             assertEquals(v, argument.getValue().status);
         });
-
     }
 
+    @Test
+    public void testSetAbuseSuspendedFlag() {
+        when(ecommService.getAccount(orionGuid.toString())).thenReturn(account);
+
+        ProductMetaField field = ProductMetaField.ABUSE_SUSPENDED_FLAG;
+        creditService.updateProductMeta(orionGuid, field, "true");
+
+        ArgumentCaptor<MetadataUpdate> argument = ArgumentCaptor.forClass(MetadataUpdate.class);
+        verify(ecommService).updateProductMetadata(eq(orionGuid.toString()), argument.capture());
+        assertNull(argument.getValue().from.get(field.toString()));
+        assertEquals("true", argument.getValue().to.get(field.toString()));
+    }
+
+    @Test
+    public void testSetBillingSuspendedFlag() {
+        when(ecommService.getAccount(orionGuid.toString())).thenReturn(account);
+
+        ProductMetaField field = ProductMetaField.BILLING_SUSPENDED_FLAG;
+        creditService.updateProductMeta(orionGuid, field, "true");
+
+        ArgumentCaptor<MetadataUpdate> argument = ArgumentCaptor.forClass(MetadataUpdate.class);
+        verify(ecommService).updateProductMetadata(eq(orionGuid.toString()), argument.capture());
+        assertNull(argument.getValue().from.get(field.toString()));
+        assertEquals("true", argument.getValue().to.get(field.toString()));
+    }
 }

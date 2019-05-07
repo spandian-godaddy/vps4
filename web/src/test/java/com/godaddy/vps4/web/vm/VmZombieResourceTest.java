@@ -17,21 +17,27 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
-import com.godaddy.vps4.vm.*;
-import gdg.hfs.vhfs.ecomm.Account;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
+import org.mockito.Matchers;
 
 import com.godaddy.vps4.credit.CreditService;
 import com.godaddy.vps4.credit.VirtualMachineCredit;
 import com.godaddy.vps4.security.GDUserMock;
+import com.godaddy.vps4.vm.AccountStatus;
+import com.godaddy.vps4.vm.Action;
+import com.godaddy.vps4.vm.ActionService;
+import com.godaddy.vps4.vm.ActionStatus;
+import com.godaddy.vps4.vm.ActionType;
+import com.godaddy.vps4.vm.DataCenterService;
+import com.godaddy.vps4.vm.VirtualMachine;
+import com.godaddy.vps4.vm.VirtualMachineService;
 import com.godaddy.vps4.web.Vps4Exception;
 import com.godaddy.vps4.web.security.GDUser;
 
 import gdg.hfs.orchestration.CommandService;
 import gdg.hfs.orchestration.CommandState;
-import org.mockito.Matchers;
 
 public class VmZombieResourceTest {
 
@@ -89,7 +95,7 @@ public class VmZombieResourceTest {
 
         VirtualMachineCredit credit = new VirtualMachineCredit.Builder(mock(DataCenterService.class))
                 .withAccountGuid(orionGuid.toString())
-                .withAccountStatus(Account.Status.valueOf(accountStatus.toString().toLowerCase()))
+                .withAccountStatus(accountStatus)
                 .withShopperID(user.getShopperId())
                 .withProductMeta(productMeta)
                 .withPlanFeatures(planFeatures)

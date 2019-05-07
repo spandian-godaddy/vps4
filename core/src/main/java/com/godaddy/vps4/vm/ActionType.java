@@ -41,7 +41,8 @@ public enum ActionType {
     RESCHEDULE_MANUAL_SNAPSHOT(32),
     DELETE_MANUAL_SNAPSHOT_SCHEDULE(33),
     RESCUE(34),
-    END_RESCUE(35);
+    END_RESCUE(35),
+    BILLING_SUSPEND(36);
 
     private final int typeId;
 

@@ -164,4 +164,25 @@ public class VirtualMachineCreditTest {
         assertFalse(credit.isHeritageManaged());
     }
 
+    @Test
+    public void isAbuseSuspendedFlagSet() throws Exception {
+        Map<String, String> productMeta = new HashMap<>();
+        productMeta.put(ECommCreditService.ProductMetaField.ABUSE_SUSPENDED_FLAG.toString(), String.valueOf(true));
+
+        VirtualMachineCredit credit = new VirtualMachineCredit.Builder(mock(DataCenterService.class))
+                .withProductMeta(productMeta)
+                .build();
+        assertTrue(credit.isAbuseSuspendedFlagSet());
+    }
+
+    @Test
+    public void isBillingSuspendedFlagSet() throws Exception {
+        Map<String, String> productMeta = new HashMap<>();
+        productMeta.put(ECommCreditService.ProductMetaField.BILLING_SUSPENDED_FLAG.toString(), String.valueOf(true));
+
+        VirtualMachineCredit credit = new VirtualMachineCredit.Builder(mock(DataCenterService.class))
+                .withProductMeta(productMeta)
+                .build();
+        assertTrue(credit.isBillingSuspendedFlagSet());
+    }
 }

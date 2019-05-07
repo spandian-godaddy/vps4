@@ -3,7 +3,7 @@ package com.godaddy.vps4.orchestration.vm;
 import javax.inject.Inject;
 
 import com.godaddy.vps4.credit.CreditService;
-import com.godaddy.vps4.orchestration.hfs.vm.RescueVm;
+import com.godaddy.vps4.orchestration.hfs.vm.EndRescueVm;
 import com.godaddy.vps4.vm.ActionService;
 
 import gdg.hfs.orchestration.CommandContext;
@@ -11,21 +11,21 @@ import gdg.hfs.orchestration.CommandMetadata;
 import gdg.hfs.orchestration.CommandRetryStrategy;
 
 @CommandMetadata(
-        name="Vps4AbuseSuspendDedicated",
-        requestType=VmActionRequest.class,
+        name="Vps4ReinstateDedServer",
+        requestType=Vps4ReinstateServer.Request.class,
         responseType=Void.class,
         retryStrategy = CommandRetryStrategy.NEVER
     )
-public class Vps4AbuseSuspendDedicated extends Vps4AbuseSuspendVm {
+public class Vps4ReinstateDedServer extends Vps4ReinstateServer {
 
     @Inject
-    public Vps4AbuseSuspendDedicated(ActionService actionService, CreditService creditService) {
+    public Vps4ReinstateDedServer(ActionService actionService, CreditService creditService) {
         super(actionService, creditService);
     }
 
     @Override
-    protected void suspendVm(CommandContext context, VmActionRequest request) {
-        context.execute(RescueVm.class, request.virtualMachine.hfsVmId);
+    protected void reinstateVm(CommandContext context, Vps4ReinstateServer.Request request) {
+        context.execute(EndRescueVm.class, request.virtualMachine.hfsVmId);
     }
 
 }

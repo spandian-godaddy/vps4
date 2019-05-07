@@ -1,26 +1,25 @@
 package com.godaddy.vps4.phase2;
 
+import static org.mockito.Mockito.mock;
+
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
-import com.godaddy.vps4.vm.DataCenterService;
-import gdg.hfs.vhfs.ecomm.Account;
 import org.mockito.Mockito;
 
+import com.godaddy.hfs.vm.Vm;
+import com.godaddy.hfs.vm.VmService;
 import com.godaddy.vps4.credit.CreditService;
 import com.godaddy.vps4.credit.VirtualMachineCredit;
 import com.godaddy.vps4.security.GDUserMock;
 import com.godaddy.vps4.vm.AccountStatus;
+import com.godaddy.vps4.vm.DataCenterService;
 import com.google.inject.AbstractModule;
 
 import gdg.hfs.orchestration.CommandGroupSpec;
 import gdg.hfs.orchestration.CommandService;
 import gdg.hfs.orchestration.CommandState;
-import com.godaddy.hfs.vm.Vm;
-import com.godaddy.hfs.vm.VmService;
-
-import static org.mockito.Mockito.mock;
 
 public class Phase2ExternalsModule extends AbstractModule {
     private final static CreditService creditService = mock(CreditService.class);
@@ -48,13 +47,13 @@ public class Phase2ExternalsModule extends AbstractModule {
         Map<String, String> planFeatures = new HashMap<>();
         planFeatures.put("tier", String.valueOf(10));
         planFeatures.put("managed_level", String.valueOf(0));
-        planFeatures.put("control_panel_type", String.valueOf("myh"));
-        planFeatures.put("operatingsystem", String.valueOf("linux"));
+        planFeatures.put("control_panel_type", "myh");
+        planFeatures.put("operatingsystem", "linux");
         planFeatures.put("monitoring", String.valueOf(1));
 
         VirtualMachineCredit credit = new VirtualMachineCredit.Builder(mock(DataCenterService.class))
                 .withAccountGuid(UUID.randomUUID().toString())
-                .withAccountStatus(Account.Status.valueOf(accountStatus.toString().toLowerCase()))
+                .withAccountStatus(accountStatus)
                 .withShopperID(GDUserMock.DEFAULT_SHOPPER)
                 .withPlanFeatures(planFeatures)
                 .build();
@@ -62,7 +61,7 @@ public class Phase2ExternalsModule extends AbstractModule {
         Mockito.when(creditService.getVirtualMachineCredit(Mockito.any())).thenReturn(credit);
     }
 
-    public static void mockHfsVm(String status) {
+    static void mockHfsVm(String status) {
         Vm hfsVm = new Vm();
         hfsVm.status = status;
         hfsVm.vmId = 98765;

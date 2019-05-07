@@ -9,7 +9,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.lang.reflect.Method;
-import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -17,8 +17,6 @@ import java.util.UUID;
 
 import javax.ws.rs.NotFoundException;
 
-import com.godaddy.vps4.vm.DataCenterService;
-import gdg.hfs.vhfs.ecomm.Account;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -28,6 +26,7 @@ import com.godaddy.vps4.credit.ECommCreditService.ProductMetaField;
 import com.godaddy.vps4.credit.VirtualMachineCredit;
 import com.godaddy.vps4.security.GDUserMock;
 import com.godaddy.vps4.vm.AccountStatus;
+import com.godaddy.vps4.vm.DataCenterService;
 import com.godaddy.vps4.web.Vps4NoShopperException;
 import com.godaddy.vps4.web.credit.CreditResource;
 import com.godaddy.vps4.web.credit.CreditResource.CreateCreditRequest;
@@ -43,7 +42,7 @@ public class CreditResourceTest {
     private GDUser user;
     private UUID orionGuid = UUID.randomUUID();
     private VirtualMachineCredit vmCredit;
-    CreditService creditService = mock(CreditService.class);
+    private CreditService creditService = mock(CreditService.class);
 
 
     private Injector injector = Guice.createInjector(
@@ -66,12 +65,11 @@ public class CreditResourceTest {
     }
 
     private VirtualMachineCredit createVmCredit(AccountStatus accountStatus) {
-        VirtualMachineCredit credit = new VirtualMachineCredit.Builder(mock(DataCenterService.class))
+        return new VirtualMachineCredit.Builder(mock(DataCenterService.class))
                 .withAccountGuid(orionGuid.toString())
-                .withAccountStatus(Account.Status.valueOf(accountStatus.toString().toLowerCase()))
+                .withAccountStatus(accountStatus)
                 .withShopperID(user.getShopperId())
                 .build();
-        return credit;
     }
 
     @Before
@@ -80,7 +78,7 @@ public class CreditResourceTest {
         vmCredit = createVmCredit(AccountStatus.ACTIVE);
         when(creditService.getVirtualMachineCredit(orionGuid)).thenReturn(vmCredit);
         when(creditService.getUnclaimedVirtualMachineCredits("validUserShopperId"))
-                     .thenReturn(Arrays.asList(vmCredit));
+                     .thenReturn(Collections.singletonList(vmCredit));
     }
 
     @Test
@@ -133,7 +131,7 @@ public class CreditResourceTest {
     public void testGetSuspendedCredits() {
         VirtualMachineCredit suspendedCredit = createVmCredit(AccountStatus.SUSPENDED);
         when(creditService.getVirtualMachineCredits(GDUserMock.DEFAULT_SHOPPER))
-                .thenReturn(Arrays.asList(suspendedCredit));
+                .thenReturn(Collections.singletonList(suspendedCredit));
         List<VirtualMachineCredit> credits = getCreditResource().getCredits(true);
         Assert.assertTrue(credits.contains(suspendedCredit));
     }

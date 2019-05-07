@@ -13,7 +13,6 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.io.IOException;
-import java.time.Instant;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
@@ -22,8 +21,17 @@ import javax.ws.rs.InternalServerErrorException;
 import javax.ws.rs.ProcessingException;
 import javax.ws.rs.ServiceUnavailableException;
 
+import org.apache.http.conn.HttpHostConnectException;
+import org.apache.kafka.clients.consumer.ConsumerRecord;
+import org.json.simple.JSONObject;
+import org.junit.Before;
+import org.junit.Test;
+import org.mockito.ArgumentCaptor;
+import org.mockito.Mockito;
+
 import com.godaddy.hfs.config.Config;
 import com.godaddy.vps4.credit.CreditService;
+import com.godaddy.vps4.credit.ECommCreditService.PlanFeatures;
 import com.godaddy.vps4.credit.ECommCreditService.ProductMetaField;
 import com.godaddy.vps4.credit.VirtualMachineCredit;
 import com.godaddy.vps4.messaging.MissingShopperIdException;
@@ -35,16 +43,9 @@ import com.godaddy.vps4.vm.DataCenterService;
 import com.godaddy.vps4.vm.ServerSpec;
 import com.godaddy.vps4.vm.VirtualMachine;
 import com.godaddy.vps4.vm.VirtualMachineService;
+import com.godaddy.vps4.vm.VmAction;
+import com.godaddy.vps4.web.client.VmSuspendReinstateService;
 import com.godaddy.vps4.web.client.VmZombieService;
-
-import gdg.hfs.vhfs.ecomm.Account;
-import org.apache.http.conn.HttpHostConnectException;
-import org.apache.kafka.clients.consumer.ConsumerRecord;
-import org.json.simple.JSONObject;
-import org.junit.Before;
-import org.junit.Test;
-import org.mockito.ArgumentCaptor;
-import org.mockito.Mockito;
 
 import gdg.hfs.orchestration.CommandGroupSpec;
 import gdg.hfs.orchestration.CommandService;
@@ -57,16 +58,18 @@ public class Vps4AccountMessageHandlerTest {
     private ActionService vmActionServiceMock = mock(ActionService.class);
     private CommandService commandServiceMock = mock(CommandService.class);
     private DataCenterService dcService = mock(DataCenterService.class);
-    private VmZombieService vmZombieService = mock(VmZombieService.class);
+    private VmZombieService vmZombieServiceMock = mock(VmZombieService.class);
+    private VmSuspendReinstateService vmSuspendReinstateService = mock(VmSuspendReinstateService.class);
     private Config configMock = mock(Config.class);
     private Vps4MessagingService messagingServiceMock = mock(Vps4MessagingService.class);
+    private VmAction vmAction = mock(VmAction.class);
 
     private UUID orionGuid;
     private VirtualMachine vm;
 
     @Before
     public void setupTest() {
-        when(dcService.getDataCenter(5)).thenReturn(new DataCenter(5,"testDataCenter"));
+        when(dcService.getDataCenter(5)).thenReturn(new DataCenter(5, "testDataCenter"));
         when(configMock.get("monitoring.nodeping.account.id")).thenReturn("0");
 
         orionGuid = UUID.randomUUID();
@@ -75,7 +78,7 @@ public class Vps4AccountMessageHandlerTest {
         vmSpec.tier = 10;
 
         vm = new VirtualMachine(UUID.randomUUID(), 123L, orionGuid,
-                321L, vmSpec, "TestVm", null, null, null, null, null, null, 0, UUID.randomUUID());
+                                321L, vmSpec, "TestVm", null, null, null, null, null, null, 0, UUID.randomUUID());
         when(vmServiceMock.getVirtualMachine(vm.vmId)).thenReturn(vm);
 
         CommandState command = new CommandState();
@@ -83,32 +86,64 @@ public class Vps4AccountMessageHandlerTest {
         when(commandServiceMock.executeCommand(anyObject())).thenReturn(command);
     }
 
+    private void mockVmUpgradeCredit(AccountStatus accountStatus, UUID productId) {
+        mockVmCredit(accountStatus, productId, 20, 0, "myh", false, false);
+    }
+
+    private void mockVmUpgradeCreditWithAbuseSuspendFlag(AccountStatus accountStatus, UUID productId) {
+        mockVmCredit(accountStatus, productId, 20, 0, "myh", true, false);
+    }
+
+    private void mockVmUpgradeCreditWithBillingSuspendFlag(AccountStatus accountStatus, UUID productId) {
+        mockVmCredit(accountStatus, productId, 20, 0, "myh", false, true);
+    }
+
+    private void mockVmUpgradeCreditWithAbuseAndBillingSuspendFlag(AccountStatus accountStatus, UUID productId) {
+        mockVmCredit(accountStatus, productId, 20, 0, "myh", true, true);
+    }
+
     private void mockVmCredit(AccountStatus accountStatus, UUID productId) {
-        mockVmCredit(accountStatus, productId, 10, 0, "myh");
+        mockVmCredit(accountStatus, productId, 10, 0, "myh", false, false);
+    }
+
+    private void mockAbuseSuspendedVmCredit(AccountStatus accountStatus, UUID productId) {
+        mockVmCredit(accountStatus, productId, 10, 0, "myh", true, false);
+    }
+
+    private void mockBillingSuspendedVmCredit(AccountStatus accountStatus, UUID productId) {
+        mockVmCredit(accountStatus, productId, 10, 0, "myh", false, true);
+    }
+
+    private void mockAbuseAndBillingSuspendedVmCredit(AccountStatus accountStatus, UUID productId) {
+        mockVmCredit(accountStatus, productId, 10, 0, "myh", true, true);
     }
 
     private void mockFullManagedVmCredit(AccountStatus accountStatus, UUID productId) {
-        mockVmCredit(accountStatus, productId, 10, 2, "cpanel");
+        mockVmCredit(accountStatus, productId, 10, 2, "cpanel", false, false);
     }
 
-    private void mockVmCredit(AccountStatus accountStatus, UUID productId, int tier, int managedLevel, String controlPanel) {
+    private void mockVmCredit(AccountStatus accountStatus, UUID productId, int tier, int managedLevel,
+                              String controlPanel, boolean abuseSuspendFlag, boolean billingSuspendedFlag) {
         Map<String, String> planFeatures = new HashMap<>();
-        planFeatures.put("tier", String.valueOf(tier));
-        planFeatures.put("managed_level", String.valueOf(managedLevel));
-        planFeatures.put("control_panel_type", String.valueOf(controlPanel));
+        planFeatures.put(PlanFeatures.TIER.toString(), String.valueOf(tier));
+        planFeatures.put(PlanFeatures.MANAGED_LEVEL.toString(), String.valueOf(managedLevel));
+        planFeatures.put(PlanFeatures.CONTROL_PANEL_TYPE.toString(), String.valueOf(controlPanel));
 
         Map<String, String> productMeta = new HashMap<>();
-        if (productId != null)
-            productMeta.put("product_id", productId.toString());
-        productMeta.put("data_center", String.valueOf(5));
+        if (productId != null) {
+            productMeta.put(ProductMetaField.PRODUCT_ID.toString(), productId.toString());
+        }
+        productMeta.put(ProductMetaField.DATA_CENTER.toString(), String.valueOf(5));
+        productMeta.put(ProductMetaField.ABUSE_SUSPENDED_FLAG.toString(), String.valueOf(abuseSuspendFlag));
+        productMeta.put(ProductMetaField.BILLING_SUSPENDED_FLAG.toString(), String.valueOf(billingSuspendedFlag));
 
         VirtualMachineCredit vmCredit = new VirtualMachineCredit.Builder(mock(DataCenterService.class))
-            .withAccountGuid(orionGuid.toString())
-            .withAccountStatus(Account.Status.valueOf(accountStatus.toString().toLowerCase()))
-            .withShopperID("TestShopper")
-            .withProductMeta(productMeta)
-            .withPlanFeatures(planFeatures)
-            .build();
+                .withAccountGuid(orionGuid.toString())
+                .withAccountStatus(accountStatus)
+                .withShopperID("TestShopper")
+                .withProductMeta(productMeta)
+                .withPlanFeatures(planFeatures)
+                .build();
         when(creditServiceMock.getVirtualMachineCredit(orionGuid)).thenReturn(vmCredit);
     }
 
@@ -138,12 +173,13 @@ public class Vps4AccountMessageHandlerTest {
         ConsumerRecord<String, String> record = mock(ConsumerRecord.class);
         when(record.value()).thenReturn(message);
         MessageHandler handler = new Vps4AccountMessageHandler(vmServiceMock,
-                creditServiceMock,
-                vmActionServiceMock,
-                commandServiceMock,
-                messagingServiceMock,
-                vmZombieService,
-                configMock);
+                                                               creditServiceMock,
+                                                               vmActionServiceMock,
+                                                               commandServiceMock,
+                                                               messagingServiceMock,
+                                                               vmZombieServiceMock,
+                                                               vmSuspendReinstateService,
+                                                               configMock);
         handler.handleMessage(record);
     }
 
@@ -155,8 +191,8 @@ public class Vps4AccountMessageHandlerTest {
     @Test(expected = IllegalArgumentException.class)
     public void testHandleMessageBadValues() throws MessageHandlerException {
         callHandleMessage("{\"id\":\"not a guid\","
-                + "\"notification\":{\"type\":[\"added\"],"
-                + "\"account_guid\":\"e36b4412-ec52-420f-86fd-cf5332cf0c88\"}}");
+                          + "\"notification\":{\"type\":[\"added\"],"
+                          + "\"account_guid\":\"e36b4412-ec52-420f-86fd-cf5332cf0c88\"}}");
     }
 
     @Test
@@ -169,7 +205,8 @@ public class Vps4AccountMessageHandlerTest {
     }
 
     @Test
-    public void testHandleMessageAddedCausesNoChange() throws MessageHandlerException, MissingShopperIdException, IOException {
+    public void testHandleMessageAddedCausesNoChange()
+            throws MessageHandlerException, MissingShopperIdException, IOException {
         mockVmCredit(AccountStatus.ACTIVE, null);
         callHandleMessage(createTestKafkaMessage("added"));
 
@@ -183,13 +220,15 @@ public class Vps4AccountMessageHandlerTest {
         mockFullManagedVmCredit(AccountStatus.ACTIVE, vm.vmId);
         when(messagingServiceMock.sendFullyManagedEmail("TestShopper", "cpanel")).thenReturn("messageId");
         when(configMock.get("vps4MessageHandler.processFullyManagedEmails")).thenReturn("true");
-        Mockito.doNothing().when(creditServiceMock).updateProductMeta(orionGuid, ProductMetaField.FULLY_MANAGED_EMAIL_SENT, "true");
+        Mockito.doNothing().when(creditServiceMock)
+               .updateProductMeta(orionGuid, ProductMetaField.FULLY_MANAGED_EMAIL_SENT, "true");
 
         callHandleMessage(createTestKafkaMessage("added"));
 
         verify(creditServiceMock, times(1)).getVirtualMachineCredit(anyObject());
         verify(messagingServiceMock, times(1)).sendFullyManagedEmail("TestShopper", "cpanel");
-        verify(creditServiceMock, times(1)).updateProductMeta(orionGuid, ProductMetaField.FULLY_MANAGED_EMAIL_SENT, "true");
+        verify(creditServiceMock, times(1))
+                .updateProductMeta(orionGuid, ProductMetaField.FULLY_MANAGED_EMAIL_SENT, "true");
 
         ArgumentCaptor<CommandGroupSpec> argument = ArgumentCaptor.forClass(CommandGroupSpec.class);
         verify(commandServiceMock, times(1)).executeCommand(argument.capture());
@@ -197,7 +236,8 @@ public class Vps4AccountMessageHandlerTest {
     }
 
     @Test
-    public void testDontProcessFullyManagedEmails() throws MessageHandlerException, MissingShopperIdException, IOException {
+    public void testDontProcessFullyManagedEmails()
+            throws MessageHandlerException, MissingShopperIdException, IOException {
         mockFullManagedVmCredit(AccountStatus.ACTIVE, null);
         when(messagingServiceMock.sendFullyManagedEmail("TestShopper", "cpanel")).thenReturn("messageId");
         when(configMock.get("vps4MessageHandler.processFullyManagedEmails")).thenReturn("false");
@@ -209,7 +249,8 @@ public class Vps4AccountMessageHandlerTest {
     }
 
     @Test
-    public void testFullyManagedEmailAlreadySent() throws MessageHandlerException, MissingShopperIdException, IOException {
+    public void testFullyManagedEmailAlreadySent()
+            throws MessageHandlerException, MissingShopperIdException, IOException {
         VirtualMachineCredit vmCredit = new VirtualMachineCredit.Builder(dcService).build();
 
         when(creditServiceMock.getVirtualMachineCredit(orionGuid)).thenReturn(vmCredit);
@@ -229,6 +270,8 @@ public class Vps4AccountMessageHandlerTest {
 
         verify(creditServiceMock, times(1)).getVirtualMachineCredit(anyObject());
         verify(commandServiceMock, never()).executeCommand(anyObject());
+        verify(vmSuspendReinstateService, never()).abuseSuspendAccount(any(UUID.class));
+        verify(vmSuspendReinstateService, never()).billingSuspendAccount(any(UUID.class));
     }
 
     @Test
@@ -237,7 +280,8 @@ public class Vps4AccountMessageHandlerTest {
         mockVmCredit(AccountStatus.ACTIVE, null);
         callHandleMessage(createTestKafkaMessage("added"));
 
-        verify(creditServiceMock, times(1)).updateProductMeta(eq(orionGuid), eq(ProductMetaField.PURCHASED_AT), any(String.class));
+        verify(creditServiceMock, times(1))
+                .updateProductMeta(eq(orionGuid), eq(ProductMetaField.PURCHASED_AT), any(String.class));
     }
 
     @Test
@@ -253,20 +297,18 @@ public class Vps4AccountMessageHandlerTest {
     public void testHandleMessageSuspended() throws MessageHandlerException {
         mockVmCredit(AccountStatus.SUSPENDED, vm.vmId);
         callHandleMessage(createTestKafkaMessage("suspended"));
+        when(vmSuspendReinstateService.billingSuspendAccount(any(UUID.class))).thenReturn(vmAction);
 
-        ArgumentCaptor<CommandGroupSpec> argument = ArgumentCaptor.forClass(CommandGroupSpec.class);
-        verify(commandServiceMock, times(1)).executeCommand(argument.capture());
-        assertEquals("Vps4StopVm", argument.getValue().commands.get(0).command);
+        verify(vmSuspendReinstateService, times(1)).billingSuspendAccount(eq(vm.vmId));
     }
 
     @Test
     public void testHandleMessageAbuseSuspended() throws MessageHandlerException {
         mockVmCredit(AccountStatus.ABUSE_SUSPENDED, vm.vmId);
-        callHandleMessage(createTestKafkaMessage("suspended"));
+        callHandleMessage(createTestKafkaMessage("abuse_suspended"));
+        when(vmSuspendReinstateService.abuseSuspendAccount(any(UUID.class))).thenReturn(vmAction);
 
-        ArgumentCaptor<CommandGroupSpec> argument = ArgumentCaptor.forClass(CommandGroupSpec.class);
-        verify(commandServiceMock, times(1)).executeCommand(argument.capture());
-        assertEquals("Vps4StopVm", argument.getValue().commands.get(0).command);
+        verify(vmSuspendReinstateService, times(1)).abuseSuspendAccount(eq(vm.vmId));
     }
 
     @Test
@@ -279,12 +321,151 @@ public class Vps4AccountMessageHandlerTest {
     }
 
     @Test
-    public void testHandleMessageCausesPlanChange() throws MessageHandlerException {
+    public void testHandleMessageReinstated() throws MessageHandlerException {
         mockVmCredit(AccountStatus.ACTIVE, vm.vmId);
         callHandleMessage(createTestKafkaMessage("reinstated"));
 
         verify(creditServiceMock, times(1)).getVirtualMachineCredit(anyObject());
-        verify(commandServiceMock, times(1)).executeCommand(anyObject());
+        verify(vmSuspendReinstateService, times(1)).reinstateBillingSuspendedAccount(eq(vm.vmId));
+    }
+
+    @Test
+    public void testHandleMessageUpgraded() throws MessageHandlerException {
+        mockVmUpgradeCredit(AccountStatus.ACTIVE, vm.vmId);
+        callHandleMessage(createTestKafkaMessage("updated"));
+
+        verify(creditServiceMock, times(1)).getVirtualMachineCredit(anyObject());
+        verify(vmSuspendReinstateService, never()).reinstateAbuseSuspendedAccount(eq(vm.vmId));
+        verify(vmSuspendReinstateService, never()).reinstateBillingSuspendedAccount(eq(vm.vmId));
+        verify(creditServiceMock, never()).setStatus(eq(orionGuid), eq(AccountStatus.ABUSE_SUSPENDED));
+        verify(creditServiceMock, times(1))
+                .updateProductMeta(eq(orionGuid), eq(ProductMetaField.PLAN_CHANGE_PENDING), eq(String.valueOf(true)));
+        ArgumentCaptor<CommandGroupSpec> argument = ArgumentCaptor.forClass(CommandGroupSpec.class);
+        verify(commandServiceMock, times(1)).executeCommand(argument.capture());
+        assertEquals("Vps4PlanChange", argument.getValue().commands.get(0).command);
+    }
+
+    @Test
+    public void testAbuseSuspendFlaggedVmIsNotUpgraded() throws MessageHandlerException {
+        mockVmUpgradeCreditWithAbuseSuspendFlag(AccountStatus.ABUSE_SUSPENDED, vm.vmId);
+        callHandleMessage(createTestKafkaMessage("updated"));
+
+        verify(creditServiceMock, times(1)).getVirtualMachineCredit(anyObject());
+        verify(vmSuspendReinstateService, never()).reinstateAbuseSuspendedAccount(eq(vm.vmId));
+        verify(vmSuspendReinstateService, never()).reinstateBillingSuspendedAccount(eq(vm.vmId));
+        verify(creditServiceMock, times(1)).setStatus(eq(orionGuid), eq(AccountStatus.ABUSE_SUSPENDED));
+        verify(creditServiceMock, times(1))
+                .updateProductMeta(eq(orionGuid), eq(ProductMetaField.PLAN_CHANGE_PENDING), eq(String.valueOf(true)));
+        verify(commandServiceMock, never()).executeCommand(anyObject());
+    }
+
+    @Test
+    public void testAbuseAndBillingSuspendFlaggedVmIsNotUpgraded() throws MessageHandlerException {
+        mockVmUpgradeCreditWithAbuseAndBillingSuspendFlag(AccountStatus.SUSPENDED, vm.vmId);
+        callHandleMessage(createTestKafkaMessage("updated"));
+
+        verify(creditServiceMock, times(1)).getVirtualMachineCredit(anyObject());
+        verify(vmSuspendReinstateService, never()).reinstateAbuseSuspendedAccount(eq(vm.vmId));
+        verify(vmSuspendReinstateService, times(1)).reinstateBillingSuspendedAccount(eq(vm.vmId));
+        verify(creditServiceMock, times(1)).setStatus(eq(orionGuid), eq(AccountStatus.ABUSE_SUSPENDED));
+        verify(creditServiceMock, times(1))
+                .updateProductMeta(eq(orionGuid), eq(ProductMetaField.PLAN_CHANGE_PENDING), eq(String.valueOf(true)));
+        verify(commandServiceMock, never()).executeCommand(anyObject());
+    }
+
+    @Test
+    public void testBillingSuspendFlaggedVmIsUpgraded() throws MessageHandlerException {
+        mockVmUpgradeCreditWithBillingSuspendFlag(AccountStatus.SUSPENDED, vm.vmId);
+        callHandleMessage(createTestKafkaMessage("updated"));
+
+        verify(creditServiceMock, times(1)).getVirtualMachineCredit(anyObject());
+        verify(vmSuspendReinstateService, never()).reinstateAbuseSuspendedAccount(eq(vm.vmId));
+        verify(vmSuspendReinstateService, times(1)).reinstateBillingSuspendedAccount(eq(vm.vmId));
+        verify(creditServiceMock, never()).setStatus(eq(orionGuid), eq(AccountStatus.ABUSE_SUSPENDED));
+        verify(creditServiceMock, times(1))
+                .updateProductMeta(eq(orionGuid), eq(ProductMetaField.PLAN_CHANGE_PENDING), eq(String.valueOf(true)));
+        ArgumentCaptor<CommandGroupSpec> argument = ArgumentCaptor.forClass(CommandGroupSpec.class);
+        verify(commandServiceMock, times(1)).executeCommand(argument.capture());
+        assertEquals("Vps4PlanChange", argument.getValue().commands.get(0).command);
+    }
+
+    @Test
+    public void testAbuseSuspendFlaggedVmIsNotRenewed() throws MessageHandlerException {
+        mockAbuseSuspendedVmCredit(AccountStatus.ABUSE_SUSPENDED, vm.vmId);
+        callHandleMessage(createTestKafkaMessage("renewed"));
+
+        verify(creditServiceMock, times(1)).getVirtualMachineCredit(anyObject());
+        verify(vmSuspendReinstateService, never()).reinstateAbuseSuspendedAccount(eq(vm.vmId));
+        verify(vmSuspendReinstateService, never()).reinstateBillingSuspendedAccount(eq(vm.vmId));
+        verify(creditServiceMock, times(1)).setStatus(eq(orionGuid), eq(AccountStatus.ABUSE_SUSPENDED));
+        verify(commandServiceMock, never()).executeCommand(anyObject());
+    }
+
+    @Test
+    public void testAbuseAndBillingSuspendFlaggedVmIsNotRenewed() throws MessageHandlerException {
+        mockAbuseAndBillingSuspendedVmCredit(AccountStatus.SUSPENDED, vm.vmId);
+        callHandleMessage(createTestKafkaMessage("renewed"));
+
+        verify(creditServiceMock, times(1)).getVirtualMachineCredit(anyObject());
+        verify(vmSuspendReinstateService, never()).reinstateAbuseSuspendedAccount(eq(vm.vmId));
+        verify(vmSuspendReinstateService, times(1)).reinstateBillingSuspendedAccount(eq(vm.vmId));
+        verify(creditServiceMock, times(1)).setStatus(eq(orionGuid), eq(AccountStatus.ABUSE_SUSPENDED));
+        verify(commandServiceMock, never()).executeCommand(anyObject());
+    }
+
+    @Test
+    public void testHandleMessageRenewed() throws MessageHandlerException {
+        mockVmCredit(AccountStatus.ACTIVE, vm.vmId);
+        callHandleMessage(createTestKafkaMessage("renewed"));
+
+        verify(creditServiceMock, times(1)).getVirtualMachineCredit(anyObject());
+        verify(vmSuspendReinstateService, never()).reinstateAbuseSuspendedAccount(eq(vm.vmId));
+        verify(vmSuspendReinstateService, never()).reinstateBillingSuspendedAccount(eq(vm.vmId));
+        verify(creditServiceMock, never()).setStatus(eq(orionGuid), eq(AccountStatus.ABUSE_SUSPENDED));
+        ArgumentCaptor<CommandGroupSpec> argument = ArgumentCaptor.forClass(CommandGroupSpec.class);
+        verify(commandServiceMock, times(1)).executeCommand(argument.capture());
+        assertEquals("Vps4PlanChange", argument.getValue().commands.get(0).command);
+    }
+
+    @Test
+    public void testBillingSuspendedVmCanBeRenewed() throws MessageHandlerException {
+        mockBillingSuspendedVmCredit(AccountStatus.SUSPENDED, vm.vmId);
+        callHandleMessage(createTestKafkaMessage("renewed"));
+
+        verify(creditServiceMock, times(1)).getVirtualMachineCredit(anyObject());
+        verify(vmSuspendReinstateService, never()).reinstateAbuseSuspendedAccount(eq(vm.vmId));
+        verify(creditServiceMock, never()).setStatus(eq(orionGuid), eq(AccountStatus.ABUSE_SUSPENDED));
+        verify(vmSuspendReinstateService, times(1)).reinstateBillingSuspendedAccount(eq(vm.vmId));
+        ArgumentCaptor<CommandGroupSpec> argument = ArgumentCaptor.forClass(CommandGroupSpec.class);
+        verify(commandServiceMock, times(1)).executeCommand(argument.capture());
+        assertEquals("Vps4PlanChange", argument.getValue().commands.get(0).command);
+    }
+
+    @Test
+    public void testAbuseSuspendedAccountCanBeRemoved() throws MessageHandlerException {
+        mockAbuseSuspendedVmCredit(AccountStatus.ABUSE_SUSPENDED, vm.vmId);
+        callHandleMessage(createTestKafkaMessage("removed"));
+
+        verify(creditServiceMock, times(1)).getVirtualMachineCredit(anyObject());
+        verify(vmZombieServiceMock, times(1)).zombieVm(eq(vm.vmId));
+    }
+
+    @Test
+    public void testAbuseAndBillingSuspendedAccountCanBeRemoved() throws MessageHandlerException {
+        mockAbuseAndBillingSuspendedVmCredit(AccountStatus.SUSPENDED, vm.vmId);
+        callHandleMessage(createTestKafkaMessage("removed"));
+
+        verify(creditServiceMock, times(1)).getVirtualMachineCredit(anyObject());
+        verify(vmZombieServiceMock, times(1)).zombieVm(eq(vm.vmId));
+    }
+
+    @Test
+    public void testBillingSuspendedAccountCanBeRemoved() throws MessageHandlerException {
+        mockBillingSuspendedVmCredit(AccountStatus.SUSPENDED, vm.vmId);
+        callHandleMessage(createTestKafkaMessage("removed"));
+
+        verify(creditServiceMock, times(1)).getVirtualMachineCredit(anyObject());
+        verify(vmZombieServiceMock, times(1)).zombieVm(eq(vm.vmId));
     }
 
     @Test
@@ -292,7 +473,7 @@ public class Vps4AccountMessageHandlerTest {
         mockVmCredit(AccountStatus.REMOVED, vm.vmId);
         callHandleMessage(createTestKafkaMessage("removed"));
 
-        verify(vmZombieService, times(1)).zombieVm(vm.vmId);
+        verify(vmZombieServiceMock, times(1)).zombieVm(vm.vmId);
     }
 
     @Test
@@ -302,18 +483,18 @@ public class Vps4AccountMessageHandlerTest {
 
         callHandleMessage(createTestKafkaMessage("removed"));
 
-        verify(vmZombieService, times(0)).zombieVm(vm.vmId);
+        verify(vmZombieServiceMock, times(0)).zombieVm(vm.vmId);
     }
 
     @Test
     public void accountRemovalThrowsRetryableExceptionWhenApiDown() {
         mockVmCredit(AccountStatus.REMOVED, vm.vmId);
-        doThrow(new ProcessingException(mock(HttpHostConnectException.class))).when(vmZombieService).zombieVm(any(UUID.class));
+        doThrow(new ProcessingException(mock(HttpHostConnectException.class))).when(vmZombieServiceMock)
+                                                                              .zombieVm(any(UUID.class));
 
         try {
             callHandleMessage(createTestKafkaMessage("removed"));
-        }
-        catch (MessageHandlerException ex) {
+        } catch (MessageHandlerException ex) {
             assertTrue(ex.shouldRetry());
         }
     }
@@ -321,12 +502,11 @@ public class Vps4AccountMessageHandlerTest {
     @Test
     public void accountRemovalThrowsRetryableExceptionWhenOrchestrationEngineIsDown() {
         mockVmCredit(AccountStatus.REMOVED, vm.vmId);
-        doThrow(new InternalServerErrorException()).when(vmZombieService).zombieVm(any(UUID.class));
+        doThrow(new InternalServerErrorException()).when(vmZombieServiceMock).zombieVm(any(UUID.class));
 
         try {
             callHandleMessage(createTestKafkaMessage("removed"));
-        }
-        catch (MessageHandlerException ex) {
+        } catch (MessageHandlerException ex) {
             assertTrue(ex.shouldRetry());
         }
     }
@@ -334,12 +514,11 @@ public class Vps4AccountMessageHandlerTest {
     @Test
     public void accountRemovalThrowsRetryableExceptionWhenApiServiceUnavailable() {
         mockVmCredit(AccountStatus.REMOVED, vm.vmId);
-        doThrow(new ServiceUnavailableException()).when(vmZombieService).zombieVm(any(UUID.class));
+        doThrow(new ServiceUnavailableException()).when(vmZombieServiceMock).zombieVm(any(UUID.class));
 
         try {
             callHandleMessage(createTestKafkaMessage("removed"));
-        }
-        catch (MessageHandlerException ex) {
+        } catch (MessageHandlerException ex) {
             assertTrue(ex.shouldRetry());
         }
     }
@@ -347,19 +526,18 @@ public class Vps4AccountMessageHandlerTest {
     @Test
     public void accountRemovalThrowsRetryableExceptionIfDBIsDown() {
         mockVmCredit(AccountStatus.REMOVED, vm.vmId);
-        doThrow(new RuntimeException("Sql.foobar")).when(vmZombieService).zombieVm(any(UUID.class));
+        doThrow(new RuntimeException("Sql.foobar")).when(vmZombieServiceMock).zombieVm(any(UUID.class));
 
         try {
             callHandleMessage(createTestKafkaMessage("removed"));
-        }
-        catch (MessageHandlerException ex) {
+        } catch (MessageHandlerException ex) {
             assertTrue(ex.shouldRetry());
         }
     }
 
     @Test
     public void testHandleMessageCausesTierUpgradePending() throws MessageHandlerException {
-        mockVmCredit(AccountStatus.ACTIVE, vm.vmId, 20, 0, "myh");
+        mockVmCredit(AccountStatus.ACTIVE, vm.vmId, 20, 0, "myh", false, false);
         callHandleMessage(createTestKafkaMessage("updated"));
 
         verify(creditServiceMock, times(1)).updateProductMeta(orionGuid, ProductMetaField.PLAN_CHANGE_PENDING, "true");

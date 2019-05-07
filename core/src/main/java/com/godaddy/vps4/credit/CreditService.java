@@ -33,4 +33,8 @@ public interface CreditService {
     Map<ProductMetaField, String> getProductMeta(UUID orionGuid);
 
     void setStatus(UUID orionGuid, AccountStatus accountStatus);
+
+    void setAbuseSuspendedFlag(UUID orionGuid, boolean value);
+
+    void setBillingSuspendedFlag(UUID orionGuid, boolean value);
 }
