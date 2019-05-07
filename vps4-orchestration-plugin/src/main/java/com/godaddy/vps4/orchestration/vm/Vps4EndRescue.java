@@ -20,14 +20,9 @@ import gdg.hfs.orchestration.CommandRetryStrategy;
     )
 public class Vps4EndRescue extends ActionCommand<VmActionRequest, Void> {
 
-    final ActionService actionService;
-    final VmService vmService;
-
     @Inject
-    public Vps4EndRescue(ActionService actionService, VmService vmService) {
+    public Vps4EndRescue(ActionService actionService) {
         super(actionService);
-        this.actionService = actionService;
-        this.vmService = vmService;
     }
 
     @Override

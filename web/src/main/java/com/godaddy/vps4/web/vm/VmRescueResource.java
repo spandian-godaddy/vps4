@@ -33,10 +33,10 @@ import io.swagger.annotations.Api;
 @Consumes(MediaType.APPLICATION_JSON)
 public class VmRescueResource {
 
-    private GDUser user;
-    private VmResource vmResource;
-    private ActionService actionService;
-    private CommandService commandService;
+    private final VmResource vmResource;
+    private final ActionService actionService;
+    private final CommandService commandService;
+    private final GDUser user;
 
     @Inject
     public VmRescueResource(GDUser user, VmResource vmResource, ActionService actionService, CommandService commandService) {
@@ -49,14 +49,20 @@ public class VmRescueResource {
     @POST
     @Path("{vmId}/rescue")
     public VmAction rescue(@PathParam("vmId") UUID vmId) {
-        return new VmAction();
+        VirtualMachine vm = vmResource.getVm(vmId);
+        validateServerInCompatibleMode(vm.hfsVmId, "ACTIVE");
+        
+        VmActionRequest rescueRequest = new VmActionRequest();
+        rescueRequest.virtualMachine = vm;
+        return createActionAndExecute(actionService, commandService, vmId, ActionType.RESCUE, rescueRequest, 
+                "Vps4Rescue", user);
     }
 
     @POST
     @Path("{vmId}/endRescue")
     public VmAction endRescue(@PathParam("vmId") UUID vmId) {
         VirtualMachine vm = vmResource.getVm(vmId);
-        validateServerInRescueMode(vm.hfsVmId);
+        validateServerInCompatibleMode(vm.hfsVmId, "RESCUED");
 
         VmActionRequest endRescueRequest = new VmActionRequest();
         endRescueRequest.virtualMachine = vm;
@@ -64,10 +70,10 @@ public class VmRescueResource {
                 endRescueRequest, "Vps4EndRescue", user);
     }
 
-    private void validateServerInRescueMode(long hfsVmId) {
+    private void validateServerInCompatibleMode(long hfsVmId, String mode) {
         Vm hfsVm = vmResource.getVmFromVmVertical(hfsVmId);
-        if (!hfsVm.status.equals("RESCUED")) {
-            throw new Vps4Exception("INVALID_STATUS", "The server is not in Rescue Mode");
+        if (!hfsVm.status.equals(mode)) {
+            throw new Vps4Exception("INVALID_STATUS", String.format("The server is not in %s Mode", mode));
         }
     }
 

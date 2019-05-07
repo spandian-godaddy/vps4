@@ -45,7 +45,6 @@ public class VmRescueResourceTest {
         when(vmResource.getVm(vps4VmId)).thenReturn(vm);
 
         hfsVm = mock(Vm.class);
-        hfsVm.status = "RESCUED";
         when(vmResource.getVmFromVmVertical(hfsVmId)).thenReturn(hfsVm);
 
         Action rescueAction = mock(Action.class);
@@ -56,7 +55,27 @@ public class VmRescueResourceTest {
     }
 
     @Test
+    public void createsRescueAction() {
+        hfsVm.status = "ACTIVE";
+        rescueResource.rescue(vps4VmId);
+        verify(actionService).createAction(vps4VmId, ActionType.RESCUE, "{}", gdUser.getUsername());
+    }
+
+    @Test
+    public void throwsVps4ExceptionIfServerNotInActiveStatus() {
+        hfsVm.status = "RESCUED";
+        try {
+            rescueResource.rescue(vps4VmId);
+            fail();
+        } catch (Vps4Exception ex) {
+            assertEquals("INVALID_STATUS", ex.getId());
+        }
+        verify(actionService, never()).createAction(vps4VmId, ActionType.RESCUE, "{}", gdUser.getUsername());
+    }
+
+    @Test
     public void createsEndRescueAction() {
+        hfsVm.status = "RESCUED";
         rescueResource.endRescue(vps4VmId);
         verify(actionService).createAction(vps4VmId, ActionType.END_RESCUE, "{}", gdUser.getUsername());
     }

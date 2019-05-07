@@ -1,6 +1,6 @@
 package com.godaddy.vps4.orchestration.hfs.vm;
 
-import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertEquals;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.verify;
@@ -34,7 +34,7 @@ public class RescueVmTest {
         VmAction hfsRescueAction = mock(VmAction.class);
         when(vmService.rescueVm(hfsVmId)).thenReturn(hfsRescueAction);
 
-        assertNull(command.execute(context, hfsVmId));
+        assertEquals(hfsRescueAction, command.execute(context, hfsVmId));
         verify(vmService).rescueVm(hfsVmId);
         verify(context).execute(WaitForVmAction.class, hfsRescueAction);
     }

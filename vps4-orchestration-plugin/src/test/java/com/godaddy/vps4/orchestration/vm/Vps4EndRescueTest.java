@@ -6,7 +6,6 @@ import static org.mockito.Mockito.verify;
 
 import org.junit.Test;
 
-import com.godaddy.hfs.vm.VmService;
 import com.godaddy.vps4.orchestration.hfs.vm.EndRescueVm;
 import com.godaddy.vps4.vm.ActionService;
 import com.godaddy.vps4.vm.VirtualMachine;
@@ -16,9 +15,8 @@ import gdg.hfs.orchestration.CommandContext;
 public class Vps4EndRescueTest {
 
     private ActionService actionService = mock(ActionService.class);
-    private VmService vmService = mock(VmService.class);
 
-    private Vps4EndRescue command = new Vps4EndRescue(actionService, vmService);
+    private Vps4EndRescue command = new Vps4EndRescue(actionService);
     private CommandContext context = mock(CommandContext.class);
     private long hfsVmId = 42L;
 

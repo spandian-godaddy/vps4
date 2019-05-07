@@ -8,7 +8,7 @@ import com.godaddy.hfs.vm.VmService;
 import gdg.hfs.orchestration.Command;
 import gdg.hfs.orchestration.CommandContext;
 
-public class RescueVm implements Command<Long, Void> {
+public class RescueVm implements Command<Long, VmAction> {
 
     final VmService vmService;
 
@@ -18,11 +18,11 @@ public class RescueVm implements Command<Long, Void> {
     }
 
     @Override
-    public Void execute(CommandContext context, Long vmId) {
+    public VmAction execute(CommandContext context, Long vmId) {
 
         VmAction action = context.execute("RescueVmHfs", ctx -> vmService.rescueVm(vmId), VmAction.class);
         context.execute(WaitForVmAction.class, action);
 
-        return null;
+        return action;
     }
 }
