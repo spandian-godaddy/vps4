@@ -19,7 +19,6 @@ public class EndRescueVm implements Command<Long, Void> {
 
     @Override
     public Void execute(CommandContext context, Long vmId) {
-
         VmAction action = context.execute("EndRescueVmHfs", ctx -> vmService.endRescueVm(vmId), VmAction.class);
         context.execute(WaitForVmAction.class, action);
 

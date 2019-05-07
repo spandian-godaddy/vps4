@@ -1,5 +1,7 @@
 package com.godaddy.vps4.web.vm;
 
+import static com.godaddy.vps4.web.util.VmHelper.createActionAndExecute;
+
 import java.util.UUID;
 
 import javax.ws.rs.Consumes;
@@ -10,10 +12,18 @@ import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
 
+import com.godaddy.hfs.vm.Vm;
+import com.godaddy.vps4.orchestration.vm.VmActionRequest;
+import com.godaddy.vps4.vm.ActionService;
+import com.godaddy.vps4.vm.ActionType;
+import com.godaddy.vps4.vm.VirtualMachine;
 import com.godaddy.vps4.vm.VmAction;
 import com.godaddy.vps4.web.Vps4Api;
+import com.godaddy.vps4.web.Vps4Exception;
+import com.godaddy.vps4.web.security.GDUser;
 import com.google.inject.Inject;
 
+import gdg.hfs.orchestration.CommandService;
 import io.swagger.annotations.Api;
 
 @Vps4Api
@@ -23,8 +33,17 @@ import io.swagger.annotations.Api;
 @Consumes(MediaType.APPLICATION_JSON)
 public class VmRescueResource {
 
+    private GDUser user;
+    private VmResource vmResource;
+    private ActionService actionService;
+    private CommandService commandService;
+
     @Inject
-    public VmRescueResource() {
+    public VmRescueResource(GDUser user, VmResource vmResource, ActionService actionService, CommandService commandService) {
+        this.user = user;
+        this.vmResource = vmResource;
+        this.actionService = actionService;
+        this.commandService = commandService;
     }
 
     @POST
@@ -36,7 +55,20 @@ public class VmRescueResource {
     @POST
     @Path("{vmId}/endRescue")
     public VmAction endRescue(@PathParam("vmId") UUID vmId) {
-        return new VmAction();
+        VirtualMachine vm = vmResource.getVm(vmId);
+        validateServerInRescueMode(vm.hfsVmId);
+
+        VmActionRequest endRescueRequest = new VmActionRequest();
+        endRescueRequest.virtualMachine = vm;
+        return createActionAndExecute(actionService, commandService, vmId, ActionType.END_RESCUE,
+                endRescueRequest, "Vps4EndRescue", user);
+    }
+
+    private void validateServerInRescueMode(long hfsVmId) {
+        Vm hfsVm = vmResource.getVmFromVmVertical(hfsVmId);
+        if (!hfsVm.status.equals("RESCUE")) {
+            throw new Vps4Exception("INVALID_STATUS", "The server is not in Rescue Mode");
+        }
     }
 
     @GET

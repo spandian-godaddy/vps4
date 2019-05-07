@@ -2,16 +2,18 @@ package com.godaddy.vps4.web.util;
 
 import java.util.UUID;
 
+import org.json.simple.JSONObject;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.godaddy.vps4.orchestration.ActionRequest;
 import com.godaddy.vps4.vm.ActionService;
 import com.godaddy.vps4.vm.ActionType;
 import com.godaddy.vps4.vm.VmAction;
 import com.godaddy.vps4.web.security.GDUser;
+
 import gdg.hfs.orchestration.CommandService;
 import gdg.hfs.orchestration.CommandState;
-import org.json.simple.JSONObject;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public class VmHelper {
     private static final Logger logger = LoggerFactory.getLogger(VmHelper.class);
