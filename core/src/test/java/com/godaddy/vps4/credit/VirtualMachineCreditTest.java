@@ -1,7 +1,7 @@
 package com.godaddy.vps4.credit;
 
-import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.assertEquals;
 import static org.mockito.Mockito.mock;
 
 import java.time.Instant;
@@ -11,8 +11,10 @@ import java.util.Map;
 import org.junit.Test;
 
 import com.godaddy.vps4.vm.DataCenterService;
+import com.godaddy.vps4.credit.VirtualMachineCredit.EffectiveManagedLevel;
 
 public class VirtualMachineCreditTest {
+
     private Map<String, String> planFeatures(String controlPanel, String managedLevel){
         Map<String, String> planFeatures = new HashMap<>();
         planFeatures.put("control_panel_type", controlPanel);
@@ -27,142 +29,165 @@ public class VirtualMachineCreditTest {
     }
 
     @Test
-    public void isHeritageSelfManagedIfPurchasedAtNotSetWithoutControlPanel() throws Exception {
+    public void purchasedDateNotSetNoControlPanelManagedLevel0() throws Exception {
         VirtualMachineCredit credit = new VirtualMachineCredit.Builder(mock(DataCenterService.class))
                 .withPlanFeatures(planFeatures("MYH", "0"))
                 .build();
-        assertTrue(credit.isHeritageSelfManaged());
+        assertEquals(EffectiveManagedLevel.SELF_MANAGED_V1, credit.effectiveManagedLevel());
     }
 
     @Test
-    public void isHeritageSelfManagedIfPurchasedAtNotSetWithoutControlPanelFullyManaged() throws Exception {
+    public void purchasedDateNotSetNoControlPanelManagedLevel1() throws Exception {
+        VirtualMachineCredit credit = new VirtualMachineCredit.Builder(mock(DataCenterService.class))
+                .withPlanFeatures(planFeatures("MYH", "1"))
+                .build();
+        assertEquals(EffectiveManagedLevel.MANAGED_V2, credit.effectiveManagedLevel());
+    }
+
+    @Test
+    public void purchasedDateNotSetNoControlPanelManagedLevel2() throws Exception {
         VirtualMachineCredit credit = new VirtualMachineCredit.Builder(mock(DataCenterService.class))
                 .withPlanFeatures(planFeatures("MYH", "2"))
                 .build();
-        assertFalse(credit.isHeritageSelfManaged());
+        assertEquals(EffectiveManagedLevel.FULLY_MANAGED, credit.effectiveManagedLevel());
     }
 
     @Test
-    public void isHeritageSelfManagedIfAccountPurchasedBeforeCutOverDateWithoutControlPanel() throws Exception {
-        VirtualMachineCredit credit = new VirtualMachineCredit.Builder(mock(DataCenterService.class))
-                .withProductMeta(productMeta(Instant.MIN))
-                .withPlanFeatures(planFeatures("MYH", "0"))
-                .build();
-        assertTrue(credit.isHeritageSelfManaged());
-    }
-
-    @Test
-    public void isHeritageSelfManagedIfPurchasedAtNotSetWithControlPanel() throws Exception {
+    public void purchasedDateNotSetWithControlPanelManagedLevel0() throws Exception {
         VirtualMachineCredit credit = new VirtualMachineCredit.Builder(mock(DataCenterService.class))
                 .withPlanFeatures(planFeatures("CPANEL", "0"))
                 .build();
-        assertFalse(credit.isHeritageSelfManaged());
+        assertEquals(EffectiveManagedLevel.MANAGED_V1, credit.effectiveManagedLevel());
     }
 
     @Test
-    public void isHeritageSelfManagedIfAccountPurchasedBeforeCutOverDateWithControlPanel() throws Exception {
+    public void purchasedDateNotSetWithControlPanelManagedLevel1() throws Exception {
+        VirtualMachineCredit credit = new VirtualMachineCredit.Builder(mock(DataCenterService.class))
+                .withPlanFeatures(planFeatures("CPANEL", "1"))
+                .build();
+        assertEquals(EffectiveManagedLevel.MANAGED_V2, credit.effectiveManagedLevel());
+    }
+
+    @Test
+    public void purchasedDateNotSetWithControlPanelManagedLevel2() throws Exception {
+        VirtualMachineCredit credit = new VirtualMachineCredit.Builder(mock(DataCenterService.class))
+                .withPlanFeatures(planFeatures("CPANEL", "2"))
+                .build();
+        assertEquals(EffectiveManagedLevel.FULLY_MANAGED, credit.effectiveManagedLevel());
+    }
+
+
+    @Test
+    public void purchasedBeforeCutOffNoControlPanelManagedLevel0() throws Exception {
         VirtualMachineCredit credit = new VirtualMachineCredit.Builder(mock(DataCenterService.class))
                 .withProductMeta(productMeta(Instant.MIN))
-                .withPlanFeatures(planFeatures("PLESK", "0"))
-                .build();
-        assertFalse(credit.isHeritageSelfManaged());
-    }
-
-    @Test
-    public void isHeritageSelfManagedIfAccountPurchasedAfterCutOverDateWithoutControlPanel() throws Exception {
-        VirtualMachineCredit credit = new VirtualMachineCredit.Builder(mock(DataCenterService.class))
-                .withProductMeta(productMeta(Instant.MAX))
                 .withPlanFeatures(planFeatures("MYH", "0"))
                 .build();
-        assertFalse(credit.isHeritageSelfManaged());
+        assertEquals(EffectiveManagedLevel.SELF_MANAGED_V1, credit.effectiveManagedLevel());
     }
 
     @Test
-    public void isHeritageSelfManagedIfAccountPurchasedAfterCutOverDateWithControlPanel() throws Exception {
+    public void purchasedBeforeCutOffNoControlPanelManagedLevel1() throws Exception {
         VirtualMachineCredit credit = new VirtualMachineCredit.Builder(mock(DataCenterService.class))
-                .withProductMeta(productMeta(Instant.MAX))
-                .withPlanFeatures(planFeatures("PLESK", "0"))
+                .withProductMeta(productMeta(Instant.MIN))
+                .withPlanFeatures(planFeatures("MYH", "1"))
                 .build();
-        assertFalse(credit.isHeritageSelfManaged());
+        assertEquals(EffectiveManagedLevel.MANAGED_V2, credit.effectiveManagedLevel());
     }
 
     @Test
-    public void isHeritageSelfManagedIfAccountPurchasedBeforeCutOverDateWithoutControlPanelFullyManaged() throws Exception {
+    public void purchasedBeforeCutOffNoControlPanelManagedLevel2() throws Exception {
         VirtualMachineCredit credit = new VirtualMachineCredit.Builder(mock(DataCenterService.class))
                 .withProductMeta(productMeta(Instant.MIN))
                 .withPlanFeatures(planFeatures("MYH", "2"))
                 .build();
-        assertFalse(credit.isHeritageSelfManaged());
+        assertEquals(EffectiveManagedLevel.FULLY_MANAGED, credit.effectiveManagedLevel());
     }
 
     @Test
-    public void isHeritageManagedIfPurchasedAtNotSetWithoutControlPanel() throws Exception {
-        VirtualMachineCredit credit = new VirtualMachineCredit.Builder(mock(DataCenterService.class))
-                .withPlanFeatures(planFeatures("MYH", "0"))
-                .build();
-        assertFalse(credit.isHeritageManaged());
-    }
-
-    @Test
-    public void isHeritageManagedIfPurchasedAtNotSetWithoutControlPanelFullyManaged() throws Exception {
-        VirtualMachineCredit credit = new VirtualMachineCredit.Builder(mock(DataCenterService.class))
-                .withPlanFeatures(planFeatures("MYH", "2"))
-                .build();
-        assertFalse(credit.isHeritageManaged());
-    }
-
-    @Test
-    public void isHeritageManagedIfPurchasedAtNotSetWithControlPanel() throws Exception {
-        VirtualMachineCredit credit = new VirtualMachineCredit.Builder(mock(DataCenterService.class))
-                .withPlanFeatures(planFeatures("CPANEL", "0"))
-                .build();
-        assertTrue(credit.isHeritageManaged());
-    }
-
-    @Test
-    public void isHeritageManagedIfAccountPurchasedBeforeCutOverDateWithControlPanel() throws Exception {
+    public void purchasedBeforeCutOffWithControlPanelManagedLevel0() throws Exception {
         VirtualMachineCredit credit = new VirtualMachineCredit.Builder(mock(DataCenterService.class))
                 .withProductMeta(productMeta(Instant.MIN))
                 .withPlanFeatures(planFeatures("CPANEL", "0"))
                 .build();
-        assertTrue(credit.isHeritageManaged());
+        assertEquals(EffectiveManagedLevel.MANAGED_V1, credit.effectiveManagedLevel());
     }
 
     @Test
-    public void isHeritageManagedIfAccountPurchasedBeforeCutOverDateWithoutControlPanel() throws Exception {
+    public void purchasedBeforeCutOffWithControlPanelManagedLevel1() throws Exception {
         VirtualMachineCredit credit = new VirtualMachineCredit.Builder(mock(DataCenterService.class))
                 .withProductMeta(productMeta(Instant.MIN))
-                .withPlanFeatures(planFeatures("MYH", "0"))
+                .withPlanFeatures(planFeatures("PLESK", "1"))
                 .build();
-        assertFalse(credit.isHeritageManaged());
+        assertEquals(EffectiveManagedLevel.MANAGED_V2, credit.effectiveManagedLevel());
     }
 
     @Test
-    public void isHeritageManagedIfAccountPurchasedAfterCutOverDateWithoutControlPanel() throws Exception {
-        VirtualMachineCredit credit = new VirtualMachineCredit.Builder(mock(DataCenterService.class))
-                .withProductMeta(productMeta(Instant.MAX))
-                .withPlanFeatures(planFeatures("MYH", "0"))
-                .build();
-        assertFalse(credit.isHeritageManaged());
-    }
-
-    @Test
-    public void isHeritageManagedIfAccountPurchasedAfterCutOverDateWithControlPanel() throws Exception {
-        VirtualMachineCredit credit = new VirtualMachineCredit.Builder(mock(DataCenterService.class))
-                .withProductMeta(productMeta(Instant.MAX))
-                .withPlanFeatures(planFeatures("PLESK", "0"))
-                .build();
-        assertFalse(credit.isHeritageManaged());
-    }
-
-    @Test
-    public void isHeritageManagedIfAccountPurchasedBeforeCutOverDateWithControlPanelFullyManaged() throws Exception {
+    public void purchasedBeforeCutOffWithControlPanelManagedLevel2() throws Exception {
         VirtualMachineCredit credit = new VirtualMachineCredit.Builder(mock(DataCenterService.class))
                 .withProductMeta(productMeta(Instant.MIN))
                 .withPlanFeatures(planFeatures("CPANEL", "2"))
                 .build();
-        assertFalse(credit.isHeritageManaged());
+        assertEquals(EffectiveManagedLevel.FULLY_MANAGED, credit.effectiveManagedLevel());
     }
+
+
+
+    @Test
+    public void purchasedAfterCutOffNoControlPanelManagedLevel0() throws Exception {
+        VirtualMachineCredit credit = new VirtualMachineCredit.Builder(mock(DataCenterService.class))
+                .withProductMeta(productMeta(Instant.MAX))
+                .withPlanFeatures(planFeatures("MYH", "0"))
+                .build();
+        assertEquals(EffectiveManagedLevel.SELF_MANAGED_V2, credit.effectiveManagedLevel());
+    }
+
+    @Test
+    public void purchasedAfterCutOffNoControlPanelManagedLevel1() throws Exception {
+        VirtualMachineCredit credit = new VirtualMachineCredit.Builder(mock(DataCenterService.class))
+                .withProductMeta(productMeta(Instant.MAX))
+                .withPlanFeatures(planFeatures("MYH", "1"))
+                .build();
+        assertEquals(EffectiveManagedLevel.MANAGED_V2, credit.effectiveManagedLevel());
+    }
+
+    @Test
+    public void purchasedAfterCutOffNoControlPanelManagedLevel2() throws Exception {
+        VirtualMachineCredit credit = new VirtualMachineCredit.Builder(mock(DataCenterService.class))
+                .withProductMeta(productMeta(Instant.MAX))
+                .withPlanFeatures(planFeatures("MYH", "2"))
+                .build();
+        assertEquals(EffectiveManagedLevel.FULLY_MANAGED, credit.effectiveManagedLevel());
+    }
+
+    @Test
+    public void purchasedAfterCutOffWithControlPanelManagedLevel0() throws Exception {
+        VirtualMachineCredit credit = new VirtualMachineCredit.Builder(mock(DataCenterService.class))
+                .withProductMeta(productMeta(Instant.MAX))
+                .withPlanFeatures(planFeatures("CPANEL", "0"))
+                .build();
+        assertEquals(EffectiveManagedLevel.SELF_MANAGED_V2, credit.effectiveManagedLevel());
+    }
+
+    @Test
+    public void purchasedAfterCutOffWithControlPanelManagedLevel1() throws Exception {
+        VirtualMachineCredit credit = new VirtualMachineCredit.Builder(mock(DataCenterService.class))
+                .withProductMeta(productMeta(Instant.MAX))
+                .withPlanFeatures(planFeatures("PLESK", "1"))
+                .build();
+        assertEquals(EffectiveManagedLevel.MANAGED_V2, credit.effectiveManagedLevel());
+    }
+
+    @Test
+    public void purchasedAfterCutOffWithControlPanelManagedLevel2() throws Exception {
+        VirtualMachineCredit credit = new VirtualMachineCredit.Builder(mock(DataCenterService.class))
+                .withProductMeta(productMeta(Instant.MAX))
+                .withPlanFeatures(planFeatures("CPANEL", "2"))
+                .build();
+        assertEquals(EffectiveManagedLevel.FULLY_MANAGED, credit.effectiveManagedLevel());
+    }
+
+
 
     @Test
     public void isAbuseSuspendedFlagSet() throws Exception {

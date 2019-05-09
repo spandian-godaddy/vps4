@@ -17,7 +17,7 @@ import com.godaddy.vps4.vm.DataCenterService;
 
 public class VirtualMachineCredit {
     @JsonIgnore
-    private static final Instant HERITAGE_CUT_OVER_DATE = Instant.parse("2099-05-01T00:00:00Z");
+    private static final Instant MANAGED_LEVEL_V2_CUTOVER_DATE = Instant.parse("2099-05-01T00:00:00Z");
     private static final String MYH_CONTROL_PANEL = "MYH";
 
     private final int FULLY_MANAGED_LEVEL = 2;
@@ -44,6 +44,15 @@ public class VirtualMachineCredit {
 
     private VirtualMachineCredit() {
     }
+
+    public enum EffectiveManagedLevel{
+        SELF_MANAGED_V1,
+        SELF_MANAGED_V2,
+        MANAGED_V1,
+        MANAGED_V2,
+        FULLY_MANAGED
+    }
+
 
     @JsonIgnore
     public boolean isAccountSuspended() {
@@ -91,29 +100,37 @@ public class VirtualMachineCredit {
         return purchasedAt;
     }
 
-    private boolean isHeritage() {
-        return (purchasedAt == null || purchasedAt.isBefore(HERITAGE_CUT_OVER_DATE)) && !isFullyManaged();
+    private boolean purchasedBeforeMLV2CutoffDate() {
+        return (purchasedAt == null || purchasedAt.isBefore(MANAGED_LEVEL_V2_CUTOVER_DATE));
     }
 
-    @JsonProperty("isHeritageSelfManaged")
-    public boolean isHeritageSelfManaged() {
-        // Heritage self managed accounts are accounts that existed (purchased) before Ecomm
-        // created separate pfids for self-managed vs managed accounts and do not have a control panel.
-        // We want to make this determination (heritage or otherwise) because we want
-        // to continue providing self-managed as well as managed customers from this
-        // set the same experience as the new managed and the same features.
-        return isHeritage() && controlPanel.toUpperCase() == MYH_CONTROL_PANEL;
+    @JsonProperty("effectiveManagedLevel")
+    public EffectiveManagedLevel effectiveManagedLevel() {
+        EffectiveManagedLevel effectiveManagedLevel;
+        switch(managedLevel) {
+            case 2:
+                effectiveManagedLevel = EffectiveManagedLevel.FULLY_MANAGED;
+                break;
+            case 1:
+                effectiveManagedLevel = EffectiveManagedLevel.MANAGED_V2;
+                break;
+            default:
+                if(purchasedBeforeMLV2CutoffDate()){
+                    // determine level based on control panel
+                    if(controlPanel==null || MYH_CONTROL_PANEL.equalsIgnoreCase(controlPanel)){
+                        effectiveManagedLevel = EffectiveManagedLevel.SELF_MANAGED_V1;
+                    } else {
+                        effectiveManagedLevel = EffectiveManagedLevel.MANAGED_V1;
+                    }
+                } else {
+                    effectiveManagedLevel = EffectiveManagedLevel.SELF_MANAGED_V2;
+                }
+                break;
+        }
+        return effectiveManagedLevel;
+
     }
 
-    @JsonProperty("isHeritageManaged")
-    public boolean isHeritageManaged() {
-        // Heritage accounts are accounts that existed (purchased) before Ecomm
-        // created separate pfids for self-managed vs managed accounts and have a control panel.
-        // We want to make this determination (heritage or otherwise) because we want
-        // to continue providing self-managed as well as managed customers from this
-        // set the same experience as the new managed and the same features.
-        return isHeritage() && controlPanel.toUpperCase() != MYH_CONTROL_PANEL;
-    }
 
     @JsonIgnore
     public boolean isAccountActive() {
