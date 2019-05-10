@@ -2,6 +2,8 @@ package com.godaddy.vps4.web.vm;
 
 import static com.godaddy.vps4.web.util.VmHelper.createActionAndExecute;
 
+import java.util.Arrays;
+import java.util.List;
 import java.util.UUID;
 
 import javax.ws.rs.Consumes;
@@ -12,12 +14,16 @@ import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.godaddy.hfs.vm.Vm;
+import com.godaddy.hfs.vm.VmService;
 import com.godaddy.vps4.orchestration.vm.VmActionRequest;
+import com.godaddy.vps4.orchestration.vm.Vps4Rescue;
 import com.godaddy.vps4.vm.ActionService;
 import com.godaddy.vps4.vm.ActionType;
 import com.godaddy.vps4.vm.VirtualMachine;
 import com.godaddy.vps4.vm.VmAction;
+import com.godaddy.vps4.web.PaginatedResult;
 import com.godaddy.vps4.web.Vps4Api;
 import com.godaddy.vps4.web.Vps4Exception;
 import com.godaddy.vps4.web.security.GDUser;
@@ -37,13 +43,19 @@ public class VmRescueResource {
     private final ActionService actionService;
     private final CommandService commandService;
     private final GDUser user;
+    private final VmActionResource vmActionResource;
+    private static final ObjectMapper mapper = new ObjectMapper();
+    private final VmService vmService;
 
     @Inject
-    public VmRescueResource(GDUser user, VmResource vmResource, ActionService actionService, CommandService commandService) {
+    public VmRescueResource(GDUser user, VmResource vmResource, ActionService actionService,
+            CommandService commandService, VmActionResource vmActionResource, VmService vmService) {
         this.user = user;
         this.vmResource = vmResource;
         this.actionService = actionService;
         this.commandService = commandService;
+        this.vmActionResource = vmActionResource;
+        this.vmService = vmService;
     }
 
     @POST
@@ -51,10 +63,10 @@ public class VmRescueResource {
     public VmAction rescue(@PathParam("vmId") UUID vmId) {
         VirtualMachine vm = vmResource.getVm(vmId);
         validateServerInCompatibleMode(vm.hfsVmId, "ACTIVE");
-        
+
         VmActionRequest rescueRequest = new VmActionRequest();
         rescueRequest.virtualMachine = vm;
-        return createActionAndExecute(actionService, commandService, vmId, ActionType.RESCUE, rescueRequest, 
+        return createActionAndExecute(actionService, commandService, vmId, ActionType.RESCUE, rescueRequest,
                 "Vps4Rescue", user);
     }
 
@@ -80,6 +92,41 @@ public class VmRescueResource {
     @GET
     @Path("{vmId}/rescueCredentials")
     public RescueCredentials getRescueCredentials(@PathParam("vmId") UUID vmId) {
-        return new RescueCredentials("testUsername", "testPassword");
+        VirtualMachine vm = vmResource.getVm(vmId);
+        VmAction action = getLatestRescueAction(vmId);
+        if (action == null) {
+            return null;
+        }
+        com.godaddy.hfs.vm.VmAction hfsAction = getHfsVmAction(vm, action);
+        return readRescueCredentials(hfsAction);
+    }
+
+    private VmAction getLatestRescueAction(UUID vmId) {
+        List<VmAction> actions = vmActionResource.getVmActionList(vmId, Arrays.asList("COMPLETE"),
+                Arrays.asList("RESCUE"), null, null, 1, 0, null).results;
+        VmAction action = null;
+        action = actions.isEmpty() ? null : actions.get(0);
+        return action;
+    }
+
+    private com.godaddy.hfs.vm.VmAction getHfsVmAction(VirtualMachine vm, VmAction action) {
+        com.godaddy.hfs.vm.VmAction hfsAction;
+        try {
+            long hfsVmActionId = mapper.readValue(action.response, Vps4Rescue.Response.class).hfsVmActionId;
+            hfsAction = vmService.getVmAction(vm.hfsVmId, hfsVmActionId);
+        } catch (Exception e) {
+            throw new Vps4Exception("CREDENTIALS_NOT_AVAILABLE", "Unable to get rescue credentials", e);
+        }
+        return hfsAction;
+    }
+
+    private RescueCredentials readRescueCredentials(com.godaddy.hfs.vm.VmAction hfsAction) {
+        RescueCredentials credentials;
+        try {
+            credentials = mapper.readValue(hfsAction.resultset, RescueCredentials.class);
+        } catch (Exception e) {
+            throw new Vps4Exception("CREDENTIALS_NOT_AVAILABLE", "Failed to read rescue credentials", e);
+        }
+        return credentials;
     }
 }

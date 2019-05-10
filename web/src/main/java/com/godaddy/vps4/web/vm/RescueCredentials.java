@@ -4,6 +4,9 @@ public class RescueCredentials {
     private String username;
     private String password;
 
+    public RescueCredentials() {
+    }
+
     public RescueCredentials(String username, String password) {
         setUsername(username);
         setPassword(password);

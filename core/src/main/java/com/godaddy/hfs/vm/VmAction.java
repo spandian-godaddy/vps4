@@ -1,5 +1,7 @@
 package com.godaddy.hfs.vm;
 
+import org.apache.commons.lang3.builder.ReflectionToStringBuilder;
+import org.apache.commons.lang3.builder.ToStringStyle;
 
 public class VmAction {
 
@@ -13,12 +15,12 @@ public class VmAction {
     public String completedAt;
     public String createdAt;
     public String message;
+    public String resultset;
     
 
     @Override
     public String toString() {
-        return String.format("VmAction [vmActionId=%d, vmId=%d, actionType=%s, state=%s, tickNum=%d, numTicks=%d, tickInfo=%s, createdAt=%s, completedAt=%s, message=%s",
-        		vmActionId, vmId, actionType, state, tickNum, numTicks, tickInfo, createdAt, completedAt, message);
+        return ReflectionToStringBuilder.toString(this, ToStringStyle.SHORT_PREFIX_STYLE);
     }
     
     public enum Status {
