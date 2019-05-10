@@ -81,7 +81,7 @@ public class Vps4AccountMessageHandler implements MessageHandler {
                 return;
             }
 
-            if(primaryMessageConsumerServer && credit.getPurchasedAt() == null) {
+            if(shouldUpdatePurchasedAt(vps4Message, credit)) {
                 // this is a new credit.  set the purchasedAt date to now.
                 // purchasedAt is primarily used for determining if this is a heritage account.
                 creditService.updateProductMeta(vps4Message.accountGuid, ProductMetaField.PURCHASED_AT,
@@ -153,6 +153,12 @@ public class Vps4AccountMessageHandler implements MessageHandler {
 
             throw new MessageHandlerException(shouldRetry, ex);
         }
+    }
+
+    private boolean shouldUpdatePurchasedAt(Vps4AccountMessage vps4Message, VirtualMachineCredit credit){
+        return (primaryMessageConsumerServer
+                && vps4Message.notificationType == vps4Message.notificationType.ADDED
+                && credit.getPurchasedAt() == null);
     }
 
     private void sendFullyManagedWelcomeEmail(VirtualMachineCredit credit) {

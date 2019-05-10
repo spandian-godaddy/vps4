@@ -294,6 +294,15 @@ public class Vps4AccountMessageHandlerTest {
     }
 
     @Test
+    public void testHandleMessagePurchasedAtNotSetNotAddedMessage() throws MessageHandlerException {
+        when(configMock.get("vps4MessageHandler.primaryMessageConsumerServer")).thenReturn("true");
+        mockVmCredit(AccountStatus.ACTIVE, null);
+        callHandleMessage(createTestKafkaMessage("suspended"));
+
+        verify(creditServiceMock, never()).updateProductMeta(any(UUID.class), any(ProductMetaField.class), any(String.class));
+    }
+
+    @Test
     public void testHandleMessageSuspended() throws MessageHandlerException {
         mockVmCredit(AccountStatus.SUSPENDED, vm.vmId);
         callHandleMessage(createTestKafkaMessage("suspended"));
