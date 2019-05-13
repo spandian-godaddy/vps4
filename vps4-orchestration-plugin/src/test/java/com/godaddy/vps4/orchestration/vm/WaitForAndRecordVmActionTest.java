@@ -3,13 +3,9 @@ package com.godaddy.vps4.orchestration.vm;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Matchers.eq;
-import static org.mockito.Mockito.when;
-
 import com.godaddy.hfs.vm.VmAction;
 import com.godaddy.vps4.hfs.HfsVmTrackingRecordService;
 
-import com.godaddy.vps4.orchestration.hfs.vm.WaitForVmAction;
 import org.junit.Test;
 
 import gdg.hfs.orchestration.CommandContext;
@@ -30,7 +26,6 @@ public class WaitForAndRecordVmActionTest {
     @Test
     public void testExecuteWaitForAndRecordVmActionCreate() {
         VmAction newHfsAction = createMockVmAction("CREATE");
-        when(context.execute(eq(WaitForVmAction.class), eq(newHfsAction))).thenReturn(newHfsAction);
         command.execute(context, newHfsAction);
         verify(hfsVmTrackingRecordService, times(1)).setCreated(newHfsAction.vmId);
     }
@@ -38,7 +33,6 @@ public class WaitForAndRecordVmActionTest {
     @Test
     public void testExecuteWaitForAndRecordVmActionDelete() {
         VmAction newHfsAction = createMockVmAction("DESTROY");
-        when(context.execute(eq(WaitForVmAction.class), eq(newHfsAction))).thenReturn(newHfsAction);
         command.execute(context, newHfsAction);
         verify(hfsVmTrackingRecordService, times(1)).setDestroyed(newHfsAction.vmId);
     }

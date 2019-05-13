@@ -8,7 +8,7 @@ import com.google.inject.Inject;
 import gdg.hfs.orchestration.Command;
 import gdg.hfs.orchestration.CommandContext;
 
-public class WaitForAndRecordVmAction implements Command<VmAction, VmAction> {
+public class WaitForAndRecordVmAction implements Command<VmAction, Void> {
 
     private final HfsVmTrackingRecordService hfsVmTrackingRecordService;
 
@@ -18,8 +18,8 @@ public class WaitForAndRecordVmAction implements Command<VmAction, VmAction> {
     }
 
     @Override
-    public VmAction execute(CommandContext context, VmAction hfsAction) {
-        hfsAction = context.execute(WaitForVmAction.class, hfsAction);
+    public Void execute(CommandContext context, VmAction hfsAction) {
+        context.execute(WaitForVmAction.class, hfsAction);
 
         if (hfsAction.actionType.equals("CREATE")) {
             hfsVmTrackingRecordService.setCreated(hfsAction.vmId);
@@ -27,6 +27,6 @@ public class WaitForAndRecordVmAction implements Command<VmAction, VmAction> {
             hfsVmTrackingRecordService.setDestroyed(hfsAction.vmId);
         }
 
-        return hfsAction;
+        return null;
     }
 }
