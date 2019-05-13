@@ -197,10 +197,6 @@ public class Vps4AccountMessageHandler implements MessageHandler {
         if (credit.getTier() != vm.spec.tier) {
             // Update credit that a tier upgrade is pending. Customer will initiate manually as it will incur down time.
             creditService.updateProductMeta(credit.getOrionGuid(), ProductMetaField.PLAN_CHANGE_PENDING, String.valueOf(true));
-            // remove billing suspension since product was upgraded. Customer likely paid for it.
-        }
-        if(credit.isBillingSuspendedFlagSet()) {
-            reinstateAccount(vm);
         }
         // abuse suspended vm's cannot be upgraded or renewed.
         if (isAccountAbuseSuspended(credit, vm)) {

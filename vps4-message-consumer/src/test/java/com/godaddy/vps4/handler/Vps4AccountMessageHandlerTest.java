@@ -375,7 +375,6 @@ public class Vps4AccountMessageHandlerTest {
 
         verify(creditServiceMock, times(1)).getVirtualMachineCredit(anyObject());
         verify(vmSuspendReinstateService, never()).reinstateAbuseSuspendedAccount(eq(vm.vmId));
-        verify(vmSuspendReinstateService, times(1)).reinstateBillingSuspendedAccount(eq(vm.vmId));
         verify(creditServiceMock, times(1)).setStatus(eq(orionGuid), eq(AccountStatus.ABUSE_SUSPENDED));
         verify(creditServiceMock, times(1))
                 .updateProductMeta(eq(orionGuid), eq(ProductMetaField.PLAN_CHANGE_PENDING), eq(String.valueOf(true)));
@@ -389,7 +388,6 @@ public class Vps4AccountMessageHandlerTest {
 
         verify(creditServiceMock, times(1)).getVirtualMachineCredit(anyObject());
         verify(vmSuspendReinstateService, never()).reinstateAbuseSuspendedAccount(eq(vm.vmId));
-        verify(vmSuspendReinstateService, times(1)).reinstateBillingSuspendedAccount(eq(vm.vmId));
         verify(creditServiceMock, never()).setStatus(eq(orionGuid), eq(AccountStatus.ABUSE_SUSPENDED));
         verify(creditServiceMock, times(1))
                 .updateProductMeta(eq(orionGuid), eq(ProductMetaField.PLAN_CHANGE_PENDING), eq(String.valueOf(true)));
@@ -417,7 +415,7 @@ public class Vps4AccountMessageHandlerTest {
 
         verify(creditServiceMock, times(1)).getVirtualMachineCredit(anyObject());
         verify(vmSuspendReinstateService, never()).reinstateAbuseSuspendedAccount(eq(vm.vmId));
-        verify(vmSuspendReinstateService, times(1)).reinstateBillingSuspendedAccount(eq(vm.vmId));
+        verify(vmSuspendReinstateService, never()).reinstateBillingSuspendedAccount(eq(vm.vmId));
         verify(creditServiceMock, times(1)).setStatus(eq(orionGuid), eq(AccountStatus.ABUSE_SUSPENDED));
         verify(commandServiceMock, never()).executeCommand(anyObject());
     }
@@ -429,7 +427,6 @@ public class Vps4AccountMessageHandlerTest {
 
         verify(creditServiceMock, times(1)).getVirtualMachineCredit(anyObject());
         verify(vmSuspendReinstateService, never()).reinstateAbuseSuspendedAccount(eq(vm.vmId));
-        verify(vmSuspendReinstateService, never()).reinstateBillingSuspendedAccount(eq(vm.vmId));
         verify(creditServiceMock, never()).setStatus(eq(orionGuid), eq(AccountStatus.ABUSE_SUSPENDED));
         ArgumentCaptor<CommandGroupSpec> argument = ArgumentCaptor.forClass(CommandGroupSpec.class);
         verify(commandServiceMock, times(1)).executeCommand(argument.capture());
@@ -444,7 +441,6 @@ public class Vps4AccountMessageHandlerTest {
         verify(creditServiceMock, times(1)).getVirtualMachineCredit(anyObject());
         verify(vmSuspendReinstateService, never()).reinstateAbuseSuspendedAccount(eq(vm.vmId));
         verify(creditServiceMock, never()).setStatus(eq(orionGuid), eq(AccountStatus.ABUSE_SUSPENDED));
-        verify(vmSuspendReinstateService, times(1)).reinstateBillingSuspendedAccount(eq(vm.vmId));
         ArgumentCaptor<CommandGroupSpec> argument = ArgumentCaptor.forClass(CommandGroupSpec.class);
         verify(commandServiceMock, times(1)).executeCommand(argument.capture());
         assertEquals("Vps4PlanChange", argument.getValue().commands.get(0).command);
