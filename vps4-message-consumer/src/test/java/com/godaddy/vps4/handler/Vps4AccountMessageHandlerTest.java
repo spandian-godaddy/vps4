@@ -1,5 +1,7 @@
 package com.godaddy.vps4.handler;
 
+import static com.godaddy.vps4.handler.Vps4AccountMessageHandler.FULLY_MANAGED_LEVEL;
+import static java.time.temporal.ChronoUnit.DAYS;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Matchers.any;
@@ -13,6 +15,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.io.IOException;
+import java.time.Instant;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
@@ -44,6 +47,7 @@ import com.godaddy.vps4.vm.ServerSpec;
 import com.godaddy.vps4.vm.VirtualMachine;
 import com.godaddy.vps4.vm.VirtualMachineService;
 import com.godaddy.vps4.vm.VmAction;
+import com.godaddy.vps4.web.client.VmService;
 import com.godaddy.vps4.web.client.VmSuspendReinstateService;
 import com.godaddy.vps4.web.client.VmZombieService;
 
@@ -60,6 +64,7 @@ public class Vps4AccountMessageHandlerTest {
     private DataCenterService dcService = mock(DataCenterService.class);
     private VmZombieService vmZombieServiceMock = mock(VmZombieService.class);
     private VmSuspendReinstateService vmSuspendReinstateService = mock(VmSuspendReinstateService.class);
+    private VmService vmService = mock(VmService.class);
     private Config configMock = mock(Config.class);
     private Vps4MessagingService messagingServiceMock = mock(Vps4MessagingService.class);
     private VmAction vmAction = mock(VmAction.class);
@@ -67,10 +72,23 @@ public class Vps4AccountMessageHandlerTest {
     private UUID orionGuid;
     private VirtualMachine vm;
 
+    private final String DEFAULT_TIER = "10";
+    private final String UPGRADED_TIER = "20";
+    private final String DEFAULT_MANAGEDLEVEL = "0";
+    private final String DEFAULT_CONTROLPANEL = "myh";
+    private final String DEFAULT_DATACENTER = "5";
+    private Map<String, String> planFeatures;
+    private Map<String, String> productMeta;
+
     @Before
     public void setupTest() {
+        planFeatures = new HashMap<>();
+        productMeta = new HashMap<>();
+        setDefaultPlanFeatures();
+
         when(dcService.getDataCenter(5)).thenReturn(new DataCenter(5, "testDataCenter"));
         when(configMock.get("monitoring.nodeping.account.id")).thenReturn("0");
+        when(configMock.get("vps4.zombie.minimum.account.age")).thenReturn("7");
 
         orionGuid = UUID.randomUUID();
 
@@ -86,56 +104,17 @@ public class Vps4AccountMessageHandlerTest {
         when(commandServiceMock.executeCommand(anyObject())).thenReturn(command);
     }
 
-    private void mockVmUpgradeCredit(AccountStatus accountStatus, UUID productId) {
-        mockVmCredit(accountStatus, productId, 20, 0, "myh", false, false);
-    }
-
-    private void mockVmUpgradeCreditWithAbuseSuspendFlag(AccountStatus accountStatus, UUID productId) {
-        mockVmCredit(accountStatus, productId, 20, 0, "myh", true, false);
-    }
-
-    private void mockVmUpgradeCreditWithBillingSuspendFlag(AccountStatus accountStatus, UUID productId) {
-        mockVmCredit(accountStatus, productId, 20, 0, "myh", false, true);
-    }
-
-    private void mockVmUpgradeCreditWithAbuseAndBillingSuspendFlag(AccountStatus accountStatus, UUID productId) {
-        mockVmCredit(accountStatus, productId, 20, 0, "myh", true, true);
+    private void setDefaultPlanFeatures() {
+        planFeatures.put(PlanFeatures.TIER.toString(), DEFAULT_TIER);
+        planFeatures.put(PlanFeatures.MANAGED_LEVEL.toString(), DEFAULT_MANAGEDLEVEL);
+        planFeatures.put(PlanFeatures.CONTROL_PANEL_TYPE.toString(), DEFAULT_CONTROLPANEL);
     }
 
     private void mockVmCredit(AccountStatus accountStatus, UUID productId) {
-        mockVmCredit(accountStatus, productId, 10, 0, "myh", false, false);
-    }
-
-    private void mockAbuseSuspendedVmCredit(AccountStatus accountStatus, UUID productId) {
-        mockVmCredit(accountStatus, productId, 10, 0, "myh", true, false);
-    }
-
-    private void mockBillingSuspendedVmCredit(AccountStatus accountStatus, UUID productId) {
-        mockVmCredit(accountStatus, productId, 10, 0, "myh", false, true);
-    }
-
-    private void mockAbuseAndBillingSuspendedVmCredit(AccountStatus accountStatus, UUID productId) {
-        mockVmCredit(accountStatus, productId, 10, 0, "myh", true, true);
-    }
-
-    private void mockFullManagedVmCredit(AccountStatus accountStatus, UUID productId) {
-        mockVmCredit(accountStatus, productId, 10, 2, "cpanel", false, false);
-    }
-
-    private void mockVmCredit(AccountStatus accountStatus, UUID productId, int tier, int managedLevel,
-                              String controlPanel, boolean abuseSuspendFlag, boolean billingSuspendedFlag) {
-        Map<String, String> planFeatures = new HashMap<>();
-        planFeatures.put(PlanFeatures.TIER.toString(), String.valueOf(tier));
-        planFeatures.put(PlanFeatures.MANAGED_LEVEL.toString(), String.valueOf(managedLevel));
-        planFeatures.put(PlanFeatures.CONTROL_PANEL_TYPE.toString(), String.valueOf(controlPanel));
-
-        Map<String, String> productMeta = new HashMap<>();
         if (productId != null) {
-            productMeta.put(ProductMetaField.PRODUCT_ID.toString(), productId.toString());
+            productMeta.put(ProductMetaField.PRODUCT_ID.toString(), vm.vmId.toString());
+            productMeta.put(ProductMetaField.DATA_CENTER.toString(), DEFAULT_DATACENTER);
         }
-        productMeta.put(ProductMetaField.DATA_CENTER.toString(), String.valueOf(5));
-        productMeta.put(ProductMetaField.ABUSE_SUSPENDED_FLAG.toString(), String.valueOf(abuseSuspendFlag));
-        productMeta.put(ProductMetaField.BILLING_SUSPENDED_FLAG.toString(), String.valueOf(billingSuspendedFlag));
 
         VirtualMachineCredit vmCredit = new VirtualMachineCredit.Builder(mock(DataCenterService.class))
                 .withAccountGuid(orionGuid.toString())
@@ -179,6 +158,7 @@ public class Vps4AccountMessageHandlerTest {
                                                                messagingServiceMock,
                                                                vmZombieServiceMock,
                                                                vmSuspendReinstateService,
+                                                               vmService,
                                                                configMock);
         handler.handleMessage(record);
     }
@@ -217,7 +197,9 @@ public class Vps4AccountMessageHandlerTest {
 
     @Test
     public void testFullyManagedCredit() throws MessageHandlerException, MissingShopperIdException, IOException {
-        mockFullManagedVmCredit(AccountStatus.ACTIVE, vm.vmId);
+        planFeatures.put(PlanFeatures.CONTROL_PANEL_TYPE.toString(), String.valueOf("cpanel"));
+        planFeatures.put(PlanFeatures.MANAGED_LEVEL.toString(), String.valueOf(FULLY_MANAGED_LEVEL));
+        mockVmCredit(AccountStatus.ACTIVE, vm.vmId);
         when(messagingServiceMock.sendFullyManagedEmail("TestShopper", "cpanel")).thenReturn("messageId");
         when(configMock.get("vps4MessageHandler.processFullyManagedEmails")).thenReturn("true");
         Mockito.doNothing().when(creditServiceMock)
@@ -236,9 +218,9 @@ public class Vps4AccountMessageHandlerTest {
     }
 
     @Test
-    public void testDontProcessFullyManagedEmails()
-            throws MessageHandlerException, MissingShopperIdException, IOException {
-        mockFullManagedVmCredit(AccountStatus.ACTIVE, null);
+    public void testDontProcessFullyManagedEmails() throws Exception {
+        planFeatures.put(PlanFeatures.MANAGED_LEVEL.toString(), String.valueOf(FULLY_MANAGED_LEVEL));
+        mockVmCredit(AccountStatus.ACTIVE, null);
         when(messagingServiceMock.sendFullyManagedEmail("TestShopper", "cpanel")).thenReturn("messageId");
         when(configMock.get("vps4MessageHandler.processFullyManagedEmails")).thenReturn("false");
 
@@ -340,7 +322,8 @@ public class Vps4AccountMessageHandlerTest {
 
     @Test
     public void testHandleMessageUpgraded() throws MessageHandlerException {
-        mockVmUpgradeCredit(AccountStatus.ACTIVE, vm.vmId);
+        planFeatures.put(PlanFeatures.TIER.toString(), UPGRADED_TIER);
+        mockVmCredit(AccountStatus.ACTIVE, vm.vmId);
         callHandleMessage(createTestKafkaMessage("updated"));
 
         verify(creditServiceMock, times(1)).getVirtualMachineCredit(anyObject());
@@ -356,7 +339,9 @@ public class Vps4AccountMessageHandlerTest {
 
     @Test
     public void testAbuseSuspendFlaggedVmIsNotUpgraded() throws MessageHandlerException {
-        mockVmUpgradeCreditWithAbuseSuspendFlag(AccountStatus.ABUSE_SUSPENDED, vm.vmId);
+        planFeatures.put(PlanFeatures.TIER.toString(), UPGRADED_TIER);
+        productMeta.put(ProductMetaField.ABUSE_SUSPENDED_FLAG.toString(), String.valueOf(true));
+        mockVmCredit(AccountStatus.ABUSE_SUSPENDED, vm.vmId);
         callHandleMessage(createTestKafkaMessage("updated"));
 
         verify(creditServiceMock, times(1)).getVirtualMachineCredit(anyObject());
@@ -370,7 +355,10 @@ public class Vps4AccountMessageHandlerTest {
 
     @Test
     public void testAbuseAndBillingSuspendFlaggedVmIsNotUpgraded() throws MessageHandlerException {
-        mockVmUpgradeCreditWithAbuseAndBillingSuspendFlag(AccountStatus.SUSPENDED, vm.vmId);
+        planFeatures.put(PlanFeatures.TIER.toString(), UPGRADED_TIER);
+        productMeta.put(ProductMetaField.ABUSE_SUSPENDED_FLAG.toString(), String.valueOf(true));
+        productMeta.put(ProductMetaField.BILLING_SUSPENDED_FLAG.toString(), String.valueOf(true));
+        mockVmCredit(AccountStatus.SUSPENDED, vm.vmId);
         callHandleMessage(createTestKafkaMessage("updated"));
 
         verify(creditServiceMock, times(1)).getVirtualMachineCredit(anyObject());
@@ -383,7 +371,9 @@ public class Vps4AccountMessageHandlerTest {
 
     @Test
     public void testBillingSuspendFlaggedVmIsUpgraded() throws MessageHandlerException {
-        mockVmUpgradeCreditWithBillingSuspendFlag(AccountStatus.SUSPENDED, vm.vmId);
+        planFeatures.put(PlanFeatures.TIER.toString(), UPGRADED_TIER);
+        productMeta.put(ProductMetaField.BILLING_SUSPENDED_FLAG.toString(), String.valueOf(true));
+        mockVmCredit(AccountStatus.SUSPENDED, vm.vmId);
         callHandleMessage(createTestKafkaMessage("updated"));
 
         verify(creditServiceMock, times(1)).getVirtualMachineCredit(anyObject());
@@ -398,7 +388,8 @@ public class Vps4AccountMessageHandlerTest {
 
     @Test
     public void testAbuseSuspendFlaggedVmIsNotRenewed() throws MessageHandlerException {
-        mockAbuseSuspendedVmCredit(AccountStatus.ABUSE_SUSPENDED, vm.vmId);
+        productMeta.put(ProductMetaField.ABUSE_SUSPENDED_FLAG.toString(), String.valueOf(true));
+        mockVmCredit(AccountStatus.ABUSE_SUSPENDED, vm.vmId);
         callHandleMessage(createTestKafkaMessage("renewed"));
 
         verify(creditServiceMock, times(1)).getVirtualMachineCredit(anyObject());
@@ -410,7 +401,9 @@ public class Vps4AccountMessageHandlerTest {
 
     @Test
     public void testAbuseAndBillingSuspendFlaggedVmIsNotRenewed() throws MessageHandlerException {
-        mockAbuseAndBillingSuspendedVmCredit(AccountStatus.SUSPENDED, vm.vmId);
+        productMeta.put(ProductMetaField.ABUSE_SUSPENDED_FLAG.toString(), String.valueOf(true));
+        productMeta.put(ProductMetaField.BILLING_SUSPENDED_FLAG.toString(), String.valueOf(true));
+        mockVmCredit(AccountStatus.SUSPENDED, vm.vmId);
         callHandleMessage(createTestKafkaMessage("renewed"));
 
         verify(creditServiceMock, times(1)).getVirtualMachineCredit(anyObject());
@@ -435,7 +428,8 @@ public class Vps4AccountMessageHandlerTest {
 
     @Test
     public void testBillingSuspendedVmCanBeRenewed() throws MessageHandlerException {
-        mockBillingSuspendedVmCredit(AccountStatus.SUSPENDED, vm.vmId);
+        productMeta.put(ProductMetaField.BILLING_SUSPENDED_FLAG.toString(), String.valueOf(true));
+        mockVmCredit(AccountStatus.SUSPENDED, vm.vmId);
         callHandleMessage(createTestKafkaMessage("renewed"));
 
         verify(creditServiceMock, times(1)).getVirtualMachineCredit(anyObject());
@@ -448,7 +442,8 @@ public class Vps4AccountMessageHandlerTest {
 
     @Test
     public void testAbuseSuspendedAccountCanBeRemoved() throws MessageHandlerException {
-        mockAbuseSuspendedVmCredit(AccountStatus.ABUSE_SUSPENDED, vm.vmId);
+        productMeta.put(ProductMetaField.ABUSE_SUSPENDED_FLAG.toString(), String.valueOf(true));
+        mockVmCredit(AccountStatus.ABUSE_SUSPENDED, vm.vmId);
         callHandleMessage(createTestKafkaMessage("removed"));
 
         verify(creditServiceMock, times(1)).getVirtualMachineCredit(anyObject());
@@ -457,7 +452,9 @@ public class Vps4AccountMessageHandlerTest {
 
     @Test
     public void testAbuseAndBillingSuspendedAccountCanBeRemoved() throws MessageHandlerException {
-        mockAbuseAndBillingSuspendedVmCredit(AccountStatus.SUSPENDED, vm.vmId);
+        productMeta.put(ProductMetaField.ABUSE_SUSPENDED_FLAG.toString(), String.valueOf(true));
+        productMeta.put(ProductMetaField.BILLING_SUSPENDED_FLAG.toString(), String.valueOf(true));
+        mockVmCredit(AccountStatus.SUSPENDED, vm.vmId);
         callHandleMessage(createTestKafkaMessage("removed"));
 
         verify(creditServiceMock, times(1)).getVirtualMachineCredit(anyObject());
@@ -466,7 +463,8 @@ public class Vps4AccountMessageHandlerTest {
 
     @Test
     public void testBillingSuspendedAccountCanBeRemoved() throws MessageHandlerException {
-        mockBillingSuspendedVmCredit(AccountStatus.SUSPENDED, vm.vmId);
+        productMeta.put(ProductMetaField.BILLING_SUSPENDED_FLAG.toString(), String.valueOf(true));
+        mockVmCredit(AccountStatus.SUSPENDED, vm.vmId);
         callHandleMessage(createTestKafkaMessage("removed"));
 
         verify(creditServiceMock, times(1)).getVirtualMachineCredit(anyObject());
@@ -474,11 +472,32 @@ public class Vps4AccountMessageHandlerTest {
     }
 
     @Test
-    public void accountRemovalZombiesAssociatedVm() throws MessageHandlerException {
+    public void accountRemovalZombiesAccountWithPurchasedAtNotSet() throws MessageHandlerException {
+        productMeta.remove(ProductMetaField.PURCHASED_AT.toString());
         mockVmCredit(AccountStatus.REMOVED, vm.vmId);
         callHandleMessage(createTestKafkaMessage("removed"));
 
-        verify(vmZombieServiceMock, times(1)).zombieVm(vm.vmId);
+        verify(vmZombieServiceMock).zombieVm(vm.vmId);
+    }
+
+    @Test
+    public void accountRemovalDeletesAccountWithPurchasedAtLessThan7DaysOld() throws Exception {
+        Instant sixDaysAgo = Instant.now().minus(6, DAYS);
+        productMeta.put(ProductMetaField.PURCHASED_AT.toString(), sixDaysAgo.toString());
+        mockVmCredit(AccountStatus.REMOVED, vm.vmId);
+        callHandleMessage(createTestKafkaMessage("removed"));
+
+        verify(vmService).destroyVm(vm.vmId);
+    }
+
+    @Test
+    public void accountRemovalZombiesAccountWithPurchasedAt7DaysOld() throws Exception {
+        Instant sevenDaysAgo = Instant.now().minus(7, DAYS);
+        productMeta.put(ProductMetaField.PURCHASED_AT.toString(), sevenDaysAgo.toString());
+        mockVmCredit(AccountStatus.REMOVED, vm.vmId);
+        callHandleMessage(createTestKafkaMessage("removed"));
+
+        verify(vmZombieServiceMock).zombieVm(vm.vmId);
     }
 
     @Test
@@ -542,7 +561,8 @@ public class Vps4AccountMessageHandlerTest {
 
     @Test
     public void testHandleMessageCausesTierUpgradePending() throws MessageHandlerException {
-        mockVmCredit(AccountStatus.ACTIVE, vm.vmId, 20, 0, "myh", false, false);
+        planFeatures.put(PlanFeatures.TIER.toString(), UPGRADED_TIER);
+        mockVmCredit(AccountStatus.ACTIVE, vm.vmId);
         callHandleMessage(createTestKafkaMessage("updated"));
 
         verify(creditServiceMock, times(1)).updateProductMeta(orionGuid, ProductMetaField.PLAN_CHANGE_PENDING, "true");

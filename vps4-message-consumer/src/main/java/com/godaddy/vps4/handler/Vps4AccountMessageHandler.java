@@ -6,6 +6,7 @@ import static com.godaddy.vps4.handler.util.Utils.isOrchEngineDown;
 import static com.godaddy.vps4.handler.util.Utils.isVps4ApiDown;
 
 import java.io.IOException;
+import java.time.Duration;
 import java.time.Instant;
 
 import org.apache.kafka.clients.consumer.ConsumerRecord;
@@ -23,6 +24,7 @@ import com.godaddy.vps4.vm.AccountStatus;
 import com.godaddy.vps4.vm.ActionService;
 import com.godaddy.vps4.vm.VirtualMachine;
 import com.godaddy.vps4.vm.VirtualMachineService;
+import com.godaddy.vps4.web.client.VmService;
 import com.godaddy.vps4.web.client.VmSuspendReinstateService;
 import com.godaddy.vps4.web.client.VmZombieService;
 import com.google.inject.Inject;
@@ -42,7 +44,9 @@ public class Vps4AccountMessageHandler implements MessageHandler {
     private final VmZombieService vmZombieService;
     private final Vps4MessagingService messagingService;
     private final VmSuspendReinstateService vmSuspendReinstateService;
-    private final int FULLY_MANAGED_LEVEL = 2;
+    private final VmService vmService;
+    private final Config config;
+    static final int FULLY_MANAGED_LEVEL = 2;
 
     @Inject
     public Vps4AccountMessageHandler(
@@ -53,8 +57,8 @@ public class Vps4AccountMessageHandler implements MessageHandler {
             Vps4MessagingService messagingService,
             VmZombieService vmZombieService,
             VmSuspendReinstateService vmSuspendReinstateService,
-            Config config
-    ) {
+            VmService vmService,
+            Config config) {
 
         this.virtualMachineService = virtualMachineService;
         this.creditService = creditService;
@@ -63,6 +67,8 @@ public class Vps4AccountMessageHandler implements MessageHandler {
         this.messagingService = messagingService;
         this.vmZombieService = vmZombieService;
         this.vmSuspendReinstateService = vmSuspendReinstateService;
+        this.vmService = vmService;
+        this.config = config;
         processFullyManagedEmails = Boolean.parseBoolean(config.get("vps4MessageHandler.processFullyManagedEmails"));
         primaryMessageConsumerServer = Boolean.parseBoolean(config.get("vps4MessageHandler.primaryMessageConsumerServer"));
     }
@@ -238,7 +244,25 @@ public class Vps4AccountMessageHandler implements MessageHandler {
     }
 
     private void handleAccountCancellation(VirtualMachine vm, VirtualMachineCredit credit) {
-        logger.info("Vps4 account canceled: {} - Zombie'ing associated vm", credit.getOrionGuid());
-        this.vmZombieService.zombieVm(vm.vmId);
+        logger.info("Vps4 account canceled: {}", credit.getOrionGuid());
+        if (shouldTemporarilyRetainResources(credit)) {
+            logger.info("Zombie'ing associated server {}", vm.vmId);
+            this.vmZombieService.zombieVm(vm.vmId);
+        }
+        else {
+            logger.info("Deleting server {}, will NOT zombie, has not been setup long enough", vm.vmId);
+            this.vmService.destroyVm(vm.vmId);
+        }
     }
+
+    private boolean shouldTemporarilyRetainResources(VirtualMachineCredit credit) {
+        if (credit.getPurchasedAt() == null) {
+            return true;
+        }
+
+        long minAccountAge = Long.valueOf(config.get("vps4.zombie.minimum.account.age"));
+        Duration ageOfAccount = Duration.between(credit.getPurchasedAt(), Instant.now());
+        return ageOfAccount.toDays() >= minAccountAge;
+    }
+
 }
