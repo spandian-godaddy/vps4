@@ -8,19 +8,20 @@ import org.apache.commons.lang3.builder.ToStringStyle;
 
 public class Action {
 
-    public final long id;
-    public final UUID resourceId;
-    public final ActionType type;
-    public final String request;
-    public final String state;
-    public final String response;
-    public final ActionStatus status;
-    public final Instant created;
-    public final Instant completed;
-    public final String note;
-    public final UUID commandId;
-    public final String initiatedBy;
+    public long id;
+    public UUID resourceId;
+    public ActionType type;
+    public String request;
+    public String state;
+    public String response;
+    public ActionStatus status;
+    public Instant created;
+    public Instant completed;
+    public String note;
+    public UUID commandId;
+    public String initiatedBy;
 
+    
     public Action(long id, UUID resourceId, ActionType type, String request, String state, String response,
             ActionStatus status, Instant created, Instant completed, String note, UUID commandId, String initiatedBy) {
         this.id = id;

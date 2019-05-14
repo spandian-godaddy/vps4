@@ -19,13 +19,14 @@ import com.godaddy.hfs.vm.Vm;
 import com.godaddy.hfs.vm.VmService;
 import com.godaddy.vps4.orchestration.vm.VmActionRequest;
 import com.godaddy.vps4.orchestration.vm.Vps4Rescue;
+import com.godaddy.vps4.vm.Action;
 import com.godaddy.vps4.vm.ActionService;
 import com.godaddy.vps4.vm.ActionType;
 import com.godaddy.vps4.vm.VirtualMachine;
 import com.godaddy.vps4.vm.VmAction;
-import com.godaddy.vps4.web.PaginatedResult;
 import com.godaddy.vps4.web.Vps4Api;
 import com.godaddy.vps4.web.Vps4Exception;
+import com.godaddy.vps4.web.action.ActionResource;
 import com.godaddy.vps4.web.security.GDUser;
 import com.google.inject.Inject;
 
@@ -43,19 +44,19 @@ public class VmRescueResource {
     private final ActionService actionService;
     private final CommandService commandService;
     private final GDUser user;
-    private final VmActionResource vmActionResource;
     private static final ObjectMapper mapper = new ObjectMapper();
     private final VmService vmService;
+    private final ActionResource actionResource;
 
     @Inject
-    public VmRescueResource(GDUser user, VmResource vmResource, ActionService actionService,
-            CommandService commandService, VmActionResource vmActionResource, VmService vmService) {
+    public VmRescueResource(GDUser user, VmResource vmResource, ActionService actionService, CommandService commandService,
+            VmService vmService, ActionResource actionResource) {
         this.user = user;
         this.vmResource = vmResource;
         this.actionService = actionService;
         this.commandService = commandService;
-        this.vmActionResource = vmActionResource;
         this.vmService = vmService;
+        this.actionResource = actionResource;
     }
 
     @POST
@@ -93,7 +94,7 @@ public class VmRescueResource {
     @Path("{vmId}/rescueCredentials")
     public RescueCredentials getRescueCredentials(@PathParam("vmId") UUID vmId) {
         VirtualMachine vm = vmResource.getVm(vmId);
-        VmAction action = getLatestRescueAction(vmId);
+        Action action = getLatestRescueAction(vmId);
         if (action == null) {
             return null;
         }
@@ -101,15 +102,15 @@ public class VmRescueResource {
         return readRescueCredentials(hfsAction);
     }
 
-    private VmAction getLatestRescueAction(UUID vmId) {
-        List<VmAction> actions = vmActionResource.getVmActionList(vmId, Arrays.asList("COMPLETE"),
-                Arrays.asList("RESCUE"), null, null, 1, 0, null).results;
-        VmAction action = null;
+    private Action getLatestRescueAction(UUID vmId) {
+        List<Action> actions = actionResource.getVmActionList(vmId, Arrays.asList("COMPLETE"),
+                Arrays.asList("RESCUE"), null, null, 1, 0);
+        Action action = null;
         action = actions.isEmpty() ? null : actions.get(0);
         return action;
     }
 
-    private com.godaddy.hfs.vm.VmAction getHfsVmAction(VirtualMachine vm, VmAction action) {
+    private com.godaddy.hfs.vm.VmAction getHfsVmAction(VirtualMachine vm, Action action) {
         com.godaddy.hfs.vm.VmAction hfsAction;
         try {
             long hfsVmActionId = mapper.readValue(action.response, Vps4Rescue.Response.class).hfsVmActionId;

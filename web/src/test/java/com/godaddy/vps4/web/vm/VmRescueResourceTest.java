@@ -27,9 +27,8 @@ import com.godaddy.vps4.vm.Action;
 import com.godaddy.vps4.vm.ActionService;
 import com.godaddy.vps4.vm.ActionType;
 import com.godaddy.vps4.vm.VirtualMachine;
-import com.godaddy.vps4.vm.VmAction;
-import com.godaddy.vps4.web.PaginatedResult;
 import com.godaddy.vps4.web.Vps4Exception;
+import com.godaddy.vps4.web.action.ActionResource;
 import com.godaddy.vps4.web.security.GDUser;
 
 import gdg.hfs.orchestration.CommandService;
@@ -42,7 +41,7 @@ public class VmRescueResourceTest {
     private ActionService actionService = mock(ActionService.class);
     private CommandService commandService = mock(CommandService.class);
     private VmRescueResource rescueResource;
-    private VmActionResource vmActionResource = mock(VmActionResource.class);
+    private ActionResource actionResource = mock(ActionResource.class);
     private VmService vmService = mock(VmService.class);
 
     private UUID vmId = UUID.randomUUID();
@@ -62,7 +61,8 @@ public class VmRescueResourceTest {
         when(actionService.getAction(anyLong())).thenReturn(rescueAction);
 
         when(commandService.executeCommand(any())).thenReturn(new CommandState());
-        rescueResource = new VmRescueResource(gdUser, vmResource, actionService, commandService, vmActionResource, vmService);
+        rescueResource = new VmRescueResource(gdUser, vmResource, actionService, commandService, vmService, 
+                actionResource);
     }
 
     @Test
@@ -105,18 +105,14 @@ public class VmRescueResourceTest {
 
     @Test
     public void testGetRescueCredentials() throws JsonProcessingException {
-        VmAction testVps4Action = new VmAction();
+        Action testVps4Action = mock(Action.class);
         ObjectMapper mapper = new ObjectMapper();
         Vps4Rescue.Response response = new Vps4Rescue.Response();
         response.hfsVmActionId = 123L;
         testVps4Action.response = mapper.writeValueAsString(response);
-        List<VmAction> testVps4Actions = Arrays.asList(testVps4Action);
-        PaginatedResult<VmAction> testResults = mock(PaginatedResult.class);
-        testResults.results = testVps4Actions;
-
-        when(vmActionResource.getVmActionList(vmId, Arrays.asList("COMPLETE"), Arrays.asList("RESCUE"), null, null, 1,
-                0, null)).thenReturn(testResults);
-
+        List<Action> testVps4Actions = Arrays.asList(testVps4Action);
+        when(actionResource.getVmActionList(vmId, Arrays.asList("COMPLETE"), Arrays.asList("RESCUE"), null, null, 1,
+                0)).thenReturn(testVps4Actions);
         com.godaddy.hfs.vm.VmAction testHfsAction = new com.godaddy.hfs.vm.VmAction();
         testHfsAction.vmActionId = 123L;
         testHfsAction.resultset = "{\"password\": \"S5wurpP1Rd6xVbYLi\", \"username\": \"root\"}";
@@ -129,30 +125,25 @@ public class VmRescueResourceTest {
     
     @Test
     public void testGetRescueCredentialsNoRescueAction() throws JsonProcessingException {
-        PaginatedResult<VmAction> testResults = mock(PaginatedResult.class);
-        testResults.results = new ArrayList<VmAction>();
-
-        when(vmActionResource.getVmActionList(vmId, Arrays.asList("COMPLETE"), Arrays.asList("RESCUE"), null, null, 1,
-                0, null)).thenReturn(testResults);
+        List<Action> testResults = new ArrayList<Action>();
+        when(actionResource.getVmActionList(vmId, Arrays.asList("COMPLETE"), Arrays.asList("RESCUE"), null, null, 1,
+                0)).thenReturn(testResults);
 
         RescueCredentials creds = rescueResource.getRescueCredentials(vmId);
+
         assertNull(creds);
     }
 
     @Test(expected = Vps4Exception.class)
     public void testGetRescueCredentialsBadCreds() throws JsonProcessingException {
-        VmAction testVps4Action = new VmAction();
+        Action testVps4Action = mock(Action.class);
         ObjectMapper mapper = new ObjectMapper();
         Vps4Rescue.Response response = new Vps4Rescue.Response();
         response.hfsVmActionId = 123L;
         testVps4Action.response = mapper.writeValueAsString(response);
-        List<VmAction> testVps4Actions = Arrays.asList(testVps4Action);
-        PaginatedResult<VmAction> testResults = mock(PaginatedResult.class);
-        testResults.results = testVps4Actions;
-
-        when(vmActionResource.getVmActionList(vmId, Arrays.asList("COMPLETE"), Arrays.asList("RESCUE"), null, null, 1,
-                0, null)).thenReturn(testResults);
-
+        List<Action> testVps4Actions = Arrays.asList(testVps4Action);
+        when(actionResource.getVmActionList(vmId, Arrays.asList("COMPLETE"), Arrays.asList("RESCUE"), null, null, 1,
+                0)).thenReturn(testVps4Actions);
         com.godaddy.hfs.vm.VmAction testHfsAction = new com.godaddy.hfs.vm.VmAction();
         testHfsAction.vmActionId = 123L;
         testHfsAction.resultset = "bad creds";
