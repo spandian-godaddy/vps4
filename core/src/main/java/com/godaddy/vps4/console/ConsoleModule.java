@@ -6,6 +6,6 @@ public class ConsoleModule extends AbstractModule{
 
     @Override
     public void configure() {
-        bind(ConsoleService.class).to(SpiceConsole.class);
+        bind(ConsoleService.class).to(HfsConsoleService.class);
     }
 }

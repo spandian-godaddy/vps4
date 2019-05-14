@@ -65,7 +65,7 @@ public interface VmService {
 
     @POST
     @Path("/{vmId}/console")
-    VmAction createConsoleUrl(@PathParam("vmId") long vmId);
+    VmAction createConsoleUrl(@PathParam("vmId") long vmId, ConsoleRequest consoleRequest);
 
     @POST
     @Path("/{vmId}/reboot")

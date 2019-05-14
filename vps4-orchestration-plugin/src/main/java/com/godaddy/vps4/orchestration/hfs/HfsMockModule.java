@@ -24,6 +24,7 @@ import com.godaddy.hfs.mailrelay.MailRelayService;
 import com.godaddy.hfs.mailrelay.MailRelayUpdate;
 import com.godaddy.hfs.vm.AgentDetails;
 import com.godaddy.hfs.vm.Console;
+import com.godaddy.hfs.vm.ConsoleRequest;
 import com.godaddy.hfs.vm.CreateVMRequest;
 import com.godaddy.hfs.vm.CreateVMWithFlavorRequest;
 import com.godaddy.hfs.vm.FlavorList;
@@ -742,7 +743,7 @@ public class HfsMockModule extends AbstractModule {
             }
 
             @Override
-            public VmAction createConsoleUrl(long vmId) {
+            public VmAction createConsoleUrl(long vmId, ConsoleRequest req) {
                 VmAction vmAction = this.createVmAction(vmId, "CREATE_CONSOLE", VmAction.Status.COMPLETE);
                 this.storeVmAction(vmId, vmAction);
                 return vmAction;

@@ -1,33 +1,32 @@
 package com.godaddy.vps4.console;
 
 import com.godaddy.hfs.config.Config;
-import com.godaddy.hfs.vm.VmAction;
+
 import org.apache.commons.lang3.StringUtils;
 
 import javax.inject.Inject;
 
 import com.godaddy.hfs.vm.Console;
+import com.godaddy.hfs.vm.ConsoleRequest;
+import com.godaddy.hfs.vm.VmAction;
 import com.godaddy.hfs.vm.VmService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 
-public class SpiceConsole implements ConsoleService {
-    private static final Logger logger = LoggerFactory.getLogger(SpiceConsole.class);
+public class HfsConsoleService implements ConsoleService {
+    private static final Logger logger = LoggerFactory.getLogger(HfsConsoleService.class);
 
     final Config config;
     final VmService vmService;
 
     @Inject
-    public SpiceConsole(Config config, VmService vmService){
+    public HfsConsoleService(Config config, VmService vmService){
         this.config = config;
         this.vmService = vmService;
     }
 
     public String getConsoleUrl(long hfsVmId) throws CouldNotRetrieveConsoleException{
-        if(Boolean.parseBoolean(config.get("ded4.console.deployed", "false"))) {
-            createConsoleUrl(hfsVmId);
-        }
         Console console = vmService.getConsole(hfsVmId);
         if(console == null ) {
             throw new CouldNotRetrieveConsoleException("Null console object returned for hfs vm " + hfsVmId);
@@ -38,8 +37,15 @@ public class SpiceConsole implements ConsoleService {
         return console.url;
     }
 
-    private void createConsoleUrl(long hfsVmId) {
-        VmAction action = vmService.createConsoleUrl(hfsVmId);
+    public String getConsoleUrl(long hfsVmId, String allowedIpAddress) throws CouldNotRetrieveConsoleException{
+        createConsoleUrl(hfsVmId, allowedIpAddress);
+        return getConsoleUrl(hfsVmId);
+    }
+
+    private void createConsoleUrl(long hfsVmId, String allowedAddress) {
+        ConsoleRequest request = new ConsoleRequest();
+        request.allowedAddress = allowedAddress;
+        VmAction action = vmService.createConsoleUrl(hfsVmId, request);
         waitForCreateConsoleAction(action);
     }
 
@@ -69,7 +75,5 @@ public class SpiceConsole implements ConsoleService {
             logger.info("wait for createConsoleUrl action interrupted");
         }
     }
-
-
 
 }
