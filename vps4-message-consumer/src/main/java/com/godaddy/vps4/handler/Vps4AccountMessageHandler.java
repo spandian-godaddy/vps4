@@ -260,9 +260,9 @@ public class Vps4AccountMessageHandler implements MessageHandler {
             return true;
         }
 
-        long minAccountAge = Long.valueOf(config.get("vps4.zombie.minimum.account.age"));
+        long minAccountAgeInDays = Long.valueOf(config.get("vps4.zombie.minimum.account.age"));
         Duration ageOfAccount = Duration.between(credit.getPurchasedAt(), Instant.now());
-        return ageOfAccount.toDays() >= minAccountAge;
+        return ageOfAccount.toDays() >= minAccountAgeInDays;
     }
 
 }
