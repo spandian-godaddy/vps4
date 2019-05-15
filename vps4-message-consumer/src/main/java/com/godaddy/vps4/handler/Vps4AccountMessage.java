@@ -17,7 +17,7 @@ public class Vps4AccountMessage extends JsonMessage {
         id = UUID.fromString(value.get("id").toString());
         accountGuid = UUID.fromString(((JSONObject) value.get("notification")).get("account_guid").toString());
         String typePreFormat = ((JSONObject) value.get("notification")).get("type").toString();
-        notificationType = MessageNotificationType.valueOf(typePreFormat.toUpperCase());
+        notificationType = MessageNotificationType.getEnum(typePreFormat.toUpperCase());
     }
 
     @Override
