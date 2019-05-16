@@ -37,7 +37,7 @@ public class JdbcMonitorService implements MonitorService {
 
     private final static String orderby = "ORDER BY vma.created ASC; ";
 
-    private final static String selectVmsBySnapshotActionAndDuration =
+    private final static String selectVmsByAutomaticSnapshotActionAndDuration =
             "SELECT sna.id, sna.command_id, sna.snapshot_id, action_type.type as action_type, " +
             "action_status.status as action_status, sna.created as action_created_date " +
             "FROM snapshot_action sna " +
@@ -49,6 +49,8 @@ public class JdbcMonitorService implements MonitorService {
             "  SELECT status_id FROM action_status WHERE status INCLAUSE " +
             ") AND snapshot.status NOT IN ( " +
             "  SELECT snapshot_status.status_id FROM snapshot_status WHERE snapshot_status.status in ('CANCELLED', 'ERROR_RESCHEDULED', 'DESTROYED') " +
+            ") AND snapshot.snapshot_type_id = ( " +
+            "  SELECT snapshot_type.snapshot_type_id FROM snapshot_type where snapshot_type.snapshot_type = 'AUTOMATIC' " +
             ") " +
             "AND now_utc() - sna.created >= ";
 
@@ -107,8 +109,9 @@ public class JdbcMonitorService implements MonitorService {
         String interval = "INTERVAL '" + thresholdInMinutes + " minutes'  ";
         String[] actionStatuses = stream(status).map(ActionStatus::name).toArray(String[]::new);
         String inClause = "IN ('" + String.join("','", actionStatuses) + "')";
-        String selectVmsBySnapshotActionAndDurationWithInClause = selectVmsBySnapshotActionAndDuration.replaceFirst("INCLAUSE", inClause);
+        String selectVmsBySnapshotActionAndDurationWithInClause = selectVmsByAutomaticSnapshotActionAndDuration.replaceFirst("INCLAUSE", inClause);
         String selectDateOrderedVmsBySnapshotActionAndDuration = selectVmsBySnapshotActionAndDurationWithInClause + interval + orderBySnapshotCreated;
+
         return Sql.with(dataSource)
                 .exec(selectDateOrderedVmsBySnapshotActionAndDuration, Sql.listOf(this::mapSnapshotActionData));
     }

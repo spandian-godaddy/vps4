@@ -156,6 +156,28 @@ public class MonitorServiceTest {
         assertTrue(String.format("Expected count of problem VM's does not match actual count of {%s} VM's.", problemVms.size()), problemVms.size() == 2);
         assertTrue("Expected vm id not present in list of problem VM's.", problemVms.stream().anyMatch(vm -> (vm.snapshotId.compareTo(testSnapshotVm6.id) == 0)));
     }
+    
+    @Test
+    public void testGetVmsBySnapshotActionsIgnoresOnDemandSnapshots() {
+        Snapshot testSnapshot = new Snapshot(
+                UUID.randomUUID(),
+                vm4.projectId,
+                vm4.vmId,
+                "fake-snapshot-1",
+                SnapshotStatus.ERROR,
+                Instant.now(),
+                null,
+                "fake-imageid",
+                (int) (Math.random() * 100000),
+                SnapshotType.ON_DEMAND
+        );
+        SqlTestData.insertTestSnapshot(testSnapshot, reportsDataSource);
+        createSnapshotActionWithDate(testSnapshot.id, ActionType.CREATE_SNAPSHOT, ActionStatus.ERROR, Instant.now().minus(Duration.ofMinutes(125)), reportsDataSource);
+
+        List<SnapshotActionData> problemVms = provisioningMonitorService.getVmsBySnapshotActions(120, ActionStatus.IN_PROGRESS, ActionStatus.ERROR);
+        assertNotNull(problemVms);
+        assertTrue(String.format("Expected count of problem VM's does not match actual count of {%s} VM's.", problemVms.size()), problemVms.size() == 2);
+    }
 
     @Test
     public void testGetVmsPendingNewActions() {
