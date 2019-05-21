@@ -17,7 +17,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.godaddy.hfs.config.Config;
+import com.godaddy.hfs.vm.VmService;
 import com.godaddy.vps4.orchestration.hfs.sysadmin.SetPassword;
+import com.godaddy.vps4.orchestration.scheduler.ScheduleSupportUserRemoval;
 import com.godaddy.vps4.orchestration.sysadmin.Vps4AddSupportUser;
 import com.godaddy.vps4.orchestration.sysadmin.Vps4RemoveSupportUser;
 import com.godaddy.vps4.orchestration.sysadmin.Vps4SetPassword;
@@ -30,6 +32,7 @@ import com.godaddy.vps4.vm.ActionType;
 import com.godaddy.vps4.vm.VirtualMachine;
 import com.godaddy.vps4.vm.VmUserService;
 import com.godaddy.vps4.web.Vps4Api;
+import com.godaddy.vps4.web.Vps4Exception;
 import com.godaddy.vps4.web.security.GDUser;
 import com.godaddy.vps4.web.security.StaffOnly;
 import com.godaddy.vps4.web.util.Commands;
@@ -53,6 +56,7 @@ public class VmSupportUserResource {
     private final ActionService actionService;
     private final CommandService commandService;
     private final VmUserService vmUserService;
+    private final VmService vmService;
     private final Cryptography cryptography;
     private final Config config;
     private final GDUser gdUser;
@@ -64,12 +68,14 @@ public class VmSupportUserResource {
                                  ActionService actionService,
                                  CommandService commandService,
                                  VmUserService vmUserService,
+                                 VmService vmService,
                                  Cryptography cryptography,
                                  Config config) {
         this.vmResource = vmResource;
         this.actionService = actionService;
         this.commandService = commandService;
         this.vmUserService = vmUserService;
+        this.vmService = vmService;
         this.cryptography = cryptography;
         this.config = config;
         this.gdUser = user;
@@ -116,7 +122,7 @@ public class VmSupportUserResource {
     @ApiOperation(value = "Remove a support user from a VM")
     public VmActionWithDetails removeSupportUsers(@PathParam("vmId") UUID vmId, @PathParam("supportUsername") String username) {
         VirtualMachine vm = vmResource.getVm(vmId);
-
+        
         if (vmUserService.supportUserExists(username, vmId)) {
             JSONObject removeUserJson = new JSONObject();
             removeUserJson.put("username", username);

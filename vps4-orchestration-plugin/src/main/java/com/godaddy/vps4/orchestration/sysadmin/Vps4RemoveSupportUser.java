@@ -1,7 +1,10 @@
 package com.godaddy.vps4.orchestration.sysadmin;
 
+import com.godaddy.hfs.vm.VmService;
 import com.godaddy.vps4.orchestration.Vps4ActionRequest;
+
 import gdg.hfs.orchestration.CommandRetryStrategy;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -24,12 +27,14 @@ import gdg.hfs.orchestration.CommandMetadata;
 
 public class Vps4RemoveSupportUser extends ActionCommand<Vps4RemoveSupportUser.Request, Void> {
     private final VmUserService vmUserService;
+    private final VmService vmService;
     private static final Logger logger = LoggerFactory.getLogger(Vps4RemoveSupportUser.class);
 
     @Inject
-    public Vps4RemoveSupportUser(ActionService actionService, VmUserService vmUserService) {
+    public Vps4RemoveSupportUser(ActionService actionService, VmUserService vmUserService, VmService vmService) {
         super(actionService);
         this.vmUserService = vmUserService;
+        this.vmService = vmService;
     }
 
     public static class Request extends Vps4ActionRequest {
@@ -40,6 +45,16 @@ public class Vps4RemoveSupportUser extends ActionCommand<Vps4RemoveSupportUser.R
     @Override
     protected Void executeWithAction(CommandContext context, Request request) {
 
+        if (vmService.getVm(request.hfsVmId).status.equalsIgnoreCase("STOPPED")) {
+            rescheduleSupportUserRemoval(context, request);
+            String errorMessage =
+                    String.format(
+                            "VM %s is in STOPPED status. Cannot remove support user %s from VM %s, scheduling retry.",
+                            request.vmId, request.username, request.vmId);
+            logger.warn(errorMessage);
+            throw new RuntimeException(errorMessage);
+        }
+
         RemoveUser.Request removeUserRequest = new RemoveUser.Request();
         removeUserRequest.hfsVmId = request.hfsVmId;
         removeUserRequest.username = request.username;
@@ -49,15 +64,21 @@ public class Vps4RemoveSupportUser extends ActionCommand<Vps4RemoveSupportUser.R
             context.execute(RemoveUser.class, removeUserRequest);
             vmUserService.deleteUser(request.username, request.vmId);
         } catch (ActionNotCompletedException e) {
-            String errorMessage = String.format("Remove support user %s from VM %s failed, scheduling retry.", request.username, request.vmId);
+            String errorMessage =
+                    String.format("Remove support user %s from VM %s failed, scheduling retry.", request.username,
+                            request.vmId);
             logger.warn(errorMessage, e);
-            ScheduleSupportUserRemoval.Request removeSupportUserRequest = new ScheduleSupportUserRemoval.Request();
-            removeSupportUserRequest.vmId = request.vmId;
-            removeSupportUserRequest.username = request.username;
-            context.execute(ScheduleSupportUserRemoval.class, removeSupportUserRequest);
+            rescheduleSupportUserRemoval(context, request);
             throw new RuntimeException(errorMessage, e);
         }
 
         return null;
+    }
+
+    private void rescheduleSupportUserRemoval(CommandContext context, Request request) {
+        ScheduleSupportUserRemoval.Request removeSupportUserRequest = new ScheduleSupportUserRemoval.Request();
+        removeSupportUserRequest.vmId = request.vmId;
+        removeSupportUserRequest.username = request.username;
+        context.execute(ScheduleSupportUserRemoval.class, removeSupportUserRequest);
     }
 }
