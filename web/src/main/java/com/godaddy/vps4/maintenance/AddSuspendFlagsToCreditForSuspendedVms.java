@@ -78,17 +78,21 @@ public class AddSuspendFlagsToCreditForSuspendedVms {
         // get the vmIds associated with the suspended actions.
         Set<UUID> vmIdSet = new HashSet<>();
         if (suspendedActions != null) {
-            suspendedActions.results.stream().map(suspendedAction -> vmIdSet.add(suspendedAction.resourceId))
-                                    .collect(Collectors.toSet());
+            suspendedActions.results.forEach(suspendedAction -> vmIdSet.add(suspendedAction.resourceId));
+        }
+
+        if(vmIdSet.size() == 0) {
+            logger.warn("No suspended vm actions exist in data-center");
+            return;
         }
 
         logger.info("Total Vm ids in suspend status: {}", vmIdSet.size());
-        vmIdSet.stream().forEach(vmId -> logger.info("VmId: {}", vmId));
+        vmIdSet.forEach(vmId -> logger.info("VmId: {}", vmId));
 
         // get the Orion GUID associated with each VM id
         Set<UUID> orionGuids = new HashSet<>();
-        vmIdSet.stream().forEach(vmId -> orionGuids.add(addFlags.virtualMachineService.getOrionGuidByVmId(vmId)));
-        orionGuids.stream().forEach(orionGuid -> logger.info("Orion Guid: {} ", orionGuid));
+        vmIdSet.forEach(vmId -> orionGuids.add(addFlags.virtualMachineService.getOrionGuidByVmId(vmId)));
+        orionGuids.forEach(orionGuid -> logger.info("Orion Guid: {} ", orionGuid));
 
         for (UUID orionGuid : orionGuids) {
             VirtualMachineCredit credit;
@@ -99,36 +103,43 @@ public class AddSuspendFlagsToCreditForSuspendedVms {
                 }
             } catch (Exception ex) {
                 logger.error("Encountered exception while trying to get credit for orionGuid {}", orionGuid);
-                logger.error("Exception: {} ", ex);
+                logger.error("Exception: ", ex);
                 continue;
             }
 
             try {
+                if(credit == null) {
+                    logger.error("Credit is null, cannot proceed.");
+                    throw new RuntimeException("Credit is null. Cannot proceed. ");
+                }
 
                 VirtualMachine virtualMachine = addFlags.virtualMachineService.getVirtualMachine(credit.getProductId());
 
-                if (credit != null && addFlags.isActiveVirtualMachine(virtualMachine)) {
+                if (addFlags.isActiveVirtualMachine(virtualMachine)) {
+                    logger.info("Account status for vmid {} is {}", virtualMachine.vmId, credit.getAccountStatus());
+
                     if (credit.getAccountStatus() == AccountStatus.ABUSE_SUSPENDED) {
                         if (!credit.isAbuseSuspendedFlagSet()) {
                             logger.info("Updating credit, set abuse_suspended flag for credit {}", orionGuid);
-                            if (testMode == false) {
-                                addFlags.creditService.setAbuseSuspendedFlag(virtualMachine.vmId, true);
-                                addFlags.creditService.setBillingSuspendedFlag(virtualMachine.vmId, false);
+                            if (!testMode) {
+                                logger.info("TestMode is {}. Updating credit, set abuse_suspended flag for credit {}", testMode, orionGuid);
+                                addFlags.creditService.setAbuseSuspendedFlag(orionGuid, true);
+                                addFlags.creditService.setBillingSuspendedFlag(orionGuid, false);
                             }
                         }
                     } else if (credit.getAccountStatus() == AccountStatus.SUSPENDED) {
                         if (!credit.isBillingSuspendedFlagSet()) {
                             logger.info("Updating credit, set billing_suspended flag for vmId {}", virtualMachine.vmId);
-                            if (testMode == false) {
-                                addFlags.creditService.setBillingSuspendedFlag(virtualMachine.vmId, true);
-                                addFlags.creditService.setAbuseSuspendedFlag(virtualMachine.vmId, false);
+                            if (!testMode) {
+                                logger.info("TestMode is {}. Updating credit, set billing_suspended flag for credit {}", testMode, orionGuid);
+                                addFlags.creditService.setBillingSuspendedFlag(orionGuid, true);
+                                addFlags.creditService.setAbuseSuspendedFlag(orionGuid, false);
                             }
                         }
                     }
                 }
             } catch (Exception ex) {
                 logger.error("Encountered exception in setting values for credit {}. Exception: {} ", orionGuid, ex);
-                continue;
             }
         }
     }
