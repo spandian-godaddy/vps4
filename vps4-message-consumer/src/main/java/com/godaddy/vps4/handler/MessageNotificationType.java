@@ -8,15 +8,5 @@ public enum MessageNotificationType {
     ADDED,
     UPDATED,
     RENEWED,
-    OTHER;
-
-    public static MessageNotificationType getEnum(String messageType){
-        for(MessageNotificationType mnType : MessageNotificationType.values()){
-            if(mnType.toString().equalsIgnoreCase(messageType)){
-                return mnType;
-            }
-        }
-        return MessageNotificationType.OTHER;
-    }
-
+    UNSUPPORTED;
 }

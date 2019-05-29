@@ -1,5 +1,6 @@
 package com.godaddy.vps4.handler;
 
+import static com.godaddy.vps4.handler.MessageNotificationType.ADDED;
 import static com.godaddy.vps4.handler.util.Commands.execute;
 import static com.godaddy.vps4.handler.util.Utils.isDBError;
 import static com.godaddy.vps4.handler.util.Utils.isOrchEngineDown;
@@ -8,6 +9,7 @@ import static com.godaddy.vps4.handler.util.Utils.isVps4ApiDown;
 import java.io.IOException;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.UUID;
 
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.slf4j.Logger;
@@ -77,181 +79,171 @@ public class Vps4AccountMessageHandler implements MessageHandler {
     public void handleMessage(ConsumerRecord<String, String> message) throws MessageHandlerException {
         logger.info("Consumed message: {} ", message.value());
         Vps4AccountMessage vps4Message = new Vps4AccountMessage(message);
-
-        VirtualMachineCredit credit;
-        VirtualMachine vm;
-        try {
-            credit = creditService.getVirtualMachineCredit(vps4Message.accountGuid);
-            if (credit == null) {
-                logger.info("Account {} not found, message handling will not continue", vps4Message.accountGuid);
-                return;
-            }
-
-            if(shouldUpdatePurchasedAt(vps4Message, credit)) {
-                // this is a new credit.  set the purchasedAt date to now.
-                // purchasedAt is primarily used for determining if this is a heritage account.
-                creditService.updateProductMeta(vps4Message.accountGuid, ProductMetaField.PURCHASED_AT,
-                                                Instant.now().toString());
-            }
-
-            if(credit.getAccountStatus() == AccountStatus.ACTIVE) {
-                // this is pulled out of the switch block because it needs to happen whether there is an existing
-                // vm or not.  The sendFullyManagedWelcomeEmail method will check if this DC is
-                // configured to send the email.
-                sendFullyManagedWelcomeEmail(credit);
-            }
-
-            vm = getVirtualMachine(credit);
-            if (vm == null) {
-                return;
-            }
-        } catch (Exception ex) {
-            logger.error(
-                    "Error while trying to locate account credit for Virtual Machine using account guid {}",
-                    vps4Message.accountGuid);
-            boolean shouldRetry = isOrchEngineDown(ex) || isDBError(ex);
-            throw new MessageHandlerException(shouldRetry, ex);
+        if (vps4Message.notificationType == MessageNotificationType.UNSUPPORTED) {
+            logger.info("Message type is not supported, message processing will not continue for message {}", message);
+            return;
         }
 
+        VirtualMachineCredit credit = getCredit(vps4Message.accountGuid);
+        if (credit == null) {
+            logger.info("Account {} not found, message handling will not continue", vps4Message.accountGuid);
+            return;
+        }
+        VirtualMachine vm = getVirtualMachine(credit);
+        if (vm == null) {
+            logger.info("Could not find an active virtual machine with orion guid {}", credit.getOrionGuid());
+        }
+
+        handleMessageByNotificationType(vps4Message, credit, vm);
+    }
+
+    private VirtualMachineCredit getCredit(UUID accountGuid) throws MessageHandlerException {
+        VirtualMachineCredit credit = null;
         try {
-            switch (vps4Message.notificationType) {
-                case ABUSE_SUSPENDED:
-                    abuseSuspendServer(vm);
-                    break;
-                case SUSPENDED:
-                    billingSuspendServer(vm);
-                    break;
-                case RENEWED:
-                case ADDED:
-                case UPDATED:
-                    processPlanChange(credit, vm);
-                    break;
-                case REMOVED:
-                    handleAccountCancellation(vm, credit);
-                    break;
-                case REINSTATED:
-                    reinstateAccount(vm);
-                    break;
-                default:
-                    break;
+            credit = creditService.getVirtualMachineCredit(accountGuid);
+        } catch (Exception ex) {
+            handleExceptionDuringAccountLookup(accountGuid, ex);
+        }
+        return credit;
+    }
+
+    private void handleExceptionDuringAccountLookup(UUID accountGuid, Exception ex) throws MessageHandlerException {
+        logger.error("Error while trying to locate credit for account guid {}", accountGuid);
+        boolean shouldRetry = isOrchEngineDown(ex) || isDBError(ex);
+        throw new MessageHandlerException(shouldRetry, ex);
+    }
+
+    private VirtualMachine getVirtualMachine(VirtualMachineCredit credit) throws MessageHandlerException {
+        VirtualMachine vm = null;
+        try {
+            if (credit.getProductId() != null) {
+                vm = virtualMachineService.getVirtualMachine(credit.getProductId());
             }
         } catch (Exception ex) {
-            boolean shouldRetry;
-            logger.error("Failed while handling message for account {} with exception {}", vps4Message.accountGuid, ex);
+            handleExceptionDuringVmLookup(credit.getOrionGuid(), ex);
+        }
+        return vm;
+    }    
+    
+    private void handleExceptionDuringVmLookup(UUID accountGuid, Exception ex) throws MessageHandlerException {
+        logger.error("Error while trying to locate server associated with account guid {}", accountGuid);
+        boolean shouldRetry = isOrchEngineDown(ex) || isDBError(ex);
+        throw new MessageHandlerException(shouldRetry, ex);
+    }
 
+    private void handleMessageByNotificationType(Vps4AccountMessage vps4Message, VirtualMachineCredit credit,
+            VirtualMachine vm) throws MessageHandlerException {
+        try {
             switch (vps4Message.notificationType) {
-                case UPDATED:
-                case ADDED:
-                case RENEWED:
-                    // These messages are handled by posting to orchestration engine
-                    shouldRetry = isOrchEngineDown(ex) || isDBError(ex);
-                    break;
-                case ABUSE_SUSPENDED:
-                case SUSPENDED:
-                case REMOVED:
-                    // These messages are handled by posting to vps4 api
-                    shouldRetry = isDBError(ex) || isVps4ApiDown(ex);
-                    break;
-                default:
-                    shouldRetry = isDBError(ex);
-                    break;
+            case ABUSE_SUSPENDED:
+                abuseSuspendServer(vm);
+                break;
+            case SUSPENDED:
+                billingSuspendServer(vm);
+                break;
+            case ADDED:
+                setPurchasedAt(vps4Message, credit);
+                sendFullyManagedWelcomeEmail(credit);
+                processPlanChange(credit, vm);
+                break;
+            case RENEWED:
+            case UPDATED:
+                processPlanChange(credit, vm);
+                break;
+            case REMOVED:
+                handleAccountCancellation(vm, credit);
+                break;
+            case REINSTATED:
+                reinstateAccount(vm);
+                break;
+            default:
+                break;
             }
-
-            throw new MessageHandlerException(shouldRetry, ex);
+        } catch (Exception ex) {
+            handleMessageProcessingException(vps4Message, ex);
         }
     }
 
-    private boolean shouldUpdatePurchasedAt(Vps4AccountMessage vps4Message, VirtualMachineCredit credit){
-        return (primaryMessageConsumerServer
-                && vps4Message.notificationType == vps4Message.notificationType.ADDED
+    private void abuseSuspendServer(VirtualMachine vm) {
+        if (vm != null) {
+            logger.info("Now performing an Abuse suspend on the server {}.", vm.vmId);
+            vmSuspendReinstateService.abuseSuspendAccount(vm.vmId);
+        }
+    }
+
+    private void billingSuspendServer(VirtualMachine vm) {
+        if (vm != null) {
+            logger.info("Now performing a Billing suspend on the server {}.", vm.vmId);
+            vmSuspendReinstateService.billingSuspendAccount(vm.vmId);
+        }
+    }
+
+    private void setPurchasedAt(Vps4AccountMessage vps4Message, VirtualMachineCredit credit) {
+        if (isNewCredit(vps4Message, credit)) {
+            setPurchasedAtInProductMeta(vps4Message);
+        }
+    }
+
+    private boolean isNewCredit(Vps4AccountMessage vps4Message, VirtualMachineCredit credit) {
+        return (primaryMessageConsumerServer && vps4Message.notificationType == ADDED
                 && credit.getPurchasedAt() == null);
     }
 
+    private void setPurchasedAtInProductMeta(Vps4AccountMessage vps4Message) {
+        creditService.updateProductMeta(vps4Message.accountGuid, ProductMetaField.PURCHASED_AT,
+                Instant.now().toString());
+    }
+
     private void sendFullyManagedWelcomeEmail(VirtualMachineCredit credit) {
-        // We can control which datacenter to send welcome emails from the config file variable assigned to
-        // processFullyManagedEmails. We decided to only send these emails from one datacenter because there will be
-        // no vm or datacenter associated with the credit when we want to send the email, and either all or no
-        // datacenters would send the welcome email.
-
-        if (processFullyManagedEmails
-            && credit.getManagedLevel() == FULLY_MANAGED_LEVEL
-            && !credit.isFullyManagedEmailSent()) {
-
+        if (credit.getAccountStatus() == AccountStatus.ACTIVE && processFullyManagedEmails
+                && credit.getManagedLevel() == FULLY_MANAGED_LEVEL && !credit.isFullyManagedEmailSent()) {
             try {
                 messagingService.sendFullyManagedEmail(credit.getShopperId(), credit.getControlPanel());
-                creditService.updateProductMeta(credit.getOrionGuid(),
-                                                ProductMetaField.FULLY_MANAGED_EMAIL_SENT, "true");
-            }
-            catch (MissingShopperIdException | IOException e) {
+                creditService.updateProductMeta(credit.getOrionGuid(), ProductMetaField.FULLY_MANAGED_EMAIL_SENT,
+                        "true");
+            } catch (MissingShopperIdException | IOException e) {
                 logger.warn("Failed to send fully managed welcome email", e);
             }
         }
     }
 
-    private VirtualMachine getVirtualMachine(VirtualMachineCredit credit) {
-        VirtualMachine vm = null;
-        if(credit.getProductId() != null) {
-            vm = virtualMachineService.getVirtualMachine(credit.getProductId());
+    private void processPlanChange(VirtualMachineCredit credit, VirtualMachine vm) {
+        if (vm != null) {
+            if (credit.getTier() != vm.spec.tier) {
+                setPlanChangePendingInProductMeta(credit);
+            }
+            // abuse suspended vm's cannot be upgraded or renewed.
+            if (isAccountAbuseSuspended(credit, vm)) {
+                creditService.setStatus(vm.orionGuid, AccountStatus.ABUSE_SUSPENDED);
+                return;
+            }
+
+            updateVmManagedLevel(credit, vm);
         }
-        if(vm == null) {
-            logger.info("Could not find an active virtual machine with orion guid {}", credit.getOrionGuid());
-        }
-        return vm;
     }
 
-    private void processPlanChange(VirtualMachineCredit credit, VirtualMachine vm) {
-        if (credit.getTier() != vm.spec.tier) {
-            // Update credit that a tier upgrade is pending. Customer will initiate manually as it will incur down time.
-            creditService.updateProductMeta(credit.getOrionGuid(), ProductMetaField.PLAN_CHANGE_PENDING, String.valueOf(true));
-        }
-        // abuse suspended vm's cannot be upgraded or renewed.
-        if (isAccountAbuseSuspended(credit, vm)) {
-            creditService.setStatus(vm.orionGuid, AccountStatus.ABUSE_SUSPENDED);
-            return;
-        }
+    private void setPlanChangePendingInProductMeta(VirtualMachineCredit credit) {
+        creditService.updateProductMeta(credit.getOrionGuid(), ProductMetaField.PLAN_CHANGE_PENDING,
+                String.valueOf(true));
+    }
 
-        // Updates the managed level of a vm
+    private void updateVmManagedLevel(VirtualMachineCredit credit, VirtualMachine vm) {
         Vps4PlanChange.Request request = new Vps4PlanChange.Request();
         request.credit = credit;
         request.vm = vm;
         execute(commandService, vmActionService, "Vps4PlanChange", request);
     }
 
-    private boolean isAccountAbuseSuspended(VirtualMachineCredit credit, VirtualMachine vm) {
-        if (credit.isAbuseSuspendedFlagSet()) {
-            logger.warn(
-                    "Cannot update an ABUSE SUSPENDED account. Account {}  for vm {} is abuse suspended. Account will" +
-                    " need to be reinstated before any other actions can be performed.",
-                    credit.getOrionGuid(), vm.vmId);
-            return true;
-        }
-        return false;
-    }
-
-    private void abuseSuspendServer(VirtualMachine vm) {
-        logger.info("Now performing an Abuse suspend on the server {}.", vm.vmId);
-        vmSuspendReinstateService.abuseSuspendAccount(vm.vmId);
-    }
-
-    private void billingSuspendServer(VirtualMachine vm) {
-        logger.info("Now performing a Billing suspend on the server {}.", vm.vmId);
-        vmSuspendReinstateService.billingSuspendAccount(vm.vmId);
-    }
-    private void reinstateAccount(VirtualMachine vm) {
-        // only billing suspended accounts are re-instated using the notification from kafka messages
-        logger.info("Now re-instating billing suspended account for vm: {} ", vm);
-        vmSuspendReinstateService.reinstateBillingSuspendedAccount(vm.vmId);
-    }
-
     private void handleAccountCancellation(VirtualMachine vm, VirtualMachineCredit credit) {
-        logger.info("Vps4 account canceled: {}", credit.getOrionGuid());
-        if (shouldTemporarilyRetainResources(credit)) {
-            logger.info("Zombie'ing associated server {}", vm.vmId);
-            this.vmZombieService.zombieVm(vm.vmId);
-        }
-        else {
-            logger.info("Deleting server {}, will NOT zombie, has not been setup long enough", vm.vmId);
-            this.vmService.destroyVm(vm.vmId);
+        if (vm != null) {
+            logger.info("Vps4 account canceled: {}", credit.getOrionGuid());
+            if (shouldTemporarilyRetainResources(credit)) {
+                logger.info("Zombie'ing associated server {}", vm.vmId);
+                this.vmZombieService.zombieVm(vm.vmId);
+            } else {
+                logger.info("Deleting server {}, will NOT zombie, has not been setup long enough", vm.vmId);
+                this.vmService.destroyVm(vm.vmId);
+            }
         }
     }
 
@@ -265,4 +257,49 @@ public class Vps4AccountMessageHandler implements MessageHandler {
         return ageOfAccount.toDays() >= minAccountAgeInDays;
     }
 
+    private void reinstateAccount(VirtualMachine vm) {
+        if (vm != null) {
+            // only billing suspended accounts are re-instated using the notification from
+            // kafka messages
+            logger.info("Now re-instating billing suspended account for vm: {} ", vm);
+            vmSuspendReinstateService.reinstateBillingSuspendedAccount(vm.vmId);
+        }
+    }
+
+    private boolean isAccountAbuseSuspended(VirtualMachineCredit credit, VirtualMachine vm) {
+        if (credit.isAbuseSuspendedFlagSet()) {
+            logger.warn(
+                    "Cannot update an ABUSE SUSPENDED account. Account {}  for vm {} is abuse suspended. Account will"
+                            + " need to be reinstated before any other actions can be performed.",
+                            credit.getOrionGuid(), vm.vmId);
+            return true;
+        }
+        return false;
+    }
+
+    private void handleMessageProcessingException(Vps4AccountMessage vps4Message, Exception ex)
+            throws MessageHandlerException {
+        boolean shouldRetry;
+        logger.error("Failed while handling message for account {} with exception {}", vps4Message.accountGuid, ex);
+
+        switch (vps4Message.notificationType) {
+        case UPDATED:
+        case ADDED:
+        case RENEWED:
+            // These messages are handled by posting to orchestration engine
+            shouldRetry = isOrchEngineDown(ex) || isDBError(ex);
+            break;
+        case ABUSE_SUSPENDED:
+        case SUSPENDED:
+        case REMOVED:
+            // These messages are handled by posting to vps4 api
+            shouldRetry = isDBError(ex) || isVps4ApiDown(ex);
+            break;
+        default:
+            shouldRetry = isDBError(ex);
+            break;
+        }
+
+        throw new MessageHandlerException(shouldRetry, ex);
+    }
 }

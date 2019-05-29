@@ -567,4 +567,11 @@ public class Vps4AccountMessageHandlerTest {
 
         verify(creditServiceMock, times(1)).updateProductMeta(orionGuid, ProductMetaField.PLAN_CHANGE_PENDING, "true");
     }
+    
+    @Test
+    public void testHandleUnsupportedMessage() throws MessageHandlerException {
+    	callHandleMessage(createTestKafkaMessage("shopper_changed"));
+    	
+    	verify(creditServiceMock, times(0)).getVirtualMachineCredit(vm.orionGuid);
+    }
 }
