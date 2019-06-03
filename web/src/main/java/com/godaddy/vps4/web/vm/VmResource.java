@@ -68,10 +68,11 @@ import static com.godaddy.vps4.web.util.RequestValidation.getAndValidateUserAcco
 import static com.godaddy.vps4.web.util.RequestValidation.validateCreditIsNotInUse;
 import static com.godaddy.vps4.web.util.RequestValidation.validateNoConflictingActions;
 import static com.godaddy.vps4.web.util.RequestValidation.validateResellerCredit;
-import static com.godaddy.vps4.web.util.RequestValidation.validateServerIsActive;
-import static com.godaddy.vps4.web.util.RequestValidation.validateServerIsStopped;
+import static com.godaddy.vps4.web.util.RequestValidation.validateServerIsActiveOrUnknown;
+import static com.godaddy.vps4.web.util.RequestValidation.validateServerIsStoppedOrUnknown;
 import static com.godaddy.vps4.web.util.RequestValidation.validateUserIsShopper;
 import static com.godaddy.vps4.web.util.RequestValidation.validateVmExists;
+
 import static com.godaddy.vps4.web.util.VmHelper.createActionAndExecute;
 
 @Vps4Api
@@ -149,7 +150,7 @@ public class VmResource {
         VirtualMachine vm = getVm(vmId);
         validateNoConflictingActions(vmId, actionService, ActionType.START_VM, ActionType.STOP_VM,
                 ActionType.RESTART_VM, ActionType.RESTORE_VM);
-        validateServerIsStopped(vmService.getVm(vm.hfsVmId));
+        validateServerIsStoppedOrUnknown(vmService.getVm(vm.hfsVmId));
 
         VmActionRequest startRequest = new VmActionRequest();
         startRequest.virtualMachine = vm;
@@ -163,7 +164,7 @@ public class VmResource {
         VirtualMachine vm = getVm(vmId);
         validateNoConflictingActions(vmId, actionService, ActionType.START_VM, ActionType.STOP_VM,
                 ActionType.RESTART_VM, ActionType.RESTORE_VM);
-        validateServerIsActive(vmService.getVm(vm.hfsVmId));
+        validateServerIsActiveOrUnknown(vmService.getVm(vm.hfsVmId));
 
         VmActionRequest stopRequest = new VmActionRequest();
         stopRequest.virtualMachine = vm;
@@ -183,7 +184,7 @@ public class VmResource {
         // for example: a restart/stop/start vm or restore/upgrade/rebuild vm action is already in progress
         validateNoConflictingActions(vmId, actionService, ActionType.START_VM, ActionType.STOP_VM,
                 ActionType.RESTART_VM, ActionType.POWER_CYCLE, ActionType.RESTORE_VM, ActionType.UPGRADE_VM, ActionType.REBUILD_VM);
-        validateServerIsActive(vmService.getVm(vm.hfsVmId));
+        validateServerIsActiveOrUnknown(vmService.getVm(vm.hfsVmId));
 
         if (vm.spec.isVirtualMachine()) {
             // restart virtual machine if we pass all validations

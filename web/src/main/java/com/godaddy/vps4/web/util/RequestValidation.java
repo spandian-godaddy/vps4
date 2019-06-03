@@ -47,9 +47,14 @@ public class RequestValidation {
             throw new Vps4Exception("INVALID_STATUS", "This action must be run while the server is running");
     }
 
-    public static void validateServerIsStopped(Vm vm) {
-        if (!vm.status.equals("STOPPED"))
-            throw new Vps4Exception("INVALID_STATUS", "This action must be run while the server is stopped");
+    public static void validateServerIsActiveOrUnknown(Vm vm) {
+        if (!Arrays.asList("ACTIVE", "UNKNOWN").contains(vm.status))
+            throw new Vps4Exception("INVALID_STATUS", "This action must be run while the server is in active or unknown status");
+    }
+
+    public static void validateServerIsStoppedOrUnknown(Vm vm) {
+        if (!Arrays.asList("STOPPED", "UNKNOWN").contains(vm.status))
+            throw new Vps4Exception("INVALID_STATUS", "This action must be run while the server is in stopped or unknown status");
     }
 
     public static void validateNoConflictingActions(UUID vmId,

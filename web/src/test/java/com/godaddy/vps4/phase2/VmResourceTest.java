@@ -256,6 +256,12 @@ public class VmResourceTest {
     }
 
     @Test
+    public void testStartUnknownStatusVm() {
+        Phase2ExternalsModule.mockHfsVm("UNKNOWN");
+        startVm();
+    }
+
+    @Test
     public void testStartActiveVm() {
         try {
             startVm();
@@ -300,6 +306,12 @@ public class VmResourceTest {
     @Test
     public void testEmployeeStopVm() {
         user = GDUserMock.createEmployee();
+        testStopVm();
+    }
+
+    @Test
+    public void testStopUnknownStatusVm() {
+        Phase2ExternalsModule.mockHfsVm("UNKNOWN");
         testStopVm();
     }
 
@@ -354,6 +366,12 @@ public class VmResourceTest {
     @Test
     public void testE2SRestartVm() {
         user = GDUserMock.createEmployee2Shopper();
+        testRestartVm();
+    }
+
+    @Test
+    public void testRestartUnknownStatusVm() {
+        Phase2ExternalsModule.mockHfsVm("UNKNOWN");
         testRestartVm();
     }
 
