@@ -3,6 +3,7 @@ package com.godaddy.vps4.security;
 import java.util.UUID;
 
 import com.godaddy.vps4.project.ProjectPrivilege;
+import com.godaddy.vps4.project.UserProjectPrivilege;
 
 public interface PrivilegeService {
 
@@ -19,4 +20,11 @@ public interface PrivilegeService {
     boolean checkPrivilege(Vps4User user, long projectId, ProjectPrivilege privilege);
 
     void requirePrivilege(Vps4User user, long projectId, ProjectPrivilege privilege);
+
+    void outdateVmPrivilegeForShopper(long userId, long projectId);
+
+    void addPrivilegeForUser(long userId, int privilegeId, long projectId);
+
+    UserProjectPrivilege getActivePrivilege(long projectId);
+
 }
