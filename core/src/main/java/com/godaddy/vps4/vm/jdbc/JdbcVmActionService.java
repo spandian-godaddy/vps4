@@ -110,7 +110,7 @@ public class JdbcVmActionService implements ActionService {
         Map<String, Object> filterParams = new HashMap<>();
         UUID vmId = actionFilters.getVmId();
         if (vmId != null){
-            logger.info("In getActionHelper, vmId: [{}]", vmId);
+            logger.debug("In getActionHelper, vmId: [{}]", vmId);
             filterParams.put("vm_id", vmId);
         }
 
@@ -134,7 +134,7 @@ public class JdbcVmActionService implements ActionService {
         actionsQuery.append(" ORDER BY created DESC ");
         long limit = actionFilters.getLimit();
         if (limit >= 0) {
-            logger.info("In getActionHelper, limit: [{}]", limit);
+            logger.debug("In getActionHelper, limit: [{}]", limit);
             actionsQuery.append("LIMIT ? ");
             filterValues.add(limit);
         }
@@ -144,8 +144,8 @@ public class JdbcVmActionService implements ActionService {
             filterValues.add(offset);
         }
 
-        logger.info("In getActionHelper, Query: [{}]", actionsQuery.toString());
-        logger.info("In getActionHelper, filter values: ({})", filterValues.toString());
+        logger.debug("In getActionHelper, Query: [{}]", actionsQuery.toString());
+        logger.debug("In getActionHelper, filter values: ({})", filterValues.toString());
         return Sql.with(dataSource).exec(actionsQuery.toString(),
                 Sql.nextOrNull(this::mapActionWithTotal),
                 filterValues.toArray());
@@ -155,7 +155,7 @@ public class JdbcVmActionService implements ActionService {
         if (typeList.isEmpty())
             return;
 
-        logger.info("In getActionHelper, action list: [{}]", typeList);
+        logger.debug("In getActionHelper, action list: [{}]", typeList);
         String whereInClause = " AND action_type.type IN (%s)";
         List<String> paramaterizedTokens = typeList.stream().map(t -> "?").collect(Collectors.toList());
         whereInClause = String.format(whereInClause, String.join(",", paramaterizedTokens));
@@ -168,7 +168,7 @@ public class JdbcVmActionService implements ActionService {
         if (statusList.isEmpty())
             return;
 
-        logger.info("In getActionHelper, action list: [{}]", statusList);
+        logger.debug("In getActionHelper, action list: [{}]", statusList);
         String whereInClause = " AND action_status.status IN (%s)";
         List<String> paramaterizedTokens = statusList.stream().map(t -> "?").collect(Collectors.toList());
         whereInClause = String.format(whereInClause, String.join(",", paramaterizedTokens));
@@ -180,12 +180,12 @@ public class JdbcVmActionService implements ActionService {
     private void buildDateQuery(Instant beginDate, Instant endDate,
                                 ArrayList<Object> filterValues, StringBuilder actionsQuery) {
         if (beginDate != null){
-            logger.info("In getActionHelper, begin date: [{}]", beginDate);
+            logger.debug("In getActionHelper, begin date: [{}]", beginDate);
             actionsQuery.append(" and created >= ?");
             filterValues.add(LocalDateTime.ofInstant(beginDate, ZoneOffset.UTC));
         }
         if (endDate != null){
-            logger.info("In getActionHelper, end date: [{}]", endDate);
+            logger.debug("In getActionHelper, end date: [{}]", endDate);
             actionsQuery.append(" and created <= ?");
             filterValues.add(LocalDateTime.ofInstant(endDate, ZoneOffset.UTC));
         }

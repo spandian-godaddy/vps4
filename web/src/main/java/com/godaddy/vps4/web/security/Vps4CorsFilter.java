@@ -30,7 +30,7 @@ public class Vps4CorsFilter implements Filter {
 
     @Override
     public void doFilter(ServletRequest req, ServletResponse res, FilterChain chain) throws IOException, ServletException {
-        logger.info("Vps4CorsFilter");
+        logger.debug("Vps4CorsFilter");
         HttpServletRequest request = (HttpServletRequest)req;
         HttpServletResponse response = (HttpServletResponse)res;
 
