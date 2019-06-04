@@ -13,6 +13,7 @@ import org.junit.Test;
 import com.godaddy.vps4.jdbc.DatabaseModule;
 import com.godaddy.vps4.plan.Plan;
 import com.godaddy.vps4.plan.PlanModule;
+import com.godaddy.vps4.vm.Image.ControlPanel;
 import com.godaddy.vps4.web.plan.PlanResource;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
@@ -33,7 +34,7 @@ public class PlanResourceTest {
     }
 
     @Test
-    public void testGetPlan() {
+    public void testGetPlan1066868() {
         int pfid = 1066868;  // tier1, linux, 3mo
         String expectedPackageId = "vps4_linux_tier1_003mo";
         int expectedCpus = 1;
@@ -46,6 +47,24 @@ public class PlanResourceTest {
         assertEquals(expectedCpus, plan.cpuCoreCount);
         assertEquals(expectedMem, plan.memoryMib);
         assertEquals(expectedDisk, plan.diskGib);
+        assertEquals(ControlPanel.MYH, plan.controlPanel);
+    }
+
+    @Test
+    public void testGetPlan1215752() {
+        int pfid = 1215752; // tier1, linux, 3mo
+        String expectedPackageId = "vps4_managed_lin_cpanel_tier2_012mo";
+        int expectedCpus = 2;
+        int expectedMem = 4096;
+        int expectedDisk = 60;
+        Plan plan = getPlanResource().getPlan(pfid);
+
+        assertEquals(pfid, plan.pfid);
+        assertEquals(expectedPackageId, plan.packageId);
+        assertEquals(expectedCpus, plan.cpuCoreCount);
+        assertEquals(expectedMem, plan.memoryMib);
+        assertEquals(expectedDisk, plan.diskGib);
+        assertEquals(ControlPanel.CPANEL, plan.controlPanel);
     }
 
     @Test
@@ -57,19 +76,28 @@ public class PlanResourceTest {
     }
 
     @Test
-    public void testGetUpgradeList() {
+    public void testGetUpgradeListPlan1066873() {
         int pfid = 1066873;  // tier2, linux, 6mo
         List<Plan> upgradeList = getPlanResource().getUpgradeList(pfid);
-
-        // Only tier3 and tier4 available, tier1 not in upgrade list
-        assertEquals(2, upgradeList.size());
+        
+        assertEquals(4, upgradeList.size());
         assertEquals("vps4_linux_tier3_006mo", upgradeList.get(0).packageId);
         assertEquals("vps4_linux_tier4_006mo", upgradeList.get(1).packageId);
+        assertEquals("vps4_self_managed_high_mem_lin_tier2_006mo", upgradeList.get(2).packageId);
+        assertEquals("vps4_self_managed_high_mem_lin_tier4_006mo", upgradeList.get(3).packageId);
+    }
+
+    @Test
+    public void testGetUpgradeListPlan1215752() {
+        int pfid = 1215752; // tier2, linux, 6mo
+        List<Plan> upgradeList = getPlanResource().getUpgradeList(pfid);
+
+        assertEquals(4, upgradeList.size());
     }
 
     @Test
     public void testGetUpgradeListTopTierNoUpgrades() {
-        int pfid = 1066910;  // tier4, linux, 12mo
+        int pfid = 1193702;  // tier4, linux, 12mo, high_mem
         List<Plan> upgradeList = getPlanResource().getUpgradeList(pfid);
 
         // already highest at highest tier available
