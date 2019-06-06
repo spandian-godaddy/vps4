@@ -1,9 +1,19 @@
 # Getting Started developing on VPS4
 
-
-- request to be added to the `Dev-VPS4` AD group
-    - https://godaddy.service-now.com/gdsp
-    - Service Catalog -> My Digital Experience -> Access -> Security Group Updates -> Update My Security Groups
+## Access Rights
+- There are several requests for access you need to make to get started on developing:
+    - request to be added to the `dev-VPS4` AD group (for vps4-web-api)
+       - https://godaddy.service-now.com/gdsp
+       - Service Catalog -> My Digital Experience -> Access -> Security Group Updates -> Update My Security Groups  
+    - request to be added to the `admins_VPS4` AD group (for access to infrastructure servers)
+       - https://godaddy.service-now.com/gdsp
+       - Service Catalog -> My Digital Experience -> Access -> Security Group Updates -> Update My Security Groups
+    - request CRM - Validation Skip Access (for special admin-type access)
+       - https://godaddy.service-now.com/gdsp
+       - Service Catalog -> Go to Search bar -> Type "skip access" and enter-> Click on the "CRM - Validation Skip Access" link
+    - Note: the requests may be automatically marked as completed, however it usually takes a few hours for the system to update and for you to gain access.
+  
+## Getting Started
 - git clone vps4 code locally:
     - https://github.secureserver.net/vps4/vps4
     - note: you will not have write access to this repo until someone adds you as a collaborator or to the vps4 team in GitHub
@@ -11,11 +21,15 @@
 - download Eclipse IDE for Java Developers
     - you can choose to use another IDE, like IntelliJ IDEA (Community Edition should be sufficient & does not require a license), but these specific instructions are catered for Eclipse setup
 - download Intellij Idea Ultimate edition IDE if that is your choice of IDE
-    - you can get a godaddy license activation by logging into the jetbrains website with your godaddy email. This should provide you with a Toolbox subscription for several Jetbrains products.
-- setup code style settings for Intellij Idea 
-    - download the file in the url shown here to a local directory on your mac https://github.secureserver.net/vps4/intellijSettings/blob/master/codestyles/Default.xml
-    - Open Intellij Idea and click on File -> Import Settings and import the file. This will enable your import settings to match with the teams' preferences.
+    - you can get a godaddy license activation by submitting a SNOW request (example: [RITM0120501](https://godaddy.service-now.com/nav_to.do?uri=sc_req_item.do?sys_id=b2e5047c37708384ce4fb15ec3990e9a)). After it is resolved, the JetBrains license will be connected to your GoDaddy email, you will then be able to activate license for both your IntelliJ IDEA IDE and WebStorm IDE.
+    - Note: this request might take a few days to resolve. In the meantime, you can still use the 30 day free trial version.
+- setup code style settings for Intellij Idea    
+    - <s>download the file in the url shown here to a local directory on your mac https://github.secureserver.net/vps4/intellijSettings/blob/master/codestyles/Default.xml
+    - Open Intellij Idea and click on File -> Import Settings and import the file. This will enable your import settings to match with the teams' preferences.</s> - this yields "Invalid File" error
     - Alternatively, you can point your Intellij Idea to the repo located at https://github.secureserver.net/vps4/intellijSettings.git by choosing File -> Settings Repo and using the URL for the settings repo.  
+- make sure Maven is installed
+    - for Mac, if you have homebrew already installed, one way to do it:
+       - `brew install maven`
 - create maven settings file (be sure to get the password for line 22):
 > File: ~/.m2/settings.xml
 ```xml
@@ -60,6 +74,13 @@
     - go through the screens clicking "Next"
     - Project should be opened in the editor once above steps are completed
 
+- create Intellij Run Configurations
+    - Click on "Edit configurations" on the top right bar
+    - Click on "+"/"Add new configurations" 
+        - Local Orchestration Engine (**Refer to the [intellij run configs](../doc/intellij_run_configs.md) under section "Orchestration (Non-plugin)" for instructions on setting up the run config for orchengine**)
+        - Web Server  (**Refer to the same link above, under section "Vps4 API"**)
+        - Scheduler (**Refer to the same link above under section "Scheduler memory mode"**)
+
 - create Eclipse Run Configurations
     - Run -> Run configurations
     - Java Application, create New launch configurations
@@ -81,7 +102,7 @@
 - replace Java limited encryption jars if you’ve never done so
     - Download the unlimited jce jars and see the readme.txt for instructions: http://www.oracle.com/technetwork/java/javase/downloads/jce8-download-2133166.html
 
-- setup Postgres database
+- setup Postgres database - **ask someone on the team for default Postgres db password**
     - install postgresql locally or install vagrant
     - for Mac, one way to do it:
         - install homebrew
@@ -101,6 +122,10 @@
             ```bash
             mvn initialize flyway:migrate
             ```
+ - setup local configs if needed
+    - open: ```core/src/main/resources/com/godaddy/vps4/config/local/config.properties```
+    - edit the line: ```-hfs.sgid.prefix=vps4-local-``` into: ```-hfs.sgid.prefix=vps4-local-your_jomax_username```
+    
 
 - import HFS web developer client cert into browser (Chrome?) to use HFS swagger UI
     - ask HFS team for read collaborator access to the `hfs/Creds` repo, and then git clone it locally
