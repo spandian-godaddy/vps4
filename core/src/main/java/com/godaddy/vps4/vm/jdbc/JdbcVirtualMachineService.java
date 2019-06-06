@@ -225,9 +225,10 @@ public class JdbcVirtualMachineService implements VirtualMachineService {
             UUID orionGuid, Long hfsVmId) {
         List<Object> args = new ArrayList<>();
         StringBuilder queryAddition = new StringBuilder();
+        queryAddition.append("JOIN user_project_privilege upp on upp.project_id = prj.project_id ");
+
         if(vps4UserId != null){
-            queryAddition.append("JOIN user_project_privilege upp on upp.project_id = prj.project_id "
-            + "JOIN vps4_user on vps4_user.vps4_user_id = upp.vps4_user_id ");
+            queryAddition.append("JOIN vps4_user on vps4_user.vps4_user_id = upp.vps4_user_id ");
         }
         queryAddition.append("WHERE upp.valid_until = 'infinity'");
         if(vps4UserId != null) {

@@ -169,4 +169,16 @@ public class VmShopperMergeResourceTest {
                 userProjectPrivilege.projectId);
     }
 
+    @Test
+    public void ifCurrentShopperUserIdIsEqualToNewUserIdReturn() {
+
+        userProjectPrivilege.vps4UserId = 1;
+        VmShopperMergeResource.ShopperMergeRequest shopperMergeRequest = createVmShopperMergeRequest(newUser.getShopperId());
+        testShopperMergeResource.mergeTwoShopperAccounts(vmId, shopperMergeRequest);
+        testShopperMergeResource.mergeTwoShopperAccounts(vmId, shopperMergeRequest);
+
+        verify(privilegeService, times(0))
+                .outdateVmPrivilegeForShopper(userProjectPrivilege.vps4UserId, userProjectPrivilege.projectId);
+    }
+
 }

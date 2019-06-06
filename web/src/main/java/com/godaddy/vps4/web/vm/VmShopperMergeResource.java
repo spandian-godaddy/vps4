@@ -85,13 +85,16 @@ public class VmShopperMergeResource {
         long projectId = vm.projectId;
 
         UserProjectPrivilege currentShopperProjectPrivilege = privilegeService.getActivePrivilege(projectId);
-        if (currentShopperProjectPrivilege == null) {
-            throw new Vps4Exception("NO_SHOPPER_PRIVILEGE", "shopper privilege not found");
+
+        if (currentShopperProjectPrivilege.vps4UserId != vps4NewUser.getId()) {
+            if (currentShopperProjectPrivilege == null) {
+                throw new Vps4Exception("NO_SHOPPER_PRIVILEGE", "shopper privilege not found");
+            }
+            long currentUserId = currentShopperProjectPrivilege.vps4UserId;
+            privilegeService.outdateVmPrivilegeForShopper(currentUserId, projectId);
+            privilegeService
+                    .addPrivilegeForUser(vps4NewUser.getId(), currentShopperProjectPrivilege.privilegeId, projectId);
         }
-        long currentUserId = currentShopperProjectPrivilege.vps4UserId;
-        privilegeService.outdateVmPrivilegeForShopper(currentUserId, projectId);
-        privilegeService
-                .addPrivilegeForUser(vps4NewUser.getId(), currentShopperProjectPrivilege.privilegeId, projectId);
     }
 
 }
