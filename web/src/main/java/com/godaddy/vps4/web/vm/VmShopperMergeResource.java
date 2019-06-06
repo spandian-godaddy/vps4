@@ -74,7 +74,7 @@ public class VmShopperMergeResource {
             notes = "merges two shopper accounts.")
     @RequiresRole(roles = {GDUser.Role.ADMIN})
     public void mergeTwoShopperAccounts(@PathParam("vmId") UUID vmId, ShopperMergeRequest shopperMergeRequest) {
-        logger.info("attempting to merge shopperId {} with vmId {}", shopperMergeRequest.newShopperId, vmId);
+        logger.info("Attempting to merge shopperId {} with vmId {}", shopperMergeRequest.newShopperId, vmId);
         VirtualMachine vm = vmResource.getVm(vmId);
         VirtualMachineCredit vmCredit = getAndValidateUserAccountCredit(
                 creditService, vm.orionGuid, shopperMergeRequest.newShopperId);
