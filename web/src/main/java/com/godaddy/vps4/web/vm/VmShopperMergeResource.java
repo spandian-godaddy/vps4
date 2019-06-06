@@ -22,6 +22,7 @@ import com.godaddy.vps4.security.Vps4UserService;
 import com.godaddy.vps4.vm.VirtualMachine;
 import com.godaddy.vps4.vm.VirtualMachineService;
 import com.godaddy.vps4.web.Vps4Api;
+import com.godaddy.vps4.web.Vps4Exception;
 import com.godaddy.vps4.web.security.GDUser;
 import com.godaddy.vps4.web.security.RequiresRole;
 
@@ -73,7 +74,7 @@ public class VmShopperMergeResource {
             notes = "merges two shopper accounts.")
     @RequiresRole(roles = {GDUser.Role.ADMIN})
     public void mergeTwoShopperAccounts(@PathParam("vmId") UUID vmId, ShopperMergeRequest shopperMergeRequest) {
-        logger.info("attempting to merge shopperId {} with vmId {}", shopperMergeRequest.newShopperId ,vmId);
+        logger.info("attempting to merge shopperId {} with vmId {}", shopperMergeRequest.newShopperId, vmId);
         VirtualMachine vm = vmResource.getVm(vmId);
         VirtualMachineCredit vmCredit = getAndValidateUserAccountCredit(
                 creditService, vm.orionGuid, shopperMergeRequest.newShopperId);
@@ -84,7 +85,9 @@ public class VmShopperMergeResource {
         long projectId = vm.projectId;
 
         UserProjectPrivilege currentShopperProjectPrivilege = privilegeService.getActivePrivilege(projectId);
-        assert (currentShopperProjectPrivilege != null);
+        if (currentShopperProjectPrivilege == null) {
+            throw new Vps4Exception("NO_SHOPPER_PRIVILEGE", "shopper privilege not found");
+        }
         long currentUserId = currentShopperProjectPrivilege.vps4UserId;
         privilegeService.outdateVmPrivilegeForShopper(currentUserId, projectId);
         privilegeService

@@ -135,7 +135,7 @@ public class VmShopperMergeResourceTest {
     @Test
     public void getOrCreateUserIfDoesNotExist() {
         testShopperMergeResource.mergeTwoShopperAccounts(vmId, createVmShopperMergeRequest(newUser.getShopperId()));
-        
+
         verify(userService, times(1)).getOrCreateUserForShopper(newUser.getShopperId(), resellerId);
     }
 
@@ -164,7 +164,7 @@ public class VmShopperMergeResourceTest {
     @Test
     public void createNewPrivilegeForUser() {
         testShopperMergeResource.mergeTwoShopperAccounts(vmId, createVmShopperMergeRequest(newUser.getShopperId()));
-        
+
         verify(privilegeService, times(1)).addPrivilegeForUser(newVps4User.getId(), userProjectPrivilege.privilegeId,
                 userProjectPrivilege.projectId);
     }
