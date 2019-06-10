@@ -8,5 +8,6 @@ public enum MessageNotificationType {
     ADDED,
     UPDATED,
     RENEWED,
+    SHOPPER_CHANGED,
     UNSUPPORTED;
 }

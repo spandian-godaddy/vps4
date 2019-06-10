@@ -48,8 +48,12 @@ import com.godaddy.vps4.vm.VirtualMachine;
 import com.godaddy.vps4.vm.VirtualMachineService;
 import com.godaddy.vps4.vm.VmAction;
 import com.godaddy.vps4.web.client.VmService;
+import com.godaddy.vps4.web.client.VmShopperMergeService;
 import com.godaddy.vps4.web.client.VmSuspendReinstateService;
 import com.godaddy.vps4.web.client.VmZombieService;
+import com.godaddy.vps4.web.vm.VmShopperMergeResource;
+
+import static com.godaddy.vps4.web.vm.VmShopperMergeResource.ShopperMergeRequest;
 
 import gdg.hfs.orchestration.CommandGroupSpec;
 import gdg.hfs.orchestration.CommandService;
@@ -65,6 +69,7 @@ public class Vps4AccountMessageHandlerTest {
     private VmZombieService vmZombieServiceMock = mock(VmZombieService.class);
     private VmSuspendReinstateService vmSuspendReinstateService = mock(VmSuspendReinstateService.class);
     private VmService vmService = mock(VmService.class);
+    private VmShopperMergeService vmShopperMergeService = mock(VmShopperMergeService.class);
     private Config configMock = mock(Config.class);
     private Vps4MessagingService messagingServiceMock = mock(Vps4MessagingService.class);
     private VmAction vmAction = mock(VmAction.class);
@@ -96,7 +101,7 @@ public class Vps4AccountMessageHandlerTest {
         vmSpec.tier = 10;
 
         vm = new VirtualMachine(UUID.randomUUID(), 123L, orionGuid,
-                                321L, vmSpec, "TestVm", null, null, null, null, null, null, 0, UUID.randomUUID());
+                321L, vmSpec, "TestVm", null, null, null, null, null, null, 0, UUID.randomUUID());
         when(vmServiceMock.getVirtualMachine(vm.vmId)).thenReturn(vm);
 
         CommandState command = new CommandState();
@@ -152,14 +157,15 @@ public class Vps4AccountMessageHandlerTest {
         ConsumerRecord<String, String> record = mock(ConsumerRecord.class);
         when(record.value()).thenReturn(message);
         MessageHandler handler = new Vps4AccountMessageHandler(vmServiceMock,
-                                                               creditServiceMock,
-                                                               vmActionServiceMock,
-                                                               commandServiceMock,
-                                                               messagingServiceMock,
-                                                               vmZombieServiceMock,
-                                                               vmSuspendReinstateService,
-                                                               vmService,
-                                                               configMock);
+                creditServiceMock,
+                vmActionServiceMock,
+                commandServiceMock,
+                messagingServiceMock,
+                vmZombieServiceMock,
+                vmSuspendReinstateService,
+                vmService,
+                vmShopperMergeService,
+                configMock);
         handler.handleMessage(record);
     }
 
@@ -171,8 +177,8 @@ public class Vps4AccountMessageHandlerTest {
     @Test(expected = IllegalArgumentException.class)
     public void testHandleMessageBadValues() throws MessageHandlerException {
         callHandleMessage("{\"id\":\"not a guid\","
-                          + "\"notification\":{\"type\":[\"added\"],"
-                          + "\"account_guid\":\"e36b4412-ec52-420f-86fd-cf5332cf0c88\"}}");
+                + "\"notification\":{\"type\":[\"added\"],"
+                + "\"account_guid\":\"e36b4412-ec52-420f-86fd-cf5332cf0c88\"}}");
     }
 
     @Test
@@ -203,7 +209,7 @@ public class Vps4AccountMessageHandlerTest {
         when(messagingServiceMock.sendFullyManagedEmail("TestShopper", "cpanel")).thenReturn("messageId");
         when(configMock.get("vps4MessageHandler.processFullyManagedEmails")).thenReturn("true");
         Mockito.doNothing().when(creditServiceMock)
-               .updateProductMeta(orionGuid, ProductMetaField.FULLY_MANAGED_EMAIL_SENT, "true");
+                .updateProductMeta(orionGuid, ProductMetaField.FULLY_MANAGED_EMAIL_SENT, "true");
 
         callHandleMessage(createTestKafkaMessage("added"));
 
@@ -272,7 +278,8 @@ public class Vps4AccountMessageHandlerTest {
         mockVmCredit(AccountStatus.ACTIVE, null);
         callHandleMessage(createTestKafkaMessage("added"));
 
-        verify(creditServiceMock, never()).updateProductMeta(any(UUID.class), any(ProductMetaField.class), any(String.class));
+        verify(creditServiceMock, never())
+                .updateProductMeta(any(UUID.class), any(ProductMetaField.class), any(String.class));
     }
 
     @Test
@@ -281,7 +288,8 @@ public class Vps4AccountMessageHandlerTest {
         mockVmCredit(AccountStatus.ACTIVE, null);
         callHandleMessage(createTestKafkaMessage("suspended"));
 
-        verify(creditServiceMock, never()).updateProductMeta(any(UUID.class), any(ProductMetaField.class), any(String.class));
+        verify(creditServiceMock, never())
+                .updateProductMeta(any(UUID.class), any(ProductMetaField.class), any(String.class));
     }
 
     @Test
@@ -514,7 +522,7 @@ public class Vps4AccountMessageHandlerTest {
     public void accountRemovalThrowsRetryableExceptionWhenApiDown() {
         mockVmCredit(AccountStatus.REMOVED, vm.vmId);
         doThrow(new ProcessingException(mock(HttpHostConnectException.class))).when(vmZombieServiceMock)
-                                                                              .zombieVm(any(UUID.class));
+                .zombieVm(any(UUID.class));
 
         try {
             callHandleMessage(createTestKafkaMessage("removed"));
@@ -567,11 +575,56 @@ public class Vps4AccountMessageHandlerTest {
 
         verify(creditServiceMock, times(1)).updateProductMeta(orionGuid, ProductMetaField.PLAN_CHANGE_PENDING, "true");
     }
-    
+
     @Test
     public void testHandleUnsupportedMessage() throws MessageHandlerException {
-    	callHandleMessage(createTestKafkaMessage("shopper_changed"));
-    	
-    	verify(creditServiceMock, times(0)).getVirtualMachineCredit(vm.orionGuid);
+        callHandleMessage(createTestKafkaMessage("unsupported_message"));
+
+        verify(creditServiceMock, times(0)).getVirtualMachineCredit(vm.orionGuid);
     }
+
+    @Test
+    public void testHandleShopperChangedMessage() throws MessageHandlerException {
+        mockVmCredit(AccountStatus.ACTIVE, vm.vmId);
+        callHandleMessage(createTestKafkaMessage("shopper_changed"));
+
+        verify(vmShopperMergeService, times(1)).mergeShopper(eq(vm.vmId), anyObject());
+    }
+
+    @Test
+    public void handleShopperChangedThrowsRetryableExceptionIfDBIsDown() {
+        mockVmCredit(AccountStatus.ACTIVE, vm.vmId);
+        doThrow(new RuntimeException("Sql.foobar")).when(vmZombieServiceMock).zombieVm(any(UUID.class));
+
+        try {
+            callHandleMessage(createTestKafkaMessage("shopper_changed"));
+        } catch (MessageHandlerException ex) {
+            assertTrue(ex.shouldRetry());
+        }
+    }
+
+    @Test
+    public void handlerSHopperCHangedThrowsRetryableExceptionWhenApiServiceUnavailable() {
+        mockVmCredit(AccountStatus.ACTIVE, vm.vmId);
+        doThrow(new ServiceUnavailableException()).when(vmZombieServiceMock).zombieVm(any(UUID.class));
+
+        try {
+            callHandleMessage(createTestKafkaMessage("shopper_changed"));
+        } catch (MessageHandlerException ex) {
+            assertTrue(ex.shouldRetry());
+        }
+    }
+
+    @Test
+    public void handlerShopperChangedThrowsNotRetryableExceptionWhenOrchestrationEngineIsDown() {
+        mockVmCredit(AccountStatus.ACTIVE, vm.vmId);
+        doThrow(new InternalServerErrorException()).when(vmZombieServiceMock).zombieVm(any(UUID.class));
+
+        try {
+            callHandleMessage(createTestKafkaMessage("shopper_changed"));
+        } catch (MessageHandlerException ex) {
+            assertTrue(!ex.shouldRetry());
+        }
+    }
+
 }

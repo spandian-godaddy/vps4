@@ -27,8 +27,13 @@ import com.godaddy.vps4.vm.ActionService;
 import com.godaddy.vps4.vm.VirtualMachine;
 import com.godaddy.vps4.vm.VirtualMachineService;
 import com.godaddy.vps4.web.client.VmService;
+import com.godaddy.vps4.web.client.VmShopperMergeService;
 import com.godaddy.vps4.web.client.VmSuspendReinstateService;
 import com.godaddy.vps4.web.client.VmZombieService;
+import com.godaddy.vps4.web.vm.VmShopperMergeResource;
+
+import static com.godaddy.vps4.web.vm.VmShopperMergeResource.ShopperMergeRequest;
+
 import com.google.inject.Inject;
 
 import gdg.hfs.orchestration.CommandService;
@@ -44,6 +49,7 @@ public class Vps4AccountMessageHandler implements MessageHandler {
     private final boolean processFullyManagedEmails;
     private final boolean primaryMessageConsumerServer;
     private final VmZombieService vmZombieService;
+    private final VmShopperMergeService vmShopperMergeService;
     private final Vps4MessagingService messagingService;
     private final VmSuspendReinstateService vmSuspendReinstateService;
     private final VmService vmService;
@@ -59,7 +65,8 @@ public class Vps4AccountMessageHandler implements MessageHandler {
             Vps4MessagingService messagingService,
             VmZombieService vmZombieService,
             VmSuspendReinstateService vmSuspendReinstateService,
-            VmService vmService,
+            VmService vmService, 
+            VmShopperMergeService vmShopperMergeService,
             Config config) {
 
         this.virtualMachineService = virtualMachineService;
@@ -70,9 +77,11 @@ public class Vps4AccountMessageHandler implements MessageHandler {
         this.vmZombieService = vmZombieService;
         this.vmSuspendReinstateService = vmSuspendReinstateService;
         this.vmService = vmService;
+        this.vmShopperMergeService = vmShopperMergeService;
         this.config = config;
         processFullyManagedEmails = Boolean.parseBoolean(config.get("vps4MessageHandler.processFullyManagedEmails"));
-        primaryMessageConsumerServer = Boolean.parseBoolean(config.get("vps4MessageHandler.primaryMessageConsumerServer"));
+        primaryMessageConsumerServer =
+                Boolean.parseBoolean(config.get("vps4MessageHandler.primaryMessageConsumerServer"));
     }
 
     @Override
@@ -123,8 +132,8 @@ public class Vps4AccountMessageHandler implements MessageHandler {
             handleExceptionDuringVmLookup(credit.getOrionGuid(), ex);
         }
         return vm;
-    }    
-    
+    }
+
     private void handleExceptionDuringVmLookup(UUID accountGuid, Exception ex) throws MessageHandlerException {
         logger.error("Error while trying to locate server associated with account guid {}", accountGuid);
         boolean shouldRetry = isOrchEngineDown(ex) || isDBError(ex);
@@ -132,32 +141,35 @@ public class Vps4AccountMessageHandler implements MessageHandler {
     }
 
     private void handleMessageByNotificationType(Vps4AccountMessage vps4Message, VirtualMachineCredit credit,
-            VirtualMachine vm) throws MessageHandlerException {
+                                                 VirtualMachine vm) throws MessageHandlerException {
         try {
             switch (vps4Message.notificationType) {
-            case ABUSE_SUSPENDED:
-                abuseSuspendServer(vm);
-                break;
-            case SUSPENDED:
-                billingSuspendServer(vm);
-                break;
-            case ADDED:
-                setPurchasedAt(vps4Message, credit);
-                sendFullyManagedWelcomeEmail(credit);
-                processPlanChange(credit, vm);
-                break;
-            case RENEWED:
-            case UPDATED:
-                processPlanChange(credit, vm);
-                break;
-            case REMOVED:
-                handleAccountCancellation(vm, credit);
-                break;
-            case REINSTATED:
-                reinstateAccount(vm);
-                break;
-            default:
-                break;
+                case ABUSE_SUSPENDED:
+                    abuseSuspendServer(vm);
+                    break;
+                case SUSPENDED:
+                    billingSuspendServer(vm);
+                    break;
+                case ADDED:
+                    setPurchasedAt(vps4Message, credit);
+                    sendFullyManagedWelcomeEmail(credit);
+                    processPlanChange(credit, vm);
+                    break;
+                case RENEWED:
+                case UPDATED:
+                    processPlanChange(credit, vm);
+                    break;
+                case REMOVED:
+                    handleAccountCancellation(vm, credit);
+                    break;
+                case REINSTATED:
+                    reinstateAccount(vm);
+                    break;
+                case SHOPPER_CHANGED:
+                    processShopperMerge(vm, credit);
+                    break;
+                default:
+                    break;
             }
         } catch (Exception ex) {
             handleMessageProcessingException(vps4Message, ex);
@@ -271,10 +283,18 @@ public class Vps4AccountMessageHandler implements MessageHandler {
             logger.warn(
                     "Cannot update an ABUSE SUSPENDED account. Account {}  for vm {} is abuse suspended. Account will"
                             + " need to be reinstated before any other actions can be performed.",
-                            credit.getOrionGuid(), vm.vmId);
+                    credit.getOrionGuid(), vm.vmId);
             return true;
         }
         return false;
+    }
+
+    private void processShopperMerge(VirtualMachine vm, VirtualMachineCredit credit) {
+        if (vm != null) {
+            ShopperMergeRequest shopperMergeRequest = new ShopperMergeRequest();
+            shopperMergeRequest.newShopperId = credit.getShopperId();
+            vmShopperMergeService.mergeShopper(vm.vmId, shopperMergeRequest);
+        }
     }
 
     private void handleMessageProcessingException(Vps4AccountMessage vps4Message, Exception ex)
@@ -283,21 +303,22 @@ public class Vps4AccountMessageHandler implements MessageHandler {
         logger.error("Failed while handling message for account {} with exception {}", vps4Message.accountGuid, ex);
 
         switch (vps4Message.notificationType) {
-        case UPDATED:
-        case ADDED:
-        case RENEWED:
-            // These messages are handled by posting to orchestration engine
-            shouldRetry = isOrchEngineDown(ex) || isDBError(ex);
-            break;
-        case ABUSE_SUSPENDED:
-        case SUSPENDED:
-        case REMOVED:
-            // These messages are handled by posting to vps4 api
-            shouldRetry = isDBError(ex) || isVps4ApiDown(ex);
-            break;
-        default:
-            shouldRetry = isDBError(ex);
-            break;
+            case UPDATED:
+            case ADDED:
+            case RENEWED:
+                // These messages are handled by posting to orchestration engine
+                shouldRetry = isOrchEngineDown(ex) || isDBError(ex);
+                break;
+            case ABUSE_SUSPENDED:
+            case SUSPENDED:
+            case REMOVED:
+            case SHOPPER_CHANGED:
+                // These messages are handled by posting to vps4 api
+                shouldRetry = isDBError(ex) || isVps4ApiDown(ex);
+                break;
+            default:
+                shouldRetry = isDBError(ex);
+                break;
         }
 
         throw new MessageHandlerException(shouldRetry, ex);
