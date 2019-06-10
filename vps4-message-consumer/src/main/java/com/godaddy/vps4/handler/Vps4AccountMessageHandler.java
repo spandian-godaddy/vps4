@@ -5,6 +5,7 @@ import static com.godaddy.vps4.handler.util.Commands.execute;
 import static com.godaddy.vps4.handler.util.Utils.isDBError;
 import static com.godaddy.vps4.handler.util.Utils.isOrchEngineDown;
 import static com.godaddy.vps4.handler.util.Utils.isVps4ApiDown;
+import static com.godaddy.vps4.web.vm.VmShopperMergeResource.ShopperMergeRequest;
 
 import java.io.IOException;
 import java.time.Duration;
@@ -30,10 +31,6 @@ import com.godaddy.vps4.web.client.VmService;
 import com.godaddy.vps4.web.client.VmShopperMergeService;
 import com.godaddy.vps4.web.client.VmSuspendReinstateService;
 import com.godaddy.vps4.web.client.VmZombieService;
-import com.godaddy.vps4.web.vm.VmShopperMergeResource;
-
-import static com.godaddy.vps4.web.vm.VmShopperMergeResource.ShopperMergeRequest;
-
 import com.google.inject.Inject;
 
 import gdg.hfs.orchestration.CommandService;
@@ -55,7 +52,6 @@ public class Vps4AccountMessageHandler implements MessageHandler {
     private final VmService vmService;
     private final Config config;
     static final int FULLY_MANAGED_LEVEL = 2;
-
     @Inject
     public Vps4AccountMessageHandler(
             VirtualMachineService virtualMachineService,
@@ -65,7 +61,7 @@ public class Vps4AccountMessageHandler implements MessageHandler {
             Vps4MessagingService messagingService,
             VmZombieService vmZombieService,
             VmSuspendReinstateService vmSuspendReinstateService,
-            VmService vmService, 
+            VmService vmService,
             VmShopperMergeService vmShopperMergeService,
             Config config) {
 

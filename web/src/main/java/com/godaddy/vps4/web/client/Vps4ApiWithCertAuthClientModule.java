@@ -54,5 +54,11 @@ public class Vps4ApiWithCertAuthClientModule extends AbstractModule {
                         this.clientCertKeyPath, this.clientCertPath))
                 .in(Singleton.class);
 
+        //Vm Shopper Merge endpoint
+        bind(VmShopperMergeService.class)
+                .toProvider(getClientCertAuthServiceProvider(VmShopperMergeService.class, baseUrlConfigPropName,
+                        this.clientCertKeyPath, this.clientCertPath))
+                .in(Singleton.class);
+
     }
 }
