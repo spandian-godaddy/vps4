@@ -14,7 +14,14 @@ import com.godaddy.vps4.vm.VirtualMachineService;
 
 import gdg.hfs.orchestration.Command;
 import gdg.hfs.orchestration.CommandContext;
+import gdg.hfs.orchestration.CommandMetadata;
+import gdg.hfs.orchestration.CommandRetryStrategy;
 
+@CommandMetadata(
+    name = "HandleMonitoringDownEvent", 
+    requestType = Long.class, 
+    retryStrategy = CommandRetryStrategy.NEVER
+)
 public class HandleMonitoringDownEvent implements Command<Long, Void> {
 
     private static final Logger logger = LoggerFactory.getLogger(HandleMonitoringDownEvent.class);
@@ -51,8 +58,6 @@ public class HandleMonitoringDownEvent implements Command<Long, Void> {
 
         boolean isFullyManaged = credit.isFullyManaged();
         boolean isAccountActive = credit.getAccountStatus() == AccountStatus.ACTIVE;
-        //This is where I will check  any other conditions that would stop us from sending the notification.
-        //those will be added in my next story.
 
         return isFullyManaged && isAccountActive;
     }
