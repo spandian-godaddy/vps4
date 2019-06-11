@@ -59,12 +59,15 @@ public class PlanResourceTest {
         int expectedDisk = 60;
         Plan plan = getPlanResource().getPlan(pfid);
 
-        assertEquals(pfid, plan.pfid);
-        assertEquals(expectedPackageId, plan.packageId);
-        assertEquals(expectedCpus, plan.cpuCoreCount);
-        assertEquals(expectedMem, plan.memoryMib);
-        assertEquals(expectedDisk, plan.diskGib);
-        assertEquals(ControlPanel.CPANEL, plan.controlPanel);
+        assertTrue(plan == null);
+
+        //Restore these assertions when the new plans are enabled
+        // assertEquals(pfid, plan.pfid);
+        // assertEquals(expectedPackageId, plan.packageId);
+        // assertEquals(expectedCpus, plan.cpuCoreCount);
+        // assertEquals(expectedMem, plan.memoryMib);
+        // assertEquals(expectedDisk, plan.diskGib);
+        // assertEquals(ControlPanel.CPANEL, plan.controlPanel);
     }
 
     @Test
@@ -80,11 +83,12 @@ public class PlanResourceTest {
         int pfid = 1066873;  // tier2, linux, 6mo
         List<Plan> upgradeList = getPlanResource().getUpgradeList(pfid);
         
-        assertEquals(4, upgradeList.size());
-        assertEquals("vps4_linux_tier3_006mo", upgradeList.get(0).packageId);
-        assertEquals("vps4_linux_tier4_006mo", upgradeList.get(1).packageId);
-        assertEquals("vps4_self_managed_high_mem_lin_tier2_006mo", upgradeList.get(2).packageId);
-        assertEquals("vps4_self_managed_high_mem_lin_tier4_006mo", upgradeList.get(3).packageId);
+        assertEquals(2, upgradeList.size());
+        List<String> packageIds = upgradeList.stream().map(x -> x.packageId).collect(Collectors.toList());
+        assertTrue(packageIds.contains("vps4_linux_tier3_006mo"));
+        assertTrue(packageIds.contains("vps4_linux_tier4_006mo"));
+        // assertTrue(packageIds.contains("vps4_self_managed_high_mem_lin_tier2_006mo"));
+        // assertTrue(packageIds.contains("vps4_self_managed_high_mem_lin_tier4_006mo"));
     }
 
     @Test
@@ -92,12 +96,13 @@ public class PlanResourceTest {
         int pfid = 1215752; // tier2, linux, 6mo
         List<Plan> upgradeList = getPlanResource().getUpgradeList(pfid);
 
-        assertEquals(4, upgradeList.size());
+        assertEquals(0, upgradeList.size());
     }
 
     @Test
     public void testGetUpgradeListTopTierNoUpgrades() {
-        int pfid = 1193702;  // tier4, linux, 12mo, high_mem
+        int pfid = 1066918;  // tier4, linux, 12mo
+        // int pfid = 1193702; // tier4, linux, 12mo, high_mem -- use this when the new plans are enabled
         List<Plan> upgradeList = getPlanResource().getUpgradeList(pfid);
 
         // already highest at highest tier available
