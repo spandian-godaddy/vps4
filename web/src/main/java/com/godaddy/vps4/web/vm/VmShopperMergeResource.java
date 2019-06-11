@@ -73,6 +73,7 @@ public class VmShopperMergeResource {
     @ApiOperation(value = "merges two shopper accounts.",
             notes = "merges two shopper accounts.")
     @RequiresRole(roles = {GDUser.Role.ADMIN})
+    //credit must be updated with proper Id through HFS in order for this to work. Cannot call this API on its own.
     public void mergeTwoShopperAccounts(@PathParam("vmId") UUID vmId, ShopperMergeRequest shopperMergeRequest) {
         logger.info("Attempting to merge shopperId {} with vmId {}", shopperMergeRequest.newShopperId, vmId);
         VirtualMachine vm = vmResource.getVm(vmId);
