@@ -42,7 +42,8 @@ public enum ActionType {
     DELETE_MANUAL_SNAPSHOT_SCHEDULE(33),
     RESCUE(34),
     END_RESCUE(35),
-    BILLING_SUSPEND(36);
+    BILLING_SUSPEND(36),
+    CREATE_REVERSE_DNS_NAME_RECORD(37);
 
     private final int typeId;
 

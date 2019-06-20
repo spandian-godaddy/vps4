@@ -4,6 +4,8 @@ import com.godaddy.vps4.orchestration.hfs.cpanel.ConfigureCpanel;
 import com.godaddy.vps4.orchestration.hfs.cpanel.RefreshCpanelLicense;
 import com.godaddy.vps4.orchestration.hfs.cpanel.UnlicenseCpanel;
 import com.godaddy.vps4.orchestration.hfs.cpanel.WaitForCpanelAction;
+import com.godaddy.vps4.orchestration.hfs.dns.Vps4CreateReverseDnsNameRecord;
+import com.godaddy.vps4.orchestration.hfs.dns.WaitForDnsAction;
 import com.godaddy.vps4.orchestration.hfs.mailrelay.SetMailRelayQuota;
 import com.godaddy.vps4.orchestration.hfs.network.AllocateIp;
 import com.godaddy.vps4.orchestration.hfs.network.BindIp;
@@ -94,5 +96,9 @@ public class HfsCommandModule extends AbstractModule {
 
         // Monitoring
         bind(HandleMonitoringDownEvent.class);
+
+        // dns
+        bind(Vps4CreateReverseDnsNameRecord.class);
+        bind(WaitForDnsAction.class);
     }
 }

@@ -6,7 +6,6 @@ import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jsr310.JSR310Module;
 import com.fasterxml.jackson.jaxrs.json.JacksonJaxbJsonProvider;
 import com.fasterxml.jackson.jaxrs.json.JacksonJsonProvider;
-import com.godaddy.vps4.util.ObjectMapperProvider;
 import com.google.inject.AbstractModule;
 
 public class ObjectMapperModule extends AbstractModule {

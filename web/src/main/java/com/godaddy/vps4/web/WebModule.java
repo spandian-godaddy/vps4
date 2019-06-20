@@ -2,13 +2,17 @@ package com.godaddy.vps4.web;
 
 import com.godaddy.vps4.web.action.ActionResource;
 import com.godaddy.vps4.web.appmonitors.VmActionsMonitorResource;
+import com.godaddy.vps4.web.audit.AuditHfsVmResource;
 import com.godaddy.vps4.web.cache.CacheResource;
 import com.godaddy.vps4.web.console.ConsoleResource;
 import com.godaddy.vps4.web.controlPanel.cpanel.CPanelResource;
 import com.godaddy.vps4.web.controlPanel.plesk.PleskResource;
 import com.godaddy.vps4.web.credit.CreditResource;
+import com.godaddy.vps4.web.dns.ActionCommandHelper;
+import com.godaddy.vps4.web.dns.DnsResource;
+import com.godaddy.vps4.web.dns.ObjectMapperProvider;
+import com.godaddy.vps4.web.dns.ReverseDnsLookup;
 import com.godaddy.vps4.web.featureFlag.ConfigFeatureMaskModule;
-import com.godaddy.vps4.web.audit.AuditHfsVmResource;
 import com.godaddy.vps4.web.mailrelay.VmMailRelayResource;
 import com.godaddy.vps4.web.messaging.VmMessagingResource;
 import com.godaddy.vps4.web.monitoring.VmMonitoringResource;
@@ -90,6 +94,10 @@ public class WebModule extends AbstractModule {
         bind(AuditHfsVmResource.class);
         bind(VmRescueResource.class);
         bind(VmShopperMergeResource.class);
+        bind(ObjectMapperProvider.class); // do not remove - Guice requires explicit binding
+        bind(ActionCommandHelper.class);
+        bind(ReverseDnsLookup.class);
+        bind(DnsResource.class);
 
         bind(CommandsResource.class);
         bind(CommandsViewResource.class);

@@ -5,6 +5,9 @@ import java.util.List;
 
 import javax.inject.Singleton;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.godaddy.hfs.servicediscovery.HfsServiceMetadata;
 import com.godaddy.hfs.servicediscovery.ZkServiceRegistrationModule;
@@ -50,9 +53,6 @@ import com.google.inject.PrivateModule;
 import com.google.inject.multibindings.Multibinder;
 import com.google.inject.multibindings.OptionalBinder;
 import com.google.inject.servlet.ServletModule;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import gdg.hfs.orchestration.CommandService;
 import gdg.hfs.orchestration.cluster.ClusterClientModule;

@@ -21,7 +21,6 @@ import javax.ws.rs.client.ClientResponseContext;
 import javax.ws.rs.client.ClientResponseFilter;
 import javax.ws.rs.core.Response;
 
-import com.godaddy.vps4.util.KeyManagerBuilder;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.client.HttpClient;
 import org.apache.http.config.RegistryBuilder;
@@ -38,6 +37,7 @@ import org.slf4j.LoggerFactory;
 
 import com.fasterxml.jackson.jaxrs.json.JacksonJsonProvider;
 import com.godaddy.hfs.config.Config;
+import com.godaddy.vps4.util.KeyManagerBuilder;
 import com.godaddy.vps4.util.ThreadLocalRequestId;
 
 @Singleton
@@ -130,7 +130,7 @@ public class HfsClientProvider<T> implements Provider<T> {
                         errMsg.append(line);
                     }
                     logger.error("Error response with status {} returned. Response body: {}.",
-                            Integer.toString(responseContext.getStatus()), StringUtils.left(errMsg.toString(), 1024));
+                                 responseContext.getStatus(), StringUtils.left(errMsg.toString(), 1024));
                 }
             }
         });

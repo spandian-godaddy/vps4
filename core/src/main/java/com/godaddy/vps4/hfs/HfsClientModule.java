@@ -2,6 +2,7 @@ package com.godaddy.vps4.hfs;
 
 import javax.inject.Singleton;
 
+import com.godaddy.hfs.dns.HfsDnsService;
 import com.godaddy.hfs.mailrelay.MailRelayService;
 import com.godaddy.hfs.vm.VmService;
 import com.google.inject.AbstractModule;
@@ -25,5 +26,6 @@ public class HfsClientModule extends AbstractModule {
         bind(ECommService.class).toProvider(new HfsClientProvider<>(ECommService.class)).in(Singleton.class);
         bind(NodePingService.class).toProvider(new HfsClientProvider<>(NodePingService.class)).in(Singleton.class);
         bind(NetworkServiceV2.class).toProvider(new HfsClientProvider<>(NetworkServiceV2.class)).in(Singleton.class);
+        bind(HfsDnsService.class).toProvider(new HfsClientProvider<>(HfsDnsService.class)).in(Singleton.class);
     }
 }

@@ -1,0 +1,1 @@
+INSERT INTO action_type (type_id, type) VALUES (37, 'CREATE_REVERSE_DNS_NAME_RECORD');
