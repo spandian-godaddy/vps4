@@ -113,11 +113,11 @@ public class TestGroupExecutionTest {
         tests.add(test);
         tests.add(test);
 
-        ImageTestGroup centos7 = new ImageTestGroup("centos-7");
+        ImageTestGroup centos7 = new ImageTestGroup("hfs-centos-7");
         centos7.addTests(tests);
         vps4.add(centos7);
 
-        ImageTestGroup centos7cPanel = new ImageTestGroup("centos-7-cpanel-11");
+        ImageTestGroup centos7cPanel = new ImageTestGroup("hfs-centos-7-cpanel-11");
         centos7cPanel.addTests(tests);
         vps4.add(centos7cPanel);
 

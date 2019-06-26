@@ -23,9 +23,6 @@ public class VirtualMachinePool {
 
     private static final Logger logger = LoggerFactory.getLogger(VirtualMachinePool.class);
 
-    // Regex example: hfs-centos-7-cpanel-11, where <os> is centos, and <panel> is cpanel
-    private static final Pattern imageRegex = Pattern.compile("(?:hfs-)?(?<os>\\w*)-\\w*(?:-(?<panel>\\w*)-\\w*)?");
-
     final int maxTotalVmCount;
 
     final int maxPerImageVmCount;
@@ -230,15 +227,19 @@ public class VirtualMachinePool {
         }
 
         public UUID getVmCredit() {
-            // Check if a vm credit is available for pool image via hfs ecomm api
-            // Regex example: hfs-centos-7-cpanel-11, where <os> is centos, and <panel> is cpanel
-            Matcher m = imageRegex.matcher(imageName);
-            if (!m.matches()) {
-                throw new RuntimeException("Invalid image requested: " +  imageName);
-            }
+            int PLATFORM = 0;
+            int OS = 1;
+            int OSVERSION = 2;
+            int CONTROLPANEL = 3;
+            int CPVERSION = 4;
 
-            String os = m.group("os").equals("windows") ? "windows" : "Linux";
-            String panel = m.group("panel") != null ? m.group("panel") :  "MYH";
+            String parts[] = imageName.split("-");
+
+            String os = parts[OS].equals("windows") ? "windows" : "Linux";
+            String panel = "MYH";
+            if(parts.length >= 4 && (parts[CONTROLPANEL].equals("cpanel") || parts[CONTROLPANEL].equals("plesk"))) {
+                panel = parts[CONTROLPANEL];
+            }
             UUID vmCredit = apiClient.getVmCredit(shopperId,  os,  panel);
             if (vmCredit == null && claimedCredits.isEmpty()) {
                 logger.error("There are no credits available to run tests for image : {}", imageName);
