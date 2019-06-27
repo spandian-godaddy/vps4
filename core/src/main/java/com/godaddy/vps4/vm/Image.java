@@ -109,7 +109,6 @@ public class Image {
      * This is needed because ISPconfig (which is a free control panel) is represented as MYH
      * @return
      */
-    @JsonIgnore
     public String getImageControlPanel() {
         return this.hasPaidControlPanel()
             ? this.controlPanel.toString().toLowerCase()
