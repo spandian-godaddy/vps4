@@ -33,6 +33,8 @@ public class VirtualMachinePool {
 
     final Map<String, PerImagePool> poolByImageName = new ConcurrentHashMap<>();
 
+    final Set<UUID> claimedCredits = new HashSet<>();
+
     final Vps4ApiClient apiClient;
 
     final Vps4ApiClient adminClient;
@@ -95,7 +97,6 @@ public class VirtualMachinePool {
 
         final String imageName;
         final BlockingDeque<VirtualMachine> pool;
-        final Set<UUID> claimedCredits = new HashSet<>();
         final Semaphore perImageLeases;
 
         public PerImagePool(String imageName) {
@@ -207,19 +208,21 @@ public class VirtualMachinePool {
             // try to claim
             // return if claimed
             // repeat
-            UUID credit = getVmCredit();
-            while (credit != null) {
-                if (canClaimCredit(credit)) {
-                    logger.info("Successfully claimed credit: {}", credit);
-                    return credit;
+            synchronized (claimedCredits) {
+                UUID credit = getVmCredit();
+                while (credit != null) {
+                    if (canClaimCredit(credit)) {
+                        logger.info("Successfully claimed credit: {}", credit);
+                        return credit;
+                    }
+                    logger.debug("Another test already claimed the credit {}, will try again", credit);
+                    try {
+                        Thread.sleep(1000); // wait a few seconds before trying again, coz the api takes a bit
+                    } catch (InterruptedException e) {
+                        logger.error("Waiting for new credit interrupted", e);
+                    }
+                    credit = getVmCredit();
                 }
-                logger.debug("Another test already claimed the credit {}, will try again", credit);
-                try {
-                    Thread.sleep(1000);  // wait a few seconds before trying again, coz the api takes a bit
-                } catch (InterruptedException e) {
-                    logger.error("Waiting for new credit interrupted", e);
-                }
-                credit = getVmCredit();
             }
 
             logger.info("Other tests have claimed all available credits for image : " + imageName);
@@ -259,6 +262,7 @@ public class VirtualMachinePool {
         public UUID provisionVm(UUID orionGuid){
             JSONObject provisionResult = apiClient.provisionVm("VPS4 Phase 3 Test VM",
                     orionGuid, imageName, 1, username, password);
+            logger.debug(provisionResult.toJSONString());
             UUID vmId = UUID.fromString(provisionResult.get("virtualMachineId").toString());
             long actionId = Long.parseLong(provisionResult.get("id").toString());
             logger.debug("Creating vmId {} for orionGuid {} with actionId {}", vmId, orionGuid, actionId);
