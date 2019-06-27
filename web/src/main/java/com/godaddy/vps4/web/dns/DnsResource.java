@@ -50,6 +50,7 @@ import io.swagger.annotations.ApiOperation;
 
 @Path("/api/vms")
 @Consumes(MediaType.APPLICATION_JSON)
+@Produces(MediaType.APPLICATION_JSON)
 @BlockServerType(serverTypes = {ServerType.Type.VIRTUAL})
 public class DnsResource {
     private static final Logger logger = LoggerFactory.getLogger(DnsResource.class);
@@ -74,18 +75,23 @@ public class DnsResource {
         this.reverseDnsLookup = reverseDnsLookup;
     }
 
+    public static class PTRRecord {
+        public String reverseDnsName;
+    }
+
     @GET
     @Path("/{vmId}/rdns/{ipAddress}")
-    @Produces(MediaType.TEXT_PLAIN)
     @ApiOperation(value = "Get the reverse dns name for dedicated server with specified IP address.",
             notes = "Get the reverse dns name for dedicated server with specified IP address.")
-    public String getReverseDnsName(@PathParam("vmId") UUID vmId, @PathParam("ipAddress") String ipAddress) {
+    public PTRRecord getReverseDnsName(@PathParam("vmId") UUID vmId, @PathParam("ipAddress") String ipAddress) {
         String decodedIpAddress = urlDecodeIpAddress(ipAddress);
         VirtualMachine vm = vmResource.getVm(vmId);
         verifyIpAssociatedWithVm(decodedIpAddress, vm);
         logger.info("Getting reverse dns records for vm id : {} ", vm.vmId);
-        return Arrays.stream(dnsService.getReverseDnsName(vm.hfsVmId).results).filter(Objects::nonNull).findFirst()
-                     .map(Results::getName).orElse(null);
+        PTRRecord ptrRecord = new PTRRecord();
+        ptrRecord.reverseDnsName = Arrays.stream(dnsService.getReverseDnsName(vm.hfsVmId).results).filter(Objects::nonNull).findFirst()
+                                         .map(Results::getName).orElse(null);
+        return ptrRecord;
     }
 
 
@@ -95,7 +101,6 @@ public class DnsResource {
 
     @PUT
     @Path("/{vmId}/rdns/{ipAddress}")
-    @Produces(MediaType.APPLICATION_JSON)
     @ApiOperation(value = "Create a reverse dns name record (PTR) for dedicated server with an existing A-record.",
             notes = "Create a reverse dns name record (PTR) for dedicated server with an existing A-record.")
     public VmAction createReverseDnsNameRecord(@PathParam("vmId") UUID vmId, @PathParam("ipAddress") String ipAddress,
