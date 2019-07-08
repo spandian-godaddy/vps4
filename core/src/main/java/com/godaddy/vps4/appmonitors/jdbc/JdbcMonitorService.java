@@ -11,7 +11,10 @@ import java.util.UUID;
 import javax.sql.DataSource;
 
 import com.godaddy.hfs.jdbc.Sql;
-import com.godaddy.vps4.appmonitors.*;
+import com.godaddy.vps4.appmonitors.BackupJobAuditData;
+import com.godaddy.vps4.appmonitors.MonitorService;
+import com.godaddy.vps4.appmonitors.MonitoringCheckpoint;
+import com.godaddy.vps4.appmonitors.SnapshotActionData;
 import com.godaddy.vps4.jdbc.Vps4ReportsDataSource;
 import com.godaddy.vps4.util.TimestampUtils;
 import com.godaddy.vps4.vm.ActionStatus;
@@ -21,21 +24,6 @@ import com.google.inject.Inject;
 public class JdbcMonitorService implements MonitorService {
 
     private final DataSource dataSource;
-
-    private final static String selectVmsByActionAndDuration =
-            "SELECT vma.id, vma.command_id, vma.vm_id, action_type.type as action_type " +
-            "FROM vm_action vma " +
-            "JOIN action_type ON vma.action_type_id = action_type.type_id " +
-            "WHERE vma.created < now_utc() " +
-            "AND vma.action_type_id = ( " +
-            "  SELECT type_id FROM action_type WHERE type = ? " +
-            ") " +
-            "AND vma.status_id = ( " +
-            "  SELECT status_id FROM action_status WHERE status = ? " +
-            ") " +
-            "AND now_utc() - vma.created >= ";
-
-    private final static String orderby = "ORDER BY vma.created ASC; ";
 
     private final static String selectVmsByAutomaticSnapshotActionAndDuration =
             "SELECT sna.id, sna.command_id, sna.snapshot_id, action_type.type as action_type, " +
@@ -56,15 +44,6 @@ public class JdbcMonitorService implements MonitorService {
 
     private final static String orderBySnapshotCreated = "ORDER BY sna.created ASC; ";
 
-    private final static String selectVmsByActionStatusAndDuration = "SELECT vma.id, vma.command_id, vma.vm_id, action_type.type " +
-            "FROM vm_action vma, action_type " +
-            "WHERE vma.created < now_utc() " +
-            "AND vma.action_type_id = action_type.type_id " +
-            "AND vma.status_id = ( " +
-            "  SELECT status_id FROM action_status WHERE status = ? " +
-            ") " +
-            "AND now_utc() - vma.created >= ";
-
     private final static String selectVmsFilteredByNullBackupJob = "SELECT vm.vm_id, vm.valid_on, * FROM virtual_machine vm " +
             "JOIN vm_action USING (vm_id) " +
             "JOIN virtual_machine_spec vmspec USING (spec_id) " +
@@ -80,28 +59,6 @@ public class JdbcMonitorService implements MonitorService {
     @Inject
     public JdbcMonitorService(@Vps4ReportsDataSource DataSource reportsDataSource) {
         this.dataSource = reportsDataSource;
-    }
-
-    @Override
-    public List<VmActionData> getVmsByActions(long thresholdInMinutes, ActionType type, ActionStatus status) {
-        String interval = "INTERVAL '" + thresholdInMinutes + " minutes'";
-        String selectDateOrderedVmsByActionAndDuration = selectVmsByActionAndDuration + interval + orderby;
-        return Sql.with(dataSource)
-                .exec(selectDateOrderedVmsByActionAndDuration, Sql.listOf(this::mapVmActionData), type.name(), status.name());
-    }
-
-    private VmActionData mapVmActionData(ResultSet rs) throws SQLException {
-
-        try {
-            String actionId = rs.getString("id");
-            UUID commandId = rs.getString("command_id") == null ? null : java.util.UUID.fromString(rs.getString("command_id"));
-            UUID vmId = rs.getString("vm_id") == null ? null : java.util.UUID.fromString(rs.getString("vm_id"));
-
-            VmActionData vmActionData = new VmActionData(actionId, commandId, vmId);
-            return vmActionData;
-        }catch (IllegalArgumentException iax) {
-            throw new IllegalArgumentException("Could not map response. ", iax);
-        }
     }
 
     @Override
@@ -129,29 +86,6 @@ public class JdbcMonitorService implements MonitorService {
             SnapshotActionData snapshotActionData = new SnapshotActionData(actionId, commandId, snapshotId, actionType, actionStatus, createdDate);
             return snapshotActionData;
 
-        } catch (IllegalArgumentException iax) {
-            throw new IllegalArgumentException("Could not map response. ", iax);
-        }
-    }
-
-    @Override
-    public List<VmActionData> getVmsByActionStatus(long thresholdInMinutes, ActionStatus status) {
-        String interval = "INTERVAL '" + thresholdInMinutes + " minutes'  ";
-        String selectDateOrderedVmsByActionStatusAndDuration = selectVmsByActionStatusAndDuration + interval + orderby;
-        return Sql.with(dataSource)
-                .exec(selectDateOrderedVmsByActionStatusAndDuration, Sql.listOf(this::mapVmActionDataWithActionType), status.name());
-    }
-
-    private VmActionData mapVmActionDataWithActionType(ResultSet rs) throws SQLException {
-
-        try {
-            String actionId = rs.getString("id");
-            UUID commandId = rs.getString("command_id") == null ? null : java.util.UUID.fromString(rs.getString("command_id"));
-            UUID vmId = rs.getString("vm_id") == null ? null : java.util.UUID.fromString(rs.getString("vm_id"));
-            String actionType = rs.getString("type") == null ? null : ActionType.valueOf(rs.getString("type")).name();
-
-            VmActionData vmActionData = new VmActionData(actionId, commandId, vmId, actionType);
-            return vmActionData;
         } catch (IllegalArgumentException iax) {
             throw new IllegalArgumentException("Could not map response. ", iax);
         }

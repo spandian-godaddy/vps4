@@ -3,6 +3,7 @@ package com.godaddy.vps4.web.appmonitors;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
@@ -35,6 +36,7 @@ import com.godaddy.vps4.web.Vps4Api;
 import com.godaddy.vps4.web.security.GDUser;
 import com.godaddy.vps4.web.security.RequiresRole;
 import com.google.inject.Inject;
+
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
@@ -48,14 +50,36 @@ import io.swagger.annotations.ApiParam;
 public class VmActionsMonitorResource {
 
     private final MonitorService monitorService;
-    private final ActionService actionService;
+    private final ActionService vmActionService;
     private final VirtualMachineService virtualMachineService;
 
     @Inject
     public VmActionsMonitorResource(MonitorService monitorService, ActionService actionService, VirtualMachineService virtualMachineService) {
         this.monitorService = monitorService;
-        this.actionService = actionService;
+        this.vmActionService = actionService;
         this.virtualMachineService = virtualMachineService;
+    }
+
+    private List<VmActionData> filterOverdueInProgressActionsByType(long thresholdInMinutes, ActionType... actionTypes) {
+        ActionListFilters actionListFilters = new ActionListFilters();
+        actionListFilters.byStatus(ActionStatus.IN_PROGRESS);
+        actionListFilters.byType(actionTypes);
+        actionListFilters.byDateRange(null, Instant.now().minus(Duration.ofMinutes(thresholdInMinutes)));
+
+        return getFilteredActions(actionListFilters);
+    }
+
+    private List<VmActionData> filterOverdueActionsByStatus(long thresholdInMinutes, ActionStatus status) {
+        ActionListFilters actionListFilters = new ActionListFilters();
+        actionListFilters.byStatus(status);
+        actionListFilters.byDateRange(null, Instant.now().minus(Duration.ofMinutes(thresholdInMinutes)));
+
+        return getFilteredActions(actionListFilters);
+    }
+
+    private List<VmActionData> getFilteredActions(ActionListFilters filters) {
+        ResultSubset<Action> resultSubset = vmActionService.getActionList(filters);
+        return (resultSubset != null) ? mapActionsToVmActionData(resultSubset.results) : Collections.emptyList();
     }
 
     @RequiresRole(roles = {GDUser.Role.ADMIN})
@@ -63,8 +87,8 @@ public class VmActionsMonitorResource {
     @Path("/pending/provision")
     @ApiOperation(value = "Find all VM id's that are pending provisioning for longer than m minutes, default 60 minutes",
             notes = "Find all VM id's that are pending provisioning for longer than m minutes, default 60 minutes")
-    public List<VmActionData> getProvisioningPendingVms(@QueryParam("thresholdInMinutes") @DefaultValue("60") Long thresholdInMinutes) {
-        return monitorService.getVmsByActions(thresholdInMinutes, ActionType.CREATE_VM, ActionStatus.IN_PROGRESS);
+    public List<VmActionData> getProvisioningPendingVms(@QueryParam("thresholdInMinutes") @DefaultValue("60") long thresholdInMinutes) {
+        return filterOverdueInProgressActionsByType(thresholdInMinutes, ActionType.CREATE_VM);
     }
 
     @RequiresRole(roles = {GDUser.Role.ADMIN})
@@ -72,8 +96,8 @@ public class VmActionsMonitorResource {
     @Path("/pending/startvm")
     @ApiOperation(value = "Find all VM id's that are pending start vm action for longer than m minutes, default 15 minutes",
             notes = "Find all VM id's that are pending start vm action for longer than m minutes, default 15 minutes")
-    public List<VmActionData> getStartPendingVms(@QueryParam("thresholdInMinutes") @DefaultValue("15") Long thresholdInMinutes) {
-        return monitorService.getVmsByActions( thresholdInMinutes, ActionType.START_VM, ActionStatus.IN_PROGRESS);
+    public List<VmActionData> getStartPendingVms(@QueryParam("thresholdInMinutes") @DefaultValue("15") long thresholdInMinutes) {
+        return filterOverdueInProgressActionsByType(thresholdInMinutes, ActionType.START_VM);
     }
 
     @RequiresRole(roles = {GDUser.Role.ADMIN})
@@ -81,8 +105,8 @@ public class VmActionsMonitorResource {
     @Path("/pending/stopvm")
     @ApiOperation(value = "Find all VM id's that are pending stop vm action for longer than m minutes, default 15 minutes",
             notes = "Find all VM id's that are pending stop vm action for longer than m minutes, default 15 minutes")
-    public List<VmActionData> getStopPendingVms(@QueryParam("thresholdInMinutes") @DefaultValue("15") Long thresholdInMinutes) {
-        return monitorService.getVmsByActions(thresholdInMinutes, ActionType.STOP_VM, ActionStatus.IN_PROGRESS);
+    public List<VmActionData> getStopPendingVms(@QueryParam("thresholdInMinutes") @DefaultValue("15") long thresholdInMinutes) {
+        return filterOverdueInProgressActionsByType(thresholdInMinutes, ActionType.STOP_VM);
     }
 
     @RequiresRole(roles = {GDUser.Role.ADMIN})
@@ -90,29 +114,23 @@ public class VmActionsMonitorResource {
     @Path("/pending/restartvm")
     @ApiOperation(value = "Find all VM id's that are pending restart vm action for longer than m minutes, default 15 minutes",
             notes = "Find all VM id's that are pending restart vm action for longer than m minutes, default 15 minutes")
-    public List<VmActionData> getRestartPendingVms(@QueryParam("thresholdInMinutes") @DefaultValue("15") Long thresholdInMinutes) {
-        ActionListFilters actionListFilters = new ActionListFilters();
-        actionListFilters.byType(ActionType.RESTART_VM, ActionType.POWER_CYCLE);
-        actionListFilters.byStatus(ActionStatus.IN_PROGRESS);
-        actionListFilters.byDateRange(null, Instant.now().minus(Duration.ofMinutes(thresholdInMinutes)));
-
-        ResultSubset<Action> resultSubset = actionService.getActionList(actionListFilters);
-        if(resultSubset == null) {
-            return new ArrayList<>();
-        }
-        List<Action> actions = resultSubset.results;
-        return mapActionsToVmActionData(actions);
+    public List<VmActionData> getRestartPendingVms(@QueryParam("thresholdInMinutes") @DefaultValue("15") long thresholdInMinutes) {
+        return filterOverdueInProgressActionsByType(thresholdInMinutes, ActionType.RESTART_VM, ActionType.POWER_CYCLE);
     }
 
     private List<VmActionData> mapActionsToVmActionData(List<Action> actions) {
-        if(actions.isEmpty()) {
-            return  new ArrayList<>();
+        List<VmActionData> actionDataList = new ArrayList<>();
+        for (Action action: actions) {
+            VmActionData actionData = new VmActionData();
+            actionData.actionId = action.id;
+            actionData.vmId = action.resourceId;
+            actionData.commandId = action.commandId;
+            actionData.actionType = action.type.toString();
+            actionData.hfsVmId = virtualMachineService.getHfsVmIdByVmId(action.resourceId);
+            actionDataList.add(actionData);
         }
-        List<VmActionData> actionData = new ArrayList<>(actions.size());
-        actions.forEach(action -> {
-            actionData.add(new VmActionData(Long.toString(action.id), action.commandId, action.resourceId, action.type.toString()));
-        });
-        return actionData;
+
+        return actionDataList;
     }
 
     @RequiresRole(roles = {GDUser.Role.ADMIN})
@@ -120,7 +138,7 @@ public class VmActionsMonitorResource {
     @Path("/pending/backupactions")
     @ApiOperation(value = "Find all snapshot ids that are pending backup vm action for longer than m minutes, default 2 hours",
             notes = "Find all snapshot id's that are pending backup vm action for longer than m minutes, default 2 hours")
-    public List<SnapshotActionData> getBackupPendingActions(@QueryParam("thresholdInMinutes") @DefaultValue("120") Long thresholdInMinutes) {
+    public List<SnapshotActionData> getBackupPendingActions(@QueryParam("thresholdInMinutes") @DefaultValue("120") long thresholdInMinutes) {
         return monitorService.getVmsBySnapshotActions(thresholdInMinutes, ActionStatus.IN_PROGRESS, ActionStatus.NEW, ActionStatus.ERROR);
     }
 
@@ -129,8 +147,8 @@ public class VmActionsMonitorResource {
     @Path("/pending/restorevm")
     @ApiOperation(value = "Find all VM id's that are pending restore vm action for longer than m minutes, default 2 hours",
             notes = "Find all VM id's that are pending restore vm action for longer than m minutes, default 2 hours")
-    public List<VmActionData> getRestorePendingVms(@QueryParam("thresholdInMinutes") @DefaultValue("120") Long thresholdInMinutes) {
-        return monitorService.getVmsByActions(thresholdInMinutes, ActionType.RESTORE_VM, ActionStatus.IN_PROGRESS);
+    public List<VmActionData> getRestorePendingVms(@QueryParam("thresholdInMinutes") @DefaultValue("120") long thresholdInMinutes) {
+        return filterOverdueInProgressActionsByType(thresholdInMinutes, ActionType.RESTORE_VM);
     }
 
     @RequiresRole(roles = {GDUser.Role.ADMIN})
@@ -138,17 +156,18 @@ public class VmActionsMonitorResource {
     @Path("/pending/newactions")
     @ApiOperation(value = "Find all vm actions pending in new status for longer than m minutes, default 2 hours",
             notes = "Find all VM actions that are pending in new status for longer than m minutes, default 2 hours")
-    public List<VmActionData> getVmsWithPendingNewActions(@QueryParam("thresholdInMinutes") @DefaultValue("120") Long thresholdInMinutes) {
-        return monitorService.getVmsByActionStatus(thresholdInMinutes, ActionStatus.NEW);
+    public List<VmActionData> getVmsWithPendingNewActions(@QueryParam("thresholdInMinutes") @DefaultValue("120") long thresholdInMinutes) {
+        return filterOverdueActionsByStatus(thresholdInMinutes, ActionStatus.NEW);
     }
+
 
     @RequiresRole(roles = {GDUser.Role.ADMIN})
     @GET
     @Path("/pending/allactions")
     @ApiOperation(value = "Find all vm actions in pending 'in_progress' status for longer than m minutes, default 2 hours",
             notes = "Find all VM actions that are in pending 'in_progress' status for longer than m minutes, default 2 hours")
-    public List<VmActionData> getVmsWithAllPendingActions(@QueryParam("thresholdInMinutes") @DefaultValue("120") Long thresholdInMinutes) {
-        return monitorService.getVmsByActionStatus(thresholdInMinutes, ActionStatus.IN_PROGRESS);
+    public List<VmActionData> getVmsWithAllPendingActions(@QueryParam("thresholdInMinutes") @DefaultValue("120") long thresholdInMinutes) {
+        return filterOverdueActionsByStatus(thresholdInMinutes, ActionStatus.IN_PROGRESS);
     }
 
     @RequiresRole(roles = {GDUser.Role.ADMIN})
@@ -176,7 +195,7 @@ public class VmActionsMonitorResource {
             actionFilters.byDateRange(beginDate, null);
             actionFilters.byType(type);
 
-            ResultSubset<Action> resultSubset = actionService.getActionList(actionFilters);
+            ResultSubset<Action> resultSubset = vmActionService.getActionList(actionFilters);
             List<Action> actions = resultSubset==null?new ArrayList<>():resultSubset.results;
             List<Action> errors = actions.stream().filter(a -> a.status==ActionStatus.ERROR).collect(Collectors.toList());
 

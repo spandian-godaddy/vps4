@@ -1,10 +1,29 @@
 package com.godaddy.vps4.web.appmonitors;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.argThat;
+import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
+
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.Test;
+import org.mockito.ArgumentCaptor;
+import org.mockito.ArgumentMatcher;
 
 import com.godaddy.vps4.appmonitors.MonitorService;
 import com.godaddy.vps4.appmonitors.MonitoringCheckpoint;
@@ -18,40 +37,18 @@ import com.godaddy.vps4.vm.ActionStatus;
 import com.godaddy.vps4.vm.ActionType;
 import com.godaddy.vps4.vm.VirtualMachine;
 import com.godaddy.vps4.vm.VirtualMachineService;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
-import org.mockito.ArgumentMatcher;
-
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.argThat;
-import static org.mockito.Mockito.doNothing;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
 
 public class VmActionsMonitorResourceTest {
 
     private VmActionsMonitorResource vmActionsMonitorResource;
     private MonitorService monitorService = mock(MonitorService.class);
-    private ActionService actionService = mock(ActionService.class);
+    private ActionService vmActionService = mock(ActionService.class);
     private VirtualMachineService virtualMachineService = mock(VirtualMachineService.class);
-    private List<VmActionData> expectedVmActionData;
     private List<SnapshotActionData> expectedSnapshotActionData;
+    private long pendingThreshold = 60L;
 
     @Before
     public void setupTest() {
-        expectedVmActionData = new ArrayList<>();
-        VmActionData vmActionData = new VmActionData("fake-action-id-1", UUID.randomUUID(), UUID.randomUUID());
-        expectedVmActionData.add(vmActionData);
-
-        vmActionData = new VmActionData("fake-action-id-2", UUID.randomUUID(), UUID.randomUUID());
-        expectedVmActionData.add(vmActionData);
-
-        vmActionData = new VmActionData("fake-action-id-3", UUID.randomUUID(), UUID.randomUUID());
-        expectedVmActionData.add(vmActionData);
-
         expectedSnapshotActionData = new ArrayList<>();
 
         SnapshotActionData snapshotActionData = new SnapshotActionData("fake-action-id-1", UUID.randomUUID(), UUID.randomUUID(), ActionType.CREATE_SNAPSHOT.name(), ActionStatus.IN_PROGRESS.name(), Instant.now().minus(10, ChronoUnit.MINUTES).toString());
@@ -68,80 +65,80 @@ public class VmActionsMonitorResourceTest {
         VirtualMachine virtualMachine2 = new VirtualMachine();
         virtualMachine2.orionGuid = UUID.randomUUID();
         when(virtualMachineService.getVirtualMachine(any())).thenReturn(virtualMachine).thenReturn(virtualMachine2);
-        vmActionsMonitorResource = new VmActionsMonitorResource(monitorService, actionService, virtualMachineService);
+        vmActionsMonitorResource = new VmActionsMonitorResource(monitorService, vmActionService, virtualMachineService);
+    }
+
+    private void validateActionFilters(List<ActionType> typeList, List<ActionStatus> statusList) {
+        ArgumentCaptor<ActionListFilters> argument = ArgumentCaptor.forClass(ActionListFilters.class);
+        verify(vmActionService).getActionList(argument.capture());
+        ActionListFilters filters = argument.getValue();
+        assertEquals(typeList, filters.getTypeList());
+        assertEquals(statusList, filters.getStatusList());
+        Instant expectedEndTime = Instant.now().minus(pendingThreshold - 1, ChronoUnit.MINUTES);
+        assertTrue("EndDate later than expected", filters.getEnd().isBefore(expectedEndTime));
     }
 
     @Test
-    public void testGetProvisioningPendingVms() {
-        when(monitorService.getVmsByActions(60L, ActionType.CREATE_VM, ActionStatus.IN_PROGRESS)).thenReturn(expectedVmActionData);
-        List<VmActionData> actualVmActionData = vmActionsMonitorResource.getProvisioningPendingVms(60L);
-        Assert.assertNotNull(actualVmActionData);
-        Assert.assertEquals(expectedVmActionData.size(), actualVmActionData.size());
+    public void filtersVmsForPendingProvisionEndpoint() {
+        vmActionsMonitorResource.getProvisioningPendingVms(pendingThreshold);
+        validateActionFilters(Arrays.asList(ActionType.CREATE_VM), Arrays.asList(ActionStatus.IN_PROGRESS));
     }
 
     @Test
-    public void testGetStartPendingVms() {
-        when(monitorService.getVmsByActions(15L, ActionType.START_VM, ActionStatus.IN_PROGRESS)).thenReturn(expectedVmActionData);
-        List<VmActionData> actualVmActionData = vmActionsMonitorResource.getStartPendingVms(15L);
-
-        Assert.assertNotNull(actualVmActionData);
-        Assert.assertEquals(expectedVmActionData.size(), actualVmActionData.size());
+    public void filtersVmsForPendingStartEndpoint() {
+        vmActionsMonitorResource.getStartPendingVms(pendingThreshold);
+        validateActionFilters(Arrays.asList(ActionType.START_VM), Arrays.asList(ActionStatus.IN_PROGRESS));
     }
 
     @Test
-    public void testGetStopPendingVms() {
-        when(monitorService.getVmsByActions(15L, ActionType.STOP_VM, ActionStatus.IN_PROGRESS)).thenReturn(expectedVmActionData);
-        List<VmActionData> actualVmActionData = vmActionsMonitorResource.getStopPendingVms(15L);
-        Assert.assertNotNull(actualVmActionData);
-        Assert.assertEquals(expectedVmActionData.size(), actualVmActionData.size());
+    public void filtersVmsForPendingStopEndpoint() {
+        vmActionsMonitorResource.getStopPendingVms(pendingThreshold);
+        validateActionFilters(Arrays.asList(ActionType.STOP_VM), Arrays.asList(ActionStatus.IN_PROGRESS));
     }
 
     @Test
-    public void testGetRestartPendingVms() {
-        // setup the test to create a restart action in in-Progress status
-        Action action = new Action(0, UUID.randomUUID(), ActionType.RESTART_VM, null, null, null,
-                ActionStatus.IN_PROGRESS, Instant.now().minus(10, ChronoUnit.MINUTES), Instant.now(), null,
-                UUID.randomUUID(), "tester");
-        List<Action> testActions = new ArrayList<>();
-        testActions.add(action);
-        ResultSubset<Action> resultSubset = new ResultSubset<>(testActions, testActions.size());
-        ArgumentMatcher<ActionListFilters> expectedActionFilters = new ArgumentMatcher<ActionListFilters>() {
-            @Override
-            public boolean matches(Object item) {
-                ActionListFilters actionFilters = (ActionListFilters)item;
-                return actionFilters.getTypeList().stream()
-                        .anyMatch(f -> ActionType.valueOf(f.getActionTypeId()) == ActionType.RESTART_VM);
-            }
-        };
-
-        when(actionService.getActionList(argThat(expectedActionFilters))).thenReturn(resultSubset);
-        List<VmActionData> actualVmActionData = vmActionsMonitorResource.getRestartPendingVms(15L);
-        Assert.assertNotNull(actualVmActionData);
-        Assert.assertEquals(1, actualVmActionData.size());
+    public void filtersVmsForPendingRestartEndpoint() {
+        vmActionsMonitorResource.getRestartPendingVms(pendingThreshold);
+        validateActionFilters(Arrays.asList(ActionType.RESTART_VM, ActionType.POWER_CYCLE),
+                Arrays.asList(ActionStatus.IN_PROGRESS));
     }
 
     @Test
-    public void testGetRebootPendingVms() {
-        // setup the test to create a restart action in in-Progress status
-        Action action = new Action(0, UUID.randomUUID(), ActionType.POWER_CYCLE, null, null, null,
-                ActionStatus.IN_PROGRESS, Instant.now().minus(10, ChronoUnit.MINUTES), Instant.now(), null,
-                UUID.randomUUID(), "tester");
-        List<Action> testActions = new ArrayList<>();
-        testActions.add(action);
-        ResultSubset<Action> resultSubset = new ResultSubset<>(testActions, testActions.size());
-        ArgumentMatcher<ActionListFilters> expectedActionFilters = new ArgumentMatcher<ActionListFilters>() {
-            @Override
-            public boolean matches(Object item) {
-                ActionListFilters actionFilters = (ActionListFilters) item;
-                return actionFilters.getTypeList().stream()
-                        .anyMatch(f -> ActionType.valueOf(f.getActionTypeId()) == ActionType.POWER_CYCLE);
-            }
-        };
+    public void filtersVmsForPendingRestoreEndpoint() {
+        vmActionsMonitorResource.getRestorePendingVms(pendingThreshold);
+        validateActionFilters(Arrays.asList(ActionType.RESTORE_VM), Arrays.asList(ActionStatus.IN_PROGRESS));
+    }
 
-        when(actionService.getActionList(argThat(expectedActionFilters))).thenReturn(resultSubset);
-        List<VmActionData> actualVmActionData = vmActionsMonitorResource.getRestartPendingVms(15L);
-        Assert.assertNotNull(actualVmActionData);
-        Assert.assertEquals(1, actualVmActionData.size());
+    @Test
+    public void filtersVmsForPendingNewActionsEndpoint() {
+        vmActionsMonitorResource.getVmsWithPendingNewActions(pendingThreshold);
+        validateActionFilters(Collections.emptyList(), Arrays.asList(ActionStatus.NEW));
+    }
+
+    @Test
+    public void filtersVmsForPendingAllActionsEndpoint() {
+        vmActionsMonitorResource.getVmsWithAllPendingActions(pendingThreshold);
+        validateActionFilters(Collections.emptyList(), Arrays.asList(ActionStatus.IN_PROGRESS));
+    }
+
+    @Test
+    public void verifyFieldsOfActionMappingToVmActionData() {
+        UUID vmId = UUID.randomUUID();
+        long hfsVmId = 33L;
+        Action action = mock(Action.class);
+        action.id = 23L;
+        action.type = ActionType.CREATE_VM;
+        action.resourceId = vmId;
+        action.commandId = UUID.randomUUID();
+
+        ResultSubset<Action> subset = new ResultSubset<>(Arrays.asList(action), 1);
+        doReturn(subset).when(vmActionService).getActionList(any(ActionListFilters.class));
+        doReturn(hfsVmId).when(virtualMachineService).getHfsVmIdByVmId(vmId);
+
+        List<VmActionData> results = vmActionsMonitorResource.getProvisioningPendingVms(pendingThreshold);
+        assertEquals(1, results.size());
+        assertEquals(hfsVmId, results.get(0).hfsVmId);
+        assertEquals(vmId, results.get(0).vmId);
     }
 
     @Test
@@ -150,14 +147,6 @@ public class VmActionsMonitorResourceTest {
         List<SnapshotActionData> actualSnapshotActionData = vmActionsMonitorResource.getBackupPendingActions(120L);
         Assert.assertNotNull(actualSnapshotActionData);
         Assert.assertEquals(expectedSnapshotActionData.size(), actualSnapshotActionData.size());
-    }
-
-    @Test
-    public void testGetRestorePendingVms() {
-        when(monitorService.getVmsByActions(120L, ActionType.RESTORE_VM, ActionStatus.IN_PROGRESS)).thenReturn(expectedVmActionData);
-        List<VmActionData> actualVmActionData = vmActionsMonitorResource.getRestorePendingVms(120L);
-        Assert.assertNotNull(actualVmActionData);
-        Assert.assertEquals(expectedVmActionData.size(), actualVmActionData.size());
     }
 
     private ResultSubset<Action> getTestResultSet(long size, ActionType actionType, ActionStatus actionStatus) {
@@ -193,7 +182,7 @@ public class VmActionsMonitorResourceTest {
                 return actionFilters.getTypeList().get(0).equals(ActionType.START_VM);
             }
         };
-        when(actionService.getActionList(argThat(expectedActionFilters))).thenReturn(resultSubset).thenReturn(emptyResultSet);
+        when(vmActionService.getActionList(argThat(expectedActionFilters))).thenReturn(resultSubset).thenReturn(emptyResultSet);
 
         List<ActionTypeErrorData> errorData = vmActionsMonitorResource.getFailedActionsForAllTypes(10);
         Assert.assertEquals(1, errorData.size());
@@ -221,7 +210,7 @@ public class VmActionsMonitorResourceTest {
                         && actionFilters.getStart().equals(checkpoint.checkpoint);
             }
         };
-        when(actionService.getActionList(argThat(expectedActionFilters))).thenReturn(resultSubset).thenReturn(emptyResultSet);
+        when(vmActionService.getActionList(argThat(expectedActionFilters))).thenReturn(resultSubset).thenReturn(emptyResultSet);
 
         List<ActionTypeErrorData> errorData = vmActionsMonitorResource.getFailedActionsForAllTypes(10);
         Assert.assertEquals(1, errorData.size());
@@ -244,7 +233,7 @@ public class VmActionsMonitorResourceTest {
                 return actionFilters.getTypeList().get(0).equals(ActionType.START_VM);
             }
         };
-        when(actionService.getActionList(argThat(expectedActionFilters))).thenReturn(resultSubset).thenReturn(emptyResultSet);
+        when(vmActionService.getActionList(argThat(expectedActionFilters))).thenReturn(resultSubset).thenReturn(emptyResultSet);
 
         List<ActionTypeErrorData> errorData = vmActionsMonitorResource.getFailedActionsForAllTypes(10);
         Assert.assertEquals(1, errorData.size());
@@ -257,7 +246,7 @@ public class VmActionsMonitorResourceTest {
 
     @Test
     public void testCheckForFailingActionsEmpty() {
-        when(actionService.getActionList(any(ActionListFilters.class))).thenReturn(null);
+        when(vmActionService.getActionList(any(ActionListFilters.class))).thenReturn(null);
 
         List<ActionTypeErrorData> errorData = vmActionsMonitorResource.getFailedActionsForAllTypes(10);
         Assert.assertEquals(0, errorData.size());

@@ -1,5 +1,10 @@
 package com.godaddy.vps4.phase2.appmonitors;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+
 import java.sql.Timestamp;
 import java.time.Duration;
 import java.time.Instant;
@@ -10,11 +15,14 @@ import java.util.function.Predicate;
 
 import javax.sql.DataSource;
 
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
+
 import com.godaddy.hfs.jdbc.Sql;
 import com.godaddy.vps4.appmonitors.BackupJobAuditData;
 import com.godaddy.vps4.appmonitors.MonitorService;
 import com.godaddy.vps4.appmonitors.SnapshotActionData;
-import com.godaddy.vps4.appmonitors.VmActionData;
 import com.godaddy.vps4.appmonitors.jdbc.JdbcMonitorService;
 import com.godaddy.vps4.jdbc.DatabaseModule;
 import com.godaddy.vps4.jdbc.Vps4ReportsDataSource;
@@ -32,11 +40,6 @@ import com.godaddy.vps4.vm.VirtualMachine;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
 import com.google.inject.Key;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
-
-import static org.junit.Assert.*;
 
 public class MonitorServiceTest {
 
@@ -141,22 +144,13 @@ public class MonitorServiceTest {
     }
 
     @Test
-    public void testGetVmsByActions() {
-        List<VmActionData> problemVms = provisioningMonitorService.getVmsByActions(60, ActionType.CREATE_VM, ActionStatus.IN_PROGRESS);
-        assertNotNull(problemVms);
-        assertTrue(String.format("Expected count of problem VM's does not match actual count of {%s} VM's.", problemVms.size()), problemVms.size() == 3);
-        assertTrue("Expected vm id not present in list of problem VM's.", problemVms.stream().anyMatch(vm -> (vm.vmId.compareTo(vm1.vmId) == 0)));
-        assertTrue("Expected vm id not present in list of problem VM's.", problemVms.stream().anyMatch(vm -> (vm.vmId.compareTo(vm3.vmId) == 0)));
-    }
-
-    @Test
     public void testGetVmsBySnapshotActions() {
         List<SnapshotActionData> problemVms = provisioningMonitorService.getVmsBySnapshotActions(120, ActionStatus.IN_PROGRESS, ActionStatus.ERROR);
         assertNotNull(problemVms);
         assertTrue(String.format("Expected count of problem VM's does not match actual count of {%s} VM's.", problemVms.size()), problemVms.size() == 2);
         assertTrue("Expected vm id not present in list of problem VM's.", problemVms.stream().anyMatch(vm -> (vm.snapshotId.compareTo(testSnapshotVm6.id) == 0)));
     }
-    
+
     @Test
     public void testGetVmsBySnapshotActionsIgnoresOnDemandSnapshots() {
         Snapshot testSnapshot = new Snapshot(
@@ -177,14 +171,6 @@ public class MonitorServiceTest {
         List<SnapshotActionData> problemVms = provisioningMonitorService.getVmsBySnapshotActions(120, ActionStatus.IN_PROGRESS, ActionStatus.ERROR);
         assertNotNull(problemVms);
         assertTrue(String.format("Expected count of problem VM's does not match actual count of {%s} VM's.", problemVms.size()), problemVms.size() == 2);
-    }
-
-    @Test
-    public void testGetVmsPendingNewActions() {
-        List<VmActionData> problemVms = provisioningMonitorService.getVmsByActionStatus(120, ActionStatus.NEW);
-        assertNotNull(problemVms);
-        assertTrue(String.format("Expected count of problem VM's does not match actual count of {%s} VM's.", problemVms.size()), problemVms.size() == 1);
-        assertTrue("Expected vm id not present in list of problem VM's.", problemVms.stream().anyMatch(vm -> (vm.vmId.compareTo(vm8.vmId) == 0)));
     }
 
     @Test

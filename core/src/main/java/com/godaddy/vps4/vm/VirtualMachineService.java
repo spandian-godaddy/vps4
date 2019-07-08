@@ -105,6 +105,8 @@ public interface VirtualMachineService {
 
     UUID getOrionGuidByVmId(UUID vmId);
 
+    long getHfsVmIdByVmId(UUID vmId);
+
     Long getPendingSnapshotActionIdByVmId(UUID vmId);
 
     String getOSDistro(UUID vmId);

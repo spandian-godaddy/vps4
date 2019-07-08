@@ -14,6 +14,8 @@ import java.util.regex.Pattern;
 import javax.inject.Inject;
 import javax.sql.DataSource;
 
+import org.apache.commons.lang3.StringUtils;
+
 import com.godaddy.hfs.jdbc.Sql;
 import com.godaddy.vps4.network.IpAddress;
 import com.godaddy.vps4.network.jdbc.IpAddressMapper;
@@ -26,7 +28,6 @@ import com.godaddy.vps4.vm.ServerType;
 import com.godaddy.vps4.vm.VirtualMachine;
 import com.godaddy.vps4.vm.VirtualMachineService;
 import com.godaddy.vps4.vm.VirtualMachineType;
-import org.apache.commons.lang3.StringUtils;
 
 public class JdbcVirtualMachineService implements VirtualMachineService {
 
@@ -290,6 +291,12 @@ public class JdbcVirtualMachineService implements VirtualMachineService {
     public UUID getOrionGuidByVmId(UUID vmId) {
         return Sql.with(dataSource).exec("SELECT orion_guid FROM virtual_machine WHERE vm_id=?;",
                 Sql.nextOrNull(rs -> UUID.fromString(rs.getString("orion_guid"))), vmId);
+    }
+
+    @Override
+    public long getHfsVmIdByVmId(UUID vmId) {
+        return Sql.with(dataSource).exec("SELECT hfs_vm_id FROM virtual_machine WHERE vm_id=?;",
+                Sql.nextOrNull(rs -> rs.getLong("hfs_vm_id")), vmId);
     }
 
     @Override
