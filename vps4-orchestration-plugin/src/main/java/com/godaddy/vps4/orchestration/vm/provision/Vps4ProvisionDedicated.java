@@ -15,6 +15,7 @@ import java.util.UUID;
 import javax.inject.Inject;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.godaddy.hfs.vm.Vm;
 import com.godaddy.hfs.vm.VmAction;
 import com.godaddy.hfs.vm.VmService;
 import com.godaddy.vps4.credit.CreditService;
@@ -69,7 +70,6 @@ public class Vps4ProvisionDedicated extends ActionCommand<ProvisionRequest, Vps4
 
     private ProvisionRequest request;
     private ActionState state;
-    private String hostname;
     private CommandContext context;
 
     @Inject
@@ -105,61 +105,42 @@ public class Vps4ProvisionDedicated extends ActionCommand<ProvisionRequest, Vps4
 
         logger.info("begin provision vm for request: {}", request);
 
-        generateHostname();
-
         long hfsVmId = createServer();
 
-        String ipAddress = getIpFromHfs(hfsVmId);
+        Vm hfsVm = vmService.getVm(hfsVmId);
+
+        addIpToDb(hfsVm.address.ip_address);
 
         setupUsers(hfsVmId);
 
         configureControlPanel(hfsVmId);
 
-        setHostname(hfsVmId);
+        setHostname(hfsVmId, hfsVm.resource_id);
 
         configureAdminUser(hfsVmId, request.vmInfo.vmId);
 
-        configureMonitoring(ipAddress);
+        configureMonitoring(hfsVm.address.ip_address);
 
         setEcommCommonName(request.orionGuid, request.serverName);
 
-        sendSetupEmail(request, ipAddress);
+        sendSetupEmail(request, hfsVm.address.ip_address);
 
         setStep(SetupComplete);
         logger.info("provision vm finished: {}", request.vmInfo.vmId);
         return null;
     }
 
-    private String getIpFromHfs(long hfsVmId){
-        String ipAddress = vmService.getVm(hfsVmId).address.ip_address;
-
-        // Add the ip to the database
+    private void addIpToDb(String ipAddress){
         context.execute("Create-" + ipAddress, ctx -> {
             networkService.createIpAddress(0, request.vmInfo.vmId, ipAddress, IpAddressType.PRIMARY);
             return null;
         }, Void.class);
-
-        return ipAddress;
     }
 
-    //TODO: Update Vps4ProvisionVm to use this same method to generate hostname
-    private void generateHostname() {
-        setStep(GeneratingHostname);
-        Random r = new Random();
-        StringBuilder stringBuilder = new StringBuilder("");
-        for (int i = 0; i < 10; ++i) {
-            char selectedChar = (char)(r.nextInt(26) + 'a');
-            stringBuilder.append(selectedChar);
-        }
-         hostname = "ded" + stringBuilder.toString() + ".secureserver.net";
-    }
-
-    private void setHostname(long hfsVmId) {
+    private void setHostname(long hfsVmId, String resourceId) {   
         setStep(SetHostname);
-
-        SetHostname.Request hfsRequest = new SetHostname.Request(hfsVmId, hostname,
-                request.vmInfo.image.getImageControlPanel());
-
+        SetHostname.Request hfsRequest = new SetHostname.Request(hfsVmId, resourceId, request.vmInfo.image.getImageControlPanel());
+        virtualMachineService.setHostname(request.vmInfo.vmId, resourceId);
         context.execute(SetHostname.class, hfsRequest);
     }
 
@@ -205,8 +186,8 @@ public class Vps4ProvisionDedicated extends ActionCommand<ProvisionRequest, Vps4
 
     private long createServer() {
         setStep(RequestingServer);
+        String hostname = "dedtemp.secureserver.net";
         CreateVm.Request createVmRequest = ProvisionHelper.getCreateVmRequest(request, hostname);
-        virtualMachineService.setHostname(request.vmInfo.vmId, createVmRequest.hostname);
         VmAction vmAction = context.execute(CreateVm.class, createVmRequest);
         addHfsVmIdToVmInVps4Db(vmAction);
         context.execute(WaitForAndRecordVmAction.class, vmAction);

@@ -48,7 +48,6 @@ import org.mockito.Captor;
 import org.mockito.MockitoAnnotations;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyBoolean;
 import static org.mockito.Matchers.anyLong;
@@ -171,6 +170,7 @@ public class Vps4ProvisionDedicatedTest {
         hfsIp.ip_address = "1.2.3.4";
         hfsVm = new Vm();
         hfsVm.address = hfsIp;
+        hfsVm.resource_id = "test.resourceid.com";
         when(vmService.getVm(anyLong())).thenReturn(hfsVm);
 
 
@@ -271,7 +271,6 @@ public class Vps4ProvisionDedicatedTest {
         SetHostname.Request req = setHostnameArgumentCaptor.getValue();
         assertEquals(req.controlPanel, request.vmInfo.image.getImageControlPanel());
         assertEquals(req.hfsVmId, hfsVmId);
-        assertTrue(req.hostname.startsWith("ded"));
-        assertTrue(req.hostname.endsWith(".secureserver.net"));
+        assertEquals(hfsVm.resource_id, req.hostname);
     }
 }
