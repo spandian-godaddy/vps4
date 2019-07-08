@@ -11,19 +11,22 @@ public class VirtualMachineDetails {
     public String status;
     public boolean running;
     public boolean useable;
-    
+    public String resource_id;
+
     public VirtualMachineDetails (Vm hfsVm) {
         if (hfsVm == null) {
             vmId = null;
             status = "REQUESTING";
             running = false;
             useable = false;
+            resource_id = null;
         }
         else {
             vmId = hfsVm.vmId;
             status = hfsVm.status;
             running = hfsVm.running;
             useable = hfsVm.useable;
+            resource_id = hfsVm.resource_id;
         }
     }
 

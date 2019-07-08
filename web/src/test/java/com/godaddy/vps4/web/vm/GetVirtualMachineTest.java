@@ -118,6 +118,7 @@ public class GetVirtualMachineTest {
     private VmService getMockedVmService() {
         hfsVm = new Vm();
         hfsVm.vmId = hfsVmId;
+        hfsVm.resource_id = "foobar";
         VmService vmService = mock(VmService.class);
         when(vmService.getVm(hfsVmId)).thenReturn(hfsVm);
         return vmService;
@@ -143,6 +144,7 @@ public class GetVirtualMachineTest {
     public void testGetVirtualMachineDetails() {
         VirtualMachineDetails vmDetails = vmResource.getVirtualMachineDetails(vmId);
         assertEquals(new Long(hfsVm.vmId), vmDetails.vmId);
+        assertEquals(hfsVm.resource_id, vmDetails.resource_id);
     }
 
     @Test
@@ -152,6 +154,7 @@ public class GetVirtualMachineTest {
         assertEquals("REQUESTING", details.status);
         assertFalse(details.running);
         assertFalse(details.useable);
+        assertNull(details.resource_id);
 
         // Verify class has toString method
         assertNotNull(details.toString());
