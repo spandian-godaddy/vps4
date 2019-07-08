@@ -43,7 +43,8 @@ public enum ActionType {
     RESCUE(34),
     END_RESCUE(35),
     BILLING_SUSPEND(36),
-    CREATE_REVERSE_DNS_NAME_RECORD(37);
+    CREATE_REVERSE_DNS_NAME_RECORD(37),
+    MERGE_SHOPPER(38);
 
     private final int typeId;
 

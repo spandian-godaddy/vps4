@@ -1,0 +1,1 @@
+INSERT INTO action_type(type_id, type) VALUES (38, 'MERGE_SHOPPER');
