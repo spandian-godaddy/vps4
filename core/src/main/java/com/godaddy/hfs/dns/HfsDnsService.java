@@ -24,7 +24,7 @@ public interface HfsDnsService {
 
     @POST
     @Path("/servers/{serverId}/reverse/")
-    HfsDnsAction createReverseDnsNameRecord(@PathParam("serverId") long hfsVmId, @QueryParam("name") String reverseDnsName);
+    HfsDnsAction createDnsPtrRecord(@PathParam("serverId") long hfsVmId, @QueryParam("name") String reverseDnsName);
 
     @GET
     @Path("/servers/{serverId}/reverse/")

@@ -1,4 +1,4 @@
-package com.godaddy.vps4.orchestration.hfs.dns;
+package com.godaddy.vps4.orchestration.dns;
 
 import javax.inject.Inject;
 

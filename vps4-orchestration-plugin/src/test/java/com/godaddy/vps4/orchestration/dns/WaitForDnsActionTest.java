@@ -1,4 +1,4 @@
-package com.godaddy.vps4.orchestration.hfs.dns;
+package com.godaddy.vps4.orchestration.dns;
 
 import static org.junit.Assert.assertEquals;
 import static org.mockito.Mockito.mock;
@@ -52,7 +52,7 @@ public class WaitForDnsActionTest {
     public void testExecuteActionFails() {
         HfsDnsAction newHfsAction = createMockDnsAction(ActionStatus.NEW);
         HfsDnsAction errorHfsAction = createMockDnsAction(ActionStatus.ERROR);
-        when(hfsDnsService.createReverseDnsNameRecord(hfsVmId, reverseDnsName)).thenReturn(errorHfsAction);
+        when(hfsDnsService.createDnsPtrRecord(hfsVmId, reverseDnsName)).thenReturn(errorHfsAction);
 
         command.execute(context, newHfsAction);
     }

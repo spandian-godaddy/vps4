@@ -27,7 +27,7 @@ import org.slf4j.LoggerFactory;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.godaddy.hfs.dns.HfsDnsService;
 import com.godaddy.hfs.dns.RdnsRecords.Results;
-import com.godaddy.vps4.orchestration.hfs.dns.Vps4ReverseDnsNameRecordRequest;
+import com.godaddy.vps4.orchestration.dns.Vps4CreateDnsPtrRecord;
 import com.godaddy.vps4.vm.ActionService;
 import com.godaddy.vps4.vm.ActionType;
 import com.godaddy.vps4.vm.ServerType;
@@ -103,7 +103,7 @@ public class DnsResource {
     @Path("/{vmId}/rdns/{ipAddress}")
     @ApiOperation(value = "Create a reverse dns name record (PTR) for dedicated server with an existing A-record.",
             notes = "Create a reverse dns name record (PTR) for dedicated server with an existing A-record.")
-    public VmAction createReverseDnsNameRecord(@PathParam("vmId") UUID vmId, @PathParam("ipAddress") String ipAddress,
+    public VmAction createDnsPtrRecord(@PathParam("vmId") UUID vmId, @PathParam("ipAddress") String ipAddress,
                                                ReverseDnsNameRequest request) {
 
         String decodedIpAddress = urlDecodeIpAddress(ipAddress);
@@ -114,7 +114,7 @@ public class DnsResource {
                                      ActionType.RESTORE_VM, ActionType.DESTROY_IP);
         reverseDnsLookup.validateReverseDnsName(request.reverseDnsName, ipAddress);
 
-        Vps4ReverseDnsNameRecordRequest reverseDnsNameRequest = new Vps4ReverseDnsNameRecordRequest();
+        Vps4CreateDnsPtrRecord.Request reverseDnsNameRequest = new Vps4CreateDnsPtrRecord.Request();
         reverseDnsNameRequest.virtualMachine = vm;
         reverseDnsNameRequest.reverseDnsName = request.reverseDnsName;
         long actionId = actionService.createAction(vm.vmId, ActionType.CREATE_REVERSE_DNS_NAME_RECORD,
@@ -122,7 +122,7 @@ public class DnsResource {
         logger.info("Action id to create reverse dns name: {}", actionId);
         reverseDnsNameRequest.setActionId(actionId);
         CommandState command =
-                execute(commandService, actionService, "Vps4CreateReverseDnsNameRecord", reverseDnsNameRequest);
+                execute(commandService, actionService, "Vps4CreateDnsPtrRecord", reverseDnsNameRequest);
         logger.info("running {} with command id {}", command.name, command.commandId);
         return new VmAction(actionService.getAction(actionId), user.isEmployee());
     }
@@ -149,7 +149,7 @@ public class DnsResource {
         }
     }
 
-    private String getRequestAsJsonString(Vps4ReverseDnsNameRecordRequest reverseDnsNameRequest) {
+    private String getRequestAsJsonString(Vps4CreateDnsPtrRecord.Request reverseDnsNameRequest) {
         try {
             return mapperProvider.get().writeValueAsString(reverseDnsNameRequest);
         } catch (JsonProcessingException jsonPex) {

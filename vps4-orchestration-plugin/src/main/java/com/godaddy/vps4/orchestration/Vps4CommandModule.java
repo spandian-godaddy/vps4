@@ -1,5 +1,6 @@
 package com.godaddy.vps4.orchestration;
 
+import com.godaddy.vps4.orchestration.dns.Vps4CreateDnsPtrRecord;
 import com.godaddy.vps4.orchestration.mailrelay.Vps4SetMailRelayQuota;
 import com.godaddy.vps4.orchestration.messaging.SendFailoverCompletedEmail;
 import com.godaddy.vps4.orchestration.messaging.SendScheduledPatchingEmail;
@@ -90,5 +91,6 @@ public class Vps4CommandModule extends AbstractModule {
         bind(Vps4SuspendDedServer.class);
         bind(Vps4ReinstateServer.class);
         bind(Vps4ReinstateDedServer.class);
+        bind(Vps4CreateDnsPtrRecord.class);
     }
 }

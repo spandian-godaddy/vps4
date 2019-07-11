@@ -7,6 +7,8 @@ import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -22,11 +24,13 @@ import javax.ws.rs.core.Response;
 
 import org.junit.Before;
 import org.junit.Test;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mockito;
 
 import com.godaddy.hfs.mailrelay.MailRelay;
 import com.godaddy.hfs.mailrelay.MailRelayService;
 import com.godaddy.hfs.mailrelay.MailRelayUpdate;
+import com.godaddy.hfs.vm.Vm;
 import com.godaddy.hfs.vm.VmAction;
 import com.godaddy.hfs.vm.VmService;
 import com.godaddy.vps4.hfs.HfsVmTrackingRecordService;
@@ -34,6 +38,8 @@ import com.godaddy.vps4.network.IpAddress;
 import com.godaddy.vps4.network.IpAddress.IpAddressType;
 import com.godaddy.vps4.network.NetworkService;
 import com.godaddy.vps4.orchestration.TestCommandContext;
+import com.godaddy.vps4.orchestration.dns.Vps4CreateDnsPtrRecord;
+import com.godaddy.vps4.orchestration.hfs.dns.CreateDnsPtrRecord;
 import com.godaddy.vps4.orchestration.hfs.network.ReleaseIp;
 import com.godaddy.vps4.orchestration.hfs.network.UnbindIp;
 import com.godaddy.vps4.orchestration.hfs.vm.DestroyVm;
@@ -73,9 +79,12 @@ public class Vps4DestroyDedicatedTest {
     NetworkService networkService = mock(NetworkService.class);
     HfsVmTrackingRecordService hfsVmTrackingRecordService = mock(HfsVmTrackingRecordService.class);
     DestroyVm destroyVm = mock(DestroyVm.class);
+    Vm hfsVm = mock(Vm.class);
+    CreateDnsPtrRecord createDnsPtrRecord =  mock(CreateDnsPtrRecord.class);
+    Vps4CreateDnsPtrRecord vps4CreateDnsPtrRecord = mock(Vps4CreateDnsPtrRecord.class);
 
     Vps4DestroyDedicated command = new Vps4DestroyDedicated(actionService, networkService, nodePingService,
-            monitoringMeta, hfsVmTrackingRecordService);
+            monitoringMeta, hfsVmTrackingRecordService, vmService);
     Injector injector = Guice.createInjector(binder -> {
         binder.bind(UnbindIp.class);
         binder.bind(ReleaseIp.class);
@@ -92,9 +101,12 @@ public class Vps4DestroyDedicatedTest {
         binder.bind(NetworkService.class).toInstance(networkService);
         binder.bind(HfsVmTrackingRecordService.class).toInstance(hfsVmTrackingRecordService);
         binder.bind(DestroyVm.class).toInstance(destroyVm);
+        binder.bind(Vm.class).toInstance(hfsVm);
+        binder.bind(CreateDnsPtrRecord.class).toInstance(createDnsPtrRecord);
+        binder.bind(Vps4CreateDnsPtrRecord.class).toInstance(vps4CreateDnsPtrRecord);
     });
 
-    CommandContext context = new TestCommandContext(new GuiceCommandProvider(injector));
+    CommandContext context = spy(new TestCommandContext(new GuiceCommandProvider(injector)));
 
     VirtualMachine vm;
     VmActionRequest request;
@@ -143,6 +155,8 @@ public class Vps4DestroyDedicatedTest {
         when(virtualMachineService.getVirtualMachine(eq(request.virtualMachine.hfsVmId))).thenReturn(vm);
         when(vmService.destroyVm(eq(request.virtualMachine.hfsVmId))).thenReturn(vmAction);
         when(vmService.getVmAction(Mockito.anyLong(), Mockito.anyLong())).thenReturn(vmAction);
+        when(vmService.getVm(eq(request.virtualMachine.hfsVmId))).thenReturn(hfsVm);
+
         doNothing().when(nodePingService).deleteCheck(nodePingAccountId, primaryIp.pingCheckId);
         when(monitoringMeta.getAccountId()).thenReturn(nodePingAccountId);
         when(networkService.getVmPrimaryAddress(any(UUID.class))).thenReturn(primaryIp);
@@ -250,5 +264,21 @@ public class Vps4DestroyDedicatedTest {
     public void ensureIpAddressRecordUpdatedForDedDestroy() throws Exception {
         command.execute(context, request);
         verify(networkService, atLeastOnce()).destroyIpAddress(anyLong());
+    }
+
+    @Test
+    public void testResetPTRRecord() throws Exception {
+        hfsVm.resource_id = "fake.resource_id";
+        command.execute(context, request);
+        verify(vmService, times(1)).getVm(anyLong());
+        verify(context, times(1)).execute(any(), any(CreateDnsPtrRecord.Request.class));
+    }
+
+    @Test
+    public void testResetPTRRecordFoundNoResourceId() throws Exception {
+        hfsVm.resource_id = null;
+        command.execute(context, request);
+        verify(vmService, times(1)).getVm(anyLong());
+        verify(context, never()).execute(eq(CreateDnsPtrRecord.class), any(CreateDnsPtrRecord.Request.class));
     }
 }

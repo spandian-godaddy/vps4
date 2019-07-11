@@ -132,13 +132,13 @@ public class DnsResourceTest {
         hfsVm.status = "ACTIVE";
         when(vmResource.getVmFromVmVertical(anyLong())).thenReturn(hfsVm);
         doNothing().when(reverseDnsLookup).validateReverseDnsName(anyString(), eq("1.2.3.4"));
-        when(dnsService.createReverseDnsNameRecord(anyLong(), anyString())).thenReturn(dnsAction);
+        when(dnsService.createDnsPtrRecord(anyLong(), anyString())).thenReturn(dnsAction);
 
-        dnsResource.createReverseDnsNameRecord(testVm.vmId, testVm.primaryIpAddress.ipAddress, request);
+        dnsResource.createDnsPtrRecord(testVm.vmId, testVm.primaryIpAddress.ipAddress, request);
 
         ArgumentCaptor<CommandGroupSpec> argument = ArgumentCaptor.forClass(CommandGroupSpec.class);
         verify(commandService, times(1)).executeCommand(argument.capture());
-        Assert.assertEquals("Vps4CreateReverseDnsNameRecord", argument.getValue().commands.get(0).command);
+        Assert.assertEquals("Vps4CreateDnsPtrRecord", argument.getValue().commands.get(0).command);
         verify(actionService, times(1)).getAction(anyLong());
     }
 
@@ -148,10 +148,10 @@ public class DnsResourceTest {
         hfsVm.status = "ACTIVE";
         when(vmResource.getVmFromVmVertical(anyLong())).thenReturn(hfsVm);
         doNothing().when(reverseDnsLookup).validateReverseDnsName(anyString(), eq("1.2.3.4"));
-        when(dnsService.createReverseDnsNameRecord(anyLong(), anyString())).thenReturn(dnsAction);
+        when(dnsService.createDnsPtrRecord(anyLong(), anyString())).thenReturn(dnsAction);
 
         try {
-            dnsResource.createReverseDnsNameRecord(testVm.vmId, "mismatched_ip_address", request);
+            dnsResource.createDnsPtrRecord(testVm.vmId, "mismatched_ip_address", request);
         } catch (Vps4Exception vex) {
             assert (vex.getMessage().equalsIgnoreCase(
                     "Ip address provided does not match the primary ip address for the vm."));
@@ -167,9 +167,9 @@ public class DnsResourceTest {
         hfsVm.status = "ACTIVE";
         when(vmResource.getVmFromVmVertical(anyLong())).thenReturn(hfsVm);
         doNothing().when(reverseDnsLookup).validateReverseDnsName(anyString(), eq("1.2.3.4"));
-        when(dnsService.createReverseDnsNameRecord(anyLong(), anyString())).thenReturn(dnsAction);
+        when(dnsService.createDnsPtrRecord(anyLong(), anyString())).thenReturn(dnsAction);
 
-        dnsResource.createReverseDnsNameRecord(testVm.vmId, "1.2.3.4", request);
+        dnsResource.createDnsPtrRecord(testVm.vmId, "1.2.3.4", request);
         verify(reverseDnsLookup, times(1)).validateReverseDnsName(eq(fakeReverseDnsName), eq("1.2.3.4"));
     }
 
@@ -181,10 +181,10 @@ public class DnsResourceTest {
         doThrow(new Vps4Exception("IP_ADDRESS_LOOKUP_FAILED", "fakeException")).when(reverseDnsLookup)
                                                                                .validateReverseDnsName(anyString(),
                                                                                                        eq("1.2.3.4"));
-        when(dnsService.createReverseDnsNameRecord(anyLong(), anyString())).thenReturn(dnsAction);
+        when(dnsService.createDnsPtrRecord(anyLong(), anyString())).thenReturn(dnsAction);
 
         try {
-            dnsResource.createReverseDnsNameRecord(testVm.vmId, "1.2.3.4", request);
+            dnsResource.createDnsPtrRecord(testVm.vmId, "1.2.3.4", request);
         } catch (Vps4Exception vex) {
             assert (vex.getId().equalsIgnoreCase("IP_ADDRESS_LOOKUP_FAILED"));
             throw vex;
