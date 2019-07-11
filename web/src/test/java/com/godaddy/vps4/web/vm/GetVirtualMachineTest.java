@@ -144,7 +144,7 @@ public class GetVirtualMachineTest {
     public void testGetVirtualMachineDetails() {
         VirtualMachineDetails vmDetails = vmResource.getVirtualMachineDetails(vmId);
         assertEquals(new Long(hfsVm.vmId), vmDetails.vmId);
-        assertEquals(hfsVm.resource_id, vmDetails.resource_id);
+        assertEquals(hfsVm.resource_id, vmDetails.resourceId);
     }
 
     @Test
@@ -154,7 +154,7 @@ public class GetVirtualMachineTest {
         assertEquals("REQUESTING", details.status);
         assertFalse(details.running);
         assertFalse(details.useable);
-        assertNull(details.resource_id);
+        assertNull(details.resourceId);
 
         // Verify class has toString method
         assertNotNull(details.toString());
