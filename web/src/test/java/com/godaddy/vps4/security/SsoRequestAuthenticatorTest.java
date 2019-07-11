@@ -143,7 +143,7 @@ public class SsoRequestAuthenticatorTest {
         Assert.assertEquals(false, user.isAdmin());
         Assert.assertEquals(true, user.isEmployee());
         Assert.assertEquals(false, user.isStaff());
-        Assert.assertEquals(Role.LEGAL, user.role());
+        Assert.assertEquals(Role.SUSPEND_AUTH, user.role());
     }
 
     @Test
@@ -157,7 +157,7 @@ public class SsoRequestAuthenticatorTest {
         Assert.assertEquals(false, user.isAdmin());
         Assert.assertEquals(true, user.isEmployee());
         Assert.assertEquals(true, user.isStaff());
-        Assert.assertEquals(Role.HS_OPS, user.role());
+        Assert.assertEquals(Role.SUSPEND_AUTH, user.role());
     }
 
     @Test
@@ -171,7 +171,21 @@ public class SsoRequestAuthenticatorTest {
         Assert.assertEquals(false, user.isAdmin());
         Assert.assertEquals(true, user.isEmployee());
         Assert.assertEquals(false, user.isStaff());
-        Assert.assertEquals(Role.DCU, user.role());
+        Assert.assertEquals(Role.SUSPEND_AUTH, user.role());
+    }
+
+    @Test
+    public void testChargebackRole() {
+        SsoToken token = mockJomaxToken(Collections.singletonList("Chargeback User"));
+        when(tokenExtractor.extractToken(request)).thenReturn(token);
+
+        GDUser user = authenticator.authenticate(request);
+        Assert.assertEquals(null, user.getShopperId());
+        Assert.assertEquals(false, user.isShopper());
+        Assert.assertEquals(false, user.isAdmin());
+        Assert.assertEquals(true, user.isEmployee());
+        Assert.assertEquals(false, user.isStaff());
+        Assert.assertEquals(Role.SUSPEND_AUTH, user.role());
     }
 
     @Test

@@ -29,7 +29,6 @@ import com.godaddy.vps4.web.security.GDUser;
 import com.godaddy.vps4.web.security.RequiresRole;
 
 import gdg.hfs.orchestration.CommandService;
-
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 
@@ -63,8 +62,7 @@ public class VmSuspendReinstateResource {
     @Path("{vmId}/abuseSuspend")
     @ApiOperation(value = "Abuse suspend a server and the credit associated with it.",
                   notes = "Abuse suspend a server and the credit associated with it.")
-    @RequiresRole(roles = {GDUser.Role.ADMIN, GDUser.Role.HS_LEAD, GDUser.Role.LEGAL, GDUser.Role.HS_OPS,
-            GDUser.Role.DCU})
+    @RequiresRole(roles = {GDUser.Role.ADMIN, GDUser.Role.HS_LEAD, GDUser.Role.SUSPEND_AUTH})
     public VmAction abuseSuspendAccount(@PathParam("vmId") UUID vmId) {
         VirtualMachine vm = virtualMachineService.getVirtualMachine(vmId);
         getAndValidateCredit(vm);
@@ -97,8 +95,7 @@ public class VmSuspendReinstateResource {
     @Path("{vmId}/reinstateAbuseSuspend")
     @ApiOperation(value = "Re-instate an abuse-suspended server.",
                   notes = "Re-instate an abuse-suspended server.")
-    @RequiresRole(roles = {GDUser.Role.ADMIN, GDUser.Role.HS_LEAD, GDUser.Role.LEGAL, GDUser.Role.HS_OPS,
-            GDUser.Role.DCU})
+    @RequiresRole(roles = {GDUser.Role.ADMIN, GDUser.Role.HS_LEAD, GDUser.Role.SUSPEND_AUTH})
     public VmAction reinstateAbuseSuspendedAccount(@PathParam("vmId") UUID vmId) {
         VirtualMachine vm = virtualMachineService.getVirtualMachine(vmId);
         validateVmExists(vmId, vm, user);

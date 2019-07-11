@@ -1,14 +1,14 @@
 package com.godaddy.vps4.web.security;
 
 
-import com.godaddy.hfs.sso.token.SsoToken;
-
 import java.util.Arrays;
+
+import com.godaddy.hfs.sso.token.SsoToken;
 
 public class GDUser {
     // Role that this user is assigned in the Vps4 app
     public enum Role {
-        ADMIN, CUSTOMER, EMPLOYEE_OTHER, HS_AGENT, HS_LEAD, LEGAL, HS_OPS, DCU
+        ADMIN, CUSTOMER, EMPLOYEE_OTHER, HS_AGENT, HS_LEAD, SUSPEND_AUTH
     };
 
     SsoToken token;
