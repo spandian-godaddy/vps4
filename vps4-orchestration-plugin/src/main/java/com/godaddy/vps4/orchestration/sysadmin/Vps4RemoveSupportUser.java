@@ -9,7 +9,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.godaddy.vps4.orchestration.ActionCommand;
-import com.godaddy.vps4.orchestration.hfs.ActionNotCompletedException;
+import com.godaddy.vps4.orchestration.hfs.SysAdminActionNotCompletedException;
 import com.godaddy.vps4.orchestration.hfs.sysadmin.RemoveUser;
 import com.godaddy.vps4.orchestration.scheduler.ScheduleSupportUserRemoval;
 import com.godaddy.vps4.vm.ActionService;
@@ -63,7 +63,7 @@ public class Vps4RemoveSupportUser extends ActionCommand<Vps4RemoveSupportUser.R
         try {
             context.execute(RemoveUser.class, removeUserRequest);
             vmUserService.deleteUser(request.username, request.vmId);
-        } catch (ActionNotCompletedException e) {
+        } catch (SysAdminActionNotCompletedException e) {
             String errorMessage =
                     String.format("Remove support user %s from VM %s failed, scheduling retry.", request.username,
                             request.vmId);

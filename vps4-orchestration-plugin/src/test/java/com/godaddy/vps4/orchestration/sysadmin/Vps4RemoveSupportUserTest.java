@@ -19,7 +19,7 @@ import org.junit.Test;
 
 import com.godaddy.hfs.vm.Vm;
 import com.godaddy.hfs.vm.VmService;
-import com.godaddy.vps4.orchestration.hfs.ActionNotCompletedException;
+import com.godaddy.vps4.orchestration.hfs.SysAdminActionNotCompletedException;
 import com.godaddy.vps4.orchestration.hfs.sysadmin.AddUser;
 import com.godaddy.vps4.orchestration.hfs.sysadmin.RemoveUser;
 import com.godaddy.vps4.orchestration.scheduler.ScheduleSupportUserRemoval;
@@ -27,6 +27,7 @@ import com.godaddy.vps4.vm.ActionService;
 import com.godaddy.vps4.vm.VmUserService;
 
 import gdg.hfs.orchestration.CommandContext;
+import gdg.hfs.vhfs.sysadmin.SysAdminAction;
 
 public class Vps4RemoveSupportUserTest {
 
@@ -79,7 +80,7 @@ public class Vps4RemoveSupportUserTest {
     public void testVps4RemoveSupportUserRescheduleOnError() {
         doReturn(null).when(context).execute(eq(AddUser.class), anyObject());
         when(vmService.getVm(anyLong())).thenReturn(vm);
-        when(context.execute(eq(RemoveUser.class), anyObject())).thenThrow(new ActionNotCompletedException("Test exception"));
+        when(context.execute(eq(RemoveUser.class), anyObject())).thenThrow(new SysAdminActionNotCompletedException(new SysAdminAction()));
 
         Vps4RemoveSupportUser.Request req = new Vps4RemoveSupportUser.Request();
         req.hfsVmId = 123;

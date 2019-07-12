@@ -1,10 +1,13 @@
 package com.godaddy.vps4.orchestration.sysadmin;
 
+import static org.apache.commons.lang3.exception.ExceptionUtils.getRootCause;
+
 import javax.inject.Inject;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.godaddy.vps4.orchestration.ActionCommand;
 import com.godaddy.vps4.orchestration.Vps4ActionRequest;
+import com.godaddy.vps4.orchestration.hfs.SysAdminActionNotCompletedException;
 import com.godaddy.vps4.orchestration.hfs.cpanel.RefreshCpanelLicense;
 import com.godaddy.vps4.orchestration.hfs.sysadmin.SetHostname;
 import com.godaddy.vps4.vm.ActionService;
@@ -20,9 +23,9 @@ import gdg.hfs.orchestration.CommandMetadata;
 import gdg.hfs.orchestration.CommandRetryStrategy;
 
 @CommandMetadata(
-    name = "Vps4SetHostname",
-    requestType = Vps4SetHostname.Request.class,
-    retryStrategy = CommandRetryStrategy.NEVER
+        name = "Vps4SetHostname",
+        requestType = Vps4SetHostname.Request.class,
+        retryStrategy = CommandRetryStrategy.NEVER
 )
 public class Vps4SetHostname extends ActionCommand<Vps4SetHostname.Request, Void> {
 
@@ -44,17 +47,23 @@ public class Vps4SetHostname extends ActionCommand<Vps4SetHostname.Request, Void
 
         virtualMachineService.setHostname(request.vmId, request.setHostnameRequest.hostname);
         JSONObject response = new JSONObject();
-        try{
+        try {
             setStep(request.actionId, UpdateHostnameStep.UpdatingHostname);
             context.execute(SetHostname.class, request.setHostnameRequest);
-        }catch(Exception e){
-            logger.error("Error while setting hostname to {} on vm {}.", request.setHostnameRequest.hostname, request.vmId);
+        } catch (Exception e) {
+            logger.error("Error while setting hostname to {} on vm {}.", request.setHostnameRequest.hostname,
+                         request.vmId);
             virtualMachineService.setHostname(request.vmId, request.oldHostname);
+            String sysAdminActionNotCompletedException = returnRootCauseMessage(e);
+            if (sysAdminActionNotCompletedException != null) {
+                response.put("message", sysAdminActionNotCompletedException);
+                throw new Exception(response.toJSONString(), e);
+            }
             response.put("message", e.getMessage());
             throw e;
         }
 
-        if (virtualMachineService.virtualMachineHasCpanel(request.vmId)){
+        if (virtualMachineService.virtualMachineHasCpanel(request.vmId)) {
             // Refresh Cpanel License
             setStep(request.actionId, UpdateHostnameStep.RefreshingCpanelLicense);
             RefreshCpanelLicense.Request cpLicRequest = new RefreshCpanelLicense.Request();
@@ -65,7 +74,7 @@ public class Vps4SetHostname extends ActionCommand<Vps4SetHostname.Request, Void
         return null;
     }
 
-    public static class ActionState{
+    public static class ActionState {
         public UpdateHostnameStep step;
     }
 
@@ -73,6 +82,19 @@ public class Vps4SetHostname extends ActionCommand<Vps4SetHostname.Request, Void
         ActionState state = new ActionState();
         state.step = step;
         actionService.updateActionState(actionId, mapper.writeValueAsString(state));
+    }
+
+    private String returnRootCauseMessage(Exception e) {
+        SysAdminActionNotCompletedException sysAdminActionNotCompletedException = null;
+        Throwable rootCause = getRootCause(e);
+        if (rootCause instanceof SysAdminActionNotCompletedException) {
+            sysAdminActionNotCompletedException =
+                    (SysAdminActionNotCompletedException) rootCause;
+            if (sysAdminActionNotCompletedException != null && sysAdminActionNotCompletedException.getAction() != null) {
+                return sysAdminActionNotCompletedException.getAction().message;
+            }
+        }
+        return null;
     }
 
     public static class Request extends Vps4ActionRequest {

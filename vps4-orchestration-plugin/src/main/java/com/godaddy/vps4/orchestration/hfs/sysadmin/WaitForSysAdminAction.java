@@ -5,7 +5,7 @@ import javax.inject.Inject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.godaddy.vps4.orchestration.hfs.ActionNotCompletedException;
+import com.godaddy.vps4.orchestration.hfs.SysAdminActionNotCompletedException;
 
 import gdg.hfs.orchestration.Command;
 import gdg.hfs.orchestration.CommandContext;
@@ -36,7 +36,7 @@ public class WaitForSysAdminAction implements Command<SysAdminAction, SysAdminAc
         if(sysAction.status == SysAdminAction.Status.COMPLETE) {
             logger.info("System Admin Action completed. {} ", sysAction );
         } else {
-            throw new ActionNotCompletedException(sysAction);
+            throw new SysAdminActionNotCompletedException(sysAction);
         }
 
         return sysAction;
