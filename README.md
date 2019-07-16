@@ -150,7 +150,7 @@ The keys for the respective environments are read from https://github.secureserv
 
     vps4.{environment}.key
     
-The keys for stage and prod can be found on the Jenkins server at /opt/vps4/keys. 
+The keys for stage and prod can be found on the Jenkins build slave at /opt/vps4/keys. 
 _Never_ check in the `vps4.stage.key` or `vps4.prod.key` files.
 These files are explicitly ignored in .gitignore.
 
