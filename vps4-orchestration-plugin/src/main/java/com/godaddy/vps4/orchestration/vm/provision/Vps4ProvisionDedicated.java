@@ -25,6 +25,7 @@ import com.godaddy.vps4.network.NetworkService;
 import com.godaddy.vps4.orchestration.ActionCommand;
 import com.godaddy.vps4.orchestration.hfs.cpanel.ConfigureCpanel;
 import com.godaddy.vps4.orchestration.hfs.cpanel.ConfigureCpanel.ConfigureCpanelRequest;
+import com.godaddy.vps4.orchestration.hfs.dns.CreateDnsPtrRecord;
 import com.godaddy.vps4.orchestration.hfs.plesk.ConfigurePlesk;
 import com.godaddy.vps4.orchestration.hfs.plesk.ConfigurePlesk.ConfigurePleskRequest;
 import com.godaddy.vps4.orchestration.hfs.sysadmin.SetHostname;
@@ -117,6 +118,8 @@ public class Vps4ProvisionDedicated extends ActionCommand<ProvisionRequest, Vps4
 
         setHostname(hfsVmId, hfsVm.resource_id);
 
+        createPTRRecord(hfsVm.resource_id);
+
         configureAdminUser(hfsVmId, request.vmInfo.vmId);
 
         configureMonitoring(hfsVm.address.ip_address);
@@ -142,6 +145,14 @@ public class Vps4ProvisionDedicated extends ActionCommand<ProvisionRequest, Vps4
         SetHostname.Request hfsRequest = new SetHostname.Request(hfsVmId, resourceId, request.vmInfo.image.getImageControlPanel());
         virtualMachineService.setHostname(request.vmInfo.vmId, resourceId);
         context.execute(SetHostname.class, hfsRequest);
+    }
+
+    public void createPTRRecord(String resourceId) {
+        VirtualMachine vm = virtualMachineService.getVirtualMachine(request.vmInfo.vmId);
+        CreateDnsPtrRecord.Request reverseDnsNameRequest = new CreateDnsPtrRecord.Request();
+        reverseDnsNameRequest.virtualMachine = vm;
+        reverseDnsNameRequest.reverseDnsName = resourceId;
+        context.execute("CreateDnsPtrRecord", CreateDnsPtrRecord.class, reverseDnsNameRequest);
     }
 
     private void configureControlPanel(long hfsVmId) {

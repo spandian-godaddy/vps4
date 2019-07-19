@@ -16,6 +16,7 @@ import com.godaddy.vps4.messaging.MissingShopperIdException;
 import com.godaddy.vps4.messaging.Vps4MessagingService;
 import com.godaddy.vps4.network.NetworkService;
 import com.godaddy.vps4.orchestration.hfs.cpanel.ConfigureCpanel;
+import com.godaddy.vps4.orchestration.hfs.dns.CreateDnsPtrRecord;
 import com.godaddy.vps4.orchestration.hfs.network.AllocateIp;
 import com.godaddy.vps4.orchestration.hfs.network.BindIp;
 import com.godaddy.vps4.orchestration.hfs.plesk.ConfigurePlesk;
@@ -71,6 +72,7 @@ public class Vps4ProvisionDedicatedTest {
     CreateVm createVm = mock(CreateVm.class);
     BindIp bindIp = mock(BindIp.class);
     SetHostname setHostname = mock(SetHostname.class);
+    CreateDnsPtrRecord createDnsPtrRecord = mock(CreateDnsPtrRecord.class);
     SetPassword setPassword = mock(SetPassword.class);
     ToggleAdmin toggleAdmin = mock(ToggleAdmin.class);
     NodePingService nodePingService = mock(NodePingService.class);
@@ -83,6 +85,7 @@ public class Vps4ProvisionDedicatedTest {
     @Captor private ArgumentCaptor<Function<CommandContext, Void>> setCommonNameLambdaCaptor;
     @Captor private ArgumentCaptor<SetPassword.Request> setPasswordCaptor;
     @Captor private ArgumentCaptor<SetHostname.Request> setHostnameArgumentCaptor;
+    @Captor private ArgumentCaptor<CreateDnsPtrRecord.Request> reverseDnsNameRequestCaptor;
 
     Vps4ProvisionDedicated command = new Vps4ProvisionDedicated(actionService, vmService,
             virtualMachineService, vmUserService, networkService, nodePingService,
@@ -98,6 +101,7 @@ public class Vps4ProvisionDedicatedTest {
         binder.bind(CreateVm.class).toInstance(createVm);
         binder.bind(BindIp.class).toInstance(bindIp);
         binder.bind(SetHostname.class).toInstance(setHostname);
+        binder.bind(CreateDnsPtrRecord.class).toInstance(createDnsPtrRecord);
         binder.bind(ToggleAdmin.class).toInstance(toggleAdmin);
         binder.bind(PleskService.class).toInstance(mock(PleskService.class));
         binder.bind(ConfigurePlesk.class).toInstance(mock(ConfigurePlesk.class));
@@ -254,7 +258,7 @@ public class Vps4ProvisionDedicatedTest {
     }
 
     @Test
-    public void setsTheRootPasswordToBeSameAsUserPassword() {
+    public void testSetsTheRootPasswordToBeSameAsUserPassword() {
         command.executeWithAction(context, this.request);
         verify(context, times(1))
                 .execute(eq(SetPassword.class), setPasswordCaptor.capture());
@@ -265,12 +269,21 @@ public class Vps4ProvisionDedicatedTest {
     }
 
     @Test
-    public void setsHostname() {
+    public void testSetsHostname() {
         command.executeWithAction(context, request);
         verify(context, times(1)).execute(eq(SetHostname.class), setHostnameArgumentCaptor.capture());
         SetHostname.Request req = setHostnameArgumentCaptor.getValue();
         assertEquals(req.controlPanel, request.vmInfo.image.getImageControlPanel());
         assertEquals(req.hfsVmId, hfsVmId);
         assertEquals(hfsVm.resource_id, req.hostname);
+    }
+
+    @Test
+    public void testCreatePTRRecord() {
+        command.executeWithAction(context, request);
+        verify(context, times(1)).execute(eq("CreateDnsPtrRecord"), eq(CreateDnsPtrRecord.class), reverseDnsNameRequestCaptor.capture());
+        CreateDnsPtrRecord.Request req = reverseDnsNameRequestCaptor.getValue();
+        assertEquals("test.resourceid.com", req.reverseDnsName);
+        assertEquals(this.vm, req.virtualMachine);
     }
 }
