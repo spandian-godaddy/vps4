@@ -81,7 +81,7 @@ Integration Testing
 
 Running the maven build on Jenkins:
 
-Jenkins Integration Database:  p3dlvps4dbint.cloud.phx3.gdg
+Jenkins Integration Database:  p3dlvps4dbint2.cloud.phx3.gdg
 
 mvn clean verify     \
   -Dvps4.env=jenkins \
