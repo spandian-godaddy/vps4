@@ -37,4 +37,6 @@ public interface CreditService {
     void setAbuseSuspendedFlag(UUID orionGuid, boolean value);
 
     void setBillingSuspendedFlag(UUID orionGuid, boolean value);
+
+    void setPanoptaInstalled(UUID orionGuid, boolean value);
 }

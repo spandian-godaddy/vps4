@@ -6,18 +6,19 @@ import java.util.UUID;
 import javax.inject.Inject;
 import javax.sql.DataSource;
 
-import com.godaddy.vps4.scheduler.api.web.SchedulerWebService;
-import com.godaddy.vps4.snapshot.SnapshotModule;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
+import org.mockito.Mockito;
 
 import com.godaddy.vps4.jdbc.DatabaseModule;
+import com.godaddy.vps4.scheduler.api.web.SchedulerWebService;
 import com.godaddy.vps4.security.GDUserMock;
 import com.godaddy.vps4.security.SecurityModule;
 import com.godaddy.vps4.security.Vps4User;
 import com.godaddy.vps4.security.Vps4UserService;
+import com.godaddy.vps4.snapshot.SnapshotModule;
 import com.godaddy.vps4.vm.VirtualMachine;
 import com.godaddy.vps4.vm.VmModule;
 import com.godaddy.vps4.vm.VmUser;
@@ -28,7 +29,6 @@ import com.google.inject.AbstractModule;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
 import com.google.inject.Provides;
-import org.mockito.Mockito;
 
 public class UserResourceTest {
     @Inject Vps4UserService userService;

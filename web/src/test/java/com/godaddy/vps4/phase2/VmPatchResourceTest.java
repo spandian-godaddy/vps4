@@ -13,8 +13,6 @@ import java.util.UUID;
 import javax.inject.Inject;
 import javax.sql.DataSource;
 
-import com.godaddy.vps4.security.PrivilegeService;
-import com.godaddy.vps4.security.jdbc.JdbcPrivilegeService;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -22,12 +20,16 @@ import org.mockito.Mockito;
 
 import com.godaddy.vps4.credit.CreditService;
 import com.godaddy.vps4.jdbc.DatabaseModule;
+import com.godaddy.vps4.panopta.PanoptaApiCustomerService;
+import com.godaddy.vps4.panopta.PanoptaApiServerService;
 import com.godaddy.vps4.scheduler.api.web.SchedulerWebService;
 import com.godaddy.vps4.security.GDUserMock;
+import com.godaddy.vps4.security.PrivilegeService;
 import com.godaddy.vps4.security.SecurityModule;
 import com.godaddy.vps4.security.Vps4User;
 import com.godaddy.vps4.security.Vps4UserService;
 import com.godaddy.vps4.security.jdbc.AuthorizationException;
+import com.godaddy.vps4.security.jdbc.JdbcPrivilegeService;
 import com.godaddy.vps4.snapshot.SnapshotModule;
 import com.godaddy.vps4.vm.Action;
 import com.godaddy.vps4.vm.ActionService;
@@ -85,6 +87,8 @@ public class VmPatchResourceTest {
                     bind(SchedulerWebService.class).toInstance(swServ);
                     bind(DataCenterService.class).to(JdbcDataCenterService.class);
                     bind(PrivilegeService.class).to(JdbcPrivilegeService.class);
+                    bind(PanoptaApiCustomerService.class).toInstance(mock(PanoptaApiCustomerService.class));
+                    bind(PanoptaApiServerService.class).toInstance(mock(PanoptaApiServerService.class));
                 }
 
                 @Provides

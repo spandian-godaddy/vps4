@@ -1,5 +1,9 @@
 package com.godaddy.vps4.phase2;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.mockito.Mockito.when;
+
 import java.time.Instant;
 import java.util.HashSet;
 import java.util.List;
@@ -16,10 +20,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mockito;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.mockito.Mockito.when;
-
+import com.godaddy.hfs.vm.Vm;
 import com.godaddy.vps4.jdbc.DatabaseModule;
 import com.godaddy.vps4.network.IpAddress.IpAddressType;
 import com.godaddy.vps4.scheduler.api.core.JobRequest;
@@ -36,19 +37,17 @@ import com.godaddy.vps4.vm.ActionType;
 import com.godaddy.vps4.vm.VirtualMachine;
 import com.godaddy.vps4.vm.VirtualMachineService;
 import com.godaddy.vps4.vm.VirtualMachineType;
+import com.godaddy.vps4.vm.VmAction;
 import com.godaddy.vps4.vm.VmModule;
 import com.godaddy.vps4.web.Vps4Exception;
 import com.godaddy.vps4.web.security.GDUser;
 import com.godaddy.vps4.web.vm.VirtualMachineDetails;
 import com.godaddy.vps4.web.vm.VirtualMachineWithDetails;
-import com.godaddy.vps4.vm.VmAction;
 import com.godaddy.vps4.web.vm.VmResource;
 import com.google.inject.AbstractModule;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
 import com.google.inject.Provides;
-
-import com.godaddy.hfs.vm.Vm;
 
 public class VmResourceTest {
 

@@ -63,11 +63,11 @@ abstract public class HttpServiceProvider<T> {
         return serviceClient;
     }
 
-    List<ClientRequestFilter> getRequestFilters() {
+    public List<ClientRequestFilter> getRequestFilters() {
        return new ArrayList<>();
     }
 
-    List<ClientResponseFilter> getResponseFilters() {
+    public List<ClientResponseFilter> getResponseFilters() {
         return new ArrayList<>();
     }
 

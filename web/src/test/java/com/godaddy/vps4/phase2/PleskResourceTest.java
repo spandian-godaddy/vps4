@@ -1,5 +1,7 @@
 package com.godaddy.vps4.phase2;
 
+import static org.mockito.Mockito.mock;
+
 import java.util.Arrays;
 import java.util.UUID;
 
@@ -8,8 +10,6 @@ import javax.sql.DataSource;
 import javax.ws.rs.NotAcceptableException;
 import javax.ws.rs.core.HttpHeaders;
 
-import com.godaddy.vps4.scheduler.api.web.SchedulerWebService;
-import com.godaddy.vps4.snapshot.SnapshotModule;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -17,12 +17,16 @@ import org.junit.Test;
 import org.mockito.Mockito;
 
 import com.godaddy.vps4.jdbc.DatabaseModule;
+import com.godaddy.vps4.panopta.PanoptaApiCustomerService;
+import com.godaddy.vps4.panopta.PanoptaApiServerService;
 import com.godaddy.vps4.plesk.Vps4PleskService;
+import com.godaddy.vps4.scheduler.api.web.SchedulerWebService;
 import com.godaddy.vps4.security.GDUserMock;
 import com.godaddy.vps4.security.SecurityModule;
 import com.godaddy.vps4.security.Vps4User;
 import com.godaddy.vps4.security.Vps4UserService;
 import com.godaddy.vps4.security.jdbc.AuthorizationException;
+import com.godaddy.vps4.snapshot.SnapshotModule;
 import com.godaddy.vps4.util.PollerTimedOutException;
 import com.godaddy.vps4.vm.AccountStatus;
 import com.godaddy.vps4.vm.VirtualMachine;
@@ -62,6 +66,8 @@ public class PleskResourceTest {
                     bind(Vps4PleskService.class).toInstance(pleskServ);
                     SchedulerWebService swServ = Mockito.mock(SchedulerWebService.class);
                     bind(SchedulerWebService.class).toInstance(swServ);
+                    bind(PanoptaApiCustomerService.class).toInstance(mock(PanoptaApiCustomerService.class));
+                    bind(PanoptaApiServerService.class).toInstance(mock(PanoptaApiServerService.class));
                 }
 
                 @Provides

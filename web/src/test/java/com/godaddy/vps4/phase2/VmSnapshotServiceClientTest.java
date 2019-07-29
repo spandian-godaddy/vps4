@@ -1,26 +1,32 @@
 package com.godaddy.vps4.phase2;
+
 import static com.godaddy.vps4.client.ClientUtils.withShopperId;
+import static org.mockito.Mockito.mock;
 
 import java.util.List;
 import java.util.UUID;
 
 import javax.ws.rs.NotFoundException;
 
-import com.godaddy.vps4.client.SsoJwtAuth;
-import com.godaddy.vps4.config.ConfigModule;
-import com.godaddy.vps4.snapshot.Snapshot;
-import com.godaddy.vps4.util.ObjectMapperModule;
-import com.godaddy.vps4.web.client.VmSnapshotService;
-import com.godaddy.vps4.web.client.Vps4ApiWithSSOAuthClientModule;
-import com.google.inject.Guice;
-import com.google.inject.Inject;
-import com.google.inject.Injector;
-
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
+
+import com.godaddy.vps4.client.SsoJwtAuth;
+import com.godaddy.vps4.config.ConfigModule;
+import com.godaddy.vps4.panopta.PanoptaApiCustomerService;
+import com.godaddy.vps4.panopta.PanoptaApiServerService;
+import com.godaddy.vps4.scheduler.api.web.SchedulerWebService;
+import com.godaddy.vps4.snapshot.Snapshot;
+import com.godaddy.vps4.util.ObjectMapperModule;
+import com.godaddy.vps4.web.client.VmSnapshotService;
+import com.godaddy.vps4.web.client.Vps4ApiWithSSOAuthClientModule;
+import com.google.inject.AbstractModule;
+import com.google.inject.Guice;
+import com.google.inject.Inject;
+import com.google.inject.Injector;
 
 
 /**
@@ -39,9 +45,16 @@ public class VmSnapshotServiceClientTest {
                 new ConfigModule(),
                 new ObjectMapperModule(),
                 new Vps4ApiWithSSOAuthClientModule(),
-                new CancelActionModule()
-        );
-
+                new CancelActionModule(),
+                new AbstractModule() {
+                    @Override
+                    public void configure() {
+                        SchedulerWebService swServ = mock(SchedulerWebService.class);
+                        bind(SchedulerWebService.class).toInstance(swServ);
+                        bind(PanoptaApiCustomerService.class).toInstance(mock(PanoptaApiCustomerService.class));
+                        bind(PanoptaApiServerService.class).toInstance(mock(PanoptaApiServerService.class));
+                    }
+                });
         injector.injectMembers(this);
     }
 

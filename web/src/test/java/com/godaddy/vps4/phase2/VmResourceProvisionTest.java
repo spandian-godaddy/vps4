@@ -1,6 +1,7 @@
 package com.godaddy.vps4.phase2;
 
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 import java.time.Instant;
 import java.util.HashMap;
@@ -14,7 +15,6 @@ import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
-import org.mockito.Mockito;
 
 import com.godaddy.vps4.credit.CreditService;
 import com.godaddy.vps4.credit.VirtualMachineCredit;
@@ -124,7 +124,7 @@ public class VmResourceProvisionTest {
     private void testProvisionVm() {
         VirtualMachineCredit credit = createVmCredit("myh", false, AccountStatus.ACTIVE);
         ProvisionVmRequest request = createProvisionVmRequest(credit.getOrionGuid());
-        Mockito.when(creditService.getVirtualMachineCredit(credit.getOrionGuid())).thenReturn(credit);
+        when(creditService.getVirtualMachineCredit(credit.getOrionGuid())).thenReturn(credit);
 
         VmAction vmAction = getVmResource().provisionVm(request);
         Assert.assertNotNull(vmAction.commandId);
@@ -159,7 +159,7 @@ public class VmResourceProvisionTest {
         // Credit doesn't match provision request image
         VirtualMachineCredit credit = createVmCredit("cpanel", false, AccountStatus.ACTIVE);
         ProvisionVmRequest request = createProvisionVmRequest(credit.getOrionGuid());
-        Mockito.when(creditService.getVirtualMachineCredit(credit.getOrionGuid())).thenReturn(credit);
+        when(creditService.getVirtualMachineCredit(credit.getOrionGuid())).thenReturn(credit);
 
         try {
             getVmResource().provisionVm(request);
@@ -173,7 +173,7 @@ public class VmResourceProvisionTest {
     public void testProvisionVmNoSuchCredit() {
         UUID creditGuid = UUID.randomUUID();
         ProvisionVmRequest request = createProvisionVmRequest(creditGuid);
-        Mockito.when(creditService.getVirtualMachineCredit(creditGuid)).thenReturn(null);
+        when(creditService.getVirtualMachineCredit(creditGuid)).thenReturn(null);
 
         try {
             getVmResource().provisionVm(request);
@@ -187,7 +187,7 @@ public class VmResourceProvisionTest {
     public void testProvisionVmCreditClaimed() {
         VirtualMachineCredit credit = createVmCredit("cpanel", true, AccountStatus.ACTIVE);
         ProvisionVmRequest request = createProvisionVmRequest(credit.getOrionGuid());
-        Mockito.when(creditService.getVirtualMachineCredit(credit.getOrionGuid())).thenReturn(credit);
+        when(creditService.getVirtualMachineCredit(credit.getOrionGuid())).thenReturn(credit);
 
         try {
             getVmResource().provisionVm(request);
@@ -201,7 +201,7 @@ public class VmResourceProvisionTest {
     public void testSuspendedShopperProvisionVm() {
         VirtualMachineCredit credit = createVmCredit("myh", false, AccountStatus.SUSPENDED);
         ProvisionVmRequest request = createProvisionVmRequest(credit.getOrionGuid());
-        Mockito.when(creditService.getVirtualMachineCredit(credit.getOrionGuid())).thenReturn(credit);
+        when(creditService.getVirtualMachineCredit(credit.getOrionGuid())).thenReturn(credit);
 
         try {
             getVmResource().provisionVm(request);
@@ -218,7 +218,7 @@ public class VmResourceProvisionTest {
         String HEG_RESELLER_ID = "525847";
         VirtualMachineCredit credit = createVmCredit("myh", false, AccountStatus.ACTIVE, HEG_RESELLER_ID);
         ProvisionVmRequest request = createProvisionVmRequest(credit.getOrionGuid());
-        Mockito.when(creditService.getVirtualMachineCredit(credit.getOrionGuid())).thenReturn(credit);
+        when(creditService.getVirtualMachineCredit(credit.getOrionGuid())).thenReturn(credit);
 
         try {
             getVmResource().provisionVm(request);
@@ -234,7 +234,7 @@ public class VmResourceProvisionTest {
         String MT_RESELLER_ID = "495469";
         VirtualMachineCredit credit = createVmCredit("myh", false, AccountStatus.ACTIVE, MT_RESELLER_ID);
         ProvisionVmRequest request = createProvisionVmRequest(credit.getOrionGuid());
-        Mockito.when(creditService.getVirtualMachineCredit(credit.getOrionGuid())).thenReturn(credit);
+        when(creditService.getVirtualMachineCredit(credit.getOrionGuid())).thenReturn(credit);
 
         VmAction vmAction = getVmResource().provisionVm(request);
         Assert.assertNotNull(vmAction.commandId);

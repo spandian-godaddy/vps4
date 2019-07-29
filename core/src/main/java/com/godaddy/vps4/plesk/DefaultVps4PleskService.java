@@ -74,11 +74,11 @@ public class DefaultVps4PleskService implements Vps4PleskService {
             return parseSiteListPayload(responsePayload);
         }
         catch (ParseException pe) {
-            logger.warn("Error parsing plesk account list response {} ", pe);
+            logger.warn("Error parsing plesk account list response ", pe);
             throw pe;
         }
         catch (PollerTimedOutException pte) {
-            logger.warn("Timed out while waiting to receive response from hfs plesk endopoint for hfsVmId: {} ", hfsVmId);
+            logger.warn("Timed out while waiting to receive response from hfs plesk endpoint for hfsVmId: {} ", hfsVmId);
             throw pte;
         }
     }
@@ -92,10 +92,9 @@ public class DefaultVps4PleskService implements Vps4PleskService {
 
         JSONArray subscriptionsArray = (JSONArray) payloadJson.get("subscriptions");
         if (subscriptionsArray != null) {
-            List<PleskSubscription> accounts = (List<PleskSubscription>) subscriptionsArray.stream()
-                    .map(subscription -> new PleskSubscription(subscription))
+            return (List<PleskSubscription>) subscriptionsArray.stream()
+                    .map(PleskSubscription::new)
                     .collect(Collectors.toList());
-            return accounts;
         }
         String message = "Could not parse the subscription list. ";
         logger.error(message);

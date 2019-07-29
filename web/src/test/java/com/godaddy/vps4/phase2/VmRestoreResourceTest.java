@@ -1,5 +1,6 @@
 package com.godaddy.vps4.phase2;
 
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
@@ -22,6 +23,8 @@ import org.mockito.MockitoAnnotations;
 
 import com.godaddy.vps4.jdbc.DatabaseModule;
 import com.godaddy.vps4.orchestration.vm.Vps4RestoreVm;
+import com.godaddy.vps4.panopta.PanoptaApiCustomerService;
+import com.godaddy.vps4.panopta.PanoptaApiServerService;
 import com.godaddy.vps4.scheduler.api.web.SchedulerWebService;
 import com.godaddy.vps4.security.GDUserMock;
 import com.godaddy.vps4.security.SecurityModule;
@@ -70,7 +73,6 @@ public class VmRestoreResourceTest {
     @Inject SnapshotService vps4SnapshotService;
     @Inject ActionService actionService;
 
-
     private GDUser user;
     private VirtualMachine ourVm;
     private VirtualMachine theirVm;
@@ -95,6 +97,8 @@ public class VmRestoreResourceTest {
                 public void configure() {
                     SchedulerWebService swServ = Mockito.mock(SchedulerWebService.class);
                     bind(SchedulerWebService.class).toInstance(swServ);
+                    bind(PanoptaApiCustomerService.class).toInstance(mock(PanoptaApiCustomerService.class));
+                    bind(PanoptaApiServerService.class).toInstance(mock(PanoptaApiServerService.class));
                 }
 
                 @Provides

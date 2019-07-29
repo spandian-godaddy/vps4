@@ -1,9 +1,9 @@
 package com.godaddy.vps4.orchestration.vm.provision;
 
+import java.util.UUID;
+
 import com.godaddy.vps4.orchestration.ActionRequest;
 import com.godaddy.vps4.vm.ProvisionVmInfo;
-
-import java.util.UUID;
 
 public class ProvisionRequest implements ActionRequest {
     public ProvisionVmInfo vmInfo;

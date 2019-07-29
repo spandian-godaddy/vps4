@@ -41,6 +41,8 @@ import com.godaddy.vps4.orchestration.hfs.sysadmin.SetPassword;
 import com.godaddy.vps4.orchestration.hfs.vm.CreateVm;
 import com.godaddy.vps4.orchestration.phase2.Vps4ExternalsModule;
 import com.godaddy.vps4.orchestration.sysadmin.ConfigureMailRelay;
+import com.godaddy.vps4.panopta.PanoptaApiCustomerService;
+import com.godaddy.vps4.panopta.PanoptaApiServerService;
 import com.godaddy.vps4.security.SecurityModule;
 import com.godaddy.vps4.vm.ActionService;
 import com.godaddy.vps4.vm.Image;
@@ -75,6 +77,8 @@ public class Vps4ProvisionVmUnitTest {
                     bind(VmUserService.class).toInstance(mock(VmUserService.class));
                     bind(NetworkService.class).toInstance(mock(NetworkService.class));
                     bind(DefaultVps4MessagingService.class).toInstance(mock(DefaultVps4MessagingService.class));
+                    bind(PanoptaApiCustomerService.class).toInstance(mock(PanoptaApiCustomerService.class));
+                    bind(PanoptaApiServerService.class).toInstance(mock(PanoptaApiServerService.class));
                 }
             }
     );
