@@ -11,6 +11,7 @@ import java.util.Random;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
+import javax.ws.rs.InternalServerErrorException;
 import javax.ws.rs.NotFoundException;
 import javax.ws.rs.core.Response;
 
@@ -18,6 +19,9 @@ import org.joda.time.DateTime;
 import org.mockito.Mockito;
 
 import com.godaddy.hfs.config.Config;
+import com.godaddy.hfs.dns.HfsDnsAction;
+import com.godaddy.hfs.dns.HfsDnsService;
+import com.godaddy.hfs.dns.RdnsRecords;
 import com.godaddy.hfs.mailrelay.MailRelay;
 import com.godaddy.hfs.mailrelay.MailRelayHistory;
 import com.godaddy.hfs.mailrelay.MailRelayService;
@@ -415,6 +419,26 @@ public class HfsMockModule extends AbstractModule {
             @Override
             public String sendFailoverCompletedEmail(String shopperId, String serverName, boolean isFullyManaged) {
                 return createFakeMessage(shopperId);
+            }
+        };
+    }
+
+    @Provides
+    public HfsDnsService provideDnsService() {
+        return new HfsDnsService(){
+            @Override
+            public HfsDnsAction getDnsAction(long dnsActionId) {
+                return null;
+            }
+
+            @Override
+            public HfsDnsAction createDnsPtrRecord(long hfsVmId, String reverseDnsName) {
+                return null;
+            }
+
+            @Override
+            public RdnsRecords getReverseDnsName(long hfsVmId) {
+                return null;
             }
         };
     }

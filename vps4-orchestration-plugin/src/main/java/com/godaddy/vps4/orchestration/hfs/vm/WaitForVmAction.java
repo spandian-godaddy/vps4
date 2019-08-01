@@ -9,6 +9,7 @@ import gdg.hfs.orchestration.Command;
 import gdg.hfs.orchestration.CommandContext;
 import com.godaddy.hfs.vm.VmAction;
 import com.godaddy.hfs.vm.VmService;
+import com.godaddy.vps4.orchestration.scheduler.Utils;
 
 public class WaitForVmAction implements Command<VmAction, Void> {
 
@@ -27,6 +28,10 @@ public class WaitForVmAction implements Command<VmAction, Void> {
         hfsAction = vmService.getVmAction(hfsAction.vmId, hfsAction.vmActionId);
 
         int currentHfsTick = 1;
+
+        long vmId = hfsAction.vmId;
+        long vmActionId = hfsAction.vmActionId;
+
         // wait for VmAction to complete
         while (hfsAction.state == VmAction.Status.NEW
                 || hfsAction.state == VmAction.Status.REQUESTED
@@ -38,9 +43,9 @@ public class WaitForVmAction implements Command<VmAction, Void> {
                 currentHfsTick = hfsAction.tickNum;
             }
 
-            context.sleep(2000);
-
-            hfsAction = vmService.getVmAction(hfsAction.vmId, hfsAction.vmActionId);
+            hfsAction = Utils.runWithRetriesForServerErrorException(context, logger, () ->{
+                return vmService.getVmAction(vmId, vmActionId);
+            });
         }
         if (!(hfsAction.state == VmAction.Status.COMPLETE)) {
             throw new RuntimeException(String.format("failed to complete VM action: %s", hfsAction));

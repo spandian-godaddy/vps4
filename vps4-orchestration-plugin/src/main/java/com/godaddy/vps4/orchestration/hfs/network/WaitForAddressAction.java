@@ -5,6 +5,8 @@ import javax.inject.Inject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.godaddy.vps4.orchestration.scheduler.Utils;
+
 import gdg.hfs.orchestration.Command;
 import gdg.hfs.orchestration.CommandContext;
 import gdg.hfs.vhfs.network.AddressAction;
@@ -23,13 +25,16 @@ public class WaitForAddressAction implements Command<AddressAction, AddressActio
 
     @Override
     public AddressAction execute(CommandContext context, AddressAction hfsAction) {
+        long addressId =  hfsAction.addressId;
+        long addressActionId = hfsAction.addressActionId;
+
         while (!hfsAction.status.equals(AddressAction.Status.COMPLETE)
                 && !hfsAction.status.equals(AddressAction.Status.FAILED)) {
             logger.debug("waiting for address action: {}", hfsAction);
 
-            context.sleep(2000);
-
-            hfsAction = networkService.getAddressAction(hfsAction.addressId, hfsAction.addressActionId);
+            hfsAction = Utils.runWithRetriesForServerErrorException(context, logger, () ->{
+                return networkService.getAddressAction(addressId, addressActionId);
+            });
         }
 
         if (hfsAction.status != AddressAction.Status.COMPLETE) {
