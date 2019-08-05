@@ -69,6 +69,14 @@ Command line: -Dvps4.env=stage exec:java@encrypt-config
 Profiles: NA
 ```
 
+### Maven Decrypt Config
+```
+Type: Maven (in Intellij run config editor)
+Working directory: /Users/ashetty/myWorkingDir/vps4/firefly/source/vps4/core
+Command line: -Dvps4.env=stage exec:java@decrypt-config
+Profiles: NA
+```
+
 
 ### Running phase 2 tests
 ```
