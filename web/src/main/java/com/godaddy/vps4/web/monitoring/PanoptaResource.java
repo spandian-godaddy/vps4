@@ -1,11 +1,10 @@
 package com.godaddy.vps4.web.monitoring;
 
-import static com.godaddy.vps4.web.util.RequestValidation.getAndValidateUserAccountCredit;
-
 import java.util.UUID;
 
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
+import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
@@ -20,15 +19,17 @@ import com.godaddy.hfs.config.Config;
 import com.godaddy.vps4.credit.CreditService;
 import com.godaddy.vps4.credit.VirtualMachineCredit;
 import com.godaddy.vps4.panopta.PanoptaCustomer;
-import com.godaddy.vps4.panopta.PanoptaCustomerRequest;
+import com.godaddy.vps4.panopta.PanoptaServer;
 import com.godaddy.vps4.panopta.PanoptaService;
 import com.godaddy.vps4.panopta.PanoptaServiceException;
 import com.godaddy.vps4.vm.ServerSpec;
+import com.godaddy.vps4.vm.VirtualMachine;
 import com.godaddy.vps4.vm.VirtualMachineService;
 import com.godaddy.vps4.web.Vps4Api;
 import com.godaddy.vps4.web.Vps4Exception;
 import com.godaddy.vps4.web.security.GDUser;
 import com.godaddy.vps4.web.security.RequiresRole;
+import com.godaddy.vps4.web.vm.VmResource;
 import com.google.inject.Inject;
 
 import io.swagger.annotations.Api;
@@ -49,16 +50,17 @@ public class PanoptaResource {
     private final PanoptaService panoptaService;
     private final CreditService creditService;
     private final VirtualMachineService virtualMachineService;
-    private final GDUser user;
+    private final VmResource vmResource;
     private Config config;
 
     @Inject
     public PanoptaResource(PanoptaService panoptaService, CreditService creditService,
-                           VirtualMachineService virtualMachineService, GDUser user, Config config) {
+                           VirtualMachineService virtualMachineService, VmResource vmResource,
+                           Config config) {
         this.panoptaService = panoptaService;
         this.creditService = creditService;
         this.virtualMachineService = virtualMachineService;
-        this.user = user;
+        this.vmResource = vmResource;
         this.config = config;
     }
 
@@ -69,29 +71,18 @@ public class PanoptaResource {
     @RequiresRole(roles = {GDUser.Role.ADMIN})
     public PanoptaCustomer createCustomer(CreateCustomerRequest request) {
 
-        if(request == null) {
-            throw new Vps4Exception("MISSING_ORIONGUID", "Missing Orion GUID in request.");
+        if (request == null || StringUtils.isBlank(request.vmId)) {
+            throw new Vps4Exception("MISSING_VMID", "Missing Vm id in request.");
         }
 
-        if(StringUtils.isBlank(request.orionGuid)) {
-            throw new Vps4Exception("MISSING_ORIONGUID", "Missing Orion GUID in request.");
-        }
-
-        UUID orionGuid = UUID.fromString(request.orionGuid);
-
-        // validate credit belongs to shopper
-        getAndValidateUserAccountCredit(creditService, orionGuid, user.getShopperId());
+        VirtualMachine virtualMachine = vmResource.getVm(UUID.fromString(request.vmId));
 
         //  Only vps4 credits are allowed panopta installations at the moment.
         // check credit and lookup spec to ensure credit is not for a ded4 server
-        verifyCreditIsForVirtualServer(creditService, orionGuid);
-
-        // prepare a request to create panopta customer
-        PanoptaCustomerRequest panoptaCustomerRequest = new PanoptaCustomerRequest(creditService, config);
-        panoptaCustomerRequest.createPanoptaCustomerRequest(orionGuid);
+        verifyCreditIsForVirtualServer(creditService, virtualMachine.orionGuid);
 
         try {
-            return panoptaService.createPanoptaCustomer(panoptaCustomerRequest);
+            return panoptaService.createCustomer(UUID.fromString(request.vmId));
         } catch (PanoptaServiceException e) {
             logger.warn("Encountered exception while creating customer in panopta: ", e);
             throw new Vps4Exception(e.getId(), e.getMessage(), e);
@@ -108,25 +99,40 @@ public class PanoptaResource {
     }
 
     @DELETE
-    @Path("/customers/{orionGuid}")
+    @Path("/customers/{vmId}")
     @ApiOperation(value = "Delete a vps4 panopta customer.",
             notes = "Delete a vps4 panopta customer.")
     @ApiResponses(value = {
-            @ApiResponse(code = 400, message = "Could not delete customer, or customer does not exist.")
+            @ApiResponse(code = 404, message = "Could not delete customer, or customer does not exist.")
     })
     @RequiresRole(roles = {GDUser.Role.ADMIN})
-    public void deleteCustomer(@PathParam("orionGuid") UUID orionGuid) {
+    public void deleteCustomer(@PathParam("vmId") UUID vmId) {
         try {
-            panoptaService.deletePanoptaCustomer(
-                    config.get("panopta.api.partner.customer.key.prefix") + orionGuid);
+            panoptaService.deleteCustomer(
+                    config.get("panopta.api.partner.customer.key.prefix") + vmId);
         } catch (PanoptaServiceException e) {
             logger.warn("Encountered exception while attempting to delete customer in panopta: ", e);
             throw new Vps4Exception(e.getId(), e.getMessage(), e);
         }
     }
 
-
     public static class CreateCustomerRequest {
-        public String orionGuid;
+        public String vmId;
+    }
+
+    @GET
+    @Path("/server/{vmId}")
+    @ApiOperation(value = "Get the vps4 server instance in panopta.", notes = "Get the vps4 server instance in panopta")
+    @ApiResponses(value = {
+            @ApiResponse(code = 404, message = "Could not locate server in panopta, or server does not exist.")
+    })
+    @RequiresRole(roles = {GDUser.Role.ADMIN})
+    public PanoptaServer getServer(@PathParam("vmId") UUID vmId) {
+        try {
+            return panoptaService.getServer(config.get("panopta.api.partner.customer.key.prefix") + vmId);
+        } catch (PanoptaServiceException e) {
+            logger.warn("Encountered exception while attempting to get server from panopta for vmId: " + vmId, e);
+            throw new Vps4Exception(e.getId(), e.getMessage(), e);
+        }
     }
 }

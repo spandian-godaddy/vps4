@@ -25,4 +25,8 @@ public interface PanoptaApiServerService {
     @Path("/{server_id}/agent_resource")
     PanoptaAgentResourceList getAgentResourceList(@PathParam("server_id") int serverId,
                                       @QueryParam("partner_customer_key") String partnerCustomerKey);
+
+    @GET
+    @Path("/servers")
+    PanoptaServers getPanoptaServers(@QueryParam("partner_customer_key") String partnerCustomerKey);
 }

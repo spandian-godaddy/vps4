@@ -7,9 +7,11 @@ import javax.inject.Inject;
 import com.godaddy.hfs.config.Config;
 import com.godaddy.vps4.credit.CreditService;
 import com.godaddy.vps4.credit.VirtualMachineCredit;
+import com.godaddy.vps4.vm.VirtualMachine;
+import com.godaddy.vps4.vm.VirtualMachineService;
 
 public class PanoptaCustomerRequest {
-    private UUID orionGuid;
+    private UUID vmId;
     private String shopperId; // this is the name field in the request to panopta
     private String partnerCustomerKey;
     private String emailAddress;
@@ -17,18 +19,22 @@ public class PanoptaCustomerRequest {
     @Inject
     private Config config;
     @Inject
-    private CreditService creditService;
+    VirtualMachineService virtualMachineService;
+    @Inject
+    CreditService creditService;
 
-    public PanoptaCustomerRequest(CreditService creditService, Config config) {
+    public PanoptaCustomerRequest(VirtualMachineService virtualMachineService, CreditService creditService, Config config) {
+        this.virtualMachineService = virtualMachineService;
         this.creditService = creditService;
         this.config = config;
     }
 
-    public PanoptaCustomerRequest createPanoptaCustomerRequest(UUID orionGuid) {
+    public PanoptaCustomerRequest createPanoptaCustomerRequest(UUID vmId) {
 
-        VirtualMachineCredit credit = creditService.getVirtualMachineCredit(orionGuid);
+        VirtualMachine virtualMachine = virtualMachineService.getVirtualMachine(vmId);
+        VirtualMachineCredit credit = creditService.getVirtualMachineCredit(virtualMachine.orionGuid);
         this.shopperId = credit.getShopperId();
-        partnerCustomerKey = config.get("panopta.api.partner.customer.key.prefix") + orionGuid;
+        partnerCustomerKey = config.get("panopta.api.partner.customer.key.prefix") + vmId;
         this.partnerCustomerKey = partnerCustomerKey;
         this.emailAddress = config.get("panopta.api.customer.email", "dev-vps4@godaddy.com");
         // commented out at the moment since we need to create the correct managed levels in Panopta.
@@ -40,8 +46,8 @@ public class PanoptaCustomerRequest {
         return this;
     }
 
-    public UUID getOrionGuid() {
-        return orionGuid;
+    public UUID getVmId() {
+        return vmId;
     }
 
     public String getShopperId() {
