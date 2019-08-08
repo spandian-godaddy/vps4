@@ -71,6 +71,7 @@
 
 - import code into Intellij Idea
     - Import project -> find the pom.xml for the vps4-project and open it. 
+    - Select "Search for projects recursively" and "Import Maven projects automatically"
     - go through the screens clicking "Next"
     - Project should be opened in the editor once above steps are completed
 
