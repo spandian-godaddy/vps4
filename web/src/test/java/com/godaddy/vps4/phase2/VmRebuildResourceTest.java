@@ -66,7 +66,6 @@ public class VmRebuildResourceTest {
     @Inject DataSource dataSource;
     @Inject ActionService actionService;
 
-
     private GDUser user;
     private VirtualMachine ourVm;
     private VirtualMachine ourDedicated;

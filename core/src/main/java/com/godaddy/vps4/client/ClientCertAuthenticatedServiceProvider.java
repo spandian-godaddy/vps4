@@ -39,7 +39,7 @@ public class ClientCertAuthenticatedServiceProvider<T> extends HttpServiceProvid
     }
 
     @Override
-    List<ClientRequestFilter> getRequestFilters() {
+    public List<ClientRequestFilter> getRequestFilters() {
         List<ClientRequestFilter> requestFilters = super.getRequestFilters();
         requestFilters.add(getShopperIdInjectionFilter(shopperIdProvider));
         return requestFilters;

@@ -3,6 +3,7 @@ package com.godaddy.vps4.phase2;
 import static java.util.UUID.randomUUID;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.eq;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
@@ -15,7 +16,15 @@ import java.util.UUID;
 import javax.inject.Inject;
 import javax.sql.DataSource;
 
+import org.junit.After;
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.Test;
+import org.mockito.Mockito;
+
 import com.godaddy.vps4.jdbc.DatabaseModule;
+import com.godaddy.vps4.panopta.PanoptaApiCustomerService;
+import com.godaddy.vps4.panopta.PanoptaApiServerService;
 import com.godaddy.vps4.scheduler.api.web.SchedulerWebService;
 import com.godaddy.vps4.security.GDUserMock;
 import com.godaddy.vps4.security.SecurityModule;
@@ -40,12 +49,6 @@ import com.google.inject.Guice;
 import com.google.inject.Injector;
 import com.google.inject.Provides;
 
-import org.junit.After;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
-import org.mockito.Mockito;
-
 public class VmDestroyTest {
     @Inject
     Vps4UserService userService;
@@ -67,6 +70,8 @@ public class VmDestroyTest {
                     bind(SnapshotService.class).toInstance(snapshotService);
                     SchedulerWebService swServ = Mockito.mock(SchedulerWebService.class);
                     bind(SchedulerWebService.class).toInstance(swServ);
+                    bind(PanoptaApiCustomerService.class).toInstance(mock(PanoptaApiCustomerService.class));
+                    bind(PanoptaApiServerService.class).toInstance(mock(PanoptaApiServerService.class));
                 }
 
                 @Provides

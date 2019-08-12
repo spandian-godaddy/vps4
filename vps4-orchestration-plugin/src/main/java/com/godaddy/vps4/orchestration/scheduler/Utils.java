@@ -3,15 +3,20 @@ package com.godaddy.vps4.orchestration.scheduler;
 import java.util.HashMap;
 import java.util.Map;
 
+import javax.ws.rs.ServerErrorException;
+
+import org.slf4j.Logger;
+
 import com.godaddy.vps4.scheduledJob.ScheduledJob;
 import com.godaddy.vps4.scheduler.api.core.JobRequest;
 import com.godaddy.vps4.scheduler.api.plugin.Vps4BackupJobRequest;
 import com.godaddy.vps4.scheduler.api.plugin.Vps4RemoveSupportUserJobRequest;
 import com.godaddy.vps4.scheduler.api.plugin.Vps4ZombieCleanupJobRequest;
 
-public class Utils {
-    private static final Map<ScheduledJob.ScheduledJobType, Class<? extends JobRequest>> typeClassMap = new HashMap<>();
+import gdg.hfs.orchestration.CommandContext;
 
+public abstract class Utils {
+    private static final Map<ScheduledJob.ScheduledJobType, Class<? extends JobRequest>> typeClassMap = new HashMap<>();
     static {
         typeClassMap.put(ScheduledJob.ScheduledJobType.BACKUPS_RETRY, Vps4BackupJobRequest.class);
         typeClassMap.put(ScheduledJob.ScheduledJobType.ZOMBIE, Vps4ZombieCleanupJobRequest.class);
@@ -22,5 +27,26 @@ public class Utils {
 
     public static Class<? extends JobRequest> getJobRequestClassForType(ScheduledJob.ScheduledJobType scheduledJobType) {
         return typeClassMap.get(scheduledJobType);
+    }
+
+    public interface RetryActionHandler <T> {
+        T handle();
+    }
+
+    public static <T> T runWithRetriesForServerErrorException(CommandContext context, Logger logger, RetryActionHandler<T> handler) {
+        int serverErrorRetries = 0;
+        int maxRetries = 5;
+        while (serverErrorRetries < maxRetries) {
+            context.sleep(2000);
+            try {
+                return handler.handle();
+            }
+            catch (ServerErrorException e) {
+                logger.info("Caught Server Error. Attempting retry number: #{}", serverErrorRetries);
+                if (++serverErrorRetries >= maxRetries)
+                    throw e;
+            }
+        }
+        return null;
     }
 }

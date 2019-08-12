@@ -9,6 +9,7 @@ import gdg.hfs.orchestration.Command;
 import gdg.hfs.orchestration.CommandContext;
 import com.godaddy.hfs.vm.VmAction;
 import com.godaddy.hfs.vm.VmService;
+import com.godaddy.vps4.orchestration.scheduler.Utils;
 
 public class WaitForManageVmAction implements Command<VmAction, VmAction> {
 
@@ -23,6 +24,9 @@ public class WaitForManageVmAction implements Command<VmAction, VmAction> {
 
     @Override
     public VmAction execute(CommandContext context, VmAction hfsAction) {
+        long vmId = hfsAction.vmId;
+        long vmActionId = hfsAction.vmActionId;
+
         // wait for VmAction to complete
         while (hfsAction.state == VmAction.Status.NEW
                 || hfsAction.state == VmAction.Status.REQUESTED
@@ -30,9 +34,9 @@ public class WaitForManageVmAction implements Command<VmAction, VmAction> {
 
             logger.debug("waiting for vm action to complete: {}", hfsAction);
 
-            context.sleep(2000);
-
-            hfsAction = vmService.getVmAction(hfsAction.vmId, hfsAction.vmActionId);
+            hfsAction = Utils.runWithRetriesForServerErrorException(context, logger, () ->{
+                return vmService.getVmAction(vmId, vmActionId);
+            });
         }
         if(hfsAction.state == VmAction.Status.COMPLETE) {
             logger.info("Vm Action completed. hfsAction: {} ", hfsAction );
@@ -41,5 +45,4 @@ public class WaitForManageVmAction implements Command<VmAction, VmAction> {
         }
         return hfsAction;
     }
-
 }

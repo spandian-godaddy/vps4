@@ -21,7 +21,7 @@ public class SsoJwtAuthenticatedServiceProvider<T> extends HttpServiceProvider<T
     }
 
     @Override
-    List<ClientRequestFilter> getRequestFilters() {
+    public List<ClientRequestFilter> getRequestFilters() {
         List<ClientRequestFilter> requestFilters = super.getRequestFilters();
         requestFilters.add(getSsoJwtInjectionFilter(ssoTokenService));
         requestFilters.add(getShopperIdInjectionFilter(shopperIdProvider));

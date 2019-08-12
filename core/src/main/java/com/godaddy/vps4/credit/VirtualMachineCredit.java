@@ -41,6 +41,7 @@ public class VirtualMachineCredit {
     private Instant purchasedAt;
     private boolean abuseSuspendedFlag;
     private boolean billingSuspendedFlag;
+    private boolean panoptaInstalled;
 
     private VirtualMachineCredit() {
     }
@@ -210,6 +211,10 @@ public class VirtualMachineCredit {
         return billingSuspendedFlag;
     }
 
+    public boolean isPanoptaInstalled() {
+        return panoptaInstalled;
+    }
+
     public static class Builder {
         private Map<String, String> planFeatures;
         private Map<String, String> productMeta;
@@ -303,6 +308,7 @@ public class VirtualMachineCredit {
                 credit.productId = getProductId();
                 credit.abuseSuspendedFlag = getFlagFromProductMeta(ProductMetaField.ABUSE_SUSPENDED_FLAG.toString());
                 credit.billingSuspendedFlag = getFlagFromProductMeta(ProductMetaField.BILLING_SUSPENDED_FLAG.toString());
+                credit.panoptaInstalled = getFlagFromProductMeta(ProductMetaField.PANOPTA_INSTALLED.toString());
             }
 
             credit.shopperId = this.shopperId;

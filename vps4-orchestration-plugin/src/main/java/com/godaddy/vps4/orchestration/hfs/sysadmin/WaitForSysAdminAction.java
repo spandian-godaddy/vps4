@@ -6,6 +6,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.godaddy.vps4.orchestration.hfs.SysAdminActionNotCompletedException;
+import com.godaddy.vps4.orchestration.scheduler.Utils;
 
 import gdg.hfs.orchestration.Command;
 import gdg.hfs.orchestration.CommandContext;
@@ -26,11 +27,13 @@ public class WaitForSysAdminAction implements Command<SysAdminAction, SysAdminAc
     @Override
     public SysAdminAction execute(CommandContext context, SysAdminAction sysAction) {
 
+        long sysAdminActionId = sysAction.sysAdminActionId;
         while (sysAction.status == SysAdminAction.Status.NEW
                 || sysAction.status == SysAdminAction.Status.IN_PROGRESS) {
             logger.debug("waiting on System Admin Action: {}", sysAction);
-            context.sleep(2000);
-            sysAction = sysAdminService.getSysAdminAction(sysAction.sysAdminActionId);
+            sysAction = Utils.runWithRetriesForServerErrorException(context, logger, () ->{
+                return sysAdminService.getSysAdminAction(sysAdminActionId);
+            });
         }
 
         if(sysAction.status == SysAdminAction.Status.COMPLETE) {

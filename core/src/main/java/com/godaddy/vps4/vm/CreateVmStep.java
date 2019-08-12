@@ -17,5 +17,6 @@ public enum CreateVmStep {
     SetHostname,
     ConfigureMailRelay,
     ConfigureNodeping,
+    ConfigurePanopta,
     SetupAutomaticBackupSchedule;
 }

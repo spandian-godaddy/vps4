@@ -26,6 +26,8 @@ import com.godaddy.vps4.credit.CreditService;
 import com.godaddy.vps4.credit.VirtualMachineCredit;
 import com.godaddy.vps4.jdbc.DatabaseModule;
 import com.godaddy.vps4.network.NetworkService;
+import com.godaddy.vps4.panopta.PanoptaApiCustomerService;
+import com.godaddy.vps4.panopta.PanoptaApiServerService;
 import com.godaddy.vps4.phase2.SqlTestData;
 import com.godaddy.vps4.scheduledJob.ScheduledJobService;
 import com.godaddy.vps4.scheduler.api.web.SchedulerWebService;
@@ -106,6 +108,8 @@ public class DedicatedDestroyTest {
                     bind(DataCenterService.class).toInstance(mock(DataCenterService.class));
                     bind(ScheduledJobService.class).toInstance(mock(ScheduledJobService.class));
                     bind(MonitorService.class).toInstance(mock(MonitorService.class));
+                    bind(PanoptaApiCustomerService.class).toInstance(mock(PanoptaApiCustomerService.class));
+                    bind(PanoptaApiServerService.class).toInstance(mock(PanoptaApiServerService.class));
 
                 }
 

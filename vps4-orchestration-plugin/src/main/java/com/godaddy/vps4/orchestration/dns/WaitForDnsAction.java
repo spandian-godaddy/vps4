@@ -7,6 +7,7 @@ import org.slf4j.LoggerFactory;
 
 import com.godaddy.hfs.dns.HfsDnsAction;
 import com.godaddy.hfs.dns.HfsDnsService;
+import com.godaddy.vps4.orchestration.scheduler.Utils;
 import com.godaddy.vps4.vm.ActionStatus;
 
 import gdg.hfs.orchestration.Command;
@@ -26,15 +27,17 @@ public class WaitForDnsAction implements Command<HfsDnsAction, HfsDnsAction> {
 
     @Override
     public HfsDnsAction execute(CommandContext context, HfsDnsAction hfsDnsAction) {
+        long dnsActionId = hfsDnsAction.dns_action_id;
+
         // wait for action to complete
         while (hfsDnsAction.status == ActionStatus.NEW
                 || hfsDnsAction.status == ActionStatus.IN_PROGRESS) {
 
             logger.debug("waiting for dns action to complete: {}", hfsDnsAction);
 
-            context.sleep(2000);
-
-            hfsDnsAction = hfsDnsService.getDnsAction(hfsDnsAction.dns_action_id);
+            hfsDnsAction = Utils.runWithRetriesForServerErrorException(context, logger, () ->{
+                return hfsDnsService.getDnsAction(dnsActionId);
+            });
         }
         if (hfsDnsAction.status == ActionStatus.COMPLETE) {
             logger.info("HFS DNS Action completed. hfsAction: {} ", hfsDnsAction);

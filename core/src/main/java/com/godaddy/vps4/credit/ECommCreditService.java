@@ -37,7 +37,8 @@ public class ECommCreditService implements CreditService {
         PLAN_CHANGE_PENDING,
         PURCHASED_AT,
         ABUSE_SUSPENDED_FLAG,
-        BILLING_SUSPENDED_FLAG;
+        BILLING_SUSPENDED_FLAG,
+        PANOPTA_INSTALLED;
 
         @Override
         public String toString() {
@@ -280,6 +281,11 @@ public class ECommCreditService implements CreditService {
     @Override
     public void setBillingSuspendedFlag(UUID orionGuid, boolean value) {
         updateProductMeta(orionGuid, ProductMetaField.BILLING_SUSPENDED_FLAG, String.valueOf(value));
+    }
+
+    @Override
+    public void setPanoptaInstalled(UUID orionGuid, boolean value) {
+        updateProductMeta(orionGuid, ProductMetaField.PANOPTA_INSTALLED, String.valueOf(value));
     }
 
     private Account.Status getEcommAccountStatus(AccountStatus accountStatus) {

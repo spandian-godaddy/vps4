@@ -1,5 +1,9 @@
 package com.godaddy.vps4.phase2;
 
+import static org.mockito.Matchers.anyLong;
+import static org.mockito.Matchers.eq;
+import static org.mockito.Mockito.mock;
+
 import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
@@ -7,11 +11,19 @@ import java.util.UUID;
 import javax.sql.DataSource;
 import javax.ws.rs.NotFoundException;
 
+import org.junit.After;
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.Test;
+import org.mockito.Mockito;
+
 import com.godaddy.vps4.cpanel.CpanelInvalidUserException;
 import com.godaddy.vps4.cpanel.CpanelTimeoutException;
 import com.godaddy.vps4.cpanel.Vps4CpanelService;
 import com.godaddy.vps4.jdbc.DatabaseModule;
 import com.godaddy.vps4.network.IpAddress;
+import com.godaddy.vps4.panopta.PanoptaApiCustomerService;
+import com.godaddy.vps4.panopta.PanoptaApiServerService;
 import com.godaddy.vps4.scheduler.api.web.SchedulerWebService;
 import com.godaddy.vps4.security.GDUserMock;
 import com.godaddy.vps4.security.SecurityModule;
@@ -30,14 +42,6 @@ import com.google.inject.Guice;
 import com.google.inject.Inject;
 import com.google.inject.Injector;
 import com.google.inject.Provides;
-import org.junit.After;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
-import org.mockito.Mockito;
-
-import static org.mockito.Matchers.anyLong;
-import static org.mockito.Matchers.eq;
 
 public class CpanelResourceTest {
 
@@ -59,10 +63,12 @@ public class CpanelResourceTest {
 
                 @Override
                 protected void configure() {
-                    cpServ = Mockito.mock(Vps4CpanelService.class);
+                    cpServ = mock(Vps4CpanelService.class);
                     bind(Vps4CpanelService.class).toInstance(cpServ);
-                    SchedulerWebService swServ = Mockito.mock(SchedulerWebService.class);
+                    SchedulerWebService swServ = mock(SchedulerWebService.class);
                     bind(SchedulerWebService.class).toInstance(swServ);
+                    bind(PanoptaApiCustomerService.class).toInstance(mock(PanoptaApiCustomerService.class));
+                    bind(PanoptaApiServerService.class).toInstance(mock(PanoptaApiServerService.class));
                 }
 
                 @Provides

@@ -17,8 +17,14 @@ import static com.godaddy.vps4.vm.CreateVmStep.StartingServerSetup;
 import java.util.UUID;
 
 import javax.inject.Inject;
-import com.godaddy.hfs.config.Config;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.godaddy.hfs.config.Config;
+import com.godaddy.hfs.vm.VmAction;
+import com.godaddy.hfs.vm.VmService;
 import com.godaddy.vps4.credit.CreditService;
 import com.godaddy.vps4.messaging.Vps4MessagingService;
 import com.godaddy.vps4.network.IpAddress.IpAddressType;
@@ -47,6 +53,7 @@ import com.godaddy.vps4.vm.Image;
 import com.godaddy.vps4.vm.VirtualMachine;
 import com.godaddy.vps4.vm.VirtualMachineService;
 import com.godaddy.vps4.vm.VmUserService;
+
 import gdg.hfs.orchestration.CommandContext;
 import gdg.hfs.orchestration.CommandMetadata;
 import gdg.hfs.orchestration.CommandRetryStrategy;
@@ -54,10 +61,6 @@ import gdg.hfs.vhfs.network.IpAddress;
 import gdg.hfs.vhfs.nodeping.CreateCheckRequest;
 import gdg.hfs.vhfs.nodeping.NodePingCheck;
 import gdg.hfs.vhfs.nodeping.NodePingService;
-import com.godaddy.hfs.vm.VmAction;
-import com.godaddy.hfs.vm.VmService;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 @CommandMetadata(
         name = "ProvisionVm",

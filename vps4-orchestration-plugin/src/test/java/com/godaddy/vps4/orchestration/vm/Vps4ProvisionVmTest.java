@@ -17,15 +17,19 @@ import java.util.Random;
 import java.util.UUID;
 import java.util.function.Function;
 
-import com.godaddy.hfs.config.Config;
-import com.godaddy.vps4.orchestration.hfs.sysadmin.SetPassword;
-import com.godaddy.vps4.orchestration.scheduler.SetupAutomaticBackupSchedule;
-import com.godaddy.vps4.orchestration.sysadmin.ConfigureMailRelay;
-import com.godaddy.vps4.orchestration.vm.provision.ProvisionRequest;
-
 import org.junit.Before;
 import org.junit.Test;
+import org.mockito.ArgumentCaptor;
+import org.mockito.Captor;
+import org.mockito.MockitoAnnotations;
 
+import com.godaddy.hfs.config.Config;
+import com.godaddy.hfs.mailrelay.MailRelay;
+import com.godaddy.hfs.mailrelay.MailRelayService;
+import com.godaddy.hfs.mailrelay.MailRelayUpdate;
+import com.godaddy.hfs.vm.VmAction;
+import com.godaddy.hfs.vm.VmAction.Status;
+import com.godaddy.hfs.vm.VmService;
 import com.godaddy.vps4.credit.CreditService;
 import com.godaddy.vps4.messaging.MissingShopperIdException;
 import com.godaddy.vps4.messaging.Vps4MessagingService;
@@ -34,8 +38,12 @@ import com.godaddy.vps4.orchestration.hfs.network.AllocateIp;
 import com.godaddy.vps4.orchestration.hfs.network.BindIp;
 import com.godaddy.vps4.orchestration.hfs.plesk.ConfigurePlesk;
 import com.godaddy.vps4.orchestration.hfs.sysadmin.SetHostname;
+import com.godaddy.vps4.orchestration.hfs.sysadmin.SetPassword;
 import com.godaddy.vps4.orchestration.hfs.sysadmin.ToggleAdmin;
 import com.godaddy.vps4.orchestration.hfs.vm.CreateVm;
+import com.godaddy.vps4.orchestration.scheduler.SetupAutomaticBackupSchedule;
+import com.godaddy.vps4.orchestration.sysadmin.ConfigureMailRelay;
+import com.godaddy.vps4.orchestration.vm.provision.ProvisionRequest;
 import com.godaddy.vps4.orchestration.vm.provision.Vps4ProvisionVm;
 import com.godaddy.vps4.util.MonitoringMeta;
 import com.godaddy.vps4.vm.ActionService;
@@ -49,20 +57,11 @@ import com.google.inject.Guice;
 import com.google.inject.Injector;
 
 import gdg.hfs.orchestration.CommandContext;
-import com.godaddy.hfs.mailrelay.MailRelay;
-import com.godaddy.hfs.mailrelay.MailRelayService;
-import com.godaddy.hfs.mailrelay.MailRelayUpdate;
 import gdg.hfs.vhfs.network.IpAddress;
 import gdg.hfs.vhfs.nodeping.CreateCheckRequest;
 import gdg.hfs.vhfs.nodeping.NodePingCheck;
 import gdg.hfs.vhfs.nodeping.NodePingService;
 import gdg.hfs.vhfs.plesk.PleskService;
-import com.godaddy.hfs.vm.VmAction;
-import com.godaddy.hfs.vm.VmAction.Status;
-import com.godaddy.hfs.vm.VmService;
-import org.mockito.ArgumentCaptor;
-import org.mockito.Captor;
-import org.mockito.MockitoAnnotations;
 
 
 public class Vps4ProvisionVmTest {
@@ -89,8 +88,8 @@ public class Vps4ProvisionVmTest {
     @Captor private ArgumentCaptor<SetHostname.Request> setHostnameArgumentCaptor;
 
     Vps4ProvisionVm command = new Vps4ProvisionVm(actionService, vmService,
-            virtualMachineService, vmUserService, networkService, nodePingService,
-            monitoringMeta, messagingService, creditService, config);
+                                                  virtualMachineService, vmUserService, networkService, nodePingService,
+                                                  monitoringMeta, messagingService, creditService, config);
 
     Injector injector = Guice.createInjector(binder -> {
         binder.bind(ActionService.class).toInstance(actionService);
@@ -127,6 +126,7 @@ public class Vps4ProvisionVmTest {
     int diskGib;
     UUID orionGuid = UUID.randomUUID();
     long hfsVmId = 42;
+    String panoptaCustomerKey = "fakePanoptaPartnerCustomerKey-";
 
     @Before
     public void setupTest() throws Exception {
@@ -273,5 +273,4 @@ public class Vps4ProvisionVmTest {
         String expectedHostname = "s" + primaryIp.address.replace('.', '-') + ".secureserver.net";
         assertEquals(expectedHostname, req.hostname);
     }
-
 }
