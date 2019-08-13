@@ -43,6 +43,8 @@ public class RunSomeTests {
         int maxPerImageVm = Integer.parseInt(cmd.getOptionValue("pool-size"));
         int maxVmWaitSeconds = Integer.parseInt(cmd.getOptionValue("vm-timeout"));
 
+        boolean smokeTest = Boolean.parseBoolean(cmd.getOptionValue("smoke-test", "false"));
+
         String imagesToTest = cmd.getOptionValue("images");
 
         SsoClient ssoClient = new SsoClient(ssoUrl);
@@ -71,6 +73,12 @@ public class RunSomeTests {
                 new StopStartVmTest(),
                 new SnapshotTest()
         );
+
+        if(smokeTest) {
+            tests = Arrays.asList(
+                    new ChangeHostnameTest(randomHostname())
+            );
+        }
 
         TestGroup vps4 = new TestGroup("VPS4 Phase3 Tests");
 
@@ -144,6 +152,7 @@ public class RunSomeTests {
         options.addOption( "p", "pool-size", true, "maximum number of vms per image type");
         options.addOption( "t", "vm-timeout", true, "maximum time in seconds a test will wait for a VM");
         options.addOption( "i", "images", true, "hfs images to test");
+        options.addOption( "b", "smoke-test", true, "only run a smoke test");
 
         CommandLine cmd = parser.parse(options, args);
         for (Option option : cmd.getOptions())
