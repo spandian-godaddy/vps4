@@ -39,7 +39,12 @@ public class PanoptaDataServiceTest {
         String fakePartnerCustomerKey = "godaddy_totally-fake-uuid";
         panoptaCustomer = new PanoptaCustomer(fakeCustomerKey, fakePartnerCustomerKey);
         long fakeServerId = 1234567;
-        panoptaServer = new PanoptaServer(fakePartnerCustomerKey, fakeServerId, fakeServerKey);
+        String fakeName = "s64-202-190-85.secureserver.net";
+        String fakeFqdn = "s64-202-190-85.secureserver.net";
+        String serverGroup = "https://api2.panopta.com/v2/server_group/348625";
+        PanoptaServer.Status status = PanoptaServer.Status.ACTIVE;
+        panoptaServer = new PanoptaServer(fakePartnerCustomerKey, fakeServerId, fakeServerKey, fakeName,
+                                          fakeFqdn, serverGroup, status);
     }
 
     @After

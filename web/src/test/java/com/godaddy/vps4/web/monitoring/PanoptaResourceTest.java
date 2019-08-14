@@ -31,8 +31,10 @@ import com.godaddy.vps4.panopta.PanoptaApiCustomerList;
 import com.godaddy.vps4.panopta.PanoptaApiCustomerRequest;
 import com.godaddy.vps4.panopta.PanoptaApiCustomerService;
 import com.godaddy.vps4.panopta.PanoptaApiServerService;
+import com.godaddy.vps4.panopta.PanoptaDataService;
 import com.godaddy.vps4.panopta.PanoptaServers;
 import com.godaddy.vps4.panopta.PanoptaService;
+import com.godaddy.vps4.panopta.jdbc.JdbcPanoptaDataService;
 import com.godaddy.vps4.security.GDUserMock;
 import com.godaddy.vps4.util.ObjectMapperModule;
 import com.godaddy.vps4.vm.AccountStatus;
@@ -58,6 +60,7 @@ public class PanoptaResourceTest {
     private DataCenterService dataCenterService = mock(DataCenterService.class);
     private VirtualMachineService virtualMachineService = mock(VirtualMachineService.class);
     private ServerSpec serverSpec = mock(ServerSpec.class);
+    private PanoptaDataService panoptaDataService = mock(PanoptaDataService.class);
     private Response response = mock(Response.class);
     private Response.StatusType responseStatusType = mock(Response.StatusType.class);
 
@@ -88,6 +91,7 @@ public class PanoptaResourceTest {
                     bind(ServerSpec.class).toInstance(serverSpec);
                     bind(VmResource.class).toInstance(vmResource);
                     bind(PanoptaService.class).to(DefaultPanoptaService.class);
+                    bind(PanoptaDataService.class).toInstance(panoptaDataService);
                 }
 
                 @Provides

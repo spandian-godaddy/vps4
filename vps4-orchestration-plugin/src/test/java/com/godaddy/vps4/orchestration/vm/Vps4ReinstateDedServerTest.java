@@ -8,6 +8,7 @@ import java.util.UUID;
 import org.junit.Before;
 import org.junit.Test;
 
+import com.godaddy.hfs.config.Config;
 import com.godaddy.vps4.credit.CreditService;
 import com.godaddy.vps4.credit.ECommCreditService;
 import com.godaddy.vps4.orchestration.hfs.vm.EndRescueVm;
@@ -21,10 +22,11 @@ public class Vps4ReinstateDedServerTest {
     ActionService actionService = mock(ActionService.class);
     CreditService creditService = mock(CreditService.class);
     CommandContext context = mock(CommandContext.class);
+    Config config = mock(Config.class);
     VirtualMachine vm;
 
     Vps4ReinstateDedServer command =
-            new Vps4ReinstateDedServer(actionService, creditService);
+            new Vps4ReinstateDedServer(actionService, creditService, config);
 
     @Before
     public void setup() {

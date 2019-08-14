@@ -39,8 +39,6 @@ import com.godaddy.vps4.orchestration.vm.VmActionRequest;
 import com.godaddy.vps4.orchestration.vm.Vps4RecordScheduledJobForVm;
 import com.godaddy.vps4.project.ProjectService;
 import com.godaddy.vps4.scheduledJob.ScheduledJob;
-import com.godaddy.vps4.scheduledJob.ScheduledJobService;
-import com.godaddy.vps4.scheduledJob.jdbc.JdbcScheduledJobService;
 import com.godaddy.vps4.security.SecurityModule;
 import com.godaddy.vps4.security.Vps4UserService;
 import com.godaddy.vps4.vm.ActionService;
@@ -69,6 +67,7 @@ public class Vps4ProcessAccountCancellationTest {
     private VirtualMachineCredit virtualMachineCredit;
     private Vps4ProcessAccountCancellation.Request request;
     private static VmService vmService = mock(VmService.class);
+    private static Config config  = mock(Config.class);
     private VmAction rescueDedicatedVmAction;
 
     @Inject Vps4UserService vps4UserService;
@@ -97,7 +96,6 @@ public class Vps4ProcessAccountCancellationTest {
                     protected void configure() {
                         bind(ActionService.class).to(JdbcVmActionService.class);
                         bind(VirtualMachineService.class).to(JdbcVirtualMachineService.class);
-                        bind(ScheduledJobService.class).to(JdbcScheduledJobService.class);
                         bind(VmService.class).toInstance(vmService);
                     }
                 }
@@ -169,8 +167,9 @@ public class Vps4ProcessAccountCancellationTest {
     @Test
     public void calculatesValidUntilWhenAccountCancellationIsProcessed() {
         Instant now = Instant.now();
-        Config config = injector.getInstance(Config.class);
-        long zombieWaitDuration = Long.parseLong(config.get("vps4.zombie.cleanup.waittime"));
+        long zombieWaitDuration = 7;
+        when(config.get("vps4.zombie.cleanup.waittime")).thenReturn(String.valueOf(zombieWaitDuration));
+
         command.execute(context, request);
         verify(context, times(1))
                 .execute(eq("CalculateValidUntil"), calculateValidUntilLambdaCaptor.capture(), eq(long.class));

@@ -7,6 +7,8 @@ import com.godaddy.vps4.orchestration.messaging.SendScheduledPatchingEmail;
 import com.godaddy.vps4.orchestration.messaging.SendSystemDownFailoverEmail;
 import com.godaddy.vps4.orchestration.messaging.SendUnexpectedButScheduledMaintenanceEmail;
 import com.godaddy.vps4.orchestration.messaging.WaitForMessageComplete;
+import com.godaddy.vps4.orchestration.panopta.PausePanoptaMonitoring;
+import com.godaddy.vps4.orchestration.panopta.ResumePanoptaMonitoring;
 import com.godaddy.vps4.orchestration.snapshot.Vps4DestroySnapshot;
 import com.godaddy.vps4.orchestration.snapshot.Vps4SnapshotVm;
 import com.godaddy.vps4.orchestration.sysadmin.Vps4AddSupportUser;
@@ -92,5 +94,7 @@ public class Vps4CommandModule extends AbstractModule {
         bind(Vps4ReinstateServer.class);
         bind(Vps4ReinstateDedServer.class);
         bind(Vps4CreateDnsPtrRecord.class);
+        bind(PausePanoptaMonitoring.class);
+        bind(ResumePanoptaMonitoring.class);
     }
 }

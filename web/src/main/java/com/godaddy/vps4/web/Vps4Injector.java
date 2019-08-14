@@ -28,7 +28,6 @@ import com.godaddy.vps4.hfs.HfsVmTrackingRecordModule;
 import com.godaddy.vps4.jdbc.DatabaseModule;
 import com.godaddy.vps4.mailrelay.MailRelayModule;
 import com.godaddy.vps4.messaging.MessagingModule;
-import com.godaddy.vps4.panopta.PanoptaClientModule;
 import com.godaddy.vps4.panopta.PanoptaModule;
 import com.godaddy.vps4.plan.PlanModule;
 import com.godaddy.vps4.plesk.PleskModule;
@@ -170,7 +169,6 @@ public class Vps4Injector {
         modules.add(new HazelcastCacheModule());
         modules.add(new SchedulerServiceClientModule());
         modules.add(new ConsoleModule());
-        modules.add(new PanoptaClientModule());
         modules.add(new PanoptaModule());
 
         return Guice.createInjector(modules);

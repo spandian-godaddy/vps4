@@ -15,6 +15,7 @@ import com.godaddy.hfs.config.Config;
 import com.godaddy.vps4.credit.VirtualMachineCredit;
 import com.godaddy.vps4.orchestration.ActionCommand;
 import com.godaddy.vps4.orchestration.ActionRequest;
+import com.godaddy.vps4.orchestration.panopta.PausePanoptaMonitoring;
 import com.godaddy.vps4.orchestration.scheduler.ScheduleZombieVmCleanup;
 import com.godaddy.vps4.orchestration.vm.Vps4RecordScheduledJobForVm;
 import com.godaddy.vps4.scheduledJob.ScheduledJob.ScheduledJobType;
@@ -63,6 +64,7 @@ public class Vps4ProcessAccountCancellation extends ActionCommand<Vps4ProcessAcc
             if (hasAccountBeenClaimed(request.virtualMachineCredit)) {
                 UUID vmId = request.virtualMachineCredit.getProductId();
                 Instant validUntil = calculateValidUntil();
+                pausePanoptaMonitoring(vmId);
                 markVmAsZombie(vmId);
                 UUID jobId = scheduleZombieVmCleanup(vmId, validUntil);
                 recordJobId(vmId, jobId);
@@ -76,6 +78,13 @@ public class Vps4ProcessAccountCancellation extends ActionCommand<Vps4ProcessAcc
         }
 
         return null;
+    }
+
+    public void pausePanoptaMonitoring(UUID vmId) {
+        boolean isPanoptaInstallationEnabled = Boolean.valueOf(config.get("panopta.installation.enabled", "false"));
+        if (isPanoptaInstallationEnabled) {
+            context.execute(PausePanoptaMonitoring.class, vmId);
+        }
     }
 
     private boolean hasAccountBeenClaimed(VirtualMachineCredit virtualMachineCredit) {

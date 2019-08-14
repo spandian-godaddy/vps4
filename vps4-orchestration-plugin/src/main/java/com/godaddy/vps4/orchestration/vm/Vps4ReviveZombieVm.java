@@ -4,6 +4,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
+import com.godaddy.hfs.config.Config;
 import com.godaddy.hfs.vm.VmService;
 import com.godaddy.vps4.credit.CreditService;
 import com.godaddy.vps4.credit.ECommCreditService.ProductMetaField;
@@ -11,6 +12,7 @@ import com.godaddy.vps4.orchestration.ActionCommand;
 import com.godaddy.vps4.orchestration.ActionRequest;
 import com.godaddy.vps4.orchestration.hfs.vm.EndRescueVm;
 import com.godaddy.vps4.orchestration.hfs.vm.StartVm;
+import com.godaddy.vps4.orchestration.panopta.ResumePanoptaMonitoring;
 import com.godaddy.vps4.orchestration.scheduler.DeleteScheduledJob;
 import com.godaddy.vps4.scheduledJob.ScheduledJob;
 import com.godaddy.vps4.scheduledJob.ScheduledJob.ScheduledJobType;
@@ -36,16 +38,18 @@ public class Vps4ReviveZombieVm extends ActionCommand<Vps4ReviveZombieVm.Request
     private final VmService vmService;
     private final ScheduledJobService scheduledJobService;
     private final CreditService creditService;
-
+    private final Config config;
 
     @Inject
     public Vps4ReviveZombieVm(ActionService actionService, VirtualMachineService virtualMachineService,
-            VmService vmService, ScheduledJobService scheduledJobService, CreditService creditService) {
+                              VmService vmService, ScheduledJobService scheduledJobService, CreditService creditService,
+                              Config config) {
         super(actionService);
         this.virtualMachineService = virtualMachineService;
         this.vmService = vmService;
         this.scheduledJobService = scheduledJobService;
         this.creditService = creditService;
+        this.config = config;
     }
 
     
@@ -62,6 +66,8 @@ public class Vps4ReviveZombieVm extends ActionCommand<Vps4ReviveZombieVm.Request
 
         startServer(context, request);
 
+        resumePanoptaMonitoring(context, request);
+
         return null;
     }
 
@@ -71,6 +77,13 @@ public class Vps4ReviveZombieVm extends ActionCommand<Vps4ReviveZombieVm.Request
             context.execute(StartVm.class, virtualMachine.hfsVmId);
         } else {
             context.execute(EndRescueVm.class, virtualMachine.hfsVmId);
+        }
+    }
+
+    public void resumePanoptaMonitoring(CommandContext context, Request request) {
+        boolean isPanoptaInstallationEnabled = Boolean.valueOf(config.get("panopta.installation.enabled", "false"));
+        if (isPanoptaInstallationEnabled) {
+            context.execute(ResumePanoptaMonitoring.class, request.vmId);
         }
     }
 
@@ -85,7 +98,6 @@ public class Vps4ReviveZombieVm extends ActionCommand<Vps4ReviveZombieVm.Request
             return null;
         }, Void.class);
     }
-
 
     private void removeScheduledCleanupJobs(CommandContext context, Request request) {
         List<ScheduledJob> jobs = scheduledJobService.getScheduledJobsByType(request.vmId, ScheduledJobType.ZOMBIE);
