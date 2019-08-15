@@ -3,6 +3,7 @@ package com.godaddy.vps4.panopta;
 
 import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
+import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
@@ -29,4 +30,15 @@ public interface PanoptaApiServerService {
     @GET
     @Path("/servers")
     PanoptaServers getPanoptaServers(@QueryParam("partner_customer_key") String partnerCustomerKey);
+
+    @GET
+    @Path("/{server_id}")
+    PanoptaServers.Server getServer(@PathParam("server_id") int serverId,
+                            @QueryParam("partner_customer_key") String partnerCustomerKey);
+
+    @PUT
+    @Path("/{server_id}")
+    void setServerStatus(@PathParam("server_id") int serverId,
+                         @QueryParam("partner_customer_key") String partnerCustomerKey,
+                         PanoptaApiUpdateServerRequest panoptaApiUpdateServerRequest);
 }

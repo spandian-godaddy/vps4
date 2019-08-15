@@ -12,8 +12,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
+import com.godaddy.hfs.config.Config;
 import com.godaddy.hfs.vm.VmAction;
 import com.godaddy.hfs.vm.VmService;
+import com.godaddy.vps4.panopta.PanoptaDataService;
+import com.godaddy.vps4.panopta.PanoptaDetail;
+import com.godaddy.vps4.panopta.PanoptaService;
+import com.godaddy.vps4.panopta.PanoptaServiceException;
 import com.godaddy.vps4.vm.ActionService;
 import com.godaddy.vps4.vm.ServerSpec;
 import com.godaddy.vps4.vm.ServerType;
@@ -51,15 +56,21 @@ public class Vps4ReviveZombieVmTest{
     private SchedulerWebService schedulerWebService;
     private ActionService actionService;
     private VirtualMachine vm;
+    private PanoptaDataService panoptaDataService;
+    private PanoptaService panoptaService;
+    private Config config;
 
     @Before
-    public void setup() {
+    public void setup() throws PanoptaServiceException {
         virtualMachineService = mock(VirtualMachineService.class);
         vmService = mock(VmService.class);
         schedulerWebService = mock(SchedulerWebService.class);
         scheduledJobService = mock(ScheduledJobService.class);
         creditService = mock(CreditService.class);
         actionService = mock(ActionService.class);
+        panoptaDataService = mock(PanoptaDataService.class);
+        panoptaService = mock(PanoptaService.class);
+        config = mock(Config.class);
         
         job = new ScheduledJob();
         job.id = UUID.randomUUID();
@@ -85,15 +96,23 @@ public class Vps4ReviveZombieVmTest{
         when(vmService.startVm(vm.hfsVmId)).thenReturn(vma);
         when(vmService.getVmAction(vma.vmId, vma.vmActionId)).thenReturn(vma);
 
+        PanoptaDetail panoptaDetail = new PanoptaDetail(1, job.vmId, "partnerCustomerKey",
+                                                        "customerKey", 3, "serverKey",
+                                                        Instant.now(), Instant.MAX);
+        when(panoptaDataService.getPanoptaDetails(job.vmId)).thenReturn(panoptaDetail);
+
         injector = Guice.createInjector(binder -> {
             binder.bind(VirtualMachineService.class).toInstance(virtualMachineService);
             binder.bind(VmService.class).toInstance(vmService);
             binder.bind(ScheduledJobService.class).toInstance(scheduledJobService);
             binder.bind(SchedulerWebService.class).toInstance(schedulerWebService);
             binder.bind(ActionService.class).toInstance(actionService);
+            binder.bind(PanoptaDataService.class).toInstance(panoptaDataService);
+            binder.bind(PanoptaService.class).toInstance(panoptaService);
+            binder.bind(Config.class).toInstance(config);
         });
         
-        command = new Vps4ReviveZombieVm(actionService, virtualMachineService, vmService, scheduledJobService, creditService);
+        command = new Vps4ReviveZombieVm(actionService, virtualMachineService, vmService, scheduledJobService, creditService, config);
         context = new TestCommandContext(new GuiceCommandProvider(injector));
     }
     

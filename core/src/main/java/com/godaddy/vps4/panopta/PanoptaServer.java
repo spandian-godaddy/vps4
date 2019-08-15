@@ -7,23 +7,24 @@ public class PanoptaServer {
     public String partnerCustomerKey;
     public long serverId;
     public String serverKey;
+    public String name;
+    public String fqdn;
+    public String serverGroup;
+    public Status status;
 
-    public PanoptaServer(String partnerCustomerKey, long serverId, String serverKey) {
+    public enum Status {
+        ACTIVE, SUSPENDED, DELETED;
+    }
+
+    public PanoptaServer(String partnerCustomerKey, long serverId, String serverKey,
+                         String name, String fqdn, String serverGroup, Status status) {
         this.partnerCustomerKey = partnerCustomerKey;
         this.serverId = serverId;
         this.serverKey = serverKey;
-    }
-
-    public String getPartnerCustomerKey() {
-        return partnerCustomerKey;
-    }
-
-    public long getServerId() {
-        return serverId;
-    }
-
-    public String getServerKey() {
-        return serverKey;
+        this.name = name;
+        this.fqdn = fqdn;
+        this.serverGroup = serverGroup;
+        this.status = status;
     }
 
     @Override

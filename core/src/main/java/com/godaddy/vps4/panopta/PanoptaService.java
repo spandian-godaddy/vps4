@@ -15,4 +15,9 @@ public interface PanoptaService {
             throws PanoptaServiceException;
 
     PanoptaServer getServer(String partnerCustomerKey) throws PanoptaServiceException;
+
+    void pauseServerMonitoring(UUID vmId);
+
+    void resumeServerMonitoring(UUID vmId);
+
 }

@@ -9,6 +9,7 @@ import java.util.UUID;
 import org.junit.Before;
 import org.junit.Test;
 
+import com.godaddy.hfs.config.Config;
 import com.godaddy.vps4.credit.CreditService;
 import com.godaddy.vps4.orchestration.hfs.vm.RescueVm;
 import com.godaddy.vps4.vm.AccountStatus;
@@ -22,9 +23,10 @@ public class Vps4SuspendDedServerTest {
     ActionService actionService = mock(ActionService.class);
     CreditService creditService = mock(CreditService.class);
     CommandContext context = mock(CommandContext.class);
+    Config config = mock(Config.class);
     VirtualMachine vm;
 
-    Vps4SuspendDedServer command = new Vps4SuspendDedServer(actionService, creditService);
+    Vps4SuspendDedServer command = new Vps4SuspendDedServer(actionService, creditService, config);
 
     @Before
     public void setup () {

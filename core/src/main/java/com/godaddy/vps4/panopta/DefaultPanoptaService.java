@@ -18,6 +18,7 @@ public class DefaultPanoptaService implements PanoptaService {
     private static final Logger logger = LoggerFactory.getLogger(DefaultPanoptaService.class);
     private final PanoptaApiCustomerService panoptaApiCustomerService;
     private final PanoptaApiServerService panoptaApiServerService;
+    private final PanoptaDataService panoptaDataService;
     private final VirtualMachineService virtualMachineService;
     private final CreditService creditService;
     private final Config config;
@@ -25,11 +26,13 @@ public class DefaultPanoptaService implements PanoptaService {
     @Inject
     public DefaultPanoptaService(PanoptaApiCustomerService panoptaApiCustomerService,
                                  PanoptaApiServerService panoptaApiServerService,
+                                 PanoptaDataService panoptaDataService,
                                  VirtualMachineService virtualMachineService,
                                  CreditService creditService,
                                  Config config) {
         this.panoptaApiCustomerService = panoptaApiCustomerService;
         this.panoptaApiServerService = panoptaApiServerService;
+        this.panoptaDataService = panoptaDataService;
         this.virtualMachineService = virtualMachineService;
         this.creditService = creditService;
         this.config = config;
@@ -130,7 +133,49 @@ public class DefaultPanoptaService implements PanoptaService {
 
     private PanoptaServer mapServer(String partnerCustomerKey, PanoptaServers.Server server) {
         long serverId = Integer.parseInt(server.url.substring(server.url.lastIndexOf("/") + 1));
-        return new PanoptaServer(partnerCustomerKey, serverId, server.serverKey);
+        return new PanoptaServer(partnerCustomerKey, serverId, server.serverKey, server.name, server.fqdn, server.serverGroup, PanoptaServer.Status.valueOf(server.status.toUpperCase()));
+    }
+
+    @Override
+    public void pauseServerMonitoring(UUID vmId) {
+        PanoptaDetail panoptaDetail = panoptaDataService.getPanoptaDetails(vmId);
+        if (panoptaDetail == null) return;
+        long serverId = panoptaDetail.getServerId();
+        String partnerCustomerKey = panoptaDetail.getPartnerCustomerKey();
+        PanoptaServer server = mapServer(partnerCustomerKey, panoptaApiServerService.getServer((int)serverId, partnerCustomerKey));
+        if (server.status == PanoptaServer.Status.ACTIVE) {
+            PanoptaApiUpdateServerRequest panoptaApiUpdateServerRequest = new PanoptaApiUpdateServerRequest();
+            panoptaApiUpdateServerRequest.fqdn = server.fqdn;
+            panoptaApiUpdateServerRequest.name = server.name;
+            panoptaApiUpdateServerRequest.serverGroup = server.serverGroup;
+            panoptaApiUpdateServerRequest.status = PanoptaServer.Status.SUSPENDED.toString().toLowerCase();
+            logger.info("Setting Panopta server to suspended status");
+            panoptaApiServerService.setServerStatus((int)serverId, partnerCustomerKey, panoptaApiUpdateServerRequest);
+        }
+        else {
+            logger.info("Panopta server is already in suspended status. No need to update status");
+        }
+    }
+
+    @Override
+    public void resumeServerMonitoring(UUID vmId) {
+        PanoptaDetail panoptaDetail = panoptaDataService.getPanoptaDetails(vmId);
+        if (panoptaDetail == null) return;
+        long serverId = panoptaDetail.getServerId();
+        String partnerCustomerKey = panoptaDetail.getPartnerCustomerKey();
+        PanoptaServer server = mapServer(partnerCustomerKey, panoptaApiServerService.getServer((int)serverId, partnerCustomerKey));
+        if (server.status == PanoptaServer.Status.SUSPENDED) {
+            PanoptaApiUpdateServerRequest panoptaApiUpdateServerRequest = new PanoptaApiUpdateServerRequest();
+            panoptaApiUpdateServerRequest.fqdn = server.fqdn;
+            panoptaApiUpdateServerRequest.name = server.name;
+            panoptaApiUpdateServerRequest.serverGroup = server.serverGroup;
+            panoptaApiUpdateServerRequest.status = PanoptaServer.Status.ACTIVE.toString().toLowerCase();
+            logger.info("Setting Panopta server to active status");
+            panoptaApiServerService.setServerStatus((int)serverId, partnerCustomerKey, panoptaApiUpdateServerRequest);
+        }
+        else {
+            logger.info("Panopta server is already in active status. No need to update status");
+        }
     }
 }
 

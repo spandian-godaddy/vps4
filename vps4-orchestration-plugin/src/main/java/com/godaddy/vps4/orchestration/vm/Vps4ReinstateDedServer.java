@@ -2,6 +2,7 @@ package com.godaddy.vps4.orchestration.vm;
 
 import javax.inject.Inject;
 
+import com.godaddy.hfs.config.Config;
 import com.godaddy.vps4.credit.CreditService;
 import com.godaddy.vps4.orchestration.hfs.vm.EndRescueVm;
 import com.godaddy.vps4.vm.ActionService;
@@ -19,8 +20,8 @@ import gdg.hfs.orchestration.CommandRetryStrategy;
 public class Vps4ReinstateDedServer extends Vps4ReinstateServer {
 
     @Inject
-    public Vps4ReinstateDedServer(ActionService actionService, CreditService creditService) {
-        super(actionService, creditService);
+    public Vps4ReinstateDedServer(ActionService actionService, CreditService creditService, Config config) {
+        super(actionService, creditService, config);
     }
 
     @Override
