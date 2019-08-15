@@ -65,18 +65,18 @@ pipeline {
             }
         }
     }
-        catch (Exception e) {
-            slackSend(color: '#ff0000', message: "ERROR: EXCEPTION: Job '${env.JOB_NAME} [${VPS4_VERSION}]' (${env.BUILD_URL}): ${e.getMessage()}")
-            error(e.getMessage())
-        }
-        catch (AssertionError e) {
-            slackSend(color: '#ff0000', message: "ERROR: ASSERTION: Job '${env.JOB_NAME} [${VPS4_VERSION}]' (${env.BUILD_URL}): ${e.getMessage()}")
-            error(e.getMessage())
-        }
-        finally {
-            cleanupEnvironment()
-        }
-    }
+    //     catch (Exception e) {
+    //         slackSend(color: '#ff0000', message: "ERROR: EXCEPTION: Job '${env.JOB_NAME} [${VPS4_VERSION}]' (${env.BUILD_URL}): ${e.getMessage()}")
+    //         error(e.getMessage())
+    //     }
+    //     catch (AssertionError e) {
+    //         slackSend(color: '#ff0000', message: "ERROR: ASSERTION: Job '${env.JOB_NAME} [${VPS4_VERSION}]' (${env.BUILD_URL}): ${e.getMessage()}")
+    //         error(e.getMessage())
+    //     }
+    //     finally {
+    //         cleanupEnvironment()
+    //     }
+    // }
 }
 
 private void setNextStage(java.lang.String nextStageName) {
