@@ -8,14 +8,12 @@ import javax.ws.rs.NotFoundException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.godaddy.hfs.vm.Vm;
 import com.godaddy.hfs.vm.VmService;
 import com.godaddy.hfs.vm.VmAction;
 import com.godaddy.vps4.hfs.HfsVmTrackingRecordService;
 import com.godaddy.vps4.network.IpAddress;
 import com.godaddy.vps4.network.NetworkService;
 import com.godaddy.vps4.orchestration.ActionCommand;
-import com.godaddy.vps4.orchestration.hfs.dns.CreateDnsPtrRecord;
 import com.godaddy.vps4.orchestration.hfs.vm.DestroyVm;
 import com.godaddy.vps4.util.MonitoringMeta;
 import com.godaddy.vps4.vm.ActionService;
@@ -66,7 +64,6 @@ public class Vps4DestroyDedicated extends ActionCommand<VmActionRequest, Vps4Des
 
         unlicenseControlPanel(vm);
         deleteIpMonitoring(vm.primaryIpAddress);
-        resetPTRRecord(context, vm);
         releaseIp(context, vm);
         deleteAllScheduledJobsForVm(context, vm);
         deleteSupportUsersInDatabase(context, vm);
@@ -78,18 +75,6 @@ public class Vps4DestroyDedicated extends ActionCommand<VmActionRequest, Vps4Des
         response.vmId = vm.vmId;
         response.hfsAction = hfsAction;
         return response;
-    }
-
-    private void resetPTRRecord(CommandContext context, VirtualMachine vm){
-        Vm hfsVm = vmService.getVm(vm.hfsVmId);
-        if (hfsVm.resource_id == null) {
-            return;
-        }
-        logger.info("Resetting PTR record for hfsVmId {} with resource_id: {}", vm.hfsVmId, hfsVm.resource_id);
-        CreateDnsPtrRecord.Request reverseDnsNameRequest = new CreateDnsPtrRecord.Request();
-        reverseDnsNameRequest.virtualMachine = vm;
-        reverseDnsNameRequest.reverseDnsName = hfsVm.resource_id;
-        context.execute("CreateDnsPtrRecord", CreateDnsPtrRecord.class, reverseDnsNameRequest);
     }
 
     private VmAction deleteVmInHfs(CommandContext context, VirtualMachine vm) {

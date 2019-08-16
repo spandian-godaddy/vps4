@@ -38,7 +38,6 @@ import com.godaddy.vps4.network.IpAddress;
 import com.godaddy.vps4.network.IpAddress.IpAddressType;
 import com.godaddy.vps4.network.NetworkService;
 import com.godaddy.vps4.orchestration.TestCommandContext;
-import com.godaddy.vps4.orchestration.dns.Vps4CreateDnsPtrRecord;
 import com.godaddy.vps4.orchestration.hfs.dns.CreateDnsPtrRecord;
 import com.godaddy.vps4.orchestration.hfs.network.ReleaseIp;
 import com.godaddy.vps4.orchestration.hfs.network.UnbindIp;
@@ -81,7 +80,6 @@ public class Vps4DestroyDedicatedTest {
     DestroyVm destroyVm = mock(DestroyVm.class);
     Vm hfsVm = mock(Vm.class);
     CreateDnsPtrRecord createDnsPtrRecord =  mock(CreateDnsPtrRecord.class);
-    Vps4CreateDnsPtrRecord vps4CreateDnsPtrRecord = mock(Vps4CreateDnsPtrRecord.class);
 
     Vps4DestroyDedicated command = new Vps4DestroyDedicated(actionService, networkService, nodePingService,
             monitoringMeta, hfsVmTrackingRecordService, vmService);
@@ -103,7 +101,6 @@ public class Vps4DestroyDedicatedTest {
         binder.bind(DestroyVm.class).toInstance(destroyVm);
         binder.bind(Vm.class).toInstance(hfsVm);
         binder.bind(CreateDnsPtrRecord.class).toInstance(createDnsPtrRecord);
-        binder.bind(Vps4CreateDnsPtrRecord.class).toInstance(vps4CreateDnsPtrRecord);
     });
 
     CommandContext context = spy(new TestCommandContext(new GuiceCommandProvider(injector)));
@@ -266,19 +263,4 @@ public class Vps4DestroyDedicatedTest {
         verify(networkService, atLeastOnce()).destroyIpAddress(anyLong());
     }
 
-    @Test
-    public void testResetPTRRecord() throws Exception {
-        hfsVm.resource_id = "fake.resource_id";
-        command.execute(context, request);
-        verify(vmService, times(1)).getVm(anyLong());
-        verify(context, times(1)).execute(any(), any(CreateDnsPtrRecord.Request.class));
-    }
-
-    @Test
-    public void testResetPTRRecordFoundNoResourceId() throws Exception {
-        hfsVm.resource_id = null;
-        command.execute(context, request);
-        verify(vmService, times(1)).getVm(anyLong());
-        verify(context, never()).execute(eq(CreateDnsPtrRecord.class), any(CreateDnsPtrRecord.Request.class));
-    }
 }
