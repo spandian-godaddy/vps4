@@ -5,82 +5,68 @@ import groovy.transform.Field
 @Library('ECM@master') _
 pipeline {
     agent { label "vps4-test-slave" }
+    options { 
+        skipStagesAfterUnstable()
+        timestamps()
+    }
     stages {
         stage('Build') {
-            if (nextStage == "BUILD") {
+            steps {
                 git credentialsId: 'd12d30ba-3f92-43a2-9c0d-0682c9bc6da9', url: 'git@github.secureserver.net:vps4/vps4.git'
                 build job: 'vps4'
                 load("/home/jenkins/vps4_latest_version.properties")
                 echo "vps4 version: ${VPS4_VERSION}"
-
-                setNextStage("TEST_DEPLOY")
                 slackSend(color: '#00CD48', message: "vps4 *BUILD* was successful. Job '${env.JOB_NAME} [${VPS4_VERSION}]' (${env.BUILD_URL})")
-            } else {
-                echo "Skipping Build"
             }
         }
-        stage("Deploy to Test") {
-            if (nextStage == "TEST_DEPLOY") {
-                build job: 'deploy_to_test', parameters: [string(name: 'VPS4_VERSION', value: VPS4_VERSION)]
-                // preDeployToEnv("test", "${VPS4_VERSION}")
-                productStampZk("test", "vps4-web-${VPS4_VERSION}.noarch", "vps4-web")
-                productStampZk("test", "vps4-message-consumer-${VPS4_VERSION}.noarch", "vps4-message-consumer")
-                productStampZk("test", "vps4-orchestration-plugin-${VPS4_VERSION}.noarch", "hfs-engine", "/orchestration/serviceapi")
-                productStampZk("test", "vps4-scheduler-${VPS4_VERSION}.noarch", "vps4-scheduler")
-                setNextStage("STAGE_DEPLOY")
-                slackSend(color: '#00CD48', message: "vps4 *DEPLOY TO TEST* was SUCCESSFUL. Job '${env.JOB_NAME} [${VPS4_VERSION}]' (${env.BUILD_URL})")
-            } else {
-                echo "Skipping Deploy to Test"
+        stage("Deploy") {
+            parallel {
+                stage("Deploy to Test") {
+                    steps {
+                        build job: 'deploy_to_test', parameters: [string(name: 'VPS4_VERSION', value: VPS4_VERSION)]
+                        productStampZk("test", "vps4-web-${VPS4_VERSION}.noarch", "vps4-web")
+                        productStampZk("test", "vps4-message-consumer-${VPS4_VERSION}.noarch", "vps4-message-consumer")
+                        productStampZk("test", "vps4-orchestration-plugin-${VPS4_VERSION}.noarch", "hfs-engine", "/orchestration/serviceapi")
+                        productStampZk("test", "vps4-scheduler-${VPS4_VERSION}.noarch", "vps4-scheduler")
+                        slackSend(color: '#00CD48', message: "vps4 *DEPLOY TO TEST* was SUCCESSFUL. Job '${env.JOB_NAME} [${VPS4_VERSION}]' (${env.BUILD_URL})")
+                    }
+                }
+                stage("Deploy to Stage") {            
+                    steps {
+                        build job: 'deploy_to_stage', parameters: [string(name: 'VPS4_VERSION', value: VPS4_VERSION)]
+                        productStampZk("stage", "vps4-web-${VPS4_VERSION}.noarch", "vps4-web")
+                        productStampZk("stage", "vps4-message-consumer-${VPS4_VERSION}.noarch", "vps4-message-consumer")
+                        productStampZk("stage", "vps4-orchestration-plugin-${VPS4_VERSION}.noarch", "hfs-engine", "/orchestration/serviceapi")
+                        productStampZk("stage", "vps4-scheduler-${VPS4_VERSION}.noarch", "vps4-scheduler")
+                        slackSend(color: '#00CD48', message: "vps4 *DEPLOY TO STAGE* was SUCCESSFUL. Job '${env.JOB_NAME} [${VPS4_VERSION}]' (${env.BUILD_URL})")
+                    }
+                }
             }
         }
-        stage("Deploy to Stage") {
-            if (nextStage == "STAGE_DEPLOY") {
-                build job: 'deploy_to_stage', parameters: [string(name: 'VPS4_VERSION', value: VPS4_VERSION)]
-                // preDeployToEnv("stage", "${VPS4_VERSION}")
-                productStampZk("stage", "vps4-web-${VPS4_VERSION}.noarch", "vps4-web")
-                productStampZk("stage", "vps4-message-consumer-${VPS4_VERSION}.noarch", "vps4-message-consumer")
-                productStampZk("stage", "vps4-orchestration-plugin-${VPS4_VERSION}.noarch", "hfs-engine", "/orchestration/serviceapi")
-                productStampZk("stage", "vps4-scheduler-${VPS4_VERSION}.noarch", "vps4-scheduler")
-                setNextStage("STAGE_PHASE3")
-                slackSend(color: '#00CD48', message: "vps4 *DEPLOY TO STAGE* was SUCCESSFUL. Job '${env.JOB_NAME} [${VPS4_VERSION}]' (${env.BUILD_URL})")
-            } else {
-                echo "Skipping Deploy to Stage"
-            }
-        }
-
         stage("Phase3 Stage") {
-            if (nextStage == "STAGE_PHASE3") {
+            options {
+                timeout(time: 45, unit: 'MINUTES')
+                retry(1)
+            }
+            steps {
+                load("/home/jenkins/vps4_latest_version.properties")
+                echo "vps4 version: ${VPS4_VERSION}"
                 timeout(time:45, unit:'MINUTES') {
                     build job: 'stage_phase_3_test', parameters: [string(name: 'VPS4_VERSION', value: VPS4_VERSION)]
                 }
-                setNextStage("DONE")
                 slackSend(color: '#00CD48', message: "vps4 *PHASE 3 TESTS* in stage env were SUCCESSFUL. Job '${env.JOB_NAME} [${VPS4_VERSION}]' (${env.BUILD_URL})")
-            } else {
-                echo "Skipping Phase3 Stage"
-            }
-        }
-        stage("Done") {
-            if (nextStage == "DONE") {
-            slackSend(color: '#00CD48', message: "VPS4 Deployment Complete. Job '${env.JOB_NAME} [${VPS4_VERSION}]' (${env.BUILD_URL})")
             }
         }
     }
-    //     catch (Exception e) {
-    //         slackSend(color: '#ff0000', message: "ERROR: EXCEPTION: Job '${env.JOB_NAME} [${VPS4_VERSION}]' (${env.BUILD_URL}): ${e.getMessage()}")
-    //         error(e.getMessage())
-    //     }
-    //     catch (AssertionError e) {
-    //         slackSend(color: '#ff0000', message: "ERROR: ASSERTION: Job '${env.JOB_NAME} [${VPS4_VERSION}]' (${env.BUILD_URL}): ${e.getMessage()}")
-    //         error(e.getMessage())
-    //     }
-    //     finally {
-    //         cleanupEnvironment()
-    //     }
-    // }
-}
-
-private void setNextStage(java.lang.String nextStageName) {
-    nextStage = nextStageName
+    post {
+        success {
+            cleanupEnvironment()
+            slackSend(color: '#00CD48', message: "VPS4 Deployment Complete. Job '${env.JOB_NAME} [${VPS4_VERSION}]' (${env.BUILD_URL})")
+        }
+        failure {
+            slackSend(color: '#ff0000', message: "ERROR: Job '${env.JOB_NAME} [${VPS4_VERSION}]' (${env.BUILD_URL})")
+        }
+    }
 }
 
 private void cleanupEnvironment() {
