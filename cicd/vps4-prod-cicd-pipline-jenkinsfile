@@ -3,85 +3,83 @@ import groovy.transform.Field
 
 @Field def VPS4_VERSION
 @Library('ECM@master') _
-node("vps4-test-slave") {
-    pipeline {
-        agent { label "vps4-test-slave" }
-        options { 
-            skipStagesAfterUnstable()
-            timestamps()
-        }
-        stages {
-            stage("Deploy to Prod") {
-                steps {
-                    load("/home/jenkins/vps4_latest_version.properties")
-                    echo "vps4 version: ${VPS4_VERSION}"
+pipeline {
+    agent { label "vps4-test-slave" }
+    options { 
+        skipStagesAfterUnstable()
+        timestamps()
+    }
+    stages {
+        stage("Deploy to Prod") {
+            steps {
+                load("/home/jenkins/vps4_latest_version.properties")
+                echo "vps4 version: ${VPS4_VERSION}"
 
-                    def changeRequestId = openChangeRequest(url:'https://godaddy.service-now.com/api/now/table/change_request',
-                                    assignmentGroup:'Dev-Vps4',
-                                    credentialsId:'2f9c93a6-a0a1-4b4f-bb56-f45590a033b1',
-                                    commit:"{$VPS4_VERSION}",
-                                    message:"Link ${env.BUILD_URL}")
+                // def changeRequestId = openChangeRequest(url:'https://godaddy.service-now.com/api/now/table/change_request',
+                //                 assignmentGroup:'Dev-Vps4',
+                //                 credentialsId:'2f9c93a6-a0a1-4b4f-bb56-f45590a033b1',
+                //                 commit:"{$VPS4_VERSION}",
+                //                 message:"Link ${env.BUILD_URL}")
 
-                    echo "Change Order: https://godaddy.service-now.com/nav_to.do?uri=%2Fchange_request.do?sys_id=${changeRequestId}"
+                // echo "Change Order: https://godaddy.service-now.com/nav_to.do?uri=%2Fchange_request.do?sys_id=${changeRequestId}"
 
-                    checkout scm
+                checkout scm
 
-                    echo "Deploying to SG2"
-                    build job: 'deploy_to_prod_sin2', parameters: [string(name: 'VPS4_VERSION', value: VPS4_VERSION)]
-                    productStampZk("prod_sin2", "vps4-web-${VPS4_VERSION}.noarch", "vps4-web")
-                    productStampZk("prod_sin2", "vps4-message-consumer-${VPS4_VERSION}.noarch", "vps4-message-consumer")
-                    productStampZk("prod_sin2", "vps4-orchestration-plugin-${VPS4_VERSION}.noarch", "hfs-engine", "/orchestration/serviceapi")
-                    productStampZk("prod_sin2", "vps4-scheduler-${VPS4_VERSION}.noarch", "vps4-scheduler")
-                    slackSend(color: '#00CD48', message: "vps4 *DEPLOY TO PROD_SIN2* was SUCCESSFUL. Job '${env.JOB_NAME} [${VPS4_VERSION}]' (${env.BUILD_URL})")
+                // echo "Deploying to SG2"
+                // build job: 'deploy_to_prod_sin2', parameters: [string(name: 'VPS4_VERSION', value: VPS4_VERSION)]
+                // productStampZk("prod_sin2", "vps4-web-${VPS4_VERSION}.noarch", "vps4-web")
+                // productStampZk("prod_sin2", "vps4-message-consumer-${VPS4_VERSION}.noarch", "vps4-message-consumer")
+                // productStampZk("prod_sin2", "vps4-orchestration-plugin-${VPS4_VERSION}.noarch", "hfs-engine", "/orchestration/serviceapi")
+                // productStampZk("prod_sin2", "vps4-scheduler-${VPS4_VERSION}.noarch", "vps4-scheduler")
+                // slackSend(color: '#00CD48', message: "vps4 *DEPLOY TO PROD_SIN2* was SUCCESSFUL. Job '${env.JOB_NAME} [${VPS4_VERSION}]' (${env.BUILD_URL})")
 
-                    echo "Deploying to AMS3"
-                    build job: 'deploy_to_prod_ams3', parameters: [string(name: 'VPS4_VERSION', value: VPS4_VERSION)]
-                    productStampZk("prod_ams3", "vps4-web-${VPS4_VERSION}.noarch", "vps4-web")
-                    productStampZk("prod_ams3", "vps4-message-consumer-${VPS4_VERSION}.noarch", "vps4-message-consumer")
-                    productStampZk("prod_ams3", "vps4-orchestration-plugin-${VPS4_VERSION}.noarch", "hfs-engine", "/orchestration/serviceapi")
-                    productStampZk("prod_ams3", "vps4-scheduler-${VPS4_VERSION}.noarch", "vps4-scheduler")
-                    slackSend(color: '#00CD48', message: "vps4 *DEPLOY TO PROD_AMS3* was SUCCESSFUL. Job '${env.JOB_NAME} [${VPS4_VERSION}]' (${env.BUILD_URL})")
+                // echo "Deploying to AMS3"
+                // build job: 'deploy_to_prod_ams3', parameters: [string(name: 'VPS4_VERSION', value: VPS4_VERSION)]
+                // productStampZk("prod_ams3", "vps4-web-${VPS4_VERSION}.noarch", "vps4-web")
+                // productStampZk("prod_ams3", "vps4-message-consumer-${VPS4_VERSION}.noarch", "vps4-message-consumer")
+                // productStampZk("prod_ams3", "vps4-orchestration-plugin-${VPS4_VERSION}.noarch", "hfs-engine", "/orchestration/serviceapi")
+                // productStampZk("prod_ams3", "vps4-scheduler-${VPS4_VERSION}.noarch", "vps4-scheduler")
+                // slackSend(color: '#00CD48', message: "vps4 *DEPLOY TO PROD_AMS3* was SUCCESSFUL. Job '${env.JOB_NAME} [${VPS4_VERSION}]' (${env.BUILD_URL})")
 
-                    echo "Deploying to A2"
-                    build job: 'deploy_to_prod_a2', parameters: [string(name: 'VPS4_VERSION', value: VPS4_VERSION)]
-                    productStampZk("prod_a2", "vps4-web-${VPS4_VERSION}.noarch", "vps4-web")
-                    productStampZk("prod_a2", "vps4-message-consumer-${VPS4_VERSION}.noarch", "vps4-message-consumer")
-                    productStampZk("prod_a2", "vps4-orchestration-plugin-${VPS4_VERSION}.noarch", "hfs-engine", "/orchestration/serviceapi")
-                    productStampZk("prod_a2", "vps4-scheduler-${VPS4_VERSION}.noarch", "vps4-scheduler")
-                    slackSend(color: '#00CD48', message: "vps4 *DEPLOY TO PROD_IAD2* was SUCCESSFUL. Job '${env.JOB_NAME} [${VPS4_VERSION}]' (${env.BUILD_URL})")
+                // echo "Deploying to A2"
+                // build job: 'deploy_to_prod_a2', parameters: [string(name: 'VPS4_VERSION', value: VPS4_VERSION)]
+                // productStampZk("prod_a2", "vps4-web-${VPS4_VERSION}.noarch", "vps4-web")
+                // productStampZk("prod_a2", "vps4-message-consumer-${VPS4_VERSION}.noarch", "vps4-message-consumer")
+                // productStampZk("prod_a2", "vps4-orchestration-plugin-${VPS4_VERSION}.noarch", "hfs-engine", "/orchestration/serviceapi")
+                // productStampZk("prod_a2", "vps4-scheduler-${VPS4_VERSION}.noarch", "vps4-scheduler")
+                // slackSend(color: '#00CD48', message: "vps4 *DEPLOY TO PROD_IAD2* was SUCCESSFUL. Job '${env.JOB_NAME} [${VPS4_VERSION}]' (${env.BUILD_URL})")
 
-                    echo "Deploying to P3"
-                    build job: 'deploy_to_prod_phx3', parameters: [string(name: 'VPS4_VERSION', value: VPS4_VERSION)]
-                    productStampZk("prod_phx3", "vps4-web-${VPS4_VERSION}.noarch", "vps4-web")
-                    productStampZk("prod_phx3", "vps4-message-consumer-${VPS4_VERSION}.noarch", "vps4-message-consumer")
-                    productStampZk("prod_phx3", "vps4-orchestration-plugin-${VPS4_VERSION}.noarch", "hfs-engine", "/orchestration/serviceapi")
-                    productStampZk("prod_phx3", "vps4-scheduler-${VPS4_VERSION}.noarch", "vps4-scheduler")
-                    slackSend(color: '#00CD48', message: "vps4 *DEPLOY TO PROD_PHX3* was SUCCESSFUL. Job '${env.JOB_NAME} [${VPS4_VERSION}]' (${env.BUILD_URL})")
+                // echo "Deploying to P3"
+                // build job: 'deploy_to_prod_phx3', parameters: [string(name: 'VPS4_VERSION', value: VPS4_VERSION)]
+                // productStampZk("prod_phx3", "vps4-web-${VPS4_VERSION}.noarch", "vps4-web")
+                // productStampZk("prod_phx3", "vps4-message-consumer-${VPS4_VERSION}.noarch", "vps4-message-consumer")
+                // productStampZk("prod_phx3", "vps4-orchestration-plugin-${VPS4_VERSION}.noarch", "hfs-engine", "/orchestration/serviceapi")
+                // productStampZk("prod_phx3", "vps4-scheduler-${VPS4_VERSION}.noarch", "vps4-scheduler")
+                // slackSend(color: '#00CD48', message: "vps4 *DEPLOY TO PROD_PHX3* was SUCCESSFUL. Job '${env.JOB_NAME} [${VPS4_VERSION}]' (${env.BUILD_URL})")
 
-                    closeChangeRequest url:'https://godaddy.service-now.com/api/now/table/change_request',
-                                    credentialsId:'2f9c93a6-a0a1-4b4f-bb56-f45590a033b1'
-                }
+                // closeChangeRequest url:'https://godaddy.service-now.com/api/now/table/change_request',
+                //                 credentialsId:'2f9c93a6-a0a1-4b4f-bb56-f45590a033b1'
             }
-            stage("Restart Proxymanager Service in Prod") {
-                steps {
-                    node('vps4-test-slave') {
-                        slackSend(color: '#00CD48', message: "vps4 Deploy To Production: *Restarting proxy manager service* on web proxy servers.")
-                        build job: 'restart_proxymgr_prod', parameters: [string(name: 'VPS4_VERSION', value: VPS4_VERSION)]
-                    }
+        }
+        stage("Restart Proxymanager Service in Prod") {
+            steps {
+                node('vps4-test-slave') {
+                    slackSend(color: '#00CD48', message: "vps4 Deploy To Production: *Restarting proxy manager service* on web proxy servers.")
+                    // build job: 'restart_proxymgr_prod', parameters: [string(name: 'VPS4_VERSION', value: VPS4_VERSION)]
                 }
             }
         }
-        post {
-            success {
-                cleanupEnvironment()
-                slackSend(color: '#00CD48', message: "VPS4 Deployment Complete. Job '${env.JOB_NAME} [${VPS4_VERSION}]' (${env.BUILD_URL})")
-            }
-            failure {
-                closeChangeRequest url:'https://godaddy.service-now.com/api/now/table/change_request',
-                    credentialsId:'2f9c93a6-a0a1-4b4f-bb56-f45590a033b1',
-                    status:'7'
-                slackSend(color: '#ff0000', message: "ERROR: Job '${env.JOB_NAME} [${VPS4_VERSION}]' (${env.BUILD_URL})")
-            }
+    }
+    post {
+        success {
+            cleanupEnvironment()
+            slackSend(color: '#00CD48', message: "VPS4 Deployment Complete. Job '${env.JOB_NAME} [${VPS4_VERSION}]' (${env.BUILD_URL})")
+        }
+        failure {
+            closeChangeRequest url:'https://godaddy.service-now.com/api/now/table/change_request',
+                credentialsId:'2f9c93a6-a0a1-4b4f-bb56-f45590a033b1',
+                status:'7'
+            slackSend(color: '#ff0000', message: "ERROR: Job '${env.JOB_NAME} [${VPS4_VERSION}]' (${env.BUILD_URL})")
         }
     }
 }
