@@ -23,7 +23,7 @@ pipeline {
 
                 // echo "Change Order: https://godaddy.service-now.com/nav_to.do?uri=%2Fchange_request.do?sys_id=${changeRequestId}"
 
-                checkout scm
+                // checkout scm
 
                 // echo "Deploying to SG2"
                 // build job: 'deploy_to_prod_sin2', parameters: [string(name: 'VPS4_VERSION', value: VPS4_VERSION)]
@@ -81,6 +81,14 @@ pipeline {
                 status:'7'
             slackSend(color: '#ff0000', message: "ERROR: Job '${env.JOB_NAME} [${VPS4_VERSION}]' (${env.BUILD_URL})")
         }
+    }
+}
+
+private void cleanupEnvironment() {
+    if (currentBuild.currentResult == 'SUCCESS') {
+        cleanWs cleanWhenAborted: false, cleanWhenFailure: false, cleanWhenNotBuilt: false, cleanWhenUnstable: false
+    } else {
+        echo "Skipping workspace cleanup due to errors in build"
     }
 }
 
