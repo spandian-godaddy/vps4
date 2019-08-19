@@ -5,8 +5,6 @@ import static java.util.stream.Collectors.toMap;
 
 import java.util.Map;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
-
 public class Image {
 
     public static final String ISPCONFIG = "ispconfig";

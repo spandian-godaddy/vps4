@@ -156,7 +156,7 @@ public class VmDestroyTest {
     @Test
     public void destroyTestVmWithSnapshots() throws Exception {
         VirtualMachine vm = createTestVm();
-        List<Snapshot> snapshots = new ArrayList();
+        List<Snapshot> snapshots = new ArrayList<Snapshot>();
 
         for(int i = 0; i<5; i++){
             snapshots.add(createSnapshot(vm.vmId, SnapshotStatus.LIVE));

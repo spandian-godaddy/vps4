@@ -3,7 +3,6 @@ package com.godaddy.vps4.security.jdbc;
 import static org.junit.Assert.*;
 
 import java.sql.Timestamp;
-import java.time.Duration;
 import java.time.Instant;
 
 import javax.sql.DataSource;

@@ -8,9 +8,7 @@ import javax.ws.rs.NotFoundException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.godaddy.hfs.vm.VmService;
 import com.godaddy.hfs.vm.VmAction;
-import com.godaddy.vps4.hfs.HfsVmTrackingRecordService;
 import com.godaddy.vps4.network.IpAddress;
 import com.godaddy.vps4.network.NetworkService;
 import com.godaddy.vps4.orchestration.ActionCommand;
@@ -36,23 +34,17 @@ public class Vps4DestroyDedicated extends ActionCommand<VmActionRequest, Vps4Des
     private final NetworkService networkService;
     private final NodePingService monitoringService;
     private final MonitoringMeta monitoringMeta;
-    private final HfsVmTrackingRecordService hfsVmTrackingRecordService;
-    private final VmService vmService;
     CommandContext context;
 
     @Inject
     public Vps4DestroyDedicated(ActionService actionService,
                                 NetworkService networkService,
                                 NodePingService monitoringService,
-                                MonitoringMeta monitoringMeta,
-                                HfsVmTrackingRecordService hfsVmTrackingRecordService,
-                                VmService vmService) {
+                                MonitoringMeta monitoringMeta) {
         super(actionService);
         this.networkService = networkService;
         this.monitoringService = monitoringService;
         this.monitoringMeta = monitoringMeta;
-        this.hfsVmTrackingRecordService = hfsVmTrackingRecordService;
-        this.vmService = vmService;
     }
 
     @Override

@@ -67,8 +67,7 @@ public class GetVirtualMachineTest {
         VmActionResource vmActionResource = mock(VmActionResource.class);
         SnapshotService snapshotService = mock(SnapshotService.class);
 
-        vmResource = new VmResource(user, vmService, userService, virtualMachineService, creditService, null,
-                null, null, null, null, config, cryptography,
+        vmResource = new VmResource(user, vmService, userService, virtualMachineService, creditService, null, null, null, null, config, cryptography,
                 schedulerWebService, dcService, vmActionResource, snapshotService, null);
     }
 

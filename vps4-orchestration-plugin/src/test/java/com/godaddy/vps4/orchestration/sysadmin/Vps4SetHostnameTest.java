@@ -1,6 +1,5 @@
 package com.godaddy.vps4.orchestration.sysadmin;
 
-import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
@@ -22,8 +21,6 @@ import com.godaddy.vps4.vm.ActionService;
 import com.godaddy.vps4.vm.VirtualMachineService;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
-
-import static org.apache.commons.lang3.exception.ExceptionUtils.getRootCause;
 
 import gdg.hfs.orchestration.CommandContext;
 import gdg.hfs.orchestration.GuiceCommandProvider;

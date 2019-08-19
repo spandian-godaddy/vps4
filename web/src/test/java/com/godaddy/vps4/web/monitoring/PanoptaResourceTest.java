@@ -34,7 +34,6 @@ import com.godaddy.vps4.panopta.PanoptaApiServerService;
 import com.godaddy.vps4.panopta.PanoptaDataService;
 import com.godaddy.vps4.panopta.PanoptaServers;
 import com.godaddy.vps4.panopta.PanoptaService;
-import com.godaddy.vps4.panopta.jdbc.JdbcPanoptaDataService;
 import com.godaddy.vps4.security.GDUserMock;
 import com.godaddy.vps4.util.ObjectMapperModule;
 import com.godaddy.vps4.vm.AccountStatus;
@@ -61,7 +60,6 @@ public class PanoptaResourceTest {
     private VirtualMachineService virtualMachineService = mock(VirtualMachineService.class);
     private ServerSpec serverSpec = mock(ServerSpec.class);
     private PanoptaDataService panoptaDataService = mock(PanoptaDataService.class);
-    private Response response = mock(Response.class);
     private Response.StatusType responseStatusType = mock(Response.StatusType.class);
 
     private GDUser user = GDUserMock.createShopper();

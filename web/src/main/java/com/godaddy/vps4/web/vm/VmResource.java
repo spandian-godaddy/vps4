@@ -53,7 +53,6 @@ import com.godaddy.vps4.vm.Action;
 import com.godaddy.vps4.vm.ActionService;
 import com.godaddy.vps4.vm.ActionType;
 import com.godaddy.vps4.vm.DataCenterService;
-import com.godaddy.vps4.vm.ImageService;
 import com.godaddy.vps4.vm.ProvisionVmInfo;
 import com.godaddy.vps4.vm.ServerSpec;
 import com.godaddy.vps4.vm.ServerType;
@@ -92,7 +91,6 @@ public class VmResource {
     private final CreditService creditService;
     private final VmService vmService;
     private final ProjectService projectService;
-    private final ImageService imageService;
     private final ActionService actionService;
     private final CommandService commandService;
     private final VmSnapshotResource vmSnapshotResource;
@@ -108,7 +106,7 @@ public class VmResource {
     @Inject
     public VmResource(GDUser user, VmService vmService, Vps4UserService vps4UserService,
                       VirtualMachineService virtualMachineService, CreditService creditService,
-                      ProjectService projectService, ImageService imageService, ActionService actionService,
+                      ProjectService projectService, ActionService actionService,
                       CommandService commandService, VmSnapshotResource vmSnapshotResource, Config config,
                       Cryptography cryptography, SchedulerWebService schedulerWebService, DataCenterService dcService,
                       VmActionResource vmActionResource, SnapshotService snapshotService, ImageResource imageResource
@@ -119,7 +117,6 @@ public class VmResource {
         this.creditService = creditService;
         this.vmService = vmService;
         this.projectService = projectService;
-        this.imageService = imageService;
         this.actionService = actionService;
         this.commandService = commandService;
         this.vmSnapshotResource = vmSnapshotResource;

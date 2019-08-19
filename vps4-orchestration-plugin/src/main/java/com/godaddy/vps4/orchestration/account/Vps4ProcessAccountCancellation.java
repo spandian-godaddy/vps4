@@ -22,7 +22,6 @@ import com.godaddy.vps4.scheduledJob.ScheduledJob.ScheduledJobType;
 import com.godaddy.vps4.vm.ActionService;
 import com.godaddy.vps4.vm.VirtualMachine;
 import com.godaddy.vps4.vm.VirtualMachineService;
-import com.godaddy.hfs.vm.VmService;
 
 
 import gdg.hfs.orchestration.CommandContext;
@@ -43,18 +42,15 @@ public class Vps4ProcessAccountCancellation extends ActionCommand<Vps4ProcessAcc
     final ActionService vmActionService;
     private final VirtualMachineService virtualMachineService;
     private final Config config;
-    private final VmService vmService;
 
     @Inject
     public Vps4ProcessAccountCancellation(ActionService vmActionService,
                                           VirtualMachineService virtualMachineService,
-                                          Config config,
-                                          VmService vmService) {
+                                          Config config) {
         super(vmActionService);
         this.vmActionService = vmActionService;
         this.virtualMachineService = virtualMachineService;
         this.config = config;
-        this.vmService = vmService;
     }
 
     @Override

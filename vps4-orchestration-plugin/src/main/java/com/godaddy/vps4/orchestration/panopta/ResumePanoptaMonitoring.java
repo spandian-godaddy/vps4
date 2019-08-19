@@ -4,9 +4,6 @@ import java.util.UUID;
 
 import javax.inject.Inject;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import com.godaddy.vps4.panopta.PanoptaService;
 
 import gdg.hfs.orchestration.Command;
@@ -21,7 +18,6 @@ import gdg.hfs.orchestration.CommandRetryStrategy;
 )
 
 public class ResumePanoptaMonitoring implements Command<UUID, Void> {
-    private static final Logger logger = LoggerFactory.getLogger(ResumePanoptaMonitoring.class);
     private final PanoptaService panoptaService;
 
     @Inject

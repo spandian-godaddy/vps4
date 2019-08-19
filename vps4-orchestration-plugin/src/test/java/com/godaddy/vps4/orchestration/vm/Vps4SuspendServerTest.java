@@ -16,7 +16,6 @@ import com.godaddy.hfs.config.Config;
 import com.godaddy.vps4.credit.CreditService;
 import com.godaddy.vps4.orchestration.hfs.vm.StopVm;
 import com.godaddy.vps4.orchestration.panopta.PausePanoptaMonitoring;
-import com.godaddy.vps4.orchestration.panopta.ResumePanoptaMonitoring;
 import com.godaddy.vps4.vm.AccountStatus;
 import com.godaddy.vps4.vm.ActionService;
 import com.godaddy.vps4.vm.ActionType;

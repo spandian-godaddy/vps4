@@ -26,7 +26,6 @@ import com.godaddy.hfs.config.Config;
 import com.godaddy.vps4.credit.CreditService;
 import com.godaddy.vps4.orchestration.vm.Vps4RestoreVm;
 import com.godaddy.vps4.project.ProjectService;
-import com.godaddy.vps4.security.Vps4UserService;
 import com.godaddy.vps4.snapshot.Snapshot;
 import com.godaddy.vps4.snapshot.SnapshotService;
 import com.godaddy.vps4.snapshot.SnapshotStatus;
@@ -59,7 +58,6 @@ public class VmRestoreResource {
     private final VirtualMachineService virtualMachineService;
     private final SnapshotService snapshotService;
     private final VmUserService vmUserService;
-    private final Vps4UserService vps4UserService;
     private final ProjectService projectService;
     private final ActionService actionService;
     private final CommandService commandService;
@@ -73,7 +71,6 @@ public class VmRestoreResource {
     public VmRestoreResource(
             GDUser user,
             VmUserService vmUserService,
-            Vps4UserService vps4UserService,
             VirtualMachineService virtualMachineService,
             SnapshotService snapshotService,
             ProjectService projectService,
@@ -89,7 +86,6 @@ public class VmRestoreResource {
         this.virtualMachineService = virtualMachineService;
         this.snapshotService = snapshotService;
         this.vmUserService = vmUserService;
-        this.vps4UserService = vps4UserService;
         this.projectService = projectService;
         this.actionService = actionService;
         this.commandService = commandService;

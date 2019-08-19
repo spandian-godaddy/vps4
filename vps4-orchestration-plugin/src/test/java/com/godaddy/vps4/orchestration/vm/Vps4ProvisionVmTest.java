@@ -87,9 +87,9 @@ public class Vps4ProvisionVmTest {
     @Captor private ArgumentCaptor<SetPassword.Request> setPasswordCaptor;
     @Captor private ArgumentCaptor<SetHostname.Request> setHostnameArgumentCaptor;
 
-    Vps4ProvisionVm command = new Vps4ProvisionVm(actionService, vmService,
-                                                  virtualMachineService, vmUserService, networkService, nodePingService,
-                                                  monitoringMeta, messagingService, creditService, config);
+    Vps4ProvisionVm command = new Vps4ProvisionVm(actionService, virtualMachineService, vmUserService, networkService,
+                                                  nodePingService, monitoringMeta, messagingService, creditService,
+                                                  config);
 
     Injector injector = Guice.createInjector(binder -> {
         binder.bind(ActionService.class).toInstance(actionService);

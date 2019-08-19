@@ -25,7 +25,6 @@ import com.godaddy.vps4.security.Vps4UserService;
 import com.godaddy.vps4.vm.ActionService;
 import com.godaddy.vps4.vm.ActionType;
 import com.godaddy.vps4.vm.VirtualMachine;
-import com.godaddy.vps4.vm.VirtualMachineService;
 import com.godaddy.vps4.vm.VmAction;
 import com.godaddy.vps4.web.Vps4Api;
 import com.godaddy.vps4.web.Vps4Exception;
@@ -49,7 +48,6 @@ public class VmShopperMergeResource {
     private final GDUser user;
     private final Vps4UserService vps4UserService;
     private final CreditService creditService;
-    private final VirtualMachineService virtualMachineService;
     private final PrivilegeService privilegeService;
     private final ActionService actionService;
 
@@ -59,7 +57,6 @@ public class VmShopperMergeResource {
             GDUser user,
             Vps4UserService vps4UserService,
             CreditService creditService,
-            VirtualMachineService virtualMachineService,
             PrivilegeService privilegeService,
             VmResource vmResource,
             ActionService actionService
@@ -68,7 +65,6 @@ public class VmShopperMergeResource {
         this.user = user;
         this.vps4UserService = vps4UserService;
         this.creditService = creditService;
-        this.virtualMachineService = virtualMachineService;
         this.privilegeService = privilegeService;
         this.vmResource = vmResource;
         this.actionService = actionService;

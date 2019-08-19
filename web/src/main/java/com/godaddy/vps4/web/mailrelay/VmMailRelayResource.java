@@ -25,7 +25,6 @@ import com.godaddy.vps4.vm.ActionService;
 import com.godaddy.vps4.vm.ActionType;
 import com.godaddy.vps4.vm.ServerType.Type;
 import com.godaddy.vps4.vm.VirtualMachine;
-import com.godaddy.vps4.vm.VirtualMachineService;
 import com.godaddy.vps4.web.PATCH;
 import com.godaddy.vps4.web.Vps4Api;
 import com.godaddy.vps4.web.security.BlockServerType;
@@ -59,20 +58,17 @@ public class VmMailRelayResource {
     private final VmResource vmResource;
     private final CommandService commandService;
     private final ActionService actionService;
-    private final VirtualMachineService virtualMachineService;
     private final CreditService creditService;
     private final GDUser user;
 
     @Inject
     public VmMailRelayResource(GDUser user, MailRelayService mailRelayService,
             NetworkService networkService, CommandService commandService,
-            ActionService actionService, VirtualMachineService virtualMachineService,
-            VmResource vmResource, CreditService creditService) {
+            ActionService actionService, VmResource vmResource, CreditService creditService) {
         this.mailRelayService = mailRelayService;
         this.networkService = networkService;
         this.commandService = commandService;
         this.actionService = actionService;
-        this.virtualMachineService = virtualMachineService;
         this.creditService = creditService;
         this.vmResource = vmResource;
         this.user = user;

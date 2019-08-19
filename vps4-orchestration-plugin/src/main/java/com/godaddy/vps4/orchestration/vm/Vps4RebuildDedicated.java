@@ -26,7 +26,6 @@ import com.godaddy.vps4.orchestration.hfs.sysadmin.ToggleAdmin;
 import com.godaddy.vps4.orchestration.hfs.vm.RebuildDedicated;
 import com.godaddy.vps4.orchestration.sysadmin.ConfigureMailRelay;
 import com.godaddy.vps4.orchestration.sysadmin.ConfigureMailRelay.ConfigureMailRelayRequest;
-import com.godaddy.vps4.util.Cryptography;
 import com.godaddy.vps4.vm.ActionService;
 import com.godaddy.vps4.vm.Image;
 import com.godaddy.vps4.vm.RebuildVmInfo;
@@ -55,7 +54,6 @@ public class Vps4RebuildDedicated extends ActionCommand<Vps4RebuildDedicated.Req
     private final VirtualMachineService virtualMachineService;
     private final VmUserService vmUserService;
     private final CreditService creditService;
-    private final Cryptography cryptography;
     private Request request;
     private ActionState state;
     private CommandContext context;
@@ -63,13 +61,12 @@ public class Vps4RebuildDedicated extends ActionCommand<Vps4RebuildDedicated.Req
 
     @Inject
     public Vps4RebuildDedicated(ActionService actionService, VmService vmService, VirtualMachineService virtualMachineService,
-                                VmUserService vmUserService, CreditService creditService, Cryptography cryptography) {
+                                VmUserService vmUserService, CreditService creditService) {
         super(actionService);
         this.vmService = vmService;
         this.virtualMachineService = virtualMachineService;
         this.vmUserService = vmUserService;
         this.creditService = creditService;
-        this.cryptography = cryptography;
     }
 
     @Override

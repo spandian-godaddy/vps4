@@ -7,7 +7,6 @@ import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -24,7 +23,6 @@ import javax.ws.rs.core.Response;
 
 import org.junit.Before;
 import org.junit.Test;
-import org.mockito.ArgumentCaptor;
 import org.mockito.Mockito;
 
 import com.godaddy.hfs.mailrelay.MailRelay;
@@ -82,7 +80,7 @@ public class Vps4DestroyDedicatedTest {
     CreateDnsPtrRecord createDnsPtrRecord =  mock(CreateDnsPtrRecord.class);
 
     Vps4DestroyDedicated command = new Vps4DestroyDedicated(actionService, networkService, nodePingService,
-            monitoringMeta, hfsVmTrackingRecordService, vmService);
+            monitoringMeta);
     Injector injector = Guice.createInjector(binder -> {
         binder.bind(UnbindIp.class);
         binder.bind(ReleaseIp.class);

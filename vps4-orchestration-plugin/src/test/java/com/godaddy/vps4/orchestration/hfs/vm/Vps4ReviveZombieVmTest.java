@@ -112,7 +112,7 @@ public class Vps4ReviveZombieVmTest{
             binder.bind(Config.class).toInstance(config);
         });
         
-        command = new Vps4ReviveZombieVm(actionService, virtualMachineService, vmService, scheduledJobService, creditService, config);
+        command = new Vps4ReviveZombieVm(actionService, virtualMachineService, scheduledJobService, creditService, config);
         context = new TestCommandContext(new GuiceCommandProvider(injector));
     }
     

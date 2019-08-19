@@ -5,7 +5,6 @@ import java.util.Map;
 import java.util.UUID;
 
 import com.godaddy.hfs.config.Config;
-import com.godaddy.hfs.vm.VmService;
 import com.godaddy.vps4.credit.CreditService;
 import com.godaddy.vps4.credit.ECommCreditService.ProductMetaField;
 import com.godaddy.vps4.orchestration.ActionCommand;
@@ -35,18 +34,16 @@ public class Vps4ReviveZombieVm extends ActionCommand<Vps4ReviveZombieVm.Request
 
     private static final Logger logger = LoggerFactory.getLogger(Vps4ReviveZombieVm.class);
     private final VirtualMachineService virtualMachineService;
-    private final VmService vmService;
     private final ScheduledJobService scheduledJobService;
     private final CreditService creditService;
     private final Config config;
 
     @Inject
     public Vps4ReviveZombieVm(ActionService actionService, VirtualMachineService virtualMachineService,
-                              VmService vmService, ScheduledJobService scheduledJobService, CreditService creditService,
+                              ScheduledJobService scheduledJobService, CreditService creditService,
                               Config config) {
         super(actionService);
         this.virtualMachineService = virtualMachineService;
-        this.vmService = vmService;
         this.scheduledJobService = scheduledJobService;
         this.creditService = creditService;
         this.config = config;

@@ -30,7 +30,6 @@ public class DefaultPanoptaServiceTest {
     private long serverId;
     private UUID vmId;
     private String partnerCustomerKey;
-    private String newStatus;
     private DefaultPanoptaService defaultPanoptaService;
     private PanoptaDetail panoptaDetail;
     private PanoptaServers.Server server;

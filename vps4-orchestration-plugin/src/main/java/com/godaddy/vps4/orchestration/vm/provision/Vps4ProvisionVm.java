@@ -24,7 +24,6 @@ import org.slf4j.LoggerFactory;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.godaddy.hfs.config.Config;
 import com.godaddy.hfs.vm.VmAction;
-import com.godaddy.hfs.vm.VmService;
 import com.godaddy.vps4.credit.CreditService;
 import com.godaddy.vps4.messaging.Vps4MessagingService;
 import com.godaddy.vps4.network.IpAddress.IpAddressType;
@@ -71,7 +70,6 @@ import gdg.hfs.vhfs.nodeping.NodePingService;
 public class Vps4ProvisionVm extends ActionCommand<ProvisionRequest, Vps4ProvisionVm.Response> {
 
     private static final Logger logger = LoggerFactory.getLogger(Vps4ProvisionVm.class);
-    private final VmService vmService;
     private final VirtualMachineService virtualMachineService;
     private final VmUserService vmUserService;
     private final NetworkService networkService;
@@ -89,7 +87,6 @@ public class Vps4ProvisionVm extends ActionCommand<ProvisionRequest, Vps4Provisi
     @Inject
     public Vps4ProvisionVm(
             ActionService actionService,
-            VmService vmService,
             VirtualMachineService virtualMachineService,
             VmUserService vmUserService,
             NetworkService networkService,
@@ -99,7 +96,6 @@ public class Vps4ProvisionVm extends ActionCommand<ProvisionRequest, Vps4Provisi
             CreditService creditService,
             Config config) {
         super(actionService);
-        this.vmService = vmService;
         this.virtualMachineService = virtualMachineService;
         this.vmUserService = vmUserService;
         this.networkService = networkService;

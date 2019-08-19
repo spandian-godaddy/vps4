@@ -35,7 +35,6 @@ import com.godaddy.vps4.scheduler.api.client.SchedulerServiceClientModule;
 import com.godaddy.vps4.security.SecurityModule;
 import com.godaddy.vps4.snapshot.SnapshotModule;
 import com.godaddy.vps4.sso.SsoModule;
-import com.godaddy.vps4.sysadmin.SysAdminModule;
 import com.godaddy.vps4.util.ObjectMapperProvider;
 import com.godaddy.vps4.util.UtilsModule;
 import com.godaddy.vps4.vm.VmModule;
@@ -114,7 +113,6 @@ public class Vps4Injector {
         modules.add(new HfsVmTrackingRecordModule());
         modules.add(new SnapshotModule());
         modules.add(new NetworkModule());
-        modules.add(new SysAdminModule());
         modules.add(new MailRelayModule());
         modules.add(new CpanelModule());
         modules.add(new PleskModule());

@@ -51,9 +51,6 @@ import com.godaddy.vps4.web.client.VmService;
 import com.godaddy.vps4.web.client.VmShopperMergeService;
 import com.godaddy.vps4.web.client.VmSuspendReinstateService;
 import com.godaddy.vps4.web.client.VmZombieService;
-import com.godaddy.vps4.web.vm.VmShopperMergeResource;
-
-import static com.godaddy.vps4.web.vm.VmShopperMergeResource.ShopperMergeRequest;
 
 import gdg.hfs.orchestration.CommandGroupSpec;
 import gdg.hfs.orchestration.CommandService;

@@ -2,7 +2,6 @@ package com.godaddy.vps4.orchestration.vm;
 
 import javax.inject.Inject;
 
-import com.godaddy.hfs.vm.VmService;
 import com.godaddy.vps4.orchestration.ActionCommand;
 import com.godaddy.vps4.orchestration.hfs.vm.EndRescueVm;
 import com.godaddy.vps4.vm.ActionService;

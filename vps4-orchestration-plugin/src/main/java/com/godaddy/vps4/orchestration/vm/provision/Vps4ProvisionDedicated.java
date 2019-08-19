@@ -3,13 +3,11 @@ package com.godaddy.vps4.orchestration.vm.provision;
 import static com.godaddy.vps4.vm.CreateVmStep.ConfigureNodeping;
 import static com.godaddy.vps4.vm.CreateVmStep.ConfiguringCPanel;
 import static com.godaddy.vps4.vm.CreateVmStep.ConfiguringPlesk;
-import static com.godaddy.vps4.vm.CreateVmStep.GeneratingHostname;
 import static com.godaddy.vps4.vm.CreateVmStep.RequestingServer;
 import static com.godaddy.vps4.vm.CreateVmStep.SetHostname;
 import static com.godaddy.vps4.vm.CreateVmStep.SetupComplete;
 import static com.godaddy.vps4.vm.CreateVmStep.StartingServerSetup;
 
-import java.util.Random;
 import java.util.UUID;
 
 import javax.inject.Inject;
