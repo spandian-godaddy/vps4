@@ -28,7 +28,7 @@ public interface PanoptaApiServerService {
                                       @QueryParam("partner_customer_key") String partnerCustomerKey);
 
     @GET
-    @Path("/servers")
+    @Path("/")
     PanoptaServers getPanoptaServers(@QueryParam("partner_customer_key") String partnerCustomerKey);
 
     @GET
