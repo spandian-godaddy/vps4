@@ -42,8 +42,8 @@ import com.godaddy.vps4.vm.ActionStatus;
 import com.godaddy.vps4.vm.ActionType;
 import com.godaddy.vps4.vm.VirtualMachine;
 import com.godaddy.vps4.web.Vps4Exception;
-import com.godaddy.vps4.web.security.AdminOnly;
 import com.godaddy.vps4.web.security.GDUser;
+import com.godaddy.vps4.web.security.RequiresRole;
 import com.godaddy.vps4.web.security.TemporarilyDisabled;
 import com.google.inject.AbstractModule;
 import com.google.inject.Guice;
@@ -207,7 +207,8 @@ public class SnapshotActionResourceTest {
         SnapshotActionResource actionResource = getSnapshotActionResource();
         try {
             Method m = actionResource.getClass().getMethod("cancelSnapshotAction", UUID.class, long.class);
-            Assert.assertTrue(m.isAnnotationPresent(AdminOnly.class));
+            GDUser.Role[] expectedRoles = new GDUser.Role[] {GDUser.Role.ADMIN};
+            Assert.assertArrayEquals(expectedRoles, m.getAnnotation(RequiresRole.class).roles());
         }
         catch (NoSuchMethodException e) {
             Assert.fail("Cancel action should only be available to an admin");

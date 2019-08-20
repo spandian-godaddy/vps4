@@ -5,7 +5,8 @@ import com.google.inject.AbstractModule;
 public class Vps4ContainerRequestFilterModule extends AbstractModule {
     @Override
     protected void configure() {
-        bind(AdminAuthFilter.class);
+        bind(OrchestrationCommandsAuthFeature.class);
+        bind(StaffRequiredFilter.class);
         bind(RequiresRoleFilter.class);
         bind(RequiresRoleFeature.class);
         bind(TemporarilyDisabledFeature.class);

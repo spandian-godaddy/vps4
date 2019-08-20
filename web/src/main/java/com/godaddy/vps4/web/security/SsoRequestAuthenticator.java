@@ -113,17 +113,13 @@ public class SsoRequestAuthenticator implements RequestAuthenticator<GDUser> {
         // well as the hosting support agents group. But we would want to assign them to a role of HS_LEAD.
         if (groups.contains(VPS4_TEAM)) {
             gdUser.isAdmin = true;
-            gdUser.isStaff = true;
             gdUser.role = Role.ADMIN;
         } else if (groups.contains(C3_HOSTING_SUPPORT_LEAD)) {
-            gdUser.isStaff = true;
             gdUser.role = Role.HS_LEAD;
         } else if (groups.contains(C3_HOSTING_SUPPORT)) {
-            gdUser.isStaff = true;
             gdUser.role = Role.HS_AGENT;
         } else if (groups.contains(HOSTING_OPERATIONS)) {
             gdUser.role = Role.SUSPEND_AUTH;
-            gdUser.isStaff = true;
         } else if (groups.contains(LEGAL) ||
                 groups.contains(DIGITAL_CRIMES_UNIT) ||
                 groups.contains(CHARGEBACK)) {

@@ -27,8 +27,8 @@ import com.godaddy.vps4.vm.VirtualMachineService;
 import com.godaddy.vps4.vm.VmAction;
 import com.godaddy.vps4.web.Vps4Api;
 import com.godaddy.vps4.web.Vps4Exception;
-import com.godaddy.vps4.web.security.AdminOnly;
 import com.godaddy.vps4.web.security.GDUser;
+import com.godaddy.vps4.web.security.RequiresRole;
 import com.godaddy.vps4.web.util.VmHelper;
 import com.google.inject.Inject;
 
@@ -46,6 +46,7 @@ import io.swagger.annotations.ApiParam;
 @Path("/api/vms")
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
+@RequiresRole(roles = {GDUser.Role.ADMIN})
 public class VmZombieResource {
 
     private static final Logger logger = LoggerFactory.getLogger(VmZombieResource.class);
@@ -72,7 +73,7 @@ public class VmZombieResource {
         this.vmActionResource = vmActionResource;
     }
 
-    @AdminOnly
+
     @POST
     @Path("/{vmId}/revive")
     @ApiOperation(value = "Revive a zombie vm whose account has been canceled but the server has not yet been deleted",
@@ -105,7 +106,6 @@ public class VmZombieResource {
                 ActionType.RESTORE_ACCOUNT, request, "Vps4ReviveZombieVm", user);
     }
 
-    @AdminOnly
     @POST
     @Path("/{vmId}/zombie")
     @ApiOperation(value = "Zombie (stop and schedule deletion for) a VM whose account has been canceled",

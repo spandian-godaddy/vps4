@@ -9,12 +9,11 @@ public class GDUser {
     // Role that this user is assigned in the Vps4 app
     public enum Role {
         ADMIN, CUSTOMER, EMPLOYEE_OTHER, HS_AGENT, HS_LEAD, SUSPEND_AUTH
-    };
+    }
 
     SsoToken token;
     String shopperId;
     boolean isEmployee;
-    boolean isStaff;
     boolean isAdmin;
     String username;
     Role role = Role.CUSTOMER; // default
@@ -33,10 +32,6 @@ public class GDUser {
 
     public boolean isAdmin() {
         return isAdmin;
-    }
-
-    public boolean isStaff() {
-        return isStaff ;
     }
 
     public Role role() {
@@ -70,7 +65,7 @@ public class GDUser {
     @Override
     public String toString() {
         return "GDUser [token=" + token + ", shopperId=" + shopperId + ", isEmployee="
-                + isEmployee + ", isStaff=" + isStaff + ", isAdmin=" + isAdmin + "," +
+                + isEmployee + ", isAdmin=" + isAdmin + "," +
                 "isShopper()=" + isShopper() + ", username=" + username + ", role=" + role + "]";
     }
 

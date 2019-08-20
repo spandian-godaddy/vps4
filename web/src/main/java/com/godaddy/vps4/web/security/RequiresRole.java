@@ -7,7 +7,7 @@ import java.lang.annotation.Target;
 
 import com.godaddy.vps4.web.security.GDUser.Role;
 
-@Target(ElementType.METHOD)
+@Target({ElementType.TYPE, ElementType.METHOD})
 @Retention(RetentionPolicy.RUNTIME)
 public @interface RequiresRole {
     Role[] roles();

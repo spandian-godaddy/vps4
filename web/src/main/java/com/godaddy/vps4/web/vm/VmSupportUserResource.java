@@ -21,7 +21,6 @@ import com.godaddy.vps4.orchestration.hfs.sysadmin.SetPassword;
 import com.godaddy.vps4.orchestration.sysadmin.Vps4AddSupportUser;
 import com.godaddy.vps4.orchestration.sysadmin.Vps4RemoveSupportUser;
 import com.godaddy.vps4.orchestration.sysadmin.Vps4SetPassword;
-import com.godaddy.vps4.security.Vps4UserService;
 import com.godaddy.vps4.sysadmin.UsernamePasswordGenerator;
 import com.godaddy.vps4.util.Cryptography;
 import com.godaddy.vps4.vm.Action;
@@ -31,7 +30,7 @@ import com.godaddy.vps4.vm.VirtualMachine;
 import com.godaddy.vps4.vm.VmUserService;
 import com.godaddy.vps4.web.Vps4Api;
 import com.godaddy.vps4.web.security.GDUser;
-import com.godaddy.vps4.web.security.StaffOnly;
+import com.godaddy.vps4.web.security.RequiresRole;
 import com.godaddy.vps4.web.util.Commands;
 import com.google.inject.Inject;
 
@@ -46,6 +45,7 @@ import io.swagger.annotations.ApiOperation;
 @Path("/api/vms")
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
+@RequiresRole(roles = {GDUser.Role.ADMIN, GDUser.Role.HS_LEAD, GDUser.Role.HS_AGENT, GDUser.Role.SUSPEND_AUTH})
 public class VmSupportUserResource {
     private static final Logger logger = LoggerFactory.getLogger(VmSupportUserResource.class);
 
@@ -60,7 +60,6 @@ public class VmSupportUserResource {
     @Inject
     public VmSupportUserResource(GDUser user, 
                                  VmResource vmResource,
-                                 Vps4UserService vps4UserService,
                                  ActionService actionService,
                                  CommandService commandService,
                                  VmUserService vmUserService,
@@ -76,7 +75,6 @@ public class VmSupportUserResource {
     }
 
     @SuppressWarnings("unchecked")
-    @StaffOnly
     @POST
     @Path("/{vmId}/supportUsers")
     @ApiOperation(value = "Add a support user to a VM")
@@ -110,7 +108,6 @@ public class VmSupportUserResource {
     }
 
     @SuppressWarnings("unchecked")
-    @StaffOnly
     @DELETE
     @Path("/{vmId}/supportUsers/{supportUsername}")
     @ApiOperation(value = "Remove a support user from a VM")
@@ -140,7 +137,6 @@ public class VmSupportUserResource {
     }
 
     @SuppressWarnings("unchecked")
-    @StaffOnly
     @POST
     @Path("/{vmId}/supportUsers/{supportUsername}/changePassword")
     @ApiOperation(value = "Change the password for a support user")

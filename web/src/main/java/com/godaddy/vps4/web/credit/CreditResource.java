@@ -23,7 +23,6 @@ import com.godaddy.vps4.credit.ECommCreditService.ProductMetaField;
 import com.godaddy.vps4.credit.VirtualMachineCredit;
 import com.godaddy.vps4.web.Vps4Api;
 import com.godaddy.vps4.web.Vps4NoShopperException;
-import com.godaddy.vps4.web.security.AdminOnly;
 import com.godaddy.vps4.web.security.GDUser;
 import com.godaddy.vps4.web.security.RequiresRole;
 import com.google.inject.Inject;
@@ -72,7 +71,7 @@ public class CreditResource {
         return creditService.getUnclaimedVirtualMachineCredits(user.getShopperId());
     }
 
-    @AdminOnly
+    @RequiresRole(roles = {GDUser.Role.ADMIN})
     @POST
     @Path("/")
     public VirtualMachineCredit createCredit(CreateCreditRequest request){
@@ -95,7 +94,7 @@ public class CreditResource {
         public int resellerId;
     }
 
-    @AdminOnly
+    @RequiresRole(roles = {GDUser.Role.ADMIN})
     @POST
     @Path("/{orionGuid}/release")
     public VirtualMachineCredit releaseCredit(@PathParam("orionGuid") UUID orionGuid) {

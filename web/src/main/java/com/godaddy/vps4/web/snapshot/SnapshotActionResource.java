@@ -33,8 +33,8 @@ import com.godaddy.vps4.vm.ActionStatus;
 import com.godaddy.vps4.vm.ActionType;
 import com.godaddy.vps4.web.Vps4Api;
 import com.godaddy.vps4.web.Vps4Exception;
-import com.godaddy.vps4.web.security.AdminOnly;
 import com.godaddy.vps4.web.security.GDUser;
+import com.godaddy.vps4.web.security.RequiresRole;
 import com.godaddy.vps4.web.security.TemporarilyDisabled;
 import com.godaddy.vps4.web.util.Commands;
 import com.google.inject.Inject;
@@ -112,7 +112,7 @@ public class SnapshotActionResource {
         return new SnapshotAction(this.getSnapshotActionFromCore(snapshotId, actionId), user.isEmployee());
     }
 
-    @AdminOnly
+    @RequiresRole(roles = {GDUser.Role.ADMIN})
     @GET
     @Path("/{snapshotId}/actions/{actionId}/withDetails")
     public SnapshotActionWithDetails getSnapshotActionWithDetails(
@@ -123,7 +123,7 @@ public class SnapshotActionResource {
         return new SnapshotActionWithDetails(action, commandState, user.isEmployee());
     }
 
-    @AdminOnly
+    @RequiresRole(roles = {GDUser.Role.ADMIN})
     @TemporarilyDisabled
     @POST
     @Path("{snapshotId}/actions/{actionId}/cancel")

@@ -50,8 +50,8 @@ import com.godaddy.vps4.vm.VirtualMachineService;
 import com.godaddy.vps4.web.PATCH;
 import com.godaddy.vps4.web.Vps4Api;
 import com.godaddy.vps4.web.Vps4NoShopperException;
-import com.godaddy.vps4.web.security.AdminOnly;
 import com.godaddy.vps4.web.security.GDUser;
+import com.godaddy.vps4.web.security.RequiresRole;
 import com.godaddy.vps4.web.util.Commands;
 
 import gdg.hfs.orchestration.CommandService;
@@ -64,7 +64,7 @@ import io.swagger.annotations.Api;
 @Path("/api/snapshots")
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
-
+@RequiresRole(roles = {GDUser.Role.ADMIN})
 public class SnapshotResource {
     private static final Logger logger = LoggerFactory.getLogger(SnapshotResource.class);
 
@@ -98,7 +98,6 @@ public class SnapshotResource {
         this.schedulerWebService = schedulerWebService;
     }
 
-    @AdminOnly
     @GET
     @Path("/")
     @JsonView(Views.Public.class)
@@ -118,7 +117,6 @@ public class SnapshotResource {
                 .collect(Collectors.toList());
     }
 
-    @AdminOnly
     @POST
     @Path("/")
     public SnapshotAction createSnapshot(SnapshotRequest snapshotRequest) {
@@ -177,7 +175,6 @@ public class SnapshotResource {
         );
     }
 
-    @AdminOnly
     @GET
     @Path("/{snapshotId}")
     @JsonView(Views.Public.class)
@@ -194,7 +191,6 @@ public class SnapshotResource {
         return snapshot;
     }
 
-    @AdminOnly
     @DELETE
     @Path("/{snapshotId}")
     public SnapshotAction destroySnapshot(@PathParam("snapshotId") UUID snapshotId) {
@@ -226,7 +222,6 @@ public class SnapshotResource {
         }
     }
 
-    @AdminOnly
     @GET
     @Path("/{snapshotId}/withDetails")
     @JsonView(Views.Internal.class)
@@ -239,7 +234,6 @@ public class SnapshotResource {
         public String name;
     }
 
-    @AdminOnly
     @PATCH
     @Path("/{snapshotId}")
     public SnapshotAction renameSnapshot(@PathParam("snapshotId") UUID snapshotId,

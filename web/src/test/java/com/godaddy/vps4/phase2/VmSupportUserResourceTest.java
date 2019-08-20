@@ -10,7 +10,8 @@ import com.godaddy.vps4.vm.jdbc.JdbcDataCenterService;
 import com.godaddy.vps4.vm.jdbc.JdbcImageService;
 import com.godaddy.vps4.vm.jdbc.JdbcVirtualMachineService;
 import com.godaddy.vps4.vm.jdbc.JdbcVmActionService;
-import com.godaddy.vps4.web.security.StaffOnly;
+import com.godaddy.vps4.web.security.GDUser;
+import com.godaddy.vps4.web.security.RequiresRole;
 import com.godaddy.vps4.web.vm.VmActionWithDetails;
 import com.godaddy.vps4.web.vm.VmResource;
 import com.godaddy.vps4.web.vm.VmSupportUserResource;
@@ -97,9 +98,9 @@ public class VmSupportUserResourceTest {
     // add support user tests
 
     @Test
-    public void testAddSupportUserStaffOnly() throws NoSuchMethodException {
-        Method method = VmSupportUserResource.class.getMethod("addSupportUsers", UUID.class);
-        Assert.assertTrue(method.isAnnotationPresent(StaffOnly.class));
+    public void testAddSupportUserExpectedRoles() throws NoSuchMethodException {
+        GDUser.Role[] expectedRoles = new GDUser.Role[] {GDUser.Role.ADMIN, GDUser.Role.HS_LEAD, GDUser.Role.HS_AGENT, GDUser.Role.SUSPEND_AUTH};
+        Assert.assertArrayEquals(expectedRoles, VmSupportUserResource.class.getAnnotation(RequiresRole.class).roles());
     }
 
     @Test
@@ -128,14 +129,6 @@ public class VmSupportUserResourceTest {
         }
 
         Mockito.verify(vmResource, Mockito.times(3)).getVm(Mockito.any(UUID.class));
-    }
-
-    // remove support user tests
-
-    @Test
-    public void testRemoveSupportUserStaffOnly() throws NoSuchMethodException {
-        Method method = VmSupportUserResource.class.getMethod("removeSupportUsers", UUID.class, String.class);
-        Assert.assertTrue(method.isAnnotationPresent(StaffOnly.class));
     }
 
     @Test

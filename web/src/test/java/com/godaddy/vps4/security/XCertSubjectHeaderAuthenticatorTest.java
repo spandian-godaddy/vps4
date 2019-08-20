@@ -28,7 +28,6 @@ public class XCertSubjectHeaderAuthenticatorTest {
 
         GDUser user = authenticator.authenticate(request);
         Assert.assertNotNull(user);
-        Assert.assertEquals(true, user.isStaff());
         Assert.assertEquals(Role.ADMIN, user.role());
         Assert.assertNull(user.getShopperId());
     }
@@ -44,7 +43,6 @@ public class XCertSubjectHeaderAuthenticatorTest {
 
         GDUser user = authenticator.authenticate(request);
         Assert.assertNotNull(user);
-        Assert.assertEquals(true, user.isStaff());
         Assert.assertEquals(Role.ADMIN, user.role());
         Assert.assertNull(user.getShopperId());
     }
@@ -60,7 +58,6 @@ public class XCertSubjectHeaderAuthenticatorTest {
 
         GDUser user = authenticator.authenticate(request);
         Assert.assertNotNull(user);
-        Assert.assertEquals(true, user.isStaff());
         Assert.assertEquals(Role.ADMIN, user.role());
         Assert.assertNull(user.getShopperId());
     }
@@ -78,7 +75,6 @@ public class XCertSubjectHeaderAuthenticatorTest {
         GDUser user = authenticator.authenticate(request);
 
         Assert.assertNotNull(user);
-        Assert.assertEquals(true, user.isStaff());
         Assert.assertEquals(Role.ADMIN, user.role());
         Assert.assertEquals("12345", user.getShopperId());
     }

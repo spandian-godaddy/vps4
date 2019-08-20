@@ -4,7 +4,6 @@ import javax.ws.rs.container.DynamicFeature;
 import javax.ws.rs.container.ResourceInfo;
 import javax.ws.rs.core.FeatureContext;
 import javax.ws.rs.ext.Provider;
-import java.lang.reflect.Method;
 
 import com.godaddy.vps4.web.security.GDUser.Role;
 import com.google.inject.Inject;
@@ -26,10 +25,8 @@ public class RequiresRoleFeature implements DynamicFeature {
 
     @Override
     public void configure(ResourceInfo resourceInfo, FeatureContext featureContext) {
-        Method resourceMethod = resourceInfo.getResourceMethod();
-
-        if (resourceMethod.isAnnotationPresent(RequiresRole.class)) {
-            RequiresRoleFilter filter = getRequiresRoleFilter(resourceMethod);
+        if (hasRequiresRoleAnnotation(resourceInfo)) {
+            RequiresRoleFilter filter = getRequiresRoleFilter(resourceInfo);
             logger.info(String.format("Filter %s attached to resource class/method: [%s/%s]",
                 filter.getClass().getSimpleName(), resourceInfo.getResourceClass().getSimpleName(),
                 resourceInfo.getResourceMethod().getName()));
@@ -38,8 +35,16 @@ public class RequiresRoleFeature implements DynamicFeature {
         }
     }
 
-    private RequiresRoleFilter getRequiresRoleFilter(Method resourceMethod) {
-        Role[] roles = resourceMethod.getAnnotation(RequiresRole.class).roles();
+    private boolean hasRequiresRoleAnnotation(ResourceInfo resourceInfo) {
+        return resourceInfo.getResourceMethod().isAnnotationPresent(RequiresRole.class)
+            || resourceInfo.getResourceClass().isAnnotationPresent(RequiresRole.class);
+    }
+
+    private RequiresRoleFilter getRequiresRoleFilter(ResourceInfo resourceInfo) {
+        Role[] roles = resourceInfo.getResourceMethod().isAnnotationPresent(RequiresRole.class)
+                ? resourceInfo.getResourceMethod().getAnnotation(RequiresRole.class).roles() // use the annotation on the resource method if present
+                : resourceInfo.getResourceClass().getAnnotation(RequiresRole.class).roles(); // else use the annotation on the resource class
+
         RequiresRoleFilter filter = this.injector.getInstance(RequiresRoleFilter.class);
         filter.setReqdRoles(roles);
         return filter;

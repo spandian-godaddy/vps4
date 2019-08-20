@@ -30,8 +30,8 @@ import com.godaddy.vps4.vm.DataCenterService;
 import com.godaddy.vps4.web.Vps4NoShopperException;
 import com.godaddy.vps4.web.credit.CreditResource;
 import com.godaddy.vps4.web.credit.CreditResource.CreateCreditRequest;
-import com.godaddy.vps4.web.security.AdminOnly;
 import com.godaddy.vps4.web.security.GDUser;
+import com.godaddy.vps4.web.security.RequiresRole;
 import com.google.inject.AbstractModule;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
@@ -151,10 +151,11 @@ public class CreditResourceTest {
     }
 
     @Test
-    public void testCreateCreditAdminOnly() {
+    public void testCreateCreditRequiresAdmin() {
         try {
             Method method = CreditResource.class.getMethod("createCredit", CreateCreditRequest.class);
-            Assert.assertTrue(method.isAnnotationPresent(AdminOnly.class));
+            GDUser.Role[] expectedRoles = new GDUser.Role[] {GDUser.Role.ADMIN};
+            Assert.assertArrayEquals(expectedRoles, method.getAnnotation(RequiresRole.class).roles());
         }
         catch(NoSuchMethodException ex) {
             Assert.fail();
@@ -183,10 +184,11 @@ public class CreditResourceTest {
     }
 
     @Test
-    public void testReleaseCreditAdminOnly() {
+    public void testReleaseCreditRequiresAdmin() {
         try {
             Method method = CreditResource.class.getMethod("releaseCredit", UUID.class);
-            assertTrue(method.isAnnotationPresent(AdminOnly.class));
+            GDUser.Role[] expectedRoles = new GDUser.Role[] {GDUser.Role.ADMIN};
+            Assert.assertArrayEquals(expectedRoles, method.getAnnotation(RequiresRole.class).roles());
         }
         catch(NoSuchMethodException ex) {
             Assert.fail();

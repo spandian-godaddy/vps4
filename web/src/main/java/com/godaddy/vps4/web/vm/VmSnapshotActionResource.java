@@ -3,9 +3,9 @@ package com.godaddy.vps4.web.vm;
 import com.godaddy.vps4.security.PrivilegeService;
 import com.godaddy.vps4.security.Vps4UserService;
 import com.godaddy.vps4.web.Vps4Api;
-import com.godaddy.vps4.web.security.AdminOnly;
 import com.godaddy.vps4.web.security.GDUser;
 import com.godaddy.vps4.snapshot.SnapshotAction;
+import com.godaddy.vps4.web.security.RequiresRole;
 import com.godaddy.vps4.web.security.TemporarilyDisabled;
 import com.godaddy.vps4.web.snapshot.SnapshotActionResource;
 import com.godaddy.vps4.web.snapshot.SnapshotActionWithDetails;
@@ -60,7 +60,7 @@ public class VmSnapshotActionResource {
         return snapshotActionResource.getSnapshotAction(snapshotId, actionId);
     }
 
-    @AdminOnly
+    @RequiresRole(roles = {GDUser.Role.ADMIN})
     @GET
     @Path("/{vmId}/snapshots/{snapshotId}/actions/{actionId}/withDetails")
     public SnapshotActionWithDetails getSnapshotActionWithDetails(
@@ -77,7 +77,7 @@ public class VmSnapshotActionResource {
         }
     }
 
-    @AdminOnly
+    @RequiresRole(roles = {GDUser.Role.ADMIN})
     @TemporarilyDisabled
     @POST
     @Path("/{vmId}/snapshots/{snapshotId}/actions/{actionId}/cancel")

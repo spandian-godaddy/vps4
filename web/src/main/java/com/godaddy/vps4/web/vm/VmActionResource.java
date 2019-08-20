@@ -39,7 +39,6 @@ import com.godaddy.vps4.vm.VmAction;
 import com.godaddy.vps4.web.PaginatedResult;
 import com.godaddy.vps4.web.Vps4Api;
 import com.godaddy.vps4.web.Vps4Exception;
-import com.godaddy.vps4.web.security.AdminOnly;
 import com.godaddy.vps4.web.security.GDUser;
 import com.godaddy.vps4.web.security.GDUser.Role;
 import com.godaddy.vps4.web.security.RequiresRole;
@@ -159,7 +158,7 @@ public class VmActionResource {
         return new VmActionWithDetails(action, commandState, user.isEmployee());
     }
 
-    @AdminOnly
+    @RequiresRole(roles = {GDUser.Role.ADMIN})
     @POST
     @Path("{vmId}/actions/{actionId}/cancel")
     public void cancelVmAction(@PathParam("vmId") UUID vmId, @PathParam("actionId") long actionId) {

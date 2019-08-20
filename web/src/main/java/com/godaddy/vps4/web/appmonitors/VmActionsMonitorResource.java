@@ -47,6 +47,7 @@ import io.swagger.annotations.ApiParam;
 @Path("/api/appmonitors")
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
+@RequiresRole(roles = {GDUser.Role.ADMIN})
 public class VmActionsMonitorResource {
 
     private final MonitorService monitorService;
@@ -82,7 +83,6 @@ public class VmActionsMonitorResource {
         return (resultSubset != null) ? mapActionsToVmActionData(resultSubset.results) : Collections.emptyList();
     }
 
-    @RequiresRole(roles = {GDUser.Role.ADMIN})
     @GET
     @Path("/pending/provision")
     @ApiOperation(value = "Find all VM id's that are pending provisioning for longer than m minutes, default 60 minutes",
@@ -91,7 +91,6 @@ public class VmActionsMonitorResource {
         return filterOverdueInProgressActionsByType(thresholdInMinutes, ActionType.CREATE_VM);
     }
 
-    @RequiresRole(roles = {GDUser.Role.ADMIN})
     @GET
     @Path("/pending/startvm")
     @ApiOperation(value = "Find all VM id's that are pending start vm action for longer than m minutes, default 15 minutes",
@@ -100,7 +99,6 @@ public class VmActionsMonitorResource {
         return filterOverdueInProgressActionsByType(thresholdInMinutes, ActionType.START_VM);
     }
 
-    @RequiresRole(roles = {GDUser.Role.ADMIN})
     @GET
     @Path("/pending/stopvm")
     @ApiOperation(value = "Find all VM id's that are pending stop vm action for longer than m minutes, default 15 minutes",
@@ -109,7 +107,6 @@ public class VmActionsMonitorResource {
         return filterOverdueInProgressActionsByType(thresholdInMinutes, ActionType.STOP_VM);
     }
 
-    @RequiresRole(roles = {GDUser.Role.ADMIN})
     @GET
     @Path("/pending/restartvm")
     @ApiOperation(value = "Find all VM id's that are pending restart vm action for longer than m minutes, default 15 minutes",
@@ -133,7 +130,6 @@ public class VmActionsMonitorResource {
         return actionDataList;
     }
 
-    @RequiresRole(roles = {GDUser.Role.ADMIN})
     @GET
     @Path("/pending/backupactions")
     @ApiOperation(value = "Find all snapshot ids that are pending backup vm action for longer than m minutes, default 2 hours",
@@ -142,7 +138,6 @@ public class VmActionsMonitorResource {
         return monitorService.getVmsBySnapshotActions(thresholdInMinutes, ActionStatus.IN_PROGRESS, ActionStatus.NEW, ActionStatus.ERROR);
     }
 
-    @RequiresRole(roles = {GDUser.Role.ADMIN})
     @GET
     @Path("/pending/restorevm")
     @ApiOperation(value = "Find all VM id's that are pending restore vm action for longer than m minutes, default 2 hours",
@@ -151,7 +146,6 @@ public class VmActionsMonitorResource {
         return filterOverdueInProgressActionsByType(thresholdInMinutes, ActionType.RESTORE_VM);
     }
 
-    @RequiresRole(roles = {GDUser.Role.ADMIN})
     @GET
     @Path("/pending/newactions")
     @ApiOperation(value = "Find all vm actions pending in new status for longer than m minutes, default 2 hours",
@@ -161,7 +155,6 @@ public class VmActionsMonitorResource {
     }
 
 
-    @RequiresRole(roles = {GDUser.Role.ADMIN})
     @GET
     @Path("/pending/allactions")
     @ApiOperation(value = "Find all vm actions in pending 'in_progress' status for longer than m minutes, default 2 hours",
@@ -170,7 +163,6 @@ public class VmActionsMonitorResource {
         return filterOverdueActionsByStatus(thresholdInMinutes, ActionStatus.IN_PROGRESS);
     }
 
-    @RequiresRole(roles = {GDUser.Role.ADMIN})
     @GET
     @Path("/missing_backup_jobs")
     @ApiOperation(value = "Find all active vms that do not have a backup job id, meaning scheduler create job failed",
@@ -179,7 +171,6 @@ public class VmActionsMonitorResource {
         return monitorService.getVmsFilteredByNullBackupJob();
     }
 
-    @RequiresRole(roles = {GDUser.Role.ADMIN})
     @GET
     @Path("/failedActionsPercent")
     public List<ActionTypeErrorData> getFailedActionsForAllTypes(
@@ -214,28 +205,24 @@ public class VmActionsMonitorResource {
         return accounts.size();
     }
 
-    @RequiresRole(roles = { GDUser.Role.ADMIN })
     @POST
     @Path("/checkpoints/{actionType}")
     public MonitoringCheckpoint setMonitoringCheckpoint(@PathParam("actionType") ActionType actionType) {
          return monitorService.setMonitoringCheckpoint(actionType);
     }
 
-    @RequiresRole(roles = {GDUser.Role.ADMIN})
     @GET
     @Path("/checkpoints/{actionType}")
     public MonitoringCheckpoint getMonitoringCheckpoint(@PathParam("actionType") ActionType actionType) {
         return monitorService.getMonitoringCheckpoint(actionType);
     }
 
-    @RequiresRole(roles = {GDUser.Role.ADMIN})
     @GET
     @Path("/checkpoints")
     public List<MonitoringCheckpoint> getMonitoringCheckpoints() {
         return monitorService.getMonitoringCheckpoints();
     }
 
-    @RequiresRole(roles = {GDUser.Role.ADMIN})
     @DELETE
     @Path("/checkpoints/{actionType}")
     public void deleteMonitoringCheckpoint(@PathParam("actionType") ActionType actionType) {

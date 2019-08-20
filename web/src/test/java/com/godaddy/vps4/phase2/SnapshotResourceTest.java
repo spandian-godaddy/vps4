@@ -37,8 +37,8 @@ import com.godaddy.vps4.vm.VirtualMachine;
 import com.godaddy.vps4.vm.VmModule;
 import com.godaddy.vps4.web.Vps4Exception;
 import com.godaddy.vps4.web.Vps4NoShopperException;
-import com.godaddy.vps4.web.security.AdminOnly;
 import com.godaddy.vps4.web.security.GDUser;
+import com.godaddy.vps4.web.security.RequiresRole;
 import com.godaddy.vps4.web.snapshot.SnapshotResource;
 import com.godaddy.vps4.web.snapshot.SnapshotResource.SnapshotRenameRequest;
 import com.godaddy.vps4.web.snapshot.SnapshotResource.SnapshotRequest;
@@ -240,12 +240,8 @@ public class SnapshotResourceTest {
 
     @Test
     public void testShopperGetSnapshotWithDetails() {
-        try {
-            Method method = SnapshotResource.class.getMethod("getSnapshotWithDetails", UUID.class);
-            Assert.assertTrue(method.isAnnotationPresent(AdminOnly.class));
-        } catch (NoSuchMethodException ex) {
-            Assert.fail();
-        }
+        GDUser.Role[] expectedRoles = new GDUser.Role[] {GDUser.Role.ADMIN};
+        Assert.assertArrayEquals(expectedRoles, SnapshotResource.class.getAnnotation(RequiresRole.class).roles());
     }
 
     @Test

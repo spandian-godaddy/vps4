@@ -19,8 +19,8 @@ import com.godaddy.vps4.vm.VirtualMachine;
 import com.godaddy.vps4.vm.VirtualMachineService;
 import com.godaddy.vps4.web.Vps4Api;
 import com.godaddy.vps4.web.Vps4Exception;
-import com.godaddy.vps4.web.security.AdminOnly;
 import com.godaddy.vps4.web.security.GDUser;
+import com.godaddy.vps4.web.security.RequiresRole;
 import com.godaddy.vps4.web.util.Commands;
 import com.godaddy.vps4.web.util.RequestValidation;
 
@@ -34,7 +34,7 @@ import io.swagger.annotations.ApiParam;
 @Path("/api/vms")
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
-
+@RequiresRole(roles = {GDUser.Role.ADMIN})
 public class VmMessagingResource {
 
     private final VirtualMachineService virtualMachineService;
@@ -51,7 +51,7 @@ public class VmMessagingResource {
         this.user = user;
     }
 
-    @AdminOnly
+
     @POST
     @Path("/{vmId}/messaging/patching")
     public void messagePatching(@PathParam("vmId") UUID vmId,
@@ -94,7 +94,6 @@ public class VmMessagingResource {
         return startTimeInstant;
     }
 
-    @AdminOnly
     @POST
     @Path("/{vmId}/messaging/scheduledMaintenance")
     public void messageScheduledMaintenance(@PathParam("vmId") UUID vmId,
@@ -105,7 +104,6 @@ public class VmMessagingResource {
         Commands.execute(commandService, "SendUnexpectedButScheduledMaintenanceEmail", request);
     }
 
-    @AdminOnly
     @POST
     @Path("/{vmId}/messaging/failover")
     public void messageFailover(@PathParam("vmId") UUID vmId) {
@@ -126,7 +124,6 @@ public class VmMessagingResource {
 		return shopperId;
 	}
 
-	@AdminOnly
     @POST
     @Path("/{vmId}/messaging/failoverComplete")
     public void messageFailoverComplete(@PathParam("vmId") UUID vmId) {

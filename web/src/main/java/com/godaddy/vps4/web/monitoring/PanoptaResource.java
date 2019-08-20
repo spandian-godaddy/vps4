@@ -43,6 +43,7 @@ import io.swagger.annotations.ApiResponses;
 @Path("/api/panopta")
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
+@RequiresRole(roles = {GDUser.Role.ADMIN})
 public class PanoptaResource {
 
     private static final Logger logger = LoggerFactory.getLogger(PanoptaResource.class);
@@ -68,7 +69,6 @@ public class PanoptaResource {
     @Path("/customers")
     @ApiOperation(value = "Create a panopta customer for vps4.",
             notes = "Create a panopta customer for vps4.")
-    @RequiresRole(roles = {GDUser.Role.ADMIN})
     public PanoptaCustomer createCustomer(CreateCustomerRequest request) {
 
         if (request == null || StringUtils.isBlank(request.vmId)) {
@@ -105,7 +105,6 @@ public class PanoptaResource {
     @ApiResponses(value = {
             @ApiResponse(code = 404, message = "Could not delete customer, or customer does not exist.")
     })
-    @RequiresRole(roles = {GDUser.Role.ADMIN})
     public void deleteCustomer(@PathParam("vmId") UUID vmId) {
         try {
             panoptaService.deleteCustomer(
@@ -126,7 +125,6 @@ public class PanoptaResource {
     @ApiResponses(value = {
             @ApiResponse(code = 404, message = "Could not locate server in panopta, or server does not exist.")
     })
-    @RequiresRole(roles = {GDUser.Role.ADMIN})
     public PanoptaServer getServer(@PathParam("vmId") UUID vmId) {
         try {
             return panoptaService.getServer(config.get("panopta.api.partner.customer.key.prefix") + vmId);

@@ -43,7 +43,6 @@ import com.godaddy.vps4.vm.VirtualMachine;
 import com.godaddy.vps4.vm.VmAction;
 import com.godaddy.vps4.vm.VmModule;
 import com.godaddy.vps4.web.Vps4Exception;
-import com.godaddy.vps4.web.security.AdminOnly;
 import com.godaddy.vps4.web.security.GDUser;
 import com.godaddy.vps4.web.security.GDUser.Role;
 import com.godaddy.vps4.web.security.RequiresRole;
@@ -275,7 +274,7 @@ public class VmActionResourceTest {
     }
 
     @Test
-    public void testGetActionDetailsAdminOnly() {
+    public void testGetActionDetailsRequiresAdmin() {
         try {
             Method method = VmActionResource.class.getMethod("getVmActionWithDetails", UUID.class, long.class);
             Assert.assertTrue(method.isAnnotationPresent(RequiresRole.class));
@@ -391,7 +390,8 @@ public class VmActionResourceTest {
         VmActionResource actionResource = getVmActionResource();
         try {
             Method m = actionResource.getClass().getMethod("cancelVmAction", UUID.class, long.class);
-            Assert.assertTrue(m.isAnnotationPresent(AdminOnly.class));
+            GDUser.Role[] expectedRoles = new GDUser.Role[] {GDUser.Role.ADMIN};
+            Assert.assertArrayEquals(expectedRoles, m.getAnnotation(RequiresRole.class).roles());
         }
         catch (NoSuchMethodException e) {
             Assert.fail("Cancel action should only be available to an admin");
