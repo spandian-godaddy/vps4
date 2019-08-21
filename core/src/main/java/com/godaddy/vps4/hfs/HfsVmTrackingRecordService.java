@@ -5,19 +5,26 @@ import java.util.UUID;
 
 public interface HfsVmTrackingRecordService {
 
+    static enum Status {
+        UNUSED, CANCELED, REQUESTED
+    }
+
+    static class ListFilters {
+        public UUID vmId;
+        public long hfsVmId;
+        public String sgid;
+        public Status byStatus;
+    }
+
     HfsVmTrackingRecord get(long hfsVmId);
 
     HfsVmTrackingRecord create(long hfsVmId, UUID vmId, UUID orionGuid);
-    
+
     void setCreated(long hfsVmId);
 
     void setCanceled(long hfsVmId);
-    
+
     void setDestroyed(long hfsVmId);
 
-    List<HfsVmTrackingRecord> getCanceled();
-
-    List<HfsVmTrackingRecord> getUnused();
-
-    List<HfsVmTrackingRecord> getRequested();
+    List<HfsVmTrackingRecord> getTrackingRecords(ListFilters listFilters);
 }

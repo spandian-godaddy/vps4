@@ -1,17 +1,19 @@
 package com.godaddy.vps4.hfs.jdbc;
 
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Timestamp;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.UUID;
+
+import javax.inject.Inject;
+import javax.sql.DataSource;
+
 import com.godaddy.hfs.jdbc.Sql;
 import com.godaddy.vps4.hfs.HfsVmTrackingRecord;
 import com.godaddy.vps4.hfs.HfsVmTrackingRecordService;
 import com.godaddy.vps4.util.TimestampUtils;
-
-import javax.inject.Inject;
-import javax.sql.DataSource;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.sql.Timestamp;
-import java.util.List;
-import java.util.UUID;
 
 public class JdbcHfsVmTrackingRecordService implements HfsVmTrackingRecordService {
 
@@ -24,7 +26,9 @@ public class JdbcHfsVmTrackingRecordService implements HfsVmTrackingRecordServic
 
     @Override
     public HfsVmTrackingRecord get(long hfsVmId) {
-        return Sql.with(dataSource).exec("SELECT * FROM hfs_vm_tracking_record WHERE hfs_vm_id=?",
+        return Sql.with(dataSource).exec("SELECT hv.*, p.vhfs_sgid FROM hfs_vm_tracking_record hv " +
+                        "JOIN virtual_machine v ON hv.vm_id = v.vm_id " +
+                        " JOIN project p ON v.project_id = p.project_id WHERE hv.hfs_vm_id=?",
                 Sql.nextOrNull(this::mapHfsVm), hfsVmId);
     }
 
@@ -40,6 +44,7 @@ public class JdbcHfsVmTrackingRecordService implements HfsVmTrackingRecordServic
         hfsVm.hfsVmId = rs.getLong("hfs_vm_id");
         hfsVm.vmId = UUID.fromString(rs.getString("vm_id"));
         hfsVm.orionGuid = UUID.fromString(rs.getString("orion_guid"));
+        hfsVm.sgid = rs.getString("vhfs_sgid");
         hfsVm.requested = rs.getTimestamp("requested", TimestampUtils.utcCalendar).toInstant();
         Timestamp createdTs = rs.getTimestamp("created", TimestampUtils.utcCalendar);
         hfsVm.created = (createdTs == null) ? null : createdTs.toInstant();
@@ -69,26 +74,45 @@ public class JdbcHfsVmTrackingRecordService implements HfsVmTrackingRecordServic
     }
 
     @Override
-    public List<HfsVmTrackingRecord> getCanceled() {
-        return Sql.with(dataSource).exec(
-                "select * from hfs_vm_tracking_record where canceled is not null and destroyed is null",
-                Sql.listOf(this::mapHfsVm));
-    }
+    public List<HfsVmTrackingRecord> getTrackingRecords(ListFilters listFilters) {
+        StringBuilder sqlQuery = new StringBuilder();
+        List<Object> args = new ArrayList<>();
 
-    @Override
-    public List<HfsVmTrackingRecord> getUnused() {
-        return Sql.with(dataSource).exec(
-                "select hfs.* from hfs_vm_tracking_record hfs left join virtual_machine vm on hfs.vm_id = vm.vm_id " +
-                        "where hfs.hfs_vm_id <> vm.hfs_vm_id and hfs.created is not null and hfs.canceled is null " +
-                        "and hfs.destroyed is null",
-                Sql.listOf(this::mapHfsVm));
-    }
+        sqlQuery.append(
+                "SELECT hv.*, p.vhfs_sgid FROM hfs_vm_tracking_record hv JOIN virtual_machine v ON hv.vm_id = v.vm_id" +
+                        " JOIN project p ON v.project_id = p.project_id WHERE 1=1 ");
 
-    @Override
-    public List<HfsVmTrackingRecord> getRequested() {
-        return Sql.with(dataSource).exec(
-                "select * from hfs_vm_tracking_record where requested is not null and created is null " +
-                        "and canceled is null and destroyed is null",
-                Sql.listOf(this::mapHfsVm));
+        if (listFilters.sgid != null) {
+            sqlQuery.append(" AND p.vhfs_sgid = ?");
+            args.add(listFilters.sgid);
+        }
+
+        if (listFilters.vmId != null) {
+            sqlQuery.append(" AND v.vm_id = ?");
+            args.add(listFilters.vmId);
+        }
+
+        if (listFilters.hfsVmId != 0) {
+            sqlQuery.append(" AND hv.hfs_vm_id = ?");
+            args.add(listFilters.hfsVmId);
+        }
+
+        if (listFilters.byStatus != null) {
+            switch (listFilters.byStatus) {
+                case UNUSED:
+                    sqlQuery.append(" AND hv.hfs_vm_id <> v.hfs_vm_id AND hv.created IS NOT null" +
+                            " AND hv.canceled IS null AND hv.destroyed IS null");
+                    break;
+                case CANCELED:
+                    sqlQuery.append(" AND hv.canceled IS NOT null AND hv.destroyed IS null");
+                    break;
+                case REQUESTED:
+                    sqlQuery.append(" AND hv.requested IS NOT null AND hv.created IS null " +
+                            " AND hv.canceled IS null AND hv.destroyed IS null");
+                    break;
+            }
+        }
+
+        return Sql.with(dataSource).exec(sqlQuery.toString(), Sql.listOf(this::mapHfsVm), args.toArray());
     }
 }
