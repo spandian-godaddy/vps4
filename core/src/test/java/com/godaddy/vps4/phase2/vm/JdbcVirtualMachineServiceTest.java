@@ -324,12 +324,13 @@ public class JdbcVirtualMachineServiceTest {
         VirtualMachine expectedVm = SqlTestData.insertTestVm(orionGuid, dataSource);
         virtualMachines.add(expectedVm);
 
-        Instant before = Instant.now();
+        Instant maxPsqlTimestamp = expectedVm.canceled;
         virtualMachineService.setVmZombie(expectedVm.vmId);
-        Instant after = Instant.now().plusSeconds(120);
         VirtualMachine actualVm = virtualMachineService.getVirtualMachine(expectedVm.vmId);
 
-        Assert.assertTrue(before.isBefore(actualVm.canceled) && after.isAfter(actualVm.canceled));
+        Assert.assertTrue("VM Canceled not set properly", actualVm.canceled.isBefore(maxPsqlTimestamp));
+        Assert.assertTrue("VM Canceled must be after Valid On", actualVm.validOn.isBefore(actualVm.canceled));
+        Assert.assertTrue("VM Canceled is after Valid Until", actualVm.canceled.isBefore(actualVm.validUntil));
     }
 
     @Test
