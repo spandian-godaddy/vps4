@@ -77,12 +77,6 @@ private void cleanupEnvironment() {
     }
 }
 
-private void preDeployToEnv(String targetEnv, String version) {
-    echo "targetEnv: ${targetEnv}, version: ${version}"
-    shell("chmod +x ./cicd/pre_deploy.sh ")
-    shell("./cicd/pre_deploy.sh -e ${targetEnv} -v ${version}")
-}
-
 private void productStampZk(String targetEnv, String rpmName, String product) {
     echo "targetEnv: ${targetEnv}, rpmName: ${rpmName}, product: ${product}"
     shell("/usr/bin/python ./cicd/vps4_zk_cicd.py -e ${targetEnv} -n ${rpmName} -p ${product}")
