@@ -34,7 +34,7 @@ public class DestroyVm implements Command<Long, VmAction> {
         }
 
         VmAction hfsAction = context.execute("RequestDestroy", ctx -> vmService.destroyVm(hfsVmId), VmAction.class);
-        hfsTrackingService.setCanceled(hfsVmId);
+        hfsTrackingService.setCanceled(hfsVmId, hfsAction.vmActionId);
 
         context.execute(WaitForAndRecordVmAction.class, hfsAction);
 

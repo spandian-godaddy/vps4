@@ -17,6 +17,7 @@ import java.util.stream.Collectors;
 
 import javax.sql.DataSource;
 
+import org.json.simple.JSONObject;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -26,9 +27,12 @@ import com.godaddy.vps4.hfs.HfsVmTrackingRecordService;
 import com.godaddy.vps4.hfs.jdbc.JdbcHfsVmTrackingRecordService;
 import com.godaddy.vps4.jdbc.DatabaseModule;
 import com.godaddy.vps4.phase2.SqlTestData;
+import com.godaddy.vps4.vm.ActionService;
+import com.godaddy.vps4.vm.ActionType;
 import com.godaddy.vps4.vm.VirtualMachine;
 import com.godaddy.vps4.vm.VirtualMachineService;
 import com.godaddy.vps4.vm.jdbc.JdbcVirtualMachineService;
+import com.godaddy.vps4.vm.jdbc.JdbcVmActionService;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
 
@@ -38,14 +42,31 @@ public class JdbcHfsVmTrackingRecordServiceTest {
     DataSource dataSource = injector.getInstance(DataSource.class);
     HfsVmTrackingRecordService hfsVmService = new JdbcHfsVmTrackingRecordService(dataSource);
     VirtualMachineService virtualMachineService = new JdbcVirtualMachineService(dataSource);
+    ActionService actionService = new JdbcVmActionService(dataSource);
     VirtualMachine vmOne, vmTwo, vmThree;
     HfsVmTrackingRecord hfs11, hfs12, hfs13, hfs21, hfs22, hfs23, hfs31, hfs32, hfs33;
+    long vmOneCreateActionId, vmTwoCreateActionId, vmThreeCreateActionId,
+            vmOneCancelActionId, vmTwoCancelActionId, vmThreeCancelActionId,
+            vmOneDestroyctionId, vmTwoDestroyActionId, vmThreeDestroyActionId;
 
     @Before
     public void setup() {
         vmOne = SqlTestData.insertTestVm(UUID.randomUUID(), dataSource);
         vmTwo = SqlTestData.insertTestVm(UUID.randomUUID(), dataSource);
         vmThree = SqlTestData.insertTestVm(UUID.randomUUID(), dataSource);
+
+        vmOneCreateActionId = actionService.createAction(vmOne.vmId, ActionType.CREATE_VM, new JSONObject().toJSONString(), "username");
+        vmTwoCreateActionId = actionService.createAction(vmTwo.vmId, ActionType.CREATE_VM, new JSONObject().toJSONString(), "username");
+        vmThreeCreateActionId = actionService.createAction(vmThree.vmId, ActionType.CREATE_VM, new JSONObject().toJSONString(), "username");
+
+        vmOneCancelActionId= actionService.createAction(vmOne.vmId, ActionType.CANCEL_ACCOUNT, new JSONObject().toJSONString(), "username");
+        vmTwoCancelActionId= actionService.createAction(vmTwo.vmId, ActionType.CANCEL_ACCOUNT, new JSONObject().toJSONString(), "username");
+        vmThreeCancelActionId = actionService.createAction(vmThree.vmId, ActionType.CANCEL_ACCOUNT, new JSONObject().toJSONString(), "username");
+
+        vmOneDestroyctionId = actionService.createAction(vmOne.vmId, ActionType.DESTROY_VM, new JSONObject().toJSONString(), "username");
+        vmTwoDestroyActionId = actionService.createAction(vmTwo.vmId, ActionType.DESTROY_VM, new JSONObject().toJSONString(), "username");
+        vmThreeDestroyActionId = actionService.createAction(vmThree.vmId, ActionType.DESTROY_VM, new JSONObject().toJSONString(), "username");
+
     }
 
     @After
@@ -79,42 +100,49 @@ public class JdbcHfsVmTrackingRecordServiceTest {
         assertNull(hfsVm.created);
         assertNull(hfsVm.canceled);
         assertNull(hfsVm.destroyed);
+        assertEquals(0, hfsVm.createActionId);
+        assertEquals(0, hfsVm.cancelActionId);
+        assertEquals(0, hfsVm.destroyActionId);
     }
 
     @Test
     public void testSetCreated() {
         HfsVmTrackingRecord hfsVm = hfsVmService.create(1001, vmOne.vmId, vmOne.orionGuid);
-        hfsVmService.setCreated(hfsVm.hfsVmId);
+        hfsVmService.setCreated(hfsVm.hfsVmId, vmOneCreateActionId);
         HfsVmTrackingRecord hfsVm2 = hfsVmService.get(hfsVm.hfsVmId);
         assertNotNull(hfsVm2.created);
+        assertEquals(vmOneCreateActionId, hfsVm2.createActionId);
     }
 
     @Test
     public void testSetCanceled() {
         HfsVmTrackingRecord hfsVm = hfsVmService.create(1001, vmOne.vmId, vmOne.orionGuid);
-        hfsVmService.setCanceled(hfsVm.hfsVmId);
+        hfsVmService.setCanceled(hfsVm.hfsVmId, vmOneCancelActionId);
         hfsVm = hfsVmService.get(hfsVm.hfsVmId);
         assertNotNull(hfsVm.canceled);
+        assertEquals(vmOneCancelActionId, hfsVm.cancelActionId);
     }
 
     @Test
     public void testSetDestroyed() {
         HfsVmTrackingRecord hfsVm = hfsVmService.create(1001, vmOne.vmId, vmOne.orionGuid);
-        hfsVmService.setDestroyed(hfsVm.hfsVmId);
+        hfsVmService.setDestroyed(hfsVm.hfsVmId, vmOneDestroyctionId);
         hfsVm = hfsVmService.get(hfsVm.hfsVmId);
         assertNotNull(hfsVm.destroyed);
+        assertEquals(vmOneDestroyctionId, hfsVm.destroyActionId);
     }
 
     @Test
     public void getCanceledHfsVms() {
         createHfsTrackingRecords();
-        hfsVmService.setCanceled(hfs11.hfsVmId);
-        hfsVmService.setCanceled(hfs21.hfsVmId);
-        hfsVmService.setCanceled(hfs31.hfsVmId);
+
+        hfsVmService.setCanceled(hfs11.hfsVmId, vmOneCancelActionId);
+        hfsVmService.setCanceled(hfs21.hfsVmId, vmTwoCancelActionId);
+        hfsVmService.setCanceled(hfs31.hfsVmId, vmThreeCancelActionId);
 
         // This entry shouldn't be included as it has also been marked as destroyed
-        hfsVmService.setCanceled(hfs32.hfsVmId);
-        hfsVmService.setDestroyed(hfs32.hfsVmId);
+        hfsVmService.setCanceled(hfs32.hfsVmId, vmThreeCancelActionId);
+        hfsVmService.setDestroyed(hfs32.hfsVmId, vmThreeDestroyActionId);
 
         Long[] expected = {hfs11.hfsVmId, hfs21.hfsVmId, hfs31.hfsVmId};
         Long[] notExpected = {hfs12.hfsVmId, hfs13.hfsVmId, hfs22.hfsVmId, hfs23.hfsVmId, hfs32.hfsVmId, hfs33.hfsVmId};
@@ -130,11 +158,11 @@ public class JdbcHfsVmTrackingRecordServiceTest {
     @Test
     public void getUnusedHfsVms() {
         createHfsTrackingRecords();
-        hfsVmService.setCreated(hfs11.hfsVmId);
-        hfsVmService.setCreated(hfs12.hfsVmId);
+        hfsVmService.setCreated(hfs11.hfsVmId, vmOneCreateActionId);
+        hfsVmService.setCreated(hfs12.hfsVmId, vmOneCreateActionId);
 
         // This hfs vm is now the official vm associated with the vps4 vm
-        hfsVmService.setCreated(hfs13.hfsVmId);
+        hfsVmService.setCreated(hfs13.hfsVmId, vmOneCreateActionId);
         virtualMachineService.addHfsVmIdToVirtualMachine(vmOne.vmId, hfs13.hfsVmId);
 
         Long[] expected = {hfs11.hfsVmId, hfs12.hfsVmId};
@@ -152,9 +180,9 @@ public class JdbcHfsVmTrackingRecordServiceTest {
     @Test
     public void getRequestedHfsVms() {
         createHfsTrackingRecords();
-        hfsVmService.setCreated(hfs11.hfsVmId);
-        hfsVmService.setCreated(hfs21.hfsVmId);
-        hfsVmService.setCreated(hfs31.hfsVmId);
+        hfsVmService.setCreated(hfs11.hfsVmId, vmOneCreateActionId);
+        hfsVmService.setCreated(hfs21.hfsVmId, vmTwoCreateActionId);
+        hfsVmService.setCreated(hfs31.hfsVmId, vmThreeCreateActionId);
 
         Long[] notExpected = {hfs11.hfsVmId, hfs21.hfsVmId, hfs31.hfsVmId};
         Long[] expected = {hfs12.hfsVmId, hfs13.hfsVmId, hfs22.hfsVmId, hfs23.hfsVmId, hfs32.hfsVmId, hfs33.hfsVmId};
@@ -202,9 +230,9 @@ public class JdbcHfsVmTrackingRecordServiceTest {
     public void getVmsByStatusAndVps4Vm() {
         createHfsTrackingRecords();
 
-        hfsVmService.setCanceled(hfs11.hfsVmId);
-        hfsVmService.setCanceled(hfs12.hfsVmId);
-        hfsVmService.setCanceled(hfs21.hfsVmId);
+        hfsVmService.setCanceled(hfs11.hfsVmId, vmOneCancelActionId);
+        hfsVmService.setCanceled(hfs12.hfsVmId, vmOneCancelActionId);
+        hfsVmService.setCanceled(hfs21.hfsVmId, vmTwoCancelActionId);
 
         Long[] expected = {hfs11.hfsVmId, hfs12.hfsVmId};
         Long[] notExpected = {hfs13.hfsVmId, hfs21.hfsVmId, hfs22.hfsVmId, hfs23.hfsVmId, hfs31.hfsVmId, hfs32.hfsVmId,
@@ -223,9 +251,9 @@ public class JdbcHfsVmTrackingRecordServiceTest {
     public void getVmsByStatusHfsVmIdAndVps4Vm() {
         createHfsTrackingRecords();
 
-        hfsVmService.setCanceled(hfs11.hfsVmId);
-        hfsVmService.setCanceled(hfs12.hfsVmId);
-        hfsVmService.setCanceled(hfs21.hfsVmId);
+        hfsVmService.setCanceled(hfs11.hfsVmId, vmOneCancelActionId);
+        hfsVmService.setCanceled(hfs12.hfsVmId, vmOneCancelActionId);
+        hfsVmService.setCanceled(hfs21.hfsVmId, vmTwoCancelActionId);
 
         Long[] expected = {hfs11.hfsVmId};
         Long[] notExpected = {hfs12.hfsVmId, hfs13.hfsVmId, hfs21.hfsVmId, hfs22.hfsVmId, hfs23.hfsVmId, hfs31.hfsVmId,

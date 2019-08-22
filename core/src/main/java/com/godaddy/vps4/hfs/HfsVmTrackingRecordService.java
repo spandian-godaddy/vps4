@@ -20,11 +20,11 @@ public interface HfsVmTrackingRecordService {
 
     HfsVmTrackingRecord create(long hfsVmId, UUID vmId, UUID orionGuid);
 
-    void setCreated(long hfsVmId);
+    void setCreated(long hfsVmId, long actionId);
 
-    void setCanceled(long hfsVmId);
+    void setCanceled(long hfsVmId, long actionId);
 
-    void setDestroyed(long hfsVmId);
+    void setDestroyed(long hfsVmId, long actionId);
 
     List<HfsVmTrackingRecord> getTrackingRecords(ListFilters listFilters);
 }

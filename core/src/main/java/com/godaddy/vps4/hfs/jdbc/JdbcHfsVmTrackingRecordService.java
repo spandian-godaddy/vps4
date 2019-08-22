@@ -52,25 +52,28 @@ public class JdbcHfsVmTrackingRecordService implements HfsVmTrackingRecordServic
         hfsVm.canceled = (canceledTs == null) ? null : canceledTs.toInstant();
         Timestamp destroyedTs = rs.getTimestamp("destroyed", TimestampUtils.utcCalendar);
         hfsVm.destroyed = (destroyedTs == null) ? null : destroyedTs.toInstant();
+        hfsVm.createActionId = rs.getLong("create_action_id");
+        hfsVm.cancelActionId = rs.getLong("cancel_action_id");
+        hfsVm.destroyActionId = rs.getLong("destroy_action_id");
         return hfsVm;
     }
 
     @Override
-    public void setCreated(long hfsVmId) {
-        Sql.with(dataSource).exec("UPDATE hfs_vm_tracking_record SET created=now_utc() WHERE hfs_vm_id = ?", null,
-                hfsVmId);
+    public void setCreated(long hfsVmId, long actionId) {
+        Sql.with(dataSource).exec("UPDATE hfs_vm_tracking_record SET created=now_utc(), create_action_id = ?"
+                                  + " WHERE hfs_vm_id = ?", null, actionId, hfsVmId);
     }
 
     @Override
-    public void setCanceled(long hfsVmId) {
-        Sql.with(dataSource).exec("UPDATE hfs_vm_tracking_record SET canceled=now_utc() WHERE hfs_vm_id = ?", null,
-                hfsVmId);
+    public void setCanceled(long hfsVmId, long actionId) {
+        Sql.with(dataSource).exec("UPDATE hfs_vm_tracking_record SET canceled=now_utc(), cancel_action_id = ?"
+                                  + " WHERE hfs_vm_id = ?", null, actionId, hfsVmId);
     }
 
     @Override
-    public void setDestroyed(long hfsVmId) {
-        Sql.with(dataSource).exec("UPDATE hfs_vm_tracking_record SET destroyed=now_utc() WHERE hfs_vm_id = ?", null,
-                hfsVmId);
+    public void setDestroyed(long hfsVmId, long actionId) {
+        Sql.with(dataSource).exec("UPDATE hfs_vm_tracking_record SET destroyed=now_utc(), destroy_action_id = ?"
+                                  + " WHERE hfs_vm_id = ?", null, actionId, hfsVmId);
     }
 
     @Override

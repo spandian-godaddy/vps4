@@ -55,7 +55,7 @@ public class DestroyVmTest {
         command.execute(context, hfsVmId);
         verify(vmService).destroyVm(hfsVmId);
         verify(context).execute(WaitForAndRecordVmAction.class, hfsAction);
-        verify(hfsTrackingService).setCanceled(hfsVmId);
+        verify(hfsTrackingService).setCanceled(hfsVmId, hfsAction.vmActionId);
     }
 
     @Test

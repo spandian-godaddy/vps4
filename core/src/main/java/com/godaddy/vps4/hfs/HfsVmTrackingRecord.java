@@ -12,8 +12,10 @@ public class HfsVmTrackingRecord {
     public long hfsVmId;
     public UUID vmId;
     public UUID orionGuid;
-
     public String sgid;
+    public long createActionId;
+    public long cancelActionId;
+    public long destroyActionId;
 
     @ApiModelProperty(
             value = "The timestamp of when this vm was requested. This is an ISO 8601 formatted date string",
