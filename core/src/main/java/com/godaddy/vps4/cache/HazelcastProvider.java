@@ -6,6 +6,9 @@ import java.util.List;
 import javax.inject.Inject;
 import javax.inject.Provider;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -27,8 +30,6 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.zookeeper.ZookeeperDiscoveryProperties;
 import com.hazelcast.zookeeper.ZookeeperDiscoveryStrategyFactory;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public class HazelcastProvider implements Provider<HazelcastInstance> {
 
@@ -77,7 +78,7 @@ public class HazelcastProvider implements Provider<HazelcastInstance> {
 
         // configure eviction policy per map
         for (String cacheName : new String[]{CacheName.CPANEL_ACCESSHASH,
-                                             CacheName.VM_USAGE,
+                                             CacheName.SERVER_USAGE,
                                              CacheName.MAIL_RELAY_HISTORY}) {
             config.getMapConfig(cacheName)
                   .setEvictionPolicy(EvictionPolicy.LRU)
