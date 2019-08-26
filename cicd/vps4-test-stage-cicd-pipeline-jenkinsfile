@@ -12,6 +12,7 @@ pipeline {
     stages {
         stage('Build') {
             steps {
+                slackSend(color: '#00CD48', message: "vps4 *STARTING NEW BUILD*. Job '${env.JOB_NAME} [${VPS4_VERSION}]' (${env.BUILD_URL})")
                 git credentialsId: 'd12d30ba-3f92-43a2-9c0d-0682c9bc6da9', url: 'git@github.secureserver.net:vps4/vps4.git'
                 build job: 'vps4'
                 load("/home/jenkins/vps4_latest_version.properties")
@@ -26,7 +27,7 @@ pipeline {
                         build job: 'deploy_to_test', parameters: [string(name: 'VPS4_VERSION', value: VPS4_VERSION)]
                         productStampZk("test", "vps4-web-${VPS4_VERSION}.noarch", "vps4-web")
                         productStampZk("test", "vps4-message-consumer-${VPS4_VERSION}.noarch", "vps4-message-consumer")
-                        productStampZk("test", "vps4-orchestration-plugin-${VPS4_VERSION}.noarch", "hfs-engine", "/orchestration/serviceapi")
+                        productStampZk("test", "vps4-orchestration-plugin-${VPS4_VERSION}.noarch", "hfs-engine")
                         productStampZk("test", "vps4-scheduler-${VPS4_VERSION}.noarch", "vps4-scheduler")
                         slackSend(color: '#00CD48', message: "vps4 *DEPLOY TO TEST* was SUCCESSFUL. Job '${env.JOB_NAME} [${VPS4_VERSION}]' (${env.BUILD_URL})")
                     }
@@ -36,7 +37,7 @@ pipeline {
                         build job: 'deploy_to_stage', parameters: [string(name: 'VPS4_VERSION', value: VPS4_VERSION)]
                         productStampZk("stage", "vps4-web-${VPS4_VERSION}.noarch", "vps4-web")
                         productStampZk("stage", "vps4-message-consumer-${VPS4_VERSION}.noarch", "vps4-message-consumer")
-                        productStampZk("stage", "vps4-orchestration-plugin-${VPS4_VERSION}.noarch", "hfs-engine", "/orchestration/serviceapi")
+                        productStampZk("stage", "vps4-orchestration-plugin-${VPS4_VERSION}.noarch", "hfs-engine")
                         productStampZk("stage", "vps4-scheduler-${VPS4_VERSION}.noarch", "vps4-scheduler")
                         slackSend(color: '#00CD48', message: "vps4 *DEPLOY TO STAGE* was SUCCESSFUL. Job '${env.JOB_NAME} [${VPS4_VERSION}]' (${env.BUILD_URL})")
                     }
@@ -61,10 +62,10 @@ pipeline {
     post {
         success {
             cleanupEnvironment()
-            slackSend(color: '#00CD48', message: "VPS4 Deployment Complete. Job '${env.JOB_NAME} [${VPS4_VERSION}]' (${env.BUILD_URL})")
+            slackSend(color: '#00CD48', message: "vps4 *TEST/STAGE DEPLOYMENT COMPLETE*. Job '${env.JOB_NAME} [${VPS4_VERSION}]' (${env.BUILD_URL})")
         }
         failure {
-            slackSend(color: '#ff0000', message: "ERROR: Job '${env.JOB_NAME} [${VPS4_VERSION}]' (${env.BUILD_URL})")
+            slackSend(color: '#ff0000', message: "*ERROR*: Job '${env.JOB_NAME} [${VPS4_VERSION}]' (${env.BUILD_URL})")
         }
     }
 }
@@ -80,11 +81,6 @@ private void cleanupEnvironment() {
 private void productStampZk(String targetEnv, String rpmName, String product) {
     echo "targetEnv: ${targetEnv}, rpmName: ${rpmName}, product: ${product}"
     shell("/usr/bin/python ./cicd/vps4_zk_cicd.py -e ${targetEnv} -n ${rpmName} -p ${product}")
-}
-
-private void productStampZk(String targetEnv, String rpmName, String product, String zkServiceNode) {
-    echo "targetEnv: ${targetEnv}, rpmName: ${rpmName}, product: ${product}, zkServiceNode: ${zkServiceNode}"
-    shell("/usr/bin/python ./cicd/vps4_zk_cicd.py -e ${targetEnv} -n ${rpmName} -p ${product} -z ${zkServiceNode}")
 }
 
 private void shell(GString script) {
