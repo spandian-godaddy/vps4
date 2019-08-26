@@ -12,6 +12,7 @@ import com.godaddy.hfs.vm.VmAction.Status;
 import com.godaddy.hfs.vm.VmAddress;
 import com.godaddy.hfs.vm.VmService;
 import com.godaddy.vps4.credit.CreditService;
+import com.godaddy.vps4.hfs.HfsVmTrackingRecordService;
 import com.godaddy.vps4.messaging.MissingShopperIdException;
 import com.godaddy.vps4.messaging.Vps4MessagingService;
 import com.godaddy.vps4.network.NetworkService;
@@ -79,6 +80,7 @@ public class Vps4ProvisionDedicatedTest {
     MonitoringMeta monitoringMeta = mock(MonitoringMeta.class);
     Vps4MessagingService messagingService = mock(Vps4MessagingService.class);
     CreditService creditService = mock(CreditService.class);
+    HfsVmTrackingRecordService hfsVmTrackingRecordService = mock(HfsVmTrackingRecordService.class);
     ConfigureCpanel configureCpanel = mock(ConfigureCpanel.class);
     AddUser addUser = mock(AddUser.class);
 
@@ -89,7 +91,7 @@ public class Vps4ProvisionDedicatedTest {
 
     Vps4ProvisionDedicated command = new Vps4ProvisionDedicated(actionService, vmService,
             virtualMachineService, vmUserService, networkService, nodePingService,
-            monitoringMeta, messagingService, creditService);
+            monitoringMeta, messagingService, creditService, hfsVmTrackingRecordService);
 
     Injector injector = Guice.createInjector(binder -> {
         binder.bind(ActionService.class).toInstance(actionService);
@@ -107,6 +109,7 @@ public class Vps4ProvisionDedicatedTest {
         binder.bind(ConfigurePlesk.class).toInstance(mock(ConfigurePlesk.class));
         binder.bind(Vps4MessagingService.class).toInstance(messagingService);
         binder.bind(CreditService.class).toInstance(creditService);
+        binder.bind(HfsVmTrackingRecordService.class).toInstance(hfsVmTrackingRecordService);
         binder.bind(SetPassword.class).toInstance(setPassword);
         binder.bind(ConfigureCpanel.class).toInstance(configureCpanel);
         binder.bind(AddUser.class).toInstance(addUser);
@@ -285,5 +288,12 @@ public class Vps4ProvisionDedicatedTest {
         CreateDnsPtrRecord.Request req = reverseDnsNameRequestCaptor.getValue();
         assertEquals("test.resourceid.com", req.reverseDnsName);
         assertEquals(this.vm, req.virtualMachine);
+    }
+
+    @Test
+    public void updateHfsVmTrackingRecord() {
+        command.executeWithAction(context, request);
+        verify(context, times(1)).execute(eq("UpdateHfsVmTrackingRecord"),
+                                          any(Function.class), eq(Void.class));
     }
 }

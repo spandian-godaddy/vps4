@@ -9,6 +9,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.godaddy.hfs.vm.VmAction;
+import com.godaddy.vps4.hfs.HfsVmTrackingRecordService;
 import com.godaddy.vps4.network.IpAddress;
 import com.godaddy.vps4.network.NetworkService;
 import com.godaddy.vps4.orchestration.ActionCommand;
@@ -35,16 +36,19 @@ public class Vps4DestroyDedicated extends ActionCommand<VmActionRequest, Vps4Des
     private final NodePingService monitoringService;
     private final MonitoringMeta monitoringMeta;
     CommandContext context;
+    private final HfsVmTrackingRecordService hfsVmTrackingRecordService;
 
     @Inject
     public Vps4DestroyDedicated(ActionService actionService,
                                 NetworkService networkService,
                                 NodePingService monitoringService,
-                                MonitoringMeta monitoringMeta) {
+                                MonitoringMeta monitoringMeta,
+                                HfsVmTrackingRecordService hfsVmTrackingRecordService) {
         super(actionService);
         this.networkService = networkService;
         this.monitoringService = monitoringService;
         this.monitoringMeta = monitoringMeta;
+        this.hfsVmTrackingRecordService = hfsVmTrackingRecordService;
     }
 
     @Override
@@ -59,7 +63,7 @@ public class Vps4DestroyDedicated extends ActionCommand<VmActionRequest, Vps4Des
         releaseIp(context, vm);
         deleteAllScheduledJobsForVm(context, vm);
         deleteSupportUsersInDatabase(context, vm);
-        VmAction hfsAction = deleteVmInHfs(context, vm);
+        VmAction hfsAction = deleteVmInHfs(context, vm, request);
 
         logger.info("Completed destroying VM {}", vm.vmId);
 
@@ -69,8 +73,11 @@ public class Vps4DestroyDedicated extends ActionCommand<VmActionRequest, Vps4Des
         return response;
     }
 
-    private VmAction deleteVmInHfs(CommandContext context, VirtualMachine vm) {
-        return context.execute("DestroyVmHfs", DestroyVm.class, vm.hfsVmId);
+    private VmAction deleteVmInHfs(CommandContext context, VirtualMachine vm, VmActionRequest request) {
+        DestroyVm.Request destroyVmRequest = new DestroyVm.Request();
+        destroyVmRequest.hfsVmId = vm.hfsVmId;
+        destroyVmRequest.actionId = request.actionId;
+        return context.execute("DestroyVmHfs", DestroyVm.class, destroyVmRequest);
     }
 
     private void deleteSupportUsersInDatabase(CommandContext context, VirtualMachine vm) {

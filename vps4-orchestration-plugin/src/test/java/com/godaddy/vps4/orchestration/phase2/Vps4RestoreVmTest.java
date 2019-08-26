@@ -179,7 +179,7 @@ public class Vps4RestoreVmTest {
 
         when(mockContext.execute(eq("UpdateHfsVmId"), any(Function.class), eq(Void.class))).thenReturn(null);
         when(mockContext.execute(startsWith("BindIP-"), eq(BindIp.class), any())).thenReturn(null);
-        when(mockContext.execute(eq("DestroyVmHfs"), eq(DestroyVm.class), eq(hfsNewVmId))).thenReturn(null);
+        when(mockContext.execute(eq("DestroyVmHfs"), eq(DestroyVm.class), any(DestroyVm.Request.class))).thenReturn(null);
         return mockContext;
     }
 
@@ -354,7 +354,7 @@ public class Vps4RestoreVmTest {
         command.execute(context, request);
 
         // SqlTestData.hfsVmId is the ID of the old hfs vm
-        verify(context, times(1)).execute(eq("DestroyVmHfs"), eq(DestroyVm.class), eq(SqlTestData.hfsVmId));
+        verify(context, times(1)).execute(eq("DestroyVmHfs"), eq(DestroyVm.class), any(DestroyVm.Request.class));
     }
 
     @Test
@@ -386,7 +386,7 @@ public class Vps4RestoreVmTest {
             Assert.fail();
         } catch (RuntimeException ex) {
             // Verify destroys newHfsVm and *force* binds IPs back to originalHfsVm
-            verify(context).execute(eq("DestroyVmHfs"), eq(DestroyVm.class), eq(hfsNewVmId));
+            verify(context).execute(eq("DestroyVmHfs"), eq(DestroyVm.class), any(DestroyVm.Request.class));
             for (IpAddress ipAddress : ipAddresses) {
                 verify(context).execute(eq(String.format("ForceBindIP-%d", ipAddress.ipAddressId)), eq(BindIp.class),
                         bindIpRequestArgumentCaptor.capture());
@@ -410,7 +410,7 @@ public class Vps4RestoreVmTest {
             Assert.fail();
         } catch (RuntimeException ex) {
             // Verify destroys newHfsVm and *force* binds IPs back to originalHfsVm
-            verify(context, never()).execute(eq("DestroyVmHfs"), eq(DestroyVm.class), eq(hfsNewVmId));
+            verify(context, never()).execute(eq("DestroyVmHfs"), eq(DestroyVm.class), any(DestroyVm.Request.class));
         }
     }
 

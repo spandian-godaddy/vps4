@@ -5,6 +5,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
 
+import org.bouncycastle.cert.ocsp.Req;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -79,12 +80,12 @@ public class Vps4RestoreVm extends ActionCommand<Vps4RestoreVm.Request, Void> {
         try {
             configureNewVm(newHfsVm);
         } catch (RuntimeException e) {
-            cleanupAndRollback(newHfsVm);
+            cleanupAndRollback(newHfsVm, request);
             throw e;
         }
 
         updateHfsVmId(newHfsVm.vmId);
-        cleanupVm(originalHfsVmId);
+        cleanupVm(originalHfsVmId, request);
         logger.info("VM restore of vmId {} finished", vps4VmId);
         return null;
     }
@@ -99,7 +100,7 @@ public class Vps4RestoreVm extends ActionCommand<Vps4RestoreVm.Request, Void> {
         refreshCpanelLicense(newHfsVm.vmId);
     }
 
-    private void cleanupAndRollback(Vm newHfsVm) {
+    private void cleanupAndRollback(Vm newHfsVm, Request request) {
         long originalHfsVmId = getOriginalHfsVmId();
         logger.info("Restore VM {} failed, binding ips back to HFS VM {} and destroying errored HFS VM {}", vps4VmId, originalHfsVmId, newHfsVm.vmId);
 
@@ -108,7 +109,7 @@ public class Vps4RestoreVm extends ActionCommand<Vps4RestoreVm.Request, Void> {
         bindPublicIpAddress(originalHfsVmId, ipAddresses, true);
 
         if (!request.debugEnabled) {
-            cleanupVm(newHfsVm.vmId);
+            cleanupVm(newHfsVm.vmId, request);
         }
     }
 
@@ -236,10 +237,13 @@ public class Vps4RestoreVm extends ActionCommand<Vps4RestoreVm.Request, Void> {
         }
     }
 
-    private void cleanupVm(long hfsVmId) {
+    private void cleanupVm(long hfsVmId, Request request) {
         setStep(RestoreVmStep.CleanupVm);
         logger.info("Deleting VM: " + hfsVmId);
-        context.execute("DestroyVmHfs", DestroyVm.class, hfsVmId);
+        DestroyVm.Request destroyVmRequest = new DestroyVm.Request();
+        destroyVmRequest.hfsVmId = hfsVmId;
+        destroyVmRequest.actionId = request.getActionId();
+        context.execute("DestroyVmHfs", DestroyVm.class, destroyVmRequest);
     }
 
     protected void setStep(RestoreVmStep step) {

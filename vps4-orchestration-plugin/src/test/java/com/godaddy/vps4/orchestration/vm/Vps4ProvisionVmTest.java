@@ -31,6 +31,7 @@ import com.godaddy.hfs.vm.VmAction;
 import com.godaddy.hfs.vm.VmAction.Status;
 import com.godaddy.hfs.vm.VmService;
 import com.godaddy.vps4.credit.CreditService;
+import com.godaddy.vps4.hfs.HfsVmTrackingRecordService;
 import com.godaddy.vps4.messaging.MissingShopperIdException;
 import com.godaddy.vps4.messaging.Vps4MessagingService;
 import com.godaddy.vps4.network.NetworkService;
@@ -83,13 +84,14 @@ public class Vps4ProvisionVmTest {
     Vps4MessagingService messagingService = mock(Vps4MessagingService.class);
     CreditService creditService = mock(CreditService.class);
     Config config = mock(Config.class);
+    HfsVmTrackingRecordService hfsVmTrackingRecordService = mock(HfsVmTrackingRecordService.class);
     @Captor private ArgumentCaptor<Function<CommandContext, Void>> setCommonNameLambdaCaptor;
     @Captor private ArgumentCaptor<SetPassword.Request> setPasswordCaptor;
     @Captor private ArgumentCaptor<SetHostname.Request> setHostnameArgumentCaptor;
 
     Vps4ProvisionVm command = new Vps4ProvisionVm(actionService, virtualMachineService, vmUserService, networkService,
                                                   nodePingService, monitoringMeta, messagingService, creditService,
-                                                  config);
+                                                  config, hfsVmTrackingRecordService);
 
     Injector injector = Guice.createInjector(binder -> {
         binder.bind(ActionService.class).toInstance(actionService);
@@ -109,6 +111,7 @@ public class Vps4ProvisionVmTest {
         binder.bind(Vps4MessagingService.class).toInstance(messagingService);
         binder.bind(CreditService.class).toInstance(creditService);
         binder.bind(Config.class).toInstance(config);
+        binder.bind(HfsVmTrackingRecordService.class).toInstance(hfsVmTrackingRecordService);
     });
 
     CommandContext context = mock(CommandContext.class);
@@ -127,6 +130,7 @@ public class Vps4ProvisionVmTest {
     UUID orionGuid = UUID.randomUUID();
     long hfsVmId = 42;
     String panoptaCustomerKey = "fakePanoptaPartnerCustomerKey-";
+    VmAction vmAction;
 
     @Before
     public void setupTest() throws Exception {
@@ -178,7 +182,7 @@ public class Vps4ProvisionVmTest {
         relay.quota = vmInfo.mailRelayQuota;
         when(mailRelayService.setRelayQuota(eq(primaryIp.address), any(MailRelayUpdate.class))).thenReturn(relay);
 
-        VmAction vmAction = new VmAction();
+        vmAction = new VmAction();
         vmAction.vmId = hfsVmId;
         vmAction.state = Status.COMPLETE;
         when(createVm.execute(any(CommandContext.class), any(CreateVm.Request.class))).thenReturn(vmAction);
@@ -272,5 +276,12 @@ public class Vps4ProvisionVmTest {
         assertEquals(req.hfsVmId, hfsVmId);
         String expectedHostname = "s" + primaryIp.address.replace('.', '-') + ".secureserver.net";
         assertEquals(expectedHostname, req.hostname);
+    }
+
+    @Test
+    public void updateHfsVmTrackingRecord() {
+        command.executeWithAction(context, request);
+        verify(context, times(1)).execute(eq("UpdateHfsVmTrackingRecord"),
+                                          any(Function.class), eq(Void.class));
     }
 }

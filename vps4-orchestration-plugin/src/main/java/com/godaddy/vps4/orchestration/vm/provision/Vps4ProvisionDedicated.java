@@ -17,6 +17,7 @@ import com.godaddy.hfs.vm.Vm;
 import com.godaddy.hfs.vm.VmAction;
 import com.godaddy.hfs.vm.VmService;
 import com.godaddy.vps4.credit.CreditService;
+import com.godaddy.vps4.hfs.HfsVmTrackingRecordService;
 import com.godaddy.vps4.messaging.Vps4MessagingService;
 import com.godaddy.vps4.network.IpAddress.IpAddressType;
 import com.godaddy.vps4.network.NetworkService;
@@ -66,6 +67,7 @@ public class Vps4ProvisionDedicated extends ActionCommand<ProvisionRequest, Vps4
     private final MonitoringMeta monitoringMeta;
     private final Vps4MessagingService messagingService;
     private final CreditService creditService;
+    private final HfsVmTrackingRecordService hfsVmTrackingRecordService;
 
     private ProvisionRequest request;
     private ActionState state;
@@ -81,7 +83,8 @@ public class Vps4ProvisionDedicated extends ActionCommand<ProvisionRequest, Vps4
             NodePingService monitoringService,
             MonitoringMeta monitoringMeta,
             Vps4MessagingService messagingService,
-            CreditService creditService) {
+            CreditService creditService,
+            HfsVmTrackingRecordService hfsVmTrackingRecordService) {
         super(actionService);
         this.vmService = vmService;
         this.virtualMachineService = virtualMachineService;
@@ -91,6 +94,7 @@ public class Vps4ProvisionDedicated extends ActionCommand<ProvisionRequest, Vps4
         this.monitoringMeta = monitoringMeta;
         this.messagingService = messagingService;
         this.creditService = creditService;
+        this.hfsVmTrackingRecordService = hfsVmTrackingRecordService;
     }
 
     @Override
@@ -200,11 +204,19 @@ public class Vps4ProvisionDedicated extends ActionCommand<ProvisionRequest, Vps4
         VmAction vmAction = context.execute(CreateVm.class, createVmRequest);
         addHfsVmIdToVmInVps4Db(vmAction);
         context.execute(WaitForAndRecordVmAction.class, vmAction);
+        updateHfsVmTrackingRecord(vmAction);
         return vmAction.vmId;
     }
 
+    public void updateHfsVmTrackingRecord(VmAction vmAction){
+        context.execute("UpdateHfsVmTrackingRecord", ctx -> {
+            hfsVmTrackingRecordService.setCreated(vmAction.vmId, request.actionId);
+            return null;
+        }, Void.class);
+    }
+
     private void addHfsVmIdToVmInVps4Db(VmAction vmAction) {
-        context.execute("Vps4ProvisionVm", ctx -> {
+        context.execute("AddHfsVmIdToVmInVps4Db", ctx -> {
             virtualMachineService.addHfsVmIdToVirtualMachine(request.vmInfo.vmId, vmAction.vmId);
             return null;
         }, Void.class);

@@ -1,11 +1,18 @@
 package com.godaddy.vps4.orchestration.hfs.vm;
 
 import static org.junit.Assert.assertNull;
+import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.anyLong;
+import static org.mockito.Matchers.eq;
+import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+
+import java.util.function.Function;
 
 import org.junit.Before;
 import org.junit.Test;
@@ -27,12 +34,15 @@ public class DestroyVmTest {
     VmService vmService = mock(VmService.class);
     HfsVmTrackingRecordService hfsTrackingService = mock(HfsVmTrackingRecordService.class);
     WaitForAndRecordVmAction waitAction = mock(WaitForAndRecordVmAction.class);
+    DestroyVm.Request destroyVmRequest;
     VmAction hfsAction;
-    Long hfsVmId;
+    long hfsVmId;
+    long vps4ActionId;
     Vm hfsVm;
 
     Injector injector = Guice.createInjector(binder -> {
         binder.bind(WaitForAndRecordVmAction.class).toInstance(waitAction);
+        binder.bind(HfsVmTrackingRecordService.class).toInstance(hfsTrackingService);
     });
     CommandContext context = spy(new TestCommandContext(new GuiceCommandProvider(injector)));
 
@@ -40,7 +50,11 @@ public class DestroyVmTest {
 
     @Before
     public void setupTest() {
+        destroyVmRequest = new DestroyVm.Request();
         hfsVmId = 23L;
+        vps4ActionId = 45L;
+        destroyVmRequest.hfsVmId = hfsVmId;
+        destroyVmRequest.actionId = vps4ActionId;
 
         hfsVm = new Vm();
         hfsVm.status = "ACTIVE";
@@ -52,24 +66,34 @@ public class DestroyVmTest {
 
     @Test
     public void callsDestroyVm() {
-        command.execute(context, hfsVmId);
+        command.execute(context, destroyVmRequest);
         verify(vmService).destroyVm(hfsVmId);
         verify(context).execute(WaitForAndRecordVmAction.class, hfsAction);
-        verify(hfsTrackingService).setCanceled(hfsVmId, hfsAction.vmActionId);
+    }
+
+    @Test
+    public void callsUpdateHfsTrackingRecord() {
+        command.execute(context, destroyVmRequest);
+        verify(context).execute(eq("UpdateHfsVmTrackingRecord"),
+                                          any(Function.class), eq(Void.class));
+        verify(hfsTrackingService).setDestroyed(hfsVmId, destroyVmRequest.actionId);
     }
 
     @Test
     public void skipsDestroyIfHfsVmIdZero() {
-        hfsVmId = 0L;
-        assertNull(command.execute(context, hfsVmId));
+        destroyVmRequest.hfsVmId = 0L;
+        assertNull(command.execute(context, destroyVmRequest));
         verify(vmService, never()).destroyVm(hfsVmId);
+        verify(hfsTrackingService, never()).setDestroyed(hfsVmId, destroyVmRequest.actionId);
     }
 
     @Test
     public void skipsDestroyIfHfsVmAlreadyDestroyed() {
         hfsVm.status = "DESTROYED";
-        assertNull(command.execute(context, hfsVmId));
+        assertNull(command.execute(context, destroyVmRequest));
         verify(vmService, never()).destroyVm(hfsVmId);
+        verify(hfsTrackingService, never()).setDestroyed(hfsVmId, destroyVmRequest.actionId);
     }
+
 
 }

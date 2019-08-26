@@ -159,7 +159,8 @@ public class Vps4RebuildVmTest {
     @Test
     public void deletesOriginalVm() {
         command.execute(context, request);
-        verify(context).execute("DestroyVmHfs", DestroyVm.class, originalHfsVmId);
+        ArgumentCaptor<DestroyVm.Request> argument = ArgumentCaptor.forClass(DestroyVm.Request.class);
+        verify(context).execute(eq("DestroyVmHfs"), eq(DestroyVm.class), argument.capture());
     }
 
     @Test

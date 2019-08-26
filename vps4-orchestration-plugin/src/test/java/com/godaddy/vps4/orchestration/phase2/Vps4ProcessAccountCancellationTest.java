@@ -30,6 +30,8 @@ import com.godaddy.hfs.config.Config;
 import com.godaddy.hfs.vm.VmAction;
 import com.godaddy.hfs.vm.VmService;
 import com.godaddy.vps4.credit.VirtualMachineCredit;
+import com.godaddy.vps4.hfs.HfsVmTrackingRecordService;
+import com.godaddy.vps4.hfs.jdbc.JdbcHfsVmTrackingRecordService;
 import com.godaddy.vps4.jdbc.DatabaseModule;
 import com.godaddy.vps4.orchestration.account.Vps4ProcessAccountCancellation;
 import com.godaddy.vps4.orchestration.hfs.vm.RescueVm;
@@ -74,6 +76,7 @@ public class Vps4ProcessAccountCancellationTest {
     @Inject ProjectService projectService;
     @Inject VirtualMachineService vps4VmService;
     @Inject ActionService actionService;
+    @Inject HfsVmTrackingRecordService hfsVmTrackingRecordService;
     @Inject Vps4ProcessAccountCancellation command;
 
     @Captor private ArgumentCaptor<Function<CommandContext, Long>> calculateValidUntilLambdaCaptor;
@@ -97,6 +100,7 @@ public class Vps4ProcessAccountCancellationTest {
                         bind(ActionService.class).to(JdbcVmActionService.class);
                         bind(VirtualMachineService.class).to(JdbcVirtualMachineService.class);
                         bind(VmService.class).toInstance(vmService);
+                        bind(HfsVmTrackingRecordService.class).to(JdbcHfsVmTrackingRecordService.class);
                     }
                 }
         );
@@ -206,6 +210,13 @@ public class Vps4ProcessAccountCancellationTest {
 
         verify(context, times(1)).execute(eq(RescueVm.class), eq(vm.hfsVmId));
         verify(context, times(0)).execute(eq(StopVm.class), anyLong());
+    }
+
+    @Test
+    public void updateHfsVmTrackingRecord() {
+        command.execute(context, request);
+        verify(context, times(1)).execute(eq("UpdateHfsVmTrackingRecord"),
+                                          any(Function.class), eq(Void.class));
     }
 
     @Test

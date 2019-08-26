@@ -6,6 +6,7 @@ import java.util.UUID;
 
 import javax.inject.Inject;
 
+import com.godaddy.vps4.hfs.HfsVmTrackingRecordService;
 import com.godaddy.vps4.orchestration.hfs.vm.RescueVm;
 import com.godaddy.vps4.orchestration.hfs.vm.StopVm;
 import org.slf4j.Logger;
@@ -42,15 +43,18 @@ public class Vps4ProcessAccountCancellation extends ActionCommand<Vps4ProcessAcc
     final ActionService vmActionService;
     private final VirtualMachineService virtualMachineService;
     private final Config config;
+    private final HfsVmTrackingRecordService hfsVmTrackingRecordService;
 
     @Inject
     public Vps4ProcessAccountCancellation(ActionService vmActionService,
                                           VirtualMachineService virtualMachineService,
-                                          Config config) {
+                                          Config config,
+                                          HfsVmTrackingRecordService hfsVmTrackingRecordService) {
         super(vmActionService);
         this.vmActionService = vmActionService;
         this.virtualMachineService = virtualMachineService;
         this.config = config;
+        this.hfsVmTrackingRecordService = hfsVmTrackingRecordService;
     }
 
     @Override
@@ -104,6 +108,14 @@ public class Vps4ProcessAccountCancellation extends ActionCommand<Vps4ProcessAcc
         } else {
             context.execute(RescueVm.class, virtualMachine.hfsVmId);
         }
+        updateHfsVmTrackingRecord(virtualMachine.hfsVmId, request.actionId);
+    }
+
+    public void updateHfsVmTrackingRecord(long hfsVmId, long vps4ActionId){
+        context.execute("UpdateHfsVmTrackingRecord", ctx -> {
+            hfsVmTrackingRecordService.setCanceled(hfsVmId, vps4ActionId);
+            return null;
+        }, Void.class);
     }
 
     private void markVmAsZombie(UUID vmId) {

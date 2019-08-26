@@ -80,7 +80,7 @@ public class Vps4DestroyDedicatedTest {
     CreateDnsPtrRecord createDnsPtrRecord =  mock(CreateDnsPtrRecord.class);
 
     Vps4DestroyDedicated command = new Vps4DestroyDedicated(actionService, networkService, nodePingService,
-            monitoringMeta);
+            monitoringMeta, hfsVmTrackingRecordService);
     Injector injector = Guice.createInjector(binder -> {
         binder.bind(UnbindIp.class);
         binder.bind(ReleaseIp.class);

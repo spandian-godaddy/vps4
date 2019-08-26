@@ -26,6 +26,7 @@ import org.mockito.runners.MockitoJUnitRunner;
 
 import com.godaddy.hfs.vm.VmAction;
 import com.godaddy.vps4.credit.CreditService;
+import com.godaddy.vps4.hfs.HfsVmTrackingRecordService;
 import com.godaddy.vps4.jdbc.DatabaseModule;
 import com.godaddy.vps4.messaging.DefaultVps4MessagingService;
 import com.godaddy.vps4.messaging.MessagingModule;
@@ -79,6 +80,7 @@ public class Vps4ProvisionVmUnitTest {
                     bind(DefaultVps4MessagingService.class).toInstance(mock(DefaultVps4MessagingService.class));
                     bind(PanoptaApiCustomerService.class).toInstance(mock(PanoptaApiCustomerService.class));
                     bind(PanoptaApiServerService.class).toInstance(mock(PanoptaApiServerService.class));
+                    bind(HfsVmTrackingRecordService.class).toInstance(mock(HfsVmTrackingRecordService.class));
                 }
             }
     );

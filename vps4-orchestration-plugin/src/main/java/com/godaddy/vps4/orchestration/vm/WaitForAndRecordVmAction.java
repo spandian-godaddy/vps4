@@ -20,13 +20,6 @@ public class WaitForAndRecordVmAction implements Command<VmAction, Void> {
     @Override
     public Void execute(CommandContext context, VmAction hfsAction) {
         context.execute(WaitForVmAction.class, hfsAction);
-
-        if (hfsAction.actionType.equals("CREATE")) {
-            hfsVmTrackingRecordService.setCreated(hfsAction.vmId, hfsAction.vmActionId);
-        } else if (hfsAction.actionType.equals("DESTROY")) {
-            hfsVmTrackingRecordService.setDestroyed(hfsAction.vmId, hfsAction.vmActionId);
-        }
-
         return null;
     }
 }

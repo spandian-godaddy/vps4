@@ -8,25 +8,28 @@ import org.slf4j.LoggerFactory;
 import com.godaddy.hfs.vm.VmAction;
 import com.godaddy.hfs.vm.VmService;
 import com.godaddy.vps4.hfs.HfsVmTrackingRecordService;
+import com.godaddy.vps4.orchestration.ActionRequest;
 import com.godaddy.vps4.orchestration.vm.WaitForAndRecordVmAction;
 
 import gdg.hfs.orchestration.Command;
 import gdg.hfs.orchestration.CommandContext;
 
-public class DestroyVm implements Command<Long, VmAction> {
+public class DestroyVm implements Command<DestroyVm.Request, VmAction> {
 
     private static final Logger logger = LoggerFactory.getLogger(DestroyVm.class);
     final VmService vmService;
-    final HfsVmTrackingRecordService hfsTrackingService;
+    private final HfsVmTrackingRecordService hfsVmTrackingRecordService;
 
     @Inject
-    public DestroyVm(VmService vmService, HfsVmTrackingRecordService hfsTrackingService) {
+    public DestroyVm(VmService vmService, HfsVmTrackingRecordService hfsVmTrackingRecordService) {
         this.vmService = vmService;
-        this.hfsTrackingService = hfsTrackingService;
+        this.hfsVmTrackingRecordService = hfsVmTrackingRecordService;
     }
 
     @Override
-    public VmAction execute(CommandContext context, Long hfsVmId) {
+    public VmAction execute(CommandContext context, DestroyVm.Request request) {
+
+        long hfsVmId = request.hfsVmId;
 
         if (hfsVmId == 0 || isAlreadyDestroyed(hfsVmId)) {
             logger.info("Skipping deletion of HFS VM {} - already deleted or non-existent", hfsVmId);
@@ -34,15 +37,38 @@ public class DestroyVm implements Command<Long, VmAction> {
         }
 
         VmAction hfsAction = context.execute("RequestDestroy", ctx -> vmService.destroyVm(hfsVmId), VmAction.class);
-        hfsTrackingService.setCanceled(hfsVmId, hfsAction.vmActionId);
 
         context.execute(WaitForAndRecordVmAction.class, hfsAction);
 
+        updateHfsVmTrackingRecord(context, hfsVmId, request.actionId);
+
         return hfsAction;
+    }
+
+    public void updateHfsVmTrackingRecord(CommandContext context, long hfsVmId, long vps4ActionId){
+        context.execute("UpdateHfsVmTrackingRecord", ctx -> {
+            hfsVmTrackingRecordService.setDestroyed(hfsVmId, vps4ActionId);
+            return null;
+        }, Void.class);
     }
 
     private boolean isAlreadyDestroyed(long hfsVmId) {
         return vmService.getVm(hfsVmId).status.equals("DESTROYED");
     }
 
+    public static class Request implements ActionRequest {
+        public long actionId;
+        public long hfsVmId;
+
+        @Override
+        public long getActionId() {
+            return actionId;
+        }
+
+        @Override
+        public void setActionId(long actionId) {
+            this.actionId = actionId;
+        }
+
+    }
 }

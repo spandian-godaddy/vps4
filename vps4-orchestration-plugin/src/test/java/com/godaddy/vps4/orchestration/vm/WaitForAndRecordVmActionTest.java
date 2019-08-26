@@ -23,19 +23,4 @@ public class WaitForAndRecordVmActionTest {
         return mockAction;
     }
 
-    @Test
-    public void testExecuteWaitForAndRecordVmActionCreate() {
-        VmAction newHfsAction = createMockVmAction("CREATE");
-        command.execute(context, newHfsAction);
-        verify(hfsVmTrackingRecordService, times(1)).setCreated(newHfsAction.vmId, newHfsAction.vmActionId);
-    }
-
-    @Test
-    public void testExecuteWaitForAndRecordVmActionDelete() {
-        VmAction newHfsAction = createMockVmAction("DESTROY");
-        command.execute(context, newHfsAction);
-        verify(hfsVmTrackingRecordService, times(1)).setDestroyed(newHfsAction.vmId, newHfsAction.vmActionId);
-    }
-
-
 }
