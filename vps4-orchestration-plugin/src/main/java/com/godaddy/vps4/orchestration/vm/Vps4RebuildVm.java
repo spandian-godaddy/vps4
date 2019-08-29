@@ -120,6 +120,7 @@ public class Vps4RebuildVm extends ActionCommand<Vps4RebuildVm.Request, Void> {
         logger.info("Deleting HFS VM {}", hfsVmId);
         DestroyVm.Request destroyVmRequest = new DestroyVm.Request();
         destroyVmRequest.hfsVmId = hfsVmId;
+        destroyVmRequest.actionId = request.actionId;
         context.execute("DestroyVmHfs", DestroyVm.class, destroyVmRequest);
     }
 
