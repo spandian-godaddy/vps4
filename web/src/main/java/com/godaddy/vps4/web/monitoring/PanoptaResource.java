@@ -1,5 +1,10 @@
 package com.godaddy.vps4.web.monitoring;
 
+import static com.godaddy.vps4.web.util.RequestValidation.getAndValidateUserAccountCredit;
+import static com.godaddy.vps4.web.util.RequestValidation.validateAndReturnDateInstant;
+import static com.godaddy.vps4.web.util.RequestValidation.validateVmExists;
+
+import java.time.Instant;
 import java.util.UUID;
 
 import javax.ws.rs.Consumes;
@@ -9,6 +14,7 @@ import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
 
 import org.apache.commons.lang3.StringUtils;
@@ -18,6 +24,7 @@ import org.slf4j.LoggerFactory;
 import com.godaddy.hfs.config.Config;
 import com.godaddy.vps4.credit.CreditService;
 import com.godaddy.vps4.credit.VirtualMachineCredit;
+import com.godaddy.vps4.panopta.PanoptaAvailability;
 import com.godaddy.vps4.panopta.PanoptaCustomer;
 import com.godaddy.vps4.panopta.PanoptaServer;
 import com.godaddy.vps4.panopta.PanoptaService;
@@ -34,6 +41,7 @@ import com.google.inject.Inject;
 
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
+import io.swagger.annotations.ApiParam;
 import io.swagger.annotations.ApiResponse;
 import io.swagger.annotations.ApiResponses;
 
@@ -49,16 +57,18 @@ public class PanoptaResource {
     private static final Logger logger = LoggerFactory.getLogger(PanoptaResource.class);
 
     private final PanoptaService panoptaService;
+    private final GDUser user;
     private final CreditService creditService;
     private final VirtualMachineService virtualMachineService;
     private final VmResource vmResource;
     private Config config;
 
     @Inject
-    public PanoptaResource(PanoptaService panoptaService, CreditService creditService,
-                           VirtualMachineService virtualMachineService, VmResource vmResource,
-                           Config config) {
+    public PanoptaResource(PanoptaService panoptaService, GDUser user,
+                           CreditService creditService, VirtualMachineService virtualMachineService,
+                           VmResource vmResource, Config config) {
         this.panoptaService = panoptaService;
+        this.user = user;
         this.creditService = creditService;
         this.virtualMachineService = virtualMachineService;
         this.vmResource = vmResource;
@@ -121,7 +131,7 @@ public class PanoptaResource {
 
     @GET
     @Path("/server/{vmId}")
-    @ApiOperation(value = "Get the vps4 server instance in panopta.", notes = "Get the vps4 server instance in panopta")
+    @ApiOperation(value = "Get the vps4 server instance from panopta", notes = "Get the vps4 server instance from panopta")
     @ApiResponses(value = {
             @ApiResponse(code = 404, message = "Could not locate server in panopta, or server does not exist.")
     })

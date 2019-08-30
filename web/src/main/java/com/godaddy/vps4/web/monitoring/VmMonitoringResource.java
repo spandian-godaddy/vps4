@@ -2,6 +2,9 @@ package com.godaddy.vps4.web.monitoring;
 
 import java.time.Duration;
 import java.time.Instant;
+import java.time.ZoneOffset;
+import java.time.format.DateTimeFormatter;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.UUID;
@@ -19,6 +22,12 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.UriInfo;
 
 import org.joda.time.DateTime;
+
+import com.godaddy.vps4.panopta.PanoptaAvailability;
+import com.godaddy.vps4.panopta.PanoptaDataService;
+import com.godaddy.vps4.panopta.PanoptaDetail;
+import com.godaddy.vps4.panopta.PanoptaService;
+import com.godaddy.vps4.panopta.PanoptaServiceException;
 import com.godaddy.vps4.util.MonitoringMeta;
 import com.godaddy.vps4.vm.VirtualMachine;
 import com.godaddy.vps4.web.PaginatedResult;
@@ -29,7 +38,9 @@ import com.google.inject.Inject;
 import gdg.hfs.vhfs.nodeping.NodePingEvent;
 import gdg.hfs.vhfs.nodeping.NodePingService;
 import gdg.hfs.vhfs.nodeping.NodePingUptimeRecord;
+
 import io.swagger.annotations.Api;
+import io.swagger.annotations.ApiOperation;
 
 @Vps4Api
 @Api(tags = { "vms" })
@@ -42,35 +53,63 @@ public class VmMonitoringResource {
     private final NodePingService monitoringService;
     private final VmResource vmResource;
     private final MonitoringMeta monitoringMeta;
+    private final PanoptaService panoptaService;
+    private final PanoptaDataService panoptaDataService;
 
     @Inject
-    public VmMonitoringResource(NodePingService monitoringService, VmResource vmResource, MonitoringMeta monitoringMeta) {
+    public VmMonitoringResource(NodePingService monitoringService,
+                                VmResource vmResource,
+                                MonitoringMeta monitoringMeta,
+                                PanoptaService panoptaService,
+                                PanoptaDataService panoptaDataService) {
         this.monitoringService = monitoringService;
         this.vmResource = vmResource;
         this.monitoringMeta = monitoringMeta;
+        this.panoptaService = panoptaService;
+        this.panoptaDataService = panoptaDataService;
     }
 
     @GET
     @Path("/{vmId}/uptime")
-    public List<MonitoringUptimeRecord> getVmUptime(@PathParam("vmId") UUID vmId, @QueryParam("days") @DefaultValue("30") Integer days) {
+    @ApiOperation(value = "Get uptime data from Panopta or NodePing")
+    public List<MonitoringUptimeRecord> getVmUptime(@PathParam("vmId") UUID vmId,
+                                                    @QueryParam("days") @DefaultValue("30") Integer days) throws PanoptaServiceException {
+        PanoptaDetail detail = panoptaDataService.getPanoptaDetails(vmId);
+        return (detail != null) ? getPanoptaUptime(vmId, days) : getNodePingUptime(vmId, days);
+    }
+
+    private List<MonitoringUptimeRecord> getPanoptaUptime(UUID vmId, Integer days) throws PanoptaServiceException {
         VirtualMachine vm = vmResource.getVm(vmId);
-        Instant start = Instant.now().minus(Duration.ofDays(days-1));
-        if(start.isBefore(vm.validOn)){
+        Instant start = Instant.now().minus(Duration.ofDays(days));
+        Instant end = Instant.now();
+        if (start.isBefore(vm.validOn)) {
             start = vm.validOn;
         }
+        DateTimeFormatter dtf = DateTimeFormatter
+                .ofPattern("yyyy-MM-dd HH:mm:ss")
+                .withZone(ZoneOffset.UTC);
+        PanoptaAvailability uptime = panoptaService.getAvailability(vmId,
+                                                                    dtf.format(start),
+                                                                    dtf.format(end));
+        NodePingUptimeRecord record = new NodePingUptimeRecord();
+        record.label = "total";
+        record.uptime = uptime.availability * 100;
+        return Collections.singletonList(new MonitoringUptimeRecord(record));
+    }
 
-        String startStr = start.toString();
-
-        String end = Instant.now().plus(Duration.ofDays(1)).toString(); // the end date in the nodeping api is non-inclusive
-
+    private List<MonitoringUptimeRecord> getNodePingUptime(UUID vmId, Integer days) {
+        VirtualMachine vm = vmResource.getVm(vmId);
+        Instant start = Instant.now().minus(Duration.ofDays(days - 1));
+        Instant end = Instant.now().plus(Duration.ofDays(1)); // NodePing end date is non-inclusive
+        if (start.isBefore(vm.validOn)) {
+            start = vm.validOn;
+        }
         List<NodePingUptimeRecord> nodepingRecords = monitoringService.getCheckUptime(monitoringMeta.getAccountId(),
-                vm.primaryIpAddress.pingCheckId,
-                "days",
-                startStr,
-                end);
-
+                                                                                      vm.primaryIpAddress.pingCheckId,
+                                                                                      "days",
+                                                                                      start.toString(),
+                                                                                      end.toString());
         sortRecordsByDateAsc(nodepingRecords);
-
         return nodepingRecords.stream().map(x -> new MonitoringUptimeRecord(x)).collect(Collectors.toList());
     }
 

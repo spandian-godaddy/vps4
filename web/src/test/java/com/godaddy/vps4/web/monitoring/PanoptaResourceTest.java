@@ -12,6 +12,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.io.IOException;
+import java.time.Instant;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
@@ -34,20 +35,22 @@ import com.godaddy.vps4.panopta.PanoptaApiServerService;
 import com.godaddy.vps4.panopta.PanoptaDataService;
 import com.godaddy.vps4.panopta.PanoptaServers;
 import com.godaddy.vps4.panopta.PanoptaService;
+import com.godaddy.vps4.panopta.PanoptaServiceException;
 import com.godaddy.vps4.security.GDUserMock;
+import com.godaddy.vps4.security.jdbc.AuthorizationException;
 import com.godaddy.vps4.util.ObjectMapperModule;
 import com.godaddy.vps4.vm.AccountStatus;
 import com.godaddy.vps4.vm.DataCenterService;
 import com.godaddy.vps4.vm.ServerSpec;
 import com.godaddy.vps4.vm.VirtualMachine;
 import com.godaddy.vps4.vm.VirtualMachineService;
+import com.godaddy.vps4.web.Vps4Exception;
 import com.godaddy.vps4.web.security.GDUser;
 import com.godaddy.vps4.web.vm.VmResource;
 import com.google.inject.AbstractModule;
 import com.google.inject.Guice;
 import com.google.inject.Inject;
 import com.google.inject.Injector;
-import com.google.inject.Provides;
 
 public class PanoptaResourceTest {
 
@@ -59,11 +62,13 @@ public class PanoptaResourceTest {
     private DataCenterService dataCenterService = mock(DataCenterService.class);
     private VirtualMachineService virtualMachineService = mock(VirtualMachineService.class);
     private ServerSpec serverSpec = mock(ServerSpec.class);
+    private PanoptaService panoptaService = mock(PanoptaService.class);
     private PanoptaDataService panoptaDataService = mock(PanoptaDataService.class);
     private Response.StatusType responseStatusType = mock(Response.StatusType.class);
-
     private GDUser user = GDUserMock.createShopper();
+
     private VirtualMachineCredit credit;
+    private VirtualMachineCredit otherCredit;
     private VirtualMachine virtualMachine;
     private UUID vmId = UUID.randomUUID();
     private UUID orionGuid = UUID.randomUUID();
@@ -75,7 +80,7 @@ public class PanoptaResourceTest {
     @Inject
     private ObjectMapper objectMapper;
 
-    private Injector injector = Guice.createInjector(
+    private Injector injector1 = Guice.createInjector(
             new ObjectMapperModule(),
             new AbstractModule() {
                 @Override
@@ -90,24 +95,34 @@ public class PanoptaResourceTest {
                     bind(VmResource.class).toInstance(vmResource);
                     bind(PanoptaService.class).to(DefaultPanoptaService.class);
                     bind(PanoptaDataService.class).toInstance(panoptaDataService);
+                    bind(GDUser.class).toInstance(user);
                 }
-
-                @Provides
-                public GDUser provideUser() {
-                    return user;
+            });
+    private Injector injector2 = Guice.createInjector(
+            new AbstractModule() {
+                @Override
+                protected void configure() {
+                    bind(Config.class).toInstance(config);
+                    bind(CreditService.class).toInstance(creditService);
+                    bind(VirtualMachineService.class).toInstance(virtualMachineService);
+                    bind(VmResource.class).toInstance(vmResource);
+                    bind(PanoptaService.class).toInstance(panoptaService);
+                    bind(GDUser.class).toInstance(user);
                 }
             });
 
-    private PanoptaResource panoptaResource = injector.getInstance(PanoptaResource.class);
+    private PanoptaResource panoptaResource1 = injector1.getInstance(PanoptaResource.class);
+    private PanoptaResource panoptaResource2 = injector2.getInstance(PanoptaResource.class);
 
     @Before
     public void setupTest() {
-        injector.injectMembers(this);
-        user = GDUserMock.createShopper();
-        credit = createCredit(AccountStatus.ACTIVE, "10");
+        injector1.injectMembers(this);
+        injector2.injectMembers(this);
+        credit = createCredit(user.getShopperId(), AccountStatus.ACTIVE, "10");
+        otherCredit = createCredit("SomeOtherShopper", AccountStatus.ACTIVE, "10");
         virtualMachine =
                 new VirtualMachine(vmId, 123L, orionGuid, 321L, new ServerSpec(), "TestVm", null, null,
-                                   null, null, null, null, 0, UUID.randomUUID());
+                                   Instant.now(), null, Instant.MAX, null, 0, UUID.randomUUID());
         when(vmResource.getVm(vmId)).thenReturn(virtualMachine);
         when(virtualMachineService.getVirtualMachine(vmId)).thenReturn(virtualMachine);
         when(creditService.getVirtualMachineCredit(orionGuid)).thenReturn(credit);
@@ -120,14 +135,14 @@ public class PanoptaResourceTest {
         }
     }
 
-    private VirtualMachineCredit createCredit(AccountStatus accountStatus, String tier) {
+    private VirtualMachineCredit createCredit(String shopperId, AccountStatus accountStatus, String tier) {
         Map<String, String> planFeatures = new HashMap<>();
         planFeatures.put(ECommCreditService.PlanFeatures.TIER.toString(), tier);
 
         return new VirtualMachineCredit.Builder(dataCenterService)
                 .withAccountGuid(orionGuid.toString())
                 .withAccountStatus(accountStatus)
-                .withShopperID(user.getShopperId())
+                .withShopperID(shopperId)
                 .withPlanFeatures(planFeatures)
                 .build();
     }
@@ -258,7 +273,7 @@ public class PanoptaResourceTest {
         when(panoptaApiCustomerService.getCustomer(anyString())).thenReturn(fakePanoptaApiCustomerList);
         createCustomerRequest.vmId = vmId.toString();
 
-        panoptaResource.createCustomer(createCustomerRequest);
+        panoptaResource1.createCustomer(createCustomerRequest);
 
         verify(panoptaApiCustomerService, times(1)).createCustomer(any(PanoptaApiCustomerRequest.class));
     }
@@ -270,7 +285,7 @@ public class PanoptaResourceTest {
         when(serverSpec.isVirtualMachine()).thenReturn(false);
         createCustomerRequest.vmId = vmId.toString();
 
-        panoptaResource.createCustomer(createCustomerRequest);
+        panoptaResource1.createCustomer(createCustomerRequest);
 
         verify(panoptaApiCustomerService, never()).createCustomer(any(PanoptaApiCustomerRequest.class));
     }
@@ -281,7 +296,7 @@ public class PanoptaResourceTest {
         when(config.get(eq("panopta.api.partner.customer.key.prefix"))).thenReturn("gdtest_");
         when(responseStatusType.getFamily()).thenReturn(Response.Status.Family.SUCCESSFUL);
 
-        panoptaResource.deleteCustomer(vmId);
+        panoptaResource1.deleteCustomer(vmId);
 
         verify(panoptaApiCustomerService, times(1)).getCustomer(eq("gdtest_" + vmId));
         verify(panoptaApiCustomerService, times(1)).deleteCustomer(eq("2hum-wpmt-vswt-2g3b"));
@@ -293,7 +308,7 @@ public class PanoptaResourceTest {
         when(config.get(eq("panopta.api.partner.customer.key.prefix"))).thenReturn("gdtest_");
         when(responseStatusType.getFamily()).thenReturn(Response.Status.Family.SUCCESSFUL);
 
-        panoptaResource.getServer(vmId);
+        panoptaResource1.getServer(vmId);
 
         verify(panoptaApiServerService, times(1)).getPanoptaServers(eq("gdtest_" + vmId));
     }

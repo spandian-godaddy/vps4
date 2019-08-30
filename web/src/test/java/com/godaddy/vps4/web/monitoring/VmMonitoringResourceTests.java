@@ -26,6 +26,11 @@ import org.junit.Before;
 import org.junit.Test;
 
 import com.godaddy.vps4.network.IpAddress;
+import com.godaddy.vps4.panopta.PanoptaAvailability;
+import com.godaddy.vps4.panopta.PanoptaDataService;
+import com.godaddy.vps4.panopta.PanoptaDetail;
+import com.godaddy.vps4.panopta.PanoptaService;
+import com.godaddy.vps4.panopta.PanoptaServiceException;
 import com.godaddy.vps4.util.MonitoringMeta;
 import com.godaddy.vps4.vm.VirtualMachine;
 import com.godaddy.vps4.web.PaginatedResult;
@@ -45,12 +50,16 @@ public class VmMonitoringResourceTests {
     JSONParser parser;
     UriInfo uriInfo;
     MonitoringMeta monitoringMeta;
+    PanoptaService panoptaService;
+    PanoptaDataService panoptaDataService;
 
     @Before
     public void setup() {
         monitoringService = mock(NodePingService.class);
         vmResource = mock(VmResource.class);
         monitoringMeta = mock(MonitoringMeta.class);
+        panoptaService = mock(PanoptaService.class);
+        panoptaDataService = mock(PanoptaDataService.class);
         IpAddress ipAddress = new IpAddress(0, null, null, null, 123L, null, null);
         vm = new VirtualMachine(UUID.randomUUID(), 1L, null, 1L, null, null, null, ipAddress, Instant.now().minus(Duration.ofDays(5)), null, null, null, 0, UUID.randomUUID());
         when(vmResource.getVm(vm.vmId)).thenReturn(vm);
@@ -71,7 +80,27 @@ public class VmMonitoringResourceTests {
     }
 
     @Test
-    public void testGetVmUptime() throws ParseException {
+    public void testGetVmUptimeForPanopta() throws PanoptaServiceException {
+        PanoptaAvailability panoptaAvailability = new PanoptaAvailability();
+        panoptaAvailability.availability = 0.9985360556398332;
+        PanoptaDetail panoptaDetail = new PanoptaDetail(1, vm.vmId, "partnerCustomerKey",
+                                                        "customerKey", 666L, "serverKey",
+                                                        Instant.now(), Instant.MAX);
+
+        when(panoptaDataService.getPanoptaDetails(vm.vmId)).thenReturn(panoptaDetail);
+        when(panoptaService.getAvailability(eq(vm.vmId), anyString(), anyString())).thenReturn(panoptaAvailability);
+
+        resource = new VmMonitoringResource(monitoringService, vmResource, monitoringMeta, panoptaService, panoptaDataService);
+        List<MonitoringUptimeRecord> records = resource.getVmUptime(vm.vmId, 30);
+
+        assertEquals(1, records.size());
+
+        MonitoringUptimeRecord record = records.get(0);
+        assertEquals(99.85360556398332, record.uptime, 0);
+    }
+
+    @Test
+    public void testGetVmUptimeForNodePing() throws ParseException, PanoptaServiceException {
         List<NodePingUptimeRecord> npRecords = new ArrayList<>();
         JSONObject jsonObject = (JSONObject) parser.parse("{\"enabled\": 2678400000,\"down\": 35210534,\"uptime\": 98.685}");
         JSONObject jsonObject2 = (JSONObject) parser.parse("{\"enabled\": 3789511111,\"down\": 35210645,\"uptime\": 95.685}");
@@ -79,20 +108,18 @@ public class VmMonitoringResourceTests {
         npRecords.add(new NodePingUptimeRecord("2017-05-06", jsonObject2));
         npRecords.add(new NodePingUptimeRecord("total", jsonObject2));
 
+        when(panoptaDataService.getPanoptaDetails(vm.vmId)).thenReturn(null);
+        when(monitoringService.getCheckUptime(eq(monitoringAccountId), eq(vm.primaryIpAddress.pingCheckId), eq("days"), anyString(), anyString())).thenReturn(npRecords);
 
-        when(monitoringService.getCheckUptime(eq(monitoringAccountId), eq(vm.primaryIpAddress.pingCheckId), eq("days"), anyString(),
-                anyString()))
-                .thenReturn(npRecords);
-
-        resource = new VmMonitoringResource(monitoringService, vmResource, monitoringMeta);
+        resource = new VmMonitoringResource(monitoringService, vmResource, monitoringMeta, panoptaService, panoptaDataService);
         List<MonitoringUptimeRecord> records = resource.getVmUptime(vm.vmId, 30);
 
         assertEquals(3, records.size());
 
-        MonitoringUptimeRecord first = records.stream().filter(x -> x.label == "2017-05-05").findFirst().get();
+        MonitoringUptimeRecord first = records.stream().filter(x -> x.label.equals("2017-05-05")).findFirst().get();
         assertEquals(98.685, first.uptime, 0);
 
-        MonitoringUptimeRecord second = records.stream().filter(x -> x.label == "2017-05-06").findFirst().get();
+        MonitoringUptimeRecord second = records.stream().filter(x -> x.label.equals("2017-05-06")).findFirst().get();
         assertEquals(95.685, second.uptime, 0);
     }
 
@@ -112,7 +139,7 @@ public class VmMonitoringResourceTests {
 
         when(monitoringService.getCheckEvents(monitoringAccountId, vm.primaryIpAddress.pingCheckId, 0)).thenReturn(npEvents);
 
-        resource = new VmMonitoringResource(monitoringService, vmResource, monitoringMeta);
+        resource = new VmMonitoringResource(monitoringService, vmResource, monitoringMeta, panoptaService, panoptaDataService);
         PaginatedResult<MonitoringEvent> events = resource.getVmMonitoringEvents(vm.vmId, Integer.valueOf(30),
                 Integer.valueOf(10), Integer.valueOf(0), uriInfo);
 
@@ -125,5 +152,4 @@ public class VmMonitoringResourceTests {
         assertNull(event.end);
         assertEquals("timeout", event.message);
     }
-
 }

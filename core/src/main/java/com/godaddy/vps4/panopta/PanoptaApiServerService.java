@@ -41,4 +41,11 @@ public interface PanoptaApiServerService {
     void setServerStatus(@PathParam("server_id") int serverId,
                          @QueryParam("partner_customer_key") String partnerCustomerKey,
                          PanoptaApiUpdateServerRequest panoptaApiUpdateServerRequest);
+
+    @GET
+    @Path("/{server_id}/availability")
+    PanoptaAvailability getAvailability(@PathParam("server_id") int serverId,
+                                        @QueryParam("partner_customer_key") String partnerCustomerKey,
+                                        @QueryParam("start_time") String startTime,
+                                        @QueryParam("end_time") String endTime);
 }

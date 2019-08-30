@@ -177,5 +177,18 @@ public class DefaultPanoptaService implements PanoptaService {
             logger.info("Panopta server is already in active status. No need to update status");
         }
     }
-}
 
+    @Override
+    public PanoptaAvailability getAvailability(UUID vmId, String startTime, String endTime) throws PanoptaServiceException {
+        PanoptaDetail panoptaDetail = panoptaDataService.getPanoptaDetails(vmId);
+        if (panoptaDetail == null) {
+            logger.warn("Could not find Panopta data for VM ID: {}", vmId);
+            throw new PanoptaServiceException("NO_SERVER_FOUND",
+                                              "No matching server found in VPS4 Panopta database for VM ID: " + vmId);
+        }
+        return panoptaApiServerService.getAvailability((int) panoptaDetail.getServerId(),
+                                                       panoptaDetail.getPartnerCustomerKey(),
+                                                       startTime,
+                                                       endTime);
+    }
+}
