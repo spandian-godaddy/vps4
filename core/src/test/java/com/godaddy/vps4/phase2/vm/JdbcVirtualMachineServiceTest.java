@@ -297,6 +297,17 @@ public class JdbcVirtualMachineServiceTest {
 
         Assert.assertEquals( "centos-7", virtualMachineService.getOSDistro(vm.vmId));
     }
+
+    @Test
+    public void testVmOsDistroIspConfig() {
+        ProvisionVirtualMachineParameters params = new ProvisionVirtualMachineParameters(vps4User.getId(), 1, "vps4-testing-",
+                orionGuid, "testServer", 10, 1, "vps4-ubuntu-1604-ispconfig-3");
+        VirtualMachine vm = virtualMachineService.provisionVirtualMachine(params);
+        virtualMachines.add(vm);
+
+        System.out.println(virtualMachineService.getOSDistro(vm.vmId));
+        Assert.assertEquals( "ubuntu-1604", virtualMachineService.getOSDistro(vm.vmId));
+    }
     
     @Test 
     public void testUpdateManagedLevel() {

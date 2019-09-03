@@ -318,7 +318,7 @@ public class JdbcVirtualMachineService implements VirtualMachineService {
                 + "JOIN image ON image.image_id=v.image_id WHERE v.vm_id=?;",
                 Sql.nextOrNull(rs -> rs.getString("hfs_name")), vmId);
 
-        String pattern = "(?:hfs-)?(?<osdistro>\\w+-\\w+)(?:-\\w+-\\w+)?";
+        String pattern = "(?:hfs-|vps4-)?(?<osdistro>\\w+-\\w+)(?:-\\w+-\\w+)?";
         Matcher m = Pattern.compile(pattern).matcher(hfsName);
         m.matches();
         return m.group("osdistro");
