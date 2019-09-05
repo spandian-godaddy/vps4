@@ -1,13 +1,12 @@
 package com.godaddy.vps4.panopta;
 
-import java.time.Instant;
 import java.util.Map;
 import java.util.UUID;
 
 public interface PanoptaService {
     PanoptaCustomer createCustomer(UUID vmId) throws PanoptaServiceException;
 
-    void deleteCustomer(String partnerCustomerKey) throws PanoptaServiceException;
+    void deleteCustomer(UUID vmId);
 
     PanoptaServerMetric getServerMetricsFromPanopta(int agentResourceId, int serverId, String timescale,
                                                     String partnerCustomerKey) throws PanoptaServiceException;
@@ -22,4 +21,7 @@ public interface PanoptaService {
     void resumeServerMonitoring(UUID vmId);
 
     PanoptaAvailability getAvailability(UUID vmId, String startTime, String endTime) throws PanoptaServiceException;
+
+    void removeServerMonitoring(UUID vmId);
+
 }

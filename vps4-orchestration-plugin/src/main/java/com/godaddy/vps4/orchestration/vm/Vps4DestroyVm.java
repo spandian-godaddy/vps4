@@ -6,7 +6,6 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 
 import javax.inject.Inject;
-import javax.ws.rs.NotFoundException;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -16,8 +15,8 @@ import com.godaddy.vps4.network.IpAddress;
 import com.godaddy.vps4.network.NetworkService;
 import com.godaddy.vps4.orchestration.ActionCommand;
 import com.godaddy.vps4.orchestration.hfs.vm.DestroyVm;
+import com.godaddy.vps4.orchestration.monitoring.Vps4RemoveMonitoring;
 import com.godaddy.vps4.orchestration.scheduler.DeleteAutomaticBackupSchedule;
-import com.godaddy.vps4.util.MonitoringMeta;
 import com.godaddy.vps4.vm.ActionService;
 import com.godaddy.vps4.vm.VirtualMachine;
 import com.godaddy.vps4.vm.VirtualMachineService;
@@ -26,7 +25,6 @@ import gdg.hfs.orchestration.CommandContext;
 import gdg.hfs.orchestration.CommandMetadata;
 import gdg.hfs.orchestration.CommandRetryStrategy;
 import gdg.hfs.vhfs.cpanel.CPanelService;
-import gdg.hfs.vhfs.nodeping.NodePingService;
 import gdg.hfs.vhfs.plesk.PleskService;
 
 @CommandMetadata(
@@ -39,8 +37,6 @@ public class Vps4DestroyVm extends ActionCommand<VmActionRequest, Vps4DestroyVm.
 
     private static final Logger logger = LoggerFactory.getLogger(Vps4DestroyVm.class);
     private final NetworkService networkService;
-    private final NodePingService monitoringService;
-    private final MonitoringMeta monitoringMeta;
     CommandContext context;
 
     @Inject
@@ -48,13 +44,9 @@ public class Vps4DestroyVm extends ActionCommand<VmActionRequest, Vps4DestroyVm.
             NetworkService networkService,
             VirtualMachineService virtualMachineService,
             CPanelService cpanelService,
-            NodePingService monitoringService,
-            PleskService pleskService,
-            MonitoringMeta monitoringMeta) {
+            PleskService pleskService) {
         super(actionService);
         this.networkService = networkService;
-        this.monitoringService = monitoringService;
-        this.monitoringMeta = monitoringMeta;
     }
 
     @Override
@@ -65,6 +57,7 @@ public class Vps4DestroyVm extends ActionCommand<VmActionRequest, Vps4DestroyVm.
         VirtualMachine vm = request.virtualMachine;
 
         unlicenseControlPanel(vm);
+        removeMonitoring(vm);
         releaseIps(context, request, vm);
         deleteAutomaticBackupSchedule(vm);
         deleteAllScheduledJobsForVm(context, vm);
@@ -94,29 +87,21 @@ public class Vps4DestroyVm extends ActionCommand<VmActionRequest, Vps4DestroyVm.
         context.execute("DestroyAllScheduledJobsForVm", Vps4DeleteAllScheduledJobsForVm.class, vm.vmId);
     }
 
+    private void removeMonitoring(VirtualMachine vm) {
+        context.execute(Vps4RemoveMonitoring.class, vm.vmId);
+    }
+
     private void releaseIps(CommandContext context, VmActionRequest request, VirtualMachine vm) {
         List<IpAddress> activeAddresses = networkService.getVmIpAddresses(vm.vmId).stream()
                 .filter(address -> address.validUntil.isAfter(Instant.now())).collect(Collectors.toList());
 
         for (IpAddress address : activeAddresses) {
-            deleteIpMonitoring(address);
-
             context.execute("DeleteIpAddress-" + address.ipAddressId, Vps4DestroyIpAddress.class,
                     new Vps4DestroyIpAddress.Request(address, vm, true));
             context.execute("Destroy-" + address.ipAddressId, ctx -> {
                 networkService.destroyIpAddress(address.ipAddressId);
                 return null;
             }, Void.class);
-        }
-    }
-
-    private void deleteIpMonitoring(IpAddress address) {
-        if (address.pingCheckId != null) {
-            try {
-                monitoringService.deleteCheck(monitoringMeta.getAccountId(), address.pingCheckId);
-            } catch (NotFoundException ex) {
-                logger.info("Monitoring check {} was not found", address.pingCheckId, ex);
-            }
         }
     }
 

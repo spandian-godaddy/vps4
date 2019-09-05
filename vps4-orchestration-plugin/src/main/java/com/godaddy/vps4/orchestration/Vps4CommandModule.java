@@ -7,6 +7,10 @@ import com.godaddy.vps4.orchestration.messaging.SendScheduledPatchingEmail;
 import com.godaddy.vps4.orchestration.messaging.SendSystemDownFailoverEmail;
 import com.godaddy.vps4.orchestration.messaging.SendUnexpectedButScheduledMaintenanceEmail;
 import com.godaddy.vps4.orchestration.messaging.WaitForMessageComplete;
+import com.godaddy.vps4.orchestration.monitoring.DeletePanoptaCustomer;
+import com.godaddy.vps4.orchestration.monitoring.RemoveNodePingMonitoring;
+import com.godaddy.vps4.orchestration.monitoring.RemovePanoptaMonitoring;
+import com.godaddy.vps4.orchestration.monitoring.Vps4RemoveMonitoring;
 import com.godaddy.vps4.orchestration.panopta.PausePanoptaMonitoring;
 import com.godaddy.vps4.orchestration.panopta.ResumePanoptaMonitoring;
 import com.godaddy.vps4.orchestration.snapshot.Vps4DestroySnapshot;
@@ -96,5 +100,9 @@ public class Vps4CommandModule extends AbstractModule {
         bind(Vps4CreateDnsPtrRecord.class);
         bind(PausePanoptaMonitoring.class);
         bind(ResumePanoptaMonitoring.class);
+        bind(Vps4RemoveMonitoring.class);
+        bind(RemovePanoptaMonitoring.class);
+        bind(RemoveNodePingMonitoring.class);
+        bind(DeletePanoptaCustomer.class);
     }
 }

@@ -3,10 +3,8 @@ package com.godaddy.vps4.orchestration.vm;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyLong;
 import static org.mockito.Matchers.eq;
-import static org.mockito.Mockito.doNothing;
-import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -14,11 +12,9 @@ import static org.mockito.Mockito.when;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.UUID;
 
 import javax.ws.rs.ClientErrorException;
-import javax.ws.rs.NotFoundException;
 import javax.ws.rs.core.Response;
 
 import org.junit.Before;
@@ -40,8 +36,8 @@ import com.godaddy.vps4.orchestration.TestCommandContext;
 import com.godaddy.vps4.orchestration.hfs.network.ReleaseIp;
 import com.godaddy.vps4.orchestration.hfs.network.UnbindIp;
 import com.godaddy.vps4.orchestration.hfs.vm.DestroyVm;
+import com.godaddy.vps4.orchestration.monitoring.Vps4RemoveMonitoring;
 import com.godaddy.vps4.scheduledJob.ScheduledJobService;
-import com.godaddy.vps4.util.MonitoringMeta;
 import com.godaddy.vps4.vm.ActionService;
 import com.godaddy.vps4.vm.VirtualMachine;
 import com.godaddy.vps4.vm.VirtualMachineService;
@@ -56,7 +52,6 @@ import gdg.hfs.vhfs.cpanel.CPanelLicense;
 import gdg.hfs.vhfs.cpanel.CPanelService;
 import gdg.hfs.vhfs.network.AddressAction;
 import gdg.hfs.vhfs.network.IpAddress.Status;
-import gdg.hfs.vhfs.nodeping.NodePingService;
 import gdg.hfs.vhfs.plesk.PleskAction;
 import gdg.hfs.vhfs.plesk.PleskService;
 import junit.framework.Assert;
@@ -71,15 +66,14 @@ public class Vps4DestroyVmTest {
     PleskService pleskService = mock(PleskService.class);
     MailRelayService mailRelayService = mock(MailRelayService.class);
     VmService vmService = mock(VmService.class);
-    NodePingService nodePingService = mock(NodePingService.class);
     ScheduledJobService scheduledJobService = mock(ScheduledJobService.class);
     VmUserService vmUserService = mock(VmUserService.class);
-    MonitoringMeta monitoringMeta = mock(MonitoringMeta.class);
     HfsVmTrackingRecordService hfsVmTrackingRecordService = mock(HfsVmTrackingRecordService.class);
+    Vps4RemoveMonitoring removeMonitoring = mock(Vps4RemoveMonitoring.class);
     DestroyVm destroyVm = mock(DestroyVm.class);
 
     Vps4DestroyVm command = new Vps4DestroyVm(actionService, networkService, virtualMachineService,
-            cpanelService, nodePingService, pleskService, monitoringMeta);
+            cpanelService, pleskService);
 
     Injector injector = Guice.createInjector(binder -> {
         binder.bind(UnbindIp.class);
@@ -90,15 +84,14 @@ public class Vps4DestroyVmTest {
         binder.bind(CPanelService.class).toInstance(cpanelService);
         binder.bind(PleskService.class).toInstance(pleskService);
         binder.bind(MailRelayService.class).toInstance(mailRelayService);
-        binder.bind(NodePingService.class).toInstance(nodePingService);
         binder.bind(ScheduledJobService.class).toInstance(scheduledJobService);
         binder.bind(VmUserService.class).toInstance(vmUserService);
-        binder.bind(MonitoringMeta.class).toInstance(monitoringMeta);
         binder.bind(HfsVmTrackingRecordService.class).toInstance(hfsVmTrackingRecordService);
+        binder.bind(Vps4RemoveMonitoring.class).toInstance(removeMonitoring);
         binder.bind(DestroyVm.class).toInstance(destroyVm);
     });
 
-    CommandContext context = new TestCommandContext(new GuiceCommandProvider(injector));
+    CommandContext context = spy(new TestCommandContext(new GuiceCommandProvider(injector)));
 
     VirtualMachine vm;
     VmActionRequest request;
@@ -150,8 +143,6 @@ public class Vps4DestroyVmTest {
         when(hfsNetworkService.getAddress(primaryIp.ipAddressId)).thenReturn(hfsIpAddress);
         when(hfsNetworkService.unbindIp(Mockito.anyLong(), Mockito.eq(true))).thenReturn(addressAction);
         when(hfsNetworkService.releaseIp(Mockito.anyLong())).thenReturn(addressAction);
-        doNothing().when(nodePingService).deleteCheck(nodePingAccountId, primaryIp.pingCheckId);
-        when(monitoringMeta.getAccountId()).thenReturn(nodePingAccountId);
         when(cpanelService.getLicenseFromDb(eq(request.virtualMachine.hfsVmId))).thenReturn(cPanelLicense);
         when(cpanelService.getLicenseFromDb(0)).thenReturn(new CPanelLicense());
         when(hfsVmTrackingRecordService.create(anyLong(), any(), any())).thenReturn(hfsVmTrackingRecord);
@@ -172,7 +163,6 @@ public class Vps4DestroyVmTest {
         when(mailRelayService.setRelayQuota(eq("1.2.3.4"), any(MailRelayUpdate.class))).thenReturn(mailRelay);
         command.execute(context, this.request);
         verify(pleskService, times(1)).licenseRelease(this.request.virtualMachine.hfsVmId);
-        verify(nodePingService, times(1)).deleteCheck(nodePingAccountId, primaryIp.pingCheckId);
 
         verifyMailRelay();
     }
@@ -248,17 +238,9 @@ public class Vps4DestroyVmTest {
     }
 
     @Test
-    public void testDeleteIpMonitoringWithNullCheckId() throws Exception {
-        primaryIp.pingCheckId = null;
-        when(networkService.getVmIpAddresses(vm.vmId)).thenReturn(Arrays.asList(primaryIp));
+    public void destroyVmRemovesMonitoring() {
         command.execute(context, request);
-        verify(nodePingService, never()).deleteCheck(anyLong(), anyLong());
+        verify(context).execute(Vps4RemoveMonitoring.class, vm.vmId);
     }
 
-    @Test
-    public void testDeleteIpMonitoringIgnoresNotFoundException() throws Exception {
-        doThrow(new NotFoundException()).when(nodePingService).deleteCheck(nodePingAccountId, primaryIp.pingCheckId);
-        command.execute(context, request);
-        verify(nodePingService, times(1)).deleteCheck(nodePingAccountId, primaryIp.pingCheckId);
-    }
 }

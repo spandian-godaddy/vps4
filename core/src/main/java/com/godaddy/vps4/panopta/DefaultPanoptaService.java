@@ -81,12 +81,12 @@ public class DefaultPanoptaService implements PanoptaService {
     }
 
     @Override
-    public void deleteCustomer(String partnerCustomerKey) throws PanoptaServiceException {
-        PanoptaCustomer panoptaCustomer =
-                mapResponseToCustomer(getCustomerDetails(partnerCustomerKey));
-        panoptaApiCustomerService.deleteCustomer(panoptaCustomer.customerKey);
+    public void deleteCustomer(UUID vmId) {
+        PanoptaDetail panoptaDetails = panoptaDataService.getPanoptaDetails(vmId);
+        panoptaApiCustomerService.deleteCustomer(panoptaDetails.getCustomerKey());
     }
 
+    @Override
     public PanoptaServerMetric getServerMetricsFromPanopta(int agentResourceId, int serverId, String timescale,
                                                            String partnerCustomerKey)
             throws PanoptaServiceException {
@@ -190,5 +190,11 @@ public class DefaultPanoptaService implements PanoptaService {
                                                        panoptaDetail.getPartnerCustomerKey(),
                                                        startTime,
                                                        endTime);
+    }
+
+    @Override
+    public void removeServerMonitoring(UUID vmId) {
+        PanoptaDetail panoptaDetails = panoptaDataService.getPanoptaDetails(vmId);
+        panoptaApiServerService.deleteServer((int)panoptaDetails.getServerId(), panoptaDetails.getPartnerCustomerKey());
     }
 }

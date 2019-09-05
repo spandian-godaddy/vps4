@@ -2,6 +2,7 @@ package com.godaddy.vps4.panopta;
 
 
 import javax.ws.rs.Consumes;
+import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
 import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
@@ -48,4 +49,9 @@ public interface PanoptaApiServerService {
                                         @QueryParam("partner_customer_key") String partnerCustomerKey,
                                         @QueryParam("start_time") String startTime,
                                         @QueryParam("end_time") String endTime);
+
+    @DELETE
+    @Path("/{server_id}")
+    void deleteServer(@PathParam("server_id") int serverId,
+            @QueryParam("partner_customer_key") String partnerCustomerKey);
 }

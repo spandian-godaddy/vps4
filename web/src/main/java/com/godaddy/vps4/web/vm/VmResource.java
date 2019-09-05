@@ -71,7 +71,6 @@ import com.godaddy.vps4.web.util.ResellerConfigHelper;
 
 import gdg.hfs.orchestration.CommandService;
 import gdg.hfs.orchestration.CommandState;
-
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;

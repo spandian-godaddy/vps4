@@ -1,8 +1,5 @@
 package com.godaddy.vps4.panopta;
 
-import org.junit.Before;
-import org.junit.Test;
-
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.mock;
@@ -11,10 +8,11 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-
 import java.time.Instant;
-import java.time.temporal.ChronoUnit;
 import java.util.UUID;
+
+import org.junit.Before;
+import org.junit.Test;
 
 import com.godaddy.hfs.config.Config;
 import com.godaddy.vps4.credit.CreditService;
@@ -30,6 +28,7 @@ public class DefaultPanoptaServiceTest {
     private Config config;
     private long serverId;
     private UUID vmId;
+    private String customerKey;
     private String partnerCustomerKey;
     private DefaultPanoptaService defaultPanoptaService;
     private PanoptaDetail panoptaDetail;
@@ -45,6 +44,7 @@ public class DefaultPanoptaServiceTest {
         config = mock(Config.class);
         serverId = 666L;
         partnerCustomerKey = "someRandomPartnerCustomerKey";
+        customerKey = "someCustomerKey";
         vmId = UUID.randomUUID();
         defaultPanoptaService = new DefaultPanoptaService(panoptaApiCustomerService,
                                                           panoptaApiServerService,
@@ -53,7 +53,7 @@ public class DefaultPanoptaServiceTest {
                                                           creditService,
                                                           config);
         panoptaDetail = new PanoptaDetail(1, vmId, partnerCustomerKey,
-                                          "someCustomerKey", serverId, "someServerKey",
+                                          customerKey, serverId, "someServerKey",
                                           Instant.now(), Instant.MAX);
         server = new PanoptaServers.Server();
         server.url = "https://api2.panopta.com/v2/server/666";
@@ -120,5 +120,19 @@ public class DefaultPanoptaServiceTest {
         String endTime = "2007-12-03 12:15:30";
         defaultPanoptaService.getAvailability(vmId, startTime, endTime);
         verify(panoptaApiServerService, times(1)).getAvailability(eq((int)serverId), eq(partnerCustomerKey), eq(startTime), eq(endTime));
+    }
+
+    @Test
+    public void removeMonitoringCallsPanoptaApiDeleteServer() {
+        when(panoptaDataService.getPanoptaDetails(vmId)).thenReturn(panoptaDetail);
+        defaultPanoptaService.removeServerMonitoring(vmId);
+        verify(panoptaApiServerService).deleteServer((int)serverId, partnerCustomerKey);
+    }
+
+    @Test
+    public void deleteCustomerCallsPanoptaApiDeleteCustomer() {
+        when(panoptaDataService.getPanoptaDetails(vmId)).thenReturn(panoptaDetail);
+        defaultPanoptaService.deleteCustomer(vmId);
+        verify(panoptaApiCustomerService).deleteCustomer(customerKey);
     }
 }
