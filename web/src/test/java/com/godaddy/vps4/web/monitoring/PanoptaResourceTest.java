@@ -33,18 +33,16 @@ import com.godaddy.vps4.panopta.PanoptaApiCustomerRequest;
 import com.godaddy.vps4.panopta.PanoptaApiCustomerService;
 import com.godaddy.vps4.panopta.PanoptaApiServerService;
 import com.godaddy.vps4.panopta.PanoptaDataService;
+import com.godaddy.vps4.panopta.PanoptaDetail;
 import com.godaddy.vps4.panopta.PanoptaServers;
 import com.godaddy.vps4.panopta.PanoptaService;
-import com.godaddy.vps4.panopta.PanoptaServiceException;
 import com.godaddy.vps4.security.GDUserMock;
-import com.godaddy.vps4.security.jdbc.AuthorizationException;
 import com.godaddy.vps4.util.ObjectMapperModule;
 import com.godaddy.vps4.vm.AccountStatus;
 import com.godaddy.vps4.vm.DataCenterService;
 import com.godaddy.vps4.vm.ServerSpec;
 import com.godaddy.vps4.vm.VirtualMachine;
 import com.godaddy.vps4.vm.VirtualMachineService;
-import com.godaddy.vps4.web.Vps4Exception;
 import com.godaddy.vps4.web.security.GDUser;
 import com.godaddy.vps4.web.vm.VmResource;
 import com.google.inject.AbstractModule;
@@ -292,14 +290,12 @@ public class PanoptaResourceTest {
 
     @Test
     public void testCustomerDeletion() {
-        when(panoptaApiCustomerService.getCustomer("gdtest_" + vmId)).thenReturn(fakePanoptaApiCustomerList);
-        when(config.get(eq("panopta.api.partner.customer.key.prefix"))).thenReturn("gdtest_");
-        when(responseStatusType.getFamily()).thenReturn(Response.Status.Family.SUCCESSFUL);
-
+        String customerKey = "2hum-wpmt-vswt-2g3b";
+        PanoptaDetail panoptaDetails = new PanoptaDetail(42L, vmId, "partnerCustomerKey", customerKey,
+                23L, "serverKey", Instant.now(), null);
+        when(panoptaDataService.getPanoptaDetails(vmId)).thenReturn(panoptaDetails);
         panoptaResource1.deleteCustomer(vmId);
-
-        verify(panoptaApiCustomerService, times(1)).getCustomer(eq("gdtest_" + vmId));
-        verify(panoptaApiCustomerService, times(1)).deleteCustomer(eq("2hum-wpmt-vswt-2g3b"));
+        verify(panoptaApiCustomerService, times(1)).deleteCustomer(customerKey);
     }
 
     @Test

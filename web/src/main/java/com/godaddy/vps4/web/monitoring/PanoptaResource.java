@@ -1,10 +1,5 @@
 package com.godaddy.vps4.web.monitoring;
 
-import static com.godaddy.vps4.web.util.RequestValidation.getAndValidateUserAccountCredit;
-import static com.godaddy.vps4.web.util.RequestValidation.validateAndReturnDateInstant;
-import static com.godaddy.vps4.web.util.RequestValidation.validateVmExists;
-
-import java.time.Instant;
 import java.util.UUID;
 
 import javax.ws.rs.Consumes;
@@ -14,7 +9,6 @@ import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
-import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
 
 import org.apache.commons.lang3.StringUtils;
@@ -24,7 +18,6 @@ import org.slf4j.LoggerFactory;
 import com.godaddy.hfs.config.Config;
 import com.godaddy.vps4.credit.CreditService;
 import com.godaddy.vps4.credit.VirtualMachineCredit;
-import com.godaddy.vps4.panopta.PanoptaAvailability;
 import com.godaddy.vps4.panopta.PanoptaCustomer;
 import com.godaddy.vps4.panopta.PanoptaServer;
 import com.godaddy.vps4.panopta.PanoptaService;
@@ -41,7 +34,6 @@ import com.google.inject.Inject;
 
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
-import io.swagger.annotations.ApiParam;
 import io.swagger.annotations.ApiResponse;
 import io.swagger.annotations.ApiResponses;
 
@@ -116,13 +108,7 @@ public class PanoptaResource {
             @ApiResponse(code = 404, message = "Could not delete customer, or customer does not exist.")
     })
     public void deleteCustomer(@PathParam("vmId") UUID vmId) {
-        try {
-            panoptaService.deleteCustomer(
-                    config.get("panopta.api.partner.customer.key.prefix") + vmId);
-        } catch (PanoptaServiceException e) {
-            logger.warn("Encountered exception while attempting to delete customer in panopta: ", e);
-            throw new Vps4Exception(e.getId(), e.getMessage(), e);
-        }
+        panoptaService.deleteCustomer(vmId);
     }
 
     public static class CreateCustomerRequest {
