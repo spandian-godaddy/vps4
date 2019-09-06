@@ -24,8 +24,6 @@ import com.godaddy.vps4.orchestration.hfs.plesk.ConfigurePlesk.ConfigurePleskReq
 import com.godaddy.vps4.orchestration.hfs.sysadmin.SetPassword;
 import com.godaddy.vps4.orchestration.hfs.sysadmin.ToggleAdmin;
 import com.godaddy.vps4.orchestration.hfs.vm.RebuildDedicated;
-import com.godaddy.vps4.orchestration.sysadmin.ConfigureMailRelay;
-import com.godaddy.vps4.orchestration.sysadmin.ConfigureMailRelay.ConfigureMailRelayRequest;
 import com.godaddy.vps4.vm.ActionService;
 import com.godaddy.vps4.vm.Image;
 import com.godaddy.vps4.vm.RebuildVmInfo;
@@ -100,7 +98,6 @@ public class Vps4RebuildDedicated extends ActionCommand<Vps4RebuildDedicated.Req
         setRootUserPassword(newHfsVmId);
         configureControlPanel(newHfsVmId);
         configureAdminUser(newHfsVmId);
-        configureMailRelay(newHfsVmId);
 
         updateServerDetails(request);
         setEcommCommonName(oldVm.orionGuid, request.rebuildVmInfo.serverName);
@@ -109,14 +106,6 @@ public class Vps4RebuildDedicated extends ActionCommand<Vps4RebuildDedicated.Req
 
         logger.info("Completed Dedicated VM Rebuild.");
         return null;
-    }
-
-    private void configureMailRelay(long hfsVmId) {
-        setStep(RebuildVmStep.ConfigureMailRelay);
-
-        ConfigureMailRelayRequest configureMailRelayRequest = new ConfigureMailRelayRequest(hfsVmId, request.rebuildVmInfo.image.controlPanel);
-        context.execute(ConfigureMailRelay.class, configureMailRelayRequest);
-
     }
 
     private void updateServerDetails(Request request) {

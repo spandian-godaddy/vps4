@@ -338,25 +338,6 @@ public class Vps4RebuildDedicatedTest {
     }
 
     @Test
-    public void configuresMailRelayWithNullControlPanel() {
-        command.execute(context, request);
-        verify(context, times(1)).execute(eq(ConfigureMailRelay.class), configMTAArgumentCaptor.capture());
-        ConfigureMailRelay.ConfigureMailRelayRequest mtaReq = configMTAArgumentCaptor.getValue();
-
-        Assert.assertNull(mtaReq.controlPanel);
-    }
-
-    @Test
-    public void configuresMailRelayWithcPanel() {
-        request.rebuildVmInfo.image.controlPanel= Image.ControlPanel.CPANEL;
-        command.execute(context, request);
-        verify(context, times(1)).execute(eq(ConfigureMailRelay.class), configMTAArgumentCaptor.capture());
-        ConfigureMailRelay.ConfigureMailRelayRequest mtaReq = configMTAArgumentCaptor.getValue();
-
-        Assert.assertEquals(Image.ControlPanel.CPANEL.toString().toLowerCase(), mtaReq.controlPanel);
-    }
-
-    @Test
     public void configuresControlPanelForcPanelImage() {
         request.rebuildVmInfo.image = setupcPanelImage();
         command.execute(context, request);
