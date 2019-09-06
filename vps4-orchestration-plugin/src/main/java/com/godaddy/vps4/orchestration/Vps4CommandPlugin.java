@@ -1,7 +1,10 @@
 package com.godaddy.vps4.orchestration;
 
-import ch.qos.logback.classic.Level;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.godaddy.hfs.config.Config;
+import com.godaddy.vps4.config.ConfigModule;
 import com.godaddy.vps4.credit.CreditModule;
 import com.godaddy.vps4.hfs.HfsVmTrackingRecordModule;
 import com.godaddy.vps4.jdbc.DatabaseModule;
@@ -11,6 +14,7 @@ import com.godaddy.vps4.orchestration.hfs.HfsCommandModule;
 import com.godaddy.vps4.orchestration.hfs.HfsMockModule;
 import com.godaddy.vps4.orchestration.hfs.HfsModule;
 import com.godaddy.vps4.orchestration.scheduler.SchedulerModule;
+import com.godaddy.vps4.panopta.PanoptaClientModule;
 import com.godaddy.vps4.panopta.PanoptaModule;
 import com.godaddy.vps4.scheduler.api.client.SchedulerServiceClientModule;
 import com.godaddy.vps4.security.SecurityModule;
@@ -22,13 +26,11 @@ import com.google.inject.AbstractModule;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import gdg.hfs.orchestration.CommandPlugin;
 import gdg.hfs.orchestration.CommandProvider;
 import gdg.hfs.orchestration.GuiceCommandProvider;
-import com.godaddy.vps4.config.ConfigModule;
+
+import ch.qos.logback.classic.Level;
 
 public class Vps4CommandPlugin implements CommandPlugin {
 
@@ -79,7 +81,8 @@ public class Vps4CommandPlugin implements CommandPlugin {
             new SecurityModule(),
             new MonitoringModule(),
             new HfsVmTrackingRecordModule(),
-            new PanoptaModule()
+            new PanoptaModule(),
+            new PanoptaClientModule()
             );
             
         return new GuiceCommandProvider(injector);

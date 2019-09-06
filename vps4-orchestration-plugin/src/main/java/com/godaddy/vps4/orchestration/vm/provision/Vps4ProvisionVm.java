@@ -6,6 +6,7 @@ import static com.godaddy.vps4.vm.CreateVmStep.ConfiguringCPanel;
 import static com.godaddy.vps4.vm.CreateVmStep.ConfiguringNetwork;
 import static com.godaddy.vps4.vm.CreateVmStep.ConfiguringPlesk;
 import static com.godaddy.vps4.vm.CreateVmStep.GeneratingHostname;
+import static com.godaddy.vps4.vm.CreateVmStep.InstallPanopta;
 import static com.godaddy.vps4.vm.CreateVmStep.RequestingIPAddress;
 import static com.godaddy.vps4.vm.CreateVmStep.RequestingMailRelay;
 import static com.godaddy.vps4.vm.CreateVmStep.RequestingServer;
@@ -25,6 +26,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.godaddy.hfs.config.Config;
 import com.godaddy.hfs.vm.VmAction;
 import com.godaddy.vps4.credit.CreditService;
+import com.godaddy.vps4.credit.VirtualMachineCredit;
 import com.godaddy.vps4.hfs.HfsVmTrackingRecordService;
 import com.godaddy.vps4.messaging.Vps4MessagingService;
 import com.godaddy.vps4.network.IpAddress.IpAddressType;
@@ -41,6 +43,7 @@ import com.godaddy.vps4.orchestration.hfs.sysadmin.SetHostname;
 import com.godaddy.vps4.orchestration.hfs.sysadmin.SetPassword;
 import com.godaddy.vps4.orchestration.hfs.sysadmin.ToggleAdmin;
 import com.godaddy.vps4.orchestration.hfs.vm.CreateVm;
+import com.godaddy.vps4.orchestration.panopta.SetupPanopta;
 import com.godaddy.vps4.orchestration.scheduler.SetupAutomaticBackupSchedule;
 import com.godaddy.vps4.orchestration.sysadmin.ConfigureMailRelay;
 import com.godaddy.vps4.orchestration.sysadmin.ConfigureMailRelay.ConfigureMailRelayRequest;
@@ -141,7 +144,7 @@ public class Vps4ProvisionVm extends ActionCommand<ProvisionRequest, Vps4Provisi
 
         configureMailRelay(hfsVmId);
 
-        configureMonitoring(ip);
+        configureMonitoring(ip, hfsVmId);
 
         setEcommCommonName(request.orionGuid, request.serverName);
 
@@ -185,7 +188,7 @@ public class Vps4ProvisionVm extends ActionCommand<ProvisionRequest, Vps4Provisi
         setStep(SetHostname);
 
         SetHostname.Request hfsRequest = new SetHostname.Request(hfsVmId, hostname,
-                request.vmInfo.image.getImageControlPanel());
+                                                                 request.vmInfo.image.getImageControlPanel());
 
         context.execute(SetHostname.class, hfsRequest);
     }
@@ -222,7 +225,8 @@ public class Vps4ProvisionVm extends ActionCommand<ProvisionRequest, Vps4Provisi
     private void configureMailRelay(long hfsVmId) {
         setStep(ConfigureMailRelay);
 
-        ConfigureMailRelayRequest configureMailRelayRequest = new ConfigureMailRelayRequest(hfsVmId, request.vmInfo.image.controlPanel);
+        ConfigureMailRelayRequest configureMailRelayRequest =
+                new ConfigureMailRelayRequest(hfsVmId, request.vmInfo.image.controlPanel);
         context.execute(ConfigureMailRelay.class, configureMailRelayRequest);
 
     }
@@ -238,7 +242,8 @@ public class Vps4ProvisionVm extends ActionCommand<ProvisionRequest, Vps4Provisi
         VirtualMachine vm = virtualMachineService.getVirtualMachine(request.vmInfo.vmId);
         if (vm.image.operatingSystem == Image.OperatingSystem.LINUX) {
             SetPassword.Request setRootPasswordRequest
-                = ProvisionHelper.createSetRootPasswordRequest(hfsVmId, request.encryptedPassword, vm.image.getImageControlPanel());
+                    = ProvisionHelper
+                    .createSetRootPasswordRequest(hfsVmId, request.encryptedPassword, vm.image.getImageControlPanel());
             context.execute(SetPassword.class, setRootPasswordRequest);
         }
     }
@@ -316,14 +321,40 @@ public class Vps4ProvisionVm extends ActionCommand<ProvisionRequest, Vps4Provisi
         return ip;
     }
 
-    private void configureMonitoring(IpAddress ipAddress) {
+    private void configureMonitoring(IpAddress ipAddress, long hfsVmId) {
+        VirtualMachineCredit credit = creditService.getVirtualMachineCredit(request.orionGuid);
+
         if (request.vmInfo.hasMonitoring) {
-            setStep(ConfigureNodeping);
-            CreateCheckRequest checkRequest = ProvisionHelper.getCreateCheckRequest(ipAddress.address, monitoringMeta);
-            NodePingCheck check = monitoringService.createCheck(monitoringMeta.getAccountId(), checkRequest);
-            logger.debug("CheckId: {}", check.checkId);
-            addCheckIdToIp(ipAddress, check);
+
+            // gate panopta installation using a feature flag
+            boolean isPanoptaInstallationEnabled = Boolean.parseBoolean(config.get("panopta.installation.enabled", "false"));
+
+            if (isPanoptaInstallationEnabled) {
+                setStep(InstallPanopta);
+                installPanopta(hfsVmId, credit);
+            } else {
+                configureNodeping(ipAddress);
+            }
         }
+    }
+
+    private void installPanopta(long hfsVmId, VirtualMachineCredit credit) {
+        SetupPanopta.Request setupPanoptaRequest = new SetupPanopta.Request();
+        setupPanoptaRequest.hfsVmId = hfsVmId;
+        setupPanoptaRequest.orionGuid = request.orionGuid;
+        setupPanoptaRequest.vmId = request.vmInfo.vmId;
+        setupPanoptaRequest.panoptaTemplates = config.get("panopta.api.templates." + credit.effectiveManagedLevel().toString() + "." + credit
+                .getOperatingSystem());
+        context.execute(SetupPanopta.class, setupPanoptaRequest);
+    }
+
+    private void configureNodeping(IpAddress ipAddress) {
+        setStep(ConfigureNodeping);
+        CreateCheckRequest checkRequest =
+                ProvisionHelper.getCreateCheckRequest(ipAddress.address, monitoringMeta);
+        NodePingCheck check = monitoringService.createCheck(monitoringMeta.getAccountId(), checkRequest);
+        logger.debug("CheckId: {}", check.checkId);
+        addCheckIdToIp(ipAddress, check);
     }
 
     private void addCheckIdToIp(IpAddress ipAddress, NodePingCheck check) {
@@ -343,7 +374,8 @@ public class Vps4ProvisionVm extends ActionCommand<ProvisionRequest, Vps4Provisi
     private void sendSetupEmail(ProvisionRequest request, String ipAddress) {
         try {
             String messageId = messagingService.sendSetupEmail(request.shopperId, request.serverName, ipAddress,
-                    request.orionGuid.toString(), request.vmInfo.isFullyManaged());
+                                                               request.orionGuid.toString(),
+                                                               request.vmInfo.isFullyManaged());
             logger.info(String.format("Setup email sent for shopper %s. Message id: %s", request.shopperId, messageId));
         } catch (Exception ex) {
             logger.error(

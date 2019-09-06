@@ -1,6 +1,7 @@
 package com.godaddy.vps4.credit;
 
 import java.time.Instant;
+import java.util.Arrays;
 import java.util.Map;
 import java.util.UUID;
 
@@ -46,7 +47,7 @@ public class VirtualMachineCredit {
     private VirtualMachineCredit() {
     }
 
-    public enum EffectiveManagedLevel{
+    public enum EffectiveManagedLevel {
         SELF_MANAGED_V1,
         SELF_MANAGED_V2,
         MANAGED_V1,
@@ -97,6 +98,12 @@ public class VirtualMachineCredit {
     }
 
     @JsonIgnore
+    public boolean isEffectivelySelfManaged() {
+        return Arrays.asList(EffectiveManagedLevel.SELF_MANAGED_V1, EffectiveManagedLevel.SELF_MANAGED_V2)
+                     .contains(this.effectiveManagedLevel());
+    }
+
+    @JsonIgnore
     public Instant getPurchasedAt() {
         return purchasedAt;
     }
@@ -108,7 +115,7 @@ public class VirtualMachineCredit {
     @JsonProperty("effectiveManagedLevel")
     public EffectiveManagedLevel effectiveManagedLevel() {
         EffectiveManagedLevel effectiveManagedLevel;
-        switch(managedLevel) {
+        switch (managedLevel) {
             case 2:
                 effectiveManagedLevel = EffectiveManagedLevel.FULLY_MANAGED;
                 break;
@@ -116,9 +123,9 @@ public class VirtualMachineCredit {
                 effectiveManagedLevel = EffectiveManagedLevel.MANAGED_V2;
                 break;
             default:
-                if(purchasedBeforeMLV2CutoffDate()){
+                if (purchasedBeforeMLV2CutoffDate()) {
                     // determine level based on control panel
-                    if(controlPanel==null || MYH_CONTROL_PANEL.equalsIgnoreCase(controlPanel)){
+                    if (controlPanel == null || MYH_CONTROL_PANEL.equalsIgnoreCase(controlPanel)) {
                         effectiveManagedLevel = EffectiveManagedLevel.SELF_MANAGED_V1;
                     } else {
                         effectiveManagedLevel = EffectiveManagedLevel.MANAGED_V1;
@@ -307,7 +314,8 @@ public class VirtualMachineCredit {
                 credit.dataCenter = getDataCenter();
                 credit.productId = getProductId();
                 credit.abuseSuspendedFlag = getFlagFromProductMeta(ProductMetaField.ABUSE_SUSPENDED_FLAG.toString());
-                credit.billingSuspendedFlag = getFlagFromProductMeta(ProductMetaField.BILLING_SUSPENDED_FLAG.toString());
+                credit.billingSuspendedFlag =
+                        getFlagFromProductMeta(ProductMetaField.BILLING_SUSPENDED_FLAG.toString());
                 credit.panoptaInstalled = getFlagFromProductMeta(ProductMetaField.PANOPTA_INSTALLED.toString());
             }
 

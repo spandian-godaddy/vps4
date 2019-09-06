@@ -1,6 +1,8 @@
 package com.godaddy.vps4.orchestration;
 
 import com.godaddy.vps4.orchestration.dns.Vps4CreateDnsPtrRecord;
+import com.godaddy.vps4.orchestration.panopta.CreatePanoptaCustomer;
+import com.godaddy.vps4.orchestration.hfs.sysadmin.InstallPanopta;
 import com.godaddy.vps4.orchestration.mailrelay.Vps4SetMailRelayQuota;
 import com.godaddy.vps4.orchestration.messaging.SendFailoverCompletedEmail;
 import com.godaddy.vps4.orchestration.messaging.SendScheduledPatchingEmail;
@@ -13,6 +15,8 @@ import com.godaddy.vps4.orchestration.monitoring.RemovePanoptaMonitoring;
 import com.godaddy.vps4.orchestration.monitoring.Vps4RemoveMonitoring;
 import com.godaddy.vps4.orchestration.panopta.PausePanoptaMonitoring;
 import com.godaddy.vps4.orchestration.panopta.ResumePanoptaMonitoring;
+import com.godaddy.vps4.orchestration.panopta.GetPanoptaServerDetails;
+import com.godaddy.vps4.orchestration.panopta.SetupPanopta;
 import com.godaddy.vps4.orchestration.snapshot.Vps4DestroySnapshot;
 import com.godaddy.vps4.orchestration.snapshot.Vps4SnapshotVm;
 import com.godaddy.vps4.orchestration.sysadmin.Vps4AddSupportUser;
@@ -104,5 +108,9 @@ public class Vps4CommandModule extends AbstractModule {
         bind(RemovePanoptaMonitoring.class);
         bind(RemoveNodePingMonitoring.class);
         bind(DeletePanoptaCustomer.class);
+        bind(CreatePanoptaCustomer.class);
+        bind(InstallPanopta.class);
+        bind(GetPanoptaServerDetails.class);
+        bind(SetupPanopta.class);
     }
 }

@@ -690,6 +690,11 @@ public class HfsMockModule extends AbstractModule {
             public SysAdminAction removeNydus(long l) {
                 return null;
             }
+
+            @Override
+            public SysAdminAction installPanopta(long vmId, String customerKey, String templates, String serverName) {
+                return null;
+            }
         };
     }
 

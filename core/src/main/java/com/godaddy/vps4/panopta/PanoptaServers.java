@@ -8,7 +8,7 @@ import org.apache.commons.lang3.builder.ToStringStyle;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 /*
-Representation of the response
+Representation of panopta response
 {
   "meta": {
     "limit": 50,

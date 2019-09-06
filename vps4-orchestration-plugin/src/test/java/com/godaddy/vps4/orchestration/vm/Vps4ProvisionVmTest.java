@@ -32,6 +32,7 @@ import com.godaddy.hfs.vm.VmAction.Status;
 import com.godaddy.hfs.vm.VmService;
 import com.godaddy.vps4.credit.CreditService;
 import com.godaddy.vps4.hfs.HfsVmTrackingRecordService;
+import com.godaddy.vps4.credit.VirtualMachineCredit;
 import com.godaddy.vps4.messaging.MissingShopperIdException;
 import com.godaddy.vps4.messaging.Vps4MessagingService;
 import com.godaddy.vps4.network.NetworkService;
@@ -42,10 +43,13 @@ import com.godaddy.vps4.orchestration.hfs.sysadmin.SetHostname;
 import com.godaddy.vps4.orchestration.hfs.sysadmin.SetPassword;
 import com.godaddy.vps4.orchestration.hfs.sysadmin.ToggleAdmin;
 import com.godaddy.vps4.orchestration.hfs.vm.CreateVm;
+import com.godaddy.vps4.orchestration.panopta.SetupPanopta;
 import com.godaddy.vps4.orchestration.scheduler.SetupAutomaticBackupSchedule;
 import com.godaddy.vps4.orchestration.sysadmin.ConfigureMailRelay;
 import com.godaddy.vps4.orchestration.vm.provision.ProvisionRequest;
 import com.godaddy.vps4.orchestration.vm.provision.Vps4ProvisionVm;
+import com.godaddy.vps4.panopta.PanoptaDataService;
+import com.godaddy.vps4.panopta.PanoptaService;
 import com.godaddy.vps4.util.MonitoringMeta;
 import com.godaddy.vps4.vm.ActionService;
 import com.godaddy.vps4.vm.Image;
@@ -83,15 +87,23 @@ public class Vps4ProvisionVmTest {
     MonitoringMeta monitoringMeta = mock(MonitoringMeta.class);
     Vps4MessagingService messagingService = mock(Vps4MessagingService.class);
     CreditService creditService = mock(CreditService.class);
+    VirtualMachineCredit credit = mock(VirtualMachineCredit.class);
+    PanoptaService panoptaService = mock(PanoptaService.class);
+    PanoptaDataService panoptaDataService = mock(PanoptaDataService.class);
     Config config = mock(Config.class);
     HfsVmTrackingRecordService hfsVmTrackingRecordService = mock(HfsVmTrackingRecordService.class);
-    @Captor private ArgumentCaptor<Function<CommandContext, Void>> setCommonNameLambdaCaptor;
-    @Captor private ArgumentCaptor<SetPassword.Request> setPasswordCaptor;
-    @Captor private ArgumentCaptor<SetHostname.Request> setHostnameArgumentCaptor;
+    @Captor
+    private ArgumentCaptor<Function<CommandContext, Void>> setCommonNameLambdaCaptor;
+    @Captor
+    private ArgumentCaptor<SetPassword.Request> setPasswordCaptor;
+    @Captor
+    private ArgumentCaptor<SetHostname.Request> setHostnameArgumentCaptor;
+    @Captor
+    private ArgumentCaptor<SetupPanopta.Request> setupPanoptaRequestArgCaptor;
 
-    Vps4ProvisionVm command = new Vps4ProvisionVm(actionService, virtualMachineService, vmUserService, networkService,
-                                                  nodePingService, monitoringMeta, messagingService, creditService,
-                                                  config, hfsVmTrackingRecordService);
+    Vps4ProvisionVm command =
+            new Vps4ProvisionVm(actionService, virtualMachineService, vmUserService, networkService, nodePingService,
+                                monitoringMeta, messagingService, creditService, config, hfsVmTrackingRecordService);
 
     Injector injector = Guice.createInjector(binder -> {
         binder.bind(ActionService.class).toInstance(actionService);
@@ -110,6 +122,8 @@ public class Vps4ProvisionVmTest {
         binder.bind(ConfigurePlesk.class).toInstance(mock(ConfigurePlesk.class));
         binder.bind(Vps4MessagingService.class).toInstance(messagingService);
         binder.bind(CreditService.class).toInstance(creditService);
+        binder.bind(PanoptaService.class).toInstance(panoptaService);
+        binder.bind(PanoptaDataService.class).toInstance(panoptaDataService);
         binder.bind(Config.class).toInstance(config);
         binder.bind(HfsVmTrackingRecordService.class).toInstance(hfsVmTrackingRecordService);
     });
@@ -141,9 +155,9 @@ public class Vps4ProvisionVmTest {
         image.hfsName = "foobar";
         expectedServerName = "VM Name";
         this.vm = new VirtualMachine(UUID.randomUUID(), hfsVmId, UUID.randomUUID(), 1,
-                null, expectedServerName,
-                image, null, null, null, null,
-                "fake.host.name", 0, UUID.randomUUID());
+                                     null, expectedServerName,
+                                     image, null, null, null, null,
+                                     "fake.host.name", 0, UUID.randomUUID());
 
         this.vmInfo = new ProvisionVmInfo();
         this.vmInfo.vmId = this.vmId;
@@ -192,7 +206,7 @@ public class Vps4ProvisionVmTest {
 
         when(context.execute(eq(AllocateIp.class), any(AllocateIp.Request.class))).thenReturn(primaryIp);
         when(context.execute(eq(SetupAutomaticBackupSchedule.class), any(SetupAutomaticBackupSchedule.Request.class)))
-            .thenReturn(UUID.randomUUID());
+                .thenReturn(UUID.randomUUID());
         when(context.execute(eq(CreateVm.class), any(CreateVm.Request.class))).thenReturn(vmAction);
     }
 
@@ -216,23 +230,66 @@ public class Vps4ProvisionVmTest {
     }
 
     @Test
-    public void testProvisionVmConfiguresNodePing() {
+    public void testProvisionVmConfiguresNodePingForSelfManagedAccounts() {
         NodePingCheck check = mock(NodePingCheck.class);
         check.checkId = 1;
         when(nodePingService.createCheck(anyLong(), any())).thenReturn(check);
         when(monitoringMeta.getAccountId()).thenReturn(1L);
         when(monitoringMeta.getGeoRegion()).thenReturn("nam");
         this.vmInfo.hasMonitoring = true;
+        vm.primaryIpAddress = mock(com.godaddy.vps4.network.IpAddress.class);
+        vm.primaryIpAddress.pingCheckId = 1234L;
+        when(creditService.getVirtualMachineCredit(any(UUID.class))).thenReturn(credit);
+        when(credit.isEffectivelySelfManaged()).thenReturn(true);
+        when(credit.effectiveManagedLevel()).thenReturn(VirtualMachineCredit.EffectiveManagedLevel.SELF_MANAGED_V2);
 
         command.executeWithAction(context, this.request);
         verify(nodePingService, times(1)).createCheck(eq(1L), any(CreateCheckRequest.class));
     }
 
     @Test
+    public void configuresNodePingForAllAccountsWhenPanoptaIsDisabled() {
+        NodePingCheck check = mock(NodePingCheck.class);
+        check.checkId = 1;
+        when(nodePingService.createCheck(anyLong(), any())).thenReturn(check);
+        when(monitoringMeta.getAccountId()).thenReturn(1L);
+        when(monitoringMeta.getGeoRegion()).thenReturn("nam");
+        this.vmInfo.hasMonitoring = true;
+        vm.primaryIpAddress = mock(com.godaddy.vps4.network.IpAddress.class);
+        when(creditService.getVirtualMachineCredit(any(UUID.class))).thenReturn(credit);
+        when(credit.isEffectivelySelfManaged()).thenReturn(true);
+        when(credit.effectiveManagedLevel()).thenReturn(VirtualMachineCredit.EffectiveManagedLevel.MANAGED_V2);
+        when(config.get(eq("panopta.installation.enabled"), eq("false"))).thenReturn("false");
+
+        command.executeWithAction(context, this.request);
+        verify(nodePingService, times(1)).createCheck(eq(1L), any(CreateCheckRequest.class));
+    }
+
+    @Test
+    public void provisionVmInvokesPanoptaSetup() {
+        this.vmInfo.hasMonitoring = true;
+        vm.primaryIpAddress = mock(com.godaddy.vps4.network.IpAddress.class);
+        vm.primaryIpAddress.pingCheckId = 1234L;
+        when(creditService.getVirtualMachineCredit(any(UUID.class))).thenReturn(credit);
+        when(credit.isEffectivelySelfManaged()).thenReturn(false);
+        when(credit.effectiveManagedLevel()).thenReturn(VirtualMachineCredit.EffectiveManagedLevel.FULLY_MANAGED);
+        when(config.get(eq("panopta.installation.enabled"), eq("false"))).thenReturn("true");
+        when(virtualMachineService.getVirtualMachine(any(UUID.class))).thenReturn(vm);
+
+        command.executeWithAction(context, this.request);
+        verify(context, times(1)).execute(eq(SetupPanopta.class), setupPanoptaRequestArgCaptor.capture());
+        SetupPanopta.Request capturedRequest = setupPanoptaRequestArgCaptor.getValue();
+        assertEquals(capturedRequest.vmId, vmId);
+        assertEquals(capturedRequest.hfsVmId, hfsVmId);
+        assertEquals(capturedRequest.orionGuid, orionGuid);
+    }
+
+    @Test
     public void testSendSetupEmail() throws MissingShopperIdException, IOException {
         command.executeWithAction(context, this.request);
         verify(messagingService, times(1)).sendSetupEmail(shopperId, expectedServerName,
-                primaryIp.address, orionGuid.toString(), this.vmInfo.isFullyManaged());
+                                                          primaryIp.address, orionGuid.toString(),
+                                                          this.vmInfo.isFullyManaged());
     }
 
     @Test
@@ -242,14 +299,14 @@ public class Vps4ProvisionVmTest {
 
         command.executeWithAction(context, this.request);
         verify(messagingService, times(1)).sendSetupEmail(anyString(), anyString(),
-                anyString(), anyString(), anyBoolean());
+                                                          anyString(), anyString(), anyBoolean());
     }
 
     @Test
     public void testSetEcommCommonName() {
         command.executeWithAction(context, this.request);
         verify(context, times(1))
-            .execute(eq("SetCommonName"), setCommonNameLambdaCaptor.capture(), eq(Void.class));
+                .execute(eq("SetCommonName"), setCommonNameLambdaCaptor.capture(), eq(Void.class));
 
         // Verify that the lambda is returning what we expect
         Function<CommandContext, Void> lambda = setCommonNameLambdaCaptor.getValue();
@@ -261,7 +318,7 @@ public class Vps4ProvisionVmTest {
     public void setsTheRootPasswordToBeSameAsUserPassword() {
         command.executeWithAction(context, this.request);
         verify(context, times(1))
-            .execute(eq(SetPassword.class), setPasswordCaptor.capture());
+                .execute(eq(SetPassword.class), setPasswordCaptor.capture());
         SetPassword.Request req = setPasswordCaptor.getValue();
         assertEquals(req.controlPanel, vm.image.getImageControlPanel());
         assertEquals(req.encryptedPassword, request.encryptedPassword);

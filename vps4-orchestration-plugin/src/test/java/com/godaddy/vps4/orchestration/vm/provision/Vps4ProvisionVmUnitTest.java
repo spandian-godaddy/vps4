@@ -44,6 +44,8 @@ import com.godaddy.vps4.orchestration.phase2.Vps4ExternalsModule;
 import com.godaddy.vps4.orchestration.sysadmin.ConfigureMailRelay;
 import com.godaddy.vps4.panopta.PanoptaApiCustomerService;
 import com.godaddy.vps4.panopta.PanoptaApiServerService;
+import com.godaddy.vps4.panopta.PanoptaDataService;
+import com.godaddy.vps4.panopta.PanoptaService;
 import com.godaddy.vps4.security.SecurityModule;
 import com.godaddy.vps4.vm.ActionService;
 import com.godaddy.vps4.vm.Image;
@@ -81,6 +83,8 @@ public class Vps4ProvisionVmUnitTest {
                     bind(PanoptaApiCustomerService.class).toInstance(mock(PanoptaApiCustomerService.class));
                     bind(PanoptaApiServerService.class).toInstance(mock(PanoptaApiServerService.class));
                     bind(HfsVmTrackingRecordService.class).toInstance(mock(HfsVmTrackingRecordService.class));
+                    bind(PanoptaDataService.class).toInstance(mock(PanoptaDataService.class));
+                    bind(PanoptaService.class).toInstance(mock(PanoptaService.class));
                 }
             }
     );

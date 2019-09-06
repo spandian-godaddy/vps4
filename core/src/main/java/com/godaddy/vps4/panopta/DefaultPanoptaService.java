@@ -45,7 +45,7 @@ public class DefaultPanoptaService implements PanoptaService {
         // prepare a request to create panopta customer
         PanoptaCustomerRequest panoptaCustomerRequest =
                 new PanoptaCustomerRequest(virtualMachineService, creditService, config);
-        panoptaCustomerRequest.createPanoptaCustomerRequest(vmId);
+        panoptaCustomerRequest = panoptaCustomerRequest.createPanoptaCustomerRequest(vmId);
 
 
         // setup the customer request for panopta
@@ -119,14 +119,17 @@ public class DefaultPanoptaService implements PanoptaService {
 
     @Override
     public PanoptaServer getServer(String partnerCustomerKey) throws PanoptaServiceException {
+        logger.info("Attempting to get panopta server details using partner customer key {} ", partnerCustomerKey);
         PanoptaServers panoptaServers = panoptaApiServerService.getPanoptaServers(partnerCustomerKey);
         if (panoptaServers == null || CollectionUtil.isEmpty(panoptaServers.getServers())) {
-            throw new PanoptaServiceException("NO_SERVER_FOUND",
-                                              "No matching server found in Panopta for partner customer key: " + partnerCustomerKey);
+            String errorMessage = "No matching server found in Panopta for partner customer key: " + partnerCustomerKey;
+            logger.warn(errorMessage);
+            throw new PanoptaServiceException("NO_SERVER_FOUND", errorMessage);
         }
         if (panoptaServers.getServers().size() > 1) {
-            throw new PanoptaServiceException("MULTIPLE_PANOPTA_SERVERS_FOUND",
-                                              "Multiple servers found for partner customer key: " + partnerCustomerKey);
+            String errorMessage = "Multiple servers found for partner customer key: " + partnerCustomerKey;
+            logger.warn(errorMessage);
+            throw new PanoptaServiceException("MULTIPLE_PANOPTA_SERVERS_FOUND", errorMessage);
         }
         return mapServer(partnerCustomerKey, panoptaServers.getServers().stream().findFirst().get());
     }
