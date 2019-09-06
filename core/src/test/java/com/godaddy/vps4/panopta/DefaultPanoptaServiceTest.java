@@ -26,7 +26,7 @@ public class DefaultPanoptaServiceTest {
     private VirtualMachineService virtualMachineService;
     private CreditService creditService;
     private Config config;
-    private long serverId;
+    private int serverId;
     private UUID vmId;
     private String customerKey;
     private String partnerCustomerKey;
@@ -42,7 +42,7 @@ public class DefaultPanoptaServiceTest {
         virtualMachineService = mock(VirtualMachineService.class);
         creditService = mock(CreditService.class);
         config = mock(Config.class);
-        serverId = 666L;
+        serverId = 42;
         partnerCustomerKey = "someRandomPartnerCustomerKey";
         customerKey = "someCustomerKey";
         vmId = UUID.randomUUID();
@@ -65,68 +65,68 @@ public class DefaultPanoptaServiceTest {
 
     @Test
     public void testDoesNotPauseMonitoringWhenNoDbEntry() {
-        when(panoptaDataService.getPanoptaDetails(eq(vmId))).thenReturn(null);
+        when(panoptaDataService.getPanoptaDetails(vmId)).thenReturn(null);
         defaultPanoptaService.pauseServerMonitoring(vmId);
-        verify(panoptaApiServerService, never()).getServer(eq((int)serverId), eq(partnerCustomerKey));
+        verify(panoptaApiServerService, never()).getServer(serverId, partnerCustomerKey);
     }
 
     @Test
     public void testDoesNotPauseMonitoringWhenPanoptaAlreadySuspended() {
-        when(panoptaDataService.getPanoptaDetails(eq(vmId))).thenReturn(panoptaDetail);
+        when(panoptaDataService.getPanoptaDetails(vmId)).thenReturn(panoptaDetail);
         server.status = "suspended";
-        when(panoptaApiServerService.getServer(eq(666), eq(partnerCustomerKey))).thenReturn(server);
+        when(panoptaApiServerService.getServer(serverId, partnerCustomerKey)).thenReturn(server);
         defaultPanoptaService.pauseServerMonitoring(vmId);
-        verify(panoptaApiServerService, never()).setServerStatus(eq((int)serverId), eq(partnerCustomerKey), any());
+        verify(panoptaApiServerService, never()).setServerStatus(eq(serverId), eq(partnerCustomerKey), any());
     }
 
     @Test
     public void testPauseMonitoringSuccess() {
-        when(panoptaDataService.getPanoptaDetails(eq(vmId))).thenReturn(panoptaDetail);
+        when(panoptaDataService.getPanoptaDetails(vmId)).thenReturn(panoptaDetail);
         server.status = "active";
-        when(panoptaApiServerService.getServer(eq((int)serverId), eq(partnerCustomerKey))).thenReturn(server);
+        when(panoptaApiServerService.getServer(serverId, partnerCustomerKey)).thenReturn(server);
         defaultPanoptaService.pauseServerMonitoring(vmId);
-        verify(panoptaApiServerService, times(1)).setServerStatus(eq((int)serverId), eq(partnerCustomerKey), any());
+        verify(panoptaApiServerService, times(1)).setServerStatus(eq(serverId), eq(partnerCustomerKey), any());
     }
 
     @Test
     public void testDoesNotResumeMonitoringWhenNoDbEntry() {
-        when(panoptaDataService.getPanoptaDetails(eq(vmId))).thenReturn(null);
+        when(panoptaDataService.getPanoptaDetails(vmId)).thenReturn(null);
         defaultPanoptaService.resumeServerMonitoring(vmId);
-        verify(panoptaApiServerService, never()).getServer(eq((int)serverId), eq(partnerCustomerKey));
+        verify(panoptaApiServerService, never()).getServer(serverId, partnerCustomerKey);
     }
 
     @Test
     public void testDoesNotResumeMonitoringWhenPanoptaAlreadyActive() {
-        when(panoptaDataService.getPanoptaDetails(eq(vmId))).thenReturn(panoptaDetail);
+        when(panoptaDataService.getPanoptaDetails(vmId)).thenReturn(panoptaDetail);
         server.status = "active";
-        when(panoptaApiServerService.getServer(eq((int)serverId), eq(partnerCustomerKey))).thenReturn(server);
+        when(panoptaApiServerService.getServer(serverId, partnerCustomerKey)).thenReturn(server);
         defaultPanoptaService.resumeServerMonitoring(vmId);
-        verify(panoptaApiServerService, never()).setServerStatus(eq((int)serverId), eq(partnerCustomerKey), any());
+        verify(panoptaApiServerService, never()).setServerStatus(eq(serverId), eq(partnerCustomerKey), any());
     }
 
     @Test
     public void testResumeMonitoringSuccess() {
-        when(panoptaDataService.getPanoptaDetails(eq(vmId))).thenReturn(panoptaDetail);
+        when(panoptaDataService.getPanoptaDetails(vmId)).thenReturn(panoptaDetail);
         server.status = "suspended";
-        when(panoptaApiServerService.getServer(eq((int)serverId), eq(partnerCustomerKey))).thenReturn(server);
+        when(panoptaApiServerService.getServer(serverId, partnerCustomerKey)).thenReturn(server);
         defaultPanoptaService.resumeServerMonitoring(vmId);
-        verify(panoptaApiServerService, times(1)).setServerStatus(eq((int)serverId), eq(partnerCustomerKey), any());
+        verify(panoptaApiServerService, times(1)).setServerStatus(eq(serverId), eq(partnerCustomerKey), any());
     }
 
     @Test
     public void testGetAvailabilitySuccess() throws PanoptaServiceException {
-        when(panoptaDataService.getPanoptaDetails(eq(vmId))).thenReturn(panoptaDetail);
+        when(panoptaDataService.getPanoptaDetails(vmId)).thenReturn(panoptaDetail);
         String startTime = "2007-12-03 10:15:30";
         String endTime = "2007-12-03 12:15:30";
         defaultPanoptaService.getAvailability(vmId, startTime, endTime);
-        verify(panoptaApiServerService, times(1)).getAvailability(eq((int)serverId), eq(partnerCustomerKey), eq(startTime), eq(endTime));
+        verify(panoptaApiServerService, times(1)).getAvailability(serverId, partnerCustomerKey, startTime, endTime);
     }
 
     @Test
     public void removeMonitoringCallsPanoptaApiDeleteServer() {
         when(panoptaDataService.getPanoptaDetails(vmId)).thenReturn(panoptaDetail);
         defaultPanoptaService.removeServerMonitoring(vmId);
-        verify(panoptaApiServerService).deleteServer((int)serverId, partnerCustomerKey);
+        verify(panoptaApiServerService).deleteServer(serverId, partnerCustomerKey);
     }
 
     @Test

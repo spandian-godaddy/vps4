@@ -84,7 +84,7 @@ public class VmMonitoringResourceTests {
         PanoptaAvailability panoptaAvailability = new PanoptaAvailability();
         panoptaAvailability.availability = 0.9985360556398332;
         PanoptaDetail panoptaDetail = new PanoptaDetail(1, vm.vmId, "partnerCustomerKey",
-                                                        "customerKey", 666L, "serverKey",
+                                                        "customerKey", 23, "serverKey",
                                                         Instant.now(), Instant.MAX);
 
         when(panoptaDataService.getPanoptaDetails(vm.vmId)).thenReturn(panoptaDetail);

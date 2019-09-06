@@ -143,9 +143,9 @@ public class DefaultPanoptaService implements PanoptaService {
     public void pauseServerMonitoring(UUID vmId) {
         PanoptaDetail panoptaDetail = panoptaDataService.getPanoptaDetails(vmId);
         if (panoptaDetail == null) return;
-        long serverId = panoptaDetail.getServerId();
+        int serverId = panoptaDetail.getServerId();
         String partnerCustomerKey = panoptaDetail.getPartnerCustomerKey();
-        PanoptaServer server = mapServer(partnerCustomerKey, panoptaApiServerService.getServer((int)serverId, partnerCustomerKey));
+        PanoptaServer server = mapServer(partnerCustomerKey, panoptaApiServerService.getServer(serverId, partnerCustomerKey));
         if (server.status == PanoptaServer.Status.ACTIVE) {
             PanoptaApiUpdateServerRequest panoptaApiUpdateServerRequest = new PanoptaApiUpdateServerRequest();
             panoptaApiUpdateServerRequest.fqdn = server.fqdn;
@@ -153,7 +153,7 @@ public class DefaultPanoptaService implements PanoptaService {
             panoptaApiUpdateServerRequest.serverGroup = server.serverGroup;
             panoptaApiUpdateServerRequest.status = PanoptaServer.Status.SUSPENDED.toString().toLowerCase();
             logger.info("Setting Panopta server to suspended status");
-            panoptaApiServerService.setServerStatus((int)serverId, partnerCustomerKey, panoptaApiUpdateServerRequest);
+            panoptaApiServerService.setServerStatus(serverId, partnerCustomerKey, panoptaApiUpdateServerRequest);
         }
         else {
             logger.info("Panopta server is already in suspended status. No need to update status");
@@ -164,9 +164,9 @@ public class DefaultPanoptaService implements PanoptaService {
     public void resumeServerMonitoring(UUID vmId) {
         PanoptaDetail panoptaDetail = panoptaDataService.getPanoptaDetails(vmId);
         if (panoptaDetail == null) return;
-        long serverId = panoptaDetail.getServerId();
+        int serverId = panoptaDetail.getServerId();
         String partnerCustomerKey = panoptaDetail.getPartnerCustomerKey();
-        PanoptaServer server = mapServer(partnerCustomerKey, panoptaApiServerService.getServer((int)serverId, partnerCustomerKey));
+        PanoptaServer server = mapServer(partnerCustomerKey, panoptaApiServerService.getServer(serverId, partnerCustomerKey));
         if (server.status == PanoptaServer.Status.SUSPENDED) {
             PanoptaApiUpdateServerRequest panoptaApiUpdateServerRequest = new PanoptaApiUpdateServerRequest();
             panoptaApiUpdateServerRequest.fqdn = server.fqdn;
@@ -174,7 +174,7 @@ public class DefaultPanoptaService implements PanoptaService {
             panoptaApiUpdateServerRequest.serverGroup = server.serverGroup;
             panoptaApiUpdateServerRequest.status = PanoptaServer.Status.ACTIVE.toString().toLowerCase();
             logger.info("Setting Panopta server to active status");
-            panoptaApiServerService.setServerStatus((int)serverId, partnerCustomerKey, panoptaApiUpdateServerRequest);
+            panoptaApiServerService.setServerStatus(serverId, partnerCustomerKey, panoptaApiUpdateServerRequest);
         }
         else {
             logger.info("Panopta server is already in active status. No need to update status");
@@ -189,7 +189,7 @@ public class DefaultPanoptaService implements PanoptaService {
             throw new PanoptaServiceException("NO_SERVER_FOUND",
                                               "No matching server found in VPS4 Panopta database for VM ID: " + vmId);
         }
-        return panoptaApiServerService.getAvailability((int) panoptaDetail.getServerId(),
+        return panoptaApiServerService.getAvailability(panoptaDetail.getServerId(),
                                                        panoptaDetail.getPartnerCustomerKey(),
                                                        startTime,
                                                        endTime);
@@ -198,6 +198,6 @@ public class DefaultPanoptaService implements PanoptaService {
     @Override
     public void removeServerMonitoring(UUID vmId) {
         PanoptaDetail panoptaDetails = panoptaDataService.getPanoptaDetails(vmId);
-        panoptaApiServerService.deleteServer((int)panoptaDetails.getServerId(), panoptaDetails.getPartnerCustomerKey());
+        panoptaApiServerService.deleteServer(panoptaDetails.getServerId(), panoptaDetails.getPartnerCustomerKey());
     }
 }

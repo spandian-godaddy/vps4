@@ -171,10 +171,11 @@ public class PanoptaResourceTest {
     }
 
     @Test
-    public void testCustomerDeletion() throws PanoptaServiceException {
-        when(config.get(eq("panopta.api.partner.customer.key.prefix"))).thenReturn("gdtest_");
-        when(responseStatusType.getFamily()).thenReturn(Response.Status.Family.SUCCESSFUL);
-
+    public void testCustomerDeletion() {
+        String customerKey = "2hum-wpmt-vswt-2g3b";
+        PanoptaDetail panoptaDetails = new PanoptaDetail(42L, vmId, "partnerCustomerKey", customerKey,
+                23, "serverKey", Instant.now(), null);
+        when(panoptaDataService.getPanoptaDetails(vmId)).thenReturn(panoptaDetails);
         panoptaResource1.deleteCustomer(vmId);
 
         verify(panoptaService, times(1)).deleteCustomer(vmId);

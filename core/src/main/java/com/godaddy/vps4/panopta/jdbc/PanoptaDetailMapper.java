@@ -18,7 +18,7 @@ public class PanoptaDetailMapper {
                 UUID.fromString(rs.getString("vm_id")),
                 rs.getString("partner_customer_key"),
                 rs.getString("customer_key"),
-                rs.getLong("server_id"),
+                rs.getInt("server_id"),
                 rs.getString("server_key"),
                 rs.getTimestamp("created").toInstant(),
                 destroyed == null ? null: destroyed.toInstant());

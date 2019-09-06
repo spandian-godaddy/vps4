@@ -8,13 +8,13 @@ public class PanoptaDetail {
     private UUID vmId;
     private String partnerCustomerKey;
     private String customerKey;
-    private long serverId;
+    private int serverId;
     private String serverKey;
     private Instant created;
     private Instant destroyed;
 
     public PanoptaDetail(long panoptaDetailId, UUID vmId, String partnerCustomerKey, String customerKey,
-                  long serverId, String serverKey, Instant created, Instant destroyed) {
+            int serverId, String serverKey, Instant created, Instant destroyed) {
         this.panoptaDetailId = panoptaDetailId;
         this.vmId = vmId;
         this.partnerCustomerKey = partnerCustomerKey;
@@ -41,7 +41,7 @@ public class PanoptaDetail {
         return customerKey;
     }
 
-    public long getServerId() {
+    public int getServerId() {
         return serverId;
     }
 
