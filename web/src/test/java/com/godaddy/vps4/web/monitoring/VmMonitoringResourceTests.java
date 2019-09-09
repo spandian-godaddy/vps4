@@ -8,12 +8,14 @@ import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
 
@@ -25,16 +27,22 @@ import org.json.simple.parser.ParseException;
 import org.junit.Before;
 import org.junit.Test;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.godaddy.vps4.network.IpAddress;
 import com.godaddy.vps4.panopta.PanoptaAvailability;
 import com.godaddy.vps4.panopta.PanoptaDataService;
 import com.godaddy.vps4.panopta.PanoptaDetail;
+import com.godaddy.vps4.panopta.PanoptaOutage;
 import com.godaddy.vps4.panopta.PanoptaService;
 import com.godaddy.vps4.panopta.PanoptaServiceException;
 import com.godaddy.vps4.util.MonitoringMeta;
+import com.godaddy.vps4.util.ObjectMapperModule;
 import com.godaddy.vps4.vm.VirtualMachine;
 import com.godaddy.vps4.web.PaginatedResult;
 import com.godaddy.vps4.web.vm.VmResource;
+import com.google.inject.Guice;
+import com.google.inject.Inject;
+import com.google.inject.Injector;
 
 import gdg.hfs.vhfs.nodeping.NodePingEvent;
 import gdg.hfs.vhfs.nodeping.NodePingService;
@@ -42,30 +50,55 @@ import gdg.hfs.vhfs.nodeping.NodePingUptimeRecord;
 
 public class VmMonitoringResourceTests {
 
-    VmMonitoringResource resource;
-    VmResource vmResource;
-    NodePingService monitoringService;
-    VirtualMachine vm;
-    long monitoringAccountId = 12;
-    JSONParser parser;
-    UriInfo uriInfo;
-    MonitoringMeta monitoringMeta;
-    PanoptaService panoptaService;
-    PanoptaDataService panoptaDataService;
+    private VmMonitoringResource resource;
+    private VmResource vmResource;
+    private NodePingService monitoringService;
+    private VirtualMachine vm;
+    private long monitoringAccountId = 12;
+    private JSONParser parser;
+    private UriInfo uriInfo;
+    private MonitoringMeta monitoringMeta;
+    private PanoptaService panoptaService;
+    private PanoptaDataService panoptaDataService;
+    private PanoptaOutage panoptaOutage;
+    private String json;
+
+    @Inject
+    private ObjectMapper objectMapper;
+
+    private Injector injector = Guice.createInjector(new ObjectMapperModule());
 
     @Before
     public void setup() {
+        injector.injectMembers(this);
         monitoringService = mock(NodePingService.class);
         vmResource = mock(VmResource.class);
         monitoringMeta = mock(MonitoringMeta.class);
         panoptaService = mock(PanoptaService.class);
         panoptaDataService = mock(PanoptaDataService.class);
+        panoptaOutage = mock(PanoptaOutage.class);
         IpAddress ipAddress = new IpAddress(0, null, null, null, 123L, null, null);
         vm = new VirtualMachine(UUID.randomUUID(), 1L, null, 1L, null, null, null, ipAddress, Instant.now().minus(Duration.ofDays(5)), null, null, null, 0, UUID.randomUUID());
         when(vmResource.getVm(vm.vmId)).thenReturn(vm);
         when(monitoringMeta.getAccountId()).thenReturn(12L);
         parser = new JSONParser();
+        setupPanoptaOutage();
         setupUri();
+    }
+
+    private void setupPanoptaOutage() {
+        panoptaOutage.meta = new PanoptaOutage.Meta();
+        panoptaOutage.meta.limit = 10;
+        panoptaOutage.meta.next = null;
+        panoptaOutage.meta.offset = 0;
+        panoptaOutage.meta.previous = null;
+        panoptaOutage.meta.totalCount = 1;
+        PanoptaOutage.Outage outage = new PanoptaOutage.Outage();
+        outage.startTime = "Fri, 23 Aug 2019 22:31:49 -0000";
+        outage.endTime = null;
+        outage.status = "active";
+        outage.description = "Agent Heartbeat; HTTP: Unable to resolve host name s148-66-134-27.secureserver.net";
+        panoptaOutage.outageList = Collections.singletonList(outage);
     }
 
     private void setupUri(){
@@ -124,7 +157,29 @@ public class VmMonitoringResourceTests {
     }
 
     @Test
-    public void testGetVmMonitoringEvents() throws ParseException {
+    public void testGetVmMonitoringEventsForPanopta() throws PanoptaServiceException, IOException {
+        PanoptaDetail panoptaDetail = new PanoptaDetail(1, vm.vmId, "partnerCustomerKey",
+                                                        "customerKey", 42, "serverKey",
+                                                        Instant.now(), Instant.MAX);
+
+        when(panoptaDataService.getPanoptaDetails(vm.vmId)).thenReturn(panoptaDetail);
+        when(panoptaService.getOutage(eq(vm.vmId), anyString(), anyString(), eq(10), eq(0))).thenReturn(panoptaOutage);
+
+        resource = new VmMonitoringResource(monitoringService, vmResource, monitoringMeta, panoptaService, panoptaDataService);
+        PaginatedResult<MonitoringEvent> events = resource.getVmMonitoringEvents(vm.vmId, 30, 10, 0, uriInfo);
+
+        assertEquals(1, events.results.size());
+        assertEquals(1, events.pagination.total);
+        MonitoringEvent event = events.results.get(0);
+        assertEquals("outage", event.type);
+        assertTrue(event.open);
+        assertEquals(Instant.parse("2019-08-23T22:31:49Z"), event.start);
+        assertNull(event.end);
+        assertEquals("Agent Heartbeat; HTTP: Unable to resolve host name s148-66-134-27.secureserver.net", event.message);
+    }
+
+    @Test
+    public void testGetVmMonitoringEventsForNodePing() throws ParseException, PanoptaServiceException {
         List<NodePingEvent> npEvents = new ArrayList<>();
         long now = Instant.now().toEpochMilli();
         long lastMonth = Instant.now().minus(31, ChronoUnit.DAYS).toEpochMilli();
@@ -133,15 +188,15 @@ public class VmMonitoringResourceTests {
                 .parse(String.format("{\"type\": \"down\",\"start\":%d,\"end\":%d,\"open\":true,\"message\":\"timeout\"}", now, null));
         JSONObject jsonObject2 = (JSONObject) parser
                 .parse(String.format("{\"type\": \"down\",\"start\":%d,\"end\":%d,\"open\":false,\"message\":\"timeout\"}", lastMonth,
-                        now));
+                                     now));
         npEvents.add(new NodePingEvent(jsonObject));
         npEvents.add(new NodePingEvent(jsonObject2));
 
+        when(panoptaDataService.getPanoptaDetails(vm.vmId)).thenReturn(null);
         when(monitoringService.getCheckEvents(monitoringAccountId, vm.primaryIpAddress.pingCheckId, 0)).thenReturn(npEvents);
 
         resource = new VmMonitoringResource(monitoringService, vmResource, monitoringMeta, panoptaService, panoptaDataService);
-        PaginatedResult<MonitoringEvent> events = resource.getVmMonitoringEvents(vm.vmId, Integer.valueOf(30),
-                Integer.valueOf(10), Integer.valueOf(0), uriInfo);
+        PaginatedResult<MonitoringEvent> events = resource.getVmMonitoringEvents(vm.vmId, 30, 10, 0, uriInfo);
 
         assertEquals(1, events.results.size());
         assertEquals(1, events.pagination.total);

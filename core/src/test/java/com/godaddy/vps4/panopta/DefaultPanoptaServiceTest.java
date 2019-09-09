@@ -85,7 +85,7 @@ public class DefaultPanoptaServiceTest {
         server.status = "active";
         when(panoptaApiServerService.getServer(serverId, partnerCustomerKey)).thenReturn(server);
         defaultPanoptaService.pauseServerMonitoring(vmId);
-        verify(panoptaApiServerService, times(1)).setServerStatus(eq(serverId), eq(partnerCustomerKey), any());
+        verify(panoptaApiServerService).setServerStatus(eq(serverId), eq(partnerCustomerKey), any());
     }
 
     @Test
@@ -110,16 +110,7 @@ public class DefaultPanoptaServiceTest {
         server.status = "suspended";
         when(panoptaApiServerService.getServer(serverId, partnerCustomerKey)).thenReturn(server);
         defaultPanoptaService.resumeServerMonitoring(vmId);
-        verify(panoptaApiServerService, times(1)).setServerStatus(eq(serverId), eq(partnerCustomerKey), any());
-    }
-
-    @Test
-    public void testGetAvailabilitySuccess() throws PanoptaServiceException {
-        when(panoptaDataService.getPanoptaDetails(vmId)).thenReturn(panoptaDetail);
-        String startTime = "2007-12-03 10:15:30";
-        String endTime = "2007-12-03 12:15:30";
-        defaultPanoptaService.getAvailability(vmId, startTime, endTime);
-        verify(panoptaApiServerService, times(1)).getAvailability(serverId, partnerCustomerKey, startTime, endTime);
+        verify(panoptaApiServerService).setServerStatus(eq(serverId), eq(partnerCustomerKey), any());
     }
 
     @Test
@@ -134,5 +125,39 @@ public class DefaultPanoptaServiceTest {
         when(panoptaDataService.getPanoptaDetails(vmId)).thenReturn(panoptaDetail);
         defaultPanoptaService.deleteCustomer(vmId);
         verify(panoptaApiCustomerService).deleteCustomer(customerKey);
+    }
+
+    @Test
+    public void testGetAvailability() throws PanoptaServiceException {
+        when(panoptaDataService.getPanoptaDetails(eq(vmId))).thenReturn(panoptaDetail);
+        String startTime = "2007-12-03 10:15:30";
+        String endTime = "2007-12-03 12:15:30";
+        defaultPanoptaService.getAvailability(vmId, startTime, endTime);
+        verify(panoptaApiServerService).getAvailability(serverId, partnerCustomerKey, startTime, endTime);
+    }
+
+    @Test(expected = PanoptaServiceException.class)
+    public void testGetAvailabilityException() throws PanoptaServiceException {
+        String startTime = "2009-04-03 10:15:30";
+        String endTime = "2009-05-03 12:15:30";
+        defaultPanoptaService.getAvailability(UUID.randomUUID(), startTime, endTime);
+    }
+
+    @Test
+    public void testGetOutage() throws PanoptaServiceException {
+        when(panoptaDataService.getPanoptaDetails(eq(vmId))).thenReturn(panoptaDetail);
+        String startTime = "2007-08-12 07:12:20";
+        String endTime = "2007-08-12 08:12:20";
+        int limit = 5, offset = 15;
+        defaultPanoptaService.getOutage(vmId, startTime, endTime, limit, offset);
+        verify(panoptaApiServerService).getOutage(serverId, partnerCustomerKey, startTime, endTime, limit, offset);
+    }
+
+    @Test(expected = PanoptaServiceException.class)
+    public void testGetOutageException() throws PanoptaServiceException {
+        String startTime = "2010-11-03 14:15:50";
+        String endTime = "2010-11-03 17:15:50";
+        int limit = 5, offset = 15;
+        defaultPanoptaService.getOutage(UUID.randomUUID(), startTime, endTime, limit, offset);
     }
 }

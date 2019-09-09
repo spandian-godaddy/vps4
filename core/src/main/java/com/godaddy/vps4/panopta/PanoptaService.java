@@ -20,8 +20,9 @@ public interface PanoptaService {
 
     void resumeServerMonitoring(UUID vmId);
 
-    PanoptaAvailability getAvailability(UUID vmId, String startTime, String endTime) throws PanoptaServiceException;
-
     void removeServerMonitoring(UUID vmId);
 
+    PanoptaAvailability getAvailability(UUID vmId, String startTime, String endTime) throws PanoptaServiceException;
+
+    PanoptaOutage getOutage(UUID vmId, String startTime, String endTime, int limit, int offset) throws PanoptaServiceException;
 }

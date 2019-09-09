@@ -49,18 +49,18 @@ public class PanoptaResource {
     private static final Logger logger = LoggerFactory.getLogger(PanoptaResource.class);
 
     private final PanoptaService panoptaService;
-    private final GDUser user;
     private final CreditService creditService;
     private final VirtualMachineService virtualMachineService;
     private final VmResource vmResource;
     private Config config;
 
     @Inject
-    public PanoptaResource(PanoptaService panoptaService, GDUser user,
-                           CreditService creditService, VirtualMachineService virtualMachineService,
-                           VmResource vmResource, Config config) {
+    public PanoptaResource(PanoptaService panoptaService,
+                           CreditService creditService,
+                           VirtualMachineService virtualMachineService,
+                           VmResource vmResource,
+                           Config config) {
         this.panoptaService = panoptaService;
-        this.user = user;
         this.creditService = creditService;
         this.virtualMachineService = virtualMachineService;
         this.vmResource = vmResource;
@@ -69,8 +69,7 @@ public class PanoptaResource {
 
     @POST
     @Path("/customers")
-    @ApiOperation(value = "Create a panopta customer for vps4.",
-            notes = "Create a panopta customer for vps4.")
+    @ApiOperation(value = "Create a panopta customer for vps4", notes = "Create a panopta customer for vps4")
     public PanoptaCustomer createCustomer(CreateCustomerRequest request) {
 
         if (request == null || StringUtils.isBlank(request.vmId)) {
@@ -102,8 +101,7 @@ public class PanoptaResource {
 
     @DELETE
     @Path("/customers/{vmId}")
-    @ApiOperation(value = "Delete a vps4 panopta customer.",
-            notes = "Delete a vps4 panopta customer.")
+    @ApiOperation(value = "Delete a vps4 panopta customer", notes = "Delete a vps4 panopta customer")
     @ApiResponses(value = {
             @ApiResponse(code = 404, message = "Could not delete customer, or customer does not exist.")
     })

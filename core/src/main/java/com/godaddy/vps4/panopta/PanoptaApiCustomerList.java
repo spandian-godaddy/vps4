@@ -49,12 +49,12 @@ public class PanoptaApiCustomerList {
     }
 
     public static class Meta {
-        public String limit;
+        public int limit;
+        public int offset;
         public String next;
-        public String offset;
         public String previous;
         @JsonProperty("total_count")
-        public String totalCount;
+        public int totalCount;
 
         public Meta() {
         }

@@ -1,5 +1,6 @@
 package com.godaddy.vps4.panopta;
 
+import java.time.Instant;
 import java.util.Map;
 import java.util.UUID;
 
@@ -182,6 +183,12 @@ public class DefaultPanoptaService implements PanoptaService {
     }
 
     @Override
+    public void removeServerMonitoring(UUID vmId) {
+        PanoptaDetail panoptaDetails = panoptaDataService.getPanoptaDetails(vmId);
+        panoptaApiServerService.deleteServer(panoptaDetails.getServerId(), panoptaDetails.getPartnerCustomerKey());
+    }
+
+    @Override
     public PanoptaAvailability getAvailability(UUID vmId, String startTime, String endTime) throws PanoptaServiceException {
         PanoptaDetail panoptaDetail = panoptaDataService.getPanoptaDetails(vmId);
         if (panoptaDetail == null) {
@@ -196,8 +203,18 @@ public class DefaultPanoptaService implements PanoptaService {
     }
 
     @Override
-    public void removeServerMonitoring(UUID vmId) {
-        PanoptaDetail panoptaDetails = panoptaDataService.getPanoptaDetails(vmId);
-        panoptaApiServerService.deleteServer(panoptaDetails.getServerId(), panoptaDetails.getPartnerCustomerKey());
+    public PanoptaOutage getOutage(UUID vmId, String startTime, String endTime, int limit, int offset) throws PanoptaServiceException {
+        PanoptaDetail panoptaDetail = panoptaDataService.getPanoptaDetails(vmId);
+        if (panoptaDetail == null) {
+            logger.warn("Could not find Panopta data for VM ID: {}", vmId);
+            throw new PanoptaServiceException("NO_SERVER_FOUND",
+                                              "No matching server found in VPS4 Panopta database for VM ID: " + vmId);
+        }
+        return panoptaApiServerService.getOutage(panoptaDetail.getServerId(),
+                                                 panoptaDetail.getPartnerCustomerKey(),
+                                                 startTime,
+                                                 endTime,
+                                                 limit,
+                                                 offset);
     }
 }

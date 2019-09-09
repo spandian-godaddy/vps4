@@ -11,6 +11,8 @@ public class MonitoringEvent {
     public boolean open;
     public String message;
 
+    public MonitoringEvent() {}
+
     public MonitoringEvent(NodePingEvent sourceEvent) {
         this.type = sourceEvent.type;
         this.start = Instant.ofEpochMilli(sourceEvent.start);

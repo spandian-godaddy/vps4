@@ -1,6 +1,8 @@
 package com.godaddy.vps4.panopta;
 
 
+import java.time.Instant;
+
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
@@ -42,6 +44,10 @@ public interface PanoptaApiServerService {
     void setServerStatus(@PathParam("server_id") int serverId,
                          @QueryParam("partner_customer_key") String partnerCustomerKey,
                          PanoptaApiUpdateServerRequest panoptaApiUpdateServerRequest);
+    @DELETE
+    @Path("/{server_id}")
+    void deleteServer(@PathParam("server_id") int serverId,
+                      @QueryParam("partner_customer_key") String partnerCustomerKey);
 
     @GET
     @Path("/{server_id}/availability")
@@ -50,8 +56,12 @@ public interface PanoptaApiServerService {
                                         @QueryParam("start_time") String startTime,
                                         @QueryParam("end_time") String endTime);
 
-    @DELETE
-    @Path("/{server_id}")
-    void deleteServer(@PathParam("server_id") int serverId,
-            @QueryParam("partner_customer_key") String partnerCustomerKey);
+    @GET
+    @Path("/{server_id}/outage")
+    PanoptaOutage getOutage(@PathParam("server_id") int serverId,
+                            @QueryParam("partner_customer_key") String partnerCustomerKey,
+                            @QueryParam("start_time") String startTime,
+                            @QueryParam("end_time") String endTime,
+                            @QueryParam("limit") int limit,
+                            @QueryParam("offset") int offset);
 }
