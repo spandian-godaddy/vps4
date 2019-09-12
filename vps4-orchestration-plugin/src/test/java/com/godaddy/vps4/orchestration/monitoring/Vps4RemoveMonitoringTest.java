@@ -1,5 +1,7 @@
 package com.godaddy.vps4.orchestration.monitoring;
 
+import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -40,6 +42,13 @@ public class Vps4RemoveMonitoringTest {
     public void executesRemoveNodePingMonitoring() {
         command.execute(context, vmId);
         verify(context).execute(RemoveNodePingMonitoring.class, primaryIp);
+    }
+
+    @Test
+    public void skipsRemoveNodePingIfNullIp() {
+        when(vps4NetworkService.getVmPrimaryAddress(vmId)).thenReturn(null);
+        command.execute(context, vmId);
+        verify(context, never()).execute(eq(RemoveNodePingMonitoring.class), any());
     }
 
     @Test

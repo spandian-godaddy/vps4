@@ -130,7 +130,7 @@ public class NetworkResourceUserTest {
 
         IpAddress ip = createSecondaryIp(vm.vmId);
 
-        Action action = resource.destroyIpAddress(vm.vmId, ip.ipAddressId, false);
+        Action action = resource.destroyIpAddress(vm.vmId, ip.ipAddressId);
         Assert.assertNotNull(action);
     }
 

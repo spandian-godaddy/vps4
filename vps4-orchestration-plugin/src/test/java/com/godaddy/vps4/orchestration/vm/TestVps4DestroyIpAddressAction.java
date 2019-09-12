@@ -13,6 +13,7 @@ import java.util.function.Function;
 
 import org.junit.Test;
 
+import com.godaddy.hfs.vm.VmService;
 import com.godaddy.vps4.network.IpAddress;
 import com.godaddy.vps4.network.IpAddress.IpAddressType;
 import com.godaddy.vps4.network.NetworkService;
@@ -23,7 +24,6 @@ import com.google.inject.Guice;
 import com.google.inject.Injector;
 
 import gdg.hfs.orchestration.CommandContext;
-import com.godaddy.hfs.vm.VmService;
 import junit.framework.Assert;
 
 public class TestVps4DestroyIpAddressAction {
@@ -32,18 +32,16 @@ public class TestVps4DestroyIpAddressAction {
     VirtualMachineService virtualMachineService = mock(VirtualMachineService.class);
     NetworkService networkService = mock(NetworkService.class);
 
-    Vps4DestroyIpAddress vps4DestroyIpAddress = mock(Vps4DestroyIpAddress.class);
+    Vps4RemoveIp vps4DestroyIpAddress = mock(Vps4RemoveIp.class);
 
     Vps4DestroyIpAddressAction command = new Vps4DestroyIpAddressAction(actionService, vmService, virtualMachineService, networkService);
 
     Injector injector = Guice.createInjector(binder -> {
-        binder.bind(Vps4DestroyIpAddress.class).toInstance(vps4DestroyIpAddress);
+        binder.bind(Vps4RemoveIp.class).toInstance(vps4DestroyIpAddress);
         binder.bind(ActionService.class).toInstance(actionService);
         binder.bind(VmService.class).toInstance(vmService);
         binder.bind(VirtualMachineService.class).toInstance(virtualMachineService);
         binder.bind(NetworkService.class).toInstance(networkService);
-
-        //binder.bind(SysAdminService.class).toInstance(sysAdminService);
     });
 
     CommandContext context = mock(CommandContext.class);
@@ -67,9 +65,9 @@ public class TestVps4DestroyIpAddressAction {
             System.out.println(e);
             Assert.fail();
         }
-        verify(context, times(1)).execute(eq(Vps4DestroyIpAddress.class), any(Vps4DestroyIpAddress.Request.class));
+        verify(context, times(1)).execute(Vps4RemoveIp.class, ip);
 
-        verify(context, times(1)).execute(eq("Destroy-3425"), any(Function.class), eq(Void.class));
+        verify(context, times(1)).execute(eq("MarkIpDeleted-3425"), any(Function.class), eq(Void.class));
     }
 
 

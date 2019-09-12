@@ -37,7 +37,6 @@ import com.godaddy.vps4.web.vm.VmResource;
 import gdg.hfs.orchestration.CommandGroupSpec;
 import gdg.hfs.orchestration.CommandService;
 import gdg.hfs.orchestration.CommandState;
-
 import junit.framework.Assert;
 
 public class NetworkResourceTest {
@@ -118,14 +117,14 @@ public class NetworkResourceTest {
         IpAddress ip = new IpAddress(1111, vmId, "1.2.3.4", IpAddressType.SECONDARY,
                 null, Instant.now(), Instant.now().plus(24, ChronoUnit.HOURS));
         when(networkService.getIpAddress(1111)).thenReturn(ip);
-        Action returnAction = resource.destroyIpAddress(vmId, 1111, false);
+        Action returnAction = resource.destroyIpAddress(vmId, 1111);
         Assert.assertEquals(action, returnAction);
     }
 
     @Test(expected=NotFoundException.class)
     public void testDestroyIpNotFound(){
         when(networkService.getIpAddress(1111)).thenReturn(null);
-        resource.destroyIpAddress(vmId, 1111, false);
+        resource.destroyIpAddress(vmId, 1111);
     }
 
     @Test(expected=NotFoundException.class)
@@ -134,7 +133,7 @@ public class NetworkResourceTest {
                 null, Instant.now(), Instant.now().plus(24, ChronoUnit.HOURS));
 
         when(networkService.getIpAddress(1111)).thenReturn(ip);
-        resource.destroyIpAddress(vmId, 1111, false);
+        resource.destroyIpAddress(vmId, 1111);
     }
 
     @Test(expected=NotFoundException.class)
@@ -143,16 +142,16 @@ public class NetworkResourceTest {
                 null, Instant.now(), Instant.now().minus(24, ChronoUnit.HOURS));
 
         when(networkService.getIpAddress(1111)).thenReturn(ip);
-        resource.destroyIpAddress(vmId, 1111, false);
+        resource.destroyIpAddress(vmId, 1111);
     }
 
     @Test(expected=Vps4Exception.class)
     public void testDeletePrimaryIp(){
-       IpAddress ip = new IpAddress(1111, vmId, "1.2.3.4", IpAddressType.PRIMARY,
-               null, Instant.now(), Instant.now().plus(24, ChronoUnit.HOURS));
+        IpAddress ip = new IpAddress(1111, vmId, "1.2.3.4", IpAddressType.PRIMARY, null, Instant.now(),
+                Instant.now().plus(24, ChronoUnit.HOURS));
 
-       when(networkService.getIpAddress(1111)).thenReturn(ip);
-        resource.destroyIpAddress(vmId, 1111, false);
+        when(networkService.getIpAddress(1111)).thenReturn(ip);
+        resource.destroyIpAddress(vmId, 1111);
     }
 
     @Test

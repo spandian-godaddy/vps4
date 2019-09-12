@@ -1,9 +1,6 @@
 package com.godaddy.vps4.orchestration.vm;
 
-import java.time.Instant;
-import java.util.List;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
 import javax.inject.Inject;
 
@@ -19,13 +16,10 @@ import com.godaddy.vps4.orchestration.monitoring.Vps4RemoveMonitoring;
 import com.godaddy.vps4.orchestration.scheduler.DeleteAutomaticBackupSchedule;
 import com.godaddy.vps4.vm.ActionService;
 import com.godaddy.vps4.vm.VirtualMachine;
-import com.godaddy.vps4.vm.VirtualMachineService;
 
 import gdg.hfs.orchestration.CommandContext;
 import gdg.hfs.orchestration.CommandMetadata;
 import gdg.hfs.orchestration.CommandRetryStrategy;
-import gdg.hfs.vhfs.cpanel.CPanelService;
-import gdg.hfs.vhfs.plesk.PleskService;
 
 @CommandMetadata(
         name="Vps4DestroyVm",
@@ -38,13 +32,11 @@ public class Vps4DestroyVm extends ActionCommand<VmActionRequest, Vps4DestroyVm.
     private static final Logger logger = LoggerFactory.getLogger(Vps4DestroyVm.class);
     private final NetworkService networkService;
     CommandContext context;
+    VirtualMachine vm;
 
     @Inject
     public Vps4DestroyVm(ActionService actionService,
-            NetworkService networkService,
-            VirtualMachineService virtualMachineService,
-            CPanelService cpanelService,
-            PleskService pleskService) {
+            NetworkService networkService) {
         super(actionService);
         this.networkService = networkService;
     }
@@ -52,17 +44,17 @@ public class Vps4DestroyVm extends ActionCommand<VmActionRequest, Vps4DestroyVm.
     @Override
     public Response executeWithAction(CommandContext context, VmActionRequest request) {
         this.context = context;
+        this.vm = request.virtualMachine;
 
-        logger.info("Destroying VM {}", request.virtualMachine.vmId);
-        VirtualMachine vm = request.virtualMachine;
+        logger.info("Destroying server {}", vm.vmId);
 
-        unlicenseControlPanel(vm);
-        removeMonitoring(vm);
-        releaseIps(context, request, vm);
-        deleteAutomaticBackupSchedule(vm);
-        deleteAllScheduledJobsForVm(context, vm);
-        deleteSupportUsersInDatabase(context, vm);
-        VmAction hfsAction = deleteVmInHfs(context, vm, request);
+        unlicenseControlPanel();
+        removeMonitoring();
+        removeIp();
+        deleteAutomaticBackupSchedule();
+        deleteAllScheduledJobsForVm();
+        deleteSupportUsersInDatabase();
+        VmAction hfsAction = deleteVmInHfs(request);
 
         logger.info("Completed destroying VM {}", vm.vmId);
 
@@ -72,40 +64,45 @@ public class Vps4DestroyVm extends ActionCommand<VmActionRequest, Vps4DestroyVm.
         return response;
     }
 
-    private VmAction deleteVmInHfs(CommandContext context, VirtualMachine vm, VmActionRequest request) {
+    private VmAction deleteVmInHfs(VmActionRequest request) {
         DestroyVm.Request destroyVmRequest = new DestroyVm.Request();
         destroyVmRequest.hfsVmId = vm.hfsVmId;
         destroyVmRequest.actionId = request.actionId;
         return context.execute("DestroyVmHfs", DestroyVm.class, destroyVmRequest);
     }
 
-    private void deleteSupportUsersInDatabase(CommandContext context, VirtualMachine vm) {
-        context.execute("DestroyAllSupportUsersForVm", Vps4RemoveSupportUsersFromDatabase.class, vm.vmId);
+    private void deleteSupportUsersInDatabase() {
+        context.execute(Vps4RemoveSupportUsersFromDatabase.class, vm.vmId);
     }
 
-    private void deleteAllScheduledJobsForVm(CommandContext context, VirtualMachine vm) {
-        context.execute("DestroyAllScheduledJobsForVm", Vps4DeleteAllScheduledJobsForVm.class, vm.vmId);
+    private void deleteAllScheduledJobsForVm() {
+        context.execute(Vps4DeleteAllScheduledJobsForVm.class, vm.vmId);
     }
 
-    private void removeMonitoring(VirtualMachine vm) {
+    private void removeMonitoring() {
         context.execute(Vps4RemoveMonitoring.class, vm.vmId);
     }
 
-    private void releaseIps(CommandContext context, VmActionRequest request, VirtualMachine vm) {
-        List<IpAddress> activeAddresses = networkService.getVmIpAddresses(vm.vmId).stream()
-                .filter(address -> address.validUntil.isAfter(Instant.now())).collect(Collectors.toList());
-
-        for (IpAddress address : activeAddresses) {
-            context.execute("DeleteIpAddress-" + address.ipAddressId, Vps4DestroyIpAddress.class,
-                    new Vps4DestroyIpAddress.Request(address, vm, true));
-            context.execute("Destroy-" + address.ipAddressId, ctx -> {
-                networkService.destroyIpAddress(address.ipAddressId);
-                return null;
-            }, Void.class);
+    private void removeIp() {
+        IpAddress address = networkService.getVmPrimaryAddress(vm.vmId);
+        if (address != null) {
+            removeIpFromServer(address);
+            markIpDeletedInDb(address);
         }
     }
 
-    private void deleteAutomaticBackupSchedule(VirtualMachine vm) {
+    private void markIpDeletedInDb(IpAddress address) {
+        context.execute("MarkIpDeleted-" + address.ipAddressId, ctx -> {
+                networkService.destroyIpAddress(address.ipAddressId);
+                return null;
+            }, Void.class);
+    }
+
+    protected void removeIpFromServer(IpAddress address) {
+        context.execute("RemoveIp-" + address.ipAddressId, Vps4RemoveIp.class, address);
+    }
+
+    private void deleteAutomaticBackupSchedule() {
         if (hasAutomaticBackupJobScheduled(vm)) {
             try {
                 context.execute(DeleteAutomaticBackupSchedule.class, vm.backupJobId);
@@ -121,7 +118,7 @@ public class Vps4DestroyVm extends ActionCommand<VmActionRequest, Vps4DestroyVm.
         return vm.backupJobId != null;
     }
 
-    private void unlicenseControlPanel(VirtualMachine vm) {
+    private void unlicenseControlPanel() {
             context.execute(UnlicenseControlPanel.class, vm);
     }
 

@@ -68,7 +68,7 @@ public class Vps4RemoveMonitoring implements Command<UUID, Void> {
     }
 
     private boolean hasNodePingMonitoring(IpAddress primaryIp) {
-        return primaryIp.pingCheckId != null;
+        return (primaryIp != null && primaryIp.pingCheckId != null);
     }
 
 }
