@@ -275,6 +275,7 @@ public class Vps4ProvisionVmTest {
         when(credit.effectiveManagedLevel()).thenReturn(VirtualMachineCredit.EffectiveManagedLevel.FULLY_MANAGED);
         when(config.get(eq("panopta.installation.enabled"), eq("false"))).thenReturn("true");
         when(virtualMachineService.getVirtualMachine(any(UUID.class))).thenReturn(vm);
+        when(credit.getOperatingSystem()).thenReturn("LINUX");
 
         command.executeWithAction(context, this.request);
         verify(context, times(1)).execute(eq(SetupPanopta.class), setupPanoptaRequestArgCaptor.capture());

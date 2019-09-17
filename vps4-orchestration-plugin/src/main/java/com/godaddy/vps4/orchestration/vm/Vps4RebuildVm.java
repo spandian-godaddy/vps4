@@ -11,8 +11,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.godaddy.hfs.config.Config;
 import com.godaddy.hfs.vm.VmAction;
 import com.godaddy.vps4.credit.CreditService;
+import com.godaddy.vps4.credit.VirtualMachineCredit;
 import com.godaddy.vps4.network.IpAddress;
 import com.godaddy.vps4.network.NetworkService;
 import com.godaddy.vps4.orchestration.ActionCommand;
@@ -28,8 +30,10 @@ import com.godaddy.vps4.orchestration.hfs.sysadmin.SetPassword;
 import com.godaddy.vps4.orchestration.hfs.sysadmin.ToggleAdmin;
 import com.godaddy.vps4.orchestration.hfs.vm.CreateVm;
 import com.godaddy.vps4.orchestration.hfs.vm.DestroyVm;
+import com.godaddy.vps4.orchestration.panopta.SetupPanopta;
 import com.godaddy.vps4.orchestration.sysadmin.ConfigureMailRelay;
 import com.godaddy.vps4.orchestration.sysadmin.ConfigureMailRelay.ConfigureMailRelayRequest;
+import com.godaddy.vps4.panopta.PanoptaDataService;
 import com.godaddy.vps4.vm.ActionService;
 import com.godaddy.vps4.vm.Image;
 import com.godaddy.vps4.vm.RebuildVmInfo;
@@ -44,9 +48,9 @@ import gdg.hfs.orchestration.CommandMetadata;
 import gdg.hfs.orchestration.CommandRetryStrategy;
 
 @CommandMetadata(
-        name="Vps4RebuildVm",
-        requestType=Vps4RebuildVm.Request.class,
-        responseType=Void.class,
+        name = "Vps4RebuildVm",
+        requestType = Vps4RebuildVm.Request.class,
+        responseType = Void.class,
         retryStrategy = CommandRetryStrategy.NEVER
 )
 public class Vps4RebuildVm extends ActionCommand<Vps4RebuildVm.Request, Void> {
@@ -56,6 +60,8 @@ public class Vps4RebuildVm extends ActionCommand<Vps4RebuildVm.Request, Void> {
     private final NetworkService vps4NetworkService;
     private final VmUserService vmUserService;
     private final CreditService creditService;
+    private final Config config;
+    private final PanoptaDataService panoptaDataService;
 
     private Request request;
     private ActionState state;
@@ -64,12 +70,15 @@ public class Vps4RebuildVm extends ActionCommand<Vps4RebuildVm.Request, Void> {
 
     @Inject
     public Vps4RebuildVm(ActionService actionService, VirtualMachineService virtualMachineService,
-                         NetworkService vps4NetworkService, VmUserService vmUserService, CreditService creditService) {
+                         NetworkService vps4NetworkService, VmUserService vmUserService, CreditService creditService,
+                         PanoptaDataService panoptaDataService, Config config) {
         super(actionService);
         this.virtualMachineService = virtualMachineService;
         this.vps4NetworkService = vps4NetworkService;
         this.vmUserService = vmUserService;
         this.creditService = creditService;
+        this.panoptaDataService = panoptaDataService;
+        this.config = config;
     }
 
     @Override
@@ -102,7 +111,7 @@ public class Vps4RebuildVm extends ActionCommand<Vps4RebuildVm.Request, Void> {
 
     private void unbindPublicIpAddresses(List<IpAddress> ipAddresses) {
         setStep(RebuildVmStep.UnbindingIPAddress);
-        for (IpAddress ipAddress: ipAddresses) {
+        for (IpAddress ipAddress : ipAddresses) {
             logger.info("Unbind public ip address {} from VM {}", ipAddress.ipAddress, vps4VmId);
             UnbindIp.Request unbindIpRequest = new UnbindIp.Request();
             unbindIpRequest.addressId = ipAddress.ipAddressId;
@@ -188,13 +197,14 @@ public class Vps4RebuildVm extends ActionCommand<Vps4RebuildVm.Request, Void> {
         setHostname(newHfsVmId);
         configureVmUser(newHfsVmId);
         configureMailRelay(newHfsVmId);
+        configureMonitoring(newHfsVmId);
         setEcommCommonName(request.rebuildVmInfo.orionGuid, request.rebuildVmInfo.serverName);
     }
 
     private void bindPublicIpAddress(long hfsVmId, List<IpAddress> ipAddresses) {
         setStep(RebuildVmStep.ConfiguringNetwork);
 
-        for (IpAddress ipAddress: ipAddresses) {
+        for (IpAddress ipAddress : ipAddresses) {
             logger.info("Bind public ip address {} to VM {}", ipAddress.ipAddress, vps4VmId);
 
             BindIp.Request bindRequest = new BindIp.Request();
@@ -259,7 +269,7 @@ public class Vps4RebuildVm extends ActionCommand<Vps4RebuildVm.Request, Void> {
 
     private void setRootUserPassword(long hfsVmId) {
         // set the root password to the same as the user password (LINUX ONLY)
-        if(virtualMachineService.isLinux(vps4VmId)) {
+        if (virtualMachineService.isLinux(vps4VmId)) {
             SetPassword.Request setRootPasswordRequest = createSetRootPasswordRequest(hfsVmId);
             context.execute("SetRootUserPassword", SetPassword.class, setRootPasswordRequest);
         }
@@ -277,8 +287,32 @@ public class Vps4RebuildVm extends ActionCommand<Vps4RebuildVm.Request, Void> {
     private void configureMailRelay(long hfsVmId) {
         setStep(RebuildVmStep.ConfigureMailRelay);
 
-        ConfigureMailRelayRequest configureMailRelayRequest = new ConfigureMailRelayRequest(hfsVmId, request.rebuildVmInfo.image.controlPanel);
+        ConfigureMailRelayRequest configureMailRelayRequest =
+                new ConfigureMailRelayRequest(hfsVmId, request.rebuildVmInfo.image.controlPanel);
         context.execute(ConfigureMailRelay.class, configureMailRelayRequest);
+    }
+
+    private void configureMonitoring(long hfsVmId) {
+        // gate panopta installation using a feature flag
+        boolean isPanoptaInstallationEnabled =
+                Boolean.parseBoolean(config.get("panopta.installation.enabled", "false"));
+
+        if (isPanoptaInstallationEnabled && isCreditEligibleForPanopta()) {
+            SetupPanopta.Request setupPanoptaRequest = new SetupPanopta.Request();
+            setupPanoptaRequest.hfsVmId = hfsVmId;
+            setupPanoptaRequest.orionGuid = request.rebuildVmInfo.orionGuid;
+            setupPanoptaRequest.vmId = request.rebuildVmInfo.vmId;
+            context.execute(SetupPanopta.class, setupPanoptaRequest);
+        }
+    }
+
+    private boolean isCreditEligibleForPanopta() {
+        VirtualMachineCredit credit = creditService.getVirtualMachineCredit(request.rebuildVmInfo.orionGuid);
+        return Arrays.asList(VirtualMachineCredit.EffectiveManagedLevel.SELF_MANAGED_V2,
+                             VirtualMachineCredit.EffectiveManagedLevel.MANAGED_V2,
+                             VirtualMachineCredit.EffectiveManagedLevel.MANAGED_V1,
+                             VirtualMachineCredit.EffectiveManagedLevel.FULLY_MANAGED)
+                     .contains(credit.effectiveManagedLevel());
     }
 
     // Sets the name customers see in MYA when launching into their server dashboard

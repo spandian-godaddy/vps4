@@ -16,6 +16,7 @@ public class InstallPanopta implements Command<InstallPanopta.Request, Void> {
 
     public static class Request {
         public String customerKey;
+        public String serverKey; //TODO: use once its ready for use on HFS.
         public String templates;
         public long hfsVmId;
     }

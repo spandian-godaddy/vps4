@@ -343,8 +343,6 @@ public class Vps4ProvisionVm extends ActionCommand<ProvisionRequest, Vps4Provisi
         setupPanoptaRequest.hfsVmId = hfsVmId;
         setupPanoptaRequest.orionGuid = request.orionGuid;
         setupPanoptaRequest.vmId = request.vmInfo.vmId;
-        setupPanoptaRequest.panoptaTemplates = config.get("panopta.api.templates." + credit.effectiveManagedLevel().toString() + "." + credit
-                .getOperatingSystem());
         context.execute(SetupPanopta.class, setupPanoptaRequest);
     }
 

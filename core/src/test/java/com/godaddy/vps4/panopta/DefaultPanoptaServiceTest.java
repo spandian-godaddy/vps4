@@ -2,21 +2,30 @@ package com.godaddy.vps4.panopta;
 
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.eq;
+import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import java.io.IOException;
 import java.time.Instant;
 import java.util.UUID;
 
 import org.junit.Before;
 import org.junit.Test;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.godaddy.hfs.config.Config;
 import com.godaddy.vps4.credit.CreditService;
+import com.godaddy.vps4.credit.VirtualMachineCredit;
+import com.godaddy.vps4.util.ObjectMapperProvider;
+import com.godaddy.vps4.vm.AccountStatus;
+import com.godaddy.vps4.vm.DataCenterService;
+import com.godaddy.vps4.vm.VirtualMachine;
 import com.godaddy.vps4.vm.VirtualMachineService;
+import com.google.inject.Inject;
 
 public class DefaultPanoptaServiceTest {
 
@@ -25,6 +34,8 @@ public class DefaultPanoptaServiceTest {
     private PanoptaDataService panoptaDataService;
     private VirtualMachineService virtualMachineService;
     private CreditService creditService;
+    private VirtualMachineCredit credit;
+    private VirtualMachine virtualMachine;
     private Config config;
     private int serverId;
     private UUID vmId;
@@ -33,14 +44,21 @@ public class DefaultPanoptaServiceTest {
     private DefaultPanoptaService defaultPanoptaService;
     private PanoptaDetail panoptaDetail;
     private PanoptaServers.Server server;
+    private PanoptaApiCustomerList panoptaApiCustomerList;
+    @Inject
+    private ObjectMapper objectMapper = new ObjectMapperProvider().get();
 
     @Before
     public void setup() {
         panoptaApiServerService = mock(PanoptaApiServerService.class);
         panoptaApiCustomerService = mock(PanoptaApiCustomerService.class);
         panoptaDataService = mock(PanoptaDataService.class);
+        panoptaApiCustomerList = mock(PanoptaApiCustomerList.class);
         virtualMachineService = mock(VirtualMachineService.class);
         creditService = mock(CreditService.class);
+        credit = createDummyCredit();
+        virtualMachine = new VirtualMachine();
+        virtualMachine.orionGuid = UUID.randomUUID();
         config = mock(Config.class);
         serverId = 42;
         partnerCustomerKey = "someRandomPartnerCustomerKey";
@@ -61,6 +79,65 @@ public class DefaultPanoptaServiceTest {
         server.name = "someServerName";
         server.fqdn = "someFqdn";
         server.serverGroup = "someServerGroup";
+    }
+
+    private String mockedupCustomerList() {
+        return "{\n" +
+                "  \"customer_list\": [\n" +
+                "    {\n" +
+                "      \"customer_key\": \"2hum-wpmt-vswt-2g3b\",\n" +
+                "      \"email_address\": \"abhoite@godaddy.com\",\n" +
+                "      \"name\": \"Godaddy VPS4 POC\",\n" +
+                "      \"package\": \"godaddy.fully_managed\",\n" +
+                "      \"partner_customer_key\": \"gdtest_" + vmId + "\",\n" +
+                "      \"status\": \"active\",\n" +
+                "      \"url\": \"https://api2.panopta.com/v2/customer/2hum-wpmt-vswt-2g3b\"\n" +
+                "    }\n" +
+                "  ],\n" +
+                "  \"meta\": {\n" +
+                "    \"limit\": 50,\n" +
+                "    \"next\": null,\n" +
+                "    \"offset\": 0,\n" +
+                "    \"previous\": null,\n" +
+                "    \"total_count\": 1\n" +
+                "  }\n" +
+                "}\n";
+    }
+
+    private VirtualMachineCredit createDummyCredit() {
+        return new VirtualMachineCredit.Builder(mock(DataCenterService.class))
+                .withAccountGuid(UUID.randomUUID().toString())
+                .withAccountStatus(AccountStatus.ACTIVE)
+                .withShopperID("dummy-shopper-id")
+                .build();
+    }
+
+    @Test(expected = PanoptaServiceException.class)
+    public void testInvokesCreatesCustomer() throws PanoptaServiceException {
+        when(virtualMachineService.getVirtualMachine(any(UUID.class))).thenReturn(virtualMachine);
+        when(creditService.getVirtualMachineCredit(any(UUID.class))).thenReturn(credit);
+        when(panoptaApiCustomerService.getCustomer(eq(partnerCustomerKey))).thenReturn(panoptaApiCustomerList);
+        doNothing().when(panoptaApiCustomerService).createCustomer(any(PanoptaApiCustomerRequest.class));
+
+        defaultPanoptaService.createCustomer(vmId);
+
+        verify(panoptaApiCustomerService, times(1)).createCustomer(any(PanoptaApiCustomerRequest.class));
+    }
+
+
+    @Test
+    public void testInvokesCreatesCustomerWithMatchingCustomer() throws PanoptaServiceException, IOException {
+        when(config.get("panopta.api.partner.customer.key.prefix")).thenReturn("gdtest_");
+        PanoptaApiCustomerList fakePanoptaCustomers = objectMapper.readValue(mockedupCustomerList(), PanoptaApiCustomerList.class);
+        when(virtualMachineService.getVirtualMachine(any(UUID.class))).thenReturn(virtualMachine);
+        when(creditService.getVirtualMachineCredit(any(UUID.class))).thenReturn(credit);
+        when(panoptaApiCustomerService.getCustomer(eq("gdtest_" + vmId))).thenReturn(fakePanoptaCustomers);
+        when(panoptaApiCustomerList.getCustomerList()).thenReturn(fakePanoptaCustomers.getCustomerList());
+        doNothing().when(panoptaApiCustomerService).createCustomer(any(PanoptaApiCustomerRequest.class));
+
+        defaultPanoptaService.createCustomer(vmId);
+
+        verify(panoptaApiCustomerService, times(1)).createCustomer(any(PanoptaApiCustomerRequest.class));
     }
 
     @Test
