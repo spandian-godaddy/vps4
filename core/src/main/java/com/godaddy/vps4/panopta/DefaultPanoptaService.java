@@ -1,6 +1,7 @@
 package com.godaddy.vps4.panopta;
 
-import java.util.Map;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 
 import javax.inject.Inject;
@@ -15,6 +16,8 @@ import com.godaddy.vps4.vm.VirtualMachineService;
 import com.hazelcast.util.CollectionUtil;
 
 public class DefaultPanoptaService implements PanoptaService {
+    private static final int UNLIMITED = 0;
+
     private static final Logger logger = LoggerFactory.getLogger(DefaultPanoptaService.class);
     private final PanoptaApiCustomerService panoptaApiCustomerService;
     private final PanoptaApiServerService panoptaApiServerService;
@@ -86,6 +89,30 @@ public class DefaultPanoptaService implements PanoptaService {
     }
 
     @Override
+    public List<PanoptaGraphId> getUsageIds(UUID vmId) {
+        List<PanoptaGraphId> ids = new ArrayList<>();
+        PanoptaDetail detail = panoptaDataService.getPanoptaDetails(vmId);
+        if (detail != null) {
+            ids = panoptaApiServerService
+                    .getUsageList(detail.getServerId(), detail.getPartnerCustomerKey(), UNLIMITED)
+                    .getList();
+        }
+        return ids;
+    }
+
+    @Override
+    public List<PanoptaGraphId> getNetworkIds(UUID vmId) {
+        List<PanoptaGraphId> ids = new ArrayList<>();
+        PanoptaDetail detail = panoptaDataService.getPanoptaDetails(vmId);
+        if (detail != null) {
+            ids = panoptaApiServerService
+                    .getNetworkList(detail.getServerId(), detail.getPartnerCustomerKey(), UNLIMITED)
+                    .getList();
+        }
+        return ids;
+    }
+
+    @Override
     public PanoptaServerMetric getServerMetricsFromPanopta(int agentResourceId, int serverId, String timescale,
                                                            String partnerCustomerKey)
             throws PanoptaServiceException {
@@ -96,20 +123,6 @@ public class DefaultPanoptaService implements PanoptaService {
             String errorMessage = "Failed to get server metrics in Panopta.";
             logger.error(errorMessage);
             throw new PanoptaServiceException("GET_SERVER_METRICS_FAILED", errorMessage);
-        }
-    }
-
-    @Override
-    public Map<String, Integer> getAgentResourceIdList(int serverId, String partnerCustomerKey)
-            throws PanoptaServiceException {
-        try {
-            PanoptaAgentResourceList serverAgentResourceList =
-                    panoptaApiServerService.getAgentResourceList(serverId, partnerCustomerKey);
-            return serverAgentResourceList.returnAgentResourceIdList();
-        } catch (Exception ex) {
-            String errorMessage = "Failed to get server's agent resource list in Panopta.";
-            logger.error(errorMessage);
-            throw new PanoptaServiceException("GET_AGENT_RESOURCE_FAILED", errorMessage);
         }
     }
 

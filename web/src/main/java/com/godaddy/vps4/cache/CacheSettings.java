@@ -30,11 +30,11 @@ public class CacheSettings {
 
         cacheManager.createCache(CacheName.SERVER_USAGE,
                 new MutableConfiguration<Long, ServerUsageStats>()
-                        .setStoreByValue(true)
-                        .setTypes(Long.class, ServerUsageStats.class)
-                        .setExpiryPolicyFactory(
-                                AccessedExpiryPolicy.factoryOf(Duration.ONE_DAY))
-                        .setStatisticsEnabled(false));
+                    .setStoreByValue(true)
+                    .setTypes(Long.class, ServerUsageStats.class)
+                    .setExpiryPolicyFactory(
+                            AccessedExpiryPolicy.factoryOf(Duration.ONE_DAY))
+                    .setStatisticsEnabled(false));
 
         cacheManager.createCache(CacheName.MAIL_RELAY_HISTORY,
                 new MutableConfiguration<String, CachedMailRelayHistory>()

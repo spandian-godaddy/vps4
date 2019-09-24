@@ -1,7 +1,5 @@
 package com.godaddy.vps4.web.monitoring;
 
-import static java.time.temporal.ChronoField.EPOCH_DAY;
-
 import java.time.Duration;
 import java.time.Instant;
 import java.time.ZoneOffset;
@@ -28,6 +26,7 @@ import org.joda.time.DateTime;
 import com.godaddy.vps4.panopta.PanoptaAvailability;
 import com.godaddy.vps4.panopta.PanoptaDataService;
 import com.godaddy.vps4.panopta.PanoptaDetail;
+import com.godaddy.vps4.panopta.PanoptaGraph;
 import com.godaddy.vps4.panopta.PanoptaOutage;
 import com.godaddy.vps4.panopta.PanoptaService;
 import com.godaddy.vps4.panopta.PanoptaServiceException;
@@ -35,9 +34,7 @@ import com.godaddy.vps4.util.MonitoringMeta;
 import com.godaddy.vps4.vm.VirtualMachine;
 import com.godaddy.vps4.web.PaginatedResult;
 import com.godaddy.vps4.web.Vps4Api;
-import com.godaddy.vps4.web.Vps4Exception;
 import com.godaddy.vps4.web.vm.VmResource;
-import com.google.common.collect.Lists;
 import com.google.inject.Inject;
 
 import gdg.hfs.vhfs.nodeping.NodePingEvent;
@@ -46,6 +43,7 @@ import gdg.hfs.vhfs.nodeping.NodePingUptimeRecord;
 
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
+import io.swagger.annotations.ApiParam;
 
 @Vps4Api
 @Api(tags = { "vms" })
@@ -181,7 +179,7 @@ public class VmMonitoringResource {
 
         int totalRows = events.size();
 
-        // only the specified range of events.
+        // only the specified range of events
         events = events.subList(Math.min(scrubbedOffset, events.size()), Math.min(scrubbedOffset+scrubbedLimit, events.size()));
 
         return new PaginatedResult<>(events, scrubbedLimit, scrubbedOffset, totalRows, uri);
@@ -192,15 +190,19 @@ public class VmMonitoringResource {
         if (outage != null) {
             event.open = outage.status.equals("active");
             event.message = outage.description;
-            event.start = (outage.startTime == null) ? null : Instant.from(DateTimeFormatter.RFC_1123_DATE_TIME.parse(outage.startTime));
-            event.end = (outage.endTime == null) ? null : Instant.from(DateTimeFormatter.RFC_1123_DATE_TIME.parse(outage.endTime));
+            event.start = (outage.startTime == null)
+                    ? null
+                    : Instant.from(DateTimeFormatter.RFC_1123_DATE_TIME.parse(outage.startTime));
+            event.end = (outage.endTime == null)
+                    ? null
+                    : Instant.from(DateTimeFormatter.RFC_1123_DATE_TIME.parse(outage.endTime));
             event.type = "outage";
         }
         return event;
     }
 
     private List<MonitoringEvent> getDaysOfEvents(Integer days, List<NodePingEvent> sourceEvents) {
-        List<MonitoringEvent> events = sourceEvents.stream().map(x -> new MonitoringEvent(x)).collect(Collectors.toList());
+        List<MonitoringEvent> events = sourceEvents.stream().map(MonitoringEvent::new).collect(Collectors.toList());
         events = events.stream().filter(e -> e.start.isAfter(Instant.now().minus(Duration.ofDays(days))))
                 .collect(Collectors.toList());
         return events;

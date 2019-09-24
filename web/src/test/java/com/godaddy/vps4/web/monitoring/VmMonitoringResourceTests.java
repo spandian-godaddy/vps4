@@ -6,6 +6,7 @@ import static org.junit.Assert.assertTrue;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.io.IOException;
@@ -77,6 +78,7 @@ public class VmMonitoringResourceTests {
         panoptaService = mock(PanoptaService.class);
         panoptaDataService = mock(PanoptaDataService.class);
         panoptaOutage = mock(PanoptaOutage.class);
+        resource = new VmMonitoringResource(monitoringService, vmResource, monitoringMeta, panoptaService, panoptaDataService);
         IpAddress ipAddress = new IpAddress(0, null, null, null, 123L, null, null);
         vm = new VirtualMachine(UUID.randomUUID(), 1L, null, 1L, null, null, null, ipAddress, Instant.now().minus(Duration.ofDays(5)), null, null, null, 0, UUID.randomUUID());
         when(vmResource.getVm(vm.vmId)).thenReturn(vm);
@@ -123,7 +125,6 @@ public class VmMonitoringResourceTests {
         when(panoptaDataService.getPanoptaDetails(vm.vmId)).thenReturn(panoptaDetail);
         when(panoptaService.getAvailability(eq(vm.vmId), anyString(), anyString())).thenReturn(panoptaAvailability);
 
-        resource = new VmMonitoringResource(monitoringService, vmResource, monitoringMeta, panoptaService, panoptaDataService);
         List<MonitoringUptimeRecord> records = resource.getVmUptime(vm.vmId, 30);
 
         assertEquals(1, records.size());
@@ -144,7 +145,6 @@ public class VmMonitoringResourceTests {
         when(panoptaDataService.getPanoptaDetails(vm.vmId)).thenReturn(null);
         when(monitoringService.getCheckUptime(eq(monitoringAccountId), eq(vm.primaryIpAddress.pingCheckId), eq("days"), anyString(), anyString())).thenReturn(npRecords);
 
-        resource = new VmMonitoringResource(monitoringService, vmResource, monitoringMeta, panoptaService, panoptaDataService);
         List<MonitoringUptimeRecord> records = resource.getVmUptime(vm.vmId, 30);
 
         assertEquals(3, records.size());
@@ -165,7 +165,6 @@ public class VmMonitoringResourceTests {
         when(panoptaDataService.getPanoptaDetails(vm.vmId)).thenReturn(panoptaDetail);
         when(panoptaService.getOutage(eq(vm.vmId), anyString(), anyString(), eq(10), eq(0))).thenReturn(panoptaOutage);
 
-        resource = new VmMonitoringResource(monitoringService, vmResource, monitoringMeta, panoptaService, panoptaDataService);
         PaginatedResult<MonitoringEvent> events = resource.getVmMonitoringEvents(vm.vmId, 30, 10, 0, uriInfo);
 
         assertEquals(1, events.results.size());
@@ -195,7 +194,6 @@ public class VmMonitoringResourceTests {
         when(panoptaDataService.getPanoptaDetails(vm.vmId)).thenReturn(null);
         when(monitoringService.getCheckEvents(monitoringAccountId, vm.primaryIpAddress.pingCheckId, 0)).thenReturn(npEvents);
 
-        resource = new VmMonitoringResource(monitoringService, vmResource, monitoringMeta, panoptaService, panoptaDataService);
         PaginatedResult<MonitoringEvent> events = resource.getVmMonitoringEvents(vm.vmId, 30, 10, 0, uriInfo);
 
         assertEquals(1, events.results.size());

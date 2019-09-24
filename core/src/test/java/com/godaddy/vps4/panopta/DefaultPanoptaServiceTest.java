@@ -1,5 +1,6 @@
 package com.godaddy.vps4.panopta;
 
+import static org.junit.Assert.assertEquals;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyInt;
 import static org.mockito.Matchers.anyString;
@@ -7,20 +8,24 @@ import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.io.IOException;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
+
+import javax.cache.Cache;
+import javax.cache.CacheManager;
 
 import org.junit.Before;
 import org.junit.Test;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.godaddy.hfs.config.Config;
+import com.godaddy.vps4.cache.CacheName;
 import com.godaddy.vps4.credit.CreditService;
 import com.godaddy.vps4.credit.VirtualMachineCredit;
 import com.godaddy.vps4.util.ObjectMapperProvider;
@@ -49,7 +54,10 @@ public class DefaultPanoptaServiceTest {
     private PanoptaServers panoptaServers;
     private PanoptaServers.Server server;
     private PanoptaApiCustomerList panoptaApiCustomerList;
+    private PanoptaUsageIdList usageIdList;
+    private PanoptaNetworkIdList networkIdList;
     private PanoptaServerMetric panoptaServerMetric;
+
     @Inject
     private ObjectMapper objectMapper = new ObjectMapperProvider().get();
 
@@ -70,12 +78,6 @@ public class DefaultPanoptaServiceTest {
         partnerCustomerKey = "someRandomPartnerCustomerKey";
         customerKey = "someCustomerKey";
         vmId = UUID.randomUUID();
-        defaultPanoptaService = new DefaultPanoptaService(panoptaApiCustomerService,
-                                                          panoptaApiServerService,
-                                                          panoptaDataService,
-                                                          virtualMachineService,
-                                                          creditService,
-                                                          config);
         panoptaDetail = new PanoptaDetail(1, vmId, partnerCustomerKey,
                                           customerKey, serverId, "someServerKey",
                                           Instant.now(), Instant.MAX);
@@ -89,6 +91,29 @@ public class DefaultPanoptaServiceTest {
         server.serverGroup = "someServerGroup";
         server.status = PanoptaServer.Status.ACTIVE.toString();
         panoptaServers.servers.add(server);
+        setupGraphIdLists();
+        defaultPanoptaService = new DefaultPanoptaService(panoptaApiCustomerService,
+                                                          panoptaApiServerService,
+                                                          panoptaDataService,
+                                                          virtualMachineService,
+                                                          creditService,
+                                                          config);
+    }
+
+    private void setupGraphIdLists() {
+        List<PanoptaGraphId> graphIdList = new ArrayList<>();
+        PanoptaGraphId pgi1 = new PanoptaGraphId();
+        pgi1.id = (int) (Math.random() * 9999);
+        pgi1.type = PanoptaGraph.Type.UNKNOWN;
+        graphIdList.add(pgi1);
+        PanoptaGraphId pgi2 = new PanoptaGraphId();
+        pgi2.id = (int) (Math.random() * 9999);
+        pgi2.type = PanoptaGraph.Type.HTTP;
+        graphIdList.add(pgi2);
+        usageIdList = new PanoptaUsageIdList();
+        usageIdList.setList(graphIdList);
+        networkIdList = new PanoptaNetworkIdList();
+        networkIdList.setList(graphIdList);
     }
 
     private String mockedupCustomerList() {
@@ -131,14 +156,15 @@ public class DefaultPanoptaServiceTest {
 
         defaultPanoptaService.createCustomer(vmId);
 
-        verify(panoptaApiCustomerService, times(1)).createCustomer(any(PanoptaApiCustomerRequest.class));
+        verify(panoptaApiCustomerService).createCustomer(any(PanoptaApiCustomerRequest.class));
     }
 
 
     @Test
     public void testInvokesCreatesCustomerWithMatchingCustomer() throws PanoptaServiceException, IOException {
         when(config.get("panopta.api.partner.customer.key.prefix")).thenReturn("gdtest_");
-        PanoptaApiCustomerList fakePanoptaCustomers = objectMapper.readValue(mockedupCustomerList(), PanoptaApiCustomerList.class);
+        PanoptaApiCustomerList fakePanoptaCustomers =
+                objectMapper.readValue(mockedupCustomerList(), PanoptaApiCustomerList.class);
         when(virtualMachineService.getVirtualMachine(any(UUID.class))).thenReturn(virtualMachine);
         when(creditService.getVirtualMachineCredit(any(UUID.class))).thenReturn(credit);
         when(panoptaApiCustomerService.getCustomer(eq("gdtest_" + vmId))).thenReturn(fakePanoptaCustomers);
@@ -147,7 +173,47 @@ public class DefaultPanoptaServiceTest {
 
         defaultPanoptaService.createCustomer(vmId);
 
-        verify(panoptaApiCustomerService, times(1)).createCustomer(any(PanoptaApiCustomerRequest.class));
+        verify(panoptaApiCustomerService).createCustomer(any(PanoptaApiCustomerRequest.class));
+    }
+
+    @Test
+    public void testGetUsageIdsWhenNoDbEntry() {
+        when(panoptaDataService.getPanoptaDetails(vmId)).thenReturn(null);
+        defaultPanoptaService.getUsageIds(vmId);
+        verify(panoptaApiServerService, never()).getUsageList(anyInt(), anyString(), anyInt());
+    }
+
+    @Test
+    public void testGetUsageIds() {
+        when(panoptaDataService.getPanoptaDetails(vmId)).thenReturn(panoptaDetail);
+        when(panoptaApiServerService.getUsageList(serverId, partnerCustomerKey, 0)).thenReturn(usageIdList);
+
+        List<PanoptaGraphId> ids = defaultPanoptaService.getUsageIds(vmId);
+
+        verify(panoptaApiServerService).getUsageList(serverId, partnerCustomerKey, 0);
+        assertEquals(ids.size(), 1);
+        assertEquals(ids.get(0).id, usageIdList.getList().get(0).id);
+        assertEquals(ids.get(0).type, usageIdList.getList().get(0).type);
+    }
+
+    @Test
+    public void testGetNetworkIdsWhenNoDbEntry() {
+        when(panoptaDataService.getPanoptaDetails(vmId)).thenReturn(null);
+        defaultPanoptaService.getNetworkIds(vmId);
+        verify(panoptaApiServerService, never()).getNetworkList(anyInt(), anyString(), anyInt());
+    }
+
+    @Test
+    public void testGetNetworkIds() {
+        when(panoptaDataService.getPanoptaDetails(vmId)).thenReturn(panoptaDetail);
+        when(panoptaApiServerService.getNetworkList(serverId, partnerCustomerKey, 0)).thenReturn(networkIdList);
+
+        List<PanoptaGraphId> ids = defaultPanoptaService.getNetworkIds(vmId);
+
+        verify(panoptaApiServerService).getNetworkList(serverId, partnerCustomerKey, 0);
+        assertEquals(ids.size(), 1);
+        assertEquals(ids.get(0).id, networkIdList.getList().get(0).id);
+        assertEquals(ids.get(0).type, networkIdList.getList().get(0).type);
     }
 
     @Test
@@ -254,7 +320,7 @@ public class DefaultPanoptaServiceTest {
 
         defaultPanoptaService.getServerMetricsFromPanopta(123, serverId, "fake-timescale", partnerCustomerKey);
 
-        verify(panoptaApiServerService, times(1)).getMetricData(eq(serverId), eq(123), eq("fake-timescale"), eq(partnerCustomerKey));
+        verify(panoptaApiServerService).getMetricData(eq(serverId), eq(123), eq("fake-timescale"), eq(partnerCustomerKey));
 
     }
 
@@ -268,14 +334,14 @@ public class DefaultPanoptaServiceTest {
     public void testGetServer() throws PanoptaServiceException {
         when(panoptaApiServerService.getPanoptaServers(eq(partnerCustomerKey))).thenReturn(panoptaServers);
         defaultPanoptaService.getServer(partnerCustomerKey);
-        verify(panoptaApiServerService, times(1)).getPanoptaServers(eq(partnerCustomerKey));
+        verify(panoptaApiServerService).getPanoptaServers(eq(partnerCustomerKey));
     }
 
     @Test(expected =  PanoptaServiceException.class)
     public void testGetServerThrowsException() throws PanoptaServiceException {
         when(panoptaApiServerService.getPanoptaServers(eq(partnerCustomerKey))).thenReturn(null);
         defaultPanoptaService.getServer(partnerCustomerKey);
-        verify(panoptaApiServerService, times(1)).getPanoptaServers(eq(partnerCustomerKey));
+        verify(panoptaApiServerService).getPanoptaServers(eq(partnerCustomerKey));
     }
 
     @Test(expected =  PanoptaServiceException.class)
@@ -283,6 +349,6 @@ public class DefaultPanoptaServiceTest {
         panoptaServers.servers.add(server); // force add another entry to the list
         when(panoptaApiServerService.getPanoptaServers(eq(partnerCustomerKey))).thenReturn(panoptaServers);
         defaultPanoptaService.getServer(partnerCustomerKey);
-        verify(panoptaApiServerService, times(1)).getPanoptaServers(eq(partnerCustomerKey));
+        verify(panoptaApiServerService).getPanoptaServers(eq(partnerCustomerKey));
     }
 }

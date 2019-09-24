@@ -1,8 +1,6 @@
 package com.godaddy.vps4.panopta;
 
 
-import java.time.Instant;
-
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
@@ -18,16 +16,21 @@ import javax.ws.rs.core.MediaType;
 @Produces(MediaType.APPLICATION_JSON)
 public interface PanoptaApiServerService {
     @GET
+    @Path("/{server_id}/agent_resource")
+    PanoptaUsageIdList getUsageList(@PathParam("server_id") int serverId,
+                                    @QueryParam("partner_customer_key") String partnerCustomerKey,
+                                    @QueryParam("limit") int limit);
+
+    @GET
+    @Path("/{server_id}/network_service")
+    PanoptaNetworkIdList getNetworkList(@PathParam("server_id") int serverId,
+                                        @QueryParam("partner_customer_key") String partnerCustomerKey,
+                                        @QueryParam("limit") int limit);
+
     @Path("/{server_id}/agent_resource/{agent_resource_id}/metric/{timescale}")
     PanoptaServerMetric getMetricData(@PathParam("server_id") int serverId,
                                       @PathParam("agent_resource_id") int agentResourceId,
                                       @PathParam("timescale") String timescale,
-                                      @QueryParam("partner_customer_key") String partnerCustomerKey);
-
-
-    @GET
-    @Path("/{server_id}/agent_resource")
-    PanoptaAgentResourceList getAgentResourceList(@PathParam("server_id") int serverId,
                                       @QueryParam("partner_customer_key") String partnerCustomerKey);
 
     @GET
@@ -37,7 +40,7 @@ public interface PanoptaApiServerService {
     @GET
     @Path("/{server_id}")
     PanoptaServers.Server getServer(@PathParam("server_id") int serverId,
-                            @QueryParam("partner_customer_key") String partnerCustomerKey);
+                                    @QueryParam("partner_customer_key") String partnerCustomerKey);
 
     @PUT
     @Path("/{server_id}")
