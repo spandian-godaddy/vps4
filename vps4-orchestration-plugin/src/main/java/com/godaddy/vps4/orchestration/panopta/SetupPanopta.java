@@ -48,7 +48,7 @@ public class SetupPanopta implements Command<SetupPanopta.Request, Void> {
             // create panopta customer in Panopta
             PanoptaCustomer panoptaCustomer = getPanoptaCustomer(context, request);
 
-            // install panopta on the vm, no server key is passed in
+            // install panopta on the vm, no server key is passed in since this is a brand new install
             installPanoptaOnVm(panoptaCustomer.getCustomerKey(), null, request, context);
 
             // get server information from Panopta and save in VPS4 Database

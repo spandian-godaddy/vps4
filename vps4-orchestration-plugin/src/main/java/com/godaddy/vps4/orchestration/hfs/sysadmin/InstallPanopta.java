@@ -16,7 +16,7 @@ public class InstallPanopta implements Command<InstallPanopta.Request, Void> {
 
     public static class Request {
         public String customerKey;
-        public String serverKey; //TODO: use once its ready for use on HFS.
+        public String serverKey;
         public String templates;
         public long hfsVmId;
     }
@@ -33,7 +33,7 @@ public class InstallPanopta implements Command<InstallPanopta.Request, Void> {
         logger.info("Configuring panopta for orion guid {} ", request.hfsVmId);
 
         SysAdminAction hfsSysAction = context.execute("InstallPanopta-" + request.hfsVmId,
-                                                      ctx -> sysAdminService.installPanopta(request.hfsVmId, request.customerKey, request.templates, null),
+                                                      ctx -> sysAdminService.installPanopta(request.hfsVmId, request.customerKey, request.templates, null, request.serverKey),
                                                       SysAdminAction.class);
         context.execute("WaitForPanoptaInstall-" + request.hfsVmId, WaitForSysAdminAction.class, hfsSysAction);
 

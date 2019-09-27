@@ -692,7 +692,7 @@ public class HfsMockModule extends AbstractModule {
             }
 
             @Override
-            public SysAdminAction installPanopta(long vmId, String customerKey, String templates, String serverName) {
+            public SysAdminAction installPanopta(long vmId, String customerKey, String templates, String serverName, String serverKey) {
                 return null;
             }
         };
