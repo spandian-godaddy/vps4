@@ -8,6 +8,8 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import java.time.Duration;
+import java.time.Instant;
 import java.util.UUID;
 import java.util.function.Function;
 
@@ -50,6 +52,7 @@ public class Vps4DestroyVmTest {
         request.actionId = 13L;
 
         primaryIp.ipAddressId = 23L;
+        primaryIp.validUntil = Instant.MAX;
         when(networkService.getVmPrimaryAddress(vm.vmId)).thenReturn(primaryIp);
     }
 
@@ -74,6 +77,13 @@ public class Vps4DestroyVmTest {
     @Test
     public void skipsRemoveIpIfNullIp() {
         when(networkService.getVmPrimaryAddress(vm.vmId)).thenReturn(null);
+        command.execute(context, request);
+        verify(context, never()).execute(any(), eq(Vps4RemoveMonitoring.class), any());
+    }
+
+    @Test
+    public void skipsRemoveIpIfValidUntilAlreadySet() {
+        primaryIp.validUntil = Instant.now().minus(Duration.ofHours(1));
         command.execute(context, request);
         verify(context, never()).execute(any(), eq(Vps4RemoveMonitoring.class), any());
     }

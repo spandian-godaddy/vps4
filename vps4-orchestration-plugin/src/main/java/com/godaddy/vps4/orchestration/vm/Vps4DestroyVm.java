@@ -1,5 +1,6 @@
 package com.godaddy.vps4.orchestration.vm;
 
+import java.time.Instant;
 import java.util.UUID;
 
 import javax.inject.Inject;
@@ -85,13 +86,18 @@ public class Vps4DestroyVm extends ActionCommand<VmActionRequest, Vps4DestroyVm.
 
     private void removeIp() {
         IpAddress address = networkService.getVmPrimaryAddress(vm.vmId);
-        if (address != null) {
+        if (isAddressValid(address)) {
             removeIpFromServer(address);
-            markIpDeletedInDb(address);
+            updateIpValidUntil(address);
         }
     }
 
-    private void markIpDeletedInDb(IpAddress address) {
+    private boolean isAddressValid(IpAddress address) {
+        return address != null && address.validUntil.isAfter(Instant.now());
+    }
+
+
+    private void updateIpValidUntil(IpAddress address) {
         context.execute("MarkIpDeleted-" + address.ipAddressId, ctx -> {
                 networkService.destroyIpAddress(address.ipAddressId);
                 return null;

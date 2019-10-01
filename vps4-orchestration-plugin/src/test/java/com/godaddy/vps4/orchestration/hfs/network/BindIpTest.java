@@ -1,4 +1,4 @@
-package com.godaddy.vps4.orchestration.network;
+package com.godaddy.vps4.orchestration.hfs.network;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
