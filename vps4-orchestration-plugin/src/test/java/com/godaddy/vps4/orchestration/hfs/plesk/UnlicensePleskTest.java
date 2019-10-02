@@ -65,15 +65,15 @@ public class UnlicensePleskTest {
                 "  \"status\": 422\n" +
                 "}";
         Response response = Response.status(422).entity(hfsResponse).build();
-        doThrow(new ClientErrorException(response))
+        doThrow(new RuntimeException(new RuntimeException(new ClientErrorException(response))))
             .when(pleskService).licenseRelease(hfsVmId);
         command.execute(context, hfsVmId);
     }
 
-    @Test(expected=ClientErrorException.class)
+    @Test(expected=RuntimeException.class)
     public void throwsUnexpectedErrorException() {
         Response response = Response.status(422).entity("Crazy unexpected unlicense exception").build();
-        doThrow(new ClientErrorException(response))
+        doThrow(new RuntimeException(new ClientErrorException(response)))
             .when(context).execute(WaitForPleskAction.class, pleskAction);
         command.execute(context, hfsVmId);
     }
