@@ -1,5 +1,7 @@
 package com.godaddy.vps4.orchestration.hfs.plesk;
 
+import javax.ws.rs.ClientErrorException;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -29,16 +31,15 @@ public class UnlicensePlesk implements Command<Long, Void> {
                     ctx -> pleskService.licenseRelease(hfsVmId), PleskAction.class);
             context.execute(WaitForPleskAction.class, action);
 
-        } catch (RuntimeException e) {
+        } catch (ClientErrorException e) {
             // This logic can be revisited when HFS provides a way to lookup Plesk licenses
-            if(e.getMessage().contains("VM does not have a resource ID")) {
+            if (e.getResponse().getEntity().toString().contains("VM does not have a resource ID")) {
                 logger.warn("No resource ID found for HFS VM {}, ignore unlicensing error", hfsVmId);
-            } else if(e.getMessage().contains("Failed to find license for VM")) {
-                logger.warn("No license found for HFS VM {}, ignore unlicensing error", hfsVmId);
             } else {
                 throw e;
             }
         }
         return null;
     }
+
 }

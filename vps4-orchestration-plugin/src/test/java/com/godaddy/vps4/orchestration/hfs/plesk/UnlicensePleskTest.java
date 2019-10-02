@@ -6,6 +6,9 @@ import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import javax.ws.rs.ClientErrorException;
+import javax.ws.rs.core.Response;
+
 import org.junit.Before;
 import org.junit.Test;
 
@@ -50,22 +53,27 @@ public class UnlicensePleskTest {
     }
 
     @Test
-    public void ignoresNoLicenseFoundException() {
-        doThrow(new RuntimeException("Failed to find license for VM"))
-            .when(context).execute(WaitForPleskAction.class, pleskAction);
-        command.execute(context, hfsVmId);
-    }
-
-    @Test
     public void ignoresNoVmResourceIdException() {
-        doThrow(new RuntimeException("VM does not have a resource ID"))
+        String hfsResponse = "{\n" +
+                "  \"id\": \"HFS:INTERNAL_ERROR\",\n" +
+                "  \"stackTrace\": [\n" +
+                "    \"gdg.hfs.vhfs.plesk.web.RestPleskService.serverToVM:400\",\n" +
+                "    \"gdg.hfs.vhfs.plesk.web.RestPleskService.licenseReleaseNydus:299\",\n" +
+                "    \"gdg.hfs.vhfs.plesk.web.RestPleskService.licenseRelease:292\",\n" +
+                "  ],\n" +
+                "  \"message\": \"VM does not have a resource ID associated with it\",\n" +
+                "  \"status\": 422\n" +
+                "}";
+        Response response = Response.status(422).entity(hfsResponse).build();
+        doThrow(new ClientErrorException(response))
             .when(pleskService).licenseRelease(hfsVmId);
         command.execute(context, hfsVmId);
     }
 
-    @Test(expected=RuntimeException.class)
+    @Test(expected=ClientErrorException.class)
     public void throwsUnexpectedErrorException() {
-        doThrow(new RuntimeException("Crazy unexpected exception during plesk unlicense"))
+        Response response = Response.status(422).entity("Crazy unexpected unlicense exception").build();
+        doThrow(new ClientErrorException(response))
             .when(context).execute(WaitForPleskAction.class, pleskAction);
         command.execute(context, hfsVmId);
     }
