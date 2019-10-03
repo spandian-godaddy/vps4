@@ -1,5 +1,6 @@
 package com.godaddy.vps4.orchestration.hfs.plesk;
 
+import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
@@ -64,15 +65,19 @@ public class UnlicensePleskTest {
                 "  \"message\": \"VM does not have a resource ID associated with it\",\n" +
                 "  \"status\": 422\n" +
                 "}";
-        Response response = Response.status(422).entity(hfsResponse).build();
-        doThrow(new RuntimeException(new RuntimeException(new ClientErrorException(response))))
+        Response response = spy(Response.status(422).build());
+        doReturn(hfsResponse).when(response).readEntity(String.class);
+        // Wrap the exception like the command context will send it back
+        doThrow(new RuntimeException(new ClientErrorException(response)))
             .when(pleskService).licenseRelease(hfsVmId);
         command.execute(context, hfsVmId);
     }
 
     @Test(expected=RuntimeException.class)
     public void throwsUnexpectedErrorException() {
-        Response response = Response.status(422).entity("Crazy unexpected unlicense exception").build();
+        String hfsResponse = "Crazy unexpected unlicense exception";
+        Response response = spy(Response.status(422).build());
+        doReturn(hfsResponse).when(response).readEntity(String.class);
         doThrow(new RuntimeException(new ClientErrorException(response)))
             .when(context).execute(WaitForPleskAction.class, pleskAction);
         command.execute(context, hfsVmId);
