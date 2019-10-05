@@ -1,8 +1,8 @@
 package com.godaddy.vps4.hfs;
 
-import java.io.BufferedReader;
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
-import java.io.InputStreamReader;
+import java.io.InputStream;
 import java.security.SecureRandom;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
@@ -21,6 +21,7 @@ import javax.ws.rs.client.ClientResponseContext;
 import javax.ws.rs.client.ClientResponseFilter;
 import javax.ws.rs.core.Response;
 
+import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.client.HttpClient;
 import org.apache.http.config.RegistryBuilder;
@@ -119,18 +120,17 @@ public class HfsClientProvider<T> implements Provider<T> {
 
         client.register(jacksonJsonProvider);
 
+        // log status and response body for hfs requests that error
         client.register(new ClientResponseFilter() {
             @Override
             public void filter(ClientRequestContext requestContext, ClientResponseContext responseContext) throws IOException {
-                if (!responseContext.getStatusInfo().getFamily().equals(Response.Status.Family.SUCCESSFUL)) {
-                    StringBuilder errMsg = new StringBuilder();
-                    BufferedReader reader = new BufferedReader(new InputStreamReader(responseContext.getEntityStream()));
-                    String line;
-                    while((line = reader.readLine()) != null){
-                        errMsg.append(line);
+                if (responseContext.getStatusInfo().getFamily() != Response.Status.Family.SUCCESSFUL) {
+                    try (InputStream entityStream = responseContext.getEntityStream()) {
+                        byte[] bytes = IOUtils.toByteArray(entityStream);
+                        responseContext.setEntityStream(new ByteArrayInputStream(bytes));
+                        logger.error("Error response with status {} returned. Response body: {}",
+                                responseContext.getStatus(), StringUtils.left(new String(bytes), 4096));
                     }
-                    logger.error("Error response with status {} returned. Response body: {}.",
-                                 responseContext.getStatus(), StringUtils.left(errMsg.toString(), 1024));
                 }
             }
         });

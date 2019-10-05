@@ -47,7 +47,8 @@ public class UnlicensePlesk implements Command<Long, Void> {
     private boolean shouldThrowException(Throwable t) {
         if (t instanceof ClientErrorException) {
             ClientErrorException cee = (ClientErrorException) t;
-            if (cee.getResponse().readEntity(String.class).contains("VM does not have a resource ID")) {
+            String hfsEntity = cee.getResponse().readEntity(String.class);
+            if (hfsEntity.contains("VM does not have a resource ID")) {
                 logger.warn("No resource ID found for HFS VM {}, ignore unlicensing error", hfsVmId);
                 return false;
             }
