@@ -2,13 +2,12 @@ package com.godaddy.vps4.panopta;
 
 import java.util.UUID;
 
-import javax.inject.Inject;
-
 import com.godaddy.hfs.config.Config;
 import com.godaddy.vps4.credit.CreditService;
 import com.godaddy.vps4.credit.VirtualMachineCredit;
 import com.godaddy.vps4.vm.VirtualMachine;
 import com.godaddy.vps4.vm.VirtualMachineService;
+import com.google.inject.Inject;
 
 public class PanoptaCustomerRequest {
     private UUID vmId;
@@ -23,6 +22,7 @@ public class PanoptaCustomerRequest {
     @Inject
     CreditService creditService;
 
+    @Inject
     public PanoptaCustomerRequest(VirtualMachineService virtualMachineService, CreditService creditService, Config config) {
         this.virtualMachineService = virtualMachineService;
         this.creditService = creditService;
@@ -34,8 +34,7 @@ public class PanoptaCustomerRequest {
         VirtualMachine virtualMachine = virtualMachineService.getVirtualMachine(vmId);
         VirtualMachineCredit credit = creditService.getVirtualMachineCredit(virtualMachine.orionGuid);
         this.shopperId = credit.getShopperId();
-        partnerCustomerKey = config.get("panopta.api.partner.customer.key.prefix") + vmId;
-        this.partnerCustomerKey = partnerCustomerKey;
+        this.partnerCustomerKey = config.get("panopta.api.partner.customer.key.prefix") + vmId;
         this.emailAddress = config.get("panopta.api.customer.email", "dev-vps4@godaddy.com");
         // commented out at the moment since we need to create the correct managed levels in Panopta.
         // customerRequest.panoptaPackage = config.get("panopta.api.package." + credit

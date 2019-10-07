@@ -324,17 +324,14 @@ public class Vps4ProvisionVm extends ActionCommand<ProvisionRequest, Vps4Provisi
     private void configureMonitoring(IpAddress ipAddress, long hfsVmId) {
         VirtualMachineCredit credit = creditService.getVirtualMachineCredit(request.orionGuid);
 
-        if (request.vmInfo.hasMonitoring) {
+        // gate panopta installation using a feature flag
+        boolean isPanoptaInstallationEnabled = Boolean.parseBoolean(config.get("panopta.installation.enabled", "false"));
 
-            // gate panopta installation using a feature flag
-            boolean isPanoptaInstallationEnabled = Boolean.parseBoolean(config.get("panopta.installation.enabled", "false"));
-
-            if (isPanoptaInstallationEnabled) {
-                setStep(InstallPanopta);
-                installPanopta(hfsVmId, credit);
-            } else {
-                configureNodeping(ipAddress);
-            }
+        if (isPanoptaInstallationEnabled) {
+            setStep(InstallPanopta);
+            installPanopta(hfsVmId, credit);
+        } else if(request.vmInfo.hasMonitoring) {
+            configureNodeping(ipAddress);
         }
     }
 

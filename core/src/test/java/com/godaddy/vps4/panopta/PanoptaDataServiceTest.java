@@ -2,6 +2,7 @@ package com.godaddy.vps4.panopta;
 
 import static junit.framework.Assert.assertNotNull;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
 
 import java.util.UUID;
 
@@ -69,6 +70,6 @@ public class PanoptaDataServiceTest {
         panoptaDataService.setServerDestroyedInPanopta(vm.vmId);
 
         PanoptaDetail panoptaDetail = panoptaDataService.getPanoptaDetails(vm.vmId);
-        assertNotNull(panoptaDetail.getDestroyed());
+        assertNull(panoptaDetail);
     }
 }

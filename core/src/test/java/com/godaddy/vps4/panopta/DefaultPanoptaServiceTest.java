@@ -17,15 +17,11 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
-import javax.cache.Cache;
-import javax.cache.CacheManager;
-
 import org.junit.Before;
 import org.junit.Test;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.godaddy.hfs.config.Config;
-import com.godaddy.vps4.cache.CacheName;
 import com.godaddy.vps4.credit.CreditService;
 import com.godaddy.vps4.credit.VirtualMachineCredit;
 import com.godaddy.vps4.util.ObjectMapperProvider;
@@ -60,6 +56,10 @@ public class DefaultPanoptaServiceTest {
 
     @Inject
     private ObjectMapper objectMapper = new ObjectMapperProvider().get();
+    @Inject
+    private PanoptaCustomerRequest panoptaCustomerRequest;
+    @Inject
+    private PanoptaApiCustomerRequest panoptaApiCustomerRequest;
 
     @Before
     public void setup() {
@@ -70,14 +70,14 @@ public class DefaultPanoptaServiceTest {
         panoptaServerMetric = mock(PanoptaServerMetric.class);
         virtualMachineService = mock(VirtualMachineService.class);
         creditService = mock(CreditService.class);
+        config = mock(Config.class);
         credit = createDummyCredit();
         virtualMachine = new VirtualMachine();
         virtualMachine.orionGuid = UUID.randomUUID();
-        config = mock(Config.class);
-        serverId = 42;
-        partnerCustomerKey = "someRandomPartnerCustomerKey";
-        customerKey = "someCustomerKey";
         vmId = UUID.randomUUID();
+        serverId = 42;
+        partnerCustomerKey = "gdtest_" + vmId;
+        customerKey = "someCustomerKey";
         panoptaDetail = new PanoptaDetail(1, vmId, partnerCustomerKey,
                                           customerKey, serverId, "someServerKey",
                                           Instant.now(), Instant.MAX);
@@ -91,12 +91,13 @@ public class DefaultPanoptaServiceTest {
         server.serverGroup = "someServerGroup";
         server.status = PanoptaServer.Status.ACTIVE.toString();
         panoptaServers.servers.add(server);
+        panoptaCustomerRequest = new PanoptaCustomerRequest(virtualMachineService, creditService, config);
+        panoptaApiCustomerRequest = new PanoptaApiCustomerRequest();
         setupGraphIdLists();
         defaultPanoptaService = new DefaultPanoptaService(panoptaApiCustomerService,
                                                           panoptaApiServerService,
                                                           panoptaDataService,
-                                                          virtualMachineService,
-                                                          creditService,
+                                                          panoptaCustomerRequest,
                                                           config);
     }
 
@@ -151,6 +152,7 @@ public class DefaultPanoptaServiceTest {
     public void testInvokesCreatesCustomer() throws PanoptaServiceException {
         when(virtualMachineService.getVirtualMachine(any(UUID.class))).thenReturn(virtualMachine);
         when(creditService.getVirtualMachineCredit(any(UUID.class))).thenReturn(credit);
+        when(config.get("panopta.api.partner.customer.key.prefix")).thenReturn("gdtest_");
         when(panoptaApiCustomerService.getCustomer(eq(partnerCustomerKey))).thenReturn(panoptaApiCustomerList);
         doNothing().when(panoptaApiCustomerService).createCustomer(any(PanoptaApiCustomerRequest.class));
 
@@ -159,14 +161,13 @@ public class DefaultPanoptaServiceTest {
         verify(panoptaApiCustomerService).createCustomer(any(PanoptaApiCustomerRequest.class));
     }
 
-
     @Test
     public void testInvokesCreatesCustomerWithMatchingCustomer() throws PanoptaServiceException, IOException {
-        when(config.get("panopta.api.partner.customer.key.prefix")).thenReturn("gdtest_");
         PanoptaApiCustomerList fakePanoptaCustomers =
                 objectMapper.readValue(mockedupCustomerList(), PanoptaApiCustomerList.class);
         when(virtualMachineService.getVirtualMachine(any(UUID.class))).thenReturn(virtualMachine);
         when(creditService.getVirtualMachineCredit(any(UUID.class))).thenReturn(credit);
+        when(config.get("panopta.api.partner.customer.key.prefix")).thenReturn("gdtest_");
         when(panoptaApiCustomerService.getCustomer(eq("gdtest_" + vmId))).thenReturn(fakePanoptaCustomers);
         when(panoptaApiCustomerList.getCustomerList()).thenReturn(fakePanoptaCustomers.getCustomerList());
         doNothing().when(panoptaApiCustomerService).createCustomer(any(PanoptaApiCustomerRequest.class));
@@ -332,15 +333,16 @@ public class DefaultPanoptaServiceTest {
 
     @Test
     public void testGetServer() throws PanoptaServiceException {
+        when(config.get("panopta.api.partner.customer.key.prefix")).thenReturn("gdtest_");
         when(panoptaApiServerService.getPanoptaServers(eq(partnerCustomerKey))).thenReturn(panoptaServers);
-        defaultPanoptaService.getServer(partnerCustomerKey);
+        defaultPanoptaService.getServer(vmId);
         verify(panoptaApiServerService).getPanoptaServers(eq(partnerCustomerKey));
     }
 
     @Test(expected =  PanoptaServiceException.class)
     public void testGetServerThrowsException() throws PanoptaServiceException {
         when(panoptaApiServerService.getPanoptaServers(eq(partnerCustomerKey))).thenReturn(null);
-        defaultPanoptaService.getServer(partnerCustomerKey);
+        defaultPanoptaService.getServer(vmId);
         verify(panoptaApiServerService).getPanoptaServers(eq(partnerCustomerKey));
     }
 
@@ -348,7 +350,7 @@ public class DefaultPanoptaServiceTest {
     public void testGetServerThrowsExceptionWhenMultipleServersFound() throws PanoptaServiceException {
         panoptaServers.servers.add(server); // force add another entry to the list
         when(panoptaApiServerService.getPanoptaServers(eq(partnerCustomerKey))).thenReturn(panoptaServers);
-        defaultPanoptaService.getServer(partnerCustomerKey);
+        defaultPanoptaService.getServer(vmId);
         verify(panoptaApiServerService).getPanoptaServers(eq(partnerCustomerKey));
     }
 }

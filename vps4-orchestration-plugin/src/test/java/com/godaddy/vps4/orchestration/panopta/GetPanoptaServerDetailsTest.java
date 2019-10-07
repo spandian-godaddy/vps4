@@ -48,7 +48,7 @@ public class GetPanoptaServerDetailsTest {
 
     private void setupMockContext() {
         try {
-            when(panoptaServiceMock.getServer(eq(fakePartnerCustomerKey))).thenReturn(panoptaServerMock);
+            when(panoptaServiceMock.getServer(eq(fakeVmId))).thenReturn(panoptaServerMock);
         } catch (PanoptaServiceException psex) {
             fail("Unexpected Exception during test setup " + psex);
         }
@@ -66,7 +66,7 @@ public class GetPanoptaServerDetailsTest {
     public void invokesGetServerOnPanoptaService() {
         command.execute(contextMock, request);
         try {
-            verify(panoptaServiceMock, times(1)).getServer(eq(fakePartnerCustomerKey));
+            verify(panoptaServiceMock, times(1)).getServer(eq(fakeVmId));
         } catch (PanoptaServiceException psex) {
             fail("Unexpected exception encountered. " + psex);
         }

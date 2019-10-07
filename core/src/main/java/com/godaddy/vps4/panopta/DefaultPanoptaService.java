@@ -11,8 +11,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.godaddy.hfs.config.Config;
-import com.godaddy.vps4.credit.CreditService;
-import com.godaddy.vps4.vm.VirtualMachineService;
 import com.hazelcast.util.CollectionUtil;
 
 public class DefaultPanoptaService implements PanoptaService {
@@ -22,22 +20,19 @@ public class DefaultPanoptaService implements PanoptaService {
     private final PanoptaApiCustomerService panoptaApiCustomerService;
     private final PanoptaApiServerService panoptaApiServerService;
     private final PanoptaDataService panoptaDataService;
-    private final VirtualMachineService virtualMachineService;
-    private final CreditService creditService;
     private final Config config;
+    private PanoptaCustomerRequest panoptaCustomerRequest;
 
     @Inject
     public DefaultPanoptaService(PanoptaApiCustomerService panoptaApiCustomerService,
                                  PanoptaApiServerService panoptaApiServerService,
                                  PanoptaDataService panoptaDataService,
-                                 VirtualMachineService virtualMachineService,
-                                 CreditService creditService,
+                                 PanoptaCustomerRequest panoptaCustomerRequest,
                                  Config config) {
         this.panoptaApiCustomerService = panoptaApiCustomerService;
         this.panoptaApiServerService = panoptaApiServerService;
         this.panoptaDataService = panoptaDataService;
-        this.virtualMachineService = virtualMachineService;
-        this.creditService = creditService;
+        this.panoptaCustomerRequest = panoptaCustomerRequest;
         this.config = config;
     }
 
@@ -46,16 +41,15 @@ public class DefaultPanoptaService implements PanoptaService {
             throws PanoptaServiceException {
 
         // prepare a request to create panopta customer
-        PanoptaCustomerRequest panoptaCustomerRequest =
-                new PanoptaCustomerRequest(virtualMachineService, creditService, config);
         panoptaCustomerRequest = panoptaCustomerRequest.createPanoptaCustomerRequest(vmId);
 
         // setup the customer request for panopta
         PanoptaApiCustomerRequest panoptaApiCustomerRequest = new PanoptaApiCustomerRequest();
-        panoptaApiCustomerRequest.panoptaPackage = panoptaCustomerRequest.getPanoptaPackage();
-        panoptaApiCustomerRequest.name = panoptaCustomerRequest.getShopperId();
-        panoptaApiCustomerRequest.emailAddress = panoptaCustomerRequest.getEmailAddress();
-        panoptaApiCustomerRequest.partnerCustomerKey = panoptaCustomerRequest.getPartnerCustomerKey();
+        panoptaApiCustomerRequest.setPanoptaPackage(panoptaCustomerRequest.getPanoptaPackage());
+        panoptaApiCustomerRequest.setName(panoptaCustomerRequest.getShopperId());
+        panoptaApiCustomerRequest.setEmailAddress(panoptaCustomerRequest.getEmailAddress());
+        panoptaApiCustomerRequest.setPartnerCustomerKey(panoptaCustomerRequest.getPartnerCustomerKey());
+        logger.info("Panopta API customer Request: {}", panoptaApiCustomerRequest.toString());
 
         // perform a POST to create the customer
         panoptaApiCustomerService.createCustomer(panoptaApiCustomerRequest);
@@ -85,7 +79,10 @@ public class DefaultPanoptaService implements PanoptaService {
     @Override
     public void deleteCustomer(UUID vmId) {
         PanoptaDetail panoptaDetails = panoptaDataService.getPanoptaDetails(vmId);
-        panoptaApiCustomerService.deleteCustomer(panoptaDetails.getCustomerKey());
+        if(panoptaDetails != null) {
+            logger.info("Deleting customer in Panopta. Panopta Details: {}", panoptaDetails.toString());
+            panoptaApiCustomerService.deleteCustomer(panoptaDetails.getCustomerKey());
+        }
     }
 
     @Override
@@ -127,7 +124,18 @@ public class DefaultPanoptaService implements PanoptaService {
     }
 
     @Override
-    public PanoptaServer getServer(String partnerCustomerKey) throws PanoptaServiceException {
+    public PanoptaServer getServer(UUID vmId) throws PanoptaServiceException {
+        // first check to see if the panopta details exist in the vps4 database.
+        PanoptaDetail panoptaDetail = panoptaDataService.getPanoptaDetails(vmId);
+        if (panoptaDetail != null) {
+            logger.info("Attempting to get panopta server details for vm id {} using partner customer key {} ", vmId,
+                        panoptaDetail.getPartnerCustomerKey());
+            return mapServer(panoptaDetail.getPartnerCustomerKey(), panoptaApiServerService
+                    .getServer(panoptaDetail.getServerId(), panoptaDetail.getPartnerCustomerKey()));
+        }
+
+        // no panopta related details exist in vps4 db, fire a call to panopta to get those details
+        String partnerCustomerKey = config.get("panopta.api.partner.customer.key.prefix") + vmId;
         logger.info("Attempting to get panopta server details using partner customer key {} ", partnerCustomerKey);
         PanoptaServers panoptaServers = panoptaApiServerService.getPanoptaServers(partnerCustomerKey);
         if (panoptaServers == null || CollectionUtil.isEmpty(panoptaServers.getServers())) {
@@ -198,7 +206,11 @@ public class DefaultPanoptaService implements PanoptaService {
     @Override
     public void removeServerMonitoring(UUID vmId) {
         PanoptaDetail panoptaDetails = panoptaDataService.getPanoptaDetails(vmId);
-        panoptaApiServerService.deleteServer(panoptaDetails.getServerId(), panoptaDetails.getPartnerCustomerKey());
+        logger.info("Attempting to delete server from panopta.");
+        if(panoptaDetails != null) {
+            logger.info("Panopta Details: {}", panoptaDetails.toString());
+            panoptaApiServerService.deleteServer(panoptaDetails.getServerId(), panoptaDetails.getPartnerCustomerKey());
+        }
     }
 
     @Override

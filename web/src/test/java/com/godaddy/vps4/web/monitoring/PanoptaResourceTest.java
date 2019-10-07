@@ -173,7 +173,7 @@ public class PanoptaResourceTest {
         panoptaResource.getServer(vmId);
 
         try {
-            verify(panoptaService, times(1)).getServer(eq("gdtest_" + vmId));
+            verify(panoptaService, times(1)).getServer(eq(vmId));
         } catch (PanoptaServiceException psex) {
             fail("Unexpected exception encountered. " + psex);
         }

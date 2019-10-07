@@ -10,5 +10,6 @@ public class PanoptaModule extends AbstractModule {
         install(new PanoptaClientModule());
         bind(PanoptaService.class).to(DefaultPanoptaService.class).in(Scopes.SINGLETON);
         bind(PanoptaDataService.class).to(JdbcPanoptaDataService.class);
+        bind(PanoptaCustomerRequest.class);
     }
 }

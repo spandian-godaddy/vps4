@@ -43,7 +43,7 @@ public class GetPanoptaServerDetails
         while (Instant.now().isBefore(expiration)) {
 
             try {
-                panoptaServer = panoptaService.getServer(request.partnerCustomerKey);
+                panoptaServer = panoptaService.getServer(request.vmId);
             } catch (PanoptaServiceException e) {
                 logger.warn(e.getId(), e.getMessage());
             }

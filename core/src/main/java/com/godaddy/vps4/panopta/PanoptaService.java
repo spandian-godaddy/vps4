@@ -15,7 +15,7 @@ public interface PanoptaService {
     PanoptaServerMetric getServerMetricsFromPanopta(int agentResourceId, int serverId, String timescale,
                                                     String partnerCustomerKey) throws PanoptaServiceException;
 
-    PanoptaServer getServer(String partnerCustomerKey) throws PanoptaServiceException;
+    PanoptaServer getServer(UUID vmId) throws PanoptaServiceException;
 
     void pauseServerMonitoring(UUID vmId);
 

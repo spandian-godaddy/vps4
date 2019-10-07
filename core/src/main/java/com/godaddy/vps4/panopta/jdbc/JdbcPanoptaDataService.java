@@ -38,7 +38,7 @@ public class JdbcPanoptaDataService implements PanoptaDataService {
     @Override
     public PanoptaDetail getPanoptaDetails(UUID vmId) {
         return Sql.with(dataSource).exec(
-                "SELECT * FROM " + tableName + " WHERE vm_id = ? ",
+                "SELECT * FROM " + tableName + " WHERE vm_id = ?  and destroyed = 'infinity' ",
                 Sql.nextOrNull(PanoptaDetailMapper::mapPanoptaDetails), vmId);
     }
 }

@@ -121,7 +121,7 @@ public class PanoptaResource {
     })
     public PanoptaServer getServer(@PathParam("vmId") UUID vmId) {
         try {
-            return panoptaService.getServer(config.get("panopta.api.partner.customer.key.prefix") + vmId);
+            return panoptaService.getServer(vmId);
         } catch (PanoptaServiceException e) {
             logger.warn("Encountered exception while attempting to get server from panopta for vmId: " + vmId, e);
             throw new Vps4Exception(e.getId(), e.getMessage(), e);
