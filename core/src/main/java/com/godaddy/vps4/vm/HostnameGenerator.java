@@ -4,7 +4,7 @@ public class HostnameGenerator {
 
     public static String getHostname(String ipAddress) {
 
-        return "s" + ipAddress.replace('.', '-') + ".secureserver.net";
+        return "ip-" + ipAddress.replace('.', '-') + ".ip.secureserver.net";
 
     }
 }

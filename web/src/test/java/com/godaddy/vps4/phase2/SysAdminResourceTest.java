@@ -200,6 +200,14 @@ public class SysAdminResourceTest {
     }
 
     @Test
+    public void testSetHostnameDefaultFormat() {
+        SetHostnameRequest request = new SetHostnameRequest();
+        request.hostname = "ip-111-112-113-114.ip.secureserver.net";
+
+        getSysAdminResource().setHostname(vm.vmId, request);
+    }
+
+    @Test
     public void testSetHostnameInvalidHostname() {
         SetHostnameRequest request = new SetHostnameRequest();
         request.hostname = "www.sooo.not.valid";

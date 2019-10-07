@@ -31,8 +31,8 @@ import com.godaddy.hfs.vm.VmAction;
 import com.godaddy.hfs.vm.VmAction.Status;
 import com.godaddy.hfs.vm.VmService;
 import com.godaddy.vps4.credit.CreditService;
-import com.godaddy.vps4.hfs.HfsVmTrackingRecordService;
 import com.godaddy.vps4.credit.VirtualMachineCredit;
+import com.godaddy.vps4.hfs.HfsVmTrackingRecordService;
 import com.godaddy.vps4.messaging.MissingShopperIdException;
 import com.godaddy.vps4.messaging.Vps4MessagingService;
 import com.godaddy.vps4.network.NetworkService;
@@ -332,7 +332,7 @@ public class Vps4ProvisionVmTest {
         verify(context, times(1)).execute(eq(SetHostname.class), setHostnameArgumentCaptor.capture());
         SetHostname.Request req = setHostnameArgumentCaptor.getValue();
         assertEquals(req.hfsVmId, hfsVmId);
-        String expectedHostname = "s" + primaryIp.address.replace('.', '-') + ".secureserver.net";
+        String expectedHostname = "ip-" + primaryIp.address.replace('.', '-') + ".ip.secureserver.net";
         assertEquals(expectedHostname, req.hostname);
     }
 

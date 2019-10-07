@@ -14,6 +14,6 @@ public class HostnameGeneratorTest {
 
         String hostname = HostnameGenerator.getHostname(ipAddress);
 
-        assertEquals("s192-168-1-1.secureserver.net", hostname);
+        assertEquals("ip-192-168-1-1.ip.secureserver.net", hostname);
     }
 }
