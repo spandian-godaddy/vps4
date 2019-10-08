@@ -54,6 +54,7 @@ public class ValidatorRegistry {
         return(new Validator(Arrays.asList(
             new Rule("Fully Qualified Hostname (xxx.xxx.xxx)", "^[a-zA-Z0-9-]+\\.([a-zA-Z0-9-]+\\.)+[a-zA-Z0-9-]+$"),
             new Rule(". and - are the only allowed special characters", "^[a-zA-Z0-9-.]*$"),
+            new Rule("63 characters or fewer per section", "[^\\.]{1,63}\\.([^\\.]{1,63}\\.)+[^\\.]{1,63}"),
             new Rule("Doesn't begin with a hyphen", "^(?!-).*$"),
             new Rule("Doesn't end with a hyphen", ".*(?<!-)$"),
             new Rule("Multiple periods may not be adjacent", "^((?!\\.\\.).)*$"),

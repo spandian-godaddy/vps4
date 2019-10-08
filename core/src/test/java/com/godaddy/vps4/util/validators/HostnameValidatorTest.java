@@ -1,8 +1,10 @@
 package com.godaddy.vps4.util.validators;
 
-import org.junit.Test;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
-import static org.junit.Assert.*;
+import org.junit.Test;
 
 public class HostnameValidatorTest {
 
@@ -12,56 +14,57 @@ public class HostnameValidatorTest {
     public void fqdn() {
         // 3 sets of 1-15 characters separated by periods
         assertTrue(validator.isValid("fake.User-name1.test"));
+        assertTrue(validator.isValid("ip-111-112-113-114.ip.secureserver.net")); // 4 sections
         assertFalse(validator.isValid(".User-name1.test"));  // empty first section
-        assertFalse(validator.isValid("fake.User-name1.test.test")); // 4 sections
         assertFalse(validator.isValid("fake.User-name1.")); // empty last section
         assertFalse(validator.isValid("fake.User-name1")); // only 2 sections
         assertFalse(validator.isValid("fake")); // only one section
         assertFalse(validator.isValid("")); // blank
 
     }
-    
+
     @Test
     public void specialCharacters() {
-        // . and - are the only allowed special characters 
-        
+        // . and - are the only allowed special characters
+
         assertTrue(validator.isValid("fake.User-name1.test"));
         assertFalse(validator.isValid("fake.User@name1.test"));
         assertFalse(validator.isValid("fake.User!name1.test"));
         assertFalse(validator.isValid("fake.User#name1.test"));
         assertFalse(validator.isValid("fake.User$name1.test"));
     }
-    
+
     @Test
     public void sectionLength() {
-        // Less than 16 characters per section
-        
-        assertTrue(validator.isValid("s123-123-123-123.User-name1012345.test123412341234")); //16 characters per section
-        assertFalse(validator.isValid("fake123456789012a.User-name101234.test12341234123")); //17 characters in first section
-        assertFalse(validator.isValid("fake12345678901.User-name1012345a.test12341234123")); //17 characters in second section
-        assertFalse(validator.isValid("fake12345678901.User-name101234.test123412341234a")); //17 characters in third section
+        // Less than 64 characters per section
+
+        String longSection = "iamtheproudownerofthelongestlongestlongestdomainnameinthisworld";
+        assertEquals(63, longSection.length());
+        assertTrue(validator.isValid(longSection + ".secureserver.net"));  //63 chars in first section
+        assertTrue(validator.isValid("subdomain." + longSection + ".net"));  //63 chars in middle section
+        assertFalse(validator.isValid(longSection + "1.secureserver.net")); //64 chars not allowed!
     }
-    
+
     @Test
     public void beginsWithHyphen() {
         // Doesn't begin with a hyphen
-        
+
         assertTrue(validator.isValid("fake.User-name1.test"));
         assertFalse(validator.isValid("-fake.User-name1.test"));
     }
-    
+
     @Test
     public void endsWithHyphen() {
         // Doesn't end with a hyphen
-        
+
         assertTrue(validator.isValid("fake.User-name1.test"));
         assertFalse(validator.isValid("fake.User-name1.test-"));
     }
-    
+
     @Test
     public void adjacentPeriods() {
         // Multiple periods may not be adjacent
-        
+
         assertTrue(validator.isValid("fake.User-name1.test"));
         assertFalse(validator.isValid("fake..test")); // empty middle section
     }
@@ -69,11 +72,11 @@ public class HostnameValidatorTest {
     @Test
     public void adjacentHyphens() {
         // Multiple hyphens may not be adjacent
-        
+
         assertTrue(validator.isValid("fake.User-name1.test"));
         assertFalse(validator.isValid("fake.User--name1.test")); // adjacent hyphens
     }
-    
+
     @Test
     public void shouldNotStartWithW3Prefix() {
         // Cannot begin www. prefix
