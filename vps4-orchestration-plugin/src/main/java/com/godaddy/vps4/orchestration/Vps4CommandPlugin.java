@@ -4,6 +4,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.godaddy.hfs.config.Config;
+import com.godaddy.vps4.cache.HazelcastCacheModule;
 import com.godaddy.vps4.config.ConfigModule;
 import com.godaddy.vps4.credit.CreditModule;
 import com.godaddy.vps4.hfs.HfsVmTrackingRecordModule;
@@ -65,6 +66,7 @@ public class Vps4CommandPlugin implements CommandPlugin {
         }
         
         Injector injector = Guice.createInjector(
+            new HazelcastCacheModule(),
             new ObjectMapperModule(),
             hfsModule,
             new HfsCommandModule(),

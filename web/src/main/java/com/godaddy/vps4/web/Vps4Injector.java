@@ -119,6 +119,7 @@ public class Vps4Injector {
         modules.add(new MessagingModule());
         modules.add(new PlanModule());
         modules.add(new ServerUsageStatsModule());
+        modules.add(new PanoptaModule());
         modules.add(binder -> {
             binder.bind(ObjectMapper.class).toProvider(ObjectMapperProvider.class);
         });
@@ -167,7 +168,6 @@ public class Vps4Injector {
         modules.add(new HazelcastCacheModule());
         modules.add(new SchedulerServiceClientModule());
         modules.add(new ConsoleModule());
-        modules.add(new PanoptaModule());
 
         return Guice.createInjector(modules);
     }

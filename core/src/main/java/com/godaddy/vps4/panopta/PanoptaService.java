@@ -12,8 +12,9 @@ public interface PanoptaService {
 
     List<PanoptaGraphId> getNetworkIds(UUID vmId);
 
-    PanoptaServerMetric getServerMetricsFromPanopta(int agentResourceId, int serverId, String timescale,
-                                                    String partnerCustomerKey) throws PanoptaServiceException;
+    List<PanoptaGraph> getUsageGraphs(UUID vmId, String timescale) throws PanoptaServiceException;
+
+    List<PanoptaGraph> getNetworkGraphs(UUID vmId, String timescale) throws PanoptaServiceException;
 
     PanoptaServer getServer(UUID vmId) throws PanoptaServiceException;
 

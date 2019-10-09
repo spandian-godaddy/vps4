@@ -12,7 +12,6 @@ public class HazelcastCacheModule extends AbstractModule {
 
     @Override
     public void configure() {
-
         bind(HazelcastInstance.class).toProvider(HazelcastProvider.class);
     }
 

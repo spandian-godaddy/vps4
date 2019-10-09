@@ -10,6 +10,7 @@ import org.json.simple.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.godaddy.vps4.panopta.PanoptaServiceException;
 import com.godaddy.vps4.security.jdbc.AuthorizationException;
 
 @Provider

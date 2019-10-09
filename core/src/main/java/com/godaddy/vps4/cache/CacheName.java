@@ -8,4 +8,6 @@ public interface CacheName {
 
     public static final String MAIL_RELAY_HISTORY = "mail.relay.history";
 
+    public static final String PANOPTA_METRIC_GRAPH = "panopta.metric.graph";
+
 }

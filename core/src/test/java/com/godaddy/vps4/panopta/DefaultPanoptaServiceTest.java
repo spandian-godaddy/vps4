@@ -8,20 +8,32 @@ import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.io.IOException;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.UUID;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
+import javax.cache.Cache;
+import javax.cache.CacheManager;
+
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.godaddy.hfs.config.Config;
+import com.godaddy.vps4.cache.CacheName;
 import com.godaddy.vps4.credit.CreditService;
 import com.godaddy.vps4.credit.VirtualMachineCredit;
 import com.godaddy.vps4.util.ObjectMapperProvider;
@@ -33,6 +45,8 @@ import com.google.inject.Inject;
 
 public class DefaultPanoptaServiceTest {
 
+    private @PanoptaExecutorService ExecutorService pool;
+    private CacheManager cacheManager;
     private PanoptaApiServerService panoptaApiServerService;
     private PanoptaApiCustomerService panoptaApiCustomerService;
     private PanoptaDataService panoptaDataService;
@@ -41,6 +55,7 @@ public class DefaultPanoptaServiceTest {
     private VirtualMachineCredit credit;
     private VirtualMachine virtualMachine;
     private Config config;
+    private Cache cache;
     private int serverId;
     private UUID vmId;
     private String customerKey;
@@ -52,8 +67,8 @@ public class DefaultPanoptaServiceTest {
     private PanoptaApiCustomerList panoptaApiCustomerList;
     private PanoptaUsageIdList usageIdList;
     private PanoptaNetworkIdList networkIdList;
-    private PanoptaServerMetric panoptaServerMetric;
-
+    private PanoptaUsageGraph usageGraph;
+    private PanoptaNetworkGraph networkGraph;
     @Inject
     private ObjectMapper objectMapper = new ObjectMapperProvider().get();
     @Inject
@@ -63,18 +78,19 @@ public class DefaultPanoptaServiceTest {
 
     @Before
     public void setup() {
+        pool = spy(Executors.newCachedThreadPool());
+        cacheManager = mock(CacheManager.class);
         panoptaApiServerService = mock(PanoptaApiServerService.class);
         panoptaApiCustomerService = mock(PanoptaApiCustomerService.class);
         panoptaDataService = mock(PanoptaDataService.class);
         panoptaApiCustomerList = mock(PanoptaApiCustomerList.class);
-        panoptaServerMetric = mock(PanoptaServerMetric.class);
         virtualMachineService = mock(VirtualMachineService.class);
         creditService = mock(CreditService.class);
         config = mock(Config.class);
+        cache = mock(Cache.class);
         credit = createDummyCredit();
         virtualMachine = new VirtualMachine();
         virtualMachine.orionGuid = UUID.randomUUID();
-        vmId = UUID.randomUUID();
         serverId = 42;
         partnerCustomerKey = "gdtest_" + vmId;
         customerKey = "someCustomerKey";
@@ -94,11 +110,22 @@ public class DefaultPanoptaServiceTest {
         panoptaCustomerRequest = new PanoptaCustomerRequest(virtualMachineService, creditService, config);
         panoptaApiCustomerRequest = new PanoptaApiCustomerRequest();
         setupGraphIdLists();
-        defaultPanoptaService = new DefaultPanoptaService(panoptaApiCustomerService,
+        setupGraphs();
+        when(cacheManager.getCache(CacheName.PANOPTA_METRIC_GRAPH,
+                                   String.class,
+                                   DefaultPanoptaService.CachedMonitoringGraphs.class)).thenReturn(cache);
+        defaultPanoptaService = new DefaultPanoptaService(pool,
+                                                          cacheManager,
+                                                          panoptaApiCustomerService,
                                                           panoptaApiServerService,
                                                           panoptaDataService,
                                                           panoptaCustomerRequest,
                                                           config);
+    }
+
+    @After
+    public void teardown() {
+        pool.shutdown();
     }
 
     private void setupGraphIdLists() {
@@ -115,6 +142,17 @@ public class DefaultPanoptaServiceTest {
         usageIdList.setList(graphIdList);
         networkIdList = new PanoptaNetworkIdList();
         networkIdList.setList(graphIdList);
+    }
+
+    private void setupGraphs() {
+        this.usageGraph = new PanoptaUsageGraph();
+        usageGraph.type = PanoptaGraph.Type.SSH;
+        usageGraph.timestamps = new ArrayList<>();
+        usageGraph.values = new ArrayList<>();
+        this.networkGraph = new PanoptaNetworkGraph();
+        networkGraph.type = PanoptaGraph.Type.FTP;
+        networkGraph.timestamps = new ArrayList<>();
+        networkGraph.values = new ArrayList<>();
     }
 
     private String mockedupCustomerList() {
@@ -218,6 +256,98 @@ public class DefaultPanoptaServiceTest {
     }
 
     @Test
+    public void testGetUsageGraphs() throws PanoptaServiceException, InterruptedException {
+        when(cache.containsKey(String.format("%s.usage.%s", vmId, "hour"))).thenReturn(false);
+        when(panoptaDataService.getPanoptaDetails(vmId)).thenReturn(panoptaDetail);
+        when(panoptaApiServerService.getUsageList(serverId, partnerCustomerKey, 0)).thenReturn(usageIdList);
+        when(panoptaApiServerService.getUsageGraph(eq(serverId),
+                                                   anyInt(),
+                                                   eq("hour"),
+                                                   eq(partnerCustomerKey))).thenReturn(usageGraph);
+
+        List<PanoptaGraph> graphs = defaultPanoptaService.getUsageGraphs(vmId, "hour");
+
+        verify(panoptaApiServerService).getUsageList(serverId, partnerCustomerKey, 0);
+        verify(panoptaApiServerService)
+                .getUsageGraph(eq(serverId), anyInt(), eq("hour"), eq(partnerCustomerKey));
+        verify(pool, times(1))
+                .invokeAll(any(Collection.class), eq(1L), eq(TimeUnit.MINUTES));
+        assertEquals(graphs.get(0), usageGraph);
+    }
+
+    @Test
+    public void testGetNetworkGraphs() throws PanoptaServiceException, InterruptedException {
+        when(cache.containsKey(String.format("%s.network.%s", vmId, "hour"))).thenReturn(false);
+        when(panoptaDataService.getPanoptaDetails(vmId)).thenReturn(panoptaDetail);
+        when(panoptaApiServerService.getNetworkList(serverId, partnerCustomerKey, 0)).thenReturn(networkIdList);
+        when(panoptaApiServerService.getNetworkGraph(eq(serverId),
+                                                     anyInt(),
+                                                     eq("hour"),
+                                                     eq(partnerCustomerKey))).thenReturn(networkGraph);
+
+        List<PanoptaGraph> graphs = defaultPanoptaService.getNetworkGraphs(vmId, "hour");
+
+        verify(panoptaApiServerService).getNetworkList(serverId, partnerCustomerKey, 0);
+        verify(panoptaApiServerService)
+                .getNetworkGraph(eq(serverId), anyInt(), eq("hour"), eq(partnerCustomerKey));
+        verify(pool, times(1))
+                .invokeAll(any(Collection.class), eq(1L), eq(TimeUnit.MINUTES));
+        assertEquals(graphs.get(0), networkGraph);
+    }
+
+    @Test
+    public void testGetUsageGraphsWithCache() throws PanoptaServiceException {
+        List<PanoptaGraph> panoptaGraphs = new ArrayList<>();
+        panoptaGraphs.add(usageGraph);
+        DefaultPanoptaService.CachedMonitoringGraphs
+                cachedGraphs = new DefaultPanoptaService.CachedMonitoringGraphs(panoptaGraphs);
+
+        when(cache.containsKey(String.format("%s.usage.%s", vmId, "hour"))).thenReturn(true);
+        when(cache.containsKey(String.format("%s.usage.%s", vmId, "hour"))).thenReturn(true);
+        when(cache.get(String.format("%s.usage.%s", vmId, "hour"))).thenReturn(cachedGraphs);
+        when(panoptaDataService.getPanoptaDetails(vmId)).thenReturn(panoptaDetail);
+
+        List<PanoptaGraph> graphs = defaultPanoptaService.getUsageGraphs(vmId, "hour");
+
+        verify(panoptaApiServerService, never()).getUsageList(anyInt(), anyString(), anyInt());
+        verify(panoptaApiServerService, never())
+                .getUsageGraph(anyInt(), anyInt(), anyString(), anyString());
+        assertEquals(graphs.get(0), usageGraph);
+    }
+
+    @Test
+    public void testGetNetworkGraphsWithCache() throws PanoptaServiceException {
+        List<PanoptaGraph> panoptaGraphs = new ArrayList<>();
+        panoptaGraphs.add(networkGraph);
+        DefaultPanoptaService.CachedMonitoringGraphs
+                cachedGraphs = new DefaultPanoptaService.CachedMonitoringGraphs(panoptaGraphs);
+
+        when(cache.containsKey(String.format("%s.network.%s", vmId, "hour"))).thenReturn(true);
+        when(cache.containsKey(String.format("%s.network.%s", vmId, "hour"))).thenReturn(true);
+        when(cache.get(String.format("%s.network.%s", vmId, "hour"))).thenReturn(cachedGraphs);
+        when(panoptaDataService.getPanoptaDetails(vmId)).thenReturn(panoptaDetail);
+
+        List<PanoptaGraph> graphs = defaultPanoptaService.getNetworkGraphs(vmId, "hour");
+
+        verify(panoptaApiServerService, never()).getNetworkList(anyInt(), anyString(), anyInt());
+        verify(panoptaApiServerService, never())
+                .getNetworkGraph(anyInt(), anyInt(), anyString(), anyString());
+        assertEquals(graphs.get(0), networkGraph);
+    }
+
+    @Test(expected = PanoptaServiceException.class)
+    public void testGetUsageGraphsWhenNoDbEntry() throws PanoptaServiceException {
+        when(panoptaDataService.getPanoptaDetails(vmId)).thenReturn(null);
+        defaultPanoptaService.getUsageGraphs(vmId, "hour");
+    }
+
+    @Test(expected = PanoptaServiceException.class)
+    public void testGetNetworkGraphsWhenNoDbEntry() throws PanoptaServiceException {
+        when(panoptaDataService.getPanoptaDetails(vmId)).thenReturn(null);
+        defaultPanoptaService.getNetworkGraphs(vmId, "hour");
+    }
+
+    @Test
     public void testDoesNotPauseMonitoringWhenNoDbEntry() {
         when(panoptaDataService.getPanoptaDetails(vmId)).thenReturn(null);
         defaultPanoptaService.pauseServerMonitoring(vmId);
@@ -313,22 +443,6 @@ public class DefaultPanoptaServiceTest {
         String endTime = "2010-11-03 17:15:50";
         int limit = 5, offset = 15;
         defaultPanoptaService.getOutage(UUID.randomUUID(), startTime, endTime, limit, offset);
-    }
-
-    @Test
-    public void testGetsServerMetrics() throws PanoptaServiceException {
-        when(panoptaApiServerService.getMetricData(eq(serverId), anyInt(), anyString(), eq(partnerCustomerKey))).thenReturn(panoptaServerMetric);
-
-        defaultPanoptaService.getServerMetricsFromPanopta(123, serverId, "fake-timescale", partnerCustomerKey);
-
-        verify(panoptaApiServerService).getMetricData(eq(serverId), eq(123), eq("fake-timescale"), eq(partnerCustomerKey));
-
-    }
-
-    @Test(expected = PanoptaServiceException.class)
-    public void testGetsServerMetricsThrowsException() throws  PanoptaServiceException {
-        when(panoptaApiServerService.getMetricData(eq(serverId), anyInt(), anyString(), eq(partnerCustomerKey))).thenThrow(new RuntimeException());
-        defaultPanoptaService.getServerMetricsFromPanopta(123, serverId, "fake-timescale", partnerCustomerKey);
     }
 
     @Test

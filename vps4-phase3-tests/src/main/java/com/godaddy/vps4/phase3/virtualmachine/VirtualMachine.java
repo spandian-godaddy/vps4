@@ -8,7 +8,7 @@ import com.godaddy.vps4.phase3.ssh.Vps4SshClient;
 public class VirtualMachine {
 
     public final UUID vmId;
-    public final UUID orionGuid;;
+    public final UUID orionGuid;
     public final String imageName;
     final Vps4ApiClient apiClient;
     final VirtualMachinePool vmPool;

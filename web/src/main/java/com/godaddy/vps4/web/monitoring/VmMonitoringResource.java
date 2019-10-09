@@ -4,6 +4,7 @@ import java.time.Duration;
 import java.time.Instant;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
@@ -34,6 +35,7 @@ import com.godaddy.vps4.util.MonitoringMeta;
 import com.godaddy.vps4.vm.VirtualMachine;
 import com.godaddy.vps4.web.PaginatedResult;
 import com.godaddy.vps4.web.Vps4Api;
+import com.godaddy.vps4.web.Vps4Exception;
 import com.godaddy.vps4.web.vm.VmResource;
 import com.google.inject.Inject;
 
@@ -206,5 +208,21 @@ public class VmMonitoringResource {
         events = events.stream().filter(e -> e.start.isAfter(Instant.now().minus(Duration.ofDays(days))))
                 .collect(Collectors.toList());
         return events;
+    }
+
+    @GET
+    @Path("/{vmId}/monitoringGraphs")
+    public List<PanoptaGraph> getMonitoringGraphs(@PathParam("vmId") UUID vmId,
+            @ApiParam(value = "('hour', 'day', 'week', 'month', or 'year')", defaultValue = "hour", required = true)
+            @QueryParam("timescale") String timescale) {
+        vmResource.getVm(vmId);
+        List<PanoptaGraph> graphs = new ArrayList<>();
+        try {
+            graphs.addAll(panoptaService.getUsageGraphs(vmId, timescale));
+            graphs.addAll(panoptaService.getNetworkGraphs(vmId, timescale));
+        } catch (PanoptaServiceException e) {
+            throw new Vps4Exception(e.getId(), e.getMessage(), e);
+        }
+        return graphs;
     }
 }

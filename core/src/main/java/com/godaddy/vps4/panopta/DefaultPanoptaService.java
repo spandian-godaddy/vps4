@@ -3,7 +3,14 @@ package com.godaddy.vps4.panopta;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 
+import javax.cache.Cache;
+import javax.cache.CacheManager;
 import javax.inject.Inject;
 
 import org.apache.commons.lang3.StringUtils;
@@ -11,12 +18,15 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.godaddy.hfs.config.Config;
+import com.godaddy.vps4.cache.CacheName;
 import com.hazelcast.util.CollectionUtil;
 
 public class DefaultPanoptaService implements PanoptaService {
     private static final int UNLIMITED = 0;
 
     private static final Logger logger = LoggerFactory.getLogger(DefaultPanoptaService.class);
+    private final Cache<String, CachedMonitoringGraphs> cache;
+    private final ExecutorService pool;
     private final PanoptaApiCustomerService panoptaApiCustomerService;
     private final PanoptaApiServerService panoptaApiServerService;
     private final PanoptaDataService panoptaDataService;
@@ -24,11 +34,17 @@ public class DefaultPanoptaService implements PanoptaService {
     private PanoptaCustomerRequest panoptaCustomerRequest;
 
     @Inject
-    public DefaultPanoptaService(PanoptaApiCustomerService panoptaApiCustomerService,
+    public DefaultPanoptaService(@PanoptaExecutorService ExecutorService pool,
+                                 CacheManager cacheManager,
+                                 PanoptaApiCustomerService panoptaApiCustomerService,
                                  PanoptaApiServerService panoptaApiServerService,
                                  PanoptaDataService panoptaDataService,
                                  PanoptaCustomerRequest panoptaCustomerRequest,
                                  Config config) {
+        this.cache = cacheManager.getCache(CacheName.PANOPTA_METRIC_GRAPH,
+                                           String.class,
+                                           CachedMonitoringGraphs.class);
+        this.pool = pool;
         this.panoptaApiCustomerService = panoptaApiCustomerService;
         this.panoptaApiServerService = panoptaApiServerService;
         this.panoptaDataService = panoptaDataService;
@@ -110,16 +126,84 @@ public class DefaultPanoptaService implements PanoptaService {
     }
 
     @Override
-    public PanoptaServerMetric getServerMetricsFromPanopta(int agentResourceId, int serverId, String timescale,
-                                                           String partnerCustomerKey)
-            throws PanoptaServiceException {
-        try {
+    public List<PanoptaGraph> getUsageGraphs(UUID vmId, String timescale) throws PanoptaServiceException {
+        PanoptaDetail detail = panoptaDataService.getPanoptaDetails(vmId);
+        if (detail == null) {
+            logger.warn("Could not find Panopta data for VM ID: {}", vmId);
+            throw new PanoptaServiceException("NO_SERVER_FOUND",
+                                              "No matching server found in VPS4 Panopta database for VM ID: " + vmId);
+        }
+        String cacheKey = String.format("%s.usage.%s", vmId, timescale);
+        if (cache.containsKey(cacheKey)) {
+            return cache.get(cacheKey).graphs;
+        } else {
+            List<PanoptaGraphId> usageIds = getUsageIds(vmId);
+            List<Callable<PanoptaGraph>> tasks = new ArrayList<>();
+            for (PanoptaGraphId usageId : usageIds) {
+                Callable<PanoptaGraph> task = () -> {
+                    PanoptaGraph graph = panoptaApiServerService.getUsageGraph(detail.getServerId(),
+                                                                               usageId.id,
+                                                                               timescale,
+                                                                               detail.getPartnerCustomerKey());
+                    graph.type = usageId.type;
+                    return graph;
+                };
+                tasks.add(task);
+            }
+            return resolveGraphsAndUpdateCache(tasks, cacheKey);
+        }
+    }
 
-            return panoptaApiServerService.getMetricData(serverId, agentResourceId, timescale, partnerCustomerKey);
-        } catch (Exception ex) {
-            String errorMessage = "Failed to get server metrics in Panopta.";
-            logger.error(errorMessage);
-            throw new PanoptaServiceException("GET_SERVER_METRICS_FAILED", errorMessage);
+    @Override
+    public List<PanoptaGraph> getNetworkGraphs(UUID vmId, String timescale) throws PanoptaServiceException {
+        PanoptaDetail detail = panoptaDataService.getPanoptaDetails(vmId);
+        if (detail == null) {
+            logger.warn("Could not find Panopta data for VM ID: {}", vmId);
+            throw new PanoptaServiceException("NO_SERVER_FOUND",
+                                              "No matching server found in VPS4 Panopta database for VM ID: " + vmId);
+        }
+        String cacheKey = String.format("%s.network.%s", vmId, timescale);
+        if (cache.containsKey(cacheKey)) {
+            return cache.get(cacheKey).graphs;
+        } else {
+            List<PanoptaGraphId> networkIds = getNetworkIds(vmId);
+            List<Callable<PanoptaGraph>> tasks = new ArrayList<>();
+            for (PanoptaGraphId networkId : networkIds) {
+                Callable<PanoptaGraph> task = () -> {
+                    PanoptaGraph graph = panoptaApiServerService.getNetworkGraph(detail.getServerId(),
+                                                                                 networkId.id,
+                                                                                 timescale,
+                                                                                 detail.getPartnerCustomerKey());
+                    graph.type = networkId.type;
+                    return graph;
+                };
+                tasks.add(task);
+            }
+            return resolveGraphsAndUpdateCache(tasks, cacheKey);
+        }
+    }
+
+    private List<PanoptaGraph> resolveGraphsAndUpdateCache(List<Callable<PanoptaGraph>> tasks, String cacheKey) {
+        List<PanoptaGraph> graphs = new ArrayList<>();
+        try {
+            List<Future<PanoptaGraph>> futures = pool.invokeAll(tasks, 1, TimeUnit.MINUTES);
+            for (Future<PanoptaGraph> future : futures) {
+                graphs.add(future.get());
+            }
+            cache.put(cacheKey, new CachedMonitoringGraphs(graphs));
+        } catch (InterruptedException | ExecutionException e) {
+            logger.error("Could not fetch graph from Panopta", e);
+        }
+        return graphs;
+    }
+
+    public static class CachedMonitoringGraphs {
+        public List<PanoptaGraph> graphs;
+
+        public CachedMonitoringGraphs() {}
+
+        public CachedMonitoringGraphs(List<PanoptaGraph> graphs) {
+            this.graphs = graphs;
         }
     }
 

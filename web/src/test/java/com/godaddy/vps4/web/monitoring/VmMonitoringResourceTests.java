@@ -205,4 +205,17 @@ public class VmMonitoringResourceTests {
         assertNull(event.end);
         assertEquals("timeout", event.message);
     }
+
+    @Test
+    public void testGetMonitoringGraphs() throws PanoptaServiceException {
+        String timescale = "randomScale" + (Math.random() * 100);
+
+        when(vmResource.getVm(vm.vmId)).thenReturn(vm);
+
+        resource.getMonitoringGraphs(vm.vmId, timescale);
+
+        verify(vmResource).getVm(vm.vmId);
+        verify(panoptaService).getUsageGraphs(vm.vmId, timescale);
+        verify(panoptaService).getNetworkGraphs(vm.vmId, timescale);
+    }
 }

@@ -29,10 +29,17 @@ public interface PanoptaApiServerService {
 
     @GET
     @Path("/{server_id}/agent_resource/{agent_resource_id}/metric/{timescale}")
-    PanoptaServerMetric getMetricData(@PathParam("server_id") int serverId,
-                                      @PathParam("agent_resource_id") int agentResourceId,
-                                      @PathParam("timescale") String timescale,
-                                      @QueryParam("partner_customer_key") String partnerCustomerKey);
+    PanoptaUsageGraph getUsageGraph(@PathParam("server_id") int serverId,
+                                    @PathParam("agent_resource_id") int agentResourceId,
+                                    @PathParam("timescale") String timescale,
+                                    @QueryParam("partner_customer_key") String partnerCustomerKey);
+
+    @GET
+    @Path("/{server_id}/network_service/{network_service_id}/response_time/{timescale}")
+    PanoptaNetworkGraph getNetworkGraph(@PathParam("server_id") int serverId,
+                                        @PathParam("network_service_id") int networkServiceId,
+                                        @PathParam("timescale") String timescale,
+                                        @QueryParam("partner_customer_key") String partnerCustomerKey);
 
     @GET
     @Path("/")

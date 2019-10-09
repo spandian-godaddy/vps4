@@ -56,13 +56,16 @@ public class PanoptaUsageIdList {
         @JsonProperty("resource_textkey")
         public void mapResourceKey(String key) {
             switch (key) {
-                case "ram.percent":
+                case "ram.percent": // memory on Linux
+                case "percent_used": // memory  on Windows
                     this.type = RAM;
                     break;
-                case "usage_percentage":
+                case "usage_percentage": // cpu on Linux
+                case "percent_processor_time": // cpu on Windows
                     this.type = CPU;
                     break;
-                case "usage.percent_used":
+                case "usage.percent_used": // disk on Linux
+                case "percent_used_space": // disk on Windows
                     this.type = DISK;
                     break;
                 default:

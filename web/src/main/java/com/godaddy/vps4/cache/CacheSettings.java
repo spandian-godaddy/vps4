@@ -3,10 +3,12 @@ package com.godaddy.vps4.cache;
 import javax.cache.CacheManager;
 import javax.cache.configuration.MutableConfiguration;
 import javax.cache.expiry.AccessedExpiryPolicy;
+import javax.cache.expiry.CreatedExpiryPolicy;
 import javax.cache.expiry.Duration;
 
 import com.godaddy.hfs.vm.ServerUsageStats;
 import com.godaddy.vps4.mailrelay.MailRelayService.CachedMailRelayHistory;
+import com.godaddy.vps4.panopta.DefaultPanoptaService;
 
 public class CacheSettings {
 
@@ -43,5 +45,13 @@ public class CacheSettings {
                     .setExpiryPolicyFactory(
                             AccessedExpiryPolicy.factoryOf(Duration.ONE_DAY))
                     .setStatisticsEnabled(false));
+
+        cacheManager.createCache(CacheName.PANOPTA_METRIC_GRAPH,
+                 new MutableConfiguration<String, DefaultPanoptaService.CachedMonitoringGraphs>()
+                     .setStoreByValue(true)
+                     .setTypes(String.class, DefaultPanoptaService.CachedMonitoringGraphs.class)
+                     .setExpiryPolicyFactory(
+                             CreatedExpiryPolicy.factoryOf(Duration.FIVE_MINUTES))
+                     .setStatisticsEnabled(false));
     }
 }

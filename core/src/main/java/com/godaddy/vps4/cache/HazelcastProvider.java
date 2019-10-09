@@ -79,7 +79,8 @@ public class HazelcastProvider implements Provider<HazelcastInstance> {
         // configure eviction policy per map
         for (String cacheName : new String[]{CacheName.CPANEL_ACCESSHASH,
                                              CacheName.SERVER_USAGE,
-                                             CacheName.MAIL_RELAY_HISTORY}) {
+                                             CacheName.MAIL_RELAY_HISTORY,
+                                             CacheName.PANOPTA_METRIC_GRAPH}) {
             config.getMapConfig(cacheName)
                   .setEvictionPolicy(EvictionPolicy.LRU)
                   .setMaxSizeConfig(new MaxSizeConfig(10000, MaxSizePolicy.PER_NODE));
