@@ -92,7 +92,7 @@
         <dependency>
             <groupId>com.godaddy.hosting</groupId>
             <artifactId>orchestration-api</artifactId>
-            <version>0.5.1-40</version>
+            <version>0.5.1-41</version>
         </dependency>
 
         <dependency>
