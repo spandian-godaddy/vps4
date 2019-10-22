@@ -63,7 +63,7 @@
                     <release>${parsedVersion.buildNumber}</release>
                     <packager>rpm</packager>
                     <requires>
-                        <require>hfs-engine == 0.5.1-40</require>
+                        <require>hfs-engine == 0.5.1-41</require>
                     </requires>
                     <changelogFile>src/changelog</changelogFile>
                     <defineStatements>
