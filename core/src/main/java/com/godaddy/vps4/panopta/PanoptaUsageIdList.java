@@ -53,20 +53,17 @@ public class PanoptaUsageIdList {
     }
 
     public static class UsageId extends PanoptaGraphId {
-        @JsonProperty("resource_textkey")
-        public void mapResourceKey(String key) {
+        @JsonProperty("name")
+        public void mapName(String key) {
             switch (key) {
-                case "ram.percent": // memory on Linux
-                case "percent_used": // memory  on Windows
-                    this.type = RAM;
-                    break;
-                case "usage_percentage": // cpu on Linux
-                case "percent_processor_time": // cpu on Windows
+                case "vps4_cpu_total_percent_used":
                     this.type = CPU;
                     break;
-                case "usage.percent_used": // disk on Linux
-                case "percent_used_space": // disk on Windows
+                case "vps4_disk_total_percent_used":
                     this.type = DISK;
+                    break;
+                case "vps4_ram_total_percent_used":
+                    this.type = RAM;
                     break;
                 default:
                     this.type = UNKNOWN;

@@ -6,6 +6,8 @@ import static org.junit.Assert.assertTrue;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -212,10 +214,36 @@ public class VmMonitoringResourceTests {
 
         when(vmResource.getVm(vm.vmId)).thenReturn(vm);
 
-        resource.getMonitoringGraphs(vm.vmId, timescale);
+        resource.getMonitoringGraphs(vm.vmId, timescale, null);
 
         verify(vmResource).getVm(vm.vmId);
         verify(panoptaService).getUsageGraphs(vm.vmId, timescale);
+        verify(panoptaService).getNetworkGraphs(vm.vmId, timescale);
+    }
+
+    @Test
+    public void testGetMonitoringGraphsFilteredForUsage() throws PanoptaServiceException {
+        String timescale = "randomScale" + (Math.random() * 100);
+
+        when(vmResource.getVm(vm.vmId)).thenReturn(vm);
+
+        resource.getMonitoringGraphs(vm.vmId, timescale, VmMonitoringResource.Category.USAGE);
+
+        verify(vmResource).getVm(vm.vmId);
+        verify(panoptaService).getUsageGraphs(vm.vmId, timescale);
+        verify(panoptaService, never()).getNetworkGraphs(vm.vmId, timescale);
+    }
+
+    @Test
+    public void testGetMonitoringGraphsFilteredForNetwork() throws PanoptaServiceException {
+        String timescale = "randomScale" + (Math.random() * 100);
+
+        when(vmResource.getVm(vm.vmId)).thenReturn(vm);
+
+        resource.getMonitoringGraphs(vm.vmId, timescale, VmMonitoringResource.Category.NETWORK);
+
+        verify(vmResource).getVm(vm.vmId);
+        verify(panoptaService, never()).getUsageGraphs(vm.vmId, timescale);
         verify(panoptaService).getNetworkGraphs(vm.vmId, timescale);
     }
 }

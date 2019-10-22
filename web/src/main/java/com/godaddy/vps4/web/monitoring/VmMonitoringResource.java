@@ -210,19 +210,28 @@ public class VmMonitoringResource {
         return events;
     }
 
+    public enum Category {USAGE, NETWORK}
+
     @GET
     @Path("/{vmId}/monitoringGraphs")
     public List<PanoptaGraph> getMonitoringGraphs(@PathParam("vmId") UUID vmId,
-            @ApiParam(value = "('hour', 'day', 'week', 'month', or 'year')", defaultValue = "hour", required = true)
-            @QueryParam("timescale") String timescale) {
+              @ApiParam(value = "('hour', 'day', 'week', 'month', or 'year')", defaultValue = "hour", required = true)
+              @QueryParam("timescale") String timescale,
+              @QueryParam("type") Category category) {
         vmResource.getVm(vmId);
-        List<PanoptaGraph> graphs = new ArrayList<>();
         try {
+            if (category == Category.USAGE) {
+                return panoptaService.getUsageGraphs(vmId, timescale);
+            }
+            if (category == Category.NETWORK) {
+                return panoptaService.getNetworkGraphs(vmId, timescale);
+            }
+            List<PanoptaGraph> graphs = new ArrayList<>();
             graphs.addAll(panoptaService.getUsageGraphs(vmId, timescale));
             graphs.addAll(panoptaService.getNetworkGraphs(vmId, timescale));
+            return graphs;
         } catch (PanoptaServiceException e) {
             throw new Vps4Exception(e.getId(), e.getMessage(), e);
         }
-        return graphs;
     }
 }
