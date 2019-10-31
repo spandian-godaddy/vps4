@@ -3,10 +3,10 @@ package com.godaddy.vps4.panopta;
 import java.time.Instant;
 import java.util.List;
 
-public class PanoptaGraph {
-    public enum Type {UNKNOWN, CPU, DISK, RAM, FTP, SSH, SMTP, HTTP, IMAP, POP3}
+import com.godaddy.vps4.vm.VmMetric;
 
-    public Type type;
+public class PanoptaGraph {
+    public VmMetric type;
     public List<Instant> timestamps;
     public List<Double> values;
 }

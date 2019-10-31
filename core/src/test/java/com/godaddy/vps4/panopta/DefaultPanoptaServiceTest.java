@@ -19,7 +19,6 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.UUID;
-import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
@@ -41,6 +40,7 @@ import com.godaddy.vps4.vm.AccountStatus;
 import com.godaddy.vps4.vm.DataCenterService;
 import com.godaddy.vps4.vm.VirtualMachine;
 import com.godaddy.vps4.vm.VirtualMachineService;
+import com.godaddy.vps4.vm.VmMetric;
 import com.google.inject.Inject;
 
 public class DefaultPanoptaServiceTest {
@@ -132,11 +132,11 @@ public class DefaultPanoptaServiceTest {
         List<PanoptaGraphId> graphIdList = new ArrayList<>();
         PanoptaGraphId pgi1 = new PanoptaGraphId();
         pgi1.id = (int) (Math.random() * 9999);
-        pgi1.type = PanoptaGraph.Type.UNKNOWN;
+        pgi1.type = VmMetric.UNKNOWN;
         graphIdList.add(pgi1);
         PanoptaGraphId pgi2 = new PanoptaGraphId();
         pgi2.id = (int) (Math.random() * 9999);
-        pgi2.type = PanoptaGraph.Type.HTTP;
+        pgi2.type = VmMetric.HTTP;
         graphIdList.add(pgi2);
         usageIdList = new PanoptaUsageIdList();
         usageIdList.setList(graphIdList);
@@ -146,11 +146,11 @@ public class DefaultPanoptaServiceTest {
 
     private void setupGraphs() {
         this.usageGraph = new PanoptaUsageGraph();
-        usageGraph.type = PanoptaGraph.Type.SSH;
+        usageGraph.type = VmMetric.SSH;
         usageGraph.timestamps = new ArrayList<>();
         usageGraph.values = new ArrayList<>();
         this.networkGraph = new PanoptaNetworkGraph();
-        networkGraph.type = PanoptaGraph.Type.FTP;
+        networkGraph.type = VmMetric.FTP;
         networkGraph.timestamps = new ArrayList<>();
         networkGraph.values = new ArrayList<>();
     }

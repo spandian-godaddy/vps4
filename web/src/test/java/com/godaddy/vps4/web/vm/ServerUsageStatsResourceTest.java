@@ -17,11 +17,9 @@ import static org.mockito.Mockito.when;
 import java.time.Instant;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
 
-import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -45,6 +43,7 @@ import com.godaddy.vps4.snapshot.SnapshotModule;
 import com.godaddy.vps4.vm.ServerSpec;
 import com.godaddy.vps4.vm.ServerUsageStatsService;
 import com.godaddy.vps4.vm.VirtualMachine;
+import com.godaddy.vps4.vm.VmMetric;
 import com.godaddy.vps4.vm.VmModule;
 import com.godaddy.vps4.web.Vps4Exception;
 import com.google.inject.AbstractModule;
@@ -108,12 +107,12 @@ public class ServerUsageStatsResourceTest {
 
     private void setUpUsageGraphs() {
         usageGraphs = new ArrayList<>();
-        usageGraphs.add(setUpUsageGraph(PanoptaGraph.Type.CPU, cpu));
-        usageGraphs.add(setUpUsageGraph(PanoptaGraph.Type.RAM, mem));
-        usageGraphs.add(setUpUsageGraph(PanoptaGraph.Type.DISK, disk));
+        usageGraphs.add(setUpUsageGraph(VmMetric.CPU, cpu));
+        usageGraphs.add(setUpUsageGraph(VmMetric.RAM, mem));
+        usageGraphs.add(setUpUsageGraph(VmMetric.DISK, disk));
     }
 
-    private PanoptaGraph setUpUsageGraph(PanoptaGraph.Type type, Double value) {
+    private PanoptaGraph setUpUsageGraph(VmMetric type, Double value) {
         PanoptaGraph g = new PanoptaUsageGraph();
         g.type = type;
         g.timestamps = new ArrayList<>();

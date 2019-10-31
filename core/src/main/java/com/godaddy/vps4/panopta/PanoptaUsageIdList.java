@@ -1,6 +1,9 @@
 package com.godaddy.vps4.panopta;
 
-import static com.godaddy.vps4.panopta.PanoptaGraph.Type.*;
+import static com.godaddy.vps4.vm.VmMetric.CPU;
+import static com.godaddy.vps4.vm.VmMetric.DISK;
+import static com.godaddy.vps4.vm.VmMetric.RAM;
+import static com.godaddy.vps4.vm.VmMetric.UNKNOWN;
 
 import java.util.ArrayList;
 import java.util.List;
