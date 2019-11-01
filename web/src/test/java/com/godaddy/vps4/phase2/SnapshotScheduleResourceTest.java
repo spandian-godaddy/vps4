@@ -15,6 +15,7 @@ import com.godaddy.vps4.security.SecurityModule;
 import com.godaddy.vps4.security.Vps4User;
 import com.godaddy.vps4.security.Vps4UserService;
 import com.godaddy.vps4.snapshot.SnapshotModule;
+import com.godaddy.vps4.util.ActionListFilters;
 import com.godaddy.vps4.vm.Action;
 import com.godaddy.vps4.vm.ActionService;
 import com.godaddy.vps4.vm.ActionType;
@@ -359,8 +360,8 @@ public class SnapshotScheduleResourceTest {
     }
 
     private ResultSubset<Action> getAllActionsOfType(ActionType actionType){
-        ActionService.ActionListFilters filters = new ActionService.ActionListFilters();
-        filters.byVmId(testVm.vmId);
+        ActionListFilters filters = new ActionListFilters();
+        filters.byResourceId(testVm.vmId);
         filters.byType(actionType);
         return actionService.getActionList(filters);
     }

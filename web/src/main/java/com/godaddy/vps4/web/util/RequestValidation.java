@@ -20,11 +20,11 @@ import com.godaddy.vps4.snapshot.Snapshot;
 import com.godaddy.vps4.snapshot.SnapshotService;
 import com.godaddy.vps4.snapshot.SnapshotStatus;
 import com.godaddy.vps4.snapshot.SnapshotType;
+import com.godaddy.vps4.util.ActionListFilters;
 import com.godaddy.vps4.util.validators.Validator;
 import com.godaddy.vps4.util.validators.ValidatorRegistry;
 import com.godaddy.vps4.vm.Action;
 import com.godaddy.vps4.vm.ActionService;
-import com.godaddy.vps4.vm.ActionService.ActionListFilters;
 import com.godaddy.vps4.vm.ActionStatus;
 import com.godaddy.vps4.vm.ActionType;
 import com.godaddy.vps4.vm.DataCenter;
@@ -62,7 +62,7 @@ public class RequestValidation {
                                                     ActionType... conflictingActions) {
         ActionListFilters actionFilters = new ActionListFilters();
         actionFilters.byStatus(ActionStatus.NEW, ActionStatus.IN_PROGRESS);
-        actionFilters.byVmId(vmId);
+        actionFilters.byResourceId(vmId);
         ResultSubset<Action> currentActions = actionService.getActionList(actionFilters);
 
         if (currentActions != null) {

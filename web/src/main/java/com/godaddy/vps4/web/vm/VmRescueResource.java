@@ -103,7 +103,7 @@ public class VmRescueResource {
     }
 
     private Action getLatestRescueAction(UUID vmId) {
-        List<Action> actions = actionResource.getVmActionList(vmId, Arrays.asList("COMPLETE"),
+        List<Action> actions = actionResource.getActionList(ActionResource.ResourceType.VM, vmId, Arrays.asList("COMPLETE"),
                 Arrays.asList("RESCUE"), null, null, 1, 0);
         Action action = null;
         action = actions.isEmpty() ? null : actions.get(0);

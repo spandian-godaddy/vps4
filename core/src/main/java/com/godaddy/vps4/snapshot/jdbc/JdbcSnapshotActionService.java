@@ -12,20 +12,23 @@ import javax.sql.DataSource;
 
 import com.godaddy.hfs.jdbc.Sql;
 import com.godaddy.vps4.jdbc.ResultSubset;
+import com.godaddy.vps4.util.ActionListFilters;
+import com.godaddy.vps4.util.ActionListUtils;
+import com.godaddy.vps4.util.TimestampUtils;
 import com.godaddy.vps4.vm.Action;
 import com.godaddy.vps4.vm.ActionService;
 import com.godaddy.vps4.vm.ActionStatus;
 import com.godaddy.vps4.vm.ActionType;
 
-import com.godaddy.vps4.util.TimestampUtils;
-
 public class JdbcSnapshotActionService implements ActionService {
 
     private final DataSource dataSource;
+    private final ActionListUtils actionListUtils;
 
     @Inject
     public JdbcSnapshotActionService(DataSource dataSource) {
         this.dataSource = dataSource;
+        actionListUtils = new ActionListUtils("snapshot_action", "snapshot_id", dataSource);
     }
 
     @Override
@@ -104,7 +107,7 @@ public class JdbcSnapshotActionService implements ActionService {
 
     @Override
     public ResultSubset<Action> getActionList(ActionListFilters actionFilters) {
-        throw new UnsupportedOperationException("Not implemented, yet");
+        return actionListUtils.getActions(actionFilters);
     }
 
     private Action mapAction(ResultSet rs) throws SQLException {

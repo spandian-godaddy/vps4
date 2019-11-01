@@ -4,39 +4,32 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.time.Instant;
-import java.time.LocalDateTime;
-import java.time.ZoneOffset;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
 import javax.inject.Inject;
 import javax.sql.DataSource;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import com.godaddy.hfs.jdbc.Sql;
 import com.godaddy.vps4.jdbc.ResultSubset;
+import com.godaddy.vps4.util.ActionListFilters;
+import com.godaddy.vps4.util.ActionListUtils;
 import com.godaddy.vps4.util.TimestampUtils;
 import com.godaddy.vps4.vm.Action;
 import com.godaddy.vps4.vm.ActionService;
 import com.godaddy.vps4.vm.ActionStatus;
 import com.godaddy.vps4.vm.ActionType;
 
-
 public class JdbcVmActionService implements ActionService {
 
-    private static final Logger logger = LoggerFactory.getLogger(JdbcVmActionService.class);
-
     private final DataSource dataSource;
+    private final ActionListUtils actionListUtils;
 
     @Inject
     public JdbcVmActionService(DataSource dataSource) {
         this.dataSource = dataSource;
+        actionListUtils = new ActionListUtils("vm_action", "vm_id", dataSource);
     }
 
     @Override
@@ -68,7 +61,7 @@ public class JdbcVmActionService implements ActionService {
     public List<Action> getIncompleteActions(UUID vmId) {
         ActionListFilters actionFilters = new ActionListFilters();
         actionFilters.byStatus(ActionStatus.NEW, ActionStatus.IN_PROGRESS);
-        actionFilters.byVmId(vmId);
+        actionFilters.byResourceId(vmId);
         ResultSubset<Action> result = getActionList(actionFilters);
         return result != null ? result.results : new ArrayList<>();
     }
@@ -106,99 +99,7 @@ public class JdbcVmActionService implements ActionService {
 
     @Override
     public ResultSubset<Action> getActionList(ActionListFilters actionFilters) {
-
-        Map<String, Object> filterParams = new HashMap<>();
-        UUID vmId = actionFilters.getVmId();
-        if (vmId != null){
-            logger.debug("In getActionHelper, vmId: [{}]", vmId);
-            filterParams.put("vm_id", vmId);
-        }
-
-        ArrayList<Object> filterValues = new ArrayList<>();
-        StringBuilder actionsQuery = new StringBuilder();
-        actionsQuery.append("SELECT *, count(*) over() as total_rows FROM vm_action "
-                + " JOIN action_status on vm_action.status_id = action_status.status_id"
-                + " JOIN action_type on vm_action.action_type_id = action_type.type_id"
-                + " WHERE 1=1 ");
-        for (Map.Entry<String, Object> pair: filterParams.entrySet()){
-            actionsQuery.append(" and ");
-            actionsQuery.append(pair.getKey());
-            actionsQuery.append("=?");
-            filterValues.add(pair.getValue());
-        }
-
-        addStatusFilter(actionFilters.getStatusList(), filterValues, actionsQuery);
-        addActionTypeFilter(actionFilters.getTypeList(), filterValues, actionsQuery);
-        buildDateQuery(actionFilters.getStart(), actionFilters.getEnd(), filterValues, actionsQuery);
-
-        actionsQuery.append(" ORDER BY created DESC ");
-        long limit = actionFilters.getLimit();
-        if (limit >= 0) {
-            logger.debug("In getActionHelper, limit: [{}]", limit);
-            actionsQuery.append("LIMIT ? ");
-            filterValues.add(limit);
-        }
-        long offset = actionFilters.getOffset();
-        if (offset > 0 ) {
-            actionsQuery.append("OFFSET ?;");
-            filterValues.add(offset);
-        }
-
-        logger.debug("In getActionHelper, Query: [{}]", actionsQuery.toString());
-        logger.debug("In getActionHelper, filter values: ({})", filterValues.toString());
-        return Sql.with(dataSource).exec(actionsQuery.toString(),
-                Sql.nextOrNull(this::mapActionWithTotal),
-                filterValues.toArray());
-    }
-
-    private void addActionTypeFilter(List<ActionType> typeList, ArrayList<Object> filterValues, StringBuilder actionsQuery) {
-        if (typeList.isEmpty())
-            return;
-
-        logger.debug("In getActionHelper, action list: [{}]", typeList);
-        String whereInClause = " AND action_type.type IN (%s)";
-        List<String> paramaterizedTokens = typeList.stream().map(t -> "?").collect(Collectors.toList());
-        whereInClause = String.format(whereInClause, String.join(",", paramaterizedTokens));
-
-        filterValues.addAll(typeList.stream().map(t -> t.toString()).collect(Collectors.toList()));
-        actionsQuery.append(whereInClause);
-    }
-
-    private void addStatusFilter(List<ActionStatus> statusList, ArrayList<Object> filterValues, StringBuilder actionsQuery) {
-        if (statusList.isEmpty())
-            return;
-
-        logger.debug("In getActionHelper, action list: [{}]", statusList);
-        String whereInClause = " AND action_status.status IN (%s)";
-        List<String> paramaterizedTokens = statusList.stream().map(t -> "?").collect(Collectors.toList());
-        whereInClause = String.format(whereInClause, String.join(",", paramaterizedTokens));
-
-        filterValues.addAll(statusList.stream().map(s -> s.toString()).collect(Collectors.toList()));
-        actionsQuery.append(whereInClause);
-    }
-
-    private void buildDateQuery(Instant beginDate, Instant endDate,
-                                ArrayList<Object> filterValues, StringBuilder actionsQuery) {
-        if (beginDate != null){
-            logger.debug("In getActionHelper, begin date: [{}]", beginDate);
-            actionsQuery.append(" and created >= ?");
-            filterValues.add(LocalDateTime.ofInstant(beginDate, ZoneOffset.UTC));
-        }
-        if (endDate != null){
-            logger.debug("In getActionHelper, end date: [{}]", endDate);
-            actionsQuery.append(" and created <= ?");
-            filterValues.add(LocalDateTime.ofInstant(endDate, ZoneOffset.UTC));
-        }
-    }
-
-    private ResultSubset<Action> mapActionWithTotal(ResultSet rs) throws SQLException {
-       long totalRows = rs.getLong("total_rows");
-       List<Action> actions = new ArrayList<>();
-       actions.add(mapAction(rs));
-       while(rs.next()){
-           actions.add(mapAction(rs));
-       }
-       return new ResultSubset<Action>(actions, totalRows);
+        return actionListUtils.getActions(actionFilters);
     }
 
     private Action mapAction(ResultSet rs) throws SQLException {

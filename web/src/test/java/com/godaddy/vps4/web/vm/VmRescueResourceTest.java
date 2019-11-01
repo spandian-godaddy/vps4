@@ -111,8 +111,8 @@ public class VmRescueResourceTest {
         response.hfsVmActionId = 123L;
         testVps4Action.response = mapper.writeValueAsString(response);
         List<Action> testVps4Actions = Arrays.asList(testVps4Action);
-        when(actionResource.getVmActionList(vmId, Arrays.asList("COMPLETE"), Arrays.asList("RESCUE"), null, null, 1,
-                0)).thenReturn(testVps4Actions);
+        when(actionResource.getActionList(ActionResource.ResourceType.VM, vmId, Arrays.asList("COMPLETE"), Arrays.asList("RESCUE"), null, 
+                null, 1, 0)).thenReturn(testVps4Actions);
         com.godaddy.hfs.vm.VmAction testHfsAction = new com.godaddy.hfs.vm.VmAction();
         testHfsAction.vmActionId = 123L;
         testHfsAction.resultset = "{\"password\": \"S5wurpP1Rd6xVbYLi\", \"username\": \"root\"}";
@@ -126,8 +126,8 @@ public class VmRescueResourceTest {
     @Test
     public void testGetRescueCredentialsNoRescueAction() throws JsonProcessingException {
         List<Action> testResults = new ArrayList<Action>();
-        when(actionResource.getVmActionList(vmId, Arrays.asList("COMPLETE"), Arrays.asList("RESCUE"), null, null, 1,
-                0)).thenReturn(testResults);
+        when(actionResource.getActionList(ActionResource.ResourceType.VM, vmId, Arrays.asList("COMPLETE"), Arrays.asList("RESCUE"), null, 
+                null, 1, 0)).thenReturn(testResults);
 
         RescueCredentials creds = rescueResource.getRescueCredentials(vmId);
 
@@ -142,8 +142,8 @@ public class VmRescueResourceTest {
         response.hfsVmActionId = 123L;
         testVps4Action.response = mapper.writeValueAsString(response);
         List<Action> testVps4Actions = Arrays.asList(testVps4Action);
-        when(actionResource.getVmActionList(vmId, Arrays.asList("COMPLETE"), Arrays.asList("RESCUE"), null, null, 1,
-                0)).thenReturn(testVps4Actions);
+        when(actionResource.getActionList(ActionResource.ResourceType.VM, vmId, Arrays.asList("COMPLETE"), Arrays.asList("RESCUE"), 
+                null, null, 1, 0)).thenReturn(testVps4Actions);
         com.godaddy.hfs.vm.VmAction testHfsAction = new com.godaddy.hfs.vm.VmAction();
         testHfsAction.vmActionId = 123L;
         testHfsAction.resultset = "bad creds";

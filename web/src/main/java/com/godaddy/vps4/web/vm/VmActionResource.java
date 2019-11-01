@@ -30,9 +30,9 @@ import org.slf4j.LoggerFactory;
 import com.godaddy.vps4.jdbc.ResultSubset;
 import com.godaddy.vps4.security.PrivilegeService;
 import com.godaddy.vps4.security.Vps4UserService;
+import com.godaddy.vps4.util.ActionListFilters;
 import com.godaddy.vps4.vm.Action;
 import com.godaddy.vps4.vm.ActionService;
-import com.godaddy.vps4.vm.ActionService.ActionListFilters;
 import com.godaddy.vps4.vm.ActionStatus;
 import com.godaddy.vps4.vm.ActionType;
 import com.godaddy.vps4.vm.VmAction;
@@ -109,7 +109,7 @@ public class VmActionResource {
 
 
         ActionListFilters actionFilters = new ActionListFilters();
-        actionFilters.byVmId(vmId);
+        actionFilters.byResourceId(vmId);
         actionFilters.byStatus(enumStatusList);
         actionFilters.byType(enumTypeList);
         actionFilters.byDateRange(start, end);

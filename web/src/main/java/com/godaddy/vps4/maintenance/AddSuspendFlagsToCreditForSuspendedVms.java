@@ -23,6 +23,7 @@ import com.godaddy.vps4.hfs.HfsClientModule;
 import com.godaddy.vps4.jdbc.DatabaseModule;
 import com.godaddy.vps4.jdbc.ResultSubset;
 import com.godaddy.vps4.security.SecurityModule;
+import com.godaddy.vps4.util.ActionListFilters;
 import com.godaddy.vps4.vm.AccountStatus;
 import com.godaddy.vps4.vm.Action;
 import com.godaddy.vps4.vm.ActionService;
@@ -68,7 +69,7 @@ public class AddSuspendFlagsToCreditForSuspendedVms {
         injector.injectMembers(addFlags);
 
         // get the list of suspended actions in the Datacenter.
-        ActionService.ActionListFilters actionListFilters = new ActionService.ActionListFilters();
+        ActionListFilters actionListFilters = new ActionListFilters();
         actionListFilters.byStatus(ActionStatus.COMPLETE);
         actionListFilters.byType(Arrays.asList(ActionType.ABUSE_SUSPEND, ActionType.BILLING_SUSPEND));
         ResultSubset<Action> suspendedActions =
@@ -164,4 +165,3 @@ public class AddSuspendFlagsToCreditForSuspendedVms {
         return false;
     }
 }
-

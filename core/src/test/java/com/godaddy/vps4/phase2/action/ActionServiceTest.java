@@ -17,9 +17,13 @@ import org.junit.Test;
 import com.godaddy.vps4.jdbc.DatabaseModule;
 import com.godaddy.vps4.jdbc.ResultSubset;
 import com.godaddy.vps4.phase2.SqlTestData;
+import com.godaddy.vps4.snapshot.SnapshotService;
+import com.godaddy.vps4.snapshot.SnapshotType;
+import com.godaddy.vps4.snapshot.jdbc.JdbcSnapshotActionService;
+import com.godaddy.vps4.snapshot.jdbc.JdbcSnapshotService;
+import com.godaddy.vps4.util.ActionListFilters;
 import com.godaddy.vps4.vm.Action;
 import com.godaddy.vps4.vm.ActionService;
-import com.godaddy.vps4.vm.ActionService.ActionListFilters;
 import com.godaddy.vps4.vm.ActionStatus;
 import com.godaddy.vps4.vm.ActionType;
 import com.godaddy.vps4.vm.VirtualMachine;
@@ -30,7 +34,9 @@ import com.google.inject.Injector;
 
 public class ActionServiceTest {
 
-    private ActionService actionService;
+    private ActionService vmActionService;
+    private ActionService snapshotActionService;
+    private SnapshotService snapshotService;
     private Injector injector = Guice.createInjector(new DatabaseModule());
 
     private UUID orionGuid = UUID.randomUUID();
@@ -38,14 +44,22 @@ public class ActionServiceTest {
     private VirtualMachine vm;
     private VirtualMachine vm1;
     private VirtualMachine vm2;
+    private UUID snapshotId;
+    private UUID snapshotId1;
+    private UUID snapshotId2;
 
     @Before
     public void setupService() {
         dataSource = injector.getInstance(DataSource.class);
-        actionService = new JdbcVmActionService(dataSource);
+        vmActionService = new JdbcVmActionService(dataSource);
+        snapshotActionService = new JdbcSnapshotActionService(dataSource);
+        snapshotService = new JdbcSnapshotService(dataSource);
         vm = SqlTestData.insertTestVm(orionGuid, dataSource);
         vm1 = SqlTestData.insertTestVm(orionGuid, dataSource);
         vm2 = SqlTestData.insertTestVm(orionGuid, dataSource);
+        snapshotId = snapshotService.createSnapshot(vm.projectId, vm.vmId, "vmSnapshot", SnapshotType.AUTOMATIC);
+        snapshotId1 = snapshotService.createSnapshot(vm1.projectId, vm1.vmId, "vm1Snapshot", SnapshotType.AUTOMATIC);
+        snapshotId2 = snapshotService.createSnapshot(vm2.projectId, vm2.vmId, "vmSnapshot", SnapshotType.AUTOMATIC);
     }
 
     @After
@@ -55,6 +69,8 @@ public class ActionServiceTest {
         SqlTestData.cleanupTestVmAndRelatedData(vm2.vmId, dataSource);
     }
 
+
+    /**** VM Actions ****/
     private long getNumberOfExistingActions(ResultSubset<Action> actions) {
         long numberOfExistingActions = 0;
         if (actions != null){
@@ -66,14 +82,14 @@ public class ActionServiceTest {
     @Test
     public void testGetAllActionsForVmId() {
         ActionListFilters actionFilters = new ActionListFilters();
-        actionFilters.byVmId(vm.vmId);
+        actionFilters.byResourceId(vm.vmId);
 
-        ResultSubset<Action> actions = actionService.getActionList(actionFilters);
+        ResultSubset<Action> actions = vmActionService.getActionList(actionFilters);
         long numberOfExistingActions = getNumberOfExistingActions(actions);
 
-        actionService.createAction(vm.vmId, ActionType.CREATE_VM, "{}", "tester");
+        vmActionService.createAction(vm.vmId, ActionType.CREATE_VM, "{}", "tester");
 
-        actions = actionService.getActionList(actionFilters);
+        actions = vmActionService.getActionList(actionFilters);
         assertEquals(numberOfExistingActions + 1, actions.results.size());
     }
 
@@ -81,15 +97,15 @@ public class ActionServiceTest {
     public void testGetAllActions() {
         ActionListFilters actionFilters = new ActionListFilters();
 
-        ResultSubset<Action> actions = actionService.getActionList(actionFilters);
+        ResultSubset<Action> actions = vmActionService.getActionList(actionFilters);
         long numberOfExistingActions = getNumberOfExistingActions(actions);
 
-        actionService.createAction(vm.vmId, ActionType.CREATE_VM, "{}", "tester");
-        actionService.createAction(vm1.vmId, ActionType.CREATE_VM, "{}", "tester");
-        actionService.createAction(vm2.vmId, ActionType.CREATE_VM, "{}", "tester");
-        actionService.createAction(vm.vmId, ActionType.CREATE_VM, "{}", "tester");
+        vmActionService.createAction(vm.vmId, ActionType.CREATE_VM, "{}", "tester");
+        vmActionService.createAction(vm1.vmId, ActionType.CREATE_VM, "{}", "tester");
+        vmActionService.createAction(vm2.vmId, ActionType.CREATE_VM, "{}", "tester");
+        vmActionService.createAction(vm.vmId, ActionType.CREATE_VM, "{}", "tester");
 
-        actions = actionService.getActionList(actionFilters);
+        actions = vmActionService.getActionList(actionFilters);
         assertEquals(numberOfExistingActions + 4, actions.results.size());
     }
 
@@ -98,15 +114,15 @@ public class ActionServiceTest {
         ActionListFilters actionFilters = new ActionListFilters();
         actionFilters.byType(ActionType.CREATE_VM, ActionType.STOP_VM);
 
-        ResultSubset<Action> actions = actionService.getActionList(actionFilters);
+        ResultSubset<Action> actions = vmActionService.getActionList(actionFilters);
         long numberOfExistingActions = getNumberOfExistingActions(actions);
 
-        actionService.createAction(vm.vmId, ActionType.CREATE_VM, "{}", "tester");
-        actionService.createAction(vm1.vmId, ActionType.STOP_VM, "{}", "tester");
-        actionService.createAction(vm2.vmId, ActionType.CREATE_VM, "{}", "tester");
-        actionService.createAction(vm.vmId, ActionType.START_VM, "{}", "tester");
+        vmActionService.createAction(vm.vmId, ActionType.CREATE_VM, "{}", "tester");
+        vmActionService.createAction(vm1.vmId, ActionType.STOP_VM, "{}", "tester");
+        vmActionService.createAction(vm2.vmId, ActionType.CREATE_VM, "{}", "tester");
+        vmActionService.createAction(vm.vmId, ActionType.START_VM, "{}", "tester");
 
-        actions = actionService.getActionList(actionFilters);
+        actions = vmActionService.getActionList(actionFilters);
         assertEquals(numberOfExistingActions + 3, actions.results.size());
     }
 
@@ -115,100 +131,100 @@ public class ActionServiceTest {
         ActionListFilters actionFilters = new ActionListFilters();
         actionFilters.byStatus(ActionStatus.NEW);
 
-        ResultSubset<Action> actions = actionService.getActionList(actionFilters);
+        ResultSubset<Action> actions = vmActionService.getActionList(actionFilters);
         long numberOfExistingActions = getNumberOfExistingActions(actions);
 
-        actionService.createAction(vm.vmId, ActionType.CREATE_VM, "{}", "tester");
-        actionService.createAction(vm1.vmId, ActionType.STOP_VM, "{}", "tester");
-        actionService.createAction(vm2.vmId, ActionType.CREATE_VM, "{}", "tester");
-        actionService.createAction(vm.vmId, ActionType.START_VM, "{}", "tester");
+        vmActionService.createAction(vm.vmId, ActionType.CREATE_VM, "{}", "tester");
+        vmActionService.createAction(vm1.vmId, ActionType.STOP_VM, "{}", "tester");
+        vmActionService.createAction(vm2.vmId, ActionType.CREATE_VM, "{}", "tester");
+        vmActionService.createAction(vm.vmId, ActionType.START_VM, "{}", "tester");
 
-        actions = actionService.getActionList(actionFilters);
+        actions = vmActionService.getActionList(actionFilters);
         assertEquals(numberOfExistingActions + 4, actions.results.size());
     }
 
     @Test
     public void testGetActionsByTypeForVmId() {
         ActionListFilters actionFilters = new ActionListFilters();
-        actionFilters.byVmId(vm.vmId);
+        actionFilters.byResourceId(vm.vmId);
         actionFilters.byType(ActionType.CREATE_VM);
 
-        ResultSubset<Action> actions = actionService.getActionList(actionFilters);
+        ResultSubset<Action> actions = vmActionService.getActionList(actionFilters);
         long numberOfExistingActions = getNumberOfExistingActions(actions);
 
-        actionService.createAction(vm.vmId, ActionType.CREATE_VM, "{}", "tester");
-        actionService.createAction(vm.vmId, ActionType.STOP_VM, "{}", "tester");
-        actionService.createAction(vm.vmId, ActionType.START_VM, "{}", "tester");
+        vmActionService.createAction(vm.vmId, ActionType.CREATE_VM, "{}", "tester");
+        vmActionService.createAction(vm.vmId, ActionType.STOP_VM, "{}", "tester");
+        vmActionService.createAction(vm.vmId, ActionType.START_VM, "{}", "tester");
 
-        actions = actionService.getActionList(actionFilters);
+        actions = vmActionService.getActionList(actionFilters);
         assertEquals(numberOfExistingActions + 1, actions.results.size());
     }
 
     @Test
     public void testGetActionsInDateRange() {
         Instant before = Instant.now().minus(Duration.ofMinutes(1));
-        actionService.createAction(vm.vmId, ActionType.SET_HOSTNAME, "{}", "tester");
+        vmActionService.createAction(vm.vmId, ActionType.SET_HOSTNAME, "{}", "tester");
         Instant after = Instant.now().plus(Duration.ofMinutes(1));
 
         ActionListFilters actionFilters = new ActionListFilters();
-        actionFilters.byVmId(vm.vmId);
+        actionFilters.byResourceId(vm.vmId);
         actionFilters.byDateRange(before, after);
 
-        ResultSubset<Action> actions = actionService.getActionList(actionFilters);
+        ResultSubset<Action> actions = vmActionService.getActionList(actionFilters);
         assertEquals(1, actions.results.size());
 
         actionFilters.byDateRange(before, null);
-        actions = actionService.getActionList(actionFilters);
+        actions = vmActionService.getActionList(actionFilters);
         assertEquals(1, actions.results.size());
 
         actionFilters.byDateRange(null, after);
-        actions = actionService.getActionList(actionFilters);
+        actions = vmActionService.getActionList(actionFilters);
         assertEquals(1, actions.results.size());
 
         // No actions in range, date range ends before action
         actionFilters.byDateRange(null, before);
-        actions = actionService.getActionList(actionFilters);
+        actions = vmActionService.getActionList(actionFilters);
         assertEquals(null, actions);
 
         // No actions in range, date range starts after action
         actionFilters.byDateRange(after, null);
-        actions = actionService.getActionList(actionFilters);
+        actions = vmActionService.getActionList(actionFilters);
         assertEquals(null, actions);
     }
 
     @Test
     public void testGetActionsByStatus() {
-        actionService.createAction(vm.vmId, ActionType.SET_HOSTNAME, "{}", "tester");
+        vmActionService.createAction(vm.vmId, ActionType.SET_HOSTNAME, "{}", "tester");
 
         ActionListFilters actionFilters = new ActionListFilters();
-        actionFilters.byVmId(vm.vmId);
+        actionFilters.byResourceId(vm.vmId);
         actionFilters.byStatus(ActionStatus.NEW);
 
-        ResultSubset<Action> actions = actionService.getActionList(actionFilters);
+        ResultSubset<Action> actions = vmActionService.getActionList(actionFilters);
         assertEquals(1, actions.results.size());
 
         Action action = actions.results.get(0);
-        actionService.completeAction(action.id, null, null);
+        vmActionService.completeAction(action.id, null, null);
 
         actionFilters.byStatus(ActionStatus.COMPLETE);
-        actions = actionService.getActionList(actionFilters);
+        actions = vmActionService.getActionList(actionFilters);
         assertEquals(1, actions.results.size());
     }
 
     @Test
     public void testCompleteActionPopulatesCompletedColumn() {
-        actionService.createAction(vm.vmId, ActionType.SET_HOSTNAME, "{}", "tester");
+        vmActionService.createAction(vm.vmId, ActionType.SET_HOSTNAME, "{}", "tester");
 
         ActionListFilters actionFilters = new ActionListFilters();
-        actionFilters.byVmId(vm.vmId);
+        actionFilters.byResourceId(vm.vmId);
 
-        ResultSubset<Action> actions = actionService.getActionList(actionFilters);
+        ResultSubset<Action> actions = vmActionService.getActionList(actionFilters);
         Action testAction = actions.results.get(0);
         assertNull(testAction.completed);
 
-        actionService.completeAction(testAction.id, "{}", "");
+        vmActionService.completeAction(testAction.id, "{}", "");
 
-        actions = actionService.getActionList(actionFilters);
+        actions = vmActionService.getActionList(actionFilters);
         testAction = actions.results.get(0);
         assertNotNull(testAction.completed);
     }
@@ -216,23 +232,178 @@ public class ActionServiceTest {
     @Test
     public void testGetActionsWithLimitAndOffset() {
         ActionListFilters actionFilters = new ActionListFilters();
-        actionFilters.byVmId(vm.vmId);
+        actionFilters.byResourceId(vm.vmId);
 
-        actionService.createAction(vm.vmId, ActionType.CREATE_VM, "{}", "tester");
-        actionService.createAction(vm.vmId, ActionType.STOP_VM, "{}", "tester");
-        actionService.createAction(vm.vmId, ActionType.START_VM, "{}", "tester");
+        vmActionService.createAction(vm.vmId, ActionType.CREATE_VM, "{}", "tester");
+        vmActionService.createAction(vm.vmId, ActionType.STOP_VM, "{}", "tester");
+        vmActionService.createAction(vm.vmId, ActionType.START_VM, "{}", "tester");
 
-        ResultSubset<Action> actions = actionService.getActionList(actionFilters);
+        ResultSubset<Action> actions = vmActionService.getActionList(actionFilters);
         assertEquals(3, actions.results.size());
 
         actionFilters.setLimit(2);
-        actions = actionService.getActionList(actionFilters);
+        actions = vmActionService.getActionList(actionFilters);
         assertEquals(2, actions.results.size());
 
         actionFilters.setOffset(2);
         actionFilters.toString();
-        actions = actionService.getActionList(actionFilters);
+        actions = vmActionService.getActionList(actionFilters);
         assertEquals(1, actions.results.size());
         assertEquals(ActionType.CREATE_VM, actions.results.get(0).type); // order by created desc
+    }
+
+    /**** Snapshot Actions ****/
+    @Test
+    public void testGetAllSnapshotActionsForSnapshotId() {
+        ActionListFilters actionFilters = new ActionListFilters();
+        actionFilters.byResourceId(snapshotId);
+        ResultSubset<Action> actions = snapshotActionService.getActionList(actionFilters);
+        long existingActions = getNumberOfExistingActions(actions);
+
+        snapshotActionService.createAction(snapshotId, ActionType.CREATE_SNAPSHOT, "{}", "tester");
+        snapshotActionService.createAction(snapshotId, ActionType.CREATE_SNAPSHOT, "{}", "tester");
+        snapshotActionService.createAction(snapshotId, ActionType.DESTROY_SNAPSHOT, "{}", "tester");
+
+        actions = snapshotActionService.getActionList(actionFilters);
+        assertEquals(existingActions + 3, actions.results.size());
+    }
+
+    @Test
+    public void testGetAllSnapshotActions() {
+        ActionListFilters actionFilters = new ActionListFilters();
+
+        ResultSubset<Action> actions = snapshotActionService.getActionList(actionFilters);
+        long existingActions = getNumberOfExistingActions(actions);
+
+        snapshotActionService.createAction(snapshotId, ActionType.CREATE_SNAPSHOT, "{}", "tester");
+        snapshotActionService.createAction(snapshotId1, ActionType.CREATE_SNAPSHOT, "{}", "tester");
+        snapshotActionService.createAction(snapshotId2, ActionType.CREATE_SNAPSHOT, "{}", "tester");
+        snapshotActionService.createAction(snapshotId, ActionType.DESTROY_SNAPSHOT, "{}", "tester");
+
+        actions = snapshotActionService.getActionList(actionFilters);
+        assertEquals(existingActions + 4, actions.results.size());
+    }
+
+    @Test
+    public void testGetAllSnapshotActionsByType() {
+        ActionListFilters actionFilters = new ActionListFilters();
+        actionFilters.byType(ActionType.CREATE_SNAPSHOT, ActionType.DESTROY_SNAPSHOT);
+
+        ResultSubset<Action> actions = snapshotActionService.getActionList(actionFilters);
+        long numberOfExistingActions = getNumberOfExistingActions(actions);
+
+        snapshotActionService.createAction(snapshotId, ActionType.CREATE_SNAPSHOT, "{}", "tester");
+        snapshotActionService.createAction(snapshotId1, ActionType.STOP_VM, "{}", "tester");
+        snapshotActionService.createAction(snapshotId2, ActionType.CREATE_SNAPSHOT, "{}", "tester");
+        snapshotActionService.createAction(snapshotId, ActionType.DESTROY_SNAPSHOT, "{}", "tester");
+
+        actions = snapshotActionService.getActionList(actionFilters);
+        assertEquals(numberOfExistingActions + 3, actions.results.size());
+    }
+
+    @Test
+    public void testGetAllSnapshotActionsByStatus() {
+        ActionListFilters actionFilters = new ActionListFilters();
+        actionFilters.byStatus(ActionStatus.NEW);
+
+        ResultSubset<Action> actions = snapshotActionService.getActionList(actionFilters);
+        long numberOfExistingActions = getNumberOfExistingActions(actions);
+
+        snapshotActionService.createAction(snapshotId, ActionType.CREATE_VM, "{}", "tester");
+        snapshotActionService.createAction(snapshotId1, ActionType.STOP_VM, "{}", "tester");
+        snapshotActionService.createAction(snapshotId2, ActionType.CREATE_VM, "{}", "tester");
+        snapshotActionService.createAction(snapshotId, ActionType.START_VM, "{}", "tester");
+
+        actions = snapshotActionService.getActionList(actionFilters);
+        assertEquals(numberOfExistingActions + 4, actions.results.size());
+    }
+
+    @Test
+    public void testGetSnapshotActionsByTypeForSnapshotId() {
+        ActionListFilters actionFilters = new ActionListFilters();
+        actionFilters.byResourceId(snapshotId);
+        actionFilters.byType(ActionType.CREATE_SNAPSHOT);
+
+        ResultSubset<Action> actions = snapshotActionService.getActionList(actionFilters);
+        long numberOfExistingActions = getNumberOfExistingActions(actions);
+
+        snapshotActionService.createAction(snapshotId, ActionType.CREATE_SNAPSHOT, "{}", "tester");
+        snapshotActionService.createAction(snapshotId, ActionType.DESTROY_SNAPSHOT, "{}", "tester");
+
+        actions = snapshotActionService.getActionList(actionFilters);
+        assertEquals(numberOfExistingActions + 1, actions.results.size());
+    }
+
+    @Test
+    public void testGetSnapshotActionsInDateRange() {
+        Instant before = Instant.now().minus(Duration.ofMinutes(1));
+        snapshotActionService.createAction(snapshotId, ActionType.CREATE_SNAPSHOT, "{}", "tester");
+        Instant after = Instant.now().plus(Duration.ofMinutes(1));
+
+        ActionListFilters actionFilters = new ActionListFilters();
+        actionFilters.byResourceId(snapshotId);
+        actionFilters.byDateRange(before, after);
+
+        ResultSubset<Action> actions = snapshotActionService.getActionList(actionFilters);
+        assertEquals(1, actions.results.size());
+
+        actionFilters.byDateRange(before, null);
+        actions = snapshotActionService.getActionList(actionFilters);
+        assertEquals(1, actions.results.size());
+
+        actionFilters.byDateRange(null, after);
+        actions = snapshotActionService.getActionList(actionFilters);
+        assertEquals(1, actions.results.size());
+
+        // No actions in range, date range ends before action
+        actionFilters.byDateRange(null, before);
+        actions = snapshotActionService.getActionList(actionFilters);
+        assertEquals(null, actions);
+
+        // No actions in range, date range starts after action
+        actionFilters.byDateRange(after, null);
+        actions = snapshotActionService.getActionList(actionFilters);
+        assertEquals(null, actions);
+    }
+
+    @Test
+    public void testGetSnapshotActionsByStatus() {
+        snapshotActionService.createAction(snapshotId, ActionType.CREATE_SNAPSHOT, "{}", "tester");
+
+        ActionListFilters actionFilters = new ActionListFilters();
+        actionFilters.byResourceId(snapshotId);
+        actionFilters.byStatus(ActionStatus.NEW);
+
+        ResultSubset<Action> actions = snapshotActionService.getActionList(actionFilters);
+        assertEquals(1, actions.results.size());
+
+        Action action = actions.results.get(0);
+        snapshotActionService.completeAction(action.id, null, null);
+
+        actionFilters.byStatus(ActionStatus.COMPLETE);
+        actions = snapshotActionService.getActionList(actionFilters);
+        assertEquals(1, actions.results.size());
+    }
+
+    @Test
+    public void testGetSnapshotActionsWithLimitAndOffset() {
+        ActionListFilters actionFilters = new ActionListFilters();
+        actionFilters.byResourceId(snapshotId);
+
+        snapshotActionService.createAction(snapshotId, ActionType.CREATE_SNAPSHOT, "{}", "tester");
+        snapshotActionService.createAction(snapshotId, ActionType.DESTROY_SNAPSHOT, "{}", "tester");
+        snapshotActionService.createAction(snapshotId, ActionType.CREATE_SNAPSHOT, "{}", "tester");
+
+        ResultSubset<Action> actions = snapshotActionService.getActionList(actionFilters);
+        assertEquals(3, actions.results.size());
+
+        actionFilters.setLimit(2);
+        actions = snapshotActionService.getActionList(actionFilters);
+        assertEquals(2, actions.results.size());
+
+        actionFilters.setOffset(1);
+        actions = snapshotActionService.getActionList(actionFilters);
+        assertEquals(2, actions.results.size());
+        assertEquals(ActionType.DESTROY_SNAPSHOT, actions.results.get(0).type); // order by created desc
     }
 }
