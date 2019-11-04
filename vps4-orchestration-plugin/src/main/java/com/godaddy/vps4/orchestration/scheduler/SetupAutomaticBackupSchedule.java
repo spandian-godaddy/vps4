@@ -15,6 +15,7 @@ import org.slf4j.LoggerFactory;
 import javax.inject.Inject;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
+import java.util.Random;
 import java.util.UUID;
 
 public class SetupAutomaticBackupSchedule implements Command<SetupAutomaticBackupSchedule.Request, UUID> {
@@ -23,11 +24,13 @@ public class SetupAutomaticBackupSchedule implements Command<SetupAutomaticBacku
 
     private final SchedulerWebService schedulerWebService;
     private final Config config;
+    private final Random random;
 
     @Inject
     public SetupAutomaticBackupSchedule(SchedulerWebService schedulerWebService, Config config) {
         this.schedulerWebService = schedulerWebService;
         this.config = config;
+        random = new Random();
     }
 
     @Override
@@ -56,9 +59,9 @@ public class SetupAutomaticBackupSchedule implements Command<SetupAutomaticBacku
         backupRequest.shopperId = request.shopperId;
         backupRequest.scheduledJobType = ScheduledJob.ScheduledJobType.BACKUPS_AUTOMATIC;
         long firstTime = Long.parseLong(config.get("vps4.autobackup.initial"));
-        backupRequest.when = Instant.now().plus(firstTime, ChronoUnit.DAYS);
+        backupRequest.when = Instant.now().plus(firstTime, ChronoUnit.DAYS).plus(random.nextInt(25), ChronoUnit.HOURS);
         int repeatInterval = Integer.parseInt(config.get("vps4.autobackup.repeatInterval"));
-        backupRequest.repeatIntervalInDays = repeatInterval; // every seven days
+        backupRequest.repeatIntervalInDays = repeatInterval;
         return backupRequest;
     }
 
