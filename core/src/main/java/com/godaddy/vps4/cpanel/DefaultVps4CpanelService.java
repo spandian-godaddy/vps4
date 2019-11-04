@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 
 import javax.inject.Inject;
@@ -152,6 +153,7 @@ public class DefaultVps4CpanelService implements Vps4CpanelService {
                     }
                 }
 
+                domains.sort(Comparator.comparing(d -> d.name));
                 return domains;
             } catch (ParseException e) {
                 throw new IOException("Error parsing cPanel account list response", e);
@@ -171,7 +173,7 @@ public class DefaultVps4CpanelService implements Vps4CpanelService {
                 JSONObject cpanelResult = (JSONObject) jsonObject.get("cpanelresult");
                 if (cpanelResult != null) {
                     JSONArray data;
-                    try{
+                    try {
                         data = (JSONArray) cpanelResult.get("data");
                     } catch (ClassCastException e){
                         String error = (String) cpanelResult.get("error");
@@ -189,6 +191,8 @@ public class DefaultVps4CpanelService implements Vps4CpanelService {
                         domains.add(domain);
                     }
                 }
+
+                domains.sort(Comparator.comparing(d -> d));
                 return domains;
             } catch (ParseException | ClassCastException e) {
                 throw new IOException("Error parsing cPanel account list response", e);

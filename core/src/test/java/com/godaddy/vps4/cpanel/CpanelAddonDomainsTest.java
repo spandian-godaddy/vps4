@@ -126,6 +126,19 @@ public class CpanelAddonDomainsTest {
     }
 
     @Test()
+    public void testListAddonDomainsSuccessAlphabetical() throws Exception {
+        String cpanelReturnVal = "{\"cpanelresult\":{\"data\":[{\"domain\":\"third.domain\"},{\"domain\":\"first" +
+                ".domain\"},{\"domain\":\"second.domain\"}]}}";
+        when(cpClient.listAddOnDomains("fakeUsername")).thenReturn(cpanelReturnVal);
+        service.listAddOnDomains(hfsVmId, "fakeUsername");
+        List<String> returnValue = new ArrayList<>();
+        returnValue.add("first.domain");
+        returnValue.add("second.domain");
+        returnValue.add("third.domain");
+        assertEquals(returnValue, service.listAddOnDomains(hfsVmId, "fakeUsername"));
+    }
+
+    @Test()
     public void testListAddonDomainsSuccessNoAddons() throws Exception{
         String cpanelReturnVal = "{\"cpanelresult\":{\"func\":\"listaddondomains\","
                 + "\"event\":{\"result\":1},"
