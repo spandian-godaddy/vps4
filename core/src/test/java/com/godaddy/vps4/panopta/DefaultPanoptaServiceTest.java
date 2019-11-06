@@ -94,7 +94,7 @@ public class DefaultPanoptaServiceTest {
         serverId = 42;
         partnerCustomerKey = "gdtest_" + vmId;
         customerKey = "someCustomerKey";
-        panoptaDetail = new PanoptaDetail(1, vmId, partnerCustomerKey,
+        panoptaDetail = new PanoptaDetail(vmId, partnerCustomerKey,
                                           customerKey, serverId, "someServerKey",
                                           Instant.now(), Instant.MAX);
         panoptaServers = new PanoptaServers();

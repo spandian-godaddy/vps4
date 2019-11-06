@@ -62,7 +62,7 @@ public class Vps4RemoveMonitoringTest {
     public void executesRemovePanoptaMonitoring() {
         command.execute(context, vmId);
         verify(context).execute(RemovePanoptaMonitoring.class, vmId);
-        verify(panoptaDataService).setServerDestroyedInPanopta(vmId);
+        verify(panoptaDataService).setPanoptaServerDestroyed(vmId);
         verify(context).execute(DeletePanoptaCustomer.class, vmId);
     }
 
@@ -71,7 +71,7 @@ public class Vps4RemoveMonitoringTest {
         when(panoptaDataService.getPanoptaDetails(vmId)).thenReturn(null);
         command.execute(context, vmId);
         verify(context, never()).execute(RemovePanoptaMonitoring.class, vmId);
-        verify(panoptaDataService, never()).setServerDestroyedInPanopta(vmId);
+        verify(panoptaDataService, never()).setPanoptaServerDestroyed(vmId);
         verify(context, never()).execute(DeletePanoptaCustomer.class, vmId);
     }
 }

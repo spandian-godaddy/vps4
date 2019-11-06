@@ -72,7 +72,8 @@ public class GetPanoptaServerDetails
         // save the panopta details (customer and server information) in the vps4 database.
         PanoptaServer finalPanoptaServer = panoptaServer;
         context.execute("CreatePanoptaDetailsInVPS4Db", ctx -> {
-            panoptaDataService.createPanoptaDetails(request.vmId, request.panoptaCustomer, finalPanoptaServer);
+            panoptaDataService.createPanoptaCustomer(request.shopperId, request.panoptaCustomer.getCustomerKey());
+            panoptaDataService.createPanoptaServer(request.vmId, request.shopperId, finalPanoptaServer);
             return null;
         }, Void.class);
 
@@ -84,6 +85,7 @@ public class GetPanoptaServerDetails
     public static class Request {
         public String partnerCustomerKey;
         public UUID vmId;
+        public String shopperId;
         public PanoptaCustomer panoptaCustomer;
     }
 

@@ -7,29 +7,23 @@ import org.apache.commons.lang3.builder.ReflectionToStringBuilder;
 import org.apache.commons.lang3.builder.ToStringStyle;
 
 public class PanoptaDetail {
-    private long panoptaDetailId;
     private UUID vmId;
     private String partnerCustomerKey;
     private String customerKey;
     private int serverId;
     private String serverKey;
-    private Instant created;
-    private Instant destroyed;
+    private Instant serverCreated;
+    private Instant serverDestroyed;
 
-    public PanoptaDetail(long panoptaDetailId, UUID vmId, String partnerCustomerKey, String customerKey,
+    public PanoptaDetail(UUID vmId, String partnerCustomerKey, String customerKey,
             int serverId, String serverKey, Instant created, Instant destroyed) {
-        this.panoptaDetailId = panoptaDetailId;
         this.vmId = vmId;
         this.partnerCustomerKey = partnerCustomerKey;
         this.customerKey = customerKey;
         this.serverId = serverId;
         this.serverKey = serverKey;
-        this.created = created;
-        this.destroyed = destroyed;
-    }
-
-    public long getPanoptaDetailId() {
-        return panoptaDetailId;
+        this.serverCreated = created;
+        this.serverDestroyed = destroyed;
     }
 
     public UUID getVmId() {
@@ -52,12 +46,12 @@ public class PanoptaDetail {
         return serverKey;
     }
 
-    public Instant getCreated() {
-        return created;
+    public Instant getServerCreated() {
+        return serverCreated;
     }
 
-    public Instant getDestroyed() {
-        return destroyed;
+    public Instant getServerDestroyed() {
+        return serverDestroyed;
     }
 
     public String toString() {

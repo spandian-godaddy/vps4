@@ -57,7 +57,7 @@ public class Vps4RemoveMonitoring implements Command<UUID, Void> {
     }
 
     private void markPanoptaMonitoringDeletedInDb() {
-        panoptaDataService.setServerDestroyedInPanopta(vmId);
+        panoptaDataService.setPanoptaServerDestroyed(vmId);
     }
 
     private void removeNodePingMonitoring() {

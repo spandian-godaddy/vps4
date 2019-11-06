@@ -157,7 +157,7 @@ public class PanoptaResourceTest {
     @Test
     public void testCustomerDeletion() {
         String customerKey = "2hum-wpmt-vswt-2g3b";
-        PanoptaDetail panoptaDetails = new PanoptaDetail(42L, vmId, "partnerCustomerKey", customerKey,
+        PanoptaDetail panoptaDetails = new PanoptaDetail(vmId, "partnerCustomerKey", customerKey,
                 23, "serverKey", Instant.now(), null);
         when(panoptaDataService.getPanoptaDetails(vmId)).thenReturn(panoptaDetails);
         panoptaResource.deleteCustomer(vmId);

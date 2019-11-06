@@ -12,30 +12,30 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
-import com.godaddy.hfs.config.Config;
-import com.godaddy.hfs.vm.VmAction;
-import com.godaddy.hfs.vm.VmService;
-import com.godaddy.vps4.panopta.PanoptaDataService;
-import com.godaddy.vps4.panopta.PanoptaDetail;
-import com.godaddy.vps4.panopta.PanoptaService;
-import com.godaddy.vps4.panopta.PanoptaServiceException;
-import com.godaddy.vps4.vm.ActionService;
-import com.godaddy.vps4.vm.ServerSpec;
-import com.godaddy.vps4.vm.ServerType;
-import com.godaddy.vps4.vm.VirtualMachine;
 import org.junit.Before;
 import org.junit.Test;
 
+import com.godaddy.hfs.config.Config;
+import com.godaddy.hfs.vm.VmAction;
+import com.godaddy.hfs.vm.VmService;
 import com.godaddy.vps4.credit.CreditService;
 import com.godaddy.vps4.credit.ECommCreditService.ProductMetaField;
 import com.godaddy.vps4.orchestration.TestCommandContext;
 import com.godaddy.vps4.orchestration.vm.Vps4ReviveZombieVm;
+import com.godaddy.vps4.panopta.PanoptaDataService;
+import com.godaddy.vps4.panopta.PanoptaDetail;
+import com.godaddy.vps4.panopta.PanoptaService;
+import com.godaddy.vps4.panopta.PanoptaServiceException;
 import com.godaddy.vps4.scheduledJob.ScheduledJob;
 import com.godaddy.vps4.scheduledJob.ScheduledJob.ScheduledJobType;
 import com.godaddy.vps4.scheduledJob.ScheduledJobService;
 import com.godaddy.vps4.scheduler.api.core.utils.Utils;
 import com.godaddy.vps4.scheduler.api.plugin.Vps4ZombieCleanupJobRequest;
 import com.godaddy.vps4.scheduler.api.web.SchedulerWebService;
+import com.godaddy.vps4.vm.ActionService;
+import com.godaddy.vps4.vm.ServerSpec;
+import com.godaddy.vps4.vm.ServerType;
+import com.godaddy.vps4.vm.VirtualMachine;
 import com.godaddy.vps4.vm.VirtualMachineService;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
@@ -96,7 +96,7 @@ public class Vps4ReviveZombieVmTest{
         when(vmService.startVm(vm.hfsVmId)).thenReturn(vma);
         when(vmService.getVmAction(vma.vmId, vma.vmActionId)).thenReturn(vma);
 
-        PanoptaDetail panoptaDetail = new PanoptaDetail(1, job.vmId, "partnerCustomerKey",
+        PanoptaDetail panoptaDetail = new PanoptaDetail(job.vmId, "partnerCustomerKey",
                                                         "customerKey", 3, "serverKey",
                                                         Instant.now(), Instant.MAX);
         when(panoptaDataService.getPanoptaDetails(job.vmId)).thenReturn(panoptaDetail);

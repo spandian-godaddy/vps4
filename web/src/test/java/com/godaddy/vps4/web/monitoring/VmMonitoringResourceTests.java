@@ -7,7 +7,6 @@ import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -120,7 +119,7 @@ public class VmMonitoringResourceTests {
     public void testGetVmUptimeForPanopta() throws PanoptaServiceException {
         PanoptaAvailability panoptaAvailability = new PanoptaAvailability();
         panoptaAvailability.availability = 0.9985360556398332;
-        PanoptaDetail panoptaDetail = new PanoptaDetail(1, vm.vmId, "partnerCustomerKey",
+        PanoptaDetail panoptaDetail = new PanoptaDetail(vm.vmId, "partnerCustomerKey",
                                                         "customerKey", 23, "serverKey",
                                                         Instant.now(), Instant.MAX);
 
@@ -160,7 +159,7 @@ public class VmMonitoringResourceTests {
 
     @Test
     public void testGetVmMonitoringEventsForPanopta() throws PanoptaServiceException, IOException {
-        PanoptaDetail panoptaDetail = new PanoptaDetail(1, vm.vmId, "partnerCustomerKey",
+        PanoptaDetail panoptaDetail = new PanoptaDetail(vm.vmId, "partnerCustomerKey",
                                                         "customerKey", 42, "serverKey",
                                                         Instant.now(), Instant.MAX);
 
