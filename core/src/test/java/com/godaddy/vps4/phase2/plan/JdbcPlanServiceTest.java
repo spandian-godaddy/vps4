@@ -29,14 +29,14 @@ public class JdbcPlanServiceTest {
     DataSource dataSource = injector.getInstance(DataSource.class);
     PlanService planService;
     int[] pfids = { 123, 234, 345, 456, 567, 678, 789, 890};
-     
+
 
     @Before
     public void prepareTest() {
         String insertQuery = "INSERT INTO plan (pfid, package_id, term_months, os_type_id, spec_id, control_panel_id, enabled) VALUES (?,?,?,?,(select distinct spec_id from virtual_machine_spec where tier = ? and valid_until = 'infinity'),?,?)";
         Sql.with(dataSource).exec(insertQuery, null, 123, "test_plan_tier_1", 12, 1, 10, 1, true);
         Sql.with(dataSource).exec(insertQuery, null, 234, "test_plan_tier_2", 12, 1, 20, 1, true);
-        Sql.with(dataSource).exec(insertQuery, null, 345, "test_plan_tier_3", 12, 1, 30, 1, true);
+        Sql.with(dataSource).exec(insertQuery, null, 345, "test_plan_tier_3", 12, 1, 30, 1, false);
         Sql.with(dataSource).exec(insertQuery, null, 456, "test_plan_tier_4", 12, 1, 40, 1, true);
         Sql.with(dataSource).exec(insertQuery, null, 567, "test_plan_tier_3_disabled", 12, 1, 30, 1, false);
         Sql.with(dataSource).exec(insertQuery, null, 678, "test_plan_tier_4_disabled", 12, 1, 40, 1, false);
@@ -64,30 +64,49 @@ public class JdbcPlanServiceTest {
     }
 
     @Test
+    public void verifyCanGetDisabledPlan() {
+        Plan plan = planService.getPlan(345);
+
+        assertEquals("test_plan_tier_3", plan.packageId);
+        assertEquals(12, plan.termMonths);
+        assertEquals(OperatingSystem.LINUX, plan.os);
+        assertEquals(30, plan.tier);
+        assertEquals(ControlPanel.CPANEL, plan.controlPanel);
+    }
+
+    @Test
     public void testGetPlanList() {
-        int[] activePfids = { 123, 234, 345, 456, 789, 890 };
+        int[] activePfids = { 123, 234, 456, 789, 890 };
 
         List<Plan> planList = planService.getPlanList();
 
         List<Integer> planListPfids = planList.stream().map(x -> x.pfid).collect(Collectors.toList());
         for (int pfid : activePfids) {
-            assertTrue(planListPfids.contains((Integer)pfid));
+            assertTrue(planListPfids.contains(pfid));
         }
     }
 
     @Test
-    public void testGetUpgradeList234() {
-        int[] upgradePfids = {345, 456};
-        int[] excludePfis = { 123, 234, 567, 678, 789, 890 };
+    public void testGetUpgradeList123() {
+        int[] upgradePfids = {234, 456};
+        int[] excludePfis = { 123, 345, 567, 678, 789, 890 };
 
-        List<Plan> planList = planService.getUpgradeList(234);
+        List<Plan> planList = planService.getUpgradeList(123);
 
         List<Integer> planListPfids = planList.stream().map(x -> x.pfid).collect(Collectors.toList());
         for (int pfid : upgradePfids) {
-            assertTrue(planListPfids.contains((Integer) pfid));
+            assertTrue(planListPfids.contains(pfid));
         }
         for (int pfid : excludePfis) {
-            assertFalse(planListPfids.contains((Integer) pfid));
+            assertFalse(planListPfids.contains(pfid));
         }
+    }
+
+    @Test
+    public void verifyDisabledPlansCanStillUpgrade() {
+        int upgradePfid = 456;
+        List<Plan> planList = planService.getUpgradeList(345);
+        List<Integer> planListPfids = planList.stream().map(x -> x.pfid).collect(Collectors.toList());
+        assertTrue(planListPfids.contains(upgradePfid));
     }
 }

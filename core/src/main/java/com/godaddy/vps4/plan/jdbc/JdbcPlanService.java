@@ -38,7 +38,7 @@ public class JdbcPlanService implements PlanService {
     private List<Plan> getPlanListFromDatabase() {
         String selectPlanQuery = "SELECT p.pfid, p.package_id, p.os_type_id, p.term_months, p.control_panel_id, p.enabled, "
                 + "s.cpu_core_count, s.memory_mib, s.disk_gib, s.tier " + "FROM plan p "
-                + "JOIN virtual_machine_spec s ON s.spec_id = p.spec_id " + "WHERE enabled;";
+                + "JOIN virtual_machine_spec s ON s.spec_id = p.spec_id;";
         return Sql.with(dataSource).exec(selectPlanQuery, Sql.listOf(this::mapPlan));
     }
 
@@ -54,6 +54,7 @@ public class JdbcPlanService implements PlanService {
         plan.diskGib = rs.getInt("disk_gib");
         plan.pfid = rs.getInt("pfid");
         plan.packageId = rs.getString("package_id");
+        plan.enabled = rs.getBoolean("enabled");
         plan.os = OperatingSystem.valueOf(rs.getInt("os_type_id"));
         plan.termMonths = rs.getInt("term_months");
         plan.tier = rs.getInt("tier");
@@ -67,8 +68,9 @@ public class JdbcPlanService implements PlanService {
         List<Plan> upgradesList = new ArrayList<Plan>();
         if(originalPlan != null) {
             upgradesList = plans.stream()
-                .filter(p -> p.os == originalPlan.os 
-                        && p.termMonths == originalPlan.termMonths 
+                .filter(p -> p.enabled
+                        && p.os == originalPlan.os
+                        && p.termMonths == originalPlan.termMonths
                         && p.controlPanel == originalPlan.controlPanel
                         && p.tier > originalPlan.tier)
                 .collect(Collectors.toList());

@@ -12,6 +12,8 @@ public class Plan {
     public int memoryMib;
     public int diskGib;
     @JsonIgnore
+    public boolean enabled;
+    @JsonIgnore
     public OperatingSystem os;
     @JsonIgnore
     public int termMonths;
