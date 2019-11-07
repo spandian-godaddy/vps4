@@ -1,7 +1,6 @@
 package com.godaddy.vps4.orchestration;
 
 import com.godaddy.vps4.orchestration.dns.Vps4CreateDnsPtrRecord;
-import com.godaddy.vps4.orchestration.panopta.CreatePanoptaCustomer;
 import com.godaddy.vps4.orchestration.hfs.sysadmin.InstallPanopta;
 import com.godaddy.vps4.orchestration.mailrelay.Vps4SetMailRelayQuota;
 import com.godaddy.vps4.orchestration.messaging.SendFailoverCompletedEmail;
@@ -13,9 +12,11 @@ import com.godaddy.vps4.orchestration.monitoring.DeletePanoptaCustomer;
 import com.godaddy.vps4.orchestration.monitoring.RemoveNodePingMonitoring;
 import com.godaddy.vps4.orchestration.monitoring.RemovePanoptaMonitoring;
 import com.godaddy.vps4.orchestration.monitoring.Vps4RemoveMonitoring;
+import com.godaddy.vps4.orchestration.panopta.CreatePanoptaCustomer;
+import com.godaddy.vps4.orchestration.panopta.GetPanoptaServerDetails;
+import com.godaddy.vps4.orchestration.panopta.GetPanoptaServerKeyFromHfs;
 import com.godaddy.vps4.orchestration.panopta.PausePanoptaMonitoring;
 import com.godaddy.vps4.orchestration.panopta.ResumePanoptaMonitoring;
-import com.godaddy.vps4.orchestration.panopta.GetPanoptaServerDetails;
 import com.godaddy.vps4.orchestration.panopta.SetupPanopta;
 import com.godaddy.vps4.orchestration.snapshot.Vps4DestroySnapshot;
 import com.godaddy.vps4.orchestration.snapshot.Vps4SnapshotVm;
@@ -29,7 +30,6 @@ import com.godaddy.vps4.orchestration.vm.Vps4AddIpAddress;
 import com.godaddy.vps4.orchestration.vm.Vps4CancelAction;
 import com.godaddy.vps4.orchestration.vm.Vps4DeleteAllScheduledJobsForVm;
 import com.godaddy.vps4.orchestration.vm.Vps4DestroyDedicated;
-import com.godaddy.vps4.orchestration.vm.Vps4RemoveIp;
 import com.godaddy.vps4.orchestration.vm.Vps4DestroyIpAddressAction;
 import com.godaddy.vps4.orchestration.vm.Vps4DestroyVm;
 import com.godaddy.vps4.orchestration.vm.Vps4EndRescue;
@@ -40,6 +40,7 @@ import com.godaddy.vps4.orchestration.vm.Vps4RebuildVm;
 import com.godaddy.vps4.orchestration.vm.Vps4RecordScheduledJobForVm;
 import com.godaddy.vps4.orchestration.vm.Vps4ReinstateDedServer;
 import com.godaddy.vps4.orchestration.vm.Vps4ReinstateServer;
+import com.godaddy.vps4.orchestration.vm.Vps4RemoveIp;
 import com.godaddy.vps4.orchestration.vm.Vps4RemoveSupportUsersFromDatabase;
 import com.godaddy.vps4.orchestration.vm.Vps4Rescue;
 import com.godaddy.vps4.orchestration.vm.Vps4RestartVm;
@@ -111,6 +112,7 @@ public class Vps4CommandModule extends AbstractModule {
         bind(CreatePanoptaCustomer.class);
         bind(InstallPanopta.class);
         bind(GetPanoptaServerDetails.class);
+        bind(GetPanoptaServerKeyFromHfs.class);
         bind(SetupPanopta.class);
     }
 }

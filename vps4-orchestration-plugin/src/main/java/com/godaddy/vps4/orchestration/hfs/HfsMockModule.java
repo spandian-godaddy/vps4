@@ -71,7 +71,6 @@ import gdg.hfs.vhfs.snapshot.Snapshot;
 import gdg.hfs.vhfs.snapshot.SnapshotAction;
 import gdg.hfs.vhfs.snapshot.SnapshotService;
 import gdg.hfs.vhfs.sysadmin.SysAdminAction;
-import gdg.hfs.vhfs.sysadmin.SysAdminInstallable;
 import gdg.hfs.vhfs.sysadmin.SysAdminService;
 
 public class HfsMockModule extends AbstractModule {
@@ -541,66 +540,6 @@ public class HfsMockModule extends AbstractModule {
             }
 
             @Override
-            public SysAdminAction addFTPUser(long l, String s, String s1, String s2, String s3) {
-                // NOTE: do nothing, Implement when needed
-                throw new UnsupportedOperationException("Not implemented, yet");
-            }
-
-            @Override
-            public SysAdminAction removeFTPUser(long l, String s, String s1, String s2) {
-                // NOTE: do nothing, Implement when needed
-                throw new UnsupportedOperationException("Not implemented, yet");
-            }
-
-            @Override
-            public SysAdminAction changeFTPPassword(long l, String s, String s1, String s2, String s3) {
-                // NOTE: do nothing, Implement when needed
-                throw new UnsupportedOperationException("Not implemented, yet");
-            }
-
-            @Override
-            public SysAdminAction addDBUser(long l, String s, String s1, String s2, String s3, String s4) {
-                // NOTE: do nothing, Implement when needed
-                throw new UnsupportedOperationException("Not implemented, yet");
-            }
-
-            @Override
-            public SysAdminAction removeDBUser(long l, String s, String s1, String s2, String s3) {
-                // NOTE: do nothing, Implement when needed
-                throw new UnsupportedOperationException("Not implemented, yet");
-            }
-
-            @Override
-            public SysAdminAction changeDBPassword(long l, String s, String s1, String s2, String s3, String s4) {
-                // NOTE: do nothing, Implement when needed
-                throw new UnsupportedOperationException("Not implemented, yet");
-            }
-
-            @Override
-            public SysAdminAction addSite(long l, String s, String s1, String s2) {
-                // NOTE: do nothing, Implement when needed
-                throw new UnsupportedOperationException("Not implemented, yet");
-            }
-
-            @Override
-            public SysAdminAction removeSite(long l, String s, String s1) {
-                // NOTE: do nothing, Implement when needed
-                throw new UnsupportedOperationException("Not implemented, yet");
-            }
-
-            @Override
-            public SysAdminAction addDB(long l, String s, String s1, String s2, String s3) {
-                // NOTE: do nothing, Implement when needed
-                throw new UnsupportedOperationException("Not implemented, yet");
-            }
-
-            @Override
-            public SysAdminAction removeDB(long l, String s, String s1, String s2, String s3) {
-                // NOTE: do nothing, Implement when needed
-                throw new UnsupportedOperationException("Not implemented, yet");
-            }
-
-            @Override
             public SysAdminAction getSysAdminAction(long sysAdminActionId) {
                 if (!sysAdminActions.containsKey(sysAdminActionId)) {
                     throw new NotFoundException("Sysadmin action not present");
@@ -617,42 +556,6 @@ public class HfsMockModule extends AbstractModule {
 
             @Override
             public List<SysAdminAction> getSysAdminActionsByServer(long l, int i, int i1) {
-                // NOTE: do nothing, Implement when needed
-                throw new UnsupportedOperationException("Not implemented, yet");
-            }
-
-            @Override
-            public List<SysAdminInstallable> getInstallables(long l) {
-                // NOTE: do nothing, Implement when needed
-                throw new UnsupportedOperationException("Not implemented, yet");
-            }
-
-            @Override
-            public SysAdminAction installPackage(long l, long l1) {
-                // NOTE: do nothing, Implement when needed
-                throw new UnsupportedOperationException("Not implemented, yet");
-            }
-
-            @Override
-            public List<SysAdminInstallable> getInstallations(long l) {
-                // NOTE: do nothing, Implement when needed
-                throw new UnsupportedOperationException("Not implemented, yet");
-            }
-
-            @Override
-            public SysAdminAction uninstallPackage(long l, long l1) {
-                // NOTE: do nothing, Implement when needed
-                throw new UnsupportedOperationException("Not implemented, yet");
-            }
-
-            @Override
-            public SysAdminAction usageStatsUpdate(long l, int i) {
-                // NOTE: do nothing, Implement when needed
-                throw new UnsupportedOperationException("Not implemented, yet");
-            }
-
-            @Override
-            public Response usageStatsResults(long l, String s, String s1) {
                 // NOTE: do nothing, Implement when needed
                 throw new UnsupportedOperationException("Not implemented, yet");
             }
@@ -693,6 +596,16 @@ public class HfsMockModule extends AbstractModule {
 
             @Override
             public SysAdminAction installPanopta(long vmId, String customerKey, String templates, String serverName, String serverKey) {
+                return null;
+            }
+
+            @Override
+            public Response panoptaNotify(String s) {
+                return null;
+            }
+
+            @Override
+            public SysAdminAction getPanoptaServerKey(long l) {
                 return null;
             }
         };
