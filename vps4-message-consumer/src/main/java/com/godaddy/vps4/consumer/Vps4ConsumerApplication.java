@@ -37,7 +37,7 @@ public class Vps4ConsumerApplication {
         setApplicationLogLevels(injector.getInstance(Config.class));
 
         boolean skipZkRegistration = Boolean.parseBoolean(System.getProperty("SkipZkRegistration"));
-        
+
         if(skipZkRegistration){
             runVps4ConsumerGroup(injector);
         }
@@ -47,7 +47,7 @@ public class Vps4ConsumerApplication {
             ZkAppRegistrationService zkAppRegistrationService =
                     new ZkAppRegistrationService(zkConfig.getPath(), zkConfig.getServiceName(),
                             ZooKeeperClient.getInstance());
-    
+
             runZkServiceRegistration(zkAppRegistrationService,
                     (() -> runVps4ConsumerGroup(injector)));
         }
@@ -111,7 +111,7 @@ public class Vps4ConsumerApplication {
 
 	private static List<Vps4ConsumerConfiguration> getVps4ConsumerConfigs(Injector injector) {
         Config config = injector.getInstance(Config.class);
-        String[] consumerNames = config.get("vps4.kafka.consumer.names", "Account,Monitoring").split(",");
+        String[] consumerNames = config.get("vps4.kafka.consumer.names", "Account,Monitoring,Panopta").split(",");
 
         List<Vps4ConsumerConfiguration> configs = new ArrayList<>();
         for(String name : consumerNames){
@@ -120,11 +120,11 @@ public class Vps4ConsumerApplication {
 		return configs;
 	}
 
-	private static Vps4ConsumerConfiguration getVps4ConsumerConfig(Injector injector, String name) {
-		KafkaConfiguration monitoringKafkaConfig = injector.getInstance(Key.get(KafkaConfiguration.class, Names.named(name)));
-        MessageHandler monitoringMessageHandler = injector.getInstance(Key.get(MessageHandler.class, Names.named(name)));
-        return new Vps4ConsumerConfiguration(monitoringKafkaConfig, monitoringMessageHandler);
-	}
+    private static Vps4ConsumerConfiguration getVps4ConsumerConfig(Injector injector, String name) {
+        KafkaConfiguration kafkaConfig = injector.getInstance(Key.get(KafkaConfiguration.class, Names.named(name)));
+        MessageHandler messageHandler = injector.getInstance(Key.get(MessageHandler.class, Names.named(name)));
+        return new Vps4ConsumerConfiguration(kafkaConfig, messageHandler);
+    }
 
     private static void runZkServiceRegistration(ZkAppRegistrationService zkAppRegistrationService, Runnable vps4ConsumerGroup) {
 
