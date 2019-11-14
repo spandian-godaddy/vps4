@@ -46,6 +46,11 @@ public interface PanoptaApiServerService {
     PanoptaServers getPanoptaServers(@QueryParam("partner_customer_key") String partnerCustomerKey);
 
     @GET
+    @Path("/")
+    PanoptaServers getPanoptaServers(@QueryParam("partner_customer_key") String partnerCustomerKey,
+                                     @QueryParam("server_key") String serverKey);
+
+    @GET
     @Path("/{server_id}")
     PanoptaServers.Server getServer(@PathParam("server_id") int serverId,
                                     @QueryParam("partner_customer_key") String partnerCustomerKey);
@@ -55,6 +60,7 @@ public interface PanoptaApiServerService {
     void setServerStatus(@PathParam("server_id") int serverId,
                          @QueryParam("partner_customer_key") String partnerCustomerKey,
                          PanoptaApiUpdateServerRequest panoptaApiUpdateServerRequest);
+
     @DELETE
     @Path("/{server_id}")
     void deleteServer(@PathParam("server_id") int serverId,

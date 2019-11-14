@@ -19,7 +19,6 @@ import org.slf4j.LoggerFactory;
 
 import com.godaddy.hfs.config.Config;
 import com.godaddy.vps4.cache.CacheName;
-import com.hazelcast.util.CollectionUtil;
 
 public class DefaultPanoptaService implements PanoptaService {
     private static final int UNLIMITED = 0;
@@ -95,7 +94,7 @@ public class DefaultPanoptaService implements PanoptaService {
     @Override
     public void deleteCustomer(UUID vmId) {
         PanoptaDetail panoptaDetails = panoptaDataService.getPanoptaDetails(vmId);
-        if(panoptaDetails != null) {
+        if (panoptaDetails != null) {
             logger.info("Deleting customer in Panopta. Panopta Details: {}", panoptaDetails.toString());
             panoptaApiCustomerService.deleteCustomer(panoptaDetails.getCustomerKey());
         }
@@ -208,31 +207,16 @@ public class DefaultPanoptaService implements PanoptaService {
     }
 
     @Override
-    public PanoptaServer getServer(UUID vmId) throws PanoptaServiceException {
-        // first check to see if the panopta details exist in the vps4 database.
-        PanoptaDetail panoptaDetail = panoptaDataService.getPanoptaDetails(vmId);
-        if (panoptaDetail != null) {
-            logger.info("Attempting to get panopta server details for vm id {} using partner customer key {} ", vmId,
-                        panoptaDetail.getPartnerCustomerKey());
-            return mapServer(panoptaDetail.getPartnerCustomerKey(), panoptaApiServerService
-                    .getServer(panoptaDetail.getServerId(), panoptaDetail.getPartnerCustomerKey()));
+    public PanoptaServer getServer(String shopperId, String serverKey) throws PanoptaServiceException {
+        String partnerCustomerKey = config.get("panopta.api.partner.customer.key.prefix") + shopperId;
+        PanoptaServers servers = panoptaApiServerService.getPanoptaServers(partnerCustomerKey, serverKey);
+        if (servers == null || servers.getServers().size() == 0) {
+            String message =
+                    String.format("No servers found for partnerCustomerKey %s, serverKey %s", partnerCustomerKey,
+                                  serverKey);
+            throw new PanoptaServiceException("SERVER_NOT_FOUND", message);
         }
-
-        // no panopta related details exist in vps4 db, fire a call to panopta to get those details
-        String partnerCustomerKey = config.get("panopta.api.partner.customer.key.prefix") + vmId;
-        logger.info("Attempting to get panopta server details using partner customer key {} ", partnerCustomerKey);
-        PanoptaServers panoptaServers = panoptaApiServerService.getPanoptaServers(partnerCustomerKey);
-        if (panoptaServers == null || CollectionUtil.isEmpty(panoptaServers.getServers())) {
-            String errorMessage = "No matching server found in Panopta for partner customer key: " + partnerCustomerKey;
-            logger.warn(errorMessage);
-            throw new PanoptaServiceException("NO_SERVER_FOUND", errorMessage);
-        }
-        if (panoptaServers.getServers().size() > 1) {
-            String errorMessage = "Multiple servers found for partner customer key: " + partnerCustomerKey;
-            logger.warn(errorMessage);
-            throw new PanoptaServiceException("MULTIPLE_PANOPTA_SERVERS_FOUND", errorMessage);
-        }
-        return mapServer(partnerCustomerKey, panoptaServers.getServers().stream().findFirst().get());
+        return mapServer(partnerCustomerKey, servers.getServers().get(0));
     }
 
     private PanoptaServer mapServer(String partnerCustomerKey, PanoptaServers.Server server) {
@@ -291,7 +275,7 @@ public class DefaultPanoptaService implements PanoptaService {
     public void removeServerMonitoring(UUID vmId) {
         PanoptaDetail panoptaDetails = panoptaDataService.getPanoptaDetails(vmId);
         logger.info("Attempting to delete server from panopta.");
-        if(panoptaDetails != null) {
+        if (panoptaDetails != null) {
             logger.info("Panopta Details: {}", panoptaDetails.toString());
             panoptaApiServerService.deleteServer(panoptaDetails.getServerId(), panoptaDetails.getPartnerCustomerKey());
         }

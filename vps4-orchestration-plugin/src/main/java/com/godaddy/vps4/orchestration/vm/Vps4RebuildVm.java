@@ -33,7 +33,6 @@ import com.godaddy.vps4.orchestration.hfs.vm.DestroyVm;
 import com.godaddy.vps4.orchestration.panopta.SetupPanopta;
 import com.godaddy.vps4.orchestration.sysadmin.ConfigureMailRelay;
 import com.godaddy.vps4.orchestration.sysadmin.ConfigureMailRelay.ConfigureMailRelayRequest;
-import com.godaddy.vps4.panopta.PanoptaDataService;
 import com.godaddy.vps4.vm.ActionService;
 import com.godaddy.vps4.vm.Image;
 import com.godaddy.vps4.vm.RebuildVmInfo;
@@ -61,7 +60,6 @@ public class Vps4RebuildVm extends ActionCommand<Vps4RebuildVm.Request, Void> {
     private final VmUserService vmUserService;
     private final CreditService creditService;
     private final Config config;
-    private final PanoptaDataService panoptaDataService;
 
     private Request request;
     private ActionState state;
@@ -71,13 +69,12 @@ public class Vps4RebuildVm extends ActionCommand<Vps4RebuildVm.Request, Void> {
     @Inject
     public Vps4RebuildVm(ActionService actionService, VirtualMachineService virtualMachineService,
                          NetworkService vps4NetworkService, VmUserService vmUserService, CreditService creditService,
-                         PanoptaDataService panoptaDataService, Config config) {
+                         Config config) {
         super(actionService);
         this.virtualMachineService = virtualMachineService;
         this.vps4NetworkService = vps4NetworkService;
         this.vmUserService = vmUserService;
         this.creditService = creditService;
-        this.panoptaDataService = panoptaDataService;
         this.config = config;
     }
 
@@ -121,7 +118,8 @@ public class Vps4RebuildVm extends ActionCommand<Vps4RebuildVm.Request, Void> {
     }
 
     private long getOriginalHfsVmId() {
-        return context.execute("GetHfsVmId", ctx -> virtualMachineService.getVirtualMachine(vps4VmId).hfsVmId, long.class);
+        return context
+                .execute("GetHfsVmId", ctx -> virtualMachineService.getVirtualMachine(vps4VmId).hfsVmId, long.class);
     }
 
     private void deleteVmInHfs(long hfsVmId) {
@@ -234,14 +232,15 @@ public class Vps4RebuildVm extends ActionCommand<Vps4RebuildVm.Request, Void> {
     }
 
     private ConfigurePleskRequest createConfigurePleskRequest(long hfsVmId) {
-        return new ConfigurePleskRequest(hfsVmId, request.rebuildVmInfo.username, request.rebuildVmInfo.encryptedPassword);
+        return new ConfigurePleskRequest(hfsVmId, request.rebuildVmInfo.username,
+                                         request.rebuildVmInfo.encryptedPassword);
     }
 
     private void setHostname(long hfsVmId) {
         setStep(RebuildVmStep.SetHostname);
 
         SetHostname.Request hfsRequest = new SetHostname.Request(hfsVmId, request.rebuildVmInfo.hostname,
-                request.rebuildVmInfo.image.getImageControlPanel());
+                                                                 request.rebuildVmInfo.image.getImageControlPanel());
         context.execute(SetHostname.class, hfsRequest);
     }
 
@@ -296,18 +295,23 @@ public class Vps4RebuildVm extends ActionCommand<Vps4RebuildVm.Request, Void> {
         // gate panopta installation using a feature flag
         boolean isPanoptaInstallationEnabled =
                 Boolean.parseBoolean(config.get("panopta.installation.enabled", "false"));
+        VirtualMachineCredit credit = getVirtualMachineCredit();
 
-        if (isPanoptaInstallationEnabled && isCreditEligibleForPanopta()) {
+        if (isPanoptaInstallationEnabled && isCreditEligibleForPanopta(credit)) {
             SetupPanopta.Request setupPanoptaRequest = new SetupPanopta.Request();
             setupPanoptaRequest.hfsVmId = hfsVmId;
             setupPanoptaRequest.orionGuid = request.rebuildVmInfo.orionGuid;
             setupPanoptaRequest.vmId = request.rebuildVmInfo.vmId;
+            setupPanoptaRequest.shopperId = credit.getShopperId();
             context.execute(SetupPanopta.class, setupPanoptaRequest);
         }
     }
 
-    private boolean isCreditEligibleForPanopta() {
-        VirtualMachineCredit credit = creditService.getVirtualMachineCredit(request.rebuildVmInfo.orionGuid);
+    private VirtualMachineCredit getVirtualMachineCredit() {
+        return creditService.getVirtualMachineCredit(request.rebuildVmInfo.orionGuid);
+    }
+
+    private boolean isCreditEligibleForPanopta(VirtualMachineCredit credit) {
         return Arrays.asList(VirtualMachineCredit.EffectiveManagedLevel.SELF_MANAGED_V2,
                              VirtualMachineCredit.EffectiveManagedLevel.MANAGED_V2,
                              VirtualMachineCredit.EffectiveManagedLevel.MANAGED_V1,

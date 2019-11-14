@@ -16,7 +16,7 @@ public interface PanoptaService {
 
     List<PanoptaGraph> getNetworkGraphs(UUID vmId, String timescale) throws PanoptaServiceException;
 
-    PanoptaServer getServer(UUID vmId) throws PanoptaServiceException;
+    PanoptaServer getServer(String shopperId, String serverKey) throws PanoptaServiceException;
 
     void pauseServerMonitoring(UUID vmId);
 

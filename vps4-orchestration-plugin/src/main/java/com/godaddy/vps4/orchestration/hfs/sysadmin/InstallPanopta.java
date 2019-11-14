@@ -30,7 +30,7 @@ public class InstallPanopta implements Command<InstallPanopta.Request, Void> {
 
     @Override
     public Void execute(CommandContext context, Request request) {
-        logger.info("Configuring panopta for orion guid {} ", request.hfsVmId);
+        logger.info("Configuring panopta for hfs vm id {} ", request.hfsVmId);
 
         SysAdminAction hfsSysAction = context.execute("InstallPanopta-" + request.hfsVmId,
                                                       ctx -> sysAdminService.installPanopta(request.hfsVmId, request.customerKey, request.templates, null, request.serverKey),

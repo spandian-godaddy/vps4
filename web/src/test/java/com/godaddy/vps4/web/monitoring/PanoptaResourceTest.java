@@ -69,6 +69,7 @@ public class PanoptaResourceTest {
     private VirtualMachine virtualMachine;
     private UUID vmId = UUID.randomUUID();
     private UUID orionGuid = UUID.randomUUID();
+   private String serverKey = "fake-server-key";
 
     @Inject
     private PanoptaServers fakePanoptaApiServers;
@@ -168,12 +169,14 @@ public class PanoptaResourceTest {
     @Test
     public void testGetServer() {
         when(config.get(eq("panopta.api.partner.customer.key.prefix"))).thenReturn("gdtest_");
+        when(virtualMachineService.getVirtualMachine(vmId)).thenReturn(virtualMachine);
+        when(creditService.getVirtualMachineCredit(eq(orionGuid))).thenReturn(credit);
         when(responseStatusType.getFamily()).thenReturn(Response.Status.Family.SUCCESSFUL);
 
-        panoptaResource.getServer(vmId);
+        panoptaResource.getServer(serverKey);
 
         try {
-            verify(panoptaService, times(1)).getServer(eq(vmId));
+            verify(panoptaService, times(1)).getServer(eq(user.getShopperId()), eq(serverKey));
         } catch (PanoptaServiceException psex) {
             fail("Unexpected exception encountered. " + psex);
         }

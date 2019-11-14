@@ -1,6 +1,8 @@
 package com.godaddy.vps4.panopta;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyInt;
 import static org.mockito.Matchers.anyString;
@@ -58,6 +60,8 @@ public class DefaultPanoptaServiceTest {
     private Cache cache;
     private int serverId;
     private UUID vmId;
+    private String shopperId;
+    private String serverKey;
     private String customerKey;
     private String partnerCustomerKey;
     private DefaultPanoptaService defaultPanoptaService;
@@ -92,10 +96,11 @@ public class DefaultPanoptaServiceTest {
         virtualMachine = new VirtualMachine();
         virtualMachine.orionGuid = UUID.randomUUID();
         serverId = 42;
-        partnerCustomerKey = "gdtest_" + vmId;
+        partnerCustomerKey = "gdtest_" + shopperId;
         customerKey = "someCustomerKey";
+        serverKey = "someServerKey";
         panoptaDetail = new PanoptaDetail(vmId, partnerCustomerKey,
-                                          customerKey, serverId, "someServerKey",
+                                          customerKey, serverId, serverKey,
                                           Instant.now(), Instant.MAX);
         panoptaServers = new PanoptaServers();
         panoptaServers.servers = new ArrayList<>();
@@ -448,23 +453,20 @@ public class DefaultPanoptaServiceTest {
     @Test
     public void testGetServer() throws PanoptaServiceException {
         when(config.get("panopta.api.partner.customer.key.prefix")).thenReturn("gdtest_");
-        when(panoptaApiServerService.getPanoptaServers(eq(partnerCustomerKey))).thenReturn(panoptaServers);
-        defaultPanoptaService.getServer(vmId);
-        verify(panoptaApiServerService).getPanoptaServers(eq(partnerCustomerKey));
+        when(panoptaApiServerService.getPanoptaServers(eq(partnerCustomerKey), eq(serverKey))).thenReturn(panoptaServers);
+        PanoptaServer server = defaultPanoptaService.getServer(shopperId, serverKey);
+        verify(panoptaApiServerService).getPanoptaServers(eq(partnerCustomerKey), eq(serverKey));
+        assertNotNull(server);
+        assertEquals(serverKey, server.serverKey);
     }
 
     @Test(expected =  PanoptaServiceException.class)
     public void testGetServerThrowsException() throws PanoptaServiceException {
-        when(panoptaApiServerService.getPanoptaServers(eq(partnerCustomerKey))).thenReturn(null);
-        defaultPanoptaService.getServer(vmId);
-        verify(panoptaApiServerService).getPanoptaServers(eq(partnerCustomerKey));
-    }
-
-    @Test(expected =  PanoptaServiceException.class)
-    public void testGetServerThrowsExceptionWhenMultipleServersFound() throws PanoptaServiceException {
-        panoptaServers.servers.add(server); // force add another entry to the list
-        when(panoptaApiServerService.getPanoptaServers(eq(partnerCustomerKey))).thenReturn(panoptaServers);
-        defaultPanoptaService.getServer(vmId);
-        verify(panoptaApiServerService).getPanoptaServers(eq(partnerCustomerKey));
+        PanoptaServers panoptaServers = new PanoptaServers();
+        panoptaServers.servers = new ArrayList<>();
+        when(panoptaApiServerService.getPanoptaServers(eq(partnerCustomerKey), eq(serverKey))).thenReturn(panoptaServers);
+        PanoptaServer server = defaultPanoptaService.getServer(shopperId, serverKey);
+        verify(panoptaApiServerService).getPanoptaServers(eq(partnerCustomerKey), eq(serverKey));
+        assertNull(server);
     }
 }

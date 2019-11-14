@@ -18,7 +18,7 @@ import gdg.hfs.orchestration.CommandContext;
 import gdg.hfs.vhfs.sysadmin.SysAdminAction;
 import gdg.hfs.vhfs.sysadmin.SysAdminService;
 
-public class GetPanoptaServerKeyFromHfsTest {
+public class WaitForPanoptaInstallKeyFromHfsTest {
 
     private GetPanoptaServerKeyFromHfs command;
     private CommandContext contextMock;

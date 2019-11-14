@@ -283,6 +283,7 @@ public class Vps4ProvisionVmTest {
         assertEquals(capturedRequest.vmId, vmId);
         assertEquals(capturedRequest.hfsVmId, hfsVmId);
         assertEquals(capturedRequest.orionGuid, orionGuid);
+        assertEquals(capturedRequest.shopperId, shopperId);
     }
 
     @Test

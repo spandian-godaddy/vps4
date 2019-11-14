@@ -22,23 +22,25 @@ import com.godaddy.vps4.panopta.PanoptaServiceException;
 
 import gdg.hfs.orchestration.CommandContext;
 
-public class GetPanoptaServerDetailsTest {
+public class WaitForPanoptaInstallTest {
 
     private PanoptaService panoptaServiceMock;
     private PanoptaDataService panoptaDataServiceMock;
     private CommandContext contextMock;
-    private GetPanoptaServerDetails command;
-    private GetPanoptaServerDetails.Request request;
+    private WaitForPanoptaInstall command;
+    private WaitForPanoptaInstall.Request request;
     private PanoptaCustomer panoptaCustomerMock;
     private PanoptaServer panoptaServerMock;
     private UUID fakeVmId = UUID.randomUUID();
-    private String fakePartnerCustomerKey = "gdtest_" + fakeVmId;
+    private String fakeShopperId = "fake-shopper-id";
+    private String fakePartnerCustomerKey = "gdtest_" + fakeShopperId;
+    private String fakeServerKey = "fake-server-key";
 
     @Before
     public void setUp() throws Exception {
         panoptaDataServiceMock = mock(PanoptaDataService.class);
         panoptaServiceMock = mock(PanoptaService.class);
-        command = new GetPanoptaServerDetails(panoptaServiceMock, panoptaDataServiceMock);
+        command = new WaitForPanoptaInstall(panoptaServiceMock);
         contextMock = mock(CommandContext.class);
         panoptaCustomerMock = mock(PanoptaCustomer.class);
         panoptaServerMock = mock(PanoptaServer.class);
@@ -48,7 +50,7 @@ public class GetPanoptaServerDetailsTest {
 
     private void setupMockContext() {
         try {
-            when(panoptaServiceMock.getServer(eq(fakeVmId))).thenReturn(panoptaServerMock);
+            when(panoptaServiceMock.getServer(eq(fakeShopperId), eq(fakeServerKey))).thenReturn(panoptaServerMock);
         } catch (PanoptaServiceException psex) {
             fail("Unexpected Exception during test setup " + psex);
         }
@@ -56,27 +58,19 @@ public class GetPanoptaServerDetailsTest {
     }
 
     private void setupCommandRequest() {
-        request = new GetPanoptaServerDetails.Request();
-        request.panoptaCustomer = panoptaCustomerMock;
+        request = new WaitForPanoptaInstall.Request();
         request.vmId = fakeVmId;
-        request.partnerCustomerKey = fakePartnerCustomerKey;
+        request.shopperId = fakeShopperId;
+        request.serverKey = fakeServerKey;
     }
 
     @Test
     public void invokesGetServerOnPanoptaService() {
         command.execute(contextMock, request);
         try {
-            verify(panoptaServiceMock, times(1)).getServer(eq(fakeVmId));
+            verify(panoptaServiceMock, times(1)).getServer(eq(fakeShopperId), eq(fakeServerKey));
         } catch (PanoptaServiceException psex) {
             fail("Unexpected exception encountered. " + psex);
         }
     }
-
-    @Test
-    public void savesPanoptaDetailsInVps4Db() {
-        command.execute(contextMock, request);
-        verify(contextMock, times(1)).execute(eq("CreatePanoptaDetailsInVPS4Db"), any(Function.class), eq(Void.class));
-    }
-
-
 }

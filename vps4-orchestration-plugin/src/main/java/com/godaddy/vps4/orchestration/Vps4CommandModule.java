@@ -13,7 +13,7 @@ import com.godaddy.vps4.orchestration.monitoring.RemoveNodePingMonitoring;
 import com.godaddy.vps4.orchestration.monitoring.RemovePanoptaMonitoring;
 import com.godaddy.vps4.orchestration.monitoring.Vps4RemoveMonitoring;
 import com.godaddy.vps4.orchestration.panopta.CreatePanoptaCustomer;
-import com.godaddy.vps4.orchestration.panopta.GetPanoptaServerDetails;
+import com.godaddy.vps4.orchestration.panopta.WaitForPanoptaInstall;
 import com.godaddy.vps4.orchestration.panopta.GetPanoptaServerKeyFromHfs;
 import com.godaddy.vps4.orchestration.panopta.PausePanoptaMonitoring;
 import com.godaddy.vps4.orchestration.panopta.ResumePanoptaMonitoring;
@@ -111,7 +111,7 @@ public class Vps4CommandModule extends AbstractModule {
         bind(DeletePanoptaCustomer.class);
         bind(CreatePanoptaCustomer.class);
         bind(InstallPanopta.class);
-        bind(GetPanoptaServerDetails.class);
+        bind(WaitForPanoptaInstall.class);
         bind(GetPanoptaServerKeyFromHfs.class);
         bind(SetupPanopta.class);
     }

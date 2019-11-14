@@ -35,17 +35,13 @@ import com.godaddy.vps4.orchestration.hfs.network.BindIp;
 import com.godaddy.vps4.orchestration.hfs.network.UnbindIp;
 import com.godaddy.vps4.orchestration.hfs.plesk.ConfigurePlesk;
 import com.godaddy.vps4.orchestration.hfs.plesk.ConfigurePlesk.ConfigurePleskRequest;
-import com.godaddy.vps4.orchestration.hfs.sysadmin.InstallPanopta;
 import com.godaddy.vps4.orchestration.hfs.sysadmin.SetHostname;
 import com.godaddy.vps4.orchestration.hfs.sysadmin.SetPassword;
 import com.godaddy.vps4.orchestration.hfs.sysadmin.ToggleAdmin;
 import com.godaddy.vps4.orchestration.hfs.vm.CreateVm;
 import com.godaddy.vps4.orchestration.hfs.vm.DestroyVm;
-import com.godaddy.vps4.orchestration.panopta.SetupPanopta;
 import com.godaddy.vps4.orchestration.sysadmin.ConfigureMailRelay;
 import com.godaddy.vps4.orchestration.sysadmin.ConfigureMailRelay.ConfigureMailRelayRequest;
-import com.godaddy.vps4.panopta.PanoptaDataService;
-import com.godaddy.vps4.panopta.PanoptaDetail;
 import com.godaddy.vps4.vm.ActionService;
 import com.godaddy.vps4.vm.Image;
 import com.godaddy.vps4.vm.Image.ControlPanel;
@@ -68,8 +64,6 @@ public class Vps4RebuildVmTest {
     NetworkService vps4NetworkService = mock(NetworkService.class);
     VmUserService vmUserService = mock(VmUserService.class);
     CreditService creditService = mock(CreditService.class);
-    PanoptaDataService panoptaDataService = mock(PanoptaDataService.class);
-    PanoptaDetail panoptaDetail = mock(PanoptaDetail.class);
     Config  config = mock(Config.class);
     VirtualMachineCredit credit = mock(VirtualMachineCredit.class);
 
@@ -81,8 +75,6 @@ public class Vps4RebuildVmTest {
     long ipAddressId = 34L;
     VirtualMachine vm;
     VmAction action;
-    String fakeServerKey = "ultra-fake-server-key";
-    String fakeCustomerKey = "super-fake-customer-key";
 
     UnbindIp unbindIp = mock(UnbindIp.class);
     DestroyVm destroyVm = mock(DestroyVm.class);
@@ -95,8 +87,6 @@ public class Vps4RebuildVmTest {
     ToggleAdmin enableAdmin = mock(ToggleAdmin.class);
     SetPassword setPassword = mock(SetPassword.class);
     ConfigureMailRelay setMailRelay = mock(ConfigureMailRelay.class);
-    InstallPanopta installPanopta = mock(InstallPanopta.class);
-
 
     Vps4RebuildVm.Request request;
 
@@ -112,15 +102,13 @@ public class Vps4RebuildVmTest {
         binder.bind(ToggleAdmin.class).toInstance(enableAdmin);
         binder.bind(SetPassword.class).toInstance(setPassword);
         binder.bind(ConfigureMailRelay.class).toInstance(setMailRelay);
-        binder.bind(PanoptaDataService.class).toInstance(panoptaDataService);
         binder.bind(Config.class).toInstance(config);
-        binder.bind(InstallPanopta.class).toInstance(installPanopta);
         binder.bind(CreditService.class).toInstance(creditService);
     });
     CommandContext context = spy(new TestCommandContext(new GuiceCommandProvider(injector)));
 
     Vps4RebuildVm command = new Vps4RebuildVm(actionService, virtualMachineService,
-                                              vps4NetworkService, vmUserService, creditService, panoptaDataService, config);
+                                              vps4NetworkService, vmUserService, creditService, config);
 
     @Before
     public void setupTest() {
@@ -327,131 +315,6 @@ public class Vps4RebuildVmTest {
         ConfigureMailRelayRequest request = argument.getValue();
         assertEquals(newHfsVmId, request.vmId);
         assertEquals("cpanel", request.controlPanel);
-    }
-
-    @Test
-    public void configuresPanoptaOnRebuildForFullyManaged() {
-        when(config.get(eq("panopta.installation.enabled"), eq("false"))).thenReturn("true");
-        when(panoptaDataService.getPanoptaDetails(eq(vps4VmId))).thenReturn(panoptaDetail);
-        when(panoptaDetail.getCustomerKey()).thenReturn(fakeCustomerKey);
-        when(panoptaDetail.getServerKey()).thenReturn(fakeServerKey);
-        when(config.get(eq("panopta.api.templates.FULLY_MANAGED.linux"))).thenReturn("fake-template-id");
-        when(creditService.getVirtualMachineCredit(orionGuid)).thenReturn(credit);
-        when(credit.effectiveManagedLevel()).thenReturn(VirtualMachineCredit.EffectiveManagedLevel.FULLY_MANAGED);
-        when(credit.getOperatingSystem()).thenReturn("linux");
-        when(credit.hasMonitoring()).thenReturn(true);
-
-        command.execute(context, request);
-
-        ArgumentCaptor<SetupPanopta.Request> argumentCaptor = ArgumentCaptor.forClass(SetupPanopta.Request.class);
-        verify(context).execute(eq(SetupPanopta.class), argumentCaptor.capture());
-        SetupPanopta.Request setupPanoptaRequest = argumentCaptor.getValue();
-        assertEquals(newHfsVmId, setupPanoptaRequest.hfsVmId);
-        assertEquals(orionGuid, setupPanoptaRequest.orionGuid);
-        assertEquals(vps4VmId, setupPanoptaRequest.vmId);
-    }
-
-    @Test
-    public void configuresPanoptaOnRebuildForManagedV1() {
-        when(config.get(eq("panopta.installation.enabled"), eq("false"))).thenReturn("true");
-        when(panoptaDataService.getPanoptaDetails(eq(vps4VmId))).thenReturn(panoptaDetail);
-        when(panoptaDetail.getCustomerKey()).thenReturn(fakeCustomerKey);
-        when(panoptaDetail.getServerKey()).thenReturn(fakeServerKey);
-        when(config.get(eq("panopta.api.templates.MANAGED_V1.linux"))).thenReturn("fake-template-id");
-        when(creditService.getVirtualMachineCredit(orionGuid)).thenReturn(credit);
-        when(credit.effectiveManagedLevel()).thenReturn(VirtualMachineCredit.EffectiveManagedLevel.FULLY_MANAGED);
-        when(credit.getOperatingSystem()).thenReturn("linux");
-        when(credit.hasMonitoring()).thenReturn(true);
-
-        command.execute(context, request);
-
-        ArgumentCaptor<SetupPanopta.Request> argumentCaptor = ArgumentCaptor.forClass(SetupPanopta.Request.class);
-        verify(context).execute(eq(SetupPanopta.class), argumentCaptor.capture());
-        SetupPanopta.Request setupPanoptaRequest = argumentCaptor.getValue();
-        assertEquals(newHfsVmId, setupPanoptaRequest.hfsVmId);
-        assertEquals(orionGuid, setupPanoptaRequest.orionGuid);
-        assertEquals(vps4VmId, setupPanoptaRequest.vmId);
-    }
-
-    @Test
-    public void configuresPanoptaOnRebuildForManagedV2() {
-        when(config.get(eq("panopta.installation.enabled"), eq("false"))).thenReturn("true");
-        when(panoptaDataService.getPanoptaDetails(eq(vps4VmId))).thenReturn(panoptaDetail);
-        when(panoptaDetail.getCustomerKey()).thenReturn(fakeCustomerKey);
-        when(panoptaDetail.getServerKey()).thenReturn(fakeServerKey);
-        when(config.get(eq("panopta.api.templates.MANAGED_V2.linux"))).thenReturn("fake-template-id");
-        when(creditService.getVirtualMachineCredit(orionGuid)).thenReturn(credit);
-        when(credit.effectiveManagedLevel()).thenReturn(VirtualMachineCredit.EffectiveManagedLevel.FULLY_MANAGED);
-        when(credit.getOperatingSystem()).thenReturn("linux");
-        when(credit.hasMonitoring()).thenReturn(true);
-
-        command.execute(context, request);
-
-        ArgumentCaptor<SetupPanopta.Request> argumentCaptor = ArgumentCaptor.forClass(SetupPanopta.Request.class);
-        verify(context).execute(eq(SetupPanopta.class), argumentCaptor.capture());
-        SetupPanopta.Request setupPanoptaRequest = argumentCaptor.getValue();
-        assertEquals(newHfsVmId, setupPanoptaRequest.hfsVmId);
-        assertEquals(orionGuid, setupPanoptaRequest.orionGuid);
-        assertEquals(vps4VmId, setupPanoptaRequest.vmId);
-    }
-
-    @Test
-    public void configuresPanoptaOnRebuildForSelfManagedV2() {
-        when(config.get(eq("panopta.installation.enabled"), eq("false"))).thenReturn("true");
-        when(panoptaDataService.getPanoptaDetails(eq(vps4VmId))).thenReturn(panoptaDetail);
-        when(panoptaDetail.getCustomerKey()).thenReturn(fakeCustomerKey);
-        when(panoptaDetail.getServerKey()).thenReturn(fakeServerKey);
-        when(config.get(eq("panopta.api.templates.SELF_MANAGED_V2.linux"))).thenReturn("fake-template-id");
-        when(creditService.getVirtualMachineCredit(orionGuid)).thenReturn(credit);
-        when(credit.effectiveManagedLevel()).thenReturn(VirtualMachineCredit.EffectiveManagedLevel.FULLY_MANAGED);
-        when(credit.getOperatingSystem()).thenReturn("linux");
-        when(credit.hasMonitoring()).thenReturn(true);
-
-        command.execute(context, request);
-
-        ArgumentCaptor<SetupPanopta.Request> argumentCaptor = ArgumentCaptor.forClass(SetupPanopta.Request.class);
-        verify(context).execute(eq(SetupPanopta.class), argumentCaptor.capture());
-        SetupPanopta.Request setupPanoptaRequest = argumentCaptor.getValue();
-        assertEquals(newHfsVmId, setupPanoptaRequest.hfsVmId);
-        assertEquals(orionGuid, setupPanoptaRequest.orionGuid);
-        assertEquals(vps4VmId, setupPanoptaRequest.vmId);
-    }
-
-    @Test
-    public void updatesCreditAfterPanoptaInstallation() {
-        when(config.get(eq("panopta.installation.enabled"), eq("false"))).thenReturn("true");
-        when(panoptaDataService.getPanoptaDetails(eq(vps4VmId))).thenReturn(panoptaDetail);
-        when(panoptaDetail.getCustomerKey()).thenReturn(fakeCustomerKey);
-        when(panoptaDetail.getServerKey()).thenReturn(fakeServerKey);
-        when(config.get(eq("panopta.api.templates.FULLY_MANAGED.linux"))).thenReturn("fake-template-id");
-        when(creditService.getVirtualMachineCredit(orionGuid)).thenReturn(credit);
-        when(credit.effectiveManagedLevel()).thenReturn(VirtualMachineCredit.EffectiveManagedLevel.FULLY_MANAGED);
-        when(credit.getOperatingSystem()).thenReturn("linux");
-        when(credit.hasMonitoring()).thenReturn(true);
-
-        command.execute(context, request);
-
-        verify(context).execute(eq(SetupPanopta.class), any());
-        verify(creditService).setPanoptaInstalled(eq(orionGuid), eq(true));
-    }
-
-    @Test
-    public void doesNotInstallPanoptaForExistingSelfManagedV1() {
-        when(config.get(eq("panopta.installation.enabled"), eq("false"))).thenReturn("true");
-        when(panoptaDataService.getPanoptaDetails(eq(vps4VmId))).thenReturn(panoptaDetail);
-        when(panoptaDetail.getCustomerKey()).thenReturn(fakeCustomerKey);
-        when(panoptaDetail.getServerKey()).thenReturn(fakeServerKey);
-        when(config.get(eq("panopta.api.templates.SELF_MANAGED_V1.linux"))).thenReturn("fake-template-id");
-        when(creditService.getVirtualMachineCredit(orionGuid)).thenReturn(credit);
-        when(credit.effectiveManagedLevel()).thenReturn(VirtualMachineCredit.EffectiveManagedLevel.SELF_MANAGED_V1);
-        when(credit.getOperatingSystem()).thenReturn("linux");
-        when(credit.hasMonitoring()).thenReturn(true);
-
-        command.execute(context, request);
-
-        verify(context, never()).execute(eq(SetupPanopta.class), any());
-        verify(creditService, never()).setPanoptaInstalled(eq(orionGuid), eq(true));
-
     }
 
     @Test

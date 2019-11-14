@@ -9,6 +9,7 @@ import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
 
 import org.apache.commons.lang3.StringUtils;
@@ -53,18 +54,21 @@ public class PanoptaResource {
     private final VirtualMachineService virtualMachineService;
     private final VmResource vmResource;
     private Config config;
+    private GDUser gdUser;
 
     @Inject
     public PanoptaResource(PanoptaService panoptaService,
                            CreditService creditService,
                            VirtualMachineService virtualMachineService,
                            VmResource vmResource,
-                           Config config) {
+                           Config config,
+                           GDUser gdUser) {
         this.panoptaService = panoptaService;
         this.creditService = creditService;
         this.virtualMachineService = virtualMachineService;
         this.vmResource = vmResource;
         this.config = config;
+        this.gdUser = gdUser;
     }
 
     @POST
@@ -114,16 +118,19 @@ public class PanoptaResource {
     }
 
     @GET
-    @Path("/server/{vmId}")
-    @ApiOperation(value = "Get the vps4 server instance from panopta", notes = "Get the vps4 server instance from panopta")
+    @Path("/servers")
+    @ApiOperation(value = "Get the vps4 server instance from panopta", notes = "Get the vps4 server instance from " +
+            "panopta")
     @ApiResponses(value = {
             @ApiResponse(code = 404, message = "Could not locate server in panopta, or server does not exist.")
     })
-    public PanoptaServer getServer(@PathParam("vmId") UUID vmId) {
+    public PanoptaServer getServer(@QueryParam("serverKey") String serverKey) {
         try {
-            return panoptaService.getServer(vmId);
+            return panoptaService.getServer(gdUser.getShopperId(), serverKey);
         } catch (PanoptaServiceException e) {
-            logger.warn("Encountered exception while attempting to get server from panopta for vmId: " + vmId, e);
+            logger.warn(
+                    "Encountered exception while attempting to get server from panopta for server key: {}", serverKey,
+                    e);
             throw new Vps4Exception(e.getId(), e.getMessage(), e);
         }
     }

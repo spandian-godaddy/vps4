@@ -2,6 +2,7 @@ package com.godaddy.vps4.orchestration.panopta;
 
 import static org.junit.Assert.assertEquals;
 import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.anyLong;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
@@ -25,8 +26,11 @@ import com.godaddy.vps4.panopta.PanoptaCustomer;
 import com.godaddy.vps4.panopta.PanoptaDataService;
 import com.godaddy.vps4.panopta.PanoptaDetail;
 import com.godaddy.vps4.panopta.PanoptaServer;
+import com.godaddy.vps4.panopta.jdbc.PanoptaCustomerDetails;
+import com.godaddy.vps4.panopta.jdbc.PanoptaServerDetails;
 
 import gdg.hfs.orchestration.CommandContext;
+import gdg.hfs.vhfs.sysadmin.SysAdminAction;
 
 @RunWith(MockitoJUnitRunner.class)
 public class SetupPanoptaTest {
@@ -35,41 +39,46 @@ public class SetupPanoptaTest {
     private CommandContext commandContextMock;
     private PanoptaServer panoptaServerMock;
     private PanoptaCustomer panoptaCustomerMock;
+    private PanoptaCustomerDetails panoptaCustomerDetailsMock;
+    private PanoptaServerDetails panoptaServerDetailsMock;
     private CreatePanoptaCustomer createPanoptaCustomerMock;
     private CreatePanoptaCustomer.Response createPanoptaCustomerResponse;
-    private GetPanoptaServerDetails getPanoptaServerDetailsMock;
-    private GetPanoptaServerDetails.Response getPanoptaServerDetailsResponse;
+    private WaitForPanoptaInstall waitForPanoptaInstallMock;
     private InstallPanopta installPanoptaMock;
     private PanoptaDataService panoptaDataServiceMock;
     private PanoptaDetail panoptaDetailMock;
     private Config configMock;
     private SetupPanopta command;
     private SetupPanopta.Request request;
+    private SysAdminAction sysAdminActionMock;
     private UUID fakeVmId;
     private UUID fakeOrionGuid;
     private long fakeHfsVmId;
     private String fakeCustomerKey;
     private String fakePanoptaTemplates;
     private String fakeServerKey;
+    private String fakeShopperId;
     private VirtualMachineCredit creditMock;
     @Captor
     private ArgumentCaptor<CreatePanoptaCustomer.Request> createPanoptaRequestCaptor;
     @Captor
     private ArgumentCaptor<InstallPanopta.Request> installPanoptaRequestCaptor;
     @Captor
-    private ArgumentCaptor<GetPanoptaServerDetails.Request> getPanoptaDetailsRequestCaptor;
+    private ArgumentCaptor<WaitForPanoptaInstall.Request> getPanoptaServerRequestCaptor;
 
     @Before
     public void setUp() throws Exception {
         fakeVmId = UUID.randomUUID();
         fakeOrionGuid = UUID.randomUUID();
         fakeHfsVmId = 1234L;
+        fakeShopperId = "fake-shopper-id";
         fakeCustomerKey = "so-very-fake-customer-key";
+        fakeServerKey = "ultra-fake-server-key";
         fakePanoptaTemplates = "super-fake-panopta-template";
         creditServiceMock = mock(CreditService.class);
         commandContextMock = mock(CommandContext.class);
         createPanoptaCustomerMock = mock(CreatePanoptaCustomer.class);
-        getPanoptaServerDetailsMock = mock(GetPanoptaServerDetails.class);
+        waitForPanoptaInstallMock = mock(WaitForPanoptaInstall.class);
         installPanoptaMock = mock(InstallPanopta.class);
         panoptaCustomerMock = mock(PanoptaCustomer.class);
         panoptaServerMock = mock(PanoptaServer.class);
@@ -77,11 +86,13 @@ public class SetupPanoptaTest {
         configMock = mock(Config.class);
         creditMock = mock(VirtualMachineCredit.class);
         panoptaDetailMock = mock(PanoptaDetail.class);
+        sysAdminActionMock = mock(SysAdminAction.class);
+        panoptaCustomerDetailsMock = mock(PanoptaCustomerDetails.class);
+        panoptaServerDetailsMock = mock(PanoptaServerDetails.class);
 
         command = new SetupPanopta(creditServiceMock, panoptaDataServiceMock, configMock);
 
         setupFakePanoptaCustomerResponse();
-        setupFakePanoptaServerResponse();
         setupMockContext();
         setupCommandRequest();
         setupMocksForTests();
@@ -90,8 +101,9 @@ public class SetupPanoptaTest {
     private void setupMockContext() {
         when(commandContextMock.execute(eq(CreatePanoptaCustomer.class), any(CreatePanoptaCustomer.Request.class)))
                 .thenReturn(createPanoptaCustomerResponse);
-        when(commandContextMock.execute(eq(GetPanoptaServerDetails.class), any(GetPanoptaServerDetails.Request.class)))
-                .thenReturn(getPanoptaServerDetailsResponse);
+        when(commandContextMock.execute(eq(GetPanoptaServerKeyFromHfs.class), anyLong())).thenReturn(sysAdminActionMock);
+        when(commandContextMock.execute(eq(WaitForPanoptaInstall.class), any(WaitForPanoptaInstall.Request.class)))
+                .thenReturn(panoptaServerMock);
     }
 
     private void setupCommandRequest() {
@@ -99,17 +111,13 @@ public class SetupPanoptaTest {
         request.vmId = fakeVmId;
         request.orionGuid = fakeOrionGuid;
         request.hfsVmId = fakeHfsVmId;
+        request.shopperId = fakeShopperId;
         request.panoptaTemplates = fakePanoptaTemplates;
     }
 
     private void setupFakePanoptaCustomerResponse() {
         createPanoptaCustomerResponse = new CreatePanoptaCustomer.Response();
         createPanoptaCustomerResponse.panoptaCustomer = panoptaCustomerMock;
-    }
-
-    private void setupFakePanoptaServerResponse() {
-        getPanoptaServerDetailsResponse = new GetPanoptaServerDetails.Response();
-        getPanoptaServerDetailsResponse.panoptaServer = panoptaServerMock;
     }
 
     private void setupMocksForTests() {
@@ -123,6 +131,9 @@ public class SetupPanoptaTest {
 
     @Test
     public void invokesCreatePanoptaCustomer() {
+        when(panoptaDataServiceMock.getPanoptaCustomerDetails(eq(fakeShopperId))).thenReturn(null).thenReturn(panoptaCustomerDetailsMock);
+        when(panoptaDataServiceMock.getPanoptaServerDetails(eq(fakeVmId))).thenReturn(null);
+        when(panoptaCustomerDetailsMock.getCustomerKey()).thenReturn(fakeCustomerKey);
         command.execute(commandContextMock, request);
 
         verify(commandContextMock, times(1))
@@ -134,20 +145,32 @@ public class SetupPanoptaTest {
     }
 
     @Test
-    public void invokesGetPanoptaServerDetails() {
+    public void invokesWaitForPanoptaInstall() {
+        when(panoptaDataServiceMock.getPanoptaCustomerDetails(eq(fakeShopperId))).thenReturn(panoptaCustomerDetailsMock);
+        when(panoptaCustomerDetailsMock.getCustomerKey()).thenReturn(fakeCustomerKey);
         command.execute(commandContextMock, request);
 
         verify(commandContextMock, times(1))
-                .execute(eq(GetPanoptaServerDetails.class), getPanoptaDetailsRequestCaptor.capture());
-        GetPanoptaServerDetails.Request capturedRequest = getPanoptaDetailsRequestCaptor.getValue();
+                .execute(eq(WaitForPanoptaInstall.class), getPanoptaServerRequestCaptor.capture());
+        WaitForPanoptaInstall.Request capturedRequest = getPanoptaServerRequestCaptor.getValue();
         assertEquals("Expected vm id in request does not match actual value. ", fakeVmId, capturedRequest.vmId);
-        assertEquals("Expected panopta customer in request does not match actual value. ", panoptaCustomerMock,
-                     capturedRequest.panoptaCustomer);
+        assertEquals("Expected shopper id in request does not match actual value. ", fakeShopperId, capturedRequest.shopperId);
     }
 
     @Test
-    public void invokesInstallPanopta() {
-        when(panoptaCustomerMock.getCustomerKey()).thenReturn(fakeCustomerKey);
+    public void invokesGetServerKeyFromHfs() {
+        when(panoptaDataServiceMock.getPanoptaCustomerDetails(eq(fakeShopperId))).thenReturn(panoptaCustomerDetailsMock);
+        when(panoptaCustomerDetailsMock.getCustomerKey()).thenReturn(fakeCustomerKey);
+        command.execute(commandContextMock, request);
+
+        verify(commandContextMock, times(1))
+                .execute(eq(GetPanoptaServerKeyFromHfs.class), eq(fakeHfsVmId));
+    }
+
+    @Test
+    public void invokesInstallPanoptaOnProvisions() {
+        when(panoptaDataServiceMock.getPanoptaCustomerDetails(eq(fakeShopperId))).thenReturn(panoptaCustomerDetailsMock);
+        when(panoptaCustomerDetailsMock.getCustomerKey()).thenReturn(fakeCustomerKey);
         command.execute(commandContextMock, request);
 
         verify(commandContextMock, times(1)).execute(eq(InstallPanopta.class), installPanoptaRequestCaptor.capture());
@@ -160,9 +183,10 @@ public class SetupPanoptaTest {
 
     @Test
     public void invokesInstallPanoptaOnRebuilds() {
-        when(panoptaDataServiceMock.getPanoptaDetails(eq(fakeVmId))).thenReturn(panoptaDetailMock);
-        when(panoptaDetailMock.getCustomerKey()).thenReturn(fakeCustomerKey);
-        when(panoptaDetailMock.getServerKey()).thenReturn(fakeServerKey);
+        when(panoptaDataServiceMock.getPanoptaCustomerDetails(eq(fakeShopperId))).thenReturn(panoptaCustomerDetailsMock);
+        when(panoptaDataServiceMock.getPanoptaServerDetails(eq(fakeVmId))).thenReturn(panoptaServerDetailsMock);
+        when(panoptaServerDetailsMock.getServerKey()).thenReturn(fakeServerKey);
+        when(panoptaCustomerDetailsMock.getCustomerKey()).thenReturn(fakeCustomerKey);
         command.execute(commandContextMock, request);
 
         verify(commandContextMock, times(1)).execute(eq(InstallPanopta.class), installPanoptaRequestCaptor.capture());

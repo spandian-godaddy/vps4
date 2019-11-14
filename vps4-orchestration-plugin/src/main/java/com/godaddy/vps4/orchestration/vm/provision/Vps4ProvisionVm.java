@@ -329,17 +329,18 @@ public class Vps4ProvisionVm extends ActionCommand<ProvisionRequest, Vps4Provisi
 
         if (isPanoptaInstallationEnabled) {
             setStep(InstallPanopta);
-            installPanopta(hfsVmId, credit);
+            installPanopta(hfsVmId);
         } else if(request.vmInfo.hasMonitoring) {
             configureNodeping(ipAddress);
         }
     }
 
-    private void installPanopta(long hfsVmId, VirtualMachineCredit credit) {
+    private void installPanopta(long hfsVmId) {
         SetupPanopta.Request setupPanoptaRequest = new SetupPanopta.Request();
         setupPanoptaRequest.hfsVmId = hfsVmId;
         setupPanoptaRequest.orionGuid = request.orionGuid;
         setupPanoptaRequest.vmId = request.vmInfo.vmId;
+        setupPanoptaRequest.shopperId = request.shopperId;
         context.execute(SetupPanopta.class, setupPanoptaRequest);
     }
 

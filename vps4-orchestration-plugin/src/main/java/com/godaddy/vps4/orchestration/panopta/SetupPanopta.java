@@ -4,6 +4,7 @@ import java.util.UUID;
 
 import javax.inject.Inject;
 
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -13,11 +14,13 @@ import com.godaddy.vps4.credit.VirtualMachineCredit;
 import com.godaddy.vps4.orchestration.hfs.sysadmin.InstallPanopta;
 import com.godaddy.vps4.panopta.PanoptaCustomer;
 import com.godaddy.vps4.panopta.PanoptaDataService;
-import com.godaddy.vps4.panopta.PanoptaDetail;
 import com.godaddy.vps4.panopta.PanoptaServer;
+import com.godaddy.vps4.panopta.jdbc.PanoptaCustomerDetails;
+import com.godaddy.vps4.panopta.jdbc.PanoptaServerDetails;
 
 import gdg.hfs.orchestration.Command;
 import gdg.hfs.orchestration.CommandContext;
+import gdg.hfs.vhfs.sysadmin.SysAdminAction;
 
 public class SetupPanopta implements Command<SetupPanopta.Request, Void> {
 
@@ -38,21 +41,19 @@ public class SetupPanopta implements Command<SetupPanopta.Request, Void> {
     public Void execute(CommandContext context, Request request) {
 
         // get panopta details from vps4 DB
-        PanoptaDetail panoptaDetail = panoptaDataService.getPanoptaDetails(request.vmId);
-        if (panoptaDetail != null) {
-            // Since we already have the panopta details, this is likely a rebuild of vm where panopta was already
-            // installed on previous vm, so we just install panopta on the new vm using the existing server_key
-            installPanoptaOnVm(panoptaDetail.getCustomerKey(), panoptaDetail.getServerKey(), request, context);
+        PanoptaCustomerDetails panoptaCustomerDetails = panoptaDataService.getPanoptaCustomerDetails(request.shopperId);
+        PanoptaServerDetails panoptaServerDetails = panoptaDataService.getPanoptaServerDetails(request.vmId);
+        if (panoptaServerDetails != null && panoptaCustomerDetails != null
+                && StringUtils.isNotBlank(panoptaServerDetails.getServerKey())) {
+            // this is a rebuild vm - so install panopta on rebuild.
+            installPanoptaOnRebuild(panoptaServerDetails, panoptaCustomerDetails, request, context);
+        } else if (panoptaCustomerDetails != null) {
+            // existing customer in panopta with new vm provision, install panopta on new vm
+            installPanoptaOnProvision(panoptaCustomerDetails, request, context);
         } else {
-            // if panopta was never installed on the vm, this is a first time panopta install
-            // create panopta customer in Panopta
-            PanoptaCustomer panoptaCustomer = getPanoptaCustomer(context, request);
-
-            // install panopta on the vm, no server key is passed in since this is a brand new install
-            installPanoptaOnVm(panoptaCustomer.getCustomerKey(), null, request, context);
-
-            // get server information from Panopta and save in VPS4 Database
-            getServerDetailsAndSaveInVps4Db(context, request, panoptaCustomer);
+            // new customer, create new customer in panopta and install panopta on new vm
+            panoptaCustomerDetails = createNewCustomerInPanopta(request, context);
+            installPanoptaOnProvision(panoptaCustomerDetails, request, context);
         }
 
         // update credit to reflect panopta was installed
@@ -60,33 +61,61 @@ public class SetupPanopta implements Command<SetupPanopta.Request, Void> {
         return null;
     }
 
-    private void getServerDetailsAndSaveInVps4Db(CommandContext context, Request request,
-                                                 PanoptaCustomer panoptaCustomer) {
-        GetPanoptaServerDetails.Request serverDetailsRequest =
-                getServerDetailsRequest(request, panoptaCustomer);
-        GetPanoptaServerDetails.Response getPanoptaServerDetailsResponse =
-                context.execute(GetPanoptaServerDetails.class, serverDetailsRequest);
-        PanoptaServer panoptaServer = getPanoptaServerDetailsResponse.getPanoptaServer();
-        logger.info("Panopta Server Details: " + panoptaServer.toString());
+    private void installPanoptaOnRebuild(PanoptaServerDetails panoptaServerDetails,
+                                         PanoptaCustomerDetails panoptaCustomerDetails, Request request,
+                                         CommandContext context) {
+        installPanoptaOnVm(panoptaCustomerDetails.getCustomerKey(), panoptaServerDetails.getServerKey(), request,
+                           context);
     }
 
-    private PanoptaCustomer getPanoptaCustomer(CommandContext context, Request request) {
+    private void installPanoptaOnProvision(PanoptaCustomerDetails panoptaCustomerDetails, Request request,
+                                           CommandContext context) {
+        installPanoptaOnVm(panoptaCustomerDetails.getCustomerKey(), null, request, context);
+        updateVps4DbWithPanoptaServerInfo(context, request);
+    }
+
+    private PanoptaCustomerDetails createNewCustomerInPanopta(Request request, CommandContext context) {
+        PanoptaCustomer panoptaCustomer = createCustomerInPanopta(context, request);
+        savePanoptaCustomerInVps4Db(request, panoptaCustomer);
+        return panoptaDataService.getPanoptaCustomerDetails(request.shopperId);
+    }
+
+    private PanoptaCustomer createCustomerInPanopta(CommandContext context, Request request) {
         CreatePanoptaCustomer.Request createCustomerRequest = new CreatePanoptaCustomer.Request();
         createCustomerRequest.vmId = request.vmId;
         CreatePanoptaCustomer.Response createCustomerResponse =
                 context.execute(CreatePanoptaCustomer.class, createCustomerRequest);
-        PanoptaCustomer panoptaCustomer = createCustomerResponse.panoptaCustomer;
-        logger.info("Customer created in Panopta: " + panoptaCustomer.toString());
-        return panoptaCustomer;
+        return createCustomerResponse.getPanoptaCustomer();
     }
 
-    private GetPanoptaServerDetails.Request getServerDetailsRequest(Request request,
-                                                                    PanoptaCustomer panoptaCustomer) {
-        GetPanoptaServerDetails.Request getPanoptaServerDetailsRequest = new GetPanoptaServerDetails.Request();
-        getPanoptaServerDetailsRequest.partnerCustomerKey = panoptaCustomer.partnerCustomerKey;
-        getPanoptaServerDetailsRequest.vmId = request.vmId;
-        getPanoptaServerDetailsRequest.panoptaCustomer = panoptaCustomer;
-        return getPanoptaServerDetailsRequest;
+    private void savePanoptaCustomerInVps4Db(Request request, PanoptaCustomer panoptaCustomer) {
+        // save panopta customer details in vps4 db
+        panoptaDataService.createPanoptaCustomer(request.shopperId, panoptaCustomer.getCustomerKey());
+    }
+
+    private void updateVps4DbWithPanoptaServerInfo(CommandContext context, Request request) {
+        // get the server key from HFS
+        String serverKey = getServerKeyFromHfs(context, request);
+        // get server information from Panopta using the server key
+        PanoptaServer panoptaServer = getPanoptaServerByServerkey(context, request, serverKey);
+        // save server information in VPS4 Database
+        panoptaDataService.createPanoptaServer(request.vmId, request.shopperId, panoptaServer);
+    }
+
+    private String getServerKeyFromHfs(CommandContext context, Request request) {
+        SysAdminAction sysAdminAction =
+                context.execute(GetPanoptaServerKeyFromHfs.class, request.hfsVmId);
+        String panoptaServerKey = sysAdminAction.resultSet;
+        logger.debug("Panopta Server Key: " + panoptaServerKey);
+        return panoptaServerKey;
+    }
+
+    private PanoptaServer getPanoptaServerByServerkey(CommandContext context, Request request, String serverKey) {
+        WaitForPanoptaInstall.Request getPanoptaServerRequest = new WaitForPanoptaInstall.Request();
+        getPanoptaServerRequest.shopperId = request.shopperId;
+        getPanoptaServerRequest.serverKey = serverKey;
+        getPanoptaServerRequest.vmId = request.vmId;
+        return context.execute(WaitForPanoptaInstall.class, getPanoptaServerRequest);
     }
 
     private void installPanoptaOnVm(String customerKey, String serverKey, SetupPanopta.Request request,
@@ -104,13 +133,14 @@ public class SetupPanopta implements Command<SetupPanopta.Request, Void> {
     private String setPanoptaTemplates(SetupPanopta.Request request) {
         VirtualMachineCredit credit = creditService.getVirtualMachineCredit(request.orionGuid);
         return config.get("panopta.api.templates." + credit.effectiveManagedLevel().toString()
-                                                      + "." + credit.getOperatingSystem().toLowerCase());
+                                  + "." + credit.getOperatingSystem().toLowerCase());
     }
 
     public static class Request {
         public UUID vmId;
         public UUID orionGuid;
         public long hfsVmId;
+        public String shopperId;
         public String panoptaTemplates;
     }
 }
