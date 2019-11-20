@@ -1,12 +1,12 @@
 package com.godaddy.vps4.orchestration.vm.provision;
 
 import static com.godaddy.vps4.vm.CreateVmStep.ConfigureMailRelay;
+import static com.godaddy.vps4.vm.CreateVmStep.ConfigureMonitoring;
 import static com.godaddy.vps4.vm.CreateVmStep.ConfigureNodeping;
 import static com.godaddy.vps4.vm.CreateVmStep.ConfiguringCPanel;
 import static com.godaddy.vps4.vm.CreateVmStep.ConfiguringNetwork;
 import static com.godaddy.vps4.vm.CreateVmStep.ConfiguringPlesk;
 import static com.godaddy.vps4.vm.CreateVmStep.GeneratingHostname;
-import static com.godaddy.vps4.vm.CreateVmStep.InstallPanopta;
 import static com.godaddy.vps4.vm.CreateVmStep.RequestingIPAddress;
 import static com.godaddy.vps4.vm.CreateVmStep.RequestingMailRelay;
 import static com.godaddy.vps4.vm.CreateVmStep.RequestingServer;
@@ -328,7 +328,6 @@ public class Vps4ProvisionVm extends ActionCommand<ProvisionRequest, Vps4Provisi
         boolean isPanoptaInstallationEnabled = Boolean.parseBoolean(config.get("panopta.installation.enabled", "false"));
 
         if (isPanoptaInstallationEnabled) {
-            setStep(InstallPanopta);
             installPanopta(hfsVmId);
         } else if(request.vmInfo.hasMonitoring) {
             configureNodeping(ipAddress);
@@ -336,6 +335,7 @@ public class Vps4ProvisionVm extends ActionCommand<ProvisionRequest, Vps4Provisi
     }
 
     private void installPanopta(long hfsVmId) {
+        setStep(ConfigureMonitoring);
         SetupPanopta.Request setupPanoptaRequest = new SetupPanopta.Request();
         setupPanoptaRequest.hfsVmId = hfsVmId;
         setupPanoptaRequest.orionGuid = request.orionGuid;

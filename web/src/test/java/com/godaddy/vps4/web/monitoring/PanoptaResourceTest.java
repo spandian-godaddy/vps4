@@ -163,7 +163,7 @@ public class PanoptaResourceTest {
         when(panoptaDataService.getPanoptaDetails(vmId)).thenReturn(panoptaDetails);
         panoptaResource.deleteCustomer(vmId);
 
-        verify(panoptaService, times(1)).deleteCustomer(vmId);
+        verify(panoptaService, times(1)).deleteCustomer(user.getShopperId());
     }
 
     @Test

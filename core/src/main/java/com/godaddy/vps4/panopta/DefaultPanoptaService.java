@@ -19,6 +19,7 @@ import org.slf4j.LoggerFactory;
 
 import com.godaddy.hfs.config.Config;
 import com.godaddy.vps4.cache.CacheName;
+import com.godaddy.vps4.panopta.jdbc.PanoptaCustomerDetails;
 
 public class DefaultPanoptaService implements PanoptaService {
     private static final int UNLIMITED = 0;
@@ -92,11 +93,11 @@ public class DefaultPanoptaService implements PanoptaService {
     }
 
     @Override
-    public void deleteCustomer(UUID vmId) {
-        PanoptaDetail panoptaDetails = panoptaDataService.getPanoptaDetails(vmId);
-        if (panoptaDetails != null) {
-            logger.info("Deleting customer in Panopta. Panopta Details: {}", panoptaDetails.toString());
-            panoptaApiCustomerService.deleteCustomer(panoptaDetails.getCustomerKey());
+    public void deleteCustomer(String shopperId) {
+        PanoptaCustomerDetails panoptaCustomerDetails = panoptaDataService.getPanoptaCustomerDetails(shopperId);
+        if (panoptaCustomerDetails != null) {
+            logger.info("Deleting customer in Panopta. Panopta Details: {}", panoptaCustomerDetails.toString());
+            panoptaApiCustomerService.deleteCustomer(panoptaCustomerDetails.getCustomerKey());
         }
     }
 

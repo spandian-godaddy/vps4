@@ -12,10 +12,14 @@ import java.util.UUID;
 import org.junit.Before;
 import org.junit.Test;
 
+import com.godaddy.vps4.credit.CreditService;
+import com.godaddy.vps4.credit.VirtualMachineCredit;
 import com.godaddy.vps4.network.IpAddress;
 import com.godaddy.vps4.network.NetworkService;
 import com.godaddy.vps4.panopta.PanoptaDataService;
 import com.godaddy.vps4.panopta.PanoptaDetail;
+import com.godaddy.vps4.vm.VirtualMachine;
+import com.godaddy.vps4.vm.VirtualMachineService;
 
 import gdg.hfs.orchestration.CommandContext;
 
@@ -23,19 +27,29 @@ public class Vps4RemoveMonitoringTest {
 
     NetworkService vps4NetworkService = mock(NetworkService.class);
     PanoptaDataService panoptaDataService = mock(PanoptaDataService.class);
+    VirtualMachineService virtualMachineService = mock(VirtualMachineService.class);
+    CreditService creditService = mock(CreditService.class);
+    VirtualMachine virtualMachine = mock(VirtualMachine.class);
+    VirtualMachineCredit credit = mock(VirtualMachineCredit.class);
     CommandContext context = mock(CommandContext.class);
     IpAddress primaryIp = mock(IpAddress.class);
     PanoptaDetail panoptaDetails = mock(PanoptaDetail.class);
     Long pingCheckId = 23L;
     UUID vmId = UUID.randomUUID();
+    String shopperId = "fake-shopper-id";
 
-    Vps4RemoveMonitoring command = new Vps4RemoveMonitoring(vps4NetworkService, panoptaDataService);
+    Vps4RemoveMonitoring command = new Vps4RemoveMonitoring(vps4NetworkService, panoptaDataService, creditService,
+                                                            virtualMachineService);
 
     @Before
     public void setUp() {
         primaryIp.pingCheckId = pingCheckId;
         when(vps4NetworkService.getVmPrimaryAddress(vmId)).thenReturn(primaryIp);
         when(panoptaDataService.getPanoptaDetails(vmId)).thenReturn(panoptaDetails);
+        when(panoptaDataService.checkAndSetPanoptaCustomerDestroyed(shopperId)).thenReturn(true);
+        when(virtualMachineService.getVirtualMachine(vmId)).thenReturn(virtualMachine);
+        when(creditService.getVirtualMachineCredit(any())).thenReturn(credit);
+        when(credit.getShopperId()).thenReturn(shopperId);
     }
 
     @Test
@@ -63,7 +77,7 @@ public class Vps4RemoveMonitoringTest {
         command.execute(context, vmId);
         verify(context).execute(RemovePanoptaMonitoring.class, vmId);
         verify(panoptaDataService).setPanoptaServerDestroyed(vmId);
-        verify(context).execute(DeletePanoptaCustomer.class, vmId);
+        verify(context).execute(DeletePanoptaCustomer.class, shopperId);
     }
 
     @Test
@@ -72,6 +86,6 @@ public class Vps4RemoveMonitoringTest {
         command.execute(context, vmId);
         verify(context, never()).execute(RemovePanoptaMonitoring.class, vmId);
         verify(panoptaDataService, never()).setPanoptaServerDestroyed(vmId);
-        verify(context, never()).execute(DeletePanoptaCustomer.class, vmId);
+        verify(context, never()).execute(DeletePanoptaCustomer.class, shopperId);
     }
 }

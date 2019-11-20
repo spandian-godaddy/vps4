@@ -6,7 +6,7 @@ import java.util.UUID;
 public interface PanoptaService {
     PanoptaCustomer createCustomer(UUID vmId) throws PanoptaServiceException;
 
-    void deleteCustomer(UUID vmId);
+    void deleteCustomer(String shopperId);
 
     List<PanoptaGraphId> getUsageIds(UUID vmId);
 

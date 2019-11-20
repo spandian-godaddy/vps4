@@ -37,6 +37,7 @@ import com.godaddy.hfs.config.Config;
 import com.godaddy.vps4.cache.CacheName;
 import com.godaddy.vps4.credit.CreditService;
 import com.godaddy.vps4.credit.VirtualMachineCredit;
+import com.godaddy.vps4.panopta.jdbc.PanoptaCustomerDetails;
 import com.godaddy.vps4.util.ObjectMapperProvider;
 import com.godaddy.vps4.vm.AccountStatus;
 import com.godaddy.vps4.vm.DataCenterService;
@@ -66,6 +67,7 @@ public class DefaultPanoptaServiceTest {
     private String partnerCustomerKey;
     private DefaultPanoptaService defaultPanoptaService;
     private PanoptaDetail panoptaDetail;
+    private PanoptaCustomerDetails panoptaCustomerDetails;
     private PanoptaServers panoptaServers;
     private PanoptaServers.Server server;
     private PanoptaApiCustomerList panoptaApiCustomerList;
@@ -88,6 +90,7 @@ public class DefaultPanoptaServiceTest {
         panoptaApiCustomerService = mock(PanoptaApiCustomerService.class);
         panoptaDataService = mock(PanoptaDataService.class);
         panoptaApiCustomerList = mock(PanoptaApiCustomerList.class);
+        panoptaCustomerDetails = mock(PanoptaCustomerDetails.class);
         virtualMachineService = mock(VirtualMachineService.class);
         creditService = mock(CreditService.class);
         config = mock(Config.class);
@@ -411,8 +414,9 @@ public class DefaultPanoptaServiceTest {
 
     @Test
     public void deleteCustomerCallsPanoptaApiDeleteCustomer() {
-        when(panoptaDataService.getPanoptaDetails(vmId)).thenReturn(panoptaDetail);
-        defaultPanoptaService.deleteCustomer(vmId);
+        when(panoptaDataService.getPanoptaCustomerDetails(shopperId)).thenReturn(panoptaCustomerDetails);
+        when(panoptaCustomerDetails.getCustomerKey()).thenReturn(customerKey);
+        defaultPanoptaService.deleteCustomer(shopperId);
         verify(panoptaApiCustomerService).deleteCustomer(customerKey);
     }
 

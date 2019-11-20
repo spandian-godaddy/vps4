@@ -128,7 +128,7 @@ public class JdbcPanoptaDataService implements PanoptaDataService {
     public PanoptaDetail getPanoptaDetails(UUID vmId) {
         return Sql.with(dataSource).exec(
                 "SELECT pc.partner_customer_key, pc.customer_key, ps.vm_id, ps.server_id, ps.server_key, " +
-                        "ps.created, ps.destroyed " +
+                        " ps.created, ps.destroyed " +
                         " FROM panopta_customer pc " +
                         " JOIN panopta_server ps USING (partner_customer_key) " +
                         " WHERE ps.vm_id = ?  AND ps.destroyed = 'infinity' ",

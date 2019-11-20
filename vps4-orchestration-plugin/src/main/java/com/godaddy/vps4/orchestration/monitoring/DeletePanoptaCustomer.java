@@ -1,7 +1,5 @@
 package com.godaddy.vps4.orchestration.monitoring;
 
-import java.util.UUID;
-
 import javax.inject.Inject;
 
 import com.godaddy.vps4.panopta.PanoptaService;
@@ -13,10 +11,10 @@ import gdg.hfs.orchestration.CommandRetryStrategy;
 
 @CommandMetadata(
         name = "DeletePanoptaCustomer",
-        requestType = UUID.class,
+        requestType = String.class,
         retryStrategy = CommandRetryStrategy.NEVER
 )
-public class DeletePanoptaCustomer implements Command<UUID, Void> {
+public class DeletePanoptaCustomer implements Command<String, Void> {
 
     private final PanoptaService panoptaService;
 
@@ -26,8 +24,8 @@ public class DeletePanoptaCustomer implements Command<UUID, Void> {
     }
 
     @Override
-    public Void execute(CommandContext context, UUID vmId) {
-        panoptaService.deleteCustomer(vmId);
+    public Void execute(CommandContext context, String shopperId) {
+        panoptaService.deleteCustomer(shopperId);
         return null;
     }
 }

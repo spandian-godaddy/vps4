@@ -105,12 +105,14 @@ public class PanoptaResource {
 
     @DELETE
     @Path("/customers/{vmId}")
-    @ApiOperation(value = "Delete a vps4 panopta customer", notes = "Delete a vps4 panopta customer")
+    @ApiOperation(value = "Delete a panopta server and customer",
+            notes = "Delete a panopta server and customer if there are no active servers associated with the customer.")
     @ApiResponses(value = {
             @ApiResponse(code = 404, message = "Could not delete customer, or customer does not exist.")
     })
     public void deleteCustomer(@PathParam("vmId") UUID vmId) {
-        panoptaService.deleteCustomer(vmId);
+        panoptaService.removeServerMonitoring(vmId);
+        panoptaService.deleteCustomer(gdUser.getShopperId());
     }
 
     public static class CreateCustomerRequest {
