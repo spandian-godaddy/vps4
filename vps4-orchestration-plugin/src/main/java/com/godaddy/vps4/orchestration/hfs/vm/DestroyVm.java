@@ -5,6 +5,7 @@ import javax.inject.Inject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.godaddy.hfs.vm.Vm;
 import com.godaddy.hfs.vm.VmAction;
 import com.godaddy.hfs.vm.VmService;
 import com.godaddy.vps4.hfs.HfsVmTrackingRecordService;
@@ -31,7 +32,7 @@ public class DestroyVm implements Command<DestroyVm.Request, VmAction> {
 
         long hfsVmId = request.hfsVmId;
 
-        if (hfsVmId == 0 || isAlreadyDestroyed(hfsVmId)) {
+        if (shouldSkipHfsDestroy(hfsVmId)) {
             logger.info("Skipping deletion of HFS VM {} - already deleted or non-existent", hfsVmId);
             return null;
         }
@@ -52,8 +53,19 @@ public class DestroyVm implements Command<DestroyVm.Request, VmAction> {
         }, Void.class);
     }
 
-    private boolean isAlreadyDestroyed(long hfsVmId) {
-        return vmService.getVm(hfsVmId).status.equals("DESTROYED");
+    private boolean shouldSkipHfsDestroy(long hfsVmId) {
+        if (hfsVmId == 0)
+            return true;
+        Vm hfsVm = vmService.getVm(hfsVmId);
+        return isAlreadyDestroyed(hfsVm.status) || hasNoResourceId(hfsVm.resourceId);
+    }
+
+    private boolean isAlreadyDestroyed(String hfsStatus) {
+       return hfsStatus.equals("DESTROYED");
+    }
+
+    private boolean hasNoResourceId(String hfsResourceId) {
+        return hfsResourceId == null;
     }
 
     public static class Request implements ActionRequest {

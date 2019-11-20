@@ -9,10 +9,10 @@ public class Vm {
 	public boolean running;
 	public boolean useable;
 	
-	public String resource_id;
+	public String resourceId;
 	public String resource;
-	public String resource_uuid;
-	public String resource_region;
+	public String resourceUuid;
+	public String resourceRegion;
 	public String tag;
 	
 	public VmAddress address;
@@ -34,8 +34,8 @@ public class Vm {
     @Override
     public String toString() {
         return "Vm [vmId=" + vmId + ", status=" + status + ", running=" + running + ", useable=" + useable
-                + ", resource=" + resource + ", resource_id=" + resource_id + ", resource_uuid=" + resource_uuid
-                + ", resource_region=" + resource_region + ", tag=" + tag + ", address=" + address + ", osinfo=" + osinfo
+                + ", resource=" + resource + ", resource_id=" + resourceId + ", resource_uuid=" + resourceUuid
+                + ", resource_region=" + resourceRegion + ", tag=" + tag + ", address=" + address + ", osinfo=" + osinfo
                 + ", sgid=" + sgid + ", cpuCores=" + cpuCores + ", ramMiB=" + ramMiB + ", diskGiB=" + diskGiB
                 + ", rawFlavor=" + rawFlavor + ", created=" + created + ", prepared=" + prepared + ", disabled=" + disabled + "]";
     }

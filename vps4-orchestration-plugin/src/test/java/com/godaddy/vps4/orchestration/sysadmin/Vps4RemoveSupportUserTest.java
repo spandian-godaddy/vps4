@@ -53,7 +53,7 @@ public class Vps4RemoveSupportUserTest {
     private Vm createVm(long hfsVmId) {
         Vm vm = new Vm();
         vm.vmId = hfsVmId;
-        vm.resource_uuid = UUID.randomUUID().toString();
+        vm.resourceUuid = UUID.randomUUID().toString();
         vm.status = "ACTIVE";
         return vm;
     }

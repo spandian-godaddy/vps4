@@ -177,7 +177,7 @@ public class Vps4ProvisionDedicatedTest {
         hfsIp.ip_address = "1.2.3.4";
         hfsVm = new Vm();
         hfsVm.address = hfsIp;
-        hfsVm.resource_id = "test.resourceid.com";
+        hfsVm.resourceId = "test.resourceid.com";
         when(vmService.getVm(anyLong())).thenReturn(hfsVm);
 
 
@@ -278,7 +278,7 @@ public class Vps4ProvisionDedicatedTest {
         SetHostname.Request req = setHostnameArgumentCaptor.getValue();
         assertEquals(req.controlPanel, request.vmInfo.image.getImageControlPanel());
         assertEquals(req.hfsVmId, hfsVmId);
-        assertEquals(hfsVm.resource_id, req.hostname);
+        assertEquals(hfsVm.resourceId, req.hostname);
     }
 
     @Test

@@ -117,7 +117,7 @@ public class GetVirtualMachineTest {
     private VmService getMockedVmService() {
         hfsVm = new Vm();
         hfsVm.vmId = hfsVmId;
-        hfsVm.resource_id = "foobar";
+        hfsVm.resourceId = "foobar";
         VmService vmService = mock(VmService.class);
         when(vmService.getVm(hfsVmId)).thenReturn(hfsVm);
         return vmService;
@@ -143,7 +143,7 @@ public class GetVirtualMachineTest {
     public void testGetVirtualMachineDetails() {
         VirtualMachineDetails vmDetails = vmResource.getVirtualMachineDetails(vmId);
         assertEquals(new Long(hfsVm.vmId), vmDetails.vmId);
-        assertEquals(hfsVm.resource_id, vmDetails.resourceId);
+        assertEquals(hfsVm.resourceId, vmDetails.resourceId);
     }
 
     @Test

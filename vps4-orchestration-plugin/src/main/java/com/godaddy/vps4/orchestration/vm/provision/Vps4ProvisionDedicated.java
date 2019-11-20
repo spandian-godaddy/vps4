@@ -118,9 +118,9 @@ public class Vps4ProvisionDedicated extends ActionCommand<ProvisionRequest, Vps4
 
         configureControlPanel(hfsVmId);
 
-        setHostname(hfsVmId, hfsVm.resource_id);
+        setHostname(hfsVmId, hfsVm.resourceId);
 
-        createPTRRecord(hfsVm.resource_id);
+        createPTRRecord(hfsVm.resourceId);
 
         configureAdminUser(hfsVmId, request.vmInfo.vmId);
 

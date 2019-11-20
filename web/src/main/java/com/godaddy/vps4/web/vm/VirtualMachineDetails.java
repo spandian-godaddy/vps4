@@ -26,7 +26,7 @@ public class VirtualMachineDetails {
             status = hfsVm.status;
             running = hfsVm.running;
             useable = hfsVm.useable;
-            resourceId = hfsVm.resource_id;
+            resourceId = hfsVm.resourceId;
         }
     }
 
