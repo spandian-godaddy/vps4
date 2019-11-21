@@ -1,5 +1,6 @@
 package com.godaddy.hfs.vm;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 public class Vm {
 
@@ -9,9 +10,12 @@ public class Vm {
 	public boolean running;
 	public boolean useable;
 	
+    @JsonProperty("resource_id")
 	public String resourceId;
 	public String resource;
+    @JsonProperty("resource_uuid")
 	public String resourceUuid;
+    @JsonProperty("resource_region")
 	public String resourceRegion;
 	public String tag;
 	
