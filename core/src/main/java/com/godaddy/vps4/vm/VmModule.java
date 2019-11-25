@@ -14,6 +14,7 @@ import com.godaddy.vps4.vm.jdbc.JdbcImageService;
 import com.godaddy.vps4.vm.jdbc.JdbcVirtualMachineService;
 import com.godaddy.vps4.vm.jdbc.JdbcVmActionService;
 import com.godaddy.vps4.vm.jdbc.JdbcVmAlertService;
+import com.godaddy.vps4.vm.jdbc.JdbcVmOutageService;
 import com.godaddy.vps4.vm.jdbc.JdbcVmUserService;
 import com.google.inject.AbstractModule;
 
@@ -32,5 +33,6 @@ public class VmModule extends AbstractModule {
         bind(ScheduledJobService.class).to(JdbcScheduledJobService.class);
         bind(MonitorService.class).to(JdbcMonitorService.class);
         bind(VmAlertService.class).to(JdbcVmAlertService.class);
+        bind(VmOutageService.class).to(JdbcVmOutageService.class);
     }
 }
