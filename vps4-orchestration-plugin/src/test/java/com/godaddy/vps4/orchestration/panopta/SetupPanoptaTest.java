@@ -1,6 +1,9 @@
 package com.godaddy.vps4.orchestration.panopta;
 
+import static org.hamcrest.CoreMatchers.not;
+import static org.hamcrest.Matchers.containsString;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertThat;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyLong;
 import static org.mockito.Matchers.eq;
@@ -58,6 +61,7 @@ public class SetupPanoptaTest {
     private String fakePanoptaTemplates;
     private String fakeServerKey;
     private String fakeShopperId;
+    private String fakeDataCenterTemplate;
     private VirtualMachineCredit creditMock;
     @Captor
     private ArgumentCaptor<CreatePanoptaCustomer.Request> createPanoptaRequestCaptor;
@@ -75,6 +79,7 @@ public class SetupPanoptaTest {
         fakeCustomerKey = "so-very-fake-customer-key";
         fakeServerKey = "ultra-fake-server-key";
         fakePanoptaTemplates = "super-fake-panopta-template";
+        fakeDataCenterTemplate = "mega-fake-data-center-template";
         creditServiceMock = mock(CreditService.class);
         commandContextMock = mock(CommandContext.class);
         createPanoptaCustomerMock = mock(CreatePanoptaCustomer.class);
@@ -127,6 +132,7 @@ public class SetupPanoptaTest {
         when(configMock.get(eq("panopta.api.templates."
                                        + VirtualMachineCredit.EffectiveManagedLevel.FULLY_MANAGED.toString()
                                        + ".linux"))).thenReturn(fakePanoptaTemplates);
+        when(configMock.get("panopta.api.templates.webhook")).thenReturn(fakeDataCenterTemplate);
     }
 
     @Test
@@ -178,7 +184,7 @@ public class SetupPanoptaTest {
         assertEquals("Expected HFS vm id in request does not match actual value. ", fakeHfsVmId,
                      capturedRequest.hfsVmId);
         assertEquals(fakeCustomerKey, capturedRequest.customerKey);
-        assertEquals(fakePanoptaTemplates, capturedRequest.templates);
+        assertEquals(fakePanoptaTemplates + "," + fakeDataCenterTemplate , capturedRequest.templates);
     }
 
     @Test
@@ -195,6 +201,31 @@ public class SetupPanoptaTest {
                      fakeHfsVmId);
         assertEquals(fakeCustomerKey, capturedRequest.customerKey);
         assertEquals(fakeServerKey, capturedRequest.serverKey);
-        assertEquals(fakePanoptaTemplates, capturedRequest.templates);
+        assertEquals(fakePanoptaTemplates + "," + fakeDataCenterTemplate , capturedRequest.templates);
+    }
+
+    @Test
+    public void installsManagedTemplateForSelfManagedWithMonitoring() {
+        String fakePanoptaTemplateForManaged = "fake-managed-panopta-template";
+        when(creditMock.effectiveManagedLevel()).thenReturn(VirtualMachineCredit.EffectiveManagedLevel.SELF_MANAGED_V1);
+        when(configMock.get(eq("panopta.api.templates."
+                                       + VirtualMachineCredit.EffectiveManagedLevel.SELF_MANAGED_V1.toString()
+                                       + ".linux"))).thenReturn(fakePanoptaTemplateForManaged);
+
+        when(panoptaDataServiceMock.getPanoptaCustomerDetails(eq(fakeShopperId))).thenReturn(panoptaCustomerDetailsMock);
+        when(panoptaDataServiceMock.getPanoptaServerDetails(eq(fakeVmId))).thenReturn(panoptaServerDetailsMock);
+        when(panoptaServerDetailsMock.getServerKey()).thenReturn(fakeServerKey);
+        when(panoptaCustomerDetailsMock.getCustomerKey()).thenReturn(fakeCustomerKey);
+        command.execute(commandContextMock, request);
+
+        verify(commandContextMock, times(1)).execute(eq(InstallPanopta.class), installPanoptaRequestCaptor.capture());
+        InstallPanopta.Request capturedRequest = installPanoptaRequestCaptor.getValue();
+        assertEquals("Expected HFS vm id in request does not match actual value. ", capturedRequest.hfsVmId,
+                     fakeHfsVmId);
+        assertEquals(fakeCustomerKey, capturedRequest.customerKey);
+        assertEquals(fakeServerKey, capturedRequest.serverKey);
+        assertEquals(fakePanoptaTemplateForManaged + "," + fakeDataCenterTemplate , capturedRequest.templates);
+        assertThat(capturedRequest.templates, not(containsString(fakePanoptaTemplates)));
+
     }
 }

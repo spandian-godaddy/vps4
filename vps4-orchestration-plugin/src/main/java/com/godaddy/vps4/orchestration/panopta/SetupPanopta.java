@@ -1,5 +1,9 @@
 package com.godaddy.vps4.orchestration.panopta;
 
+import static com.godaddy.vps4.credit.VirtualMachineCredit.EffectiveManagedLevel.MANAGED_V2;
+import static com.godaddy.vps4.credit.VirtualMachineCredit.EffectiveManagedLevel.SELF_MANAGED_V1;
+import static com.godaddy.vps4.credit.VirtualMachineCredit.EffectiveManagedLevel.SELF_MANAGED_V2;
+
 import java.util.UUID;
 
 import javax.inject.Inject;
@@ -132,8 +136,21 @@ public class SetupPanopta implements Command<SetupPanopta.Request, Void> {
 
     private String setPanoptaTemplates(SetupPanopta.Request request) {
         VirtualMachineCredit credit = creditService.getVirtualMachineCredit(request.orionGuid);
-        return config.get("panopta.api.templates." + credit.effectiveManagedLevel().toString()
-                                  + "." + credit.getOperatingSystem().toLowerCase());
+        String baseTemplate = config.get("panopta.api.templates." + credit.effectiveManagedLevel().toString()
+                                                 + "." + credit.getOperatingSystem().toLowerCase());
+        String datacenterTemplate = config.get("panopta.api.templates.webhook");
+        if (isSelfManagedCustomerWithMonitoringEnabled(credit)) {
+            baseTemplate = config.get(
+                    "panopta.api.templates." + MANAGED_V2.toString()
+                            + "." + credit.getOperatingSystem().toLowerCase());
+        }
+        return baseTemplate + "," + datacenterTemplate;
+    }
+
+    private boolean isSelfManagedCustomerWithMonitoringEnabled(VirtualMachineCredit credit) {
+        return (credit.hasMonitoring() &&
+                (credit.effectiveManagedLevel() == SELF_MANAGED_V1 ||
+                        credit.effectiveManagedLevel() == SELF_MANAGED_V2));
     }
 
     public static class Request {

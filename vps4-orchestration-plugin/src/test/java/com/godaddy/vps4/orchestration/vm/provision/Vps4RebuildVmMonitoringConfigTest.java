@@ -168,7 +168,7 @@ public class Vps4RebuildVmMonitoringConfigTest {
         when(panoptaCustomerDetails.getCustomerKey()).thenReturn(fakeCustomerKey);
         when(panoptaServerDetails.getServerKey()).thenReturn(fakeServerKey);
         when(credit.getDataCenter()).thenReturn(dummyDataCenter);
-        when(config.get(eq("panopta.api.templates.iad2"))).thenReturn("fake-datacenter-template-id");
+        when(config.get(eq("panopta.api.templates.webhook"))).thenReturn("fake-datacenter-template-id");
         when(creditService.getVirtualMachineCredit(eq(orionGuid))).thenReturn(credit);
         when(credit.getOperatingSystem()).thenReturn("linux");
         when(credit.hasMonitoring()).thenReturn(true);
