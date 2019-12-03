@@ -22,6 +22,7 @@ public class CreatePanoptaCustomer implements Command<CreatePanoptaCustomer.Requ
 
     public static class Request {
         public UUID vmId;
+        public String shopperId;
     }
 
     public static class Response {
@@ -39,7 +40,7 @@ public class CreatePanoptaCustomer implements Command<CreatePanoptaCustomer.Requ
 
     @Override
     public CreatePanoptaCustomer.Response execute(CommandContext context, CreatePanoptaCustomer.Request request) {
-        logger.debug("Creating customer in panopta for hfs vm id {} ", request.vmId);
+        logger.debug("Creating customer in panopta for hfs vm id {} and shopper {}", request.vmId, request.shopperId);
 
         // execute the call to create customer in Panopta using the panopta api
         PanoptaCustomer panoptaCustomer = context.execute("CreatePanoptaCustomer", ctx -> {
@@ -53,7 +54,7 @@ public class CreatePanoptaCustomer implements Command<CreatePanoptaCustomer.Requ
 
     private PanoptaCustomer getPanoptaCustomer(Request request) {
         try {
-            return panoptaService.createCustomer(request.vmId);
+            return panoptaService.createCustomer(request.shopperId);
         } catch (PanoptaServiceException e) {
             logger.error(e.getId(), e.getMessage());
             throw new RuntimeException(e);

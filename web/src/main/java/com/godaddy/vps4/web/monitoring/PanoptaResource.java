@@ -12,11 +12,9 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
 
-import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.godaddy.hfs.config.Config;
 import com.godaddy.vps4.credit.CreditService;
 import com.godaddy.vps4.credit.VirtualMachineCredit;
 import com.godaddy.vps4.panopta.PanoptaCustomer;
@@ -53,7 +51,6 @@ public class PanoptaResource {
     private final CreditService creditService;
     private final VirtualMachineService virtualMachineService;
     private final VmResource vmResource;
-    private Config config;
     private GDUser gdUser;
 
     @Inject
@@ -61,13 +58,11 @@ public class PanoptaResource {
                            CreditService creditService,
                            VirtualMachineService virtualMachineService,
                            VmResource vmResource,
-                           Config config,
                            GDUser gdUser) {
         this.panoptaService = panoptaService;
         this.creditService = creditService;
         this.virtualMachineService = virtualMachineService;
         this.vmResource = vmResource;
-        this.config = config;
         this.gdUser = gdUser;
     }
 
@@ -76,10 +71,6 @@ public class PanoptaResource {
     @ApiOperation(value = "Create a panopta customer for vps4", notes = "Create a panopta customer for vps4")
     public PanoptaCustomer createCustomer(CreateCustomerRequest request) {
 
-        if (request == null || StringUtils.isBlank(request.vmId)) {
-            throw new Vps4Exception("MISSING_VMID", "Missing Vm id in request.");
-        }
-
         VirtualMachine virtualMachine = vmResource.getVm(UUID.fromString(request.vmId));
 
         //  Only vps4 credits are allowed panopta installations at the moment.
@@ -87,9 +78,9 @@ public class PanoptaResource {
         verifyCreditIsForVirtualServer(creditService, virtualMachine.orionGuid);
 
         try {
-            return panoptaService.createCustomer(UUID.fromString(request.vmId));
+            return panoptaService.createCustomer(gdUser.getShopperId());
         } catch (PanoptaServiceException e) {
-            logger.warn("Encountered exception while creating customer in panopta: ", e);
+            logger.warn("Encountered exception while creating customer in panopta for shopper {}: ", gdUser.getShopperId(), e);
             throw new Vps4Exception(e.getId(), e.getMessage(), e);
         }
     }

@@ -4,8 +4,6 @@ import java.util.UUID;
 
 import com.godaddy.hfs.config.Config;
 import com.godaddy.vps4.credit.CreditService;
-import com.godaddy.vps4.credit.VirtualMachineCredit;
-import com.godaddy.vps4.vm.VirtualMachine;
 import com.godaddy.vps4.vm.VirtualMachineService;
 import com.google.inject.Inject;
 
@@ -29,17 +27,11 @@ public class PanoptaCustomerRequest {
         this.config = config;
     }
 
-    public PanoptaCustomerRequest createPanoptaCustomerRequest(UUID vmId) {
+    public PanoptaCustomerRequest createPanoptaCustomerRequest(String shopperId) {
 
-        VirtualMachine virtualMachine = virtualMachineService.getVirtualMachine(vmId);
-        VirtualMachineCredit credit = creditService.getVirtualMachineCredit(virtualMachine.orionGuid);
-        this.shopperId = credit.getShopperId();
-        this.partnerCustomerKey = config.get("panopta.api.partner.customer.key.prefix") + vmId;
+        this.shopperId = shopperId;
+        this.partnerCustomerKey = config.get("panopta.api.partner.customer.key.prefix") + shopperId;
         this.emailAddress = config.get("panopta.api.customer.email", "dev-vps4@godaddy.com");
-        // commented out at the moment since we need to create the correct managed levels in Panopta.
-        // customerRequest.panoptaPackage = config.get("panopta.api.package." + credit
-        // .effectiveManagedLevel().toString());
-        // defaulting to fully managed for now
         this.panoptaPackage =
                 config.get("panopta.api.package.FULLY_MANAGED");
         return this;

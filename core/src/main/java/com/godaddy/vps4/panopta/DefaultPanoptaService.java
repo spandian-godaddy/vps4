@@ -53,11 +53,11 @@ public class DefaultPanoptaService implements PanoptaService {
     }
 
     @Override
-    public PanoptaCustomer createCustomer(UUID vmId)
+    public PanoptaCustomer createCustomer(String shopperId)
             throws PanoptaServiceException {
 
         // prepare a request to create panopta customer
-        panoptaCustomerRequest = panoptaCustomerRequest.createPanoptaCustomerRequest(vmId);
+        panoptaCustomerRequest = panoptaCustomerRequest.createPanoptaCustomerRequest(shopperId);
 
         // setup the customer request for panopta
         PanoptaApiCustomerRequest panoptaApiCustomerRequest = new PanoptaApiCustomerRequest();

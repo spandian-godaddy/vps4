@@ -1,7 +1,6 @@
 package com.godaddy.vps4.web.monitoring;
 
 import static org.junit.Assert.fail;
-import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyInt;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.eq;
@@ -105,7 +104,7 @@ public class PanoptaResourceTest {
         when(creditService.getVirtualMachineCredit(orionGuid)).thenReturn(credit);
         createCustomerRequest = new PanoptaResource.CreateCustomerRequest();
         try {
-            when(panoptaService.createCustomer(any(UUID.class))).thenReturn(panoptaCustomer);
+            when(panoptaService.createCustomer(anyString())).thenReturn(panoptaCustomer);
         } catch (PanoptaServiceException psex) {
             fail("Could not setup test. " + psex.getMessage());
         }
@@ -137,7 +136,7 @@ public class PanoptaResourceTest {
         panoptaResource.createCustomer(createCustomerRequest);
 
         try {
-            verify(panoptaService, times(1)).createCustomer(any(UUID.class));
+            verify(panoptaService, times(1)).createCustomer(anyString());
         } catch (PanoptaServiceException psex) {
             fail("Unexpected exception encountered. " + psex);
         }
@@ -152,7 +151,7 @@ public class PanoptaResourceTest {
 
         panoptaResource.createCustomer(createCustomerRequest);
 
-        verify(panoptaService, never()).createCustomer(any(UUID.class));
+        verify(panoptaService, never()).createCustomer(anyString());
     }
 
     @Test

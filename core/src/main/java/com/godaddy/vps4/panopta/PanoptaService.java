@@ -4,7 +4,7 @@ import java.util.List;
 import java.util.UUID;
 
 public interface PanoptaService {
-    PanoptaCustomer createCustomer(UUID vmId) throws PanoptaServiceException;
+    PanoptaCustomer createCustomer(String shopperId) throws PanoptaServiceException;
 
     void deleteCustomer(String shopperId);
 

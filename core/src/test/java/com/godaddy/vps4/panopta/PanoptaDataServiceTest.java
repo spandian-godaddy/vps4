@@ -72,8 +72,9 @@ public class PanoptaDataServiceTest {
 
     @After
     public void tearDown() {
-        SqlTestData.cleanupTestVmAndRelatedData(vm.vmId, dataSource);
+        Sql.with(dataSource).exec("DELETE FROM panopta_server WHERE vm_id = ?", null, vm.vmId);
         Sql.with(dataSource).exec("DELETE FROM panopta_customer WHERE partner_customer_key = ?", null, fakePartnerCustomerKey);
+        SqlTestData.cleanupTestVmAndRelatedData(vm.vmId, dataSource);
     }
 
     @Test

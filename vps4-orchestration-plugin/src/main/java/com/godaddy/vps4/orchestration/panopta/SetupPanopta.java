@@ -87,6 +87,7 @@ public class SetupPanopta implements Command<SetupPanopta.Request, Void> {
     private PanoptaCustomer createCustomerInPanopta(CommandContext context, Request request) {
         CreatePanoptaCustomer.Request createCustomerRequest = new CreatePanoptaCustomer.Request();
         createCustomerRequest.vmId = request.vmId;
+        createCustomerRequest.shopperId = request.shopperId;
         CreatePanoptaCustomer.Response createCustomerResponse =
                 context.execute(CreatePanoptaCustomer.class, createCustomerRequest);
         return createCustomerResponse.getPanoptaCustomer();

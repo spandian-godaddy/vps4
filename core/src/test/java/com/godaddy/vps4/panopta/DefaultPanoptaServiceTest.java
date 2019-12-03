@@ -202,7 +202,7 @@ public class DefaultPanoptaServiceTest {
         when(panoptaApiCustomerService.getCustomer(eq(partnerCustomerKey))).thenReturn(panoptaApiCustomerList);
         doNothing().when(panoptaApiCustomerService).createCustomer(any(PanoptaApiCustomerRequest.class));
 
-        defaultPanoptaService.createCustomer(vmId);
+        defaultPanoptaService.createCustomer(shopperId);
 
         verify(panoptaApiCustomerService).createCustomer(any(PanoptaApiCustomerRequest.class));
     }
@@ -218,7 +218,7 @@ public class DefaultPanoptaServiceTest {
         when(panoptaApiCustomerList.getCustomerList()).thenReturn(fakePanoptaCustomers.getCustomerList());
         doNothing().when(panoptaApiCustomerService).createCustomer(any(PanoptaApiCustomerRequest.class));
 
-        defaultPanoptaService.createCustomer(vmId);
+        defaultPanoptaService.createCustomer(shopperId);
 
         verify(panoptaApiCustomerService).createCustomer(any(PanoptaApiCustomerRequest.class));
     }
