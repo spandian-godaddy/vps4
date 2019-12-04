@@ -3,6 +3,9 @@ package com.godaddy.vps4.panopta.jdbc;
 import java.time.Instant;
 import java.util.UUID;
 
+import org.apache.commons.lang3.builder.ReflectionToStringBuilder;
+import org.apache.commons.lang3.builder.ToStringStyle;
+
 public class PanoptaServerDetails {
     private String partnerCustomerKey;
     private UUID vmId;
@@ -57,5 +60,10 @@ public class PanoptaServerDetails {
 
     public void setDestroyed(Instant destroyed) {
         this.destroyed = destroyed;
+    }
+
+    @Override
+    public String toString() {
+        return ReflectionToStringBuilder.toString(this, ToStringStyle.MULTI_LINE_STYLE);
     }
 }

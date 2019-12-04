@@ -2,6 +2,9 @@ package com.godaddy.vps4.panopta.jdbc;
 
 import java.time.Instant;
 
+import org.apache.commons.lang3.builder.ReflectionToStringBuilder;
+import org.apache.commons.lang3.builder.ToStringStyle;
+
 public class PanoptaCustomerDetails {
     private String partnerCustomerKey;
     private String customerKey;
@@ -38,5 +41,10 @@ public class PanoptaCustomerDetails {
 
     public void setDestroyed(Instant destroyed) {
         this.destroyed = destroyed;
+    }
+
+    @Override
+    public String toString() {
+        return ReflectionToStringBuilder.toString(this, ToStringStyle.MULTI_LINE_STYLE);
     }
 }
