@@ -4,12 +4,16 @@ import java.util.UUID;
 
 import javax.inject.Inject;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.godaddy.vps4.credit.CreditService;
 import com.godaddy.vps4.credit.VirtualMachineCredit;
 import com.godaddy.vps4.network.IpAddress;
 import com.godaddy.vps4.network.NetworkService;
 import com.godaddy.vps4.panopta.PanoptaDataService;
 import com.godaddy.vps4.panopta.PanoptaDetail;
+import com.godaddy.vps4.panopta.PanoptaService;
 import com.godaddy.vps4.vm.VirtualMachine;
 import com.godaddy.vps4.vm.VirtualMachineService;
 
@@ -25,8 +29,11 @@ import gdg.hfs.orchestration.CommandRetryStrategy;
 )
 public class Vps4RemoveMonitoring implements Command<UUID, Void> {
 
+    private static final Logger logger = LoggerFactory.getLogger(Vps4RemoveMonitoring.class);
+
     private final NetworkService vps4NetworkService;
     private final PanoptaDataService panoptaDataService;
+    private final PanoptaService panoptaService;
     private final CreditService creditService;
     private final VirtualMachineService virtualMachineService;
     private UUID vmId;
@@ -35,10 +42,12 @@ public class Vps4RemoveMonitoring implements Command<UUID, Void> {
     @Inject
     public Vps4RemoveMonitoring(NetworkService networkService,
                                 PanoptaDataService panoptaDataService,
+                                PanoptaService panoptaService,
                                 CreditService creditService,
                                 VirtualMachineService virtualMachineService) {
         this.vps4NetworkService = networkService;
         this.panoptaDataService = panoptaDataService;
+        this.panoptaService = panoptaService;
         this.creditService = creditService;
         this.virtualMachineService = virtualMachineService;
     }
@@ -58,7 +67,8 @@ public class Vps4RemoveMonitoring implements Command<UUID, Void> {
             context.execute(RemovePanoptaMonitoring.class, vmId);
             panoptaDataService.setPanoptaServerDestroyed(vmId);
             String shopperId = getShopperId(vmId);
-            if (panoptaDataService.getActivePanoptaServers(shopperId).size() == 0) {
+            if (panoptaService.getActiveServers(shopperId).isEmpty()
+                    && panoptaDataService.getActivePanoptaServers(shopperId).isEmpty()) {
                 context.execute(DeletePanoptaCustomer.class, shopperId);
                 panoptaDataService.checkAndSetPanoptaCustomerDestroyed(shopperId);
             }

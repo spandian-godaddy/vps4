@@ -8,6 +8,7 @@ import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyLong;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -45,6 +46,7 @@ public class SetupPanoptaTest {
     private PanoptaCustomerDetails panoptaCustomerDetailsMock;
     private PanoptaServerDetails panoptaServerDetailsMock;
     private CreatePanoptaCustomer createPanoptaCustomerMock;
+    private GetPanoptaCustomer.Response getPanoptaCustomerResponse;
     private CreatePanoptaCustomer.Response createPanoptaCustomerResponse;
     private WaitForPanoptaInstall waitForPanoptaInstallMock;
     private InstallPanopta installPanoptaMock;
@@ -106,7 +108,8 @@ public class SetupPanoptaTest {
     private void setupMockContext() {
         when(commandContextMock.execute(eq(CreatePanoptaCustomer.class), any(CreatePanoptaCustomer.Request.class)))
                 .thenReturn(createPanoptaCustomerResponse);
-        when(commandContextMock.execute(eq(GetPanoptaServerKeyFromHfs.class), anyLong())).thenReturn(sysAdminActionMock);
+        when(commandContextMock.execute(eq(GetPanoptaServerKeyFromHfs.class), anyLong()))
+                .thenReturn(sysAdminActionMock);
         when(commandContextMock.execute(eq(WaitForPanoptaInstall.class), any(WaitForPanoptaInstall.Request.class)))
                 .thenReturn(panoptaServerMock);
     }
@@ -137,7 +140,8 @@ public class SetupPanoptaTest {
 
     @Test
     public void invokesCreatePanoptaCustomer() {
-        when(panoptaDataServiceMock.getPanoptaCustomerDetails(eq(fakeShopperId))).thenReturn(null).thenReturn(panoptaCustomerDetailsMock);
+        when(panoptaDataServiceMock.getPanoptaCustomerDetails(eq(fakeShopperId))).thenReturn(null).thenReturn(
+                panoptaCustomerDetailsMock);
         when(panoptaDataServiceMock.getPanoptaServerDetails(eq(fakeVmId))).thenReturn(null);
         when(panoptaCustomerDetailsMock.getCustomerKey()).thenReturn(fakeCustomerKey);
         command.execute(commandContextMock, request);
@@ -152,7 +156,8 @@ public class SetupPanoptaTest {
 
     @Test
     public void invokesWaitForPanoptaInstall() {
-        when(panoptaDataServiceMock.getPanoptaCustomerDetails(eq(fakeShopperId))).thenReturn(panoptaCustomerDetailsMock);
+        when(panoptaDataServiceMock.getPanoptaCustomerDetails(eq(fakeShopperId)))
+                .thenReturn(panoptaCustomerDetailsMock);
         when(panoptaCustomerDetailsMock.getCustomerKey()).thenReturn(fakeCustomerKey);
         command.execute(commandContextMock, request);
 
@@ -160,12 +165,14 @@ public class SetupPanoptaTest {
                 .execute(eq(WaitForPanoptaInstall.class), getPanoptaServerRequestCaptor.capture());
         WaitForPanoptaInstall.Request capturedRequest = getPanoptaServerRequestCaptor.getValue();
         assertEquals("Expected vm id in request does not match actual value. ", fakeVmId, capturedRequest.vmId);
-        assertEquals("Expected shopper id in request does not match actual value. ", fakeShopperId, capturedRequest.shopperId);
+        assertEquals("Expected shopper id in request does not match actual value. ", fakeShopperId,
+                     capturedRequest.shopperId);
     }
 
     @Test
     public void invokesGetServerKeyFromHfs() {
-        when(panoptaDataServiceMock.getPanoptaCustomerDetails(eq(fakeShopperId))).thenReturn(panoptaCustomerDetailsMock);
+        when(panoptaDataServiceMock.getPanoptaCustomerDetails(eq(fakeShopperId)))
+                .thenReturn(panoptaCustomerDetailsMock);
         when(panoptaCustomerDetailsMock.getCustomerKey()).thenReturn(fakeCustomerKey);
         command.execute(commandContextMock, request);
 
@@ -175,7 +182,8 @@ public class SetupPanoptaTest {
 
     @Test
     public void invokesInstallPanoptaOnProvisions() {
-        when(panoptaDataServiceMock.getPanoptaCustomerDetails(eq(fakeShopperId))).thenReturn(panoptaCustomerDetailsMock);
+        when(panoptaDataServiceMock.getPanoptaCustomerDetails(eq(fakeShopperId)))
+                .thenReturn(panoptaCustomerDetailsMock);
         when(panoptaCustomerDetailsMock.getCustomerKey()).thenReturn(fakeCustomerKey);
         command.execute(commandContextMock, request);
 
@@ -184,12 +192,13 @@ public class SetupPanoptaTest {
         assertEquals("Expected HFS vm id in request does not match actual value. ", fakeHfsVmId,
                      capturedRequest.hfsVmId);
         assertEquals(fakeCustomerKey, capturedRequest.customerKey);
-        assertEquals(fakePanoptaTemplates + "," + fakeDataCenterTemplate , capturedRequest.templates);
+        assertEquals(fakePanoptaTemplates + "," + fakeDataCenterTemplate, capturedRequest.templates);
     }
 
     @Test
     public void invokesInstallPanoptaOnRebuilds() {
-        when(panoptaDataServiceMock.getPanoptaCustomerDetails(eq(fakeShopperId))).thenReturn(panoptaCustomerDetailsMock);
+        when(panoptaDataServiceMock.getPanoptaCustomerDetails(eq(fakeShopperId)))
+                .thenReturn(panoptaCustomerDetailsMock);
         when(panoptaDataServiceMock.getPanoptaServerDetails(eq(fakeVmId))).thenReturn(panoptaServerDetailsMock);
         when(panoptaServerDetailsMock.getServerKey()).thenReturn(fakeServerKey);
         when(panoptaCustomerDetailsMock.getCustomerKey()).thenReturn(fakeCustomerKey);
@@ -201,7 +210,7 @@ public class SetupPanoptaTest {
                      fakeHfsVmId);
         assertEquals(fakeCustomerKey, capturedRequest.customerKey);
         assertEquals(fakeServerKey, capturedRequest.serverKey);
-        assertEquals(fakePanoptaTemplates + "," + fakeDataCenterTemplate , capturedRequest.templates);
+        assertEquals(fakePanoptaTemplates + "," + fakeDataCenterTemplate, capturedRequest.templates);
     }
 
     @Test
@@ -212,7 +221,8 @@ public class SetupPanoptaTest {
                                        + VirtualMachineCredit.EffectiveManagedLevel.SELF_MANAGED_V1.toString()
                                        + ".linux"))).thenReturn(fakePanoptaTemplateForManaged);
 
-        when(panoptaDataServiceMock.getPanoptaCustomerDetails(eq(fakeShopperId))).thenReturn(panoptaCustomerDetailsMock);
+        when(panoptaDataServiceMock.getPanoptaCustomerDetails(eq(fakeShopperId)))
+                .thenReturn(panoptaCustomerDetailsMock);
         when(panoptaDataServiceMock.getPanoptaServerDetails(eq(fakeVmId))).thenReturn(panoptaServerDetailsMock);
         when(panoptaServerDetailsMock.getServerKey()).thenReturn(fakeServerKey);
         when(panoptaCustomerDetailsMock.getCustomerKey()).thenReturn(fakeCustomerKey);
@@ -224,8 +234,43 @@ public class SetupPanoptaTest {
                      fakeHfsVmId);
         assertEquals(fakeCustomerKey, capturedRequest.customerKey);
         assertEquals(fakeServerKey, capturedRequest.serverKey);
-        assertEquals(fakePanoptaTemplateForManaged + "," + fakeDataCenterTemplate , capturedRequest.templates);
+        assertEquals(fakePanoptaTemplateForManaged + "," + fakeDataCenterTemplate, capturedRequest.templates);
         assertThat(capturedRequest.templates, not(containsString(fakePanoptaTemplates)));
 
+    }
+
+    @Test
+    public void checksIfCustomerExistsInPanoptaBeforeCreate() {
+        when(commandContextMock.execute(eq(GetPanoptaCustomer.class), eq(fakeShopperId))).thenReturn(null);
+        when(panoptaDataServiceMock.getPanoptaCustomerDetails(eq(fakeShopperId))).thenReturn(null).thenReturn(
+                panoptaCustomerDetailsMock);
+        when(panoptaDataServiceMock.getPanoptaServerDetails(eq(fakeVmId))).thenReturn(null);
+        when(panoptaCustomerDetailsMock.getCustomerKey()).thenReturn(fakeCustomerKey);
+        command.execute(commandContextMock, request);
+
+        verify(commandContextMock).execute(eq(GetPanoptaCustomer.class), eq(fakeShopperId));
+        verify(commandContextMock, times(1))
+                .execute(eq(CreatePanoptaCustomer.class), any(CreatePanoptaCustomer.Request.class));
+        verify(commandContextMock, times(1))
+                .execute(eq(CreatePanoptaCustomer.class), createPanoptaRequestCaptor.capture());
+        CreatePanoptaCustomer.Request capturedRequest = createPanoptaRequestCaptor.getValue();
+        assertEquals("Expected vm id in request does not match actual value. ", fakeVmId, capturedRequest.vmId);
+    }
+
+    @Test
+    public void doesNotCreateCustomerInPanoptaIfOneExists() {
+        getPanoptaCustomerResponse = new GetPanoptaCustomer.Response();
+        getPanoptaCustomerResponse.panoptaCustomer = panoptaCustomerMock;
+        when(commandContextMock.execute(eq(GetPanoptaCustomer.class), eq(fakeShopperId)))
+                .thenReturn(getPanoptaCustomerResponse);
+        when(panoptaDataServiceMock.getPanoptaCustomerDetails(eq(fakeShopperId))).thenReturn(null).thenReturn(
+                panoptaCustomerDetailsMock);
+        when(panoptaDataServiceMock.getPanoptaServerDetails(eq(fakeVmId))).thenReturn(null);
+        when(panoptaCustomerDetailsMock.getCustomerKey()).thenReturn(fakeCustomerKey);
+        command.execute(commandContextMock, request);
+
+        verify(commandContextMock).execute(eq(GetPanoptaCustomer.class), eq(fakeShopperId));
+        verify(commandContextMock, never())
+                .execute(eq(CreatePanoptaCustomer.class), any(CreatePanoptaCustomer.Request.class));
     }
 }

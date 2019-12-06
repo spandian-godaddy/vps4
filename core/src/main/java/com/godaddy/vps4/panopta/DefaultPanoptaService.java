@@ -62,10 +62,11 @@ public class DefaultPanoptaService implements PanoptaService {
         // setup the customer request for panopta
         PanoptaApiCustomerRequest panoptaApiCustomerRequest = new PanoptaApiCustomerRequest();
         panoptaApiCustomerRequest.setPanoptaPackage(panoptaCustomerRequest.getPanoptaPackage());
-        panoptaApiCustomerRequest.setName(panoptaCustomerRequest.getShopperId());
+        String panoptaNamePrefix = config.get("panopta.api.name.prefix");
+        panoptaApiCustomerRequest.setName(panoptaNamePrefix + panoptaCustomerRequest.getShopperId());
         panoptaApiCustomerRequest.setEmailAddress(panoptaCustomerRequest.getEmailAddress());
         panoptaApiCustomerRequest.setPartnerCustomerKey(panoptaCustomerRequest.getPartnerCustomerKey());
-        logger.info("Panopta API customer Request: {}", panoptaApiCustomerRequest.toString());
+        logger.info("Create Panopta customer Request: {}", panoptaApiCustomerRequest.toString());
 
         // perform a POST to create the customer
         panoptaApiCustomerService.createCustomer(panoptaApiCustomerRequest);
@@ -73,6 +74,18 @@ public class DefaultPanoptaService implements PanoptaService {
         return mapResponseToCustomer(
                 getCustomerDetails(panoptaCustomerRequest.getPartnerCustomerKey()));
 
+    }
+
+    @Override
+    public PanoptaCustomer getCustomer(String shopperId) {
+        String panoptaNamePrefix = config.get("panopta.api.name.prefix");
+        PanoptaApiCustomerList panoptaApiCustomerList =
+                panoptaApiCustomerService.getCustomersByStatus(panoptaNamePrefix + shopperId, "active");
+        if (!panoptaApiCustomerList.getCustomerList().isEmpty()) {
+                return mapResponseToCustomer(panoptaApiCustomerList.getCustomerList().stream().findFirst().get());
+        }
+        logger.info("Could not find customer in panopta for shopper id {} ", panoptaNamePrefix + shopperId);
+        return null;
     }
 
     private PanoptaCustomer mapResponseToCustomer(PanoptaApiCustomerList.Customer customer) {
@@ -209,7 +222,9 @@ public class DefaultPanoptaService implements PanoptaService {
 
     @Override
     public PanoptaServer getServer(String shopperId, String serverKey) throws PanoptaServiceException {
-        String partnerCustomerKey = config.get("panopta.api.partner.customer.key.prefix") + shopperId;
+        String partnerCustomerKey = getPartnerCustomerKey(shopperId);
+        logger.info("Getting panopta server info for partnerCustomerKey: {} and serverKey: {}", partnerCustomerKey,
+                    serverKey);
         PanoptaServers servers = panoptaApiServerService.getPanoptaServers(partnerCustomerKey, serverKey);
         if (servers == null || servers.getServers().size() == 0) {
             String message =
@@ -218,6 +233,23 @@ public class DefaultPanoptaService implements PanoptaService {
             throw new PanoptaServiceException("SERVER_NOT_FOUND", message);
         }
         return mapServer(partnerCustomerKey, servers.getServers().get(0));
+    }
+
+    private String getPartnerCustomerKey(String shopperId) {
+        return config.get("panopta.api.partner.customer.key.prefix") + shopperId;
+    }
+
+    @Override
+    public List<PanoptaServer> getActiveServers(String shopperId) {
+        String partnerCustomerKey = getPartnerCustomerKey(shopperId);
+        List<PanoptaServer> panoptaServerList = new ArrayList<>();
+
+        PanoptaServers panoptaServers = panoptaApiServerService.getActivePanoptaServers(partnerCustomerKey, "active");
+        panoptaServers.getServers().forEach(server -> {
+            logger.debug("Found server in panopta: {} ", server);
+            panoptaServerList.add(mapServer(partnerCustomerKey, server));
+        });
+        return panoptaServerList;
     }
 
     private PanoptaServer mapServer(String partnerCustomerKey, PanoptaServers.Server server) {

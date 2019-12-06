@@ -50,12 +50,13 @@ public class SetupPanopta implements Command<SetupPanopta.Request, Void> {
         if (panoptaServerDetails != null && panoptaCustomerDetails != null
                 && StringUtils.isNotBlank(panoptaServerDetails.getServerKey())) {
             // this is a rebuild vm - so install panopta on rebuild.
+            logger.info("Rebuilding server with panopta with serverKey {} and customerKey {}",
+                        panoptaServerDetails.getServerKey(), panoptaCustomerDetails.getCustomerKey());
             installPanoptaOnRebuild(panoptaServerDetails, panoptaCustomerDetails, request, context);
-        } else if (panoptaCustomerDetails != null) {
-            // existing customer in panopta with new vm provision, install panopta on new vm
-            installPanoptaOnProvision(panoptaCustomerDetails, request, context);
         } else {
-            // new customer, create new customer in panopta and install panopta on new vm
+            // check if customer exists in panopta, if not, create customer in panopta and install panopta on new vm
+            logger.info("Checking if customer exists in Panopta for shopper {} vm id {}  before provisioning server...",
+                        request.shopperId, request.vmId);
             panoptaCustomerDetails = createNewCustomerInPanopta(request, context);
             installPanoptaOnProvision(panoptaCustomerDetails, request, context);
         }
@@ -79,9 +80,21 @@ public class SetupPanopta implements Command<SetupPanopta.Request, Void> {
     }
 
     private PanoptaCustomerDetails createNewCustomerInPanopta(Request request, CommandContext context) {
-        PanoptaCustomer panoptaCustomer = createCustomerInPanopta(context, request);
+        // create panopta customer if one does not already exist
+        PanoptaCustomer panoptaCustomer = getCustomerFromPanopta(context, request);
+        if (panoptaCustomer == null) {
+            panoptaCustomer = createCustomerInPanopta(context, request);
+        }
         savePanoptaCustomerInVps4Db(request, panoptaCustomer);
         return panoptaDataService.getPanoptaCustomerDetails(request.shopperId);
+    }
+
+    private PanoptaCustomer getCustomerFromPanopta(CommandContext context, Request request) {
+        GetPanoptaCustomer.Response response = context.execute(GetPanoptaCustomer.class, request.shopperId);
+        if (response == null) {
+            return null;
+        }
+        return response.getPanoptaCustomer();
     }
 
     private PanoptaCustomer createCustomerInPanopta(CommandContext context, Request request) {
@@ -111,7 +124,7 @@ public class SetupPanopta implements Command<SetupPanopta.Request, Void> {
         SysAdminAction sysAdminAction =
                 context.execute(GetPanoptaServerKeyFromHfs.class, request.hfsVmId);
         String panoptaServerKey = sysAdminAction.resultSet;
-        logger.debug("Panopta Server Key: " + panoptaServerKey);
+        logger.info("Panopta Server Key: " + panoptaServerKey);
         return panoptaServerKey;
     }
 

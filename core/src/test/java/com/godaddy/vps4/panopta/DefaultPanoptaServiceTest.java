@@ -3,6 +3,7 @@ package com.godaddy.vps4.panopta;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyInt;
 import static org.mockito.Matchers.anyString;
@@ -457,20 +458,47 @@ public class DefaultPanoptaServiceTest {
     @Test
     public void testGetServer() throws PanoptaServiceException {
         when(config.get("panopta.api.partner.customer.key.prefix")).thenReturn("gdtest_");
-        when(panoptaApiServerService.getPanoptaServers(eq(partnerCustomerKey), eq(serverKey))).thenReturn(panoptaServers);
+        when(panoptaApiServerService.getPanoptaServers(eq(partnerCustomerKey), eq(serverKey)))
+                .thenReturn(panoptaServers);
         PanoptaServer server = defaultPanoptaService.getServer(shopperId, serverKey);
         verify(panoptaApiServerService).getPanoptaServers(eq(partnerCustomerKey), eq(serverKey));
         assertNotNull(server);
         assertEquals(serverKey, server.serverKey);
     }
 
-    @Test(expected =  PanoptaServiceException.class)
+    @Test(expected = PanoptaServiceException.class)
     public void testGetServerThrowsException() throws PanoptaServiceException {
         PanoptaServers panoptaServers = new PanoptaServers();
         panoptaServers.servers = new ArrayList<>();
-        when(panoptaApiServerService.getPanoptaServers(eq(partnerCustomerKey), eq(serverKey))).thenReturn(panoptaServers);
+        when(panoptaApiServerService.getPanoptaServers(eq(partnerCustomerKey), eq(serverKey)))
+                .thenReturn(panoptaServers);
         PanoptaServer server = defaultPanoptaService.getServer(shopperId, serverKey);
         verify(panoptaApiServerService).getPanoptaServers(eq(partnerCustomerKey), eq(serverKey));
         assertNull(server);
+    }
+
+    @Test
+    public void testGetActiveServers() {
+        when(config.get("panopta.api.partner.customer.key.prefix")).thenReturn("gdtest_");
+        when(panoptaApiServerService.getActivePanoptaServers(eq(partnerCustomerKey), eq("active")))
+                .thenReturn(panoptaServers);
+        List<PanoptaServer> panoptaServersList = defaultPanoptaService.getActiveServers(shopperId);
+        verify(panoptaApiServerService).getActivePanoptaServers(eq(partnerCustomerKey), eq("active"));
+        assertNotNull(panoptaServersList);
+        assertTrue(panoptaServersList.size() > 0);
+    }
+
+    @Test
+    public void testGetActiveServersReturnsEmptyList() {
+        PanoptaServers panoptaServers = new PanoptaServers();
+        panoptaServers.servers = new ArrayList<>();
+
+        when(config.get("panopta.api.partner.customer.key.prefix")).thenReturn("gdtest_");
+        when(panoptaApiServerService.getActivePanoptaServers(eq(partnerCustomerKey), eq("active")))
+                .thenReturn(panoptaServers);
+        List<PanoptaServer> panoptaServersList = defaultPanoptaService.getActiveServers(shopperId);
+        verify(panoptaApiServerService).getActivePanoptaServers(eq(partnerCustomerKey), eq("active"));
+        assertNotNull(panoptaServersList);
+        assertTrue(panoptaServersList.isEmpty());
     }
 }

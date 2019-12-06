@@ -2,6 +2,7 @@ package com.godaddy.vps4.panopta;
 
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
+import javax.ws.rs.DefaultValue;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
@@ -22,6 +23,11 @@ public interface PanoptaApiCustomerService {
     @GET
     @Path("/")
     PanoptaApiCustomerList getCustomer(@QueryParam("partner_key") String partnerCustomerKey);
+
+    @GET
+    @Path("/")
+    PanoptaApiCustomerList getCustomersByStatus(@QueryParam("name") String name,
+                                                @DefaultValue("active") @QueryParam("status") String status);
 
     @DELETE
     @Path("/{customer_key}")

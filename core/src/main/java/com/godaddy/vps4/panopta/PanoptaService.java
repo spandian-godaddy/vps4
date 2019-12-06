@@ -6,6 +6,8 @@ import java.util.UUID;
 public interface PanoptaService {
     PanoptaCustomer createCustomer(String shopperId) throws PanoptaServiceException;
 
+    PanoptaCustomer getCustomer(String shopperId);
+
     void deleteCustomer(String shopperId);
 
     List<PanoptaGraphId> getUsageIds(UUID vmId);
@@ -17,6 +19,8 @@ public interface PanoptaService {
     List<PanoptaGraph> getNetworkGraphs(UUID vmId, String timescale) throws PanoptaServiceException;
 
     PanoptaServer getServer(String shopperId, String serverKey) throws PanoptaServiceException;
+
+    List<PanoptaServer> getActiveServers(String shopperId);
 
     void pauseServerMonitoring(UUID vmId);
 
