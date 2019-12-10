@@ -1,6 +1,7 @@
 package com.godaddy.vps4.phase2.vm;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -79,6 +80,19 @@ public class JdbcVmOutageServiceTest {
         assertEquals(0, outageList.size());
         outageList = vmOutageService.getVmOutageList(vm.vmId, VmMetric.DISK);
         assertEquals(1, outageList.size());
+    }
+
+    @Test
+    public void getVmOutageId() {
+        int outageId = vmOutageService.newVmOutage(vm.vmId, VmMetric.DISK, Instant.now(), "disk is pretty full", 1234L);
+        int lookupResult = vmOutageService.getVmOutageId(1234L);
+        assertEquals(outageId, lookupResult);
+    }
+
+    @Test
+    public void getVmOutageIdReturnsNullIfNoPanoptaId() {
+        Integer lookupResult = vmOutageService.getVmOutageId(1234L);
+        assertNull(lookupResult);
     }
 
 }

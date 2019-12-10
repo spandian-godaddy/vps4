@@ -13,6 +13,7 @@ import com.godaddy.vps4.hfs.HfsClientModule;
 import com.godaddy.vps4.jdbc.DatabaseModule;
 import com.godaddy.vps4.messaging.MessagingModule;
 import com.godaddy.vps4.orchestration.hfs.HfsMockModule;
+import com.godaddy.vps4.panopta.PanoptaDataModule;
 import com.godaddy.vps4.security.SecurityModule;
 import com.godaddy.vps4.snapshot.SnapshotModule;
 import com.godaddy.vps4.util.ObjectMapperModule;
@@ -66,6 +67,7 @@ public class Vps4ConsumerInjector {
         modules.add(new SecurityModule());
         modules.add(new DatabaseModule());
         modules.add(new CreditModule());
+        modules.add(new PanoptaDataModule());
 
         logger.info("Orchestration engine clustered: {}", isOrchestrationEngineClustered);
         if (isOrchestrationEngineClustered) {

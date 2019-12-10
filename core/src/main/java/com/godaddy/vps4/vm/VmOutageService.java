@@ -10,4 +10,5 @@ public interface VmOutageService {
     VmOutage getVmOutage(int outageId);
     int newVmOutage(UUID vmId, VmMetric metric, Instant startDate, String reason, long panoptaOutageId);
     void clearVmOutage(int outageId, Instant endDate);
+    Integer getVmOutageId(long panoptaOutageId);
 }

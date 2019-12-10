@@ -88,4 +88,11 @@ public class JdbcVmOutageService implements VmOutageService {
                 null, LocalDateTime.ofInstant(endDate, ZoneOffset.UTC), outageId);
     }
 
+    @Override
+    public Integer getVmOutageId(long panoptaOutageId) {
+        return Sql.with(dataSource).exec(
+                "SELECT id FROM vm_outage WHERE panopta_outage_id = ?",
+                Sql.nextOrNull(rs -> rs.getInt("id")), panoptaOutageId);
+    }
+
 }

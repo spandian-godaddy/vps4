@@ -15,4 +15,5 @@ public interface PanoptaDataService {
     PanoptaDetail getPanoptaDetails(UUID vmId);
     void setPanoptaServerDestroyed(UUID vmId);
     boolean checkAndSetPanoptaCustomerDestroyed(String shopperId);
+    UUID getVmId(String serverKey);
 }

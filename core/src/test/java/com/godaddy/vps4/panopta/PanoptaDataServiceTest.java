@@ -5,7 +5,6 @@ import static junit.framework.Assert.assertNull;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
-import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -21,15 +20,12 @@ import org.junit.Test;
 
 import com.godaddy.hfs.config.Config;
 import com.godaddy.hfs.jdbc.Sql;
-import com.godaddy.vps4.credit.CreditService;
-import com.godaddy.vps4.credit.VirtualMachineCredit;
 import com.godaddy.vps4.jdbc.DatabaseModule;
 import com.godaddy.vps4.panopta.jdbc.JdbcPanoptaDataService;
 import com.godaddy.vps4.panopta.jdbc.PanoptaCustomerDetails;
 import com.godaddy.vps4.panopta.jdbc.PanoptaServerDetails;
 import com.godaddy.vps4.phase2.SqlTestData;
 import com.godaddy.vps4.vm.VirtualMachine;
-import com.godaddy.vps4.vm.VirtualMachineService;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
 
@@ -46,10 +42,7 @@ public class PanoptaDataServiceTest {
 
     private PanoptaDataService panoptaDataService;
     private PanoptaServer panoptaServer;
-    private VirtualMachineService virtualMachineService = mock(VirtualMachineService.class);
-    private CreditService creditService = mock(CreditService.class);
     private Config config = mock(Config.class);
-    private VirtualMachineCredit credit = mock(VirtualMachineCredit.class);
 
     private Injector injector = Guice.createInjector(new DatabaseModule());
     private DataSource dataSource = injector.getInstance(DataSource.class);
@@ -57,17 +50,14 @@ public class PanoptaDataServiceTest {
     @Before
     public void setUp() throws Exception {
         vm = SqlTestData.insertTestVm(orionGuid, dataSource);
-        panoptaDataService = new JdbcPanoptaDataService(dataSource, virtualMachineService, creditService, config);
+        panoptaDataService = new JdbcPanoptaDataService(dataSource, config);
         String fakeName = "s64-202-190-85.secureserver.net";
         String fakeFqdn = "s64-202-190-85.secureserver.net";
         String serverGroup = "https://api2.panopta.com/v2/server_group/348625";
         PanoptaServer.Status status = PanoptaServer.Status.ACTIVE;
         panoptaServer = new PanoptaServer(fakePartnerCustomerKey, fakeServerId, fakeServerKey, fakeName,
                                           fakeFqdn, serverGroup, status);
-        when(virtualMachineService.getVirtualMachine(any(UUID.class))).thenReturn(vm);
         when(config.get("panopta.api.partner.customer.key.prefix")).thenReturn("gdtest_");
-        when(creditService.getVirtualMachineCredit(any(UUID.class))).thenReturn(credit);
-        when(credit.getShopperId()).thenReturn(fakeShopperId);
     }
 
     @After
@@ -178,5 +168,14 @@ public class PanoptaDataServiceTest {
         assertEquals(fakeServerKey, panoptaDetail.getServerKey());
         assertEquals(fakeServerId, panoptaDetail.getServerId());
         assertEquals(vm.vmId, panoptaDetail.getVmId());
+    }
+
+    @Test
+    public void canGetVmIdByServerKey() {
+        panoptaDataService.createPanoptaCustomer(fakeShopperId, fakeCustomerKey);
+        panoptaDataService.createPanoptaServer(vm.vmId, fakeShopperId, panoptaServer);
+
+        UUID vmId = panoptaDataService.getVmId(fakeServerKey);
+        assertEquals(vm.vmId, vmId);
     }
 }

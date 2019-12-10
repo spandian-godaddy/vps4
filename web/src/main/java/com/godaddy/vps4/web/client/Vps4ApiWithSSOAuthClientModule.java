@@ -37,10 +37,14 @@ public class Vps4ApiWithSSOAuthClientModule extends AbstractModule {
                 .toProvider(getSsoAuthServiceProvider(VmSuspendReinstateService.class, baseUrlConfigPropName))
                 .in(Singleton.class);
 
-        //Vm SHopper Merge endpoint
+        //Vm Shopper Merge endpoint
         bind(VmShopperMergeService.class)
                 .toProvider(getSsoAuthServiceProvider(VmShopperMergeService.class, baseUrlConfigPropName))
                 .in(Singleton.class);
 
+        //Vm Outages endpoint
+        bind(VmOutageApiService.class)
+                .toProvider(getSsoAuthServiceProvider(VmOutageApiService.class, baseUrlConfigPropName))
+                .in(Singleton.class);
     }
 }

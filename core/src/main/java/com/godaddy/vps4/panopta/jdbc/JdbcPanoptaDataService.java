@@ -10,26 +10,19 @@ import javax.sql.DataSource;
 
 import com.godaddy.hfs.config.Config;
 import com.godaddy.hfs.jdbc.Sql;
-import com.godaddy.vps4.credit.CreditService;
 import com.godaddy.vps4.panopta.PanoptaDataService;
 import com.godaddy.vps4.panopta.PanoptaDetail;
 import com.godaddy.vps4.panopta.PanoptaServer;
 import com.godaddy.vps4.util.TimestampUtils;
-import com.godaddy.vps4.vm.VirtualMachineService;
 
 public class JdbcPanoptaDataService implements PanoptaDataService {
 
     private final DataSource dataSource;
-    private final VirtualMachineService virtualMachineService;
-    private final CreditService creditService;
     private final Config config;
 
     @Inject
-    public JdbcPanoptaDataService(DataSource dataSource, VirtualMachineService virtualMachineService,
-                                  CreditService creditService, Config config) {
+    public JdbcPanoptaDataService(DataSource dataSource, Config config) {
         this.dataSource = dataSource;
-        this.virtualMachineService = virtualMachineService;
-        this.creditService = creditService;
         this.config = config;
     }
 
@@ -134,4 +127,11 @@ public class JdbcPanoptaDataService implements PanoptaDataService {
                         " WHERE ps.vm_id = ?  AND ps.destroyed = 'infinity' ",
                 Sql.nextOrNull(PanoptaDetailMapper::mapPanoptaDetails), vmId);
     }
+
+    @Override
+    public UUID getVmId(String serverKey) {
+        return Sql.with(dataSource).exec("SELECT vm_id FROM panopta_server WHERE server_key = ?;",
+                Sql.nextOrNull(rs -> UUID.fromString(rs.getString("vm_id"))), serverKey);
+    }
+
 }
