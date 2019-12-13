@@ -92,11 +92,13 @@ public class VirtualMachineCredit {
         return monitoring == MONITORING_ENABLED || isFullyManaged();
     }
 
+    @Deprecated
     @JsonIgnore
     public boolean isFullyManaged() {
         return managedLevel == FULLY_MANAGED_LEVEL;
     }
 
+    @Deprecated
     @JsonIgnore
     public boolean isEffectivelySelfManaged() {
         return Arrays.asList(EffectiveManagedLevel.SELF_MANAGED_V1, EffectiveManagedLevel.SELF_MANAGED_V2)
@@ -112,6 +114,7 @@ public class VirtualMachineCredit {
         return (purchasedAt == null || purchasedAt.isBefore(MANAGED_LEVEL_V2_CUTOVER_DATE));
     }
 
+    @Deprecated
     @JsonProperty("effectiveManagedLevel")
     public EffectiveManagedLevel effectiveManagedLevel() {
         EffectiveManagedLevel effectiveManagedLevel;
@@ -139,6 +142,20 @@ public class VirtualMachineCredit {
 
     }
 
+    public boolean isManaged() {
+        switch (managedLevel) {
+            case 2:
+                return true;
+            case 1:
+                if (!isDed4())
+                    return true;
+        }
+        return false;
+    }
+
+    public boolean isDed4() {
+        return (tier >= 60) ? true : false;
+    }
 
     @JsonIgnore
     public boolean isAccountActive() {
