@@ -1,11 +1,11 @@
 package com.godaddy.vps4.handler;
 
-import static com.godaddy.vps4.handler.Vps4AccountMessageHandler.FULLY_MANAGED_LEVEL;
 import static java.time.temporal.ChronoUnit.DAYS;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyObject;
+import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
@@ -76,7 +76,10 @@ public class Vps4AccountMessageHandlerTest {
 
     private final String DEFAULT_TIER = "10";
     private final String UPGRADED_TIER = "20";
-    private final String DEFAULT_MANAGEDLEVEL = "0";
+    private final String DED4_TIER = "60";
+    private final String DEFAULT_UNMANAGED = "0";
+    private final String VPS4_MANAGED = "1";
+    private final String DED4_MANAGED = "2";
     private final String DEFAULT_CONTROLPANEL = "myh";
     private final String DEFAULT_DATACENTER = "5";
     private Map<String, String> planFeatures;
@@ -108,7 +111,7 @@ public class Vps4AccountMessageHandlerTest {
 
     private void setDefaultPlanFeatures() {
         planFeatures.put(PlanFeatures.TIER.toString(), DEFAULT_TIER);
-        planFeatures.put(PlanFeatures.MANAGED_LEVEL.toString(), DEFAULT_MANAGEDLEVEL);
+        planFeatures.put(PlanFeatures.MANAGED_LEVEL.toString(), DEFAULT_UNMANAGED);
         planFeatures.put(PlanFeatures.CONTROL_PANEL_TYPE.toString(), DEFAULT_CONTROLPANEL);
     }
 
@@ -199,9 +202,9 @@ public class Vps4AccountMessageHandlerTest {
     }
 
     @Test
-    public void testFullyManagedCredit() throws MessageHandlerException, MissingShopperIdException, IOException {
+    public void testVps4ManagedCredit() throws MessageHandlerException, MissingShopperIdException, IOException {
         planFeatures.put(PlanFeatures.CONTROL_PANEL_TYPE.toString(), String.valueOf("cpanel"));
-        planFeatures.put(PlanFeatures.MANAGED_LEVEL.toString(), String.valueOf(FULLY_MANAGED_LEVEL));
+        planFeatures.put(PlanFeatures.MANAGED_LEVEL.toString(), VPS4_MANAGED);
         mockVmCredit(AccountStatus.ACTIVE, vm.vmId);
         when(messagingServiceMock.sendFullyManagedEmail("TestShopper", "cpanel")).thenReturn("messageId");
         when(configMock.get("vps4MessageHandler.processFullyManagedEmails")).thenReturn("true");
@@ -221,8 +224,32 @@ public class Vps4AccountMessageHandlerTest {
     }
 
     @Test
+    public void testDed4DoesNotSendManagedEmail() throws MessageHandlerException, MissingShopperIdException, IOException {
+        planFeatures.put(PlanFeatures.TIER.toString(), DED4_TIER);
+        planFeatures.put(PlanFeatures.MANAGED_LEVEL.toString(), VPS4_MANAGED);
+        mockVmCredit(AccountStatus.ACTIVE, vm.vmId);
+        when(configMock.get("vps4MessageHandler.processFullyManagedEmails")).thenReturn("true");
+        callHandleMessage(createTestKafkaMessage("added"));
+
+        verify(creditServiceMock).getVirtualMachineCredit(anyObject());
+        verify(messagingServiceMock, never()).sendFullyManagedEmail(anyString(), anyString());
+    }
+
+    @Test
+    public void testDed4SendsManagedEmail() throws MessageHandlerException, MissingShopperIdException, IOException {
+        planFeatures.put(PlanFeatures.TIER.toString(), DED4_TIER);
+        planFeatures.put(PlanFeatures.MANAGED_LEVEL.toString(), DED4_MANAGED);
+        mockVmCredit(AccountStatus.ACTIVE, vm.vmId);
+        when(configMock.get("vps4MessageHandler.processFullyManagedEmails")).thenReturn("true");
+        callHandleMessage(createTestKafkaMessage("added"));
+
+        verify(creditServiceMock).getVirtualMachineCredit(anyObject());
+        verify(messagingServiceMock).sendFullyManagedEmail("TestShopper", "myh");
+    }
+
+    @Test
     public void testDontProcessFullyManagedEmails() throws Exception {
-        planFeatures.put(PlanFeatures.MANAGED_LEVEL.toString(), String.valueOf(FULLY_MANAGED_LEVEL));
+        planFeatures.put(PlanFeatures.MANAGED_LEVEL.toString(), VPS4_MANAGED);
         mockVmCredit(AccountStatus.ACTIVE, null);
         when(messagingServiceMock.sendFullyManagedEmail("TestShopper", "cpanel")).thenReturn("messageId");
         when(configMock.get("vps4MessageHandler.processFullyManagedEmails")).thenReturn("false");
