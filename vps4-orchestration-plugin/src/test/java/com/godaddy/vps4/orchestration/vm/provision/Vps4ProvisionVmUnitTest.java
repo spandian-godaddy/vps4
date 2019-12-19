@@ -188,7 +188,7 @@ public class Vps4ProvisionVmUnitTest {
         vmInfo.hasMonitoring = false;
         vmInfo.sgid = "fake_sgid";
         vmInfo.diskGib = new Random().nextInt(100);
-        vmInfo.managedLevel = 0;
+        vmInfo.isManaged = false;
         return vmInfo;
     }
 

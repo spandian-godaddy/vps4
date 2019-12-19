@@ -34,7 +34,7 @@ public class SendScheduledPatchingEmail extends SendMessagingEmailBase
         String messageId = context.execute("SendPatchingEmail-" + emailRequest.shopperId,
                 ctx -> messagingService.sendScheduledPatchingEmail(emailRequest.shopperId,
                         emailRequest.accountName, emailRequest.startTime,
-                        emailRequest.durationMinutes, emailRequest.isFullyManaged),
+                        emailRequest.durationMinutes, emailRequest.isManaged),
                 String.class);
         this.waitForMessageComplete(context, messageId, emailRequest.shopperId);
 

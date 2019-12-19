@@ -32,7 +32,7 @@ public class SendSystemDownFailoverEmail extends SendMessagingEmailBase implemen
         logger.info("Sending SystemDownFailoverEmail for shopper {}", emailRequest.shopperId);
         String messageId = context.execute("SendSystemDownEmail-" + emailRequest.shopperId,
                 ctx -> messagingService.sendSystemDownFailoverEmail(emailRequest.shopperId,
-                        emailRequest.accountName, emailRequest.isFullyManaged),
+                        emailRequest.accountName, emailRequest.isManaged),
                 String.class);
         this.waitForMessageComplete(context, messageId, emailRequest.shopperId);
 

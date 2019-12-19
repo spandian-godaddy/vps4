@@ -2,14 +2,13 @@ package com.godaddy.vps4.vm;
 
 import java.time.Instant;
 import java.util.UUID;
+
 import org.apache.commons.lang3.builder.ReflectionToStringBuilder;
 import org.apache.commons.lang3.builder.ToStringStyle;
+
 import com.godaddy.vps4.network.IpAddress;
 
 public class VirtualMachine {
-
-
-    public static final int FULLY_MANAGED_LEVEL = 2;
 
     public UUID vmId;
     public long hfsVmId;
@@ -25,7 +24,7 @@ public class VirtualMachine {
     public String hostname;
     public int managedLevel;
     public UUID backupJobId;
-	
+
     public VirtualMachine() {
     }
 
@@ -81,7 +80,4 @@ public class VirtualMachine {
         return ReflectionToStringBuilder.toString(this, ToStringStyle.SHORT_PREFIX_STYLE);
     }
 
-    public boolean isFullyManaged() {
-        return this.managedLevel == FULLY_MANAGED_LEVEL;
-    }
 }

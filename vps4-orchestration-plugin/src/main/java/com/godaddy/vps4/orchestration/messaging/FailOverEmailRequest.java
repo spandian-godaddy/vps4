@@ -3,14 +3,14 @@ package com.godaddy.vps4.orchestration.messaging;
 public class FailOverEmailRequest {
     public String shopperId;
     public String accountName;
-    public boolean isFullyManaged;
+    public boolean isManaged;
 
     public FailOverEmailRequest() {
     }
 
-    public FailOverEmailRequest(String shopperId, String accountName, boolean isFullyManaged) {
+    public FailOverEmailRequest(String shopperId, String accountName, boolean isManaged) {
         this.shopperId = shopperId;
         this.accountName = accountName;
-        this.isFullyManaged = isFullyManaged;
+        this.isManaged = isManaged;
     }
 }

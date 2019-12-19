@@ -12,9 +12,10 @@ import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
 
+import com.godaddy.vps4.credit.CreditService;
+import com.godaddy.vps4.credit.VirtualMachineCredit;
 import com.godaddy.vps4.orchestration.messaging.FailOverEmailRequest;
 import com.godaddy.vps4.orchestration.messaging.ScheduledMaintenanceEmailRequest;
-import com.godaddy.vps4.security.Vps4UserService;
 import com.godaddy.vps4.vm.VirtualMachine;
 import com.godaddy.vps4.vm.VirtualMachineService;
 import com.godaddy.vps4.web.Vps4Api;
@@ -38,16 +39,16 @@ import io.swagger.annotations.ApiParam;
 public class VmMessagingResource {
 
     private final VirtualMachineService virtualMachineService;
-    private final Vps4UserService vps4UserService;
     private final CommandService commandService;
+    private final CreditService creditService;
     private final GDUser user;
 
     @Inject
-    public VmMessagingResource(VirtualMachineService virtualMachineService, Vps4UserService vps4UserService,
-            CommandService commandService, GDUser user) {
+    public VmMessagingResource(VirtualMachineService virtualMachineService, CommandService commandService,
+            CreditService creditService, GDUser user) {
         this.virtualMachineService = virtualMachineService;
-        this.vps4UserService = vps4UserService;
         this.commandService = commandService;
+        this.creditService = creditService;
         this.user = user;
     }
 
@@ -57,19 +58,20 @@ public class VmMessagingResource {
     public void messagePatching(@PathParam("vmId") UUID vmId,
             @ApiParam(value = "startTime in GMT, Example: 2007-12-03T10:15:30.00Z. duration is in minutes.", required = true) ScheduledMessagingResourceRequest messageRequest) {
 
-        ScheduledMaintenanceEmailRequest request = CreateScheduledMaintenanceEmailRequest(vmId,
+        ScheduledMaintenanceEmailRequest request = createScheduledMaintenanceEmailRequest(vmId,
                 messageRequest.startTime, messageRequest.durationMinutes);
         Commands.execute(commandService, "SendScheduledPatchingEmail", request);
     }
 
-	private ScheduledMaintenanceEmailRequest CreateScheduledMaintenanceEmailRequest(UUID vmId, String startTime, long durationMinutes) {
+	private ScheduledMaintenanceEmailRequest createScheduledMaintenanceEmailRequest(UUID vmId, String startTime, long durationMinutes) {
 		Instant startTimeInstant = validateStartTime(startTime);
         validateDuration(durationMinutes);
 
         VirtualMachine vm = getAndValidateVm(vmId);
-        String shopperId = getShopperId(vm);
+        VirtualMachineCredit credit = creditService.getVirtualMachineCredit(vm.orionGuid);
+        String shopperId = credit.getShopperId();
 
-        return new ScheduledMaintenanceEmailRequest(shopperId, vm.name, vm.isFullyManaged(), startTimeInstant, durationMinutes);
+        return new ScheduledMaintenanceEmailRequest(shopperId, vm.name, credit.isManaged(), startTimeInstant, durationMinutes);
 	}
 
 	private VirtualMachine getAndValidateVm(UUID vmId) {
@@ -99,7 +101,7 @@ public class VmMessagingResource {
     public void messageScheduledMaintenance(@PathParam("vmId") UUID vmId,
             @ApiParam(value = "startTime in GMT, Example: 2007-12-03T10:15:30.00Z. duration is in minutes.", required = true) ScheduledMessagingResourceRequest messageRequest) {
 
-        ScheduledMaintenanceEmailRequest request = CreateScheduledMaintenanceEmailRequest(vmId,
+        ScheduledMaintenanceEmailRequest request = createScheduledMaintenanceEmailRequest(vmId,
                 messageRequest.startTime, messageRequest.durationMinutes);
         Commands.execute(commandService, "SendUnexpectedButScheduledMaintenanceEmail", request);
     }
@@ -107,27 +109,22 @@ public class VmMessagingResource {
     @POST
     @Path("/{vmId}/messaging/failover")
     public void messageFailover(@PathParam("vmId") UUID vmId) {
-        FailOverEmailRequest request = CreateEmailRequest(vmId);
+        FailOverEmailRequest request = createEmailRequest(vmId);
         Commands.execute(commandService, "SendSystemDownFailoverEmail", request);
     }
 
-    private FailOverEmailRequest CreateEmailRequest(UUID vmId) {
+    private FailOverEmailRequest createEmailRequest(UUID vmId) {
 		VirtualMachine vm = getAndValidateVm(vmId);
-        String shopperId = getShopperId(vm);
+        VirtualMachineCredit credit = creditService.getVirtualMachineCredit(vm.orionGuid);
+        String shopperId = credit.getShopperId();
 
-        return new FailOverEmailRequest(shopperId, vm.name, vm.isFullyManaged());
-	}
-
-	private String getShopperId(VirtualMachine vm) {
-		long vps4UserId = virtualMachineService.getUserIdByVmId(vm.vmId);
-        String shopperId = vps4UserService.getUser(vps4UserId).getShopperId();
-		return shopperId;
+        return new FailOverEmailRequest(shopperId, vm.name, credit.isManaged());
 	}
 
     @POST
     @Path("/{vmId}/messaging/failoverComplete")
     public void messageFailoverComplete(@PathParam("vmId") UUID vmId) {
-        FailOverEmailRequest request = CreateEmailRequest(vmId);
+        FailOverEmailRequest request = createEmailRequest(vmId);
         Commands.execute(commandService, "SendFailoverCompletedEmail", request);
     }
 }

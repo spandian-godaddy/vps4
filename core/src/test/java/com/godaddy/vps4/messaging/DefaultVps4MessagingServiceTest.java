@@ -1,19 +1,7 @@
 package com.godaddy.vps4.messaging;
 
-import com.godaddy.hfs.config.Config;
-import com.godaddy.vps4.config.Configs;
-import com.godaddy.vps4.messaging.DefaultVps4MessagingService.EmailTemplates;
-import com.godaddy.vps4.messaging.models.Message;
-import com.godaddy.vps4.messaging.models.MessagingResponse;
-import com.godaddy.vps4.messaging.models.ShopperMessage;
-import com.godaddy.vps4.util.SecureHttpClient;
-import org.apache.http.client.methods.HttpGet;
-import org.apache.http.client.methods.HttpPost;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
-import org.mockito.Mockito;
-import org.mockito.internal.matchers.apachecommons.ReflectionEquals;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 import java.io.IOException;
 import java.lang.reflect.Method;
@@ -25,8 +13,21 @@ import java.time.temporal.ChronoUnit;
 import java.util.EnumMap;
 import java.util.UUID;
 
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
+import org.apache.http.client.methods.HttpGet;
+import org.apache.http.client.methods.HttpPost;
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.Test;
+import org.mockito.Mockito;
+import org.mockito.internal.matchers.apachecommons.ReflectionEquals;
+
+import com.godaddy.hfs.config.Config;
+import com.godaddy.vps4.config.Configs;
+import com.godaddy.vps4.messaging.DefaultVps4MessagingService.EmailTemplates;
+import com.godaddy.vps4.messaging.models.Message;
+import com.godaddy.vps4.messaging.models.MessagingResponse;
+import com.godaddy.vps4.messaging.models.ShopperMessage;
+import com.godaddy.vps4.util.SecureHttpClient;
 
 public class DefaultVps4MessagingServiceTest {
 
@@ -38,7 +39,7 @@ public class DefaultVps4MessagingServiceTest {
     private String accountName;
     private String ipAddress;
     private String orionId;
-    private Boolean isFullyManaged;
+    private Boolean isManaged;
     private Config config;
     private Instant startTime;
     private long durationMinutes;
@@ -49,7 +50,7 @@ public class DefaultVps4MessagingServiceTest {
         accountName = UUID.randomUUID().toString();
         ipAddress = UUID.randomUUID().toString();
         orionId = UUID.randomUUID().toString();
-        isFullyManaged = false;
+        isManaged = false;
         startTime = Instant.now();
         durationMinutes = 1440;
         secureHttpClient = mock(SecureHttpClient.class);
@@ -103,7 +104,7 @@ public class DefaultVps4MessagingServiceTest {
     public void testSendSetupEmail() throws MissingShopperIdException, IOException {
         when(secureHttpClient.executeHttp(Mockito.any(HttpPost.class), Mockito.any())).thenReturn(mockMessageId);
         String actualMessageId = messagingService.sendSetupEmail(shopperId, accountName, ipAddress,
-                orionId, isFullyManaged);
+                orionId, isManaged);
         Assert.assertNotNull(actualMessageId);
         Assert.assertEquals(mockMessageId.messageId, actualMessageId);
     }
@@ -133,7 +134,7 @@ public class DefaultVps4MessagingServiceTest {
             String accountName = UUID.randomUUID().toString();
             String ipAddress = UUID.randomUUID().toString();
             String orionId = UUID.randomUUID().toString();
-            Boolean isFullyManaged = false;
+            Boolean isManaged = false;
             ShopperMessage shopperMessage = new ShopperMessage();
             shopperMessage.templateNamespaceKey = DefaultVps4MessagingService.TEMPLATE_NAMESPACE_KEY;
             shopperMessage.templateTypeKey = DefaultVps4MessagingService.EmailTemplates.VirtualPrivateHostingProvisioned4.toString();
@@ -144,7 +145,7 @@ public class DefaultVps4MessagingServiceTest {
             substitutionValues.put(DefaultVps4MessagingService.EmailSubstitutions.IPADDRESS, ipAddress);
             substitutionValues.put(DefaultVps4MessagingService.EmailSubstitutions.ORION_ID, orionId);
             substitutionValues.put(DefaultVps4MessagingService.EmailSubstitutions.ISMANAGEDSUPPORT,
-                    Boolean.toString(isFullyManaged));
+                    Boolean.toString(isManaged));
             shopperMessage.substitutionValues = substitutionValues;
 
             Class[] args = new Class[] {EmailTemplates.class, EnumMap.class};
@@ -195,7 +196,7 @@ public class DefaultVps4MessagingServiceTest {
             String accountName = UUID.randomUUID().toString();
             Instant startTime = Instant.now();
             long durationMinutes = 1440;
-            Boolean isFullyManaged = false;
+            Boolean isManaged = false;
             Method formatDateTime = getFormatDateTimeMethod();
             ShopperMessage shopperMessage = new ShopperMessage();
             shopperMessage.templateNamespaceKey = DefaultVps4MessagingService.TEMPLATE_NAMESPACE_KEY;
@@ -210,14 +211,14 @@ public class DefaultVps4MessagingServiceTest {
                     startTime.plus(durationMinutes, ChronoUnit.MINUTES));
             substitutionValues.put(DefaultVps4MessagingService.EmailSubstitutions.END_DATE_TIME, endDateTime);
             substitutionValues.put(DefaultVps4MessagingService.EmailSubstitutions.ISMANAGEDSUPPORT,
-                    Boolean.toString(isFullyManaged));
+                    Boolean.toString(isManaged));
             shopperMessage.substitutionValues = substitutionValues;
 
             Class[] args = new Class[] {EmailTemplates.class, String.class, Instant.class, long.class, boolean.class};
             Method buildScheduledMaintenanceJson = messagingService.getClass().getDeclaredMethod("buildScheduledMaintenanceJson", args);
             buildScheduledMaintenanceJson.setAccessible(true);
             String shopperMessageJsonResult = (String)buildScheduledMaintenanceJson.invoke(messagingService,
-                    emailTemplate, accountName, startTime, durationMinutes, isFullyManaged);
+                    emailTemplate, accountName, startTime, durationMinutes, isManaged);
             Assert.assertEquals(SecureHttpClient.createJSONStringFromObject(shopperMessage), shopperMessageJsonResult);
         } catch (Exception ex) {
             ex.printStackTrace();
@@ -229,7 +230,7 @@ public class DefaultVps4MessagingServiceTest {
     public void testSendScheduledPatchingEmail() throws MissingShopperIdException, IOException {
         when(secureHttpClient.executeHttp(Mockito.any(HttpPost.class), Mockito.any())).thenReturn(mockMessageId);
         String actualMessageId = messagingService.sendScheduledPatchingEmail(shopperId, accountName, startTime,
-                durationMinutes, isFullyManaged);
+                durationMinutes, isManaged);
         Assert.assertNotNull(actualMessageId);
         Assert.assertEquals(mockMessageId.messageId, actualMessageId);
     }
@@ -238,7 +239,7 @@ public class DefaultVps4MessagingServiceTest {
     public void testSendUnexpectedButScheduledMaintenanceEmail() throws MissingShopperIdException, IOException {
         when(secureHttpClient.executeHttp(Mockito.any(HttpPost.class), Mockito.any())).thenReturn(mockMessageId);
         String actualMessageId = messagingService.sendUnexpectedButScheduledMaintenanceEmail(shopperId, accountName,
-                startTime, durationMinutes, isFullyManaged);
+                startTime, durationMinutes, isManaged);
         Assert.assertNotNull(actualMessageId);
         Assert.assertEquals(mockMessageId.messageId, actualMessageId);
     }
@@ -248,7 +249,7 @@ public class DefaultVps4MessagingServiceTest {
         try {
             EmailTemplates emailTemplate = EmailTemplates.VPS4SystemDownFailoverV2;
             String accountName = UUID.randomUUID().toString();
-            Boolean isFullyManaged = false;
+            Boolean isManaged = false;
             ShopperMessage shopperMessage = new ShopperMessage();
             shopperMessage.templateNamespaceKey = DefaultVps4MessagingService.TEMPLATE_NAMESPACE_KEY;
             shopperMessage.templateTypeKey = EmailTemplates.VPS4SystemDownFailoverV2.toString();
@@ -257,14 +258,14 @@ public class DefaultVps4MessagingServiceTest {
                     new EnumMap<>(DefaultVps4MessagingService.EmailSubstitutions.class);
             substitutionValues.put(DefaultVps4MessagingService.EmailSubstitutions.ACCOUNTNAME, accountName);
             substitutionValues.put(DefaultVps4MessagingService.EmailSubstitutions.ISMANAGEDSUPPORT,
-                    Boolean.toString(isFullyManaged));
+                    Boolean.toString(isManaged));
             shopperMessage.substitutionValues = substitutionValues;
 
             Class[] args = new Class[] {EmailTemplates.class, String.class, boolean.class};
             Method buildFailoverJson = messagingService.getClass().getDeclaredMethod("buildFailoverJson", args);
             buildFailoverJson.setAccessible(true);
             String shopperMessageJsonResult = (String)buildFailoverJson.invoke(messagingService,
-                    emailTemplate, accountName, isFullyManaged);
+                    emailTemplate, accountName, isManaged);
             Assert.assertEquals(SecureHttpClient.createJSONStringFromObject(shopperMessage), shopperMessageJsonResult);
         } catch (Exception ex) {
             ex.printStackTrace();
@@ -275,7 +276,7 @@ public class DefaultVps4MessagingServiceTest {
     @Test
     public void testSendSystemDownFailoverEmail() throws MissingShopperIdException, IOException {
         when(secureHttpClient.executeHttp(Mockito.any(HttpPost.class), Mockito.any())).thenReturn(mockMessageId);
-        String actualMessageId = messagingService.sendSystemDownFailoverEmail(shopperId, accountName, isFullyManaged);
+        String actualMessageId = messagingService.sendSystemDownFailoverEmail(shopperId, accountName, isManaged);
         Assert.assertNotNull(actualMessageId);
         Assert.assertEquals(mockMessageId.messageId, actualMessageId);
     }
@@ -283,7 +284,7 @@ public class DefaultVps4MessagingServiceTest {
     @Test
     public void testSendFailoverCompletedEmail() throws MissingShopperIdException, IOException {
         when(secureHttpClient.executeHttp(Mockito.any(HttpPost.class), Mockito.any())).thenReturn(mockMessageId);
-        String actualMessageId = messagingService.sendFailoverCompletedEmail(shopperId, accountName, isFullyManaged);
+        String actualMessageId = messagingService.sendFailoverCompletedEmail(shopperId, accountName, isManaged);
         Assert.assertNotNull(actualMessageId);
         Assert.assertEquals(mockMessageId.messageId, actualMessageId);
     }

@@ -12,6 +12,9 @@ import java.util.UUID;
 
 import javax.inject.Inject;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.godaddy.hfs.vm.Vm;
 import com.godaddy.hfs.vm.VmAction;
@@ -39,9 +42,6 @@ import com.godaddy.vps4.vm.Image;
 import com.godaddy.vps4.vm.VirtualMachine;
 import com.godaddy.vps4.vm.VirtualMachineService;
 import com.godaddy.vps4.vm.VmUserService;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import gdg.hfs.orchestration.CommandContext;
 import gdg.hfs.orchestration.CommandMetadata;
@@ -142,7 +142,7 @@ public class Vps4ProvisionDedicated extends ActionCommand<ProvisionRequest, Vps4
         }, Void.class);
     }
 
-    private void setHostname(long hfsVmId, String resourceId) {   
+    private void setHostname(long hfsVmId, String resourceId) {
         setStep(SetHostname);
         SetHostname.Request hfsRequest = new SetHostname.Request(hfsVmId, resourceId, request.vmInfo.image.getImageControlPanel());
         virtualMachineService.setHostname(request.vmInfo.vmId, resourceId);
@@ -265,7 +265,7 @@ public class Vps4ProvisionDedicated extends ActionCommand<ProvisionRequest, Vps4
     private void sendSetupEmail(ProvisionRequest request, String ipAddress) {
         try {
             String messageId = messagingService.sendSetupEmail(request.shopperId, request.serverName, ipAddress,
-                    request.orionGuid.toString(), request.vmInfo.isFullyManaged());
+                    request.orionGuid.toString(), request.vmInfo.isManaged);
             logger.info(String.format("Setup email sent for shopper %s. Message id: %s", request.shopperId, messageId));
         } catch (Exception ex) {
             logger.error(

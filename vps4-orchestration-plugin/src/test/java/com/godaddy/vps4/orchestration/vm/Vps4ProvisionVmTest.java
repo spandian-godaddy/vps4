@@ -167,7 +167,7 @@ public class Vps4ProvisionVmTest {
         this.vmInfo.sgid = "";
         diskGib = new Random().nextInt(100);
         this.vmInfo.diskGib = diskGib;
-        this.vmInfo.managedLevel = 0;
+        this.vmInfo.isManaged = false;
 
         request = new ProvisionRequest();
         request.rawFlavor = "";
@@ -230,35 +230,14 @@ public class Vps4ProvisionVmTest {
     }
 
     @Test
-    public void testProvisionVmConfiguresNodePingForSelfManagedAccounts() {
-        NodePingCheck check = mock(NodePingCheck.class);
-        check.checkId = 1;
-        when(nodePingService.createCheck(anyLong(), any())).thenReturn(check);
-        when(monitoringMeta.getAccountId()).thenReturn(1L);
-        when(monitoringMeta.getGeoRegion()).thenReturn("nam");
-        this.vmInfo.hasMonitoring = true;
-        vm.primaryIpAddress = mock(com.godaddy.vps4.network.IpAddress.class);
-        vm.primaryIpAddress.pingCheckId = 1234L;
-        when(creditService.getVirtualMachineCredit(any(UUID.class))).thenReturn(credit);
-        when(credit.isEffectivelySelfManaged()).thenReturn(true);
-        when(credit.effectiveManagedLevel()).thenReturn(VirtualMachineCredit.EffectiveManagedLevel.SELF_MANAGED_V2);
-
-        command.executeWithAction(context, this.request);
-        verify(nodePingService, times(1)).createCheck(eq(1L), any(CreateCheckRequest.class));
-    }
-
-    @Test
     public void configuresNodePingForAllAccountsWhenPanoptaIsDisabled() {
+        this.vmInfo.hasMonitoring = true;
         NodePingCheck check = mock(NodePingCheck.class);
         check.checkId = 1;
         when(nodePingService.createCheck(anyLong(), any())).thenReturn(check);
         when(monitoringMeta.getAccountId()).thenReturn(1L);
         when(monitoringMeta.getGeoRegion()).thenReturn("nam");
-        this.vmInfo.hasMonitoring = true;
         vm.primaryIpAddress = mock(com.godaddy.vps4.network.IpAddress.class);
-        when(creditService.getVirtualMachineCredit(any(UUID.class))).thenReturn(credit);
-        when(credit.isEffectivelySelfManaged()).thenReturn(true);
-        when(credit.effectiveManagedLevel()).thenReturn(VirtualMachineCredit.EffectiveManagedLevel.MANAGED_V2);
         when(config.get(eq("panopta.installation.enabled"), eq("false"))).thenReturn("false");
 
         command.executeWithAction(context, this.request);
@@ -267,15 +246,10 @@ public class Vps4ProvisionVmTest {
 
     @Test
     public void provisionVmInvokesPanoptaSetup() {
-        this.vmInfo.hasMonitoring = true;
         vm.primaryIpAddress = mock(com.godaddy.vps4.network.IpAddress.class);
         vm.primaryIpAddress.pingCheckId = 1234L;
-        when(creditService.getVirtualMachineCredit(any(UUID.class))).thenReturn(credit);
-        when(credit.isEffectivelySelfManaged()).thenReturn(false);
-        when(credit.effectiveManagedLevel()).thenReturn(VirtualMachineCredit.EffectiveManagedLevel.FULLY_MANAGED);
         when(config.get(eq("panopta.installation.enabled"), eq("false"))).thenReturn("true");
         when(virtualMachineService.getVirtualMachine(any(UUID.class))).thenReturn(vm);
-        when(credit.getOperatingSystem()).thenReturn("LINUX");
 
         command.executeWithAction(context, this.request);
         verify(context, times(1)).execute(eq(SetupPanopta.class), setupPanoptaRequestArgCaptor.capture());
@@ -291,7 +265,7 @@ public class Vps4ProvisionVmTest {
         command.executeWithAction(context, this.request);
         verify(messagingService, times(1)).sendSetupEmail(shopperId, expectedServerName,
                                                           primaryIp.address, orionGuid.toString(),
-                                                          this.vmInfo.isFullyManaged());
+                                                          this.vmInfo.isManaged);
     }
 
     @Test

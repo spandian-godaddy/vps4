@@ -40,7 +40,6 @@ import com.godaddy.vps4.web.Vps4Api;
 import com.godaddy.vps4.web.security.GDUser;
 
 import gdg.hfs.orchestration.CommandService;
-
 import io.swagger.annotations.Api;
 
 @Vps4Api
@@ -165,6 +164,7 @@ public class VmRebuildResource {
                 config.get("ovh.zone", null);
         rebuildVmInfo.privateLabelId = creditService.getVirtualMachineCredit(vm.orionGuid).getResellerId();
         rebuildVmInfo.orionGuid = vm.orionGuid;
+        rebuildVmInfo.shopperId = user.getShopperId();
 
         Vps4RebuildVm.Request req = new Vps4RebuildVm.Request();
         req.rebuildVmInfo = rebuildVmInfo;

@@ -11,10 +11,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.godaddy.hfs.config.Config;
 import com.godaddy.hfs.vm.VmAction;
 import com.godaddy.vps4.credit.CreditService;
-import com.godaddy.vps4.credit.VirtualMachineCredit;
 import com.godaddy.vps4.network.IpAddress;
 import com.godaddy.vps4.network.NetworkService;
 import com.godaddy.vps4.orchestration.ActionCommand;
@@ -33,6 +31,8 @@ import com.godaddy.vps4.orchestration.hfs.vm.DestroyVm;
 import com.godaddy.vps4.orchestration.panopta.SetupPanopta;
 import com.godaddy.vps4.orchestration.sysadmin.ConfigureMailRelay;
 import com.godaddy.vps4.orchestration.sysadmin.ConfigureMailRelay.ConfigureMailRelayRequest;
+import com.godaddy.vps4.panopta.PanoptaDataService;
+import com.godaddy.vps4.panopta.jdbc.PanoptaServerDetails;
 import com.godaddy.vps4.vm.ActionService;
 import com.godaddy.vps4.vm.Image;
 import com.godaddy.vps4.vm.RebuildVmInfo;
@@ -59,7 +59,7 @@ public class Vps4RebuildVm extends ActionCommand<Vps4RebuildVm.Request, Void> {
     private final NetworkService vps4NetworkService;
     private final VmUserService vmUserService;
     private final CreditService creditService;
-    private final Config config;
+    private final PanoptaDataService panoptaDataService;
 
     private Request request;
     private ActionState state;
@@ -69,13 +69,13 @@ public class Vps4RebuildVm extends ActionCommand<Vps4RebuildVm.Request, Void> {
     @Inject
     public Vps4RebuildVm(ActionService actionService, VirtualMachineService virtualMachineService,
                          NetworkService vps4NetworkService, VmUserService vmUserService, CreditService creditService,
-                         Config config) {
+                         PanoptaDataService panoptaDataService) {
         super(actionService);
         this.virtualMachineService = virtualMachineService;
         this.vps4NetworkService = vps4NetworkService;
         this.vmUserService = vmUserService;
         this.creditService = creditService;
-        this.config = config;
+        this.panoptaDataService = panoptaDataService;
     }
 
     @Override
@@ -292,31 +292,19 @@ public class Vps4RebuildVm extends ActionCommand<Vps4RebuildVm.Request, Void> {
     }
 
     private void configureMonitoring(long hfsVmId) {
-        // gate panopta installation using a feature flag
-        boolean isPanoptaInstallationEnabled =
-                Boolean.parseBoolean(config.get("panopta.installation.enabled", "false"));
-        VirtualMachineCredit credit = getVirtualMachineCredit();
-
-        if (isPanoptaInstallationEnabled && isCreditEligibleForPanopta(credit)) {
+        if (hasPanoptaMonitoring()) {
             SetupPanopta.Request setupPanoptaRequest = new SetupPanopta.Request();
             setupPanoptaRequest.hfsVmId = hfsVmId;
             setupPanoptaRequest.orionGuid = request.rebuildVmInfo.orionGuid;
             setupPanoptaRequest.vmId = request.rebuildVmInfo.vmId;
-            setupPanoptaRequest.shopperId = credit.getShopperId();
+            setupPanoptaRequest.shopperId = request.rebuildVmInfo.shopperId;
             context.execute(SetupPanopta.class, setupPanoptaRequest);
         }
     }
 
-    private VirtualMachineCredit getVirtualMachineCredit() {
-        return creditService.getVirtualMachineCredit(request.rebuildVmInfo.orionGuid);
-    }
-
-    private boolean isCreditEligibleForPanopta(VirtualMachineCredit credit) {
-        return Arrays.asList(VirtualMachineCredit.EffectiveManagedLevel.SELF_MANAGED_V2,
-                             VirtualMachineCredit.EffectiveManagedLevel.MANAGED_V2,
-                             VirtualMachineCredit.EffectiveManagedLevel.MANAGED_V1,
-                             VirtualMachineCredit.EffectiveManagedLevel.FULLY_MANAGED)
-                     .contains(credit.effectiveManagedLevel());
+    private boolean hasPanoptaMonitoring() {
+        PanoptaServerDetails panoptaDetails = panoptaDataService.getPanoptaServerDetails(vps4VmId);
+        return panoptaDetails != null;
     }
 
     // Sets the name customers see in MYA when launching into their server dashboard

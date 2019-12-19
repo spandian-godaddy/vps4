@@ -1,7 +1,6 @@
 package com.godaddy.vps4.credit;
 
 import java.time.Instant;
-import java.util.Arrays;
 import java.util.Map;
 import java.util.UUID;
 
@@ -9,7 +8,6 @@ import org.apache.commons.lang3.builder.ReflectionToStringBuilder;
 import org.apache.commons.lang3.builder.ToStringStyle;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.annotation.JsonProperty;
 import com.godaddy.vps4.credit.ECommCreditService.PlanFeatures;
 import com.godaddy.vps4.credit.ECommCreditService.ProductMetaField;
 import com.godaddy.vps4.vm.AccountStatus;
@@ -17,11 +15,7 @@ import com.godaddy.vps4.vm.DataCenter;
 import com.godaddy.vps4.vm.DataCenterService;
 
 public class VirtualMachineCredit {
-    @JsonIgnore
-    private static final Instant MANAGED_LEVEL_V2_CUTOVER_DATE = Instant.parse("2099-05-01T00:00:00Z");
-    private static final String MYH_CONTROL_PANEL = "MYH";
 
-    private final int FULLY_MANAGED_LEVEL = 2;
     private final int MONITORING_ENABLED = 1;
 
     private UUID orionGuid;
@@ -46,15 +40,6 @@ public class VirtualMachineCredit {
 
     private VirtualMachineCredit() {
     }
-
-    public enum EffectiveManagedLevel {
-        SELF_MANAGED_V1,
-        SELF_MANAGED_V2,
-        MANAGED_V1,
-        MANAGED_V2,
-        FULLY_MANAGED
-    }
-
 
     @JsonIgnore
     public boolean isAccountSuspended() {
@@ -89,57 +74,12 @@ public class VirtualMachineCredit {
 
     @JsonIgnore
     public boolean hasMonitoring() {
-        return monitoring == MONITORING_ENABLED || isFullyManaged();
-    }
-
-    @Deprecated
-    @JsonIgnore
-    public boolean isFullyManaged() {
-        return managedLevel == FULLY_MANAGED_LEVEL;
-    }
-
-    @Deprecated
-    @JsonIgnore
-    public boolean isEffectivelySelfManaged() {
-        return Arrays.asList(EffectiveManagedLevel.SELF_MANAGED_V1, EffectiveManagedLevel.SELF_MANAGED_V2)
-                     .contains(this.effectiveManagedLevel());
+        return monitoring == MONITORING_ENABLED;
     }
 
     @JsonIgnore
     public Instant getPurchasedAt() {
         return purchasedAt;
-    }
-
-    private boolean purchasedBeforeMLV2CutoffDate() {
-        return (purchasedAt == null || purchasedAt.isBefore(MANAGED_LEVEL_V2_CUTOVER_DATE));
-    }
-
-    @Deprecated
-    @JsonProperty("effectiveManagedLevel")
-    public EffectiveManagedLevel effectiveManagedLevel() {
-        EffectiveManagedLevel effectiveManagedLevel;
-        switch (managedLevel) {
-            case 2:
-                effectiveManagedLevel = EffectiveManagedLevel.FULLY_MANAGED;
-                break;
-            case 1:
-                effectiveManagedLevel = EffectiveManagedLevel.MANAGED_V2;
-                break;
-            default:
-                if (purchasedBeforeMLV2CutoffDate()) {
-                    // determine level based on control panel
-                    if (controlPanel == null || MYH_CONTROL_PANEL.equalsIgnoreCase(controlPanel)) {
-                        effectiveManagedLevel = EffectiveManagedLevel.SELF_MANAGED_V1;
-                    } else {
-                        effectiveManagedLevel = EffectiveManagedLevel.MANAGED_V1;
-                    }
-                } else {
-                    effectiveManagedLevel = EffectiveManagedLevel.SELF_MANAGED_V2;
-                }
-                break;
-        }
-        return effectiveManagedLevel;
-
     }
 
     public boolean isManaged() {

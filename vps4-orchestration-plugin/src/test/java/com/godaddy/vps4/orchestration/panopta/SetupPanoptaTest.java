@@ -28,7 +28,6 @@ import com.godaddy.vps4.credit.VirtualMachineCredit;
 import com.godaddy.vps4.orchestration.hfs.sysadmin.InstallPanopta;
 import com.godaddy.vps4.panopta.PanoptaCustomer;
 import com.godaddy.vps4.panopta.PanoptaDataService;
-import com.godaddy.vps4.panopta.PanoptaDetail;
 import com.godaddy.vps4.panopta.PanoptaServer;
 import com.godaddy.vps4.panopta.jdbc.PanoptaCustomerDetails;
 import com.godaddy.vps4.panopta.jdbc.PanoptaServerDetails;
@@ -45,13 +44,9 @@ public class SetupPanoptaTest {
     private PanoptaCustomer panoptaCustomerMock;
     private PanoptaCustomerDetails panoptaCustomerDetailsMock;
     private PanoptaServerDetails panoptaServerDetailsMock;
-    private CreatePanoptaCustomer createPanoptaCustomerMock;
     private GetPanoptaCustomer.Response getPanoptaCustomerResponse;
     private CreatePanoptaCustomer.Response createPanoptaCustomerResponse;
-    private WaitForPanoptaInstall waitForPanoptaInstallMock;
-    private InstallPanopta installPanoptaMock;
     private PanoptaDataService panoptaDataServiceMock;
-    private PanoptaDetail panoptaDetailMock;
     private Config configMock;
     private SetupPanopta command;
     private SetupPanopta.Request request;
@@ -84,15 +79,11 @@ public class SetupPanoptaTest {
         fakeDataCenterTemplate = "mega-fake-data-center-template";
         creditServiceMock = mock(CreditService.class);
         commandContextMock = mock(CommandContext.class);
-        createPanoptaCustomerMock = mock(CreatePanoptaCustomer.class);
-        waitForPanoptaInstallMock = mock(WaitForPanoptaInstall.class);
-        installPanoptaMock = mock(InstallPanopta.class);
         panoptaCustomerMock = mock(PanoptaCustomer.class);
         panoptaServerMock = mock(PanoptaServer.class);
         panoptaDataServiceMock = mock(PanoptaDataService.class);
         configMock = mock(Config.class);
         creditMock = mock(VirtualMachineCredit.class);
-        panoptaDetailMock = mock(PanoptaDetail.class);
         sysAdminActionMock = mock(SysAdminAction.class);
         panoptaCustomerDetailsMock = mock(PanoptaCustomerDetails.class);
         panoptaServerDetailsMock = mock(PanoptaServerDetails.class);
@@ -120,7 +111,6 @@ public class SetupPanoptaTest {
         request.orionGuid = fakeOrionGuid;
         request.hfsVmId = fakeHfsVmId;
         request.shopperId = fakeShopperId;
-        request.panoptaTemplates = fakePanoptaTemplates;
     }
 
     private void setupFakePanoptaCustomerResponse() {
@@ -131,10 +121,8 @@ public class SetupPanoptaTest {
     private void setupMocksForTests() {
         when(creditServiceMock.getVirtualMachineCredit(eq(fakeOrionGuid))).thenReturn(creditMock);
         when(creditMock.getOperatingSystem()).thenReturn("linux");
-        when(creditMock.effectiveManagedLevel()).thenReturn(VirtualMachineCredit.EffectiveManagedLevel.FULLY_MANAGED);
-        when(configMock.get(eq("panopta.api.templates."
-                                       + VirtualMachineCredit.EffectiveManagedLevel.FULLY_MANAGED.toString()
-                                       + ".linux"))).thenReturn(fakePanoptaTemplates);
+        when(creditMock.isManaged()).thenReturn(true);
+        when(configMock.get(eq("panopta.api.templates.managed.linux"))).thenReturn(fakePanoptaTemplates);
         when(configMock.get("panopta.api.templates.webhook")).thenReturn(fakeDataCenterTemplate);
     }
 
@@ -214,12 +202,11 @@ public class SetupPanoptaTest {
     }
 
     @Test
-    public void installsManagedTemplateForSelfManagedWithMonitoring() {
-        String fakePanoptaTemplateForManaged = "fake-managed-panopta-template";
-        when(creditMock.effectiveManagedLevel()).thenReturn(VirtualMachineCredit.EffectiveManagedLevel.SELF_MANAGED_V1);
-        when(configMock.get(eq("panopta.api.templates."
-                                       + VirtualMachineCredit.EffectiveManagedLevel.SELF_MANAGED_V1.toString()
-                                       + ".linux"))).thenReturn(fakePanoptaTemplateForManaged);
+    public void installsBasePlusTemplateForUnmanagedWithMonitoring() {
+        String fakeUnmanagedServerTemplate = "fake-unmanaged-panopta-template";
+        when(creditMock.isManaged()).thenReturn(false);
+        when(creditMock.hasMonitoring()).thenReturn(true);
+        when(configMock.get(eq("panopta.api.templates.addon.linux"))).thenReturn(fakeUnmanagedServerTemplate);
 
         when(panoptaDataServiceMock.getPanoptaCustomerDetails(eq(fakeShopperId)))
                 .thenReturn(panoptaCustomerDetailsMock);
@@ -234,9 +221,8 @@ public class SetupPanoptaTest {
                      fakeHfsVmId);
         assertEquals(fakeCustomerKey, capturedRequest.customerKey);
         assertEquals(fakeServerKey, capturedRequest.serverKey);
-        assertEquals(fakePanoptaTemplateForManaged + "," + fakeDataCenterTemplate, capturedRequest.templates);
+        assertEquals(fakeUnmanagedServerTemplate + "," + fakeDataCenterTemplate, capturedRequest.templates);
         assertThat(capturedRequest.templates, not(containsString(fakePanoptaTemplates)));
-
     }
 
     @Test

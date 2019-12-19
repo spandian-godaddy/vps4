@@ -1,19 +1,6 @@
 package com.godaddy.vps4.orchestration.vm.provision;
 
-import static com.godaddy.vps4.vm.CreateVmStep.ConfigureMailRelay;
-import static com.godaddy.vps4.vm.CreateVmStep.ConfigureMonitoring;
-import static com.godaddy.vps4.vm.CreateVmStep.ConfigureNodeping;
-import static com.godaddy.vps4.vm.CreateVmStep.ConfiguringCPanel;
-import static com.godaddy.vps4.vm.CreateVmStep.ConfiguringNetwork;
-import static com.godaddy.vps4.vm.CreateVmStep.ConfiguringPlesk;
-import static com.godaddy.vps4.vm.CreateVmStep.GeneratingHostname;
-import static com.godaddy.vps4.vm.CreateVmStep.RequestingIPAddress;
-import static com.godaddy.vps4.vm.CreateVmStep.RequestingMailRelay;
-import static com.godaddy.vps4.vm.CreateVmStep.RequestingServer;
-import static com.godaddy.vps4.vm.CreateVmStep.SetHostname;
-import static com.godaddy.vps4.vm.CreateVmStep.SetupAutomaticBackupSchedule;
-import static com.godaddy.vps4.vm.CreateVmStep.SetupComplete;
-import static com.godaddy.vps4.vm.CreateVmStep.StartingServerSetup;
+import static com.godaddy.vps4.vm.CreateVmStep.*;
 
 import java.util.UUID;
 
@@ -26,7 +13,6 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.godaddy.hfs.config.Config;
 import com.godaddy.hfs.vm.VmAction;
 import com.godaddy.vps4.credit.CreditService;
-import com.godaddy.vps4.credit.VirtualMachineCredit;
 import com.godaddy.vps4.hfs.HfsVmTrackingRecordService;
 import com.godaddy.vps4.messaging.Vps4MessagingService;
 import com.godaddy.vps4.network.IpAddress.IpAddressType;
@@ -322,8 +308,6 @@ public class Vps4ProvisionVm extends ActionCommand<ProvisionRequest, Vps4Provisi
     }
 
     private void configureMonitoring(IpAddress ipAddress, long hfsVmId) {
-        VirtualMachineCredit credit = creditService.getVirtualMachineCredit(request.orionGuid);
-
         // gate panopta installation using a feature flag
         boolean isPanoptaInstallationEnabled = Boolean.parseBoolean(config.get("panopta.installation.enabled", "false"));
 
@@ -349,7 +333,6 @@ public class Vps4ProvisionVm extends ActionCommand<ProvisionRequest, Vps4Provisi
         CreateCheckRequest checkRequest =
                 ProvisionHelper.getCreateCheckRequest(ipAddress.address, monitoringMeta);
         NodePingCheck check = monitoringService.createCheck(monitoringMeta.getAccountId(), checkRequest);
-        logger.debug("CheckId: {}", check.checkId);
         addCheckIdToIp(ipAddress, check);
     }
 
@@ -370,8 +353,7 @@ public class Vps4ProvisionVm extends ActionCommand<ProvisionRequest, Vps4Provisi
     private void sendSetupEmail(ProvisionRequest request, String ipAddress) {
         try {
             String messageId = messagingService.sendSetupEmail(request.shopperId, request.serverName, ipAddress,
-                                                               request.orionGuid.toString(),
-                                                               request.vmInfo.isFullyManaged());
+                    request.orionGuid.toString(), request.vmInfo.isManaged);
             logger.info(String.format("Setup email sent for shopper %s. Message id: %s", request.shopperId, messageId));
         } catch (Exception ex) {
             logger.error(

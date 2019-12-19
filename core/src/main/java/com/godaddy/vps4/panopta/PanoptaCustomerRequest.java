@@ -32,8 +32,7 @@ public class PanoptaCustomerRequest {
         this.shopperId = shopperId;
         this.partnerCustomerKey = config.get("panopta.api.partner.customer.key.prefix") + shopperId;
         this.emailAddress = config.get("panopta.api.customer.email", "dev-vps4@godaddy.com");
-        this.panoptaPackage =
-                config.get("panopta.api.package.FULLY_MANAGED");
+        this.panoptaPackage = config.get("panopta.api.package");
         return this;
     }
 

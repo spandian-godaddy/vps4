@@ -34,7 +34,7 @@ public class SendUnexpectedButScheduledMaintenanceEmail extends SendMessagingEma
         String messageId = context.execute("SendUnscheduledMaintEmail-" + emailRequest.shopperId,
                 ctx -> messagingService.sendUnexpectedButScheduledMaintenanceEmail(
                         emailRequest.shopperId, emailRequest.accountName, emailRequest.startTime,
-                        emailRequest.durationMinutes, emailRequest.isFullyManaged),
+                        emailRequest.durationMinutes, emailRequest.isManaged),
                 String.class);
         this.waitForMessageComplete(context, messageId, emailRequest.shopperId);
 

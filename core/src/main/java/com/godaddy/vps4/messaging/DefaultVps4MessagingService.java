@@ -107,12 +107,12 @@ public class DefaultVps4MessagingService implements Vps4MessagingService {
 
     @Override
     public String sendSetupEmail(String shopperId, String accountName, String ipAddress, String orionGuid,
-                                 boolean isFullyManaged) {
+                                 boolean isManaged) {
         EnumMap<EmailSubstitutions, String> substitutionValues = new EnumMap<>(EmailSubstitutions.class);
         substitutionValues.put(EmailSubstitutions.ACCOUNTNAME, accountName);
         substitutionValues.put(EmailSubstitutions.IPADDRESS, ipAddress);
         substitutionValues.put(EmailSubstitutions.ORION_ID, orionGuid);
-        substitutionValues.put(EmailSubstitutions.ISMANAGEDSUPPORT, Boolean.toString(isFullyManaged));
+        substitutionValues.put(EmailSubstitutions.ISMANAGEDSUPPORT, Boolean.toString(isManaged));
 
         String shopperMessageJson = buildShopperMessageJson(EmailTemplates.VirtualPrivateHostingProvisioned4, substitutionValues);
         return sendMessage(shopperId, shopperMessageJson);
@@ -164,56 +164,56 @@ public class DefaultVps4MessagingService implements Vps4MessagingService {
     }
 
     private String buildScheduledMaintenanceJson(EmailTemplates emailTemplate, String accountName, Instant startTime,
-                                                 long durationMinutes, boolean isFullyManaged) {
+                                                 long durationMinutes, boolean isManaged) {
         EnumMap<EmailSubstitutions, String> substitutionValues = new EnumMap<>(EmailSubstitutions.class);
         substitutionValues.put(EmailSubstitutions.ACCOUNTNAME, accountName);
         String startDateTime = formatDateTime(startTime);
         substitutionValues.put(EmailSubstitutions.START_DATE_TIME, startDateTime);
         String endDateTime = formatDateTime(startTime.plus(durationMinutes, ChronoUnit.MINUTES));
         substitutionValues.put(EmailSubstitutions.END_DATE_TIME, endDateTime);
-        substitutionValues.put(EmailSubstitutions.ISMANAGEDSUPPORT, Boolean.toString(isFullyManaged));
+        substitutionValues.put(EmailSubstitutions.ISMANAGEDSUPPORT, Boolean.toString(isManaged));
 
         return buildShopperMessageJson(emailTemplate, substitutionValues);
     }
 
     @Override
     public String sendScheduledPatchingEmail(String shopperId, String accountName, Instant startTime,
-                                             long durationMinutes, boolean isFullyManaged) {
+                                             long durationMinutes, boolean isManaged) {
         String shopperMessageJson = buildScheduledMaintenanceJson(EmailTemplates.VPS4ScheduledPatchingV2, accountName,
-                startTime, durationMinutes, isFullyManaged);
+                startTime, durationMinutes, isManaged);
 
         return sendMessage(shopperId, shopperMessageJson);
     }
 
     @Override
     public String sendUnexpectedButScheduledMaintenanceEmail(String shopperId, String accountName, Instant startTime,
-                                                             long durationMinutes, boolean isFullyManaged) {
+                                                             long durationMinutes, boolean isManaged) {
         String shopperMessageJson = buildScheduledMaintenanceJson(EmailTemplates.VPS4UnexpectedbutScheduledMaintenanceV2,
-                accountName, startTime, durationMinutes, isFullyManaged);
+                accountName, startTime, durationMinutes, isManaged);
 
         return sendMessage(shopperId, shopperMessageJson);
     }
 
-    private String buildFailoverJson(EmailTemplates emailTemplate, String accountName, boolean isFullyManaged) {
+    private String buildFailoverJson(EmailTemplates emailTemplate, String accountName, boolean isManaged) {
         EnumMap<EmailSubstitutions, String> substitutionValues = new EnumMap<>(EmailSubstitutions.class);
         substitutionValues.put(EmailSubstitutions.ACCOUNTNAME, accountName);
-        substitutionValues.put(EmailSubstitutions.ISMANAGEDSUPPORT, Boolean.toString(isFullyManaged));
+        substitutionValues.put(EmailSubstitutions.ISMANAGEDSUPPORT, Boolean.toString(isManaged));
 
         return buildShopperMessageJson(emailTemplate, substitutionValues);
     }
 
     @Override
-    public String sendSystemDownFailoverEmail(String shopperId, String accountName, boolean isFullyManaged) {
+    public String sendSystemDownFailoverEmail(String shopperId, String accountName, boolean isManaged) {
         String shopperMessageJson = buildFailoverJson(EmailTemplates.VPS4SystemDownFailoverV2, accountName,
-                isFullyManaged);
+                isManaged);
 
         return sendMessage(shopperId, shopperMessageJson);
     }
 
     @Override
-    public String sendFailoverCompletedEmail(String shopperId, String accountName, boolean isFullyManaged) {
+    public String sendFailoverCompletedEmail(String shopperId, String accountName, boolean isManaged) {
         String shopperMessageJson = buildFailoverJson(EmailTemplates.VPS4UnexpectedscheduledmaintenanceFailoveriscompleted,
-                accountName, isFullyManaged);
+                accountName, isManaged);
 
         return sendMessage(shopperId, shopperMessageJson);
     }

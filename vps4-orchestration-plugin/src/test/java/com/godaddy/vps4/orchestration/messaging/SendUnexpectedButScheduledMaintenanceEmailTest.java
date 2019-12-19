@@ -41,7 +41,7 @@ public class SendUnexpectedButScheduledMaintenanceEmailTest {
         request = new ScheduledMaintenanceEmailRequest();
         request.accountName = "vmname";
         request.shopperId = "shopperid";
-        request.isFullyManaged = false;
+        request.isManaged = false;
         request.startTime = startTime;
         request.durationMinutes = 30;
 

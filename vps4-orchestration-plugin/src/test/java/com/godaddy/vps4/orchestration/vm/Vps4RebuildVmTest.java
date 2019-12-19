@@ -22,7 +22,6 @@ import org.junit.Before;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
 
-import com.godaddy.hfs.config.Config;
 import com.godaddy.hfs.vm.VmAction;
 import com.godaddy.vps4.credit.CreditService;
 import com.godaddy.vps4.credit.VirtualMachineCredit;
@@ -40,8 +39,11 @@ import com.godaddy.vps4.orchestration.hfs.sysadmin.SetPassword;
 import com.godaddy.vps4.orchestration.hfs.sysadmin.ToggleAdmin;
 import com.godaddy.vps4.orchestration.hfs.vm.CreateVm;
 import com.godaddy.vps4.orchestration.hfs.vm.DestroyVm;
+import com.godaddy.vps4.orchestration.panopta.SetupPanopta;
 import com.godaddy.vps4.orchestration.sysadmin.ConfigureMailRelay;
 import com.godaddy.vps4.orchestration.sysadmin.ConfigureMailRelay.ConfigureMailRelayRequest;
+import com.godaddy.vps4.panopta.PanoptaDataService;
+import com.godaddy.vps4.panopta.jdbc.PanoptaServerDetails;
 import com.godaddy.vps4.vm.ActionService;
 import com.godaddy.vps4.vm.Image;
 import com.godaddy.vps4.vm.Image.ControlPanel;
@@ -64,11 +66,12 @@ public class Vps4RebuildVmTest {
     NetworkService vps4NetworkService = mock(NetworkService.class);
     VmUserService vmUserService = mock(VmUserService.class);
     CreditService creditService = mock(CreditService.class);
-    Config  config = mock(Config.class);
     VirtualMachineCredit credit = mock(VirtualMachineCredit.class);
+    PanoptaDataService panoptaDataService = mock(PanoptaDataService.class);
 
     UUID vps4VmId = UUID.randomUUID();
     UUID orionGuid = UUID.randomUUID();
+    String shopperId = "12345678";
     long originalHfsVmId = 123L;
     long newHfsVmId = 456L;
     long actionId = 12L;
@@ -87,6 +90,7 @@ public class Vps4RebuildVmTest {
     ToggleAdmin enableAdmin = mock(ToggleAdmin.class);
     SetPassword setPassword = mock(SetPassword.class);
     ConfigureMailRelay setMailRelay = mock(ConfigureMailRelay.class);
+    SetupPanopta setupPanopta = mock(SetupPanopta.class);
 
     Vps4RebuildVm.Request request;
 
@@ -102,13 +106,12 @@ public class Vps4RebuildVmTest {
         binder.bind(ToggleAdmin.class).toInstance(enableAdmin);
         binder.bind(SetPassword.class).toInstance(setPassword);
         binder.bind(ConfigureMailRelay.class).toInstance(setMailRelay);
-        binder.bind(Config.class).toInstance(config);
-        binder.bind(CreditService.class).toInstance(creditService);
+        binder.bind(SetupPanopta.class).toInstance(setupPanopta);
     });
     CommandContext context = spy(new TestCommandContext(new GuiceCommandProvider(injector)));
 
-    Vps4RebuildVm command = new Vps4RebuildVm(actionService, virtualMachineService,
-                                              vps4NetworkService, vmUserService, creditService, config);
+    Vps4RebuildVm command = new Vps4RebuildVm(actionService, virtualMachineService, vps4NetworkService,
+            vmUserService, creditService, panoptaDataService);
 
     @Before
     public void setupTest() {
@@ -125,6 +128,7 @@ public class Vps4RebuildVmTest {
         request.rebuildVmInfo.serverName = "server-name";
         request.rebuildVmInfo.hostname = "host.name";
         request.rebuildVmInfo.encryptedPassword = "encrypted".getBytes();
+        request.rebuildVmInfo.shopperId = shopperId;
 
         IpAddress publicIp = new IpAddress();
         publicIp.ipAddressId = ipAddressId;
@@ -321,5 +325,26 @@ public class Vps4RebuildVmTest {
     public void setsEcommCommonName() {
         command.execute(context, request);
         verify(creditService).setCommonName(orionGuid, "server-name");
+    }
+
+    @Test
+    public void configuresMonitoringIfHasPanopta() {
+        PanoptaServerDetails serverDetails = mock(PanoptaServerDetails.class);
+        when(panoptaDataService.getPanoptaServerDetails(vps4VmId)).thenReturn(serverDetails);
+        command.execute(context, request);
+        ArgumentCaptor<SetupPanopta.Request> argument = ArgumentCaptor.forClass(SetupPanopta.Request.class);
+        verify(context).execute(eq(SetupPanopta.class), argument.capture());
+        SetupPanopta.Request request = argument.getValue();
+        assertEquals(newHfsVmId, request.hfsVmId);
+        assertEquals(orionGuid, request.orionGuid);
+        assertEquals(vps4VmId, request.vmId);
+        assertEquals(shopperId, request.shopperId);
+    }
+
+    @Test
+    public void skipsMonitoringSetupIfNoPanoptaDetails() {
+        when(panoptaDataService.getPanoptaServerDetails(vps4VmId)).thenReturn(null);
+        command.execute(context, request);
+        verify(context, never()).execute(eq(SetupPanopta.class), any(SetupPanopta.Request.class));
     }
 }

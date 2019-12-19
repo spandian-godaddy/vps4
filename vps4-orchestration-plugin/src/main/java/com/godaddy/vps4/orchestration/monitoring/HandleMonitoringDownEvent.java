@@ -18,8 +18,8 @@ import gdg.hfs.orchestration.CommandMetadata;
 import gdg.hfs.orchestration.CommandRetryStrategy;
 
 @CommandMetadata(
-    name = "HandleMonitoringDownEvent", 
-    requestType = Long.class, 
+    name = "HandleMonitoringDownEvent",
+    requestType = Long.class,
     retryStrategy = CommandRetryStrategy.NEVER
 )
 public class HandleMonitoringDownEvent implements Command<Long, Void> {
@@ -56,9 +56,9 @@ public class HandleMonitoringDownEvent implements Command<Long, Void> {
     private boolean shouldSendNotification(VirtualMachine vm) {
         VirtualMachineCredit credit = creditService.getVirtualMachineCredit(vm.orionGuid);
 
-        boolean isFullyManaged = credit.isFullyManaged();
+        boolean isManaged = credit.isManaged();
         boolean isAccountActive = credit.getAccountStatus() == AccountStatus.ACTIVE;
 
-        return isFullyManaged && isAccountActive;
+        return isManaged && isAccountActive;
     }
 }

@@ -1,9 +1,27 @@
 package com.godaddy.vps4.orchestration.vm;
 
+import static org.junit.Assert.assertEquals;
+import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.anyBoolean;
+import static org.mockito.Matchers.anyLong;
+import static org.mockito.Matchers.anyString;
+import static org.mockito.Matchers.eq;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
 import java.io.IOException;
 import java.util.Random;
 import java.util.UUID;
 import java.util.function.Function;
+
+import org.junit.Before;
+import org.junit.Test;
+import org.mockito.ArgumentCaptor;
+import org.mockito.Captor;
+import org.mockito.MockitoAnnotations;
 
 import com.godaddy.hfs.mailrelay.MailRelayUpdate;
 import com.godaddy.hfs.vm.Vm;
@@ -38,28 +56,12 @@ import com.godaddy.vps4.vm.VirtualMachineService;
 import com.godaddy.vps4.vm.VmUserService;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
+
 import gdg.hfs.orchestration.CommandContext;
 import gdg.hfs.vhfs.nodeping.CreateCheckRequest;
 import gdg.hfs.vhfs.nodeping.NodePingCheck;
 import gdg.hfs.vhfs.nodeping.NodePingService;
 import gdg.hfs.vhfs.plesk.PleskService;
-import org.junit.Before;
-import org.junit.Test;
-import org.mockito.ArgumentCaptor;
-import org.mockito.Captor;
-import org.mockito.MockitoAnnotations;
-
-import static org.junit.Assert.assertEquals;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyBoolean;
-import static org.mockito.Matchers.anyLong;
-import static org.mockito.Matchers.anyString;
-import static org.mockito.Matchers.eq;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
 
 public class Vps4ProvisionDedicatedTest {
 
@@ -153,7 +155,7 @@ public class Vps4ProvisionDedicatedTest {
         this.vmInfo.sgid = "";
         diskGib = new Random().nextInt(100);
         this.vmInfo.diskGib = diskGib;
-        this.vmInfo.managedLevel = 0;
+        this.vmInfo.isManaged = false;
 
         request = new ProvisionRequest();
         request.rawFlavor = "";
@@ -235,7 +237,7 @@ public class Vps4ProvisionDedicatedTest {
     public void testSendSetupEmail() throws MissingShopperIdException, IOException {
         command.executeWithAction(context, this.request);
         verify(messagingService, times(1)).sendSetupEmail(shopperId, expectedServerName,
-                hfsIp.ip_address, orionGuid.toString(), this.vmInfo.isFullyManaged());
+                hfsIp.ip_address, orionGuid.toString(), this.vmInfo.isManaged);
     }
 
     @Test

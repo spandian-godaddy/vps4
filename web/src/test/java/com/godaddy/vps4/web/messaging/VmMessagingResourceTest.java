@@ -17,11 +17,11 @@ import org.junit.Before;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
 
+import com.godaddy.vps4.credit.CreditService;
+import com.godaddy.vps4.credit.VirtualMachineCredit;
 import com.godaddy.vps4.orchestration.messaging.FailOverEmailRequest;
 import com.godaddy.vps4.orchestration.messaging.ScheduledMaintenanceEmailRequest;
 import com.godaddy.vps4.security.GDUserMock;
-import com.godaddy.vps4.security.Vps4User;
-import com.godaddy.vps4.security.Vps4UserService;
 import com.godaddy.vps4.vm.VirtualMachine;
 import com.godaddy.vps4.vm.VirtualMachineService;
 import com.godaddy.vps4.web.Vps4Exception;
@@ -35,17 +35,16 @@ public class VmMessagingResourceTest {
     private VmMessagingResource resource;
 
     private VirtualMachineService virtualMachineService;
-    private Vps4UserService vps4UserService;
+    private CreditService creditService;
     private CommandService commandService;
 
     VirtualMachine vm;
-    Vps4User user;
     GDUser gdUser;
 
     @Before
     public void setupMocks() {
         virtualMachineService = mock(VirtualMachineService.class);
-        vps4UserService = mock(Vps4UserService.class);
+        creditService = mock(CreditService.class);
         commandService = mock(CommandService.class);
 
         vm = new VirtualMachine();
@@ -54,26 +53,27 @@ public class VmMessagingResourceTest {
         vm.validUntil = Instant.MAX;
         vm.name = "testVmName";
 
-        user = new Vps4User(1L, "testMessagingUser");
-        gdUser = GDUserMock.createShopper(user.getShopperId());
+        gdUser = GDUserMock.createShopper();
 
         CommandState command = new CommandState();
         command.commandId = UUID.randomUUID();
 
         when(virtualMachineService.getVirtualMachine(vm.vmId)).thenReturn(vm);
-        when(virtualMachineService.getUserIdByVmId(vm.vmId)).thenReturn(user.getId());
-        when(vps4UserService.getUser(1L)).thenReturn(user);
         when(commandService.executeCommand(any())).thenReturn(command);
 
-        resource = new VmMessagingResource(virtualMachineService, vps4UserService, commandService, gdUser);
+        VirtualMachineCredit credit = mock(VirtualMachineCredit.class);
+        when(credit.isManaged()).thenReturn(false);
+        when(credit.getShopperId()).thenReturn(GDUserMock.DEFAULT_SHOPPER);
+        when(creditService.getVirtualMachineCredit(vm.orionGuid)).thenReturn(credit);
+
+        resource = new VmMessagingResource(virtualMachineService, commandService, creditService, gdUser);
     }
 
     @Test
     public void testMessagePatching() {
         long duration = 24L * 60L;
         Instant startTime = Instant.now();
-        ScheduledMessagingResourceRequest messagingRequest = new ScheduledMessagingResourceRequest(startTime.toString(),
-                duration);
+        ScheduledMessagingResourceRequest messagingRequest = new ScheduledMessagingResourceRequest(startTime.toString(), duration);
         resource.messagePatching(vm.vmId, messagingRequest);
 
         ArgumentCaptor<CommandGroupSpec> argument = ArgumentCaptor.forClass(CommandGroupSpec.class);
@@ -82,8 +82,8 @@ public class VmMessagingResourceTest {
         ScheduledMaintenanceEmailRequest request = (ScheduledMaintenanceEmailRequest) cgs.commands.get(0).request;
         assertEquals(vm.name, request.accountName);
         assertEquals(duration, request.durationMinutes);
-        assertEquals(vm.isFullyManaged(), request.isFullyManaged);
-        assertEquals(user.getShopperId(), request.shopperId);
+        assertEquals(false, request.isManaged);
+        assertEquals(GDUserMock.DEFAULT_SHOPPER, request.shopperId);
         assertEquals(startTime, request.startTime);
     }
 
@@ -132,8 +132,8 @@ public class VmMessagingResourceTest {
         ScheduledMaintenanceEmailRequest request = (ScheduledMaintenanceEmailRequest) cgs.commands.get(0).request;
         assertEquals(vm.name, request.accountName);
         assertEquals(duration, request.durationMinutes);
-        assertEquals(vm.isFullyManaged(), request.isFullyManaged);
-        assertEquals(user.getShopperId(), request.shopperId);
+        assertEquals(false, request.isManaged);
+        assertEquals(GDUserMock.DEFAULT_SHOPPER, request.shopperId);
         assertEquals(startTime, request.startTime);
     }
 
@@ -146,8 +146,8 @@ public class VmMessagingResourceTest {
         CommandGroupSpec cgs = argument.getValue();
         FailOverEmailRequest request = (FailOverEmailRequest) cgs.commands.get(0).request;
         assertEquals(vm.name, request.accountName);
-        assertEquals(vm.isFullyManaged(), request.isFullyManaged);
-        assertEquals(user.getShopperId(), request.shopperId);
+        assertEquals(false, request.isManaged);
+        assertEquals(GDUserMock.DEFAULT_SHOPPER, request.shopperId);
     }
 
     @Test
@@ -159,8 +159,8 @@ public class VmMessagingResourceTest {
         CommandGroupSpec cgs = argument.getValue();
         FailOverEmailRequest request = (FailOverEmailRequest) cgs.commands.get(0).request;
         assertEquals(vm.name, request.accountName);
-        assertEquals(vm.isFullyManaged(), request.isFullyManaged);
-        assertEquals(user.getShopperId(), request.shopperId);
+        assertEquals(false, request.isManaged);
+        assertEquals(GDUserMock.DEFAULT_SHOPPER, request.shopperId);
     }
 
 }

@@ -20,10 +20,12 @@ public class RebuildVmInfo {
     public String serverName;
     public String privateLabelId;
     public UUID orionGuid;
+    public String shopperId;
 
     public RebuildVmInfo() {
     }
 
+    @Override
     public String toString() {
         return ToStringBuilder.reflectionToString(this);
     }

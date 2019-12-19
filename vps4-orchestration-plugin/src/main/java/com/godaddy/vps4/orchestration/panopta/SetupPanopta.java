@@ -1,9 +1,5 @@
 package com.godaddy.vps4.orchestration.panopta;
 
-import static com.godaddy.vps4.credit.VirtualMachineCredit.EffectiveManagedLevel.MANAGED_V2;
-import static com.godaddy.vps4.credit.VirtualMachineCredit.EffectiveManagedLevel.SELF_MANAGED_V1;
-import static com.godaddy.vps4.credit.VirtualMachineCredit.EffectiveManagedLevel.SELF_MANAGED_V2;
-
 import java.util.UUID;
 
 import javax.inject.Inject;
@@ -150,21 +146,12 @@ public class SetupPanopta implements Command<SetupPanopta.Request, Void> {
 
     private String setPanoptaTemplates(SetupPanopta.Request request) {
         VirtualMachineCredit credit = creditService.getVirtualMachineCredit(request.orionGuid);
-        String baseTemplate = config.get("panopta.api.templates." + credit.effectiveManagedLevel().toString()
-                                                 + "." + credit.getOperatingSystem().toLowerCase());
-        String datacenterTemplate = config.get("panopta.api.templates.webhook");
-        if (isSelfManagedCustomerWithMonitoringEnabled(credit)) {
-            baseTemplate = config.get(
-                    "panopta.api.templates." + MANAGED_V2.toString()
-                            + "." + credit.getOperatingSystem().toLowerCase());
-        }
-        return baseTemplate + "," + datacenterTemplate;
-    }
+        String templateType = (credit.isManaged()) ? "managed" : credit.hasMonitoring() ? "addon" : "base";
 
-    private boolean isSelfManagedCustomerWithMonitoringEnabled(VirtualMachineCredit credit) {
-        return (credit.hasMonitoring() &&
-                (credit.effectiveManagedLevel() == SELF_MANAGED_V1 ||
-                        credit.effectiveManagedLevel() == SELF_MANAGED_V2));
+        String serverTemplate = config.get("panopta.api.templates." + templateType +
+                "." + credit.getOperatingSystem().toLowerCase());
+        String dcAlertTemplate = config.get("panopta.api.templates.webhook");
+        return String.join(",", serverTemplate, dcAlertTemplate);
     }
 
     public static class Request {
@@ -172,6 +159,5 @@ public class SetupPanopta implements Command<SetupPanopta.Request, Void> {
         public UUID orionGuid;
         public long hfsVmId;
         public String shopperId;
-        public String panoptaTemplates;
     }
 }

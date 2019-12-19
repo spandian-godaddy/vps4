@@ -251,7 +251,7 @@ public class VmResource {
                 ResellerConfigHelper.getResellerConfig(config, vmCredit.getResellerId(), "mailrelay.quota", "5000"));
 
         ProvisionVmInfo vmInfo =
-                new ProvisionVmInfo(virtualMachine.vmId, vmCredit.getManagedLevel(), vmCredit.hasMonitoring(),
+                new ProvisionVmInfo(virtualMachine.vmId, vmCredit.isManaged(), vmCredit.hasMonitoring(),
                                     virtualMachine.image, project.getVhfsSgid(), mailRelayQuota,
                                     virtualMachine.spec.diskGib);
         logger.info("vmInfo: {}", vmInfo.toString());

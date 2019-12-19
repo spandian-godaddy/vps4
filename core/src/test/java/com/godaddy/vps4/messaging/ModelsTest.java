@@ -1,14 +1,23 @@
 package com.godaddy.vps4.messaging;
 
-import com.godaddy.vps4.messaging.models.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.EnumMap;
+import java.util.UUID;
+
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
-import java.util.EnumMap;
-import java.util.UUID;
-import java.util.ArrayList;
-import java.util.Arrays;
+import com.godaddy.vps4.messaging.models.Contact;
+import com.godaddy.vps4.messaging.models.EmailRecipient;
+import com.godaddy.vps4.messaging.models.Message;
+import com.godaddy.vps4.messaging.models.MessagingEmail;
+import com.godaddy.vps4.messaging.models.MessagingResponse;
+import com.godaddy.vps4.messaging.models.Preference;
+import com.godaddy.vps4.messaging.models.ShopperMessage;
+import com.godaddy.vps4.messaging.models.ShopperNote;
+import com.godaddy.vps4.messaging.models.ShopperOverride;
 
 public class ModelsTest {
     private EmailRecipient emailRecipient;
@@ -23,7 +32,7 @@ public class ModelsTest {
     private String accountName;
     private String ipAddress;
     private String orionId;
-    private String isFullyManaged;
+    private String isManaged;
     private String transformData1;
     private String transformData2;
 
@@ -70,14 +79,14 @@ public class ModelsTest {
         accountName = UUID.randomUUID().toString();
         ipAddress = UUID.randomUUID().toString();
         orionId = UUID.randomUUID().toString();
-        isFullyManaged = "false";
+        isManaged = "false";
 
         EnumMap<DefaultVps4MessagingService.EmailSubstitutions, String> substitutionValues =
                 new EnumMap<>(DefaultVps4MessagingService.EmailSubstitutions.class);
         substitutionValues.put(DefaultVps4MessagingService.EmailSubstitutions.ACCOUNTNAME, accountName);
         substitutionValues.put(DefaultVps4MessagingService.EmailSubstitutions.IPADDRESS, ipAddress);
         substitutionValues.put(DefaultVps4MessagingService.EmailSubstitutions.ORION_ID, orionId);
-        substitutionValues.put(DefaultVps4MessagingService.EmailSubstitutions.ISMANAGEDSUPPORT, isFullyManaged);
+        substitutionValues.put(DefaultVps4MessagingService.EmailSubstitutions.ISMANAGEDSUPPORT, isManaged);
         shopperMessage.substitutionValues = substitutionValues;
 
         transformData1 = UUID.randomUUID().toString();

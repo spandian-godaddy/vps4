@@ -31,7 +31,7 @@ public class SendFailoverCompletedEmail extends SendMessagingEmailBase implement
     public Void execute(CommandContext context, FailOverEmailRequest emailRequest) {
         logger.info("Sending SystemDownFailoverEmail for shopper {}", emailRequest.shopperId);
         String messageId = context.execute("SendFailoverCompletedEmail-" + emailRequest.shopperId,
-                ctx -> messagingService.sendFailoverCompletedEmail(emailRequest.shopperId, emailRequest.accountName, emailRequest.isFullyManaged),
+                ctx -> messagingService.sendFailoverCompletedEmail(emailRequest.shopperId, emailRequest.accountName, emailRequest.isManaged),
                 String.class);
         this.waitForMessageComplete(context, messageId, emailRequest.shopperId);
 

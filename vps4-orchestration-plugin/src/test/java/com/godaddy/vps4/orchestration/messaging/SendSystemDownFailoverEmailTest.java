@@ -40,7 +40,7 @@ public class SendSystemDownFailoverEmailTest {
         request = new FailOverEmailRequest();
         request.accountName = "vmname";
         request.shopperId = "shopperid";
-        request.isFullyManaged = false;
+        request.isManaged = false;
         messageId = UUID.randomUUID().toString();
         Message message = mock(Message.class);
         message.status = Message.Statuses.SUCCESS.toString();
