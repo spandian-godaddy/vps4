@@ -238,7 +238,6 @@ public class Vps4ProvisionVmTest {
         when(monitoringMeta.getAccountId()).thenReturn(1L);
         when(monitoringMeta.getGeoRegion()).thenReturn("nam");
         vm.primaryIpAddress = mock(com.godaddy.vps4.network.IpAddress.class);
-        when(config.get(eq("panopta.installation.enabled"), eq("false"))).thenReturn("false");
 
         command.executeWithAction(context, this.request);
         verify(nodePingService, times(1)).createCheck(eq(1L), any(CreateCheckRequest.class));
@@ -248,7 +247,7 @@ public class Vps4ProvisionVmTest {
     public void provisionVmInvokesPanoptaSetup() {
         vm.primaryIpAddress = mock(com.godaddy.vps4.network.IpAddress.class);
         vm.primaryIpAddress.pingCheckId = 1234L;
-        when(config.get(eq("panopta.installation.enabled"), eq("false"))).thenReturn("true");
+        request.vmInfo.isPanoptaEnabled = true;
         when(virtualMachineService.getVirtualMachine(any(UUID.class))).thenReturn(vm);
 
         command.executeWithAction(context, this.request);

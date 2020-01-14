@@ -5,7 +5,6 @@ import javax.inject.Inject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.godaddy.hfs.config.Config;
 import com.godaddy.vps4.credit.CreditService;
 import com.godaddy.vps4.credit.ECommCreditService;
 import com.godaddy.vps4.orchestration.ActionCommand;
@@ -28,15 +27,13 @@ public class Vps4ReinstateServer extends ActionCommand<Vps4ReinstateServer.Reque
 
     final ActionService actionService;
     final CreditService creditService;
-    private final Config config;
     private final Logger logger = LoggerFactory.getLogger(Vps4ReinstateServer.class);
 
     @Inject
-    public Vps4ReinstateServer(ActionService actionService, CreditService creditService, Config config) {
+    public Vps4ReinstateServer(ActionService actionService, CreditService creditService) {
         super(actionService);
         this.actionService = actionService;
         this.creditService = creditService;
-        this.config = config;
     }
 
     @Override
@@ -54,10 +51,7 @@ public class Vps4ReinstateServer extends ActionCommand<Vps4ReinstateServer.Reque
     }
 
     public void resumePanoptaMonitoring(CommandContext context,  Vps4ReinstateServer.Request request) {
-        boolean isPanoptaInstallationEnabled = Boolean.valueOf(config.get("panopta.installation.enabled", "false"));
-        if (isPanoptaInstallationEnabled) {
-            context.execute(ResumePanoptaMonitoring.class, request.virtualMachine.vmId);
-        }
+        context.execute(ResumePanoptaMonitoring.class, request.virtualMachine.vmId);
     }
 
     protected void reinstateVm(CommandContext context, Vps4ReinstateServer.Request request) {

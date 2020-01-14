@@ -6,16 +6,16 @@ import java.util.UUID;
 
 import javax.inject.Inject;
 
-import com.godaddy.vps4.hfs.HfsVmTrackingRecordService;
-import com.godaddy.vps4.orchestration.hfs.vm.RescueVm;
-import com.godaddy.vps4.orchestration.hfs.vm.StopVm;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.godaddy.hfs.config.Config;
 import com.godaddy.vps4.credit.VirtualMachineCredit;
+import com.godaddy.vps4.hfs.HfsVmTrackingRecordService;
 import com.godaddy.vps4.orchestration.ActionCommand;
 import com.godaddy.vps4.orchestration.ActionRequest;
+import com.godaddy.vps4.orchestration.hfs.vm.RescueVm;
+import com.godaddy.vps4.orchestration.hfs.vm.StopVm;
 import com.godaddy.vps4.orchestration.panopta.PausePanoptaMonitoring;
 import com.godaddy.vps4.orchestration.scheduler.ScheduleZombieVmCleanup;
 import com.godaddy.vps4.orchestration.vm.Vps4RecordScheduledJobForVm;
@@ -23,7 +23,6 @@ import com.godaddy.vps4.scheduledJob.ScheduledJob.ScheduledJobType;
 import com.godaddy.vps4.vm.ActionService;
 import com.godaddy.vps4.vm.VirtualMachine;
 import com.godaddy.vps4.vm.VirtualMachineService;
-
 
 import gdg.hfs.orchestration.CommandContext;
 import gdg.hfs.orchestration.CommandMetadata;
@@ -81,10 +80,7 @@ public class Vps4ProcessAccountCancellation extends ActionCommand<Vps4ProcessAcc
     }
 
     public void pausePanoptaMonitoring(UUID vmId) {
-        boolean isPanoptaInstallationEnabled = Boolean.valueOf(config.get("panopta.installation.enabled", "false"));
-        if (isPanoptaInstallationEnabled) {
-            context.execute(PausePanoptaMonitoring.class, vmId);
-        }
+        context.execute(PausePanoptaMonitoring.class, vmId);
     }
 
     private boolean hasAccountBeenClaimed(VirtualMachineCredit virtualMachineCredit) {

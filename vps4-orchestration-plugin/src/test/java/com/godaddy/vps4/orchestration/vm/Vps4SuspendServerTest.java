@@ -5,14 +5,12 @@ import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
 
 import java.util.UUID;
 
 import org.junit.Before;
 import org.junit.Test;
 
-import com.godaddy.hfs.config.Config;
 import com.godaddy.vps4.credit.CreditService;
 import com.godaddy.vps4.orchestration.hfs.vm.StopVm;
 import com.godaddy.vps4.orchestration.panopta.PausePanoptaMonitoring;
@@ -27,10 +25,9 @@ public class Vps4SuspendServerTest {
     ActionService actionService = mock(ActionService.class);
     CreditService creditService = mock(CreditService.class);
     CommandContext context = mock(CommandContext.class);
-    Config config = mock(Config.class);
     VirtualMachine vm;
 
-    Vps4SuspendServer command = new Vps4SuspendServer(actionService, creditService, config);
+    Vps4SuspendServer command = new Vps4SuspendServer(actionService, creditService);
 
     @Before
     public void setup() {
@@ -66,19 +63,9 @@ public class Vps4SuspendServerTest {
     }
 
     @Test
-    public void testNoPausePanoptaMonitoringWhenConfigIsOff() {
-        Vps4SuspendServer.Request request = new Vps4SuspendServer.Request();
-        request.virtualMachine = vm;
-        when(config.get("panopta.installation.enabled", "false")).thenReturn("false");
-        command.executeWithAction(context, request);
-        verify(context, times(0)).execute(eq(PausePanoptaMonitoring.class), any());
-    }
-
-    @Test
     public void testPausePanoptaMonitoring(){
         Vps4SuspendServer.Request request = new Vps4SuspendServer.Request();
         request.virtualMachine = vm;
-        when(config.get("panopta.installation.enabled", "false")).thenReturn("true");
         command.executeWithAction(context, request);
         verify(context, times(1)).execute(eq(PausePanoptaMonitoring.class), any());
     }

@@ -15,7 +15,6 @@ import java.util.UUID;
 import org.junit.Before;
 import org.junit.Test;
 
-import com.godaddy.hfs.config.Config;
 import com.godaddy.hfs.vm.VmAction;
 import com.godaddy.hfs.vm.VmService;
 import com.godaddy.vps4.credit.CreditService;
@@ -45,7 +44,7 @@ import gdg.hfs.orchestration.GuiceCommandProvider;
 
 public class Vps4ReviveZombieVmTest{
     static Injector injector;
-    
+
     private VirtualMachineService virtualMachineService;
     private VmService vmService;
     private ScheduledJobService scheduledJobService;
@@ -58,7 +57,6 @@ public class Vps4ReviveZombieVmTest{
     private VirtualMachine vm;
     private PanoptaDataService panoptaDataService;
     private PanoptaService panoptaService;
-    private Config config;
 
     @Before
     public void setup() throws PanoptaServiceException {
@@ -70,8 +68,7 @@ public class Vps4ReviveZombieVmTest{
         actionService = mock(ActionService.class);
         panoptaDataService = mock(PanoptaDataService.class);
         panoptaService = mock(PanoptaService.class);
-        config = mock(Config.class);
-        
+
         job = new ScheduledJob();
         job.id = UUID.randomUUID();
         job.vmId = UUID.randomUUID();
@@ -109,28 +106,27 @@ public class Vps4ReviveZombieVmTest{
             binder.bind(ActionService.class).toInstance(actionService);
             binder.bind(PanoptaDataService.class).toInstance(panoptaDataService);
             binder.bind(PanoptaService.class).toInstance(panoptaService);
-            binder.bind(Config.class).toInstance(config);
         });
-        
-        command = new Vps4ReviveZombieVm(actionService, virtualMachineService, scheduledJobService, creditService, config);
+
+        command = new Vps4ReviveZombieVm(actionService, virtualMachineService, scheduledJobService, creditService);
         context = new TestCommandContext(new GuiceCommandProvider(injector));
     }
-    
+
     @Test
     public void testReviveZombieVm() {
         Vps4ReviveZombieVm.Request request = new Vps4ReviveZombieVm.Request();
         request.vmId = job.vmId;
         request.newCreditId = UUID.randomUUID();
         request.oldCreditId = UUID.randomUUID();
-        
+
         Map<ProductMetaField, String> productMeta = new HashMap<>();
         when(creditService.getProductMeta(request.oldCreditId)).thenReturn(productMeta);
 
         command.execute(context, request);
-        
+
         String product = Utils.getProductForJobRequestClass(Vps4ZombieCleanupJobRequest.class);
         String group = Utils.getJobGroupForJobRequestClass(Vps4ZombieCleanupJobRequest.class);
-        
+
         verify(virtualMachineService, times(1)).reviveZombieVm(request.vmId, request.newCreditId);
         verify(schedulerWebService, times(1)).deleteJob(product, group, job.id);
         verify(creditService, times(1)).updateProductMeta(request.newCreditId, productMeta);

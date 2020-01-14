@@ -2,7 +2,6 @@ package com.godaddy.vps4.orchestration.vm;
 
 import javax.inject.Inject;
 
-import com.godaddy.hfs.config.Config;
 import com.godaddy.vps4.credit.CreditService;
 import com.godaddy.vps4.orchestration.hfs.vm.RescueVm;
 import com.godaddy.vps4.vm.ActionService;
@@ -20,8 +19,8 @@ import gdg.hfs.orchestration.CommandRetryStrategy;
 public class Vps4SuspendDedServer extends Vps4SuspendServer {
 
     @Inject
-    public Vps4SuspendDedServer(ActionService actionService, CreditService creditService, Config config) {
-        super(actionService, creditService, config);
+    public Vps4SuspendDedServer(ActionService actionService, CreditService creditService) {
+        super(actionService, creditService);
     }
 
     @Override

@@ -205,6 +205,7 @@ public class VmResource {
         public int dataCenterId;
         public String username;
         public String password;
+        public boolean useBetaMonitoring;
     }
 
     @POST
@@ -254,6 +255,7 @@ public class VmResource {
                 new ProvisionVmInfo(virtualMachine.vmId, vmCredit.isManaged(), vmCredit.hasMonitoring(),
                                     virtualMachine.image, project.getVhfsSgid(), mailRelayQuota,
                                     virtualMachine.spec.diskGib);
+        vmInfo.isPanoptaEnabled = provisionRequest.useBetaMonitoring;
         logger.info("vmInfo: {}", vmInfo.toString());
         byte[] encryptedPassword = cryptography.encrypt(provisionRequest.password);
 

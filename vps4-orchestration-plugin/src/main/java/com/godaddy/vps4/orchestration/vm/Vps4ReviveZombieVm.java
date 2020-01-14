@@ -4,7 +4,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
-import com.godaddy.hfs.config.Config;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.godaddy.vps4.credit.CreditService;
 import com.godaddy.vps4.credit.ECommCreditService.ProductMetaField;
 import com.godaddy.vps4.orchestration.ActionCommand;
@@ -22,9 +24,6 @@ import com.godaddy.vps4.vm.VirtualMachine;
 import com.godaddy.vps4.vm.VirtualMachineService;
 import com.google.inject.Inject;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import gdg.hfs.orchestration.CommandContext;
 import gdg.hfs.orchestration.CommandMetadata;
 import gdg.hfs.orchestration.CommandRetryStrategy;
@@ -36,20 +35,17 @@ public class Vps4ReviveZombieVm extends ActionCommand<Vps4ReviveZombieVm.Request
     private final VirtualMachineService virtualMachineService;
     private final ScheduledJobService scheduledJobService;
     private final CreditService creditService;
-    private final Config config;
 
     @Inject
     public Vps4ReviveZombieVm(ActionService actionService, VirtualMachineService virtualMachineService,
-                              ScheduledJobService scheduledJobService, CreditService creditService,
-                              Config config) {
+                              ScheduledJobService scheduledJobService, CreditService creditService) {
         super(actionService);
         this.virtualMachineService = virtualMachineService;
         this.scheduledJobService = scheduledJobService;
         this.creditService = creditService;
-        this.config = config;
     }
 
-    
+
     @Override
     protected Void executeWithAction(CommandContext context, Request request) throws Exception {
 
@@ -58,7 +54,7 @@ public class Vps4ReviveZombieVm extends ActionCommand<Vps4ReviveZombieVm.Request
         transferProductMeta(request);
 
         removeScheduledCleanupJobs(context, request);
-        
+
         reviveInOurDb(context, request);
 
         startServer(context, request);
@@ -78,10 +74,7 @@ public class Vps4ReviveZombieVm extends ActionCommand<Vps4ReviveZombieVm.Request
     }
 
     public void resumePanoptaMonitoring(CommandContext context, Request request) {
-        boolean isPanoptaInstallationEnabled = Boolean.valueOf(config.get("panopta.installation.enabled", "false"));
-        if (isPanoptaInstallationEnabled) {
-            context.execute(ResumePanoptaMonitoring.class, request.vmId);
-        }
+        context.execute(ResumePanoptaMonitoring.class, request.vmId);
     }
 
     private void transferProductMeta(Request request) {
@@ -98,7 +91,7 @@ public class Vps4ReviveZombieVm extends ActionCommand<Vps4ReviveZombieVm.Request
 
     private void removeScheduledCleanupJobs(CommandContext context, Request request) {
         List<ScheduledJob> jobs = scheduledJobService.getScheduledJobsByType(request.vmId, ScheduledJobType.ZOMBIE);
-        
+
         for(ScheduledJob job : jobs) {
             DeleteScheduledJob.Request req = new DeleteScheduledJob.Request();
             req.jobId = job.id;
@@ -106,7 +99,7 @@ public class Vps4ReviveZombieVm extends ActionCommand<Vps4ReviveZombieVm.Request
             context.execute(DeleteScheduledJob.class, req);
         }
     }
-    
+
     public static class Request implements ActionRequest {
         public long actionId;
         public UUID vmId;

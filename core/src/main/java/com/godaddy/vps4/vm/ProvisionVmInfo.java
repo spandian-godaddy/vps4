@@ -13,6 +13,7 @@ public class ProvisionVmInfo {
     public Image image;
     public int mailRelayQuota;
     public int diskGib;
+    public boolean isPanoptaEnabled;
 
     public ProvisionVmInfo() {
     }

@@ -5,7 +5,6 @@ import javax.inject.Inject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.godaddy.hfs.config.Config;
 import com.godaddy.vps4.credit.CreditService;
 import com.godaddy.vps4.orchestration.ActionCommand;
 import com.godaddy.vps4.orchestration.hfs.vm.StopVm;
@@ -29,15 +28,13 @@ public class Vps4SuspendServer extends ActionCommand<Vps4SuspendServer.Request, 
 
     final ActionService actionService;
     final CreditService creditService;
-    private final Config config;
     private final Logger logger = LoggerFactory.getLogger(Vps4SuspendServer.class);
 
     @Inject
-    public Vps4SuspendServer(ActionService actionService, CreditService creditService, Config config) {
+    public Vps4SuspendServer(ActionService actionService, CreditService creditService) {
         super(actionService);
         this.actionService = actionService;
         this.creditService = creditService;
-        this.config = config;
     }
 
     @Override
@@ -50,10 +47,7 @@ public class Vps4SuspendServer extends ActionCommand<Vps4SuspendServer.Request, 
     }
 
     public void pausePanoptaMonitoring(CommandContext context, Vps4SuspendServer.Request request) {
-        boolean isPanoptaInstallationEnabled = Boolean.valueOf(config.get("panopta.installation.enabled", "false"));
-        if (isPanoptaInstallationEnabled) {
-            context.execute(PausePanoptaMonitoring.class, request.virtualMachine.vmId);
-        }
+        context.execute(PausePanoptaMonitoring.class, request.virtualMachine.vmId);
     }
 
     private void updateCredit(Vps4SuspendServer.Request request) {
