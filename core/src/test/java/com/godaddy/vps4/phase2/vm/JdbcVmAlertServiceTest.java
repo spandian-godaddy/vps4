@@ -4,6 +4,7 @@ import static com.godaddy.vps4.vm.VmMetric.CPU;
 import static com.godaddy.vps4.vm.VmMetric.PING;
 import static com.godaddy.vps4.vm.VmMetric.RAM;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 
 import java.util.Arrays;
@@ -22,6 +23,7 @@ import com.godaddy.vps4.vm.VirtualMachine;
 import com.godaddy.vps4.vm.VmAlertService;
 import com.godaddy.vps4.vm.VmMetric;
 import com.godaddy.vps4.vm.VmMetricAlert;
+import com.godaddy.vps4.vm.VmMetricAlert.Status;
 import com.godaddy.vps4.vm.jdbc.JdbcVmAlertService;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
@@ -49,7 +51,7 @@ public class JdbcVmAlertServiceTest {
     public void allAlertsEnabledByDefault() {
         List<VmMetricAlert> alerts = vmAlertService.getVmMetricAlertList(vm.vmId);
         for (VmMetricAlert alert : alerts) {
-            assertEquals("enabled", alert.status);
+            assertSame(Status.ENABLED, alert.status);
             assertTrue(Arrays.asList(VmMetric.values()).contains(alert.metric));
         }
     }
@@ -59,14 +61,14 @@ public class JdbcVmAlertServiceTest {
         VmMetricAlert alert = vmAlertService.getVmMetricAlert(vm.vmId, PING.name());
         assertEquals(PING, alert.metric);
         assertEquals("network_service", alert.type);
-        assertEquals("enabled", alert.status);
+        assertSame(Status.ENABLED, alert.status);
     }
 
     @Test
     public void disableAlert() {
         vmAlertService.disableVmMetricAlert(vm.vmId, PING.name());
         VmMetricAlert alert = vmAlertService.getVmMetricAlert(vm.vmId, PING.name());
-        assertEquals("disabled", alert.status);
+        assertSame(Status.DISABLED, alert.status);
     }
 
     @Test
@@ -80,7 +82,7 @@ public class JdbcVmAlertServiceTest {
         vmAlertService.disableVmMetricAlert(vm.vmId, PING.name());
         vmAlertService.reenableVmMetricAlert(vm.vmId, PING.name());
         VmMetricAlert alert = vmAlertService.getVmMetricAlert(vm.vmId, PING.name());
-        assertEquals("enabled", alert.status);
+        assertSame(Status.ENABLED, alert.status);
     }
 
     @Test
@@ -92,9 +94,9 @@ public class JdbcVmAlertServiceTest {
 
         List<VmMetricAlert> alerts = vmAlertService.getVmMetricAlertList(vm.vmId);
         for (VmMetricAlert alert : alerts) {
-            String expectedStatus = (alertsToDisable.contains(alert.metric)) ? "disabled" : "enabled";
-            assertEquals(expectedStatus, alert.status);
+            Status expectedStatus =
+                    (alertsToDisable.contains(alert.metric)) ? Status.DISABLED : Status.ENABLED;
+            assertSame(expectedStatus, alert.status);
         }
     }
-
 }

@@ -125,7 +125,8 @@ public class HfsMockModule extends AbstractModule {
         PleskAction completeAction = new PleskAction();
         completeAction.status = PleskAction.Status.COMPLETE;
         PleskService pleskService = Mockito.mock(PleskService.class);
-        Mockito.when(pleskService.imageConfig(Mockito.anyLong(), Mockito.anyString(), Mockito.anyString())).thenReturn(completeAction);
+        Mockito.when(pleskService.imageConfig(Mockito.anyLong(), Mockito.anyString(), Mockito.anyString()))
+               .thenReturn(completeAction);
         Mockito.when(pleskService.adminPassUpdate(Mockito.anyLong(), Mockito.anyString())).thenReturn(completeAction);
         return pleskService;
     }
@@ -134,8 +135,8 @@ public class HfsMockModule extends AbstractModule {
     public CPanelService provideCPanelService() {
         return new CPanelService() {
             private CPanelAction createCPanelAction(long vmId,
-                                                    CPanelAction.ActionType actionType,
-                                                    CPanelAction.Status status) {
+                    CPanelAction.ActionType actionType,
+                    CPanelAction.Status status) {
                 CPanelAction cPanelAction = new CPanelAction();
                 cPanelAction.actionId = UUID.randomUUID().getMostSignificantBits() & Long.MAX_VALUE;
                 cPanelAction.vmId = vmId;
@@ -150,8 +151,8 @@ public class HfsMockModule extends AbstractModule {
             }
 
             private CPanelAction createAndStoreCPanelAction(long vmId,
-                                                            CPanelAction.ActionType actionType,
-                                                            CPanelAction.Status status) {
+                    CPanelAction.ActionType actionType,
+                    CPanelAction.Status status) {
                 CPanelAction cPanelAction = this.createCPanelAction(vmId, actionType, status);
                 this.storeCPanelAction(cPanelAction);
                 return cPanelAction;
@@ -366,7 +367,8 @@ public class HfsMockModule extends AbstractModule {
                 Message message = new Message();
                 message.messageId = messageId;
                 message.shopperId = shopperId;
-                message.templateTypeKey = DefaultVps4MessagingService.EmailTemplates.VirtualPrivateHostingProvisioned4.toString();
+                message.templateTypeKey =
+                        DefaultVps4MessagingService.EmailTemplates.VirtualPrivateHostingProvisioned4.toString();
                 message.templateNamespaceKey = DefaultVps4MessagingService.TEMPLATE_NAMESPACE_KEY;
                 message.privateLabelId = 1;
                 message.createdAt = DateTime.now().toString();
@@ -387,7 +389,8 @@ public class HfsMockModule extends AbstractModule {
             }
 
             @Override
-            public String sendSetupEmail(String shopperId, String accountName, String ipAddress, String orionId, boolean isManaged) {
+            public String sendSetupEmail(String shopperId, String accountName, String ipAddress, String orionId,
+                    boolean isManaged) {
                 return createFakeMessage(shopperId);
             }
 
@@ -399,13 +402,14 @@ public class HfsMockModule extends AbstractModule {
 
             @Override
             public String sendScheduledPatchingEmail(String shopperId, String serverName, Instant startTime,
-                                                     long durationMinutes, boolean isManaged) {
+                    long durationMinutes, boolean isManaged) {
                 return createFakeMessage(shopperId);
             }
 
             @Override
-            public String sendUnexpectedButScheduledMaintenanceEmail(String shopperId, String serverName, Instant startTime,
-                                                                     long durationMinutes, boolean isManaged) {
+            public String sendUnexpectedButScheduledMaintenanceEmail(String shopperId, String serverName,
+                    Instant startTime, long durationMinutes,
+                    boolean isManaged) {
                 return createFakeMessage(shopperId);
             }
 
@@ -418,12 +422,51 @@ public class HfsMockModule extends AbstractModule {
             public String sendFailoverCompletedEmail(String shopperId, String serverName, boolean isManaged) {
                 return createFakeMessage(shopperId);
             }
+
+            @Override
+            public String sendUptimeOutageEmail(String shopperId, String accountName, String ipAddress, UUID orionGuid,
+                    Instant alertStart, boolean isFullyManaged) {
+                return null;
+            }
+
+            @Override
+            public String sendServerUsageOutageEmail(String shopperId, String accountName, String ipAddress,
+                    UUID orionGuid, String resourceName, String resourceUsage,
+                    Instant alertStart, boolean isFullyManaged) {
+                return null;
+            }
+
+            @Override
+            public String sendServicesDownEmail(String shopperId, String accountName, String ipAddress, UUID orionGuid,
+                    String serviceName, Instant alertStart, boolean isFullyManaged) {
+                return null;
+            }
+
+            @Override
+            public String sendUptimeOutageResolvedEmail(String shopperId, String accountName, String ipAddress,
+                    UUID orionGuid, Instant alertEnd, boolean isFullyManaged) {
+                return null;
+            }
+
+            @Override
+            public String sendUsageOutageResolvedEmail(String shopperId, String accountName, String ipAddress,
+                    UUID orionGuid, String resourceName, Instant alertEnd,
+                    boolean isFullyManaged) {
+                return null;
+            }
+
+            @Override
+            public String sendServiceOutageResolvedEmail(String shopperId, String accountName, String ipAddress,
+                    UUID orionGuid, String serviceName, Instant alertEnd,
+                    boolean isFullyManaged) {
+                return null;
+            }
         };
     }
 
     @Provides
     public HfsDnsService provideDnsService() {
-        return new HfsDnsService(){
+        return new HfsDnsService() {
             @Override
             public HfsDnsAction getDnsAction(long dnsActionId) {
                 return null;
@@ -486,8 +529,8 @@ public class HfsMockModule extends AbstractModule {
     public SysAdminService provideMockSysAdminService() {
         return new SysAdminService() {
             private SysAdminAction createSysAdminAction(long vmId,
-                                                        SysAdminAction.Type actionType,
-                                                        SysAdminAction.Status status) {
+                    SysAdminAction.Type actionType,
+                    SysAdminAction.Status status) {
                 SysAdminAction sysAdminAction = new SysAdminAction();
                 sysAdminAction.sysAdminActionId = UUID.randomUUID().getMostSignificantBits() & Long.MAX_VALUE;
                 sysAdminAction.vmId = vmId;
@@ -508,8 +551,8 @@ public class HfsMockModule extends AbstractModule {
             }
 
             private SysAdminAction createAndStoreSysAdminAction(long vmId,
-                                                                SysAdminAction.Type actionType,
-                                                                SysAdminAction.Status status) {
+                    SysAdminAction.Type actionType,
+                    SysAdminAction.Status status) {
                 SysAdminAction sysAdminAction = this.createSysAdminAction(vmId, actionType, status);
                 this.storeSysAdminAction(vmId, sysAdminAction);
                 return sysAdminAction;
@@ -595,7 +638,8 @@ public class HfsMockModule extends AbstractModule {
             }
 
             @Override
-            public SysAdminAction installPanopta(long vmId, String customerKey, String templates, String serverName, String serverKey) {
+            public SysAdminAction installPanopta(long vmId, String customerKey, String templates, String serverName,
+                    String serverKey) {
                 return null;
             }
 
@@ -679,7 +723,9 @@ public class HfsMockModule extends AbstractModule {
             @Override
             public Console getConsole(long vmId) {
                 Console console = new Console();
-                console.url = "https://console.phx-public.cloud.secureserver.net:443/spice_auto.html?token=394f9629-4081-421d-a2e3-30b7aa950843";
+                console.url =
+                        "https://console.phx-public.cloud.secureserver.net:443/spice_auto" +
+                                ".html?token=394f9629-4081-421d-a2e3-30b7aa950843";
                 return console;
             }
 
@@ -957,7 +1003,8 @@ public class HfsMockModule extends AbstractModule {
             }
 
             @Override
-            public IpAddressList listIps(String sgid, int offset, int limit, IpAddress.Status status, String ipAddress) {
+            public IpAddressList listIps(String sgid, int offset, int limit, IpAddress.Status status,
+                    String ipAddress) {
                 // NOTE: do nothing, Implement when needed
                 throw new UnsupportedOperationException("Not implemented, yet");
             }
@@ -1226,7 +1273,7 @@ public class HfsMockModule extends AbstractModule {
 
             @Override
             public Account updateAccountStatusAndPlanFeatures(String arg0,
-                                                              Account arg1) {
+                    Account arg1) {
                 // TODO Auto-generated method stub
                 throw new UnsupportedOperationException("Not implemented, yet");
             }

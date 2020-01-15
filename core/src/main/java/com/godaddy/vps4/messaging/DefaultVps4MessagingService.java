@@ -9,9 +9,11 @@ import java.time.temporal.ChronoUnit;
 import java.util.EnumMap;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.UUID;
 
 import javax.inject.Inject;
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.entity.ContentType;
@@ -50,7 +52,16 @@ public class DefaultVps4MessagingService implements Vps4MessagingService {
         VPS4ScheduledPatchingV2,
         VPS4UnexpectedbutScheduledMaintenanceV2,
         VPS4SystemDownFailoverV2,
-        VPS4UnexpectedscheduledmaintenanceFailoveriscompleted
+        VPS4UnexpectedscheduledmaintenanceFailoveriscompleted,
+        NewFinalSelfManagedUptime,
+        NewFinalSelfManagedServerUsage,
+        NewFinalSelfManagedServicesDown,
+        NewFinalManagedUptime,
+        NewFinalManagedServerUsage,
+        NewFinalManagedServicesDown,
+        VPS_DED_4_Issue_Resolved_Uptime,
+        VPS_DED_4_Issue_Resolved_Services,
+        VPS_DED_4_Issue_Resolved_Resources
     }
 
     public enum EmailSubstitutions {
@@ -59,11 +70,17 @@ public class DefaultVps4MessagingService implements Vps4MessagingService {
         ORION_ID,
         ISMANAGEDSUPPORT,
         START_DATE_TIME,
-        END_DATE_TIME
+        END_DATE_TIME,
+        ALERTSTARTTIME,
+        ALERTENDTIME,
+        SERVERNAME,
+        SERVICENAME,
+        RESOURCENAME,
+        RESOURCEUSAGE
     }
 
     @Inject
-    public DefaultVps4MessagingService (Config config) {
+    public DefaultVps4MessagingService(Config config) {
         this(config, new SecureHttpClient(
                 config,
                 CLIENT_CERTIFICATE_KEY_PATH,
@@ -77,7 +94,7 @@ public class DefaultVps4MessagingService implements Vps4MessagingService {
         this.client = httpClient;
     }
 
-    protected String buildApiUri(String uriPath){
+    protected String buildApiUri(String uriPath) {
         return String.format("%s%s", baseUrl, uriPath);
     }
 
@@ -95,7 +112,8 @@ public class DefaultVps4MessagingService implements Vps4MessagingService {
         }
     }
 
-    private String buildShopperMessageJson(EmailTemplates template, EnumMap<EmailSubstitutions, String> substitutionValues) {
+    private String buildShopperMessageJson(EmailTemplates template,
+            EnumMap<EmailSubstitutions, String> substitutionValues) {
         ShopperMessage shopperMessage = new ShopperMessage();
         shopperMessage.templateNamespaceKey = TEMPLATE_NAMESPACE_KEY;
         shopperMessage.templateTypeKey = template.toString();
@@ -107,14 +125,15 @@ public class DefaultVps4MessagingService implements Vps4MessagingService {
 
     @Override
     public String sendSetupEmail(String shopperId, String accountName, String ipAddress, String orionGuid,
-                                 boolean isManaged) {
+            boolean isManaged) {
         EnumMap<EmailSubstitutions, String> substitutionValues = new EnumMap<>(EmailSubstitutions.class);
         substitutionValues.put(EmailSubstitutions.ACCOUNTNAME, accountName);
         substitutionValues.put(EmailSubstitutions.IPADDRESS, ipAddress);
         substitutionValues.put(EmailSubstitutions.ORION_ID, orionGuid);
         substitutionValues.put(EmailSubstitutions.ISMANAGEDSUPPORT, Boolean.toString(isManaged));
 
-        String shopperMessageJson = buildShopperMessageJson(EmailTemplates.VirtualPrivateHostingProvisioned4, substitutionValues);
+        String shopperMessageJson =
+                buildShopperMessageJson(EmailTemplates.VirtualPrivateHostingProvisioned4, substitutionValues);
         return sendMessage(shopperId, shopperMessageJson);
     }
 
@@ -139,18 +158,18 @@ public class DefaultVps4MessagingService implements Vps4MessagingService {
     }
 
     @Override
-    public String sendFullyManagedEmail(String shopperId, String controlPanel) throws MissingShopperIdException, IOException {
+    public String sendFullyManagedEmail(String shopperId, String controlPanel) {
         EnumMap<EmailSubstitutions, String> substitutionValues = new EnumMap<>(EmailSubstitutions.class);
-        String shopperMessageJson = null;
+        String shopperMessageJson;
         switch (controlPanel.trim().toLowerCase()) {
-        case "cpanel":
-            shopperMessageJson = buildShopperMessageJson(EmailTemplates.VPSWelcomeCpanel, substitutionValues);
-            break;
-        case "plesk":
-            shopperMessageJson = buildShopperMessageJson(EmailTemplates.VPSWelcomePlesk, substitutionValues);
-            break;
-        default:
-            throw new IllegalArgumentException("Specified control panel not supported for fully managed email.");
+            case "cpanel":
+                shopperMessageJson = buildShopperMessageJson(EmailTemplates.VPSWelcomeCpanel, substitutionValues);
+                break;
+            case "plesk":
+                shopperMessageJson = buildShopperMessageJson(EmailTemplates.VPSWelcomePlesk, substitutionValues);
+                break;
+            default:
+                throw new IllegalArgumentException("Specified control panel not supported for fully managed email.");
         }
         return sendMessage(shopperId, shopperMessageJson);
 
@@ -164,7 +183,7 @@ public class DefaultVps4MessagingService implements Vps4MessagingService {
     }
 
     private String buildScheduledMaintenanceJson(EmailTemplates emailTemplate, String accountName, Instant startTime,
-                                                 long durationMinutes, boolean isManaged) {
+            long durationMinutes, boolean isManaged) {
         EnumMap<EmailSubstitutions, String> substitutionValues = new EnumMap<>(EmailSubstitutions.class);
         substitutionValues.put(EmailSubstitutions.ACCOUNTNAME, accountName);
         String startDateTime = formatDateTime(startTime);
@@ -178,19 +197,18 @@ public class DefaultVps4MessagingService implements Vps4MessagingService {
 
     @Override
     public String sendScheduledPatchingEmail(String shopperId, String accountName, Instant startTime,
-                                             long durationMinutes, boolean isManaged) {
+            long durationMinutes, boolean isManaged) {
         String shopperMessageJson = buildScheduledMaintenanceJson(EmailTemplates.VPS4ScheduledPatchingV2, accountName,
                 startTime, durationMinutes, isManaged);
-
         return sendMessage(shopperId, shopperMessageJson);
     }
 
     @Override
     public String sendUnexpectedButScheduledMaintenanceEmail(String shopperId, String accountName, Instant startTime,
-                                                             long durationMinutes, boolean isManaged) {
-        String shopperMessageJson = buildScheduledMaintenanceJson(EmailTemplates.VPS4UnexpectedbutScheduledMaintenanceV2,
-                accountName, startTime, durationMinutes, isManaged);
-
+            long durationMinutes, boolean isManaged) {
+        String shopperMessageJson =
+                buildScheduledMaintenanceJson(EmailTemplates.VPS4UnexpectedbutScheduledMaintenanceV2,
+                        accountName, startTime, durationMinutes, isManaged);
         return sendMessage(shopperId, shopperMessageJson);
     }
 
@@ -204,17 +222,104 @@ public class DefaultVps4MessagingService implements Vps4MessagingService {
 
     @Override
     public String sendSystemDownFailoverEmail(String shopperId, String accountName, boolean isManaged) {
-        String shopperMessageJson = buildFailoverJson(EmailTemplates.VPS4SystemDownFailoverV2, accountName,
-                isManaged);
-
+        String shopperMessageJson = buildFailoverJson(EmailTemplates.VPS4SystemDownFailoverV2, accountName, isManaged);
         return sendMessage(shopperId, shopperMessageJson);
     }
 
     @Override
     public String sendFailoverCompletedEmail(String shopperId, String accountName, boolean isManaged) {
-        String shopperMessageJson = buildFailoverJson(EmailTemplates.VPS4UnexpectedscheduledmaintenanceFailoveriscompleted,
-                accountName, isManaged);
-
+        String shopperMessageJson =
+                buildFailoverJson(EmailTemplates.VPS4UnexpectedscheduledmaintenanceFailoveriscompleted,
+                        accountName, isManaged);
         return sendMessage(shopperId, shopperMessageJson);
+    }
+
+    @Override
+    public String sendUptimeOutageEmail(String shopperId, String accountName, String ipAddress, UUID orionGuid,
+            Instant alertStart, boolean isManaged) {
+        String shopperMessageJson = buildOutageJson(
+                isManaged ? EmailTemplates.NewFinalManagedUptime : EmailTemplates.NewFinalSelfManagedUptime,
+                accountName, ipAddress, orionGuid, null, null, alertStart, null, isManaged);
+        return sendMessage(shopperId, shopperMessageJson);
+    }
+
+    @Override
+    public String sendServerUsageOutageEmail(String shopperId, String accountName, String ipAddress, UUID orionGuid,
+            String resourceName, String resourceUsage, Instant alertStart,
+            boolean isManaged) {
+        String shopperMessageJson = buildOutageJson(
+                isManaged ? EmailTemplates.NewFinalManagedServerUsage :
+                        EmailTemplates.NewFinalSelfManagedServerUsage,
+                accountName, ipAddress, orionGuid, resourceName, resourceUsage, alertStart, null, isManaged);
+        return sendMessage(shopperId, shopperMessageJson);
+    }
+
+    @Override
+    public String sendServicesDownEmail(String shopperId, String accountName, String ipAddress, UUID orionGuid,
+            String serviceName, Instant alertStart, boolean isManaged) {
+        String shopperMessageJson = buildOutageJson(
+                isManaged ? EmailTemplates.NewFinalManagedServicesDown :
+                        EmailTemplates.NewFinalManagedServicesDown,
+                accountName, ipAddress, orionGuid, serviceName, null, alertStart, null, isManaged);
+        return sendMessage(shopperId, shopperMessageJson);
+    }
+
+    @Override
+    public String sendUptimeOutageResolvedEmail(String shopperId, String accountName, String ipAddress, UUID orionGuid,
+            Instant alertEnd, boolean isManaged) {
+        String shopperMessageJson =
+                buildOutageJson(EmailTemplates.VPS_DED_4_Issue_Resolved_Uptime, accountName, ipAddress, orionGuid, null,
+                        null, null, alertEnd, isManaged);
+        return sendMessage(shopperId, shopperMessageJson);
+    }
+
+    @Override
+    public String sendUsageOutageResolvedEmail(String shopperId, String accountName, String ipAddress, UUID orionGuid,
+            String resourceName, Instant alertEnd, boolean isManaged) {
+        String shopperMessageJson =
+                buildOutageJson(EmailTemplates.VPS_DED_4_Issue_Resolved_Resources, accountName, ipAddress, orionGuid,
+                        resourceName, null, null, alertEnd, isManaged);
+        return sendMessage(shopperId, shopperMessageJson);
+    }
+
+    @Override
+    public String sendServiceOutageResolvedEmail(String shopperId, String accountName, String ipAddress, UUID orionGuid,
+            String serviceName, Instant alertEnd, boolean isManaged) {
+        String shopperMessageJson =
+                buildOutageJson(EmailTemplates.VPS_DED_4_Issue_Resolved_Services, accountName, ipAddress, orionGuid,
+                        serviceName, null, null, alertEnd, isManaged);
+        return sendMessage(shopperId, shopperMessageJson);
+    }
+
+    /*
+    The variable metricName is used interchangeably for service name and resource name. The email templates specify
+     a different named parameter for service name and resource name but we just seem to pass in the metric.
+     We populate the same value in those email parameters so they get used by the email templates as needed.
+     */
+    private String buildOutageJson(EmailTemplates emailTemplate, String accountName, String ipAddress, UUID orionGuid,
+            String metricName, String resourceUsage, Instant alertStart, Instant alertEnd, boolean isManaged) {
+
+        EnumMap<EmailSubstitutions, String> substitutionValues = new EnumMap<>(EmailSubstitutions.class);
+        substitutionValues.put(EmailSubstitutions.ACCOUNTNAME, accountName);
+        substitutionValues.put(EmailSubstitutions.SERVERNAME, accountName);
+        substitutionValues.put(EmailSubstitutions.IPADDRESS, ipAddress);
+        substitutionValues.put(EmailSubstitutions.ORION_ID, orionGuid.toString());
+        substitutionValues.put(EmailSubstitutions.ISMANAGEDSUPPORT, Boolean.toString(isManaged));
+        if (alertStart != null) {
+            substitutionValues.put(EmailSubstitutions.ALERTSTARTTIME, alertStart.toString());
+        }
+        if (alertEnd != null) {
+            substitutionValues.put(EmailSubstitutions.ALERTENDTIME, alertEnd.toString());
+        }
+        if (StringUtils.isNotEmpty(metricName)) {
+            substitutionValues.put(EmailSubstitutions.SERVICENAME, metricName);
+        }
+        if (StringUtils.isNotEmpty(metricName)) {
+            substitutionValues.put(EmailSubstitutions.RESOURCENAME, metricName);
+        }
+        if (StringUtils.isNotEmpty(resourceUsage)) {
+            substitutionValues.put(EmailSubstitutions.RESOURCEUSAGE, resourceUsage);
+        }
+        return buildShopperMessageJson(emailTemplate, substitutionValues);
     }
 }

@@ -40,7 +40,7 @@ public class WaitForMessageComplete implements Command<String, Void> {
             throw new RuntimeException(errorMessage);
         }
         else {
-            logger.error("Message {} status: ", message.messageId, message.status);
+            logger.error("Message {} status: {}", message.messageId, message.status);
         }
 
         return null;

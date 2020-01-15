@@ -36,7 +36,7 @@ public class JdbcVmAlertService implements VmAlertService {
         VmMetricAlert alert = new VmMetricAlert();
         alert.metric = VmMetric.valueOf(rs.getString("name"));
         alert.type = rs.getString("type");
-        alert.status = rs.getInt("id") == 0 ? "enabled" : "disabled";
+        alert.status = rs.getInt("id") == 0 ? VmMetricAlert.Status.ENABLED : VmMetricAlert.Status.DISABLED;
         return alert;
     }
 
