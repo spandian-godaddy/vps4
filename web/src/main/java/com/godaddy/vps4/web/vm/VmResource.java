@@ -41,8 +41,6 @@ import com.godaddy.vps4.orchestration.vm.VmActionRequest;
 import com.godaddy.vps4.orchestration.vm.provision.ProvisionRequest;
 import com.godaddy.vps4.project.Project;
 import com.godaddy.vps4.project.ProjectService;
-import com.godaddy.vps4.scheduler.api.core.SchedulerJobDetail;
-import com.godaddy.vps4.scheduler.api.web.SchedulerWebService;
 import com.godaddy.vps4.security.Vps4User;
 import com.godaddy.vps4.security.Vps4UserService;
 import com.godaddy.vps4.snapshot.Snapshot;
@@ -96,7 +94,6 @@ public class VmResource {
     private final Config config;
     private final String sgidPrefix;
     private final Cryptography cryptography;
-    private final SchedulerWebService schedulerWebService;
     private final DataCenterService dcService;
     private final VmActionResource vmActionResource;
     private final SnapshotService snapshotService;
@@ -107,7 +104,7 @@ public class VmResource {
                       VirtualMachineService virtualMachineService, CreditService creditService,
                       ProjectService projectService, ActionService actionService,
                       CommandService commandService, VmSnapshotResource vmSnapshotResource, Config config,
-                      Cryptography cryptography, SchedulerWebService schedulerWebService, DataCenterService dcService,
+                      Cryptography cryptography, DataCenterService dcService,
                       VmActionResource vmActionResource, SnapshotService snapshotService, ImageResource imageResource
                      ) {
         this.user = user;
@@ -120,7 +117,6 @@ public class VmResource {
         this.commandService = commandService;
         this.vmSnapshotResource = vmSnapshotResource;
         this.config = config;
-        this.schedulerWebService = schedulerWebService;
         this.dcService = dcService;
         sgidPrefix = this.config.get("hfs.sgid.prefix", "vps4-undefined-");
         this.cryptography = cryptography;
@@ -396,21 +392,6 @@ public class VmResource {
         return virtualMachineService.getVirtualMachines(type, vps4User.getId(), null, null, null);
     }
 
-    @GET
-    @Path("/{vmId}/details")
-    public VirtualMachineDetails getVirtualMachineDetails(@PathParam("vmId") UUID vmId) {
-        VirtualMachine virtualMachine = getVm(vmId);
-        Vm vm = getVmFromVmVertical(virtualMachine.hfsVmId);
-        return new VirtualMachineDetails(vm);
-    }
-
-    @GET
-    @Path("/{vmId}/hfsDetails")
-    public Vm getMoreDetails(@PathParam("vmId") UUID vmId) {
-        VirtualMachine virtualMachine = getVm(vmId);
-        return getVmFromVmVertical(virtualMachine.hfsVmId);
-    }
-
     public Vm getVmFromVmVertical(long vmId) {
         try {
             return vmService.getVm(vmId);
@@ -418,28 +399,6 @@ public class VmResource {
             logger.warn("Cannot find VM ID {} in vm vertical", vmId);
             return null;
         }
-    }
-
-    @GET
-    @Path("/{vmId}/withDetails")
-    public VirtualMachineWithDetails getVirtualMachineWithDetails(@PathParam("vmId") UUID vmId) {
-        VirtualMachine virtualMachine = getVm(vmId);
-        VirtualMachineCredit credit = creditService.getVirtualMachineCredit(virtualMachine.orionGuid);
-        Vm vm = getVmFromVmVertical(virtualMachine.hfsVmId);
-        AutomaticSnapshotSchedule automaticSnapshotSchedule = new AutomaticSnapshotSchedule();
-        if (virtualMachine.backupJobId != null) {
-            SchedulerJobDetail job = schedulerWebService.getJob("vps4", "backups", virtualMachine.backupJobId);
-            if (job != null) {
-                Instant nextRun = job.nextRun;
-                int repeatIntervalInDays = job.jobRequest.repeatIntervalInDays;
-                int copiesToRetain = 1;
-                boolean isPaused = job.isPaused;
-                automaticSnapshotSchedule =
-                        new AutomaticSnapshotSchedule(nextRun, copiesToRetain, repeatIntervalInDays, isPaused);
-            }
-        }
-        return new VirtualMachineWithDetails(virtualMachine, new VirtualMachineDetails(vm), credit.getDataCenter(),
-                                             credit.getShopperId(), automaticSnapshotSchedule);
     }
 
 }

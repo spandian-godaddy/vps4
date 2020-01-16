@@ -1,9 +1,6 @@
 package com.godaddy.vps4.web.vm;
 
-import static junit.framework.Assert.assertNotNull;
-import static junit.framework.Assert.assertNull;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -26,7 +23,6 @@ import com.godaddy.vps4.credit.CreditService;
 import com.godaddy.vps4.credit.VirtualMachineCredit;
 import com.godaddy.vps4.network.IpAddress;
 import com.godaddy.vps4.network.IpAddress.IpAddressType;
-import com.godaddy.vps4.scheduler.api.web.SchedulerWebService;
 import com.godaddy.vps4.security.GDUserMock;
 import com.godaddy.vps4.security.Vps4User;
 import com.godaddy.vps4.security.Vps4UserService;
@@ -63,12 +59,11 @@ public class GetVirtualMachineTest {
         CreditService creditService = getMockedCreditService(dcService);
         Config config = getMockedConfig();
         Cryptography cryptography = mock(Cryptography.class);
-        SchedulerWebService schedulerWebService = mock(SchedulerWebService.class);
         VmActionResource vmActionResource = mock(VmActionResource.class);
         SnapshotService snapshotService = mock(SnapshotService.class);
 
         vmResource = new VmResource(user, vmService, userService, virtualMachineService, creditService, null, null, null, null, config, cryptography,
-                schedulerWebService, dcService, vmActionResource, snapshotService, null);
+                dcService, vmActionResource, snapshotService, null);
     }
 
     private Config getMockedConfig() {
@@ -131,32 +126,6 @@ public class GetVirtualMachineTest {
         when(userService.getOrCreateUserForShopper(user.getShopperId(), "1")).thenReturn(vps4User);
         when(userService.getUser(user.getShopperId())).thenReturn(vps4User);
         return userService;
-    }
-
-    @Test
-    public void testGetVirtualMachineWithDetailsIncludesDataCenter() {
-        VirtualMachineWithDetails vm = vmResource.getVirtualMachineWithDetails(vmId);
-        assertEquals(dc, vm.dataCenter);
-    }
-
-    @Test
-    public void testGetVirtualMachineDetails() {
-        VirtualMachineDetails vmDetails = vmResource.getVirtualMachineDetails(vmId);
-        assertEquals(new Long(hfsVm.vmId), vmDetails.vmId);
-        assertEquals(hfsVm.resourceId, vmDetails.resourceId);
-    }
-
-    @Test
-    public void testGetDetailsNullVm() {
-        VirtualMachineDetails details = new VirtualMachineDetails(null);
-        assertNull(details.vmId);
-        assertEquals("REQUESTING", details.status);
-        assertFalse(details.running);
-        assertFalse(details.useable);
-        assertNull(details.resourceId);
-
-        // Verify class has toString method
-        assertNotNull(details.toString());
     }
 
     @Test

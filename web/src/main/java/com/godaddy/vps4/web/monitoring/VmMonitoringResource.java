@@ -42,7 +42,6 @@ import com.google.inject.Inject;
 import gdg.hfs.vhfs.nodeping.NodePingEvent;
 import gdg.hfs.vhfs.nodeping.NodePingService;
 import gdg.hfs.vhfs.nodeping.NodePingUptimeRecord;
-
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;

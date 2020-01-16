@@ -6,13 +6,15 @@ import java.util.UUID;
 import org.apache.commons.lang3.builder.ReflectionToStringBuilder;
 import org.apache.commons.lang3.builder.ToStringStyle;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 public class PanoptaServerDetails {
-    private String partnerCustomerKey;
-    private UUID vmId;
+    @JsonIgnore private String partnerCustomerKey;
+    @JsonIgnore private UUID vmId;
     private long serverId;
     private String serverKey;
-    private Instant created;
-    private Instant destroyed;
+    @JsonIgnore private Instant created;
+    @JsonIgnore private Instant destroyed;
 
     public String getPartnerCustomerKey() {
         return partnerCustomerKey;

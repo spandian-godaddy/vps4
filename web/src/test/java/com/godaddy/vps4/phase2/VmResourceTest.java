@@ -4,7 +4,6 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.mockito.Mockito.when;
 
-import java.time.Instant;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -20,11 +19,8 @@ import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mockito;
 
-import com.godaddy.hfs.vm.Vm;
 import com.godaddy.vps4.jdbc.DatabaseModule;
 import com.godaddy.vps4.network.IpAddress.IpAddressType;
-import com.godaddy.vps4.scheduler.api.core.JobRequest;
-import com.godaddy.vps4.scheduler.api.core.SchedulerJobDetail;
 import com.godaddy.vps4.scheduler.api.web.SchedulerWebService;
 import com.godaddy.vps4.security.GDUserMock;
 import com.godaddy.vps4.security.SecurityModule;
@@ -41,8 +37,6 @@ import com.godaddy.vps4.vm.VmAction;
 import com.godaddy.vps4.vm.VmModule;
 import com.godaddy.vps4.web.Vps4Exception;
 import com.godaddy.vps4.web.security.GDUser;
-import com.godaddy.vps4.web.vm.VirtualMachineDetails;
-import com.godaddy.vps4.web.vm.VirtualMachineWithDetails;
 import com.godaddy.vps4.web.vm.VmResource;
 import com.google.inject.AbstractModule;
 import com.google.inject.Guice;
@@ -56,7 +50,7 @@ public class VmResourceTest {
     @Inject VirtualMachineService virtualMachineService;
 
     private GDUser user;
-    private long hfsVmId = 98765;
+//    private long hfsVmId = 98765;
     private SchedulerWebService schedulerWebService = Mockito.mock(SchedulerWebService.class);
 
     private Injector injector = Guice.createInjector(
@@ -567,105 +561,6 @@ public class VmResourceTest {
         actualOrionGuids.add(vms.get(1).orionGuid);
 
         Assert.assertEquals(expectedOrionGuids, actualOrionGuids);
-    }
-
-    // === getVmDetails Tests ===
-    public void testGetVmDetails() {
-        VirtualMachine vm = createTestVm();
-
-        VirtualMachineDetails details = getVmResource().getVirtualMachineDetails(vm.vmId);
-        Assert.assertEquals(details.status, "ACTIVE");
-        Assert.assertEquals(details.vmId.longValue(), hfsVmId);
-    }
-
-    @Test
-    public void testShopperGetVmDetails() {
-        testGetVmDetails();
-    }
-
-    @Test(expected=AuthorizationException.class)
-    public void testUnauthorizedShopperGetVmDetails() {
-        user = GDUserMock.createShopper("shopperX");
-        testGetVmDetails();
-    }
-
-    @Test
-    public void testAdminGetVmDetails() {
-        user = GDUserMock.createAdmin();
-        testGetVmDetails();
-    }
-
-    // === getVmWithDetails Tests ===
-    public void testGetVmWithDetails() {
-        VirtualMachine vm = createTestVm();
-
-        VirtualMachineWithDetails detailedVm = getVmResource().getVirtualMachineWithDetails(vm.vmId);
-        Assert.assertEquals(detailedVm.orionGuid, vm.orionGuid);
-        Assert.assertEquals(detailedVm.virtualMachineDetails.vmId.longValue(), hfsVmId);
-    }
-
-    @Test
-    public void testShopperGetVmWithDetails() {
-        testGetVmWithDetails();
-    }
-
-    @Test(expected=AuthorizationException.class)
-    public void testUnauthorizedShopperGetVmWithDetails() {
-        user = GDUserMock.createShopper("shopperX");
-        testGetVmWithDetails();
-    }
-
-    @Test
-    public void testAdminGetVmWithDetails() {
-        user = GDUserMock.createAdmin();
-        testGetVmWithDetails();
-    }
-
-    @Test
-    public void testNoScheduledBackupId(){
-        VirtualMachine vm = createTestVm();
-        VirtualMachineWithDetails detailedVm = getVmResource().getVirtualMachineWithDetails(vm.vmId);
-        Assert.assertEquals(0, detailedVm.autoSnapshots.copiesToRetain);
-        Assert.assertEquals(0, detailedVm.autoSnapshots.repeatIntervalInDays);
-        Assert.assertEquals(null, detailedVm.autoSnapshots.nextAt);
-    }
-
-    @Test
-    public void testNoScheduledBackupJob(){
-        VirtualMachine vm = createTestVm();
-        UUID jobId = UUID.randomUUID();
-        virtualMachineService.setBackupJobId(vm.vmId, jobId);
-        Mockito.when(schedulerWebService.getJob("vps4", "backups", jobId)).thenReturn(null);
-        VirtualMachineWithDetails detailedVm = getVmResource().getVirtualMachineWithDetails(vm.vmId);
-        Assert.assertEquals(0, detailedVm.autoSnapshots.copiesToRetain);
-        Assert.assertEquals(0, detailedVm.autoSnapshots.repeatIntervalInDays);
-        Assert.assertEquals(null, detailedVm.autoSnapshots.nextAt);
-    }
-
-    @Test
-    public void testAutoBackupScheduled(){
-        Instant nextRun = Instant.now();
-        JobRequest jobRequest = new JobRequest();
-        jobRequest.repeatIntervalInDays = 7;
-        SchedulerJobDetail jobDetail = new SchedulerJobDetail(UUID.randomUUID(), nextRun, jobRequest, false);
-        VirtualMachine vm = createTestVm();
-        virtualMachineService.setBackupJobId(vm.vmId, jobDetail.id);
-        Mockito.when(schedulerWebService.getJob("vps4", "backups", jobDetail.id)).thenReturn(jobDetail);
-        VirtualMachineWithDetails detailedVm = getVmResource().getVirtualMachineWithDetails(vm.vmId);
-        Assert.assertEquals(1, detailedVm.autoSnapshots.copiesToRetain);
-        Assert.assertEquals(7, detailedVm.autoSnapshots.repeatIntervalInDays);
-        Assert.assertEquals(nextRun, detailedVm.autoSnapshots.nextAt);
-    }
-
-
-
-    // === getHfsDetails Tests ===
-    @Test
-    public void testShopperGetHfsDetails() {
-        VirtualMachine vm = createTestVm();
-
-        Vm hfsvm = getVmResource().getMoreDetails(vm.vmId);
-        Assert.assertEquals(hfsvm.vmId, hfsVmId);
     }
 
 }
