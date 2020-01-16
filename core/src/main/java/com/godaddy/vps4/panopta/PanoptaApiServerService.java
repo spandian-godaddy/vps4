@@ -78,13 +78,4 @@ public interface PanoptaApiServerService {
                                         @QueryParam("partner_customer_key") String partnerCustomerKey,
                                         @QueryParam("start_time") String startTime,
                                         @QueryParam("end_time") String endTime);
-
-    @GET
-    @Path("/{server_id}/outage")
-    PanoptaOutage getOutage(@PathParam("server_id") int serverId,
-                            @QueryParam("partner_customer_key") String partnerCustomerKey,
-                            @QueryParam("start_time") String startTime,
-                            @QueryParam("end_time") String endTime,
-                            @QueryParam("limit") int limit,
-                            @QueryParam("offset") int offset);
 }

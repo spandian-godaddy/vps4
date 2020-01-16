@@ -328,21 +328,4 @@ public class DefaultPanoptaService implements PanoptaService {
                                                        startTime,
                                                        endTime);
     }
-
-    @Override
-    public PanoptaOutage getOutage(UUID vmId, String startTime, String endTime, int limit, int offset)
-            throws PanoptaServiceException {
-        PanoptaDetail panoptaDetail = panoptaDataService.getPanoptaDetails(vmId);
-        if (panoptaDetail == null) {
-            logger.warn("Could not find Panopta data for VM ID: {}", vmId);
-            throw new PanoptaServiceException("NO_SERVER_FOUND",
-                                              "No matching server found in VPS4 Panopta database for VM ID: " + vmId);
-        }
-        return panoptaApiServerService.getOutage(panoptaDetail.getServerId(),
-                                                 panoptaDetail.getPartnerCustomerKey(),
-                                                 startTime,
-                                                 endTime,
-                                                 limit,
-                                                 offset);
-    }
 }

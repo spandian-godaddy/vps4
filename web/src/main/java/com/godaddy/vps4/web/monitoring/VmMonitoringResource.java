@@ -28,11 +28,11 @@ import com.godaddy.vps4.panopta.PanoptaAvailability;
 import com.godaddy.vps4.panopta.PanoptaDataService;
 import com.godaddy.vps4.panopta.PanoptaDetail;
 import com.godaddy.vps4.panopta.PanoptaGraph;
-import com.godaddy.vps4.panopta.PanoptaOutage;
 import com.godaddy.vps4.panopta.PanoptaService;
 import com.godaddy.vps4.panopta.PanoptaServiceException;
 import com.godaddy.vps4.util.MonitoringMeta;
 import com.godaddy.vps4.vm.VirtualMachine;
+import com.godaddy.vps4.vm.VmOutage;
 import com.godaddy.vps4.web.PaginatedResult;
 import com.godaddy.vps4.web.Vps4Api;
 import com.godaddy.vps4.web.Vps4Exception;
@@ -59,18 +59,21 @@ public class VmMonitoringResource {
     private final MonitoringMeta monitoringMeta;
     private final PanoptaService panoptaService;
     private final PanoptaDataService panoptaDataService;
+    private final VmOutageResource vmOutageResource;
 
     @Inject
     public VmMonitoringResource(NodePingService monitoringService,
                                 VmResource vmResource,
                                 MonitoringMeta monitoringMeta,
                                 PanoptaService panoptaService,
-                                PanoptaDataService panoptaDataService) {
+                                PanoptaDataService panoptaDataService,
+                                VmOutageResource vmOutageResource) {
         this.monitoringService = monitoringService;
         this.vmResource = vmResource;
         this.monitoringMeta = monitoringMeta;
         this.panoptaService = panoptaService;
         this.panoptaDataService = panoptaDataService;
+        this.vmOutageResource = vmOutageResource;
     }
 
     @GET
@@ -145,68 +148,31 @@ public class VmMonitoringResource {
             @QueryParam("days") @DefaultValue("30") Integer days,
             @DefaultValue("10") @QueryParam("limit") Integer limit,
             @DefaultValue("0") @QueryParam("offset") Integer offset,
-            @Context UriInfo uri) throws PanoptaServiceException {
-        PanoptaDetail detail = panoptaDataService.getPanoptaDetails(vmId);
-        return (detail != null) ? getPanoptaEvents(vmId, days, limit, offset, uri) : getNodePingEvents(vmId, days, limit, offset, uri);
-    }
-
-    private PaginatedResult<MonitoringEvent> getPanoptaEvents(UUID vmId, int days, int limit, int offset, UriInfo uri) throws PanoptaServiceException {
+            @Context UriInfo uri) {
         VirtualMachine vm = vmResource.getVm(vmId);
-        Instant start = Instant.now().minus(Duration.ofDays(days));
-        Instant end = Instant.now();
-        if (start.isBefore(vm.validOn)) {
-            start = vm.validOn;
-        }
-        DateTimeFormatter dtf = DateTimeFormatter
-                .ofPattern("yyyy-MM-dd HH:mm:ss")
-                .withZone(ZoneOffset.UTC);
-        // no need to scrub parameters since Panopta already does this
-        PanoptaOutage outage = panoptaService.getOutage(vmId, dtf.format(start), dtf.format(end), limit, offset);
-        List<MonitoringEvent> events = outage.outageList.stream().map(this::getPanoptaMonitoringEvent).collect(Collectors.toList());
-        return new PaginatedResult<>(events, outage.meta.limit, outage.meta.offset, outage.meta.totalCount, uri);
-    }
-
-    private PaginatedResult<MonitoringEvent> getNodePingEvents(UUID vmId, int days, int limit, int offset, UriInfo uri) {
-        VirtualMachine vm = vmResource.getVm(vmId);
-
         int scrubbedLimit = Math.max(limit, 0);
         int scrubbedOffset = Math.max(offset, 0);
+        List<MonitoringEvent> events;
 
-        List<NodePingEvent> sourceEvents = monitoringService.getCheckEvents(
-                monitoringMeta.getAccountId(), vm.primaryIpAddress.pingCheckId, 0);
+        if (panoptaDataService.getPanoptaDetails(vmId) != null) {
+            List<VmOutage> sourceEvents = vmOutageResource.getVmOutageList(vmId, "PING");
+            events = sourceEvents.stream().map(MonitoringEvent::new).collect(Collectors.toList());
+        } else {
+            List<NodePingEvent> sourceEvents = monitoringService
+                    .getCheckEvents(monitoringMeta.getAccountId(), vm.primaryIpAddress.pingCheckId, 0);
+            events = sourceEvents.stream().map(MonitoringEvent::new).collect(Collectors.toList());
+        }
 
         // only events from past "days" days
-        List<MonitoringEvent> events = getDaysOfEvents(days, sourceEvents);
-
-        int totalRows = events.size();
+        events = events.stream()
+                       .filter(e -> e.start.isAfter(Instant.now().minus(Duration.ofDays(days))))
+                       .collect(Collectors.toList());
 
         // only the specified range of events
-        events = events.subList(Math.min(scrubbedOffset, events.size()), Math.min(scrubbedOffset+scrubbedLimit, events.size()));
+        events = events.subList(Math.min(scrubbedOffset, events.size()),
+                                Math.min(scrubbedOffset + scrubbedLimit, events.size()));
 
-        return new PaginatedResult<>(events, scrubbedLimit, scrubbedOffset, totalRows, uri);
-    }
-
-    private MonitoringEvent getPanoptaMonitoringEvent(PanoptaOutage.Outage outage) {
-        MonitoringEvent event = new MonitoringEvent();
-        if (outage != null) {
-            event.open = outage.status.equals("active");
-            event.message = outage.description;
-            event.start = (outage.startTime == null)
-                    ? null
-                    : Instant.from(DateTimeFormatter.RFC_1123_DATE_TIME.parse(outage.startTime));
-            event.end = (outage.endTime == null)
-                    ? null
-                    : Instant.from(DateTimeFormatter.RFC_1123_DATE_TIME.parse(outage.endTime));
-            event.type = "outage";
-        }
-        return event;
-    }
-
-    private List<MonitoringEvent> getDaysOfEvents(Integer days, List<NodePingEvent> sourceEvents) {
-        List<MonitoringEvent> events = sourceEvents.stream().map(MonitoringEvent::new).collect(Collectors.toList());
-        events = events.stream().filter(e -> e.start.isAfter(Instant.now().minus(Duration.ofDays(days))))
-                .collect(Collectors.toList());
-        return events;
+        return new PaginatedResult<>(events, scrubbedLimit, scrubbedOffset, events.size(), uri);
     }
 
     public enum Category {USAGE, NETWORK}

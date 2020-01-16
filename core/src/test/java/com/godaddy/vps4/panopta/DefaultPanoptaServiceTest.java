@@ -438,24 +438,6 @@ public class DefaultPanoptaServiceTest {
     }
 
     @Test
-    public void testGetOutage() throws PanoptaServiceException {
-        when(panoptaDataService.getPanoptaDetails(eq(vmId))).thenReturn(panoptaDetail);
-        String startTime = "2007-08-12 07:12:20";
-        String endTime = "2007-08-12 08:12:20";
-        int limit = 5, offset = 15;
-        defaultPanoptaService.getOutage(vmId, startTime, endTime, limit, offset);
-        verify(panoptaApiServerService).getOutage(serverId, partnerCustomerKey, startTime, endTime, limit, offset);
-    }
-
-    @Test(expected = PanoptaServiceException.class)
-    public void testGetOutageException() throws PanoptaServiceException {
-        String startTime = "2010-11-03 14:15:50";
-        String endTime = "2010-11-03 17:15:50";
-        int limit = 5, offset = 15;
-        defaultPanoptaService.getOutage(UUID.randomUUID(), startTime, endTime, limit, offset);
-    }
-
-    @Test
     public void testGetServer() throws PanoptaServiceException {
         when(config.get("panopta.api.partner.customer.key.prefix")).thenReturn("gdtest_");
         when(panoptaApiServerService.getPanoptaServers(eq(partnerCustomerKey), eq(serverKey)))
