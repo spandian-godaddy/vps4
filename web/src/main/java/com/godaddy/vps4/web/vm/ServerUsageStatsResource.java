@@ -92,20 +92,20 @@ public class ServerUsageStatsResource {
                 switch (graph.type) {
                     case CPU:
                         UsageStats.CpuUsage newCpu = new UsageStats.CpuUsage();
-                        newCpu.cpuUsagePercent = getLastDouble(graph.values);
+                        newCpu.cpuUsagePercent = getLastPercent(graph.values);
                         stats.cpu = newCpu;
                         break;
                     case RAM:
                         int memMib = spec.memoryMib;
                         UsageStats.MemUsage newMem = new UsageStats.MemUsage();
-                        newMem.memUsed = (long) (memMib * getLastDouble(graph.values) / 100); // calculate percentage
+                        newMem.memUsed = (long) (memMib * getLastPercent(graph.values) / 100); // calculate percentage
                         newMem.memTotal = spec.memoryMib;
                         stats.mem = newMem;
                         break;
                     case DISK:
                         int diskMib = spec.diskGib * 1024; // convert from GB to MB
                         UsageStats.DiskUsage newDisk = new UsageStats.DiskUsage();
-                        newDisk.diskUsed = (long) (diskMib * getLastDouble(graph.values) / 100); // calculate percentage
+                        newDisk.diskUsed = (long) (diskMib * getLastPercent(graph.values) / 100); // calculate percentage
                         newDisk.diskTotal = diskMib;
                         stats.disk = newDisk;
                         break;
@@ -123,13 +123,13 @@ public class ServerUsageStatsResource {
         return stats;
     }
 
-    private Double getLastDouble(List<Double> list) {
+    private Double getLastPercent(List<Double> list) {
         Double d = list.get(list.size() - 1);
         // Panopta will sometimes return null for the last value. In that case, check the second to last value.
         if (d == null) {
             d = list.get(list.size() - 2);
         }
-        return d;
+        return Math.min(d, 100);
     }
 
     private Instant getLastInstant(List<Instant> list) {

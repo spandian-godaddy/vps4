@@ -62,6 +62,7 @@ public class ServerUsageStatsResourceTest {
     private VirtualMachine vm;
     private PanoptaDetail panoptaDetail;
     private List<PanoptaGraph> usageGraphs;
+    private List<PanoptaGraph> maxUsageGraphs;
     private double cpu;
     private double mem;
     private double disk;
@@ -103,6 +104,7 @@ public class ServerUsageStatsResourceTest {
         mem = Math.random() * 100;
         disk = Math.random() * 100;
         setUpUsageGraphs();
+        setUpMaxUsageGraphs();
     }
 
     private void setUpUsageGraphs() {
@@ -110,6 +112,13 @@ public class ServerUsageStatsResourceTest {
         usageGraphs.add(setUpUsageGraph(VmMetric.CPU, cpu));
         usageGraphs.add(setUpUsageGraph(VmMetric.RAM, mem));
         usageGraphs.add(setUpUsageGraph(VmMetric.DISK, disk));
+    }
+
+    private void setUpMaxUsageGraphs() {
+        maxUsageGraphs = new ArrayList<>();
+        maxUsageGraphs.add(setUpUsageGraph(VmMetric.CPU, (double) 100));
+        maxUsageGraphs.add(setUpUsageGraph(VmMetric.RAM, (double) 100));
+        maxUsageGraphs.add(setUpUsageGraph(VmMetric.DISK, (double) 100));
     }
 
     private PanoptaGraph setUpUsageGraph(VmMetric type, Double value) {
@@ -160,6 +169,25 @@ public class ServerUsageStatsResourceTest {
         assertEquals((long) (vm.spec.memoryMib * mem / 100), stats.mem.memUsed);
         assertEquals(vm.spec.memoryMib, stats.mem.memTotal);
         assertEquals((long) (vm.spec.diskGib * 1024 * disk / 100), stats.disk.diskUsed);
+        assertEquals(vm.spec.diskGib * 1024, stats.disk.diskTotal);
+    }
+
+    @Test
+    public void getPanoptaUsageWithValuesOver100() throws PanoptaServiceException {
+        doNothing().when(spyResource).verifyServerIsActive(anyLong());
+        when(vmResource.getVm(vm.vmId)).thenReturn(vm);
+        when(panoptaDataService.getPanoptaDetails(vm.vmId)).thenReturn(panoptaDetail);
+        when(panoptaService.getUsageGraphs(vm.vmId, "hour")).thenReturn(maxUsageGraphs);
+
+        UsageStats stats = spyResource.getUsage(vm.vmId);
+
+        verify(vmResource, times(1)).getVm(vm.vmId);
+        verify(panoptaService, times(1)).getUsageGraphs(vm.vmId, "hour");
+        assertNotNull("Stats cannot be null.", stats);
+        assertEquals(100, stats.cpu.cpuUsagePercent, 0.01);
+        assertEquals(vm.spec.memoryMib, stats.mem.memUsed);
+        assertEquals(vm.spec.memoryMib, stats.mem.memTotal);
+        assertEquals(vm.spec.diskGib * 1024, stats.disk.diskUsed);
         assertEquals(vm.spec.diskGib * 1024, stats.disk.diskTotal);
     }
 
