@@ -8,9 +8,12 @@ import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.atLeast;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.UUID;
 
 import org.apache.kafka.clients.consumer.ConsumerRecord;
@@ -21,6 +24,8 @@ import org.mockito.ArgumentCaptor;
 
 import com.godaddy.vps4.handler.Vps4PanoptaMessageHandler.Item;
 import com.godaddy.vps4.panopta.PanoptaDataService;
+import com.godaddy.vps4.vm.VmMetric;
+import com.godaddy.vps4.vm.VmOutage;
 import com.godaddy.vps4.vm.VmOutageService;
 import com.godaddy.vps4.web.client.VmOutageApiService;
 import com.godaddy.vps4.web.monitoring.VmOutageResource.VmOutageRequest;
@@ -33,13 +38,18 @@ public class Vps4PanoptaMessageHandlerTest {
 
     private UUID vmId = UUID.randomUUID();
     private String serverKey = "5kk3-ukkv-aher-ngna";
+    private VmOutage outage;
     private long panoptaOutageId = -105141431;
     private int outageId = 23;
 
     @Before
     public void setUp() {
+        outage = new VmOutage();
+        outage.outageId = outageId;
+        outage.outageDetailId = panoptaOutageId;
+        outage.metric = VmMetric.CPU;
         when(panoptaDataService.getVmId(serverKey)).thenReturn(vmId);
-        when(vmOutageDbService.getVmOutageId(panoptaOutageId)).thenReturn(outageId);
+        when(vmOutageDbService.getVmOutageList(panoptaOutageId)).thenReturn(Arrays.asList(outage));
     }
 
     private JSONObject createOutageEventMessage() {
@@ -106,9 +116,38 @@ public class Vps4PanoptaMessageHandlerTest {
     }
 
     @Test
+    public void handleOutageWithMultipleItemTypes() throws MessageHandlerException {
+        JSONObject jsonMsg = createOutageEventMessage();
+        String multiItemType = String.join(",", Item.ITEM_FTP.getTextkey(), Item.ITEM_HTTP.getTextkey());
+        replaceJsonKeyVal(jsonMsg, "itemType", multiItemType);
+        callHandleMessage(jsonMsg.toJSONString());
+        verify(vmOutageApi, times(2)).newVmOutage(eq(vmId), any(VmOutageRequest.class));
+    }
+
+    @Test
+    public void handleOutageWithMultipleAndUnknown() throws MessageHandlerException {
+        JSONObject jsonMsg = createOutageEventMessage();
+        String multiItemType = String.join(",", "tcp.snmp.port", Item.ITEM_FTP.getTextkey());
+        replaceJsonKeyVal(jsonMsg, "itemType", multiItemType);
+        callHandleMessage(jsonMsg.toJSONString());
+        verify(vmOutageApi, times(1)).newVmOutage(eq(vmId), any(VmOutageRequest.class));
+    }
+
+    @Test
     public void handlesClearEventMessage() throws MessageHandlerException {
         callHandleMessage(createClearEventMessage().toJSONString());
         verify(vmOutageApi).clearVmOutage(vmId, outageId, "2019-12-09 21:19:51 UTC");
+    }
+
+    @Test
+    public void handlesClearWithMultipleOutages() throws MessageHandlerException {
+        VmOutage outage2 = new VmOutage();
+        outage2.outageId = 42;
+        outage2.metric = VmMetric.DISK;
+        when(vmOutageDbService.getVmOutageList(panoptaOutageId)).thenReturn(Arrays.asList(outage, outage2));
+        callHandleMessage(createClearEventMessage().toJSONString());
+        verify(vmOutageApi).clearVmOutage(vmId, outageId, "2019-12-09 21:19:51 UTC");
+        verify(vmOutageApi).clearVmOutage(vmId, outage2.outageId, "2019-12-09 21:19:51 UTC");
     }
 
     @Test
@@ -135,7 +174,7 @@ public class Vps4PanoptaMessageHandlerTest {
 
     @Test
     public void canHandleMessageWithUnknownOutageId() throws MessageHandlerException {
-        when(vmOutageDbService.getVmOutageId(panoptaOutageId)).thenReturn(null);
+        when(vmOutageDbService.getVmOutageList(panoptaOutageId)).thenReturn(Collections.emptyList());
         callHandleMessage(createClearEventMessage().toJSONString());
         verify(vmOutageApi, never()).clearVmOutage(eq(vmId), anyInt(), anyString());
     }

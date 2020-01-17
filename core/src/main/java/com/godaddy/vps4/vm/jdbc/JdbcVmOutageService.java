@@ -89,10 +89,13 @@ public class JdbcVmOutageService implements VmOutageService {
     }
 
     @Override
-    public Integer getVmOutageId(long panoptaOutageId) {
+    public List<VmOutage> getVmOutageList(long panoptaOutageId) {
         return Sql.with(dataSource).exec(
-                "SELECT id FROM vm_outage WHERE panopta_outage_id = ?",
-                Sql.nextOrNull(rs -> rs.getInt("id")), panoptaOutageId);
+                "SELECT o.id, vm_id, m.name, started, ended, reason, panopta_outage_id"
+                + " FROM vm_outage o"
+                + " JOIN metric m ON m.id = o.metric_id"
+                + " WHERE panopta_outage_id = ?;",
+                Sql.listOf(this::mapVmOutage), panoptaOutageId);
     }
 
 }

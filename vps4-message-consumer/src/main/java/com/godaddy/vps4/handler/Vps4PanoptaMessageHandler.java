@@ -3,6 +3,8 @@ package com.godaddy.vps4.handler;
 import static java.util.Arrays.stream;
 import static java.util.stream.Collectors.toMap;
 
+import java.util.Arrays;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
@@ -14,6 +16,7 @@ import org.slf4j.LoggerFactory;
 
 import com.godaddy.vps4.panopta.PanoptaDataService;
 import com.godaddy.vps4.vm.VmMetric;
+import com.godaddy.vps4.vm.VmOutage;
 import com.godaddy.vps4.vm.VmOutageService;
 import com.godaddy.vps4.web.client.VmOutageApiService;
 import com.godaddy.vps4.web.monitoring.VmOutageResource.VmOutageRequest;
@@ -31,6 +34,9 @@ public class Vps4PanoptaMessageHandler implements MessageHandler {
     private final String EVENT_CLEAR = "clear event";
 
     enum Item {
+        ITEM_RAM_WIN ("perfmon.memory/percent_used"),
+        ITEM_DISK_WIN("perfmon.logicaldisk/percent_used_space"),
+        ITEM_CPU_WIN ("perfmon.processor/percent_processor_time"),
         ITEM_RAM ("memory/ram.percent"),
         ITEM_DISK("disk/usage.percent_used"),
         ITEM_CPU ("cpu_usage/usage_percentage"),
@@ -82,10 +88,10 @@ public class Vps4PanoptaMessageHandler implements MessageHandler {
 
         switch (msg.event) {
             case EVENT_OUTAGE :
-                reportNewVmMetricOutage(vmId, msg);
+                reportNewVmMetricOutages(vmId, msg);
                 break;
             case EVENT_CLEAR :
-                clearVmMetricOutage(vmId, msg);
+                clearVmMetricOutages(vmId, msg);
                 break;
             default :
                 logger.warn("Unknown event found in panopta webhook alert : {}", msg.event);
@@ -96,20 +102,23 @@ public class Vps4PanoptaMessageHandler implements MessageHandler {
         return panoptaDataService.getVmId(serverKey);
     }
 
-    private void reportNewVmMetricOutage(UUID vmId, Vps4PanoptaMessage msg) {
-        VmMetric metric = mapItemTypeToMetric(msg.itemType);
-        if (metric == VmMetric.UNKNOWN) {
-            logger.warn("Unknown metric found in panopta webhook alert: {}", msg.itemType);
-            return;
-        }
+    private void reportNewVmMetricOutages(UUID vmId, Vps4PanoptaMessage msg) {
+        List<String> itemList = Arrays.asList(msg.itemType.split(","));  // msg.itemType is comma delimited list
+        for(String itemType: itemList) {
+            VmMetric metric = mapItemTypeToMetric(itemType);
+            if (metric == VmMetric.UNKNOWN) {
+                logger.warn("Unknown metric found in panopta webhook alert: {}", msg.itemType);
+                continue;
+            }
 
-        VmOutageRequest req = new VmOutageRequest();
-        req.metric = metric.name();
-        req.startDate = msg.start;
-        req.reason = msg.reasons;
-        req.panoptaOutageId = Long.parseLong(msg.outageId);
-        logger.info("Reporting new outage on VM {} for metric {} from panopta webhook alert", vmId, metric.name());
-        vmOutageApi.newVmOutage(vmId, req);
+            VmOutageRequest req = new VmOutageRequest();
+            req.metric = metric.name();
+            req.startDate = msg.start;
+            req.reason = msg.reasons;
+            req.panoptaOutageId = Long.parseLong(msg.outageId);
+            logger.info("Reporting new outage on VM {} for metric {} from panopta webhook alert", vmId, metric.name());
+            vmOutageApi.newVmOutage(vmId, req);
+        }
     }
 
     private VmMetric mapItemTypeToMetric(String itemType) {
@@ -119,10 +128,13 @@ public class Vps4PanoptaMessageHandler implements MessageHandler {
 
         switch (item) {
             case ITEM_RAM :
+            case ITEM_RAM_WIN :
                 return VmMetric.RAM;
             case ITEM_DISK :
+            case ITEM_DISK_WIN :
                 return VmMetric.DISK;
             case ITEM_CPU :
+            case ITEM_CPU_WIN :
                 return VmMetric.CPU;
             case ITEM_PING :
                 return VmMetric.PING;
@@ -143,21 +155,22 @@ public class Vps4PanoptaMessageHandler implements MessageHandler {
         }
     }
 
-    private void clearVmMetricOutage(UUID vmId, Vps4PanoptaMessage msg) {
+    private void clearVmMetricOutages(UUID vmId, Vps4PanoptaMessage msg) {
         long panoptaOutageId = Long.parseLong(msg.outageId);
-        Integer outageId = lookupVmOutageId(panoptaOutageId);
-        if (outageId == null) {
-            logger.warn("Unknown outage ID found in panopta webhook alert: {}, No corresponding outage found in DB", msg.outageId);
+        List<VmOutage> outageList = lookupVmOutageList(panoptaOutageId);
+        if (outageList.isEmpty()) {
+            logger.warn("Unknown outage ID found in panopta webhook alert: {}, No corresponding VM outages found in DB", msg.outageId);
             return;
         }
 
-        logger.info("Clearing outage on VM {} for metric {} from panopta webhook alert",
-                vmId, mapItemTypeToMetric(msg.itemType).name());
-        vmOutageApi.clearVmOutage(vmId, outageId, msg.start);
+        for (VmOutage outage: outageList) {
+            logger.info("Clearing outage on VM {} for metric {} from panopta webhook alert", vmId, outage.metric.name());
+            vmOutageApi.clearVmOutage(vmId, outage.outageId, msg.start);
+        }
     }
 
-    private Integer lookupVmOutageId(long panoptaOutageId) {
-        return vmOutageDbService.getVmOutageId(panoptaOutageId);
+    private List<VmOutage> lookupVmOutageList(long panoptaOutageId) {
+        return vmOutageDbService.getVmOutageList(panoptaOutageId);
     }
 
 }
