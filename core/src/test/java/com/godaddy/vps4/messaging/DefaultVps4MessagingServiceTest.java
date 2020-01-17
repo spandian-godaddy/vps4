@@ -147,13 +147,13 @@ public class DefaultVps4MessagingServiceTest {
             substitutionValues.put(DefaultVps4MessagingService.EmailSubstitutions.ISMANAGEDSUPPORT, Boolean.toString(isManaged));
             shopperMessage.substitutionValues = substitutionValues;
 
-            Class[] args = new Class[]{EmailTemplates.class, EnumMap.class};
+            Class[] args = new Class[]{EmailTemplates.class, EnumMap.class, EnumMap.class};
             Method buildShopperMessageJson =
                     messagingService.getClass().getDeclaredMethod("buildShopperMessageJson", args);
             buildShopperMessageJson.setAccessible(true);
             String shopperMessageJsonResult = (String) buildShopperMessageJson.invoke(messagingService,
                                                                                       DefaultVps4MessagingService.EmailTemplates.VirtualPrivateHostingProvisioned4,
-                                                                                      substitutionValues);
+                                                                                      substitutionValues, null);
             Assert.assertEquals(SecureHttpClient.createJSONStringFromObject(shopperMessage), shopperMessageJsonResult);
         } catch (Exception ex) {
             ex.printStackTrace();

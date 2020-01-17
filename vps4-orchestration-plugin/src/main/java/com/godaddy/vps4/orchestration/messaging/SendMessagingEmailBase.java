@@ -10,6 +10,9 @@ public class SendMessagingEmailBase {
             throw new RuntimeException(exceptionMessage);
         }
 
+        // Introduce a wait before getting the message status since the GD messaging api inserts the record into
+        // their on box cache but the message is queued up asynchronously to be persisted to their db
+        context.sleep(3000);
         context.execute(WaitForMessageComplete.class, messageId);
     }
 }

@@ -1,8 +1,10 @@
 package com.godaddy.vps4.orchestration.messaging;
 
-import com.godaddy.vps4.messaging.Vps4MessagingService;
-import com.godaddy.vps4.messaging.models.Message;
-import gdg.hfs.orchestration.CommandContext;
+import static org.mockito.Mockito.atLeastOnce;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 import java.util.UUID;
 
@@ -10,10 +12,10 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
-import static org.mockito.Mockito.times;
+import com.godaddy.vps4.messaging.Vps4MessagingService;
+import com.godaddy.vps4.messaging.models.Message;
+
+import gdg.hfs.orchestration.CommandContext;
 
 public class WaitForMessageCompleteTest {
     Vps4MessagingService messagingService;
@@ -53,7 +55,7 @@ public class WaitForMessageCompleteTest {
         waitForMsgCompleteCmd.execute(context, messageId);
 
         verify(messagingService, times(2)).getMessageById(messageId);
-        verify(context, times(1)).sleep(3000);
+        verify(context, atLeastOnce()).sleep(3000);
     }
 
     @Test

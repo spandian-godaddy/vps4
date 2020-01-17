@@ -1,8 +1,12 @@
 package com.godaddy.vps4.messaging.models;
 
 import java.util.List;
-import com.fasterxml.jackson.annotation.JsonInclude;
+
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.builder.ReflectionToStringBuilder;
+import org.apache.commons.lang3.builder.ToStringStyle;
+
+import com.fasterxml.jackson.annotation.JsonInclude;
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class Message {
@@ -26,10 +30,7 @@ public class Message {
     @Override
     public String toString() {
         if (StringUtils.isEmpty(code)) {
-            return "Message [messageId: " + messageId + " status: " + status +
-                    " createdAt: " + createdAt + " templateNamespaceKey: " + templateNamespaceKey +
-                    " templateTypeKey: " + templateTypeKey + " privateLabelId: " + privateLabelId +
-                    " shopperId: " + shopperId + " failureReason: " + failureReason + "]";
+            return ReflectionToStringBuilder.toString(this, ToStringStyle.MULTI_LINE_STYLE);
         }
         else {
             return "Error message response [code: " + code + " message: " + message + "]";

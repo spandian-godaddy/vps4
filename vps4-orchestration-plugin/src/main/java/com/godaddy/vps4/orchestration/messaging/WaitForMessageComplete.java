@@ -26,21 +26,26 @@ public class WaitForMessageComplete implements Command<String, Void> {
     public Void execute(CommandContext context, String messageId) {
         Message message = this.getMessageById(messageId);
 
-        while (message.status.equalsIgnoreCase(Message.Statuses.PENDING.toString())) {
-            logger.debug("waiting on message id: {}", messageId);
-            context.sleep(3000);
-            message = this.getMessageById(messageId);
-        }
+        if (message.status != null) {
+            while (message.status.equalsIgnoreCase(Message.Statuses.PENDING.toString())) {
+                logger.debug("waiting on message id: {}", messageId);
+                context.sleep(3000);
+                message = this.getMessageById(messageId);
+            }
 
-        if (message.status.equalsIgnoreCase(Message.Statuses.SUCCESS.toString())) {
-            logger.info("Message id {} sent successfully for shopper [{}].", messageId, message.shopperId);
-        } else if (message.status.equalsIgnoreCase(Message.Statuses.FAILED.toString())) {
-            String errorMessage = String.format("Message %s failed: %s", message.messageId, message.failureReason);
-            logger.error(errorMessage);
-            throw new RuntimeException(errorMessage);
-        }
-        else {
-            logger.error("Message {} status: {}", message.messageId, message.status);
+            if (message.status.equalsIgnoreCase(Message.Statuses.SUCCESS.toString())) {
+                logger.info("Message.toString(): {} ", message.toString());
+                logger.info("Message id {} sent successfully for shopper [{}].", messageId, message.shopperId);
+            } else if (message.status.equalsIgnoreCase(Message.Statuses.FAILED.toString())) {
+                String errorMessage = String.format("Message %s failed: %s", message.messageId, message.failureReason);
+                logger.error(errorMessage);
+                throw new RuntimeException(errorMessage);
+            } else {
+                logger.error("Message {} status: {}", message.messageId, message.status);
+            }
+        } else {
+            logger.error("GET response for Message ID {} did not return with success status ", messageId);
+            logger.error("Message response: {}", message.toString());
         }
 
         return null;

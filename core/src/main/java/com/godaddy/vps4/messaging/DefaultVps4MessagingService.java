@@ -79,6 +79,11 @@ public class DefaultVps4MessagingService implements Vps4MessagingService {
         RESOURCEUSAGE
     }
 
+    public enum TransformationData {
+        ALERTSTARTTIME,
+        ALERTENDTIME,
+    }
+
     @Inject
     public DefaultVps4MessagingService(Config config) {
         this(config, new SecureHttpClient(
@@ -104,6 +109,7 @@ public class DefaultVps4MessagingService implements Vps4MessagingService {
         String uri = buildApiUri(uriPath);
         HttpGet httpGet = SecureHttpClient.createJsonHttpGet(uri);
 
+        logger.debug("HTTP GET message id: {} ", messageId);
         try {
             return this.client.executeHttp(httpGet, Message.class);
         } catch (IOException e) {
@@ -114,11 +120,21 @@ public class DefaultVps4MessagingService implements Vps4MessagingService {
 
     private String buildShopperMessageJson(EmailTemplates template,
             EnumMap<EmailSubstitutions, String> substitutionValues) {
+        return buildShopperMessageJson(template, substitutionValues, null);
+    }
+
+    private String buildShopperMessageJson(EmailTemplates template,
+            EnumMap<EmailSubstitutions, String> substitutionValues,
+            EnumMap<TransformationData, String> transformationData) {
         ShopperMessage shopperMessage = new ShopperMessage();
         shopperMessage.templateNamespaceKey = TEMPLATE_NAMESPACE_KEY;
         shopperMessage.templateTypeKey = template.toString();
 
         shopperMessage.substitutionValues = substitutionValues;
+
+        if (transformationData != null) {
+            shopperMessage.transformationData = transformationData;
+        }
 
         return SecureHttpClient.createJSONStringFromObject(shopperMessage);
     }
@@ -143,12 +159,15 @@ public class DefaultVps4MessagingService implements Vps4MessagingService {
         Map<String, String> headers = new HashMap<>();
         headers.put("X-Shopper-Id", shopperId);
 
+        logger.debug("JSON POST shopperMessageJson: {} ", shopperMessageJson);
         HttpPost httpPost = SecureHttpClient.createJsonHttpPostWithHeaders(uri, headers);
         httpPost.setEntity(new StringEntity(shopperMessageJson, ContentType.APPLICATION_JSON));
 
         MessagingResponse response;
         try {
             response = this.client.executeHttp(httpPost, MessagingResponse.class);
+            logger.debug("RESPONSE from POST: {} code: {} message: {} messageId: {}", response.toString(),
+                    response.code, response.message, response.messageId);
         } catch (IOException e) {
             logger.error("Exception sending to messaging api: ", e);
             throw new RuntimeException(e);
@@ -259,7 +278,7 @@ public class DefaultVps4MessagingService implements Vps4MessagingService {
             String serviceName, Instant alertStart, boolean isManaged) {
         String shopperMessageJson = buildOutageJson(
                 isManaged ? EmailTemplates.NewFinalManagedServicesDown :
-                        EmailTemplates.NewFinalManagedServicesDown,
+                        EmailTemplates.NewFinalSelfManagedServicesDown,
                 accountName, ipAddress, orionGuid, serviceName, null, alertStart, null, isManaged);
         return sendMessage(shopperId, shopperMessageJson);
     }
@@ -305,11 +324,12 @@ public class DefaultVps4MessagingService implements Vps4MessagingService {
         substitutionValues.put(EmailSubstitutions.IPADDRESS, ipAddress);
         substitutionValues.put(EmailSubstitutions.ORION_ID, orionGuid.toString());
         substitutionValues.put(EmailSubstitutions.ISMANAGEDSUPPORT, Boolean.toString(isManaged));
+        EnumMap<TransformationData, String> tranformationData = new EnumMap<>(TransformationData.class);
         if (alertStart != null) {
-            substitutionValues.put(EmailSubstitutions.ALERTSTARTTIME, alertStart.toString());
+            tranformationData.put(TransformationData.ALERTSTARTTIME, alertStart.toString());
         }
         if (alertEnd != null) {
-            substitutionValues.put(EmailSubstitutions.ALERTENDTIME, alertEnd.toString());
+            tranformationData.put(TransformationData.ALERTENDTIME, alertEnd.toString());
         }
         if (StringUtils.isNotEmpty(metricName)) {
             substitutionValues.put(EmailSubstitutions.SERVICENAME, metricName);
@@ -320,6 +340,6 @@ public class DefaultVps4MessagingService implements Vps4MessagingService {
         if (StringUtils.isNotEmpty(resourceUsage)) {
             substitutionValues.put(EmailSubstitutions.RESOURCEUSAGE, resourceUsage);
         }
-        return buildShopperMessageJson(emailTemplate, substitutionValues);
+        return buildShopperMessageJson(emailTemplate, substitutionValues, tranformationData);
     }
 }
