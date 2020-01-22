@@ -86,15 +86,20 @@ public class Vps4PanoptaMessageHandler implements MessageHandler {
             return;
         }
 
-        switch (msg.event) {
-            case EVENT_OUTAGE :
-                reportNewVmMetricOutages(vmId, msg);
-                break;
-            case EVENT_CLEAR :
-                clearVmMetricOutages(vmId, msg);
-                break;
-            default :
-                logger.warn("Unknown event found in panopta webhook alert : {}", msg.event);
+        try {
+            switch (msg.event) {
+                case EVENT_OUTAGE :
+                    reportNewVmMetricOutages(vmId, msg);
+                    break;
+                case EVENT_CLEAR :
+                    clearVmMetricOutages(vmId, msg);
+                    break;
+                default :
+                    logger.warn("Unknown event found in panopta webhook alert : {}", msg.event);
+            }
+        } catch (Exception ex) {
+            // retry the message processing for panopta
+            throw new MessageHandlerException(true, ex);
         }
     }
 
@@ -172,5 +177,4 @@ public class Vps4PanoptaMessageHandler implements MessageHandler {
     private List<VmOutage> lookupVmOutageList(long panoptaOutageId) {
         return vmOutageDbService.getVmOutageList(panoptaOutageId);
     }
-
 }

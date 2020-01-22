@@ -1,6 +1,7 @@
 package com.godaddy.vps4.handler;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyInt;
 import static org.mockito.Matchers.anyString;
@@ -15,6 +16,8 @@ import static org.mockito.Mockito.when;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.UUID;
+
+import javax.ws.rs.BadRequestException;
 
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.json.simple.JSONObject;
@@ -35,6 +38,7 @@ public class Vps4PanoptaMessageHandlerTest {
     private PanoptaDataService panoptaDataService = mock(PanoptaDataService.class);
     private VmOutageApiService  vmOutageApi = mock(VmOutageApiService.class);
     private VmOutageService vmOutageDbService = mock(VmOutageService.class);
+    private VmOutageRequest vmOutageRequest = mock(VmOutageRequest.class);
 
     private UUID vmId = UUID.randomUUID();
     private String serverKey = "5kk3-ukkv-aher-ngna";
@@ -189,4 +193,13 @@ public class Vps4PanoptaMessageHandlerTest {
         }
     }
 
+    @Test
+    public void invokesRetryOnBadRequestException() throws MessageHandlerException {
+        when(vmOutageApi.newVmOutage(vmId, vmOutageRequest)).thenThrow(new BadRequestException());
+        try {
+            callHandleMessage(createOutageEventMessage().toJSONString());
+        } catch (MessageHandlerException mhex) {
+            assertTrue(mhex.shouldRetry());
+        }
+    }
 }
