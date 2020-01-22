@@ -33,8 +33,9 @@ public class VmActiveSnapshotFilter implements Filter {
 
     private static final Logger logger = LoggerFactory.getLogger(VmActiveSnapshotFilter.class);
 
-    private static final String MATCH_PATTERN = "/api/vms/(?<vmid>[0-9a-f-]+)(/.*)?";
-    private static final String EXCLUDE_PATTERN = "/api/vms/(?<vmid>[0-9a-f-]+)/messaging/?.*";
+    // Regex matches vm api requests and captures vmid and vm endpoint used, Ex: /api/vms/<vmId>/<endpoint>/endpointId/sub-endpoint
+    private static final Pattern VM_API_PATTERN = Pattern.compile("/api/vms/(?<vmid>[0-9a-fA-F-]+)/?(?<endpoint>.*?)(?:/.*)*");
+    private static final List<String> EXCLUDED_VM_ENDPOINTS = Arrays.asList("messaging","outages","alerts");
 
     final VirtualMachineService virtualMachineService;
 
@@ -56,7 +57,7 @@ public class VmActiveSnapshotFilter implements Filter {
 
         HttpServletRequest request = (HttpServletRequest) req;
         try {
-            validateIfVmApiRequest(request);
+            validateSafeApiRequest(request);
             chain.doFilter(req, res);
         }
         catch (Vps4Exception e) {
@@ -73,43 +74,40 @@ public class VmActiveSnapshotFilter implements Filter {
         }
     }
 
-    private void validateIfVmApiRequest(HttpServletRequest request) {
-        String requestUri = request.getRequestURI();
-
-        if(shouldEndpointBeExcluded(requestUri)) {
-            return;
-        }
-
-        Matcher m = Pattern.compile(MATCH_PATTERN).matcher(requestUri);
-        if (m.matches()) {
-            String vmId = m.group("vmid");
-            validateIfVmHasActiveSnapshotAction(request, vmId);
+    private void validateSafeApiRequest(HttpServletRequest request) {
+        String httpMethod = request.getMethod();
+        List<String> unsafeHttpMethods = Arrays.asList("POST", "PUT", "PATCH");
+        if (unsafeHttpMethods.contains(httpMethod)) {
+            validateIfVmApiRequest(request);
         }
     }
 
-	private boolean shouldEndpointBeExcluded(String requestUri) {
-		return Pattern.matches(EXCLUDE_PATTERN, requestUri);
-	}
+    private void validateIfVmApiRequest(HttpServletRequest request) {
+        String requestUri = request.getRequestURI();
 
-    private void validateIfVmHasActiveSnapshotAction(HttpServletRequest request, String vmId) {
+        Matcher m = VM_API_PATTERN.matcher(requestUri);
+        if (m.matches() && !isVmEndpointExcluded(m.group("endpoint"))) {
+            String vmId = m.group("vmid");
+            validateNoActiveSnapshotAction(request, vmId);
+        }
+    }
+
+    private boolean isVmEndpointExcluded(String endpoint) {
+        return EXCLUDED_VM_ENDPOINTS.contains(endpoint);
+    }
+
+    private void validateNoActiveSnapshotAction(HttpServletRequest request, String vmId) {
         Long snapshotActionId = getPendingSnapshotAction(UUID.fromString(vmId));
-        if (snapshotActionId != null)
-            validateHttpMethodAllowedDuringSnapshot(request, snapshotActionId);
+        if (snapshotActionId != null) {
+            String errorMsg = "Request not allowed while snapshot action running";
+            logger.info(errorMsg + String.format(", action: %s, request: %s %s",
+                    snapshotActionId, request.getMethod(), request.getRequestURI()));
+            throw new Vps4Exception("SNAPSHOT_ACTION_IN_PROGRESS", errorMsg);
+        }
     }
 
     private Long getPendingSnapshotAction(UUID vmId) {
         return virtualMachineService.getPendingSnapshotActionIdByVmId(vmId);
-    }
-
-    private void validateHttpMethodAllowedDuringSnapshot(HttpServletRequest request, Long actionId) {
-        String httpMethod = request.getMethod();
-        List<String> disallowedHttpMethods = Arrays.asList("POST", "PUT", "PATCH");
-        if (disallowedHttpMethods.contains(httpMethod)) {
-            String errorMsg = "Request not allowed while snapshot action running";
-            logger.info(errorMsg + String.format(", action: %s, request: %s %s",
-                    actionId, httpMethod, request.getRequestURI()));
-            throw new Vps4Exception("SNAPSHOT_ACTION_IN_PROGRESS", errorMsg);
-        }
     }
 
 }
