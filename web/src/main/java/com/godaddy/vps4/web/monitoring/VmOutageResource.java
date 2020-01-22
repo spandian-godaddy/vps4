@@ -134,7 +134,7 @@ public class VmOutageResource {
                                              VmOutage vmOutage) {
         VirtualMachineCredit credit = creditService.getVirtualMachineCredit(virtualMachine.orionGuid);
         VmOutageEmailRequest vmOutageEmailRequest =
-                new VmOutageEmailRequest(virtualMachine.hostname, virtualMachine.primaryIpAddress.ipAddress,
+                new VmOutageEmailRequest(virtualMachine.name, virtualMachine.primaryIpAddress.ipAddress,
                                          credit.getOrionGuid(), credit.getShopperId(), vmId, credit.isManaged(),
                                          vmOutage);
         CommandState command = Commands.execute(commandService, emailOrchestrationClassname, vmOutageEmailRequest);
