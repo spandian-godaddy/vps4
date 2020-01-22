@@ -1,10 +1,9 @@
 package com.godaddy.vps4.handler.util;
 
-import org.apache.http.conn.HttpHostConnectException;
-
-import javax.ws.rs.InternalServerErrorException;
 import javax.ws.rs.ProcessingException;
-import javax.ws.rs.ServiceUnavailableException;
+import javax.ws.rs.WebApplicationException;
+
+import org.apache.http.conn.HttpHostConnectException;
 
 
 public abstract class Utils {
@@ -21,7 +20,6 @@ public abstract class Utils {
 
     public static boolean isVps4ApiDown(Throwable ex) {
         return  (ex instanceof ProcessingException && ex.getCause() instanceof HttpHostConnectException) // If the api is down
-            || ex instanceof InternalServerErrorException // Orch engine is down but api is up, comes back as a 500
-            || ex instanceof ServiceUnavailableException;  // Api returns a 503
+            || ex instanceof WebApplicationException; //  4xx or 5xx errors from api or orch engine
     }
 }
