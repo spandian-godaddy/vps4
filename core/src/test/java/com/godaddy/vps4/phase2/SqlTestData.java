@@ -105,7 +105,6 @@ public class SqlTestData {
                 + " WHERE sa.snapshot_id = s.id AND s.vm_id = ?", null, vmId);
         Sql.with(dataSource).exec("DELETE FROM snapshot WHERE vm_id = ?", null, vmId);
         Sql.with(dataSource).exec("DELETE FROM scheduled_job WHERE vm_id = ?", null, vmId);
-        Sql.with(dataSource).exec("DELETE FROM panopta_detail WHERE vm_id = ?", null, vmId);
         Sql.with(dataSource).exec("DELETE FROM virtual_machine WHERE vm_id = ?", null, vmId);
         Sql.with(dataSource).exec("DELETE FROM user_project_privilege WHERE project_id = ?", null, vm.projectId);
         Sql.with(dataSource).exec("DELETE FROM project WHERE project_id = ?", null, vm.projectId);
