@@ -87,6 +87,8 @@ public class ServerUsageStatsResource {
     private UsageStats mapPanoptaUsageStats(ServerSpec spec, List<PanoptaGraph> graphs) {
         UsageStats stats = new UsageStats();
         stats.lastRefreshedAt = Instant.now();
+        stats.status = UsageStats.UsageStatsStatus.UPDATED;
+        stats.utilizationId = -1;
         for (PanoptaGraph graph : graphs) {
             try {
                 switch (graph.type) {
@@ -115,11 +117,9 @@ public class ServerUsageStatsResource {
                     stats.lastRefreshedAt = instant;
                 }
             } catch (NullPointerException e) {
-                // Panopta gave a null value, do nothing
+                throw new Vps4Exception("USAGE_STATS_UNAVAILABLE", "Usage stats are unavailable at the moment.");
             }
         }
-        stats.status = UsageStats.UsageStatsStatus.UPDATED;
-        stats.utilizationId = -1;
         return stats;
     }
 
