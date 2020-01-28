@@ -78,13 +78,13 @@ public class DefaultPanoptaService implements PanoptaService {
 
     @Override
     public PanoptaCustomer getCustomer(String shopperId) {
-        String panoptaNamePrefix = config.get("panopta.api.name.prefix");
+        String partnerCustomerKey = getPartnerCustomerKey(shopperId);
         PanoptaApiCustomerList panoptaApiCustomerList =
-                panoptaApiCustomerService.getCustomersByStatus(panoptaNamePrefix + shopperId, "active");
+                panoptaApiCustomerService.getCustomersByStatus(partnerCustomerKey,"active");
         if (!panoptaApiCustomerList.getCustomerList().isEmpty()) {
                 return mapResponseToCustomer(panoptaApiCustomerList.getCustomerList().stream().findFirst().get());
         }
-        logger.info("Could not find customer in panopta for shopper id {} ", panoptaNamePrefix + shopperId);
+        logger.info("Could not find customer in panopta for partner-customer-key {} ", partnerCustomerKey);
         return null;
     }
 

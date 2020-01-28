@@ -26,7 +26,7 @@ public interface PanoptaApiCustomerService {
 
     @GET
     @Path("/")
-    PanoptaApiCustomerList getCustomersByStatus(@QueryParam("name") String name,
+    PanoptaApiCustomerList getCustomersByStatus(@QueryParam("partner_key") String partnerCustomerKey,
                                                 @DefaultValue("active") @QueryParam("status") String status);
 
     @DELETE
