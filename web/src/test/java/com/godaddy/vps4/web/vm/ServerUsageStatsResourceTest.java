@@ -215,7 +215,7 @@ public class ServerUsageStatsResourceTest {
         assertEquals(vm.spec.diskGib * 1024, stats.disk.diskTotal);
     }
 
-    @Test
+    @Test(expected = Vps4Exception.class)
     public void getPanoptaUsageWithMultipleNullValues() throws PanoptaServiceException {
         for (PanoptaGraph graph : usageGraphs) {
             graph.timestamps.add(Instant.now());
@@ -229,14 +229,7 @@ public class ServerUsageStatsResourceTest {
         when(panoptaDataService.getPanoptaDetails(vm.vmId)).thenReturn(panoptaDetail);
         when(panoptaService.getUsageGraphs(vm.vmId, "hour")).thenReturn(usageGraphs);
 
-        UsageStats stats = spyResource.getUsage(vm.vmId);
-
-        verify(vmResource, times(1)).getVm(vm.vmId);
-        verify(panoptaService, times(1)).getUsageGraphs(vm.vmId, "hour");
-        assertNotNull("Stats cannot be null.", stats);
-        assertNull(stats.cpu);
-        assertNull(stats.mem);
-        assertNull(stats.disk);
+        spyResource.getUsage(vm.vmId);
     }
 
     @Test(expected = Vps4Exception.class)
