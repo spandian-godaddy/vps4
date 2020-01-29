@@ -401,4 +401,32 @@ public class ECommCreditServiceTest {
         assertNull(argument.getValue().from.get(field.toString()));
         assertEquals("true", argument.getValue().to.get(field.toString()));
     }
+
+    @Test
+    public void testUpdateProductMetaRemovesUnusedFields() {
+        account.product_meta.put("NoLongerUsedField", "unimportant");
+        when(ecommService.getAccount(orionGuid.toString())).thenReturn(account);
+
+        ProductMetaField field = ProductMetaField.PLAN_CHANGE_PENDING;
+        creditService.updateProductMeta(orionGuid, field, "true");
+        ArgumentCaptor<MetadataUpdate> argument = ArgumentCaptor.forClass(MetadataUpdate.class);
+        verify(ecommService).updateProductMetadata(eq(orionGuid.toString()), argument.capture());
+        Map<String,String> to = argument.getValue().to;
+        assertTrue(to.containsKey("NoLongerUsedField"));
+        assertNull(to.get("NoLongerUsedField"));
+    }
+
+    @Test
+    public void testUpdateProductMetaRemovesBooleanFalseFields() {
+        ProductMetaField field = ProductMetaField.PLAN_CHANGE_PENDING;
+        account.product_meta.put(field.toString(), "true");
+        when(ecommService.getAccount(orionGuid.toString())).thenReturn(account);
+
+        creditService.updateProductMeta(orionGuid, field, "false");
+        ArgumentCaptor<MetadataUpdate> argument = ArgumentCaptor.forClass(MetadataUpdate.class);
+        verify(ecommService).updateProductMetadata(eq(orionGuid.toString()), argument.capture());
+        Map<String,String> to = argument.getValue().to;
+        assertTrue(to.containsKey(field.toString()));
+        assertNull(to.get(field.toString()));
+    }
 }

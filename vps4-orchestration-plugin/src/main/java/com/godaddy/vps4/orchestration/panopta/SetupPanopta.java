@@ -57,8 +57,6 @@ public class SetupPanopta implements Command<SetupPanopta.Request, Void> {
             installPanoptaOnProvision(panoptaCustomerDetails, request, context);
         }
 
-        // update credit to reflect panopta was installed
-        creditService.setPanoptaInstalled(request.orionGuid, true);
         return null;
     }
 

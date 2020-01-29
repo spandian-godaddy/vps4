@@ -1,6 +1,7 @@
 package com.godaddy.vps4.credit;
 
 import java.time.Instant;
+import java.util.Collections;
 import java.util.EnumMap;
 import java.util.HashMap;
 import java.util.List;
@@ -37,8 +38,7 @@ public class ECommCreditService implements CreditService {
         PLAN_CHANGE_PENDING,
         PURCHASED_AT,
         ABUSE_SUSPENDED_FLAG,
-        BILLING_SUSPENDED_FLAG,
-        PANOPTA_INSTALLED;
+        BILLING_SUSPENDED_FLAG;
 
         @Override
         public String toString() {
@@ -217,17 +217,44 @@ public class ECommCreditService implements CreditService {
     }
 
     @Override
+    public void updateProductMeta(UUID orionGuid, ProductMetaField field, String value) {
+        updateProductMeta(orionGuid, Collections.singletonMap(field, value));
+    }
+
+    @Override
+    public void updateProductMeta(UUID orionGuid, Map<ProductMetaField, String> updates) {
+        updateProductMeta(orionGuid, updates, Collections.emptyMap());
+    }
+
+    @Override
     public void updateProductMeta(UUID orionGuid, Map<ProductMetaField, String> requestedTo,
                                   Map<ProductMetaField, String> expectedFrom) {
         // initialize both to and from JSON objects to the current prodMeta of the ecomm credit
-        MetadataUpdate metaUpdateReq = new MetadataUpdate();
-        metaUpdateReq.to = getCurrentProductMeta(orionGuid);
-        metaUpdateReq.from = new HashMap<>(metaUpdateReq.to);
+        MetadataUpdate prodMeta = new MetadataUpdate();
+        prodMeta.to = getCurrentProductMeta(orionGuid);
+        prodMeta.from = new HashMap<>(prodMeta.to);
 
-        metaUpdateReq.to.putAll(fromEnumMap(requestedTo));
-        metaUpdateReq.from.putAll(fromEnumMap(expectedFrom));
+        prodMeta.to.putAll(fromEnumMap(requestedTo));
+        prodMeta.from.putAll(fromEnumMap(expectedFrom));
 
-        ecommService.updateProductMetadata(orionGuid.toString(), metaUpdateReq);
+        prodMeta.to.replaceAll((k,v) -> cleanProdMeta(k,v));
+
+        ecommService.updateProductMetadata(orionGuid.toString(), prodMeta);
+    }
+
+    private String cleanProdMeta(String key, String value) {
+        // Set value of non-existing enum fields and boolean false flags to null
+        // This will cause hfs to remove the fields and keep the ecomm prod meta data clean
+        if (value == null || value.equals("false"))
+            return null;
+
+        try {
+            ProductMetaField.valueOf(key.toUpperCase());
+        } catch (IllegalArgumentException ex) {
+            return null;
+        }
+
+        return value;
     }
 
     private <K extends Enum<K>> Map<String, String> fromEnumMap(Map<K, String> enumMap) {
@@ -240,28 +267,6 @@ public class ECommCreditService implements CreditService {
         Map<K, String> enumMap = new EnumMap<>(clazz);
         stringMap.forEach((k, v) -> enumMap.put(K.valueOf(clazz, k.toUpperCase()), v));
         return enumMap;
-    }
-
-    @Override
-    public void updateProductMeta(UUID orionGuid, Map<ProductMetaField, String> updates) {
-        MetadataUpdate prodMeta = new MetadataUpdate();
-        prodMeta.from = getCurrentProductMeta(orionGuid);
-        prodMeta.to = new HashMap<>(prodMeta.from);
-        prodMeta.to.putAll(fromEnumMap(updates));
-
-        ecommService.updateProductMetadata(orionGuid.toString(), prodMeta);
-    }
-
-    @Override
-    public void updateProductMeta(UUID orionGuid, ProductMetaField field, String value) {
-        MetadataUpdate prodMeta = new MetadataUpdate();
-        prodMeta.from = getCurrentProductMeta(orionGuid);
-        prodMeta.to = new HashMap<>(prodMeta.from);
-
-        prodMeta.to.put(field.toString(), value);
-        logger.info("Updating product meta for credit : {}, product_meta : {}", orionGuid, prodMeta);
-
-        ecommService.updateProductMetadata(orionGuid.toString(), prodMeta);
     }
 
     @Override
@@ -281,11 +286,6 @@ public class ECommCreditService implements CreditService {
     @Override
     public void setBillingSuspendedFlag(UUID orionGuid, boolean value) {
         updateProductMeta(orionGuid, ProductMetaField.BILLING_SUSPENDED_FLAG, String.valueOf(value));
-    }
-
-    @Override
-    public void setPanoptaInstalled(UUID orionGuid, boolean value) {
-        updateProductMeta(orionGuid, ProductMetaField.PANOPTA_INSTALLED, String.valueOf(value));
     }
 
     private Account.Status getEcommAccountStatus(AccountStatus accountStatus) {
