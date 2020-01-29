@@ -1,7 +1,9 @@
 package com.godaddy.vps4.handler;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyInt;
 import static org.mockito.Matchers.anyString;
@@ -18,6 +20,8 @@ import java.util.Collections;
 import java.util.UUID;
 
 import javax.ws.rs.BadRequestException;
+import javax.ws.rs.InternalServerErrorException;
+import javax.ws.rs.ServiceUnavailableException;
 
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.json.simple.JSONObject;
@@ -38,7 +42,6 @@ public class Vps4PanoptaMessageHandlerTest {
     private PanoptaDataService panoptaDataService = mock(PanoptaDataService.class);
     private VmOutageApiService  vmOutageApi = mock(VmOutageApiService.class);
     private VmOutageService vmOutageDbService = mock(VmOutageService.class);
-    private VmOutageRequest vmOutageRequest = mock(VmOutageRequest.class);
 
     private UUID vmId = UUID.randomUUID();
     private String serverKey = "5kk3-ukkv-aher-ngna";
@@ -194,12 +197,49 @@ public class Vps4PanoptaMessageHandlerTest {
     }
 
     @Test
-    public void invokesRetryOnBadRequestException() throws MessageHandlerException {
-        when(vmOutageApi.newVmOutage(vmId, vmOutageRequest)).thenThrow(new BadRequestException());
+    public void ignoresBadRequestException() throws MessageHandlerException {
+        when(vmOutageApi.newVmOutage(eq(vmId), any(VmOutageRequest.class))).thenThrow(new BadRequestException());
         try {
             callHandleMessage(createOutageEventMessage().toJSONString());
+            fail();
+        } catch (MessageHandlerException mhex) {
+            // Deliberately do not retry 4xx client errors as they are unlikely to be successful on retry
+            assertFalse(mhex.shouldRetry());
+        }
+    }
+
+    @Test
+    public void invokesRetryOnInternalServerError() throws MessageHandlerException {
+        when(vmOutageApi.newVmOutage(eq(vmId), any(VmOutageRequest.class))).thenThrow(new InternalServerErrorException());
+        try {
+            callHandleMessage(createOutageEventMessage().toJSONString());
+            fail();
         } catch (MessageHandlerException mhex) {
             assertTrue(mhex.shouldRetry());
         }
     }
+
+    @Test
+    public void invokesRetryOnServiceUnavailableError() throws MessageHandlerException {
+        when(vmOutageApi.newVmOutage(eq(vmId), any(VmOutageRequest.class))).thenThrow(new ServiceUnavailableException());
+        try {
+            callHandleMessage(createOutageEventMessage().toJSONString());
+            fail();
+        } catch (MessageHandlerException mhex) {
+            assertTrue(mhex.shouldRetry());
+        }
+    }
+
+    @Test
+    public void invokesRetryOnDBError() throws MessageHandlerException {
+        RuntimeException DBError = new RuntimeException("Sql.error.oops");
+        when(vmOutageApi.newVmOutage(eq(vmId), any(VmOutageRequest.class))).thenThrow(DBError);
+        try {
+            callHandleMessage(createOutageEventMessage().toJSONString());
+            fail();
+        } catch (MessageHandlerException mhex) {
+            assertTrue(mhex.shouldRetry());
+        }
+    }
+
 }

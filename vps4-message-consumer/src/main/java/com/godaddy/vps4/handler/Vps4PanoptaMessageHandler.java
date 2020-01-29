@@ -1,5 +1,7 @@
 package com.godaddy.vps4.handler;
 
+import static com.godaddy.vps4.handler.util.Utils.isDBError;
+import static com.godaddy.vps4.handler.util.Utils.isVps4ApiDown;
 import static java.util.Arrays.stream;
 import static java.util.stream.Collectors.toMap;
 
@@ -98,8 +100,11 @@ public class Vps4PanoptaMessageHandler implements MessageHandler {
                     logger.warn("Unknown event found in panopta webhook alert : {}", msg.event);
             }
         } catch (Exception ex) {
-            // retry the message processing for panopta
-            throw new MessageHandlerException(true, ex);
+            // retry the message processing for panopta if DB or Vps4API is down
+            // specifically not retrying messages for 4xx client errors like BadRequest, NotFound
+            // - as they would likely repeatedly fail and the consumer offset would never progress.
+            boolean shouldRetry = isDBError(ex) || isVps4ApiDown(ex);
+            throw new MessageHandlerException(shouldRetry, ex);
         }
     }
 

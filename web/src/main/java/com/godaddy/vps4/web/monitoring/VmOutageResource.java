@@ -11,6 +11,7 @@ import java.util.UUID;
 import javax.inject.Inject;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
+import javax.ws.rs.NotFoundException;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
@@ -38,7 +39,6 @@ import com.godaddy.vps4.web.vm.VmResource;
 
 import gdg.hfs.orchestration.CommandService;
 import gdg.hfs.orchestration.CommandState;
-
 import io.swagger.annotations.Api;
 
 @Vps4Api
@@ -133,6 +133,10 @@ public class VmOutageResource {
                                              String emailOrchestrationClassname,
                                              VmOutage vmOutage) {
         VirtualMachineCredit credit = creditService.getVirtualMachineCredit(virtualMachine.orionGuid);
+        if (credit == null) {
+            throw new NotFoundException("Outage for unknown credit id: " + virtualMachine.orionGuid);
+        }
+
         VmOutageEmailRequest vmOutageEmailRequest =
                 new VmOutageEmailRequest(virtualMachine.name, virtualMachine.primaryIpAddress.ipAddress,
                                          credit.getOrionGuid(), credit.getShopperId(), vmId, credit.isManaged(),

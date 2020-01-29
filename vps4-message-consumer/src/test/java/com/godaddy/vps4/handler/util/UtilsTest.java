@@ -4,7 +4,6 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
 
-import javax.ws.rs.BadRequestException;
 import javax.ws.rs.InternalServerErrorException;
 import javax.ws.rs.ProcessingException;
 import javax.ws.rs.ServiceUnavailableException;
@@ -49,8 +48,4 @@ public class UtilsTest {
         assertTrue(Utils.isVps4ApiDown(new ProcessingException(mock(HttpHostConnectException.class))));
     }
 
-    @Test
-    public void isVps4ApiDownReturnsTrueIfBadRequestException() throws Exception {
-        assertTrue(Utils.isVps4ApiDown(mock(BadRequestException.class)));
-    }
 }
