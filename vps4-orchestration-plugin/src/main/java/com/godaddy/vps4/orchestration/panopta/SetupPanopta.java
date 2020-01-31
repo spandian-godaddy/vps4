@@ -84,11 +84,7 @@ public class SetupPanopta implements Command<SetupPanopta.Request, Void> {
     }
 
     private PanoptaCustomer getCustomerFromPanopta(CommandContext context, Request request) {
-        GetPanoptaCustomer.Response response = context.execute(GetPanoptaCustomer.class, request.shopperId);
-        if (response == null) {
-            return null;
-        }
-        return response.getPanoptaCustomer();
+        return context.execute(GetPanoptaCustomer.class, request.shopperId);
     }
 
     private PanoptaCustomer createCustomerInPanopta(CommandContext context, Request request) {

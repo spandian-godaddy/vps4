@@ -44,7 +44,6 @@ public class SetupPanoptaTest {
     private PanoptaCustomer panoptaCustomerMock;
     private PanoptaCustomerDetails panoptaCustomerDetailsMock;
     private PanoptaServerDetails panoptaServerDetailsMock;
-    private GetPanoptaCustomer.Response getPanoptaCustomerResponse;
     private CreatePanoptaCustomer.Response createPanoptaCustomerResponse;
     private PanoptaDataService panoptaDataServiceMock;
     private Config configMock;
@@ -245,10 +244,7 @@ public class SetupPanoptaTest {
 
     @Test
     public void doesNotCreateCustomerInPanoptaIfOneExists() {
-        getPanoptaCustomerResponse = new GetPanoptaCustomer.Response();
-        getPanoptaCustomerResponse.panoptaCustomer = panoptaCustomerMock;
-        when(commandContextMock.execute(eq(GetPanoptaCustomer.class), eq(fakeShopperId)))
-                .thenReturn(getPanoptaCustomerResponse);
+        when(commandContextMock.execute(GetPanoptaCustomer.class, fakeShopperId)).thenReturn(panoptaCustomerMock);
         when(panoptaDataServiceMock.getPanoptaCustomerDetails(eq(fakeShopperId))).thenReturn(null).thenReturn(
                 panoptaCustomerDetailsMock);
         when(panoptaDataServiceMock.getPanoptaServerDetails(eq(fakeVmId))).thenReturn(null);

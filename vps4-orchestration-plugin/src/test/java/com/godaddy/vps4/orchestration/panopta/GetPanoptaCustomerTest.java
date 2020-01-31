@@ -1,54 +1,44 @@
 package com.godaddy.vps4.orchestration.panopta;
 
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.eq;
+import static org.junit.Assert.assertEquals;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import java.util.function.Function;
-
-import org.junit.Before;
 import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.mockito.runners.MockitoJUnitRunner;
 
+import com.godaddy.vps4.orchestration.TestCommandContext;
 import com.godaddy.vps4.panopta.PanoptaCustomer;
 import com.godaddy.vps4.panopta.PanoptaService;
+import com.google.inject.Guice;
+import com.google.inject.Injector;
 
 import gdg.hfs.orchestration.CommandContext;
+import gdg.hfs.orchestration.GuiceCommandProvider;
 
-@RunWith(MockitoJUnitRunner.class)
 public class GetPanoptaCustomerTest {
 
-    private PanoptaService panoptaServiceMock;
-    private GetPanoptaCustomer command;
-    private CommandContext contextMock;
-    private PanoptaCustomer panoptaCustomerMock;
+    private PanoptaService panoptaService = mock(PanoptaService.class);
     private String shopperId = "fake-shopper-id";
+    private Injector injector = Guice.createInjector();
 
-    @Before
-    public void setUp() throws Exception {
-        panoptaServiceMock = mock(PanoptaService.class);
-        panoptaCustomerMock = mock(PanoptaCustomer.class);
-        contextMock = mock(CommandContext.class);
+    private GetPanoptaCustomer command = new GetPanoptaCustomer(panoptaService);
+    private CommandContext context = spy(new TestCommandContext(new GuiceCommandProvider(injector)));
 
-        command = new GetPanoptaCustomer(panoptaServiceMock);
-        setupMockContext();
-    }
-
-    private void setupMockContext() {
-        when(contextMock.execute(eq("GetPanoptaCustomer"), any(Function.class), eq(PanoptaCustomer.class)))
-                .thenReturn(panoptaCustomerMock);
+    @Test
+    public void callsPanoptaServiceGetCustomer() {
+        command.execute(context, shopperId);
+        verify(panoptaService).getCustomer(shopperId);
     }
 
     @Test
-    public void invokesGetPanoptaCustomer() {
-        command.execute(contextMock, shopperId);
+    public void returnsPanoptaCustomer() {
+        PanoptaCustomer panoptaCustomer = new PanoptaCustomer("customer-key", "partner-customer-key");
+        when(panoptaService.getCustomer(shopperId)).thenReturn(panoptaCustomer);
 
-        verify(contextMock, times(1)).execute(eq("GetPanoptaCustomer"), any(Function.class),
-                                              eq(PanoptaCustomer.class));
+        PanoptaCustomer response = command.execute(context, shopperId);
+        assertEquals(panoptaCustomer, response);
     }
 
 }
