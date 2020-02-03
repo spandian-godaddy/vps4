@@ -12,6 +12,9 @@ public class PanoptaCustomer {
         this.partnerCustomerKey = partnerCustomerKey;
     }
 
+    // Default constructor for Jackson to deserialize
+    public PanoptaCustomer() {}
+
     public String getCustomerKey() {
         return customerKey;
     }
@@ -20,6 +23,7 @@ public class PanoptaCustomer {
         return partnerCustomerKey;
     }
 
+    @Override
     public String toString() {
         return ReflectionToStringBuilder.toString(this, ToStringStyle.MULTI_LINE_STYLE);
     }
