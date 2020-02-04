@@ -99,7 +99,7 @@ public class ModelsTest {
         email = new MessagingEmail();
         email.createdAt = UUID.randomUUID().toString();
         email.currency = UUID.randomUUID().toString();
-        email.emailId = 1;
+        email.emailId = 1L;
         email.failureReason = UUID.randomUUID().toString();
         email.marketId = UUID.randomUUID().toString();
         email.status = UUID.randomUUID().toString();

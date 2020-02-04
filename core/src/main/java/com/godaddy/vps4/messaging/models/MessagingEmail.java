@@ -5,7 +5,7 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class MessagingEmail {
 
-    public Integer emailId;
+    public Long emailId;
     public Integer templateId;
     public String templateName;
     public String to;
