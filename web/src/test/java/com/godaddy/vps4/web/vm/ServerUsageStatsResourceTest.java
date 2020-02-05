@@ -192,9 +192,12 @@ public class ServerUsageStatsResourceTest {
     }
 
     @Test
-    public void getPanoptaUsageWithNullLastValue() throws PanoptaServiceException {
+    public void getPanoptaUsageWithUnderFiveNullValues() throws PanoptaServiceException {
         for (PanoptaGraph graph : usageGraphs) {
             graph.timestamps.add(Instant.now());
+            graph.values.add(null);
+            graph.values.add(null);
+            graph.values.add(null);
             graph.values.add(null);
         }
 
@@ -216,10 +219,12 @@ public class ServerUsageStatsResourceTest {
     }
 
     @Test(expected = Vps4Exception.class)
-    public void getPanoptaUsageWithMultipleNullValues() throws PanoptaServiceException {
+    public void getPanoptaUsageWithFiveNullValues() throws PanoptaServiceException {
         for (PanoptaGraph graph : usageGraphs) {
             graph.timestamps.add(Instant.now());
-            graph.timestamps.add(Instant.now());
+            graph.values.add(null);
+            graph.values.add(null);
+            graph.values.add(null);
             graph.values.add(null);
             graph.values.add(null);
         }

@@ -124,10 +124,10 @@ public class ServerUsageStatsResource {
     }
 
     private Double getLastPercent(List<Double> list) {
-        Double d = list.get(list.size() - 1);
-        // Panopta will sometimes return null for the last value. In that case, check the second to last value.
-        if (d == null) {
-            d = list.get(list.size() - 2);
+        Double d = null;
+        // Get the last non-null value. If there are five null values in a row, the data is stale anyways so give up.
+        for (int i = 1; i < 6 && d == null; i++) {
+            d = list.get(list.size() - i);
         }
         return Math.min(d, 100);
     }
