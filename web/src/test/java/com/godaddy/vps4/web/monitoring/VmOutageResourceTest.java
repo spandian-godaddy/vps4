@@ -1,8 +1,6 @@
 package com.godaddy.vps4.web.monitoring;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.fail;
 import static org.mockito.Matchers.any;
@@ -11,10 +9,12 @@ import static org.mockito.Matchers.anyObject;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.UUID;
 
 import org.junit.Before;
@@ -25,7 +25,6 @@ import com.godaddy.vps4.credit.CreditService;
 import com.godaddy.vps4.credit.VirtualMachineCredit;
 import com.godaddy.vps4.network.IpAddress;
 import com.godaddy.vps4.vm.VirtualMachine;
-import com.godaddy.vps4.vm.VmAlertService;
 import com.godaddy.vps4.vm.VmMetric;
 import com.godaddy.vps4.vm.VmMetricAlert;
 import com.godaddy.vps4.vm.VmOutage;
@@ -33,7 +32,6 @@ import com.godaddy.vps4.vm.VmOutageService;
 import com.godaddy.vps4.web.Vps4Exception;
 import com.godaddy.vps4.web.monitoring.VmOutageResource.VmOutageRequest;
 import com.godaddy.vps4.web.security.GDUser;
-import com.godaddy.vps4.web.util.Commands;
 import com.godaddy.vps4.web.vm.VmResource;
 
 import gdg.hfs.orchestration.CommandGroupSpec;
@@ -44,37 +42,44 @@ public class VmOutageResourceTest {
 
     private VmResource vmResource = mock(VmResource.class);
     private VmOutageService vmOutageService = mock(VmOutageService.class);
-    private VmAlertService vmAlertService = mock(VmAlertService.class);
     private CommandService commandService = mock(CommandService.class);
     private CreditService creditService = mock(CreditService.class);
     private VirtualMachineCredit credit = mock(VirtualMachineCredit.class);
-    private Commands commands = mock(Commands.class);
     private GDUser gdUser = mock(GDUser.class);
 
-    private VmOutageResource resource =
-            new VmOutageResource(vmResource, vmAlertService, vmOutageService, commandService, creditService, gdUser);
+    private VmOutageResource resource = new VmOutageResource(vmResource, vmOutageService, commandService, creditService);
     private UUID vmId = UUID.randomUUID();
     private VmMetric metric = VmMetric.CPU;
     private VmMetricAlert vmMetricAlert = new VmMetricAlert();
-    private VirtualMachine vm = new VirtualMachine();
+    private VirtualMachine vm;
     private int outageId = 23;
     private String shopperId = "fake-shopper-id";
+    private boolean suppressEmail;
 
     @Before
     public void setUp() {
+        suppressEmail = false;
+
+        vm = new VirtualMachine();
         vm.hostname = "TestHostname";
         vm.vmId = UUID.randomUUID();
         vm.orionGuid = UUID.randomUUID();
         vm.primaryIpAddress = new IpAddress();
         vm.primaryIpAddress.ipAddress = "127.0.0.1";
+        vm.validUntil = Instant.MAX;
+        when(vmResource.getVm(any(UUID.class))).thenReturn(vm);
 
         when(creditService.getVirtualMachineCredit(eq(vm.orionGuid))).thenReturn(credit);
         when(credit.isManaged()).thenReturn(true);
-        when(vmResource.getVm(any(UUID.class))).thenReturn(vm);
-        vmMetricAlert.status = VmMetricAlert.Status.ENABLED;
+        when(credit.isAccountActive()).thenReturn(true);
+
+        VmOutage vmOutage = new VmOutage();
+        vmOutage.metric = VmMetric.CPU;
+        when(vmOutageService.getVmOutage(outageId)).thenReturn(vmOutage);
         when(vmOutageService.newVmOutage(eq(vmId), any(VmMetric.class), any(Instant.class),
                                          anyString(), anyLong())).thenReturn(outageId);
-        when(vmAlertService.getVmMetricAlert(vmId, metric.toString())).thenReturn(vmMetricAlert);
+
+        vmMetricAlert.status = VmMetricAlert.Status.ENABLED;
         when(gdUser.getShopperId()).thenReturn(shopperId);
         when(commandService.executeCommand(anyObject())).thenReturn(new CommandState());
     }
@@ -156,11 +161,8 @@ public class VmOutageResourceTest {
 
     @Test
     public void clearOutage() {
-        VmOutage vmOutage = new VmOutage();
-        vmOutage.metric = VmMetric.CPU;
-        when(vmOutageService.getVmOutage(outageId)).thenReturn(vmOutage);
         String endDate = "2019-11-19 13:23:42 UTC"; //Panopta format
-        resource.clearVmOutage(vmId, outageId, endDate);
+        resource.clearVmOutage(vmId, outageId, endDate, suppressEmail);
         verify(vmOutageService).clearVmOutage(outageId, Instant.parse("2019-11-19T13:23:42Z"));
         verify(vmOutageService).getVmOutage(outageId);
     }
@@ -169,7 +171,7 @@ public class VmOutageResourceTest {
     public void catchClearWithInvalidDateFormat() {
         String endDate = "2019-11-19T13:23:42Z"; // NOT Panopta format
         try {
-            resource.clearVmOutage(vmId, outageId, endDate);
+            resource.clearVmOutage(vmId, outageId, endDate, suppressEmail);
             fail();
         } catch (Vps4Exception e) {
             assertEquals("INVALID_PARAMETER", e.getId());
@@ -178,10 +180,7 @@ public class VmOutageResourceTest {
 
     @Test
     public void clearOutageWithoutEndDate() {
-        VmOutage vmOutage = new VmOutage();
-        vmOutage.metric = VmMetric.CPU;
-        when(vmOutageService.getVmOutage(outageId)).thenReturn(vmOutage);
-        resource.clearVmOutage(vmId, outageId, null);
+        resource.clearVmOutage(vmId, outageId, null, suppressEmail);
         verify(vmOutageService).clearVmOutage(eq(outageId), any(Instant.class));
         verify(vmOutageService).getVmOutage(outageId);
     }
@@ -190,16 +189,41 @@ public class VmOutageResourceTest {
     public void invokesSendEmailOnAlerts() {
         VmOutageRequest req = newOutageRequest();
         resource.newVmOutage(vmId, req);
-        verify(vmResource).getVm(vmId);
-        verify(vmOutageService)
-                .newVmOutage(vmId, VmMetric.valueOf(req.metric), Instant.parse("2019-11-15T12:40:01Z"), req.reason,
-                             req.panoptaOutageId);
-        verify(vmOutageService).getVmOutage(outageId);
         ArgumentCaptor<CommandGroupSpec> commandGroupSpecArgumentCaptor = ArgumentCaptor.forClass(CommandGroupSpec.class);
         verify(commandService).executeCommand(commandGroupSpecArgumentCaptor.capture());
         CommandGroupSpec commandGroupSpec = commandGroupSpecArgumentCaptor.getValue();
-        assertNotNull(commandGroupSpec.commands);
-        assertFalse(commandGroupSpec.commands.isEmpty());
         assertSame(commandGroupSpec.commands.get(0).command, "SendVmOutageEmail");
     }
+
+    @Test
+    public void noClearEmailCommandWithSuppressEmailTrue() {
+        suppressEmail = true;
+        resource.clearVmOutage(vmId, outageId, null, suppressEmail);
+        verify(commandService, never()).executeCommand(any());
+    }
+
+    @Test
+    public void noEmailCommandWhenAccountNotActive() {
+        when(credit.isAccountActive()).thenReturn(false);
+        VmOutageRequest req = newOutageRequest();
+        resource.newVmOutage(vmId, req);
+        verify(commandService, never()).executeCommand(any());
+    }
+
+    @Test
+    public void noEmailCommandWhenCreditNotFound() {
+        when(creditService.getVirtualMachineCredit(eq(vm.orionGuid))).thenReturn(null);
+        VmOutageRequest req = newOutageRequest();
+        resource.newVmOutage(vmId, req);
+        verify(commandService, never()).executeCommand(any());
+    }
+
+    @Test
+    public void noEmailCommandWhenVmDestroyed() {
+        vm.validUntil = Instant.now().minus(5, ChronoUnit.MINUTES);
+        VmOutageRequest req = newOutageRequest();
+        resource.newVmOutage(vmId, req);
+        verify(commandService, never()).executeCommand(any());
+    }
+
 }

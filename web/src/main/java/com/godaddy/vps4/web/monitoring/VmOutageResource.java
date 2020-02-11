@@ -11,7 +11,6 @@ import java.util.UUID;
 import javax.inject.Inject;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
-import javax.ws.rs.NotFoundException;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
@@ -19,14 +18,10 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import com.godaddy.vps4.credit.CreditService;
 import com.godaddy.vps4.credit.VirtualMachineCredit;
 import com.godaddy.vps4.orchestration.monitoring.VmOutageEmailRequest;
 import com.godaddy.vps4.vm.VirtualMachine;
-import com.godaddy.vps4.vm.VmAlertService;
 import com.godaddy.vps4.vm.VmMetric;
 import com.godaddy.vps4.vm.VmOutage;
 import com.godaddy.vps4.vm.VmOutageService;
@@ -38,7 +33,6 @@ import com.godaddy.vps4.web.util.Commands;
 import com.godaddy.vps4.web.vm.VmResource;
 
 import gdg.hfs.orchestration.CommandService;
-import gdg.hfs.orchestration.CommandState;
 import io.swagger.annotations.Api;
 
 @Vps4Api
@@ -49,24 +43,18 @@ import io.swagger.annotations.Api;
 @Consumes(MediaType.APPLICATION_JSON)
 public class VmOutageResource {
 
-    private static final Logger logger = LoggerFactory.getLogger(VmOutageResource.class);
-
     private final VmResource vmResource;
-    private final VmAlertService vmAlertService;
     private final VmOutageService vmOutageService;
     private final CommandService commandService;
     private final CreditService creditService;
-    private final GDUser gdUser;
 
     @Inject
-    public VmOutageResource(VmResource vmResource, VmAlertService vmAlertService, VmOutageService vmOutageService,
-                            CommandService commandService, CreditService creditService, GDUser gdUser) {
+    public VmOutageResource(VmResource vmResource, VmOutageService vmOutageService,
+            CommandService commandService, CreditService creditService) {
         this.vmResource = vmResource;
-        this.vmAlertService = vmAlertService;
         this.vmOutageService = vmOutageService;
         this.commandService = commandService;
         this.creditService = creditService;
-        this.gdUser = gdUser;
     }
 
     @GET
@@ -111,7 +99,8 @@ public class VmOutageResource {
     @Path("/{vmId}/outages/{outageId}/clear")
     public VmOutage clearVmOutage(@PathParam("vmId") UUID vmId,
                                   @PathParam("outageId") int outageId,
-                                  @QueryParam("endDate") String endDate) {
+                                  @QueryParam("endDate") String endDate,
+                                  @QueryParam("suppressEmail") boolean suppressEmail) {
 
         VirtualMachine virtualMachine = vmResource.getVm(vmId);  // Auth validation
         Instant end = Instant.now();
@@ -119,31 +108,29 @@ public class VmOutageResource {
             end = validatePanoptaDateAndReturnInstant(endDate);
         }
         vmOutageService.clearVmOutage(outageId, end);
+        if (suppressEmail) {
+            return vmOutageService.getVmOutage(outageId);
+        }
         return getVmOutageAndSendEmail(vmId, outageId, virtualMachine, "SendVmOutageResolvedEmail");
     }
 
-    private VmOutage getVmOutageAndSendEmail(UUID vmId, int outageId, VirtualMachine virtualMachine,
-                                             String emailOrchestrationClassname) {
+    private VmOutage getVmOutageAndSendEmail(UUID vmId, int outageId, VirtualMachine virtualMachine, String emailOrchestrationClassname) {
         VmOutage vmOutage = vmOutageService.getVmOutage(outageId);
         sendOutageNotificationEmail(vmId, virtualMachine, emailOrchestrationClassname, vmOutage);
         return vmOutage;
     }
 
     private void sendOutageNotificationEmail(UUID vmId, VirtualMachine virtualMachine,
-                                             String emailOrchestrationClassname,
-                                             VmOutage vmOutage) {
-        VirtualMachineCredit credit = creditService.getVirtualMachineCredit(virtualMachine.orionGuid);
-        if (credit == null) {
-            throw new NotFoundException("Outage for unknown credit id: " + virtualMachine.orionGuid);
-        }
+            String emailOrchestrationClassname, VmOutage vmOutage) {
 
-        VmOutageEmailRequest vmOutageEmailRequest =
-                new VmOutageEmailRequest(virtualMachine.name, virtualMachine.primaryIpAddress.ipAddress,
-                                         credit.getOrionGuid(), credit.getShopperId(), vmId, credit.isManaged(),
-                                         vmOutage);
-        CommandState command = Commands.execute(commandService, emailOrchestrationClassname, vmOutageEmailRequest);
-        logger.info("running {} with command id {} and request {}", command.name, command.commandId,
-                    vmOutageEmailRequest.toString());
+        VirtualMachineCredit credit = creditService.getVirtualMachineCredit(virtualMachine.orionGuid);
+        if (credit != null && credit.isAccountActive() && virtualMachine.isActive()) {
+            VmOutageEmailRequest vmOutageEmailRequest =
+                    new VmOutageEmailRequest(virtualMachine.name, virtualMachine.primaryIpAddress.ipAddress,
+                                             credit.getOrionGuid(), credit.getShopperId(), vmId, credit.isManaged(),
+                                             vmOutage);
+            Commands.execute(commandService, emailOrchestrationClassname, vmOutageEmailRequest);
+        }
     }
 
     public static final DateTimeFormatter PANOPTA_DATE_FORMAT = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss z");
@@ -156,4 +143,5 @@ public class VmOutageResource {
                     "Date %s has invalid format, use format such as 2011-12-03 10:15:30 UTC", dateToValidate));
         }
     }
+
 }

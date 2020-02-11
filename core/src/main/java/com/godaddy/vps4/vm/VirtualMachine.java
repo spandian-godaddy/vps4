@@ -6,6 +6,7 @@ import java.util.UUID;
 import org.apache.commons.lang3.builder.ReflectionToStringBuilder;
 import org.apache.commons.lang3.builder.ToStringStyle;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.godaddy.vps4.network.IpAddress;
 
 public class VirtualMachine {
@@ -73,6 +74,11 @@ public class VirtualMachine {
         hostname = virtualMachine.hostname;
         managedLevel = virtualMachine.managedLevel;
         backupJobId = virtualMachine.backupJobId;
+    }
+
+    @JsonIgnore
+    public boolean isActive() {
+        return validUntil.isAfter(Instant.now());
     }
 
     @Override
