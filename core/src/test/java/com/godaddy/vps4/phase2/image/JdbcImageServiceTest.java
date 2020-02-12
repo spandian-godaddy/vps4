@@ -3,6 +3,8 @@ package com.godaddy.vps4.phase2.image;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
+import java.util.List;
+
 import com.godaddy.vps4.jdbc.DatabaseModule;
 import com.godaddy.vps4.vm.Image;
 import com.godaddy.vps4.vm.ImageService;
@@ -15,8 +17,6 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 
 import javax.sql.DataSource;
-import java.util.Set;
-
 
 public class JdbcImageServiceTest {
 
@@ -49,7 +49,7 @@ public class JdbcImageServiceTest {
 
     @Test
     public void getImagesIncludesImageNotDisabled() {
-        Set<Image> images = injector.getInstance(ImageService.class).getImages("linux", "myh", null, 0);
+        List<Image> images = injector.getInstance(ImageService.class).getImages("linux", "myh", null, 0);
         assertTrue(images.stream().map(i -> i.hfsName).anyMatch(name -> name.equals(imageName)));
     }
 }

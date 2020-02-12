@@ -7,7 +7,7 @@ import io.swagger.annotations.ApiParam;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.Set;
+import java.util.List;
 
 import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
@@ -48,12 +48,19 @@ public class ImageResource {
         setting = ImageListFeatureSetting.class,
         disabled = false
     )
-    public Set<Image> getImages(@QueryParam("os") String os,
-                                @QueryParam("controlPanel") String controlPanel,
-                                @ApiParam(value = "HFS Image name") @QueryParam("imageName") String hfsImageName,
-                                @QueryParam("tier") int tier) {
+    public List<Image> getImages(@QueryParam("os") String os,
+                                 @QueryParam("controlPanel") String controlPanel,
+                                 @ApiParam(value = "HFS Image name") @QueryParam("imageName") String hfsImageName,
+                                 @QueryParam("tier") int tier) {
         logger.info("getting images with os = {} and controlPanel = {} available for tier {}", os, controlPanel, tier);
-        return imageService.getImages(os, controlPanel, hfsImageName, tier);
+        List<Image> images = imageService.getImages(os, controlPanel, hfsImageName, tier);
+
+        // Tier 5 VMs do not have enough resources (CPU, RAM, disk) to handle ISPConfig.
+        if (tier <= 5) {
+            images.removeIf(image -> image.imageName.toLowerCase().contains("ispconfig"));
+        }
+
+        return images;
     }
 
     @GET

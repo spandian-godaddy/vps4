@@ -2,7 +2,7 @@ package com.godaddy.vps4.vm.jdbc;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.Set;
+import java.util.List;
 
 import javax.inject.Inject;
 import javax.sql.DataSource;
@@ -26,9 +26,9 @@ public class JdbcImageService implements ImageService {
     }
 
     @Override
-    public Set<String> obtainCompatibleImages() {
+    public List<String> obtainCompatibleImages() {
         return Sql.with(dataSource).exec("SELECT name FROM " + this.tableName,
-                Sql.setOf(rs -> rs.getString("name")));
+                Sql.listOf(rs -> rs.getString("name")));
     }
 
     @Override
@@ -69,7 +69,7 @@ public class JdbcImageService implements ImageService {
     }
 
     @Override
-    public Set<Image> getImages(String os, String controlPanel, String hfsName, int tier) {
+    public List<Image> getImages(String os, String controlPanel, String hfsName, int tier) {
         String tierQuery = (tier == 0) ? "" : " AND tier = " + tier;
 
         return Sql.with(dataSource).exec("SELECT image.image_id, image.name, image.hfs_name, image.control_panel_id, image.os_type_id, "+
@@ -88,7 +88,7 @@ public class JdbcImageService implements ImageService {
                         "WHERE valid_until = 'infinity' "+
                         tierQuery +
                         "GROUP BY server_type_id)",
-                Sql.setOf(this::mapImage),
+                Sql.listOf(this::mapImage),
                 os, os, controlPanel, controlPanel, hfsName, hfsName);
     }
 

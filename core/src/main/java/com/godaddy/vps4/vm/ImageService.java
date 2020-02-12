@@ -1,10 +1,10 @@
 package com.godaddy.vps4.vm;
 
-import java.util.Set;
+import java.util.List;
 
 public interface ImageService {
 
-    Set<String> obtainCompatibleImages();
+    List<String> obtainCompatibleImages();
 
     void addCompatibleImage(String name, Long controlPanelId);
 
@@ -14,5 +14,5 @@ public interface ImageService {
 
     Image getImage(String name);
     
-    Set<Image> getImages(String os, String controlPanel, String hfsName, int tier);
+    List<Image> getImages(String os, String controlPanel, String hfsName, int tier);
 }

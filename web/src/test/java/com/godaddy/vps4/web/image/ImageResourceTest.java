@@ -10,9 +10,9 @@ import org.junit.Before;
 import org.junit.Test;
 
 import javax.ws.rs.NotFoundException;
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.Set;
+
+import java.util.ArrayList;
+import java.util.List;
 
 import static org.junit.Assert.assertEquals;
 import static org.mockito.Matchers.anyInt;
@@ -30,8 +30,9 @@ public class ImageResourceTest {
     private Injector injector;
     private String os = "linux";
     private String controlPanel = "myh";
-    private int tier = 0;
-    private Image[] images = {mock(Image.class), mock(Image.class)};
+    private int tier = 10;
+    private List<Image> images;
+    private List<Image> verifyImages;
     private Image image = mock(Image.class);
     private String imageName = "foobar";
 
@@ -44,11 +45,27 @@ public class ImageResourceTest {
             }
         });
 
-        when(imageService.getImages(anyString(), anyString(), anyString(), anyInt()))
-            .thenReturn(new HashSet<>(Arrays.asList(images)));
+        images = new ArrayList<>();
+        verifyImages = new ArrayList<>();
+        setupImages(images);
+        setupImages(verifyImages);
+
+        when(imageService.getImages(anyString(), anyString(), anyString(), anyInt())).thenReturn(images);
         when(imageService.getImage(anyString())).thenReturn(image);
 
         resource = injector.getInstance(ImageResource.class);
+    }
+
+    private void setupImages(List<Image> images) {
+        Image i1 = new Image();
+        i1.imageName = "Ubuntu 16.04 (ISPConfig)";
+        images.add(i1);
+        Image i2 = new Image();
+        i2.imageName = "Debian 8";
+        images.add(i2);
+        Image i3 = new Image();
+        i3.imageName = "CentOS 7";
+        images.add(i3);
     }
 
     @Test
@@ -58,9 +75,26 @@ public class ImageResourceTest {
     }
 
     @Test
-    public void getImagesReturnsSetOfImagesFound(){
-        Set<Image> retImages = resource.getImages(os, controlPanel, null, tier);
-        assertEquals(retImages, new HashSet<>(Arrays.asList(images)));
+    public void getImagesReturnsListOfImagesFound(){
+        List<Image> retImages = resource.getImages(os, controlPanel, null, tier);
+        for (int i = 0; i < retImages.size(); i++) {
+            assertEquals(retImages.get(i).imageName, verifyImages.get(i).imageName);
+        }
+    }
+
+    @Test
+    public void getImagesIncludesISPConfig(){
+        List<Image> retImages = resource.getImages(os, controlPanel, null, 10);
+        for (int i = 0; i < retImages.size(); i++) {
+            assertEquals(retImages.get(i).imageName, verifyImages.get(i).imageName);
+        }
+    }
+
+    @Test
+    public void getImagesRemovesISPConfigIfTierIsLow(){
+        List<Image> retImages = resource.getImages(os, controlPanel, null, 5);
+        assertEquals(retImages.get(0).imageName, verifyImages.get(1).imageName);
+        assertEquals(retImages.get(1).imageName, verifyImages.get(2).imageName);
     }
 
     @Test
