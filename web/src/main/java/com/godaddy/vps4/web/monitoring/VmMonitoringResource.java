@@ -42,6 +42,7 @@ import com.google.inject.Inject;
 import gdg.hfs.vhfs.nodeping.NodePingEvent;
 import gdg.hfs.vhfs.nodeping.NodePingService;
 import gdg.hfs.vhfs.nodeping.NodePingUptimeRecord;
+
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
@@ -168,11 +169,11 @@ public class VmMonitoringResource {
                        .filter(e -> e.start.isAfter(Instant.now().minus(Duration.ofDays(days))))
                        .collect(Collectors.toList());
 
-        // only the specified range of events
-        events = events.subList(Math.min(scrubbedOffset, events.size()),
+        // only the specified page of events
+        List<MonitoringEvent> paginatedEvents = events.subList(Math.min(scrubbedOffset, events.size()),
                                 Math.min(scrubbedOffset + scrubbedLimit, events.size()));
 
-        return new PaginatedResult<>(events, scrubbedLimit, scrubbedOffset, events.size(), uri);
+        return new PaginatedResult<>(paginatedEvents, scrubbedLimit, scrubbedOffset, events.size(), uri);
     }
 
     public enum Category {USAGE, NETWORK}
