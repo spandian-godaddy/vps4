@@ -21,7 +21,6 @@ import com.godaddy.vps4.cpanel.CpanelInvalidUserException;
 import com.godaddy.vps4.cpanel.CpanelTimeoutException;
 import com.godaddy.vps4.cpanel.Vps4CpanelService;
 import com.godaddy.vps4.jdbc.DatabaseModule;
-import com.godaddy.vps4.network.IpAddress;
 import com.godaddy.vps4.panopta.PanoptaApiCustomerService;
 import com.godaddy.vps4.panopta.PanoptaApiServerService;
 import com.godaddy.vps4.scheduler.api.web.SchedulerWebService;
@@ -131,7 +130,7 @@ public class CpanelResourceTest {
 
     @Test
     public void testGetWhmSessionIgnoresCpanelServiceException() throws Exception {
-        Mockito.when(cpServ.createSession(anyLong(), Mockito.anyString(), Mockito.any(IpAddress.class), Mockito.any()))
+        Mockito.when(cpServ.createSession(anyLong(), Mockito.anyString(), Mockito.any()))
                 .thenThrow(new CpanelTimeoutException("Timed out"));
         Assert.assertNull(getCpanelResource().getWHMSession(vm.vmId));
     }
@@ -166,7 +165,7 @@ public class CpanelResourceTest {
 
     @Test
     public void testGetCPanelSessionIgnoresCpanelServiceException() throws Exception {
-        Mockito.when(cpServ.createSession(anyLong(), Mockito.anyString(), Mockito.any(IpAddress.class), Mockito.any()))
+        Mockito.when(cpServ.createSession(anyLong(), Mockito.anyString(), Mockito.any()))
                 .thenThrow(new CpanelTimeoutException("Timed out"));
         Assert.assertNull(getCpanelResource().getCPanelSession(vm.vmId, "testuser"));
     }

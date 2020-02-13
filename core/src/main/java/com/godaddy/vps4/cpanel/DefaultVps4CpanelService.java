@@ -20,6 +20,7 @@ import com.godaddy.hfs.config.Config;
 import com.godaddy.vps4.cpanel.CpanelClient.CpanelServiceType;
 import com.godaddy.vps4.network.IpAddress;
 import com.godaddy.vps4.network.NetworkService;
+import com.godaddy.vps4.vm.HostnameGenerator;
 
 public class DefaultVps4CpanelService implements Vps4CpanelService {
 
@@ -42,8 +43,9 @@ public class DefaultVps4CpanelService implements Vps4CpanelService {
         this.timeoutVal = timeoutVal;
     }
 
-    private String getVmIp(long hfsVmId) {
-        return networkService.getVmPrimaryAddress(hfsVmId).ipAddress;
+    private String getVmHostname(long hfsVmId) {
+        IpAddress ip = networkService.getVmPrimaryAddress(hfsVmId);
+        return HostnameGenerator.getHostname(ip.ipAddress);
     }
 
     interface CpanelClientHandler<T> {
@@ -63,8 +65,8 @@ public class DefaultVps4CpanelService implements Vps4CpanelService {
         Void handle(String reason);
     }
 
-    protected CpanelClient getCpanelClient(String publicIp, String accessHash){
-        return new CpanelClient(publicIp, accessHash);
+    protected CpanelClient getCpanelClient(String hostname, String accessHash){
+        return new CpanelClient(hostname, accessHash);
     }
 
     <T> T withAccessHash(long hfsVmId, CpanelClientHandler<T> handler)
@@ -75,9 +77,9 @@ public class DefaultVps4CpanelService implements Vps4CpanelService {
         Exception lastThrown = null;
 
         while (Instant.now().isBefore(timeoutAt)) {
-            // TODO remove the hardcoded values for IP
-            String publicIp = getVmIp(hfsVmId);
-            String accessHash = accessHashService.getAccessHash(hfsVmId, publicIp, timeoutAt);
+            String hostname = getVmHostname(hfsVmId);
+            IpAddress ip = networkService.getVmPrimaryAddress(hfsVmId);
+            String accessHash = accessHashService.getAccessHash(hfsVmId, ip.ipAddress, timeoutAt);
             if (accessHash == null) {
                 // we couldn't get the access hash, so no point in even
                 // trying to contact the VM
@@ -88,14 +90,14 @@ public class DefaultVps4CpanelService implements Vps4CpanelService {
 
             // TODO make sure we're still within timeoutAt to actually
             //      make the call to the VM
-            CpanelClient cPanelClient = getCpanelClient(publicIp, accessHash);
+            CpanelClient cPanelClient = getCpanelClient(hostname, accessHash);
             try {
                 // need to configure read timeout in HTTP client
                 return handler.handle(cPanelClient);
 
             } catch (CpanelAccessDeniedException e) {
 
-                logger.warn("Access denied for cPanel VM {}, invalidating access hash", publicIp);
+                logger.warn("Access denied for cPanel VM {}, invalidating access hash", hostname);
 
                 // we weren't able to access the target VM, which may be due to an
                 // access hash we thought was good, but has now been invalidated,
@@ -201,10 +203,10 @@ public class DefaultVps4CpanelService implements Vps4CpanelService {
     }
 
     @Override
-    public CPanelSession createSession(long hfsVmId, String username, IpAddress ip, CpanelServiceType serviceType)
+    public CPanelSession createSession(long hfsVmId, String username, CpanelServiceType serviceType)
             throws CpanelAccessDeniedException, CpanelTimeoutException, IOException {
-
-        return withAccessHash(hfsVmId, cPanelClient -> cPanelClient.createSession(username, ip.ipAddress, serviceType));
+        String hostname = getVmHostname(hfsVmId);
+        return withAccessHash(hfsVmId, cPanelClient -> cPanelClient.createSession(username, hostname, serviceType));
     }
 
     private boolean didCallSucceed(JSONObject responseJson) {

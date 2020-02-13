@@ -57,7 +57,7 @@ public class CPanelResource {
         VirtualMachine vm = resolveVirtualMachine(vmId);
 
         try {
-            return cpanelService.createSession(vm.hfsVmId, "root", vm.primaryIpAddress, CpanelServiceType.whostmgrd);
+            return cpanelService.createSession(vm.hfsVmId, "root", CpanelServiceType.whostmgrd);
         } catch (Exception e) {
             logger.warn("Could not provide WHM cpanel session for vmId {} , Exception: {} ", vmId, e);
         }
@@ -74,7 +74,7 @@ public class CPanelResource {
         VirtualMachine vm = resolveVirtualMachine(vmId);
 
         try {
-            return cpanelService.createSession(vm.hfsVmId, username, vm.primaryIpAddress, CpanelServiceType.cpaneld);
+            return cpanelService.createSession(vm.hfsVmId, username, CpanelServiceType.cpaneld);
         } catch (Exception e) {
             logger.warn("Could not provide cpanel session for vmId {} , Exception: {} ", vmId, e);
         }
