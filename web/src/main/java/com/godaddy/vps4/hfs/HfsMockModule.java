@@ -25,6 +25,7 @@ import com.godaddy.hfs.vm.ConsoleRequest;
 import com.godaddy.hfs.vm.CreateVMRequest;
 import com.godaddy.hfs.vm.CreateVMWithFlavorRequest;
 import com.godaddy.hfs.vm.FlavorList;
+import com.godaddy.hfs.vm.HfsInventoryData;
 import com.godaddy.hfs.vm.RebuildDedicatedRequest;
 import com.godaddy.hfs.vm.ServerUsageStats;
 import com.godaddy.hfs.vm.Vm;
@@ -308,6 +309,11 @@ public class HfsMockModule extends AbstractModule {
 
             @Override
             public AgentDetails getHfsAgentDetails(long vmId) {
+                throw new UnsupportedOperationException("Not implemented, yet");
+            }
+
+            @Override
+            public List<HfsInventoryData> getInventory(String provider) {
                 throw new UnsupportedOperationException("Not implemented, yet");
             }
         };

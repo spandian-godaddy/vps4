@@ -1,5 +1,7 @@
 package com.godaddy.hfs.vm;
 
+import java.util.List;
+
 import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
@@ -94,5 +96,9 @@ public interface VmService {
     @GET
     @Path("/{vmId}/agent")
     AgentDetails getHfsAgentDetails(@PathParam("vmId") long vmId);
+
+    @GET
+    @Path("/inventory")
+    List<HfsInventoryData> getInventory(@QueryParam("provider") String provider);
 
 }
