@@ -4,17 +4,17 @@ import java.util.UUID;
 
 import javax.inject.Inject;
 
-import com.godaddy.vps4.hfs.HfsVmTrackingRecordService;
-import com.godaddy.vps4.orchestration.vm.WaitForAndRecordVmAction;
-import com.godaddy.vps4.util.Cryptography;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import gdg.hfs.orchestration.Command;
-import gdg.hfs.orchestration.CommandContext;
 import com.godaddy.hfs.vm.CreateVMWithFlavorRequest;
 import com.godaddy.hfs.vm.VmAction;
 import com.godaddy.hfs.vm.VmService;
+import com.godaddy.vps4.hfs.HfsVmTrackingRecordService;
+import com.godaddy.vps4.util.Cryptography;
+
+import gdg.hfs.orchestration.Command;
+import gdg.hfs.orchestration.CommandContext;
 
 public class CreateVmFromSnapshot implements Command<CreateVmFromSnapshot.Request, VmAction> {
 
@@ -25,9 +25,8 @@ public class CreateVmFromSnapshot implements Command<CreateVmFromSnapshot.Reques
     private final HfsVmTrackingRecordService hfsVmTrackingRecordService;
 
     @Inject
-    public CreateVmFromSnapshot(VmService vmService,
-                                Cryptography cryptography, 
-                                HfsVmTrackingRecordService hfsVmTrackingRecordService) {
+    public CreateVmFromSnapshot(VmService vmService, Cryptography cryptography,
+            HfsVmTrackingRecordService hfsVmTrackingRecordService) {
         this.cryptography = cryptography;
         this.vmService = vmService;
         this.hfsVmTrackingRecordService = hfsVmTrackingRecordService;
@@ -35,17 +34,12 @@ public class CreateVmFromSnapshot implements Command<CreateVmFromSnapshot.Reques
 
     @Override
     public VmAction execute(CommandContext context, Request request) {
-
-        logger.info("sending HFS VM request: {}", request);
+        logger.info("VM {} - Create HFS VM from Snapshot imageId {}, request: {}", request.vmId, request.image_id, request);
 
         CreateVMWithFlavorRequest hfsRequest = createHfsRequest(request);
-
         VmAction vmAction = context.execute("CreateVmHfs", ctx -> vmService.createVmWithFlavor(hfsRequest), VmAction.class);
 
         hfsVmTrackingRecordService.create(vmAction.vmId, request.vmId, request.orionGuid);
-
-        context.execute(WaitForAndRecordVmAction.class, vmAction);
-
         return vmAction;
     }
 

@@ -5,7 +5,6 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
 
-import org.bouncycastle.cert.ocsp.Req;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -24,6 +23,7 @@ import com.godaddy.vps4.orchestration.hfs.sysadmin.SetPassword;
 import com.godaddy.vps4.orchestration.hfs.sysadmin.ToggleAdmin;
 import com.godaddy.vps4.orchestration.hfs.vm.CreateVmFromSnapshot;
 import com.godaddy.vps4.orchestration.hfs.vm.DestroyVm;
+import com.godaddy.vps4.orchestration.hfs.vm.WaitForVmAction;
 import com.godaddy.vps4.snapshot.SnapshotService;
 import com.godaddy.vps4.vm.ActionService;
 import com.godaddy.vps4.vm.Image;
@@ -73,6 +73,7 @@ public class Vps4RestoreVm extends ActionCommand<Vps4RestoreVm.Request, Void> {
         this.context = context;
         this.state = new ActionState();
         this.vps4VmId = request.restoreVmInfo.vmId;
+        logger.info("Starting Restore VM {} from snapshot {}", vps4VmId, request.restoreVmInfo.snapshotId);
 
         long originalHfsVmId = getOriginalHfsVmId();
         Vm newHfsVm = createVmFromSnapshot();
@@ -80,17 +81,19 @@ public class Vps4RestoreVm extends ActionCommand<Vps4RestoreVm.Request, Void> {
         try {
             configureNewVm(newHfsVm);
         } catch (RuntimeException e) {
-            cleanupAndRollback(newHfsVm, request);
+            cleanupAndRollback(newHfsVm);
             throw e;
         }
 
         updateHfsVmId(newHfsVm.vmId);
-        cleanupVm(originalHfsVmId, request);
-        logger.info("VM restore of vmId {} finished", vps4VmId);
+        cleanupVm(originalHfsVmId);
+        logger.info("Restore VM {} COMPLETE", vps4VmId);
         return null;
     }
 
     private void configureNewVm(Vm newHfsVm) {
+        logger.info("Restore VM {} - configuring VM... Create VM from Snapshot completed.", vps4VmId);
+
         List<IpAddress> ipAddresses = getPublicIpAddresses();
         unbindPublicIpAddresses(ipAddresses);
         bindPublicIpAddress(newHfsVm.vmId, ipAddresses, false);
@@ -100,7 +103,7 @@ public class Vps4RestoreVm extends ActionCommand<Vps4RestoreVm.Request, Void> {
         refreshCpanelLicense(newHfsVm.vmId);
     }
 
-    private void cleanupAndRollback(Vm newHfsVm, Request request) {
+    private void cleanupAndRollback(Vm newHfsVm) {
         long originalHfsVmId = getOriginalHfsVmId();
         logger.info("Restore VM {} failed, binding ips back to HFS VM {} and destroying errored HFS VM {}", vps4VmId, originalHfsVmId, newHfsVm.vmId);
 
@@ -109,7 +112,7 @@ public class Vps4RestoreVm extends ActionCommand<Vps4RestoreVm.Request, Void> {
         bindPublicIpAddress(originalHfsVmId, ipAddresses, true);
 
         if (!request.debugEnabled) {
-            cleanupVm(newHfsVm.vmId, request);
+            cleanupVm(newHfsVm.vmId);
         }
     }
 
@@ -163,10 +166,21 @@ public class Vps4RestoreVm extends ActionCommand<Vps4RestoreVm.Request, Void> {
 
     private Vm createVmFromSnapshot() {
         setStep(RestoreVmStep.RequestingServer);
-        logger.info("create vm from snapshot");
+        CreateVmFromSnapshot.Request request = createHfsRequest();
+        VmAction vmAction = context.execute(CreateVmFromSnapshot.class, request);
 
-        CreateVmFromSnapshot.Request createVmFromSnapshotRequest = createHfsRequest();
-        VmAction vmAction = context.execute("CreateVmFromSnapshot", CreateVmFromSnapshot.class, createVmFromSnapshotRequest);
+        try {
+            context.execute("WaitForCreateVmFromSnapshot", WaitForVmAction.class, vmAction);
+        } catch (RuntimeException ex) {
+            // The create vm action failed, but since we aren't sure if a vm was actually created
+            // - or not, we try to delete it to prevent orphans.  Sometimes the vm is created but
+            // - fails to come up and register with hfs/nydus so the hfs create action fails
+            // - even though a vm was created.  Hfs should really cleanup on error, then we can remove
+            // - this code.
+            logger.info("Restore VM {} failed to create VM from snapshot, cleanup HFS VM {}", vps4VmId, vmAction.vmId);
+            cleanupVm(vmAction.vmId);
+            throw ex;
+        }
 
         // Get the hfs vm
         return context.execute("GetVmAfterCreate", ctx -> vmService.getVm(vmAction.vmId), Vm.class);
@@ -237,9 +251,9 @@ public class Vps4RestoreVm extends ActionCommand<Vps4RestoreVm.Request, Void> {
         }
     }
 
-    private void cleanupVm(long hfsVmId, Request request) {
+    private void cleanupVm(long hfsVmId) {
         setStep(RestoreVmStep.CleanupVm);
-        logger.info("Deleting VM: " + hfsVmId);
+        logger.info("Restore VM {} - Cleaning up HFS VM {}", vps4VmId, hfsVmId);
         DestroyVm.Request destroyVmRequest = new DestroyVm.Request();
         destroyVmRequest.hfsVmId = hfsVmId;
         destroyVmRequest.actionId = request.getActionId();

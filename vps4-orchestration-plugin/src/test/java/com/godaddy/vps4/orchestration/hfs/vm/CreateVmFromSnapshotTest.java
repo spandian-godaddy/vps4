@@ -1,113 +1,71 @@
 package com.godaddy.vps4.orchestration.hfs.vm;
 
 import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.util.UUID;
-import java.util.function.Function;
 
-import com.godaddy.vps4.orchestration.vm.WaitForAndRecordVmAction;
-import com.godaddy.vps4.util.Cryptography;
-import com.google.inject.AbstractModule;
 import org.junit.Assert;
 import org.junit.Before;
-import org.junit.BeforeClass;
 import org.junit.Test;
-import org.mockito.ArgumentCaptor;
-import org.mockito.Captor;
-import org.mockito.MockitoAnnotations;
 
-import com.godaddy.vps4.hfs.HfsVmTrackingRecordService;
-import com.godaddy.vps4.orchestration.phase2.Vps4ExternalsModule;
-import com.google.inject.Guice;
-import com.google.inject.Inject;
-import com.google.inject.Injector;
-
-import gdg.hfs.orchestration.CommandContext;
 import com.godaddy.hfs.vm.CreateVMWithFlavorRequest;
 import com.godaddy.hfs.vm.VmAction;
 import com.godaddy.hfs.vm.VmService;
+import com.godaddy.vps4.hfs.HfsVmTrackingRecordService;
+import com.godaddy.vps4.orchestration.TestCommandContext;
+import com.godaddy.vps4.util.Cryptography;
+import com.google.inject.Guice;
+import com.google.inject.Injector;
+
+import gdg.hfs.orchestration.CommandContext;
+import gdg.hfs.orchestration.GuiceCommandProvider;
 
 public class CreateVmFromSnapshotTest {
-    static Injector injector;
 
-    @Inject
-    VmService vmService;
-    @Inject
-    HfsVmTrackingRecordService hfsVmTrackingRecordService;
+    VmService vmService = mock(VmService.class);
+    HfsVmTrackingRecordService hfsVmTrackService = mock(HfsVmTrackingRecordService.class);
+    Cryptography cryptography = mock(Cryptography.class);
+    Injector injector = Guice.createInjector();
 
-    private CreateVmFromSnapshot command;
-    private CommandContext context;
-    private CreateVmFromSnapshot.Request request;
-    private VmAction hfsAction;
+    CreateVmFromSnapshot command = new CreateVmFromSnapshot(vmService, cryptography, hfsVmTrackService);
+    CommandContext context = spy(new TestCommandContext(new GuiceCommandProvider(injector)));
 
-    @Captor
-    ArgumentCaptor<Function<CommandContext, VmAction>> createVmLambdaCaptor;
-
-    @BeforeClass
-    public static void newInjector() {
-        injector = Guice.createInjector(
-                new Vps4ExternalsModule(),
-                new AbstractModule() {
-                    @Override
-                    protected void configure() {
-                        Cryptography cryptography = mock(Cryptography.class);
-                        bind(Cryptography.class).toInstance(cryptography);
-                        HfsVmTrackingRecordService hfsVmTrackingRecordService = mock(HfsVmTrackingRecordService.class);
-                        bind(HfsVmTrackingRecordService.class).toInstance(hfsVmTrackingRecordService);
-                    }
-                }
-        );
-    }
+    CreateVmFromSnapshot.Request request;
+    VmAction hfsAction;
+    UUID vmId = UUID.randomUUID();
+    UUID orionGuid = UUID.randomUUID();
 
     @Before
     public void setUpTest() {
-        injector.injectMembers(this);
-        MockitoAnnotations.initMocks(this);
-        command = new CreateVmFromSnapshot(vmService, mock(Cryptography.class), hfsVmTrackingRecordService);
-        context = setupMockContext();
         request = new CreateVmFromSnapshot.Request();
-
-        when(vmService.createVmWithFlavor(any(CreateVMWithFlavorRequest.class))).thenReturn(hfsAction);
-    }
-
-    private CommandContext setupMockContext() {
-        CommandContext mockContext = mock(CommandContext.class);
-        when(mockContext.getId()).thenReturn(UUID.randomUUID());
+        request.vmId = vmId;
+        request.orionGuid = orionGuid;
 
         hfsAction = new VmAction();
         hfsAction.vmActionId = 12345;
         hfsAction.vmId = 4567;
-
-        when(mockContext.execute(eq("CreateVmHfs"), any(Function.class), eq(VmAction.class))).thenReturn(hfsAction);
-        when(mockContext.execute(eq(WaitForVmAction.class), eq(hfsAction))).thenReturn(null);
-        return mockContext;
+        when(vmService.createVmWithFlavor(any(CreateVMWithFlavorRequest.class))).thenReturn(hfsAction);
     }
 
     @Test
     public void callsHfsVmVerticalToCreateTheVm() {
         command.execute(context, request);
-        verify(context, times(1))
-                .execute(eq("CreateVmHfs"), createVmLambdaCaptor.capture(), eq(VmAction.class));
-
-        // Verify that the lambda is returning what we expect
-        Function<CommandContext, VmAction> lambda = createVmLambdaCaptor.getValue();
-        VmAction vmAction = lambda.apply(context);
-        Assert.assertEquals(vmAction, hfsAction);
+        verify(vmService).createVmWithFlavor(any(CreateVMWithFlavorRequest.class));
     }
 
     @Test
-    public void waitsForCompletionOfTheVmCreation() {
+    public void createsHfsVmTrackingRecord() {
         command.execute(context, request);
-        verify(context, times(1)).execute(eq(WaitForAndRecordVmAction.class), eq(hfsAction));
+        verify(hfsVmTrackService).create(hfsAction.vmId, vmId, orionGuid);
     }
 
     @Test
-    public void commandReturnsTheHfsVmAction() {
-        Assert.assertEquals(command.execute(context, request), hfsAction);
+    public void commandReturnsHfsVmAction() {
+        VmAction result = command.execute(context, request);
+        Assert.assertEquals(hfsAction, result);
     }
 }

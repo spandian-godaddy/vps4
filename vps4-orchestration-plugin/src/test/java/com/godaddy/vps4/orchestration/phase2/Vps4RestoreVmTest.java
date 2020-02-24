@@ -2,6 +2,7 @@ package com.godaddy.vps4.orchestration.phase2;
 
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.junit.Assert.assertThat;
+import static org.junit.Assert.fail;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Matchers.startsWith;
@@ -43,6 +44,7 @@ import com.godaddy.vps4.orchestration.hfs.sysadmin.SetPassword;
 import com.godaddy.vps4.orchestration.hfs.sysadmin.ToggleAdmin;
 import com.godaddy.vps4.orchestration.hfs.vm.CreateVmFromSnapshot;
 import com.godaddy.vps4.orchestration.hfs.vm.DestroyVm;
+import com.godaddy.vps4.orchestration.hfs.vm.WaitForVmAction;
 import com.godaddy.vps4.orchestration.vm.Vps4RestoreVm;
 import com.godaddy.vps4.project.Project;
 import com.godaddy.vps4.project.ProjectService;
@@ -170,8 +172,7 @@ public class Vps4RestoreVmTest {
         hfsAction.vmActionId = hfsRestoreActionId;
         hfsAction.vmId = hfsNewVmId;
 
-        when(mockContext.execute(eq("CreateVmFromSnapshot"), eq(CreateVmFromSnapshot.class), any()))
-                .thenReturn(hfsAction);
+        when(mockContext.execute(eq(CreateVmFromSnapshot.class), any())).thenReturn(hfsAction);
 
         hfsVm = new Vm();
         hfsVm.vmId = hfsNewVmId;
@@ -236,14 +237,31 @@ public class Vps4RestoreVmTest {
     @Test
     public void createsVmFromSnapshot() {
         command.execute(context, request);
-        verify(context, times(1)).execute(eq("CreateVmFromSnapshot"), eq(CreateVmFromSnapshot.class),
-                flavorRequestArgumentCaptor.capture());
+        verify(context, times(1)).execute(eq(CreateVmFromSnapshot.class), flavorRequestArgumentCaptor.capture());
 
         CreateVmFromSnapshot.Request flavorRequest = flavorRequestArgumentCaptor.getValue();
         Assert.assertEquals("True", flavorRequest.ignore_whitelist);
         Assert.assertEquals(SqlTestData.nfImageId, flavorRequest.image_id);
         Assert.assertEquals(SqlTestData.IMAGE_NAME, flavorRequest.os);
         Assert.assertEquals("1", flavorRequest.privateLabelId);
+    }
+
+    @Test
+    public void waitsForCreateVmFromSnapshot() {
+        command.execute(context, request);
+        verify(context).execute("WaitForCreateVmFromSnapshot", WaitForVmAction.class, hfsAction);
+    }
+
+    @Test
+    public void cleansUpIfCreateVmFromSnapshotFails() {
+        when(context.execute("WaitForCreateVmFromSnapshot", WaitForVmAction.class, hfsAction)).thenThrow(
+                new RuntimeException("HFS created a VM but action failed"));
+        try {
+            command.execute(context, request);
+            fail();
+        } catch(RuntimeException ex) {
+            verify(context).execute(eq("DestroyVmHfs"), eq(DestroyVm.class), any(DestroyVm.Request.class));
+        }
     }
 
     @Test
@@ -367,13 +385,6 @@ public class Vps4RestoreVmTest {
 
         RefreshCpanelLicense.Request refreshRequest = refreshLicenseCaptor.getValue();
         Assert.assertEquals(hfsNewVmId, refreshRequest.hfsVmId);
-    }
-
-    @Test(expected = RuntimeException.class)
-    public void throwsExceptionWhenCreateFromSnapshotFails() {
-        when(context.execute(eq("CreateVmFromSnapshot"), eq(CreateVmFromSnapshot.class), any()))
-                .thenThrow(new RuntimeException("test create vm failed"));
-        command.execute(context, request);
     }
 
     @Test
