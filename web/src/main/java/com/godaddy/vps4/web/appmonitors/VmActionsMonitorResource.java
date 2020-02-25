@@ -85,9 +85,9 @@ public class VmActionsMonitorResource {
 
     @GET
     @Path("/pending/provision")
-    @ApiOperation(value = "Find all VM id's that are pending provisioning for longer than m minutes, default 60 minutes",
-            notes = "Find all VM id's that are pending provisioning for longer than m minutes, default 60 minutes")
-    public List<VmActionData> getProvisioningPendingVms(@QueryParam("thresholdInMinutes") @DefaultValue("60") long thresholdInMinutes) {
+    @ApiOperation(value = "Find all VM id's that are pending provisioning for longer than m minutes, default 90 minutes",
+            notes = "Find all VM id's that are pending provisioning for longer than m minutes, default 90 minutes")
+    public List<VmActionData> getProvisioningPendingVms(@QueryParam("thresholdInMinutes") @DefaultValue("90") long thresholdInMinutes) {
         return filterOverdueInProgressActionsByType(thresholdInMinutes, ActionType.CREATE_VM);
     }
 
