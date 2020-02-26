@@ -1,10 +1,10 @@
 package com.godaddy.vps4.orchestration.hfs;
 
+import com.godaddy.vps4.orchestration.dns.WaitForDnsAction;
 import com.godaddy.vps4.orchestration.hfs.cpanel.ConfigureCpanel;
 import com.godaddy.vps4.orchestration.hfs.cpanel.RefreshCpanelLicense;
 import com.godaddy.vps4.orchestration.hfs.cpanel.UnlicenseCpanel;
 import com.godaddy.vps4.orchestration.hfs.cpanel.WaitForCpanelAction;
-import com.godaddy.vps4.orchestration.dns.WaitForDnsAction;
 import com.godaddy.vps4.orchestration.hfs.dns.CreateDnsPtrRecord;
 import com.godaddy.vps4.orchestration.hfs.mailrelay.SetMailRelayQuota;
 import com.godaddy.vps4.orchestration.hfs.network.AllocateIp;

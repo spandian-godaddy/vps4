@@ -891,6 +891,28 @@ public class HfsMockModule extends AbstractModule {
             public List<HfsInventoryData> getInventory(String provider) {
                 throw new UnsupportedOperationException("Not implemented, yet");
             }
+
+            @Override
+            public VmAction createBackupStorage(long vmId) {
+                if (!customerVms.containsKey(vmId)
+                        || !vmActionList.containsKey(vmId)
+                        || this.isVmDestroyed(vmId)) {
+                    throw new NotFoundException("Vm not present or has already been destroyed");
+                }
+
+                return this.createAndStoreVmAction(vmId, "CREATE_BACKUP_STORAGE", VmAction.Status.NEW);
+            }
+
+            @Override
+            public VmAction destroyBackupStorage(long vmId) {
+                if (!customerVms.containsKey(vmId)
+                        || !vmActionList.containsKey(vmId)
+                        || this.isVmDestroyed(vmId)) {
+                    throw new NotFoundException("Vm not present or has already been destroyed");
+                }
+
+                return this.createAndStoreVmAction(vmId, "DESTROY_BACKUP_STORAGE", VmAction.Status.NEW);
+            }
         };
     }
 

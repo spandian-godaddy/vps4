@@ -31,7 +31,9 @@ import com.godaddy.vps4.orchestration.sysadmin.Vps4ToggleAdmin;
 import com.godaddy.vps4.orchestration.vm.UnlicenseControlPanel;
 import com.godaddy.vps4.orchestration.vm.Vps4AddIpAddress;
 import com.godaddy.vps4.orchestration.vm.Vps4CancelAction;
+import com.godaddy.vps4.orchestration.vm.Vps4CreateBackupStorage;
 import com.godaddy.vps4.orchestration.vm.Vps4DeleteAllScheduledJobsForVm;
+import com.godaddy.vps4.orchestration.vm.Vps4DestroyBackupStorage;
 import com.godaddy.vps4.orchestration.vm.Vps4DestroyDedicated;
 import com.godaddy.vps4.orchestration.vm.Vps4DestroyIpAddressAction;
 import com.godaddy.vps4.orchestration.vm.Vps4DestroyVm;
@@ -120,5 +122,7 @@ public class Vps4CommandModule extends AbstractModule {
         bind(WaitForPanoptaInstall.class);
         bind(GetPanoptaServerKeyFromHfs.class);
         bind(SetupPanopta.class);
+        bind(Vps4CreateBackupStorage.class);
+        bind(Vps4DestroyBackupStorage.class);
     }
 }

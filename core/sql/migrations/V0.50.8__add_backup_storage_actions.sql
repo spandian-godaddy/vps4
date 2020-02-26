@@ -1,0 +1,1 @@
+INSERT INTO action_type(type_id, type) VALUES (39, 'CREATE_BACKUP_STORAGE'), (40, 'DESTROY_BACKUP_STORAGE');

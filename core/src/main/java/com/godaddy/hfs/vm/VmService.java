@@ -3,6 +3,7 @@ package com.godaddy.hfs.vm;
 import java.util.List;
 
 import javax.ws.rs.Consumes;
+import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
@@ -101,4 +102,11 @@ public interface VmService {
     @Path("/inventory")
     List<HfsInventoryData> getInventory(@QueryParam("provider") String provider);
 
+    @POST
+    @Path("/{vmId}/backupSpace")
+    VmAction createBackupStorage(@PathParam("vmId") long vmId);
+
+    @DELETE
+    @Path("/{vmId}/backupSpace")
+    VmAction destroyBackupStorage(@PathParam("vmId") long vmId);
 }
