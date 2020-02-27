@@ -1,5 +1,6 @@
 package com.godaddy.vps4.credit;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
@@ -87,6 +88,32 @@ public class VirtualMachineCreditTest {
                 .build();
         assertTrue(credit.isManaged());
         assertTrue(credit.isDed4());
+    }
+
+    @Test
+    public void getMonitoringHandlesBooleanValue() {
+        VirtualMachineCredit credit = new VirtualMachineCredit.Builder(mock(DataCenterService.class))
+                .withPlanFeatures(planFeaturesFrom("monitoring", "true")).build();
+        assertTrue(credit.hasMonitoring());
+        assertEquals(1, credit.getMonitoring());
+
+        credit = new VirtualMachineCredit.Builder(mock(DataCenterService.class))
+                .withPlanFeatures(planFeaturesFrom("monitoring", "false")).build();
+        assertFalse(credit.hasMonitoring());
+        assertEquals(0, credit.getMonitoring());
+    }
+
+    @Test
+    public void getMonitoringHandlesIntegerValue() {
+        VirtualMachineCredit credit = new VirtualMachineCredit.Builder(mock(DataCenterService.class))
+                .withPlanFeatures(planFeaturesFrom("monitoring", "1")).build();
+        assertTrue(credit.hasMonitoring());
+        assertEquals(1, credit.getMonitoring());
+
+        credit = new VirtualMachineCredit.Builder(mock(DataCenterService.class))
+                .withPlanFeatures(planFeaturesFrom("monitoring", "0")).build();
+        assertFalse(credit.hasMonitoring());
+        assertEquals(0, credit.getMonitoring());
     }
 
 }

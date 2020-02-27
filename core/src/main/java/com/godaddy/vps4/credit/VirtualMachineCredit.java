@@ -1,6 +1,7 @@
 package com.godaddy.vps4.credit;
 
 import java.time.Instant;
+import java.util.Arrays;
 import java.util.Map;
 import java.util.UUID;
 
@@ -249,8 +250,7 @@ public class VirtualMachineCredit {
                 credit.tier = Integer.parseInt(planFeatures.getOrDefault(PlanFeatures.TIER.toString(), "10"));
                 credit.managedLevel =
                         Integer.parseInt(planFeatures.getOrDefault(PlanFeatures.MANAGED_LEVEL.toString(), "0"));
-                credit.monitoring =
-                        Integer.parseInt(planFeatures.getOrDefault(PlanFeatures.MONITORING.toString(), "0"));
+                credit.monitoring = parseMonitoring(planFeatures.getOrDefault(PlanFeatures.MONITORING.toString(), "0"));
                 credit.operatingSystem = planFeatures.get(PlanFeatures.OPERATINGSYSTEM.toString());
                 credit.controlPanel = planFeatures.get(PlanFeatures.CONTROL_PANEL_TYPE.toString());
                 credit.pfid = Integer.parseInt(planFeatures.getOrDefault(PlanFeatures.PF_ID.toString(), "0"));
@@ -276,6 +276,11 @@ public class VirtualMachineCredit {
 
             return credit;
         }
+
+        private int parseMonitoring(String value) {
+            return (Arrays.asList("true","1").contains(value)) ? 1 : 0;
+        }
+
     }
 
 }
