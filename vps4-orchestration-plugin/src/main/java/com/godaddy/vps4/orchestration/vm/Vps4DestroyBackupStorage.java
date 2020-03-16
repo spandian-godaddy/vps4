@@ -1,7 +1,5 @@
 package com.godaddy.vps4.orchestration.vm;
 
-import java.util.UUID;
-
 import javax.inject.Inject;
 
 import org.slf4j.Logger;
@@ -12,6 +10,7 @@ import com.godaddy.hfs.vm.VmService;
 import com.godaddy.vps4.orchestration.ActionCommand;
 import com.godaddy.vps4.orchestration.hfs.vm.WaitForVmAction;
 import com.godaddy.vps4.vm.ActionService;
+import com.godaddy.vps4.vm.VirtualMachine;
 
 import gdg.hfs.orchestration.CommandContext;
 import gdg.hfs.orchestration.CommandMetadata;
@@ -35,12 +34,11 @@ public class Vps4DestroyBackupStorage extends ActionCommand<VmActionRequest, Voi
 
     @Override
     public Void executeWithAction(CommandContext context, VmActionRequest request) {
-        UUID vmId = request.virtualMachine.vmId;
-        long hfsVmId = request.virtualMachine.hfsVmId;
-        logger.info("Calling HFS to destroy backup storage for vmId: {}, hfsVmId: {}", vmId, hfsVmId);
+        VirtualMachine vm = request.virtualMachine;
+        logger.info("Calling HFS to destroy backup storage for vmId: {}, hfsVmId: {}", vm.vmId, vm.hfsVmId);
 
         VmAction hfsBackupStorageAction = context.execute("DestroyBackupStorageHfs",
-                                                        ctx -> vmService.destroyBackupStorage(hfsVmId),
+                                                        ctx -> vmService.destroyBackupStorage(vm.hfsVmId),
                                                         VmAction.class);
         context.execute(WaitForVmAction.class, hfsBackupStorageAction);
 

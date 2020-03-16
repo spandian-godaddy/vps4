@@ -23,8 +23,14 @@ public class Vps4DestroyDedicated extends Vps4DestroyVm {
     }
 
     @Override
+    protected void destroyBackupStorage() {
+        VmActionRequest request = new VmActionRequest();
+        request.virtualMachine = vm;
+        context.execute(Vps4DestroyBackupStorage.class, request);
+    }
+
+    @Override
     protected void removeIpFromServer(IpAddress address) {
         // Ded4 servers do not need to unbind and release IPs back to an IP Pool
     }
-
 }

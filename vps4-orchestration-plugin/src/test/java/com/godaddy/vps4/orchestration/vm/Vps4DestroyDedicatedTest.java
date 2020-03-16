@@ -21,10 +21,16 @@ public class Vps4DestroyDedicatedTest extends Vps4DestroyVmTest {
 
     @Override
     @Test
+    public void executesDestroyBackupStorage() {
+        command.execute(context, request);
+        verify(context).execute(eq(Vps4DestroyBackupStorage.class), any(VmActionRequest.class));
+    }
+
+    @Override
+    @Test
     public void executesRemoveIp() {
         // Ded4 boxes do not need to call RemoveIp command.
         command.execute(context, request);
         verify(context, never()).execute(anyString(), eq(Vps4RemoveIp.class), any());
     }
-
 }
