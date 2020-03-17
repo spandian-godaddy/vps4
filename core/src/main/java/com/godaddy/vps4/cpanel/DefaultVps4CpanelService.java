@@ -45,7 +45,7 @@ public class DefaultVps4CpanelService implements Vps4CpanelService {
 
     private String getVmHostname(long hfsVmId) {
         IpAddress ip = networkService.getVmPrimaryAddress(hfsVmId);
-        return HostnameGenerator.getHostname(ip.ipAddress);
+        return HostnameGenerator.getLinuxHostname(ip.ipAddress);
     }
 
     interface CpanelClientHandler<T> {

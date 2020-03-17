@@ -147,7 +147,7 @@ public class Vps4ProvisionVm extends ActionCommand<ProvisionRequest, Vps4Provisi
 
     private void generateHostname(IpAddress ip) {
         setStep(GeneratingHostname);
-        hostname = HostnameGenerator.getHostname(ip.address);
+        hostname = HostnameGenerator.getHostname(ip.address, request.vmInfo.image.operatingSystem);
     }
 
     private void setupAutomaticBackupSchedule(UUID vps4VmId, String shopperId) {
