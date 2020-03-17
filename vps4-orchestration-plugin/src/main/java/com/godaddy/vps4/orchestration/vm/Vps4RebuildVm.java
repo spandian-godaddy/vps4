@@ -293,6 +293,7 @@ public class Vps4RebuildVm extends ActionCommand<Vps4RebuildVm.Request, Void> {
 
     private void configureMonitoring(long hfsVmId) {
         if (hasPanoptaMonitoring()) {
+            setStep(RebuildVmStep.ConfigureMonitoring);
             SetupPanopta.Request setupPanoptaRequest = new SetupPanopta.Request();
             setupPanoptaRequest.hfsVmId = hfsVmId;
             setupPanoptaRequest.orionGuid = request.rebuildVmInfo.orionGuid;
