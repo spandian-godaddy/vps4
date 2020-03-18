@@ -17,6 +17,8 @@ import org.junit.Before;
 import org.junit.Test;
 import org.mockito.ArgumentMatcher;
 
+import com.godaddy.hfs.vm.BackupStorage;
+import com.godaddy.hfs.vm.VmService;
 import com.godaddy.vps4.credit.CreditService;
 import com.godaddy.vps4.credit.VirtualMachineCredit;
 import com.godaddy.vps4.jdbc.ResultSubset;
@@ -39,10 +41,12 @@ public class BackupStorageResourceTest {
     private CreditService creditService = mock(CreditService.class);
     private VirtualMachineCredit credit = mock(VirtualMachineCredit.class);
     private VmResource vmResource = mock(VmResource.class);
+    private VmService vmService = mock(VmService.class);
 
     private UUID vmId = UUID.randomUUID();
     private UUID orionGuid = UUID.randomUUID();
-
+    private long hfsVmId = 42;
+    private BackupStorage backupStorage = mock(BackupStorage.class);
     private BackupStorageResource resource;
 
     @Before
@@ -50,7 +54,10 @@ public class BackupStorageResourceTest {
         VirtualMachine vm = mock(VirtualMachine.class);
         vm.orionGuid = orionGuid;
         vm.vmId = vmId;
+        vm.hfsVmId = hfsVmId;
         when(vmResource.getVm(vmId)).thenReturn(vm);
+
+        when(vmService.getBackupStorage(hfsVmId)).thenReturn(backupStorage);
 
         Action action = mock(Action.class);
         when(actionService.getAction(anyLong())).thenReturn(action);
@@ -59,7 +66,7 @@ public class BackupStorageResourceTest {
         when(creditService.getVirtualMachineCredit(orionGuid)).thenReturn(credit);
 
         when(commandService.executeCommand(any())).thenReturn(new CommandState());
-        resource = new BackupStorageResource(user, actionService, commandService, creditService, vmResource);
+        resource = new BackupStorageResource(user, actionService, commandService, creditService, vmResource, vmService);
     }
 
     @Test
@@ -148,5 +155,24 @@ public class BackupStorageResourceTest {
         }
         verify(actionService, never()).createAction(vmId, ActionType.DESTROY_BACKUP_STORAGE,
                                                     "{}", user.getUsername());
+    }
+
+    @Test
+    public void testGetBackupStorage() {
+        BackupStorage backup = resource.getBackupStorage(vmId);
+        verify(vmResource, times(1)).getVm(vmId);
+        verify(vmService, times(1)).getBackupStorage(hfsVmId);
+        assertEquals(backupStorage, backup);
+    }
+
+    @Test
+    public void testGetOnVirtualServer() {
+        when(credit.isDed4()).thenReturn(false);
+        try {
+            resource.getBackupStorage(vmId);
+        } catch (Vps4Exception e) {
+            assertEquals("INVALID_SERVER", e.getId());
+        }
+        verify(vmService, never()).getBackupStorage(hfsVmId);
     }
 }

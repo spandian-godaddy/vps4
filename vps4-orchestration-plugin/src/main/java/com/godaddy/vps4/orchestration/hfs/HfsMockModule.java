@@ -26,6 +26,7 @@ import com.godaddy.hfs.mailrelay.MailRelayHistory;
 import com.godaddy.hfs.mailrelay.MailRelayService;
 import com.godaddy.hfs.mailrelay.MailRelayUpdate;
 import com.godaddy.hfs.vm.AgentDetails;
+import com.godaddy.hfs.vm.BackupStorage;
 import com.godaddy.hfs.vm.Console;
 import com.godaddy.hfs.vm.ConsoleRequest;
 import com.godaddy.hfs.vm.CreateVMRequest;
@@ -912,6 +913,12 @@ public class HfsMockModule extends AbstractModule {
                 }
 
                 return this.createAndStoreVmAction(vmId, "DESTROY_BACKUP_STORAGE", VmAction.Status.NEW);
+            }
+
+            @Override
+            public BackupStorage getBackupStorage(long vmId) {
+                // NOTE: do nothing, Implement when needed
+                throw new UnsupportedOperationException("Not implemented, yet");
             }
         };
     }

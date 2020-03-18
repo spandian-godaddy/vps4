@@ -38,8 +38,8 @@ public class Vps4DestroyBackupStorage extends ActionCommand<VmActionRequest, Voi
         logger.info("Calling HFS to destroy backup storage for vmId: {}, hfsVmId: {}", vm.vmId, vm.hfsVmId);
 
         VmAction hfsBackupStorageAction = context.execute("DestroyBackupStorageHfs",
-                                                        ctx -> vmService.destroyBackupStorage(vm.hfsVmId),
-                                                        VmAction.class);
+                                                          ctx -> vmService.destroyBackupStorage(vm.hfsVmId),
+                                                          VmAction.class);
         context.execute(WaitForVmAction.class, hfsBackupStorageAction);
 
         return null;

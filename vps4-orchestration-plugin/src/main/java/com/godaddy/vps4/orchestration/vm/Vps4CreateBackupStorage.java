@@ -38,8 +38,8 @@ public class Vps4CreateBackupStorage extends ActionCommand<VmActionRequest, Void
         logger.info("Calling HFS to create backup storage for vmId: {}, hfsVmId: {}", vm.vmId, vm.hfsVmId);
 
         VmAction hfsBackupStorageAction = context.execute("CreateBackupStorageHfs",
-                                                        ctx -> vmService.createBackupStorage(vm.hfsVmId),
-                                                        VmAction.class);
+                                                          ctx -> vmService.createBackupStorage(vm.hfsVmId),
+                                                          VmAction.class);
         context.execute(WaitForVmAction.class, hfsBackupStorageAction);
 
         return null;

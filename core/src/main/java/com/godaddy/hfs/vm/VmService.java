@@ -109,4 +109,8 @@ public interface VmService {
     @DELETE
     @Path("/{vmId}/backupSpace")
     VmAction destroyBackupStorage(@PathParam("vmId") long vmId);
+
+    @GET
+    @Path("/{vmId}/backupSpace")
+    BackupStorage getBackupStorage(@PathParam("vmId") long vmId);
 }
