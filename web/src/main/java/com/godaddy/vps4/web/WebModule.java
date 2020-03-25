@@ -16,6 +16,7 @@ import com.godaddy.vps4.web.featureFlag.ConfigFeatureMaskModule;
 import com.godaddy.vps4.web.mailrelay.VmMailRelayResource;
 import com.godaddy.vps4.web.messaging.VmMessagingResource;
 import com.godaddy.vps4.web.monitoring.PanoptaResource;
+import com.godaddy.vps4.web.monitoring.VmAddMonitoringResource;
 import com.godaddy.vps4.web.monitoring.VmAlertResource;
 import com.godaddy.vps4.web.monitoring.VmMonitoringResource;
 import com.godaddy.vps4.web.monitoring.VmOutageResource;
@@ -110,6 +111,7 @@ public class WebModule extends AbstractModule {
         bind(VmDetailsResource.class);
         bind(InventoryResource.class);
         bind(BackupStorageResource.class);
+        bind(VmAddMonitoringResource.class);
 
         bind(CommandsResource.class);
         bind(CommandsViewResource.class);

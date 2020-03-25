@@ -46,7 +46,8 @@ public enum ActionType {
     CREATE_REVERSE_DNS_NAME_RECORD(37),
     MERGE_SHOPPER(38),
     CREATE_BACKUP_STORAGE(39),
-    DESTROY_BACKUP_STORAGE(40);
+    DESTROY_BACKUP_STORAGE(40),
+    ADD_MONITORING(41);
 
     private final int typeId;
 

@@ -13,6 +13,7 @@ import com.godaddy.vps4.orchestration.monitoring.RemoveNodePingMonitoring;
 import com.godaddy.vps4.orchestration.monitoring.RemovePanoptaMonitoring;
 import com.godaddy.vps4.orchestration.monitoring.SendVmOutageEmail;
 import com.godaddy.vps4.orchestration.monitoring.SendVmOutageResolvedEmail;
+import com.godaddy.vps4.orchestration.monitoring.Vps4AddMonitoring;
 import com.godaddy.vps4.orchestration.monitoring.Vps4RemoveMonitoring;
 import com.godaddy.vps4.orchestration.panopta.CreatePanoptaCustomer;
 import com.godaddy.vps4.orchestration.panopta.GetPanoptaCustomer;
@@ -112,6 +113,7 @@ public class Vps4CommandModule extends AbstractModule {
         bind(Vps4CreateDnsPtrRecord.class);
         bind(PausePanoptaMonitoring.class);
         bind(ResumePanoptaMonitoring.class);
+        bind(Vps4AddMonitoring.class);
         bind(Vps4RemoveMonitoring.class);
         bind(RemovePanoptaMonitoring.class);
         bind(RemoveNodePingMonitoring.class);
