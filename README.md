@@ -363,7 +363,7 @@ TODO: Eventually need to puppetize this process below.
       yum install -y sensu-team-plugins-vps4.noarch
     ```
 * Ensure the following:
-  - VPS4 sensu repository is located [here: https://vps4.sensu.prod.phx3.secureserver.net/#/checks](https://vps4.sensu.prod.phx3.secureserver.net/#/checks) 
+  - VPS4 sensu repository is located [here: https://github.secureserver.net/ECMI/vps4-checks](https://github.secureserver.net/ECMI/vps4-checks) 
   - To add a new check, checkout this repository, add the new check and the plugin in the appropriate folder and commit to the repo. This should trigger a jenkins build to generate a new rpm for this package`sensu-team-plugins-vps4.noarch` and install it on the sensu servers.
   - To monitor the progress of the build, you can join the #monitoring-notices slack channel.
   - Sensu checks are located under /etc/sensu/conf.d/team/checks
