@@ -22,7 +22,7 @@ import com.godaddy.hfs.vm.VmService;
 import com.godaddy.vps4.vm.ServerSpec;
 import com.godaddy.vps4.vm.VirtualMachineService;
 import com.godaddy.vps4.web.Vps4Api;
-import com.godaddy.vps4.web.security.GDUser;
+import com.godaddy.vps4.web.security.GDUser.Role;
 import com.godaddy.vps4.web.security.RequiresRole;
 
 import io.swagger.annotations.Api;
@@ -45,7 +45,7 @@ public class InventoryResource {
         this.virtualMachineService = virtualMachineService;
     }
 
-    @RequiresRole(roles = {GDUser.Role.ADMIN})
+    @RequiresRole(roles = {Role.ADMIN, Role.HS_LEAD, Role.HS_AGENT, Role.SUSPEND_AUTH, Role.EMPLOYEE_OTHER})
     @GET
     @Path("/ded/inventory")
     @ApiOperation(value = "Get the inventory details for the specified spec or tier, otherwise return inventory on " +
