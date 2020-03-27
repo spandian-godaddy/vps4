@@ -4,6 +4,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.godaddy.hfs.config.Config;
+import com.godaddy.vps4.backupstorage.BackupStorageModule;
 import com.godaddy.vps4.cache.HazelcastCacheModule;
 import com.godaddy.vps4.config.ConfigModule;
 import com.godaddy.vps4.credit.CreditModule;
@@ -82,7 +83,8 @@ public class Vps4CommandPlugin implements CommandPlugin {
             new SecurityModule(),
             new MonitoringModule(),
             new HfsVmTrackingRecordModule(),
-            new PanoptaModule()
+            new PanoptaModule(),
+            new BackupStorageModule()
             );
             
         return new GuiceCommandProvider(injector);
