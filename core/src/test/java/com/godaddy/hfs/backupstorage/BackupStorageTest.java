@@ -1,4 +1,4 @@
-package com.godaddy.hfs.vm;
+package com.godaddy.hfs.backupstorage;
 
 import static org.junit.Assert.assertEquals;
 
@@ -8,6 +8,7 @@ import org.junit.Before;
 import org.junit.Test;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.godaddy.hfs.backupstorage.BackupStorage;
 import com.godaddy.vps4.util.ObjectMapperModule;
 import com.google.inject.Guice;
 import com.google.inject.Injector;

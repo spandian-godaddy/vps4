@@ -1,4 +1,4 @@
-package com.godaddy.hfs.vm;
+package com.godaddy.hfs.backupstorage;
 
 import java.util.Objects;
 

@@ -28,7 +28,7 @@ import com.godaddy.vps4.web.snapshot.SnapshotResource;
 import com.godaddy.vps4.web.sysadmin.SysAdminResource;
 import com.godaddy.vps4.web.util.TroubleshootVmHelper;
 import com.godaddy.vps4.web.validator.ValidatorResource;
-import com.godaddy.vps4.web.vm.BackupStorageResource;
+import com.godaddy.vps4.web.backupstorage.BackupStorageResource;
 import com.godaddy.vps4.web.vm.ImageResource;
 import com.godaddy.vps4.web.vm.InventoryResource;
 import com.godaddy.vps4.web.vm.OrphanResource;

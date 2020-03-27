@@ -12,6 +12,9 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
 
+import com.godaddy.hfs.backupstorage.BackupStorage;
+import com.godaddy.hfs.backupstorage.BackupStorageCreds;
+
 import io.swagger.annotations.Api;
 
 @Path("/api/v1/vms")
@@ -113,4 +116,12 @@ public interface VmService {
     @GET
     @Path("/{vmId}/backupSpace")
     BackupStorage getBackupStorage(@PathParam("vmId") long vmId);
+
+    @POST
+    @Path("/{vmId}/backupSpace/credentials")
+    VmAction resetBackupStorageCreds(@PathParam("vmId") long vmId);
+
+    @GET
+    @Path("/{vmId}/backupSpace/credentials")
+    BackupStorageCreds getBackupStorageCreds(@PathParam("vmId") long vmId);
 }

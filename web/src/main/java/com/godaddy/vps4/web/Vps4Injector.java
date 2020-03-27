@@ -17,6 +17,7 @@ import com.godaddy.hfs.web.GuiceFilterModule;
 import com.godaddy.hfs.web.HttpModule;
 import com.godaddy.hfs.web.ServerModule;
 import com.godaddy.hfs.zookeeper.ZooKeeperModule;
+import com.godaddy.vps4.backupstorage.BackupStorageModule;
 import com.godaddy.vps4.cache.CacheModule;
 import com.godaddy.vps4.cache.HazelcastCacheModule;
 import com.godaddy.vps4.console.ConsoleModule;
@@ -120,6 +121,7 @@ public class Vps4Injector {
         modules.add(new PlanModule());
         modules.add(new ServerUsageStatsModule());
         modules.add(new PanoptaModule());
+        modules.add(new BackupStorageModule());
         modules.add(binder -> {
             binder.bind(ObjectMapper.class).toProvider(ObjectMapperProvider.class);
         });

@@ -9,6 +9,8 @@ import static org.mockito.Mockito.verify;
 import org.junit.Before;
 import org.junit.Test;
 
+import com.godaddy.vps4.orchestration.backupstorage.Vps4DestroyBackupStorage;
+
 public class Vps4DestroyDedicatedTest extends Vps4DestroyVmTest {
 
     @Override

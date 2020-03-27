@@ -47,7 +47,8 @@ public enum ActionType {
     MERGE_SHOPPER(38),
     CREATE_BACKUP_STORAGE(39),
     DESTROY_BACKUP_STORAGE(40),
-    ADD_MONITORING(41);
+    ADD_MONITORING(41),
+    RESET_BACKUP_STORAGE_CREDS(42);
 
     private final int typeId;
 

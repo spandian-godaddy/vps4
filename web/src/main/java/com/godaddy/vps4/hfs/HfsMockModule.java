@@ -20,7 +20,8 @@ import com.godaddy.hfs.mailrelay.MailRelayHistory;
 import com.godaddy.hfs.mailrelay.MailRelayService;
 import com.godaddy.hfs.mailrelay.MailRelayUpdate;
 import com.godaddy.hfs.vm.AgentDetails;
-import com.godaddy.hfs.vm.BackupStorage;
+import com.godaddy.hfs.backupstorage.BackupStorage;
+import com.godaddy.hfs.backupstorage.BackupStorageCreds;
 import com.godaddy.hfs.vm.Console;
 import com.godaddy.hfs.vm.ConsoleRequest;
 import com.godaddy.hfs.vm.CreateVMRequest;
@@ -338,6 +339,21 @@ public class HfsMockModule extends AbstractModule {
 
             @Override
             public BackupStorage getBackupStorage(long vmId) {
+                // NOTE: do nothing, Implement when needed
+                throw new UnsupportedOperationException("Not implemented, yet");
+            }
+
+            @Override
+            public VmAction resetBackupStorageCreds(long vmId) {
+                VmAction resetVmBackupStorageCredsAction = new VmAction();
+                resetVmBackupStorageCredsAction.vmActionId = new Random().nextInt(10000);
+                resetVmBackupStorageCredsAction.vmId = vmId;
+                resetVmBackupStorageCredsAction.state = VmAction.Status.COMPLETE;
+                return resetVmBackupStorageCredsAction;
+            }
+
+            @Override
+            public BackupStorageCreds getBackupStorageCreds(long vmId) {
                 // NOTE: do nothing, Implement when needed
                 throw new UnsupportedOperationException("Not implemented, yet");
             }
