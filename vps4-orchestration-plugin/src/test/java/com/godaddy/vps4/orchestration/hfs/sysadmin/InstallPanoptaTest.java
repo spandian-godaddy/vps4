@@ -33,6 +33,8 @@ public class InstallPanoptaTest {
     private String fakeCustomerKey = "totally-fake-customer-key";
     private String fakeTemplates = "totally-fake-templates";
     private String fakeServerKey = "totally-fake-server-key";
+    private String fakeFqdn = "totally-fake-fqdn";
+    private boolean fakeDisableServerMatch = true;
 
     @Captor
     private ArgumentCaptor<Function<CommandContext, SysAdminAction>> panoptaInstallArgumentCaptor;
@@ -50,7 +52,8 @@ public class InstallPanoptaTest {
     private void setupMockContext() {
         when(context.execute(eq("InstallPanopta-" + fakeHfsVmId), any(Function.class), eq(SysAdminAction.class)))
                 .thenReturn(dummyHfsAction);
-        when(sysAdminService.installPanopta(fakeHfsVmId, fakeCustomerKey, fakeTemplates, null, fakeServerKey))
+        when(sysAdminService.installPanopta(fakeHfsVmId, fakeCustomerKey, fakeTemplates, null, fakeServerKey, fakeFqdn,
+                fakeDisableServerMatch))
                 .thenReturn(dummyHfsAction);
     }
 
@@ -60,6 +63,8 @@ public class InstallPanoptaTest {
         request.customerKey = fakeCustomerKey;
         request.templates = fakeTemplates;
         request.serverKey = fakeServerKey;
+        request.fqdn = fakeFqdn;
+        request.disableServerMatch = true;
     }
 
     @Test
@@ -67,10 +72,12 @@ public class InstallPanoptaTest {
         command.execute(context, request);
 
         verify(context, times(1))
-                .execute(eq("InstallPanopta-" + fakeHfsVmId), panoptaInstallArgumentCaptor.capture(), eq(SysAdminAction.class));
+                .execute(eq("InstallPanopta-" + fakeHfsVmId), panoptaInstallArgumentCaptor.capture(),
+                        eq(SysAdminAction.class));
         Function<CommandContext, SysAdminAction> lambdaValue = panoptaInstallArgumentCaptor.getValue();
-        SysAdminAction sysAdminAction  = lambdaValue.apply(context);
-        verify(sysAdminService, times(1)).installPanopta(fakeHfsVmId, fakeCustomerKey, fakeTemplates, null, fakeServerKey);
+        SysAdminAction sysAdminAction = lambdaValue.apply(context);
+        verify(sysAdminService, times(1)).installPanopta(fakeHfsVmId, fakeCustomerKey, fakeTemplates, null,
+                fakeServerKey, fakeFqdn, fakeDisableServerMatch);
         assertEquals(dummyHfsAction, sysAdminAction);
     }
 }

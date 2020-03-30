@@ -299,6 +299,7 @@ public class Vps4RebuildVm extends ActionCommand<Vps4RebuildVm.Request, Void> {
             setupPanoptaRequest.orionGuid = request.rebuildVmInfo.orionGuid;
             setupPanoptaRequest.vmId = request.rebuildVmInfo.vmId;
             setupPanoptaRequest.shopperId = request.rebuildVmInfo.shopperId;
+            setupPanoptaRequest.fqdn = vps4NetworkService.getVmPrimaryAddress(vps4VmId).ipAddress;
             context.execute(SetupPanopta.class, setupPanoptaRequest);
         }
     }

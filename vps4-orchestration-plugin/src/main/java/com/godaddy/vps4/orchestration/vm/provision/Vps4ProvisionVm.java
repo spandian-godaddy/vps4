@@ -311,19 +311,20 @@ public class Vps4ProvisionVm extends ActionCommand<ProvisionRequest, Vps4Provisi
         // TODO: remove soon after launch
         // gate panopta installation using a feature flag
         if (request.vmInfo.isPanoptaEnabled) {
-            installPanopta(hfsVmId);
+            installPanopta(ipAddress, hfsVmId);
         } else if(request.vmInfo.hasMonitoring) {
             configureNodeping(ipAddress);
         }
     }
 
-    private void installPanopta(long hfsVmId) {
+    private void installPanopta(IpAddress ipAddress, long hfsVmId) {
         setStep(ConfigureMonitoring);
         SetupPanopta.Request setupPanoptaRequest = new SetupPanopta.Request();
         setupPanoptaRequest.hfsVmId = hfsVmId;
         setupPanoptaRequest.orionGuid = request.orionGuid;
         setupPanoptaRequest.vmId = request.vmInfo.vmId;
         setupPanoptaRequest.shopperId = request.shopperId;
+        setupPanoptaRequest.fqdn = ipAddress.address;
         context.execute(SetupPanopta.class, setupPanoptaRequest);
     }
 

@@ -63,12 +63,14 @@ public class SetupPanopta implements Command<SetupPanopta.Request, Void> {
     private void installPanoptaOnRebuild(PanoptaServerDetails panoptaServerDetails,
                                          PanoptaCustomerDetails panoptaCustomerDetails, Request request,
                                          CommandContext context) {
+        request.disableServerMatch = false;
         installPanoptaOnVm(panoptaCustomerDetails.getCustomerKey(), panoptaServerDetails.getServerKey(), request,
                            context);
     }
 
     private void installPanoptaOnProvision(PanoptaCustomerDetails panoptaCustomerDetails, Request request,
                                            CommandContext context) {
+        request.disableServerMatch = true;
         installPanoptaOnVm(panoptaCustomerDetails.getCustomerKey(), null, request, context);
         updateVps4DbWithPanoptaServerInfo(context, request);
     }
@@ -130,12 +132,14 @@ public class SetupPanopta implements Command<SetupPanopta.Request, Void> {
                                     CommandContext context) {
 
         // make HFS calls to install panopta on the vm
-        InstallPanopta.Request panoptaRequest = new InstallPanopta.Request();
-        panoptaRequest.hfsVmId = request.hfsVmId;
-        panoptaRequest.customerKey = customerKey;
-        panoptaRequest.serverKey = serverKey;
-        panoptaRequest.templates = setPanoptaTemplates(request);
-        context.execute(InstallPanopta.class, panoptaRequest);
+        InstallPanopta.Request installPanoptaRequest = new InstallPanopta.Request();
+        installPanoptaRequest.hfsVmId = request.hfsVmId;
+        installPanoptaRequest.customerKey = customerKey;
+        installPanoptaRequest.serverKey = serverKey;
+        installPanoptaRequest.templates = setPanoptaTemplates(request);
+        installPanoptaRequest.fqdn = request.fqdn;
+        installPanoptaRequest.disableServerMatch = request.disableServerMatch;
+        context.execute(InstallPanopta.class, installPanoptaRequest);
     }
 
     private String setPanoptaTemplates(SetupPanopta.Request request) {
@@ -153,5 +157,7 @@ public class SetupPanopta implements Command<SetupPanopta.Request, Void> {
         public UUID orionGuid;
         public long hfsVmId;
         public String shopperId;
+        public String fqdn;
+        public boolean disableServerMatch;
     }
 }

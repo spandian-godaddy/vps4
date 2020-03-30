@@ -642,7 +642,7 @@ public class HfsMockModule extends AbstractModule {
 
             @Override
             public SysAdminAction installPanopta(long vmId, String customerKey, String templates, String serverName,
-                    String serverKey) {
+                    String serverKey, String fqdn, boolean disableServerMatch) {
                 return null;
             }
 
@@ -1078,6 +1078,7 @@ public class HfsMockModule extends AbstractModule {
             }
 
             @Override
+            @Deprecated
             public IpAddressList getAddressesForStatus(IpAddress.Status status, int offset, int limit) {
                 // NOTE: do nothing, Implement when needed
                 throw new UnsupportedOperationException("Not implemented, yet");

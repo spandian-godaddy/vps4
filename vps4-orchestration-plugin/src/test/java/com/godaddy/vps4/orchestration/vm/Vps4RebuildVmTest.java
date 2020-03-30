@@ -76,6 +76,7 @@ public class Vps4RebuildVmTest {
     long newHfsVmId = 456L;
     long actionId = 12L;
     long ipAddressId = 34L;
+    String fqdn = "10.0.0.1";
     VirtualMachine vm;
     VmAction action;
 
@@ -132,7 +133,9 @@ public class Vps4RebuildVmTest {
 
         IpAddress publicIp = new IpAddress();
         publicIp.ipAddressId = ipAddressId;
+        publicIp.ipAddress = fqdn;
         when(vps4NetworkService.getVmIpAddresses(vps4VmId)).thenReturn(Arrays.asList(publicIp));
+        when(vps4NetworkService.getVmPrimaryAddress(vps4VmId)).thenReturn(publicIp);
 
         vm = new VirtualMachine();
         vm.hfsVmId = originalHfsVmId;
@@ -339,6 +342,7 @@ public class Vps4RebuildVmTest {
         assertEquals(orionGuid, request.orionGuid);
         assertEquals(vps4VmId, request.vmId);
         assertEquals(shopperId, request.shopperId);
+        assertEquals(fqdn, request.fqdn);
     }
 
     @Test
