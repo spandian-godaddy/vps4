@@ -38,6 +38,7 @@ function Install-Panopta {
     if ([System.IO.File]::Exists($manifestFile)) {
         $ManifestProps = ConvertFrom-StringData (Get-Content $manifestFile -raw)
         $customerKey = $ManifestProps["customer_key"]
+        Write-Output "Customer key: $customerKey"
 
         $installPanoptaScript = "C:\panopta_temp\panopta_agent_windows.ps1"
         $args = "-customer_key $customerKey"
@@ -50,11 +51,13 @@ function Install-Panopta {
 }
 
 function Read-ServerKey {
+    param ([string]$serverKeyLabel = "")
+
     $agentConfig = "C:\Program Files (x86)\PanoptaAgent\Agent.config"
     if ([System.IO.File]::Exists($agentConfig)) {
         $XPath = "//add[@key='ServerKey']"
         $serverKey = Select-Xml -Path $agentConfig -XPath $XPath | Select-Object -ExpandProperty Node
-        Write-Output "New server_key: $($serverKey.value)"
+        Write-Output "$serverKeyLabel server_key: $($serverKey.value)"
     }
     else {
         Write-Output "$agentConfig does not exist"
@@ -64,9 +67,10 @@ function Read-ServerKey {
 $manifestFile = "C:\PanoptaAgent.manifest"
 Write-Output "Starting..."
 
+Read-ServerKey "Old"
 Uninstall-Panopta
 Edit-ManifestFile
 Install-Panopta
-Read-ServerKey
+Read-ServerKey "New"
 
 Write-Output "Script Finished"
