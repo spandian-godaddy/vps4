@@ -22,6 +22,8 @@ public interface PanoptaService {
 
     List<PanoptaServer> getActiveServers(String shopperId);
 
+    List<PanoptaServer> getSuspendedServers(String shopperId);
+
     void pauseServerMonitoring(UUID vmId);
 
     void resumeServerMonitoring(UUID vmId);

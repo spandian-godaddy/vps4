@@ -44,6 +44,8 @@ public class Vps4RemoveMonitoringTest {
     Long pingCheckId = 23L;
     UUID vmId = UUID.randomUUID();
     String shopperId = "fake-shopper-id";
+    List<PanoptaServerDetails> panoptaServerDetailsList;
+    List<PanoptaServer> panoptaServerList;
 
     Vps4RemoveMonitoring command =
             new Vps4RemoveMonitoring(vps4NetworkService, panoptaDataService, panoptaService, creditService,
@@ -52,6 +54,8 @@ public class Vps4RemoveMonitoringTest {
     @Before
     public void setUp() {
         primaryIp.pingCheckId = pingCheckId;
+        panoptaServerDetailsList = Arrays.asList(mock(PanoptaServerDetails.class), mock(PanoptaServerDetails.class));
+        panoptaServerList = Collections.singletonList(mock(PanoptaServer.class));
         when(vps4NetworkService.getVmPrimaryAddress(vmId)).thenReturn(primaryIp);
         when(panoptaDataService.getPanoptaDetails(vmId)).thenReturn(panoptaDetails);
         when(panoptaDataService.checkAndSetPanoptaCustomerDestroyed(shopperId)).thenReturn(true);
@@ -98,9 +102,7 @@ public class Vps4RemoveMonitoringTest {
     }
 
     @Test
-    public void skipPanotaCustomerDeleteIfActiveServers() {
-        List<PanoptaServerDetails> panoptaServerDetailsList =
-                Arrays.asList(mock(PanoptaServerDetails.class), mock(PanoptaServerDetails.class));
+    public void skipPanoptaCustomerDeleteIfActiveServers() {
         when(panoptaDataService.getActivePanoptaServers(shopperId)).thenReturn(panoptaServerDetailsList);
         command.execute(context, vmId);
         verify(context).execute(RemovePanoptaMonitoring.class, vmId);
@@ -109,12 +111,21 @@ public class Vps4RemoveMonitoringTest {
     }
 
     @Test
-    public void skipPanotaCustomerDeleteIfCustomerHasActiveServersInPanopta() {
-        List<PanoptaServerDetails> panoptaServerDetailsList =
-                Arrays.asList(mock(PanoptaServerDetails.class), mock(PanoptaServerDetails.class));
-        List<PanoptaServer> panoptaServerList = Collections.singletonList(mock(PanoptaServer.class));
+    public void skipPanoptaCustomerDeleteIfCustomerHasActiveServersInPanopta() {
         when(panoptaDataService.getActivePanoptaServers(shopperId)).thenReturn(null);
         when(panoptaService.getActiveServers(eq(shopperId))).thenReturn(panoptaServerList);
+        when(panoptaService.getSuspendedServers(eq(shopperId))).thenReturn(Collections.emptyList());
+        command.execute(context, vmId);
+        verify(context).execute(RemovePanoptaMonitoring.class, vmId);
+        verify(panoptaDataService).setPanoptaServerDestroyed(vmId);
+        verify(context, never()).execute(DeletePanoptaCustomer.class, shopperId);
+    }
+
+    @Test
+    public void skipPanoptaCustomerDeleteIfCustomerHasSuspendedServersInPanopta() {
+        when(panoptaDataService.getActivePanoptaServers(shopperId)).thenReturn(null);
+        when(panoptaService.getActiveServers(eq(shopperId))).thenReturn(Collections.emptyList());
+        when(panoptaService.getSuspendedServers(eq(shopperId))).thenReturn(panoptaServerList);
         command.execute(context, vmId);
         verify(context).execute(RemovePanoptaMonitoring.class, vmId);
         verify(panoptaDataService).setPanoptaServerDestroyed(vmId);

@@ -462,10 +462,10 @@ public class DefaultPanoptaServiceTest {
     @Test
     public void testGetActiveServers() {
         when(config.get("panopta.api.partner.customer.key.prefix")).thenReturn("gdtest_");
-        when(panoptaApiServerService.getActivePanoptaServers(eq(partnerCustomerKey), eq("active")))
+        when(panoptaApiServerService.getPanoptaServersByStatus(eq(partnerCustomerKey), eq("active")))
                 .thenReturn(panoptaServers);
         List<PanoptaServer> panoptaServersList = defaultPanoptaService.getActiveServers(shopperId);
-        verify(panoptaApiServerService).getActivePanoptaServers(eq(partnerCustomerKey), eq("active"));
+        verify(panoptaApiServerService).getPanoptaServersByStatus(eq(partnerCustomerKey), eq("active"));
         assertNotNull(panoptaServersList);
         assertTrue(panoptaServersList.size() > 0);
     }
@@ -476,11 +476,22 @@ public class DefaultPanoptaServiceTest {
         panoptaServers.servers = new ArrayList<>();
 
         when(config.get("panopta.api.partner.customer.key.prefix")).thenReturn("gdtest_");
-        when(panoptaApiServerService.getActivePanoptaServers(eq(partnerCustomerKey), eq("active")))
+        when(panoptaApiServerService.getPanoptaServersByStatus(eq(partnerCustomerKey), eq("active")))
                 .thenReturn(panoptaServers);
         List<PanoptaServer> panoptaServersList = defaultPanoptaService.getActiveServers(shopperId);
-        verify(panoptaApiServerService).getActivePanoptaServers(eq(partnerCustomerKey), eq("active"));
+        verify(panoptaApiServerService).getPanoptaServersByStatus(eq(partnerCustomerKey), eq("active"));
         assertNotNull(panoptaServersList);
         assertTrue(panoptaServersList.isEmpty());
+    }
+
+    @Test
+    public void testGetSuspendedServers() {
+        when(config.get("panopta.api.partner.customer.key.prefix")).thenReturn("gdtest_");
+        when(panoptaApiServerService.getPanoptaServersByStatus(eq(partnerCustomerKey), eq("suspended")))
+                .thenReturn(panoptaServers);
+        List<PanoptaServer> panoptaServersList = defaultPanoptaService.getSuspendedServers(shopperId);
+        verify(panoptaApiServerService).getPanoptaServersByStatus(eq(partnerCustomerKey), eq("suspended"));
+        assertNotNull(panoptaServersList);
+        assertTrue(panoptaServersList.size() > 0);
     }
 }

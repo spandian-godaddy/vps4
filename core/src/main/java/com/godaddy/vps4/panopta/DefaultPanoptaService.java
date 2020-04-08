@@ -241,10 +241,19 @@ public class DefaultPanoptaService implements PanoptaService {
 
     @Override
     public List<PanoptaServer> getActiveServers(String shopperId) {
+        return getPanoptaServers(shopperId, "active");
+    }
+
+    @Override
+    public List<PanoptaServer> getSuspendedServers(String shopperId) {
+        return getPanoptaServers(shopperId, "suspended");
+    }
+
+    private List<PanoptaServer> getPanoptaServers(String shopperId, String status) {
         String partnerCustomerKey = getPartnerCustomerKey(shopperId);
         List<PanoptaServer> panoptaServerList = new ArrayList<>();
 
-        PanoptaServers panoptaServers = panoptaApiServerService.getActivePanoptaServers(partnerCustomerKey, "active");
+        PanoptaServers panoptaServers = panoptaApiServerService.getPanoptaServersByStatus(partnerCustomerKey, status);
         panoptaServers.getServers().forEach(server -> {
             logger.debug("Found server in panopta: {} ", server);
             panoptaServerList.add(mapServer(partnerCustomerKey, server));

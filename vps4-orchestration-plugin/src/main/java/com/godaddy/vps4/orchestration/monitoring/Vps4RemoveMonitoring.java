@@ -68,8 +68,11 @@ public class Vps4RemoveMonitoring implements Command<UUID, Void> {
             panoptaDataService.setPanoptaServerDestroyed(vmId);
             String shopperId = getShopperId(vmId);
             if (panoptaService.getActiveServers(shopperId).isEmpty()
+                    && panoptaService.getSuspendedServers(shopperId).isEmpty()
                     && panoptaDataService.getActivePanoptaServers(shopperId).isEmpty()) {
+                logger.info("Setting panopta customer to destroyed in panopta for shopper id {}.", shopperId);
                 context.execute(DeletePanoptaCustomer.class, shopperId);
+                logger.info("Setting panopta customer to destroyed in vps4 db for shopper id {}.", shopperId);
                 panoptaDataService.checkAndSetPanoptaCustomerDestroyed(shopperId);
             }
         }
