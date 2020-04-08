@@ -300,6 +300,8 @@ Cleanup failed deployments
 Show all available and in use resources. (spares + in use)
     
     $>mcpctl resources
+    
+MCP Repo location: https://github.secureserver.net/hfs/mcp
 
 Application Monitoring
 ==================
