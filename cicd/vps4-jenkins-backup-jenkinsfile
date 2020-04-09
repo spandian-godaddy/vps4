@@ -1,0 +1,35 @@
+pipeline {
+   agent { label "master" }
+   options {
+        disableConcurrentBuilds()
+        disableResume()
+        timestamps()
+        timeout(time: 1, unit: 'HOURS')
+   }
+
+   stages {
+      stage('Backup Jenkins') {
+         steps {
+            echo 'Creating Jenkins backup file'
+            sh 'pwd'
+            // Using a jenkins job to backup jenkins causes some files to get modified during the tar.  Swallow the warning.
+            sh 'tar -czf /tmp/vps4_jenkins_auto_backup.tgz /var/lib/jenkins/ || ( export ret=$?; [[ $ret -eq 1 ]] || exit "$ret" )'
+         }
+      }
+      stage('Store in Ceph') {
+          steps {
+              echo 'Storing Jenkins backup to ceph'
+              sh '/usr/bin/python3 -m venv hfs-utils-env'
+              // hfsutils pip install requires $JENKINS_HOME/.pip/pip.conf with hfs artifactory index url
+              sh '''source hfs-utils-env/bin/activate
+                pip install hfsutils
+                pip install requests
+                list_bucket_contents --env vps4-p3-test --bucket_name vps4-jenkins-backup
+                set_contents_from_file --env vps4-p3-test --bucket_name vps4-jenkins-backup --source_path /tmp/vps4_jenkins_auto_backup.tgz
+                list_bucket_contents --env vps4-p3-test --bucket_name vps4-jenkins-backup
+              '''
+              slackSend(color: 'good', message: "Backup of Jenkins stored successfully")
+          }
+      }
+   }
+}
