@@ -33,4 +33,6 @@ public interface ActionService {
     List<Action> getIncompleteActions(UUID resourceId);
 
     ResultSubset<Action> getActionList(ActionListFilters filters);
+
+    List<Action> getUnfinishedDestroyActions(long thresholdInMinutes);
 }

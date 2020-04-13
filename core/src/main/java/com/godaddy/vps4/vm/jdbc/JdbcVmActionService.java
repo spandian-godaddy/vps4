@@ -135,4 +135,22 @@ public class JdbcVmActionService implements ActionService {
                 null, commandId, actionId);
     }
 
+    @Override
+    public List<Action> getUnfinishedDestroyActions(long thresholdInMinutes) {
+        // Find most recent destroy_vm action that was not successfully completed for each vm
+        return Sql.with(dataSource).exec("SELECT a.*, status, type"
+                + " FROM ("
+                + "     SELECT MAX(id) AS id, vm_id FROM vm_action a"
+                + "     JOIN action_type t ON t.type_id=a.action_type_id"
+                + "     WHERE type = 'DESTROY_VM'"
+                + "     GROUP BY vm_id"
+                + " ) AS last_actions"
+                + " JOIN vm_action a ON a.id=last_actions.id"
+                + " JOIN action_status s ON s.status_id=a.status_id"
+                + " JOIN action_type t ON t.type_id=a.action_type_id"
+                + " WHERE s.status != 'COMPLETE'"
+                + " AND now_utc() - a.created >= INTERVAL '" + thresholdInMinutes + " minutes';",
+                Sql.listOf(this::mapAction));
+    }
+
 }

@@ -124,6 +124,8 @@ public class VmActionsMonitorResource {
             actionData.commandId = action.commandId;
             actionData.actionType = action.type.toString();
             actionData.hfsVmId = virtualMachineService.getHfsVmIdByVmId(action.resourceId);
+            actionData.created = action.created;
+            actionData.initiatedBy = action.initiatedBy;
             actionDataList.add(actionData);
         }
 
@@ -227,5 +229,13 @@ public class VmActionsMonitorResource {
     @Path("/checkpoints/{actionType}")
     public void deleteMonitoringCheckpoint(@PathParam("actionType") ActionType actionType) {
         monitorService.deleteMonitoringCheckpoint(actionType);
+    }
+
+    @GET
+    @Path("/incomplete/destroyvm")
+    @ApiOperation(value = "Find all VM id's that are failing destroy and potentially orphaning server and ip resources",
+            notes = "Find all VM id's that are failing destroy and potentially orphaning server and ip resources")
+    public List<VmActionData> getAllFailedDestroys(@QueryParam("thresholdInMinutes") @DefaultValue("60") long thresholdInMinutes) {
+        return mapActionsToVmActionData(vmActionService.getUnfinishedDestroyActions(thresholdInMinutes));
     }
 }

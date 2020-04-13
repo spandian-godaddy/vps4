@@ -143,4 +143,9 @@ public class JdbcSnapshotActionService implements ActionService {
                 null, commandId, actionId);
     }
 
+    @Override
+    public List<Action> getUnfinishedDestroyActions(long thresholdInMinutes) {
+        throw new UnsupportedOperationException("Not yet implemented for snapshots");
+    }
+
 }
