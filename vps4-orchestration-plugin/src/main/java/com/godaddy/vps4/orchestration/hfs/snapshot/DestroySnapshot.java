@@ -31,7 +31,7 @@ public class DestroySnapshot implements Command<Long, Void> {
     }
 
     private boolean doesHfsSnapShotExist(Long snapshotId, CommandContext context) {
-        if (snapshotId == null) {
+        if (snapshotId == 0) {
             return false;
         }
 

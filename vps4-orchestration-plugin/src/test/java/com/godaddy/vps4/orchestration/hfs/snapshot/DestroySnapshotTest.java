@@ -57,8 +57,8 @@ public class DestroySnapshotTest {
     }
 
     @Test
-    public void testDoNotDestroySnapshotIfHfsIdNull() throws Exception {
-        Long snapshotId = null;
+    public void testDoNotDestroySnapshotIfHfsIdZero() throws Exception {
+        Long snapshotId = 0L;
         command.execute(context, snapshotId);
         verify(hfsSnapshotService, never()).getSnapshot(anyLong());
         verify(hfsSnapshotService, never()).destroySnapshot(anyLong());
