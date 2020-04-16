@@ -31,6 +31,10 @@ public class DestroySnapshot implements Command<Long, Void> {
     }
 
     private boolean doesHfsSnapShotExist(Long snapshotId, CommandContext context) {
+        if (snapshotId == null) {
+            return false;
+        }
+
         Snapshot hfsSnapshot = context.execute("GetSnapshotHfs",
                                                ctx -> hfsSnapshotService.getSnapshot(snapshotId),
                                                Snapshot.class);

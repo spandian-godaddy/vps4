@@ -1,5 +1,6 @@
 package com.godaddy.vps4.orchestration.hfs.snapshot;
 
+import static org.mockito.Matchers.anyLong;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.spy;
@@ -10,7 +11,6 @@ import static org.mockito.Mockito.when;
 import org.junit.Test;
 
 import com.godaddy.vps4.orchestration.TestCommandContext;
-import com.godaddy.vps4.orchestration.hfs.snapshot.DestroySnapshot;
 import com.godaddy.vps4.orchestration.snapshot.WaitForSnapshotAction;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
@@ -54,6 +54,14 @@ public class DestroySnapshotTest {
         when(hfsSnapshotService.getSnapshot(snapshotId)).thenReturn(hfsSnapshot);
         command.execute(context, snapshotId);
         verify(hfsSnapshotService, never()).destroySnapshot(snapshotId);
+    }
+
+    @Test
+    public void testDoNotDestroySnapshotIfHfsIdNull() throws Exception {
+        Long snapshotId = null;
+        command.execute(context, snapshotId);
+        verify(hfsSnapshotService, never()).getSnapshot(anyLong());
+        verify(hfsSnapshotService, never()).destroySnapshot(anyLong());
     }
 
     @Test
