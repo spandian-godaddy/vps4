@@ -1,33 +1,33 @@
 package com.godaddy.vps4.orchestration.scheduler;
 
-import com.godaddy.hfs.config.Config;
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
+import java.util.UUID;
+
+import javax.inject.Inject;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.godaddy.vps4.scheduledJob.ScheduledJob;
 import com.godaddy.vps4.scheduler.api.core.JobType;
 import com.godaddy.vps4.scheduler.api.core.SchedulerJobDetail;
 import com.godaddy.vps4.scheduler.api.core.utils.Utils;
 import com.godaddy.vps4.scheduler.api.plugin.Vps4BackupJobRequest;
 import com.godaddy.vps4.scheduler.api.web.SchedulerWebService;
+
 import gdg.hfs.orchestration.Command;
 import gdg.hfs.orchestration.CommandContext;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import javax.inject.Inject;
-import java.time.Instant;
-import java.time.temporal.ChronoUnit;
-import java.util.UUID;
 
 public class ScheduleAutomaticBackupRetry implements Command<ScheduleAutomaticBackupRetry.Request, UUID> {
 
     private static final Logger logger = LoggerFactory.getLogger(ScheduleAutomaticBackupRetry.class);
 
     private final SchedulerWebService schedulerService;
-    private final Config config;
 
     @Inject
-    public ScheduleAutomaticBackupRetry(SchedulerWebService schedulerService, Config config) {
+    public ScheduleAutomaticBackupRetry(SchedulerWebService schedulerService) {
         this.schedulerService = schedulerService;
-        this.config = config;
     }
 
     @Override
@@ -55,13 +55,13 @@ public class ScheduleAutomaticBackupRetry implements Command<ScheduleAutomaticBa
         backupRequest.jobType = JobType.ONE_TIME;
         backupRequest.shopperId = request.shopperId;
         backupRequest.scheduledJobType = ScheduledJob.ScheduledJobType.BACKUPS_RETRY;
-        int hoursToWait = Integer.valueOf(config.get("vps4.autobackup.rescheduleFailedBackupWaitHours", "12"));
-        backupRequest.when = Instant.now().plus(hoursToWait, ChronoUnit.HOURS);
+        backupRequest.when = Instant.now().plus(request.minutesToWait, ChronoUnit.MINUTES);
         return backupRequest;
     }
 
     public static class Request {
         public UUID vmId;
         public String shopperId;
+        public int minutesToWait;
     }
 }

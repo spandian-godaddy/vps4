@@ -4,6 +4,7 @@ import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -299,7 +300,7 @@ public class Vps4SnapshotVmTest {
 
     @Test
     public void dontRescheduleWhenAutoSnapshotFailsAndAboveRetryLimit() {
-        int retryLimit = Integer.valueOf(config.get("vps4.autobackup.failedBackupRetryLimit"));
+        int retryLimit = Integer.parseInt(config.get("vps4.autobackup.failedBackupRetryLimit"));
         doReturn(retryLimit + 1).when(spySnapshotService).failedBackupsSinceSuccess(any(UUID.class), eq(SnapshotType.AUTOMATIC));
         verifyBackupRescheduled(0);
     }
@@ -355,5 +356,44 @@ public class Vps4SnapshotVmTest {
         Vps4RecordScheduledJobForVm.Request req = recordJobArgumentCaptor.getValue();
         Assert.assertEquals(retryJobId, req.jobId);
         Assert.assertEquals(ScheduledJob.ScheduledJobType.BACKUPS_RETRY, req.jobType);
+    }
+
+    @Test
+    public void testTakesAutomaticSnapshotWhenLoadIsLow() {
+        int limit = Integer.parseInt(config.get("vps4.autobackup.concurrentLimit"));
+        doReturn(limit - 1).when(spySnapshotService).totalSnapshotsInProgress();
+        command.execute(context, automaticRequest);
+        verify(spySnapshotService, never()).markSnapshotErrorRescheduled(any());
+        verify(context, never())
+                .execute(eq("RecordScheduledJobId"), eq(Vps4RecordScheduledJobForVm.class), any());
+        verify(context, never()).execute(eq(ScheduleAutomaticBackupRetry.class), any(ScheduleAutomaticBackupRetry.Request.class));
+        verify(context, times(1)).execute(eq("Vps4SnapshotVm"), any(Function.class), any());
+    }
+
+    @Test
+    public void testTakesManualSnapshotWhenLoadIsHigh() {
+        int limit = Integer.parseInt(config.get("vps4.autobackup.concurrentLimit"));
+        doReturn(limit).when(spySnapshotService).totalSnapshotsInProgress();
+        command.execute(context, request);
+        verify(spySnapshotService, never()).markSnapshotErrorRescheduled(any());
+        verify(context, never())
+                .execute(eq("RecordScheduledJobId"), eq(Vps4RecordScheduledJobForVm.class), any());
+        verify(context, never()).execute(eq(ScheduleAutomaticBackupRetry.class), any(ScheduleAutomaticBackupRetry.Request.class));
+        verify(context, times(1)).execute(eq("Vps4SnapshotVm"), any(Function.class), any());
+    }
+
+    @Test
+    public void testReschedulesAutomaticSnapshotWhenLoadIsHigh() {
+        int limit = Integer.parseInt(config.get("vps4.autobackup.concurrentLimit"));
+        doReturn(limit).when(spySnapshotService).totalSnapshotsInProgress();
+        try {
+            command.execute(context, automaticRequest);
+            Assert.fail("RuntimeException should have been thrown");
+        } catch (RuntimeException ignored) {}
+        verify(context, times(1)).execute(eq(ScheduleAutomaticBackupRetry.class), any(ScheduleAutomaticBackupRetry.Request.class));
+        verify(context, times(1))
+                .execute(eq("RecordScheduledJobId"), eq(Vps4RecordScheduledJobForVm.class), any());
+        verify(spySnapshotService, times(1)).markSnapshotLimitRescheduled(vps4AutomaticSnapshotId);
+        verify(context, never()).execute(eq("Vps4SnapshotVm"), any(Function.class), any());
     }
 }

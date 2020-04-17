@@ -5,6 +5,8 @@ import static java.util.Arrays.stream;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 import java.util.List;
 import java.util.UUID;
 
@@ -14,7 +16,9 @@ import com.godaddy.hfs.jdbc.Sql;
 import com.godaddy.vps4.appmonitors.BackupJobAuditData;
 import com.godaddy.vps4.appmonitors.MonitorService;
 import com.godaddy.vps4.appmonitors.MonitoringCheckpoint;
+import com.godaddy.vps4.appmonitors.RescheduledSnapshotData;
 import com.godaddy.vps4.appmonitors.SnapshotActionData;
+import com.godaddy.vps4.backupstorage.jdbc.BackupStorageModel;
 import com.godaddy.vps4.jdbc.Vps4ReportsDataSource;
 import com.godaddy.vps4.util.TimestampUtils;
 import com.godaddy.vps4.vm.ActionStatus;
@@ -36,7 +40,7 @@ public class JdbcMonitorService implements MonitorService {
             "AND sna.status_id IN ( " +
             "  SELECT status_id FROM action_status WHERE status INCLAUSE " +
             ") AND snapshot.status NOT IN ( " +
-            "  SELECT snapshot_status.status_id FROM snapshot_status WHERE snapshot_status.status in ('CANCELLED', 'ERROR_RESCHEDULED', 'DESTROYED') " +
+            "  SELECT snapshot_status.status_id FROM snapshot_status WHERE snapshot_status.status in ('CANCELLED', 'ERROR_RESCHEDULED', 'LIMIT_RESCHEDULED', 'DESTROYED') " +
             ") AND snapshot.snapshot_type_id = ( " +
             "  SELECT snapshot_type.snapshot_type_id FROM snapshot_type where snapshot_type.snapshot_type = 'AUTOMATIC' " +
             ") " +
@@ -92,6 +96,19 @@ public class JdbcMonitorService implements MonitorService {
     }
 
     @Override
+    public List<RescheduledSnapshotData> getLimitRescheduledCount(int hours) {
+        return Sql.with(dataSource).exec(
+                "SELECT Count(DISTINCT s.id) AS snapshot_count, Count(DISTINCT vm.vm_id) AS vm_count "
+                        + "FROM virtual_machine vm "
+                        + "JOIN snapshot s ON vm.vm_id = s.vm_id "
+                        + "JOIN snapshot_status ss ON s.status = ss.status_id "
+                        + "WHERE vm.valid_until = 'infinity' "
+                        + "AND ss.status = 'LIMIT_RESCHEDULED' "
+                        + "AND s.created_at > now() - (? || ' hour')::interval",
+                Sql.listOf(this::mapRescheduledSnapshotData), hours);
+    }
+
+    @Override
     public List<BackupJobAuditData> getVmsFilteredByNullBackupJob() {
         return Sql.with(dataSource)
                 .exec(selectVmsFilteredByNullBackupJob, Sql.listOf(this::mapVmId));
@@ -142,6 +159,13 @@ public class JdbcMonitorService implements MonitorService {
         return checkpoint;
     }
 
+    private RescheduledSnapshotData mapRescheduledSnapshotData(ResultSet rs) throws SQLException {
+        return new RescheduledSnapshotData(
+                rs.getInt("snapshot_count"),
+                rs.getInt("vm_count")
+        );
+    }
+
     private BackupJobAuditData mapVmId(ResultSet rs) throws SQLException {
         try {
             UUID vmId = UUID.fromString(rs.getString("vm_id"));
@@ -153,5 +177,4 @@ public class JdbcMonitorService implements MonitorService {
             throw new IllegalArgumentException("Could not map response. ", iax);
         }
     }
-
 }

@@ -18,6 +18,8 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
 import org.mockito.MockitoAnnotations;
 
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.UUID;
 import java.util.function.Function;
 
@@ -66,6 +68,7 @@ public class ScheduleAutomaticBackupRetryTest {
 
     private void setCommandRequest() {
         request = new ScheduleAutomaticBackupRetry.Request();
+        request.minutesToWait = 5;
     }
 
     @Test
@@ -91,6 +94,8 @@ public class ScheduleAutomaticBackupRetryTest {
         Assert.assertEquals(request.vmId, jobRequestData.vmId);
         Assert.assertEquals(JobType.ONE_TIME, jobRequestData.jobType);
         Assert.assertEquals(null, jobRequestData.repeatIntervalInDays);
+        Assert.assertTrue(jobRequestData.when.isAfter(Instant.now().plus(4, ChronoUnit.MINUTES)));
+        Assert.assertTrue(jobRequestData.when.isBefore(Instant.now().plus(6, ChronoUnit.MINUTES)));
     }
 
     @Test(expected = RuntimeException.class)

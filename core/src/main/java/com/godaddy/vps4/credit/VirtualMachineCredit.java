@@ -221,7 +221,7 @@ public class VirtualMachineCredit {
         private DataCenter getDataCenter() {
             DataCenter dc = null;
             if (productMeta.containsKey(ProductMetaField.DATA_CENTER.toString())) {
-                int dcId = Integer.valueOf(productMeta.get(ProductMetaField.DATA_CENTER.toString()));
+                int dcId = Integer.parseInt(productMeta.get(ProductMetaField.DATA_CENTER.toString()));
                 dc = dataCenterService.getDataCenter(dcId);
             }
             return dc;

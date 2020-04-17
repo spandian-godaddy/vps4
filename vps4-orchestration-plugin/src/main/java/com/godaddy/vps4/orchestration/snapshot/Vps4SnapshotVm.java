@@ -35,6 +35,7 @@ import gdg.hfs.vhfs.snapshot.SnapshotAction;
 )
 public class Vps4SnapshotVm extends ActionCommand<Vps4SnapshotVm.Request, Vps4SnapshotVm.Response> {
     private static final Logger logger = LoggerFactory.getLogger(Vps4SnapshotVm.class);
+    private CommandContext context;
 
     private final gdg.hfs.vhfs.snapshot.SnapshotService hfsSnapshotService;
     private final SnapshotService vps4SnapshotService;
@@ -53,7 +54,15 @@ public class Vps4SnapshotVm extends ActionCommand<Vps4SnapshotVm.Request, Vps4Sn
     }
 
     @Override
-    protected Response executeWithAction(CommandContext context, Vps4SnapshotVm.Request request) throws Exception {
+    protected Response executeWithAction(CommandContext context, Vps4SnapshotVm.Request request) {
+        this.context = context;
+        if (request.snapshotType.equals(SnapshotType.AUTOMATIC)) {
+            int currentLoad = vps4SnapshotService.totalSnapshotsInProgress();
+            int maxAllowed = Integer.parseInt(config.get("vps4.autobackup.concurrentLimit", "30"));
+            if (currentLoad >= maxAllowed) {
+                handleTooManyConcurrentSnapshots(request);
+            }
+        }
         snapshotIdToBeDeprecated = context.execute("MarkOldestSnapshotForDeprecation" + request.orionGuid,
                 ctx -> vps4SnapshotService.markOldestSnapshotForDeprecation(request.orionGuid, request.snapshotType),
                 UUID.class);
@@ -61,8 +70,8 @@ public class Vps4SnapshotVm extends ActionCommand<Vps4SnapshotVm.Request, Vps4Sn
             vps4SnapshotService.cancelErroredSnapshots(request.orionGuid, request.snapshotType);
             return null;
         }, Void.class);
-        SnapshotAction hfsAction = createAndWaitForSnapshotCompletion(context, request);
-        deprecateOldSnapshot(context, request.initiatedBy);
+        SnapshotAction hfsAction = createAndWaitForSnapshotCompletion(request);
+        deprecateOldSnapshot(request.initiatedBy);
         return generateResponse(hfsAction);
     }
 
@@ -72,15 +81,15 @@ public class Vps4SnapshotVm extends ActionCommand<Vps4SnapshotVm.Request, Vps4Sn
         return response;
     }
 
-    private SnapshotAction createAndWaitForSnapshotCompletion(CommandContext context, Request request) {
-        SnapshotAction hfsAction = createSnapshot(context, request);
-        updateHfsSnapshotId(context, request.vps4SnapshotId, hfsAction.snapshotId);
-        hfsAction = WaitForSnapshotCompletion(context, request, hfsAction);
-        updateHfsImageId(context, request.vps4SnapshotId, hfsAction.snapshotId);
+    private SnapshotAction createAndWaitForSnapshotCompletion(Request request) {
+        SnapshotAction hfsAction = createSnapshot(request);
+        updateHfsSnapshotId(request.vps4SnapshotId, hfsAction.snapshotId);
+        hfsAction = waitForSnapshotCompletion(request, hfsAction);
+        updateHfsImageId(request.vps4SnapshotId, hfsAction.snapshotId);
         return hfsAction;
     }
 
-    private void deprecateOldSnapshot(CommandContext context, String initiatedBy) {
+    private void deprecateOldSnapshot(String initiatedBy) {
         if (snapshotIdToBeDeprecated != null) {
             logger.info("Deprecate snapshot with id: {}", snapshotIdToBeDeprecated);
             context.execute("MarkSnapshotAsDeprecated" + snapshotIdToBeDeprecated, ctx -> {
@@ -91,7 +100,7 @@ public class Vps4SnapshotVm extends ActionCommand<Vps4SnapshotVm.Request, Vps4Sn
 
             try {
                 // now destroy the deprecated snapshot
-                destroyOldSnapshot(context, vps4Snapshot.hfsSnapshotId, initiatedBy);
+                destroyOldSnapshot(vps4Snapshot.hfsSnapshotId, initiatedBy);
             } catch (Exception e) {
                 // Squelch any exceptions because we cant really do anything about it?
                 logger.info("Deprecation/Destroy failure for snapshot with id: {}", snapshotIdToBeDeprecated);
@@ -99,7 +108,7 @@ public class Vps4SnapshotVm extends ActionCommand<Vps4SnapshotVm.Request, Vps4Sn
         }
     }
 
-    private void destroyOldSnapshot(CommandContext context, long hfsSnapshotId, String initiatedBy) {
+    private void destroyOldSnapshot(long hfsSnapshotId, String initiatedBy) {
         long delActionId = actionService.createAction(
                 snapshotIdToBeDeprecated,  ActionType.DESTROY_SNAPSHOT, new JSONObject().toJSONString(), initiatedBy);
 
@@ -110,15 +119,14 @@ public class Vps4SnapshotVm extends ActionCommand<Vps4SnapshotVm.Request, Vps4Sn
         context.execute(Vps4DestroySnapshot.class, req);
     }
 
-    private SnapshotAction WaitForSnapshotCompletion(CommandContext context, Request request,
-                                                     SnapshotAction hfsAction) {
+    private SnapshotAction waitForSnapshotCompletion(Request request, SnapshotAction hfsAction) {
         try {
             hfsAction = context.execute(WaitForSnapshotAction.class, hfsAction);
         } catch (Exception e) {
             logger.info("Snapshot creation error (waitForAction) for snapshot with id: {}", request.vps4SnapshotId);
             vps4SnapshotService.markSnapshotErrored(request.vps4SnapshotId);
-            reverseSnapshotDeprecation(context);
-            handleSnapshotCreationError(context, request, e);
+            reverseSnapshotDeprecation();
+            handleSnapshotCreationError(request, e);
         }
 
         context.execute("MarkSnapshotLive" + request.vps4SnapshotId, ctx -> {
@@ -128,34 +136,48 @@ public class Vps4SnapshotVm extends ActionCommand<Vps4SnapshotVm.Request, Vps4Sn
         return hfsAction;
     }
 
-    private boolean shouldRetryAgain(UUID vmId){
+    private boolean shouldRetryAgain(UUID vmId) {
         int numOfFailedSnapshots = vps4SnapshotService.failedBackupsSinceSuccess(vmId, SnapshotType.AUTOMATIC);
-        int retryLimit = Integer.valueOf(config.get("vps4.autobackup.failedBackupRetryLimit"));
+        int retryLimit = Integer.parseInt(config.get("vps4.autobackup.failedBackupRetryLimit"));
         return numOfFailedSnapshots <= retryLimit;
     }
 
-    private void handleSnapshotCreationError(CommandContext context, Request request, Exception e) {
-        Snapshot failedSnapshot = vps4SnapshotService.getSnapshot(request.vps4SnapshotId);
-        if(failedSnapshot.snapshotType.equals(SnapshotType.AUTOMATIC)){
-            if(shouldRetryAgain(failedSnapshot.vmId)) {
-                // If an automatic snapshot fails, schedule another one in a configurable number of hours
-                ScheduleAutomaticBackupRetry.Request req = new ScheduleAutomaticBackupRetry.Request();
-                req.vmId = failedSnapshot.vmId;
-                req.shopperId = request.shopperId;
-
-                UUID retryJobId = context.execute(ScheduleAutomaticBackupRetry.class, req);
-                recordJobId(context, failedSnapshot.vmId, retryJobId);
-                vps4SnapshotService.markSnapshotRescheduled(failedSnapshot.id);
-                logger.info("Rescheduled automatic snapshot for vm {} with retry job id: {}", failedSnapshot.vmId, retryJobId);
-            }else{
-                logger.warn("Max retries exceeded for automatic snapshot on vm: {}  Will not retry again.", failedSnapshot.vmId);
+    private void handleSnapshotCreationError(Request request, Exception e) {
+        if (request.snapshotType.equals(SnapshotType.AUTOMATIC)) {
+            if (shouldRetryAgain(request.vmId)) {
+                int minutesToWait = Integer.parseInt(config.get("vps4.autobackup.rescheduleFailedBackupWaitMinutes", "720"));
+                rescheduleSnapshot(request, minutesToWait);
+                vps4SnapshotService.markSnapshotErrorRescheduled(request.vps4SnapshotId);
+            } else {
+                logger.warn("Max retries exceeded for automatic snapshot on vm: {}  Will not retry again.",
+                            request.vmId);
             }
         }
-
-        throw new RuntimeException("Exception while running backup for vmId " + failedSnapshot.vmId, e);
+        throw new RuntimeException("Exception while running backup for vmId " + request.vmId, e);
     }
 
-    private void recordJobId(CommandContext context, UUID vmId, UUID jobId) {
+    private void handleTooManyConcurrentSnapshots(Request request) {
+        int minutesToWait = Integer.parseInt(config.get("vps4.autobackup.rescheduleConcurrentBackupWaitMinutes", "20"));
+        int delta = Integer.parseInt(config.get("vps4.autobackup.rescheduleConcurrentBackupWaitDelta", "10"));
+        minutesToWait += Math.random() * (2 * delta) - delta;
+        rescheduleSnapshot(request, minutesToWait);
+        vps4SnapshotService.markSnapshotLimitRescheduled(request.vps4SnapshotId);
+        throw new RuntimeException("Too many concurrent snapshots. Rescheduling for vmId " + request.vmId);
+    }
+
+    private void rescheduleSnapshot(Request request, int minutesToWait) {
+        // If an automatic snapshot fails, schedule another one in a configurable number of hours
+        ScheduleAutomaticBackupRetry.Request retryRequest = new ScheduleAutomaticBackupRetry.Request();
+        retryRequest.vmId = request.vmId;
+        retryRequest.shopperId = request.shopperId;
+        retryRequest.minutesToWait = minutesToWait;
+
+        UUID retryJobId = context.execute(ScheduleAutomaticBackupRetry.class, retryRequest);
+        recordJobId(request.vmId, retryJobId);
+        logger.info("Rescheduled automatic snapshot for vm {} with retry job id: {}", request.vmId, retryJobId);
+    }
+
+    private void recordJobId(UUID vmId, UUID jobId) {
         Vps4RecordScheduledJobForVm.Request req = new Vps4RecordScheduledJobForVm.Request();
         req.jobId = jobId;
         req.vmId = vmId;
@@ -163,7 +185,7 @@ public class Vps4SnapshotVm extends ActionCommand<Vps4SnapshotVm.Request, Vps4Sn
         context.execute("RecordScheduledJobId", Vps4RecordScheduledJobForVm.class, req);
     }
 
-    private SnapshotAction createSnapshot(CommandContext context, Request request) {
+    private SnapshotAction createSnapshot(Request request) {
         long vmId = request.hfsVmId;
         String version = "1.0.0";
         //  random snapshot name to hfs layer
@@ -187,16 +209,13 @@ public class Vps4SnapshotVm extends ActionCommand<Vps4SnapshotVm.Request, Vps4Sn
         } catch (Exception e) {
             logger.info("Snapshot creation error for VPS4 snapshot with id: {}", request.vps4SnapshotId);
             vps4SnapshotService.markSnapshotErrored(request.vps4SnapshotId);
-            reverseSnapshotDeprecation(context);
-            handleSnapshotCreationError(context, request, e);
-
-            // this statement is never really hit as retrySnapshotCreation throws an exception always.
-            // this return is here to only satisfy the compiler
+            reverseSnapshotDeprecation();
+            handleSnapshotCreationError(request, e);
             return null;
         }
     }
 
-    private void reverseSnapshotDeprecation(CommandContext context) {
+    private void reverseSnapshotDeprecation() {
         if (snapshotIdToBeDeprecated != null)
         {
             logger.info("Reverse deprecation of VPS4 snapshot with id: {}", snapshotIdToBeDeprecated);
@@ -207,7 +226,7 @@ public class Vps4SnapshotVm extends ActionCommand<Vps4SnapshotVm.Request, Vps4Sn
         }
     }
 
-    private void updateHfsSnapshotId(CommandContext context, UUID vps4SnapshotId, long hfsSnapshotId) {
+    private void updateHfsSnapshotId(UUID vps4SnapshotId, long hfsSnapshotId) {
         logger.info("Update VPS4 snapshot [{}] with HFS snapshot id: {}", vps4SnapshotId, hfsSnapshotId);
         context.execute("UpdateHfsSnapshotId" + vps4SnapshotId, ctx -> {
             vps4SnapshotService.updateHfsSnapshotId(vps4SnapshotId, hfsSnapshotId);
@@ -215,7 +234,7 @@ public class Vps4SnapshotVm extends ActionCommand<Vps4SnapshotVm.Request, Vps4Sn
         }, Void.class);
     }
 
-    private void updateHfsImageId(CommandContext context, UUID vps4SnapshotId, long hfsSnapshotId) {
+    private void updateHfsImageId(UUID vps4SnapshotId, long hfsSnapshotId) {
         gdg.hfs.vhfs.snapshot.Snapshot hfsSnapshot = context.execute(
                 "GetHFSSnapshot",
                 ctx -> hfsSnapshotService.getSnapshot(hfsSnapshotId),

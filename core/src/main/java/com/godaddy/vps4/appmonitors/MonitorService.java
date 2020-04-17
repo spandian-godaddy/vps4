@@ -8,6 +8,7 @@ import com.godaddy.vps4.vm.ActionType;
 public interface MonitorService {
 
     List<SnapshotActionData> getVmsBySnapshotActions(long thresholdInMinutes, ActionStatus... status);
+    List<RescheduledSnapshotData> getLimitRescheduledCount(int hours);
     List<BackupJobAuditData> getVmsFilteredByNullBackupJob();
     MonitoringCheckpoint getMonitoringCheckpoint(ActionType actionType);
     MonitoringCheckpoint setMonitoringCheckpoint(ActionType actionType);

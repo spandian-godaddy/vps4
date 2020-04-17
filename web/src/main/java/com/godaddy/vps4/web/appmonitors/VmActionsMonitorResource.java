@@ -1,5 +1,7 @@
 package com.godaddy.vps4.web.appmonitors;
 
+import static com.godaddy.vps4.web.util.RequestValidation.validateAndReturnDateInstant;
+
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -8,6 +10,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
@@ -23,6 +26,7 @@ import javax.ws.rs.core.MediaType;
 import com.godaddy.vps4.appmonitors.BackupJobAuditData;
 import com.godaddy.vps4.appmonitors.MonitorService;
 import com.godaddy.vps4.appmonitors.MonitoringCheckpoint;
+import com.godaddy.vps4.appmonitors.RescheduledSnapshotData;
 import com.godaddy.vps4.appmonitors.SnapshotActionData;
 import com.godaddy.vps4.appmonitors.VmActionData;
 import com.godaddy.vps4.jdbc.ResultSubset;
@@ -163,6 +167,16 @@ public class VmActionsMonitorResource {
             notes = "Find all VM actions that are in pending 'in_progress' status for longer than m minutes, default 2 hours")
     public List<VmActionData> getVmsWithAllPendingActions(@QueryParam("thresholdInMinutes") @DefaultValue("120") long thresholdInMinutes) {
         return filterOverdueActionsByStatus(thresholdInMinutes, ActionStatus.IN_PROGRESS);
+    }
+
+    @GET
+    @Path("/rescheduledSnapshotCount")
+    @ApiOperation(value = "Find a count of snapshots that were rescheduled due to high load",
+            notes = "Find a count of snapshots that were rescheduled due to high load")
+    public List<RescheduledSnapshotData> getRescheduledSnapshotData(
+            @ApiParam(value = "How many hours back to check") @QueryParam("beginDate") @DefaultValue("24") int hours) {
+
+        return monitorService.getLimitRescheduledCount(hours);
     }
 
     @GET

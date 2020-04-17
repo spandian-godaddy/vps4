@@ -54,13 +54,13 @@ public class JdbcSnapshotService implements SnapshotService {
     }
 
     private boolean hasOpenSlots(UUID orionGuid, SnapshotType snapshotType) {
-        // check if number of snapshots (not in error, destroyed, cancelled, or error_rescheduled) linked to the credit is over the number
+        // check if number of snapshots (not in error, destroyed, cancelled, error_rescheduled or limit_rescheduled) linked to the credit is over the number
         // of open slots available. Right now the number of open slots is hard coded to 1 but this might change in
         // the future as HEG and MT get on-boarded.
         return Sql.with(dataSource).exec(
                 "SELECT COUNT(*) FROM SNAPSHOT s JOIN SNAPSHOT_STATUS ss ON s.status = ss.status_id "
                         + "JOIN VIRTUAL_MACHINE v ON s.vm_id = v.vm_id "
-                        + "WHERE v.orion_guid = ? AND ss.status NOT IN ('ERROR', 'DESTROYED', 'CANCELLED', 'ERROR_RESCHEDULED') "
+                        + "WHERE v.orion_guid = ? AND ss.status NOT IN ('ERROR', 'DESTROYED', 'CANCELLED', 'ERROR_RESCHEDULED', 'LIMIT_RESCHEDULED') "
                         + "AND s.snapshot_type_id = ?;",
                 this::hasOpenSlotsMapper, orionGuid, snapshotType.getSnapshotTypeId());
     }
@@ -74,7 +74,7 @@ public class JdbcSnapshotService implements SnapshotService {
                 "SELECT ss.status, COUNT(*) FROM SNAPSHOT s JOIN snapshot_status ss ON s.status = ss.status_id "
                         + "JOIN VIRTUAL_MACHINE v ON s.vm_id = v.vm_id "
                         + "WHERE v.orion_guid = ? "
-                        + "AND ss.status NOT IN ('ERROR', 'DESTROYED', 'CANCELLED', 'ERROR_RESCHEDULED') "
+                        + "AND ss.status NOT IN ('ERROR', 'DESTROYED', 'CANCELLED', 'ERROR_RESCHEDULED', 'LIMIT_RESCHEDULED') "
                         + "AND snapshot_type_id = ?"
                         + "GROUP BY ss.status;",
                 Sql.listOf(this::mapStatusCount), orionGuid, snapshotType.getSnapshotTypeId());
@@ -116,16 +116,24 @@ public class JdbcSnapshotService implements SnapshotService {
     }
 
     @Override
-    public boolean otherBackupsInProgress(UUID orionGuid) {
+    public boolean hasSnapshotInProgress(UUID orionGuid) {
         int numOfRows = Sql.with(dataSource).exec(
-                "SELECT COUNT(*) FROM SNAPSHOT s JOIN snapshot_status ss ON s.status = ss.status_id "
-                        + "JOIN VIRTUAL_MACHINE v ON s.vm_id = v.vm_id "
+                "SELECT COUNT(*) FROM snapshot s JOIN snapshot_status ss ON s.status = ss.status_id "
+                        + "JOIN virtual_machine v ON s.vm_id = v.vm_id "
                         + "WHERE v.orion_guid = ? "
-                        + "AND ss.status NOT IN ('LIVE', 'ERROR', 'DESTROYED', 'CANCELLED', 'ERROR_RESCHEDULED');",
+                        + "AND ss.status NOT IN ('LIVE', 'ERROR', 'DESTROYED', 'CANCELLED', 'ERROR_RESCHEDULED', 'LIMIT_RESCHEDULED');",
                 Sql.nextOrNull(this::mapCountRows), orionGuid);
 
-//        // No 2 backups for the same vm should ever be in progress at the same time
+        // No 2 backups for the same vm should ever be in progress at the same time
         return numOfRows > 0;
+    }
+
+    @Override
+    public int totalSnapshotsInProgress() {
+        return Sql.with(dataSource).exec(
+                "SELECT COUNT(*) FROM snapshot s JOIN snapshot_status ss ON s.status = ss.status_id "
+                        + "WHERE ss.status = 'IN_PROGRESS';",
+                Sql.nextOrNull(this::mapCountRows));
     }
 
     private int mapCountRows(ResultSet rs) throws SQLException {
@@ -175,8 +183,13 @@ public class JdbcSnapshotService implements SnapshotService {
     }
 
     @Override
-    public void markSnapshotRescheduled(UUID snapshotId) {
+    public void markSnapshotErrorRescheduled(UUID snapshotId) {
         updateSnapshotStatus(snapshotId, SnapshotStatus.ERROR_RESCHEDULED);
+    }
+
+    @Override
+    public void markSnapshotLimitRescheduled(UUID snapshotId) {
+        updateSnapshotStatus(snapshotId, SnapshotStatus.LIMIT_RESCHEDULED);
     }
 
     @Override
@@ -283,9 +296,11 @@ public class JdbcSnapshotService implements SnapshotService {
                         + " JOIN virtual_machine v ON s.vm_id = v.vm_id"
                         + " WHERE v.orion_guid = ?"
                         + " AND s.snapshot_type_id = ?"
-                        + " AND s.status in (?, ?);",
-                Sql.listOf(this::mapSnapshotIds),
-                orionGuid, snapshotType.getSnapshotTypeId(), SnapshotStatus.ERROR.getSnapshotStatusId(), SnapshotStatus.ERROR_RESCHEDULED.getSnapshotStatusId());
+                        + " AND s.status in (?, ?, ?);",
+                Sql.listOf(this::mapSnapshotIds), orionGuid, snapshotType.getSnapshotTypeId(),
+                SnapshotStatus.ERROR.getSnapshotStatusId(),
+                SnapshotStatus.ERROR_RESCHEDULED.getSnapshotStatusId(),
+                SnapshotStatus.LIMIT_RESCHEDULED.getSnapshotStatusId());
         markSnapshotCancelled(ids);
     }
 
@@ -306,8 +321,8 @@ public class JdbcSnapshotService implements SnapshotService {
     @Override
     public int failedBackupsSinceSuccess(UUID vmId, SnapshotType snapshotType){
         // count the rows of ERRORed, ERROR_RESCHEDULED, and CANCELLED backups since the last successful backup
-        // 01/02/03 is an arbitrary time earlier than any backup recorded in this system.  It is used for
-        // the case when there are no 'LIVE' backups recorded for the vm yet.
+        // 01/02/03 is an arbitrary time earlier than any backup recorded in this system.  It is used for the case when
+        // there are no 'LIVE' backups recorded for the vm yet.
         return Sql.with(dataSource).exec("SELECT COUNT(id) AS numOfIds " +
                 "FROM snapshot " +
                 "JOIN snapshot_status on snapshot.status = snapshot_status.status_id " +

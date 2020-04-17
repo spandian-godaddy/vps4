@@ -201,7 +201,7 @@ public class SnapshotCreateResourceTest {
         user = us;
         SnapshotAction action1 = getSnapshotResource()
                 .createSnapshot(getRequestPayload(ourVmId, SqlTestData.TEST_SNAPSHOT_NAME));
-        vps4SnapshotService.markSnapshotRescheduled(action1.snapshotId);
+        vps4SnapshotService.markSnapshotErrorRescheduled(action1.snapshotId);
 
         SnapshotAction action2 = getSnapshotResource()
                 .createSnapshot(getRequestPayload(ourVmId, SqlTestData.TEST_SNAPSHOT_NAME));

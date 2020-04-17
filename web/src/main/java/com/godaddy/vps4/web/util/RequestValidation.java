@@ -93,7 +93,7 @@ public class RequestValidation {
     }
 
     public static void validateNoOtherSnapshotsInProgress(SnapshotService snapshotService, UUID orionGuid){
-        if (snapshotService.otherBackupsInProgress(orionGuid)){
+        if (snapshotService.hasSnapshotInProgress(orionGuid)){
             throw new Vps4Exception("SNAPSHOT_ALREADY_IN_PROGRESS", "Snapshot creation rejected as snapshot already in progress");
         }
     }
@@ -140,7 +140,8 @@ public class RequestValidation {
         // Allow admin user to access deleted Snapshots
         if (!user.isAdmin() && (snapshot.status == SnapshotStatus.DESTROYED ||
                 snapshot.status == SnapshotStatus.CANCELLED ||
-                snapshot.status == SnapshotStatus.ERROR_RESCHEDULED)) {
+                snapshot.status == SnapshotStatus.ERROR_RESCHEDULED ||
+                snapshot.status == SnapshotStatus.LIMIT_RESCHEDULED)) {
             throw new Vps4Exception("SNAPSHOT_DELETED", String.format("The snapshot %s was DELETED", snapshot.id));
         }
     }

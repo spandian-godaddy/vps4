@@ -16,7 +16,9 @@ public interface SnapshotService {
 
     boolean isOverQuota(UUID orionGuid, SnapshotType snapshotType);
 
-    boolean otherBackupsInProgress(UUID orionGuid);
+    boolean hasSnapshotInProgress(UUID orionGuid);
+
+    int totalSnapshotsInProgress();
 
     void renameSnapshot(UUID snapshotId, String name);
 
@@ -30,7 +32,9 @@ public interface SnapshotService {
 
     void markSnapshotErrored(UUID snapshotId);
 
-    void markSnapshotRescheduled(UUID snapshotId);
+    void markSnapshotErrorRescheduled(UUID snapshotId);
+
+    void markSnapshotLimitRescheduled(UUID snapshotId);
 
     void markSnapshotDestroyed(UUID snapshotId);
 

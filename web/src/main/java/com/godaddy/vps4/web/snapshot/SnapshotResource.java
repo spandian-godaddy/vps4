@@ -113,7 +113,8 @@ public class SnapshotResource {
                 .stream()
                 .filter(snapshot -> snapshot.status != SnapshotStatus.DESTROYED
                         && snapshot.status != SnapshotStatus.CANCELLED
-                        && snapshot.status != SnapshotStatus.ERROR_RESCHEDULED)
+                        && snapshot.status != SnapshotStatus.ERROR_RESCHEDULED
+                        && snapshot.status != SnapshotStatus.LIMIT_RESCHEDULED)
                 .collect(Collectors.toList());
     }
 

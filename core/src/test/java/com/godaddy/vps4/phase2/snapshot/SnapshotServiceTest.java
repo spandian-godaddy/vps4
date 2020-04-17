@@ -189,21 +189,21 @@ public class SnapshotServiceTest {
     @Test
     public void noOtherBackupInProgressWhenNoOtherBackupExists() {
         // Verify otherBackupsInProgress can handle no other backups existing
-        assertFalse(snapshotService.otherBackupsInProgress(orionGuid));
+        assertFalse(snapshotService.hasSnapshotInProgress(orionGuid));
     }
 
     @Test
     public void noOtherBackupInProgressWhenBackupIsDestroyed() {
         // Destroyed backups do not count towards backups in progress
         insertTestSnapshots(1, SnapshotStatus.DESTROYED, SnapshotType.ON_DEMAND);
-        assertFalse(snapshotService.otherBackupsInProgress(orionGuid));
+        assertFalse(snapshotService.hasSnapshotInProgress(orionGuid));
     }
 
     @Test
     public void noOtherBackupInProgressWhenBackupIsErrored() {
         // Errored backups do not count towards backups in progress
         insertTestSnapshots(1, SnapshotStatus.ERROR, SnapshotType.ON_DEMAND);
-        assertFalse(snapshotService.otherBackupsInProgress(orionGuid));
+        assertFalse(snapshotService.hasSnapshotInProgress(orionGuid));
     }
 
     @Test
@@ -211,28 +211,41 @@ public class SnapshotServiceTest {
         // Backups in NEW status are already queued, hence a backup is in progress, or soon to
         // be in progress
         insertTestSnapshots(1, SnapshotStatus.NEW, SnapshotType.ON_DEMAND);
-        assertTrue(snapshotService.otherBackupsInProgress(orionGuid));
+        assertTrue(snapshotService.hasSnapshotInProgress(orionGuid));
     }
 
     @Test
     public void otherBackupInProgressWhenBackupIsInProgress() {
         // A backup in IN_PROGRESS status indicates that a backup is currently running
         insertTestSnapshots(1, SnapshotStatus.IN_PROGRESS, SnapshotType.ON_DEMAND);
-        assertTrue(snapshotService.otherBackupsInProgress(orionGuid));
+        assertTrue(snapshotService.hasSnapshotInProgress(orionGuid));
     }
 
     @Test
     public void otherBackupInProgressWhenBackupIsDeprecating() {
         // When there is a backup in depecating status, that means a backup is currently being taken
         insertTestSnapshots(1, SnapshotStatus.DEPRECATING, SnapshotType.ON_DEMAND);
-        assertTrue(snapshotService.otherBackupsInProgress(orionGuid));
+        assertTrue(snapshotService.hasSnapshotInProgress(orionGuid));
     }
 
     @Test
     public void otherBackupInProgressWhenBackupIsDeprecated() {
         // When a backup is in deprecated status another backup is currently running
         insertTestSnapshots(1, SnapshotStatus.DEPRECATED, SnapshotType.ON_DEMAND);
-        assertTrue(snapshotService.otherBackupsInProgress(orionGuid));
+        assertTrue(snapshotService.hasSnapshotInProgress(orionGuid));
+    }
+
+    @Test
+    public void totalSnapshotsInProgress() {
+        insertTestSnapshots(1, SnapshotStatus.NEW, SnapshotType.ON_DEMAND);
+        insertTestSnapshots(1, SnapshotStatus.IN_PROGRESS, SnapshotType.ON_DEMAND);
+        insertTestSnapshots(1, SnapshotStatus.DEPRECATING, SnapshotType.ON_DEMAND);
+        insertTestSnapshots(1, SnapshotStatus.DEPRECATED, SnapshotType.ON_DEMAND);
+        insertTestSnapshots(1, SnapshotStatus.ERROR, SnapshotType.ON_DEMAND);
+        insertTestSnapshots(1, SnapshotStatus.CANCELLED, SnapshotType.ON_DEMAND);
+        insertTestSnapshots(1, SnapshotStatus.ERROR_RESCHEDULED, SnapshotType.ON_DEMAND);
+        insertTestSnapshots(1, SnapshotStatus.LIMIT_RESCHEDULED, SnapshotType.ON_DEMAND);
+        assertEquals(1, snapshotService.totalSnapshotsInProgress());
     }
 
     @Test
@@ -356,6 +369,13 @@ public class SnapshotServiceTest {
         insertTestSnapshots(1, SnapshotStatus.ERROR_RESCHEDULED, SnapshotType.AUTOMATIC);
         int numOfFailedBackups = snapshotService.failedBackupsSinceSuccess(vm.vmId, SnapshotType.AUTOMATIC);
         assertEquals(1, numOfFailedBackups);
+    }
+
+    @Test
+    public void onlyOneLimitRescheduledBackup() {
+        insertTestSnapshots(1, SnapshotStatus.LIMIT_RESCHEDULED, SnapshotType.AUTOMATIC);
+        int numOfFailedBackups = snapshotService.failedBackupsSinceSuccess(vm.vmId, SnapshotType.AUTOMATIC);
+        assertEquals(0, numOfFailedBackups);
     }
 
     @Test
