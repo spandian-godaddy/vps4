@@ -3,6 +3,9 @@ package com.godaddy.vps4.scheduler;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.godaddy.hfs.servicediscovery.HfsServiceMetadata;
 import com.godaddy.hfs.servicediscovery.ZkServiceRegistrationModule;
 import com.godaddy.hfs.swagger.SwaggerModule;
@@ -25,8 +28,6 @@ import com.google.inject.Module;
 import com.google.inject.Singleton;
 import com.google.inject.multibindings.OptionalBinder;
 import com.google.inject.servlet.ServletModule;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public class Vps4SchedulerInjector {
 

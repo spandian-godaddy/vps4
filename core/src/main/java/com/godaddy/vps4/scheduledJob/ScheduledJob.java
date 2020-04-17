@@ -47,7 +47,7 @@ public class ScheduledJob {
         this.type = type;
         this.created = created;
     }
-    
+
     public UUID id;
     public UUID vmId;
     public ScheduledJobType type;
