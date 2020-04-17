@@ -5,10 +5,14 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
+import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import java.time.Instant;
+import java.time.temporal.ChronoUnit;
+import java.util.Collections;
+import java.util.List;
 import java.util.UUID;
 
 import org.junit.Before;
@@ -32,6 +36,7 @@ public class VmDetailsResourceTest {
     private CreditService creditService = mock(CreditService.class);
     private SchedulerWebService schedulerWebService = mock(SchedulerWebService.class);
     private PanoptaDataService panoptaDataService = mock(PanoptaDataService.class);
+    private VmZombieResource vmZombieResource = mock(VmZombieResource.class);
 
     private UUID vmId = UUID.randomUUID();
     private UUID orionGuid = UUID.randomUUID();
@@ -39,13 +44,14 @@ public class VmDetailsResourceTest {
     private VirtualMachine vps4Vm = new VirtualMachine();
 
     private VmDetailsResource vmDetailsResource = new VmDetailsResource(vmResource, creditService,
-            schedulerWebService, panoptaDataService);
+            schedulerWebService, panoptaDataService, vmZombieResource);
 
 
     @Before
     public void setUp() {
         vps4Vm.hfsVmId = hfsVmId;
         vps4Vm.orionGuid = orionGuid;
+        vps4Vm.canceled = Instant.MAX;
         when(vmResource.getVm(vmId)).thenReturn(vps4Vm);
 
         Vm hfsVm = new Vm();
@@ -159,4 +165,29 @@ public class VmDetailsResourceTest {
         assertNull(withDetails.monitoringAgent);
     }
 
+    @Test
+    public void testGetWithDetailsContainsZombieJobDetail() {
+        // zombie the vm
+        vps4Vm.canceled = Instant.now().minus(10, ChronoUnit.MINUTES);
+        UUID jobId = UUID.randomUUID();
+        Instant nextRun = Instant.now().plus(7, ChronoUnit.DAYS);
+        SchedulerJobDetail job = mock(SchedulerJobDetail.class);
+        List<SchedulerJobDetail> scheduledZombieCleanupJobs = Collections.singletonList(job);
+        when(vmZombieResource.getScheduledZombieVmDelete(eq(vmId))).thenReturn(scheduledZombieCleanupJobs);
+
+        VirtualMachineWithDetails withDetails = vmDetailsResource.getVirtualMachineWithDetails(vmId);
+
+        assertNotNull(withDetails.scheduledZombieCleanupJobs);
+        assertFalse(withDetails.scheduledZombieCleanupJobs.isEmpty());
+        assertEquals(1, withDetails.scheduledZombieCleanupJobs.size());
+    }
+
+    @Test
+    public void withDetailsDoesNotReturnZombieCleanupJobIfVmIsNotZombie() {
+        List<SchedulerJobDetail> scheduledZombieCleanupJobs = Collections.emptyList();
+        when(vmZombieResource.getScheduledZombieVmDelete(eq(vmId))).thenReturn(scheduledZombieCleanupJobs);
+
+        VirtualMachineWithDetails withDetails = vmDetailsResource.getVirtualMachineWithDetails(vmId);
+        assertTrue(withDetails.scheduledZombieCleanupJobs.isEmpty());
+    }
 }

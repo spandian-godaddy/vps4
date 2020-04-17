@@ -1,6 +1,10 @@
 package com.godaddy.vps4.web.vm;
 
+import java.time.Clock;
 import java.time.Instant;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 import java.util.UUID;
 
 import javax.inject.Inject;
@@ -34,14 +38,17 @@ public class VmDetailsResource {
     private final CreditService creditService;
     private final SchedulerWebService schedulerWebService;
     private final PanoptaDataService panoptaDataService;
+    private final VmZombieResource vmZombieResource;
 
     @Inject
     public VmDetailsResource(VmResource vmResource, CreditService creditService,
-            SchedulerWebService schedulerWebService, PanoptaDataService panoptaDataService) {
+            SchedulerWebService schedulerWebService, PanoptaDataService panoptaDataService,
+            VmZombieResource vmZombieResource) {
         this.vmResource = vmResource;
         this.creditService = creditService;
         this.schedulerWebService = schedulerWebService;
         this.panoptaDataService = panoptaDataService;
+        this.vmZombieResource = vmZombieResource;
     }
 
     @GET
@@ -79,9 +86,24 @@ public class VmDetailsResource {
                         new AutomaticSnapshotSchedule(nextRun, copiesToRetain, repeatIntervalInDays, isPaused);
             }
         }
+        List<SchedulerJobDetail> zombieCleanupDetailJobs = Collections.emptyList();
+        if (isZombie(virtualMachine)) {
+            zombieCleanupDetailJobs = vmZombieResource.getScheduledZombieVmDelete(vmId);
+        }
+        List<ScheduledZombieCleanupJob> scheduledZombieCleanupJobs = new ArrayList<>();
+        zombieCleanupDetailJobs.forEach(job -> {
+            ScheduledZombieCleanupJob scheduledZombieCleanupJob = new ScheduledZombieCleanupJob();
+            scheduledZombieCleanupJob.jobId = job.id;
+            scheduledZombieCleanupJob.nextRun = job.nextRun;
+            scheduledZombieCleanupJob.isPaused = job.isPaused;
+            scheduledZombieCleanupJobs.add(scheduledZombieCleanupJob);
+        });
+
         return new VirtualMachineWithDetails(virtualMachine, new VirtualMachineDetails(vm), credit.getDataCenter(),
-                                             credit.getShopperId(), automaticSnapshotSchedule, panoptaDetails);
+                credit.getShopperId(), automaticSnapshotSchedule, panoptaDetails, scheduledZombieCleanupJobs);
     }
 
-
+    private boolean isZombie(VirtualMachine vm) {
+        return vm.canceled.isBefore(Instant.now(Clock.systemUTC()));
+    }
 }

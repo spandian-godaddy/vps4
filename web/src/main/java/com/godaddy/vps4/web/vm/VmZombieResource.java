@@ -7,10 +7,12 @@ import static com.godaddy.vps4.web.util.RequestValidation.validateVmExists;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
 import javax.ws.rs.Consumes;
+import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
@@ -29,6 +31,9 @@ import com.godaddy.vps4.orchestration.scheduler.RescheduleZombieVmCleanup;
 import com.godaddy.vps4.orchestration.vm.Vps4ReviveZombieVm;
 import com.godaddy.vps4.scheduledJob.ScheduledJob;
 import com.godaddy.vps4.scheduledJob.ScheduledJobService;
+import com.godaddy.vps4.scheduler.api.core.SchedulerJobDetail;
+import com.godaddy.vps4.scheduler.api.plugin.Vps4ZombieCleanupJobRequest;
+import com.godaddy.vps4.scheduler.api.web.SchedulerWebService;
 import com.godaddy.vps4.vm.Action;
 import com.godaddy.vps4.vm.ActionService;
 import com.godaddy.vps4.vm.ActionType;
@@ -66,6 +71,7 @@ public class VmZombieResource {
     private final GDUser user;
     private final ActionService actionService;
     private final VmActionResource vmActionResource;
+    private final SchedulerWebService schedulerWebService;
     private final ScheduledJobService scheduledJobService;
     private final Config config;
 
@@ -76,6 +82,7 @@ public class VmZombieResource {
             GDUser user,
             ActionService actionService,
             VmActionResource vmActionResource,
+            SchedulerWebService schedulerWebService,
             ScheduledJobService scheduledJobService,
             Config config) {
         this.virtualMachineService = virtualMachineService;
@@ -84,6 +91,7 @@ public class VmZombieResource {
         this.user = user;
         this.actionService = actionService;
         this.vmActionResource = vmActionResource;
+        this.schedulerWebService = schedulerWebService;
         this.scheduledJobService = scheduledJobService;
         this.config = config;
     }
@@ -145,11 +153,10 @@ public class VmZombieResource {
                 ActionType.CANCEL_ACCOUNT, request, "Vps4ProcessAccountCancellation", user);
     }
 
-
     @POST
     @Path("/{vmId}/zombie/reschedule")
-    @ApiOperation(value = "Reschedule the deletion of a cancelled VM (vm in zombie status)",
-            notes = "Reschedule the deletion of a cancelled VM (vm in zombie status)")
+    @ApiOperation(value = "Reschedule the deletion of a cancelled VM (vm in zombie status) to after 7 days from now.",
+            notes = "Reschedule the deletion of a cancelled VM (vm in zombie status) to after 7 days from now.")
     @RequiresRole(roles = {GDUser.Role.ADMIN, GDUser.Role.HS_LEAD})
     public void rescheduleZombieVmDelete(
             @ApiParam(value = "Id of the VM in zombie status whose deletion needs to be rescheduled", required = true)
@@ -167,10 +174,43 @@ public class VmZombieResource {
                     "Expected 1 zombie cleanup job scheduled, returned " + scheduledJobs.size());
         }
 
+        UUID scheduledJobId = scheduledJobs.get(0).id;
+        logger.info("Rescheduling zombie vm clean up job id: {} for vm id {}", scheduledJobId, vmId);
+        rescheduleZombieVmCleanupJob(vmId, scheduledJobId);
+    }
+
+    @GET
+    @Path("/{vmId}/zombie/schedules")
+    @ApiOperation(value = "Get scheduled jobs for the deletion of a cancelled VM (vm in zombie status)",
+            notes = "Get scheduled jobs for the deletion of a cancelled VM (vm in zombie status)")
+    @RequiresRole(roles = {GDUser.Role.ADMIN, GDUser.Role.HS_LEAD})
+    public List<SchedulerJobDetail> getScheduledZombieVmDelete(
+            @ApiParam(value = "Id of the VM in zombie status", required = true)
+            @PathParam("vmId") UUID vmId) {
+        VirtualMachine vm = virtualMachineService.getVirtualMachine(vmId);
+        validateVmExists(vmId, vm, user);
+
+        validateVmIsZombie(vm);
+
+        String product = com.godaddy.vps4.scheduler.api.core.utils.Utils.getProductForJobRequestClass(
+                Vps4ZombieCleanupJobRequest.class);
+        String jobGroup = com.godaddy.vps4.scheduler.api.core.utils.Utils.getJobGroupForJobRequestClass(
+                Vps4ZombieCleanupJobRequest.class);
+        List<ScheduledJob> scheduledJobs =
+                scheduledJobService.getScheduledJobsByType(vmId, ScheduledJob.ScheduledJobType.ZOMBIE);
+        List<SchedulerJobDetail> schedulerJobDetails = new ArrayList<>();
+        scheduledJobs.forEach(scheduledJob -> {
+            SchedulerJobDetail schedulerJobDetail = schedulerWebService.getJob(product, jobGroup, scheduledJob.id);
+            schedulerJobDetails.add(schedulerJobDetail);
+        });
+        return schedulerJobDetails;
+    }
+
+    private void rescheduleZombieVmCleanupJob(UUID vmId, UUID jobId) {
         RescheduleZombieVmCleanup.Request rescheduleZombieVmCleanupRequest = new RescheduleZombieVmCleanup.Request();
         rescheduleZombieVmCleanupRequest.vmId = vmId;
         rescheduleZombieVmCleanupRequest.when = calculateValidUntil();
-        rescheduleZombieVmCleanupRequest.jobId = scheduledJobs.get(0).id;
+        rescheduleZombieVmCleanupRequest.jobId = jobId;
         Commands.execute(commandService, "RescheduleZombieVmCleanup", rescheduleZombieVmCleanupRequest);
     }
 

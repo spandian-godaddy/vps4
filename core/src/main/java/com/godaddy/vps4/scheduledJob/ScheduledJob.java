@@ -52,4 +52,20 @@ public class ScheduledJob {
     public UUID vmId;
     public ScheduledJobType type;
     public Instant created;
+
+    public UUID getId() {
+        return id;
+    }
+
+    public UUID getVmId() {
+        return vmId;
+    }
+
+    public ScheduledJobType getType() {
+        return type;
+    }
+
+    public Instant getCreated() {
+        return created;
+    }
 }

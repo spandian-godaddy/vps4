@@ -1,5 +1,8 @@
 package com.godaddy.vps4.web.vm;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Matchers.anyInt;
@@ -33,6 +36,9 @@ import com.godaddy.vps4.credit.CreditService;
 import com.godaddy.vps4.credit.VirtualMachineCredit;
 import com.godaddy.vps4.scheduledJob.ScheduledJob;
 import com.godaddy.vps4.scheduledJob.ScheduledJobService;
+import com.godaddy.vps4.scheduler.api.core.JobRequest;
+import com.godaddy.vps4.scheduler.api.core.SchedulerJobDetail;
+import com.godaddy.vps4.scheduler.api.web.SchedulerWebService;
 import com.godaddy.vps4.security.GDUserMock;
 import com.godaddy.vps4.vm.AccountStatus;
 import com.godaddy.vps4.vm.Action;
@@ -56,6 +62,7 @@ public class VmZombieResourceTest {
     CommandService commandService = mock(CommandService.class);
     ActionService actionService = mock(ActionService.class);
     VmActionResource vmActionResource = mock(VmActionResource.class);
+    SchedulerWebService schedulerWebService = mock(SchedulerWebService.class);
     ScheduledJobService scheduledJobService = mock(ScheduledJobService.class);
     Config config = mock(Config.class);
     ScheduledJob scheduledJob = mock(ScheduledJob.class);
@@ -65,6 +72,11 @@ public class VmZombieResourceTest {
     VirtualMachineCredit newCredit;
     List<ScheduledJob> scheduledJobs;
     VmZombieResource vmZombieResource;
+    UUID jobId = UUID.randomUUID();
+    Instant nextRun = Instant.now().minus(7, ChronoUnit.DAYS);
+    JobRequest jobRequest = mock(JobRequest.class);
+    SchedulerJobDetail job;
+
 
     private GDUser user;
 
@@ -91,9 +103,18 @@ public class VmZombieResourceTest {
                 ActionStatus.COMPLETE, Instant.now(), Instant.now(), null, UUID.randomUUID(), null);
 
         when(actionService.getAction(anyLong())).thenReturn(testAction);
+
         vmZombieResource =
                 new VmZombieResource(virtualMachineService, creditService, commandService, user, actionService,
-                        vmActionResource, scheduledJobService, config);
+                        vmActionResource, schedulerWebService, scheduledJobService, config);
+        job = new SchedulerJobDetail(jobId, nextRun, jobRequest, false);
+        scheduledJobs = new ArrayList<>();
+        scheduledJobs.add(scheduledJob);
+        scheduledJob.id = jobId;
+        when(scheduledJobService.getScheduledJobsByType(eq(testVm.vmId),
+                eq(ScheduledJob.ScheduledJobType.ZOMBIE))).thenReturn(scheduledJobs);
+        when(config.get(eq("vps4.zombie.cleanup.waittime"))).thenReturn("7");
+        when(schedulerWebService.getJob(eq("vps4"), eq("zombie"), eq(jobId))).thenReturn(job);
     }
 
     private VirtualMachineCredit createVmCredit(UUID orionGuid, AccountStatus accountStatus, String controlPanel,
@@ -271,12 +292,6 @@ public class VmZombieResourceTest {
     @Test
     public void testRescheduleZombieVmDeleteInvokesCommand() {
         testVm.canceled = Instant.now().minus(10, ChronoUnit.MINUTES);
-        scheduledJobs = new ArrayList<>();
-        scheduledJobs.add(scheduledJob);
-        when(scheduledJobService.getScheduledJobsByType(eq(testVm.vmId),
-                eq(ScheduledJob.ScheduledJobType.ZOMBIE))).thenReturn(scheduledJobs);
-        when(config.get(eq("vps4.zombie.cleanup.waittime"))).thenReturn("7");
-        scheduledJob.id = UUID.randomUUID();
 
         vmZombieResource.rescheduleZombieVmDelete(testVm.vmId);
         ArgumentCaptor<CommandGroupSpec>
@@ -288,12 +303,6 @@ public class VmZombieResourceTest {
 
     @Test(expected = Vps4Exception.class)
     public void doesNotRescheduleZombieVmDeleteIfVmIsActive() {
-        scheduledJobs = new ArrayList<>();
-        scheduledJobs.add(scheduledJob);
-        when(scheduledJobService.getScheduledJobsByType(eq(testVm.vmId),
-                eq(ScheduledJob.ScheduledJobType.ZOMBIE))).thenReturn(scheduledJobs);
-        when(config.get(eq("vps4.zombie.cleanup.waittime"))).thenReturn("7");
-        scheduledJob.id = UUID.randomUUID();
 
         try {
             vmZombieResource.rescheduleZombieVmDelete(testVm.vmId);
@@ -307,11 +316,8 @@ public class VmZombieResourceTest {
     @Test(expected = Vps4Exception.class)
     public void doesNotRescheduleDeletionIfNoPreviousCleanupJobExists() {
         testVm.canceled = Instant.now().minus(10, ChronoUnit.MINUTES);
-        scheduledJobs = Collections.emptyList();
         when(scheduledJobService.getScheduledJobsByType(eq(testVm.vmId),
-                eq(ScheduledJob.ScheduledJobType.ZOMBIE))).thenReturn(scheduledJobs);
-        when(config.get(eq("vps4.zombie.cleanup.waittime"))).thenReturn("7");
-        scheduledJob.id = UUID.randomUUID();
+                eq(ScheduledJob.ScheduledJobType.ZOMBIE))).thenReturn(Collections.emptyList());
 
         try {
             vmZombieResource.rescheduleZombieVmDelete(testVm.vmId);
@@ -320,5 +326,19 @@ public class VmZombieResourceTest {
                     "Expected 1 zombie cleanup job scheduled, returned 0"));
             throw e;
         }
+    }
+
+    @Test
+    public void getsScheduledZombieVmDeleteJob() {
+        testVm.canceled = Instant.now().minus(10, ChronoUnit.MINUTES);
+
+        List<SchedulerJobDetail> zombieCleanupJobs = vmZombieResource.getScheduledZombieVmDelete(testVm.vmId);
+
+        assertNotNull(zombieCleanupJobs);
+        assertEquals(1, zombieCleanupJobs.size());
+        SchedulerJobDetail zombieCleanupJob = zombieCleanupJobs.get(0);
+        assertEquals(jobId, zombieCleanupJob.id);
+        assertEquals(nextRun, zombieCleanupJob.nextRun);
+        assertFalse(zombieCleanupJob.isPaused);
     }
 }
