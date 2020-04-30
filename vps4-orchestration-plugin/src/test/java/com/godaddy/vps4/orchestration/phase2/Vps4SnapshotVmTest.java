@@ -1,6 +1,7 @@
 package com.godaddy.vps4.orchestration.phase2;
 
 import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.anyLong;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
@@ -10,15 +11,12 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import java.util.ArrayList;
 import java.util.UUID;
 import java.util.function.Function;
 
 import javax.sql.DataSource;
 
-import com.godaddy.hfs.config.Config;
-import com.godaddy.vps4.orchestration.scheduler.ScheduleAutomaticBackupRetry;
-import com.godaddy.vps4.orchestration.vm.Vps4RecordScheduledJobForVm;
-import com.godaddy.vps4.scheduledJob.ScheduledJob;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -28,12 +26,20 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
 import org.mockito.MockitoAnnotations;
 
+import com.godaddy.hfs.config.Config;
+import com.godaddy.hfs.vm.Vm;
+import com.godaddy.hfs.vm.VmService;
 import com.godaddy.vps4.jdbc.DatabaseModule;
+import com.godaddy.vps4.network.IpAddress;
+import com.godaddy.vps4.network.NetworkService;
+import com.godaddy.vps4.orchestration.scheduler.ScheduleAutomaticBackupRetry;
 import com.godaddy.vps4.orchestration.snapshot.Vps4DestroySnapshot;
 import com.godaddy.vps4.orchestration.snapshot.Vps4SnapshotVm;
 import com.godaddy.vps4.orchestration.snapshot.WaitForSnapshotAction;
+import com.godaddy.vps4.orchestration.vm.Vps4RecordScheduledJobForVm;
 import com.godaddy.vps4.project.Project;
 import com.godaddy.vps4.project.ProjectService;
+import com.godaddy.vps4.scheduledJob.ScheduledJob;
 import com.godaddy.vps4.security.SecurityModule;
 import com.godaddy.vps4.security.Vps4UserService;
 import com.godaddy.vps4.snapshot.SnapshotActionService;
@@ -41,6 +47,8 @@ import com.godaddy.vps4.snapshot.SnapshotModule;
 import com.godaddy.vps4.snapshot.SnapshotService;
 import com.godaddy.vps4.snapshot.SnapshotStatus;
 import com.godaddy.vps4.snapshot.SnapshotType;
+import com.godaddy.vps4.util.TroubleshootVmService;
+import com.godaddy.vps4.util.UtilsModule;
 import com.godaddy.vps4.vm.ActionService;
 import com.godaddy.vps4.vm.ActionType;
 import com.godaddy.vps4.vm.VirtualMachine;
@@ -62,6 +70,7 @@ public class Vps4SnapshotVmTest {
     private Vps4SnapshotVm.Request automaticRequest;
     private gdg.hfs.vhfs.snapshot.SnapshotAction hfsAction;
     private gdg.hfs.vhfs.snapshot.Snapshot hfsSnapshot;
+    private VirtualMachine vm;
     private UUID orionGuid;
     private UUID vps4SnapshotId;
     private UUID vps4AutomaticSnapshotId;
@@ -72,9 +81,12 @@ public class Vps4SnapshotVmTest {
     private long hfsSnapshotId = 4567L;
     private String hfsImageId = "nocfoxid";
     private SnapshotService spySnapshotService;
+    private VmService vmService;
+    private TroubleshootVmService troubleshootVmService;
 
 
     @Inject Vps4UserService vps4UserService;
+    @Inject NetworkService networkService;
     @Inject ProjectService projectService;
     @Inject VirtualMachineService virtualMachineService;
     @Inject SnapshotService snapshotService;
@@ -96,7 +108,8 @@ public class Vps4SnapshotVmTest {
                 new SecurityModule(),
                 new SnapshotModule(),
                 new Vps4ExternalsModule(),
-                new Vps4SnapshotTestModule()
+                new Vps4SnapshotTestModule(),
+                new UtilsModule()
         );
     }
 
@@ -105,8 +118,10 @@ public class Vps4SnapshotVmTest {
         MockitoAnnotations.initMocks(this);
         injector.injectMembers(this);
 
+        setupMocks();
         spySnapshotService = spy(snapshotService);
-        command = new Vps4SnapshotVm(actionService, hfsSnapshotService, spySnapshotService, config);
+        command = new Vps4SnapshotVm(actionService, troubleshootVmService, hfsSnapshotService,
+                                     spySnapshotService, virtualMachineService, vmService, config);
         addTestSqlData();
         context = setupMockContext();
         request = getCommandRequest(vps4SnapshotActionId, vps4SnapshotId, SnapshotType.ON_DEMAND);
@@ -115,11 +130,23 @@ public class Vps4SnapshotVmTest {
 
     private Vps4SnapshotVm.Request getCommandRequest(long snapshotActionId, UUID snapshotId, SnapshotType snapshotType) {
         Vps4SnapshotVm.Request req = new Vps4SnapshotVm.Request();
-        req.actionId = snapshotActionId;
-        req.vps4SnapshotId = snapshotId;
+        req.hfsVmId = vm.hfsVmId;
+        req.vmId = vm.vmId;
         req.orionGuid = orionGuid;
         req.snapshotType = snapshotType;
+        req.actionId = snapshotActionId;
+        req.vps4SnapshotId = snapshotId;
         return req;
+    }
+
+    private void setupMocks() {
+        vmService = mock(VmService.class);
+        Vm hfsVm = new Vm();
+        hfsVm.status = "ACTIVE";
+        when(vmService.getVm(anyLong())).thenReturn(hfsVm);
+        troubleshootVmService = mock(TroubleshootVmService.class);
+        when(troubleshootVmService.isPortOpenOnVm(any(), eq(2224))).thenReturn(true);
+        when(troubleshootVmService.getHfsAgentStatus(anyLong())).thenReturn("OK");
     }
 
     private CommandContext setupMockContext() {
@@ -145,7 +172,7 @@ public class Vps4SnapshotVmTest {
     private void addTestSqlData() {
         SqlTestData.insertUser(vps4UserService);
         Project project = SqlTestData.insertProject(projectService, vps4UserService);
-        VirtualMachine vm = SqlTestData.insertVm(virtualMachineService, vps4UserService);
+        vm = SqlTestData.insertVm(virtualMachineService, vps4UserService);
         orionGuid = vm.orionGuid;
         vps4SnapshotId = SqlTestData.insertSnapshot(snapshotService, vm.vmId, project.getProjectId(), SnapshotType.ON_DEMAND);
         vps4AutomaticSnapshotId = SqlTestData.insertSnapshot(snapshotService, vm.vmId, project.getProjectId(), SnapshotType.AUTOMATIC);
@@ -153,6 +180,7 @@ public class Vps4SnapshotVmTest {
                 snapshotService, vm.vmId, project.getProjectId(), SnapshotStatus.LIVE, SnapshotType.ON_DEMAND);
         vps4SnapshotActionId = SqlTestData.insertSnapshotAction(actionService, vps4UserService, vps4SnapshotId);
         vps4AutomaticSnapshotActionId = SqlTestData.insertSnapshotAction(actionService, vps4UserService, vps4AutomaticSnapshotId);
+        SqlTestData.insertIpAddresses(networkService, vm.vmId, 1, IpAddress.IpAddressType.PRIMARY);
     }
 
     @After
@@ -366,7 +394,8 @@ public class Vps4SnapshotVmTest {
         verify(spySnapshotService, never()).markSnapshotErrorRescheduled(any());
         verify(context, never())
                 .execute(eq("RecordScheduledJobId"), eq(Vps4RecordScheduledJobForVm.class), any());
-        verify(context, never()).execute(eq(ScheduleAutomaticBackupRetry.class), any(ScheduleAutomaticBackupRetry.Request.class));
+        verify(context, never())
+                .execute(eq(ScheduleAutomaticBackupRetry.class), any(ScheduleAutomaticBackupRetry.Request.class));
         verify(context, times(1)).execute(eq("Vps4SnapshotVm"), any(Function.class), any());
     }
 
@@ -378,7 +407,8 @@ public class Vps4SnapshotVmTest {
         verify(spySnapshotService, never()).markSnapshotErrorRescheduled(any());
         verify(context, never())
                 .execute(eq("RecordScheduledJobId"), eq(Vps4RecordScheduledJobForVm.class), any());
-        verify(context, never()).execute(eq(ScheduleAutomaticBackupRetry.class), any(ScheduleAutomaticBackupRetry.Request.class));
+        verify(context, never())
+                .execute(eq(ScheduleAutomaticBackupRetry.class), any(ScheduleAutomaticBackupRetry.Request.class));
         verify(context, times(1)).execute(eq("Vps4SnapshotVm"), any(Function.class), any());
     }
 
@@ -390,10 +420,37 @@ public class Vps4SnapshotVmTest {
             command.execute(context, automaticRequest);
             Assert.fail("RuntimeException should have been thrown");
         } catch (RuntimeException ignored) {}
-        verify(context, times(1)).execute(eq(ScheduleAutomaticBackupRetry.class), any(ScheduleAutomaticBackupRetry.Request.class));
+        verify(context, times(1))
+                .execute(eq(ScheduleAutomaticBackupRetry.class), any(ScheduleAutomaticBackupRetry.Request.class));
         verify(context, times(1))
                 .execute(eq("RecordScheduledJobId"), eq(Vps4RecordScheduledJobForVm.class), any());
         verify(spySnapshotService, times(1)).markSnapshotLimitRescheduled(vps4AutomaticSnapshotId);
+        verify(context, never()).execute(eq("Vps4SnapshotVm"), any(Function.class), any());
+    }
+
+    @Test
+    public void testSnapshotFailsWhenNydusPortIsBlocked() {
+        when(troubleshootVmService.isPortOpenOnVm(any(), eq(2224))).thenReturn(false);
+        when(troubleshootVmService.getHfsAgentStatus(anyLong())).thenReturn("OK");
+        try {
+            command.execute(context, automaticRequest);
+            Assert.fail("RuntimeException should have been thrown");
+        } catch (RuntimeException ignored) {}
+        verify(spySnapshotService, times(0)).markSnapshotErrorRescheduled(vps4AutomaticSnapshotId);
+        verify(spySnapshotService, times(0)).markSnapshotLimitRescheduled(vps4AutomaticSnapshotId);
+        verify(context, never()).execute(eq("Vps4SnapshotVm"), any(Function.class), any());
+    }
+
+    @Test
+    public void testSnapshotFailsWhenNydusIsDown() {
+        when(troubleshootVmService.isPortOpenOnVm(any(), eq(2224))).thenReturn(true);
+        when(troubleshootVmService.getHfsAgentStatus(anyLong())).thenReturn("UNKNOWN");
+        try {
+            command.execute(context, automaticRequest);
+            Assert.fail("RuntimeException should have been thrown");
+        } catch (RuntimeException ignored) {}
+        verify(spySnapshotService, times(0)).markSnapshotErrorRescheduled(vps4AutomaticSnapshotId);
+        verify(spySnapshotService, times(0)).markSnapshotLimitRescheduled(vps4AutomaticSnapshotId);
         verify(context, never()).execute(eq("Vps4SnapshotVm"), any(Function.class), any());
     }
 }

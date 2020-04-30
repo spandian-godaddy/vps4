@@ -1,4 +1,4 @@
-package com.godaddy.vps4.web.util;
+package com.godaddy.vps4.util;
 
 import java.io.IOException;
 import java.net.InetAddress;
@@ -12,22 +12,24 @@ import org.slf4j.LoggerFactory;
 
 import com.godaddy.hfs.vm.VmService;
 
-public class TroubleshootVmHelper {
+public class DefaultTroubleshootVmService implements TroubleshootVmService {
 
-    private static final Logger logger = LoggerFactory.getLogger(TroubleshootVmHelper.class);
+    private static final Logger logger = LoggerFactory.getLogger(DefaultTroubleshootVmService.class);
     private final int ONE_SECOND = 1000;
 
     private VmService hfsVmService;
 
     @Inject
-    public TroubleshootVmHelper(VmService hfsVmService) {
+    public DefaultTroubleshootVmService(VmService hfsVmService) {
         this.hfsVmService = hfsVmService;
     }
 
+    @Override
     public String getHfsAgentStatus(long hfsVmId) {
         return hfsVmService.getHfsAgentDetails(hfsVmId).agentStatus;
     }
 
+    @Override
     public boolean canPingVm(String ipAddress) {
         try {
             InetAddress inetAddr = getInetAddress(ipAddress);
@@ -39,6 +41,7 @@ public class TroubleshootVmHelper {
         return false;
     }
 
+    @Override
     public boolean isPortOpenOnVm(String ipAddress, int port) {
         Socket s = this.createSocket();
         try {

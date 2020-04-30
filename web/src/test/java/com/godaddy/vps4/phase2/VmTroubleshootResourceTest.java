@@ -17,9 +17,10 @@ import org.junit.Test;
 import com.godaddy.hfs.vm.AgentDetails;
 import com.godaddy.hfs.vm.VmService;
 import com.godaddy.vps4.network.IpAddress;
+import com.godaddy.vps4.util.TroubleshootVmService;
 import com.godaddy.vps4.vm.TroubleshootInfo;
 import com.godaddy.vps4.vm.VirtualMachine;
-import com.godaddy.vps4.web.util.TroubleshootVmHelper;
+import com.godaddy.vps4.util.DefaultTroubleshootVmService;
 import com.godaddy.vps4.web.vm.VmResource;
 import com.godaddy.vps4.web.vm.VmTroubleshootResource;
 
@@ -38,7 +39,7 @@ public class VmTroubleshootResourceTest {
 
     private Socket socketMock = mock(Socket.class);
     private InetAddress inetAddrMock = mock(InetAddress.class);
-    private TroubleshootVmHelper troubleHelper = new TroubleshootVmHelper(hfsVmService) {
+    private TroubleshootVmService troubleHelper = new DefaultTroubleshootVmService(hfsVmService) {
         @Override
         public Socket createSocket() {
             return socketMock;

@@ -1,30 +1,36 @@
 package com.godaddy.vps4.orchestration.snapshot;
 
+import java.util.Arrays;
 import java.util.UUID;
 
 import javax.inject.Inject;
 
-import com.godaddy.hfs.config.Config;
-import com.godaddy.vps4.orchestration.Vps4ActionRequest;
-import com.godaddy.vps4.orchestration.scheduler.ScheduleAutomaticBackupRetry;
-import com.godaddy.vps4.orchestration.vm.Vps4RecordScheduledJobForVm;
-import com.godaddy.vps4.scheduledJob.ScheduledJob;
-import gdg.hfs.orchestration.CommandRetryStrategy;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.json.simple.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.godaddy.hfs.config.Config;
+import com.godaddy.hfs.vm.Vm;
+import com.godaddy.hfs.vm.VmService;
 import com.godaddy.vps4.orchestration.ActionCommand;
+import com.godaddy.vps4.orchestration.Vps4ActionRequest;
+import com.godaddy.vps4.orchestration.scheduler.ScheduleAutomaticBackupRetry;
+import com.godaddy.vps4.orchestration.vm.Vps4RecordScheduledJobForVm;
+import com.godaddy.vps4.scheduledJob.ScheduledJob;
 import com.godaddy.vps4.snapshot.Snapshot;
 import com.godaddy.vps4.snapshot.SnapshotActionService;
 import com.godaddy.vps4.snapshot.SnapshotService;
 import com.godaddy.vps4.snapshot.SnapshotType;
+import com.godaddy.vps4.util.TroubleshootVmService;
 import com.godaddy.vps4.vm.ActionService;
 import com.godaddy.vps4.vm.ActionType;
+import com.godaddy.vps4.vm.VirtualMachine;
+import com.godaddy.vps4.vm.VirtualMachineService;
 
 import gdg.hfs.orchestration.CommandContext;
 import gdg.hfs.orchestration.CommandMetadata;
+import gdg.hfs.orchestration.CommandRetryStrategy;
 import gdg.hfs.vhfs.snapshot.SnapshotAction;
 
 @CommandMetadata(
@@ -37,32 +43,36 @@ public class Vps4SnapshotVm extends ActionCommand<Vps4SnapshotVm.Request, Vps4Sn
     private static final Logger logger = LoggerFactory.getLogger(Vps4SnapshotVm.class);
     private CommandContext context;
 
+    private final TroubleshootVmService troubleshootVmService;
     private final gdg.hfs.vhfs.snapshot.SnapshotService hfsSnapshotService;
     private final SnapshotService vps4SnapshotService;
+    private final VirtualMachineService virtualMachineService;
+    private final VmService vmService;
     private UUID snapshotIdToBeDeprecated;
     private final Config config;
 
     @Inject
     public Vps4SnapshotVm(@SnapshotActionService ActionService actionService,
+                          TroubleshootVmService troubleshootVmService,
                           gdg.hfs.vhfs.snapshot.SnapshotService hfsSnapshotService,
                           SnapshotService vps4SnapshotService,
+                          VirtualMachineService virtualMachineService,
+                          VmService vmService,
                           Config config) {
         super(actionService);
+        this.troubleshootVmService = troubleshootVmService;
         this.hfsSnapshotService = hfsSnapshotService;
         this.vps4SnapshotService = vps4SnapshotService;
+        this.virtualMachineService = virtualMachineService;
+        this.vmService = vmService;
         this.config = config;
     }
 
     @Override
-    protected Response executeWithAction(CommandContext context, Vps4SnapshotVm.Request request) {
+    protected Response executeWithAction(CommandContext context, Request request) {
         this.context = context;
-        if (request.snapshotType.equals(SnapshotType.AUTOMATIC)) {
-            int currentLoad = vps4SnapshotService.totalSnapshotsInProgress();
-            int maxAllowed = Integer.parseInt(config.get("vps4.autobackup.concurrentLimit", "30"));
-            if (currentLoad >= maxAllowed) {
-                handleTooManyConcurrentSnapshots(request);
-            }
-        }
+        throwErrorIfAgentIsDown(request);
+        throwErrorAndRescheduleIfLimitReached(request);
         snapshotIdToBeDeprecated = context.execute("MarkOldestSnapshotForDeprecation" + request.orionGuid,
                 ctx -> vps4SnapshotService.markOldestSnapshotForDeprecation(request.orionGuid, request.snapshotType),
                 UUID.class);
@@ -73,6 +83,29 @@ public class Vps4SnapshotVm extends ActionCommand<Vps4SnapshotVm.Request, Vps4Sn
         SnapshotAction hfsAction = createAndWaitForSnapshotCompletion(request);
         deprecateOldSnapshot(request.initiatedBy);
         return generateResponse(hfsAction);
+    }
+
+    private void throwErrorIfAgentIsDown(Request request) {
+        VirtualMachine vm = virtualMachineService.getVirtualMachine(request.vmId);
+        Vm hfsVm = vmService.getVm(request.hfsVmId);
+        if (hfsVm.status.equals("ACTIVE")) {
+            if (!troubleshootVmService.isPortOpenOnVm(vm.primaryIpAddress.ipAddress, 2224)) {
+                throw new RuntimeException("VmId " + request.vmId + " has port 2224 blocked. Refusing to take snapshot.");
+            }
+            if (!troubleshootVmService.getHfsAgentStatus(vm.hfsVmId).equals("OK")) {
+                throw new RuntimeException("Agent for vmId " + request.vmId + " is down. Refusing to take snapshot.");
+            }
+        }
+    }
+
+    private void throwErrorAndRescheduleIfLimitReached(Request request) {
+        if (request.snapshotType.equals(SnapshotType.AUTOMATIC)) {
+            int currentLoad = vps4SnapshotService.totalSnapshotsInProgress();
+            int maxAllowed = Integer.parseInt(config.get("vps4.autobackup.concurrentLimit", "30"));
+            if (currentLoad >= maxAllowed) {
+                handleTooManyConcurrentSnapshots(request);
+            }
+        }
     }
 
     private Response generateResponse(SnapshotAction hfsAction) {

@@ -13,10 +13,10 @@ import javax.ws.rs.core.MediaType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.godaddy.vps4.util.TroubleshootVmService;
 import com.godaddy.vps4.vm.TroubleshootInfo;
 import com.godaddy.vps4.vm.VirtualMachine;
 import com.godaddy.vps4.web.Vps4Api;
-import com.godaddy.vps4.web.util.TroubleshootVmHelper;
 
 import io.swagger.annotations.Api;
 
@@ -29,14 +29,13 @@ import io.swagger.annotations.Api;
 public class VmTroubleshootResource {
 
     private final VmResource vmResource;
-    private final TroubleshootVmHelper troubleVmHelper;
+    private final TroubleshootVmService troubleshootVmService;
     private static final Logger logger = LoggerFactory.getLogger(VmTroubleshootResource.class);
 
     @Inject
-    public VmTroubleshootResource(VmResource vmResource,
-            TroubleshootVmHelper troubleVmHelper) {
+    public VmTroubleshootResource(VmResource vmResource, TroubleshootVmService troubleshootVmService) {
         this.vmResource = vmResource;
-        this.troubleVmHelper = troubleVmHelper;
+        this.troubleshootVmService = troubleshootVmService;
     }
 
     @GET
@@ -46,9 +45,9 @@ public class VmTroubleshootResource {
         String ip = virtualMachine.primaryIpAddress.ipAddress;
 
         TroubleshootInfo info = new TroubleshootInfo();
-        info.status.canPing = troubleVmHelper.canPingVm(ip);
-        info.status.isPortOpen2224 = troubleVmHelper.isPortOpenOnVm(ip, 2224);
-        info.status.hfsAgentStatus = troubleVmHelper.getHfsAgentStatus(virtualMachine.hfsVmId);
+        info.status.canPing = troubleshootVmService.canPingVm(ip);
+        info.status.isPortOpen2224 = troubleshootVmService.isPortOpenOnVm(ip, 2224);
+        info.status.hfsAgentStatus = troubleshootVmService.getHfsAgentStatus(virtualMachine.hfsVmId);
 
         if (!info.isOk()) {
             logger.warn("Vm " + vmId + " troubleshooting status: " + info.toString());
