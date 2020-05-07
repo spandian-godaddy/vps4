@@ -30,7 +30,7 @@ public class WaitForPanoptaInstall
     public static final Logger logger = LoggerFactory.getLogger(WaitForPanoptaInstall.class);
 
     private PanoptaService panoptaService;
-    private long timeoutValue = 600000; // 10 minutes
+    private long timeoutValue = 1800000; // 30 minutes
     private long sleepInterval = 5000; // 5 seconds
 
     @Inject
