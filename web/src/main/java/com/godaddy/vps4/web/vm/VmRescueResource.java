@@ -63,7 +63,6 @@ public class VmRescueResource {
     @Path("{vmId}/rescue")
     public VmAction rescue(@PathParam("vmId") UUID vmId) {
         VirtualMachine vm = vmResource.getVm(vmId);
-        validateServerInCompatibleMode(vm.hfsVmId, "ACTIVE");
 
         VmActionRequest rescueRequest = new VmActionRequest();
         rescueRequest.virtualMachine = vm;

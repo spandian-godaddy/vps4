@@ -17,6 +17,7 @@ import java.util.UUID;
 
 import org.junit.Before;
 import org.junit.Test;
+
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.godaddy.hfs.vm.Vm;
@@ -61,7 +62,7 @@ public class VmRescueResourceTest {
         when(actionService.getAction(anyLong())).thenReturn(rescueAction);
 
         when(commandService.executeCommand(any())).thenReturn(new CommandState());
-        rescueResource = new VmRescueResource(gdUser, vmResource, actionService, commandService, vmService, 
+        rescueResource = new VmRescueResource(gdUser, vmResource, actionService, commandService, vmService,
                 actionResource);
     }
 
@@ -73,15 +74,10 @@ public class VmRescueResourceTest {
     }
 
     @Test
-    public void throwsVps4ExceptionIfServerNotInActiveStatus() {
-        hfsVm.status = "RESCUED";
-        try {
-            rescueResource.rescue(vmId);
-            fail();
-        } catch (Vps4Exception ex) {
-            assertEquals("INVALID_STATUS", ex.getId());
-        }
-        verify(actionService, never()).createAction(vmId, ActionType.RESCUE, "{}", gdUser.getUsername());
+    public void createsRescueActionIfStatusUnknown() {
+        hfsVm.status = "UNKNOWN";
+        rescueResource.rescue(vmId);
+        verify(actionService).createAction(vmId, ActionType.RESCUE, "{}", gdUser.getUsername());
     }
 
     @Test
@@ -111,7 +107,7 @@ public class VmRescueResourceTest {
         response.hfsVmActionId = 123L;
         testVps4Action.response = mapper.writeValueAsString(response);
         List<Action> testVps4Actions = Arrays.asList(testVps4Action);
-        when(actionResource.getActionList(ActionResource.ResourceType.VM, vmId, Arrays.asList("COMPLETE"), Arrays.asList("RESCUE"), null, 
+        when(actionResource.getActionList(ActionResource.ResourceType.VM, vmId, Arrays.asList("COMPLETE"), Arrays.asList("RESCUE"), null,
                 null, 1, 0)).thenReturn(testVps4Actions);
         com.godaddy.hfs.vm.VmAction testHfsAction = new com.godaddy.hfs.vm.VmAction();
         testHfsAction.vmActionId = 123L;
@@ -122,11 +118,11 @@ public class VmRescueResourceTest {
         assertEquals("root", creds.getUsername());
         assertEquals("S5wurpP1Rd6xVbYLi", creds.getPassword());
     }
-    
+
     @Test
     public void testGetRescueCredentialsNoRescueAction() throws JsonProcessingException {
         List<Action> testResults = new ArrayList<Action>();
-        when(actionResource.getActionList(ActionResource.ResourceType.VM, vmId, Arrays.asList("COMPLETE"), Arrays.asList("RESCUE"), null, 
+        when(actionResource.getActionList(ActionResource.ResourceType.VM, vmId, Arrays.asList("COMPLETE"), Arrays.asList("RESCUE"), null,
                 null, 1, 0)).thenReturn(testResults);
 
         RescueCredentials creds = rescueResource.getRescueCredentials(vmId);
@@ -142,7 +138,7 @@ public class VmRescueResourceTest {
         response.hfsVmActionId = 123L;
         testVps4Action.response = mapper.writeValueAsString(response);
         List<Action> testVps4Actions = Arrays.asList(testVps4Action);
-        when(actionResource.getActionList(ActionResource.ResourceType.VM, vmId, Arrays.asList("COMPLETE"), Arrays.asList("RESCUE"), 
+        when(actionResource.getActionList(ActionResource.ResourceType.VM, vmId, Arrays.asList("COMPLETE"), Arrays.asList("RESCUE"),
                 null, null, 1, 0)).thenReturn(testVps4Actions);
         com.godaddy.hfs.vm.VmAction testHfsAction = new com.godaddy.hfs.vm.VmAction();
         testHfsAction.vmActionId = 123L;
