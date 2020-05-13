@@ -141,6 +141,15 @@ public class Vps4PanoptaMessageHandlerTest {
     }
 
     @Test
+    public void handleOutageWithDuplicateItemTypes() throws MessageHandlerException {
+        JSONObject jsonMsg = createOutageEventMessage();
+        String multiItemType = String.join(",", Item.ITEM_SSH.getTextkey(), Item.ITEM_SSH.getTextkey());
+        replaceJsonKeyVal(jsonMsg, "itemType", multiItemType);
+        callHandleMessage(jsonMsg.toJSONString());
+        verify(vmOutageApi, times(1)).newVmOutage(eq(vmId), any(VmOutageRequest.class));
+    }
+
+    @Test
     public void handlesClearEventMessage() throws MessageHandlerException {
         callHandleMessage(createClearEventMessage().toJSONString());
         verify(vmOutageApi).clearVmOutage(vmId, outageId, "2019-12-09 21:19:51 UTC");

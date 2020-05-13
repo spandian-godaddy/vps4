@@ -8,7 +8,9 @@ import static java.util.stream.Collectors.toMap;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 import javax.inject.Inject;
 
@@ -113,8 +115,9 @@ public class Vps4PanoptaMessageHandler implements MessageHandler {
     }
 
     private void reportNewVmMetricOutages(UUID vmId, Vps4PanoptaMessage msg) {
-        List<String> itemList = Arrays.asList(msg.itemType.split(","));  // msg.itemType is comma delimited list
-        for(String itemType: itemList) {
+        // msg.itemType is comma delimited list
+        Set<String> itemSet = Arrays.stream(msg.itemType.split((","))).collect(Collectors.toSet());
+        for (String itemType: itemSet) {
             VmMetric metric = mapItemTypeToMetric(itemType);
             if (metric == VmMetric.UNKNOWN) {
                 logger.warn("Unknown metric found in panopta webhook alert: {}", msg.itemType);
