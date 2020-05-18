@@ -22,11 +22,7 @@
     - you can choose to use another IDE, like IntelliJ IDEA (Community Edition should be sufficient & does not require a license), but these specific instructions are catered for Eclipse setup
 - download Intellij Idea Ultimate edition IDE if that is your choice of IDE
     - you can get a godaddy license activation by submitting a SNOW request (example: [RITM0120501](https://godaddy.service-now.com/nav_to.do?uri=sc_req_item.do?sys_id=b2e5047c37708384ce4fb15ec3990e9a)). After it is resolved, the JetBrains license will be connected to your GoDaddy email, you will then be able to activate license for both your IntelliJ IDEA IDE and WebStorm IDE.
-    - Note: this request might take a few days to resolve. In the meantime, you can still use the 30 day free trial version.
-- setup code style settings for Intellij Idea    
-    - <s>download the file in the url shown here to a local directory on your mac https://github.secureserver.net/vps4/intellijSettings/blob/master/codestyles/Default.xml
-    - Open Intellij Idea and click on File -> Import Settings and import the file. This will enable your import settings to match with the teams' preferences.</s> - this yields "Invalid File" error
-    - Alternatively, you can point your Intellij Idea to the repo located at https://github.secureserver.net/vps4/intellijSettings.git by choosing File -> Settings Repo and using the URL for the settings repo.  
+    - Note: this request might take a few days to resolve. In the meantime, you can still use the 30 day free trial version. 
 - make sure Maven is installed
     - for Mac, if you have homebrew already installed, one way to do it:
        - `brew install maven`
