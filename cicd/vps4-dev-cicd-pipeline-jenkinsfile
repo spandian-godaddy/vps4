@@ -25,6 +25,8 @@ pipeline {
         }
         stage('Deploy Branch to Dev') {
             steps {
+                load("/home/jenkins/vps4_dev_latest_version.properties")
+                echo "vps4 version: ${VPS4_VERSION}"
                 build job: 'dev-deploy-branch', parameters: [string(name: 'VPS4_VERSION', value: VPS4_VERSION)]
                 productStampZk("dev", "vps4-web-${VPS4_VERSION}.noarch", "vps4-web")
                 productStampZk("dev", "vps4-message-consumer-${VPS4_VERSION}.noarch", "vps4-message-consumer")
