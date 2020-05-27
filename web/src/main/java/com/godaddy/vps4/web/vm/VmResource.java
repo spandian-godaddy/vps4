@@ -320,7 +320,8 @@ public class VmResource {
             if (snapshot.status == SnapshotStatus.NEW
                     || snapshot.status == SnapshotStatus.ERROR
                     || snapshot.status == SnapshotStatus.ERROR_RESCHEDULED
-                    || snapshot.status == SnapshotStatus.LIMIT_RESCHEDULED) {
+                    || snapshot.status == SnapshotStatus.LIMIT_RESCHEDULED
+                    || snapshot.status == SnapshotStatus.AGENT_DOWN) {
                 // just mark snapshots as cancelled if they were new or errored
                 snapshotService.updateSnapshotStatus(snapshot.id, SnapshotStatus.CANCELLED);
             } else {

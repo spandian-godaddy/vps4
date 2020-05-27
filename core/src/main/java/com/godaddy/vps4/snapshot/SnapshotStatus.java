@@ -15,7 +15,8 @@ public enum SnapshotStatus {
     DEPRECATED(7),
     CANCELLED(8),
     ERROR_RESCHEDULED(9),
-    LIMIT_RESCHEDULED(10);
+    LIMIT_RESCHEDULED(10),
+    AGENT_DOWN(11);
 
     private final int typeId;
 

@@ -40,7 +40,9 @@ public class JdbcMonitorService implements MonitorService {
             "AND sna.status_id IN ( " +
             "  SELECT status_id FROM action_status WHERE status INCLAUSE " +
             ") AND snapshot.status NOT IN ( " +
-            "  SELECT snapshot_status.status_id FROM snapshot_status WHERE snapshot_status.status in ('CANCELLED', 'ERROR_RESCHEDULED', 'LIMIT_RESCHEDULED', 'DESTROYED') " +
+            "  SELECT snapshot_status.status_id FROM snapshot_status WHERE snapshot_status.status in (" +
+            "'CANCELLED', 'ERROR', 'ERROR_RESCHEDULED', 'LIMIT_RESCHEDULED', 'DESTROYED', 'AGENT_DOWN'" +
+            ") " +
             ") AND snapshot.snapshot_type_id = ( " +
             "  SELECT snapshot_type.snapshot_type_id FROM snapshot_type where snapshot_type.snapshot_type = 'AUTOMATIC' " +
             ") " +

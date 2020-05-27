@@ -436,8 +436,7 @@ public class Vps4SnapshotVmTest {
             command.execute(context, automaticRequest);
             Assert.fail("RuntimeException should have been thrown");
         } catch (RuntimeException ignored) {}
-        verify(spySnapshotService, times(0)).markSnapshotErrorRescheduled(vps4AutomaticSnapshotId);
-        verify(spySnapshotService, times(0)).markSnapshotLimitRescheduled(vps4AutomaticSnapshotId);
+        verify(spySnapshotService, times(1)).markSnapshotAgentDown(vps4AutomaticSnapshotId);
         verify(context, never()).execute(eq("Vps4SnapshotVm"), any(Function.class), any());
     }
 
@@ -449,8 +448,19 @@ public class Vps4SnapshotVmTest {
             command.execute(context, automaticRequest);
             Assert.fail("RuntimeException should have been thrown");
         } catch (RuntimeException ignored) {}
+        verify(spySnapshotService, times(1)).markSnapshotAgentDown(vps4AutomaticSnapshotId);
+        verify(context, never()).execute(eq("Vps4SnapshotVm"), any(Function.class), any());
+    }
+
+    @Test
+    public void testNydusErrorDoesNotGetRescheduled() {
+        when(troubleshootVmService.isPortOpenOnVm(any(), eq(2224))).thenReturn(true);
+        when(troubleshootVmService.getHfsAgentStatus(anyLong())).thenReturn("UNKNOWN");
+        try {
+            command.execute(context, automaticRequest);
+            Assert.fail("RuntimeException should have been thrown");
+        } catch (RuntimeException ignored) {}
         verify(spySnapshotService, times(0)).markSnapshotErrorRescheduled(vps4AutomaticSnapshotId);
         verify(spySnapshotService, times(0)).markSnapshotLimitRescheduled(vps4AutomaticSnapshotId);
-        verify(context, never()).execute(eq("Vps4SnapshotVm"), any(Function.class), any());
     }
 }

@@ -141,7 +141,8 @@ public class RequestValidation {
         if (!user.isAdmin() && (snapshot.status == SnapshotStatus.DESTROYED ||
                 snapshot.status == SnapshotStatus.CANCELLED ||
                 snapshot.status == SnapshotStatus.ERROR_RESCHEDULED ||
-                snapshot.status == SnapshotStatus.LIMIT_RESCHEDULED)) {
+                snapshot.status == SnapshotStatus.LIMIT_RESCHEDULED ||
+                snapshot.status == SnapshotStatus.AGENT_DOWN)) {
             throw new Vps4Exception("SNAPSHOT_DELETED", String.format("The snapshot %s was DELETED", snapshot.id));
         }
     }

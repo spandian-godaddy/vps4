@@ -114,7 +114,8 @@ public class SnapshotResource {
                 .filter(snapshot -> snapshot.status != SnapshotStatus.DESTROYED
                         && snapshot.status != SnapshotStatus.CANCELLED
                         && snapshot.status != SnapshotStatus.ERROR_RESCHEDULED
-                        && snapshot.status != SnapshotStatus.LIMIT_RESCHEDULED)
+                        && snapshot.status != SnapshotStatus.LIMIT_RESCHEDULED
+                        && snapshot.status != SnapshotStatus.AGENT_DOWN)
                 .collect(Collectors.toList());
     }
 

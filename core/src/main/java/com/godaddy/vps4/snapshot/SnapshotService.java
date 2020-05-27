@@ -36,6 +36,8 @@ public interface SnapshotService {
 
     void markSnapshotLimitRescheduled(UUID snapshotId);
 
+    void markSnapshotAgentDown(UUID snapshotId);
+
     void markSnapshotDestroyed(UUID snapshotId);
 
     UUID markOldestSnapshotForDeprecation(UUID orionGuid, SnapshotType snapshotType);

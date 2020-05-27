@@ -245,6 +245,7 @@ public class SnapshotServiceTest {
         insertTestSnapshots(1, SnapshotStatus.CANCELLED, SnapshotType.ON_DEMAND);
         insertTestSnapshots(1, SnapshotStatus.ERROR_RESCHEDULED, SnapshotType.ON_DEMAND);
         insertTestSnapshots(1, SnapshotStatus.LIMIT_RESCHEDULED, SnapshotType.ON_DEMAND);
+        insertTestSnapshots(1, SnapshotStatus.AGENT_DOWN, SnapshotType.ON_DEMAND);
         assertEquals(1, snapshotService.totalSnapshotsInProgress());
     }
 

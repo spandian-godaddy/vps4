@@ -1,6 +1,5 @@
 package com.godaddy.vps4.orchestration.snapshot;
 
-import java.util.Arrays;
 import java.util.UUID;
 
 import javax.inject.Inject;
@@ -71,15 +70,15 @@ public class Vps4SnapshotVm extends ActionCommand<Vps4SnapshotVm.Request, Vps4Sn
     @Override
     protected Response executeWithAction(CommandContext context, Request request) {
         this.context = context;
+        context.execute("CancelErroredSnapshots", ctx -> {
+            vps4SnapshotService.cancelErroredSnapshots(request.orionGuid, request.snapshotType);
+            return null;
+        }, Void.class);
         throwErrorIfAgentIsDown(request);
         throwErrorAndRescheduleIfLimitReached(request);
         snapshotIdToBeDeprecated = context.execute("MarkOldestSnapshotForDeprecation" + request.orionGuid,
                 ctx -> vps4SnapshotService.markOldestSnapshotForDeprecation(request.orionGuid, request.snapshotType),
                 UUID.class);
-        context.execute("CancelErroredSnapshots", ctx -> {
-            vps4SnapshotService.cancelErroredSnapshots(request.orionGuid, request.snapshotType);
-            return null;
-        }, Void.class);
         SnapshotAction hfsAction = createAndWaitForSnapshotCompletion(request);
         deprecateOldSnapshot(request.initiatedBy);
         return generateResponse(hfsAction);
@@ -90,9 +89,11 @@ public class Vps4SnapshotVm extends ActionCommand<Vps4SnapshotVm.Request, Vps4Sn
         Vm hfsVm = vmService.getVm(request.hfsVmId);
         if (hfsVm.status.equals("ACTIVE")) {
             if (!troubleshootVmService.isPortOpenOnVm(vm.primaryIpAddress.ipAddress, 2224)) {
+                vps4SnapshotService.markSnapshotAgentDown(request.vps4SnapshotId);
                 throw new RuntimeException("VmId " + request.vmId + " has port 2224 blocked. Refusing to take snapshot.");
             }
             if (!troubleshootVmService.getHfsAgentStatus(vm.hfsVmId).equals("OK")) {
+                vps4SnapshotService.markSnapshotAgentDown(request.vps4SnapshotId);
                 throw new RuntimeException("Agent for vmId " + request.vmId + " is down. Refusing to take snapshot.");
             }
         }
