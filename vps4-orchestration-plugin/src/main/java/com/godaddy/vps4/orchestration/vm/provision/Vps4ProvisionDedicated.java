@@ -7,11 +7,14 @@ import static com.godaddy.vps4.vm.CreateVmStep.RequestingServer;
 import static com.godaddy.vps4.vm.CreateVmStep.SetHostname;
 import static com.godaddy.vps4.vm.CreateVmStep.SetupComplete;
 import static com.godaddy.vps4.vm.CreateVmStep.StartingServerSetup;
+import static com.godaddy.vps4.vm.CreateVmStep.ConfigureMonitoring;
 
 import java.util.UUID;
 
 import javax.inject.Inject;
 
+import com.godaddy.vps4.orchestration.panopta.SetupPanopta;
+import gdg.hfs.vhfs.network.IpAddress;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -124,7 +127,7 @@ public class Vps4ProvisionDedicated extends ActionCommand<ProvisionRequest, Vps4
 
         configureAdminUser(hfsVmId, request.vmInfo.vmId);
 
-        configureMonitoring(hfsVm.address.ip_address);
+        configureMonitoring(hfsVm.address.ip_address, hfsVmId);
 
         setEcommCommonName(request.orionGuid, request.serverName);
 
@@ -238,14 +241,28 @@ public class Vps4ProvisionDedicated extends ActionCommand<ProvisionRequest, Vps4
         return new ConfigurePleskRequest(hfsVmId, request.username, request.encryptedPassword);
     }
 
-    private void configureMonitoring(String ipAddress) {
-        if (request.vmInfo.hasMonitoring) {
+    private void configureMonitoring(String ipAddress, long hfsVmId) {
+        // gate panopta installation using a feature flag
+        if (request.vmInfo.isPanoptaEnabled) {
+            installPanopta(ipAddress, hfsVmId);
+        }else if (request.vmInfo.hasMonitoring) {
             setStep(ConfigureNodeping);
             CreateCheckRequest checkRequest = ProvisionHelper.getCreateCheckRequest(ipAddress, monitoringMeta);
             NodePingCheck check = monitoringService.createCheck(monitoringMeta.getAccountId(), checkRequest);
             logger.debug("CheckId: {}", check.checkId);
             addCheckIdToIp(ipAddress, check);
         }
+    }
+
+    private void installPanopta(String ipAddress, long hfsVmId) {
+        setStep(ConfigureMonitoring);
+        SetupPanopta.Request setupPanoptaRequest = new SetupPanopta.Request();
+        setupPanoptaRequest.hfsVmId = hfsVmId;
+        setupPanoptaRequest.orionGuid = request.orionGuid;
+        setupPanoptaRequest.vmId = request.vmInfo.vmId;
+        setupPanoptaRequest.shopperId = request.shopperId;
+        setupPanoptaRequest.fqdn = ipAddress;
+        context.execute(SetupPanopta.class, setupPanoptaRequest);
     }
 
     private void addCheckIdToIp(String ipAddress, NodePingCheck check) {

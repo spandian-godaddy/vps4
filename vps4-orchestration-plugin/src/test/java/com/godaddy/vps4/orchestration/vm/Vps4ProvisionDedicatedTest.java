@@ -17,6 +17,7 @@ import java.util.Random;
 import java.util.UUID;
 import java.util.function.Function;
 
+import com.godaddy.vps4.orchestration.panopta.SetupPanopta;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
@@ -56,6 +57,9 @@ import com.godaddy.vps4.vm.VirtualMachineService;
 import com.godaddy.vps4.vm.VmUserService;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
+import com.godaddy.vps4.panopta.PanoptaDataService;
+import com.godaddy.vps4.panopta.PanoptaService;
+import com.godaddy.vps4.orchestration.panopta.SetupPanopta;
 
 import gdg.hfs.orchestration.CommandContext;
 import gdg.hfs.vhfs.nodeping.CreateCheckRequest;
@@ -85,11 +89,14 @@ public class Vps4ProvisionDedicatedTest {
     HfsVmTrackingRecordService hfsVmTrackingRecordService = mock(HfsVmTrackingRecordService.class);
     ConfigureCpanel configureCpanel = mock(ConfigureCpanel.class);
     AddUser addUser = mock(AddUser.class);
+    PanoptaService panoptaService = mock(PanoptaService.class);
+    PanoptaDataService panoptaDataService = mock(PanoptaDataService.class);
 
     @Captor private ArgumentCaptor<Function<CommandContext, Void>> setCommonNameLambdaCaptor;
     @Captor private ArgumentCaptor<SetPassword.Request> setPasswordCaptor;
     @Captor private ArgumentCaptor<SetHostname.Request> setHostnameArgumentCaptor;
     @Captor private ArgumentCaptor<CreateDnsPtrRecord.Request> reverseDnsNameRequestCaptor;
+    @Captor private ArgumentCaptor<SetupPanopta.Request> setupPanoptaRequestArgCaptor;
 
     Vps4ProvisionDedicated command = new Vps4ProvisionDedicated(actionService, vmService,
             virtualMachineService, vmUserService, networkService, nodePingService,
@@ -115,6 +122,8 @@ public class Vps4ProvisionDedicatedTest {
         binder.bind(SetPassword.class).toInstance(setPassword);
         binder.bind(ConfigureCpanel.class).toInstance(configureCpanel);
         binder.bind(AddUser.class).toInstance(addUser);
+        binder.bind(PanoptaService.class).toInstance(panoptaService);
+        binder.bind(PanoptaDataService.class).toInstance(panoptaDataService);
     });
 
     CommandContext context = mock(CommandContext.class);
@@ -133,6 +142,7 @@ public class Vps4ProvisionDedicatedTest {
     int diskGib;
     UUID orionGuid = UUID.randomUUID();
     long hfsVmId = 42;
+    String panoptaCustomerKey = "fakePanoptaPartnerCustomerKey-";
 
     @Before
     public void setupTest() throws Exception {
@@ -297,5 +307,33 @@ public class Vps4ProvisionDedicatedTest {
         command.executeWithAction(context, request);
         verify(context, times(1)).execute(eq("UpdateHfsVmTrackingRecord"),
                                           any(Function.class), eq(Void.class));
+    }
+
+    @Test
+    public void configuresNodePingForAllAccountsWhenPanoptaIsDisabled() {
+        this.vmInfo.hasMonitoring = true;
+        NodePingCheck check = mock(NodePingCheck.class);
+        check.checkId = 1;
+        when(nodePingService.createCheck(anyLong(), any())).thenReturn(check);
+        when(monitoringMeta.getAccountId()).thenReturn(1L);
+        when(monitoringMeta.getGeoRegion()).thenReturn("nam");
+        vm.primaryIpAddress = mock(com.godaddy.vps4.network.IpAddress.class);
+
+        command.executeWithAction(context, this.request);
+        verify(nodePingService, times(1)).createCheck(eq(1L), any(CreateCheckRequest.class));
+    }
+
+    @Test
+    public void provisionVmInvokesPanoptaSetup() {
+        request.vmInfo.isPanoptaEnabled = true;
+        when(virtualMachineService.getVirtualMachine(any(UUID.class))).thenReturn(vm);
+
+        command.executeWithAction(context, this.request);
+        verify(context, times(1)).execute(eq(SetupPanopta.class), setupPanoptaRequestArgCaptor.capture());
+        SetupPanopta.Request capturedRequest = setupPanoptaRequestArgCaptor.getValue();
+        assertEquals(capturedRequest.vmId, vmId);
+        assertEquals(capturedRequest.hfsVmId, hfsVmId);
+        assertEquals(capturedRequest.orionGuid, orionGuid);
+        assertEquals(capturedRequest.shopperId, shopperId);
     }
 }
