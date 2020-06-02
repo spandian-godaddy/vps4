@@ -187,11 +187,12 @@
         ```json
         {
           "name": "vm01",
-          "orionGuid": "product_id_from_credit",
-          "image": "hfs-centos-7-cpanel-11",
+          "orionGuid": "sameAsAccountGuidAbove",
+          "image": "vps4-centos-7-cpanel-11",
           "dataCenterId": 1,
           "username": "myusername",
           "password": "onevps4ME!"
         }
         ```
         - note: `Error while creating a backup schedule for VM: someGUID. Error details: {} java.net.ConnectException: Connection refused; Connect to 127.0.0.1:8180` during creates is normal / expected if you do not have a real scheduler
+        - note: Currently available cPanel image name can be found in vps4 database 'image' table.
