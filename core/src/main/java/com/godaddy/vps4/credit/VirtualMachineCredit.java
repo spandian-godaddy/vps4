@@ -5,6 +5,7 @@ import java.util.Arrays;
 import java.util.Map;
 import java.util.UUID;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import org.apache.commons.lang3.builder.ReflectionToStringBuilder;
 import org.apache.commons.lang3.builder.ToStringStyle;
 
@@ -72,8 +73,12 @@ public class VirtualMachineCredit {
         return provisionDate == null;
     }
 
-    @JsonIgnore
+    @JsonProperty("hasMonitoring")
     public boolean hasMonitoring() {
+        if (this.isDed4() && this.managedLevel == 1)
+        {
+            return false;
+        }
         return monitoring == MONITORING_ENABLED;
     }
 

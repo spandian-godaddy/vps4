@@ -91,6 +91,25 @@ public class VirtualMachineCreditTest {
     }
 
     @Test
+    public void monitoringFalseForDed4WithManagedLevel1() {
+        VirtualMachineCredit credit = new VirtualMachineCredit.Builder(mock(DataCenterService.class))
+                .withPlanFeatures(planFeaturesFrom("tier", "60", "managed_level", "1"))
+                .build();
+        assertFalse(credit.hasMonitoring());
+        assertFalse(credit.isManaged());
+        assertTrue(credit.isDed4());
+    }
+    @Test
+    public void monitoringFalseForDed4WithManagedLevel0() {
+        VirtualMachineCredit credit = new VirtualMachineCredit.Builder(mock(DataCenterService.class))
+                .withPlanFeatures(planFeaturesFrom("tier", "60", "managed_level", "0"))
+                .build();
+        assertFalse(credit.hasMonitoring());
+        assertFalse(credit.isManaged());
+        assertTrue(credit.isDed4());
+    }
+
+    @Test
     public void getMonitoringHandlesBooleanValue() {
         VirtualMachineCredit credit = new VirtualMachineCredit.Builder(mock(DataCenterService.class))
                 .withPlanFeatures(planFeaturesFrom("monitoring", "true")).build();
