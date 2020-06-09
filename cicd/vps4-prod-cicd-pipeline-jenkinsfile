@@ -30,6 +30,8 @@ pipeline {
 
         stage ("Deploy to AMS3") {
             steps {
+                load("/home/jenkins/vps4_latest_version.properties")
+                echo "vps4 version: ${VPS4_VERSION}"
                 echo "Deploying to AMS3"
                 build job: 'deploy_to_prod_ams3', parameters: [string(name: 'VPS4_VERSION', value: VPS4_VERSION)]
                 productStampZk("prod_ams3", "vps4-web-${VPS4_VERSION}.noarch", "vps4-web")
@@ -45,6 +47,8 @@ pipeline {
                 timeout(time:45, unit:'MINUTES')
             }
             steps {
+                load("/home/jenkins/vps4_latest_version.properties")
+                echo "vps4 version: ${VPS4_VERSION}"
                 build job: 'prod_n3_phase_3_test', parameters: [string(name: 'VPS4_VERSION', value: VPS4_VERSION)]
                 slackSend(color: '#00CD48', message: "Post Deploy *N3 SMOKE TEST* was SUCCESSFUL. Job '${env.JOB_NAME} [${VPS4_VERSION}]' (${env.BUILD_URL})")
             }
@@ -54,6 +58,8 @@ pipeline {
             parallel {
                 stage("Deploy to SG2") {
                     steps {
+                        load("/home/jenkins/vps4_latest_version.properties")
+                        echo "vps4 version: ${VPS4_VERSION}"
                         echo "Deploying to SG2"
                         build job: 'deploy_to_prod_sin2', parameters: [string(name: 'VPS4_VERSION', value: VPS4_VERSION)]
                         productStampZk("prod_sin2", "vps4-web-${VPS4_VERSION}.noarch", "vps4-web")
@@ -66,6 +72,8 @@ pipeline {
 
                 stage ("Deploy to A2") {
                     steps {
+                        load("/home/jenkins/vps4_latest_version.properties")
+                        echo "vps4 version: ${VPS4_VERSION}"
                         echo "Deploying to A2"
                         build job: 'deploy_to_prod_a2', parameters: [string(name: 'VPS4_VERSION', value: VPS4_VERSION)]
                         productStampZk("prod_a2", "vps4-web-${VPS4_VERSION}.noarch", "vps4-web")
@@ -78,6 +86,8 @@ pipeline {
 
                 stage ("Deploy to P3") {
                     steps {
+                        load("/home/jenkins/vps4_latest_version.properties")
+                        echo "vps4 version: ${VPS4_VERSION}"
                         echo "Deploying to P3"
                         build job: 'deploy_to_prod_phx3', parameters: [string(name: 'VPS4_VERSION', value: VPS4_VERSION)]
                         productStampZk("prod_phx3", "vps4-web-${VPS4_VERSION}.noarch", "vps4-web")
@@ -100,6 +110,8 @@ pipeline {
 
         stage("Restart Proxymanager Service in Prod") {
             steps {
+                load("/home/jenkins/vps4_latest_version.properties")
+                echo "vps4 version: ${VPS4_VERSION}"
                 slackSend(color: '#00CD48', message: "vps4 Deploy To Production: *Restarting proxy manager service* on web proxy servers.")
                 build job: 'restart_proxymgr_prod', parameters: [string(name: 'VPS4_VERSION', value: VPS4_VERSION)]
             }
@@ -110,6 +122,8 @@ pipeline {
                 timeout(time:45, unit:'MINUTES')
             }
             steps {
+                load("/home/jenkins/vps4_latest_version.properties")
+                echo "vps4 version: ${VPS4_VERSION}"
                 build job: 'prod_sg2_phase_3_test', parameters: [string(name: 'VPS4_VERSION', value: VPS4_VERSION)]
                 slackSend(color: '#00CD48', message: "Post Deploy *SG2 SMOKE TEST* was SUCCESSFUL. Job '${env.JOB_NAME} [${VPS4_VERSION}]' (${env.BUILD_URL})")
             }
@@ -120,6 +134,8 @@ pipeline {
                 timeout(time:45, unit:'MINUTES')
             }
             steps {
+                load("/home/jenkins/vps4_latest_version.properties")
+                echo "vps4 version: ${VPS4_VERSION}"
                 build job: 'prod_a2_phase_3_test', parameters: [string(name: 'VPS4_VERSION', value: VPS4_VERSION)]
                 slackSend(color: '#00CD48', message: "Post Deploy *A2 SMOKE TEST* was SUCCESSFUL. Job '${env.JOB_NAME} [${VPS4_VERSION}]' (${env.BUILD_URL})")
             }
