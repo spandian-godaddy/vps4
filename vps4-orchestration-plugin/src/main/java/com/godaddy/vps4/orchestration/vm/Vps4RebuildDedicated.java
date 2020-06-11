@@ -7,6 +7,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
+import com.godaddy.vps4.network.NetworkService;
+import com.godaddy.vps4.orchestration.panopta.SetupPanopta;
+import com.godaddy.vps4.panopta.PanoptaDataService;
+import com.godaddy.vps4.panopta.jdbc.PanoptaServerDetails;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -50,8 +54,10 @@ public class Vps4RebuildDedicated extends ActionCommand<Vps4RebuildDedicated.Req
     private static final Logger logger = LoggerFactory.getLogger(Vps4RebuildDedicated.class);
     private final VmService vmService;
     private final VirtualMachineService virtualMachineService;
+    private final NetworkService networkService;
     private final VmUserService vmUserService;
     private final CreditService creditService;
+    private final PanoptaDataService panoptaDataService;
     private Request request;
     private ActionState state;
     private CommandContext context;
@@ -59,12 +65,15 @@ public class Vps4RebuildDedicated extends ActionCommand<Vps4RebuildDedicated.Req
 
     @Inject
     public Vps4RebuildDedicated(ActionService actionService, VmService vmService, VirtualMachineService virtualMachineService,
-                                VmUserService vmUserService, CreditService creditService) {
+                                VmUserService vmUserService, CreditService creditService,
+                                NetworkService networkService, PanoptaDataService panoptaDataService) {
         super(actionService);
         this.vmService = vmService;
         this.virtualMachineService = virtualMachineService;
         this.vmUserService = vmUserService;
         this.creditService = creditService;
+        this.networkService = networkService;
+        this.panoptaDataService = panoptaDataService;
     }
 
     @Override
@@ -100,6 +109,7 @@ public class Vps4RebuildDedicated extends ActionCommand<Vps4RebuildDedicated.Req
         configureAdminUser(newHfsVmId);
 
         updateServerDetails(request);
+        configureMonitoring(newHfsVmId);
         setEcommCommonName(oldVm.orionGuid, request.rebuildVmInfo.serverName);
 
         setStep(RebuildVmStep.RebuildComplete);
@@ -208,6 +218,24 @@ public class Vps4RebuildDedicated extends ActionCommand<Vps4RebuildDedicated.Req
 
     private ConfigurePleskRequest createConfigurePleskRequest(long hfsVmId) {
         return new ConfigurePleskRequest(hfsVmId, request.rebuildVmInfo.username, request.rebuildVmInfo.encryptedPassword);
+    }
+
+    private void configureMonitoring(long hfsVmId) {
+        if (hasPanoptaMonitoring()) {
+            setStep(RebuildVmStep.ConfigureMonitoring);
+            SetupPanopta.Request setupPanoptaRequest = new SetupPanopta.Request();
+            setupPanoptaRequest.hfsVmId = hfsVmId;
+            setupPanoptaRequest.orionGuid = request.rebuildVmInfo.orionGuid;
+            setupPanoptaRequest.vmId = request.rebuildVmInfo.vmId;
+            setupPanoptaRequest.shopperId = request.rebuildVmInfo.shopperId;
+            setupPanoptaRequest.fqdn = networkService.getVmPrimaryAddress(vps4VmId).ipAddress;
+            context.execute(SetupPanopta.class, setupPanoptaRequest);
+        }
+    }
+
+    private boolean hasPanoptaMonitoring() {
+        PanoptaServerDetails panoptaDetails = panoptaDataService.getPanoptaServerDetails(vps4VmId);
+        return panoptaDetails != null;
     }
 
     private void setEcommCommonName(UUID orionGuid, String commonName) {
