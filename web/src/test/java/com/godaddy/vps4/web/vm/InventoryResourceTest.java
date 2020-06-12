@@ -13,7 +13,9 @@ import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import javax.ws.rs.ServiceUnavailableException;
 
@@ -33,10 +35,14 @@ public class InventoryResourceTest {
     private VirtualMachineService virtualMachineService = mock(VirtualMachineService.class);
     private ServerSpec mockServerSpec = mock(ServerSpec.class);
     private InventoryResource inventoryResource;
+    private int activeServerCount = 9999;
+    private int zombieServerCount = 22;
 
     @Before
     public void setUp() throws Exception {
         when(virtualMachineService.getSpec(anyString())).thenReturn(mockServerSpec);
+        when(virtualMachineService.getActiveServerCountByTiers()).thenReturn(new HashMap<Integer, Integer>());
+        when(virtualMachineService.getZombieServerCountByTiers()).thenReturn(new HashMap<Integer, Integer>());
         when(vmService.getInventory(anyString())).thenReturn(new ArrayList<>());
         inventoryResource = new InventoryResource(vmService, virtualMachineService);
     }
@@ -52,6 +58,18 @@ public class InventoryResourceTest {
         serverType.serverType = ServerType.Type.DEDICATED;
         return new ServerSpec(1, "test.spec", "test.spec", 100, 2, 2, 2, Instant.now(),
                 Instant.now().plus(1, ChronoUnit.DAYS), serverType);
+    }
+
+    private Map<Integer, Integer> createDummyActiveServerCountByTiers() {
+        Map<Integer, Integer> serverCountInTiersMap=new HashMap<Integer, Integer>();
+        serverCountInTiersMap.put(100, activeServerCount);
+        return serverCountInTiersMap;
+    }
+
+    private Map<Integer, Integer> createDummyZombieServerCountByTiers() {
+        Map<Integer, Integer> serverCountInTiersMap=new HashMap<Integer, Integer>();
+        serverCountInTiersMap.put(100, zombieServerCount);
+        return serverCountInTiersMap;
     }
 
     @Test
@@ -87,8 +105,10 @@ public class InventoryResourceTest {
         when(virtualMachineService.getSpec(anyString())).thenReturn(createDummyServerSpec());
         when(vmService.getInventory(anyString())).thenReturn(createDummyInventory());
         List<InventoryDetails> inventoryDetailsList = inventoryResource.getInventory("", 0);
-        assertFalse(inventoryDetailsList.isEmpty());
         assertEquals(1, inventoryDetailsList.size());
+        InventoryDetails inventoryDetails = inventoryDetailsList.get(0);
+        assertEquals(0, inventoryDetails.vps4Active);
+        assertEquals(0, inventoryDetails.vps4Zombie);
     }
 
     @Test
@@ -103,5 +123,17 @@ public class InventoryResourceTest {
     public void throwsExceptionWhenHfsCallFails() {
         inventoryResource.getInventory("test.spec", 0);
         fail("Expected exception to be thrown.");
+    }
+
+    @Test
+    public void testGetInventoryUsesServerCountByTiersData() throws IOException{
+        when(vmService.getInventory(anyString())).thenReturn(createDummyInventory());
+        when(virtualMachineService.getSpec(anyString())).thenReturn(createDummyServerSpec());
+        when(virtualMachineService.getActiveServerCountByTiers()).thenReturn(createDummyActiveServerCountByTiers());
+        when(virtualMachineService.getZombieServerCountByTiers()).thenReturn(createDummyZombieServerCountByTiers());
+        List<InventoryDetails> inventoryDetailsList = inventoryResource.getInventory("test.spec", 100);
+        InventoryDetails inventoryDetails = inventoryDetailsList.get(0);
+        assertEquals(activeServerCount, inventoryDetails.vps4Active);
+        assertEquals(zombieServerCount, inventoryDetails.vps4Zombie);
     }
 }

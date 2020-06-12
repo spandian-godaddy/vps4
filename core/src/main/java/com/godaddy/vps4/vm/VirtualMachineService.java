@@ -18,6 +18,10 @@ public interface VirtualMachineService {
 
     ServerSpec getSpec(int tier);
 
+    Map<Integer, Integer> getActiveServerCountByTiers();
+
+    Map<Integer, Integer> getZombieServerCountByTiers();
+
     /**
      * @param vmId - the VM ID from the VM Vertical Service
      * @param projectId

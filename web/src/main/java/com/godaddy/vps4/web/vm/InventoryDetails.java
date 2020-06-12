@@ -11,4 +11,6 @@ public class InventoryDetails {
     public int ram;
     public int diskSize;
     public String diskType;
+    public int vps4Active;
+    public int vps4Zombie;
 }

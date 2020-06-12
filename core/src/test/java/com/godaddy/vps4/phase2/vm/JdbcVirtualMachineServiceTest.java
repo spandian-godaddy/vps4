@@ -358,4 +358,28 @@ public class JdbcVirtualMachineServiceTest {
         Assert.assertEquals(newOrionGuid, actualVm.orionGuid);
     }
 
+    @Test
+    public void testGetActiveServerCountByTiers() {
+        for (int i = 0; i < 3; i++) {
+            VirtualMachine testVm = SqlTestData.insertTestVm(UUID.randomUUID(), dataSource);
+            virtualMachines.add(testVm);
+        }
+
+        Map<Integer, Integer> activeServerCount = virtualMachineService.getActiveServerCountByTiers();
+        assertEquals(3, activeServerCount.get(10).intValue());
+    }
+
+    @Test
+    public void testGetZombieServerCountByTiers() {
+        for (int i = 0; i < 3; i++) {
+            VirtualMachine testVm = SqlTestData.insertTestVm(UUID.randomUUID(), dataSource);
+            virtualMachines.add(testVm);
+        }
+        virtualMachineService.setVmZombie(virtualMachines.get(0).vmId);
+        virtualMachineService.setVmZombie(virtualMachines.get(1).vmId);
+
+        Map<Integer, Integer> zombieServerCount = virtualMachineService.getZombieServerCountByTiers();
+        assertEquals(2, zombieServerCount.get(10).intValue());
+    }
+
 }

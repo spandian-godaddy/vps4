@@ -341,4 +341,35 @@ public class JdbcVirtualMachineService implements VirtualMachineService {
         vmPatchMap.put("backup_job_id", backupJobId);
         updateVirtualMachine(vmId, vmPatchMap);
     }
+
+    @Override
+    public Map<Integer, Integer> getActiveServerCountByTiers(){
+        return Sql.with(dataSource).exec(
+                "SELECT count(vm.vm_id), vms.tier " +
+                        "FROM virtual_machine vm " +
+                        "JOIN virtual_machine_spec vms ON vms.spec_id=vm.spec_id " +
+                        "WHERE vm.canceled = 'infinity' AND vm.valid_until = 'infinity' " +
+                        "GROUP BY vms.tier; ",
+                Sql.mapOf(this::mapCount, this::mapTier));
+    }
+
+    @Override
+    public Map<Integer, Integer> getZombieServerCountByTiers(){
+        return Sql.with(dataSource).exec(
+                "SELECT count(vm.vm_id), vms.tier " +
+                        "FROM virtual_machine vm " +
+                        "JOIN virtual_machine_spec vms ON vms.spec_id=vm.spec_id " +
+                        "WHERE vm.canceled < 'infinity' AND vm.valid_until = 'infinity' " +
+                        "GROUP BY vms.tier; ",
+                Sql.mapOf(this::mapCount, this::mapTier));
+    }
+
+    protected Integer mapTier(ResultSet rs) throws SQLException {
+        return rs.getInt("tier");
+    }
+
+    protected Integer mapCount(ResultSet rs) throws SQLException {
+        return rs.getInt("count");
+    }
+
 }

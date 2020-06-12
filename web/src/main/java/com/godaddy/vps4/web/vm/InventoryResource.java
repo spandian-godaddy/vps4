@@ -2,6 +2,7 @@ package com.godaddy.vps4.web.vm;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 import javax.inject.Inject;
@@ -74,11 +75,17 @@ public class InventoryResource {
             throw new ServiceUnavailableException("Could not get inventory details from HFS.");
         }
 
+        logger.info("Invoking the call to VPS4 to get usage data from VPS4 database");
+        Map<Integer, Integer> activeServerCountByTiers = virtualMachineService.getActiveServerCountByTiers();
+        Map<Integer, Integer> zombieServerCountByTiers = virtualMachineService.getZombieServerCountByTiers();
+
         List<InventoryDetails> inventoryDetails = new ArrayList<>();
         hfsInventoryDataList.forEach(inventoryData -> {
             ServerSpec serverSpec = virtualMachineService.getSpec(inventoryData.getName());
+
             if (serverSpec != null) {
-                inventoryDetails.add(mapInventoryDataToDetails(inventoryData, serverSpec));
+                inventoryDetails.add(mapInventoryDataToDetails(inventoryData, serverSpec, activeServerCountByTiers,
+                        zombieServerCountByTiers));
             } else {
                 logger.info("No corresponding server spec entry found in vps4 for spec: {}",
                         inventoryData.getName());
@@ -88,7 +95,9 @@ public class InventoryResource {
         return inventoryDetails;
     }
 
-    private InventoryDetails mapInventoryDataToDetails(HfsInventoryData matchedHfsInventoryData, ServerSpec serverSpec) {
+    private InventoryDetails mapInventoryDataToDetails(HfsInventoryData matchedHfsInventoryData, ServerSpec serverSpec,
+                                                       Map<Integer, Integer> activeServerCountByTiers,
+                                                       Map<Integer, Integer> zombieServerCountByTiers) {
         InventoryDetails inventoryDetails = new InventoryDetails();
         inventoryDetails.flavor = matchedHfsInventoryData.getName();
         inventoryDetails.tier = serverSpec.tier;
@@ -100,7 +109,8 @@ public class InventoryResource {
         inventoryDetails.ram = serverSpec.memoryMib;
         inventoryDetails.diskType =
                 serverSpec.specName.contains("ssd") ? "SSD" : serverSpec.specName.contains("hdd") ? "HDD" : "";
+        inventoryDetails.vps4Active = activeServerCountByTiers.getOrDefault(serverSpec.tier, 0);
+        inventoryDetails.vps4Zombie = zombieServerCountByTiers.getOrDefault(serverSpec.tier, 0);
         return inventoryDetails;
     }
-
 }
