@@ -11,6 +11,8 @@ public class HfsInventoryData {
     int available;
     @JsonProperty("in_use")
     int inUse;
+    @JsonProperty("hfs_in_use")
+    int hfsInUse;
     int reserved;
 
     public String getName() {
@@ -21,9 +23,9 @@ public class HfsInventoryData {
         return available;
     }
 
-    public int getInUse() {
-        return inUse;
-    }
+    public int getInUse() { return inUse; }
+
+    public int getHfsInUse() { return hfsInUse; }
 
     public int getReserved() {
         return reserved;

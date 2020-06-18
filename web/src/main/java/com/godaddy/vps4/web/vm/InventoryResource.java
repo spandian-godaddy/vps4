@@ -103,6 +103,7 @@ public class InventoryResource {
         inventoryDetails.tier = serverSpec.tier;
         inventoryDetails.available = matchedHfsInventoryData.getAvailable();
         inventoryDetails.inUse = matchedHfsInventoryData.getInUse();
+        inventoryDetails.hfsInUse = matchedHfsInventoryData.getHfsInUse();
         inventoryDetails.reserved = matchedHfsInventoryData.getReserved();
         inventoryDetails.cpus = serverSpec.cpuCoreCount;
         inventoryDetails.diskSize = serverSpec.diskGib;

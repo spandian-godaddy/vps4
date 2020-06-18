@@ -2,6 +2,7 @@ package com.godaddy.vps4.web.vm;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.mockito.Matchers.anyString;
@@ -107,6 +108,7 @@ public class InventoryResourceTest {
         List<InventoryDetails> inventoryDetailsList = inventoryResource.getInventory("", 0);
         assertEquals(1, inventoryDetailsList.size());
         InventoryDetails inventoryDetails = inventoryDetailsList.get(0);
+        assertNotNull(inventoryDetails.hfsInUse);
         assertEquals(0, inventoryDetails.vps4Active);
         assertEquals(0, inventoryDetails.vps4Zombie);
     }

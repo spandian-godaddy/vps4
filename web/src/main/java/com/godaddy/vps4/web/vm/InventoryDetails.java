@@ -6,6 +6,7 @@ public class InventoryDetails {
     public int tier;
     public int available;
     public int inUse;
+    public int hfsInUse;
     public int reserved;
     public int cpus;
     public int ram;
