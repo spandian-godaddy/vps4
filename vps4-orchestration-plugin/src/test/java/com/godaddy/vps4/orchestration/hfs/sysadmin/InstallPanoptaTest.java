@@ -8,6 +8,7 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import java.util.UUID;
 import java.util.function.Function;
 
 import org.junit.Before;
@@ -34,6 +35,8 @@ public class InstallPanoptaTest {
     private String fakeTemplates = "totally-fake-templates";
     private String fakeServerKey = "totally-fake-server-key";
     private String fakeFqdn = "totally-fake-fqdn";
+    private UUID fakeOrionGUID = UUID.randomUUID();
+    private String fakeServerName = fakeOrionGUID.toString();
     private boolean fakeDisableServerMatch = true;
 
     @Captor
@@ -52,7 +55,7 @@ public class InstallPanoptaTest {
     private void setupMockContext() {
         when(context.execute(eq("InstallPanopta-" + fakeHfsVmId), any(Function.class), eq(SysAdminAction.class)))
                 .thenReturn(dummyHfsAction);
-        when(sysAdminService.installPanopta(fakeHfsVmId, fakeCustomerKey, fakeTemplates, null, fakeServerKey, fakeFqdn,
+        when(sysAdminService.installPanopta(fakeHfsVmId, fakeCustomerKey, fakeTemplates, fakeServerName, fakeServerKey, fakeFqdn,
                 fakeDisableServerMatch))
                 .thenReturn(dummyHfsAction);
     }
@@ -64,6 +67,7 @@ public class InstallPanoptaTest {
         request.templates = fakeTemplates;
         request.serverKey = fakeServerKey;
         request.fqdn = fakeFqdn;
+        request.serverName = fakeServerName;
         request.disableServerMatch = true;
     }
 
@@ -76,7 +80,7 @@ public class InstallPanoptaTest {
                         eq(SysAdminAction.class));
         Function<CommandContext, SysAdminAction> lambdaValue = panoptaInstallArgumentCaptor.getValue();
         SysAdminAction sysAdminAction = lambdaValue.apply(context);
-        verify(sysAdminService, times(1)).installPanopta(fakeHfsVmId, fakeCustomerKey, fakeTemplates, null,
+        verify(sysAdminService, times(1)).installPanopta(fakeHfsVmId, fakeCustomerKey, fakeTemplates, fakeServerName,
                 fakeServerKey, fakeFqdn, fakeDisableServerMatch);
         assertEquals(dummyHfsAction, sysAdminAction);
     }

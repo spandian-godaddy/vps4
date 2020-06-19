@@ -136,6 +136,7 @@ public class SetupPanopta implements Command<SetupPanopta.Request, Void> {
         installPanoptaRequest.hfsVmId = request.hfsVmId;
         installPanoptaRequest.customerKey = customerKey;
         installPanoptaRequest.serverKey = serverKey;
+        installPanoptaRequest.serverName = request.orionGuid.toString();
         installPanoptaRequest.templates = setPanoptaTemplates(request);
         installPanoptaRequest.fqdn = request.fqdn;
         installPanoptaRequest.disableServerMatch = request.disableServerMatch;

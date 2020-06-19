@@ -56,6 +56,7 @@ public class SetupPanoptaTest {
     private String fakeCustomerKey;
     private String fakePanoptaTemplates;
     private String fakeServerKey;
+    private String fakeServerName;
     private String fakeShopperId;
     private String fakeDataCenterTemplate;
     private VirtualMachineCredit creditMock;
@@ -74,6 +75,7 @@ public class SetupPanoptaTest {
         fakeShopperId = "fake-shopper-id";
         fakeCustomerKey = "so-very-fake-customer-key";
         fakeServerKey = "ultra-fake-server-key";
+        fakeServerName = fakeOrionGuid.toString();
         fakePanoptaTemplates = "super-fake-panopta-template";
         fakeDataCenterTemplate = "mega-fake-data-center-template";
         creditServiceMock = mock(CreditService.class);
@@ -254,5 +256,18 @@ public class SetupPanoptaTest {
         verify(commandContextMock).execute(eq(GetPanoptaCustomer.class), eq(fakeShopperId));
         verify(commandContextMock, never())
                 .execute(eq(CreatePanoptaCustomer.class), any(CreatePanoptaCustomer.Request.class));
+    }
+
+    @Test
+    public void setServerNameAsOrionGUID() {
+        when(panoptaDataServiceMock.getPanoptaCustomerDetails(eq(fakeShopperId)))
+                .thenReturn(panoptaCustomerDetailsMock);
+        when(panoptaDataServiceMock.getPanoptaServerDetails(eq(fakeVmId))).thenReturn(panoptaServerDetailsMock);
+        when(panoptaServerDetailsMock.getServerKey()).thenReturn(fakeServerKey);
+        when(panoptaCustomerDetailsMock.getCustomerKey()).thenReturn(fakeCustomerKey);
+        command.execute(commandContextMock, request);
+        verify(commandContextMock, times(1)).execute(eq(InstallPanopta.class), installPanoptaRequestCaptor.capture());
+        InstallPanopta.Request capturedRequest = installPanoptaRequestCaptor.getValue();
+        assertEquals(fakeOrionGuid.toString(), capturedRequest.serverName);
     }
 }

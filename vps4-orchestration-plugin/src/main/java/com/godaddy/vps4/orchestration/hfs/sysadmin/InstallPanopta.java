@@ -17,6 +17,7 @@ public class InstallPanopta implements Command<InstallPanopta.Request, Void> {
     public static class Request {
         public String customerKey;
         public String serverKey;
+        public String serverName;
         public String templates;
         public String fqdn;
         public boolean disableServerMatch;
@@ -35,7 +36,7 @@ public class InstallPanopta implements Command<InstallPanopta.Request, Void> {
         logger.info("Configuring panopta for hfs vm id {} ", request.hfsVmId);
 
         SysAdminAction hfsSysAction = context.execute("InstallPanopta-" + request.hfsVmId,
-                ctx -> sysAdminService.installPanopta(request.hfsVmId, request.customerKey, request.templates, null,
+                ctx -> sysAdminService.installPanopta(request.hfsVmId, request.customerKey, request.templates, request.serverName,
                         request.serverKey, request.fqdn, request.disableServerMatch),
                 SysAdminAction.class);
         context.execute("WaitForPanoptaInstall-" + request.hfsVmId, WaitForSysAdminAction.class, hfsSysAction);
