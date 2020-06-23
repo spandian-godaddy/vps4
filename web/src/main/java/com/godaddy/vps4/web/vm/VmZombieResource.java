@@ -241,10 +241,12 @@ public class VmZombieResource {
         if (!oldCredit.getControlPanel().equalsIgnoreCase(newCredit.getControlPanel())) {
             throw new Vps4Exception("CONTROL_PANEL_MISMATCH", "Control panel of old and new credits do not match");
         }
-        if (oldCredit.getManagedLevel() != newCredit.getManagedLevel()) {
+        if (oldCredit.getManagedLevel() != newCredit.getManagedLevel() &&
+                !(oldCredit.getManagedLevel()  == 1 && newCredit.getManagedLevel()  == 0 )) {
             throw new Vps4Exception("MANAGED_LEVEL_MISMATCH", "Managed level of the old and new credits do not match");
         }
-        if (oldCredit.getMonitoring() != newCredit.getMonitoring()) {
+        if (oldCredit.getMonitoring() != newCredit.getMonitoring() &&
+                !(oldCredit.getMonitoring() == 1 && newCredit.getMonitoring() == 0)) {
             throw new Vps4Exception("MONITORING_MISMATCH", "Monitoring of the old and new credits do not match");
         }
         if (!oldCredit.getOperatingSystem().equalsIgnoreCase(newCredit.getOperatingSystem())) {
