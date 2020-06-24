@@ -25,13 +25,12 @@ import com.godaddy.hfs.backupstorage.BackupStorageCreds;
 import com.godaddy.hfs.vm.VmService;
 import com.godaddy.vps4.backupstorage.BackupStorageService;
 import com.godaddy.vps4.backupstorage.jdbc.BackupStorageModel;
-import com.godaddy.vps4.credit.CreditService;
-import com.godaddy.vps4.credit.VirtualMachineCredit;
 import com.godaddy.vps4.jdbc.ResultSubset;
 import com.godaddy.vps4.vm.Action;
 import com.godaddy.vps4.vm.ActionService;
 import com.godaddy.vps4.vm.ActionStatus;
 import com.godaddy.vps4.vm.ActionType;
+import com.godaddy.vps4.vm.ServerSpec;
 import com.godaddy.vps4.vm.VirtualMachine;
 import com.godaddy.vps4.web.Vps4Exception;
 import com.godaddy.vps4.web.security.GDUser;
@@ -46,11 +45,10 @@ public class BackupStorageResourceTest {
     private ActionService actionService = mock(ActionService.class);
     private BackupStorageService backupStorageService = mock(BackupStorageService.class);
     private CommandService commandService = mock(CommandService.class);
-    private CreditService creditService = mock(CreditService.class);
-    private VirtualMachineCredit credit = mock(VirtualMachineCredit.class);
     private VmResource vmResource = mock(VmResource.class);
     private VmService vmService = mock(VmService.class);
 
+    private VirtualMachine vm;
     private UUID vmId = UUID.randomUUID();
     private UUID orionGuid = UUID.randomUUID();
     private long hfsVmId = 42;
@@ -60,7 +58,7 @@ public class BackupStorageResourceTest {
 
     @Before
     public void setUp() {
-        VirtualMachine vm = mock(VirtualMachine.class);
+        vm = mock(VirtualMachine.class);
         vm.orionGuid = orionGuid;
         vm.vmId = vmId;
         vm.hfsVmId = hfsVmId;
@@ -72,11 +70,11 @@ public class BackupStorageResourceTest {
         Action action = mock(Action.class);
         when(actionService.getAction(anyLong())).thenReturn(action);
 
-        when(credit.isDed4()).thenReturn(true);
-        when(creditService.getVirtualMachineCredit(orionGuid)).thenReturn(credit);
+        vm.spec = mock(ServerSpec.class);
+        when (vm.spec.isVirtualMachine()).thenReturn(false);
 
         when(commandService.executeCommand(any())).thenReturn(new CommandState());
-        resource = new BackupStorageResource(user, actionService, backupStorageService, commandService, creditService, vmResource, vmService);
+        resource = new BackupStorageResource(user, actionService, backupStorageService, commandService, vmResource, vmService);
 
         BackupStorageModel backup = new BackupStorageModel(
                 12, vmId, "example.com", "ftp", Instant.EPOCH, Instant.MAX
@@ -105,7 +103,7 @@ public class BackupStorageResourceTest {
         Action action = mock(Action.class);
         action.type = ActionType.CREATE_BACKUP_STORAGE;
         action.status = ActionStatus.NEW;
-        ResultSubset<Action> currentActions = new ResultSubset<>(Collections.singletonList(action), 2);
+        ResultSubset<Action> currentActions = new ResultSubset<>(Collections.singletonList(action), 1);
         when(actionService.getActionList(any())).thenReturn(currentActions);
         try {
             resource.createBackupStorage(vmId);
@@ -118,7 +116,7 @@ public class BackupStorageResourceTest {
 
     @Test
     public void testCreateOnVirtualServer() {
-        when(credit.isDed4()).thenReturn(false);
+        when (vm.spec.isVirtualMachine()).thenReturn(true);
         try {
             resource.createBackupStorage(vmId);
         } catch (Vps4Exception e) {
@@ -149,7 +147,7 @@ public class BackupStorageResourceTest {
         Action action = mock(Action.class);
         action.type = ActionType.DESTROY_BACKUP_STORAGE;
         action.status = ActionStatus.NEW;
-        ResultSubset<Action> currentActions = new ResultSubset<>(Collections.singletonList(action), 2);
+        ResultSubset<Action> currentActions = new ResultSubset<>(Collections.singletonList(action), 1);
         when(actionService.getActionList(any())).thenReturn(currentActions);
         try {
             resource.destroyBackupStorage(vmId);
@@ -162,7 +160,7 @@ public class BackupStorageResourceTest {
 
     @Test
     public void testDestroyOnVirtualServer() {
-        when(credit.isDed4()).thenReturn(false);
+        when (vm.spec.isVirtualMachine()).thenReturn(true);
         try {
             resource.destroyBackupStorage(vmId);
         } catch (Vps4Exception e) {
@@ -182,7 +180,7 @@ public class BackupStorageResourceTest {
 
     @Test
     public void testGetOnVirtualServer() {
-        when(credit.isDed4()).thenReturn(false);
+        when (vm.spec.isVirtualMachine()).thenReturn(true);
         try {
             resource.getBackupStorage(vmId);
         } catch (Vps4Exception e) {
@@ -212,7 +210,7 @@ public class BackupStorageResourceTest {
         Action action = mock(Action.class);
         action.type = ActionType.RESET_BACKUP_STORAGE_CREDS;
         action.status = ActionStatus.NEW;
-        ResultSubset<Action> currentActions = new ResultSubset<>(Collections.singletonList(action), 2);
+        ResultSubset<Action> currentActions = new ResultSubset<>(Collections.singletonList(action), 1);
         when(actionService.getActionList(any())).thenReturn(currentActions);
         try {
             resource.resetBackupStorageCreds(vmId);
@@ -225,7 +223,7 @@ public class BackupStorageResourceTest {
 
     @Test
     public void testResetOnVirtualServer() {
-        when(credit.isDed4()).thenReturn(false);
+        when (vm.spec.isVirtualMachine()).thenReturn(true);
         try {
             resource.resetBackupStorageCreds(vmId);
         } catch (Vps4Exception e) {
@@ -257,7 +255,7 @@ public class BackupStorageResourceTest {
 
     @Test
     public void testGetCredsOnVirtualServer() {
-        when(credit.isDed4()).thenReturn(false);
+        when (vm.spec.isVirtualMachine()).thenReturn(true);
         try {
             resource.getBackupStorageCreds(vmId);
         } catch (Vps4Exception e) {

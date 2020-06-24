@@ -73,16 +73,14 @@ public class RequestValidation {
         }
     }
 
-    public static void validateServerIsDedicated(VirtualMachine vm, CreditService creditService) {
-        VirtualMachineCredit credit = creditService.getVirtualMachineCredit(vm.orionGuid);
-        if (!credit.isDed4()) {
+    public static void validateServerIsDedicated(VirtualMachine vm) {
+        if (vm.spec.isVirtualMachine()) {
             throw new Vps4Exception("INVALID_SERVER", "Only dedicated servers support this operation");
         }
     }
 
-    public static void validateServerIsVirtual(VirtualMachine vm, CreditService creditService) {
-        VirtualMachineCredit credit = creditService.getVirtualMachineCredit(vm.orionGuid);
-        if (credit.isDed4()) {
+    public static void validateServerIsVirtual(VirtualMachine vm) {
+        if (!vm.spec.isVirtualMachine()) {
             throw new Vps4Exception("INVALID_SERVER", "Only virtual servers support this operation");
         }
     }

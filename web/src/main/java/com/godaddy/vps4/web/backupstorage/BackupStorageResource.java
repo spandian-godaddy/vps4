@@ -20,15 +20,14 @@ import javax.ws.rs.core.MediaType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.godaddy.hfs.backupstorage.BackupStorageCreds;
 import com.godaddy.hfs.backupstorage.BackupStorage;
+import com.godaddy.hfs.backupstorage.BackupStorageCreds;
 import com.godaddy.hfs.vm.VmService;
-import com.godaddy.vps4.credit.CreditService;
+import com.godaddy.vps4.backupstorage.BackupStorageService;
+import com.godaddy.vps4.backupstorage.jdbc.BackupStorageModel;
 import com.godaddy.vps4.orchestration.vm.VmActionRequest;
 import com.godaddy.vps4.vm.ActionService;
 import com.godaddy.vps4.vm.ActionType;
-import com.godaddy.vps4.backupstorage.BackupStorageService;
-import com.godaddy.vps4.backupstorage.jdbc.BackupStorageModel;
 import com.godaddy.vps4.vm.VirtualMachine;
 import com.godaddy.vps4.vm.VmAction;
 import com.godaddy.vps4.web.Vps4Api;
@@ -52,7 +51,6 @@ public class BackupStorageResource {
     private final ActionService actionService;
     private final BackupStorageService backupStorageService;
     private final CommandService commandService;
-    private final CreditService creditService;
     private final VmResource vmResource;
     private final VmService vmService;
 
@@ -61,14 +59,12 @@ public class BackupStorageResource {
                                  ActionService actionService,
                                  BackupStorageService backupStorageService,
                                  CommandService commandService,
-                                 CreditService creditService,
                                  VmResource vmResource,
                                  VmService vmService) {
         this.user = user;
         this.actionService = actionService;
         this.backupStorageService = backupStorageService;
         this.commandService = commandService;
-        this.creditService = creditService;
         this.vmResource = vmResource;
         this.vmService = vmService;
     }
@@ -79,7 +75,7 @@ public class BackupStorageResource {
         logger.info("Creating backup storage for VM ID: {}", vmId);
 
         VirtualMachine vm = vmResource.getVm(vmId);  // Auth validation
-        validateServerIsDedicated(vm, creditService);
+        validateServerIsDedicated(vm);
         validateNoConflictingActions(vmId, actionService, ActionType.CREATE_BACKUP_STORAGE, ActionType.DESTROY_BACKUP_STORAGE);
 
         VmActionRequest request = new VmActionRequest();
@@ -94,7 +90,7 @@ public class BackupStorageResource {
         logger.info("Destroying backup storage for VM ID: {}", vmId);
 
         VirtualMachine vm = vmResource.getVm(vmId);  // Auth validation
-        validateServerIsDedicated(vm, creditService);
+        validateServerIsDedicated(vm);
         validateNoConflictingActions(vmId, actionService, ActionType.CREATE_BACKUP_STORAGE, ActionType.DESTROY_BACKUP_STORAGE);
 
         VmActionRequest request = new VmActionRequest();
@@ -109,7 +105,7 @@ public class BackupStorageResource {
         logger.info("Getting backup storage for VM ID: {}", vmId);
 
         VirtualMachine vm = vmResource.getVm(vmId);  // Auth validation
-        validateServerIsDedicated(vm, creditService);
+        validateServerIsDedicated(vm);
 
         try {
             return vmService.getBackupStorage(vm.hfsVmId);
@@ -125,7 +121,7 @@ public class BackupStorageResource {
         logger.info("Creating backup storage for VM ID: {}", vmId);
 
         VirtualMachine vm = vmResource.getVm(vmId);  // Auth validation
-        validateServerIsDedicated(vm, creditService);
+        validateServerIsDedicated(vm);
         validateNoConflictingActions(vmId, actionService, ActionType.RESET_BACKUP_STORAGE_CREDS);
 
         VmActionRequest request = new VmActionRequest();
@@ -140,7 +136,7 @@ public class BackupStorageResource {
         logger.info("Checking HFS for backup storage credentials matching VM ID: {}", vmId);
 
         VirtualMachine vm = vmResource.getVm(vmId);  // Auth validation
-        validateServerIsDedicated(vm, creditService);
+        validateServerIsDedicated(vm);
 
         try {
             return vmService.getBackupStorageCreds(vm.hfsVmId);

@@ -1,19 +1,18 @@
 package com.godaddy.vps4.console;
 
-import com.godaddy.hfs.config.Config;
-
-import org.apache.commons.lang3.StringUtils;
-
 import javax.inject.Inject;
 
+import org.apache.commons.lang3.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import com.godaddy.hfs.config.Config;
 import com.godaddy.hfs.vm.Console;
 import com.godaddy.hfs.vm.ConsoleRequest;
 import com.godaddy.hfs.vm.VmAction;
 import com.godaddy.hfs.vm.VmService;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
-
+@Deprecated // this will no longer be needed once the old /console endpoint is removed
 public class HfsConsoleService implements ConsoleService {
     private static final Logger logger = LoggerFactory.getLogger(HfsConsoleService.class);
 
