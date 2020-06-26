@@ -52,6 +52,7 @@ import com.godaddy.vps4.vm.Image;
 import com.godaddy.vps4.vm.ProvisionVmInfo;
 import com.godaddy.vps4.vm.VirtualMachine;
 import com.godaddy.vps4.vm.VirtualMachineService;
+import com.godaddy.vps4.vm.VmAlertService;
 import com.godaddy.vps4.vm.VmUserService;
 import com.google.inject.AbstractModule;
 import com.google.inject.Guice;
@@ -85,6 +86,7 @@ public class Vps4ProvisionVmUnitTest {
                     bind(HfsVmTrackingRecordService.class).toInstance(mock(HfsVmTrackingRecordService.class));
                     bind(PanoptaDataService.class).toInstance(mock(PanoptaDataService.class));
                     bind(PanoptaService.class).toInstance(mock(PanoptaService.class));
+                    bind(VmAlertService.class).toInstance(mock(VmAlertService.class));
                 }
             }
     );

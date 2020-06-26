@@ -44,6 +44,8 @@ import com.godaddy.vps4.vm.CreateVmStep;
 import com.godaddy.vps4.vm.Image;
 import com.godaddy.vps4.vm.VirtualMachine;
 import com.godaddy.vps4.vm.VirtualMachineService;
+import com.godaddy.vps4.vm.VmAlertService;
+import com.godaddy.vps4.vm.VmMetric;
 import com.godaddy.vps4.vm.VmUserService;
 
 import gdg.hfs.orchestration.CommandContext;
@@ -71,6 +73,7 @@ public class Vps4ProvisionDedicated extends ActionCommand<ProvisionRequest, Vps4
     private final Vps4MessagingService messagingService;
     private final CreditService creditService;
     private final HfsVmTrackingRecordService hfsVmTrackingRecordService;
+    private final VmAlertService vmAlertService;
 
     private ProvisionRequest request;
     private ActionState state;
@@ -87,7 +90,8 @@ public class Vps4ProvisionDedicated extends ActionCommand<ProvisionRequest, Vps4
             MonitoringMeta monitoringMeta,
             Vps4MessagingService messagingService,
             CreditService creditService,
-            HfsVmTrackingRecordService hfsVmTrackingRecordService) {
+            HfsVmTrackingRecordService hfsVmTrackingRecordService,
+            VmAlertService vmAlertService) {
         super(actionService);
         this.vmService = vmService;
         this.virtualMachineService = virtualMachineService;
@@ -98,6 +102,7 @@ public class Vps4ProvisionDedicated extends ActionCommand<ProvisionRequest, Vps4
         this.messagingService = messagingService;
         this.creditService = creditService;
         this.hfsVmTrackingRecordService = hfsVmTrackingRecordService;
+        this.vmAlertService = vmAlertService;
     }
 
     @Override
@@ -245,12 +250,18 @@ public class Vps4ProvisionDedicated extends ActionCommand<ProvisionRequest, Vps4
         // gate panopta installation using a feature flag
         if (request.vmInfo.isPanoptaEnabled) {
             installPanopta(ipAddress, hfsVmId);
+            configurePanoptaAlert();
         }else if (request.vmInfo.hasMonitoring) {
             setStep(ConfigureNodeping);
             CreateCheckRequest checkRequest = ProvisionHelper.getCreateCheckRequest(ipAddress, monitoringMeta);
             NodePingCheck check = monitoringService.createCheck(monitoringMeta.getAccountId(), checkRequest);
             logger.debug("CheckId: {}", check.checkId);
             addCheckIdToIp(ipAddress, check);
+        }
+    }
+    private void configurePanoptaAlert() {
+        if  (request.vmInfo.hasMonitoring) {
+            vmAlertService.disableVmMetricAlert(request.vmInfo.vmId, VmMetric.FTP.name());
         }
     }
 

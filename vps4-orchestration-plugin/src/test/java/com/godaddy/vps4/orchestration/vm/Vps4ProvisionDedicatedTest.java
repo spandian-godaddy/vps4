@@ -17,7 +17,6 @@ import java.util.Random;
 import java.util.UUID;
 import java.util.function.Function;
 
-import com.godaddy.vps4.orchestration.panopta.SetupPanopta;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
@@ -54,6 +53,8 @@ import com.godaddy.vps4.vm.Image.ControlPanel;
 import com.godaddy.vps4.vm.ProvisionVmInfo;
 import com.godaddy.vps4.vm.VirtualMachine;
 import com.godaddy.vps4.vm.VirtualMachineService;
+import com.godaddy.vps4.vm.VmAlertService;
+import com.godaddy.vps4.vm.VmMetric;
 import com.godaddy.vps4.vm.VmUserService;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
@@ -91,6 +92,7 @@ public class Vps4ProvisionDedicatedTest {
     AddUser addUser = mock(AddUser.class);
     PanoptaService panoptaService = mock(PanoptaService.class);
     PanoptaDataService panoptaDataService = mock(PanoptaDataService.class);
+    VmAlertService vmAlertService = mock(VmAlertService.class);
 
     @Captor private ArgumentCaptor<Function<CommandContext, Void>> setCommonNameLambdaCaptor;
     @Captor private ArgumentCaptor<SetPassword.Request> setPasswordCaptor;
@@ -100,7 +102,7 @@ public class Vps4ProvisionDedicatedTest {
 
     Vps4ProvisionDedicated command = new Vps4ProvisionDedicated(actionService, vmService,
             virtualMachineService, vmUserService, networkService, nodePingService,
-            monitoringMeta, messagingService, creditService, hfsVmTrackingRecordService);
+            monitoringMeta, messagingService, creditService, hfsVmTrackingRecordService, vmAlertService);
 
     Injector injector = Guice.createInjector(binder -> {
         binder.bind(ActionService.class).toInstance(actionService);
@@ -124,6 +126,7 @@ public class Vps4ProvisionDedicatedTest {
         binder.bind(AddUser.class).toInstance(addUser);
         binder.bind(PanoptaService.class).toInstance(panoptaService);
         binder.bind(PanoptaDataService.class).toInstance(panoptaDataService);
+        binder.bind(VmAlertService.class).toInstance(vmAlertService);
     });
 
     CommandContext context = mock(CommandContext.class);
@@ -335,5 +338,21 @@ public class Vps4ProvisionDedicatedTest {
         assertEquals(capturedRequest.hfsVmId, hfsVmId);
         assertEquals(capturedRequest.orionGuid, orionGuid);
         assertEquals(capturedRequest.shopperId, shopperId);
+    }
+
+    @Test
+    public void provisionVMInvokesConfigurePanoptaAlert(){
+        request.vmInfo.isPanoptaEnabled = true;
+        request.vmInfo.hasMonitoring = true;
+        command.executeWithAction(context, this.request);
+        verify(vmAlertService).disableVmMetricAlert(request.vmInfo.vmId, VmMetric.FTP.name());
+    }
+
+    @Test
+    public void provisionVMSkipsConfigurePanoptaAlert(){
+        request.vmInfo.isPanoptaEnabled = true;
+        request.vmInfo.hasMonitoring = false;
+        command.executeWithAction(context, this.request);
+        verify(vmAlertService, never()).disableVmMetricAlert(any(UUID.class), anyString());
     }
 }

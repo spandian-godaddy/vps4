@@ -57,6 +57,8 @@ import com.godaddy.vps4.vm.Image.ControlPanel;
 import com.godaddy.vps4.vm.ProvisionVmInfo;
 import com.godaddy.vps4.vm.VirtualMachine;
 import com.godaddy.vps4.vm.VirtualMachineService;
+import com.godaddy.vps4.vm.VmAlertService;
+import com.godaddy.vps4.vm.VmMetric;
 import com.godaddy.vps4.vm.VmUserService;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
@@ -92,6 +94,7 @@ public class Vps4ProvisionVmTest {
     PanoptaDataService panoptaDataService = mock(PanoptaDataService.class);
     Config config = mock(Config.class);
     HfsVmTrackingRecordService hfsVmTrackingRecordService = mock(HfsVmTrackingRecordService.class);
+    VmAlertService vmAlertService = mock(VmAlertService.class);
     @Captor
     private ArgumentCaptor<Function<CommandContext, Void>> setCommonNameLambdaCaptor;
     @Captor
@@ -103,7 +106,8 @@ public class Vps4ProvisionVmTest {
 
     Vps4ProvisionVm command =
             new Vps4ProvisionVm(actionService, virtualMachineService, vmUserService, networkService, nodePingService,
-                                monitoringMeta, messagingService, creditService, config, hfsVmTrackingRecordService);
+                                monitoringMeta, messagingService, creditService, config, hfsVmTrackingRecordService,
+                                vmAlertService);
 
     Injector injector = Guice.createInjector(binder -> {
         binder.bind(ActionService.class).toInstance(actionService);
@@ -126,6 +130,7 @@ public class Vps4ProvisionVmTest {
         binder.bind(PanoptaDataService.class).toInstance(panoptaDataService);
         binder.bind(Config.class).toInstance(config);
         binder.bind(HfsVmTrackingRecordService.class).toInstance(hfsVmTrackingRecordService);
+        binder.bind(VmAlertService.class).toInstance(vmAlertService);
     });
 
     CommandContext context = mock(CommandContext.class);
@@ -257,6 +262,22 @@ public class Vps4ProvisionVmTest {
         assertEquals(capturedRequest.hfsVmId, hfsVmId);
         assertEquals(capturedRequest.orionGuid, orionGuid);
         assertEquals(capturedRequest.shopperId, shopperId);
+    }
+
+    @Test
+    public void provisionVMInvokesConfigurePanoptaAlert(){
+        request.vmInfo.isPanoptaEnabled = true;
+        request.vmInfo.hasMonitoring = true;
+        command.executeWithAction(context, this.request);
+        verify(vmAlertService).disableVmMetricAlert(request.vmInfo.vmId, VmMetric.FTP.name());
+    }
+
+    @Test
+    public void provisionVMSkipsConfigurePanoptaAlert(){
+        request.vmInfo.isPanoptaEnabled = true;
+        request.vmInfo.hasMonitoring = false;
+        command.executeWithAction(context, this.request);
+        verify(vmAlertService, never()).disableVmMetricAlert(any(UUID.class), anyString());
     }
 
     @Test
