@@ -45,10 +45,8 @@ public class ImageResourceTest {
             }
         });
 
-        images = new ArrayList<>();
-        verifyImages = new ArrayList<>();
-        setupImages(images);
-        setupImages(verifyImages);
+        images = testImages("Ubuntu 16.04", "CentOS 7");
+        verifyImages = testImages("Ubuntu 16.04", "CentOS 7");
 
         when(imageService.getImages(anyString(), anyString(), anyString(), anyInt())).thenReturn(images);
         when(imageService.getImage(anyString())).thenReturn(image);
@@ -56,16 +54,14 @@ public class ImageResourceTest {
         resource = injector.getInstance(ImageResource.class);
     }
 
-    private void setupImages(List<Image> images) {
-        Image i1 = new Image();
-        i1.imageName = "Ubuntu 16.04 (ISPConfig)";
-        images.add(i1);
-        Image i2 = new Image();
-        i2.imageName = "Debian 8";
-        images.add(i2);
-        Image i3 = new Image();
-        i3.imageName = "CentOS 7";
-        images.add(i3);
+    private List<Image> testImages(String... names) {
+        List<Image> images = new ArrayList<>();
+        for (String name : names) {
+            Image image = new Image();
+            image.imageName = name;
+            images.add(image);
+        }
+        return images;
     }
 
     @Test
@@ -78,23 +74,8 @@ public class ImageResourceTest {
     public void getImagesReturnsListOfImagesFound(){
         List<Image> retImages = resource.getImages(os, controlPanel, null, tier);
         for (int i = 0; i < retImages.size(); i++) {
-            assertEquals(retImages.get(i).imageName, verifyImages.get(i).imageName);
+            assertEquals(verifyImages.get(i).imageName, retImages.get(i).imageName);
         }
-    }
-
-    @Test
-    public void getImagesIncludesISPConfig(){
-        List<Image> retImages = resource.getImages(os, controlPanel, null, 10);
-        for (int i = 0; i < retImages.size(); i++) {
-            assertEquals(retImages.get(i).imageName, verifyImages.get(i).imageName);
-        }
-    }
-
-    @Test
-    public void getImagesRemovesISPConfigIfTierIsLow(){
-        List<Image> retImages = resource.getImages(os, controlPanel, null, 5);
-        assertEquals(retImages.get(0).imageName, verifyImages.get(1).imageName);
-        assertEquals(retImages.get(1).imageName, verifyImages.get(2).imageName);
     }
 
     @Test

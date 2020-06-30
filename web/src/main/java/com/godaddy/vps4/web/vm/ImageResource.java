@@ -53,14 +53,7 @@ public class ImageResource {
                                  @ApiParam(value = "HFS Image name") @QueryParam("imageName") String hfsImageName,
                                  @QueryParam("tier") int tier) {
         logger.info("getting images with os = {} and controlPanel = {} available for tier {}", os, controlPanel, tier);
-        List<Image> images = imageService.getImages(os, controlPanel, hfsImageName, tier);
-
-        // Tier 5 VMs do not have enough resources (CPU, RAM, disk) to handle ISPConfig.
-        if (tier <= 5) {
-            images.removeIf(image -> image.imageName.toLowerCase().contains("ispconfig"));
-        }
-
-        return images;
+        return imageService.getImages(os, controlPanel, hfsImageName, tier);
     }
 
     @GET
