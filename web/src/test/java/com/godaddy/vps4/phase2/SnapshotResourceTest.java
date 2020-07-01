@@ -1,6 +1,5 @@
 package com.godaddy.vps4.phase2;
 
-import java.lang.reflect.Method;
 import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
@@ -366,6 +365,19 @@ public class SnapshotResourceTest {
         } catch (Vps4Exception ex) {
             Assert.assertEquals("VM_DELETED", ex.getId());
         }
+    }
+
+    @Test
+    public void testSnapshotFailsWhenNydusIsDown() {
+        createTestVm();
+        SnapshotRequest request = new SnapshotRequest();
+        request.vmId = testVm.vmId;
+        Phase2ExternalsModule.mockNydusDown();
+        try {
+            getSnapshotResource().createSnapshot(request);
+            Assert.fail("RuntimeException should have been thrown");
+        } catch (Vps4Exception ex) {
+            Assert.assertEquals("AGENT_DOWN", ex.getId());}
     }
 
 }

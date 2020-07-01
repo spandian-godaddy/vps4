@@ -1,7 +1,6 @@
 package com.godaddy.vps4.orchestration.phase2;
 
 import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyLong;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
@@ -11,7 +10,6 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import java.util.ArrayList;
 import java.util.UUID;
 import java.util.function.Function;
 
@@ -28,7 +26,6 @@ import org.mockito.MockitoAnnotations;
 
 import com.godaddy.hfs.config.Config;
 import com.godaddy.hfs.vm.Vm;
-import com.godaddy.hfs.vm.VmService;
 import com.godaddy.vps4.jdbc.DatabaseModule;
 import com.godaddy.vps4.network.IpAddress;
 import com.godaddy.vps4.network.NetworkService;
@@ -47,7 +44,6 @@ import com.godaddy.vps4.snapshot.SnapshotModule;
 import com.godaddy.vps4.snapshot.SnapshotService;
 import com.godaddy.vps4.snapshot.SnapshotStatus;
 import com.godaddy.vps4.snapshot.SnapshotType;
-import com.godaddy.vps4.util.TroubleshootVmService;
 import com.godaddy.vps4.util.UtilsModule;
 import com.godaddy.vps4.vm.ActionService;
 import com.godaddy.vps4.vm.ActionType;
@@ -81,8 +77,6 @@ public class Vps4SnapshotVmTest {
     private long hfsSnapshotId = 4567L;
     private String hfsImageId = "nocfoxid";
     private SnapshotService spySnapshotService;
-    private VmService vmService;
-    private TroubleshootVmService troubleshootVmService;
 
 
     @Inject Vps4UserService vps4UserService;
@@ -120,8 +114,8 @@ public class Vps4SnapshotVmTest {
 
         setupMocks();
         spySnapshotService = spy(snapshotService);
-        command = new Vps4SnapshotVm(actionService, troubleshootVmService, hfsSnapshotService,
-                                     spySnapshotService, virtualMachineService, vmService, config);
+        command = new Vps4SnapshotVm(actionService, hfsSnapshotService,
+                                     spySnapshotService, config);
         addTestSqlData();
         context = setupMockContext();
         request = getCommandRequest(vps4SnapshotActionId, vps4SnapshotId, SnapshotType.ON_DEMAND);
@@ -140,13 +134,8 @@ public class Vps4SnapshotVmTest {
     }
 
     private void setupMocks() {
-        vmService = mock(VmService.class);
         Vm hfsVm = new Vm();
         hfsVm.status = "ACTIVE";
-        when(vmService.getVm(anyLong())).thenReturn(hfsVm);
-        troubleshootVmService = mock(TroubleshootVmService.class);
-        when(troubleshootVmService.isPortOpenOnVm(any(), eq(2224))).thenReturn(true);
-        when(troubleshootVmService.getHfsAgentStatus(anyLong())).thenReturn("OK");
     }
 
     private CommandContext setupMockContext() {
@@ -426,41 +415,5 @@ public class Vps4SnapshotVmTest {
                 .execute(eq("RecordScheduledJobId"), eq(Vps4RecordScheduledJobForVm.class), any());
         verify(spySnapshotService, times(1)).markSnapshotLimitRescheduled(vps4AutomaticSnapshotId);
         verify(context, never()).execute(eq("Vps4SnapshotVm"), any(Function.class), any());
-    }
-
-    @Test
-    public void testSnapshotFailsWhenNydusPortIsBlocked() {
-        when(troubleshootVmService.isPortOpenOnVm(any(), eq(2224))).thenReturn(false);
-        when(troubleshootVmService.getHfsAgentStatus(anyLong())).thenReturn("OK");
-        try {
-            command.execute(context, automaticRequest);
-            Assert.fail("RuntimeException should have been thrown");
-        } catch (RuntimeException ignored) {}
-        verify(spySnapshotService, times(1)).markSnapshotAgentDown(vps4AutomaticSnapshotId);
-        verify(context, never()).execute(eq("Vps4SnapshotVm"), any(Function.class), any());
-    }
-
-    @Test
-    public void testSnapshotFailsWhenNydusIsDown() {
-        when(troubleshootVmService.isPortOpenOnVm(any(), eq(2224))).thenReturn(true);
-        when(troubleshootVmService.getHfsAgentStatus(anyLong())).thenReturn("UNKNOWN");
-        try {
-            command.execute(context, automaticRequest);
-            Assert.fail("RuntimeException should have been thrown");
-        } catch (RuntimeException ignored) {}
-        verify(spySnapshotService, times(1)).markSnapshotAgentDown(vps4AutomaticSnapshotId);
-        verify(context, never()).execute(eq("Vps4SnapshotVm"), any(Function.class), any());
-    }
-
-    @Test
-    public void testNydusErrorDoesNotGetRescheduled() {
-        when(troubleshootVmService.isPortOpenOnVm(any(), eq(2224))).thenReturn(true);
-        when(troubleshootVmService.getHfsAgentStatus(anyLong())).thenReturn("UNKNOWN");
-        try {
-            command.execute(context, automaticRequest);
-            Assert.fail("RuntimeException should have been thrown");
-        } catch (RuntimeException ignored) {}
-        verify(spySnapshotService, times(0)).markSnapshotErrorRescheduled(vps4AutomaticSnapshotId);
-        verify(spySnapshotService, times(0)).markSnapshotLimitRescheduled(vps4AutomaticSnapshotId);
     }
 }

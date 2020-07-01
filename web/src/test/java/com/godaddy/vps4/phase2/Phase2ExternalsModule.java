@@ -1,11 +1,16 @@
 package com.godaddy.vps4.phase2;
 
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.any;
+import static org.mockito.Mockito.anyLong;
+import static org.mockito.Mockito.eq;
 
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
+import com.godaddy.vps4.util.TroubleshootVmService;
 import org.mockito.Mockito;
 
 import com.godaddy.hfs.vm.Vm;
@@ -24,6 +29,7 @@ import gdg.hfs.orchestration.CommandState;
 public class Phase2ExternalsModule extends AbstractModule {
     private final static CreditService creditService = mock(CreditService.class);
     private final static VmService vmService = mock(VmService.class);
+    private final static TroubleshootVmService troubleshootVmService = mock(TroubleshootVmService.class);
 
     @Override
     public void configure() {
@@ -33,6 +39,7 @@ public class Phase2ExternalsModule extends AbstractModule {
         // HFS services
         mockHfsVm("ACTIVE");
         bind(VmService.class).toInstance(vmService);
+        bind(TroubleshootVmService.class).toInstance(troubleshootVmService);
 
         CommandService commandService = mock(CommandService.class);
         CommandState commandState = new CommandState();
@@ -41,6 +48,8 @@ public class Phase2ExternalsModule extends AbstractModule {
                 .thenReturn(commandState);
         bind(CommandService.class).toInstance(commandService);
 
+        Mockito.when(troubleshootVmService.getHfsAgentStatus(anyLong())).thenReturn("OK");
+        Mockito.when(troubleshootVmService.isPortOpenOnVm(any(), eq(2224))).thenReturn(true);
     }
 
     public static void mockVmCredit(AccountStatus accountStatus) {
@@ -66,6 +75,12 @@ public class Phase2ExternalsModule extends AbstractModule {
         hfsVm.status = status;
         hfsVm.vmId = 98765;
         Mockito.when(vmService.getVm(Mockito.anyLong())).thenReturn(hfsVm);
+    }
+
+    static void mockNydusDown()
+    {
+        when(troubleshootVmService.isPortOpenOnVm(any(), eq(2224))).thenReturn(true);
+        when(troubleshootVmService.getHfsAgentStatus(anyLong())).thenReturn("UNKNOWN");
     }
 
 

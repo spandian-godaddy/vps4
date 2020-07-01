@@ -57,7 +57,6 @@ public class SysAdminResourceTest {
             new VmModule(),
             new SnapshotModule(),
             new Phase2ExternalsModule(),
-            new UtilsModule(),
             new CancelActionModule(),
             new AbstractModule() {
 

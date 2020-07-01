@@ -24,7 +24,11 @@ import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
 
+import com.godaddy.hfs.vm.Vm;
+import com.godaddy.hfs.vm.VmService;
 import com.godaddy.vps4.scheduler.api.web.SchedulerWebService;
+import com.godaddy.vps4.util.TroubleshootVmService;
+import com.godaddy.vps4.web.Vps4Exception;
 import org.json.simple.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -77,6 +81,8 @@ public class SnapshotResource {
     private final Vps4UserService userService;
     private final SnapshotActionResource snapshotActionResource;
     private final SchedulerWebService schedulerWebService;
+    private final VmService vmService;
+    private final TroubleshootVmService troubleshootVmService;
 
     @Inject
     public SnapshotResource(@SnapshotActionService ActionService actionService,
@@ -86,7 +92,9 @@ public class SnapshotResource {
                             VirtualMachineService virtualMachineService,
                             Vps4UserService userService,
                             SnapshotActionResource snapshotActionResource,
-                            SchedulerWebService schedulerWebService) {
+                            SchedulerWebService schedulerWebService,
+                            VmService vmService,
+                            TroubleshootVmService troubleshootVmService) {
         this.actionService = actionService;
         this.commandService = commandService;
         this.user = user;
@@ -96,6 +104,8 @@ public class SnapshotResource {
         this.userService = userService;
         this.snapshotActionResource = snapshotActionResource;
         this.schedulerWebService = schedulerWebService;
+        this.vmService = vmService;
+        this.troubleshootVmService = troubleshootVmService;
     }
 
     @GET
@@ -125,6 +135,7 @@ public class SnapshotResource {
         // check to ensure snapshot belongs to vm and vm exists
         VirtualMachine vm = virtualMachineService.getVirtualMachine(snapshotRequest.vmId);
         validateVmExists(snapshotRequest.vmId, vm, user, false);
+        throwErrorIfAgentIsDown(vm);
         if (user.isShopper()) {
             getAndValidateUserAccountCredit(creditService, vm.orionGuid, user.getShopperId());
         }
@@ -138,6 +149,14 @@ public class SnapshotResource {
         public String name;
         public UUID vmId;
         public SnapshotType snapshotType;
+    }
+
+    private void throwErrorIfAgentIsDown(VirtualMachine vm) {
+        Vm hfsVm = vmService.getVm(vm.hfsVmId);
+        if (hfsVm.status.equals("ACTIVE") && (!troubleshootVmService.getHfsAgentStatus(vm.hfsVmId).equals("OK"))) {
+            throw new Vps4Exception("AGENT_DOWN","Agent for vmId " + vm.vmId + " is down. Refusing to take snapshot.");
+        }
+
     }
 
     private void validateCreation(UUID orionGuid, UUID backupJobId, String name, SnapshotType snapshotType) {

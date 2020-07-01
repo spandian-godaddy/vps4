@@ -12,6 +12,7 @@ import java.util.UUID;
 
 import javax.sql.DataSource;
 
+import com.godaddy.vps4.util.TroubleshootVmService;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -70,6 +71,7 @@ public class DedicatedDestroyTest {
     private ActionService actionService = mock(ActionService.class);
     private CreditService creditService = mock(CreditService.class);
     private VirtualMachineService virtualMachineService = mock(VirtualMachineService.class);
+    private TroubleshootVmService troubleshootVmService = mock(TroubleshootVmService.class);
 
     private VmResource vmResource;
     private VirtualMachine vm;
@@ -93,6 +95,7 @@ public class DedicatedDestroyTest {
                     bind(CreditService.class).toInstance(creditService);
                     bind(ActionService.class).toInstance(actionService);
                     bind(VirtualMachineService.class).toInstance(virtualMachineService);
+                    bind(TroubleshootVmService.class).toInstance(troubleshootVmService);
 
                     MapBinder<ActionType, String> actionTypeToCancelCmdNameMapBinder
                             = MapBinder.newMapBinder(binder(), ActionType.class, String.class);

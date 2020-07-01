@@ -42,28 +42,19 @@ public class Vps4SnapshotVm extends ActionCommand<Vps4SnapshotVm.Request, Vps4Sn
     private static final Logger logger = LoggerFactory.getLogger(Vps4SnapshotVm.class);
     private CommandContext context;
 
-    private final TroubleshootVmService troubleshootVmService;
     private final gdg.hfs.vhfs.snapshot.SnapshotService hfsSnapshotService;
     private final SnapshotService vps4SnapshotService;
-    private final VirtualMachineService virtualMachineService;
-    private final VmService vmService;
     private UUID snapshotIdToBeDeprecated;
     private final Config config;
 
     @Inject
     public Vps4SnapshotVm(@SnapshotActionService ActionService actionService,
-                          TroubleshootVmService troubleshootVmService,
                           gdg.hfs.vhfs.snapshot.SnapshotService hfsSnapshotService,
                           SnapshotService vps4SnapshotService,
-                          VirtualMachineService virtualMachineService,
-                          VmService vmService,
                           Config config) {
         super(actionService);
-        this.troubleshootVmService = troubleshootVmService;
         this.hfsSnapshotService = hfsSnapshotService;
         this.vps4SnapshotService = vps4SnapshotService;
-        this.virtualMachineService = virtualMachineService;
-        this.vmService = vmService;
         this.config = config;
     }
 
@@ -74,7 +65,6 @@ public class Vps4SnapshotVm extends ActionCommand<Vps4SnapshotVm.Request, Vps4Sn
             vps4SnapshotService.cancelErroredSnapshots(request.orionGuid, request.snapshotType);
             return null;
         }, Void.class);
-        throwErrorIfAgentIsDown(request);
         throwErrorAndRescheduleIfLimitReached(request);
         snapshotIdToBeDeprecated = context.execute("MarkOldestSnapshotForDeprecation" + request.orionGuid,
                 ctx -> vps4SnapshotService.markOldestSnapshotForDeprecation(request.orionGuid, request.snapshotType),
@@ -82,21 +72,6 @@ public class Vps4SnapshotVm extends ActionCommand<Vps4SnapshotVm.Request, Vps4Sn
         SnapshotAction hfsAction = createAndWaitForSnapshotCompletion(request);
         deprecateOldSnapshot(request.initiatedBy);
         return generateResponse(hfsAction);
-    }
-
-    private void throwErrorIfAgentIsDown(Request request) {
-        VirtualMachine vm = virtualMachineService.getVirtualMachine(request.vmId);
-        Vm hfsVm = vmService.getVm(request.hfsVmId);
-        if (hfsVm.status.equals("ACTIVE")) {
-            if (!troubleshootVmService.isPortOpenOnVm(vm.primaryIpAddress.ipAddress, 2224)) {
-                vps4SnapshotService.markSnapshotAgentDown(request.vps4SnapshotId);
-                throw new RuntimeException("VmId " + request.vmId + " has port 2224 blocked. Refusing to take snapshot.");
-            }
-            if (!troubleshootVmService.getHfsAgentStatus(vm.hfsVmId).equals("OK")) {
-                vps4SnapshotService.markSnapshotAgentDown(request.vps4SnapshotId);
-                throw new RuntimeException("Agent for vmId " + request.vmId + " is down. Refusing to take snapshot.");
-            }
-        }
     }
 
     private void throwErrorAndRescheduleIfLimitReached(Request request) {
