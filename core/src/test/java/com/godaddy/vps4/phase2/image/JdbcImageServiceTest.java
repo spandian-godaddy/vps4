@@ -5,6 +5,12 @@ import static org.junit.Assert.assertTrue;
 
 import java.util.List;
 
+import javax.sql.DataSource;
+
+import org.junit.Before;
+import org.junit.BeforeClass;
+import org.junit.Test;
+
 import com.godaddy.vps4.jdbc.DatabaseModule;
 import com.godaddy.vps4.vm.Image;
 import com.godaddy.vps4.vm.ImageService;
@@ -12,18 +18,13 @@ import com.godaddy.vps4.vm.jdbc.JdbcImageService;
 import com.google.inject.AbstractModule;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Test;
-
-import javax.sql.DataSource;
 
 public class JdbcImageServiceTest {
 
     static private Injector injectorForDS;
     private Injector injector;
     static private DataSource dataSource;
-    private String imageName = "vps4-ubuntu-1604-ispconfig-3";
+    private String imageName = "hfs-ubuntu-1604";
 
     @BeforeClass
     public static void setUpInternalInjector() {
@@ -44,7 +45,7 @@ public class JdbcImageServiceTest {
 
     @Test
     public void getImageForRegularImageOk() {
-        assertNotNull(injector.getInstance(ImageService.class).getImage("vps4-ubuntu-1604-ispconfig-3"));
+        assertNotNull(injector.getInstance(ImageService.class).getImage("hfs-ubuntu-1604"));
     }
 
     @Test
