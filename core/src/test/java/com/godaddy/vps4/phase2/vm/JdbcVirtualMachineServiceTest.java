@@ -368,7 +368,7 @@ public class JdbcVirtualMachineServiceTest {
         }
 
         Map<Integer, Integer> activeServerCount = virtualMachineService.getActiveServerCountByTiers();
-        assertEquals(currentCount.get(10).intValue() + 3, activeServerCount.get(10).intValue());
+        assertEquals(currentCount.getOrDefault(10, 0).intValue() + 3, activeServerCount.get(10).intValue());
     }
 
     @Test
