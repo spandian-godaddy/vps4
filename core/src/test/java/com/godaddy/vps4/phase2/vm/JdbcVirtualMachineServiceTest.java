@@ -153,7 +153,7 @@ public class JdbcVirtualMachineServiceTest {
         VirtualMachine actualVm = virtualMachineService.getVirtualMachine(testVm.hfsVmId);
         assertEquals(testVm.hfsVmId, actualVm.hfsVmId);
     }
-    
+
     @Test
     public void testGetVirtualMachineByIpAddress() {
         UUID orionGuid = UUID.randomUUID();
@@ -308,22 +308,22 @@ public class JdbcVirtualMachineServiceTest {
         System.out.println(virtualMachineService.getOSDistro(vm.vmId));
         Assert.assertEquals( "ubuntu-1604", virtualMachineService.getOSDistro(vm.vmId));
     }
-    
-    @Test 
+
+    @Test
     public void testUpdateManagedLevel() {
         VirtualMachine vm = SqlTestData.insertTestVm(orionGuid, dataSource);
         virtualMachines.add(vm);
-        
+
         Assert.assertEquals(0,  vm.managedLevel);
 
         Map<String, Object> paramsToUpdate = new HashMap<>();
         paramsToUpdate.put("managed_level", 2);
         virtualMachineService.updateVirtualMachine(vm.vmId, paramsToUpdate);
         vm = virtualMachineService.getVirtualMachine(vm.vmId);
-        
+
         Assert.assertEquals(2,  vm.managedLevel);
     }
-    
+
     @Test
     public void testVmNotExistsReturnsNull() {
         VirtualMachine vm = virtualMachineService.getVirtualMachine(UUID.randomUUID());
@@ -360,13 +360,15 @@ public class JdbcVirtualMachineServiceTest {
 
     @Test
     public void testGetActiveServerCountByTiers() {
+        Map<Integer, Integer> currentCount = virtualMachineService.getActiveServerCountByTiers();
+
         for (int i = 0; i < 3; i++) {
             VirtualMachine testVm = SqlTestData.insertTestVm(UUID.randomUUID(), dataSource);
             virtualMachines.add(testVm);
         }
 
         Map<Integer, Integer> activeServerCount = virtualMachineService.getActiveServerCountByTiers();
-        assertEquals(3, activeServerCount.get(10).intValue());
+        assertEquals(currentCount.get(10).intValue() + 3, activeServerCount.get(10).intValue());
     }
 
     @Test
