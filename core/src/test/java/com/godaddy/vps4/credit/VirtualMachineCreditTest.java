@@ -135,4 +135,16 @@ public class VirtualMachineCreditTest {
         assertEquals(0, credit.getMonitoring());
     }
 
+    @Test
+    // NES made a change to plan features changing operatingsystem to operating_system.  Need to support both going forward.
+    public void handlesModifiedOperatingSystemPlanFeature() {
+        VirtualMachineCredit credit = new VirtualMachineCredit.Builder(mock(DataCenterService.class))
+                .withPlanFeatures(planFeaturesFrom("operating_system", "linux")).build();
+        assertEquals("linux", credit.getOperatingSystem());
+
+        credit = new VirtualMachineCredit.Builder(mock(DataCenterService.class))
+                .withPlanFeatures(planFeaturesFrom("operatingsystem", "linux")).build();
+        assertEquals("linux", credit.getOperatingSystem());
+    }
+
 }

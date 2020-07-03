@@ -5,11 +5,11 @@ import java.util.Arrays;
 import java.util.Map;
 import java.util.UUID;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
 import org.apache.commons.lang3.builder.ReflectionToStringBuilder;
 import org.apache.commons.lang3.builder.ToStringStyle;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.godaddy.vps4.credit.ECommCreditService.PlanFeatures;
 import com.godaddy.vps4.credit.ECommCreditService.ProductMetaField;
 import com.godaddy.vps4.vm.AccountStatus;
@@ -257,6 +257,10 @@ public class VirtualMachineCredit {
                         Integer.parseInt(planFeatures.getOrDefault(PlanFeatures.MANAGED_LEVEL.toString(), "0"));
                 credit.monitoring = parseMonitoring(planFeatures.getOrDefault(PlanFeatures.MONITORING.toString(), "0"));
                 credit.operatingSystem = planFeatures.get(PlanFeatures.OPERATINGSYSTEM.toString());
+                if (credit.operatingSystem == null) {
+                    // Alternative field name from entitlement gateway
+                    credit.operatingSystem = planFeatures.get("operating_system");
+                }
                 credit.controlPanel = planFeatures.get(PlanFeatures.CONTROL_PANEL_TYPE.toString());
                 credit.pfid = Integer.parseInt(planFeatures.getOrDefault(PlanFeatures.PF_ID.toString(), "0"));
             }
