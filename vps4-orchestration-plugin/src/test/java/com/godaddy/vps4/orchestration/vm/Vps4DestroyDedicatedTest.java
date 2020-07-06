@@ -9,8 +9,6 @@ import static org.mockito.Mockito.verify;
 import org.junit.Before;
 import org.junit.Test;
 
-import com.godaddy.vps4.orchestration.backupstorage.Vps4DestroyBackupStorage;
-
 public class Vps4DestroyDedicatedTest extends Vps4DestroyVmTest {
 
     @Override
@@ -19,13 +17,6 @@ public class Vps4DestroyDedicatedTest extends Vps4DestroyVmTest {
         super.setUp();
         // Run the same tests in Vps4DestroyVmTest but with Ded4 destroy command
         command = new Vps4DestroyDedicated(actionService, networkService);
-    }
-
-    @Override
-    @Test
-    public void executesDestroyBackupStorage() {
-        command.execute(context, request);
-        verify(context).execute(eq(Vps4DestroyBackupStorage.class), any(VmActionRequest.class));
     }
 
     @Override

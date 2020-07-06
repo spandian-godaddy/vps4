@@ -48,7 +48,6 @@ public class Vps4DestroyVm extends ActionCommand<VmActionRequest, Vps4DestroyVm.
 
         logger.info("Destroying server {}", vm.vmId);
 
-        destroyBackupStorage();
         unlicenseControlPanel();
         removeMonitoring();
         removeIp();
@@ -102,10 +101,6 @@ public class Vps4DestroyVm extends ActionCommand<VmActionRequest, Vps4DestroyVm.
                 networkService.destroyIpAddress(address.ipAddressId);
                 return null;
             }, Void.class);
-    }
-
-    protected void destroyBackupStorage() {
-        // Virtual servers do not need to remove backup storage, but dedicated servers override this method
     }
 
     protected void removeIpFromServer(IpAddress address) {
