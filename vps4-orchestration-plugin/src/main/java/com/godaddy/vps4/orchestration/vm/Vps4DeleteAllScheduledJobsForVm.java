@@ -29,7 +29,7 @@ public class Vps4DeleteAllScheduledJobsForVm implements Command<UUID, Void> {
     private final ScheduledJobService scheduledJobService;
 
     private CommandContext context;
-    private UUID vmId;
+    protected UUID vmId;
 
     @Inject
     public Vps4DeleteAllScheduledJobsForVm(ScheduledJobService scheduledJobService) {
@@ -41,16 +41,15 @@ public class Vps4DeleteAllScheduledJobsForVm implements Command<UUID, Void> {
     public Void execute(CommandContext context, UUID vmId) {
         this.context = context;
         this.vmId = vmId;
-        deleteAllScheduledJobs();
+        List<ScheduledJob> jobs = getJobsForDeletion();
+        for (ScheduledJob job : jobs) {
+            deleteJob(job);
+        }
         return null;
     }
 
-    private void deleteAllScheduledJobs() {
-        List<ScheduledJob> jobs =  scheduledJobService.getScheduledJobs(vmId);
-        
-        for(ScheduledJob job : jobs) {
-            deleteJob(job);
-        }
+    protected List<ScheduledJob> getJobsForDeletion() {
+        return scheduledJobService.getScheduledJobs(vmId);
     }
 
     private void deleteJob(ScheduledJob job) {

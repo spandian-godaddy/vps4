@@ -30,10 +30,10 @@ import com.google.inject.Injector;
 
 import gdg.hfs.orchestration.CommandContext;
 
-public class Vps4DeleteAllScheduledJobsForVmTest {
+public class Vps4DeleteAllScheduledZombieJobsForVmTest {
     static Injector injector;
 
-    @Inject Vps4DeleteAllScheduledJobsForVm command;
+    @Inject Vps4DeleteAllScheduledZombieJobsForVm command;
     @Inject ScheduledJobService scheduledJobService;
 
     private CommandContext context;
@@ -71,27 +71,41 @@ public class Vps4DeleteAllScheduledJobsForVmTest {
 
     private void setupMockContext() {
         context = mock(CommandContext.class);
-        when(scheduledJobService.getScheduledJobs(vmId)).thenReturn(scheduledJobs);
+        when(scheduledJobService.getScheduledJobsByType(vmId, ScheduledJob.ScheduledJobType.ZOMBIE))
+                .thenReturn(scheduledJobs);
     }
 
     @Test
-    public void callsScheduledJobServiceToGetListOfVmJobs() {
+    public void callsScheduledJobServiceToGetListOfZombieVmJobs() {
         command.execute(context, vmId);
 
-        verify(scheduledJobService, times(1)).getScheduledJobs(eq(vmId));
+        verify(scheduledJobService, times(1))
+                .getScheduledJobsByType(vmId, ScheduledJob.ScheduledJobType.ZOMBIE);
     }
 
     @Test
-    public void callsDeleteJobOnEveryScheduledJob() {
+    public void callsDeleteJobOnZombieScheduledJob() {
         command.execute(context, vmId);
 
-        for(ScheduledJob job : scheduledJobs) {
-            verify(context, times(1))
+        ScheduledJob job = scheduledJobs.get(1);
+        verify(context, times(1))
                 .execute(eq(String.format("DeleteScheduledJob-%s", job.id)), eq(DeleteScheduledJob.class), deleteScheduledJobReqCaptor.capture());
 
-            DeleteScheduledJob.Request req = deleteScheduledJobReqCaptor.getValue();
-            Assert.assertEquals(job.id, req.jobId);
-            Assert.assertEquals(Utils.getJobRequestClassForType(job.type), req.jobRequestClass);
-        }
+        DeleteScheduledJob.Request req = deleteScheduledJobReqCaptor.getValue();
+        Assert.assertEquals(job.id, req.jobId);
+        Assert.assertEquals(Utils.getJobRequestClassForType(job.type), req.jobRequestClass);
+    }
+
+    @Test
+    public void onlyCallsDeleteJobOnZombieScheduledJob() {
+        command.execute(context, vmId);
+
+        ScheduledJob job = scheduledJobs.get(0);
+        verify(context, times(1))
+                .execute(eq(String.format("DeleteScheduledJob-%s", job.id)), eq(DeleteScheduledJob.class), deleteScheduledJobReqCaptor.capture());
+
+        DeleteScheduledJob.Request req = deleteScheduledJobReqCaptor.getValue();
+        Assert.assertEquals(job.id, req.jobId);
+        Assert.assertEquals(Utils.getJobRequestClassForType(job.type), req.jobRequestClass);
     }
 }
