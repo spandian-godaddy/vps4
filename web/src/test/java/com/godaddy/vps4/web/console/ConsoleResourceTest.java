@@ -4,8 +4,6 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyLong;
-import static org.mockito.Matchers.anyString;
-import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
@@ -16,16 +14,15 @@ import java.util.Collections;
 import java.util.UUID;
 
 import javax.servlet.http.HttpServletRequest;
-import javax.ws.rs.InternalServerErrorException;
+import javax.ws.rs.ClientErrorException;
 import javax.ws.rs.core.HttpHeaders;
+import javax.ws.rs.core.Response;
 
 import org.junit.Before;
 import org.junit.Test;
 
 import com.godaddy.hfs.vm.Console;
 import com.godaddy.hfs.vm.VmService;
-import com.godaddy.vps4.console.ConsoleService;
-import com.godaddy.vps4.console.CouldNotRetrieveConsoleException;
 import com.godaddy.vps4.jdbc.ResultSubset;
 import com.godaddy.vps4.security.GDUserMock;
 import com.godaddy.vps4.vm.Action;
@@ -46,7 +43,6 @@ public class ConsoleResourceTest {
     GDUser user = GDUserMock.createShopper();
     ActionService actionService = mock(ActionService.class);
     CommandService commandService = mock(CommandService.class);
-    ConsoleService consoleService = mock(ConsoleService.class);
     VmResource vmResource = mock(VmResource.class);
     com.godaddy.hfs.vm.VmService vmService = mock(VmService.class);
 
@@ -56,7 +52,7 @@ public class ConsoleResourceTest {
     UUID vmId = UUID.randomUUID();
     long hfsVmId = 1234;
     VirtualMachine vm;
-    ConsoleResource consoleResource = new ConsoleResource(user, actionService, commandService, consoleService, vmResource, vmService);
+    ConsoleResource consoleResource = new ConsoleResource(user, actionService, commandService, vmResource, vmService);
 
     @Before
     public void setupTest() {
@@ -67,8 +63,6 @@ public class ConsoleResourceTest {
         vm.spec.serverType = new ServerType();
         vm.spec.serverType.serverType = ServerType.Type.VIRTUAL;
 
-        when(consoleService.getConsoleUrl(hfsVmId)).thenReturn(fakeUrl);
-        when(consoleService.getConsoleUrl(eq(hfsVmId), anyString())).thenReturn(fakeUrl);
         when(vmResource.getVm(vmId)).thenReturn(vm);
         Action action = mock(Action.class);
         when(actionService.getAction(anyLong())).thenReturn(action);
@@ -76,63 +70,6 @@ public class ConsoleResourceTest {
         Console console = new Console();
         console.url = fakeUrl;
         when(vmService.getConsole(hfsVmId)).thenReturn(console);
-    }
-
-    @Test
-    public void deprecatedForAVMReturnsConsoleWithHfsUrl() {
-        ConsoleResource.Console actualConsole = consoleResource.getConsoleUrl(vmId, null, null, null);
-        verify(consoleService, times(1)).getConsoleUrl(hfsVmId);
-        assertEquals(fakeUrl, actualConsole.url);
-    }
-
-    @Test
-    public void deprecatedForADEDWithFromIpAddressPassedInReturnsConsoleWithHfsUrl() {
-        String ipAddress = "12.12.12.12";
-        vm.spec.serverType.serverType = ServerType.Type.DEDICATED;
-
-        ConsoleResource.Console actualConsole = consoleResource.getConsoleUrl(vmId, ipAddress, null, null);
-
-        verify(consoleService, times(1)).getConsoleUrl(hfsVmId, ipAddress);
-        assertEquals(fakeUrl, actualConsole.url);
-    }
-
-    @Test
-    public void deprecatedForADEDWithFromIpAddressNotPassedInReturnsConsoleWithHfsUrl() {
-        HttpHeaders httpHeaders = mock(HttpHeaders.class);
-        HttpServletRequest httpServletRequest = mock(HttpServletRequest.class);
-        when(httpServletRequest.getRemoteAddr()).thenReturn(fromIpAddress);
-        vm.spec.serverType.serverType = ServerType.Type.DEDICATED;
-
-        ConsoleResource.Console actualConsole =
-                consoleResource.getConsoleUrl(vmId, null, httpHeaders, httpServletRequest);
-
-        verify(consoleService, times(1)).getConsoleUrl(hfsVmId, fromIpAddress);
-        assertEquals(fakeUrl, actualConsole.url);
-    }
-
-    @Test
-    public void deprecatedForADEDWithInvalidFromIpAddressReturnsBlankUrl() {
-        String ipAddress = "notanip";
-        vm.spec.serverType.serverType = ServerType.Type.DEDICATED;
-
-        ConsoleResource.Console actualConsole = consoleResource.getConsoleUrl(vmId, ipAddress, null, null);
-
-        verify(consoleService, never()).getConsoleUrl(hfsVmId, ipAddress);
-        assertEquals("", actualConsole.url);
-    }
-
-    @Test
-    public void deprecatedHandlesCouldNotRetrieveConsoleException() {
-        when(consoleService.getConsoleUrl(hfsVmId)).thenThrow(new CouldNotRetrieveConsoleException("..."));
-        ConsoleResource.Console actualConsole = consoleResource.getConsoleUrl(vmId, null, null, null);
-        assertEquals("", actualConsole.url);
-    }
-
-    @Test
-    public void deprecatedHandlesRandomException() {
-        when(consoleService.getConsoleUrl(hfsVmId)).thenThrow(new RuntimeException());
-        ConsoleResource.Console actualConsole = consoleResource.getConsoleUrl(vmId, null, null, null);
-        assertEquals("", actualConsole.url);
     }
 
     @Test
@@ -225,8 +162,8 @@ public class ConsoleResourceTest {
 
     @Test
     public void handlesInternalServerException() {
-        // HFS throws an InternalServerException when you call GET /console without first calling POST /console
-        when(vmService.getConsole(hfsVmId)).thenThrow(new InternalServerErrorException());
+        // HFS throws a ClientErrorException when you call GET /console without first calling POST /console
+        when(vmService.getConsole(hfsVmId)).thenThrow(new ClientErrorException(Response.Status.CONFLICT));
         try {
             consoleResource.getConsoleUrl(vmId);
             fail();

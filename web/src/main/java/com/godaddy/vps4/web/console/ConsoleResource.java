@@ -26,8 +26,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.godaddy.hfs.vm.VmService;
-import com.godaddy.vps4.console.ConsoleService;
-import com.godaddy.vps4.console.CouldNotRetrieveConsoleException;
 import com.godaddy.vps4.orchestration.console.Vps4RequestConsole;
 import com.godaddy.vps4.vm.ActionService;
 import com.godaddy.vps4.vm.ActionType;
@@ -58,7 +56,6 @@ public class ConsoleResource {
     private final GDUser user;
     private final ActionService actionService;
     private final CommandService commandService;
-    private final ConsoleService consoleService;
     private final VmResource vmResource;
     private final VmService vmService;
 
@@ -66,13 +63,11 @@ public class ConsoleResource {
     ConsoleResource(GDUser user,
                     ActionService actionService,
                     CommandService commandService,
-                    ConsoleService consoleService,
                     VmResource vmResource,
                     VmService vmService) {
         this.user = user;
         this.actionService = actionService;
         this.commandService = commandService;
-        this.consoleService = consoleService;
         this.vmResource = vmResource;
         this.vmService = vmService;
     }
@@ -80,52 +75,8 @@ public class ConsoleResource {
     public static class Console {
         public String url;
 
-        public Console() {
-            this.url = "";
-        }
-
         public Console(String url) {
             this.url = url;
-        }
-    }
-
-    @GET
-    @Path("/{vmId}/console")
-    @ApiOperation(value = "Get a console url to a Virtual Machine", notes = "Get a console url to a Virtual Machine")
-    @Deprecated // this will no longer be needed once the UI switches to the new /consoleUrl endpoints
-    public Console getConsoleUrl(
-            @ApiParam(value = "The ID of the selected server", required = true) @PathParam("vmId") UUID vmId,
-            @QueryParam("fromIpAddress") String fromIpAddress,
-            @Context HttpHeaders headers,
-            @Context HttpServletRequest req) {
-        VirtualMachine vm = vmResource.getVm(vmId);
-
-        try {
-            String consoleUrl = null;
-            if (vm.spec.isVirtualMachine()) {
-                consoleUrl = consoleService.getConsoleUrl(vm.hfsVmId);
-            } else {
-                // DED server's will issue console url only to a particular ip address
-                if (StringUtils.isBlank(fromIpAddress)) {
-                    fromIpAddress = Utils.getClientIpAddress(headers, req);
-                } else {
-                    if (!Utils.isIPv4Address(fromIpAddress)) {
-                        throw new Vps4Exception("INVALID_CLIENT_IP", "Invalid client IP address.");
-                    }
-                }
-
-                logger.info("Fetching console url for vm {} using ip {}", vm.vmId, fromIpAddress);
-                consoleUrl = consoleService.getConsoleUrl(vm.hfsVmId, fromIpAddress);
-            }
-
-            return new Console(consoleUrl);
-        } catch (CouldNotRetrieveConsoleException e) {
-            logger.error("Failed getting console url for vm {}.  Returning \"\".  Exception: {}", vm.vmId, e);
-            return new Console();
-        } catch (Exception e) {
-            logger.error("Unexpected exception getting console url for vm {}.  Returning \"\".  Exception: {}", vm.vmId,
-                         e);
-            return new Console();
         }
     }
 
