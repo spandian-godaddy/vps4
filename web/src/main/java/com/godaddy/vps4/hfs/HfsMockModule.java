@@ -20,8 +20,6 @@ import com.godaddy.hfs.mailrelay.MailRelayHistory;
 import com.godaddy.hfs.mailrelay.MailRelayService;
 import com.godaddy.hfs.mailrelay.MailRelayUpdate;
 import com.godaddy.hfs.vm.AgentDetails;
-import com.godaddy.hfs.backupstorage.BackupStorage;
-import com.godaddy.hfs.backupstorage.BackupStorageCreds;
 import com.godaddy.hfs.vm.Console;
 import com.godaddy.hfs.vm.ConsoleRequest;
 import com.godaddy.hfs.vm.CreateVMRequest;
@@ -316,45 +314,6 @@ public class HfsMockModule extends AbstractModule {
 
             @Override
             public List<HfsInventoryData> getInventory(String provider) {
-                throw new UnsupportedOperationException("Not implemented, yet");
-            }
-
-            @Override
-            public VmAction createBackupStorage(long vmId) {
-                VmAction createVmBackupStorageAction = new VmAction();
-                createVmBackupStorageAction.vmActionId = new Random().nextInt(10000);
-                createVmBackupStorageAction.vmId = vmId;
-                createVmBackupStorageAction.state = VmAction.Status.COMPLETE;
-                return createVmBackupStorageAction;
-            }
-
-            @Override
-            public VmAction destroyBackupStorage(long vmId) {
-                VmAction destroyVmBackupStorageAction = new VmAction();
-                destroyVmBackupStorageAction.vmActionId = new Random().nextInt(10000);
-                destroyVmBackupStorageAction.vmId = vmId;
-                destroyVmBackupStorageAction.state = VmAction.Status.COMPLETE;
-                return destroyVmBackupStorageAction;
-            }
-
-            @Override
-            public BackupStorage getBackupStorage(long vmId) {
-                // NOTE: do nothing, Implement when needed
-                throw new UnsupportedOperationException("Not implemented, yet");
-            }
-
-            @Override
-            public VmAction resetBackupStorageCreds(long vmId) {
-                VmAction resetVmBackupStorageCredsAction = new VmAction();
-                resetVmBackupStorageCredsAction.vmActionId = new Random().nextInt(10000);
-                resetVmBackupStorageCredsAction.vmId = vmId;
-                resetVmBackupStorageCredsAction.state = VmAction.Status.COMPLETE;
-                return resetVmBackupStorageCredsAction;
-            }
-
-            @Override
-            public BackupStorageCreds getBackupStorageCreds(long vmId) {
-                // NOTE: do nothing, Implement when needed
                 throw new UnsupportedOperationException("Not implemented, yet");
             }
         };

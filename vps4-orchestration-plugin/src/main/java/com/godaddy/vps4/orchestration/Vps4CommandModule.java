@@ -1,8 +1,5 @@
 package com.godaddy.vps4.orchestration;
 
-import com.godaddy.vps4.orchestration.backupstorage.Vps4CreateBackupStorage;
-import com.godaddy.vps4.orchestration.backupstorage.Vps4DestroyBackupStorage;
-import com.godaddy.vps4.orchestration.backupstorage.Vps4ResetBackupStorageCreds;
 import com.godaddy.vps4.orchestration.console.Vps4RequestConsole;
 import com.godaddy.vps4.orchestration.dns.Vps4CreateDnsPtrRecord;
 import com.godaddy.vps4.orchestration.hfs.sysadmin.InstallPanopta;
@@ -128,9 +125,6 @@ public class Vps4CommandModule extends AbstractModule {
         bind(WaitForPanoptaInstall.class);
         bind(GetPanoptaServerKeyFromHfs.class);
         bind(SetupPanopta.class);
-        bind(Vps4CreateBackupStorage.class);
-        bind(Vps4DestroyBackupStorage.class);
-        bind(Vps4ResetBackupStorageCreds.class);
         bind(Vps4RequestConsole.class);
     }
 }

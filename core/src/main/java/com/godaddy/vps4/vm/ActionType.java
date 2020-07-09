@@ -45,10 +45,10 @@ public enum ActionType {
     BILLING_SUSPEND(36),
     CREATE_REVERSE_DNS_NAME_RECORD(37),
     MERGE_SHOPPER(38),
-    CREATE_BACKUP_STORAGE(39),
-    DESTROY_BACKUP_STORAGE(40),
+    CREATE_BACKUP_STORAGE(39), // no longer used, but kept for historical purposes
+    DESTROY_BACKUP_STORAGE(40), // no longer used, but kept for historical purposes
     ADD_MONITORING(41),
-    RESET_BACKUP_STORAGE_CREDS(42),
+    RESET_BACKUP_STORAGE_CREDS(42), // no longer used, but kept for historical purposes
     REQUEST_CONSOLE(43);
 
     private final int typeId;

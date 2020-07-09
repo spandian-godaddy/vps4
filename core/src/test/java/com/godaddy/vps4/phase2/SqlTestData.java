@@ -95,7 +95,6 @@ public class SqlTestData {
         VirtualMachineService virtualMachineService = new JdbcVirtualMachineService(dataSource);
         VirtualMachine vm = virtualMachineService.getVirtualMachine(vmId);
 
-        Sql.with(dataSource).exec("DELETE FROM backup_storage WHERE vm_id = ? ", null, vmId);
         Sql.with(dataSource).exec("DELETE FROM vm_silenced_alert WHERE vm_id = ? ", null, vmId);
         Sql.with(dataSource).exec("DELETE FROM vm_outage WHERE vm_id = ? ", null, vmId);
         Sql.with(dataSource).exec("DELETE FROM hfs_vm_tracking_record WHERE vm_id = ?", null, vmId);

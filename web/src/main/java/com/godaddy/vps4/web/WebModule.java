@@ -3,7 +3,6 @@ package com.godaddy.vps4.web;
 import com.godaddy.vps4.web.action.ActionResource;
 import com.godaddy.vps4.web.appmonitors.VmActionsMonitorResource;
 import com.godaddy.vps4.web.audit.AuditHfsVmResource;
-import com.godaddy.vps4.web.backupstorage.BackupStorageResource;
 import com.godaddy.vps4.web.cache.CacheResource;
 import com.godaddy.vps4.web.console.ConsoleResource;
 import com.godaddy.vps4.web.controlPanel.cpanel.CPanelResource;
@@ -108,7 +107,6 @@ public class WebModule extends AbstractModule {
         bind(VmOutageResource.class);
         bind(VmDetailsResource.class);
         bind(InventoryResource.class);
-        bind(BackupStorageResource.class);
         bind(VmAddMonitoringResource.class);
 
         bind(CommandsResource.class);

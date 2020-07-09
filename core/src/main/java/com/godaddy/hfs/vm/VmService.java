@@ -3,7 +3,6 @@ package com.godaddy.hfs.vm;
 import java.util.List;
 
 import javax.ws.rs.Consumes;
-import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
@@ -11,9 +10,6 @@ import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
-
-import com.godaddy.hfs.backupstorage.BackupStorage;
-import com.godaddy.hfs.backupstorage.BackupStorageCreds;
 
 import io.swagger.annotations.Api;
 
@@ -104,24 +100,4 @@ public interface VmService {
     @GET
     @Path("/inventory")
     List<HfsInventoryData> getInventory(@QueryParam("provider") String provider);
-
-    @POST
-    @Path("/{vmId}/backupSpace")
-    VmAction createBackupStorage(@PathParam("vmId") long vmId);
-
-    @DELETE
-    @Path("/{vmId}/backupSpace")
-    VmAction destroyBackupStorage(@PathParam("vmId") long vmId);
-
-    @GET
-    @Path("/{vmId}/backupSpace")
-    BackupStorage getBackupStorage(@PathParam("vmId") long vmId);
-
-    @POST
-    @Path("/{vmId}/backupSpace/credentials")
-    VmAction resetBackupStorageCreds(@PathParam("vmId") long vmId);
-
-    @GET
-    @Path("/{vmId}/backupSpace/credentials")
-    BackupStorageCreds getBackupStorageCreds(@PathParam("vmId") long vmId);
 }
