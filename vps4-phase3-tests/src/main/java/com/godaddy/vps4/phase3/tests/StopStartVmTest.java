@@ -34,8 +34,8 @@ public class StopStartVmTest implements VmTest {
         vps4Client.pollForVmActionComplete(vm.vmId, startVmActionId, 240);
 
         try {
-            // A brief pause before trying ssh connection
-            Thread.sleep(15000);
+            // Pause before trying ssh connection to allow the SSH server to finish spinning up
+            Thread.sleep(30000);
         } catch (InterruptedException e) {
             logger.error("Error during start stop test sleeping, pre-ssh check", e);
         }
