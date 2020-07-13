@@ -16,6 +16,7 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
 
 import com.godaddy.hfs.vm.Vm;
+import com.godaddy.hfs.vm.VmExtendedInfo;
 import com.godaddy.vps4.credit.CreditService;
 import com.godaddy.vps4.credit.VirtualMachineCredit;
 import com.godaddy.vps4.panopta.PanoptaDataService;
@@ -24,6 +25,7 @@ import com.godaddy.vps4.scheduler.api.core.SchedulerJobDetail;
 import com.godaddy.vps4.scheduler.api.web.SchedulerWebService;
 import com.godaddy.vps4.vm.VirtualMachine;
 import com.godaddy.vps4.web.Vps4Api;
+import com.godaddy.vps4.web.security.GDUser;
 
 import io.swagger.annotations.Api;
 
@@ -39,16 +41,18 @@ public class VmDetailsResource {
     private final SchedulerWebService schedulerWebService;
     private final PanoptaDataService panoptaDataService;
     private final VmZombieResource vmZombieResource;
+    private final GDUser user;
 
     @Inject
     public VmDetailsResource(VmResource vmResource, CreditService creditService,
             SchedulerWebService schedulerWebService, PanoptaDataService panoptaDataService,
-            VmZombieResource vmZombieResource) {
+            VmZombieResource vmZombieResource, GDUser user) {
         this.vmResource = vmResource;
         this.creditService = creditService;
         this.schedulerWebService = schedulerWebService;
         this.panoptaDataService = panoptaDataService;
         this.vmZombieResource = vmZombieResource;
+        this.user = user;
     }
 
     @GET
@@ -72,6 +76,12 @@ public class VmDetailsResource {
         VirtualMachine virtualMachine = vmResource.getVm(vmId);
         VirtualMachineCredit credit = creditService.getVirtualMachineCredit(virtualMachine.orionGuid);
         Vm vm = vmResource.getVmFromVmVertical(virtualMachine.hfsVmId);
+        String hypervisorHostname = null;
+        if (user.isEmployee() && !credit.isDed4()) {
+            VmExtendedInfo vmExtendedInfo = vmResource.getVmExtendedInfoFromVmVertical(virtualMachine.hfsVmId);
+            hypervisorHostname = vmExtendedInfo.extended.hypervisorHostname;
+        }
+
         PanoptaServerDetails panoptaDetails = panoptaDataService.getPanoptaServerDetails(vmId);
 
         AutomaticSnapshotSchedule automaticSnapshotSchedule = new AutomaticSnapshotSchedule();
@@ -100,7 +110,8 @@ public class VmDetailsResource {
         });
 
         return new VirtualMachineWithDetails(virtualMachine, new VirtualMachineDetails(vm), credit.getDataCenter(),
-                credit.getShopperId(), automaticSnapshotSchedule, panoptaDetails, scheduledZombieCleanupJobs);
+                credit.getShopperId(), automaticSnapshotSchedule, panoptaDetails, scheduledZombieCleanupJobs,
+                hypervisorHostname);
     }
 
     private boolean isZombie(VirtualMachine vm) {

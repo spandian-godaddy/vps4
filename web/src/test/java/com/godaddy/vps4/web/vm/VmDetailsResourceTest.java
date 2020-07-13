@@ -18,7 +18,9 @@ import java.util.UUID;
 import org.junit.Before;
 import org.junit.Test;
 
+import com.godaddy.hfs.vm.Extended;
 import com.godaddy.hfs.vm.Vm;
+import com.godaddy.hfs.vm.VmExtendedInfo;
 import com.godaddy.vps4.credit.CreditService;
 import com.godaddy.vps4.credit.VirtualMachineCredit;
 import com.godaddy.vps4.panopta.PanoptaDataService;
@@ -28,6 +30,7 @@ import com.godaddy.vps4.scheduler.api.core.SchedulerJobDetail;
 import com.godaddy.vps4.scheduler.api.web.SchedulerWebService;
 import com.godaddy.vps4.vm.DataCenter;
 import com.godaddy.vps4.vm.VirtualMachine;
+import com.godaddy.vps4.web.security.GDUser;
 
 public class VmDetailsResourceTest {
 
@@ -37,14 +40,17 @@ public class VmDetailsResourceTest {
     private SchedulerWebService schedulerWebService = mock(SchedulerWebService.class);
     private PanoptaDataService panoptaDataService = mock(PanoptaDataService.class);
     private VmZombieResource vmZombieResource = mock(VmZombieResource.class);
+    private GDUser user = mock(GDUser.class);
 
     private UUID vmId = UUID.randomUUID();
     private UUID orionGuid = UUID.randomUUID();
     private Long hfsVmId = 42L;
     private VirtualMachine vps4Vm = new VirtualMachine();
 
+    private VmExtendedInfo vmExtendedInfoMock = new VmExtendedInfo();
+
     private VmDetailsResource vmDetailsResource = new VmDetailsResource(vmResource, creditService,
-            schedulerWebService, panoptaDataService, vmZombieResource);
+            schedulerWebService, panoptaDataService, vmZombieResource, user);
 
 
     @Before
@@ -61,6 +67,13 @@ public class VmDetailsResourceTest {
         hfsVm.useable = true;
         hfsVm.resourceId = "ns3210123.ip-123-45-67.eu";
         when(vmResource.getVmFromVmVertical(hfsVmId)).thenReturn(hfsVm);
+
+        vmExtendedInfoMock.provider = "nocfox";
+        vmExtendedInfoMock.resource = "openstack";
+        Extended extendedMock = new Extended();
+        extendedMock.hypervisorHostname = "n3plztncldhv001-02.prod.ams3.gdg";
+        vmExtendedInfoMock.extended = extendedMock;
+        when(vmResource.getVmExtendedInfoFromVmVertical(hfsVmId)).thenReturn(vmExtendedInfoMock);
 
         credit = mock(VirtualMachineCredit.class);
         when(creditService.getVirtualMachineCredit(orionGuid)).thenReturn(credit);
@@ -189,5 +202,27 @@ public class VmDetailsResourceTest {
 
         VirtualMachineWithDetails withDetails = vmDetailsResource.getVirtualMachineWithDetails(vmId);
         assertTrue(withDetails.scheduledZombieCleanupJobs.isEmpty());
+    }
+
+    @Test
+    public void testGetWithDetailsContainsNullExtendedInfoForDed4() {
+        when(credit.isDed4()).thenReturn(Boolean.TRUE);
+        VirtualMachineWithDetails withDetails = vmDetailsResource.getVirtualMachineWithDetails(vmId);
+        assertEquals(null, withDetails.hypervisorHostname);
+    }
+
+    @Test
+    public void testGetWithDetailsContainsNullExtendedInfoForNonEmployee() {
+        when(user.isEmployee()).thenReturn(Boolean.FALSE);
+        VirtualMachineWithDetails withDetails = vmDetailsResource.getVirtualMachineWithDetails(vmId);
+        assertEquals(null, withDetails.hypervisorHostname);
+    }
+
+    @Test
+    public void testGetWithDetailsContainsExtendedInfo() {
+        when(user.isEmployee()).thenReturn(Boolean.TRUE);
+        when(credit.isDed4()).thenReturn(Boolean.FALSE);
+        VirtualMachineWithDetails withDetails = vmDetailsResource.getVirtualMachineWithDetails(vmId);
+        assertEquals(vmExtendedInfoMock.extended.hypervisorHostname, withDetails.hypervisorHostname);
     }
 }

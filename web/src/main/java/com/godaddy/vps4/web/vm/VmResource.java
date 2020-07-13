@@ -34,6 +34,7 @@ import org.slf4j.LoggerFactory;
 
 import com.godaddy.hfs.config.Config;
 import com.godaddy.hfs.vm.Vm;
+import com.godaddy.hfs.vm.VmExtendedInfo;
 import com.godaddy.hfs.vm.VmService;
 import com.godaddy.vps4.credit.CreditService;
 import com.godaddy.vps4.credit.VirtualMachineCredit;
@@ -399,6 +400,15 @@ public class VmResource {
     public Vm getVmFromVmVertical(long vmId) {
         try {
             return vmService.getVm(vmId);
+        } catch (Exception e) {
+            logger.warn("Cannot find VM ID {} in vm vertical", vmId);
+            return null;
+        }
+    }
+
+    public VmExtendedInfo getVmExtendedInfoFromVmVertical(long vmId) {
+        try {
+            return vmService.getVmExtendedInfo(vmId);
         } catch (Exception e) {
             logger.warn("Cannot find VM ID {} in vm vertical", vmId);
             return null;

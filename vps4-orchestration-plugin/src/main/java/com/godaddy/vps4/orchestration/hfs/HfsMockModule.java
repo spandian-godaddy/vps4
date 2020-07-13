@@ -37,6 +37,7 @@ import com.godaddy.hfs.vm.ServerUsageStats;
 import com.godaddy.hfs.vm.Vm;
 import com.godaddy.hfs.vm.VmAction;
 import com.godaddy.hfs.vm.VmAddress;
+import com.godaddy.hfs.vm.VmExtendedInfo;
 import com.godaddy.hfs.vm.VmList;
 import com.godaddy.hfs.vm.VmService;
 import com.godaddy.vps4.messaging.DefaultVps4MessagingService;
@@ -889,6 +890,11 @@ public class HfsMockModule extends AbstractModule {
 
             @Override
             public List<HfsInventoryData> getInventory(String provider) {
+                throw new UnsupportedOperationException("Not implemented, yet");
+            }
+
+            @Override
+            public VmExtendedInfo getVmExtendedInfo(long vmId) {
                 throw new UnsupportedOperationException("Not implemented, yet");
             }
         };

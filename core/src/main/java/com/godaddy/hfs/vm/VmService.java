@@ -100,4 +100,9 @@ public interface VmService {
     @GET
     @Path("/inventory")
     List<HfsInventoryData> getInventory(@QueryParam("provider") String provider);
+
+    @GET
+    @Path("{vmId}/extendedinfo")
+    VmExtendedInfo getVmExtendedInfo(@PathParam("vmId") long vmId);
+
 }
