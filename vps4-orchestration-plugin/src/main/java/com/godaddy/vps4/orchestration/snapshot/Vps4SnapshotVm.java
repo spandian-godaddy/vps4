@@ -75,7 +75,7 @@ public class Vps4SnapshotVm extends ActionCommand<Vps4SnapshotVm.Request, Vps4Sn
     }
 
     private void throwErrorAndRescheduleIfLimitReached(Request request) {
-        if (request.snapshotType.equals(SnapshotType.AUTOMATIC)) {
+        if (request.snapshotType.equals(SnapshotType.AUTOMATIC) && request.allowRetries) {
             int currentLoad = vps4SnapshotService.totalSnapshotsInProgress();
             int maxAllowed = Integer.parseInt(config.get("vps4.autobackup.concurrentLimit", "30"));
             if (currentLoad >= maxAllowed) {
@@ -153,12 +153,12 @@ public class Vps4SnapshotVm extends ActionCommand<Vps4SnapshotVm.Request, Vps4Sn
 
     private void handleSnapshotCreationError(Request request, Exception e) {
         if (request.snapshotType.equals(SnapshotType.AUTOMATIC)) {
-            if (shouldRetryAgain(request.vmId)) {
+            if (request.allowRetries && shouldRetryAgain(request.vmId)) {
                 int minutesToWait = Integer.parseInt(config.get("vps4.autobackup.rescheduleFailedBackupWaitMinutes", "720"));
                 rescheduleSnapshot(request, minutesToWait);
                 vps4SnapshotService.markSnapshotErrorRescheduled(request.vps4SnapshotId);
             } else {
-                logger.warn("Max retries exceeded for automatic snapshot on vm: {}  Will not retry again.",
+                logger.warn("Retries not allowed or max retries exceeded for automatic snapshot on vm: {}  Will not retry again.",
                             request.vmId);
             }
         }
@@ -265,6 +265,7 @@ public class Vps4SnapshotVm extends ActionCommand<Vps4SnapshotVm.Request, Vps4Sn
         public SnapshotType snapshotType;
         public String shopperId;
         public String initiatedBy;
+        public boolean allowRetries = true;
     }
 
     public static class Response {

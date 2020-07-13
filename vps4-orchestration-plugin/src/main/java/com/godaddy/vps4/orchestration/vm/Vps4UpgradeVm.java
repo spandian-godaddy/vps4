@@ -134,6 +134,7 @@ public class Vps4UpgradeVm extends ActionCommand<Vps4UpgradeVm.Request, Void> {
         snapshotReq.snapshotType = SnapshotType.AUTOMATIC;
         snapshotReq.shopperId = request.shopperId;
         snapshotReq.initiatedBy = request.initiatedBy;
+        snapshotReq.allowRetries = false;
 
         logger.info("Creating snapshot-for-upgrade for VM {}", request.vmId);
         context.execute("Vps4SnapshotVm", Vps4SnapshotVm.class, snapshotReq);

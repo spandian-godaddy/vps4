@@ -323,6 +323,17 @@ public class Vps4SnapshotVmTest {
     }
 
     @Test
+    public void dontRescheduleWhenAutoSnapshotFailsAndAllowRetriesValueIsFalse() {
+        automaticRequest.allowRetries = false;
+        try {
+            command.execute(context, automaticRequest);
+        }catch(RuntimeException e){
+            // ignore the runtime exception we expected
+        }
+        verifyBackupRescheduled(0);
+    }
+
+    @Test
     public void errorInCreationProcessSetsStatusToError() {
         when(context.execute(eq(WaitForSnapshotAction.class), eq(hfsAction)))
                 .thenThrow(new RuntimeException("Error in initial request"));

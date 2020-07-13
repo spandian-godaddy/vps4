@@ -147,6 +147,7 @@ public class Vps4UpgradeVmTest {
         assertEquals(SnapshotType.AUTOMATIC, snapReq.snapshotType);
         assertEquals(request.shopperId, snapReq.shopperId);
         assertEquals(request.initiatedBy, snapReq.initiatedBy);
+        assertEquals(false,snapReq.allowRetries);
     }
 
     @Test
