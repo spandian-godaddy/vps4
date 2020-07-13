@@ -75,7 +75,7 @@ public class Vps4SnapshotVm extends ActionCommand<Vps4SnapshotVm.Request, Vps4Sn
     }
 
     private void throwErrorAndRescheduleIfLimitReached(Request request) {
-        if (request.snapshotType.equals(SnapshotType.AUTOMATIC) && request.allowRetries) {
+        if (request.snapshotType.equals(SnapshotType.AUTOMATIC)) {
             int currentLoad = vps4SnapshotService.totalSnapshotsInProgress();
             int maxAllowed = Integer.parseInt(config.get("vps4.autobackup.concurrentLimit", "30"));
             if (currentLoad >= maxAllowed) {
@@ -166,6 +166,10 @@ public class Vps4SnapshotVm extends ActionCommand<Vps4SnapshotVm.Request, Vps4Sn
     }
 
     private void handleTooManyConcurrentSnapshots(Request request) {
+        if(!request.allowRetries)
+        {
+            throw new RuntimeException("Too many concurrent snapshots. Retries not allowed for vmId " + request.vmId);
+        }
         int minutesToWait = Integer.parseInt(config.get("vps4.autobackup.rescheduleConcurrentBackupWaitMinutes", "20"));
         int delta = Integer.parseInt(config.get("vps4.autobackup.rescheduleConcurrentBackupWaitDelta", "10"));
         minutesToWait += Math.random() * (2 * delta) - delta;
