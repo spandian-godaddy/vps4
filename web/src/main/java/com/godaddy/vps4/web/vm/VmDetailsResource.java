@@ -79,7 +79,7 @@ public class VmDetailsResource {
         String hypervisorHostname = null;
         if (user.isEmployee() && !credit.isDed4()) {
             VmExtendedInfo vmExtendedInfo = vmResource.getVmExtendedInfoFromVmVertical(virtualMachine.hfsVmId);
-            hypervisorHostname = vmExtendedInfo.extended.hypervisorHostname;
+            if (vmExtendedInfo != null) hypervisorHostname = vmExtendedInfo.extended.hypervisorHostname;
         }
 
         PanoptaServerDetails panoptaDetails = panoptaDataService.getPanoptaServerDetails(vmId);

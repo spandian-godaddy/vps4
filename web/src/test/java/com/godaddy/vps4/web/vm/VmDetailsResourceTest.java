@@ -205,24 +205,33 @@ public class VmDetailsResourceTest {
     }
 
     @Test
-    public void testGetWithDetailsContainsNullExtendedInfoForDed4() {
+    public void testGetWithDetailsContainsNullHvHostnameForDed4() {
         when(credit.isDed4()).thenReturn(Boolean.TRUE);
         VirtualMachineWithDetails withDetails = vmDetailsResource.getVirtualMachineWithDetails(vmId);
         assertEquals(null, withDetails.hypervisorHostname);
     }
 
     @Test
-    public void testGetWithDetailsContainsNullExtendedInfoForNonEmployee() {
+    public void testGetWithDetailsContainsNullHvHostnameForNonEmployee() {
         when(user.isEmployee()).thenReturn(Boolean.FALSE);
         VirtualMachineWithDetails withDetails = vmDetailsResource.getVirtualMachineWithDetails(vmId);
         assertEquals(null, withDetails.hypervisorHostname);
     }
 
     @Test
-    public void testGetWithDetailsContainsExtendedInfo() {
+    public void testGetWithDetailsContainsHvHostname() {
         when(user.isEmployee()).thenReturn(Boolean.TRUE);
         when(credit.isDed4()).thenReturn(Boolean.FALSE);
         VirtualMachineWithDetails withDetails = vmDetailsResource.getVirtualMachineWithDetails(vmId);
         assertEquals(vmExtendedInfoMock.extended.hypervisorHostname, withDetails.hypervisorHostname);
+    }
+
+    @Test
+    public void testGetWithDetailsContainsByNullHvHostnameDueToHfsException() {
+        when(user.isEmployee()).thenReturn(Boolean.TRUE);
+        when(credit.isDed4()).thenReturn(Boolean.FALSE);
+        when(vmResource.getVmExtendedInfoFromVmVertical(hfsVmId)).thenReturn(null);
+        VirtualMachineWithDetails withDetails = vmDetailsResource.getVirtualMachineWithDetails(vmId);
+        assertEquals(null, withDetails.hypervisorHostname);
     }
 }

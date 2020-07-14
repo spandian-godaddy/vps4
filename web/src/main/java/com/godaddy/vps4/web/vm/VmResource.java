@@ -410,7 +410,7 @@ public class VmResource {
         try {
             return vmService.getVmExtendedInfo(vmId);
         } catch (Exception e) {
-            logger.warn("Cannot find VM ID {} in vm vertical", vmId);
+            logger.warn("Cannot get VM extended info in vm vertical for VM ID {}: {}", vmId, e.getMessage());
             return null;
         }
     }
