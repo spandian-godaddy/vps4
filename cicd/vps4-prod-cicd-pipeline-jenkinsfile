@@ -84,6 +84,8 @@ pipeline {
                     }
                 }
 
+                /*
+                * Skipping P3 Deploy - Currently P3 Env is not used
                 stage ("Deploy to P3") {
                     steps {
                         load("/home/jenkins/vps4_latest_version.properties")
@@ -97,6 +99,7 @@ pipeline {
                         slackSend(color: '#00CD48', message: "vps4 *DEPLOY TO PROD_PHX3* was SUCCESSFUL. Job '${env.JOB_NAME} [${VPS4_VERSION}]' (${env.BUILD_URL})")
                     }
                 }
+                */
             }
         }
 
