@@ -52,14 +52,15 @@ public class ValidatorRegistry {
 
     static Validator getHostnameValidator() {
         return(new Validator(Arrays.asList(
-            new Rule("Fully Qualified Hostname (xxx.xxx.xxx)", "^[a-zA-Z0-9-]+\\.([a-zA-Z0-9-]+\\.)+[a-zA-Z0-9-]+$"),
+            new Rule("Fully Qualified Hostname (xxx.xxx.xxx)", "^[^\\.]+\\.([^\\.]+\\.)+[^\\.]+$"),
             new Rule(". and - are the only allowed special characters", "^[a-zA-Z0-9-.]*$"),
-            new Rule("63 characters or fewer per section", "[^\\.]{1,63}\\.([^\\.]{1,63}\\.)+[^\\.]{1,63}"),
-            new Rule("Doesn't begin with a hyphen", "^(?!-).*$"),
-            new Rule("Doesn't end with a hyphen", ".*(?<!-)$"),
+            new Rule("63 characters or fewer per section", "^[^\\.]{0,63}(\\.[^\\.]{0,63})*$"),
+            new Rule("No section begins with a hyphen", "^[^-.][^.]*$|^([^-.][^.]*\\.)+[^-.][^.]*$"),
+            new Rule("No section ends with a hyphen", "^[^.]*[^-.]$|^([^.]*[^-.]\\.)+[^.]*[^-.]$"),
             new Rule("Multiple periods may not be adjacent", "^((?!\\.\\.).)*$"),
-            new Rule("Multiple hyphens may not be adjacent", "^((?!\\-\\-).)*$"),
-            new Rule("Doesn't begin with www.", "^(?!www\\.).*$")
+            new Rule("Multiple hyphens may not be adjacent", "^((?!--).)*$"),
+            new Rule("Doesn't begin with www.", "^(?!www\\.).*$"),
+            new Rule("Contain a non-digit in the last section", "^.*\\.[^.]*[^.0-9][^.]*$")
         )));
     }
 
