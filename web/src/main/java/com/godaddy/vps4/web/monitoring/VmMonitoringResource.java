@@ -42,7 +42,6 @@ import com.google.inject.Inject;
 import gdg.hfs.vhfs.nodeping.NodePingEvent;
 import gdg.hfs.vhfs.nodeping.NodePingService;
 import gdg.hfs.vhfs.nodeping.NodePingUptimeRecord;
-
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
@@ -156,7 +155,7 @@ public class VmMonitoringResource {
         List<MonitoringEvent> events;
 
         if (panoptaDataService.getPanoptaDetails(vmId) != null) {
-            List<VmOutage> sourceEvents = vmOutageResource.getVmOutageList(vmId, "PING");
+            List<VmOutage> sourceEvents = vmOutageResource.getVmOutageList(vmId, "PING", false);
             events = sourceEvents.stream().map(MonitoringEvent::new).collect(Collectors.toList());
         } else {
             List<NodePingEvent> sourceEvents = monitoringService

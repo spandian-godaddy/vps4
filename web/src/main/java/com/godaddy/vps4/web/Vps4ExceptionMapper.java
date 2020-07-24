@@ -10,7 +10,6 @@ import org.json.simple.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.godaddy.vps4.panopta.PanoptaServiceException;
 import com.godaddy.vps4.security.jdbc.AuthorizationException;
 
 @Provider
@@ -48,7 +47,8 @@ public class Vps4ExceptionMapper implements ExceptionMapper<Throwable> {
             if (ve.getId().equals("CONFLICTING_INCOMPLETE_ACTION")
                     || ve.getId().equals("INVALID_STATUS")
                     || ve.getId().equals("INVALID_SNAPSHOT_NAME")
-                    || ve.getId().equals("SNAPSHOT_OVER_QUOTA"))
+                    || ve.getId().equals("SNAPSHOT_OVER_QUOTA")
+                    || ve.getId().equals("ALREADY_EXISTS"))
                 status = Response.Status.CONFLICT;
             return Response.status(status)
                     .type(MediaType.APPLICATION_JSON)

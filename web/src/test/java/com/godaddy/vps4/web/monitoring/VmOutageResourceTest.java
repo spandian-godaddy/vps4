@@ -8,8 +8,10 @@ import static org.mockito.Matchers.anyLong;
 import static org.mockito.Matchers.anyObject;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.eq;
+import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -78,6 +80,7 @@ public class VmOutageResourceTest {
         when(vmOutageService.getVmOutage(outageId)).thenReturn(vmOutage);
         when(vmOutageService.newVmOutage(eq(vmId), any(VmMetric.class), any(Instant.class),
                                          anyString(), anyLong())).thenReturn(outageId);
+        doNothing().when(vmOutageService).clearAllActiveOutagesByMetric(eq(vmId), any(VmMetric.class), any(Instant.class));
 
         vmMetricAlert.status = VmMetricAlert.Status.ENABLED;
         when(gdUser.getShopperId()).thenReturn(shopperId);
@@ -86,26 +89,33 @@ public class VmOutageResourceTest {
 
     @Test
     public void getOutageList() {
-        resource.getVmOutageList(vmId, null);
+        resource.getVmOutageList(vmId, null, false);
         verify(vmResource).getVm(vmId);
-        verify(vmOutageService).getVmOutageList(vmId);
+        verify(vmOutageService).getVmOutageList(vmId, null, false);
     }
 
     @Test
     public void getMetricFilteredOutageList() {
-        resource.getVmOutageList(vmId, metric.name());
+        resource.getVmOutageList(vmId, metric.name(), false);
         verify(vmResource).getVm(vmId);
-        verify(vmOutageService).getVmOutageList(vmId, metric);
+        verify(vmOutageService).getVmOutageList(vmId, metric, false);
     }
 
     @Test
     public void filterByInvalidMetric() {
         try {
-            resource.getVmOutageList(vmId, "UPTIME");
+            resource.getVmOutageList(vmId, "UPTIME", false);
             fail();
         } catch (Vps4Exception e) {
             assertEquals("INVALID_PARAMETER", e.getId());
         }
+    }
+
+    @Test
+    public void getActiveFilteredOutageList() {
+        resource.getVmOutageList(vmId, metric.name(), true);
+        verify(vmResource).getVm(vmId);
+        verify(vmOutageService).getVmOutageList(vmId, metric, true);
     }
 
     @Test
@@ -160,11 +170,26 @@ public class VmOutageResourceTest {
     }
 
     @Test
+    public void catchOutageAlreadyReported() {
+        VmOutageRequest req = newOutageRequest();
+        VmOutage duplicateOutage = new VmOutage();
+        when(vmOutageService.getVmOutage(vmId, VmMetric.valueOf(req.metric), req.panoptaOutageId)).thenReturn(duplicateOutage);
+
+        try {
+            resource.newVmOutage(vmId, req);
+            fail();
+        } catch (Vps4Exception e) {
+            assertEquals("ALREADY_EXISTS", e.getId());
+            verify(vmOutageService, never()).newVmOutage(eq(vmId), any(VmMetric.class), any(Instant.class), anyString(), anyLong());
+        }
+    }
+
+    @Test
     public void clearOutage() {
         String endDate = "2019-11-19 13:23:42 UTC"; //Panopta format
         resource.clearVmOutage(vmId, outageId, endDate, suppressEmail);
-        verify(vmOutageService).clearVmOutage(outageId, Instant.parse("2019-11-19T13:23:42Z"));
-        verify(vmOutageService).getVmOutage(outageId);
+        verify(vmOutageService).clearAllActiveOutagesByMetric(vmId, metric, Instant.parse("2019-11-19T13:23:42Z"));
+        verify(vmOutageService, times(2)).getVmOutage(outageId);
     }
 
     @Test
@@ -179,10 +204,33 @@ public class VmOutageResourceTest {
     }
 
     @Test
+    public void catchOutageAlreadyCleared() {
+        VmOutage clearedOutage = new VmOutage();
+        clearedOutage.ended = Instant.now();
+        clearedOutage.metric = VmMetric.HTTP;
+        clearedOutage.outageDetailId = 123L;
+        when(vmOutageService.getVmOutage(outageId)).thenReturn(clearedOutage);
+
+        try {
+            resource.clearVmOutage(vmId, outageId, null, suppressEmail);
+            fail();
+        } catch (Vps4Exception e) {
+            assertEquals("ALREADY_EXISTS", e.getId());
+            verify(vmOutageService, never()).clearVmOutage(eq(outageId), any(Instant.class));
+        }
+    }
+
+    @Test
     public void clearOutageWithoutEndDate() {
         resource.clearVmOutage(vmId, outageId, null, suppressEmail);
-        verify(vmOutageService).clearVmOutage(eq(outageId), any(Instant.class));
-        verify(vmOutageService).getVmOutage(outageId);
+        verify(vmOutageService).clearAllActiveOutagesByMetric(eq(vmId), eq(metric), any(Instant.class));
+        verify(vmOutageService, times(2)).getVmOutage(outageId);
+    }
+
+    @Test
+    public void clearsAllActiveOutagesMatchingMetric() {
+        resource.clearVmOutage(vmId, outageId, null, suppressEmail);
+        verify(vmOutageService).clearAllActiveOutagesByMetric(eq(vmId), eq(metric), any(Instant.class));
     }
 
     @Test

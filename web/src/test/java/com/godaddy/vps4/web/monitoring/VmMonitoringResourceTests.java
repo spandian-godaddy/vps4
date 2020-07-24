@@ -10,14 +10,12 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
 
@@ -165,7 +163,7 @@ public class VmMonitoringResourceTests {
                                                         "customerKey", 3, "serverKey",
                                                         Instant.now(), Instant.MAX);
         when(panoptaDataService.getPanoptaDetails(vm.vmId)).thenReturn(panoptaDetail);
-        when(vmOutageResource.getVmOutageList(vm.vmId, "PING")).thenReturn(panoptaEvents);
+        when(vmOutageResource.getVmOutageList(vm.vmId, "PING", false)).thenReturn(panoptaEvents);
 
         PaginatedResult<MonitoringEvent> events = resource.getVmMonitoringEvents(vm.vmId, 30, 10, 0, uriInfo);
 

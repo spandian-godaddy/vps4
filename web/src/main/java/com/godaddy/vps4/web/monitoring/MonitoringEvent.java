@@ -17,10 +17,10 @@ public class MonitoringEvent {
 
     public MonitoringEvent(VmOutage sourceEvent) {
         this.type = "outage";
-        this.start = sourceEvent.getStarted();
-        this.end = sourceEvent.getEnded();
-        this.open = sourceEvent.getEnded() == null;
-        this.message = sourceEvent.getReason();
+        this.start = sourceEvent.started;
+        this.end = sourceEvent.ended;
+        this.open = sourceEvent.ended == null;
+        this.message = sourceEvent.reason;
     }
 
     public MonitoringEvent(NodePingEvent sourceEvent) {
