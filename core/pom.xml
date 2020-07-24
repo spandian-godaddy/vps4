@@ -67,9 +67,10 @@
             <plugin>
                 <groupId>org.flywaydb</groupId>
                 <artifactId>flyway-maven-plugin</artifactId>
-                <version>4.0.3</version>
+                <version>6.5.2</version>
                 <configuration>
                     <url>jdbc:postgresql://${db.vps4.server}:${db.vps4.port}/${db.vps4.database}</url>
+                    <table>schema_version</table>
                     <user>${db.vps4.username}</user>
                     <password>${db.vps4.password}</password>
                     <locations>
