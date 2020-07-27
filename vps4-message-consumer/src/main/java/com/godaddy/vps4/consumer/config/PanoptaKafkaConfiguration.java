@@ -8,7 +8,7 @@ public class PanoptaKafkaConfiguration extends KafkaConfiguration {
 
     @Inject
     public PanoptaKafkaConfiguration(Config vps4Config) {
-        super(vps4Config, "vps4.panopta.kafka.topic", "vps4.panopta.kafka.client.id", "vps4.monitoring.kafka.bootstrap.servers");
+        super(vps4Config, "vps4.panopta.kafka.topic", "vps4.panopta.kafka.client.id", "vps4.panopta.kafka.bootstrap.servers");
     }
 
 }
