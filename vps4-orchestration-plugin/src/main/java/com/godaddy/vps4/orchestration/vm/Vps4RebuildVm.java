@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
+import com.godaddy.vps4.hfs.HfsVmTrackingRecordService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -60,6 +61,7 @@ public class Vps4RebuildVm extends ActionCommand<Vps4RebuildVm.Request, Void> {
     private final VmUserService vmUserService;
     private final CreditService creditService;
     private final PanoptaDataService panoptaDataService;
+    private HfsVmTrackingRecordService hfsVmTrackingRecordService;
 
     private Request request;
     private ActionState state;
@@ -69,13 +71,14 @@ public class Vps4RebuildVm extends ActionCommand<Vps4RebuildVm.Request, Void> {
     @Inject
     public Vps4RebuildVm(ActionService actionService, VirtualMachineService virtualMachineService,
                          NetworkService vps4NetworkService, VmUserService vmUserService, CreditService creditService,
-                         PanoptaDataService panoptaDataService) {
+                         PanoptaDataService panoptaDataService, HfsVmTrackingRecordService hfsVmTrackingRecordService) {
         super(actionService);
         this.virtualMachineService = virtualMachineService;
         this.vps4NetworkService = vps4NetworkService;
         this.vmUserService = vmUserService;
         this.creditService = creditService;
         this.panoptaDataService = panoptaDataService;
+        this.hfsVmTrackingRecordService = hfsVmTrackingRecordService;
     }
 
     @Override
@@ -152,6 +155,7 @@ public class Vps4RebuildVm extends ActionCommand<Vps4RebuildVm.Request, Void> {
         updateServerDetails(request);
 
         context.execute(WaitForAndRecordVmAction.class, vmAction);
+        updateHfsVmTrackingRecord(vmAction);
 
         return vmAction.vmId;
     }
@@ -169,6 +173,13 @@ public class Vps4RebuildVm extends ActionCommand<Vps4RebuildVm.Request, Void> {
         createVm.vmId = request.rebuildVmInfo.vmId;
         createVm.orionGuid = request.rebuildVmInfo.orionGuid;
         return createVm;
+    }
+
+    public void updateHfsVmTrackingRecord(VmAction vmAction){
+        context.execute("UpdateHfsVmTrackingRecord", ctx -> {
+            hfsVmTrackingRecordService.setCreated(vmAction.vmId, request.actionId);
+            return null;
+        }, Void.class);
     }
 
     private void updateHfsVmId(long hfsVmId) {

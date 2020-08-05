@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
+import com.godaddy.vps4.hfs.HfsVmTrackingRecordService;
 import com.godaddy.vps4.network.NetworkService;
 import com.godaddy.vps4.orchestration.panopta.SetupPanopta;
 import com.godaddy.vps4.panopta.PanoptaDataService;
@@ -58,6 +59,7 @@ public class Vps4RebuildDedicated extends ActionCommand<Vps4RebuildDedicated.Req
     private final VmUserService vmUserService;
     private final CreditService creditService;
     private final PanoptaDataService panoptaDataService;
+    private HfsVmTrackingRecordService hfsVmTrackingRecordService;
     private Request request;
     private ActionState state;
     private CommandContext context;
@@ -66,7 +68,7 @@ public class Vps4RebuildDedicated extends ActionCommand<Vps4RebuildDedicated.Req
     @Inject
     public Vps4RebuildDedicated(ActionService actionService, VmService vmService, VirtualMachineService virtualMachineService,
                                 VmUserService vmUserService, CreditService creditService,
-                                NetworkService networkService, PanoptaDataService panoptaDataService) {
+                                NetworkService networkService, PanoptaDataService panoptaDataService, HfsVmTrackingRecordService hfsVmTrackingRecordService) {
         super(actionService);
         this.vmService = vmService;
         this.virtualMachineService = virtualMachineService;
@@ -74,6 +76,7 @@ public class Vps4RebuildDedicated extends ActionCommand<Vps4RebuildDedicated.Req
         this.creditService = creditService;
         this.networkService = networkService;
         this.panoptaDataService = panoptaDataService;
+        this.hfsVmTrackingRecordService = hfsVmTrackingRecordService;
     }
 
     @Override
@@ -143,9 +146,17 @@ public class Vps4RebuildDedicated extends ActionCommand<Vps4RebuildDedicated.Req
         rebuildDedRequest.username = request.rebuildVmInfo.username;
         rebuildDedRequest.encryptedPassword = request.rebuildVmInfo.encryptedPassword;
         VmAction vmAction = context.execute("RebuildDedicated", RebuildDedicated.class, rebuildDedRequest);
+        updateHfsVmTrackingRecord(vmAction);
 
         // Get the hfs vm
         return context.execute("GetVmAfterCreate", ctx -> vmService.getVm(vmAction.vmId), Vm.class);
+    }
+
+    public void updateHfsVmTrackingRecord(VmAction vmAction){
+        context.execute("UpdateHfsVmTrackingRecord", ctx -> {
+            hfsVmTrackingRecordService.setCreated(vmAction.vmId, request.actionId);
+            return null;
+        }, Void.class);
     }
 
     private void updateVmUser(String username, UUID oldVmId, UUID newVmId) {

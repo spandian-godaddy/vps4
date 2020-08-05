@@ -12,12 +12,15 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.times;
 
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
+import java.util.function.Function;
 
+import com.godaddy.vps4.hfs.HfsVmTrackingRecordService;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
@@ -68,6 +71,7 @@ public class Vps4RebuildVmTest {
     CreditService creditService = mock(CreditService.class);
     VirtualMachineCredit credit = mock(VirtualMachineCredit.class);
     PanoptaDataService panoptaDataService = mock(PanoptaDataService.class);
+    HfsVmTrackingRecordService hfsVmTrackingRecordService = mock(HfsVmTrackingRecordService.class);
 
     UUID vps4VmId = UUID.randomUUID();
     UUID orionGuid = UUID.randomUUID();
@@ -112,7 +116,7 @@ public class Vps4RebuildVmTest {
     CommandContext context = spy(new TestCommandContext(new GuiceCommandProvider(injector)));
 
     Vps4RebuildVm command = new Vps4RebuildVm(actionService, virtualMachineService, vps4NetworkService,
-            vmUserService, creditService, panoptaDataService);
+            vmUserService, creditService, panoptaDataService, hfsVmTrackingRecordService);
 
     @Before
     public void setupTest() {
@@ -350,5 +354,12 @@ public class Vps4RebuildVmTest {
         when(panoptaDataService.getPanoptaServerDetails(vps4VmId)).thenReturn(null);
         command.execute(context, request);
         verify(context, never()).execute(eq(SetupPanopta.class), any(SetupPanopta.Request.class));
+    }
+
+    @Test
+    public void updateHfsVmTrackingRecord() {
+        command.execute(context, request);
+        verify(context, times(1)).execute(eq("UpdateHfsVmTrackingRecord"),
+                any(Function.class), eq(Void.class));
     }
 }

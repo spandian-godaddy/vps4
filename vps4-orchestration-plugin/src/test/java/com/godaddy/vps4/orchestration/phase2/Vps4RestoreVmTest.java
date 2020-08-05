@@ -23,6 +23,8 @@ import java.util.function.Function;
 
 import javax.sql.DataSource;
 
+import com.godaddy.vps4.hfs.HfsTrackingRecordModule;
+import com.godaddy.vps4.hfs.HfsVmTrackingRecordService;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -95,6 +97,7 @@ public class Vps4RestoreVmTest {
     @Inject private NetworkService vps4NetworkService;
     @Inject private ActionService actionService;
     @Inject private VmUserService vmUserService;
+    @Inject private HfsVmTrackingRecordService hfsVmTrackingRecordService;
 
     @Captor private ArgumentCaptor<Function<CommandContext, Long>> getHfsVmIdLambdaCaptor;
     @Captor private ArgumentCaptor<Function<CommandContext, String>> getVmOSDistroLambdaCaptor;
@@ -115,7 +118,8 @@ public class Vps4RestoreVmTest {
                 new SecurityModule(),
                 new VmModule(),
                 new SnapshotModule(),
-                new Vps4ExternalsModule()
+                new Vps4ExternalsModule(),
+                new HfsTrackingRecordModule()
         );
     }
 
@@ -126,7 +130,7 @@ public class Vps4RestoreVmTest {
 
         spyVps4VmService = spy(vps4VmService);
         command = new Vps4RestoreVm(actionService, hfsVmService, spyVps4VmService, vps4NetworkService,
-                vps4SnapshotService, vmUserService);
+                vps4SnapshotService, vmUserService, hfsVmTrackingRecordService);
         addTestSqlData();
         context = setupMockContext();
         request = getCommandRequest();
@@ -425,4 +429,10 @@ public class Vps4RestoreVmTest {
         }
     }
 
+    @Test
+    public void updateHfsVmTrackingRecord() {
+        command.execute(context, request);
+        verify(context, times(1)).execute(eq("UpdateHfsVmTrackingRecord"),
+                any(Function.class), eq(Void.class));
+    }
 }

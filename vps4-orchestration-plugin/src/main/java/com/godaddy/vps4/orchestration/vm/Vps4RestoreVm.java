@@ -5,6 +5,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
 
+import com.godaddy.vps4.hfs.HfsVmTrackingRecordService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -51,6 +52,7 @@ public class Vps4RestoreVm extends ActionCommand<Vps4RestoreVm.Request, Void> {
     private final SnapshotService vps4SnapshotService;
     private final NetworkService vps4NetworkService;
     private final VmUserService vmUserService;
+    private HfsVmTrackingRecordService hfsVmTrackingRecordService;
     private Request request;
     private ActionState state;
     private CommandContext context;
@@ -58,13 +60,15 @@ public class Vps4RestoreVm extends ActionCommand<Vps4RestoreVm.Request, Void> {
 
     @Inject
     public Vps4RestoreVm(ActionService actionService, VmService vmService, VirtualMachineService virtualMachineService,
-                         NetworkService vps4NetworkService, SnapshotService vps4SnapshotService, VmUserService vmUserService) {
+                         NetworkService vps4NetworkService, SnapshotService vps4SnapshotService, VmUserService vmUserService,
+                         HfsVmTrackingRecordService hfsVmTrackingRecordService) {
         super(actionService);
         this.vmService = vmService;
         this.virtualMachineService = virtualMachineService;
         this.vps4NetworkService = vps4NetworkService;
         this.vps4SnapshotService = vps4SnapshotService;
         this.vmUserService = vmUserService;
+        this.hfsVmTrackingRecordService = hfsVmTrackingRecordService;
     }
 
     @Override
@@ -164,6 +168,13 @@ public class Vps4RestoreVm extends ActionCommand<Vps4RestoreVm.Request, Void> {
         return createVmFromSnapshotRequest;
     }
 
+    public void updateHfsVmTrackingRecord(VmAction vmAction){
+        context.execute("UpdateHfsVmTrackingRecord", ctx -> {
+            hfsVmTrackingRecordService.setCreated(vmAction.vmId, request.actionId);
+            return null;
+        }, Void.class);
+    }
+
     private Vm createVmFromSnapshot() {
         setStep(RestoreVmStep.RequestingServer);
         CreateVmFromSnapshot.Request request = createHfsRequest();
@@ -171,6 +182,7 @@ public class Vps4RestoreVm extends ActionCommand<Vps4RestoreVm.Request, Void> {
 
         try {
             context.execute("WaitForCreateVmFromSnapshot", WaitForVmAction.class, vmAction);
+            updateHfsVmTrackingRecord(vmAction);
         } catch (RuntimeException ex) {
             // The create vm action failed, but since we aren't sure if a vm was actually created
             // - or not, we try to delete it to prevent orphans.  Sometimes the vm is created but

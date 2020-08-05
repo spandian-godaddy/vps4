@@ -22,6 +22,7 @@ import java.util.function.Function;
 
 import javax.sql.DataSource;
 
+import com.godaddy.vps4.hfs.HfsVmTrackingRecordService;
 import com.godaddy.vps4.network.NetworkService;
 import com.godaddy.vps4.orchestration.panopta.SetupPanopta;
 import com.godaddy.vps4.panopta.PanoptaDataService;
@@ -103,6 +104,7 @@ public class Vps4RebuildDedicatedTest {
     @Inject private Cryptography cryptography;
     private PanoptaDataService panoptaDataService = mock(PanoptaDataService.class);
     private NetworkService networkService = mock(NetworkService.class);
+    HfsVmTrackingRecordService hfsVmTrackingRecordService = mock(HfsVmTrackingRecordService.class);
 
     VirtualMachineService spyVps4VmService;
     VmUserService spyVmUserService;
@@ -146,7 +148,7 @@ public class Vps4RebuildDedicatedTest {
         spyVmUserService = spy(vmUserService);
 
         command = new Vps4RebuildDedicated(actionService, hfsVmService, spyVps4VmService,
-                spyVmUserService, creditService, networkService, panoptaDataService);
+                spyVmUserService, creditService, networkService, panoptaDataService, hfsVmTrackingRecordService);
         addTestSqlData();
 
         vps4NewVm = mock(VirtualMachine.class);
@@ -422,5 +424,12 @@ public class Vps4RebuildDedicatedTest {
         when(panoptaDataService.getPanoptaServerDetails(vps4VmId)).thenReturn(null);
         command.execute(context, request);
         verify(context, never()).execute(eq(SetupPanopta.class), any(SetupPanopta.Request.class));
+    }
+
+    @Test
+    public void updateHfsVmTrackingRecord() {
+        command.execute(context, request);
+        verify(context, times(1)).execute(eq("UpdateHfsVmTrackingRecord"),
+                any(Function.class), eq(Void.class));
     }
 }
