@@ -51,4 +51,10 @@ public interface SnapshotService {
     void cancelErroredSnapshots(UUID orionGuid, SnapshotType snapshotType);
 
     int failedBackupsSinceSuccess(UUID vmId, SnapshotType snapshotType);
+
+    UUID getVmIdWithInProgressSnapshotOnHv(String hypervisorHostname);
+
+    void saveVmHvForSnapshotTracking(UUID vmId, String hypervisorHostname);
+
+    void deleteVmHvForSnapshotTracking(UUID vmId);
 }

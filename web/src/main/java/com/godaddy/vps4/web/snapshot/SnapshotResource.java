@@ -24,7 +24,9 @@ import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
 
+import com.godaddy.hfs.config.Config;
 import com.godaddy.hfs.vm.Vm;
+import com.godaddy.hfs.vm.VmExtendedInfo;
 import com.godaddy.hfs.vm.VmService;
 import com.godaddy.vps4.scheduler.api.web.SchedulerWebService;
 import com.godaddy.vps4.util.TroubleshootVmService;
@@ -83,6 +85,7 @@ public class SnapshotResource {
     private final SchedulerWebService schedulerWebService;
     private final VmService vmService;
     private final TroubleshootVmService troubleshootVmService;
+    private final Config config;
 
     @Inject
     public SnapshotResource(@SnapshotActionService ActionService actionService,
@@ -94,7 +97,8 @@ public class SnapshotResource {
                             SnapshotActionResource snapshotActionResource,
                             SchedulerWebService schedulerWebService,
                             VmService vmService,
-                            TroubleshootVmService troubleshootVmService) {
+                            TroubleshootVmService troubleshootVmService,
+                            Config config) {
         this.actionService = actionService;
         this.commandService = commandService;
         this.user = user;
@@ -106,6 +110,7 @@ public class SnapshotResource {
         this.schedulerWebService = schedulerWebService;
         this.vmService = vmService;
         this.troubleshootVmService = troubleshootVmService;
+        this.config = config;
     }
 
     @GET
@@ -140,6 +145,8 @@ public class SnapshotResource {
             getAndValidateUserAccountCredit(creditService, vm.orionGuid, user.getShopperId());
         }
         validateCreation(vm.orionGuid, vm.backupJobId, snapshotRequest.name, snapshotRequest.snapshotType);
+        validateDCLimit(snapshotRequest);
+        validateHVLimit(snapshotRequest, vm.hfsVmId);
         Action action = createSnapshotAndActionEntries(vm, snapshotRequest.name, snapshotRequest.snapshotType);
         kickoffSnapshotCreation(vm.vmId, vm.hfsVmId, action, vm.orionGuid, snapshotRequest.snapshotType, user.getShopperId());
         return new SnapshotAction(actionService.getAction(action.id), user.isEmployee());
@@ -173,6 +180,43 @@ public class SnapshotResource {
                 snapshotId, ActionType.CREATE_SNAPSHOT, new JSONObject().toJSONString(), user.getUsername());
         logger.info("Creating db entries for snapshot creation. Snapshot Action ID: {}, Snapshot ID: {}", actionId, snapshotId);
         return actionService.getAction(actionId);
+    }
+
+    private void validateDCLimit(SnapshotRequest snapshotRequest) {
+        if(!snapshotRequest.snapshotType.equals((SnapshotType.AUTOMATIC)))
+            return;
+        int currentLoad = snapshotService.totalSnapshotsInProgress();
+        int maxAllowed = Integer.parseInt(config.get("vps4.autobackup.concurrentLimit", "30"));
+        if (currentLoad >= maxAllowed) {
+            logger.info("Cannot create snapshot for vmID {} because of too many concurrent snapshots", snapshotRequest.vmId);
+            throw new Vps4Exception("SNAPSHOT_DC_LIMIT_REACHED",
+                String.format("Too many concurrent snapshots. Cannot create snapshot for vmID %s now", snapshotRequest.vmId));
+        }
+    }
+
+    private void validateHVLimit(SnapshotRequest snapshotRequest, long hfsVmId) {
+        if(!snapshotRequest.snapshotType.equals((SnapshotType.AUTOMATIC)))
+            return;
+        String hypervisorHostname = getVmHypervisorHostname(snapshotRequest.vmId, hfsVmId);
+        if (hypervisorHostname != null) {
+            UUID conflictingVmId = snapshotService.getVmIdWithInProgressSnapshotOnHv(hypervisorHostname);
+            if (conflictingVmId != null) { // limit 1 snapshot per HV
+                logger.info("Cannot create snapshot for vmID {} because another vmId {} already has snapshot in progress on {}",
+                            snapshotRequest.vmId, conflictingVmId, hypervisorHostname);
+                throw new Vps4Exception("SNAPSHOT_HV_LIMIT_REACHED", "Only 1 snapshot allowed per hypervisor");
+            }
+            snapshotService.saveVmHvForSnapshotTracking(snapshotRequest.vmId, hypervisorHostname);
+        }
+    }
+
+    private String getVmHypervisorHostname(UUID vmId, long hfsVmId) {
+        VmExtendedInfo vmExtendedInfo = vmService.getVmExtendedInfo(hfsVmId);
+        if(vmExtendedInfo != null) {
+            String hypervisorHostname = vmExtendedInfo.extended.hypervisorHostname;
+            logger.info("Getting vm {} hypervisor: {}", vmId, hypervisorHostname);
+            return hypervisorHostname;
+        }
+        return null;
     }
 
     private void kickoffSnapshotCreation(UUID vmId, long hfsVmId, Action action,

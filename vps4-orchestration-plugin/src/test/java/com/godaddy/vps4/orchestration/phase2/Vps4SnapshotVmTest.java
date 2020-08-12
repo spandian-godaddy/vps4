@@ -4,7 +4,6 @@ import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -78,7 +77,6 @@ public class Vps4SnapshotVmTest {
     private String hfsImageId = "nocfoxid";
     private SnapshotService spySnapshotService;
 
-
     @Inject Vps4UserService vps4UserService;
     @Inject NetworkService networkService;
     @Inject ProjectService projectService;
@@ -90,6 +88,7 @@ public class Vps4SnapshotVmTest {
 
     @Captor ArgumentCaptor<Function<CommandContext, Void>> snapshotCaptor;
     @Captor ArgumentCaptor<Function<CommandContext, Void>> cancelSnapshotCaptor;
+    @Captor ArgumentCaptor<Function<CommandContext, Void>> deleteVmHvForSnapshotTrackingCaptor;
     @Captor ArgumentCaptor<Function<CommandContext, UUID>> markOldestSnapshotCaptor;
     @Captor ArgumentCaptor<Function<CommandContext, SnapshotAction>> snapshotActionCaptor;
     @Captor ArgumentCaptor<Function<CommandContext, gdg.hfs.vhfs.snapshot.Snapshot>> hfsSnapshotCaptor;
@@ -365,6 +364,22 @@ public class Vps4SnapshotVmTest {
     }
 
     @Test
+    public void errorInCreationProcessDeletesHvInfo() {
+        when(context.execute(eq(WaitForSnapshotAction.class), eq(hfsAction)))
+                .thenThrow(new RuntimeException("Error in initial request"));
+        try {
+            command.execute(context, request);
+            Assert.fail("RuntimeException should have been thrown");
+        }catch(RuntimeException rte){
+            // Ignore the runtime exception
+        }
+        verify(context, times(1)).execute(eq("DeleteVmHvForSnapshotTracking" + request.vmId), deleteVmHvForSnapshotTrackingCaptor.capture(), eq(Void.class));
+        Function<CommandContext, Void> lambda = deleteVmHvForSnapshotTrackingCaptor.getValue();
+        lambda.apply(context);
+        verify(spySnapshotService, times(1)).deleteVmHvForSnapshotTracking(eq(request.vmId));
+    }
+
+    @Test
     public void errorInCreationRecordsScheduledJobId() {
         UUID retryJobId = UUID.randomUUID();
         when(context.execute(eq(WaitForSnapshotAction.class), eq(hfsAction)))
@@ -387,44 +402,12 @@ public class Vps4SnapshotVmTest {
     }
 
     @Test
-    public void testTakesAutomaticSnapshotWhenLoadIsLow() {
-        int limit = Integer.parseInt(config.get("vps4.autobackup.concurrentLimit"));
-        doReturn(limit - 1).when(spySnapshotService).totalSnapshotsInProgress();
-        command.execute(context, automaticRequest);
-        verify(spySnapshotService, never()).markSnapshotErrorRescheduled(any());
-        verify(context, never())
-                .execute(eq("RecordScheduledJobId"), eq(Vps4RecordScheduledJobForVm.class), any());
-        verify(context, never())
-                .execute(eq(ScheduleAutomaticBackupRetry.class), any(ScheduleAutomaticBackupRetry.Request.class));
-        verify(context, times(1)).execute(eq("Vps4SnapshotVm"), any(Function.class), any());
-    }
-
-    @Test
-    public void testTakesManualSnapshotWhenLoadIsHigh() {
-        int limit = Integer.parseInt(config.get("vps4.autobackup.concurrentLimit"));
-        doReturn(limit).when(spySnapshotService).totalSnapshotsInProgress();
+    public void successInCreationProcessDeletesHvInfo() {
         command.execute(context, request);
-        verify(spySnapshotService, never()).markSnapshotErrorRescheduled(any());
-        verify(context, never())
-                .execute(eq("RecordScheduledJobId"), eq(Vps4RecordScheduledJobForVm.class), any());
-        verify(context, never())
-                .execute(eq(ScheduleAutomaticBackupRetry.class), any(ScheduleAutomaticBackupRetry.Request.class));
-        verify(context, times(1)).execute(eq("Vps4SnapshotVm"), any(Function.class), any());
-    }
-
-    @Test
-    public void testReschedulesAutomaticSnapshotWhenLoadIsHigh() {
-        int limit = Integer.parseInt(config.get("vps4.autobackup.concurrentLimit"));
-        doReturn(limit).when(spySnapshotService).totalSnapshotsInProgress();
-        try {
-            command.execute(context, automaticRequest);
-            Assert.fail("RuntimeException should have been thrown");
-        } catch (RuntimeException ignored) {}
-        verify(context, times(1))
-                .execute(eq(ScheduleAutomaticBackupRetry.class), any(ScheduleAutomaticBackupRetry.Request.class));
-        verify(context, times(1))
-                .execute(eq("RecordScheduledJobId"), eq(Vps4RecordScheduledJobForVm.class), any());
-        verify(spySnapshotService, times(1)).markSnapshotLimitRescheduled(vps4AutomaticSnapshotId);
-        verify(context, never()).execute(eq("Vps4SnapshotVm"), any(Function.class), any());
+        when(context.execute(eq("CancelErroredSnapshots"), any(Function.class), eq(Void.class))).thenReturn(null);
+        verify(context, times(1)).execute(eq("DeleteVmHvForSnapshotTracking" + request.vmId), deleteVmHvForSnapshotTrackingCaptor.capture(), eq(Void.class));
+        Function<CommandContext, Void> lambda = deleteVmHvForSnapshotTrackingCaptor.getValue();
+        lambda.apply(context);
+        verify(spySnapshotService, times(1)).deleteVmHvForSnapshotTracking(eq(request.vmId));
     }
 }

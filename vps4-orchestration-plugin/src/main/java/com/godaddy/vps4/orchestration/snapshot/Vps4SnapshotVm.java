@@ -10,8 +10,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.godaddy.hfs.config.Config;
-import com.godaddy.hfs.vm.Vm;
-import com.godaddy.hfs.vm.VmService;
 import com.godaddy.vps4.orchestration.ActionCommand;
 import com.godaddy.vps4.orchestration.Vps4ActionRequest;
 import com.godaddy.vps4.orchestration.scheduler.ScheduleAutomaticBackupRetry;
@@ -21,11 +19,8 @@ import com.godaddy.vps4.snapshot.Snapshot;
 import com.godaddy.vps4.snapshot.SnapshotActionService;
 import com.godaddy.vps4.snapshot.SnapshotService;
 import com.godaddy.vps4.snapshot.SnapshotType;
-import com.godaddy.vps4.util.TroubleshootVmService;
 import com.godaddy.vps4.vm.ActionService;
 import com.godaddy.vps4.vm.ActionType;
-import com.godaddy.vps4.vm.VirtualMachine;
-import com.godaddy.vps4.vm.VirtualMachineService;
 
 import gdg.hfs.orchestration.CommandContext;
 import gdg.hfs.orchestration.CommandMetadata;
@@ -65,23 +60,13 @@ public class Vps4SnapshotVm extends ActionCommand<Vps4SnapshotVm.Request, Vps4Sn
             vps4SnapshotService.cancelErroredSnapshots(request.orionGuid, request.snapshotType);
             return null;
         }, Void.class);
-        throwErrorAndRescheduleIfLimitReached(request);
         snapshotIdToBeDeprecated = context.execute("MarkOldestSnapshotForDeprecation" + request.orionGuid,
                 ctx -> vps4SnapshotService.markOldestSnapshotForDeprecation(request.orionGuid, request.snapshotType),
                 UUID.class);
         SnapshotAction hfsAction = createAndWaitForSnapshotCompletion(request);
+        deleteVmHvForSnapshotTracking(request.vmId);
         deprecateOldSnapshot(request.initiatedBy);
         return generateResponse(hfsAction);
-    }
-
-    private void throwErrorAndRescheduleIfLimitReached(Request request) {
-        if (request.snapshotType.equals(SnapshotType.AUTOMATIC)) {
-            int currentLoad = vps4SnapshotService.totalSnapshotsInProgress();
-            int maxAllowed = Integer.parseInt(config.get("vps4.autobackup.concurrentLimit", "30"));
-            if (currentLoad >= maxAllowed) {
-                handleTooManyConcurrentSnapshots(request);
-            }
-        }
     }
 
     private Response generateResponse(SnapshotAction hfsAction) {
@@ -132,9 +117,6 @@ public class Vps4SnapshotVm extends ActionCommand<Vps4SnapshotVm.Request, Vps4Sn
         try {
             hfsAction = context.execute(WaitForSnapshotAction.class, hfsAction);
         } catch (Exception e) {
-            logger.info("Snapshot creation error (waitForAction) for snapshot with id: {}", request.vps4SnapshotId);
-            vps4SnapshotService.markSnapshotErrored(request.vps4SnapshotId);
-            reverseSnapshotDeprecation();
             handleSnapshotCreationError(request, e);
         }
 
@@ -152,6 +134,10 @@ public class Vps4SnapshotVm extends ActionCommand<Vps4SnapshotVm.Request, Vps4Sn
     }
 
     private void handleSnapshotCreationError(Request request, Exception e) {
+        logger.info("Snapshot creation error for VPS4 snapshot with id: {}", request.vps4SnapshotId);
+        vps4SnapshotService.markSnapshotErrored(request.vps4SnapshotId);
+        reverseSnapshotDeprecation();
+        deleteVmHvForSnapshotTracking(request.vmId);
         if (request.snapshotType.equals(SnapshotType.AUTOMATIC)) {
             if (request.allowRetries && shouldRetryAgain(request.vmId)) {
                 int minutesToWait = Integer.parseInt(config.get("vps4.autobackup.rescheduleFailedBackupWaitMinutes", "720"));
@@ -163,19 +149,6 @@ public class Vps4SnapshotVm extends ActionCommand<Vps4SnapshotVm.Request, Vps4Sn
             }
         }
         throw new RuntimeException("Exception while running backup for vmId " + request.vmId, e);
-    }
-
-    private void handleTooManyConcurrentSnapshots(Request request) {
-        if(!request.allowRetries)
-        {
-            throw new RuntimeException("Too many concurrent snapshots. Retries not allowed for vmId " + request.vmId);
-        }
-        int minutesToWait = Integer.parseInt(config.get("vps4.autobackup.rescheduleConcurrentBackupWaitMinutes", "20"));
-        int delta = Integer.parseInt(config.get("vps4.autobackup.rescheduleConcurrentBackupWaitDelta", "10"));
-        minutesToWait += Math.random() * (2 * delta) - delta;
-        rescheduleSnapshot(request, minutesToWait);
-        vps4SnapshotService.markSnapshotLimitRescheduled(request.vps4SnapshotId);
-        throw new RuntimeException("Too many concurrent snapshots. Rescheduling for vmId " + request.vmId);
     }
 
     private void rescheduleSnapshot(Request request, int minutesToWait) {
@@ -220,9 +193,6 @@ public class Vps4SnapshotVm extends ActionCommand<Vps4SnapshotVm.Request, Vps4Sn
             }, Void.class);
             return hfsAction;
         } catch (Exception e) {
-            logger.info("Snapshot creation error for VPS4 snapshot with id: {}", request.vps4SnapshotId);
-            vps4SnapshotService.markSnapshotErrored(request.vps4SnapshotId);
-            reverseSnapshotDeprecation();
             handleSnapshotCreationError(request, e);
             return null;
         }
@@ -258,6 +228,14 @@ public class Vps4SnapshotVm extends ActionCommand<Vps4SnapshotVm.Request, Vps4Sn
 
         context.execute("UpdateHfsImageId" + vps4SnapshotId, ctx -> {
             vps4SnapshotService.updateHfsImageId(vps4SnapshotId, hfsSnapshot.imageId);
+            return null;
+        }, Void.class);
+    }
+
+    private void deleteVmHvForSnapshotTracking (UUID vmId) {
+        logger.info("Deleting hypervisor info that was used to track snapshot for VM {}.", vmId);
+        context.execute("DeleteVmHvForSnapshotTracking" + vmId, ctx -> {
+            vps4SnapshotService.deleteVmHvForSnapshotTracking(vmId);
             return null;
         }, Void.class);
     }

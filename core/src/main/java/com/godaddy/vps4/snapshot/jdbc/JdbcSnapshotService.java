@@ -350,4 +350,21 @@ public class JdbcSnapshotService implements SnapshotService {
                 vmId, snapshotType.getSnapshotTypeId(), vmId, snapshotType.getSnapshotTypeId());
     }
 
+    @Override
+    public UUID getVmIdWithInProgressSnapshotOnHv(String hypervisorHostname) {
+        return Sql.with(dataSource).exec(
+                "SELECT vm_id FROM vm_hypervisor_snapshottracking WHERE hypervisor = ?;",
+                Sql.nextOrNull(rs -> UUID.fromString(rs.getString("vm_id"))), hypervisorHostname);
+    }
+
+    @Override
+    public void saveVmHvForSnapshotTracking(UUID vmId, String hypervisorHostname) {
+        Sql.with(dataSource).exec("INSERT INTO vm_hypervisor_snapshottracking (vm_id, hypervisor) "
+                                  + "VALUES (?, ?);", null, vmId, hypervisorHostname);
+    }
+
+    @Override
+    public void deleteVmHvForSnapshotTracking(UUID vmId) {
+        Sql.with(dataSource).exec("DELETE FROM vm_hypervisor_snapshottracking WHERE vm_id = ?;",null, vmId);
+    }
 }

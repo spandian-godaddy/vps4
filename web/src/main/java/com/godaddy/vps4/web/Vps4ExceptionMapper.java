@@ -48,7 +48,9 @@ public class Vps4ExceptionMapper implements ExceptionMapper<Throwable> {
                     || ve.getId().equals("INVALID_STATUS")
                     || ve.getId().equals("INVALID_SNAPSHOT_NAME")
                     || ve.getId().equals("SNAPSHOT_OVER_QUOTA")
-                    || ve.getId().equals("ALREADY_EXISTS"))
+                    || ve.getId().equals("ALREADY_EXISTS")
+                    || ve.getId().equals("SNAPSHOT_HV_LIMIT_REACHED")
+                    || ve.getId().equals("SNAPSHOT_DC_LIMIT_REACHED"))
                 status = Response.Status.CONFLICT;
             return Response.status(status)
                     .type(MediaType.APPLICATION_JSON)

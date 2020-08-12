@@ -1,6 +1,7 @@
 package com.godaddy.vps4.phase2;
 
 import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.anyLong;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
@@ -14,6 +15,9 @@ import javax.inject.Inject;
 import javax.sql.DataSource;
 import javax.ws.rs.NotFoundException;
 
+import com.godaddy.hfs.vm.Extended;
+import com.godaddy.hfs.vm.VmExtendedInfo;
+import com.godaddy.hfs.vm.VmService;
 import com.godaddy.vps4.scheduler.api.core.SchedulerJobDetail;
 import com.godaddy.vps4.scheduler.api.web.SchedulerWebService;
 import org.junit.After;
@@ -77,8 +81,11 @@ public class SnapshotCreateResourceTest {
     @Inject
     SnapshotService vps4SnapshotService;
 
+    @Inject
+    VmService vmService;
+
     private GDUser user;
-    private UUID ourVmId;
+    private UUID ourVmId, ourVmId2;
     private Vps4User ourVps4User;
     private SchedulerWebService schedulerWebService = mock(SchedulerWebService.class);
 
@@ -112,8 +119,17 @@ public class SnapshotCreateResourceTest {
     @Before
     public void setupTest() {
         ourVmId = createOurVm();
+        ourVmId2 = createOurVm();
         SchedulerJobDetail jobDetail = new SchedulerJobDetail(UUID.randomUUID(), null, null, false);
         when(schedulerWebService.getJob(eq("vps4"), eq("backups"),any(UUID.class) )).thenReturn(jobDetail);
+
+        VmExtendedInfo vmExtendedInfoMock = new VmExtendedInfo();
+        vmExtendedInfoMock.provider = "nocfox";
+        vmExtendedInfoMock.resource = "openstack";
+        Extended extendedMock = new Extended();
+        extendedMock.hypervisorHostname = "n3plztncldhv001-02.prod.ams3.gdg";
+        vmExtendedInfoMock.extended = extendedMock;
+        when(vmService.getVmExtendedInfo(anyLong())).thenReturn(vmExtendedInfoMock);
     }
 
     @After
@@ -143,7 +159,6 @@ public class SnapshotCreateResourceTest {
     private void verifySuccessfulSnapshotCreation() {
         SnapshotAction snapshotAction = getSnapshotResource()
                 .createSnapshot(getRequestPayload(ourVmId, SqlTestData.TEST_SNAPSHOT_NAME));
-
         verifyActionAssociatedWithSnapshot(snapshotAction);
         verifyCommandExecution();
     }
@@ -266,6 +281,21 @@ public class SnapshotCreateResourceTest {
             Assert.fail("Exception not thrown");
         } catch(Vps4Exception e) {
             Assert.assertEquals("ACCOUNT_SUSPENDED", e.getId());
+        }
+    }
+
+    @Test
+    public void testThrowsVps4ExceptionIfReachHvConcurrencyLimit() {
+        user = us;
+        SnapshotRequest request = getRequestPayload(ourVmId, SqlTestData.TEST_SNAPSHOT_NAME);
+        request.snapshotType = SnapshotType.AUTOMATIC;
+        SnapshotAction action1 = getSnapshotResource().createSnapshot(request);
+        vps4SnapshotService.markSnapshotLive(action1.snapshotId);
+        try {
+            getSnapshotResource().createSnapshot(request);
+            Assert.fail("Exception not thrown");
+        } catch(Vps4Exception e) {
+            Assert.assertEquals("SNAPSHOT_HV_LIMIT_REACHED", e.getId());
         }
     }
 
