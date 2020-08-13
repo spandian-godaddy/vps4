@@ -115,7 +115,7 @@ public class SsoClient {
         }catch(ParseException e){
             throw new RuntimeException(e.getMessage(), e.getCause());
         }
-      }
+    }
 
 }
 

@@ -88,7 +88,6 @@ public class RunSomeTests {
             ImageTestGroup imageTestGroup = new ImageTestGroup(image);
             imageTestGroup.addTests(tests);
             vps4.add(imageTestGroup);
-
         }
 
         TestGroupExecution testGroupExecution = vps4.execute(threadPool, vmPool);

@@ -126,7 +126,7 @@ public class PanoptaDataServiceTest {
         panoptaDataService.createPanoptaCustomer(fakeShopperId, fakeCustomerKey);
         panoptaDataService.createPanoptaServer(vm.vmId, fakeShopperId, panoptaServer);
 
-        List<PanoptaServerDetails> panoptaServerDetailsList = panoptaDataService.getActivePanoptaServers(fakeShopperId);
+        List<PanoptaServerDetails> panoptaServerDetailsList = panoptaDataService.getPanoptaServerDetailsList(fakeShopperId);
         assertNotNull(panoptaServerDetailsList);
         assertFalse(panoptaServerDetailsList.isEmpty());
     }
@@ -139,7 +139,7 @@ public class PanoptaDataServiceTest {
 
         boolean wasDestroyed = panoptaDataService.checkAndSetPanoptaCustomerDestroyed(fakeShopperId);
         assertTrue(wasDestroyed);
-        List<PanoptaServerDetails> panoptaServerDetailsList = panoptaDataService.getActivePanoptaServers(fakeShopperId);
+        List<PanoptaServerDetails> panoptaServerDetailsList = panoptaDataService.getPanoptaServerDetailsList(fakeShopperId);
         assertEquals(0, panoptaServerDetailsList.size());
         assertNull(panoptaDataService.getPanoptaCustomerDetails(fakeShopperId));
     }
@@ -151,7 +151,7 @@ public class PanoptaDataServiceTest {
 
         boolean wasDestroyed = panoptaDataService.checkAndSetPanoptaCustomerDestroyed(fakeShopperId);
         assertFalse(wasDestroyed);
-        List<PanoptaServerDetails> panoptaServerDetailsList = panoptaDataService.getActivePanoptaServers(fakeShopperId);
+        List<PanoptaServerDetails> panoptaServerDetailsList = panoptaDataService.getPanoptaServerDetailsList(fakeShopperId);
         assertFalse(panoptaServerDetailsList.isEmpty());
         assertEquals(1, panoptaServerDetailsList.size());
     }

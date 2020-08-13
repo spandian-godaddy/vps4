@@ -1,5 +1,7 @@
 package com.godaddy.vps4.panopta;
 
+import java.util.UUID;
+
 import org.apache.commons.lang3.builder.ReflectionToStringBuilder;
 import org.apache.commons.lang3.builder.ToStringStyle;
 

@@ -49,7 +49,7 @@ public interface PanoptaApiServerService {
     @GET
     @Path("/")
     PanoptaServers getPanoptaServersByStatus(@QueryParam("partner_customer_key") String partnerCustomerKey,
-                                           @DefaultValue("active") @QueryParam("status") String status);
+                                             @DefaultValue("active") @QueryParam("status") PanoptaServer.Status status);
 
     @GET
     @Path("/")
@@ -69,7 +69,7 @@ public interface PanoptaApiServerService {
 
     @DELETE
     @Path("/{server_id}")
-    void deleteServer(@PathParam("server_id") int serverId,
+    void deleteServer(@PathParam("server_id") long serverId,
                       @QueryParam("partner_customer_key") String partnerCustomerKey);
 
     @GET

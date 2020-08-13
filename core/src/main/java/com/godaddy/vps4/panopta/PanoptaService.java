@@ -30,5 +30,7 @@ public interface PanoptaService {
 
     void removeServerMonitoring(UUID vmId);
 
+    void removeServerMonitoring(long panoptaServerId, String partnerCustomerKey);
+
     PanoptaAvailability getAvailability(UUID vmId, String startTime, String endTime) throws PanoptaServiceException;
 }

@@ -241,15 +241,15 @@ public class DefaultPanoptaService implements PanoptaService {
 
     @Override
     public List<PanoptaServer> getActiveServers(String shopperId) {
-        return getPanoptaServers(shopperId, "active");
+        return getPanoptaServersByStatus(shopperId, PanoptaServer.Status.ACTIVE);
     }
 
     @Override
     public List<PanoptaServer> getSuspendedServers(String shopperId) {
-        return getPanoptaServers(shopperId, "suspended");
+        return getPanoptaServersByStatus(shopperId, PanoptaServer.Status.SUSPENDED);
     }
 
-    private List<PanoptaServer> getPanoptaServers(String shopperId, String status) {
+    private List<PanoptaServer> getPanoptaServersByStatus(String shopperId, PanoptaServer.Status status) {
         String partnerCustomerKey = getPartnerCustomerKey(shopperId);
         List<PanoptaServer> panoptaServerList = new ArrayList<>();
 
@@ -316,11 +316,17 @@ public class DefaultPanoptaService implements PanoptaService {
     @Override
     public void removeServerMonitoring(UUID vmId) {
         PanoptaDetail panoptaDetails = panoptaDataService.getPanoptaDetails(vmId);
-        logger.info("Attempting to delete server from panopta.");
         if (panoptaDetails != null) {
-            logger.info("Panopta Details: {}", panoptaDetails.toString());
+            logger.info("Attempting to delete server {} from panopta.", panoptaDetails.getServerId());
             panoptaApiServerService.deleteServer(panoptaDetails.getServerId(), panoptaDetails.getPartnerCustomerKey());
         }
+    }
+
+    @Override
+    public void removeServerMonitoring(long panoptaServerId, String shopperId) {
+        logger.info("Attempting to delete server {} from panopta.", panoptaServerId);
+        String partnerCustomerKey = getPartnerCustomerKey(shopperId);
+        panoptaApiServerService.deleteServer(panoptaServerId, partnerCustomerKey);
     }
 
     @Override

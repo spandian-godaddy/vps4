@@ -67,11 +67,11 @@ public class JdbcPanoptaDataService implements PanoptaDataService {
     }
 
     private boolean noActivePanoptaServers(String shopperId) {
-        return getActivePanoptaServers(shopperId).size() == 0;
+        return getPanoptaServerDetailsList(shopperId).size() == 0;
     }
 
     @Override
-    public List<PanoptaServerDetails> getActivePanoptaServers(String shopperId) {
+    public List<PanoptaServerDetails> getPanoptaServerDetailsList(String shopperId) {
         String partnerCustomerKey = getPartnerCustomerKey(shopperId);
         String findActivePanoptaServersQuery = "SELECT partner_customer_key, vm_id, server_id, server_key, created, destroyed" +
                 " FROM panopta_server WHERE partner_customer_key = ? AND destroyed = 'infinity' ";
