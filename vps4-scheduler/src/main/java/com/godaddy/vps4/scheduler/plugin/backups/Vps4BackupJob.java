@@ -91,8 +91,8 @@ public class Vps4BackupJob extends SchedulerJob {
                                          .forJob(context.getJobDetail().getKey())
                                          .build();
         context.getScheduler().scheduleJob(newTrigger);
-        logger.info("One-time backup job id {} will run next at {}. Job detail: {}", context.getJobDetail().getKey(),
-                    newTrigger.getNextFireTime(),  context.getJobDetail().toString());
+        logger.info("Delaying quartz scheduler job. One-time backup job for vm {} will run next at {}. Job detail: {}",
+                    request.vmId, newTrigger.getNextFireTime(), context.getJobDetail().toString());
     }
 
     private void createAutomaticBackup(UUID vmId, String backupName, String shopperId, ScheduledJob.ScheduledJobType scheduledJobType) {
