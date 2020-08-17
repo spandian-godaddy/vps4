@@ -195,6 +195,8 @@ public class SnapshotResource {
     }
 
     private void validateHVLimit(SnapshotRequest snapshotRequest, long hfsVmId) {
+        if(!Boolean.parseBoolean(config.get("vps4.autobackup.checkHvConcurrentLimit")))
+            return;
         if(!snapshotRequest.snapshotType.equals((SnapshotType.AUTOMATIC)))
             return;
         String hypervisorHostname = getVmHypervisorHostname(snapshotRequest.vmId, hfsVmId);
