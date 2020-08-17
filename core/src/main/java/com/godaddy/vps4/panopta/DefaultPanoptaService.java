@@ -1,6 +1,7 @@
 package com.godaddy.vps4.panopta;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.Callable;
@@ -12,6 +13,7 @@ import java.util.concurrent.TimeUnit;
 import javax.cache.Cache;
 import javax.cache.CacheManager;
 import javax.inject.Inject;
+import javax.ws.rs.NotAuthorizedException;
 
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
@@ -253,12 +255,18 @@ public class DefaultPanoptaService implements PanoptaService {
         String partnerCustomerKey = getPartnerCustomerKey(shopperId);
         List<PanoptaServer> panoptaServerList = new ArrayList<>();
 
-        PanoptaServers panoptaServers = panoptaApiServerService.getPanoptaServersByStatus(partnerCustomerKey, status);
-        panoptaServers.getServers().forEach(server -> {
-            logger.debug("Found server in panopta: {} ", server);
-            panoptaServerList.add(mapServer(partnerCustomerKey, server));
-        });
-        return panoptaServerList;
+        try {
+            PanoptaServers ps = panoptaApiServerService.getPanoptaServersByStatus(partnerCustomerKey, status);
+            ps.getServers().forEach(server -> {
+                logger.debug("Found server in panopta: {} ", server);
+                panoptaServerList.add(mapServer(partnerCustomerKey, server));
+            });
+            return panoptaServerList;
+        } catch (NotAuthorizedException e) {
+            logger.debug("Access to partner customer key {} is unauthorized. "
+                    + "This likely means no customer exists for that key.", partnerCustomerKey);
+            return Collections.emptyList();
+        }
     }
 
     private PanoptaServer mapServer(String partnerCustomerKey, PanoptaServers.Server server) {

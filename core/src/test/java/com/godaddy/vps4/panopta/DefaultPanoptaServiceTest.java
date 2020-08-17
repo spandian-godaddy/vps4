@@ -28,6 +28,7 @@ import java.util.concurrent.TimeUnit;
 
 import javax.cache.Cache;
 import javax.cache.CacheManager;
+import javax.ws.rs.NotAuthorizedException;
 
 import org.junit.After;
 import org.junit.Before;
@@ -506,5 +507,18 @@ public class DefaultPanoptaServiceTest {
         verify(panoptaApiServerService).getPanoptaServersByStatus(partnerCustomerKey, PanoptaServer.Status.SUSPENDED);
         assertNotNull(panoptaServersList);
         assertTrue(panoptaServersList.size() > 0);
+    }
+
+    @Test
+    public void testGetServersByStatusHandles401() {
+        shopperId = "nonexistent_shopper";
+        partnerCustomerKey = "gdtest_nonexistent_shopper";
+        when(config.get("panopta.api.partner.customer.key.prefix")).thenReturn("gdtest_");
+        when(panoptaApiServerService.getPanoptaServersByStatus(partnerCustomerKey, PanoptaServer.Status.ACTIVE))
+                .thenThrow(new NotAuthorizedException("Nope"));
+        List<PanoptaServer> panoptaServersList = defaultPanoptaService.getActiveServers(shopperId);
+        verify(panoptaApiServerService).getPanoptaServersByStatus(partnerCustomerKey, PanoptaServer.Status.ACTIVE);
+        assertNotNull(panoptaServersList);
+        assertEquals(0, panoptaServersList.size());
     }
 }
