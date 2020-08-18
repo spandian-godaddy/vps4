@@ -1,7 +1,5 @@
 package com.godaddy.vps4.web.appmonitors;
 
-import static com.godaddy.vps4.web.util.RequestValidation.validateAndReturnDateInstant;
-
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -10,7 +8,6 @@ import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
@@ -26,9 +23,9 @@ import javax.ws.rs.core.MediaType;
 import com.godaddy.vps4.appmonitors.BackupJobAuditData;
 import com.godaddy.vps4.appmonitors.MonitorService;
 import com.godaddy.vps4.appmonitors.MonitoringCheckpoint;
-import com.godaddy.vps4.appmonitors.RescheduledSnapshotData;
 import com.godaddy.vps4.appmonitors.SnapshotActionData;
 import com.godaddy.vps4.appmonitors.VmActionData;
+import com.godaddy.vps4.appmonitors.HvBlockingSnapshotsData;
 import com.godaddy.vps4.jdbc.ResultSubset;
 import com.godaddy.vps4.util.ActionListFilters;
 import com.godaddy.vps4.vm.Action;
@@ -170,13 +167,15 @@ public class VmActionsMonitorResource {
     }
 
     @GET
-    @Path("/rescheduledSnapshotCount")
-    @ApiOperation(value = "Find a count of snapshots that were rescheduled due to high load",
-            notes = "Find a count of snapshots that were rescheduled due to high load")
-    public List<RescheduledSnapshotData> getRescheduledSnapshotData(
-            @ApiParam(value = "How many hours back to check") @QueryParam("beginDate") @DefaultValue("24") int hours) {
-
-        return monitorService.getLimitRescheduledCount(hours);
+    @Path("/hvsBlockingSnapshots")
+    @ApiOperation(value = "Get a list of hypervisors and VMs that are blocking new snapshot creations, due to entry "
+            + "tracked in vm_hypervisor_snapshottracking table for over X hours, default 8 hours",
+            notes = "Get a list of hypervisors and VMs that are blocking new snapshot creations, due to entry "
+                    + "tracked in vm_hypervisor_snapshottracking table for over X hours, default 8 hours")
+    public List<HvBlockingSnapshotsData> getHvsBlockingSnapshots(@ApiParam(value = "How many hours since the hypervisor "
+            + "was inserted into vm_hypervisor_snapshottracking table") @QueryParam("thresholdInHours")
+                                                                        @DefaultValue("8") long thresholdInHours) {
+        return monitorService.getHvsBlockingSnapshots(thresholdInHours);
     }
 
     @GET

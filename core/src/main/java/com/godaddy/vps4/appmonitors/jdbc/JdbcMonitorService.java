@@ -14,8 +14,8 @@ import com.godaddy.hfs.jdbc.Sql;
 import com.godaddy.vps4.appmonitors.BackupJobAuditData;
 import com.godaddy.vps4.appmonitors.MonitorService;
 import com.godaddy.vps4.appmonitors.MonitoringCheckpoint;
-import com.godaddy.vps4.appmonitors.RescheduledSnapshotData;
 import com.godaddy.vps4.appmonitors.SnapshotActionData;
+import com.godaddy.vps4.appmonitors.HvBlockingSnapshotsData;
 import com.godaddy.vps4.jdbc.Vps4ReportsDataSource;
 import com.godaddy.vps4.util.TimestampUtils;
 import com.godaddy.vps4.vm.ActionStatus;
@@ -95,16 +95,10 @@ public class JdbcMonitorService implements MonitorService {
     }
 
     @Override
-    public List<RescheduledSnapshotData> getLimitRescheduledCount(int hours) {
+    public List<HvBlockingSnapshotsData> getHvsBlockingSnapshots(long thresholdInHours) {
         return Sql.with(dataSource).exec(
-                "SELECT Count(DISTINCT s.id) AS snapshot_count, Count(DISTINCT vm.vm_id) AS vm_count "
-                        + "FROM virtual_machine vm "
-                        + "JOIN snapshot s ON vm.vm_id = s.vm_id "
-                        + "JOIN snapshot_status ss ON s.status = ss.status_id "
-                        + "WHERE vm.valid_until = 'infinity' "
-                        + "AND ss.status = 'LIMIT_RESCHEDULED' "
-                        + "AND s.created_at > now() - (? || ' hour')::interval",
-                Sql.listOf(this::mapRescheduledSnapshotData), hours);
+                "SELECT * FROM vm_hypervisor_snapshottracking WHERE now_utc() - created >= INTERVAL '" + thresholdInHours + " hours'",
+              Sql.listOf(this::mapHvBlockingSnapshotsData));
     }
 
     @Override
@@ -158,10 +152,11 @@ public class JdbcMonitorService implements MonitorService {
         return checkpoint;
     }
 
-    private RescheduledSnapshotData mapRescheduledSnapshotData(ResultSet rs) throws SQLException {
-        return new RescheduledSnapshotData(
-                rs.getInt("snapshot_count"),
-                rs.getInt("vm_count")
+    private HvBlockingSnapshotsData mapHvBlockingSnapshotsData(ResultSet rs) throws SQLException {
+        return new HvBlockingSnapshotsData(
+                rs.getString("hypervisor"),
+                UUID.fromString(rs.getString("vm_id")),
+                rs.getTimestamp("created", TimestampUtils.utcCalendar).toInstant()
         );
     }
 

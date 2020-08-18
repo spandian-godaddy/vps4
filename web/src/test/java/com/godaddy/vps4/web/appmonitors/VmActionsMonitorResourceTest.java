@@ -3,6 +3,7 @@ package com.godaddy.vps4.web.appmonitors;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.anyLong;
 import static org.mockito.Matchers.argThat;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
@@ -11,6 +12,7 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import java.time.Duration;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
@@ -29,6 +31,7 @@ import com.godaddy.vps4.appmonitors.MonitorService;
 import com.godaddy.vps4.appmonitors.MonitoringCheckpoint;
 import com.godaddy.vps4.appmonitors.SnapshotActionData;
 import com.godaddy.vps4.appmonitors.VmActionData;
+import com.godaddy.vps4.appmonitors.HvBlockingSnapshotsData;
 import com.godaddy.vps4.jdbc.ResultSubset;
 import com.godaddy.vps4.util.ActionListFilters;
 import com.godaddy.vps4.vm.Action;
@@ -45,6 +48,7 @@ public class VmActionsMonitorResourceTest {
     private ActionService vmActionService = mock(ActionService.class);
     private VirtualMachineService virtualMachineService = mock(VirtualMachineService.class);
     private List<SnapshotActionData> expectedSnapshotActionData;
+    private List<HvBlockingSnapshotsData> expectedHvBlockingSnapshotsData;
     private long pendingThreshold = 60L;
 
     @Before
@@ -294,4 +298,15 @@ public class VmActionsMonitorResourceTest {
         verify(monitorService, times(1)).deleteMonitoringCheckpoint(ActionType.CREATE_VM);
     }
 
+    @Test
+    public void testGetHvsBlockingSnapshots() {
+        expectedHvBlockingSnapshotsData = new ArrayList<HvBlockingSnapshotsData>();
+        expectedHvBlockingSnapshotsData.add(new HvBlockingSnapshotsData("hypervisor1", UUID.randomUUID(),
+                                                                        Instant.now().minus(Duration.ofDays(2))));
+        when(monitorService.getHvsBlockingSnapshots(anyLong())).thenReturn(expectedHvBlockingSnapshotsData);
+        List<HvBlockingSnapshotsData>
+                actualHvBlockingSnapshotsData = vmActionsMonitorResource.getHvsBlockingSnapshots(anyLong());
+        Assert.assertNotNull(actualHvBlockingSnapshotsData);
+        Assert.assertEquals(expectedHvBlockingSnapshotsData.size(), actualHvBlockingSnapshotsData.size());
+    }
 }
