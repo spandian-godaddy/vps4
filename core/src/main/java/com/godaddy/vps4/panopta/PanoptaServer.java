@@ -1,7 +1,5 @@
 package com.godaddy.vps4.panopta;
 
-import java.util.UUID;
-
 import org.apache.commons.lang3.builder.ReflectionToStringBuilder;
 import org.apache.commons.lang3.builder.ToStringStyle;
 
@@ -16,6 +14,11 @@ public class PanoptaServer {
 
     public enum Status {
         ACTIVE, SUSPENDED, DELETED;
+
+        @Override
+        public String toString() {
+            return name().toLowerCase();
+        }
     }
 
     public PanoptaServer(String partnerCustomerKey, long serverId, String serverKey,
