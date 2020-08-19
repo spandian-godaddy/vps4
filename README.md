@@ -307,51 +307,16 @@ Application Monitoring
 ==================
 
 The application monitoring api is exposed through the vps4 swagger in the "appmonitors" section. The commands are set to EmployeeOnly level impersonation.
-The appropriate SSL certificates will need to be placed in the directory where the script is set to run. 
-The jobs are setup under the user **vps4monitor** and the password is available from the vps4 development team. 
-The monitoring scripts are setup manually and invoked using a cron scheduler on a separate server in each DC for the production environment.
-The monitoring scripts will update the *vps4-monitoring* slack channel with alerts.
+
+### Sensu Client
+Currently the only sensu client for all data centers is in P3 Prod.
 
 | DC Env    |   Server                              |
 | -------   | ------------------------------------- |
 | P3 Prod   | p3plvps4rprt01.cloud.phx3.gdg         |
 | A2 Prod   | TBD                                   |
-| SG2 Prod  | sg2plvps4rprt01.cloud.sin2.gdg        |
-| AMS Prod  | n3plvps4rprt01.cloud.ams3.gdg        |
-
-Process to setup a cron job:
-* Edit the crontab and ensure the jobs are entered as below.
-    ```
-    [root@p3plvps4rprt01 ~]# crontab -e
-    0 8-17 * * * root cd /home/vps4monitor;/home/vps4monitor/monitor_pending_actions.sh https://vps4-cca.api.phx3.godaddy.com/api/appmonitors/pending/backupactions?thresholdInMinutes=120 PROD P3 Backup > /dev/null 2>&1
-    0 8-17 * * * root cd /home/vps4monitor;/home/vps4monitor/monitor_pending_actions.sh https://vps4-cca.api.phx3.godaddy.com/api/appmonitors/pending/provision?thresholdInMinutes=60 PROD P3 Provision > /dev/null 2>&1
-    0 8-17 * * * root cd /home/vps4monitor;/home/vps4monitor/monitor_pending_actions.sh https://vps4-cca.api.phx3.godaddy.com/api/appmonitors/pending/restartvm?thresholdInMinutes=15 PROD P3 Restart > /dev/null 2>&1
-    0 8-17 * * * root cd /home/vps4monitor;/home/vps4monitor/monitor_pending_actions.sh https://vps4-cca.api.phx3.godaddy.com/api/appmonitors/pending/restorevm?thresholdInMinutes=120 PROD P3 Restore > /dev/null 2>&1
-    0 8-17 * * * root cd /home/vps4monitor;/home/vps4monitor/monitor_pending_actions.sh https://vps4-cca.api.phx3.godaddy.com/api/appmonitors/pending/startvm?thresholdInMinutes=15 PROD P3 Start > /dev/null 2>&1
-    0 8-17 * * * root cd /home/vps4monitor;/home/vps4monitor/monitor_pending_actions.sh https://vps4-cca.api.phx3.godaddy.com/api/appmonitors/pending/stopvm?thresholdInMinutes=15 PROD P3 Stop > /dev/null 2>&1
-    0 8-17 * * * root cd /home/vps4monitor;/home/vps4monitor/monitor_pending_actions.sh https://vps4-cca.api.phx3.godaddy.com/api/appmonitors/pending/newactions?thresholdInMinutes=120 PROD P3 All > /dev/null 2>&1
-    0 8-17 * * * root cd /home/vps4monitor;/home/vps4monitor/monitor_pending_actions.sh https://vps4-cca.api.phx3.godaddy.com/api/appmonitors/missing_backup_jobs PROD P3 'Missing Backup Jobs' > /dev/null 2>&1
-    0 8-17 * * * root cd /home/vps4monitor;/home/vps4monitor/monitor_pending_actions.sh https://vps4-cca.api.phx3.godaddy.com/api/appmonitors/pending/allactions PROD P3 'All Pending Actions' > /dev/null 2>&1
-    ```
-
-* Restart the crond service.
-    ```
-    [root@p3plvps4rprt01 ~]# sudo systemctl restart crond.service
-    ```
-
-* Similarly for SG2 with different url and parameters
-    ```
-    [root@sg2plvps4rprt01 ~]# crontab -l
-    0 8-17 * * * root cd /home/vps4monitor;/home/vps4monitor/monitor_pending_actions.sh https://vps4-cca.api.sin2.godaddy.com/api/appmonitors/pending/backupactions?thresholdInMinutes=120 PROD SG2 Backup > /dev/null 2>&1
-    0 8-17 * * * root cd /home/vps4monitor;/home/vps4monitor/monitor_pending_actions.sh https://vps4-cca.api.sin2.godaddy.com/api/appmonitors/pending/provision?thresholdInMinutes=60 PROD SG2 Provision > /dev/null 2>&1
-    0 8-17 * * * root cd /home/vps4monitor;/home/vps4monitor/monitor_pending_actions.sh https://vps4-cca.api.sin2.godaddy.com/api/appmonitors/pending/restartvm?thresholdInMinutes=15 PROD SG2 Restart > /dev/null 2>&1
-    0 8-17 * * * root cd /home/vps4monitor;/home/vps4monitor/monitor_pending_actions.sh https://vps4-cca.api.sin2.godaddy.com/api/appmonitors/pending/restorevm?thresholdInMinutes=120 PROD SG2 Restore > /dev/null 2>&1
-    0 8-17 * * * root cd /home/vps4monitor;/home/vps4monitor/monitor_pending_actions.sh https://vps4-cca.api.sin2.godaddy.com/api/appmonitors/pending/startvm?thresholdInMinutes=15 PROD SG2 Start > /dev/null 2>&1
-    0 8-17 * * * root cd /home/vps4monitor;/home/vps4monitor/monitor_pending_actions.sh https://vps4-cca.api.sin2.godaddy.com/api/appmonitors/pending/stopvm?thresholdInMinutes=15 PROD SG2 Stop > /dev/null 2>&1
-    0 8-17 * * * root cd /home/vps4monitor;/home/vps4monitor/monitor_pending_actions.sh https://vps4-cca.api.sin2.godaddy.com/api/appmonitors/pending/newactions?thresholdInMinutes=15 PROD SG2 All > /dev/null 2>&1
-    0 8-17 * * * root cd /home/vps4monitor;/home/vps4monitor/monitor_pending_actions.sh https://vps4-cca.api.sin2.godaddy.com/api/appmonitors/missing_backup_jobs PROD SG2 'Missing Backup Jobs' > /dev/null 2>&1
-    0 8-17 * * * root cd /home/vps4monitor;/home/vps4monitor/monitor_pending_actions.sh https://vps4-cca.api.sin2.godaddy.com/api/appmonitors/pending/allactions PROD SG2 'All Pending Actions' > /dev/null 2>&1
-    ```
+| SG2 Prod  | TBD                                   |
+| AMS Prod  | TBD                                   |
 
 ### Sensu Alert setup for application monitoring
 Sensu Dashboard is located [here: https://vps4.sensu.prod.phx3.secureserver.net/#/events](https://vps4.sensu.prod.phx3.secureserver.net/#/events)
@@ -376,18 +341,18 @@ TODO: Eventually need to puppetize this process below.
   
  ```
  Client.json pasted here for reference, the name and ip address and subscriptions for the server will differ based on the datacenter.
- {
-   "client": {
-     "name": "p3plvps4rprt01",
-     "address": "10.32.65.48",
-     "site": "p3",
-     "environment": "prod",
-     "environment_filter": true,
-     "project": "vps4",
-     "playbook": "https://confluence.int.godaddy.com/display/HPLAT/vps4app#vps4app-prod",
-     "subscriptions": [ "p3plvps4rprt01", "vps4app", "prod_p3", "vps4", "linuxhost" ]
-   }
- }
+{
+  "client": {
+    "name": "p3plvps4rprt01",
+    "address": "10.32.65.48",
+    "site": "p3",
+    "environment": "prod",
+    "environment_filter": true,
+    "project": "vps4",
+    "playbook": "https://confluence.godaddy.com/display/HOSTING/Sum+of+All+Knowledge+-+Support+Documentation",
+    "subscriptions": [ "prod_sin2", "prod_ams3", "prod_iad2" ]
+  }
+}
  ```
  
  ```
