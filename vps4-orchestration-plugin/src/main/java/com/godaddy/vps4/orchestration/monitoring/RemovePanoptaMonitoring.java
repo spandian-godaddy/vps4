@@ -99,10 +99,12 @@ public class RemovePanoptaMonitoring implements Command<UUID, Void> {
                                                .filter(s -> s.name.equals(orionGuid.toString()))
                                                .collect(Collectors.toList());
         for (PanoptaServer server : removableServers) {
-            logger.info("Attempting to delete server {} from panopta.", server.serverId);
-            panoptaService.removeServerMonitoring(server.serverId, shopperId);
+//            logger.info("Attempting to delete server {} from panopta.", server.serverId);
+//            panoptaService.removeServerMonitoring(server.serverId, shopperId);
+            logger.info("Server {} is likely an orphan in panopta.", server.serverId);
         }
-        if (removableServers.size() == allServers.size()) {
+//        if (removableServers.size() == allServers.size()) {
+        if (allServers.isEmpty()) {
             removePanoptaCustomer();
         }
     }
