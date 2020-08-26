@@ -17,6 +17,9 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
 
 import com.fasterxml.jackson.annotation.JsonView;
+import com.godaddy.hfs.config.Config;
+import com.godaddy.hfs.vm.VmExtendedInfo;
+import com.godaddy.hfs.vm.VmService;
 import com.godaddy.vps4.credit.CreditService;
 import com.godaddy.vps4.security.Views;
 import com.godaddy.vps4.snapshot.Snapshot;
@@ -34,6 +37,7 @@ import com.godaddy.vps4.web.snapshot.SnapshotResource.SnapshotRenameRequest;
 import com.google.inject.Inject;
 
 import io.swagger.annotations.Api;
+import io.swagger.annotations.ApiOperation;
 
 @Vps4Api
 @Api(tags = {"vms"})
@@ -48,19 +52,24 @@ public class VmSnapshotResource {
     private final SnapshotService snapshotService;
     private final SnapshotResource snapshotResource;
     private final VirtualMachineService virtualMachineService;
+    private final VmService vmService;
+    private final Config config;
 
     @Inject
     public VmSnapshotResource(GDUser user,
                               CreditService creditService,
                               SnapshotResource snapshotResource,
                               SnapshotService snapshotService,
-                              VirtualMachineService virtualMachineService
-                              ) {
+                              VirtualMachineService virtualMachineService,
+                              VmService vmService,
+                              Config config) {
         this.user = user;
         this.creditService = creditService;
         this.snapshotResource = snapshotResource;
         this.snapshotService = snapshotService;
         this.virtualMachineService = virtualMachineService;
+        this.vmService = vmService;
+        this.config = config;
     }
 
     @GET
@@ -126,5 +135,25 @@ public class VmSnapshotResource {
         return snapshotResource.renameSnapshot(snapshotId, request);
     }
 
+    @GET
+    @Path("/{vmId}/canSnapshotNow")
+    @ApiOperation(value = "Check for DC and hypervisor snapshot limits to decide whether a snapshot can be requested right now for a VM",
+            notes = "Returns true if neither DC snapshot limit nor hypervisor snapshot limit are reached; false otherwise")
+    public boolean canSnapshotNow(
+            @PathParam("vmId") UUID vmId) {
+        int currentDCLoad = snapshotService.totalSnapshotsInProgress();
+        int maxDCAllowed = Integer.parseInt(config.get("vps4.autobackup.concurrentLimit", "50"));
 
+        if (currentDCLoad >= maxDCAllowed)
+            return false;
+        if(Boolean.parseBoolean(config.get("vps4.autobackup.checkHvConcurrentLimit"))) {
+            VirtualMachine virtualMachine = virtualMachineService.getVirtualMachine(vmId);
+            VmExtendedInfo vmExtendedInfo = vmService.getVmExtendedInfo(virtualMachine.hfsVmId);
+            if(vmExtendedInfo != null) {
+                UUID conflictingVmId = snapshotService.getVmIdWithInProgressSnapshotOnHv(vmExtendedInfo.extended.hypervisorHostname);
+                return conflictingVmId == null;
+            }
+        }
+        return true;
+    }
 }
