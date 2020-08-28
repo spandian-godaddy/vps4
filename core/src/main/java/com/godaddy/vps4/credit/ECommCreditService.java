@@ -117,7 +117,16 @@ public class ECommCreditService implements CreditService {
 
     private String getShopperId(Account account) {
         // Brand resellers will use sub_account_shopper_id, otherwise use shopper_id
-        return (account.sub_account_shopper_id != null) ? account.sub_account_shopper_id : account.shopper_id;
+        // return (account.sub_account_shopper_id != null) ? account.sub_account_shopper_id : account.shopper_id;
+
+        /* Code above commented due to HFS bug that may not be fixed
+         * as it would break other products like Plesk.
+         * If the shopper is a brand reseller customer,
+         * HFS is actually putting the parent shopper id into the sub_account_shopper_id field
+         * and the brand reseller's customer's shopper id is in the shopper_id field.
+         * So basically HFS provided shopper_id is always correct, regardless if is brand reseller.
+         */
+        return account.shopper_id;
     }
 
     @Override

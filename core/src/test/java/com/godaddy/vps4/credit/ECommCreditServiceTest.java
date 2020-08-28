@@ -159,10 +159,13 @@ public class ECommCreditServiceTest {
     public void testGetBrandResellerCredit() throws Exception {
         // Brand Resellers set shopper_id to match sub_account_shopper_id
         account.sub_account_shopper_id = "brand-reseller-shopper-id";
+
         when(ecommService.getAccount(orionGuid.toString())).thenReturn(account);
         VirtualMachineCredit credit = creditService.getVirtualMachineCredit(orionGuid);
 
-        assertEquals(account.sub_account_shopper_id, credit.getShopperId());
+        // See comment in ECommCreditService getShopperId() for details
+        // assertEquals(account.sub_account_shopper_id, credit.getShopperId());
+        assertEquals(account.shopper_id, credit.getShopperId());
     }
 
     @Test
