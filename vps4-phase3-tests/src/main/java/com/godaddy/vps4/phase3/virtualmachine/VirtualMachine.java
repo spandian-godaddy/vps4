@@ -3,7 +3,9 @@ package com.godaddy.vps4.phase3.virtualmachine;
 import java.util.UUID;
 
 import com.godaddy.vps4.phase3.api.Vps4ApiClient;
-import com.godaddy.vps4.phase3.ssh.Vps4SshClient;
+import com.godaddy.vps4.phase3.remote.Vps4RemoteAccessClient;
+import com.godaddy.vps4.phase3.remote.Vps4SshClient;
+import com.godaddy.vps4.phase3.remote.Vps4WinexeClient;
 
 public class VirtualMachine {
 
@@ -36,12 +38,19 @@ public class VirtualMachine {
         return apiClient;
     }
 
-    public Vps4SshClient ssh() {
-        return new Vps4SshClient(apiClient, defaultUsername, defaultPassword);
+    public String getUsername() {
+        return defaultUsername;
     }
 
-    public Vps4SshClient ssh(String username, String password) {
-        return new Vps4SshClient(apiClient, username, password);
+    public boolean isWindows() {
+        return imageName.toLowerCase().contains("windows");
+    }
+
+    public Vps4RemoteAccessClient remote() {
+        if (isWindows()) {
+            return new Vps4WinexeClient(apiClient, defaultUsername, defaultPassword);
+        }
+        return new Vps4SshClient(apiClient, defaultUsername, defaultPassword);
     }
 
     public void release() {

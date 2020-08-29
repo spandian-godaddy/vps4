@@ -118,6 +118,16 @@ public class Vps4ApiClient {
 
     }
 
+    public long enableAdmin(UUID vmId, String username) {
+        JSONObject body = new JSONObject();
+        body.put("username", username);
+        Vps4JsonResponse<JSONObject> enableAdminResponse = sendPost("api/vms/" + vmId.toString() + "/enableAdmin", body);
+        assert(enableAdminResponse.statusCode == 200);
+        JSONObject enableAdminJsonResult = enableAdminResponse.jsonResponse;
+        return (long) enableAdminJsonResult.get("id");
+
+    }
+
     public UUID createVmCredit(String shopperId, String osType, String controlPanel,
                                 int managedLevel, int tier){
         JSONObject body = new JSONObject();

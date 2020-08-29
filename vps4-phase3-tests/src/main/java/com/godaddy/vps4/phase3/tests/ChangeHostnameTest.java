@@ -5,7 +5,7 @@ import org.slf4j.LoggerFactory;
 
 import com.godaddy.vps4.phase3.VmTest;
 import com.godaddy.vps4.phase3.api.Vps4ApiClient;
-import com.godaddy.vps4.phase3.ssh.Vps4SshClient;
+import com.godaddy.vps4.phase3.remote.Vps4RemoteAccessClient;
 import com.godaddy.vps4.phase3.virtualmachine.VirtualMachine;
 
 public class ChangeHostnameTest implements VmTest {
@@ -22,8 +22,14 @@ public class ChangeHostnameTest implements VmTest {
     }
 
     @Override
-    public void execute(VirtualMachine vm){
+    public void execute(VirtualMachine vm) {
         Vps4ApiClient vps4Client = vm.getClient();
+
+        // Admin access is required for Winexe
+        if (vm.isWindows()) {
+            logger.debug("Turning on admin access for user {} on vm {}", vm.getUsername(), vm);
+            vps4Client.enableAdmin(vm.vmId, vm.getUsername());
+        }
 
         long setHostnameActionId = vps4Client.setHostname(vm.vmId, newHostname);
         logger.debug("Wait for change hostname on vm {}", vm);
@@ -34,14 +40,14 @@ public class ChangeHostnameTest implements VmTest {
         vps4Client.pollForVmActionComplete(vm.vmId, restartVmActionId, RESTART_TIMEOUT_SECONDS);
 
         try {
-            // A brief pause before trying ssh connections
+            // A brief pause before trying remote connections
             Thread.sleep(15000);
         } catch (InterruptedException e) {
-            logger.error("Error during start stop test sleeping, pre-ssh check", e);
+            logger.error("Error during start stop test sleeping, pre-remote check", e);
         }
 
-        Vps4SshClient sshClient = vm.ssh();
-        sshClient.assertCommandResult(vm.vmId, newHostname, "hostname;");
+        Vps4RemoteAccessClient client = vm.remote();
+        assert client.checkHostname(vm.vmId, newHostname);
     }
 
     @Override

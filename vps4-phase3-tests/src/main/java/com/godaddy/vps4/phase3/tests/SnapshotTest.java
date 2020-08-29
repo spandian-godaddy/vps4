@@ -14,7 +14,7 @@ public class SnapshotTest implements VmTest {
     
     private static final Logger logger = LoggerFactory.getLogger(SnapshotTest.class);
 
-    private int SNAPSHOT_TIMEOUT_SECONDS = 1200;
+    private final int SNAPSHOT_TIMEOUT_SECONDS = 1200;
 
     @Override
     public void execute(VirtualMachine vm) {
@@ -31,7 +31,7 @@ public class SnapshotTest implements VmTest {
     }
     
     @Override
-    public String toString(){
+    public String toString() {
         return "Snapshot VM Test";
     }
 }
