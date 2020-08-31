@@ -3,23 +3,24 @@ package com.godaddy.vps4.orchestration.hfs.network;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
+import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyBoolean;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Matchers.startsWith;
+import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import java.util.Arrays;
+
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
 
 import com.godaddy.vps4.orchestration.TestCommandContext;
-import com.godaddy.vps4.orchestration.hfs.network.BindIp;
-import com.godaddy.vps4.orchestration.hfs.network.UnbindIp;
-import com.godaddy.vps4.orchestration.hfs.network.WaitForAddressAction;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
 
@@ -81,7 +82,7 @@ public class BindIpTest {
 
     @Test(expected=IllegalStateException.class)
     public void invalidHfsAddressStatusForBindIp() {
-        setupHfsAddress(Status.BINDING);
+        setupHfsAddress(Status.RELEASING);
         command.execute(context, request);
     }
 
@@ -111,6 +112,17 @@ public class BindIpTest {
         assertEquals(addressId, argument.getValue().addressId);
         assertTrue(argument.getValue().forceIfVmInaccessible);
         verify(networkService).bindIp(request.addressId, request.hfsVmId, request.shouldForce);
+    }
+
+    @Test
+    public void forcedUnbindHfsAddressBinding() {
+        request.shouldForce = true;
+        for (Status status : Arrays.asList(Status.BINDING, Status.UNBINDING)) {
+            setupHfsAddress(status);
+            command.execute(context, request);
+            verify(context, atLeastOnce()).execute(startsWith("ForceUnbindIP"), eq(UnbindIp.class), any(UnbindIp.Request.class));
+            verify(networkService, atLeastOnce()).bindIp(request.addressId, request.hfsVmId, request.shouldForce);
+        }
     }
 
 }

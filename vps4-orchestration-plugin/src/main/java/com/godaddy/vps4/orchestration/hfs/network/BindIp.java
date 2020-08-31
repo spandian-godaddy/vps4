@@ -27,7 +27,7 @@ public class BindIp implements Command<BindIp.Request, Void> {
     private static final Logger logger = LoggerFactory.getLogger(BindIp.class);
 
     private final NetworkServiceV2 networkService;
-    private final List<Status> invalidAddressStates = Arrays.asList(ACQUIRING, BINDING, RELEASED, RELEASING, UNBINDING);
+    private final List<Status> invalidAddressStates = Arrays.asList(ACQUIRING, RELEASED, RELEASING);
 
     private Request request;
     private IpAddress hfsAddress;
@@ -53,7 +53,10 @@ public class BindIp implements Command<BindIp.Request, Void> {
             }
             // Address NOT bound to requested server
             forceUnbindAddress(context);
+        } else if (isHfsAddressInBindTransition()) {
+            forceUnbindAddress(context);
         }
+
         bindAddress(context);
         return null;
     }
@@ -67,6 +70,10 @@ public class BindIp implements Command<BindIp.Request, Void> {
 
     private boolean isAddressAlreadyBound() {
         return hfsAddress.status == BOUND;
+    }
+
+    private boolean isHfsAddressInBindTransition() {
+        return hfsAddress.status == UNBINDING || hfsAddress.status == BINDING;
     }
 
     private boolean isAddressBoundToRequestedServer() {
