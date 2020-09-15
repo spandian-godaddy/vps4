@@ -2,6 +2,7 @@ package com.godaddy.vps4.orchestration.vm.provision;
 
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyBoolean;
+import static org.mockito.Matchers.anyLong;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Matchers.startsWith;
@@ -24,7 +25,9 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
 import org.mockito.runners.MockitoJUnitRunner;
 
+import com.godaddy.hfs.vm.Vm;
 import com.godaddy.hfs.vm.VmAction;
+import com.godaddy.hfs.vm.VmService;
 import com.godaddy.vps4.credit.CreditService;
 import com.godaddy.vps4.hfs.HfsVmTrackingRecordService;
 import com.godaddy.vps4.jdbc.DatabaseModule;
@@ -103,6 +106,7 @@ public class Vps4ProvisionVmUnitTest {
 
     @Inject private VirtualMachineService virtualMachineService;
     @Inject private Vps4MessagingService messagingService;
+    @Inject private VmService vmService;
 
     @Captor private ArgumentCaptor<CreateVm.Request> createVmRequestArgumentCaptor;
 
@@ -202,6 +206,9 @@ public class Vps4ProvisionVmUnitTest {
                 anyString(), anyBoolean())).thenReturn("email_id");
         when(context.execute(eq(CreateVm.class), any(CreateVm.Request.class)))
                 .thenReturn(vmAction);
+        Vm hfsVm = new Vm();
+        hfsVm.resourceId = "somerandomresourceid";
+        when(vmService.getVm(anyLong())).thenReturn(hfsVm);
 
         command.execute(context, request);
 

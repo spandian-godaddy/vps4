@@ -27,6 +27,7 @@ import com.godaddy.hfs.config.Config;
 import com.godaddy.hfs.mailrelay.MailRelay;
 import com.godaddy.hfs.mailrelay.MailRelayService;
 import com.godaddy.hfs.mailrelay.MailRelayUpdate;
+import com.godaddy.hfs.vm.Vm;
 import com.godaddy.hfs.vm.VmAction;
 import com.godaddy.hfs.vm.VmAction.Status;
 import com.godaddy.hfs.vm.VmService;
@@ -50,7 +51,6 @@ import com.godaddy.vps4.orchestration.vm.provision.ProvisionRequest;
 import com.godaddy.vps4.orchestration.vm.provision.Vps4ProvisionVm;
 import com.godaddy.vps4.panopta.PanoptaDataService;
 import com.godaddy.vps4.panopta.PanoptaService;
-import com.godaddy.vps4.util.MonitoringMeta;
 import com.godaddy.vps4.vm.ActionService;
 import com.godaddy.vps4.vm.Image;
 import com.godaddy.vps4.vm.Image.ControlPanel;
@@ -65,9 +65,6 @@ import com.google.inject.Injector;
 
 import gdg.hfs.orchestration.CommandContext;
 import gdg.hfs.vhfs.network.IpAddress;
-import gdg.hfs.vhfs.nodeping.CreateCheckRequest;
-import gdg.hfs.vhfs.nodeping.NodePingCheck;
-import gdg.hfs.vhfs.nodeping.NodePingService;
 import gdg.hfs.vhfs.plesk.PleskService;
 
 
@@ -85,8 +82,6 @@ public class Vps4ProvisionVmTest {
     SetHostname setHostname = mock(SetHostname.class);
     ToggleAdmin toggleAdmin = mock(ToggleAdmin.class);
     ConfigureMailRelay configureMailRelay = mock(ConfigureMailRelay.class);
-    NodePingService nodePingService = mock(NodePingService.class);
-    MonitoringMeta monitoringMeta = mock(MonitoringMeta.class);
     Vps4MessagingService messagingService = mock(Vps4MessagingService.class);
     CreditService creditService = mock(CreditService.class);
     VirtualMachineCredit credit = mock(VirtualMachineCredit.class);
@@ -105,9 +100,8 @@ public class Vps4ProvisionVmTest {
     private ArgumentCaptor<SetupPanopta.Request> setupPanoptaRequestArgCaptor;
 
     Vps4ProvisionVm command =
-            new Vps4ProvisionVm(actionService, virtualMachineService, vmUserService, networkService, nodePingService,
-                                monitoringMeta, messagingService, creditService, config, hfsVmTrackingRecordService,
-                                vmAlertService);
+            new Vps4ProvisionVm(actionService, vmService, virtualMachineService, vmUserService, networkService,
+                                messagingService, creditService, config, hfsVmTrackingRecordService, vmAlertService);
 
     Injector injector = Guice.createInjector(binder -> {
         binder.bind(ActionService.class).toInstance(actionService);
@@ -150,6 +144,7 @@ public class Vps4ProvisionVmTest {
     long hfsVmId = 42;
     String panoptaCustomerKey = "fakePanoptaPartnerCustomerKey-";
     VmAction vmAction;
+    Vm hfsVm;
 
     @Before
     public void setupTest() throws Exception {
@@ -207,6 +202,10 @@ public class Vps4ProvisionVmTest {
         when(createVm.execute(any(CommandContext.class), any(CreateVm.Request.class))).thenReturn(vmAction);
         when(vmService.getVmAction(hfsVmId, vmAction.vmActionId)).thenReturn(vmAction);
 
+        hfsVm = new Vm();
+        hfsVm.resourceId = "somerandomresourceid";
+        when(vmService.getVm(anyLong())).thenReturn(hfsVm);
+
         when(virtualMachineService.getVirtualMachine(vmInfo.vmId)).thenReturn(this.vm);
 
         when(context.execute(eq(AllocateIp.class), any(AllocateIp.Request.class))).thenReturn(primaryIp);
@@ -226,26 +225,6 @@ public class Vps4ProvisionVmTest {
         this.image.controlPanel = Image.ControlPanel.PLESK;
         command.executeWithAction(context, this.request);
         verify(vmUserService, times(1)).updateUserAdminAccess(username, vmId, false);
-    }
-
-    @Test
-    public void testProvisionVmDoesntConfigureNodePing() {
-        command.executeWithAction(context, this.request);
-        verify(nodePingService, never()).createCheck(anyLong(), any(CreateCheckRequest.class));
-    }
-
-    @Test
-    public void configuresNodePingForAllAccountsWhenPanoptaIsDisabled() {
-        this.vmInfo.hasMonitoring = true;
-        NodePingCheck check = mock(NodePingCheck.class);
-        check.checkId = 1;
-        when(nodePingService.createCheck(anyLong(), any())).thenReturn(check);
-        when(monitoringMeta.getAccountId()).thenReturn(1L);
-        when(monitoringMeta.getGeoRegion()).thenReturn("nam");
-        vm.primaryIpAddress = mock(com.godaddy.vps4.network.IpAddress.class);
-
-        command.executeWithAction(context, this.request);
-        verify(nodePingService, times(1)).createCheck(eq(1L), any(CreateCheckRequest.class));
     }
 
     @Test

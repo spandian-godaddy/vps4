@@ -1,6 +1,18 @@
 package com.godaddy.vps4.orchestration.vm.provision;
 
-import static com.godaddy.vps4.vm.CreateVmStep.*;
+import static com.godaddy.vps4.vm.CreateVmStep.ConfigureMailRelay;
+import static com.godaddy.vps4.vm.CreateVmStep.ConfigureMonitoring;
+import static com.godaddy.vps4.vm.CreateVmStep.ConfiguringCPanel;
+import static com.godaddy.vps4.vm.CreateVmStep.ConfiguringNetwork;
+import static com.godaddy.vps4.vm.CreateVmStep.ConfiguringPlesk;
+import static com.godaddy.vps4.vm.CreateVmStep.GeneratingHostname;
+import static com.godaddy.vps4.vm.CreateVmStep.RequestingIPAddress;
+import static com.godaddy.vps4.vm.CreateVmStep.RequestingMailRelay;
+import static com.godaddy.vps4.vm.CreateVmStep.RequestingServer;
+import static com.godaddy.vps4.vm.CreateVmStep.SetHostname;
+import static com.godaddy.vps4.vm.CreateVmStep.SetupAutomaticBackupSchedule;
+import static com.godaddy.vps4.vm.CreateVmStep.SetupComplete;
+import static com.godaddy.vps4.vm.CreateVmStep.StartingServerSetup;
 
 import java.util.UUID;
 
@@ -11,7 +23,9 @@ import org.slf4j.LoggerFactory;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.godaddy.hfs.config.Config;
+import com.godaddy.hfs.vm.Vm;
 import com.godaddy.hfs.vm.VmAction;
+import com.godaddy.hfs.vm.VmService;
 import com.godaddy.vps4.credit.CreditService;
 import com.godaddy.vps4.hfs.HfsVmTrackingRecordService;
 import com.godaddy.vps4.messaging.Vps4MessagingService;
@@ -34,7 +48,6 @@ import com.godaddy.vps4.orchestration.scheduler.SetupAutomaticBackupSchedule;
 import com.godaddy.vps4.orchestration.sysadmin.ConfigureMailRelay;
 import com.godaddy.vps4.orchestration.sysadmin.ConfigureMailRelay.ConfigureMailRelayRequest;
 import com.godaddy.vps4.orchestration.vm.WaitForAndRecordVmAction;
-import com.godaddy.vps4.util.MonitoringMeta;
 import com.godaddy.vps4.vm.ActionService;
 import com.godaddy.vps4.vm.CreateVmStep;
 import com.godaddy.vps4.vm.HostnameGenerator;
@@ -49,9 +62,6 @@ import gdg.hfs.orchestration.CommandContext;
 import gdg.hfs.orchestration.CommandMetadata;
 import gdg.hfs.orchestration.CommandRetryStrategy;
 import gdg.hfs.vhfs.network.IpAddress;
-import gdg.hfs.vhfs.nodeping.CreateCheckRequest;
-import gdg.hfs.vhfs.nodeping.NodePingCheck;
-import gdg.hfs.vhfs.nodeping.NodePingService;
 
 @CommandMetadata(
         name = "ProvisionVm",
@@ -62,41 +72,38 @@ import gdg.hfs.vhfs.nodeping.NodePingService;
 public class Vps4ProvisionVm extends ActionCommand<ProvisionRequest, Vps4ProvisionVm.Response> {
 
     private static final Logger logger = LoggerFactory.getLogger(Vps4ProvisionVm.class);
-    private final VirtualMachineService virtualMachineService;
+    private final VmService vmService;
+    protected final VirtualMachineService virtualMachineService;
     private final VmUserService vmUserService;
     private final NetworkService networkService;
-    private final NodePingService monitoringService;
-    private final MonitoringMeta monitoringMeta;
     private final Vps4MessagingService messagingService;
     private final CreditService creditService;
     private final Config config;
     private final HfsVmTrackingRecordService hfsVmTrackingRecordService;
     private final VmAlertService vmAlertService;
 
-    private ProvisionRequest request;
+    protected ProvisionRequest request;
     private ActionState state;
-    private String hostname;
-    private CommandContext context;
+    protected String hostname;
+    protected CommandContext context;
 
     @Inject
     public Vps4ProvisionVm(
             ActionService actionService,
+            VmService vmService,
             VirtualMachineService virtualMachineService,
             VmUserService vmUserService,
             NetworkService networkService,
-            NodePingService monitoringService,
-            MonitoringMeta monitoringMeta,
             Vps4MessagingService messagingService,
             CreditService creditService,
             Config config,
             HfsVmTrackingRecordService hfsVmTrackingRecordService,
             VmAlertService vmAlertService) {
         super(actionService);
+        this.vmService = vmService;
         this.virtualMachineService = virtualMachineService;
         this.vmUserService = vmUserService;
         this.networkService = networkService;
-        this.monitoringService = monitoringService;
-        this.monitoringMeta = monitoringMeta;
         this.messagingService = messagingService;
         this.creditService = creditService;
         this.config = config;
@@ -115,31 +122,30 @@ public class Vps4ProvisionVm extends ActionCommand<ProvisionRequest, Vps4Provisi
 
         logger.info("begin provision vm for request: {}", request);
 
-        IpAddress ip = allocateIp();
+        long hfsVmId = createServer();
+        Vm hfsVm = vmService.getVm(hfsVmId);
 
-        createMailRelay(ip);
+        String primaryIpAddress = setupPrimaryIp(hfsVm);
 
-        generateHostname(ip);
-
-        long hfsVmId = createVm();
-
-        bindIp(hfsVmId, ip);
+        createMailRelay(primaryIpAddress);
 
         setupUsers(hfsVmId);
 
         configureControlPanel(hfsVmId);
 
-        setHostname(hfsVmId);
+        generateAndSetHostname(hfsVmId, primaryIpAddress, hfsVm.resourceId);
+
+        createPTRRecord(hfsVm.resourceId);
 
         configureAdminUser(hfsVmId, request.vmInfo.vmId);
 
         configureMailRelay(hfsVmId);
 
-        configureMonitoring(ip, hfsVmId);
+        configureMonitoring(primaryIpAddress, hfsVmId);
 
         setEcommCommonName(request.orionGuid, request.serverName);
 
-        sendSetupEmail(request, ip.address);
+        sendSetupEmail(request, primaryIpAddress);
 
         // TODO: keeps this commented until we have the nginx configured to setup client cert based auth for
         // vps4 inter microservice communication.
@@ -150,12 +156,18 @@ public class Vps4ProvisionVm extends ActionCommand<ProvisionRequest, Vps4Provisi
         return null;
     }
 
-    private void generateHostname(IpAddress ip) {
-        setStep(GeneratingHostname);
-        hostname = HostnameGenerator.getHostname(ip.address, request.vmInfo.image.operatingSystem);
+    protected String setupPrimaryIp(Vm hfsVm) {
+        IpAddress ip = allocateIp();
+        bindIp(hfsVm.vmId, ip);
+        return ip.address;
     }
 
-    private void setupAutomaticBackupSchedule(UUID vps4VmId, String shopperId) {
+    /* Create Reverse DNS record.
+       For Openstack/OptimizedHosting Vm, no need to set RDNS record, so skip. */
+    protected void createPTRRecord(String resourceId) {
+    }
+
+    protected void setupAutomaticBackupSchedule(UUID vps4VmId, String shopperId) {
         setStep(SetupAutomaticBackupSchedule);
         SetupAutomaticBackupSchedule.Request req = new SetupAutomaticBackupSchedule.Request();
         req.vmId = vps4VmId;
@@ -175,12 +187,17 @@ public class Vps4ProvisionVm extends ActionCommand<ProvisionRequest, Vps4Provisi
         }
     }
 
-    private void setHostname(long hfsVmId) {
-        setStep(SetHostname);
+    protected void generateAndSetHostname(long hfsVmId, String ipAddress, String resourceId) {
+        setStep(GeneratingHostname);
+        hostname = HostnameGenerator.getHostname(ipAddress, request.vmInfo.image.operatingSystem);
+        setHostname(hfsVmId);
+    }
 
+    protected void setHostname(long hfsVmId) {
+        setStep(SetHostname);
         SetHostname.Request hfsRequest = new SetHostname.Request(hfsVmId, hostname,
                                                                  request.vmInfo.image.getImageControlPanel());
-
+        virtualMachineService.setHostname(request.vmInfo.vmId, hostname);
         context.execute(SetHostname.class, hfsRequest);
     }
 
@@ -213,7 +230,7 @@ public class Vps4ProvisionVm extends ActionCommand<ProvisionRequest, Vps4Provisi
         context.execute(BindIp.class, bindRequest);
     }
 
-    private void configureMailRelay(long hfsVmId) {
+    protected void configureMailRelay(long hfsVmId) {
         setStep(ConfigureMailRelay);
 
         ConfigureMailRelayRequest configureMailRelayRequest =
@@ -223,26 +240,30 @@ public class Vps4ProvisionVm extends ActionCommand<ProvisionRequest, Vps4Provisi
     }
 
     private void setupUsers(long hfsVmId) {
-        // associate the Vm with the user that created it
+        addUserToVps4();
+        setLinuxRootPassword(hfsVmId);
+    }
+
+    private void addUserToVps4() {
         context.execute("CreateVps4User", ctx -> {
             vmUserService.createUser(request.username, request.vmInfo.vmId);
             return null;
         }, Void.class);
+    }
 
-        // set the root password to the same as the user password (LINUX ONLY)
+    private void setLinuxRootPassword(long hfsVmId) {
         VirtualMachine vm = virtualMachineService.getVirtualMachine(request.vmInfo.vmId);
         if (vm.image.operatingSystem == Image.OperatingSystem.LINUX) {
             SetPassword.Request setRootPasswordRequest
-                    = ProvisionHelper
-                    .createSetRootPasswordRequest(hfsVmId, request.encryptedPassword, vm.image.getImageControlPanel());
+                    = ProvisionHelper.createSetRootPasswordRequest(hfsVmId, request.encryptedPassword, vm.image.getImageControlPanel());
             context.execute(SetPassword.class, setRootPasswordRequest);
         }
     }
 
-    private long createVm() {
+    private long createServer() {
+        hostname = "temp.secureserver.net";
         setStep(RequestingServer);
         CreateVm.Request createVmRequest = ProvisionHelper.getCreateVmRequest(request, hostname);
-        virtualMachineService.setHostname(request.vmInfo.vmId, createVmRequest.hostname);
         VmAction vmAction = context.execute(CreateVm.class, createVmRequest);
         // note: we want to update the HFS vm id in the vps4 database in the event
         // that the provisioning failed on the HFS side.
@@ -253,7 +274,7 @@ public class Vps4ProvisionVm extends ActionCommand<ProvisionRequest, Vps4Provisi
         return vmAction.vmId;
     }
 
-    public void updateHfsVmTrackingRecord(VmAction vmAction){
+    private void updateHfsVmTrackingRecord(VmAction vmAction){
         context.execute("UpdateHfsVmTrackingRecord", ctx -> {
             hfsVmTrackingRecordService.setCreated(vmAction.vmId, request.actionId);
             return null;
@@ -267,12 +288,12 @@ public class Vps4ProvisionVm extends ActionCommand<ProvisionRequest, Vps4Provisi
         }, Void.class);
     }
 
-    private void createMailRelay(IpAddress ip) {
+    protected void createMailRelay(String ipAddress) {
 
         setStep(RequestingMailRelay);
 
         SetMailRelayQuota.Request hfsRequest = new SetMailRelayQuota.Request();
-        hfsRequest.ipAddress = ip.address;
+        hfsRequest.ipAddress = ipAddress;
         hfsRequest.mailRelayQuota = request.vmInfo.mailRelayQuota;
         context.execute(SetMailRelayQuota.class, hfsRequest);
     }
@@ -312,14 +333,21 @@ public class Vps4ProvisionVm extends ActionCommand<ProvisionRequest, Vps4Provisi
         return ip;
     }
 
-    private void configureMonitoring(IpAddress ipAddress, long hfsVmId) {
+    /* Add IP address to VPS4 database, if it is not done already.
+       For Openstack Vm, IP address has already been added to vps4 db as part of the allocateIp step. */
+    protected void addIpToDb(String ipAddress) {
+        context.execute("Create-" + ipAddress, ctx -> {
+            networkService.createIpAddress(0, request.vmInfo.vmId, ipAddress, IpAddressType.PRIMARY);
+            return null;
+        }, Void.class);
+    }
+
+    private void configureMonitoring(String ipAddress, long hfsVmId) {
         // TODO: remove soon after launch
         // gate panopta installation using a feature flag
         if (request.vmInfo.isPanoptaEnabled) {
             installPanopta(ipAddress, hfsVmId);
             configurePanoptaAlert();
-        } else if(request.vmInfo.hasMonitoring) {
-            configureNodeping(ipAddress);
         }
     }
 
@@ -329,30 +357,15 @@ public class Vps4ProvisionVm extends ActionCommand<ProvisionRequest, Vps4Provisi
         }
     }
 
-    private void installPanopta(IpAddress ipAddress, long hfsVmId) {
+    private void installPanopta(String ipAddress, long hfsVmId) {
         setStep(ConfigureMonitoring);
         SetupPanopta.Request setupPanoptaRequest = new SetupPanopta.Request();
         setupPanoptaRequest.hfsVmId = hfsVmId;
         setupPanoptaRequest.orionGuid = request.orionGuid;
         setupPanoptaRequest.vmId = request.vmInfo.vmId;
         setupPanoptaRequest.shopperId = request.shopperId;
-        setupPanoptaRequest.fqdn = ipAddress.address;
+        setupPanoptaRequest.fqdn = ipAddress;
         context.execute(SetupPanopta.class, setupPanoptaRequest);
-    }
-
-    private void configureNodeping(IpAddress ipAddress) {
-        setStep(ConfigureNodeping);
-        CreateCheckRequest checkRequest =
-                ProvisionHelper.getCreateCheckRequest(ipAddress.address, monitoringMeta);
-        NodePingCheck check = monitoringService.createCheck(monitoringMeta.getAccountId(), checkRequest);
-        addCheckIdToIp(ipAddress, check);
-    }
-
-    private void addCheckIdToIp(IpAddress ipAddress, NodePingCheck check) {
-        context.execute("AddCheckIdToIp-" + ipAddress.address, ctx -> {
-            networkService.updateIpWithCheckId(ipAddress.addressId, check.checkId);
-            return null;
-        }, Void.class);
     }
 
     private void setEcommCommonName(UUID orionGuid, String commonName) {
@@ -374,7 +387,7 @@ public class Vps4ProvisionVm extends ActionCommand<ProvisionRequest, Vps4Provisi
         }
     }
 
-    private void setStep(CreateVmStep step) {
+    protected void setStep(CreateVmStep step) {
         state.step = step;
         try {
             actionService.updateActionState(request.getActionId(), mapper.writeValueAsString(state));

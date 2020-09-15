@@ -10,14 +10,14 @@ import gdg.hfs.orchestration.CommandMetadata;
 import gdg.hfs.orchestration.CommandRetryStrategy;
 
 @CommandMetadata(
-        name = "Vps4DestroyVirtuozzoVm",
+        name = "Vps4DestroyOHVm",
         requestType = VmActionRequest.class,
-        responseType = Vps4DestroyVirtuozzoVm.Response.class,
+        responseType = Vps4DestroyOHVm.Response.class,
         retryStrategy = CommandRetryStrategy.NEVER
 )
-public class Vps4DestroyVirtuozzoVm extends Vps4DestroyVm {
+public class Vps4DestroyOHVm extends Vps4DestroyVm {
     @Inject
-    public Vps4DestroyVirtuozzoVm(ActionService actionService, NetworkService networkService) {
+    public Vps4DestroyOHVm(ActionService actionService, NetworkService networkService) {
         super(actionService, networkService);
     }
 

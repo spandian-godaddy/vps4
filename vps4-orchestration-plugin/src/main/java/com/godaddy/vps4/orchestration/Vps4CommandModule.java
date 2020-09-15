@@ -37,7 +37,7 @@ import com.godaddy.vps4.orchestration.vm.Vps4DeleteAllScheduledJobsForVm;
 import com.godaddy.vps4.orchestration.vm.Vps4DeleteAllScheduledZombieJobsForVm;
 import com.godaddy.vps4.orchestration.vm.Vps4DestroyDedicated;
 import com.godaddy.vps4.orchestration.vm.Vps4DestroyIpAddressAction;
-import com.godaddy.vps4.orchestration.vm.Vps4DestroyVirtuozzoVm;
+import com.godaddy.vps4.orchestration.vm.Vps4DestroyOHVm;
 import com.godaddy.vps4.orchestration.vm.Vps4DestroyVm;
 import com.godaddy.vps4.orchestration.vm.Vps4EndRescue;
 import com.godaddy.vps4.orchestration.vm.Vps4PlanChange;
@@ -60,7 +60,7 @@ import com.godaddy.vps4.orchestration.vm.Vps4SuspendServer;
 import com.godaddy.vps4.orchestration.vm.Vps4TestCommand;
 import com.godaddy.vps4.orchestration.vm.Vps4UpgradeVm;
 import com.godaddy.vps4.orchestration.vm.provision.Vps4ProvisionDedicated;
-import com.godaddy.vps4.orchestration.vm.provision.Vps4ProvisionVirtuozzoVm;
+import com.godaddy.vps4.orchestration.vm.provision.Vps4ProvisionOHVm;
 import com.godaddy.vps4.orchestration.vm.provision.Vps4ProvisionVm;
 import com.google.inject.AbstractModule;
 
@@ -70,14 +70,14 @@ public class Vps4CommandModule extends AbstractModule {
     public void configure() {
         bind(Vps4ProvisionVm.class);
         bind(Vps4ProvisionDedicated.class);
-        bind(Vps4ProvisionVirtuozzoVm.class);
+        bind(Vps4ProvisionOHVm.class);
         bind(Vps4ToggleAdmin.class);
         bind(Vps4SetPassword.class);
         bind(Vps4SetHostname.class);
         bind(Vps4TestCommand.class);
         bind(Vps4DestroyVm.class);
         bind(Vps4DestroyDedicated.class);
-        bind(Vps4DestroyVirtuozzoVm.class);
+        bind(Vps4DestroyOHVm.class);
         bind(Vps4StartVm.class);
         bind(Vps4StopVm.class);
         bind(Vps4RestartVm.class);

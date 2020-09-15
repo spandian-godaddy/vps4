@@ -23,6 +23,7 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
 import org.mockito.MockitoAnnotations;
 
+import com.godaddy.hfs.config.Config;
 import com.godaddy.hfs.mailrelay.MailRelay;
 import com.godaddy.hfs.mailrelay.MailRelayService;
 import com.godaddy.hfs.mailrelay.MailRelayUpdate;
@@ -46,10 +47,9 @@ import com.godaddy.vps4.orchestration.hfs.vm.CreateVm;
 import com.godaddy.vps4.orchestration.panopta.SetupPanopta;
 import com.godaddy.vps4.orchestration.sysadmin.ConfigureMailRelay;
 import com.godaddy.vps4.orchestration.vm.provision.ProvisionRequest;
-import com.godaddy.vps4.orchestration.vm.provision.Vps4ProvisionVirtuozzoVm;
+import com.godaddy.vps4.orchestration.vm.provision.Vps4ProvisionOHVm;
 import com.godaddy.vps4.panopta.PanoptaDataService;
 import com.godaddy.vps4.panopta.PanoptaService;
-import com.godaddy.vps4.util.MonitoringMeta;
 import com.godaddy.vps4.vm.ActionService;
 import com.godaddy.vps4.vm.Image;
 import com.godaddy.vps4.vm.Image.ControlPanel;
@@ -65,7 +65,7 @@ import com.google.inject.Injector;
 import gdg.hfs.orchestration.CommandContext;
 import gdg.hfs.vhfs.plesk.PleskService;
 
-public class Vps4ProvisionVirtuozzoVmTest {
+public class Vps4ProvisionOHVmTest {
 
 
     ActionService actionService = mock(ActionService.class);
@@ -77,7 +77,6 @@ public class Vps4ProvisionVirtuozzoVmTest {
     SetHostname setHostname = mock(SetHostname.class);
     SetPassword setPassword = mock(SetPassword.class);
     ToggleAdmin toggleAdmin = mock(ToggleAdmin.class);
-    MonitoringMeta monitoringMeta = mock(MonitoringMeta.class);
     Vps4MessagingService messagingService = mock(Vps4MessagingService.class);
     CreditService creditService = mock(CreditService.class);
     HfsVmTrackingRecordService hfsVmTrackingRecordService = mock(HfsVmTrackingRecordService.class);
@@ -88,16 +87,17 @@ public class Vps4ProvisionVirtuozzoVmTest {
     VmAlertService vmAlertService = mock(VmAlertService.class);
     MailRelayService mailRelayService = mock(MailRelayService.class);
     ConfigureMailRelay configureMailRelay = mock(ConfigureMailRelay.class);
+    Config config = mock(Config.class);
 
     @Captor private ArgumentCaptor<Function<CommandContext, Void>> setCommonNameLambdaCaptor;
     @Captor private ArgumentCaptor<SetPassword.Request> setPasswordCaptor;
     @Captor private ArgumentCaptor<SetHostname.Request> setHostnameArgumentCaptor;
     @Captor private ArgumentCaptor<SetupPanopta.Request> setupPanoptaRequestArgCaptor;
 
-    Vps4ProvisionVirtuozzoVm command = new Vps4ProvisionVirtuozzoVm(actionService, vmService, virtualMachineService,
-                                                                    vmUserService, networkService, monitoringMeta,
-                                                                    messagingService, creditService,
-                                                                    hfsVmTrackingRecordService, vmAlertService);
+    Vps4ProvisionOHVm command = new Vps4ProvisionOHVm(actionService, vmService, virtualMachineService,
+                                                      vmUserService, networkService, messagingService,
+                                                      creditService, config, hfsVmTrackingRecordService,
+                                                      vmAlertService);
 
     Injector injector = Guice.createInjector(binder -> {
         binder.bind(ActionService.class).toInstance(actionService);
@@ -149,9 +149,9 @@ public class Vps4ProvisionVirtuozzoVmTest {
         image.hfsName = "foobar";
         expectedServerName = "VM Name";
         this.vm = new VirtualMachine(UUID.randomUUID(), hfsVmId, UUID.randomUUID(), 1,
-                null, expectedServerName,
-                image, null, null, null, null,
-                "fake.host.name", 0, UUID.randomUUID());
+                                     null, expectedServerName,
+                                     image, null, null, null, null,
+                                     "fake.host.name", 0, UUID.randomUUID());
 
         this.vmInfo = new ProvisionVmInfo();
         this.vmInfo.vmId = this.vmId;
@@ -226,7 +226,7 @@ public class Vps4ProvisionVirtuozzoVmTest {
     public void testSendSetupEmail() throws MissingShopperIdException, IOException {
         command.executeWithAction(context, this.request);
         verify(messagingService, times(1)).sendSetupEmail(shopperId, expectedServerName,
-                hfsIp.ip_address, orionGuid.toString(), this.vmInfo.isManaged);
+                                                          hfsIp.ip_address, orionGuid.toString(), this.vmInfo.isManaged);
     }
 
     @Test
@@ -236,7 +236,7 @@ public class Vps4ProvisionVirtuozzoVmTest {
 
         command.executeWithAction(context, this.request);
         verify(messagingService, times(1)).sendSetupEmail(anyString(), anyString(),
-                anyString(), anyString(), anyBoolean());
+                                                          anyString(), anyString(), anyBoolean());
     }
 
     @Test

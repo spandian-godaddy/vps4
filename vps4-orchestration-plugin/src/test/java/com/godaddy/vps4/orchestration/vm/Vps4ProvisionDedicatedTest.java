@@ -23,6 +23,7 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
 import org.mockito.MockitoAnnotations;
 
+import com.godaddy.hfs.config.Config;
 import com.godaddy.hfs.mailrelay.MailRelayUpdate;
 import com.godaddy.hfs.vm.Vm;
 import com.godaddy.hfs.vm.VmAction;
@@ -46,7 +47,6 @@ import com.godaddy.vps4.orchestration.hfs.sysadmin.ToggleAdmin;
 import com.godaddy.vps4.orchestration.hfs.vm.CreateVm;
 import com.godaddy.vps4.orchestration.vm.provision.ProvisionRequest;
 import com.godaddy.vps4.orchestration.vm.provision.Vps4ProvisionDedicated;
-import com.godaddy.vps4.util.MonitoringMeta;
 import com.godaddy.vps4.vm.ActionService;
 import com.godaddy.vps4.vm.Image;
 import com.godaddy.vps4.vm.Image.ControlPanel;
@@ -63,9 +63,6 @@ import com.godaddy.vps4.panopta.PanoptaService;
 import com.godaddy.vps4.orchestration.panopta.SetupPanopta;
 
 import gdg.hfs.orchestration.CommandContext;
-import gdg.hfs.vhfs.nodeping.CreateCheckRequest;
-import gdg.hfs.vhfs.nodeping.NodePingCheck;
-import gdg.hfs.vhfs.nodeping.NodePingService;
 import gdg.hfs.vhfs.plesk.PleskService;
 
 public class Vps4ProvisionDedicatedTest {
@@ -83,8 +80,6 @@ public class Vps4ProvisionDedicatedTest {
     CreateDnsPtrRecord createDnsPtrRecord = mock(CreateDnsPtrRecord.class);
     SetPassword setPassword = mock(SetPassword.class);
     ToggleAdmin toggleAdmin = mock(ToggleAdmin.class);
-    NodePingService nodePingService = mock(NodePingService.class);
-    MonitoringMeta monitoringMeta = mock(MonitoringMeta.class);
     Vps4MessagingService messagingService = mock(Vps4MessagingService.class);
     CreditService creditService = mock(CreditService.class);
     HfsVmTrackingRecordService hfsVmTrackingRecordService = mock(HfsVmTrackingRecordService.class);
@@ -93,6 +88,7 @@ public class Vps4ProvisionDedicatedTest {
     PanoptaService panoptaService = mock(PanoptaService.class);
     PanoptaDataService panoptaDataService = mock(PanoptaDataService.class);
     VmAlertService vmAlertService = mock(VmAlertService.class);
+    Config config = mock(Config.class);
 
     @Captor private ArgumentCaptor<Function<CommandContext, Void>> setCommonNameLambdaCaptor;
     @Captor private ArgumentCaptor<SetPassword.Request> setPasswordCaptor;
@@ -100,9 +96,10 @@ public class Vps4ProvisionDedicatedTest {
     @Captor private ArgumentCaptor<CreateDnsPtrRecord.Request> reverseDnsNameRequestCaptor;
     @Captor private ArgumentCaptor<SetupPanopta.Request> setupPanoptaRequestArgCaptor;
 
-    Vps4ProvisionDedicated command = new Vps4ProvisionDedicated(actionService, vmService,
-            virtualMachineService, vmUserService, networkService, nodePingService,
-            monitoringMeta, messagingService, creditService, hfsVmTrackingRecordService, vmAlertService);
+    Vps4ProvisionDedicated command = new Vps4ProvisionDedicated(actionService, vmService, virtualMachineService,
+                                                                vmUserService, networkService, messagingService,
+                                                                creditService, config, hfsVmTrackingRecordService,
+                                                                vmAlertService);
 
     Injector injector = Guice.createInjector(binder -> {
         binder.bind(ActionService.class).toInstance(actionService);
@@ -228,25 +225,6 @@ public class Vps4ProvisionDedicatedTest {
     }
 
     @Test
-    public void testProvisionVmDoesntConfigureNodePing() {
-        command.executeWithAction(context, this.request);
-        verify(nodePingService, never()).createCheck(anyLong(), any(CreateCheckRequest.class));
-    }
-
-    @Test
-    public void testProvisionVmConfiguresNodePing() {
-        NodePingCheck check = mock(NodePingCheck.class);
-        check.checkId = 1;
-        when(nodePingService.createCheck(anyLong(), any())).thenReturn(check);
-        when(monitoringMeta.getAccountId()).thenReturn(1L);
-        when(monitoringMeta.getGeoRegion()).thenReturn("nam");
-        this.vmInfo.hasMonitoring = true;
-
-        command.executeWithAction(context, this.request);
-        verify(nodePingService, times(1)).createCheck(eq(1L), any(CreateCheckRequest.class));
-    }
-
-    @Test
     public void testSendSetupEmail() throws MissingShopperIdException, IOException {
         command.executeWithAction(context, this.request);
         verify(messagingService, times(1)).sendSetupEmail(shopperId, expectedServerName,
@@ -310,20 +288,6 @@ public class Vps4ProvisionDedicatedTest {
         command.executeWithAction(context, request);
         verify(context, times(1)).execute(eq("UpdateHfsVmTrackingRecord"),
                                           any(Function.class), eq(Void.class));
-    }
-
-    @Test
-    public void configuresNodePingForAllAccountsWhenPanoptaIsDisabled() {
-        this.vmInfo.hasMonitoring = true;
-        NodePingCheck check = mock(NodePingCheck.class);
-        check.checkId = 1;
-        when(nodePingService.createCheck(anyLong(), any())).thenReturn(check);
-        when(monitoringMeta.getAccountId()).thenReturn(1L);
-        when(monitoringMeta.getGeoRegion()).thenReturn("nam");
-        vm.primaryIpAddress = mock(com.godaddy.vps4.network.IpAddress.class);
-
-        command.executeWithAction(context, this.request);
-        verify(nodePingService, times(1)).createCheck(eq(1L), any(CreateCheckRequest.class));
     }
 
     @Test
