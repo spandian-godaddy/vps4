@@ -4,6 +4,7 @@ import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.Matchers.containsString;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThat;
+import static org.junit.Assert.fail;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyLong;
 import static org.mockito.Matchers.eq;
@@ -185,6 +186,19 @@ public class SetupPanoptaTest {
     }
 
     @Test
+    public void installPanoptaOnProvisionCompletesEvenIfPanoptaFails() {
+        when(panoptaDataServiceMock.getPanoptaCustomerDetails(eq(fakeShopperId)))
+                .thenReturn(panoptaCustomerDetailsMock);
+        when(panoptaCustomerDetailsMock.getCustomerKey()).thenReturn(fakeCustomerKey);
+        when(commandContextMock.execute(eq(InstallPanopta.class), any()))
+                .thenThrow(new RuntimeException("something broke"));
+        command.execute(commandContextMock, request);
+
+        verify(commandContextMock, times(1)).execute(eq(InstallPanopta.class), any());
+        verify(panoptaDataServiceMock, never()).createPanoptaServer(any(), any(), any());
+    }
+
+    @Test
     public void invokesInstallPanoptaOnRebuilds() {
         when(panoptaDataServiceMock.getPanoptaCustomerDetails(eq(fakeShopperId)))
                 .thenReturn(panoptaCustomerDetailsMock);
@@ -200,6 +214,23 @@ public class SetupPanoptaTest {
         assertEquals(fakeCustomerKey, capturedRequest.customerKey);
         assertEquals(fakeServerKey, capturedRequest.serverKey);
         assertEquals(fakePanoptaTemplates + "," + fakeDataCenterTemplate, capturedRequest.templates);
+    }
+
+    @Test
+    public void installPanoptaOnRebuildFailsIfPanoptaFails() {
+        try {
+            when(panoptaDataServiceMock.getPanoptaCustomerDetails(eq(fakeShopperId)))
+                    .thenReturn(panoptaCustomerDetailsMock);
+            when(panoptaDataServiceMock.getPanoptaServerDetails(eq(fakeVmId))).thenReturn(panoptaServerDetailsMock);
+            when(panoptaServerDetailsMock.getServerKey()).thenReturn(fakeServerKey);
+            when(panoptaCustomerDetailsMock.getCustomerKey()).thenReturn(fakeCustomerKey);
+            when(commandContextMock.execute(eq(InstallPanopta.class), any()))
+                    .thenThrow(new RuntimeException("something broke"));
+            command.execute(commandContextMock, request);
+            fail();
+        } catch (RuntimeException e) {
+            verify(commandContextMock, times(1)).execute(eq(InstallPanopta.class), any());
+        }
     }
 
     @Test

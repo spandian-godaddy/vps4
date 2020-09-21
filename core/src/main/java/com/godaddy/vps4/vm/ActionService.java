@@ -35,4 +35,6 @@ public interface ActionService {
     ResultSubset<Action> getActionList(ActionListFilters filters);
 
     List<Action> getUnfinishedDestroyActions(long thresholdInMinutes);
+
+    List<Action> getCreatesWithoutPanopta(long windowSize);
 }

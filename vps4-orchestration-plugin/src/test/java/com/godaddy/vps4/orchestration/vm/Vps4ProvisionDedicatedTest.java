@@ -12,7 +12,6 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import java.io.IOException;
 import java.util.Random;
 import java.util.UUID;
 import java.util.function.Function;
@@ -24,7 +23,6 @@ import org.mockito.Captor;
 import org.mockito.MockitoAnnotations;
 
 import com.godaddy.hfs.config.Config;
-import com.godaddy.hfs.mailrelay.MailRelayUpdate;
 import com.godaddy.hfs.vm.Vm;
 import com.godaddy.hfs.vm.VmAction;
 import com.godaddy.hfs.vm.VmAction.Status;
@@ -32,19 +30,13 @@ import com.godaddy.hfs.vm.VmAddress;
 import com.godaddy.hfs.vm.VmService;
 import com.godaddy.vps4.credit.CreditService;
 import com.godaddy.vps4.hfs.HfsVmTrackingRecordService;
-import com.godaddy.vps4.messaging.MissingShopperIdException;
 import com.godaddy.vps4.messaging.Vps4MessagingService;
 import com.godaddy.vps4.network.NetworkService;
-import com.godaddy.vps4.orchestration.hfs.cpanel.ConfigureCpanel;
 import com.godaddy.vps4.orchestration.hfs.dns.CreateDnsPtrRecord;
-import com.godaddy.vps4.orchestration.hfs.network.AllocateIp;
-import com.godaddy.vps4.orchestration.hfs.network.BindIp;
-import com.godaddy.vps4.orchestration.hfs.plesk.ConfigurePlesk;
-import com.godaddy.vps4.orchestration.hfs.sysadmin.AddUser;
 import com.godaddy.vps4.orchestration.hfs.sysadmin.SetHostname;
 import com.godaddy.vps4.orchestration.hfs.sysadmin.SetPassword;
-import com.godaddy.vps4.orchestration.hfs.sysadmin.ToggleAdmin;
 import com.godaddy.vps4.orchestration.hfs.vm.CreateVm;
+import com.godaddy.vps4.orchestration.panopta.SetupPanopta;
 import com.godaddy.vps4.orchestration.vm.provision.ProvisionRequest;
 import com.godaddy.vps4.orchestration.vm.provision.Vps4ProvisionDedicated;
 import com.godaddy.vps4.vm.ActionService;
@@ -56,14 +48,8 @@ import com.godaddy.vps4.vm.VirtualMachineService;
 import com.godaddy.vps4.vm.VmAlertService;
 import com.godaddy.vps4.vm.VmMetric;
 import com.godaddy.vps4.vm.VmUserService;
-import com.google.inject.Guice;
-import com.google.inject.Injector;
-import com.godaddy.vps4.panopta.PanoptaDataService;
-import com.godaddy.vps4.panopta.PanoptaService;
-import com.godaddy.vps4.orchestration.panopta.SetupPanopta;
 
 import gdg.hfs.orchestration.CommandContext;
-import gdg.hfs.vhfs.plesk.PleskService;
 
 public class Vps4ProvisionDedicatedTest {
 
@@ -73,20 +59,10 @@ public class Vps4ProvisionDedicatedTest {
     VirtualMachineService virtualMachineService = mock(VirtualMachineService.class);
     VmService vmService = mock(VmService.class);
     VmUserService vmUserService = mock(VmUserService.class);
-    AllocateIp allocateIp = mock(AllocateIp.class);
     CreateVm createVm = mock(CreateVm.class);
-    BindIp bindIp = mock(BindIp.class);
-    SetHostname setHostname = mock(SetHostname.class);
-    CreateDnsPtrRecord createDnsPtrRecord = mock(CreateDnsPtrRecord.class);
-    SetPassword setPassword = mock(SetPassword.class);
-    ToggleAdmin toggleAdmin = mock(ToggleAdmin.class);
     Vps4MessagingService messagingService = mock(Vps4MessagingService.class);
     CreditService creditService = mock(CreditService.class);
     HfsVmTrackingRecordService hfsVmTrackingRecordService = mock(HfsVmTrackingRecordService.class);
-    ConfigureCpanel configureCpanel = mock(ConfigureCpanel.class);
-    AddUser addUser = mock(AddUser.class);
-    PanoptaService panoptaService = mock(PanoptaService.class);
-    PanoptaDataService panoptaDataService = mock(PanoptaDataService.class);
     VmAlertService vmAlertService = mock(VmAlertService.class);
     Config config = mock(Config.class);
 
@@ -101,31 +77,6 @@ public class Vps4ProvisionDedicatedTest {
                                                                 creditService, config, hfsVmTrackingRecordService,
                                                                 vmAlertService);
 
-    Injector injector = Guice.createInjector(binder -> {
-        binder.bind(ActionService.class).toInstance(actionService);
-        binder.bind(NetworkService.class).toInstance(networkService);
-        binder.bind(VmService.class).toInstance(vmService);
-        binder.bind(VirtualMachineService.class).toInstance(virtualMachineService);
-        binder.bind(VmUserService.class).toInstance(vmUserService);
-        binder.bind(AllocateIp.class).toInstance(allocateIp);
-        binder.bind(CreateVm.class).toInstance(createVm);
-        binder.bind(BindIp.class).toInstance(bindIp);
-        binder.bind(SetHostname.class).toInstance(setHostname);
-        binder.bind(CreateDnsPtrRecord.class).toInstance(createDnsPtrRecord);
-        binder.bind(ToggleAdmin.class).toInstance(toggleAdmin);
-        binder.bind(PleskService.class).toInstance(mock(PleskService.class));
-        binder.bind(ConfigurePlesk.class).toInstance(mock(ConfigurePlesk.class));
-        binder.bind(Vps4MessagingService.class).toInstance(messagingService);
-        binder.bind(CreditService.class).toInstance(creditService);
-        binder.bind(HfsVmTrackingRecordService.class).toInstance(hfsVmTrackingRecordService);
-        binder.bind(SetPassword.class).toInstance(setPassword);
-        binder.bind(ConfigureCpanel.class).toInstance(configureCpanel);
-        binder.bind(AddUser.class).toInstance(addUser);
-        binder.bind(PanoptaService.class).toInstance(panoptaService);
-        binder.bind(PanoptaDataService.class).toInstance(panoptaDataService);
-        binder.bind(VmAlertService.class).toInstance(vmAlertService);
-    });
-
     CommandContext context = mock(CommandContext.class);
 
     VirtualMachine vm;
@@ -133,7 +84,6 @@ public class Vps4ProvisionDedicatedTest {
     ProvisionRequest request;
     VmAddress hfsIp;
     String expectedServerName;
-    MailRelayUpdate mrUpdate;
     String username = "tester";
     UUID vmId = UUID.randomUUID();
     Image image;
@@ -142,10 +92,9 @@ public class Vps4ProvisionDedicatedTest {
     int diskGib;
     UUID orionGuid = UUID.randomUUID();
     long hfsVmId = 42;
-    String panoptaCustomerKey = "fakePanoptaPartnerCustomerKey-";
 
     @Before
-    public void setupTest() throws Exception {
+    public void setupTest() {
         MockitoAnnotations.initMocks(this);
         this.image = new Image();
         image.operatingSystem = Image.OperatingSystem.LINUX;
@@ -205,34 +154,34 @@ public class Vps4ProvisionDedicatedTest {
     }
 
     @Test
-    public void provisionVmTestUserHasAdminAccess() throws Exception {
+    public void provisionVmTestUserHasAdminAccess() {
         this.image.controlPanel = ControlPanel.MYH;
         command.executeWithAction(context, this.request);
         verify(vmUserService, times(1)).updateUserAdminAccess(username, vmId, true);
     }
 
     @Test
-    public void provisionVmTestUserDoesntHaveAdminAccess() throws Exception {
+    public void provisionVmTestUserDoesntHaveAdminAccess() {
         command.executeWithAction(context, this.request);
         verify(vmUserService, times(1)).updateUserAdminAccess(username, vmId, false);
     }
 
     @Test
-    public void provisionVmTestPleskUserDoesntHaveAdminAccess() throws Exception {
+    public void provisionVmTestPleskUserDoesntHaveAdminAccess() {
         this.image.controlPanel = ControlPanel.PLESK;
         command.executeWithAction(context, this.request);
         verify(vmUserService, times(1)).updateUserAdminAccess(username, vmId, false);
     }
 
     @Test
-    public void testSendSetupEmail() throws MissingShopperIdException, IOException {
+    public void testSendSetupEmail() {
         command.executeWithAction(context, this.request);
         verify(messagingService, times(1)).sendSetupEmail(shopperId, expectedServerName,
                 hfsIp.ip_address, orionGuid.toString(), this.vmInfo.isManaged);
     }
 
     @Test
-    public void testSendSetupEmailDoesNotThrowException() throws MissingShopperIdException, IOException {
+    public void testSendSetupEmailDoesNotThrowException() {
         when(messagingService.sendSetupEmail(anyString(), anyString(), anyString(), anyString(), anyBoolean()))
                 .thenThrow(new RuntimeException("Unit test exception"));
 

@@ -48,6 +48,9 @@ public class Vps4AddMonitoring extends ActionCommand<VmActionRequest, Void> {
         setupRequest.orionGuid = vm.orionGuid;
         setupRequest.hfsVmId = vm.hfsVmId;
         setupRequest.shopperId = getShopperId();
+        if (vm.primaryIpAddress != null) {
+            setupRequest.fqdn = vm.primaryIpAddress.ipAddress;
+        }
         context.execute(SetupPanopta.class, setupRequest);
     }
 

@@ -89,11 +89,11 @@ public class Vps4AddMonitoringTest {
         verify(context, never()).execute(eq(RemoveNodePingMonitoring.class), any());
     }
 
+    @Test
     public void skipsRemoveNodePingIfPingCheckIdNull() {
         vm.primaryIpAddress.pingCheckId = null;
         command.execute(context, req);
 
         verify(context, never()).execute(eq(RemoveNodePingMonitoring.class), any());
     }
-
 }

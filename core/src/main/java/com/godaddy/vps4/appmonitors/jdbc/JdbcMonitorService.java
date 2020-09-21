@@ -12,10 +12,10 @@ import javax.sql.DataSource;
 
 import com.godaddy.hfs.jdbc.Sql;
 import com.godaddy.vps4.appmonitors.BackupJobAuditData;
+import com.godaddy.vps4.appmonitors.HvBlockingSnapshotsData;
 import com.godaddy.vps4.appmonitors.MonitorService;
 import com.godaddy.vps4.appmonitors.MonitoringCheckpoint;
 import com.godaddy.vps4.appmonitors.SnapshotActionData;
-import com.godaddy.vps4.appmonitors.HvBlockingSnapshotsData;
 import com.godaddy.vps4.jdbc.Vps4ReportsDataSource;
 import com.godaddy.vps4.util.TimestampUtils;
 import com.godaddy.vps4.vm.ActionStatus;
@@ -141,7 +141,7 @@ public class JdbcMonitorService implements MonitorService {
     }
 
     private MonitoringCheckpoint mapActionCheckpoint(ResultSet resultSet) throws SQLException {
-        if(resultSet == null) {
+        if (resultSet == null) {
             return null;
         }
 

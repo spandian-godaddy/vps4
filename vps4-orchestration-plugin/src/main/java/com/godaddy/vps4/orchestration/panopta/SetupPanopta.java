@@ -39,7 +39,6 @@ public class SetupPanopta implements Command<SetupPanopta.Request, Void> {
 
     @Override
     public Void execute(CommandContext context, Request request) {
-
         // get panopta details from vps4 DB
         PanoptaCustomerDetails panoptaCustomerDetails = panoptaDataService.getPanoptaCustomerDetails(request.shopperId);
         PanoptaServerDetails panoptaServerDetails = panoptaDataService.getPanoptaServerDetails(request.vmId);
@@ -71,7 +70,13 @@ public class SetupPanopta implements Command<SetupPanopta.Request, Void> {
     private void installPanoptaOnProvision(PanoptaCustomerDetails panoptaCustomerDetails, Request request,
                                            CommandContext context) {
         request.disableServerMatch = true;
-        installPanoptaOnVm(panoptaCustomerDetails.getCustomerKey(), null, request, context);
+        try {
+            installPanoptaOnVm(panoptaCustomerDetails.getCustomerKey(), null, request, context);
+        } catch (Exception e) {
+            logger.error("Exception while installing Panopta on VM {} for shopper {}: {}",
+                         request.vmId, request.shopperId, e);
+            return;
+        }
         updateVps4DbWithPanoptaServerInfo(context, request);
     }
 

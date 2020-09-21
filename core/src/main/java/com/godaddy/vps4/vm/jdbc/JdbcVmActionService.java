@@ -20,6 +20,7 @@ import com.godaddy.vps4.vm.Action;
 import com.godaddy.vps4.vm.ActionService;
 import com.godaddy.vps4.vm.ActionStatus;
 import com.godaddy.vps4.vm.ActionType;
+import com.godaddy.vps4.vm.VirtualMachine;
 
 public class JdbcVmActionService implements ActionService {
 
@@ -108,7 +109,7 @@ public class JdbcVmActionService implements ActionService {
 
         String vmIdStr = rs.getString("vm_id");
         UUID vmid = null;
-        if (vmIdStr != null){
+        if (vmIdStr != null) {
             vmid = UUID.fromString(vmIdStr);
         }
 
@@ -149,8 +150,22 @@ public class JdbcVmActionService implements ActionService {
                 + " JOIN action_status s ON s.status_id=a.status_id"
                 + " JOIN action_type t ON t.type_id=a.action_type_id"
                 + " WHERE s.status != 'COMPLETE'"
-                + " AND now_utc() - a.created >= INTERVAL '" + thresholdInMinutes + " minutes';",
+                + " AND now_utc() - a.created >= INTERVAL '" + thresholdInMinutes + " minutes'",
                 Sql.listOf(this::mapAction));
     }
 
+    @Override
+    public List<Action> getCreatesWithoutPanopta(long windowSize) {
+        return Sql.with(dataSource).exec(
+                "SELECT va.*, acs.status, act.type " +
+                        "FROM vm_action va " +
+                        "JOIN action_type act ON va.action_type_id = act.type_id " +
+                        "JOIN action_status acs ON va.status_id = acs.status_id " +
+                        "LEFT JOIN panopta_server ps ON va.vm_id = ps.vm_id " +
+                        "WHERE ps.vm_id IS NULL " +
+                        "AND act.type = 'CREATE_VM' " +
+                        "AND acs.status = 'COMPLETE' " +
+                        "ORDER BY va.created DESC LIMIT ?",
+                Sql.listOf(this::mapAction), windowSize);
+    }
 }

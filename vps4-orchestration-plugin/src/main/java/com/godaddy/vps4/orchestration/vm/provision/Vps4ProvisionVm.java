@@ -343,7 +343,6 @@ public class Vps4ProvisionVm extends ActionCommand<ProvisionRequest, Vps4Provisi
     }
 
     private void configureMonitoring(String ipAddress, long hfsVmId) {
-        // TODO: remove soon after launch
         // gate panopta installation using a feature flag
         if (request.vmInfo.isPanoptaEnabled) {
             installPanopta(ipAddress, hfsVmId);

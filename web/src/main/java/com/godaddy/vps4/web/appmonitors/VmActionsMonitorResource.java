@@ -2,8 +2,10 @@ package com.godaddy.vps4.web.appmonitors;
 
 import java.time.Duration;
 import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
@@ -250,5 +252,34 @@ public class VmActionsMonitorResource {
             notes = "Find all VM id's that are failing destroy and potentially orphaning server and ip resources")
     public List<VmActionData> getAllFailedDestroys(@QueryParam("thresholdInMinutes") @DefaultValue("60") long thresholdInMinutes) {
         return mapActionsToVmActionData(vmActionService.getUnfinishedDestroyActions(thresholdInMinutes));
+    }
+
+    @GET
+    @Path("/createsWithoutPanopta")
+    @ApiOperation(value = "Find all VMs that were provisioned without Panopta",
+            notes = "Find all VM create actions that completed without installing Panopta. A high percentage of " +
+                    "these usually means Panopta is broken (their agent install is timing out, their yum repo is " +
+                    "corrupt, etc).")
+    public ActionTypeErrorData getCreatesWithoutPanopta(
+            @QueryParam("windowSize") @DefaultValue("10") long windowSize) {
+        List<Action> errors = vmActionService.getCreatesWithoutPanopta(windowSize);
+        if (errors.isEmpty()) {
+            return new ActionTypeErrorData(ActionType.CREATE_VM,
+                                           0,
+                                           0,
+                                           errors);
+        } else {
+            ActionListFilters actionFilters = new ActionListFilters();
+            actionFilters.byStatus(ActionStatus.COMPLETE);
+            actionFilters.byType(ActionType.CREATE_VM);
+            actionFilters.setLimit(windowSize);
+            List<Long> allCreateIds = getFilteredActions(actionFilters)
+                    .stream().map(a -> a.actionId).collect(Collectors.toList());
+            errors.removeIf(e -> !allCreateIds.contains(e.id));
+            return new ActionTypeErrorData(ActionType.CREATE_VM,
+                                           ((double) errors.size() / allCreateIds.size()) * 100,
+                                           getCountOfAffectedAccounts(errors),
+                                           errors);
+        }
     }
 }

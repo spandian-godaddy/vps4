@@ -148,4 +148,8 @@ public class JdbcSnapshotActionService implements ActionService {
         throw new UnsupportedOperationException("Not yet implemented for snapshots");
     }
 
+    @Override
+    public List<Action> getCreatesWithoutPanopta(long windowSize) {
+        throw new UnsupportedOperationException("Not yet implemented for snapshots");
+    }
 }
