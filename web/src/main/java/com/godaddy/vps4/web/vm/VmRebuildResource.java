@@ -164,7 +164,7 @@ public class VmRebuildResource {
                 config.get("ovh.zone", null);
         rebuildVmInfo.privateLabelId = creditService.getVirtualMachineCredit(vm.orionGuid).getResellerId();
         rebuildVmInfo.orionGuid = vm.orionGuid;
-        rebuildVmInfo.shopperId = user.getShopperId();
+        rebuildVmInfo.shopperId = user.isShopper() ? user.getShopperId(): creditService.getVirtualMachineCredit(vm.orionGuid).getShopperId();
 
         Vps4RebuildVm.Request req = new Vps4RebuildVm.Request();
         req.rebuildVmInfo = rebuildVmInfo;
