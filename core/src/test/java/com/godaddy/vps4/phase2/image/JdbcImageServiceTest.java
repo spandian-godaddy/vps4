@@ -50,7 +50,7 @@ public class JdbcImageServiceTest {
 
     @Test
     public void getImagesIncludesImageNotDisabled() {
-        List<Image> images = injector.getInstance(ImageService.class).getImages("linux", "myh", null, 0);
+        List<Image> images = injector.getInstance(ImageService.class).getImages("linux", "myh", null, "openstack");
         assertTrue(images.stream().map(i -> i.hfsName).anyMatch(name -> name.equals(imageName)));
     }
 }

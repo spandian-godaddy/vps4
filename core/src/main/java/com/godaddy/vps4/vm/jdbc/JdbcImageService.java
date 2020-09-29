@@ -69,9 +69,7 @@ public class JdbcImageService implements ImageService {
     }
 
     @Override
-    public List<Image> getImages(String os, String controlPanel, String hfsName, int tier) {
-        String tierQuery = (tier == 0) ? "" : " AND tier = " + tier;
-
+    public List<Image> getImages(String os, String controlPanel, String hfsName, String platform) {
         return Sql.with(dataSource).exec("SELECT image.image_id, image.name, image.hfs_name, image.control_panel_id, image.os_type_id, "+
                 "st.server_type_id, st.server_type, st.platform " +
                 " FROM image AS image " +
@@ -82,14 +80,9 @@ public class JdbcImageService implements ImageService {
                 " AND   (?::text is null or LOWER(os.name) = LOWER(?))" +
                 " AND   (?::text is null or LOWER(cp.name) = LOWER(?))" +
                 " AND   (?::text is null or LOWER(image.hfs_name) = LOWER(?))" +
-                " AND st.server_type_id in " +
-                    "(SELECT server_type_id " +
-                        "FROM virtual_machine_spec " +
-                        "WHERE valid_until = 'infinity' "+
-                        tierQuery +
-                        "GROUP BY server_type_id)",
+                " AND   (?::text is null or LOWER(st.platform) = LOWER(?))",
                 Sql.listOf(this::mapImage),
-                os, os, controlPanel, controlPanel, hfsName, hfsName);
+                os, os, controlPanel, controlPanel, hfsName, hfsName,  platform, platform);
     }
 
     private Image mapImage(ResultSet rs) throws SQLException {

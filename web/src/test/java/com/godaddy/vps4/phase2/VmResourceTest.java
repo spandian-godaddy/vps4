@@ -100,9 +100,10 @@ public class VmResourceTest {
     }
 
     private VirtualMachine createTestServer(int tier) {
+        String imageName = tier < 60 ? "hfs-centos-7" : "centos7_64";
         UUID orionGuid = UUID.randomUUID();
         Vps4User vps4User = userService.getOrCreateUserForShopper(GDUserMock.DEFAULT_SHOPPER, "1");
-        VirtualMachine server = SqlTestData.insertTestVm(orionGuid, vps4User.getId(), dataSource, "centos-7", tier);
+        VirtualMachine server = SqlTestData.insertTestVm(orionGuid, vps4User.getId(), dataSource, imageName, tier);
         long ipAddressId = SqlTestData.getNextIpAddressId(dataSource);
         SqlTestData.insertTestIp(ipAddressId, server.vmId, "127.0.0." + ipAddressId, IpAddressType.PRIMARY, dataSource);
         server = virtualMachineService.getVirtualMachine(server.vmId);

@@ -33,7 +33,11 @@ public class JdbcPlanServiceTest {
 
     @Before
     public void prepareTest() {
-        String insertQuery = "INSERT INTO plan (pfid, package_id, term_months, os_type_id, spec_id, control_panel_id, enabled) VALUES (?,?,?,?,(select distinct spec_id from virtual_machine_spec where tier = ? and valid_until = 'infinity'),?,?)";
+        String insertQuery = "INSERT INTO plan (pfid, package_id, term_months, os_type_id, spec_id, control_panel_id, enabled)"
+                + " VALUES (?,?,?,?,"
+                + " (select distinct spec_id from virtual_machine_spec"
+                + "  where tier = ? and server_type_id = 1 and valid_until = 'infinity'),"
+                + " ?,?)";
         Sql.with(dataSource).exec(insertQuery, null, 123, "test_plan_tier_1", 12, 1, 10, 1, true);
         Sql.with(dataSource).exec(insertQuery, null, 234, "test_plan_tier_2", 12, 1, 20, 1, true);
         Sql.with(dataSource).exec(insertQuery, null, 345, "test_plan_tier_3", 12, 1, 30, 1, false);

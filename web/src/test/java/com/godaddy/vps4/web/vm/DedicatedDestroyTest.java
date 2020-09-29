@@ -12,7 +12,6 @@ import java.util.UUID;
 
 import javax.sql.DataSource;
 
-import com.godaddy.vps4.util.TroubleshootVmService;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -38,6 +37,7 @@ import com.godaddy.vps4.security.SecurityModule;
 import com.godaddy.vps4.security.Vps4UserService;
 import com.godaddy.vps4.security.jdbc.JdbcPrivilegeService;
 import com.godaddy.vps4.snapshot.SnapshotModule;
+import com.godaddy.vps4.util.TroubleshootVmService;
 import com.godaddy.vps4.vm.AccountStatus;
 import com.godaddy.vps4.vm.Action;
 import com.godaddy.vps4.vm.ActionService;
@@ -48,6 +48,7 @@ import com.godaddy.vps4.vm.DataCenterService;
 import com.godaddy.vps4.vm.ImageService;
 import com.godaddy.vps4.vm.ServerSpec;
 import com.godaddy.vps4.vm.ServerType;
+import com.godaddy.vps4.vm.ServerType.Platform;
 import com.godaddy.vps4.vm.VirtualMachine;
 import com.godaddy.vps4.vm.VirtualMachineService;
 import com.godaddy.vps4.vm.VmUserService;
@@ -134,6 +135,7 @@ public class DedicatedDestroyTest {
         ServerSpec spec = new ServerSpec();
         spec.serverType = new ServerType();
         spec.serverType.serverType = ServerType.Type.DEDICATED;
+        spec.serverType.platform = Platform.OVH;
         vm.spec = spec;
         when(virtualMachineService.getVirtualMachine(any(UUID.class))).thenReturn(vm);
 
@@ -171,12 +173,26 @@ public class DedicatedDestroyTest {
     @Test
     public void testDestroyVM() {
         vm.spec.serverType.serverType = ServerType.Type.VIRTUAL;
+        vm.spec.serverType.platform = Platform.OPENSTACK;
 
         vmResource.destroyVm(UUID.randomUUID());
         verify(commandService, times(1)).executeCommand(commandGroupSpecArgumentCaptor.capture());
         CommandGroupSpec commandGroupSpec = commandGroupSpecArgumentCaptor.getValue();
         CommandSpec commandSpec = commandGroupSpec.commands.get(0);
         Assert.assertEquals("Vps4DestroyVm", commandSpec.command);
+
+    }
+
+    @Test
+    public void testDestroyOptimizedHostingVM() {
+        vm.spec.serverType.serverType = ServerType.Type.VIRTUAL;
+        vm.spec.serverType.platform = Platform.OPTIMIZED_HOSTING;
+
+        vmResource.destroyVm(UUID.randomUUID());
+        verify(commandService, times(1)).executeCommand(commandGroupSpecArgumentCaptor.capture());
+        CommandGroupSpec commandGroupSpec = commandGroupSpecArgumentCaptor.getValue();
+        CommandSpec commandSpec = commandGroupSpec.commands.get(0);
+        Assert.assertEquals("Vps4DestroyOHVm", commandSpec.command);
 
     }
 }

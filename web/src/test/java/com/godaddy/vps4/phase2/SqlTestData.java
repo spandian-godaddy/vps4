@@ -45,7 +45,7 @@ public class SqlTestData {
     }
 
     public static VirtualMachine insertDedicatedTestVm(UUID orionGuid, DataSource dataSource) {
-        return insertTestVm(orionGuid, 1, dataSource, "centos-7", 140);
+        return insertTestVm(orionGuid, 1, dataSource, "centos7_64", 140);
     }
 
     public static VirtualMachine insertTestVm(UUID orionGuid, DataSource dataSource) {
@@ -53,7 +53,7 @@ public class SqlTestData {
     }
 
     public static VirtualMachine insertTestVm(UUID orionGuid, long vps4UserId, DataSource dataSource){
-        return insertTestVm(orionGuid, vps4UserId, dataSource, "centos-7");
+        return insertTestVm(orionGuid, vps4UserId, dataSource, "hfs-centos-7");
     }
 
     public static VirtualMachine insertTestVm(UUID orionGuid, long vps4UserId, DataSource dataSource, String imageName) {

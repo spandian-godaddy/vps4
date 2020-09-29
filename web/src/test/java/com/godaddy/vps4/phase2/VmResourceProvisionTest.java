@@ -1,6 +1,8 @@
 package com.godaddy.vps4.phase2;
 
+import static org.junit.Assert.assertEquals;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.time.Instant;
@@ -15,6 +17,7 @@ import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
+import org.mockito.ArgumentCaptor;
 
 import com.godaddy.vps4.credit.CreditService;
 import com.godaddy.vps4.credit.VirtualMachineCredit;
@@ -38,12 +41,23 @@ import com.google.inject.Guice;
 import com.google.inject.Injector;
 import com.google.inject.Provides;
 
+import gdg.hfs.orchestration.CommandGroupSpec;
+import gdg.hfs.orchestration.CommandService;
+
 public class VmResourceProvisionTest {
 
     @Inject DataSource dataSource;
 
     private GDUser user;
     private CreditService creditService;
+    private CommandService mockCmdService;
+
+    private Map<String, String> planFeatures;
+    private Map<String, String> productMeta;
+    private UUID orionGuid;
+    private String resellerId;
+    private AccountStatus accountStatus;
+    private ProvisionVmRequest request;
 
     private Injector injector = Guice.createInjector(
             new DatabaseModule(),
@@ -71,7 +85,28 @@ public class VmResourceProvisionTest {
         System.setProperty("hfs.sgid.prefix", SqlTestData.TEST_VM_SGID);
         injector.injectMembers(this);
         creditService = injector.getInstance(CreditService.class);
+        mockCmdService = injector.getInstance(CommandService.class);
+
+        orionGuid = UUID.randomUUID();
+        resellerId = "1";
+        accountStatus = AccountStatus.ACTIVE;
+
         user = GDUserMock.createShopper();
+        planFeatures = new HashMap<>();
+        planFeatures.put("tier", String.valueOf(10));
+        planFeatures.put("managed_level", String.valueOf(1));
+        planFeatures.put("control_panel_type", "myh");
+        planFeatures.put("monitoring", String.valueOf(0));
+        planFeatures.put("operatingsystem", "linux");
+
+        productMeta = new HashMap<>();
+
+        request = new ProvisionVmRequest();
+        request.orionGuid = orionGuid;
+        request.dataCenterId = 1;
+        request.image = "hfs-centos-7";
+        request.name = SqlTestData.TEST_VM_NAME;
+        request.password = "Password1!";
     }
 
     @After
@@ -83,26 +118,9 @@ public class VmResourceProvisionTest {
         return injector.getInstance(VmResource.class);
     }
 
-    private VirtualMachineCredit createVmCredit(String controlPanel,
-            boolean claimed, AccountStatus accountStatus) {
-        return createVmCredit(controlPanel, claimed, accountStatus, "1");
-    }
-
-    private VirtualMachineCredit createVmCredit(String controlPanel, boolean claimed,
-            AccountStatus accountStatus, String resellerId) {
-        Map<String, String> planFeatures = new HashMap<>();
-        planFeatures.put("tier", String.valueOf(10));
-        planFeatures.put("managed_level", String.valueOf(1));
-        planFeatures.put("control_panel_type", String.valueOf(controlPanel));
-        planFeatures.put("monitoring", String.valueOf(0));
-        planFeatures.put("operatingsystem", "linux");
-
-        Map<String, String> productMeta = new HashMap<>();
-        if (claimed)
-            productMeta.put("provision_date", Instant.now().toString());
-
+    private VirtualMachineCredit createVmCredit() {
         return new VirtualMachineCredit.Builder(mock(DataCenterService.class))
-            .withAccountGuid(UUID.randomUUID().toString())
+            .withAccountGuid(orionGuid.toString())
             .withAccountStatus(accountStatus)
             .withShopperID(GDUserMock.DEFAULT_SHOPPER)
             .withResellerID(resellerId)
@@ -111,19 +129,8 @@ public class VmResourceProvisionTest {
             .build();
     }
 
-    private ProvisionVmRequest createProvisionVmRequest(UUID orionGuid) {
-        ProvisionVmRequest request = new ProvisionVmRequest();
-        request.orionGuid = orionGuid;
-        request.dataCenterId = 1;
-        request.image = "hfs-centos-7";
-        request.name = SqlTestData.TEST_VM_NAME;
-        request.password = "Password1!";
-        return request;
-    }
-
     private void testProvisionVm() {
-        VirtualMachineCredit credit = createVmCredit("myh", false, AccountStatus.ACTIVE);
-        ProvisionVmRequest request = createProvisionVmRequest(credit.getOrionGuid());
+        VirtualMachineCredit credit = createVmCredit();
         when(creditService.getVirtualMachineCredit(credit.getOrionGuid())).thenReturn(credit);
 
         VmAction vmAction = getVmResource().provisionVm(request);
@@ -155,14 +162,37 @@ public class VmResourceProvisionTest {
     }
 
     @Test
-    public void testProvisionVmInvalidCredit() {
+    public void testProvisionVmInvalidCreditCP() {
         // Credit doesn't match provision request image
-        VirtualMachineCredit credit = createVmCredit("cpanel", false, AccountStatus.ACTIVE);
-        ProvisionVmRequest request = createProvisionVmRequest(credit.getOrionGuid());
-        when(creditService.getVirtualMachineCredit(credit.getOrionGuid())).thenReturn(credit);
+        planFeatures.put("control_panel_type", "cpanel");
 
         try {
-            getVmResource().provisionVm(request);
+            testProvisionVm();
+            Assert.fail();
+        } catch (Vps4Exception e) {
+            Assert.assertEquals("INVALID_IMAGE", e.getId());
+        }
+    }
+
+    @Test
+    public void testProvisionVmInvalidCreditOS() {
+        planFeatures.put("operatingsystem", "windows");
+
+        try {
+            testProvisionVm();
+            Assert.fail();
+        } catch (Vps4Exception e) {
+            Assert.assertEquals("INVALID_IMAGE", e.getId());
+        }
+    }
+
+    @Test
+    public void testProvisionVmInvalidCreditDed() {
+        // Ded4 credit doesn't match vps image
+        planFeatures.put("tier", String.valueOf(60));
+
+        try {
+            testProvisionVm();
             Assert.fail();
         } catch (Vps4Exception e) {
             Assert.assertEquals("INVALID_IMAGE", e.getId());
@@ -171,12 +201,11 @@ public class VmResourceProvisionTest {
 
     @Test
     public void testProvisionVmNoSuchCredit() {
-        UUID creditGuid = UUID.randomUUID();
-        ProvisionVmRequest request = createProvisionVmRequest(creditGuid);
-        when(creditService.getVirtualMachineCredit(creditGuid)).thenReturn(null);
+        request.orionGuid = UUID.randomUUID();
+        when(creditService.getVirtualMachineCredit(request.orionGuid)).thenReturn(null);
 
         try {
-            getVmResource().provisionVm(request);
+            testProvisionVm();
             Assert.fail();
         } catch (Vps4Exception e) {
             Assert.assertEquals("CREDIT_NOT_FOUND", e.getId());
@@ -185,12 +214,11 @@ public class VmResourceProvisionTest {
 
     @Test
     public void testProvisionVmCreditClaimed() {
-        VirtualMachineCredit credit = createVmCredit("cpanel", true, AccountStatus.ACTIVE);
-        ProvisionVmRequest request = createProvisionVmRequest(credit.getOrionGuid());
-        when(creditService.getVirtualMachineCredit(credit.getOrionGuid())).thenReturn(credit);
+        planFeatures.put("control_panel_type", "cpanel");
+        productMeta.put("provision_date", Instant.now().toString());
 
         try {
-            getVmResource().provisionVm(request);
+            testProvisionVm();
             Assert.fail();
         } catch (Vps4Exception e) {
             Assert.assertEquals("CREDIT_ALREADY_IN_USE", e.getId());
@@ -199,12 +227,10 @@ public class VmResourceProvisionTest {
 
     @Test
     public void testSuspendedShopperProvisionVm() {
-        VirtualMachineCredit credit = createVmCredit("myh", false, AccountStatus.SUSPENDED);
-        ProvisionVmRequest request = createProvisionVmRequest(credit.getOrionGuid());
-        when(creditService.getVirtualMachineCredit(credit.getOrionGuid())).thenReturn(credit);
+        accountStatus = AccountStatus.SUSPENDED;
 
         try {
-            getVmResource().provisionVm(request);
+            testProvisionVm();
             Assert.fail();
         } catch (Vps4Exception e) {
             Assert.assertEquals("ACCOUNT_SUSPENDED", e.getId());
@@ -216,12 +242,10 @@ public class VmResourceProvisionTest {
         // HEG Reseller is restricted in the reseller_datacenters table to dataCenterID==4
         // VM Create attempts to use dataCenterId=1, so test should fail
         String HEG_RESELLER_ID = "525847";
-        VirtualMachineCredit credit = createVmCredit("myh", false, AccountStatus.ACTIVE, HEG_RESELLER_ID);
-        ProvisionVmRequest request = createProvisionVmRequest(credit.getOrionGuid());
-        when(creditService.getVirtualMachineCredit(credit.getOrionGuid())).thenReturn(credit);
+        resellerId = HEG_RESELLER_ID;
 
         try {
-            getVmResource().provisionVm(request);
+            testProvisionVm();
             Assert.fail();
         } catch (Vps4Exception e) {
             Assert.assertEquals("DATACENTER_UNSUPPORTED", e.getId());
@@ -232,11 +256,41 @@ public class VmResourceProvisionTest {
     public void testProvisionVmSupportedResellerDc() {
         // MT Reseller is restricted in the reseller_datacenters table to dataCenterID==1, so test should succeed
         String MT_RESELLER_ID = "495469";
-        VirtualMachineCredit credit = createVmCredit("myh", false, AccountStatus.ACTIVE, MT_RESELLER_ID);
-        ProvisionVmRequest request = createProvisionVmRequest(credit.getOrionGuid());
-        when(creditService.getVirtualMachineCredit(credit.getOrionGuid())).thenReturn(credit);
+        resellerId = MT_RESELLER_ID;
 
-        VmAction vmAction = getVmResource().provisionVm(request);
-        Assert.assertNotNull(vmAction.commandId);
+        testProvisionVm();
+    }
+
+    @Test
+    public void testProvisionVMUsesOpenStackCmd() {
+        testProvisionVm();
+
+        ArgumentCaptor<CommandGroupSpec> captor = ArgumentCaptor.forClass(CommandGroupSpec.class);
+        verify(mockCmdService).executeCommand(captor.capture());
+        String provisionCmd = captor.getValue().commands.get(0).command;
+        assertEquals("ProvisionVm", provisionCmd);
+    }
+
+    @Test
+    public void testProvisionVMUsesOptimizedHostingCmd() {
+        request.image = "hfs-centos70-x86_64-vmtempl";
+        testProvisionVm();
+
+        ArgumentCaptor<CommandGroupSpec> captor = ArgumentCaptor.forClass(CommandGroupSpec.class);
+        verify(mockCmdService).executeCommand(captor.capture());
+        String provisionCmd = captor.getValue().commands.get(0).command;
+        assertEquals("ProvisionOHVm", provisionCmd);
+    }
+
+    @Test
+    public void testProvisionVMUsesDedicatedCmd() {
+        planFeatures.put("tier", String.valueOf(60));
+        request.image = "centos7_64";
+        testProvisionVm();
+
+        ArgumentCaptor<CommandGroupSpec> captor = ArgumentCaptor.forClass(CommandGroupSpec.class);
+        verify(mockCmdService).executeCommand(captor.capture());
+        String provisionCmd = captor.getValue().commands.get(0).command;
+        assertEquals("ProvisionDedicated", provisionCmd);
     }
 }

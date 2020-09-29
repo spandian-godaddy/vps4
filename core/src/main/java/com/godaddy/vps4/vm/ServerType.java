@@ -1,9 +1,9 @@
 package com.godaddy.vps4.vm;
 
-import java.util.Map;
-
 import static java.util.Arrays.stream;
 import static java.util.stream.Collectors.toMap;
+
+import java.util.Map;
 
 
 public class ServerType {
@@ -29,7 +29,21 @@ public class ServerType {
     }
 
     public enum Platform {
-        OPENSTACK(1), OVH(2);
+        OPENSTACK(1) {
+            @Override public String getZone() {return "openstack.zone";}
+            @Override public String getProvisionCommand() {return "ProvisionVm";}
+            @Override public String getDestroyCommand() {return "Vps4DestroyVm";}
+        },
+        OVH(2) {
+            @Override public String getZone() {return "ovh.zone";}
+            @Override public String getProvisionCommand() {return "ProvisionDedicated";}
+            @Override public String getDestroyCommand() {return "Vps4DestroyDedicated";}
+        },
+        OPTIMIZED_HOSTING(3) {
+            @Override public String getZone() {return "optimizedHosting.zone";}
+            @Override public String getProvisionCommand() {return "ProvisionOHVm";}
+            @Override public String getDestroyCommand() {return "Vps4DestroyOHVm";}
+        };
 
         private final int platformId;
 
@@ -39,6 +53,10 @@ public class ServerType {
 
         private final static Map<Integer, Platform> map = stream(Platform.values())
                 .collect(toMap(type -> type.platformId, type -> type));
+
+        public abstract String getZone();
+        public abstract String getProvisionCommand();
+        public abstract String getDestroyCommand();
 
         public static Platform valueOf(int platformId) {
             return map.get(platformId);
@@ -60,4 +78,5 @@ public class ServerType {
      * The platform used to house the server.
      */
     public Platform platform;
+
 }

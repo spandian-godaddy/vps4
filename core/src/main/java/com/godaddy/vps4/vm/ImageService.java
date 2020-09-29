@@ -13,6 +13,6 @@ public interface ImageService {
     int getImageId(String name);
 
     Image getImage(String name);
-    
-    List<Image> getImages(String os, String controlPanel, String hfsName, int tier);
+
+    List<Image> getImages(String os, String controlPanel, String hfsName, String platform);
 }

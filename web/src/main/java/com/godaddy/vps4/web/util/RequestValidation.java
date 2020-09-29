@@ -8,6 +8,7 @@ import java.util.UUID;
 
 import javax.ws.rs.NotFoundException;
 
+import com.godaddy.hfs.vm.Vm;
 import com.godaddy.vps4.credit.CreditService;
 import com.godaddy.vps4.credit.VirtualMachineCredit;
 import com.godaddy.vps4.jdbc.ResultSubset;
@@ -29,14 +30,16 @@ import com.godaddy.vps4.vm.ActionStatus;
 import com.godaddy.vps4.vm.ActionType;
 import com.godaddy.vps4.vm.DataCenter;
 import com.godaddy.vps4.vm.DataCenterService;
+import com.godaddy.vps4.vm.Image;
+import com.godaddy.vps4.vm.Image.ControlPanel;
+import com.godaddy.vps4.vm.Image.OperatingSystem;
+import com.godaddy.vps4.vm.ServerType.Type;
 import com.godaddy.vps4.vm.VirtualMachine;
 import com.godaddy.vps4.vm.VirtualMachineService;
 import com.godaddy.vps4.web.Vps4Exception;
 import com.godaddy.vps4.web.Vps4NoShopperException;
 import com.godaddy.vps4.web.security.GDUser;
 import com.godaddy.vps4.web.security.GDUser.Role;
-
-import com.godaddy.hfs.vm.Vm;
 
 public class RequestValidation {
     static final int GODADDY_MAIL_RELAY_LIMIT = 10000;
@@ -229,6 +232,28 @@ public class RequestValidation {
             boolean resellerAllowsDc = resellerDataCenters.stream().anyMatch(dc -> dc.dataCenterId == requestedDcId);
             if (!resellerAllowsDc)
                 throw new Vps4Exception("DATACENTER_UNSUPPORTED", "Data Center provided is not supported: " + requestedDcId);
+        }
+    }
+
+    public static void validateRequestedImage(VirtualMachineCredit vmCredit, Image image) {
+        String errMsg = "The image %s (%s:%s) is not valid for this credit.";
+
+        ControlPanel creditCp = validateAndReturnEnumValue(ControlPanel.class, vmCredit.getControlPanel().toUpperCase());
+        if (image.controlPanel != creditCp) {
+            throw new Vps4Exception("INVALID_IMAGE",
+                    String.format(errMsg, image.hfsName, "control panel", image.controlPanel));
+        }
+
+        OperatingSystem creditOs = validateAndReturnEnumValue(OperatingSystem.class, vmCredit.getOperatingSystem().toUpperCase());
+        if (image.operatingSystem != creditOs) {
+            throw new Vps4Exception("INVALID_IMAGE",
+                    String.format(errMsg, image.hfsName, "os", image.operatingSystem));
+        }
+
+        Type creditType = vmCredit.isDed4() ? Type.DEDICATED : Type.VIRTUAL;
+        if (image.serverType.serverType != creditType) {
+            throw new Vps4Exception("INVALID_IMAGE",
+                    String.format(errMsg, image.hfsName, "platform", image.serverType.serverType));
         }
     }
 

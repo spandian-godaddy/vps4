@@ -3,6 +3,7 @@ package com.godaddy.vps4.web.vm;
 import static com.godaddy.vps4.web.util.RequestValidation.getAndValidateUserAccountCredit;
 import static com.godaddy.vps4.web.util.RequestValidation.validateCreditIsNotInUse;
 import static com.godaddy.vps4.web.util.RequestValidation.validateNoConflictingActions;
+import static com.godaddy.vps4.web.util.RequestValidation.validateRequestedImage;
 import static com.godaddy.vps4.web.util.RequestValidation.validateResellerCredit;
 import static com.godaddy.vps4.web.util.RequestValidation.validateServerIsActiveOrUnknown;
 import static com.godaddy.vps4.web.util.RequestValidation.validateServerIsStoppedOrUnknown;
@@ -52,9 +53,9 @@ import com.godaddy.vps4.vm.Action;
 import com.godaddy.vps4.vm.ActionService;
 import com.godaddy.vps4.vm.ActionType;
 import com.godaddy.vps4.vm.DataCenterService;
+import com.godaddy.vps4.vm.Image;
 import com.godaddy.vps4.vm.ProvisionVmInfo;
 import com.godaddy.vps4.vm.ServerSpec;
-import com.godaddy.vps4.vm.ServerType;
 import com.godaddy.vps4.vm.VirtualMachine;
 import com.godaddy.vps4.vm.VirtualMachineService;
 import com.godaddy.vps4.vm.VirtualMachineService.ProvisionVirtualMachineParameters;
@@ -216,13 +217,8 @@ public class VmResource {
         validateCreditIsNotInUse(vmCredit);
         validateResellerCredit(dcService, vmCredit.getResellerId(), provisionRequest.dataCenterId);
 
-        if (imageResource.getImages(vmCredit.getOperatingSystem(), vmCredit.getControlPanel(), provisionRequest.image,
-                                    vmCredit.getTier())
-                         .size() == 0) {
-            // verify that the image matches the request (control panel, managed level, OS)
-            String message = String.format("The image %s is not valid for this credit.", provisionRequest.image);
-            throw new Vps4Exception("INVALID_IMAGE", message);
-        }
+        Image image = imageResource.getImage(provisionRequest.image);
+        validateRequestedImage(vmCredit, image);
 
         ProvisionVirtualMachineParameters params;
         VirtualMachine virtualMachine;
@@ -262,7 +258,8 @@ public class VmResource {
                                        provisionRequest.orionGuid, encryptedPassword, vmCredit.getResellerId()
                                        );
 
-        String provisionClassName = virtualMachine.spec.isVirtualMachine() ? "ProvisionVm" : "ProvisionDedicated";
+        String provisionClassName = virtualMachine.spec.serverType.platform.getProvisionCommand();
+
         CommandState command = Commands.execute(commandService, actionService, provisionClassName, request);
         logger.info("running {} in {}", provisionClassName, command.commandId);
 
@@ -285,7 +282,7 @@ public class VmResource {
         request.serverName = serverName;
         request.orionGuid = orionGuid;
         request.encryptedPassword = encryptedPassword;
-        request.zone = spec.isVirtualMachine() ? config.get("openstack.zone") : config.get("ovh.zone");
+        request.zone = config.get(spec.serverType.platform.getZone());
         request.privateLabelId = resellerId;
         return request;
     }
@@ -301,8 +298,7 @@ public class VmResource {
         // delete all snapshots associated with the VM
         destroyVmSnapshots(vmId);
 
-        String destroyMethod =
-                vm.spec.serverType.serverType == ServerType.Type.DEDICATED ? "Vps4DestroyDedicated" : "Vps4DestroyVm";
+        String destroyMethod = vm.spec.serverType.platform.getDestroyCommand();
 
         VmActionRequest destroyRequest = new VmActionRequest();
         destroyRequest.virtualMachine = vm;
