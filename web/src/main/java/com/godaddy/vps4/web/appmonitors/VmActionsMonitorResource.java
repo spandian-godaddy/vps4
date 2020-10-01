@@ -2,10 +2,8 @@ package com.godaddy.vps4.web.appmonitors;
 
 import java.time.Duration;
 import java.time.Instant;
-import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
@@ -23,8 +21,9 @@ import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
 
 import com.godaddy.vps4.appmonitors.BackupJobAuditData;
+import com.godaddy.vps4.appmonitors.Checkpoint;
 import com.godaddy.vps4.appmonitors.MonitorService;
-import com.godaddy.vps4.appmonitors.MonitoringCheckpoint;
+import com.godaddy.vps4.appmonitors.ActionCheckpoint;
 import com.godaddy.vps4.appmonitors.SnapshotActionData;
 import com.godaddy.vps4.appmonitors.VmActionData;
 import com.godaddy.vps4.appmonitors.HvBlockingSnapshotsData;
@@ -197,7 +196,7 @@ public class VmActionsMonitorResource {
         actionFilters.setLimit(windowSize);
 
         for(ActionType type : ActionType.values()) {
-            MonitoringCheckpoint checkpoint = monitorService.getMonitoringCheckpoint(type);
+            ActionCheckpoint checkpoint = monitorService.getActionCheckpoint(type);
             Instant beginDate = checkpoint == null ? null : checkpoint.checkpoint;
 
             actionFilters.byDateRange(beginDate, null);
@@ -223,27 +222,51 @@ public class VmActionsMonitorResource {
     }
 
     @POST
-    @Path("/checkpoints/{actionType}")
-    public MonitoringCheckpoint setMonitoringCheckpoint(@PathParam("actionType") ActionType actionType) {
-         return monitorService.setMonitoringCheckpoint(actionType);
+    @Path("/checkpoints/actions/{actionType}")
+    public ActionCheckpoint setActionCheckpoint(@PathParam("actionType") ActionType actionType) {
+        return monitorService.setActionCheckpoint(actionType);
     }
 
     @GET
-    @Path("/checkpoints/{actionType}")
-    public MonitoringCheckpoint getMonitoringCheckpoint(@PathParam("actionType") ActionType actionType) {
-        return monitorService.getMonitoringCheckpoint(actionType);
+    @Path("/checkpoints/actions/{actionType}")
+    public ActionCheckpoint getActionCheckpoint(@PathParam("actionType") ActionType actionType) {
+        return monitorService.getActionCheckpoint(actionType);
+    }
+
+    @GET
+    @Path("/checkpoints/actions")
+    public List<ActionCheckpoint> getActionCheckpoints() {
+        return monitorService.getActionCheckpoints();
+    }
+
+    @DELETE
+    @Path("/checkpoints/actions/{actionType}")
+    public void deleteActionCheckpoint(@PathParam("actionType") ActionType actionType) {
+        monitorService.deleteActionCheckpoint(actionType);
+    }
+
+    @POST
+    @Path("/checkpoints/{name}")
+    public Checkpoint setCheckpoint(@PathParam("name") Checkpoint.Name name) {
+        return monitorService.setCheckpoint(name);
+    }
+
+    @GET
+    @Path("/checkpoints/{name}")
+    public Checkpoint getCheckpoint(@PathParam("name") Checkpoint.Name name) {
+        return monitorService.getCheckpoint(name);
     }
 
     @GET
     @Path("/checkpoints")
-    public List<MonitoringCheckpoint> getMonitoringCheckpoints() {
-        return monitorService.getMonitoringCheckpoints();
+    public List<Checkpoint> getCheckpoints() {
+        return monitorService.getCheckpoints();
     }
 
     @DELETE
-    @Path("/checkpoints/{actionType}")
-    public void deleteMonitoringCheckpoint(@PathParam("actionType") ActionType actionType) {
-        monitorService.deleteMonitoringCheckpoint(actionType);
+    @Path("/checkpoints/{name}")
+    public void deleteCheckpoint(@PathParam("name") Checkpoint.Name name) {
+        monitorService.deleteCheckpoint(name);
     }
 
     @GET
@@ -269,8 +292,11 @@ public class VmActionsMonitorResource {
                                            0,
                                            errors);
         } else {
+            Checkpoint checkpoint = monitorService.getCheckpoint(Checkpoint.Name.CREATES_WITHOUT_PANOPTA);
+            Instant beginDate = checkpoint == null ? null : checkpoint.checkpoint;
             ActionListFilters actionFilters = new ActionListFilters();
             actionFilters.byStatus(ActionStatus.COMPLETE);
+            actionFilters.byDateRange(beginDate, null);
             actionFilters.byType(ActionType.CREATE_VM);
             actionFilters.setLimit(windowSize);
             List<Long> allCreateIds = getFilteredActions(actionFilters)

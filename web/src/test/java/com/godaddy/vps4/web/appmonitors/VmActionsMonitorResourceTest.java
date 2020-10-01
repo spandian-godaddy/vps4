@@ -27,8 +27,9 @@ import org.junit.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.ArgumentMatcher;
 
+import com.godaddy.vps4.appmonitors.Checkpoint;
 import com.godaddy.vps4.appmonitors.MonitorService;
-import com.godaddy.vps4.appmonitors.MonitoringCheckpoint;
+import com.godaddy.vps4.appmonitors.ActionCheckpoint;
 import com.godaddy.vps4.appmonitors.SnapshotActionData;
 import com.godaddy.vps4.appmonitors.VmActionData;
 import com.godaddy.vps4.appmonitors.HvBlockingSnapshotsData;
@@ -48,7 +49,6 @@ public class VmActionsMonitorResourceTest {
     private ActionService vmActionService = mock(ActionService.class);
     private VirtualMachineService virtualMachineService = mock(VirtualMachineService.class);
     private List<SnapshotActionData> expectedSnapshotActionData;
-    private List<HvBlockingSnapshotsData> expectedHvBlockingSnapshotsData;
     private long pendingThreshold = 60L;
 
     @Before
@@ -201,10 +201,10 @@ public class VmActionsMonitorResourceTest {
         ResultSubset<Action> resultSubset = getTestResultSet(5, ActionType.START_VM, ActionStatus.COMPLETE);
         resultSubset = getTestResultSet(5, ActionType.START_VM, ActionStatus.ERROR, resultSubset.results);
         ResultSubset<Action> emptyResultSet = new ResultSubset<>(new ArrayList<>(), 0);
-        MonitoringCheckpoint checkpoint = new MonitoringCheckpoint();
+        ActionCheckpoint checkpoint = new ActionCheckpoint();
         checkpoint.checkpoint = Instant.now().minus(1, ChronoUnit.DAYS);
 
-        when(monitorService.getMonitoringCheckpoint(ActionType.START_VM)).thenReturn(checkpoint);
+        when(monitorService.getActionCheckpoint(ActionType.START_VM)).thenReturn(checkpoint);
 
         ArgumentMatcher<ActionListFilters> expectedActionFilters = new ArgumentMatcher<ActionListFilters>() {
             @Override
@@ -257,50 +257,88 @@ public class VmActionsMonitorResourceTest {
     }
 
     @Test
-    public void testGetCheckpoints() {
-        MonitoringCheckpoint checkpoint = new MonitoringCheckpoint();
+    public void testGetActionCheckpoints() {
+        ActionCheckpoint checkpoint = new ActionCheckpoint();
         checkpoint.checkpoint = Instant.now().minus(1, ChronoUnit.DAYS);
         checkpoint.actionType = ActionType.CREATE_VM;
-        MonitoringCheckpoint checkpoint2 = new MonitoringCheckpoint();
+        ActionCheckpoint checkpoint2 = new ActionCheckpoint();
         checkpoint2.checkpoint = Instant.now().minus(1, ChronoUnit.DAYS);
         checkpoint2.actionType = ActionType.STOP_VM;
-        List<MonitoringCheckpoint> checkpoints = new ArrayList<>();
+        List<ActionCheckpoint> checkpoints = new ArrayList<>();
         checkpoints.add(checkpoint);
         checkpoints.add(checkpoint2);
 
-        when(monitorService.getMonitoringCheckpoints()).thenReturn(checkpoints);
+        when(monitorService.getActionCheckpoints()).thenReturn(checkpoints);
 
-        List<MonitoringCheckpoint> actualCheckpoints = vmActionsMonitorResource.getMonitoringCheckpoints();
+        List<ActionCheckpoint> actualCheckpoints = vmActionsMonitorResource.getActionCheckpoints();
 
         Assert.assertEquals(2, actualCheckpoints.size());
     }
 
     @Test
-    public void testGetCheckpoint() {
-        MonitoringCheckpoint checkpoint = new MonitoringCheckpoint();
+    public void testGetActionCheckpoint() {
+        ActionCheckpoint checkpoint = new ActionCheckpoint();
         checkpoint.checkpoint = Instant.now();
         checkpoint.actionType = ActionType.CREATE_VM;
 
-        when(monitorService.getMonitoringCheckpoint(ActionType.CREATE_VM)).thenReturn(checkpoint);
+        when(monitorService.getActionCheckpoint(ActionType.CREATE_VM)).thenReturn(checkpoint);
 
-        MonitoringCheckpoint actualCheckpoint = vmActionsMonitorResource.getMonitoringCheckpoint(ActionType.CREATE_VM);
+        ActionCheckpoint actualCheckpoint = vmActionsMonitorResource.getActionCheckpoint(ActionType.CREATE_VM);
 
         Assert.assertEquals(checkpoint.actionType, actualCheckpoint.actionType);
         Assert.assertEquals(checkpoint.checkpoint, actualCheckpoint.checkpoint);
     }
 
     @Test
+    public void testDeleteActionCheckpoint() {
+        doNothing().when(monitorService).deleteActionCheckpoint(ActionType.CREATE_VM);
+
+        vmActionsMonitorResource.deleteActionCheckpoint(ActionType.CREATE_VM);
+
+        verify(monitorService, times(1)).deleteActionCheckpoint(ActionType.CREATE_VM);
+    }
+
+    @Test
+    public void testGetCheckpoints() {
+        Checkpoint checkpoint = new Checkpoint();
+        checkpoint.checkpoint = Instant.now().minus(1, ChronoUnit.DAYS);
+        checkpoint.name = Checkpoint.Name.CREATES_WITHOUT_PANOPTA;
+        List<Checkpoint> checkpoints = Collections.singletonList(checkpoint);
+
+        when(monitorService.getCheckpoints()).thenReturn(checkpoints);
+
+        List<Checkpoint> actualCheckpoints = vmActionsMonitorResource.getCheckpoints();
+
+        Assert.assertEquals(1, actualCheckpoints.size());
+    }
+
+    @Test
+    public void testGetCheckpoint() {
+        Checkpoint checkpoint = new Checkpoint();
+        checkpoint.checkpoint = Instant.now().minus(1, ChronoUnit.DAYS);
+        checkpoint.name = Checkpoint.Name.CREATES_WITHOUT_PANOPTA;
+
+        when(monitorService.getCheckpoint(Checkpoint.Name.CREATES_WITHOUT_PANOPTA)).thenReturn(checkpoint);
+
+        Checkpoint actualCheckpoint = vmActionsMonitorResource.getCheckpoint(Checkpoint.Name.CREATES_WITHOUT_PANOPTA);
+
+        Assert.assertEquals(checkpoint.name, actualCheckpoint.name);
+        Assert.assertEquals(checkpoint.checkpoint, actualCheckpoint.checkpoint);
+    }
+
+    @Test
     public void testDeleteCheckpoint() {
-        doNothing().when(monitorService).deleteMonitoringCheckpoint(ActionType.CREATE_VM);
+        doNothing().when(monitorService).deleteCheckpoint(Checkpoint.Name.CREATES_WITHOUT_PANOPTA);
 
-        vmActionsMonitorResource.deleteMonitoringCheckpoint(ActionType.CREATE_VM);
+        vmActionsMonitorResource.deleteCheckpoint(Checkpoint.Name.CREATES_WITHOUT_PANOPTA);
 
-        verify(monitorService, times(1)).deleteMonitoringCheckpoint(ActionType.CREATE_VM);
+        verify(monitorService, times(1))
+                .deleteCheckpoint(Checkpoint.Name.CREATES_WITHOUT_PANOPTA);
     }
 
     @Test
     public void testGetHvsBlockingSnapshots() {
-        expectedHvBlockingSnapshotsData = new ArrayList<HvBlockingSnapshotsData>();
+        List<HvBlockingSnapshotsData> expectedHvBlockingSnapshotsData = new ArrayList<>();
         expectedHvBlockingSnapshotsData.add(new HvBlockingSnapshotsData("hypervisor1", UUID.randomUUID(),
                                                                         Instant.now().minus(Duration.ofDays(2))));
         when(monitorService.getHvsBlockingSnapshots(anyLong())).thenReturn(expectedHvBlockingSnapshotsData);
@@ -308,5 +346,21 @@ public class VmActionsMonitorResourceTest {
                 actualHvBlockingSnapshotsData = vmActionsMonitorResource.getHvsBlockingSnapshots(anyLong());
         Assert.assertNotNull(actualHvBlockingSnapshotsData);
         Assert.assertEquals(expectedHvBlockingSnapshotsData.size(), actualHvBlockingSnapshotsData.size());
+    }
+
+    @Test
+    public void testGetCreatesWithoutPanopta() {
+        Action action = mock(Action.class);
+        action.type = ActionType.CREATE_VM;
+        List<Action> actions = new ArrayList<>();
+        actions.add(action);
+        ResultSubset<Action> result = new ResultSubset<>(actions, actions.size());
+        when(vmActionService.getActionList(any())).thenReturn(result);
+        when(vmActionService.getCreatesWithoutPanopta(anyLong())).thenReturn(actions);
+        ActionTypeErrorData actualCreates = vmActionsMonitorResource.getCreatesWithoutPanopta(anyLong());
+        Assert.assertEquals(1, actualCreates.affectedAccounts);
+        Assert.assertEquals(100, actualCreates.failurePercentage, 0);
+        Assert.assertEquals(ActionType.CREATE_VM, actualCreates.actionType);
+        Assert.assertEquals(1, actualCreates.failedActions.size());
     }
 }

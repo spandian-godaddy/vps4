@@ -10,8 +10,12 @@ public interface MonitorService {
     List<SnapshotActionData> getVmsBySnapshotActions(long thresholdInMinutes, ActionStatus... status);
     List<HvBlockingSnapshotsData> getHvsBlockingSnapshots(long thresholdInHours);
     List<BackupJobAuditData> getVmsFilteredByNullBackupJob();
-    MonitoringCheckpoint getMonitoringCheckpoint(ActionType actionType);
-    MonitoringCheckpoint setMonitoringCheckpoint(ActionType actionType);
-    void deleteMonitoringCheckpoint(ActionType actionType);
-    List<MonitoringCheckpoint> getMonitoringCheckpoints();
+    ActionCheckpoint getActionCheckpoint(ActionType actionType);
+    ActionCheckpoint setActionCheckpoint(ActionType actionType);
+    void deleteActionCheckpoint(ActionType actionType);
+    List<ActionCheckpoint> getActionCheckpoints();
+    Checkpoint getCheckpoint(Checkpoint.Name name);
+    Checkpoint setCheckpoint(Checkpoint.Name name);
+    void deleteCheckpoint(Checkpoint.Name name);
+    List<Checkpoint> getCheckpoints();
 }

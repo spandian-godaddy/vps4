@@ -12,9 +12,10 @@ import javax.sql.DataSource;
 
 import com.godaddy.hfs.jdbc.Sql;
 import com.godaddy.vps4.appmonitors.BackupJobAuditData;
+import com.godaddy.vps4.appmonitors.Checkpoint;
 import com.godaddy.vps4.appmonitors.HvBlockingSnapshotsData;
 import com.godaddy.vps4.appmonitors.MonitorService;
-import com.godaddy.vps4.appmonitors.MonitoringCheckpoint;
+import com.godaddy.vps4.appmonitors.ActionCheckpoint;
 import com.godaddy.vps4.appmonitors.SnapshotActionData;
 import com.godaddy.vps4.jdbc.Vps4ReportsDataSource;
 import com.godaddy.vps4.util.TimestampUtils;
@@ -108,45 +109,87 @@ public class JdbcMonitorService implements MonitorService {
     }
 
     @Override
-    public MonitoringCheckpoint getMonitoringCheckpoint(ActionType actionType) {
-        return Sql.with(dataSource).exec("SELECT * from monitoring_checkpoint where action_type_id = ?",
-                Sql.nextOrNull(this::mapActionCheckpoint),
-                actionType.getActionTypeId());
+    public ActionCheckpoint getActionCheckpoint(ActionType actionType) {
+        return Sql.with(dataSource).exec("SELECT * from action_checkpoint where action_type_id = ?",
+                                         Sql.nextOrNull(this::mapActionCheckpoint),
+                                         actionType.getActionTypeId());
     }
 
     @Override
-    public MonitoringCheckpoint setMonitoringCheckpoint(ActionType actionType) {
-        MonitoringCheckpoint checkpoint = getMonitoringCheckpoint(actionType);
+    public ActionCheckpoint setActionCheckpoint(ActionType actionType) {
+        ActionCheckpoint checkpoint = getActionCheckpoint(actionType);
         String upsertCheckpointQuery;
         if (checkpoint == null) {
-            upsertCheckpointQuery = "INSERT INTO monitoring_checkpoint(action_type_id) VALUES(?) RETURNING *";
+            upsertCheckpointQuery = "INSERT INTO action_checkpoint(action_type_id) VALUES(?) RETURNING *";
         } else {
-            upsertCheckpointQuery = "UPDATE monitoring_checkpoint SET checkpoint = now_utc() WHERE action_type_id = ? RETURNING *";
+            upsertCheckpointQuery = "UPDATE action_checkpoint SET checkpoint = now_utc() WHERE action_type_id = ? RETURNING *";
         }
 
         return Sql.with(dataSource).exec(upsertCheckpointQuery,
-                Sql.nextOrNull(this::mapActionCheckpoint),
-                actionType.getActionTypeId());
+                                         Sql.nextOrNull(this::mapActionCheckpoint),
+                                         actionType.getActionTypeId());
     }
 
     @Override
-    public void deleteMonitoringCheckpoint(ActionType actionType) {
-        Sql.with(dataSource).exec("DELETE FROM monitoring_checkpoint WHERE action_type_id = ?", null,
-                actionType.getActionTypeId());
+    public void deleteActionCheckpoint(ActionType actionType) {
+        Sql.with(dataSource).exec("DELETE FROM action_checkpoint WHERE action_type_id = ?", null,
+                                  actionType.getActionTypeId());
     }
 
     @Override
-    public List<MonitoringCheckpoint> getMonitoringCheckpoints() {
-        return Sql.with(dataSource).exec("SELECT * FROM monitoring_checkpoint", Sql.listOf(this::mapActionCheckpoint));
+    public List<ActionCheckpoint> getActionCheckpoints() {
+        return Sql.with(dataSource).exec("SELECT * FROM action_checkpoint", Sql.listOf(this::mapActionCheckpoint));
     }
 
-    private MonitoringCheckpoint mapActionCheckpoint(ResultSet resultSet) throws SQLException {
+    @Override
+    public Checkpoint getCheckpoint(Checkpoint.Name name) {
+        return Sql.with(dataSource).exec("SELECT * from checkpoint where name = ?",
+                                         Sql.nextOrNull(this::mapCheckpoint),
+                                         name.toString());
+    }
+
+    @Override
+    public Checkpoint setCheckpoint(Checkpoint.Name name) {
+        Checkpoint checkpoint = getCheckpoint(name);
+        String upsertCheckpointQuery;
+        if (checkpoint == null) {
+            upsertCheckpointQuery = "INSERT INTO checkpoint(name) VALUES(?) RETURNING *";
+        } else {
+            upsertCheckpointQuery = "UPDATE checkpoint SET checkpoint = now_utc() WHERE name = ? RETURNING *";
+        }
+
+        return Sql.with(dataSource).exec(upsertCheckpointQuery, Sql.nextOrNull(this::mapCheckpoint), name.toString());
+    }
+
+    @Override
+    public void deleteCheckpoint(Checkpoint.Name name) {
+        Sql.with(dataSource).exec("DELETE FROM checkpoint WHERE name = ?", null, name.toString());
+    }
+
+    @Override
+    public List<Checkpoint> getCheckpoints() {
+        return Sql.with(dataSource).exec("SELECT * FROM checkpoint", Sql.listOf(this::mapCheckpoint));
+    }
+
+    private ActionCheckpoint mapActionCheckpoint(ResultSet resultSet) throws SQLException {
         if (resultSet == null) {
             return null;
         }
 
-        MonitoringCheckpoint checkpoint = new MonitoringCheckpoint();
+        ActionCheckpoint checkpoint = new ActionCheckpoint();
         checkpoint.actionType = ActionType.valueOf(resultSet.getInt("action_type_id"));
+        checkpoint.checkpoint = resultSet.getTimestamp("checkpoint", TimestampUtils.utcCalendar).toInstant();
+
+        return checkpoint;
+    }
+
+    private Checkpoint mapCheckpoint(ResultSet resultSet) throws SQLException {
+        if (resultSet == null) {
+            return null;
+        }
+
+        Checkpoint checkpoint = new Checkpoint();
+        checkpoint.name = Checkpoint.Name.valueOf(resultSet.getString("name"));
         checkpoint.checkpoint = resultSet.getTimestamp("checkpoint", TimestampUtils.utcCalendar).toInstant();
 
         return checkpoint;

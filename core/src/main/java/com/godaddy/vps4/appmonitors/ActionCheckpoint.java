@@ -4,7 +4,7 @@ import com.godaddy.vps4.vm.ActionType;
 
 import java.time.Instant;
 
-public class MonitoringCheckpoint {
+public class ActionCheckpoint {
     public ActionType actionType;
     public Instant checkpoint;
 }
