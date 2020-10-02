@@ -6,7 +6,9 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.time.Instant;
+import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
@@ -241,14 +243,20 @@ public class VmResourceProvisionTest {
     public void testProvisionVmUnsupportedResellerDc() {
         // HEG Reseller is restricted in the reseller_datacenters table to dataCenterID==4
         // VM Create attempts to use dataCenterId=1, so test should fail
-        String HEG_RESELLER_ID = "525847";
-        resellerId = HEG_RESELLER_ID;
+        String heartInternet = "525848";
+        String tsoHost = "527397";
+        String domainFactory = "525847";
+        String hostEurope = "525847";
 
-        try {
-            testProvisionVm();
-            Assert.fail();
-        } catch (Vps4Exception e) {
-            Assert.assertEquals("DATACENTER_UNSUPPORTED", e.getId());
+        List<String> emea_brand_resellers = Arrays.asList(heartInternet, tsoHost, domainFactory, hostEurope);
+        for (String reseller : emea_brand_resellers) {
+            resellerId = reseller;
+            try {
+                testProvisionVm();
+                Assert.fail("DATACENTER_UNSUPPORTED exception expected for reseller id: " + resellerId);
+            } catch (Vps4Exception e) {
+                Assert.assertEquals("DATACENTER_UNSUPPORTED", e.getId());
+            }
         }
     }
 
