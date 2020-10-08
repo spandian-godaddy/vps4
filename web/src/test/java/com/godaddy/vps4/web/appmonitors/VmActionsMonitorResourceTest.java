@@ -188,12 +188,37 @@ public class VmActionsMonitorResourceTest {
         };
         when(vmActionService.getActionList(argThat(expectedActionFilters))).thenReturn(resultSubset).thenReturn(emptyResultSet);
 
-        List<ActionTypeErrorData> errorData = vmActionsMonitorResource.getFailedActionsForAllTypes(10);
+        List<ActionTypeErrorData> errorData = vmActionsMonitorResource.getFailedActionsForAllTypes(10, Collections.<String> emptyList());
         Assert.assertEquals(1, errorData.size());
         ActionTypeErrorData actionTypeErrorData = errorData.get(0);
         Assert.assertEquals(5, actionTypeErrorData.failedActions.size());
         Assert.assertEquals(ActionType.START_VM, actionTypeErrorData.actionType);
+        Assert.assertEquals(false, actionTypeErrorData.isCritical);
         Assert.assertTrue(actionTypeErrorData.failurePercentage == 50.0);
+    }
+
+    @Test
+    public void testCheckForFailingActionsWithCriticalActionType() {
+        ResultSubset<Action> resultSubset = getTestResultSet(5, ActionType.START_VM, ActionStatus.COMPLETE);
+        resultSubset = getTestResultSet(5, ActionType.START_VM, ActionStatus.ERROR, resultSubset.results);
+        ResultSubset<Action> emptyResultSet = new ResultSubset<>(new ArrayList<>(), 0);
+        List<String> criticalActionList = Arrays.asList("START_VM");
+
+        ArgumentMatcher<ActionListFilters> expectedActionFilters = new ArgumentMatcher<ActionListFilters>() {
+            @Override
+            public boolean matches(Object item) {
+                ActionListFilters actionFilters = (ActionListFilters)item;
+                return actionFilters.getTypeList().get(0).equals(ActionType.START_VM);
+            }
+        };
+        when(vmActionService.getActionList(argThat(expectedActionFilters))).thenReturn(resultSubset).thenReturn(emptyResultSet);
+
+        List<ActionTypeErrorData> errorData = vmActionsMonitorResource.getFailedActionsForAllTypes(10, criticalActionList);
+        Assert.assertEquals(1, errorData.size());
+        ActionTypeErrorData actionTypeErrorData = errorData.get(0);
+        Assert.assertEquals(5, actionTypeErrorData.failedActions.size());
+        Assert.assertEquals(ActionType.START_VM, actionTypeErrorData.actionType);
+        Assert.assertEquals(true, actionTypeErrorData.isCritical);
     }
 
     @Test
@@ -216,7 +241,7 @@ public class VmActionsMonitorResourceTest {
         };
         when(vmActionService.getActionList(argThat(expectedActionFilters))).thenReturn(resultSubset).thenReturn(emptyResultSet);
 
-        List<ActionTypeErrorData> errorData = vmActionsMonitorResource.getFailedActionsForAllTypes(10);
+        List<ActionTypeErrorData> errorData = vmActionsMonitorResource.getFailedActionsForAllTypes(10, Collections.<String> emptyList());
         Assert.assertEquals(1, errorData.size());
         ActionTypeErrorData actionTypeErrorData = errorData.get(0);
         Assert.assertEquals(5, actionTypeErrorData.failedActions.size());
@@ -239,7 +264,7 @@ public class VmActionsMonitorResourceTest {
         };
         when(vmActionService.getActionList(argThat(expectedActionFilters))).thenReturn(resultSubset).thenReturn(emptyResultSet);
 
-        List<ActionTypeErrorData> errorData = vmActionsMonitorResource.getFailedActionsForAllTypes(10);
+        List<ActionTypeErrorData> errorData = vmActionsMonitorResource.getFailedActionsForAllTypes(10, Collections.<String> emptyList());
         Assert.assertEquals(1, errorData.size());
         ActionTypeErrorData actionTypeErrorData = errorData.get(0);
         Assert.assertEquals(3, actionTypeErrorData.failedActions.size());
@@ -252,7 +277,7 @@ public class VmActionsMonitorResourceTest {
     public void testCheckForFailingActionsEmpty() {
         when(vmActionService.getActionList(any(ActionListFilters.class))).thenReturn(null);
 
-        List<ActionTypeErrorData> errorData = vmActionsMonitorResource.getFailedActionsForAllTypes(10);
+        List<ActionTypeErrorData> errorData = vmActionsMonitorResource.getFailedActionsForAllTypes(10, Collections.<String> emptyList());
         Assert.assertEquals(0, errorData.size());
     }
 

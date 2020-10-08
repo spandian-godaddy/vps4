@@ -1,5 +1,7 @@
 package com.godaddy.vps4.web.appmonitors;
 
+import static com.godaddy.vps4.web.util.RequestValidation.validateAndReturnEnumValue;
+
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -190,10 +192,15 @@ public class VmActionsMonitorResource {
     @GET
     @Path("/failedActionsPercent")
     public List<ActionTypeErrorData> getFailedActionsForAllTypes(
-            @ApiParam(value = "Number of actions to use in percentage calculation.") @DefaultValue("10") @QueryParam("windowSize") long windowSize) {
+            @ApiParam(value = "Number of actions to use in percentage calculation.") @DefaultValue("20") @QueryParam("windowSize") long windowSize,
+            @ApiParam(value = "A list of actions to filter the actions.") @DefaultValue("CREATE_VM")  @QueryParam("criticalActionType") List<String> criticalActionTypeList) {
         List<ActionTypeErrorData> result = new ArrayList<>();
         ActionListFilters actionFilters = new ActionListFilters();
         actionFilters.setLimit(windowSize);
+
+        List<ActionType> criticalActionTypeListToCheck = criticalActionTypeList.stream()
+                                                .map(t -> validateAndReturnEnumValue(ActionType.class, t))
+                                                .collect(Collectors.toList());
 
         for(ActionType type : ActionType.values()) {
             ActionCheckpoint checkpoint = monitorService.getActionCheckpoint(type);
@@ -209,7 +216,8 @@ public class VmActionsMonitorResource {
             if(!errors.isEmpty()) {
                 double failurePercentage = ((double) errors.size() / windowSize) * 100;
                 long affectedAccounts = getCountOfAffectedAccounts(errors);
-                ActionTypeErrorData actionTypeError = new ActionTypeErrorData(type, failurePercentage, affectedAccounts, errors);
+                boolean isCritical = criticalActionTypeListToCheck.contains(type);
+                ActionTypeErrorData actionTypeError = new ActionTypeErrorData(type, failurePercentage, affectedAccounts, isCritical, errors);
                 result.add(actionTypeError);
             }
         }
@@ -290,6 +298,7 @@ public class VmActionsMonitorResource {
             return new ActionTypeErrorData(ActionType.CREATE_VM,
                                            0,
                                            0,
+                                           true,
                                            errors);
         } else {
             Checkpoint checkpoint = monitorService.getCheckpoint(Checkpoint.Name.CREATES_WITHOUT_PANOPTA);
@@ -305,6 +314,7 @@ public class VmActionsMonitorResource {
             return new ActionTypeErrorData(ActionType.CREATE_VM,
                                            ((double) errors.size() / allCreateIds.size()) * 100,
                                            getCountOfAffectedAccounts(errors),
+                                           true,
                                            errors);
         }
     }
