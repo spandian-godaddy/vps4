@@ -268,4 +268,20 @@ public class Vps4ProvisionDedicatedTest {
         command.executeWithAction(context, this.request);
         verify(vmAlertService, never()).disableVmMetricAlert(any(UUID.class), anyString());
     }
+
+    @Test
+    public void rebootWindowsServer() {
+        this.vm.image.operatingSystem = Image.OperatingSystem.WINDOWS;
+        command.executeWithAction(context, this.request);
+        ArgumentCaptor<VmActionRequest> argument = ArgumentCaptor.forClass(VmActionRequest.class);
+        verify(context).execute(eq(Vps4RebootDedicated.class), argument.capture());
+        VmActionRequest actionRequest = argument.getValue();
+        assertEquals(this.vm, actionRequest.virtualMachine);
+    }
+
+    @Test
+    public void doesNotRebootLinuxServer() {
+        command.executeWithAction(context, this.request);
+        verify(context, never()).execute(eq(Vps4RebootDedicated.class), any());
+    }
 }

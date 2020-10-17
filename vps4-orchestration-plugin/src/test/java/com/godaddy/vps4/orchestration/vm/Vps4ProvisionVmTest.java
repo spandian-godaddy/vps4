@@ -271,4 +271,20 @@ public class Vps4ProvisionVmTest {
         verify(context, times(1)).execute(eq("UpdateHfsVmTrackingRecord"),
                                           any(Function.class), eq(Void.class));
     }
+
+    @Test
+    public void rebootWindowsServer() {
+        this.vm.image.operatingSystem = Image.OperatingSystem.WINDOWS;
+        command.executeWithAction(context, this.request);
+        ArgumentCaptor<VmActionRequest> argument = ArgumentCaptor.forClass(VmActionRequest.class);
+        verify(context).execute(eq(Vps4RestartVm.class), argument.capture());
+        VmActionRequest actionRequest = argument.getValue();
+        assertEquals(this.vm, actionRequest.virtualMachine);
+    }
+
+    @Test
+    public void doesNotRebootLinuxServer() {
+        command.executeWithAction(context, this.request);
+        verify(context, never()).execute(eq(Vps4RestartVm.class), any());
+    }
 }

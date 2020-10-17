@@ -47,6 +47,8 @@ import com.godaddy.vps4.orchestration.panopta.SetupPanopta;
 import com.godaddy.vps4.orchestration.scheduler.SetupAutomaticBackupSchedule;
 import com.godaddy.vps4.orchestration.sysadmin.ConfigureMailRelay;
 import com.godaddy.vps4.orchestration.sysadmin.ConfigureMailRelay.ConfigureMailRelayRequest;
+import com.godaddy.vps4.orchestration.vm.VmActionRequest;
+import com.godaddy.vps4.orchestration.vm.Vps4RestartVm;
 import com.godaddy.vps4.orchestration.vm.WaitForAndRecordVmAction;
 import com.godaddy.vps4.vm.ActionService;
 import com.godaddy.vps4.vm.CreateVmStep;
@@ -199,6 +201,21 @@ public class Vps4ProvisionVm extends ActionCommand<ProvisionRequest, Vps4Provisi
                                                                  request.vmInfo.image.getImageControlPanel());
         virtualMachineService.setHostname(request.vmInfo.vmId, hostname);
         context.execute(SetHostname.class, hfsRequest);
+        rebootWindowsServer();
+    }
+
+    // Windows server needs a reboot to apply hostname change
+    private void rebootWindowsServer() {
+        VirtualMachine vm = virtualMachineService.getVirtualMachine(request.vmInfo.vmId);
+        if (vm.image.operatingSystem == Image.OperatingSystem.WINDOWS) {
+            VmActionRequest rebootRequest = new VmActionRequest();
+            rebootRequest.virtualMachine = vm;
+            rebootServer(rebootRequest);
+        }
+    }
+
+    protected void rebootServer(VmActionRequest rebootRequest) {
+        context.execute(Vps4RestartVm.class, rebootRequest);
     }
 
     private void configureControlPanel(long hfsVmId) {

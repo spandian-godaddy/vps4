@@ -15,6 +15,8 @@ import com.godaddy.vps4.hfs.HfsVmTrackingRecordService;
 import com.godaddy.vps4.messaging.Vps4MessagingService;
 import com.godaddy.vps4.network.NetworkService;
 import com.godaddy.vps4.orchestration.hfs.dns.CreateDnsPtrRecord;
+import com.godaddy.vps4.orchestration.vm.VmActionRequest;
+import com.godaddy.vps4.orchestration.vm.Vps4RebootDedicated;
 import com.godaddy.vps4.vm.ActionService;
 import com.godaddy.vps4.vm.VirtualMachine;
 import com.godaddy.vps4.vm.VirtualMachineService;
@@ -85,5 +87,10 @@ public class Vps4ProvisionDedicated extends Vps4ProvisionVm {
         reverseDnsNameRequest.virtualMachine = vm;
         reverseDnsNameRequest.reverseDnsName = resourceId;
         context.execute("CreateDnsPtrRecord", CreateDnsPtrRecord.class, reverseDnsNameRequest);
+    }
+
+    @Override
+    protected void rebootServer(VmActionRequest rebootRequest) {
+        context.execute(Vps4RebootDedicated.class, rebootRequest);
     }
 }
