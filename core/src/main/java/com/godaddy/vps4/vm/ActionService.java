@@ -34,7 +34,7 @@ public interface ActionService {
 
     ResultSubset<Action> getActionList(ActionListFilters filters);
 
-    List<Action> getUnfinishedDestroyActions(long thresholdInMinutes);
+    List<Action> getIncompleteDestroyActions(int minimumAttempts);
 
     List<Action> getCreatesWithoutPanopta(long windowSize);
 }

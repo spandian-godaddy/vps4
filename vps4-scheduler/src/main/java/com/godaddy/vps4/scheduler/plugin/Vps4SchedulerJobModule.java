@@ -1,6 +1,7 @@
 package com.godaddy.vps4.scheduler.plugin;
 
 import com.godaddy.vps4.scheduler.plugin.backups.Vps4BackupJob;
+import com.godaddy.vps4.scheduler.plugin.destroyVm.Vps4DestroyVmJob;
 import com.godaddy.vps4.scheduler.plugin.patch.Vps4PatchJob;
 import com.godaddy.vps4.scheduler.plugin.supportUser.Vps4RemoveSupportUserJob;
 import com.godaddy.vps4.scheduler.plugin.supportUser.Vps4SupportUserJob;
@@ -16,5 +17,6 @@ public class Vps4SchedulerJobModule extends AbstractModule {
         bind(Vps4SupportUserJob.class);
         bind(Vps4ZombieCleanupJob.class);
         bind(Vps4RemoveSupportUserJob.class);
+        bind(Vps4DestroyVmJob.class);
     }
 }

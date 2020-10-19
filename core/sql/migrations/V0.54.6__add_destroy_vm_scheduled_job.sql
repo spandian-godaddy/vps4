@@ -1,0 +1,1 @@
+INSERT INTO scheduled_job_type (id, job_group) VALUES (6, 'destroy_vm');

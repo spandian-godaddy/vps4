@@ -1,6 +1,7 @@
 package com.godaddy.vps4.orchestration.vm;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.mock;
@@ -25,6 +26,7 @@ import com.godaddy.vps4.network.NetworkService;
 import com.godaddy.vps4.orchestration.hfs.vm.DestroyVm;
 import com.godaddy.vps4.orchestration.monitoring.Vps4RemoveMonitoring;
 import com.godaddy.vps4.orchestration.scheduler.DeleteAutomaticBackupSchedule;
+import com.godaddy.vps4.orchestration.scheduler.ScheduleDestroyVm;
 import com.godaddy.vps4.vm.ActionService;
 import com.godaddy.vps4.vm.VirtualMachine;
 
@@ -149,6 +151,24 @@ public class Vps4DestroyVmTest {
         Vps4DestroyVm.Response response = command.execute(context, request);
         assertEquals(vmId, response.vmId);
         assertEquals(hfsAction, response.hfsAction);
+    }
+
+    @Test
+    public void schedulesRetryIfExceptionThrown() {
+        when(context.execute(eq("DestroyVmHfs"), eq(DestroyVm.class), any(DestroyVm.Request.class)))
+                .thenThrow(new RuntimeException("Faked HFS failure"));
+        try {
+            command.execute(context, request);
+            fail();
+        } catch (RuntimeException e) {
+            verify(context).execute(ScheduleDestroyVm.class, vmId);
+        }
+    }
+
+    @Test
+    public void doesNotScheduleRetryIfNoExceptionThrown() {
+        command.execute(context, request);
+        verify(context, never()).execute(ScheduleDestroyVm.class, vmId);
     }
 
 }

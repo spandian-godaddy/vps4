@@ -22,7 +22,7 @@ import com.godaddy.vps4.config.ConfigModule;
 import com.godaddy.vps4.orchestration.vm.Vps4RecordScheduledJobForVm;
 import com.godaddy.vps4.scheduler.api.core.JobType;
 import com.godaddy.vps4.scheduler.api.core.SchedulerJobDetail;
-import com.godaddy.vps4.scheduler.api.plugin.Vps4RemoveSupportUserJobRequest;
+import com.godaddy.vps4.scheduler.api.plugin.Vps4DestroyVmJobRequest;
 import com.godaddy.vps4.scheduler.api.web.SchedulerWebService;
 import com.google.inject.AbstractModule;
 import com.google.inject.Guice;
@@ -31,19 +31,19 @@ import com.google.inject.Injector;
 
 import gdg.hfs.orchestration.CommandContext;
 
-public class ScheduleSupportUserRemovalTest {
+public class ScheduleDestroyVmTest {
     static Injector injector;
 
     private CommandContext context;
-    private ScheduleSupportUserRemoval.Request request;
-    private UUID jobId = UUID.randomUUID();
+    private final UUID vmId = UUID.randomUUID();
+    private final UUID jobId = UUID.randomUUID();
     private SchedulerJobDetail jobDetail;
 
-    @Inject ScheduleSupportUserRemoval command;
+    @Inject ScheduleDestroyVm command;
     @Inject SchedulerWebService schedulerWebService;
 
     @Captor private ArgumentCaptor<Function<CommandContext, SchedulerJobDetail>> createJobCaptor;
-    @Captor private ArgumentCaptor<Vps4RemoveSupportUserJobRequest> schedulerJobCreationDataCaptor;
+    @Captor private ArgumentCaptor<Vps4DestroyVmJobRequest> schedulerJobCreationDataCaptor;
     @Captor private ArgumentCaptor<Vps4RecordScheduledJobForVm.Request> recordJobArgumentCaptor;
 
     @BeforeClass
@@ -65,46 +65,41 @@ public class ScheduleSupportUserRemovalTest {
         injector.injectMembers(this);
         MockitoAnnotations.initMocks(this);
         setupMockContext();
-        setCommandRequest();
     }
 
     private void setupMockContext() {
         context = mock(CommandContext.class);
     }
 
-    private void setCommandRequest() {
-        request = new ScheduleSupportUserRemoval.Request();
-    }
-
     @Test
     public void callsSchedulerServiceToCreateJobSchedule() throws Exception {
         jobDetail = new SchedulerJobDetail(jobId, null, null, false);
-        when(context.execute(eq("Create schedule"), any(Function.class), eq(SchedulerJobDetail.class)))
+        when(context.execute(eq("Retry Destroy VM"), any(Function.class), eq(SchedulerJobDetail.class)))
                 .thenReturn(jobDetail);
 
-        command.execute(context, request);
+        command.execute(context, vmId);
 
         // verify call to the scheduler service is wrapped in a context.execute method
         verify(context, times(1))
-            .execute(eq("Create schedule"), createJobCaptor.capture(), eq(SchedulerJobDetail.class));
+                .execute(eq("Retry Destroy VM"), createJobCaptor.capture(), eq(SchedulerJobDetail.class));
 
         // Verify that the lambda is calling the appropriate scheduler service method
         Function<CommandContext, SchedulerJobDetail> lambda = createJobCaptor.getValue();
         lambda.apply(context);
         verify(schedulerWebService, times(1))
-                .submitJobToGroup(eq("vps4"), eq("removeSupportUser"), schedulerJobCreationDataCaptor.capture());
+                .submitJobToGroup(eq("vps4"), eq("destroyVm"), schedulerJobCreationDataCaptor.capture());
 
         // verify the job creation payload data
-        Vps4RemoveSupportUserJobRequest jobRequestData = schedulerJobCreationDataCaptor.getValue();
-        Assert.assertEquals(request.vmId, jobRequestData.vmId);
+        Vps4DestroyVmJobRequest jobRequestData = schedulerJobCreationDataCaptor.getValue();
+        Assert.assertEquals(vmId, jobRequestData.vmId);
         Assert.assertEquals(JobType.ONE_TIME, jobRequestData.jobType);
     }
 
     @Test(expected = RuntimeException.class)
     public void errorInSchedulerJobCreation() {
-        when(context.execute(eq("Create schedule"), any(Function.class), eq(SchedulerJobDetail.class)))
+        when(context.execute(eq("Retry Destroy VM"), any(Function.class), eq(SchedulerJobDetail.class)))
                 .thenThrow(new RuntimeException("Error"));
-        command.execute(context, request);
+        command.execute(context, vmId);
     }
 
     @Test
@@ -113,11 +108,10 @@ public class ScheduleSupportUserRemovalTest {
         when(mockContext.getId()).thenReturn(UUID.randomUUID());
 
         jobDetail = new SchedulerJobDetail(jobId, null, null, false);
-        when(context.execute(eq("Create schedule"), any(Function.class), eq(SchedulerJobDetail.class))).thenReturn(jobDetail);
+        when(context.execute(eq("Retry Destroy VM"), any(Function.class), eq(SchedulerJobDetail.class))).thenReturn(jobDetail);
 
-        command.execute(context, request);
+        command.execute(context, vmId);
 
         verify(context, times(1)).execute(eq("RecordScheduledJobId"), eq(Vps4RecordScheduledJobForVm.class), recordJobArgumentCaptor.capture());
     }
-
 }

@@ -5,8 +5,10 @@ import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 import javax.inject.Inject;
 import javax.sql.DataSource;
@@ -107,11 +109,8 @@ public class JdbcVmActionService implements ActionService {
         ActionStatus status = ActionStatus.valueOf(rs.getString("status"));
         ActionType type = ActionType.valueOf(rs.getString("type"));
 
-        String vmIdStr = rs.getString("vm_id");
-        UUID vmid = null;
-        if (vmIdStr != null) {
-            vmid = UUID.fromString(vmIdStr);
-        }
+        String vmIdString = rs.getString("vm_id");
+        UUID vmId = (vmIdString == null) ? null : UUID.fromString(vmIdString);
 
         String commandIdStr = rs.getString("command_id");
         UUID commandId = null;
@@ -125,9 +124,14 @@ public class JdbcVmActionService implements ActionService {
             completed = completedTs.toInstant();
         }
 
-        return new Action(rs.getLong("id"), vmid, type, rs.getString("request"), rs.getString("state"),
+        return new Action(rs.getLong("id"), vmId, type, rs.getString("request"), rs.getString("state"),
                 rs.getString("response"), status, rs.getTimestamp("created", TimestampUtils.utcCalendar).toInstant(),
                 completed, rs.getString("note"), commandId, rs.getString("initiated_by"));
+    }
+
+    private UUID mapVmIds(ResultSet rs) throws SQLException {
+        String vmIdString = rs.getString("vm_id");
+        return (vmIdString == null) ? null : UUID.fromString(vmIdString);
     }
 
     @Override
@@ -137,21 +141,47 @@ public class JdbcVmActionService implements ActionService {
     }
 
     @Override
-    public List<Action> getUnfinishedDestroyActions(long thresholdInMinutes) {
-        // Find most recent destroy_vm action that was not successfully completed for each vm
-        return Sql.with(dataSource).exec("SELECT a.*, status, type"
-                + " FROM ("
-                + "     SELECT MAX(id) AS id, vm_id FROM vm_action a"
-                + "     JOIN action_type t ON t.type_id=a.action_type_id"
-                + "     WHERE type = 'DESTROY_VM'"
-                + "     GROUP BY vm_id"
-                + " ) AS last_actions"
-                + " JOIN vm_action a ON a.id=last_actions.id"
-                + " JOIN action_status s ON s.status_id=a.status_id"
-                + " JOIN action_type t ON t.type_id=a.action_type_id"
-                + " WHERE s.status != 'COMPLETE'"
-                + " AND now_utc() - a.created >= INTERVAL '" + thresholdInMinutes + " minutes'",
-                Sql.listOf(this::mapAction));
+    public List<Action> getIncompleteDestroyActions(int minimumAttempts) {
+        // get the vmIds of all VMs where the number of failed destroys is >= minimumAttempts
+        List<UUID> vmIds = Sql.with(dataSource).exec(
+                "SELECT va.vm_id AS vm_id, count(*) AS attempts " +
+                        "FROM vm_action va " +
+                        "JOIN action_type t ON va.action_type_id = t.type_id " +
+                        "JOIN action_status s ON va.status_id = s.status_id " +
+                        "WHERE t.type = 'DESTROY_VM' AND s.status != 'COMPLETE' " +
+                        "AND va.vm_id NOT IN (" +
+                            "SELECT vm_id AS destroyed_vm_id " +
+                            "FROM vm_action va " +
+                            "JOIN action_type t " +
+                            "ON va.action_type_id = t.type_id " +
+                            "JOIN action_status s " +
+                            "ON va.status_id = s.status_id " +
+                            "WHERE t.type = 'DESTROY_VM' " +
+                            "AND s.status = 'COMPLETE'" +
+                        ") GROUP BY va.vm_id HAVING Count(*) >= ?;",
+                Sql.listOf(this::mapVmIds), minimumAttempts
+        );
+        if (vmIds.size() > 0) {
+            StringBuilder placeholders = new StringBuilder("?");
+            for (int i = 1; i < vmIds.size(); i++) {
+                placeholders.append(",?");
+            }
+            // find most recent destroy_vm action that was not successfully completed for each vm
+            return Sql.with(dataSource).exec("SELECT a.*, status, type"
+                    + " FROM ("
+                    + "     SELECT MAX(id) AS id, vm_id FROM vm_action a"
+                    + "     JOIN action_type t ON t.type_id=a.action_type_id"
+                    + "     WHERE type = 'DESTROY_VM'"
+                    + "     GROUP BY vm_id"
+                    + " ) AS last_actions"
+                    + " JOIN vm_action a ON a.id=last_actions.id"
+                    + " JOIN action_status s ON s.status_id=a.status_id"
+                    + " JOIN action_type t ON t.type_id=a.action_type_id"
+                    + " WHERE s.status != 'COMPLETE'"
+                    + " AND a.vm_id IN (" + placeholders + ")",
+                    Sql.listOf(this::mapAction), vmIds.toArray());
+        }
+        return new ArrayList<>();
     }
 
     @Override

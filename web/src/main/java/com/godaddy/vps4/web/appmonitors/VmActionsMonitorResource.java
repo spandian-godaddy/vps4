@@ -22,13 +22,13 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
 
+import com.godaddy.vps4.appmonitors.ActionCheckpoint;
 import com.godaddy.vps4.appmonitors.BackupJobAuditData;
 import com.godaddy.vps4.appmonitors.Checkpoint;
+import com.godaddy.vps4.appmonitors.HvBlockingSnapshotsData;
 import com.godaddy.vps4.appmonitors.MonitorService;
-import com.godaddy.vps4.appmonitors.ActionCheckpoint;
 import com.godaddy.vps4.appmonitors.SnapshotActionData;
 import com.godaddy.vps4.appmonitors.VmActionData;
-import com.godaddy.vps4.appmonitors.HvBlockingSnapshotsData;
 import com.godaddy.vps4.jdbc.ResultSubset;
 import com.godaddy.vps4.util.ActionListFilters;
 import com.godaddy.vps4.vm.Action;
@@ -281,8 +281,11 @@ public class VmActionsMonitorResource {
     @Path("/incomplete/destroyvm")
     @ApiOperation(value = "Find all VM id's that are failing destroy and potentially orphaning server and ip resources",
             notes = "Find all VM id's that are failing destroy and potentially orphaning server and ip resources")
-    public List<VmActionData> getAllFailedDestroys(@QueryParam("thresholdInMinutes") @DefaultValue("60") long thresholdInMinutes) {
-        return mapActionsToVmActionData(vmActionService.getUnfinishedDestroyActions(thresholdInMinutes));
+    public List<VmActionData> getAllFailedDestroys(
+            @QueryParam("minimumAttempts") @DefaultValue("3") int minimumAttempts) {
+        minimumAttempts = Math.max(1, minimumAttempts);
+        List<Action> actions = vmActionService.getIncompleteDestroyActions(minimumAttempts);
+        return mapActionsToVmActionData(actions);
     }
 
     @GET

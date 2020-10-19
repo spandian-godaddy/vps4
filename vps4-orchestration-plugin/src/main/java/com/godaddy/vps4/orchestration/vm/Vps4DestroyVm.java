@@ -15,6 +15,7 @@ import com.godaddy.vps4.orchestration.ActionCommand;
 import com.godaddy.vps4.orchestration.hfs.vm.DestroyVm;
 import com.godaddy.vps4.orchestration.monitoring.Vps4RemoveMonitoring;
 import com.godaddy.vps4.orchestration.scheduler.DeleteAutomaticBackupSchedule;
+import com.godaddy.vps4.orchestration.scheduler.ScheduleDestroyVm;
 import com.godaddy.vps4.vm.ActionService;
 import com.godaddy.vps4.vm.VirtualMachine;
 
@@ -48,20 +49,32 @@ public class Vps4DestroyVm extends ActionCommand<VmActionRequest, Vps4DestroyVm.
 
         logger.info("Destroying server {}", vm.vmId);
 
-        unlicenseControlPanel();
-        removeMonitoring();
-        removeIp();
-        deleteAutomaticBackupSchedule();
-        deleteAllScheduledJobsForVm();
-        deleteSupportUsersInDatabase();
-        VmAction hfsAction = deleteVmInHfs(request);
+        try {
+            unlicenseControlPanel();
+            removeMonitoring();
+            removeIp();
+            deleteAutomaticBackupSchedule();
+            deleteAllScheduledJobsForVm();
+            deleteSupportUsersInDatabase();
+            VmAction hfsAction = deleteVmInHfs(request);
+            return buildResponse(hfsAction);
+        } catch (Exception e) {
+            rescheduleDestroy();
+            throw e;
+        }
+    }
 
+    private Response buildResponse(VmAction hfsAction) {
         logger.info("Completed destroying VM {}", vm.vmId);
 
         Vps4DestroyVm.Response response = new Vps4DestroyVm.Response();
         response.vmId = vm.vmId;
         response.hfsAction = hfsAction;
         return response;
+    }
+
+    private void rescheduleDestroy() {
+        context.execute(ScheduleDestroyVm.class, vm.vmId);
     }
 
     private VmAction deleteVmInHfs(VmActionRequest request) {
@@ -124,7 +137,7 @@ public class Vps4DestroyVm extends ActionCommand<VmActionRequest, Vps4DestroyVm.
     }
 
     private void unlicenseControlPanel() {
-            context.execute(UnlicenseControlPanel.class, vm);
+        context.execute(UnlicenseControlPanel.class, vm);
     }
 
     public static class Response {

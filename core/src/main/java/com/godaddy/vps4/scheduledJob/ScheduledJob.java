@@ -8,7 +8,8 @@ import java.util.UUID;
 public class ScheduledJob {
 
     public enum ScheduledJobType {
-        BACKUPS_RETRY(1), ZOMBIE(2), REMOVE_SUPPORT_USER(3), BACKUPS_MANUAL(4), BACKUPS_AUTOMATIC(5);
+        BACKUPS_RETRY(1), ZOMBIE(2), REMOVE_SUPPORT_USER(3),
+        BACKUPS_MANUAL(4), BACKUPS_AUTOMATIC(5), DESTROY_VM(6);
         
         private int id;
         private static final Map<Integer, ScheduledJobType> byId = new HashMap<Integer, ScheduledJobType>();

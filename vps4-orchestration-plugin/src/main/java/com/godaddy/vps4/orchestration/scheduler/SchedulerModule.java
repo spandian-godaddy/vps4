@@ -13,5 +13,6 @@ public class SchedulerModule extends AbstractModule {
         bind(RescheduleZombieVmCleanup.class);
         bind(DeleteScheduledJob.class);
         bind(ScheduleSupportUserRemoval.class);
+        bind(ScheduleDestroyVm.class);
     }
 }
