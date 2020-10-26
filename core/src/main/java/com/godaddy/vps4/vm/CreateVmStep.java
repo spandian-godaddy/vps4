@@ -18,5 +18,5 @@ public enum CreateVmStep {
     ConfigureMailRelay,
     ConfigureNodeping,
     ConfigureMonitoring,
-    SetupAutomaticBackupSchedule;
+    SetupAutomaticBackupSchedule
 }

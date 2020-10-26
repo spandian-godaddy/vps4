@@ -105,4 +105,7 @@ public interface VmService {
     @Path("{vmId}/extendedinfo")
     VmExtendedInfo getVmExtendedInfo(@PathParam("vmId") long vmId);
 
+    @POST
+    @Path("/{vmId}/restore")
+    VmAction restore(@PathParam("vmId") long vmId, @QueryParam("snapshotId") long snapshotId);
 }

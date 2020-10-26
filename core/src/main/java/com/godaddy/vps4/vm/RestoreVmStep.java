@@ -5,5 +5,5 @@ public enum RestoreVmStep {
     RequestingServer,
     ConfiguringNetwork,
     ConfiguringCPanel,
-    CleanupVm;
+    CleanupVm
 }

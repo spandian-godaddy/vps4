@@ -323,6 +323,11 @@ public class HfsMockModule extends AbstractModule {
                 // NOTE: do nothing, Implement when needed
                 throw new UnsupportedOperationException("Not implemented, yet");
             }
+
+            @Override
+            public VmAction restore(long vmId, long snapshotId) {
+                throw new UnsupportedOperationException("Not implemented, yet");
+            }
         };
     }
 

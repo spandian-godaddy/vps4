@@ -24,6 +24,8 @@ import org.slf4j.LoggerFactory;
 
 import com.godaddy.hfs.config.Config;
 import com.godaddy.vps4.credit.CreditService;
+import com.godaddy.vps4.orchestration.ActionRequest;
+import com.godaddy.vps4.orchestration.vm.Vps4RestoreOHVm;
 import com.godaddy.vps4.orchestration.vm.Vps4RestoreVm;
 import com.godaddy.vps4.project.ProjectService;
 import com.godaddy.vps4.snapshot.Snapshot;
@@ -33,6 +35,7 @@ import com.godaddy.vps4.util.Cryptography;
 import com.godaddy.vps4.vm.ActionService;
 import com.godaddy.vps4.vm.ActionType;
 import com.godaddy.vps4.vm.RestoreVmInfo;
+import com.godaddy.vps4.vm.ServerType;
 import com.godaddy.vps4.vm.VirtualMachine;
 import com.godaddy.vps4.vm.VirtualMachineService;
 import com.godaddy.vps4.vm.VmAction;
@@ -106,12 +109,14 @@ public class VmRestoreResource {
     public VmAction restore(@PathParam("vmId") UUID vmId, RestoreVmRequest restoreVmRequest) {
         restoreVmRequest = performAdminPrereqs(vmId, restoreVmRequest);
         VirtualMachine vm = vmResource.getVm(vmId);
-        isValidRestoreVmRequest(vmId, restoreVmRequest);
+        isValidRestoreVmRequest(vm, restoreVmRequest);
         logger.info("Processing restore on VM {} using snapshot {}", vmId, restoreVmRequest.backupId);
-        Vps4RestoreVm.Request commandRequest = generateRestoreVmOrchestrationRequest(
-                vm, restoreVmRequest.backupId, restoreVmRequest.password, restoreVmRequest.debugEnabled);
-        VmAction restoreAction = createActionAndExecute(
-            actionService, commandService, vm.vmId, ActionType.RESTORE_VM, commandRequest, "Vps4RestoreVm", user);
+
+        String restoreClassName = vm.spec.serverType.platform.getRestoreCommand();
+        ActionRequest commandRequest = generateRestoreVmOrchestrationRequest(vm, restoreVmRequest.backupId,
+                                                         restoreVmRequest.password, restoreVmRequest.debugEnabled);
+        VmAction restoreAction = createActionAndExecute(actionService, commandService, vm.vmId, ActionType.RESTORE_VM,
+                                                        commandRequest, restoreClassName, user);
         return restoreAction;
     }
 
@@ -127,13 +132,15 @@ public class VmRestoreResource {
         return restoreVmRequest;
     }
 
-    private void isValidRestoreVmRequest(UUID vmId, RestoreVmRequest restoreVmRequest) {
-        validateNoConflictingActions(vmId, actionService, ActionType.START_VM, ActionType.STOP_VM,
+    private void isValidRestoreVmRequest(VirtualMachine vm, RestoreVmRequest restoreVmRequest) {
+        validateNoConflictingActions(vm.vmId, actionService, ActionType.START_VM, ActionType.STOP_VM,
                 ActionType.RESTART_VM, ActionType.RESTORE_VM, ActionType.CREATE_VM, ActionType.RESTORE_VM);
         validateIfSnapshotExists(snapshotService, restoreVmRequest.backupId);
         validateIfSnapshotIsLive(snapshotService, restoreVmRequest.backupId);
-        validateIfSnapshotFromVm(virtualMachineService, snapshotService, vmId, restoreVmRequest.backupId);
-        validatePassword(restoreVmRequest.password);
+        validateIfSnapshotFromVm(virtualMachineService, snapshotService, vm.vmId, restoreVmRequest.backupId);
+        if(vm.spec.serverType.platform == ServerType.Platform.OPENSTACK) {
+            validatePassword(restoreVmRequest.password);
+        }
     }
 
     private UUID findMostRecentActiveVmSnapshot(UUID vmId) {
@@ -148,23 +155,32 @@ public class VmRestoreResource {
         }
     }
 
-    private Vps4RestoreVm.Request generateRestoreVmOrchestrationRequest(
+    private ActionRequest generateRestoreVmOrchestrationRequest(
             VirtualMachine vm, UUID snapshotId, String password, boolean debugEnabled) {
-        RestoreVmInfo restoreVmInfo = new RestoreVmInfo();
-        restoreVmInfo.hostname = vm.hostname;
-        restoreVmInfo.encryptedPassword = cryptography.encrypt(password);
-        restoreVmInfo.rawFlavor = vm.spec.specName;
-        restoreVmInfo.sgid = projectService.getProject(vm.projectId).getVhfsSgid();
-        restoreVmInfo.snapshotId = snapshotId;
-        restoreVmInfo.username = vmUserService.getPrimaryCustomer(vm.vmId).username;
-        restoreVmInfo.vmId = vm.vmId;
-        restoreVmInfo.zone = config.get("openstack.zone", null);
-        restoreVmInfo.orionGuid = vm.orionGuid;
+        if(vm.spec.serverType.platform == ServerType.Platform.OPENSTACK) {
+            RestoreVmInfo restoreVmInfo = new RestoreVmInfo();
+            restoreVmInfo.hostname = vm.hostname;
+            restoreVmInfo.encryptedPassword = cryptography.encrypt(password);
+            restoreVmInfo.rawFlavor = vm.spec.specName;
+            restoreVmInfo.sgid = projectService.getProject(vm.projectId).getVhfsSgid();
+            restoreVmInfo.snapshotId = snapshotId;
+            restoreVmInfo.username = vmUserService.getPrimaryCustomer(vm.vmId).username;
+            restoreVmInfo.vmId = vm.vmId;
+            restoreVmInfo.zone = config.get("openstack.zone", null);
+            restoreVmInfo.orionGuid = vm.orionGuid;
 
-        Vps4RestoreVm.Request req = new Vps4RestoreVm.Request();
-        req.restoreVmInfo = restoreVmInfo;
-        req.privateLabelId = creditService.getVirtualMachineCredit(vm.orionGuid).getResellerId();
-        req.debugEnabled = debugEnabled;
-        return req;
+            Vps4RestoreVm.Request req = new Vps4RestoreVm.Request();
+            req.restoreVmInfo = restoreVmInfo;
+            req.privateLabelId = creditService.getVirtualMachineCredit(vm.orionGuid).getResellerId();
+            req.debugEnabled = debugEnabled;
+            return req;
+        }
+        else if(vm.spec.serverType.platform == ServerType.Platform.OPTIMIZED_HOSTING) {
+            Vps4RestoreOHVm.Request req = new Vps4RestoreOHVm.Request();
+            req.vps4SnapshotId = snapshotId;
+            req.virtualMachine = vm;
+            return req;
+        }
+        else throw new Vps4Exception("INVALID_PLATFORM_FOR_RESTORE", String.format("Could not restore snapshot for platform %s", vm.spec.serverType.platform));
     }
 }
