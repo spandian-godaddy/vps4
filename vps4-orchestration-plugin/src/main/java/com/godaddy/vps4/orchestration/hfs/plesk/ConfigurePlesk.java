@@ -48,7 +48,7 @@ public class ConfigurePlesk implements Command<ConfigurePlesk.ConfigurePleskRequ
         public byte[] encryptedPassword;
 
         // Empty constructor required for Jackson
-        public ConfigurePleskRequest(){}
+        public ConfigurePleskRequest() {}
 
         public ConfigurePleskRequest(long vmId, String username, byte[] encryptedPassword) {
             this.vmId = vmId;

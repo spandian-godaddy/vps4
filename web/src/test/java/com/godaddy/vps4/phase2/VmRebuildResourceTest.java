@@ -21,7 +21,7 @@ import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 
 import com.godaddy.vps4.jdbc.DatabaseModule;
-import com.godaddy.vps4.orchestration.vm.Vps4RebuildVm;
+import com.godaddy.vps4.orchestration.vm.rebuild.Vps4RebuildVm;
 import com.godaddy.vps4.scheduler.api.web.SchedulerWebService;
 import com.godaddy.vps4.security.GDUserMock;
 import com.godaddy.vps4.security.SecurityModule;

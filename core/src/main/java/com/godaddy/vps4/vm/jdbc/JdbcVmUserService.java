@@ -86,7 +86,7 @@ public class JdbcVmUserService implements VmUserService{
     }
 
     @Override
-    public void updateUserAdminAccess(String username, UUID vmId, boolean adminEnabled){
+    public void updateUserAdminAccess(String username, UUID vmId, boolean adminEnabled) {
         Sql.with(dataSource).exec("UPDATE vm_user SET admin_enabled=? WHERE name=? AND vm_id=?", null, adminEnabled, username, vmId);
     }
 

@@ -321,10 +321,8 @@ public class Vps4ProvisionVm extends ActionCommand<ProvisionRequest, Vps4Provisi
         vmUserService.updateUserAdminAccess(toggleAdminRequest.username, vmId, toggleAdminRequest.enabled);
     }
 
-    private ConfigureCpanelRequest createConfigureCpanelRequest(long vmId) {
-        ConfigureCpanelRequest cpanelRequest = new ConfigureCpanelRequest();
-        cpanelRequest.vmId = vmId;
-        return cpanelRequest;
+    private ConfigureCpanelRequest createConfigureCpanelRequest(long hfsVmId) {
+        return new ConfigureCpanelRequest(hfsVmId);
     }
 
     private ConfigurePleskRequest createConfigurePleskRequest(long hfsVmId) {

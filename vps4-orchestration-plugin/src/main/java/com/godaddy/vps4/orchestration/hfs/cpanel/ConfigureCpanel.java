@@ -41,5 +41,12 @@ public class ConfigureCpanel implements Command<ConfigureCpanel.ConfigureCpanelR
 
     public static class ConfigureCpanelRequest {
         public long vmId;
+
+        // Empty constructor required for Jackson
+        public ConfigureCpanelRequest() {}
+
+        public ConfigureCpanelRequest(long vmId) {
+            this.vmId = vmId;
+        }
     }
 }

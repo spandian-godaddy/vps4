@@ -1,8 +1,10 @@
-package com.godaddy.vps4.orchestration.vm;
+package com.godaddy.vps4.orchestration.vm.rebuild;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.anyObject;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Matchers.startsWith;
 import static org.mockito.Mockito.atLeastOnce;
@@ -10,9 +12,9 @@ import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
-import static org.mockito.Mockito.times;
 
 import java.util.Arrays;
 import java.util.HashMap;
@@ -20,7 +22,6 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.function.Function;
 
-import com.godaddy.vps4.hfs.HfsVmTrackingRecordService;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
@@ -28,6 +29,7 @@ import org.mockito.ArgumentCaptor;
 import com.godaddy.hfs.vm.VmAction;
 import com.godaddy.vps4.credit.CreditService;
 import com.godaddy.vps4.credit.VirtualMachineCredit;
+import com.godaddy.vps4.hfs.HfsVmTrackingRecordService;
 import com.godaddy.vps4.network.IpAddress;
 import com.godaddy.vps4.network.NetworkService;
 import com.godaddy.vps4.orchestration.TestCommandContext;
@@ -37,7 +39,6 @@ import com.godaddy.vps4.orchestration.hfs.network.BindIp;
 import com.godaddy.vps4.orchestration.hfs.network.UnbindIp;
 import com.godaddy.vps4.orchestration.hfs.plesk.ConfigurePlesk;
 import com.godaddy.vps4.orchestration.hfs.plesk.ConfigurePlesk.ConfigurePleskRequest;
-import com.godaddy.vps4.orchestration.hfs.sysadmin.SetHostname;
 import com.godaddy.vps4.orchestration.hfs.sysadmin.SetPassword;
 import com.godaddy.vps4.orchestration.hfs.sysadmin.ToggleAdmin;
 import com.godaddy.vps4.orchestration.hfs.vm.CreateVm;
@@ -45,6 +46,7 @@ import com.godaddy.vps4.orchestration.hfs.vm.DestroyVm;
 import com.godaddy.vps4.orchestration.panopta.SetupPanopta;
 import com.godaddy.vps4.orchestration.sysadmin.ConfigureMailRelay;
 import com.godaddy.vps4.orchestration.sysadmin.ConfigureMailRelay.ConfigureMailRelayRequest;
+import com.godaddy.vps4.orchestration.vm.WaitForAndRecordVmAction;
 import com.godaddy.vps4.panopta.PanoptaDataService;
 import com.godaddy.vps4.panopta.jdbc.PanoptaServerDetails;
 import com.godaddy.vps4.vm.ActionService;
@@ -91,7 +93,6 @@ public class Vps4RebuildVmTest {
     BindIp bindIp = mock(BindIp.class);
     ConfigureCpanel configCpanel = mock(ConfigureCpanel.class);
     ConfigurePlesk configPlesk = mock(ConfigurePlesk.class);
-    SetHostname setHostname = mock(SetHostname.class);
     ToggleAdmin enableAdmin = mock(ToggleAdmin.class);
     SetPassword setPassword = mock(SetPassword.class);
     ConfigureMailRelay setMailRelay = mock(ConfigureMailRelay.class);
@@ -107,7 +108,6 @@ public class Vps4RebuildVmTest {
         binder.bind(BindIp.class).toInstance(bindIp);
         binder.bind(ConfigureCpanel.class).toInstance(configCpanel);
         binder.bind(ConfigurePlesk.class).toInstance(configPlesk);
-        binder.bind(SetHostname.class).toInstance(setHostname);
         binder.bind(ToggleAdmin.class).toInstance(enableAdmin);
         binder.bind(SetPassword.class).toInstance(setPassword);
         binder.bind(ConfigureMailRelay.class).toInstance(setMailRelay);
@@ -239,7 +239,7 @@ public class Vps4RebuildVmTest {
 
     @Test
     public void configuresPleskPanel() {
-        vm.image.controlPanel = ControlPanel.PLESK;
+        request.rebuildVmInfo.image.controlPanel = ControlPanel.PLESK;
         command.execute(context, request);
 
         ArgumentCaptor<ConfigurePleskRequest> argument = ArgumentCaptor.forClass(ConfigurePleskRequest.class);
@@ -252,22 +252,10 @@ public class Vps4RebuildVmTest {
 
     @Test
     public void configuresNoControlPanel() {
-        vm.image.controlPanel = ControlPanel.MYH;
+        request.rebuildVmInfo.image.controlPanel = ControlPanel.MYH;
         command.execute(context, request);
         verify(context, never()).execute(eq(ConfigureCpanel.class), any());
         verify(context, never()).execute(eq(ConfigurePlesk.class), any());
-    }
-
-    @Test
-    public void setsHostname() {
-        command.execute(context, request);
-
-        ArgumentCaptor<SetHostname.Request> argument = ArgumentCaptor.forClass(SetHostname.Request.class);
-        verify(context).execute(eq(SetHostname.class), argument.capture());
-        SetHostname.Request request = argument.getValue();
-        assertEquals(newHfsVmId, request.hfsVmId);
-        assertEquals("host.name", request.hostname);
-        assertEquals("cpanel", request.controlPanel);
     }
 
     @Test
@@ -280,14 +268,15 @@ public class Vps4RebuildVmTest {
         ToggleAdmin.Request request = argument.getValue();
         assertEquals(newHfsVmId, request.vmId);
         assertEquals("user", request.username);
-        assertEquals(true, request.enabled);
+        assertTrue(request.enabled);
     }
 
     @Test
-    public void doesNotEnableAdminIfControlPanel() {
+    public void disablesAdminIfControlPanel() {
         when(virtualMachineService.hasControlPanel(vps4VmId)).thenReturn(true);
         command.execute(context, request);
-        verify(context, never()).execute(eq("ConfigureAdminAccess"), eq(ToggleAdmin.class), any());
+
+        verify(context, never()).execute(eq("ConfigureAdminAccess"), eq(ToggleAdmin.class), anyObject());
     }
 
     @Test

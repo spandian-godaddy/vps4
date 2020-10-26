@@ -4,9 +4,12 @@ import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThat;
 import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.anyBoolean;
 import static org.mockito.Matchers.anyLong;
+import static org.mockito.Matchers.anyObject;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.atLeastOnce;
+import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
@@ -39,7 +42,6 @@ import org.mockito.runners.MockitoJUnitRunner;
 
 import com.godaddy.hfs.vm.Vm;
 import com.godaddy.hfs.vm.VmAction;
-import com.godaddy.hfs.vm.VmService;
 import com.godaddy.vps4.credit.CreditService;
 import com.godaddy.vps4.jdbc.DatabaseModule;
 import com.godaddy.vps4.network.IpAddress;
@@ -49,7 +51,7 @@ import com.godaddy.vps4.orchestration.hfs.sysadmin.SetPassword;
 import com.godaddy.vps4.orchestration.hfs.sysadmin.ToggleAdmin;
 import com.godaddy.vps4.orchestration.hfs.vm.RebuildDedicated;
 import com.godaddy.vps4.orchestration.sysadmin.ConfigureMailRelay;
-import com.godaddy.vps4.orchestration.vm.Vps4RebuildDedicated;
+import com.godaddy.vps4.orchestration.vm.rebuild.Vps4RebuildDedicated;
 import com.godaddy.vps4.project.Project;
 import com.godaddy.vps4.project.ProjectService;
 import com.godaddy.vps4.security.SecurityModule;
@@ -96,7 +98,6 @@ public class Vps4RebuildDedicatedTest {
     String shopperId = "12345678";
     @Inject private Vps4UserService vps4UserService;
     @Inject private ProjectService projectService;
-    @Inject private VmService hfsVmService;
     @Inject private VirtualMachineService vps4VmService;
     @Inject private ActionService actionService;
     @Inject private CreditService creditService;
@@ -147,8 +148,8 @@ public class Vps4RebuildDedicatedTest {
         spyVps4VmService = spy(vps4VmService);
         spyVmUserService = spy(vmUserService);
 
-        command = new Vps4RebuildDedicated(actionService, hfsVmService, spyVps4VmService,
-                spyVmUserService, creditService, networkService, panoptaDataService, hfsVmTrackingRecordService);
+        command = new Vps4RebuildDedicated(actionService, spyVps4VmService, networkService, spyVmUserService,
+                                           creditService, panoptaDataService, hfsVmTrackingRecordService);
         addTestSqlData();
 
         vps4NewVm = mock(VirtualMachine.class);
@@ -226,7 +227,7 @@ public class Vps4RebuildDedicatedTest {
         return image;
     }
 
-    private Image setupcPanelImage() {
+    private Image setupCpanelImage() {
         Image image = new Image();
         image.operatingSystem = Image.OperatingSystem.LINUX;
         image.hfsName = "hfs-centos-7-cpanel-11";
@@ -281,27 +282,13 @@ public class Vps4RebuildDedicatedTest {
         Assert.assertEquals(SqlTestData.hfsVmId, request.vmId);
     }
 
-
     @Test
-    public void getNewHfsVmAfterRebuild() {
-        when(hfsVmService.getVm(eq(hfsNewVmId))).thenReturn(hfsVm);
-        command.execute(context, request);
-        verify(context, times(1))
-                .execute(eq("GetVmAfterCreate"), getHfsVmLambdaCaptor.capture(), eq(Vm.class));
-
-        // Verify that the lambda is returning what we expect
-        Function<CommandContext, Vm> lambda = getHfsVmLambdaCaptor.getValue();
-        Vm newHfsVm = lambda.apply(context);
-        Assert.assertEquals(newHfsVm.vmId, hfsNewVmId);
-    }
-
-    @Test
-    public void updatesUsernameForVm() {
+    public void updatesUsersForVm() {
         command.execute(context, request);
 
-        verify(spyVmUserService, atLeastOnce()).listUsers(any(UUID.class), eq(VmUserType.CUSTOMER));
+        verify(spyVmUserService, atLeastOnce()).listUsers(any(UUID.class));
         verify(spyVmUserService, atLeastOnce()).deleteUser(any(String.class), any(UUID.class));
-        verify(spyVmUserService, atLeastOnce()).createUser(any(String.class), any(UUID.class));
+        verify(spyVmUserService, atLeastOnce()).createUser(any(String.class), any(UUID.class), anyBoolean());
     }
 
     @Test
@@ -323,7 +310,7 @@ public class Vps4RebuildDedicatedTest {
 
     @Test
     public void doesNotSetRootUserPasswordForNonLinuxBasedVm() {
-        request.rebuildVmInfo.image = setupPleskImage();
+        doReturn(false).when(spyVps4VmService).isLinux(vps4VmId);
         command.execute(context, request);
 
         verify(context, times(0))
@@ -345,21 +332,16 @@ public class Vps4RebuildDedicatedTest {
 
     @Test
     public void disablesAdminAccessForFullyManagedVm() {
-        request.rebuildVmInfo.image = setupcPanelImage();
+        doReturn(true).when(spyVps4VmService).hasControlPanel(vps4VmId);
         command.execute(context, request);
 
-        verify(context, times(1))
-                .execute(eq("ConfigureAdminAccess"), eq(ToggleAdmin.class), toggleAdminArgumentCaptor.capture());
-
-        ToggleAdmin.Request request = toggleAdminArgumentCaptor.getValue();
-        Assert.assertEquals(username, request.username);
-        Assert.assertEquals(hfsNewVmId, request.vmId);
-        Assert.assertFalse(request.enabled);
+        verify(context, never()).execute(eq("ConfigureAdminAccess"), eq(ToggleAdmin.class), anyObject());
     }
 
     @Test
-    public void configuresControlPanelForcPanelImage() {
-        request.rebuildVmInfo.image = setupcPanelImage();
+    public void configuresControlPanelForCpanelImage() {
+        request.rebuildVmInfo.image = setupCpanelImage();
+        doReturn(false).when(spyVps4VmService).isLinux(vps4VmId);
         command.execute(context, request);
 
         verify(context, times(1))
@@ -384,11 +366,7 @@ public class Vps4RebuildDedicatedTest {
     @Test
     public void updatesVirtualMachineDetails() {
         command.execute(context, request);
-        Assert.assertEquals(request.rebuildVmInfo.image.imageId,
-                vps4VmService.getVirtualMachine(request.rebuildVmInfo.vmId).image.imageId);
-
-        Assert.assertEquals(request.rebuildVmInfo.serverName,
-                vps4VmService.getVirtualMachine(request.rebuildVmInfo.vmId).name);
+        verify(context, times(1)).execute(eq("UpdateVmDetails"), any(Function.class), eq(Void.class));
     }
 
     @Test
@@ -397,13 +375,6 @@ public class Vps4RebuildDedicatedTest {
         verify(context, times(1)).execute(eq("SetCommonName"), any(Function.class), eq(Void.class));
     }
 
-    @Test
-    public void doesInvokeDeleteSupportUsers() {
-        command.execute(context, request);
-
-        verify(spyVmUserService, atLeastOnce()).listUsers(any(UUID.class), eq(VmUserType.SUPPORT));
-        verify(spyVmUserService, atLeastOnce()).deleteUser(any(String.class), any(UUID.class));
-    }
     @Test
     public void configuresMonitoringIfHasPanopta() {
         PanoptaServerDetails serverDetails = mock(PanoptaServerDetails.class);

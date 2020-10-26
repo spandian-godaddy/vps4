@@ -22,7 +22,7 @@ import org.slf4j.LoggerFactory;
 
 import com.godaddy.hfs.config.Config;
 import com.godaddy.vps4.credit.CreditService;
-import com.godaddy.vps4.orchestration.vm.Vps4RebuildVm;
+import com.godaddy.vps4.orchestration.vm.rebuild.Vps4RebuildVm;
 import com.godaddy.vps4.project.ProjectService;
 import com.godaddy.vps4.snapshot.Snapshot;
 import com.godaddy.vps4.snapshot.SnapshotService;
@@ -120,16 +120,16 @@ public class VmRebuildResource {
 
         Vps4RebuildVm.Request commandRequest = generateRebuildVmOrchestrationRequest(vm, rebuildVmRequest);
 
-        if(vm.spec.isVirtualMachine()) {
+        if (vm.spec.isVirtualMachine()) {
             destroyVmSnapshots(vmId);
         }
 
-        String rebuildClassName = vm.spec.isVirtualMachine() ? "Vps4RebuildVm" : "Vps4RebuildDedicated";
+        String rebuildClassName = vm.spec.serverType.platform.getRebuildCommand();
         return createActionAndExecute(actionService, commandService, vm.vmId, ActionType.REBUILD_VM, commandRequest, rebuildClassName, user);
     }
 
     private RebuildVmRequest performAdminPrereqs(RebuildVmRequest rebuildVmRequest) {
-        if(user.isAdmin()) {
+        if (user.isAdmin()) {
             if (StringUtils.isBlank(rebuildVmRequest.password)) {
                 rebuildVmRequest.password = generatePassword(MAX_PASSWORD_LENGTH);
             }
