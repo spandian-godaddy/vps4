@@ -3,7 +3,7 @@ package com.godaddy.hfs.vm;
 import org.apache.commons.lang3.builder.ReflectionToStringBuilder;
 import org.apache.commons.lang3.builder.ToStringStyle;
 
-public class RebuildDedicatedRequest {
+public class RebuildVmRequest {
     public String hostname;
     public String image_id;
     public String image_name;

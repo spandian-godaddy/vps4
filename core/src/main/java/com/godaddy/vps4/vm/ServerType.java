@@ -33,27 +33,24 @@ public class ServerType {
             @Override public String getZone() {return "openstack.zone";}
             @Override public String getProvisionCommand() {return "ProvisionVm";}
             @Override public String getDestroyCommand() {return "Vps4DestroyVm";}
-            @Override public String getRestoreCommand() {return "Vps4RestoreVm";}
             @Override public String getRebuildCommand() {return "Vps4RebuildVm";}
+            @Override public String getRestoreCommand() {return "Vps4RestoreVm";}
         },
         OVH(2) {
             @Override public String getZone() {return "ovh.zone";}
             @Override public String getProvisionCommand() {return "ProvisionDedicated";}
             @Override public String getDestroyCommand() {return "Vps4DestroyDedicated";}
+            @Override public String getRebuildCommand() {return "Vps4RebuildDedicated";}
             @Override public String getRestoreCommand() {
                 throw new UnsupportedOperationException("Not yet implemented for OH");
             }
-            @Override public String getRebuildCommand() {return "Vps4RebuildDedicated";}
         },
         OPTIMIZED_HOSTING(3) {
             @Override public String getZone() {return "optimizedHosting.zone";}
             @Override public String getProvisionCommand() {return "ProvisionOHVm";}
             @Override public String getDestroyCommand() {return "Vps4DestroyOHVm";}
+            @Override public String getRebuildCommand() {return "Vps4RebuildOHVm";}
             @Override public String getRestoreCommand() {return "Vps4RestoreOHVm";}
-            @Override public String getRebuildCommand() {
-                // TODO add command in follow-up PR
-                throw new UnsupportedOperationException("Not yet implemented for OH");
-            }
         };
 
         private final int platformId;

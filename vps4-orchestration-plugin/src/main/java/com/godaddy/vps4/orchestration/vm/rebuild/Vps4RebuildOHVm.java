@@ -20,18 +20,18 @@ import gdg.hfs.orchestration.CommandMetadata;
 import gdg.hfs.orchestration.CommandRetryStrategy;
 
 @CommandMetadata(
-        name="Vps4RebuildDedicated",
+        name="Vps4RebuildOHVm",
         requestType= Vps4RebuildVm.Request.class,
         retryStrategy = CommandRetryStrategy.NEVER
 )
-public class Vps4RebuildDedicated extends Vps4RebuildVm {
-    private static final Logger logger = LoggerFactory.getLogger(Vps4RebuildDedicated.class);
+public class Vps4RebuildOHVm extends Vps4RebuildVm {
+    private static final Logger logger = LoggerFactory.getLogger(Vps4RebuildOHVm.class);
 
     @Inject
-    public Vps4RebuildDedicated(ActionService actionService, VirtualMachineService virtualMachineService,
-                                NetworkService vps4NetworkService, VmUserService vmUserService,
-                                CreditService creditService, PanoptaDataService panoptaDataService,
-                                HfsVmTrackingRecordService hfsVmTrackingRecordService) {
+    public Vps4RebuildOHVm(ActionService actionService, VirtualMachineService virtualMachineService,
+                           NetworkService vps4NetworkService, VmUserService vmUserService,
+                           CreditService creditService, PanoptaDataService panoptaDataService,
+                           HfsVmTrackingRecordService hfsVmTrackingRecordService) {
         super(actionService, virtualMachineService, vps4NetworkService, vmUserService, creditService,
               panoptaDataService, hfsVmTrackingRecordService);
     }
@@ -39,23 +39,23 @@ public class Vps4RebuildDedicated extends Vps4RebuildVm {
     @Override
     protected long rebuildServer(long oldHfsVmId) throws Exception {
         try {
-            long newHfsVmId = rebuildDedicated(oldHfsVmId);
+            long newHfsVmId = rebuildVm(oldHfsVmId);
             if (newHfsVmId == 0) {
-                throw new Exception("HFS Vm ID is not available. Expecting HFS VM ID.");
+                throw new Exception("HFS VM ID is not available. Expecting HFS VM ID.");
             }
             return newHfsVmId;
         } catch (RuntimeException e) {
-            logger.info("Rebuild Dedicated vm failed for dedicated vm id: {}", oldHfsVmId);
+            logger.info("Rebuild optimized hosting VM failed for VM ID: {}", oldHfsVmId);
             throw e;
         }
     }
 
-    private long rebuildDedicated(long oldHfsVmId) {
+    private long rebuildVm(long oldHfsVmId) {
         setStep(RebuildVmStep.RequestingServer);
-        logger.info("rebuild dedicated vm process");
+        logger.info("Rebuild OH VM process");
 
         RebuildVm.Request rebuildDedRequest = rebuildHfsVmRequest(oldHfsVmId);
-        VmAction vmAction = context.execute("RebuildDedicated", RebuildVm.class, rebuildDedRequest);
+        VmAction vmAction = context.execute("RebuildOHVm", RebuildVm.class, rebuildDedRequest);
 
         updateServerDetails(request);
 
@@ -74,7 +74,4 @@ public class Vps4RebuildDedicated extends Vps4RebuildVm {
         rebuildDedRequest.encryptedPassword = request.rebuildVmInfo.encryptedPassword;
         return rebuildDedRequest;
     }
-
-    @Override
-    protected void configureMailRelay(long hfsVmId) {}
 }

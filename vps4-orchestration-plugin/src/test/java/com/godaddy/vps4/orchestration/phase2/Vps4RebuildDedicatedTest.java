@@ -49,7 +49,7 @@ import com.godaddy.vps4.orchestration.hfs.cpanel.ConfigureCpanel;
 import com.godaddy.vps4.orchestration.hfs.plesk.ConfigurePlesk;
 import com.godaddy.vps4.orchestration.hfs.sysadmin.SetPassword;
 import com.godaddy.vps4.orchestration.hfs.sysadmin.ToggleAdmin;
-import com.godaddy.vps4.orchestration.hfs.vm.RebuildDedicated;
+import com.godaddy.vps4.orchestration.hfs.vm.RebuildVm;
 import com.godaddy.vps4.orchestration.sysadmin.ConfigureMailRelay;
 import com.godaddy.vps4.orchestration.vm.rebuild.Vps4RebuildDedicated;
 import com.godaddy.vps4.project.Project;
@@ -117,7 +117,7 @@ public class Vps4RebuildDedicatedTest {
     @Captor private ArgumentCaptor<ConfigureMailRelay.ConfigureMailRelayRequest> configMTAArgumentCaptor;
     @Captor private ArgumentCaptor<ConfigureCpanel.ConfigureCpanelRequest> configureCpanelRequestArgumentCaptor;
     @Captor private ArgumentCaptor<ConfigurePlesk.ConfigurePleskRequest> configurePleskRequestArgumentCaptor;
-    @Captor private ArgumentCaptor<RebuildDedicated.Request> rebuildDedRequestArgCaptor;
+    @Captor private ArgumentCaptor<RebuildVm.Request> rebuildDedRequestArgCaptor;
 
     @BeforeClass
     public static void newInjector() {
@@ -195,7 +195,7 @@ public class Vps4RebuildDedicatedTest {
         when(mockContext.execute(eq("GetVmOSDistro"), any(Function.class), eq(String.class))).thenReturn(SqlTestData.IMAGE_NAME);
 
         vmAction = mock(VmAction.class);
-        when(mockContext.execute(eq("RebuildDedicated"), eq(RebuildDedicated.class), any(RebuildDedicated.Request.class)))
+        when(mockContext.execute(eq("RebuildDedicated"), eq(RebuildVm.class), any(RebuildVm.Request.class)))
                 .thenReturn(vmAction);
         vmAction.vmId = hfsNewVmId;
 
@@ -272,11 +272,11 @@ public class Vps4RebuildDedicatedTest {
         command.execute(context, request);
         verify(context, times(1))
                 .execute(
-                        eq("RebuildDedicated"), eq(RebuildDedicated.class),
+                        eq("RebuildDedicated"), eq(RebuildVm.class),
                         rebuildDedRequestArgCaptor.capture()
                 );
 
-        RebuildDedicated.Request request = rebuildDedRequestArgCaptor.getValue();
+        RebuildVm.Request request = rebuildDedRequestArgCaptor.getValue();
         // TODO: add this assertion once HFS adds the ability to pass in the private label id for a dedicated rebuild.
         //  Assert.assertEquals("1", request.privateLabelId);
         Assert.assertEquals(SqlTestData.hfsVmId, request.vmId);

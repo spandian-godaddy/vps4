@@ -28,7 +28,6 @@ import org.mockito.ArgumentCaptor;
 
 import com.godaddy.hfs.vm.VmAction;
 import com.godaddy.vps4.credit.CreditService;
-import com.godaddy.vps4.credit.VirtualMachineCredit;
 import com.godaddy.vps4.hfs.HfsVmTrackingRecordService;
 import com.godaddy.vps4.network.IpAddress;
 import com.godaddy.vps4.network.NetworkService;
@@ -71,7 +70,6 @@ public class Vps4RebuildVmTest {
     NetworkService vps4NetworkService = mock(NetworkService.class);
     VmUserService vmUserService = mock(VmUserService.class);
     CreditService creditService = mock(CreditService.class);
-    VirtualMachineCredit credit = mock(VirtualMachineCredit.class);
     PanoptaDataService panoptaDataService = mock(PanoptaDataService.class);
     HfsVmTrackingRecordService hfsVmTrackingRecordService = mock(HfsVmTrackingRecordService.class);
 
@@ -80,7 +78,6 @@ public class Vps4RebuildVmTest {
     String shopperId = "12345678";
     long originalHfsVmId = 123L;
     long newHfsVmId = 456L;
-    long actionId = 12L;
     long ipAddressId = 34L;
     String fqdn = "10.0.0.1";
     VirtualMachine vm;
@@ -98,6 +95,7 @@ public class Vps4RebuildVmTest {
     ConfigureMailRelay setMailRelay = mock(ConfigureMailRelay.class);
     SetupPanopta setupPanopta = mock(SetupPanopta.class);
 
+    Vps4RebuildVm command;
     Vps4RebuildVm.Request request;
 
     Injector injector = Guice.createInjector(binder -> {
@@ -114,9 +112,6 @@ public class Vps4RebuildVmTest {
         binder.bind(SetupPanopta.class).toInstance(setupPanopta);
     });
     CommandContext context = spy(new TestCommandContext(new GuiceCommandProvider(injector)));
-
-    Vps4RebuildVm command = new Vps4RebuildVm(actionService, virtualMachineService, vps4NetworkService,
-            vmUserService, creditService, panoptaDataService, hfsVmTrackingRecordService);
 
     @Before
     public void setupTest() {
@@ -154,6 +149,10 @@ public class Vps4RebuildVmTest {
         action = new VmAction();
         action.vmId = newHfsVmId;
         doReturn(action).when(context).execute(eq("CreateVm"), eq(CreateVm.class), any());
+
+        command = new Vps4RebuildVm(actionService, virtualMachineService, vps4NetworkService,
+                                                  vmUserService, creditService, panoptaDataService,
+                                                  hfsVmTrackingRecordService);
     }
 
     @Test

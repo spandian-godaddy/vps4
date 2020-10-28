@@ -26,7 +26,7 @@ import com.godaddy.vps4.orchestration.hfs.vm.RebuildVm;
 import com.godaddy.vps4.orchestration.sysadmin.ConfigureMailRelay;
 import com.godaddy.vps4.orchestration.vm.WaitForAndRecordVmAction;
 
-public class Vps4RebuildDedicatedTest extends Vps4RebuildVmTest {
+public class Vps4RebuildOHVmTest extends Vps4RebuildVmTest {
 
     @Override
     @Before
@@ -35,10 +35,10 @@ public class Vps4RebuildDedicatedTest extends Vps4RebuildVmTest {
 
         super.setupTest();
 
-        request.rebuildVmInfo.image.hfsName = "centos7-cpanel-latest_64";
-        doReturn(action).when(context).execute(eq("RebuildDedicated"), eq(RebuildVm.class), any());
-        command = new Vps4RebuildDedicated(actionService, virtualMachineService, vps4NetworkService, vmUserService,
-                                           creditService, panoptaDataService, hfsVmTrackingRecordService);
+        request.rebuildVmInfo.image.hfsName = "hfs-centos70-cpanel-11-x86_64-vmtempl";
+        doReturn(action).when(context).execute(eq("RebuildOHVm"), eq(RebuildVm.class), any());
+        command = new Vps4RebuildOHVm(actionService, virtualMachineService, vps4NetworkService, vmUserService,
+                                      creditService, panoptaDataService, hfsVmTrackingRecordService);
     }
 
     @Override
@@ -76,22 +76,15 @@ public class Vps4RebuildDedicatedTest extends Vps4RebuildVmTest {
         verify(context, never()).execute(startsWith("BindIP-"), eq(BindIp.class), anyObject());
     }
 
-    @Override
-    @Test
-    public void configuresMailRelay() {
-        command.execute(context, request);
-        verify(context, never()).execute(eq(ConfigureMailRelay.class), anyObject());
-    }
-
     @Test
     public void rebuildsVmInHfs() {
         command.execute(context, request);
         ArgumentCaptor<RebuildVm.Request> argument = ArgumentCaptor.forClass(RebuildVm.Request.class);
-        verify(context).execute(eq("RebuildDedicated"), eq(RebuildVm.class), argument.capture());
+        verify(context).execute(eq("RebuildOHVm"), eq(RebuildVm.class), argument.capture());
         RebuildVm.Request request = argument.getValue();
         assertEquals(originalHfsVmId, request.vmId);
         assertEquals("host.name", request.hostname);
-        assertEquals("centos7-cpanel-latest_64", request.image_name);
+        assertEquals("hfs-centos70-cpanel-11-x86_64-vmtempl", request.image_name);
         assertEquals("user", request.username);
     }
 
