@@ -2,7 +2,6 @@ import hudson.model.*
 import groovy.transform.Field
 
 @Field def VPS4_VERSION
-@Library('ECM@master') _
 pipeline {
     agent { label "vps4-test-slave" }
     options { 
