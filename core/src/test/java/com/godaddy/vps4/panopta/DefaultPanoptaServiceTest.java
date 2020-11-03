@@ -63,7 +63,7 @@ public class DefaultPanoptaServiceTest {
     private UUID orionGuid;
     private VirtualMachineCredit credit;
     private VirtualMachine virtualMachine;
-    private int serverId;
+    private long serverId;
     private String shopperId;
     private String serverKey;
     private String customerKey;

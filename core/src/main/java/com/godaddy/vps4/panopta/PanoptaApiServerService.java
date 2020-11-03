@@ -18,26 +18,26 @@ import javax.ws.rs.core.MediaType;
 public interface PanoptaApiServerService {
     @GET
     @Path("/{server_id}/agent_resource")
-    PanoptaUsageIdList getUsageList(@PathParam("server_id") int serverId,
+    PanoptaUsageIdList getUsageList(@PathParam("server_id") long serverId,
                                     @QueryParam("partner_customer_key") String partnerCustomerKey,
                                     @QueryParam("limit") int limit);
 
     @GET
     @Path("/{server_id}/network_service")
-    PanoptaNetworkIdList getNetworkList(@PathParam("server_id") int serverId,
+    PanoptaNetworkIdList getNetworkList(@PathParam("server_id") long serverId,
                                         @QueryParam("partner_customer_key") String partnerCustomerKey,
                                         @QueryParam("limit") int limit);
 
     @GET
     @Path("/{server_id}/agent_resource/{agent_resource_id}/metric/{timescale}")
-    PanoptaUsageGraph getUsageGraph(@PathParam("server_id") int serverId,
+    PanoptaUsageGraph getUsageGraph(@PathParam("server_id") long serverId,
                                     @PathParam("agent_resource_id") int agentResourceId,
                                     @PathParam("timescale") String timescale,
                                     @QueryParam("partner_customer_key") String partnerCustomerKey);
 
     @GET
     @Path("/{server_id}/network_service/{network_service_id}/response_time/{timescale}")
-    PanoptaNetworkGraph getNetworkGraph(@PathParam("server_id") int serverId,
+    PanoptaNetworkGraph getNetworkGraph(@PathParam("server_id") long serverId,
                                         @PathParam("network_service_id") int networkServiceId,
                                         @PathParam("timescale") String timescale,
                                         @QueryParam("partner_customer_key") String partnerCustomerKey);
@@ -58,12 +58,12 @@ public interface PanoptaApiServerService {
 
     @GET
     @Path("/{server_id}")
-    PanoptaServers.Server getServer(@PathParam("server_id") int serverId,
+    PanoptaServers.Server getServer(@PathParam("server_id") long serverId,
                                     @QueryParam("partner_customer_key") String partnerCustomerKey);
 
     @PUT
     @Path("/{server_id}")
-    void setServerStatus(@PathParam("server_id") int serverId,
+    void setServerStatus(@PathParam("server_id") long serverId,
                          @QueryParam("partner_customer_key") String partnerCustomerKey,
                          PanoptaApiUpdateServerRequest panoptaApiUpdateServerRequest);
 
@@ -74,7 +74,7 @@ public interface PanoptaApiServerService {
 
     @GET
     @Path("/{server_id}/availability")
-    PanoptaAvailability getAvailability(@PathParam("server_id") int serverId,
+    PanoptaAvailability getAvailability(@PathParam("server_id") long serverId,
                                         @QueryParam("partner_customer_key") String partnerCustomerKey,
                                         @QueryParam("start_time") String startTime,
                                         @QueryParam("end_time") String endTime);

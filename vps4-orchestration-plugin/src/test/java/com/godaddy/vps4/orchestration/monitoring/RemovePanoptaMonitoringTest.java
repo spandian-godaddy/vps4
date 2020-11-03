@@ -72,38 +72,40 @@ public class RemovePanoptaMonitoringTest {
     }
 
     @Test
-    public void removesPanoptaWithDb() {
-        when(panoptaService.getActiveServers(shopperId)).thenReturn(Collections.emptyList());
+    public void removesPanoptaWithApi() {
+        when(panoptaDataService.getPanoptaDetails(vmId)).thenReturn(null);
+        long serverId = panoptaServerList.get(0).serverId;
         command.execute(context, vmId);
-        verify(panoptaService, times(1)).removeServerMonitoring(vmId);
-        verify(panoptaDataService, times(1)).setPanoptaServerDestroyed(vmId);
+        verify(panoptaService, times(1)).removeServerMonitoring(serverId, shopperId);
+        verify(context, times(1)).execute(DeletePanoptaCustomer.class, shopperId);
     }
 
     @Test
-    public void skipsRemovingPanoptaWithDbIfNoRecordIsFound() {
+    public void onlyRemovesMatchingServers() {
+        panoptaServerList.add(getTestPanoptaServer());
         when(panoptaDataService.getPanoptaDetails(vmId)).thenReturn(null);
         command.execute(context, vmId);
-        verify(panoptaService, never()).removeServerMonitoring(vmId);
-        verify(panoptaDataService, never()).setPanoptaServerDestroyed(vmId);
+        verify(panoptaService, times(1)).removeServerMonitoring(anyLong(), anyString());
+        verify(context, never()).execute(DeletePanoptaCustomer.class, shopperId);
     }
 
-//    @Test
-//    public void removesPanoptaWithApi() {
-//        when(panoptaDataService.getPanoptaDetails(vmId)).thenReturn(null);
-//        long serverId = panoptaServerList.get(0).serverId;
-//        command.execute(context, vmId);
-//        verify(panoptaService, times(1)).removeServerMonitoring(serverId, shopperId);
-//        verify(context, times(1)).execute(DeletePanoptaCustomer.class, shopperId);
-//    }
+    @Test
+    public void skipsNewServerIfVmHasBeenRebuilt() {
+        panoptaServerList.add(getTestPanoptaServer(virtualMachine.orionGuid.toString()));
+        long serverId = panoptaServerList.get(0).serverId;
+        long newServerId = panoptaServerList.get(1).serverId;
 
-//    @Test
-//    public void onlyRemovesMatchingServers() {
-//        panoptaServerList.add(getTestPanoptaServer());
-//        when(panoptaDataService.getPanoptaDetails(vmId)).thenReturn(null);
-//        command.execute(context, vmId);
-//        verify(panoptaService, times(1)).removeServerMonitoring(anyLong(), anyString());
-//        verify(context, never()).execute(DeletePanoptaCustomer.class, shopperId);
-//    }
+        UUID newVmId = UUID.randomUUID();
+        when(credit.getProductId()).thenReturn(newVmId);
+        PanoptaDetail newServerPanoptaDetails = mock(PanoptaDetail.class);
+        when(newServerPanoptaDetails.getServerId()).thenReturn(newServerId);
+        when(panoptaDataService.getPanoptaDetails(newVmId)).thenReturn(newServerPanoptaDetails);
+
+        command.execute(context, vmId);
+        verify(panoptaService, times(1)).removeServerMonitoring(serverId, shopperId);
+        verify(panoptaService, never()).removeServerMonitoring(newServerId, shopperId);
+        verify(context, never()).execute(DeletePanoptaCustomer.class, shopperId);
+    }
 
     @Test
     public void skipCustomerDeleteIfActiveServersStillExistInPanopta() {

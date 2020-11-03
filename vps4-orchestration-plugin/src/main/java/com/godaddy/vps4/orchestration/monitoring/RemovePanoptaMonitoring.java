@@ -58,8 +58,8 @@ public class RemovePanoptaMonitoring implements Command<UUID, Void> {
         this.context = context;
         this.vmId = vmId;
         this.shopperId = getShopperId(vmId);
-        removePanoptaUsingDb();
-        removePanoptaServer();
+        deleteMatchingServersFromPanopta();
+        panoptaDataService.setPanoptaServerDestroyed(vmId);
         return null;
     }
 
@@ -70,43 +70,46 @@ public class RemovePanoptaMonitoring implements Command<UUID, Void> {
     }
 
     /*
-     * Delete any Panopta servers matching the vmId in our database. This is necessary since some of the older Panopta
-     * VMs do not have a name matching their Orion GUID, and therefore will not be deleted with the Panopta API lookup.
-     */
-    private void removePanoptaUsingDb() {
-        if (hasPanoptaMonitoring()) {
-            panoptaService.removeServerMonitoring(vmId);
-            panoptaDataService.setPanoptaServerDestroyed(vmId);
-        }
-    }
-
-    private boolean hasPanoptaMonitoring() {
-        PanoptaDetail panoptaDetails = panoptaDataService.getPanoptaDetails(vmId);
-        return panoptaDetails != null;
-    }
-
-    /*
      * Delete any Panopta servers with a Panopta name matching the Orion GUID. This is necessary since failed Panopta
-     * installs can leave orphaned Panopta accounts outside of our DB.
+     * installs can leave orphaned Panopta accounts which are not tracked in our DB.
      */
-    private void removePanoptaServer() {
-        UUID orionGuid = virtualMachineService.getVirtualMachine(vmId).orionGuid;
+    private void deleteMatchingServersFromPanopta() {
+        VirtualMachine vm = virtualMachineService.getVirtualMachine(vmId);
+        String orion = vm.orionGuid.toString();
+
         List<PanoptaServer> allServers = Stream.concat(
                 panoptaService.getActiveServers(shopperId).stream(),
                 panoptaService.getSuspendedServers(shopperId).stream()
         ).collect(Collectors.toList());
+        long ignoredId = ignoredPanoptaServer(vm);
         List<PanoptaServer> removableServers = allServers.stream()
-                                               .filter(s -> s.name.equals(orionGuid.toString()))
+                                               .filter(s -> s.name.equals(orion) && s.serverId != ignoredId)
                                                .collect(Collectors.toList());
         for (PanoptaServer server : removableServers) {
-//            logger.info("Attempting to delete server {} from panopta.", server.serverId);
-//            panoptaService.removeServerMonitoring(server.serverId, shopperId);
-            logger.info("Server {} is likely an orphan in panopta.", server.serverId);
+            logger.info("Deleting panopta server {} for orion guid {}.", server.serverId, orion);
+            panoptaService.removeServerMonitoring(server.serverId, shopperId);
         }
-//        if (removableServers.size() == allServers.size()) {
-        if (allServers.isEmpty()) {
+        if (removableServers.size() == allServers.size()) {
             removePanoptaCustomer();
         }
+    }
+
+
+    /*
+     * It's technically possible for another (active) server to exist with the same orion guid as the one being
+     * destroyed. This could happen if a server was rebuilt cross-DC and the destroy action for the old VM failed.
+     * Eventually we would retry the destroy action of the old VM, and when that happens, we don't want to remove
+     * Panopta from the new VM.
+     */
+    private long ignoredPanoptaServer(VirtualMachine vm) {
+        UUID newVmId = creditService.getVirtualMachineCredit(vm.orionGuid).getProductId();
+        if (vm.vmId != newVmId) {
+            PanoptaDetail newVmPanoptaDetails = panoptaDataService.getPanoptaDetails(newVmId);
+            if (newVmPanoptaDetails != null) {
+                return newVmPanoptaDetails.getServerId();
+            }
+        }
+        return -1;
     }
 
     private void removePanoptaCustomer() {

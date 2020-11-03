@@ -270,9 +270,10 @@ public class DefaultPanoptaService implements PanoptaService {
     }
 
     private PanoptaServer mapServer(String partnerCustomerKey, PanoptaServers.Server server) {
-        long serverId = Integer.parseInt(server.url.substring(server.url.lastIndexOf("/") + 1));
+        long serverId = Long.parseLong(server.url.substring(server.url.lastIndexOf("/") + 1));
+        PanoptaServer.Status status = PanoptaServer.Status.valueOf(server.status.toUpperCase());
         return new PanoptaServer(partnerCustomerKey, serverId, server.serverKey, server.name, server.fqdn,
-                                 server.serverGroup, PanoptaServer.Status.valueOf(server.status.toUpperCase()));
+                                 server.serverGroup, status);
     }
 
     @Override
@@ -281,7 +282,7 @@ public class DefaultPanoptaService implements PanoptaService {
         if (panoptaDetail == null) {
             return;
         }
-        int serverId = panoptaDetail.getServerId();
+        long serverId = panoptaDetail.getServerId();
         String partnerCustomerKey = panoptaDetail.getPartnerCustomerKey();
         PanoptaServer server =
                 mapServer(partnerCustomerKey, panoptaApiServerService.getServer(serverId, partnerCustomerKey));
@@ -304,7 +305,7 @@ public class DefaultPanoptaService implements PanoptaService {
         if (panoptaDetail == null) {
             return;
         }
-        int serverId = panoptaDetail.getServerId();
+        long serverId = panoptaDetail.getServerId();
         String partnerCustomerKey = panoptaDetail.getPartnerCustomerKey();
         PanoptaServer server =
                 mapServer(partnerCustomerKey, panoptaApiServerService.getServer(serverId, partnerCustomerKey));
