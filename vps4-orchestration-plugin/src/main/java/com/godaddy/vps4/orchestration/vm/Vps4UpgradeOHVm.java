@@ -1,0 +1,92 @@
+package com.godaddy.vps4.orchestration.vm;
+
+import static com.godaddy.vps4.credit.ECommCreditService.ProductMetaField.PLAN_CHANGE_PENDING;
+
+import java.util.Collections;
+
+import javax.inject.Inject;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import com.godaddy.vps4.credit.CreditService;
+import com.godaddy.vps4.orchestration.ActionCommand;
+import com.godaddy.vps4.orchestration.hfs.vm.ResizeOHVm;
+import com.godaddy.vps4.vm.ActionService;
+import com.godaddy.vps4.vm.ServerType;
+import com.godaddy.vps4.vm.VirtualMachine;
+import com.godaddy.vps4.vm.VirtualMachineService;
+
+import gdg.hfs.orchestration.CommandContext;
+import gdg.hfs.orchestration.CommandMetadata;
+import gdg.hfs.orchestration.CommandRetryStrategy;
+
+@CommandMetadata(
+        name="Vps4UpgradeOHVm",
+        requestType= Vps4UpgradeOHVm.Request.class,
+        responseType=Void.class,
+        retryStrategy = CommandRetryStrategy.NEVER
+)
+public class Vps4UpgradeOHVm extends ActionCommand<Vps4UpgradeOHVm.Request, Void> {
+    private static final Logger logger = LoggerFactory.getLogger(Vps4UpgradeOHVm.class);
+
+    private final VirtualMachineService virtualMachineService;
+    private final CreditService creditService;
+    private CommandContext context;
+    private Request request;
+
+    @Inject
+    public Vps4UpgradeOHVm(ActionService actionService, VirtualMachineService virtualMachineService,
+                           CreditService creditService) {
+        super(actionService);
+        this.virtualMachineService = virtualMachineService;
+        this.creditService = creditService;
+    }
+
+    @Override
+    protected Void executeWithAction(CommandContext context, Request request) {
+        this.context = context;
+        this.request = request;
+
+        String specName = virtualMachineService.getSpec(request.newTier, ServerType.Platform.OPTIMIZED_HOSTING.getplatformId()).specName;
+        ResizeOHVm.Request resizeOHVmRequest= new ResizeOHVm.Request(request.virtualMachine.hfsVmId, specName);
+        context.execute(ResizeOHVm.class, resizeOHVmRequest);
+
+        updateVmDetails();
+        logger.info("Upgrade action complete for vm {}", request.virtualMachine.vmId);
+        return null;
+    }
+
+
+    private void updateVmDetails() {
+        updateVmTierInDb();
+        updateEcommCredit();
+    }
+
+    private void updateVmTierInDb() {
+        logger.info("Updating tier to match new upgraded VM {}", request.virtualMachine.vmId);
+
+        int newSpecId = virtualMachineService.getSpec(request.newTier, ServerType.Platform.OPTIMIZED_HOSTING.getplatformId()).specId;
+        context.execute("UpdateVmTier", ctx -> {
+            virtualMachineService.updateVirtualMachine(request.virtualMachine.vmId, Collections.singletonMap("spec_id", newSpecId));
+            return null;
+        }, Void.class);
+    }
+
+    private void updateEcommCredit() {
+        logger.info("Mark pending plan upgrade complete in credit for VM {}", request.virtualMachine.vmId);
+
+        creditService.updateProductMeta(request.virtualMachine.orionGuid, PLAN_CHANGE_PENDING, "false");
+    }
+
+    public static class Request extends VmActionRequest{
+        public int newTier;
+
+        public Request(){}
+
+        public Request(VirtualMachine vm, int newTier){
+            this.virtualMachine = vm;
+            this.newTier = newTier;
+        }
+    }
+}

@@ -31,6 +31,7 @@ import com.godaddy.vps4.snapshot.SnapshotType;
 import com.godaddy.vps4.vm.ActionStatus;
 import com.godaddy.vps4.vm.ActionType;
 import com.godaddy.vps4.vm.ImageService;
+import com.godaddy.vps4.vm.ServerType;
 import com.godaddy.vps4.vm.VirtualMachine;
 import com.godaddy.vps4.vm.VirtualMachineService;
 import com.godaddy.vps4.vm.VirtualMachineService.ProvisionVirtualMachineParameters;
@@ -106,7 +107,7 @@ public class JdbcVirtualMachineServiceTest {
     public void testService() throws InterruptedException {
         String name = "testServer";
         int tier = 10;
-        int specId = virtualMachineService.getSpec(tier).specId;
+        int specId = virtualMachineService.getSpec(tier, ServerType.Platform.OPENSTACK.getplatformId()).specId;
 
         ProvisionVirtualMachineParameters params = new ProvisionVirtualMachineParameters(vps4User.getId(), 1, "vps4-testing-",
                 orionGuid, name, tier, 1, "centos-7");

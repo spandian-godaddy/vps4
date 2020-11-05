@@ -3,6 +3,8 @@ package com.godaddy.vps4.web.vm;
 import com.godaddy.hfs.config.Config;
 import com.godaddy.vps4.credit.CreditService;
 import com.godaddy.vps4.credit.VirtualMachineCredit;
+import com.godaddy.vps4.orchestration.ActionRequest;
+import com.godaddy.vps4.orchestration.vm.Vps4UpgradeOHVm;
 import com.godaddy.vps4.orchestration.vm.Vps4UpgradeVm;
 import com.godaddy.vps4.util.Cryptography;
 import com.godaddy.vps4.vm.*;
@@ -75,24 +77,38 @@ public class VmUpgradeResource {
         VirtualMachineCredit credit = null;
         if (user.isShopper()) {
             credit = getAndValidateUserAccountCredit(creditService, virtualMachine.orionGuid, user.getShopperId());
-            if(!credit.isPlanChangePending()) {
+            if (!credit.isPlanChangePending()) {
                 throw new Vps4Exception("NO_PLAN_CHANGE_PENDING", "No plan change is pending for VM " + vmId);
             }
         }
 
-        validatePassword(upgradeVmRequest.password);
+        if (virtualMachine.spec.serverType.platform == ServerType.Platform.OPENSTACK) {
+            validatePassword(upgradeVmRequest.password);
+        }
 
-        Vps4UpgradeVm.Request req = new Vps4UpgradeVm.Request();
-        req.vmId = vmId;
-        req.shopperId = user.getShopperId();
-        req.initiatedBy = user.getUsername();
-        req.encryptedPassword = cryptography.encrypt(upgradeVmRequest.password);
-        req.newTier = credit.getTier();
-        req.autoBackupName = autoBackupName;
-        req.zone = openStackZone;
-        req.privateLabelId = credit.getResellerId();
-        return VmHelper.createActionAndExecute(actionService, commandService, vmId,
-                ActionType.UPGRADE_VM, req, "Vps4UpgradeVm", user);
+        String upgradeClassName = virtualMachine.spec.serverType.platform.getUpgradeCommand();
+        ActionRequest commandRequest = generateUpgradeVmOrchestrationRequest(virtualMachine, credit,
+                                                                             upgradeVmRequest);
+        return VmHelper.createActionAndExecute(actionService, commandService, vmId, ActionType.UPGRADE_VM,
+                                               commandRequest, upgradeClassName, user);
+    }
 
+    private ActionRequest generateUpgradeVmOrchestrationRequest(VirtualMachine vm, VirtualMachineCredit credit, UpgradeVmRequest upgradeVmRequest) {
+        if (vm.spec.serverType.platform == ServerType.Platform.OPENSTACK) {
+            Vps4UpgradeVm.Request req = new Vps4UpgradeVm.Request();
+            req.vmId = vm.vmId;
+            req.shopperId = user.getShopperId();
+            req.initiatedBy = user.getUsername();
+            req.encryptedPassword = cryptography.encrypt(upgradeVmRequest.password);
+            req.newTier = credit.getTier();
+            req.autoBackupName = autoBackupName;
+            req.zone = openStackZone;
+            req.privateLabelId = credit.getResellerId();
+            return req;
+        }
+        else if (vm.spec.serverType.platform == ServerType.Platform.OPTIMIZED_HOSTING) {
+            return new Vps4UpgradeOHVm.Request(vm, credit.getTier());
+        }
+        else throw new Vps4Exception("UPGRADE_NOT_SUPPORTTED_FOR_PLATFORM", String.format("Upgrade not supported for platform %s", vm.spec.serverType.platform));
     }
 }

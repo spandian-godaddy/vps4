@@ -24,6 +24,7 @@ import com.godaddy.vps4.snapshot.SnapshotType;
 import com.godaddy.vps4.vm.ActionService;
 import com.godaddy.vps4.vm.ActionType;
 import com.godaddy.vps4.vm.RestoreVmInfo;
+import com.godaddy.vps4.vm.ServerType;
 import com.godaddy.vps4.vm.VirtualMachine;
 import com.godaddy.vps4.vm.VirtualMachineService;
 import com.godaddy.vps4.vm.VmUserService;
@@ -149,7 +150,7 @@ public class Vps4UpgradeVm extends ActionCommand<Vps4UpgradeVm.Request, Void> {
         restoreVmInfo.sgid = projectService.getProject(vm.projectId).getVhfsSgid();
         restoreVmInfo.hostname = vm.hostname;
         restoreVmInfo.encryptedPassword = request.encryptedPassword;
-        restoreVmInfo.rawFlavor = virtualMachineService.getSpec(request.newTier).specName;
+        restoreVmInfo.rawFlavor = virtualMachineService.getSpec(request.newTier, ServerType.Platform.OPENSTACK.getplatformId()).specName;
         restoreVmInfo.username = vmUserService.getPrimaryCustomer(request.vmId).username;
         restoreVmInfo.zone = request.zone;
         restoreVmInfo.orionGuid = orionGuid;
@@ -169,7 +170,7 @@ public class Vps4UpgradeVm extends ActionCommand<Vps4UpgradeVm.Request, Void> {
     private void updateVmTierInDb() {
         logger.info("Updating tier to match new upgraded VM {}", request.vmId);
 
-        int newSpecId = virtualMachineService.getSpec(request.newTier).specId;
+        int newSpecId = virtualMachineService.getSpec(request.newTier, ServerType.Platform.OPENSTACK.getplatformId()).specId;
         context.execute("UpdateVmTier", ctx -> {
             virtualMachineService.updateVirtualMachine(request.vmId, Collections.singletonMap("spec_id", newSpecId));
             return null;

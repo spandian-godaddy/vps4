@@ -108,4 +108,8 @@ public interface VmService {
     @POST
     @Path("/{vmId}/restore")
     VmAction restore(@PathParam("vmId") long vmId, @QueryParam("snapshotId") long snapshotId);
+
+    @POST
+    @Path("/{vmId}/resize")
+    VmAction resize(@PathParam("vmId") long vmId, ResizeRequest request);
 }

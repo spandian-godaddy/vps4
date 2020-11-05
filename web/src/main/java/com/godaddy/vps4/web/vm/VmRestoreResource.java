@@ -181,6 +181,6 @@ public class VmRestoreResource {
             req.virtualMachine = vm;
             return req;
         }
-        else throw new Vps4Exception("INVALID_PLATFORM_FOR_RESTORE", String.format("Could not restore snapshot for platform %s", vm.spec.serverType.platform));
+        else throw new Vps4Exception("RESTORE_NOT_SUPPORTED_FOR_PLATFORM", String.format("Restore not supported for platform %s", vm.spec.serverType.platform));
     }
 }

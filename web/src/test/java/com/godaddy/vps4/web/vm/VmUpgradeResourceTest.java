@@ -1,9 +1,14 @@
 package com.godaddy.vps4.web.vm;
 
+import static org.junit.Assert.assertNull;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyLong;
 import static org.mockito.Matchers.anyObject;
+import static org.mockito.Matchers.anyString;
+import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.time.Instant;
@@ -25,6 +30,8 @@ import com.godaddy.vps4.vm.ActionService;
 import com.godaddy.vps4.vm.ActionStatus;
 import com.godaddy.vps4.vm.ActionType;
 import com.godaddy.vps4.vm.DataCenterService;
+import com.godaddy.vps4.vm.ServerSpec;
+import com.godaddy.vps4.vm.ServerType;
 import com.godaddy.vps4.vm.VirtualMachine;
 import com.godaddy.vps4.vm.VirtualMachineService;
 import com.godaddy.vps4.web.Vps4Exception;
@@ -97,16 +104,6 @@ public class VmUpgradeResourceTest {
             .build();
     }
 
-    @Test
-    public void testUpgradeVm() {
-        when(creditService.getVirtualMachineCredit(testCredit.getOrionGuid())).thenReturn(testCredit);
-        String password = "T0ta!1yRand0m";
-        UpgradeVmRequest upgradeVmRequest= new UpgradeVmRequest();
-        upgradeVmRequest.password = password;
-        resource.upgradeVm(testVm.vmId, upgradeVmRequest);
-    }
-
-
     @Test(expected = Vps4Exception.class)
     public void testUpgradeVmNoPlanChangePending() {
         testCredit = setupCredit(Boolean.FALSE);
@@ -114,5 +111,53 @@ public class VmUpgradeResourceTest {
         UpgradeVmRequest upgradeVmRequest= new UpgradeVmRequest();
         resource.upgradeVm(testVm.vmId, upgradeVmRequest);
     }
+
+    @Test
+    public void testUpgradeOpenstackVmWithValidPassword() {
+        testVm.spec = new ServerSpec();
+        testVm.spec.serverType = new ServerType();
+        testVm.spec.serverType.platform = ServerType.Platform.OPENSTACK;
+        when(creditService.getVirtualMachineCredit(testCredit.getOrionGuid())).thenReturn(testCredit);
+        String password = "T0ta!1yRand0m";
+        UpgradeVmRequest upgradeVmRequest= new UpgradeVmRequest();
+        upgradeVmRequest.password = password;
+        resource.upgradeVm(testVm.vmId, upgradeVmRequest);
+        verify(actionService, times(1)).createAction(eq(testVm.vmId), eq(ActionType.UPGRADE_VM), anyString(), anyString());
+    }
+
+    @Test(expected = Vps4Exception.class)
+    public void testUpgradeOpenstackVmWithInvalidPassword() {
+        testVm.spec = new ServerSpec();
+        testVm.spec.serverType = new ServerType();
+        testVm.spec.serverType.platform = ServerType.Platform.OPENSTACK;
+        when(creditService.getVirtualMachineCredit(testCredit.getOrionGuid())).thenReturn(testCredit);
+        String password = "";
+        UpgradeVmRequest upgradeVmRequest= new UpgradeVmRequest();
+        upgradeVmRequest.password = password;
+        resource.upgradeVm(testVm.vmId, upgradeVmRequest);
+    }
+
+    @Test
+    public void testUpgradeOHVmNoPasswordNeeded() {
+        testVm.spec = new ServerSpec();
+        testVm.spec.serverType = new ServerType();
+        testVm.spec.serverType.platform = ServerType.Platform.OPTIMIZED_HOSTING;
+        when(creditService.getVirtualMachineCredit(testCredit.getOrionGuid())).thenReturn(testCredit);
+        UpgradeVmRequest upgradeVmRequest= new UpgradeVmRequest();
+        resource.upgradeVm(testVm.vmId, upgradeVmRequest);
+        assertNull(upgradeVmRequest.password);
+        verify(actionService, times(1)).createAction(eq(testVm.vmId), eq(ActionType.UPGRADE_VM), anyString(), anyString());
+    }
+
+    @Test(expected = UnsupportedOperationException.class)
+    public void testUpgradeDedicatedNotSupported() {
+        testVm.spec = new ServerSpec();
+        testVm.spec.serverType = new ServerType();
+        testVm.spec.serverType.platform = ServerType.Platform.OVH;
+        when(creditService.getVirtualMachineCredit(testCredit.getOrionGuid())).thenReturn(testCredit);
+        UpgradeVmRequest upgradeVmRequest= new UpgradeVmRequest();
+        resource.upgradeVm(testVm.vmId, upgradeVmRequest);
+    }
+
 
 }

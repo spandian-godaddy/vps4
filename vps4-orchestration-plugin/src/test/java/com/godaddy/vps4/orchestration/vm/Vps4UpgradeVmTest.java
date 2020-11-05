@@ -35,6 +35,7 @@ import com.godaddy.vps4.snapshot.SnapshotType;
 import com.godaddy.vps4.vm.ActionService;
 import com.godaddy.vps4.vm.ActionType;
 import com.godaddy.vps4.vm.ServerSpec;
+import com.godaddy.vps4.vm.ServerType;
 import com.godaddy.vps4.vm.VirtualMachine;
 import com.godaddy.vps4.vm.VirtualMachineService;
 import com.godaddy.vps4.vm.VmUser;
@@ -104,7 +105,7 @@ public class Vps4UpgradeVmTest {
         ServerSpec spec = mock(ServerSpec.class);
         spec.specName = "flavor.unittest";
         spec.specId = 7;
-        when(virtualMachineService.getSpec(request.newTier)).thenReturn(spec);
+        when(virtualMachineService.getSpec(request.newTier, ServerType.Platform.OPENSTACK.getplatformId())).thenReturn(spec);
 
         VmUser vmUser = mock(VmUser.class);
         when(vmUserService.getPrimaryCustomer(originalVmId)).thenReturn(vmUser);
@@ -162,7 +163,7 @@ public class Vps4UpgradeVmTest {
         assertEquals("flavor.unittest", restoreReq.restoreVmInfo.rawFlavor);
         assertEquals(request.actionId, restoreReq.actionId);
         assertEquals(orionGuid, restoreReq.restoreVmInfo.orionGuid);
-        verify(virtualMachineService, atLeastOnce()).getSpec(request.newTier);
+        verify(virtualMachineService, atLeastOnce()).getSpec(request.newTier, ServerType.Platform.OPENSTACK.getplatformId());
     }
 
     @Test

@@ -65,15 +65,15 @@ public class JdbcVirtualMachineService implements VirtualMachineService {
     }
 
     @Override
-    public ServerSpec getSpec(int tier) {
+    public ServerSpec getSpec(int tier, int serverTypeId) {
         return Sql.with(dataSource).exec(
                 "SELECT spec_id, name as spec_vps4_name, spec_name, tier, cpu_core_count, memory_mib, disk_gib, " +
                         "valid_on as spec_valid_on, valid_until as spec_valid_until, " +
                         "st.server_type_id, st.server_type, st.platform " +
                 "FROM virtual_machine_spec " +
                 "JOIN server_type st USING(server_type_id)" +
-                "WHERE valid_until > now_utc() AND tier=? ",
-                Sql.nextOrNull(this::mapServerSpec), tier);
+                "WHERE valid_until > now_utc() AND tier=? AND server_type_id=?",
+                Sql.nextOrNull(this::mapServerSpec), tier, serverTypeId);
     }
 
     @Override

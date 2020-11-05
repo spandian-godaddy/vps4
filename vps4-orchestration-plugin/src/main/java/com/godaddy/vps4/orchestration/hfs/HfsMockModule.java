@@ -33,6 +33,7 @@ import com.godaddy.hfs.vm.CreateVMWithFlavorRequest;
 import com.godaddy.hfs.vm.FlavorList;
 import com.godaddy.hfs.vm.HfsInventoryData;
 import com.godaddy.hfs.vm.RebuildVmRequest;
+import com.godaddy.hfs.vm.ResizeRequest;
 import com.godaddy.hfs.vm.ServerUsageStats;
 import com.godaddy.hfs.vm.Vm;
 import com.godaddy.hfs.vm.VmAction;
@@ -900,6 +901,11 @@ public class HfsMockModule extends AbstractModule {
 
             @Override
             public VmAction restore(long vmId, long snapshotId) {
+                throw new UnsupportedOperationException("Not implemented, yet");
+            }
+
+            @Override
+            public VmAction resize(long vmId, ResizeRequest request) {
                 throw new UnsupportedOperationException("Not implemented, yet");
             }
         };

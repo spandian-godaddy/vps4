@@ -33,6 +33,7 @@ import com.godaddy.vps4.orchestration.hfs.vm.RestartVm;
 import com.godaddy.vps4.orchestration.hfs.vm.RestoreOHVm;
 import com.godaddy.vps4.orchestration.hfs.vm.StartVm;
 import com.godaddy.vps4.orchestration.hfs.vm.StopVm;
+import com.godaddy.vps4.orchestration.hfs.vm.ResizeOHVm;
 import com.godaddy.vps4.orchestration.hfs.vm.WaitForVmAction;
 import com.godaddy.vps4.orchestration.monitoring.HandleMonitoringDownEvent;
 import com.godaddy.vps4.orchestration.snapshot.WaitForSnapshotAction;
@@ -60,6 +61,7 @@ public class HfsCommandModule extends AbstractModule {
         bind(WaitForManageVmAction.class);
         bind(WaitForAndRecordVmAction.class);
         bind(RestoreOHVm.class);
+        bind(ResizeOHVm.class);
 
         // Network
         bind(AllocateIp.class);

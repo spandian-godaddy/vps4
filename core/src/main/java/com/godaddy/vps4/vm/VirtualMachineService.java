@@ -16,7 +16,7 @@ public interface VirtualMachineService {
 
     ServerSpec getSpec(String name);
 
-    ServerSpec getSpec(int tier);
+    ServerSpec getSpec(int tier, int serverTypeId);
 
     Map<Integer, Integer> getActiveServerCountByTiers();
 
