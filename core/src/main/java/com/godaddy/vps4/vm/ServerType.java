@@ -43,10 +43,10 @@ public class ServerType {
             @Override public String getDestroyCommand() {return "Vps4DestroyDedicated";}
             @Override public String getRebuildCommand() {return "Vps4RebuildDedicated";}
             @Override public String getRestoreCommand() {
-                throw new UnsupportedOperationException("Not yet implemented for OH");
+                throw new UnsupportedOperationException("Not yet implemented for OVH");
             }
             @Override public String getUpgradeCommand() {
-                throw new UnsupportedOperationException("Not supported for OH");
+                throw new UnsupportedOperationException("Not supported for OVH");
             }
         },
         OPTIMIZED_HOSTING(3) {
