@@ -15,7 +15,8 @@ public class ChangeHostnameTest implements VmTest {
     final String newHostname;
 
     private int HOSTNAME_TIMEOUT_SECONDS = 240;
-    private int RESTART_TIMEOUT_SECONDS = 240;
+    private int RESTART_TIMEOUT_SECONDS = 480;
+    private int WAIT_AFTER_RESTART_MILLISECONDS = 30000;
 
     public ChangeHostnameTest(String newHostname) {
         this.newHostname = newHostname;
@@ -32,21 +33,25 @@ public class ChangeHostnameTest implements VmTest {
         }
 
         long setHostnameActionId = vps4Client.setHostname(vm.vmId, newHostname);
-        logger.debug("Wait for change hostname on vm {}", vm);
+        logger.debug("Wait for change hostname on vm {}, via action id: {}", vm, setHostnameActionId);
         vps4Client.pollForVmActionComplete(vm.vmId, setHostnameActionId, HOSTNAME_TIMEOUT_SECONDS);
 
-        long restartVmActionId = vps4Client.restartVm(vm.vmId);
-        logger.debug("Wait for restart on vm {}", vm);
-        vps4Client.pollForVmActionComplete(vm.vmId, restartVmActionId, RESTART_TIMEOUT_SECONDS);
+        // a reboot is only needed for windows to apply hostname change; reboot not required for linux
+        if (vm.isWindows()) {
+            long restartVmActionId = vps4Client.restartVm(vm.vmId);
+            logger.debug("Wait for restart on vm {}, via action id: {}", vm, restartVmActionId);
+            vps4Client.pollForVmActionComplete(vm.vmId, restartVmActionId, RESTART_TIMEOUT_SECONDS);
 
-        try {
-            // A brief pause before trying remote connections
-            Thread.sleep(15000);
-        } catch (InterruptedException e) {
-            logger.error("Error during start stop test sleeping, pre-remote check", e);
+            try {
+                // A brief pause before trying remote connections
+                Thread.sleep(WAIT_AFTER_RESTART_MILLISECONDS);
+            } catch (InterruptedException e) {
+                logger.error("Error during start stop test sleeping, pre-remote check", e);
+            }
         }
 
         Vps4RemoteAccessClient client = vm.remote();
+        logger.debug("check hostname on vm {}", vm);
         assert client.checkHostname(vm.vmId, newHostname);
     }
 

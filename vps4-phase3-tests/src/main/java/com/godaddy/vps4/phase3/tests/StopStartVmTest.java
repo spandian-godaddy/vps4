@@ -18,6 +18,10 @@ public class StopStartVmTest implements VmTest {
 
     private static final Logger logger = LoggerFactory.getLogger(StopStartVmTest.class);
 
+    private int STOP_TIMEOUT_SECONDS = 240;
+    private int START_TIMEOUT_SECONDS = 240;
+    private int WAIT_AFTER_START_MILLISECONDS = 30000;
+
     @Override
     public void execute(VirtualMachine vm) {
         Vps4ApiClient vps4Client = vm.getClient();
@@ -30,18 +34,18 @@ public class StopStartVmTest implements VmTest {
 
         long stopVmActionId = vps4Client.stopVm(vm.vmId);
         logger.debug("Wait for shutdown on vm {}, via action id: {}", vm, stopVmActionId);
-        vps4Client.pollForVmActionComplete(vm.vmId, stopVmActionId, 240);
+        vps4Client.pollForVmActionComplete(vm.vmId, stopVmActionId, STOP_TIMEOUT_SECONDS);
 
         Vps4RemoteAccessClient client = vm.remote();
         assert(!client.checkConnection(vm.vmId));
 
         long startVmActionId = vps4Client.startVm(vm.vmId);
         logger.debug("Wait for startup on vm {}, via action id: {}", vm, startVmActionId);
-        vps4Client.pollForVmActionComplete(vm.vmId, startVmActionId, 240);
+        vps4Client.pollForVmActionComplete(vm.vmId, startVmActionId, START_TIMEOUT_SECONDS);
 
         try {
-            // Pause before trying remote connection to allow the server to finish spinning up
-            Thread.sleep(30000);
+            // Pause before trying remote connection to allow the server to finish starting up
+            Thread.sleep(WAIT_AFTER_START_MILLISECONDS);
         } catch (InterruptedException e) {
             logger.error("Error during start stop test sleeping, pre-remote check", e);
         }

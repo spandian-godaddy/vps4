@@ -70,7 +70,6 @@ public class RunSomeTests {
         List<VmTest> tests = Arrays.asList(
                 new ChangeHostnameTest(randomHostname()),
                 new StopStartVmTest(),
-                new StopStartVmTest(),
                 new SnapshotTest()
         );
 

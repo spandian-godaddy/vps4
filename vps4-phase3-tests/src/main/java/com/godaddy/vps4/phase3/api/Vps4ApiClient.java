@@ -192,22 +192,22 @@ public class Vps4ApiClient {
     public long restartVm(UUID vmId) {
         Vps4JsonResponse<JSONObject> restartRequestResponse = sendPost("api/vms/"+ vmId + "/restart");
         assert(restartRequestResponse.statusCode == 200);
-        JSONObject resartJsonResult = restartRequestResponse.jsonResponse;
-        return (long)resartJsonResult.get("id");
+        JSONObject restartJsonResult = restartRequestResponse.jsonResponse;
+        return (long)restartJsonResult.get("id");
     }
 
     public long stopVm(UUID vmId) {
-        Vps4JsonResponse<JSONObject> restartRequestResponse = sendPost("api/vms/"+ vmId + "/stop");
-        assert(restartRequestResponse.statusCode == 200);
-        JSONObject resartJsonResult = restartRequestResponse.jsonResponse;
-        return (long)resartJsonResult.get("id");
+        Vps4JsonResponse<JSONObject> stopRequestResponse = sendPost("api/vms/"+ vmId + "/stop");
+        assert(stopRequestResponse.statusCode == 200);
+        JSONObject stopJsonResult = stopRequestResponse.jsonResponse;
+        return (long)stopJsonResult.get("id");
     }
 
     public long startVm(UUID vmId) {
-        Vps4JsonResponse<JSONObject> restartRequestResponse = sendPost("api/vms/"+ vmId + "/start");
-        assert(restartRequestResponse.statusCode == 200);
-        JSONObject resartJsonResult = restartRequestResponse.jsonResponse;
-        return (long)resartJsonResult.get("id");
+        Vps4JsonResponse<JSONObject> startRequestResponse = sendPost("api/vms/"+ vmId + "/start");
+        assert(startRequestResponse.statusCode == 200);
+        JSONObject startJsonResult = startRequestResponse.jsonResponse;
+        return (long)startJsonResult.get("id");
     }
 
     private void pollForActionComplete(UUID vmId, long actionId, long timeoutSeconds, String urlAppendix) {
