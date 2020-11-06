@@ -223,7 +223,7 @@ public class Vps4ApiClient {
                 Thread.sleep(5000);
                 secondsPassed+=5;
                 if (secondsPassed % 15 == 0) {
-                    logger.debug("{} seconds passed waiting for action {}", secondsPassed, actionId);
+                    logger.debug("{} seconds passed waiting on action {} for vm {}", secondsPassed, actionId, vmId);
                 }
             } catch (InterruptedException e) {
                 logger.error("Test was interrupted: ", e);
@@ -231,7 +231,7 @@ public class Vps4ApiClient {
             }
         }
         if (!result.jsonResponse.get("status").equals("COMPLETE")) {
-            throw new RuntimeException("Couldn't complete action " + actionId + "in time " + timeoutSeconds + "s");
+            throw new RuntimeException("Couldn't complete action " + actionId + " in time " + timeoutSeconds + "s for vm " + vmId);
         }
     }
 

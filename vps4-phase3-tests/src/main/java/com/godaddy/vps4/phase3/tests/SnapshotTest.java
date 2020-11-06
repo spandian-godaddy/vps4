@@ -23,7 +23,7 @@ public class SnapshotTest implements VmTest {
         JSONObject snapshotActionId = vps4Client.snanpshotVm(vm.vmId);
         long actionId = (long)snapshotActionId.get("id");
         UUID snapshotId = UUID.fromString((String)snapshotActionId.get("snapshotId"));
-        logger.debug("Wait for snapshot on vm {}", vm);
+        logger.debug("Wait for snapshot id {} on vm {}, via action id: {}", snapshotId, vm, actionId);
         vps4Client.pollForSnapshotActionComplete(vm.vmId, snapshotId, actionId, SNAPSHOT_TIMEOUT_SECONDS);
 
         String snapshotStatus = vps4Client.getSnapshotStatus(vm.vmId, snapshotId);
