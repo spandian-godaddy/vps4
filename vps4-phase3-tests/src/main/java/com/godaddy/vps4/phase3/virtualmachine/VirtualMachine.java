@@ -43,7 +43,11 @@ public class VirtualMachine {
     }
 
     public boolean isWindows() {
-        return imageName.toLowerCase().contains("windows");
+        return imageName.toLowerCase().contains("win");
+    }
+
+    public boolean isDed() {
+        return imageName.toLowerCase().endsWith("_64");
     }
 
     public Vps4RemoteAccessClient remote() {

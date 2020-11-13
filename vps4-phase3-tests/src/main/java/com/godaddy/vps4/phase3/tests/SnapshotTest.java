@@ -18,6 +18,13 @@ public class SnapshotTest implements VmTest {
 
     @Override
     public void execute(VirtualMachine vm) {
+
+        // Do not run snapshot test on dedicated servers
+        if (vm.isDed()) {
+            logger.debug("Skipping SnapshotTest on vm {}", vm);
+            return;
+        }
+
         Vps4ApiClient vps4Client = vm.getClient();
 
         JSONObject snapshotActionId = vps4Client.snanpshotVm(vm.vmId);

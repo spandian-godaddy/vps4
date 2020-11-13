@@ -228,20 +228,17 @@ public class VirtualMachinePool {
         }
 
         public UUID getVmCredit() {
-            int PLATFORM = 0;
-            int OS = 1;
-            int OSVERSION = 2;
-            int CONTROLPANEL = 3;
-            int CPVERSION = 4;
-
-            String parts[] = imageName.split("-");
-
-            String os = parts[OS].equals("windows") ? "windows" : "Linux";
-            String panel = "MYH";
-            if(parts.length >= 4 && (parts[CONTROLPANEL].equals("cpanel") || parts[CONTROLPANEL].equals("plesk"))) {
-                panel = parts[CONTROLPANEL];
+            JSONObject image = apiClient.getImage(imageName);
+            if (image.get("imageId") == null) {
+                logger.error("Invalid image: " + imageName);
+                throw new RuntimeException("Invalid image: " + imageName);
             }
-            UUID vmCredit = apiClient.getVmCredit(shopperId,  os,  panel);
+            String os = image.get("operatingSystem").toString();
+            String controlPanel = image.get("controlPanel").toString();
+            JSONObject serverType = (JSONObject) image.get("serverType");
+            String platform = serverType.get("platform").toString();;
+
+            UUID vmCredit = apiClient.getVmCredit(shopperId,  os,  controlPanel, platform);
             if (vmCredit == null && claimedCredits.isEmpty()) {
                 logger.error("There are no credits available to run tests for image : {}", imageName);
                 throw new RuntimeException();

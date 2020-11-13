@@ -108,6 +108,12 @@ public class Vps4ApiClient {
         return primaryIp.get("ipAddress").toString();
     }
 
+    public JSONObject getImage(String imageName) {
+        Vps4JsonResponse<JSONObject> getImageResponse = sendGetObject("api/vmImages/" + imageName);
+        assert(getImageResponse.statusCode == 200);
+        return getImageResponse.jsonResponse;
+    }
+
     public long setHostname(UUID vmId, String hostname) {
         JSONObject body = new JSONObject();
         body.put("hostname", hostname);
@@ -144,15 +150,18 @@ public class Vps4ApiClient {
         return retVal;
     }
 
-    public UUID getVmCredit(String shopperId, String os, String panel) {
+    public UUID getVmCredit(String shopperId, String os, String panel, String platform) {
+        boolean isDed4 = platform.equalsIgnoreCase("OVH") ? true: false;
+
         Vps4JsonResponse<JSONArray> getCreditsResponse = sendGetList("/api/credits");
         assert(getCreditsResponse.statusCode == 200);
         JSONArray credits = getCreditsResponse.jsonResponse;
         for (int i=0; i < credits.size(); i++)
         {
             JSONObject credit = (JSONObject) credits.get(i);
-            if ( ((String)credit.get("controlPanel")).equalsIgnoreCase(panel) &&
-                 ((String)credit.get("operatingSystem")).equalsIgnoreCase(os))
+            if ((credit != null) && credit.get("controlPanel").toString().equalsIgnoreCase(panel)
+                    && credit.get("operatingSystem").toString().equalsIgnoreCase(os)
+                    && (Boolean.parseBoolean(credit.get("ded4").toString()) == isDed4))
                 return UUID.fromString(credit.get("orionGuid").toString());
         }
         return null;

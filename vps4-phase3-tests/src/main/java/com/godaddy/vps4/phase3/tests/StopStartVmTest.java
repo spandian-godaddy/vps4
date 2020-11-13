@@ -20,7 +20,9 @@ public class StopStartVmTest implements VmTest {
 
     private int STOP_TIMEOUT_SECONDS = 240;
     private int START_TIMEOUT_SECONDS = 240;
+    private int DED_RESTART_TIMEOUT_SECONDS = 480;
     private int WAIT_AFTER_START_MILLISECONDS = 30000;
+    private int DED_WAIT_AFTER_RESTART_MILLISECONDS = 120000;
 
     @Override
     public void execute(VirtualMachine vm) {
@@ -32,20 +34,27 @@ public class StopStartVmTest implements VmTest {
             vps4Client.enableAdmin(vm.vmId, vm.getUsername());
         }
 
-        long stopVmActionId = vps4Client.stopVm(vm.vmId);
-        logger.debug("Wait for shutdown on vm {}, via action id: {}", vm, stopVmActionId);
-        vps4Client.pollForVmActionComplete(vm.vmId, stopVmActionId, STOP_TIMEOUT_SECONDS);
-
         Vps4RemoteAccessClient client = vm.remote();
-        assert(!client.checkConnection(vm.vmId));
+        if (vm.isDed()) {
+            long restartActionId = vps4Client.restartVm(vm.vmId);
+            vps4Client.pollForVmActionComplete(vm.vmId, restartActionId, DED_RESTART_TIMEOUT_SECONDS);
+        }
+        else {
+            long stopVmActionId = vps4Client.stopVm(vm.vmId);
+            logger.debug("Wait for shutdown on vm {}, via action id: {}", vm, stopVmActionId);
+            vps4Client.pollForVmActionComplete(vm.vmId, stopVmActionId, STOP_TIMEOUT_SECONDS);
 
-        long startVmActionId = vps4Client.startVm(vm.vmId);
-        logger.debug("Wait for startup on vm {}, via action id: {}", vm, startVmActionId);
-        vps4Client.pollForVmActionComplete(vm.vmId, startVmActionId, START_TIMEOUT_SECONDS);
+            assert(!client.checkConnection(vm.vmId));
+
+            long startVmActionId = vps4Client.startVm(vm.vmId);
+            logger.debug("Wait for startup on vm {}, via action id: {}", vm, startVmActionId);
+            vps4Client.pollForVmActionComplete(vm.vmId, startVmActionId, START_TIMEOUT_SECONDS);
+        }
 
         try {
             // Pause before trying remote connection to allow the server to finish starting up
-            Thread.sleep(WAIT_AFTER_START_MILLISECONDS);
+            int waitTime = vm.isDed() ? DED_WAIT_AFTER_RESTART_MILLISECONDS: WAIT_AFTER_START_MILLISECONDS;
+            Thread.sleep(waitTime);
         } catch (InterruptedException e) {
             logger.error("Error during start stop test sleeping, pre-remote check", e);
         }

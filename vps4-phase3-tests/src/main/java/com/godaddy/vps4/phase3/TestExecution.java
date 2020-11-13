@@ -28,7 +28,7 @@ public class TestExecution {
         }
         catch (ExecutionException e) {
             this.exception = exception;
-            logger.error("Test aborted: ", e);
+            logger.error("Test aborted: {}", e);
             throw new RuntimeException(e);
         }
     }

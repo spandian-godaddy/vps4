@@ -30,7 +30,7 @@ public class TestGroupExecutionTest {
 
     @Test
     public void testGroupExecution() throws InterruptedException {
-        when(apiClient.getVmCredit(any(), any(), any()))
+        when(apiClient.getVmCredit(any(), any(), any(), any()))
             .thenAnswer(invocation -> UUID.randomUUID());
 
         runPhase3Tests();
@@ -39,33 +39,33 @@ public class TestGroupExecutionTest {
     @Test(expected=RuntimeException.class)
     public void testNoCreditsAvailable() throws InterruptedException {
         // Test no credit available
-        when(apiClient.getVmCredit(any(), any(), any())).thenReturn(null);
+        when(apiClient.getVmCredit(any(), any(), any(), any())).thenReturn(null);
         runPhase3Tests();
     }
 
     @Test
     public void testCreditsNotReused() throws InterruptedException {
-        when(apiClient.getVmCredit(any(), any(), eq("cpanel")))
+        when(apiClient.getVmCredit(any(), any(), eq("CPANEL"), any()))
             .thenAnswer(invocation -> UUID.randomUUID());
         // Test simulates the api returning a credit that is already in process of being claimed, but not yet marked as claimed
         UUID credit1 = UUID.randomUUID();
-        when(apiClient.getVmCredit(any(), any(), eq("MYH")))
+        when(apiClient.getVmCredit(any(), any(), eq("MYH"), any()))
             .thenReturn(credit1)
             .thenReturn(credit1)
             .thenReturn(credit1)
             .thenReturn(UUID.randomUUID());
         runPhase3Tests();
-        verify(apiClient, times(4)).getVmCredit(any(), any(), eq("MYH"));
-        verify(apiClient, times(2)).getVmCredit(any(), any(), eq("cpanel"));
+        verify(apiClient, times(4)).getVmCredit(any(), any(), eq("MYH"), any());
+        verify(apiClient, times(2)).getVmCredit(any(), any(), eq("CPANEL"), any());
     }
 
     @Test
     public void testMoreVmsThanCredits() throws InterruptedException {
         // Test tries two vms per image. Limit one credit per image, force vm reuse
-        when(apiClient.getVmCredit(any(), any(), eq("MYH")))
+        when(apiClient.getVmCredit(any(), any(), eq("MYH"), any()))
             .thenReturn(UUID.randomUUID())
             .thenReturn(null);
-        when(apiClient.getVmCredit(any(), any(), eq("cpanel")))
+        when(apiClient.getVmCredit(any(), any(), eq("CPANEL"), any()))
             .thenReturn(UUID.randomUUID())
             .thenReturn(null);
         runPhase3Tests();
@@ -73,6 +73,26 @@ public class TestGroupExecutionTest {
 
     @SuppressWarnings("unchecked")
     public void runPhase3Tests() throws InterruptedException {
+
+
+        JSONObject image1Json = new JSONObject();
+        image1Json.put("imageId", 5);
+        image1Json.put("controlPanel", "MYH");
+        image1Json.put("operatingSystem", "LINUX");
+        JSONObject server1TypeJson = new JSONObject();
+        server1TypeJson.put("platform", "OPENSTACK");
+        image1Json.put("serverType", server1TypeJson);
+
+        JSONObject image2Json = new JSONObject();
+        image2Json.put("imageId", 31);
+        image2Json.put("controlPanel", "CPANEL");
+        image2Json.put("operatingSystem", "LINUX");
+        JSONObject server2TypeJson = new JSONObject();
+        server2TypeJson.put("platform", "OPENSTACK");
+        image2Json.put("serverType", server2TypeJson);
+
+        when(apiClient.getImage(eq("hfs-centos-7"))).thenReturn(image1Json);
+        when(apiClient.getImage(eq("hfs-centos-7-cpanel-11"))).thenReturn(image2Json);
 
         ExecutorService threadPool = Executors.newCachedThreadPool();
 
