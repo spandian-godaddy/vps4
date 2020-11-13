@@ -61,7 +61,7 @@ public class Vps4SshClient extends Vps4RemoteAccessClient {
             session.disconnect();
             return true;
         } catch (JSchException e) {
-            logger.error("Exception checking ssh connection: {}", e.getMessage());
+            logger.info("Exception checking ssh connection: {}", e.getMessage());
             return false;
         }
     }
