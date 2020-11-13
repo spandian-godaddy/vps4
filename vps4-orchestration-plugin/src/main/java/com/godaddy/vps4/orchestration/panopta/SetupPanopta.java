@@ -1,6 +1,9 @@
 package com.godaddy.vps4.orchestration.panopta;
 
+import java.util.List;
 import java.util.UUID;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import javax.inject.Inject;
 
@@ -15,6 +18,7 @@ import com.godaddy.vps4.orchestration.hfs.sysadmin.InstallPanopta;
 import com.godaddy.vps4.panopta.PanoptaCustomer;
 import com.godaddy.vps4.panopta.PanoptaDataService;
 import com.godaddy.vps4.panopta.PanoptaServer;
+import com.godaddy.vps4.panopta.PanoptaService;
 import com.godaddy.vps4.panopta.jdbc.PanoptaCustomerDetails;
 import com.godaddy.vps4.panopta.jdbc.PanoptaServerDetails;
 
@@ -28,12 +32,15 @@ public class SetupPanopta implements Command<SetupPanopta.Request, Void> {
 
     private CreditService creditService;
     private PanoptaDataService panoptaDataService;
+    private PanoptaService panoptaService;
     private Config config;
 
     @Inject
-    public SetupPanopta(CreditService creditService, PanoptaDataService panoptaDataService, Config config) {
+    public SetupPanopta(CreditService creditService, PanoptaDataService panoptaDataService,
+                        PanoptaService panoptaService, Config config) {
         this.creditService = creditService;
         this.panoptaDataService = panoptaDataService;
+        this.panoptaService = panoptaService;
         this.config = config;
     }
 
@@ -53,6 +60,7 @@ public class SetupPanopta implements Command<SetupPanopta.Request, Void> {
             logger.info("Checking if customer exists in Panopta for shopper {} vm id {}  before provisioning server...",
                         request.shopperId, request.vmId);
             panoptaCustomerDetails = createNewCustomerInPanopta(request, context);
+            removeOrphanedInstances(request.orionGuid, request.shopperId);
             installPanoptaOnProvision(panoptaCustomerDetails, request, context);
         }
 
@@ -62,14 +70,12 @@ public class SetupPanopta implements Command<SetupPanopta.Request, Void> {
     private void installPanoptaOnRebuild(PanoptaServerDetails panoptaServerDetails,
                                          PanoptaCustomerDetails panoptaCustomerDetails, Request request,
                                          CommandContext context) {
-        request.disableServerMatch = false;
         installPanoptaOnVm(panoptaCustomerDetails.getCustomerKey(), panoptaServerDetails.getServerKey(), request,
                            context);
     }
 
     private void installPanoptaOnProvision(PanoptaCustomerDetails panoptaCustomerDetails, Request request,
                                            CommandContext context) {
-        request.disableServerMatch = true;
         try {
             installPanoptaOnVm(panoptaCustomerDetails.getCustomerKey(), null, request, context);
         } catch (Exception e) {
@@ -78,6 +84,18 @@ public class SetupPanopta implements Command<SetupPanopta.Request, Void> {
             return;
         }
         updateVps4DbWithPanoptaServerInfo(context, request);
+    }
+
+    private void removeOrphanedInstances(UUID orionGuid, String shopperId) {
+        List<PanoptaServer> servers = Stream.concat(
+                panoptaService.getActiveServers(shopperId).stream(),
+                panoptaService.getSuspendedServers(shopperId).stream()
+        ).filter(s -> s.name.equals(orionGuid.toString())).collect(Collectors.toList());
+
+        for (PanoptaServer server : servers) {
+            logger.info("Deleting panopta server {} for orion guid {}.", server.serverId, orionGuid);
+            panoptaService.removeServerMonitoring(server.serverId, shopperId);
+        }
     }
 
     private PanoptaCustomerDetails createNewCustomerInPanopta(Request request, CommandContext context) {
@@ -144,7 +162,7 @@ public class SetupPanopta implements Command<SetupPanopta.Request, Void> {
         installPanoptaRequest.serverName = request.orionGuid.toString();
         installPanoptaRequest.templates = setPanoptaTemplates(request);
         installPanoptaRequest.fqdn = request.fqdn;
-        installPanoptaRequest.disableServerMatch = request.disableServerMatch;
+        installPanoptaRequest.disableServerMatch = false;
         context.execute(InstallPanopta.class, installPanoptaRequest);
     }
 
@@ -164,6 +182,5 @@ public class SetupPanopta implements Command<SetupPanopta.Request, Void> {
         public long hfsVmId;
         public String shopperId;
         public String fqdn;
-        public boolean disableServerMatch;
     }
 }

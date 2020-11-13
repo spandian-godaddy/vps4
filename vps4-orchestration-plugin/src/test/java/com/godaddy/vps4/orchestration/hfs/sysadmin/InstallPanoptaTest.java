@@ -37,7 +37,7 @@ public class InstallPanoptaTest {
     private String fakeFqdn = "totally-fake-fqdn";
     private UUID fakeOrionGUID = UUID.randomUUID();
     private String fakeServerName = fakeOrionGUID.toString();
-    private boolean fakeDisableServerMatch = true;
+    private boolean fakeDisableServerMatch = false;
 
     @Captor
     private ArgumentCaptor<Function<CommandContext, SysAdminAction>> panoptaInstallArgumentCaptor;
@@ -68,7 +68,7 @@ public class InstallPanoptaTest {
         request.serverKey = fakeServerKey;
         request.fqdn = fakeFqdn;
         request.serverName = fakeServerName;
-        request.disableServerMatch = true;
+        request.disableServerMatch = false;
     }
 
     @Test

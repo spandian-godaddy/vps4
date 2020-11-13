@@ -14,6 +14,8 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.UUID;
 
 import org.junit.Before;
@@ -30,6 +32,7 @@ import com.godaddy.vps4.orchestration.hfs.sysadmin.InstallPanopta;
 import com.godaddy.vps4.panopta.PanoptaCustomer;
 import com.godaddy.vps4.panopta.PanoptaDataService;
 import com.godaddy.vps4.panopta.PanoptaServer;
+import com.godaddy.vps4.panopta.PanoptaService;
 import com.godaddy.vps4.panopta.jdbc.PanoptaCustomerDetails;
 import com.godaddy.vps4.panopta.jdbc.PanoptaServerDetails;
 
@@ -47,6 +50,7 @@ public class SetupPanoptaTest {
     private PanoptaServerDetails panoptaServerDetailsMock;
     private CreatePanoptaCustomer.Response createPanoptaCustomerResponse;
     private PanoptaDataService panoptaDataServiceMock;
+    private PanoptaService panoptaServiceMock;
     private Config configMock;
     private SetupPanopta command;
     private SetupPanopta.Request request;
@@ -84,13 +88,14 @@ public class SetupPanoptaTest {
         panoptaCustomerMock = mock(PanoptaCustomer.class);
         panoptaServerMock = mock(PanoptaServer.class);
         panoptaDataServiceMock = mock(PanoptaDataService.class);
+        panoptaServiceMock = mock(PanoptaService.class);
         configMock = mock(Config.class);
         creditMock = mock(VirtualMachineCredit.class);
         sysAdminActionMock = mock(SysAdminAction.class);
         panoptaCustomerDetailsMock = mock(PanoptaCustomerDetails.class);
         panoptaServerDetailsMock = mock(PanoptaServerDetails.class);
 
-        command = new SetupPanopta(creditServiceMock, panoptaDataServiceMock, configMock);
+        command = new SetupPanopta(creditServiceMock, panoptaDataServiceMock, panoptaServiceMock, configMock);
 
         setupFakePanoptaCustomerResponse();
         setupMockContext();
@@ -126,6 +131,8 @@ public class SetupPanoptaTest {
         when(creditMock.isManaged()).thenReturn(true);
         when(configMock.get(eq("panopta.api.templates.managed.linux"))).thenReturn(fakePanoptaTemplates);
         when(configMock.get("panopta.api.templates.webhook")).thenReturn(fakeDataCenterTemplate);
+        when(panoptaServiceMock.getActiveServers(fakeShopperId)).thenReturn(new ArrayList<>());
+        when(panoptaServiceMock.getSuspendedServers(fakeShopperId)).thenReturn(new ArrayList<>());
     }
 
     @Test
@@ -183,6 +190,23 @@ public class SetupPanoptaTest {
                      capturedRequest.hfsVmId);
         assertEquals(fakeCustomerKey, capturedRequest.customerKey);
         assertEquals(fakePanoptaTemplates + "," + fakeDataCenterTemplate, capturedRequest.templates);
+    }
+
+    @Test
+    public void installPanoptaOnProvisionsRemovesOrphans() {
+        when(panoptaDataServiceMock.getPanoptaCustomerDetails(eq(fakeShopperId)))
+                .thenReturn(panoptaCustomerDetailsMock);
+        when(panoptaCustomerDetailsMock.getCustomerKey()).thenReturn(fakeCustomerKey);
+
+        PanoptaServer orphan = mock(PanoptaServer.class);
+        orphan.serverId = 15;
+        orphan.name = fakeOrionGuid.toString();
+        when(panoptaServiceMock.getActiveServers(fakeShopperId)).thenReturn(Collections.singletonList(orphan));
+
+        command.execute(commandContextMock, request);
+
+        verify(commandContextMock, times(1)).execute(eq(InstallPanopta.class), installPanoptaRequestCaptor.capture());
+        verify(panoptaServiceMock, times(1)).removeServerMonitoring(orphan.serverId, fakeShopperId);
     }
 
     @Test
