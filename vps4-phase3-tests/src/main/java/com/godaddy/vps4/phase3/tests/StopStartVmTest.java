@@ -22,7 +22,7 @@ public class StopStartVmTest implements VmTest {
     private int START_TIMEOUT_SECONDS = 240;
     private int DED_RESTART_TIMEOUT_SECONDS = 480;
     private int WAIT_AFTER_START_MILLISECONDS = 30000;
-    private int DED_WAIT_AFTER_RESTART_MILLISECONDS = 180000;
+    private int DED_WAIT_AFTER_RESTART_MILLISECONDS = 300000;
 
     @Override
     public void execute(VirtualMachine vm) {
