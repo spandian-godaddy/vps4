@@ -16,7 +16,8 @@ public class ChangeHostnameTest implements VmTest {
 
     private int HOSTNAME_TIMEOUT_SECONDS = 240;
     private int RESTART_TIMEOUT_SECONDS = 480;
-    private int WAIT_AFTER_RESTART_MILLISECONDS = 30000;
+    private int WAIT_AFTER_RESTART_MILLISECONDS = 45000;
+    private int DED_WAIT_AFTER_RESTART_MILLISECONDS = 300000;
 
     public ChangeHostnameTest(String newHostname) {
         this.newHostname = newHostname;
@@ -43,8 +44,9 @@ public class ChangeHostnameTest implements VmTest {
             vps4Client.pollForVmActionComplete(vm.vmId, restartVmActionId, RESTART_TIMEOUT_SECONDS);
 
             try {
-                // A brief pause before trying remote connections
-                Thread.sleep(WAIT_AFTER_RESTART_MILLISECONDS);
+                // Pause before trying remote connection to allow the server to finish starting up
+                int waitTime = vm.isDed() ? DED_WAIT_AFTER_RESTART_MILLISECONDS: WAIT_AFTER_RESTART_MILLISECONDS;
+                Thread.sleep(waitTime);
             } catch (InterruptedException e) {
                 logger.error("Error during start stop test sleeping, pre-remote check", e);
             }

@@ -21,8 +21,8 @@ public class StopStartVmTest implements VmTest {
     private int STOP_TIMEOUT_SECONDS = 240;
     private int START_TIMEOUT_SECONDS = 240;
     private int DED_RESTART_TIMEOUT_SECONDS = 480;
-    private int WAIT_AFTER_START_MILLISECONDS = 30000;
-    private int DED_WAIT_AFTER_RESTART_MILLISECONDS = 300000;
+    private int WAIT_AFTER_START_MILLISECONDS = 45000;
+    private int DED_WAIT_AFTER_START_MILLISECONDS = 300000;
 
     @Override
     public void execute(VirtualMachine vm) {
@@ -53,7 +53,7 @@ public class StopStartVmTest implements VmTest {
 
         try {
             // Pause before trying remote connection to allow the server to finish starting up
-            int waitTime = vm.isDed() ? DED_WAIT_AFTER_RESTART_MILLISECONDS: WAIT_AFTER_START_MILLISECONDS;
+            int waitTime = vm.isDed() ? DED_WAIT_AFTER_START_MILLISECONDS: WAIT_AFTER_START_MILLISECONDS;
             Thread.sleep(waitTime);
         } catch (InterruptedException e) {
             logger.error("Error during start stop test sleeping, pre-remote check", e);
