@@ -378,3 +378,4 @@ TODO: Eventually need to puppetize this process below.
     tail -50f /var/log/sensu/sensu-client.log
     ```
 
+
