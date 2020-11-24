@@ -30,7 +30,7 @@ Deploying to all environments is accomplished with the VPS4 Jenkins server - htt
 The development environment for VPS4 can be used to test your changes on a specific branch.
 *Before using it, please announce in the #VPS4 slack channel that you are going to be using it and for roughly how long. When you are finished please deploy the Master branch to the Development environment and announce it in the #VPS4 channel.*
 
-To deploy to development, execute the **vps4-dev-pipeline** Jenkins job and provide your branch name as the parameter. This will initiate the vps4-build-dev job and then dev-deploy-branch.
+To deploy to development, execute the **development** Jenkins job and provide your branch name as the parameter. This will initiate the vps4-build-dev job and then dev-deploy-branch.
 
 ### Test/Stage
 
@@ -38,7 +38,7 @@ Test and Stage deployment are triggered by a checkin to the master branch and do
 
 ### Prod
  
-Execute the **vps4-cicd** job with **PROD_DEPLOY** specified in the deployToEnv parameter, leave mcpDeploy set to enabled. 
+Execute the **prod** job to initate a deployment to production.  The latest version will then be deployed to N3 first followed by a brief N3 smoke test.  If the smoke test is successful then prod deployments will continue to the rest of the environments. 
 
 
 Versioning
