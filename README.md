@@ -34,7 +34,7 @@ To deploy to development, execute the **development** Jenkins job and provide yo
 
 ### Test/Stage
 
-Test and Stage deployment are triggered by a checkin to the master branch and does not require manual interaction.
+Test and Stage deployment are triggered by a checkin to the master branch and does not require manual interaction.  If needed a deployment can still be initiated manually by executing the **test-stage** jenkins job.
 
 ### Prod
  
