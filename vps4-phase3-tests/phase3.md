@@ -14,7 +14,7 @@ Testing Windows images requires the `winexe` program. It is used to run Powershe
 
 #### On Linux
 
-Winexe is not available in any mainstream package managers. Buidling it from source is also difficult since some dependencies it needs (specifically the `mingw*` packages) have been removed. It also uses a deprecated version of SMB by default which causes occassional errors when trying to connect. Instead, install [this patched binary](vps4-phase3-tests/winexe/winexe-static) which supports SMB2.
+Winexe is not available in any mainstream package managers. Buidling it from source is also difficult since some dependencies it needs (specifically the `mingw*` packages) have been removed. It also uses a deprecated version of SMB by default which causes occassional errors when trying to connect. Instead, install [this patched binary](winexe/winexe-static) which supports SMB2.
 ```
 cp vps4-phase3-tests/winexe/winexe-static /usr/bin/winexe && chmod +x /usr/bin/winexe
 ```

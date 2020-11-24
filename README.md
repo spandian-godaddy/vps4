@@ -183,6 +183,7 @@ You can create a credit via the following link:
      - {1066863} creates a linux prime container with no add ons.
      - {1066863:1068243} creates a linux prime container with a control panel
      - {1066863:1068243|1068247} creates a linux prime container with a control panel and monitoring
+ - The order will most likely get stuck in "Pending" which you can see from the products page. If so just ask if someone in #partners-frdreview can clear it.
      
 Cancelling VM Credits
 ======================
