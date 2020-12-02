@@ -16,7 +16,7 @@ import org.slf4j.LoggerFactory;
 import com.godaddy.vps4.phase3.api.Vps4ApiClient;
 
 public class Vps4WinexeClient extends Vps4RemoteAccessClient {
-    private static final int MAX_TRIES = 3;
+    private static final int MAX_TRIES = 5;
 
     private static final Logger logger = LoggerFactory.getLogger(Vps4WinexeClient.class);
     private final boolean isWinexeInstalled;
@@ -55,7 +55,7 @@ public class Vps4WinexeClient extends Vps4RemoteAccessClient {
                     "-c",
                     processCommand
             });
-            if (!process.waitFor(30, TimeUnit.SECONDS)) {
+            if (!process.waitFor(60, TimeUnit.SECONDS)) {
                 process.destroy();
                 throw new RuntimeException("Winexe command timed out and was destroyed");
             }
