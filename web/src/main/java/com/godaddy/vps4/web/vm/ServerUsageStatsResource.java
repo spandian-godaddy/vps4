@@ -125,8 +125,8 @@ public class ServerUsageStatsResource {
 
     private Double getLastPercent(List<Double> list) {
         Double d = null;
-        // Get the last non-null value. If there are five null values in a row, the data is stale anyways so give up.
-        for (int i = 1; i < 6 && d == null; i++) {
+        // Get the last non-null value. If there are ten null values in a row, the data is stale anyways so give up.
+        for (int i = 1; i < 11 && d == null; i++) {
             d = list.get(list.size() - i);
         }
         return Math.min(d, 100);

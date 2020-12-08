@@ -219,14 +219,12 @@ public class ServerUsageStatsResourceTest {
     }
 
     @Test(expected = Vps4Exception.class)
-    public void getPanoptaUsageWithFiveNullValues() throws PanoptaServiceException {
+    public void getPanoptaUsageWithTenNullValues() throws PanoptaServiceException {
         for (PanoptaGraph graph : usageGraphs) {
             graph.timestamps.add(Instant.now());
-            graph.values.add(null);
-            graph.values.add(null);
-            graph.values.add(null);
-            graph.values.add(null);
-            graph.values.add(null);
+            for (int i = 0; i < 10; i++) {
+                graph.values.add(null);
+            }
         }
 
         doNothing().when(spyResource).verifyServerIsActive(anyLong());
