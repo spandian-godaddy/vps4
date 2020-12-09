@@ -77,6 +77,6 @@ public class Vps4SshClient extends Vps4RemoteAccessClient {
     public boolean hasAdminPrivilege(UUID vmId) {
         String result = executeCommand(vmId, "sudo -n id");
         logger.info("'sudo -n id' result: {}", result);
-        return "uid=0(root) gid=0(root) groups=0(root)".equals(result);
+        return result.contains("uid=0(root) gid=0(root) groups=0(root)");
     }
 }
