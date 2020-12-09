@@ -13,19 +13,22 @@ public class VirtualMachine {
     public final UUID orionGuid;
     public final String imageName;
     final Vps4ApiClient apiClient;
+    final Vps4ApiClient adminClient;
     final VirtualMachinePool vmPool;
-    final String defaultUsername;
-    final String defaultPassword;
+    String defaultUsername;
+    String defaultPassword;
 
     public VirtualMachine(
             VirtualMachinePool vmPool,
             Vps4ApiClient apiClient,
+            Vps4ApiClient adminClient,
             String imageName,
             String defaultUsername,
             String defaultPassword,
             UUID vmId,
             UUID orionGuid){
         this.apiClient = apiClient;
+        this.adminClient = adminClient;
         this.imageName = imageName;
         this.vmPool = vmPool;
         this.vmId = vmId;
@@ -38,8 +41,20 @@ public class VirtualMachine {
         return apiClient;
     }
 
+    public Vps4ApiClient getAdminClient() { return adminClient; }
+
     public String getUsername() {
-        return defaultUsername;
+        return this.defaultUsername;
+    }
+
+    public void setUsername(String newUsername) { this.defaultUsername = newUsername; }
+
+    public String getPassword() {
+        return this.defaultPassword;
+    }
+
+    public void setPassword(String newPassword) {
+        this.defaultPassword = newPassword;
     }
 
     public boolean isWindows() {

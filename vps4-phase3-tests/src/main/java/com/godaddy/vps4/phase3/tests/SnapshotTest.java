@@ -14,7 +14,8 @@ public class SnapshotTest implements VmTest {
     
     private static final Logger logger = LoggerFactory.getLogger(SnapshotTest.class);
 
-    private final int SNAPSHOT_TIMEOUT_SECONDS = 1200;
+    private final int SNAPSHOT_TIMEOUT_SECONDS = 2100;
+    private final int TROUBLESHOOT_TIMEOUT_SECONDS = 60;
 
     @Override
     public void execute(VirtualMachine vm) {
@@ -27,7 +28,11 @@ public class SnapshotTest implements VmTest {
 
         Vps4ApiClient vps4Client = vm.getClient();
 
-        JSONObject snapshotActionId = vps4Client.snanpshotVm(vm.vmId);
+        // Sometimes even when windows VM becomes accessible through winexe, HFS agent status might not be reporting "OK" yet.
+        // Poll until agent reports OK to avoid "Agent is down. Refusing to take snapshot" error when creating snapshot later
+        vps4Client.pollForVmAgentStatusOK(vm.vmId, TROUBLESHOOT_TIMEOUT_SECONDS);
+
+        JSONObject snapshotActionId = vps4Client.snapshotVm(vm.vmId);
         long actionId = (long)snapshotActionId.get("id");
         UUID snapshotId = UUID.fromString((String)snapshotActionId.get("snapshotId"));
         logger.debug("Wait for snapshot id {} on vm {}, via action id: {}", snapshotId, vm, actionId);

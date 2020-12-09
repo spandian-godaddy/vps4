@@ -72,4 +72,11 @@ public class Vps4SshClient extends Vps4RemoteAccessClient {
         logger.info("check hostname result: {}", result);
         return expectedHostname.equals(result);
     }
+
+    @Override
+    public boolean hasAdminPrivilege(UUID vmId) {
+        String result = executeCommand(vmId, "sudo -n id");
+        logger.info("'sudo -n id' result: {}", result);
+        return "uid=0(root) gid=0(root) groups=0(root)".equals(result);
+    }
 }

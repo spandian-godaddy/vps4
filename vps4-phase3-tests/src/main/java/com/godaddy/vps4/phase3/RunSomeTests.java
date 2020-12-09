@@ -16,12 +16,19 @@ import org.apache.commons.cli.DefaultParser;
 import org.apache.commons.cli.Option;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
+import org.passay.CharacterData;
+import org.passay.CharacterRule;
+import org.passay.EnglishCharacterData;
+import org.passay.PasswordGenerator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.godaddy.vps4.phase3.api.SsoClient;
 import com.godaddy.vps4.phase3.api.Vps4ApiClient;
 import com.godaddy.vps4.phase3.tests.ChangeHostnameTest;
+import com.godaddy.vps4.phase3.tests.AddSupportUserTest;
+import com.godaddy.vps4.phase3.tests.EnableDisableAdminTest;
+import com.godaddy.vps4.phase3.tests.SetPasswordTest;
 import com.godaddy.vps4.phase3.tests.SnapshotTest;
 import com.godaddy.vps4.phase3.tests.StopStartVmTest;
 import com.godaddy.vps4.phase3.virtualmachine.VirtualMachinePool;
@@ -70,8 +77,10 @@ public class RunSomeTests {
         List<VmTest> tests = Arrays.asList(
                 new ChangeHostnameTest(randomHostname()),
                 new StopStartVmTest(),
-                new SnapshotTest()
-        );
+                new SnapshotTest(),
+                new SetPasswordTest(randomPassword(14)),
+                new AddSupportUserTest(),
+                new EnableDisableAdminTest());
 
         if(smokeTest) {
             tests = Arrays.asList(
@@ -182,5 +191,30 @@ public class RunSomeTests {
           }
         }
         return sb.toString();
+     }
+
+     public static String randomPassword(int length) {
+         List<CharacterRule> rules = new ArrayList<>();
+         rules.add(new CharacterRule(EnglishCharacterData.UpperCase, 1));
+         rules.add(new CharacterRule(EnglishCharacterData.LowerCase, 1));
+         rules.add(new CharacterRule(EnglishCharacterData.Digit, 1));
+         CharacterData SPECIAL_CHAR_DATA = new CharacterData() {
+             @Override
+             public String getErrorCode() {
+                 return "INVALID_SPECIAL_CHARS";
+             }
+
+             @Override
+             public String getCharacters() { return "@!#%$"; }
+         };
+         rules.add(new CharacterRule(SPECIAL_CHAR_DATA, 1));
+
+         List<CharacterRule> firstLetterRules = new ArrayList<>();
+         firstLetterRules.add(new CharacterRule(EnglishCharacterData.LowerCase, 1));
+
+         PasswordGenerator pwGenerator = new PasswordGenerator();
+         String firstLetter = pwGenerator.generatePassword(1, firstLetterRules);
+
+         return firstLetter + pwGenerator.generatePassword(length - 1, rules);
      }
 }

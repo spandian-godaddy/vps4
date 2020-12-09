@@ -72,7 +72,6 @@ public class Vps4ApiClient {
     }
 
     public Vps4JsonResponse<JSONObject> sendPost(String urlAppendix) {
-
         return this.sendPost(urlAppendix, null);
     }
 
@@ -121,7 +120,22 @@ public class Vps4ApiClient {
         assert(setHostnameResponse.statusCode == 200);
         JSONObject setHostnameJsonResult = setHostnameResponse.jsonResponse;
         return (long) setHostnameJsonResult.get("id");
+    }
 
+    public long setPassword(UUID vmId, String username, String password) {
+        JSONObject body = new JSONObject();
+        body.put("username", username);
+        body.put("password", password);
+        Vps4JsonResponse<JSONObject> setPwdResponse = sendPost("api/vms/" + vmId.toString() + "/setPassword", body);
+        assert(setPwdResponse.statusCode == 200);
+        JSONObject setPwdJsonResult = setPwdResponse.jsonResponse;
+        return (long) setPwdJsonResult.get("id");
+    }
+
+    public JSONObject addSupportUser(UUID vmId) {
+        Vps4JsonResponse<JSONObject> addSupportUserResponse = sendPost("api/vms/" + vmId + "/supportUsers");
+        assert(addSupportUserResponse.statusCode == 200);
+        return addSupportUserResponse.jsonResponse;
     }
 
     public long enableAdmin(UUID vmId, String username) {
@@ -131,7 +145,15 @@ public class Vps4ApiClient {
         assert(enableAdminResponse.statusCode == 200);
         JSONObject enableAdminJsonResult = enableAdminResponse.jsonResponse;
         return (long) enableAdminJsonResult.get("id");
+    }
 
+    public long disableAdmin(UUID vmId, String username) {
+        JSONObject body = new JSONObject();
+        body.put("username", username);
+        Vps4JsonResponse<JSONObject> disableAdminResponse = sendPost("api/vms/" + vmId.toString() + "/disableAdmin", body);
+        assert(disableAdminResponse.statusCode == 200);
+        JSONObject enableAdminJsonResult = disableAdminResponse.jsonResponse;
+        return (long) enableAdminJsonResult.get("id");
     }
 
     public UUID createVmCredit(String shopperId, String osType, String controlPanel,
@@ -231,7 +253,7 @@ public class Vps4ApiClient {
             try {
                 Thread.sleep(5000);
                 secondsPassed+=5;
-                if (secondsPassed % 15 == 0) {
+                if (secondsPassed % 30 == 0) {
                     logger.debug("{} seconds passed waiting on action {} for vm {}", secondsPassed, actionId, vmId);
                 }
             } catch (InterruptedException e) {
@@ -252,6 +274,26 @@ public class Vps4ApiClient {
     public void pollForSnapshotActionComplete(UUID vmId, UUID snapshotId, long actionId, long timeoutSeconds) {
         String urlAppendix = "api/vms/" + vmId.toString() + "/snapshots/" + snapshotId.toString() + "/actions/" + actionId;
         pollForActionComplete(vmId, actionId, timeoutSeconds, urlAppendix);
+    }
+
+    public void pollForVmAgentStatusOK(UUID vmId, long timeoutSeconds) {
+        Vps4JsonResponse<JSONObject> result = sendGetObject("api/vms/" + vmId + "/troubleshoot");
+        Instant timeout = Instant.now().plusSeconds(timeoutSeconds);
+        long secondsPassed = 0;
+        while (!((JSONObject)result.jsonResponse.get("status")).get("hfsAgentStatus").equals("OK") && Instant.now().isBefore(timeout)) {
+            logger.debug("Retry getting vm agent status. JsonResponse: {}", result.jsonResponse);
+            result = sendGetObject("api/vms/" + vmId + "/troubleshoot");
+            try {
+                Thread.sleep(10000);
+                secondsPassed+=10;
+            } catch (InterruptedException e) {
+                logger.error("Test was interrupted: ", e);
+                throw new RuntimeException(e);
+            }
+        }
+        if (!((JSONObject)result.jsonResponse.get("status")).get("hfsAgentStatus").equals("OK")) {
+            throw new RuntimeException("VM troubleshoot endpoint does not return OK in time " + timeoutSeconds + "s for vm " + vmId);
+        }
     }
 
     public Vps4JsonResponse<JSONObject> deleteVm(UUID vmId) {
@@ -306,16 +348,14 @@ public class Vps4ApiClient {
         }
     }
 
-    public JSONObject snanpshotVm(UUID vmId) {
+    public JSONObject snapshotVm(UUID vmId) {
         JSONObject body = new JSONObject();
         body.put("name", "t" + System.currentTimeMillis());
-
         body.put("snapshotType", "ON_DEMAND");
-
         Vps4JsonResponse<JSONObject> snapshotVmResponse = sendPost("api/vms/" + vmId + "/snapshots", body);
+        logger.debug("snapshot vm {} json response: {} (status code {})", vmId, snapshotVmResponse.jsonResponse.toString(), snapshotVmResponse.statusCode);
         assert (snapshotVmResponse.statusCode == 200);
         return snapshotVmResponse.jsonResponse;
-
     }
 
     public String getSnapshotStatus(UUID vmId, UUID snapshotId){

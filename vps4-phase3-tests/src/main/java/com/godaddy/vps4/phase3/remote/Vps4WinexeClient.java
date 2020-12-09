@@ -88,6 +88,12 @@ public class Vps4WinexeClient extends Vps4RemoteAccessClient {
         return testWithRetries(vmId, "hostname", expectedHostname);
     }
 
+    @Override
+    public boolean hasAdminPrivilege(UUID vmId) {
+        String command = "cmd.exe /c net user "+  this.username + " | find /c \"Administrators\"";
+        return testWithRetries(vmId, command, "1");
+    }
+
     private String escapeSingleQuotes(String s) {
         return s.replace("'", "\\'");
     }

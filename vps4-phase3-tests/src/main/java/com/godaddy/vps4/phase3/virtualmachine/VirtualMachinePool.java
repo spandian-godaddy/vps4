@@ -192,6 +192,7 @@ public class VirtualMachinePool {
                     offer( new VirtualMachine(
                             VirtualMachinePool.this,
                             VirtualMachinePool.this.apiClient,
+                            VirtualMachinePool.this.adminClient,
                             this.imageName,
                             username,
                             password,
@@ -257,7 +258,7 @@ public class VirtualMachinePool {
         public UUID provisionVm(UUID orionGuid){
             JSONObject provisionResult = apiClient.provisionVm("VPS4 Phase 3 Test VM",
                     orionGuid, imageName, 1, username, password);
-            logger.debug(provisionResult.toJSONString());
+            logger.debug("provision vm: {}",provisionResult.toJSONString());
             UUID vmId = UUID.fromString(provisionResult.get("virtualMachineId").toString());
             long actionId = Long.parseLong(provisionResult.get("id").toString());
             logger.debug("Creating vmId {} for orionGuid {} with actionId {}", vmId, orionGuid, actionId);

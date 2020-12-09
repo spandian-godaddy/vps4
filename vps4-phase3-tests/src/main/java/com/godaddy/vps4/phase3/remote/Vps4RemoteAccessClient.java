@@ -25,6 +25,8 @@ public abstract class Vps4RemoteAccessClient {
 
     public abstract boolean checkHostname(UUID vmId, String expectedHostname);
 
+    public abstract boolean hasAdminPrivilege(UUID vmId);
+
     String streamToString(InputStream stream) throws IOException {
         StringBuilder result = new StringBuilder();
         try (BufferedReader in = new BufferedReader(new InputStreamReader(stream))) {
