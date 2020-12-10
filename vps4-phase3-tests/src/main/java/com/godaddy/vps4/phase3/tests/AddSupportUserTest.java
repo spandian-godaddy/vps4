@@ -30,7 +30,7 @@ public class AddSupportUserTest implements VmTest {
             String username = messageJson.get("Username").toString();
             String password = messageJson.get("Password").toString();
 
-            logger.debug("Wait for ADD_SUPPORT_USER to finish on vm {}, via action id: {}", vm, actionId);
+            logger.debug("Wait for ADD_SUPPORT_USER ({}:{}) to finish on vm {}, via action id: {}", username, password, vm, actionId);
             vps4AdminClient.pollForVmActionComplete(vm.vmId, actionId, ADD_SUPPORT_USER_TIMEOUT_SECONDS);
 
             logger.debug("Verify remote connection on vm {} using new support user creds", vm);
@@ -50,6 +50,6 @@ public class AddSupportUserTest implements VmTest {
 
     @Override
     public String toString(){
-        return "Create Support User Test";
+        return "Add Support User Test";
     }
 }

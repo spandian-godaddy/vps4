@@ -45,6 +45,6 @@ public class SetPasswordTest implements VmTest {
 
     @Override
     public String toString(){
-        return "Set password Test";
+        return "Set Password Test";
     }
 }

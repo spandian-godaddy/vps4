@@ -15,7 +15,7 @@ public class SnapshotTest implements VmTest {
     private static final Logger logger = LoggerFactory.getLogger(SnapshotTest.class);
 
     private final int SNAPSHOT_TIMEOUT_SECONDS = 2100;
-    private final int TROUBLESHOOT_TIMEOUT_SECONDS = 60;
+    private final int TROUBLESHOOT_TIMEOUT_SECONDS = 240;
 
     @Override
     public void execute(VirtualMachine vm) {
