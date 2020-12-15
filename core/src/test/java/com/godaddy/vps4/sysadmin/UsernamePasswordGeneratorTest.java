@@ -21,8 +21,6 @@ public class UsernamePasswordGeneratorTest {
         int length = 14;
         String password = UsernamePasswordGenerator.generatePassword(length);
         assertEquals(length, password.length());
-        char start = password.charAt(0);
-        assertTrue(start >= 'a' && start <= 'z');
 
         PasswordValidator validator = new PasswordValidator(Arrays.asList(
                 new LengthRule(length, length),

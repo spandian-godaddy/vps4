@@ -209,12 +209,7 @@ public class RunSomeTests {
          };
          rules.add(new CharacterRule(SPECIAL_CHAR_DATA, 1));
 
-         List<CharacterRule> firstLetterRules = new ArrayList<>();
-         firstLetterRules.add(new CharacterRule(EnglishCharacterData.LowerCase, 1));
-
          PasswordGenerator pwGenerator = new PasswordGenerator();
-         String firstLetter = pwGenerator.generatePassword(1, firstLetterRules);
-
-         return firstLetter + pwGenerator.generatePassword(length - 1, rules);
+         return pwGenerator.generatePassword(length, rules);
      }
 }
