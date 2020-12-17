@@ -70,22 +70,6 @@ public class PasswordValidatorTest {
     }
 
     @Test
-    public void shouldStartWithALetter() {
-        String prefixCharsToUse = String.format("%s%s", EnumPasswordCharacters.SPECIAL, EnumPasswordCharacters.NUMERIC);
-        String charsToUse = String.format("%s%s%s%s", EnumPasswordCharacters.UPPERCASE,
-                EnumPasswordCharacters.LOWERCASE, EnumPasswordCharacters.SPECIAL, EnumPasswordCharacters.NUMERIC);
-
-        RandomStringGenerator generator = new RandomStringGenerator.Builder().selectFrom(prefixCharsToUse.toCharArray())
-                .build();
-        String strPrefix = generator.generate(1);
-        generator = new RandomStringGenerator.Builder().selectFrom(charsToUse.toCharArray()).build();
-        String restOfString = generator.generate(randInt(7, 13));
-        String invalidString = String.format("%s%s", strPrefix, restOfString);
-
-        assertFalse(validator.isValid(invalidString));
-    }
-
-    @Test
     public void shouldIncludeALowercaseLetter() {
         String prefixCharsToUse = String.format("%s", EnumPasswordCharacters.UPPERCASE);
         String charsToUse = String.format("%s%s%s", EnumPasswordCharacters.UPPERCASE, EnumPasswordCharacters.SPECIAL,
