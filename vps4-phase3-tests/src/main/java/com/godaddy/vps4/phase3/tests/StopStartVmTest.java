@@ -21,8 +21,6 @@ public class StopStartVmTest implements VmTest {
     private int STOP_TIMEOUT_SECONDS = 240;
     private int START_TIMEOUT_SECONDS = 240;
     private int DED_RESTART_TIMEOUT_SECONDS = 480;
-    private int WAIT_AFTER_START_MILLISECONDS = 45000;
-    private int DED_WAIT_AFTER_START_MILLISECONDS = 300000;
 
     @Override
     public void execute(VirtualMachine vm) {
@@ -30,7 +28,7 @@ public class StopStartVmTest implements VmTest {
 
         // Admin access is required for Winexe
         if (vm.isWindows()) {
-            logger.debug("Turning on admin access for user {} on vm {}", vm.getUsername(), vm);
+            logger.debug("Turning on admin access for user {} on vm {}", vm.getUsername(), vm.vmId);
             vps4Client.enableAdmin(vm.vmId, vm.getUsername());
         }
 
@@ -41,30 +39,26 @@ public class StopStartVmTest implements VmTest {
         }
         else {
             long stopVmActionId = vps4Client.stopVm(vm.vmId);
-            logger.debug("Wait for shutdown on vm {}, via action id: {}", vm, stopVmActionId);
+            logger.debug("Wait for shutdown on vm {}, via action id: {}", vm.vmId, stopVmActionId);
             vps4Client.pollForVmActionComplete(vm.vmId, stopVmActionId, STOP_TIMEOUT_SECONDS);
 
+            logger.debug("Verify remote connection failure on vm {} after stopVM", vm.vmId);
             assert(!client.checkConnection(vm.vmId));
 
             long startVmActionId = vps4Client.startVm(vm.vmId);
-            logger.debug("Wait for startup on vm {}, via action id: {}", vm, startVmActionId);
+            logger.debug("Wait for startup on vm {}, via action id: {}", vm.vmId, startVmActionId);
             vps4Client.pollForVmActionComplete(vm.vmId, startVmActionId, START_TIMEOUT_SECONDS);
         }
 
-        try {
-            // Pause before trying remote connection to allow the server to finish starting up
-            int waitTime = vm.isDed() ? DED_WAIT_AFTER_START_MILLISECONDS: WAIT_AFTER_START_MILLISECONDS;
-            Thread.sleep(waitTime);
-        } catch (InterruptedException e) {
-            logger.error("Error during start stop test sleeping, pre-remote check", e);
-        }
+        // Poll until agent reports OK to ensure that server is online
+        vps4Client.pollForVmAgentStatusOK(vm.vmId, DED_RESTART_TIMEOUT_SECONDS);
 
-        logger.debug("Verify remote connection on vm {}", vm);
+        logger.debug("Verify remote connection success on vm {} after reboot", vm.vmId);
         assert(client.checkConnection(vm.vmId));
     }
 
     @Override
     public String toString(){
-        return "Stop/Start VM Test";
+        return "Stop & Start VM Test";
     }
 }

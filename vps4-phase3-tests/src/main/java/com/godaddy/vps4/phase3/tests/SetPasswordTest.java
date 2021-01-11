@@ -26,18 +26,18 @@ public class SetPasswordTest implements VmTest {
 
         // Admin access is required for Winexe
         if (vm.isWindows()) {
-            logger.debug("Turning on admin access for user {} on vm {}", vm.getUsername(), vm);
+            logger.debug("Turning on admin access for user {} on vm {}", vm.getUsername(), vm.vmId);
             vps4Client.enableAdmin(vm.vmId, vm.getUsername());
         }
 
         long setPasswordActionId = vps4Client.setPassword(vm.vmId, vm.getUsername(), newPassword);
-        logger.debug("Wait for set password to {} on vm {}, via action id: {}", newPassword, vm, setPasswordActionId);
+        logger.debug("Wait for set password to {} on vm {}, via action id: {}", newPassword, vm.vmId, setPasswordActionId);
         vps4Client.pollForVmActionComplete(vm.vmId, setPasswordActionId, SETPASSWORD_TIMEOUT_SECONDS);
 
-        logger.debug("Verify remote connection fails on vm {} using old password", vm);
+        logger.debug("Verify remote connection failure on vm {} using old password", vm.vmId);
         Vps4RemoteAccessClient client1 = vm.remote();
         assert(!client1.checkConnection(vm.vmId));
-        logger.debug("Verify remote connection on vm {} using new password", vm);
+        logger.debug("Verify remote connection success on vm {} using new password", vm.vmId);
         vm.setPassword(newPassword);
         Vps4RemoteAccessClient client2 = vm.remote();
         assert(client2.checkConnection(vm.vmId));

@@ -19,21 +19,21 @@ public class EnableDisableAdminTest implements VmTest {
         Vps4ApiClient vps4Client = vm.getClient();
 
         long enableAdminActionId = vps4Client.enableAdmin(vm.vmId, vm.getUsername());
-        logger.debug("Wait for ENABLE_ADMIN on vm {}, via action id: {}", vm, enableAdminActionId);
+        logger.debug("Wait for ENABLE_ADMIN on vm {}, via action id: {}", vm.vmId, enableAdminActionId);
         vps4Client.pollForVmActionComplete(vm.vmId, enableAdminActionId, TOGGLE_ADMIN_TIMEOUT_SECONDS);
 
-        logger.debug("Verify admin enabled on vm {}", vm);
+        logger.debug("Verify admin enabled on vm {}", vm.vmId);
         Vps4RemoteAccessClient client = vm.remote();
         assert(client.hasAdminPrivilege(vm.vmId));
 
         long disableAdminActionId = vps4Client.disableAdmin(vm.vmId, vm.getUsername());
-        logger.debug("Wait for DISABLE_ADMIN on vm {}, via action id: {}", vm, disableAdminActionId);
+        logger.debug("Wait for DISABLE_ADMIN on vm {}, via action id: {}", vm.vmId, disableAdminActionId);
         vps4Client.pollForVmActionComplete(vm.vmId, disableAdminActionId, TOGGLE_ADMIN_TIMEOUT_SECONDS);
 
         // Admin access is required for Winexe so we cannot use Winexe to verify that admin access is disabled
         // Skip verifying admin disabled on Windows for now
         if (!vm.isWindows()) {
-            logger.debug("Verify admin disabled on vm {}", vm);
+            logger.debug("Verify admin disabled on Linux vm {}", vm.vmId);
             assert(!client.hasAdminPrivilege(vm.vmId));
         }
     }

@@ -16,8 +16,6 @@ public class ChangeHostnameTest implements VmTest {
 
     private int HOSTNAME_TIMEOUT_SECONDS = 240;
     private int RESTART_TIMEOUT_SECONDS = 480;
-    private int WAIT_AFTER_RESTART_MILLISECONDS = 45000;
-    private int DED_WAIT_AFTER_RESTART_MILLISECONDS = 300000;
 
     public ChangeHostnameTest(String newHostname) {
         this.newHostname = newHostname;
@@ -29,31 +27,26 @@ public class ChangeHostnameTest implements VmTest {
 
         // Admin access is required for Winexe
         if (vm.isWindows()) {
-            logger.debug("Turning on admin access for user {} on vm {}", vm.getUsername(), vm);
+            logger.debug("Turning on admin access for user {} on vm {}", vm.getUsername(), vm.vmId);
             vps4Client.enableAdmin(vm.vmId, vm.getUsername());
         }
 
         long setHostnameActionId = vps4Client.setHostname(vm.vmId, newHostname);
-        logger.debug("Wait for change hostname on vm {}, via action id: {}", vm, setHostnameActionId);
+        logger.debug("Wait for change hostname on vm {}, via action id: {}", vm.vmId, setHostnameActionId);
         vps4Client.pollForVmActionComplete(vm.vmId, setHostnameActionId, HOSTNAME_TIMEOUT_SECONDS);
 
         // a reboot is only needed for windows to apply hostname change; reboot not required for linux
         if (vm.isWindows()) {
             long restartVmActionId = vps4Client.restartVm(vm.vmId);
-            logger.debug("Wait for restart on vm {}, via action id: {}", vm, restartVmActionId);
+            logger.debug("Wait for restart on vm {}, via action id: {}", vm.vmId, restartVmActionId);
             vps4Client.pollForVmActionComplete(vm.vmId, restartVmActionId, RESTART_TIMEOUT_SECONDS);
 
-            try {
-                // Pause before trying remote connection to allow the server to finish starting up
-                int waitTime = vm.isDed() ? DED_WAIT_AFTER_RESTART_MILLISECONDS: WAIT_AFTER_RESTART_MILLISECONDS;
-                Thread.sleep(waitTime);
-            } catch (InterruptedException e) {
-                logger.error("Error during start stop test sleeping, pre-remote check", e);
-            }
+            // Poll until agent reports OK to ensure that VM is online
+            vps4Client.pollForVmAgentStatusOK(vm.vmId, RESTART_TIMEOUT_SECONDS);
         }
 
         Vps4RemoteAccessClient client = vm.remote();
-        logger.debug("check hostname on vm {}", vm);
+        logger.debug("check hostname on vm {}", vm.vmId);
         assert client.checkHostname(vm.vmId, newHostname);
     }
 

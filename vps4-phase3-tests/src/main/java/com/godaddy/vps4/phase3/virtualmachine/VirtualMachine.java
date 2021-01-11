@@ -2,6 +2,8 @@ package com.godaddy.vps4.phase3.virtualmachine;
 
 import java.util.UUID;
 
+import org.json.simple.JSONObject;
+
 import com.godaddy.vps4.phase3.api.Vps4ApiClient;
 import com.godaddy.vps4.phase3.remote.Vps4RemoteAccessClient;
 import com.godaddy.vps4.phase3.remote.Vps4SshClient;
@@ -58,18 +60,28 @@ public class VirtualMachine {
     }
 
     public boolean isWindows() {
-        return imageName.toLowerCase().contains("win");
+        JSONObject image = apiClient.getImage(imageName);
+        return image.get("operatingSystem").toString().equalsIgnoreCase("WINDOWS");
     }
 
     public boolean isDed() {
-        return imageName.toLowerCase().endsWith("_64");
+        JSONObject image = apiClient.getImage(imageName);
+        JSONObject serverType = (JSONObject) image.get("serverType");
+        return serverType.get("serverType").toString().equalsIgnoreCase("DEDICATED");
+    }
+
+    public boolean isPlatformOptimizedHosting() {
+        JSONObject image = apiClient.getImage(imageName);
+        JSONObject serverType = (JSONObject) image.get("serverType");
+        return serverType.get("platform").toString().equalsIgnoreCase("OPTIMIZED_HOSTING");
     }
 
     public Vps4RemoteAccessClient remote() {
+        // use adminClient instead of apiClient because shopper cannot get VM primary IP for remote access when VM is suspended
         if (isWindows()) {
-            return new Vps4WinexeClient(apiClient, defaultUsername, defaultPassword);
+            return new Vps4WinexeClient(adminClient, defaultUsername, defaultPassword);
         }
-        return new Vps4SshClient(apiClient, defaultUsername, defaultPassword);
+        return new Vps4SshClient(adminClient, defaultUsername, defaultPassword);
     }
 
     public void release() {

@@ -101,7 +101,7 @@ public class Vps4ApiClient {
 
     public String getVmPrimaryIp(UUID vmId){
         Vps4JsonResponse<JSONObject> getVmResponse = sendGetObject("api/vms/" + vmId);
-        assert(getVmResponse.statusCode == 200);
+        assertStatusCode200(getVmResponse);
         JSONObject vm = getVmResponse.jsonResponse;
         JSONObject primaryIp = (JSONObject) vm.get("primaryIpAddress");
         return primaryIp.get("ipAddress").toString();
@@ -109,7 +109,7 @@ public class Vps4ApiClient {
 
     public JSONObject getImage(String imageName) {
         Vps4JsonResponse<JSONObject> getImageResponse = sendGetObject("api/vmImages/" + imageName);
-        assert(getImageResponse.statusCode == 200);
+        assertStatusCode200(getImageResponse);
         return getImageResponse.jsonResponse;
     }
 
@@ -117,7 +117,7 @@ public class Vps4ApiClient {
         JSONObject body = new JSONObject();
         body.put("hostname", hostname);
         Vps4JsonResponse<JSONObject> setHostnameResponse = sendPost("api/vms/" + vmId.toString() + "/setHostname", body);
-        assert(setHostnameResponse.statusCode == 200);
+        assertStatusCode200(setHostnameResponse);
         JSONObject setHostnameJsonResult = setHostnameResponse.jsonResponse;
         return (long) setHostnameJsonResult.get("id");
     }
@@ -127,20 +127,14 @@ public class Vps4ApiClient {
         body.put("username", username);
         body.put("password", password);
         Vps4JsonResponse<JSONObject> setPwdResponse = sendPost("api/vms/" + vmId.toString() + "/setPassword", body);
-        if (setPwdResponse.statusCode != 200) {
-            logger.debug("setPassword for vm {} json response: {} (status code {})", vmId, setPwdResponse.jsonResponse.toString(), setPwdResponse.statusCode);
-        }
-        assert(setPwdResponse.statusCode == 200);
+        assertStatusCode200(setPwdResponse);
         JSONObject setPwdJsonResult = setPwdResponse.jsonResponse;
         return (long) setPwdJsonResult.get("id");
     }
 
     public JSONObject addSupportUser(UUID vmId) {
         Vps4JsonResponse<JSONObject> addSupportUserResponse = sendPost("api/vms/" + vmId + "/supportUsers");
-        if (addSupportUserResponse.statusCode != 200) {
-            logger.debug("addSupportUser for vm {} json response: {} (status code {})", vmId, addSupportUserResponse.jsonResponse.toString(), addSupportUserResponse.statusCode);
-        }
-        assert(addSupportUserResponse.statusCode == 200);
+        assertStatusCode200(addSupportUserResponse);
         return addSupportUserResponse.jsonResponse;
     }
 
@@ -148,7 +142,7 @@ public class Vps4ApiClient {
         JSONObject body = new JSONObject();
         body.put("username", username);
         Vps4JsonResponse<JSONObject> enableAdminResponse = sendPost("api/vms/" + vmId.toString() + "/enableAdmin", body);
-        assert(enableAdminResponse.statusCode == 200);
+        assertStatusCode200(enableAdminResponse);
         JSONObject enableAdminJsonResult = enableAdminResponse.jsonResponse;
         return (long) enableAdminJsonResult.get("id");
     }
@@ -157,7 +151,7 @@ public class Vps4ApiClient {
         JSONObject body = new JSONObject();
         body.put("username", username);
         Vps4JsonResponse<JSONObject> disableAdminResponse = sendPost("api/vms/" + vmId.toString() + "/disableAdmin", body);
-        assert(disableAdminResponse.statusCode == 200);
+        assertStatusCode200(disableAdminResponse);
         JSONObject enableAdminJsonResult = disableAdminResponse.jsonResponse;
         return (long) enableAdminJsonResult.get("id");
     }
@@ -171,7 +165,7 @@ public class Vps4ApiClient {
         body.put("controlPanel", controlPanel);
         body.put("shopperId", shopperId);
         Vps4JsonResponse<JSONObject> createCreditResponse = sendPost("api/support/createCredit", body);
-        assert(createCreditResponse.statusCode == 200);
+        assertStatusCode200(createCreditResponse);
         JSONObject createCreditJsonResult = createCreditResponse.jsonResponse;
         UUID retVal =  UUID.fromString(createCreditJsonResult.get("orionGuid").toString());
 
@@ -182,7 +176,7 @@ public class Vps4ApiClient {
         boolean isDed4 = platform.equalsIgnoreCase("OVH") ? true: false;
 
         Vps4JsonResponse<JSONArray> getCreditsResponse = sendGetList("/api/credits");
-        assert(getCreditsResponse.statusCode == 200);
+        assertStatusCode200(getCreditsResponse);
         JSONArray credits = getCreditsResponse.jsonResponse;
         for (int i=0; i < credits.size(); i++)
         {
@@ -195,9 +189,15 @@ public class Vps4ApiClient {
         return null;
     }
 
+    public JSONObject getCredit(UUID orionGuid) {
+        Vps4JsonResponse<JSONObject> getCreditResponse = sendGetObject("/api/credits/" + orionGuid);
+        assertStatusCode200(getCreditResponse);
+        return getCreditResponse.jsonResponse;
+    }
+
     public Vps4JsonResponse<JSONArray> getVms() {
         Vps4JsonResponse<JSONArray> getVmsResponse = sendGetList("/api/vms");
-        assert (getVmsResponse.statusCode == 200);
+        assertStatusCode200(getVmsResponse);
         return getVmsResponse;
     }
 
@@ -228,21 +228,21 @@ public class Vps4ApiClient {
 
     public long restartVm(UUID vmId) {
         Vps4JsonResponse<JSONObject> restartRequestResponse = sendPost("api/vms/"+ vmId + "/restart");
-        assert(restartRequestResponse.statusCode == 200);
+        assertStatusCode200(restartRequestResponse);
         JSONObject restartJsonResult = restartRequestResponse.jsonResponse;
         return (long)restartJsonResult.get("id");
     }
 
     public long stopVm(UUID vmId) {
         Vps4JsonResponse<JSONObject> stopRequestResponse = sendPost("api/vms/"+ vmId + "/stop");
-        assert(stopRequestResponse.statusCode == 200);
+        assertStatusCode200(stopRequestResponse);
         JSONObject stopJsonResult = stopRequestResponse.jsonResponse;
         return (long)stopJsonResult.get("id");
     }
 
     public long startVm(UUID vmId) {
         Vps4JsonResponse<JSONObject> startRequestResponse = sendPost("api/vms/"+ vmId + "/start");
-        assert(startRequestResponse.statusCode == 200);
+        assertStatusCode200(startRequestResponse);
         JSONObject startJsonResult = startRequestResponse.jsonResponse;
         return (long)startJsonResult.get("id");
     }
@@ -362,20 +362,65 @@ public class Vps4ApiClient {
         body.put("name", "t" + System.currentTimeMillis());
         body.put("snapshotType", "ON_DEMAND");
         Vps4JsonResponse<JSONObject> snapshotVmResponse = sendPost("api/vms/" + vmId + "/snapshots", body);
-        if (snapshotVmResponse.statusCode != 200) {
-            logger.debug("snapshot vm {} json response: {} (status code {})", vmId, snapshotVmResponse.jsonResponse.toString(), snapshotVmResponse.statusCode);
-        }
-        assert (snapshotVmResponse.statusCode == 200);
+        assertStatusCode200(snapshotVmResponse);
         return snapshotVmResponse.jsonResponse;
     }
 
     public String getSnapshotStatus(UUID vmId, UUID snapshotId){
         Vps4JsonResponse<JSONObject> getSnapshotResponse = sendGetObject("api/vms/" + vmId + "/snapshots/" + snapshotId);
-        if (getSnapshotResponse.statusCode != 200) {
-            logger.debug("getSnapshotStatus for vm {} json response: {} (status code {})", vmId, getSnapshotResponse.jsonResponse.toString(), getSnapshotResponse.statusCode);
-        }
-        assert(getSnapshotResponse.statusCode == 200);
+        assertStatusCode200(getSnapshotResponse);
         JSONObject snapshot = getSnapshotResponse.jsonResponse;
         return snapshot.get("status").toString();
+    }
+
+    public JSONObject restoreVm(UUID vmId, UUID snapshotId, String newPassword) {
+        JSONObject body = new JSONObject();
+        body.put("backupId", snapshotId.toString());
+        if(!newPassword.isEmpty()){
+            body.put("password", newPassword);
+        }
+        Vps4JsonResponse<JSONObject> restoreVmResponse = sendPost("api/vms/" + vmId + "/restore", body);
+        assertStatusCode200(restoreVmResponse);
+        return restoreVmResponse.jsonResponse;
+    }
+
+    public JSONObject createConsoleUrl(UUID vmId) {
+        Vps4JsonResponse<JSONObject> createConsoleUrlResponse = sendPost("api/vms/" + vmId + "/consoleUrl");
+        assertStatusCode200(createConsoleUrlResponse);
+        return createConsoleUrlResponse.jsonResponse;
+    }
+
+    public String getConsoleUrl(UUID vmId){
+        Vps4JsonResponse<JSONObject> getConsoleUrlResponse = sendGetObject("api/vms/" + vmId + "/consoleUrl");
+        assertStatusCode200(getConsoleUrlResponse);
+        JSONObject console = getConsoleUrlResponse.jsonResponse;
+        return console.get("url").toString();
+    }
+
+    public long abuseSuspend(UUID vmId) {
+        Vps4JsonResponse<JSONObject> abuseSuspendResponse = sendPost("api/vms/" + vmId + "/abuseSuspend");
+        assertStatusCode200(abuseSuspendResponse);
+        JSONObject suspendJsonResult = abuseSuspendResponse.jsonResponse;
+        return (long)suspendJsonResult.get("id");
+    }
+
+    public long reinstateAbuseSuspend(UUID vmId) {
+        Vps4JsonResponse<JSONObject> reinstateAbuseSuspendResponse = sendPost("api/vms/" + vmId + "/reinstateAbuseSuspend");
+        assertStatusCode200(reinstateAbuseSuspendResponse);
+        JSONObject reinstateJsonResult = reinstateAbuseSuspendResponse.jsonResponse;
+        return (long)reinstateJsonResult.get("id");
+    }
+
+    public JSONObject getServerActions(UUID vmId) {
+        Vps4JsonResponse<JSONObject> getVmActionsResponse = sendGetObject("/api/vms/" + vmId + "/actions");
+        assertStatusCode200(getVmActionsResponse);
+        return getVmActionsResponse.jsonResponse;
+    }
+
+    private void assertStatusCode200(Vps4JsonResponse response) {
+        if (response.statusCode != 200) {
+            logger.debug("json response: {} (status code {})", response.jsonResponse.toString(), response.statusCode);
+        }
+        assert(response.statusCode == 200);
     }
 }

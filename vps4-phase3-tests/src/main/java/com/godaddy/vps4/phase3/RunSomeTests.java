@@ -27,10 +27,13 @@ import com.godaddy.vps4.phase3.api.SsoClient;
 import com.godaddy.vps4.phase3.api.Vps4ApiClient;
 import com.godaddy.vps4.phase3.tests.ChangeHostnameTest;
 import com.godaddy.vps4.phase3.tests.AddSupportUserTest;
+import com.godaddy.vps4.phase3.tests.ConsoleUrlTest;
 import com.godaddy.vps4.phase3.tests.EnableDisableAdminTest;
+import com.godaddy.vps4.phase3.tests.GetServerActionsTest;
 import com.godaddy.vps4.phase3.tests.SetPasswordTest;
 import com.godaddy.vps4.phase3.tests.SnapshotTest;
 import com.godaddy.vps4.phase3.tests.StopStartVmTest;
+import com.godaddy.vps4.phase3.tests.SuspendReinstateTest;
 import com.godaddy.vps4.phase3.virtualmachine.VirtualMachinePool;
 
 public class RunSomeTests {
@@ -80,7 +83,10 @@ public class RunSomeTests {
                 new SnapshotTest(),
                 new SetPasswordTest(randomPassword(14)),
                 new AddSupportUserTest(),
-                new EnableDisableAdminTest());
+                new EnableDisableAdminTest(),
+                new ConsoleUrlTest(),
+                new SuspendReinstateTest(),
+                new GetServerActionsTest());
 
         if(smokeTest) {
             tests = Arrays.asList(

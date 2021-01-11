@@ -30,15 +30,15 @@ public class AddSupportUserTest implements VmTest {
             String username = messageJson.get("Username").toString();
             String password = messageJson.get("Password").toString();
 
-            logger.debug("Wait for ADD_SUPPORT_USER ({}:{}) to finish on vm {}, via action id: {}", username, password, vm, actionId);
+            logger.debug("Wait for ADD_SUPPORT_USER ({}:{}) to finish on vm {}, via action id: {}", username, password, vm.vmId, actionId);
             vps4AdminClient.pollForVmActionComplete(vm.vmId, actionId, ADD_SUPPORT_USER_TIMEOUT_SECONDS);
 
-            logger.debug("Verify remote connection on vm {} using new support user creds", vm);
+            logger.debug("Verify remote connection on vm {} using new support user creds", vm.vmId);
             vm.setUsername(username);
             vm.setPassword(password);
             Vps4RemoteAccessClient client1 = vm.remote();
             assert(client1.checkConnection(vm.vmId));
-            logger.debug("Verify remote connection on vm {} using original user creds", vm);
+            logger.debug("Verify remote connection on vm {} using original user creds", vm.vmId);
             vm.setUsername(originalUsername);
             vm.setPassword(originalPwd);
             Vps4RemoteAccessClient client2 = vm.remote();
