@@ -28,7 +28,7 @@ Tests run on different VMs of different image types in parallel.
    ```
    java -ea -jar vps4-phase3-tests-0.0.1-SNAPSHOT.jar --api-url https://vps4.api.stg-godaddy.com/ --shopper YOUR_SHOPPER_ID --password '[YOUR_SHOPPER_PWD]' --sso-url https://sso.godaddy.com/v1/api/token --admin SVCM2AbYa3jVxBHWa --admin-pass '[FIND_PWD_IN_CYBERARK_OR_ASK_TEAM]' --max-vms 2 --pool-size 1 --vm-timeout 1800 --images 'vps4-centos-7-cpanel-11'
    ```
-4. See the [MacOS instructions](#On-MacOS) if you want to test Windows images from your laptop
+4. See the [Winexe on MacOS instructions](#On-MacOS) if you want to test Windows images from your laptop.
 
 ## Testing Windows images
 
@@ -38,8 +38,12 @@ Testing Windows images requires the `winexe` program. It is used to run Powershe
 
 Winexe is not available in any mainstream package managers. Buidling it from source is also difficult since some dependencies it needs (specifically the `mingw*` packages) have been removed. It also uses a deprecated version of SMB by default which causes occassional errors when trying to connect. Instead, install [this patched binary](winexe/winexe-static) which supports SMB2.
 ```
-cp vps4-phase3-tests/winexe/winexe-static /usr/bin/winexe && chmod +x /usr/bin/winexe
+sudo mkdir /usr/bin/winexe
+sudo cp vps4-phase3-tests/winexe/winexe-static /usr/bin/winexe/winexe
+sudo chown root:root winexe
+sudo chmod 755 /usr/bin/winexe/winexe
 ```
+Winexe is installed in `/usr/bin/winexe` and not `/usr/bin` because the `/usr/bin/winexe` directory is excluded from Trend Micro. Trend Micro will automatically delete it if you store it elsewhere. Make sure `/usr/bin/winexe` is included in the path of whichever user plans to run it.
 
 #### On MacOS
 
