@@ -10,9 +10,9 @@ import gdg.hfs.orchestration.CommandContext;
 import gdg.hfs.vhfs.sysadmin.SysAdminAction;
 import gdg.hfs.vhfs.sysadmin.SysAdminService;
 
-public class InstallPanopta implements Command<InstallPanopta.Request, Void> {
+public class InstallPanoptaAgent implements Command<InstallPanoptaAgent.Request, Void> {
 
-    private static final Logger logger = LoggerFactory.getLogger(InstallPanopta.class);
+    private static final Logger logger = LoggerFactory.getLogger(InstallPanoptaAgent.class);
 
     public static class Request {
         public String customerKey;
@@ -20,24 +20,23 @@ public class InstallPanopta implements Command<InstallPanopta.Request, Void> {
         public String serverName;
         public String templates;
         public String fqdn;
-        public boolean disableServerMatch;
         public long hfsVmId;
     }
 
     private final SysAdminService sysAdminService;
 
     @Inject
-    public InstallPanopta(SysAdminService sysAdminService) {
+    public InstallPanoptaAgent(SysAdminService sysAdminService) {
         this.sysAdminService = sysAdminService;
     }
 
     @Override
     public Void execute(CommandContext context, Request request) {
-        logger.info("Configuring panopta for hfs vm id {} ", request.hfsVmId);
+        logger.info("Configuring panopta agent for hfs vm id {} ", request.hfsVmId);
 
-        SysAdminAction hfsSysAction = context.execute("InstallPanopta-" + request.hfsVmId,
-                ctx -> sysAdminService.installPanopta(request.hfsVmId, request.customerKey, request.templates, request.serverName,
-                        request.serverKey, request.fqdn, request.disableServerMatch),
+        SysAdminAction hfsSysAction = context.execute("InstallPanoptaAgent",
+                ctx -> sysAdminService.installPanopta(request.hfsVmId, request.customerKey, request.templates,
+                                                      request.serverName, request.serverKey, request.fqdn, false),
                 SysAdminAction.class);
         context.execute("WaitForPanoptaInstall-" + request.hfsVmId, WaitForSysAdminAction.class, hfsSysAction);
 

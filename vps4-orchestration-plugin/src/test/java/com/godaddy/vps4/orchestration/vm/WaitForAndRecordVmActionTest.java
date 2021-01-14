@@ -1,12 +1,9 @@
 package com.godaddy.vps4.orchestration.vm;
 
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
+
 import com.godaddy.hfs.vm.VmAction;
 import com.godaddy.vps4.hfs.HfsVmTrackingRecordService;
-
-import org.junit.Test;
 
 import gdg.hfs.orchestration.CommandContext;
 

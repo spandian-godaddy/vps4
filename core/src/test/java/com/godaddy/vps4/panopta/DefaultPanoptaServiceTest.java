@@ -2,7 +2,6 @@ package com.godaddy.vps4.panopta;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyInt;
@@ -39,6 +38,7 @@ import com.godaddy.hfs.config.Config;
 import com.godaddy.vps4.cache.CacheName;
 import com.godaddy.vps4.credit.CreditService;
 import com.godaddy.vps4.credit.VirtualMachineCredit;
+import com.godaddy.vps4.network.IpAddress;
 import com.godaddy.vps4.panopta.jdbc.PanoptaCustomerDetails;
 import com.godaddy.vps4.util.ObjectMapperProvider;
 import com.godaddy.vps4.vm.AccountStatus;
@@ -49,11 +49,11 @@ import com.godaddy.vps4.vm.VmMetric;
 import com.google.inject.Inject;
 
 public class DefaultPanoptaServiceTest {
-
     private @PanoptaExecutorService ExecutorService pool;
     private CacheManager cacheManager;
     private PanoptaApiServerService panoptaApiServerService;
     private PanoptaApiCustomerService panoptaApiCustomerService;
+    private PanoptaApiServerGroupService panoptaApiServerGroupService;
     private PanoptaDataService panoptaDataService;
     private VirtualMachineService virtualMachineService;
     private CreditService creditService;
@@ -80,17 +80,14 @@ public class DefaultPanoptaServiceTest {
     private PanoptaNetworkGraph networkGraph;
     @Inject
     private ObjectMapper objectMapper = new ObjectMapperProvider().get();
-    @Inject
-    private PanoptaCustomerRequest panoptaCustomerRequest;
-    @Inject
-    private PanoptaApiCustomerRequest panoptaApiCustomerRequest;
 
     @Before
-    public void setup() {
+    public void setup() throws IOException {
         pool = spy(Executors.newCachedThreadPool());
         cacheManager = mock(CacheManager.class);
         panoptaApiServerService = mock(PanoptaApiServerService.class);
         panoptaApiCustomerService = mock(PanoptaApiCustomerService.class);
+        panoptaApiServerGroupService = mock(PanoptaApiServerGroupService.class);
         panoptaDataService = mock(PanoptaDataService.class);
         panoptaApiCustomerList = mock(PanoptaApiCustomerList.class);
         panoptaCustomerDetails = mock(PanoptaCustomerDetails.class);
@@ -101,6 +98,8 @@ public class DefaultPanoptaServiceTest {
         vmId = UUID.randomUUID();
         orionGuid = UUID.randomUUID();
         virtualMachine = new VirtualMachine();
+        virtualMachine.primaryIpAddress = new IpAddress();
+        virtualMachine.primaryIpAddress.ipAddress = "127.0.0.1";
         virtualMachine.orionGuid = orionGuid;
         virtualMachine.vmId = vmId;
         serverId = 42;
@@ -114,18 +113,16 @@ public class DefaultPanoptaServiceTest {
                                           Instant.now(), Instant.MAX);
         panoptaServers = new PanoptaServers();
         panoptaServers.servers = new ArrayList<>();
-        server = new PanoptaServers.Server();
-        server.url = "https://api2.panopta.com/v2/server/666";
-        server.serverKey = "someServerKey";
-        server.name = "someServerName";
-        server.fqdn = "someFqdn";
-        server.serverGroup = "someServerGroup";
+        server = mock(PanoptaServers.Server.class);
+        server.name = virtualMachine.orionGuid.toString();
+        server.url = "https://api2.panopta.com/v2/server/1234";
         server.status = PanoptaServer.Status.ACTIVE.toString();
         panoptaServers.servers.add(server);
-        panoptaCustomerRequest = new PanoptaCustomerRequest(virtualMachineService, creditService, config);
-        panoptaApiCustomerRequest = new PanoptaApiCustomerRequest();
         setupGraphIdLists();
         setupGraphs();
+        setupCustomerList();
+        setupServerGroups();
+        setupOtherMocks();
         when(cacheManager.getCache(CacheName.PANOPTA_METRIC_GRAPH,
                                    String.class,
                                    DefaultPanoptaService.CachedMonitoringGraphs.class)).thenReturn(cache);
@@ -133,8 +130,8 @@ public class DefaultPanoptaServiceTest {
                                                           cacheManager,
                                                           panoptaApiCustomerService,
                                                           panoptaApiServerService,
+                                                          panoptaApiServerGroupService,
                                                           panoptaDataService,
-                                                          panoptaCustomerRequest,
                                                           config);
     }
 
@@ -170,8 +167,8 @@ public class DefaultPanoptaServiceTest {
         networkGraph.values = new ArrayList<>();
     }
 
-    private String mockedupCustomerList() {
-        return "{\n" +
+    private void setupCustomerList() throws IOException {
+        String mock = "{\n" +
                 "  \"customer_list\": [\n" +
                 "    {\n" +
                 "      \"customer_key\": \"2hum-wpmt-vswt-2g3b\",\n" +
@@ -191,6 +188,39 @@ public class DefaultPanoptaServiceTest {
                 "    \"total_count\": 1\n" +
                 "  }\n" +
                 "}\n";
+        PanoptaApiCustomerList fakePanoptaCustomers = objectMapper.readValue(mock, PanoptaApiCustomerList.class);
+        when(panoptaApiCustomerService.getCustomer(partnerCustomerKey)).thenReturn(fakePanoptaCustomers);
+        when(panoptaApiCustomerList.getCustomerList()).thenReturn(fakePanoptaCustomers.getCustomerList());
+    }
+
+    private void setupServerGroups() throws IOException {
+        String mock = "{\n" +
+                "  \"server_group_list\": [\n" +
+                "    {\n" +
+                "      \"name\": \"Default Server Group\",\n" +
+                "      \"notification_schedule\": \"https://api2.panopta.com/v2/notification_schedule/224324\",\n" +
+                "      \"server_group\": null,\n" +
+                "      \"tags\": [],\n" +
+                "      \"url\": \"https://api2.panopta.com/v2/server_group/428250\"\n" +
+                "    }\n" +
+                "  ]\n" +
+                "}";
+        PanoptaServerGroupList fakeGroups = objectMapper.readValue(mock, PanoptaServerGroupList.class);
+        when(panoptaApiServerGroupService.getServerGroups(partnerCustomerKey)).thenReturn(fakeGroups);
+    }
+
+    private void setupOtherMocks() {
+        when(virtualMachineService.getVirtualMachine(any(UUID.class))).thenReturn(virtualMachine);
+        when(creditService.getVirtualMachineCredit(any(UUID.class))).thenReturn(credit);
+        when(config.get("panopta.api.part" +
+                                "ner.customer.key.prefix")).thenReturn("gdtest_");
+        doNothing().when(panoptaApiCustomerService).createCustomer(any(PanoptaApiCustomerRequest.class));
+        when(panoptaApiServerService.getUsageList(serverId, partnerCustomerKey, 0)).thenReturn(usageIdList);
+        when(panoptaApiServerService.getNetworkList(serverId, partnerCustomerKey, 0)).thenReturn(networkIdList);
+        when(panoptaApiServerService.getServer(serverId, partnerCustomerKey)).thenReturn(server);
+        when(panoptaApiServerService.getPanoptaServersByStatus(partnerCustomerKey, PanoptaServer.Status.ACTIVE))
+                .thenReturn(panoptaServers);
+        when(panoptaDataService.getPanoptaDetails(vmId)).thenReturn(panoptaDetail);
     }
 
     private VirtualMachineCredit createDummyCredit() {
@@ -203,30 +233,17 @@ public class DefaultPanoptaServiceTest {
 
     @Test(expected = PanoptaServiceException.class)
     public void testInvokesCreatesCustomer() throws PanoptaServiceException {
-        when(virtualMachineService.getVirtualMachine(any(UUID.class))).thenReturn(virtualMachine);
-        when(creditService.getVirtualMachineCredit(any(UUID.class))).thenReturn(credit);
-        when(config.get("panopta.api.partner.customer.key.prefix")).thenReturn("gdtest_");
-        when(panoptaApiCustomerService.getCustomer(eq(partnerCustomerKey))).thenReturn(panoptaApiCustomerList);
-        doNothing().when(panoptaApiCustomerService).createCustomer(any(PanoptaApiCustomerRequest.class));
+        when(panoptaApiCustomerService.getCustomer("gdtest_nonexistent"))
+                .thenReturn(panoptaApiCustomerList);
 
-        defaultPanoptaService.createCustomer(shopperId);
+        defaultPanoptaService.createCustomer("nonexistent");
 
         verify(panoptaApiCustomerService).createCustomer(any(PanoptaApiCustomerRequest.class));
     }
 
     @Test
     public void testInvokesCreatesCustomerWithMatchingCustomer() throws PanoptaServiceException, IOException {
-        PanoptaApiCustomerList fakePanoptaCustomers =
-                objectMapper.readValue(mockedupCustomerList(), PanoptaApiCustomerList.class);
-        when(virtualMachineService.getVirtualMachine(any(UUID.class))).thenReturn(virtualMachine);
-        when(creditService.getVirtualMachineCredit(any(UUID.class))).thenReturn(credit);
-        when(config.get("panopta.api.partner.customer.key.prefix")).thenReturn("gdtest_");
-        when(panoptaApiCustomerService.getCustomer(partnerCustomerKey)).thenReturn(fakePanoptaCustomers);
-        when(panoptaApiCustomerList.getCustomerList()).thenReturn(fakePanoptaCustomers.getCustomerList());
-        doNothing().when(panoptaApiCustomerService).createCustomer(any(PanoptaApiCustomerRequest.class));
-
         defaultPanoptaService.createCustomer(shopperId);
-
         verify(panoptaApiCustomerService).createCustomer(any(PanoptaApiCustomerRequest.class));
     }
 
@@ -239,11 +256,7 @@ public class DefaultPanoptaServiceTest {
 
     @Test
     public void testGetUsageIds() {
-        when(panoptaDataService.getPanoptaDetails(vmId)).thenReturn(panoptaDetail);
-        when(panoptaApiServerService.getUsageList(serverId, partnerCustomerKey, 0)).thenReturn(usageIdList);
-
         List<PanoptaGraphId> ids = defaultPanoptaService.getUsageIds(vmId);
-
         verify(panoptaApiServerService).getUsageList(serverId, partnerCustomerKey, 0);
         assertEquals(ids.size(), 1);
         assertEquals(ids.get(0).id, usageIdList.getList().get(0).id);
@@ -259,11 +272,7 @@ public class DefaultPanoptaServiceTest {
 
     @Test
     public void testGetNetworkIds() {
-        when(panoptaDataService.getPanoptaDetails(vmId)).thenReturn(panoptaDetail);
-        when(panoptaApiServerService.getNetworkList(serverId, partnerCustomerKey, 0)).thenReturn(networkIdList);
-
         List<PanoptaGraphId> ids = defaultPanoptaService.getNetworkIds(vmId);
-
         verify(panoptaApiServerService).getNetworkList(serverId, partnerCustomerKey, 0);
         assertEquals(ids.size(), 1);
         assertEquals(ids.get(0).id, networkIdList.getList().get(0).id);
@@ -273,8 +282,6 @@ public class DefaultPanoptaServiceTest {
     @Test
     public void testGetUsageGraphs() throws PanoptaServiceException, InterruptedException {
         when(cache.containsKey(String.format("%s.usage.%s", vmId, "hour"))).thenReturn(false);
-        when(panoptaDataService.getPanoptaDetails(vmId)).thenReturn(panoptaDetail);
-        when(panoptaApiServerService.getUsageList(serverId, partnerCustomerKey, 0)).thenReturn(usageIdList);
         when(panoptaApiServerService.getUsageGraph(eq(serverId),
                                                    anyInt(),
                                                    eq("hour"),
@@ -293,8 +300,6 @@ public class DefaultPanoptaServiceTest {
     @Test
     public void testGetNetworkGraphs() throws PanoptaServiceException, InterruptedException {
         when(cache.containsKey(String.format("%s.network.%s", vmId, "hour"))).thenReturn(false);
-        when(panoptaDataService.getPanoptaDetails(vmId)).thenReturn(panoptaDetail);
-        when(panoptaApiServerService.getNetworkList(serverId, partnerCustomerKey, 0)).thenReturn(networkIdList);
         when(panoptaApiServerService.getNetworkGraph(eq(serverId),
                                                      anyInt(),
                                                      eq("hour"),
@@ -320,7 +325,6 @@ public class DefaultPanoptaServiceTest {
         when(cache.containsKey(String.format("%s.usage.%s", vmId, "hour"))).thenReturn(true);
         when(cache.containsKey(String.format("%s.usage.%s", vmId, "hour"))).thenReturn(true);
         when(cache.get(String.format("%s.usage.%s", vmId, "hour"))).thenReturn(cachedGraphs);
-        when(panoptaDataService.getPanoptaDetails(vmId)).thenReturn(panoptaDetail);
 
         List<PanoptaGraph> graphs = defaultPanoptaService.getUsageGraphs(vmId, "hour");
 
@@ -338,9 +342,7 @@ public class DefaultPanoptaServiceTest {
                 cachedGraphs = new DefaultPanoptaService.CachedMonitoringGraphs(panoptaGraphs);
 
         when(cache.containsKey(String.format("%s.network.%s", vmId, "hour"))).thenReturn(true);
-        when(cache.containsKey(String.format("%s.network.%s", vmId, "hour"))).thenReturn(true);
         when(cache.get(String.format("%s.network.%s", vmId, "hour"))).thenReturn(cachedGraphs);
-        when(panoptaDataService.getPanoptaDetails(vmId)).thenReturn(panoptaDetail);
 
         List<PanoptaGraph> graphs = defaultPanoptaService.getNetworkGraphs(vmId, "hour");
 
@@ -371,18 +373,14 @@ public class DefaultPanoptaServiceTest {
 
     @Test
     public void testDoesNotPauseMonitoringWhenPanoptaAlreadySuspended() {
-        when(panoptaDataService.getPanoptaDetails(vmId)).thenReturn(panoptaDetail);
         server.status = "suspended";
-        when(panoptaApiServerService.getServer(serverId, partnerCustomerKey)).thenReturn(server);
         defaultPanoptaService.pauseServerMonitoring(vmId);
         verify(panoptaApiServerService, never()).setServerStatus(eq(serverId), eq(partnerCustomerKey), any());
     }
 
     @Test
     public void testPauseMonitoringSuccess() {
-        when(panoptaDataService.getPanoptaDetails(vmId)).thenReturn(panoptaDetail);
         server.status = "active";
-        when(panoptaApiServerService.getServer(serverId, partnerCustomerKey)).thenReturn(server);
         defaultPanoptaService.pauseServerMonitoring(vmId);
         verify(panoptaApiServerService).setServerStatus(eq(serverId), eq(partnerCustomerKey), any());
     }
@@ -396,39 +394,32 @@ public class DefaultPanoptaServiceTest {
 
     @Test
     public void testDoesNotResumeMonitoringWhenPanoptaAlreadyActive() {
-        when(panoptaDataService.getPanoptaDetails(vmId)).thenReturn(panoptaDetail);
         server.status = "active";
-        when(panoptaApiServerService.getServer(serverId, partnerCustomerKey)).thenReturn(server);
         defaultPanoptaService.resumeServerMonitoring(vmId);
         verify(panoptaApiServerService, never()).setServerStatus(eq(serverId), eq(partnerCustomerKey), any());
     }
 
     @Test
     public void testResumeMonitoringSuccess() {
-        when(panoptaDataService.getPanoptaDetails(vmId)).thenReturn(panoptaDetail);
         server.status = "suspended";
-        when(panoptaApiServerService.getServer(serverId, partnerCustomerKey)).thenReturn(server);
         defaultPanoptaService.resumeServerMonitoring(vmId);
         verify(panoptaApiServerService).setServerStatus(eq(serverId), eq(partnerCustomerKey), any());
     }
 
     @Test
     public void removeMonitoringCallsPanoptaApiDeleteServer() {
-        when(panoptaDataService.getPanoptaDetails(vmId)).thenReturn(panoptaDetail);
         defaultPanoptaService.removeServerMonitoring(vmId);
         verify(panoptaApiServerService).deleteServer(serverId, partnerCustomerKey);
     }
 
     @Test
     public void removeMonitoringWithPanoptaParamsCallsPanoptaApi() {
-        when(config.get("panopta.api.partner.customer.key.prefix")).thenReturn("gdtest_");
-        when(panoptaDataService.getPanoptaDetails(vmId)).thenReturn(panoptaDetail);
         defaultPanoptaService.removeServerMonitoring(serverId, shopperId);
         verify(panoptaApiServerService).deleteServer(serverId, partnerCustomerKey);
     }
 
     @Test
-    public void deleteCustomerCallsPanoptaApiDeleteCustomer() {
+    public void deleteCustomerCallsPanoptaApi() {
         when(panoptaDataService.getPanoptaCustomerDetails(shopperId)).thenReturn(panoptaCustomerDetails);
         when(panoptaCustomerDetails.getCustomerKey()).thenReturn(customerKey);
         defaultPanoptaService.deleteCustomer(shopperId);
@@ -436,8 +427,20 @@ public class DefaultPanoptaServiceTest {
     }
 
     @Test
+    public void testCreateServer() throws PanoptaServiceException {
+        String ipAddress = virtualMachine.primaryIpAddress.ipAddress;
+        String[] templates = new String[] {
+                "https://api2.panopta.com/v2/server_template/1",
+                "https://api2.panopta.com/v2/server_template/2"
+        };
+        PanoptaServer server = defaultPanoptaService.createServer(shopperId, orionGuid, ipAddress, templates);
+        verify(panoptaApiServerService).createServer(eq(partnerCustomerKey), any(PanoptaApiServerRequest.class));
+        verify(panoptaApiServerService).getPanoptaServersByStatus(partnerCustomerKey, PanoptaServer.Status.ACTIVE);
+        assertEquals(panoptaServers.servers.get(0).name, server.name);
+    }
+
+    @Test
     public void testGetAvailability() throws PanoptaServiceException {
-        when(panoptaDataService.getPanoptaDetails(eq(vmId))).thenReturn(panoptaDetail);
         String startTime = "2007-12-03 10:15:30";
         String endTime = "2007-12-03 12:15:30";
         defaultPanoptaService.getAvailability(vmId, startTime, endTime);
@@ -452,32 +455,7 @@ public class DefaultPanoptaServiceTest {
     }
 
     @Test
-    public void testGetServer() throws PanoptaServiceException {
-        when(config.get("panopta.api.partner.customer.key.prefix")).thenReturn("gdtest_");
-        when(panoptaApiServerService.getPanoptaServers(eq(partnerCustomerKey), eq(serverKey)))
-                .thenReturn(panoptaServers);
-        PanoptaServer server = defaultPanoptaService.getServer(shopperId, serverKey);
-        verify(panoptaApiServerService).getPanoptaServers(eq(partnerCustomerKey), eq(serverKey));
-        assertNotNull(server);
-        assertEquals(serverKey, server.serverKey);
-    }
-
-    @Test(expected = PanoptaServiceException.class)
-    public void testGetServerThrowsException() throws PanoptaServiceException {
-        PanoptaServers panoptaServers = new PanoptaServers();
-        panoptaServers.servers = new ArrayList<>();
-        when(panoptaApiServerService.getPanoptaServers(eq(partnerCustomerKey), eq(serverKey)))
-                .thenReturn(panoptaServers);
-        PanoptaServer server = defaultPanoptaService.getServer(shopperId, serverKey);
-        verify(panoptaApiServerService).getPanoptaServers(eq(partnerCustomerKey), eq(serverKey));
-        assertNull(server);
-    }
-
-    @Test
     public void testGetActiveServers() {
-        when(config.get("panopta.api.partner.customer.key.prefix")).thenReturn("gdtest_");
-        when(panoptaApiServerService.getPanoptaServersByStatus(partnerCustomerKey, PanoptaServer.Status.ACTIVE))
-                .thenReturn(panoptaServers);
         List<PanoptaServer> panoptaServersList = defaultPanoptaService.getActiveServers(shopperId);
         verify(panoptaApiServerService).getPanoptaServersByStatus(partnerCustomerKey, PanoptaServer.Status.ACTIVE);
         assertNotNull(panoptaServersList);
@@ -488,10 +466,9 @@ public class DefaultPanoptaServiceTest {
     public void testGetActiveServersReturnsEmptyList() {
         PanoptaServers panoptaServers = new PanoptaServers();
         panoptaServers.servers = new ArrayList<>();
-
-        when(config.get("panopta.api.partner.customer.key.prefix")).thenReturn("gdtest_");
         when(panoptaApiServerService.getPanoptaServersByStatus(partnerCustomerKey, PanoptaServer.Status.ACTIVE))
                 .thenReturn(panoptaServers);
+
         List<PanoptaServer> panoptaServersList = defaultPanoptaService.getActiveServers(shopperId);
         verify(panoptaApiServerService).getPanoptaServersByStatus(partnerCustomerKey, PanoptaServer.Status.ACTIVE);
         assertNotNull(panoptaServersList);
@@ -500,7 +477,6 @@ public class DefaultPanoptaServiceTest {
 
     @Test
     public void testGetSuspendedServers() {
-        when(config.get("panopta.api.partner.customer.key.prefix")).thenReturn("gdtest_");
         when(panoptaApiServerService.getPanoptaServersByStatus(partnerCustomerKey, PanoptaServer.Status.SUSPENDED))
                 .thenReturn(panoptaServers);
         List<PanoptaServer> panoptaServersList = defaultPanoptaService.getSuspendedServers(shopperId);
@@ -513,7 +489,6 @@ public class DefaultPanoptaServiceTest {
     public void testGetServersByStatusHandles401() {
         shopperId = "nonexistent_shopper";
         partnerCustomerKey = "gdtest_nonexistent_shopper";
-        when(config.get("panopta.api.partner.customer.key.prefix")).thenReturn("gdtest_");
         when(panoptaApiServerService.getPanoptaServersByStatus(partnerCustomerKey, PanoptaServer.Status.ACTIVE))
                 .thenThrow(new NotAuthorizedException("Nope"));
         List<PanoptaServer> panoptaServersList = defaultPanoptaService.getActiveServers(shopperId);

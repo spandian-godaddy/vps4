@@ -10,6 +10,9 @@ public interface PanoptaService {
 
     void deleteCustomer(String shopperId);
 
+    PanoptaServer createServer(String shopperId, UUID orionGuid, String ipAddress, String[] templates)
+            throws PanoptaServiceException;
+
     List<PanoptaGraphId> getUsageIds(UUID vmId);
 
     List<PanoptaGraphId> getNetworkIds(UUID vmId);
@@ -17,8 +20,6 @@ public interface PanoptaService {
     List<PanoptaGraph> getUsageGraphs(UUID vmId, String timescale) throws PanoptaServiceException;
 
     List<PanoptaGraph> getNetworkGraphs(UUID vmId, String timescale) throws PanoptaServiceException;
-
-    PanoptaServer getServer(String shopperId, String serverKey) throws PanoptaServiceException;
 
     List<PanoptaServer> getActiveServers(String shopperId);
 
@@ -33,4 +34,6 @@ public interface PanoptaService {
     void removeServerMonitoring(long panoptaServerId, String partnerCustomerKey);
 
     PanoptaAvailability getAvailability(UUID vmId, String startTime, String endTime) throws PanoptaServiceException;
+
+    String getDefaultGroup(String shopperId) throws PanoptaServiceException;
 }

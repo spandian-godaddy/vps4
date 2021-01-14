@@ -18,7 +18,6 @@ import org.mockito.ArgumentCaptor;
 import com.godaddy.hfs.vm.ConsoleRequest;
 import com.godaddy.hfs.vm.VmAction;
 import com.godaddy.hfs.vm.VmService;
-import com.godaddy.vps4.monitoring.iris.irisClient.CreateIncidentInput;
 import com.godaddy.vps4.orchestration.TestCommandContext;
 import com.godaddy.vps4.orchestration.hfs.vm.WaitForVmAction;
 import com.godaddy.vps4.vm.ActionService;

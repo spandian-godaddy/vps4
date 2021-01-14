@@ -37,8 +37,6 @@ public class CreateVmTest {
     private HfsVmTrackingRecordService hfsVmService;
 
     @Captor private ArgumentCaptor<Function<CommandContext, VmAction>> createVmLambdaCaptor;
-    @Captor private ArgumentCaptor<VmAction> vmActionArgumentCaptor;
-
 
     @Before
     public void setup () {

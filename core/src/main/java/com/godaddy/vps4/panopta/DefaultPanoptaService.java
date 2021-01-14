@@ -31,17 +31,17 @@ public class DefaultPanoptaService implements PanoptaService {
     private final ExecutorService pool;
     private final PanoptaApiCustomerService panoptaApiCustomerService;
     private final PanoptaApiServerService panoptaApiServerService;
+    private final PanoptaApiServerGroupService panoptaApiServerGroupService;
     private final PanoptaDataService panoptaDataService;
     private final Config config;
-    private PanoptaCustomerRequest panoptaCustomerRequest;
 
     @Inject
     public DefaultPanoptaService(@PanoptaExecutorService ExecutorService pool,
                                  CacheManager cacheManager,
                                  PanoptaApiCustomerService panoptaApiCustomerService,
                                  PanoptaApiServerService panoptaApiServerService,
+                                 PanoptaApiServerGroupService panoptaApiServerGroupService,
                                  PanoptaDataService panoptaDataService,
-                                 PanoptaCustomerRequest panoptaCustomerRequest,
                                  Config config) {
         this.cache = cacheManager.getCache(CacheName.PANOPTA_METRIC_GRAPH,
                                            String.class,
@@ -49,33 +49,27 @@ public class DefaultPanoptaService implements PanoptaService {
         this.pool = pool;
         this.panoptaApiCustomerService = panoptaApiCustomerService;
         this.panoptaApiServerService = panoptaApiServerService;
+        this.panoptaApiServerGroupService = panoptaApiServerGroupService;
         this.panoptaDataService = panoptaDataService;
-        this.panoptaCustomerRequest = panoptaCustomerRequest;
         this.config = config;
     }
 
     @Override
-    public PanoptaCustomer createCustomer(String shopperId)
-            throws PanoptaServiceException {
-
-        // prepare a request to create panopta customer
-        panoptaCustomerRequest = panoptaCustomerRequest.createPanoptaCustomerRequest(shopperId);
-
-        // setup the customer request for panopta
-        PanoptaApiCustomerRequest panoptaApiCustomerRequest = new PanoptaApiCustomerRequest();
-        panoptaApiCustomerRequest.setPanoptaPackage(panoptaCustomerRequest.getPanoptaPackage());
+    public PanoptaCustomer createCustomer(String shopperId) throws PanoptaServiceException {
+        String emailAddress = config.get("panopta.api.customer.email");
         String panoptaNamePrefix = config.get("panopta.api.name.prefix");
-        panoptaApiCustomerRequest.setName(panoptaNamePrefix + panoptaCustomerRequest.getShopperId());
-        panoptaApiCustomerRequest.setEmailAddress(panoptaCustomerRequest.getEmailAddress());
-        panoptaApiCustomerRequest.setPartnerCustomerKey(panoptaCustomerRequest.getPartnerCustomerKey());
+        String panoptaPackage = config.get("panopta.api.package");
+        String partnerCustomerKey = getPartnerCustomerKey(shopperId);
+
+        PanoptaApiCustomerRequest panoptaApiCustomerRequest = new PanoptaApiCustomerRequest();
+        panoptaApiCustomerRequest.setPanoptaPackage(panoptaPackage);
+        panoptaApiCustomerRequest.setName(panoptaNamePrefix + shopperId);
+        panoptaApiCustomerRequest.setEmailAddress(emailAddress);
+        panoptaApiCustomerRequest.setPartnerCustomerKey(partnerCustomerKey);
         logger.info("Create Panopta customer Request: {}", panoptaApiCustomerRequest.toString());
 
-        // perform a POST to create the customer
         panoptaApiCustomerService.createCustomer(panoptaApiCustomerRequest);
-
-        return mapResponseToCustomer(
-                getCustomerDetails(panoptaCustomerRequest.getPartnerCustomerKey()));
-
+        return mapResponseToCustomer(getCustomerDetails(partnerCustomerKey));
     }
 
     @Override
@@ -115,6 +109,27 @@ public class DefaultPanoptaService implements PanoptaService {
             panoptaApiCustomerService.deleteCustomer(panoptaCustomerDetails.getCustomerKey());
         }
     }
+
+    @Override
+    public PanoptaServer createServer(String shopperId, UUID orionGuid, String ipAddress, String[] templates)
+            throws PanoptaServiceException {
+        PanoptaApiServerRequest request = new PanoptaApiServerRequest(
+                ipAddress,
+                orionGuid.toString(),
+                getDefaultGroup(shopperId),
+                templates
+        );
+
+        logger.info("Create Panopta server request: {}", request.toString());
+        panoptaApiServerService.createServer(getPartnerCustomerKey(shopperId), request);
+
+        return getActiveServers(shopperId)
+                .stream()
+                .filter(s -> s.name.equals(orionGuid.toString()))
+                .findFirst()
+                .orElseThrow(() -> new PanoptaServiceException("NO_SERVER_FOUND", "No matching server found."));
+    }
+
 
     @Override
     public List<PanoptaGraphId> getUsageIds(UUID vmId) {
@@ -220,21 +235,6 @@ public class DefaultPanoptaService implements PanoptaService {
         public CachedMonitoringGraphs(List<PanoptaGraph> graphs) {
             this.graphs = graphs;
         }
-    }
-
-    @Override
-    public PanoptaServer getServer(String shopperId, String serverKey) throws PanoptaServiceException {
-        String partnerCustomerKey = getPartnerCustomerKey(shopperId);
-        logger.info("Getting panopta server info for partnerCustomerKey: {} and serverKey: {}", partnerCustomerKey,
-                    serverKey);
-        PanoptaServers servers = panoptaApiServerService.getPanoptaServers(partnerCustomerKey, serverKey);
-        if (servers == null || servers.getServers().size() == 0) {
-            String message =
-                    String.format("No servers found for partnerCustomerKey %s, serverKey %s", partnerCustomerKey,
-                                  serverKey);
-            throw new PanoptaServiceException("SERVER_NOT_FOUND", message);
-        }
-        return mapServer(partnerCustomerKey, servers.getServers().get(0));
     }
 
     private String getPartnerCustomerKey(String shopperId) {
@@ -351,5 +351,19 @@ public class DefaultPanoptaService implements PanoptaService {
                                                        panoptaDetail.getPartnerCustomerKey(),
                                                        startTime,
                                                        endTime);
+    }
+
+    @Override
+    public String getDefaultGroup(String shopperId) throws PanoptaServiceException {
+        String partnerCustomerKey = getPartnerCustomerKey(shopperId);
+        PanoptaServerGroupList groupList = panoptaApiServerGroupService.getServerGroups(partnerCustomerKey);
+        return groupList.groups
+                .stream()
+                .filter(g -> g.name.equals("Default Server Group"))
+                .findFirst()
+                .orElseThrow(() -> new PanoptaServiceException(
+                        "NO_SERVER_GROUP_FOUND",
+                        "No default server group found."
+                )).url;
     }
 }

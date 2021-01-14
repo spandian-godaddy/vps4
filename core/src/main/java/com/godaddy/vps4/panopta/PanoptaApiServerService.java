@@ -5,6 +5,7 @@ import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
 import javax.ws.rs.DefaultValue;
 import javax.ws.rs.GET;
+import javax.ws.rs.POST;
 import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
@@ -16,6 +17,11 @@ import javax.ws.rs.core.MediaType;
 @Consumes(MediaType.APPLICATION_JSON)
 @Produces(MediaType.APPLICATION_JSON)
 public interface PanoptaApiServerService {
+    @POST
+    @Path("/")
+    void createServer(@QueryParam("partner_customer_key") String partnerCustomerKey,
+                      PanoptaApiServerRequest panoptaApiServerRequest);
+
     @GET
     @Path("/{server_id}/agent_resource")
     PanoptaUsageIdList getUsageList(@PathParam("server_id") long serverId,
@@ -50,11 +56,6 @@ public interface PanoptaApiServerService {
     @Path("/")
     PanoptaServers getPanoptaServersByStatus(@QueryParam("partner_customer_key") String partnerCustomerKey,
                                              @DefaultValue("active") @QueryParam("status") PanoptaServer.Status status);
-
-    @GET
-    @Path("/")
-    PanoptaServers getPanoptaServers(@QueryParam("partner_customer_key") String partnerCustomerKey,
-                                     @QueryParam("server_key") String serverKey);
 
     @GET
     @Path("/{server_id}")

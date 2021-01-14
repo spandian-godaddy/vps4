@@ -7,20 +7,12 @@ public class PanoptaCustomer {
     public String customerKey;
     public String partnerCustomerKey;
 
-    public PanoptaCustomer(String customerKey, String partnerCustomerKey) {
-        this.customerKey = customerKey;
-        this.partnerCustomerKey = partnerCustomerKey;
-    }
-
     // Default constructor for Jackson to deserialize
     public PanoptaCustomer() {}
 
-    public String getCustomerKey() {
-        return customerKey;
-    }
-
-    public String getPartnerCustomerKey() {
-        return partnerCustomerKey;
+    public PanoptaCustomer(String customerKey, String partnerCustomerKey) {
+        this.customerKey = customerKey;
+        this.partnerCustomerKey = partnerCustomerKey;
     }
 
     @Override

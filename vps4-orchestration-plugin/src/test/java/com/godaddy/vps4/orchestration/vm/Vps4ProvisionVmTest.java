@@ -199,6 +199,14 @@ public class Vps4ProvisionVmTest {
     }
 
     @Test
+    public void provisionCompletesEvenIfPanoptaInstallFails() {
+        when(context.execute(eq(SetupPanopta.class), any(SetupPanopta.Request.class)))
+                .thenThrow(new RuntimeException("Panopta broke"));
+        command.executeWithAction(context, this.request);
+        verify(actionService).updateActionState(request.actionId, "{\"step\":\"StartingServerSetup\"}");
+    }
+
+    @Test
     public void provisionVMInvokesConfigurePanoptaAlert(){
         request.vmInfo.isPanoptaEnabled = true;
         request.vmInfo.hasMonitoring = true;

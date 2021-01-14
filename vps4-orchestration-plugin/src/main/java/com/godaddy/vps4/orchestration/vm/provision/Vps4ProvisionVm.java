@@ -379,7 +379,12 @@ public class Vps4ProvisionVm extends ActionCommand<ProvisionRequest, Vps4Provisi
         setupPanoptaRequest.vmId = request.vmInfo.vmId;
         setupPanoptaRequest.shopperId = request.shopperId;
         setupPanoptaRequest.fqdn = ipAddress;
-        context.execute(SetupPanopta.class, setupPanoptaRequest);
+        try {
+            context.execute(SetupPanopta.class, setupPanoptaRequest);
+        } catch (Exception e) {
+            logger.error("Exception while setting up Panopta for VM {} and shopper {}: {}",
+                         request.vmInfo.vmId, request.shopperId, e);
+        }
     }
 
     private void setEcommCommonName(UUID orionGuid, String commonName) {

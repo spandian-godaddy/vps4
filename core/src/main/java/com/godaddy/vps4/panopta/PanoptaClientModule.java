@@ -9,8 +9,15 @@ public class PanoptaClientModule extends AbstractModule {
     public void configure() {
         String baseUrl = "panopta.api.base.url";
 
-        bind(PanoptaApiCustomerService.class).toProvider(new PanoptaClientServiceProvider<>(baseUrl, PanoptaApiCustomerService.class)).in(Singleton.class);
-        bind(PanoptaApiServerService.class).toProvider(new PanoptaClientServiceProvider<>(baseUrl, PanoptaApiServerService.class)).in(Singleton.class);
+        bind(PanoptaApiCustomerService.class)
+                .toProvider(new PanoptaClientServiceProvider<>(baseUrl, PanoptaApiCustomerService.class))
+                .in(Singleton.class);
+        bind(PanoptaApiServerService.class)
+                .toProvider(new PanoptaClientServiceProvider<>(baseUrl, PanoptaApiServerService.class))
+                .in(Singleton.class);
+        bind(PanoptaApiServerGroupService.class)
+                .toProvider(new PanoptaClientServiceProvider<>(baseUrl, PanoptaApiServerGroupService.class))
+                .in(Singleton.class);
 
         bind(PanoptaClientRequestFilter.class);
         bind(PanoptaClientResponseFilter.class);

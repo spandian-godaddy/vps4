@@ -23,7 +23,6 @@ import com.godaddy.vps4.orchestration.hfs.network.UnbindIp;
 import com.godaddy.vps4.orchestration.hfs.vm.CreateVm;
 import com.godaddy.vps4.orchestration.hfs.vm.DestroyVm;
 import com.godaddy.vps4.orchestration.hfs.vm.RebuildVm;
-import com.godaddy.vps4.orchestration.sysadmin.ConfigureMailRelay;
 import com.godaddy.vps4.orchestration.vm.WaitForAndRecordVmAction;
 
 public class Vps4RebuildOHVmTest extends Vps4RebuildVmTest {
