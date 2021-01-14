@@ -28,11 +28,6 @@ public class SnapshotTest implements VmTest {
             logger.debug("Skipping SnapshotTest on dedicated server {}", vm.vmId);
             return;
         }
-        // Admin access is required for Winexe
-        if (vm.isWindows()) {
-            logger.debug("Turning on admin access for user {} on vm {}", vm.getUsername(), vm.vmId);
-            vps4Client.enableAdmin(vm.vmId, vm.getUsername());
-        }
 
         // Sometimes even when windows VM becomes accessible through winexe, HFS agent status might not be reporting "OK" yet.
         // Poll until agent reports OK to avoid "Agent is down. Refusing to take snapshot" error when creating snapshot later
@@ -64,6 +59,11 @@ public class SnapshotTest implements VmTest {
         // Verify remote connection. Note that password is updated for OpenStack VM
         if(!isPlatformOH) {
             vm.setPassword(newPassword);
+        }
+        // Admin access is required for Winexe
+        if (vm.isWindows()) {
+            logger.debug("Turning on admin access for user {} on vm {}", vm.getUsername(), vm.vmId);
+            vps4Client.enableAdmin(vm.vmId, vm.getUsername());
         }
         logger.debug("Verify remote connection success after restoring snapshot {} on vm {}", snapshotId, vm.vmId);
         Vps4RemoteAccessClient client = vm.remote();

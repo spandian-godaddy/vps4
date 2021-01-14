@@ -41,6 +41,14 @@ public class AddSupportUserTest implements VmTest {
             logger.debug("Verify remote connection on vm {} using original user creds", vm.vmId);
             vm.setUsername(originalUsername);
             vm.setPassword(originalPwd);
+            // Admin access is required for Winexe
+            if (vm.isWindows()) {
+                logger.debug("Turning on admin access for user {} on vm {}", vm.getUsername(), vm.vmId);
+                Vps4ApiClient vps4Client = vm.getClient();
+                long enableAdminActionId = vps4Client.enableAdmin(vm.vmId, vm.getUsername());
+                logger.debug("Wait for ENABLE_ADMIN on vm {}, via action id: {}", vm.vmId, enableAdminActionId);
+                vps4Client.pollForVmActionComplete(vm.vmId, enableAdminActionId, ADD_SUPPORT_USER_TIMEOUT_SECONDS);
+            }
             Vps4RemoteAccessClient client2 = vm.remote();
             assert(client2.checkConnection(vm.vmId));
         } catch (ParseException e) {
