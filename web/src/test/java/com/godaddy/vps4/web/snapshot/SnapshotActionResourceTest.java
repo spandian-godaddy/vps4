@@ -215,18 +215,6 @@ public class SnapshotActionResourceTest {
         }
     }
 
-    @Test
-    public void testTemporarilyDisabled() {
-        SnapshotActionResource actionResource = getSnapshotActionResource();
-        try {
-            Method m = actionResource.getClass().getMethod("cancelSnapshotAction", UUID.class, long.class);
-            Assert.assertTrue(m.isAnnotationPresent(TemporarilyDisabled.class));
-        }
-        catch (NoSuchMethodException e) {
-            Assert.fail("Cancel action should be disabled for the time being");
-        }
-    }
-
     @Test(expected = Vps4Exception.class)
     public void testNonCancellableActionThrowsAnException() {
         Snapshot snapshot = createTestSnapshot(user.getShopperId());
