@@ -163,9 +163,6 @@ public class VmActionResource {
     @Path("{vmId}/actions/{actionId}/cancel")
     public void cancelVmAction(@PathParam("vmId") UUID vmId, @PathParam("actionId") long actionId) {
         Action action = this.getVmActionFromCore(vmId, actionId);
-        if (action == null) {
-            throw new NotFoundException("actionId " + actionId + " not found");
-        }
 
         if (!canCancel(action)) {
             throw new Vps4Exception("INVALID_STATUS", "This action cannot be cancelled");

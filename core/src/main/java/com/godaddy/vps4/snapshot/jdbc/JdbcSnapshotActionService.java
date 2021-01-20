@@ -61,7 +61,7 @@ public class JdbcSnapshotActionService implements ActionService {
         return Sql.with(dataSource).exec("SELECT * FROM snapshot_action "
                         + " JOIN action_status on snapshot_action.status_id = action_status.status_id"
                         + " JOIN action_type on snapshot_action.action_type_id = action_type.type_id"
-                        + " where snapshot_action.snapshot_id = ? and action_status in ('NEW', 'IN_PROGRESS');",
+                        + " where snapshot_action.snapshot_id = ? and action_status.status in ('NEW', 'IN_PROGRESS')",
                 Sql.listOf(this::mapAction), snapshotId);
     }
 

@@ -124,7 +124,6 @@ public class SnapshotActionResource {
     }
 
     @RequiresRole(roles = {GDUser.Role.ADMIN})
-    @TemporarilyDisabled
     @POST
     @Path("{snapshotId}/actions/{actionId}/cancel")
     public void cancelSnapshotAction(
@@ -132,9 +131,6 @@ public class SnapshotActionResource {
         @PathParam("actionId") long actionId) {
         verifyPrivilege(snapshotId);
         Action action = this.getSnapshotActionFromCore(snapshotId, actionId);
-        if (action == null) {
-            throw new NotFoundException("actionId " + actionId + " not found");
-        }
 
         if (!canCancel(action)) {
             throw new Vps4Exception("INVALID_STATUS", "This snapshot action cannot be cancelled");

@@ -92,6 +92,7 @@ public class SqlTestData {
 
     public static Snapshot insertSnapshot(SnapshotService snapshotService, UUID vmId, long projectId, SnapshotType snapshotType) {
         UUID snapshotId = snapshotService.createSnapshot(projectId, vmId, TEST_SNAPSHOT_NAME, snapshotType);
+        snapshotService.saveVmHvForSnapshotTracking(vmId, "test_" + vmId);
         return snapshotService.getSnapshot(snapshotId);
     }
 

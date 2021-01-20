@@ -1,16 +1,15 @@
 package com.godaddy.vps4.phase2;
 
+import static org.mockito.Mockito.mock;
+
 import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
-
-import static org.mockito.Mockito.mock;
 
 import javax.inject.Inject;
 import javax.sql.DataSource;
 import javax.ws.rs.NotFoundException;
 
-import com.godaddy.vps4.scheduler.api.web.SchedulerWebService;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -19,6 +18,7 @@ import org.junit.Test;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.godaddy.vps4.jdbc.DatabaseModule;
+import com.godaddy.vps4.scheduler.api.web.SchedulerWebService;
 import com.godaddy.vps4.security.GDUserMock;
 import com.godaddy.vps4.security.SecurityModule;
 import com.godaddy.vps4.security.Views;
@@ -253,11 +253,16 @@ public class SnapshotResourceTest {
     }
 
     // === destroySnapshot Tests ===
-    public void testDestroySnapshot() {
+    private void testDestroySnapshot() {
         Snapshot snapshot = createTestSnapshot();
+
+        String hvsHostname = "test_" + snapshot.vmId;
+        Assert.assertEquals(snapshot.vmId, snapshotService.getVmIdWithInProgressSnapshotOnHv(hvsHostname));
 
         SnapshotAction snapshotAction = getSnapshotResource().destroySnapshot(snapshot.id);
         Assert.assertNotNull(snapshotAction.commandId);
+
+        Assert.assertNull(snapshotService.getVmIdWithInProgressSnapshotOnHv(hvsHostname));
     }
 
     @Test
@@ -284,7 +289,7 @@ public class SnapshotResourceTest {
     }
 
     // === renameSnapshot Tests ===
-    public void testRenameSnapshot() {
+    private void testRenameSnapshot() {
         testRenameSnapshot("snappy");
     }
 

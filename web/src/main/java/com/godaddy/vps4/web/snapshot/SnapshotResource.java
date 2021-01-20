@@ -195,9 +195,9 @@ public class SnapshotResource {
     }
 
     private void validateHVLimit(SnapshotRequest snapshotRequest, long hfsVmId) {
-        if(!Boolean.parseBoolean(config.get("vps4.autobackup.checkHvConcurrentLimit")))
+        if (!Boolean.parseBoolean(config.get("vps4.autobackup.checkHvConcurrentLimit")))
             return;
-        if(!snapshotRequest.snapshotType.equals((SnapshotType.AUTOMATIC)))
+        if (!snapshotRequest.snapshotType.equals((SnapshotType.AUTOMATIC)))
             return;
         String hypervisorHostname = getVmHypervisorHostname(snapshotRequest.vmId, hfsVmId);
         if (hypervisorHostname != null) {
@@ -262,9 +262,10 @@ public class SnapshotResource {
     @Path("/{snapshotId}")
     public SnapshotAction destroySnapshot(@PathParam("snapshotId") UUID snapshotId) {
         Snapshot snapshot = getSnapshot(snapshotId);
+        snapshotService.deleteVmHvForSnapshotTracking(snapshot.vmId);
 
-        // We dont cancel any incomplete snapshot actions for now as it really doesn't do anything in the Openstack land
-        //cancelIncompleteSnapshotActions(snapshotId);
+        // Note: this doesn't do anything on the OpenStack side, just updates our database
+        cancelIncompleteSnapshotActions(snapshotId);
 
         long actionId = actionService.createAction(snapshotId,  ActionType.DESTROY_SNAPSHOT,
                 new JSONObject().toJSONString(), user.getUsername());
