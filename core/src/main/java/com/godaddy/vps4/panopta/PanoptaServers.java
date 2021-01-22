@@ -1,5 +1,6 @@
 package com.godaddy.vps4.panopta;
 
+import java.time.Instant;
 import java.util.List;
 
 import org.apache.commons.lang3.builder.ReflectionToStringBuilder;
@@ -113,11 +114,8 @@ public class PanoptaServers {
         public int offset;
         public String next;
         public String previous;
-        @JsonProperty("total_count")
-        public int totalCount;
 
-        public Meta() {
-        }
+        public Meta() {}
 
         @Override
         public String toString() {
@@ -133,98 +131,16 @@ public class PanoptaServers {
     }
 
     public static class Server {
-
-        @JsonProperty("additional_fqdns")
-        public List<String> additonalFqdns;
-        @JsonProperty("agent_heartbeat_delay")
-        public String agentHeartbeatDelay;
-        @JsonProperty("agent_heartbeat_enabled")
-        public boolean agentHeartbeatEnabled;
-        @JsonProperty("agent_heartbeat_notification_schedule")
-        public String agentHeartbeatNotificationSchedule;
-        @JsonProperty("agent_installed")
-        public boolean agentInstalled;
-        @JsonProperty("agent_last_sync_time")
-        public String agentLastSyncTime;
-        @JsonProperty("agent_version")
-        public String agentVersion;
-
-       @JsonProperty("attributes")
-        public List<Attribute> attributes;
-        public static class Attribute {
-            @JsonProperty("server_attribute_type")
-            public String serverAttributeType;
-            public String url;
-            public String value;
-        }
-
-        @JsonProperty("auxiliary_notification")
-        public AuxillaryNotification auxillaryNotification;
-
-        public static class AuxillaryNotification {
-
-            @JsonProperty("agent_heartbeats")
-            public List<String> agentHeartbeats;
-            @JsonProperty("agent_thresholds")
-            public List<String> agentThresholds;
-            @JsonProperty("network_outages")
-            public List<String> networkOutages;
-            @JsonProperty("snmp_heartbeats")
-            public List<String> snmpHeartbeats;
-            @JsonProperty("snmp_thresholds")
-            public List<String> snmpThresholds;
-            @JsonProperty("wmi_heartbeats")
-            public List<String> wmiHeartbeats;
-            @JsonProperty("wmi_thresholds")
-            public List<String> wmiThresholds;
-        }
-
-        @JsonProperty("auxiliary_notification_schedules")
-        public List<String> auxiliaryNotificationSchedules;
-        @JsonProperty("billing_type")
-        public String billingType;
-        @JsonProperty("countermeasures_enabled")
-        public boolean countermeasuresEnabled;
+        @JsonProperty("agent_last_sync_time") public String agentLastSynced;
         public String created;
-        @JsonProperty("current_outages")
-        public List<String> currentOutages;
-        @JsonProperty("current_state")
-        public String currentState;
         public String deleted;
         public String description;
-        @JsonProperty("device_type")
-        public String deviceType;
         public String fqdn;
         public String name;
-        @JsonProperty("notification_schedule")
-        public String notificationSchedule;
-        @JsonProperty("notify_agent_heartbeat_failure")
-        public boolean notifyAgentHeartbeatFailure;
-        @JsonProperty("parent_server")
-        public String parentServer;
-        @JsonProperty("partner_server_id")
-        public String partnerServerId;
-        @JsonProperty("primary_monitoring_node")
-        public String primaryMonitoringNode;
-        @JsonProperty("server_group")
-        public String serverGroup;
-        @JsonProperty("server_key")
-        public String serverKey;
-        @JsonProperty("server_template")
-        public List<String> serverTemplates;
-        @JsonProperty("snmp_heartbeat_delay")
-        public String snmpHeartbeatDelay;
-        @JsonProperty("snmp_heartbeat_enabled")
-        public String snmpHeartbeatEnabled;
-        @JsonProperty("snmp_heartbeat_notification_schedule")
-        public String snmpHeartbeatNotificationSchedule;
-        public String snmpcredential;
+        @JsonProperty("server_group") public String serverGroup;
+        @JsonProperty("server_key") public String serverKey;
         public String status;
         public List<String> tags;
-        @JsonProperty("template_ignore_agent_heartbeat")
-        public String templateIgnoreAgentHeartbeat;
-        @JsonProperty("template_ignore_snmp_heartbeat")
-        public String templateIgnoreSnmpHeartbeat;
         public String url;
 
         @Override

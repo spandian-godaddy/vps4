@@ -1,6 +1,7 @@
 package com.godaddy.vps4.orchestration.panopta;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.eq;
@@ -24,6 +25,8 @@ import com.godaddy.hfs.config.Config;
 import com.godaddy.vps4.credit.CreditService;
 import com.godaddy.vps4.credit.VirtualMachineCredit;
 import com.godaddy.vps4.orchestration.hfs.sysadmin.InstallPanoptaAgent;
+import com.godaddy.vps4.orchestration.hfs.sysadmin.UninstallPanoptaAgent;
+import com.godaddy.vps4.orchestration.monitoring.RemovePanoptaMonitoring;
 import com.godaddy.vps4.panopta.PanoptaCustomer;
 import com.godaddy.vps4.panopta.PanoptaDataService;
 import com.godaddy.vps4.panopta.PanoptaServer;
@@ -73,9 +76,8 @@ public class SetupPanoptaTest {
         setupCredit();
         setupPanoptaCustomer();
         setupPanoptaServer();
+        setupPanoptaAgent();
         setupTemplates();
-
-        when(context.execute(eq(InstallPanoptaAgent.class), any(InstallPanoptaAgent.Request.class))).thenReturn(null);
 
         setupPanopta = new SetupPanopta(creditService, panoptaDataService, panoptaService, config);
         request = setupRequest();
@@ -106,6 +108,13 @@ public class SetupPanoptaTest {
         when(serverDetails.getServerKey()).thenReturn(serverKey);
         when(panoptaDataService.getPanoptaServerDetails(vmId)).thenReturn(serverDetails);
         doNothing().when(panoptaDataService).createPanoptaServer(eq(vmId), eq(shopperId), any());
+    }
+
+    private void setupPanoptaAgent() {
+        when(context.execute(eq(InstallPanoptaAgent.class), any(InstallPanoptaAgent.Request.class))).thenReturn(null);
+        when(context.execute(eq(WaitForPanoptaAgentSync.class), any())).thenReturn(null);
+        when(context.execute(UninstallPanoptaAgent.class, hfsVmId)).thenReturn(null);
+        when(context.execute(RemovePanoptaMonitoring.class, vmId)).thenReturn(null);
     }
 
     private void setupTemplates() {
@@ -218,5 +227,54 @@ public class SetupPanoptaTest {
         assertEquals("fake_template_base,fake_template_dc", request.templates);
         assertEquals(fqdn, request.fqdn);
         assertEquals(hfsVmId, request.hfsVmId);
+    }
+
+    @Test
+    public void handlesAgentInstallFailure() {
+        try {
+            when(context.execute(eq(InstallPanoptaAgent.class), any())).thenThrow(new RuntimeException("test"));
+            setupPanopta.execute(context, request);
+            fail();
+        } catch (RuntimeException e) {
+            verify(context, times(1)).execute(eq(InstallPanoptaAgent.class), any());
+            verify(context, never()).execute(eq(WaitForPanoptaAgentSync.class), any());
+            verify(context, times(1)).execute(UninstallPanoptaAgent.class, hfsVmId);
+            verify(context, times(1)).execute(RemovePanoptaMonitoring.class, vmId);
+        }
+    }
+
+    @Test
+    public void handlesAgentInstallAndUninstallFailure() {
+        try {
+            when(context.execute(eq(InstallPanoptaAgent.class), any())).thenThrow(new RuntimeException("test"));
+            when(context.execute(eq(UninstallPanoptaAgent.class), any())).thenThrow(new RuntimeException("test"));
+            setupPanopta.execute(context, request);
+            fail();
+        } catch (RuntimeException e) {
+            verify(context, times(1)).execute(eq(InstallPanoptaAgent.class), any());
+            verify(context, never()).execute(eq(WaitForPanoptaAgentSync.class), any());
+            verify(context, times(1)).execute(UninstallPanoptaAgent.class, hfsVmId);
+            verify(context, times(1)).execute(RemovePanoptaMonitoring.class, vmId);
+        }
+    }
+
+    @Test
+    public void waitsForAgentSync() {
+        setupPanopta.execute(context, request);
+        verify(context, times(1)).execute(eq(WaitForPanoptaAgentSync.class), any());
+    }
+
+    @Test
+    public void uninstallsIfAgentSyncFails() {
+        try {
+            when(context.execute(eq(WaitForPanoptaAgentSync.class), any())).thenThrow(new RuntimeException("oof"));
+            setupPanopta.execute(context, request);
+            fail();
+        } catch (RuntimeException e) {
+            verify(context, times(1)).execute(eq(InstallPanoptaAgent.class), any());
+            verify(context, times(1)).execute(eq(WaitForPanoptaAgentSync.class), any());
+            verify(context, times(1)).execute(UninstallPanoptaAgent.class, hfsVmId);
+            verify(context, times(1)).execute(RemovePanoptaMonitoring.class, vmId);
+        }
     }
 }

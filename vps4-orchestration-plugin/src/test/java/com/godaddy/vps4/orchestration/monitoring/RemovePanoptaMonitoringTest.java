@@ -22,9 +22,9 @@ public class RemovePanoptaMonitoringTest {
     RemovePanoptaMonitoring command = new RemovePanoptaMonitoring(panoptaDataService, panoptaService);
 
     @Test
-    public void callsPanoptaRemoveMonitoring() {
+    public void removesMonitoring() {
         command.execute(context, vmId);
-        verify(panoptaService).removeServerMonitoring(vmId);
+        verify(panoptaService).deleteServer(vmId);
         verify(panoptaDataService).setPanoptaServerDestroyed(vmId);
     }
 }

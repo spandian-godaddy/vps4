@@ -111,13 +111,7 @@ public class DefaultPanoptaServiceTest {
         panoptaDetail = new PanoptaDetail(vmId, partnerCustomerKey,
                                           customerKey, serverId, serverKey,
                                           Instant.now(), Instant.MAX);
-        panoptaServers = new PanoptaServers();
-        panoptaServers.servers = new ArrayList<>();
-        server = mock(PanoptaServers.Server.class);
-        server.name = virtualMachine.orionGuid.toString();
-        server.url = "https://api2.panopta.com/v2/server/1234";
-        server.status = PanoptaServer.Status.ACTIVE.toString();
-        panoptaServers.servers.add(server);
+        setupPanoptaServers();
         setupGraphIdLists();
         setupGraphs();
         setupCustomerList();
@@ -138,6 +132,18 @@ public class DefaultPanoptaServiceTest {
     @After
     public void teardown() {
         pool.shutdown();
+    }
+
+    private void setupPanoptaServers() {
+        panoptaServers = new PanoptaServers();
+        panoptaServers.servers = new ArrayList<>();
+        server = mock(PanoptaServers.Server.class);
+        server.serverKey = serverKey;
+        server.name = virtualMachine.orionGuid.toString();
+        server.url = "https://api2.panopta.com/v2/server/" + serverId;
+        server.status = PanoptaServer.Status.ACTIVE.toString();
+        server.agentLastSynced = "2021-01-19 17:22:20";
+        panoptaServers.servers.add(server);
     }
 
     private void setupGraphIdLists() {
@@ -407,19 +413,7 @@ public class DefaultPanoptaServiceTest {
     }
 
     @Test
-    public void removeMonitoringCallsPanoptaApiDeleteServer() {
-        defaultPanoptaService.removeServerMonitoring(vmId);
-        verify(panoptaApiServerService).deleteServer(serverId, partnerCustomerKey);
-    }
-
-    @Test
-    public void removeMonitoringWithPanoptaParamsCallsPanoptaApi() {
-        defaultPanoptaService.removeServerMonitoring(serverId, shopperId);
-        verify(panoptaApiServerService).deleteServer(serverId, partnerCustomerKey);
-    }
-
-    @Test
-    public void deleteCustomerCallsPanoptaApi() {
+    public void testDeleteCustomerCallsPanoptaApi() {
         when(panoptaDataService.getPanoptaCustomerDetails(shopperId)).thenReturn(panoptaCustomerDetails);
         when(panoptaCustomerDetails.getCustomerKey()).thenReturn(customerKey);
         defaultPanoptaService.deleteCustomer(shopperId);
@@ -437,6 +431,23 @@ public class DefaultPanoptaServiceTest {
         verify(panoptaApiServerService).createServer(eq(partnerCustomerKey), any(PanoptaApiServerRequest.class));
         verify(panoptaApiServerService).getPanoptaServersByStatus(partnerCustomerKey, PanoptaServer.Status.ACTIVE);
         assertEquals(panoptaServers.servers.get(0).name, server.name);
+    }
+
+    @Test
+    public void testGetServer() {
+        PanoptaServer result = defaultPanoptaService.getServer(vmId);
+        verify(panoptaDataService).getPanoptaDetails(vmId);
+        verify(panoptaApiServerService).getServer(serverId, partnerCustomerKey);
+        assertEquals(serverId, result.serverId);
+        assertEquals(serverKey, result.serverKey);
+        Instant instant = Instant.parse("2021-01-19T17:22:20Z");
+        assertEquals(instant, result.agentLastSynced);
+    }
+
+    @Test
+    public void testDeleteServer() {
+        defaultPanoptaService.deleteServer(vmId);
+        verify(panoptaApiServerService).deleteServer(serverId, partnerCustomerKey);
     }
 
     @Test

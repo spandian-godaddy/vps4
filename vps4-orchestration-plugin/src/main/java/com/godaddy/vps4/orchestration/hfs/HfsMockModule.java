@@ -631,18 +631,13 @@ public class HfsMockModule extends AbstractModule {
             }
 
             @Override
-            public SysAdminAction installNydus(long l) {
-                return null;
-            }
-
-            @Override
-            public SysAdminAction removeNydus(long l) {
-                return null;
-            }
-
-            @Override
             public SysAdminAction installPanopta(long vmId, String customerKey, String templates, String serverName,
                     String serverKey, String fqdn, boolean disableServerMatch) {
+                return null;
+            }
+
+            @Override
+            public SysAdminAction deletePanopta(long vmId) {
                 return null;
             }
 

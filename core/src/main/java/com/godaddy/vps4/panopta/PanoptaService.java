@@ -13,6 +13,10 @@ public interface PanoptaService {
     PanoptaServer createServer(String shopperId, UUID orionGuid, String ipAddress, String[] templates)
             throws PanoptaServiceException;
 
+    PanoptaServer getServer(UUID vmId);
+
+    void deleteServer(UUID vmId);
+
     List<PanoptaGraphId> getUsageIds(UUID vmId);
 
     List<PanoptaGraphId> getNetworkIds(UUID vmId);
@@ -28,10 +32,6 @@ public interface PanoptaService {
     void pauseServerMonitoring(UUID vmId);
 
     void resumeServerMonitoring(UUID vmId);
-
-    void removeServerMonitoring(UUID vmId);
-
-    void removeServerMonitoring(long panoptaServerId, String partnerCustomerKey);
 
     PanoptaAvailability getAvailability(UUID vmId, String startTime, String endTime) throws PanoptaServiceException;
 

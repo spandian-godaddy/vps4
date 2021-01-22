@@ -1,5 +1,7 @@
 package com.godaddy.vps4.panopta;
 
+import java.time.Instant;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -24,6 +26,7 @@ import com.godaddy.vps4.cache.CacheName;
 import com.godaddy.vps4.panopta.jdbc.PanoptaCustomerDetails;
 
 public class DefaultPanoptaService implements PanoptaService {
+    private static final DateTimeFormatter PANOPTA_DATE_FORMAT = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss z");
     private static final int UNLIMITED = 0;
 
     private static final Logger logger = LoggerFactory.getLogger(DefaultPanoptaService.class);
@@ -125,11 +128,31 @@ public class DefaultPanoptaService implements PanoptaService {
 
         return getActiveServers(shopperId)
                 .stream()
-                .filter(s -> s.name.equals(orionGuid.toString()))
+                .filter(s -> s.fqdn.equals(ipAddress) && s.name.equals(orionGuid.toString()))
                 .findFirst()
                 .orElseThrow(() -> new PanoptaServiceException("NO_SERVER_FOUND", "No matching server found."));
     }
 
+    @Override
+    public PanoptaServer getServer(UUID vmId) {
+        PanoptaDetail panoptaDetails = panoptaDataService.getPanoptaDetails(vmId);
+        if (panoptaDetails != null) {
+            long serverId = panoptaDetails.getServerId();
+            String partnerCustomerKey = panoptaDetails.getPartnerCustomerKey();
+            return mapServer(partnerCustomerKey, panoptaApiServerService.getServer(serverId, partnerCustomerKey));
+        }
+        logger.info("Could not find server in panopta for VM ID {} ", vmId);
+        return null;
+    }
+
+    @Override
+    public void deleteServer(UUID vmId) {
+        PanoptaDetail panoptaDetails = panoptaDataService.getPanoptaDetails(vmId);
+        if (panoptaDetails != null) {
+            logger.info("Attempting to delete server {} from panopta.", panoptaDetails.getServerId());
+            panoptaApiServerService.deleteServer(panoptaDetails.getServerId(), panoptaDetails.getPartnerCustomerKey());
+        }
+    }
 
     @Override
     public List<PanoptaGraphId> getUsageIds(UUID vmId) {
@@ -272,8 +295,11 @@ public class DefaultPanoptaService implements PanoptaService {
     private PanoptaServer mapServer(String partnerCustomerKey, PanoptaServers.Server server) {
         long serverId = Long.parseLong(server.url.substring(server.url.lastIndexOf("/") + 1));
         PanoptaServer.Status status = PanoptaServer.Status.valueOf(server.status.toUpperCase());
+        Instant agentLastSynced = (server.agentLastSynced == null)
+                ? null
+                : Instant.from(PANOPTA_DATE_FORMAT.parse(server.agentLastSynced + " UTC"));
         return new PanoptaServer(partnerCustomerKey, serverId, server.serverKey, server.name, server.fqdn,
-                                 server.serverGroup, status);
+                                 server.serverGroup, status, agentLastSynced);
     }
 
     @Override
@@ -320,22 +346,6 @@ public class DefaultPanoptaService implements PanoptaService {
         } else {
             logger.info("Panopta server is already in active status. No need to update status");
         }
-    }
-
-    @Override
-    public void removeServerMonitoring(UUID vmId) {
-        PanoptaDetail panoptaDetails = panoptaDataService.getPanoptaDetails(vmId);
-        if (panoptaDetails != null) {
-            logger.info("Attempting to delete server {} from panopta.", panoptaDetails.getServerId());
-            panoptaApiServerService.deleteServer(panoptaDetails.getServerId(), panoptaDetails.getPartnerCustomerKey());
-        }
-    }
-
-    @Override
-    public void removeServerMonitoring(long panoptaServerId, String shopperId) {
-        logger.info("Attempting to delete server {} from panopta.", panoptaServerId);
-        String partnerCustomerKey = getPartnerCustomerKey(shopperId);
-        panoptaApiServerService.deleteServer(panoptaServerId, partnerCustomerKey);
     }
 
     @Override

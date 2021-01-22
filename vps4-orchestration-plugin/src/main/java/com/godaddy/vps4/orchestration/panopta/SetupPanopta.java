@@ -1,5 +1,6 @@
 package com.godaddy.vps4.orchestration.panopta;
 
+import java.time.Instant;
 import java.util.Arrays;
 import java.util.UUID;
 
@@ -12,6 +13,8 @@ import com.godaddy.hfs.config.Config;
 import com.godaddy.vps4.credit.CreditService;
 import com.godaddy.vps4.credit.VirtualMachineCredit;
 import com.godaddy.vps4.orchestration.hfs.sysadmin.InstallPanoptaAgent;
+import com.godaddy.vps4.orchestration.hfs.sysadmin.UninstallPanoptaAgent;
+import com.godaddy.vps4.orchestration.monitoring.RemovePanoptaMonitoring;
 import com.godaddy.vps4.panopta.PanoptaCustomer;
 import com.godaddy.vps4.panopta.PanoptaDataService;
 import com.godaddy.vps4.panopta.PanoptaServer;
@@ -49,7 +52,7 @@ public class SetupPanopta implements Command<SetupPanopta.Request, Void> {
         this.request = request;
         PanoptaCustomerDetails customerDetails = getOrCreateCustomer();
         PanoptaServerDetails serverDetails = getOrCreateServer();
-        installPanoptaAgent(customerDetails.getCustomerKey(), serverDetails.getServerKey());
+        installAgentOrFailGracefully(customerDetails.getCustomerKey(), serverDetails.getServerKey());
         return null;
     }
 
@@ -92,13 +95,29 @@ public class SetupPanopta implements Command<SetupPanopta.Request, Void> {
                     .stream(getTemplateIds())
                     .map(t -> "https://api2.panopta.com/v2/server_template/" + t)
                     .toArray(String[]::new);
-            return panoptaService.createServer(request.shopperId,request.orionGuid, request.fqdn, templates);
+            return panoptaService.createServer(request.shopperId, request.orionGuid, request.fqdn, templates);
         } catch (PanoptaServiceException e) {
             throw new RuntimeException(e);
         }
     }
 
-    private void installPanoptaAgent(String customerKey, String serverKey) {
+    private void installAgentOrFailGracefully(String customerKey, String serverKey) {
+        try {
+            Instant timeOfInstall = Instant.now();
+            installAgent(customerKey, serverKey);
+            syncAgent(timeOfInstall);
+        } catch (Exception e) {
+            logger.error("Error while installing Panopta agent for VM: {}. Error details: {}", this.request.vmId, e);
+            try {
+                // uninstalling the agent greatly improves the chances that a retry will work
+                context.execute(UninstallPanoptaAgent.class, this.request.hfsVmId);
+            } catch (Exception ignored) {}
+            context.execute(RemovePanoptaMonitoring.class, this.request.vmId);
+            throw e;
+        }
+    }
+
+    private void installAgent(String customerKey, String serverKey) {
         InstallPanoptaAgent.Request request = new InstallPanoptaAgent.Request();
         request.hfsVmId = this.request.hfsVmId;
         request.customerKey = customerKey;
@@ -117,6 +136,13 @@ public class SetupPanopta implements Command<SetupPanopta.Request, Void> {
         String serverTemplate = config.get("panopta.api.templates." + templateType + "." + templateOS);
         String dcAlertTemplate = config.get("panopta.api.templates.webhook");
         return new String[] { serverTemplate, dcAlertTemplate };
+    }
+
+    private void syncAgent(Instant timeOfInstall) {
+        WaitForPanoptaAgentSync.Request request = new WaitForPanoptaAgentSync.Request();
+        request.timeOfInstall = timeOfInstall;
+        request.vmId = this.request.vmId;
+        context.execute(WaitForPanoptaAgentSync.class, request);
     }
 
     public static class Request {

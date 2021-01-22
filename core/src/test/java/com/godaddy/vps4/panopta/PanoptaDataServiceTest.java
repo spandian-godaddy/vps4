@@ -55,8 +55,8 @@ public class PanoptaDataServiceTest {
         String fakeFqdn = "s64-202-190-85.secureserver.net";
         String serverGroup = "https://api2.panopta.com/v2/server_group/348625";
         PanoptaServer.Status status = PanoptaServer.Status.ACTIVE;
-        panoptaServer = new PanoptaServer(fakePartnerCustomerKey, fakeServerId, fakeServerKey, fakeName,
-                                          fakeFqdn, serverGroup, status);
+        panoptaServer = new PanoptaServer(fakePartnerCustomerKey, fakeServerId, fakeServerKey, fakeName, fakeFqdn,
+                                          serverGroup, status, Instant.now());
         when(config.get("panopta.api.partner.customer.key.prefix")).thenReturn("gdtest_");
     }
 
