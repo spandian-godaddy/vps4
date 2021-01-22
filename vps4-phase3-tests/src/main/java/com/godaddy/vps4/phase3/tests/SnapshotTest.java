@@ -63,7 +63,9 @@ public class SnapshotTest implements VmTest {
         // Admin access is required for Winexe
         if (vm.isWindows()) {
             logger.debug("Turning on admin access for user {} on vm {}", vm.getUsername(), vm.vmId);
-            vps4Client.enableAdmin(vm.vmId, vm.getUsername());
+            long enableAdminActionId = vps4Client.enableAdmin(vm.vmId, vm.getUsername());
+            logger.debug("Wait for ENABLE_ADMIN on vm {}, via action id: {}", vm.vmId, enableAdminActionId);
+            vps4Client.pollForVmActionComplete(vm.vmId, enableAdminActionId, TROUBLESHOOT_TIMEOUT_SECONDS);
         }
         logger.debug("Verify remote connection success after restoring snapshot {} on vm {}", snapshotId, vm.vmId);
         Vps4RemoteAccessClient client = vm.remote();
