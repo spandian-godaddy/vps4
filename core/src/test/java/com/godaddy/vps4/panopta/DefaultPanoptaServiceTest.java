@@ -61,6 +61,7 @@ public class DefaultPanoptaServiceTest {
     private Cache cache;
     private UUID vmId;
     private UUID orionGuid;
+    private String ipAddress;
     private VirtualMachineCredit credit;
     private VirtualMachine virtualMachine;
     private long serverId;
@@ -97,9 +98,10 @@ public class DefaultPanoptaServiceTest {
         cache = mock(Cache.class);
         vmId = UUID.randomUUID();
         orionGuid = UUID.randomUUID();
+        ipAddress = "127.0.0.1";
         virtualMachine = new VirtualMachine();
         virtualMachine.primaryIpAddress = new IpAddress();
-        virtualMachine.primaryIpAddress.ipAddress = "127.0.0.1";
+        virtualMachine.primaryIpAddress.ipAddress = ipAddress;
         virtualMachine.orionGuid = orionGuid;
         virtualMachine.vmId = vmId;
         serverId = 42;
@@ -138,6 +140,7 @@ public class DefaultPanoptaServiceTest {
         panoptaServers = new PanoptaServers();
         panoptaServers.servers = new ArrayList<>();
         server = mock(PanoptaServers.Server.class);
+        server.fqdn = ipAddress;
         server.serverKey = serverKey;
         server.name = virtualMachine.orionGuid.toString();
         server.url = "https://api2.panopta.com/v2/server/" + serverId;
@@ -430,6 +433,7 @@ public class DefaultPanoptaServiceTest {
         PanoptaServer server = defaultPanoptaService.createServer(shopperId, orionGuid, ipAddress, templates);
         verify(panoptaApiServerService).createServer(eq(partnerCustomerKey), any(PanoptaApiServerRequest.class));
         verify(panoptaApiServerService).getPanoptaServersByStatus(partnerCustomerKey, PanoptaServer.Status.ACTIVE);
+        assertEquals(panoptaServers.servers.get(0).fqdn, server.fqdn);
         assertEquals(panoptaServers.servers.get(0).name, server.name);
     }
 

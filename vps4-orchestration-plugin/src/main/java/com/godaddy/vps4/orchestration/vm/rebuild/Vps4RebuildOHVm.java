@@ -54,8 +54,8 @@ public class Vps4RebuildOHVm extends Vps4RebuildVm {
         setStep(RebuildVmStep.RequestingServer);
         logger.info("Rebuild OH VM process");
 
-        RebuildVm.Request rebuildDedRequest = rebuildHfsVmRequest(oldHfsVmId);
-        VmAction vmAction = context.execute("RebuildOHVm", RebuildVm.class, rebuildDedRequest);
+        RebuildVm.Request rebuildRequest = rebuildHfsVmRequest(oldHfsVmId);
+        VmAction vmAction = context.execute("RebuildOHVm", RebuildVm.class, rebuildRequest);
 
         updateServerDetails(request);
 
@@ -66,12 +66,12 @@ public class Vps4RebuildOHVm extends Vps4RebuildVm {
     }
 
     private RebuildVm.Request rebuildHfsVmRequest(long oldHfsVmId) {
-        RebuildVm.Request rebuildDedRequest = new RebuildVm.Request();
-        rebuildDedRequest.vmId = oldHfsVmId;
-        rebuildDedRequest.hostname = request.rebuildVmInfo.hostname;
-        rebuildDedRequest.image_name = request.rebuildVmInfo.image.hfsName;
-        rebuildDedRequest.username = request.rebuildVmInfo.username;
-        rebuildDedRequest.encryptedPassword = request.rebuildVmInfo.encryptedPassword;
-        return rebuildDedRequest;
+        RebuildVm.Request rebuildRequest = new RebuildVm.Request();
+        rebuildRequest.vmId = oldHfsVmId;
+        rebuildRequest.hostname = request.rebuildVmInfo.hostname;
+        rebuildRequest.image_name = request.rebuildVmInfo.image.hfsName;
+        rebuildRequest.username = request.rebuildVmInfo.username;
+        rebuildRequest.encryptedPassword = request.rebuildVmInfo.encryptedPassword;
+        return rebuildRequest;
     }
 }
