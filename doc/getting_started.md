@@ -26,6 +26,12 @@
 - make sure Maven is installed
     - for Mac, if you have homebrew already installed, one way to do it:
        - `brew install maven`
+- make sure Maven is using the correct version of Java 8 and not its own default Java by
+    - `mvn -v`
+    - if output is Java version larger than 1.8:
+        - make a ``~/.mavenrc`` file with this content:
+          ```
+          JAVA_HOME=`/usr/libexec/java_home -v 1.8`
 - create maven settings file (be sure to get the password for line 22):
 > File: ~/.m2/settings.xml
 ```xml
@@ -70,10 +76,14 @@
     - Select "Search for projects recursively" and "Import Maven projects automatically"
     - go through the screens clicking "Next"
     - Project should be opened in the editor once above steps are completed
+    - make sure IntelliJ is using the local Maven and not its own bundled Maven:
+        - Go to `Preferences -> Build, Execution, Deployment -> Build tools -> Maven`
+        - Confirm Maven home path is your local (/usr/local...e.t.c) and not Bundled Maven
 
 - create Intellij Run Configurations
     - Click on "Edit configurations" on the top right bar
     - Click on "+"/"Add new configurations" 
+        - Click on "Modify Options" dropdown, make sure "add VM Options" is checked
         - Local Orchestration Engine (**Refer to the [intellij run configs](../doc/intellij_run_configs.md) under section "Orchestration (Non-plugin)" for instructions on setting up the run config for orchengine**)
         - Web Server  (**Refer to the same link above, under section "Vps4 API"**)
         - Scheduler (**Refer to the same link above under section "Scheduler memory mode"**)
@@ -99,7 +109,7 @@
 - replace Java limited encryption jars if you’ve never done so
     - Download the unlimited jce jars and see the readme.txt for instructions: http://www.oracle.com/technetwork/java/javase/downloads/jce8-download-2133166.html
 
-- setup Postgres database - **ask someone on the team for default Postgres db password**
+- setup Postgres database
     - install postgresql locally or install vagrant
     - for Mac, one way to do it:
         - install homebrew
