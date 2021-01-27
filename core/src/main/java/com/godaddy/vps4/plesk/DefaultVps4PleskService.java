@@ -136,7 +136,7 @@ public class DefaultVps4PleskService implements Vps4PleskService {
             logger.info("SSO URL from HFS: {} ", ssoUrl);
             // replace hostname with IP. this is a temporary fix until HFS updates their API
             String ip = getVmIp(hfsVmId);
-            Pattern p = Pattern.compile("(?<=https?://).*?(?=:8443)");
+            Pattern p = Pattern.compile("(?<=https?://)[a-zA-Z0-9.-]*");
             ssoUrl = p.matcher(ssoUrl).replaceFirst(ip);
             logger.info("SSO URL: {} ", ssoUrl);
             return new PleskSession(ssoUrl);

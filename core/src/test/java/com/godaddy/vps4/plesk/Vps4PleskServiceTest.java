@@ -121,15 +121,31 @@ public class Vps4PleskServiceTest {
         }
     }
 
-    /*
-     * This is a temporary test until the Plesk URL returned from HFS uses an IP instead of a hostname.
-     * Once HFS does that, this test (and it's corresponding code in DefaultVps4PleskService) are no longer needed.
-     */
     @Test
     public void testServiceReplacesDomainWithIP() throws Exception {
         String fromIpAddress = "my.super.fake.ip.address";
         String responsePayload = "{\"ssoUrl\":\"https://some.fake.hostname:8443/enterprise/rsession_init.php?PLESKSESSID=5fe2a93e3b182912b899be1213d50c04\"}";
         String expectedSsoUrl = "https://" + vmIpAddress + ":8443/enterprise/rsession_init.php?PLESKSESSID=5fe2a93e3b182912b899be1213d50c04";
+
+        pleskAction.responsePayload = responsePayload;
+
+        when(pleskService.requestAccess(hfsVmId, fromIpAddress)).thenReturn(pleskAction);
+        when(networkService.getVmPrimaryAddress(hfsVmId)).thenReturn(ipAddress);
+        when(poller.poll(eq(pleskAction), anyInt())).thenReturn(responsePayload);
+
+        try {
+            PleskSession session = vps4PleskService.getPleskSsoUrl(hfsVmId, fromIpAddress);
+            assertEquals("Expected SSO URL does not match actual SSO URL.", expectedSsoUrl, session.getSsoUrl());
+        } catch (Exception e) {
+            fail("Encountered unexpected exception in getPleskSsoUrl, failing test. Exception: " + e);
+        }
+    }
+
+    @Test
+    public void testServiceReplacesAnotherDomainWithIP() throws Exception {
+        String fromIpAddress = "my.super.fake.ip.address";
+        String responsePayload = "{\"ssoUrl\":\"https://HOSTNAME.with-no.p0rt/enterprise/rsession_init.php?PLESKSESSID=5fe2a93e3b182912b899be1213d50c04\"}";
+        String expectedSsoUrl = "https://" + vmIpAddress + "/enterprise/rsession_init.php?PLESKSESSID=5fe2a93e3b182912b899be1213d50c04";
 
         pleskAction.responsePayload = responsePayload;
 
