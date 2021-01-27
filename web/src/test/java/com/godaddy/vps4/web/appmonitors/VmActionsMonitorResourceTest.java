@@ -147,8 +147,16 @@ public class VmActionsMonitorResourceTest {
 
     @Test
     public void testGetBackupPendingActions() {
-        when(monitorService.getVmsBySnapshotActions(120L, ActionStatus.IN_PROGRESS, ActionStatus.NEW, ActionStatus.ERROR)).thenReturn(expectedSnapshotActionData);
-        List<SnapshotActionData> actualSnapshotActionData = vmActionsMonitorResource.getBackupPendingActions(120L);
+        when(monitorService.getVmsBySnapshotActions(180L, ActionStatus.IN_PROGRESS, ActionStatus.ERROR)).thenReturn(expectedSnapshotActionData);
+        List<SnapshotActionData> actualSnapshotActionData = vmActionsMonitorResource.getBackupPendingActions(180L);
+        Assert.assertNotNull(actualSnapshotActionData);
+        Assert.assertEquals(expectedSnapshotActionData.size(), actualSnapshotActionData.size());
+    }
+
+    @Test
+    public void testGetNewBackupPendingActions() {
+        when(monitorService.getVmsBySnapshotActions(300L, ActionStatus.NEW)).thenReturn(expectedSnapshotActionData);
+        List<SnapshotActionData> actualSnapshotActionData = vmActionsMonitorResource.getNewBackupPendingActions(300L);
         Assert.assertNotNull(actualSnapshotActionData);
         Assert.assertEquals(expectedSnapshotActionData.size(), actualSnapshotActionData.size());
     }

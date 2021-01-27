@@ -138,10 +138,18 @@ public class VmActionsMonitorResource {
 
     @GET
     @Path("/pending/backupactions")
-    @ApiOperation(value = "Find all snapshot ids that are pending backup vm action for longer than m minutes, default 2 hours",
-            notes = "Find all snapshot id's that are pending backup vm action for longer than m minutes, default 2 hours")
-    public List<SnapshotActionData> getBackupPendingActions(@QueryParam("thresholdInMinutes") @DefaultValue("120") long thresholdInMinutes) {
-        return monitorService.getVmsBySnapshotActions(thresholdInMinutes, ActionStatus.IN_PROGRESS, ActionStatus.NEW, ActionStatus.ERROR);
+    @ApiOperation(value = "Find all snapshot ids that are pending in progress or error status for backup vm action for longer than m minutes, default 2 hours",
+            notes = "Find all snapshot id's that are pending backup vm action for longer than m minutes, default 3 hours")
+    public List<SnapshotActionData> getBackupPendingActions(@QueryParam("thresholdInMinutes") @DefaultValue("180") long thresholdInMinutes) {
+        return monitorService.getVmsBySnapshotActions(thresholdInMinutes, ActionStatus.IN_PROGRESS, ActionStatus.ERROR);
+    }
+
+    @GET
+    @Path("/pending/newbackupactions")
+    @ApiOperation(value = "Find all snapshot ids that are pending in new status for backup vm action for longer than m minutes, default 2 hours",
+            notes = "Find all snapshot id's that are pending backup vm action for longer than m minutes, default 5 hours")
+    public List<SnapshotActionData> getNewBackupPendingActions(@QueryParam("thresholdInMinutes") @DefaultValue("300") long thresholdInMinutes) {
+        return monitorService.getVmsBySnapshotActions(thresholdInMinutes, ActionStatus.NEW);
     }
 
     @GET
