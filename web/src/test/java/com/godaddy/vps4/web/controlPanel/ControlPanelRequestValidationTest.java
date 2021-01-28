@@ -37,6 +37,7 @@ public class ControlPanelRequestValidationTest {
                 null,               // validOn
                 null,               // canceled                          
                 null,               // validUntil
+                null,               // nydusAck
                 "omg.host.name",    // hostname
                 0,                   // managed level
                 UUID.randomUUID()

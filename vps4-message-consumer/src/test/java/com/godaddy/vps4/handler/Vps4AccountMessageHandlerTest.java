@@ -101,7 +101,7 @@ public class Vps4AccountMessageHandlerTest {
         vmSpec.tier = 10;
 
         vm = new VirtualMachine(UUID.randomUUID(), 123L, orionGuid,
-                321L, vmSpec, "TestVm", null, null, null, null, null, null, 0, UUID.randomUUID());
+                321L, vmSpec, "TestVm", null, null, null, null, null, null, null, 0, UUID.randomUUID());
         when(vmServiceMock.getVirtualMachine(vm.vmId)).thenReturn(vm);
 
         CommandState command = new CommandState();
