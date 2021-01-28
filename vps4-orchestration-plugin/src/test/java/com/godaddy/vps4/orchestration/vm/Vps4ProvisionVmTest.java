@@ -111,7 +111,7 @@ public class Vps4ProvisionVmTest {
         expectedServerName = "VM Name";
         this.vm = new VirtualMachine(UUID.randomUUID(), hfsVmId, UUID.randomUUID(), 1,
                                      null, expectedServerName,
-                                     image, null, null, null, null,
+                                     image, null, null, null, null, null,
                                      "fake.host.name", 0, UUID.randomUUID());
 
         this.vmInfo = new ProvisionVmInfo();

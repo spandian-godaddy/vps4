@@ -34,7 +34,8 @@ public class JdbcVirtualMachineService implements VirtualMachineService {
     private final DataSource dataSource;
 
     private String selectVirtualMachineQuery = "SELECT vm.vm_id, vm.hfs_vm_id, vm.orion_guid, vm.project_id, vm.name as \"vm_name\", "
-            + "vm.hostname, vm.account_status_id, vm.backup_job_id, vm.valid_on as \"vm_valid_on\", vm.canceled as \"vm_canceled\", vm.valid_until as \"vm_valid_until\", vm.managed_level, "
+            +
+            "vm.hostname, vm.account_status_id, vm.backup_job_id, vm.valid_on as \"vm_valid_on\", vm.canceled as \"vm_canceled\", vm.valid_until as \"vm_valid_until\", vm.nydus_warning_ack, vm.managed_level, "
             + "vms.spec_id, vms.spec_name, vms.tier, vms.cpu_core_count, vms.memory_mib, vms.disk_gib, vms.valid_on as \"spec_valid_on\", "
             + "vms.valid_until as \"spec_valid_until\", vms.name as \"spec_vps4_name\", st.server_type, st.server_type_id, st.platform, "
             + "image.name, image.hfs_name, image.image_id, image.control_panel_id, image.os_type_id, "
@@ -111,7 +112,9 @@ public class JdbcVirtualMachineService implements VirtualMachineService {
                 rs.getLong("project_id"), spec, rs.getString("vm_name"), image, ipAddress,
                 rs.getTimestamp("vm_valid_on", TimestampUtils.utcCalendar).toInstant(),
                 rs.getTimestamp("vm_canceled", TimestampUtils.utcCalendar).toInstant(),
-                rs.getTimestamp("vm_valid_until", TimestampUtils.utcCalendar).toInstant(), rs.getString("hostname"),
+                rs.getTimestamp("vm_valid_until", TimestampUtils.utcCalendar).toInstant(),
+                rs.getTimestamp("nydus_warning_ack", TimestampUtils.utcCalendar).toInstant(),
+                rs.getString("hostname"),
                 rs.getInt("managed_level"), backupJobId != null ? java.util.UUID.fromString(backupJobId) : null);
     }
 
@@ -372,4 +375,8 @@ public class JdbcVirtualMachineService implements VirtualMachineService {
         return rs.getInt("count");
     }
 
+    @Override
+    public void ackNydusWarning(UUID vmId) {
+        Sql.with(dataSource).exec("UPDATE virtual_machine vm SET nydus_warning_ack=now_utc() WHERE vm_id=?", null, vmId);
+    }
 }

@@ -22,6 +22,7 @@ public class VirtualMachine {
     public Instant validOn;
     public Instant canceled;
     public Instant validUntil;
+    public Instant nydusWarningAck;
     public String hostname;
     public int managedLevel;
     public UUID backupJobId;
@@ -40,6 +41,7 @@ public class VirtualMachine {
             Instant validOn,
             Instant canceled,
             Instant validUntil,
+            Instant nydusWarningAck,
             String hostname,
             int managedLevel,
             UUID backupJobId) {
@@ -54,6 +56,7 @@ public class VirtualMachine {
         this.validOn = validOn;
         this.canceled = canceled;
         this.validUntil = validUntil;
+        this.nydusWarningAck = nydusWarningAck;
         this.hostname = hostname;
         this.managedLevel = managedLevel;
         this.backupJobId = backupJobId;
@@ -71,6 +74,7 @@ public class VirtualMachine {
         validOn = virtualMachine.validOn;
         canceled = virtualMachine.canceled;
         validUntil = virtualMachine.validUntil;
+        nydusWarningAck = virtualMachine.nydusWarningAck;
         hostname = virtualMachine.hostname;
         managedLevel = virtualMachine.managedLevel;
         backupJobId = virtualMachine.backupJobId;
@@ -79,6 +83,11 @@ public class VirtualMachine {
     @JsonIgnore
     public boolean isActive() {
         return validUntil.isAfter(Instant.now());
+    }
+
+    @JsonIgnore
+    public boolean hasNydusWarningAcked () {
+        return nydusWarningAck.isBefore(Instant.now());
     }
 
     @Override

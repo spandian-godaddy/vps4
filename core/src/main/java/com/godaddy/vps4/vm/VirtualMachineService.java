@@ -125,4 +125,6 @@ public interface VirtualMachineService {
 
 	List<VirtualMachine> getVirtualMachines(VirtualMachineType type, Long vps4UserId, String ipAddress, UUID orionGuid,
 			Long hfsVmId);
+
+    void ackNydusWarning(UUID vmId);
 }

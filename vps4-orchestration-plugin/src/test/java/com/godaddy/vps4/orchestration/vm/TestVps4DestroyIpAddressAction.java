@@ -51,7 +51,7 @@ public class TestVps4DestroyIpAddressAction {
         Vps4DestroyIpAddressAction.Request request = new Vps4DestroyIpAddressAction.Request();
         VirtualMachine virtualMachine = new VirtualMachine(UUID.randomUUID(),
                 1111, UUID.randomUUID(), 0, null, "fakeName", null, null,
-                Instant.now(), null, null, "fake.hostname.com", 0, UUID.randomUUID());
+                Instant.now(), null, null, null, "fake.hostname.com", 0, UUID.randomUUID());
         request.ipAddressId = 3425;
         request.virtualMachine = virtualMachine;
 

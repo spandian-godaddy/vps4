@@ -55,7 +55,7 @@ public class TestVps4AddIpAddress {
         Vps4AddIpAddress.Request request = new Vps4AddIpAddress.Request();
         VirtualMachine virtualMachine = new VirtualMachine(UUID.randomUUID(),
                 1111, UUID.randomUUID(), 0, null, "fakeName", null, null,
-                Instant.now(), null, null, "fake.hostname.com", 0, UUID.randomUUID());
+                Instant.now(), null, null, null, "fake.hostname.com", 0, UUID.randomUUID());
         request.virtualMachine = virtualMachine;
         request.zone = "vps4-phx3";
         request.sgid = "vps4-unittest-1234";
