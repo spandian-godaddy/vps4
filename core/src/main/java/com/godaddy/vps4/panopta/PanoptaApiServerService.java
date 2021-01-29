@@ -49,18 +49,15 @@ public interface PanoptaApiServerService {
                                         @QueryParam("partner_customer_key") String partnerCustomerKey);
 
     @GET
-    @Path("/")
-    PanoptaServers getPanoptaServers(@QueryParam("partner_customer_key") String partnerCustomerKey);
-
-    @GET
-    @Path("/")
-    PanoptaServers getPanoptaServersByStatus(@QueryParam("partner_customer_key") String partnerCustomerKey,
-                                             @DefaultValue("active") @QueryParam("status") PanoptaServer.Status status);
-
-    @GET
     @Path("/{server_id}")
     PanoptaServers.Server getServer(@PathParam("server_id") long serverId,
                                     @QueryParam("partner_customer_key") String partnerCustomerKey);
+
+    @GET
+    @Path("/")
+    PanoptaServers getServers(@QueryParam("partner_customer_key") String partnerCustomerKey,
+                              @QueryParam("fqdn") String fqdn,
+                              @QueryParam("name") String name);
 
     @PUT
     @Path("/{server_id}")

@@ -2,8 +2,8 @@ package com.godaddy.vps4.panopta;
 
 import java.time.Instant;
 import java.time.format.DateTimeFormatter;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.Callable;
@@ -15,7 +15,6 @@ import java.util.concurrent.TimeUnit;
 import javax.cache.Cache;
 import javax.cache.CacheManager;
 import javax.inject.Inject;
-import javax.ws.rs.NotAuthorizedException;
 
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
@@ -28,6 +27,8 @@ import com.godaddy.vps4.panopta.jdbc.PanoptaCustomerDetails;
 public class DefaultPanoptaService implements PanoptaService {
     private static final DateTimeFormatter PANOPTA_DATE_FORMAT = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss z");
     private static final int UNLIMITED = 0;
+    private static final int SLEEP_SECONDS = 10;
+    private static final int TIMEOUT_MINUTES = 1;
 
     private static final Logger logger = LoggerFactory.getLogger(DefaultPanoptaService.class);
     private final Cache<String, CachedMonitoringGraphs> cache;
@@ -126,11 +127,17 @@ public class DefaultPanoptaService implements PanoptaService {
         logger.info("Create Panopta server request: {}", request.toString());
         panoptaApiServerService.createServer(getPartnerCustomerKey(shopperId), request);
 
-        return getActiveServers(shopperId)
-                .stream()
-                .filter(s -> s.fqdn.equals(ipAddress) && s.name.equals(orionGuid.toString()))
-                .findFirst()
-                .orElseThrow(() -> new PanoptaServiceException("NO_SERVER_FOUND", "No matching server found."));
+        Instant timeoutAt = Instant.now().plus(TIMEOUT_MINUTES, ChronoUnit.MINUTES);
+        while (Instant.now().isBefore(timeoutAt)) {
+            List<PanoptaServer> servers = getServers(shopperId, ipAddress, orionGuid);
+            if (!servers.isEmpty()) {
+                return servers.get(0);
+            }
+            try {
+                Thread.sleep(SLEEP_SECONDS * 1000);
+            } catch (InterruptedException ignored) {}
+        }
+        throw new PanoptaServiceException("NO_SERVER_FOUND", "No matching server found.");
     }
 
     @Override
@@ -143,6 +150,17 @@ public class DefaultPanoptaService implements PanoptaService {
         }
         logger.info("Could not find server in panopta for VM ID {} ", vmId);
         return null;
+    }
+
+    @Override
+    public List<PanoptaServer> getServers(String shopperId, String ipAddress, UUID orionGuid) {
+        String partnerCustomerKey = getPartnerCustomerKey(shopperId);
+        List<PanoptaServer> panoptaServerList = new ArrayList<>();
+        PanoptaServers ps = panoptaApiServerService.getServers(partnerCustomerKey,
+                                                               ipAddress,
+                                                               orionGuid.toString());
+        ps.getServers().forEach(server -> panoptaServerList.add(mapServer(partnerCustomerKey, server)));
+        return panoptaServerList;
     }
 
     @Override
@@ -262,34 +280,6 @@ public class DefaultPanoptaService implements PanoptaService {
 
     private String getPartnerCustomerKey(String shopperId) {
         return config.get("panopta.api.partner.customer.key.prefix") + shopperId;
-    }
-
-    @Override
-    public List<PanoptaServer> getActiveServers(String shopperId) {
-        return getPanoptaServersByStatus(shopperId, PanoptaServer.Status.ACTIVE);
-    }
-
-    @Override
-    public List<PanoptaServer> getSuspendedServers(String shopperId) {
-        return getPanoptaServersByStatus(shopperId, PanoptaServer.Status.SUSPENDED);
-    }
-
-    private List<PanoptaServer> getPanoptaServersByStatus(String shopperId, PanoptaServer.Status status) {
-        String partnerCustomerKey = getPartnerCustomerKey(shopperId);
-        List<PanoptaServer> panoptaServerList = new ArrayList<>();
-
-        try {
-            PanoptaServers ps = panoptaApiServerService.getPanoptaServersByStatus(partnerCustomerKey, status);
-            ps.getServers().forEach(server -> {
-                logger.debug("Found server in panopta: {} ", server);
-                panoptaServerList.add(mapServer(partnerCustomerKey, server));
-            });
-            return panoptaServerList;
-        } catch (NotAuthorizedException e) {
-            logger.debug("Access to partner customer key {} is unauthorized. "
-                    + "This likely means no customer exists for that key.", partnerCustomerKey);
-            return Collections.emptyList();
-        }
     }
 
     private PanoptaServer mapServer(String partnerCustomerKey, PanoptaServers.Server server) {

@@ -15,6 +15,8 @@ public interface PanoptaService {
 
     PanoptaServer getServer(UUID vmId);
 
+    List<PanoptaServer> getServers(String shopperId, String ipAddress, UUID orionGuid);
+
     void deleteServer(UUID vmId);
 
     List<PanoptaGraphId> getUsageIds(UUID vmId);
@@ -24,10 +26,6 @@ public interface PanoptaService {
     List<PanoptaGraph> getUsageGraphs(UUID vmId, String timescale) throws PanoptaServiceException;
 
     List<PanoptaGraph> getNetworkGraphs(UUID vmId, String timescale) throws PanoptaServiceException;
-
-    List<PanoptaServer> getActiveServers(String shopperId);
-
-    List<PanoptaServer> getSuspendedServers(String shopperId);
 
     void pauseServerMonitoring(UUID vmId);
 

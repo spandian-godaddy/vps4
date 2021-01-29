@@ -27,7 +27,6 @@ import java.util.concurrent.TimeUnit;
 
 import javax.cache.Cache;
 import javax.cache.CacheManager;
-import javax.ws.rs.NotAuthorizedException;
 
 import org.junit.After;
 import org.junit.Before;
@@ -227,7 +226,7 @@ public class DefaultPanoptaServiceTest {
         when(panoptaApiServerService.getUsageList(serverId, partnerCustomerKey, 0)).thenReturn(usageIdList);
         when(panoptaApiServerService.getNetworkList(serverId, partnerCustomerKey, 0)).thenReturn(networkIdList);
         when(panoptaApiServerService.getServer(serverId, partnerCustomerKey)).thenReturn(server);
-        when(panoptaApiServerService.getPanoptaServersByStatus(partnerCustomerKey, PanoptaServer.Status.ACTIVE))
+        when(panoptaApiServerService.getServers(partnerCustomerKey, ipAddress, orionGuid.toString()))
                 .thenReturn(panoptaServers);
         when(panoptaDataService.getPanoptaDetails(vmId)).thenReturn(panoptaDetail);
     }
@@ -432,7 +431,7 @@ public class DefaultPanoptaServiceTest {
         };
         PanoptaServer server = defaultPanoptaService.createServer(shopperId, orionGuid, ipAddress, templates);
         verify(panoptaApiServerService).createServer(eq(partnerCustomerKey), any(PanoptaApiServerRequest.class));
-        verify(panoptaApiServerService).getPanoptaServersByStatus(partnerCustomerKey, PanoptaServer.Status.ACTIVE);
+        verify(panoptaApiServerService).getServers(partnerCustomerKey, ipAddress, orionGuid.toString());
         assertEquals(panoptaServers.servers.get(0).fqdn, server.fqdn);
         assertEquals(panoptaServers.servers.get(0).name, server.name);
     }
@@ -470,45 +469,23 @@ public class DefaultPanoptaServiceTest {
     }
 
     @Test
-    public void testGetActiveServers() {
-        List<PanoptaServer> panoptaServersList = defaultPanoptaService.getActiveServers(shopperId);
-        verify(panoptaApiServerService).getPanoptaServersByStatus(partnerCustomerKey, PanoptaServer.Status.ACTIVE);
+    public void testGetServers() {
+        List<PanoptaServer> panoptaServersList = defaultPanoptaService.getServers(shopperId, ipAddress, orionGuid);
+        verify(panoptaApiServerService).getServers(partnerCustomerKey, ipAddress, orionGuid.toString());
         assertNotNull(panoptaServersList);
         assertTrue(panoptaServersList.size() > 0);
     }
 
     @Test
-    public void testGetActiveServersReturnsEmptyList() {
+    public void testGetServersReturnsEmptyList() {
         PanoptaServers panoptaServers = new PanoptaServers();
         panoptaServers.servers = new ArrayList<>();
-        when(panoptaApiServerService.getPanoptaServersByStatus(partnerCustomerKey, PanoptaServer.Status.ACTIVE))
+        when(panoptaApiServerService.getServers(partnerCustomerKey, ipAddress, orionGuid.toString()))
                 .thenReturn(panoptaServers);
 
-        List<PanoptaServer> panoptaServersList = defaultPanoptaService.getActiveServers(shopperId);
-        verify(panoptaApiServerService).getPanoptaServersByStatus(partnerCustomerKey, PanoptaServer.Status.ACTIVE);
+        List<PanoptaServer> panoptaServersList = defaultPanoptaService.getServers(shopperId, ipAddress, orionGuid);
+        verify(panoptaApiServerService).getServers(partnerCustomerKey, ipAddress, orionGuid.toString());
         assertNotNull(panoptaServersList);
         assertTrue(panoptaServersList.isEmpty());
-    }
-
-    @Test
-    public void testGetSuspendedServers() {
-        when(panoptaApiServerService.getPanoptaServersByStatus(partnerCustomerKey, PanoptaServer.Status.SUSPENDED))
-                .thenReturn(panoptaServers);
-        List<PanoptaServer> panoptaServersList = defaultPanoptaService.getSuspendedServers(shopperId);
-        verify(panoptaApiServerService).getPanoptaServersByStatus(partnerCustomerKey, PanoptaServer.Status.SUSPENDED);
-        assertNotNull(panoptaServersList);
-        assertTrue(panoptaServersList.size() > 0);
-    }
-
-    @Test
-    public void testGetServersByStatusHandles401() {
-        shopperId = "nonexistent_shopper";
-        partnerCustomerKey = "gdtest_nonexistent_shopper";
-        when(panoptaApiServerService.getPanoptaServersByStatus(partnerCustomerKey, PanoptaServer.Status.ACTIVE))
-                .thenThrow(new NotAuthorizedException("Nope"));
-        List<PanoptaServer> panoptaServersList = defaultPanoptaService.getActiveServers(shopperId);
-        verify(panoptaApiServerService).getPanoptaServersByStatus(partnerCustomerKey, PanoptaServer.Status.ACTIVE);
-        assertNotNull(panoptaServersList);
-        assertEquals(0, panoptaServersList.size());
     }
 }
