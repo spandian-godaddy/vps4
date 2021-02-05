@@ -127,4 +127,8 @@ public interface VirtualMachineService {
 			Long hfsVmId);
 
     void ackNydusWarning(UUID vmId);
+
+    void setMonitoringPlanFeature(UUID vmId, boolean monitoring);
+
+    boolean getMonitoringPlanFeature (UUID orionGuid);
 }

@@ -81,18 +81,19 @@ public class SetupPanopta implements Command<SetupPanopta.Request, Void> {
     private PanoptaServerDetails getOrCreateServer() {
         PanoptaServerDetails serverDetails = panoptaDataService.getPanoptaServerDetails(request.vmId);
         if (serverDetails == null) {
-            PanoptaServer server = createServer();
-            panoptaDataService.createPanoptaServer(request.vmId, request.shopperId, server);
+            String[] templateIds = getTemplateIds();
+            PanoptaServer server = createServer(templateIds);
+            panoptaDataService.createPanoptaServer(request.vmId, request.shopperId, templateIds[0], server);
             serverDetails = panoptaDataService.getPanoptaServerDetails(request.vmId);
         }
         return serverDetails;
     }
 
-    private PanoptaServer createServer() {
+    private PanoptaServer createServer(String[] templateIds) {
         logger.info("Creating new Panopta server for VM {}.", request.vmId);
         try {
             String[] templates = Arrays
-                    .stream(getTemplateIds())
+                    .stream(templateIds)
                     .map(t -> "https://api2.panopta.com/v2/server_template/" + t)
                     .toArray(String[]::new);
             return panoptaService.createServer(request.shopperId, request.orionGuid, request.fqdn, templates);

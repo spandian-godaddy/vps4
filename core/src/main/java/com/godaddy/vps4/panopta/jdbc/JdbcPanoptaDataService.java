@@ -41,12 +41,12 @@ public class JdbcPanoptaDataService implements PanoptaDataService {
     }
 
     @Override
-    public void createPanoptaServer(UUID vmId, String shopperId, PanoptaServer panoptaServer) {
+    public void createPanoptaServer(UUID vmId, String shopperId, String templateId, PanoptaServer panoptaServer) {
         Sql.with(dataSource)
-           .exec("INSERT INTO panopta_server (partner_customer_key, vm_id, server_id, server_key) " +
-                         "values (?,?,?,?) ",
+           .exec("INSERT INTO panopta_server (partner_customer_key, vm_id, server_id, server_key, template_id) " +
+                         "values (?,?,?,?,?) ",
                  null, getPartnerCustomerKey(shopperId), vmId, panoptaServer.serverId,
-                 panoptaServer.serverKey);
+                 panoptaServer.serverKey, templateId);
     }
 
     @Override

@@ -229,6 +229,7 @@ public class VmResource {
                                                            vmCredit.getTier(), vmCredit.getManagedLevel(),
                                                            provisionRequest.image);
             virtualMachine = virtualMachineService.provisionVirtualMachine(params);
+            virtualMachineService.setMonitoringPlanFeature(virtualMachine.vmId, (vmCredit.getMonitoring() == 0)?false:true);
             creditService.claimVirtualMachineCredit(provisionRequest.orionGuid, provisionRequest.dataCenterId,
                                                     virtualMachine.vmId);
         } catch (Exception e) {
@@ -304,7 +305,6 @@ public class VmResource {
         destroyRequest.virtualMachine = vm;
         VmAction deleteAction = createActionAndExecute(actionService, commandService, vm.vmId,
                                                        ActionType.DESTROY_VM, destroyRequest, destroyMethod, user);
-
         creditService.unclaimVirtualMachineCredit(vm.orionGuid, vm.vmId);
         virtualMachineService.setVmRemoved(vm.vmId);
 

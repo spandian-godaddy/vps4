@@ -1,6 +1,7 @@
 package com.godaddy.vps4.phase2.vm;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
@@ -385,4 +386,11 @@ public class JdbcVirtualMachineServiceTest {
         assertEquals(2, zombieServerCount.get(10).intValue());
     }
 
+    @Test
+    public void testSetMonitoringPlanFeature(){
+        VirtualMachine testVm = SqlTestData.insertTestVm(UUID.randomUUID(), dataSource);
+        virtualMachines.add(testVm);
+        virtualMachineService.setMonitoringPlanFeature(testVm.vmId, true);
+        assertTrue(virtualMachineService.getMonitoringPlanFeature(testVm.vmId));
+    }
 }

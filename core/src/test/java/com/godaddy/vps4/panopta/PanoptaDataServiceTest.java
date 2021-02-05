@@ -36,6 +36,7 @@ public class PanoptaDataServiceTest {
     private final String fakeServerKey = "totally-fake-server-key";
     private final String fakeShopperId = "so-fake-shopperid";
     private final String fakePartnerCustomerKey = "gdtest_" + fakeShopperId;
+    private final String fakeTemplateId = "12345";
     private final long fakeServerId = 1234567;
 
     private VirtualMachine vm;
@@ -95,7 +96,7 @@ public class PanoptaDataServiceTest {
     @Test
     public void destroyPanoptaServer() {
         panoptaDataService.createPanoptaCustomer(fakeShopperId, fakeCustomerKey);
-        panoptaDataService.createPanoptaServer(vm.vmId, fakeShopperId, panoptaServer);
+        panoptaDataService.createPanoptaServer(vm.vmId, fakeShopperId, fakeTemplateId, panoptaServer);
 
         panoptaDataService.setPanoptaServerDestroyed(vm.vmId);
 
@@ -110,7 +111,7 @@ public class PanoptaDataServiceTest {
     @Test
     public void createPanoptaServer() {
         panoptaDataService.createPanoptaCustomer(fakeShopperId, fakeCustomerKey);
-        panoptaDataService.createPanoptaServer(vm.vmId, fakeShopperId, panoptaServer);
+        panoptaDataService.createPanoptaServer(vm.vmId, fakeShopperId, fakeTemplateId, panoptaServer);
 
         PanoptaServerDetails panoptaServerDetails = panoptaDataService.getPanoptaServerDetails(vm.vmId);
         assertNotNull(panoptaServerDetails);
@@ -124,7 +125,7 @@ public class PanoptaDataServiceTest {
     @Test
     public void getActivePanoptaServers() {
         panoptaDataService.createPanoptaCustomer(fakeShopperId, fakeCustomerKey);
-        panoptaDataService.createPanoptaServer(vm.vmId, fakeShopperId, panoptaServer);
+        panoptaDataService.createPanoptaServer(vm.vmId, fakeShopperId, fakeTemplateId, panoptaServer);
 
         List<PanoptaServerDetails> panoptaServerDetailsList = panoptaDataService.getPanoptaServerDetailsList(fakeShopperId);
         assertNotNull(panoptaServerDetailsList);
@@ -134,7 +135,7 @@ public class PanoptaDataServiceTest {
     @Test
     public void removePanoptaCustomer() {
         panoptaDataService.createPanoptaCustomer(fakeShopperId, fakeCustomerKey);
-        panoptaDataService.createPanoptaServer(vm.vmId, fakeShopperId, panoptaServer);
+        panoptaDataService.createPanoptaServer(vm.vmId, fakeShopperId, fakeTemplateId, panoptaServer);
         panoptaDataService.setPanoptaServerDestroyed(vm.vmId);
 
         boolean wasDestroyed = panoptaDataService.checkAndSetPanoptaCustomerDestroyed(fakeShopperId);
@@ -147,7 +148,7 @@ public class PanoptaDataServiceTest {
     @Test
     public void doesNotRemoveCustomerIfActiveServersExist() {
         panoptaDataService.createPanoptaCustomer(fakeShopperId, fakeCustomerKey);
-        panoptaDataService.createPanoptaServer(vm.vmId, fakeShopperId, panoptaServer);
+        panoptaDataService.createPanoptaServer(vm.vmId, fakeShopperId, fakeTemplateId, panoptaServer);
 
         boolean wasDestroyed = panoptaDataService.checkAndSetPanoptaCustomerDestroyed(fakeShopperId);
         assertFalse(wasDestroyed);
@@ -159,7 +160,7 @@ public class PanoptaDataServiceTest {
     @Test
     public void getPanoptaDetail() {
         panoptaDataService.createPanoptaCustomer(fakeShopperId, fakeCustomerKey);
-        panoptaDataService.createPanoptaServer(vm.vmId, fakeShopperId, panoptaServer);
+        panoptaDataService.createPanoptaServer(vm.vmId, fakeShopperId, fakeTemplateId, panoptaServer);
 
         PanoptaDetail panoptaDetail = panoptaDataService.getPanoptaDetails(vm.vmId);
         assertNotNull(panoptaDetail);
@@ -173,7 +174,7 @@ public class PanoptaDataServiceTest {
     @Test
     public void canGetVmIdByServerKey() {
         panoptaDataService.createPanoptaCustomer(fakeShopperId, fakeCustomerKey);
-        panoptaDataService.createPanoptaServer(vm.vmId, fakeShopperId, panoptaServer);
+        panoptaDataService.createPanoptaServer(vm.vmId, fakeShopperId, fakeTemplateId, panoptaServer);
 
         UUID vmId = panoptaDataService.getVmId(fakeServerKey);
         assertEquals(vm.vmId, vmId);

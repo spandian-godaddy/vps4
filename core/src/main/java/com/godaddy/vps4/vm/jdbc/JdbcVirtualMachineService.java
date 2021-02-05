@@ -379,4 +379,17 @@ public class JdbcVirtualMachineService implements VirtualMachineService {
     public void ackNydusWarning(UUID vmId) {
         Sql.with(dataSource).exec("UPDATE virtual_machine vm SET nydus_warning_ack=now_utc() WHERE vm_id=?", null, vmId);
     }
+
+    @Override
+    public boolean getMonitoringPlanFeature (UUID vmId){
+        return Sql.with(dataSource).exec("SELECT monitoring FROM monitoring_pf WHERE vm_id = ?;",
+                                         Sql.nextOrNull(rs -> rs.getBoolean("monitoring")), vmId);
+    }
+
+    @Override
+    public void setMonitoringPlanFeature (UUID vmId, boolean monitoring) {
+        Sql.with(dataSource).exec("INSERT INTO monitoring_pf (vm_id, monitoring) VALUES (?, ?) " +
+                                          " ON CONFLICT (vm_id) DO UPDATE SET monitoring = ? ",
+                                  null, vmId, monitoring, monitoring);
+    }
 }

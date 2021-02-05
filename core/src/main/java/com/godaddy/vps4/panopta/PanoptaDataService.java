@@ -8,7 +8,7 @@ import com.godaddy.vps4.panopta.jdbc.PanoptaServerDetails;
 
 public interface PanoptaDataService {
     void createPanoptaCustomer(String shopperId, String customerKey);
-    void createPanoptaServer(UUID vmId, String shopperId, PanoptaServer panoptaServer);
+    void createPanoptaServer(UUID vmId, String shopperId, String templateId, PanoptaServer panoptaServer);
     PanoptaCustomerDetails getPanoptaCustomerDetails(String shopperId);
     PanoptaServerDetails getPanoptaServerDetails(UUID vmId);
     List<PanoptaServerDetails> getPanoptaServerDetailsList(String shopperId);

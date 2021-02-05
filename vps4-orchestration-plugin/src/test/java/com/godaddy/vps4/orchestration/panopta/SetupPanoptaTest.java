@@ -107,7 +107,7 @@ public class SetupPanoptaTest {
         serverDetails = mock(PanoptaServerDetails.class);
         when(serverDetails.getServerKey()).thenReturn(serverKey);
         when(panoptaDataService.getPanoptaServerDetails(vmId)).thenReturn(serverDetails);
-        doNothing().when(panoptaDataService).createPanoptaServer(eq(vmId), eq(shopperId), any());
+        doNothing().when(panoptaDataService).createPanoptaServer(eq(vmId), eq(shopperId), any(), any());
     }
 
     private void setupPanoptaAgent() {
@@ -187,6 +187,7 @@ public class SetupPanoptaTest {
         String[] templates = templateCaptor.getValue();
         assertEquals("https://api2.panopta.com/v2/server_template/fake_template_base", templates[0]);
         assertEquals("https://api2.panopta.com/v2/server_template/fake_template_dc", templates[1]);
+        verify(panoptaDataService, times(1)).createPanoptaServer(eq(vmId), eq(shopperId), eq("fake_template_base"), any());
     }
 
     @Test
