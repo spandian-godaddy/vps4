@@ -65,5 +65,11 @@ public class Vps4ApiWithCertAuthClientModule extends AbstractModule {
                 .toProvider(getClientCertAuthServiceProvider(VmOutageApiService.class, baseUrlConfigPropName,
                         this.clientCertKeyPath, this.clientCertPath))
                 .in(Singleton.class);
+
+        //Vm Sync endpoint
+        bind(VmSyncStatusService.class)
+                .toProvider(getClientCertAuthServiceProvider(VmSyncStatusService.class, baseUrlConfigPropName,
+                        this.clientCertKeyPath, this.clientCertPath))
+                .in(Singleton.class);
     }
 }

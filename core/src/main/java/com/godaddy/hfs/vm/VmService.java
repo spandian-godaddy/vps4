@@ -112,4 +112,8 @@ public interface VmService {
     @POST
     @Path("/{vmId}/resize")
     VmAction resize(@PathParam("vmId") long vmId, ResizeRequest request);
+
+    @POST
+    @Path("/{vmId}/sync")
+    VmAction sync(@PathParam("vmId") long vmId);
 }

@@ -62,6 +62,7 @@ import com.godaddy.vps4.orchestration.vm.provision.Vps4ProvisionVm;
 import com.godaddy.vps4.orchestration.vm.rebuild.Vps4RebuildDedicated;
 import com.godaddy.vps4.orchestration.vm.rebuild.Vps4RebuildOHVm;
 import com.godaddy.vps4.orchestration.vm.rebuild.Vps4RebuildVm;
+import com.godaddy.vps4.orchestration.vm.Vps4SyncVmStatus;
 import com.google.inject.AbstractModule;
 
 public class Vps4CommandModule extends AbstractModule {
@@ -130,5 +131,6 @@ public class Vps4CommandModule extends AbstractModule {
         bind(UninstallPanoptaAgent.class);
         bind(WaitForPanoptaAgentSync.class);
         bind(Vps4RequestConsole.class);
+        bind(Vps4SyncVmStatus.class);
     }
 }

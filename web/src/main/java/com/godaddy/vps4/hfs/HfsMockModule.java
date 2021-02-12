@@ -334,6 +334,11 @@ public class HfsMockModule extends AbstractModule {
             public VmAction resize(long vmId, ResizeRequest request) {
                 throw new UnsupportedOperationException("Not implemented, yet");
             }
+
+            @Override
+            public VmAction sync(long vmId) {
+                throw new UnsupportedOperationException("Not implemented, yet");
+            }
         };
     }
 

@@ -49,7 +49,8 @@ public enum ActionType {
     DESTROY_BACKUP_STORAGE(40), // no longer used, but kept for historical purposes
     ADD_MONITORING(41),
     RESET_BACKUP_STORAGE_CREDS(42), // no longer used, but kept for historical purposes
-    REQUEST_CONSOLE(43);
+    REQUEST_CONSOLE(43),
+    SYNC_STATUS(44);
 
     private final int typeId;
 

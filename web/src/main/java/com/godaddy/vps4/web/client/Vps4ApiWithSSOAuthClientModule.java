@@ -46,5 +46,10 @@ public class Vps4ApiWithSSOAuthClientModule extends AbstractModule {
         bind(VmOutageApiService.class)
                 .toProvider(getSsoAuthServiceProvider(VmOutageApiService.class, baseUrlConfigPropName))
                 .in(Singleton.class);
+
+        //Vm Sync endpoint
+        bind(VmSyncStatusService.class)
+                .toProvider(getSsoAuthServiceProvider(VmSyncStatusService.class, baseUrlConfigPropName))
+                .in(Singleton.class);
     }
 }
