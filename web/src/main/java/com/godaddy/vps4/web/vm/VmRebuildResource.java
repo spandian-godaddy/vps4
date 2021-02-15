@@ -3,6 +3,7 @@ package com.godaddy.vps4.web.vm;
 import static com.godaddy.vps4.sysadmin.UsernamePasswordGenerator.generatePassword;
 import static com.godaddy.vps4.web.util.RequestValidation.validateNoConflictingActions;
 import static com.godaddy.vps4.web.util.RequestValidation.validatePassword;
+import static com.godaddy.vps4.web.util.RequestValidation.validateRequestedImage;
 import static com.godaddy.vps4.web.util.VmHelper.createActionAndExecute;
 
 import java.util.List;
@@ -16,6 +17,7 @@ import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
 
+import com.godaddy.vps4.credit.VirtualMachineCredit;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -114,7 +116,7 @@ public class VmRebuildResource {
     public VmAction rebuild(@PathParam("vmId") UUID vmId, RebuildVmRequest rebuildVmRequest) {
         rebuildVmRequest = performAdminPrereqs(rebuildVmRequest);
         VirtualMachine vm = vmResource.getVm(vmId);
-        isValidRebuildVmRequest(vmId, rebuildVmRequest);
+        isValidRebuildVmRequest(vmId, rebuildVmRequest,vm.orionGuid);
         logger.info("Processing rebuild on VM {}", vmId);
         cancelIncompleteVmActions(vmId);
 
@@ -137,9 +139,10 @@ public class VmRebuildResource {
         return rebuildVmRequest;
     }
 
-    private void isValidRebuildVmRequest(UUID vmId, RebuildVmRequest rebuildVmRequest) {
+    private void isValidRebuildVmRequest(UUID vmId, RebuildVmRequest rebuildVmRequest, UUID orionGuid) {
         validateNoConflictingActions(vmId, actionService, ActionType.RESTORE_VM, ActionType.CREATE_VM, ActionType.REBUILD_VM);
         validatePassword(rebuildVmRequest.password);
+        validateRequestedImage(creditService.getVirtualMachineCredit(orionGuid),imageResource.getImage(rebuildVmRequest.imageName));
         if (!StringUtils.isBlank(rebuildVmRequest.imageName)) {
             // Validate image name passed in. This should throw a 404 if image is disabled (for env or role)
             imageResource.getImage(rebuildVmRequest.imageName);

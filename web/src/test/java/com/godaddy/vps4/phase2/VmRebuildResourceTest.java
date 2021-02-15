@@ -2,13 +2,20 @@ package com.godaddy.vps4.phase2;
 
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.any;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.UUID;
 
 import javax.inject.Inject;
 import javax.sql.DataSource;
 import javax.ws.rs.NotFoundException;
 
+import com.godaddy.vps4.credit.CreditService;
+import com.godaddy.vps4.credit.VirtualMachineCredit;
 import org.json.simple.JSONObject;
 import org.junit.After;
 import org.junit.Assert;
@@ -37,6 +44,7 @@ import com.godaddy.vps4.vm.VmAction;
 import com.godaddy.vps4.vm.VmModule;
 import com.godaddy.vps4.vm.VmUser;
 import com.godaddy.vps4.vm.VmUserType;
+import com.godaddy.vps4.vm.DataCenterService;
 import com.godaddy.vps4.web.Vps4Exception;
 import com.godaddy.vps4.web.security.GDUser;
 import com.godaddy.vps4.web.vm.VmRebuildResource;
@@ -61,10 +69,12 @@ public class VmRebuildResourceTest {
     private static String goodPassword = "QsxEfv@12345";
     private static String badPassword = "password";
     private static String imageName = "hfs-centos-7";
+    private static String dedImageName = "centos7_64";
 
     @Inject Vps4UserService userService;
     @Inject DataSource dataSource;
     @Inject ActionService actionService;
+    @Inject CreditService creditService;
 
     private GDUser user;
     private VirtualMachine ourVm;
@@ -151,7 +161,7 @@ public class VmRebuildResourceTest {
     // === Shopper Tests ===
 
     private void verifySuccessfulVmRebuildByAdmin() {
-        VmAction vmAction = getVmRebuildResource().rebuild(ourVm.vmId, getRequestPayload(null, null));
+        VmAction vmAction = getVmRebuildResource().rebuild(ourVm.vmId, getRequestPayload(goodPassword, imageName));
 
         Assert.assertEquals(vmAction.type, ActionType.REBUILD_VM);
         Assert.assertEquals(vmAction.virtualMachineId, ourVm.vmId);
@@ -167,14 +177,14 @@ public class VmRebuildResourceTest {
     }
 
     private void verifySuccessfulDedicatedRebuildByAdmin() {
-        VmAction vmAction = getVmRebuildResource().rebuild(ourDedicated.vmId, getRequestPayload(null, null));
+        VmAction vmAction = getVmRebuildResource().rebuild(ourDedicated.vmId, getRequestPayload(goodPassword, dedImageName));
 
         Assert.assertEquals(vmAction.type, ActionType.REBUILD_VM);
         Assert.assertEquals(vmAction.virtualMachineId, ourDedicated.vmId);
     }
 
     private void verifySuccessfulDedicatedRebuild() {
-        VmAction vmAction = getVmRebuildResource().rebuild(ourDedicated.vmId, getRequestPayload(goodPassword, imageName));
+        VmAction vmAction = getVmRebuildResource().rebuild(ourDedicated.vmId, getRequestPayload(goodPassword, dedImageName));
 
         Assert.assertEquals(vmAction.type, ActionType.REBUILD_VM);
         Assert.assertEquals(vmAction.virtualMachineId, ourDedicated.vmId);
@@ -198,6 +208,15 @@ public class VmRebuildResourceTest {
     @Test
     public void verifyAdminRebuildDedicated() {
         user = admin;
+        Map<String, String> planFeatures = new HashMap<>();
+        planFeatures.put("tier", String.valueOf(140));
+        planFeatures.put("control_panel_type", "myh");
+        planFeatures.put("operating_system", "linux");
+        VirtualMachineCredit credit = new VirtualMachineCredit.Builder(mock(DataCenterService.class))
+                .withAccountGuid(ourDedicated.orionGuid.toString())
+                .withPlanFeatures(planFeatures)
+                .build();
+        when(creditService.getVirtualMachineCredit(any(UUID.class))).thenReturn(credit);
         verifySuccessfulDedicatedRebuildByAdmin();
     }
 
@@ -207,9 +226,28 @@ public class VmRebuildResourceTest {
         verifySuccessfulDedicatedRebuild();
     }
 
+    @Test(expected = Vps4Exception.class)
+    public void verifyFailVmRebuildWrongImage() {
+        user = us;
+        VmAction vmAction = getVmRebuildResource().rebuild(ourVm.vmId, getRequestPayload(goodPassword, "vps4-centos-7-cpanel-11"));
+        Assert.assertEquals(vmAction.type, ActionType.REBUILD_VM);
+        Assert.assertEquals(vmAction.virtualMachineId, ourVm.vmId);
+        verifyCommandRequestParams(ourVm);
+    }
+
     @Test
     public void weCanRebuildOurDedicated() {
         user = us;
+        Map<String, String> planFeatures = new HashMap<>();
+        planFeatures.put("tier", String.valueOf(140));
+        planFeatures.put("control_panel_type", "myh");
+        planFeatures.put("operating_system", "linux");
+        VirtualMachineCredit credit = new VirtualMachineCredit.Builder(mock(DataCenterService.class))
+                .withAccountGuid(ourDedicated.orionGuid.toString())
+                .withPlanFeatures(planFeatures)
+                .withShopperID(us.getShopperId())
+                .build();
+        when(creditService.getVirtualMachineCredit(any(UUID.class))).thenReturn(credit);
         verifySuccessfulDedicatedRebuild();
     }
 
