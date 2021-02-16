@@ -5,6 +5,7 @@ import static org.mockito.Mockito.when;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.Vector;
 
 import javax.servlet.http.HttpServletRequest;
 
@@ -125,6 +126,24 @@ public class SsoRequestAuthenticatorTest {
         Assert.assertEquals(false, user.isAdmin());
         Assert.assertEquals(true, user.isEmployee());
         Assert.assertEquals(Role.HS_AGENT, user.role());
+    }
+
+    @Test
+    public void testMultiSSOGroupsPrecedence() {
+        Vector<String> ssoGroups = new Vector<>();
+        ssoGroups.add("C3-Hosting Support");
+        ssoGroups.add("DCU-Phishstory");
+
+        SsoToken token = mockJomaxToken(Collections.list(Collections.enumeration(ssoGroups)));
+        when(tokenExtractor.extractToken(request)).thenReturn(token);
+
+        //expect suspend_auth to take precedence over hs_agent role
+        GDUser user = authenticator.authenticate(request);
+        Assert.assertEquals(null, user.getShopperId());
+        Assert.assertEquals(false, user.isShopper());
+        Assert.assertEquals(false, user.isAdmin());
+        Assert.assertEquals(true, user.isEmployee());
+        Assert.assertEquals(Role.SUSPEND_AUTH, user.role());
     }
 
     @Test

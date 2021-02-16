@@ -116,14 +116,13 @@ public class SsoRequestAuthenticator implements RequestAuthenticator<GDUser> {
             gdUser.role = Role.ADMIN;
         } else if (groups.contains(C3_HOSTING_SUPPORT_LEAD)) {
             gdUser.role = Role.HS_LEAD;
-        } else if (groups.contains(C3_HOSTING_SUPPORT)) {
-            gdUser.role = Role.HS_AGENT;
-        } else if (groups.contains(HOSTING_OPERATIONS)) {
-            gdUser.role = Role.SUSPEND_AUTH;
-        } else if (groups.contains(LEGAL) ||
+        } else if (groups.contains(HOSTING_OPERATIONS) ||
+                groups.contains(LEGAL) ||
                 groups.contains(DIGITAL_CRIMES_UNIT) ||
                 groups.contains(CHARGEBACK)) {
             gdUser.role = Role.SUSPEND_AUTH;
+        } else if (groups.contains(C3_HOSTING_SUPPORT)) {
+            gdUser.role = Role.HS_AGENT;
         } else {
             gdUser.role = Role.EMPLOYEE_OTHER;
         }
