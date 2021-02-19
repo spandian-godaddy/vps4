@@ -40,23 +40,23 @@ api_key = 'dfcc9ba3-47e1-44b3-ad2c-19d6d49ca457'
 db_creds = [
             {'ssh_host': 'vps4-db-n3.int.godaddy.com',
              'psql_user': 'vps4_owner',
-             'psql_pass': 'XdLa4(H$qoiH@Y@#"Cg'
+             'psql_pass': '[hidden]'
             },
             {'ssh_host': 'vps4-db-sg2.int.godaddy.com',
              'psql_user': 'vps4_owner',
-             'psql_pass': 'CpJs7{Z"qnH#)#@$Cg'
+             'psql_pass': '[hidden]'
             },
             {'ssh_host': 'vps4-db-a2.int.godaddy.com',
              'psql_user': 'vps4_owner2',
-             'psql_pass': 'h$CWcD?FZ7LS23A%'
+             'psql_pass': '[hidden]'
             },
             {'ssh_host': 'vps4-db-p3.int.stg-godaddy.com',
              'psql_user': 'vps4_owner',
-             'psql_pass': 'vps4_ownerdev'
+             'psql_pass': '[hidden]'
             },
             {'ssh_host': 'p3tlvps4db01.cloud.phx3.gdg',
             'psql_user': 'vps4_owner',
-            'psql_pass': 'vps4_ownerdev'
+            'psql_pass': '[hidden]'
             }]
 pgres_host = 'localhost'
 pgres_port = 5432
