@@ -84,8 +84,6 @@ pipeline {
                     }
                 }
 
-                /*
-                * Skipping P3 Deploy - Currently P3 Env is not used
                 stage ("Deploy to P3") {
                     steps {
                         load("/home/jenkins/vps4_latest_version.properties")
@@ -99,7 +97,6 @@ pipeline {
                         slackSend(color: '#00CD48', message: "vps4 *DEPLOY TO PROD_PHX3* was SUCCESSFUL. Job '${env.JOB_NAME} [${VPS4_VERSION}]' (${env.BUILD_URL})")
                     }
                 }
-                */
             }
         }
 
@@ -143,6 +140,20 @@ pipeline {
                 slackSend(color: '#00CD48', message: "Post Deploy *A2 SMOKE TEST* was SUCCESSFUL. Job '${env.JOB_NAME} [${VPS4_VERSION}]' (${env.BUILD_URL})")
             }
         }
+
+        /* Commented out until verified working
+        stage("Prod P3 Smoke Test") {
+            options {
+                timeout(time:45, unit:'MINUTES')
+            }
+            steps {
+                load("/home/jenkins/vps4_latest_version.properties")
+                echo "vps4 version: ${VPS4_VERSION}"
+                build job: 'prod_p3_phase_3_test', parameters: [string(name: 'VPS4_VERSION', value: VPS4_VERSION)]
+                slackSend(color: '#00CD48', message: "Post Deploy *P3 SMOKE TEST* was SUCCESSFUL. Job '${env.JOB_NAME} [${VPS4_VERSION}]' (${env.BUILD_URL})")
+            }
+        }
+        */
     }
     post {
         success {
