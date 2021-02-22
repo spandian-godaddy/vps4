@@ -28,6 +28,7 @@ public class SsoRequestAuthenticator implements RequestAuthenticator<GDUser> {
     private final String HOSTING_OPERATIONS = "Hosting Ops";
     private final String DIGITAL_CRIMES_UNIT = "DCU-Phishstory";
     private final String CHARGEBACK = "Chargeback User";
+    private final String DEV_PTGS = "Dev-PTGS";
 
     private final SsoTokenExtractor tokenExtractor;
     private Config config;
@@ -111,7 +112,8 @@ public class SsoRequestAuthenticator implements RequestAuthenticator<GDUser> {
         // you want to assign a role corresponding to the group with the most privileges.
         // For example: A hosting support supervisor may be part of both the hosting support teach leads group as
         // well as the hosting support agents group. But we would want to assign them to a role of HS_LEAD.
-        if (groups.contains(VPS4_TEAM)) {
+        if (groups.contains(VPS4_TEAM) ||
+              groups.contains(DEV_PTGS)) {
             gdUser.isAdmin = true;
             gdUser.role = Role.ADMIN;
         } else if (groups.contains(C3_HOSTING_SUPPORT_LEAD)) {
