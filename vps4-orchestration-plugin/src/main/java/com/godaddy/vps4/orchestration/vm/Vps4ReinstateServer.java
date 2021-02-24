@@ -39,9 +39,9 @@ public class Vps4ReinstateServer extends ActionCommand<Vps4ReinstateServer.Reque
     @Override
     protected Void executeWithAction(CommandContext context, Vps4ReinstateServer.Request request) {
         logger.info("Request: {}", request);
-        reinstateVm(context, request);
-        resumePanoptaMonitoring(context, request);
         updateCredit(request);
+        resumePanoptaMonitoring(context, request);
+        reinstateVm(context, request);
         return null;
     }
 
