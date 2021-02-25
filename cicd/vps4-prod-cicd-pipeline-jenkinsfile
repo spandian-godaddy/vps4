@@ -141,7 +141,6 @@ pipeline {
             }
         }
 
-        /* Commented out until verified working
         stage("Prod P3 Smoke Test") {
             options {
                 timeout(time:45, unit:'MINUTES')
@@ -153,7 +152,6 @@ pipeline {
                 slackSend(color: '#00CD48', message: "Post Deploy *P3 SMOKE TEST* was SUCCESSFUL. Job '${env.JOB_NAME} [${VPS4_VERSION}]' (${env.BUILD_URL})")
             }
         }
-        */
     }
     post {
         success {
