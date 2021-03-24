@@ -131,8 +131,8 @@ public class VmSupportUserResource {
             Action action = actionService.getAction(actionId);
             return new VmActionWithDetails(action, command, gdUser.isEmployee());
         } else {
-            logger.info("Support user {} not found in vm {}", username, vmId);
-            throw new NotFoundException("Support user not found");
+            logger.info("Support user {} not found in vm {}. Return successfully", username, vmId);
+            return null;
         }
     }
 

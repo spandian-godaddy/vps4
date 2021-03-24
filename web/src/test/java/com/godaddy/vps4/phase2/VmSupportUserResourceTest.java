@@ -146,7 +146,9 @@ public class VmSupportUserResourceTest {
         Mockito.verify(vmResource, Mockito.times(1)).getVm(Mockito.any(UUID.class));
     }
 
-    @Test(expected = NotFoundException.class)
+    // action still completes successfully if user is not found or already deleted
+    // for cases when scheduled deletion job runs after support user is already manually deleted
+    @Test
     public void testRemoveSupportUser404() {
         supportUsers.add(new VmUser("support_test", UUID.randomUUID(), true, VmUserType.SUPPORT));
 
@@ -173,7 +175,6 @@ public class VmSupportUserResourceTest {
     @Test(expected = NotFoundException.class)
     public void testChangePassword404() {
         supportUsers.add(new VmUser("support-test", UUID.randomUUID(), true, VmUserType.SUPPORT));
-
         getVmSupportUserResource().changeSupportUsersPassword(vm.vmId, "support-404");
     }
 }
