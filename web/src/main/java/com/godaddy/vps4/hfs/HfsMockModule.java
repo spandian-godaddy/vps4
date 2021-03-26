@@ -12,6 +12,9 @@ import java.util.Random;
 
 import javax.ws.rs.core.Response;
 
+import com.godaddy.hfs.cpanel.CPanelAction;
+import com.godaddy.hfs.cpanel.CPanelLicense;
+import com.godaddy.hfs.cpanel.CPanelService;
 import org.joda.time.DateTime;
 import org.mockito.Mockito;
 
@@ -40,9 +43,6 @@ import com.google.inject.AbstractModule;
 import com.google.inject.Provides;
 
 import gdg.hfs.request.CompleteResponse;
-import gdg.hfs.vhfs.cpanel.CPanelAction;
-import gdg.hfs.vhfs.cpanel.CPanelLicense;
-import gdg.hfs.vhfs.cpanel.CPanelService;
 import gdg.hfs.vhfs.ecomm.Account;
 import gdg.hfs.vhfs.ecomm.ECommDataCache;
 import gdg.hfs.vhfs.ecomm.ECommService;
@@ -353,7 +353,7 @@ public class HfsMockModule extends AbstractModule {
             }
 
             @Override
-            public CPanelAction requestAccess(long arg0, String arg1, String arg2) {
+            public CPanelAction requestAccess(long arg0, String arg1) {
                 return reqAccessRet;
             }
 

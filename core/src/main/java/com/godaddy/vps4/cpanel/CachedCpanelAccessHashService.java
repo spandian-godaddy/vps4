@@ -8,10 +8,10 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import com.godaddy.hfs.cpanel.CPanelService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import gdg.hfs.vhfs.cpanel.CPanelService;
 
 public class CachedCpanelAccessHashService implements CpanelAccessHashService {
 

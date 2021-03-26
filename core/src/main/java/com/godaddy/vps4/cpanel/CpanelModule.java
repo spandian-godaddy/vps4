@@ -5,11 +5,11 @@ import java.util.concurrent.Executors;
 
 import javax.cache.CacheManager;
 
+import com.godaddy.hfs.cpanel.CPanelService;
 import com.google.inject.AbstractModule;
 import com.google.inject.Provides;
 import com.google.inject.Scopes;
 
-import gdg.hfs.vhfs.cpanel.CPanelService;
 
 public class CpanelModule extends AbstractModule {
 

@@ -10,6 +10,8 @@ import static org.mockito.Mockito.verify;
 
 import java.util.function.Function;
 
+import com.godaddy.hfs.cpanel.CPanelAction;
+import com.godaddy.hfs.cpanel.CPanelService;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -19,8 +21,6 @@ import com.google.inject.Injector;
 
 import gdg.hfs.orchestration.CommandContext;
 import gdg.hfs.orchestration.GuiceCommandProvider;
-import gdg.hfs.vhfs.cpanel.CPanelAction;
-import gdg.hfs.vhfs.cpanel.CPanelService;
 
 public class RefreshCpanelLicenseTest {
     CPanelService cpanelService = mock(CPanelService.class);

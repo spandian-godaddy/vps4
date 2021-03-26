@@ -2,13 +2,13 @@ package com.godaddy.vps4.orchestration.hfs.cpanel;
 
 import javax.inject.Inject;
 
+import com.godaddy.hfs.cpanel.CPanelAction;
+import com.godaddy.hfs.cpanel.CPanelService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import gdg.hfs.orchestration.Command;
 import gdg.hfs.orchestration.CommandContext;
-import gdg.hfs.vhfs.cpanel.CPanelAction;
-import gdg.hfs.vhfs.cpanel.CPanelService;
 
 public class ConfigureCpanel implements Command<ConfigureCpanel.ConfigureCpanelRequest, Void> {
 

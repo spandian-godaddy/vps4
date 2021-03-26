@@ -260,18 +260,6 @@
 
         <dependency>
             <groupId>hfs</groupId>
-            <artifactId>vhfs-cpanel-common-lib</artifactId>
-            <version>1.1.0.34343</version>
-            <exclusions>
-                <exclusion>
-                    <groupId>*</groupId>
-                    <artifactId>*</artifactId>
-                </exclusion>
-            </exclusions>
-        </dependency>
-
-        <dependency>
-            <groupId>hfs</groupId>
             <artifactId>vhfs-ecomm-common-lib</artifactId>
             <version>1.1.0.31715</version>
             <exclusions>

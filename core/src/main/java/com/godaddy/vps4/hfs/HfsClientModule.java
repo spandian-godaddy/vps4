@@ -2,12 +2,12 @@ package com.godaddy.vps4.hfs;
 
 import javax.inject.Singleton;
 
+import com.godaddy.hfs.cpanel.CPanelService;
 import com.godaddy.hfs.dns.HfsDnsService;
 import com.godaddy.hfs.mailrelay.MailRelayService;
 import com.godaddy.hfs.vm.VmService;
 import com.google.inject.AbstractModule;
 
-import gdg.hfs.vhfs.cpanel.CPanelService;
 import gdg.hfs.vhfs.ecomm.ECommService;
 import gdg.hfs.vhfs.network.NetworkServiceV2;
 import gdg.hfs.vhfs.nodeping.NodePingService;

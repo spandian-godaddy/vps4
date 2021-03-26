@@ -2,13 +2,12 @@ package com.godaddy.vps4.cpanel;
 
 import java.time.Instant;
 
+import com.godaddy.hfs.cpanel.CPanelAction;
+import com.godaddy.hfs.cpanel.CPanelService;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import gdg.hfs.vhfs.cpanel.CPanelAction;
-import gdg.hfs.vhfs.cpanel.CPanelService;
 
 public class HfsCpanelAccessHashService implements CpanelAccessHashService {
 
@@ -38,7 +37,7 @@ public class HfsCpanelAccessHashService implements CpanelAccessHashService {
 
     private String makeCallOutToCPanelVertical(long vmId, String publicIp, Instant timeoutAt) throws Exception {
         logger.info("Sending access hash generation request to HFS for vm: {}", vmId);
-        CPanelAction hfsAction = this.cPanelService.requestAccess(vmId, publicIp, null);
+        CPanelAction hfsAction = this.cPanelService.requestAccess(vmId, publicIp);
 
         while (!hfsAction.status.equals(CPanelAction.Status.COMPLETE)
                 && !hfsAction.status.equals(CPanelAction.Status.FAILED)
