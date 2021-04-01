@@ -25,7 +25,7 @@ pipeline {
                     steps {
                         load("/home/jenkins/vps4_latest_version.properties")
                         echo "vps4 version: ${VPS4_VERSION}"
-                        build job: 'deploy_to_test', parameters: [string(name: 'VPS4_VERSION', value: VPS4_VERSION)]
+                        build job: 'deployment/deploy_to_test', parameters: [string(name: 'VPS4_VERSION', value: VPS4_VERSION)]
                         productStampZk("test", "vps4-web-${VPS4_VERSION}.noarch", "vps4-web")
                         productStampZk("test", "vps4-message-consumer-${VPS4_VERSION}.noarch", "vps4-message-consumer")
                         productStampZk("test", "vps4-orchestration-plugin-${VPS4_VERSION}.noarch", "hfs-engine")
@@ -37,7 +37,7 @@ pipeline {
                     steps {
                         load("/home/jenkins/vps4_latest_version.properties")
                         echo "vps4 version: ${VPS4_VERSION}"
-                        build job: 'deploy_to_stage', parameters: [string(name: 'VPS4_VERSION', value: VPS4_VERSION)]
+                        build job: 'deployment/deploy_to_stage', parameters: [string(name: 'VPS4_VERSION', value: VPS4_VERSION)]
                         productStampZk("stage", "vps4-web-${VPS4_VERSION}.noarch", "vps4-web")
                         productStampZk("stage", "vps4-message-consumer-${VPS4_VERSION}.noarch", "vps4-message-consumer")
                         productStampZk("stage", "vps4-orchestration-plugin-${VPS4_VERSION}.noarch", "hfs-engine")

@@ -33,7 +33,7 @@ pipeline {
                 load("/home/jenkins/vps4_latest_version.properties")
                 echo "vps4 version: ${VPS4_VERSION}"
                 echo "Deploying to AMS3"
-                build job: 'deploy_to_prod_ams3', parameters: [string(name: 'VPS4_VERSION', value: VPS4_VERSION)]
+                build job: 'deployment/deploy_to_prod_ams3', parameters: [string(name: 'VPS4_VERSION', value: VPS4_VERSION)]
                 productStampZk("prod_ams3", "vps4-web-${VPS4_VERSION}.noarch", "vps4-web")
                 productStampZk("prod_ams3", "vps4-message-consumer-${VPS4_VERSION}.noarch", "vps4-message-consumer")
                 productStampZk("prod_ams3", "vps4-orchestration-plugin-${VPS4_VERSION}.noarch", "hfs-engine")
@@ -61,7 +61,7 @@ pipeline {
                         load("/home/jenkins/vps4_latest_version.properties")
                         echo "vps4 version: ${VPS4_VERSION}"
                         echo "Deploying to SG2"
-                        build job: 'deploy_to_prod_sin2', parameters: [string(name: 'VPS4_VERSION', value: VPS4_VERSION)]
+                        build job: 'deployment/deploy_to_prod_sin2', parameters: [string(name: 'VPS4_VERSION', value: VPS4_VERSION)]
                         productStampZk("prod_sin2", "vps4-web-${VPS4_VERSION}.noarch", "vps4-web")
                         productStampZk("prod_sin2", "vps4-message-consumer-${VPS4_VERSION}.noarch", "vps4-message-consumer")
                         productStampZk("prod_sin2", "vps4-orchestration-plugin-${VPS4_VERSION}.noarch", "hfs-engine")
@@ -75,7 +75,7 @@ pipeline {
                         load("/home/jenkins/vps4_latest_version.properties")
                         echo "vps4 version: ${VPS4_VERSION}"
                         echo "Deploying to A2"
-                        build job: 'deploy_to_prod_a2', parameters: [string(name: 'VPS4_VERSION', value: VPS4_VERSION)]
+                        build job: 'deployment/deploy_to_prod_a2', parameters: [string(name: 'VPS4_VERSION', value: VPS4_VERSION)]
                         productStampZk("prod_a2", "vps4-web-${VPS4_VERSION}.noarch", "vps4-web")
                         productStampZk("prod_a2", "vps4-message-consumer-${VPS4_VERSION}.noarch", "vps4-message-consumer")
                         productStampZk("prod_a2", "vps4-orchestration-plugin-${VPS4_VERSION}.noarch", "hfs-engine")
@@ -89,7 +89,7 @@ pipeline {
                         load("/home/jenkins/vps4_latest_version.properties")
                         echo "vps4 version: ${VPS4_VERSION}"
                         echo "Deploying to P3"
-                        build job: 'deploy_to_prod_phx3', parameters: [string(name: 'VPS4_VERSION', value: VPS4_VERSION)]
+                        build job: 'deployment/deploy_to_prod_phx3', parameters: [string(name: 'VPS4_VERSION', value: VPS4_VERSION)]
                         productStampZk("prod_phx3", "vps4-web-${VPS4_VERSION}.noarch", "vps4-web")
                         productStampZk("prod_phx3", "vps4-message-consumer-${VPS4_VERSION}.noarch", "vps4-message-consumer")
                         productStampZk("prod_phx3", "vps4-orchestration-plugin-${VPS4_VERSION}.noarch", "hfs-engine")
