@@ -1,5 +1,7 @@
 package com.godaddy.vps4.web.vm;
 
+import com.godaddy.vps4.snapshot.SnapshotType;
+import com.godaddy.vps4.web.Vps4Exception;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -8,6 +10,9 @@ import static org.mockito.Matchers.anyLong;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.any;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.times;
 
 import java.time.Instant;
 import java.util.UUID;
@@ -104,6 +109,45 @@ public class VmSnapshotResourceTest {
         vmExtendedInfoMock.extended = extendedMock;
         when(vmService.getVmExtendedInfo(anyLong())).thenReturn(vmExtendedInfoMock);
         when(snapshotService.getVmIdWithInProgressSnapshotOnHv(anyString())).thenReturn(UUID.randomUUID());
+        Assert.assertFalse(resource.canSnapshotNow(testVm.vmId));
+    }
+
+    @Test
+    public void runsSnapshotResource() {
+        when(config.get("vps4.snapshot.currentlyPaused")).thenReturn("false");
+        VmSnapshotResource.VmSnapshotRequest vmSnapshotRequest = new VmSnapshotResource.VmSnapshotRequest();
+        vmSnapshotRequest.snapshotType= SnapshotType.ON_DEMAND;
+        vmSnapshotRequest.name = "testSnapshot";
+        resource.createSnapshot(testVm.vmId,vmSnapshotRequest);
+        SnapshotResource.SnapshotRequest snapshotRequest = new SnapshotResource.SnapshotRequest();
+        verify(snapshotResource, times(1))
+                .createSnapshot(any());
+    }
+
+    @Test
+    public void canSnapshotNowIfPauseSnapshotFlagIsFalse() {
+        when(config.get("vps4.snapshot.currentlyPaused")).thenReturn("false");
+        VmSnapshotResource.VmSnapshotRequest snapshotRequest = new VmSnapshotResource.VmSnapshotRequest();
+        snapshotRequest.snapshotType= SnapshotType.ON_DEMAND;
+        snapshotRequest.name = "testSnapshot";
+        Assert.assertTrue(resource.canSnapshotNow(testVm.vmId));
+    }
+
+    @Test(expected = Vps4Exception.class)
+    public void throwsExceptionIfPauseSnapshotFlagIsTrue() {
+        when(config.get("vps4.snapshot.currentlyPaused")).thenReturn("true");
+        VmSnapshotResource.VmSnapshotRequest snapshotRequest = new VmSnapshotResource.VmSnapshotRequest();
+        snapshotRequest.snapshotType= SnapshotType.ON_DEMAND;
+        snapshotRequest.name = "testSnapshot";
+        resource.createSnapshot(testVm.vmId,snapshotRequest);
+
+    }
+    @Test
+    public void cannotSnapshotNowIfPauseSnapshotFlagIsTrue() {
+        when(config.get("vps4.snapshot.currentlyPaused")).thenReturn("true");
+        VmSnapshotResource.VmSnapshotRequest snapshotRequest = new VmSnapshotResource.VmSnapshotRequest();
+        snapshotRequest.snapshotType= SnapshotType.ON_DEMAND;
+        snapshotRequest.name = "testSnapshot";
         Assert.assertFalse(resource.canSnapshotNow(testVm.vmId));
     }
 }

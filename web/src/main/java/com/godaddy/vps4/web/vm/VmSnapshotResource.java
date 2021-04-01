@@ -30,6 +30,7 @@ import com.godaddy.vps4.vm.VirtualMachine;
 import com.godaddy.vps4.vm.VirtualMachineService;
 import com.godaddy.vps4.web.PATCH;
 import com.godaddy.vps4.web.Vps4Api;
+import com.godaddy.vps4.web.Vps4Exception;
 import com.godaddy.vps4.web.security.GDUser;
 import com.godaddy.vps4.snapshot.SnapshotAction;
 import com.godaddy.vps4.web.snapshot.SnapshotResource;
@@ -97,6 +98,11 @@ public class VmSnapshotResource {
     @POST
     @Path("/{vmId}/snapshots")
     public SnapshotAction createSnapshot(@PathParam("vmId") UUID vmId, VmSnapshotRequest vmSnapshotRequest) {
+        //check if config is currently pausing snapshot actions
+        if (Boolean.parseBoolean(config.get("vps4.snapshot.currentlyPaused")))
+        {
+            throw new Vps4Exception("JOB_PAUSED","Currently pausing all snapshot jobs. Refusing to take snapshot.");
+        }
         SnapshotResource.SnapshotRequest request = new SnapshotResource.SnapshotRequest();
         request.vmId = vmId;
         request.name = vmSnapshotRequest.name;
@@ -144,6 +150,8 @@ public class VmSnapshotResource {
         int currentDCLoad = snapshotService.totalSnapshotsInProgress();
         int maxDCAllowed = Integer.parseInt(config.get("vps4.autobackup.concurrentLimit", "50"));
 
+        if(Boolean.parseBoolean(config.get("vps4.snapshot.currentlyPaused")))
+            return false;
         if (currentDCLoad >= maxDCAllowed)
             return false;
         if(Boolean.parseBoolean(config.get("vps4.autobackup.checkHvConcurrentLimit"))) {
