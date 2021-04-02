@@ -101,6 +101,7 @@ public class VmZombieResource {
     @Path("/{vmId}/revive")
     @ApiOperation(value = "Revive a zombie vm whose account has been canceled but the server has not yet been deleted",
             notes = "Revive a zombie vm whose account has been canceled but the server has not yet been deleted")
+    @RequiresRole(roles = {GDUser.Role.ADMIN, GDUser.Role.HS_LEAD, GDUser.Role.HS_AGENT})
     public VmAction reviveZombieVm(
             @ApiParam(value = "The ID of the server to revive", required = true) @PathParam("vmId") UUID vmId,
             @ApiParam(value = "The ID of the new credit to which the VM will be linked",

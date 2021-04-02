@@ -50,6 +50,7 @@ import com.godaddy.vps4.vm.VirtualMachine;
 import com.godaddy.vps4.vm.VirtualMachineService;
 import com.godaddy.vps4.web.Vps4Exception;
 import com.godaddy.vps4.web.security.GDUser;
+import com.godaddy.vps4.web.security.RequiresRole;
 
 import gdg.hfs.orchestration.CommandGroupSpec;
 import gdg.hfs.orchestration.CommandService;
@@ -366,5 +367,18 @@ public class VmZombieResourceTest {
         assertEquals(jobId, zombieCleanupJob.id);
         assertEquals(nextRun, zombieCleanupJob.nextRun);
         assertFalse(zombieCleanupJob.isPaused);
+    }
+
+    @Test
+    public void classHasExpectedRoles() {
+        GDUser.Role[] expectedRoles = new GDUser.Role[] {GDUser.Role.ADMIN};
+        Assert.assertArrayEquals(expectedRoles, VmZombieResource.class.getAnnotation(RequiresRole.class).roles());
+    }
+
+    @Test
+    public void zombieReviveHasExpectedRoles() throws NoSuchMethodException {
+        GDUser.Role[] expectedRoles = new GDUser.Role[] {GDUser.Role.ADMIN, GDUser.Role.HS_LEAD, GDUser.Role.HS_AGENT};
+        Assert.assertArrayEquals(expectedRoles, VmZombieResource.class.getMethod("reviveZombieVm", UUID.class, UUID.class)
+                                                                      .getAnnotation(RequiresRole.class).roles());
     }
 }
