@@ -21,6 +21,7 @@ public class AllocateIp implements Command<AllocateIp.Request, IpAddress> {
     public static class Request {
         public String sgid;
         public String zone;
+        public Long serverId;
     }
 
     final NetworkServiceV2 networkService;
@@ -35,10 +36,15 @@ public class AllocateIp implements Command<AllocateIp.Request, IpAddress> {
 
         logger.info("sending HFS request to allocate IP for hfsSgid: {}", request.sgid);
 
-        AddressAction hfsAction = context.execute("RequestFromHFS",
-                ctx -> networkService.acquireIp(request.sgid, request.zone),
-                AddressAction.class);
+        // HFS acquireIp API works differently based on platforms:
+        // server id can be null for openstack vms
+        // Openstack - allocates but doesn't bind or configure
+        // OVH - allocates and binds but doesn't configure
+        // Optimized Hosting - allocates and binds and configures
 
+        AddressAction hfsAction = context.execute("RequestFromHFS",
+                ctx -> networkService.acquireIp(request.sgid, request.zone, request.serverId),
+                AddressAction.class);
         context.execute(WaitForAddressAction.class, hfsAction);
 
         IpAddress ipAddress = networkService.getAddress(hfsAction.addressId);

@@ -47,7 +47,7 @@ public class AllocateIpTest {
         ip.address = "10.1.2.3";
         ip.status = IpAddress.Status.UNBOUND;
 
-        when(networkService.acquireIp(request.sgid, request.zone)).thenReturn(waitingHfsAction);
+        when(networkService.acquireIp(request.sgid, request.zone, request.serverId)).thenReturn(waitingHfsAction);
         when(networkService.getAddress(waitingHfsAction.addressId)).thenReturn(ip);
     }
 
@@ -55,7 +55,7 @@ public class AllocateIpTest {
     public void testExecuteSuccess() {
         IpAddress result = command.execute(context, request);
 
-        verify(networkService, times(1)).acquireIp(request.sgid, request.zone);
+        verify(networkService, times(1)).acquireIp(request.sgid, request.zone, request.serverId);
         verify(context, times(1)).execute(WaitForAddressAction.class, waitingHfsAction);
         verify(networkService, times(1)).getAddress(waitingHfsAction.addressId);
         assertEquals(result, ip);

@@ -3,6 +3,11 @@ package com.godaddy.vps4.web.network;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.anyLong;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Matchers.anyString;
+import static org.mockito.Matchers.eq;
+import static org.mockito.Mockito.times;
 
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
@@ -30,6 +35,9 @@ import com.godaddy.vps4.vm.ActionStatus;
 import com.godaddy.vps4.vm.ActionType;
 import com.godaddy.vps4.vm.VirtualMachine;
 import com.godaddy.vps4.vm.VirtualMachineService;
+import com.godaddy.vps4.vm.ServerType;
+import com.godaddy.vps4.vm.ServerSpec;
+import com.godaddy.vps4.vm.VmAction;
 import com.godaddy.vps4.web.Vps4Exception;
 import com.godaddy.vps4.web.security.GDUser;
 import com.godaddy.vps4.web.vm.VmResource;
@@ -61,8 +69,12 @@ public class NetworkResourceTest {
         CommandService commandService = mock(CommandService.class);
         Config config = mock(Config.class);
 
+        ServerType vmServerType = new ServerType();
+        vmServerType.platform = ServerType.Platform.OPTIMIZED_HOSTING;
+        ServerSpec vmSpec = new ServerSpec();
+        vmSpec.serverType = vmServerType;
         vm = new VirtualMachine(vmId, hfsVmId, UUID.randomUUID(),
-                1, null, "Unit Test Vm", null, null,
+                1, vmSpec, "Unit Test Vm", null, null,
                 Instant.now(), Instant.now().plus(24, ChronoUnit.HOURS), Instant.now().plus(24, ChronoUnit.HOURS),
                 null, null, 0, UUID.randomUUID());
 
@@ -82,28 +94,36 @@ public class NetworkResourceTest {
                 projectService, commandService, vmResource, config);
 
     }
-
-    @Test(expected=NotFoundException.class)
-    public void testAddIpVmNotTiedToHfs(){
-        VirtualMachine vm = new VirtualMachine(vmId, 0, UUID.randomUUID(),
-                1, null, "Unit Test Vm", null, null,
-                Instant.now(), Instant.now().plus(24, ChronoUnit.HOURS), Instant.now().plus(24, ChronoUnit.HOURS),
-                null, null, 0, UUID.randomUUID());
-        when(vmResource.getVm(vmId)).thenReturn(vm);
-        resource.addIpAddress(vmId);
-    }
-
     @Test
-    public void testReturnsAction(){
+    public void testReturnsActionForOH(){
         Action action = new Action(123, UUID.randomUUID(), ActionType.ADD_IP,
                 "{}", "NEW", "{}", ActionStatus.NEW, Instant.now(), null, "", UUID.randomUUID(), "tester");
-        when(actionService.createAction(vm.vmId, ActionType.ADD_IP, new JSONObject().toJSONString(), action.initiatedBy)).thenReturn(action.id);
-        when(actionService.getAction(123)).thenReturn(action);
+        when(actionService.getAction(anyLong())).thenReturn(action);
         when(virtualMachineService.getVirtualMachine(vmId)).thenReturn(vm);
 
-        Action returnAction = resource.addIpAddress(vmId);
+        resource.addIpAddress(vmId);
+        verify(actionService, times(1)).createAction(eq(vm.vmId), eq(ActionType.ADD_IP), anyString(), anyString());
 
-        Assert.assertEquals(action, returnAction);
+
+    }
+    @Test
+    public void testReturnsActionForOVHServer(){
+        ServerType vmServerType = new ServerType();
+        vmServerType.platform = ServerType.Platform.OVH;
+        ServerSpec vmSpec = new ServerSpec();
+        vmSpec.serverType = vmServerType;
+        vm = new VirtualMachine(vmId, 1111, UUID.randomUUID(),
+                1, vmSpec, "Unit Test Vm", null, null,
+                Instant.now(), Instant.now().plus(24, ChronoUnit.HOURS), Instant.now().plus(24, ChronoUnit.HOURS),
+                null, null, 0, UUID.randomUUID());
+
+        Action action = new Action(123, UUID.randomUUID(), ActionType.ADD_IP,
+        "{}", "NEW", "{}", ActionStatus.NEW, Instant.now(), null, "", UUID.randomUUID(), "tester");
+        when(actionService.getAction(anyLong())).thenReturn(action);
+        when(virtualMachineService.getVirtualMachine(vmId)).thenReturn(vm);
+        resource.addIpAddress(vmId);
+        verify(actionService, times(1)).createAction(eq(vm.vmId), eq(ActionType.ADD_IP), anyString(), anyString());
+
 
     }
 
@@ -119,6 +139,34 @@ public class NetworkResourceTest {
         when(networkService.getIpAddress(1111)).thenReturn(ip);
         Action returnAction = resource.destroyIpAddress(vmId, 1111);
         Assert.assertEquals(action, returnAction);
+    }
+
+    @Test(expected=Vps4Exception.class)
+    public void testAddIpOpenStackNotAllowed(){
+        ServerType serverType = new ServerType();
+        serverType.platform = ServerType.Platform.OPENSTACK;
+        ServerSpec spec = new ServerSpec();
+        spec.serverType = serverType;
+        VirtualMachine vm = new VirtualMachine(vmId, 1111, UUID.randomUUID(),
+                1, spec , "Unit Test Vm", null, null,
+                Instant.now(), Instant.now().plus(24, ChronoUnit.HOURS), Instant.now().plus(24, ChronoUnit.HOURS),
+                null, null, 0, UUID.randomUUID());
+        when(vmResource.getVm(vmId)).thenReturn(vm);
+        resource.addIpAddress(vmId);
+    }
+
+    @Test(expected=NotFoundException.class)
+    public void testAddIpVmNotTiedToHfs(){
+        ServerType serverType = new ServerType();
+        serverType.platform = ServerType.Platform.OPTIMIZED_HOSTING;
+        ServerSpec spec = new ServerSpec();
+        spec.serverType = serverType;
+        VirtualMachine vm = new VirtualMachine(vmId, 0, UUID.randomUUID(),
+                1, spec , "Unit Test Vm", null, null,
+                Instant.now(), Instant.now().plus(24, ChronoUnit.HOURS), Instant.now().plus(24, ChronoUnit.HOURS),
+                null, null, 0, UUID.randomUUID());
+        when(vmResource.getVm(vmId)).thenReturn(vm);
+        resource.addIpAddress(vmId);
     }
 
     @Test(expected=NotFoundException.class)

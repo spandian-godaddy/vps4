@@ -15,6 +15,7 @@ import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
 
+import com.godaddy.vps4.orchestration.ActionRequest;
 import org.json.simple.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -31,6 +32,8 @@ import com.godaddy.vps4.vm.ActionService;
 import com.godaddy.vps4.vm.ActionType;
 import com.godaddy.vps4.vm.VirtualMachine;
 import com.godaddy.vps4.vm.VirtualMachineService;
+import com.godaddy.vps4.vm.ServerType;
+import com.godaddy.vps4.vm.VmAction;
 import com.godaddy.vps4.web.Vps4Api;
 import com.godaddy.vps4.web.Vps4Exception;
 import com.godaddy.vps4.web.security.GDUser;
@@ -41,6 +44,8 @@ import com.google.inject.Inject;
 
 import gdg.hfs.orchestration.CommandService;
 import io.swagger.annotations.Api;
+
+import static com.godaddy.vps4.web.util.VmHelper.createActionAndExecute;
 
 @Vps4Api
 @Api(tags = { "vms" })
@@ -105,32 +110,19 @@ public class NetworkResource {
     @RequiresRole(roles = {GDUser.Role.ADMIN})
     @POST
     @Path("/{vmId}/ipAddresses")
-    public Action addIpAddress(@PathParam("vmId") UUID vmId) {
+    public VmAction addIpAddress(@PathParam("vmId") UUID vmId) {
         VirtualMachine virtualMachine = vmResource.getVm(vmId);
-
-        long actionId = actionService.createAction(virtualMachine.vmId, ActionType.ADD_IP,
-                new JSONObject().toJSONString(), user.getUsername());
-
-        Project project = projectService.getProject(virtualMachine.projectId);
-        String sgid = project.getVhfsSgid();
-
-        String zone = config.get("openstack.zone", null);
 
         logger.info("Adding IP to VM {}", virtualMachine.vmId);
         if(virtualMachine.hfsVmId == 0){
             throw new NotFoundException("VM was not associated with hfs vm");
         }
-
-        Vps4AddIpAddress.Request request = new Vps4AddIpAddress.Request();
-        request.setActionId(actionId);
-        request.virtualMachine = virtualMachine;
-        request.zone = zone;
-        request.sgid = sgid;
+        ActionRequest request = generateAddIpOrchestrationRequest(virtualMachine);
 
         logger.info("Adding Ip Address with request "+ request.toString());
-        Commands.execute(commandService, actionService, "Vps4AddIpAddress", request);
 
-        return actionService.getAction(actionId);
+        return createActionAndExecute(actionService, commandService, virtualMachine.vmId, ActionType.ADD_IP,
+                request, "Vps4AddIpAddress", user);
     }
 
     @DELETE
@@ -156,5 +148,26 @@ public class NetworkResource {
 
         return actionService.getAction(actionId);
     }
+    private ActionRequest generateAddIpOrchestrationRequest(VirtualMachine vm) {
+
+        Project project = projectService.getProject(vm.projectId);
+        String sgid = project.getVhfsSgid();
+
+        String zone = vm.spec.isVirtualMachine() ?
+                config.get("optimizedHosting.zone", null) :
+                config.get("ovh.zone", null);
+
+        if (vm.spec.serverType.platform == ServerType.Platform.OPTIMIZED_HOSTING
+        || vm.spec.serverType.platform == ServerType.Platform.OVH) {
+            Vps4AddIpAddress.Request request = new Vps4AddIpAddress.Request();
+            request.vmId = vm.vmId;
+            request.zone = zone;
+            request.sgid = sgid;
+            request.serverId = vm.hfsVmId;
+            return request;
+        }
+        else throw new Vps4Exception("ADD_IP_NOT_SUPPORTED_FOR_PLATFORM", String.format("Add Ip not supported " +
+                    "for platform %s", vm.spec.serverType.platform));
+        }
 
 }

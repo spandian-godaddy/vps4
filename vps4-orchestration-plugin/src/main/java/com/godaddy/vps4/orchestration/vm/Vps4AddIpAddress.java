@@ -5,6 +5,7 @@ import java.util.UUID;
 
 import javax.inject.Inject;
 
+import com.godaddy.vps4.orchestration.ActionRequest;
 import gdg.hfs.orchestration.CommandRetryStrategy;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -14,7 +15,6 @@ import com.godaddy.vps4.network.NetworkService;
 import com.godaddy.vps4.orchestration.ActionCommand;
 import com.godaddy.vps4.orchestration.hfs.mailrelay.SetMailRelayQuota;
 import com.godaddy.vps4.orchestration.hfs.network.AllocateIp;
-import com.godaddy.vps4.orchestration.hfs.network.BindIp;
 import com.godaddy.vps4.vm.ActionService;
 import com.godaddy.vps4.vm.VirtualMachine;
 import com.godaddy.vps4.vm.VirtualMachineService;
@@ -50,12 +50,15 @@ public class Vps4AddIpAddress extends ActionCommand<Vps4AddIpAddress.Request, Vo
 
     @Override
     protected Void executeWithAction(CommandContext context, Vps4AddIpAddress.Request request) throws Exception {
-        logger.info("Add an IP to vm {}", request.virtualMachine.vmId);
-        VirtualMachine virtualMachine = request.virtualMachine;
+        logger.info("Add an IP to vm {}", request.vmId);
+        VirtualMachine virtualMachine = virtualMachineService.getVirtualMachine(request.vmId);
         IpAddress ip = allocateIp(context, request);
         addIpToDatabase(context, ip, virtualMachine.vmId);
-        disableMailRelays(context, ip);
-        bindIp(context, ip, virtualMachine.hfsVmId);
+
+        if(virtualMachine.spec.isVirtualMachine()) {
+            disableMailRelays(context, ip);
+        }
+
         logger.info("Completed adding IP {} to vm {}", ip.address, virtualMachine.vmId);
 
         return null;
@@ -66,6 +69,7 @@ public class Vps4AddIpAddress extends ActionCommand<Vps4AddIpAddress.Request, Vo
         AllocateIp.Request allocateIpRequest = new AllocateIp.Request();
         allocateIpRequest.sgid = request.sgid;
         allocateIpRequest.zone = request.zone;
+        allocateIpRequest.serverId = request.serverId;
 
         logger.info("Allocating IP for sgid {} in zone {}" , allocateIpRequest.sgid, allocateIpRequest.zone);
         IpAddress ip = context.execute(AllocateIp.class, allocateIpRequest);
@@ -87,21 +91,21 @@ public class Vps4AddIpAddress extends ActionCommand<Vps4AddIpAddress.Request, Vo
         context.execute(SetMailRelayQuota.class, hfsRequest);
     }
 
-    private void bindIp(CommandContext context, IpAddress ip, long hfsVmId) {
-        BindIp.Request bindRequest = new BindIp.Request();
-        bindRequest.addressId = ip.addressId;
-        bindRequest.hfsVmId = hfsVmId;
-        logger.info("Binding IP {} for vmId {}", bindRequest.addressId, bindRequest.hfsVmId);
-        context.execute(BindIp.class, bindRequest);
+    public static class Request implements ActionRequest {
+        public UUID vmId;
+        public long actionId;
+        public String sgid;
+        public String zone;
+        public long serverId;
+
+        @Override
+        public long getActionId() {
+            return actionId;
+        }
+
+        @Override
+        public void setActionId(long actionId) {
+            this.actionId = actionId;
+        }
     }
-
-    public static class Request extends VmActionRequest{
-      public String sgid;
-      public String zone;
-
-      @Override
-      public String toString(){
-          return ("VirtualMachine: " + virtualMachine.toString() + ", sgid:"+sgid+", zone:"+zone);
-      }
-  }
 }

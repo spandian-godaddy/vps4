@@ -127,7 +127,7 @@
         <dependency>
             <groupId>hfs</groupId>
             <artifactId>vhfs-network-common-lib</artifactId>
-            <version>1.0.0.34117</version>
+            <version>1.0.0.36094</version>
             <exclusions>
                 <exclusion>
                     <groupId>*</groupId>

@@ -30,6 +30,7 @@ import com.godaddy.vps4.vm.AccountStatus;
 import com.godaddy.vps4.vm.Action;
 import com.godaddy.vps4.vm.VirtualMachine;
 import com.godaddy.vps4.vm.VmModule;
+import com.godaddy.vps4.vm.VmAction;
 import com.godaddy.vps4.web.Vps4Exception;
 import com.godaddy.vps4.web.network.NetworkResource;
 import com.godaddy.vps4.web.security.GDUser;
@@ -83,7 +84,7 @@ public class NetworkResourceUserTest {
     private VirtualMachine createTestVm() {
         UUID orionGuid = UUID.randomUUID();
         Vps4User vps4User = userService.getOrCreateUserForShopper(GDUserMock.DEFAULT_SHOPPER, "1");
-        VirtualMachine vm = SqlTestData.insertTestVm(orionGuid, vps4User.getId(), dataSource);
+        VirtualMachine vm = SqlTestData.insertTestVm(orionGuid, vps4User.getId(), dataSource, "hfs-centos7");
         return vm;
     }
 
@@ -100,7 +101,7 @@ public class NetworkResourceUserTest {
         VirtualMachine vm = createTestVm();
         NetworkResource resource = injector.getInstance(NetworkResource.class);
 
-        Action action = resource.addIpAddress(vm.vmId);
+        VmAction action = resource.addIpAddress(vm.vmId);
         Assert.assertNotNull(action);
     }
 
