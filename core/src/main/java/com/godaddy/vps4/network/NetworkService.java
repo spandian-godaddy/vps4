@@ -19,6 +19,8 @@ public interface NetworkService {
     
     IpAddress getVmPrimaryAddress(long hfsVmId);
 
+    List<IpAddress> getVmSecondaryAddress(long hfsVmId);
+
     void updateIpWithCheckId(long addressId, long checkId);
 
     void updateIpWithCheckId(String ipAddress, long checkId);

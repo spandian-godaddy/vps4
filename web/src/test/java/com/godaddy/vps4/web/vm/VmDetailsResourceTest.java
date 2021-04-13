@@ -11,10 +11,13 @@ import static org.mockito.Mockito.when;
 
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
 
+import com.godaddy.vps4.network.IpAddress;
+import com.godaddy.vps4.network.NetworkService;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -40,6 +43,8 @@ public class VmDetailsResourceTest {
     private SchedulerWebService schedulerWebService = mock(SchedulerWebService.class);
     private PanoptaDataService panoptaDataService = mock(PanoptaDataService.class);
     private VmZombieResource vmZombieResource = mock(VmZombieResource.class);
+    private NetworkService networkService = mock(NetworkService.class);
+
     private GDUser user = mock(GDUser.class);
 
     private UUID vmId = UUID.randomUUID();
@@ -50,7 +55,7 @@ public class VmDetailsResourceTest {
     private VmExtendedInfo vmExtendedInfoMock = new VmExtendedInfo();
 
     private VmDetailsResource vmDetailsResource = new VmDetailsResource(vmResource, creditService,
-            schedulerWebService, panoptaDataService, vmZombieResource, user);
+            schedulerWebService, panoptaDataService, vmZombieResource, user, networkService);
 
 
     @Before
@@ -233,5 +238,24 @@ public class VmDetailsResourceTest {
         when(vmResource.getVmExtendedInfoFromVmVertical(hfsVmId)).thenReturn(null);
         VirtualMachineWithDetails withDetails = vmDetailsResource.getVirtualMachineWithDetails(vmId);
         assertEquals(null, withDetails.hypervisorHostname);
+    }
+
+
+    @Test
+    public void testGetWithDetailsContainsAdditionalIps() {
+        List<IpAddress> additionalIps = new ArrayList<>();
+
+        IpAddress secondIp = new IpAddress();
+        secondIp.validUntil = Instant.MAX;
+        secondIp.ipAddressType = IpAddress.IpAddressType.SECONDARY;
+        additionalIps.add(secondIp);
+
+        when(networkService.getVmSecondaryAddress(hfsVmId)).thenReturn(additionalIps);
+
+        VirtualMachineWithDetails withDetails = vmDetailsResource.getVirtualMachineWithDetails(vmId);
+
+        assertNotNull(withDetails.additionalIps);
+        assertFalse(withDetails.additionalIps.isEmpty());
+        assertEquals(1, withDetails.additionalIps.size());
     }
 }

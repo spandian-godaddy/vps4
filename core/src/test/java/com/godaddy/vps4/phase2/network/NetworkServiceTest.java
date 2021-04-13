@@ -155,4 +155,31 @@ public class NetworkServiceTest {
         // Should fail to insert a duplicate active IP address
         networkService.createIpAddress(primaryId + 1, vmTwo.vmId, primaryAddress, IpAddress.IpAddressType.PRIMARY);
     }
+
+    @Test
+    public void testGetSecondaryIpsOnly() {
+        long primaryId = 125;
+        String primaryAddress = "192.168.1.1";
+        String ipAddress = "127.0.0.1";
+
+        networkService.createIpAddress(primaryId, vm.vmId, primaryAddress, IpAddress.IpAddressType.PRIMARY);
+        networkService.createIpAddress(126, vm.vmId, ipAddress, IpAddress.IpAddressType.SECONDARY);
+        List<IpAddress> ips = networkService.getVmSecondaryAddress(vm.hfsVmId);
+        assertEquals(1, ips.size());
+    }
+
+    @Test
+    public void testGetValidSecondaryIpsOnly() {
+        long secondaryIp = 125;
+        String invalidIpAddress = "192.168.1.1";
+        String ipAddress = "127.0.0.1";
+
+        networkService.createIpAddress(secondaryIp, vm.vmId, invalidIpAddress, IpAddress.IpAddressType.SECONDARY);
+        networkService.destroyIpAddress(secondaryIp);
+
+        networkService.createIpAddress(126, vm.vmId, ipAddress, IpAddress.IpAddressType.SECONDARY);
+        List<IpAddress> ips = networkService.getVmSecondaryAddress(vm.hfsVmId);
+        assertEquals(1, ips.size());
+    }
+
 }

@@ -61,6 +61,15 @@ public class JdbcNetworkService implements NetworkService {
                 Sql.nextOrNull(IpAddressMapper::mapIpAddress), hfsVmId, IpAddress.IpAddressType.PRIMARY.getId());
     }
 
+
+    @Override
+    public List<IpAddress> getVmSecondaryAddress(long hfsVmId) {
+        return Sql.with(dataSource).exec(
+                "SELECT * FROM ip_address ip JOIN virtual_machine vm on ip.vm_id = vm.vm_id WHERE vm.hfs_vm_id=?" +
+                        " AND ip.ip_address_type_id = ? and ip.valid_until > now_utc()",
+                Sql.listOf(IpAddressMapper::mapIpAddress), hfsVmId, IpAddress.IpAddressType.SECONDARY.getId());
+    }
+
     @Override
     public void updateIpWithCheckId(long addressId, long checkId) {
         Sql.with(dataSource).exec("UPDATE ip_address SET ping_check_id = ? WHERE ip_address_id = ?;", null, checkId, addressId);

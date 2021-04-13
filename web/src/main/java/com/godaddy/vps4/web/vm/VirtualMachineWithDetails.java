@@ -3,6 +3,7 @@ package com.godaddy.vps4.web.vm;
 import java.util.List;
 
 import com.godaddy.hfs.vm.VmExtendedInfo;
+import com.godaddy.vps4.network.IpAddress;
 import com.godaddy.vps4.panopta.jdbc.PanoptaServerDetails;
 import com.godaddy.vps4.vm.DataCenter;
 import com.godaddy.vps4.vm.VirtualMachine;
@@ -16,11 +17,12 @@ public class VirtualMachineWithDetails extends VirtualMachine {
     public PanoptaServerDetails monitoringAgent;
     public List<ScheduledZombieCleanupJob> scheduledZombieCleanupJobs;
     public String hypervisorHostname;
+    public List<IpAddress> additionalIps;
 
     public VirtualMachineWithDetails(VirtualMachine virtualMachine, VirtualMachineDetails virtualMachineDetails,
             DataCenter dataCenter, String shopperId, AutomaticSnapshotSchedule autoSnapshots,
             PanoptaServerDetails panoptaDetails, List<ScheduledZombieCleanupJob> scheduledZombieCleanupJobs,
-            String hypervisorHostname) {
+            String hypervisorHostname, List<IpAddress> additionalIps) {
         super(virtualMachine);
         this.virtualMachineDetails = virtualMachineDetails;
         this.dataCenter = dataCenter;
@@ -29,5 +31,6 @@ public class VirtualMachineWithDetails extends VirtualMachine {
         this.monitoringAgent = panoptaDetails;
         this.scheduledZombieCleanupJobs = scheduledZombieCleanupJobs;
         this.hypervisorHostname = hypervisorHostname;
+        this.additionalIps = additionalIps;
     }
 }

@@ -6,6 +6,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 import javax.inject.Inject;
 import javax.ws.rs.Consumes;
@@ -19,6 +20,8 @@ import com.godaddy.hfs.vm.Vm;
 import com.godaddy.hfs.vm.VmExtendedInfo;
 import com.godaddy.vps4.credit.CreditService;
 import com.godaddy.vps4.credit.VirtualMachineCredit;
+import com.godaddy.vps4.network.IpAddress;
+import com.godaddy.vps4.network.NetworkService;
 import com.godaddy.vps4.panopta.PanoptaDataService;
 import com.godaddy.vps4.panopta.jdbc.PanoptaServerDetails;
 import com.godaddy.vps4.scheduler.api.core.SchedulerJobDetail;
@@ -41,18 +44,20 @@ public class VmDetailsResource {
     private final SchedulerWebService schedulerWebService;
     private final PanoptaDataService panoptaDataService;
     private final VmZombieResource vmZombieResource;
+    private final NetworkService networkService;
     private final GDUser user;
 
     @Inject
     public VmDetailsResource(VmResource vmResource, CreditService creditService,
             SchedulerWebService schedulerWebService, PanoptaDataService panoptaDataService,
-            VmZombieResource vmZombieResource, GDUser user) {
+            VmZombieResource vmZombieResource, GDUser user, NetworkService networkService) {
         this.vmResource = vmResource;
         this.creditService = creditService;
         this.schedulerWebService = schedulerWebService;
         this.panoptaDataService = panoptaDataService;
         this.vmZombieResource = vmZombieResource;
         this.user = user;
+        this.networkService = networkService;
     }
 
     @GET
@@ -109,9 +114,11 @@ public class VmDetailsResource {
             scheduledZombieCleanupJobs.add(scheduledZombieCleanupJob);
         });
 
+        List<IpAddress> additionalIps = networkService.getVmSecondaryAddress(virtualMachine.hfsVmId);
+
         return new VirtualMachineWithDetails(virtualMachine, new VirtualMachineDetails(vm), credit.getDataCenter(),
                 credit.getShopperId(), automaticSnapshotSchedule, panoptaDetails, scheduledZombieCleanupJobs,
-                hypervisorHostname);
+                hypervisorHostname, additionalIps);
     }
 
     private boolean isZombie(VirtualMachine vm) {
