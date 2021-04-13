@@ -95,7 +95,7 @@ public class NetworkResourceTest {
 
     }
     @Test
-    public void testReturnsActionForOH(){
+    public void testCreatesAddIpActionForOH(){
         Action action = new Action(123, UUID.randomUUID(), ActionType.ADD_IP,
                 "{}", "NEW", "{}", ActionStatus.NEW, Instant.now(), null, "", UUID.randomUUID(), "tester");
         when(actionService.getAction(anyLong())).thenReturn(action);
@@ -107,7 +107,7 @@ public class NetworkResourceTest {
 
     }
     @Test
-    public void testReturnsActionForOVHServer(){
+    public void testCreatesAddIPActionForOVHServer(){
         ServerType vmServerType = new ServerType();
         vmServerType.platform = ServerType.Platform.OVH;
         ServerSpec vmSpec = new ServerSpec();
@@ -124,11 +124,10 @@ public class NetworkResourceTest {
         resource.addIpAddress(vmId);
         verify(actionService, times(1)).createAction(eq(vm.vmId), eq(ActionType.ADD_IP), anyString(), anyString());
 
-
     }
 
     @Test
-    public void testDestroyIp(){
+    public void testDestroyIpOH(){
         Action action = new Action(123, UUID.randomUUID(), ActionType.DESTROY_IP,
                 "{}", "NEW", "{}", ActionStatus.NEW, Instant.now(), null, "", UUID.randomUUID(), "tester");
         when(actionService.createAction(vm.vmId, ActionType.DESTROY_IP, new JSONObject().toJSONString(), action.initiatedBy)).thenReturn(action.id);
@@ -137,8 +136,33 @@ public class NetworkResourceTest {
         IpAddress ip = new IpAddress(1111, vmId, "1.2.3.4", IpAddressType.SECONDARY,
                 null, Instant.now(), Instant.now().plus(24, ChronoUnit.HOURS));
         when(networkService.getIpAddress(1111)).thenReturn(ip);
-        Action returnAction = resource.destroyIpAddress(vmId, 1111);
-        Assert.assertEquals(action, returnAction);
+        when(virtualMachineService.getVirtualMachine(vmId)).thenReturn(vm);
+
+        resource.destroyIpAddress(vmId,1111);
+        verify(actionService, times(1)).createAction(eq(vm.vmId), eq(ActionType.DESTROY_IP), anyString(), anyString());
+    }
+
+    @Test
+    public void testDestroysIpForOVHServer(){
+        ServerType vmServerType = new ServerType();
+        vmServerType.platform = ServerType.Platform.OVH;
+        ServerSpec vmSpec = new ServerSpec();
+        vmSpec.serverType = vmServerType;
+        vm = new VirtualMachine(vmId, 1111, UUID.randomUUID(),
+                1, vmSpec, "Unit Test Vm", null, null,
+                Instant.now(), Instant.now().plus(24, ChronoUnit.HOURS), Instant.now().plus(24, ChronoUnit.HOURS),
+                null, null, 0, UUID.randomUUID());
+        Action action = new Action(123, UUID.randomUUID(), ActionType.DESTROY_IP,
+                "{}", "NEW", "{}", ActionStatus.NEW, Instant.now(), null, "", UUID.randomUUID(), "tester");
+        when(actionService.createAction(vm.vmId, ActionType.DESTROY_IP, new JSONObject().toJSONString(), action.initiatedBy)).thenReturn(action.id);
+        when(actionService.getAction(action.id)).thenReturn(action);
+
+        IpAddress ip = new IpAddress(1111, vmId, "1.2.3.4", IpAddressType.SECONDARY,
+                null, Instant.now(), Instant.now().plus(24, ChronoUnit.HOURS));
+        when(networkService.getIpAddress(1111)).thenReturn(ip);
+        when(virtualMachineService.getVirtualMachine(vmId)).thenReturn(vm);
+        resource.destroyIpAddress(vmId, 1111);
+        verify(actionService, times(1)).createAction(eq(vm.vmId), eq(ActionType.DESTROY_IP), anyString(), anyString());
     }
 
     @Test(expected=Vps4Exception.class)

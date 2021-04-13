@@ -16,7 +16,6 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
 
 import com.godaddy.vps4.orchestration.ActionRequest;
-import org.json.simple.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -27,7 +26,6 @@ import com.godaddy.vps4.orchestration.vm.Vps4AddIpAddress;
 import com.godaddy.vps4.orchestration.vm.Vps4DestroyIpAddressAction;
 import com.godaddy.vps4.project.Project;
 import com.godaddy.vps4.project.ProjectService;
-import com.godaddy.vps4.vm.Action;
 import com.godaddy.vps4.vm.ActionService;
 import com.godaddy.vps4.vm.ActionType;
 import com.godaddy.vps4.vm.VirtualMachine;
@@ -38,7 +36,6 @@ import com.godaddy.vps4.web.Vps4Api;
 import com.godaddy.vps4.web.Vps4Exception;
 import com.godaddy.vps4.web.security.GDUser;
 import com.godaddy.vps4.web.security.RequiresRole;
-import com.godaddy.vps4.web.util.Commands;
 import com.godaddy.vps4.web.vm.VmResource;
 import com.google.inject.Inject;
 
@@ -125,9 +122,10 @@ public class NetworkResource {
                 request, "Vps4AddIpAddress", user);
     }
 
+    @RequiresRole(roles = {GDUser.Role.ADMIN})
     @DELETE
     @Path("/{vmId}/ipAddresses/{ipAddressId}")
-    public Action destroyIpAddress(@PathParam("vmId") UUID vmId, @PathParam("ipAddressId") long ipAddressId) {
+    public VmAction destroyIpAddress(@PathParam("vmId") UUID vmId, @PathParam("ipAddressId") long ipAddressId) {
         VirtualMachine virtualMachine = vmResource.getVm(vmId);
 
         IpAddress ipAddress = getIpAddressInternal(vmId, ipAddressId);
@@ -135,19 +133,19 @@ public class NetworkResource {
         if(ipAddress.ipAddressType.equals(IpAddress.IpAddressType.PRIMARY)){
             throw new Vps4Exception("CANNOT_DESTROY_PRIMARY_IP","Cannot destroy a VM's Primary IP");
         }
+        ActionRequest request = generateDestroyIpOrchestrationRequest(virtualMachine, ipAddressId);
 
-        long actionId = actionService.createAction(virtualMachine.vmId, ActionType.DESTROY_IP,
-                new JSONObject().toJSONString(), user.getUsername());
+        return createActionAndExecute(actionService, commandService, virtualMachine.vmId, ActionType.DESTROY_IP,
+                request, "Vps4DestroyIpAddressAction", user);
+    }
 
+    private ActionRequest generateDestroyIpOrchestrationRequest(VirtualMachine vm, long ipAddressId ) {
         Vps4DestroyIpAddressAction.Request request = new Vps4DestroyIpAddressAction.Request();
         request.ipAddressId = ipAddressId;
-        request.virtualMachine = virtualMachine;
-        request.setActionId(actionId);
-
-        Commands.execute(commandService, actionService, "Vps4DestroyIpAddressAction", request);
-
-        return actionService.getAction(actionId);
+        request.vmId = vm.vmId;
+        return request;
     }
+
     private ActionRequest generateAddIpOrchestrationRequest(VirtualMachine vm) {
 
         Project project = projectService.getProject(vm.projectId);

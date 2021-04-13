@@ -3,6 +3,7 @@ package com.godaddy.vps4.orchestration.vm;
 
 import javax.inject.Inject;
 
+import com.godaddy.vps4.orchestration.ActionRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -16,6 +17,8 @@ import com.godaddy.vps4.vm.VirtualMachineService;
 import gdg.hfs.orchestration.CommandContext;
 import gdg.hfs.orchestration.CommandMetadata;
 import gdg.hfs.orchestration.CommandRetryStrategy;
+
+import java.util.UUID;
 
 @CommandMetadata(
         name="Vps4DestroyIpAddressAction",
@@ -51,13 +54,25 @@ public class Vps4DestroyIpAddressAction extends ActionCommand<Vps4DestroyIpAddre
                 return null;
             }, Void.class);
 
-        logger.info("Completed removing IP from vm {}", request.virtualMachine.vmId);
+        logger.info("Completed removing IP from vm {}", request.vmId);
 
         return null;
     }
 
-    public static class Request extends VmActionRequest{
+    public static class Request implements ActionRequest {
+        public UUID vmId;
         public long ipAddressId;
+        public long actionId;
+        @Override
+        public long getActionId() {
+            return actionId;
+        }
+
+        @Override
+        public void setActionId(long actionId) {
+            this.actionId = actionId;
+        }
+
     }
 
 }

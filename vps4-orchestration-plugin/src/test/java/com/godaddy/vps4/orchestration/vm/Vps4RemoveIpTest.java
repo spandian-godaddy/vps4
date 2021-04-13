@@ -21,11 +21,27 @@ public class Vps4RemoveIpTest {
     Vps4RemoveIp command = new Vps4RemoveIp();
 
     @Test
-    public void testExecute(){
-        IpAddress ipAddress = mock(IpAddress.class);
+    public void testExecuteDestroyPrimaryIp(){
+        IpAddress ipAddress = new IpAddress();
+        ipAddress.ipAddress = "1.2.3.4";
+        ipAddress.ipAddressId = 3425;
+        ipAddress.ipAddressType =  IpAddress.IpAddressType.PRIMARY;
+
         command.execute(context, ipAddress);
-        verify(context, times(1)).execute(eq(UnbindIp.class), any(UnbindIp.Request.class));
         verify(context, times(1)).execute(eq(ReleaseIp.class), eq(ipAddress.ipAddressId));
+        verify(context, times(1)).execute(eq(UnbindIp.class), any(UnbindIp.Request.class));
+        verify(context, never()).execute(eq(SetMailRelayQuota.class), any());
+    }
+    @Test
+    public void testExecuteDestroySecondaryIp(){
+        IpAddress ipAddress = new IpAddress();
+        ipAddress.ipAddress = "1.2.3.4";
+        ipAddress.ipAddressId = 3425;
+        ipAddress.ipAddressType =  IpAddress.IpAddressType.SECONDARY;
+
+        command.execute(context, ipAddress);
+        verify(context, times(1)).execute(eq(ReleaseIp.class), eq(ipAddress.ipAddressId));
+        verify(context, never()).execute(eq(UnbindIp.class), any(UnbindIp.Request.class));
         verify(context, never()).execute(eq(SetMailRelayQuota.class), any());
     }
 }

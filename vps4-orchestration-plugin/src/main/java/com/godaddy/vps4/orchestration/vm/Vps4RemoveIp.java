@@ -18,11 +18,13 @@ public class Vps4RemoveIp implements Command<IpAddress, Void> {
     public Void execute(CommandContext context, IpAddress address) {
         logger.info("Deleting IP Adddress with addressId {}", address.ipAddressId);
 
-        UnbindIp.Request unbindIpRequest = new UnbindIp.Request();
-        unbindIpRequest.addressId = address.ipAddressId;
-        unbindIpRequest.forceIfVmInaccessible = true;
-
-        context.execute(UnbindIp.class, unbindIpRequest);
+        // secondary/additional ips do not need to be unbound
+        if(address.ipAddressType.equals(IpAddress.IpAddressType.PRIMARY)) {
+            UnbindIp.Request unbindIpRequest = new UnbindIp.Request();
+            unbindIpRequest.addressId = address.ipAddressId;
+            unbindIpRequest.forceIfVmInaccessible = true;
+            context.execute(UnbindIp.class, unbindIpRequest);
+        }
         context.execute(ReleaseIp.class, address.ipAddressId);
 
         return null;
