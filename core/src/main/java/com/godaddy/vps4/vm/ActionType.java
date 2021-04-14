@@ -50,7 +50,8 @@ public enum ActionType {
     ADD_MONITORING(41),
     RESET_BACKUP_STORAGE_CREDS(42), // no longer used, but kept for historical purposes
     REQUEST_CONSOLE(43),
-    SYNC_STATUS(44);
+    SYNC_STATUS(44),
+    IMPORT_VM(45);
 
     private final int typeId;
 

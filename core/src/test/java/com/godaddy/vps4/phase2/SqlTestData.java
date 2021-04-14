@@ -71,7 +71,7 @@ public class SqlTestData {
         String ipAddress =
                 random.nextInt(255) + "." + random.nextInt(255) + "." + random.nextInt(255) + "." + random.nextInt(255);
         Sql.with(dataSource)
-                .exec("INSERT INTO ip_address (ip_address_id, ip_address, ip_address_type_id, vm_id) VALUES (?, ?, 1," +
+                .exec("INSERT INTO ip_address (ip_address_id, ip_address, ip_address_type_id, vm_id) VALUES (?, ?::inet, 1," +
                                 " ?)",
                         null,
                         ipAddressId, ipAddress, virtualMachine.vmId);
@@ -106,6 +106,7 @@ public class SqlTestData {
         Sql.with(dataSource).exec("DELETE FROM snapshot WHERE vm_id = ?", null, vmId);
         Sql.with(dataSource).exec("DELETE FROM scheduled_job WHERE vm_id = ?", null, vmId);
         Sql.with(dataSource).exec("DELETE FROM monitoring_pf WHERE vm_id = ?", null, vmId);
+        Sql.with(dataSource).exec("DELETE FROM imported_vm WHERE vm_id = ?", null, vmId);
         Sql.with(dataSource).exec("DELETE FROM virtual_machine WHERE vm_id = ?", null, vmId);
         Sql.with(dataSource).exec("DELETE FROM user_project_privilege WHERE project_id = ?", null, vm.projectId);
         Sql.with(dataSource).exec("DELETE FROM project WHERE project_id = ?", null, vm.projectId);

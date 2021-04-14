@@ -22,8 +22,8 @@ public class JdbcNetworkService implements NetworkService {
 
     @Override
     public void createIpAddress(long ipAddressId, UUID vmId, String ipAddress, IpAddressType ipAddressType) {
-        Sql.with(dataSource).exec("SELECT * FROM ip_address_create(?,?,?,?)", null,
-                ipAddressId, vmId, ipAddress, ipAddressType.getId());
+        Sql.with(dataSource).exec("INSERT INTO ip_address (ip_address_id, ip_address, vm_id, ip_address_type_id) VALUES (?, ?::inet, ?, ?);", null,
+                ipAddressId, ipAddress, vmId, ipAddressType.getId());
 
     }
 

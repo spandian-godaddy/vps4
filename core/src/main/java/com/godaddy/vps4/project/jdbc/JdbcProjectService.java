@@ -113,4 +113,13 @@ public class JdbcProjectService implements ProjectService {
 
         return getProject(newProjectId);
     }
+
+    @Override
+    public Project createProjectAndPrivilegeWithSgid(String name, long userId, String sgid) {
+        logger.info("creating project: '{}' for user {} with sgid {}", name, userId, sgid);
+        long newProjectId = Sql.with(dataSource).exec("INSERT INTO project (project_name, vhfs_sgid) VALUES (?, ?) RETURNING project_id",
+                                                      Sql.nextOrNull(rs -> rs.getLong(1)), name, sgid);
+        Sql.with(dataSource).exec("INSERT INTO user_project_privilege (vps4_user_id, project_id, privilege_id) VALUES (?, ?, 1)", null, userId, newProjectId);
+        return getProject(newProjectId);
+    }
 }

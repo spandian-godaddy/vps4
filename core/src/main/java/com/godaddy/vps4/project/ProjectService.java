@@ -10,6 +10,8 @@ public interface ProjectService {
 
     Project createProject(String name, long userId, String sgidPrefix);
 
+    Project createProjectAndPrivilegeWithSgid(String name, long userId, String sgid);
+
     Project deleteProject(long projectId);
 
 }

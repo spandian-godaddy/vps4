@@ -3,6 +3,7 @@ package com.godaddy.vps4.phase2;
 import static org.mockito.Mockito.mock;
 
 import java.util.List;
+import java.util.Random;
 import java.util.UUID;
 
 import javax.inject.Inject;
@@ -91,7 +92,8 @@ public class NetworkResourceUserTest {
     private IpAddress createSecondaryIp(UUID vmId) {
         double rando = Math.random() * 350;
         long ipAddressId = (long) rando;
-        String ipAddress = "1.2.3."+(int) rando;
+        Random random = new Random();
+        String ipAddress = "192.168.1."+random.nextInt(256);
         IpAddress ip = SqlTestData.insertTestIp(ipAddressId, vmId, ipAddress, IpAddressType.SECONDARY, dataSource);
         return ip;
     }

@@ -56,8 +56,8 @@ public class CpanelAddonDomainsTest {
     public void setupTest(){
         when(config.get("vps4.callable.timeout", "10000")).thenReturn("10");
 
-        UUID ipId = UUID.randomUUID();
-        IpAddress ip = new IpAddress(1, ipId, "123.0.0.1", IpAddressType.PRIMARY, null, null, null);
+        UUID vmId = UUID.randomUUID();
+        IpAddress ip = new IpAddress(1, 1, vmId, "123.0.0.1", IpAddressType.PRIMARY, null, null, null);
         when(networkService.getVmPrimaryAddress(hfsVmId)).thenReturn(ip);
 
         when(cpanelAccessHashService.getAccessHash(eq(hfsVmId), eq("123.0.0.1"), any())).thenReturn("randomaccesshash");

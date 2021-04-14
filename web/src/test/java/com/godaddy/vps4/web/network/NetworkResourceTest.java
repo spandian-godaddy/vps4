@@ -133,8 +133,14 @@ public class NetworkResourceTest {
         when(actionService.createAction(vm.vmId, ActionType.DESTROY_IP, new JSONObject().toJSONString(), action.initiatedBy)).thenReturn(action.id);
         when(actionService.getAction(action.id)).thenReturn(action);
 
-        IpAddress ip = new IpAddress(1111, vmId, "1.2.3.4", IpAddressType.SECONDARY,
-                null, Instant.now(), Instant.now().plus(24, ChronoUnit.HOURS));
+        IpAddress ip = new IpAddress(1111,
+                                     1111,
+                                     vmId,
+                                     "1.2.3.4",
+                                     IpAddressType.SECONDARY,
+                                     null,
+                                     Instant.now(),
+                                     Instant.now().plus(24, ChronoUnit.HOURS));
         when(networkService.getIpAddress(1111)).thenReturn(ip);
         when(virtualMachineService.getVirtualMachine(vmId)).thenReturn(vm);
 
@@ -157,7 +163,7 @@ public class NetworkResourceTest {
         when(actionService.createAction(vm.vmId, ActionType.DESTROY_IP, new JSONObject().toJSONString(), action.initiatedBy)).thenReturn(action.id);
         when(actionService.getAction(action.id)).thenReturn(action);
 
-        IpAddress ip = new IpAddress(1111, vmId, "1.2.3.4", IpAddressType.SECONDARY,
+        IpAddress ip = new IpAddress(111, 111, vmId, "1.2.3.4", IpAddressType.SECONDARY,
                 null, Instant.now(), Instant.now().plus(24, ChronoUnit.HOURS));
         when(networkService.getIpAddress(1111)).thenReturn(ip);
         when(virtualMachineService.getVirtualMachine(vmId)).thenReturn(vm);
@@ -201,7 +207,7 @@ public class NetworkResourceTest {
 
     @Test(expected=NotFoundException.class)
     public void testDestroyIpBelongsToDifferentVm(){
-        IpAddress ip = new IpAddress(1111, UUID.randomUUID(), "1.2.3.4", IpAddressType.SECONDARY,
+        IpAddress ip = new IpAddress(1111,1111, UUID.randomUUID(), "1.2.3.4", IpAddressType.SECONDARY,
                 null, Instant.now(), Instant.now().plus(24, ChronoUnit.HOURS));
 
         when(networkService.getIpAddress(1111)).thenReturn(ip);
@@ -210,7 +216,7 @@ public class NetworkResourceTest {
 
     @Test(expected=NotFoundException.class)
     public void testDestroyIpAlreadyRemoved(){
-        IpAddress ip = new IpAddress(1111, vmId, "1.2.3.4", IpAddressType.SECONDARY,
+        IpAddress ip = new IpAddress(1111, 1111, vmId, "1.2.3.4", IpAddressType.SECONDARY,
                 null, Instant.now(), Instant.now().minus(24, ChronoUnit.HOURS));
 
         when(networkService.getIpAddress(1111)).thenReturn(ip);
@@ -219,7 +225,7 @@ public class NetworkResourceTest {
 
     @Test(expected=Vps4Exception.class)
     public void testDeletePrimaryIp(){
-        IpAddress ip = new IpAddress(1111, vmId, "1.2.3.4", IpAddressType.PRIMARY, null, Instant.now(),
+        IpAddress ip = new IpAddress(1111, 1111, vmId, "1.2.3.4", IpAddressType.PRIMARY, null, Instant.now(),
                 Instant.now().plus(24, ChronoUnit.HOURS));
 
         when(networkService.getIpAddress(1111)).thenReturn(ip);
@@ -228,11 +234,11 @@ public class NetworkResourceTest {
 
     @Test
     public void testGetIpAddresses(){
-        IpAddress primaryIp = new IpAddress(1111, vmId, "1.2.3.4", IpAddressType.PRIMARY,
+        IpAddress primaryIp = new IpAddress(1111, 1111, vmId, "1.2.3.4", IpAddressType.PRIMARY,
                 null, Instant.now(), Instant.now().plus(24, ChronoUnit.HOURS));
-        IpAddress secondaryIp = new IpAddress(1111, vmId, "1.2.3.4", IpAddressType.SECONDARY,
+        IpAddress secondaryIp = new IpAddress(1111, 1111, vmId, "1.2.3.4", IpAddressType.SECONDARY,
                 null, Instant.now(), Instant.now().plus(24, ChronoUnit.HOURS));
-        IpAddress removedIp = new IpAddress(1111, vmId, "1.2.3.4", IpAddressType.SECONDARY,
+        IpAddress removedIp = new IpAddress(1111, 1111, vmId, "1.2.3.4", IpAddressType.SECONDARY,
                 null, Instant.now(), Instant.now().minus(24, ChronoUnit.HOURS));
 
         List<IpAddress> allIps = new ArrayList<IpAddress>();

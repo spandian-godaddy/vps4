@@ -79,7 +79,7 @@ public class VmMonitoringResourceTests {
         panoptaDataService = mock(PanoptaDataService.class);
         vmOutageResource = mock(VmOutageResource.class);
         resource = new VmMonitoringResource(monitoringService, vmResource, monitoringMeta, panoptaService, panoptaDataService, vmOutageResource);
-        IpAddress ipAddress = new IpAddress(0, null, null, null, 123L, null, null);
+        IpAddress ipAddress = new IpAddress(1, 0, null, null, null, 123L, null, null);
         vm = new VirtualMachine(UUID.randomUUID(), 1L, null, 1L, null, null, null, ipAddress, Instant.now().minus(Duration.ofDays(5)), null, null, null, null, 0, UUID.randomUUID());
         when(vmResource.getVm(vm.vmId)).thenReturn(vm);
         when(monitoringMeta.getAccountId()).thenReturn(12L);

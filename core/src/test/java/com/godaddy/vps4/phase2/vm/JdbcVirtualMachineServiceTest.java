@@ -1,7 +1,6 @@
 package com.godaddy.vps4.phase2.vm;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
@@ -23,6 +22,7 @@ import com.godaddy.vps4.jdbc.DatabaseModule;
 import com.godaddy.vps4.network.NetworkService;
 import com.godaddy.vps4.network.jdbc.JdbcNetworkService;
 import com.godaddy.vps4.phase2.SqlTestData;
+import com.godaddy.vps4.project.Project;
 import com.godaddy.vps4.project.ProjectService;
 import com.godaddy.vps4.project.jdbc.JdbcProjectService;
 import com.godaddy.vps4.security.Vps4User;
@@ -392,5 +392,14 @@ public class JdbcVirtualMachineServiceTest {
         virtualMachines.add(testVm);
         virtualMachineService.setMonitoringPlanFeature(testVm.vmId, true);
         assertTrue(virtualMachineService.getMonitoringPlanFeature(testVm.vmId));
+    }
+
+    @Test
+    public void testImportVirtualMachine() {
+        Project project = projectService.createProjectAndPrivilegeWithSgid("testProjectForImportVm", vps4User.getId(), "testProjectForImportVm");
+        VirtualMachineService.ImportVirtualMachineParameters parameters = new VirtualMachineService.ImportVirtualMachineParameters(-1, UUID.randomUUID(), "testImportServer", project.getProjectId(), 10, 1);
+        VirtualMachine testVm2 = virtualMachineService.importVirtualMachine(parameters);
+        virtualMachines.add(testVm2);
+        assertNotNull(testVm2);
     }
 }

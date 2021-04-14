@@ -13,7 +13,9 @@ public class IpAddressMapper {
 
         long pingCheckId = rs.getLong("ping_check_id");
 
-        return new IpAddress(rs.getLong("ip_address_id"),
+        return new IpAddress(
+                rs.getLong(("id")),
+                rs.getLong("ip_address_id"),
                 UUID.fromString(rs.getString("vm_id")),
                 rs.getString("ip_address"),
                 IpAddress.IpAddressType.valueOf(rs.getInt("ip_address_type_id")),
