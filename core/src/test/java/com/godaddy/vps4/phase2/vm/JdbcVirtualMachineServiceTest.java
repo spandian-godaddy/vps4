@@ -2,6 +2,7 @@ package com.godaddy.vps4.phase2.vm;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 import java.time.Instant;
@@ -399,7 +400,15 @@ public class JdbcVirtualMachineServiceTest {
         Project project = projectService.createProjectAndPrivilegeWithSgid("testProjectForImportVm", vps4User.getId(), "testProjectForImportVm");
         VirtualMachineService.ImportVirtualMachineParameters parameters = new VirtualMachineService.ImportVirtualMachineParameters(-1, UUID.randomUUID(), "testImportServer", project.getProjectId(), 10, 1);
         VirtualMachine testVm2 = virtualMachineService.importVirtualMachine(parameters);
+        UUID importedVm = virtualMachineService.getImportedVm(testVm2.vmId);
         virtualMachines.add(testVm2);
         assertNotNull(testVm2);
+        assertNotNull(importedVm);
+    }
+
+    @Test
+    public void testGetImportedVirtualMachineReturnsNull() {
+        UUID importedVm = virtualMachineService.getImportedVm(UUID.randomUUID());
+        assertNull(importedVm);
     }
 }

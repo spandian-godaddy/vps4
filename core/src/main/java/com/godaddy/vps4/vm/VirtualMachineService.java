@@ -146,6 +146,8 @@ public interface VirtualMachineService {
 	List<VirtualMachine> getVirtualMachines(VirtualMachineType type, Long vps4UserId, String ipAddress, UUID orionGuid,
 			Long hfsVmId);
 
+    UUID getImportedVm(UUID vmId);
+
     void ackNydusWarning(UUID vmId);
 
     void setMonitoringPlanFeature(UUID vmId, boolean monitoring);

@@ -27,6 +27,7 @@ import com.godaddy.vps4.panopta.jdbc.PanoptaServerDetails;
 import com.godaddy.vps4.scheduler.api.core.SchedulerJobDetail;
 import com.godaddy.vps4.scheduler.api.web.SchedulerWebService;
 import com.godaddy.vps4.vm.VirtualMachine;
+import com.godaddy.vps4.vm.VirtualMachineService;
 import com.godaddy.vps4.web.Vps4Api;
 import com.godaddy.vps4.web.security.GDUser;
 
@@ -46,11 +47,17 @@ public class VmDetailsResource {
     private final VmZombieResource vmZombieResource;
     private final NetworkService networkService;
     private final GDUser user;
+    private final VirtualMachineService virtualMachineService;
 
     @Inject
-    public VmDetailsResource(VmResource vmResource, CreditService creditService,
-            SchedulerWebService schedulerWebService, PanoptaDataService panoptaDataService,
-            VmZombieResource vmZombieResource, GDUser user, NetworkService networkService) {
+    public VmDetailsResource(VmResource vmResource,
+                             CreditService creditService,
+                             SchedulerWebService schedulerWebService,
+                             PanoptaDataService panoptaDataService,
+                             VmZombieResource vmZombieResource,
+                             GDUser user,
+                             NetworkService networkService,
+                             VirtualMachineService virtualMachineService) {
         this.vmResource = vmResource;
         this.creditService = creditService;
         this.schedulerWebService = schedulerWebService;
@@ -58,6 +65,7 @@ public class VmDetailsResource {
         this.vmZombieResource = vmZombieResource;
         this.user = user;
         this.networkService = networkService;
+        this.virtualMachineService = virtualMachineService;
     }
 
     @GET
@@ -79,6 +87,7 @@ public class VmDetailsResource {
     @Path("/{vmId}/withDetails")
     public VirtualMachineWithDetails getVirtualMachineWithDetails(@PathParam("vmId") UUID vmId) {
         VirtualMachine virtualMachine = vmResource.getVm(vmId);
+        boolean imported = isImported(vmId);
         VirtualMachineCredit credit = creditService.getVirtualMachineCredit(virtualMachine.orionGuid);
         Vm vm = vmResource.getVmFromVmVertical(virtualMachine.hfsVmId);
         String hypervisorHostname = null;
@@ -118,7 +127,12 @@ public class VmDetailsResource {
 
         return new VirtualMachineWithDetails(virtualMachine, new VirtualMachineDetails(vm), credit.getDataCenter(),
                 credit.getShopperId(), automaticSnapshotSchedule, panoptaDetails, scheduledZombieCleanupJobs,
-                hypervisorHostname, additionalIps);
+                hypervisorHostname, additionalIps, imported);
+    }
+
+    private boolean isImported(UUID vmId) {
+        boolean imported = virtualMachineService.getImportedVm(vmId) == null? false : true;
+        return imported;
     }
 
     private boolean isZombie(VirtualMachine vm) {

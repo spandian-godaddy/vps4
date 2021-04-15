@@ -33,6 +33,7 @@ import com.godaddy.vps4.scheduler.api.core.SchedulerJobDetail;
 import com.godaddy.vps4.scheduler.api.web.SchedulerWebService;
 import com.godaddy.vps4.vm.DataCenter;
 import com.godaddy.vps4.vm.VirtualMachine;
+import com.godaddy.vps4.vm.VirtualMachineService;
 import com.godaddy.vps4.web.security.GDUser;
 
 public class VmDetailsResourceTest {
@@ -44,6 +45,7 @@ public class VmDetailsResourceTest {
     private PanoptaDataService panoptaDataService = mock(PanoptaDataService.class);
     private VmZombieResource vmZombieResource = mock(VmZombieResource.class);
     private NetworkService networkService = mock(NetworkService.class);
+    private VirtualMachineService virtualMachineService = mock(VirtualMachineService.class);
 
     private GDUser user = mock(GDUser.class);
 
@@ -55,7 +57,7 @@ public class VmDetailsResourceTest {
     private VmExtendedInfo vmExtendedInfoMock = new VmExtendedInfo();
 
     private VmDetailsResource vmDetailsResource = new VmDetailsResource(vmResource, creditService,
-            schedulerWebService, panoptaDataService, vmZombieResource, user, networkService);
+            schedulerWebService, panoptaDataService, vmZombieResource, user, networkService, virtualMachineService);
 
 
     @Before
@@ -82,6 +84,8 @@ public class VmDetailsResourceTest {
 
         credit = mock(VirtualMachineCredit.class);
         when(creditService.getVirtualMachineCredit(orionGuid)).thenReturn(credit);
+
+        when(virtualMachineService.getImportedVm(vmId)).thenReturn(vmId);
     }
 
     @Test

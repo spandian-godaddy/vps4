@@ -103,19 +103,19 @@ public class JdbcVirtualMachineService implements VirtualMachineService {
 
     protected VirtualMachine mapVirtualMachine(ResultSet rs) throws SQLException {
         ServerSpec spec = mapServerSpec(rs);
-        UUID vmId = java.util.UUID.fromString(rs.getString("vm_id"));
+        UUID vmId = UUID.fromString(rs.getString("vm_id"));
         IpAddress ipAddress = mapIpAddress(rs);
         Image image = mapImage(rs);
         String backupJobId = rs.getString("backup_job_id");
 
-        return new VirtualMachine(vmId, rs.getLong("hfs_vm_id"), java.util.UUID.fromString(rs.getString("orion_guid")),
+        return new VirtualMachine(vmId, rs.getLong("hfs_vm_id"), UUID.fromString(rs.getString("orion_guid")),
                 rs.getLong("project_id"), spec, rs.getString("vm_name"), image, ipAddress,
                 rs.getTimestamp("vm_valid_on", TimestampUtils.utcCalendar).toInstant(),
                 rs.getTimestamp("vm_canceled", TimestampUtils.utcCalendar).toInstant(),
                 rs.getTimestamp("vm_valid_until", TimestampUtils.utcCalendar).toInstant(),
                 rs.getTimestamp("nydus_warning_ack", TimestampUtils.utcCalendar).toInstant(),
                 rs.getString("hostname"),
-                rs.getInt("managed_level"), backupJobId != null ? java.util.UUID.fromString(backupJobId) : null);
+                rs.getInt("managed_level"), backupJobId != null ? UUID.fromString(backupJobId) : null);
     }
 
     protected IpAddress mapIpAddress(ResultSet rs) throws SQLException {
@@ -383,6 +383,14 @@ public class JdbcVirtualMachineService implements VirtualMachineService {
                         "WHERE vm.canceled < 'infinity' AND vm.valid_until = 'infinity' " +
                         "GROUP BY vms.tier; ",
                 Sql.mapOf(this::mapCount, this::mapTier));
+    }
+
+    @Override
+    public UUID getImportedVm(UUID vmId) {
+        String stringVmId = Sql.with(dataSource).exec("SELECT vm_id from imported_vm where vm_id = ?",
+                                         Sql.nextOrNull(rs -> rs.getString("vm_id")), vmId);
+        if (stringVmId == null) return null;
+        return UUID.fromString(stringVmId);
     }
 
     protected Integer mapTier(ResultSet rs) throws SQLException {

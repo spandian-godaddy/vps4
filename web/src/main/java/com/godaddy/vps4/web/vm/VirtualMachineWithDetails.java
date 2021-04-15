@@ -18,11 +18,12 @@ public class VirtualMachineWithDetails extends VirtualMachine {
     public List<ScheduledZombieCleanupJob> scheduledZombieCleanupJobs;
     public String hypervisorHostname;
     public List<IpAddress> additionalIps;
+    public boolean imported;
 
     public VirtualMachineWithDetails(VirtualMachine virtualMachine, VirtualMachineDetails virtualMachineDetails,
             DataCenter dataCenter, String shopperId, AutomaticSnapshotSchedule autoSnapshots,
             PanoptaServerDetails panoptaDetails, List<ScheduledZombieCleanupJob> scheduledZombieCleanupJobs,
-            String hypervisorHostname, List<IpAddress> additionalIps) {
+            String hypervisorHostname, List<IpAddress> additionalIps, boolean imported) {
         super(virtualMachine);
         this.virtualMachineDetails = virtualMachineDetails;
         this.dataCenter = dataCenter;
@@ -32,5 +33,6 @@ public class VirtualMachineWithDetails extends VirtualMachine {
         this.scheduledZombieCleanupJobs = scheduledZombieCleanupJobs;
         this.hypervisorHostname = hypervisorHostname;
         this.additionalIps = additionalIps;
+        this.imported = imported;
     }
 }

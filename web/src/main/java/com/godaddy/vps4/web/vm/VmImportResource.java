@@ -94,7 +94,7 @@ public class VmImportResource {
         ServerSpec serverSpec = virtualMachineService.getSpec(virtualMachineCredit.getTier(), ServerType.Platform.OPTIMIZED_HOSTING.getplatformId());
         //TODO: Convert this to a lookup or insert to a new imported_images table
         int imageId = imageService.getImageId(importVmRequest.image);
-
+ 
         Vps4User vps4User = vps4UserService.getOrCreateUserForShopper(importVmRequest.shopperId, virtualMachineCredit.getResellerId());
         Project project = projectService.createProject(importVmRequest.entitlementId.toString(), vps4User.getId(), importVmRequest.sgid);
 
