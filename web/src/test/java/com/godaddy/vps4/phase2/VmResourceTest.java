@@ -113,8 +113,7 @@ public class VmResourceTest {
     private String createTestIP() {
         int p1 = (int) (Math.random() * 255);
         int p2 = (int) (Math.random() * 255);
-        int p3 = (int) (Math.random() * 255);
-        return String.format("10.%d.%d.%d", p1, p2, p3);
+        return String.format("192.168.%d.%d", p1, p2);
     }
 
     // === GetVm Tests ===
