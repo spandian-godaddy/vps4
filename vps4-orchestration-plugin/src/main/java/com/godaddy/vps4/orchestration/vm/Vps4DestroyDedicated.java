@@ -9,6 +9,7 @@ import com.godaddy.vps4.vm.ActionService;
 import gdg.hfs.orchestration.CommandMetadata;
 import gdg.hfs.orchestration.CommandRetryStrategy;
 
+
 @CommandMetadata(
         name = "Vps4DestroyDedicated",
         requestType = VmActionRequest.class,
@@ -16,9 +17,12 @@ import gdg.hfs.orchestration.CommandRetryStrategy;
         retryStrategy = CommandRetryStrategy.NEVER
 )
 public class Vps4DestroyDedicated extends Vps4DestroyVm {
+    NetworkService networkService;
+
     @Inject
     public Vps4DestroyDedicated(ActionService actionService, NetworkService networkService) {
         super(actionService, networkService);
+        this.networkService = networkService;
     }
 
     @Override

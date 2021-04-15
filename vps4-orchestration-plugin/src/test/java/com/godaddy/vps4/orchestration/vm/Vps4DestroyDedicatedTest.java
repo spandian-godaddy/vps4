@@ -5,7 +5,6 @@ import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
-
 import org.junit.Before;
 import org.junit.Test;
 
@@ -22,7 +21,7 @@ public class Vps4DestroyDedicatedTest extends Vps4DestroyVmTest {
     @Override
     @Test
     public void executesRemoveIp() {
-        // Ded4 boxes do not need to call RemoveIp command.
+        // Ded4 boxes without secondary ips do not need to call RemoveIp command.
         command.execute(context, request);
         verify(context, never()).execute(anyString(), eq(Vps4RemoveIp.class), any());
     }

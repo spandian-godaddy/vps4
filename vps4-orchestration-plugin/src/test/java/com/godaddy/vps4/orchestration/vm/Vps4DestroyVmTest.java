@@ -11,6 +11,9 @@ import static org.mockito.Mockito.when;
 
 import java.time.Duration;
 import java.time.Instant;
+import java.time.temporal.ChronoUnit;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 import java.util.function.Function;
 
@@ -171,4 +174,59 @@ public class Vps4DestroyVmTest {
         verify(context, never()).execute(ScheduleDestroyVm.class, vmId);
     }
 
+
+    @Test
+    public void executesRemoveIpForAdditionalIps() {
+        IpAddress primaryIp = new IpAddress(1,1111, vmId, "1.2.3.4", IpAddress.IpAddressType.SECONDARY,
+                null, Instant.now(), Instant.now().plus(24, ChronoUnit.HOURS));
+        IpAddress secondaryIp = new IpAddress(2,1112, vmId, "1.2.3.4", IpAddress.IpAddressType.SECONDARY,
+                null, Instant.now(), Instant.now().plus(24, ChronoUnit.HOURS));
+        IpAddress removedIp = new IpAddress(3,1113, vmId, "1.2.3.4", IpAddress.IpAddressType.SECONDARY,
+                null, Instant.now(), Instant.now().plus(24, ChronoUnit.HOURS));
+
+        List<IpAddress> secondaryIps = new ArrayList<IpAddress>();
+        secondaryIps.add(primaryIp);
+        secondaryIps.add(secondaryIp);
+        secondaryIps.add(removedIp);
+        when(networkService.getVmSecondaryAddress(vm.hfsVmId)).thenReturn(secondaryIps);
+        command.execute(context, request);
+        for (IpAddress ip : secondaryIps) {
+            verify(context).execute(eq("RemoveIp-" + ip.ipAddressId), eq(Vps4RemoveIp.class), any());
+        }
+    }
+
+    @Test
+    public void marksIpDeletedForAdditionalIps() {
+        IpAddress primaryIp = new IpAddress(1,1111, vmId, "1.2.3.4", IpAddress.IpAddressType.SECONDARY,
+                null, Instant.now(), Instant.now().plus(24, ChronoUnit.HOURS));
+        IpAddress secondaryIp = new IpAddress(2,1112, vmId, "1.2.3.4", IpAddress.IpAddressType.SECONDARY,
+                null, Instant.now(), Instant.now().plus(24, ChronoUnit.HOURS));
+        IpAddress removedIp = new IpAddress(3,1113, vmId, "1.2.3.4", IpAddress.IpAddressType.SECONDARY,
+                null, Instant.now(), Instant.now().minus(24, ChronoUnit.HOURS));
+
+        MockitoAnnotations.initMocks(this);
+        List<IpAddress> secondaryIps = new ArrayList<IpAddress>();
+        secondaryIps.add(primaryIp);
+        secondaryIps.add(secondaryIp);
+        secondaryIps.add(removedIp);
+        when(networkService.getVmSecondaryAddress(vm.hfsVmId)).thenReturn(secondaryIps);
+        command.execute(context, request);
+        for (IpAddress ip : secondaryIps) {
+            verify(context).execute(eq("MarkIpDeleted-" + ip.ipAddressId), lambda.capture(), eq(Void.class));
+            lambda.getValue().apply(context);
+            verify(networkService).destroyIpAddress(ip.ipAddressId);
+        }
+    }
+
+    @Test
+    public void doesNotRunDeleteAdditionalIpsIfThereAreNone() {
+        List<IpAddress> secondaryIps = new ArrayList<IpAddress>();
+        when(networkService.getVmSecondaryAddress(vm.hfsVmId)).thenReturn(null);
+        command.execute(context, request);
+        for (IpAddress ip : secondaryIps) {
+            verify(context,never()).execute(eq("RemoveIp-" + ip.ipAddressId), eq(Vps4RemoveIp.class), any());
+            verify(context,never()).execute(eq("MarkIpDeleted-" + ip.ipAddressId), lambda.capture(), eq(Void.class));
+            verify(networkService,never()).destroyIpAddress(ip.ipAddressId);
+        }
+    }
 }
