@@ -3,12 +3,9 @@ package com.godaddy.vps4.panopta;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import java.util.stream.Collectors;
 
-import org.apache.commons.lang3.builder.ReflectionToStringBuilder;
-import org.apache.commons.lang3.builder.ToStringStyle;
-
+import com.fasterxml.jackson.annotation.JsonAnySetter;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 /*
@@ -23,21 +20,26 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 
 public class PanoptaUsageGraph extends PanoptaGraph {
     @JsonProperty("labels")
-    public void unwrapLabels(ArrayList<Long> labels) {
+    private void unwrapLabels(ArrayList<Long> labels) {
         this.timestamps = labels.stream().map(Instant::ofEpochSecond).collect(Collectors.toList());
     }
 
     @JsonProperty("data")
-    @SuppressWarnings("unchecked")
-    public void unwrapData(Map<String, Object> data) {
-        Map.Entry<String, Object> unwrappedMetrics = data.entrySet().iterator().next();
-        ArrayList<Object> metricList = (ArrayList<Object>) unwrappedMetrics.getValue();
-        Map<String, Object> metric = (Map<String, Object>) metricList.get(0);
-        this.values = (List<Double>) metric.get("data");
+    private void unwrapData(ListWrapper wrapper) {
+        this.values = wrapper.list.get(0).data;
     }
 
-    @Override
-    public String toString() {
-        return ReflectionToStringBuilder.toString(this, ToStringStyle.MULTI_LINE_STYLE);
+    private static class ListWrapper {
+        private List<DataWrapper> list;
+
+        @JsonAnySetter
+        private void set(String ignored, List<DataWrapper> list) {
+            this.list = list;
+        }
+
+        private static class DataWrapper {
+            @JsonProperty("data")
+            private List<Double> data;
+        }
     }
 }
