@@ -76,7 +76,7 @@ public class ImageResource {
     )
     public Image getImage(@ApiParam(value = "Hfs image name") @PathParam("name") String name) {
         logger.info("getting images with name {}", name);
-        Image image = imageService.getImage(name);
+        Image image = imageService.getImageByHfsName(name);
         if (image == null) {
             throw new NotFoundException("Unknown image: " + name);
         }

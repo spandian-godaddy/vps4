@@ -1,0 +1,1 @@
+alter table image add column imported_image boolean not null default false;

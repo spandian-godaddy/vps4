@@ -4,6 +4,8 @@ import static com.godaddy.vps4.vm.VirtualMachineService.*;
 import static com.godaddy.vps4.web.vm.VmImportResource.*;
 import static org.junit.Assert.assertEquals;
 import static org.mockito.Matchers.anyObject;
+import static org.mockito.Matchers.anyString;
+import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -52,12 +54,43 @@ public class VmImportResourceTest {
     VirtualMachineCredit credit;
     VmImportResource vmImportResource;
     private GDUser user;
+    private ImportVmRequest importVmRequest;
+    private ServerSpec spec;
+    private Vps4User vps4User;
+    private Project project;
+    private VirtualMachine virtualMachine;
+    private ArgumentCaptor<ImportVirtualMachineParameters> argument;
 
     @Before
     public void setupTest() {
         user = GDUserMock.createShopper();
+        credit = createVmCredit(UUID.randomUUID(), AccountStatus.ACTIVE, "myh", 0, 0, 10, "Linux", Instant.now());
+        when(creditService.getVirtualMachineCredit(credit.getOrionGuid())).thenReturn(credit);
+
+        importVmRequest = new ImportVmRequest();
+        importVmRequest.entitlementId = credit.getOrionGuid();
+        importVmRequest.shopperId = user.getShopperId();
+        importVmRequest.ip = "192.168.0.1";
+        importVmRequest.additionalIps.add("2001:0db8:85a3:0000:0000:8a2e:0370:7334");
+        importVmRequest.additionalIps.add("192.168.0.2");
+        importVmRequest.additionalIps.add("192.168.0.2");
+
 
         vmImportResource = new VmImportResource(virtualMachineService, creditService, projectService, vps4UserService, imageService, networkService, actionService);
+
+        spec = new ServerSpec();
+        when(virtualMachineService.getSpec(credit.getTier(), ServerType.Platform.OPTIMIZED_HOSTING.getplatformId())).thenReturn(spec);
+
+        vps4User = new Vps4User(123, credit.getShopperId());
+        when(vps4UserService.getOrCreateUserForShopper(user.getShopperId(), credit.getResellerId())).thenReturn(vps4User);
+
+        project = new Project(1, "testProject", "testSgid", Instant.now(), Instant.MAX);
+        when(projectService.createProject(credit.getOrionGuid().toString(), vps4User.getId(), importVmRequest.sgid)).thenReturn(project);
+
+        virtualMachine = new VirtualMachine();
+        virtualMachine.vmId = UUID.randomUUID();
+        argument = ArgumentCaptor.forClass(ImportVirtualMachineParameters.class);
+        when(virtualMachineService.importVirtualMachine(anyObject())).thenReturn(virtualMachine);
     }
 
     private VirtualMachineCredit createVmCredit(UUID orionGuid, AccountStatus accountStatus, String controlPanel,
@@ -85,34 +118,37 @@ public class VmImportResourceTest {
     }
 
     @Test
-    public void ImportVmTest(){
-        credit = createVmCredit(UUID.randomUUID(), AccountStatus.ACTIVE, "myh", 0, 0, 10, "Linux", Instant.now());
-        when(creditService.getVirtualMachineCredit(credit.getOrionGuid())).thenReturn(credit);
-
-        ImportVmRequest importVmRequest = new ImportVmRequest();
-        importVmRequest.entitlementId = credit.getOrionGuid();
-        importVmRequest.shopperId = user.getShopperId();
-        importVmRequest.ip = "192.168.0.1";
-        importVmRequest.additionalIps.add("2001:0db8:85a3:0000:0000:8a2e:0370:7334");
-        importVmRequest.additionalIps.add("192.168.0.2");
-        importVmRequest.additionalIps.add("192.168.0.2");
-
-        ServerSpec spec = new ServerSpec();
-        when(virtualMachineService.getSpec(credit.getTier(), ServerType.Platform.OPTIMIZED_HOSTING.getplatformId())).thenReturn(spec);
-
+    public void ImportVmTestExistingImage(){
         int imageId = 1;
-        when(imageService.getImageId(importVmRequest.image)).thenReturn(imageId);
+        when(imageService.getImageIdByHfsName(importVmRequest.image)).thenReturn(imageId);
 
-        Vps4User vps4User = new Vps4User(123, importVmRequest.shopperId);
-        when(vps4UserService.getOrCreateUserForShopper(importVmRequest.shopperId, credit.getResellerId())).thenReturn(vps4User);
 
-        Project project = new Project(1, "testProject", "testSgid", Instant.now(), Instant.MAX);
-        when(projectService.createProject(importVmRequest.entitlementId.toString(), vps4User.getId(), importVmRequest.sgid)).thenReturn(project);
+        VmAction action = vmImportResource.importVm(importVmRequest);
 
-        VirtualMachine virtualMachine = new VirtualMachine();
-        virtualMachine.vmId = UUID.randomUUID();
-        ArgumentCaptor<ImportVirtualMachineParameters> argument = ArgumentCaptor.forClass(ImportVirtualMachineParameters.class);
-        when(virtualMachineService.importVirtualMachine(anyObject())).thenReturn(virtualMachine);
+
+        assertEquals(ActionType.IMPORT_VM, action.type);
+        assertEquals(ActionStatus.COMPLETE, action.status);
+        assertEquals(virtualMachine.vmId, action.virtualMachineId);
+
+        verify(virtualMachineService, times(1)).importVirtualMachine(argument.capture());
+        ImportVirtualMachineParameters parameters = argument.getValue();
+        assertEquals(importVmRequest.hfsVmId, parameters.hfsVmId);
+        assertEquals(importVmRequest.entitlementId, parameters.orionGuid);
+        assertEquals(spec.name, parameters.name);
+        assertEquals(project.getProjectId(), parameters.projectId);
+        assertEquals(spec.specId, parameters.specId);
+        assertEquals(imageId, parameters.imageId);
+
+        verify(networkService, times(1)).createIpAddress(0, action.virtualMachineId, importVmRequest.ip, IpAddress.IpAddressType.PRIMARY);
+        verify(networkService, times(1)).createIpAddress(0, action.virtualMachineId, "2001:0db8:85a3:0000:0000:8a2e:0370:7334", IpAddress.IpAddressType.SECONDARY);
+        verify(networkService, times(2)).createIpAddress(0, action.virtualMachineId, "192.168.0.2", IpAddress.IpAddressType.SECONDARY);
+    }
+
+    @Test
+    public void ImportVmTestNewImage(){
+        long imageId = 2;
+        when(imageService.insertImage(eq(0), eq(1), anyString(), eq(3), anyString(), eq(true))).thenReturn(imageId);
+        when(imageService.getImageIdByHfsName(importVmRequest.image)).thenReturn(0);
 
 
         VmAction action = vmImportResource.importVm(importVmRequest);

@@ -17,7 +17,6 @@ import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
 
-import com.godaddy.vps4.credit.VirtualMachineCredit;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -160,7 +159,7 @@ public class VmRebuildResource {
         rebuildVmInfo.sgid = projectService.getProject(vm.projectId).getVhfsSgid();
         rebuildVmInfo.username = StringUtils.isBlank(request.username) ? vmUserService.getPrimaryCustomer(vm.vmId).username : request.username;
         rebuildVmInfo.vmId = vm.vmId;
-        rebuildVmInfo.image = StringUtils.isBlank(request.imageName) ? vm.image : imageService.getImage(request.imageName);
+        rebuildVmInfo.image = StringUtils.isBlank(request.imageName) ? vm.image : imageService.getImageByHfsName(request.imageName);
         rebuildVmInfo.ipAddress = vm.primaryIpAddress;
         rebuildVmInfo.zone = vm.spec.isVirtualMachine() ?
                 config.get("openstack.zone", null) :

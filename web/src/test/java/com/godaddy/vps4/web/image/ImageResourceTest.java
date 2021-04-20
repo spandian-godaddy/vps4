@@ -49,7 +49,7 @@ public class ImageResourceTest {
         verifyImages = testImages("Ubuntu 16.04", "CentOS 7");
 
         when(imageService.getImages(anyString(), anyString(), anyString(), anyString())).thenReturn(images);
-        when(imageService.getImage(anyString())).thenReturn(image);
+        when(imageService.getImageByHfsName(anyString())).thenReturn(image);
 
         resource = injector.getInstance(ImageResource.class);
     }
@@ -89,7 +89,7 @@ public class ImageResourceTest {
     @Test
     public void getImageCallsImageServiceToGetImage(){
         resource.getImage(imageName);
-        verify(imageService, times(1)).getImage(imageName);
+        verify(imageService, times(1)).getImageByHfsName(imageName);
     }
 
     @Test
@@ -99,7 +99,7 @@ public class ImageResourceTest {
 
     @Test
     public void getImageThowsExceptionWhenImageNotFound(){
-        when(imageService.getImage(anyString())).thenReturn(null);
+        when(imageService.getImageByHfsName(anyString())).thenReturn(null);
         try {
             resource.getImage(imageName);
         }

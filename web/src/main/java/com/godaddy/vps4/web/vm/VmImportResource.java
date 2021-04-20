@@ -92,9 +92,9 @@ public class VmImportResource {
 
         VirtualMachineCredit virtualMachineCredit = getAndValidateUserAccountCredit(creditService, importVmRequest.entitlementId, importVmRequest.shopperId);
         ServerSpec serverSpec = virtualMachineService.getSpec(virtualMachineCredit.getTier(), ServerType.Platform.OPTIMIZED_HOSTING.getplatformId());
-        //TODO: Convert this to a lookup or insert to a new imported_images table
-        int imageId = imageService.getImageId(importVmRequest.image);
- 
+
+        long imageId = getOrInsertImage(importVmRequest);
+
         Vps4User vps4User = vps4UserService.getOrCreateUserForShopper(importVmRequest.shopperId, virtualMachineCredit.getResellerId());
         Project project = projectService.createProject(importVmRequest.entitlementId.toString(), vps4User.getId(), importVmRequest.sgid);
 
@@ -109,6 +109,14 @@ public class VmImportResource {
         importIpAddresses(importVmRequest, virtualMachine);
 
         return createReturnAction(virtualMachine);
+    }
+
+    private long getOrInsertImage(ImportVmRequest importVmRequest) {
+        long imageId = imageService.getImageIdByHfsName(importVmRequest.image);
+        if(imageId==0){
+            imageId = imageService.insertImage(0, 1, importVmRequest.image, 3, importVmRequest.image, true);
+        }
+        return imageId;
     }
 
     private void importIpAddresses(ImportVmRequest importVmRequest, VirtualMachine virtualMachine) {

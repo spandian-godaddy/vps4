@@ -53,19 +53,32 @@ public class JdbcImageService implements ImageService {
      *      the ability to look up an image by HFS image name
      */
     @Override
-    public int getImageId(String name) {
-        return Sql.with(dataSource).exec("SELECT image_id FROM " + tableName + " WHERE hfs_name=?",
-                Sql.nextOrNull(rs -> rs.getInt("image_id")), name);
+    public int getImageIdByHfsName(String hfsName) {
+        Integer id = Sql.with(dataSource).exec("SELECT image_id FROM " + tableName + " WHERE LOWER(hfs_name)=LOWER(?)",
+                Sql.nextOrNull(rs -> rs.getInt("image_id")), hfsName);
+        return id != null ? id : 0;
     }
 
     @Override
-    public Image getImage(String name) {
+    public Image getImageByHfsName(String hfsName) {
         return Sql.with(dataSource).exec("SELECT image_id, name, hfs_name, control_panel_id, os_type_id," +
                         "st.server_type_id, st.server_type, st.platform " +
                         "FROM " + tableName + " AS image " +
                         "JOIN server_type AS st USING(server_type_id)" +
-                        "WHERE hfs_name=?",
-                Sql.nextOrNull(this::mapImage), name);
+                        "WHERE LOWER(hfs_name)=LOWER(?)",
+                Sql.nextOrNull(this::mapImage), hfsName);
+    }
+
+    @Override
+    public long insertImage(int controlPanelId, int osTypeId, String name, int serverTypeId, String hfsName, boolean importedImage) {
+        return Sql.with(dataSource).exec("insert into image (control_panel_id, os_type_id, name, server_type_id, hfs_name, imported_image) values (?, ?, ?, ?, ?, ?) RETURNING image_id;",
+                                  Sql.nextOrNull(rs -> rs.getLong("image_id")),
+                                  controlPanelId,
+                                  osTypeId,
+                                  name,
+                                  serverTypeId,
+                                  hfsName,
+                                  importedImage);
     }
 
     @Override
