@@ -21,6 +21,8 @@ public interface NetworkService {
 
     List<IpAddress> getVmSecondaryAddress(long hfsVmId);
 
+    int getActiveIpAddressesCount(UUID vmId);
+
     void updateIpWithCheckId(long addressId, long checkId);
 
     void updateIpWithCheckId(String ipAddress, long checkId);

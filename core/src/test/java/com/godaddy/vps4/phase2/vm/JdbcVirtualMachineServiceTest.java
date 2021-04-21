@@ -411,4 +411,13 @@ public class JdbcVirtualMachineServiceTest {
         UUID importedVm = virtualMachineService.getImportedVm(UUID.randomUUID());
         assertNull(importedVm);
     }
+
+    @Test
+    public void testGetVirtualMachineReturnsIpLimit() {
+        UUID orionGuid = UUID.randomUUID();
+        VirtualMachine testVm = SqlTestData.insertTestVmWithIp(orionGuid, dataSource);
+        virtualMachines.add(testVm);
+        VirtualMachine actualVm = virtualMachineService.getVirtualMachines(null, null, null, orionGuid, null).get(0);
+        assertNotNull(actualVm.spec.ipAddressLimit);
+    }
 }

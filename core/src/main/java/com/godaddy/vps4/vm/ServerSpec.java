@@ -17,12 +17,13 @@ public class ServerSpec {
     public Instant validOn;
     public Instant validUntil;
     public ServerType serverType;
+    public int ipAddressLimit;
 
     public ServerSpec() {
     }
 
     public ServerSpec(int specId, String name, String specName, int tier, int cpuCoreCount, int memoryMib, int diskGib,
-                      Instant validOn, Instant validUntil, ServerType serverType) {
+                      Instant validOn, Instant validUntil, ServerType serverType, int ipAddressLimit) {
         this.specId = specId;
         this.name = name;
         this.specName = specName;
@@ -33,6 +34,7 @@ public class ServerSpec {
         this.validOn = validOn;
         this.validUntil = validUntil;
         this.serverType = serverType;
+        this.ipAddressLimit = ipAddressLimit;
     }
 
     public boolean isVirtualMachine() {

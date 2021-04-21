@@ -42,6 +42,7 @@ import com.google.inject.Inject;
 import gdg.hfs.orchestration.CommandService;
 import io.swagger.annotations.Api;
 
+import static com.godaddy.vps4.web.util.RequestValidation.validateNoConflictingActions;
 import static com.godaddy.vps4.web.util.VmHelper.createActionAndExecute;
 
 @Vps4Api
@@ -109,7 +110,13 @@ public class NetworkResource {
     @Path("/{vmId}/ipAddresses")
     public VmAction addIpAddress(@PathParam("vmId") UUID vmId) {
         VirtualMachine virtualMachine = vmResource.getVm(vmId);
+        validateNoConflictingActions(vmId, actionService, ActionType.ADD_IP);
 
+        int currentIpsInUse = networkService.getActiveIpAddressesCount(vmId);
+        if( currentIpsInUse >= virtualMachine.spec.ipAddressLimit)
+        {
+            throw new Vps4Exception("IP_LIMIT_REACHED",String.format("This vm's ip limit is %s and it already has %s ips in use.", virtualMachine.spec.ipAddressLimit, currentIpsInUse));
+        }
         logger.info("Adding IP to VM {}", virtualMachine.vmId);
         if(virtualMachine.hfsVmId == 0){
             throw new NotFoundException("VM was not associated with hfs vm");

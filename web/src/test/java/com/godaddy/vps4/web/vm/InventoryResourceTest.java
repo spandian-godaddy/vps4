@@ -58,7 +58,7 @@ public class InventoryResourceTest {
         ServerType serverType = new ServerType();
         serverType.serverType = ServerType.Type.DEDICATED;
         return new ServerSpec(1, "test.spec", "test.spec", 100, 2, 2, 2, Instant.now(),
-                Instant.now().plus(1, ChronoUnit.DAYS), serverType);
+                Instant.now().plus(1, ChronoUnit.DAYS), serverType, 1);
     }
 
     private Map<Integer, Integer> createDummyActiveServerCountByTiers() {

@@ -37,7 +37,7 @@ public class JdbcVirtualMachineService implements VirtualMachineService {
             +
             "vm.hostname, vm.account_status_id, vm.backup_job_id, vm.valid_on as \"vm_valid_on\", vm.canceled as \"vm_canceled\", vm.valid_until as \"vm_valid_until\", vm.nydus_warning_ack, vm.managed_level, "
             + "vms.spec_id, vms.spec_name, vms.tier, vms.cpu_core_count, vms.memory_mib, vms.disk_gib, vms.valid_on as \"spec_valid_on\", "
-            + "vms.valid_until as \"spec_valid_until\", vms.name as \"spec_vps4_name\", st.server_type, st.server_type_id, st.platform, "
+            + "vms.valid_until as \"spec_valid_until\", vms.name as \"spec_vps4_name\", vms.ip_address_count, st.server_type, st.server_type_id, st.platform, "
             + "image.name, image.hfs_name, image.image_id, image.control_panel_id, image.os_type_id, "
             + "ip.id, ip.ip_address_id, ip.ip_address, ip.ip_address_type_id, ip.valid_on, ip.valid_until, ip.ping_check_id "
             + "FROM virtual_machine vm "
@@ -57,7 +57,7 @@ public class JdbcVirtualMachineService implements VirtualMachineService {
 
         return Sql.with(dataSource).exec(
                 "SELECT spec_id, name as spec_vps4_name, spec_name, tier, cpu_core_count, memory_mib, disk_gib, " +
-                        "valid_on as spec_valid_on, valid_until as spec_valid_until, " +
+                        "valid_on as spec_valid_on, valid_until as spec_valid_until, ip_address_count, " +
                         "st.server_type_id, st.server_type, st.platform " +
                 "FROM virtual_machine_spec " +
                 "JOIN server_type st USING(server_type_id)" +
@@ -69,7 +69,7 @@ public class JdbcVirtualMachineService implements VirtualMachineService {
     public ServerSpec getSpec(int tier, int serverTypeId) {
         return Sql.with(dataSource).exec(
                 "SELECT spec_id, name as spec_vps4_name, spec_name, tier, cpu_core_count, memory_mib, disk_gib, " +
-                        "valid_on as spec_valid_on, valid_until as spec_valid_until, " +
+                        "valid_on as spec_valid_on, valid_until as spec_valid_until, ip_address_count, " +
                         "st.server_type_id, st.server_type, st.platform " +
                 "FROM virtual_machine_spec " +
                 "JOIN server_type st USING(server_type_id)" +
@@ -115,7 +115,8 @@ public class JdbcVirtualMachineService implements VirtualMachineService {
                 rs.getTimestamp("vm_valid_until", TimestampUtils.utcCalendar).toInstant(),
                 rs.getTimestamp("nydus_warning_ack", TimestampUtils.utcCalendar).toInstant(),
                 rs.getString("hostname"),
-                rs.getInt("managed_level"), backupJobId != null ? UUID.fromString(backupJobId) : null);
+                rs.getInt("managed_level"),
+                backupJobId != null ? java.util.UUID.fromString(backupJobId) : null);
     }
 
     protected IpAddress mapIpAddress(ResultSet rs) throws SQLException {
@@ -148,7 +149,7 @@ public class JdbcVirtualMachineService implements VirtualMachineService {
         return new ServerSpec(rs.getInt("spec_id"), rs.getString("spec_vps4_name"), rs.getString("spec_name"),
                 rs.getInt("tier"), rs.getInt("cpu_core_count"), rs.getInt("memory_mib"), rs.getInt("disk_gib"),
                 rs.getTimestamp("spec_valid_on", TimestampUtils.utcCalendar).toInstant(),
-                validUntil != null ? validUntil.toInstant() : null, serverType);
+                validUntil != null ? validUntil.toInstant() : null, serverType, rs.getInt("ip_address_count"));
     }
 
     protected  ServerType mapServerType(ResultSet rs) throws SQLException {

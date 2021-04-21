@@ -1,5 +1,7 @@
 package com.godaddy.vps4.network.jdbc;
 
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.List;
 import java.util.UUID;
 
@@ -61,13 +63,19 @@ public class JdbcNetworkService implements NetworkService {
                 Sql.nextOrNull(IpAddressMapper::mapIpAddress), hfsVmId, IpAddress.IpAddressType.PRIMARY.getId());
     }
 
-
     @Override
     public List<IpAddress> getVmSecondaryAddress(long hfsVmId) {
         return Sql.with(dataSource).exec(
                 "SELECT * FROM ip_address ip JOIN virtual_machine vm on ip.vm_id = vm.vm_id WHERE vm.hfs_vm_id=?" +
                         " AND ip.ip_address_type_id = ? and ip.valid_until > now_utc()",
                 Sql.listOf(IpAddressMapper::mapIpAddress), hfsVmId, IpAddress.IpAddressType.SECONDARY.getId());
+    }
+
+    @Override
+    public int getActiveIpAddressesCount(UUID vmId) {
+        return Sql.with(dataSource).exec(
+                "SELECT COUNT(*) FROM ip_address ip WHERE ip.valid_until > now_utc() AND" + " vm_id=? ",
+                Sql.nextOrNull(rs -> rs.getInt("count")), vmId);
     }
 
     @Override

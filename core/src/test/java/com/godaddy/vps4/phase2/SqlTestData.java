@@ -69,9 +69,24 @@ public class SqlTestData {
         long ipAddressId = getNextIpAddressId(dataSource);
         Random random = new Random();
         String ipAddress =
-                random.nextInt(255) + "." + random.nextInt(255) + "." + random.nextInt(255) + "." + random.nextInt(255);
+                "192.168." + random.nextInt(255) + "." + random.nextInt(255);
         Sql.with(dataSource)
                 .exec("INSERT INTO ip_address (ip_address_id, ip_address, ip_address_type_id, vm_id) VALUES (?, ?::inet, 1," +
+                                " ?)",
+                        null,
+                        ipAddressId, ipAddress, virtualMachine.vmId);
+        VirtualMachineService virtualMachineService = new JdbcVirtualMachineService(dataSource);
+        return virtualMachineService.getVirtualMachine(virtualMachine.vmId);
+    }
+
+
+    public static VirtualMachine addAdditionalIpToTestVm(DataSource dataSource, VirtualMachine virtualMachine) {
+        long ipAddressId = getNextIpAddressId(dataSource);
+        Random random = new Random();
+        String ipAddress =
+                random.nextInt(255) + "." + random.nextInt(255) + "." + random.nextInt(255) + "." + random.nextInt(255);
+        Sql.with(dataSource)
+                .exec("INSERT INTO ip_address (ip_address_id, ip_address, ip_address_type_id, vm_id) VALUES (?, ?::inet, 2," +
                                 " ?)",
                         null,
                         ipAddressId, ipAddress, virtualMachine.vmId);

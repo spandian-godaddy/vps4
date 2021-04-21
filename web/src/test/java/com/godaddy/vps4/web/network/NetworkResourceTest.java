@@ -37,7 +37,6 @@ import com.godaddy.vps4.vm.VirtualMachine;
 import com.godaddy.vps4.vm.VirtualMachineService;
 import com.godaddy.vps4.vm.ServerType;
 import com.godaddy.vps4.vm.ServerSpec;
-import com.godaddy.vps4.vm.VmAction;
 import com.godaddy.vps4.web.Vps4Exception;
 import com.godaddy.vps4.web.security.GDUser;
 import com.godaddy.vps4.web.vm.VmResource;
@@ -73,6 +72,7 @@ public class NetworkResourceTest {
         vmServerType.platform = ServerType.Platform.OPTIMIZED_HOSTING;
         ServerSpec vmSpec = new ServerSpec();
         vmSpec.serverType = vmServerType;
+        vmSpec.ipAddressLimit = 2;
         vm = new VirtualMachine(vmId, hfsVmId, UUID.randomUUID(),
                 1, vmSpec, "Unit Test Vm", null, null,
                 Instant.now(), Instant.now().plus(24, ChronoUnit.HOURS), Instant.now().plus(24, ChronoUnit.HOURS),
@@ -176,7 +176,23 @@ public class NetworkResourceTest {
         ServerType serverType = new ServerType();
         serverType.platform = ServerType.Platform.OPENSTACK;
         ServerSpec spec = new ServerSpec();
+        spec.ipAddressLimit = 2;
         spec.serverType = serverType;
+        VirtualMachine vm = new VirtualMachine(vmId, 1111, UUID.randomUUID(),
+                1, spec , "Unit Test Vm", null, null,
+                Instant.now(), Instant.now().plus(24, ChronoUnit.HOURS), Instant.now().plus(24, ChronoUnit.HOURS),
+                null, null, 0, UUID.randomUUID());
+        when(vmResource.getVm(vmId)).thenReturn(vm);
+        resource.addIpAddress(vmId);
+    }
+
+    @Test(expected=Vps4Exception.class)
+    public void testAddIpPassedIpLimit(){
+        ServerType serverType = new ServerType();
+        serverType.platform = ServerType.Platform.OPENSTACK;
+        ServerSpec spec = new ServerSpec();
+        spec.serverType = serverType;
+        spec.ipAddressLimit = 1;
         VirtualMachine vm = new VirtualMachine(vmId, 1111, UUID.randomUUID(),
                 1, spec , "Unit Test Vm", null, null,
                 Instant.now(), Instant.now().plus(24, ChronoUnit.HOURS), Instant.now().plus(24, ChronoUnit.HOURS),
@@ -190,6 +206,7 @@ public class NetworkResourceTest {
         ServerType serverType = new ServerType();
         serverType.platform = ServerType.Platform.OPTIMIZED_HOSTING;
         ServerSpec spec = new ServerSpec();
+        spec.ipAddressLimit = 2;
         spec.serverType = serverType;
         VirtualMachine vm = new VirtualMachine(vmId, 0, UUID.randomUUID(),
                 1, spec , "Unit Test Vm", null, null,
