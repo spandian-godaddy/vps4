@@ -40,7 +40,7 @@ public class BindIp implements Command<BindIp.Request, Void> {
     @Override
     public Void execute(CommandContext context, Request request) {
         this.request = request;
-        this.hfsAddress = networkService.getAddress(request.addressId);
+        this.hfsAddress = networkService.getAddress(request.hfsAddressId);
         logger.info("Binding HFS Address {} with status {} to HFS server {}",
                 hfsAddress.addressId, hfsAddress.status, request.hfsVmId);
 
@@ -85,7 +85,7 @@ public class BindIp implements Command<BindIp.Request, Void> {
 
         logger.info("Forcing unbind of HFS address {} from HFS server {}", hfsAddress.addressId, hfsAddress.serverId);
         UnbindIp.Request unbindRequest = new UnbindIp.Request();
-        unbindRequest.addressId = hfsAddress.addressId;
+        unbindRequest.hfsAddressId = hfsAddress.addressId;
         unbindRequest.forceIfVmInaccessible = true;
         context.execute(String.format("ForceUnbindIP-%d", hfsAddress.addressId), UnbindIp.class, unbindRequest);
     }
@@ -100,7 +100,7 @@ public class BindIp implements Command<BindIp.Request, Void> {
 
     private void bindAddress(CommandContext context) {
         AddressAction hfsAction = context.execute("BindIpHfs",
-                ctx -> networkService.bindIp(request.addressId, request.hfsVmId, request.shouldForce),
+                ctx -> networkService.bindIp(request.hfsAddressId, request.hfsVmId, request.shouldForce),
                 AddressAction.class);
 
         context.execute(WaitForAddressAction.class, hfsAction);
@@ -108,7 +108,7 @@ public class BindIp implements Command<BindIp.Request, Void> {
 
 
     public static class Request {
-        public long addressId;
+        public long hfsAddressId;
         public long hfsVmId;
         public boolean shouldForce;
     }

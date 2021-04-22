@@ -58,24 +58,24 @@ public class NetworkServiceTest {
     @Test
     public void testCreateIp() {
 
-        long addressId = 123;
+        long hfsAddressId = 123;
         String ipAddress = "127.0.0.1";
 
         long primaryId = 125;
         String primaryAddress = "192.168.1.1";
 
         networkService.createIpAddress(primaryId, vm.vmId, primaryAddress, IpAddress.IpAddressType.PRIMARY);
-        networkService.createIpAddress(addressId, vm.vmId, ipAddress, IpAddress.IpAddressType.SECONDARY);
+        IpAddress address = networkService.createIpAddress(hfsAddressId, vm.vmId, ipAddress, IpAddress.IpAddressType.SECONDARY);
 
         List<IpAddress> ips = networkService.getVmIpAddresses(vm.vmId);
         assertEquals(2, ips.size());
 
-        IpAddress ip = networkService.getIpAddress(addressId);
+        IpAddress ip = networkService.getIpAddress(address.addressId);
 
         assertEquals(vm.vmId, ip.vmId);
         assertTrue(ip.validUntil.isAfter(Instant.now()));
         assertNotNull(ip.validOn);
-        assertEquals(addressId, ip.ipAddressId);
+        assertEquals(hfsAddressId, ip.hfsAddressId);
         assertEquals(ipAddress, ip.ipAddress);
         assertEquals(IpAddress.IpAddressType.SECONDARY, ip.ipAddressType);
 
@@ -84,22 +84,22 @@ public class NetworkServiceTest {
         assertEquals(vm.vmId, primary.vmId);
         assertTrue(primary.validUntil.isAfter(Instant.now()));
         assertNotNull(primary.validOn);
-        assertEquals(primaryId, primary.ipAddressId);
+        assertEquals(primaryId, primary.hfsAddressId);
         assertEquals(primaryAddress, primary.ipAddress);
         assertEquals(IpAddress.IpAddressType.PRIMARY, primary.ipAddressType);
     }
 
     @Test
     public void testDeleteIp() {
-        long addressId = 123;
+        long hfsAddressId = 123;
         String ipAddress = "127.0.0.1";
-        networkService.createIpAddress(addressId, vm.vmId, ipAddress, IpAddress.IpAddressType.SECONDARY);
+        IpAddress address = networkService.createIpAddress(hfsAddressId, vm.vmId, ipAddress, IpAddress.IpAddressType.SECONDARY);
 
-        IpAddress ip = networkService.getIpAddress(addressId);
+        IpAddress ip = networkService.getIpAddress(address.addressId);
 
-        networkService.destroyIpAddress(addressId);
+        networkService.destroyIpAddress(address.addressId);
 
-        IpAddress deletedIp = networkService.getIpAddress(addressId);
+        IpAddress deletedIp = networkService.getIpAddress(address.addressId);
         assertTrue(deletedIp.validUntil.isBefore(ip.validUntil));
     }
 
@@ -137,13 +137,13 @@ public class NetworkServiceTest {
 
     @Test
     public void testReuseOfPrimaryIp() {
-        long primaryId = 125;
+        long hfsAddressId = 125;
         String primaryAddress = "192.168.1.1";
 
-        networkService.createIpAddress(primaryId, vm.vmId, primaryAddress, IpAddress.IpAddressType.PRIMARY);
-        networkService.destroyIpAddress(primaryId);
+        IpAddress address = networkService.createIpAddress(hfsAddressId, vm.vmId, primaryAddress, IpAddress.IpAddressType.PRIMARY);
+        networkService.destroyIpAddress(address.addressId);
 
-        networkService.createIpAddress(primaryId + 1, vmTwo.vmId, primaryAddress, IpAddress.IpAddressType.PRIMARY);
+        networkService.createIpAddress(hfsAddressId + 1, vmTwo.vmId, primaryAddress, IpAddress.IpAddressType.PRIMARY);
     }
 
     @Test(expected=RuntimeException.class)
@@ -170,12 +170,11 @@ public class NetworkServiceTest {
 
     @Test
     public void testGetValidSecondaryIpsOnly() {
-        long secondaryIp = 125;
         String invalidIpAddress = "192.168.1.1";
         String ipAddress = "127.0.0.1";
 
-        networkService.createIpAddress(secondaryIp, vm.vmId, invalidIpAddress, IpAddress.IpAddressType.SECONDARY);
-        networkService.destroyIpAddress(secondaryIp);
+        IpAddress address = networkService.createIpAddress(125, vm.vmId, invalidIpAddress, IpAddress.IpAddressType.SECONDARY);
+        networkService.destroyIpAddress(address.addressId);
 
         networkService.createIpAddress(126, vm.vmId, ipAddress, IpAddress.IpAddressType.SECONDARY);
         List<IpAddress> ips = networkService.getVmSecondaryAddress(vm.hfsVmId);

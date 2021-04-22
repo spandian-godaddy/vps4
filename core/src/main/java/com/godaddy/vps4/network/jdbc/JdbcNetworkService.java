@@ -23,23 +23,26 @@ public class JdbcNetworkService implements NetworkService {
     }
 
     @Override
-    public void createIpAddress(long ipAddressId, UUID vmId, String ipAddress, IpAddressType ipAddressType) {
-        Sql.with(dataSource).exec("INSERT INTO ip_address (ip_address_id, ip_address, vm_id, ip_address_type_id) VALUES (?, ?::inet, ?, ?);", null,
-                ipAddressId, ipAddress, vmId, ipAddressType.getId());
+    public IpAddress createIpAddress(long hfsAddressId, UUID vmId, String ipAddress, IpAddressType ipAddressType) {
+        return Sql.with(dataSource).exec("INSERT INTO ip_address (hfs_address_id, ip_address, vm_id, ip_address_type_id) " +
+                                                 "VALUES (?, ?::inet, ?, ?) " +
+                                                 "RETURNING *",
+                                         Sql.nextOrNull(IpAddressMapper::mapIpAddress),
+                                         hfsAddressId, ipAddress, vmId, ipAddressType.getId());
 
     }
 
     @Override
-    public void destroyIpAddress(long ipAddressId) {
-        Sql.with(dataSource).exec("SELECT * FROM ip_address_delete(?)", null,
-                ipAddressId);
+    public void destroyIpAddress(long addressId) {
+        Sql.with(dataSource).exec("UPDATE ip_address SET valid_until = now_utc() WHERE address_id = ?",
+                                  null, addressId);
     }
 
     @Override
-    public IpAddress getIpAddress(long ipAddressId) {
+    public IpAddress getIpAddress(long addressId) {
         return Sql.with(dataSource).exec(
-                "SELECT * FROM ip_address ip " + " WHERE ip_address_id=? ",
-                Sql.nextOrNull(IpAddressMapper::mapIpAddress), ipAddressId);
+                "SELECT * FROM ip_address ip " + " WHERE address_id = ?",
+                Sql.nextOrNull(IpAddressMapper::mapIpAddress), addressId);
     }
 
     @Override
@@ -76,17 +79,5 @@ public class JdbcNetworkService implements NetworkService {
         return Sql.with(dataSource).exec(
                 "SELECT COUNT(*) FROM ip_address ip WHERE ip.valid_until > now_utc() AND" + " vm_id=? ",
                 Sql.nextOrNull(rs -> rs.getInt("count")), vmId);
-    }
-
-    @Override
-    public void updateIpWithCheckId(long addressId, long checkId) {
-        Sql.with(dataSource).exec("UPDATE ip_address SET ping_check_id = ? WHERE ip_address_id = ?;", null, checkId, addressId);
-
-    }
-
-    @Override
-    public void updateIpWithCheckId(String ipAddress, long checkId) {
-        Sql.with(dataSource).exec("UPDATE ip_address SET ping_check_id = ? WHERE ip_address = ? and valid_until = 'infinity';", null, checkId, ipAddress);
-
     }
 }

@@ -46,22 +46,22 @@ public class Vps4DestroyIpAddressAction extends ActionCommand<Vps4DestroyIpAddre
 
     @Override
     protected Void executeWithAction(CommandContext context, Vps4DestroyIpAddressAction.Request request) throws Exception {
-        IpAddress ip = networkService.getIpAddress(request.ipAddressId);
+        IpAddress ip = networkService.getIpAddress(request.addressId);
         context.execute(Vps4RemoveIp.class, ip);
 
-        context.execute("MarkIpDeleted-"+ip.ipAddressId, ctx -> {
-                networkService.destroyIpAddress(ip.ipAddressId);
+        context.execute("MarkIpDeleted-" + ip.addressId, ctx -> {
+                networkService.destroyIpAddress(ip.addressId);
                 return null;
             }, Void.class);
 
-        logger.info("Completed removing IP from vm {}", request.vmId);
+        logger.info("Completed removing IP {} from vm {}", request.addressId, request.vmId);
 
         return null;
     }
 
     public static class Request implements ActionRequest {
         public UUID vmId;
-        public long ipAddressId;
+        public long addressId;
         public long actionId;
         @Override
         public long getActionId() {

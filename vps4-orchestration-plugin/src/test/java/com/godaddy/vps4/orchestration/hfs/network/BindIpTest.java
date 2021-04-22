@@ -40,7 +40,7 @@ public class BindIpTest {
 
     BindIp command = new BindIp(networkService);
     BindIp.Request request;
-    long addressId = 42L;
+    long hfsAddressId = 42L;
     long hfsVmId = 23L;
 
     Injector injector = Guice.createInjector(binder -> {
@@ -53,12 +53,12 @@ public class BindIpTest {
     @Before
     public void setUp() {
         request = new BindIp.Request();
-        request.addressId = addressId;
+        request.hfsAddressId = hfsAddressId;
         request.hfsVmId = hfsVmId;
         request.shouldForce = false;
         setupHfsAddress(Status.UNBOUND);
 
-        when(networkService.bindIp(eq(request.addressId), eq(request.hfsVmId), anyBoolean())).thenReturn(waitingHfsAction);
+        when(networkService.bindIp(eq(request.hfsAddressId), eq(request.hfsVmId), anyBoolean())).thenReturn(waitingHfsAction);
     }
 
     private void setupHfsAddress(Status status) {
@@ -69,14 +69,14 @@ public class BindIpTest {
         IpAddress hfsAddress = new IpAddress();
         hfsAddress.status = status;
         hfsAddress.serverId = vmId;
-        hfsAddress.addressId = addressId;
-        when(networkService.getAddress(request.addressId)).thenReturn(hfsAddress);
+        hfsAddress.addressId = hfsAddressId;
+        when(networkService.getAddress(request.hfsAddressId)).thenReturn(hfsAddress);
     }
 
     @Test
     public void bindsHfsUnboundAddress() {
         assertNull(command.execute(context, request));
-        verify(networkService).bindIp(request.addressId, request.hfsVmId, request.shouldForce);
+        verify(networkService).bindIp(request.hfsAddressId, request.hfsVmId, request.shouldForce);
         verify(context).execute(WaitForAddressAction.class, waitingHfsAction);
     }
 
@@ -90,7 +90,7 @@ public class BindIpTest {
     public void handlesHfsAddressAlreadyProperlyBound() {
         setupHfsAddress(Status.BOUND);
         command.execute(context, request);
-        verify(networkService, never()).bindIp(request.addressId, request.hfsVmId, request.shouldForce);
+        verify(networkService, never()).bindIp(request.hfsAddressId, request.hfsVmId, request.shouldForce);
     }
 
     @Test(expected=UnsupportedOperationException.class)
@@ -109,9 +109,9 @@ public class BindIpTest {
 
         ArgumentCaptor<UnbindIp.Request> argument = ArgumentCaptor.forClass(UnbindIp.Request.class);
         verify(context).execute(startsWith("ForceUnbindIP"), eq(UnbindIp.class), argument.capture());
-        assertEquals(addressId, argument.getValue().addressId);
+        assertEquals(hfsAddressId, argument.getValue().hfsAddressId);
         assertTrue(argument.getValue().forceIfVmInaccessible);
-        verify(networkService).bindIp(request.addressId, request.hfsVmId, request.shouldForce);
+        verify(networkService).bindIp(request.hfsAddressId, request.hfsVmId, request.shouldForce);
     }
 
     @Test
@@ -121,7 +121,7 @@ public class BindIpTest {
             setupHfsAddress(status);
             command.execute(context, request);
             verify(context, atLeastOnce()).execute(startsWith("ForceUnbindIP"), eq(UnbindIp.class), any(UnbindIp.Request.class));
-            verify(networkService, atLeastOnce()).bindIp(request.addressId, request.hfsVmId, request.shouldForce);
+            verify(networkService, atLeastOnce()).bindIp(request.hfsAddressId, request.hfsVmId, request.shouldForce);
         }
     }
 

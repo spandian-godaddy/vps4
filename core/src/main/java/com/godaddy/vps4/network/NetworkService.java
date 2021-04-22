@@ -7,11 +7,11 @@ import com.godaddy.vps4.network.IpAddress.IpAddressType;
 
 public interface NetworkService {
 
-    void createIpAddress(long ipAddressId, UUID vmId, String ipAddress, IpAddressType ipAddressType);
+    IpAddress createIpAddress(long hfsAddressId, UUID vmId, String ipAddress, IpAddressType ipAddressType);
 
-    void destroyIpAddress(long ipAddressId);
+    void destroyIpAddress(long addressId);
 
-    IpAddress getIpAddress(long ipAddressId);
+    IpAddress getIpAddress(long addressId);
 
     List<IpAddress> getVmIpAddresses(UUID vmId);
 
@@ -22,8 +22,4 @@ public interface NetworkService {
     List<IpAddress> getVmSecondaryAddress(long hfsVmId);
 
     int getActiveIpAddressesCount(UUID vmId);
-
-    void updateIpWithCheckId(long addressId, long checkId);
-
-    void updateIpWithCheckId(String ipAddress, long checkId);
 }

@@ -56,7 +56,7 @@ public class Vps4DestroyVmTest {
         request.virtualMachine = vm;
         request.actionId = 13L;
 
-        primaryIp.ipAddressId = 23L;
+        primaryIp.hfsAddressId = 23L;
         primaryIp.validUntil = Instant.MAX;
         when(networkService.getVmPrimaryAddress(vm.vmId)).thenReturn(primaryIp);
     }
@@ -75,8 +75,9 @@ public class Vps4DestroyVmTest {
 
     @Test
     public void executesRemoveIp() {
+        primaryIp.addressId = (long) (Math.random() * 100);
         command.execute(context, request);
-        verify(context).execute("RemoveIp-23", Vps4RemoveIp.class, primaryIp);
+        verify(context).execute("RemoveIp-" + primaryIp.addressId, Vps4RemoveIp.class, primaryIp);
     }
 
     @Test
@@ -97,10 +98,11 @@ public class Vps4DestroyVmTest {
     @Test
     public void marksIpInvalidInDb() {
         MockitoAnnotations.initMocks(this);
+        primaryIp.addressId = (long) (Math.random() * 100);
         command.execute(context, request);
-        verify(context).execute(eq("MarkIpDeleted-23"), lambda.capture(), eq(Void.class));
+        verify(context).execute(eq("MarkIpDeleted-" + primaryIp.addressId), lambda.capture(), eq(Void.class));
         lambda.getValue().apply(context);
-        verify(networkService).destroyIpAddress(23);
+        verify(networkService).destroyIpAddress(primaryIp.addressId);
     }
 
     @Test
@@ -191,7 +193,7 @@ public class Vps4DestroyVmTest {
         when(networkService.getVmSecondaryAddress(vm.hfsVmId)).thenReturn(secondaryIps);
         command.execute(context, request);
         for (IpAddress ip : secondaryIps) {
-            verify(context).execute(eq("RemoveIp-" + ip.ipAddressId), eq(Vps4RemoveIp.class), any());
+            verify(context).execute(eq("RemoveIp-" + ip.addressId), eq(Vps4RemoveIp.class), any());
         }
     }
 
@@ -212,9 +214,9 @@ public class Vps4DestroyVmTest {
         when(networkService.getVmSecondaryAddress(vm.hfsVmId)).thenReturn(secondaryIps);
         command.execute(context, request);
         for (IpAddress ip : secondaryIps) {
-            verify(context).execute(eq("MarkIpDeleted-" + ip.ipAddressId), lambda.capture(), eq(Void.class));
+            verify(context).execute(eq("MarkIpDeleted-" + ip.addressId), lambda.capture(), eq(Void.class));
             lambda.getValue().apply(context);
-            verify(networkService).destroyIpAddress(ip.ipAddressId);
+            verify(networkService).destroyIpAddress(ip.addressId);
         }
     }
 
@@ -224,9 +226,9 @@ public class Vps4DestroyVmTest {
         when(networkService.getVmSecondaryAddress(vm.hfsVmId)).thenReturn(null);
         command.execute(context, request);
         for (IpAddress ip : secondaryIps) {
-            verify(context,never()).execute(eq("RemoveIp-" + ip.ipAddressId), eq(Vps4RemoveIp.class), any());
-            verify(context,never()).execute(eq("MarkIpDeleted-" + ip.ipAddressId), lambda.capture(), eq(Void.class));
-            verify(networkService,never()).destroyIpAddress(ip.ipAddressId);
+            verify(context,never()).execute(eq("RemoveIp-" + ip.addressId), eq(Vps4RemoveIp.class), any());
+            verify(context,never()).execute(eq("MarkIpDeleted-" + ip.addressId), lambda.capture(), eq(Void.class));
+            verify(networkService,never()).destroyIpAddress(ip.addressId);
         }
     }
 }

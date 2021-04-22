@@ -147,7 +147,7 @@ public class OrphanResource {
 
         if (primaryIp != null && isVirtualMachine(vm)) {
             try {
-                gdg.hfs.vhfs.network.IpAddress hfsIp = networkService.getAddress(primaryIp.ipAddressId);
+                gdg.hfs.vhfs.network.IpAddress hfsIp = networkService.getAddress(primaryIp.hfsAddressId);
                 logger.debug("Found hfsIp: " + hfsIp);
                 if (ipIsValid(primaryIp) && hfsIp != null && isHfsIpAssignedToThisVm(orphans.sgid, hfsIp)) {
                     // our db thinks the IP is still active and hfs
@@ -156,7 +156,7 @@ public class OrphanResource {
 
                 }
             } catch (Exception e) {
-                logger.info("could not find hfs ip with id: " + primaryIp.ipAddressId);
+                logger.info("could not find hfs ip with id: " + primaryIp.hfsAddressId);
             }
         }
 

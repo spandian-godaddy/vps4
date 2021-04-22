@@ -93,7 +93,7 @@ public class Vps4RebuildDedicatedTest {
     private static final String username = "fake_user";
     private static final String password = "P@$$w0rd1";
     private String fqdn = "10.0.0.1";
-    private long ipAddressId = 34L;
+    private long hfsAddressId = 34L;
     UUID orionGuid = UUID.randomUUID();
     String shopperId = "12345678";
     @Inject private Vps4UserService vps4UserService;
@@ -157,7 +157,7 @@ public class Vps4RebuildDedicatedTest {
         vps4NewVm.image = setupImage();
         vps4NewVm.hfsVmId = hfsNewVmId;
         IpAddress publicIp = new IpAddress();
-        publicIp.ipAddressId = ipAddressId;
+        publicIp.hfsAddressId = hfsAddressId;
         publicIp.ipAddress = fqdn;
         when(networkService.getVmIpAddresses(vps4VmId)).thenReturn(Arrays.asList(publicIp));
         when(networkService.getVmPrimaryAddress(vps4VmId)).thenReturn(publicIp);

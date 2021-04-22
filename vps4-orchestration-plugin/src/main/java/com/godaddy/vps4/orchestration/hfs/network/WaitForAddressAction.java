@@ -25,15 +25,15 @@ public class WaitForAddressAction implements Command<AddressAction, AddressActio
 
     @Override
     public AddressAction execute(CommandContext context, AddressAction hfsAction) {
-        long addressId =  hfsAction.addressId;
-        long addressActionId = hfsAction.addressActionId;
+        long hfsAddressId =  hfsAction.addressId;
+        long hfsActionId = hfsAction.addressActionId;
 
         while (!hfsAction.status.equals(AddressAction.Status.COMPLETE)
                 && !hfsAction.status.equals(AddressAction.Status.FAILED)) {
             logger.debug("waiting for address action: {}", hfsAction);
 
             hfsAction = Utils.runWithRetriesForServerErrorException(context, logger, () ->{
-                return networkService.getAddressAction(addressId, addressActionId);
+                return networkService.getAddressAction(hfsAddressId, hfsActionId);
             });
         }
 

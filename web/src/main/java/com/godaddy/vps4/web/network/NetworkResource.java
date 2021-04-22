@@ -29,7 +29,6 @@ import com.godaddy.vps4.project.ProjectService;
 import com.godaddy.vps4.vm.ActionService;
 import com.godaddy.vps4.vm.ActionType;
 import com.godaddy.vps4.vm.VirtualMachine;
-import com.godaddy.vps4.vm.VirtualMachineService;
 import com.godaddy.vps4.vm.ServerType;
 import com.godaddy.vps4.vm.VmAction;
 import com.godaddy.vps4.web.Vps4Api;
@@ -65,9 +64,13 @@ public class NetworkResource {
 
 
     @Inject
-    public NetworkResource(GDUser user, NetworkService networkService, ActionService actionService,
-            VirtualMachineService virtualMachineService, ProjectService projectService,
-            CommandService commandService, VmResource vmResource, Config config){
+    public NetworkResource(GDUser user,
+                           NetworkService networkService,
+                           ActionService actionService,
+                           ProjectService projectService,
+                           CommandService commandService,
+                           VmResource vmResource,
+                           Config config) {
         this.networkService = networkService;
         this.actionService = actionService;
         this.projectService = projectService;
@@ -77,20 +80,20 @@ public class NetworkResource {
         this.user = user;
     }
 
-    private IpAddress getIpAddressInternal(UUID vmId, long ipAddressId){
-        IpAddress ipAddress = networkService.getIpAddress(ipAddressId);
-        if(ipAddress == null || !ipAddress.vmId.equals(vmId) || ipAddress.validUntil.isBefore(Instant.now())){
+    private IpAddress getIpAddressInternal(UUID vmId, long addressId) {
+        IpAddress ipAddress = networkService.getIpAddress(addressId);
+        if (ipAddress == null || !ipAddress.vmId.equals(vmId) || ipAddress.validUntil.isBefore(Instant.now())) {
             throw new NotFoundException();
         }
         return ipAddress;
     }
 
     @GET
-    @Path("/{vmId}/ipAddresses/{ipAddressId}")
-    public IpAddress getIpAddress(@PathParam("vmId") UUID vmId, @PathParam("ipAddressId") long ipAddressId){
+    @Path("/{vmId}/ipAddresses/{addressId}")
+    public IpAddress getIpAddress(@PathParam("vmId") UUID vmId, @PathParam("addressId") long addressId) {
         // getVm does authorization verification
         vmResource.getVm(vmId);
-        return getIpAddressInternal(vmId, ipAddressId);
+        return getIpAddressInternal(vmId, addressId);
     }
 
 
@@ -131,24 +134,24 @@ public class NetworkResource {
 
     @RequiresRole(roles = {GDUser.Role.ADMIN})
     @DELETE
-    @Path("/{vmId}/ipAddresses/{ipAddressId}")
-    public VmAction destroyIpAddress(@PathParam("vmId") UUID vmId, @PathParam("ipAddressId") long ipAddressId) {
+    @Path("/{vmId}/ipAddresses/{addressId}")
+    public VmAction destroyIpAddress(@PathParam("vmId") UUID vmId, @PathParam("addressId") long addressId) {
         VirtualMachine virtualMachine = vmResource.getVm(vmId);
 
-        IpAddress ipAddress = getIpAddressInternal(vmId, ipAddressId);
+        IpAddress ipAddress = getIpAddressInternal(vmId, addressId);
 
         if(ipAddress.ipAddressType.equals(IpAddress.IpAddressType.PRIMARY)){
             throw new Vps4Exception("CANNOT_DESTROY_PRIMARY_IP","Cannot destroy a VM's Primary IP");
         }
-        ActionRequest request = generateDestroyIpOrchestrationRequest(virtualMachine, ipAddressId);
+        ActionRequest request = generateDestroyIpOrchestrationRequest(virtualMachine, addressId);
 
         return createActionAndExecute(actionService, commandService, virtualMachine.vmId, ActionType.DESTROY_IP,
                 request, "Vps4DestroyIpAddressAction", user);
     }
 
-    private ActionRequest generateDestroyIpOrchestrationRequest(VirtualMachine vm, long ipAddressId ) {
+    private ActionRequest generateDestroyIpOrchestrationRequest(VirtualMachine vm, long addressId ) {
         Vps4DestroyIpAddressAction.Request request = new Vps4DestroyIpAddressAction.Request();
-        request.ipAddressId = ipAddressId;
+        request.addressId = addressId;
         request.vmId = vm.vmId;
         return request;
     }

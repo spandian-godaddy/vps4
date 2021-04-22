@@ -219,11 +219,11 @@ public class Vps4RestoreVmTest {
     public void unbindsExistingIpAddresses() {
         command.execute(context, request);
         for (IpAddress ipAddress : ipAddresses) {
-            verify(context, times(1)).execute(eq(String.format("UnbindIP-%d", ipAddress.ipAddressId)),
+            verify(context, times(1)).execute(eq(String.format("UnbindIP-%d", ipAddress.hfsAddressId)),
                     eq(UnbindIp.class), unbindIpArgumentCaptor.capture());
             UnbindIp.Request unbindIpRequest = unbindIpArgumentCaptor.getValue();
             Assert.assertTrue(unbindIpRequest.forceIfVmInaccessible);
-            Assert.assertEquals(ipAddress.ipAddressId, unbindIpRequest.addressId);
+            Assert.assertEquals(ipAddress.hfsAddressId, unbindIpRequest.hfsAddressId);
         }
     }
 
@@ -360,13 +360,13 @@ public class Vps4RestoreVmTest {
     public void bindsIpAddressesToNewHfsVm() {
         command.execute(context, request);
         for (IpAddress ipAddress : ipAddresses) {
-            verify(context, times(1)).execute(eq(String.format("BindIP-%d", ipAddress.ipAddressId)), eq(BindIp.class),
-                    bindIpRequestArgumentCaptor.capture());
+            verify(context, times(1)).execute(eq(String.format("BindIP-%d", ipAddress.hfsAddressId)), eq(BindIp.class),
+                                              bindIpRequestArgumentCaptor.capture());
 
-            // verify parameter passed into the BindIp command is the right pair of hfsVmId and ipAddressId
+            // verify parameter passed into the BindIp command is the right pair of hfsVmId and hfsAddressId
             BindIp.Request bindIpRequest = bindIpRequestArgumentCaptor.getValue();
             Assert.assertEquals(bindIpRequest.hfsVmId, hfsNewVmId);
-            Assert.assertEquals(bindIpRequest.addressId, ipAddress.ipAddressId);
+            Assert.assertEquals(bindIpRequest.hfsAddressId, ipAddress.hfsAddressId);
             Assert.assertFalse(bindIpRequest.shouldForce);
         }
     }
@@ -403,12 +403,12 @@ public class Vps4RestoreVmTest {
             // Verify destroys newHfsVm and *force* binds IPs back to originalHfsVm
             verify(context).execute(eq("DestroyVmHfs"), eq(DestroyVm.class), any(DestroyVm.Request.class));
             for (IpAddress ipAddress : ipAddresses) {
-                verify(context).execute(eq(String.format("ForceBindIP-%d", ipAddress.ipAddressId)), eq(BindIp.class),
-                        bindIpRequestArgumentCaptor.capture());
+                verify(context).execute(eq(String.format("ForceBindIP-%d", ipAddress.hfsAddressId)), eq(BindIp.class),
+                                        bindIpRequestArgumentCaptor.capture());
 
                 BindIp.Request bindIpRequest = bindIpRequestArgumentCaptor.getValue();
                 Assert.assertEquals(bindIpRequest.hfsVmId, vps4Vm.hfsVmId);
-                Assert.assertEquals(bindIpRequest.addressId, ipAddress.ipAddressId);
+                Assert.assertEquals(bindIpRequest.hfsAddressId, ipAddress.hfsAddressId);
                 Assert.assertTrue(bindIpRequest.shouldForce);
             }
         }

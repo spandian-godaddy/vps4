@@ -95,7 +95,7 @@ public class GetVirtualMachineTest {
         IpAddress ipAddress = new IpAddress();
         ipAddress.ipAddressType = IpAddressType.PRIMARY;
         ipAddress.ipAddress = "127.0.0.1";
-        ipAddress.ipAddressId = 1;
+        ipAddress.hfsAddressId = 1;
         VirtualMachineService virtualMachineService = mock(VirtualMachineService.class);
         vm = new VirtualMachine(vmId, hfsVmId, orionGuid, 1, null, "Unit Test Vm", null, ipAddress,
                 Instant.now(), Instant.now().plus(24, ChronoUnit.HOURS), Instant.now().plus(24, ChronoUnit.HOURS), Instant.now(),

@@ -65,11 +65,11 @@ public class TestVps4AddIpAddress {
         request.zone = "vps4-phx3";
         request.sgid = "vps4-unittest-1234";
 
-        IpAddress ip = new IpAddress();
-        ip.address = "1.2.3.4";
-        ip.addressId = 3425;
+        IpAddress hfsAddress = new IpAddress();
+        hfsAddress.address = "1.2.3.4";
+        hfsAddress.addressId = 3425;
         when(virtualMachineService.getVirtualMachine(any())).thenReturn(virtualMachine);
-        when(context.execute(eq(AllocateIp.class), any(AllocateIp.Request.class))).thenReturn(ip);
+        when(context.execute(eq(AllocateIp.class), any(AllocateIp.Request.class))).thenReturn(hfsAddress);
 
         try{
             command.executeWithAction(context, request);

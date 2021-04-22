@@ -24,11 +24,11 @@ public class Vps4RemoveIpTest {
     public void testExecuteDestroyPrimaryIp(){
         IpAddress ipAddress = new IpAddress();
         ipAddress.ipAddress = "1.2.3.4";
-        ipAddress.ipAddressId = 3425;
+        ipAddress.hfsAddressId = 3425;
         ipAddress.ipAddressType =  IpAddress.IpAddressType.PRIMARY;
 
         command.execute(context, ipAddress);
-        verify(context, times(1)).execute(eq(ReleaseIp.class), eq(ipAddress.ipAddressId));
+        verify(context, times(1)).execute(eq(ReleaseIp.class), eq(ipAddress.hfsAddressId));
         verify(context, times(1)).execute(eq(UnbindIp.class), any(UnbindIp.Request.class));
         verify(context, never()).execute(eq(SetMailRelayQuota.class), any());
     }
@@ -36,11 +36,11 @@ public class Vps4RemoveIpTest {
     public void testExecuteDestroySecondaryIp(){
         IpAddress ipAddress = new IpAddress();
         ipAddress.ipAddress = "1.2.3.4";
-        ipAddress.ipAddressId = 3425;
+        ipAddress.hfsAddressId = 3425;
         ipAddress.ipAddressType =  IpAddress.IpAddressType.SECONDARY;
 
         command.execute(context, ipAddress);
-        verify(context, times(1)).execute(eq(ReleaseIp.class), eq(ipAddress.ipAddressId));
+        verify(context, times(1)).execute(eq(ReleaseIp.class), eq(ipAddress.hfsAddressId));
         verify(context, never()).execute(eq(UnbindIp.class), any(UnbindIp.Request.class));
         verify(context, never()).execute(eq(SetMailRelayQuota.class), any());
     }

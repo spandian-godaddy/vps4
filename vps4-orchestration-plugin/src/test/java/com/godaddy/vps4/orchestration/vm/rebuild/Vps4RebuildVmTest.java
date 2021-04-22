@@ -78,7 +78,7 @@ public class Vps4RebuildVmTest {
     String shopperId = "12345678";
     long originalHfsVmId = 123L;
     long newHfsVmId = 456L;
-    long ipAddressId = 34L;
+    long hfsAddressId = 34L;
     String fqdn = "10.0.0.1";
     VirtualMachine vm;
     VmAction action;
@@ -131,7 +131,7 @@ public class Vps4RebuildVmTest {
         request.rebuildVmInfo.shopperId = shopperId;
 
         IpAddress publicIp = new IpAddress();
-        publicIp.ipAddressId = ipAddressId;
+        publicIp.hfsAddressId = hfsAddressId;
         publicIp.ipAddress = fqdn;
         when(vps4NetworkService.getVmIpAddresses(vps4VmId)).thenReturn(Arrays.asList(publicIp));
         when(vps4NetworkService.getVmPrimaryAddress(vps4VmId)).thenReturn(publicIp);
@@ -167,7 +167,7 @@ public class Vps4RebuildVmTest {
         ArgumentCaptor<UnbindIp.Request> argument = ArgumentCaptor.forClass(UnbindIp.Request.class);
         verify(context).execute(startsWith("UnbindIP-"), eq(UnbindIp.class), argument.capture());
         UnbindIp.Request request = argument.getValue();
-        assertEquals(ipAddressId, request.addressId);
+        assertEquals(hfsAddressId, request.hfsAddressId);
         assertEquals(true, request.forceIfVmInaccessible);
     }
 
@@ -223,7 +223,7 @@ public class Vps4RebuildVmTest {
         verify(context).execute(startsWith("BindIP-"), eq(BindIp.class), argument.capture());
         BindIp.Request request = argument.getValue();
         assertEquals(newHfsVmId, request.hfsVmId);
-        assertEquals(ipAddressId, request.addressId);
+        assertEquals(hfsAddressId, request.hfsAddressId);
         assertEquals(false, request.shouldForce);
     }
 

@@ -149,7 +149,7 @@ public class OrphanResourceTest {
 
     private IpAddress getPrimaryIp(){
         IpAddress ip = new IpAddress();
-        ip.ipAddressId = 4545;
+        ip.hfsAddressId = 4545;
         ip.validUntil= Instant.MAX;
         ip.ipAddress = "123.32.2.1";
         return ip;

@@ -104,8 +104,8 @@ public class VmResourceTest {
         UUID orionGuid = UUID.randomUUID();
         Vps4User vps4User = userService.getOrCreateUserForShopper(GDUserMock.DEFAULT_SHOPPER, "1");
         VirtualMachine server = SqlTestData.insertTestVm(orionGuid, vps4User.getId(), dataSource, imageName, tier);
-        long ipAddressId = SqlTestData.getNextIpAddressId(dataSource);
-        SqlTestData.insertTestIp(ipAddressId, server.vmId, createTestIP(), IpAddressType.PRIMARY, dataSource);
+        long hfsAddressId = SqlTestData.getNextHfsAddressId(dataSource);
+        SqlTestData.insertTestIp(hfsAddressId, server.vmId, createTestIP(), IpAddressType.PRIMARY, dataSource);
         server = virtualMachineService.getVirtualMachine(server.vmId);
         return server;
     }

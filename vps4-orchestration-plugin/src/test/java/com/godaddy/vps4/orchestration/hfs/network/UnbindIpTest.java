@@ -13,8 +13,6 @@ import org.junit.Before;
 import org.junit.Test;
 
 import com.godaddy.vps4.orchestration.TestCommandContext;
-import com.godaddy.vps4.orchestration.hfs.network.UnbindIp;
-import com.godaddy.vps4.orchestration.hfs.network.WaitForAddressAction;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
 
@@ -32,7 +30,7 @@ public class UnbindIpTest {
 
     UnbindIp command = new UnbindIp(networkService);
     UnbindIp.Request request;
-    long addressId = 42L;
+    long hfsAddressId = 42L;
 
     Injector injector = Guice.createInjector(binder -> {
         binder.bind(WaitForAddressAction.class).toInstance(addressWaitCmd);
@@ -42,24 +40,24 @@ public class UnbindIpTest {
     @Before
     public void setUp() {
         request = new UnbindIp.Request();
-        request.addressId = addressId;
+        request.hfsAddressId = hfsAddressId;
         request.forceIfVmInaccessible = false;
         setupHfsAddress(Status.BOUND);
 
-        when(networkService.unbindIp(eq(request.addressId), anyBoolean())).thenReturn(waitingHfsAction);
+        when(networkService.unbindIp(eq(request.hfsAddressId), anyBoolean())).thenReturn(waitingHfsAction);
     }
 
     private void setupHfsAddress(Status status) {
         IpAddress hfsAddress = new IpAddress();
         hfsAddress.status = status;
-        hfsAddress.addressId = addressId;
-        when(networkService.getAddress(request.addressId)).thenReturn(hfsAddress);
+        hfsAddress.addressId = hfsAddressId;
+        when(networkService.getAddress(request.hfsAddressId)).thenReturn(hfsAddress);
     }
 
     @Test
     public void unbindsHfsBoundAddress() {
         assertNull(command.execute(context, request));
-        verify(networkService).unbindIp(request.addressId, request.forceIfVmInaccessible);
+        verify(networkService).unbindIp(request.hfsAddressId, request.forceIfVmInaccessible);
         verify(context).execute(WaitForAddressAction.class, waitingHfsAction);
     }
 
@@ -67,14 +65,14 @@ public class UnbindIpTest {
     public void unbindHfsAddressAlreadyUnbound() {
         setupHfsAddress(Status.UNBOUND);
         command.execute(context, request);
-        verify(networkService, never()).unbindIp(request.addressId, request.forceIfVmInaccessible);
+        verify(networkService, never()).unbindIp(request.hfsAddressId, request.forceIfVmInaccessible);
     }
 
     @Test
     public void unbindUnnecessaryForHfsAddressStatus() {
         setupHfsAddress(Status.RELEASED);
         command.execute(context, request);
-        verify(networkService, never()).unbindIp(request.addressId, request.forceIfVmInaccessible);
+        verify(networkService, never()).unbindIp(request.hfsAddressId, request.forceIfVmInaccessible);
     }
 
     @Test(expected=UnsupportedOperationException.class)
@@ -88,7 +86,7 @@ public class UnbindIpTest {
         request.forceIfVmInaccessible = true;
         setupHfsAddress(Status.UNBINDING);
         command.execute(context, request);
-        verify(networkService).unbindIp(request.addressId, request.forceIfVmInaccessible);
+        verify(networkService).unbindIp(request.hfsAddressId, request.forceIfVmInaccessible);
     }
 
 }

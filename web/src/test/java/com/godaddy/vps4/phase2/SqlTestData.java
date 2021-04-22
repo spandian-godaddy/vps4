@@ -39,9 +39,9 @@ public class SqlTestData {
                 Sql.nextOrNull(rs -> rs.isAfterLast() ? 0 : rs.getLong("hfs_vm_id"))) + 1;
     }
 
-    public static long getNextIpAddressId(DataSource dataSource) {
-        return Sql.with(dataSource).exec("SELECT max(ip_address_id) as ip_address_id FROM ip_address",
-                Sql.nextOrNull(rs -> rs.isAfterLast() ? 0 : rs.getLong("ip_address_id"))) + 1;
+    public static long getNextHfsAddressId(DataSource dataSource) {
+        return Sql.with(dataSource).exec("SELECT max(hfs_address_id) as hfs_address_id FROM ip_address",
+                Sql.nextOrNull(rs -> rs.isAfterLast() ? 0 : rs.getLong("hfs_address_id"))) + 1;
     }
 
     public static VirtualMachine insertDedicatedTestVm(UUID orionGuid, DataSource dataSource) {
@@ -71,10 +71,9 @@ public class SqlTestData {
         return virtualMachineService.getVirtualMachine(virtualMachine.vmId);
     }
 
-    public static IpAddress insertTestIp(long ipAddressId, UUID vmId, String ipAddress, IpAddressType ipAddressType, DataSource dataSource){
+    public static IpAddress insertTestIp(long hfsAddressId, UUID vmId, String ipAddress, IpAddressType ipAddressType, DataSource dataSource){
         NetworkService networkService = new JdbcNetworkService(dataSource);
-        networkService.createIpAddress(ipAddressId, vmId, ipAddress, ipAddressType);
-        return networkService.getIpAddress(ipAddressId);
+        return networkService.createIpAddress(hfsAddressId, vmId, ipAddress, ipAddressType);
     }
 
     public static Action insertTestVmAction(UUID commandId, UUID vmId, ActionType actionType, DataSource dataSource) {

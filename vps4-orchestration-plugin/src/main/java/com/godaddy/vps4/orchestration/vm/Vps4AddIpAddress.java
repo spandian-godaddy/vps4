@@ -52,14 +52,14 @@ public class Vps4AddIpAddress extends ActionCommand<Vps4AddIpAddress.Request, Vo
     protected Void executeWithAction(CommandContext context, Vps4AddIpAddress.Request request) throws Exception {
         logger.info("Add an IP to vm {}", request.vmId);
         VirtualMachine virtualMachine = virtualMachineService.getVirtualMachine(request.vmId);
-        IpAddress ip = allocateIp(context, request);
-        addIpToDatabase(context, ip, virtualMachine.vmId);
+        IpAddress hfsIp = allocateIp(context, request);
+        addIpToDatabase(context, hfsIp, virtualMachine.vmId);
 
         if(virtualMachine.spec.isVirtualMachine()) {
-            disableMailRelays(context, ip);
+            disableMailRelays(context, hfsIp);
         }
 
-        logger.info("Completed adding IP {} to vm {}", ip.address, virtualMachine.vmId);
+        logger.info("Completed adding HFS IP {} to vm {}", hfsIp.address, virtualMachine.vmId);
 
         return null;
     }
@@ -72,21 +72,20 @@ public class Vps4AddIpAddress extends ActionCommand<Vps4AddIpAddress.Request, Vo
         allocateIpRequest.serverId = request.serverId;
 
         logger.info("Allocating IP for sgid {} in zone {}" , allocateIpRequest.sgid, allocateIpRequest.zone);
-        IpAddress ip = context.execute(AllocateIp.class, allocateIpRequest);
-        return ip;
+        return context.execute(AllocateIp.class, allocateIpRequest);
     }
 
-    private void addIpToDatabase(CommandContext context, IpAddress ip, UUID vmId){
-        logger.info("Adding IP {} to the db for vmId {}", ip.address, vmId);
-        context.execute("Create-" + ip.addressId, ctx -> {
-             networkService.createIpAddress(ip.addressId, vmId, ip.address, IpAddressType.SECONDARY);
+    private void addIpToDatabase(CommandContext context, IpAddress hfsIp, UUID vmId){
+        logger.info("Adding HFS IP {} to the db for vmId {}", hfsIp.address, vmId);
+        context.execute("Create-" + hfsIp.addressId, ctx -> {
+             networkService.createIpAddress(hfsIp.addressId, vmId, hfsIp.address, IpAddressType.SECONDARY);
              return null;
         }, Void.class);
     }
 
-    private void disableMailRelays(CommandContext context, IpAddress ip) {
+    private void disableMailRelays(CommandContext context, IpAddress hfsIp) {
         SetMailRelayQuota.Request hfsRequest = new SetMailRelayQuota.Request();
-        hfsRequest.ipAddress = ip.address;
+        hfsRequest.ipAddress = hfsIp.address;
         hfsRequest.mailRelayQuota = 0;
         context.execute(SetMailRelayQuota.class, hfsRequest);
     }

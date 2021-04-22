@@ -47,19 +47,19 @@ public class AllocateIp implements Command<AllocateIp.Request, IpAddress> {
                 AddressAction.class);
         context.execute(WaitForAddressAction.class, hfsAction);
 
-        IpAddress ipAddress = networkService.getAddress(hfsAction.addressId);
-        IpAddressValidator.validateIpAddress(ipAddress.address);
+        IpAddress hfsAddress = networkService.getAddress(hfsAction.addressId);
+        IpAddressValidator.validateIpAddress(hfsAddress.address);
 
         // hfs allocate ip for OH and OVH automatically updates status to BOUND
         // this check is for Openstack Ips that still needs to be manually bound
         // openstack ip allocation request always has null server id
-        if (request.serverId == null && ipAddress.status != Status.UNBOUND) {
-            throw new RuntimeException(String.format("IP %s is not unbound", ipAddress.address));
+        if (request.serverId == null && hfsAddress.status != Status.UNBOUND) {
+            throw new RuntimeException(String.format("IP %s is not unbound", hfsAddress.address));
         }
 
         logger.info("Address allocate is complete: {}", hfsAction);
-        logger.info("Allocated address: {}", ipAddress);
+        logger.info("Allocated address: {}", hfsAddress);
 
-        return ipAddress;
+        return hfsAddress;
     }
 }

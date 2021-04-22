@@ -3,7 +3,6 @@ package com.godaddy.vps4.orchestration.vm;
 import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
 import javax.inject.Inject;
 
@@ -112,9 +111,9 @@ public class Vps4DestroyVm extends ActionCommand<VmActionRequest, Vps4DestroyVm.
         additionalIps = networkService.getVmSecondaryAddress(vm.hfsVmId);
         if (additionalIps != null) {
             for (IpAddress ip : additionalIps) {
-                context.execute("RemoveIp-" + ip.ipAddressId, Vps4RemoveIp.class, ip);
-                context.execute("MarkIpDeleted-" + ip.ipAddressId, ctx -> {
-                    networkService.destroyIpAddress(ip.ipAddressId);
+                context.execute("RemoveIp-" + ip.addressId, Vps4RemoveIp.class, ip);
+                context.execute("MarkIpDeleted-" + ip.addressId, ctx -> {
+                    networkService.destroyIpAddress(ip.addressId);
                     return null;
                 }, Void.class);
             }
@@ -127,14 +126,14 @@ public class Vps4DestroyVm extends ActionCommand<VmActionRequest, Vps4DestroyVm.
 
 
     private void updateIpValidUntil(IpAddress address) {
-        context.execute("MarkIpDeleted-" + address.ipAddressId, ctx -> {
-                networkService.destroyIpAddress(address.ipAddressId);
+        context.execute("MarkIpDeleted-" + address.addressId, ctx -> {
+                networkService.destroyIpAddress(address.addressId);
                 return null;
             }, Void.class);
     }
 
     protected void removeIpFromServer(IpAddress address) {
-        context.execute("RemoveIp-" + address.ipAddressId, Vps4RemoveIp.class, address);
+        context.execute("RemoveIp-" + address.addressId, Vps4RemoveIp.class, address);
     }
 
     private void deleteAutomaticBackupSchedule() {

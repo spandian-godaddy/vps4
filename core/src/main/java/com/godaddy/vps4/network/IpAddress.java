@@ -32,8 +32,8 @@ public class IpAddress {
         }
     }
 
-    public long id;
-    public long ipAddressId;
+    public long addressId;
+    public long hfsAddressId;
     public UUID vmId;
     public String ipAddress;
     public IpAddressType ipAddressType;
@@ -44,10 +44,10 @@ public class IpAddress {
     public IpAddress() {
     }
 
-    public IpAddress(long id, long ipAddressId, UUID vmId, String ipAddress, IpAddressType ipAddressType, Long pingCheckId, Instant validOn,
-            Instant validUntil) {
-        this.id = id;
-        this.ipAddressId = ipAddressId;
+    public IpAddress(long addressId, long hfsAddressId, UUID vmId, String ipAddress, IpAddressType ipAddressType, Long pingCheckId, Instant validOn,
+                     Instant validUntil) {
+        this.addressId = addressId;
+        this.hfsAddressId = hfsAddressId;
         this.vmId = vmId;
         this.ipAddress = ipAddress;
         this.ipAddressType = ipAddressType;

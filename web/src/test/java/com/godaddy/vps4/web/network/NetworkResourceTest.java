@@ -1,13 +1,13 @@
 package com.godaddy.vps4.web.network;
 
 import static org.mockito.Matchers.any;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
-import static org.mockito.Mockito.anyLong;
-import static org.mockito.Mockito.verify;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.eq;
+import static org.mockito.Mockito.anyLong;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
@@ -28,15 +28,13 @@ import com.godaddy.vps4.network.NetworkService;
 import com.godaddy.vps4.project.Project;
 import com.godaddy.vps4.project.ProjectService;
 import com.godaddy.vps4.security.GDUserMock;
-import com.godaddy.vps4.security.Vps4User;
 import com.godaddy.vps4.vm.Action;
 import com.godaddy.vps4.vm.ActionService;
 import com.godaddy.vps4.vm.ActionStatus;
 import com.godaddy.vps4.vm.ActionType;
-import com.godaddy.vps4.vm.VirtualMachine;
-import com.godaddy.vps4.vm.VirtualMachineService;
-import com.godaddy.vps4.vm.ServerType;
 import com.godaddy.vps4.vm.ServerSpec;
+import com.godaddy.vps4.vm.ServerType;
+import com.godaddy.vps4.vm.VirtualMachine;
 import com.godaddy.vps4.web.Vps4Exception;
 import com.godaddy.vps4.web.security.GDUser;
 import com.godaddy.vps4.web.vm.VmResource;
@@ -44,6 +42,7 @@ import com.godaddy.vps4.web.vm.VmResource;
 import gdg.hfs.orchestration.CommandGroupSpec;
 import gdg.hfs.orchestration.CommandService;
 import gdg.hfs.orchestration.CommandState;
+
 import junit.framework.Assert;
 
 public class NetworkResourceTest {
@@ -52,9 +51,7 @@ public class NetworkResourceTest {
     private NetworkResource resource;
     private ActionService actionService = mock(ActionService.class);
     private NetworkService networkService = mock(NetworkService.class);
-    private VirtualMachineService virtualMachineService = mock(VirtualMachineService.class);
     private VirtualMachine vm;
-    private Vps4User vps4User;
     private VmResource vmResource = mock(VmResource.class);
 
 
@@ -78,9 +75,6 @@ public class NetworkResourceTest {
                 Instant.now(), Instant.now().plus(24, ChronoUnit.HOURS), Instant.now().plus(24, ChronoUnit.HOURS),
                 null, null, 0, UUID.randomUUID());
 
-        vps4User = new Vps4User(112, user.getShopperId());
-        when(virtualMachineService.getUserIdByVmId(vmId)).thenReturn(vps4User.getId());
-
         Project project = new Project(123, "unitTestProject", "vps4-unittest-123", Instant.now(), null);
         when(projectService.getProject(vm.projectId)).thenReturn(project);
 
@@ -90,7 +84,7 @@ public class NetworkResourceTest {
 
         when(vmResource.getVm(vmId)).thenReturn(vm);
 
-        resource = new NetworkResource(user, networkService, actionService, virtualMachineService,
+        resource = new NetworkResource(user, networkService, actionService,
                 projectService, commandService, vmResource, config);
 
     }
@@ -99,7 +93,6 @@ public class NetworkResourceTest {
         Action action = new Action(123, UUID.randomUUID(), ActionType.ADD_IP,
                 "{}", "NEW", "{}", ActionStatus.NEW, Instant.now(), null, "", UUID.randomUUID(), "tester");
         when(actionService.getAction(anyLong())).thenReturn(action);
-        when(virtualMachineService.getVirtualMachine(vmId)).thenReturn(vm);
 
         resource.addIpAddress(vmId);
         verify(actionService, times(1)).createAction(eq(vm.vmId), eq(ActionType.ADD_IP), anyString(), anyString());
@@ -120,7 +113,6 @@ public class NetworkResourceTest {
         Action action = new Action(123, UUID.randomUUID(), ActionType.ADD_IP,
         "{}", "NEW", "{}", ActionStatus.NEW, Instant.now(), null, "", UUID.randomUUID(), "tester");
         when(actionService.getAction(anyLong())).thenReturn(action);
-        when(virtualMachineService.getVirtualMachine(vmId)).thenReturn(vm);
         resource.addIpAddress(vmId);
         verify(actionService, times(1)).createAction(eq(vm.vmId), eq(ActionType.ADD_IP), anyString(), anyString());
 
@@ -142,7 +134,6 @@ public class NetworkResourceTest {
                                      Instant.now(),
                                      Instant.now().plus(24, ChronoUnit.HOURS));
         when(networkService.getIpAddress(1111)).thenReturn(ip);
-        when(virtualMachineService.getVirtualMachine(vmId)).thenReturn(vm);
 
         resource.destroyIpAddress(vmId,1111);
         verify(actionService, times(1)).createAction(eq(vm.vmId), eq(ActionType.DESTROY_IP), anyString(), anyString());
@@ -166,7 +157,6 @@ public class NetworkResourceTest {
         IpAddress ip = new IpAddress(111, 111, vmId, "1.2.3.4", IpAddressType.SECONDARY,
                 null, Instant.now(), Instant.now().plus(24, ChronoUnit.HOURS));
         when(networkService.getIpAddress(1111)).thenReturn(ip);
-        when(virtualMachineService.getVirtualMachine(vmId)).thenReturn(vm);
         resource.destroyIpAddress(vmId, 1111);
         verify(actionService, times(1)).createAction(eq(vm.vmId), eq(ActionType.DESTROY_IP), anyString(), anyString());
     }

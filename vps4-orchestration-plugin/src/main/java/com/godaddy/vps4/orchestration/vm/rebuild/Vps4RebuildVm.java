@@ -126,9 +126,9 @@ public class Vps4RebuildVm extends ActionCommand<Vps4RebuildVm.Request, Void> {
         for (IpAddress ipAddress : ipAddresses) {
             logger.info("Unbind public ip address {} from VM {}", ipAddress.ipAddress, vps4VmId);
             UnbindIp.Request unbindIpRequest = new UnbindIp.Request();
-            unbindIpRequest.addressId = ipAddress.ipAddressId;
+            unbindIpRequest.hfsAddressId = ipAddress.hfsAddressId;
             unbindIpRequest.forceIfVmInaccessible = true;
-            context.execute(String.format("UnbindIP-%d", ipAddress.ipAddressId), UnbindIp.class, unbindIpRequest);
+            context.execute(String.format("UnbindIP-%d", ipAddress.hfsAddressId), UnbindIp.class, unbindIpRequest);
         }
     }
 
@@ -190,9 +190,9 @@ public class Vps4RebuildVm extends ActionCommand<Vps4RebuildVm.Request, Void> {
             logger.info("Bind public ip address {} to VM {}", ipAddress.ipAddress, vps4VmId);
 
             BindIp.Request bindRequest = new BindIp.Request();
-            bindRequest.addressId = ipAddress.ipAddressId;
+            bindRequest.hfsAddressId = ipAddress.hfsAddressId;
             bindRequest.hfsVmId = hfsVmId;
-            context.execute(String.format("BindIP-%d", ipAddress.ipAddressId), BindIp.class, bindRequest);
+            context.execute(String.format("BindIP-%d", ipAddress.hfsAddressId), BindIp.class, bindRequest);
         }
     }
 

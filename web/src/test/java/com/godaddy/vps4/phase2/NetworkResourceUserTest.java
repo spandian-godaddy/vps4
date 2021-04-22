@@ -28,7 +28,6 @@ import com.godaddy.vps4.security.Vps4UserService;
 import com.godaddy.vps4.security.jdbc.AuthorizationException;
 import com.godaddy.vps4.snapshot.SnapshotModule;
 import com.godaddy.vps4.vm.AccountStatus;
-import com.godaddy.vps4.vm.Action;
 import com.godaddy.vps4.vm.VirtualMachine;
 import com.godaddy.vps4.vm.VmModule;
 import com.godaddy.vps4.vm.VmAction;
@@ -91,10 +90,10 @@ public class NetworkResourceUserTest {
 
     private IpAddress createSecondaryIp(UUID vmId) {
         double rando = Math.random() * 350;
-        long ipAddressId = (long) rando;
+        long hfsAddressId = (long) rando;
         Random random = new Random();
         String ipAddress = "192.168.1."+random.nextInt(256);
-        IpAddress ip = SqlTestData.insertTestIp(ipAddressId, vmId, ipAddress, IpAddressType.SECONDARY, dataSource);
+        IpAddress ip = SqlTestData.insertTestIp(hfsAddressId, vmId, ipAddress, IpAddressType.SECONDARY, dataSource);
         return ip;
     }
 
@@ -133,7 +132,7 @@ public class NetworkResourceUserTest {
 
         IpAddress ip = createSecondaryIp(vm.vmId);
 
-        VmAction action = resource.destroyIpAddress(vm.vmId, ip.ipAddressId);
+        VmAction action = resource.destroyIpAddress(vm.vmId, ip.addressId);
         Assert.assertNotNull(action);
     }
 
@@ -195,10 +194,10 @@ public class NetworkResourceUserTest {
 
         IpAddress ip = createSecondaryIp(vm.vmId);
 
-        IpAddress returnedIp = resource.getIpAddress(vm.vmId,ip.ipAddressId);
+        IpAddress returnedIp = resource.getIpAddress(vm.vmId, ip.addressId);
 
         // Only expecting 1 because createTestVm doesn't create the primary IP.
-        Assert.assertEquals(ip.ipAddressId, returnedIp.ipAddressId);
+        Assert.assertEquals(ip.hfsAddressId, returnedIp.hfsAddressId);
     }
 
     @Test

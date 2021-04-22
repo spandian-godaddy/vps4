@@ -52,11 +52,11 @@ public class TestVps4DestroyIpAddressAction {
         VirtualMachine virtualMachine = new VirtualMachine(UUID.randomUUID(),
                 1111, UUID.randomUUID(), 0, null, "fakeName", null, null,
                 Instant.now(), null, null, null, "fake.hostname.com", 0, UUID.randomUUID());
-        request.ipAddressId = 3425;
+        request.addressId = 123;
         request.vmId = virtualMachine.vmId;
 
-        IpAddress ip = new IpAddress(3425, 3425, UUID.randomUUID(), "1.2.3.4", IpAddressType.SECONDARY, null, Instant.now(), null);
-        when(networkService.getIpAddress(ip.ipAddressId)).thenReturn(ip);
+        IpAddress ip = new IpAddress(123, 3425, UUID.randomUUID(), "1.2.3.4", IpAddressType.SECONDARY, null, Instant.now(), null);
+        when(networkService.getIpAddress(ip.addressId)).thenReturn(ip);
 
         try{
             command.executeWithAction(context, request);
@@ -66,7 +66,7 @@ public class TestVps4DestroyIpAddressAction {
         }
         verify(context, times(1)).execute(Vps4RemoveIp.class, ip);
 
-        verify(context, times(1)).execute(eq("MarkIpDeleted-3425"), any(Function.class), eq(Void.class));
+        verify(context, times(1)).execute(eq("MarkIpDeleted-123"), any(Function.class), eq(Void.class));
     }
 
 

@@ -159,9 +159,9 @@ public class Vps4ProvisionVm extends ActionCommand<ProvisionRequest, Vps4Provisi
     }
 
     protected String setupPrimaryIp(Vm hfsVm) {
-        IpAddress ip = allocateIp();
-        bindIp(hfsVm.vmId, ip);
-        return ip.address;
+        IpAddress hfsIp = allocateIp();
+        bindIp(hfsVm.vmId, hfsIp.addressId);
+        return hfsIp.address;
     }
 
     /* Create Reverse DNS record.
@@ -237,12 +237,12 @@ public class Vps4ProvisionVm extends ActionCommand<ProvisionRequest, Vps4Provisi
         }
     }
 
-    private void bindIp(long hfsVmId, IpAddress ip) {
+    private void bindIp(long hfsVmId, long hfsAddressId) {
         // bind IP to the VM
         setStep(ConfiguringNetwork);
 
         BindIp.Request bindRequest = new BindIp.Request();
-        bindRequest.addressId = ip.addressId;
+        bindRequest.hfsAddressId = hfsAddressId;
         bindRequest.hfsVmId = hfsVmId;
         context.execute(BindIp.class, bindRequest);
     }
@@ -337,15 +337,15 @@ public class Vps4ProvisionVm extends ActionCommand<ProvisionRequest, Vps4Provisi
         allocateIpRequest.sgid = request.vmInfo.sgid;
         allocateIpRequest.zone = request.zone;
 
-        IpAddress ip = context.execute(AllocateIp.class, allocateIpRequest);
+        IpAddress hfsIp = context.execute(AllocateIp.class, allocateIpRequest);
 
         // Add the ip to the database
-        context.execute("Create-" + ip.addressId, ctx -> {
-            networkService.createIpAddress(ip.addressId, request.vmInfo.vmId, ip.address, IpAddressType.PRIMARY);
+        context.execute("Create-" + hfsIp.addressId, ctx -> {
+            networkService.createIpAddress(hfsIp.addressId, request.vmInfo.vmId, hfsIp.address, IpAddressType.PRIMARY);
             return null;
         }, Void.class);
 
-        return ip;
+        return hfsIp;
     }
 
     /* Add IP address to VPS4 database, if it is not done already.

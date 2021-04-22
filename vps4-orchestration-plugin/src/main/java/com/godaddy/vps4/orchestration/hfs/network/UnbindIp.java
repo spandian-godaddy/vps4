@@ -33,7 +33,7 @@ public class UnbindIp implements Command<UnbindIp.Request, Void> {
     @Override
     public Void execute(CommandContext context, Request request) {
         this.request = request;
-        this.hfsAddress = networkService.getAddress(request.addressId);
+        this.hfsAddress = networkService.getAddress(request.hfsAddressId);
         logger.info("Unbinding HFS Address {} with status {} from HFS server {}",
                 hfsAddress.addressId, hfsAddress.status, hfsAddress.serverId);
 
@@ -65,7 +65,7 @@ public class UnbindIp implements Command<UnbindIp.Request, Void> {
         }
 
         AddressAction hfsAction = context.execute("RequestFromHFS", ctx -> {
-            return networkService.unbindIp(request.addressId, request.forceIfVmInaccessible);
+            return networkService.unbindIp(request.hfsAddressId, request.forceIfVmInaccessible);
         }, AddressAction.class);
 
         context.execute(WaitForAddressAction.class, hfsAction);
@@ -80,7 +80,7 @@ public class UnbindIp implements Command<UnbindIp.Request, Void> {
 
 
     public static class Request {
-        public long addressId;
+        public long hfsAddressId;
         public boolean forceIfVmInaccessible;
     }
 
