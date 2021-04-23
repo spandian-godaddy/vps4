@@ -350,4 +350,16 @@ public class Vps4RebuildVmTest {
         verify(context, times(1)).execute(eq("UpdateHfsVmTrackingRecord"),
                 any(Function.class), eq(Void.class));
     }
+
+    @Test
+    public void doesNotReleaseIps() {
+        command.execute(context, request);
+        verify(context, never()).execute(startsWith("RemoveIp-"), eq(BindIp.class), anyObject());
+    }
+
+    @Test
+    public void doesNotDeleteIpsinDB() {
+        command.execute(context, request);
+        verify(context, never()).execute(startsWith("MarkIpDeleted-"), eq(BindIp.class), anyObject());
+    }
 }
