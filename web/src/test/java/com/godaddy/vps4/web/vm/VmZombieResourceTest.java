@@ -377,7 +377,8 @@ public class VmZombieResourceTest {
 
     @Test
     public void zombieReviveHasExpectedRoles() throws NoSuchMethodException {
-        GDUser.Role[] expectedRoles = new GDUser.Role[] {GDUser.Role.ADMIN, GDUser.Role.HS_LEAD, GDUser.Role.HS_AGENT};
+        GDUser.Role[] expectedRoles = new GDUser.Role[] {GDUser.Role.ADMIN, GDUser.Role.HS_LEAD, GDUser.Role.HS_AGENT,
+                GDUser.Role.SUSPEND_AUTH, GDUser.Role.C3_OTHER};
         Assert.assertArrayEquals(expectedRoles, VmZombieResource.class.getMethod("reviveZombieVm", UUID.class, UUID.class)
                                                                       .getAnnotation(RequiresRole.class).roles());
     }

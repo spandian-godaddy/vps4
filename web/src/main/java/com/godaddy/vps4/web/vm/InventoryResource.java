@@ -46,7 +46,7 @@ public class InventoryResource {
         this.virtualMachineService = virtualMachineService;
     }
 
-    @RequiresRole(roles = {Role.ADMIN, Role.HS_LEAD, Role.HS_AGENT, Role.SUSPEND_AUTH, Role.EMPLOYEE_OTHER})
+    @RequiresRole(roles = {Role.ADMIN, Role.HS_LEAD, Role.HS_AGENT, Role.SUSPEND_AUTH, Role.C3_OTHER})
     @GET
     @Path("/ded/inventory")
     @ApiOperation(value = "Get the inventory details for the specified spec or tier, otherwise return inventory on " +
