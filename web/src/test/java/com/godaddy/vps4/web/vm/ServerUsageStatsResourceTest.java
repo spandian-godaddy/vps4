@@ -192,13 +192,12 @@ public class ServerUsageStatsResourceTest {
     }
 
     @Test
-    public void getPanoptaUsageWithUnderFiveNullValues() throws PanoptaServiceException {
+    public void getPanoptaUsageWithUnderTenNullValues() throws PanoptaServiceException {
         for (PanoptaGraph graph : usageGraphs) {
             graph.timestamps.add(Instant.now());
-            graph.values.add(null);
-            graph.values.add(null);
-            graph.values.add(null);
-            graph.values.add(null);
+            for (int i = 0; i < 9; i++) {
+                graph.values.add(null);
+            }
         }
 
         doNothing().when(spyResource).verifyServerIsActive(anyLong());
@@ -225,6 +224,21 @@ public class ServerUsageStatsResourceTest {
             for (int i = 0; i < 10; i++) {
                 graph.values.add(null);
             }
+        }
+
+        doNothing().when(spyResource).verifyServerIsActive(anyLong());
+        when(vmResource.getVm(vm.vmId)).thenReturn(vm);
+        when(panoptaDataService.getPanoptaDetails(vm.vmId)).thenReturn(panoptaDetail);
+        when(panoptaService.getUsageGraphs(vm.vmId, "hour")).thenReturn(usageGraphs);
+
+        spyResource.getUsage(vm.vmId);
+    }
+
+    @Test(expected = Vps4Exception.class)
+    public void getPanoptaUsageWithEmptyValueList() throws PanoptaServiceException {
+        for (PanoptaGraph graph : usageGraphs) {
+            graph.timestamps.add(Instant.now());
+            graph.values = new ArrayList<>();
         }
 
         doNothing().when(spyResource).verifyServerIsActive(anyLong());

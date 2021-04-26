@@ -116,7 +116,7 @@ public class ServerUsageStatsResource {
                 if (instant.isBefore(stats.lastRefreshedAt)) {
                     stats.lastRefreshedAt = instant;
                 }
-            } catch (NullPointerException e) {
+            } catch (IndexOutOfBoundsException | NullPointerException e) {
                 throw new Vps4Exception("USAGE_STATS_UNAVAILABLE", "Usage stats are unavailable at the moment.");
             }
         }
