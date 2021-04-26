@@ -42,6 +42,7 @@ import com.godaddy.vps4.web.network.NetworkModule;
 import com.godaddy.vps4.web.security.AuthenticationFilter;
 import com.godaddy.vps4.web.security.GDUserModule;
 import com.godaddy.vps4.web.security.Vps4CorsFilter;
+import com.godaddy.vps4.web.util.ImportedVmFilter;
 import com.godaddy.vps4.web.util.RequestIdFilter;
 import com.godaddy.vps4.web.util.VmActiveSnapshotFilter;
 import com.godaddy.vps4.web.vm.ServerUsageStatsModule;
@@ -157,6 +158,8 @@ public class Vps4Injector {
                 bind(VmActiveSnapshotFilter.class).in(Singleton.class);
                 filter("/api/vms/*").through(VmActiveSnapshotFilter.class);
 
+                bind(ImportedVmFilter.class).in(Singleton.class);
+                filter("/api/vms/*").through(ImportedVmFilter.class);
 
                 Multibinder.newSetBinder(binder(), SwaggerClassFilter.class)
                         .addBinding().toInstance(resourceClass -> isResourceSwaggerVisible(resourceClass));
