@@ -93,7 +93,8 @@ public class JdbcImageService implements ImageService {
                 " AND   (?::text is null or LOWER(os.name) = LOWER(?))" +
                 " AND   (?::text is null or LOWER(cp.name) = LOWER(?))" +
                 " AND   (?::text is null or LOWER(image.hfs_name) = LOWER(?))" +
-                " AND   (?::text is null or LOWER(st.platform) = LOWER(?))",
+                " AND   (?::text is null or LOWER(st.platform) = LOWER(?))" +
+                " AND   image.imported_image = false",
                 Sql.listOf(this::mapImage),
                 os, os, controlPanel, controlPanel, hfsName, hfsName,  platform, platform);
     }
