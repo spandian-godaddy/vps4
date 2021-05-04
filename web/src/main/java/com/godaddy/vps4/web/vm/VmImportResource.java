@@ -15,6 +15,7 @@ import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
 
+import com.godaddy.hfs.config.Config;
 import com.godaddy.vps4.credit.CreditService;
 import com.godaddy.vps4.credit.VirtualMachineCredit;
 import com.godaddy.vps4.network.IpAddress;
@@ -24,7 +25,6 @@ import com.godaddy.vps4.project.ProjectService;
 import com.godaddy.vps4.security.Vps4User;
 import com.godaddy.vps4.security.Vps4UserService;
 import com.godaddy.vps4.vm.ActionService;
-import com.godaddy.vps4.vm.ActionStatus;
 import com.godaddy.vps4.vm.ActionType;
 import com.godaddy.vps4.vm.ImageService;
 import com.godaddy.vps4.vm.ServerSpec;
@@ -54,6 +54,9 @@ public class VmImportResource {
     private final ImageService imageService;
     private final NetworkService networkService;
     private final ActionService actionService;
+    private final VmActionResource vmActionResource;
+    private final Config config;
+    private final int defaultDatacenterId;
 
     @Inject
     public VmImportResource(VirtualMachineService virtualMachineService,
@@ -62,7 +65,9 @@ public class VmImportResource {
                             Vps4UserService vps4UserService,
                             ImageService imageService,
                             NetworkService networkService,
-                            ActionService actionService) {
+                            ActionService actionService,
+                            VmActionResource vmActionResource,
+                            Config config) {
         this.virtualMachineService = virtualMachineService;
         this.creditService = creditService;
         this.projectService = projectService;
@@ -70,6 +75,9 @@ public class VmImportResource {
         this.imageService = imageService;
         this.networkService = networkService;
         this.actionService = actionService;
+        this.vmActionResource = vmActionResource;
+        this.config = config;
+        defaultDatacenterId = Integer.parseInt(config.get("vps4.datacenter.defaultId"));
     }
 
     public static class ImportVmRequest {
@@ -106,6 +114,8 @@ public class VmImportResource {
                                                                                        imageId);
         VirtualMachine virtualMachine = virtualMachineService.importVirtualMachine(parameters);
 
+        creditService.claimVirtualMachineCredit(importVmRequest.entitlementId, defaultDatacenterId, virtualMachine.vmId);
+
         importIpAddresses(importVmRequest, virtualMachine);
 
         return createReturnAction(virtualMachine);
@@ -131,12 +141,12 @@ public class VmImportResource {
     private VmAction createReturnAction(VirtualMachine virtualMachine) {
         VmAction action = new VmAction();
         action.type = ActionType.IMPORT_VM;
-        action.status = ActionStatus.COMPLETE;
         action.virtualMachineId = virtualMachine.vmId;
         action.created = action.completed = Instant.now();
 
-        actionService.createAction(virtualMachine.vmId, ActionType.IMPORT_VM, null, "EMEA Migrations");
+        long actionId = actionService.createAction(virtualMachine.vmId, ActionType.IMPORT_VM, null, "EMEA Migrations");
+        actionService.completeAction(actionId, null, null);
 
-        return action;
+        return vmActionResource.getVmAction(virtualMachine.vmId, actionId);
     }
 }

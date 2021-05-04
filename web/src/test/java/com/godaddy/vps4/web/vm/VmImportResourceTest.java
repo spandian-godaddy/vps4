@@ -3,9 +3,11 @@ package com.godaddy.vps4.web.vm;
 import static com.godaddy.vps4.vm.VirtualMachineService.*;
 import static com.godaddy.vps4.web.vm.VmImportResource.*;
 import static org.junit.Assert.assertEquals;
+import static org.mockito.Matchers.anyLong;
 import static org.mockito.Matchers.anyObject;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.eq;
+import static org.mockito.Matchers.matches;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -20,6 +22,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
 
+import com.godaddy.hfs.config.Config;
 import com.godaddy.vps4.credit.CreditService;
 import com.godaddy.vps4.credit.VirtualMachineCredit;
 import com.godaddy.vps4.network.IpAddress;
@@ -50,6 +53,8 @@ public class VmImportResourceTest {
     ImageService imageService = mock(ImageService.class);
     NetworkService networkService = mock(NetworkService.class);
     ActionService actionService = mock(ActionService.class);
+    VmActionResource vmActionResource = mock(VmActionResource.class);
+    Config config = mock(Config.class);
 
     VirtualMachineCredit credit;
     VmImportResource vmImportResource;
@@ -66,6 +71,7 @@ public class VmImportResourceTest {
         user = GDUserMock.createShopper();
         credit = createVmCredit(UUID.randomUUID(), AccountStatus.ACTIVE, "myh", 0, 0, 10, "Linux", Instant.now());
         when(creditService.getVirtualMachineCredit(credit.getOrionGuid())).thenReturn(credit);
+        when(config.get("vps4.datacenter.defaultId")).thenReturn("1");
 
         importVmRequest = new ImportVmRequest();
         importVmRequest.entitlementId = credit.getOrionGuid();
@@ -75,8 +81,15 @@ public class VmImportResourceTest {
         importVmRequest.additionalIps.add("192.168.0.2");
         importVmRequest.additionalIps.add("192.168.0.2");
 
-
-        vmImportResource = new VmImportResource(virtualMachineService, creditService, projectService, vps4UserService, imageService, networkService, actionService);
+        vmImportResource = new VmImportResource(virtualMachineService,
+                                                creditService,
+                                                projectService,
+                                                vps4UserService,
+                                                imageService,
+                                                networkService,
+                                                actionService,
+                                                vmActionResource,
+                                                config);
 
         spec = new ServerSpec();
         when(virtualMachineService.getSpec(credit.getTier(), ServerType.Platform.OPTIMIZED_HOSTING.getplatformId())).thenReturn(spec);
@@ -91,6 +104,12 @@ public class VmImportResourceTest {
         virtualMachine.vmId = UUID.randomUUID();
         argument = ArgumentCaptor.forClass(ImportVirtualMachineParameters.class);
         when(virtualMachineService.importVirtualMachine(anyObject())).thenReturn(virtualMachine);
+
+        VmAction result = new VmAction();
+        result.type = ActionType.IMPORT_VM;
+        result.virtualMachineId = virtualMachine.vmId;
+        result.status = ActionStatus.COMPLETE;
+        when(vmActionResource.getVmAction(anyObject(), anyLong())).thenReturn(result);
     }
 
     private VirtualMachineCredit createVmCredit(UUID orionGuid, AccountStatus accountStatus, String controlPanel,
@@ -142,6 +161,7 @@ public class VmImportResourceTest {
         verify(networkService, times(1)).createIpAddress(0, action.virtualMachineId, importVmRequest.ip, IpAddress.IpAddressType.PRIMARY);
         verify(networkService, times(1)).createIpAddress(0, action.virtualMachineId, "2001:0db8:85a3:0000:0000:8a2e:0370:7334", IpAddress.IpAddressType.SECONDARY);
         verify(networkService, times(2)).createIpAddress(0, action.virtualMachineId, "192.168.0.2", IpAddress.IpAddressType.SECONDARY);
+        verify(creditService, times(1)).claimVirtualMachineCredit(importVmRequest.entitlementId, 1, virtualMachine.vmId);
     }
 
     @Test
