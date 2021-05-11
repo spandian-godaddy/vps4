@@ -115,7 +115,7 @@ public class NetworkResource {
         VirtualMachine virtualMachine = vmResource.getVm(vmId);
         validateNoConflictingActions(vmId, actionService, ActionType.ADD_IP);
 
-        int currentIpsInUse = networkService.getActiveIpAddressesCount(vmId);
+        int currentIpsInUse = networkService.getActiveIpv4AddressesCount(vmId);
         if( currentIpsInUse >= virtualMachine.spec.ipAddressLimit)
         {
             throw new Vps4Exception("IP_LIMIT_REACHED",String.format("This vm's ip limit is %s and it already has %s ips in use.", virtualMachine.spec.ipAddressLimit, currentIpsInUse));

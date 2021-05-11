@@ -106,7 +106,7 @@ public class DnsResourceTest {
         testVm.spec = testSpec;
         testVm.primaryIpAddress =
                 new IpAddress(1111, 1111, vmId, "1.2.3.4", IpAddress.IpAddressType.PRIMARY, null, Instant.now(),
-                              Instant.now().plus(24, ChronoUnit.HOURS));
+                              Instant.now().plus(24, ChronoUnit.HOURS), 4);
         when(vmResource.getVm(testVm.vmId)).thenReturn(testVm);
     }
 

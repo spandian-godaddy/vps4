@@ -40,12 +40,13 @@ public class IpAddress {
     public Long pingCheckId;
     public Instant validOn;
     public Instant validUntil;
+    public int family;
 
     public IpAddress() {
     }
 
     public IpAddress(long addressId, long hfsAddressId, UUID vmId, String ipAddress, IpAddressType ipAddressType, Long pingCheckId, Instant validOn,
-                     Instant validUntil) {
+                     Instant validUntil, int family) {
         this.addressId = addressId;
         this.hfsAddressId = hfsAddressId;
         this.vmId = vmId;
@@ -54,6 +55,7 @@ public class IpAddress {
         this.pingCheckId = pingCheckId;
         this.validOn = validOn;
         this.validUntil = validUntil;
+        this.family = family;
     }
 
     @Override

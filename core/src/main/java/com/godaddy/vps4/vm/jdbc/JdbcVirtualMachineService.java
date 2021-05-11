@@ -39,7 +39,7 @@ public class JdbcVirtualMachineService implements VirtualMachineService {
             + "vms.spec_id, vms.spec_name, vms.tier, vms.cpu_core_count, vms.memory_mib, vms.disk_gib, vms.valid_on as \"spec_valid_on\", "
             + "vms.valid_until as \"spec_valid_until\", vms.name as \"spec_vps4_name\", vms.ip_address_count, st.server_type, st.server_type_id, st.platform, "
             + "image.name, image.hfs_name, image.image_id, image.control_panel_id, image.os_type_id, "
-            + "ip.address_id, ip.hfs_address_id, ip.ip_address, ip.ip_address_type_id, ip.valid_on, ip.valid_until, ip.ping_check_id "
+            + "ip.address_id, ip.hfs_address_id, ip.ip_address, ip.ip_address_type_id, ip.valid_on, ip.valid_until, ip.ping_check_id, family(ip.ip_address) "
             + "FROM virtual_machine vm "
             + "JOIN virtual_machine_spec vms ON vms.spec_id=vm.spec_id "
             + "JOIN image ON image.image_id=vm.image_id "

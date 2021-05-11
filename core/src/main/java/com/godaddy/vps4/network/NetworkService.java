@@ -21,5 +21,5 @@ public interface NetworkService {
 
     List<IpAddress> getVmSecondaryAddress(long hfsVmId);
 
-    int getActiveIpAddressesCount(UUID vmId);
+    int getActiveIpv4AddressesCount(UUID vmId);
 }

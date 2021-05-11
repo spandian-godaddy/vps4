@@ -180,11 +180,11 @@ public class Vps4DestroyVmTest {
     @Test
     public void executesRemoveIpForAdditionalIps() {
         IpAddress primaryIp = new IpAddress(1,1111, vmId, "1.2.3.4", IpAddress.IpAddressType.SECONDARY,
-                null, Instant.now(), Instant.now().plus(24, ChronoUnit.HOURS));
+                null, Instant.now(), Instant.now().plus(24, ChronoUnit.HOURS), 4);
         IpAddress secondaryIp = new IpAddress(2,1112, vmId, "1.2.3.4", IpAddress.IpAddressType.SECONDARY,
-                null, Instant.now(), Instant.now().plus(24, ChronoUnit.HOURS));
+                null, Instant.now(), Instant.now().plus(24, ChronoUnit.HOURS), 4);
         IpAddress removedIp = new IpAddress(3,1113, vmId, "1.2.3.4", IpAddress.IpAddressType.SECONDARY,
-                null, Instant.now(), Instant.now().plus(24, ChronoUnit.HOURS));
+                null, Instant.now(), Instant.now().plus(24, ChronoUnit.HOURS), 4);
 
         List<IpAddress> secondaryIps = new ArrayList<IpAddress>();
         secondaryIps.add(primaryIp);
@@ -200,11 +200,11 @@ public class Vps4DestroyVmTest {
     @Test
     public void marksIpDeletedForAdditionalIps() {
         IpAddress primaryIp = new IpAddress(1,1111, vmId, "1.2.3.4", IpAddress.IpAddressType.SECONDARY,
-                null, Instant.now(), Instant.now().plus(24, ChronoUnit.HOURS));
+                null, Instant.now(), Instant.now().plus(24, ChronoUnit.HOURS), 4);
         IpAddress secondaryIp = new IpAddress(2,1112, vmId, "1.2.3.4", IpAddress.IpAddressType.SECONDARY,
-                null, Instant.now(), Instant.now().plus(24, ChronoUnit.HOURS));
+                null, Instant.now(), Instant.now().plus(24, ChronoUnit.HOURS), 4);
         IpAddress removedIp = new IpAddress(3,1113, vmId, "1.2.3.4", IpAddress.IpAddressType.SECONDARY,
-                null, Instant.now(), Instant.now().minus(24, ChronoUnit.HOURS));
+                null, Instant.now(), Instant.now().minus(24, ChronoUnit.HOURS), 4);
 
         MockitoAnnotations.initMocks(this);
         List<IpAddress> secondaryIps = new ArrayList<IpAddress>();

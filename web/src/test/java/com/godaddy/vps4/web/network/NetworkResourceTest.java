@@ -132,7 +132,7 @@ public class NetworkResourceTest {
                                      IpAddressType.SECONDARY,
                                      null,
                                      Instant.now(),
-                                     Instant.now().plus(24, ChronoUnit.HOURS));
+                                     Instant.now().plus(24, ChronoUnit.HOURS), 4);
         when(networkService.getIpAddress(1111)).thenReturn(ip);
 
         resource.destroyIpAddress(vmId,1111);
@@ -155,7 +155,7 @@ public class NetworkResourceTest {
         when(actionService.getAction(action.id)).thenReturn(action);
 
         IpAddress ip = new IpAddress(111, 111, vmId, "1.2.3.4", IpAddressType.SECONDARY,
-                null, Instant.now(), Instant.now().plus(24, ChronoUnit.HOURS));
+                null, Instant.now(), Instant.now().plus(24, ChronoUnit.HOURS), 4);
         when(networkService.getIpAddress(1111)).thenReturn(ip);
         resource.destroyIpAddress(vmId, 1111);
         verify(actionService, times(1)).createAction(eq(vm.vmId), eq(ActionType.DESTROY_IP), anyString(), anyString());
@@ -215,7 +215,7 @@ public class NetworkResourceTest {
     @Test(expected=NotFoundException.class)
     public void testDestroyIpBelongsToDifferentVm(){
         IpAddress ip = new IpAddress(1111,1111, UUID.randomUUID(), "1.2.3.4", IpAddressType.SECONDARY,
-                null, Instant.now(), Instant.now().plus(24, ChronoUnit.HOURS));
+                null, Instant.now(), Instant.now().plus(24, ChronoUnit.HOURS), 4);
 
         when(networkService.getIpAddress(1111)).thenReturn(ip);
         resource.destroyIpAddress(vmId, 1111);
@@ -224,7 +224,7 @@ public class NetworkResourceTest {
     @Test(expected=NotFoundException.class)
     public void testDestroyIpAlreadyRemoved(){
         IpAddress ip = new IpAddress(1111, 1111, vmId, "1.2.3.4", IpAddressType.SECONDARY,
-                null, Instant.now(), Instant.now().minus(24, ChronoUnit.HOURS));
+                null, Instant.now(), Instant.now().minus(24, ChronoUnit.HOURS), 4);
 
         when(networkService.getIpAddress(1111)).thenReturn(ip);
         resource.destroyIpAddress(vmId, 1111);
@@ -233,7 +233,7 @@ public class NetworkResourceTest {
     @Test(expected=Vps4Exception.class)
     public void testDeletePrimaryIp(){
         IpAddress ip = new IpAddress(1111, 1111, vmId, "1.2.3.4", IpAddressType.PRIMARY, null, Instant.now(),
-                Instant.now().plus(24, ChronoUnit.HOURS));
+                Instant.now().plus(24, ChronoUnit.HOURS), 4);
 
         when(networkService.getIpAddress(1111)).thenReturn(ip);
         resource.destroyIpAddress(vmId, 1111);
@@ -242,11 +242,11 @@ public class NetworkResourceTest {
     @Test
     public void testGetIpAddresses(){
         IpAddress primaryIp = new IpAddress(1111, 1111, vmId, "1.2.3.4", IpAddressType.PRIMARY,
-                null, Instant.now(), Instant.now().plus(24, ChronoUnit.HOURS));
+                null, Instant.now(), Instant.now().plus(24, ChronoUnit.HOURS), 4);
         IpAddress secondaryIp = new IpAddress(1111, 1111, vmId, "1.2.3.4", IpAddressType.SECONDARY,
-                null, Instant.now(), Instant.now().plus(24, ChronoUnit.HOURS));
+                null, Instant.now(), Instant.now().plus(24, ChronoUnit.HOURS), 4);
         IpAddress removedIp = new IpAddress(1111, 1111, vmId, "1.2.3.4", IpAddressType.SECONDARY,
-                null, Instant.now(), Instant.now().minus(24, ChronoUnit.HOURS));
+                null, Instant.now(), Instant.now().minus(24, ChronoUnit.HOURS), 4);
 
         List<IpAddress> allIps = new ArrayList<IpAddress>();
         allIps.add(primaryIp);

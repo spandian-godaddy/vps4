@@ -21,6 +21,8 @@ public class IpAddressMapper {
                 IpAddress.IpAddressType.valueOf(rs.getInt("ip_address_type_id")),
                 pingCheckId == 0 ? null : pingCheckId,
                 rs.getTimestamp("valid_on", TimestampUtils.utcCalendar).toInstant(),
-                rs.getTimestamp("valid_until", TimestampUtils.utcCalendar).toInstant());
+                rs.getTimestamp("valid_until", TimestampUtils.utcCalendar).toInstant(),
+                rs.getInt("family"));
+
     }
 }

@@ -55,7 +55,7 @@ public class TestVps4DestroyIpAddressAction {
         request.addressId = 123;
         request.vmId = virtualMachine.vmId;
 
-        IpAddress ip = new IpAddress(123, 3425, UUID.randomUUID(), "1.2.3.4", IpAddressType.SECONDARY, null, Instant.now(), null);
+        IpAddress ip = new IpAddress(123, 3425, UUID.randomUUID(), "1.2.3.4", IpAddressType.SECONDARY, null, Instant.now(), null, 4);
         when(networkService.getIpAddress(ip.addressId)).thenReturn(ip);
 
         try{
