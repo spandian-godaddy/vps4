@@ -27,11 +27,14 @@ public class ImportedVmFilter extends VmFilter {
                             "delete",
                             "consoleUrl",
                             "snapshots",
+                            "restore",
                             "abuseSuspend",
                             "billingSuspend",
                             "reinstateAbuseSuspend",
                             "reinstateBillingSuspend",
-                            "messaging"),
+                            "messaging",
+                            "syncVmStatus",
+                            "snapshotSchedules"),
               virtualMachineService);
     }
 
