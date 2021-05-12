@@ -4,6 +4,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
+import com.godaddy.hfs.mailrelay.MailRelay;
 import com.godaddy.vps4.credit.ECommCreditService.ProductMetaField;
 import com.godaddy.vps4.vm.AccountStatus;
 
@@ -20,7 +21,7 @@ public interface CreditService {
 
     void claimVirtualMachineCredit(UUID orionGuid, int dataCenterId, UUID productId);
 
-    void unclaimVirtualMachineCredit(UUID orionGuid, UUID productId);
+    void unclaimVirtualMachineCredit(UUID orionGuid, UUID productId, int currentMailRelays);
 
     void setCommonName(UUID orionGuid, String newName);
 

@@ -21,6 +21,7 @@ import com.godaddy.vps4.cpanel.CpanelInvalidUserException;
 import com.godaddy.vps4.cpanel.CpanelTimeoutException;
 import com.godaddy.vps4.cpanel.Vps4CpanelService;
 import com.godaddy.vps4.jdbc.DatabaseModule;
+import com.godaddy.vps4.mailrelay.MailRelayService;
 import com.godaddy.vps4.panopta.PanoptaApiCustomerService;
 import com.godaddy.vps4.panopta.PanoptaApiServerService;
 import com.godaddy.vps4.scheduler.api.web.SchedulerWebService;
@@ -68,6 +69,7 @@ public class CpanelResourceTest {
                     bind(SchedulerWebService.class).toInstance(swServ);
                     bind(PanoptaApiCustomerService.class).toInstance(mock(PanoptaApiCustomerService.class));
                     bind(PanoptaApiServerService.class).toInstance(mock(PanoptaApiServerService.class));
+                    bind(MailRelayService.class).toInstance(mock(MailRelayService.class));
                 }
 
                 @Provides

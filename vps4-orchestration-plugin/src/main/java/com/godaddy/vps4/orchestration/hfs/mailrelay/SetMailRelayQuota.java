@@ -26,6 +26,7 @@ public class SetMailRelayQuota implements Command<SetMailRelayQuota.Request, Voi
     public Void execute(CommandContext context, Request request) {
         MailRelayUpdate mailRelayUpdate = new MailRelayUpdate();
         mailRelayUpdate.quota = request.mailRelayQuota;
+        mailRelayUpdate.relays = request.previousRelays;
         logger.info("Updating mail relay quota to {} for ip {}", mailRelayUpdate.quota, request.ipAddress);
         MailRelay relay = mailRelayService.setRelayQuota(request.ipAddress, mailRelayUpdate);
         if (relay == null || relay.quota != mailRelayUpdate.quota) {
@@ -39,5 +40,6 @@ public class SetMailRelayQuota implements Command<SetMailRelayQuota.Request, Voi
     public static class Request {
         public String ipAddress;
         public int mailRelayQuota;
+        public int previousRelays;
     }
 }

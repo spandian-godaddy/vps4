@@ -62,9 +62,13 @@ public class VmMailRelayResource {
     private final GDUser user;
 
     @Inject
-    public VmMailRelayResource(GDUser user, MailRelayService mailRelayService,
-            NetworkService networkService, CommandService commandService,
-            ActionService actionService, VmResource vmResource, CreditService creditService) {
+    public VmMailRelayResource(GDUser user,
+                               MailRelayService mailRelayService,
+                               NetworkService networkService,
+                               CommandService commandService,
+                               ActionService actionService,
+                               VmResource vmResource,
+                               CreditService creditService) {
         this.mailRelayService = mailRelayService;
         this.networkService = networkService;
         this.commandService = commandService;

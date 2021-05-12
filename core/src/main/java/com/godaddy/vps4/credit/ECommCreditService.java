@@ -16,6 +16,7 @@ import javax.ws.rs.WebApplicationException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.godaddy.hfs.mailrelay.MailRelay;
 import com.godaddy.vps4.vm.AccountStatus;
 import com.godaddy.vps4.vm.DataCenterService;
 import com.google.inject.Singleton;
@@ -38,7 +39,9 @@ public class ECommCreditService implements CreditService {
         PLAN_CHANGE_PENDING,
         PURCHASED_AT,
         ABUSE_SUSPENDED_FLAG,
-        BILLING_SUSPENDED_FLAG;
+        BILLING_SUSPENDED_FLAG,
+        RELEASED_AT,
+        RELAY_COUNT;
 
         @Override
         public String toString() {
@@ -182,12 +185,14 @@ public class ECommCreditService implements CreditService {
         to.put(ProductMetaField.DATA_CENTER, String.valueOf(dataCenterId));
         to.put(ProductMetaField.PROVISION_DATE, Instant.now().toString());
         to.put(ProductMetaField.PRODUCT_ID, productId.toString());
+        to.put(ProductMetaField.RELAY_COUNT, null);
+        to.put(ProductMetaField.RELEASED_AT, null);
 
         updateProductMeta(orionGuid, to);
     }
 
     @Override
-    public void unclaimVirtualMachineCredit(UUID orionGuid, UUID productId) {
+    public void unclaimVirtualMachineCredit(UUID orionGuid, UUID productId, int currentMailRelays) {
         EnumMap<ProductMetaField, String> expectedFrom = new EnumMap<>(ProductMetaField.class);
         expectedFrom.put(ProductMetaField.PRODUCT_ID, productId.toString());
 
@@ -195,6 +200,10 @@ public class ECommCreditService implements CreditService {
         requestedTo.put(ProductMetaField.DATA_CENTER, null);
         requestedTo.put(ProductMetaField.PROVISION_DATE, null);
         requestedTo.put(ProductMetaField.PRODUCT_ID, null);
+        if(currentMailRelays > 0) {
+            requestedTo.put(ProductMetaField.RELEASED_AT, Instant.now().toString());
+            requestedTo.put(ProductMetaField.RELAY_COUNT, String.valueOf(currentMailRelays));
+        }
 
         try {
             updateProductMeta(orionGuid, requestedTo, expectedFrom);

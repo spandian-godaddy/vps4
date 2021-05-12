@@ -312,6 +312,7 @@ public class Vps4ProvisionVm extends ActionCommand<ProvisionRequest, Vps4Provisi
         SetMailRelayQuota.Request hfsRequest = new SetMailRelayQuota.Request();
         hfsRequest.ipAddress = ipAddress;
         hfsRequest.mailRelayQuota = request.vmInfo.mailRelayQuota;
+        hfsRequest.previousRelays = request.vmInfo.previousRelays;
         context.execute(SetMailRelayQuota.class, hfsRequest);
     }
 

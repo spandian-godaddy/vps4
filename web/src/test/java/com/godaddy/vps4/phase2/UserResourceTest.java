@@ -1,5 +1,7 @@
 package com.godaddy.vps4.phase2;
 
+import static org.mockito.Mockito.mock;
+
 import java.util.List;
 import java.util.UUID;
 
@@ -13,6 +15,7 @@ import org.junit.Test;
 import org.mockito.Mockito;
 
 import com.godaddy.vps4.jdbc.DatabaseModule;
+import com.godaddy.vps4.mailrelay.MailRelayService;
 import com.godaddy.vps4.scheduler.api.web.SchedulerWebService;
 import com.godaddy.vps4.security.GDUserMock;
 import com.godaddy.vps4.security.SecurityModule;
@@ -54,6 +57,7 @@ public class UserResourceTest {
                 public void configure() {
                     SchedulerWebService swServ = Mockito.mock(SchedulerWebService.class);
                     bind(SchedulerWebService.class).toInstance(swServ);
+                    bind(MailRelayService.class).toInstance(mock(MailRelayService.class));
                 }
 
                 @Provides

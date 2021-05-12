@@ -2,10 +2,12 @@ package com.godaddy.vps4.phase2;
 
 import static java.util.UUID.randomUUID;
 import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 import java.time.Instant;
 import java.util.ArrayList;
@@ -22,7 +24,10 @@ import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mockito;
 
+import com.godaddy.hfs.mailrelay.MailRelay;
 import com.godaddy.vps4.jdbc.DatabaseModule;
+import com.godaddy.vps4.mailrelay.MailRelayService;
+import com.godaddy.vps4.network.IpAddress;
 import com.godaddy.vps4.panopta.PanoptaApiCustomerService;
 import com.godaddy.vps4.panopta.PanoptaApiServerService;
 import com.godaddy.vps4.scheduler.api.web.SchedulerWebService;
@@ -60,6 +65,7 @@ public class VmDestroyTest {
     private GDUser user;
     private VmSnapshotResource vmSnapshotResource = Mockito.mock(VmSnapshotResource.class);
     private SnapshotService snapshotService = Mockito.mock(SnapshotService.class);
+    private MailRelayService mailRelayService = mock(MailRelayService.class);
 
     private Injector injector = Guice.createInjector(new DatabaseModule(), new SecurityModule(), new VmModule(),
             new Phase2ExternalsModule(), new CancelActionModule(), new AbstractModule() {
@@ -72,6 +78,7 @@ public class VmDestroyTest {
                     bind(SchedulerWebService.class).toInstance(swServ);
                     bind(PanoptaApiCustomerService.class).toInstance(mock(PanoptaApiCustomerService.class));
                     bind(PanoptaApiServerService.class).toInstance(mock(PanoptaApiServerService.class));
+                    bind(MailRelayService.class).toInstance(mailRelayService);
                 }
 
                 @Provides
@@ -84,6 +91,7 @@ public class VmDestroyTest {
         UUID orionGuid = randomUUID();
         Vps4User vps4User = userService.getOrCreateUserForShopper(GDUserMock.DEFAULT_SHOPPER, "1");
         VirtualMachine vm = SqlTestData.insertTestVm(orionGuid, vps4User.getId(), dataSource);
+        SqlTestData.insertTestIp(vm.hfsVmId, vm.vmId, "192.168.0.112", IpAddress.IpAddressType.PRIMARY, dataSource);
         return vm;
     }
 
@@ -104,6 +112,7 @@ public class VmDestroyTest {
 
     @Before
     public void setupTest() {
+        when(mailRelayService.getMailRelay(anyString())).thenReturn(new MailRelay());
         injector.injectMembers(this);
         user = GDUserMock.createShopper();
     }
@@ -146,7 +155,7 @@ public class VmDestroyTest {
         Snapshot singleSnapshot = createSnapshot(vm.vmId, SnapshotStatus.LIVE);
         List<Snapshot> snapshots = Arrays.asList(singleSnapshot);
 
-        Mockito.when(getVmSnapshotResource().getSnapshotsForVM(Mockito.any())).thenReturn(snapshots);
+        when(getVmSnapshotResource().getSnapshotsForVM(Mockito.any())).thenReturn(snapshots);
 
         VmAction vmAction = getVmResource().destroyVm(vm.vmId);
         Assert.assertNotNull(vmAction.commandId);
@@ -162,7 +171,7 @@ public class VmDestroyTest {
             snapshots.add(createSnapshot(vm.vmId, SnapshotStatus.LIVE));
         }
 
-        Mockito.when(getVmSnapshotResource().getSnapshotsForVM(Mockito.any())).thenReturn(snapshots);
+        when(getVmSnapshotResource().getSnapshotsForVM(Mockito.any())).thenReturn(snapshots);
 
         VmAction vmAction = getVmResource().destroyVm(vm.vmId);
         Assert.assertNotNull(vmAction.commandId);
@@ -183,7 +192,7 @@ public class VmDestroyTest {
 
         List<Snapshot> snapshots = Arrays.asList(erroredSnapshot, newSnapshot, rescheduledSnapshot);
 
-        Mockito.when(getVmSnapshotResource().getSnapshotsForVM(Mockito.any())).thenReturn(snapshots);
+        when(getVmSnapshotResource().getSnapshotsForVM(Mockito.any())).thenReturn(snapshots);
 
         VmAction vmAction = getVmResource().destroyVm(vm.vmId);
         Assert.assertNotNull(vmAction.commandId);
@@ -201,7 +210,7 @@ public class VmDestroyTest {
 
         List<Snapshot> snapshots = Arrays.asList(erroredSnapshot, newSnapshot, rescheduledSnapshot);
 
-        Mockito.when(getVmSnapshotResource().getSnapshotsForVM(Mockito.any())).thenReturn(snapshots);
+        when(getVmSnapshotResource().getSnapshotsForVM(Mockito.any())).thenReturn(snapshots);
 
         VmAction vmAction = getVmResource().destroyVm(vm.vmId);
         Assert.assertNotNull(vmAction.commandId);
@@ -209,6 +218,4 @@ public class VmDestroyTest {
         verify(snapshotService, times(1)).updateSnapshotStatus(erroredSnapshot.id, SnapshotStatus.CANCELLED);
         verify(snapshotService, times(1)).updateSnapshotStatus(rescheduledSnapshot.id, SnapshotStatus.CANCELLED);
     }
-
-
 }

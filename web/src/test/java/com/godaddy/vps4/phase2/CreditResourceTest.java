@@ -21,15 +21,18 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
+import com.godaddy.hfs.mailrelay.MailRelay;
 import com.godaddy.vps4.credit.CreditService;
 import com.godaddy.vps4.credit.ECommCreditService.ProductMetaField;
 import com.godaddy.vps4.credit.VirtualMachineCredit;
+import com.godaddy.vps4.mailrelay.MailRelayService;
 import com.godaddy.vps4.security.GDUserMock;
 import com.godaddy.vps4.vm.AccountStatus;
 import com.godaddy.vps4.vm.DataCenterService;
 import com.godaddy.vps4.web.Vps4NoShopperException;
 import com.godaddy.vps4.web.credit.CreditResource;
 import com.godaddy.vps4.web.credit.CreditResource.CreateCreditRequest;
+import com.godaddy.vps4.web.mailrelay.VmMailRelayResource;
 import com.godaddy.vps4.web.security.GDUser;
 import com.godaddy.vps4.web.security.RequiresRole;
 import com.google.inject.AbstractModule;
@@ -43,25 +46,10 @@ public class CreditResourceTest {
     private UUID orionGuid = UUID.randomUUID();
     private VirtualMachineCredit vmCredit;
     private CreditService creditService = mock(CreditService.class);
-
-
-    private Injector injector = Guice.createInjector(
-            new CancelActionModule(),
-            new AbstractModule() {
-
-                @Override
-                public void configure() {
-                    bind(CreditService.class).toInstance(creditService);
-                }
-
-                @Provides
-                public GDUser provideUser() {
-                    return user;
-                }
-            });
+    private VmMailRelayResource vmMailRelayResource = mock(VmMailRelayResource.class);
 
     private CreditResource getCreditResource() {
-        return injector.getInstance(CreditResource.class);
+        return new CreditResource(user, creditService, vmMailRelayResource);
     }
 
     private VirtualMachineCredit createVmCredit(AccountStatus accountStatus) {
@@ -77,8 +65,7 @@ public class CreditResourceTest {
         user = GDUserMock.createShopper();
         vmCredit = createVmCredit(AccountStatus.ACTIVE);
         when(creditService.getVirtualMachineCredit(orionGuid)).thenReturn(vmCredit);
-        when(creditService.getUnclaimedVirtualMachineCredits("validUserShopperId"))
-                     .thenReturn(Collections.singletonList(vmCredit));
+        when(creditService.getUnclaimedVirtualMachineCredits("validUserShopperId")).thenReturn(Collections.singletonList(vmCredit));
     }
 
     @Test
@@ -203,11 +190,14 @@ public class CreditResourceTest {
         Map<ProductMetaField, String> prodMeta = new HashMap<>();
         prodMeta.put(ProductMetaField.PRODUCT_ID, vmId.toString());
         when(creditService.getProductMeta(creditGuid)).thenReturn(prodMeta);
+        MailRelay relay = new MailRelay();
+        relay.relays = 223;
+        when(vmMailRelayResource.getCurrentMailRelayUsage(vmId)).thenReturn(relay);
+
         VirtualMachineCredit freeCredit = getCreditResource().releaseCredit(creditGuid);
 
-        verify(creditService).unclaimVirtualMachineCredit(creditGuid, vmId);
+        verify(creditService).unclaimVirtualMachineCredit(creditGuid, vmId, relay.relays);
         verify(creditService).getVirtualMachineCredit(creditGuid);
-
         assertEquals(creditService.getVirtualMachineCredit(creditGuid), freeCredit);
     }
 

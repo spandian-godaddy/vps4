@@ -22,6 +22,7 @@ import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 
 import com.godaddy.vps4.jdbc.DatabaseModule;
+import com.godaddy.vps4.mailrelay.MailRelayService;
 import com.godaddy.vps4.orchestration.vm.Vps4RestoreVm;
 import com.godaddy.vps4.panopta.PanoptaApiCustomerService;
 import com.godaddy.vps4.panopta.PanoptaApiServerService;
@@ -99,6 +100,7 @@ public class VmRestoreResourceTest {
                     bind(SchedulerWebService.class).toInstance(swServ);
                     bind(PanoptaApiCustomerService.class).toInstance(mock(PanoptaApiCustomerService.class));
                     bind(PanoptaApiServerService.class).toInstance(mock(PanoptaApiServerService.class));
+                    bind(MailRelayService.class).toInstance(mock(MailRelayService.class));
                 }
 
                 @Provides

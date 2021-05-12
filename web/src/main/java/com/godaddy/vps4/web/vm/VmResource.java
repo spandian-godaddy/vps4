@@ -12,8 +12,10 @@ import static com.godaddy.vps4.web.util.RequestValidation.validateVmExists;
 import static com.godaddy.vps4.web.util.VmHelper.createActionAndExecute;
 
 import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 import javax.inject.Inject;
@@ -21,6 +23,7 @@ import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
 import javax.ws.rs.DefaultValue;
 import javax.ws.rs.GET;
+import javax.ws.rs.NotFoundException;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
@@ -34,11 +37,14 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.godaddy.hfs.config.Config;
+import com.godaddy.hfs.mailrelay.MailRelay;
 import com.godaddy.hfs.vm.Vm;
 import com.godaddy.hfs.vm.VmExtendedInfo;
 import com.godaddy.hfs.vm.VmService;
 import com.godaddy.vps4.credit.CreditService;
+import com.godaddy.vps4.credit.ECommCreditService;
 import com.godaddy.vps4.credit.VirtualMachineCredit;
+import com.godaddy.vps4.mailrelay.MailRelayService;
 import com.godaddy.vps4.orchestration.vm.VmActionRequest;
 import com.godaddy.vps4.orchestration.vm.provision.ProvisionRequest;
 import com.godaddy.vps4.project.Project;
@@ -56,6 +62,7 @@ import com.godaddy.vps4.vm.DataCenterService;
 import com.godaddy.vps4.vm.Image;
 import com.godaddy.vps4.vm.ProvisionVmInfo;
 import com.godaddy.vps4.vm.ServerSpec;
+import com.godaddy.vps4.vm.ServerType;
 import com.godaddy.vps4.vm.VirtualMachine;
 import com.godaddy.vps4.vm.VirtualMachineService;
 import com.godaddy.vps4.vm.VirtualMachineService.ProvisionVirtualMachineParameters;
@@ -100,15 +107,25 @@ public class VmResource {
     private final VmActionResource vmActionResource;
     private final SnapshotService snapshotService;
     private final ImageResource imageResource;
+    private final MailRelayService mailRelayService;
 
     @Inject
-    public VmResource(GDUser user, VmService vmService, Vps4UserService vps4UserService,
-                      VirtualMachineService virtualMachineService, CreditService creditService,
-                      ProjectService projectService, ActionService actionService,
-                      CommandService commandService, VmSnapshotResource vmSnapshotResource, Config config,
-                      Cryptography cryptography, DataCenterService dcService,
-                      VmActionResource vmActionResource, SnapshotService snapshotService, ImageResource imageResource
-                     ) {
+    public VmResource(GDUser user,
+                      VmService vmService,
+                      Vps4UserService vps4UserService,
+                      VirtualMachineService virtualMachineService,
+                      CreditService creditService,
+                      ProjectService projectService,
+                      ActionService actionService,
+                      CommandService commandService,
+                      VmSnapshotResource vmSnapshotResource,
+                      Config config,
+                      Cryptography cryptography,
+                      DataCenterService dcService,
+                      VmActionResource vmActionResource,
+                      SnapshotService snapshotService,
+                      ImageResource imageResource,
+                      MailRelayService mailRelayService) {
         this.user = user;
         this.virtualMachineService = virtualMachineService;
         this.vps4UserService = vps4UserService;
@@ -125,6 +142,7 @@ public class VmResource {
         this.vmActionResource = vmActionResource;
         this.snapshotService = snapshotService;
         this.imageResource = imageResource;
+        this.mailRelayService = mailRelayService;
     }
 
     @GET
@@ -212,14 +230,15 @@ public class VmResource {
         logger.info("provisioning vm with orionGuid {}", provisionRequest.orionGuid);
 
         validateUserIsShopper(user);
-        VirtualMachineCredit vmCredit = getAndValidateUserAccountCredit(creditService, provisionRequest.orionGuid,
-                                                                        user.getShopperId());
+        VirtualMachineCredit vmCredit = getAndValidateUserAccountCredit(creditService, provisionRequest.orionGuid, user.getShopperId());
         validateCreditIsNotInUse(vmCredit);
         validateResellerCredit(dcService, vmCredit.getResellerId(), provisionRequest.dataCenterId);
 
         Image image = imageResource.getImage(provisionRequest.image);
         validateRequestedImage(vmCredit, image);
 
+
+        int previousRelays = getPreviousRelaysForVirtualServers(provisionRequest, image);
         ProvisionVirtualMachineParameters params;
         VirtualMachine virtualMachine;
         Vps4User vps4User = vps4UserService.getOrCreateUserForShopper(user.getShopperId(), vmCredit.getResellerId());
@@ -246,18 +265,31 @@ public class VmResource {
                 ResellerConfigHelper.getResellerConfig(config, vmCredit.getResellerId(), "mailrelay.quota", "5000"));
 
         ProvisionVmInfo vmInfo =
-                new ProvisionVmInfo(virtualMachine.vmId, vmCredit.isManaged(), vmCredit.hasMonitoring(),
-                                    virtualMachine.image, project.getVhfsSgid(), mailRelayQuota,
-                                    virtualMachine.spec.diskGib);
+                new ProvisionVmInfo(virtualMachine.vmId,
+                                    vmCredit.isManaged(),
+                                    vmCredit.hasMonitoring(),
+                                    virtualMachine.image,
+                                    project.getVhfsSgid(),
+                                    mailRelayQuota,
+                                    virtualMachine.spec.diskGib,
+                                    previousRelays);
         vmInfo.isPanoptaEnabled = provisionRequest.useBetaMonitoring;
-        logger.info("vmInfo: {}", vmInfo.toString());
+        logger.info("vmInfo: {}", vmInfo);
         byte[] encryptedPassword = cryptography.encrypt(provisionRequest.password);
 
         ProvisionRequest request =
-                createProvisionRequest(provisionRequest.image, provisionRequest.username, project, virtualMachine.spec,
-                                       actionId, vmInfo, user.getShopperId(), provisionRequest.name,
-                                       provisionRequest.orionGuid, encryptedPassword, vmCredit.getResellerId()
-                                       );
+                createProvisionRequest(provisionRequest.image,
+                                       provisionRequest.username,
+                                       project,
+                                       virtualMachine.spec,
+                                       actionId,
+                                       vmInfo,
+                                       user.getShopperId(),
+                                       provisionRequest.name,
+                                       provisionRequest.orionGuid,
+                                       encryptedPassword,
+                                       vmCredit.getResellerId()
+                                      );
 
         String provisionClassName = virtualMachine.spec.serverType.platform.getProvisionCommand();
 
@@ -265,6 +297,26 @@ public class VmResource {
         logger.info("running {} in {}", provisionClassName, command.commandId);
 
         return new VmAction(actionService.getAction(actionId), user.isEmployee());
+    }
+
+    private int getPreviousRelaysForVirtualServers(ProvisionVmRequest provisionRequest, Image image) {
+        int previousRelays = 0;
+        if(image.serverType.serverType == ServerType.Type.VIRTUAL) {
+            Map<ECommCreditService.ProductMetaField, String> productMeta = creditService.getProductMeta(
+                    provisionRequest.orionGuid);
+            String previousRelaysString = productMeta.get(ECommCreditService.ProductMetaField.RELAY_COUNT);
+            previousRelays = previousRelaysString==null ? 0 : Integer.parseInt(previousRelaysString);
+            if(previousRelays > 0)
+            {
+                Instant releasedAt = Instant.parse(productMeta.get(ECommCreditService.ProductMetaField.RELEASED_AT)).truncatedTo(ChronoUnit.DAYS);
+                Instant now = Instant.now().truncatedTo(ChronoUnit.DAYS);
+                if(!releasedAt.isBefore(now))
+                {
+                    previousRelays = 0;
+                }
+            }
+        }
+        return previousRelays;
     }
 
     private ProvisionRequest createProvisionRequest(String image, String username, Project project,
@@ -305,10 +357,27 @@ public class VmResource {
         destroyRequest.virtualMachine = vm;
         VmAction deleteAction = createActionAndExecute(actionService, commandService, vm.vmId,
                                                        ActionType.DESTROY_VM, destroyRequest, destroyMethod, user);
-        creditService.unclaimVirtualMachineCredit(vm.orionGuid, vm.vmId);
+
+        int mailRelays = getMailRelays(vm);
+
+        creditService.unclaimVirtualMachineCredit(vm.orionGuid, vm.vmId, mailRelays);
         virtualMachineService.setVmRemoved(vm.vmId);
 
         return deleteAction;
+    }
+
+    private int getMailRelays(VirtualMachine vm) {
+        int mailRelays = 0;
+        if(vm.spec.serverType.serverType == ServerType.Type.VIRTUAL) {
+            try {
+                MailRelay relay = mailRelayService.getMailRelay(vm.primaryIpAddress.ipAddress);
+                mailRelays = relay.relays;
+            }
+            catch (NotFoundException e) {
+                logger.debug("Mail relay record not found for ip {}", vm.primaryIpAddress.ipAddress);
+            }
+        }
+        return mailRelays;
     }
 
     private void destroyVmSnapshots(UUID vmId) {

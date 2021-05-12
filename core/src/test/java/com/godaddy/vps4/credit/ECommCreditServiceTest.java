@@ -298,13 +298,16 @@ public class ECommCreditServiceTest {
         assertEquals(vmId.toString(), newProdMeta.to.get("product_id"));
         assertEquals(String.valueOf(phx3), newProdMeta.to.get("data_center"));
         assertNotNull(newProdMeta.to.get("provision_date"));
+        assertNull(newProdMeta.to.get("released_at"));
+        assertNull(newProdMeta.to.get("relay_count"));
     }
 
     @Test
     public void testUnclaimCreditCallsUpdateProdMeta() {
+        int currentRelays = 123;
         markCreditClaimed();
         when(ecommService.getAccount(orionGuid.toString())).thenReturn(account);
-        creditService.unclaimVirtualMachineCredit(orionGuid, vmId);
+        creditService.unclaimVirtualMachineCredit(orionGuid, vmId, currentRelays);
 
         ArgumentCaptor<MetadataUpdate> argument = ArgumentCaptor.forClass(MetadataUpdate.class);
         verify(ecommService).updateProductMetadata(eq(orionGuid.toString()), argument.capture());
@@ -312,6 +315,8 @@ public class ECommCreditServiceTest {
         assertEquals(dcId, newProdMeta.from.get(ProductMetaField.DATA_CENTER.toString()));
         assertEquals(provisionDate, newProdMeta.from.get(ProductMetaField.PROVISION_DATE.toString()));
         assertEquals(vmId.toString(), newProdMeta.from.get(ProductMetaField.PRODUCT_ID.toString()));
+        assertEquals(Integer.toString(currentRelays), newProdMeta.to.get(ProductMetaField.RELAY_COUNT.toString()));
+        assertNotNull(newProdMeta.to.get(ProductMetaField.RELEASED_AT.toString()));
         assertNull(newProdMeta.to.get(ProductMetaField.DATA_CENTER.toString()));
         assertNull(newProdMeta.to.get(ProductMetaField.PROVISION_DATE.toString()));
         assertNull(newProdMeta.to.get(ProductMetaField.PRODUCT_ID.toString()));
@@ -324,7 +329,7 @@ public class ECommCreditServiceTest {
         when(ecommService.updateProductMetadata(eq(orionGuid.toString()), any(MetadataUpdate.class)))
                 .thenThrow(new WebApplicationException());
         UUID someVmId = UUID.randomUUID();
-        creditService.unclaimVirtualMachineCredit(orionGuid, someVmId);
+        creditService.unclaimVirtualMachineCredit(orionGuid, someVmId, 0);
 
         ArgumentCaptor<MetadataUpdate> argument = ArgumentCaptor.forClass(MetadataUpdate.class);
         verify(ecommService).updateProductMetadata(eq(orionGuid.toString()), argument.capture());

@@ -2,6 +2,8 @@ package com.godaddy.vps4.phase2;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.mockito.Matchers.anyString;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import java.util.HashSet;
@@ -19,7 +21,9 @@ import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mockito;
 
+import com.godaddy.hfs.mailrelay.MailRelay;
 import com.godaddy.vps4.jdbc.DatabaseModule;
+import com.godaddy.vps4.mailrelay.MailRelayService;
 import com.godaddy.vps4.network.IpAddress.IpAddressType;
 import com.godaddy.vps4.scheduler.api.web.SchedulerWebService;
 import com.godaddy.vps4.security.GDUserMock;
@@ -50,8 +54,8 @@ public class VmResourceTest {
     @Inject VirtualMachineService virtualMachineService;
 
     private GDUser user;
-//    private long hfsVmId = 98765;
     private SchedulerWebService schedulerWebService = Mockito.mock(SchedulerWebService.class);
+    private MailRelayService mailRelayService = mock(MailRelayService.class);
 
     private Injector injector = Guice.createInjector(
             new DatabaseModule(),
@@ -65,6 +69,7 @@ public class VmResourceTest {
                 @Override
                 public void configure() {
                     bind(SchedulerWebService.class).toInstance(schedulerWebService);
+                    bind(MailRelayService.class).toInstance(mailRelayService);
                 }
 
                 @Provides
@@ -78,6 +83,7 @@ public class VmResourceTest {
     public void setupTest() {
         injector.injectMembers(this);
         user = GDUserMock.createShopper();
+        when(mailRelayService.getMailRelay(anyString())).thenReturn(new MailRelay());
     }
 
     @After

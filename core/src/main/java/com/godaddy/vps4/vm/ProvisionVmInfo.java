@@ -14,12 +14,13 @@ public class ProvisionVmInfo {
     public int mailRelayQuota;
     public int diskGib;
     public boolean isPanoptaEnabled;
+    public int previousRelays;
 
     public ProvisionVmInfo() {
     }
 
     public ProvisionVmInfo(UUID vmId, boolean isManaged, boolean hasMonitoring, Image image,
-            String sgid, int mailRelayQuota, int diskGib) {
+            String sgid, int mailRelayQuota, int diskGib, int previousRelays) {
         this.vmId = vmId;
         this.sgid = sgid;
         this.isManaged = isManaged;
@@ -27,6 +28,7 @@ public class ProvisionVmInfo {
         this.image = image;
         this.mailRelayQuota = mailRelayQuota;
         this.diskGib = diskGib;
+        this.previousRelays = previousRelays;
     }
 
     @Override

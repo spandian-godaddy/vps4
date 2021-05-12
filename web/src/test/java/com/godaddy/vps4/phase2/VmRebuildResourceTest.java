@@ -28,6 +28,7 @@ import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 
 import com.godaddy.vps4.jdbc.DatabaseModule;
+import com.godaddy.vps4.mailrelay.MailRelayService;
 import com.godaddy.vps4.orchestration.vm.rebuild.Vps4RebuildVm;
 import com.godaddy.vps4.scheduler.api.web.SchedulerWebService;
 import com.godaddy.vps4.security.GDUserMock;
@@ -97,6 +98,7 @@ public class VmRebuildResourceTest {
                 public void configure() {
                     SchedulerWebService swServ = Mockito.mock(SchedulerWebService.class);
                     bind(SchedulerWebService.class).toInstance(swServ);
+                    bind(MailRelayService.class).toInstance(mock(MailRelayService.class));
                 }
 
                 @Provides

@@ -23,6 +23,7 @@ import com.godaddy.vps4.credit.ECommCreditService.ProductMetaField;
 import com.godaddy.vps4.credit.VirtualMachineCredit;
 import com.godaddy.vps4.web.Vps4Api;
 import com.godaddy.vps4.web.Vps4NoShopperException;
+import com.godaddy.vps4.web.mailrelay.VmMailRelayResource;
 import com.godaddy.vps4.web.security.GDUser;
 import com.godaddy.vps4.web.security.RequiresRole;
 import com.google.inject.Inject;
@@ -41,11 +42,13 @@ public class CreditResource {
 
     private final GDUser user;
     private final CreditService creditService;
+    private final VmMailRelayResource vmMailRelayResource;
 
     @Inject
-    public CreditResource(GDUser user, CreditService creditService) {
+    public CreditResource(GDUser user, CreditService creditService, VmMailRelayResource vmMailRelayResource) {
         this.user = user;
         this.creditService = creditService;
+        this.vmMailRelayResource = vmMailRelayResource;
     }
 
     @GET
@@ -101,19 +104,9 @@ public class CreditResource {
         UUID vmId = UUID.fromString(
                 creditService.getProductMeta(orionGuid)
                     .get(ProductMetaField.PRODUCT_ID));
-        creditService.unclaimVirtualMachineCredit(orionGuid, vmId);
+        creditService.unclaimVirtualMachineCredit(orionGuid, vmId, vmMailRelayResource.getCurrentMailRelayUsage(vmId).relays);
 
         VirtualMachineCredit credit = creditService.getVirtualMachineCredit(orionGuid);
         return credit;
-    }
-
-    @RequiresRole(roles = {GDUser.Role.ADMIN})
-    @POST
-    @Path("/{orionGuid}/setPurchasedDate")
-    public VirtualMachineCredit setPurchasedDate(@PathParam("orionGuid") UUID orionGuid) {
-        // Remove this method after the backfill of all credits is complete.  It is only to be used by the
-        // backfill script.
-        creditService.updateProductMeta(orionGuid, ProductMetaField.PURCHASED_AT, Instant.now().toString());
-        return creditService.getVirtualMachineCredit(orionGuid);
     }
 }

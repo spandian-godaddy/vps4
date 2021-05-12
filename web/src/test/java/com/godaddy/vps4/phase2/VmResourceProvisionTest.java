@@ -24,6 +24,7 @@ import org.mockito.ArgumentCaptor;
 import com.godaddy.vps4.credit.CreditService;
 import com.godaddy.vps4.credit.VirtualMachineCredit;
 import com.godaddy.vps4.jdbc.DatabaseModule;
+import com.godaddy.vps4.mailrelay.MailRelayService;
 import com.godaddy.vps4.scheduler.api.web.SchedulerWebService;
 import com.godaddy.vps4.security.GDUserMock;
 import com.godaddy.vps4.security.SecurityModule;
@@ -74,6 +75,7 @@ public class VmResourceProvisionTest {
                 public void configure() {
                     SchedulerWebService swServ = mock(SchedulerWebService.class);
                     bind(SchedulerWebService.class).toInstance(swServ);
+                    bind(MailRelayService.class).toInstance(mock(MailRelayService.class));
                 }
 
                 @Provides

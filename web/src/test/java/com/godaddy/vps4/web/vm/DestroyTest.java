@@ -20,11 +20,14 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
 import org.mockito.MockitoAnnotations;
 
+import com.godaddy.hfs.mailrelay.MailRelay;
 import com.godaddy.hfs.vm.VmService;
 import com.godaddy.vps4.appmonitors.MonitorService;
 import com.godaddy.vps4.credit.CreditService;
 import com.godaddy.vps4.credit.VirtualMachineCredit;
 import com.godaddy.vps4.jdbc.DatabaseModule;
+import com.godaddy.vps4.mailrelay.MailRelayService;
+import com.godaddy.vps4.network.IpAddress;
 import com.godaddy.vps4.network.NetworkService;
 import com.godaddy.vps4.panopta.PanoptaApiCustomerService;
 import com.godaddy.vps4.panopta.PanoptaApiServerService;
@@ -65,7 +68,7 @@ import gdg.hfs.orchestration.CommandService;
 import gdg.hfs.orchestration.CommandSpec;
 import gdg.hfs.orchestration.CommandState;
 
-public class DedicatedDestroyTest {
+public class DestroyTest {
     private GDUser user;
     private CommandService commandService = mock(CommandService.class);
     private CommandState commandState = mock(CommandState.class);
@@ -73,6 +76,7 @@ public class DedicatedDestroyTest {
     private CreditService creditService = mock(CreditService.class);
     private VirtualMachineService virtualMachineService = mock(VirtualMachineService.class);
     private TroubleshootVmService troubleshootVmService = mock(TroubleshootVmService.class);
+    private MailRelayService mailRelayService = mock(MailRelayService.class);
 
     private VmResource vmResource;
     private VirtualMachine vm;
@@ -97,6 +101,7 @@ public class DedicatedDestroyTest {
                     bind(ActionService.class).toInstance(actionService);
                     bind(VirtualMachineService.class).toInstance(virtualMachineService);
                     bind(TroubleshootVmService.class).toInstance(troubleshootVmService);
+                    bind(MailRelayService.class).toInstance(mailRelayService);
 
                     MapBinder<ActionType, String> actionTypeToCancelCmdNameMapBinder
                             = MapBinder.newMapBinder(binder(), ActionType.class, String.class);
@@ -131,6 +136,7 @@ public class DedicatedDestroyTest {
         commandState.commandId = UUID.randomUUID();
         vm = new VirtualMachine();
         vm.validUntil = Instant.MAX;
+        vm.primaryIpAddress = new IpAddress(1, 1, vm.vmId, "192.168.0.1", IpAddress.IpAddressType.PRIMARY, 0L, Instant.now(), Instant.MAX, 4);
 
         ServerSpec spec = new ServerSpec();
         spec.serverType = new ServerType();
@@ -153,6 +159,11 @@ public class DedicatedDestroyTest {
 
         when(actionService.createAction(eq(vm.vmId), eq(ActionType.DESTROY_VM), any(String.class), any(String.class))).thenReturn(a.id);
         when(actionService.getAction(a.id)).thenReturn(a);
+
+        MailRelay mailRelay = new MailRelay();
+        mailRelay.relays = 123;
+        mailRelay.ipv4Address = vm.primaryIpAddress.ipAddress;
+        when(mailRelayService.getMailRelay(vm.primaryIpAddress.ipAddress)).thenReturn(mailRelay);
     }
 
     @After
