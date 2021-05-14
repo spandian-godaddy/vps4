@@ -310,7 +310,7 @@ public class VmResource {
             {
                 Instant releasedAt = Instant.parse(productMeta.get(ECommCreditService.ProductMetaField.RELEASED_AT)).truncatedTo(ChronoUnit.DAYS);
                 Instant now = Instant.now().truncatedTo(ChronoUnit.DAYS);
-                if(!releasedAt.isBefore(now))
+                if(releasedAt.isBefore(now))
                 {
                     previousRelays = 0;
                 }
