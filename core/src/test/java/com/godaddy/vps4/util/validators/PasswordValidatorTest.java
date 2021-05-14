@@ -65,7 +65,7 @@ public class PasswordValidatorTest {
                 EnumPasswordCharacters.LOWERCASE, EnumPasswordCharacters.SPECIAL, EnumPasswordCharacters.NUMERIC);
         RandomStringGenerator generator = new RandomStringGenerator.Builder().selectFrom(charsToUse.toCharArray())
                 .build();
-        String invalidString = generator.generate(15);
+        String invalidString = generator.generate(55);
         assertFalse(validator.isValid(invalidString));
     }
 

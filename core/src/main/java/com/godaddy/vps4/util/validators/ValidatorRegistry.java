@@ -41,7 +41,7 @@ public class ValidatorRegistry {
 
     static Validator getPasswordValidator() {
         return (new Validator(Arrays.asList(
-            new Rule("Between 8 and 14 characters, with no disallowed characters", "[^&?;]{8,14}"),
+            new Rule("Between 8 and 48 characters, with no disallowed characters", "[^&?;]{8,48}"),
             new Rule("Includes at least one lowercase letter", ".*[a-z].*$"),
             new Rule("Includes at least one uppercase letter", ".*[A-Z].*$"),
             new Rule("Includes at least one digit", ".*[0-9].*$"),
