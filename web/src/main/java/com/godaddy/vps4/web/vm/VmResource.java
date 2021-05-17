@@ -367,6 +367,9 @@ public class VmResource {
     }
 
     private int getMailRelays(VirtualMachine vm) {
+        if(vm.primaryIpAddress == null)
+            return 0;
+
         int mailRelays = 0;
         if(vm.spec.serverType.serverType == ServerType.Type.VIRTUAL) {
             try {
@@ -375,6 +378,9 @@ public class VmResource {
             }
             catch (NotFoundException e) {
                 logger.debug("Mail relay record not found for ip {}", vm.primaryIpAddress.ipAddress);
+            }
+            catch (Exception e) {
+                logger.debug("Failed to find mail relays for vm {}, setting mail relay count to 0", vm.vmId);
             }
         }
         return mailRelays;
