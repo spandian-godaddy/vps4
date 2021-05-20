@@ -4,6 +4,7 @@ import static com.godaddy.vps4.web.util.RequestValidation.validateAndReturnEnumV
 
 import java.util.List;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 import javax.inject.Inject;
 import javax.ws.rs.Consumes;
@@ -14,9 +15,7 @@ import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
 
-import com.godaddy.vps4.vm.VmAlertService;
-import com.godaddy.vps4.vm.VmMetric;
-import com.godaddy.vps4.vm.VmMetricAlert;
+import com.godaddy.vps4.vm.*;
 import com.godaddy.vps4.web.Vps4Api;
 import com.godaddy.vps4.web.vm.VmResource;
 
@@ -42,8 +41,13 @@ public class VmAlertResource {
     @GET
     @Path("/{vmId}/alerts/")
     public List<VmMetricAlert> getMetricAlertList(@PathParam("vmId") UUID vmId) {
-        vmResource.getVm(vmId);  // Auth validation
-        return vmAlertService.getVmMetricAlertList(vmId);
+        VirtualMachine vm = vmResource.getVm(vmId);  // Auth validation
+        List<VmMetricAlert> list = vmAlertService.getVmMetricAlertList(vmId);
+
+        if (vm.image.operatingSystem == Image.OperatingSystem.WINDOWS) {
+            list = list.stream().filter(m -> m.metric != VmMetric.SSH).collect(Collectors.toList());
+        }
+        return list;
     }
 
     @GET
