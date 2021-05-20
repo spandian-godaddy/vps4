@@ -90,6 +90,25 @@ public class ImportedVmFilterTest {
         verify(chain).doFilter(request, response);
     }
 
+
+    @Test
+    public void testVmApiReviveImportedVm() throws Exception {
+        when(request.getRequestURI()).thenReturn("/api/vms/" + importedVmId + "/revive");
+        when(request.getMethod()).thenReturn("POST");
+
+        filter.doFilter(request, response, chain);
+        verify(chain).doFilter(request, response);
+    }
+
+    @Test
+    public void testVmApiZombieImportedVm() throws Exception {
+        when(request.getRequestURI()).thenReturn("/api/vms/" + importedVmId + "/zombie");
+        when(request.getMethod()).thenReturn("POST");
+
+        filter.doFilter(request, response, chain);
+        verify(chain).doFilter(request, response);
+    }
+
     @Test
     public void testVmApiPatchImportedVm() throws Exception {
         when(request.getRequestURI()).thenReturn("/api/vms/" + importedVmId);

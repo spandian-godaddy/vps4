@@ -34,7 +34,10 @@ public class ImportedVmFilter extends VmFilter {
                             "reinstateBillingSuspend",
                             "messaging",
                             "syncVmStatus",
-                            "snapshotSchedules"),
+                            "snapshotSchedules",
+                            "zombie",
+                            "revive"
+                ),
               virtualMachineService);
     }
 
