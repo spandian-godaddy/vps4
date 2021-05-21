@@ -242,9 +242,12 @@ public class VmResourceProvisionTest {
     }
 
     @Test
-    public void testProvisionVmUnsupportedResellerDc() {
+    public void testProvisionDedUnsupportedResellerDc() {
         // HEG Reseller is restricted in the reseller_datacenters table to dataCenterID==4
-        // VM Create attempts to use dataCenterId=1, so test should fail
+        // Ded create test attempts to use dataCenterId=1, so test should fail
+        planFeatures.put("tier", String.valueOf(60));
+        request.image = "centos7_64";
+
         String heartInternet = "525848";
         String tsoHost = "527397";
         String domainFactory = "525847";
@@ -263,12 +266,30 @@ public class VmResourceProvisionTest {
     }
 
     @Test
-    public void testProvisionVmSupportedResellerDc() {
+    public void testProvisionDedSupportedResellerDc() {
         // MT Reseller is restricted in the reseller_datacenters table to dataCenterID==1, so test should succeed
+        planFeatures.put("tier", String.valueOf(60));
+        request.image = "centos7_64";
+
         String MT_RESELLER_ID = "495469";
         resellerId = MT_RESELLER_ID;
 
         testProvisionVm();
+    }
+
+    @Test
+    public void testProvisionVmSkipsUnsupportedResellerDc() {
+        // Brand resellers only restrict ded servers dcs, so vms to use dataCenterId 1 should succeed
+        String heartInternet = "525848";
+        String tsoHost = "527397";
+        String domainFactory = "525847";
+        String hostEurope = "525847";
+
+        List<String> emea_brand_resellers = Arrays.asList(heartInternet, tsoHost, domainFactory, hostEurope);
+        for (String reseller : emea_brand_resellers) {
+            resellerId = reseller;
+            testProvisionVm();
+        }
     }
 
     @Test

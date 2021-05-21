@@ -2,9 +2,9 @@ package com.godaddy.vps4.web.vm;
 
 import static com.godaddy.vps4.web.util.RequestValidation.getAndValidateUserAccountCredit;
 import static com.godaddy.vps4.web.util.RequestValidation.validateCreditIsNotInUse;
+import static com.godaddy.vps4.web.util.RequestValidation.validateDedResellerSelectedDc;
 import static com.godaddy.vps4.web.util.RequestValidation.validateNoConflictingActions;
 import static com.godaddy.vps4.web.util.RequestValidation.validateRequestedImage;
-import static com.godaddy.vps4.web.util.RequestValidation.validateResellerCredit;
 import static com.godaddy.vps4.web.util.RequestValidation.validateServerIsActiveOrUnknown;
 import static com.godaddy.vps4.web.util.RequestValidation.validateServerIsStoppedOrUnknown;
 import static com.godaddy.vps4.web.util.RequestValidation.validateUserIsShopper;
@@ -232,7 +232,9 @@ public class VmResource {
         validateUserIsShopper(user);
         VirtualMachineCredit vmCredit = getAndValidateUserAccountCredit(creditService, provisionRequest.orionGuid, user.getShopperId());
         validateCreditIsNotInUse(vmCredit);
-        validateResellerCredit(dcService, vmCredit.getResellerId(), provisionRequest.dataCenterId);
+        if (vmCredit.isDed4()) {
+            validateDedResellerSelectedDc(dcService, vmCredit.getResellerId(), provisionRequest.dataCenterId);
+        }
 
         Image image = imageResource.getImage(provisionRequest.image);
         validateRequestedImage(vmCredit, image);
