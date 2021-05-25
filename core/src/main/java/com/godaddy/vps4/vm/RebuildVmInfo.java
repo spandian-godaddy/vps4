@@ -21,6 +21,7 @@ public class RebuildVmInfo {
     public String privateLabelId;
     public UUID orionGuid;
     public String shopperId;
+    public boolean keepAdditionalIps;
 
     public RebuildVmInfo() {
     }

@@ -108,6 +108,7 @@ public class VmRebuildResource {
         public String serverName;
         public String imageName;
         public String password;
+        public boolean keepAdditionalIps = true;
     }
 
     @POST
@@ -167,7 +168,7 @@ public class VmRebuildResource {
         rebuildVmInfo.privateLabelId = creditService.getVirtualMachineCredit(vm.orionGuid).getResellerId();
         rebuildVmInfo.orionGuid = vm.orionGuid;
         rebuildVmInfo.shopperId = user.isShopper() ? user.getShopperId(): creditService.getVirtualMachineCredit(vm.orionGuid).getShopperId();
-
+        rebuildVmInfo.keepAdditionalIps = request.keepAdditionalIps;
         Vps4RebuildVm.Request req = new Vps4RebuildVm.Request();
         req.rebuildVmInfo = rebuildVmInfo;
         return req;

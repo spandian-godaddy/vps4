@@ -31,9 +31,9 @@ public class Vps4RebuildOHVm extends Vps4RebuildVm {
     public Vps4RebuildOHVm(ActionService actionService, VirtualMachineService virtualMachineService,
                            NetworkService vps4NetworkService, VmUserService vmUserService,
                            CreditService creditService, PanoptaDataService panoptaDataService,
-                           HfsVmTrackingRecordService hfsVmTrackingRecordService) {
+                           HfsVmTrackingRecordService hfsVmTrackingRecordService, NetworkService networkService) {
         super(actionService, virtualMachineService, vps4NetworkService, vmUserService, creditService,
-              panoptaDataService, hfsVmTrackingRecordService);
+              panoptaDataService, hfsVmTrackingRecordService, networkService);
     }
 
     @Override

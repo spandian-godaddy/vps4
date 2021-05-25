@@ -205,6 +205,7 @@ public class VmRebuildResourceTest {
         Assert.assertNotNull(commandRequest.rebuildVmInfo.encryptedPassword);
         Assert.assertEquals(commandRequest.rebuildVmInfo.vmId, vm.vmId);
         Assert.assertEquals(commandRequest.rebuildVmInfo.hostname, vm.hostname);
+        Assert.assertEquals(commandRequest.rebuildVmInfo.keepAdditionalIps, true);
     }
 
     @Test

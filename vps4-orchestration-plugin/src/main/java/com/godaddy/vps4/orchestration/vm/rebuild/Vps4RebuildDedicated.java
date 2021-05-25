@@ -31,9 +31,9 @@ public class Vps4RebuildDedicated extends Vps4RebuildVm {
     public Vps4RebuildDedicated(ActionService actionService, VirtualMachineService virtualMachineService,
                                 NetworkService vps4NetworkService, VmUserService vmUserService,
                                 CreditService creditService, PanoptaDataService panoptaDataService,
-                                HfsVmTrackingRecordService hfsVmTrackingRecordService) {
+                                HfsVmTrackingRecordService hfsVmTrackingRecordService, NetworkService networkService) {
         super(actionService, virtualMachineService, vps4NetworkService, vmUserService, creditService,
-              panoptaDataService, hfsVmTrackingRecordService);
+              panoptaDataService, hfsVmTrackingRecordService, networkService);
     }
 
     @Override

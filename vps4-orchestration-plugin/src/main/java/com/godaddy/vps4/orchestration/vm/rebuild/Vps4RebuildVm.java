@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
+import com.godaddy.vps4.orchestration.vm.Vps4RemoveIp;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -60,6 +61,7 @@ public class Vps4RebuildVm extends ActionCommand<Vps4RebuildVm.Request, Void> {
     protected final CreditService creditService;
     protected final PanoptaDataService panoptaDataService;
     protected final HfsVmTrackingRecordService hfsVmTrackingRecordService;
+    protected final NetworkService networkService;
 
     protected CommandContext context;
     protected UUID vps4VmId;
@@ -70,7 +72,8 @@ public class Vps4RebuildVm extends ActionCommand<Vps4RebuildVm.Request, Void> {
     @Inject
     public Vps4RebuildVm(ActionService actionService, VirtualMachineService virtualMachineService,
                          NetworkService vps4NetworkService, VmUserService vmUserService, CreditService creditService,
-                         PanoptaDataService panoptaDataService, HfsVmTrackingRecordService hfsVmTrackingRecordService) {
+                         PanoptaDataService panoptaDataService, HfsVmTrackingRecordService hfsVmTrackingRecordService,
+                         NetworkService networkService) {
         super(actionService);
         this.virtualMachineService = virtualMachineService;
         this.vps4NetworkService = vps4NetworkService;
@@ -78,6 +81,7 @@ public class Vps4RebuildVm extends ActionCommand<Vps4RebuildVm.Request, Void> {
         this.creditService = creditService;
         this.panoptaDataService = panoptaDataService;
         this.hfsVmTrackingRecordService = hfsVmTrackingRecordService;
+        this.networkService = networkService;
     }
 
     @Override
@@ -92,6 +96,12 @@ public class Vps4RebuildVm extends ActionCommand<Vps4RebuildVm.Request, Void> {
         long oldHfsVmId = context.execute("GetHfsVmId",
                                           ctx -> virtualMachineService.getVirtualMachine(vps4VmId).hfsVmId,
                                           long.class);
+
+        if(!request.rebuildVmInfo.keepAdditionalIps)
+        {
+            getAndRemoveAdditionalIps(oldHfsVmId);
+        }
+
         long newHfsVmId = rebuildServer(oldHfsVmId);
 
         configureControlPanel(newHfsVmId);
@@ -101,9 +111,24 @@ public class Vps4RebuildVm extends ActionCommand<Vps4RebuildVm.Request, Void> {
         configureMonitoring(newHfsVmId);
         setEcommCommonName(request.rebuildVmInfo.orionGuid, request.rebuildVmInfo.serverName);
 
+
         setStep(RebuildVmStep.RebuildComplete);
         logger.info("VM rebuild of vmId {} finished", vps4VmId);
         return null;
+    }
+
+    private void getAndRemoveAdditionalIps(long oldHfsId) {
+        List<IpAddress> additionalIps;
+        additionalIps = networkService.getVmSecondaryAddress(oldHfsId);
+        if (additionalIps != null) {
+            for (IpAddress ip : additionalIps) {
+                context.execute("RemoveIp-" + ip.addressId, Vps4RemoveIp.class, ip);
+                context.execute("MarkIpDeleted-" + ip.addressId, ctx -> {
+                    networkService.destroyIpAddress(ip.addressId);
+                    return null;
+                }, Void.class);
+            }
+        }
     }
 
     protected void deleteOldUsersInDb() {

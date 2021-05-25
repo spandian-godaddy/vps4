@@ -149,7 +149,7 @@ public class Vps4RebuildDedicatedTest {
         spyVmUserService = spy(vmUserService);
 
         command = new Vps4RebuildDedicated(actionService, spyVps4VmService, networkService, spyVmUserService,
-                                           creditService, panoptaDataService, hfsVmTrackingRecordService);
+                                           creditService, panoptaDataService, hfsVmTrackingRecordService, networkService);
         addTestSqlData();
 
         vps4NewVm = mock(VirtualMachine.class);

@@ -72,6 +72,7 @@ public class Vps4RebuildVmTest {
     CreditService creditService = mock(CreditService.class);
     PanoptaDataService panoptaDataService = mock(PanoptaDataService.class);
     HfsVmTrackingRecordService hfsVmTrackingRecordService = mock(HfsVmTrackingRecordService.class);
+    NetworkService networkService = mock(NetworkService.class);
 
     UUID vps4VmId = UUID.randomUUID();
     UUID orionGuid = UUID.randomUUID();
@@ -129,6 +130,7 @@ public class Vps4RebuildVmTest {
         request.rebuildVmInfo.hostname = "host.name";
         request.rebuildVmInfo.encryptedPassword = "encrypted".getBytes();
         request.rebuildVmInfo.shopperId = shopperId;
+        request.rebuildVmInfo.keepAdditionalIps = true;
 
         IpAddress publicIp = new IpAddress();
         publicIp.hfsAddressId = hfsAddressId;
@@ -152,7 +154,7 @@ public class Vps4RebuildVmTest {
 
         command = new Vps4RebuildVm(actionService, virtualMachineService, vps4NetworkService,
                                                   vmUserService, creditService, panoptaDataService,
-                                                  hfsVmTrackingRecordService);
+                                                  hfsVmTrackingRecordService, networkService);
     }
 
     @Test
@@ -352,13 +354,28 @@ public class Vps4RebuildVmTest {
     }
 
     @Test
-    public void doesNotReleaseIps() {
+    public void doesNotReleaseIpsIfRequested() {
         command.execute(context, request);
         verify(context, never()).execute(startsWith("RemoveIp-"), eq(BindIp.class), anyObject());
     }
 
     @Test
-    public void doesNotDeleteIpsinDB() {
+    public void doesNotDeleteIpsinDBIfRequested() {
+        command.execute(context, request);
+        verify(context, never()).execute(startsWith("MarkIpDeleted-"), eq(BindIp.class), anyObject());
+    }
+
+    @Test
+    public void releasesIpsIfRequested() {
+        request.rebuildVmInfo.keepAdditionalIps = false;
+        command.execute(context, request);
+        verify(context, never()).execute(startsWith("RemoveIp-"), eq(BindIp.class), anyObject());
+    }
+
+
+    @Test
+    public void deleteIpsinDBIfRequested() {
+        request.rebuildVmInfo.keepAdditionalIps = false;
         command.execute(context, request);
         verify(context, never()).execute(startsWith("MarkIpDeleted-"), eq(BindIp.class), anyObject());
     }
