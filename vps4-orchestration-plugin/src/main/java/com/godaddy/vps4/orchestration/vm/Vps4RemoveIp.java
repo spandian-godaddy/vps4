@@ -6,6 +6,7 @@ import org.slf4j.LoggerFactory;
 import com.godaddy.vps4.network.IpAddress;
 import com.godaddy.vps4.orchestration.hfs.network.ReleaseIp;
 import com.godaddy.vps4.orchestration.hfs.network.UnbindIp;
+import com.godaddy.vps4.orchestration.network.RemoveIpFromBlacklist;
 
 import gdg.hfs.orchestration.Command;
 import gdg.hfs.orchestration.CommandContext;
@@ -25,6 +26,7 @@ public class Vps4RemoveIp implements Command<IpAddress, Void> {
             unbindIpRequest.forceIfVmInaccessible = true;
             context.execute(UnbindIp.class, unbindIpRequest);
         }
+        context.execute(RemoveIpFromBlacklist.class, address.ipAddress);
         context.execute(ReleaseIp.class, address.hfsAddressId);
 
         return null;

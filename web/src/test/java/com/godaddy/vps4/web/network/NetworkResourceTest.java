@@ -85,7 +85,7 @@ public class NetworkResourceTest {
         when(vmResource.getVm(vmId)).thenReturn(vm);
 
         resource = new NetworkResource(user, networkService, actionService,
-                projectService, commandService, vmResource, config);
+                projectService, commandService, vmResource, config, null);
 
     }
     @Test

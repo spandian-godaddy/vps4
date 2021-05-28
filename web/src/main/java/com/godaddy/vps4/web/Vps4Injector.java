@@ -24,6 +24,7 @@ import com.godaddy.vps4.credit.CreditModule;
 import com.godaddy.vps4.hfs.HfsClientModule;
 import com.godaddy.vps4.hfs.HfsMockModule;
 import com.godaddy.vps4.hfs.HfsVmTrackingRecordModule;
+import com.godaddy.vps4.ipblacklist.IpBlacklistModule;
 import com.godaddy.vps4.jdbc.DatabaseModule;
 import com.godaddy.vps4.mailrelay.MailRelayModule;
 import com.godaddy.vps4.messaging.MessagingModule;
@@ -120,6 +121,7 @@ public class Vps4Injector {
         modules.add(new PlanModule());
         modules.add(new ServerUsageStatsModule());
         modules.add(new PanoptaModule());
+        modules.add(new IpBlacklistModule());
         modules.add(binder -> {
             binder.bind(ObjectMapper.class).toProvider(ObjectMapperProvider.class);
         });

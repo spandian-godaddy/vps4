@@ -15,6 +15,7 @@ import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
 
+import com.godaddy.vps4.ipblacklist.IpBlacklistService;
 import com.godaddy.vps4.orchestration.ActionRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -61,6 +62,7 @@ public class NetworkResource {
     private final VmResource vmResource;
     private final Config config;
 	private final GDUser user;
+	private final IpBlacklistService ipBlacklistService;
 
 
     @Inject
@@ -70,7 +72,8 @@ public class NetworkResource {
                            ProjectService projectService,
                            CommandService commandService,
                            VmResource vmResource,
-                           Config config) {
+                           Config config,
+                           IpBlacklistService ipBlacklistService) {
         this.networkService = networkService;
         this.actionService = actionService;
         this.projectService = projectService;
@@ -78,6 +81,7 @@ public class NetworkResource {
         this.vmResource = vmResource;
         this.config = config;
         this.user = user;
+        this.ipBlacklistService = ipBlacklistService;
     }
 
     private IpAddress getIpAddressInternal(UUID vmId, long addressId) {
@@ -176,6 +180,29 @@ public class NetworkResource {
         }
         else throw new Vps4Exception("ADD_IP_NOT_SUPPORTED_FOR_PLATFORM", String.format("Add Ip not supported " +
                     "for platform %s", vm.spec.serverType.platform));
-        }
+    }
 
+    @RequiresRole(roles = {GDUser.Role.ADMIN})
+    @GET
+    @Path("/{vmId}/ipAddresses/{addressId}/blacklist")
+    public boolean getBlacklistRecord(@PathParam("vmId") UUID vmId, @PathParam("addressId") long addressId) {
+        IpAddress ipAddress = getIpAddressInternal(vmId, addressId);
+        return ipBlacklistService.isIpBlacklisted(ipAddress.ipAddress);
+    }
+
+    @RequiresRole(roles = {GDUser.Role.ADMIN})
+    @DELETE
+    @Path("/{vmId}/ipAddresses/{addressId}/blacklist")
+    public void deleteBlacklistRecord(@PathParam("vmId") UUID vmId, @PathParam("addressId") long addressId) {
+        IpAddress ipAddress = getIpAddressInternal(vmId, addressId);
+        ipBlacklistService.removeIpFromBlacklist(ipAddress.ipAddress);
+    }
+
+    @RequiresRole(roles = {GDUser.Role.ADMIN})
+    @POST
+    @Path("/{vmId}/ipAddresses/{addressId}/blacklist")
+    public void createBlacklistRecord(@PathParam("vmId") UUID vmId, @PathParam("addressId") long addressId) {
+        IpAddress ipAddress = getIpAddressInternal(vmId, addressId);
+        ipBlacklistService.blacklistIp(ipAddress.ipAddress);
+    }
 }

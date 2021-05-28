@@ -15,6 +15,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mockito;
 
+import com.godaddy.vps4.ipblacklist.IpBlacklistService;
 import com.godaddy.vps4.jdbc.DatabaseModule;
 import com.godaddy.vps4.mailrelay.MailRelayService;
 import com.godaddy.vps4.network.IpAddress;
@@ -63,6 +64,7 @@ public class NetworkResourceUserTest {
                     bind(PanoptaApiCustomerService.class).toInstance(mock(PanoptaApiCustomerService.class));
                     bind(PanoptaApiServerService.class).toInstance(mock(PanoptaApiServerService.class));
                     bind(MailRelayService.class).toInstance(mock(MailRelayService.class));
+                    bind(IpBlacklistService.class).toInstance(mock(IpBlacklistService.class));
                 }
 
                 @Provides

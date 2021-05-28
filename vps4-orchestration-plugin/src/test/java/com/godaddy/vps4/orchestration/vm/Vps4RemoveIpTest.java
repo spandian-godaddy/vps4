@@ -13,6 +13,7 @@ import com.godaddy.vps4.network.IpAddress;
 import com.godaddy.vps4.orchestration.hfs.mailrelay.SetMailRelayQuota;
 import com.godaddy.vps4.orchestration.hfs.network.ReleaseIp;
 import com.godaddy.vps4.orchestration.hfs.network.UnbindIp;
+import com.godaddy.vps4.orchestration.network.RemoveIpFromBlacklist;
 
 import gdg.hfs.orchestration.CommandContext;
 
@@ -31,6 +32,7 @@ public class Vps4RemoveIpTest {
         verify(context, times(1)).execute(eq(ReleaseIp.class), eq(ipAddress.hfsAddressId));
         verify(context, times(1)).execute(eq(UnbindIp.class), any(UnbindIp.Request.class));
         verify(context, never()).execute(eq(SetMailRelayQuota.class), any());
+        verify(context, times(1)).execute(eq(RemoveIpFromBlacklist.class), eq(ipAddress.ipAddress));
     }
     @Test
     public void testExecuteDestroySecondaryIp(){
@@ -43,5 +45,6 @@ public class Vps4RemoveIpTest {
         verify(context, times(1)).execute(eq(ReleaseIp.class), eq(ipAddress.hfsAddressId));
         verify(context, never()).execute(eq(UnbindIp.class), any(UnbindIp.Request.class));
         verify(context, never()).execute(eq(SetMailRelayQuota.class), any());
+        verify(context, times(1)).execute(eq(RemoveIpFromBlacklist.class), eq(ipAddress.ipAddress));
     }
 }
