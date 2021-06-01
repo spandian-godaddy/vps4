@@ -21,7 +21,13 @@ public class DefaultIpBlacklistService implements IpBlacklistService {
 
     @Override
     public void removeIpFromBlacklist(String ip) {
-        blacklist.deleteBlacklistRecord(ip);
+        try{
+            blacklist.deleteBlacklistRecord(ip);
+        }
+        catch (NotFoundException e)
+        {
+            //Do nothing on not found exception - the IP isn't blacklisted so this method should succeed
+        }
     }
 
     @Override

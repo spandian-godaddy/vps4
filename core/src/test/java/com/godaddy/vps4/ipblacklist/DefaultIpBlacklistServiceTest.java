@@ -2,10 +2,13 @@ package com.godaddy.vps4.ipblacklist;
 
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+
+import javax.ws.rs.NotFoundException;
 
 import org.json.simple.JSONObject;
 import org.junit.Before;
@@ -54,6 +57,14 @@ public class DefaultIpBlacklistServiceTest {
     @Test
     public void testRemoveIpFromBlacklist() {
         String ip = "192.168.0.1";
+        service.removeIpFromBlacklist(ip);
+        verify(blacklistClientService, times(1)).deleteBlacklistRecord(ip);
+    }
+
+    @Test
+    public void testRemoveIpFromBlacklistNotFound() {
+        String ip = "192.168.0.1";
+        doThrow(new NotFoundException()).when(blacklistClientService).deleteBlacklistRecord(ip);
         service.removeIpFromBlacklist(ip);
         verify(blacklistClientService, times(1)).deleteBlacklistRecord(ip);
     }
