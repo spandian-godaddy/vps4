@@ -202,8 +202,14 @@ public class VmZombieResource {
                 scheduledJobService.getScheduledJobsByType(vmId, ScheduledJob.ScheduledJobType.ZOMBIE);
         List<SchedulerJobDetail> schedulerJobDetails = new ArrayList<>();
         scheduledJobs.forEach(scheduledJob -> {
-            SchedulerJobDetail schedulerJobDetail = schedulerWebService.getJob(product, jobGroup, scheduledJob.id);
-            schedulerJobDetails.add(schedulerJobDetail);
+            try{
+                SchedulerJobDetail schedulerJobDetail = schedulerWebService.getJob(product, jobGroup, scheduledJob.id);
+                schedulerJobDetails.add(schedulerJobDetail);
+            }
+            catch (Exception e) {
+                logger.info("Unable to find scheduler job details for job id {}. " +
+                                    "This is expected behavior if the job is already complete", scheduledJob.id);
+            }
         });
         return schedulerJobDetails;
     }
