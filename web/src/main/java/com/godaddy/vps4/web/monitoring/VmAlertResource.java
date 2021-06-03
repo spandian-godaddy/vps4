@@ -15,7 +15,11 @@ import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
 
-import com.godaddy.vps4.vm.*;
+import com.godaddy.vps4.vm.Image;
+import com.godaddy.vps4.vm.VirtualMachine;
+import com.godaddy.vps4.vm.VmAlertService;
+import com.godaddy.vps4.vm.VmMetric;
+import com.godaddy.vps4.vm.VmMetricAlert;
 import com.godaddy.vps4.web.Vps4Api;
 import com.godaddy.vps4.web.vm.VmResource;
 
