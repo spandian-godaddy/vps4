@@ -351,7 +351,7 @@ TODO: Eventually need to puppetize this process below.
     "environment_filter": true,
     "project": "vps4",
     "playbook": "https://confluence.godaddy.com/display/HOSTING/Sum+of+All+Knowledge+-+Support+Documentation",
-    "subscriptions": [ "prod_sin2", "prod_ams3", "prod_iad2" ]
+    "subscriptions": [ "prod_phx3", "prod_sin2", "prod_ams3", "prod_iad2" ]
   }
 }
  ```
