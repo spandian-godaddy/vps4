@@ -112,7 +112,6 @@ public class NetworkResource {
         return ipAddresses;
     }
 
-    @RequiresRole(roles = {GDUser.Role.ADMIN})
     @POST
     @Path("/{vmId}/ipAddresses")
     public VmAction addIpAddress(@PathParam("vmId") UUID vmId) {
@@ -136,7 +135,6 @@ public class NetworkResource {
                 request, "Vps4AddIpAddress", user);
     }
 
-    @RequiresRole(roles = {GDUser.Role.ADMIN})
     @DELETE
     @Path("/{vmId}/ipAddresses/{addressId}")
     public VmAction destroyIpAddress(@PathParam("vmId") UUID vmId, @PathParam("addressId") long addressId) {
