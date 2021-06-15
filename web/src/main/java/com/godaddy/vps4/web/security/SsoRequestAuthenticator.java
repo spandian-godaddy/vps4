@@ -30,6 +30,7 @@ public class SsoRequestAuthenticator implements RequestAuthenticator<GDUser> {
     private final String CHARGEBACK = "Chargeback User";
     private final String DEV_PTGS = "Dev-PTGS";
     private final String CSR = "CSR";
+    private final String MEDIA_TEMPLE_CS = "Media Temple - CS";
 
     private final SsoTokenExtractor tokenExtractor;
     private Config config;
@@ -124,7 +125,8 @@ public class SsoRequestAuthenticator implements RequestAuthenticator<GDUser> {
                 groups.contains(DIGITAL_CRIMES_UNIT) ||
                 groups.contains(CHARGEBACK)) {
             gdUser.role = Role.SUSPEND_AUTH;
-        } else if (groups.contains(C3_HOSTING_SUPPORT)) {
+        } else if (groups.contains(C3_HOSTING_SUPPORT) ||
+                groups.contains(MEDIA_TEMPLE_CS)) {
             gdUser.role = Role.HS_AGENT;
         } else if (groups.contains(CSR)) {
             gdUser.role = Role.C3_OTHER;

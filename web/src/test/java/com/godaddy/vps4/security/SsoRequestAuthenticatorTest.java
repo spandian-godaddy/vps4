@@ -141,6 +141,20 @@ public class SsoRequestAuthenticatorTest {
         Assert.assertEquals(Role.HS_AGENT, user.role());
     }
 
+
+    @Test
+    public void testMediaTempleCS() {
+        SsoToken token = mockJomaxToken(Collections.singletonList("Media Temple - CS"));
+        when(tokenExtractor.extractToken(request)).thenReturn(token);
+
+        GDUser user = authenticator.authenticate(request);
+        Assert.assertEquals(null, user.getShopperId());
+        Assert.assertEquals(false, user.isShopper());
+        Assert.assertEquals(false, user.isAdmin());
+        Assert.assertEquals(true, user.isEmployee());
+        Assert.assertEquals(Role.HS_AGENT, user.role());
+    }
+
     @Test
     public void testMultiSSOGroupsPrecedence() {
         Vector<String> ssoGroups = new Vector<>();
