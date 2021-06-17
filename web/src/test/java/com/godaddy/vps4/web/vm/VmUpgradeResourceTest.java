@@ -34,6 +34,7 @@ import com.godaddy.vps4.vm.ServerSpec;
 import com.godaddy.vps4.vm.ServerType;
 import com.godaddy.vps4.vm.VirtualMachine;
 import com.godaddy.vps4.vm.VirtualMachineService;
+import com.godaddy.vps4.vm.Image;
 import com.godaddy.vps4.web.Vps4Exception;
 import com.godaddy.vps4.web.security.GDUser;
 import com.godaddy.vps4.web.vm.VmUpgradeResource.UpgradeVmRequest;
@@ -117,6 +118,8 @@ public class VmUpgradeResourceTest {
         testVm.spec = new ServerSpec();
         testVm.spec.serverType = new ServerType();
         testVm.spec.serverType.platform = ServerType.Platform.OPENSTACK;
+        testVm.image = new Image();
+        testVm.image.controlPanel = Image.ControlPanel.MYH;
         when(creditService.getVirtualMachineCredit(testCredit.getOrionGuid())).thenReturn(testCredit);
         String password = "T0ta!1yRand0m";
         UpgradeVmRequest upgradeVmRequest= new UpgradeVmRequest();
@@ -130,6 +133,8 @@ public class VmUpgradeResourceTest {
         testVm.spec = new ServerSpec();
         testVm.spec.serverType = new ServerType();
         testVm.spec.serverType.platform = ServerType.Platform.OPENSTACK;
+        testVm.image = new Image();
+        testVm.image.controlPanel = Image.ControlPanel.MYH;
         when(creditService.getVirtualMachineCredit(testCredit.getOrionGuid())).thenReturn(testCredit);
         String password = "";
         UpgradeVmRequest upgradeVmRequest= new UpgradeVmRequest();

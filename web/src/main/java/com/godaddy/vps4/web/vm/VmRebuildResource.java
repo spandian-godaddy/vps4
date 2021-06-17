@@ -66,7 +66,7 @@ public class VmRebuildResource {
     private final ImageResource imageResource;
     private final Config config;
     private final Cryptography cryptography;
-    private final int MAX_PASSWORD_LENGTH = 14;
+    private final int MAX_PASSWORD_LENGTH = 48;
 
     @Inject
     public VmRebuildResource(
@@ -140,8 +140,9 @@ public class VmRebuildResource {
     }
 
     private void isValidRebuildVmRequest(UUID vmId, RebuildVmRequest rebuildVmRequest, UUID orionGuid) {
+        VirtualMachine vm = vmResource.getVm(vmId);
         validateNoConflictingActions(vmId, actionService, ActionType.RESTORE_VM, ActionType.CREATE_VM, ActionType.REBUILD_VM);
-        validatePassword(rebuildVmRequest.password);
+        validatePassword(rebuildVmRequest.password, vm.image);
         validateRequestedImage(creditService.getVirtualMachineCredit(orionGuid),imageResource.getImage(rebuildVmRequest.imageName));
         if (!StringUtils.isBlank(rebuildVmRequest.imageName)) {
             // Validate image name passed in. This should throw a 404 if image is disabled (for env or role)

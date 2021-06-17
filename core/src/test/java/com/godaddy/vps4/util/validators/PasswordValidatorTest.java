@@ -11,13 +11,14 @@ import org.junit.Test;
 
 public class PasswordValidatorTest {
     /*
-     * be 8-14 characters long (8 or more)
+     * be 8-48 characters long (8 or more)
      * starts with a letter
      * include a lower case letter
      * include an upper case letter
      * include a number
      * include a special character (! @ # $ %)
      * cannot include certain special characters (&,?,;)
+     * cannot include substring 'admin' (case-insensitive) if Plesk
      */
     private static enum EnumPasswordCharacters {
 
@@ -44,124 +45,17 @@ public class PasswordValidatorTest {
         return randomNum;
     }
 
-    @BeforeClass
-    public static void getPasswordValidator() {
-        validator = ValidatorRegistry.getInstance().get("password");
-    }
-
-    @Test
-    public void shouldBeValidLowerBound() {
-        String charsToUse = String.format("%s%s%s%s", EnumPasswordCharacters.UPPERCASE,
-                EnumPasswordCharacters.LOWERCASE, EnumPasswordCharacters.SPECIAL, EnumPasswordCharacters.NUMERIC);
-        RandomStringGenerator generator = new RandomStringGenerator.Builder().selectFrom(charsToUse.toCharArray())
-                .build();
-        String invalidString = generator.generate(randInt(0, 7));
-        assertFalse(validator.isValid(invalidString));
-    }
-
-    @Test
-    public void invalidValidUpperBound() {
-        String charsToUse = String.format("%s%s%s%s", EnumPasswordCharacters.UPPERCASE,
-                EnumPasswordCharacters.LOWERCASE, EnumPasswordCharacters.SPECIAL, EnumPasswordCharacters.NUMERIC);
-        RandomStringGenerator generator = new RandomStringGenerator.Builder().selectFrom(charsToUse.toCharArray())
-                .build();
-        String invalidString = generator.generate(55);
-        assertFalse(validator.isValid(invalidString));
-    }
-
-    @Test
-    public void shouldIncludeALowercaseLetter() {
-        String prefixCharsToUse = String.format("%s", EnumPasswordCharacters.UPPERCASE);
-        String charsToUse = String.format("%s%s%s", EnumPasswordCharacters.UPPERCASE, EnumPasswordCharacters.SPECIAL,
-                EnumPasswordCharacters.NUMERIC);
-
+    private static String generateInvalidString(String prefixCharsToUse, String charsToUse) {
         RandomStringGenerator generator = new RandomStringGenerator.Builder().selectFrom(prefixCharsToUse.toCharArray())
                 .build();
         String strPrefix = generator.generate(1);
         generator = new RandomStringGenerator.Builder().selectFrom(charsToUse.toCharArray()).build();
         String restOfString = generator.generate(randInt(7, 13));
-        String invalidString = String.format("%s%s", strPrefix, restOfString);
-
-        assertFalse(validator.isValid(invalidString));
+        return String.format("%s%s", strPrefix, restOfString);
     }
 
-    @Test
-    public void shouldIncludeAUppercaseLetter() {
-        String prefixCharsToUse = String.format("%s", EnumPasswordCharacters.LOWERCASE);
-        String charsToUse = String.format("%s%s%s", EnumPasswordCharacters.LOWERCASE, EnumPasswordCharacters.SPECIAL,
-                EnumPasswordCharacters.NUMERIC);
-
-        RandomStringGenerator generator = new RandomStringGenerator.Builder().selectFrom(prefixCharsToUse.toCharArray())
-                .build();
-        String strPrefix = generator.generate(1);
-        generator = new RandomStringGenerator.Builder().selectFrom(charsToUse.toCharArray()).build();
-        String restOfString = generator.generate(randInt(7, 13));
-        String invalidString = String.format("%s%s", strPrefix, restOfString);
-
-        assertFalse(validator.isValid(invalidString));
-    }
-
-    @Test
-    public void shouldIncludeANumber() {
-        String prefixCharsToUse = String.format("%s%s", EnumPasswordCharacters.UPPERCASE,
-                EnumPasswordCharacters.LOWERCASE);
-        String charsToUse = String.format("%s%s%s", EnumPasswordCharacters.LOWERCASE, EnumPasswordCharacters.SPECIAL,
-                EnumPasswordCharacters.UPPERCASE);
-
-        RandomStringGenerator generator = new RandomStringGenerator.Builder().selectFrom(prefixCharsToUse.toCharArray())
-                .build();
-        String strPrefix = generator.generate(1);
-        generator = new RandomStringGenerator.Builder().selectFrom(charsToUse.toCharArray()).build();
-        String restOfString = generator.generate(randInt(7, 13));
-        String invalidString = String.format("%s%s", strPrefix, restOfString);
-
-        assertFalse(validator.isValid(invalidString));
-    }
-
-    @Test
-    public void shouldIncludeASpecialCharacter() {
-        String prefixCharsToUse = String.format("%s%s", EnumPasswordCharacters.UPPERCASE,
-                EnumPasswordCharacters.LOWERCASE);
-        String charsToUse = String.format("%s%s%s", EnumPasswordCharacters.LOWERCASE, EnumPasswordCharacters.NUMERIC,
-                EnumPasswordCharacters.UPPERCASE);
-
-        RandomStringGenerator generator = new RandomStringGenerator.Builder().selectFrom(prefixCharsToUse.toCharArray())
-                .build();
-        String strPrefix = generator.generate(1);
-        generator = new RandomStringGenerator.Builder().selectFrom(charsToUse.toCharArray()).build();
-        String restOfString = generator.generate(randInt(7, 13));
-        String invalidString = String.format("%s%s", strPrefix, restOfString);
-
-        assertFalse(validator.isValid(invalidString));
-    }
-
-    @Test
-    public void shouldNotIncludeDisallowedSpecialCharacter() {
-        String prefixCharsToUse = String.format("%s%s",
-                    EnumPasswordCharacters.UPPERCASE,
-                    EnumPasswordCharacters.LOWERCASE);
-        String charsToUse = String.format("%s%s%s",
-                    EnumPasswordCharacters.LOWERCASE,
-                    EnumPasswordCharacters.SPECIAL,
-                    EnumPasswordCharacters.NUMERIC,
-                    EnumPasswordCharacters.UPPERCASE);
-        String disallowedCharsToUse = String.format("%s",
-                    EnumPasswordCharacters.DISALLOWED_SPECIAL);
-
-        RandomStringGenerator generator = new RandomStringGenerator.Builder().selectFrom(prefixCharsToUse.toCharArray()).build();
-        String strPrefix = generator.generate(1);
-        generator = new RandomStringGenerator.Builder().selectFrom(charsToUse.toCharArray()).build();
-        String restOfString = generator.generate(randInt(6, 12));
-        generator = new RandomStringGenerator.Builder().selectFrom(disallowedCharsToUse.toCharArray()).build();
-        String disallowedString = generator.generate(1);
-        String invalidString = String.format("%s%s%s", strPrefix, restOfString, disallowedString);
-
-        assertFalse(validator.isValid(invalidString));
-    }
-
-    @Test
-    public void validPassword() {
-        String charsToUse = String.format("%s%s%s", EnumPasswordCharacters.LOWERCASE, EnumPasswordCharacters.SPECIAL,
+    private static String appendToValidPassword(String suffix) {
+        String charsToUse = String.format("%s%s%s%s", EnumPasswordCharacters.LOWERCASE, EnumPasswordCharacters.SPECIAL,
                 EnumPasswordCharacters.NUMERIC, EnumPasswordCharacters.UPPERCASE);
 
         RandomStringGenerator lowerCaseGenerator = new RandomStringGenerator.Builder()
@@ -179,8 +73,122 @@ public class PasswordValidatorTest {
         RandomStringGenerator restGenerator = new RandomStringGenerator.Builder().selectFrom(charsToUse.toCharArray())
                 .build();
         String restOfString = restGenerator.generate(4, 10);
-        String validString = String.format("%s%s", strPrefixMatchingReqdRules, restOfString);
+        return String.format("%s%s%s", strPrefixMatchingReqdRules, restOfString, suffix);
+    }
 
-        assertTrue(validator.isValid(validString));
+    @BeforeClass
+    public static void getPasswordValidator() {
+        validator = ValidatorRegistry.getInstance().get("password");
+    }
+
+    @Test
+    public void shouldBeValidLowerBound() {
+        String charsToUse = String.format("%s%s%s%s", EnumPasswordCharacters.UPPERCASE,
+                EnumPasswordCharacters.LOWERCASE, EnumPasswordCharacters.SPECIAL, EnumPasswordCharacters.NUMERIC);
+        RandomStringGenerator generator = new RandomStringGenerator.Builder().selectFrom(charsToUse.toCharArray())
+                .build();
+        String invalidString = generator.generate(randInt(0, 7));
+
+        boolean isValid = validator.isValid(invalidString);
+
+        assertFalse(isValid);
+    }
+
+    @Test
+    public void invalidValidUpperBound() {
+        String charsToUse = String.format("%s%s%s%s", EnumPasswordCharacters.UPPERCASE,
+                EnumPasswordCharacters.LOWERCASE, EnumPasswordCharacters.SPECIAL, EnumPasswordCharacters.NUMERIC);
+        RandomStringGenerator generator = new RandomStringGenerator.Builder().selectFrom(charsToUse.toCharArray())
+                .build();
+        String invalidString = generator.generate(55);
+
+        boolean isValid = validator.isValid(invalidString);
+
+        assertFalse(isValid);
+    }
+
+    @Test
+    public void shouldIncludeALowercaseLetter() {
+        String prefixCharsToUse = String.format("%s", EnumPasswordCharacters.UPPERCASE);
+        String charsToUse = String.format("%s%s%s", EnumPasswordCharacters.UPPERCASE, EnumPasswordCharacters.SPECIAL,
+                EnumPasswordCharacters.NUMERIC);
+
+        boolean isValid = validator.isValid(generateInvalidString(prefixCharsToUse, charsToUse));
+
+        assertFalse(isValid);
+    }
+
+    @Test
+    public void shouldIncludeAUppercaseLetter() {
+        String prefixCharsToUse = String.format("%s", EnumPasswordCharacters.LOWERCASE);
+        String charsToUse = String.format("%s%s%s", EnumPasswordCharacters.LOWERCASE, EnumPasswordCharacters.SPECIAL,
+                EnumPasswordCharacters.NUMERIC);
+
+        boolean isValid = validator.isValid(generateInvalidString(prefixCharsToUse, charsToUse));
+
+        assertFalse(isValid);
+    }
+
+    @Test
+    public void shouldIncludeANumber() {
+        String prefixCharsToUse = String.format("%s%s", EnumPasswordCharacters.UPPERCASE,
+                EnumPasswordCharacters.LOWERCASE);
+        String charsToUse = String.format("%s%s%s", EnumPasswordCharacters.LOWERCASE, EnumPasswordCharacters.SPECIAL,
+                EnumPasswordCharacters.UPPERCASE);
+
+        boolean isValid = validator.isValid(generateInvalidString(prefixCharsToUse, charsToUse));
+
+        assertFalse(isValid);
+    }
+
+    @Test
+    public void shouldIncludeASpecialCharacter() {
+        String prefixCharsToUse = String.format("%s%s", EnumPasswordCharacters.UPPERCASE,
+                EnumPasswordCharacters.LOWERCASE);
+        String charsToUse = String.format("%s%s%s", EnumPasswordCharacters.LOWERCASE, EnumPasswordCharacters.NUMERIC,
+                EnumPasswordCharacters.UPPERCASE);
+
+        boolean isValid = validator.isValid(generateInvalidString(prefixCharsToUse, charsToUse));
+
+        assertFalse(isValid);
+    }
+
+    @Test
+    public void shouldNotIncludeDisallowedSpecialCharacter() {
+        String disallowedCharsToUse = String.format("%s",
+                    EnumPasswordCharacters.DISALLOWED_SPECIAL);
+        RandomStringGenerator generator = new RandomStringGenerator.Builder().selectFrom(disallowedCharsToUse.toCharArray()).build();
+
+        boolean isValid = validator.isValid(appendToValidPassword(generator.generate(1)));
+
+        assertFalse(isValid);
+    }
+
+    @Test
+    public void validPassword() {
+        assertTrue(validator.isValid(appendToValidPassword("")));
+    }
+
+    @Test
+    public void validToIncludeAdminIfNotPlesk() {
+        char[] adminArr = "admin".toCharArray();
+        int randChar = randInt(0, 4);
+        adminArr[randChar] = Character.toUpperCase(adminArr[randChar]);
+
+        boolean isValid = validator.isValid(appendToValidPassword(new String(adminArr)));
+
+        assertTrue(isValid);
+    }
+
+    @Test
+    public void shouldNotIncludeAdminIfPlesk() {
+        validator = ValidatorRegistry.getInstance().get("pleskPassword");
+        char[] adminArr = "admin".toCharArray();
+        int randChar = randInt(0, 4);
+        adminArr[randChar] = Character.toUpperCase(adminArr[randChar]);
+
+        boolean isValid = validator.isValid(appendToValidPassword(new String(adminArr)));
+
+        assertFalse(isValid);
     }
 }

@@ -4,6 +4,7 @@ import static com.godaddy.vps4.web.util.RequestValidation.getAndValidateUserAcco
 import static com.godaddy.vps4.web.util.RequestValidation.validateCreditIsNotInUse;
 import static com.godaddy.vps4.web.util.RequestValidation.validateDedResellerSelectedDc;
 import static com.godaddy.vps4.web.util.RequestValidation.validateNoConflictingActions;
+import static com.godaddy.vps4.web.util.RequestValidation.validatePassword;
 import static com.godaddy.vps4.web.util.RequestValidation.validateRequestedImage;
 import static com.godaddy.vps4.web.util.RequestValidation.validateServerIsActiveOrUnknown;
 import static com.godaddy.vps4.web.util.RequestValidation.validateServerIsStoppedOrUnknown;
@@ -238,7 +239,7 @@ public class VmResource {
 
         Image image = imageResource.getImage(provisionRequest.image);
         validateRequestedImage(vmCredit, image);
-
+        validatePassword(provisionRequest.password, image);
 
         int previousRelays = getPreviousRelaysForVirtualServers(provisionRequest, image);
         ProvisionVirtualMachineParameters params;

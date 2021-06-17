@@ -68,7 +68,7 @@ public class VmRestoreResource {
     private final VmResource vmResource;
     private final Config config;
     private final Cryptography cryptography;
-    private final int MAX_PASSWORD_LENGTH = 14;
+    private final int MAX_PASSWORD_LENGTH = 48;
 
     @Inject
     public VmRestoreResource(
@@ -139,7 +139,7 @@ public class VmRestoreResource {
         validateIfSnapshotIsLive(snapshotService, restoreVmRequest.backupId);
         validateIfSnapshotFromVm(virtualMachineService, snapshotService, vm.vmId, restoreVmRequest.backupId);
         if(vm.spec.serverType.platform == ServerType.Platform.OPENSTACK) {
-            validatePassword(restoreVmRequest.password);
+            validatePassword(restoreVmRequest.password, vm.image);
         }
     }
 

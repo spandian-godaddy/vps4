@@ -1,8 +1,12 @@
 package com.godaddy.vps4.util.validators;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
+import com.godaddy.vps4.vm.Image;
+import static com.godaddy.vps4.vm.Image.ControlPanel.MYH;
+import static com.godaddy.vps4.vm.Image.ControlPanel.PLESK;
 
 public class ValidatorRegistry {
 
@@ -18,6 +22,7 @@ public class ValidatorRegistry {
     static void addValidatorsToRegistry(Map<String, Validator> validators) {
         validators.put("username", getUsernameValidator());
         validators.put("password", getPasswordValidator());
+        validators.put("pleskPassword", getPasswordValidator(PLESK));
         validators.put("hostname", getHostnameValidator());
         validators.put("snapshot-name", getSnapshotNameValidator());
     }
@@ -39,14 +44,23 @@ public class ValidatorRegistry {
         )));
     }
 
+    // Non-specified controlPanel, returns default rules (MYH)
     static Validator getPasswordValidator() {
-        return (new Validator(Arrays.asList(
+        return getPasswordValidator(MYH);
+    }
+
+    static Validator getPasswordValidator(Image.ControlPanel controlPanel) {
+        ArrayList<Rule> rules = new ArrayList<>(Arrays.asList(
             new Rule("Between 8 and 48 characters, with no disallowed characters", "[^&?;]{8,48}"),
             new Rule("Includes at least one lowercase letter", ".*[a-z].*$"),
             new Rule("Includes at least one uppercase letter", ".*[A-Z].*$"),
             new Rule("Includes at least one digit", ".*[0-9].*$"),
             new Rule("Includes at least one special character", ".*[@!#$%].*$")
-        )));
+        ));
+        if (controlPanel == PLESK) {
+            rules.add(new Rule("Not include \"admin\"", "(?i)^((?!admin).)*$"));
+        }
+        return new Validator(rules);
     }
 
     static Validator getHostnameValidator() {
