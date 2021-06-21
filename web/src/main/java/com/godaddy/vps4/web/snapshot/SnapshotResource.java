@@ -90,7 +90,8 @@ public class SnapshotResource {
     @Inject
     public SnapshotResource(@SnapshotActionService ActionService actionService,
                             CommandService commandService,
-                            GDUser user, CreditService creditService,
+                            GDUser user,
+                            CreditService creditService,
                             SnapshotService snapshotService,
                             VirtualMachineService virtualMachineService,
                             Vps4UserService userService,

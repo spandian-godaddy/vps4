@@ -19,6 +19,7 @@ import com.godaddy.vps4.orchestration.scheduler.SchedulerModule;
 import com.godaddy.vps4.panopta.PanoptaModule;
 import com.godaddy.vps4.scheduler.api.client.SchedulerServiceClientModule;
 import com.godaddy.vps4.security.SecurityModule;
+import com.godaddy.vps4.shopperNotes.ShopperNotesModule;
 import com.godaddy.vps4.snapshot.SnapshotModule;
 import com.godaddy.vps4.util.ObjectMapperModule;
 import com.godaddy.vps4.util.UtilsModule;
@@ -84,9 +85,10 @@ public class Vps4CommandPlugin implements CommandPlugin {
             new MonitoringModule(),
             new HfsVmTrackingRecordModule(),
             new PanoptaModule(),
-            new IpBlacklistModule()
-            );
-            
+            new IpBlacklistModule(),
+            new ShopperNotesModule()
+        );
+
         return new GuiceCommandProvider(injector);
     }
 

@@ -38,7 +38,8 @@ public class Vps4RebuildDedicatedTest extends Vps4RebuildVmTest {
         request.rebuildVmInfo.image.hfsName = "centos7-cpanel-latest_64";
         doReturn(action).when(context).execute(eq("RebuildDedicated"), eq(RebuildVm.class), any());
         command = new Vps4RebuildDedicated(actionService, virtualMachineService, vps4NetworkService, vmUserService,
-                                           creditService, panoptaDataService, hfsVmTrackingRecordService, networkService);
+                                           creditService, panoptaDataService, hfsVmTrackingRecordService,
+                                           networkService, shopperNotesService);
     }
 
     @Override

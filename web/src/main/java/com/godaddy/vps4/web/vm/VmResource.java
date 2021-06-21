@@ -47,6 +47,7 @@ import com.godaddy.vps4.credit.ECommCreditService;
 import com.godaddy.vps4.credit.VirtualMachineCredit;
 import com.godaddy.vps4.mailrelay.MailRelayService;
 import com.godaddy.vps4.orchestration.vm.VmActionRequest;
+import com.godaddy.vps4.orchestration.vm.Vps4DestroyVm;
 import com.godaddy.vps4.orchestration.vm.provision.ProvisionRequest;
 import com.godaddy.vps4.project.Project;
 import com.godaddy.vps4.project.ProjectService;
@@ -356,8 +357,10 @@ public class VmResource {
 
         String destroyMethod = vm.spec.serverType.platform.getDestroyCommand();
 
-        VmActionRequest destroyRequest = new VmActionRequest();
+        Vps4DestroyVm.Request destroyRequest = new Vps4DestroyVm.Request();
         destroyRequest.virtualMachine = vm;
+        destroyRequest.gdUserName = user.getUsername();
+
         VmAction deleteAction = createActionAndExecute(actionService, commandService, vm.vmId,
                                                        ActionType.DESTROY_VM, destroyRequest, destroyMethod, user);
 

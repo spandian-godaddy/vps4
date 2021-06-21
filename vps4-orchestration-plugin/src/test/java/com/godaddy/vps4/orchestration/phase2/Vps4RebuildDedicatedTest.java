@@ -11,11 +11,11 @@ import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
-import static org.mockito.Mockito.never;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -25,11 +25,6 @@ import java.util.function.Function;
 
 import javax.sql.DataSource;
 
-import com.godaddy.vps4.hfs.HfsVmTrackingRecordService;
-import com.godaddy.vps4.network.NetworkService;
-import com.godaddy.vps4.orchestration.panopta.SetupPanopta;
-import com.godaddy.vps4.panopta.PanoptaDataService;
-import com.godaddy.vps4.panopta.jdbc.PanoptaServerDetails;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -43,19 +38,25 @@ import org.mockito.runners.MockitoJUnitRunner;
 import com.godaddy.hfs.vm.Vm;
 import com.godaddy.hfs.vm.VmAction;
 import com.godaddy.vps4.credit.CreditService;
+import com.godaddy.vps4.hfs.HfsVmTrackingRecordService;
 import com.godaddy.vps4.jdbc.DatabaseModule;
 import com.godaddy.vps4.network.IpAddress;
+import com.godaddy.vps4.network.NetworkService;
 import com.godaddy.vps4.orchestration.hfs.cpanel.ConfigureCpanel;
 import com.godaddy.vps4.orchestration.hfs.plesk.ConfigurePlesk;
 import com.godaddy.vps4.orchestration.hfs.sysadmin.SetPassword;
 import com.godaddy.vps4.orchestration.hfs.sysadmin.ToggleAdmin;
 import com.godaddy.vps4.orchestration.hfs.vm.RebuildVm;
+import com.godaddy.vps4.orchestration.panopta.SetupPanopta;
 import com.godaddy.vps4.orchestration.sysadmin.ConfigureMailRelay;
 import com.godaddy.vps4.orchestration.vm.rebuild.Vps4RebuildDedicated;
+import com.godaddy.vps4.panopta.PanoptaDataService;
+import com.godaddy.vps4.panopta.jdbc.PanoptaServerDetails;
 import com.godaddy.vps4.project.Project;
 import com.godaddy.vps4.project.ProjectService;
 import com.godaddy.vps4.security.SecurityModule;
 import com.godaddy.vps4.security.Vps4UserService;
+import com.godaddy.vps4.shopperNotes.ShopperNotesService;
 import com.godaddy.vps4.util.Cryptography;
 import com.godaddy.vps4.util.UtilsModule;
 import com.godaddy.vps4.vm.ActionService;
@@ -103,8 +104,9 @@ public class Vps4RebuildDedicatedTest {
     @Inject private CreditService creditService;
     @Inject private VmUserService vmUserService;
     @Inject private Cryptography cryptography;
-    private PanoptaDataService panoptaDataService = mock(PanoptaDataService.class);
-    private NetworkService networkService = mock(NetworkService.class);
+    private final PanoptaDataService panoptaDataService = mock(PanoptaDataService.class);
+    private final NetworkService networkService = mock(NetworkService.class);
+    private final ShopperNotesService shopperNotesService = mock(ShopperNotesService.class);
     HfsVmTrackingRecordService hfsVmTrackingRecordService = mock(HfsVmTrackingRecordService.class);
 
     VirtualMachineService spyVps4VmService;
@@ -149,7 +151,8 @@ public class Vps4RebuildDedicatedTest {
         spyVmUserService = spy(vmUserService);
 
         command = new Vps4RebuildDedicated(actionService, spyVps4VmService, networkService, spyVmUserService,
-                                           creditService, panoptaDataService, hfsVmTrackingRecordService, networkService);
+                                           creditService, panoptaDataService, hfsVmTrackingRecordService,
+                                           networkService, shopperNotesService);
         addTestSqlData();
 
         vps4NewVm = mock(VirtualMachine.class);

@@ -6,6 +6,7 @@ import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -17,6 +18,7 @@ import java.util.List;
 import java.util.UUID;
 import java.util.function.Function;
 
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
@@ -30,6 +32,7 @@ import com.godaddy.vps4.orchestration.hfs.vm.DestroyVm;
 import com.godaddy.vps4.orchestration.monitoring.Vps4RemoveMonitoring;
 import com.godaddy.vps4.orchestration.scheduler.DeleteAutomaticBackupSchedule;
 import com.godaddy.vps4.orchestration.scheduler.ScheduleDestroyVm;
+import com.godaddy.vps4.shopperNotes.ShopperNotesService;
 import com.godaddy.vps4.vm.ActionService;
 import com.godaddy.vps4.vm.VirtualMachine;
 
@@ -39,26 +42,42 @@ public class Vps4DestroyVmTest {
 
     ActionService actionService = mock(ActionService.class);
     NetworkService networkService = mock(NetworkService.class);
+    ShopperNotesService shopperNotesService = mock(ShopperNotesService.class);
     CommandContext context = mock(CommandContext.class);
-    VmActionRequest request = mock(VmActionRequest.class);
+    Vps4DestroyVm.Request request = mock(Vps4DestroyVm.Request.class);
     VirtualMachine vm = mock(VirtualMachine.class);
     UUID vmId = UUID.randomUUID();
     IpAddress primaryIp = mock(IpAddress.class);
 
-    Vps4DestroyVm command = new Vps4DestroyVm(actionService, networkService);
+    Vps4DestroyVm command = new Vps4DestroyVm(actionService, networkService, shopperNotesService);
 
     @Before
     public void setUp() {
         when(context.getId()).thenReturn(UUID.randomUUID());
 
         vm.vmId = vmId;
+        vm.orionGuid = UUID.randomUUID();
         vm.hfsVmId = 42L;
         request.virtualMachine = vm;
         request.actionId = 13L;
+        request.gdUserName = "fake-employee";
 
         primaryIp.hfsAddressId = 23L;
         primaryIp.validUntil = Instant.MAX;
         when(networkService.getVmPrimaryAddress(vm.vmId)).thenReturn(primaryIp);
+    }
+
+    @Test
+    public void setsShopperNote() {
+        command.execute(context, request);
+        ArgumentCaptor<String> argument = ArgumentCaptor.forClass(String.class);
+        verify(shopperNotesService, times(1))
+                .processShopperMessage(eq(vm.vmId), argument.capture());
+        String value = argument.getValue();
+        Assert.assertTrue(value.contains("destroy"));
+        Assert.assertTrue(value.contains(vm.vmId.toString()));
+        Assert.assertTrue(value.contains(vm.orionGuid.toString()));
+        Assert.assertTrue(value.contains(request.gdUserName));
     }
 
     @Test

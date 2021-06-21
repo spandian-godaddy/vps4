@@ -33,6 +33,7 @@ import com.godaddy.vps4.plan.PlanModule;
 import com.godaddy.vps4.plesk.PleskModule;
 import com.godaddy.vps4.scheduler.api.client.SchedulerServiceClientModule;
 import com.godaddy.vps4.security.SecurityModule;
+import com.godaddy.vps4.shopperNotes.ShopperNotesModule;
 import com.godaddy.vps4.snapshot.SnapshotModule;
 import com.godaddy.vps4.sso.SsoModule;
 import com.godaddy.vps4.util.ObjectMapperProvider;
@@ -122,6 +123,7 @@ public class Vps4Injector {
         modules.add(new ServerUsageStatsModule());
         modules.add(new PanoptaModule());
         modules.add(new IpBlacklistModule());
+        modules.add(new ShopperNotesModule());
         modules.add(binder -> {
             binder.bind(ObjectMapper.class).toProvider(ObjectMapperProvider.class);
         });

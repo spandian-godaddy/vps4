@@ -37,7 +37,8 @@ public class Vps4RebuildOHVmTest extends Vps4RebuildVmTest {
         request.rebuildVmInfo.image.hfsName = "hfs-centos70-cpanel-11-x86_64-vmtempl";
         doReturn(action).when(context).execute(eq("RebuildOHVm"), eq(RebuildVm.class), any());
         command = new Vps4RebuildOHVm(actionService, virtualMachineService, vps4NetworkService, vmUserService,
-                                      creditService, panoptaDataService, hfsVmTrackingRecordService, networkService);
+                                      creditService, panoptaDataService, hfsVmTrackingRecordService, networkService,
+                                      shopperNotesService);
     }
 
     @Override

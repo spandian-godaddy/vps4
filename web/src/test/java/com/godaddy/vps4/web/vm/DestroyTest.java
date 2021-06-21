@@ -70,13 +70,13 @@ import gdg.hfs.orchestration.CommandState;
 
 public class DestroyTest {
     private GDUser user;
-    private CommandService commandService = mock(CommandService.class);
-    private CommandState commandState = mock(CommandState.class);
-    private ActionService actionService = mock(ActionService.class);
-    private CreditService creditService = mock(CreditService.class);
-    private VirtualMachineService virtualMachineService = mock(VirtualMachineService.class);
-    private TroubleshootVmService troubleshootVmService = mock(TroubleshootVmService.class);
-    private MailRelayService mailRelayService = mock(MailRelayService.class);
+    private final CommandService commandService = mock(CommandService.class);
+    private final CommandState commandState = mock(CommandState.class);
+    private final ActionService actionService = mock(ActionService.class);
+    private final CreditService creditService = mock(CreditService.class);
+    private final VirtualMachineService virtualMachineService = mock(VirtualMachineService.class);
+    private final TroubleshootVmService troubleshootVmService = mock(TroubleshootVmService.class);
+    private final MailRelayService mailRelayService = mock(MailRelayService.class);
 
     private VmResource vmResource;
     private VirtualMachine vm;
@@ -84,10 +84,9 @@ public class DestroyTest {
     @Inject Vps4UserService userService;
     @Inject DataSource dataSource;
 
-
     @Captor private ArgumentCaptor<CommandGroupSpec> commandGroupSpecArgumentCaptor;
 
-    private Injector injector = Guice.createInjector(
+    private final Injector injector = Guice.createInjector(
             new DatabaseModule(),
             new SecurityModule(),
             new SnapshotModule(),
@@ -135,6 +134,8 @@ public class DestroyTest {
         user = GDUserMock.createShopper();
         commandState.commandId = UUID.randomUUID();
         vm = new VirtualMachine();
+        vm.vmId = UUID.randomUUID();
+        vm.orionGuid = UUID.randomUUID();
         vm.validUntil = Instant.MAX;
         vm.primaryIpAddress = new IpAddress(1, 1, vm.vmId, "192.168.0.1", IpAddress.IpAddressType.PRIMARY, 0L, Instant.now(), Instant.MAX, 4);
 

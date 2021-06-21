@@ -2,6 +2,7 @@ package com.godaddy.vps4.phase2;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -54,10 +55,10 @@ public class VmResourceTest {
     @Inject VirtualMachineService virtualMachineService;
 
     private GDUser user;
-    private SchedulerWebService schedulerWebService = Mockito.mock(SchedulerWebService.class);
-    private MailRelayService mailRelayService = mock(MailRelayService.class);
+    private final SchedulerWebService schedulerWebService = Mockito.mock(SchedulerWebService.class);
+    private final MailRelayService mailRelayService = mock(MailRelayService.class);
 
-    private Injector injector = Guice.createInjector(
+    private final Injector injector = Guice.createInjector(
             new DatabaseModule(),
             new SecurityModule(),
             new VmModule(),

@@ -10,6 +10,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
+import com.godaddy.vps4.shopperNotes.ShopperNotesService;
 import com.godaddy.vps4.util.TroubleshootVmService;
 import org.mockito.Mockito;
 

@@ -1,10 +1,10 @@
 package com.godaddy.vps4.phase2;
 
+import static org.mockito.Mockito.any;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.any;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -14,8 +14,6 @@ import javax.inject.Inject;
 import javax.sql.DataSource;
 import javax.ws.rs.NotFoundException;
 
-import com.godaddy.vps4.credit.CreditService;
-import com.godaddy.vps4.credit.VirtualMachineCredit;
 import org.json.simple.JSONObject;
 import org.junit.After;
 import org.junit.Assert;
@@ -27,6 +25,8 @@ import org.mockito.Captor;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 
+import com.godaddy.vps4.credit.CreditService;
+import com.godaddy.vps4.credit.VirtualMachineCredit;
 import com.godaddy.vps4.jdbc.DatabaseModule;
 import com.godaddy.vps4.mailrelay.MailRelayService;
 import com.godaddy.vps4.orchestration.vm.rebuild.Vps4RebuildVm;
@@ -40,12 +40,12 @@ import com.godaddy.vps4.snapshot.SnapshotModule;
 import com.godaddy.vps4.vm.AccountStatus;
 import com.godaddy.vps4.vm.ActionService;
 import com.godaddy.vps4.vm.ActionType;
+import com.godaddy.vps4.vm.DataCenterService;
 import com.godaddy.vps4.vm.VirtualMachine;
 import com.godaddy.vps4.vm.VmAction;
 import com.godaddy.vps4.vm.VmModule;
 import com.godaddy.vps4.vm.VmUser;
 import com.godaddy.vps4.vm.VmUserType;
-import com.godaddy.vps4.vm.DataCenterService;
 import com.godaddy.vps4.web.Vps4Exception;
 import com.godaddy.vps4.web.security.GDUser;
 import com.godaddy.vps4.web.vm.VmRebuildResource;
@@ -206,6 +206,7 @@ public class VmRebuildResourceTest {
         Assert.assertEquals(commandRequest.rebuildVmInfo.vmId, vm.vmId);
         Assert.assertEquals(commandRequest.rebuildVmInfo.hostname, vm.hostname);
         Assert.assertEquals(commandRequest.rebuildVmInfo.keepAdditionalIps, true);
+        Assert.assertEquals(commandRequest.rebuildVmInfo.gdUserName, "tester");
     }
 
     @Test
@@ -273,7 +274,7 @@ public class VmRebuildResourceTest {
     }
 
     @Test(expected = NotFoundException.class)
-    public void weCannottRebuildANonExistentVm() {
+    public void weCannotRebuildANonExistentVm() {
         user = us;
         getVmRebuildResource().rebuild(UUID.randomUUID(), getRequestPayload(goodPassword, imageName));
     }

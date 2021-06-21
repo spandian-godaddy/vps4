@@ -6,7 +6,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
-import com.godaddy.vps4.orchestration.vm.Vps4RemoveIp;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -31,9 +30,11 @@ import com.godaddy.vps4.orchestration.hfs.vm.DestroyVm;
 import com.godaddy.vps4.orchestration.panopta.SetupPanopta;
 import com.godaddy.vps4.orchestration.sysadmin.ConfigureMailRelay;
 import com.godaddy.vps4.orchestration.sysadmin.ConfigureMailRelay.ConfigureMailRelayRequest;
+import com.godaddy.vps4.orchestration.vm.Vps4RemoveIp;
 import com.godaddy.vps4.orchestration.vm.WaitForAndRecordVmAction;
 import com.godaddy.vps4.panopta.PanoptaDataService;
 import com.godaddy.vps4.panopta.jdbc.PanoptaServerDetails;
+import com.godaddy.vps4.shopperNotes.ShopperNotesService;
 import com.godaddy.vps4.vm.ActionService;
 import com.godaddy.vps4.vm.Image;
 import com.godaddy.vps4.vm.RebuildVmInfo;
@@ -62,6 +63,7 @@ public class Vps4RebuildVm extends ActionCommand<Vps4RebuildVm.Request, Void> {
     protected final PanoptaDataService panoptaDataService;
     protected final HfsVmTrackingRecordService hfsVmTrackingRecordService;
     protected final NetworkService networkService;
+    protected final ShopperNotesService shopperNotesService;
 
     protected CommandContext context;
     protected UUID vps4VmId;
@@ -73,7 +75,7 @@ public class Vps4RebuildVm extends ActionCommand<Vps4RebuildVm.Request, Void> {
     public Vps4RebuildVm(ActionService actionService, VirtualMachineService virtualMachineService,
                          NetworkService vps4NetworkService, VmUserService vmUserService, CreditService creditService,
                          PanoptaDataService panoptaDataService, HfsVmTrackingRecordService hfsVmTrackingRecordService,
-                         NetworkService networkService) {
+                         NetworkService networkService, ShopperNotesService shopperNotesService) {
         super(actionService);
         this.virtualMachineService = virtualMachineService;
         this.vps4NetworkService = vps4NetworkService;
@@ -82,6 +84,7 @@ public class Vps4RebuildVm extends ActionCommand<Vps4RebuildVm.Request, Void> {
         this.panoptaDataService = panoptaDataService;
         this.hfsVmTrackingRecordService = hfsVmTrackingRecordService;
         this.networkService = networkService;
+        this.shopperNotesService = shopperNotesService;
     }
 
     @Override
@@ -91,6 +94,7 @@ public class Vps4RebuildVm extends ActionCommand<Vps4RebuildVm.Request, Void> {
         this.request = request;
         this.vps4VmId = request.rebuildVmInfo.vmId;
 
+        writeShopperNote();
         deleteOldUsersInDb();
 
         long oldHfsVmId = context.execute("GetHfsVmId",
@@ -111,10 +115,18 @@ public class Vps4RebuildVm extends ActionCommand<Vps4RebuildVm.Request, Void> {
         configureMonitoring(newHfsVmId);
         setEcommCommonName(request.rebuildVmInfo.orionGuid, request.rebuildVmInfo.serverName);
 
-
         setStep(RebuildVmStep.RebuildComplete);
         logger.info("VM rebuild of vmId {} finished", vps4VmId);
         return null;
+    }
+
+    private void writeShopperNote() {
+        try {
+            String shopperNote = String.format("Server was rebuilt by %s. VM ID: %s. Credit ID: %s.",
+                                               request.rebuildVmInfo.gdUserName, vps4VmId,
+                                               request.rebuildVmInfo.orionGuid);
+            shopperNotesService.processShopperMessage(vps4VmId, shopperNote);
+        } catch (Exception ignored) {}
     }
 
     private void getAndRemoveAdditionalIps(long oldHfsId) {

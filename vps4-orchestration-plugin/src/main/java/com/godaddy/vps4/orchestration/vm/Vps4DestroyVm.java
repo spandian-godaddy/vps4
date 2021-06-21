@@ -17,6 +17,7 @@ import com.godaddy.vps4.orchestration.hfs.vm.DestroyVm;
 import com.godaddy.vps4.orchestration.monitoring.Vps4RemoveMonitoring;
 import com.godaddy.vps4.orchestration.scheduler.DeleteAutomaticBackupSchedule;
 import com.godaddy.vps4.orchestration.scheduler.ScheduleDestroyVm;
+import com.godaddy.vps4.shopperNotes.ShopperNotesService;
 import com.godaddy.vps4.vm.ActionService;
 import com.godaddy.vps4.vm.VirtualMachine;
 
@@ -26,31 +27,38 @@ import gdg.hfs.orchestration.CommandRetryStrategy;
 
 @CommandMetadata(
         name="Vps4DestroyVm",
-        requestType=VmActionRequest.class,
+        requestType=Vps4DestroyVm.Request.class,
         responseType=Vps4DestroyVm.Response.class,
         retryStrategy = CommandRetryStrategy.NEVER
     )
-public class Vps4DestroyVm extends ActionCommand<VmActionRequest, Vps4DestroyVm.Response> {
+public class Vps4DestroyVm extends ActionCommand<Vps4DestroyVm.Request, Vps4DestroyVm.Response> {
 
     private static final Logger logger = LoggerFactory.getLogger(Vps4DestroyVm.class);
     private final NetworkService networkService;
-    CommandContext context;
-    VirtualMachine vm;
+    private final ShopperNotesService shopperNotesService;
+    private CommandContext context;
+    private VirtualMachine vm;
+    private String gdUserName;
 
     @Inject
-    public Vps4DestroyVm(ActionService actionService, NetworkService networkService) {
+    public Vps4DestroyVm(ActionService actionService,
+                         NetworkService networkService,
+                         ShopperNotesService shopperNotesService) {
         super(actionService);
         this.networkService = networkService;
+        this.shopperNotesService = shopperNotesService;
     }
 
     @Override
-    public Response executeWithAction(CommandContext context, VmActionRequest request) {
+    public Response executeWithAction(CommandContext context, Request request) {
         this.context = context;
         this.vm = request.virtualMachine;
+        this.gdUserName = request.gdUserName;
 
         logger.info("Destroying server {}", vm.vmId);
 
         try {
+            writeShopperNote();
             unlicenseControlPanel();
             removeMonitoring();
             removeIp();
@@ -78,7 +86,7 @@ public class Vps4DestroyVm extends ActionCommand<VmActionRequest, Vps4DestroyVm.
         context.execute(ScheduleDestroyVm.class, vm.vmId);
     }
 
-    private VmAction deleteVmInHfs(VmActionRequest request) {
+    private VmAction deleteVmInHfs(Request request) {
         DestroyVm.Request destroyVmRequest = new DestroyVm.Request();
         destroyVmRequest.hfsVmId = vm.hfsVmId;
         destroyVmRequest.actionId = request.actionId;
@@ -154,6 +162,18 @@ public class Vps4DestroyVm extends ActionCommand<VmActionRequest, Vps4DestroyVm.
 
     private void unlicenseControlPanel() {
         context.execute(UnlicenseControlPanel.class, vm);
+    }
+
+    private void writeShopperNote() {
+        try {
+            String shopperNote = String.format("Server was destroyed by %s. VM ID: %s. Credit ID: %s.",
+                                               gdUserName, vm.vmId, vm.orionGuid);
+            shopperNotesService.processShopperMessage(vm.vmId, shopperNote);
+        } catch (Exception ignored) {}
+    }
+
+    public static class Request extends VmActionRequest {
+        public String gdUserName;
     }
 
     public static class Response {

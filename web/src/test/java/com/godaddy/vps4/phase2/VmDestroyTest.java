@@ -63,9 +63,9 @@ public class VmDestroyTest {
     ActionService vmActionService;
 
     private GDUser user;
-    private VmSnapshotResource vmSnapshotResource = Mockito.mock(VmSnapshotResource.class);
-    private SnapshotService snapshotService = Mockito.mock(SnapshotService.class);
-    private MailRelayService mailRelayService = mock(MailRelayService.class);
+    private final VmSnapshotResource vmSnapshotResource = Mockito.mock(VmSnapshotResource.class);
+    private final SnapshotService snapshotService = Mockito.mock(SnapshotService.class);
+    private final MailRelayService mailRelayService = mock(MailRelayService.class);
 
     private Injector injector = Guice.createInjector(new DatabaseModule(), new SecurityModule(), new VmModule(),
             new Phase2ExternalsModule(), new CancelActionModule(), new AbstractModule() {

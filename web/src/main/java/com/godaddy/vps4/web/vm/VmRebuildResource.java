@@ -85,7 +85,6 @@ public class VmRebuildResource {
             Cryptography cryptography,
             ImageResource imageResource
     ) {
-
         this.user = user;
         this.vmUserService = vmUserService;
         this.projectService = projectService;
@@ -114,29 +113,27 @@ public class VmRebuildResource {
     @POST
     @Path("{vmId}/rebuild")
     public VmAction rebuild(@PathParam("vmId") UUID vmId, RebuildVmRequest rebuildVmRequest) {
-        rebuildVmRequest = performAdminPrereqs(rebuildVmRequest);
+        performAdminPrereqs(rebuildVmRequest);
         VirtualMachine vm = vmResource.getVm(vmId);
         isValidRebuildVmRequest(vmId, rebuildVmRequest,vm.orionGuid);
         logger.info("Processing rebuild on VM {}", vmId);
+
         cancelIncompleteVmActions(vmId);
-
-        Vps4RebuildVm.Request commandRequest = generateRebuildVmOrchestrationRequest(vm, rebuildVmRequest);
-
         if (vm.spec.isVirtualMachine()) {
             destroyVmSnapshots(vmId);
         }
 
+        Vps4RebuildVm.Request commandRequest = generateRebuildVmOrchestrationRequest(vm, rebuildVmRequest);
         String rebuildClassName = vm.spec.serverType.platform.getRebuildCommand();
         return createActionAndExecute(actionService, commandService, vm.vmId, ActionType.REBUILD_VM, commandRequest, rebuildClassName, user);
     }
 
-    private RebuildVmRequest performAdminPrereqs(RebuildVmRequest rebuildVmRequest) {
+    private void performAdminPrereqs(RebuildVmRequest rebuildVmRequest) {
         if (user.isAdmin()) {
             if (StringUtils.isBlank(rebuildVmRequest.password)) {
                 rebuildVmRequest.password = generatePassword(MAX_PASSWORD_LENGTH);
             }
         }
-        return rebuildVmRequest;
     }
 
     private void isValidRebuildVmRequest(UUID vmId, RebuildVmRequest rebuildVmRequest, UUID orionGuid) {
@@ -170,6 +167,7 @@ public class VmRebuildResource {
         rebuildVmInfo.orionGuid = vm.orionGuid;
         rebuildVmInfo.shopperId = user.isShopper() ? user.getShopperId(): creditService.getVirtualMachineCredit(vm.orionGuid).getShopperId();
         rebuildVmInfo.keepAdditionalIps = request.keepAdditionalIps;
+        rebuildVmInfo.gdUserName = user.getUsername();
         Vps4RebuildVm.Request req = new Vps4RebuildVm.Request();
         req.rebuildVmInfo = rebuildVmInfo;
         return req;

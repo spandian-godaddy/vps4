@@ -10,6 +10,7 @@ import com.godaddy.vps4.network.NetworkService;
 import com.godaddy.vps4.orchestration.hfs.vm.RebuildVm;
 import com.godaddy.vps4.orchestration.vm.WaitForAndRecordVmAction;
 import com.godaddy.vps4.panopta.PanoptaDataService;
+import com.godaddy.vps4.shopperNotes.ShopperNotesService;
 import com.godaddy.vps4.vm.ActionService;
 import com.godaddy.vps4.vm.RebuildVmStep;
 import com.godaddy.vps4.vm.VirtualMachineService;
@@ -31,9 +32,10 @@ public class Vps4RebuildOHVm extends Vps4RebuildVm {
     public Vps4RebuildOHVm(ActionService actionService, VirtualMachineService virtualMachineService,
                            NetworkService vps4NetworkService, VmUserService vmUserService,
                            CreditService creditService, PanoptaDataService panoptaDataService,
-                           HfsVmTrackingRecordService hfsVmTrackingRecordService, NetworkService networkService) {
+                           HfsVmTrackingRecordService hfsVmTrackingRecordService, NetworkService networkService,
+                           ShopperNotesService shopperNotesService) {
         super(actionService, virtualMachineService, vps4NetworkService, vmUserService, creditService,
-              panoptaDataService, hfsVmTrackingRecordService, networkService);
+              panoptaDataService, hfsVmTrackingRecordService, networkService, shopperNotesService);
     }
 
     @Override

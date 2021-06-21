@@ -22,6 +22,7 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.function.Function;
 
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
@@ -48,6 +49,7 @@ import com.godaddy.vps4.orchestration.sysadmin.ConfigureMailRelay.ConfigureMailR
 import com.godaddy.vps4.orchestration.vm.WaitForAndRecordVmAction;
 import com.godaddy.vps4.panopta.PanoptaDataService;
 import com.godaddy.vps4.panopta.jdbc.PanoptaServerDetails;
+import com.godaddy.vps4.shopperNotes.ShopperNotesService;
 import com.godaddy.vps4.vm.ActionService;
 import com.godaddy.vps4.vm.Image;
 import com.godaddy.vps4.vm.Image.ControlPanel;
@@ -73,6 +75,7 @@ public class Vps4RebuildVmTest {
     PanoptaDataService panoptaDataService = mock(PanoptaDataService.class);
     HfsVmTrackingRecordService hfsVmTrackingRecordService = mock(HfsVmTrackingRecordService.class);
     NetworkService networkService = mock(NetworkService.class);
+    ShopperNotesService shopperNotesService = mock(ShopperNotesService.class);
 
     UUID vps4VmId = UUID.randomUUID();
     UUID orionGuid = UUID.randomUUID();
@@ -131,6 +134,7 @@ public class Vps4RebuildVmTest {
         request.rebuildVmInfo.encryptedPassword = "encrypted".getBytes();
         request.rebuildVmInfo.shopperId = shopperId;
         request.rebuildVmInfo.keepAdditionalIps = true;
+        request.rebuildVmInfo.gdUserName = "fake-employee";
 
         IpAddress publicIp = new IpAddress();
         publicIp.hfsAddressId = hfsAddressId;
@@ -139,6 +143,7 @@ public class Vps4RebuildVmTest {
         when(vps4NetworkService.getVmPrimaryAddress(vps4VmId)).thenReturn(publicIp);
 
         vm = new VirtualMachine();
+        vm.orionGuid = orionGuid;
         vm.hfsVmId = originalHfsVmId;
         vm.image = new Image();
         vm.image.controlPanel = ControlPanel.CPANEL;
@@ -152,9 +157,22 @@ public class Vps4RebuildVmTest {
         action.vmId = newHfsVmId;
         doReturn(action).when(context).execute(eq("CreateVm"), eq(CreateVm.class), any());
 
-        command = new Vps4RebuildVm(actionService, virtualMachineService, vps4NetworkService,
-                                                  vmUserService, creditService, panoptaDataService,
-                                                  hfsVmTrackingRecordService, networkService);
+        command = new Vps4RebuildVm(actionService, virtualMachineService, vps4NetworkService, vmUserService,
+                                    creditService, panoptaDataService, hfsVmTrackingRecordService, networkService,
+                                    shopperNotesService);
+    }
+
+    @Test
+    public void setsShopperNote() {
+        command.execute(context, request);
+        ArgumentCaptor<String> argument = ArgumentCaptor.forClass(String.class);
+        verify(shopperNotesService, times(1))
+                .processShopperMessage(eq(vps4VmId), argument.capture());
+        String value = argument.getValue();
+        Assert.assertTrue(value.contains("rebuilt"));
+        Assert.assertTrue(value.contains(vps4VmId.toString()));
+        Assert.assertTrue(value.contains(vm.orionGuid.toString()));
+        Assert.assertTrue(value.contains(request.rebuildVmInfo.gdUserName));
     }
 
     @Test
