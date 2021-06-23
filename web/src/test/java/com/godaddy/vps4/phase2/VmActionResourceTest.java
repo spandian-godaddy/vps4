@@ -278,7 +278,7 @@ public class VmActionResourceTest {
         try {
             Method method = VmActionResource.class.getMethod("getVmActionWithDetails", UUID.class, long.class);
             Assert.assertTrue(method.isAnnotationPresent(RequiresRole.class));
-            Role[] expectedRoles = new Role[] {Role.ADMIN, Role.HS_AGENT, Role.HS_LEAD};
+            Role[] expectedRoles = new Role[] {Role.ADMIN, Role.HS_AGENT, Role.HS_LEAD, Role.SUSPEND_AUTH};
             Assert.assertArrayEquals(expectedRoles, method.getAnnotation(RequiresRole.class).roles());
         }
         catch(NoSuchMethodException ex) {

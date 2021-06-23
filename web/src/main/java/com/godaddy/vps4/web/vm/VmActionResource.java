@@ -150,7 +150,7 @@ public class VmActionResource {
 
     @GET
     @Path("{vmId}/actions/{actionId}/withDetails")
-    @RequiresRole(roles = {Role.ADMIN, Role.HS_AGENT, Role.HS_LEAD})
+    @RequiresRole(roles = {Role.ADMIN, Role.HS_AGENT, Role.HS_LEAD, Role.SUSPEND_AUTH})
     public VmActionWithDetails getVmActionWithDetails(@PathParam("vmId") UUID vmId,
                                                       @PathParam("actionId") long actionId) {
         Action action = this.getVmActionFromCore(vmId, actionId);
