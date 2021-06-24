@@ -167,6 +167,7 @@ public class RequestValidation {
     private static boolean isBrandReseller(String resellerId) {
         String[] brandResellers = {
             "525848", // Heart Internet
+            "527397", // TSOHost
             "525847", // Host Europe GmbH
             "525845", // Domain Factory GmbH
             "525844", // 123 Reg
