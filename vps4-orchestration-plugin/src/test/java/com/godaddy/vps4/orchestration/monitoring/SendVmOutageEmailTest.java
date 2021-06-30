@@ -19,6 +19,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
+import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
 
 import com.godaddy.vps4.messaging.Vps4MessagingService;
@@ -31,13 +32,13 @@ import gdg.hfs.orchestration.CommandContext;
 
 @RunWith(MockitoJUnitRunner.class)
 public class SendVmOutageEmailTest {
+    @Mock private Vps4MessagingService vps4MessagingService;
+    @Mock private VmAlertService vmAlertService;
+    @Mock private CommandContext context;
 
-    Vps4MessagingService vps4MessagingService = mock(Vps4MessagingService.class);
-    VmAlertService vmAlertService = mock(VmAlertService.class);
     VmOutageEmailRequest vmOutageEmailRequest = new VmOutageEmailRequest();
     VmOutage vmOutage = new VmOutage();
     VmMetricAlert vmMetricAlert = new VmMetricAlert();
-    CommandContext context = mock(CommandContext.class);
     String fakeMessageId = "fake-message-id";
     String fakeShopperId = "fake-shopper-id";
     String fakeAccountName = "fake-account-name";
@@ -46,7 +47,7 @@ public class SendVmOutageEmailTest {
     String fakeReason = "fake-reason";
     UUID fakeVmId = UUID.randomUUID();
 
-    SendVmOutageEmail command = new SendVmOutageEmail(vps4MessagingService, vmAlertService);
+    SendVmOutageEmail command;
 
     @Captor
     ArgumentCaptor<Function<CommandContext, String>> lambdaCaptor;
@@ -66,14 +67,20 @@ public class SendVmOutageEmailTest {
         vmOutage.started = started;
         vmOutage.ended = ended;
         vmOutage.reason = fakeReason;
+
+        setupMocks();
+        command = new SendVmOutageEmail(vps4MessagingService, vmAlertService);
+    }
+
+    private void setupMocks() {
+        when(context.execute(anyString(), any(Function.class), any())).thenReturn(fakeMessageId);
+        when(vmAlertService.getVmMetricAlert(any(UUID.class), anyString())).thenReturn(vmMetricAlert);
     }
 
     @Test
     public void verifyUptimeOutageEmailIsSent() {
         vmOutageEmailRequest.vmOutage.metric = VmMetric.PING;
         vmMetricAlert.status = VmMetricAlert.Status.ENABLED;
-        when(vmAlertService.getVmMetricAlert(any(UUID.class), anyString())).thenReturn(vmMetricAlert);
-        when(context.execute(anyString(), any(Function.class), any())).thenReturn(fakeMessageId);
         when(vps4MessagingService
                 .sendUptimeOutageEmail(eq(fakeShopperId), eq(fakeAccountName), eq(fakeIpAddress), eq(fakeOrionGuid),
                         any(Instant.class), eq(true))).thenReturn(fakeMessageId);
@@ -91,9 +98,7 @@ public class SendVmOutageEmailTest {
     public void verifyServerUsageOutageEmailIsSent() {
         vmOutageEmailRequest.vmOutage.metric = VmMetric.CPU;
         vmMetricAlert.status = VmMetricAlert.Status.ENABLED;
-        when(vmAlertService.getVmMetricAlert(any(UUID.class), anyString())).thenReturn(vmMetricAlert);
         String fakeResourceName = VmMetric.CPU.name();
-        when(context.execute(anyString(), any(Function.class), any())).thenReturn(fakeMessageId);
         when(vps4MessagingService.sendServerUsageOutageEmail(eq(fakeShopperId), eq(fakeAccountName), eq(fakeIpAddress),
                 eq(fakeOrionGuid), eq(fakeResourceName), anyString(), any(Instant.class), eq(true)))
                 .thenReturn(fakeMessageId);
@@ -110,10 +115,7 @@ public class SendVmOutageEmailTest {
     public void verifyServicesDownEmailIsSent() {
         vmOutageEmailRequest.vmOutage.metric = VmMetric.HTTP;
         vmMetricAlert.status = VmMetricAlert.Status.ENABLED;
-        when(vmAlertService.getVmMetricAlert(any(UUID.class), anyString())).thenReturn(vmMetricAlert);
         String fakeResourceName = VmMetric.HTTP.name();
-        String fakeResourceUsage = "95%";
-        when(context.execute(anyString(), any(Function.class), any())).thenReturn(fakeMessageId);
         when(vps4MessagingService
                 .sendServicesDownEmail(eq(fakeShopperId), eq(fakeAccountName), eq(fakeIpAddress), eq(fakeOrionGuid),
                         eq(fakeResourceName), any(Instant.class), eq(true))).thenReturn(fakeMessageId);
@@ -130,10 +132,45 @@ public class SendVmOutageEmailTest {
     public void doesNotSendEmailIfAlertMetricIsDisabled() {
         vmOutageEmailRequest.vmOutage.metric = VmMetric.PING;
         vmMetricAlert.status = VmMetricAlert.Status.DISABLED;
-        when(vmAlertService.getVmMetricAlert(any(UUID.class), anyString())).thenReturn(vmMetricAlert);
         command.execute(context, vmOutageEmailRequest);
 
         verify(context, never())
                 .execute(eq("SendVmOutageEmail-" + fakeShopperId), any(Function.class), eq(String.class));
+    }
+
+    @Test
+    public void passesCorrectValueToOutageEmail() {
+        vmOutageEmailRequest.vmOutage.metric = VmMetric.DISK;
+        vmMetricAlert.status = VmMetricAlert.Status.ENABLED;
+        vmOutageEmailRequest.vmOutage.reason = "vps4_disk_total_percent_used greater than 42% for more than 10 minutes";
+
+        command.execute(context, vmOutageEmailRequest);
+
+        verify(context, times(1))
+                .execute(eq("SendVmOutageEmail-" + fakeShopperId), lambdaCaptor.capture(), eq(String.class));
+
+        lambdaCaptor.getValue().apply(context);
+        verify(vps4MessagingService, times(1)).sendServerUsageOutageEmail(eq(fakeShopperId), eq(fakeAccountName),
+                                                                          eq(fakeIpAddress), eq(fakeOrionGuid),
+                                                                          eq(VmMetric.DISK.name()), eq("42%"),
+                                                                          any(Instant.class), eq(true));
+    }
+
+    @Test
+    public void passesDefaultValueToOutageEmail() {
+        vmOutageEmailRequest.vmOutage.metric = VmMetric.DISK;
+        vmMetricAlert.status = VmMetricAlert.Status.ENABLED;
+        vmOutageEmailRequest.vmOutage.reason = "unexpected string";
+
+        command.execute(context, vmOutageEmailRequest);
+
+        verify(context, times(1))
+                .execute(eq("SendVmOutageEmail-" + fakeShopperId), lambdaCaptor.capture(), eq(String.class));
+
+        lambdaCaptor.getValue().apply(context);
+        verify(vps4MessagingService, times(1)).sendServerUsageOutageEmail(eq(fakeShopperId), eq(fakeAccountName),
+                                                                          eq(fakeIpAddress), eq(fakeOrionGuid),
+                                                                          eq(VmMetric.DISK.name()), eq("95%"),
+                                                                          any(Instant.class), eq(true));
     }
 }

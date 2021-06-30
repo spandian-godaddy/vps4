@@ -1,6 +1,8 @@
 package com.godaddy.vps4.orchestration.monitoring;
 
 import java.util.UUID;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import javax.inject.Inject;
 
@@ -51,13 +53,15 @@ public class SendVmOutageEmail extends SendMessagingEmailBase implements Command
                 case CPU:
                 case RAM:
                 case DISK:
-                    // send in a hardcoded 95% for now as the resource usage number.
-                    // TODO: change to use threshold dynamically
+                    Pattern pattern = Pattern.compile("^.* (\\d+%) .*$");
+                    Matcher matcher = pattern.matcher(req.vmOutage.reason);
+                    String percent = (matcher.find()) ? matcher.group(1) : "95%";
+
                     messageId = context.execute("SendVmOutageEmail-" + req.shopperId,
                             ctx -> messagingService
                                     .sendServerUsageOutageEmail(req.shopperId, req.accountName, req.ipAddress,
-                                            req.orionGuid, req.vmOutage.metric.name(), "95%", req.vmOutage.started,
-                                            req.managed),
+                                                                req.orionGuid, req.vmOutage.metric.name(), percent,
+                                                                req.vmOutage.started, req.managed),
                             String.class);
                     break;
 
