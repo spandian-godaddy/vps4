@@ -7,7 +7,6 @@ import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.TimeUnit;
 
 import javax.inject.Inject;
 import javax.net.ssl.KeyManager;
@@ -144,7 +143,6 @@ abstract public class HttpServiceProvider<T> {
         HttpClient httpClient = getHttpClient(registryBuilder);
         ResteasyClient client = new ResteasyClientBuilder()
                 .httpEngine(new ApacheHttpClient4Engine(httpClient))
-                .establishConnectionTimeout(120, TimeUnit.SECONDS)
                 .build();
 
         logger.debug("building HTTP client to service {} at base url {}", serviceClass.getName(), baseUrl);
