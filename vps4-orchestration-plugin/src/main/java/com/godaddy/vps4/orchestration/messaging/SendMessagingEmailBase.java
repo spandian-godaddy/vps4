@@ -15,4 +15,8 @@ public class SendMessagingEmailBase {
         context.sleep(3000);
         context.execute(WaitForMessageComplete.class, messageId);
     }
+
+    public static class Response {
+        public String messageId;
+    }
 }

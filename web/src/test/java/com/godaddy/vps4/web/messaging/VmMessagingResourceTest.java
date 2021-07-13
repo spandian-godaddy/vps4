@@ -38,6 +38,7 @@ public class VmMessagingResourceTest {
     private CreditService creditService;
     private CommandService commandService;
 
+    CommandState command;
     VirtualMachine vm;
     GDUser gdUser;
 
@@ -55,7 +56,7 @@ public class VmMessagingResourceTest {
 
         gdUser = GDUserMock.createShopper();
 
-        CommandState command = new CommandState();
+        command  = new CommandState();
         command.commandId = UUID.randomUUID();
 
         when(virtualMachineService.getVirtualMachine(vm.vmId)).thenReturn(vm);
@@ -74,7 +75,7 @@ public class VmMessagingResourceTest {
         long duration = 24L * 60L;
         Instant startTime = Instant.now();
         ScheduledMessagingResourceRequest messagingRequest = new ScheduledMessagingResourceRequest(startTime.toString(), duration);
-        resource.messagePatching(vm.vmId, messagingRequest);
+        VmMessagingResource.MessagingResponse res = resource.messagePatching(vm.vmId, messagingRequest);
 
         ArgumentCaptor<CommandGroupSpec> argument = ArgumentCaptor.forClass(CommandGroupSpec.class);
         verify(commandService, times(1)).executeCommand(argument.capture());
@@ -85,6 +86,9 @@ public class VmMessagingResourceTest {
         assertEquals(false, request.isManaged);
         assertEquals(GDUserMock.DEFAULT_SHOPPER, request.shopperId);
         assertEquals(startTime, request.startTime);
+        assertEquals(res.commandId,command.commandId);
+        assertEquals(res.vmId,vm.vmId);
+        assertEquals(res.commandName,"SendScheduledPatchingEmail");
     }
 
     @Test(expected = Vps4Exception.class)
@@ -124,7 +128,7 @@ public class VmMessagingResourceTest {
         long duration = 24L * 60L;
         Instant startTime = Instant.now();
         ScheduledMessagingResourceRequest messagingRequest = new ScheduledMessagingResourceRequest(startTime.toString(), duration);
-        resource.messageScheduledMaintenance(vm.vmId, messagingRequest);
+        VmMessagingResource.MessagingResponse res = resource.messageScheduledMaintenance(vm.vmId, messagingRequest);
 
         ArgumentCaptor<CommandGroupSpec> argument = ArgumentCaptor.forClass(CommandGroupSpec.class);
         verify(commandService, times(1)).executeCommand(argument.capture());
@@ -135,11 +139,14 @@ public class VmMessagingResourceTest {
         assertEquals(false, request.isManaged);
         assertEquals(GDUserMock.DEFAULT_SHOPPER, request.shopperId);
         assertEquals(startTime, request.startTime);
+        assertEquals(res.commandId,command.commandId);
+        assertEquals(res.vmId,vm.vmId);
+        assertEquals(res.commandName,"SendUnexpectedButScheduledMaintenanceEmail");
     }
 
     @Test
     public void testMessageFailover() {
-        resource.messageFailover(vm.vmId);
+        VmMessagingResource.MessagingResponse res = resource.messageFailover(vm.vmId);
 
         ArgumentCaptor<CommandGroupSpec> argument = ArgumentCaptor.forClass(CommandGroupSpec.class);
         verify(commandService, times(1)).executeCommand(argument.capture());
@@ -148,11 +155,14 @@ public class VmMessagingResourceTest {
         assertEquals(vm.name, request.accountName);
         assertEquals(false, request.isManaged);
         assertEquals(GDUserMock.DEFAULT_SHOPPER, request.shopperId);
+        assertEquals(res.commandId,command.commandId);
+        assertEquals(res.vmId,vm.vmId);
+        assertEquals(res.commandName,"SendSystemDownFailoverEmail");
     }
 
     @Test
     public void testMessageFailoverComplete() {
-        resource.messageFailoverComplete(vm.vmId);
+        VmMessagingResource.MessagingResponse res = resource.messageFailoverComplete(vm.vmId);
 
         ArgumentCaptor<CommandGroupSpec> argument = ArgumentCaptor.forClass(CommandGroupSpec.class);
         verify(commandService, times(1)).executeCommand(argument.capture());
@@ -161,6 +171,9 @@ public class VmMessagingResourceTest {
         assertEquals(vm.name, request.accountName);
         assertEquals(false, request.isManaged);
         assertEquals(GDUserMock.DEFAULT_SHOPPER, request.shopperId);
+        assertEquals(res.commandId,command.commandId);
+        assertEquals(res.vmId,vm.vmId);
+        assertEquals(res.commandName,"SendFailoverCompletedEmail");
     }
 
 }

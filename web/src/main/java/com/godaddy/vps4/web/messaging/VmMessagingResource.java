@@ -26,8 +26,11 @@ import com.godaddy.vps4.web.util.Commands;
 import com.godaddy.vps4.web.util.RequestValidation;
 
 import gdg.hfs.orchestration.CommandService;
+import gdg.hfs.orchestration.CommandState;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiParam;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @Vps4Api
 @Api(tags = { "vms" })
@@ -37,6 +40,7 @@ import io.swagger.annotations.ApiParam;
 @Consumes(MediaType.APPLICATION_JSON)
 @RequiresRole(roles = {GDUser.Role.ADMIN})
 public class VmMessagingResource {
+    private static final Logger logger = LoggerFactory.getLogger(VmMessagingResource.class);
 
     private final VirtualMachineService virtualMachineService;
     private final CommandService commandService;
@@ -52,15 +56,15 @@ public class VmMessagingResource {
         this.user = user;
     }
 
-
     @POST
     @Path("/{vmId}/messaging/patching")
-    public void messagePatching(@PathParam("vmId") UUID vmId,
-            @ApiParam(value = "startTime in GMT, Example: 2007-12-03T10:15:30.00Z. duration is in minutes.", required = true) ScheduledMessagingResourceRequest messageRequest) {
+    public MessagingResponse messagePatching(@PathParam("vmId") UUID vmId,
+                                             @ApiParam(value = "startTime in GMT, Example: 2007-12-03T10:15:30.00Z. duration is in minutes.", required = true) ScheduledMessagingResourceRequest messageRequest)  {
 
         ScheduledMaintenanceEmailRequest request = createScheduledMaintenanceEmailRequest(vmId,
                 messageRequest.startTime, messageRequest.durationMinutes);
-        Commands.execute(commandService, "SendScheduledPatchingEmail", request);
+        CommandState command = Commands.execute(commandService, "SendScheduledPatchingEmail", request);
+        return new MessagingResponse(command.commandId, vmId, "SendScheduledPatchingEmail");
     }
 
 	private ScheduledMaintenanceEmailRequest createScheduledMaintenanceEmailRequest(UUID vmId, String startTime, long durationMinutes) {
@@ -98,19 +102,22 @@ public class VmMessagingResource {
 
     @POST
     @Path("/{vmId}/messaging/scheduledMaintenance")
-    public void messageScheduledMaintenance(@PathParam("vmId") UUID vmId,
-            @ApiParam(value = "startTime in GMT, Example: 2007-12-03T10:15:30.00Z. duration is in minutes.", required = true) ScheduledMessagingResourceRequest messageRequest) {
+    public MessagingResponse messageScheduledMaintenance(@PathParam("vmId") UUID vmId,
+                                                         @ApiParam(value = "startTime in GMT, Example: 2007-12-03T10:15:30.00Z. duration is in minutes.", required = true) ScheduledMessagingResourceRequest messageRequest) {
 
         ScheduledMaintenanceEmailRequest request = createScheduledMaintenanceEmailRequest(vmId,
                 messageRequest.startTime, messageRequest.durationMinutes);
-        Commands.execute(commandService, "SendUnexpectedButScheduledMaintenanceEmail", request);
+        CommandState command = Commands.execute(commandService, "SendUnexpectedButScheduledMaintenanceEmail", request);
+        return new MessagingResponse(command.commandId, vmId, "SendUnexpectedButScheduledMaintenanceEmail");
     }
 
     @POST
     @Path("/{vmId}/messaging/failover")
-    public void messageFailover(@PathParam("vmId") UUID vmId) {
+    public MessagingResponse messageFailover(@PathParam("vmId") UUID vmId) {
         FailOverEmailRequest request = createEmailRequest(vmId);
-        Commands.execute(commandService, "SendSystemDownFailoverEmail", request);
+        CommandState command = Commands.execute(commandService, "SendSystemDownFailoverEmail", request);
+        return new MessagingResponse(command.commandId, vmId, "SendSystemDownFailoverEmail");
+
     }
 
     private FailOverEmailRequest createEmailRequest(UUID vmId) {
@@ -123,8 +130,20 @@ public class VmMessagingResource {
 
     @POST
     @Path("/{vmId}/messaging/failoverComplete")
-    public void messageFailoverComplete(@PathParam("vmId") UUID vmId) {
+    public MessagingResponse messageFailoverComplete(@PathParam("vmId") UUID vmId) {
         FailOverEmailRequest request = createEmailRequest(vmId);
-        Commands.execute(commandService, "SendFailoverCompletedEmail", request);
+        CommandState command = Commands.execute(commandService, "SendFailoverCompletedEmail", request);
+        return new MessagingResponse(command.commandId, vmId, "SendFailoverCompletedEmail");
+    }
+
+    public class MessagingResponse {
+        public UUID commandId;
+        public UUID vmId;
+        public String commandName;
+        public MessagingResponse(UUID commandId, UUID vmId, String commandName){
+            this.commandId = commandId;
+            this.vmId = vmId;
+            this.commandName = commandName;
+        }
     }
 }

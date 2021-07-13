@@ -1,5 +1,6 @@
 package com.godaddy.vps4.orchestration.messaging;
 
+import static org.junit.Assert.assertEquals;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
@@ -51,6 +52,12 @@ public class SendUnexpectedButScheduledMaintenanceEmailTest {
 
         when(messagingService.sendUnexpectedButScheduledMaintenanceEmail("shopperid", "vmname", startTime, 30, false)).thenReturn(messageId);
         when(messagingService.getMessageById(messageId)).thenReturn(message);
+    }
+
+    @Test
+    public void testReturnsMessageId() {
+        SendMessagingEmailBase.Response res = command.execute(context, request);
+        assertEquals(res.messageId,messageId);
     }
 
     @Test

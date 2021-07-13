@@ -17,7 +17,7 @@ import gdg.hfs.orchestration.CommandRetryStrategy;
     retryStrategy = CommandRetryStrategy.NEVER
 )
 public class SendScheduledPatchingEmail extends SendMessagingEmailBase
-        implements Command<ScheduledMaintenanceEmailRequest, Void> {
+        implements Command<ScheduledMaintenanceEmailRequest, SendMessagingEmailBase.Response> {
 
     private static final Logger logger = LoggerFactory.getLogger(SendScheduledPatchingEmail.class);
 
@@ -29,7 +29,7 @@ public class SendScheduledPatchingEmail extends SendMessagingEmailBase
     }
 
     @Override
-    public Void execute(CommandContext context, ScheduledMaintenanceEmailRequest emailRequest) {
+    public Response execute(CommandContext context, ScheduledMaintenanceEmailRequest emailRequest) {
         logger.info("Sending ScheduledPatchingEmail for shopper {}", emailRequest.shopperId);
         String messageId = context.execute("SendPatchingEmail-" + emailRequest.shopperId,
                 ctx -> messagingService.sendScheduledPatchingEmail(emailRequest.shopperId,
@@ -37,7 +37,8 @@ public class SendScheduledPatchingEmail extends SendMessagingEmailBase
                         emailRequest.durationMinutes, emailRequest.isManaged),
                 String.class);
         this.waitForMessageComplete(context, messageId, emailRequest.shopperId);
-
-        return null;
+        Response returnResponse = new Response();
+        returnResponse.messageId = messageId;
+        return returnResponse;
     }
 }
