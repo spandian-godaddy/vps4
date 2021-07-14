@@ -1,5 +1,6 @@
 package com.godaddy.vps4.orchestration.vm.provision;
 
+import static com.godaddy.vps4.credit.ECommCreditService.ProductMetaField.PLAN_CHANGE_PENDING;
 import static com.godaddy.vps4.vm.CreateVmStep.ConfigureMailRelay;
 import static com.godaddy.vps4.vm.CreateVmStep.ConfigureMonitoring;
 import static com.godaddy.vps4.vm.CreateVmStep.ConfiguringCPanel;
@@ -147,6 +148,8 @@ public class Vps4ProvisionVm extends ActionCommand<ProvisionRequest, Vps4Provisi
 
         setEcommCommonName(request.orionGuid, request.serverName);
 
+        validatePlanChangePending(request.orionGuid);
+
         sendSetupEmail(request, primaryIpAddress);
 
         // TODO: keeps this commented until we have the nginx configured to setup client cert based auth for
@@ -156,6 +159,13 @@ public class Vps4ProvisionVm extends ActionCommand<ProvisionRequest, Vps4Provisi
         setStep(SetupComplete);
         logger.info("provision vm finished: {}", request.vmInfo.vmId);
         return null;
+    }
+
+    protected void validatePlanChangePending(UUID orionGuid) {
+        if (creditService.getVirtualMachineCredit(orionGuid).isPlanChangePending()) {
+            logger.info("Mark pending plan upgrade complete in credit for VM {}", request.vmInfo.vmId);
+            creditService.updateProductMeta(orionGuid, PLAN_CHANGE_PENDING, "false");
+        }
     }
 
     protected String setupPrimaryIp(Vm hfsVm) {

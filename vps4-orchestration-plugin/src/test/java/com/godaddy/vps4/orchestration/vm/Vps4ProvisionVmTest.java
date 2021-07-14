@@ -1,5 +1,6 @@
 package com.godaddy.vps4.orchestration.vm;
 
+import static com.godaddy.vps4.credit.ECommCreditService.ProductMetaField.PLAN_CHANGE_PENDING;
 import static org.junit.Assert.assertEquals;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyBoolean;
@@ -12,6 +13,7 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import java.util.Collections;
 import java.util.Random;
 import java.util.UUID;
 import java.util.function.Function;
@@ -30,6 +32,8 @@ import com.godaddy.hfs.vm.Vm;
 import com.godaddy.hfs.vm.VmAction;
 import com.godaddy.hfs.vm.VmAction.Status;
 import com.godaddy.hfs.vm.VmService;
+import com.godaddy.vps4.vm.DataCenterService;
+import com.godaddy.vps4.credit.VirtualMachineCredit;
 import com.godaddy.vps4.credit.CreditService;
 import com.godaddy.vps4.hfs.HfsVmTrackingRecordService;
 import com.godaddy.vps4.messaging.Vps4MessagingService;
@@ -67,6 +71,7 @@ public class Vps4ProvisionVmTest {
     AllocateIp allocateIp = mock(AllocateIp.class);
     CreateVm createVm = mock(CreateVm.class);
     Vps4MessagingService messagingService = mock(Vps4MessagingService.class);
+    VirtualMachineCredit credit = mock(VirtualMachineCredit.class);
     CreditService creditService = mock(CreditService.class);
     Config config = mock(Config.class);
     HfsVmTrackingRecordService hfsVmTrackingRecordService = mock(HfsVmTrackingRecordService.class);
@@ -162,6 +167,8 @@ public class Vps4ProvisionVmTest {
         when(vmService.getVm(anyLong())).thenReturn(hfsVm);
 
         when(virtualMachineService.getVirtualMachine(vmInfo.vmId)).thenReturn(this.vm);
+
+        when(creditService.getVirtualMachineCredit(orionGuid)).thenReturn(credit);
 
         when(context.execute(eq(AllocateIp.class), any(AllocateIp.Request.class))).thenReturn(primaryIp);
         when(context.execute(eq(SetupAutomaticBackupSchedule.class), any(SetupAutomaticBackupSchedule.Request.class)))
@@ -294,5 +301,15 @@ public class Vps4ProvisionVmTest {
     public void doesNotRebootLinuxServer() {
         command.executeWithAction(context, this.request);
         verify(context, never()).execute(eq(Vps4RestartVm.class), any());
+    }
+
+    @Test
+    public void validatePlanChangePending() {
+        VirtualMachineCredit credit = new VirtualMachineCredit.Builder(mock(DataCenterService.class))
+                .withProductMeta(Collections.singletonMap(PLAN_CHANGE_PENDING.toString(), "true"))
+                .build();
+        when(creditService.getVirtualMachineCredit(orionGuid)).thenReturn(credit);
+        command.executeWithAction(context, request);
+        verify(creditService, times(1)).updateProductMeta(orionGuid, PLAN_CHANGE_PENDING, "false");
     }
 }

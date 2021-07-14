@@ -1,5 +1,6 @@
 package com.godaddy.vps4.orchestration.vm;
 
+import static com.godaddy.vps4.credit.ECommCreditService.ProductMetaField.PLAN_CHANGE_PENDING;
 import static org.junit.Assert.assertEquals;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyBoolean;
@@ -13,10 +14,13 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.io.IOException;
+import java.util.Collections;
 import java.util.Random;
 import java.util.UUID;
 import java.util.function.Function;
 
+import com.godaddy.vps4.credit.VirtualMachineCredit;
+import com.godaddy.vps4.vm.DataCenterService;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
@@ -78,6 +82,7 @@ public class Vps4ProvisionOHVmTest {
     SetPassword setPassword = mock(SetPassword.class);
     ToggleAdmin toggleAdmin = mock(ToggleAdmin.class);
     Vps4MessagingService messagingService = mock(Vps4MessagingService.class);
+    VirtualMachineCredit credit = mock(VirtualMachineCredit.class);
     CreditService creditService = mock(CreditService.class);
     HfsVmTrackingRecordService hfsVmTrackingRecordService = mock(HfsVmTrackingRecordService.class);
     ConfigureCpanel configureCpanel = mock(ConfigureCpanel.class);
@@ -199,6 +204,8 @@ public class Vps4ProvisionOHVmTest {
 
         when(virtualMachineService.getVirtualMachine(vmInfo.vmId)).thenReturn(this.vm);
 
+        when(creditService.getVirtualMachineCredit(orionGuid)).thenReturn(credit);
+
         when(context.execute(eq(CreateVm.class), any(CreateVm.Request.class))).thenReturn(vmAction);
     }
 
@@ -308,5 +315,15 @@ public class Vps4ProvisionOHVmTest {
         request.vmInfo.hasMonitoring = false;
         command.executeWithAction(context, this.request);
         verify(vmAlertService, never()).disableVmMetricAlert(any(UUID.class), anyString());
+    }
+
+    @Test
+    public void validatePlanChangePending() {
+        VirtualMachineCredit credit = new VirtualMachineCredit.Builder(mock(DataCenterService.class))
+                .withProductMeta(Collections.singletonMap(PLAN_CHANGE_PENDING.toString(), "true"))
+                .build();
+        when(creditService.getVirtualMachineCredit(orionGuid)).thenReturn(credit);
+        command.executeWithAction(context, request);
+        verify(creditService, times(1)).updateProductMeta(orionGuid, PLAN_CHANGE_PENDING, "false");
     }
 }

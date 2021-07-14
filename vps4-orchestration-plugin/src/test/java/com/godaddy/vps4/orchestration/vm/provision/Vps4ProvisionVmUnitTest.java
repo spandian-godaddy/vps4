@@ -15,6 +15,7 @@ import java.util.Random;
 import java.util.UUID;
 import java.util.function.Function;
 
+import com.godaddy.vps4.credit.VirtualMachineCredit;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -99,6 +100,7 @@ public class Vps4ProvisionVmUnitTest {
     private VmAction vmAction;
     private UUID vps4VmId = UUID.randomUUID();
     private IpAddress primaryIp;
+    private VirtualMachineCredit credit;
     private VirtualMachine vm;
     private long hfsVmId = 6789;
     private Image image;
@@ -107,6 +109,7 @@ public class Vps4ProvisionVmUnitTest {
     @Inject private VirtualMachineService virtualMachineService;
     @Inject private Vps4MessagingService messagingService;
     @Inject private VmService vmService;
+    @Inject private CreditService creditService;
 
     @Captor private ArgumentCaptor<CreateVm.Request> createVmRequestArgumentCaptor;
 
@@ -127,6 +130,8 @@ public class Vps4ProvisionVmUnitTest {
         image.operatingSystem = Image.OperatingSystem.LINUX;
         image.controlPanel = Image.ControlPanel.MYH;
         image.hfsName = "foobar";
+
+        credit = mock(VirtualMachineCredit.class);
 
         vm = new VirtualMachine(UUID.randomUUID(), hfsVmId, UUID.randomUUID(), 1,
                 null, "fake_server",
@@ -201,6 +206,7 @@ public class Vps4ProvisionVmUnitTest {
     @Test
     public void createVmRequestHasPrivateLabelId() {
         vmAction = mock(VmAction.class);
+        when(creditService.getVirtualMachineCredit(any(UUID.class))).thenReturn(credit);
         when(virtualMachineService.getVirtualMachine(any())).thenReturn(vm);
         when(messagingService.sendSetupEmail(anyString(), anyString(), anyString(),
                 anyString(), anyBoolean())).thenReturn("email_id");
