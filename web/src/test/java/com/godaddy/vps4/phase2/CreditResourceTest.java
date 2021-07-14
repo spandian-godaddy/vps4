@@ -1,7 +1,6 @@
 package com.godaddy.vps4.phase2;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.mock;
@@ -25,7 +24,6 @@ import com.godaddy.hfs.mailrelay.MailRelay;
 import com.godaddy.vps4.credit.CreditService;
 import com.godaddy.vps4.credit.ECommCreditService.ProductMetaField;
 import com.godaddy.vps4.credit.VirtualMachineCredit;
-import com.godaddy.vps4.mailrelay.MailRelayService;
 import com.godaddy.vps4.security.GDUserMock;
 import com.godaddy.vps4.vm.AccountStatus;
 import com.godaddy.vps4.vm.DataCenterService;
@@ -35,10 +33,6 @@ import com.godaddy.vps4.web.credit.CreditResource.CreateCreditRequest;
 import com.godaddy.vps4.web.mailrelay.VmMailRelayResource;
 import com.godaddy.vps4.web.security.GDUser;
 import com.godaddy.vps4.web.security.RequiresRole;
-import com.google.inject.AbstractModule;
-import com.google.inject.Guice;
-import com.google.inject.Injector;
-import com.google.inject.Provides;
 
 public class CreditResourceTest {
 

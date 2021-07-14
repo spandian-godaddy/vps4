@@ -17,7 +17,6 @@ import javax.ws.rs.core.MediaType;
 import com.godaddy.vps4.orchestration.vm.VmActionRequest;
 import com.godaddy.vps4.panopta.PanoptaServer;
 import com.godaddy.vps4.panopta.PanoptaService;
-import com.godaddy.vps4.panopta.PanoptaServiceException;
 import com.godaddy.vps4.vm.ActionService;
 import com.godaddy.vps4.vm.ActionType;
 import com.godaddy.vps4.vm.VirtualMachine;

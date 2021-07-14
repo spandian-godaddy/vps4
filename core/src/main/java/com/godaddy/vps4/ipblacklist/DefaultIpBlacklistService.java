@@ -35,7 +35,7 @@ public class DefaultIpBlacklistService implements IpBlacklistService {
         boolean isBlacklisted = true;
         try {
             JSONObject result = blacklist.getBlacklistRecord(ip);
-            isBlacklisted = result.containsKey("data") ? true : false;
+            isBlacklisted = result.containsKey("data");
         }
         catch (NotFoundException e) {
             isBlacklisted = false;

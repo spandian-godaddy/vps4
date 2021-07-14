@@ -2,7 +2,6 @@ package com.godaddy.vps4.web.vm;
 
 import java.util.List;
 
-import com.godaddy.hfs.vm.VmExtendedInfo;
 import com.godaddy.vps4.network.IpAddress;
 import com.godaddy.vps4.panopta.jdbc.PanoptaServerDetails;
 import com.godaddy.vps4.vm.DataCenter;

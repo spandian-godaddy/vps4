@@ -24,7 +24,6 @@ import com.godaddy.vps4.security.Vps4UserService;
 import com.godaddy.vps4.security.jdbc.AuthorizationException;
 import com.godaddy.vps4.snapshot.SnapshotModule;
 import com.godaddy.vps4.util.Cryptography;
-import com.godaddy.vps4.util.UtilsModule;
 import com.godaddy.vps4.vm.VirtualMachine;
 import com.godaddy.vps4.vm.VmModule;
 import com.godaddy.vps4.vm.VmUserService;

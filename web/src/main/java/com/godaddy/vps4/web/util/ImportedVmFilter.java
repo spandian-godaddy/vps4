@@ -56,7 +56,7 @@ public class ImportedVmFilter extends VmFilter {
     }
 
     private boolean isImportedVm(UUID vmId) {
-        return virtualMachineService.getImportedVm(vmId) == null ? false : true;
+        return virtualMachineService.getImportedVm(vmId) != null;
     }
 
 }

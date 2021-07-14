@@ -27,7 +27,7 @@ import org.mockito.Mockito;
 import javax.inject.Inject;
 import javax.sql.DataSource;
 import javax.ws.rs.NotFoundException;
-import java.lang.reflect.Method;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;

@@ -173,7 +173,7 @@ public class Vps4ApiClient {
     }
 
     public UUID getVmCredit(String shopperId, String os, String panel, String platform) {
-        boolean isDed4 = platform.equalsIgnoreCase("OVH") ? true: false;
+        boolean isDed4 = platform.equalsIgnoreCase("OVH");
 
         Vps4JsonResponse<JSONArray> getCreditsResponse = sendGetList("/api/credits");
         assertStatusCode200(getCreditsResponse);

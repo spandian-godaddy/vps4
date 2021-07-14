@@ -1,7 +1,5 @@
 package com.godaddy.vps4.orchestration.network;
 
-import java.util.UUID;
-
 import javax.inject.Inject;
 
 import com.godaddy.vps4.ipblacklist.IpBlacklistService;

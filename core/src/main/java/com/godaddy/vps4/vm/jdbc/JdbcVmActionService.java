@@ -5,10 +5,8 @@ import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.time.Instant;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
 import javax.inject.Inject;
 import javax.sql.DataSource;
@@ -22,7 +20,6 @@ import com.godaddy.vps4.vm.Action;
 import com.godaddy.vps4.vm.ActionService;
 import com.godaddy.vps4.vm.ActionStatus;
 import com.godaddy.vps4.vm.ActionType;
-import com.godaddy.vps4.vm.VirtualMachine;
 
 public class JdbcVmActionService implements ActionService {
 

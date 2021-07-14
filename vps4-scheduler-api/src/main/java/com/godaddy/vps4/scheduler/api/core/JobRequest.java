@@ -29,7 +29,7 @@ public class JobRequest extends JobRequestBase {
         }
     }
 
-    private final void validateWhen() throws Vps4JobRequestValidationException {
+    private void validateWhen() throws Vps4JobRequestValidationException {
         if(!when.isAfter(Instant.now().plusSeconds(JOB_SCHEDULE_LEAD_TIME_WINDOW))) {
             throw new Vps4JobRequestValidationException(
                 "INVALID_START_TIME",
@@ -39,13 +39,13 @@ public class JobRequest extends JobRequestBase {
         }
     }
 
-    private final void validateRepeatCount() throws Vps4JobRequestValidationException {
+    private void validateRepeatCount() throws Vps4JobRequestValidationException {
         if (jobType.equals(JobType.RECURRING) && repeatCount < 1) {
             throw new Vps4JobRequestValidationException("INVALID_REPEAT_COUNT", "Repeat count should be a positive integer");
         }
     }
 
-    private final void validateRepeatIntervalInDays() throws Vps4JobRequestValidationException {
+    private void validateRepeatIntervalInDays() throws Vps4JobRequestValidationException {
         if(jobType.equals(JobType.RECURRING) && repeatIntervalInDays < 1) {
             throw new Vps4JobRequestValidationException(
                 "INVALID_REPEAT_INTERVAL",

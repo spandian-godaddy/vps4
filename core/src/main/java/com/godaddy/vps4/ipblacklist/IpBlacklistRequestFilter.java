@@ -3,7 +3,6 @@ package com.godaddy.vps4.ipblacklist;
 import javax.inject.Inject;
 import javax.ws.rs.client.ClientRequestContext;
 import javax.ws.rs.client.ClientRequestFilter;
-import javax.ws.rs.core.CacheControl;
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;
 

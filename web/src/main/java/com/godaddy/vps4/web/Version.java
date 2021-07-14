@@ -4,7 +4,7 @@ public class Version {
 
     public static final String CURRENT = getCurrentVersion();
 
-    private static final String getCurrentVersion() {
+    private static String getCurrentVersion() {
         String version = null;
 
         Package pkg = Version.class.getPackage();

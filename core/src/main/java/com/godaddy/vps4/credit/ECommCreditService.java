@@ -16,7 +16,6 @@ import javax.ws.rs.WebApplicationException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.godaddy.hfs.mailrelay.MailRelay;
 import com.godaddy.vps4.vm.AccountStatus;
 import com.godaddy.vps4.vm.DataCenterService;
 import com.google.inject.Singleton;

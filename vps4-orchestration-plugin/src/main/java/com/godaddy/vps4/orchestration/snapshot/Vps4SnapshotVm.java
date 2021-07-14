@@ -5,6 +5,7 @@ import java.util.UUID;
 import javax.inject.Inject;
 
 import org.apache.commons.lang3.RandomStringUtils;
+import org.apache.commons.text.RandomStringGenerator;
 import org.json.simple.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -175,9 +176,10 @@ public class Vps4SnapshotVm extends ActionCommand<Vps4SnapshotVm.Request, Vps4Sn
         long vmId = request.hfsVmId;
         String version = "1.0.0";
         //  random snapshot name to hfs layer
+        RandomStringGenerator generator = new RandomStringGenerator.Builder().withinRange('A', 'z').build();
         String name = String.format("vps4-%s-%s",
                 request.snapshotType.name().toLowerCase().substring(0, 4),
-                RandomStringUtils.randomAlphabetic(8));
+                generator.generate(8));
 
         try {
             SnapshotAction hfsAction = context.execute(

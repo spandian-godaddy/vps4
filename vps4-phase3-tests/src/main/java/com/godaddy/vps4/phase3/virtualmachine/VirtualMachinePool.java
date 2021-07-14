@@ -249,7 +249,7 @@ public class VirtualMachinePool {
         }
 
         public synchronized boolean canClaimCredit(UUID vmCredit) {
-            return (vmCredit==null) ? false : claimedCredits.add(vmCredit);
+            return vmCredit != null && claimedCredits.add(vmCredit);
         }
 
         static final String username = "vpstester";

@@ -149,12 +149,10 @@ public class RequestValidation {
     }
 
     private static Validator getValidatorByImage(Image image) {
-        switch (image.controlPanel) {
-            case PLESK:
-                return ValidatorRegistry.getInstance().get("pleskPassword");
-            default:
-                return ValidatorRegistry.getInstance().get("password");
+        if (image.controlPanel == ControlPanel.PLESK) {
+            return ValidatorRegistry.getInstance().get("pleskPassword");
         }
+        return ValidatorRegistry.getInstance().get("password");
     }
 
     public static void validatePassword(String password, Image image) {

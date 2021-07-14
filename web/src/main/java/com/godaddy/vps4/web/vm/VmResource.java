@@ -252,7 +252,7 @@ public class VmResource {
                                                            vmCredit.getTier(), vmCredit.getManagedLevel(),
                                                            provisionRequest.image);
             virtualMachine = virtualMachineService.provisionVirtualMachine(params);
-            virtualMachineService.setMonitoringPlanFeature(virtualMachine.vmId, (vmCredit.getMonitoring() == 0)?false:true);
+            virtualMachineService.setMonitoringPlanFeature(virtualMachine.vmId, vmCredit.getMonitoring() != 0);
             creditService.claimVirtualMachineCredit(provisionRequest.orionGuid, provisionRequest.dataCenterId,
                                                     virtualMachine.vmId);
         } catch (Exception e) {

@@ -1,7 +1,5 @@
 package com.godaddy.vps4.network.jdbc;
 
-import java.sql.ResultSet;
-import java.sql.SQLException;
 import java.util.List;
 import java.util.UUID;
 

@@ -3,8 +3,6 @@ package com.godaddy.vps4.panopta;
 import org.apache.commons.lang3.builder.ReflectionToStringBuilder;
 import org.apache.commons.lang3.builder.ToStringStyle;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
-
 /*
 {
   "availability": 1,

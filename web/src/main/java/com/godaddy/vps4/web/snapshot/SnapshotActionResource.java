@@ -35,7 +35,6 @@ import com.godaddy.vps4.web.Vps4Api;
 import com.godaddy.vps4.web.Vps4Exception;
 import com.godaddy.vps4.web.security.GDUser;
 import com.godaddy.vps4.web.security.RequiresRole;
-import com.godaddy.vps4.web.security.TemporarilyDisabled;
 import com.godaddy.vps4.web.util.Commands;
 import com.google.inject.Inject;
 

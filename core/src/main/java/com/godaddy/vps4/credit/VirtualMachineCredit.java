@@ -99,7 +99,7 @@ public class VirtualMachineCredit {
     }
 
     public boolean isDed4() {
-        return (tier >= 60) ? true : false;
+        return tier >= 60;
     }
 
     @JsonIgnore
