@@ -17,6 +17,7 @@ import javax.sql.DataSource;
 import org.apache.commons.lang3.StringUtils;
 
 import com.godaddy.hfs.jdbc.Sql;
+import com.godaddy.vps4.credit.CreditHistory;
 import com.godaddy.vps4.network.IpAddress;
 import com.godaddy.vps4.network.jdbc.IpAddressMapper;
 import com.godaddy.vps4.util.TimestampUtils;
@@ -101,6 +102,12 @@ public class JdbcVirtualMachineService implements VirtualMachineService {
                 Sql.nextOrNull(this::mapVirtualMachine), nodePingCheckId);
     }
 
+    @Override
+    public List<CreditHistory> getCreditHistory(UUID orionGuid) {
+        return Sql.with(dataSource).exec("SELECT DISTINCT vm_id, valid_on, valid_until FROM virtual_machine WHERE orion_guid = ? ORDER BY valid_until DESC",
+                Sql.listOf(this::mapCreditHistory), orionGuid);
+    }
+
     protected VirtualMachine mapVirtualMachine(ResultSet rs) throws SQLException {
         ServerSpec spec = mapServerSpec(rs);
         UUID vmId = UUID.fromString(rs.getString("vm_id"));
@@ -158,6 +165,12 @@ public class JdbcVirtualMachineService implements VirtualMachineService {
         serverType.serverType = ServerType.Type.valueOf(rs.getString("server_type"));
         serverType.platform = ServerType.Platform.valueOf(rs.getString("platform"));
         return serverType;
+    }
+
+    protected CreditHistory mapCreditHistory(ResultSet rs) throws SQLException {
+        Timestamp validUntil = rs.getTimestamp("valid_until", TimestampUtils.utcCalendar);
+        return new CreditHistory(UUID.fromString(rs.getString("vm_id")), rs.getTimestamp("valid_on", TimestampUtils.utcCalendar).toInstant(),
+                validUntil != null ? validUntil.toInstant() : null);
     }
 
     @Override

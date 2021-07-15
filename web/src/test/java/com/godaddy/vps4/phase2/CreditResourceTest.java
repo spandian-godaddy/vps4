@@ -6,6 +6,7 @@ import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.times;
 
 import java.lang.reflect.Method;
 import java.util.Collections;
@@ -25,6 +26,7 @@ import com.godaddy.vps4.credit.CreditService;
 import com.godaddy.vps4.credit.ECommCreditService.ProductMetaField;
 import com.godaddy.vps4.credit.VirtualMachineCredit;
 import com.godaddy.vps4.security.GDUserMock;
+import com.godaddy.vps4.vm.VirtualMachineService;
 import com.godaddy.vps4.vm.AccountStatus;
 import com.godaddy.vps4.vm.DataCenterService;
 import com.godaddy.vps4.web.Vps4NoShopperException;
@@ -41,9 +43,10 @@ public class CreditResourceTest {
     private VirtualMachineCredit vmCredit;
     private CreditService creditService = mock(CreditService.class);
     private VmMailRelayResource vmMailRelayResource = mock(VmMailRelayResource.class);
+    private VirtualMachineService vmService = mock(VirtualMachineService.class);
 
     private CreditResource getCreditResource() {
-        return new CreditResource(user, creditService, vmMailRelayResource);
+        return new CreditResource(user, creditService, vmMailRelayResource, vmService);
     }
 
     private VirtualMachineCredit createVmCredit(AccountStatus accountStatus) {
@@ -193,6 +196,14 @@ public class CreditResourceTest {
         verify(creditService).unclaimVirtualMachineCredit(creditGuid, vmId, relay.relays);
         verify(creditService).getVirtualMachineCredit(creditGuid);
         assertEquals(creditService.getVirtualMachineCredit(creditGuid), freeCredit);
+    }
+
+    @Test
+    public void testGetCreditHistory() {
+        user = GDUserMock.createAdmin(null);
+        UUID creditGuid = UUID.randomUUID();
+        getCreditResource().getHistory(creditGuid);
+        verify(vmService, times(1)).getCreditHistory(creditGuid);
     }
 
 }

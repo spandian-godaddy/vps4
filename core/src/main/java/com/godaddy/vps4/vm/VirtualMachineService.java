@@ -4,6 +4,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
+import com.godaddy.vps4.credit.CreditHistory;
+
 public interface VirtualMachineService {
 
     List<VirtualMachine> getVirtualMachinesForProject(long projectId);
@@ -13,6 +15,8 @@ public interface VirtualMachineService {
     VirtualMachine getVirtualMachine(UUID vmId);
 
     VirtualMachine getVirtualMachineByCheckId(long nodePingcheckId);
+
+    List<CreditHistory> getCreditHistory(UUID orionGuid);
 
     ServerSpec getSpec(String name);
 

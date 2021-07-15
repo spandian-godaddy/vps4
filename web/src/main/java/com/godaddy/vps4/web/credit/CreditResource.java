@@ -17,9 +17,11 @@ import javax.ws.rs.core.MediaType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.godaddy.vps4.credit.CreditHistory;
 import com.godaddy.vps4.credit.CreditService;
 import com.godaddy.vps4.credit.ECommCreditService.ProductMetaField;
 import com.godaddy.vps4.credit.VirtualMachineCredit;
+import com.godaddy.vps4.vm.VirtualMachineService;
 import com.godaddy.vps4.web.Vps4Api;
 import com.godaddy.vps4.web.Vps4NoShopperException;
 import com.godaddy.vps4.web.mailrelay.VmMailRelayResource;
@@ -42,12 +44,14 @@ public class CreditResource {
     private final GDUser user;
     private final CreditService creditService;
     private final VmMailRelayResource vmMailRelayResource;
+    private VirtualMachineService vmService;
 
     @Inject
-    public CreditResource(GDUser user, CreditService creditService, VmMailRelayResource vmMailRelayResource) {
+    public CreditResource(GDUser user, CreditService creditService, VmMailRelayResource vmMailRelayResource, VirtualMachineService vmService) {
         this.user = user;
         this.creditService = creditService;
         this.vmMailRelayResource = vmMailRelayResource;
+        this.vmService = vmService;
     }
 
     @GET
@@ -107,5 +111,12 @@ public class CreditResource {
 
         VirtualMachineCredit credit = creditService.getVirtualMachineCredit(orionGuid);
         return credit;
+    }
+
+    @RequiresRole(roles = {GDUser.Role.ADMIN})
+    @GET
+    @Path("/{orionGuid}/history")
+    public List<CreditHistory> getHistory(@PathParam("orionGuid") UUID orionGuid) {
+        return vmService.getCreditHistory(orionGuid);
     }
 }

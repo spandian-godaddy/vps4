@@ -40,6 +40,7 @@ import com.godaddy.vps4.vm.VirtualMachineService.ProvisionVirtualMachineParamete
 import com.godaddy.vps4.vm.VirtualMachineType;
 import com.godaddy.vps4.vm.jdbc.JdbcImageService;
 import com.godaddy.vps4.vm.jdbc.JdbcVirtualMachineService;
+import com.godaddy.vps4.credit.CreditHistory;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
 
@@ -208,6 +209,24 @@ public class JdbcVirtualMachineServiceTest {
     }
 
     @Test
+    public void testGetCreditHistory() {
+        UUID orionGuid = UUID.randomUUID();
+        virtualMachines.add(SqlTestData.insertTestVm(orionGuid, vps4User.getId(), dataSource));
+        virtualMachines.add(SqlTestData.insertTestVm(orionGuid, vps4User.getId(), dataSource));
+        virtualMachines.add(SqlTestData.insertTestVm(UUID.randomUUID(), vps4User.getId(), dataSource));
+        virtualMachineService.setVmRemoved(virtualMachines.get(1).vmId);
+
+        List<CreditHistory> creditHistories = virtualMachineService.getCreditHistory(orionGuid);
+        assertEquals(virtualMachines.size()-1, creditHistories.size());
+        for(int i = 0; i < creditHistories.size(); i++) {
+            assertEquals(virtualMachines.get(i).vmId, creditHistories.get(i).vmId);
+            assertEquals(virtualMachines.get(i).validOn, creditHistories.get(i).validOn);
+            assertTrue(virtualMachines.get(i).validUntil.equals(creditHistories.get(i).validUntil) ||
+                    creditHistories.get(i).validUntil.isBefore(virtualMachines.get(i).validUntil));
+        }
+    }
+
+    @Test
     public void testProvisionVmCreatesId() {
         VirtualMachine virtualMachine = SqlTestData.insertTestVm(orionGuid, dataSource);
         assertNotNull(virtualMachine);
@@ -230,7 +249,6 @@ public class JdbcVirtualMachineServiceTest {
         }
         virtualMachineService.setVmRemoved(virtualMachines.get(1).vmId);
         createdVms.remove(virtualMachines.get(1).orionGuid);
-
 
         List<VirtualMachine> vms = virtualMachineService.getVirtualMachines(VirtualMachineType.ACTIVE, vps4User.getId(), null, null, null);
         List<UUID> vmGuids = vms.stream().map(vm -> vm.orionGuid).collect(Collectors.toList());
