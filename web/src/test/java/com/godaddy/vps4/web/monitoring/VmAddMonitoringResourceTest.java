@@ -99,8 +99,7 @@ public class VmAddMonitoringResourceTest {
 
         for (ActionType type : conflictTypes) {
             conflictAction.type = type;
-            actions = new ResultSubset<>(Arrays.asList(conflictAction), 0);
-            when(actionService.getActionList(any())).thenReturn(actions);
+            when(actionService.getIncompleteActions(vmId)).thenReturn(Collections.singletonList(conflictAction));
 
             try {
                 resource.installPanoptaAgent(vmId);

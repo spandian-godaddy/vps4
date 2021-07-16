@@ -14,6 +14,7 @@ import java.time.Duration;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
 import java.util.function.Function;
@@ -33,7 +34,9 @@ import com.godaddy.vps4.orchestration.monitoring.Vps4RemoveMonitoring;
 import com.godaddy.vps4.orchestration.scheduler.DeleteAutomaticBackupSchedule;
 import com.godaddy.vps4.orchestration.scheduler.ScheduleDestroyVm;
 import com.godaddy.vps4.shopperNotes.ShopperNotesService;
+import com.godaddy.vps4.vm.Action;
 import com.godaddy.vps4.vm.ActionService;
+import com.godaddy.vps4.vm.ActionType;
 import com.godaddy.vps4.vm.VirtualMachine;
 
 import gdg.hfs.orchestration.CommandContext;
@@ -185,6 +188,20 @@ public class Vps4DestroyVmTest {
             command.execute(context, request);
             fail();
         } catch (RuntimeException e) {
+            verify(context).execute(ScheduleDestroyVm.class, vmId);
+        }
+    }
+
+    @Test
+    public void schedulesRetryIfCreateIsInProgress() {
+        Action createAction = mock(Action.class);
+        createAction.type = ActionType.CREATE_VM;
+        when(actionService.getIncompleteActions(vmId)).thenReturn(Collections.singletonList(createAction));
+        try {
+            command.execute(context, request);
+            fail();
+        } catch (RuntimeException e) {
+            assert e.getMessage().contains("Create action is already running");
             verify(context).execute(ScheduleDestroyVm.class, vmId);
         }
     }

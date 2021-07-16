@@ -23,11 +23,9 @@ import org.junit.Test;
 
 import com.godaddy.hfs.vm.Console;
 import com.godaddy.hfs.vm.VmService;
-import com.godaddy.vps4.jdbc.ResultSubset;
 import com.godaddy.vps4.security.GDUserMock;
 import com.godaddy.vps4.vm.Action;
 import com.godaddy.vps4.vm.ActionService;
-import com.godaddy.vps4.vm.ActionStatus;
 import com.godaddy.vps4.vm.ActionType;
 import com.godaddy.vps4.vm.ServerSpec;
 import com.godaddy.vps4.vm.ServerType;
@@ -120,9 +118,7 @@ public class ConsoleResourceTest {
     public void testDoubleDedicatedRequestsConsoleUrl() {
         Action action = mock(Action.class);
         action.type = ActionType.REQUEST_CONSOLE;
-        action.status = ActionStatus.NEW;
-        ResultSubset<Action> currentActions = new ResultSubset<>(Collections.singletonList(action), 1);
-        when(actionService.getActionList(any())).thenReturn(currentActions);
+        when(actionService.getIncompleteActions(vmId)).thenReturn(Collections.singletonList(action));
         try {
             String ipAddress = "12.12.12.12";
             vm.spec.serverType.serverType = ServerType.Type.DEDICATED;

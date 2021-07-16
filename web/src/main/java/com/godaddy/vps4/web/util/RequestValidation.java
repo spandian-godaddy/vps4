@@ -63,17 +63,13 @@ public class RequestValidation {
     public static void validateNoConflictingActions(UUID vmId,
                                                     ActionService actionService,
                                                     ActionType... conflictingActions) {
-        ActionListFilters actionFilters = new ActionListFilters();
-        actionFilters.byStatus(ActionStatus.NEW, ActionStatus.IN_PROGRESS);
-        actionFilters.byResourceId(vmId);
-        ResultSubset<Action> currentActions = actionService.getActionList(actionFilters);
-
-        if (currentActions != null) {
-            long numOfConflictingActions = currentActions.results.stream()
-                    .filter(i -> Arrays.asList(conflictingActions).contains(i.type)).count();
-            if (numOfConflictingActions > 0)
-                throw new Vps4Exception("CONFLICTING_INCOMPLETE_ACTION", "VmAction is already running");
-        }
+        long numOfConflictingActions = actionService
+                .getIncompleteActions(vmId)
+                .stream()
+                .filter(i -> Arrays.asList(conflictingActions).contains(i.type))
+                .count();
+        if (numOfConflictingActions > 0)
+            throw new Vps4Exception("CONFLICTING_INCOMPLETE_ACTION", "VmAction is already running");
     }
 
     public static void validateServerIsDedicated(VirtualMachine vm) {

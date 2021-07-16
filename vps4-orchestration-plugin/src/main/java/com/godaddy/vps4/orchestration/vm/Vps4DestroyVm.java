@@ -19,6 +19,7 @@ import com.godaddy.vps4.orchestration.scheduler.DeleteAutomaticBackupSchedule;
 import com.godaddy.vps4.orchestration.scheduler.ScheduleDestroyVm;
 import com.godaddy.vps4.shopperNotes.ShopperNotesService;
 import com.godaddy.vps4.vm.ActionService;
+import com.godaddy.vps4.vm.ActionType;
 import com.godaddy.vps4.vm.VirtualMachine;
 
 import gdg.hfs.orchestration.CommandContext;
@@ -58,6 +59,7 @@ public class Vps4DestroyVm extends ActionCommand<Vps4DestroyVm.Request, Vps4Dest
         logger.info("Destroying server {}", vm.vmId);
 
         try {
+            assertNoConflictingActions();
             writeShopperNote();
             unlicenseControlPanel();
             removeMonitoring();
@@ -170,6 +172,17 @@ public class Vps4DestroyVm extends ActionCommand<Vps4DestroyVm.Request, Vps4Dest
                                                gdUserName, vm.vmId, vm.orionGuid);
             shopperNotesService.processShopperMessage(vm.vmId, shopperNote);
         } catch (Exception ignored) {}
+    }
+
+    private void assertNoConflictingActions() {
+        long count = actionService
+                .getIncompleteActions(vm.vmId)
+                .stream()
+                .filter(a -> a.type.equals(ActionType.CREATE_VM))
+                .count();
+        if (count > 0) {
+            throw new RuntimeException("Create action is already running");
+        }
     }
 
     public static class Request extends VmActionRequest {
