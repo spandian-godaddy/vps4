@@ -88,6 +88,20 @@ public class VmRescueResourceTest {
     }
 
     @Test
+    public void createsEndRescueActionForUnknown() {
+        hfsVm.status = "UNKNOWN";
+        rescueResource.endRescue(vmId);
+        verify(actionService).createAction(vmId, ActionType.END_RESCUE, "{}", gdUser.getUsername());
+    }
+
+    @Test
+    public void createsEndRescueActionForError() {
+        hfsVm.status = "ERROR";
+        rescueResource.endRescue(vmId);
+        verify(actionService).createAction(vmId, ActionType.END_RESCUE, "{}", gdUser.getUsername());
+    }
+
+    @Test
     public void throwsVps4ExceptionIfServerNotInRescueStatus() {
         hfsVm.status = "ACTIVE";
         try {

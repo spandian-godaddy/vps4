@@ -74,7 +74,8 @@ public class VmRescueResource {
     @Path("{vmId}/endRescue")
     public VmAction endRescue(@PathParam("vmId") UUID vmId) {
         VirtualMachine vm = vmResource.getVm(vmId);
-        validateServerInCompatibleMode(vm.hfsVmId, "RESCUED");
+        List<String> acceptableModes = Arrays.asList("RESCUED", "UNKNOWN", "ERROR");
+        validateServerInCompatibleMode(vm.hfsVmId, acceptableModes);
 
         VmActionRequest endRescueRequest = new VmActionRequest();
         endRescueRequest.virtualMachine = vm;
@@ -82,11 +83,10 @@ public class VmRescueResource {
                 endRescueRequest, "Vps4EndRescue", user);
     }
 
-    private void validateServerInCompatibleMode(long hfsVmId, String mode) {
+    private void validateServerInCompatibleMode(long hfsVmId, List<String> modes) {
         Vm hfsVm = vmResource.getVmFromVmVertical(hfsVmId);
-        if (!hfsVm.status.equals(mode)) {
-            throw new Vps4Exception("INVALID_STATUS", String.format("The server is not in %s Mode", mode));
-        }
+        if(!modes.contains(hfsVm.status))
+            throw new Vps4Exception("INVALID_STATUS", String.format("The server is not in one of these %s Modes", modes.toString()));
     }
 
     @GET
