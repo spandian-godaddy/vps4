@@ -1,13 +1,17 @@
 package com.godaddy.vps4.panopta;
 
-import static com.godaddy.vps4.vm.VmMetric.*;
+import static com.godaddy.vps4.vm.VmMetric.FTP;
+import static com.godaddy.vps4.vm.VmMetric.HTTP;
+import static com.godaddy.vps4.vm.VmMetric.IMAP;
+import static com.godaddy.vps4.vm.VmMetric.POP3;
+import static com.godaddy.vps4.vm.VmMetric.SMTP;
+import static com.godaddy.vps4.vm.VmMetric.SSH;
+import static com.godaddy.vps4.vm.VmMetric.UNKNOWN;
 
 import java.util.ArrayList;
 import java.util.List;
 
-import org.apache.commons.lang3.builder.ReflectionToStringBuilder;
-import org.apache.commons.lang3.builder.ToStringStyle;
-
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 /*
@@ -41,28 +45,18 @@ import com.fasterxml.jackson.annotation.JsonProperty;
     },[...]
   ]
 }
- */
+*/
 
 public class PanoptaNetworkIdList {
+    @JsonIgnore public List<PanoptaGraphId> value;
+
     @JsonProperty("network_service_list")
-    private List<NetworkId> networkIdList = new ArrayList<>();
-
-    public List<PanoptaGraphId> getList() {
-        networkIdList.removeIf(e -> e.type == UNKNOWN);
-        return new ArrayList<>(networkIdList);
+    private void unwrapServiceList(ArrayList<PanoptaNetworkId> list) {
+        list.removeIf(e -> e.type == UNKNOWN);
+        this.value = new ArrayList<>(list);
     }
 
-    public void setList(List<PanoptaGraphId> list) {
-        this.networkIdList = new ArrayList<>();
-        for (PanoptaGraphId id : list) {
-            PanoptaNetworkIdList.NetworkId networkId = new PanoptaNetworkIdList.NetworkId();
-            networkId.id = id.id;
-            networkId.type = id.type;
-            this.networkIdList.add(networkId);
-        }
-    }
-
-    public static class NetworkId extends PanoptaGraphId {
+    public static class PanoptaNetworkId extends PanoptaGraphId {
         @JsonProperty("port")
         public void mapPort(int port) {
             switch (port) {
@@ -94,15 +88,5 @@ public class PanoptaNetworkIdList {
         public void mapUrl(String url) {
             this.id = Integer.parseInt(url.split("/")[7]);
         }
-
-        @Override
-        public String toString() {
-            return ReflectionToStringBuilder.toString(this, ToStringStyle.MULTI_LINE_STYLE);
-        }
-    }
-
-    @Override
-    public String toString() {
-        return ReflectionToStringBuilder.toString(this, ToStringStyle.MULTI_LINE_STYLE);
     }
 }

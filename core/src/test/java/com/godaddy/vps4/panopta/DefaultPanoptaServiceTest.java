@@ -150,18 +150,14 @@ public class DefaultPanoptaServiceTest {
 
     private void setupGraphIdLists() {
         List<PanoptaGraphId> graphIdList = new ArrayList<>();
-        PanoptaGraphId pgi1 = new PanoptaGraphId();
-        pgi1.id = (int) (Math.random() * 9999);
-        pgi1.type = VmMetric.UNKNOWN;
-        graphIdList.add(pgi1);
-        PanoptaGraphId pgi2 = new PanoptaGraphId();
-        pgi2.id = (int) (Math.random() * 9999);
-        pgi2.type = VmMetric.HTTP;
-        graphIdList.add(pgi2);
+        PanoptaGraphId pgi = new PanoptaGraphId();
+        pgi.id = (int) (Math.random() * 9999);
+        pgi.type = VmMetric.HTTP;
+        graphIdList.add(pgi);
         usageIdList = new PanoptaUsageIdList();
-        usageIdList.setList(graphIdList);
+        usageIdList.value = graphIdList;
         networkIdList = new PanoptaNetworkIdList();
-        networkIdList.setList(graphIdList);
+        networkIdList.value = graphIdList;
     }
 
     private void setupGraphs() {
@@ -267,8 +263,8 @@ public class DefaultPanoptaServiceTest {
         List<PanoptaGraphId> ids = defaultPanoptaService.getUsageIds(vmId);
         verify(panoptaApiServerService).getUsageList(serverId, partnerCustomerKey, 0);
         assertEquals(ids.size(), 1);
-        assertEquals(ids.get(0).id, usageIdList.getList().get(0).id);
-        assertEquals(ids.get(0).type, usageIdList.getList().get(0).type);
+        assertEquals(ids.get(0).id, usageIdList.value.get(0).id);
+        assertEquals(ids.get(0).type, usageIdList.value.get(0).type);
     }
 
     @Test
@@ -283,8 +279,8 @@ public class DefaultPanoptaServiceTest {
         List<PanoptaGraphId> ids = defaultPanoptaService.getNetworkIds(vmId);
         verify(panoptaApiServerService).getNetworkList(serverId, partnerCustomerKey, 0);
         assertEquals(ids.size(), 1);
-        assertEquals(ids.get(0).id, networkIdList.getList().get(0).id);
-        assertEquals(ids.get(0).type, networkIdList.getList().get(0).type);
+        assertEquals(ids.get(0).id, networkIdList.value.get(0).id);
+        assertEquals(ids.get(0).type, networkIdList.value.get(0).type);
     }
 
     @Test

@@ -7,10 +7,10 @@ import static com.godaddy.vps4.vm.VmMetric.UNKNOWN;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
-import org.apache.commons.lang3.builder.ReflectionToStringBuilder;
-import org.apache.commons.lang3.builder.ToStringStyle;
-
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 /*
@@ -37,25 +37,15 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 */
 
 public class PanoptaUsageIdList {
+    @JsonIgnore public List<PanoptaGraphId> value;
+
     @JsonProperty("agent_resource_list")
-    private List<UsageId> usageIdList = new ArrayList<>();
-
-    public List<PanoptaGraphId> getList() {
-        usageIdList.removeIf(e -> e.type == UNKNOWN);
-        return new ArrayList<>(usageIdList);
+    private void unwrapResourceList(ArrayList<PanoptaUsageId> list) {
+        list.removeIf(e -> e.type == UNKNOWN);
+        this.value = new ArrayList<>(list);
     }
 
-    public void setList(List<PanoptaGraphId> list) {
-        this.usageIdList = new ArrayList<>();
-        for (PanoptaGraphId id : list) {
-            UsageId usageId = new UsageId();
-            usageId.id = id.id;
-            usageId.type = id.type;
-            this.usageIdList.add(usageId);
-        }
-    }
-
-    public static class UsageId extends PanoptaGraphId {
+    public static class PanoptaUsageId extends PanoptaGraphId {
         @JsonProperty("name")
         public void mapName(String key) {
             switch (key) {
@@ -79,14 +69,15 @@ public class PanoptaUsageIdList {
             this.id = Integer.parseInt(url.split("/")[7]);
         }
 
-        @Override
-        public String toString() {
-            return ReflectionToStringBuilder.toString(this, ToStringStyle.MULTI_LINE_STYLE);
+        @JsonProperty("resource_option")
+        public void mapResourceOption(Object option) {
+            if (option instanceof String) {
+                Pattern pattern = Pattern.compile("^.+ mounted at (.+)$");
+                Matcher matcher = pattern.matcher((String) option);
+                if (matcher.find()) {
+                    this.metadata.put("mountPoint", matcher.group(1));
+                }
+            }
         }
-    }
-
-    @Override
-    public String toString() {
-        return ReflectionToStringBuilder.toString(this, ToStringStyle.MULTI_LINE_STYLE);
     }
 }

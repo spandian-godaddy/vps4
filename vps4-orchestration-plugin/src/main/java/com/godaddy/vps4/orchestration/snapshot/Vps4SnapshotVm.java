@@ -4,7 +4,6 @@ import java.util.UUID;
 
 import javax.inject.Inject;
 
-import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.commons.text.RandomStringGenerator;
 import org.json.simple.JSONObject;
 import org.slf4j.Logger;

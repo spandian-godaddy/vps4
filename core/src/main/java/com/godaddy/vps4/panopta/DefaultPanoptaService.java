@@ -179,7 +179,7 @@ public class DefaultPanoptaService implements PanoptaService {
         if (detail != null) {
             ids = panoptaApiServerService
                     .getUsageList(detail.getServerId(), detail.getPartnerCustomerKey(), UNLIMITED)
-                    .getList();
+                    .value;
         }
         return ids;
     }
@@ -191,7 +191,7 @@ public class DefaultPanoptaService implements PanoptaService {
         if (detail != null) {
             ids = panoptaApiServerService
                     .getNetworkList(detail.getServerId(), detail.getPartnerCustomerKey(), UNLIMITED)
-                    .getList();
+                    .value;
         }
         return ids;
     }
@@ -217,6 +217,7 @@ public class DefaultPanoptaService implements PanoptaService {
                                                                                timescale,
                                                                                detail.getPartnerCustomerKey());
                     graph.type = usageId.type;
+                    graph.metadata = usageId.metadata;
                     return graph;
                 };
                 tasks.add(task);
@@ -246,6 +247,7 @@ public class DefaultPanoptaService implements PanoptaService {
                                                                                  timescale,
                                                                                  detail.getPartnerCustomerKey());
                     graph.type = networkId.type;
+                    graph.metadata = networkId.metadata;
                     return graph;
                 };
                 tasks.add(task);
