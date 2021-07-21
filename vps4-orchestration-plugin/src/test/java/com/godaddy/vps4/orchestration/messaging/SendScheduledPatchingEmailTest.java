@@ -56,8 +56,8 @@ public class SendScheduledPatchingEmailTest {
 
     @Test
     public void testReturnsMessageId() {
-        SendMessagingEmailBase.Response res = command.execute(context, request);
-        assertEquals(res.messageId,messageId);
+        String res = command.execute(context, request);
+        assertEquals(res,messageId);
     }
 
     @Test

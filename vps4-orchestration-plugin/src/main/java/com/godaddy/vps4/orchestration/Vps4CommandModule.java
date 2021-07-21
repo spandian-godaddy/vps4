@@ -10,6 +10,7 @@ import com.godaddy.vps4.orchestration.messaging.SendScheduledPatchingEmail;
 import com.godaddy.vps4.orchestration.messaging.SendSystemDownFailoverEmail;
 import com.godaddy.vps4.orchestration.messaging.SendUnexpectedButScheduledMaintenanceEmail;
 import com.godaddy.vps4.orchestration.messaging.WaitForMessageComplete;
+import com.godaddy.vps4.orchestration.messaging.SendSetupCompletedEmail;
 import com.godaddy.vps4.orchestration.monitoring.RemoveNodePingMonitoring;
 import com.godaddy.vps4.orchestration.monitoring.RemovePanoptaMonitoring;
 import com.godaddy.vps4.orchestration.monitoring.SendVmOutageEmail;
@@ -108,6 +109,7 @@ public class Vps4CommandModule extends AbstractModule {
         bind(SendUnexpectedButScheduledMaintenanceEmail.class);
         bind(SendSystemDownFailoverEmail.class);
         bind(SendFailoverCompletedEmail.class);
+        bind(SendSetupCompletedEmail.class);
         bind(SendVmOutageEmail.class);
         bind(SendVmOutageResolvedEmail.class);
         bind(WaitForMessageComplete.class);

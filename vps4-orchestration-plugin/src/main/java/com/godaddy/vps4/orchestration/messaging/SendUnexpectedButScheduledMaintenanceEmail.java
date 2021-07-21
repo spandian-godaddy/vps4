@@ -17,7 +17,7 @@ import gdg.hfs.orchestration.CommandRetryStrategy;
     retryStrategy = CommandRetryStrategy.NEVER
 )
 public class SendUnexpectedButScheduledMaintenanceEmail extends SendMessagingEmailBase
-        implements Command<ScheduledMaintenanceEmailRequest, SendMessagingEmailBase.Response> {
+        implements Command<ScheduledMaintenanceEmailRequest, String> {
 
     private static final Logger logger = LoggerFactory.getLogger(SendUnexpectedButScheduledMaintenanceEmail.class);
 
@@ -29,7 +29,7 @@ public class SendUnexpectedButScheduledMaintenanceEmail extends SendMessagingEma
     }
 
     @Override
-    public Response execute(CommandContext context, ScheduledMaintenanceEmailRequest emailRequest) {
+    public String execute(CommandContext context, ScheduledMaintenanceEmailRequest emailRequest) {
         logger.info("Sending UnexpectedButScheduledMaintenanceEmail for shopper {}", emailRequest.shopperId);
         String messageId = context.execute("SendUnscheduledMaintEmail-" + emailRequest.shopperId,
                 ctx -> messagingService.sendUnexpectedButScheduledMaintenanceEmail(
@@ -37,8 +37,6 @@ public class SendUnexpectedButScheduledMaintenanceEmail extends SendMessagingEma
                         emailRequest.durationMinutes, emailRequest.isManaged),
                 String.class);
         this.waitForMessageComplete(context, messageId, emailRequest.shopperId);
-        Response returnResponse = new Response();
-        returnResponse.messageId = messageId;
-        return returnResponse;
+        return messageId;
     }
 }

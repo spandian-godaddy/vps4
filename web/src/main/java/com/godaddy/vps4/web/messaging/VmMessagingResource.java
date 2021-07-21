@@ -16,6 +16,7 @@ import com.godaddy.vps4.credit.CreditService;
 import com.godaddy.vps4.credit.VirtualMachineCredit;
 import com.godaddy.vps4.orchestration.messaging.FailOverEmailRequest;
 import com.godaddy.vps4.orchestration.messaging.ScheduledMaintenanceEmailRequest;
+import com.godaddy.vps4.orchestration.messaging.SetupCompletedEmailRequest;
 import com.godaddy.vps4.vm.VirtualMachine;
 import com.godaddy.vps4.vm.VirtualMachineService;
 import com.godaddy.vps4.web.Vps4Api;
@@ -117,7 +118,6 @@ public class VmMessagingResource {
         FailOverEmailRequest request = createEmailRequest(vmId);
         CommandState command = Commands.execute(commandService, "SendSystemDownFailoverEmail", request);
         return new MessagingResponse(command.commandId, vmId, "SendSystemDownFailoverEmail");
-
     }
 
     private FailOverEmailRequest createEmailRequest(UUID vmId) {
@@ -134,6 +134,23 @@ public class VmMessagingResource {
         FailOverEmailRequest request = createEmailRequest(vmId);
         CommandState command = Commands.execute(commandService, "SendFailoverCompletedEmail", request);
         return new MessagingResponse(command.commandId, vmId, "SendFailoverCompletedEmail");
+    }
+
+
+    @POST
+    @Path("/{vmId}/messaging/setupCompleted")
+    public MessagingResponse messageSetupCompleted(@PathParam("vmId") UUID vmId) {
+        SetupCompletedEmailRequest request = createSetupCompleteEmailRequest(vmId);
+        CommandState command = Commands.execute(commandService, "SendSetupCompletedEmail", request);
+        return new MessagingResponse(command.commandId, vmId, "SendSetupCompletedEmail");
+    }
+
+    private SetupCompletedEmailRequest createSetupCompleteEmailRequest(UUID vmId) {
+        VirtualMachine vm = getAndValidateVm(vmId);
+        VirtualMachineCredit credit = creditService.getVirtualMachineCredit(vm.orionGuid);
+        String shopperId = credit.getShopperId();
+
+        return new SetupCompletedEmailRequest(shopperId, credit.isManaged(), vm.orionGuid, vm.name, vm.primaryIpAddress.ipAddress);
     }
 
     public class MessagingResponse {

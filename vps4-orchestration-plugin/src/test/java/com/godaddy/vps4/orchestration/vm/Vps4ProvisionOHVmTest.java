@@ -3,7 +3,6 @@ package com.godaddy.vps4.orchestration.vm;
 import static com.godaddy.vps4.credit.ECommCreditService.ProductMetaField.PLAN_CHANGE_PENDING;
 import static org.junit.Assert.assertEquals;
 import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyBoolean;
 import static org.mockito.Matchers.anyLong;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.eq;
@@ -20,6 +19,8 @@ import java.util.UUID;
 import java.util.function.Function;
 
 import com.godaddy.vps4.credit.VirtualMachineCredit;
+import com.godaddy.vps4.orchestration.messaging.SendSetupCompletedEmail;
+import com.godaddy.vps4.orchestration.messaging.SetupCompletedEmailRequest;
 import com.godaddy.vps4.vm.DataCenterService;
 import org.junit.Before;
 import org.junit.Test;
@@ -93,14 +94,16 @@ public class Vps4ProvisionOHVmTest {
     MailRelayService mailRelayService = mock(MailRelayService.class);
     ConfigureMailRelay configureMailRelay = mock(ConfigureMailRelay.class);
     Config config = mock(Config.class);
+    SendSetupCompletedEmail sendSetupCompletedEmail = mock(SendSetupCompletedEmail.class);
 
     @Captor private ArgumentCaptor<Function<CommandContext, Void>> setCommonNameLambdaCaptor;
     @Captor private ArgumentCaptor<SetPassword.Request> setPasswordCaptor;
     @Captor private ArgumentCaptor<SetHostname.Request> setHostnameArgumentCaptor;
     @Captor private ArgumentCaptor<SetupPanopta.Request> setupPanoptaRequestArgCaptor;
+    @Captor private ArgumentCaptor<SetupCompletedEmailRequest> setupCompletedEmailRequestArgCaptor;
 
     Vps4ProvisionOHVm command = new Vps4ProvisionOHVm(actionService, vmService, virtualMachineService,
-                                                      vmUserService, networkService, messagingService,
+                                                      vmUserService, networkService,
                                                       creditService, config, hfsVmTrackingRecordService,
                                                       vmAlertService);
 
@@ -183,7 +186,7 @@ public class Vps4ProvisionOHVmTest {
         request.orionGuid = orionGuid;
 
         String messagedId = UUID.randomUUID().toString();
-        when(messagingService.sendSetupEmail(anyString(), anyString(), anyString(), anyString(), anyBoolean()))
+        when(sendSetupCompletedEmail.execute(any(CommandContext.class), any(SetupCompletedEmailRequest.class)))
                 .thenReturn(messagedId);
 
         hfsIp = new VmAddress();
@@ -232,18 +235,22 @@ public class Vps4ProvisionOHVmTest {
     @Test
     public void testSendSetupEmail() throws MissingShopperIdException, IOException {
         command.executeWithAction(context, this.request);
-        verify(messagingService, times(1)).sendSetupEmail(shopperId, expectedServerName,
-                                                          hfsIp.ip_address, orionGuid.toString(), this.vmInfo.isManaged);
+        verify(context, times(1)).execute(eq(SendSetupCompletedEmail.class), setupCompletedEmailRequestArgCaptor.capture());
+        SetupCompletedEmailRequest capturedRequest = setupCompletedEmailRequestArgCaptor.getValue();
+        assertEquals(capturedRequest.serverName, expectedServerName);
+        assertEquals(capturedRequest.ipAddress, hfsIp.ip_address);
+        assertEquals(capturedRequest.orionGuid, orionGuid);
+        assertEquals(capturedRequest.shopperId, shopperId);
+        assertEquals(capturedRequest.isManaged, vmInfo.isManaged);
     }
 
     @Test
     public void testSendSetupEmailDoesNotThrowException() throws MissingShopperIdException, IOException {
-        when(messagingService.sendSetupEmail(anyString(), anyString(), anyString(), anyString(), anyBoolean()))
-                .thenThrow(new RuntimeException("Unit test exception"));
-
+        when(context.execute(eq(SendSetupCompletedEmail.class), any(SetupCompletedEmailRequest.class)))
+                .thenThrow(new RuntimeException("SendMessageFailed"));
         command.executeWithAction(context, this.request);
-        verify(messagingService, times(1)).sendSetupEmail(anyString(), anyString(),
-                                                          anyString(), anyString(), anyBoolean());
+        verify(context, times(1)).execute(eq(SendSetupCompletedEmail.class), setupCompletedEmailRequestArgCaptor.capture());
+        verify(actionService).updateActionState(request.actionId, "{\"step\":\"SetupAutomaticBackupSchedule\"}");
     }
 
     @Test

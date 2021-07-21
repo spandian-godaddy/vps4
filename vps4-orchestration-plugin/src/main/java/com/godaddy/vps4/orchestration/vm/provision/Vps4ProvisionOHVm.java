@@ -7,7 +7,6 @@ import com.godaddy.hfs.vm.Vm;
 import com.godaddy.hfs.vm.VmService;
 import com.godaddy.vps4.credit.CreditService;
 import com.godaddy.vps4.hfs.HfsVmTrackingRecordService;
-import com.godaddy.vps4.messaging.Vps4MessagingService;
 import com.godaddy.vps4.network.NetworkService;
 import com.godaddy.vps4.vm.ActionService;
 import com.godaddy.vps4.vm.VirtualMachineService;
@@ -32,12 +31,11 @@ public class Vps4ProvisionOHVm extends Vps4ProvisionVm {
             VirtualMachineService virtualMachineService,
             VmUserService vmUserService,
             NetworkService networkService,
-            Vps4MessagingService messagingService,
             CreditService creditService,
             Config config,
             HfsVmTrackingRecordService hfsVmTrackingRecordService,
             VmAlertService vmAlertService) {
-        super(actionService, vmService, virtualMachineService, vmUserService, networkService, messagingService,
+        super(actionService, vmService, virtualMachineService, vmUserService, networkService,
               creditService, config, hfsVmTrackingRecordService, vmAlertService);
     }
 

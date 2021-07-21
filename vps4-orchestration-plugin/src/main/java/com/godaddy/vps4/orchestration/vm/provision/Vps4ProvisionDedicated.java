@@ -41,12 +41,11 @@ public class Vps4ProvisionDedicated extends Vps4ProvisionVm {
             VirtualMachineService virtualMachineService,
             VmUserService vmUserService,
             NetworkService networkService,
-            Vps4MessagingService messagingService,
             CreditService creditService,
             Config config,
             HfsVmTrackingRecordService hfsVmTrackingRecordService,
             VmAlertService vmAlertService) {
-        super(actionService, vmService, virtualMachineService, vmUserService, networkService, messagingService,
+        super(actionService, vmService, virtualMachineService, vmUserService, networkService,
               creditService, config, hfsVmTrackingRecordService, vmAlertService);
     }
 

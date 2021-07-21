@@ -13,6 +13,8 @@ import java.util.UUID;
 
 import javax.ws.rs.NotFoundException;
 
+import com.godaddy.vps4.network.IpAddress;
+import com.godaddy.vps4.orchestration.messaging.SetupCompletedEmailRequest;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
@@ -53,6 +55,9 @@ public class VmMessagingResourceTest {
         vm.managedLevel = 0;
         vm.validUntil = Instant.MAX;
         vm.name = "testVmName";
+        IpAddress ip = new IpAddress();
+        ip.ipAddress = "127.0.0.1";
+        vm.primaryIpAddress = ip;
 
         gdUser = GDUserMock.createShopper();
 
@@ -174,6 +179,23 @@ public class VmMessagingResourceTest {
         assertEquals(res.commandId,command.commandId);
         assertEquals(res.vmId,vm.vmId);
         assertEquals(res.commandName,"SendFailoverCompletedEmail");
+    }
+
+    @Test
+    public void testMessageSetupComplete() {
+        VmMessagingResource.MessagingResponse res = resource.messageSetupCompleted(vm.vmId);
+
+        ArgumentCaptor<CommandGroupSpec> argument = ArgumentCaptor.forClass(CommandGroupSpec.class);
+        verify(commandService, times(1)).executeCommand(argument.capture());
+        CommandGroupSpec cgs = argument.getValue();
+        SetupCompletedEmailRequest request = (SetupCompletedEmailRequest) cgs.commands.get(0).request;
+        assertEquals(vm.name, request.serverName);
+        assertEquals(false, request.isManaged);
+        assertEquals(vm.orionGuid, request.orionGuid);
+        assertEquals(vm.primaryIpAddress.ipAddress, request.ipAddress);
+        assertEquals(res.commandId,command.commandId);
+        assertEquals(res.vmId,vm.vmId);
+        assertEquals(res.commandName,"SendSetupCompletedEmail");
     }
 
 }

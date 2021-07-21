@@ -19,6 +19,8 @@ import java.util.UUID;
 
 import javax.inject.Inject;
 
+import com.godaddy.vps4.orchestration.messaging.SendSetupCompletedEmail;
+import com.godaddy.vps4.orchestration.messaging.SetupCompletedEmailRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -29,7 +31,6 @@ import com.godaddy.hfs.vm.VmAction;
 import com.godaddy.hfs.vm.VmService;
 import com.godaddy.vps4.credit.CreditService;
 import com.godaddy.vps4.hfs.HfsVmTrackingRecordService;
-import com.godaddy.vps4.messaging.Vps4MessagingService;
 import com.godaddy.vps4.network.IpAddress.IpAddressType;
 import com.godaddy.vps4.network.NetworkService;
 import com.godaddy.vps4.orchestration.ActionCommand;
@@ -79,7 +80,6 @@ public class Vps4ProvisionVm extends ActionCommand<ProvisionRequest, Vps4Provisi
     protected final VirtualMachineService virtualMachineService;
     private final VmUserService vmUserService;
     private final NetworkService networkService;
-    private final Vps4MessagingService messagingService;
     private final CreditService creditService;
     private final Config config;
     private final HfsVmTrackingRecordService hfsVmTrackingRecordService;
@@ -97,7 +97,6 @@ public class Vps4ProvisionVm extends ActionCommand<ProvisionRequest, Vps4Provisi
             VirtualMachineService virtualMachineService,
             VmUserService vmUserService,
             NetworkService networkService,
-            Vps4MessagingService messagingService,
             CreditService creditService,
             Config config,
             HfsVmTrackingRecordService hfsVmTrackingRecordService,
@@ -107,7 +106,6 @@ public class Vps4ProvisionVm extends ActionCommand<ProvisionRequest, Vps4Provisi
         this.virtualMachineService = virtualMachineService;
         this.vmUserService = vmUserService;
         this.networkService = networkService;
-        this.messagingService = messagingService;
         this.creditService = creditService;
         this.config = config;
         this.hfsVmTrackingRecordService = hfsVmTrackingRecordService;
@@ -406,15 +404,16 @@ public class Vps4ProvisionVm extends ActionCommand<ProvisionRequest, Vps4Provisi
     }
 
     private void sendSetupEmail(ProvisionRequest request, String ipAddress) {
+        SetupCompletedEmailRequest setupCompleteEmailRequest = new SetupCompletedEmailRequest(request.shopperId,
+                request.vmInfo.isManaged, request.orionGuid, request.serverName, ipAddress);
         try {
-            String messageId = messagingService.sendSetupEmail(request.shopperId, request.serverName, ipAddress,
-                    request.orionGuid.toString(), request.vmInfo.isManaged);
-            logger.info(String.format("Setup email sent for shopper %s. Message id: %s", request.shopperId, messageId));
-        } catch (Exception ex) {
+            context.execute(SendSetupCompletedEmail.class, setupCompleteEmailRequest);
+        } catch (Exception e) {
             logger.error(
-                    String.format("Failed sending setup email for shopper %s: %s", request.shopperId, ex.getMessage()),
-                    ex);
+                    String.format("Failed sending setup email for shopper %s: %s", request.shopperId, e.getMessage()),
+                    e);
         }
+
     }
 
     protected void setStep(CreateVmStep step) {
