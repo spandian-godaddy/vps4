@@ -226,6 +226,19 @@ public class SsoRequestAuthenticatorTest {
     }
 
     @Test
+    public void testMigrationRole() {
+        SsoToken token = mockJomaxToken(Collections.singletonList("Migration-Engine-SG"));
+        when(tokenExtractor.extractToken(request)).thenReturn(token);
+
+        GDUser user = authenticator.authenticate(request);
+        Assert.assertEquals(null, user.getShopperId());
+        Assert.assertEquals(false, user.isShopper());
+        Assert.assertEquals(false, user.isAdmin());
+        Assert.assertEquals(true, user.isEmployee());
+        Assert.assertEquals(Role.MIGRATION, user.role());
+    }
+
+    @Test
     public void testAdminWithShopperOverride() {
         when(request.getHeader("X-Shopper-Id")).thenReturn("shopperX");
         SsoToken token = mockJomaxToken(Collections.singletonList("Dev-VPS4"));

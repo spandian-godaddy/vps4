@@ -1,6 +1,5 @@
 package com.godaddy.vps4.web.vm;
 
-import static com.godaddy.vps4.vm.VirtualMachineService.ImportVirtualMachineParameters;
 import static com.godaddy.vps4.web.util.RequestValidation.getAndValidateUserAccountCredit;
 
 import java.time.Instant;
@@ -31,9 +30,10 @@ import com.godaddy.vps4.vm.ServerSpec;
 import com.godaddy.vps4.vm.ServerType;
 import com.godaddy.vps4.vm.VirtualMachine;
 import com.godaddy.vps4.vm.VirtualMachineService;
+import com.godaddy.vps4.vm.VirtualMachineService.ImportVirtualMachineParameters;
 import com.godaddy.vps4.vm.VmAction;
 import com.godaddy.vps4.web.Vps4Api;
-import com.godaddy.vps4.web.security.GDUser;
+import com.godaddy.vps4.web.security.GDUser.Role;
 import com.godaddy.vps4.web.security.RequiresRole;
 
 import io.swagger.annotations.Api;
@@ -44,7 +44,7 @@ import io.swagger.annotations.Api;
 @Path("/api")
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
-@RequiresRole(roles = {GDUser.Role.ADMIN})
+@RequiresRole(roles = {Role.ADMIN, Role.MIGRATION})
 public class VmImportResource {
 
     private final VirtualMachineService virtualMachineService;

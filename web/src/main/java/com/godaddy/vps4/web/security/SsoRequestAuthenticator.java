@@ -31,6 +31,7 @@ public class SsoRequestAuthenticator implements RequestAuthenticator<GDUser> {
     private final String DEV_PTGS = "Dev-PTGS";
     private final String CSR = "CSR";
     private final String MEDIA_TEMPLE_CS = "Media Temple - CS";
+    private final String MIGRATION_TOOL = "Migration-Engine-SG";
 
     private final SsoTokenExtractor tokenExtractor;
     private Config config;
@@ -130,6 +131,8 @@ public class SsoRequestAuthenticator implements RequestAuthenticator<GDUser> {
             gdUser.role = Role.HS_AGENT;
         } else if (groups.contains(CSR)) {
             gdUser.role = Role.C3_OTHER;
+        } else if (groups.contains(MIGRATION_TOOL)) {
+            gdUser.role = Role.MIGRATION;
         } else {
             gdUser.role = Role.EMPLOYEE_OTHER;
         }
