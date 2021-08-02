@@ -54,8 +54,11 @@ public class UsernamePasswordGeneratorTest {
         PasswordValidator validator = new PasswordValidator(Arrays.asList(
                 new LengthRule(length, length),
 
+                // suffix must be digit characters
+                new CharacterRule(EnglishCharacterData.Digit, length - prefix.length()),
+
                 // all lower-case character with an underscore
-                new CharacterRule(EnglishCharacterData.LowerCase, length-1),
+                new CharacterRule(EnglishCharacterData.LowerCase, prefix.length()-1),
                 new CharacterRule(EnglishCharacterData.Special, 1),
 
                 // no whitespace

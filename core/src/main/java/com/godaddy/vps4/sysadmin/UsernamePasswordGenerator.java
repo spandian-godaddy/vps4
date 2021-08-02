@@ -30,7 +30,7 @@ public class UsernamePasswordGenerator {
         }
 
         List<CharacterRule> rules = new ArrayList<>();
-        rules.add(new CharacterRule(EnglishCharacterData.LowerCase, 1));
+        rules.add(new CharacterRule(EnglishCharacterData.Digit, 1));
 
         PasswordGenerator pwGenerator = new PasswordGenerator();
         return usernamePrefix + pwGenerator.generatePassword(lengthDifference, rules);
