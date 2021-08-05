@@ -2,6 +2,7 @@ package com.godaddy.vps4.web.appmonitors;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyLong;
 import static org.mockito.Matchers.argThat;
@@ -18,7 +19,9 @@ import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 
 import org.junit.Assert;
@@ -30,9 +33,11 @@ import org.mockito.ArgumentMatcher;
 import com.godaddy.vps4.appmonitors.Checkpoint;
 import com.godaddy.vps4.appmonitors.MonitorService;
 import com.godaddy.vps4.appmonitors.ActionCheckpoint;
+import com.godaddy.vps4.appmonitors.ReplicationLagService;
 import com.godaddy.vps4.appmonitors.SnapshotActionData;
 import com.godaddy.vps4.appmonitors.VmActionData;
 import com.godaddy.vps4.appmonitors.HvBlockingSnapshotsData;
+import com.godaddy.vps4.jdbc.DatabaseCluster;
 import com.godaddy.vps4.jdbc.ResultSubset;
 import com.godaddy.vps4.util.ActionListFilters;
 import com.godaddy.vps4.vm.Action;
@@ -41,6 +46,7 @@ import com.godaddy.vps4.vm.ActionStatus;
 import com.godaddy.vps4.vm.ActionType;
 import com.godaddy.vps4.vm.VirtualMachine;
 import com.godaddy.vps4.vm.VirtualMachineService;
+import com.godaddy.vps4.web.Vps4Exception;
 
 public class VmActionsMonitorResourceTest {
 
@@ -48,6 +54,8 @@ public class VmActionsMonitorResourceTest {
     private MonitorService monitorService = mock(MonitorService.class);
     private ActionService vmActionService = mock(ActionService.class);
     private VirtualMachineService virtualMachineService = mock(VirtualMachineService.class);
+    private ReplicationLagService replicationLagService = mock(ReplicationLagService.class);
+    private DatabaseCluster databaseCluster = mock(DatabaseCluster.class);
     private List<SnapshotActionData> expectedSnapshotActionData;
     private long pendingThreshold = 60L;
 
@@ -69,7 +77,8 @@ public class VmActionsMonitorResourceTest {
         VirtualMachine virtualMachine2 = new VirtualMachine();
         virtualMachine2.orionGuid = UUID.randomUUID();
         when(virtualMachineService.getVirtualMachine(any())).thenReturn(virtualMachine).thenReturn(virtualMachine2);
-        vmActionsMonitorResource = new VmActionsMonitorResource(monitorService, vmActionService, virtualMachineService);
+        vmActionsMonitorResource = new VmActionsMonitorResource(monitorService, vmActionService, virtualMachineService,
+                                                                replicationLagService, databaseCluster);
     }
 
     private void validateActionFilters(List<ActionType> typeList, List<ActionStatus> statusList) {
@@ -395,5 +404,38 @@ public class VmActionsMonitorResourceTest {
         Assert.assertEquals(100, actualCreates.failurePercentage, 0);
         Assert.assertEquals(ActionType.CREATE_VM, actualCreates.actionType);
         Assert.assertEquals(1, actualCreates.failedActions.size());
+    }
+
+    @Test
+    public void testGetReplicationStatus() {
+        String master = "p3plvps4db01.cloud.phx3.gdg";
+        String standby = "p3plvps4db02.cloud.phx3.gdg";
+        Set<String> servers = new HashSet<>();
+        servers.add(master);
+        servers.add(standby);
+        when(databaseCluster.getServers()).thenReturn(servers);
+        when(replicationLagService.isMasterServer(master)).thenReturn(true);
+        when(replicationLagService.getCurrentLocation(master)).thenReturn("5/4A9855D0");
+        when(replicationLagService.getLastReceiveLocation(standby)).thenReturn("5/4974E470");
+        when(replicationLagService.comparePgLsns(standby, "5/4A9855D0", "5/4974E470")).thenReturn(19100000L);
+        ReplicationStatus status = vmActionsMonitorResource.getReplicationStatus();
+        Assert.assertEquals(master, status.masterServer);
+        Assert.assertEquals(1, status.standbyServers.size());
+        ReplicationStatus.StandbyServer server = status.standbyServers.get(0);
+        Assert.assertEquals(standby, server.name);
+        Assert.assertEquals(18.2152, server.lagInMb, .01);
+    }
+
+    @Test
+    public void testGetReplicationStatusNotConfigured() {
+        Set<String> servers = new HashSet<>();
+        when(databaseCluster.getServers()).thenReturn(servers);
+        try {
+            vmActionsMonitorResource.getReplicationStatus();
+            fail();
+        } catch (Vps4Exception e) {
+            Assert.assertEquals("REPLICATION_CHECK_FAILED", e.getId());
+            Assert.assertEquals("Replication check not configured for this environment", e.getMessage());
+        }
     }
 }

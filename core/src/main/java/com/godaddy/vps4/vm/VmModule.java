@@ -1,7 +1,9 @@
 package com.godaddy.vps4.vm;
 
 import com.godaddy.vps4.appmonitors.MonitorService;
+import com.godaddy.vps4.appmonitors.ReplicationLagService;
 import com.godaddy.vps4.appmonitors.jdbc.JdbcMonitorService;
+import com.godaddy.vps4.appmonitors.jdbc.JdbcReplicationLagService;
 import com.godaddy.vps4.network.NetworkService;
 import com.godaddy.vps4.network.jdbc.JdbcNetworkService;
 import com.godaddy.vps4.scheduledJob.ScheduledJobService;
@@ -34,5 +36,6 @@ public class VmModule extends AbstractModule {
         bind(MonitorService.class).to(JdbcMonitorService.class);
         bind(VmAlertService.class).to(JdbcVmAlertService.class);
         bind(VmOutageService.class).to(JdbcVmOutageService.class);
+        bind(ReplicationLagService.class).to(JdbcReplicationLagService.class);
     }
 }

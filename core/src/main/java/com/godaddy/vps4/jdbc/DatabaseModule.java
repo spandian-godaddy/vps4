@@ -17,6 +17,7 @@ public class DatabaseModule extends AbstractModule {
         bind(Connection.class).toProvider(ConnectionProvider.class);
         bind(DataSource.class).annotatedWith(Vps4ReportsDataSource.class).toProvider(ReportsDataSourceProvider.class).in(Scopes.SINGLETON);
         bind(Connection.class).annotatedWith(Vps4ReportsDataSource.class).toProvider(ReportsConnectionProvider.class);
+        bind(DatabaseCluster.class).toProvider(DbClusterProvider.class).in(Scopes.SINGLETON);
     }
 
 }

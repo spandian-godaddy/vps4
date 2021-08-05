@@ -27,8 +27,10 @@ import com.godaddy.vps4.appmonitors.BackupJobAuditData;
 import com.godaddy.vps4.appmonitors.Checkpoint;
 import com.godaddy.vps4.appmonitors.HvBlockingSnapshotsData;
 import com.godaddy.vps4.appmonitors.MonitorService;
+import com.godaddy.vps4.appmonitors.ReplicationLagService;
 import com.godaddy.vps4.appmonitors.SnapshotActionData;
 import com.godaddy.vps4.appmonitors.VmActionData;
+import com.godaddy.vps4.jdbc.DatabaseCluster;
 import com.godaddy.vps4.jdbc.ResultSubset;
 import com.godaddy.vps4.util.ActionListFilters;
 import com.godaddy.vps4.vm.Action;
@@ -37,6 +39,7 @@ import com.godaddy.vps4.vm.ActionStatus;
 import com.godaddy.vps4.vm.ActionType;
 import com.godaddy.vps4.vm.VirtualMachineService;
 import com.godaddy.vps4.web.Vps4Api;
+import com.godaddy.vps4.web.Vps4Exception;
 import com.godaddy.vps4.web.security.GDUser;
 import com.godaddy.vps4.web.security.RequiresRole;
 import com.google.inject.Inject;
@@ -57,12 +60,20 @@ public class VmActionsMonitorResource {
     private final MonitorService monitorService;
     private final ActionService vmActionService;
     private final VirtualMachineService virtualMachineService;
+    private final ReplicationLagService replicationLagService;
+    private final DatabaseCluster databaseCluster;
 
     @Inject
-    public VmActionsMonitorResource(MonitorService monitorService, ActionService actionService, VirtualMachineService virtualMachineService) {
+    public VmActionsMonitorResource(MonitorService monitorService,
+                                    ActionService actionService,
+                                    VirtualMachineService virtualMachineService,
+                                    ReplicationLagService replicationLagService,
+                                    DatabaseCluster databaseCluster) {
         this.monitorService = monitorService;
         this.vmActionService = actionService;
         this.virtualMachineService = virtualMachineService;
+        this.replicationLagService = replicationLagService;
+        this.databaseCluster = databaseCluster;
     }
 
     private List<VmActionData> filterOverdueInProgressActionsByType(long thresholdInMinutes, ActionType... actionTypes) {
@@ -328,5 +339,39 @@ public class VmActionsMonitorResource {
                                            true,
                                            errors);
         }
+    }
+
+    @GET
+    @Path("/replicationStatus")
+    public ReplicationStatus getReplicationStatus() {
+        Set<String> servers = databaseCluster.getServers();
+        if (servers.isEmpty()) {
+            throw new Vps4Exception("REPLICATION_CHECK_FAILED",
+                                    "Replication check not configured for this environment");
+        }
+
+        String masterServer = popMasterServer(servers);
+        ReplicationStatus replicationStatus = new ReplicationStatus(masterServer);
+
+        String currentLocation = replicationLagService.getCurrentLocation(masterServer);
+        for (String server : servers) {
+            String lastReceiveLocation = replicationLagService.getLastReceiveLocation(server);
+            double difference = replicationLagService.comparePgLsns(server, currentLocation, lastReceiveLocation);
+            double lagInMegaBytes = Math.abs(difference / 1024 / 1024);
+            ReplicationStatus.StandbyServer standbyServer = new ReplicationStatus.StandbyServer(server, lagInMegaBytes);
+            replicationStatus.standbyServers.add(standbyServer);
+        }
+
+        return replicationStatus;
+    }
+
+    private String popMasterServer(Set<String> servers) {
+        for (String server : servers) {
+            if (replicationLagService.isMasterServer(server)) {
+                servers.remove(server);
+                return server;
+            }
+        }
+        throw new Vps4Exception("REPLICATION_CHECK_FAILED", "No master server found in cluster");
     }
 }
