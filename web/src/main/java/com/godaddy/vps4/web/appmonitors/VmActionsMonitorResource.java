@@ -303,7 +303,18 @@ public class VmActionsMonitorResource {
     public List<VmActionData> getAllFailedDestroys(
             @QueryParam("minimumAttempts") @DefaultValue("3") int minimumAttempts) {
         minimumAttempts = Math.max(1, minimumAttempts);
-        List<Action> actions = vmActionService.getIncompleteDestroyActions(minimumAttempts);
+        List<Action> actions = vmActionService.getIncompleteActions(minimumAttempts, "DESTROY_VM");
+        return mapActionsToVmActionData(actions);
+    }
+
+    @GET
+    @Path("/incomplete/cancelaccount")
+    @ApiOperation(value = "Find all VM id's that are failing to cancel their account",
+            notes = "Find all VM id's that are failing to cancel their account")
+    public List<VmActionData> getAllFailedCancelAccounts(
+            @QueryParam("minimumAttempts") @DefaultValue("3") int minimumAttempts) {
+        minimumAttempts = Math.max(1, minimumAttempts);
+        List<Action> actions = vmActionService.getIncompleteActions(minimumAttempts, "CANCEL_ACCOUNT");
         return mapActionsToVmActionData(actions);
     }
 

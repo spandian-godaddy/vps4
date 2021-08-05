@@ -144,7 +144,7 @@ public class JdbcSnapshotActionService implements ActionService {
     }
 
     @Override
-    public List<Action> getIncompleteDestroyActions(int minimumAttempts) {
+    public List<Action> getIncompleteActions(int minimumAttempts, String action) {
         throw new UnsupportedOperationException("Not yet implemented for snapshots");
     }
 

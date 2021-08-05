@@ -6,9 +6,6 @@ import java.util.UUID;
 
 import javax.inject.Inject;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import com.godaddy.hfs.config.Config;
 import com.godaddy.vps4.credit.VirtualMachineCredit;
 import com.godaddy.vps4.hfs.HfsVmTrackingRecordService;
@@ -18,6 +15,7 @@ import com.godaddy.vps4.orchestration.hfs.vm.RescueVm;
 import com.godaddy.vps4.orchestration.hfs.vm.StopVm;
 import com.godaddy.vps4.orchestration.panopta.PausePanoptaMonitoring;
 import com.godaddy.vps4.orchestration.scheduler.ScheduleZombieVmCleanup;
+import com.godaddy.vps4.orchestration.scheduler.ScheduleCancelAccount;
 import com.godaddy.vps4.orchestration.vm.Vps4RecordScheduledJobForVm;
 import com.godaddy.vps4.scheduledJob.ScheduledJob.ScheduledJobType;
 import com.godaddy.vps4.vm.ActionService;
@@ -36,7 +34,6 @@ import gdg.hfs.orchestration.CommandRetryStrategy;
 )
 public class Vps4ProcessAccountCancellation extends ActionCommand<Vps4ProcessAccountCancellation.Request,Void> {
 
-    private static final Logger logger = LoggerFactory.getLogger(Vps4ProcessAccountCancellation.class);
     private CommandContext context;
 
     final ActionService vmActionService;
@@ -70,13 +67,16 @@ public class Vps4ProcessAccountCancellation extends ActionCommand<Vps4ProcessAcc
                 stopServer(request, vmId);
             }
         } catch (Exception e) {
-            logger.error(
-                "Error while handling account cancellation for account: {}. Error details: {}",
-                    request.virtualMachineCredit.getOrionGuid(), e);
-            throw new RuntimeException(e);
+            rescheduleCancelAccount(request.virtualMachineCredit);
+            throw e;
         }
 
         return null;
+    }
+
+    private void rescheduleCancelAccount(VirtualMachineCredit credit) {
+        UUID vmId = credit.getProductId();
+        context.execute(ScheduleCancelAccount.class, vmId);
     }
 
     public void pausePanoptaMonitoring(UUID vmId) {

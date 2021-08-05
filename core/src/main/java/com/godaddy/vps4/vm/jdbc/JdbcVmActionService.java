@@ -138,23 +138,23 @@ public class JdbcVmActionService implements ActionService {
     }
 
     @Override
-    public List<Action> getIncompleteDestroyActions(int minimumAttempts) {
-        // get the vmIds of all VMs where the number of failed destroys is >= minimumAttempts
+    public List<Action> getIncompleteActions(int minimumAttempts, String action) {
+        // get the vmIds of all VMs where the number of failed specified actions is >= minimumAttempts
         List<UUID> vmIds = Sql.with(dataSource).exec(
                 "SELECT va.vm_id AS vm_id, count(*) AS attempts " +
                         "FROM vm_action va " +
                         "JOIN action_type t ON va.action_type_id = t.type_id " +
                         "JOIN action_status s ON va.status_id = s.status_id " +
-                        "WHERE t.type = 'DESTROY_VM' AND s.status != 'COMPLETE' " +
+                        "WHERE t.type = '" + action + "' AND s.status != 'COMPLETE' " +
                         "AND va.vm_id NOT IN (" +
-                            "SELECT vm_id AS destroyed_vm_id " +
-                            "FROM vm_action va " +
-                            "JOIN action_type t " +
-                            "ON va.action_type_id = t.type_id " +
-                            "JOIN action_status s " +
-                            "ON va.status_id = s.status_id " +
-                            "WHERE t.type = 'DESTROY_VM' " +
-                            "AND s.status = 'COMPLETE'" +
+                        "SELECT vm_id AS action_vm_id " +
+                        "FROM vm_action va " +
+                        "JOIN action_type t " +
+                        "ON va.action_type_id = t.type_id " +
+                        "JOIN action_status s " +
+                        "ON va.status_id = s.status_id " +
+                        "WHERE t.type = '" + action + "' " +
+                        "AND s.status = 'COMPLETE'" +
                         ") GROUP BY va.vm_id HAVING Count(*) >= ?;",
                 Sql.listOf(this::mapVmIds), minimumAttempts
         );
@@ -163,19 +163,19 @@ public class JdbcVmActionService implements ActionService {
             for (int i = 1; i < vmIds.size(); i++) {
                 placeholders.append(",?");
             }
-            // find most recent destroy_vm action that was not successfully completed for each vm
+            // find most recent specified action that was not successfully completed for each vm
             return Sql.with(dataSource).exec("SELECT a.*, status, type"
-                    + " FROM ("
-                    + "     SELECT MAX(id) AS id, vm_id FROM vm_action a"
-                    + "     JOIN action_type t ON t.type_id=a.action_type_id"
-                    + "     WHERE type = 'DESTROY_VM'"
-                    + "     GROUP BY vm_id"
-                    + " ) AS last_actions"
-                    + " JOIN vm_action a ON a.id=last_actions.id"
-                    + " JOIN action_status s ON s.status_id=a.status_id"
-                    + " JOIN action_type t ON t.type_id=a.action_type_id"
-                    + " WHERE s.status != 'COMPLETE'"
-                    + " AND a.vm_id IN (" + placeholders + ")",
+                            + " FROM ("
+                            + "     SELECT MAX(id) AS id, vm_id FROM vm_action a"
+                            + "     JOIN action_type t ON t.type_id=a.action_type_id"
+                            + "     WHERE type = '" + action + "'"
+                            + "     GROUP BY vm_id"
+                            + " ) AS last_actions"
+                            + " JOIN vm_action a ON a.id=last_actions.id"
+                            + " JOIN action_status s ON s.status_id=a.status_id"
+                            + " JOIN action_type t ON t.type_id=a.action_type_id"
+                            + " WHERE s.status != 'COMPLETE'"
+                            + " AND a.vm_id IN (" + placeholders + ")",
                     Sql.listOf(this::mapAction), vmIds.toArray());
         }
         return new ArrayList<>();
