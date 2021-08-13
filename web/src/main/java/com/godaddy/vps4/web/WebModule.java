@@ -20,6 +20,7 @@ import com.godaddy.vps4.web.monitoring.VmAlertResource;
 import com.godaddy.vps4.web.monitoring.VmMonitoringResource;
 import com.godaddy.vps4.web.monitoring.VmOutageResource;
 import com.godaddy.vps4.web.network.NetworkResource;
+import com.godaddy.vps4.web.notification.NotificationsResource;
 import com.godaddy.vps4.web.plan.PlanResource;
 import com.godaddy.vps4.web.security.Vps4ContainerRequestFilterModule;
 import com.godaddy.vps4.web.snapshot.SnapshotActionResource;
@@ -51,6 +52,7 @@ import com.godaddy.vps4.web.vm.VmSuspendReinstateResource;
 import com.godaddy.vps4.web.vm.VmTroubleshootResource;
 import com.godaddy.vps4.web.vm.VmUpgradeResource;
 import com.godaddy.vps4.web.vm.VmZombieResource;
+import com.godaddy.vps4.web.vm.VmNotificationResource;
 import com.google.inject.AbstractModule;
 
 import gdg.hfs.orchestration.web.CommandsResource;
@@ -112,6 +114,8 @@ public class WebModule extends AbstractModule {
         bind(VmNydusAckResource.class);
         bind(VmSyncStatusResource.class);
         bind(VmImportResource.class);
+        bind(NotificationsResource.class);
+        bind(VmNotificationResource.class);
 
         bind(CommandsResource.class);
         bind(CommandsViewResource.class);

@@ -1,6 +1,7 @@
 package com.godaddy.vps4.phase2;
 
 import java.sql.Timestamp;
+import java.time.Instant;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -10,6 +11,11 @@ import java.util.UUID;
 import javax.sql.DataSource;
 
 import com.godaddy.hfs.jdbc.Sql;
+import com.godaddy.vps4.notifications.NotificationExtendedDetails;
+import com.godaddy.vps4.notifications.NotificationFilter;
+import com.godaddy.vps4.notifications.NotificationService;
+import com.godaddy.vps4.notifications.NotificationType;
+import com.godaddy.vps4.notifications.jdbc.JdbcNotificationService;
 import com.godaddy.vps4.scheduledJob.ScheduledJob;
 import com.godaddy.vps4.scheduledJob.ScheduledJobService;
 import com.godaddy.vps4.scheduledJob.jdbc.JdbcScheduledJobService;
@@ -122,6 +128,23 @@ public class SqlTestData {
         Sql.with(dataSource)
                 .exec("INSERT INTO vm_action (vm_id, action_type_id, created, initiated_by) VALUES (?, ?, ?, ?)",
                         null, vmId, actionType.getActionTypeId(), created, "tester");
+    }
+
+    public static void insertTestNotification(UUID notificationId, NotificationType notificationType, boolean supportOnly,
+                                              boolean dismissible, Instant start, Instant end, Instant validOn, Instant validUntil,
+                                              List<NotificationFilter> filters, DataSource dataSource) {
+        NotificationService notificationService = new JdbcNotificationService(dataSource);
+        NotificationExtendedDetails notificationExtendedDetails = new NotificationExtendedDetails();
+        notificationExtendedDetails.start = start;
+        notificationExtendedDetails.end = end;
+        notificationService.createNotification(notificationId, notificationType, supportOnly, dismissible,
+                notificationExtendedDetails, filters, validOn, validUntil);
+    }
+
+
+    public static void cleanupTestNotification(UUID notificationId, DataSource dataSource) {
+        NotificationService notificationService = new JdbcNotificationService(dataSource);
+        notificationService.deleteNotification(notificationId);
     }
 
     public static void insertTestSnapshot(Snapshot snapshot, DataSource dataSource) {

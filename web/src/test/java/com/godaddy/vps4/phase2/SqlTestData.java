@@ -1,9 +1,16 @@
 package com.godaddy.vps4.phase2;
 
+import java.time.Instant;
+import java.util.List;
 import java.util.UUID;
 
 import javax.sql.DataSource;
 
+import com.godaddy.vps4.notifications.NotificationExtendedDetails;
+import com.godaddy.vps4.notifications.NotificationFilter;
+import com.godaddy.vps4.notifications.NotificationService;
+import com.godaddy.vps4.notifications.NotificationType;
+import com.godaddy.vps4.notifications.jdbc.JdbcNotificationService;
 import org.json.simple.JSONObject;
 
 import com.godaddy.hfs.jdbc.Sql;
@@ -31,6 +38,7 @@ public class SqlTestData {
     public final static String TEST_SNAPSHOT_NAME = "test-snapshot";
     public final static String TEST_VM_SGID = "vps4-testing-";
     public final static long hfsSnapshotId = 123;
+    public final static UUID notificationId = UUID.randomUUID();
     public final static String nfImageId = "test-imageid";
     public final static String INITIATED_BY = "tester";
 
@@ -83,6 +91,15 @@ public class SqlTestData {
         return actionService.getAction(actionId);
     }
 
+    public static void insertTestNotification(UUID notificationId, NotificationType notificationType, boolean supportOnly, boolean dismissible, Instant start,
+                                                Instant end, List<NotificationFilter> filters, DataSource dataSource) {
+        NotificationService notificationService = new JdbcNotificationService(dataSource);
+        NotificationExtendedDetails notificationExtendedDetails = new NotificationExtendedDetails();
+        notificationExtendedDetails.start = start;
+        notificationExtendedDetails.end = end;
+        notificationService.createNotification(notificationId,
+        notificationType, supportOnly, dismissible, notificationExtendedDetails, filters, null, null);
+    }
     public static void invalidateTestVm(UUID vmId, DataSource dataSource) {
         VirtualMachineService virtualMachineService = new JdbcVirtualMachineService(dataSource);
         VirtualMachine vm = virtualMachineService.getVirtualMachine(vmId);
@@ -139,6 +156,10 @@ public class SqlTestData {
         Sql.with(dataSource).exec("DELETE FROM monitoring_pf m USING virtual_machine v WHERE m.vm_id = v.vm_id AND " + test_vm_condition, null);
         Sql.with(dataSource).exec("DELETE FROM virtual_machine v USING project p WHERE v.project_id = p.project_id AND " + test_sgid_condition, null);
         Sql.with(dataSource).exec("DELETE FROM user_project_privilege uvp USING project p WHERE uvp.project_id = p.project_id AND " + test_sgid_condition, null);
+        Sql.with(dataSource).exec("DELETE FROM user_project_privilege uvp USING project p WHERE uvp.project_id = p.project_id AND " + test_sgid_condition, null);
+        Sql.with(dataSource).exec("DELETE FROM notification_filter nf WHERE nf.notification_id = '" + notificationId + "'", null);
+        Sql.with(dataSource).exec("DELETE FROM notification_extended_details ned WHERE ned.notification_id =  '" + notificationId + "'", null);
+        Sql.with(dataSource).exec("DELETE FROM notification ntf WHERE ntf.notification_id =  '" + notificationId + "'", null);
         Sql.with(dataSource).exec("DELETE FROM project p WHERE " + test_sgid_condition, null);
     }
 
