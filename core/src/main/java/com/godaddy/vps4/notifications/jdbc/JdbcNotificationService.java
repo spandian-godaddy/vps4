@@ -145,7 +145,7 @@ public class JdbcNotificationService implements NotificationService {
         }
         else {
             Sql.with(dataSource).exec("INSERT INTO " + notificationTableName + " (notification_id, type_id, support_only, dismissible, valid_on, valid_until) VALUES (?, ?, ?, ?, ?, ?);", null,
-                    notificationId, type.getNotificationTypeId(), supportOnly, dismissible, validOn, validUntil);
+                    notificationId, type.getNotificationTypeId(), supportOnly, dismissible, LocalDateTime.ofInstant(validOn, ZoneOffset.UTC), LocalDateTime.ofInstant(validUntil, ZoneOffset.UTC));
         }
         if(notificationExtendedDetails!=null && notificationExtendedDetails.start != null && notificationExtendedDetails.end != null) {
             Sql.with(dataSource).exec("INSERT INTO notification_extended_details (notification_id, start_time, end_time) VALUES (?, ?, ?);", null,
