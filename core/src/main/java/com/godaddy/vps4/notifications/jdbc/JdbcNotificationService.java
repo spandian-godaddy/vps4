@@ -37,11 +37,11 @@ public class JdbcNotificationService implements NotificationService {
     private void buildDateQuery(Instant validOnDate, Instant validUntilDate,
                                 StringBuilder filtersQuery, ArrayList<Object> filterValues) {
         if(validOnDate != null) {
-            filtersQuery.append(" and (n.valid_on >= ?) ");
+            filtersQuery.append(" and (n.valid_on <= ?) ");
             filterValues.add(LocalDateTime.ofInstant(validOnDate, ZoneOffset.UTC));
         }
         if(validUntilDate != null) {
-            filtersQuery.append(" or (n.valid_until <= ? OR n.valid_until = 'infinity') ");
+            filtersQuery.append(" and (n.valid_until >= ? OR n.valid_until = 'infinity') ");
             filterValues.add(LocalDateTime.ofInstant(validUntilDate, ZoneOffset.UTC));
         }
     }
