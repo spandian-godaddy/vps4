@@ -1,4 +1,4 @@
-#AWS Secrets
+# AWS Secrets
 First, install the AWS CLI - follow the AWS docs at https://docs.aws.amazon.com/cli/latest/userguide/install-cliv2.html
 Also, ensure you have jq installed - `brew install jq` if on a Mac
 
@@ -18,7 +18,7 @@ Before working with the AWS secrets you must authenticate and assume the correct
 
 `<access key id>` and `<aws secret access key>` can be found in the AWS secrets manager. If you are using the prod account you must first elevate access in the public cloud portal  
 
-##Creating an AWS Secret
+## Creating an AWS Secret
 Change directory to the directory of the file to upload as a secret. Then run the following command example, substituting the filename, tag data, and secret name:
 
     aws secretsmanager create-secret --name /stage/config.properties --description "config file for stage environment" --secret-string file://./config.properties --tags '[{"Key":"env","Value":"stage"}]'
@@ -28,7 +28,7 @@ Change directory to the directory of the file to upload as a secret. Then run th
 
 Repeat this step for every AWS secret. 
 
-##Changing an AWS Secret
+## Changing an AWS Secret
 Change directory to the directory of the file to upload as a secret. Then run the following command example, substituting the filename, and secret id:
     
     aws secretsmanager put-secret-value --secret-id /prod_ams3/config.properties --secret-string file://./config.properties
