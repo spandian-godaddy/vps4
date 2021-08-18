@@ -55,11 +55,10 @@ public class VmNotificationResource {
     @GET
     @Path("/{vmId}/notifications/")
     public List<Notification> getVmNotifications(@PathParam("vmId") UUID vmId,
-                                                 @ApiParam(value = "valid_on date in UTC, Example: 2007-12-03T10:15:30.00Z", required = true) @QueryParam("valid_on") String validOn,
-                                                 @ApiParam(value = "valid_until date in UTC, Example: 2007-12-03T10:15:30.00Z", required = true) @QueryParam("valid_until") String validUntil) {
-
-        Instant validOnDate = validateAndReturnDateInstant(validOn);
-        Instant validUntilDate = validateAndReturnDateInstant(validUntil);
+                                                 @ApiParam(value = "begin date in UTC, Example: 2007-12-03T10:15:30.00Z", required = false) @QueryParam("beginDate") String beginDate,
+                                                 @ApiParam(value = "end date in UTC, Example: 2007-12-03T10:15:30.00Z", required = false) @QueryParam("endDate") String endDate) {
+        Instant validOnDate = beginDate == null ? Instant.now() : validateAndReturnDateInstant(beginDate);
+        Instant validUntilDate = endDate == null ? Instant.now() : validateAndReturnDateInstant(endDate);
 
         VirtualMachine virtualMachine = vmResource.getVm(vmId);
 
