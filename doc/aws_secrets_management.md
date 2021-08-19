@@ -29,6 +29,4 @@ Change directory to the directory of the file to upload as a secret. Then run th
 Repeat this step for every AWS secret. 
 
 ## Changing an AWS Secret
-Change directory to the directory of the file to upload as a secret. Then run the following command example, substituting the filename, and secret id:
-    
-    aws secretsmanager put-secret-value --secret-id /prod_ams3/config.properties --secret-string file://./config.properties
+Use the Jenkins job at https://vps4.jenkins.int.godaddy.com/view/AWS%20Secrets/job/AWS-Update-Secret/.
