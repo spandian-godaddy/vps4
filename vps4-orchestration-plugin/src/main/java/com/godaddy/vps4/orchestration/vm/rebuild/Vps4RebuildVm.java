@@ -27,6 +27,8 @@ import com.godaddy.vps4.orchestration.hfs.sysadmin.SetPassword;
 import com.godaddy.vps4.orchestration.hfs.sysadmin.ToggleAdmin;
 import com.godaddy.vps4.orchestration.hfs.vm.CreateVm;
 import com.godaddy.vps4.orchestration.hfs.vm.DestroyVm;
+import com.godaddy.vps4.orchestration.messaging.SendSetupCompletedEmail;
+import com.godaddy.vps4.orchestration.messaging.SetupCompletedEmailRequest;
 import com.godaddy.vps4.orchestration.panopta.SetupPanopta;
 import com.godaddy.vps4.orchestration.sysadmin.ConfigureMailRelay;
 import com.godaddy.vps4.orchestration.sysadmin.ConfigureMailRelay.ConfigureMailRelayRequest;
@@ -114,6 +116,8 @@ public class Vps4RebuildVm extends ActionCommand<Vps4RebuildVm.Request, Void> {
         configureMailRelay(newHfsVmId);
         configureMonitoring(newHfsVmId);
         setEcommCommonName(request.rebuildVmInfo.orionGuid, request.rebuildVmInfo.serverName);
+
+        sendSetupEmail(request, request.rebuildVmInfo.ipAddress.ipAddress);
 
         setStep(RebuildVmStep.RebuildComplete);
         logger.info("VM rebuild of vmId {} finished", vps4VmId);
@@ -321,6 +325,18 @@ public class Vps4RebuildVm extends ActionCommand<Vps4RebuildVm.Request, Void> {
             creditService.setCommonName(orionGuid, commonName);
             return null;
         }, Void.class);
+    }
+
+    private void sendSetupEmail(Vps4RebuildVm.Request request, String ipAddress) {
+        SetupCompletedEmailRequest setupCompleteEmailRequest = new SetupCompletedEmailRequest(request.rebuildVmInfo.shopperId,
+                request.rebuildVmInfo.isManaged, request.rebuildVmInfo.orionGuid, request.rebuildVmInfo.serverName, ipAddress);
+        try {
+            context.execute(SendSetupCompletedEmail.class, setupCompleteEmailRequest);
+        } catch (Exception e) {
+            logger.error(
+                    String.format("Failed sending setup email for shopper %s: %s", request.rebuildVmInfo.shopperId, e.getMessage()),
+                    e);
+        }
     }
 
     protected void updateHfsVmTrackingRecord(VmAction vmAction){

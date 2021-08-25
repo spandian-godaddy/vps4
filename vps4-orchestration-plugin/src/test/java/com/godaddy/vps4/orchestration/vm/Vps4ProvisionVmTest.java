@@ -17,9 +17,6 @@ import java.util.Random;
 import java.util.UUID;
 import java.util.function.Function;
 
-import com.godaddy.vps4.orchestration.messaging.SendMessagingEmailBase;
-import com.godaddy.vps4.orchestration.messaging.SendSetupCompletedEmail;
-import com.godaddy.vps4.orchestration.messaging.SetupCompletedEmailRequest;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
@@ -34,20 +31,22 @@ import com.godaddy.hfs.vm.Vm;
 import com.godaddy.hfs.vm.VmAction;
 import com.godaddy.hfs.vm.VmAction.Status;
 import com.godaddy.hfs.vm.VmService;
-import com.godaddy.vps4.vm.DataCenterService;
-import com.godaddy.vps4.credit.VirtualMachineCredit;
 import com.godaddy.vps4.credit.CreditService;
+import com.godaddy.vps4.credit.VirtualMachineCredit;
 import com.godaddy.vps4.hfs.HfsVmTrackingRecordService;
 import com.godaddy.vps4.network.NetworkService;
 import com.godaddy.vps4.orchestration.hfs.network.AllocateIp;
 import com.godaddy.vps4.orchestration.hfs.sysadmin.SetHostname;
 import com.godaddy.vps4.orchestration.hfs.sysadmin.SetPassword;
 import com.godaddy.vps4.orchestration.hfs.vm.CreateVm;
+import com.godaddy.vps4.orchestration.messaging.SendSetupCompletedEmail;
+import com.godaddy.vps4.orchestration.messaging.SetupCompletedEmailRequest;
 import com.godaddy.vps4.orchestration.panopta.SetupPanopta;
 import com.godaddy.vps4.orchestration.scheduler.SetupAutomaticBackupSchedule;
 import com.godaddy.vps4.orchestration.vm.provision.ProvisionRequest;
 import com.godaddy.vps4.orchestration.vm.provision.Vps4ProvisionVm;
 import com.godaddy.vps4.vm.ActionService;
+import com.godaddy.vps4.vm.DataCenterService;
 import com.godaddy.vps4.vm.Image;
 import com.godaddy.vps4.vm.Image.ControlPanel;
 import com.godaddy.vps4.vm.ProvisionVmInfo;
@@ -59,7 +58,6 @@ import com.godaddy.vps4.vm.VmUserService;
 
 import gdg.hfs.orchestration.CommandContext;
 import gdg.hfs.vhfs.network.IpAddress;
-
 
 public class Vps4ProvisionVmTest {
 

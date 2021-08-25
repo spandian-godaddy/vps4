@@ -23,6 +23,7 @@ import org.slf4j.LoggerFactory;
 
 import com.godaddy.hfs.config.Config;
 import com.godaddy.vps4.credit.CreditService;
+import com.godaddy.vps4.credit.VirtualMachineCredit;
 import com.godaddy.vps4.orchestration.vm.rebuild.Vps4RebuildVm;
 import com.godaddy.vps4.project.ProjectService;
 import com.godaddy.vps4.snapshot.Snapshot;
@@ -150,6 +151,7 @@ public class VmRebuildResource {
     private Vps4RebuildVm.Request generateRebuildVmOrchestrationRequest(
             VirtualMachine vm, RebuildVmRequest request) {
 
+        VirtualMachineCredit credit = creditService.getVirtualMachineCredit(vm.orionGuid);
         RebuildVmInfo rebuildVmInfo = new RebuildVmInfo();
         rebuildVmInfo.hostname = StringUtils.isBlank(request.hostname) ? vm.hostname : request.hostname;
         rebuildVmInfo.serverName = StringUtils.isBlank(request.serverName) ? vm.name : request.serverName;
@@ -163,11 +165,12 @@ public class VmRebuildResource {
         rebuildVmInfo.zone = vm.spec.isVirtualMachine() ?
                 config.get("openstack.zone", null) :
                 config.get("ovh.zone", null);
-        rebuildVmInfo.privateLabelId = creditService.getVirtualMachineCredit(vm.orionGuid).getResellerId();
+        rebuildVmInfo.privateLabelId = credit.getResellerId();
         rebuildVmInfo.orionGuid = vm.orionGuid;
         rebuildVmInfo.shopperId = user.isShopper() ? user.getShopperId(): creditService.getVirtualMachineCredit(vm.orionGuid).getShopperId();
         rebuildVmInfo.keepAdditionalIps = request.keepAdditionalIps;
         rebuildVmInfo.gdUserName = user.getUsername();
+        rebuildVmInfo.isManaged = credit.isManaged();
         Vps4RebuildVm.Request req = new Vps4RebuildVm.Request();
         req.rebuildVmInfo = rebuildVmInfo;
         return req;

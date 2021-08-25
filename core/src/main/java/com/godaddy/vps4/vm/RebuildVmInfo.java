@@ -23,6 +23,7 @@ public class RebuildVmInfo {
     public String shopperId;
     public boolean keepAdditionalIps;
     public String gdUserName;
+    public boolean isManaged;
 
     public RebuildVmInfo() {
     }

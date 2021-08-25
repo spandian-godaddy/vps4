@@ -148,11 +148,9 @@ public class Vps4ProvisionVm extends ActionCommand<ProvisionRequest, Vps4Provisi
 
         validatePlanChangePending(request.orionGuid);
 
-        sendSetupEmail(request, primaryIpAddress);
-
-        // TODO: keeps this commented until we have the nginx configured to setup client cert based auth for
-        // vps4 inter microservice communication.
         setupAutomaticBackupSchedule(request.vmInfo.vmId, request.shopperId);
+
+        sendSetupEmail(request, primaryIpAddress);
 
         setStep(SetupComplete);
         logger.info("provision vm finished: {}", request.vmInfo.vmId);
@@ -413,7 +411,6 @@ public class Vps4ProvisionVm extends ActionCommand<ProvisionRequest, Vps4Provisi
                     String.format("Failed sending setup email for shopper %s: %s", request.shopperId, e.getMessage()),
                     e);
         }
-
     }
 
     protected void setStep(CreateVmStep step) {

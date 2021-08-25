@@ -1,6 +1,7 @@
 package com.godaddy.vps4.orchestration.vm.rebuild;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Matchers.any;
@@ -26,9 +27,12 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
+import org.mockito.Captor;
+import org.mockito.MockitoAnnotations;
 
 import com.godaddy.hfs.vm.VmAction;
 import com.godaddy.vps4.credit.CreditService;
+import com.godaddy.vps4.credit.VirtualMachineCredit;
 import com.godaddy.vps4.hfs.HfsVmTrackingRecordService;
 import com.godaddy.vps4.network.IpAddress;
 import com.godaddy.vps4.network.NetworkService;
@@ -43,6 +47,8 @@ import com.godaddy.vps4.orchestration.hfs.sysadmin.SetPassword;
 import com.godaddy.vps4.orchestration.hfs.sysadmin.ToggleAdmin;
 import com.godaddy.vps4.orchestration.hfs.vm.CreateVm;
 import com.godaddy.vps4.orchestration.hfs.vm.DestroyVm;
+import com.godaddy.vps4.orchestration.messaging.SendSetupCompletedEmail;
+import com.godaddy.vps4.orchestration.messaging.SetupCompletedEmailRequest;
 import com.godaddy.vps4.orchestration.panopta.SetupPanopta;
 import com.godaddy.vps4.orchestration.sysadmin.ConfigureMailRelay;
 import com.godaddy.vps4.orchestration.sysadmin.ConfigureMailRelay.ConfigureMailRelayRequest;
@@ -77,6 +83,8 @@ public class Vps4RebuildVmTest {
     NetworkService networkService = mock(NetworkService.class);
     ShopperNotesService shopperNotesService = mock(ShopperNotesService.class);
 
+    @Captor private ArgumentCaptor<SetupCompletedEmailRequest> setupEmailCaptor;
+
     UUID vps4VmId = UUID.randomUUID();
     UUID orionGuid = UUID.randomUUID();
     String shopperId = "12345678";
@@ -98,6 +106,7 @@ public class Vps4RebuildVmTest {
     SetPassword setPassword = mock(SetPassword.class);
     ConfigureMailRelay setMailRelay = mock(ConfigureMailRelay.class);
     SetupPanopta setupPanopta = mock(SetupPanopta.class);
+    SendSetupCompletedEmail sendSetupCompletedEmail = mock(SendSetupCompletedEmail.class);
 
     Vps4RebuildVm command;
     Vps4RebuildVm.Request request;
@@ -114,27 +123,13 @@ public class Vps4RebuildVmTest {
         binder.bind(SetPassword.class).toInstance(setPassword);
         binder.bind(ConfigureMailRelay.class).toInstance(setMailRelay);
         binder.bind(SetupPanopta.class).toInstance(setupPanopta);
+        binder.bind(SendSetupCompletedEmail.class).toInstance(sendSetupCompletedEmail);
     });
     CommandContext context = spy(new TestCommandContext(new GuiceCommandProvider(injector)));
 
     @Before
     public void setupTest() {
-        request = new Vps4RebuildVm.Request();
-        request.rebuildVmInfo = new RebuildVmInfo();
-        request.rebuildVmInfo.vmId = vps4VmId;
-        request.rebuildVmInfo.orionGuid = orionGuid;
-        request.rebuildVmInfo.image = new Image();
-        request.rebuildVmInfo.image.hfsName = "hfs-centos-7-cpanel-11";
-        request.rebuildVmInfo.image.imageId = 7L;
-        request.rebuildVmInfo.image.controlPanel = ControlPanel.CPANEL;
-        request.rebuildVmInfo.rawFlavor = "raw-flavor";
-        request.rebuildVmInfo.username = "user";
-        request.rebuildVmInfo.serverName = "server-name";
-        request.rebuildVmInfo.hostname = "host.name";
-        request.rebuildVmInfo.encryptedPassword = "encrypted".getBytes();
-        request.rebuildVmInfo.shopperId = shopperId;
-        request.rebuildVmInfo.keepAdditionalIps = true;
-        request.rebuildVmInfo.gdUserName = "fake-employee";
+        MockitoAnnotations.initMocks(this);
 
         IpAddress publicIp = new IpAddress();
         publicIp.hfsAddressId = hfsAddressId;
@@ -147,7 +142,31 @@ public class Vps4RebuildVmTest {
         vm.hfsVmId = originalHfsVmId;
         vm.image = new Image();
         vm.image.controlPanel = ControlPanel.CPANEL;
+        vm.name = "server-name";
+        vm.primaryIpAddress = publicIp;
         when(virtualMachineService.getVirtualMachine(vps4VmId)).thenReturn(vm);
+
+        request = new Vps4RebuildVm.Request();
+        request.rebuildVmInfo = new RebuildVmInfo();
+        request.rebuildVmInfo.vmId = vps4VmId;
+        request.rebuildVmInfo.orionGuid = vm.orionGuid;
+        request.rebuildVmInfo.image = new Image();
+        request.rebuildVmInfo.image.hfsName = "hfs-centos-7-cpanel-11";
+        request.rebuildVmInfo.image.imageId = 7L;
+        request.rebuildVmInfo.image.controlPanel = ControlPanel.CPANEL;
+        request.rebuildVmInfo.rawFlavor = "raw-flavor";
+        request.rebuildVmInfo.username = "user";
+        request.rebuildVmInfo.serverName = vm.name;
+        request.rebuildVmInfo.hostname = "host.name";
+        request.rebuildVmInfo.encryptedPassword = "encrypted".getBytes();
+        request.rebuildVmInfo.shopperId = shopperId;
+        request.rebuildVmInfo.keepAdditionalIps = true;
+        request.rebuildVmInfo.gdUserName = "fake-employee";
+        request.rebuildVmInfo.ipAddress = publicIp;
+
+        String messagedId = UUID.randomUUID().toString();
+        when(sendSetupCompletedEmail.execute(any(CommandContext.class), any(SetupCompletedEmailRequest.class)))
+                .thenReturn(messagedId);
 
         VmUser customerUser = new VmUser("customer", vps4VmId, false, VmUserType.CUSTOMER);
         VmUser supportUser = new VmUser("support-123", vps4VmId, true, VmUserType.SUPPORT);
@@ -334,6 +353,26 @@ public class Vps4RebuildVmTest {
         ConfigureMailRelayRequest request = argument.getValue();
         assertEquals(newHfsVmId, request.vmId);
         assertEquals("cpanel", request.controlPanel);
+    }
+
+    @Test
+    public void testSendSetupEmail() throws Exception {
+        command.executeWithAction(context, request);
+        verify(context, times(1)).execute(eq(SendSetupCompletedEmail.class), setupEmailCaptor.capture());
+        SetupCompletedEmailRequest capturedRequest = setupEmailCaptor.getValue();
+        assertEquals(vm.name, capturedRequest.serverName);
+        assertEquals(vm.primaryIpAddress.ipAddress, capturedRequest.ipAddress);
+        assertEquals(orionGuid, capturedRequest.orionGuid);
+        assertEquals(shopperId, capturedRequest.shopperId);
+        assertFalse(capturedRequest.isManaged);
+    }
+
+    @Test
+    public void testSendSetupEmailDoesNotThrowException() throws Exception {
+        when(sendSetupCompletedEmail.execute(eq(context), any(SetupCompletedEmailRequest.class)))
+                .thenThrow(new RuntimeException("SendMessageFailed"));
+        command.executeWithAction(context, request);
+        verify(context, times(1)).execute(eq(SendSetupCompletedEmail.class), setupEmailCaptor.capture());
     }
 
     @Test

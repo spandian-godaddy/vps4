@@ -255,6 +255,8 @@ public class Vps4RebuildDedicatedTest {
         req.rebuildVmInfo.privateLabelId = "1";
         req.rebuildVmInfo.orionGuid = orionGuid;
         req.rebuildVmInfo.shopperId = shopperId;
+        req.rebuildVmInfo.ipAddress = new IpAddress();
+        req.rebuildVmInfo.ipAddress.ipAddress = fqdn;
         return req;
     }
 
