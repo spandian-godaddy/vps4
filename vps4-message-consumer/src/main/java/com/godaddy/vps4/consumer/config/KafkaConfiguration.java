@@ -29,8 +29,9 @@ public abstract class KafkaConfiguration {
         kafkaConsumerProps.put("bootstrap.servers", vps4Config.get(bootstrapServersKey, "p3dlkckafka01.cloud.phx3.gdg:9092"));
         kafkaConsumerProps.put("group.id", vps4Config.get("vps4.kafka.group.id", "vps4-consumer-group-01"));
         kafkaConsumerProps.put("enable.auto.commit", Boolean.parseBoolean(vps4Config.get("vps4.kafka.enable.auto.commit", "false")));
-        kafkaConsumerProps.put("session.timeout.ms", Integer.parseInt(vps4Config.get("vps4.kafka.session.timeout.ms", "30000")));
+        kafkaConsumerProps.put("session.timeout.ms", Integer.parseInt(vps4Config.get("vps4.kafka.session.timeout.ms", "60000")));
         kafkaConsumerProps.put("max.poll.interval.ms", Integer.parseInt(vps4Config.get("vps4.kafka.max.poll.interval.ms", Integer.toString(Integer.MAX_VALUE))));
+        kafkaConsumerProps.put("max.poll.records", Integer.parseInt(vps4Config.get("vps4.max.poll.records", "250")));
         kafkaConsumerProps.put("key.deserializer", vps4Config.get("key.deserializer", "org.apache.kafka.common.serialization.StringDeserializer"));
         kafkaConsumerProps.put("value.deserializer", vps4Config.get("value.deserializer", "org.apache.kafka.common.serialization.StringDeserializer"));
         kafkaConsumerProps.put("fetch.min.bytes", Integer.parseInt(vps4Config.get("vps4.kafka.fetch.min.bytes", "1")));
