@@ -1,12 +1,12 @@
 ## When To Run Phase3 Tests
 
-1. When code gets merged to "vps4" git repo **master** branch. As part of CICD pipeline it runs [test-stage](https://vps4.jenkins.int.godaddy.com/job/test-stage/) Jenkins job which triggers [stage_phase_3_test](https://vps4.jenkins.int.godaddy.com/view/all/job/stage_phase_3_test/) build job who runs basic phase3 tests on *vps4-centos-7-cpanel-11,vps4-windows-2016-plesk-18* OpenStack images in VPS4 **Stage environment**.
-2. When deploying "vps4" code to Production. The [prod deployment job](https://vps4.jenkins.int.godaddy.com/job/prod/) triggers build jobs including [prod_n3_phase_3_test](https://vps4.jenkins.int.godaddy.com/view/all/job/prod_n3_phase_3_test/), [prod_sg2_phase_3_test](https://vps4.jenkins.int.godaddy.com/view/all/job/prod_sg2_phase_3_test/) and [prod_a2_phase_3_test](https://vps4.jenkins.int.godaddy.com/view/all/job/prod_a2_phase_3_test/).
-These build jobs run basic phase3 tests on *vps4-centos-7-cpanel-11* OpenStack image in VPS4 **N3, SG2, A2 environments** respectively.
+1. When code gets merged into the "vps4" git repo **master** branch. As part of the CICD pipeline it runs the [test-stage](https://vps4.jenkins.int.godaddy.com/job/test-stage/) Jenkins job which triggers the [stage_phase_3_test](https://vps4.jenkins.int.godaddy.com/view/all/job/stage_phase_3_test/) build job which runs basic phase3 tests against a subset of images.
+2. When deploying "vps4" code to production. The [prod deployment job](https://vps4.jenkins.int.godaddy.com/job/prod/) triggers build jobs for each prod environment: [prod_n3_phase_3_test](https://vps4.jenkins.int.godaddy.com/view/all/job/prod_n3_phase_3_test/), [prod_sg2_phase_3_test](https://vps4.jenkins.int.godaddy.com/view/all/job/prod_sg2_phase_3_test/), [prod_a2_phase_3_test](https://vps4.jenkins.int.godaddy.com/view/all/job/prod_a2_phase_3_test/) and [prod_p3_phase_3_test](https://vps4.jenkins.int.godaddy.com/view/all/job/prod_p3_phase_3_test/).
+These build jobs run basic phase3 tests on a single image in VPS4 **N3, SG2, A2 and P3 environments** respectively.
 3. Full suite of phase3 tests run daily by [daily_full_stage](https://vps4.jenkins.int.godaddy.com/job/daily_full_stage/) Jenkins job. This job runs around 2am MST daily (load balanced in Jenkins). And it runs all existing phase3 tests against a wide range of images (as of Feb 11 2021: all OpenStack images, all OptimizedHosting images, and a random OVH image are tested) in VPS4 **Stage environment**.
 
 * Note that (1) and (2) only run basic "smoke test" (passed by the "--smoke-test true" option), which is the *ChangeHostnameTest*. However, (3) runs the full suite of tests which are part of the [critical use cases](https://confluence.godaddy.com/display/HOSTING/VPS4+Critical+Use+Cases).
-* Also note that (1) and (3) are using the shopper ID **196569383**, but (2) uses a different shopper ID **227572632**.  Besides, (3) uses a service account **SVCM2AbYa3jVxBHWa** which has DEV-VPS4 privilege to run tests that require sysAdmin permission.
+* Also note that (1) and (3) are using the shopper ID **196569383**, but (2) uses a different shopper ID **227572632**.  The service account **SVCM2AbYa3jVxBHWa** is used for tests that require DEV-VPS4 privileges.
 
 ## Phase3 Tests Overview
 
@@ -20,15 +20,15 @@ Tests run on different VMs of different image types in parallel.
   ```
 * It tries to deletes all existing VMs owned the specified shopper (passed by the "--shopper" option) after the tests finish, and before starting the tests.
 
-## How To Run Phase3 Tests LOCALLY
+## How To Run Phase3 Tests Locally
 
 1. Build your code with `mvn -B verify` or the IDE of your choosing
 2. Change your working directory to `vps4-phase3-tests/target`
-3. Run the following command. Change the URLs, image names, and credentials to match the environment and images you want to test. You might have to get the admin password from someone on the team.
+3. Run the following command. Change the URLs, image names, and credentials to match the environment and images you want to test. You can get the admin password from someone on the team or find it in the Jenkins job.
    ```
-   java -ea -jar vps4-phase3-tests-0.0.1-SNAPSHOT.jar --api-url https://vps4.api.stg-godaddy.com/ --shopper YOUR_SHOPPER_ID --password '[YOUR_SHOPPER_PWD]' --sso-url https://sso.godaddy.com/v1/api/token --admin SVCM2AbYa3jVxBHWa --admin-pass '[FIND_PWD_IN_CYBERARK_OR_ASK_TEAM]' --max-vms 2 --pool-size 1 --vm-timeout 1800 --images 'vps4-centos-7-cpanel-11'
+   java -ea -jar vps4-phase3-tests-0.0.1-SNAPSHOT.jar --api-url https://vps4.api.stg-godaddy.com/ --shopper YOUR_IDP_SHOPPER_ID --password 'YOUR_IDP_SHOPPER_PWD' --sso-url https://sso.godaddy.com/v1/api/token --admin SVCM2AbYa3jVxBHWa --admin-pass 'ADMIN_PASSWORD' --max-vms 2 --pool-size 1 --vm-timeout 1800 --images 'vps4-centos-7-cpanel-11'
    ```
-4. See the [Winexe on MacOS instructions](#On-MacOS) if you want to test Windows images from your laptop.
+4. See the [Winexe on MacOS instructions](#On-MacOS) if you want to test Windows images locally.
 
 ## Testing Windows images
 

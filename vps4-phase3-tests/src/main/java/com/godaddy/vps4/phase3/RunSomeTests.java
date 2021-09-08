@@ -3,6 +3,7 @@ package com.godaddy.vps4.phase3;
 import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
@@ -88,10 +89,8 @@ public class RunSomeTests {
                 new SuspendReinstateTest(),
                 new GetServerActionsTest());
 
-        if(smokeTest) {
-            tests = Arrays.asList(
-                    new ChangeHostnameTest(randomHostname())
-            );
+        if (smokeTest) {
+            tests = Collections.singletonList(new ChangeHostnameTest(randomHostname()));
         }
 
         TestGroup vps4 = new TestGroup("VPS4 Phase3 Tests");
@@ -106,15 +105,15 @@ public class RunSomeTests {
 
         TestGroupExecution testGroupExecution = vps4.execute(threadPool, vmPool);
 
-        try{
+        try {
             testGroupExecution.await();
-        } catch(Exception e){
+        } catch(Exception e) {
             testGroupExecution.status = TestStatus.FAIL;
         }
 
         threadPool.shutdown();
 
-        try{
+        try {
             threadPool.awaitTermination(1, TimeUnit.HOURS);
         } catch(InterruptedException e) {
             System.err.println("Interrupted waiting for test termination");

@@ -201,10 +201,10 @@ public class Vps4ProvisionVmTest {
         command.executeWithAction(context, this.request);
         verify(context, times(1)).execute(eq(SetupPanopta.class), setupPanoptaRequestArgCaptor.capture());
         SetupPanopta.Request capturedRequest = setupPanoptaRequestArgCaptor.getValue();
-        assertEquals(capturedRequest.vmId, vmId);
-        assertEquals(capturedRequest.hfsVmId, hfsVmId);
-        assertEquals(capturedRequest.orionGuid, orionGuid);
-        assertEquals(capturedRequest.shopperId, shopperId);
+        assertEquals(vmId, capturedRequest.vmId);
+        assertEquals(hfsVmId, capturedRequest.hfsVmId);
+        assertEquals(orionGuid, capturedRequest.orionGuid);
+        assertEquals(shopperId, capturedRequest.shopperId);
     }
 
     @Test
@@ -236,11 +236,11 @@ public class Vps4ProvisionVmTest {
         command.executeWithAction(context, this.request);
         verify(context, times(1)).execute(eq(SendSetupCompletedEmail.class), setupCompletedEmailRequestArgCaptor.capture());
         SetupCompletedEmailRequest capturedRequest = setupCompletedEmailRequestArgCaptor.getValue();
-        assertEquals(capturedRequest.serverName, expectedServerName);
-        assertEquals(capturedRequest.ipAddress, primaryIp.address);
-        assertEquals(capturedRequest.orionGuid, orionGuid);
-        assertEquals(capturedRequest.shopperId, shopperId);
-        assertEquals(capturedRequest.isManaged, vmInfo.isManaged);
+        assertEquals(expectedServerName, capturedRequest.serverName);
+        assertEquals(primaryIp.address, capturedRequest.ipAddress);
+        assertEquals(orionGuid, capturedRequest.orionGuid);
+        assertEquals(shopperId, capturedRequest.shopperId);
+        assertEquals(vmInfo.isManaged, capturedRequest.isManaged);
     }
 
     @Test
@@ -270,9 +270,9 @@ public class Vps4ProvisionVmTest {
         verify(context, times(1))
                 .execute(eq(SetPassword.class), setPasswordCaptor.capture());
         SetPassword.Request req = setPasswordCaptor.getValue();
-        assertEquals(req.controlPanel, vm.image.getImageControlPanel());
-        assertEquals(req.encryptedPassword, request.encryptedPassword);
-        assertEquals(req.hfsVmId, hfsVmId);
+        assertEquals(vm.image.getImageControlPanel(), req.controlPanel);
+        assertEquals(request.encryptedPassword, req.encryptedPassword);
+        assertEquals(hfsVmId, req.hfsVmId);
     }
 
     @Test
@@ -280,7 +280,7 @@ public class Vps4ProvisionVmTest {
         command.executeWithAction(context, request);
         verify(context, times(1)).execute(eq(SetHostname.class), setHostnameArgumentCaptor.capture());
         SetHostname.Request req = setHostnameArgumentCaptor.getValue();
-        assertEquals(req.hfsVmId, hfsVmId);
+        assertEquals(hfsVmId, req.hfsVmId);
         String expectedHostname = "ip-" + primaryIp.address.replace('.', '-') + ".ip.secureserver.net";
         assertEquals(expectedHostname, req.hostname);
     }

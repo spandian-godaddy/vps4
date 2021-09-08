@@ -51,7 +51,8 @@ public enum ActionType {
     RESET_BACKUP_STORAGE_CREDS(42), // no longer used, but kept for historical purposes
     REQUEST_CONSOLE(43),
     SYNC_STATUS(44),
-    IMPORT_VM(45);
+    IMPORT_VM(45),
+    ENABLE_WINEXE(46);
 
     private final int typeId;
 

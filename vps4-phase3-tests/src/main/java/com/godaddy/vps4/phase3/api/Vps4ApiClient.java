@@ -247,6 +247,13 @@ public class Vps4ApiClient {
         return (long)startJsonResult.get("id");
     }
 
+    public long enableWinexe(UUID vmId) {
+        Vps4JsonResponse<JSONObject> winexeResponse = sendPost("api/vms/" + vmId + "/enableWinexe");
+        assertStatusCode200(winexeResponse);
+        JSONObject startJsonResult = winexeResponse.jsonResponse;
+        return (long) startJsonResult.get("id");
+    }
+
     private void pollForActionComplete(UUID vmId, long actionId, long timeoutSeconds, String urlAppendix) {
         Vps4ApiClient.Vps4JsonResponse<JSONObject> result = sendGetObject(urlAppendix);
         Instant timeout = Instant.now().plusSeconds(timeoutSeconds);

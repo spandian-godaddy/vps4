@@ -185,19 +185,16 @@ public class VirtualMachinePool {
                     logger.error("No credit available to create vm {}", imageName);
                 }
                 else {
-                // Create the VM and add to the pool
+                    // Create the VM and add to the pool
                     logger.debug("creating vm for {}, using credit guid {}", imageName, orionGuid);
                     UUID vmId = provisionVm(orionGuid);
-
-                    offer( new VirtualMachine(
-                            VirtualMachinePool.this,
-                            VirtualMachinePool.this.apiClient,
-                            VirtualMachinePool.this.adminClient,
-                            this.imageName,
-                            username,
-                            password,
-                            vmId,
-                            orionGuid));
+                    VirtualMachine vm = new VirtualMachine(VirtualMachinePool.this, VirtualMachinePool.this.apiClient,
+                                                           VirtualMachinePool.this.adminClient, this.imageName,
+                                                           username, password, vmId, orionGuid);
+                    if (vm.isWindows()) {
+                        enableWinexe(vm.vmId);
+                    }
+                    offer(vm);
             }});
         }
 
@@ -257,8 +254,8 @@ public class VirtualMachinePool {
 
         public UUID provisionVm(UUID orionGuid){
             JSONObject provisionResult = apiClient.provisionVm("VPS4 Phase 3 Test VM",
-                    orionGuid, imageName, 1, username, password);
-            logger.debug("provision vm: {}",provisionResult.toJSONString());
+                                                               orionGuid, imageName, 1, username, password);
+            logger.debug("provision vm: {}", provisionResult.toJSONString());
             UUID vmId = UUID.fromString(provisionResult.get("virtualMachineId").toString());
             long actionId = Long.parseLong(provisionResult.get("id").toString());
             logger.debug("Creating vmId {} for orionGuid {} with actionId {}", vmId, orionGuid, actionId);
@@ -266,6 +263,11 @@ public class VirtualMachinePool {
             return vmId;
         }
 
+        public void enableWinexe(UUID vmId) {
+            long actionId = adminClient.enableWinexe(vmId);
+            logger.debug("Opening winexe ports for vmId {} with actionId {}", vmId, actionId);
+            apiClient.pollForVmActionComplete(vmId, actionId, maxVmWaitSeconds);
+        }
     }
 
 }

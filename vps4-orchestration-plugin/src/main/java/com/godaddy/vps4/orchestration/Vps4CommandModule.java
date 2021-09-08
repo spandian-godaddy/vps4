@@ -25,6 +25,7 @@ import com.godaddy.vps4.orchestration.panopta.WaitForPanoptaAgentSync;
 import com.godaddy.vps4.orchestration.snapshot.Vps4DestroySnapshot;
 import com.godaddy.vps4.orchestration.snapshot.Vps4SnapshotVm;
 import com.godaddy.vps4.orchestration.sysadmin.Vps4AddSupportUser;
+import com.godaddy.vps4.orchestration.sysadmin.Vps4EnableWinexe;
 import com.godaddy.vps4.orchestration.sysadmin.Vps4RemoveSupportUser;
 import com.godaddy.vps4.orchestration.sysadmin.Vps4SetHostname;
 import com.godaddy.vps4.orchestration.sysadmin.Vps4SetPassword;
@@ -136,5 +137,6 @@ public class Vps4CommandModule extends AbstractModule {
         bind(Vps4RequestConsole.class);
         bind(Vps4SyncVmStatus.class);
         bind(RemoveIpFromBlacklist.class);
+        bind(Vps4EnableWinexe.class);
     }
 }

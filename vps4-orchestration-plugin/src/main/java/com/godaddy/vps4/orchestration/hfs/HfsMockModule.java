@@ -650,6 +650,11 @@ public class HfsMockModule extends AbstractModule {
             public SysAdminAction getPanoptaServerKey(long l) {
                 return null;
             }
+
+            @Override
+            public SysAdminAction enableWinexe(long l) {
+                return null;
+            }
         };
     }
 
