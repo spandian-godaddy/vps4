@@ -163,8 +163,8 @@ public class VmRebuildResource {
         rebuildVmInfo.image = StringUtils.isBlank(request.imageName) ? vm.image : imageService.getImageByHfsName(request.imageName);
         rebuildVmInfo.ipAddress = vm.primaryIpAddress;
         rebuildVmInfo.zone = vm.spec.isVirtualMachine() ?
-                config.get("openstack.zone", null) :
-                config.get("ovh.zone", null);
+                config.get(vm.dataCenter.dataCenterName + ".openstack.zone", null) :
+                config.get(vm.dataCenter.dataCenterName + ".ovh.zone", null);
         rebuildVmInfo.privateLabelId = credit.getResellerId();
         rebuildVmInfo.orionGuid = vm.orionGuid;
         rebuildVmInfo.shopperId = user.isShopper() ? user.getShopperId(): creditService.getVirtualMachineCredit(vm.orionGuid).getShopperId();

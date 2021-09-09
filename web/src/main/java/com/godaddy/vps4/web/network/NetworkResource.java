@@ -164,8 +164,8 @@ public class NetworkResource {
         String sgid = project.getVhfsSgid();
 
         String zone = vm.spec.isVirtualMachine() ?
-                config.get("optimizedHosting.zone", null) :
-                config.get("ovh.zone", null);
+                config.get(vm.dataCenter.dataCenterName + ".optimizedHosting.zone", null) :
+                config.get(vm.dataCenter.dataCenterName + ".ovh.zone", null);
 
         if (vm.spec.serverType.platform == ServerType.Platform.OPTIMIZED_HOSTING
         || vm.spec.serverType.platform == ServerType.Platform.OVH) {

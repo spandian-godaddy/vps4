@@ -24,12 +24,7 @@ public class JdbcDataCenterService implements DataCenterService {
     public DataCenter getDataCenter(int dataCenterId) {
         return Sql.with(dataSource).exec("SELECT * FROM data_center "
                 + " where data_center_id = ?;",
-                Sql.nextOrNull(this::mapDataCenter), dataCenterId);
-    }
-
-    protected DataCenter mapDataCenter(ResultSet rs) throws SQLException{
-    return new DataCenter(rs.getInt("data_center_id"),
-            rs.getString("description"));
+                Sql.nextOrNull(DataCenterMapper::mapDataCenter), dataCenterId);
     }
 
     @Override
@@ -37,7 +32,7 @@ public class JdbcDataCenterService implements DataCenterService {
         return Sql.with(dataSource).exec("SELECT DISTINCT d.* FROM reseller_data_centers rd "
                 + "JOIN data_center d ON rd.data_center_id = d.data_center_id "
                 + "WHERE rd.reseller_id= ?;",
-                Sql.listOf(this::mapDataCenter), resellerId);
+                Sql.listOf(DataCenterMapper::mapDataCenter), resellerId);
     }
 
 }

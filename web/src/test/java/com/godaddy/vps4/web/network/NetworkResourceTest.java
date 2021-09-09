@@ -32,6 +32,7 @@ import com.godaddy.vps4.vm.Action;
 import com.godaddy.vps4.vm.ActionService;
 import com.godaddy.vps4.vm.ActionStatus;
 import com.godaddy.vps4.vm.ActionType;
+import com.godaddy.vps4.vm.DataCenter;
 import com.godaddy.vps4.vm.ServerSpec;
 import com.godaddy.vps4.vm.ServerType;
 import com.godaddy.vps4.vm.VirtualMachine;
@@ -53,6 +54,7 @@ public class NetworkResourceTest {
     private NetworkService networkService = mock(NetworkService.class);
     private VirtualMachine vm;
     private VmResource vmResource = mock(VmResource.class);
+    private DataCenter dataCenter;
 
 
     @Before
@@ -70,10 +72,23 @@ public class NetworkResourceTest {
         ServerSpec vmSpec = new ServerSpec();
         vmSpec.serverType = vmServerType;
         vmSpec.ipAddressLimit = 2;
-        vm = new VirtualMachine(vmId, hfsVmId, UUID.randomUUID(),
-                1, vmSpec, "Unit Test Vm", null, null,
-                Instant.now(), Instant.now().plus(24, ChronoUnit.HOURS), Instant.now().plus(24, ChronoUnit.HOURS),
-                null, null, 0, UUID.randomUUID());
+        dataCenter = new DataCenter(1, "phx3");
+        vm = new VirtualMachine(vmId,
+                                hfsVmId,
+                                UUID.randomUUID(),
+                                1,
+                                vmSpec,
+                                "Unit Test Vm",
+                                null,
+                                null,
+                                Instant.now(),
+                                Instant.now().plus(24, ChronoUnit.HOURS),
+                                Instant.now().plus(24, ChronoUnit.HOURS),
+                                null,
+                                null,
+                                0,
+                                UUID.randomUUID(),
+                                dataCenter);
 
         Project project = new Project(123, "unitTestProject", "vps4-unittest-123", Instant.now(), null);
         when(projectService.getProject(vm.projectId)).thenReturn(project);
@@ -105,10 +120,22 @@ public class NetworkResourceTest {
         vmServerType.platform = ServerType.Platform.OVH;
         ServerSpec vmSpec = new ServerSpec();
         vmSpec.serverType = vmServerType;
-        vm = new VirtualMachine(vmId, 1111, UUID.randomUUID(),
-                1, vmSpec, "Unit Test Vm", null, null,
-                Instant.now(), Instant.now().plus(24, ChronoUnit.HOURS), Instant.now().plus(24, ChronoUnit.HOURS),
-                null, null, 0, UUID.randomUUID());
+        vm = new VirtualMachine(vmId,
+                                1111,
+                                UUID.randomUUID(),
+                                1,
+                                vmSpec,
+                                "Unit Test Vm",
+                                null,
+                                null,
+                                Instant.now(),
+                                Instant.now().plus(24, ChronoUnit.HOURS),
+                                Instant.now().plus(24, ChronoUnit.HOURS),
+                                null,
+                                null,
+                                0,
+                                UUID.randomUUID(),
+                                null);
 
         Action action = new Action(123, UUID.randomUUID(), ActionType.ADD_IP,
         "{}", "NEW", "{}", ActionStatus.NEW, Instant.now(), null, "", UUID.randomUUID(), "tester");
@@ -145,10 +172,22 @@ public class NetworkResourceTest {
         vmServerType.platform = ServerType.Platform.OVH;
         ServerSpec vmSpec = new ServerSpec();
         vmSpec.serverType = vmServerType;
-        vm = new VirtualMachine(vmId, 1111, UUID.randomUUID(),
-                1, vmSpec, "Unit Test Vm", null, null,
-                Instant.now(), Instant.now().plus(24, ChronoUnit.HOURS), Instant.now().plus(24, ChronoUnit.HOURS),
-                null, null, 0, UUID.randomUUID());
+        vm = new VirtualMachine(vmId,
+                                1111,
+                                UUID.randomUUID(),
+                                1,
+                                vmSpec,
+                                "Unit Test Vm",
+                                null,
+                                null,
+                                Instant.now(),
+                                Instant.now().plus(24, ChronoUnit.HOURS),
+                                Instant.now().plus(24, ChronoUnit.HOURS),
+                                null,
+                                null,
+                                0,
+                                UUID.randomUUID(),
+                                null);
         Action action = new Action(123, UUID.randomUUID(), ActionType.DESTROY_IP,
                 "{}", "NEW", "{}", ActionStatus.NEW, Instant.now(), null, "", UUID.randomUUID(), "tester");
         when(actionService.createAction(vm.vmId, ActionType.DESTROY_IP, new JSONObject().toJSONString(), action.initiatedBy)).thenReturn(action.id);
@@ -168,10 +207,22 @@ public class NetworkResourceTest {
         ServerSpec spec = new ServerSpec();
         spec.ipAddressLimit = 2;
         spec.serverType = serverType;
-        VirtualMachine vm = new VirtualMachine(vmId, 1111, UUID.randomUUID(),
-                1, spec , "Unit Test Vm", null, null,
-                Instant.now(), Instant.now().plus(24, ChronoUnit.HOURS), Instant.now().plus(24, ChronoUnit.HOURS),
-                null, null, 0, UUID.randomUUID());
+        VirtualMachine vm = new VirtualMachine(vmId,
+                                               1111,
+                                               UUID.randomUUID(),
+                                               1,
+                                               spec ,
+                                               "Unit Test Vm",
+                                               null,
+                                               null,
+                                               Instant.now(),
+                                               Instant.now().plus(24, ChronoUnit.HOURS),
+                                               Instant.now().plus(24, ChronoUnit.HOURS),
+                                               null,
+                                               null,
+                                               0,
+                                               UUID.randomUUID(),
+                                               dataCenter);
         when(vmResource.getVm(vmId)).thenReturn(vm);
         resource.addIpAddress(vmId);
     }
@@ -183,10 +234,22 @@ public class NetworkResourceTest {
         ServerSpec spec = new ServerSpec();
         spec.serverType = serverType;
         spec.ipAddressLimit = 1;
-        VirtualMachine vm = new VirtualMachine(vmId, 1111, UUID.randomUUID(),
-                1, spec , "Unit Test Vm", null, null,
-                Instant.now(), Instant.now().plus(24, ChronoUnit.HOURS), Instant.now().plus(24, ChronoUnit.HOURS),
-                null, null, 0, UUID.randomUUID());
+        VirtualMachine vm = new VirtualMachine(vmId,
+                                               1111,
+                                               UUID.randomUUID(),
+                                               1,
+                                               spec ,
+                                               "Unit Test Vm",
+                                               null,
+                                               null,
+                                               Instant.now(),
+                                               Instant.now().plus(24, ChronoUnit.HOURS),
+                                               Instant.now().plus(24, ChronoUnit.HOURS),
+                                               null,
+                                               null,
+                                               0,
+                                               UUID.randomUUID(),
+                                               dataCenter);
         when(vmResource.getVm(vmId)).thenReturn(vm);
         resource.addIpAddress(vmId);
     }
@@ -198,10 +261,22 @@ public class NetworkResourceTest {
         ServerSpec spec = new ServerSpec();
         spec.ipAddressLimit = 2;
         spec.serverType = serverType;
-        VirtualMachine vm = new VirtualMachine(vmId, 0, UUID.randomUUID(),
-                1, spec , "Unit Test Vm", null, null,
-                Instant.now(), Instant.now().plus(24, ChronoUnit.HOURS), Instant.now().plus(24, ChronoUnit.HOURS),
-                null, null, 0, UUID.randomUUID());
+        VirtualMachine vm = new VirtualMachine(vmId,
+                                               0,
+                                               UUID.randomUUID(),
+                                               1,
+                                               spec ,
+                                               "Unit Test Vm",
+                                               null,
+                                               null,
+                                               Instant.now(),
+                                               Instant.now().plus(24, ChronoUnit.HOURS),
+                                               Instant.now().plus(24, ChronoUnit.HOURS),
+                                               null,
+                                               null,
+                                               0,
+                                               UUID.randomUUID(),
+                                               dataCenter);
         when(vmResource.getVm(vmId)).thenReturn(vm);
         resource.addIpAddress(vmId);
     }

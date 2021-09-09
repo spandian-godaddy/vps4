@@ -102,10 +102,22 @@ public class Vps4ProvisionDedicatedTest {
         image.controlPanel = ControlPanel.CPANEL;
         image.hfsName = "foobar";
         expectedServerName = "VM Name";
-        this.vm = new VirtualMachine(UUID.randomUUID(), hfsVmId, UUID.randomUUID(), 1,
-                null, expectedServerName,
-                image, null, null, null, null, null,
-                "fake.host.name", 0, UUID.randomUUID());
+        vm = new VirtualMachine(UUID.randomUUID(),
+                                     hfsVmId,
+                                     UUID.randomUUID(),
+                                     1,
+                                     null,
+                                     expectedServerName,
+                                     image,
+                                     null,
+                                     null,
+                                     null,
+                                     null,
+                                     null,
+                                     "fake.host.name",
+                                     0,
+                                     UUID.randomUUID(),
+                                     null);
 
         this.vmInfo = new ProvisionVmInfo();
         this.vmInfo.vmId = this.vmId;
@@ -150,7 +162,7 @@ public class Vps4ProvisionDedicatedTest {
         when(createVm.execute(any(CommandContext.class), any(CreateVm.Request.class))).thenReturn(vmAction);
         when(vmService.getVmAction(hfsVmId, vmAction.vmActionId)).thenReturn(vmAction);
 
-        when(virtualMachineService.getVirtualMachine(vmInfo.vmId)).thenReturn(this.vm);
+        when(virtualMachineService.getVirtualMachine(vmInfo.vmId)).thenReturn(vm);
 
         when(context.execute(eq(CreateVm.class), any(CreateVm.Request.class))).thenReturn(vmAction);
     }

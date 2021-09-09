@@ -115,10 +115,22 @@ public class Vps4ProvisionVmTest {
         image.controlPanel = ControlPanel.MYH;
         image.hfsName = "foobar";
         expectedServerName = "VM Name";
-        this.vm = new VirtualMachine(UUID.randomUUID(), hfsVmId, UUID.randomUUID(), 1,
-                                     null, expectedServerName,
-                                     image, null, null, null, null, null,
-                                     "fake.host.name", 0, UUID.randomUUID());
+        this.vm = new VirtualMachine(UUID.randomUUID(),
+                                     hfsVmId,
+                                     UUID.randomUUID(),
+                                     1,
+                                     null,
+                                     expectedServerName,
+                                     image,
+                                     null,
+                                     null,
+                                     null,
+                                     null,
+                                     null,
+                                     "fake.host.name",
+                                     0,
+                                     UUID.randomUUID(),
+                                     null);
 
         this.vmInfo = new ProvisionVmInfo();
         this.vmInfo.vmId = this.vmId;

@@ -42,13 +42,14 @@ public interface VirtualMachineService {
     VirtualMachine provisionVirtualMachine(ProvisionVirtualMachineParameters vmProvisionParameters);
 
     public class ImportVirtualMachineParameters {
-        public ImportVirtualMachineParameters(long hfsVmId, UUID orionGuid, String name, long projectId, int tier, long imageId) {
+        public ImportVirtualMachineParameters(long hfsVmId, UUID orionGuid, String name, long projectId, int tier, long imageId, int dataCenterId) {
             this.hfsVmId = hfsVmId;
             this.orionGuid = orionGuid;
             this.name = name;
             this.projectId = projectId;
             this.specId = tier;
             this.imageId = imageId;
+            this.dataCenterId = dataCenterId;
         }
 
         public long hfsVmId;
@@ -57,6 +58,7 @@ public interface VirtualMachineService {
         public long projectId;
         public int specId;
         public long imageId;
+        public int dataCenterId;
     }
 
     VirtualMachine importVirtualMachine(ImportVirtualMachineParameters importVirtualMachineParameters);

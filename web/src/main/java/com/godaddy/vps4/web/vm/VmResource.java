@@ -60,6 +60,7 @@ import com.godaddy.vps4.util.Cryptography;
 import com.godaddy.vps4.vm.Action;
 import com.godaddy.vps4.vm.ActionService;
 import com.godaddy.vps4.vm.ActionType;
+import com.godaddy.vps4.vm.DataCenter;
 import com.godaddy.vps4.vm.DataCenterService;
 import com.godaddy.vps4.vm.Image;
 import com.godaddy.vps4.vm.ProvisionVmInfo;
@@ -110,6 +111,7 @@ public class VmResource {
     private final SnapshotService snapshotService;
     private final ImageResource imageResource;
     private final MailRelayService mailRelayService;
+    private final DataCenterService dataCenterService;
 
     @Inject
     public VmResource(GDUser user,
@@ -127,7 +129,8 @@ public class VmResource {
                       VmActionResource vmActionResource,
                       SnapshotService snapshotService,
                       ImageResource imageResource,
-                      MailRelayService mailRelayService) {
+                      MailRelayService mailRelayService,
+                      DataCenterService dataCenterService) {
         this.user = user;
         this.virtualMachineService = virtualMachineService;
         this.vps4UserService = vps4UserService;
@@ -145,6 +148,7 @@ public class VmResource {
         this.snapshotService = snapshotService;
         this.imageResource = imageResource;
         this.mailRelayService = mailRelayService;
+        this.dataCenterService = dataCenterService;
     }
 
     @GET
@@ -280,6 +284,7 @@ public class VmResource {
         vmInfo.isPanoptaEnabled = provisionRequest.useBetaMonitoring;
         logger.info("vmInfo: {}", vmInfo);
         byte[] encryptedPassword = cryptography.encrypt(provisionRequest.password);
+        String zone = getZone(provisionRequest.dataCenterId, virtualMachine.spec.serverType.platform.getZone());
 
         ProvisionRequest request =
                 createProvisionRequest(provisionRequest.image,
@@ -292,8 +297,8 @@ public class VmResource {
                                        provisionRequest.name,
                                        provisionRequest.orionGuid,
                                        encryptedPassword,
-                                       vmCredit.getResellerId()
-                                      );
+                                       vmCredit.getResellerId(),
+                                       zone);
 
         String provisionClassName = virtualMachine.spec.serverType.platform.getProvisionCommand();
 
@@ -301,6 +306,13 @@ public class VmResource {
         logger.info("running {} in {}", provisionClassName, command.commandId);
 
         return new VmAction(actionService.getAction(actionId), user.isEmployee());
+    }
+
+    private String getZone(int dataCenterId, String platformZone) {
+        DataCenter dc = dataCenterService.getDataCenter(dataCenterId);
+        String zoneConfigLabel = dc.dataCenterName + "." + platformZone;
+        String zone = config.get(zoneConfigLabel);
+        return zone;
     }
 
     private int getPreviousRelaysForVirtualServers(ProvisionVmRequest provisionRequest, Image image) {
@@ -323,11 +335,18 @@ public class VmResource {
         return previousRelays;
     }
 
-    private ProvisionRequest createProvisionRequest(String image, String username, Project project,
-                                                    ServerSpec spec, long actionId, ProvisionVmInfo vmInfo,
-                                                    String shopperId, String serverName,
-                                                    UUID orionGuid, byte[] encryptedPassword,
-                                                    String resellerId) {
+    private ProvisionRequest createProvisionRequest(String image,
+                                                    String username,
+                                                    Project project,
+                                                    ServerSpec spec,
+                                                    long actionId,
+                                                    ProvisionVmInfo vmInfo,
+                                                    String shopperId,
+                                                    String serverName,
+                                                    UUID orionGuid,
+                                                    byte[] encryptedPassword,
+                                                    String resellerId,
+                                                    String zone) {
         ProvisionRequest request = new ProvisionRequest();
         request.actionId = actionId;
         request.image_name = image;
@@ -339,7 +358,7 @@ public class VmResource {
         request.serverName = serverName;
         request.orionGuid = orionGuid;
         request.encryptedPassword = encryptedPassword;
-        request.zone = config.get(spec.serverType.platform.getZone());
+        request.zone = zone;
         request.privateLabelId = resellerId;
         return request;
     }

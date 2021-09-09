@@ -59,8 +59,21 @@ public class TestVps4AddIpAddress {
         ServerSpec vmSpec = new ServerSpec();
         vmSpec.serverType = vmServerType;
         VirtualMachine virtualMachine = new VirtualMachine(UUID.randomUUID(),
-                1111, UUID.randomUUID(), 0, vmSpec, "fakeName", null, null,
-                Instant.now(), null, null, null, "fake.hostname.com", 0, UUID.randomUUID());
+                                                           1111,
+                                                           UUID.randomUUID(),
+                                                           0,
+                                                           vmSpec,
+                                                           "fakeName",
+                                                           null,
+                                                           null,
+                                                           Instant.now(),
+                                                           null,
+                                                           null,
+                                                           null,
+                                                           "fake.hostname.com",
+                                                           0,
+                                                           UUID.randomUUID(),
+                                                           null);
         request.vmId = virtualMachine.vmId;
         request.zone = "vps4-phx3";
         request.sgid = "vps4-unittest-1234";

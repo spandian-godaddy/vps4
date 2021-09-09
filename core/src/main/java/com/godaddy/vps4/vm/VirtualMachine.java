@@ -26,6 +26,7 @@ public class VirtualMachine {
     public String hostname;
     public int managedLevel;
     public UUID backupJobId;
+    public DataCenter dataCenter;
 
     public VirtualMachine() {
     }
@@ -44,7 +45,8 @@ public class VirtualMachine {
             Instant nydusWarningAck,
             String hostname,
             int managedLevel,
-            UUID backupJobId) {
+            UUID backupJobId,
+            DataCenter dataCenter) {
         this.vmId = vmId;
         this.hfsVmId = hfsVmId;
         this.orionGuid = orionGuid;
@@ -60,6 +62,7 @@ public class VirtualMachine {
         this.hostname = hostname;
         this.managedLevel = managedLevel;
         this.backupJobId = backupJobId;
+        this.dataCenter = dataCenter;
     }
 
     public VirtualMachine(VirtualMachine virtualMachine) {
@@ -78,6 +81,7 @@ public class VirtualMachine {
         hostname = virtualMachine.hostname;
         managedLevel = virtualMachine.managedLevel;
         backupJobId = virtualMachine.backupJobId;
+        dataCenter = virtualMachine.dataCenter;
     }
 
     @JsonIgnore

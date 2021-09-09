@@ -166,7 +166,7 @@ public class VmRestoreResource {
             restoreVmInfo.snapshotId = snapshotId;
             restoreVmInfo.username = vmUserService.getPrimaryCustomer(vm.vmId).username;
             restoreVmInfo.vmId = vm.vmId;
-            restoreVmInfo.zone = config.get("openstack.zone", null);
+            restoreVmInfo.zone = config.get(vm.dataCenter.dataCenterName + ".openstack.zone", null);
             restoreVmInfo.orionGuid = vm.orionGuid;
 
             Vps4RestoreVm.Request req = new Vps4RestoreVm.Request();

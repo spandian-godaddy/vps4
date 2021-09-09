@@ -416,7 +416,14 @@ public class JdbcVirtualMachineServiceTest {
     @Test
     public void testImportVirtualMachine() {
         Project project = projectService.createProjectAndPrivilegeWithSgid("testProjectForImportVm", vps4User.getId(), "testProjectForImportVm");
-        VirtualMachineService.ImportVirtualMachineParameters parameters = new VirtualMachineService.ImportVirtualMachineParameters(-1, UUID.randomUUID(), "testImportServer", project.getProjectId(), 10, 1);
+        VirtualMachineService.ImportVirtualMachineParameters parameters =
+                new VirtualMachineService.ImportVirtualMachineParameters(-1,
+                                                                         UUID.randomUUID(),
+                                                                         "testImportServer",
+                                                                         project.getProjectId(),
+                                                                         10,
+                                                                         1,
+                                                                         1);
         VirtualMachine testVm2 = virtualMachineService.importVirtualMachine(parameters);
         UUID importedVm = virtualMachineService.getImportedVm(testVm2.vmId);
         virtualMachines.add(testVm2);

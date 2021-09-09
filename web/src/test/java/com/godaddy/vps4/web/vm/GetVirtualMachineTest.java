@@ -65,9 +65,10 @@ public class GetVirtualMachineTest {
         VmActionResource vmActionResource = mock(VmActionResource.class);
         SnapshotService snapshotService = mock(SnapshotService.class);
         MailRelayService mailRelayService = mock(MailRelayService.class);
+        DataCenterService dataCenterService = mock(DataCenterService.class);
 
         vmResource = new VmResource(user, vmService, userService, virtualMachineService, creditService, null, null, null, null, config, cryptography,
-                dcService, vmActionResource, snapshotService, null, mailRelayService);
+                dcService, vmActionResource, snapshotService, null, mailRelayService, dataCenterService);
     }
 
     private Config getMockedConfig() {
@@ -101,10 +102,22 @@ public class GetVirtualMachineTest {
         ipAddress.ipAddress = "127.0.0.1";
         ipAddress.hfsAddressId = 1;
         VirtualMachineService virtualMachineService = mock(VirtualMachineService.class);
-        vm = new VirtualMachine(vmId, hfsVmId, orionGuid, 1, null, "Unit Test Vm", null, ipAddress,
-                Instant.now(), Instant.now().plus(24, ChronoUnit.HOURS), Instant.now().plus(24, ChronoUnit.HOURS), Instant.now(),
-                null,
-                0, UUID.randomUUID());
+        vm = new VirtualMachine(vmId,
+                                hfsVmId,
+                                orionGuid,
+                                1,
+                                null,
+                                "Unit Test Vm",
+                                null,
+                                ipAddress,
+                                Instant.now(),
+                                Instant.now().plus(24, ChronoUnit.HOURS),
+                                Instant.now().plus(24, ChronoUnit.HOURS),
+                                Instant.now(),
+                                null,
+                                0,
+                                UUID.randomUUID(),
+                                null);
 
         when(virtualMachineService.getVirtualMachine(vmId)).thenReturn(vm);
         when(virtualMachineService

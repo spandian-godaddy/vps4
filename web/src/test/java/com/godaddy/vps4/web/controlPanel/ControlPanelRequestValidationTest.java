@@ -40,8 +40,9 @@ public class ControlPanelRequestValidationTest {
                 null,               // nydusAck
                 "omg.host.name",    // hostname
                 0,                   // managed level
-                UUID.randomUUID()
-                );
+                UUID.randomUUID(),
+                null
+        );
     }
 
     @Test

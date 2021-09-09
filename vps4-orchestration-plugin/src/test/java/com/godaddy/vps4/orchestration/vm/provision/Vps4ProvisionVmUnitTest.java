@@ -133,10 +133,22 @@ public class Vps4ProvisionVmUnitTest {
 
         credit = mock(VirtualMachineCredit.class);
 
-        vm = new VirtualMachine(UUID.randomUUID(), hfsVmId, UUID.randomUUID(), 1,
-                null, "fake_server",
-                image, null, null, null, null, null,
-                "fake.host.name", 0, UUID.randomUUID());
+        vm = new VirtualMachine(UUID.randomUUID(),
+                                hfsVmId,
+                                UUID.randomUUID(),
+                                1,
+                                null,
+                                "fake_server",
+                                image,
+                                null,
+                                null,
+                                null,
+                                null,
+                                null,
+                                "fake.host.name",
+                                0,
+                                UUID.randomUUID(),
+                                null);
 
         context = setupMockContext();
         request = setupProvisionRequest();

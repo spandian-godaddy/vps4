@@ -71,6 +71,7 @@ public class VmImportResourceTest {
         credit = createVmCredit(UUID.randomUUID(), AccountStatus.ACTIVE, "myh", 0, 0, 10, "Linux", Instant.now());
         when(creditService.getVirtualMachineCredit(credit.getOrionGuid())).thenReturn(credit);
         when(config.get("vps4.datacenter.defaultId")).thenReturn("1");
+        when(config.get("imported.datacenter.defaultId")).thenReturn("1");
 
         importVmRequest = new ImportVmRequest();
         importVmRequest.entitlementId = credit.getOrionGuid();
@@ -156,6 +157,7 @@ public class VmImportResourceTest {
         assertEquals(project.getProjectId(), parameters.projectId);
         assertEquals(spec.specId, parameters.specId);
         assertEquals(imageId, parameters.imageId);
+        assertEquals(1, parameters.dataCenterId);
 
         verify(networkService, times(1)).createIpAddress(0, action.virtualMachineId, importVmRequest.ip, IpAddress.IpAddressType.PRIMARY);
         verify(networkService, times(1)).createIpAddress(0, action.virtualMachineId, "2001:0db8:85a3:0000:0000:8a2e:0370:7334", IpAddress.IpAddressType.SECONDARY);
@@ -185,6 +187,7 @@ public class VmImportResourceTest {
         assertEquals(project.getProjectId(), parameters.projectId);
         assertEquals(spec.specId, parameters.specId);
         assertEquals(imageId, parameters.imageId);
+        assertEquals(1, parameters.dataCenterId);
 
         verify(networkService, times(1)).createIpAddress(0, action.virtualMachineId, importVmRequest.ip, IpAddress.IpAddressType.PRIMARY);
         verify(networkService, times(1)).createIpAddress(0, action.virtualMachineId, "2001:0db8:85a3:0000:0000:8a2e:0370:7334", IpAddress.IpAddressType.SECONDARY);

@@ -21,6 +21,7 @@ import com.godaddy.vps4.credit.CreditHistory;
 import com.godaddy.vps4.network.IpAddress;
 import com.godaddy.vps4.network.jdbc.IpAddressMapper;
 import com.godaddy.vps4.util.TimestampUtils;
+import com.godaddy.vps4.vm.DataCenter;
 import com.godaddy.vps4.vm.Image;
 import com.godaddy.vps4.vm.Image.ControlPanel;
 import com.godaddy.vps4.vm.Image.OperatingSystem;
@@ -40,12 +41,14 @@ public class JdbcVirtualMachineService implements VirtualMachineService {
             + "vms.spec_id, vms.spec_name, vms.tier, vms.cpu_core_count, vms.memory_mib, vms.disk_gib, vms.valid_on as \"spec_valid_on\", "
             + "vms.valid_until as \"spec_valid_until\", vms.name as \"spec_vps4_name\", vms.ip_address_count, st.server_type, st.server_type_id, st.platform, "
             + "image.name, image.hfs_name, image.image_id, image.control_panel_id, image.os_type_id, "
-            + "ip.address_id, ip.hfs_address_id, ip.ip_address, ip.ip_address_type_id, ip.valid_on, ip.valid_until, ip.ping_check_id, family(ip.ip_address) "
+            + "ip.address_id, ip.hfs_address_id, ip.ip_address, ip.ip_address_type_id, ip.valid_on, ip.valid_until, ip.ping_check_id, family(ip.ip_address), "
+            + "dc.data_center_id, dc.description "
             + "FROM virtual_machine vm "
             + "JOIN virtual_machine_spec vms ON vms.spec_id=vm.spec_id "
             + "JOIN image ON image.image_id=vm.image_id "
             + "JOIN project prj ON prj.project_id=vm.project_id "
             + "JOIN server_type st ON st.server_type_id = vms.server_type_id "
+            + "LEFT JOIN data_center dc ON dc.data_center_id = vm.data_center_id "
             + "LEFT JOIN ip_address ip ON ip.vm_id = vm.vm_id AND ip.ip_address_type_id = 1 ";
 
     @Inject
@@ -114,16 +117,23 @@ public class JdbcVirtualMachineService implements VirtualMachineService {
         IpAddress ipAddress = mapIpAddress(rs);
         Image image = mapImage(rs);
         String backupJobId = rs.getString("backup_job_id");
+        DataCenter dataCenter = DataCenterMapper.mapDataCenter(rs);
 
-        return new VirtualMachine(vmId, rs.getLong("hfs_vm_id"), UUID.fromString(rs.getString("orion_guid")),
-                rs.getLong("project_id"), spec, rs.getString("vm_name"), image, ipAddress,
-                rs.getTimestamp("vm_valid_on", TimestampUtils.utcCalendar).toInstant(),
-                rs.getTimestamp("vm_canceled", TimestampUtils.utcCalendar).toInstant(),
-                rs.getTimestamp("vm_valid_until", TimestampUtils.utcCalendar).toInstant(),
-                rs.getTimestamp("nydus_warning_ack", TimestampUtils.utcCalendar).toInstant(),
-                rs.getString("hostname"),
-                rs.getInt("managed_level"),
-                backupJobId != null ? java.util.UUID.fromString(backupJobId) : null);
+        return new VirtualMachine(vmId, rs.getLong("hfs_vm_id"),
+                                  UUID.fromString(rs.getString("orion_guid")),
+                                  rs.getLong("project_id"),
+                                  spec,
+                                  rs.getString("vm_name"),
+                                  image,
+                                  ipAddress,
+                                  rs.getTimestamp("vm_valid_on", TimestampUtils.utcCalendar).toInstant(),
+                                  rs.getTimestamp("vm_canceled", TimestampUtils.utcCalendar).toInstant(),
+                                  rs.getTimestamp("vm_valid_until", TimestampUtils.utcCalendar).toInstant(),
+                                  rs.getTimestamp("nydus_warning_ack", TimestampUtils.utcCalendar).toInstant(),
+                                  rs.getString("hostname"),
+                                  rs.getInt("managed_level"),
+                                  backupJobId != null ? java.util.UUID.fromString(backupJobId) : null,
+                                  dataCenter);
     }
 
     protected IpAddress mapIpAddress(ResultSet rs) throws SQLException {
@@ -192,7 +202,7 @@ public class JdbcVirtualMachineService implements VirtualMachineService {
     @Override
     public VirtualMachine provisionVirtualMachine(ProvisionVirtualMachineParameters vmProvisionParameters) {
         UUID vmId = UUID.randomUUID();
-        Sql.with(dataSource).exec("SELECT * FROM virtual_machine_provision(?, ?, ?, ?, ?, ?, ?, ?)",
+        Sql.with(dataSource).exec("SELECT * FROM virtual_machine_provision(?, ?, ?, ?, ?, ?, ?, ?, ?)",
                 null,
                 vmId,
                 vmProvisionParameters.getVps4UserId(),
@@ -201,15 +211,16 @@ public class JdbcVirtualMachineService implements VirtualMachineService {
                 vmProvisionParameters.getName(),
                 vmProvisionParameters.getTier(),
                 vmProvisionParameters.getManagedLevel(),
-                vmProvisionParameters.getImageHfsName());
+                vmProvisionParameters.getImageHfsName(),
+                vmProvisionParameters.getDataCenterId());
         return getVirtualMachine(vmId);
     }
 
     @Override
     public VirtualMachine importVirtualMachine(ImportVirtualMachineParameters importVirtualMachineParameters) {
         UUID vmId = UUID.randomUUID();
-        Sql.with(dataSource).exec("INSERT INTO virtual_machine (vm_id, hfs_vm_id, orion_guid, name, project_id, spec_id, managed_level, image_id)" +
-                                          "VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+        Sql.with(dataSource).exec("INSERT INTO virtual_machine (vm_id, hfs_vm_id, orion_guid, name, project_id, spec_id, managed_level, image_id, data_center_id)" +
+                                          "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
                                   null,
                                   vmId,
                                   importVirtualMachineParameters.hfsVmId,
@@ -218,7 +229,8 @@ public class JdbcVirtualMachineService implements VirtualMachineService {
                                   importVirtualMachineParameters.projectId,
                                   importVirtualMachineParameters.specId,
                                   0,
-                                  importVirtualMachineParameters.imageId);
+                                  importVirtualMachineParameters.imageId,
+                                  importVirtualMachineParameters.dataCenterId);
         Sql.with(dataSource).exec("INSERT INTO imported_vm (vm_id) VALUES (?)", null, vmId);
         return getVirtualMachine(vmId);
     }
@@ -291,7 +303,7 @@ public class JdbcVirtualMachineService implements VirtualMachineService {
             queryAddition.append(" AND vm.hfs_vm_id=?");
             args.add(hfsVmId);
         }
-        String query = selectVirtualMachineQuery + queryAddition.toString();
+        String query = selectVirtualMachineQuery + queryAddition;
         return Sql.with(dataSource)
                 .exec(query, Sql.listOf(this::mapVirtualMachine), args.toArray());
     }

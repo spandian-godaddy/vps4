@@ -25,6 +25,7 @@ import com.godaddy.vps4.security.Vps4User;
 import com.godaddy.vps4.security.Vps4UserService;
 import com.godaddy.vps4.vm.ActionService;
 import com.godaddy.vps4.vm.ActionType;
+import com.godaddy.vps4.vm.DataCenter;
 import com.godaddy.vps4.vm.ImageService;
 import com.godaddy.vps4.vm.ServerSpec;
 import com.godaddy.vps4.vm.ServerType;
@@ -97,9 +98,11 @@ public class VmImportResource {
     @POST
     @Path("/importVm")
     public VmAction importVm( ImportVmRequest importVmRequest) {
+        int dataCenterId = Integer.parseInt(config.get("imported.datacenter.defaultId"));
+        int platformId = ServerType.Platform.OPTIMIZED_HOSTING.getplatformId();
 
         VirtualMachineCredit virtualMachineCredit = getAndValidateUserAccountCredit(creditService, importVmRequest.entitlementId, importVmRequest.shopperId);
-        ServerSpec serverSpec = virtualMachineService.getSpec(virtualMachineCredit.getTier(), ServerType.Platform.OPTIMIZED_HOSTING.getplatformId());
+        ServerSpec serverSpec = virtualMachineService.getSpec(virtualMachineCredit.getTier(), platformId);
 
         long imageId = getOrInsertImage(importVmRequest);
 
@@ -111,7 +114,8 @@ public class VmImportResource {
                                                                                        serverSpec.specName,
                                                                                        project.getProjectId(),
                                                                                        serverSpec.specId,
-                                                                                       imageId);
+                                                                                       imageId,
+                                                                                       dataCenterId);
         VirtualMachine virtualMachine = virtualMachineService.importVirtualMachine(parameters);
 
         creditService.claimVirtualMachineCredit(importVmRequest.entitlementId, defaultDatacenterId, virtualMachine.vmId);

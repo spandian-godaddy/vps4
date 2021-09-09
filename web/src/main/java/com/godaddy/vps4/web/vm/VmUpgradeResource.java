@@ -42,8 +42,7 @@ public class VmUpgradeResource {
     private final GDUser user;
     private final Cryptography cryptography;
     private final String autoBackupName;
-    private final String openStackZone;
-
+    private final Config config;
 
     @Inject
     public VmUpgradeResource(GDUser user, VirtualMachineService virtualMachineService, CreditService creditService,
@@ -56,7 +55,7 @@ public class VmUpgradeResource {
         this.user = user;
         this.cryptography = cryptography;
         autoBackupName = config.get("vps4.autobackup.backupName");
-        openStackZone = config.get("openstack.zone");
+        this.config = config;
     }
 
     public static class UpgradeVmRequest {
@@ -102,7 +101,7 @@ public class VmUpgradeResource {
             req.encryptedPassword = cryptography.encrypt(upgradeVmRequest.password);
             req.newTier = credit.getTier();
             req.autoBackupName = autoBackupName;
-            req.zone = openStackZone;
+            req.zone = config.get(vm.dataCenter.dataCenterName + ".openstack.zone");
             req.privateLabelId = credit.getResellerId();
             return req;
         }

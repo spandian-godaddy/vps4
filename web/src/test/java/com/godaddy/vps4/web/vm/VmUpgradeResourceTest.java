@@ -29,6 +29,7 @@ import com.godaddy.vps4.vm.Action;
 import com.godaddy.vps4.vm.ActionService;
 import com.godaddy.vps4.vm.ActionStatus;
 import com.godaddy.vps4.vm.ActionType;
+import com.godaddy.vps4.vm.DataCenter;
 import com.godaddy.vps4.vm.DataCenterService;
 import com.godaddy.vps4.vm.ServerSpec;
 import com.godaddy.vps4.vm.ServerType;
@@ -68,6 +69,7 @@ public class VmUpgradeResourceTest {
         testVm.validUntil = Instant.MAX;
         testVm.vmId = UUID.randomUUID();
         testVm.orionGuid = testCredit.getOrionGuid();
+        testVm.dataCenter = new DataCenter(1, "phx3");
 
         virtualMachineService = mock(VirtualMachineService.class);
         creditService = mock(CreditService.class);

@@ -30,14 +30,12 @@ public class Vps4DestroySnapshotTest {
 
     Vps4DestroySnapshot command = new Vps4DestroySnapshot(actionService, snapshotService);
 
-    Injector injector = Guice.createInjector(binder -> {
-        binder.bind(DestroySnapshot.class).toInstance(destroySnapshotCmd);
-    });
+    Injector injector = Guice.createInjector(binder -> binder.bind(DestroySnapshot.class).toInstance(destroySnapshotCmd));
 
     CommandContext context = spy(new TestCommandContext(new GuiceCommandProvider(injector)));
 
     @Test
-    public void testExecuteSuccess() throws Exception {
+    public void testExecuteSuccess() {
         Vps4DestroySnapshot.Request request = new Vps4DestroySnapshot.Request();
         request.hfsSnapshotId = 42L;
         request.vps4SnapshotId = UUID.randomUUID();
@@ -49,7 +47,7 @@ public class Vps4DestroySnapshotTest {
     }
 
     @Test(expected = RuntimeException.class)
-    public void testVps4DestroySnapshotFails() throws Exception {
+    public void testVps4DestroySnapshotFails() {
         Vps4DestroySnapshot.Request request = new Vps4DestroySnapshot.Request();
         request.hfsSnapshotId = 42L;
 
