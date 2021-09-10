@@ -153,7 +153,7 @@ public class VmImportResourceTest {
         ImportVirtualMachineParameters parameters = argument.getValue();
         assertEquals(importVmRequest.hfsVmId, parameters.hfsVmId);
         assertEquals(importVmRequest.entitlementId, parameters.orionGuid);
-        assertEquals(spec.name, parameters.name);
+        assertEquals(importVmRequest.ip, parameters.name);
         assertEquals(project.getProjectId(), parameters.projectId);
         assertEquals(spec.specId, parameters.specId);
         assertEquals(imageId, parameters.imageId);
@@ -183,7 +183,7 @@ public class VmImportResourceTest {
         ImportVirtualMachineParameters parameters = argument.getValue();
         assertEquals(importVmRequest.hfsVmId, parameters.hfsVmId);
         assertEquals(importVmRequest.entitlementId, parameters.orionGuid);
-        assertEquals(spec.name, parameters.name);
+        assertEquals(importVmRequest.ip, parameters.name);
         assertEquals(project.getProjectId(), parameters.projectId);
         assertEquals(spec.specId, parameters.specId);
         assertEquals(imageId, parameters.imageId);

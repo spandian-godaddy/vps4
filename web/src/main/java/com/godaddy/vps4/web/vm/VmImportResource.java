@@ -111,7 +111,7 @@ public class VmImportResource {
 
         ImportVirtualMachineParameters parameters = new ImportVirtualMachineParameters(importVmRequest.hfsVmId,
                                                                                        importVmRequest.entitlementId,
-                                                                                       serverSpec.specName,
+                                                                                       importVmRequest.ip,
                                                                                        project.getProjectId(),
                                                                                        serverSpec.specId,
                                                                                        imageId,
