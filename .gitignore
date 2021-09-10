@@ -11,3 +11,7 @@
 **/.DS_Store
 tags
 .vscode/
+**/config.properties
+**/*.enc
+**/*.crt
+**/*.key

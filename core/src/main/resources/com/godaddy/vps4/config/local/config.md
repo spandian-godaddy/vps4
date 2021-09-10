@@ -1,0 +1,1 @@
+Local config is stored in AWS secrets and should not be checked into Github. Please see https://github.secureserver.net/vps4/vps4/blob/master/doc/aws_secrets_management.md to download the config and place it in this directory in your local repository.
