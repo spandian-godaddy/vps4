@@ -41,9 +41,16 @@ public class VirtualMachinePool {
 
     final ExecutorService threadPool;
 
-    public VirtualMachinePool(int maxTotalVmCount, int maxImageVmCount, int maxVmWaitSeconds,
-            Vps4ApiClient apiClient, Vps4ApiClient adminClient, String shopperId,
-            ExecutorService threadPool){
+    final int dcId;
+
+    public VirtualMachinePool(int maxTotalVmCount,
+                              int maxImageVmCount,
+                              int maxVmWaitSeconds,
+                              Vps4ApiClient apiClient,
+                              Vps4ApiClient adminClient,
+                              String shopperId,
+                              ExecutorService threadPool,
+                              int dcId){
 
         this.maxTotalVmCount = maxTotalVmCount;
         this.maxPerImageVmCount = maxImageVmCount;
@@ -54,6 +61,7 @@ public class VirtualMachinePool {
         this.adminClient = adminClient;
         this.shopperId = shopperId;
         this.threadPool = threadPool;
+        this.dcId = dcId;
     }
 
     public VirtualMachine getVm(String imageName){
@@ -254,7 +262,11 @@ public class VirtualMachinePool {
 
         public UUID provisionVm(UUID orionGuid){
             JSONObject provisionResult = apiClient.provisionVm("VPS4 Phase 3 Test VM",
-                                                               orionGuid, imageName, 1, username, password);
+                                                               orionGuid,
+                                                               imageName,
+                                                               dcId,
+                                                               username,
+                                                               password);
             logger.debug("provision vm: {}", provisionResult.toJSONString());
             UUID vmId = UUID.fromString(provisionResult.get("virtualMachineId").toString());
             long actionId = Long.parseLong(provisionResult.get("id").toString());

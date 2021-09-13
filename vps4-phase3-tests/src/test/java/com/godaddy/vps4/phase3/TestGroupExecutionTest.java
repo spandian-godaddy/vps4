@@ -108,8 +108,14 @@ public class TestGroupExecutionTest {
             });
 
         VirtualMachinePool vmPool = new VirtualMachinePool(
-                4, 2, 5, apiClient,
-                Mockito.mock(Vps4ApiClient.class), "someuser", threadPool);
+                4,
+                2,
+                5,
+                apiClient,
+                Mockito.mock(Vps4ApiClient.class),
+                "someuser",
+                threadPool,
+                2);
 
         TestGroup vps4 = new TestGroup("VPS4 Phase3 Tests");
 

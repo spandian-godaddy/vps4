@@ -53,6 +53,7 @@ public class RunSomeTests {
         int maxTotalVm = Integer.parseInt(cmd.getOptionValue("max-vms"));
         int maxPerImageVm = Integer.parseInt(cmd.getOptionValue("pool-size"));
         int maxVmWaitSeconds = Integer.parseInt(cmd.getOptionValue("vm-timeout"));
+        int dcId = Integer.parseInt(cmd.getOptionValue("dc-id", "1"));
 
         boolean smokeTest = Boolean.parseBoolean(cmd.getOptionValue("smoke-test", "false"));
 
@@ -75,8 +76,14 @@ public class RunSomeTests {
 
         ExecutorService threadPool = Executors.newCachedThreadPool();
 
-        VirtualMachinePool vmPool = new VirtualMachinePool(maxTotalVm, maxPerImageVm, maxVmWaitSeconds,
-                vps4ApiClient, adminClient, vps4ShopperId, threadPool);
+        VirtualMachinePool vmPool = new VirtualMachinePool(maxTotalVm,
+                                                           maxPerImageVm,
+                                                           maxVmWaitSeconds,
+                                                           vps4ApiClient,
+                                                           adminClient,
+                                                           vps4ShopperId,
+                                                           threadPool,
+                                                           dcId);
 
         List<VmTest> tests = Arrays.asList(
                 new ChangeHostnameTest(randomHostname()),
