@@ -172,6 +172,7 @@ public class RunSomeTests {
         options.addOption( "t", "vm-timeout", true, "maximum time in seconds a test will wait for a VM");
         options.addOption( "i", "images", true, "hfs images to test");
         options.addOption( "b", "smoke-test", true, "only run a smoke test");
+        options.addOption( "d", "dc-id", true, "the id of the dc in which the phase3 tests are being run");
 
         CommandLine cmd = parser.parse(options, args);
         for (Option option : cmd.getOptions())
