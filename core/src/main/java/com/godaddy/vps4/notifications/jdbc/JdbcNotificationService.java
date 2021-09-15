@@ -132,7 +132,7 @@ public class JdbcNotificationService implements NotificationService {
 
     @Override
     public List<NotificationFilterType> getFilters() {
-        return Sql.with(dataSource).exec("SELECT * from notification_filter_type",Sql.listOf(this::mapFilterType));
+        return Sql.with(dataSource).exec("SELECT * from notification_filter_type", Sql.listOf(this::mapFilterType));
     }
 
     @Override
@@ -147,7 +147,7 @@ public class JdbcNotificationService implements NotificationService {
             Sql.with(dataSource).exec("INSERT INTO " + notificationTableName + " (notification_id, type_id, support_only, dismissible, valid_on, valid_until) VALUES (?, ?, ?, ?, ?, ?);", null,
                     notificationId, type.getNotificationTypeId(), supportOnly, dismissible, LocalDateTime.ofInstant(validOn, ZoneOffset.UTC), LocalDateTime.ofInstant(validUntil, ZoneOffset.UTC));
         }
-        if(notificationExtendedDetails!=null && notificationExtendedDetails.start != null && notificationExtendedDetails.end != null) {
+        if (notificationExtendedDetails!=null && notificationExtendedDetails.start != null && notificationExtendedDetails.end != null) {
             Sql.with(dataSource).exec("INSERT INTO notification_extended_details (notification_id, start_time, end_time) VALUES (?, ?, ?);", null,
                     notificationId, LocalDateTime.ofInstant(notificationExtendedDetails.start, ZoneOffset.UTC),
                     LocalDateTime.ofInstant(notificationExtendedDetails.end, ZoneOffset.UTC));

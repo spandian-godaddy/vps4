@@ -1,0 +1,1 @@
+INSERT into notification_type (type_id, type) VALUES (4, 'NEW_FEATURE'), (5, 'GENERIC_OUTAGE');

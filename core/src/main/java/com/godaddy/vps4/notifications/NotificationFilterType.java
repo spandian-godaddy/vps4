@@ -12,6 +12,7 @@ public enum NotificationFilterType {
     TIER(4),
     PLATFORM_ID(5),
     VM_ID(6);
+
     private final int typeId;
 
     NotificationFilterType(int typeId) {

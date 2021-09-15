@@ -8,7 +8,10 @@ import static java.util.stream.Collectors.toMap;
 public enum NotificationType {
     PATCHING(1),
     MAINTENANCE(2),
-    NEW_FEATURE_OPCACHE(3);
+    NEW_FEATURE_OPCACHE(3),
+    NEW_FEATURE(4),
+    GENERIC_OUTAGE(5);
+
     private final int typeId;
 
     NotificationType(int typeId) {
