@@ -62,7 +62,7 @@
             "p3slvps4app03.cloud.phx3.gdg"
         ]
     },
-    "prod": {
+    "prod_iad2": {
         "app": [
             "a2plvps4app01.cloud.iad2.gdg",
             "a2plvps4app02.cloud.iad2.gdg"
