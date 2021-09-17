@@ -49,7 +49,7 @@ public class JdbcNotificationService implements NotificationService {
     private int buildFilterQuery(List<String> filters, StringBuilder filtersQuery, int filterTypeId, int andCount, ArrayList<Object> filterValues) {
         if(filters.size()>0) {
             if(andCount==0){
-                filtersQuery.append(" and ( ");
+                filtersQuery.append(" and ( ( ");
                 andCount++;
             }
             else
@@ -116,8 +116,10 @@ public class JdbcNotificationService implements NotificationService {
         andCount = buildFilterQuery(searchFilters.getHypervisor(), filtersQuery, NotificationFilterType.HYPERVISOR_HOSTNAME.getFilterTypeId(), andCount, filterValues);
         andCount = buildFilterQuery(searchFilters.getTiers(), filtersQuery, NotificationFilterType.TIER.getFilterTypeId(), andCount, filterValues);
         andCount = buildFilterQuery(searchFilters.getPlatformIds(), filtersQuery, NotificationFilterType.PLATFORM_ID.getFilterTypeId(), andCount, filterValues);
-        buildFilterQuery(searchFilters.getVmIds(), filtersQuery, NotificationFilterType.VM_ID.getFilterTypeId(), andCount, filterValues);
-
+        andCount = buildFilterQuery(searchFilters.getVmIds(), filtersQuery, NotificationFilterType.VM_ID.getFilterTypeId(), andCount, filterValues);
+        if(andCount > 0){
+            filtersQuery.append(")");
+        }
         filtersQuery.append(";");
         logger.info("query is {}", filtersQuery);
         return Sql.with(dataSource).exec(filtersQuery.toString(), Sql.listOf(this::mapNotification), filterValues.toArray());
