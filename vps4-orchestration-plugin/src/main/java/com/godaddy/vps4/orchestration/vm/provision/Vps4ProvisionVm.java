@@ -19,8 +19,6 @@ import java.util.UUID;
 
 import javax.inject.Inject;
 
-import com.godaddy.vps4.orchestration.messaging.SendSetupCompletedEmail;
-import com.godaddy.vps4.orchestration.messaging.SetupCompletedEmailRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -45,6 +43,8 @@ import com.godaddy.vps4.orchestration.hfs.sysadmin.SetHostname;
 import com.godaddy.vps4.orchestration.hfs.sysadmin.SetPassword;
 import com.godaddy.vps4.orchestration.hfs.sysadmin.ToggleAdmin;
 import com.godaddy.vps4.orchestration.hfs.vm.CreateVm;
+import com.godaddy.vps4.orchestration.messaging.SendSetupCompletedEmail;
+import com.godaddy.vps4.orchestration.messaging.SetupCompletedEmailRequest;
 import com.godaddy.vps4.orchestration.panopta.SetupPanopta;
 import com.godaddy.vps4.orchestration.scheduler.SetupAutomaticBackupSchedule;
 import com.godaddy.vps4.orchestration.sysadmin.ConfigureMailRelay;
@@ -132,9 +132,9 @@ public class Vps4ProvisionVm extends ActionCommand<ProvisionRequest, Vps4Provisi
 
         setupUsers(hfsVmId);
 
-        configureControlPanel(hfsVmId);
-
         generateAndSetHostname(hfsVmId, primaryIpAddress, hfsVm.resourceId);
+
+        configureControlPanel(hfsVmId);
 
         createPTRRecord(hfsVm.resourceId);
 
