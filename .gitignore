@@ -15,3 +15,12 @@ tags
 **/*.enc
 **/*.crt
 **/*.key
+**/*.unenc
+/vps4.prod.key	
+/vps4.stage.key	
+/vps4.prod_phx3.key	
+/vps4.prod_sin2.key	
+/vps4.prod_ams3.key
+/vps4.local.key
+/vps4.dev.key
+/vps4.test.key
