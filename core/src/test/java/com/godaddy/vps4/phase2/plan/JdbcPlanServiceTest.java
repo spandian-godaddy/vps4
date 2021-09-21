@@ -18,8 +18,11 @@ import com.godaddy.vps4.jdbc.DatabaseModule;
 import com.godaddy.vps4.plan.Plan;
 import com.godaddy.vps4.plan.PlanService;
 import com.godaddy.vps4.plan.jdbc.JdbcPlanService;
+import com.godaddy.vps4.vm.Image;
 import com.godaddy.vps4.vm.Image.ControlPanel;
 import com.godaddy.vps4.vm.Image.OperatingSystem;
+import com.godaddy.vps4.vm.ServerSpec;
+import com.godaddy.vps4.vm.VirtualMachine;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
 
@@ -42,10 +45,10 @@ public class JdbcPlanServiceTest {
         Sql.with(dataSource).exec(insertQuery, null, 234, "test_plan_tier_2", 12, 1, 20, 1, true);
         Sql.with(dataSource).exec(insertQuery, null, 345, "test_plan_tier_3", 12, 1, 30, 1, false);
         Sql.with(dataSource).exec(insertQuery, null, 456, "test_plan_tier_4", 12, 1, 40, 1, true);
-        Sql.with(dataSource).exec(insertQuery, null, 567, "test_plan_tier_3_disabled", 12, 1, 30, 1, false);
-        Sql.with(dataSource).exec(insertQuery, null, 678, "test_plan_tier_4_disabled", 12, 1, 40, 1, false);
-        Sql.with(dataSource).exec(insertQuery, null, 789, "test_plan_tier_3_windows", 12, 2, 30, 1, true);
-        Sql.with(dataSource).exec(insertQuery, null, 890, "test_plan_tier_4_myh", 12, 1, 40, 0, true);
+        Sql.with(dataSource).exec(insertQuery, null, 567, "test_plan_tier_3_disabled", 1, 1, 30, 1, false);
+        Sql.with(dataSource).exec(insertQuery, null, 678, "test_plan_tier_4_disabled", 1, 1, 40, 1, false);
+        Sql.with(dataSource).exec(insertQuery, null, 789, "test_plan_tier_3_windows", 1, 2, 30, 1, true);
+        Sql.with(dataSource).exec(insertQuery, null, 890, "test_plan_tier_4_myh", 1, 1, 40, 0, true);
         planService = new JdbcPlanService(dataSource);
     }
 
@@ -112,5 +115,21 @@ public class JdbcPlanServiceTest {
         List<Plan> planList = planService.getUpgradeList(345);
         List<Integer> planListPfids = planList.stream().map(x -> x.pfid).collect(Collectors.toList());
         assertTrue(planListPfids.contains(upgradePfid));
+    }
+
+    @Test
+    public void testGetAdjacentPlanList() {
+        VirtualMachine vm = new VirtualMachine();
+        vm.spec = new ServerSpec();
+        vm.spec.tier = 40;
+        vm.image = new Image();
+        vm.image.operatingSystem = OperatingSystem.LINUX;
+        List<String> adjacentPackages = planService.getAdjacentPlanList(vm)
+                                                   .stream()
+                                                   .map(plan -> plan.packageId)
+                                                   .collect(Collectors.toList());
+        assertTrue(adjacentPackages.contains("test_plan_tier_4_myh"));
+        assertFalse(adjacentPackages.contains("test_plan_tier_3_windows"));
+        assertFalse(adjacentPackages.contains("test_plan_tier_4_disabled"));
     }
 }

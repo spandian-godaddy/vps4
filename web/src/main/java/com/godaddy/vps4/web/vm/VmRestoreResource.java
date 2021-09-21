@@ -107,7 +107,7 @@ public class VmRestoreResource {
     @POST
     @Path("{vmId}/restore")
     public VmAction restore(@PathParam("vmId") UUID vmId, RestoreVmRequest restoreVmRequest) {
-        restoreVmRequest = performAdminPrereqs(vmId, restoreVmRequest);
+        performAdminPrereqs(vmId, restoreVmRequest);
         VirtualMachine vm = vmResource.getVm(vmId);
         isValidRestoreVmRequest(vm, restoreVmRequest);
         logger.info("Processing restore on VM {} using snapshot {}", vmId, restoreVmRequest.backupId);
@@ -120,7 +120,7 @@ public class VmRestoreResource {
         return restoreAction;
     }
 
-    private RestoreVmRequest performAdminPrereqs(UUID vmId, RestoreVmRequest restoreVmRequest) {
+    private void performAdminPrereqs(UUID vmId, RestoreVmRequest restoreVmRequest) {
         if(user.isAdmin()) {
             if (restoreVmRequest.backupId == null) {
                 restoreVmRequest.backupId = findMostRecentActiveVmSnapshot(vmId);
@@ -129,7 +129,6 @@ public class VmRestoreResource {
                 restoreVmRequest.password = generatePassword(MAX_PASSWORD_LENGTH);
             }
         }
-        return restoreVmRequest;
     }
 
     private void isValidRestoreVmRequest(VirtualMachine vm, RestoreVmRequest restoreVmRequest) {

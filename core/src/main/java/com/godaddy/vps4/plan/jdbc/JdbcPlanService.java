@@ -15,6 +15,7 @@ import com.godaddy.vps4.plan.Plan;
 import com.godaddy.vps4.plan.PlanService;
 import com.godaddy.vps4.vm.Image.ControlPanel;
 import com.godaddy.vps4.vm.Image.OperatingSystem;
+import com.godaddy.vps4.vm.VirtualMachine;
 
 public class JdbcPlanService implements PlanService {
 
@@ -76,6 +77,20 @@ public class JdbcPlanService implements PlanService {
                 .collect(Collectors.toList());
         }
         return upgradesList;
+    }
+
+    /*
+     * Since we don't have an easy way to determine the pfid of a VM, this returns a best-guess list of plans that could
+     * match the VM. Used by VPS4 tools during Zombie revives.
+     */
+    @Override
+    public List<Plan> getAdjacentPlanList(VirtualMachine vm) {
+        return plans.stream()
+                    .filter(p -> p.enabled
+                            && p.tier == vm.spec.tier
+                            && p.os == vm.image.operatingSystem
+                            && p.termMonths == 1)
+                    .collect(Collectors.toList());
     }
 
     @Override
