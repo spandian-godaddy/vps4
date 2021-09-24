@@ -18,16 +18,20 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import org.junit.Assert;
 
 import javax.sql.DataSource;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
 
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+
 
 public class JdbcNotificationServiceTest {
     static private Injector injectorForDS;
@@ -95,6 +99,80 @@ public class JdbcNotificationServiceTest {
         assertNotNull(service.getNotification(testNotificationId));
         service.deleteNotification(testNotificationId);
         assertNull(service.getNotification(testNotificationId));
+    }
+
+    @Test
+    public void updateNotificationTest() {
+        NotificationService service = injector.getInstance(NotificationService.class);
+        List<NotificationFilter> filters = new ArrayList<>();
+        NotificationFilter filter = new NotificationFilter();
+        filter.filterType = NotificationFilterType.IMAGE_ID;
+        filter.filterValue = Arrays.asList("200");
+        filters.add(filter);
+        NotificationExtendedDetails notificationExtendedDetails = new NotificationExtendedDetails();
+        notificationExtendedDetails.start = Instant.now();
+        notificationExtendedDetails.end = Instant.now();
+        service.updateNotification(notificationId, NotificationType.MAINTENANCE,false,false,
+                notificationExtendedDetails, filters, null, null);
+
+        Notification modifiedNotification = service.getNotification(notificationId);
+        assertEquals(NotificationType.MAINTENANCE, modifiedNotification.type);
+        Assert.assertEquals(false, modifiedNotification.supportOnly);
+        Assert.assertEquals(false, modifiedNotification.dismissible);
+        assertNotNull(modifiedNotification.validOn);
+        assertNotNull(modifiedNotification.validUntil);
+        assertNotNull(modifiedNotification.notificationExtendedDetails.start);
+        assertNotNull(modifiedNotification.notificationExtendedDetails.end);
+        Assert.assertEquals(NotificationFilterType.IMAGE_ID, modifiedNotification.filters.get(0).filterType);
+        Assert.assertEquals("200", modifiedNotification.filters.get(0).filterValue.get(0));
+    }
+
+    @Test
+    public void updateNotificationTestStartAndEndDateNull() {
+        NotificationService service = injector.getInstance(NotificationService.class);
+        List<NotificationFilter> filters = new ArrayList<>();
+        NotificationFilter filter = new NotificationFilter();
+        filter.filterType = NotificationFilterType.IMAGE_ID;
+        filter.filterValue = Arrays.asList("200");
+        filters.add(filter);
+        NotificationExtendedDetails notificationExtendedDetails = new NotificationExtendedDetails();
+        notificationExtendedDetails.start = null;
+        notificationExtendedDetails.end = null;
+        service.updateNotification(notificationId, NotificationType.MAINTENANCE,false,false,
+                notificationExtendedDetails, filters, null, null);
+
+        Notification modifiedNotification = service.getNotification(notificationId);
+        assertEquals(NotificationType.MAINTENANCE, modifiedNotification.type);
+        Assert.assertEquals(false, modifiedNotification.supportOnly);
+        Assert.assertEquals(false, modifiedNotification.dismissible);
+        assertNull(modifiedNotification.notificationExtendedDetails.start);
+        assertNull(modifiedNotification.notificationExtendedDetails.end);
+        Assert.assertEquals(NotificationFilterType.IMAGE_ID, modifiedNotification.filters.get(0).filterType);
+        Assert.assertEquals("200", modifiedNotification.filters.get(0).filterValue.get(0));
+    }
+
+    @Test
+    public void updateNotificationTestEndNullOnly() {
+        NotificationService service = injector.getInstance(NotificationService.class);
+        List<NotificationFilter> filters = new ArrayList<>();
+        NotificationFilter filter = new NotificationFilter();
+        filter.filterType = NotificationFilterType.IMAGE_ID;
+        filter.filterValue = Arrays.asList("200");
+        filters.add(filter);
+        NotificationExtendedDetails notificationExtendedDetails = new NotificationExtendedDetails();
+        notificationExtendedDetails.start = Instant.now();
+        notificationExtendedDetails.end = null;
+        service.updateNotification(notificationId, NotificationType.MAINTENANCE,false,false,
+                notificationExtendedDetails, filters, null, null);
+
+        Notification modifiedNotification = service.getNotification(notificationId);
+        assertEquals(NotificationType.MAINTENANCE, modifiedNotification.type);
+        Assert.assertEquals(false, modifiedNotification.supportOnly);
+        Assert.assertEquals(false, modifiedNotification.dismissible);
+        assertNotNull(modifiedNotification.notificationExtendedDetails.start);
+        assertNotNull(modifiedNotification.notificationExtendedDetails.end);
+        Assert.assertEquals(NotificationFilterType.IMAGE_ID, modifiedNotification.filters.get(0).filterType);
+        Assert.assertEquals("200", modifiedNotification.filters.get(0).filterValue.get(0));
     }
 
     @Test

@@ -7,15 +7,17 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 
 import javax.inject.Inject;
-import javax.ws.rs.Consumes;
-import javax.ws.rs.DELETE;
 import javax.ws.rs.DefaultValue;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
+import javax.ws.rs.DELETE;
+import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
+import javax.ws.rs.PathParam;
+import javax.ws.rs.Consumes;
+import javax.ws.rs.Produces;
+import javax.ws.rs.NotFoundException;
 import javax.ws.rs.core.MediaType;
 
 import com.godaddy.vps4.notifications.Notification;
@@ -102,7 +104,7 @@ public class NotificationsResource {
     @Path("/")
     public Notification createNewNotification(NotificationRequest request) {
         UUID notificationId = UUID.randomUUID();
-        return notificationService.createNotification(notificationId, request.notificationType,
+        return notificationService.createNotification(notificationId, request.type,
                 request.supportOnly, request.dismissible, request.notificationExtendedDetails, request.filters,
                 request.validOn, request.validUntil);
     }
@@ -121,8 +123,20 @@ public class NotificationsResource {
         return notificationService.getFilters();
     }
 
+    @PUT
+    @Path("/{notificationId}")
+    public Notification putNotification(@PathParam("notificationId") UUID notificationId, NotificationRequest request) {
+         if (notificationService.getNotification(notificationId) == null)
+         {
+             throw new NotFoundException("Unknown notification ID: " + notificationId);
+         }
+         return notificationService.updateNotification(notificationId, request.type,
+                request.supportOnly, request.dismissible, request.notificationExtendedDetails, request.filters,
+                request.validOn, request.validUntil);
+    }
+
     public static class NotificationRequest {
-        public NotificationType notificationType;
+        public NotificationType type;
         public boolean supportOnly;
         public boolean dismissible;
         public NotificationExtendedDetails notificationExtendedDetails;

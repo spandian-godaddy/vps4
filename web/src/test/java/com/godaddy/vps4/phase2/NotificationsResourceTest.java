@@ -35,6 +35,8 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
 
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -108,6 +110,8 @@ public class NotificationsResourceTest {
         filterPlatformId.filterValue = Arrays.asList("100");
 
         filterList.add(filterDC);
+        filterList.add(filterImage);
+
         notificationId = createTestNotification(filterList);
     }
 
@@ -141,7 +145,7 @@ public class NotificationsResourceTest {
     @Test
     public void testAddAndDeleteNotification() {
         NotificationsResource.NotificationRequest request = new NotificationsResource.NotificationRequest();
-        request.notificationType = NotificationType.PATCHING;
+        request.type = NotificationType.PATCHING;
         request.dismissible = true;
         request.supportOnly = true;
         NotificationExtendedDetails notificationExtendedDetails = new NotificationExtendedDetails();
@@ -161,7 +165,33 @@ public class NotificationsResourceTest {
 
         getNotificationResource().deleteNotifications(notificationId);
         Notification deletedNotification = getNotificationResource().getNotification(notificationId);
-        Assert.assertEquals(null, deletedNotification);
+        assertNull(deletedNotification);
+    }
+
+    @Test
+    public void testUpdateNotification() {
+        NotificationsResource.NotificationRequest request = new NotificationsResource.NotificationRequest();
+        request.type = NotificationType.MAINTENANCE;
+        request.dismissible = false;
+        request.supportOnly = false;
+        NotificationExtendedDetails notificationExtendedDetails = new NotificationExtendedDetails();
+        notificationExtendedDetails.end = Instant.now();
+        notificationExtendedDetails.start = Instant.now();
+        request.notificationExtendedDetails = notificationExtendedDetails;
+        NotificationFilter filter = new NotificationFilter();
+        filter.filterValue = Arrays.asList("2","3");
+        filter.filterType = NotificationFilterType.RESELLER_ID;
+        request.filters = Arrays.asList(filter);
+
+        getNotificationResource().putNotification(notificationId,request);
+        Notification modifiedNotification = getNotificationResource().getNotification(notificationId);
+        Assert.assertEquals(notificationId, modifiedNotification.notificationId);
+        Assert.assertEquals(NotificationType.MAINTENANCE, modifiedNotification.type);
+        Assert.assertEquals(false, modifiedNotification.supportOnly);
+        Assert.assertEquals(false, modifiedNotification.dismissible);
+        assertNotNull(modifiedNotification.notificationExtendedDetails.start);
+        assertNotNull(modifiedNotification.notificationExtendedDetails.end);
+        Assert.assertEquals(1, modifiedNotification.filters.size());
     }
 
     @Test

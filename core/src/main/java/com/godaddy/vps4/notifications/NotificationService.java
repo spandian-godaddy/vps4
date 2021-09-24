@@ -11,6 +11,9 @@ public interface NotificationService {
     Notification createNotification(UUID notificationId, NotificationType type, boolean supportOnly, boolean dismissible,
                             NotificationExtendedDetails notificationExtendedDetails, List<NotificationFilter> filters,
                                     Instant validOn, Instant validUntil);
+    Notification updateNotification(UUID notificationId, NotificationType type, boolean supportOnly, boolean dismissible,
+                                    NotificationExtendedDetails notificationExtendedDetails, List<NotificationFilter> filters,
+                                    Instant validOn, Instant validUntil);
     void addFilterToNotification(UUID notificationId, List<NotificationFilter> filters);
     void deleteNotification(UUID notificationId);
     List<NotificationFilterType> getFilters();

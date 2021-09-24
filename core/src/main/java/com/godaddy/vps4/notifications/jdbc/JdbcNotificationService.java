@@ -149,7 +149,7 @@ public class JdbcNotificationService implements NotificationService {
             Sql.with(dataSource).exec("INSERT INTO " + notificationTableName + " (notification_id, type_id, support_only, dismissible, valid_on, valid_until) VALUES (?, ?, ?, ?, ?, ?);", null,
                     notificationId, type.getNotificationTypeId(), supportOnly, dismissible, LocalDateTime.ofInstant(validOn, ZoneOffset.UTC), LocalDateTime.ofInstant(validUntil, ZoneOffset.UTC));
         }
-        if (notificationExtendedDetails!=null && notificationExtendedDetails.start != null && notificationExtendedDetails.end != null) {
+        if (notificationExtendedDetails != null && (notificationExtendedDetails.start != null || notificationExtendedDetails.end != null)) {
             Sql.with(dataSource).exec("INSERT INTO notification_extended_details (notification_id, start_time, end_time) VALUES (?, ?, ?);", null,
                     notificationId, LocalDateTime.ofInstant(notificationExtendedDetails.start, ZoneOffset.UTC),
                     LocalDateTime.ofInstant(notificationExtendedDetails.end, ZoneOffset.UTC));
@@ -157,6 +157,34 @@ public class JdbcNotificationService implements NotificationService {
         addFilterToNotification(notificationId, filters);
         return getNotification(notificationId);
     }
+
+    @Override
+    public Notification updateNotification(UUID notificationId, NotificationType type, boolean supportOnly, boolean dismissible,
+                                           NotificationExtendedDetails notificationExtendedDetails, List<NotificationFilter> filters,
+                                           Instant validOn, Instant validUntil) {
+        Sql.with(dataSource).exec("UPDATE " + notificationTableName + " SET type_id = ?, support_only= ?, dismissible= ?, valid_on = ?, valid_until = ? WHERE notification_id = ?;", null,
+                    type.getNotificationTypeId(), supportOnly, dismissible,
+                     LocalDateTime.ofInstant(validOn == null ? Instant.now() : validOn, ZoneOffset.UTC),
+                     validUntil == null ? LocalDateTime.MAX : LocalDateTime.ofInstant(validUntil, ZoneOffset.UTC),
+                    notificationId);
+        if(notificationExtendedDetails == null || (notificationExtendedDetails.start == null && notificationExtendedDetails.end == null)) {
+            Sql.with(dataSource).exec("DELETE FROM notification_extended_details WHERE notification_id = ?;", null,
+                    notificationId);
+        }
+        else {
+            Sql.with(dataSource).exec("INSERT INTO notification_extended_details (notification_id, start_time, end_time) VALUES (?, ?, ?) " +
+                            "ON CONFLICT (notification_id) DO UPDATE SET start_time = EXCLUDED.start_time," +
+                            " end_time = EXCLUDED.end_time WHERE notification_extended_details.notification_id = EXCLUDED.notification_id;", null,
+                    notificationId,
+                    LocalDateTime.ofInstant(notificationExtendedDetails.start == null ? Instant.now() : notificationExtendedDetails.start, ZoneOffset.UTC),
+                    notificationExtendedDetails.end == null ? LocalDateTime.MAX : LocalDateTime.ofInstant(notificationExtendedDetails.end, ZoneOffset.UTC));
+        }
+        Sql.with(dataSource).exec("DELETE FROM notification_filter WHERE notification_id = ?;", null,
+                notificationId);
+        addFilterToNotification(notificationId, filters);
+        return getNotification(notificationId);
+    }
+
 
     @Override
     public void addFilterToNotification(UUID notificationId, List<NotificationFilter> filters) {
