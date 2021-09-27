@@ -364,7 +364,7 @@ TODO: Eventually need to puppetize this process below.
      "host": "vps4.rmq.sensu.prod.phx3.secureserver.net",
      "user": "sensuvps4",
      "vhost": "/sensu-vps4",
-     "password": "6460567d252a8b7e2602f289dd0e91b26ef04c8d",
+     "password": "removed",
      "ssl": {
        "private_key_file": "/etc/sensu/ssl/key.pem",
        "cert_chain_file": "/etc/sensu/ssl/cert.pem"
