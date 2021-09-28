@@ -64,8 +64,8 @@ public class ImportedVmFilterTest {
     }
 
     @Test
-    public void testVmApiNotImportedVm() throws Exception {
-        when(request.getRequestURI()).thenReturn("/api/vms/" + notImportedVmId);
+    public void testVmApiNotImportedVmCallsGetImportedVm() throws Exception {
+        when(request.getRequestURI()).thenReturn("/api/vms/" + notImportedVmId + "/enableAdmin");
 
         filter.doFilter(request, response, chain);
         verify(jdbcVmService, times(1)).getImportedVm(notImportedVmId);
@@ -89,7 +89,6 @@ public class ImportedVmFilterTest {
         filter.doFilter(request, response, chain);
         verify(chain).doFilter(request, response);
     }
-
 
     @Test
     public void testVmApiReviveImportedVm() throws Exception {
@@ -115,20 +114,8 @@ public class ImportedVmFilterTest {
         when(request.getMethod()).thenReturn("PATCH");
 
         filter.doFilter(request, response, chain);
-        verify(chain, never()).doFilter(request, response);
-        JSONObject json = (JSONObject) new JSONParser().parse(writer.toString());
-        Assert.assertEquals("BLOCKED_FOR_IMPORTED_VM", json.get("id"));
+        verify(chain).doFilter(request, response);
     }
-
-    @Test
-    public void testVmApiPostImportedVm() throws Exception {
-        when(request.getRequestURI()).thenReturn("/api/vms/" + importedVmId);
-
-        filter.doFilter(request, response, chain);
-        verify(chain, never()).doFilter(request, response);
-        JSONObject json = (JSONObject) new JSONParser().parse(writer.toString());
-        Assert.assertEquals("BLOCKED_FOR_IMPORTED_VM", json.get("id"));
-   }
 
     @Test
     public void testPendingImportedVmUpperCaseUUID() throws Exception {
@@ -150,7 +137,16 @@ public class ImportedVmFilterTest {
         verify(chain).doFilter(request, response);
     }
 
-   @Test
+    @Test
+    public void testVmApiSetPasswordImportedVm() throws Exception {
+        when(request.getRequestURI()).thenReturn("/api/vms/" + importedVmId + "/setPassword");
+        when(request.getMethod()).thenReturn("POST");
+
+        filter.doFilter(request, response, chain);
+        verify(chain).doFilter(request, response);
+    }
+
+    @Test
    public void initDoesNothing() throws Exception {
        FilterConfig fc = mock(FilterConfig.class);
        filter.init(fc);

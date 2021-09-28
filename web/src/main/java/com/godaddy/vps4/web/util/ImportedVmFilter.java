@@ -24,7 +24,6 @@ public class ImportedVmFilter extends VmFilter {
         super(Arrays.asList("start",
                             "stop",
                             "restart",
-                            "delete",
                             "consoleUrl",
                             "snapshots",
                             "restore",
@@ -36,7 +35,9 @@ public class ImportedVmFilter extends VmFilter {
                             "syncVmStatus",
                             "snapshotSchedules",
                             "zombie",
-                            "revive"
+                            "revive",
+                            "setPassword",
+                            ""
                 ),
               virtualMachineService);
     }
