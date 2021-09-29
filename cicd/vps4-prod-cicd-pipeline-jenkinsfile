@@ -128,7 +128,8 @@ pipeline {
                 slackSend(color: '#00CD48', message: "Post Deploy *SG2 SMOKE TEST* was SUCCESSFUL. Job '${env.JOB_NAME} [${VPS4_VERSION}]' (${env.BUILD_URL})")
             }
         }
-
+        /*
+        teporarily disabling due to timeout errors for openstack image
         stage("Prod A2 Smoke Test") {
             options {
                 timeout(time:45, unit:'MINUTES')
@@ -140,6 +141,7 @@ pipeline {
                 slackSend(color: '#00CD48', message: "Post Deploy *A2 SMOKE TEST* was SUCCESSFUL. Job '${env.JOB_NAME} [${VPS4_VERSION}]' (${env.BUILD_URL})")
             }
         }
+        */
 
         stage("Prod P3 Smoke Test") {
             options {
