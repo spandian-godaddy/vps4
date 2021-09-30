@@ -91,7 +91,7 @@ public class SysAdminResource {
         validateServerIsActive(vmResource.getVmFromVmVertical(vm.hfsVmId));
         validateNoConflictingActions(vmId, actionService, ActionType.SET_PASSWORD, ActionType.RESTORE_VM);
 
-        if (!vmUserService.userExists(updatePasswordRequest.username, vm.vmId)) {
+        if (!vmUserService.userExists(updatePasswordRequest.username, vm.vmId) && !isMigratedRootRequest(updatePasswordRequest.username, vm.vmId)) {
             String message = String.format("Cannot find user %s for vm %s",  updatePasswordRequest.username, vmId);
             throw new Vps4Exception("VM_USER_NOT_FOUND", message);
         }
@@ -122,6 +122,9 @@ public class SysAdminResource {
         Commands.execute(commandService, actionService, "Vps4SetPassword", vps4Request);
 
         return new VmAction(actionService.getAction(actionId), user.isEmployee());
+    }
+    private boolean isMigratedRootRequest(String username, UUID vmId) {
+        return username.equals("root") && virtualMachineService.isLinux(vmId) && virtualMachineService.getImportedVm(vmId) != null;
     }
 
     public static class SetHostnameRequest{

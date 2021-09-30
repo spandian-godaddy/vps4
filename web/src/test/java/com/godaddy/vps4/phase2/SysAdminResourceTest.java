@@ -23,7 +23,6 @@ import com.godaddy.vps4.security.Vps4User;
 import com.godaddy.vps4.security.Vps4UserService;
 import com.godaddy.vps4.security.jdbc.AuthorizationException;
 import com.godaddy.vps4.snapshot.SnapshotModule;
-import com.godaddy.vps4.util.Cryptography;
 import com.godaddy.vps4.vm.VirtualMachine;
 import com.godaddy.vps4.vm.VmModule;
 import com.godaddy.vps4.vm.VmUserService;
@@ -44,8 +43,6 @@ public class SysAdminResourceTest {
     @Inject Vps4UserService userService;
     @Inject VmUserService vmUserService;
     @Inject DataSource dataSource;
-
-    Cryptography cryptography;
 
     private GDUser user;
     private String username = "fakeUser";
@@ -117,6 +114,29 @@ public class SysAdminResourceTest {
 
         user = GDUserMock.createAdmin();
         getSysAdminResource().setPassword(vm.vmId, request);
+    }
+
+    @Test
+    public void testMigratedSetPasswordRoot(){
+        SqlTestData.addImportedVM(vm.vmId, dataSource);
+        UpdatePasswordRequest request = new UpdatePasswordRequest();
+        request.username = "root";
+        request.password = "newPassword1!";
+        getSysAdminResource().setPassword(vm.vmId, request);
+        SqlTestData.removeImportedVM(vm.vmId, dataSource);
+    }
+
+    @Test
+    public void testNormalVmSetPasswordRoot(){
+        UpdatePasswordRequest request = new UpdatePasswordRequest();
+        request.username = "root";
+        request.password = "newPassword1!";
+        try {
+            getSysAdminResource().setPassword(vm.vmId, request);
+            Assert.fail();
+        } catch (Vps4Exception e) {
+            Assert.assertEquals("VM_USER_NOT_FOUND", e.getId());
+        }
     }
 
     @Test(expected=AuthorizationException.class)

@@ -167,6 +167,14 @@ public class SqlTestData {
         Sql.with(dataSource).exec("UPDATE virtual_machine SET valid_until=now_utc() WHERE vm_id = ?", null, vmId);
     }
 
+    public static void addImportedVM(UUID vmId, DataSource dataSource) {
+        Sql.with(dataSource).exec("INSERT INTO imported_vm (vm_id) VALUES (?)", null, vmId);
+    }
+
+    public static void removeImportedVM(UUID vmId, DataSource dataSource) {
+        Sql.with(dataSource).exec("DELETE FROM imported_vm WHERE vm_id = ?", null, vmId);
+    }
+
     public static void markSnapshotDestroyed(UUID snapshotId, DataSource dataSource) {
         Sql.with(dataSource).exec("UPDATE snapshot SET status=5 WHERE id = ?",  null, snapshotId);
     }
