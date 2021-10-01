@@ -1,0 +1,26 @@
+[tool.tartufo]
+repo-path = "."
+json = false
+regex = true
+entropy = true
+exclude-path-patterns = [
+    'web/src/main/resources/com/godaddy/swagger',
+    'web/src/main/java/com/godaddy/vps4/web/cpanel/FakeCpanelModule.java', # This has a fake cpanel hash
+    'web/src/main/java/com/godaddy/vps4/web/cpanel/CpanelClient.java', # This has a fake cpanel hash
+    'web/src/main/java/com/godaddy/vps4/hfs/HfsMockModule.java', # Contains a fake access hash
+    'web/src/test', # Multiple instances of high entropy test data
+    'core/src/test', # Several instances of high entropy test data
+    'vps4-phase3-tests', # Contains test data, fake JWT tokens
+    'vps4-message-consumer/src/test', # Test project with long filenames and test data
+    'vps4-scheduler/src/test',
+    '.git',
+]
+exclude-signatures = [
+    "62f22e4500140a6ed959a6143c52b0e81c74e7491081292fce733de4ec574542",
+    "ecbbe1edd6373c7e2b88b65d24d7fe84610faafd1bc2cf6ae35b43a77183e80b",
+    '0dd873925e8903005aa9cd35970ca80dd961b10ed8a18de26463f8e11a462007',
+    'e363cafbdee5c5fb64a523d00603642d2720dccc1cfa5f0b8b72e6a6f78ab294', # Fake password in the readme
+    '216396c5093fb8279688e9596c2d465292a3e405cd1fae8c52aacc76c0a07cc1', # Fake workflow ID in ServerUsageStats.java
+    '8cd27fffa0a97ecf82fe497e941706a6c7ae64f47e92af8536a3264f5b351f46', # Link to a snow ticket with ID
+    'b0ee7ec301c57ee4c93e5b232fc9ef336174964699ef89660d702caf99869c04', # Link to the SOAK article in the readme
+]
