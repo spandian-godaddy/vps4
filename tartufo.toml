@@ -23,4 +23,5 @@ exclude-signatures = [
     '216396c5093fb8279688e9596c2d465292a3e405cd1fae8c52aacc76c0a07cc1', # Fake workflow ID in ServerUsageStats.java
     '8cd27fffa0a97ecf82fe497e941706a6c7ae64f47e92af8536a3264f5b351f46', # Link to a snow ticket with ID
     'b0ee7ec301c57ee4c93e5b232fc9ef336174964699ef89660d702caf99869c04', # Link to the SOAK article in the readme
+    'ecab918563787be5bb94d22ef918f169189826ae4a7b57be13f588393c4e0224', # DB Connection string pattern - doesn't contain any secret value.
 ]
