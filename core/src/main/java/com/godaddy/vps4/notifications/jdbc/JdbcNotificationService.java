@@ -124,7 +124,7 @@ public class JdbcNotificationService implements NotificationService {
         if(andCount > 0){
             filtersQuery.append(")");
         }
-        filtersQuery.append(";");
+        filtersQuery.append(" ORDER BY valid_on DESC;");
         logger.info("query is {}", filtersQuery);
         return Sql.with(dataSource).exec(filtersQuery.toString(), Sql.listOf(this::mapNotification), filterValues.toArray());
     }
