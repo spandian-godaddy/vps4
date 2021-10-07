@@ -21,6 +21,7 @@ public class NotificationListSearchFilters {
     private Instant validOn;
     private Instant validUntil;
     private boolean showActive;
+    private boolean adminView;
 
     public void byType(NotificationType... typeList) {
         types = Arrays.asList(typeList);
@@ -80,6 +81,9 @@ public class NotificationListSearchFilters {
     public void byActive(boolean showActive) {this.showActive = showActive;
     }
 
+    public void byAdminView(boolean adminView) {this.adminView = adminView;
+    }
+
     public List<NotificationType> getTypeList() {
         return types;
     }
@@ -109,6 +113,9 @@ public class NotificationListSearchFilters {
     }
     public boolean getShowActive() {
         return showActive;
+    }
+    public boolean getAdminView() {
+        return adminView;
     }
 
     @Override

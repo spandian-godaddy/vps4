@@ -102,6 +102,10 @@ public class JdbcNotificationService implements NotificationService {
         }
         buildDateQuery(searchFilters.getValidOn(), searchFilters.getValidUntil(), filtersQuery, filterValues);
 
+        if(!searchFilters.getAdminView()){
+            // if adminView is true then show all notifications, else show only customer's notifications
+            filtersQuery.append(" and n.support_only = false ");
+        }
 
         if(searchFilters.getTypeList().size()>0) {
             String whereInClause = "  and nt.type IN (%s)";
@@ -190,8 +194,10 @@ public class JdbcNotificationService implements NotificationService {
     public void addFilterToNotification(UUID notificationId, List<NotificationFilter> filters) {
         for (NotificationFilter filter : filters) {
             String filterValues  = String.join(",", filter.filterValue);
-            Sql.with(dataSource).exec("INSERT INTO notification_filter (notification_id, filter_type_id, filter_value) VALUES (?, ?, string_to_array(?,','));", null,
-                    notificationId, filter.filterType.getFilterTypeId(), filterValues );
+            Sql.with(dataSource).exec("INSERT INTO notification_filter (notification_id, filter_type_id, filter_value) VALUES (?, ?, string_to_array(?,',')) " +
+                            "ON CONFLICT (notification_id, filter_type_id) DO UPDATE SET filter_value = EXCLUDED.filter_value WHERE " +
+                            "notification_filter.notification_id = EXCLUDED.notification_id AND notification_filter.filter_type_id = EXCLUDED.filter_type_id;", null,
+                    notificationId, filter.filterType.getFilterTypeId(), filterValues);
         }
     }
 

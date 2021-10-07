@@ -22,9 +22,11 @@ import com.godaddy.vps4.vm.VirtualMachine;
 import com.godaddy.vps4.vm.VirtualMachineService;
 import com.godaddy.vps4.web.notification.NotificationsModule;
 import com.godaddy.vps4.web.notification.NotificationsResource;
+import com.godaddy.vps4.web.security.GDUser;
 import com.google.inject.AbstractModule;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
+import com.google.inject.Provides;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.MockitoAnnotations;
@@ -55,6 +57,7 @@ public class VmNotificationResourceTest {
     private VirtualMachineService virtualMachineService = mock(VirtualMachineService.class);
     private CreditService creditService = mock(CreditService.class);
     private NotificationService notificationService = mock(NotificationService.class);
+    private GDUser user = mock(GDUser.class);
     private VirtualMachineCredit dedCredit;
     private HashMap<String,String> planFeatures = new HashMap<>();
     private UUID vmId = UUID.randomUUID();
@@ -62,12 +65,12 @@ public class VmNotificationResourceTest {
     private Long hfsVmId = 42L;
     private VirtualMachine vps4Vm = new VirtualMachine();
     private VmExtendedInfo vmExtendedInfoMock = new VmExtendedInfo();
+    private Notification notification = new Notification();
 
     private Injector injector = Guice.createInjector(new DatabaseModule(),
             new SecurityModule(),
             new NotificationsModule(),
             new AbstractModule() {
-
                 @Override
                 public void configure() {
                     bind(NotificationsResource.class).toInstance(notificationsResource);
@@ -75,6 +78,10 @@ public class VmNotificationResourceTest {
                     bind(NotificationService.class).to(JdbcNotificationService.class);
                     bind(CreditService.class).toInstance(creditService);
                     bind(VirtualMachineService.class).toInstance(virtualMachineService);
+                }
+                @Provides
+                public GDUser provideUser() {
+                    return user;
                 }
             });
 
@@ -103,7 +110,6 @@ public class VmNotificationResourceTest {
         ServerSpec spec = new ServerSpec();
         spec.tier = 30;
         vps4Vm.spec = spec;
-        when(vmResource.getVm(vmId)).thenReturn(vps4Vm);
 
         Vm hfsVm = new Vm();
         hfsVm.vmId = hfsVmId;
@@ -111,14 +117,12 @@ public class VmNotificationResourceTest {
         hfsVm.running = true;
         hfsVm.useable = true;
         hfsVm.resourceId = "ns3210123.ip-123-45-67.eu";
-        when(vmResource.getVmFromVmVertical(hfsVmId)).thenReturn(hfsVm);
 
         vmExtendedInfoMock.provider = "nocfox";
         vmExtendedInfoMock.resource = "openstack";
         Extended extendedMock = new Extended();
         extendedMock.hypervisorHostname = "n3plztncldhv001-02.prod.ams3.gdg";
         vmExtendedInfoMock.extended = extendedMock;
-        Notification notification = new Notification();
         NotificationExtendedDetails notificationExtendedDetails = new NotificationExtendedDetails();
         notificationExtendedDetails.start = null;
         notificationExtendedDetails.end = null;
@@ -140,21 +144,25 @@ public class VmNotificationResourceTest {
                 .withResellerID("1")
                 .build();
 
-        when(virtualMachineService.getVirtualMachine(vmId)).thenReturn(vps4Vm);
+        when(vmResource.getVm(vmId)).thenReturn(vps4Vm);
+        when(vmResource.getVmFromVmVertical(hfsVmId)).thenReturn(hfsVm);
         when(notificationService.getNotifications(anyObject())).thenReturn(null);
         when(getNotificationsResource().getNotificationsBasedOnFilters
                 (eq(Arrays.asList(Long.toString(vps4Vm.image.imageId))),
                         anyList(),
-                        any(), anyObject(), anyObject(),
+                        any(), 
+                        anyObject(),
+                        anyObject(),
                         anyList(),
                         eq(Arrays.asList(Integer.toString(vps4Vm.spec.tier))),
                         eq(Arrays.asList(Integer.toString(vps4Vm.image.serverType.platform.getplatformId()))),
                         eq(Arrays.asList(vps4Vm.vmId.toString())),
+                        anyBoolean(),
                         anyBoolean())).thenReturn(Arrays.asList(notification));
         when(creditService.getVirtualMachineCredit(any())).thenReturn(credit);
         when(vmResource.getVmExtendedInfoFromVmVertical(hfsVmId)).thenReturn(vmExtendedInfoMock);
+        when(user.role()).thenReturn(GDUser.Role.CUSTOMER);
     }
-
 
     @Test
     public void verifyNotificationResourceIsCalled() {
@@ -164,11 +172,14 @@ public class VmNotificationResourceTest {
         verify(notificationsResource).getNotificationsBasedOnFilters(
                 eq(Arrays.asList(Long.toString(vps4Vm.image.imageId))),
                 anyList(),
-                any(), anyObject(), anyObject(),
+                any(),
+                anyObject(),
+                anyObject(),
                 anyList(),
                 eq(Arrays.asList(Integer.toString(vps4Vm.spec.tier))),
                 eq(Arrays.asList(Integer.toString(vps4Vm.image.serverType.platform.getplatformId()))),
                 eq(Arrays.asList(vps4Vm.vmId.toString())),
+                anyBoolean(),
                 anyBoolean());
     }
 
@@ -180,6 +191,70 @@ public class VmNotificationResourceTest {
     }
 
     @Test
+    public void testGetNotificationCallsCustomerView() {
+        when(user.role()).thenReturn(GDUser.Role.CUSTOMER);
+
+        getVmNotificationResource().getVmNotifications(vmId, "2008-08-05T23:55:02.162126Z",
+                "3021-08-05T23:55:02.162126Z");
+        verify(notificationsResource).getNotificationsBasedOnFilters(
+                eq(Arrays.asList(Long.toString(vps4Vm.image.imageId))),
+                anyList(),
+                any(), 
+                anyObject(),
+                anyObject(),
+                anyList(),
+                eq(Arrays.asList(Integer.toString(vps4Vm.spec.tier))),
+                eq(Arrays.asList(Integer.toString(vps4Vm.image.serverType.platform.getplatformId()))),
+                eq(Arrays.asList(vps4Vm.vmId.toString())),
+                anyBoolean(),
+                eq(false));
+    }
+
+
+    @Test
+    public void testGetNotificationCallsAdminViewForAdmin() {
+        when(user.role()).thenReturn(GDUser.Role.ADMIN);
+
+        getVmNotificationResource().getVmNotifications(vmId, "2008-08-05T23:55:02.162126Z",
+                "3021-08-05T23:55:02.162126Z");
+        verify(notificationsResource).getNotificationsBasedOnFilters(
+                eq(Arrays.asList(Long.toString(vps4Vm.image.imageId))),
+                anyList(),
+                any(), 
+                anyObject(),
+                anyObject(),
+                anyList(),
+                eq(Arrays.asList(Integer.toString(vps4Vm.spec.tier))),
+                eq(Arrays.asList(Integer.toString(vps4Vm.image.serverType.platform.getplatformId()))),
+                eq(Arrays.asList(vps4Vm.vmId.toString())),
+                anyBoolean(),
+                eq(true));
+    }
+
+
+
+    @Test
+    public void testGetNotificationCallsAdminViewForHS() {
+        when(user.role()).thenReturn(GDUser.Role.HS_AGENT);
+
+        getVmNotificationResource().getVmNotifications(vmId, "2008-08-05T23:55:02.162126Z",
+                "3021-08-05T23:55:02.162126Z");
+        verify(notificationsResource).getNotificationsBasedOnFilters(
+                eq(Arrays.asList(Long.toString(vps4Vm.image.imageId))),
+                anyList(),
+                any(), 
+                anyObject(),
+                anyObject(),
+                anyList(),
+                eq(Arrays.asList(Integer.toString(vps4Vm.spec.tier))),
+                eq(Arrays.asList(Integer.toString(vps4Vm.image.serverType.platform.getplatformId()))),
+                eq(Arrays.asList(vps4Vm.vmId.toString())),
+                anyBoolean(),
+                eq(true));
+    }
+
+
+    @Test
     public void testIfDed4DoNotPullHypervisor() {
         when(creditService.getVirtualMachineCredit(any())).thenReturn(dedCredit);
         getVmNotificationResource().getVmNotifications(vmId, "2008-08-05T23:55:02.162126Z",
@@ -188,11 +263,14 @@ public class VmNotificationResourceTest {
         verify(notificationsResource).getNotificationsBasedOnFilters(
                 eq(Arrays.asList(Long.toString(vps4Vm.image.imageId))),
                 anyList(),
-                any(), anyObject(), anyObject(),
+                any(), 
+                anyObject(),
+                anyObject(),
                 eq(Collections.emptyList()),
                 eq(Arrays.asList(Integer.toString(vps4Vm.spec.tier))),
                 eq(Arrays.asList(Integer.toString(vps4Vm.image.serverType.platform.getplatformId()))),
                 eq(Arrays.asList(vps4Vm.vmId.toString())),
+                anyBoolean(),
                 anyBoolean());
     }
 }

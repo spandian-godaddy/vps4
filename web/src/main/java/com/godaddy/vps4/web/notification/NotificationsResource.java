@@ -78,7 +78,10 @@ public class NotificationsResource {
             @ApiParam(value = "A list of tier to filter on", required = false) @QueryParam("tier") List<String> tier,
             @ApiParam(value = "A list of platforms to filter on", required = false) @QueryParam("platformId") List<String> platformId,
             @ApiParam(value = "A list of vmIds to filter on", required = false) @QueryParam("vmId") List<String> vmId,
-            @DefaultValue("true") @QueryParam("showActive") boolean showActive) {
+            @DefaultValue("true") @QueryParam("showActive") boolean showActive,
+            @ApiParam(value = "Whether to show all notifications including support only ones", required = false)
+            @DefaultValue("false") @QueryParam("adminView") boolean adminView)
+    {
         List<NotificationType> enumTypeList = new ArrayList<>();
         if(type != null) {
             enumTypeList = type.stream()
@@ -97,6 +100,7 @@ public class NotificationsResource {
         searchFilters.byDateRange(startTime, endTime);
         searchFilters.byActive(showActive);
         searchFilters.byVmId(vmId);
+        searchFilters.byAdminView(adminView);
         return notificationService.getNotifications(searchFilters);
     }
 

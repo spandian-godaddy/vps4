@@ -59,6 +59,9 @@ public class VmNotificationResource {
                                                  @ApiParam(value = "end date in UTC, Example: 2007-12-03T10:15:30.00Z", required = false) @QueryParam("endDate") String endDate) {
         Instant validOnDate = beginDate == null ? Instant.now() : validateAndReturnDateInstant(beginDate);
         Instant validUntilDate = endDate == null ? Instant.now() : validateAndReturnDateInstant(endDate);
+        boolean isSupport = (user.role().equals(GDUser.Role.HS_AGENT) ||
+                user.role().equals(GDUser.Role.ADMIN) ||
+                user.role().equals(GDUser.Role.HS_LEAD)) ? true : false;
 
         VirtualMachine virtualMachine = vmResource.getVm(vmId);
 
@@ -79,7 +82,8 @@ public class VmNotificationResource {
                 Arrays.asList(Integer.toString(virtualMachine.spec.tier)),
                 Arrays.asList(Integer.toString(virtualMachine.image.serverType.platform.getplatformId())),
                 Arrays.asList((virtualMachine.vmId).toString()),
-                false
+                false,
+                isSupport
         );
         return listNotifications;
     }
