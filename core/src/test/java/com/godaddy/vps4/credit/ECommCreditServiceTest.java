@@ -54,6 +54,7 @@ public class ECommCreditServiceTest {
 
     // Initial product meta data
     private UUID vmId = UUID.randomUUID();
+    private UUID customerId = UUID.randomUUID();
     private String provisionDate = Instant.now().toString();
     private String dcId = "3";
 
@@ -65,6 +66,7 @@ public class ECommCreditServiceTest {
         account.product = "vps4";
         account.shopper_id = "uniq-shopper-id";
         account.status = Account.Status.active;
+        account.customer_id = customerId.toString();
         account.plan_features = new HashMap<>();
         account.plan_features.put("tier", "10");
         account.plan_features.put("managed_level", "1");

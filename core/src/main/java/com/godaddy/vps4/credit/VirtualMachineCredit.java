@@ -38,6 +38,7 @@ public class VirtualMachineCredit {
     private Instant purchasedAt;
     private boolean abuseSuspendedFlag;
     private boolean billingSuspendedFlag;
+    private UUID customerId;
 
     private VirtualMachineCredit() {
     }
@@ -180,6 +181,10 @@ public class VirtualMachineCredit {
         return billingSuspendedFlag;
     }
 
+    public UUID getCustomerId() {
+        return customerId;
+    }
+
     public static class Builder {
         private Map<String, String> planFeatures;
         private Map<String, String> productMeta;
@@ -188,6 +193,7 @@ public class VirtualMachineCredit {
         private String resellerId;
         private AccountStatus accountStatus;
         private final DataCenterService dataCenterService;
+        private UUID customerId;
 
         public Builder(DataCenterService dataCenterService) {
             this.dataCenterService = dataCenterService;
@@ -220,6 +226,11 @@ public class VirtualMachineCredit {
 
         public Builder withAccountStatus(AccountStatus accountStatus) {
             this.accountStatus = AccountStatus.valueOf(accountStatus.name().toUpperCase());
+            return this;
+        }
+
+        public Builder withCustomerID(String customerId) {
+            this.customerId = customerId != null ? UUID.fromString(customerId) : null;
             return this;
         }
 
@@ -282,6 +293,7 @@ public class VirtualMachineCredit {
             credit.shopperId = this.shopperId;
             credit.accountStatus = this.accountStatus;
             credit.resellerId = this.resellerId;
+            credit.customerId = this.customerId;
 
             return credit;
         }

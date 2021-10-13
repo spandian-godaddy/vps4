@@ -17,6 +17,8 @@ import javax.ws.rs.core.Response;
 import com.godaddy.hfs.cpanel.CPanelAction;
 import com.godaddy.hfs.cpanel.CPanelLicense;
 import com.godaddy.hfs.cpanel.CPanelService;
+import gdg.hfs.vhfs.ecomm.Reinstatement;
+import gdg.hfs.vhfs.ecomm.Suspension;
 import org.joda.time.DateTime;
 import org.mockito.Mockito;
 
@@ -1297,6 +1299,21 @@ public class HfsMockModule extends AbstractModule {
 
             @Override
             public Response setCommonName(String arg0, ECommDataCache arg1) {
+                return null;
+            }
+
+            @Override
+            public Response suspend(String s, String s1, Suspension suspension) throws Exception {
+                return null;
+            }
+
+            @Override
+            public Response reinstate(String s, String s1, Reinstatement reinstatement) throws Exception {
+                return null;
+            }
+
+            @Override
+            public Account entitlementJournal(String s) {
                 return null;
             }
 

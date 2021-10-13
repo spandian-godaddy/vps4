@@ -103,6 +103,7 @@ public class ECommCreditService implements CreditService {
                     .withAccountStatus(AccountStatus.valueOf(account.status.name().toUpperCase()))
                     .withResellerID(account.reseller_id)
                     .withShopperID(getShopperId(account))
+                    .withCustomerID(account.customer_id)
                     .build();
             logger.info("Credit: {}", credit.toString());
             return credit;
