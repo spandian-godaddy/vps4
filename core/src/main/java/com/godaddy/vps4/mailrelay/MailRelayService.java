@@ -64,16 +64,7 @@ public class MailRelayService {
 
     }
 
-    public static class CachedMailRelayUsage {
-            public MailRelay relayUsage;
-            public CachedMailRelayUsage(){
-            }
-            public CachedMailRelayUsage(MailRelay relayUsage){
-                this.relayUsage = relayUsage;
-            }
-        }
-
-        public static class CachedMailRelayHistory {
+    public static class CachedMailRelayHistory {
             public List<MailRelayHistory> relayHistory;
             public CachedMailRelayHistory(){
             }

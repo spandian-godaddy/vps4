@@ -43,7 +43,7 @@ public class CacheSettings {
                     .setStoreByValue(true)
                     .setTypes(String.class, CachedMailRelayHistory.class)
                     .setExpiryPolicyFactory(
-                            AccessedExpiryPolicy.factoryOf(Duration.ONE_DAY))
+                            AccessedExpiryPolicy.factoryOf(Duration.FIVE_MINUTES))
                     .setStatisticsEnabled(false));
 
         cacheManager.createCache(CacheName.PANOPTA_METRIC_GRAPH,
