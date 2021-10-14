@@ -1,0 +1,1 @@
+UPDATE notification_type SET type='NEW_MESSAGE_CENTER' WHERE type_id=3;

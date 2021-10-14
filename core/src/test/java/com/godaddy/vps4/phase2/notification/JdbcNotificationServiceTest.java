@@ -232,7 +232,7 @@ public class JdbcNotificationServiceTest {
         assertNotNull(notifications);
         assertEquals(1, notifications.size());
 
-        searchFilters.byType(NotificationType.NEW_FEATURE_OPCACHE);
+        searchFilters.byType(NotificationType.NEW_MESSAGE_CENTER);
         searchFilters.byTier("4000");
         searchFilters.byAdminView(true);
         List<Notification> notificationsWrong = injector.getInstance(NotificationService.class).getNotifications(searchFilters);
