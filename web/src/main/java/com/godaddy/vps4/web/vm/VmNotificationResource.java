@@ -57,6 +57,7 @@ public class VmNotificationResource {
     public List<Notification> getVmNotifications(@PathParam("vmId") UUID vmId,
                                                  @ApiParam(value = "begin date in UTC, Example: 2007-12-03T10:15:30.00Z", required = false) @QueryParam("beginDate") String beginDate,
                                                  @ApiParam(value = "end date in UTC, Example: 2007-12-03T10:15:30.00Z", required = false) @QueryParam("endDate") String endDate) {
+        logger.info("Getting notifications for vmId:  {}", vmId);
         Instant validOnDate = beginDate == null ? Instant.now() : validateAndReturnDateInstant(beginDate);
         Instant validUntilDate = endDate == null ? Instant.now() : validateAndReturnDateInstant(endDate);
         boolean isSupport = (user.role().equals(GDUser.Role.HS_AGENT) ||
@@ -64,6 +65,7 @@ public class VmNotificationResource {
                 user.role().equals(GDUser.Role.HS_LEAD)) ? true : false;
 
         VirtualMachine virtualMachine = vmResource.getVm(vmId);
+        List<Notification> listNotifications;
 
         VirtualMachineCredit virtualMachineCredit = creditService.getVirtualMachineCredit(virtualMachine.orionGuid);
         String hypervisorHostname = null;
@@ -71,20 +73,25 @@ public class VmNotificationResource {
             VmExtendedInfo vmExtendedInfo = vmResource.getVmExtendedInfoFromVmVertical(virtualMachine.hfsVmId);
             if (vmExtendedInfo != null) hypervisorHostname = vmExtendedInfo.extended.hypervisorHostname;
         }
-
-        List<Notification> listNotifications = notificationsResource.getNotificationsBasedOnFilters(
-                Arrays.asList(Long.toString(virtualMachine.image.imageId)),
-                Arrays.asList(virtualMachineCredit.getResellerId()),
-                Collections.emptyList(),
-                validOnDate.toString(),
-                validUntilDate.toString(),
-                hypervisorHostname == null ? Collections.emptyList() : Arrays.asList(hypervisorHostname),
-                Arrays.asList(Integer.toString(virtualMachine.spec.tier)),
-                Arrays.asList(Integer.toString(virtualMachine.image.serverType.platform.getplatformId())),
-                Arrays.asList((virtualMachine.vmId).toString()),
-                false,
-                isSupport
-        );
+        try {
+            listNotifications = notificationsResource.getNotificationsBasedOnFilters(
+                    Arrays.asList(Long.toString(virtualMachine.image.imageId)),
+                    Arrays.asList(virtualMachineCredit.getResellerId()),
+                    Collections.emptyList(),
+                    validOnDate.toString(),
+                    validUntilDate.toString(),
+                    hypervisorHostname == null ? Collections.emptyList() : Arrays.asList(hypervisorHostname),
+                    Arrays.asList(Integer.toString(virtualMachine.spec.tier)),
+                    Arrays.asList(Integer.toString(virtualMachine.image.serverType.platform.getplatformId())),
+                    Arrays.asList((virtualMachine.vmId).toString()),
+                    false,
+                    isSupport
+            );
+        }
+        catch (Exception ex) {
+            logger.warn("Exception encountered when attempting to get notifications for vmId:  {} , Exception: {} ", vmId, ex);
+            throw ex;
+        }
         return listNotifications;
     }
 }
