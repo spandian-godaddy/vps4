@@ -32,6 +32,7 @@ import com.godaddy.vps4.appmonitors.SnapshotActionData;
 import com.godaddy.vps4.appmonitors.VmActionData;
 import com.godaddy.vps4.jdbc.DatabaseCluster;
 import com.godaddy.vps4.jdbc.ResultSubset;
+import com.godaddy.vps4.snapshot.SnapshotType;
 import com.godaddy.vps4.util.ActionListFilters;
 import com.godaddy.vps4.vm.Action;
 import com.godaddy.vps4.vm.ActionService;
@@ -152,7 +153,10 @@ public class VmActionsMonitorResource {
     @ApiOperation(value = "Find all snapshot ids that are pending in progress or error status for backup vm action for longer than m minutes, default 2 hours",
             notes = "Find all snapshot id's that are pending backup vm action for longer than m minutes, default 3 hours")
     public List<SnapshotActionData> getBackupPendingActions(@QueryParam("thresholdInMinutes") @DefaultValue("180") long thresholdInMinutes) {
-        return monitorService.getVmsBySnapshotActions(thresholdInMinutes, ActionStatus.IN_PROGRESS, ActionStatus.ERROR);
+        return monitorService.getVmsBySnapshotActions(thresholdInMinutes,
+                                                      SnapshotType.AUTOMATIC,
+                                                      ActionStatus.IN_PROGRESS,
+                                                      ActionStatus.ERROR);
     }
 
     @GET

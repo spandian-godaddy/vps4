@@ -39,6 +39,7 @@ import com.godaddy.vps4.appmonitors.VmActionData;
 import com.godaddy.vps4.appmonitors.HvBlockingSnapshotsData;
 import com.godaddy.vps4.jdbc.DatabaseCluster;
 import com.godaddy.vps4.jdbc.ResultSubset;
+import com.godaddy.vps4.snapshot.SnapshotType;
 import com.godaddy.vps4.util.ActionListFilters;
 import com.godaddy.vps4.vm.Action;
 import com.godaddy.vps4.vm.ActionService;
@@ -156,7 +157,11 @@ public class VmActionsMonitorResourceTest {
 
     @Test
     public void testGetBackupPendingActions() {
-        when(monitorService.getVmsBySnapshotActions(180L, ActionStatus.IN_PROGRESS, ActionStatus.ERROR)).thenReturn(expectedSnapshotActionData);
+        when(monitorService.getVmsBySnapshotActions(180L,
+                                                    SnapshotType.AUTOMATIC,
+                                                    ActionStatus.IN_PROGRESS,
+                                                    ActionStatus.ERROR))
+                .thenReturn(expectedSnapshotActionData);
         List<SnapshotActionData> actualSnapshotActionData = vmActionsMonitorResource.getBackupPendingActions(180L);
         Assert.assertNotNull(actualSnapshotActionData);
         Assert.assertEquals(expectedSnapshotActionData.size(), actualSnapshotActionData.size());

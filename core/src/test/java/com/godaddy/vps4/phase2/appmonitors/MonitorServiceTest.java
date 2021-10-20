@@ -152,13 +152,13 @@ public class MonitorServiceTest {
     }
 
     @Test
-    public void testGetVmsBySnapshotActionsIgnoresOnDemandSnapshots() {
+    public void testGetVmsBySnapshotActionsIncludesOnDemandSnapshots() {
         Snapshot testSnapshot = new Snapshot(
                 UUID.randomUUID(),
                 vm4.projectId,
                 vm4.vmId,
                 "fake-snapshot-1",
-                SnapshotStatus.ERROR,
+                SnapshotStatus.LIVE,
                 Instant.now(),
                 null,
                 "fake-imageid",
@@ -170,7 +170,33 @@ public class MonitorServiceTest {
 
         List<SnapshotActionData> problemVms = provisioningMonitorService.getVmsBySnapshotActions(120, ActionStatus.IN_PROGRESS, ActionStatus.ERROR);
         assertNotNull(problemVms);
-        assertTrue(String.format("Expected count of problem VM's does not match actual count of {%s} VM's.", problemVms.size()), problemVms.size() == 2);
+        assertEquals(3, problemVms.size());
+    }
+
+    @Test
+    public void testGetVmsBySnapshotActionsFiltersSnapshotTypes() {
+        Snapshot testSnapshot = new Snapshot(
+                UUID.randomUUID(),
+                vm4.projectId,
+                vm4.vmId,
+                "fake-snapshot-1",
+                SnapshotStatus.LIVE,
+                Instant.now(),
+                null,
+                "fake-imageid",
+                (int) (Math.random() * 100000),
+                SnapshotType.ON_DEMAND
+        );
+        SqlTestData.insertTestSnapshot(testSnapshot, reportsDataSource);
+        createSnapshotActionWithDate(testSnapshot.id, ActionType.CREATE_SNAPSHOT, ActionStatus.ERROR, Instant.now().minus(Duration.ofMinutes(125)), reportsDataSource);
+
+        List<SnapshotActionData> problemVms =
+                provisioningMonitorService.getVmsBySnapshotActions(120,
+                                                                   SnapshotType.AUTOMATIC,
+                                                                   ActionStatus.IN_PROGRESS,
+                                                                   ActionStatus.ERROR);
+        assertNotNull(problemVms);
+        assertEquals(2, problemVms.size());
     }
 
     @Test

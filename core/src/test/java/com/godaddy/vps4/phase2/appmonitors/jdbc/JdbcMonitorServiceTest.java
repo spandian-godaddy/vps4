@@ -21,7 +21,7 @@ public class JdbcMonitorServiceTest {
     JdbcMonitorService jdbcMonitorService;
 
     @Before
-    public void setupTests() throws SQLException {
+    public void setupTests() {
         if (dataSource == null) {
             dataSource = injector.getInstance(DataSource.class);
         }

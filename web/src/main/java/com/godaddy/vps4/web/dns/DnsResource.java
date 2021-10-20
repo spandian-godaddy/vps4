@@ -1,6 +1,5 @@
 package com.godaddy.vps4.web.dns;
 
-import static com.godaddy.vps4.web.util.Commands.execute;
 import static com.godaddy.vps4.web.util.RequestValidation.validateNoConflictingActions;
 import static com.godaddy.vps4.web.util.RequestValidation.validateServerIsActive;
 
@@ -37,6 +36,7 @@ import com.godaddy.vps4.web.Vps4Api;
 import com.godaddy.vps4.web.Vps4Exception;
 import com.godaddy.vps4.web.security.BlockServerType;
 import com.godaddy.vps4.web.security.GDUser;
+import com.godaddy.vps4.web.util.Commands;
 import com.godaddy.vps4.web.vm.VmResource;
 
 import gdg.hfs.orchestration.CommandService;
@@ -121,8 +121,7 @@ public class DnsResource {
                                                    getRequestAsJsonString(reverseDnsNameRequest), user.getUsername());
         logger.info("Action id to create reverse dns name: {}", actionId);
         reverseDnsNameRequest.setActionId(actionId);
-        CommandState command =
-                execute(commandService, actionService, "Vps4CreateDnsPtrRecord", reverseDnsNameRequest);
+        CommandState command = Commands.execute(commandService, actionService, "Vps4CreateDnsPtrRecord", reverseDnsNameRequest);
         logger.info("running {} with command id {}", command.name, command.commandId);
         return new VmAction(actionService.getAction(actionId), user.isEmployee());
     }

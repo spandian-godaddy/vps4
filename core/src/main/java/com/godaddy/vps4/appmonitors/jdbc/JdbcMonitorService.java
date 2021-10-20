@@ -7,6 +7,7 @@ import java.sql.SQLException;
 import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 import javax.sql.DataSource;
 
@@ -18,35 +19,33 @@ import com.godaddy.vps4.appmonitors.MonitorService;
 import com.godaddy.vps4.appmonitors.ActionCheckpoint;
 import com.godaddy.vps4.appmonitors.SnapshotActionData;
 import com.godaddy.vps4.jdbc.Vps4ReportsDataSource;
+import com.godaddy.vps4.snapshot.SnapshotType;
 import com.godaddy.vps4.util.TimestampUtils;
 import com.godaddy.vps4.vm.ActionStatus;
 import com.godaddy.vps4.vm.ActionType;
 import com.google.inject.Inject;
 
 public class JdbcMonitorService implements MonitorService {
-
     private final DataSource dataSource;
 
-    private final static String selectVmsByAutomaticSnapshotActionAndDuration =
-            "SELECT sna.id, sna.command_id, sna.snapshot_id, action_type.type as action_type, " +
-            "action_status.status as action_status, sna.created as action_created_date " +
-            "FROM snapshot_action sna " +
-            "JOIN action_type ON sna.action_type_id=action_type.type_id " +
-            "JOIN action_status ON sna.status_id=action_status.status_id " +
-            "JOIN snapshot ON sna.snapshot_id=snapshot.id " +
-            "WHERE sna.created < now_utc() " +
-            "AND sna.status_id IN ( " +
-            "  SELECT status_id FROM action_status WHERE status INCLAUSE " +
-            ") AND snapshot.status NOT IN ( " +
-            "  SELECT snapshot_status.status_id FROM snapshot_status WHERE snapshot_status.status in (" +
-            "'CANCELLED', 'ERROR', 'ERROR_RESCHEDULED', 'LIMIT_RESCHEDULED', 'DESTROYED', 'AGENT_DOWN'" +
-            ") " +
-            ") AND snapshot.snapshot_type_id = ( " +
-            "  SELECT snapshot_type.snapshot_type_id FROM snapshot_type where snapshot_type.snapshot_type = 'AUTOMATIC' " +
-            ") " +
-            "AND now_utc() - sna.created >= ";
-
-    private final static String orderBySnapshotCreated = "ORDER BY sna.created ASC; ";
+    private String buildSnapshotActionQuery(String actionStatuses, long thresholdInMinutes, String... filters) {
+        return "SELECT sna.id, sna.command_id, sna.snapshot_id, action_type.type as action_type, " +
+                "action_status.status as action_status, sna.created as action_created_date " +
+                "FROM snapshot_action sna " +
+                "JOIN action_type ON sna.action_type_id=action_type.type_id " +
+                "JOIN action_status ON sna.status_id=action_status.status_id " +
+                "JOIN snapshot ON sna.snapshot_id=snapshot.id " +
+                "WHERE sna.status_id IN ( " +
+                "  SELECT status_id FROM action_status WHERE status IN ('" + actionStatuses + "') " +
+                ") " +
+                "AND snapshot.status NOT IN ( " +
+                "  SELECT snapshot_status.status_id FROM snapshot_status WHERE snapshot_status.status IN ( " +
+                "    'CANCELLED', 'ERROR', 'ERROR_RESCHEDULED', 'LIMIT_RESCHEDULED', 'DESTROYED', 'AGENT_DOWN' " +
+                "  ) " +
+                ") " +
+                "AND now_utc() - sna.created >= INTERVAL '" + thresholdInMinutes + " minutes' " +
+                String.join(" ", filters) + " ORDER BY sna.created ASC";
+    }
 
     private final static String selectVmsFilteredByNullBackupJob = "SELECT vm.vm_id, vm.valid_on, * FROM virtual_machine vm " +
             "JOIN vm_action USING (vm_id) " +
@@ -67,14 +66,23 @@ public class JdbcMonitorService implements MonitorService {
 
     @Override
     public List<SnapshotActionData> getVmsBySnapshotActions(long thresholdInMinutes, ActionStatus... status) {
-        String interval = "INTERVAL '" + thresholdInMinutes + " minutes'  ";
-        String[] actionStatuses = stream(status).map(ActionStatus::name).toArray(String[]::new);
-        String inClause = "IN ('" + String.join("','", actionStatuses) + "')";
-        String selectVmsBySnapshotActionAndDurationWithInClause = selectVmsByAutomaticSnapshotActionAndDuration.replaceFirst("INCLAUSE", inClause);
-        String selectDateOrderedVmsBySnapshotActionAndDuration = selectVmsBySnapshotActionAndDurationWithInClause + interval + orderBySnapshotCreated;
+        String actionStatuses = stream(status).map(ActionStatus::name).collect(Collectors.joining("','"));
 
-        return Sql.with(dataSource)
-                .exec(selectDateOrderedVmsBySnapshotActionAndDuration, Sql.listOf(this::mapSnapshotActionData));
+        String query = buildSnapshotActionQuery(actionStatuses, thresholdInMinutes);
+        return Sql.with(dataSource).exec(query, Sql.listOf(this::mapSnapshotActionData));
+    }
+
+    @Override
+    public List<SnapshotActionData> getVmsBySnapshotActions(long thresholdInMinutes,
+                                                            SnapshotType type,
+                                                            ActionStatus... status) {
+        String actionStatuses = stream(status).map(ActionStatus::name).collect(Collectors.joining("','"));
+        String typeFilter = "AND snapshot.snapshot_type_id IN ( " +
+                "SELECT snapshot_type_id FROM snapshot_type WHERE snapshot_type IN ('" + type.name() + "') " +
+                ")";
+
+        String query = buildSnapshotActionQuery(actionStatuses, thresholdInMinutes, typeFilter);
+        return Sql.with(dataSource).exec(query, Sql.listOf(this::mapSnapshotActionData));
     }
 
     private SnapshotActionData mapSnapshotActionData(ResultSet rs) throws SQLException {

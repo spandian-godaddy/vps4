@@ -1,6 +1,6 @@
 package com.godaddy.vps4.web.util;
 
-import java.util.Arrays;
+import java.util.Collections;
 import java.util.UUID;
 
 import org.slf4j.Logger;
@@ -15,18 +15,18 @@ import gdg.hfs.orchestration.CommandService;
 import gdg.hfs.orchestration.CommandSpec;
 import gdg.hfs.orchestration.CommandState;
 
-public class Commands {
+import net.minidev.json.JSONObject;
 
+public class Commands {
     private static final Logger logger = LoggerFactory.getLogger(Commands.class);
 
     public static CommandState execute(CommandService commandService, String commandName, Object request) {
-
         CommandGroupSpec groupSpec = new CommandGroupSpec();
 
         CommandSpec commandSpec = new CommandSpec();
         commandSpec.command = commandName;
         commandSpec.request = request;
-        groupSpec.commands = Arrays.asList(commandSpec);
+        groupSpec.commands = Collections.singletonList(commandSpec);
 
         CommandState command = commandService.executeCommand(groupSpec);
 
@@ -41,8 +41,19 @@ public class Commands {
     }
 
     public static CommandState execute(CommandService commandService, ActionService actionService, String commandName, ActionRequest request) {
-        CommandState command = execute(commandService, commandName, request);
-        actionService.tagWithCommand(request.getActionId(), command.commandId);
+        CommandState command = null;
+
+        try {
+            command = execute(commandService, commandName, request);
+        } catch (Exception e) {
+            JSONObject response = new JSONObject();
+            response.put("message", "Failed to execute command");
+            actionService.failAction(request.getActionId(), response.toJSONString(), null);
+        }
+
+        if (command != null) {
+            actionService.tagWithCommand(request.getActionId(), command.commandId);
+        }
         return command;
     }
 
