@@ -101,11 +101,14 @@ public class VmOutageResource {
 
         VmMetric vmMetric = validateAndReturnEnumValue(VmMetric.class, req.metric);
         Instant start = validatePanoptaDateAndReturnInstant(req.startDate);
-        validateNotDuplicate(vmId, vmMetric, req.panoptaOutageId);
+        try {
+            validateNotDuplicate(vmId, vmMetric, req.panoptaOutageId);
 
-        logger.info("New {} outage {} reported for VM {}", vmMetric.name(), req.panoptaOutageId, vmId);
-        int outageId = vmOutageService.newVmOutage(vmId, vmMetric, start, req.reason, req.panoptaOutageId);
-        return getVmOutageAndSendEmail(vmId, outageId, virtualMachine, "SendVmOutageEmail");
+            logger.info("New {} outage {} reported for VM {}", vmMetric.name(), req.panoptaOutageId, vmId);
+            int outageId = vmOutageService.newVmOutage(vmId, vmMetric, start, req.reason, req.panoptaOutageId);
+            return getVmOutageAndSendEmail(vmId, outageId, virtualMachine, "SendVmOutageEmail");
+        } catch (Exception ignored) {/* temporarily swallow exception due to Panopta bug with duplicate IDs */}
+        return null;
     }
 
     @POST

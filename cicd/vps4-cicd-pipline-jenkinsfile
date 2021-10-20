@@ -1,0 +1,265 @@
+import hudson.model.*
+import groovy.transform.Field
+
+@Field def VPS4_VERSION
+node("vps4-test-slave") {
+    try {
+        properties([
+                parameters([
+                        choice(choices: ["STAGE_DEPLOY", "PROD_DEPLOY", "DEV_DEPLOY",].join("\n"),
+                            defaultValue: "STAGE_DEPLOY",
+                            description: "Choosing STAGE_DEPLOY will promote the build to the staging environment. Choosing PROD_DEPLOY will promote the current build to production environment. Choosing DEV_DEPLOY will build and deploy the selected branch to dev ",
+                            name: "deployToEnv"
+                        )
+                ]),
+                buildDiscarder(logRotator(artifactDaysToKeepStr: '7', artifactNumToKeepStr: '', daysToKeepStr: '28', numToKeepStr: '')),
+        ])
+        if(params.deployToEnv ==  "STAGE_DEPLOY") {
+            setNextStage("BUILD")
+        } else if(params.deployToEnv == "PROD_DEPLOY") {
+            setNextStage("PROD_DEPLOY")
+        }
+        stage('Build') {
+            if (nextStage == "BUILD") {
+                git credentialsId: '0e6be54c-e8ae-42d2-b651-6758042e282b', url: 'https://github.secureserver.net/vps4/vps4.git'
+                build job: 'vps4'
+                load("/home/jenkins/vps4_latest_version.properties")
+                echo "vps4 version: ${VPS4_VERSION}"
+
+                setNextStage("TEST_DEPLOY")
+                slackSend(color: '#00CD48', message: "vps4 *BUILD* was successful. Job '${env.JOB_NAME} [${VPS4_VERSION}]' (${env.BUILD_URL})")
+            } else {
+                echo "Skipping Build"
+            }
+        }
+
+        // stage('Deploy to Dev') {
+        //     if (nextStage == "DEV_DEPLOY") {
+        //         build job: 'deployment/deploy_to_dev', parameters: [string(name: 'VPS4_VERSION', value: VPS4_VERSION)]
+        //         // preDeployToEnv("dev", "${VPS4_VERSION}")
+        //         productStampZk("dev", "vps4-web-${VPS4_VERSION}.noarch", "vps4-web")
+        //         productStampZk("dev", "vps4-message-consumer-${VPS4_VERSION}.noarch", "vps4-message-consumer")
+        //         productStampZk("dev", "vps4-orchestration-plugin-${VPS4_VERSION}.noarch", "hfs-engine", "/orchestration/serviceapi")
+        //         productStampZk("dev", "vps4-scheduler-${VPS4_VERSION}.noarch", "vps4-scheduler")
+        //         setNextStage("TEST_DEPLOY")
+        //         slackSend(color: '#00CD48', message: "vps4 *DEPLOY TO DEV* was SUCCESSFUL. Job '${env.JOB_NAME} [${VPS4_VERSION}]' (${env.BUILD_URL})")
+        //     } else {
+        //         echo "Skipping Deploy to Dev"
+        //     }
+        // }
+
+        stage("Deploy to Test") {
+            if (nextStage == "TEST_DEPLOY") {
+                build job: 'deployment/deploy_to_test', parameters: [string(name: 'VPS4_VERSION', value: VPS4_VERSION)]
+                // preDeployToEnv("test", "${VPS4_VERSION}")
+                productStampZk("test", "vps4-web-${VPS4_VERSION}.noarch", "vps4-web")
+                productStampZk("test", "vps4-message-consumer-${VPS4_VERSION}.noarch", "vps4-message-consumer")
+                productStampZk("test", "vps4-orchestration-plugin-${VPS4_VERSION}.noarch", "hfs-engine", "/orchestration/serviceapi")
+                productStampZk("test", "vps4-scheduler-${VPS4_VERSION}.noarch", "vps4-scheduler")
+                setNextStage("STAGE_DEPLOY")
+                slackSend(color: '#00CD48', message: "vps4 *DEPLOY TO TEST* was SUCCESSFUL. Job '${env.JOB_NAME} [${VPS4_VERSION}]' (${env.BUILD_URL})")
+            } else {
+                echo "Skipping Deploy to Test"
+            }
+        }
+        stage("Deploy to Stage") {
+            if (nextStage == "STAGE_DEPLOY") {
+                build job: 'deployment/deploy_to_stage', parameters: [string(name: 'VPS4_VERSION', value: VPS4_VERSION)]
+                // preDeployToEnv("stage", "${VPS4_VERSION}")
+                productStampZk("stage", "vps4-web-${VPS4_VERSION}.noarch", "vps4-web")
+                productStampZk("stage", "vps4-message-consumer-${VPS4_VERSION}.noarch", "vps4-message-consumer")
+                productStampZk("stage", "vps4-orchestration-plugin-${VPS4_VERSION}.noarch", "hfs-engine", "/orchestration/serviceapi")
+                productStampZk("stage", "vps4-scheduler-${VPS4_VERSION}.noarch", "vps4-scheduler")
+                setNextStage("STAGE_PHASE3")
+                slackSend(color: '#00CD48', message: "vps4 *DEPLOY TO STAGE* was SUCCESSFUL. Job '${env.JOB_NAME} [${VPS4_VERSION}]' (${env.BUILD_URL})")
+            } else {
+                echo "Skipping Deploy to Stage"
+            }
+        }
+
+        stage("Phase3 Stage") {
+            if (nextStage == "STAGE_PHASE3") {
+                timeout(time:45, unit:'MINUTES') {
+                    build job: 'stage_phase_3_test', parameters: [string(name: 'VPS4_VERSION', value: VPS4_VERSION)]
+                }
+                setNextStage("STAGING_DEPLOYMENT_COMPLETE")
+                slackSend(color: '#00CD48', message: "vps4 *PHASE 3 TESTS* in stage env were SUCCESSFUL. Job '${env.JOB_NAME} [${VPS4_VERSION}]' (${env.BUILD_URL})")
+            } else {
+                echo "Skipping Phase3 Stage"
+            }
+        }
+
+        stage("Deploy to Prod") {
+            if (nextStage == "PROD_DEPLOY") {
+                load("/home/jenkins/vps4_latest_version.properties")
+                echo "vps4 version: ${VPS4_VERSION}"
+
+                node('vps4-test-slave') {
+
+                    def changeRequestId = openChangeRequest(url:'https://godaddy.service-now.com/api/now/table/change_request',
+                                      assignmentGroup:'Dev-Vps4',
+                                      credentialsId:'2f9c93a6-a0a1-4b4f-bb56-f45590a033b1',
+                                      commit:"{$VPS4_VERSION}",
+                                      message:"Link ${env.BUILD_URL}")
+
+                    echo "Change Order: https://godaddy.service-now.com/nav_to.do?uri=%2Fchange_request.do?sys_id=${changeRequestId}"
+
+                    checkout scm
+
+                    echo "Deploying to SG2"
+                    build job: 'deployment/deploy_to_prod_sin2', parameters: [string(name: 'VPS4_VERSION', value: VPS4_VERSION)]
+                    //preDeployToEnv("prod_sin2", "${VPS4_VERSION}")
+                    productStampZk("prod_sin2", "vps4-web-${VPS4_VERSION}.noarch", "vps4-web")
+                    productStampZk("prod_sin2", "vps4-message-consumer-${VPS4_VERSION}.noarch", "vps4-message-consumer")
+                    productStampZk("prod_sin2", "vps4-orchestration-plugin-${VPS4_VERSION}.noarch", "hfs-engine", "/orchestration/serviceapi")
+                    productStampZk("prod_sin2", "vps4-scheduler-${VPS4_VERSION}.noarch", "vps4-scheduler")
+                    slackSend(color: '#00CD48', message: "vps4 *DEPLOY TO PROD_SIN2* was SUCCESSFUL. Job '${env.JOB_NAME} [${VPS4_VERSION}]' (${env.BUILD_URL})")
+
+                    echo "Deploying to AMS3"
+                    build job: 'deployment/deploy_to_prod_ams3', parameters: [string(name: 'VPS4_VERSION', value: VPS4_VERSION)]
+                    //preDeployToEnv("prod_ams3", "${VPS4_VERSION}")
+                    productStampZk("prod_ams3", "vps4-web-${VPS4_VERSION}.noarch", "vps4-web")
+                    productStampZk("prod_ams3", "vps4-message-consumer-${VPS4_VERSION}.noarch", "vps4-message-consumer")
+                    productStampZk("prod_ams3", "vps4-orchestration-plugin-${VPS4_VERSION}.noarch", "hfs-engine", "/orchestration/serviceapi")
+                    productStampZk("prod_ams3", "vps4-scheduler-${VPS4_VERSION}.noarch", "vps4-scheduler")
+                    slackSend(color: '#00CD48', message: "vps4 *DEPLOY TO PROD_AMS3* was SUCCESSFUL. Job '${env.JOB_NAME} [${VPS4_VERSION}]' (${env.BUILD_URL})")
+
+                    echo "Deploying to A2"
+                    build job: 'deployment/deploy_to_prod_a2', parameters: [string(name: 'VPS4_VERSION', value: VPS4_VERSION)]
+                    //preDeployToEnv("prod_a2", "${VPS4_VERSION}")
+                    productStampZk("prod_a2", "vps4-web-${VPS4_VERSION}.noarch", "vps4-web")
+                    productStampZk("prod_a2", "vps4-message-consumer-${VPS4_VERSION}.noarch", "vps4-message-consumer")
+                    productStampZk("prod_a2", "vps4-orchestration-plugin-${VPS4_VERSION}.noarch", "hfs-engine", "/orchestration/serviceapi")
+                    productStampZk("prod_a2", "vps4-scheduler-${VPS4_VERSION}.noarch", "vps4-scheduler")
+                    slackSend(color: '#00CD48', message: "vps4 *DEPLOY TO PROD_IAD2* was SUCCESSFUL. Job '${env.JOB_NAME} [${VPS4_VERSION}]' (${env.BUILD_URL})")
+
+                    echo "Deploying to P3"
+                    build job: 'deployment/deploy_to_prod_phx3', parameters: [string(name: 'VPS4_VERSION', value: VPS4_VERSION)]
+                    //preDeployToEnv("prod_phx3", "${VPS4_VERSION}")
+                    productStampZk("prod_phx3", "vps4-web-${VPS4_VERSION}.noarch", "vps4-web")
+                    productStampZk("prod_phx3", "vps4-message-consumer-${VPS4_VERSION}.noarch", "vps4-message-consumer")
+                    productStampZk("prod_phx3", "vps4-orchestration-plugin-${VPS4_VERSION}.noarch", "hfs-engine", "/orchestration/serviceapi")
+                    productStampZk("prod_phx3", "vps4-scheduler-${VPS4_VERSION}.noarch", "vps4-scheduler")
+                    slackSend(color: '#00CD48', message: "vps4 *DEPLOY TO PROD_PHX3* was SUCCESSFUL. Job '${env.JOB_NAME} [${VPS4_VERSION}]' (${env.BUILD_URL})")
+
+                    closeChangeRequest url:'https://godaddy.service-now.com/api/now/table/change_request',
+                                       credentialsId:'2f9c93a6-a0a1-4b4f-bb56-f45590a033b1'
+
+                    setNextStage("RESTART_PROXYMANAGER_SERVICE")
+                }
+            } else {
+                echo "Skipping Deploy to Prod"
+            }
+        }
+
+        stage("Staging Deployment Complete") {
+            if(nextStage == "STAGING_DEPLOYMENT_COMPLETE") {
+                slackSend(color: '#00CD48', message: "VPS4 Deployment To Stage Complete. Deployed version: '${env.JOB_NAME} [${VPS4_VERSION}]'. To Deploy this version to production, manually trigger the Jenkins job: (${env.BUILD_URL}) ")
+            }
+        }
+        stage("Restart Proxymanager Service in Prod") {
+            if(nextStage == "RESTART_PROXYMANAGER_SERVICE") {
+                node('vps4-test-slave') {
+                    slackSend(color: '#00CD48', message: "vps4 Deploy To Production: *Restarting proxy manager service* on web proxy servers.")
+                    build job: 'restart_proxymgr_prod', parameters: [string(name: 'VPS4_VERSION', value: VPS4_VERSION)]
+                }
+                setNextStage("POST_DEPLOYMENT_SMOKE_TEST")
+            }
+        }
+
+        stage("Prod SG2 Smoke Test") {
+            if (nextStage == "POST_DEPLOYMENT_SMOKE_TEST") {
+                timeout(time:45, unit:'MINUTES') {
+                    build job: 'prod_sg2_phase_3_test', parameters: [string(name: 'VPS4_VERSION', value: VPS4_VERSION)]
+                }
+                slackSend(color: '#00CD48', message: "SG2 Post Deploy Smoke Test was SUCCESSFUL. Job '${env.JOB_NAME} [${VPS4_VERSION}]' (${env.BUILD_URL})")
+                            } else {
+                echo "Skipping SG22 Smoke Test"
+            }
+        }
+
+        stage("Prod N3 Smoke Test") {
+            if (nextStage == "POST_DEPLOYMENT_SMOKE_TEST") {
+                timeout(time:45, unit:'MINUTES') {
+                    build job: 'prod_n3_phase_3_test', parameters: [string(name: 'VPS4_VERSION', value: VPS4_VERSION)]
+                }
+                slackSend(color: '#00CD48', message: "N3 Post Deploy Smoke Test was SUCCESSFUL. Job '${env.JOB_NAME} [${VPS4_VERSION}]' (${env.BUILD_URL})")
+            } else {
+                echo "Skipping N3 Smoke Test"
+            }
+        }
+
+        stage("Prod A2 Smoke Test") {
+            if (nextStage == "POST_DEPLOYMENT_SMOKE_TEST") {
+                timeout(time:45, unit:'MINUTES') {
+                    build job: 'prod_a2_phase_3_test', parameters: [string(name: 'VPS4_VERSION', value: VPS4_VERSION)]
+                }
+                setNextStage("DONE")
+                slackSend(color: '#00CD48', message: "A2 Post Deploy Smoke Test was SUCCESSFUL. Job '${env.JOB_NAME} [${VPS4_VERSION}]' (${env.BUILD_URL})")
+            } else {
+                echo "Skipping A2 Smoke Test"
+            }
+        }
+
+        stage("Done") {
+            if (nextStage == "DONE") {
+            slackSend(color: '#00CD48', message: "VPS4 Deployment Complete. Job '${env.JOB_NAME} [${VPS4_VERSION}]' (${env.BUILD_URL})")
+            }
+        }
+    }
+    catch (Exception e) {
+        if(params.deployToEnv == "PROD_DEPLOY") {
+            closeChangeRequest url:'https://godaddy.service-now.com/api/now/table/change_request',
+                               credentialsId:'2f9c93a6-a0a1-4b4f-bb56-f45590a033b1',
+                               status:'7'
+        }
+        slackSend(color: '#ff0000', message: "ERROR: EXCEPTION: Job '${env.JOB_NAME} [${VPS4_VERSION}]' (${env.BUILD_URL}): ${e.getMessage()}")
+        error(e.getMessage())
+    }
+    catch (AssertionError e) {
+        slackSend(color: '#ff0000', message: "ERROR: ASSERTION: Job '${env.JOB_NAME} [${VPS4_VERSION}]' (${env.BUILD_URL}): ${e.getMessage()}")
+        error(e.getMessage())
+    }
+    finally {
+        cleanupEnvironment()
+    }
+}
+
+private void setNextStage(java.lang.String nextStageName) {
+    nextStage = nextStageName
+}
+
+private void cleanupEnvironment() {
+    if (currentBuild.currentResult == 'SUCCESS') {
+        cleanWs cleanWhenAborted: false, cleanWhenFailure: false, cleanWhenNotBuilt: false, cleanWhenUnstable: false
+    } else {
+        echo "Skipping workspace cleanup due to errors in build"
+    }
+}
+
+private void preDeployToEnv(String targetEnv, String version) {
+    echo "targetEnv: ${targetEnv}, version: ${version}"
+    shell("chmod +x ./cicd/pre_deploy.sh ")
+    shell("./cicd/pre_deploy.sh -e ${targetEnv} -v ${version}")
+}
+
+private void productStampZk(String targetEnv, String rpmName, String product) {
+    echo "targetEnv: ${targetEnv}, rpmName: ${rpmName}, product: ${product}"
+    shell("/usr/bin/python ./cicd/vps4_zk_cicd.py -e ${targetEnv} -n ${rpmName} -p ${product}")
+}
+
+private void productStampZk(String targetEnv, String rpmName, String product, String zkServiceNode) {
+    echo "targetEnv: ${targetEnv}, rpmName: ${rpmName}, product: ${product}, zkServiceNode: ${zkServiceNode}"
+    shell("/usr/bin/python ./cicd/vps4_zk_cicd.py -e ${targetEnv} -n ${rpmName} -p ${product} -z ${zkServiceNode}")
+}
+
+private void shell(GString script) {
+    if (this.sh(returnStatus: true, script: script)) {
+        this.currentBuild.result = 'ERROR'
+        this.error("Error running shell script")
+    }
+}
+
+private void shell(String script) {
+    this.shell("${script}")
+}
