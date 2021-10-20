@@ -169,20 +169,20 @@ public class VmOutageResourceTest {
         }
     }
 
-//    @Test
-//    public void catchOutageAlreadyReported() {
-//        VmOutageRequest req = newOutageRequest();
-//        VmOutage duplicateOutage = new VmOutage();
-//        when(vmOutageService.getVmOutage(vmId, VmMetric.valueOf(req.metric), req.panoptaOutageId)).thenReturn(duplicateOutage);
-//
-//        try {
-//            resource.newVmOutage(vmId, req);
-//            fail();
-//        } catch (Vps4Exception e) {
-//            assertEquals("ALREADY_EXISTS", e.getId());
-//            verify(vmOutageService, never()).newVmOutage(eq(vmId), any(VmMetric.class), any(Instant.class), anyString(), anyLong());
-//        }
-//    }
+    @Test
+    public void catchOutageAlreadyReported() {
+        VmOutageRequest req = newOutageRequest();
+        VmOutage duplicateOutage = new VmOutage();
+        when(vmOutageService.getVmOutage(vmId, VmMetric.valueOf(req.metric), req.panoptaOutageId)).thenReturn(duplicateOutage);
+
+        try {
+            resource.newVmOutage(vmId, req);
+            fail();
+        } catch (Vps4Exception e) {
+            assertEquals("ALREADY_EXISTS", e.getId());
+            verify(vmOutageService, never()).newVmOutage(eq(vmId), any(VmMetric.class), any(Instant.class), anyString(), anyLong());
+        }
+    }
 
     @Test
     public void clearOutage() {
