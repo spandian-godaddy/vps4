@@ -17,6 +17,8 @@
 - git clone vps4 code locally:
     - https://github.secureserver.net/vps4/vps4
     - note: you will not have write access to this repo until someone adds you as a collaborator or to the vps4 team in GitHub
+- install Tartufo - https://tartufo.readthedocs.io/en/stable/installation.html
+- install precommit and run the quick start - https://pre-commit.com/#install
 - download Java 8 SDK
 - download Eclipse IDE for Java Developers
     - you can choose to use another IDE, like IntelliJ IDEA (Community Edition should be sufficient & does not require a license), but these specific instructions are catered for Eclipse setup
