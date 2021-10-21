@@ -168,7 +168,7 @@
         <dependency>
             <groupId>com.godaddy.hosting</groupId>
             <artifactId>orchestration-client</artifactId>
-            <version>0.5.1-25</version>
+            <version>0.5.2-43</version>
         </dependency>
 
         <!-- External dependencies -->

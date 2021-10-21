@@ -63,7 +63,7 @@
                     <release>${parsedVersion.buildNumber}</release>
                     <packager>rpm</packager>
                     <requires>
-                        <require>hfs-engine == 0.5.1-41</require>
+                        <require>hfs-engine == 0.5.2-43</require>
                     </requires>
                     <changelogFile>src/changelog</changelogFile>
                     <defineStatements>
@@ -92,7 +92,7 @@
         <dependency>
             <groupId>com.godaddy.hosting</groupId>
             <artifactId>orchestration-api</artifactId>
-            <version>0.5.1-41</version>
+            <version>0.5.2-43</version>
         </dependency>
 
         <dependency>
