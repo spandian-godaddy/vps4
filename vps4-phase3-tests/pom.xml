@@ -86,7 +86,7 @@
 		<dependency>
             <groupId>com.godaddy.hosting</groupId>
             <artifactId>orchestration-web</artifactId>
-            <version>0.5.2-43</version>
+            <version>0.5.1-27</version>
             <scope>provided</scope>
         </dependency>
         <dependency>
