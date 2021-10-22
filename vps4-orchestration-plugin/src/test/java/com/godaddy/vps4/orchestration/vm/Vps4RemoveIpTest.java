@@ -47,4 +47,33 @@ public class Vps4RemoveIpTest {
         verify(context, never()).execute(eq(SetMailRelayQuota.class), any());
         verify(context, times(1)).execute(eq(RemoveIpFromBlacklist.class), eq(ipAddress.ipAddress));
     }
+
+    @Test
+    public void testExecuteDestroyIpWith0SecondaryHfsAddressId(){
+        IpAddress ipAddress = new IpAddress();
+        ipAddress.ipAddress = "1.2.3.4";
+        ipAddress.hfsAddressId = 0;
+        ipAddress.ipAddressType =  IpAddress.IpAddressType.SECONDARY;
+
+        command.execute(context, ipAddress);
+        verify(context, never()).execute(eq(ReleaseIp.class), eq(ipAddress.hfsAddressId));
+        verify(context, never()).execute(eq(UnbindIp.class), any(UnbindIp.Request.class));
+        verify(context, never()).execute(eq(SetMailRelayQuota.class), any());
+        verify(context, times(1)).execute(eq(RemoveIpFromBlacklist.class), eq(ipAddress.ipAddress));
+    }
+
+
+    @Test
+    public void testExecuteDestroyIpWith0PrimaryHfsAddressId(){
+        IpAddress ipAddress = new IpAddress();
+        ipAddress.ipAddress = "1.2.3.4";
+        ipAddress.hfsAddressId = 0;
+        ipAddress.ipAddressType =  IpAddress.IpAddressType.PRIMARY;
+
+        command.execute(context, ipAddress);
+        verify(context, never()).execute(eq(ReleaseIp.class), eq(ipAddress.hfsAddressId));
+        verify(context, never()).execute(eq(UnbindIp.class), any(UnbindIp.Request.class));
+        verify(context, never()).execute(eq(SetMailRelayQuota.class), any());
+        verify(context, times(1)).execute(eq(RemoveIpFromBlacklist.class), eq(ipAddress.ipAddress));
+    }
 }
