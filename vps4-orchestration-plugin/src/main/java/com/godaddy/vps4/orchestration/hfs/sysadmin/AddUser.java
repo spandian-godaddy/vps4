@@ -9,6 +9,7 @@ import com.godaddy.vps4.util.Cryptography;
 
 import gdg.hfs.orchestration.Command;
 import gdg.hfs.orchestration.CommandContext;
+import gdg.hfs.vhfs.sysadmin.AddUserRequestBody;
 import gdg.hfs.vhfs.sysadmin.SysAdminAction;
 import gdg.hfs.vhfs.sysadmin.SysAdminService;
 
@@ -35,8 +36,13 @@ public class AddUser implements Command<AddUser.Request, Void> {
     public Void execute(CommandContext context, Request request) {
         logger.info("Calling HFS to add user {} to vm {}", request.username, request.hfsVmId);
 
+        AddUserRequestBody body = new AddUserRequestBody();
+        body.serverId = request.hfsVmId;
+        body.username = request.username;
+        body.password = cryptography.decrypt(request.encryptedPassword);
+
         SysAdminAction hfsSysAdminAction = context.execute("AddUser-" + request.username,
-                ctx -> sysAdminService.addUser(request.hfsVmId, request.username, cryptography.decrypt(request.encryptedPassword)),
+                ctx -> sysAdminService.addUser(0, null, null, body),
                 SysAdminAction.class);
         context.execute("WaitForAdd-" + request.username, WaitForSysAdminAction.class, hfsSysAdminAction);
 

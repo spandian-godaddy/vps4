@@ -75,6 +75,8 @@ import gdg.hfs.vhfs.plesk.PleskService;
 import gdg.hfs.vhfs.snapshot.Snapshot;
 import gdg.hfs.vhfs.snapshot.SnapshotAction;
 import gdg.hfs.vhfs.snapshot.SnapshotService;
+import gdg.hfs.vhfs.sysadmin.AddUserRequestBody;
+import gdg.hfs.vhfs.sysadmin.ChangePasswordRequestBody;
 import gdg.hfs.vhfs.sysadmin.SysAdminAction;
 import gdg.hfs.vhfs.sysadmin.SysAdminService;
 
@@ -564,7 +566,7 @@ public class HfsMockModule extends AbstractModule {
             }
 
             @Override
-            public SysAdminAction addUser(long vmId, String username, String password) {
+            public SysAdminAction addUser(long vmId, String username, String password, AddUserRequestBody body) {
                 return this.createAndStoreSysAdminAction(
                         vmId, SysAdminAction.Type.ADD_USER, SysAdminAction.Status.COMPLETE);
             }
@@ -576,7 +578,8 @@ public class HfsMockModule extends AbstractModule {
             }
 
             @Override
-            public SysAdminAction changePassword(long vmId, String username, String password, String controlPanel) {
+            public SysAdminAction changePassword(long vmId, String username, String password, String controlPanel,
+                    ChangePasswordRequestBody body) {
                 return this.createAndStoreSysAdminAction(
                         vmId, SysAdminAction.Type.CHANGE_PASSWORD, SysAdminAction.Status.COMPLETE);
             }

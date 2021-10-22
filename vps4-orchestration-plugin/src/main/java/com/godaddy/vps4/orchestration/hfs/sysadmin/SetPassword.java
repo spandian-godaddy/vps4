@@ -11,6 +11,7 @@ import com.godaddy.vps4.util.Cryptography;
 
 import gdg.hfs.orchestration.Command;
 import gdg.hfs.orchestration.CommandContext;
+import gdg.hfs.vhfs.sysadmin.ChangePasswordRequestBody;
 import gdg.hfs.vhfs.sysadmin.SysAdminAction;
 import gdg.hfs.vhfs.sysadmin.SysAdminService;
 
@@ -40,9 +41,13 @@ public class SetPassword implements Command<SetPassword.Request, Void> {
         logger.debug("Setting passwords for users {} on vm {}", request.usernames.toString(), request.hfsVmId);
         String password = cryptography.decrypt(request.encryptedPassword);
         for(String username : request.usernames){
-
+            ChangePasswordRequestBody body = new ChangePasswordRequestBody();
+            body.username = username;
+            body.password = password;
+            body.controlPanel = request.controlPanel;
+            body.serverId = request.hfsVmId;
             SysAdminAction hfsSysAction = context.execute("SetPassword-" + username,
-                    ctx -> sysAdminService.changePassword(request.hfsVmId, username, password, request.controlPanel),
+                    ctx -> sysAdminService.changePassword(0, null, null, null, body),
                     SysAdminAction.class);
 
             context.execute("WaitForSet-"+username, WaitForSysAdminAction.class, hfsSysAction);

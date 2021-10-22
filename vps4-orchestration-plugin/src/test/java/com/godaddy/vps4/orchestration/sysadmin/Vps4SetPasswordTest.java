@@ -1,7 +1,6 @@
 package com.godaddy.vps4.orchestration.sysadmin;
 
 import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
@@ -16,42 +15,31 @@ import java.util.UUID;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
-
-import com.godaddy.vps4.orchestration.hfs.plesk.UpdateAdminPassword;
-import com.godaddy.vps4.orchestration.hfs.sysadmin.SetPassword;
-import com.godaddy.vps4.orchestration.hfs.sysadmin.WaitForSysAdminAction;
-import com.godaddy.vps4.util.Cryptography;
-import com.godaddy.vps4.vm.ActionService;
-import com.godaddy.vps4.vm.Image.ControlPanel;
-import com.godaddy.vps4.vm.VmUserService;
-import com.google.inject.Guice;
-import com.google.inject.Injector;
-
-import gdg.hfs.orchestration.CommandContext;
-import gdg.hfs.vhfs.sysadmin.SysAdminAction;
-import gdg.hfs.vhfs.sysadmin.SysAdminAction.Status;
-import gdg.hfs.vhfs.sysadmin.SysAdminService;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
 import org.mockito.MockitoAnnotations;
+
+import com.godaddy.vps4.orchestration.hfs.plesk.UpdateAdminPassword;
+import com.godaddy.vps4.orchestration.hfs.sysadmin.SetPassword;
+import com.godaddy.vps4.util.Cryptography;
+import com.godaddy.vps4.vm.ActionService;
+import com.godaddy.vps4.vm.Image.ControlPanel;
+
+import gdg.hfs.orchestration.CommandContext;
+import gdg.hfs.vhfs.sysadmin.ChangePasswordRequestBody;
+import gdg.hfs.vhfs.sysadmin.SysAdminAction;
+import gdg.hfs.vhfs.sysadmin.SysAdminAction.Status;
+import gdg.hfs.vhfs.sysadmin.SysAdminService;
 
 
 public class Vps4SetPasswordTest {
 
     ActionService actionService = mock(ActionService.class);
     SysAdminService sysAdminService = mock(SysAdminService.class);
-    VmUserService userService = mock(VmUserService.class);
     Cryptography cryptography = mock(Cryptography.class);
     @Captor private ArgumentCaptor<SetPassword.Request> setPasswordRequestCaptor;
 
     Vps4SetPassword command = spy(new Vps4SetPassword(actionService));
-
-    Injector injector = Guice.createInjector(binder -> {
-        binder.bind(SetPassword.class);
-        binder.bind(WaitForSysAdminAction.class);
-        binder.bind(SysAdminService.class).toInstance(sysAdminService);
-        binder.bind(Cryptography.class).toInstance(cryptography);
-    });
 
     CommandContext context = mock(CommandContext.class);
 
@@ -82,13 +70,14 @@ public class Vps4SetPasswordTest {
         action.sysAdminActionId = 73;
         action.status = Status.COMPLETE;
 
-        when(sysAdminService.changePassword(eq(setPasswordRequest.hfsVmId), anyString(), eq(password), eq(controlPanel))).thenReturn(action);
+        when(sysAdminService.changePassword(eq(0), eq(null), eq(null), eq(null), any(ChangePasswordRequestBody.class)))
+                .thenReturn(action);
         when(sysAdminService.getSysAdminAction(action.sysAdminActionId)).thenReturn(action);
         when(cryptography.decrypt(any())).thenReturn(password);
 
         command.executeWithAction(context, request);
 
-        for (String username : setPasswordRequest.usernames) {
+        for (String ignored : setPasswordRequest.usernames) {
             verify(context, times(1)).execute(eq(SetPassword.class), setPasswordRequestCaptor.capture());
             SetPassword.Request actualPasswordReq = setPasswordRequestCaptor.getValue();
             Assert.assertEquals(request.setPasswordRequest, actualPasswordReq);
