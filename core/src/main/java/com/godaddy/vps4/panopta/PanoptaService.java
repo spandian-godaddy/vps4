@@ -1,6 +1,7 @@
 package com.godaddy.vps4.panopta;
 
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 public interface PanoptaService {
@@ -10,7 +11,7 @@ public interface PanoptaService {
 
     void deleteCustomer(String shopperId);
 
-    PanoptaServer createServer(String shopperId, UUID orionGuid, String ipAddress, String[] templates)
+    PanoptaServer createServer(String shopperId, UUID orionGuid, String ipAddress, String[] templates, String[] tags)
             throws PanoptaServiceException;
 
     PanoptaServer getServer(UUID vmId);
@@ -18,6 +19,8 @@ public interface PanoptaService {
     List<PanoptaServer> getServers(String shopperId, String ipAddress, UUID orionGuid);
 
     void deleteServer(UUID vmId);
+
+    void setServerAttributes(UUID vmId, Map<Long, String> attributes);
 
     List<PanoptaGraphId> getUsageIds(UUID vmId);
 

@@ -69,6 +69,12 @@ public interface PanoptaApiServerService {
     void deleteServer(@PathParam("server_id") long serverId,
                       @QueryParam("partner_customer_key") String partnerCustomerKey);
 
+    @POST
+    @Path("/{server_id}/server_attribute")
+    void setAttribute(@PathParam("server_id") long serverId,
+                      @QueryParam("partner_customer_key") String partnerCustomerKey,
+                      PanoptaApiAttributeRequest request);
+
     @GET
     @Path("/{server_id}/availability")
     PanoptaAvailability getAvailability(@PathParam("server_id") long serverId,

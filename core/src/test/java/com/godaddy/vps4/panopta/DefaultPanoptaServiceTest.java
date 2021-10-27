@@ -19,7 +19,9 @@ import java.io.IOException;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -31,6 +33,11 @@ import javax.cache.CacheManager;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.ArgumentCaptor;
+import org.mockito.Captor;
+import org.mockito.Mock;
+import org.mockito.runners.MockitoJUnitRunner;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.godaddy.hfs.config.Config;
@@ -47,17 +54,23 @@ import com.godaddy.vps4.vm.VirtualMachineService;
 import com.godaddy.vps4.vm.VmMetric;
 import com.google.inject.Inject;
 
+@RunWith(MockitoJUnitRunner.class)
 public class DefaultPanoptaServiceTest {
+    @Mock private CacheManager cacheManager;
+    @Mock private PanoptaApiServerService panoptaApiServerService;
+    @Mock private PanoptaApiCustomerService panoptaApiCustomerService;
+    @Mock private PanoptaApiServerGroupService panoptaApiServerGroupService;
+    @Mock private PanoptaDataService panoptaDataService;
+    @Mock private VirtualMachineService virtualMachineService;
+    @Mock private CreditService creditService;
+    @Mock private Config config;
+    @Mock private Cache cache;
+    @Mock private PanoptaCustomerDetails panoptaCustomerDetails;
+    @Mock private PanoptaApiCustomerList panoptaApiCustomerList;
+
+    @Captor private ArgumentCaptor<PanoptaApiAttributeRequest> attributeRequest;
+
     private @PanoptaExecutorService ExecutorService pool;
-    private CacheManager cacheManager;
-    private PanoptaApiServerService panoptaApiServerService;
-    private PanoptaApiCustomerService panoptaApiCustomerService;
-    private PanoptaApiServerGroupService panoptaApiServerGroupService;
-    private PanoptaDataService panoptaDataService;
-    private VirtualMachineService virtualMachineService;
-    private CreditService creditService;
-    private Config config;
-    private Cache cache;
     private UUID vmId;
     private UUID orionGuid;
     private String ipAddress;
@@ -70,31 +83,18 @@ public class DefaultPanoptaServiceTest {
     private String partnerCustomerKey;
     private DefaultPanoptaService defaultPanoptaService;
     private PanoptaDetail panoptaDetail;
-    private PanoptaCustomerDetails panoptaCustomerDetails;
     private PanoptaServers panoptaServers;
     private PanoptaServers.Server server;
-    private PanoptaApiCustomerList panoptaApiCustomerList;
     private PanoptaUsageIdList usageIdList;
     private PanoptaNetworkIdList networkIdList;
     private PanoptaUsageGraph usageGraph;
     private PanoptaNetworkGraph networkGraph;
-    @Inject
-    private ObjectMapper objectMapper = new ObjectMapperProvider().get();
+
+    @Inject private final ObjectMapper objectMapper = new ObjectMapperProvider().get();
 
     @Before
     public void setup() throws IOException {
         pool = spy(Executors.newCachedThreadPool());
-        cacheManager = mock(CacheManager.class);
-        panoptaApiServerService = mock(PanoptaApiServerService.class);
-        panoptaApiCustomerService = mock(PanoptaApiCustomerService.class);
-        panoptaApiServerGroupService = mock(PanoptaApiServerGroupService.class);
-        panoptaDataService = mock(PanoptaDataService.class);
-        panoptaApiCustomerList = mock(PanoptaApiCustomerList.class);
-        panoptaCustomerDetails = mock(PanoptaCustomerDetails.class);
-        virtualMachineService = mock(VirtualMachineService.class);
-        creditService = mock(CreditService.class);
-        config = mock(Config.class);
-        cache = mock(Cache.class);
         vmId = UUID.randomUUID();
         orionGuid = UUID.randomUUID();
         ipAddress = "127.0.0.1";
@@ -246,9 +246,25 @@ public class DefaultPanoptaServiceTest {
     }
 
     @Test
-    public void testInvokesCreatesCustomerWithMatchingCustomer() throws PanoptaServiceException, IOException {
+    public void testInvokesCreatesCustomerWithMatchingCustomer() throws PanoptaServiceException {
         defaultPanoptaService.createCustomer(shopperId);
         verify(panoptaApiCustomerService).createCustomer(any(PanoptaApiCustomerRequest.class));
+    }
+
+    @Test
+    public void testSetAttributes() {
+        Map<Long, String> attributes = new HashMap<>();
+        attributes.put(1234L, "mock-data-1");
+        attributes.put(5678L, "mock-data-2");
+        defaultPanoptaService.setServerAttributes(vmId, attributes);
+        verify(panoptaApiServerService, times(2))
+                .setAttribute(eq(serverId), eq(partnerCustomerKey), attributeRequest.capture());
+
+        List<PanoptaApiAttributeRequest> requests = attributeRequest.getAllValues();
+        assertTrue(requests.stream().anyMatch(r -> r.getValue().equals("mock-data-1")
+                && r.getServerAttributeTypeUrl().equals("https://api2.panopta.com/v2/server_attribute_type/1234")));
+        assertTrue(requests.stream().anyMatch(r -> r.getValue().equals("mock-data-2")
+                && r.getServerAttributeTypeUrl().equals("https://api2.panopta.com/v2/server_attribute_type/5678")));
     }
 
     @Test
@@ -421,11 +437,7 @@ public class DefaultPanoptaServiceTest {
     @Test
     public void testCreateServer() throws PanoptaServiceException {
         String ipAddress = virtualMachine.primaryIpAddress.ipAddress;
-        String[] templates = new String[] {
-                "https://api2.panopta.com/v2/server_template/1",
-                "https://api2.panopta.com/v2/server_template/2"
-        };
-        PanoptaServer server = defaultPanoptaService.createServer(shopperId, orionGuid, ipAddress, templates);
+        PanoptaServer server = defaultPanoptaService.createServer(shopperId, orionGuid, ipAddress, null, null);
         verify(panoptaApiServerService).createServer(eq(partnerCustomerKey), any(PanoptaApiServerRequest.class));
         verify(panoptaApiServerService).getServers(partnerCustomerKey, ipAddress, orionGuid.toString());
         assertEquals(panoptaServers.servers.get(0).fqdn, server.fqdn);

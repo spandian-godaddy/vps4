@@ -7,10 +7,10 @@ import com.godaddy.vps4.orchestration.hfs.sysadmin.UninstallPanoptaAgent;
 import com.godaddy.vps4.orchestration.mailrelay.Vps4SetMailRelayQuota;
 import com.godaddy.vps4.orchestration.messaging.SendFailoverCompletedEmail;
 import com.godaddy.vps4.orchestration.messaging.SendScheduledPatchingEmail;
+import com.godaddy.vps4.orchestration.messaging.SendSetupCompletedEmail;
 import com.godaddy.vps4.orchestration.messaging.SendSystemDownFailoverEmail;
 import com.godaddy.vps4.orchestration.messaging.SendUnexpectedButScheduledMaintenanceEmail;
 import com.godaddy.vps4.orchestration.messaging.WaitForMessageComplete;
-import com.godaddy.vps4.orchestration.messaging.SendSetupCompletedEmail;
 import com.godaddy.vps4.orchestration.monitoring.RemoveNodePingMonitoring;
 import com.godaddy.vps4.orchestration.monitoring.RemovePanoptaMonitoring;
 import com.godaddy.vps4.orchestration.monitoring.SendVmOutageEmail;
@@ -56,6 +56,7 @@ import com.godaddy.vps4.orchestration.vm.Vps4StartVm;
 import com.godaddy.vps4.orchestration.vm.Vps4StopVm;
 import com.godaddy.vps4.orchestration.vm.Vps4SuspendDedServer;
 import com.godaddy.vps4.orchestration.vm.Vps4SuspendServer;
+import com.godaddy.vps4.orchestration.vm.Vps4SyncVmStatus;
 import com.godaddy.vps4.orchestration.vm.Vps4TestCommand;
 import com.godaddy.vps4.orchestration.vm.Vps4UpgradeOHVm;
 import com.godaddy.vps4.orchestration.vm.Vps4UpgradeVm;
@@ -65,7 +66,6 @@ import com.godaddy.vps4.orchestration.vm.provision.Vps4ProvisionVm;
 import com.godaddy.vps4.orchestration.vm.rebuild.Vps4RebuildDedicated;
 import com.godaddy.vps4.orchestration.vm.rebuild.Vps4RebuildOHVm;
 import com.godaddy.vps4.orchestration.vm.rebuild.Vps4RebuildVm;
-import com.godaddy.vps4.orchestration.vm.Vps4SyncVmStatus;
 import com.google.inject.AbstractModule;
 
 public class Vps4CommandModule extends AbstractModule {

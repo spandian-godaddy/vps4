@@ -5,6 +5,7 @@ import java.util.List;
 
 import javax.inject.Singleton;
 
+import com.godaddy.vps4.reseller.ResellerModule;
 import com.godaddy.vps4.web.notification.NotificationsModule;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -126,6 +127,7 @@ public class Vps4Injector {
         modules.add(new IpBlacklistModule());
         modules.add(new ShopperNotesModule());
         modules.add(new NotificationsModule());
+        modules.add(new ResellerModule());
         modules.add(binder -> {
             binder.bind(ObjectMapper.class).toProvider(ObjectMapperProvider.class);
         });

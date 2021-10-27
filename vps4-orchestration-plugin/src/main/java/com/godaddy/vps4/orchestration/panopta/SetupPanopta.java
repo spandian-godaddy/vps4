@@ -2,6 +2,8 @@ package com.godaddy.vps4.orchestration.panopta;
 
 import java.time.Instant;
 import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.UUID;
 
 import javax.inject.Inject;
@@ -22,6 +24,7 @@ import com.godaddy.vps4.panopta.PanoptaService;
 import com.godaddy.vps4.panopta.PanoptaServiceException;
 import com.godaddy.vps4.panopta.jdbc.PanoptaCustomerDetails;
 import com.godaddy.vps4.panopta.jdbc.PanoptaServerDetails;
+import com.godaddy.vps4.reseller.ResellerService;
 
 import gdg.hfs.orchestration.Command;
 import gdg.hfs.orchestration.CommandContext;
@@ -32,17 +35,20 @@ public class SetupPanopta implements Command<SetupPanopta.Request, Void> {
     private final CreditService creditService;
     private final PanoptaDataService panoptaDataService;
     private final PanoptaService panoptaService;
+    private final ResellerService resellerService;
     private final Config config;
 
     private CommandContext context;
     private Request request;
+    private VirtualMachineCredit credit;
 
     @Inject
     public SetupPanopta(CreditService creditService, PanoptaDataService panoptaDataService,
-                        PanoptaService panoptaService, Config config) {
+                        PanoptaService panoptaService, ResellerService resellerService, Config config) {
         this.creditService = creditService;
         this.panoptaDataService = panoptaDataService;
         this.panoptaService = panoptaService;
+        this.resellerService = resellerService;
         this.config = config;
     }
 
@@ -50,6 +56,7 @@ public class SetupPanopta implements Command<SetupPanopta.Request, Void> {
     public Void execute(CommandContext context, Request request) {
         this.context = context;
         this.request = request;
+        this.credit = creditService.getVirtualMachineCredit(request.orionGuid);
         PanoptaCustomerDetails customerDetails = getOrCreateCustomer();
         PanoptaServerDetails serverDetails = getOrCreateServer();
         installAgentOrFailGracefully(customerDetails.getCustomerKey(), serverDetails.getServerKey());
@@ -82,21 +89,27 @@ public class SetupPanopta implements Command<SetupPanopta.Request, Void> {
         PanoptaServerDetails serverDetails = panoptaDataService.getPanoptaServerDetails(request.vmId);
         if (serverDetails == null) {
             String[] templateIds = getTemplateIds();
-            PanoptaServer server = createServer(templateIds);
+            Map<Long, String> attributes = getAttributes();
+            String[] tags = attributes.values().toArray(new String[0]);
+            PanoptaServer server = createServer(templateIds, tags);
             panoptaDataService.createPanoptaServer(request.vmId, request.shopperId, templateIds[0], server);
             serverDetails = panoptaDataService.getPanoptaServerDetails(request.vmId);
+            panoptaService.setServerAttributes(request.vmId, attributes);
         }
         return serverDetails;
     }
 
-    private PanoptaServer createServer(String[] templateIds) {
+    private PanoptaServer createServer(String[] templateIds, String[] tags) {
         logger.info("Creating new Panopta server for VM {}.", request.vmId);
+        String[] templates = Arrays.stream(templateIds)
+                                   .map(t -> "https://api2.panopta.com/v2/server_template/" + t)
+                                   .toArray(String[]::new);
         try {
-            String[] templates = Arrays
-                    .stream(templateIds)
-                    .map(t -> "https://api2.panopta.com/v2/server_template/" + t)
-                    .toArray(String[]::new);
-            return panoptaService.createServer(request.shopperId, request.orionGuid, request.fqdn, templates);
+            return panoptaService.createServer(request.shopperId,
+                                               request.orionGuid,
+                                               request.fqdn,
+                                               templates,
+                                               tags);
         } catch (PanoptaServiceException e) {
             throw new RuntimeException(e);
         }
@@ -130,13 +143,26 @@ public class SetupPanopta implements Command<SetupPanopta.Request, Void> {
     }
 
     private String[] getTemplateIds() {
-        VirtualMachineCredit credit = creditService.getVirtualMachineCredit(request.orionGuid);
         String templateType = (credit.isManaged()) ? "managed" : credit.hasMonitoring() ? "addon" : "base";
         String templateOS = credit.getOperatingSystem().toLowerCase();
 
         String serverTemplate = config.get("panopta.api.templates." + templateType + "." + templateOS);
         String dcAlertTemplate = config.get("panopta.api.templates.webhook");
         return new String[] { serverTemplate, dcAlertTemplate };
+    }
+
+    private Map<Long, String> getAttributes() {
+        Map<Long, String> tags = new HashMap<>();
+        long brandAttributeId = Long.parseLong(config.get("panopta.api.attribute.brand"));
+        long productAttributeId = Long.parseLong(config.get("panopta.api.attribute.product"));
+        String reseller = resellerService.getResellerDescription(credit.getResellerId());
+        if (reseller == null) {
+            tags.put(brandAttributeId, "godaddy");
+        } else {
+            tags.put(brandAttributeId, reseller.toLowerCase().replace(' ', '-'));
+        }
+        tags.put(productAttributeId, "vps4");
+        return tags;
     }
 
     private void syncAgent(Instant timeOfInstall) {

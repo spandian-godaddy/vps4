@@ -61,7 +61,7 @@ public class VmAddMonitoringResourceTest {
         when(actionService.getActionList(any())).thenReturn(actions);
 
         when(commandService.executeCommand(any())).thenReturn(new CommandState());
-        resource = new VmAddMonitoringResource(user, vmResource, actionService, commandService, null);
+        resource = new VmAddMonitoringResource(user, vmResource, actionService, commandService);
     }
 
     @Test

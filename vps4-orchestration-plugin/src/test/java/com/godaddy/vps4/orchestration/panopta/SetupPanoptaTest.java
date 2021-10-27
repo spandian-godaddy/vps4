@@ -1,6 +1,8 @@
 package com.godaddy.vps4.orchestration.panopta;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyString;
@@ -12,6 +14,9 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import java.util.Arrays;
+import java.util.Map;
+import java.util.Objects;
 import java.util.UUID;
 
 import org.junit.Before;
@@ -19,6 +24,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
+import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
 
 import com.godaddy.hfs.config.Config;
@@ -34,16 +40,18 @@ import com.godaddy.vps4.panopta.PanoptaService;
 import com.godaddy.vps4.panopta.PanoptaServiceException;
 import com.godaddy.vps4.panopta.jdbc.PanoptaCustomerDetails;
 import com.godaddy.vps4.panopta.jdbc.PanoptaServerDetails;
+import com.godaddy.vps4.reseller.ResellerService;
 
 import gdg.hfs.orchestration.CommandContext;
 
 @RunWith(MockitoJUnitRunner.class)
 public class SetupPanoptaTest {
-    private CommandContext context;
-    private CreditService creditService;
-    private PanoptaDataService panoptaDataService;
-    private PanoptaService panoptaService;
-    private Config config;
+    @Mock private CommandContext context;
+    @Mock private CreditService creditService;
+    @Mock private PanoptaDataService panoptaDataService;
+    @Mock private PanoptaService panoptaService;
+    @Mock private ResellerService resellerService;
+    @Mock private Config config;
 
     private SetupPanopta setupPanopta;
     private SetupPanopta.Request request;
@@ -64,22 +72,18 @@ public class SetupPanoptaTest {
 
     @Captor private ArgumentCaptor<InstallPanoptaAgent.Request> agentInstallCaptor;
     @Captor private ArgumentCaptor<String[]> templateCaptor;
+    @Captor private ArgumentCaptor<String[]> tagCaptor;
+    @Captor private ArgumentCaptor<Map<Long, String>> attributeCaptor;
 
     @Before
     public void setUp() throws Exception {
-        context = mock(CommandContext.class);
-        creditService = mock(CreditService.class);
-        panoptaDataService = mock(PanoptaDataService.class);
-        panoptaService = mock(PanoptaService.class);
-        config = mock(Config.class);
-
         setupCredit();
         setupPanoptaCustomer();
         setupPanoptaServer();
         setupPanoptaAgent();
-        setupTemplates();
+        setupConfig();
 
-        setupPanopta = new SetupPanopta(creditService, panoptaDataService, panoptaService, config);
+        setupPanopta = new SetupPanopta(creditService, panoptaDataService, panoptaService, resellerService, config);
         request = setupRequest();
     }
 
@@ -103,7 +107,7 @@ public class SetupPanoptaTest {
 
     private void setupPanoptaServer() throws PanoptaServiceException {
         server = mock(PanoptaServer.class);
-        when(panoptaService.createServer(eq(shopperId), eq(orionGuid), eq(fqdn), any())).thenReturn(server);
+        when(panoptaService.createServer(eq(shopperId), eq(orionGuid), eq(fqdn), any(), any())).thenReturn(server);
         serverDetails = mock(PanoptaServerDetails.class);
         when(serverDetails.getServerKey()).thenReturn(serverKey);
         when(panoptaDataService.getPanoptaServerDetails(vmId)).thenReturn(serverDetails);
@@ -117,11 +121,13 @@ public class SetupPanoptaTest {
         when(context.execute(RemovePanoptaMonitoring.class, vmId)).thenReturn(null);
     }
 
-    private void setupTemplates() {
+    private void setupConfig() {
         when(config.get("panopta.api.templates.base.linux")).thenReturn("fake_template_base");
         when(config.get("panopta.api.templates.addon.linux")).thenReturn("fake_template_addon");
         when(config.get("panopta.api.templates.managed.linux")).thenReturn("fake_template_managed");
         when(config.get("panopta.api.templates.webhook")).thenReturn("fake_template_dc");
+        when(config.get("panopta.api.attribute.brand")).thenReturn("721");
+        when(config.get("panopta.api.attribute.product")).thenReturn("722");
     }
 
     private SetupPanopta.Request setupRequest() {
@@ -172,7 +178,7 @@ public class SetupPanoptaTest {
     public void getsServerFromDb() throws PanoptaServiceException {
         setupPanopta.execute(context, request);
         verify(panoptaDataService, times(1)).getPanoptaServerDetails(vmId);
-        verify(panoptaService, never()).createServer(any(), any(), any(), any());
+        verify(panoptaService, never()).createServer(any(), any(), any(), any(), any());
     }
 
     @Test
@@ -183,11 +189,21 @@ public class SetupPanoptaTest {
         setupPanopta.execute(context, request);
         verify(panoptaDataService, times(2)).getPanoptaServerDetails(vmId);
         verify(panoptaService, times(1))
-                .createServer(eq(shopperId), eq(orionGuid), eq(fqdn), templateCaptor.capture());
+                .createServer(eq(shopperId), eq(orionGuid), eq(fqdn), templateCaptor.capture(), tagCaptor.capture());
+
         String[] templates = templateCaptor.getValue();
         assertEquals("https://api2.panopta.com/v2/server_template/fake_template_base", templates[0]);
         assertEquals("https://api2.panopta.com/v2/server_template/fake_template_dc", templates[1]);
+
+        String[] tags = tagCaptor.getValue();
+        assertTrue(Arrays.asList(tags).contains("godaddy"));
+        assertTrue(Arrays.asList(tags).contains("vps4"));
         verify(panoptaDataService, times(1)).createPanoptaServer(eq(vmId), eq(shopperId), eq("fake_template_base"), any());
+
+        verify(panoptaService, times(1)).setServerAttributes(eq(vmId), attributeCaptor.capture());
+        Map<Long, String> attributes = attributeCaptor.getValue();
+        assertEquals("godaddy", attributes.get(721L));
+        assertEquals("vps4", attributes.get(722L));
     }
 
     @Test
@@ -198,7 +214,7 @@ public class SetupPanoptaTest {
                 .thenReturn(serverDetails);
         setupPanopta.execute(context, request);
         verify(panoptaService, times(1))
-                .createServer(eq(shopperId), eq(orionGuid), eq(fqdn), templateCaptor.capture());
+                .createServer(eq(shopperId), eq(orionGuid), eq(fqdn), templateCaptor.capture(), any());
         String[] templates = templateCaptor.getValue();
         assertEquals("https://api2.panopta.com/v2/server_template/fake_template_addon", templates[0]);
     }
@@ -211,9 +227,29 @@ public class SetupPanoptaTest {
                 .thenReturn(serverDetails);
         setupPanopta.execute(context, request);
         verify(panoptaService, times(1))
-                .createServer(eq(shopperId), eq(orionGuid), eq(fqdn), templateCaptor.capture());
+                .createServer(eq(shopperId), eq(orionGuid), eq(fqdn), templateCaptor.capture(), any());
         String[] templates = templateCaptor.getValue();
         assertEquals("https://api2.panopta.com/v2/server_template/fake_template_managed", templates[0]);
+    }
+
+    @Test
+    public void createsPanoptaServerAsReseller() throws PanoptaServiceException {
+        when(resellerService.getResellerDescription(anyString())).thenReturn("media-temple");
+        when(panoptaDataService.getPanoptaServerDetails(vmId))
+                .thenReturn(null)
+                .thenReturn(serverDetails);
+        setupPanopta.execute(context, request);
+
+        verify(panoptaService, times(1))
+                .createServer(eq(shopperId), eq(orionGuid), eq(fqdn), any(), tagCaptor.capture());
+        String[] tags = tagCaptor.getValue();
+        assertFalse(Arrays.asList(tags).contains("godaddy"));
+        assertTrue(Arrays.asList(tags).contains("media-temple"));
+
+        verify(panoptaService, times(1)).setServerAttributes(eq(vmId), attributeCaptor.capture());
+        Map<Long, String> attributes = attributeCaptor.getValue();
+        assertEquals("media-temple", attributes.get(721L));
+        assertEquals("vps4", attributes.get(722L));
     }
 
     @Test

@@ -5,6 +5,7 @@ import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
@@ -70,7 +71,7 @@ public class DefaultPanoptaService implements PanoptaService {
         panoptaApiCustomerRequest.setName(panoptaNamePrefix + shopperId);
         panoptaApiCustomerRequest.setEmailAddress(emailAddress);
         panoptaApiCustomerRequest.setPartnerCustomerKey(partnerCustomerKey);
-        logger.info("Create Panopta customer Request: {}", panoptaApiCustomerRequest.toString());
+        logger.info("Create Panopta customer Request: {}", panoptaApiCustomerRequest);
 
         panoptaApiCustomerService.createCustomer(panoptaApiCustomerRequest);
         return mapResponseToCustomer(getCustomerDetails(partnerCustomerKey));
@@ -109,22 +110,21 @@ public class DefaultPanoptaService implements PanoptaService {
     public void deleteCustomer(String shopperId) {
         PanoptaCustomerDetails panoptaCustomerDetails = panoptaDataService.getPanoptaCustomerDetails(shopperId);
         if (panoptaCustomerDetails != null) {
-            logger.info("Deleting customer in Panopta. Panopta Details: {}", panoptaCustomerDetails.toString());
+            logger.info("Deleting customer in Panopta. Panopta Details: {}", panoptaCustomerDetails);
             panoptaApiCustomerService.deleteCustomer(panoptaCustomerDetails.getCustomerKey());
         }
     }
 
     @Override
-    public PanoptaServer createServer(String shopperId, UUID orionGuid, String ipAddress, String[] templates)
-            throws PanoptaServiceException {
-        PanoptaApiServerRequest request = new PanoptaApiServerRequest(
-                ipAddress,
-                orionGuid.toString(),
-                getDefaultGroup(shopperId),
-                templates
-        );
+    public PanoptaServer createServer(String shopperId,
+                                      UUID orionGuid,
+                                      String ipAddress,
+                                      String[] templates,
+                                      String[] tags) throws PanoptaServiceException {
+        PanoptaApiServerRequest request = new PanoptaApiServerRequest(ipAddress, orionGuid.toString(),
+                                                                      getDefaultGroup(shopperId), templates, tags);
 
-        logger.info("Create Panopta server request: {}", request.toString());
+        logger.info("Create Panopta server request: {}", request);
         panoptaApiServerService.createServer(getPartnerCustomerKey(shopperId), request);
 
         Instant timeoutAt = Instant.now().plus(TIMEOUT_MINUTES, ChronoUnit.MINUTES);
@@ -170,6 +170,17 @@ public class DefaultPanoptaService implements PanoptaService {
             logger.info("Attempting to delete server {} from panopta.", panoptaDetails.getServerId());
             panoptaApiServerService.deleteServer(panoptaDetails.getServerId(), panoptaDetails.getPartnerCustomerKey());
         }
+    }
+
+    @Override
+    public void setServerAttributes(UUID vmId, Map<Long, String> attributes) {
+        PanoptaDetail panoptaDetails = panoptaDataService.getPanoptaDetails(vmId);
+        attributes.forEach((key, value) -> {
+            PanoptaApiAttributeRequest request = new PanoptaApiAttributeRequest(key, value);
+            panoptaApiServerService.setAttribute(panoptaDetails.getServerId(),
+                                                 panoptaDetails.getPartnerCustomerKey(),
+                                                 request);
+        });
     }
 
     @Override

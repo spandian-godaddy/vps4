@@ -42,19 +42,16 @@ public class VmAddMonitoringResource {
     private final VmResource vmResource;
     private final ActionService actionService;
     private final CommandService commandService;
-    private final PanoptaService panoptaService;
 
     @Inject
     public VmAddMonitoringResource(GDUser user,
                                    VmResource vmResource,
                                    ActionService actionService,
-                                   CommandService commandService,
-                                   PanoptaService panoptaService) {
+                                   CommandService commandService) {
         this.user = user;
         this.vmResource = vmResource;
         this.actionService = actionService;
         this.commandService = commandService;
-        this.panoptaService = panoptaService;
     }
 
     @POST
@@ -70,23 +67,5 @@ public class VmAddMonitoringResource {
         request.virtualMachine = vm;
         return createActionAndExecute(actionService, commandService, vmId,
                 ActionType.ADD_MONITORING, request, "Vps4AddMonitoring", user);
-    }
-
-    @POST
-    @RequiresRole(roles = {GDUser.Role.ADMIN})
-    @Path("/{vmId}/addServer/{shopperId}")
-    @ApiOperation(value = "Create a server in the monitoring provider's API. " +
-            "The vmID parameter is ignored - but must be valid. " +
-            "The shopper id will be appended to the customerPartnerId prefix.")
-    public PanoptaServer addPanoptaServer(@PathParam("vmId") UUID vmId, @PathParam("shopperId") String shopperId) {
-        String[] templates = new String[] { };
-        PanoptaServer result = null;
-        try {
-            result = panoptaService.createServer(shopperId, UUID.randomUUID(), "192.168.1.1", templates);
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-
-        return result;
     }
 }

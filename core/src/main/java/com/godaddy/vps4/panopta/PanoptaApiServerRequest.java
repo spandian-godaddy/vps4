@@ -26,15 +26,19 @@ public class PanoptaApiServerRequest {
     public String serverGroup;
     @JsonProperty("server_template")
     public String[] serverTemplates;
+    @JsonProperty("tags")
+    public String[] tags;
 
     PanoptaApiServerRequest(String fqdn,
                             String name,
                             String serverGroup,
-                            String[] serverTemplates) {
+                            String[] serverTemplates,
+                            String[] tags) {
         this.fqdn = fqdn;
         this.name = name;
         this.serverGroup = serverGroup;
         this.serverTemplates = serverTemplates;
+        this.tags = tags;
     }
 
     @Override
