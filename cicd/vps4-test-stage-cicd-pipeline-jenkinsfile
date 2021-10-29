@@ -11,10 +11,9 @@ pipeline {
     stages {
         stage('Build') {
             steps {
-                slackSend(color: '#00CD48', message: "vps4 *STARTING NEW BUILD*. Job '${env.JOB_NAME} [${VPS4_VERSION}]' (${env.BUILD_URL})")
-                git credentialsId: '0e6be54c-e8ae-42d2-b651-6758042e282b', url: 'https://github.secureserver.net/vps4/vps4.git'
-                build job: 'vps4'
                 load("/home/jenkins/vps4_latest_version.properties")
+                slackSend(color: '#00CD48', message: "vps4 *STARTING NEW BUILD*. Job '${env.JOB_NAME} [${VPS4_VERSION}]' (${env.BUILD_URL})")
+                build job: 'vps4'
                 echo "vps4 version: ${VPS4_VERSION}"
                 slackSend(color: '#00CD48', message: "vps4 *BUILD* was successful. Job '${env.JOB_NAME} [${VPS4_VERSION}]' (${env.BUILD_URL})")
             }
