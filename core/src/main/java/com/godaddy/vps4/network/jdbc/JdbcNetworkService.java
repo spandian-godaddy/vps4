@@ -78,4 +78,25 @@ public class JdbcNetworkService implements NetworkService {
                 "SELECT COUNT(*) FROM ip_address ip WHERE ip.valid_until > now_utc() AND" + " vm_id=? AND family(ip.ip_address) = 4",
                 Sql.nextOrNull(rs -> rs.getInt("count")), vmId);
     }
+
+    public List<IpAddress> getActiveIpv6Addresses(long hfsVmId) {
+        return Sql.with(dataSource).exec(
+                "SELECT ip.*, family(ip.ip_address) FROM ip_address ip JOIN virtual_machine vm on ip.vm_id = vm.vm_id WHERE vm.hfs_vm_id=?" +
+                        " AND ip.ip_address_type_id = ? and ip.valid_until > now_utc() AND family(ip.ip_address) = 6",
+                Sql.listOf(IpAddressMapper::mapIpAddress), hfsVmId, IpAddress.IpAddressType.SECONDARY.getId());
+    }
+
+    public List<IpAddress> getActiveIpv4Addresses(long hfsVmId) {
+        return Sql.with(dataSource).exec(
+                "SELECT ip.*, family(ip.ip_address) FROM ip_address ip JOIN virtual_machine vm on ip.vm_id = vm.vm_id WHERE vm.hfs_vm_id=?" +
+                        " AND ip.ip_address_type_id = ? and ip.valid_until > now_utc() AND family(ip.ip_address) = 4",
+                Sql.listOf(IpAddressMapper::mapIpAddress), hfsVmId, IpAddress.IpAddressType.SECONDARY.getId());
+    }
+
+    @Override
+    public int getActiveIpv6AddressesCount(UUID vmId) {
+        return Sql.with(dataSource).exec(
+                "SELECT COUNT(*) FROM ip_address ip WHERE ip.valid_until > now_utc() AND" + " vm_id=? AND family(ip.ip_address) = 6",
+                Sql.nextOrNull(rs -> rs.getInt("count")), vmId);
+    }
 }

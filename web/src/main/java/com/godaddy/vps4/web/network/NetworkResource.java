@@ -7,16 +7,19 @@ import java.util.stream.Collectors;
 
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
+import javax.ws.rs.DefaultValue;
 import javax.ws.rs.GET;
 import javax.ws.rs.NotFoundException;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
 
 import com.godaddy.vps4.ipblacklist.IpBlacklistService;
 import com.godaddy.vps4.orchestration.ActionRequest;
+import io.swagger.annotations.ApiParam;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -114,20 +117,18 @@ public class NetworkResource {
 
     @POST
     @Path("/{vmId}/ipAddresses")
-    public VmAction addIpAddress(@PathParam("vmId") UUID vmId) {
+    public VmAction addIpAddress(@PathParam("vmId") UUID vmId,
+                                 @ApiParam(value = "internet protocol version - default is 4") @DefaultValue("4") @QueryParam("internetProtocolVersion") int internetProtocolVersion) {
         VirtualMachine virtualMachine = vmResource.getVm(vmId);
         validateNoConflictingActions(vmId, actionService, ActionType.ADD_IP);
 
-        int currentIpsInUse = networkService.getActiveIpv4AddressesCount(vmId);
-        if( currentIpsInUse >= virtualMachine.spec.ipAddressLimit)
-        {
-            throw new Vps4Exception("IP_LIMIT_REACHED",String.format("This vm's ip limit is %s and it already has %s ips in use.", virtualMachine.spec.ipAddressLimit, currentIpsInUse));
-        }
+        validateIPVAddressLimit(internetProtocolVersion, vmId, virtualMachine.spec.ipAddressLimit);
+
         logger.info("Adding IP to VM {}", virtualMachine.vmId);
         if(virtualMachine.hfsVmId == 0){
             throw new NotFoundException("VM was not associated with hfs vm");
         }
-        ActionRequest request = generateAddIpOrchestrationRequest(virtualMachine);
+        ActionRequest request = generateAddIpOrchestrationRequest(virtualMachine, internetProtocolVersion);
 
         logger.info("Adding Ip Address with request "+ request.toString());
 
@@ -158,8 +159,7 @@ public class NetworkResource {
         return request;
     }
 
-    private ActionRequest generateAddIpOrchestrationRequest(VirtualMachine vm) {
-
+    private ActionRequest generateAddIpOrchestrationRequest(VirtualMachine vm, int internetProtocolVersion) {
         Project project = projectService.getProject(vm.projectId);
         String sgid = project.getVhfsSgid();
 
@@ -168,16 +168,38 @@ public class NetworkResource {
                 config.get(vm.dataCenter.dataCenterName + ".ovh.zone", null);
 
         if (vm.spec.serverType.platform == ServerType.Platform.OPTIMIZED_HOSTING
-        || vm.spec.serverType.platform == ServerType.Platform.OVH) {
+        || (vm.spec.serverType.platform == ServerType.Platform.OVH && internetProtocolVersion == 4)) {
             Vps4AddIpAddress.Request request = new Vps4AddIpAddress.Request();
             request.vmId = vm.vmId;
             request.zone = zone;
             request.sgid = sgid;
             request.serverId = vm.hfsVmId;
+            request.internetProtocolVersion = internetProtocolVersion;
             return request;
         }
-        else throw new Vps4Exception("ADD_IP_NOT_SUPPORTED_FOR_PLATFORM", String.format("Add Ip not supported " +
-                    "for platform %s", vm.spec.serverType.platform));
+        else throw new Vps4Exception("ADD_IP_NOT_SUPPORTED_FOR_PLATFORM", String.format("Add IP for IPV %s not supported " +
+                    "for platform %s", internetProtocolVersion, vm.spec.serverType.platform));
+    }
+
+    private void validateIPVAddressLimit(int internetProtocolVersion, UUID vmId, int ipv4AddressLimit) {
+        if(internetProtocolVersion == 4){
+            int currentIpsInUse = networkService.getActiveIpv4AddressesCount(vmId);
+            if(currentIpsInUse >= ipv4AddressLimit)
+            {
+                throw new Vps4Exception("IPV4_LIMIT_REACHED",String.format("This vm's ipv4 limit is %s and it already has %s ips in use.", ipv4AddressLimit, currentIpsInUse));
+            }
+        }
+        else if (internetProtocolVersion == 6){
+            int currentIpsInUse = networkService.getActiveIpv6AddressesCount(vmId);
+            if(currentIpsInUse >= 1)
+            {
+                throw new Vps4Exception("IPV6_LIMIT_REACHED",String.format("This vm's ipv6 limit is 1 and it already has %s ips in use.", currentIpsInUse));
+            }
+        }
+        else
+        {
+            throw new Vps4Exception("INVALID_IPV",String.format("%s is not a valid int for Internet Protocol Version(IPV4 or IPV6 only).", internetProtocolVersion));
+        }
     }
 
     @RequiresRole(roles = {GDUser.Role.ADMIN})

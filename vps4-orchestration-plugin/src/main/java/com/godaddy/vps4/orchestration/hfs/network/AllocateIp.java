@@ -22,6 +22,7 @@ public class AllocateIp implements Command<AllocateIp.Request, IpAddress> {
         public String sgid;
         public String zone;
         public Long serverId;
+        public int internetProtocolVersion;
     }
 
     final NetworkServiceV2 networkService;
@@ -43,7 +44,7 @@ public class AllocateIp implements Command<AllocateIp.Request, IpAddress> {
         // Optimized Hosting - allocates and binds and configures
 
         AddressAction hfsAction = context.execute("RequestFromHFS",
-                ctx -> networkService.acquireIp(request.sgid, request.zone, request.serverId),
+                ctx -> networkService.acquireIp(request.sgid, request.zone, request.serverId, request.internetProtocolVersion),
                 AddressAction.class);
         context.execute(WaitForAddressAction.class, hfsAction);
 

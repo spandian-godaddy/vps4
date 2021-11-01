@@ -106,7 +106,7 @@ public class NetworkResourceUserTest {
         VirtualMachine vm = createTestVm();
         NetworkResource resource = injector.getInstance(NetworkResource.class);
 
-        VmAction action = resource.addIpAddress(vm.vmId);
+        VmAction action = resource.addIpAddress(vm.vmId, 4);
         Assert.assertNotNull(action);
     }
 

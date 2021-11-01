@@ -16,10 +16,16 @@ public interface NetworkService {
     List<IpAddress> getVmIpAddresses(UUID vmId);
 
     IpAddress getVmPrimaryAddress(UUID vmId);
-    
+
     IpAddress getVmPrimaryAddress(long hfsVmId);
 
     List<IpAddress> getVmSecondaryAddress(long hfsVmId);
 
+    List<IpAddress> getActiveIpv4Addresses(long hfsVmId);
+
+    List<IpAddress> getActiveIpv6Addresses(long hfsVmId);
+
     int getActiveIpv4AddressesCount(UUID vmId);
+
+    int getActiveIpv6AddressesCount(UUID vmId);
 }
