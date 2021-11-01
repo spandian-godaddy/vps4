@@ -40,7 +40,7 @@ public class Vps4AddIpAddress extends ActionCommand<Vps4AddIpAddress.Request, Vo
 
     @Inject
     public Vps4AddIpAddress(ActionService actionService, VmService vmService,
-                            VirtualMachineService virtualMachineService, NetworkService networkService) {
+            VirtualMachineService virtualMachineService, NetworkService networkService) {
         super(actionService);
         this.actionService = actionService;
         this.vmService = vmService;
@@ -65,7 +65,7 @@ public class Vps4AddIpAddress extends ActionCommand<Vps4AddIpAddress.Request, Vo
     }
 
     private IpAddress allocateIp(CommandContext context,
-                                 Vps4AddIpAddress.Request request) {
+            Vps4AddIpAddress.Request request) {
         AllocateIp.Request allocateIpRequest = new AllocateIp.Request();
         allocateIpRequest.sgid = request.sgid;
         allocateIpRequest.zone = request.zone;
@@ -79,8 +79,8 @@ public class Vps4AddIpAddress extends ActionCommand<Vps4AddIpAddress.Request, Vo
     private void addIpToDatabase(CommandContext context, IpAddress hfsIp, UUID vmId) {
         logger.info("Adding HFS IP {} to the db for vmId {}", hfsIp.address, vmId);
         context.execute("Create-" + hfsIp.addressId, ctx -> {
-            networkService.createIpAddress(hfsIp.addressId, vmId, hfsIp.address, IpAddressType.SECONDARY);
-            return null;
+             networkService.createIpAddress(hfsIp.addressId, vmId, hfsIp.address, IpAddressType.SECONDARY);
+             return null;
         }, Void.class);
     }
 

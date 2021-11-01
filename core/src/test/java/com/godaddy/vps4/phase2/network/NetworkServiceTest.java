@@ -26,7 +26,6 @@ import com.google.inject.Guice;
 import com.google.inject.Injector;
 
 import junit.framework.Assert;
-import org.mockito.internal.verification.Only;
 
 public class NetworkServiceTest {
 
