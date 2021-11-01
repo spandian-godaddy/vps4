@@ -23,17 +23,17 @@ public class JdbcNetworkService implements NetworkService {
     @Override
     public IpAddress createIpAddress(long hfsAddressId, UUID vmId, String ipAddress, IpAddressType ipAddressType) {
         return Sql.with(dataSource).exec("INSERT INTO ip_address (hfs_address_id, ip_address, vm_id, ip_address_type_id) " +
-                                                 "VALUES (?, ?::inet, ?, ?) " +
-                                                 "RETURNING ip_address.*, family(ip_address.ip_address)",
-                                         Sql.nextOrNull(IpAddressMapper::mapIpAddress),
-                                         hfsAddressId, ipAddress, vmId, ipAddressType.getId());
+                        "VALUES (?, ?::inet, ?, ?) " +
+                        "RETURNING ip_address.*, family(ip_address.ip_address)",
+                Sql.nextOrNull(IpAddressMapper::mapIpAddress),
+                hfsAddressId, ipAddress, vmId, ipAddressType.getId());
 
     }
 
     @Override
     public void destroyIpAddress(long addressId) {
         Sql.with(dataSource).exec("UPDATE ip_address SET valid_until = now_utc() WHERE address_id = ?",
-                                  null, addressId);
+                null, addressId);
     }
 
     @Override

@@ -49,7 +49,7 @@ import static com.godaddy.vps4.web.util.RequestValidation.validateNoConflictingA
 import static com.godaddy.vps4.web.util.VmHelper.createActionAndExecute;
 
 @Vps4Api
-@Api(tags = { "vms" })
+@Api(tags = {"vms"})
 
 @Path("/api/vms")
 @Produces(MediaType.APPLICATION_JSON)
@@ -64,8 +64,8 @@ public class NetworkResource {
     private final CommandService commandService;
     private final VmResource vmResource;
     private final Config config;
-	private final GDUser user;
-	private final IpBlacklistService ipBlacklistService;
+    private final GDUser user;
+    private final IpBlacklistService ipBlacklistService;
 
 
     @Inject
@@ -106,10 +106,10 @@ public class NetworkResource {
 
     @GET
     @Path("/{vmId}/ipAddresses")
-    public List<IpAddress> getIpAddresses(@PathParam("vmId") UUID vmId){
+    public List<IpAddress> getIpAddresses(@PathParam("vmId") UUID vmId) {
         VirtualMachine virtualMachine = vmResource.getVm(vmId);
         List<IpAddress> ipAddresses = networkService.getVmIpAddresses(virtualMachine.vmId);
-        if (ipAddresses != null){
+        if (ipAddresses != null) {
             ipAddresses = ipAddresses.stream().filter(ip -> ip.validUntil.isAfter(Instant.now())).collect(Collectors.toList());
         }
         return ipAddresses;
@@ -125,12 +125,12 @@ public class NetworkResource {
         validateIPVAddressLimit(internetProtocolVersion, vmId, virtualMachine.spec.ipAddressLimit);
 
         logger.info("Adding IP to VM {}", virtualMachine.vmId);
-        if(virtualMachine.hfsVmId == 0){
+        if (virtualMachine.hfsVmId == 0) {
             throw new NotFoundException("VM was not associated with hfs vm");
         }
         ActionRequest request = generateAddIpOrchestrationRequest(virtualMachine, internetProtocolVersion);
 
-        logger.info("Adding Ip Address with request "+ request.toString());
+        logger.info("Adding Ip Address with request " + request.toString());
 
         return createActionAndExecute(actionService, commandService, virtualMachine.vmId, ActionType.ADD_IP,
                 request, "Vps4AddIpAddress", user);
@@ -143,8 +143,8 @@ public class NetworkResource {
 
         IpAddress ipAddress = getIpAddressInternal(vmId, addressId);
 
-        if(ipAddress.ipAddressType.equals(IpAddress.IpAddressType.PRIMARY)){
-            throw new Vps4Exception("CANNOT_DESTROY_PRIMARY_IP","Cannot destroy a VM's Primary IP");
+        if (ipAddress.ipAddressType.equals(IpAddress.IpAddressType.PRIMARY)) {
+            throw new Vps4Exception("CANNOT_DESTROY_PRIMARY_IP", "Cannot destroy a VM's Primary IP");
         }
         ActionRequest request = generateDestroyIpOrchestrationRequest(virtualMachine, addressId);
 
@@ -152,7 +152,7 @@ public class NetworkResource {
                 request, "Vps4DestroyIpAddressAction", user);
     }
 
-    private ActionRequest generateDestroyIpOrchestrationRequest(VirtualMachine vm, long addressId ) {
+    private ActionRequest generateDestroyIpOrchestrationRequest(VirtualMachine vm, long addressId) {
         Vps4DestroyIpAddressAction.Request request = new Vps4DestroyIpAddressAction.Request();
         request.addressId = addressId;
         request.vmId = vm.vmId;
@@ -168,7 +168,7 @@ public class NetworkResource {
                 config.get(vm.dataCenter.dataCenterName + ".ovh.zone", null);
 
         if (vm.spec.serverType.platform == ServerType.Platform.OPTIMIZED_HOSTING
-        || (vm.spec.serverType.platform == ServerType.Platform.OVH && internetProtocolVersion == 4)) {
+                || (vm.spec.serverType.platform == ServerType.Platform.OVH && internetProtocolVersion == 4)) {
             Vps4AddIpAddress.Request request = new Vps4AddIpAddress.Request();
             request.vmId = vm.vmId;
             request.zone = zone;
@@ -176,29 +176,24 @@ public class NetworkResource {
             request.serverId = vm.hfsVmId;
             request.internetProtocolVersion = internetProtocolVersion;
             return request;
-        }
-        else throw new Vps4Exception("ADD_IP_NOT_SUPPORTED_FOR_PLATFORM", String.format("Add IP for IPV %s not supported " +
+        } else
+            throw new Vps4Exception("ADD_IP_NOT_SUPPORTED_FOR_PLATFORM", String.format("Add IP for IPV %s not supported " +
                     "for platform %s", internetProtocolVersion, vm.spec.serverType.platform));
     }
 
     private void validateIPVAddressLimit(int internetProtocolVersion, UUID vmId, int ipv4AddressLimit) {
         int currentIpsInUse = networkService.getActiveIpAddressesCount(vmId, internetProtocolVersion);
 
-        if(internetProtocolVersion == 4) {
-            if(currentIpsInUse >= ipv4AddressLimit)
-            {
-                throw new Vps4Exception("IPV4_LIMIT_REACHED",String.format("This vm's ipv4 limit is %s and it already has %s ips in use.", ipv4AddressLimit, currentIpsInUse));
+        if (internetProtocolVersion == 4) {
+            if (currentIpsInUse >= ipv4AddressLimit) {
+                throw new Vps4Exception("IPV4_LIMIT_REACHED", String.format("This vm's ipv4 limit is %s and it already has %s ips in use.", ipv4AddressLimit, currentIpsInUse));
             }
-        }
-        else if (internetProtocolVersion == 6) {
-            if(currentIpsInUse >= 1)
-            {
-                throw new Vps4Exception("IPV6_LIMIT_REACHED",String.format("This vm's ipv6 limit is 1 and it already has %s ips in use.", currentIpsInUse));
+        } else if (internetProtocolVersion == 6) {
+            if (currentIpsInUse >= 1) {
+                throw new Vps4Exception("IPV6_LIMIT_REACHED", String.format("This vm's ipv6 limit is 1 and it already has %s ips in use.", currentIpsInUse));
             }
-        }
-        else
-        {
-            throw new Vps4Exception("INVALID_IPV",String.format("%s is not a valid int for Internet Protocol Version(IPV4 or IPV6 only).", internetProtocolVersion));
+        } else {
+            throw new Vps4Exception("INVALID_IPV", String.format("%s is not a valid int for Internet Protocol Version(IPV4 or IPV6 only).", internetProtocolVersion));
         }
     }
 

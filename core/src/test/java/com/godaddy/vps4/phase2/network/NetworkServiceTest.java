@@ -113,8 +113,7 @@ public class NetworkServiceTest {
         try {
             networkService.createIpAddress(primaryId + 1, vm.vmId, "127.0.0.2", IpAddress.IpAddressType.PRIMARY);
             Assert.fail("This should fail to insert a new Primary IP");
-        }
-        catch (Exception se) {
+        } catch (Exception se) {
         }
     }
 
@@ -131,8 +130,7 @@ public class NetworkServiceTest {
         try {
             networkService.createIpAddress(126, vm.vmId, primaryAddress, IpAddress.IpAddressType.SECONDARY);
             Assert.fail("This should fail to insert a duplicate IP address");
-        }
-        catch (Exception e) {
+        } catch (Exception e) {
         }
     }
 
@@ -147,7 +145,7 @@ public class NetworkServiceTest {
         networkService.createIpAddress(hfsAddressId + 1, vmTwo.vmId, primaryAddress, IpAddress.IpAddressType.PRIMARY);
     }
 
-    @Test(expected=RuntimeException.class)
+    @Test(expected = RuntimeException.class)
     public void testReuseOfActiveIpFails() {
         long primaryId = 125;
         String primaryAddress = "192.168.1.1";

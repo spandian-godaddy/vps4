@@ -59,21 +59,21 @@ public class Vps4AddIpAddressTest {
         ServerSpec vmSpec = new ServerSpec();
         vmSpec.serverType = vmServerType;
         VirtualMachine virtualMachine = new VirtualMachine(UUID.randomUUID(),
-                                                           1111,
-                                                           UUID.randomUUID(),
-                                                           0,
-                                                           vmSpec,
-                                                           "fakeName",
-                                                           null,
-                                                           null,
-                                                           Instant.now(),
-                                                           null,
-                                                           null,
-                                                           null,
-                                                           "fake.hostname.com",
-                                                           0,
-                                                           UUID.randomUUID(),
-                                                           null);
+                1111,
+                UUID.randomUUID(),
+                0,
+                vmSpec,
+                "fakeName",
+                null,
+                null,
+                Instant.now(),
+                null,
+                null,
+                null,
+                "fake.hostname.com",
+                0,
+                UUID.randomUUID(),
+                null);
         request.vmId = virtualMachine.vmId;
         request.zone = "vps4-phx3";
         request.sgid = "vps4-unittest-1234";
@@ -84,9 +84,9 @@ public class Vps4AddIpAddressTest {
         when(virtualMachineService.getVirtualMachine(any())).thenReturn(virtualMachine);
         when(context.execute(eq(AllocateIp.class), any(AllocateIp.Request.class))).thenReturn(hfsAddress);
 
-        try{
+        try {
             command.executeWithAction(context, request);
-        }catch(Exception e){
+        } catch (Exception e) {
             System.out.println(e);
             Assert.fail();
         }
