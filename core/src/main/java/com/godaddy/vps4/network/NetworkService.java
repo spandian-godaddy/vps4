@@ -21,11 +21,7 @@ public interface NetworkService {
 
     List<IpAddress> getVmSecondaryAddress(long hfsVmId);
 
-    List<IpAddress> getActiveIpv4Addresses(long hfsVmId);
+    List<IpAddress> getActiveIpAddresses(long hfsVmId, int internetProtocolVersion);
 
-    List<IpAddress> getActiveIpv6Addresses(long hfsVmId);
-
-    int getActiveIpv4AddressesCount(UUID vmId);
-
-    int getActiveIpv6AddressesCount(UUID vmId);
+    int getActiveIpAddressesCount(UUID vmId, int internetProtocolVersion);
 }

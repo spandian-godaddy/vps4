@@ -18,7 +18,7 @@ public class SetMailRelayQuota implements Command<SetMailRelayQuota.Request, Voi
     private final MailRelayService mailRelayService;
 
     @Inject
-    public SetMailRelayQuota(MailRelayService mailRelayService){
+    public SetMailRelayQuota(MailRelayService mailRelayService) {
         this.mailRelayService = mailRelayService;
     }
 

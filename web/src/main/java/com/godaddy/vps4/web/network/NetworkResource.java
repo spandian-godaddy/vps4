@@ -182,15 +182,15 @@ public class NetworkResource {
     }
 
     private void validateIPVAddressLimit(int internetProtocolVersion, UUID vmId, int ipv4AddressLimit) {
-        if(internetProtocolVersion == 4){
-            int currentIpsInUse = networkService.getActiveIpv4AddressesCount(vmId);
+        int currentIpsInUse = networkService.getActiveIpAddressesCount(vmId, internetProtocolVersion);
+
+        if(internetProtocolVersion == 4) {
             if(currentIpsInUse >= ipv4AddressLimit)
             {
                 throw new Vps4Exception("IPV4_LIMIT_REACHED",String.format("This vm's ipv4 limit is %s and it already has %s ips in use.", ipv4AddressLimit, currentIpsInUse));
             }
         }
-        else if (internetProtocolVersion == 6){
-            int currentIpsInUse = networkService.getActiveIpv6AddressesCount(vmId);
+        else if (internetProtocolVersion == 6) {
             if(currentIpsInUse >= 1)
             {
                 throw new Vps4Exception("IPV6_LIMIT_REACHED",String.format("This vm's ipv6 limit is 1 and it already has %s ips in use.", currentIpsInUse));

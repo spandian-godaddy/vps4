@@ -990,7 +990,7 @@ public class HfsMockModule extends AbstractModule {
             }
 
             @Override
-            public AddressAction acquireIp(String sgid, String zone, Long serverId, Integer integer) {
+            public AddressAction acquireIp(String sgid, String zone, Long serverId, Integer internetProtocolVersion) {
                 IpAddress address = this.createAddressHelper(sgid, zone);
                 customerAddresses.put(address.addressId, address);
 

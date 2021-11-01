@@ -26,6 +26,7 @@ import com.google.inject.Guice;
 import com.google.inject.Injector;
 
 import junit.framework.Assert;
+import org.mockito.internal.verification.Only;
 
 public class NetworkServiceTest {
 
@@ -181,4 +182,25 @@ public class NetworkServiceTest {
         assertEquals(1, ips.size());
     }
 
+    @Test
+    public void testGetIpAddressesIPV4s() {
+        networkService.createIpAddress(126, vm.vmId, "192.168.1.1", IpAddress.IpAddressType.SECONDARY);
+        networkService.createIpAddress(127, vm.vmId, "127.0.0.1", IpAddress.IpAddressType.SECONDARY);
+
+        networkService.createIpAddress(126, vm.vmId, "2001:0db8:85a3:0000:0000:8a2e:0370:7334", IpAddress.IpAddressType.SECONDARY);
+
+        List<IpAddress> ips = networkService.getActiveIpAddresses(vm.hfsVmId, 4);
+        assertEquals(2, ips.size());
+    }
+
+    @Test
+    public void testGetIpAddressesIPV6s() {
+        networkService.createIpAddress(126, vm.vmId, "192.168.1.1", IpAddress.IpAddressType.SECONDARY);
+        networkService.createIpAddress(127, vm.vmId, "127.0.0.1", IpAddress.IpAddressType.SECONDARY);
+
+        networkService.createIpAddress(126, vm.vmId, "2001:0db8:85a3:0000:0000:8a2e:0370:7334", IpAddress.IpAddressType.SECONDARY);
+
+        List<IpAddress> ips = networkService.getActiveIpAddresses(vm.hfsVmId, 6);
+        assertEquals(1, ips.size());
+    }
 }
