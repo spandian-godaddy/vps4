@@ -92,6 +92,7 @@ public class SetupPanoptaTest {
         when(credit.isManaged()).thenReturn(false);
         when(credit.hasMonitoring()).thenReturn(false);
         when(credit.getOperatingSystem()).thenReturn("LINUX");
+        when(credit.getResellerId()).thenReturn("1");
         when(creditService.getVirtualMachineCredit(orionGuid)).thenReturn(credit);
     };
 
@@ -126,6 +127,7 @@ public class SetupPanoptaTest {
         when(config.get("panopta.api.templates.addon.linux")).thenReturn("fake_template_addon");
         when(config.get("panopta.api.templates.managed.linux")).thenReturn("fake_template_managed");
         when(config.get("panopta.api.templates.webhook")).thenReturn("fake_template_dc");
+        when(config.get("panopta.api.attribute.plid")).thenReturn("4410");
         when(config.get("panopta.api.attribute.brand")).thenReturn("721");
         when(config.get("panopta.api.attribute.product")).thenReturn("722");
     }
@@ -196,12 +198,14 @@ public class SetupPanoptaTest {
         assertEquals("https://api2.panopta.com/v2/server_template/fake_template_dc", templates[1]);
 
         String[] tags = tagCaptor.getValue();
+        assertTrue(Arrays.asList(tags).contains("1"));
         assertTrue(Arrays.asList(tags).contains("godaddy"));
         assertTrue(Arrays.asList(tags).contains("vps4"));
         verify(panoptaDataService, times(1)).createPanoptaServer(eq(vmId), eq(shopperId), eq("fake_template_base"), any());
 
         verify(panoptaService, times(1)).setServerAttributes(eq(vmId), attributeCaptor.capture());
         Map<Long, String> attributes = attributeCaptor.getValue();
+        assertEquals("1", attributes.get(4410L));
         assertEquals("godaddy", attributes.get(721L));
         assertEquals("vps4", attributes.get(722L));
     }
@@ -234,6 +238,7 @@ public class SetupPanoptaTest {
 
     @Test
     public void createsPanoptaServerAsReseller() throws PanoptaServiceException {
+        when(credit.getResellerId()).thenReturn("495469");
         when(resellerService.getResellerDescription(anyString())).thenReturn("media-temple");
         when(panoptaDataService.getPanoptaServerDetails(vmId))
                 .thenReturn(null)
@@ -243,11 +248,14 @@ public class SetupPanoptaTest {
         verify(panoptaService, times(1))
                 .createServer(eq(shopperId), eq(orionGuid), eq(fqdn), any(), tagCaptor.capture());
         String[] tags = tagCaptor.getValue();
+        assertFalse(Arrays.asList(tags).contains("1"));
+        assertTrue(Arrays.asList(tags).contains("495469"));
         assertFalse(Arrays.asList(tags).contains("godaddy"));
         assertTrue(Arrays.asList(tags).contains("media-temple"));
 
         verify(panoptaService, times(1)).setServerAttributes(eq(vmId), attributeCaptor.capture());
         Map<Long, String> attributes = attributeCaptor.getValue();
+        assertEquals("495469", attributes.get(4410L));
         assertEquals("media-temple", attributes.get(721L));
         assertEquals("vps4", attributes.get(722L));
     }

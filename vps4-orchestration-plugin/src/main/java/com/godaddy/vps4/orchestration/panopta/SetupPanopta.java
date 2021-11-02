@@ -153,14 +153,17 @@ public class SetupPanopta implements Command<SetupPanopta.Request, Void> {
 
     private Map<Long, String> getAttributes() {
         Map<Long, String> tags = new HashMap<>();
+        long plidAttributeId = Long.parseLong(config.get("panopta.api.attribute.plid"));
         long brandAttributeId = Long.parseLong(config.get("panopta.api.attribute.brand"));
         long productAttributeId = Long.parseLong(config.get("panopta.api.attribute.product"));
-        String reseller = resellerService.getResellerDescription(credit.getResellerId());
+        String plid = credit.getResellerId();
+        String reseller = resellerService.getResellerDescription(plid);
         if (reseller == null) {
             tags.put(brandAttributeId, "godaddy");
         } else {
             tags.put(brandAttributeId, reseller.toLowerCase().replace(' ', '-'));
         }
+        tags.put(plidAttributeId, plid);
         tags.put(productAttributeId, "vps4");
         return tags;
     }
