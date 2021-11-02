@@ -86,10 +86,7 @@ public class JdbcPlanService implements PlanService {
     @Override
     public List<Plan> getAdjacentPlanList(VirtualMachine vm) {
         return plans.stream()
-                    .filter(p -> p.enabled
-                            && p.tier == vm.spec.tier
-                            && p.os == vm.image.operatingSystem
-                            && p.termMonths == 1)
+                    .filter(p -> p.tier == vm.spec.tier && p.os == vm.image.operatingSystem && p.termMonths == 1)
                     .collect(Collectors.toList());
     }
 

@@ -129,7 +129,7 @@ public class JdbcPlanServiceTest {
                                                    .map(plan -> plan.packageId)
                                                    .collect(Collectors.toList());
         assertTrue(adjacentPackages.contains("test_plan_tier_4_myh"));
+        assertTrue(adjacentPackages.contains("test_plan_tier_4_disabled"));
         assertFalse(adjacentPackages.contains("test_plan_tier_3_windows"));
-        assertFalse(adjacentPackages.contains("test_plan_tier_4_disabled"));
     }
 }
