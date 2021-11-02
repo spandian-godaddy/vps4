@@ -23,17 +23,17 @@ public class JdbcNetworkService implements NetworkService {
     @Override
     public IpAddress createIpAddress(long hfsAddressId, UUID vmId, String ipAddress, IpAddressType ipAddressType) {
         return Sql.with(dataSource).exec("INSERT INTO ip_address (hfs_address_id, ip_address, vm_id, ip_address_type_id) " +
-                                                 "VALUES (?, ?::inet, ?, ?) " +
-                                                 "RETURNING ip_address.*, family(ip_address.ip_address)",
-                                         Sql.nextOrNull(IpAddressMapper::mapIpAddress),
-                                         hfsAddressId, ipAddress, vmId, ipAddressType.getId());
+                        "VALUES (?, ?::inet, ?, ?) " +
+                        "RETURNING ip_address.*, family(ip_address.ip_address)",
+                Sql.nextOrNull(IpAddressMapper::mapIpAddress),
+                hfsAddressId, ipAddress, vmId, ipAddressType.getId());
 
     }
 
     @Override
     public void destroyIpAddress(long addressId) {
         Sql.with(dataSource).exec("UPDATE ip_address SET valid_until = now_utc() WHERE address_id = ?",
-                                  null, addressId);
+                null, addressId);
     }
 
     @Override
@@ -73,9 +73,18 @@ public class JdbcNetworkService implements NetworkService {
     }
 
     @Override
-    public int getActiveIpv4AddressesCount(UUID vmId) {
+    public int getActiveIpAddressesCount(UUID vmId, int internetProtocolVersion) {
         return Sql.with(dataSource).exec(
-                "SELECT COUNT(*) FROM ip_address ip WHERE ip.valid_until > now_utc() AND" + " vm_id=? AND family(ip.ip_address) = 4",
-                Sql.nextOrNull(rs -> rs.getInt("count")), vmId);
+                "SELECT COUNT(*) FROM ip_address ip WHERE ip.valid_until > now_utc() AND" + " vm_id=? AND family(ip.ip_address) = ?",
+                Sql.nextOrNull(rs -> rs.getInt("count")), vmId, internetProtocolVersion);
     }
+
+    @Override
+    public List<IpAddress> getActiveIpAddresses(long hfsVmId, int internetProtocolVersion) {
+        return Sql.with(dataSource).exec(
+                "SELECT ip.*, family(ip.ip_address) FROM ip_address ip JOIN virtual_machine vm on ip.vm_id = vm.vm_id WHERE vm.hfs_vm_id=?" +
+                        " AND ip.ip_address_type_id = ? and ip.valid_until > now_utc() AND family(ip.ip_address) = ?",
+                Sql.listOf(IpAddressMapper::mapIpAddress), hfsVmId, IpAddress.IpAddressType.SECONDARY.getId(), internetProtocolVersion);
+    }
+
 }

@@ -11,14 +11,14 @@ import com.godaddy.hfs.mailrelay.MailRelay;
 import com.godaddy.hfs.mailrelay.MailRelayService;
 import com.godaddy.hfs.mailrelay.MailRelayUpdate;
 
-public class SetMailRelayQuota implements Command<SetMailRelayQuota.Request, Void>{
+public class SetMailRelayQuota implements Command<SetMailRelayQuota.Request, Void> {
 
     private static final Logger logger = LoggerFactory.getLogger(SetMailRelayQuota.class);
 
     private final MailRelayService mailRelayService;
 
     @Inject
-    public SetMailRelayQuota(MailRelayService mailRelayService){
+    public SetMailRelayQuota(MailRelayService mailRelayService) {
         this.mailRelayService = mailRelayService;
     }
 

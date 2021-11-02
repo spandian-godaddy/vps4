@@ -112,8 +112,7 @@ public class NetworkServiceTest {
         try {
             networkService.createIpAddress(primaryId + 1, vm.vmId, "127.0.0.2", IpAddress.IpAddressType.PRIMARY);
             Assert.fail("This should fail to insert a new Primary IP");
-        }
-        catch (Exception se) {
+        } catch (Exception se) {
         }
     }
 
@@ -130,8 +129,7 @@ public class NetworkServiceTest {
         try {
             networkService.createIpAddress(126, vm.vmId, primaryAddress, IpAddress.IpAddressType.SECONDARY);
             Assert.fail("This should fail to insert a duplicate IP address");
-        }
-        catch (Exception e) {
+        } catch (Exception e) {
         }
     }
 
@@ -146,7 +144,7 @@ public class NetworkServiceTest {
         networkService.createIpAddress(hfsAddressId + 1, vmTwo.vmId, primaryAddress, IpAddress.IpAddressType.PRIMARY);
     }
 
-    @Test(expected=RuntimeException.class)
+    @Test(expected = RuntimeException.class)
     public void testReuseOfActiveIpFails() {
         long primaryId = 125;
         String primaryAddress = "192.168.1.1";
@@ -181,4 +179,25 @@ public class NetworkServiceTest {
         assertEquals(1, ips.size());
     }
 
+    @Test
+    public void testGetIpAddressesIPV4s() {
+        networkService.createIpAddress(126, vm.vmId, "192.168.1.1", IpAddress.IpAddressType.SECONDARY);
+        networkService.createIpAddress(127, vm.vmId, "127.0.0.1", IpAddress.IpAddressType.SECONDARY);
+
+        networkService.createIpAddress(126, vm.vmId, "2001:0db8:85a3:0000:0000:8a2e:0370:7334", IpAddress.IpAddressType.SECONDARY);
+
+        List<IpAddress> ips = networkService.getActiveIpAddresses(vm.hfsVmId, 4);
+        assertEquals(2, ips.size());
+    }
+
+    @Test
+    public void testGetIpAddressesIPV6s() {
+        networkService.createIpAddress(126, vm.vmId, "192.168.1.1", IpAddress.IpAddressType.SECONDARY);
+        networkService.createIpAddress(127, vm.vmId, "127.0.0.1", IpAddress.IpAddressType.SECONDARY);
+
+        networkService.createIpAddress(126, vm.vmId, "2001:0db8:85a3:0000:0000:8a2e:0370:7334", IpAddress.IpAddressType.SECONDARY);
+
+        List<IpAddress> ips = networkService.getActiveIpAddresses(vm.hfsVmId, 6);
+        assertEquals(1, ips.size());
+    }
 }

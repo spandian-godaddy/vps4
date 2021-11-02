@@ -26,7 +26,7 @@ import com.google.inject.Injector;
 import gdg.hfs.orchestration.CommandContext;
 import junit.framework.Assert;
 
-public class TestVps4DestroyIpAddressAction {
+public class Vps4DestroyIpAddressActionTest {
     ActionService actionService = mock(ActionService.class);
     VmService vmService = mock(VmService.class);
     VirtualMachineService virtualMachineService = mock(VirtualMachineService.class);

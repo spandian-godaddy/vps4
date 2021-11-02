@@ -19,6 +19,8 @@ import com.godaddy.hfs.cpanel.CPanelLicense;
 import com.godaddy.hfs.cpanel.CPanelService;
 import gdg.hfs.vhfs.ecomm.Reinstatement;
 import gdg.hfs.vhfs.ecomm.Suspension;
+import gdg.hfs.vhfs.network.AddressImportRequest;
+import gdg.hfs.vhfs.network.AddressImportResponse;
 import org.joda.time.DateTime;
 import org.mockito.Mockito;
 
@@ -988,7 +990,7 @@ public class HfsMockModule extends AbstractModule {
             }
 
             @Override
-            public AddressAction acquireIp(String sgid, String zone, Long serverId) {
+            public AddressAction acquireIp(String sgid, String zone, Long serverId, Integer internetProtocolVersion) {
                 IpAddress address = this.createAddressHelper(sgid, zone);
                 customerAddresses.put(address.addressId, address);
 
@@ -1090,6 +1092,11 @@ public class HfsMockModule extends AbstractModule {
             public void onComplete(CompleteResponse completeResponse) {
                 // NOTE: do nothing, Implement when needed
                 throw new UnsupportedOperationException("Not implemented, yet");
+            }
+
+            @Override
+            public AddressImportResponse importAddresses(AddressImportRequest addressImportRequest) {
+                return null;
             }
 
 

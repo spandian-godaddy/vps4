@@ -58,7 +58,7 @@ public class NetworkResourceTest {
 
 
     @Before
-    public void setupTest(){
+    public void setupTest() {
         vmId = UUID.randomUUID();
         long hfsVmId = 1111;
 
@@ -103,22 +103,31 @@ public class NetworkResourceTest {
                 projectService, commandService, vmResource, config, null);
 
     }
+
     @Test
-    public void testCreatesAddIpActionForOH(){
-        Action action = new Action(123, UUID.randomUUID(), ActionType.ADD_IP,
-                "{}", "NEW", "{}", ActionStatus.NEW, Instant.now(), null, "", UUID.randomUUID(), "tester");
+    public void testCreatesAddIpv4ActionForOH() {
+        Action action = mock(Action.class);
         when(actionService.getAction(anyLong())).thenReturn(action);
 
-        resource.addIpAddress(vmId);
+        resource.addIpAddress(vmId, 4);
         verify(actionService, times(1)).createAction(eq(vm.vmId), eq(ActionType.ADD_IP), anyString(), anyString());
-
-
     }
+
     @Test
-    public void testCreatesAddIPActionForOVHServer(){
+    public void testCreatesAddIpv6ActionForOH() {
+        Action action = mock(Action.class);
+        when(actionService.getAction(anyLong())).thenReturn(action);
+
+        resource.addIpAddress(vmId, 6);
+        verify(actionService, times(1)).createAction(eq(vm.vmId), eq(ActionType.ADD_IP), anyString(), anyString());
+    }
+
+    @Test
+    public void testCreatesAddIPV4ActionForOVHServer() {
         ServerType vmServerType = new ServerType();
         vmServerType.platform = ServerType.Platform.OVH;
         ServerSpec vmSpec = new ServerSpec();
+        vmSpec.ipAddressLimit = 3;
         vmSpec.serverType = vmServerType;
         vm = new VirtualMachine(vmId,
                                 1111,
@@ -135,20 +144,19 @@ public class NetworkResourceTest {
                                 null,
                                 0,
                                 UUID.randomUUID(),
-                                null);
+                                dataCenter);
+        when(vmResource.getVm(vmId)).thenReturn(vm);
 
-        Action action = new Action(123, UUID.randomUUID(), ActionType.ADD_IP,
-        "{}", "NEW", "{}", ActionStatus.NEW, Instant.now(), null, "", UUID.randomUUID(), "tester");
+        Action action = mock(Action.class);
         when(actionService.getAction(anyLong())).thenReturn(action);
-        resource.addIpAddress(vmId);
+        resource.addIpAddress(vmId, 4);
         verify(actionService, times(1)).createAction(eq(vm.vmId), eq(ActionType.ADD_IP), anyString(), anyString());
 
     }
 
     @Test
-    public void testDestroyIpOH(){
-        Action action = new Action(123, UUID.randomUUID(), ActionType.DESTROY_IP,
-                "{}", "NEW", "{}", ActionStatus.NEW, Instant.now(), null, "", UUID.randomUUID(), "tester");
+    public void testDestroyIpOH() {
+        Action action = mock(Action.class);
         when(actionService.createAction(vm.vmId, ActionType.DESTROY_IP, new JSONObject().toJSONString(), action.initiatedBy)).thenReturn(action.id);
         when(actionService.getAction(action.id)).thenReturn(action);
 
@@ -162,12 +170,12 @@ public class NetworkResourceTest {
                                      Instant.now().plus(24, ChronoUnit.HOURS), 4);
         when(networkService.getIpAddress(1111)).thenReturn(ip);
 
-        resource.destroyIpAddress(vmId,1111);
+        resource.destroyIpAddress(vmId, 1111);
         verify(actionService, times(1)).createAction(eq(vm.vmId), eq(ActionType.DESTROY_IP), anyString(), anyString());
     }
 
-    @Test
-    public void testDestroysIpForOVHServer(){
+    @Test(expected = Vps4Exception.class)
+    public void testCreatesAddIpv6ActionForOVHThrowsError() {
         ServerType vmServerType = new ServerType();
         vmServerType.platform = ServerType.Platform.OVH;
         ServerSpec vmSpec = new ServerSpec();
@@ -187,10 +195,40 @@ public class NetworkResourceTest {
                                 null,
                                 0,
                                 UUID.randomUUID(),
-                                null);
-        Action action = new Action(123, UUID.randomUUID(), ActionType.DESTROY_IP,
-                "{}", "NEW", "{}", ActionStatus.NEW, Instant.now(), null, "", UUID.randomUUID(), "tester");
-        when(actionService.createAction(vm.vmId, ActionType.DESTROY_IP, new JSONObject().toJSONString(), action.initiatedBy)).thenReturn(action.id);
+                                dataCenter);
+        when(vmResource.getVm(vmId)).thenReturn(vm);
+
+        Action action = mock(Action.class);
+        when(actionService.getAction(anyLong())).thenReturn(action);
+
+        resource.addIpAddress(vmId, 6);
+    }
+
+    @Test
+    public void testDestroysIpForOVHServer() {
+        ServerType vmServerType = new ServerType();
+        vmServerType.platform = ServerType.Platform.OVH;
+        ServerSpec vmSpec = new ServerSpec();
+        vmSpec.serverType = vmServerType;
+        vm = new VirtualMachine(vmId,
+                                1111,
+                                UUID.randomUUID(),
+                                1,
+                                vmSpec,
+                                "Unit Test Vm",
+                                null,
+                                null,
+                                Instant.now(),
+                                Instant.now().plus(24, ChronoUnit.HOURS),
+                                Instant.now().plus(24, ChronoUnit.HOURS),
+                                null,
+                                null,
+                                0,
+                                UUID.randomUUID(),
+                                dataCenter);
+        when(vmResource.getVm(vmId)).thenReturn(vm);
+
+        Action action = mock(Action.class);
         when(actionService.getAction(action.id)).thenReturn(action);
 
         IpAddress ip = new IpAddress(111, 111, vmId, "1.2.3.4", IpAddressType.SECONDARY,
@@ -200,8 +238,14 @@ public class NetworkResourceTest {
         verify(actionService, times(1)).createAction(eq(vm.vmId), eq(ActionType.DESTROY_IP), anyString(), anyString());
     }
 
-    @Test(expected=Vps4Exception.class)
-    public void testAddIpOpenStackNotAllowed(){
+
+    @Test(expected = Vps4Exception.class)
+    public void testAddIpForIpvOtherThan4Or6NotAllowed() {
+        resource.addIpAddress(vmId, 5);
+    }
+
+    @Test(expected = Vps4Exception.class)
+    public void testAddIpOpenStackNotAllowed() {
         ServerType serverType = new ServerType();
         serverType.platform = ServerType.Platform.OPENSTACK;
         ServerSpec spec = new ServerSpec();
@@ -211,7 +255,7 @@ public class NetworkResourceTest {
                                                1111,
                                                UUID.randomUUID(),
                                                1,
-                                               spec ,
+                                               spec,
                                                "Unit Test Vm",
                                                null,
                                                null,
@@ -224,11 +268,11 @@ public class NetworkResourceTest {
                                                UUID.randomUUID(),
                                                dataCenter);
         when(vmResource.getVm(vmId)).thenReturn(vm);
-        resource.addIpAddress(vmId);
+        resource.addIpAddress(vmId, 4);
     }
 
-    @Test(expected=Vps4Exception.class)
-    public void testAddIpPassedIpLimit(){
+    @Test(expected = Vps4Exception.class)
+    public void testAddIpPassedIpLimit() {
         ServerType serverType = new ServerType();
         serverType.platform = ServerType.Platform.OPENSTACK;
         ServerSpec spec = new ServerSpec();
@@ -238,7 +282,7 @@ public class NetworkResourceTest {
                                                1111,
                                                UUID.randomUUID(),
                                                1,
-                                               spec ,
+                                               spec,
                                                "Unit Test Vm",
                                                null,
                                                null,
@@ -251,11 +295,18 @@ public class NetworkResourceTest {
                                                UUID.randomUUID(),
                                                dataCenter);
         when(vmResource.getVm(vmId)).thenReturn(vm);
-        resource.addIpAddress(vmId);
+        resource.addIpAddress(vmId, 4);
     }
 
-    @Test(expected=NotFoundException.class)
-    public void testAddIpVmNotTiedToHfs(){
+
+    @Test(expected = Vps4Exception.class)
+    public void testAddIpPassedIpLimit1ForIPV6() {
+        when(networkService.getActiveIpAddressesCount(vm.vmId, 6)).thenReturn(1);
+        resource.addIpAddress(vmId, 6);
+    }
+
+    @Test(expected = NotFoundException.class)
+    public void testAddIpVmNotTiedToHfs() {
         ServerType serverType = new ServerType();
         serverType.platform = ServerType.Platform.OPTIMIZED_HOSTING;
         ServerSpec spec = new ServerSpec();
@@ -265,7 +316,7 @@ public class NetworkResourceTest {
                                                0,
                                                UUID.randomUUID(),
                                                1,
-                                               spec ,
+                                               spec,
                                                "Unit Test Vm",
                                                null,
                                                null,
@@ -278,26 +329,26 @@ public class NetworkResourceTest {
                                                UUID.randomUUID(),
                                                dataCenter);
         when(vmResource.getVm(vmId)).thenReturn(vm);
-        resource.addIpAddress(vmId);
+        resource.addIpAddress(vmId, 4);
     }
 
-    @Test(expected=NotFoundException.class)
-    public void testDestroyIpNotFound(){
+    @Test(expected = NotFoundException.class)
+    public void testDestroyIpNotFound() {
         when(networkService.getIpAddress(1111)).thenReturn(null);
         resource.destroyIpAddress(vmId, 1111);
     }
 
-    @Test(expected=NotFoundException.class)
-    public void testDestroyIpBelongsToDifferentVm(){
-        IpAddress ip = new IpAddress(1111,1111, UUID.randomUUID(), "1.2.3.4", IpAddressType.SECONDARY,
+    @Test(expected = NotFoundException.class)
+    public void testDestroyIpBelongsToDifferentVm() {
+        IpAddress ip = new IpAddress(1111, 1111, UUID.randomUUID(), "1.2.3.4", IpAddressType.SECONDARY,
                 null, Instant.now(), Instant.now().plus(24, ChronoUnit.HOURS), 4);
 
         when(networkService.getIpAddress(1111)).thenReturn(ip);
         resource.destroyIpAddress(vmId, 1111);
     }
 
-    @Test(expected=NotFoundException.class)
-    public void testDestroyIpAlreadyRemoved(){
+    @Test(expected = NotFoundException.class)
+    public void testDestroyIpAlreadyRemoved() {
         IpAddress ip = new IpAddress(1111, 1111, vmId, "1.2.3.4", IpAddressType.SECONDARY,
                 null, Instant.now(), Instant.now().minus(24, ChronoUnit.HOURS), 4);
 
@@ -305,8 +356,8 @@ public class NetworkResourceTest {
         resource.destroyIpAddress(vmId, 1111);
     }
 
-    @Test(expected=Vps4Exception.class)
-    public void testDeletePrimaryIp(){
+    @Test(expected = Vps4Exception.class)
+    public void testDeletePrimaryIp() {
         IpAddress ip = new IpAddress(1111, 1111, vmId, "1.2.3.4", IpAddressType.PRIMARY, null, Instant.now(),
                 Instant.now().plus(24, ChronoUnit.HOURS), 4);
 
@@ -315,7 +366,7 @@ public class NetworkResourceTest {
     }
 
     @Test
-    public void testGetIpAddresses(){
+    public void testGetIpAddresses() {
         IpAddress primaryIp = new IpAddress(1111, 1111, vmId, "1.2.3.4", IpAddressType.PRIMARY,
                 null, Instant.now(), Instant.now().plus(24, ChronoUnit.HOURS), 4);
         IpAddress secondaryIp = new IpAddress(1111, 1111, vmId, "1.2.3.4", IpAddressType.SECONDARY,

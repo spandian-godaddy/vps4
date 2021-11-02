@@ -27,7 +27,7 @@ import gdg.hfs.vhfs.network.IpAddress;
 import com.godaddy.hfs.vm.VmService;
 import junit.framework.Assert;
 
-public class TestVps4AddIpAddress {
+public class Vps4AddIpAddressTest {
     ActionService actionService = mock(ActionService.class);
     VmService vmService = mock(VmService.class);
     VirtualMachineService virtualMachineService = mock(VirtualMachineService.class);
@@ -84,9 +84,9 @@ public class TestVps4AddIpAddress {
         when(virtualMachineService.getVirtualMachine(any())).thenReturn(virtualMachine);
         when(context.execute(eq(AllocateIp.class), any(AllocateIp.Request.class))).thenReturn(hfsAddress);
 
-        try{
+        try {
             command.executeWithAction(context, request);
-        }catch(Exception e){
+        } catch (Exception e) {
             System.out.println(e);
             Assert.fail();
         }

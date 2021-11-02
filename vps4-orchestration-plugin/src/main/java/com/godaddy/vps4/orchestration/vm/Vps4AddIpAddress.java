@@ -25,8 +25,8 @@ import gdg.hfs.vhfs.network.IpAddress;
 import com.godaddy.hfs.vm.VmService;
 
 @CommandMetadata(
-        name="Vps4AddIpAddress",
-        requestType=Vps4AddIpAddress.Request.class,
+        name = "Vps4AddIpAddress",
+        requestType = Vps4AddIpAddress.Request.class,
         retryStrategy = CommandRetryStrategy.NEVER
 )
 public class Vps4AddIpAddress extends ActionCommand<Vps4AddIpAddress.Request, Void> {
@@ -55,7 +55,7 @@ public class Vps4AddIpAddress extends ActionCommand<Vps4AddIpAddress.Request, Vo
         IpAddress hfsIp = allocateIp(context, request);
         addIpToDatabase(context, hfsIp, virtualMachine.vmId);
 
-        if(virtualMachine.spec.isVirtualMachine()) {
+        if (virtualMachine.spec.isVirtualMachine() && request.internetProtocolVersion == 4) {
             disableMailRelays(context, hfsIp);
         }
 
@@ -70,12 +70,13 @@ public class Vps4AddIpAddress extends ActionCommand<Vps4AddIpAddress.Request, Vo
         allocateIpRequest.sgid = request.sgid;
         allocateIpRequest.zone = request.zone;
         allocateIpRequest.serverId = request.serverId;
+        allocateIpRequest.internetProtocolVersion = request.internetProtocolVersion;
 
-        logger.info("Allocating IP for sgid {} in zone {}" , allocateIpRequest.sgid, allocateIpRequest.zone);
+        logger.info("Allocating IP for sgid {} in zone {}", allocateIpRequest.sgid, allocateIpRequest.zone);
         return context.execute(AllocateIp.class, allocateIpRequest);
     }
 
-    private void addIpToDatabase(CommandContext context, IpAddress hfsIp, UUID vmId){
+    private void addIpToDatabase(CommandContext context, IpAddress hfsIp, UUID vmId) {
         logger.info("Adding HFS IP {} to the db for vmId {}", hfsIp.address, vmId);
         context.execute("Create-" + hfsIp.addressId, ctx -> {
              networkService.createIpAddress(hfsIp.addressId, vmId, hfsIp.address, IpAddressType.SECONDARY);
@@ -96,6 +97,7 @@ public class Vps4AddIpAddress extends ActionCommand<Vps4AddIpAddress.Request, Vo
         public String sgid;
         public String zone;
         public long serverId;
+        public int internetProtocolVersion;
 
         @Override
         public long getActionId() {
