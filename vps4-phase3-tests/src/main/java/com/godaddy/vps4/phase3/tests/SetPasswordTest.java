@@ -36,11 +36,11 @@ public class SetPasswordTest implements VmTest {
 
         logger.debug("Verify remote connection failure on vm {} using old password", vm.vmId);
         Vps4RemoteAccessClient client1 = vm.remote();
-        assert(!client1.checkConnection(vm.vmId));
+        assert(!client1.checkConnection());
         logger.debug("Verify remote connection success on vm {} using new password", vm.vmId);
         vm.setPassword(newPassword);
         Vps4RemoteAccessClient client2 = vm.remote();
-        assert(client2.checkConnection(vm.vmId));
+        assert(client2.checkConnection());
     }
 
     @Override

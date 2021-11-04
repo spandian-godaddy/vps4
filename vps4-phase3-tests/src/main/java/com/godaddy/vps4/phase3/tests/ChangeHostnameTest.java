@@ -47,7 +47,7 @@ public class ChangeHostnameTest implements VmTest {
 
         Vps4RemoteAccessClient client = vm.remote();
         logger.debug("check hostname on vm {}", vm.vmId);
-        assert client.checkHostname(vm.vmId, newHostname);
+        assert client.checkHostname(newHostname);
     }
 
     @Override

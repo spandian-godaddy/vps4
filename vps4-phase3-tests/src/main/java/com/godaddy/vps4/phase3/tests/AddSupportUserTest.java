@@ -37,7 +37,7 @@ public class AddSupportUserTest implements VmTest {
             vm.setUsername(username);
             vm.setPassword(password);
             Vps4RemoteAccessClient client1 = vm.remote();
-            assert(client1.checkConnection(vm.vmId));
+            assert(client1.checkConnection());
             logger.debug("Verify remote connection on vm {} using original user creds", vm.vmId);
             vm.setUsername(originalUsername);
             vm.setPassword(originalPwd);
@@ -50,7 +50,7 @@ public class AddSupportUserTest implements VmTest {
                 vps4Client.pollForVmActionComplete(vm.vmId, enableAdminActionId, ADD_SUPPORT_USER_TIMEOUT_SECONDS);
             }
             Vps4RemoteAccessClient client2 = vm.remote();
-            assert(client2.checkConnection(vm.vmId));
+            assert(client2.checkConnection());
         } catch (ParseException e) {
             e.printStackTrace();
         }

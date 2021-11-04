@@ -4,28 +4,27 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.util.UUID;
-
-import com.godaddy.vps4.phase3.api.Vps4ApiClient;
 
 public abstract class Vps4RemoteAccessClient {
-    final Vps4ApiClient vps4ApiClient;
+    final String primaryIpAddress;
     final String username;
     final String password;
 
-    public Vps4RemoteAccessClient(Vps4ApiClient vps4ApiClient, String username, String password) {
-        this.vps4ApiClient = vps4ApiClient;
+    public Vps4RemoteAccessClient(String primaryIpAddress, String username, String password) {
+        this.primaryIpAddress = primaryIpAddress;
         this.username = username;
         this.password = password;
     }
 
-    public abstract String executeCommand(UUID vmId, String command);
+    public abstract String executeCommand(String command);
 
-    public abstract boolean checkConnection(UUID vmId);
+    public abstract boolean checkConnection();
 
-    public abstract boolean checkHostname(UUID vmId, String expectedHostname);
+    public abstract boolean checkHostname(String expectedHostname);
 
-    public abstract boolean hasAdminPrivilege(UUID vmId);
+    public abstract boolean hasAdminPrivilege();
+
+    public abstract boolean isActivated();
 
     String streamToString(InputStream stream) throws IOException {
         StringBuilder result = new StringBuilder();

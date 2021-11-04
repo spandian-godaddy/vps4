@@ -5,15 +5,13 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.util.UUID;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Function;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import com.godaddy.vps4.phase3.api.Vps4ApiClient;
 
 public class Vps4WinexeClient extends Vps4RemoteAccessClient {
     private static final int MAX_TRIES = 5;
@@ -21,8 +19,8 @@ public class Vps4WinexeClient extends Vps4RemoteAccessClient {
     private static final Logger logger = LoggerFactory.getLogger(Vps4WinexeClient.class);
     private final boolean isWinexeInstalled;
 
-    public Vps4WinexeClient(Vps4ApiClient vps4ApiClient, String username, String password) {
-        super(vps4ApiClient, username, password);
+    public Vps4WinexeClient(String primaryIpAddress, String username, String password) {
+        super(primaryIpAddress, username, password);
 
         isWinexeInstalled = existsInPath("winexe");
         if (!isWinexeInstalled && !existsInPath("docker")) {
@@ -32,9 +30,7 @@ public class Vps4WinexeClient extends Vps4RemoteAccessClient {
     }
 
     @Override
-    public String executeCommand(UUID vmId, String powershellCommand) {
-        String primaryIpAddress = vps4ApiClient.getVmPrimaryIp(vmId);
-
+    public String executeCommand(String powershellCommand) {
         String winexeCommand = String.format(
                 "winexe --reinstall -U '%s'%%'%s' //%s '%s'",
                 escapeSingleQuotes(username),
@@ -76,22 +72,28 @@ public class Vps4WinexeClient extends Vps4RemoteAccessClient {
     }
 
     @Override
-    public boolean checkConnection(UUID vmId) {
-        return testWithRetries(vmId, "cmd.exe /c echo \"testing connection\"", "\"testing connection\"");
+    public boolean checkConnection() {
+        return testWithRetries("cmd.exe /c echo \"testing connection\"",
+                               (result) -> result.equals("\"testing connection\""));
     }
 
     @Override
-    public boolean checkHostname(UUID vmId, String expectedHostname) {
-        if (expectedHostname.contains(".")) {
-            expectedHostname = expectedHostname.substring(0, expectedHostname.indexOf("."));
-        }
-        return testWithRetries(vmId, "hostname", expectedHostname);
+    public boolean checkHostname(String hostname) {
+        String expectedHostname = (hostname.contains("."))
+                ? hostname.substring(0, hostname.indexOf("."))
+                : hostname;
+        return testWithRetries("hostname", (result) -> result.equals(expectedHostname));
     }
 
     @Override
-    public boolean hasAdminPrivilege(UUID vmId) {
+    public boolean hasAdminPrivilege() {
         String command = "cmd.exe /c net user "+  this.username + " | find /c \"Administrators\"";
-        return testWithRetries(vmId, command, "1");
+        return testWithRetries(command, (result) -> result.equals("1"));
+    }
+
+    @Override
+    public boolean isActivated() {
+        return testWithRetries("cmd.exe /c slmgr /xpr", (result) -> result.contains("Volume activation will expire"));
     }
 
     private String escapeSingleQuotes(String s) {
@@ -107,12 +109,12 @@ public class Vps4WinexeClient extends Vps4RemoteAccessClient {
     /*
      * Sometimes Winexe will freeze, timeout or throw errors even though the VM is working fine.
      */
-    private boolean testWithRetries(UUID vmId, String command, String expected) {
+    private boolean testWithRetries(String command, Function<String, Boolean> validator) {
         int iterations = 0;
         while (iterations < MAX_TRIES) {
             try {
-                String result = executeCommand(vmId, command);
-                if (result.equals(expected)) {
+                String result = executeCommand(command);
+                if (validator.apply(result)) {
                     return true;
                 }
             } catch (RuntimeException ignored) {}

@@ -24,7 +24,7 @@ public class EnableDisableAdminTest implements VmTest {
 
         logger.debug("Verify admin enabled on vm {}", vm.vmId);
         Vps4RemoteAccessClient client = vm.remote();
-        assert(client.hasAdminPrivilege(vm.vmId));
+        assert(client.hasAdminPrivilege());
 
         long disableAdminActionId = vps4Client.disableAdmin(vm.vmId, vm.getUsername());
         logger.debug("Wait for DISABLE_ADMIN on vm {}, via action id: {}", vm.vmId, disableAdminActionId);
@@ -34,7 +34,7 @@ public class EnableDisableAdminTest implements VmTest {
         // Skip verifying admin disabled on Windows for now
         if (!vm.isWindows()) {
             logger.debug("Verify admin disabled on Linux vm {}", vm.vmId);
-            assert(!client.hasAdminPrivilege(vm.vmId));
+            assert(!client.hasAdminPrivilege());
         }
     }
 

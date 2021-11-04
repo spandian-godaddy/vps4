@@ -43,7 +43,7 @@ public class StopStartVmTest implements VmTest {
             vps4Client.pollForVmActionComplete(vm.vmId, stopVmActionId, STOP_TIMEOUT_SECONDS);
 
             logger.debug("Verify remote connection failure on vm {} after stopVM", vm.vmId);
-            assert(!client.checkConnection(vm.vmId));
+            assert(!client.checkConnection());
 
             long startVmActionId = vps4Client.startVm(vm.vmId);
             logger.debug("Wait for startup on vm {}, via action id: {}", vm.vmId, startVmActionId);
@@ -54,7 +54,7 @@ public class StopStartVmTest implements VmTest {
         vps4Client.pollForVmAgentStatusOK(vm.vmId, DED_RESTART_TIMEOUT_SECONDS);
 
         logger.debug("Verify remote connection success on vm {} after reboot", vm.vmId);
-        assert(client.checkConnection(vm.vmId));
+        assert(client.checkConnection());
     }
 
     @Override

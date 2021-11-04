@@ -38,7 +38,7 @@ public class SuspendReinstateTest implements VmTest {
         assert(creditJson.get("abuseSuspendedFlagSet").equals(true));
 
         logger.debug("Verify remote connection failure after suspension on vm {}", vm.vmId);
-        assert(!remoteAccessClient.checkConnection(vm.vmId));
+        assert(!remoteAccessClient.checkConnection());
 
         long reinstateActionId = vps4AdminClient.reinstateAbuseSuspend(vm.vmId);
         logger.debug("Wait for reinstate abuseSuspend on vm {}, via action id: {}", vm.vmId, reinstateActionId);
@@ -52,7 +52,7 @@ public class SuspendReinstateTest implements VmTest {
         assert(creditJson2.get("abuseSuspendedFlagSet").equals(false));
 
         logger.debug("Verify remote connection success after reinstatement on vm {}", vm.vmId);
-        assert(remoteAccessClient.checkConnection(vm.vmId));
+        assert(remoteAccessClient.checkConnection());
     }
 
     @Override

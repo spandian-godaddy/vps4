@@ -78,10 +78,11 @@ public class VirtualMachine {
 
     public Vps4RemoteAccessClient remote() {
         // use adminClient instead of apiClient because shopper cannot get VM primary IP for remote access when VM is suspended
+        String primaryIpAddress = adminClient.getVmPrimaryIp(vmId);
         if (isWindows()) {
-            return new Vps4WinexeClient(adminClient, defaultUsername, defaultPassword);
+            return new Vps4WinexeClient(primaryIpAddress, defaultUsername, defaultPassword);
         }
-        return new Vps4SshClient(adminClient, defaultUsername, defaultPassword);
+        return new Vps4SshClient(primaryIpAddress, defaultUsername, defaultPassword);
     }
 
     public void release() {

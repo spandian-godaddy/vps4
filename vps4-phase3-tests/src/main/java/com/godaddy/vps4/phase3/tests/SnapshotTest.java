@@ -69,7 +69,7 @@ public class SnapshotTest implements VmTest {
         }
         logger.debug("Verify remote connection success after restoring snapshot {} on vm {}", snapshotId, vm.vmId);
         Vps4RemoteAccessClient client = vm.remote();
-        assert(client.checkConnection(vm.vmId));
+        assert(client.checkConnection());
     }
     
     @Override
