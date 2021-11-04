@@ -85,6 +85,7 @@ public class VmNotificationResource {
                     Arrays.asList(Integer.toString(virtualMachine.image.serverType.platform.getplatformId())),
                     Arrays.asList((virtualMachine.vmId).toString()),
                     false,
+                    virtualMachineCredit.isManaged(),
                     isSupport
             );
         }

@@ -22,7 +22,6 @@ import org.junit.Assert;
 
 import javax.sql.DataSource;
 import java.time.Instant;
-import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -78,6 +77,9 @@ public class JdbcNotificationServiceTest {
         NotificationFilter filterVmId = new NotificationFilter();
         filterVmId.filterType = NotificationFilterType.VM_ID;
         filterVmId.filterValue = Arrays.asList("6000");
+        NotificationFilter filterIsManaged = new NotificationFilter();
+        filterIsManaged.filterType = NotificationFilterType.IS_MANAGED;
+        filterIsManaged.filterValue = Arrays.asList(Boolean.toString(true));
 
         filterList.add(filterDC);
         filterList.add(filterImage);
@@ -85,6 +87,7 @@ public class JdbcNotificationServiceTest {
         filterList.add(filterTier);
         filterList.add(filterHv);
         filterList.add(filterVmId);
+        filterList.add(filterIsManaged);
 
         SqlTestData.insertTestNotification(notificationId, NotificationType.PATCHING,true,true,
                 null, null, null, null, filterList, dataSource);
@@ -220,6 +223,16 @@ public class JdbcNotificationServiceTest {
         searchFilters.byAdminView(true);
         List<Notification> notificationsWrong = injector.getInstance(NotificationService.class).getNotifications(searchFilters);
         assertEquals(0, notificationsWrong.size());
+    }
+
+    @Test
+    public void getNotificationsShowListOfNotificationsByIsManagedOk() {
+        NotificationListSearchFilters searchFilters = new NotificationListSearchFilters();
+        searchFilters.byIsManaged(true);
+        searchFilters.byAdminView(true);
+        List<Notification> notifications = injector.getInstance(NotificationService.class).getNotifications(searchFilters);
+        assertNotNull(notifications);
+        assertFalse(0 == notifications.size());
     }
 
     @Test

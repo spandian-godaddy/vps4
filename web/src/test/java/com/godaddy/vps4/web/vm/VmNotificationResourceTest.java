@@ -59,6 +59,7 @@ public class VmNotificationResourceTest {
     private NotificationService notificationService = mock(NotificationService.class);
     private GDUser user = mock(GDUser.class);
     private VirtualMachineCredit dedCredit;
+    private HashMap<String,String> planFeaturesDed = new HashMap<>();
     private HashMap<String,String> planFeatures = new HashMap<>();
     private UUID vmId = UUID.randomUUID();
     private UUID orionGuid = UUID.randomUUID();
@@ -137,8 +138,16 @@ public class VmNotificationResourceTest {
         notification.supportOnly = false;
         notification.filters = Arrays.asList(filter);
 
-        planFeatures.put(ECommCreditService.PlanFeatures.TIER.toString(), "70");
+        planFeaturesDed.put(ECommCreditService.PlanFeatures.TIER.toString(), "70");
+        planFeaturesDed.put(ECommCreditService.PlanFeatures.MANAGED_LEVEL.toString(), "1");
+        planFeatures.put(ECommCreditService.PlanFeatures.TIER.toString(), "20");
+        planFeatures.put(ECommCreditService.PlanFeatures.MANAGED_LEVEL.toString(), "1");
         dedCredit = new VirtualMachineCredit.Builder(mock(DataCenterService.class))
+                .withAccountGuid(UUID.randomUUID().toString())
+                .withPlanFeatures(planFeaturesDed)
+                .withResellerID("1")
+                .build();
+        credit = new VirtualMachineCredit.Builder(mock(DataCenterService.class))
                 .withAccountGuid(UUID.randomUUID().toString())
                 .withPlanFeatures(planFeatures)
                 .withResellerID("1")
@@ -158,6 +167,7 @@ public class VmNotificationResourceTest {
                         eq(Arrays.asList(Integer.toString(vps4Vm.image.serverType.platform.getplatformId()))),
                         eq(Arrays.asList(vps4Vm.vmId.toString())),
                         anyBoolean(),
+                        eq(credit.isManaged()),
                         anyBoolean())).thenReturn(Arrays.asList(notification));
         when(creditService.getVirtualMachineCredit(any())).thenReturn(credit);
         when(vmResource.getVmExtendedInfoFromVmVertical(hfsVmId)).thenReturn(vmExtendedInfoMock);
@@ -180,6 +190,7 @@ public class VmNotificationResourceTest {
                 eq(Arrays.asList(Integer.toString(vps4Vm.image.serverType.platform.getplatformId()))),
                 eq(Arrays.asList(vps4Vm.vmId.toString())),
                 anyBoolean(),
+                eq(credit.isManaged()),
                 anyBoolean());
     }
 
@@ -207,6 +218,7 @@ public class VmNotificationResourceTest {
                 eq(Arrays.asList(Integer.toString(vps4Vm.image.serverType.platform.getplatformId()))),
                 eq(Arrays.asList(vps4Vm.vmId.toString())),
                 anyBoolean(),
+                eq(credit.isManaged()),
                 eq(false));
     }
 
@@ -228,6 +240,7 @@ public class VmNotificationResourceTest {
                 eq(Arrays.asList(Integer.toString(vps4Vm.image.serverType.platform.getplatformId()))),
                 eq(Arrays.asList(vps4Vm.vmId.toString())),
                 anyBoolean(),
+                eq(credit.isManaged()),
                 eq(true));
     }
 
@@ -250,6 +263,7 @@ public class VmNotificationResourceTest {
                 eq(Arrays.asList(Integer.toString(vps4Vm.image.serverType.platform.getplatformId()))),
                 eq(Arrays.asList(vps4Vm.vmId.toString())),
                 anyBoolean(),
+                eq(credit.isManaged()),
                 eq(true));
     }
 
@@ -263,7 +277,7 @@ public class VmNotificationResourceTest {
         verify(notificationsResource).getNotificationsBasedOnFilters(
                 eq(Arrays.asList(Long.toString(vps4Vm.image.imageId))),
                 anyList(),
-                any(), 
+                any(),
                 anyObject(),
                 anyObject(),
                 eq(Collections.emptyList()),
@@ -271,6 +285,7 @@ public class VmNotificationResourceTest {
                 eq(Arrays.asList(Integer.toString(vps4Vm.image.serverType.platform.getplatformId()))),
                 eq(Arrays.asList(vps4Vm.vmId.toString())),
                 anyBoolean(),
+                eq(dedCredit.isManaged()),
                 anyBoolean());
     }
 }

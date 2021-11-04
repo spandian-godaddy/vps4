@@ -22,6 +22,7 @@ public class NotificationListSearchFilters {
     private Instant validUntil;
     private boolean showActive;
     private boolean adminView;
+    private Boolean isManaged;
 
     public void byType(NotificationType... typeList) {
         types = Arrays.asList(typeList);
@@ -65,7 +66,6 @@ public class NotificationListSearchFilters {
         platformIds = Arrays.asList(platform);
     }
 
-
     public void byVmId(Collection<String> vmIds) {
         this.vmIds = new ArrayList<>(vmIds);
     }
@@ -79,6 +79,10 @@ public class NotificationListSearchFilters {
     }
 
     public void byActive(boolean showActive) {this.showActive = showActive;
+    }
+
+    public void byIsManaged(Boolean managed) {
+        this.isManaged = managed;
     }
 
     public void byAdminView(boolean adminView) {this.adminView = adminView;
@@ -104,6 +108,15 @@ public class NotificationListSearchFilters {
     }
     public List<String> getVmIds() {
         return vmIds;
+    }
+    public Boolean getIsManaged() {
+        return isManaged;
+    }
+    public List<String> getIsManagedAsList() {
+        if(isManaged == null) {
+            return new ArrayList<>();
+        }
+        return Arrays.asList(Boolean.toString(isManaged));
     }
     public Instant getValidOn() {
         return validOn;

@@ -121,11 +121,12 @@ public class JdbcNotificationService implements NotificationService {
         andCount = buildFilterQuery(searchFilters.getTiers(), filtersQuery, NotificationFilterType.TIER.getFilterTypeId(), andCount, filterValues);
         andCount = buildFilterQuery(searchFilters.getPlatformIds(), filtersQuery, NotificationFilterType.PLATFORM_ID.getFilterTypeId(), andCount, filterValues);
         andCount = buildFilterQuery(searchFilters.getVmIds(), filtersQuery, NotificationFilterType.VM_ID.getFilterTypeId(), andCount, filterValues);
+        andCount = buildFilterQuery(searchFilters.getIsManagedAsList(), filtersQuery, NotificationFilterType.IS_MANAGED.getFilterTypeId(), andCount, filterValues);
+
         if(andCount > 0){
             filtersQuery.append(")");
         }
         filtersQuery.append(" ORDER BY valid_on DESC;");
-        logger.info("query is {}", filtersQuery);
         return Sql.with(dataSource).exec(filtersQuery.toString(), Sql.listOf(this::mapNotification), filterValues.toArray());
     }
 
