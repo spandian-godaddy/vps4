@@ -118,9 +118,12 @@ public class NotificationsResource {
     @POST
     @Path("/filter")
     public UUID addFilterToNotification(NotificationFilterRequest request) {
-        UUID notificationId = UUID.randomUUID();
+        if (notificationService.getNotification(request.notificationId) == null)
+        {
+            throw new NotFoundException("Unknown notification ID: " + request.notificationId);
+        }
         notificationService.addFilterToNotification(request.notificationId, request.filters);
-        return notificationId;
+        return request.notificationId;
     }
 
     @GET

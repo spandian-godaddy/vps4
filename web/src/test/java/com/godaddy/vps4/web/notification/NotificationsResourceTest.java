@@ -239,13 +239,27 @@ public class NotificationsResourceTest {
     @Test
     public void testAddNotificationFiltertoNotificationCallsNotificationService() {
         NotificationsResource.NotificationFilterRequest notificationFilterRequest = new NotificationsResource.NotificationFilterRequest();
-        notificationFilterRequest.notificationId = UUID.randomUUID();
+
+        UUID notificationId = UUID.randomUUID();
+
+        NotificationsResource.NotificationRequest request = new NotificationsResource.NotificationRequest();
+        request.type = NotificationType.MAINTENANCE;
+        request.dismissible = true;
+        request.supportOnly = true;
+        NotificationExtendedDetails notificationExtendedDetails = new NotificationExtendedDetails();
+        notificationExtendedDetails.end = null;
+        notificationExtendedDetails.start = null;
+        request.notificationExtendedDetails = notificationExtendedDetails;
+        when(notificationService.getNotification(anyObject())).thenReturn(new Notification());
+
         NotificationFilter filter = new NotificationFilter();
         filter.filterValue = Arrays.asList("4","2");
         filter.filterType = NotificationFilterType.VM_ID;
         List filterLists = Arrays.asList(filter);
         notificationFilterRequest.filters = filterLists;
+        notificationFilterRequest.notificationId = notificationId;
         getNotificationResource().addFilterToNotification(notificationFilterRequest);
+        verify(notificationService, times(1)).getNotification(eq(notificationFilterRequest.notificationId));
         verify(notificationService, times(1)).addFilterToNotification(eq(notificationFilterRequest.notificationId), eq(filterLists));
     }
 }
