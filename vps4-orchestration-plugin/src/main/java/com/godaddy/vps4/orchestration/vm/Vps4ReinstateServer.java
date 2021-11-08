@@ -51,7 +51,7 @@ public class Vps4ReinstateServer extends ActionCommand<Vps4ReinstateServer.Reque
     }
 
     public void resumePanoptaMonitoring(CommandContext context,  Vps4ReinstateServer.Request request) {
-        context.execute(ResumePanoptaMonitoring.class, request.virtualMachine.vmId);
+        context.execute(ResumePanoptaMonitoring.class, request.virtualMachine);
     }
 
     protected void reinstateVm(CommandContext context, Vps4ReinstateServer.Request request) {

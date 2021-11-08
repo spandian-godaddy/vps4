@@ -329,7 +329,7 @@ public class DefaultPanoptaService implements PanoptaService {
     }
 
     @Override
-    public void resumeServerMonitoring(UUID vmId) {
+    public void resumeServerMonitoring(UUID vmId, UUID orionGuid) {
         PanoptaDetail panoptaDetail = panoptaDataService.getPanoptaDetails(vmId);
         if (panoptaDetail == null) {
             return;
@@ -341,7 +341,7 @@ public class DefaultPanoptaService implements PanoptaService {
         if (server.status == PanoptaServer.Status.SUSPENDED) {
             PanoptaApiUpdateServerRequest panoptaApiUpdateServerRequest = new PanoptaApiUpdateServerRequest();
             panoptaApiUpdateServerRequest.fqdn = server.fqdn;
-            panoptaApiUpdateServerRequest.name = server.name;
+            panoptaApiUpdateServerRequest.name = orionGuid.toString();
             panoptaApiUpdateServerRequest.serverGroup = server.serverGroup;
             panoptaApiUpdateServerRequest.status = PanoptaServer.Status.ACTIVE.toString().toLowerCase();
             logger.info("Setting Panopta server to active status");

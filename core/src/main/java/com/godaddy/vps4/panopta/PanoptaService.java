@@ -32,7 +32,7 @@ public interface PanoptaService {
 
     void pauseServerMonitoring(UUID vmId);
 
-    void resumeServerMonitoring(UUID vmId);
+    void resumeServerMonitoring(UUID vmId, UUID orionGuid);
 
     PanoptaAvailability getAvailability(UUID vmId, String startTime, String endTime) throws PanoptaServiceException;
 

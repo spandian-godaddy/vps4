@@ -408,21 +408,21 @@ public class DefaultPanoptaServiceTest {
     @Test
     public void testDoesNotResumeMonitoringWhenNoDbEntry() {
         when(panoptaDataService.getPanoptaDetails(vmId)).thenReturn(null);
-        defaultPanoptaService.resumeServerMonitoring(vmId);
+        defaultPanoptaService.resumeServerMonitoring(vmId, orionGuid);
         verify(panoptaApiServerService, never()).getServer(serverId, partnerCustomerKey);
     }
 
     @Test
     public void testDoesNotResumeMonitoringWhenPanoptaAlreadyActive() {
         server.status = "active";
-        defaultPanoptaService.resumeServerMonitoring(vmId);
+        defaultPanoptaService.resumeServerMonitoring(vmId, orionGuid);
         verify(panoptaApiServerService, never()).setServerStatus(eq(serverId), eq(partnerCustomerKey), any());
     }
 
     @Test
     public void testResumeMonitoringSuccess() {
         server.status = "suspended";
-        defaultPanoptaService.resumeServerMonitoring(vmId);
+        defaultPanoptaService.resumeServerMonitoring(vmId, orionGuid);
         verify(panoptaApiServerService).setServerStatus(eq(serverId), eq(partnerCustomerKey), any());
     }
 

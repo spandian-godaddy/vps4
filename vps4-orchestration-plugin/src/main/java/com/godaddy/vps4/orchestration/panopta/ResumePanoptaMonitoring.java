@@ -6,6 +6,7 @@ import javax.inject.Inject;
 
 import com.godaddy.vps4.panopta.PanoptaService;
 
+import com.godaddy.vps4.vm.VirtualMachine;
 import gdg.hfs.orchestration.Command;
 import gdg.hfs.orchestration.CommandContext;
 import gdg.hfs.orchestration.CommandMetadata;
@@ -17,7 +18,7 @@ import gdg.hfs.orchestration.CommandRetryStrategy;
         retryStrategy = CommandRetryStrategy.NEVER
 )
 
-public class ResumePanoptaMonitoring implements Command<UUID, Void> {
+public class ResumePanoptaMonitoring implements Command<VirtualMachine, Void> {
     private final PanoptaService panoptaService;
 
     @Inject
@@ -26,8 +27,8 @@ public class ResumePanoptaMonitoring implements Command<UUID, Void> {
     }
 
     @Override
-    public Void execute(CommandContext context, UUID vmId) {
-        panoptaService.resumeServerMonitoring(vmId);
+    public Void execute(CommandContext context, VirtualMachine vm) {
+        panoptaService.resumeServerMonitoring(vm.vmId, vm.orionGuid);
         return null;
     }
 }

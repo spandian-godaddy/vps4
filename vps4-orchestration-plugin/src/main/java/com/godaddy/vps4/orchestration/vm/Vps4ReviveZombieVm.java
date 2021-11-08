@@ -69,7 +69,8 @@ public class Vps4ReviveZombieVm extends ActionCommand<Vps4ReviveZombieVm.Request
     }
 
     public void resumePanoptaMonitoring(CommandContext context, Request request) {
-        context.execute(ResumePanoptaMonitoring.class, request.vmId);
+        VirtualMachine virtualMachine = virtualMachineService.getVirtualMachine(request.vmId);
+        context.execute(ResumePanoptaMonitoring.class, virtualMachine);
     }
 
     private void transferProductMeta(Request request) {

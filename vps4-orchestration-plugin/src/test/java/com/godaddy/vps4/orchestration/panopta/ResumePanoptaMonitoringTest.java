@@ -1,5 +1,6 @@
 package com.godaddy.vps4.orchestration.panopta;
 
+import com.godaddy.vps4.vm.VirtualMachine;
 import org.junit.Test;
 
 import static org.mockito.Mockito.mock;
@@ -31,8 +32,10 @@ public class ResumePanoptaMonitoringTest {
 
     @Test
     public void testExecuteSuccess() throws PanoptaServiceException {
-        UUID vmId = UUID.fromString("89111e35-6b2d-48c6-b293-d8cdb5207b19");
-        command.execute(context, vmId);
-        verify(panoptaService, times(1)).resumeServerMonitoring(vmId);
+        VirtualMachine vm = new VirtualMachine();
+        vm.vmId = UUID.fromString("89111e35-6b2d-48c6-b293-d8cdb5207b19");
+        vm.orionGuid = UUID.randomUUID();
+        command.execute(context, vm);
+        verify(panoptaService, times(1)).resumeServerMonitoring(vm.vmId, vm.orionGuid);
     }
 }
