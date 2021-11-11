@@ -77,9 +77,18 @@ public class VmImportResourceTest {
         importVmRequest.entitlementId = credit.getOrionGuid();
         importVmRequest.shopperId = user.getShopperId();
         importVmRequest.ip = "192.168.0.1";
-        importVmRequest.additionalIps.add(new ImportVmIpAddress(1, "2001:0db8:85a3:0000:0000:8a2e:0370:7334"));
-        importVmRequest.additionalIps.add(new ImportVmIpAddress(2, "192.168.0.2"));
-        importVmRequest.additionalIps.add(new ImportVmIpAddress(3, "192.168.0.2"));
+        ImportVmIpAddress address1 = new ImportVmIpAddress();
+        address1.hfsIpAddressId = 1;
+        address1.ip = "2001:0db8:85a3:0000:0000:8a2e:0370:7334";
+        importVmRequest.additionalIps.add(address1);
+        ImportVmIpAddress address2 = new ImportVmIpAddress();
+        address2.hfsIpAddressId = 2;
+        address2.ip = "192.168.0.2";
+        importVmRequest.additionalIps.add(address2);
+        ImportVmIpAddress address3 = new ImportVmIpAddress();
+        address3.hfsIpAddressId = 3;
+        address3.ip = "192.168.0.2";
+        importVmRequest.additionalIps.add(address3);
 
         vmImportResource = new VmImportResource(virtualMachineService,
                                                 creditService,

@@ -98,11 +98,6 @@ public class VmImportResource {
     public static class ImportVmIpAddress {
         public long hfsIpAddressId;
         public String ip;
-
-        public ImportVmIpAddress(long id, String ip) {
-            this.ip = ip;
-            hfsIpAddressId = id;
-        }
     }
 
     @POST
