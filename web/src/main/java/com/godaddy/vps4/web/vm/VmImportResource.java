@@ -86,12 +86,22 @@ public class VmImportResource {
         public long hfsVmId;
         public UUID entitlementId;
         public String ip;
-        public List<String> additionalIps;
+        public List<ImportVmIpAddress> additionalIps;
         public String sgid;
         public String image;
 
         public ImportVmRequest() {
             additionalIps = new ArrayList<>();
+        }
+    }
+
+    public static class ImportVmIpAddress {
+        public long hfsIpAddressId;
+        public String ip;
+
+        public ImportVmIpAddress(long id, String ip) {
+            this.ip = ip;
+            hfsIpAddressId = id;
         }
     }
 
@@ -136,8 +146,8 @@ public class VmImportResource {
     private void importIpAddresses(ImportVmRequest importVmRequest, VirtualMachine virtualMachine) {
         networkService.createIpAddress(0, virtualMachine.vmId, importVmRequest.ip, IpAddress.IpAddressType.PRIMARY);
         if(importVmRequest.additionalIps != null && !importVmRequest.additionalIps.isEmpty()){
-            for (String ipAddress : importVmRequest.additionalIps) {
-                networkService.createIpAddress(0, virtualMachine.vmId, ipAddress, IpAddress.IpAddressType.SECONDARY);
+            for (ImportVmIpAddress ipAddress : importVmRequest.additionalIps) {
+                networkService.createIpAddress(ipAddress.hfsIpAddressId, virtualMachine.vmId, ipAddress.ip, IpAddress.IpAddressType.SECONDARY);
            }
         }
     }

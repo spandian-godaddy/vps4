@@ -77,9 +77,9 @@ public class VmImportResourceTest {
         importVmRequest.entitlementId = credit.getOrionGuid();
         importVmRequest.shopperId = user.getShopperId();
         importVmRequest.ip = "192.168.0.1";
-        importVmRequest.additionalIps.add("2001:0db8:85a3:0000:0000:8a2e:0370:7334");
-        importVmRequest.additionalIps.add("192.168.0.2");
-        importVmRequest.additionalIps.add("192.168.0.2");
+        importVmRequest.additionalIps.add(new ImportVmIpAddress(1, "2001:0db8:85a3:0000:0000:8a2e:0370:7334"));
+        importVmRequest.additionalIps.add(new ImportVmIpAddress(2, "192.168.0.2"));
+        importVmRequest.additionalIps.add(new ImportVmIpAddress(3, "192.168.0.2"));
 
         vmImportResource = new VmImportResource(virtualMachineService,
                                                 creditService,
@@ -160,8 +160,9 @@ public class VmImportResourceTest {
         assertEquals(1, parameters.dataCenterId);
 
         verify(networkService, times(1)).createIpAddress(0, action.virtualMachineId, importVmRequest.ip, IpAddress.IpAddressType.PRIMARY);
-        verify(networkService, times(1)).createIpAddress(0, action.virtualMachineId, "2001:0db8:85a3:0000:0000:8a2e:0370:7334", IpAddress.IpAddressType.SECONDARY);
-        verify(networkService, times(2)).createIpAddress(0, action.virtualMachineId, "192.168.0.2", IpAddress.IpAddressType.SECONDARY);
+        verify(networkService, times(1)).createIpAddress(1, action.virtualMachineId, "2001:0db8:85a3:0000:0000:8a2e:0370:7334", IpAddress.IpAddressType.SECONDARY);
+        verify(networkService, times(1)).createIpAddress(2, action.virtualMachineId, "192.168.0.2", IpAddress.IpAddressType.SECONDARY);
+        verify(networkService, times(1)).createIpAddress(3, action.virtualMachineId, "192.168.0.2", IpAddress.IpAddressType.SECONDARY);
         verify(creditService, times(1)).claimVirtualMachineCredit(importVmRequest.entitlementId, 1, virtualMachine.vmId);
     }
 
@@ -190,7 +191,8 @@ public class VmImportResourceTest {
         assertEquals(1, parameters.dataCenterId);
 
         verify(networkService, times(1)).createIpAddress(0, action.virtualMachineId, importVmRequest.ip, IpAddress.IpAddressType.PRIMARY);
-        verify(networkService, times(1)).createIpAddress(0, action.virtualMachineId, "2001:0db8:85a3:0000:0000:8a2e:0370:7334", IpAddress.IpAddressType.SECONDARY);
-        verify(networkService, times(2)).createIpAddress(0, action.virtualMachineId, "192.168.0.2", IpAddress.IpAddressType.SECONDARY);
+        verify(networkService, times(1)).createIpAddress(1, action.virtualMachineId, "2001:0db8:85a3:0000:0000:8a2e:0370:7334", IpAddress.IpAddressType.SECONDARY);
+        verify(networkService, times(1)).createIpAddress(2, action.virtualMachineId, "192.168.0.2", IpAddress.IpAddressType.SECONDARY);
+        verify(networkService, times(1)).createIpAddress(3, action.virtualMachineId, "192.168.0.2", IpAddress.IpAddressType.SECONDARY);
     }
 }
