@@ -35,13 +35,12 @@ public class JdbcVirtualMachineService implements VirtualMachineService {
 
     private final DataSource dataSource;
 
-    private String selectVirtualMachineQuery = "SELECT vm.vm_id, vm.hfs_vm_id, vm.orion_guid, vm.project_id, vm.name as \"vm_name\", "
-            +
-            "vm.hostname, vm.account_status_id, vm.backup_job_id, vm.valid_on as \"vm_valid_on\", vm.canceled as \"vm_canceled\", vm.valid_until as \"vm_valid_until\", vm.nydus_warning_ack, vm.managed_level, "
+    private String selectVirtualMachineQuery = "SELECT DISTINCT vm.vm_id, vm.hfs_vm_id, vm.orion_guid, vm.project_id, vm.name as \"vm_name\", "
+            + "vm.hostname, vm.account_status_id, vm.backup_job_id, vm.valid_on as \"vm_valid_on\", vm.canceled as \"vm_canceled\", vm.valid_until as \"vm_valid_until\", vm.nydus_warning_ack, vm.managed_level, "
             + "vms.spec_id, vms.spec_name, vms.tier, vms.cpu_core_count, vms.memory_mib, vms.disk_gib, vms.valid_on as \"spec_valid_on\", "
             + "vms.valid_until as \"spec_valid_until\", vms.name as \"spec_vps4_name\", vms.ip_address_count, st.server_type, st.server_type_id, st.platform, "
             + "image.name, image.hfs_name, image.image_id, image.control_panel_id, image.os_type_id, "
-            + "ip.address_id, ip.hfs_address_id, ip.ip_address, ip.ip_address_type_id, ip.valid_on, ip.valid_until, ip.ping_check_id, family(ip.ip_address), "
+            + "primaryIp.address_id, primaryIp.hfs_address_id, primaryIp.ip_address, primaryIp.ip_address_type_id, primaryIp.valid_on, primaryIp.valid_until, primaryIp.ping_check_id, family(primaryIp.ip_address), "
             + "dc.data_center_id, dc.description "
             + "FROM virtual_machine vm "
             + "JOIN virtual_machine_spec vms ON vms.spec_id=vm.spec_id "
@@ -49,7 +48,8 @@ public class JdbcVirtualMachineService implements VirtualMachineService {
             + "JOIN project prj ON prj.project_id=vm.project_id "
             + "JOIN server_type st ON st.server_type_id = vms.server_type_id "
             + "LEFT JOIN data_center dc ON dc.data_center_id = vm.data_center_id "
-            + "LEFT JOIN ip_address ip ON ip.vm_id = vm.vm_id AND ip.ip_address_type_id = 1 ";
+            + "LEFT JOIN ip_address primaryIp ON primaryIp.vm_id = vm.vm_id AND primaryIp.ip_address_type_id = 1 "
+            + "LEFT JOIN ip_address allIps ON allIps.vm_id = vm.vm_id ";
 
     @Inject
     public JdbcVirtualMachineService(DataSource dataSource) {
@@ -58,7 +58,6 @@ public class JdbcVirtualMachineService implements VirtualMachineService {
 
     @Override
     public ServerSpec getSpec(String name) {
-
         return Sql.with(dataSource).exec(
                 "SELECT spec_id, name as spec_vps4_name, spec_name, tier, cpu_core_count, memory_mib, disk_gib, " +
                         "valid_on as spec_valid_on, valid_until as spec_valid_until, ip_address_count, " +
@@ -292,7 +291,7 @@ public class JdbcVirtualMachineService implements VirtualMachineService {
             }
         }
         if(ipAddress != null) {
-            queryAddition.append(" AND ip.ip_address=?::inet");
+            queryAddition.append(" AND allIps.ip_address=?::inet AND allIps.valid_until = 'infinity' ");
             args.add(ipAddress);
         }
         if(orionGuid != null) {

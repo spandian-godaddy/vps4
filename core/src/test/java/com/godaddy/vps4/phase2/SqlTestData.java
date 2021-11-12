@@ -46,7 +46,12 @@ public class SqlTestData {
 
     public static VirtualMachine insertTestVmWithIp(UUID orionGuid, DataSource dataSource) {
         VirtualMachine virtualMachine = insertTestVm(orionGuid, 1, dataSource);
-        return addIpToTestVm(dataSource, virtualMachine);
+        return addIpToTestVm(dataSource, virtualMachine, 1);
+    }
+
+    public static VirtualMachine insertSecondaryIpToVm(UUID vmId, DataSource dataSource) {
+        VirtualMachineService virtualMachineService = new JdbcVirtualMachineService(dataSource);
+        return addIpToTestVm(dataSource, virtualMachineService.getVirtualMachine(vmId), 2);
     }
 
     public static Map<VirtualMachine, List<ScheduledJob>> insertTestVmWithScheduledBackup(UUID orionGuid,
@@ -71,16 +76,16 @@ public class SqlTestData {
         return virtualMachine;
     }
 
-    private static VirtualMachine addIpToTestVm(DataSource dataSource, VirtualMachine virtualMachine) {
+    private static VirtualMachine addIpToTestVm(DataSource dataSource, VirtualMachine virtualMachine, int ipTypeId) {
         long hfsAddressId = getNextHfsAddressId(dataSource);
         Random random = new Random();
         String ipAddress =
                 "192.168." + random.nextInt(255) + "." + random.nextInt(255);
         Sql.with(dataSource)
                 .exec("INSERT INTO ip_address (hfs_address_id, ip_address, ip_address_type_id, vm_id)" +
-                              " VALUES (?, ?::inet, 1, ?)",
+                              " VALUES (?, ?::inet, ?, ?)",
                         null,
-                        hfsAddressId, ipAddress, virtualMachine.vmId);
+                        hfsAddressId, ipAddress, ipTypeId, virtualMachine.vmId);
         VirtualMachineService virtualMachineService = new JdbcVirtualMachineService(dataSource);
         return virtualMachineService.getVirtualMachine(virtualMachine.vmId);
     }

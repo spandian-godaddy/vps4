@@ -15,6 +15,7 @@ import java.util.stream.Collectors;
 
 import javax.sql.DataSource;
 
+import com.godaddy.vps4.network.IpAddress;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -159,11 +160,22 @@ public class JdbcVirtualMachineServiceTest {
     }
 
     @Test
-    public void testGetVirtualMachineByIpAddress() {
+    public void testGetVirtualMachineByPrimaryIpAddress() {
         UUID orionGuid = UUID.randomUUID();
         VirtualMachine testVm = SqlTestData.insertTestVmWithIp(orionGuid, dataSource);
         virtualMachines.add(testVm);
         VirtualMachine actualVm = virtualMachineService.getVirtualMachines(null, null, testVm.primaryIpAddress.ipAddress, null, null).get(0);
+        assertEquals(testVm.hfsVmId, actualVm.hfsVmId);
+    }
+
+    @Test
+    public void testGetVirtualMachineBySecondaryIpAddress() {
+        UUID orionGuid = UUID.randomUUID();
+        VirtualMachine testVm = SqlTestData.insertTestVmWithIp(orionGuid, dataSource);
+        SqlTestData.insertSecondaryIpToVm(testVm.vmId, dataSource);
+        virtualMachines.add(testVm);
+        IpAddress additionalIp = networkService.getVmSecondaryAddress(testVm.hfsVmId).get(0);
+        VirtualMachine actualVm = virtualMachineService.getVirtualMachines(null, null, additionalIp.ipAddress , null, null).get(0);
         assertEquals(testVm.hfsVmId, actualVm.hfsVmId);
     }
 
