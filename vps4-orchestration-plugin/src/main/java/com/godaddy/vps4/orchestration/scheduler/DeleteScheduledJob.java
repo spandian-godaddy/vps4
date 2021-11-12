@@ -24,10 +24,10 @@ public class DeleteScheduledJob implements Command<DeleteScheduledJob.Request, V
 
     @Override
     public Void execute(CommandContext context, DeleteScheduledJob.Request request) {
-        String product = Utils.getProductForJobRequestClass(request.jobRequestClass);
-        String jobGroup = Utils.getJobGroupForJobRequestClass(request.jobRequestClass);
-
         try {
+            String product = Utils.getProductForJobRequestClass(request.jobRequestClass);
+            String jobGroup = Utils.getJobGroupForJobRequestClass(request.jobRequestClass);
+
             context.execute(
                 String.format("Delete job with id: %s", request.jobId),
                 ctx -> {
