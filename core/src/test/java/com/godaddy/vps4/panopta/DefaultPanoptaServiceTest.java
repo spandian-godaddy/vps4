@@ -237,7 +237,7 @@ public class DefaultPanoptaServiceTest {
         when(panoptaApiServerService.getUsageList(serverId, partnerCustomerKey, 0)).thenReturn(usageIdList);
         when(panoptaApiServerService.getNetworkList(serverId, partnerCustomerKey, 0)).thenReturn(networkIdList);
         when(panoptaApiServerService.getServer(serverId, partnerCustomerKey)).thenReturn(server);
-        when(panoptaApiServerService.getServers(partnerCustomerKey, ipAddress, orionGuid.toString()))
+        when(panoptaApiServerService.getServers(partnerCustomerKey, ipAddress, orionGuid.toString(), "active"))
                 .thenReturn(panoptaServers);
         when(panoptaDataService.getPanoptaDetails(vmId)).thenReturn(panoptaDetail);
     }
@@ -454,7 +454,7 @@ public class DefaultPanoptaServiceTest {
         String ipAddress = virtualMachine.primaryIpAddress.ipAddress;
         PanoptaServer server = defaultPanoptaService.createServer(shopperId, orionGuid, ipAddress, null, null);
         verify(panoptaApiServerService).createServer(eq(partnerCustomerKey), any(PanoptaApiServerRequest.class));
-        verify(panoptaApiServerService).getServers(partnerCustomerKey, ipAddress, orionGuid.toString());
+        verify(panoptaApiServerService).getServers(partnerCustomerKey, ipAddress, orionGuid.toString(), "active");
         assertEquals(panoptaServers.servers.get(0).fqdn, server.fqdn);
         assertEquals(panoptaServers.servers.get(0).name, server.name);
     }
@@ -494,7 +494,7 @@ public class DefaultPanoptaServiceTest {
     @Test
     public void testGetServers() {
         List<PanoptaServer> panoptaServersList = defaultPanoptaService.getServers(shopperId, ipAddress, orionGuid);
-        verify(panoptaApiServerService).getServers(partnerCustomerKey, ipAddress, orionGuid.toString());
+        verify(panoptaApiServerService).getServers(partnerCustomerKey, ipAddress, orionGuid.toString(), "active");
         assertNotNull(panoptaServersList);
         assertTrue(panoptaServersList.size() > 0);
     }
@@ -503,11 +503,11 @@ public class DefaultPanoptaServiceTest {
     public void testGetServersReturnsEmptyList() {
         PanoptaServers panoptaServers = new PanoptaServers();
         panoptaServers.servers = new ArrayList<>();
-        when(panoptaApiServerService.getServers(partnerCustomerKey, ipAddress, orionGuid.toString()))
+        when(panoptaApiServerService.getServers(partnerCustomerKey, ipAddress, orionGuid.toString(), "active"))
                 .thenReturn(panoptaServers);
 
         List<PanoptaServer> panoptaServersList = defaultPanoptaService.getServers(shopperId, ipAddress, orionGuid);
-        verify(panoptaApiServerService).getServers(partnerCustomerKey, ipAddress, orionGuid.toString());
+        verify(panoptaApiServerService).getServers(partnerCustomerKey, ipAddress, orionGuid.toString(), "active");
         assertNotNull(panoptaServersList);
         assertTrue(panoptaServersList.isEmpty());
     }

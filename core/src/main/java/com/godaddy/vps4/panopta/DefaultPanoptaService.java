@@ -168,7 +168,8 @@ public class DefaultPanoptaService implements PanoptaService {
         List<PanoptaServer> panoptaServerList = new ArrayList<>();
         PanoptaServers ps = panoptaApiServerService.getServers(partnerCustomerKey,
                                                                ipAddress,
-                                                               orionGuid.toString());
+                                                               orionGuid.toString(),
+                                                               "active");
         ps.getServers().forEach(server -> panoptaServerList.add(mapServer(partnerCustomerKey, server)));
         return panoptaServerList;
     }

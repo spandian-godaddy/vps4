@@ -56,7 +56,8 @@ public interface PanoptaApiServerService {
     @Path("/")
     PanoptaServers getServers(@QueryParam("partner_customer_key") String partnerCustomerKey,
                               @QueryParam("fqdn") String fqdn,
-                              @QueryParam("name") String name);
+                              @QueryParam("name") String name,
+                              @QueryParam("status") String status);
 
     @PUT
     @Path("/{server_id}")
