@@ -52,7 +52,9 @@ public enum ActionType {
     REQUEST_CONSOLE(43),
     SYNC_STATUS(44),
     IMPORT_VM(45),
-    ENABLE_WINEXE(46);
+    ENABLE_WINEXE(46),
+    SUBMIT_SUSPEND(47),
+    SUBMIT_REINSTATE(48);
 
     private final int typeId;
 

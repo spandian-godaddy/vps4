@@ -7,6 +7,7 @@ import static org.junit.Assert.assertTrue;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyInt;
 import static org.mockito.Matchers.eq;
+import static org.mockito.Matchers.isA;
 import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
@@ -21,6 +22,7 @@ import java.util.Map;
 import java.util.UUID;
 
 import javax.ws.rs.WebApplicationException;
+import javax.ws.rs.core.Response;
 
 import org.junit.Before;
 import org.junit.Test;
@@ -38,6 +40,9 @@ import gdg.hfs.vhfs.ecomm.Account;
 import gdg.hfs.vhfs.ecomm.ECommDataCache;
 import gdg.hfs.vhfs.ecomm.ECommService;
 import gdg.hfs.vhfs.ecomm.MetadataUpdate;
+import gdg.hfs.vhfs.ecomm.Reinstatement;
+import gdg.hfs.vhfs.ecomm.SuspendReason;
+import gdg.hfs.vhfs.ecomm.Suspension;
 
 public class ECommCreditServiceTest {
 
@@ -438,5 +443,53 @@ public class ECommCreditServiceTest {
         Map<String,String> to = argument.getValue().to;
         assertTrue(to.containsKey(field.toString()));
         assertNull(to.get(field.toString()));
+    }
+
+    @Test
+    public void testSubmitSuspend() throws Exception {
+        Response response = mock(Response.class);
+        when(response.getStatus()).thenReturn(204);
+        when(ecommService.suspend(eq(orionGuid.toString()), eq(null), isA(Suspension.class))).thenReturn(response);
+
+        creditService.submitSuspend(orionGuid, ECommCreditService.SuspensionReason.FRAUD);
+        ArgumentCaptor<Suspension> argument = ArgumentCaptor.forClass(Suspension.class);
+        verify(ecommService).suspend(eq(orionGuid.toString()), eq(null), argument.capture());
+        assertEquals(SuspendReason.FRAUD, argument.getValue().suspendReason);
+    }
+
+    @Test (expected = Exception.class)
+    public void testSubmitSuspendFail() throws Exception {
+        Response response = mock(Response.class);
+        when(response.getStatus()).thenReturn(500);
+        when(ecommService.suspend(eq(orionGuid.toString()), eq(null), isA(Suspension.class))).thenReturn(response);
+
+        creditService.submitSuspend(orionGuid, ECommCreditService.SuspensionReason.FRAUD);
+        ArgumentCaptor<Suspension> argument = ArgumentCaptor.forClass(Suspension.class);
+        verify(ecommService).suspend(eq(orionGuid.toString()), eq(null), argument.capture());
+        assertEquals(SuspendReason.FRAUD, argument.getValue().suspendReason);
+    }
+
+    @Test
+    public void testSubmitReinstate() throws Exception {
+        Response response = mock(Response.class);
+        when(response.getStatus()).thenReturn(204);
+        when(ecommService.reinstate(eq(orionGuid.toString()), eq(null), isA(Reinstatement.class))).thenReturn(response);
+
+        creditService.submitReinstate(orionGuid, ECommCreditService.SuspensionReason.FRAUD);
+        ArgumentCaptor<Reinstatement> argument = ArgumentCaptor.forClass(Reinstatement.class);
+        verify(ecommService).reinstate(eq(orionGuid.toString()), eq(null), argument.capture());
+        assertEquals(SuspendReason.FRAUD, argument.getValue().suspendReason);
+    }
+
+    @Test (expected = Exception.class)
+    public void testSubmitReinstateFail() throws Exception {
+        Response response = mock(Response.class);
+        when(response.getStatus()).thenReturn(500);
+        when(ecommService.reinstate(eq(orionGuid.toString()), eq(null), isA(Reinstatement.class))).thenReturn(response);
+
+        creditService.submitReinstate(orionGuid, ECommCreditService.SuspensionReason.FRAUD);
+        ArgumentCaptor<Reinstatement> argument = ArgumentCaptor.forClass(Reinstatement.class);
+        verify(ecommService).reinstate(eq(orionGuid.toString()), eq(null), argument.capture());
+        assertEquals(SuspendReason.FRAUD, argument.getValue().suspendReason);
     }
 }

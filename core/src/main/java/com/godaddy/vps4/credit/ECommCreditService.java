@@ -12,6 +12,7 @@ import java.util.stream.Stream;
 
 import javax.inject.Inject;
 import javax.ws.rs.WebApplicationException;
+import javax.ws.rs.core.Response;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -19,11 +20,13 @@ import org.slf4j.LoggerFactory;
 import com.godaddy.vps4.vm.AccountStatus;
 import com.godaddy.vps4.vm.DataCenterService;
 import com.google.inject.Singleton;
-
-import gdg.hfs.vhfs.ecomm.Account;
-import gdg.hfs.vhfs.ecomm.ECommDataCache;
-import gdg.hfs.vhfs.ecomm.ECommService;
+import gdg.hfs.vhfs.ecomm.Suspension;
+import gdg.hfs.vhfs.ecomm.Reinstatement;
 import gdg.hfs.vhfs.ecomm.MetadataUpdate;
+import gdg.hfs.vhfs.ecomm.ECommService;
+import gdg.hfs.vhfs.ecomm.ECommDataCache;
+import gdg.hfs.vhfs.ecomm.Account;
+import gdg.hfs.vhfs.ecomm.SuspendReason;
 
 @Singleton
 public class ECommCreditService implements CreditService {
@@ -60,6 +63,12 @@ public class ECommCreditService implements CreditService {
         public String toString() {
             return name().toLowerCase();
         }
+    }
+
+    public enum SuspensionReason {
+        FRAUD,
+        POLICY,
+        LEGAL
     }
 
     private static final Logger logger = LoggerFactory.getLogger(ECommCreditService.class);
@@ -317,7 +326,42 @@ public class ECommCreditService implements CreditService {
             case REMOVED:
                 return Account.Status.removed;
         }
-        throw new IllegalArgumentException("Account status " + accountStatus.toString()
+        throw new IllegalArgumentException("Account status " + accountStatus
                 + " does not have a corresponding status in the ECommCreditService.");
+    }
+
+    @Override
+    public void submitSuspend(UUID orionGuid, SuspensionReason reason) throws Exception {
+        Suspension suspension = new Suspension();
+        suspension.suspendReason = ConvertVps4ReasonToHfsReason(reason);
+        try {
+            Response response = ecommService.suspend(orionGuid.toString(), null, suspension);
+            if(response.getStatus() != 204) throw new Exception(String.format("Failed to suspend %s with", orionGuid));
+        } catch (Exception ex) {
+            logger.error("Error suspending VPS4 credit for account guid {} : Exception :", orionGuid.toString(), ex);
+            throw ex;
+        }
+    }
+
+    private SuspendReason ConvertVps4ReasonToHfsReason(SuspensionReason reason) {
+        switch (reason){
+            case FRAUD : return SuspendReason.FRAUD;
+            case LEGAL: return SuspendReason.LEGAL;
+            case POLICY: return SuspendReason.POLICY;
+        }
+        return null;
+    }
+
+    @Override
+    public void submitReinstate(UUID orionGuid, SuspensionReason reason) throws Exception {
+        Reinstatement reinstatement = new Reinstatement();
+        reinstatement.suspendReason = ConvertVps4ReasonToHfsReason(reason);
+        try {
+            Response response = ecommService.reinstate(orionGuid.toString(), null, reinstatement);
+            if(response.getStatus() != 204) throw new Exception(String.format("Failed to reinstate %s with", orionGuid));
+        } catch (Exception ex) {
+            logger.error("Error reinstating VPS4 credit for account guid {} : Exception :", orionGuid.toString(), ex);
+            throw ex;
+        }
     }
 }

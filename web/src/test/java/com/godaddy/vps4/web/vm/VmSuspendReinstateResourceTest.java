@@ -18,6 +18,7 @@ import java.util.Collections;
 import java.util.Map;
 import java.util.UUID;
 
+import com.godaddy.vps4.credit.ECommCreditService;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
@@ -354,5 +355,25 @@ public class VmSuspendReinstateResourceTest {
     public void testDoesNotReinstateVmThatWasNotSuspended() {
         createTestVm();
         vmSuspendReinstateResource.reinstateAbuseSuspendedAccount(testVm.vmId);
+    }
+
+    @Test
+    public void testSuspend() {
+        createTestVm();
+        ArgumentCaptor<CommandGroupSpec> argument = ArgumentCaptor.forClass(CommandGroupSpec.class);
+        vmSuspendReinstateResource.suspendVm(testVm.vmId, "FRAUD");
+
+        verify(commandService, times(1)).executeCommand(argument.capture());
+        Assert.assertEquals("Vps4SubmitSuspendServer", argument.getValue().commands.get(0).command);
+    }
+
+    @Test
+    public void testReinstate() {
+        createTestVm();
+        ArgumentCaptor<CommandGroupSpec> argument = ArgumentCaptor.forClass(CommandGroupSpec.class);
+        vmSuspendReinstateResource.reinstateVm(testVm.vmId, "FRAUD");
+
+        verify(commandService, times(1)).executeCommand(argument.capture());
+        Assert.assertEquals("Vps4SubmitReinstateServer", argument.getValue().commands.get(0).command);
     }
 }

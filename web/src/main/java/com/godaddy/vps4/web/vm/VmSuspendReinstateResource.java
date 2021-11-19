@@ -1,5 +1,6 @@
 package com.godaddy.vps4.web.vm;
 
+import static com.godaddy.vps4.web.util.RequestValidation.validateAndReturnEnumValue;
 import static com.godaddy.vps4.web.util.RequestValidation.validateVmExists;
 import static com.godaddy.vps4.web.util.VmHelper.createActionAndExecute;
 
@@ -11,12 +12,14 @@ import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
 
 import com.godaddy.vps4.credit.CreditService;
 import com.godaddy.vps4.credit.ECommCreditService;
 import com.godaddy.vps4.credit.VirtualMachineCredit;
 import com.godaddy.vps4.orchestration.vm.Vps4ReinstateServer;
+import com.godaddy.vps4.orchestration.vm.Vps4SubmitSuspendServer;
 import com.godaddy.vps4.orchestration.vm.Vps4SuspendServer;
 import com.godaddy.vps4.vm.ActionService;
 import com.godaddy.vps4.vm.ActionType;
@@ -138,6 +141,45 @@ public class VmSuspendReinstateResource {
                 vm.spec.isVirtualMachine() ? "Vps4ReinstateServer" : "Vps4ReinstateDedServer";
         return createActionAndExecute(actionService, commandService, vm.vmId,
                                       ActionType.REINSTATE, request, commandName, user);
+    }
+
+    @POST
+    @Path("{vmId}/suspend")
+    @ApiOperation(value = "Suspend a server. This is a pass through to the corresponding HFS method.",
+            notes = "Suspend a server. " +
+                    "Available reasons are FRAUD, LEGAL, POLICY. " +
+                    "This is a pass through to the corresponding HFS method.")
+    @RequiresRole(roles = {GDUser.Role.ADMIN, GDUser.Role.HS_LEAD, GDUser.Role.SUSPEND_AUTH})
+    public VmAction suspendVm(@PathParam("vmId") UUID vmId, @QueryParam("reason") String reason) {
+        Vps4SubmitSuspendServer.Request request = new Vps4SubmitSuspendServer.Request();
+        request.reason = validateAndReturnEnumValue(ECommCreditService.SuspensionReason.class, reason);;
+
+        VirtualMachine vm = virtualMachineService.getVirtualMachine(vmId);
+        validateVmExists(vmId, vm, user);
+        request.virtualMachine = vm;
+        getAndValidateCredit(vm);
+
+        return createActionAndExecute(actionService, commandService, vm.vmId, ActionType.SUBMIT_SUSPEND, request,
+                "Vps4SubmitSuspendServer", user);
+    }
+
+    @POST
+    @Path("{vmId}/reinstate")
+    @ApiOperation(value = "Reinstate a server. This is a pass through to the corresponding HFS method.",
+            notes = "Reinstate a server. " +
+                    "Available reasons are FRAUD, LEGAL, POLICY. " +
+                    "This is a pass through to the corresponding HFS method.")
+    @RequiresRole(roles = {GDUser.Role.ADMIN, GDUser.Role.HS_LEAD, GDUser.Role.SUSPEND_AUTH})
+    public VmAction reinstateVm(@PathParam("vmId") UUID vmId, @QueryParam("reason") String reason) {
+        Vps4SubmitSuspendServer.Request request = new Vps4SubmitSuspendServer.Request();
+        request.reason = validateAndReturnEnumValue(ECommCreditService.SuspensionReason.class, reason);
+
+        VirtualMachine vm = virtualMachineService.getVirtualMachine(vmId);
+        validateVmExists(vmId, vm, user);
+        getAndValidateCredit(vm);
+
+        return createActionAndExecute(actionService, commandService, vm.vmId, ActionType.SUBMIT_REINSTATE, request,
+                "Vps4SubmitReinstateServer", user);
     }
 
     private void validateCreditIsNotBillingSuspended(VirtualMachine virtualMachine, VirtualMachineCredit credit) {
