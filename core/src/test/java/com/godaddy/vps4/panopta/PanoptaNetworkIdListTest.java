@@ -12,7 +12,6 @@ import org.junit.Test;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.godaddy.vps4.util.ObjectMapperModule;
-import com.godaddy.vps4.vm.VmMetric;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
 
@@ -26,43 +25,43 @@ public class PanoptaNetworkIdListTest {
         mapper = injector.getInstance(ObjectMapper.class);
     }
 
-    private List<PanoptaGraphId> getMockData() throws IOException {
+    private List<PanoptaMetricId> getMockData() throws IOException {
         String json = "{\n" +
                 "  \"network_service_list\": [\n" +
                 "    {\n" +
-                "      \"port\": 22,\n" +
+                "      \"service_type\": \"https://api2.panopta.com/v2/network_service_type/111\",\n" +
                 "      \"url\": \"https://api2.panopta.com/v2/server/8211236/network_service/4692869\"\n" +
                 "    },\n" +
                 "    {\n" +
-                "      \"port\": 21,\n" +
+                "      \"service_type\": \"https://api2.panopta.com/v2/network_service_type/311\",\n" +
                 "      \"url\": \"https://api2.panopta.com/v2/server/8211236/network_service/4692873\"\n" +
                 "    }\n" +
                 "  ]\n" +
                 "}";
-        List<PanoptaGraphId> list = mapper.readValue(json, PanoptaNetworkIdList.class).value;
-        list.sort(Comparator.comparing(id -> id.type));
+        List<PanoptaMetricId> list = mapper.readValue(json, PanoptaNetworkIdList.class).value;
+        list.sort(Comparator.comparing(id -> id.typeId));
         return list;
     }
 
     @Test
     public void testDeserializer() throws IOException {
-        List<PanoptaGraphId> list = getMockData();
+        List<PanoptaMetricId> list = getMockData();
         assertEquals(2, list.size());
     }
 
     @Test
     public void testFtpMetric() throws IOException {
-        List<PanoptaGraphId> list = getMockData();
-        assertEquals(VmMetric.FTP, list.get(0).type);
-        assertEquals(4692873, list.get(0).id);
+        List<PanoptaMetricId> list = getMockData();
+        assertEquals(111, list.get(0).typeId);
+        assertEquals(4692869, list.get(0).id);
         assertTrue(list.get(0).metadata.isEmpty());
     }
 
     @Test
     public void testSshMetric() throws IOException {
-        List<PanoptaGraphId> list = getMockData();
-        assertEquals(VmMetric.SSH, list.get(1).type);
-        assertEquals(4692869, list.get(1).id);
+        List<PanoptaMetricId> list = getMockData();
+        assertEquals(311, list.get(1).typeId);
+        assertEquals(4692873, list.get(1).id);
         assertTrue(list.get(1).metadata.isEmpty());
     }
 }

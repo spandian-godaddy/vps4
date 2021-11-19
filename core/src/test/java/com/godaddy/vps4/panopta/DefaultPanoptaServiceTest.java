@@ -1,10 +1,13 @@
 package com.godaddy.vps4.panopta;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyInt;
+import static org.mockito.Matchers.anyLong;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.doNothing;
@@ -17,8 +20,10 @@ import static org.mockito.Mockito.when;
 
 import java.io.IOException;
 import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -29,6 +34,7 @@ import java.util.concurrent.TimeUnit;
 
 import javax.cache.Cache;
 import javax.cache.CacheManager;
+import javax.ws.rs.NotFoundException;
 
 import org.junit.After;
 import org.junit.Before;
@@ -52,6 +58,7 @@ import com.godaddy.vps4.vm.DataCenterService;
 import com.godaddy.vps4.vm.VirtualMachine;
 import com.godaddy.vps4.vm.VirtualMachineService;
 import com.godaddy.vps4.vm.VmMetric;
+import com.godaddy.vps4.vm.VmOutage;
 import com.google.inject.Inject;
 
 @RunWith(MockitoJUnitRunner.class)
@@ -60,11 +67,13 @@ public class DefaultPanoptaServiceTest {
     @Mock private PanoptaApiServerService panoptaApiServerService;
     @Mock private PanoptaApiCustomerService panoptaApiCustomerService;
     @Mock private PanoptaApiServerGroupService panoptaApiServerGroupService;
+    @Mock private PanoptaApiOutageService panoptaApiOutageService;
     @Mock private PanoptaDataService panoptaDataService;
     @Mock private VirtualMachineService virtualMachineService;
     @Mock private CreditService creditService;
     @Mock private Config config;
     @Mock private Cache cache;
+    @Mock private PanoptaMetricMapper panoptaMetricMapper;
     @Mock private PanoptaCustomerDetails panoptaCustomerDetails;
     @Mock private PanoptaApiCustomerList panoptaApiCustomerList;
 
@@ -126,8 +135,10 @@ public class DefaultPanoptaServiceTest {
                                                           panoptaApiCustomerService,
                                                           panoptaApiServerService,
                                                           panoptaApiServerGroupService,
+                                                          panoptaApiOutageService,
                                                           panoptaDataService,
-                                                          config);
+                                                          config,
+                                                          panoptaMetricMapper);
     }
 
     @After
@@ -149,15 +160,19 @@ public class DefaultPanoptaServiceTest {
     }
 
     private void setupGraphIdLists() {
-        List<PanoptaGraphId> graphIdList = new ArrayList<>();
-        PanoptaGraphId pgi = new PanoptaGraphId();
-        pgi.id = (int) (Math.random() * 9999);
-        pgi.type = VmMetric.HTTP;
-        graphIdList.add(pgi);
         usageIdList = new PanoptaUsageIdList();
-        usageIdList.value = graphIdList;
+        usageIdList.value = Collections.singletonList(createDummyMetricId());
         networkIdList = new PanoptaNetworkIdList();
-        networkIdList.value = graphIdList;
+        networkIdList.value = new ArrayList<>();
+        networkIdList.value.add(createDummyMetricId());
+        networkIdList.value.add(createDummyMetricId());
+    }
+
+    private PanoptaMetricId createDummyMetricId() {
+        PanoptaMetricId metricId = new PanoptaMetricId();
+        metricId.id = (long) (Math.random() * 9999);
+        metricId.typeId = (long) (Math.random() * 9999);
+        return metricId;
     }
 
     private void setupGraphs() {
@@ -276,11 +291,11 @@ public class DefaultPanoptaServiceTest {
 
     @Test
     public void testGetUsageIds() {
-        List<PanoptaGraphId> ids = defaultPanoptaService.getUsageIds(vmId);
+        List<PanoptaMetricId> ids = defaultPanoptaService.getUsageIds(vmId);
         verify(panoptaApiServerService).getUsageList(serverId, partnerCustomerKey, 0);
         assertEquals(ids.size(), 1);
         assertEquals(ids.get(0).id, usageIdList.value.get(0).id);
-        assertEquals(ids.get(0).type, usageIdList.value.get(0).type);
+        assertEquals(ids.get(0).typeId, usageIdList.value.get(0).typeId);
     }
 
     @Test
@@ -292,11 +307,11 @@ public class DefaultPanoptaServiceTest {
 
     @Test
     public void testGetNetworkIds() {
-        List<PanoptaGraphId> ids = defaultPanoptaService.getNetworkIds(vmId);
+        List<PanoptaMetricId> ids = defaultPanoptaService.getNetworkIds(vmId);
         verify(panoptaApiServerService).getNetworkList(serverId, partnerCustomerKey, 0);
-        assertEquals(ids.size(), 1);
-        assertEquals(ids.get(0).id, networkIdList.value.get(0).id);
-        assertEquals(ids.get(0).type, networkIdList.value.get(0).type);
+        assertEquals(2, ids.size());
+        assertEquals(networkIdList.value.get(0).id, ids.get(0).id);
+        assertEquals(networkIdList.value.get(0).typeId, ids.get(0).typeId);
     }
 
     @Test
@@ -328,7 +343,7 @@ public class DefaultPanoptaServiceTest {
         List<PanoptaGraph> graphs = defaultPanoptaService.getNetworkGraphs(vmId, "hour");
 
         verify(panoptaApiServerService).getNetworkList(serverId, partnerCustomerKey, 0);
-        verify(panoptaApiServerService)
+        verify(panoptaApiServerService, times(2))
                 .getNetworkGraph(eq(serverId), anyInt(), eq("hour"), eq(partnerCustomerKey));
         verify(pool, times(1))
                 .invokeAll(any(Collection.class), eq(1L), eq(TimeUnit.MINUTES));
@@ -495,5 +510,82 @@ public class DefaultPanoptaServiceTest {
         verify(panoptaApiServerService).getServers(partnerCustomerKey, ipAddress, orionGuid.toString());
         assertNotNull(panoptaServersList);
         assertTrue(panoptaServersList.isEmpty());
+    }
+
+    @Test
+    public void testGetOutage() throws PanoptaServiceException {
+        PanoptaOutage mockOutage = new PanoptaOutage();
+        mockOutage.outageId = 123;
+        mockOutage.started = Instant.now().minus(5, ChronoUnit.HOURS);
+        mockOutage.metricIds = Collections.singleton(456L);
+        when(panoptaApiOutageService.getOutage(123, partnerCustomerKey)).thenReturn(mockOutage);
+
+        VmOutage outage = defaultPanoptaService.getOutage(vmId, 123);
+
+        assertEquals(mockOutage.outageId, outage.panoptaOutageId);
+        assertEquals(mockOutage.started, outage.started);
+        assertEquals(vmId, outage.vmId);
+        verify(panoptaApiServerService, times(1)).getUsageList(serverId, partnerCustomerKey, 0);
+        verify(panoptaApiServerService, times(1)).getNetworkList(serverId, partnerCustomerKey, 0);
+        verify(panoptaApiOutageService, times(1)).getOutage(mockOutage.outageId, partnerCustomerKey);
+    }
+
+    @Test
+    public void testGetOutageMapsTypeIdToVmOutage() throws PanoptaServiceException {
+        PanoptaMetricId metricId = networkIdList.value.get(0);
+        PanoptaOutage mockOutage = mock(PanoptaOutage.class);
+        mockOutage.metricIds = Collections.singleton(metricId.id);
+        when(panoptaMetricMapper.getVmMetric(metricId.typeId)).thenReturn(VmMetric.PING);
+        when(panoptaApiOutageService.getOutage(123, partnerCustomerKey)).thenReturn(mockOutage);
+
+        VmOutage outage = defaultPanoptaService.getOutage(vmId, 123);
+
+        assertTrue(outage.metrics.contains(VmMetric.PING));
+        verify(panoptaMetricMapper, times(1)).getVmMetric(metricId.typeId);
+    }
+
+    @Test
+    public void testGetOutageOnlyReturnsAffectedMetrics() throws PanoptaServiceException {
+        PanoptaMetricId affectedMetric = networkIdList.value.get(0);
+        PanoptaMetricId unaffectedMetric = networkIdList.value.get(1);
+        PanoptaOutage mockOutage = mock(PanoptaOutage.class);
+        mockOutage.metricIds = Collections.singleton(affectedMetric.id);
+        when(panoptaMetricMapper.getVmMetric(affectedMetric.typeId)).thenReturn(VmMetric.HTTP);
+        when(panoptaMetricMapper.getVmMetric(unaffectedMetric.typeId)).thenReturn(VmMetric.SSH);
+        when(panoptaApiOutageService.getOutage(123, partnerCustomerKey)).thenReturn(mockOutage);
+
+        VmOutage outage = defaultPanoptaService.getOutage(vmId, 123);
+
+        assertTrue(outage.metrics.contains(VmMetric.HTTP));
+        assertFalse(outage.metrics.contains(VmMetric.SSH));
+        verify(panoptaMetricMapper, times(1)).getVmMetric(affectedMetric.typeId);
+        verify(panoptaMetricMapper, never()).getVmMetric(unaffectedMetric.typeId);
+    }
+
+    @Test
+    public void testGetOutageForUnknownServerId() {
+        try {
+            defaultPanoptaService.getOutage(UUID.randomUUID(), 123);
+            fail();
+        } catch (PanoptaServiceException e) {
+            assertEquals("NO_SERVER_FOUND", e.getId());
+        }
+        verify(panoptaApiServerService, never()).getUsageList(anyLong(), anyString(), anyInt());
+        verify(panoptaApiServerService, never()).getNetworkList(anyLong(), anyString(), anyInt());
+        verify(panoptaApiServerService, never()).getOutages(anyLong(), anyString(), anyString(), anyInt());
+    }
+
+    @Test
+    public void testGetOutageForUnknownOutageId() {
+        when(panoptaApiOutageService.getOutage(123, partnerCustomerKey)).thenThrow(new NotFoundException());
+        try {
+            defaultPanoptaService.getOutage(vmId, 123);
+            fail();
+        } catch (PanoptaServiceException e) {
+            assertEquals("NO_OUTAGE_FOUND", e.getId());
+        }
+        verify(panoptaApiServerService, never()).getUsageList(anyLong(), anyString(), anyInt());
+        verify(panoptaApiServerService, never()).getNetworkList(anyLong(), anyString(), anyInt());
+        verify(panoptaApiServerService, never()).getOutages(anyLong(), anyString(), anyString(), anyInt());
     }
 }

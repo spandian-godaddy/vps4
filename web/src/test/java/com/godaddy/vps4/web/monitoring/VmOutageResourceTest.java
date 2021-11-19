@@ -1,22 +1,17 @@
 package com.godaddy.vps4.web.monitoring;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertSame;
-import static org.junit.Assert.fail;
 import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyLong;
 import static org.mockito.Matchers.anyObject;
-import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.eq;
-import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
+import java.util.Collections;
 import java.util.UUID;
 
 import org.junit.Before;
@@ -26,13 +21,12 @@ import org.mockito.ArgumentCaptor;
 import com.godaddy.vps4.credit.CreditService;
 import com.godaddy.vps4.credit.VirtualMachineCredit;
 import com.godaddy.vps4.network.IpAddress;
+import com.godaddy.vps4.panopta.PanoptaService;
+import com.godaddy.vps4.panopta.PanoptaServiceException;
 import com.godaddy.vps4.vm.VirtualMachine;
 import com.godaddy.vps4.vm.VmMetric;
 import com.godaddy.vps4.vm.VmMetricAlert;
 import com.godaddy.vps4.vm.VmOutage;
-import com.godaddy.vps4.vm.VmOutageService;
-import com.godaddy.vps4.web.Vps4Exception;
-import com.godaddy.vps4.web.monitoring.VmOutageResource.VmOutageRequest;
 import com.godaddy.vps4.web.security.GDUser;
 import com.godaddy.vps4.web.vm.VmResource;
 
@@ -43,25 +37,23 @@ import gdg.hfs.orchestration.CommandState;
 public class VmOutageResourceTest {
 
     private VmResource vmResource = mock(VmResource.class);
-    private VmOutageService vmOutageService = mock(VmOutageService.class);
     private CommandService commandService = mock(CommandService.class);
     private CreditService creditService = mock(CreditService.class);
+    private PanoptaService panoptaService = mock(PanoptaService.class);
     private VirtualMachineCredit credit = mock(VirtualMachineCredit.class);
     private GDUser gdUser = mock(GDUser.class);
 
-    private VmOutageResource resource = new VmOutageResource(vmResource, vmOutageService, commandService, creditService);
+    private VmOutageResource resource = new VmOutageResource(vmResource, commandService, creditService, panoptaService);
     private UUID vmId = UUID.randomUUID();
-    private VmMetric metric = VmMetric.CPU;
     private VmMetricAlert vmMetricAlert = new VmMetricAlert();
     private VirtualMachine vm;
     private int outageId = 23;
     private String shopperId = "fake-shopper-id";
-    private boolean suppressEmail;
+
+    private final ArgumentCaptor<CommandGroupSpec> commandCapture = ArgumentCaptor.forClass(CommandGroupSpec.class);
 
     @Before
     public void setUp() {
-        suppressEmail = false;
-
         vm = new VirtualMachine();
         vm.hostname = "TestHostname";
         vm.vmId = UUID.randomUUID();
@@ -76,11 +68,7 @@ public class VmOutageResourceTest {
         when(credit.isAccountActive()).thenReturn(true);
 
         VmOutage vmOutage = new VmOutage();
-        vmOutage.metric = VmMetric.CPU;
-        when(vmOutageService.getVmOutage(outageId)).thenReturn(vmOutage);
-        when(vmOutageService.newVmOutage(eq(vmId), any(VmMetric.class), any(Instant.class),
-                                         anyString(), anyLong())).thenReturn(outageId);
-        doNothing().when(vmOutageService).clearAllActiveOutagesByMetric(eq(vmId), any(VmMetric.class), any(Instant.class));
+        vmOutage.metrics = Collections.singleton(VmMetric.CPU);
 
         vmMetricAlert.status = VmMetricAlert.Status.ENABLED;
         when(gdUser.getShopperId()).thenReturn(shopperId);
@@ -88,189 +76,59 @@ public class VmOutageResourceTest {
     }
 
     @Test
-    public void getOutageList() {
-        resource.getVmOutageList(vmId, null, false);
+    public void getOutageList() throws PanoptaServiceException {
+        resource.getVmOutageList(vmId, false);
         verify(vmResource).getVm(vmId);
-        verify(vmOutageService).getVmOutageList(vmId, null, false);
+        verify(panoptaService).getOutages(vmId, false);
     }
 
     @Test
-    public void getMetricFilteredOutageList() {
-        resource.getVmOutageList(vmId, metric.name(), false);
+    public void getActiveFilteredOutageList() throws PanoptaServiceException {
+        resource.getVmOutageList(vmId, true);
         verify(vmResource).getVm(vmId);
-        verify(vmOutageService).getVmOutageList(vmId, metric, false);
+        verify(panoptaService).getOutages(vmId, true);
     }
 
     @Test
-    public void filterByInvalidMetric() {
-        try {
-            resource.getVmOutageList(vmId, "UPTIME", false);
-            fail();
-        } catch (Vps4Exception e) {
-            assertEquals("INVALID_PARAMETER", e.getId());
-        }
-    }
-
-    @Test
-    public void getActiveFilteredOutageList() {
-        resource.getVmOutageList(vmId, metric.name(), true);
+    public void createOutage() throws PanoptaServiceException {
+        resource.newVmOutage(vmId, outageId);
         verify(vmResource).getVm(vmId);
-        verify(vmOutageService).getVmOutageList(vmId, metric, true);
+        verify(panoptaService).getOutage(vmId, outageId);
+        verify(creditService).getVirtualMachineCredit(vm.orionGuid);
+
+        verify(commandService).executeCommand(commandCapture.capture());
+        assertEquals("SendVmOutageEmail", commandCapture.getValue().commands.get(0).command);
     }
 
     @Test
-    public void getOutage() {
-        resource.getVmOutage(vmId, outageId);
+    public void clearOutage() throws PanoptaServiceException {
+        resource.clearVmOutage(vmId, outageId);
         verify(vmResource).getVm(vmId);
-        verify(vmOutageService).getVmOutage(outageId);
-    }
+        verify(panoptaService).getOutage(vmId, outageId);
+        verify(creditService).getVirtualMachineCredit(vm.orionGuid);
 
-    private VmOutageRequest newOutageRequest() {
-        VmOutageRequest request = new VmOutageRequest();
-        request.metric = "CPU";
-        request.startDate = "2019-11-15 12:40:01 UTC"; //Panopta format
-        request.reason = "CPU greater than 90% for more than 1 minute";
-        request.panoptaOutageId = -103317320;
-        return request;
+        verify(commandService).executeCommand(commandCapture.capture());
+        assertEquals("SendVmOutageResolvedEmail", commandCapture.getValue().commands.get(0).command);
     }
 
     @Test
-    public void createOutage() {
-        VmOutageRequest req = newOutageRequest();
-        resource.newVmOutage(vmId, req);
-        verify(vmResource).getVm(vmId);
-        verify(vmOutageService)
-                .newVmOutage(vmId, VmMetric.valueOf(req.metric), Instant.parse("2019-11-15T12:40:01Z"), req.reason,
-                             req.panoptaOutageId);
-        verify(vmOutageService).getVmOutage(outageId);
-    }
-
-    @Test
-    public void catchCreateWithInvalidMetric() {
-        VmOutageRequest req = newOutageRequest();
-        req.metric = "BANDWIDTH";
-        try {
-            resource.newVmOutage(vmId, req);
-            fail();
-        } catch (Vps4Exception e) {
-            assertEquals("INVALID_PARAMETER", e.getId());
-        }
-    }
-
-    @Test
-    public void catchCreateWithInvalidDateFormat() {
-        VmOutageRequest req = newOutageRequest();
-        req.startDate = "2019-11-15T12:40:01Z";  // NOT Panopta format
-        try {
-            resource.newVmOutage(vmId, req);
-            fail();
-        } catch (Vps4Exception e) {
-            assertEquals("INVALID_PARAMETER", e.getId());
-        }
-    }
-
-    @Test
-    public void catchOutageAlreadyReported() {
-        VmOutageRequest req = newOutageRequest();
-        VmOutage duplicateOutage = new VmOutage();
-        when(vmOutageService.getVmOutage(vmId, VmMetric.valueOf(req.metric), req.panoptaOutageId)).thenReturn(duplicateOutage);
-
-        try {
-            resource.newVmOutage(vmId, req);
-            fail();
-        } catch (Vps4Exception e) {
-            assertEquals("ALREADY_EXISTS", e.getId());
-            verify(vmOutageService, never()).newVmOutage(eq(vmId), any(VmMetric.class), any(Instant.class), anyString(), anyLong());
-        }
-    }
-
-    @Test
-    public void clearOutage() {
-        String endDate = "2019-11-19 13:23:42 UTC"; //Panopta format
-        resource.clearVmOutage(vmId, outageId, endDate, suppressEmail);
-        verify(vmOutageService).clearAllActiveOutagesByMetric(vmId, metric, Instant.parse("2019-11-19T13:23:42Z"));
-        verify(vmOutageService, times(2)).getVmOutage(outageId);
-    }
-
-    @Test
-    public void catchClearWithInvalidDateFormat() {
-        String endDate = "2019-11-19T13:23:42Z"; // NOT Panopta format
-        try {
-            resource.clearVmOutage(vmId, outageId, endDate, suppressEmail);
-            fail();
-        } catch (Vps4Exception e) {
-            assertEquals("INVALID_PARAMETER", e.getId());
-        }
-    }
-
-    @Test
-    public void catchOutageAlreadyCleared() {
-        VmOutage clearedOutage = new VmOutage();
-        clearedOutage.ended = Instant.now();
-        clearedOutage.metric = VmMetric.HTTP;
-        clearedOutage.outageDetailId = 123L;
-        when(vmOutageService.getVmOutage(outageId)).thenReturn(clearedOutage);
-
-        try {
-            resource.clearVmOutage(vmId, outageId, null, suppressEmail);
-            fail();
-        } catch (Vps4Exception e) {
-            assertEquals("ALREADY_EXISTS", e.getId());
-            verify(vmOutageService, never()).clearVmOutage(eq(outageId), any(Instant.class));
-        }
-    }
-
-    @Test
-    public void clearOutageWithoutEndDate() {
-        resource.clearVmOutage(vmId, outageId, null, suppressEmail);
-        verify(vmOutageService).clearAllActiveOutagesByMetric(eq(vmId), eq(metric), any(Instant.class));
-        verify(vmOutageService, times(2)).getVmOutage(outageId);
-    }
-
-    @Test
-    public void clearsAllActiveOutagesMatchingMetric() {
-        resource.clearVmOutage(vmId, outageId, null, suppressEmail);
-        verify(vmOutageService).clearAllActiveOutagesByMetric(eq(vmId), eq(metric), any(Instant.class));
-    }
-
-    @Test
-    public void invokesSendEmailOnAlerts() {
-        VmOutageRequest req = newOutageRequest();
-        resource.newVmOutage(vmId, req);
-        ArgumentCaptor<CommandGroupSpec> commandGroupSpecArgumentCaptor = ArgumentCaptor.forClass(CommandGroupSpec.class);
-        verify(commandService).executeCommand(commandGroupSpecArgumentCaptor.capture());
-        CommandGroupSpec commandGroupSpec = commandGroupSpecArgumentCaptor.getValue();
-        assertSame(commandGroupSpec.commands.get(0).command, "SendVmOutageEmail");
-    }
-
-    @Test
-    public void noClearEmailCommandWithSuppressEmailTrue() {
-        suppressEmail = true;
-        resource.clearVmOutage(vmId, outageId, null, suppressEmail);
-        verify(commandService, never()).executeCommand(any());
-    }
-
-    @Test
-    public void noEmailCommandWhenAccountNotActive() {
+    public void noEmailCommandWhenAccountNotActive() throws PanoptaServiceException {
         when(credit.isAccountActive()).thenReturn(false);
-        VmOutageRequest req = newOutageRequest();
-        resource.newVmOutage(vmId, req);
+        resource.newVmOutage(vmId, outageId);
         verify(commandService, never()).executeCommand(any());
     }
 
     @Test
-    public void noEmailCommandWhenCreditNotFound() {
+    public void noEmailCommandWhenCreditNotFound() throws PanoptaServiceException {
         when(creditService.getVirtualMachineCredit(eq(vm.orionGuid))).thenReturn(null);
-        VmOutageRequest req = newOutageRequest();
-        resource.newVmOutage(vmId, req);
+        resource.newVmOutage(vmId, outageId);
         verify(commandService, never()).executeCommand(any());
     }
 
     @Test
-    public void noEmailCommandWhenVmDestroyed() {
+    public void noEmailCommandWhenVmDestroyed() throws PanoptaServiceException {
         vm.validUntil = Instant.now().minus(5, ChronoUnit.MINUTES);
-        VmOutageRequest req = newOutageRequest();
-        resource.newVmOutage(vmId, req);
+        resource.newVmOutage(vmId, outageId);
         verify(commandService, never()).executeCommand(any());
     }
 

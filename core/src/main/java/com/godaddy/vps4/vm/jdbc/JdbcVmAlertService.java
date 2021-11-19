@@ -25,8 +25,8 @@ public class JdbcVmAlertService implements VmAlertService {
     @Override
     public List<VmMetricAlert> getVmMetricAlertList(UUID vmId) {
         return Sql.with(dataSource).exec(
-                "SELECT m.name, t.type, a.id FROM metric m"
-                + " JOIN metric_type t ON m.metric_type_id = t.id"
+                "SELECT m.name, g.type, a.id FROM metric m"
+                + " JOIN metric_group g ON m.metric_group_id = g.id"
                 + " LEFT JOIN (SELECT id, metric_id FROM vm_silenced_alert WHERE vm_id = ?) a"
                 + "   ON a.metric_id = m.id;",
                 Sql.listOf(this::mapVmMetricAlert), vmId);
@@ -43,8 +43,8 @@ public class JdbcVmAlertService implements VmAlertService {
     @Override
     public VmMetricAlert getVmMetricAlert(UUID vmId, String metric) {
         return Sql.with(dataSource).exec(
-                "SELECT m.name, t.type, a.id FROM metric m"
-                + " JOIN metric_type t ON m.metric_type_id = t.id"
+                "SELECT m.name, g.type, a.id FROM metric m"
+                + " JOIN metric_group g ON m.metric_group_id = g.id"
                 + " LEFT JOIN (SELECT id, metric_id FROM vm_silenced_alert WHERE vm_id = ?) a"
                 + "   ON a.metric_id = m.id"
                 + " WHERE m.name = ?;",

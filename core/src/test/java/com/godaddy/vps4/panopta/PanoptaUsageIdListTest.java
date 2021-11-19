@@ -12,7 +12,6 @@ import org.junit.Test;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.godaddy.vps4.util.ObjectMapperModule;
-import com.godaddy.vps4.vm.VmMetric;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
 
@@ -26,45 +25,45 @@ public class PanoptaUsageIdListTest {
         mapper = injector.getInstance(ObjectMapper.class);
     }
 
-    private List<PanoptaGraphId> getMockData() throws IOException {
+    private List<PanoptaMetricId> getMockData() throws IOException {
         String json = "{\n" +
                 "  \"agent_resource_list\": [\n" +
                 "    {\n" +
-                "      \"name\": \"vps4_ram_total_percent_used\",\n" +
+                "      \"agent_resource_type\": \"https://api2.panopta.com/v2/agent_resource_type/675\",\n" +
                 "      \"resource_option\": {},\n" +
                 "      \"url\": \"https://api2.panopta.com/v2/server/8211236/agent_resource/78917415\"\n" +
                 "    },\n" +
                 "    {\n" +
-                "      \"name\": \"vps4_disk_total_percent_used\",\n" +
+                "      \"agent_resource_type\": \"https://api2.panopta.com/v2/agent_resource_type/575\",\n" +
                 "      \"resource_option\": \"/dev/sda3 mounted at /var\",\n" +
                 "      \"url\": \"https://api2.panopta.com/v2/server/8211236/agent_resource/78917436\"\n" +
                 "    }\n" +
                 "  ]\n" +
                 "}";
-        List<PanoptaGraphId> list = mapper.readValue(json, PanoptaUsageIdList.class).value;
-        list.sort(Comparator.comparing(id -> id.type));
+        List<PanoptaMetricId> list = mapper.readValue(json, PanoptaUsageIdList.class).value;
+        list.sort(Comparator.comparing(id -> id.typeId));
         return list;
     }
 
     @Test
     public void testDeserializer() throws IOException {
-        List<PanoptaGraphId> list = getMockData();
+        List<PanoptaMetricId> list = getMockData();
         assertEquals(2, list.size());
     }
 
     @Test
-    public void testRamMetric() throws IOException {
-        List<PanoptaGraphId> list = getMockData();
-        assertEquals(VmMetric.RAM, list.get(0).type);
-        assertEquals(78917415, list.get(0).id);
-        assertTrue(list.get(0).metadata.isEmpty());
+    public void testDiskMetric() throws IOException {
+        List<PanoptaMetricId> list = getMockData();
+        assertEquals(575, list.get(0).typeId);
+        assertEquals(78917436, list.get(0).id);
+        assertEquals("/var", list.get(0).metadata.get("mountPoint"));
     }
 
     @Test
-    public void testDiskMetric() throws IOException {
-        List<PanoptaGraphId> list = getMockData();
-        assertEquals(VmMetric.DISK, list.get(1).type);
-        assertEquals(78917436, list.get(1).id);
-        assertEquals("/var", list.get(1).metadata.get("mountPoint"));
+    public void testRamMetric() throws IOException {
+        List<PanoptaMetricId> list = getMockData();
+        assertEquals(675, list.get(1).typeId);
+        assertEquals(78917415, list.get(1).id);
+        assertTrue(list.get(1).metadata.isEmpty());
     }
 }

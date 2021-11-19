@@ -16,6 +16,7 @@ import java.time.Duration;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
 
@@ -62,10 +63,6 @@ public class VmMonitoringResourceTests {
     private PanoptaService panoptaService;
     private PanoptaDataService panoptaDataService;
     private VmOutageResource vmOutageResource;
-    private String json;
-
-    @Inject
-    private ObjectMapper objectMapper;
 
     private Injector injector = Guice.createInjector(new ObjectMapperModule());
 
@@ -156,19 +153,19 @@ public class VmMonitoringResourceTests {
     }
 
     @Test
-    public void testGetVmMonitoringEventsForPanopta() throws ParseException, PanoptaServiceException {
+    public void testGetVmMonitoringEventsForPanopta() throws PanoptaServiceException {
         List<VmOutage> panoptaEvents = new ArrayList<>();
         Instant now = Instant.now();
         Instant lastMonth = Instant.now().minus(31, ChronoUnit.DAYS);
 
         VmOutage outage1 = new VmOutage();
-        outage1.metric = VmMetric.PING;
+        outage1.metrics = Collections.singleton(VmMetric.PING);
         outage1.started = now;
         outage1.ended = null;
         outage1.reason = "";
         panoptaEvents.add(outage1);
         VmOutage outage2 = new VmOutage();
-        outage2.metric = VmMetric.PING;
+        outage2.metrics = Collections.singleton(VmMetric.PING);
         outage2.started = lastMonth;
         outage2.ended = now;
         outage2.reason = "";
@@ -178,7 +175,7 @@ public class VmMonitoringResourceTests {
                                                         "customerKey", 3, "serverKey",
                                                         Instant.now(), Instant.MAX);
         when(panoptaDataService.getPanoptaDetails(vm.vmId)).thenReturn(panoptaDetail);
-        when(vmOutageResource.getVmOutageList(vm.vmId, "PING", false)).thenReturn(panoptaEvents);
+        when(vmOutageResource.getVmOutageList(vm.vmId, false)).thenReturn(panoptaEvents);
 
         PaginatedResult<MonitoringEvent> events = resource.getVmMonitoringEvents(vm.vmId, 30, 10, 0, uriInfo);
 

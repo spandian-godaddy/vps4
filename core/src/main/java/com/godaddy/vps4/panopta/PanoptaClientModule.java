@@ -18,6 +18,9 @@ public class PanoptaClientModule extends AbstractModule {
         bind(PanoptaApiServerGroupService.class)
                 .toProvider(new PanoptaClientServiceProvider<>(baseUrl, PanoptaApiServerGroupService.class))
                 .in(Singleton.class);
+        bind(PanoptaApiOutageService.class)
+                .toProvider(new PanoptaClientServiceProvider<>(baseUrl, PanoptaApiOutageService.class))
+                .in(Singleton.class);
 
         bind(PanoptaClientRequestFilter.class);
         bind(PanoptaClientResponseFilter.class);

@@ -1,10 +1,5 @@
 package com.godaddy.vps4.panopta;
 
-import static com.godaddy.vps4.vm.VmMetric.CPU;
-import static com.godaddy.vps4.vm.VmMetric.DISK;
-import static com.godaddy.vps4.vm.VmMetric.RAM;
-import static com.godaddy.vps4.vm.VmMetric.UNKNOWN;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Matcher;
@@ -37,40 +32,26 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 */
 
 public class PanoptaUsageIdList {
-    @JsonIgnore public List<PanoptaGraphId> value;
+    @JsonIgnore public List<PanoptaMetricId> value;
 
     @JsonProperty("agent_resource_list")
     private void unwrapResourceList(ArrayList<PanoptaUsageId> list) {
-        list.removeIf(e -> e.type == UNKNOWN);
         this.value = new ArrayList<>(list);
     }
 
-    public static class PanoptaUsageId extends PanoptaGraphId {
-        @JsonProperty("name")
-        public void mapName(String key) {
-            switch (key) {
-                case "vps4_cpu_total_percent_used":
-                    this.type = CPU;
-                    break;
-                case "vps4_disk_total_percent_used":
-                    this.type = DISK;
-                    break;
-                case "vps4_ram_total_percent_used":
-                    this.type = RAM;
-                    break;
-                default:
-                    this.type = UNKNOWN;
-                    break;
-            }
+    public static class PanoptaUsageId extends PanoptaMetricId {
+        @JsonProperty("agent_resource_type")
+        private void mapType(String url) {
+            this.typeId = Long.parseLong(url.substring(url.lastIndexOf('/') + 1));
         }
 
         @JsonProperty("url")
-        public void mapUrl(String url) {
+        private void mapUrl(String url) {
             this.id = Integer.parseInt(url.split("/")[7]);
         }
 
         @JsonProperty("resource_option")
-        public void mapResourceOption(Object option) {
+        private void mapResourceOption(Object option) {
             if (option instanceof String) {
                 Pattern pattern = Pattern.compile("^.+ mounted at (.+)$");
                 Matcher matcher = pattern.matcher((String) option);

@@ -12,10 +12,12 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 import javax.cache.Cache;
 import javax.cache.CacheManager;
 import javax.inject.Inject;
+import javax.ws.rs.NotFoundException;
 
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
@@ -24,6 +26,8 @@ import org.slf4j.LoggerFactory;
 import com.godaddy.hfs.config.Config;
 import com.godaddy.vps4.cache.CacheName;
 import com.godaddy.vps4.panopta.jdbc.PanoptaCustomerDetails;
+import com.godaddy.vps4.vm.VmMetric;
+import com.godaddy.vps4.vm.VmOutage;
 
 public class DefaultPanoptaService implements PanoptaService {
     private static final DateTimeFormatter PANOPTA_DATE_FORMAT = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss z");
@@ -37,8 +41,10 @@ public class DefaultPanoptaService implements PanoptaService {
     private final PanoptaApiCustomerService panoptaApiCustomerService;
     private final PanoptaApiServerService panoptaApiServerService;
     private final PanoptaApiServerGroupService panoptaApiServerGroupService;
+    private final PanoptaApiOutageService panoptaApiOutageService;
     private final PanoptaDataService panoptaDataService;
     private final Config config;
+    private final PanoptaMetricMapper panoptaMetricMapper;
 
     @Inject
     public DefaultPanoptaService(@PanoptaExecutorService ExecutorService pool,
@@ -46,8 +52,10 @@ public class DefaultPanoptaService implements PanoptaService {
                                  PanoptaApiCustomerService panoptaApiCustomerService,
                                  PanoptaApiServerService panoptaApiServerService,
                                  PanoptaApiServerGroupService panoptaApiServerGroupService,
+                                 PanoptaApiOutageService panoptaApiOutageService,
                                  PanoptaDataService panoptaDataService,
-                                 Config config) {
+                                 Config config,
+                                 PanoptaMetricMapper panoptaMetricMapper) {
         this.cache = cacheManager.getCache(CacheName.PANOPTA_METRIC_GRAPH,
                                            String.class,
                                            CachedMonitoringGraphs.class);
@@ -55,8 +63,10 @@ public class DefaultPanoptaService implements PanoptaService {
         this.panoptaApiCustomerService = panoptaApiCustomerService;
         this.panoptaApiServerService = panoptaApiServerService;
         this.panoptaApiServerGroupService = panoptaApiServerGroupService;
+        this.panoptaApiOutageService = panoptaApiOutageService;
         this.panoptaDataService = panoptaDataService;
         this.config = config;
+        this.panoptaMetricMapper = panoptaMetricMapper;
     }
 
     @Override
@@ -81,7 +91,7 @@ public class DefaultPanoptaService implements PanoptaService {
     public PanoptaCustomer getCustomer(String shopperId) {
         String partnerCustomerKey = getPartnerCustomerKey(shopperId);
         PanoptaApiCustomerList panoptaApiCustomerList =
-                panoptaApiCustomerService.getCustomersByStatus(partnerCustomerKey,"active");
+                panoptaApiCustomerService.getCustomersByStatus(partnerCustomerKey, "active");
         if (!panoptaApiCustomerList.getCustomerList().isEmpty()) {
                 return mapResponseToCustomer(panoptaApiCustomerList.getCustomerList().stream().findFirst().get());
         }
@@ -184,25 +194,31 @@ public class DefaultPanoptaService implements PanoptaService {
     }
 
     @Override
-    public List<PanoptaGraphId> getUsageIds(UUID vmId) {
-        List<PanoptaGraphId> ids = new ArrayList<>();
+    public List<PanoptaMetricId> getUsageIds(UUID vmId) {
+        List<PanoptaMetricId> ids = new ArrayList<>();
         PanoptaDetail detail = panoptaDataService.getPanoptaDetails(vmId);
         if (detail != null) {
             ids = panoptaApiServerService
                     .getUsageList(detail.getServerId(), detail.getPartnerCustomerKey(), UNLIMITED)
                     .value;
+            ids = ids.stream()
+                     .filter(id -> panoptaMetricMapper.getVmMetric(id.typeId) != VmMetric.UNKNOWN)
+                     .collect(Collectors.toList());
         }
         return ids;
     }
 
     @Override
-    public List<PanoptaGraphId> getNetworkIds(UUID vmId) {
-        List<PanoptaGraphId> ids = new ArrayList<>();
+    public List<PanoptaMetricId> getNetworkIds(UUID vmId) {
+        List<PanoptaMetricId> ids = new ArrayList<>();
         PanoptaDetail detail = panoptaDataService.getPanoptaDetails(vmId);
         if (detail != null) {
             ids = panoptaApiServerService
                     .getNetworkList(detail.getServerId(), detail.getPartnerCustomerKey(), UNLIMITED)
                     .value;
+            ids = ids.stream()
+                    .filter(id -> panoptaMetricMapper.getVmMetric(id.typeId) != VmMetric.UNKNOWN)
+                     .collect(Collectors.toList());
         }
         return ids;
     }
@@ -219,15 +235,15 @@ public class DefaultPanoptaService implements PanoptaService {
         if (cache.containsKey(cacheKey)) {
             return cache.get(cacheKey).graphs;
         } else {
-            List<PanoptaGraphId> usageIds = getUsageIds(vmId);
+            List<PanoptaMetricId> usageIds = getUsageIds(vmId);
             List<Callable<PanoptaGraph>> tasks = new ArrayList<>();
-            for (PanoptaGraphId usageId : usageIds) {
+            for (PanoptaMetricId usageId : usageIds) {
                 Callable<PanoptaGraph> task = () -> {
                     PanoptaGraph graph = panoptaApiServerService.getUsageGraph(detail.getServerId(),
                                                                                usageId.id,
                                                                                timescale,
                                                                                detail.getPartnerCustomerKey());
-                    graph.type = usageId.type;
+                    graph.type = panoptaMetricMapper.getVmMetric(usageId.typeId);
                     graph.metadata = usageId.metadata;
                     return graph;
                 };
@@ -249,15 +265,15 @@ public class DefaultPanoptaService implements PanoptaService {
         if (cache.containsKey(cacheKey)) {
             return cache.get(cacheKey).graphs;
         } else {
-            List<PanoptaGraphId> networkIds = getNetworkIds(vmId);
+            List<PanoptaMetricId> networkIds = getNetworkIds(vmId);
             List<Callable<PanoptaGraph>> tasks = new ArrayList<>();
-            for (PanoptaGraphId networkId : networkIds) {
+            for (PanoptaMetricId networkId : networkIds) {
                 Callable<PanoptaGraph> task = () -> {
                     PanoptaGraph graph = panoptaApiServerService.getNetworkGraph(detail.getServerId(),
                                                                                  networkId.id,
                                                                                  timescale,
                                                                                  detail.getPartnerCustomerKey());
-                    graph.type = networkId.type;
+                    graph.type = panoptaMetricMapper.getVmMetric(networkId.typeId);
                     graph.metadata = networkId.metadata;
                     return graph;
                 };
@@ -364,6 +380,71 @@ public class DefaultPanoptaService implements PanoptaService {
                                                        panoptaDetail.getPartnerCustomerKey(),
                                                        startTime,
                                                        endTime);
+    }
+
+    @Override
+    public VmOutage getOutage(UUID vmId, long outageId) throws PanoptaServiceException {
+        PanoptaDetail panoptaDetail = panoptaDataService.getPanoptaDetails(vmId);
+        if (panoptaDetail == null) {
+            logger.warn("Could not find Panopta data for VM ID: {}", vmId);
+            throw new PanoptaServiceException("NO_SERVER_FOUND",
+                                              "No matching server found in VPS4 Panopta database for VM ID: " + vmId);
+        }
+        try {
+            PanoptaOutage outage = panoptaApiOutageService.getOutage(outageId, panoptaDetail.getPartnerCustomerKey());
+            List<PanoptaMetricId> allMetricIds = getAllMetricIds(panoptaDetail);
+            return mapPanoptaOutageToVmOutage(vmId, allMetricIds, outage);
+        } catch (NotFoundException ignored) {
+            throw new PanoptaServiceException("NO_OUTAGE_FOUND",
+                                              "No matching outage found in Panopta API for VM ID: " + vmId);
+        }
+    }
+
+    @Override
+    public List<VmOutage> getOutages(UUID vmId, boolean activeOnly) throws PanoptaServiceException {
+        PanoptaDetail panoptaDetail = panoptaDataService.getPanoptaDetails(vmId);
+        if (panoptaDetail == null) {
+            logger.warn("Could not find Panopta data for VM ID: {}", vmId);
+            throw new PanoptaServiceException("NO_SERVER_FOUND",
+                                              "No matching server found in VPS4 Panopta database for VM ID: " + vmId);
+        }
+
+        List<PanoptaMetricId> allMetricIds = getAllMetricIds(panoptaDetail);
+        PanoptaOutageList outageList = panoptaApiServerService.getOutages(panoptaDetail.getServerId(),
+                                                                          panoptaDetail.getPartnerCustomerKey(),
+                                                                          (activeOnly) ? "active" : null,
+                                                                          UNLIMITED);
+
+        return outageList.value.stream()
+                               .map(outage -> mapPanoptaOutageToVmOutage(vmId, allMetricIds, outage))
+                               .collect(Collectors.toList());
+    }
+
+    private List<PanoptaMetricId> getAllMetricIds(PanoptaDetail panoptaDetail) {
+        List<PanoptaMetricId> metricIds = new ArrayList<>();
+        metricIds.addAll(panoptaApiServerService.getUsageList(panoptaDetail.getServerId(),
+                                                              panoptaDetail.getPartnerCustomerKey(),
+                                                              UNLIMITED).value);
+        metricIds.addAll(panoptaApiServerService.getNetworkList(panoptaDetail.getServerId(),
+                                                                panoptaDetail.getPartnerCustomerKey(),
+                                                                UNLIMITED).value);
+        return metricIds;
+    }
+
+    private VmOutage mapPanoptaOutageToVmOutage(UUID vmId, List<PanoptaMetricId> allMetricIds, PanoptaOutage outage) {
+        VmOutage vmOutage = new VmOutage();
+        vmOutage.vmId = vmId;
+        vmOutage.started = outage.started;
+        vmOutage.ended = outage.ended;
+        vmOutage.reason = outage.reason;
+        vmOutage.panoptaOutageId = outage.outageId;
+
+        vmOutage.metrics = allMetricIds.stream()
+                                       .filter(metricId -> outage.metricIds.contains(metricId.id))
+                                       .map((metricId -> panoptaMetricMapper.getVmMetric(metricId.typeId)))
+                                       .collect(Collectors.toSet());
+
+        return vmOutage;
     }
 
     @Override

@@ -36,14 +36,14 @@ public interface PanoptaApiServerService {
     @GET
     @Path("/{server_id}/agent_resource/{agent_resource_id}/metric/{timescale}")
     PanoptaUsageGraph getUsageGraph(@PathParam("server_id") long serverId,
-                                    @PathParam("agent_resource_id") int agentResourceId,
+                                    @PathParam("agent_resource_id") long agentResourceId,
                                     @PathParam("timescale") String timescale,
                                     @QueryParam("partner_customer_key") String partnerCustomerKey);
 
     @GET
     @Path("/{server_id}/network_service/{network_service_id}/response_time/{timescale}")
     PanoptaNetworkGraph getNetworkGraph(@PathParam("server_id") long serverId,
-                                        @PathParam("network_service_id") int networkServiceId,
+                                        @PathParam("network_service_id") long networkServiceId,
                                         @PathParam("timescale") String timescale,
                                         @QueryParam("partner_customer_key") String partnerCustomerKey);
 
@@ -81,4 +81,11 @@ public interface PanoptaApiServerService {
                                         @QueryParam("partner_customer_key") String partnerCustomerKey,
                                         @QueryParam("start_time") String startTime,
                                         @QueryParam("end_time") String endTime);
+
+    @GET
+    @Path("/{server_id}/outage")
+    PanoptaOutageList getOutages(@PathParam("server_id") long serverId,
+                                 @QueryParam("partner_customer_key") String partnerCustomerKey,
+                                 @QueryParam("status") String status,
+                                 @QueryParam("limit") int limit);
 }

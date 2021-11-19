@@ -13,5 +13,6 @@ public class PanoptaModule extends AbstractModule {
         install(new PanoptaDataModule());
         bind(ExecutorService.class).annotatedWith(PanoptaExecutorService.class).toInstance(Executors.newCachedThreadPool());
         bind(PanoptaService.class).to(DefaultPanoptaService.class).in(Scopes.SINGLETON);
+        bind(PanoptaMetricMapper.class);
     }
 }

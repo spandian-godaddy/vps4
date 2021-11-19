@@ -4,11 +4,10 @@ import java.util.HashMap;
 import java.util.Map;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.godaddy.vps4.vm.VmMetric;
 
-public class PanoptaGraphId {
-    public VmMetric type;
-    public int id;
+public class PanoptaMetricId {
+    public long id;
+    public long typeId;
 
     @JsonProperty(access = JsonProperty.Access.READ_ONLY)
     public Map<String, String> metadata = new HashMap<>();

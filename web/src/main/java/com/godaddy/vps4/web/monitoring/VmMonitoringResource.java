@@ -32,6 +32,7 @@ import com.godaddy.vps4.panopta.PanoptaService;
 import com.godaddy.vps4.panopta.PanoptaServiceException;
 import com.godaddy.vps4.util.MonitoringMeta;
 import com.godaddy.vps4.vm.VirtualMachine;
+import com.godaddy.vps4.vm.VmMetric;
 import com.godaddy.vps4.vm.VmOutage;
 import com.godaddy.vps4.web.PaginatedResult;
 import com.godaddy.vps4.web.Vps4Api;
@@ -42,6 +43,7 @@ import com.google.inject.Inject;
 import gdg.hfs.vhfs.nodeping.NodePingEvent;
 import gdg.hfs.vhfs.nodeping.NodePingService;
 import gdg.hfs.vhfs.nodeping.NodePingUptimeRecord;
+
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
@@ -117,7 +119,7 @@ public class VmMonitoringResource {
                                                                                       start.toString(),
                                                                                       end.toString());
         sortRecordsByDateAsc(nodepingRecords);
-        return nodepingRecords.stream().map(x -> new MonitoringUptimeRecord(x)).collect(Collectors.toList());
+        return nodepingRecords.stream().map(MonitoringUptimeRecord::new).collect(Collectors.toList());
     }
 
     private void sortRecordsByDateAsc(List<NodePingUptimeRecord> nodepingRecords) {
@@ -131,12 +133,7 @@ public class VmMonitoringResource {
             }
         }
 
-        nodepingRecords.sort(new Comparator<NodePingUptimeRecord>() {
-            @Override
-            public int compare(NodePingUptimeRecord o1, NodePingUptimeRecord o2) {
-                return DateTime.parse(o1.label).compareTo(DateTime.parse(o2.label));
-            }
-        });
+        nodepingRecords.sort(Comparator.comparing(o -> DateTime.parse(o.label)));
         // add the total record back because we still want to return it.
         nodepingRecords.add(total);
     }
@@ -148,19 +145,24 @@ public class VmMonitoringResource {
             @QueryParam("days") @DefaultValue("30") Integer days,
             @DefaultValue("10") @QueryParam("limit") Integer limit,
             @DefaultValue("0") @QueryParam("offset") Integer offset,
-            @Context UriInfo uri) {
+            @Context UriInfo uri) throws PanoptaServiceException {
         VirtualMachine vm = vmResource.getVm(vmId);
         int scrubbedLimit = Math.max(limit, 0);
         int scrubbedOffset = Math.max(offset, 0);
         List<MonitoringEvent> events;
 
         if (panoptaDataService.getPanoptaDetails(vmId) != null) {
-            List<VmOutage> sourceEvents = vmOutageResource.getVmOutageList(vmId, "PING", false);
-            events = sourceEvents.stream().map(MonitoringEvent::new).collect(Collectors.toList());
+            List<VmOutage> sourceEvents = vmOutageResource.getVmOutageList(vmId, false);
+            events = sourceEvents.stream()
+                                 .filter(event -> event.metrics.contains(VmMetric.PING))
+                                 .map(MonitoringEvent::new)
+                                 .collect(Collectors.toList());
         } else {
             List<NodePingEvent> sourceEvents = monitoringService
                     .getCheckEvents(monitoringMeta.getAccountId(), vm.primaryIpAddress.pingCheckId, 0);
-            events = sourceEvents.stream().map(MonitoringEvent::new).collect(Collectors.toList());
+            events = sourceEvents.stream()
+                                 .map(MonitoringEvent::new)
+                                 .collect(Collectors.toList());
         }
 
         // only events from past "days" days

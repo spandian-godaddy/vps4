@@ -12,6 +12,7 @@ import org.slf4j.LoggerFactory;
 import com.godaddy.vps4.messaging.Vps4MessagingService;
 import com.godaddy.vps4.orchestration.messaging.SendMessagingEmailBase;
 import com.godaddy.vps4.vm.VmAlertService;
+import com.godaddy.vps4.vm.VmMetric;
 import com.godaddy.vps4.vm.VmMetricAlert;
 
 import gdg.hfs.orchestration.Command;
@@ -38,12 +39,19 @@ public class SendVmOutageEmail extends SendMessagingEmailBase implements Command
 
     @Override
     public Void execute(CommandContext context, VmOutageEmailRequest req) {
+        for (VmMetric metric : req.vmOutage.metrics) {
+            executeForMetric(context, req, metric);
+        }
+        return null;
+    }
+
+    private void executeForMetric(CommandContext context, VmOutageEmailRequest req, VmMetric metric) {
         logger.info("Sending outage email for shopper {} and vm {}", req.shopperId, req.vmId);
         String messageId;
-        if (emailAlertForMetricIsEnabled(req.vmId, req.vmOutage.metric.toString())) {
-            switch (req.vmOutage.metric) {
+        if (emailAlertForMetricIsEnabled(req.vmId, metric.toString())) {
+            switch (metric) {
                 case PING:
-                    messageId = context.execute("SendVmOutageEmail-" + req.shopperId,
+                    messageId = context.execute("SendVmOutageEmail-" + metric,
                             ctx -> messagingService
                                     .sendUptimeOutageEmail(req.shopperId, req.accountName, req.ipAddress, req.orionGuid,
                                             req.vmOutage.started, req.managed),
@@ -57,10 +65,10 @@ public class SendVmOutageEmail extends SendMessagingEmailBase implements Command
                     Matcher matcher = pattern.matcher(req.vmOutage.reason);
                     String percent = (matcher.find()) ? matcher.group(1) : "95%";
 
-                    messageId = context.execute("SendVmOutageEmail-" + req.shopperId,
+                    messageId = context.execute("SendVmOutageEmail-" + metric,
                             ctx -> messagingService
                                     .sendServerUsageOutageEmail(req.shopperId, req.accountName, req.ipAddress,
-                                                                req.orionGuid, req.vmOutage.metric.name(), percent,
+                                                                req.orionGuid, metric.name(), percent,
                                                                 req.vmOutage.started, req.managed),
                             String.class);
                     break;
@@ -71,10 +79,10 @@ public class SendVmOutageEmail extends SendMessagingEmailBase implements Command
                 case HTTP:
                 case IMAP:
                 case POP3:
-                    messageId = context.execute("SendVmOutageEmail-" + req.shopperId,
+                    messageId = context.execute("SendVmOutageEmail-" + metric,
                             ctx -> messagingService
                                     .sendServicesDownEmail(req.shopperId, req.accountName, req.ipAddress, req.orionGuid,
-                                            req.vmOutage.metric.name(), req.vmOutage.started, req.managed),
+                                            metric.name(), req.vmOutage.started, req.managed),
                             String.class);
                     break;
 
@@ -82,10 +90,13 @@ public class SendVmOutageEmail extends SendMessagingEmailBase implements Command
                 default:
                     logger.warn("Could not determine metric type, no outage email sent for shopper id {}, vm id {}.",
                             req.shopperId, req.vmId);
-                    return null;
+                    return;
             }
             if (messageId != null) {
-                this.waitForMessageComplete(context, messageId, req.shopperId);
+                context.execute("WaitForMessageComplete-" + metric, ctx -> {
+                    waitForMessageComplete(ctx, messageId, req.shopperId);
+                    return null;
+                }, Void.class);
             } else {
                 logger.warn("No outage email sent, message id was null for shopper id {}, vm id {}.", req.shopperId,
                         req.vmId);
@@ -93,9 +104,8 @@ public class SendVmOutageEmail extends SendMessagingEmailBase implements Command
         } else {
             logger.info(
                     "No emails will be sent since email alert for metric {} is disabled for shopper id {}, vm id {}.",
-                    req.vmOutage.metric.toString(), req.shopperId, req.vmId);
+                    req.vmOutage.toString(), req.shopperId, req.vmId);
         }
-        return null;
     }
 
     private boolean emailAlertForMetricIsEnabled(UUID vmId, String metric) {

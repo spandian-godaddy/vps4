@@ -4,6 +4,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
+import com.godaddy.vps4.vm.VmOutage;
+
 public interface PanoptaService {
     PanoptaCustomer createCustomer(String shopperId) throws PanoptaServiceException;
 
@@ -22,9 +24,9 @@ public interface PanoptaService {
 
     void setServerAttributes(UUID vmId, Map<Long, String> attributes);
 
-    List<PanoptaGraphId> getUsageIds(UUID vmId);
+    List<PanoptaMetricId> getUsageIds(UUID vmId);
 
-    List<PanoptaGraphId> getNetworkIds(UUID vmId);
+    List<PanoptaMetricId> getNetworkIds(UUID vmId);
 
     List<PanoptaGraph> getUsageGraphs(UUID vmId, String timescale) throws PanoptaServiceException;
 
@@ -35,6 +37,10 @@ public interface PanoptaService {
     void resumeServerMonitoring(UUID vmId, UUID orionGuid);
 
     PanoptaAvailability getAvailability(UUID vmId, String startTime, String endTime) throws PanoptaServiceException;
+
+    VmOutage getOutage(UUID vmId, long outageId) throws PanoptaServiceException;
+
+    List<VmOutage> getOutages(UUID vmId, boolean activeOnly) throws PanoptaServiceException;
 
     String getDefaultGroup(String shopperId) throws PanoptaServiceException;
 }
