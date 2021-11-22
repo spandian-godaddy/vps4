@@ -21,8 +21,15 @@ public class JdbcPanoptaMetricService implements PanoptaMetricService {
     @Override
     public Map<Long, VmMetric> getAllMetrics() {
         return Sql.with(dataSource)
-                  .exec("SELECT metric_type_id, name FROM metric_type mt JOIN metric m ON mt.metric_id = m.id",
+                  .exec("SELECT DISTINCT metric_type_id, name FROM metric_type mt JOIN metric m ON mt.metric_id = m.id",
                         Sql.mapOf(rs -> VmMetric.valueOf(rs.getString("name")),
                                   rs -> rs.getLong("metric_type_id")));
+    }
+
+    @Override
+    public Long getMetricTypeId(String metric, int osTypeId) {
+        return Sql.with(dataSource)
+                .exec("SELECT metric_type_id, name FROM metric_type mt JOIN metric m ON mt.metric_id = m.id WHERE m.name = ? AND mt.os_type_id = ?",
+                        Sql.nextOrNull(rs -> rs.getLong("metric_type_id")), metric, osTypeId);
     }
 }

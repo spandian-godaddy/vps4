@@ -7,7 +7,7 @@ import com.google.inject.Inject;
 
 public class PanoptaMetricMapper {
     private final Map<Long, VmMetric> map;
-
+    
     @Inject
     public PanoptaMetricMapper(PanoptaMetricService panoptaMetricService) {
         map = panoptaMetricService.getAllMetrics();

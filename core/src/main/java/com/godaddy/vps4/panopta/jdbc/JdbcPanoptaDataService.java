@@ -134,4 +134,22 @@ public class JdbcPanoptaDataService implements PanoptaDataService {
                 Sql.nextOrNull(rs -> UUID.fromString(rs.getString("vm_id"))), serverKey);
     }
 
+    @Override
+    public List<String> getPanoptaActiveAdditionalFqdns(UUID vmId) {
+        return Sql.with(dataSource).exec(
+                "SELECT paf.fqdn " +
+                        " FROM panopta_additional_fqdns paf " +
+                        " JOIN panopta_server ps USING (server_id) " +
+                        " WHERE ps.vm_id = ?  AND paf.valid_until = 'infinity' ",
+                Sql.listOf(rs -> rs.getString("fqdn")), vmId);
+    }
+
+    @Override
+    public void addPanoptaAdditionalFqdn(String fqdn, long panoptaServerId) {
+        Sql.with(dataSource)
+                .exec("INSERT INTO panopta_additional_fqdns (server_id, fqdn) " +
+                                "values (?,?) ",
+                        null, panoptaServerId,
+                        fqdn);
+    }
 }

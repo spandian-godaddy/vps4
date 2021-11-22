@@ -63,8 +63,10 @@ public class PanoptaDataServiceTest {
 
     @After
     public void tearDown() {
+        Sql.with(dataSource).exec("DELETE FROM panopta_additional_fqdns WHERE server_id = ?", null, fakeServerId);
         Sql.with(dataSource).exec("DELETE FROM panopta_server WHERE vm_id = ?", null, vm.vmId);
         Sql.with(dataSource).exec("DELETE FROM panopta_customer WHERE partner_customer_key = ?", null, fakePartnerCustomerKey);
+
         SqlTestData.cleanupTestVmAndRelatedData(vm.vmId, dataSource);
     }
 
@@ -178,5 +180,15 @@ public class PanoptaDataServiceTest {
 
         UUID vmId = panoptaDataService.getVmId(fakeServerKey);
         assertEquals(vm.vmId, vmId);
+    }
+
+    @Test
+    public void canAddAndGetPanoptaAdditionalFqdns() {
+        panoptaDataService.createPanoptaCustomer(fakeShopperId, fakeCustomerKey);
+        panoptaDataService.createPanoptaServer(vm.vmId, fakeShopperId, fakeTemplateId, panoptaServer);
+        panoptaDataService.addPanoptaAdditionalFqdn("fqdn.fake", panoptaServer.serverId);
+        List<String> additionalFqdns = panoptaDataService.getPanoptaActiveAdditionalFqdns(vm.vmId);
+
+        assertEquals(additionalFqdns.get(0), "fqdn.fake");
     }
 }
