@@ -1,23 +1,9 @@
 package com.godaddy.vps4.web.vm;
 
-import static com.godaddy.vps4.web.util.RequestValidation.validateAndReturnEnumValue;
-import static com.godaddy.vps4.web.util.RequestValidation.validateVmExists;
-import static com.godaddy.vps4.web.util.VmHelper.createActionAndExecute;
-
-import java.util.UUID;
-
-import javax.inject.Inject;
-import javax.ws.rs.Consumes;
-import javax.ws.rs.POST;
-import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.Produces;
-import javax.ws.rs.QueryParam;
-import javax.ws.rs.core.MediaType;
-
 import com.godaddy.vps4.credit.CreditService;
 import com.godaddy.vps4.credit.ECommCreditService;
 import com.godaddy.vps4.credit.VirtualMachineCredit;
+import com.godaddy.vps4.orchestration.vm.VmActionRequest;
 import com.godaddy.vps4.orchestration.vm.Vps4ReinstateServer;
 import com.godaddy.vps4.orchestration.vm.Vps4SubmitSuspendServer;
 import com.godaddy.vps4.orchestration.vm.Vps4SuspendServer;
@@ -30,10 +16,23 @@ import com.godaddy.vps4.web.Vps4Api;
 import com.godaddy.vps4.web.Vps4Exception;
 import com.godaddy.vps4.web.security.GDUser;
 import com.godaddy.vps4.web.security.RequiresRole;
-
 import gdg.hfs.orchestration.CommandService;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
+
+import javax.inject.Inject;
+import javax.ws.rs.Consumes;
+import javax.ws.rs.POST;
+import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
+import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
+import javax.ws.rs.core.MediaType;
+import java.util.UUID;
+
+import static com.godaddy.vps4.web.util.RequestValidation.validateAndReturnEnumValue;
+import static com.godaddy.vps4.web.util.RequestValidation.validateVmExists;
+import static com.godaddy.vps4.web.util.VmHelper.createActionAndExecute;
 
 @Vps4Api
 @Api(tags = {"vms"})
@@ -132,11 +131,39 @@ public class VmSuspendReinstateResource {
         return reinstateServer(vm, ECommCreditService.ProductMetaField.BILLING_SUSPENDED_FLAG);
     }
 
+    @POST
+    @Path("{vmId}/processSuspendMessage")
+    @ApiOperation(value = "Process a suspend message received by the message handler",
+            notes = "Process a suspend message received by the message handler")
+    @RequiresRole(roles = {GDUser.Role.ADMIN})
+    public VmAction processSuspendMessage(@PathParam("vmId") UUID vmId){
+        VirtualMachine vm = virtualMachineService.getVirtualMachine(vmId);
+        validateVmExists(vmId, vm, user);
+        VmActionRequest request = new VmActionRequest();
+        request.virtualMachine = vm;
+        return createActionAndExecute(actionService, commandService, vm.vmId, ActionType.PROCESS_SUSPEND, request,
+                "Vps4ProcessSuspendServer", user);
+    }
+
+    @POST
+    @Path("{vmId}/processReinstateMessage")
+    @ApiOperation(value = "Process a reinstate message received by the message handler",
+                  notes = "Process a reinstate Message received by the message handler")
+    @RequiresRole(roles = {GDUser.Role.ADMIN})
+    public VmAction processReinstateMessage(@PathParam("vmId") UUID vmId){
+        VirtualMachine vm = virtualMachineService.getVirtualMachine(vmId);
+        validateVmExists(vmId, vm, user);
+
+        VmActionRequest request = new VmActionRequest();
+        request.virtualMachine = vm;
+        return createActionAndExecute(actionService, commandService, vm.vmId, ActionType.PROCESS_REINSTATE, request,
+                "Vps4ProcessReinstateServer", user);
+    }
+
     private VmAction reinstateServer(VirtualMachine vm, ECommCreditService.ProductMetaField resetFlag) {
         Vps4ReinstateServer.Request request = new Vps4ReinstateServer.Request();
         request.virtualMachine = vm;
         request.resetFlag = resetFlag;
-
         String commandName =
                 vm.spec.isVirtualMachine() ? "Vps4ReinstateServer" : "Vps4ReinstateDedServer";
         return createActionAndExecute(actionService, commandService, vm.vmId,

@@ -41,6 +41,8 @@ import com.godaddy.vps4.orchestration.vm.Vps4DestroyOHVm;
 import com.godaddy.vps4.orchestration.vm.Vps4DestroyVm;
 import com.godaddy.vps4.orchestration.vm.Vps4EndRescue;
 import com.godaddy.vps4.orchestration.vm.Vps4PlanChange;
+import com.godaddy.vps4.orchestration.vm.Vps4ProcessReinstateServer;
+import com.godaddy.vps4.orchestration.vm.Vps4ProcessSuspendServer;
 import com.godaddy.vps4.orchestration.vm.Vps4RebootDedicated;
 import com.godaddy.vps4.orchestration.vm.Vps4RecordScheduledJobForVm;
 import com.godaddy.vps4.orchestration.vm.Vps4ReinstateDedServer;
@@ -142,5 +144,7 @@ public class Vps4CommandModule extends AbstractModule {
         bind(Vps4EnableWinexe.class);
         bind(Vps4SubmitSuspendServer.class);
         bind(Vps4SubmitReinstateServer.class);
+        bind(Vps4ProcessSuspendServer.class);
+        bind(Vps4ProcessReinstateServer.class);
     }
 }

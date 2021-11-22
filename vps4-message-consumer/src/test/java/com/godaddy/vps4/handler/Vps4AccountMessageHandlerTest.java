@@ -1,37 +1,5 @@
 package com.godaddy.vps4.handler;
 
-import static java.time.temporal.ChronoUnit.DAYS;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyObject;
-import static org.mockito.Matchers.anyString;
-import static org.mockito.Matchers.eq;
-import static org.mockito.Mockito.doThrow;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
-
-import java.io.IOException;
-import java.time.Instant;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.UUID;
-
-import javax.ws.rs.InternalServerErrorException;
-import javax.ws.rs.ProcessingException;
-import javax.ws.rs.ServiceUnavailableException;
-
-import org.apache.http.conn.HttpHostConnectException;
-import org.apache.kafka.clients.consumer.ConsumerRecord;
-import org.json.simple.JSONObject;
-import org.junit.Before;
-import org.junit.Test;
-import org.mockito.ArgumentCaptor;
-import org.mockito.Mockito;
-
 import com.godaddy.hfs.config.Config;
 import com.godaddy.vps4.credit.CreditService;
 import com.godaddy.vps4.credit.ECommCreditService.PlanFeatures;
@@ -51,10 +19,39 @@ import com.godaddy.vps4.web.client.VmService;
 import com.godaddy.vps4.web.client.VmShopperMergeService;
 import com.godaddy.vps4.web.client.VmSuspendReinstateService;
 import com.godaddy.vps4.web.client.VmZombieService;
-
 import gdg.hfs.orchestration.CommandGroupSpec;
 import gdg.hfs.orchestration.CommandService;
 import gdg.hfs.orchestration.CommandState;
+import org.apache.http.conn.HttpHostConnectException;
+import org.apache.kafka.clients.consumer.ConsumerRecord;
+import org.json.simple.JSONObject;
+import org.junit.Before;
+import org.junit.Test;
+import org.mockito.ArgumentCaptor;
+import org.mockito.Mockito;
+
+import javax.ws.rs.InternalServerErrorException;
+import javax.ws.rs.ProcessingException;
+import javax.ws.rs.ServiceUnavailableException;
+import java.io.IOException;
+import java.time.Instant;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.UUID;
+
+import static java.time.temporal.ChronoUnit.DAYS;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.anyObject;
+import static org.mockito.Matchers.anyString;
+import static org.mockito.Matchers.eq;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 public class Vps4AccountMessageHandlerTest {
 
@@ -334,18 +331,18 @@ public class Vps4AccountMessageHandlerTest {
     public void testHandleMessageSuspended() throws MessageHandlerException {
         mockVmCredit(AccountStatus.SUSPENDED, vm.vmId);
         callHandleMessage(createTestKafkaMessage("suspended"));
-        when(vmSuspendReinstateService.billingSuspendAccount(any(UUID.class))).thenReturn(vmAction);
+        when(vmSuspendReinstateService.processSuspend(any(UUID.class))).thenReturn(vmAction);
 
-        verify(vmSuspendReinstateService, times(1)).billingSuspendAccount(eq(vm.vmId));
+        verify(vmSuspendReinstateService, times(1)).processSuspend(eq(vm.vmId));
     }
 
     @Test
     public void testHandleMessageAbuseSuspended() throws MessageHandlerException {
         mockVmCredit(AccountStatus.ABUSE_SUSPENDED, vm.vmId);
         callHandleMessage(createTestKafkaMessage("abuse_suspended"));
-        when(vmSuspendReinstateService.abuseSuspendAccount(any(UUID.class))).thenReturn(vmAction);
+        when(vmSuspendReinstateService.processSuspend(any(UUID.class))).thenReturn(vmAction);
 
-        verify(vmSuspendReinstateService, times(1)).abuseSuspendAccount(eq(vm.vmId));
+        verify(vmSuspendReinstateService, times(1)).processSuspend(eq(vm.vmId));
     }
 
     @Test
@@ -363,7 +360,7 @@ public class Vps4AccountMessageHandlerTest {
         callHandleMessage(createTestKafkaMessage("reinstated"));
 
         verify(creditServiceMock, times(1)).getVirtualMachineCredit(anyObject());
-        verify(vmSuspendReinstateService, times(1)).reinstateBillingSuspendedAccount(eq(vm.vmId));
+        verify(vmSuspendReinstateService, times(1)).processReinstate(eq(vm.vmId));
     }
 
     @Test

@@ -1,20 +1,5 @@
 package com.godaddy.vps4.handler;
 
-import static com.godaddy.vps4.handler.MessageNotificationType.ADDED;
-import static com.godaddy.vps4.handler.util.Commands.execute;
-import static com.godaddy.vps4.handler.util.Utils.isDBError;
-import static com.godaddy.vps4.handler.util.Utils.isOrchEngineDown;
-import static com.godaddy.vps4.handler.util.Utils.isVps4ApiDown;
-
-import java.io.IOException;
-import java.time.Duration;
-import java.time.Instant;
-import java.util.UUID;
-
-import org.apache.kafka.clients.consumer.ConsumerRecord;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import com.godaddy.hfs.config.Config;
 import com.godaddy.vps4.credit.CreditService;
 import com.godaddy.vps4.credit.ECommCreditService.ProductMetaField;
@@ -32,8 +17,21 @@ import com.godaddy.vps4.web.client.VmSuspendReinstateService;
 import com.godaddy.vps4.web.client.VmZombieService;
 import com.godaddy.vps4.web.vm.VmShopperMergeResource.ShopperMergeRequest;
 import com.google.inject.Inject;
-
 import gdg.hfs.orchestration.CommandService;
+import org.apache.kafka.clients.consumer.ConsumerRecord;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.io.IOException;
+import java.time.Duration;
+import java.time.Instant;
+import java.util.UUID;
+
+import static com.godaddy.vps4.handler.MessageNotificationType.ADDED;
+import static com.godaddy.vps4.handler.util.Commands.execute;
+import static com.godaddy.vps4.handler.util.Utils.isDBError;
+import static com.godaddy.vps4.handler.util.Utils.isOrchEngineDown;
+import static com.godaddy.vps4.handler.util.Utils.isVps4ApiDown;
 
 public class Vps4AccountMessageHandler implements MessageHandler {
 
@@ -140,10 +138,8 @@ public class Vps4AccountMessageHandler implements MessageHandler {
         try {
             switch (vps4Message.notificationType) {
                 case ABUSE_SUSPENDED:
-                    abuseSuspendServer(vm);
-                    break;
                 case SUSPENDED:
-                    billingSuspendServer(vm);
+                    suspendServer(vm);
                     break;
                 case ADDED:
                     setPurchasedAt(vps4Message, credit);
@@ -171,17 +167,10 @@ public class Vps4AccountMessageHandler implements MessageHandler {
         }
     }
 
-    private void abuseSuspendServer(VirtualMachine vm) {
+    private void suspendServer(VirtualMachine vm) {
         if (vm != null) {
-            logger.info("Now performing an Abuse suspend on the server {}.", vm.vmId);
-            vmSuspendReinstateService.abuseSuspendAccount(vm.vmId);
-        }
-    }
-
-    private void billingSuspendServer(VirtualMachine vm) {
-        if (vm != null) {
-            logger.info("Now performing a Billing suspend on the server {}.", vm.vmId);
-            vmSuspendReinstateService.billingSuspendAccount(vm.vmId);
+            logger.info("Suspend server {}.", vm.vmId);
+            vmSuspendReinstateService.processSuspend(vm.vmId);
         }
     }
 
@@ -266,10 +255,8 @@ public class Vps4AccountMessageHandler implements MessageHandler {
 
     private void reinstateAccount(VirtualMachine vm) {
         if (vm != null) {
-            // only billing suspended accounts are re-instated using the notification from
-            // kafka messages
-            logger.info("Now re-instating billing suspended account for vm: {} ", vm);
-            vmSuspendReinstateService.reinstateBillingSuspendedAccount(vm.vmId);
+            logger.info("Re-instating suspended vm: {} ", vm);
+            vmSuspendReinstateService.processReinstate(vm.vmId);
         }
     }
 

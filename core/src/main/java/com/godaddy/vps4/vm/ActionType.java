@@ -1,9 +1,9 @@
 package com.godaddy.vps4.vm;
 
+import java.util.Map;
+
 import static java.util.Arrays.stream;
 import static java.util.stream.Collectors.toMap;
-
-import java.util.Map;
 
 public enum ActionType {
 
@@ -54,7 +54,9 @@ public enum ActionType {
     IMPORT_VM(45),
     ENABLE_WINEXE(46),
     SUBMIT_SUSPEND(47),
-    SUBMIT_REINSTATE(48);
+    SUBMIT_REINSTATE(48),
+    PROCESS_SUSPEND(50),
+    PROCESS_REINSTATE(51);
 
     private final int typeId;
 

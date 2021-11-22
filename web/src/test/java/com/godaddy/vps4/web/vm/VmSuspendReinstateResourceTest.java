@@ -1,28 +1,5 @@
 package com.godaddy.vps4.web.vm;
 
-import static com.godaddy.vps4.credit.ECommCreditService.ProductMetaField;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyLong;
-import static org.mockito.Matchers.anyObject;
-import static org.mockito.Matchers.anyString;
-import static org.mockito.Matchers.eq;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
-
-import java.time.Instant;
-import java.time.temporal.ChronoUnit;
-import java.util.Collections;
-import java.util.Map;
-import java.util.UUID;
-
-import com.godaddy.vps4.credit.ECommCreditService;
-import org.junit.Before;
-import org.junit.Test;
-import org.mockito.ArgumentCaptor;
-
 import com.godaddy.vps4.credit.CreditService;
 import com.godaddy.vps4.credit.VirtualMachineCredit;
 import com.godaddy.vps4.security.GDUserMock;
@@ -38,12 +15,31 @@ import com.godaddy.vps4.vm.VirtualMachine;
 import com.godaddy.vps4.vm.VirtualMachineService;
 import com.godaddy.vps4.web.Vps4Exception;
 import com.godaddy.vps4.web.security.GDUser;
-
 import gdg.hfs.orchestration.CommandGroupSpec;
 import gdg.hfs.orchestration.CommandService;
 import gdg.hfs.orchestration.CommandState;
-
 import junit.framework.Assert;
+import org.junit.Before;
+import org.junit.Test;
+import org.mockito.ArgumentCaptor;
+
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
+import java.util.Collections;
+import java.util.Map;
+import java.util.UUID;
+
+import static com.godaddy.vps4.credit.ECommCreditService.ProductMetaField;
+import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.anyLong;
+import static org.mockito.Matchers.anyObject;
+import static org.mockito.Matchers.anyString;
+import static org.mockito.Matchers.eq;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 public class VmSuspendReinstateResourceTest {
 
@@ -360,9 +356,10 @@ public class VmSuspendReinstateResourceTest {
     @Test
     public void testSuspend() {
         createTestVm();
-        ArgumentCaptor<CommandGroupSpec> argument = ArgumentCaptor.forClass(CommandGroupSpec.class);
+
         vmSuspendReinstateResource.suspendVm(testVm.vmId, "FRAUD");
 
+        ArgumentCaptor<CommandGroupSpec> argument = ArgumentCaptor.forClass(CommandGroupSpec.class);
         verify(commandService, times(1)).executeCommand(argument.capture());
         Assert.assertEquals("Vps4SubmitSuspendServer", argument.getValue().commands.get(0).command);
     }
@@ -370,10 +367,32 @@ public class VmSuspendReinstateResourceTest {
     @Test
     public void testReinstate() {
         createTestVm();
-        ArgumentCaptor<CommandGroupSpec> argument = ArgumentCaptor.forClass(CommandGroupSpec.class);
         vmSuspendReinstateResource.reinstateVm(testVm.vmId, "FRAUD");
 
+        ArgumentCaptor<CommandGroupSpec> argument = ArgumentCaptor.forClass(CommandGroupSpec.class);
         verify(commandService, times(1)).executeCommand(argument.capture());
         Assert.assertEquals("Vps4SubmitReinstateServer", argument.getValue().commands.get(0).command);
+    }
+
+    @Test
+    public void testProcessSuspendMessage() {
+        createTestVm();
+
+        vmSuspendReinstateResource.processSuspendMessage(testVm.vmId);
+
+        ArgumentCaptor<CommandGroupSpec> argument = ArgumentCaptor.forClass(CommandGroupSpec.class);
+        verify(commandService, times(1)).executeCommand(argument.capture());
+        Assert.assertEquals("Vps4ProcessSuspendServer", argument.getValue().commands.get(0).command);
+    }
+
+    @Test
+    public void testProcessReinstateMessage() {
+        createTestVm();
+
+        vmSuspendReinstateResource.processReinstateMessage(testVm.vmId);
+
+        ArgumentCaptor<CommandGroupSpec> argument = ArgumentCaptor.forClass(CommandGroupSpec.class);
+        verify(commandService, times(1)).executeCommand(argument.capture());
+        Assert.assertEquals("Vps4ProcessReinstateServer", argument.getValue().commands.get(0).command);
     }
 }
