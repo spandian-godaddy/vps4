@@ -15,7 +15,7 @@ import org.slf4j.LoggerFactory;
 import javax.inject.Inject;
 
 @CommandMetadata(
-        name = "Vps4ReinstateServer",
+        name = "Vps4ProcessReinstateServer",
         requestType = VmActionRequest.class,
         responseType = Void.class,
         retryStrategy = CommandRetryStrategy.NEVER

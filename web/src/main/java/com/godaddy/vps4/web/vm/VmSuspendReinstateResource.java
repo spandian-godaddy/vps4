@@ -154,7 +154,6 @@ public class VmSuspendReinstateResource {
     public VmAction processReinstateMessage(@PathParam("vmId") UUID vmId){
         VirtualMachine vm = virtualMachineService.getVirtualMachine(vmId);
         validateVmExists(vmId, vm, user);
-
         VmActionRequest request = new VmActionRequest();
         request.virtualMachine = vm;
         return createActionAndExecute(actionService, commandService, vm.vmId, ActionType.PROCESS_REINSTATE, request,
