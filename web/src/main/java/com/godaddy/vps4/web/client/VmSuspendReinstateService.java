@@ -32,10 +32,10 @@ public interface VmSuspendReinstateService {
     VmAction reinstateBillingSuspendedAccount(@PathParam("vmId") UUID vmId);
 
     @POST
-    @Path("{vmId}/processSuspend")
+    @Path("{vmId}/processSuspendMessage")
     VmAction processSuspend(@PathParam("vmId") UUID vmId);
 
     @POST
-    @Path("{vmId}/processReinstate")
+    @Path("{vmId}/processReinstateMessage")
     VmAction processReinstate(@PathParam("vmId") UUID vmId);
 }
