@@ -57,5 +57,10 @@ public class PanoptaNetworkIdList {
         private void mapUrl(String url) {
             this.id = Integer.parseInt(url.split("/")[7]);
         }
+
+        @JsonProperty("server_interface")
+        private void mapServerInterface(String serverInterface) {
+            this.serverInterface = serverInterface;
+        }
     }
 }

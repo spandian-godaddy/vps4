@@ -4,6 +4,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
+import com.godaddy.vps4.vm.VmMetric;
 import com.godaddy.vps4.vm.VmOutage;
 
 public interface PanoptaService {
@@ -18,6 +19,8 @@ public interface PanoptaService {
 
     PanoptaServer getServer(UUID vmId);
 
+    void addAdditionalFqdnToServer(UUID vmId, String additionalFqdn) throws PanoptaServiceException;
+
     List<PanoptaServer> getServers(String shopperId, String ipAddress, UUID orionGuid);
 
     void deleteServer(UUID vmId);
@@ -25,6 +28,8 @@ public interface PanoptaService {
     void setServerAttributes(UUID vmId, Map<Long, String> attributes);
 
     List<PanoptaMetricId> getUsageIds(UUID vmId);
+
+    void addNetworkService(UUID vmId, VmMetric metric, String additionalFqdn, int osTypeId, boolean isManaged, boolean hasMonitoring) throws PanoptaServiceException;
 
     List<PanoptaMetricId> getNetworkIds(UUID vmId);
 

@@ -9,6 +9,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import java.time.Instant;
+import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
 
@@ -55,9 +56,11 @@ public class PanoptaDataServiceTest {
         String fakeName = "s64-202-190-85.secureserver.net";
         String fakeFqdn = "s64-202-190-85.secureserver.net";
         String serverGroup = "https://api2.panopta.com/v2/server_group/348625";
+        List<String> fakeAdditionalFqdns = Arrays.asList("thisfqdn.isdefinitely.fake");
+
         PanoptaServer.Status status = PanoptaServer.Status.ACTIVE;
         panoptaServer = new PanoptaServer(fakePartnerCustomerKey, fakeServerId, fakeServerKey, fakeName, fakeFqdn,
-                                          serverGroup, status, Instant.now());
+                                        fakeAdditionalFqdns, serverGroup, status, Instant.now());
         when(config.get("panopta.api.partner.customer.key.prefix")).thenReturn("gdtest_");
     }
 

@@ -140,6 +140,7 @@ public class PanoptaServers {
         @JsonProperty("server_key") public String serverKey;
         public String status;
         public List<String> tags;
+        @JsonProperty("additional_fqdns") public List<String> additionalFqdns;
         public String url;
 
         @Override

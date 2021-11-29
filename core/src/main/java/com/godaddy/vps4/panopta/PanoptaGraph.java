@@ -11,4 +11,5 @@ public class PanoptaGraph {
     public List<Instant> timestamps;
     public List<Double> values;
     public Map<String, String> metadata;
+    public String serverInterface;
 }

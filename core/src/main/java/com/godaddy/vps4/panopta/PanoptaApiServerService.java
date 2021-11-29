@@ -61,14 +61,20 @@ public interface PanoptaApiServerService {
 
     @PUT
     @Path("/{server_id}")
-    void setServerStatus(@PathParam("server_id") long serverId,
-                         @QueryParam("partner_customer_key") String partnerCustomerKey,
-                         PanoptaApiUpdateServerRequest panoptaApiUpdateServerRequest);
+    void updateServer(@PathParam("server_id") long serverId,
+                      @QueryParam("partner_customer_key") String partnerCustomerKey,
+                      PanoptaApiUpdateServerRequest panoptaApiUpdateServerRequest);
 
     @DELETE
     @Path("/{server_id}")
     void deleteServer(@PathParam("server_id") long serverId,
                       @QueryParam("partner_customer_key") String partnerCustomerKey);
+
+    @POST
+    @Path("/{server_id}/network_service")
+    void addNetworkService(@PathParam("server_id") long serverId,
+                           @QueryParam("partner_customer_key") String partnerCustomerKey,
+                           PanoptaApiNetworkServiceRequest request);
 
     @POST
     @Path("/{server_id}/server_attribute")

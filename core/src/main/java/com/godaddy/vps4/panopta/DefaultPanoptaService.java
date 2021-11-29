@@ -34,6 +34,17 @@ public class DefaultPanoptaService implements PanoptaService {
     private static final int UNLIMITED = 0;
     private static final int SLEEP_SECONDS = 10;
     private static final int TIMEOUT_MINUTES = 1;
+    private static final int NETWORK_METRIC_FREQUENCY_MANAGED = 60;
+    private static final int OUTAGE_CONFIRMATION_DELAY_MANAGED = 900;
+    private static final int NETWORK_METRIC_FREQUENCY_SELF_MANAGED = 30;
+    private static final int OUTAGE_CONFIRMATION_DELAY_SELF_MANAGED = 300;
+    private static final int HTTPS_PORT = 443;
+    private static final int HTTP_PORT = 80;
+    private static final String SSL_EXPIRATION_WARNING_TIME = "14";
+    private static final String SSL_IGNORE = "off";
+
+    private static final boolean METRIC_OVERRIDE = false;
+    private static final boolean EXCLUDE_FROM_AVAILABILITY = true;
 
     private static final Logger logger = LoggerFactory.getLogger(DefaultPanoptaService.class);
     private final Cache<String, CachedMonitoringGraphs> cache;
@@ -151,6 +162,29 @@ public class DefaultPanoptaService implements PanoptaService {
     }
 
     @Override
+    public void addAdditionalFqdnToServer(UUID vmId, String additionalFqdn) throws PanoptaServiceException {
+        PanoptaDetail panoptaDetail = panoptaDataService.getPanoptaDetails(vmId);
+        if (panoptaDetail == null) {
+            throw new PanoptaServiceException("NO_SERVER_FOUND",
+                    "No matching server found in VPS4 Panopta database for VM ID: " + vmId);
+        }
+        long serverId = panoptaDetail.getServerId();
+        String partnerCustomerKey = panoptaDetail.getPartnerCustomerKey();
+        PanoptaServer server =
+                mapServer(partnerCustomerKey, panoptaApiServerService.getServer(serverId, partnerCustomerKey));
+
+        List<String> additionalFqdns = new ArrayList<>(server.additionalFqdns);
+        additionalFqdns.add(additionalFqdn);
+
+        PanoptaApiUpdateServerRequest panoptaApiUpdateServerRequest = new PanoptaApiUpdateServerRequest();
+        panoptaApiUpdateServerRequest.fqdn = server.fqdn;
+        panoptaApiUpdateServerRequest.name = server.name;
+        panoptaApiUpdateServerRequest.serverGroup = server.serverGroup;
+        panoptaApiUpdateServerRequest.additionalFqdns = additionalFqdns;
+        panoptaApiServerService.updateServer(serverId, partnerCustomerKey, panoptaApiUpdateServerRequest);
+    }
+
+    @Override
     public PanoptaServer getServer(UUID vmId) {
         PanoptaDetail panoptaDetails = panoptaDataService.getPanoptaDetails(vmId);
         if (panoptaDetails != null) {
@@ -192,6 +226,39 @@ public class DefaultPanoptaService implements PanoptaService {
                                                  panoptaDetails.getPartnerCustomerKey(),
                                                  request);
         });
+    }
+
+    @Override
+    public void addNetworkService(UUID vmId, VmMetric metric, String additionalFqdn, int osTypeId, boolean isManaged, boolean hasMonitoring) throws PanoptaServiceException {
+        PanoptaDetail panoptaDetails = panoptaDataService.getPanoptaDetails(vmId);
+        PanoptaApiNetworkServiceRequest request;
+        int port;
+        int networkMetricFrequency = isManaged ? NETWORK_METRIC_FREQUENCY_MANAGED : NETWORK_METRIC_FREQUENCY_SELF_MANAGED;
+        int outageConfirmationDelay = isManaged ? OUTAGE_CONFIRMATION_DELAY_MANAGED : (hasMonitoring ? OUTAGE_CONFIRMATION_DELAY_MANAGED : OUTAGE_CONFIRMATION_DELAY_SELF_MANAGED);
+        PanoptaApiNetworkServiceRequest.Metadata metadata = new PanoptaApiNetworkServiceRequest.Metadata();
+        PanoptaApiNetworkServiceRequest.HttpsMetadata httpsMetadata = new PanoptaApiNetworkServiceRequest.HttpsMetadata();
+        if(metric.equals(VmMetric.HTTPS)) {
+            httpsMetadata = new PanoptaApiNetworkServiceRequest.HttpsMetadata();
+            httpsMetadata.metricOverride = METRIC_OVERRIDE;
+            httpsMetadata.httpSslExpiration = SSL_EXPIRATION_WARNING_TIME;
+            httpsMetadata.httpSslIgnore = SSL_IGNORE;
+            port = HTTPS_PORT;
+        }
+        else if (metric.equals(VmMetric.HTTP)) {
+            metadata = new PanoptaApiNetworkServiceRequest.Metadata();
+            metadata.metricOverride = METRIC_OVERRIDE;
+            port = HTTP_PORT;
+        }
+        else {
+            throw new PanoptaServiceException("UNKNOWN_METRIC", "Only acceptable metrics is HTTP or HTTPS. This metric is unknown: "+ metric);
+        }
+
+        request = new PanoptaApiNetworkServiceRequest(panoptaMetricMapper.getMetricTypeId(metric, osTypeId),
+                networkMetricFrequency, EXCLUDE_FROM_AVAILABILITY, outageConfirmationDelay, port, additionalFqdn,
+                metric.equals(VmMetric.HTTPS) ? httpsMetadata : metadata);
+        panoptaApiServerService.addNetworkService(panoptaDetails.getServerId(),
+                panoptaDetails.getPartnerCustomerKey(),
+                request);
     }
 
     @Override
@@ -276,6 +343,7 @@ public class DefaultPanoptaService implements PanoptaService {
                                                                                  detail.getPartnerCustomerKey());
                     graph.type = panoptaMetricMapper.getVmMetric(networkId.typeId);
                     graph.metadata = networkId.metadata;
+                    graph.serverInterface = networkId.serverInterface;
                     return graph;
                 };
                 tasks.add(task);
@@ -319,7 +387,7 @@ public class DefaultPanoptaService implements PanoptaService {
                 ? null
                 : Instant.from(PANOPTA_DATE_FORMAT.parse(server.agentLastSynced + " UTC"));
         return new PanoptaServer(partnerCustomerKey, serverId, server.serverKey, server.name, server.fqdn,
-                                 server.serverGroup, status, agentLastSynced);
+                                    server.additionalFqdns, server.serverGroup, status, agentLastSynced);
     }
 
     @Override
@@ -339,7 +407,7 @@ public class DefaultPanoptaService implements PanoptaService {
             panoptaApiUpdateServerRequest.serverGroup = server.serverGroup;
             panoptaApiUpdateServerRequest.status = PanoptaServer.Status.SUSPENDED.toString().toLowerCase();
             logger.info("Setting Panopta server to suspended status");
-            panoptaApiServerService.setServerStatus(serverId, partnerCustomerKey, panoptaApiUpdateServerRequest);
+            panoptaApiServerService.updateServer(serverId, partnerCustomerKey, panoptaApiUpdateServerRequest);
         } else {
             logger.info("Panopta server is already in suspended status. No need to update status");
         }
@@ -362,7 +430,7 @@ public class DefaultPanoptaService implements PanoptaService {
             panoptaApiUpdateServerRequest.serverGroup = server.serverGroup;
             panoptaApiUpdateServerRequest.status = PanoptaServer.Status.ACTIVE.toString().toLowerCase();
             logger.info("Setting Panopta server to active status");
-            panoptaApiServerService.setServerStatus(serverId, partnerCustomerKey, panoptaApiUpdateServerRequest);
+            panoptaApiServerService.updateServer(serverId, partnerCustomerKey, panoptaApiUpdateServerRequest);
         } else {
             logger.info("Panopta server is already in active status. No need to update status");
         }

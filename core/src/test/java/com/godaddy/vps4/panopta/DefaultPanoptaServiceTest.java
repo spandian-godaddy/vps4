@@ -22,6 +22,7 @@ import java.io.IOException;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -156,6 +157,7 @@ public class DefaultPanoptaServiceTest {
         server.url = "https://api2.panopta.com/v2/server/" + serverId;
         server.status = PanoptaServer.Status.ACTIVE.toString();
         server.agentLastSynced = "2021-01-19 17:22:20";
+        server.additionalFqdns = Arrays.asList("definitelyFakeFQDN.here");
         panoptaServers.servers.add(server);
     }
 
@@ -410,14 +412,14 @@ public class DefaultPanoptaServiceTest {
     public void testDoesNotPauseMonitoringWhenPanoptaAlreadySuspended() {
         server.status = "suspended";
         defaultPanoptaService.pauseServerMonitoring(vmId);
-        verify(panoptaApiServerService, never()).setServerStatus(eq(serverId), eq(partnerCustomerKey), any());
+        verify(panoptaApiServerService, never()).updateServer(eq(serverId), eq(partnerCustomerKey), any());
     }
 
     @Test
     public void testPauseMonitoringSuccess() {
         server.status = "active";
         defaultPanoptaService.pauseServerMonitoring(vmId);
-        verify(panoptaApiServerService).setServerStatus(eq(serverId), eq(partnerCustomerKey), any());
+        verify(panoptaApiServerService).updateServer(eq(serverId), eq(partnerCustomerKey), any());
     }
 
     @Test
@@ -431,14 +433,14 @@ public class DefaultPanoptaServiceTest {
     public void testDoesNotResumeMonitoringWhenPanoptaAlreadyActive() {
         server.status = "active";
         defaultPanoptaService.resumeServerMonitoring(vmId, orionGuid);
-        verify(panoptaApiServerService, never()).setServerStatus(eq(serverId), eq(partnerCustomerKey), any());
+        verify(panoptaApiServerService, never()).updateServer(eq(serverId), eq(partnerCustomerKey), any());
     }
 
     @Test
     public void testResumeMonitoringSuccess() {
         server.status = "suspended";
         defaultPanoptaService.resumeServerMonitoring(vmId, orionGuid);
-        verify(panoptaApiServerService).setServerStatus(eq(serverId), eq(partnerCustomerKey), any());
+        verify(panoptaApiServerService).updateServer(eq(serverId), eq(partnerCustomerKey), any());
     }
 
     @Test
@@ -587,5 +589,56 @@ public class DefaultPanoptaServiceTest {
         verify(panoptaApiServerService, never()).getUsageList(anyLong(), anyString(), anyInt());
         verify(panoptaApiServerService, never()).getNetworkList(anyLong(), anyString(), anyInt());
         verify(panoptaApiServerService, never()).getOutages(anyLong(), anyString(), anyString(), anyInt());
+    }
+
+    @Test
+    public void testAddAdditionalFqdnCallsUpdateServer() throws PanoptaServiceException {
+        defaultPanoptaService.addAdditionalFqdnToServer(vmId, "thisfqdn.istotallymostdefinitely.fake");
+        verify(panoptaApiServerService).updateServer(eq(serverId), eq(partnerCustomerKey), any());
+    }
+
+    @Test
+    public void testAddAdditionalFqdnThrowsErrorIfServerDoesNotExist() {
+        when(panoptaDataService.getPanoptaDetails(vmId)).thenReturn(null);
+        try {
+            defaultPanoptaService.addAdditionalFqdnToServer(vmId, "thisfqdn.istotallymostdefinitely.fake");
+            fail();
+        } catch (PanoptaServiceException e) {
+            assertEquals("NO_SERVER_FOUND", e.getId());
+        }
+    }
+
+    @Test
+    public void testAddNetworkServiceServerHTTPCallsAddNetworkService() throws PanoptaServiceException {
+        defaultPanoptaService.addNetworkService(vmId, VmMetric.HTTP, "thisfqdn.istotallymostdefinitely.fake", 1, true, false);
+        verify(panoptaApiServerService).addNetworkService(eq(serverId), eq(partnerCustomerKey), any());
+    }
+
+    @Test
+    public void testAddNetworkServiceServerHTTPSCallsAddNetworkService() throws PanoptaServiceException {
+        defaultPanoptaService.addNetworkService(vmId, VmMetric.HTTPS, "thisfqdn.istotallymostdefinitely.fake", 1, true, false);
+        verify(panoptaApiServerService).addNetworkService(eq(serverId), eq(partnerCustomerKey), any());
+    }
+
+    @Test
+    public void testAddNetworkServiceServerCallsAddNetworkServiceIsManagedFalse() throws PanoptaServiceException {
+        defaultPanoptaService.addNetworkService(vmId, VmMetric.HTTPS, "thisfqdn.istotallymostdefinitely.fake", 1, false, false);
+        verify(panoptaApiServerService).addNetworkService(eq(serverId), eq(partnerCustomerKey), any());
+    }
+
+    @Test
+    public void testAddNetworkServiceServerCallsAddNetworkServiceIsManagedFalseMonitoringTrue() throws PanoptaServiceException {
+        defaultPanoptaService.addNetworkService(vmId, VmMetric.HTTPS, "thisfqdn.istotallymostdefinitely.fake", 1, false, true);
+        verify(panoptaApiServerService).addNetworkService(eq(serverId), eq(partnerCustomerKey), any());
+    }
+    
+    @Test
+    public void testAddNetworkServiceThrowsErrorIfMetricIsNotHTTPOrHTTPS() {
+        try {
+            defaultPanoptaService.addNetworkService(vmId, VmMetric.PING, "thisfqdn.istotallymostdefinitely.fake", 1, true, false);
+            fail();
+        } catch (PanoptaServiceException e) {
+            assertEquals("UNKNOWN_METRIC", e.getId());
+        }
     }
 }
