@@ -109,7 +109,7 @@ public class VmOutageResource {
                                              String emailOrchestrationClassname, VmOutage vmOutage) {
 
         VirtualMachineCredit credit = creditService.getVirtualMachineCredit(virtualMachine.orionGuid);
-        if (credit != null && credit.isAccountActive() && virtualMachine.isActive()) {
+        if (credit != null && credit.isAccountActive() && virtualMachine.isActive() && !credit.isManaged()) {
             VmOutageEmailRequest vmOutageEmailRequest =
                     new VmOutageEmailRequest(virtualMachine.name, virtualMachine.primaryIpAddress.ipAddress,
                                              credit.getOrionGuid(), credit.getShopperId(), vmId, credit.isManaged(),

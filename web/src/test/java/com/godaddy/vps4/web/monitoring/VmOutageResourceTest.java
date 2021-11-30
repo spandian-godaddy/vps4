@@ -64,7 +64,7 @@ public class VmOutageResourceTest {
         when(vmResource.getVm(any(UUID.class))).thenReturn(vm);
 
         when(creditService.getVirtualMachineCredit(eq(vm.orionGuid))).thenReturn(credit);
-        when(credit.isManaged()).thenReturn(true);
+        when(credit.isManaged()).thenReturn(false);
         when(credit.isAccountActive()).thenReturn(true);
 
         VmOutage vmOutage = new VmOutage();
@@ -128,6 +128,14 @@ public class VmOutageResourceTest {
     @Test
     public void noEmailCommandWhenVmDestroyed() throws PanoptaServiceException {
         vm.validUntil = Instant.now().minus(5, ChronoUnit.MINUTES);
+        resource.newVmOutage(vmId, outageId);
+        verify(commandService, never()).executeCommand(any());
+    }
+
+    @Test
+    public void noEmailCommandWhenCreditIsFullyManaged() throws PanoptaServiceException {
+        when(credit.isManaged()).thenReturn(true);
+
         resource.newVmOutage(vmId, outageId);
         verify(commandService, never()).executeCommand(any());
     }
