@@ -163,4 +163,16 @@ public class ImageTest {
         image.hfsName = "foobar";
         assertNull(image.getImageControlPanel());
     }
+
+    @Test
+    public void getImageIdForLinux() {
+        image.operatingSystem = Image.OperatingSystem.LINUX;
+        assertEquals(1, image.operatingSystem.getOperatingSystemId());
+    }
+
+    @Test
+    public void getImageIdForWindows() {
+        image.operatingSystem = Image.OperatingSystem.WINDOWS;
+        assertEquals(2, image.operatingSystem.getOperatingSystemId());
+    }
 }

@@ -10,9 +10,20 @@ import static org.mockito.Mockito.when;
 
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
+import com.godaddy.vps4.credit.CreditService;
+import com.godaddy.vps4.credit.ECommCreditService;
+import com.godaddy.vps4.credit.VirtualMachineCredit;
+import com.godaddy.vps4.panopta.PanoptaDataService;
+import com.godaddy.vps4.panopta.PanoptaService;
+import com.godaddy.vps4.vm.AccountStatus;
+import com.godaddy.vps4.vm.DataCenterService;
+import com.godaddy.vps4.vm.Image;
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
@@ -38,9 +49,14 @@ public class VmAddMonitoringResourceTest {
     private VmResource vmResource = mock(VmResource.class);
     private ActionService actionService = mock(ActionService.class);
     private CommandService commandService = mock(CommandService.class);
+    private CreditService creditService = mock(CreditService.class);
+    private PanoptaDataService panoptaDataService = mock(PanoptaDataService.class);
     private VmAddMonitoringResource resource;
 
     private UUID vmId = UUID.randomUUID();
+    private UUID orionGuid = UUID.randomUUID();
+    VmAddMonitoringResource.AddDomainToMonitoringRequest request;
+
     private long hfsVmId = 23L;
     private Vm hfsVm;
     private ResultSubset<Action> actions;
@@ -48,12 +64,29 @@ public class VmAddMonitoringResourceTest {
     @Before
     public void setUp() {
         VirtualMachine vm = mock(VirtualMachine.class);
+        request = new VmAddMonitoringResource.AddDomainToMonitoringRequest();
+        request.additionalFqdn = "domain.test";
+        Map<String, String> managedPlanFeatures = new HashMap<>();
+        managedPlanFeatures.put(ECommCreditService.PlanFeatures.MANAGED_LEVEL.toString(), "2");
+        request.additionalFqdn = "domain.test";
+        VirtualMachineCredit managedVmCredit = new VirtualMachineCredit.Builder(mock(DataCenterService.class))
+                .withAccountGuid(orionGuid.toString())
+                .withAccountStatus(AccountStatus.ACTIVE)
+                .withPlanFeatures(managedPlanFeatures)
+                .withShopperID("shopper")
+                .build();;
         vm.hfsVmId = hfsVmId;
+        vm.vmId = vmId;
+        vm.orionGuid = orionGuid;
+        Image vmImage = new Image();
+        vmImage.operatingSystem = Image.OperatingSystem.LINUX;
+        vm.image = vmImage;
         when(vmResource.getVm(vmId)).thenReturn(vm);
 
         hfsVm = mock(Vm.class);
         hfsVm.status = "ACTIVE";
         when(vmResource.getVmFromVmVertical(hfsVmId)).thenReturn(hfsVm);
+        when(creditService.getVirtualMachineCredit(orionGuid)).thenReturn(managedVmCredit);
 
         Action vmAction = mock(Action.class);
         when(actionService.getAction(anyLong())).thenReturn(vmAction);
@@ -61,7 +94,7 @@ public class VmAddMonitoringResourceTest {
         when(actionService.getActionList(any())).thenReturn(actions);
 
         when(commandService.executeCommand(any())).thenReturn(new CommandState());
-        resource = new VmAddMonitoringResource(user, vmResource, actionService, commandService);
+        resource = new VmAddMonitoringResource(user, vmResource, actionService, commandService, creditService, panoptaDataService);
     }
 
     @Test
@@ -110,5 +143,82 @@ public class VmAddMonitoringResourceTest {
         }
 
     }
+    @Test
+    public void createsAddDomainMonitoringAction() {
+        resource.addDomainToMonitoring(vmId, request);
+        verify(actionService).createAction(vmId, ActionType.ADD_DOMAIN_MONITORING, "{}", user.getUsername());
+    }
 
+    @Test
+    public void executesAddDomainMonitoringCommand() {
+        resource.addDomainToMonitoring(vmId, request);
+
+        ArgumentCaptor<CommandGroupSpec> argument = ArgumentCaptor.forClass(CommandGroupSpec.class);
+        verify(commandService).executeCommand(argument.capture());
+        CommandGroupSpec cmdGroup = argument.getValue();
+        assertEquals("Vps4AddDomainMonitoring", cmdGroup.commands.get(0).command);
+    }
+
+    @Test
+    public void errorsAddDomainMonitoringIfConflictingActionPending() {
+        Action conflictAction = mock(Action.class);
+        List<ActionType> conflictTypes = Arrays.asList(ActionType.ADD_DOMAIN_MONITORING, ActionType.ADD_MONITORING);
+
+        for (ActionType type : conflictTypes) {
+            conflictAction.type = type;
+            when(actionService.getIncompleteActions(vmId)).thenReturn(Collections.singletonList(conflictAction));
+            try {
+                resource.addDomainToMonitoring(vmId, request);
+                fail();
+            } catch (Vps4Exception e) {
+                assertEquals("CONFLICTING_INCOMPLETE_ACTION", e.getId());
+            }
+        }
+    }
+
+    @Test
+    public void errorsIfVmIsManagedAndHas5OrMoreDomain() {
+        when(panoptaDataService.getPanoptaActiveAdditionalFqdns(vmId)).thenReturn(Arrays.asList("domain1.test",
+                "domain2.test", "domain3.test", "domain4.test", "domain5.test"));
+        try {
+            resource.addDomainToMonitoring(vmId, request);
+            Assert.fail();
+        } catch (Vps4Exception e) {
+            assertEquals("DOMAIN_LIMIT_REACHED", e.getId());
+        }
+    }
+
+    @Test
+    public void errorsIfAdditionalFqdnFieldIsEmpty() {
+        request.additionalFqdn = null;
+        try {
+            resource.addDomainToMonitoring(vmId, request);
+            Assert.fail();
+        } catch (Vps4Exception e) {
+            assertEquals("INVALID_ADDITIONAL_FQDN", e.getId());
+        }
+    }
+
+    @Test
+    public void errorsIfVmIsSelfManagedAndHas1OrMoreDomain() {
+        Map<String, String> selfManagedPlanFeatures = new HashMap<>();
+        selfManagedPlanFeatures.put(ECommCreditService.PlanFeatures.MANAGED_LEVEL.toString(), "0");
+
+        VirtualMachineCredit selfManagedVmCredit = new VirtualMachineCredit.Builder(mock(DataCenterService.class))
+                .withAccountGuid(orionGuid.toString())
+                .withAccountStatus(AccountStatus.ACTIVE)
+                .withPlanFeatures(selfManagedPlanFeatures)
+                .withShopperID("shopper")
+                .build();;
+        when(creditService.getVirtualMachineCredit(orionGuid)).thenReturn(selfManagedVmCredit);
+
+        when(panoptaDataService.getPanoptaActiveAdditionalFqdns(vmId)).thenReturn(Arrays.asList("domain.test"));
+        request.additionalFqdn = "domain2.test";
+        try {
+            resource.addDomainToMonitoring(vmId, request);
+            Assert.fail();
+        } catch (Vps4Exception e) {
+            assertEquals("DOMAIN_LIMIT_REACHED", e.getId());
+        }
+    }
 }

@@ -77,6 +77,7 @@ public class SendVmOutageEmail extends SendMessagingEmailBase implements Command
                 case SSH:
                 case SMTP:
                 case HTTP:
+                case HTTPS:
                 case IMAP:
                 case POP3:
                     messageId = context.execute("SendVmOutageEmail-" + metric,

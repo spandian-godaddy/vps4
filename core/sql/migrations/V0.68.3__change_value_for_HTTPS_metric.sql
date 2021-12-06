@@ -1,0 +1,1 @@
+UPDATE metric_type SET metric_type_id = 61 where metric_id = (SELECT id FROM metric WHERE name = 'HTTPS');

@@ -22,6 +22,9 @@ public class Image {
             this.id = id;
         }
 
+        public int getOperatingSystemId() {
+            return id;
+        }
         public static OperatingSystem valueOf(int id) {
             return map.get(id);
         }
