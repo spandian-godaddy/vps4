@@ -81,6 +81,7 @@ import com.godaddy.vps4.web.util.ResellerConfigHelper;
 
 import gdg.hfs.orchestration.CommandService;
 import gdg.hfs.orchestration.CommandState;
+
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
@@ -237,7 +238,6 @@ public class VmResource {
 
         validateUserIsShopper(user);
         VirtualMachineCredit vmCredit = getAndValidateUserAccountCredit(creditService, provisionRequest.orionGuid, user.getShopperId());
-        validateCreditIsNotInUse(vmCredit);
         if (vmCredit.isDed4()) {
             validateDedResellerSelectedDc(dcService, vmCredit.getResellerId(), provisionRequest.dataCenterId);
         }
@@ -250,15 +250,17 @@ public class VmResource {
         ProvisionVirtualMachineParameters params;
         VirtualMachine virtualMachine;
         Vps4User vps4User = vps4UserService.getOrCreateUserForShopper(user.getShopperId(), vmCredit.getResellerId());
+
+        validateCreditIsNotInUse(vmCredit);
         try {
             params = new ProvisionVirtualMachineParameters(vps4User.getId(), provisionRequest.dataCenterId, sgidPrefix,
                                                            provisionRequest.orionGuid, provisionRequest.name,
                                                            vmCredit.getTier(), vmCredit.getManagedLevel(),
                                                            provisionRequest.image);
             virtualMachine = virtualMachineService.provisionVirtualMachine(params);
-            virtualMachineService.setMonitoringPlanFeature(virtualMachine.vmId, vmCredit.getMonitoring() != 0);
             creditService.claimVirtualMachineCredit(provisionRequest.orionGuid, provisionRequest.dataCenterId,
                                                     virtualMachine.vmId);
+            virtualMachineService.setMonitoringPlanFeature(virtualMachine.vmId, vmCredit.getMonitoring() != 0);
         } catch (Exception e) {
             throw new Vps4Exception("PROVISION_VM_FAILED", e.getMessage(), e);
         }

@@ -28,6 +28,7 @@ import com.godaddy.hfs.vm.Vm;
 import com.godaddy.hfs.vm.VmAction;
 import com.godaddy.hfs.vm.VmService;
 import com.godaddy.vps4.credit.CreditService;
+import com.godaddy.vps4.credit.VirtualMachineCredit;
 import com.godaddy.vps4.hfs.HfsVmTrackingRecordService;
 import com.godaddy.vps4.network.IpAddress.IpAddressType;
 import com.godaddy.vps4.network.NetworkService;
@@ -50,6 +51,7 @@ import com.godaddy.vps4.orchestration.scheduler.SetupAutomaticBackupSchedule;
 import com.godaddy.vps4.orchestration.sysadmin.ConfigureMailRelay;
 import com.godaddy.vps4.orchestration.sysadmin.ConfigureMailRelay.ConfigureMailRelayRequest;
 import com.godaddy.vps4.orchestration.vm.VmActionRequest;
+import com.godaddy.vps4.orchestration.vm.Vps4DestroyVm;
 import com.godaddy.vps4.orchestration.vm.Vps4RestartVm;
 import com.godaddy.vps4.orchestration.vm.WaitForAndRecordVmAction;
 import com.godaddy.vps4.vm.ActionService;
@@ -151,6 +153,8 @@ public class Vps4ProvisionVm extends ActionCommand<ProvisionRequest, Vps4Provisi
         setupAutomaticBackupSchedule(request.vmInfo.vmId, request.shopperId);
 
         sendSetupEmail(request, primaryIpAddress);
+
+        destroyIfOrionGuidIsMismatched(request.orionGuid);
 
         setStep(SetupComplete);
         logger.info("provision vm finished: {}", request.vmInfo.vmId);
@@ -411,6 +415,27 @@ public class Vps4ProvisionVm extends ActionCommand<ProvisionRequest, Vps4Provisi
                     String.format("Failed sending setup email for shopper %s: %s", request.shopperId, e.getMessage()),
                     e);
         }
+    }
+
+    private void destroyIfOrionGuidIsMismatched(UUID orionGuid) {
+        VirtualMachineCredit credit = creditService.getVirtualMachineCredit(orionGuid);
+        if (!credit.getProductId().equals(request.vmInfo.vmId)) {
+            /*
+             * The only time this code should run is if a customer abused a race condition in our provisioning logic and
+             * created two server instances for the same credit. Creating a locking mechanism on the credit is tricky,
+             * and likely requires HFS work. So instead, we simply destroy any duplicates.
+             */
+
+            Vps4DestroyVm.Request destroyRequest = new Vps4DestroyVm.Request();
+            destroyRequest.virtualMachine = virtualMachineService.getVirtualMachine(request.vmInfo.vmId);
+            destroyVm(destroyRequest);
+
+            throw new RuntimeException("Server is no longer tied to credit");
+        }
+    }
+
+    protected void destroyVm(Vps4DestroyVm.Request destroyRequest) {
+        context.execute(Vps4DestroyVm.class, destroyRequest);
     }
 
     protected void setStep(CreateVmStep step) {

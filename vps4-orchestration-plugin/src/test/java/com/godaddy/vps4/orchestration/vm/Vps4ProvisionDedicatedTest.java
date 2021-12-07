@@ -1,10 +1,12 @@
 package com.godaddy.vps4.orchestration.vm;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyLong;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.eq;
+import static org.mockito.Matchers.isA;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
@@ -15,6 +17,7 @@ import java.util.Random;
 import java.util.UUID;
 import java.util.function.Function;
 
+import com.godaddy.vps4.credit.VirtualMachineCredit;
 import com.godaddy.vps4.orchestration.messaging.SendMessagingEmailBase;
 import com.godaddy.vps4.orchestration.messaging.SendSetupCompletedEmail;
 import com.godaddy.vps4.orchestration.messaging.SetupCompletedEmailRequest;
@@ -61,6 +64,7 @@ public class Vps4ProvisionDedicatedTest {
     VmService vmService = mock(VmService.class);
     VmUserService vmUserService = mock(VmUserService.class);
     CreateVm createVm = mock(CreateVm.class);
+    VirtualMachineCredit credit = mock(VirtualMachineCredit.class);
     CreditService creditService = mock(CreditService.class);
     HfsVmTrackingRecordService hfsVmTrackingRecordService = mock(HfsVmTrackingRecordService.class);
     VmAlertService vmAlertService = mock(VmAlertService.class);
@@ -163,6 +167,9 @@ public class Vps4ProvisionDedicatedTest {
         when(vmService.getVmAction(hfsVmId, vmAction.vmActionId)).thenReturn(vmAction);
 
         when(virtualMachineService.getVirtualMachine(vmInfo.vmId)).thenReturn(vm);
+
+        when(credit.getProductId()).thenReturn(vmId);
+        when(creditService.getVirtualMachineCredit(orionGuid)).thenReturn(credit);
 
         when(context.execute(eq(CreateVm.class), any(CreateVm.Request.class))).thenReturn(vmAction);
     }
@@ -301,5 +308,25 @@ public class Vps4ProvisionDedicatedTest {
     public void doesNotRebootLinuxServer() {
         command.executeWithAction(context, this.request);
         verify(context, never()).execute(eq(Vps4RebootDedicated.class), any());
+    }
+
+    @Test
+    public void doesNotDestroySingleVm() {
+        command.executeWithAction(context, request);
+        verify(context, never()).execute(eq(Vps4DestroyDedicated.class), isA(Vps4DestroyVm.Request.class));
+    }
+
+    @Test
+    public void destroysDuplicateVm() {
+        try {
+            when(credit.getProductId()).thenReturn(UUID.randomUUID());
+            ArgumentCaptor<Vps4DestroyVm.Request> captor = ArgumentCaptor.forClass(Vps4DestroyVm.Request.class);
+            command.executeWithAction(context, request);
+            verify(context, times(1)).execute(eq(Vps4DestroyDedicated.class), captor.capture());
+            assertEquals(vm.vmId, captor.getValue().virtualMachine.vmId);
+            fail();
+        } catch (Exception e) {
+            assertEquals(e.getMessage(), "Server is no longer tied to credit");
+        }
     }
 }

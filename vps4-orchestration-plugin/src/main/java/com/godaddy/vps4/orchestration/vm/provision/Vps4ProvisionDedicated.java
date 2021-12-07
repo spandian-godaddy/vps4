@@ -7,15 +7,15 @@ import java.util.UUID;
 import javax.inject.Inject;
 
 import com.godaddy.hfs.config.Config;
-
 import com.godaddy.hfs.vm.Vm;
 import com.godaddy.hfs.vm.VmService;
 import com.godaddy.vps4.credit.CreditService;
 import com.godaddy.vps4.hfs.HfsVmTrackingRecordService;
-import com.godaddy.vps4.messaging.Vps4MessagingService;
 import com.godaddy.vps4.network.NetworkService;
 import com.godaddy.vps4.orchestration.hfs.dns.CreateDnsPtrRecord;
 import com.godaddy.vps4.orchestration.vm.VmActionRequest;
+import com.godaddy.vps4.orchestration.vm.Vps4DestroyDedicated;
+import com.godaddy.vps4.orchestration.vm.Vps4DestroyVm;
 import com.godaddy.vps4.orchestration.vm.Vps4RebootDedicated;
 import com.godaddy.vps4.vm.ActionService;
 import com.godaddy.vps4.vm.VirtualMachine;
@@ -96,5 +96,10 @@ public class Vps4ProvisionDedicated extends Vps4ProvisionVm {
     @Override
     protected void rebootServer(VmActionRequest rebootRequest) {
         context.execute(Vps4RebootDedicated.class, rebootRequest);
+    }
+
+    @Override
+    protected void destroyVm(Vps4DestroyVm.Request destroyRequest) {
+        context.execute(Vps4DestroyDedicated.class, destroyRequest);
     }
 }

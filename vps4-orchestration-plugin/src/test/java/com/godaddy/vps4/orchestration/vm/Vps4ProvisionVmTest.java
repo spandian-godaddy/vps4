@@ -2,21 +2,24 @@ package com.godaddy.vps4.orchestration.vm;
 
 import static com.godaddy.vps4.credit.ECommCreditService.ProductMetaField.PLAN_CHANGE_PENDING;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyLong;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.eq;
+import static org.mockito.Matchers.isA;
+import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import java.util.Collections;
 import java.util.Random;
 import java.util.UUID;
 import java.util.function.Function;
 
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
@@ -46,7 +49,6 @@ import com.godaddy.vps4.orchestration.scheduler.SetupAutomaticBackupSchedule;
 import com.godaddy.vps4.orchestration.vm.provision.ProvisionRequest;
 import com.godaddy.vps4.orchestration.vm.provision.Vps4ProvisionVm;
 import com.godaddy.vps4.vm.ActionService;
-import com.godaddy.vps4.vm.DataCenterService;
 import com.godaddy.vps4.vm.Image;
 import com.godaddy.vps4.vm.Image.ControlPanel;
 import com.godaddy.vps4.vm.ProvisionVmInfo;
@@ -115,7 +117,7 @@ public class Vps4ProvisionVmTest {
         image.controlPanel = ControlPanel.MYH;
         image.hfsName = "foobar";
         expectedServerName = "VM Name";
-        this.vm = new VirtualMachine(UUID.randomUUID(),
+        this.vm = new VirtualMachine(vmId,
                                      hfsVmId,
                                      UUID.randomUUID(),
                                      1,
@@ -182,6 +184,7 @@ public class Vps4ProvisionVmTest {
 
         when(virtualMachineService.getVirtualMachine(vmInfo.vmId)).thenReturn(this.vm);
 
+        when(credit.getProductId()).thenReturn(vmId);
         when(creditService.getVirtualMachineCredit(orionGuid)).thenReturn(credit);
 
         when(context.execute(eq(AllocateIp.class), any(AllocateIp.Request.class))).thenReturn(primaryIp);
@@ -322,11 +325,37 @@ public class Vps4ProvisionVmTest {
 
     @Test
     public void validatePlanChangePending() {
-        VirtualMachineCredit credit = new VirtualMachineCredit.Builder(mock(DataCenterService.class))
-                .withProductMeta(Collections.singletonMap(PLAN_CHANGE_PENDING.toString(), "true"))
-                .build();
-        when(creditService.getVirtualMachineCredit(orionGuid)).thenReturn(credit);
+        when(credit.isPlanChangePending()).thenReturn(true);
         command.executeWithAction(context, request);
         verify(creditService, times(1)).updateProductMeta(orionGuid, PLAN_CHANGE_PENDING, "false");
+    }
+
+    @Test
+    public void createVmRequestHasPrivateLabelId() {
+        command.executeWithAction(context, request);
+
+        ArgumentCaptor<CreateVm.Request> captor = ArgumentCaptor.forClass(CreateVm.Request.class);
+        verify(context, atLeastOnce()).execute(eq(CreateVm.class), captor.capture());
+        Assert.assertEquals("1", captor.getValue().privateLabelId);
+    }
+
+    @Test
+    public void doesNotDestroySingleVm() {
+        command.executeWithAction(context, request);
+        verify(context, never()).execute(eq(Vps4DestroyVm.class), isA(Vps4DestroyVm.Request.class));
+    }
+
+    @Test
+    public void destroysDuplicateVm() {
+        try {
+            when(credit.getProductId()).thenReturn(UUID.randomUUID());
+            ArgumentCaptor<Vps4DestroyVm.Request> captor = ArgumentCaptor.forClass(Vps4DestroyVm.Request.class);
+            command.executeWithAction(context, request);
+            verify(context, times(1)).execute(eq(Vps4DestroyVm.class), captor.capture());
+            assertEquals(vm.vmId, captor.getValue().virtualMachine.vmId);
+            fail();
+        } catch (Exception e) {
+            assertEquals(e.getMessage(), "Server is no longer tied to credit");
+        }
     }
 }

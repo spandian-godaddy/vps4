@@ -218,7 +218,7 @@ public class VmResourceProvisionTest {
 
     @Test
     public void testProvisionVmCreditClaimed() {
-        planFeatures.put("control_panel_type", "cpanel");
+        planFeatures.put("control_panel_type", "myh");
         productMeta.put("provision_date", Instant.now().toString());
 
         try {

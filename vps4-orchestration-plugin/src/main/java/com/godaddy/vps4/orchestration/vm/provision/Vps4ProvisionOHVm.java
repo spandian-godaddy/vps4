@@ -8,6 +8,8 @@ import com.godaddy.hfs.vm.VmService;
 import com.godaddy.vps4.credit.CreditService;
 import com.godaddy.vps4.hfs.HfsVmTrackingRecordService;
 import com.godaddy.vps4.network.NetworkService;
+import com.godaddy.vps4.orchestration.vm.Vps4DestroyOHVm;
+import com.godaddy.vps4.orchestration.vm.Vps4DestroyVm;
 import com.godaddy.vps4.vm.ActionService;
 import com.godaddy.vps4.vm.VirtualMachineService;
 import com.godaddy.vps4.vm.VmAlertService;
@@ -46,4 +48,8 @@ public class Vps4ProvisionOHVm extends Vps4ProvisionVm {
         return hfsVm.address.ip_address;
     }
 
+    @Override
+    protected void destroyVm(Vps4DestroyVm.Request destroyRequest) {
+        context.execute(Vps4DestroyOHVm.class, destroyRequest);
+    }
 }

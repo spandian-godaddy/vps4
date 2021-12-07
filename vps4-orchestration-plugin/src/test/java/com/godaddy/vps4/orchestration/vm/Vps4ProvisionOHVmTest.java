@@ -2,10 +2,12 @@ package com.godaddy.vps4.orchestration.vm;
 
 import static com.godaddy.vps4.credit.ECommCreditService.ProductMetaField.PLAN_CHANGE_PENDING;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyLong;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.eq;
+import static org.mockito.Matchers.isA;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
@@ -13,15 +15,10 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.io.IOException;
-import java.util.Collections;
 import java.util.Random;
 import java.util.UUID;
 import java.util.function.Function;
 
-import com.godaddy.vps4.credit.VirtualMachineCredit;
-import com.godaddy.vps4.orchestration.messaging.SendSetupCompletedEmail;
-import com.godaddy.vps4.orchestration.messaging.SetupCompletedEmailRequest;
-import com.godaddy.vps4.vm.DataCenterService;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
@@ -38,23 +35,18 @@ import com.godaddy.hfs.vm.VmAction.Status;
 import com.godaddy.hfs.vm.VmAddress;
 import com.godaddy.hfs.vm.VmService;
 import com.godaddy.vps4.credit.CreditService;
+import com.godaddy.vps4.credit.VirtualMachineCredit;
 import com.godaddy.vps4.hfs.HfsVmTrackingRecordService;
 import com.godaddy.vps4.messaging.MissingShopperIdException;
-import com.godaddy.vps4.messaging.Vps4MessagingService;
 import com.godaddy.vps4.network.NetworkService;
-import com.godaddy.vps4.orchestration.hfs.cpanel.ConfigureCpanel;
-import com.godaddy.vps4.orchestration.hfs.plesk.ConfigurePlesk;
-import com.godaddy.vps4.orchestration.hfs.sysadmin.AddUser;
 import com.godaddy.vps4.orchestration.hfs.sysadmin.SetHostname;
 import com.godaddy.vps4.orchestration.hfs.sysadmin.SetPassword;
-import com.godaddy.vps4.orchestration.hfs.sysadmin.ToggleAdmin;
 import com.godaddy.vps4.orchestration.hfs.vm.CreateVm;
+import com.godaddy.vps4.orchestration.messaging.SendSetupCompletedEmail;
+import com.godaddy.vps4.orchestration.messaging.SetupCompletedEmailRequest;
 import com.godaddy.vps4.orchestration.panopta.SetupPanopta;
-import com.godaddy.vps4.orchestration.sysadmin.ConfigureMailRelay;
 import com.godaddy.vps4.orchestration.vm.provision.ProvisionRequest;
 import com.godaddy.vps4.orchestration.vm.provision.Vps4ProvisionOHVm;
-import com.godaddy.vps4.panopta.PanoptaDataService;
-import com.godaddy.vps4.panopta.PanoptaService;
 import com.godaddy.vps4.vm.ActionService;
 import com.godaddy.vps4.vm.Image;
 import com.godaddy.vps4.vm.Image.ControlPanel;
@@ -64,11 +56,8 @@ import com.godaddy.vps4.vm.VirtualMachineService;
 import com.godaddy.vps4.vm.VmAlertService;
 import com.godaddy.vps4.vm.VmMetric;
 import com.godaddy.vps4.vm.VmUserService;
-import com.google.inject.Guice;
-import com.google.inject.Injector;
 
 import gdg.hfs.orchestration.CommandContext;
-import gdg.hfs.vhfs.plesk.PleskService;
 
 public class Vps4ProvisionOHVmTest {
 
@@ -79,20 +68,11 @@ public class Vps4ProvisionOHVmTest {
     VmService vmService = mock(VmService.class);
     VmUserService vmUserService = mock(VmUserService.class);
     CreateVm createVm = mock(CreateVm.class);
-    SetHostname setHostname = mock(SetHostname.class);
-    SetPassword setPassword = mock(SetPassword.class);
-    ToggleAdmin toggleAdmin = mock(ToggleAdmin.class);
-    Vps4MessagingService messagingService = mock(Vps4MessagingService.class);
     VirtualMachineCredit credit = mock(VirtualMachineCredit.class);
     CreditService creditService = mock(CreditService.class);
     HfsVmTrackingRecordService hfsVmTrackingRecordService = mock(HfsVmTrackingRecordService.class);
-    ConfigureCpanel configureCpanel = mock(ConfigureCpanel.class);
-    AddUser addUser = mock(AddUser.class);
-    PanoptaService panoptaService = mock(PanoptaService.class);
-    PanoptaDataService panoptaDataService = mock(PanoptaDataService.class);
     VmAlertService vmAlertService = mock(VmAlertService.class);
     MailRelayService mailRelayService = mock(MailRelayService.class);
-    ConfigureMailRelay configureMailRelay = mock(ConfigureMailRelay.class);
     Config config = mock(Config.class);
     SendSetupCompletedEmail sendSetupCompletedEmail = mock(SendSetupCompletedEmail.class);
 
@@ -106,30 +86,6 @@ public class Vps4ProvisionOHVmTest {
                                                       vmUserService, networkService,
                                                       creditService, config, hfsVmTrackingRecordService,
                                                       vmAlertService);
-
-    Injector injector = Guice.createInjector(binder -> {
-        binder.bind(ActionService.class).toInstance(actionService);
-        binder.bind(NetworkService.class).toInstance(networkService);
-        binder.bind(VmService.class).toInstance(vmService);
-        binder.bind(VirtualMachineService.class).toInstance(virtualMachineService);
-        binder.bind(VmUserService.class).toInstance(vmUserService);
-        binder.bind(CreateVm.class).toInstance(createVm);
-        binder.bind(SetHostname.class).toInstance(setHostname);
-        binder.bind(ToggleAdmin.class).toInstance(toggleAdmin);
-        binder.bind(PleskService.class).toInstance(mock(PleskService.class));
-        binder.bind(ConfigurePlesk.class).toInstance(mock(ConfigurePlesk.class));
-        binder.bind(Vps4MessagingService.class).toInstance(messagingService);
-        binder.bind(CreditService.class).toInstance(creditService);
-        binder.bind(HfsVmTrackingRecordService.class).toInstance(hfsVmTrackingRecordService);
-        binder.bind(SetPassword.class).toInstance(setPassword);
-        binder.bind(ConfigureCpanel.class).toInstance(configureCpanel);
-        binder.bind(AddUser.class).toInstance(addUser);
-        binder.bind(PanoptaService.class).toInstance(panoptaService);
-        binder.bind(PanoptaDataService.class).toInstance(panoptaDataService);
-        binder.bind(VmAlertService.class).toInstance(vmAlertService);
-        binder.bind(MailRelayService.class).toInstance(mailRelayService);
-        binder.bind(ConfigureMailRelay.class).toInstance(configureMailRelay);
-    });
 
     CommandContext context = mock(CommandContext.class);
 
@@ -146,7 +102,6 @@ public class Vps4ProvisionOHVmTest {
     int diskGib;
     UUID orionGuid = UUID.randomUUID();
     long hfsVmId = 42;
-    String panoptaCustomerKey = "fakePanoptaPartnerCustomerKey-";
 
     @Before
     public void setupTest() throws Exception {
@@ -219,33 +174,34 @@ public class Vps4ProvisionOHVmTest {
 
         when(virtualMachineService.getVirtualMachine(vmInfo.vmId)).thenReturn(this.vm);
 
+        when(credit.getProductId()).thenReturn(vmId);
         when(creditService.getVirtualMachineCredit(orionGuid)).thenReturn(credit);
 
         when(context.execute(eq(CreateVm.class), any(CreateVm.Request.class))).thenReturn(vmAction);
     }
 
     @Test
-    public void testUserHasAdminAccessWhenNoPaidControlPanel() throws Exception {
+    public void testUserHasAdminAccessWhenNoPaidControlPanel() {
         this.image.controlPanel = ControlPanel.MYH;
         command.executeWithAction(context, this.request);
         verify(vmUserService, times(1)).updateUserAdminAccess(username, vmId, true);
     }
 
     @Test
-    public void testUserDoesntHaveAdminAccessWhenCpanel() throws Exception {
+    public void testUserDoesntHaveAdminAccessWhenCpanel() {
         command.executeWithAction(context, this.request);
         verify(vmUserService, times(1)).updateUserAdminAccess(username, vmId, false);
     }
 
     @Test
-    public void testUserDoesntHaveAdminAccessWhenPlesk() throws Exception {
+    public void testUserDoesntHaveAdminAccessWhenPlesk() {
         this.image.controlPanel = ControlPanel.PLESK;
         command.executeWithAction(context, this.request);
         verify(vmUserService, times(1)).updateUserAdminAccess(username, vmId, false);
     }
 
     @Test
-    public void testSendSetupEmail() throws MissingShopperIdException, IOException {
+    public void testSendSetupEmail() throws MissingShopperIdException {
         command.executeWithAction(context, this.request);
         verify(context, times(1)).execute(eq(SendSetupCompletedEmail.class), setupCompletedEmailRequestArgCaptor.capture());
         SetupCompletedEmailRequest capturedRequest = setupCompletedEmailRequestArgCaptor.getValue();
@@ -257,7 +213,7 @@ public class Vps4ProvisionOHVmTest {
     }
 
     @Test
-    public void testSendSetupEmailDoesNotThrowException() throws MissingShopperIdException, IOException {
+    public void testSendSetupEmailDoesNotThrowException() throws IOException {
         when(context.execute(eq(SendSetupCompletedEmail.class), any(SetupCompletedEmailRequest.class)))
                 .thenThrow(new RuntimeException("SendMessageFailed"));
         command.executeWithAction(context, this.request);
@@ -338,11 +294,28 @@ public class Vps4ProvisionOHVmTest {
 
     @Test
     public void validatePlanChangePending() {
-        VirtualMachineCredit credit = new VirtualMachineCredit.Builder(mock(DataCenterService.class))
-                .withProductMeta(Collections.singletonMap(PLAN_CHANGE_PENDING.toString(), "true"))
-                .build();
-        when(creditService.getVirtualMachineCredit(orionGuid)).thenReturn(credit);
+        when(credit.isPlanChangePending()).thenReturn(true);
         command.executeWithAction(context, request);
         verify(creditService, times(1)).updateProductMeta(orionGuid, PLAN_CHANGE_PENDING, "false");
+    }
+
+    @Test
+    public void doesNotDestroySingleVm() {
+        command.executeWithAction(context, request);
+        verify(context, never()).execute(eq(Vps4DestroyOHVm.class), isA(Vps4DestroyVm.Request.class));
+    }
+
+    @Test
+    public void destroysDuplicateVm() {
+        try {
+            when(credit.getProductId()).thenReturn(UUID.randomUUID());
+            ArgumentCaptor<Vps4DestroyVm.Request> captor = ArgumentCaptor.forClass(Vps4DestroyVm.Request.class);
+            command.executeWithAction(context, request);
+            verify(context, times(1)).execute(eq(Vps4DestroyOHVm.class), captor.capture());
+            assertEquals(vm.vmId, captor.getValue().virtualMachine.vmId);
+            fail();
+        } catch (Exception e) {
+            assertEquals(e.getMessage(), "Server is no longer tied to credit");
+        }
     }
 }
