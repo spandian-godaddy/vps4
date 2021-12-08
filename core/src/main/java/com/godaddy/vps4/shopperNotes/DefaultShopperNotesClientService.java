@@ -10,6 +10,7 @@ import java.util.UUID;
 
 import javax.net.ssl.HttpsURLConnection;
 import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLSocketFactory;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.X509TrustManager;
 import javax.xml.namespace.QName;
@@ -33,6 +34,7 @@ public class DefaultShopperNotesClientService implements ShopperNotesClientServi
     private static final Logger logger = LoggerFactory.getLogger(DefaultShopperNotesClientService.class);
     private final String apiUrl;
     private final HttpsURLConnection connection;
+    private static final SSLSocketFactory defaultSsLSocketFactory = HttpsURLConnection.getDefaultSSLSocketFactory();
 
     @Inject
     public DefaultShopperNotesClientService(Config config) {
@@ -71,6 +73,7 @@ public class DefaultShopperNotesClientService implements ShopperNotesClientServi
     }
 
     private void disconnect(SOAPConnection soapConnection) throws SOAPException {
+        HttpsURLConnection.setDefaultSSLSocketFactory(defaultSsLSocketFactory);
         soapConnection.close();
         connection.disconnect();
     }
@@ -90,7 +93,6 @@ public class DefaultShopperNotesClientService implements ShopperNotesClientServi
             SOAPConnection soapConnection = connect();
             SOAPMessage soapResponse = soapConnection.call(soapRequest, apiUrl);
             disconnect(soapConnection);
-
             logger.info("Response from shopper notes API: {}", soapMessageToString(soapResponse));
             return UUID.fromString(soapResponse.getSOAPBody().getTextContent().trim()
                                                .replace("<RESPONSE><SUCCESS>", "")
