@@ -15,11 +15,11 @@ import com.godaddy.hfs.sso.VerificationException;
 import com.godaddy.hfs.sso.token.IdpSsoToken;
 import com.godaddy.hfs.sso.token.SsoToken;
 
-public class Vps4SsoTokenExtractor extends SsoTokenExtractor {
+public class Vps4LegacySsoTokenExtractor extends SsoTokenExtractor {
 
     private static final Logger logger = LoggerFactory.getLogger(Vps4SsoTokenExtractor.class);
 
-    public Vps4SsoTokenExtractor(SsoService ssoService, long sessionTimeoutMs) {
+    public Vps4LegacySsoTokenExtractor(SsoService ssoService, long sessionTimeoutMs) {
         super(ssoService, sessionTimeoutMs);
     }
 
@@ -38,21 +38,23 @@ public class Vps4SsoTokenExtractor extends SsoTokenExtractor {
 
         if (token == null) {
             // if the 'Authorization' header is not present (or the token could not be parsed),
-            // fall back to the auth_idp cookie (the auth_jomax cookie is not accepted)
-            token = extractIdpCookie(request.getCookies());
+            // fall back to the cookies with auth_idp preferred over auth_jomax
+            token = extractCookieTokenWithIdpPriority(request.getCookies());
         }
 
         return token;
     }
 
-    public SsoToken extractIdpCookie(Cookie[] cookies) {
+    public SsoToken extractCookieTokenWithIdpPriority(Cookie[] cookies) {
         List<SsoToken> tokens = extractTokens(cookies);
+        SsoToken validToken = null;
         for (SsoToken token : tokens) {
             try {
-                if (token instanceof IdpSsoToken) {
-                    validate(token);
+                validate(token);
+                if (token instanceof IdpSsoToken)
                     return token;
-                }
+                if (validToken == null)
+                    validToken = token;
             }
             catch (VerificationException e) {
                 logger.warn("Unable to verify token", e);
@@ -62,7 +64,7 @@ public class Vps4SsoTokenExtractor extends SsoTokenExtractor {
             }
         }
 
-        return null;
+        return validToken;
     }
 
 }

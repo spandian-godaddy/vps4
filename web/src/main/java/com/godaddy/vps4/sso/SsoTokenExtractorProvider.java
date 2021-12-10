@@ -30,8 +30,11 @@ public class SsoTokenExtractorProvider implements Provider<SsoTokenExtractor> {
         long ssoTimeoutMs = getSsoTimeoutMs();
         SsoService ssoService = getKeyService(config.get("sso.url"));
 
+        boolean allowJomaxCookie = Boolean.parseBoolean(config.get("sso.cookies.allowJomax", null));
         String fallbackSsoUrl = config.get("sso.url.ote", null);
-        if (fallbackSsoUrl == null) {
+        if (allowJomaxCookie) {
+            return getLegacySsoTokenExtractor(ssoService, ssoTimeoutMs);
+        } else if (fallbackSsoUrl == null) {
             return getSsoTokenExtractor(ssoService, ssoTimeoutMs);
         }
 
@@ -46,6 +49,10 @@ public class SsoTokenExtractorProvider implements Provider<SsoTokenExtractor> {
 
     SsoTokenExtractor getSsoTokenExtractor(SsoService ssoService, long ssoTimeoutMs, SsoTokenExtractor fallbackExtractor) {
         return new FallbackSsoTokenExtractor(ssoService, ssoTimeoutMs, fallbackExtractor);
+    }
+
+    SsoTokenExtractor getLegacySsoTokenExtractor(SsoService ssoService, long ssoTimeoutMs) {
+        return new Vps4LegacySsoTokenExtractor(ssoService, ssoTimeoutMs);
     }
 
     SsoService getKeyService(String ssoUrl) {
