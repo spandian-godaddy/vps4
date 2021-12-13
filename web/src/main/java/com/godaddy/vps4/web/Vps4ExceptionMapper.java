@@ -37,7 +37,11 @@ public class Vps4ExceptionMapper implements ExceptionMapper<Throwable> {
         if (t instanceof Vps4Exception) {
             Vps4Exception ve = (Vps4Exception)t;
 
-            logger.warn("writing response for VPS4 exception", ve);
+            if (ve.getId().equals("USAGE_STATS_UNAVAILABLE")) {
+                logger.warn("writing response for VPS4 exception " + ve.getId());
+            } else {
+                logger.warn("writing response for VPS4 exception", ve);
+            }
 
             JSONObject json = new JSONObject();
             json.put("id", ve.getId());
