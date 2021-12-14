@@ -22,7 +22,7 @@ public class AllocateIp implements Command<AllocateIp.Request, IpAddress> {
         public String sgid;
         public String zone;
         public Long serverId;
-        public int internetProtocolVersion;
+        public int internetProtocolVersion = 4;
     }
 
     final NetworkServiceV2 networkService;
