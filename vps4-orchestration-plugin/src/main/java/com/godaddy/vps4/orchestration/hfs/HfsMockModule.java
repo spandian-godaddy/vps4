@@ -1,30 +1,10 @@
 package com.godaddy.vps4.orchestration.hfs;
 
 
-import java.io.IOException;
-import java.time.Instant;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Random;
-import java.util.UUID;
-import java.util.stream.Collectors;
-
-import javax.ws.rs.NotFoundException;
-import javax.ws.rs.core.Response;
-
+import com.godaddy.hfs.config.Config;
 import com.godaddy.hfs.cpanel.CPanelAction;
 import com.godaddy.hfs.cpanel.CPanelLicense;
 import com.godaddy.hfs.cpanel.CPanelService;
-import gdg.hfs.vhfs.ecomm.Reinstatement;
-import gdg.hfs.vhfs.ecomm.Suspension;
-import gdg.hfs.vhfs.network.AddressImportRequest;
-import gdg.hfs.vhfs.network.AddressImportResponse;
-import org.joda.time.DateTime;
-import org.mockito.Mockito;
-
-import com.godaddy.hfs.config.Config;
 import com.godaddy.hfs.dns.HfsDnsAction;
 import com.godaddy.hfs.dns.HfsDnsService;
 import com.godaddy.hfs.dns.RdnsRecords;
@@ -54,14 +34,17 @@ import com.godaddy.vps4.messaging.Vps4MessagingService;
 import com.godaddy.vps4.messaging.models.Message;
 import com.google.inject.AbstractModule;
 import com.google.inject.Provides;
-
 import gdg.hfs.request.CompleteResponse;
 import gdg.hfs.vhfs.ecomm.Account;
 import gdg.hfs.vhfs.ecomm.ECommDataCache;
 import gdg.hfs.vhfs.ecomm.ECommService;
 import gdg.hfs.vhfs.ecomm.MetadataUpdate;
+import gdg.hfs.vhfs.ecomm.Reinstatement;
+import gdg.hfs.vhfs.ecomm.Suspension;
 import gdg.hfs.vhfs.network.AddressAction;
 import gdg.hfs.vhfs.network.AddressActionList;
+import gdg.hfs.vhfs.network.AddressImportRequest;
+import gdg.hfs.vhfs.network.AddressImportResponse;
 import gdg.hfs.vhfs.network.IpAddress;
 import gdg.hfs.vhfs.network.IpAddressList;
 import gdg.hfs.vhfs.network.NetworkServiceV2;
@@ -77,10 +60,25 @@ import gdg.hfs.vhfs.plesk.PleskService;
 import gdg.hfs.vhfs.snapshot.Snapshot;
 import gdg.hfs.vhfs.snapshot.SnapshotAction;
 import gdg.hfs.vhfs.snapshot.SnapshotService;
+import gdg.hfs.vhfs.snapshot.SnapshotUpdate;
 import gdg.hfs.vhfs.sysadmin.AddUserRequestBody;
 import gdg.hfs.vhfs.sysadmin.ChangePasswordRequestBody;
 import gdg.hfs.vhfs.sysadmin.SysAdminAction;
 import gdg.hfs.vhfs.sysadmin.SysAdminService;
+import org.joda.time.DateTime;
+import org.mockito.Mockito;
+
+import javax.ws.rs.NotFoundException;
+import javax.ws.rs.core.Response;
+import java.io.IOException;
+import java.time.Instant;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Random;
+import java.util.UUID;
+import java.util.stream.Collectors;
 
 public class HfsMockModule extends AbstractModule {
 
@@ -1118,10 +1116,17 @@ public class HfsMockModule extends AbstractModule {
         return new SnapshotService() {
             private Snapshot createSnapshotHelper(String name, String version) {
                 long snapshotId = UUID.randomUUID().getMostSignificantBits() & Long.MAX_VALUE;
-                return new Snapshot(snapshotId, "mock-sgid", name,
-                        version, "mock-imageId", "1234",
-                        "5678", null);
-
+                return new Snapshot(snapshotId,
+                        "mock-sgid",
+                        1234L,
+                        name,
+                        version,
+                        "provider",
+                        Snapshot.Type.IMAGE,
+                        "1234",
+                        "5678",
+                        null,
+                        null);
             }
 
             private SnapshotAction createSnapshotAction(
@@ -1184,17 +1189,8 @@ public class HfsMockModule extends AbstractModule {
             }
 
             @Override
-            public SnapshotAction publishSnapshot(long snapshotId) {
-                if (!customerSnapshots.containsKey(snapshotId)
-                        || !snapshotActionList.containsKey(snapshotId)
-                        || this.isSnapshotDestroyed(snapshotId)) {
-                    throw new NotFoundException("Snapshot not present or has already been destroyed");
-                }
-
-                // actionType '3' is PUBLISH
-                // vmId is being passed as 123
-                return this.createAndStoreSnapshotAction(
-                        snapshotId, 123, 3, SnapshotAction.Status.COMPLETE);
+            public SnapshotAction publishSnapshot(long l, Boolean aBoolean) {
+                return null;
             }
 
             @Override
@@ -1238,9 +1234,13 @@ public class HfsMockModule extends AbstractModule {
             }
 
             @Override
-            public List<Snapshot> getSnapshots(String sgid) {
-                // NOTE: do nothing, Implement when needed
-                throw new UnsupportedOperationException("Not implemented, yet");
+            public Snapshot updateSnapshot(long l, SnapshotUpdate snapshotUpdate) {
+                return null;
+            }
+
+            @Override
+            public List<Snapshot> getSnapshots(String s, String s1, String s2, String s3) {
+                return null;
             }
 
             @Override
