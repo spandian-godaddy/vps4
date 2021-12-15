@@ -1,5 +1,6 @@
 package com.godaddy.vps4.web.security;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import javax.inject.Inject;
@@ -111,30 +112,28 @@ public class SsoRequestAuthenticator implements RequestAuthenticator<GDUser> {
     }
 
     private void setPrivilegeByGroups(GDUser gdUser, List<String> groups) {
-        // The order of group check matters. This is because an employee could be part of different group but
-        // you want to assign a role corresponding to the group with the most privileges.
-        // For example: A hosting support supervisor may be part of both the hosting support teach leads group as
-        // well as the hosting support agents group. But we would want to assign them to a role of HS_LEAD.
+        List<Role> userRoles = new ArrayList<>();
         if (groups.contains(VPS4_TEAM) ||
               groups.contains(DEV_PTGS)) {
             gdUser.isAdmin = true;
-            gdUser.role = Role.ADMIN;
-        } else if (groups.contains(C3_HOSTING_SUPPORT_LEAD)) {
-            gdUser.role = Role.HS_LEAD;
-        } else if (groups.contains(HOSTING_OPERATIONS) ||
+            userRoles.add(Role.ADMIN);
+        } if (groups.contains(C3_HOSTING_SUPPORT_LEAD)) {
+            userRoles.add(Role.HS_LEAD);
+        } if (groups.contains(HOSTING_OPERATIONS) ||
                 groups.contains(LEGAL) ||
                 groups.contains(DIGITAL_CRIMES_UNIT) ||
                 groups.contains(CHARGEBACK)) {
-            gdUser.role = Role.SUSPEND_AUTH;
-        } else if (groups.contains(C3_HOSTING_SUPPORT) ||
+            userRoles.add(Role.SUSPEND_AUTH);
+        } if (groups.contains(C3_HOSTING_SUPPORT) ||
                 groups.contains(MEDIA_TEMPLE_CS)) {
-            gdUser.role = Role.HS_AGENT;
-        } else if (groups.contains(CSR)) {
-            gdUser.role = Role.C3_OTHER;
-        } else if (groups.contains(MIGRATION_TOOL)) {
-            gdUser.role = Role.MIGRATION;
-        } else {
-            gdUser.role = Role.EMPLOYEE_OTHER;
+            userRoles.add(Role.HS_AGENT);
+        } if (groups.contains(CSR)) {
+            userRoles.add(Role.C3_OTHER);
+        } if (groups.contains(MIGRATION_TOOL)) {
+            userRoles.add(Role.MIGRATION);
+        } if(userRoles.isEmpty()) {
+            userRoles.add(Role.EMPLOYEE_OTHER);
         }
+        gdUser.roles = userRoles;
     }
 }

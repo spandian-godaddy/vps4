@@ -2,6 +2,7 @@ package com.godaddy.vps4.web.security;
 
 
 import java.util.Arrays;
+import java.util.List;
 
 import com.godaddy.hfs.sso.token.SsoToken;
 
@@ -16,7 +17,7 @@ public class GDUser {
     boolean isEmployee;
     boolean isAdmin;
     String username;
-    Role role = Role.CUSTOMER; // default
+    List<Role> roles = Arrays.asList(Role.CUSTOMER); // default
 
     public String getShopperId() {
         return shopperId;
@@ -34,16 +35,16 @@ public class GDUser {
         return isAdmin;
     }
 
-    public Role role() {
-        return role;
+    public List<Role> roles() {
+        return roles;
     }
 
-    public boolean anyRole(Role[] roles) {
-        return Arrays.stream(roles).anyMatch(r -> r.equals(this.role));
+    public boolean anyRole(Role[] givenRoles) {
+        return Arrays.stream(givenRoles).anyMatch(r -> this.roles.contains(r));
     }
 
     public boolean isCustomer() {
-        return Role.CUSTOMER.equals(this.role);
+        return this.roles.contains(Role.CUSTOMER);
     }
 
     public boolean isEmployeeToShopper() {
@@ -66,7 +67,7 @@ public class GDUser {
     public String toString() {
         return "GDUser [token=" + token + ", shopperId=" + shopperId + ", isEmployee="
                 + isEmployee + ", isAdmin=" + isAdmin + "," +
-                "isShopper()=" + isShopper() + ", username=" + username + ", role=" + role + "]";
+                "isShopper()=" + isShopper() + ", username=" + username + ", role=" + roles.toString() + "]";
     }
 
 }

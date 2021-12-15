@@ -12,6 +12,8 @@ import com.godaddy.vps4.web.security.XCertSubjectHeaderAuthenticator;
 import junit.framework.Assert;
 import org.junit.Test;
 
+import java.util.Arrays;
+
 public class XCertSubjectHeaderAuthenticatorTest {
 
     HttpServletRequest request = mock(HttpServletRequest.class);
@@ -28,7 +30,7 @@ public class XCertSubjectHeaderAuthenticatorTest {
 
         GDUser user = authenticator.authenticate(request);
         Assert.assertNotNull(user);
-        Assert.assertEquals(Role.ADMIN, user.role());
+        Assert.assertEquals(Arrays.asList(Role.ADMIN), user.roles());
         Assert.assertNull(user.getShopperId());
     }
 
@@ -43,7 +45,7 @@ public class XCertSubjectHeaderAuthenticatorTest {
 
         GDUser user = authenticator.authenticate(request);
         Assert.assertNotNull(user);
-        Assert.assertEquals(Role.ADMIN, user.role());
+        Assert.assertEquals(Arrays.asList(Role.ADMIN), user.roles());
         Assert.assertNull(user.getShopperId());
     }
 
@@ -58,7 +60,7 @@ public class XCertSubjectHeaderAuthenticatorTest {
 
         GDUser user = authenticator.authenticate(request);
         Assert.assertNotNull(user);
-        Assert.assertEquals(Role.ADMIN, user.role());
+        Assert.assertEquals(Arrays.asList(Role.ADMIN), user.roles());
         Assert.assertNull(user.getShopperId());
     }
 
@@ -75,7 +77,7 @@ public class XCertSubjectHeaderAuthenticatorTest {
         GDUser user = authenticator.authenticate(request);
 
         Assert.assertNotNull(user);
-        Assert.assertEquals(Role.ADMIN, user.role());
+        Assert.assertEquals(Arrays.asList(Role.ADMIN), user.roles());
         Assert.assertEquals("12345", user.getShopperId());
     }
 

@@ -60,9 +60,9 @@ public class VmNotificationResource {
         logger.info("Getting notifications for vmId:  {}", vmId);
         Instant validOnDate = beginDate == null ? Instant.now() : validateAndReturnDateInstant(beginDate);
         Instant validUntilDate = endDate == null ? Instant.now() : validateAndReturnDateInstant(endDate);
-        boolean isSupport = (user.role().equals(GDUser.Role.HS_AGENT) ||
-                user.role().equals(GDUser.Role.ADMIN) ||
-                user.role().equals(GDUser.Role.HS_LEAD)) ? true : false;
+        boolean isSupport = (user.roles().contains(GDUser.Role.HS_AGENT) ||
+                user.roles().contains(GDUser.Role.ADMIN) ||
+                user.roles().contains(GDUser.Role.HS_LEAD)) ? true : false;
 
         VirtualMachine virtualMachine = vmResource.getVm(vmId);
         List<Notification> listNotifications;

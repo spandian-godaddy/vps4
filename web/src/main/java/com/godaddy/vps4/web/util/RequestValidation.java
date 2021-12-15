@@ -171,7 +171,7 @@ public class RequestValidation {
             CreditService creditService, UUID orionGuid, GDUser gdUser, int newQuota) {
         VirtualMachineCredit vmCredit = creditService.getVirtualMachineCredit(orionGuid);
 
-        if (gdUser.role().equals(Role.HS_AGENT)) {
+        if (gdUser.roles().contains(Role.HS_AGENT)) {
             if (isBrandReseller(vmCredit.getResellerId())) {
                 if (newQuota > BRAND_RESELLER_MAIL_RELAY_LIMIT) {
                     throw new Vps4Exception(

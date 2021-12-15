@@ -3,6 +3,7 @@ package com.godaddy.vps4.security;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Vector;
@@ -73,7 +74,7 @@ public class SsoRequestAuthenticatorTest {
         Assert.assertEquals(true, user.isShopper());
         Assert.assertEquals(false, user.isAdmin());
         Assert.assertEquals(false, user.isEmployee());
-        Assert.assertEquals(Role.CUSTOMER, user.role());
+        Assert.assertEquals(Arrays.asList(Role.CUSTOMER), user.roles());
     }
 
     @Test
@@ -99,7 +100,7 @@ public class SsoRequestAuthenticatorTest {
         Assert.assertEquals(false, user.isShopper());
         Assert.assertEquals(true, user.isAdmin());
         Assert.assertEquals(true, user.isEmployee());
-        Assert.assertEquals(Role.ADMIN, user.role());
+        Assert.assertEquals(Arrays.asList(Role.ADMIN), user.roles());
     }
 
     @Test
@@ -112,7 +113,7 @@ public class SsoRequestAuthenticatorTest {
         Assert.assertEquals(false, user.isShopper());
         Assert.assertEquals(true, user.isAdmin());
         Assert.assertEquals(true, user.isEmployee());
-        Assert.assertEquals(Role.ADMIN, user.role());
+        Assert.assertEquals(Arrays.asList(Role.ADMIN), user.roles());
     }
 
     @Test
@@ -125,7 +126,7 @@ public class SsoRequestAuthenticatorTest {
         Assert.assertEquals(false, user.isShopper());
         Assert.assertEquals(false, user.isAdmin());
         Assert.assertEquals(true, user.isEmployee());
-        Assert.assertEquals(Role.HS_LEAD, user.role());
+        Assert.assertEquals(Arrays.asList(Role.HS_LEAD), user.roles());
     }
 
     @Test
@@ -138,7 +139,7 @@ public class SsoRequestAuthenticatorTest {
         Assert.assertEquals(false, user.isShopper());
         Assert.assertEquals(false, user.isAdmin());
         Assert.assertEquals(true, user.isEmployee());
-        Assert.assertEquals(Role.HS_AGENT, user.role());
+        Assert.assertEquals(Arrays.asList(Role.HS_AGENT), user.roles());
     }
 
 
@@ -152,11 +153,11 @@ public class SsoRequestAuthenticatorTest {
         Assert.assertEquals(false, user.isShopper());
         Assert.assertEquals(false, user.isAdmin());
         Assert.assertEquals(true, user.isEmployee());
-        Assert.assertEquals(Role.HS_AGENT, user.role());
+        Assert.assertEquals(Arrays.asList(Role.HS_AGENT), user.roles());
     }
 
     @Test
-    public void testMultiSSOGroupsPrecedence() {
+    public void testMultiSSOGroups() {
         Vector<String> ssoGroups = new Vector<>();
         ssoGroups.add("C3-Hosting Support");
         ssoGroups.add("DCU-Phishstory");
@@ -170,7 +171,7 @@ public class SsoRequestAuthenticatorTest {
         Assert.assertEquals(false, user.isShopper());
         Assert.assertEquals(false, user.isAdmin());
         Assert.assertEquals(true, user.isEmployee());
-        Assert.assertEquals(Role.SUSPEND_AUTH, user.role());
+        Assert.assertEquals(Arrays.asList(Role.SUSPEND_AUTH, Role.HS_AGENT), user.roles());
     }
 
     @Test
@@ -183,7 +184,7 @@ public class SsoRequestAuthenticatorTest {
         Assert.assertEquals(false, user.isShopper());
         Assert.assertEquals(false, user.isAdmin());
         Assert.assertEquals(true, user.isEmployee());
-        Assert.assertEquals(Role.SUSPEND_AUTH, user.role());
+        Assert.assertEquals(Arrays.asList(Role.SUSPEND_AUTH), user.roles());
     }
 
     @Test
@@ -196,7 +197,7 @@ public class SsoRequestAuthenticatorTest {
         Assert.assertEquals(false, user.isShopper());
         Assert.assertEquals(false, user.isAdmin());
         Assert.assertEquals(true, user.isEmployee());
-        Assert.assertEquals(Role.SUSPEND_AUTH, user.role());
+        Assert.assertEquals(Arrays.asList(Role.SUSPEND_AUTH), user.roles());
     }
 
     @Test
@@ -209,7 +210,7 @@ public class SsoRequestAuthenticatorTest {
         Assert.assertEquals(false, user.isShopper());
         Assert.assertEquals(false, user.isAdmin());
         Assert.assertEquals(true, user.isEmployee());
-        Assert.assertEquals(Role.SUSPEND_AUTH, user.role());
+        Assert.assertEquals(Arrays.asList(Role.SUSPEND_AUTH), user.roles());
     }
 
     @Test
@@ -222,7 +223,7 @@ public class SsoRequestAuthenticatorTest {
         Assert.assertEquals(false, user.isShopper());
         Assert.assertEquals(false, user.isAdmin());
         Assert.assertEquals(true, user.isEmployee());
-        Assert.assertEquals(Role.SUSPEND_AUTH, user.role());
+        Assert.assertEquals(Arrays.asList(Role.SUSPEND_AUTH), user.roles());
     }
 
     @Test
@@ -235,7 +236,7 @@ public class SsoRequestAuthenticatorTest {
         Assert.assertEquals(false, user.isShopper());
         Assert.assertEquals(false, user.isAdmin());
         Assert.assertEquals(true, user.isEmployee());
-        Assert.assertEquals(Role.MIGRATION, user.role());
+        Assert.assertEquals(Arrays.asList(Role.MIGRATION), user.roles());
     }
 
     @Test
@@ -249,7 +250,7 @@ public class SsoRequestAuthenticatorTest {
         Assert.assertEquals(true, user.isShopper());
         Assert.assertEquals(true, user.isAdmin());
         Assert.assertEquals(true, user.isEmployee());
-        Assert.assertEquals(Role.ADMIN, user.role());
+        Assert.assertEquals(Arrays.asList(Role.ADMIN), user.roles());
     }
 
     @Test
@@ -262,7 +263,7 @@ public class SsoRequestAuthenticatorTest {
         Assert.assertEquals(false, user.isShopper());
         Assert.assertEquals(false, user.isAdmin());
         Assert.assertEquals(true,  user.isEmployee());
-        Assert.assertEquals(Role.EMPLOYEE_OTHER, user.role());
+        Assert.assertEquals(Arrays.asList(Role.EMPLOYEE_OTHER), user.roles());
     }
 
     @Test
@@ -276,7 +277,7 @@ public class SsoRequestAuthenticatorTest {
         Assert.assertEquals(true, user.isShopper());
         Assert.assertEquals(false, user.isAdmin());
         Assert.assertEquals(true,  user.isEmployee());
-        Assert.assertEquals(Role.EMPLOYEE_OTHER, user.role());
+        Assert.assertEquals(Arrays.asList(Role.EMPLOYEE_OTHER), user.roles());
     }
 
     @Test(expected=Vps4Exception.class)

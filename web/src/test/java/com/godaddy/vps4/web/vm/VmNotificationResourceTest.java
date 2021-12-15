@@ -171,7 +171,7 @@ public class VmNotificationResourceTest {
                         anyBoolean())).thenReturn(Arrays.asList(notification));
         when(creditService.getVirtualMachineCredit(any())).thenReturn(credit);
         when(vmResource.getVmExtendedInfoFromVmVertical(hfsVmId)).thenReturn(vmExtendedInfoMock);
-        when(user.role()).thenReturn(GDUser.Role.CUSTOMER);
+        when(user.roles()).thenReturn(Arrays.asList(GDUser.Role.CUSTOMER));
     }
 
     @Test
@@ -203,7 +203,7 @@ public class VmNotificationResourceTest {
 
     @Test
     public void testGetNotificationCallsCustomerView() {
-        when(user.role()).thenReturn(GDUser.Role.CUSTOMER);
+        when(user.roles()).thenReturn(Arrays.asList(GDUser.Role.CUSTOMER));
 
         getVmNotificationResource().getVmNotifications(vmId, "2008-08-05T23:55:02.162126Z",
                 "3021-08-05T23:55:02.162126Z");
@@ -225,7 +225,7 @@ public class VmNotificationResourceTest {
 
     @Test
     public void testGetNotificationCallsAdminViewForAdmin() {
-        when(user.role()).thenReturn(GDUser.Role.ADMIN);
+        when(user.roles()).thenReturn(Arrays.asList(GDUser.Role.ADMIN));
 
         getVmNotificationResource().getVmNotifications(vmId, "2008-08-05T23:55:02.162126Z",
                 "3021-08-05T23:55:02.162126Z");
@@ -248,7 +248,7 @@ public class VmNotificationResourceTest {
 
     @Test
     public void testGetNotificationCallsAdminViewForHS() {
-        when(user.role()).thenReturn(GDUser.Role.HS_AGENT);
+        when(user.roles()).thenReturn(Arrays.asList(GDUser.Role.HS_AGENT));
 
         getVmNotificationResource().getVmNotifications(vmId, "2008-08-05T23:55:02.162126Z",
                 "3021-08-05T23:55:02.162126Z");

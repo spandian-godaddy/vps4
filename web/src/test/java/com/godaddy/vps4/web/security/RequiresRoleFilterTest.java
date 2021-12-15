@@ -7,6 +7,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.container.ContainerRequestContext;
 import javax.ws.rs.core.Response;
 import java.lang.reflect.Field;
+import java.util.Arrays;
 
 import com.godaddy.vps4.web.security.GDUser.Role;
 
@@ -42,7 +43,18 @@ public class RequiresRoleFilterTest {
 
     @Test
     public void filterAbortsJaxRSMethodInvocationIfRoleDoesnotMatch() throws Exception {
-        gdUser.role = Role.CUSTOMER;
+        gdUser.roles = Arrays.asList(Role.CUSTOMER);
+        Role[] roles = {Role.ADMIN, Role.HS_AGENT};
+        requestFilter.setReqdRoles(roles);
+        requestFilter.filter(requestContext);
+
+        verify(requestContext, times(1)).abortWith(any(Response.class));
+    }
+
+
+    @Test
+    public void filterAbortsJaxRSMethodInvocationIfMultipleRolesDonotMatch() throws Exception {
+        gdUser.roles = Arrays.asList(Role.CUSTOMER, Role.EMPLOYEE_OTHER, Role.SUSPEND_AUTH);
         Role[] roles = {Role.ADMIN, Role.HS_AGENT};
         requestFilter.setReqdRoles(roles);
         requestFilter.filter(requestContext);
@@ -52,7 +64,29 @@ public class RequiresRoleFilterTest {
 
     @Test
     public void filterFallsThroughToJaxRSMethodInvocationIfRoleMatches() throws Exception {
-        gdUser.role = Role.ADMIN;
+        gdUser.roles = Arrays.asList(Role.ADMIN);
+        Role[] roles = {Role.ADMIN, Role.HS_AGENT};
+        requestFilter.setReqdRoles(roles);
+        requestFilter.filter(requestContext);
+
+        verify(requestContext, times(0)).abortWith(any(Response.class));
+    }
+
+
+    @Test
+    public void filterFallsThroughToJaxRSMethodInvocationIfOneRoleMatches() throws Exception {
+        gdUser.roles = Arrays.asList(Role.ADMIN, Role.EMPLOYEE_OTHER);
+        Role[] roles = {Role.HS_AGENT, Role.ADMIN, Role.C3_OTHER};
+        requestFilter.setReqdRoles(roles);
+        requestFilter.filter(requestContext);
+
+        verify(requestContext, times(0)).abortWith(any(Response.class));
+    }
+
+
+    @Test
+    public void filterFallsThroughToJaxRSMethodInvocationIfMultipleRoleMatches() throws Exception {
+        gdUser.roles = Arrays.asList(Role.ADMIN, Role.C3_OTHER, Role.HS_AGENT);
         Role[] roles = {Role.ADMIN, Role.HS_AGENT};
         requestFilter.setReqdRoles(roles);
         requestFilter.filter(requestContext);

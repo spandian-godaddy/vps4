@@ -47,6 +47,7 @@ import org.mockito.Captor;
 import org.mockito.MockitoAnnotations;
 
 import javax.sql.DataSource;
+import java.util.Arrays;
 import java.util.UUID;
 
 
@@ -111,7 +112,7 @@ public class VmMailRelayResourceTest {
 
         when(creditService.getVirtualMachineCredit(eq(testVm.orionGuid))).thenReturn(vmCredit);
 
-        when(patchUser.role()).thenReturn(GDUser.Role.HS_AGENT);
+        when(patchUser.roles()).thenReturn(Arrays.asList(GDUser.Role.HS_AGENT));
 
         when(actionService.createAction(eq(testVm.vmId), eq(ActionType.UPDATE_MAILRELAY_QUOTA), any(), any()))
             .thenReturn(actionId);
@@ -168,7 +169,7 @@ public class VmMailRelayResourceTest {
 
     @Test
     public void adminHasNoLimitsCheckForGodaddyCustomer() {
-        when(patchUser.role()).thenReturn(GDUser.Role.ADMIN);
+        when(patchUser.roles()).thenReturn(Arrays.asList(GDUser.Role.ADMIN));
         mailRelayQuotaPatch.quota = 10001;
         VmMailRelayResource mailRelayResource = getVmMailRelayResource();
         mailRelayResource.updateMailRelayQuota(testVm.vmId, mailRelayQuotaPatch);
@@ -176,7 +177,7 @@ public class VmMailRelayResourceTest {
 
     @Test
     public void adminHasNoLimitsCheckForBrandResellerCustomer() {
-        when(patchUser.role()).thenReturn(GDUser.Role.ADMIN);
+        when(patchUser.roles()).thenReturn(Arrays.asList(GDUser.Role.ADMIN));
         vmCredit = new VirtualMachineCredit.Builder(mock(DataCenterService.class)).withResellerID("525848").build();
         when(creditService.getVirtualMachineCredit(eq(testVm.orionGuid))).thenReturn(vmCredit);
 
@@ -187,7 +188,7 @@ public class VmMailRelayResourceTest {
 
     @Test
     public void hsTechLeadHasNoLimitsCheckForGodaddyCustomer() {
-        when(patchUser.role()).thenReturn(GDUser.Role.HS_LEAD);
+        when(patchUser.roles()).thenReturn(Arrays.asList(GDUser.Role.HS_LEAD));
         mailRelayQuotaPatch.quota = 10001;
         VmMailRelayResource mailRelayResource = getVmMailRelayResource();
         mailRelayResource.updateMailRelayQuota(testVm.vmId, mailRelayQuotaPatch);
@@ -195,7 +196,7 @@ public class VmMailRelayResourceTest {
 
     @Test
     public void hsTechLeadHasNoLimitsCheckForBrandResellerCustomer() {
-        when(patchUser.role()).thenReturn(GDUser.Role.HS_LEAD);
+        when(patchUser.roles()).thenReturn(Arrays.asList(GDUser.Role.HS_LEAD));
         vmCredit = new VirtualMachineCredit.Builder(mock(DataCenterService.class)).withResellerID("525848").build();
         when(creditService.getVirtualMachineCredit(eq(testVm.orionGuid))).thenReturn(vmCredit);
 
