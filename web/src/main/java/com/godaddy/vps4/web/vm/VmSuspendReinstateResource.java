@@ -66,10 +66,9 @@ public class VmSuspendReinstateResource {
     @ApiOperation(value = "Abuse suspend a server and the credit associated with it.",
                   notes = "Abuse suspend a server and the credit associated with it.")
     @RequiresRole(roles = {GDUser.Role.ADMIN, GDUser.Role.HS_LEAD, GDUser.Role.SUSPEND_AUTH})
+    @Deprecated
     public VmAction abuseSuspendAccount(@PathParam("vmId") UUID vmId) {
-        VirtualMachine vm = virtualMachineService.getVirtualMachine(vmId);
-        getAndValidateCredit(vm);
-        return suspendServer(vm, ActionType.ABUSE_SUSPEND);
+        return suspendVm(vmId, "FRAUD");
     }
 
     @POST
@@ -77,6 +76,7 @@ public class VmSuspendReinstateResource {
     @ApiOperation(value = "Billing suspend a server and the credit associated with it.",
                   notes = "Billing suspend a server and the credit associated with it.")
     @RequiresRole(roles = {GDUser.Role.ADMIN})
+    @Deprecated
     public VmAction billingSuspendAccount(@PathParam("vmId") UUID vmId) {
         VirtualMachine vm = vmResource.getVm(vmId);
         getAndValidateCredit(vm);
@@ -99,6 +99,7 @@ public class VmSuspendReinstateResource {
     @ApiOperation(value = "Re-instate an abuse-suspended server.",
                   notes = "Re-instate an abuse-suspended server.")
     @RequiresRole(roles = {GDUser.Role.ADMIN, GDUser.Role.HS_LEAD, GDUser.Role.SUSPEND_AUTH})
+    @Deprecated
     public VmAction reinstateAbuseSuspendedAccount(@PathParam("vmId") UUID vmId) {
         VirtualMachine vm = virtualMachineService.getVirtualMachine(vmId);
         validateVmExists(vmId, vm, user);
@@ -118,6 +119,7 @@ public class VmSuspendReinstateResource {
     @ApiOperation(value = "Re-instate a billing-suspended server.",
                   notes = "Re-instate a billing-suspended server.")
     @RequiresRole(roles = {GDUser.Role.ADMIN})
+    @Deprecated
     public VmAction reinstateBillingSuspendedAccount(@PathParam("vmId") UUID vmId) {
         VirtualMachine vm = virtualMachineService.getVirtualMachine(vmId);
         validateVmExists(vmId, vm, user);
