@@ -41,7 +41,7 @@ public class DefaultShopperNotesClientServiceTest {
     }
 
     private void setUpMocks() {
-        when(config.get("shopper.notes.api.url")).thenReturn("https://fakedomain.godaddy.com");
+        when(config.get("shopper.notes.api.url", null)).thenReturn("https://fakedomain.godaddy.com");
     }
 
     private String soapMessageToString(SOAPMessage message) throws Exception {

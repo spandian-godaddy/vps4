@@ -70,6 +70,7 @@ public class DefaultShopperNotesServiceTest {
                 .thenReturn(shopperNoteId);
         when(config.get("shopper.notes.enteredBy")).thenReturn("vps4-test-name");
         when(config.get("shopper.notes.datetime.pattern")).thenReturn("MM/dd/yyyy HH:mm:ss");
+        when(config.get("shopper.notes.api.url", null)).thenReturn("https://fakedomain.godaddy.com");
     }
 
     @Test
@@ -80,6 +81,12 @@ public class DefaultShopperNotesServiceTest {
         verify(shopperNotesClientService, times(1))
                 .processShopperMessage(any(ShopperNoteRequest.class));
         Assert.assertEquals(shopperNoteId, result);
+    }
+
+    @Test
+    public void processShopperMessageReturnsNullIfDisabledEnvironmentTrue() {
+        when(config.get("shopper.notes.api.url", null)).thenReturn(null);
+        Assert.assertEquals(null, service.processShopperMessage(vm.vmId, "Test shopper note"));
     }
 
     @Test

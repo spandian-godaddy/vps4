@@ -3,16 +3,9 @@ package com.godaddy.vps4.shopperNotes;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.net.URL;
-import java.security.KeyManagementException;
-import java.security.NoSuchAlgorithmException;
-import java.security.cert.X509Certificate;
 import java.util.UUID;
 
 import javax.net.ssl.HttpsURLConnection;
-import javax.net.ssl.SSLContext;
-import javax.net.ssl.SSLSocketFactory;
-import javax.net.ssl.TrustManager;
-import javax.net.ssl.X509TrustManager;
 import javax.xml.namespace.QName;
 import javax.xml.soap.MessageFactory;
 import javax.xml.soap.SOAPBody;
@@ -34,37 +27,22 @@ public class DefaultShopperNotesClientService implements ShopperNotesClientServi
     private static final Logger logger = LoggerFactory.getLogger(DefaultShopperNotesClientService.class);
     private final String apiUrl;
     private final HttpsURLConnection connection;
-    private static final SSLSocketFactory defaultSsLSocketFactory = HttpsURLConnection.getDefaultSSLSocketFactory();
 
     @Inject
     public DefaultShopperNotesClientService(Config config) {
-        apiUrl = config.get("shopper.notes.api.url");
-        connection = buildConnection();
+        apiUrl = config.get("shopper.notes.api.url", null);
+        connection = ( apiUrl == null ) ? null : buildConnection();
     }
 
     private HttpsURLConnection buildConnection() {
         try {
-            SSLContext sslContext = SSLContext.getInstance("SSL");
-            TrustManager[] trustAll = new TrustManager[] { trustAllCerts };
-            sslContext.init(null, trustAll, new java.security.SecureRandom());
-            HttpsURLConnection.setDefaultSSLSocketFactory(sslContext.getSocketFactory());
             return (HttpsURLConnection) new URL(apiUrl).openConnection();
-        } catch (IOException | KeyManagementException | NoSuchAlgorithmException e) {
+        } catch (IOException e) {
             logger.error("Exception creating shopper message connection: " + e);
             throw new RuntimeException(e);
         }
     }
 
-    private static final X509TrustManager trustAllCerts = new X509TrustManager() {
-        @Override
-        public void checkClientTrusted(X509Certificate[] certs, String authType) {}
-
-        @Override
-        public void checkServerTrusted(X509Certificate[] certs, String authType) {}
-
-        @Override
-        public X509Certificate[] getAcceptedIssuers() { return null; }
-    };
 
     private SOAPConnection connect() throws IOException, SOAPException {
         connection.connect();
@@ -73,7 +51,6 @@ public class DefaultShopperNotesClientService implements ShopperNotesClientServi
     }
 
     private void disconnect(SOAPConnection soapConnection) throws SOAPException {
-        HttpsURLConnection.setDefaultSSLSocketFactory(defaultSsLSocketFactory);
         soapConnection.close();
         connection.disconnect();
     }

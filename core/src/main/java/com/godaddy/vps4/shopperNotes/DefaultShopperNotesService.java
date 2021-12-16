@@ -38,6 +38,11 @@ public class DefaultShopperNotesService implements ShopperNotesService {
 
     @Override
     public UUID processShopperMessage(UUID vmId, String note) {
+        // Currently, shopper notes api only works in stage/prod due to different certificate issuers
+        String shopperNotesApi = config.get("shopper.notes.api.url", null);
+        if(shopperNotesApi == null) {
+            return null;
+        }
         UUID orionGuid = virtualMachineService.getOrionGuidByVmId(vmId);
         VirtualMachineCredit credit = creditService.getVirtualMachineCredit(orionGuid);
 
