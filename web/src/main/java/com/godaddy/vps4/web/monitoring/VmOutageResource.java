@@ -25,6 +25,7 @@ import com.godaddy.vps4.panopta.PanoptaServiceException;
 import com.godaddy.vps4.vm.VirtualMachine;
 import com.godaddy.vps4.vm.VmOutage;
 import com.godaddy.vps4.web.Vps4Api;
+import com.godaddy.vps4.web.Vps4Exception;
 import com.godaddy.vps4.web.security.GDUser;
 import com.godaddy.vps4.web.security.RequiresRole;
 import com.godaddy.vps4.web.util.Commands;
@@ -80,10 +81,14 @@ public class VmOutageResource {
     @POST
     @RequiresRole(roles = {GDUser.Role.ADMIN}) // From message consumer
     @Path("/{vmId}/outages/{outageId}")
-    public VmOutage newVmOutage(@PathParam("vmId") UUID vmId, @PathParam("outageId") long outageId)
-            throws PanoptaServiceException {
+    public VmOutage newVmOutage(@PathParam("vmId") UUID vmId, @PathParam("outageId") long outageId) {
         VirtualMachine virtualMachine = vmResource.getVm(vmId); // Auth validation
-        VmOutage outage = panoptaService.getOutage(vmId, outageId);
+        VmOutage outage;
+        try {
+            outage = panoptaService.getOutage(vmId, outageId);
+        } catch (PanoptaServiceException e) {
+            throw new Vps4Exception(e.getId(), e.getMessage(), e);
+        }
 
         logger.info("New outage {} reported for VM {}", outageId, vmId);
         sendOutageNotificationEmail(vmId, virtualMachine, "SendVmOutageEmail", outage);
@@ -94,10 +99,14 @@ public class VmOutageResource {
     @POST
     @RequiresRole(roles = {GDUser.Role.ADMIN}) // From message consumer
     @Path("/{vmId}/outages/{outageId}/clear")
-    public VmOutage clearVmOutage(@PathParam("vmId") UUID vmId, @PathParam("outageId") long outageId)
-            throws PanoptaServiceException {
+    public VmOutage clearVmOutage(@PathParam("vmId") UUID vmId, @PathParam("outageId") long outageId) {
         VirtualMachine virtualMachine = vmResource.getVm(vmId); // Auth validation
-        VmOutage outage = panoptaService.getOutage(vmId, outageId);
+        VmOutage outage;
+        try {
+            outage = panoptaService.getOutage(vmId, outageId);
+        } catch (PanoptaServiceException e) {
+            throw new Vps4Exception(e.getId(), e.getMessage(), e);
+        }
 
         logger.info("Clearing outage {} for VM {}", outageId, vmId);
         sendOutageNotificationEmail(vmId, virtualMachine, "SendVmOutageResolvedEmail", outage);

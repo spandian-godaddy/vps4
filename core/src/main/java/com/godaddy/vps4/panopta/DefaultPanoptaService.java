@@ -465,7 +465,7 @@ public class DefaultPanoptaService implements PanoptaService {
             return mapPanoptaOutageToVmOutage(vmId, allMetricIds, outage);
         } catch (NotFoundException ignored) {
             throw new PanoptaServiceException("NO_OUTAGE_FOUND",
-                                              "No matching outage found in Panopta API for VM ID: " + vmId);
+                                              "No matching outage found for VM ID: " + vmId);
         }
     }
 
