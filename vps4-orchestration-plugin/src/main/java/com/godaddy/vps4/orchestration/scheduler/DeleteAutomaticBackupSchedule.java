@@ -24,10 +24,10 @@ public class DeleteAutomaticBackupSchedule implements Command<UUID, Void> {
 
     @Override
     public Void execute(CommandContext context, UUID backupJobId) {
-        String product = Utils.getProductForJobRequestClass(Vps4BackupJobRequest.class);
-        String jobGroup = Utils.getJobGroupForJobRequestClass(Vps4BackupJobRequest.class);
-
         try {
+            String product = Utils.getProductForJobRequestClass(Vps4BackupJobRequest.class);
+            String jobGroup = Utils.getJobGroupForJobRequestClass(Vps4BackupJobRequest.class);
+            
             context.execute(
                 "Delete schedule",
                 ctx -> {
