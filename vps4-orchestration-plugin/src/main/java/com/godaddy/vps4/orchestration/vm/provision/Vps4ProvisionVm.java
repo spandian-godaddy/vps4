@@ -19,6 +19,7 @@ import java.util.UUID;
 
 import javax.inject.Inject;
 
+import com.godaddy.vps4.orchestration.hfs.plesk.SetPleskOutgoingEmailIp;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -40,6 +41,7 @@ import com.godaddy.vps4.orchestration.hfs.network.AllocateIp;
 import com.godaddy.vps4.orchestration.hfs.network.BindIp;
 import com.godaddy.vps4.orchestration.hfs.plesk.ConfigurePlesk;
 import com.godaddy.vps4.orchestration.hfs.plesk.ConfigurePlesk.ConfigurePleskRequest;
+import com.godaddy.vps4.orchestration.hfs.plesk.SetPleskOutgoingEmailIp.SetPleskOutgoingEmailIpRequest;
 import com.godaddy.vps4.orchestration.hfs.sysadmin.SetHostname;
 import com.godaddy.vps4.orchestration.hfs.sysadmin.SetPassword;
 import com.godaddy.vps4.orchestration.hfs.sysadmin.ToggleAdmin;
@@ -136,7 +138,7 @@ public class Vps4ProvisionVm extends ActionCommand<ProvisionRequest, Vps4Provisi
 
         generateAndSetHostname(hfsVmId, primaryIpAddress, hfsVm.resourceId);
 
-        configureControlPanel(hfsVmId);
+        configureControlPanel(hfsVmId, primaryIpAddress);
 
         createPTRRecord(hfsVm.resourceId);
 
@@ -228,7 +230,7 @@ public class Vps4ProvisionVm extends ActionCommand<ProvisionRequest, Vps4Provisi
         context.execute(Vps4RestartVm.class, rebootRequest);
     }
 
-    private void configureControlPanel(long hfsVmId) {
+    private void configureControlPanel(long hfsVmId, String primaryIpAddress) {
         if (request.vmInfo.image.hasCpanel()) {
             // VM with cPanel
             setStep(ConfiguringCPanel);
@@ -244,6 +246,12 @@ public class Vps4ProvisionVm extends ActionCommand<ProvisionRequest, Vps4Provisi
             // configure Plesk on the vm
             ConfigurePleskRequest pleskRequest = createConfigurePleskRequest(hfsVmId);
             context.execute(ConfigurePlesk.class, pleskRequest);
+
+            //set Plesk Email Ip
+            SetPleskOutgoingEmailIpRequest pleskEmailIpRequest = createPleskSetOutgoingEmailIpRequest(hfsVmId, primaryIpAddress);
+
+            context.execute(SetPleskOutgoingEmailIp.class, pleskEmailIpRequest);
+
         }
     }
 
@@ -338,6 +346,10 @@ public class Vps4ProvisionVm extends ActionCommand<ProvisionRequest, Vps4Provisi
 
     private ConfigurePleskRequest createConfigurePleskRequest(long hfsVmId) {
         return new ConfigurePleskRequest(hfsVmId, request.username, request.encryptedPassword);
+    }
+
+    private SetPleskOutgoingEmailIpRequest createPleskSetOutgoingEmailIpRequest(long hfsVmId, String ipAddress) {
+        return new SetPleskOutgoingEmailIpRequest(hfsVmId, ipAddress);
     }
 
     private IpAddress allocateIp() {

@@ -13,6 +13,7 @@ import com.godaddy.vps4.orchestration.hfs.network.ReleaseIp;
 import com.godaddy.vps4.orchestration.hfs.network.UnbindIp;
 import com.godaddy.vps4.orchestration.hfs.network.WaitForAddressAction;
 import com.godaddy.vps4.orchestration.hfs.plesk.ConfigurePlesk;
+import com.godaddy.vps4.orchestration.hfs.plesk.SetPleskOutgoingEmailIp;
 import com.godaddy.vps4.orchestration.hfs.plesk.UnlicensePlesk;
 import com.godaddy.vps4.orchestration.hfs.plesk.UpdateAdminPassword;
 import com.godaddy.vps4.orchestration.hfs.plesk.WaitForPleskAction;
@@ -90,6 +91,7 @@ public class HfsCommandModule extends AbstractModule {
         bind(UpdateAdminPassword.class);
         bind(WaitForPleskAction.class);
         bind(UnlicensePlesk.class);
+        bind(SetPleskOutgoingEmailIp.class);
 
         // Snapshot
         bind(WaitForSnapshotAction.class);

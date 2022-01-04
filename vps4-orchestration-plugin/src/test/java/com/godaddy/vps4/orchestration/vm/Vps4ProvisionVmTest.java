@@ -19,6 +19,9 @@ import java.util.Random;
 import java.util.UUID;
 import java.util.function.Function;
 
+import com.godaddy.vps4.orchestration.hfs.cpanel.ConfigureCpanel;
+import com.godaddy.vps4.orchestration.hfs.plesk.ConfigurePlesk;
+import com.godaddy.vps4.orchestration.hfs.plesk.SetPleskOutgoingEmailIp;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -81,6 +84,12 @@ public class Vps4ProvisionVmTest {
     private ArgumentCaptor<Function<CommandContext, Void>> setCommonNameLambdaCaptor;
     @Captor
     private ArgumentCaptor<SetPassword.Request> setPasswordCaptor;
+    @Captor
+    private ArgumentCaptor<ConfigureCpanel.ConfigureCpanelRequest> configureCPanelCaptor;
+    @Captor
+    private ArgumentCaptor<ConfigurePlesk.ConfigurePleskRequest> configurePleskCaptor;
+    @Captor
+    private ArgumentCaptor<SetPleskOutgoingEmailIp.SetPleskOutgoingEmailIpRequest> setPleskOutgoingEmailIpCaptor;
     @Captor
     private ArgumentCaptor<SetHostname.Request> setHostnameArgumentCaptor;
     @Captor
@@ -287,6 +296,39 @@ public class Vps4ProvisionVmTest {
         SetPassword.Request req = setPasswordCaptor.getValue();
         assertEquals(vm.image.getImageControlPanel(), req.controlPanel);
         assertEquals(request.encryptedPassword, req.encryptedPassword);
+        assertEquals(hfsVmId, req.hfsVmId);
+    }
+
+    @Test
+    public void callsConfiguringCPnaleForCPanelServers() {
+        this.image.controlPanel = ControlPanel.CPANEL;
+        command.executeWithAction(context, this.request);
+        verify(context, times(1))
+                .execute(eq(ConfigureCpanel.class), configureCPanelCaptor.capture());
+        ConfigureCpanel.ConfigureCpanelRequest req = configureCPanelCaptor.getValue();
+        assertEquals(hfsVmId, req.vmId);
+    }
+
+    @Test
+    public void callsConfiguringPleskForPleskServers() {
+        this.image.controlPanel = Image.ControlPanel.PLESK;
+        command.executeWithAction(context, this.request);
+        verify(context, times(1))
+                .execute(eq(ConfigurePlesk.class), configurePleskCaptor.capture());
+        ConfigurePlesk.ConfigurePleskRequest req = configurePleskCaptor.getValue();
+        assertEquals(request.username, req.username);
+        assertEquals(request.encryptedPassword, req.encryptedPassword);
+        assertEquals(hfsVmId, req.vmId);
+    }
+
+    @Test
+    public void callsSetPleskOutgoingEmailIpForPleskServers() {
+        this.image.controlPanel = Image.ControlPanel.PLESK;
+        command.executeWithAction(context, this.request);
+        verify(context, times(1))
+                .execute(eq(SetPleskOutgoingEmailIp.class), setPleskOutgoingEmailIpCaptor.capture());
+        SetPleskOutgoingEmailIp.SetPleskOutgoingEmailIpRequest req = setPleskOutgoingEmailIpCaptor.getValue();
+        assertEquals(primaryIp.address, req.ipAddress);
         assertEquals(hfsVmId, req.hfsVmId);
     }
 
