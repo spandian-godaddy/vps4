@@ -324,4 +324,16 @@ public class VmResourceProvisionTest {
         String provisionCmd = captor.getValue().commands.get(0).command;
         assertEquals("ProvisionDedicated", provisionCmd);
     }
+
+    @Test
+    public void testProvisionVmInInvalidDc() {
+        request.dataCenterId = -1;
+
+        try {
+            testProvisionVm();
+            Assert.fail();
+        } catch (Vps4Exception e) {
+            Assert.assertEquals("INVALID_DC_ID", e.getId());
+        }
+    }
 }

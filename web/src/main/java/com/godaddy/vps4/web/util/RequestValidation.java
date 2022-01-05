@@ -91,6 +91,13 @@ public class RequestValidation {
         }
     }
 
+    public static void validateDcIdIsAllowed(int[] validDcIds, int dcId) {
+        Arrays.stream(validDcIds)
+              .filter(id -> id == dcId)
+              .findFirst()
+              .orElseThrow(() -> new Vps4Exception("INVALID_DC_ID", "That datacenter is not allowed"));
+    }
+
     public static void validateUserIsShopper(GDUser user) {
         if (!user.isShopper())
             throw new Vps4NoShopperException();

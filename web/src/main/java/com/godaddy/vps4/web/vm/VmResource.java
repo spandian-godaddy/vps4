@@ -2,6 +2,7 @@ package com.godaddy.vps4.web.vm;
 
 import static com.godaddy.vps4.web.util.RequestValidation.getAndValidateUserAccountCredit;
 import static com.godaddy.vps4.web.util.RequestValidation.validateCreditIsNotInUse;
+import static com.godaddy.vps4.web.util.RequestValidation.validateDcIdIsAllowed;
 import static com.godaddy.vps4.web.util.RequestValidation.validateDedResellerSelectedDc;
 import static com.godaddy.vps4.web.util.RequestValidation.validateNoConflictingActions;
 import static com.godaddy.vps4.web.util.RequestValidation.validatePassword;
@@ -15,6 +16,7 @@ import static com.godaddy.vps4.web.util.VmHelper.createActionAndExecute;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -236,6 +238,10 @@ public class VmResource {
     public VmAction provisionVm(ProvisionVmRequest provisionRequest) {
         logger.info("provisioning vm with orionGuid {}", provisionRequest.orionGuid);
 
+        int[] validDcIds = Arrays.stream(config.get("vps4.datacenter.ids").split(","))
+                                 .mapToInt(Integer::parseInt)
+                                 .toArray();
+        validateDcIdIsAllowed(validDcIds, provisionRequest.dataCenterId);
         validateUserIsShopper(user);
         VirtualMachineCredit vmCredit = getAndValidateUserAccountCredit(creditService, provisionRequest.orionGuid, user.getShopperId());
         if (vmCredit.isDed4()) {
