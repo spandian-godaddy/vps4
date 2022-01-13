@@ -4,6 +4,7 @@ import java.time.Instant;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -162,6 +163,31 @@ public class DefaultPanoptaService implements PanoptaService {
     }
 
     @Override
+    public void deleteAdditionalFqdnFromServer(UUID vmId, String additionalFqdn) throws PanoptaServiceException {
+        PanoptaDetail panoptaDetail = panoptaDataService.getPanoptaDetails(vmId);
+        if (panoptaDetail == null) {
+            throw new PanoptaServiceException("NO_SERVER_FOUND",
+                    "No matching server found in VPS4 Panopta database for VM ID: " + vmId);
+        }
+        long serverId = panoptaDetail.getServerId();
+        String partnerCustomerKey = panoptaDetail.getPartnerCustomerKey();
+        PanoptaServer server =
+                mapServer(partnerCustomerKey, panoptaApiServerService.getServer(serverId, partnerCustomerKey));
+
+        server.additionalFqdns = server.additionalFqdns.stream()
+                .filter(fqdn -> !fqdn.equals(additionalFqdn))
+                .collect(Collectors.toList());
+
+        PanoptaApiUpdateServerRequest panoptaApiUpdateServerRequest = new PanoptaApiUpdateServerRequest();
+        panoptaApiUpdateServerRequest.fqdn = server.fqdn;
+        panoptaApiUpdateServerRequest.name = server.name;
+        panoptaApiUpdateServerRequest.serverGroup = server.serverGroup;
+        panoptaApiUpdateServerRequest.additionalFqdns = server.additionalFqdns;
+
+        panoptaApiServerService.updateServer(serverId, partnerCustomerKey, panoptaApiUpdateServerRequest);
+    }
+
+    @Override
     public void addAdditionalFqdnToServer(UUID vmId, String additionalFqdn) throws PanoptaServiceException {
         PanoptaDetail panoptaDetail = panoptaDataService.getPanoptaDetails(vmId);
         if (panoptaDetail == null) {
@@ -261,6 +287,20 @@ public class DefaultPanoptaService implements PanoptaService {
                 request);
     }
 
+
+    @Override
+    public void deleteNetworkService(UUID vmId, long networkServiceId) throws PanoptaServiceException {
+        PanoptaDetail panoptaDetails = panoptaDataService.getPanoptaDetails(vmId);
+        if (panoptaDetails == null) {
+            logger.warn("Could not find Panopta data for VM ID: {}", vmId);
+            throw new PanoptaServiceException("NO_SERVER_FOUND",
+                    "No matching server found in VPS4 Panopta database for VM ID: " + vmId);
+        }
+
+        panoptaApiServerService.deleteNetworkService(panoptaDetails.getServerId(),
+                networkServiceId, panoptaDetails.getPartnerCustomerKey());
+    }
+
     @Override
     public List<PanoptaMetricId> getUsageIds(UUID vmId) {
         List<PanoptaMetricId> ids = new ArrayList<>();
@@ -282,13 +322,32 @@ public class DefaultPanoptaService implements PanoptaService {
         PanoptaDetail detail = panoptaDataService.getPanoptaDetails(vmId);
         if (detail != null) {
             ids = panoptaApiServerService
-                    .getNetworkList(detail.getServerId(), detail.getPartnerCustomerKey(), UNLIMITED)
+                    .getNetworkList(detail.getServerId(), detail.getPartnerCustomerKey(),null, UNLIMITED)
                     .value;
             ids = ids.stream()
                     .filter(id -> panoptaMetricMapper.getVmMetric(id.typeId) != VmMetric.UNKNOWN)
                      .collect(Collectors.toList());
         }
         return ids;
+    }
+
+    @Override
+    public PanoptaMetricId getNetworkIdOfAdditionalFqdn(UUID vmId, String fqdn) throws PanoptaServiceException {
+        List<PanoptaMetricId> ids = new ArrayList<>();
+        PanoptaDetail detail = panoptaDataService.getPanoptaDetails(vmId);
+        if (detail != null) {
+            ids = panoptaApiServerService
+                    .getNetworkList(detail.getServerId(), detail.getPartnerCustomerKey(),fqdn, UNLIMITED)
+                    .value;
+            ids = ids.stream()
+                    .filter(id -> (Arrays.asList(VmMetric.HTTP, VmMetric.HTTPS)).contains(panoptaMetricMapper.getVmMetric(id.typeId)))
+                    .collect(Collectors.toList());
+        }
+        if (ids.isEmpty()) {
+            throw new PanoptaServiceException("NO_NETWORK_ID_FOUND",
+                    "No matching network Id found in Panopta for fqdn: " + fqdn + " and VM ID: " + vmId);
+        }
+        return ids.get(0);
     }
 
     @Override
@@ -496,6 +555,7 @@ public class DefaultPanoptaService implements PanoptaService {
                                                               UNLIMITED).value);
         metricIds.addAll(panoptaApiServerService.getNetworkList(panoptaDetail.getServerId(),
                                                                 panoptaDetail.getPartnerCustomerKey(),
+                                                                null,
                                                                 UNLIMITED).value);
         return metricIds;
     }

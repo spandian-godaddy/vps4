@@ -21,6 +21,8 @@ public interface PanoptaService {
 
     void addAdditionalFqdnToServer(UUID vmId, String additionalFqdn) throws PanoptaServiceException;
 
+    void deleteAdditionalFqdnFromServer(UUID vmId, String additionalFqdn) throws PanoptaServiceException;
+
     List<PanoptaServer> getServers(String shopperId, String ipAddress, UUID orionGuid);
 
     void deleteServer(UUID vmId);
@@ -31,7 +33,11 @@ public interface PanoptaService {
 
     void addNetworkService(UUID vmId, VmMetric metric, String additionalFqdn, int osTypeId, boolean isManaged, boolean hasMonitoring) throws PanoptaServiceException;
 
+    void deleteNetworkService(UUID vmId, long networkServiceId) throws PanoptaServiceException;
+
     List<PanoptaMetricId> getNetworkIds(UUID vmId);
+
+    PanoptaMetricId getNetworkIdOfAdditionalFqdn(UUID vmId, String fqdn) throws PanoptaServiceException;
 
     List<PanoptaGraph> getUsageGraphs(UUID vmId, String timescale) throws PanoptaServiceException;
 

@@ -18,4 +18,6 @@ public interface PanoptaDataService {
     UUID getVmId(String serverKey);
     List<String> getPanoptaActiveAdditionalFqdns(UUID vmId);
     void addPanoptaAdditionalFqdn(String fqdn, long panoptaServerId);
+    boolean activeAdditionalFqdnExistsForServer(String fqdn, long panoptaServerId);
+    void deletePanoptaAdditionalFqdn(String fqdn, long panoptaServerId);
 }

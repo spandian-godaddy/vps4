@@ -194,4 +194,30 @@ public class PanoptaDataServiceTest {
 
         assertEquals(additionalFqdns.get(0), "fqdn.fake");
     }
+
+    @Test
+    public void canAddAndDeletePanoptaAdditionalFqdns() {
+        panoptaDataService.createPanoptaCustomer(fakeShopperId, fakeCustomerKey);
+        panoptaDataService.createPanoptaServer(vm.vmId, fakeShopperId, fakeTemplateId, panoptaServer);
+        panoptaDataService.addPanoptaAdditionalFqdn("fqdn.fake", panoptaServer.serverId);
+        List<String> additionalFqdns = panoptaDataService.getPanoptaActiveAdditionalFqdns(vm.vmId);
+        assertEquals("fqdn.fake", additionalFqdns.get(0));
+
+        panoptaDataService.deletePanoptaAdditionalFqdn("fqdn.fake", panoptaServer.serverId);
+        List<String> additionalFqdnsDeleted = panoptaDataService.getPanoptaActiveAdditionalFqdns(vm.vmId);
+        assertEquals(0, additionalFqdnsDeleted.size());
+    }
+
+    @Test
+    public void canCheckIfActivePanoptaAdditionalFqdnExists() {
+        panoptaDataService.createPanoptaCustomer(fakeShopperId, fakeCustomerKey);
+        panoptaDataService.createPanoptaServer(vm.vmId, fakeShopperId, fakeTemplateId, panoptaServer);
+        panoptaDataService.addPanoptaAdditionalFqdn("fqdn.fake", panoptaServer.serverId);
+        Boolean fqdnExists = panoptaDataService.activeAdditionalFqdnExistsForServer("fqdn.fake", panoptaServer.serverId);
+        assertEquals(fqdnExists, true);
+
+        panoptaDataService.deletePanoptaAdditionalFqdn("fqdn.fake", panoptaServer.serverId);
+        Boolean deletedFqdnExists = panoptaDataService.activeAdditionalFqdnExistsForServer("fqdn.fake", panoptaServer.serverId);
+        assertEquals(false, deletedFqdnExists);
+    }
 }

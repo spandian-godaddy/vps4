@@ -143,6 +143,7 @@ public class VmAddMonitoringResourceTest {
         }
 
     }
+
     @Test
     public void createsAddDomainMonitoringAction() {
         resource.addDomainToMonitoring(vmId, request);
@@ -221,4 +222,39 @@ public class VmAddMonitoringResourceTest {
             assertEquals("DOMAIN_LIMIT_REACHED", e.getId());
         }
     }
+
+
+    @Test
+    public void createsDeleteDomainMonitoringAction() {
+        resource.deleteDomainMonitoring(vmId, "additionalfqdn.fake");
+        verify(actionService).createAction(vmId, ActionType.DELETE_DOMAIN_MONITORING, "{}", user.getUsername());
+    }
+
+    @Test
+    public void executesDeleteDomainMonitoringCommand() {
+        resource.deleteDomainMonitoring(vmId, "additionalfqdn.fake");
+
+        ArgumentCaptor<CommandGroupSpec> argument = ArgumentCaptor.forClass(CommandGroupSpec.class);
+        verify(commandService).executeCommand(argument.capture());
+        CommandGroupSpec cmdGroup = argument.getValue();
+        assertEquals("Vps4RemoveDomainMonitoring", cmdGroup.commands.get(0).command);
+    }
+
+    @Test
+    public void errorsDeleteDomainMonitoringIfConflictingActionPending() {
+        Action conflictAction = mock(Action.class);
+        List<ActionType> conflictTypes = Arrays.asList(ActionType.DELETE_DOMAIN_MONITORING, ActionType.ADD_MONITORING);
+
+        for (ActionType type : conflictTypes) {
+            conflictAction.type = type;
+            when(actionService.getIncompleteActions(vmId)).thenReturn(Collections.singletonList(conflictAction));
+            try {
+                resource.deleteDomainMonitoring(vmId, "additionalfqdn.fake");
+                fail();
+            } catch (Vps4Exception e) {
+                assertEquals("CONFLICTING_INCOMPLETE_ACTION", e.getId());
+            }
+        }
+    }
+
 }

@@ -57,7 +57,8 @@ public enum ActionType {
     SUBMIT_REINSTATE(48),
     ADD_DOMAIN_MONITORING(49),
     PROCESS_SUSPEND(50),
-    PROCESS_REINSTATE(51);
+    PROCESS_REINSTATE(51),
+    DELETE_DOMAIN_MONITORING(52);
 
     private final int typeId;
 

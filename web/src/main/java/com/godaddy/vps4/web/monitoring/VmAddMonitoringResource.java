@@ -8,19 +8,19 @@ import java.util.UUID;
 
 import javax.inject.Inject;
 import javax.ws.rs.Consumes;
+import javax.ws.rs.DELETE;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
-import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
 
 import com.godaddy.vps4.credit.CreditService;
 import com.godaddy.vps4.credit.VirtualMachineCredit;
 import com.godaddy.vps4.orchestration.monitoring.Vps4AddDomainMonitoring;
+import com.godaddy.vps4.orchestration.panopta.Vps4RemoveDomainMonitoring;
 import com.godaddy.vps4.orchestration.vm.VmActionRequest;
 import com.godaddy.vps4.panopta.PanoptaDataService;
-import com.godaddy.vps4.snapshot.SnapshotType;
 import com.godaddy.vps4.vm.ActionService;
 import com.godaddy.vps4.vm.ActionType;
 import com.godaddy.vps4.vm.VirtualMachine;
@@ -33,7 +33,6 @@ import com.godaddy.vps4.web.vm.VmResource;
 import gdg.hfs.orchestration.CommandService;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
-import io.swagger.annotations.ApiParam;
 
 @Vps4Api
 @Api(tags = { "vms" })
@@ -102,7 +101,7 @@ public class VmAddMonitoringResource {
             throw new Vps4Exception("DOMAIN_LIMIT_REACHED", "Domain limit has been reached on this server.");
         }
 
-        validateNoConflictingActions(vmId, actionService, ActionType.ADD_MONITORING, ActionType.ADD_DOMAIN_MONITORING);
+        validateNoConflictingActions(vmId, actionService, ActionType.ADD_MONITORING, ActionType.DELETE_DOMAIN_MONITORING, ActionType.ADD_DOMAIN_MONITORING);
 
         Vps4AddDomainMonitoring.Request request = new Vps4AddDomainMonitoring.Request();
         request.vmId = vmId;
@@ -114,6 +113,17 @@ public class VmAddMonitoringResource {
                 ActionType.ADD_DOMAIN_MONITORING, request, "Vps4AddDomainMonitoring", user);
     }
 
+    @DELETE
+    @Path("/{vmId}/monitoring/additionalFqdn/{additionalFqdn}")
+    @ApiOperation(value = "delete domain monitoring on customer server")
+    public VmAction deleteDomainMonitoring(@PathParam("vmId") UUID vmId, @PathParam("additionalFqdn") String additionalFqdn) {
+        validateNoConflictingActions(vmId, actionService, ActionType.ADD_MONITORING, ActionType.DELETE_DOMAIN_MONITORING, ActionType.ADD_DOMAIN_MONITORING);
+        Vps4RemoveDomainMonitoring.Request request = new Vps4RemoveDomainMonitoring.Request();
+        request.vmId = vmId;
+        request.additionalFqdn = additionalFqdn;
+        return createActionAndExecute(actionService, commandService, vmId,
+                ActionType.DELETE_DOMAIN_MONITORING,  request, "Vps4RemoveDomainMonitoring", user);
+    }
 
     public static class AddDomainToMonitoringRequest {
         public String additionalFqdn;

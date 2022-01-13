@@ -152,4 +152,25 @@ public class JdbcPanoptaDataService implements PanoptaDataService {
                         null, panoptaServerId,
                         fqdn);
     }
+
+    @Override
+    public boolean activeAdditionalFqdnExistsForServer(String fqdn, long panoptaServerId) {
+        return Sql.with(dataSource).exec(
+            "SELECT Count(*)"
+                    + " FROM panopta_additional_fqdns"
+                    + " WHERE server_id=? AND fqdn=? AND valid_until = 'infinity'", this::mapFqdnExists, panoptaServerId, fqdn);
+    }
+
+    private boolean mapFqdnExists(ResultSet rs) throws SQLException {
+        return rs.next() && rs.getLong("count") > 0;
+    }
+
+    @Override
+    public void deletePanoptaAdditionalFqdn(String fqdn, long panoptaServerId) {
+        Sql.with(dataSource)
+                .exec("UPDATE panopta_additional_fqdns SET valid_until = now_utc()"
+                                + " WHERE server_id=? AND fqdn=? AND valid_until = 'infinity'",
+                        null, panoptaServerId,
+                        fqdn);
+    }
 }

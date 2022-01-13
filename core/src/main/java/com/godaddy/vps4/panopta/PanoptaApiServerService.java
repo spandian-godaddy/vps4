@@ -1,6 +1,8 @@
 package com.godaddy.vps4.panopta;
 
 
+import com.fasterxml.jackson.annotation.JsonInclude;
+
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
@@ -31,6 +33,7 @@ public interface PanoptaApiServerService {
     @Path("/{server_id}/network_service")
     PanoptaNetworkIdList getNetworkList(@PathParam("server_id") long serverId,
                                         @QueryParam("partner_customer_key") String partnerCustomerKey,
+                                        @QueryParam("server_interface") String serverInterface,
                                         @QueryParam("limit") int limit);
 
     @GET
@@ -75,6 +78,12 @@ public interface PanoptaApiServerService {
     void addNetworkService(@PathParam("server_id") long serverId,
                            @QueryParam("partner_customer_key") String partnerCustomerKey,
                            PanoptaApiNetworkServiceRequest request);
+
+    @DELETE
+    @Path("{server_id}/network_service/{network_service_id}")
+    void deleteNetworkService(@PathParam("server_id") long serverId,
+                              @PathParam("network_service_id") long networkServiceId,
+                              @QueryParam("partner_customer_key") String partnerCustomerKey);
 
     @POST
     @Path("/{server_id}/server_attribute")
