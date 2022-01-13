@@ -1,0 +1,94 @@
+def creds_file1 = 'vps4data1.json'
+def creds_file2 = 'vps4data2.json'
+
+pipeline {
+    agent any
+
+    stages {
+        stage('Get current AWS prod credentials') {
+            steps {
+                withCredentials([aws(accessKeyVariable: 'ACCESS_KEY_ID', credentialsId: 'VPS4Data_DeployUser', secretKeyVariable: 'SECRET_ACCESS_KEY')]) {
+                    script {
+                        script_result = sh(
+                            script: '''set +x
+unset AWS_ACCESS_KEY_ID AWS_SECRET_ACCESS_KEY AWS_SESSION_TOKEN
+
+export AWS_REGION=\'us-west-2\'
+
+export AWS_ACCESS_KEY_ID=$ACCESS_KEY_ID
+export AWS_SECRET_ACCESS_KEY=$SECRET_ACCESS_KEY
+creds=$(aws sts assume-role --role-arn arn:aws:iam::152924559564:role/GD-AWS-USA-CPO-VPS4Data-Prod-Deploy --role-session-name prod-deploy)
+
+export AWS_ACCESS_KEY_ID=$(echo $creds | jq -r \'.Credentials.AccessKeyId\')
+export AWS_SECRET_ACCESS_KEY=$(echo $creds | jq -r \'.Credentials.SecretAccessKey\')
+export AWS_SESSION_TOKEN=$(echo $creds | jq -r \'.Credentials.SessionToken\')
+
+SECRET_NAME=\'/Secrets/IAMUser/vps4data-producer\'
+aws secretsmanager get-secret-value --secret-id $SECRET_NAME --query SecretString --output text > vps4data1.json
+
+SECRET_NAME2=\'/Secrets/IAMUser/GD-AWS-DeployUser-VPS4Data-Prod\'
+aws secretsmanager get-secret-value --secret-id $SECRET_NAME2 --query SecretString --output text > vps4data2.json''',
+                            returnStdout: true
+                        )
+                        println "Script for getting AWS credentials finished"
+                        println script_result
+                    }
+                }
+            }
+        }
+        stage('Update Producer credentials') {
+            steps {
+                script {
+                    def creds1 = readJSON file: creds_file1, text: ''    
+                    def kinesisAccessKeyId = creds1['AccessKeyId']
+                    def kinesisSecretAccessKey = creds1['SecretAccessKey']
+
+                    withCredentials([aws(accessKeyVariable: 'KINESIS_ACCESS_KEY_ID', credentialsId: 'VPS4Data_KinesisCreds', secretKeyVariable: 'KINESIS_SECRET_ACCESS_KEY')]) {
+                        if (KINESIS_ACCESS_KEY_ID != kinesisAccessKeyId || KINESIS_SECRET_ACCESS_KEY != kinesisSecretAccessKey) {
+                            println "Mismatch Producer creds, updating Jenkins..."
+                            hudson.util.Secret newKinesisAccessKeyId = hudson.util.Secret.fromString(kinesisAccessKeyId)
+                            hudson.util.Secret newKinesisSecretAccessKey = hudson.util.Secret.fromString(kinesisSecretAccessKey)
+                            build job: 'Update_Jenkins_AWS_Credentials', parameters: [string(name: 'credIdName', value: 'AWS_VPS4DATA_KINESIS_CREDS_PROD'), password(name: 'newAccessKeyId', value: newKinesisAccessKeyId), password(name: 'newSecretAccessKey', value: newKinesisSecretAccessKey)]
+                            slackSend(color: '#00CD48', message: "VPS4Data Producer AWS credentials successfully updated.")
+                        } else {
+                            println "No update needed for VPS4Data Producer"
+                        }
+                    }
+
+                    println "Done"
+                }
+            }
+        }
+        stage('Update DeployUser credentials') {
+            steps {
+                script {
+                    def creds2 = readJSON file: creds_file2, text: ''    
+                    def deployUserAccessKeyId = creds2['AccessKeyId']
+                    def deployUserSecretAccessKey = creds2['SecretAccessKey']
+
+                    withCredentials([aws(accessKeyVariable: 'DEPLOY_ACCESS_KEY_ID', credentialsId: 'VPS4Data_DeployUser', secretKeyVariable: 'DEPLOY_SECRET_ACCESS_KEY')]) {
+                        if (DEPLOY_ACCESS_KEY_ID != deployUserAccessKeyId || DEPLOY_SECRET_ACCESS_KEY != deployUserSecretAccessKey) {
+                            println "Mismatch Deploy User creds, updating Jenkins..."
+                            hudson.util.Secret newDeployAccessKeyId = hudson.util.Secret.fromString(deployUserAccessKeyId)
+                            hudson.util.Secret newDeploySecretAccessKey = hudson.util.Secret.fromString(deployUserSecretAccessKey)
+                            build job: 'Update_Jenkins_AWS_Credentials', parameters: [string(name: 'credIdName', value: 'GD-AWS-DeployUser-VPS4Data-Prod'), password(name: 'newAccessKeyId', value: newDeployAccessKeyId), password(name: 'newSecretAccessKey', value: newDeploySecretAccessKey)]
+                            slackSend(color: '#00CD48', message: "VPS4Data Deploy USer AWS credentials successfully updated.")
+                        } else {
+                            println "No update needed for VPS4Data Deploy User"
+                        }
+                    }
+                }
+            }
+        }
+    }
+    post {
+        always {
+            script {
+                cleanWs()
+            }
+        }
+        failure {
+            slackSend(color: '#ff0000', message: "Updating VPS4Data Prod AWS credentials failed.")
+        }
+    }
+}
