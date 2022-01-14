@@ -58,7 +58,7 @@ public class Vps4ProcessReinstateMessageTest {
 
     @Test
     public void testResumePanoptaMonitoring(){
-        Vps4ReinstateServer.Request request = new Vps4ReinstateServer.Request();
+        VmActionRequest request = new VmActionRequest();
         request.virtualMachine = vm;
         command.executeWithAction(context, request);
         verify(context, times(1)).execute(eq(ResumePanoptaMonitoring.class), any());

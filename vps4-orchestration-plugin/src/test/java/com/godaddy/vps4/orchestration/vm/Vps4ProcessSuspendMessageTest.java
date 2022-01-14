@@ -59,7 +59,7 @@ public class Vps4ProcessSuspendMessageTest {
     @Test
     public void testPausePanoptaMonitoring(){
         when(vm.spec.isVirtualMachine()).thenReturn(true);
-        Vps4SuspendServer.Request request = new Vps4SuspendServer.Request();
+        VmActionRequest request = new VmActionRequest();
         request.virtualMachine = vm;
         command.executeWithAction(context, request);
         verify(context, times(1)).execute(eq(PausePanoptaMonitoring.class), any());
