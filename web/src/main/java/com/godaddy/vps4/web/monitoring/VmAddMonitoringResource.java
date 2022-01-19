@@ -4,6 +4,7 @@ import static com.godaddy.vps4.web.util.RequestValidation.validateNoConflictingA
 import static com.godaddy.vps4.web.util.RequestValidation.validateServerIsActive;
 import static com.godaddy.vps4.web.util.VmHelper.createActionAndExecute;
 
+import java.util.List;
 import java.util.UUID;
 
 import javax.inject.Inject;
@@ -81,9 +82,13 @@ public class VmAddMonitoringResource {
                 ActionType.ADD_MONITORING, request, "Vps4AddMonitoring", user);
     }
 
-    private boolean isManagedDomainLimitReached(boolean isManaged, UUID vmId) {
-        int activeDomainsCount = panoptaDataService.getPanoptaActiveAdditionalFqdns(vmId).size();
+    private boolean isManagedDomainLimitReached(boolean isManaged, List<String> fqdns) {
+        int activeDomainsCount = fqdns.size();
         return isManaged? ( activeDomainsCount >= MANAGED_DOMAINS_LIMIT ) : activeDomainsCount >= SELF_MANAGED_DOMAINS_LIMIT;
+    }
+
+    private boolean isFqdnDuplicate(String additionalFqdn, List<String> fqdns) {
+        return fqdns.contains(additionalFqdn);
     }
 
     @POST
@@ -96,9 +101,12 @@ public class VmAddMonitoringResource {
         }
         VirtualMachine vm = vmResource.getVm(vmId);
         VirtualMachineCredit credit = creditService.getVirtualMachineCredit(vm.orionGuid);
-
-        if(this.isManagedDomainLimitReached(credit.isManaged(), vm.vmId)) {
+        List<String> activeFqdns = panoptaDataService.getPanoptaActiveAdditionalFqdns(vmId);
+        if(this.isManagedDomainLimitReached(credit.isManaged(), activeFqdns)) {
             throw new Vps4Exception("DOMAIN_LIMIT_REACHED", "Domain limit has been reached on this server.");
+        }
+        if(this.isFqdnDuplicate(addDomainMonitoringRequest.additionalFqdn, activeFqdns)) {
+            throw new Vps4Exception("DUPLICATE_FQDN", "This server already has an active entry for fqdn: " + addDomainMonitoringRequest.additionalFqdn );
         }
 
         validateNoConflictingActions(vmId, actionService, ActionType.ADD_MONITORING, ActionType.DELETE_DOMAIN_MONITORING, ActionType.ADD_DOMAIN_MONITORING);

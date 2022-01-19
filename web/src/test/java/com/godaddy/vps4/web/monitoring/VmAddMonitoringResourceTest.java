@@ -178,6 +178,18 @@ public class VmAddMonitoringResourceTest {
     }
 
     @Test
+    public void errorsAddDomainMonitoringIfActiveFqdnAlreadyExists() {
+        when(panoptaDataService.getPanoptaActiveAdditionalFqdns(vmId)).thenReturn(Arrays.asList("domain1.test",
+                "domain.test"));
+        try {
+            resource.addDomainToMonitoring(vmId, request);
+            Assert.fail();
+        } catch (Vps4Exception e) {
+            assertEquals("DUPLICATE_FQDN", e.getId());
+        }
+    }
+
+    @Test
     public void errorsIfVmIsManagedAndHas5OrMoreDomain() {
         when(panoptaDataService.getPanoptaActiveAdditionalFqdns(vmId)).thenReturn(Arrays.asList("domain1.test",
                 "domain2.test", "domain3.test", "domain4.test", "domain5.test"));
