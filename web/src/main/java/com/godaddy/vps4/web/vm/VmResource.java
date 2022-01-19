@@ -26,7 +26,6 @@ import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
 import javax.ws.rs.DefaultValue;
 import javax.ws.rs.GET;
-import javax.ws.rs.NotFoundException;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
@@ -35,19 +34,16 @@ import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
 
 import org.apache.commons.lang3.StringUtils;
-import org.json.simple.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.godaddy.hfs.config.Config;
-import com.godaddy.hfs.mailrelay.MailRelay;
 import com.godaddy.hfs.vm.Vm;
 import com.godaddy.hfs.vm.VmExtendedInfo;
 import com.godaddy.hfs.vm.VmService;
 import com.godaddy.vps4.credit.CreditService;
 import com.godaddy.vps4.credit.ECommCreditService;
 import com.godaddy.vps4.credit.VirtualMachineCredit;
-import com.godaddy.vps4.mailrelay.MailRelayService;
 import com.godaddy.vps4.orchestration.vm.VmActionRequest;
 import com.godaddy.vps4.orchestration.vm.Vps4DestroyVm;
 import com.godaddy.vps4.orchestration.vm.provision.ProvisionRequest;
@@ -55,11 +51,7 @@ import com.godaddy.vps4.project.Project;
 import com.godaddy.vps4.project.ProjectService;
 import com.godaddy.vps4.security.Vps4User;
 import com.godaddy.vps4.security.Vps4UserService;
-import com.godaddy.vps4.snapshot.Snapshot;
-import com.godaddy.vps4.snapshot.SnapshotService;
-import com.godaddy.vps4.snapshot.SnapshotStatus;
 import com.godaddy.vps4.util.Cryptography;
-import com.godaddy.vps4.vm.Action;
 import com.godaddy.vps4.vm.ActionService;
 import com.godaddy.vps4.vm.ActionType;
 import com.godaddy.vps4.vm.DataCenter;
@@ -78,11 +70,9 @@ import com.godaddy.vps4.web.Vps4Exception;
 import com.godaddy.vps4.web.Vps4NoShopperException;
 import com.godaddy.vps4.web.Vps4UserNotFound;
 import com.godaddy.vps4.web.security.GDUser;
-import com.godaddy.vps4.web.util.Commands;
 import com.godaddy.vps4.web.util.ResellerConfigHelper;
 
 import gdg.hfs.orchestration.CommandService;
-import gdg.hfs.orchestration.CommandState;
 
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
@@ -105,15 +95,11 @@ public class VmResource {
     private final ProjectService projectService;
     private final ActionService actionService;
     private final CommandService commandService;
-    private final VmSnapshotResource vmSnapshotResource;
     private final Config config;
     private final String sgidPrefix;
     private final Cryptography cryptography;
     private final DataCenterService dcService;
-    private final VmActionResource vmActionResource;
-    private final SnapshotService snapshotService;
     private final ImageResource imageResource;
-    private final MailRelayService mailRelayService;
     private final DataCenterService dataCenterService;
 
     @Inject
@@ -125,14 +111,10 @@ public class VmResource {
                       ProjectService projectService,
                       ActionService actionService,
                       CommandService commandService,
-                      VmSnapshotResource vmSnapshotResource,
                       Config config,
                       Cryptography cryptography,
                       DataCenterService dcService,
-                      VmActionResource vmActionResource,
-                      SnapshotService snapshotService,
                       ImageResource imageResource,
-                      MailRelayService mailRelayService,
                       DataCenterService dataCenterService) {
         this.user = user;
         this.virtualMachineService = virtualMachineService;
@@ -142,15 +124,11 @@ public class VmResource {
         this.projectService = projectService;
         this.actionService = actionService;
         this.commandService = commandService;
-        this.vmSnapshotResource = vmSnapshotResource;
         this.config = config;
         this.dcService = dcService;
         sgidPrefix = this.config.get("hfs.sgid.prefix", "vps4-undefined-");
         this.cryptography = cryptography;
-        this.vmActionResource = vmActionResource;
-        this.snapshotService = snapshotService;
         this.imageResource = imageResource;
-        this.mailRelayService = mailRelayService;
         this.dataCenterService = dataCenterService;
     }
 
@@ -273,10 +251,6 @@ public class VmResource {
 
         Project project = projectService.getProject(virtualMachine.projectId);
 
-        long actionId = actionService.createAction(virtualMachine.vmId, ActionType.CREATE_VM,
-                                                   new JSONObject().toJSONString(), user.getUsername());
-        logger.info("VmAction id: {}", actionId);
-
         int mailRelayQuota = Integer.parseInt(
                 ResellerConfigHelper.getResellerConfig(config, vmCredit.getResellerId(), "mailrelay.quota", "5000"));
 
@@ -299,7 +273,6 @@ public class VmResource {
                                        provisionRequest.username,
                                        project,
                                        virtualMachine.spec,
-                                       actionId,
                                        vmInfo,
                                        user.getShopperId(),
                                        provisionRequest.name,
@@ -310,10 +283,8 @@ public class VmResource {
 
         String provisionClassName = virtualMachine.spec.serverType.platform.getProvisionCommand();
 
-        CommandState command = Commands.execute(commandService, actionService, provisionClassName, request);
-        logger.info("running {} in {}", provisionClassName, command.commandId);
-
-        return new VmAction(actionService.getAction(actionId), user.isEmployee());
+        return createActionAndExecute(actionService, commandService, virtualMachine.vmId, ActionType.DESTROY_VM, request,
+                                      provisionClassName, user);
     }
 
     private String getZone(int dataCenterId, String platformZone) {
@@ -347,7 +318,6 @@ public class VmResource {
                                                     String username,
                                                     Project project,
                                                     ServerSpec spec,
-                                                    long actionId,
                                                     ProvisionVmInfo vmInfo,
                                                     String shopperId,
                                                     String serverName,
@@ -356,7 +326,6 @@ public class VmResource {
                                                     String resellerId,
                                                     String zone) {
         ProvisionRequest request = new ProvisionRequest();
-        request.actionId = actionId;
         request.image_name = image;
         request.username = username;
         request.sgid = project.getVhfsSgid();
@@ -377,69 +346,14 @@ public class VmResource {
     public VmAction destroyVm(@PathParam("vmId") UUID vmId) {
         VirtualMachine vm = getVm(vmId);
 
-        cancelIncompleteVmActions(vmId);
-
-        // delete all snapshots associated with the VM
-        destroyVmSnapshots(vmId);
-
         String destroyMethod = vm.spec.serverType.platform.getDestroyCommand();
 
         Vps4DestroyVm.Request destroyRequest = new Vps4DestroyVm.Request();
         destroyRequest.virtualMachine = vm;
         destroyRequest.gdUserName = user.getUsername();
 
-        VmAction deleteAction = createActionAndExecute(actionService, commandService, vm.vmId,
-                                                       ActionType.DESTROY_VM, destroyRequest, destroyMethod, user);
-
-        int mailRelays = getMailRelays(vm);
-
-        creditService.unclaimVirtualMachineCredit(vm.orionGuid, vm.vmId, mailRelays);
-        virtualMachineService.setVmRemoved(vm.vmId);
-
-        return deleteAction;
-    }
-
-    private int getMailRelays(VirtualMachine vm) {
-        if(vm.primaryIpAddress == null)
-            return 0;
-
-        int mailRelays = 0;
-        if(vm.spec.serverType.serverType == ServerType.Type.VIRTUAL) {
-            try {
-                MailRelay relay = mailRelayService.getMailRelay(vm.primaryIpAddress.ipAddress);
-                mailRelays = relay.relays;
-            }
-            catch (NotFoundException e) {
-                logger.debug("Mail relay record not found for ip {}", vm.primaryIpAddress.ipAddress);
-            }
-            catch (Exception e) {
-                logger.debug("Failed to find mail relays for vm {}, setting mail relay count to 0", vm.vmId);
-            }
-        }
-        return mailRelays;
-    }
-
-    private void destroyVmSnapshots(UUID vmId) {
-        List<Snapshot> snapshots = vmSnapshotResource.getSnapshotsForVM(vmId);
-        for (Snapshot snapshot : snapshots) {
-            if (snapshot.status == SnapshotStatus.NEW
-                    || snapshot.status == SnapshotStatus.ERROR
-                    || snapshot.status == SnapshotStatus.ERROR_RESCHEDULED
-                    || snapshot.status == SnapshotStatus.LIMIT_RESCHEDULED
-                    || snapshot.status == SnapshotStatus.AGENT_DOWN) {
-                // just mark snapshots as cancelled if they were new or errored
-                snapshotService.updateSnapshotStatus(snapshot.id, SnapshotStatus.CANCELLED);
-            } else {
-                vmSnapshotResource.destroySnapshot(vmId, snapshot.id);
-            }
-        }
-    }
-
-    private void cancelIncompleteVmActions(UUID vmId) {
-        List<Action> actions = actionService.getIncompleteActions(vmId);
-        for (Action action : actions) {
-            vmActionResource.cancelVmAction(vmId, action.id);
-        }
+        return createActionAndExecute(actionService, commandService, vm.vmId,
+                                      ActionType.DESTROY_VM, destroyRequest, destroyMethod, user);
     }
 
     @GET

@@ -21,13 +21,11 @@ import com.godaddy.hfs.vm.Vm;
 import com.godaddy.hfs.vm.VmService;
 import com.godaddy.vps4.credit.CreditService;
 import com.godaddy.vps4.credit.VirtualMachineCredit;
-import com.godaddy.vps4.mailrelay.MailRelayService;
 import com.godaddy.vps4.network.IpAddress;
 import com.godaddy.vps4.network.IpAddress.IpAddressType;
 import com.godaddy.vps4.security.GDUserMock;
 import com.godaddy.vps4.security.Vps4User;
 import com.godaddy.vps4.security.Vps4UserService;
-import com.godaddy.vps4.snapshot.SnapshotService;
 import com.godaddy.vps4.util.Cryptography;
 import com.godaddy.vps4.vm.AccountStatus;
 import com.godaddy.vps4.vm.DataCenter;
@@ -35,7 +33,6 @@ import com.godaddy.vps4.vm.DataCenterService;
 import com.godaddy.vps4.vm.VirtualMachine;
 import com.godaddy.vps4.vm.VirtualMachineService;
 import com.godaddy.vps4.vm.VirtualMachineType;
-import com.godaddy.vps4.web.mailrelay.VmMailRelayResource;
 import com.godaddy.vps4.web.security.GDUser;
 
 public class GetVirtualMachineTest {
@@ -48,7 +45,6 @@ public class GetVirtualMachineTest {
     private UUID orionGuid = UUID.randomUUID();
     private VirtualMachine vm;
     private GDUser user;
-    private VmMailRelayResource vmMailRelayResource;
 
     @Before
     public void setupTest() {
@@ -62,13 +58,10 @@ public class GetVirtualMachineTest {
         CreditService creditService = getMockedCreditService(dcService);
         Config config = getMockedConfig();
         Cryptography cryptography = mock(Cryptography.class);
-        VmActionResource vmActionResource = mock(VmActionResource.class);
-        SnapshotService snapshotService = mock(SnapshotService.class);
-        MailRelayService mailRelayService = mock(MailRelayService.class);
         DataCenterService dataCenterService = mock(DataCenterService.class);
 
-        vmResource = new VmResource(user, vmService, userService, virtualMachineService, creditService, null, null, null, null, config, cryptography,
-                dcService, vmActionResource, snapshotService, null, mailRelayService, dataCenterService);
+        vmResource = new VmResource(user, vmService, userService, virtualMachineService, creditService, null, null, null,
+                                    config, cryptography, dcService, null, dataCenterService);
     }
 
     private Config getMockedConfig() {

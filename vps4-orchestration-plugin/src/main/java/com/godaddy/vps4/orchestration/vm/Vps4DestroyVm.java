@@ -6,6 +6,7 @@ import java.util.UUID;
 
 import javax.inject.Inject;
 
+import org.json.simple.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -17,10 +18,15 @@ import com.godaddy.vps4.orchestration.hfs.vm.DestroyVm;
 import com.godaddy.vps4.orchestration.monitoring.Vps4RemoveMonitoring;
 import com.godaddy.vps4.orchestration.scheduler.DeleteAutomaticBackupSchedule;
 import com.godaddy.vps4.orchestration.scheduler.ScheduleDestroyVm;
+import com.godaddy.vps4.orchestration.snapshot.Vps4DestroySnapshot;
 import com.godaddy.vps4.shopperNotes.ShopperNotesService;
+import com.godaddy.vps4.snapshot.SnapshotService;
+import com.godaddy.vps4.snapshot.SnapshotStatus;
+import com.godaddy.vps4.vm.Action;
 import com.godaddy.vps4.vm.ActionService;
 import com.godaddy.vps4.vm.ActionType;
 import com.godaddy.vps4.vm.VirtualMachine;
+import com.godaddy.vps4.vm.VirtualMachineService;
 
 import gdg.hfs.orchestration.CommandContext;
 import gdg.hfs.orchestration.CommandMetadata;
@@ -31,12 +37,14 @@ import gdg.hfs.orchestration.CommandRetryStrategy;
         requestType=Vps4DestroyVm.Request.class,
         responseType=Vps4DestroyVm.Response.class,
         retryStrategy = CommandRetryStrategy.NEVER
-    )
+)
 public class Vps4DestroyVm extends ActionCommand<Vps4DestroyVm.Request, Vps4DestroyVm.Response> {
 
     private static final Logger logger = LoggerFactory.getLogger(Vps4DestroyVm.class);
     private final NetworkService networkService;
     private final ShopperNotesService shopperNotesService;
+    private final SnapshotService snapshotService;
+    private final VirtualMachineService virtualMachineService;
     private CommandContext context;
     private VirtualMachine vm;
     private String gdUserName;
@@ -44,10 +52,14 @@ public class Vps4DestroyVm extends ActionCommand<Vps4DestroyVm.Request, Vps4Dest
     @Inject
     public Vps4DestroyVm(ActionService actionService,
                          NetworkService networkService,
-                         ShopperNotesService shopperNotesService) {
+                         ShopperNotesService shopperNotesService,
+                         SnapshotService snapshotService,
+                         VirtualMachineService virtualMachineService) {
         super(actionService);
         this.networkService = networkService;
         this.shopperNotesService = shopperNotesService;
+        this.snapshotService = snapshotService;
+        this.virtualMachineService = virtualMachineService;
     }
 
     @Override
@@ -59,8 +71,10 @@ public class Vps4DestroyVm extends ActionCommand<Vps4DestroyVm.Request, Vps4Dest
         logger.info("Destroying server {}", vm.vmId);
 
         try {
-            assertNoConflictingActions();
-            writeShopperNote();
+            unclaimCredit();
+            deleteVm();
+            cancelIncompleteVmActions();
+            destroyVmSnapshots(vm.vmId);
             unlicenseControlPanel();
             removeMonitoring();
             removeIp();
@@ -68,6 +82,7 @@ public class Vps4DestroyVm extends ActionCommand<Vps4DestroyVm.Request, Vps4Dest
             deleteAllScheduledJobsForVm();
             deleteSupportUsersInDatabase();
             VmAction hfsAction = deleteVmInHfs(request);
+            writeShopperNote();
             return buildResponse(hfsAction);
         } catch (Exception e) {
             rescheduleDestroy();
@@ -174,15 +189,51 @@ public class Vps4DestroyVm extends ActionCommand<Vps4DestroyVm.Request, Vps4Dest
         } catch (Exception ignored) {}
     }
 
-    private void assertNoConflictingActions() {
-        long count = actionService
-                .getIncompleteActions(vm.vmId)
+    private void destroyVmSnapshots(UUID vmId) {
+        snapshotService
+                .getSnapshotsForVm(vmId)
                 .stream()
-                .filter(a -> a.type.equals(ActionType.CREATE_VM))
-                .count();
-        if (count > 0) {
+                .filter(s -> s.status != SnapshotStatus.DESTROYED && s.status != SnapshotStatus.CANCELLED)
+                .forEach(snapshot -> {
+                    if (snapshot.status == SnapshotStatus.NEW
+                            || snapshot.status == SnapshotStatus.ERROR
+                            || snapshot.status == SnapshotStatus.ERROR_RESCHEDULED
+                            || snapshot.status == SnapshotStatus.LIMIT_RESCHEDULED
+                            || snapshot.status == SnapshotStatus.AGENT_DOWN) {
+                        // just mark snapshots as cancelled if they were new or errored
+                        snapshotService.updateSnapshotStatus(snapshot.id, SnapshotStatus.CANCELLED);
+                    } else {
+                        Vps4DestroySnapshot.Request request = new Vps4DestroySnapshot.Request();
+                        request.hfsSnapshotId = snapshot.hfsSnapshotId;
+                        request.vps4SnapshotId = snapshot.id;
+                        context.execute("Vps4DestroySnapshot-" + snapshot.id, Vps4DestroySnapshot.class, request);
+                    }
+                });
+    }
+
+    private void cancelIncompleteVmActions() {
+        List<Action> actions = actionService.getIncompleteActions(vm.vmId);
+        if (actions.stream().anyMatch(a -> a.type.equals(ActionType.CREATE_VM))) {
             throw new RuntimeException("Create action is already running");
         }
+        for (Action action : actions) {
+            context.execute("MarkActionCancelled-" + action.id, ctx -> {
+                String note = "Action cancelled via api by admin";
+                actionService.cancelAction(action.id, new JSONObject().toJSONString(), note);
+                return null;
+            }, Void.class);
+        }
+    }
+
+    private void deleteVm() {
+        context.execute("MarkVmDeleted", ctx -> {
+            virtualMachineService.setVmRemoved(vm.vmId);
+            return null;
+        }, Void.class);
+    }
+
+    private void unclaimCredit() {
+        context.execute(Vps4UnclaimCredit.class, vm);
     }
 
     public static class Request extends VmActionRequest {

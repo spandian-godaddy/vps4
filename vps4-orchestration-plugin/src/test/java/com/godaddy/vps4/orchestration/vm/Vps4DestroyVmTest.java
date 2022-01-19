@@ -3,7 +3,10 @@ package com.godaddy.vps4.orchestration.vm;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.anyLong;
 import static org.mockito.Matchers.eq;
+import static org.mockito.Matchers.isA;
+import static org.mockito.Matchers.startsWith;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
@@ -14,6 +17,7 @@ import java.time.Duration;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
@@ -24,6 +28,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
+import org.mockito.Matchers;
 import org.mockito.MockitoAnnotations;
 
 import com.godaddy.hfs.vm.VmAction;
@@ -33,11 +38,17 @@ import com.godaddy.vps4.orchestration.hfs.vm.DestroyVm;
 import com.godaddy.vps4.orchestration.monitoring.Vps4RemoveMonitoring;
 import com.godaddy.vps4.orchestration.scheduler.DeleteAutomaticBackupSchedule;
 import com.godaddy.vps4.orchestration.scheduler.ScheduleDestroyVm;
+import com.godaddy.vps4.orchestration.snapshot.Vps4DestroySnapshot;
 import com.godaddy.vps4.shopperNotes.ShopperNotesService;
+import com.godaddy.vps4.snapshot.Snapshot;
+import com.godaddy.vps4.snapshot.SnapshotService;
+import com.godaddy.vps4.snapshot.SnapshotStatus;
+import com.godaddy.vps4.snapshot.SnapshotType;
 import com.godaddy.vps4.vm.Action;
 import com.godaddy.vps4.vm.ActionService;
 import com.godaddy.vps4.vm.ActionType;
 import com.godaddy.vps4.vm.VirtualMachine;
+import com.godaddy.vps4.vm.VirtualMachineService;
 
 import gdg.hfs.orchestration.CommandContext;
 
@@ -46,13 +57,16 @@ public class Vps4DestroyVmTest {
     ActionService actionService = mock(ActionService.class);
     NetworkService networkService = mock(NetworkService.class);
     ShopperNotesService shopperNotesService = mock(ShopperNotesService.class);
+    SnapshotService snapshotService = mock(SnapshotService.class);
+    VirtualMachineService virtualMachineService = mock(VirtualMachineService.class);
     CommandContext context = mock(CommandContext.class);
     Vps4DestroyVm.Request request = mock(Vps4DestroyVm.Request.class);
     VirtualMachine vm = mock(VirtualMachine.class);
     UUID vmId = UUID.randomUUID();
     IpAddress primaryIp = mock(IpAddress.class);
 
-    Vps4DestroyVm command = new Vps4DestroyVm(actionService, networkService, shopperNotesService);
+    Vps4DestroyVm command = new Vps4DestroyVm(actionService, networkService, shopperNotesService,
+                                              snapshotService, virtualMachineService);
 
     @Before
     public void setUp() {
@@ -258,13 +272,95 @@ public class Vps4DestroyVmTest {
 
     @Test
     public void doesNotRunDeleteAdditionalIpsIfThereAreNone() {
-        List<IpAddress> secondaryIps = new ArrayList<IpAddress>();
         when(networkService.getVmSecondaryAddress(vm.hfsVmId)).thenReturn(null);
         command.execute(context, request);
-        for (IpAddress ip : secondaryIps) {
-            verify(context,never()).execute(eq("RemoveIp-" + ip.addressId), eq(Vps4RemoveIp.class), any());
-            verify(context,never()).execute(eq("MarkIpDeleted-" + ip.addressId), lambda.capture(), eq(Void.class));
-            verify(networkService,never()).destroyIpAddress(ip.addressId);
-        }
+        verify(context, times(1)).execute(startsWith("RemoveIp-"), eq(Vps4RemoveIp.class), any());
+        verify(context, times(1)).execute(startsWith("MarkIpDeleted-"),
+                                         Matchers.<Function<CommandContext, Void>> any(),
+                                         eq(Void.class));
+        verify(networkService, never()).destroyIpAddress(anyLong());
+    }
+
+    @Test
+    public void unclaimsCredit() {
+        command.execute(context, request);
+        verify(context, times(1)).execute(eq(Vps4UnclaimCredit.class), isA(VirtualMachine.class));
+    }
+
+    @Captor ArgumentCaptor<Function<CommandContext, Void>> deleteVmCapture;
+    @Test
+    public void deletesVmInDb() {
+        MockitoAnnotations.initMocks(this);
+        command.execute(context, request);
+        verify(context, times(1)).execute(eq("MarkVmDeleted"), deleteVmCapture.capture(), eq(Void.class));
+        deleteVmCapture.getValue().apply(context);
+        verify(virtualMachineService, times(1)).setVmRemoved(vmId);
+    }
+
+    @Test
+    public void cancelsIncompleteActions() {
+        Action a1 = mock(Action.class);
+        Action a2 = mock(Action.class);
+        a1.id = 5;
+        a1.type = ActionType.ADD_MONITORING;
+        a2.id = 7;
+        a2.type = ActionType.REMOVE_SUPPORT_USER;
+        List<Action> actions = Arrays.asList(a1, a2);
+        when(actionService.getIncompleteActions(vmId)).thenReturn(actions);
+        command.execute(context, request);
+        verify(actionService, times(1)).getIncompleteActions(vmId);
+        verify(context, times(1)).execute(eq("MarkActionCancelled-5"),
+                                          Matchers.<Function<CommandContext, Void>> any(),
+                                          eq(Void.class));
+        verify(context, times(1)).execute(eq("MarkActionCancelled-7"),
+                                          Matchers.<Function<CommandContext, Void>> any(),
+                                          eq(Void.class));
+    }
+
+    @Test(expected = RuntimeException.class)
+    public void reschedulesDestroyIfCreateActionInProgress() {
+        Action action = mock(Action.class);
+        action.type = ActionType.CREATE_VM;
+        List<Action> actions = Collections.singletonList(action);
+        when(actionService.getIncompleteActions(vmId)).thenReturn(actions);
+        command.execute(context, request);
+        verify(actionService, times(1)).getIncompleteActions(vmId);
+        verify(context, never()).execute(startsWith("MarkActionCancelled-"),
+                                         Matchers.<Function<CommandContext, Void>> any(),
+                                         eq(Void.class));
+        verify(context, times(1)).execute(ScheduleDestroyVm.class, vmId);
+    }
+
+    private Snapshot createFakeSnapshot(SnapshotStatus status) {
+        return new Snapshot(UUID.randomUUID(), 0, UUID.randomUUID(), "fake-snapshot", status, Instant.now(), null,
+                            "fake-image-id", (int) (Math.random() * 100000), SnapshotType.AUTOMATIC);
+    }
+
+    @Test
+    public void marksErroredSnapshotsAsCancelled() {
+        Snapshot s1 = createFakeSnapshot(SnapshotStatus.ERROR);
+        Snapshot s2 = createFakeSnapshot(SnapshotStatus.LIVE);
+        List<Snapshot> snapshots = Arrays.asList(s1, s2);
+        when(snapshotService.getSnapshotsForVm(vmId)).thenReturn(snapshots);
+        command.execute(context, request);
+        verify(snapshotService, times(1)).getSnapshotsForVm(vmId);
+        verify(snapshotService, times(1)).updateSnapshotStatus(s1.id, SnapshotStatus.CANCELLED);
+        verify(snapshotService, never()).updateSnapshotStatus(s2.id, SnapshotStatus.CANCELLED);
+    }
+
+    @Test
+    public void destroysSnapshots() {
+        Snapshot s1 = createFakeSnapshot(SnapshotStatus.ERROR);
+        Snapshot s2 = createFakeSnapshot(SnapshotStatus.LIVE);
+        List<Snapshot> snapshots = Arrays.asList(s1, s2);
+        when(snapshotService.getSnapshotsForVm(vmId)).thenReturn(snapshots);
+        command.execute(context, request);
+        verify(snapshotService, times(1)).getSnapshotsForVm(vmId);
+        verify(context, never()).execute(eq("Vps4DestroySnapshot-" + s1.id),
+                                         eq(Vps4DestroySnapshot.class),
+                                         any(Vps4DestroySnapshot.Request.class));
+        verify(context, times(1)).execute(eq("Vps4DestroySnapshot-" + s2.id),
+                                          eq(Vps4DestroySnapshot.class),
+                                          any(Vps4DestroySnapshot.Request.class));
     }
 }

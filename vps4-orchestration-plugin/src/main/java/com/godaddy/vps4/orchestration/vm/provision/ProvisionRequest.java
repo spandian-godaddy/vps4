@@ -2,15 +2,14 @@ package com.godaddy.vps4.orchestration.vm.provision;
 
 import java.util.UUID;
 
-import com.godaddy.vps4.orchestration.ActionRequest;
+import com.godaddy.vps4.orchestration.vm.VmActionRequest;
 import com.godaddy.vps4.vm.ProvisionVmInfo;
 
-public class ProvisionRequest implements ActionRequest {
+public class ProvisionRequest extends VmActionRequest {
     public ProvisionVmInfo vmInfo;
     public String shopperId;
     public String serverName;
     public byte[] encryptedPassword;
-    public long actionId;
     public UUID orionGuid;
     public String sgid;
     public String image_name;
@@ -18,14 +17,4 @@ public class ProvisionRequest implements ActionRequest {
     public String username;
     public String zone;
     public String privateLabelId;
-
-    @Override
-    public long getActionId() {
-        return actionId;
-    }
-
-    @Override
-    public void setActionId(long actionId) {
-        this.actionId = actionId;
-    }
 }

@@ -10,7 +10,6 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.time.Instant;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
@@ -41,7 +40,6 @@ import com.godaddy.vps4.snapshot.SnapshotStatus;
 import com.godaddy.vps4.snapshot.SnapshotType;
 import com.godaddy.vps4.vm.Action;
 import com.godaddy.vps4.vm.ActionService;
-import com.godaddy.vps4.vm.ActionStatus;
 import com.godaddy.vps4.vm.ActionType;
 import com.godaddy.vps4.vm.VirtualMachine;
 import com.godaddy.vps4.vm.VmAction;
@@ -122,19 +120,6 @@ public class VmDestroyTest {
         SqlTestData.cleanupSqlTestData(dataSource);
     }
 
-    @Test
-    public void destroyCancelsInProgressActions() throws Exception {
-        VirtualMachine vm = createTestVm();
-        long inProgressActionId1 = createInProgressAction(vm.vmId, ActionType.STOP_VM);
-        long inProgressActionId2 = createInProgressAction(vm.vmId, ActionType.SET_HOSTNAME);
-
-        getVmResource().destroyVm(vm.vmId);
-        Assert.assertEquals(vmActionService.getAction(inProgressActionId1).status, ActionStatus.CANCELLED);
-        Assert.assertEquals(vmActionService.getAction(inProgressActionId2).status, ActionStatus.CANCELLED);
-    }
-
-
-
     private Snapshot createSnapshot(UUID vmId, SnapshotStatus status){
         UUID snapshotId = UUID.randomUUID();
         long projectId = 1;
@@ -147,39 +132,6 @@ public class VmDestroyTest {
 
         return new Snapshot(snapshotId, projectId, vmId, name, status,
                 createdAt, modifiedAt, hfsImageId, hfsSnapshotId, snapshotType);
-    }
-
-    @Test
-    public void destroyTestVmWithSnapshot() throws Exception {
-        VirtualMachine vm = createTestVm();
-        Snapshot singleSnapshot = createSnapshot(vm.vmId, SnapshotStatus.LIVE);
-        List<Snapshot> snapshots = Arrays.asList(singleSnapshot);
-
-        when(getVmSnapshotResource().getSnapshotsForVM(Mockito.any())).thenReturn(snapshots);
-
-        VmAction vmAction = getVmResource().destroyVm(vm.vmId);
-        Assert.assertNotNull(vmAction.commandId);
-        verify(vmSnapshotResource, times(1)).destroySnapshot(vm.vmId, singleSnapshot.id);
-    }
-
-    @Test
-    public void destroyTestVmWithSnapshots() throws Exception {
-        VirtualMachine vm = createTestVm();
-        List<Snapshot> snapshots = new ArrayList<Snapshot>();
-
-        for(int i = 0; i<5; i++){
-            snapshots.add(createSnapshot(vm.vmId, SnapshotStatus.LIVE));
-        }
-
-        when(getVmSnapshotResource().getSnapshotsForVM(Mockito.any())).thenReturn(snapshots);
-
-        VmAction vmAction = getVmResource().destroyVm(vm.vmId);
-        Assert.assertNotNull(vmAction.commandId);
-        // verify destroySnapshot is called for each snapshot
-        for(Snapshot snapshot : snapshots){
-            verify(vmSnapshotResource, times(1)).destroySnapshot(vm.vmId, snapshot.id);
-        }
-
     }
 
     @Test
@@ -197,25 +149,5 @@ public class VmDestroyTest {
         VmAction vmAction = getVmResource().destroyVm(vm.vmId);
         Assert.assertNotNull(vmAction.commandId);
         verify(vmSnapshotResource, times(0)).destroySnapshot(eq(vm.vmId), any(UUID.class));
-    }
-
-    @Test
-    public void destroyCancelsNewSnapshots() throws Exception {
-        VirtualMachine vm = createTestVm();
-
-        Snapshot erroredSnapshot = createSnapshot(vm.vmId, SnapshotStatus.ERROR);
-        Snapshot newSnapshot = createSnapshot(vm.vmId, SnapshotStatus.NEW);
-        Snapshot rescheduledSnapshot = createSnapshot(vm.vmId, SnapshotStatus.ERROR_RESCHEDULED);
-
-
-        List<Snapshot> snapshots = Arrays.asList(erroredSnapshot, newSnapshot, rescheduledSnapshot);
-
-        when(getVmSnapshotResource().getSnapshotsForVM(Mockito.any())).thenReturn(snapshots);
-
-        VmAction vmAction = getVmResource().destroyVm(vm.vmId);
-        Assert.assertNotNull(vmAction.commandId);
-        verify(snapshotService, times(1)).updateSnapshotStatus(newSnapshot.id, SnapshotStatus.CANCELLED);
-        verify(snapshotService, times(1)).updateSnapshotStatus(erroredSnapshot.id, SnapshotStatus.CANCELLED);
-        verify(snapshotService, times(1)).updateSnapshotStatus(rescheduledSnapshot.id, SnapshotStatus.CANCELLED);
     }
 }

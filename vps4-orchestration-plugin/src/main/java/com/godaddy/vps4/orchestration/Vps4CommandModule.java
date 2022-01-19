@@ -61,6 +61,7 @@ import com.godaddy.vps4.orchestration.vm.Vps4SubmitReinstateServer;
 import com.godaddy.vps4.orchestration.vm.Vps4SubmitSuspendServer;
 import com.godaddy.vps4.orchestration.vm.Vps4SyncVmStatus;
 import com.godaddy.vps4.orchestration.vm.Vps4TestCommand;
+import com.godaddy.vps4.orchestration.vm.Vps4UnclaimCredit;
 import com.godaddy.vps4.orchestration.vm.Vps4UpgradeOHVm;
 import com.godaddy.vps4.orchestration.vm.Vps4UpgradeVm;
 import com.godaddy.vps4.orchestration.vm.provision.Vps4ProvisionDedicated;
@@ -143,6 +144,7 @@ public class Vps4CommandModule extends AbstractModule {
         bind(Vps4ProcessReinstateServer.class);
         bind(Vps4AddDomainMonitoring.class);
         bind(AddAdditionalFqdnPanopta.class);
+        bind(Vps4UnclaimCredit.class);
         bind(Vps4RemoveDomainMonitoring.class);
     }
 }
