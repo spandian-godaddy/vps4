@@ -48,6 +48,7 @@ public class Vps4DestroyVm extends ActionCommand<Vps4DestroyVm.Request, Vps4Dest
     private CommandContext context;
     private VirtualMachine vm;
     private String gdUserName;
+    private long actionId;
 
     @Inject
     public Vps4DestroyVm(ActionService actionService,
@@ -67,6 +68,7 @@ public class Vps4DestroyVm extends ActionCommand<Vps4DestroyVm.Request, Vps4Dest
         this.context = context;
         this.vm = request.virtualMachine;
         this.gdUserName = request.gdUserName;
+        this.actionId = request.actionId;
 
         logger.info("Destroying server {}", vm.vmId);
 
@@ -217,11 +219,13 @@ public class Vps4DestroyVm extends ActionCommand<Vps4DestroyVm.Request, Vps4Dest
             throw new RuntimeException("Create action is already running");
         }
         for (Action action : actions) {
-            context.execute("MarkActionCancelled-" + action.id, ctx -> {
-                String note = "Action cancelled via api by admin";
-                actionService.cancelAction(action.id, new JSONObject().toJSONString(), note);
-                return null;
-            }, Void.class);
+            if (action.id != actionId) {
+                context.execute("MarkActionCancelled-" + action.id, ctx -> {
+                    String note = "Action cancelled via api by admin";
+                    actionService.cancelAction(action.id, new JSONObject().toJSONString(), note);
+                    return null;
+                }, Void.class);
+            }
         }
     }
 

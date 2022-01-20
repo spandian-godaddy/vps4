@@ -317,6 +317,20 @@ public class Vps4DestroyVmTest {
                                           eq(Void.class));
     }
 
+    @Test
+    public void doesNotCancelCurrentDestroyAction() {
+        Action action = mock(Action.class);
+        action.id = request.actionId;
+        action.type = ActionType.DESTROY_VM;
+        List<Action> actions = Collections.singletonList(action);
+        when(actionService.getIncompleteActions(vmId)).thenReturn(actions);
+        command.execute(context, request);
+        verify(actionService, times(1)).getIncompleteActions(vmId);
+        verify(context, never()).execute(eq("MarkActionCancelled-" + request.actionId),
+                                          Matchers.<Function<CommandContext, Void>> any(),
+                                          eq(Void.class));
+    }
+
     @Test(expected = RuntimeException.class)
     public void reschedulesDestroyIfCreateActionInProgress() {
         Action action = mock(Action.class);

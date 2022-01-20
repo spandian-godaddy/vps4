@@ -283,7 +283,7 @@ public class VmResource {
 
         String provisionClassName = virtualMachine.spec.serverType.platform.getProvisionCommand();
 
-        return createActionAndExecute(actionService, commandService, virtualMachine.vmId, ActionType.DESTROY_VM, request,
+        return createActionAndExecute(actionService, commandService, virtualMachine.vmId, ActionType.CREATE_VM, request,
                                       provisionClassName, user);
     }
 
