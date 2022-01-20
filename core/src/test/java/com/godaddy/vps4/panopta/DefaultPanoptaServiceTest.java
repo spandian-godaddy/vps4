@@ -164,17 +164,19 @@ public class DefaultPanoptaServiceTest {
 
     private void setupGraphIdLists() {
         usageIdList = new PanoptaUsageIdList();
-        usageIdList.value = Collections.singletonList(createDummyMetricId());
+        usageIdList.value = Collections.singletonList(createDummyMetricId(null));
         networkIdList = new PanoptaNetworkIdList();
         networkIdList.value = new ArrayList<>();
-        networkIdList.value.add(createDummyMetricId());
-        networkIdList.value.add(createDummyMetricId());
+        networkIdList.value.add(createDummyMetricId("additionalFqdn.fake"));
+        networkIdList.value.add(createDummyMetricId("additionalFqdn2.fake"));
     }
 
-    private PanoptaMetricId createDummyMetricId() {
+    private PanoptaMetricId createDummyMetricId(String serverInterface) {
         PanoptaMetricId metricId = new PanoptaMetricId();
         metricId.id = (long) (Math.random() * 9999);
         metricId.typeId = (long) (Math.random() * 9999);
+        metricId.serverInterface = serverInterface;
+        metricId.status = "active";
         return metricId;
     }
 
@@ -327,6 +329,17 @@ public class DefaultPanoptaServiceTest {
         verify(panoptaApiServerService).getNetworkList(serverId, partnerCustomerKey, "additionalfqdn.fake", 0);
         assertEquals(networkIdList.value.get(0).id, ids.id);
         assertEquals(networkIdList.value.get(0).typeId, ids.typeId);
+    }
+
+    @Test
+    public void testGetAdditionalFqdnMetricIds() {
+        when(panoptaMetricMapper.getVmMetric(anyLong())).thenReturn(VmMetric.HTTPS);
+        when(panoptaDataService.getPanoptaActiveAdditionalFqdns(vmId)).thenReturn(Arrays.asList("additionalFqdn.fake", "additionalFqdn2.fake"));
+        List<PanoptaMetricId> ids = defaultPanoptaService.getAdditionalFqdnMetricIds(vmId);
+        verify(panoptaApiServerService).getNetworkList(serverId, partnerCustomerKey, null, 0);
+        assertEquals(2, ids.size());
+        assertEquals(networkIdList.value.get(0).id, ids.get(0).id);;
+        assertEquals(networkIdList.value.get(0).typeId, ids.get(0).typeId);
     }
 
     @Test

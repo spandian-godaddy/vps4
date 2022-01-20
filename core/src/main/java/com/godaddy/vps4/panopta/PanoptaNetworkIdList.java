@@ -62,5 +62,10 @@ public class PanoptaNetworkIdList {
         private void mapServerInterface(String serverInterface) {
             this.serverInterface = serverInterface;
         }
+
+        @JsonProperty("status")
+        private void mapStatus(String status) {
+            this.status = status;
+        }
     }
 }

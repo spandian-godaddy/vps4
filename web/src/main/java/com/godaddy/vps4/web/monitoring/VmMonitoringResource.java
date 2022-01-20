@@ -22,6 +22,7 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.UriInfo;
 
+import com.godaddy.vps4.panopta.PanoptaMetricId;
 import org.joda.time.DateTime;
 
 import com.godaddy.vps4.panopta.PanoptaAvailability;
@@ -200,5 +201,12 @@ public class VmMonitoringResource {
         } catch (PanoptaServiceException e) {
             throw new Vps4Exception(e.getId(), e.getMessage(), e);
         }
+    }
+
+    @GET
+    @Path("/{vmId}/additionalFqdns")
+    public List<PanoptaMetricId> getAdditionalFqdnMetrics(@PathParam("vmId") UUID vmId) {
+        vmResource.getVm(vmId);
+        return panoptaService.getAdditionalFqdnMetricIds(vmId);
     }
 }

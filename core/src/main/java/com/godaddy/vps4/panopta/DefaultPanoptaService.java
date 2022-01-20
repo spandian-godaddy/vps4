@@ -332,12 +332,28 @@ public class DefaultPanoptaService implements PanoptaService {
     }
 
     @Override
+    public List<PanoptaMetricId> getAdditionalFqdnMetricIds(UUID vmId) {
+        List<PanoptaMetricId> ids = new ArrayList<>();
+        List<String> additionalFqdns = panoptaDataService.getPanoptaActiveAdditionalFqdns(vmId);
+        PanoptaDetail detail = panoptaDataService.getPanoptaDetails(vmId);
+        if (detail != null) {
+            ids = panoptaApiServerService
+                            .getNetworkList(detail.getServerId(), detail.getPartnerCustomerKey(), null, UNLIMITED)
+                            .value;
+            ids = ids.stream().filter(t -> additionalFqdns.contains(t.serverInterface) &&
+                    (Arrays.asList(VmMetric.HTTP, VmMetric.HTTPS)).contains(panoptaMetricMapper.getVmMetric(t.typeId)))
+                    .collect(Collectors.toList());
+        }
+        return ids;
+    }
+
+    @Override
     public PanoptaMetricId getNetworkIdOfAdditionalFqdn(UUID vmId, String fqdn) throws PanoptaServiceException {
         List<PanoptaMetricId> ids = new ArrayList<>();
         PanoptaDetail detail = panoptaDataService.getPanoptaDetails(vmId);
         if (detail != null) {
             ids = panoptaApiServerService
-                    .getNetworkList(detail.getServerId(), detail.getPartnerCustomerKey(),fqdn, UNLIMITED)
+                    .getNetworkList(detail.getServerId(), detail.getPartnerCustomerKey(), fqdn, UNLIMITED)
                     .value;
             ids = ids.stream()
                     .filter(id -> (Arrays.asList(VmMetric.HTTP, VmMetric.HTTPS)).contains(panoptaMetricMapper.getVmMetric(id.typeId)))

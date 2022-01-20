@@ -256,4 +256,14 @@ public class VmMonitoringResourceTests {
         verify(panoptaService, never()).getUsageGraphs(vm.vmId, timescale);
         verify(panoptaService).getNetworkGraphs(vm.vmId, timescale);
     }
+
+    @Test
+    public void testGetAdditionalFqdnMetric() {
+        when(vmResource.getVm(vm.vmId)).thenReturn(vm);
+
+        resource.getAdditionalFqdnMetrics(vm.vmId);
+
+        verify(vmResource).getVm(vm.vmId);
+        verify(panoptaService).getAdditionalFqdnMetricIds(vm.vmId);
+    }
 }

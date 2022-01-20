@@ -54,4 +54,6 @@ public interface PanoptaService {
     List<VmOutage> getOutages(UUID vmId, boolean activeOnly) throws PanoptaServiceException;
 
     String getDefaultGroup(String shopperId) throws PanoptaServiceException;
+
+    List<PanoptaMetricId> getAdditionalFqdnMetricIds(UUID vmId);
 }
