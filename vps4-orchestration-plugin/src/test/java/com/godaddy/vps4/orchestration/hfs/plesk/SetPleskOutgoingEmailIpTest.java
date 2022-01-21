@@ -68,12 +68,12 @@ public class SetPleskOutgoingEmailIpTest {
         verify(pleskService, times(1)).setOutgoingEMailIP(request.hfsVmId, request.ipAddress);
     }
 
-    @Test
+    @Test(expected = RuntimeException.class)
     public void failSetPleskOutgoingEmailIp() {
         SetPleskOutgoingEmailIp.SetPleskOutgoingEmailIpRequest request =
                 new SetPleskOutgoingEmailIp.SetPleskOutgoingEmailIpRequest(777L, "192.168.0.1");
 
-        // if HFS throws an exception on pleskService, the command should NOT fail
+        // if HFS throws an exception on pleskService, the command should fail
         when(pleskService.setOutgoingEMailIP(request.hfsVmId, request.ipAddress)).thenThrow(new RuntimeException("Faked an HFS failure"));
 
         command.execute(context, request);

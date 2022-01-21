@@ -23,20 +23,14 @@ public class SetPleskOutgoingEmailIp implements Command<SetPleskOutgoingEmailIp.
     @Override
     public Void execute(CommandContext context, SetPleskOutgoingEmailIpRequest request) {
         logger.info("sending HFS request to set Plesk outgoing email IP for vmId {}", request.hfsVmId);
-        try {
-            PleskAction hfsAction = context.execute("RequestFromHFS", ctx -> {
+        PleskAction hfsAction = context.execute("SetPleskOutgoingEmail", ctx -> {
                 return pleskService.setOutgoingEMailIP(request.hfsVmId, request.ipAddress);
-            }, PleskAction.class);
+        }, PleskAction.class);
 
-            context.execute(WaitForPleskAction.class, hfsAction);
+       context.execute(WaitForPleskAction.class, hfsAction);
 
-            logger.info("Completed setting Plesk outgoing email IP vm action {} ", hfsAction);
-        }
-        catch (Exception e) {
-            // This logic can be revisited
-            logger.info("Error setting Plesk outgoing email IP for vmId {}", request.hfsVmId);
-        }
-        return null;
+       logger.info("Completed setting Plesk outgoing email IP vm action {} ", hfsAction);
+       return null;
     }
 
     public static class SetPleskOutgoingEmailIpRequest {
