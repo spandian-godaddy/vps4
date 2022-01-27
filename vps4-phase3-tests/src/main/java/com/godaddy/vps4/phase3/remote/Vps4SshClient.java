@@ -79,6 +79,24 @@ public class Vps4SshClient extends Vps4RemoteAccessClient {
     @Override
     public boolean isActivated() {
         // Linux VMs do not require activation
-        return true;
+        return false;
+    }
+
+    @Override
+    public boolean hasPanoptaAgent() {
+        String result = executeCommand("test -d /etc/panopta-agent && echo \"success\" || echo \"failure\"");
+        return result.equals("success");
+    }
+
+    @Override
+    public boolean canPing(String domain) {
+        String result = executeCommand("ping -c 2 " + domain);
+        return result.contains("2 packets transmitted, 2 received, 0% packet loss");
+    }
+
+    @Override
+    public boolean isRdpRunning() {
+        // Linux VMs do not use RDP
+        return false;
     }
 }

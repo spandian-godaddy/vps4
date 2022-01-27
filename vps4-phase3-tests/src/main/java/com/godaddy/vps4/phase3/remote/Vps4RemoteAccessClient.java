@@ -16,16 +16,6 @@ public abstract class Vps4RemoteAccessClient {
         this.password = password;
     }
 
-    public abstract String executeCommand(String command);
-
-    public abstract boolean checkConnection();
-
-    public abstract boolean checkHostname(String expectedHostname);
-
-    public abstract boolean hasAdminPrivilege();
-
-    public abstract boolean isActivated();
-
     String streamToString(InputStream stream) throws IOException {
         StringBuilder result = new StringBuilder();
         try (BufferedReader in = new BufferedReader(new InputStreamReader(stream))) {
@@ -40,4 +30,20 @@ public abstract class Vps4RemoteAccessClient {
                 .replaceAll("\\r", "\n")
                 .trim();
     }
+
+    public abstract String executeCommand(String command);
+
+    public abstract boolean checkConnection();
+
+    public abstract boolean checkHostname(String expectedHostname);
+
+    public abstract boolean hasAdminPrivilege();
+
+    public abstract boolean isActivated();
+
+    public abstract boolean hasPanoptaAgent();
+
+    public abstract boolean canPing(String domain);
+
+    public abstract boolean isRdpRunning();
 }

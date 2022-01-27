@@ -14,7 +14,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class Vps4WinexeClient extends Vps4RemoteAccessClient {
-    private static final int MAX_TRIES = 5;
+    private static final int MAX_TRIES = 3;
 
     private static final Logger logger = LoggerFactory.getLogger(Vps4WinexeClient.class);
     private final boolean isWinexeInstalled;
@@ -94,6 +94,24 @@ public class Vps4WinexeClient extends Vps4RemoteAccessClient {
     @Override
     public boolean isActivated() {
         return testWithRetries("cmd.exe /c slmgr /xpr", (result) -> result.contains("Volume activation will expire"));
+    }
+
+    @Override
+    public boolean hasPanoptaAgent() {
+        return testWithRetries("tasklist /FI \"SERVICES eq PanoptaAgent\" /FO CSV",
+                               (result) -> result.contains("Aggregator.Agent.exe"));
+    }
+
+    @Override
+    public boolean canPing(String domain) {
+        return testWithRetries("ping -n 2 " + domain,
+                               (result) -> result.contains("Packets: Sent = 2, Received = 2, Lost = 0 (0% loss)"));
+    }
+
+    @Override
+    public boolean isRdpRunning() {
+        return testWithRetries("cmd.exe /c netstat -an | find /c \"0.0.0.0:3389\"",
+                               (result) -> result.equals("2"));
     }
 
     private String escapeSingleQuotes(String s) {

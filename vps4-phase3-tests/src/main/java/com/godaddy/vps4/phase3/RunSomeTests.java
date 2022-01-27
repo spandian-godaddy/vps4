@@ -4,7 +4,9 @@ import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
@@ -17,6 +19,8 @@ import org.apache.commons.cli.DefaultParser;
 import org.apache.commons.cli.Option;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
+import org.json.simple.JSONArray;
+import org.json.simple.JSONObject;
 import org.passay.CharacterData;
 import org.passay.CharacterRule;
 import org.passay.EnglishCharacterData;
@@ -26,16 +30,17 @@ import org.slf4j.LoggerFactory;
 
 import com.godaddy.vps4.phase3.api.SsoClient;
 import com.godaddy.vps4.phase3.api.Vps4ApiClient;
-import com.godaddy.vps4.phase3.tests.ChangeHostnameTest;
+import com.godaddy.vps4.phase3.tests.ActivationTest;
+import com.godaddy.vps4.phase3.tests.AddMonitoringTest;
 import com.godaddy.vps4.phase3.tests.AddSupportUserTest;
+import com.godaddy.vps4.phase3.tests.ChangeHostnameTest;
 import com.godaddy.vps4.phase3.tests.ConsoleUrlTest;
 import com.godaddy.vps4.phase3.tests.EnableDisableAdminTest;
 import com.godaddy.vps4.phase3.tests.GetServerActionsTest;
+import com.godaddy.vps4.phase3.tests.NetworkConnectivityTest;
 import com.godaddy.vps4.phase3.tests.SetPasswordTest;
 import com.godaddy.vps4.phase3.tests.SnapshotTest;
 import com.godaddy.vps4.phase3.tests.StopStartVmTest;
-import com.godaddy.vps4.phase3.tests.SuspendReinstateTest;
-import com.godaddy.vps4.phase3.tests.ActivationTest;
 import com.godaddy.vps4.phase3.virtualmachine.VirtualMachinePool;
 
 public class RunSomeTests {
@@ -58,8 +63,6 @@ public class RunSomeTests {
 
         boolean smokeTest = Boolean.parseBoolean(cmd.getOptionValue("smoke-test", "false"));
 
-        String imagesToTest = cmd.getOptionValue("images");
-
         SsoClient ssoClient = new SsoClient(ssoUrl);
 
         Vps4ApiClient adminClient = null;
@@ -73,7 +76,7 @@ public class RunSomeTests {
         String vps4AuthHeader = ssoClient.getVps4SsoToken(vps4ShopperId, vps4Password);
         Vps4ApiClient vps4ApiClient = new Vps4ApiClient(URL, vps4AuthHeader);
 
-        DeleteAnyExistingVms(vps4ApiClient);
+        deleteAnyExistingVms(vps4ApiClient);
 
         ExecutorService threadPool = Executors.newCachedThreadPool();
 
@@ -94,9 +97,10 @@ public class RunSomeTests {
                 new AddSupportUserTest(),
                 new EnableDisableAdminTest(),
                 new ConsoleUrlTest(),
-                new SuspendReinstateTest(),
                 new GetServerActionsTest(),
-                new ActivationTest());
+                new ActivationTest(),
+                new AddMonitoringTest(),
+                new NetworkConnectivityTest());
 
         if (smokeTest) {
             tests = Collections.singletonList(new ChangeHostnameTest(randomHostname()));
@@ -104,7 +108,8 @@ public class RunSomeTests {
 
         TestGroup vps4 = new TestGroup("VPS4 Phase3 Tests");
 
-        String[] images = imagesToTest.split(",");
+        Set<String> images = parseCliImages(cmd, vps4ApiClient);
+        logger.info("Running tests with images: " + images);
 
         for (String image : images) {
             ImageTestGroup imageTestGroup = new ImageTestGroup(image);
@@ -135,7 +140,7 @@ public class RunSomeTests {
         printResults(testGroupExecution);
     }
 
-    private static void DeleteAnyExistingVms(Vps4ApiClient vps4ApiClient) {
+    private static void deleteAnyExistingVms(Vps4ApiClient vps4ApiClient) {
         List<UUID> vmsToDelete = vps4ApiClient.getListOfExistingVmIds();
         if (!vmsToDelete.isEmpty()) {
             System.out.println(String.format("Found %d existing VMs, deleting before running tests", vmsToDelete.size()));
@@ -159,6 +164,18 @@ public class RunSomeTests {
         vps4ApiClient.deleteVm(vmId);
     }
 
+    private static Set<String> parseCliImages(CommandLine cmd, Vps4ApiClient vps4ApiClient) {
+        Set<String> images = new HashSet<>(Arrays.asList(cmd.getOptionValue("images").split(",")));
+        if (cmd.hasOption("all-oh-images")) {
+            JSONArray ohImages = vps4ApiClient.getImages("OPTIMIZED_HOSTING");
+            for (Object ohImage : ohImages) {
+                JSONObject image = (JSONObject) ohImage;
+                images.add(image.get("hfsName").toString());
+            }
+        }
+        return images;
+    }
+
     private static CommandLine parseCliArgs(String[] args) throws ParseException {
 
         CommandLineParser parser = new DefaultParser();
@@ -172,9 +189,10 @@ public class RunSomeTests {
         options.addOption( "m", "max-vms", true, "maximum number of vms to create");
         options.addOption( "p", "pool-size", true, "maximum number of vms per image type");
         options.addOption( "t", "vm-timeout", true, "maximum time in seconds a test will wait for a VM");
-        options.addOption( "i", "images", true, "hfs images to test");
         options.addOption( "b", "smoke-test", true, "only run a smoke test");
         options.addOption( "d", "dc-id", true, "the id of the dc in which the phase3 tests are being run");
+        options.addOption( null, "all-oh-images", false, "automatically include all active OH images");
+        options.addOption( "i", "images", true, "additional hfs images to test");
 
         CommandLine cmd = parser.parse(options, args);
         for (Option option : cmd.getOptions())
@@ -183,10 +201,9 @@ public class RunSomeTests {
     }
 
     private static void printResults(TestGroupExecution testGroupExecution){
-        System.out.println("===========================================");
-        System.out.println("===========================================");
+        System.out.println("<<<<================================");
         testGroupExecution.printResults();
-        System.out.println("===========================================");
+        System.out.println(">>>>================================");
         if (testGroupExecution.status != TestStatus.PASS){
             System.err.println("Non-Passing test found.  Exiting with status = 1");
             System.exit(1);

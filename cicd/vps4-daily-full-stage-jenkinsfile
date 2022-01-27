@@ -14,13 +14,9 @@ pipeline {
                 load("/home/jenkins/vps4_latest_version.properties")
                 echo "vps4 version: ${VPS4_VERSION}"
 
-                slackSend(color: '#00CD48', message: "vps4 starting *DAILY PHASE3 TESTS* in stage env.  Job '${env.JOB_NAME} [${VPS4_VERSION}]' (${env.BUILD_URL})")
-
                 timeout(time:120, unit:'MINUTES') {
                     build job: 'daily_full_stage_phase_3_test', parameters: [string(name: 'VPS4_VERSION', value: VPS4_VERSION)]
                 }
-
-                slackSend(color: '#00CD48', message: "vps4 *DAILY PHASE 3 TESTS* in stage env were complete. Job '${env.JOB_NAME} [${VPS4_VERSION}]' (${env.BUILD_URL})")
              }
         }
     }

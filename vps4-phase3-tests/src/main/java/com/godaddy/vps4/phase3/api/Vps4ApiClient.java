@@ -404,20 +404,6 @@ public class Vps4ApiClient {
         return console.get("url").toString();
     }
 
-    public long abuseSuspend(UUID vmId) {
-        Vps4JsonResponse<JSONObject> abuseSuspendResponse = sendPost("api/vms/" + vmId + "/abuseSuspend");
-        assertStatusCode200(abuseSuspendResponse);
-        JSONObject suspendJsonResult = abuseSuspendResponse.jsonResponse;
-        return (long)suspendJsonResult.get("id");
-    }
-
-    public long reinstateAbuseSuspend(UUID vmId) {
-        Vps4JsonResponse<JSONObject> reinstateAbuseSuspendResponse = sendPost("api/vms/" + vmId + "/reinstateAbuseSuspend");
-        assertStatusCode200(reinstateAbuseSuspendResponse);
-        JSONObject reinstateJsonResult = reinstateAbuseSuspendResponse.jsonResponse;
-        return (long)reinstateJsonResult.get("id");
-    }
-
     public JSONObject getServerActions(UUID vmId) {
         Vps4JsonResponse<JSONObject> getVmActionsResponse = sendGetObject("/api/vms/" + vmId + "/actions");
         assertStatusCode200(getVmActionsResponse);
@@ -429,5 +415,23 @@ public class Vps4ApiClient {
             logger.debug("json response: {} (status code {})", response.jsonResponse.toString(), response.statusCode);
         }
         assert(response.statusCode == 200);
+    }
+
+    public long installMonitoring(UUID vmId) {
+        Vps4JsonResponse<JSONObject> response = sendPost("api/vms/" + vmId + "/monitoring/install");
+        assertStatusCode200(response);
+        return (long) response.jsonResponse.get("id");
+    }
+
+    public JSONObject getServerDetails(UUID vmId) {
+        Vps4JsonResponse<JSONObject> getVmActionsResponse = sendGetObject("/api/vms/" + vmId + "/withDetails");
+        assertStatusCode200(getVmActionsResponse);
+        return getVmActionsResponse.jsonResponse;
+    }
+
+    public JSONArray getImages(String platform) {
+        Vps4JsonResponse<JSONArray> getImagesResponse = sendGetList("/api/vmImages?platform=" + platform);
+        assertStatusCode200(getImagesResponse);
+        return getImagesResponse.jsonResponse;
     }
 }
