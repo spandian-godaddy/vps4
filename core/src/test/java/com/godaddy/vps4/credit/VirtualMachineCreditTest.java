@@ -1,39 +1,27 @@
 package com.godaddy.vps4.credit;
 
+import com.godaddy.vps4.vm.DataCenterService;
+import org.junit.Test;
+
+import java.util.HashMap;
+import java.util.Map;
+
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
 
-import java.util.HashMap;
-import java.util.Map;
-
-import org.junit.Test;
-
-import com.godaddy.vps4.vm.DataCenterService;
-
 public class VirtualMachineCreditTest {
 
     @Test
-    public void isAbuseSuspendedFlagSet() throws Exception {
+    public void isVmSuspendedSet() {
         Map<String, String> productMeta = new HashMap<>();
-        productMeta.put(ECommCreditService.ProductMetaField.ABUSE_SUSPENDED_FLAG.toString(), String.valueOf(true));
+        productMeta.put(ECommCreditService.ProductMetaField.SUSPENDED.toString(), String.valueOf(true));
 
         VirtualMachineCredit credit = new VirtualMachineCredit.Builder(mock(DataCenterService.class))
                 .withProductMeta(productMeta)
                 .build();
-        assertTrue(credit.isAbuseSuspendedFlagSet());
-    }
-
-    @Test
-    public void isBillingSuspendedFlagSet() throws Exception {
-        Map<String, String> productMeta = new HashMap<>();
-        productMeta.put(ECommCreditService.ProductMetaField.BILLING_SUSPENDED_FLAG.toString(), String.valueOf(true));
-
-        VirtualMachineCredit credit = new VirtualMachineCredit.Builder(mock(DataCenterService.class))
-                .withProductMeta(productMeta)
-                .build();
-        assertTrue(credit.isBillingSuspendedFlagSet());
+        assertTrue(credit.isVmSuspended());
     }
 
     private Map<String, String> planFeaturesFrom(String... keyThenValue) {

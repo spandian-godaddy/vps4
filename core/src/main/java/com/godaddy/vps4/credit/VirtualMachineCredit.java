@@ -1,13 +1,5 @@
 package com.godaddy.vps4.credit;
 
-import java.time.Instant;
-import java.util.Arrays;
-import java.util.Map;
-import java.util.UUID;
-
-import org.apache.commons.lang3.builder.ReflectionToStringBuilder;
-import org.apache.commons.lang3.builder.ToStringStyle;
-
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.godaddy.vps4.credit.ECommCreditService.PlanFeatures;
@@ -15,6 +7,13 @@ import com.godaddy.vps4.credit.ECommCreditService.ProductMetaField;
 import com.godaddy.vps4.vm.AccountStatus;
 import com.godaddy.vps4.vm.DataCenter;
 import com.godaddy.vps4.vm.DataCenterService;
+import org.apache.commons.lang3.builder.ReflectionToStringBuilder;
+import org.apache.commons.lang3.builder.ToStringStyle;
+
+import java.time.Instant;
+import java.util.Arrays;
+import java.util.Map;
+import java.util.UUID;
 
 public class VirtualMachineCredit {
 
@@ -36,8 +35,7 @@ public class VirtualMachineCredit {
     private boolean planChangePending;
     private int pfid;
     private Instant purchasedAt;
-    private boolean abuseSuspendedFlag;
-    private boolean billingSuspendedFlag;
+    private boolean suspended;
     private UUID customerId;
 
     private VirtualMachineCredit() {
@@ -45,18 +43,7 @@ public class VirtualMachineCredit {
 
     @JsonIgnore
     public boolean isAccountSuspended() {
-        return accountStatus == AccountStatus.SUSPENDED ||
-                accountStatus == AccountStatus.ABUSE_SUSPENDED;
-    }
-
-    @JsonIgnore
-    public boolean isAccountAbuseSuspended() {
-        return accountStatus == AccountStatus.ABUSE_SUSPENDED;
-    }
-
-    @JsonIgnore
-    public boolean isAccountBillingSuspended() {
-        return accountStatus == AccountStatus.SUSPENDED;
+        return accountStatus == AccountStatus.SUSPENDED || accountStatus == AccountStatus.ABUSE_SUSPENDED;
     }
 
     @JsonIgnore
@@ -173,16 +160,8 @@ public class VirtualMachineCredit {
         return pfid;
     }
 
-    public boolean isAbuseSuspendedFlagSet() {
-        return abuseSuspendedFlag;
-    }
-
-    public boolean isBillingSuspendedFlagSet() {
-        return billingSuspendedFlag;
-    }
-
-    public UUID getCustomerId() {
-        return customerId;
+    public boolean isVmSuspended() {
+        return suspended;
     }
 
     public static class Builder {
@@ -197,6 +176,41 @@ public class VirtualMachineCredit {
 
         public Builder(DataCenterService dataCenterService) {
             this.dataCenterService = dataCenterService;
+        }
+
+        public VirtualMachineCredit build() {
+            VirtualMachineCredit credit = new VirtualMachineCredit();
+            credit.orionGuid = this.accountGuid;
+            if (planFeatures != null) {
+                credit.tier = Integer.parseInt(planFeatures.getOrDefault(PlanFeatures.TIER.toString(), "10"));
+                credit.managedLevel =
+                        Integer.parseInt(planFeatures.getOrDefault(PlanFeatures.MANAGED_LEVEL.toString(), "0"));
+                credit.monitoring = parseMonitoring(planFeatures.getOrDefault(PlanFeatures.MONITORING.toString(), "0"));
+                credit.operatingSystem = planFeatures.get(PlanFeatures.OPERATINGSYSTEM.toString());
+                if (credit.operatingSystem == null) {
+                    // Alternative field name from entitlement gateway
+                    credit.operatingSystem = planFeatures.get("operating_system");
+                }
+                credit.controlPanel = planFeatures.get(PlanFeatures.CONTROL_PANEL_TYPE.toString());
+                credit.pfid = Integer.parseInt(planFeatures.getOrDefault(PlanFeatures.PF_ID.toString(), "0"));
+            }
+
+            if (productMeta != null) {
+                credit.provisionDate = getDateFromProductMeta(ProductMetaField.PROVISION_DATE.toString());
+                credit.purchasedAt = getDateFromProductMeta(ProductMetaField.PURCHASED_AT.toString());
+                credit.fullyManagedEmailSent = getFlagFromProductMeta(ProductMetaField.FULLY_MANAGED_EMAIL_SENT.toString());
+                credit.planChangePending = getFlagFromProductMeta(ProductMetaField.PLAN_CHANGE_PENDING.toString());
+                credit.dataCenter = getDataCenter();
+                credit.productId = getProductId();
+                credit.suspended = getFlagFromProductMeta(ProductMetaField.SUSPENDED.toString());
+            }
+
+            credit.shopperId = this.shopperId;
+            credit.accountStatus = this.accountStatus;
+            credit.resellerId = this.resellerId;
+            credit.customerId = this.customerId;
+
+            return credit;
         }
 
         public Builder withAccountGuid(String accountGuid) {
@@ -257,45 +271,6 @@ public class VirtualMachineCredit {
         private boolean getFlagFromProductMeta(String productMetaFieldName) {
             return productMeta.containsKey(productMetaFieldName) &&
                     Boolean.parseBoolean(productMeta.get(productMetaFieldName));
-        }
-
-        public VirtualMachineCredit build() {
-            VirtualMachineCredit credit = new VirtualMachineCredit();
-            credit.orionGuid = this.accountGuid;
-            if (planFeatures != null) {
-                credit.tier = Integer.parseInt(planFeatures.getOrDefault(PlanFeatures.TIER.toString(), "10"));
-                credit.managedLevel =
-                        Integer.parseInt(planFeatures.getOrDefault(PlanFeatures.MANAGED_LEVEL.toString(), "0"));
-                credit.monitoring = parseMonitoring(planFeatures.getOrDefault(PlanFeatures.MONITORING.toString(), "0"));
-                credit.operatingSystem = planFeatures.get(PlanFeatures.OPERATINGSYSTEM.toString());
-                if (credit.operatingSystem == null) {
-                    // Alternative field name from entitlement gateway
-                    credit.operatingSystem = planFeatures.get("operating_system");
-                }
-                credit.controlPanel = planFeatures.get(PlanFeatures.CONTROL_PANEL_TYPE.toString());
-                credit.pfid = Integer.parseInt(planFeatures.getOrDefault(PlanFeatures.PF_ID.toString(), "0"));
-            }
-
-            if (productMeta != null) {
-                credit.provisionDate = getDateFromProductMeta(ProductMetaField.PROVISION_DATE.toString());
-                credit.purchasedAt = getDateFromProductMeta(ProductMetaField.PURCHASED_AT.toString());
-                credit.fullyManagedEmailSent = Boolean.parseBoolean(
-                        productMeta.get(ProductMetaField.FULLY_MANAGED_EMAIL_SENT.toString()));
-                credit.planChangePending = Boolean.parseBoolean(
-                        productMeta.get(ProductMetaField.PLAN_CHANGE_PENDING.toString()));
-                credit.dataCenter = getDataCenter();
-                credit.productId = getProductId();
-                credit.abuseSuspendedFlag = getFlagFromProductMeta(ProductMetaField.ABUSE_SUSPENDED_FLAG.toString());
-                credit.billingSuspendedFlag =
-                        getFlagFromProductMeta(ProductMetaField.BILLING_SUSPENDED_FLAG.toString());
-            }
-
-            credit.shopperId = this.shopperId;
-            credit.accountStatus = this.accountStatus;
-            credit.resellerId = this.resellerId;
-            credit.customerId = this.customerId;
-
-            return credit;
         }
 
         private int parseMonitoring(String value) {

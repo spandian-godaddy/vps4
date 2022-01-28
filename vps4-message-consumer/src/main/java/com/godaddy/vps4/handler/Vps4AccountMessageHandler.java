@@ -147,6 +147,7 @@ public class Vps4AccountMessageHandler implements MessageHandler {
                     processPlanChange(credit, vm);
                     break;
                 case RENEWED:
+                    ifVmSuspendedReinstateAccount(credit, vm);
                 case UPDATED:
                     processPlanChange(credit, vm);
                     break;
@@ -154,7 +155,7 @@ public class Vps4AccountMessageHandler implements MessageHandler {
                     handleAccountCancellation(vm, credit);
                     break;
                 case REINSTATED:
-                    reinstateAccount(vm);
+                    reinstateServer(vm);
                     break;
                 case SHOPPER_CHANGED:
                     processShopperMerge(vm, credit);
@@ -165,6 +166,11 @@ public class Vps4AccountMessageHandler implements MessageHandler {
         } catch (Exception ex) {
             handleMessageProcessingException(vps4Message, ex);
         }
+    }
+
+    private void ifVmSuspendedReinstateAccount(VirtualMachineCredit credit, VirtualMachine vm) {
+        if(credit.isVmSuspended() && !credit.isAccountSuspended())
+            reinstateServer(vm);
     }
 
     private void suspendServer(VirtualMachine vm) {
@@ -195,8 +201,7 @@ public class Vps4AccountMessageHandler implements MessageHandler {
                 && credit.isManaged() && !credit.isFullyManagedEmailSent()) {
             try {
                 messagingService.sendFullyManagedEmail(credit.getShopperId(), credit.getControlPanel());
-                creditService.updateProductMeta(credit.getOrionGuid(), ProductMetaField.FULLY_MANAGED_EMAIL_SENT,
-                        "true");
+                creditService.updateProductMeta(credit.getOrionGuid(), ProductMetaField.FULLY_MANAGED_EMAIL_SENT,"true");
             } catch (MissingShopperIdException | IOException e) {
                 logger.warn("Failed to send fully managed welcome email", e);
             }
@@ -207,11 +212,6 @@ public class Vps4AccountMessageHandler implements MessageHandler {
         if (vm != null) {
             if (credit.getTier() != vm.spec.tier) {
                 setPlanChangePendingInProductMeta(credit);
-            }
-            // abuse suspended vm's cannot be upgraded or renewed.
-            if (isAccountAbuseSuspended(credit, vm)) {
-                creditService.setStatus(vm.orionGuid, AccountStatus.ABUSE_SUSPENDED);
-                return;
             }
 
             updateVmManagedLevel(credit, vm);
@@ -253,22 +253,11 @@ public class Vps4AccountMessageHandler implements MessageHandler {
         return ageOfAccount.toDays() >= minAccountAgeInDays;
     }
 
-    private void reinstateAccount(VirtualMachine vm) {
+    private void reinstateServer(VirtualMachine vm) {
         if (vm != null) {
-            logger.info("Re-instating suspended vm: {} ", vm);
+            logger.info("Reinstating suspended vm: {} ", vm);
             vmSuspendReinstateService.processReinstate(vm.vmId);
         }
-    }
-
-    private boolean isAccountAbuseSuspended(VirtualMachineCredit credit, VirtualMachine vm) {
-        if (credit.isAbuseSuspendedFlagSet()) {
-            logger.warn(
-                    "Cannot update an ABUSE SUSPENDED account. Account {}  for vm {} is abuse suspended. Account will"
-                            + " need to be reinstated before any other actions can be performed.",
-                    credit.getOrionGuid(), vm.vmId);
-            return true;
-        }
-        return false;
     }
 
     private void processShopperMerge(VirtualMachine vm, VirtualMachineCredit credit) {

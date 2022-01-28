@@ -1,6 +1,7 @@
 package com.godaddy.vps4.orchestration.vm;
 
 import com.godaddy.vps4.credit.CreditService;
+import com.godaddy.vps4.credit.ECommCreditService;
 import com.godaddy.vps4.orchestration.ActionCommand;
 import com.godaddy.vps4.orchestration.hfs.vm.RescueVm;
 import com.godaddy.vps4.orchestration.hfs.vm.StopVm;
@@ -36,6 +37,8 @@ public class Vps4ProcessSuspendServer extends ActionCommand<VmActionRequest, Voi
     @Override
     protected Void executeWithAction(CommandContext context, VmActionRequest request) {
         logger.info("Processing Suspend Service with Request: {}", request);
+
+        creditService.updateProductMeta(request.virtualMachine.orionGuid, ECommCreditService.ProductMetaField.SUSPENDED, Boolean.toString(true));
 
         pausePanoptaMonitoring(context, request);
         if(request.virtualMachine.spec.isVirtualMachine())

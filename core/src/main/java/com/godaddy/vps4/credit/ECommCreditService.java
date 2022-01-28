@@ -1,5 +1,21 @@
 package com.godaddy.vps4.credit;
 
+import com.godaddy.vps4.vm.AccountStatus;
+import com.godaddy.vps4.vm.DataCenterService;
+import com.google.inject.Singleton;
+import gdg.hfs.vhfs.ecomm.Account;
+import gdg.hfs.vhfs.ecomm.ECommDataCache;
+import gdg.hfs.vhfs.ecomm.ECommService;
+import gdg.hfs.vhfs.ecomm.MetadataUpdate;
+import gdg.hfs.vhfs.ecomm.Reinstatement;
+import gdg.hfs.vhfs.ecomm.SuspendReason;
+import gdg.hfs.vhfs.ecomm.Suspension;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import javax.inject.Inject;
+import javax.ws.rs.WebApplicationException;
+import javax.ws.rs.core.Response;
 import java.time.Instant;
 import java.util.Collections;
 import java.util.EnumMap;
@@ -9,24 +25,6 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-
-import javax.inject.Inject;
-import javax.ws.rs.WebApplicationException;
-import javax.ws.rs.core.Response;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import com.godaddy.vps4.vm.AccountStatus;
-import com.godaddy.vps4.vm.DataCenterService;
-import com.google.inject.Singleton;
-import gdg.hfs.vhfs.ecomm.Suspension;
-import gdg.hfs.vhfs.ecomm.Reinstatement;
-import gdg.hfs.vhfs.ecomm.MetadataUpdate;
-import gdg.hfs.vhfs.ecomm.ECommService;
-import gdg.hfs.vhfs.ecomm.ECommDataCache;
-import gdg.hfs.vhfs.ecomm.Account;
-import gdg.hfs.vhfs.ecomm.SuspendReason;
 
 @Singleton
 public class ECommCreditService implements CreditService {
@@ -40,10 +38,9 @@ public class ECommCreditService implements CreditService {
         FULLY_MANAGED_EMAIL_SENT,
         PLAN_CHANGE_PENDING,
         PURCHASED_AT,
-        ABUSE_SUSPENDED_FLAG,
-        BILLING_SUSPENDED_FLAG,
         RELEASED_AT,
-        RELAY_COUNT;
+        RELAY_COUNT,
+        SUSPENDED;
 
         @Override
         public String toString() {
@@ -303,16 +300,6 @@ public class ECommCreditService implements CreditService {
         account.status = getEcommAccountStatus(accountStatus);
         logger.info("Updating status for credit {} to {}", orionGuid, accountStatus.toString().toLowerCase());
         ecommService.updateAccount(orionGuid.toString(), account);
-    }
-
-    @Override
-    public void setAbuseSuspendedFlag(UUID orionGuid, boolean value) {
-        updateProductMeta(orionGuid, ProductMetaField.ABUSE_SUSPENDED_FLAG, String.valueOf(value));
-    }
-
-    @Override
-    public void setBillingSuspendedFlag(UUID orionGuid, boolean value) {
-        updateProductMeta(orionGuid, ProductMetaField.BILLING_SUSPENDED_FLAG, String.valueOf(value));
     }
 
     private Account.Status getEcommAccountStatus(AccountStatus accountStatus) {

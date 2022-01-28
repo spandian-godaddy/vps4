@@ -1,6 +1,8 @@
 package com.godaddy.vps4.orchestration.vm;
 
 import com.godaddy.vps4.credit.CreditService;
+import com.godaddy.vps4.credit.ECommCreditService;
+import com.godaddy.vps4.credit.VirtualMachineCredit;
 import com.godaddy.vps4.orchestration.ActionCommand;
 import com.godaddy.vps4.orchestration.hfs.vm.EndRescueVm;
 import com.godaddy.vps4.orchestration.hfs.vm.StartVm;
@@ -36,6 +38,14 @@ public class Vps4ProcessReinstateServer extends ActionCommand<VmActionRequest, V
     @Override
     protected Void executeWithAction(CommandContext context, VmActionRequest request) {
         logger.info("Processing Reinstate Service with Request: {}", request);
+
+        VirtualMachineCredit credit = creditService.getVirtualMachineCredit(request.virtualMachine.orionGuid);
+        if(credit.isAccountSuspended()) {
+            throw new RuntimeException(String.format("Account %s cannot be reinstated, it is still suspended",
+                    request.virtualMachine.orionGuid));
+        }
+
+        creditService.updateProductMeta(request.virtualMachine.orionGuid, ECommCreditService.ProductMetaField.SUSPENDED, null);
         resumePanoptaMonitoring(context, request);
         if(request.virtualMachine.spec.isVirtualMachine())
             reinstateVm(context, request);

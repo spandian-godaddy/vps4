@@ -57,8 +57,7 @@ public class BuilderTest {
         productMeta.put(ProductMetaField.FULLY_MANAGED_EMAIL_SENT.toString(), fullyManagedEmailSent.toString());
         productMeta.put(ProductMetaField.PLAN_CHANGE_PENDING.toString(), planChangePending.toString());
         productMeta.put(ProductMetaField.PRODUCT_ID.toString(), productId.toString());
-        productMeta.put(ProductMetaField.ABUSE_SUSPENDED_FLAG.toString(), String.valueOf(false));
-        productMeta.put(ProductMetaField.BILLING_SUSPENDED_FLAG.toString(), String.valueOf(false));
+        productMeta.put(ProductMetaField.SUSPENDED.toString(), String.valueOf(false));
     }
 
     @Test
@@ -137,8 +136,7 @@ public class BuilderTest {
         assertEquals(fullyManagedEmailSent, credit.isFullyManagedEmailSent());
         assertEquals(planChangePending, credit.isPlanChangePending());
         assertEquals(productId, credit.getProductId());
-        assertFalse(credit.isAbuseSuspendedFlagSet());
-        assertFalse(credit.isBillingSuspendedFlagSet());
+        assertFalse(credit.isVmSuspended());
     }
 
 

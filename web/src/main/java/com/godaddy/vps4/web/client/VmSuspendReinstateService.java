@@ -16,22 +16,6 @@ import java.util.UUID;
 public interface VmSuspendReinstateService {
 
     @POST
-    @Path("{vmId}/abuseSuspend")
-    VmAction abuseSuspendAccount(@PathParam("vmId") UUID vmId);
-
-    @POST
-    @Path("{vmId}/billingSuspend")
-    VmAction billingSuspendAccount(@PathParam("vmId") UUID vmId);
-
-    @POST
-    @Path("{vmId}/reinstateAbuseSuspend")
-    VmAction reinstateAbuseSuspendedAccount(@PathParam("vmId") UUID vmId);
-
-    @POST
-    @Path("{vmId}/reinstateBillingSuspend")
-    VmAction reinstateBillingSuspendedAccount(@PathParam("vmId") UUID vmId);
-
-    @POST
     @Path("{vmId}/processSuspendMessage")
     VmAction processSuspend(@PathParam("vmId") UUID vmId);
 

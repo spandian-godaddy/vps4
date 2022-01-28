@@ -1,6 +1,7 @@
 package com.godaddy.vps4.orchestration.vm;
 
 import com.godaddy.vps4.credit.CreditService;
+import com.godaddy.vps4.credit.ECommCreditService;
 import com.godaddy.vps4.orchestration.hfs.vm.RescueVm;
 import com.godaddy.vps4.orchestration.hfs.vm.StopVm;
 import com.godaddy.vps4.orchestration.panopta.PausePanoptaMonitoring;
@@ -20,7 +21,7 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-public class Vps4ProcessSuspendMessageTest {
+public class Vps4ProcessSuspendServerTest {
     ActionService actionService = mock(ActionService.class);
     CreditService creditService = mock(CreditService.class);
     CommandContext context = mock(CommandContext.class);
@@ -44,6 +45,8 @@ public class Vps4ProcessSuspendMessageTest {
 
         command.executeWithAction(context, request);
         verify(context, times(1)).execute(StopVm.class, vm.hfsVmId);
+        verify(creditService, times(1)).updateProductMeta(vm.orionGuid, ECommCreditService.ProductMetaField.SUSPENDED,
+                Boolean.toString(true));
     }
 
     @Test
@@ -54,6 +57,8 @@ public class Vps4ProcessSuspendMessageTest {
 
         command.executeWithAction(context, request);
         verify(context, times(1)).execute(RescueVm.class, vm.hfsVmId);
+        verify(creditService, times(1)).updateProductMeta(vm.orionGuid, ECommCreditService.ProductMetaField.SUSPENDED,
+                Boolean.toString(true));
     }
 
     @Test

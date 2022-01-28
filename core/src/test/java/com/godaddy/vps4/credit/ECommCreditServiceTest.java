@@ -1,5 +1,33 @@
 package com.godaddy.vps4.credit;
 
+import com.godaddy.vps4.credit.ECommCreditService.PlanFeatures;
+import com.godaddy.vps4.credit.ECommCreditService.ProductMetaField;
+import com.godaddy.vps4.vm.AccountStatus;
+import com.godaddy.vps4.vm.DataCenter;
+import com.godaddy.vps4.vm.DataCenterService;
+import com.google.inject.Guice;
+import com.google.inject.Injector;
+import gdg.hfs.vhfs.ecomm.Account;
+import gdg.hfs.vhfs.ecomm.ECommDataCache;
+import gdg.hfs.vhfs.ecomm.ECommService;
+import gdg.hfs.vhfs.ecomm.MetadataUpdate;
+import gdg.hfs.vhfs.ecomm.Reinstatement;
+import gdg.hfs.vhfs.ecomm.SuspendReason;
+import gdg.hfs.vhfs.ecomm.Suspension;
+import org.junit.Before;
+import org.junit.Test;
+import org.mockito.ArgumentCaptor;
+
+import javax.ws.rs.WebApplicationException;
+import javax.ws.rs.core.Response;
+import java.time.Instant;
+import java.util.Arrays;
+import java.util.EnumMap;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
+
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
@@ -12,37 +40,6 @@ import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
-
-import java.time.Instant;
-import java.util.Arrays;
-import java.util.EnumMap;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
-
-import javax.ws.rs.WebApplicationException;
-import javax.ws.rs.core.Response;
-
-import org.junit.Before;
-import org.junit.Test;
-import org.mockito.ArgumentCaptor;
-
-import com.godaddy.vps4.credit.ECommCreditService.PlanFeatures;
-import com.godaddy.vps4.credit.ECommCreditService.ProductMetaField;
-import com.godaddy.vps4.vm.AccountStatus;
-import com.godaddy.vps4.vm.DataCenter;
-import com.godaddy.vps4.vm.DataCenterService;
-import com.google.inject.Guice;
-import com.google.inject.Injector;
-
-import gdg.hfs.vhfs.ecomm.Account;
-import gdg.hfs.vhfs.ecomm.ECommDataCache;
-import gdg.hfs.vhfs.ecomm.ECommService;
-import gdg.hfs.vhfs.ecomm.MetadataUpdate;
-import gdg.hfs.vhfs.ecomm.Reinstatement;
-import gdg.hfs.vhfs.ecomm.SuspendReason;
-import gdg.hfs.vhfs.ecomm.Suspension;
 
 public class ECommCreditServiceTest {
 
@@ -389,32 +386,6 @@ public class ECommCreditServiceTest {
             verify(ecommService, atLeastOnce()).updateAccount(eq(orionGuid.toString()), argument.capture());
             assertEquals(v, argument.getValue().status);
         });
-    }
-
-    @Test
-    public void testSetAbuseSuspendedFlag() {
-        when(ecommService.getAccount(orionGuid.toString())).thenReturn(account);
-
-        ProductMetaField field = ProductMetaField.ABUSE_SUSPENDED_FLAG;
-        creditService.updateProductMeta(orionGuid, field, "true");
-
-        ArgumentCaptor<MetadataUpdate> argument = ArgumentCaptor.forClass(MetadataUpdate.class);
-        verify(ecommService).updateProductMetadata(eq(orionGuid.toString()), argument.capture());
-        assertNull(argument.getValue().from.get(field.toString()));
-        assertEquals("true", argument.getValue().to.get(field.toString()));
-    }
-
-    @Test
-    public void testSetBillingSuspendedFlag() {
-        when(ecommService.getAccount(orionGuid.toString())).thenReturn(account);
-
-        ProductMetaField field = ProductMetaField.BILLING_SUSPENDED_FLAG;
-        creditService.updateProductMeta(orionGuid, field, "true");
-
-        ArgumentCaptor<MetadataUpdate> argument = ArgumentCaptor.forClass(MetadataUpdate.class);
-        verify(ecommService).updateProductMetadata(eq(orionGuid.toString()), argument.capture());
-        assertNull(argument.getValue().from.get(field.toString()));
-        assertEquals("true", argument.getValue().to.get(field.toString()));
     }
 
     @Test

@@ -34,10 +34,6 @@ public interface CreditService {
 
     void setStatus(UUID orionGuid, AccountStatus accountStatus);
 
-    void setAbuseSuspendedFlag(UUID orionGuid, boolean value);
-
-    void setBillingSuspendedFlag(UUID orionGuid, boolean value);
-
     void submitSuspend(UUID orionGuid, ECommCreditService.SuspensionReason reason) throws Exception;
 
     void submitReinstate(UUID orionGuid, ECommCreditService.SuspensionReason reason) throws Exception;
