@@ -10,6 +10,8 @@ import org.slf4j.Logger;
 import com.godaddy.vps4.scheduledJob.ScheduledJob;
 import com.godaddy.vps4.scheduler.api.core.JobRequest;
 import com.godaddy.vps4.scheduler.api.plugin.Vps4BackupJobRequest;
+import com.godaddy.vps4.scheduler.api.plugin.Vps4CancelAccountJobRequest;
+import com.godaddy.vps4.scheduler.api.plugin.Vps4DestroyVmJobRequest;
 import com.godaddy.vps4.scheduler.api.plugin.Vps4RemoveSupportUserJobRequest;
 import com.godaddy.vps4.scheduler.api.plugin.Vps4ZombieCleanupJobRequest;
 
@@ -23,6 +25,8 @@ public abstract class Utils {
         typeClassMap.put(ScheduledJob.ScheduledJobType.REMOVE_SUPPORT_USER, Vps4RemoveSupportUserJobRequest.class);
         typeClassMap.put(ScheduledJob.ScheduledJobType.BACKUPS_MANUAL, Vps4BackupJobRequest.class);
         typeClassMap.put(ScheduledJob.ScheduledJobType.BACKUPS_AUTOMATIC, Vps4BackupJobRequest.class);
+        typeClassMap.put(ScheduledJob.ScheduledJobType.DESTROY_VM, Vps4DestroyVmJobRequest.class);
+        typeClassMap.put(ScheduledJob.ScheduledJobType.CANCEL_ACCOUNT, Vps4CancelAccountJobRequest.class);
     }
 
     public static Class<? extends JobRequest> getJobRequestClassForType(ScheduledJob.ScheduledJobType scheduledJobType) {
