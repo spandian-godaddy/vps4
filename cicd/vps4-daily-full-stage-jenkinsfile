@@ -6,7 +6,10 @@ pipeline {
     agent { label "vps4-test-slave" }
     options {
         skipStagesAfterUnstable()
-        timestamps()
+    }
+    environment {
+        SHOPPER_CREDS = credentials('jenkins-shopper-creds')
+        ADMIN_CREDS = credentials('jenkins-admin-creds')
     }
     stages {
         stage("Daily full phase3 tests in stage") {
@@ -15,18 +18,49 @@ pipeline {
                 echo "vps4 version: ${VPS4_VERSION}"
 
                 timeout(time:120, unit:'MINUTES') {
-                    build job: 'daily_full_stage_phase_3_test', parameters: [string(name: 'VPS4_VERSION', value: VPS4_VERSION)]
+                    script {
+                        def TEST_STATUS = sh (
+                                script: 'set -o pipefail; '
+                                        + "java -ea -jar '/opt/vps4/phase3_tests/vps4-phase3-tests-${VPS4_VERSION}.jar' "
+                                        + '--api-url "https://vps4.api.stg-godaddy.com/" '
+                                        + '--shopper "${SHOPPER_CREDS_USR}" --password "${SHOPPER_CREDS_PSW}" '
+                                        + '--sso-url "https://sso.godaddy.com/v1/api/token" '
+                                        + '--admin "${ADMIN_CREDS_USR}" --admin-pass "${ADMIN_CREDS_PSW}" '
+                                        + '--max-vms 28 --pool-size 2 --vm-timeout 7200 '
+                                        + "${env.ALL_OH_IMAGES.toBoolean() ? '--all-oh-images' : ''} "
+                                        + "--images '${env.ADDITIONAL_IMAGES}' "
+                                        + "2>&1 | tee daily_phase3_${BUILD_NUMBER}.log",
+                                returnStatus: true
+                        )
+                        if (TEST_STATUS != 0) {
+                            currentBuild.result = 'FAILURE'
+                        }
+                    }
                 }
-             }
+            }
         }
     }
     post {
         success {
             cleanupEnvironment()
-            slackSend(color: '#00CD48', message: "vps4 DAILY PHASE 3 TESTS *SUCCESS*. Job '${env.JOB_NAME} [${VPS4_VERSION}]' (${env.BUILD_URL})")
+            slackSend(
+                    color: '#00cd48',
+                    message: "vps4 DAILY PHASE 3 TESTS *SUCCESS*. Job <${env.BUILD_URL}|${env.JOB_NAME} [${VPS4_VERSION}]>."
+            )
         }
         failure {
-            slackSend(color: '#ff0000', message: "vps4 DAILY PHASE 3 TESTS *FAILURE*. Job '${env.JOB_NAME} [${VPS4_VERSION}]' (${env.BUILD_URL})")
+            script {
+                def FAILURE_LOGS = sh (
+                        script: "cat daily_phase3_${BUILD_NUMBER}.log | "
+                                + "awk '/<<<</{flag=1;next}/>>>>/{flag=0}flag' | "
+                                + "grep -E 'Test Group|FAIL'",
+                        returnStdout: true
+                ).trim()
+                slackSend(
+                        color: '#ff0000',
+                        message: "vps4 DAILY PHASE 3 TESTS *FAILURE*. Job <${env.BUILD_URL}|${env.JOB_NAME} [${VPS4_VERSION}]>.\n```${FAILURE_LOGS}```"
+                )
+            }
         }
     }
 }
