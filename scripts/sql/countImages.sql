@@ -2,7 +2,7 @@ SELECT '_dc_' as DC,
         image.name,
         COUNT(vm.image_id) as numOfImages
 FROM virtual_machine vm
-  JOIN user_project_privilege upp
+  JOIN project prj
     USING (project_id)
   JOIN vps4_user vu
     USING (vps4_user_id)

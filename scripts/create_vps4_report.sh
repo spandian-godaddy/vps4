@@ -53,8 +53,8 @@ create_sql_file()
 		JOIN virtual_machine_spec f ON v.spec_id = f.spec_id
 		JOIN image i ON v.image_id = i.image_id
 		JOIN control_panel c ON c.control_panel_id =  i.control_panel_id
-		JOIN user_project_privilege upp USING (project_id)
-        JOIN vps4_user vu ON upp.vps4_user_id = vu.vps4_user_id
+		JOIN project prj USING (project_id)
+        JOIN vps4_user vu ON prj.vps4_user_id = vu.vps4_user_id
 		JOIN account_status s ON v.account_status_id = s.account_status_id
 		JOIN vm_action a ON v.vm_id = a.vm_id
 		JOIN action_type t ON a.action_type_id = t.type_id

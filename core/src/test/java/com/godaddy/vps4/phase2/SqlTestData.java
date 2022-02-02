@@ -1,15 +1,5 @@
 package com.godaddy.vps4.phase2;
 
-import java.sql.Timestamp;
-import java.time.Instant;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Random;
-import java.util.UUID;
-
-import javax.sql.DataSource;
-
 import com.godaddy.hfs.jdbc.Sql;
 import com.godaddy.vps4.notifications.NotificationExtendedDetails;
 import com.godaddy.vps4.notifications.NotificationFilter;
@@ -26,6 +16,15 @@ import com.godaddy.vps4.vm.VirtualMachine;
 import com.godaddy.vps4.vm.VirtualMachineService;
 import com.godaddy.vps4.vm.VirtualMachineService.ProvisionVirtualMachineParameters;
 import com.godaddy.vps4.vm.jdbc.JdbcVirtualMachineService;
+
+import javax.sql.DataSource;
+import java.sql.Timestamp;
+import java.time.Instant;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Random;
+import java.util.UUID;
 
 
 public class SqlTestData {
@@ -118,7 +117,6 @@ public class SqlTestData {
         Sql.with(dataSource).exec("DELETE FROM monitoring_pf WHERE vm_id = ?", null, vmId);
         Sql.with(dataSource).exec("DELETE FROM imported_vm WHERE vm_id = ?", null, vmId);
         Sql.with(dataSource).exec("DELETE FROM virtual_machine WHERE vm_id = ?", null, vmId);
-        Sql.with(dataSource).exec("DELETE FROM user_project_privilege WHERE project_id = ?", null, vm.projectId);
         Sql.with(dataSource).exec("DELETE FROM project WHERE project_id = ?", null, vm.projectId);
         Sql.with(dataSource).exec("DELETE FROM scheduled_job WHERE scheduled_job_type_id=1 AND vm_id = ? ", null, vmId);
     }

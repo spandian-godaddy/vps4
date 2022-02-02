@@ -1,6 +1,6 @@
 SELECT '_dc_', vu.shopper_id, COUNT(vm.vm_id) AS numOfVms
 FROM virtual_machine vm
-  JOIN user_project_privilege upp USING (project_id)
+  JOIN project prj USING (project_id)
   JOIN vps4_user vu USING (vps4_user_id)
 WHERE vm.canceled ='infinity'
  AND vm.valid_until = 'infinity'

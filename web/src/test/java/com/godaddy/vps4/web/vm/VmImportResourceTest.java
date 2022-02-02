@@ -1,26 +1,5 @@
 package com.godaddy.vps4.web.vm;
 
-import static com.godaddy.vps4.vm.VirtualMachineService.*;
-import static com.godaddy.vps4.web.vm.VmImportResource.*;
-import static org.junit.Assert.assertEquals;
-import static org.mockito.Matchers.anyLong;
-import static org.mockito.Matchers.anyObject;
-import static org.mockito.Matchers.anyString;
-import static org.mockito.Matchers.eq;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
-
-import java.time.Instant;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.UUID;
-
-import org.junit.Before;
-import org.junit.Test;
-import org.mockito.ArgumentCaptor;
-
 import com.godaddy.hfs.config.Config;
 import com.godaddy.vps4.credit.CreditService;
 import com.godaddy.vps4.credit.VirtualMachineCredit;
@@ -43,6 +22,27 @@ import com.godaddy.vps4.vm.VirtualMachine;
 import com.godaddy.vps4.vm.VirtualMachineService;
 import com.godaddy.vps4.vm.VmAction;
 import com.godaddy.vps4.web.security.GDUser;
+import org.junit.Before;
+import org.junit.Test;
+import org.mockito.ArgumentCaptor;
+
+import java.time.Instant;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.UUID;
+
+import static com.godaddy.vps4.vm.VirtualMachineService.ImportVirtualMachineParameters;
+import static com.godaddy.vps4.web.vm.VmImportResource.ImportVmIpAddress;
+import static com.godaddy.vps4.web.vm.VmImportResource.ImportVmRequest;
+import static org.junit.Assert.assertEquals;
+import static org.mockito.Matchers.anyLong;
+import static org.mockito.Matchers.anyObject;
+import static org.mockito.Matchers.anyString;
+import static org.mockito.Matchers.eq;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 public class VmImportResourceTest {
     VirtualMachineService virtualMachineService = mock(VirtualMachineService.class);
@@ -106,7 +106,7 @@ public class VmImportResourceTest {
         vps4User = new Vps4User(123, credit.getShopperId());
         when(vps4UserService.getOrCreateUserForShopper(user.getShopperId(), credit.getResellerId())).thenReturn(vps4User);
 
-        project = new Project(1, "testProject", "testSgid", Instant.now(), Instant.MAX);
+        project = new Project(1, "testProject", "testSgid", Instant.now(), Instant.MAX, 321);
         when(projectService.createProject(credit.getOrionGuid().toString(), vps4User.getId(), importVmRequest.sgid)).thenReturn(project);
 
         virtualMachine = new VirtualMachine();

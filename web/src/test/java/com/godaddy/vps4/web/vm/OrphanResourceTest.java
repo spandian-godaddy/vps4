@@ -1,9 +1,25 @@
 package com.godaddy.vps4.web.vm;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
+import com.godaddy.hfs.vm.Vm;
+import com.godaddy.vps4.credit.VirtualMachineCredit;
+import com.godaddy.vps4.network.IpAddress;
+import com.godaddy.vps4.project.Project;
+import com.godaddy.vps4.project.ProjectService;
+import com.godaddy.vps4.snapshot.Snapshot;
+import com.godaddy.vps4.util.MonitoringMeta;
+import com.godaddy.vps4.vm.DataCenterService;
+import com.godaddy.vps4.vm.Image;
+import com.godaddy.vps4.vm.ServerSpec;
+import com.godaddy.vps4.vm.ServerType;
+import com.godaddy.vps4.vm.VirtualMachine;
+import com.godaddy.vps4.web.Vps4Exception;
+import com.godaddy.vps4.web.action.Orphans;
+import com.godaddy.vps4.web.credit.CreditResource;
+import gdg.hfs.vhfs.network.NetworkServiceV2;
+import gdg.hfs.vhfs.nodeping.NodePingCheck;
+import gdg.hfs.vhfs.nodeping.NodePingService;
+import org.junit.Before;
+import org.junit.Test;
 
 import java.time.Instant;
 import java.util.ArrayList;
@@ -12,28 +28,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
-import com.godaddy.vps4.vm.DataCenterService;
-import org.junit.Before;
-import org.junit.Test;
-
-import com.godaddy.hfs.vm.Vm;
-import com.godaddy.vps4.credit.VirtualMachineCredit;
-import com.godaddy.vps4.network.IpAddress;
-import com.godaddy.vps4.project.Project;
-import com.godaddy.vps4.project.ProjectService;
-import com.godaddy.vps4.snapshot.Snapshot;
-import com.godaddy.vps4.util.MonitoringMeta;
-import com.godaddy.vps4.vm.Image;
-import com.godaddy.vps4.vm.ServerSpec;
-import com.godaddy.vps4.vm.ServerType;
-import com.godaddy.vps4.vm.VirtualMachine;
-import com.godaddy.vps4.web.Vps4Exception;
-import com.godaddy.vps4.web.action.Orphans;
-import com.godaddy.vps4.web.credit.CreditResource;
-
-import gdg.hfs.vhfs.network.NetworkServiceV2;
-import gdg.hfs.vhfs.nodeping.NodePingCheck;
-import gdg.hfs.vhfs.nodeping.NodePingService;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 public class OrphanResourceTest {
     private OrphanResource resource;
@@ -69,7 +67,7 @@ public class OrphanResourceTest {
         vm.spec = spec;
 
         projectService = mock(ProjectService.class);
-        project = new Project(1111, "test project", SGID, null, null);
+        project = new Project(1111, "test project", SGID, null, null, 321);
         when(projectService.getProject(1111)).thenReturn(project);
 
         vmResource = mock(VmResource.class);

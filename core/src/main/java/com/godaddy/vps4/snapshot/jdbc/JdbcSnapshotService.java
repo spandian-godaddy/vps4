@@ -1,21 +1,20 @@
 package com.godaddy.vps4.snapshot.jdbc;
 
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.sql.Timestamp;
-import java.util.List;
-import java.util.UUID;
-import java.util.stream.Stream;
-
-import javax.inject.Inject;
-import javax.sql.DataSource;
-
 import com.godaddy.hfs.jdbc.Sql;
 import com.godaddy.vps4.snapshot.Snapshot;
 import com.godaddy.vps4.snapshot.SnapshotService;
 import com.godaddy.vps4.snapshot.SnapshotStatus;
 import com.godaddy.vps4.snapshot.SnapshotType;
 import com.godaddy.vps4.util.TimestampUtils;
+
+import javax.inject.Inject;
+import javax.sql.DataSource;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Timestamp;
+import java.util.List;
+import java.util.UUID;
+import java.util.stream.Stream;
 
 public class JdbcSnapshotService implements SnapshotService {
     private static final long OPEN_SLOTS_PER_CREDIT = 1;
@@ -253,9 +252,8 @@ public class JdbcSnapshotService implements SnapshotService {
     @Override
     public List<Snapshot> getSnapshotsForUser(long vps4UserId) {
         return Sql.with(dataSource).exec(selectSnapshotQuery
-                        + "JOIN user_project_privilege up ON up.project_id = s.project_id "
-                        + "JOIN vps4_user u ON u.vps4_user_id = up.vps4_user_id "
-                        + "WHERE u.vps4_user_id = ?;",
+                        + "JOIN project prj ON prj.project_id = s.project_id "
+                        + "WHERE prj.vps4_user_id = ?;",
                 Sql.listOf(this::mapSnapshot), vps4UserId);
     }
 

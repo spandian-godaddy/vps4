@@ -51,8 +51,8 @@ create_sql_file()
         JOIN virtual_machine_spec f USING (spec_id)
         JOIN image i USING (image_id)
         JOIN control_panel c USING (control_panel_id)
-        JOIN user_project_privilege upp ON vm.project_id = upp.project_id
-        JOIN vps4_user vu ON upp.vps4_user_id = vu.vps4_user_id
+        JOIN project prj ON vm.project_id = prj.project_id
+        JOIN vps4_user vu ON prj.vps4_user_id = vu.vps4_user_id
         JOIN action_status USING (status_id)
         JOIN snapshot_type USING (snapshot_type_id)
         JOIN snapshot_status ON snapshot.status = snapshot_status.status_id

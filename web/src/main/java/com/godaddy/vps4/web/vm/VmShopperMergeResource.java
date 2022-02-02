@@ -1,25 +1,9 @@
 package com.godaddy.vps4.web.vm;
 
-import static com.godaddy.vps4.web.util.RequestValidation.getAndValidateUserAccountCredit;
-
-import java.util.UUID;
-
-import javax.inject.Inject;
-import javax.ws.rs.Consumes;
-import javax.ws.rs.POST;
-import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.Produces;
-import javax.ws.rs.core.MediaType;
-
-import org.json.simple.JSONObject;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import com.godaddy.vps4.credit.CreditService;
 import com.godaddy.vps4.credit.VirtualMachineCredit;
-import com.godaddy.vps4.project.UserProjectPrivilege;
-import com.godaddy.vps4.security.PrivilegeService;
+import com.godaddy.vps4.project.Project;
+import com.godaddy.vps4.project.ProjectService;
 import com.godaddy.vps4.security.Vps4User;
 import com.godaddy.vps4.security.Vps4UserService;
 import com.godaddy.vps4.vm.ActionService;
@@ -30,9 +14,22 @@ import com.godaddy.vps4.web.Vps4Api;
 import com.godaddy.vps4.web.Vps4Exception;
 import com.godaddy.vps4.web.security.GDUser;
 import com.godaddy.vps4.web.security.RequiresRole;
-
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
+import org.json.simple.JSONObject;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import javax.inject.Inject;
+import javax.ws.rs.Consumes;
+import javax.ws.rs.POST;
+import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
+import javax.ws.rs.Produces;
+import javax.ws.rs.core.MediaType;
+import java.util.UUID;
+
+import static com.godaddy.vps4.web.util.RequestValidation.getAndValidateUserAccountCredit;
 
 
 @Vps4Api
@@ -48,7 +45,7 @@ public class VmShopperMergeResource {
     private final GDUser user;
     private final Vps4UserService vps4UserService;
     private final CreditService creditService;
-    private final PrivilegeService privilegeService;
+    private final ProjectService projectService;
     private final ActionService actionService;
 
 
@@ -57,15 +54,15 @@ public class VmShopperMergeResource {
             GDUser user,
             Vps4UserService vps4UserService,
             CreditService creditService,
-            PrivilegeService privilegeService,
             VmResource vmResource,
+            ProjectService projectService,
             ActionService actionService
-                                 ) {
+    ) {
 
         this.user = user;
         this.vps4UserService = vps4UserService;
         this.creditService = creditService;
-        this.privilegeService = privilegeService;
+        this.projectService = projectService;
         this.vmResource = vmResource;
         this.actionService = actionService;
     }
@@ -84,28 +81,20 @@ public class VmShopperMergeResource {
     public VmAction mergeTwoShopperAccounts(@PathParam("vmId") UUID vmId, ShopperMergeRequest shopperMergeRequest) {
         logger.info("Attempting to merge shopperId {} with vmId {}", shopperMergeRequest.newShopperId, vmId);
         VirtualMachine vm = vmResource.getVm(vmId);
-        VirtualMachineCredit vmCredit = getAndValidateUserAccountCredit(
-                creditService, vm.orionGuid, shopperMergeRequest.newShopperId);
+        VirtualMachineCredit vmCredit = getAndValidateUserAccountCredit(creditService, vm.orionGuid, shopperMergeRequest.newShopperId);
 
-        Vps4User vps4NewUser =
-                vps4UserService.getOrCreateUserForShopper(shopperMergeRequest.newShopperId, vmCredit.getResellerId());
+        Vps4User vps4NewUser = vps4UserService.getOrCreateUserForShopper(shopperMergeRequest.newShopperId, vmCredit.getResellerId());
 
-        long projectId = vm.projectId;
+        Project currentProject = projectService.getProject(vm.projectId);
 
-        UserProjectPrivilege currentShopperProjectPrivilege = privilegeService.getActivePrivilege(projectId);
-
-        if (currentShopperProjectPrivilege == null) {
-            throw new Vps4Exception("NO_SHOPPER_PRIVILEGE", "shopper privilege not found");
+        if (currentProject == null) {
+            throw new Vps4Exception("NO_PROJECT", "project not found");
         }
 
-        if (currentShopperProjectPrivilege.vps4UserId != vps4NewUser.getId()) {
+        if (currentProject.getVps4UserId() != vps4NewUser.getId()) {
             JSONObject mergeShopperJson = new JSONObject();
-            long actionId = actionService.createAction(vmId, ActionType.MERGE_SHOPPER,
-                                                       mergeShopperJson.toJSONString(), user.getUsername());
-            long currentUserId = currentShopperProjectPrivilege.vps4UserId;
-            privilegeService.outdateVmPrivilegeForShopper(currentUserId, projectId);
-            privilegeService
-                    .addPrivilegeForUser(vps4NewUser.getId(), currentShopperProjectPrivilege.privilegeId, projectId);
+            long actionId = actionService.createAction(vmId, ActionType.MERGE_SHOPPER, mergeShopperJson.toJSONString(), user.getUsername());
+            projectService.updateProjectUser(currentProject.getProjectId(), vps4NewUser.getId());
 
             actionService.completeAction(actionId, mergeShopperJson.toJSONString(), "shopper merge completed");
             return new VmAction(actionService.getAction(actionId), true);

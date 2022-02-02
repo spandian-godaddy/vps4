@@ -1,22 +1,5 @@
 package com.godaddy.vps4.phase2.project.jdbc;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-
-import java.sql.Connection;
-import java.sql.SQLException;
-import java.sql.Statement;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
-import javax.sql.DataSource;
-
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
-
 import com.godaddy.vps4.jdbc.DatabaseModule;
 import com.godaddy.vps4.project.Project;
 import com.godaddy.vps4.project.ProjectService;
@@ -26,6 +9,21 @@ import com.godaddy.vps4.security.Vps4UserService;
 import com.godaddy.vps4.security.jdbc.JdbcVps4UserService;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
+
+import javax.sql.DataSource;
+import java.sql.Connection;
+import java.sql.SQLException;
+import java.sql.Statement;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 
 public class JdbcProjectServiceTest {
 
@@ -66,11 +64,10 @@ public class JdbcProjectServiceTest {
         }
         try (Connection conn = dataSource.getConnection()) {
             try (Statement statement = conn.createStatement()) {
+                statement.executeUpdate("DELETE FROM project where vhfs_sgid like 'unit-test%';");
                 for(Vps4User user: users.values()){
-                    statement.executeUpdate("DELETE FROM user_project_privilege where vps4_user_id = " + user.getId() + ";");
                     statement.executeUpdate("DELETE FROM vps4_user where vps4_user_id = " + user.getId() + ";");
                 }
-                statement.executeUpdate("DELETE FROM project where vhfs_sgid like 'unit-test%';");
             }
         }
     }
@@ -94,9 +91,9 @@ public class JdbcProjectServiceTest {
 
         String projectName = "testProject";
 
-        Project project = projectService.createProject(projectName, users.get("user1").getId(), "vps4-test-");
+        Project project = projectService.createProject(projectName, users.get("user1").getId(), "unit-test");
         assertTrue(project.getProjectId() > 0);
         assertEquals(projectName, project.getName());
-        assertEquals("vps4-test-" + project.getProjectId(), project.getVhfsSgid());
+        assertEquals("unit-test" + project.getProjectId(), project.getVhfsSgid());
     }
 }

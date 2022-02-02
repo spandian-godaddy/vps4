@@ -1,23 +1,15 @@
 package com.godaddy.vps4.phase2;
 
-import java.time.Instant;
-import java.util.List;
-import java.util.UUID;
-
-import javax.sql.DataSource;
-
-import com.godaddy.vps4.notifications.NotificationExtendedDetails;
-import com.godaddy.vps4.notifications.NotificationFilter;
-import com.godaddy.vps4.notifications.NotificationService;
-import com.godaddy.vps4.notifications.NotificationType;
-import com.godaddy.vps4.notifications.jdbc.JdbcNotificationService;
-import org.json.simple.JSONObject;
-
 import com.godaddy.hfs.jdbc.Sql;
 import com.godaddy.vps4.network.IpAddress;
 import com.godaddy.vps4.network.IpAddress.IpAddressType;
 import com.godaddy.vps4.network.NetworkService;
 import com.godaddy.vps4.network.jdbc.JdbcNetworkService;
+import com.godaddy.vps4.notifications.NotificationExtendedDetails;
+import com.godaddy.vps4.notifications.NotificationFilter;
+import com.godaddy.vps4.notifications.NotificationService;
+import com.godaddy.vps4.notifications.NotificationType;
+import com.godaddy.vps4.notifications.jdbc.JdbcNotificationService;
 import com.godaddy.vps4.snapshot.Snapshot;
 import com.godaddy.vps4.snapshot.SnapshotService;
 import com.godaddy.vps4.snapshot.SnapshotStatus;
@@ -31,6 +23,12 @@ import com.godaddy.vps4.vm.VirtualMachineService.ProvisionVirtualMachineParamete
 import com.godaddy.vps4.vm.VmUser;
 import com.godaddy.vps4.vm.jdbc.JdbcVirtualMachineService;
 import com.godaddy.vps4.vm.jdbc.JdbcVmActionService;
+import org.json.simple.JSONObject;
+
+import javax.sql.DataSource;
+import java.time.Instant;
+import java.util.List;
+import java.util.UUID;
 
 
 public class SqlTestData {
@@ -155,8 +153,6 @@ public class SqlTestData {
         Sql.with(dataSource).exec("DELETE FROM snapshot s USING virtual_machine v WHERE s.vm_id = v.vm_id AND " + test_vm_condition, null);
         Sql.with(dataSource).exec("DELETE FROM monitoring_pf m USING virtual_machine v WHERE m.vm_id = v.vm_id AND " + test_vm_condition, null);
         Sql.with(dataSource).exec("DELETE FROM virtual_machine v USING project p WHERE v.project_id = p.project_id AND " + test_sgid_condition, null);
-        Sql.with(dataSource).exec("DELETE FROM user_project_privilege uvp USING project p WHERE uvp.project_id = p.project_id AND " + test_sgid_condition, null);
-        Sql.with(dataSource).exec("DELETE FROM user_project_privilege uvp USING project p WHERE uvp.project_id = p.project_id AND " + test_sgid_condition, null);
         Sql.with(dataSource).exec("DELETE FROM notification_filter nf WHERE nf.notification_id = '" + notificationId + "'", null);
         Sql.with(dataSource).exec("DELETE FROM notification_extended_details ned WHERE ned.notification_id =  '" + notificationId + "'", null);
         Sql.with(dataSource).exec("DELETE FROM notification ntf WHERE ntf.notification_id =  '" + notificationId + "'", null);

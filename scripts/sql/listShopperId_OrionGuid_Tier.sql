@@ -1,6 +1,7 @@
 select '_dc_' as dc, vu.shopper_id, vm.orion_guid, vmspec.tier from virtual_machine vm
-  join user_project_privilege upp USING (project_id)
-  join vps4_user vu USING (vps4_user_id) join virtual_machine_spec vmspec USING (spec_id)
+  join project prj USING (project_id)
+  join vps4_user vu USING (vps4_user_id)
+  join virtual_machine_spec vmspec USING (spec_id)
 where vm.canceled ='infinity'
  and vm.valid_until = 'infinity'
  and length(vu.shopper_id) > 3

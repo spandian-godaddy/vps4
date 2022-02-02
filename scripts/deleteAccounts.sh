@@ -21,7 +21,6 @@ done < file
 #FROM virtual_machine vm
 #JOIN ip_address ON vm.vm_id = ip_address.vm_id
 #JOIN project ON vm.project_id = project.project_id
-#JOIN user_project_privilege ON project.project_id = user_project_privilege.project_id
-#JOIN vps4_user ON user_project_privilege.vps4_user_id = vps4_user.vps4_user_id
+#JOIN vps4_user ON project.vps4_user_id = vps4_user.vps4_user_id
 #WHERE vm.valid_until = 'infinity'
 #ORDER BY vm.valid_on DESC ;

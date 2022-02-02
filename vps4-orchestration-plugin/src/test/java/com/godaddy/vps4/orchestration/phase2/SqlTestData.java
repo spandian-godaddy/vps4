@@ -1,15 +1,5 @@
 package com.godaddy.vps4.orchestration.phase2;
 
-import java.util.List;
-import java.util.Random;
-import java.util.UUID;
-import java.util.stream.Collectors;
-import java.util.stream.IntStream;
-
-import javax.sql.DataSource;
-
-import org.json.simple.JSONObject;
-
 import com.godaddy.hfs.jdbc.Sql;
 import com.godaddy.vps4.network.IpAddress;
 import com.godaddy.vps4.network.NetworkService;
@@ -27,6 +17,14 @@ import com.godaddy.vps4.vm.VirtualMachineService;
 import com.godaddy.vps4.vm.VirtualMachineService.ProvisionVirtualMachineParameters;
 import com.godaddy.vps4.vm.VmUser;
 import com.godaddy.vps4.vm.VmUserService;
+import org.json.simple.JSONObject;
+
+import javax.sql.DataSource;
+import java.util.List;
+import java.util.Random;
+import java.util.UUID;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 
 public class SqlTestData {
@@ -151,8 +149,6 @@ public class SqlTestData {
         Sql.with(dataSource).exec(
                 "DELETE FROM virtual_machine v USING project p WHERE v.project_id = p.project_id AND " + test_sgid_condition,
                 null);
-        Sql.with(dataSource).exec(
-                "DELETE FROM user_project_privilege p WHERE " + test_privilege_condition, null);
         Sql.with(dataSource).exec("DELETE FROM project p WHERE " + test_sgid_condition, null);
         Sql.with(dataSource).exec("DELETE FROM vps4_user u WHERE " + test_user_condition, null);
     }

@@ -1,21 +1,5 @@
 package com.godaddy.vps4.vm.jdbc;
 
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.sql.Timestamp;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-
-import javax.inject.Inject;
-import javax.sql.DataSource;
-
-import org.apache.commons.lang3.StringUtils;
-
 import com.godaddy.hfs.jdbc.Sql;
 import com.godaddy.vps4.credit.CreditHistory;
 import com.godaddy.vps4.network.IpAddress;
@@ -30,6 +14,20 @@ import com.godaddy.vps4.vm.ServerType;
 import com.godaddy.vps4.vm.VirtualMachine;
 import com.godaddy.vps4.vm.VirtualMachineService;
 import com.godaddy.vps4.vm.VirtualMachineType;
+import org.apache.commons.lang3.StringUtils;
+
+import javax.inject.Inject;
+import javax.sql.DataSource;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Timestamp;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class JdbcVirtualMachineService implements VirtualMachineService {
 
@@ -272,12 +270,11 @@ public class JdbcVirtualMachineService implements VirtualMachineService {
             UUID orionGuid, Long hfsVmId) {
         List<Object> args = new ArrayList<>();
         StringBuilder queryAddition = new StringBuilder();
-        queryAddition.append("JOIN user_project_privilege upp on upp.project_id = prj.project_id ");
 
         if(vps4UserId != null){
-            queryAddition.append("JOIN vps4_user on vps4_user.vps4_user_id = upp.vps4_user_id ");
+            queryAddition.append("JOIN vps4_user on vps4_user.vps4_user_id = prj.vps4_user_id ");
         }
-        queryAddition.append("WHERE upp.valid_until = 'infinity'");
+        queryAddition.append("WHERE prj.valid_until = 'infinity'");
         if(vps4UserId != null) {
             queryAddition.append(" AND vps4_user.vps4_user_id = ? ");
             args.add(vps4UserId);
@@ -329,7 +326,7 @@ public class JdbcVirtualMachineService implements VirtualMachineService {
     @Override
     public long getUserIdByVmId(UUID vmId) {
         return Sql.with(dataSource).exec("SELECT vps4_user_id FROM virtual_machine v "
-                + "JOIN user_project_privilege upp ON v.project_id = upp.project_id "
+                + "JOIN project prj ON v.project_id = prj.project_id "
                 + "WHERE v.vm_id=?;", Sql.nextOrNull(rs -> rs.getLong("vps4_user_id")), vmId);
     }
 

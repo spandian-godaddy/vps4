@@ -1,20 +1,17 @@
 package com.godaddy.vps4.project.jdbc;
 
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.util.List;
-
-import javax.inject.Inject;
-import javax.sql.DataSource;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import com.godaddy.hfs.jdbc.Sql;
-
 import com.godaddy.vps4.project.Project;
 import com.godaddy.vps4.project.ProjectService;
 import com.godaddy.vps4.util.TimestampUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import javax.inject.Inject;
+import javax.sql.DataSource;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.util.List;
 
 public class JdbcProjectService implements ProjectService {
 
@@ -30,37 +27,22 @@ public class JdbcProjectService implements ProjectService {
     @Override
     public List<Project> getProjects(long userId, boolean active) {
 
-        if (active) {
-            return Sql.with(dataSource).exec(
-                    "SELECT "
-                    + "p.project_id, "
-                    + "p.project_name, "
-                    + "p.status_id, "
-                    + "p.vhfs_sgid, "
-                    + "p.valid_on, "
-                    + "p.valid_until "
-                    + "FROM project p "
-                    + "INNER JOIN user_project_privilege upp ON p.project_id = upp.project_id "
-                    + "WHERE upp.vps4_user_id = ? AND p.valid_until > now_utc()",
-                    Sql.listOf(this::mapProject),
-                    userId);
+        String whereClause = "WHERE p.vps4_user_id = ?";
+        if (active) whereClause += " AND p.valid_until > now_utc()";
 
-        }
-        else {
-            return Sql.with(dataSource).exec(
-                    "SELECT "
-                    + "p.project_id, "
-                    + "p.project_name, "
-                    + "p.status_id, "
-                    + "p.vhfs_sgid, "
-                    + "p.valid_on, "
-                    + "p.valid_until "
-                    + "FROM project p "
-                    + "INNER JOIN user_project_privilege upp ON p.project_id = upp.project_id "
-                    + "WHERE upp.vps4_user_id = ?",
-                    Sql.listOf(this::mapProject),
-                    userId);
-        }
+        return Sql.with(dataSource).exec(
+                "SELECT "
+                + "p.project_id, "
+                + "p.project_name, "
+                + "p.status_id, "
+                + "p.vhfs_sgid, "
+                + "p.valid_on, "
+                + "p.valid_until, "
+                + "p.vps4_user_id "
+                + "FROM project p "
+                + whereClause,
+                Sql.listOf(this::mapProject),
+                userId);
     }
 
     protected Project mapProject(ResultSet rs) throws SQLException {
@@ -68,7 +50,8 @@ public class JdbcProjectService implements ProjectService {
                 rs.getString("project_name"),
                 rs.getString("vhfs_sgid"),
                 rs.getTimestamp("valid_on", TimestampUtils.utcCalendar).toInstant(),
-                rs.getTimestamp("valid_until", TimestampUtils.utcCalendar).toInstant());
+                rs.getTimestamp("valid_until", TimestampUtils.utcCalendar).toInstant(),
+                rs.getLong("vps4_user_id"));
     }
 
     @Override
@@ -79,7 +62,8 @@ public class JdbcProjectService implements ProjectService {
                         "status_id," +
                         "vhfs_sgid," +
                         "valid_on," +
-                        "valid_until" +
+                        "valid_until, " +
+                        "vps4_user_id " +
                         " FROM project where project_id = ?",
                 Sql.nextOrNull(this::mapProject),
                 project_id);
@@ -105,6 +89,12 @@ public class JdbcProjectService implements ProjectService {
     }
 
     @Override
+    public void updateProjectUser(long projectId, long id) {
+        logger.info("updating project {} with new userid {}", projectId, id);
+        Sql.with(dataSource).exec("UPDATE project SET vps4_user_id = ? where project_id = ?", null, id, projectId);
+    }
+
+    @Override
     public Project createProject(String name, long userId, String sgidPrefix) {
         logger.info("creating project: '{}' for user {}", name, userId);
         long newProjectId = Sql.with(dataSource).exec("SELECT * FROM create_project(?, ?, ?)",
@@ -117,9 +107,8 @@ public class JdbcProjectService implements ProjectService {
     @Override
     public Project createProjectAndPrivilegeWithSgid(String name, long userId, String sgid) {
         logger.info("creating project: '{}' for user {} with sgid {}", name, userId, sgid);
-        long newProjectId = Sql.with(dataSource).exec("INSERT INTO project (project_name, vhfs_sgid) VALUES (?, ?) RETURNING project_id",
-                                                      Sql.nextOrNull(rs -> rs.getLong(1)), name, sgid);
-        Sql.with(dataSource).exec("INSERT INTO user_project_privilege (vps4_user_id, project_id, privilege_id) VALUES (?, ?, 1)", null, userId, newProjectId);
+        long newProjectId = Sql.with(dataSource).exec("INSERT INTO project (project_name, vhfs_sgid, vps4_user_id) VALUES (?, ?, ?) " +
+                        "RETURNING project_id", Sql.nextOrNull(rs -> rs.getLong(1)), name, sgid, userId);
         return getProject(newProjectId);
     }
 }

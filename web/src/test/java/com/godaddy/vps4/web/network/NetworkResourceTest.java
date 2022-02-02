@@ -1,26 +1,5 @@
 package com.godaddy.vps4.web.network;
 
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyString;
-import static org.mockito.Matchers.eq;
-import static org.mockito.Mockito.anyLong;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
-
-import java.time.Instant;
-import java.time.temporal.ChronoUnit;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.UUID;
-
-import javax.ws.rs.NotFoundException;
-
-import org.json.simple.JSONObject;
-import org.junit.Before;
-import org.junit.Test;
-
 import com.godaddy.hfs.config.Config;
 import com.godaddy.vps4.network.IpAddress;
 import com.godaddy.vps4.network.IpAddress.IpAddressType;
@@ -30,7 +9,6 @@ import com.godaddy.vps4.project.ProjectService;
 import com.godaddy.vps4.security.GDUserMock;
 import com.godaddy.vps4.vm.Action;
 import com.godaddy.vps4.vm.ActionService;
-import com.godaddy.vps4.vm.ActionStatus;
 import com.godaddy.vps4.vm.ActionType;
 import com.godaddy.vps4.vm.DataCenter;
 import com.godaddy.vps4.vm.ServerSpec;
@@ -39,12 +17,29 @@ import com.godaddy.vps4.vm.VirtualMachine;
 import com.godaddy.vps4.web.Vps4Exception;
 import com.godaddy.vps4.web.security.GDUser;
 import com.godaddy.vps4.web.vm.VmResource;
-
 import gdg.hfs.orchestration.CommandGroupSpec;
 import gdg.hfs.orchestration.CommandService;
 import gdg.hfs.orchestration.CommandState;
-
 import junit.framework.Assert;
+import org.json.simple.JSONObject;
+import org.junit.Before;
+import org.junit.Test;
+
+import javax.ws.rs.NotFoundException;
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.UUID;
+
+import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.anyString;
+import static org.mockito.Matchers.eq;
+import static org.mockito.Mockito.anyLong;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 public class NetworkResourceTest {
 
@@ -90,7 +85,7 @@ public class NetworkResourceTest {
                                 UUID.randomUUID(),
                                 dataCenter);
 
-        Project project = new Project(123, "unitTestProject", "vps4-unittest-123", Instant.now(), null);
+        Project project = new Project(123, "unitTestProject", "vps4-unittest-123", Instant.now(), null, 321);
         when(projectService.getProject(vm.projectId)).thenReturn(project);
 
         CommandState commandState = new CommandState();
