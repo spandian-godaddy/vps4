@@ -322,14 +322,24 @@ public class Vps4ProvisionVmTest {
     }
 
     @Test
-    public void callsSetPleskOutgoingEmailIpForPleskServers() {
+    public void callsSetPleskOutgoingEmailIpForPleskLinuxServers() {
         this.image.controlPanel = Image.ControlPanel.PLESK;
+        this.image.operatingSystem = Image.OperatingSystem.LINUX;
         command.executeWithAction(context, this.request);
         verify(context, times(1))
                 .execute(eq(SetPleskOutgoingEmailIp.class), setPleskOutgoingEmailIpCaptor.capture());
         SetPleskOutgoingEmailIp.SetPleskOutgoingEmailIpRequest req = setPleskOutgoingEmailIpCaptor.getValue();
         assertEquals(primaryIp.address, req.ipAddress);
         assertEquals(hfsVmId, req.hfsVmId);
+    }
+
+    @Test
+    public void doesNotCallSetPleskOutgoingEmailIpForPleskWindowsServers() {
+        this.image.controlPanel = Image.ControlPanel.PLESK;
+        this.image.operatingSystem = Image.OperatingSystem.WINDOWS;
+        command.executeWithAction(context, this.request);
+        verify(context, times(0))
+                .execute(eq(SetPleskOutgoingEmailIp.class), setPleskOutgoingEmailIpCaptor.capture());
     }
 
     @Test

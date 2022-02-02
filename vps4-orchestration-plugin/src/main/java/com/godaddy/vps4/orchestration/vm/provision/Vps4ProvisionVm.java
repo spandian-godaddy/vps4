@@ -246,12 +246,12 @@ public class Vps4ProvisionVm extends ActionCommand<ProvisionRequest, Vps4Provisi
             // configure Plesk on the vm
             ConfigurePleskRequest pleskRequest = createConfigurePleskRequest(hfsVmId);
             context.execute(ConfigurePlesk.class, pleskRequest);
-
-            //set Plesk Email Ip
-            SetPleskOutgoingEmailIpRequest pleskEmailIpRequest = createPleskSetOutgoingEmailIpRequest(hfsVmId, primaryIpAddress);
-
-            context.execute(SetPleskOutgoingEmailIp.class, pleskEmailIpRequest);
-
+            
+            //set Plesk Email Ip. Only for Linux Plesk
+            if (request.vmInfo.image.operatingSystem == Image.OperatingSystem.LINUX) {
+                SetPleskOutgoingEmailIpRequest pleskEmailIpRequest = createPleskSetOutgoingEmailIpRequest(hfsVmId, primaryIpAddress);
+                context.execute(SetPleskOutgoingEmailIp.class, pleskEmailIpRequest);
+            }
         }
     }
 
