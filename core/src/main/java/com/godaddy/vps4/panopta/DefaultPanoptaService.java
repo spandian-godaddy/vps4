@@ -37,7 +37,7 @@ public class DefaultPanoptaService implements PanoptaService {
     private static final int TIMEOUT_MINUTES = 1;
     private static final int NETWORK_METRIC_FREQUENCY_MANAGED = 60;
     private static final int OUTAGE_CONFIRMATION_DELAY_MANAGED = 900;
-    private static final int NETWORK_METRIC_FREQUENCY_SELF_MANAGED = 30;
+    private static final int NETWORK_METRIC_FREQUENCY_SELF_MANAGED = 300;
     private static final int OUTAGE_CONFIRMATION_DELAY_SELF_MANAGED = 300;
     private static final int HTTPS_PORT = 443;
     private static final int HTTP_PORT = 80;
