@@ -70,7 +70,6 @@ public class VirtualMachineCredit {
         return monitoring == MONITORING_ENABLED;
     }
 
-    @JsonIgnore
     public Instant getPurchasedAt() {
         return purchasedAt;
     }
@@ -163,6 +162,8 @@ public class VirtualMachineCredit {
     public boolean isVmSuspended() {
         return suspended;
     }
+
+    public UUID getCustomerId() { return customerId; }
 
     public static class Builder {
         private Map<String, String> planFeatures;
