@@ -1,5 +1,8 @@
 package com.godaddy.vps4.web.monitoring;
 
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.io.PrintWriter;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.ZoneOffset;
@@ -20,15 +23,19 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
 
-import com.godaddy.vps4.panopta.PanoptaMetricId;
+import org.apache.commons.csv.CSVFormat;
+import org.apache.commons.csv.CSVPrinter;
+import org.apache.commons.io.output.ByteArrayOutputStream;
 import org.joda.time.DateTime;
 
 import com.godaddy.vps4.panopta.PanoptaAvailability;
 import com.godaddy.vps4.panopta.PanoptaDataService;
 import com.godaddy.vps4.panopta.PanoptaDetail;
 import com.godaddy.vps4.panopta.PanoptaGraph;
+import com.godaddy.vps4.panopta.PanoptaMetricId;
 import com.godaddy.vps4.panopta.PanoptaService;
 import com.godaddy.vps4.panopta.PanoptaServiceException;
 import com.godaddy.vps4.util.MonitoringMeta;
@@ -201,6 +208,60 @@ public class VmMonitoringResource {
         } catch (PanoptaServiceException e) {
             throw new Vps4Exception(e.getId(), e.getMessage(), e);
         }
+    }
+
+    @GET
+    @Produces("text/csv")
+    @Path("/{vmId}/monitoringGraphsCsv")
+    public Response getMonitoringGraphsCsv(@PathParam("vmId") UUID vmId,
+            @ApiParam(value = "('hour', 'day', 'week', 'month', or 'year')", defaultValue = "hour", required = true)
+            @QueryParam("timescale") String timescale,
+            @QueryParam("type") Category category) {
+        List<PanoptaGraph> graphs = getMonitoringGraphs(vmId, timescale, category);
+        String[] headers = getCsvHeader(graphs);
+        List<List<String>> csvBody = getCsvBody(graphs);
+        ByteArrayInputStream response;
+        try (
+                ByteArrayOutputStream out = new ByteArrayOutputStream();
+                CSVPrinter csvPrinter = new CSVPrinter(new PrintWriter(out),
+                                                       CSVFormat.Builder.create().setHeader(headers).build())
+        ) {
+            for (List<String> record : csvBody) {
+                csvPrinter.printRecord(record);
+            }
+            csvPrinter.flush();
+            response = new ByteArrayInputStream(out.toByteArray());
+        } catch (IOException e) {
+            throw new Vps4Exception("CSV_FAILED", "Failed to generate the CSV file");
+        }
+        return Response.ok(response)
+                       .header("Content-Disposition", "attachment; filename=\"data.csv\"")
+                       .build();
+    }
+
+    private String[] getCsvHeader(List<PanoptaGraph> graphs) {
+        List<String> header = graphs.stream()
+                                    .map(g -> g.type.toString())
+                                    .collect(Collectors.toList());
+        header.add(0, "Timestamp");
+        return header.toArray(new String[0]);
+    }
+
+    private List<List<String>> getCsvBody(List<PanoptaGraph> graphs) {
+        List<List<String>> body = new ArrayList<>();
+        List<Instant> timestamps = graphs.get(0).timestamps;
+        List<List<Double>> allValues = graphs.stream()
+                                             .map(g -> g.values)
+                                             .collect(Collectors.toList());
+        for (int i = 0; i < timestamps.size(); i++) {
+            List<String> record = new ArrayList<>();
+            record.add(timestamps.get(i).toString());
+            for (List<Double> values : allValues) {
+                record.add((values.get(i) == null ? null : values.get(i).toString()));
+            }
+            body.add(record);
+        }
+        return body;
     }
 
     @GET
