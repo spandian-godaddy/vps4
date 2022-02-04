@@ -165,7 +165,11 @@ public class RunSomeTests {
     }
 
     private static Set<String> parseCliImages(CommandLine cmd, Vps4ApiClient vps4ApiClient) {
-        Set<String> images = new HashSet<>(Arrays.asList(cmd.getOptionValue("images").split(",")));
+        Set<String> images = new HashSet<>();
+        String imagesParam = cmd.getOptionValue("images");
+        if (imagesParam.length() > 0) {
+            Collections.addAll(images, imagesParam.split(","));
+        }
         if (cmd.hasOption("all-oh-images")) {
             JSONArray ohImages = vps4ApiClient.getImages("OPTIMIZED_HOSTING");
             for (Object ohImage : ohImages) {

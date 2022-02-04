@@ -17,7 +17,7 @@ pipeline {
                 load("/home/jenkins/vps4_latest_version.properties")
                 echo "vps4 version: ${VPS4_VERSION}"
 
-                timeout(time:120, unit:'MINUTES') {
+                timeout(time:180, unit:'MINUTES') {
                     script {
                         def TEST_STATUS = sh (
                                 script: 'set -o pipefail; '
@@ -53,7 +53,7 @@ pipeline {
                 def FAILURE_LOGS = sh (
                         script: "cat daily_phase3_${BUILD_NUMBER}.log | "
                                 + "awk '/<<<</{flag=1;next}/>>>>/{flag=0}flag' | "
-                                + "grep -E 'Test Group|FAIL'",
+                                + "grep -E 'combined result|FAIL'",
                         returnStdout: true
                 ).trim()
                 slackSend(
