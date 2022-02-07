@@ -124,9 +124,17 @@ public class VmDetailsResource {
 
         List<IpAddress> additionalIps = networkService.getVmSecondaryAddress(virtualMachine.hfsVmId);
 
-        return new VirtualMachineWithDetails(virtualMachine, new VirtualMachineDetails(vm), credit.getDataCenter(),
-                credit.getShopperId(), automaticSnapshotSchedule, panoptaDetails, scheduledZombieCleanupJobs,
-                hypervisorHostname, additionalIps, imported);
+        return new VirtualMachineWithDetails(virtualMachine,
+                new VirtualMachineDetails(vm),
+                credit.getDataCenter(),
+                credit.getShopperId(),
+                automaticSnapshotSchedule,
+                panoptaDetails,
+                scheduledZombieCleanupJobs,
+                hypervisorHostname,
+                additionalIps,
+                imported,
+                credit.getCustomerId());
     }
 
     private boolean isImported(UUID vmId) {

@@ -20,6 +20,7 @@ import java.sql.Statement;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
@@ -46,8 +47,8 @@ public class JdbcProjectServiceTest {
 
         try (Connection conn = dataSource.getConnection()) {
             try (Statement statement = conn.createStatement()) {
-                users.put("user1", vps4UserService.getOrCreateUserForShopper("testuser1", "1"));
-                users.put("user2", vps4UserService.getOrCreateUserForShopper("testuser2", "1"));
+                users.put("user1", vps4UserService.getOrCreateUserForShopper("testuser1", "1", UUID.randomUUID()));
+                users.put("user2", vps4UserService.getOrCreateUserForShopper("testuser2", "1", UUID.randomUUID()));
                 projects.put("project4", ps.createProject("project4", users.get("user1").getId(), "unit-test"));
                 projects.put("project3", ps.createProject("project3", users.get("user1").getId(), "unit-test"));
                 projects.put("project2", ps.createProject("project2", users.get("user2").getId(), "unit-test"));

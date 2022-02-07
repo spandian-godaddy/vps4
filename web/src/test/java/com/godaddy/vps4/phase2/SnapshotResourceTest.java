@@ -1,20 +1,5 @@
 package com.godaddy.vps4.phase2;
 
-import static org.mockito.Mockito.mock;
-
-import java.util.Arrays;
-import java.util.List;
-import java.util.UUID;
-
-import javax.inject.Inject;
-import javax.sql.DataSource;
-import javax.ws.rs.NotFoundException;
-
-import org.junit.After;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
-
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.godaddy.vps4.jdbc.DatabaseModule;
@@ -45,6 +30,19 @@ import com.google.inject.AbstractModule;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
 import com.google.inject.Provides;
+import org.junit.After;
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.Test;
+
+import javax.inject.Inject;
+import javax.sql.DataSource;
+import javax.ws.rs.NotFoundException;
+import java.util.Arrays;
+import java.util.List;
+import java.util.UUID;
+
+import static org.mockito.Mockito.mock;
 
 public class SnapshotResourceTest {
     @Inject Vps4UserService userService;
@@ -92,7 +90,7 @@ public class SnapshotResourceTest {
     }
 
     private void createTestVm() {
-        Vps4User vps4User = userService.getOrCreateUserForShopper(GDUserMock.DEFAULT_SHOPPER, "1");
+        Vps4User vps4User = userService.getOrCreateUserForShopper(GDUserMock.DEFAULT_SHOPPER, "1", UUID.randomUUID());
         testVm = SqlTestData.insertTestVm(UUID.randomUUID(), vps4User.getId(), dataSource);
     }
 

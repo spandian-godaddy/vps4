@@ -1,18 +1,7 @@
 package com.godaddy.vps4.phase2;
 
-import java.util.List;
-import java.util.UUID;
-
-import javax.inject.Inject;
-import javax.sql.DataSource;
-
-import com.godaddy.vps4.scheduler.api.web.SchedulerWebService;
-import org.junit.After;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
-
 import com.godaddy.vps4.jdbc.DatabaseModule;
+import com.godaddy.vps4.scheduler.api.web.SchedulerWebService;
 import com.godaddy.vps4.security.GDUserMock;
 import com.godaddy.vps4.security.SecurityModule;
 import com.godaddy.vps4.security.Vps4User;
@@ -31,6 +20,15 @@ import com.google.inject.AbstractModule;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
 import com.google.inject.Provides;
+import org.junit.After;
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.Test;
+
+import javax.inject.Inject;
+import javax.sql.DataSource;
+import java.util.List;
+import java.util.UUID;
 
 import static org.mockito.Mockito.mock;
 
@@ -78,7 +76,7 @@ public class VmSnapshotResourceTest {
     }
 
     private Snapshot createTestSnapshot() {
-        Vps4User vps4User = userService.getOrCreateUserForShopper(GDUserMock.DEFAULT_SHOPPER, "1");
+        Vps4User vps4User = userService.getOrCreateUserForShopper(GDUserMock.DEFAULT_SHOPPER, "1", UUID.randomUUID());
         testVm = SqlTestData.insertTestVm(UUID.randomUUID(), vps4User.getId(), dataSource);
         return SqlTestData.insertSnapshot(snapshotService, testVm.vmId, testVm.projectId, SnapshotType.ON_DEMAND);
     }

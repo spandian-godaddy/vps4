@@ -1,26 +1,8 @@
 package com.godaddy.vps4.phase2.vm;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-
-import java.time.Instant;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
-import java.util.stream.Collectors;
-
-import javax.sql.DataSource;
-
-import com.godaddy.vps4.network.IpAddress;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
-
+import com.godaddy.vps4.credit.CreditHistory;
 import com.godaddy.vps4.jdbc.DatabaseModule;
+import com.godaddy.vps4.network.IpAddress;
 import com.godaddy.vps4.network.NetworkService;
 import com.godaddy.vps4.network.jdbc.JdbcNetworkService;
 import com.godaddy.vps4.phase2.SqlTestData;
@@ -41,11 +23,26 @@ import com.godaddy.vps4.vm.VirtualMachineService.ProvisionVirtualMachineParamete
 import com.godaddy.vps4.vm.VirtualMachineType;
 import com.godaddy.vps4.vm.jdbc.JdbcImageService;
 import com.godaddy.vps4.vm.jdbc.JdbcVirtualMachineService;
-import com.godaddy.vps4.credit.CreditHistory;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
-
 import junit.framework.Assert;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
+
+import javax.sql.DataSource;
+import java.time.Instant;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
+import java.util.stream.Collectors;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 
 public class JdbcVirtualMachineServiceTest {
 
@@ -60,8 +57,8 @@ public class JdbcVirtualMachineServiceTest {
     List<UUID> vmCredits;
     String os = "linux";
     String controlPanel = "cpanel";
-    Vps4User vps4User = new Vps4User(1, "TestUser");
-    Vps4User vps4User2 = new Vps4User(2, "TestUser2");
+    Vps4User vps4User = new Vps4User(1, "TestUser", UUID.randomUUID());
+    Vps4User vps4User2 = new Vps4User(2, "TestUser2", UUID.randomUUID());
     int tier = 10;
     int managedLevel = 0;
     int monitoring = 0;

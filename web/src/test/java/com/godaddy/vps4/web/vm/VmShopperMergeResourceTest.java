@@ -32,6 +32,9 @@ import java.util.UUID;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
+import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.eq;
+import static org.mockito.Matchers.isA;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -85,7 +88,7 @@ public class VmShopperMergeResourceTest {
     public void setupTest() {
         user = GDUserMock.createShopper();
 
-        newVps4User = new Vps4User(1, user.getShopperId());
+        newVps4User = new Vps4User(1, user.getShopperId(), UUID.randomUUID());
         testProject = new Project(321L, "testProject", "testProjectSgid", null, null, 123L);
         testUpdatedProject = new Project(321L, "testProject", "testProjectSgid", null, null, newVps4User.getId());
         shopperCredit = new VirtualMachineCredit.Builder(mock(DataCenterService.class))
@@ -93,12 +96,14 @@ public class VmShopperMergeResourceTest {
                 .withAccountStatus(AccountStatus.ACTIVE)
                 .withShopperID(GDUserMock.DEFAULT_SHOPPER)
                 .withResellerID(resellerId)
+                .withCustomerID(UUID.randomUUID().toString())
                 .build();
         notShopperCredit = new VirtualMachineCredit.Builder(mock(DataCenterService.class))
                 .withAccountGuid(orionGuid.toString())
                 .withAccountStatus(AccountStatus.ACTIVE)
                 .withShopperID("shopper2")
                 .withResellerID(resellerId)
+                .withCustomerID(UUID.randomUUID().toString())
                 .build();
         vm.orionGuid = orionGuid;
         vm.projectId = testProject.getProjectId();
@@ -108,7 +113,7 @@ public class VmShopperMergeResourceTest {
         when(vmResource.getVm(vmId)).thenReturn(vm);
         when(creditService.getVirtualMachineCredit(orionGuid)).thenReturn(shopperCredit);
         when(virtualMachineService.getVirtualMachine(vmId)).thenReturn(vm);
-        when(userService.getOrCreateUserForShopper(GDUserMock.DEFAULT_SHOPPER, resellerId)).thenReturn(newVps4User);
+        when(userService.getOrCreateUserForShopper(eq(GDUserMock.DEFAULT_SHOPPER), eq(resellerId), any(UUID.class))).thenReturn(newVps4User);
         when(actionService.createAction(vmId, ActionType.MERGE_SHOPPER,
                                         mergeShopperJson.toJSONString(), user.getUsername())).thenReturn(actionId);
         when(actionService.getAction(actionId)).thenReturn(mergeAction);
@@ -152,12 +157,12 @@ public class VmShopperMergeResourceTest {
     public void getOrCreateUserIfDoesNotExist() {
         testShopperMergeResource.mergeTwoShopperAccounts(vmId, createVmShopperMergeRequest(user.getShopperId()));
 
-        verify(userService, times(1)).getOrCreateUserForShopper(user.getShopperId(), resellerId);
+        verify(userService, times(1)).getOrCreateUserForShopper(user.getShopperId(), resellerId, shopperCredit.getCustomerId());
     }
 
     @Test(expected = IllegalStateException.class)
     public void ifUserCreationFails() {
-        when(userService.getOrCreateUserForShopper(GDUserMock.DEFAULT_SHOPPER, resellerId)).thenThrow(
+        when(userService.getOrCreateUserForShopper(eq(GDUserMock.DEFAULT_SHOPPER), eq(resellerId), any())).thenThrow(
                 new IllegalStateException("Unable to lazily create user for shopper " + GDUserMock.DEFAULT_SHOPPER));
         testShopperMergeResource.mergeTwoShopperAccounts(vmId, createVmShopperMergeRequest(user.getShopperId()));
     }

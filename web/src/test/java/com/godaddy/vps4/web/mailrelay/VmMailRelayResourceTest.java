@@ -1,12 +1,5 @@
 package com.godaddy.vps4.web.mailrelay;
 
-import static org.mockito.Mockito.any;
-import static org.mockito.Mockito.eq;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
-
 import com.godaddy.vps4.credit.CreditService;
 import com.godaddy.vps4.credit.VirtualMachineCredit;
 import com.godaddy.vps4.jdbc.DatabaseModule;
@@ -26,8 +19,8 @@ import com.godaddy.vps4.vm.DataCenterService;
 import com.godaddy.vps4.vm.VirtualMachine;
 import com.godaddy.vps4.vm.VirtualMachineService;
 import com.godaddy.vps4.web.Vps4Exception;
-import com.godaddy.vps4.web.security.GDUser;
 import com.godaddy.vps4.web.mailrelay.VmMailRelayResource.MailRelayQuotaPatch;
+import com.godaddy.vps4.web.security.GDUser;
 import com.godaddy.vps4.web.vm.VmResource;
 import com.google.inject.AbstractModule;
 import com.google.inject.Guice;
@@ -49,6 +42,13 @@ import org.mockito.MockitoAnnotations;
 import javax.sql.DataSource;
 import java.util.Arrays;
 import java.util.UUID;
+
+import static org.mockito.Mockito.any;
+import static org.mockito.Mockito.eq;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 
 public class VmMailRelayResourceTest {
@@ -132,7 +132,7 @@ public class VmMailRelayResourceTest {
     }
 
     private void createTestVM(String shopperId) {
-        Vps4User vps4User = userService.getOrCreateUserForShopper(shopperId, "1");
+        Vps4User vps4User = userService.getOrCreateUserForShopper(shopperId, "1", UUID.randomUUID());
         testVm = SqlTestData.insertTestVm(UUID.randomUUID(), vps4User.getId(), dataSource);
     }
 

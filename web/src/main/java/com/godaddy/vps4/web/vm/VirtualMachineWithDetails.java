@@ -1,6 +1,7 @@
 package com.godaddy.vps4.web.vm;
 
 import java.util.List;
+import java.util.UUID;
 
 import com.godaddy.vps4.network.IpAddress;
 import com.godaddy.vps4.panopta.jdbc.PanoptaServerDetails;
@@ -12,6 +13,7 @@ public class VirtualMachineWithDetails extends VirtualMachine {
     public VirtualMachineDetails virtualMachineDetails;
     public DataCenter dataCenter;
     public String shopperId;
+    public UUID customerId;
     public AutomaticSnapshotSchedule autoSnapshots;
     public PanoptaServerDetails monitoringAgent;
     public List<ScheduledZombieCleanupJob> scheduledZombieCleanupJobs;
@@ -19,10 +21,17 @@ public class VirtualMachineWithDetails extends VirtualMachine {
     public List<IpAddress> additionalIps;
     public boolean imported;
 
-    public VirtualMachineWithDetails(VirtualMachine virtualMachine, VirtualMachineDetails virtualMachineDetails,
-            DataCenter dataCenter, String shopperId, AutomaticSnapshotSchedule autoSnapshots,
-            PanoptaServerDetails panoptaDetails, List<ScheduledZombieCleanupJob> scheduledZombieCleanupJobs,
-            String hypervisorHostname, List<IpAddress> additionalIps, boolean imported) {
+    public VirtualMachineWithDetails(VirtualMachine virtualMachine,
+                                     VirtualMachineDetails virtualMachineDetails,
+                                     DataCenter dataCenter,
+                                     String shopperId,
+                                     AutomaticSnapshotSchedule autoSnapshots,
+                                     PanoptaServerDetails panoptaDetails,
+                                     List<ScheduledZombieCleanupJob> scheduledZombieCleanupJobs,
+                                     String hypervisorHostname,
+                                     List<IpAddress> additionalIps,
+                                     boolean imported,
+                                     UUID customerId) {
         super(virtualMachine);
         this.virtualMachineDetails = virtualMachineDetails;
         this.dataCenter = dataCenter;
@@ -33,5 +42,6 @@ public class VirtualMachineWithDetails extends VirtualMachine {
         this.hypervisorHostname = hypervisorHostname;
         this.additionalIps = additionalIps;
         this.imported = imported;
+        this.customerId = customerId;
     }
 }

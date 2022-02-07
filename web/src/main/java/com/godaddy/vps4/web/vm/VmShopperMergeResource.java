@@ -83,7 +83,8 @@ public class VmShopperMergeResource {
         VirtualMachine vm = vmResource.getVm(vmId);
         VirtualMachineCredit vmCredit = getAndValidateUserAccountCredit(creditService, vm.orionGuid, shopperMergeRequest.newShopperId);
 
-        Vps4User vps4NewUser = vps4UserService.getOrCreateUserForShopper(shopperMergeRequest.newShopperId, vmCredit.getResellerId());
+        Vps4User vps4NewUser = vps4UserService.getOrCreateUserForShopper(shopperMergeRequest.newShopperId, vmCredit.getResellerId(),
+                vmCredit.getCustomerId());
 
         Project currentProject = projectService.getProject(vm.projectId);
 

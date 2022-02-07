@@ -1,19 +1,5 @@
 package com.godaddy.vps4.web.vm;
 
-import static com.godaddy.vps4.web.util.RequestValidation.getAndValidateUserAccountCredit;
-
-import java.time.Instant;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.UUID;
-
-import javax.inject.Inject;
-import javax.ws.rs.Consumes;
-import javax.ws.rs.POST;
-import javax.ws.rs.Path;
-import javax.ws.rs.Produces;
-import javax.ws.rs.core.MediaType;
-
 import com.godaddy.hfs.config.Config;
 import com.godaddy.vps4.credit.CreditService;
 import com.godaddy.vps4.credit.VirtualMachineCredit;
@@ -25,7 +11,6 @@ import com.godaddy.vps4.security.Vps4User;
 import com.godaddy.vps4.security.Vps4UserService;
 import com.godaddy.vps4.vm.ActionService;
 import com.godaddy.vps4.vm.ActionType;
-import com.godaddy.vps4.vm.DataCenter;
 import com.godaddy.vps4.vm.ImageService;
 import com.godaddy.vps4.vm.ServerSpec;
 import com.godaddy.vps4.vm.ServerType;
@@ -36,8 +21,20 @@ import com.godaddy.vps4.vm.VmAction;
 import com.godaddy.vps4.web.Vps4Api;
 import com.godaddy.vps4.web.security.GDUser.Role;
 import com.godaddy.vps4.web.security.RequiresRole;
-
 import io.swagger.annotations.Api;
+
+import javax.inject.Inject;
+import javax.ws.rs.Consumes;
+import javax.ws.rs.POST;
+import javax.ws.rs.Path;
+import javax.ws.rs.Produces;
+import javax.ws.rs.core.MediaType;
+import java.time.Instant;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.UUID;
+
+import static com.godaddy.vps4.web.util.RequestValidation.getAndValidateUserAccountCredit;
 
 @Vps4Api
 @Api(tags = { "vms" })
@@ -111,7 +108,8 @@ public class VmImportResource {
 
         long imageId = getOrInsertImage(importVmRequest);
 
-        Vps4User vps4User = vps4UserService.getOrCreateUserForShopper(importVmRequest.shopperId, virtualMachineCredit.getResellerId());
+        Vps4User vps4User = vps4UserService.getOrCreateUserForShopper(importVmRequest.shopperId, virtualMachineCredit.getResellerId(),
+                virtualMachineCredit.getCustomerId());
         Project project = projectService.createProject(importVmRequest.entitlementId.toString(), vps4User.getId(), importVmRequest.sgid);
 
         ImportVirtualMachineParameters parameters = new ImportVirtualMachineParameters(importVmRequest.hfsVmId,

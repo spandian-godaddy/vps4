@@ -1,34 +1,5 @@
 package com.godaddy.vps4.phase2;
 
-import static org.mockito.Matchers.any;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
-
-import java.lang.reflect.Method;
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
-import java.util.stream.Collectors;
-
-import javax.sql.DataSource;
-import javax.ws.rs.NotFoundException;
-import javax.ws.rs.core.UriInfo;
-
-import org.json.simple.JSONObject;
-import org.junit.After;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
-import org.mockito.ArgumentCaptor;
-import org.mockito.Captor;
-import org.mockito.MockitoAnnotations;
-
 import com.godaddy.vps4.jdbc.DatabaseModule;
 import com.godaddy.vps4.security.GDUserMock;
 import com.godaddy.vps4.security.SecurityModule;
@@ -54,11 +25,37 @@ import com.google.inject.Inject;
 import com.google.inject.Injector;
 import com.google.inject.Provides;
 import com.google.inject.multibindings.MapBinder;
-
 import gdg.hfs.orchestration.CommandGroupSpec;
 import gdg.hfs.orchestration.CommandService;
 import gdg.hfs.orchestration.CommandSpec;
 import gdg.hfs.orchestration.CommandState;
+import org.json.simple.JSONObject;
+import org.junit.After;
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.Test;
+import org.mockito.ArgumentCaptor;
+import org.mockito.Captor;
+import org.mockito.MockitoAnnotations;
+
+import javax.sql.DataSource;
+import javax.ws.rs.NotFoundException;
+import javax.ws.rs.core.UriInfo;
+import java.lang.reflect.Method;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
+import java.util.stream.Collectors;
+
+import static org.mockito.Matchers.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 public class VmActionResourceTest {
 
@@ -117,7 +114,7 @@ public class VmActionResourceTest {
 
     private VirtualMachine createTestVm(String shopperId) {
         UUID orionGuid = UUID.randomUUID();
-        Vps4User vps4User = userService.getOrCreateUserForShopper(shopperId, "1");
+        Vps4User vps4User = userService.getOrCreateUserForShopper(shopperId, "1", UUID.randomUUID());
         return SqlTestData.insertTestVm(orionGuid, vps4User.getId(), dataSource);
     }
 

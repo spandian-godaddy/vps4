@@ -42,7 +42,7 @@ public class SqlTestData {
     public final static String TEST_CUSTOMER_NAME = "fake_vm_customer";
 
     public static Vps4User insertUser(Vps4UserService userService) {
-        return userService.getOrCreateUserForShopper(TEST_SHOPPER_ID, "1");
+        return userService.getOrCreateUserForShopper(TEST_SHOPPER_ID, "1", UUID.randomUUID());
     }
 
     public static Project insertProject(ProjectService projectService, Vps4UserService userService) {

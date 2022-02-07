@@ -1,20 +1,5 @@
 package com.godaddy.vps4.phase2;
 
-import static org.mockito.Mockito.mock;
-
-import java.util.List;
-import java.util.Random;
-import java.util.UUID;
-
-import javax.inject.Inject;
-import javax.sql.DataSource;
-
-import org.junit.After;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
-import org.mockito.Mockito;
-
 import com.godaddy.vps4.ipblacklist.IpBlacklistService;
 import com.godaddy.vps4.jdbc.DatabaseModule;
 import com.godaddy.vps4.mailrelay.MailRelayService;
@@ -40,6 +25,19 @@ import com.google.inject.AbstractModule;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
 import com.google.inject.Provides;
+import org.junit.After;
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.Test;
+import org.mockito.Mockito;
+
+import javax.inject.Inject;
+import javax.sql.DataSource;
+import java.util.List;
+import java.util.Random;
+import java.util.UUID;
+
+import static org.mockito.Mockito.mock;
 
 public class NetworkResourceUserTest {
 
@@ -87,7 +85,7 @@ public class NetworkResourceUserTest {
 
     private VirtualMachine createTestVm() {
         UUID orionGuid = UUID.randomUUID();
-        Vps4User vps4User = userService.getOrCreateUserForShopper(GDUserMock.DEFAULT_SHOPPER, "1");
+        Vps4User vps4User = userService.getOrCreateUserForShopper(GDUserMock.DEFAULT_SHOPPER, "1", UUID.randomUUID());
         VirtualMachine vm = SqlTestData.insertTestVm(orionGuid, vps4User.getId(), dataSource, "hfs-centos7");
         return vm;
     }

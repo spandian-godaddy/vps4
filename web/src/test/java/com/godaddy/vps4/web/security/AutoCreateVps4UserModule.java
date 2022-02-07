@@ -5,6 +5,8 @@ import com.godaddy.vps4.security.Vps4UserService;
 import com.google.inject.AbstractModule;
 import com.google.inject.Provides;
 
+import java.util.UUID;
+
 public class AutoCreateVps4UserModule extends AbstractModule {
 
     final String shopperId;
@@ -21,7 +23,6 @@ public class AutoCreateVps4UserModule extends AbstractModule {
     @Provides
     protected Vps4User provideUser(Vps4UserService userService) {
 
-        return userService.getOrCreateUserForShopper(shopperId, "1");
+        return userService.getOrCreateUserForShopper(shopperId, "1", UUID.randomUUID());
     }
-
 }

@@ -1,19 +1,5 @@
 package com.godaddy.vps4.monitoring.iris;
 
-import static org.junit.Assert.assertEquals;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyLong;
-import static org.mockito.Matchers.anyObject;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
-
-import java.util.UUID;
-
-import org.junit.Test;
-import org.mockito.ArgumentCaptor;
-
 import com.godaddy.hfs.config.Config;
 import com.godaddy.vps4.monitoring.iris.irisClient.CreateIncidentInput;
 import com.godaddy.vps4.monitoring.iris.irisClient.IrisWebServiceSoap;
@@ -22,6 +8,19 @@ import com.godaddy.vps4.security.Vps4User;
 import com.godaddy.vps4.security.Vps4UserService;
 import com.godaddy.vps4.vm.VirtualMachine;
 import com.godaddy.vps4.vm.VirtualMachineService;
+import org.junit.Test;
+import org.mockito.ArgumentCaptor;
+
+import java.util.UUID;
+
+import static org.junit.Assert.assertEquals;
+import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.anyLong;
+import static org.mockito.Matchers.anyObject;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 public class IrisMonitoringNotificationServiceTest {
 
@@ -34,7 +33,7 @@ public class IrisMonitoringNotificationServiceTest {
         when(vmServiceMock.getUserIdByVmId(any(UUID.class))).thenReturn(1L);
 
         Vps4UserService userServiceMock = mock(Vps4UserService.class);
-        Vps4User testUser = new Vps4User(1, "yl9");
+        Vps4User testUser = new Vps4User(1, "yl9", UUID.randomUUID());
         when(userServiceMock.getUser(anyLong())).thenReturn(testUser);
 
         IrisWebServiceSoap irisWebServiceSoapMock = mock(IrisWebServiceSoap.class);

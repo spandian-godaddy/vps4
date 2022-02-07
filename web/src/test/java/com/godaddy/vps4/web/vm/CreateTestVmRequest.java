@@ -1,10 +1,5 @@
 package com.godaddy.vps4.web.vm;
 
-import java.util.Random;
-import java.util.UUID;
-
-import javax.inject.Inject;
-
 import com.godaddy.vps4.config.ConfigModule;
 import com.godaddy.vps4.credit.CreditService;
 import com.godaddy.vps4.jdbc.DatabaseModule;
@@ -19,6 +14,10 @@ import com.godaddy.vps4.vm.VmModule;
 import com.godaddy.vps4.web.security.AutoCreateVps4UserModule;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
+
+import javax.inject.Inject;
+import java.util.Random;
+import java.util.UUID;
 
 public class CreateTestVmRequest {
 
@@ -54,7 +53,7 @@ public class CreateTestVmRequest {
         // normally we would get this from HFS
         long hfsVmId = new Random().nextInt(1000000);
 
-        Vps4User user = userService.getOrCreateUserForShopper(shopperId, "1");
+        Vps4User user = userService.getOrCreateUserForShopper(shopperId, "1", UUID.randomUUID());
 
         ProvisionVirtualMachineParameters params = new ProvisionVirtualMachineParameters(user.getId(), 1, "vps4-testing-", orionGuid,
                 "SomeNewVm", 1, 1, operatingSystem);

@@ -1,24 +1,5 @@
 package com.godaddy.vps4.phase2.appmonitors;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-
-import java.sql.Timestamp;
-import java.time.Duration;
-import java.time.Instant;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
-import java.util.function.Predicate;
-
-import javax.sql.DataSource;
-
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
-
 import com.godaddy.hfs.jdbc.Sql;
 import com.godaddy.vps4.appmonitors.BackupJobAuditData;
 import com.godaddy.vps4.appmonitors.MonitorService;
@@ -40,6 +21,23 @@ import com.godaddy.vps4.vm.VirtualMachine;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
 import com.google.inject.Key;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
+
+import javax.sql.DataSource;
+import java.sql.Timestamp;
+import java.time.Duration;
+import java.time.Instant;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
+import java.util.function.Predicate;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 
 public class MonitorServiceTest {
 
@@ -56,7 +54,7 @@ public class MonitorServiceTest {
     @Before
     public void setupService() {
         vps4UserService = new JdbcVps4UserService(reportsDataSource);
-        vps4User = vps4UserService.getOrCreateUserForShopper("FakeShopper", "1");
+        vps4User = vps4UserService.getOrCreateUserForShopper("FakeShopper", "1", UUID.randomUUID());
         vm1 = SqlTestData.insertTestVm(orionGuid, reportsDataSource);
         createActionWithDate(vm1.vmId, ActionType.CREATE_VM, ActionStatus.IN_PROGRESS, Instant.now().minus(Duration.ofMinutes(61)),  reportsDataSource);
 

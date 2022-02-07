@@ -1,42 +1,5 @@
 package com.godaddy.vps4.web.vm;
 
-import static com.godaddy.vps4.web.util.RequestValidation.getAndValidateUserAccountCredit;
-import static com.godaddy.vps4.web.util.RequestValidation.validateCreditIsNotInUse;
-import static com.godaddy.vps4.web.util.RequestValidation.validateDcIdIsAllowed;
-import static com.godaddy.vps4.web.util.RequestValidation.validateDedResellerSelectedDc;
-import static com.godaddy.vps4.web.util.RequestValidation.validateNoConflictingActions;
-import static com.godaddy.vps4.web.util.RequestValidation.validatePassword;
-import static com.godaddy.vps4.web.util.RequestValidation.validateRequestedImage;
-import static com.godaddy.vps4.web.util.RequestValidation.validateServerIsActiveOrUnknown;
-import static com.godaddy.vps4.web.util.RequestValidation.validateServerIsStoppedOrUnknown;
-import static com.godaddy.vps4.web.util.RequestValidation.validateUserIsShopper;
-import static com.godaddy.vps4.web.util.RequestValidation.validateVmExists;
-import static com.godaddy.vps4.web.util.VmHelper.createActionAndExecute;
-
-import java.time.Instant;
-import java.time.temporal.ChronoUnit;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
-
-import javax.inject.Inject;
-import javax.ws.rs.Consumes;
-import javax.ws.rs.DELETE;
-import javax.ws.rs.DefaultValue;
-import javax.ws.rs.GET;
-import javax.ws.rs.POST;
-import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.Produces;
-import javax.ws.rs.QueryParam;
-import javax.ws.rs.core.MediaType;
-
-import org.apache.commons.lang3.StringUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import com.godaddy.hfs.config.Config;
 import com.godaddy.hfs.vm.Vm;
 import com.godaddy.hfs.vm.VmExtendedInfo;
@@ -71,12 +34,45 @@ import com.godaddy.vps4.web.Vps4NoShopperException;
 import com.godaddy.vps4.web.Vps4UserNotFound;
 import com.godaddy.vps4.web.security.GDUser;
 import com.godaddy.vps4.web.util.ResellerConfigHelper;
-
 import gdg.hfs.orchestration.CommandService;
-
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
+import org.apache.commons.lang3.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import javax.inject.Inject;
+import javax.ws.rs.Consumes;
+import javax.ws.rs.DELETE;
+import javax.ws.rs.DefaultValue;
+import javax.ws.rs.GET;
+import javax.ws.rs.POST;
+import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
+import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
+import javax.ws.rs.core.MediaType;
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
+
+import static com.godaddy.vps4.web.util.RequestValidation.getAndValidateUserAccountCredit;
+import static com.godaddy.vps4.web.util.RequestValidation.validateCreditIsNotInUse;
+import static com.godaddy.vps4.web.util.RequestValidation.validateDcIdIsAllowed;
+import static com.godaddy.vps4.web.util.RequestValidation.validateDedResellerSelectedDc;
+import static com.godaddy.vps4.web.util.RequestValidation.validateNoConflictingActions;
+import static com.godaddy.vps4.web.util.RequestValidation.validatePassword;
+import static com.godaddy.vps4.web.util.RequestValidation.validateRequestedImage;
+import static com.godaddy.vps4.web.util.RequestValidation.validateServerIsActiveOrUnknown;
+import static com.godaddy.vps4.web.util.RequestValidation.validateServerIsStoppedOrUnknown;
+import static com.godaddy.vps4.web.util.RequestValidation.validateUserIsShopper;
+import static com.godaddy.vps4.web.util.RequestValidation.validateVmExists;
+import static com.godaddy.vps4.web.util.VmHelper.createActionAndExecute;
 
 @Vps4Api
 @Api(tags = {"vms"})
@@ -233,7 +229,7 @@ public class VmResource {
         int previousRelays = getPreviousRelaysForVirtualServers(provisionRequest, image);
         ProvisionVirtualMachineParameters params;
         VirtualMachine virtualMachine;
-        Vps4User vps4User = vps4UserService.getOrCreateUserForShopper(user.getShopperId(), vmCredit.getResellerId());
+        Vps4User vps4User = vps4UserService.getOrCreateUserForShopper(user.getShopperId(), vmCredit.getResellerId(), vmCredit.getCustomerId());
 
         validateCreditIsNotInUse(vmCredit);
         try {

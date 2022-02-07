@@ -103,8 +103,8 @@ public class VmImportResourceTest {
         spec = new ServerSpec();
         when(virtualMachineService.getSpec(credit.getTier(), ServerType.Platform.OPTIMIZED_HOSTING.getplatformId())).thenReturn(spec);
 
-        vps4User = new Vps4User(123, credit.getShopperId());
-        when(vps4UserService.getOrCreateUserForShopper(user.getShopperId(), credit.getResellerId())).thenReturn(vps4User);
+        vps4User = new Vps4User(123, credit.getShopperId(), credit.getCustomerId());
+        when(vps4UserService.getOrCreateUserForShopper(user.getShopperId(), credit.getResellerId(), credit.getCustomerId())).thenReturn(vps4User);
 
         project = new Project(1, "testProject", "testSgid", Instant.now(), Instant.MAX, 321);
         when(projectService.createProject(credit.getOrionGuid().toString(), vps4User.getId(), importVmRequest.sgid)).thenReturn(project);
