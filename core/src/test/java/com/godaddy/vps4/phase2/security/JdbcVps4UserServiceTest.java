@@ -15,6 +15,7 @@ import javax.sql.DataSource;
 import java.util.UUID;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
 
 public class JdbcVps4UserServiceTest {
 
@@ -46,5 +47,27 @@ public class JdbcVps4UserServiceTest {
 
         Vps4User user3 = userService.getUser(user1Id);
         assertEquals(shopperId, user3.getShopperId());
+    }
+
+    @Test
+    public void getUserForShopperTestNullCustomerId() {
+        Vps4UserService userService = new JdbcVps4UserService(dataSource);
+
+        Vps4User user1 = userService.getOrCreateUserForShopper(shopperId, "1", null);
+        assertEquals(shopperId, user1.getShopperId());
+
+        assertEquals(shopperId, user1.getShopperId());
+        assertNull(user1.getCustomerId());
+    }
+
+    @Test
+    public void getUserForShopperTestCustomerIdNotNull() {
+        Vps4UserService userService = new JdbcVps4UserService(dataSource);
+
+        UUID customerId = UUID.randomUUID();
+        Vps4User user1 = userService.getOrCreateUserForShopper(shopperId, "1", customerId);
+
+        assertEquals(shopperId, user1.getShopperId());
+        assertEquals(customerId, user1.getCustomerId());
     }
 }

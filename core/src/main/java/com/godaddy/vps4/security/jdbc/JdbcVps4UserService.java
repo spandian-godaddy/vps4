@@ -81,7 +81,8 @@ public class JdbcVps4UserService implements Vps4UserService {
 
         long userId = rs.getLong("vps4_user_id");
         String shopperId = rs.getString("shopper_id");
-        UUID customerId = UUID.fromString(rs.getString("customer_id"));
+        String customerIdString = rs.getString("customer_id");
+        UUID customerId = customerIdString == null ? null : UUID.fromString(rs.getString("customer_id"));
 
         return new Vps4User(userId, shopperId, customerId);
     }
