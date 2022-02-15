@@ -1,6 +1,8 @@
 package com.godaddy.vps4.phase2;
 
 import com.godaddy.hfs.jdbc.Sql;
+import com.godaddy.vps4.customNotes.CustomNotesService;
+import com.godaddy.vps4.customNotes.jdbc.JdbcCustomNotesService;
 import com.godaddy.vps4.notifications.NotificationExtendedDetails;
 import com.godaddy.vps4.notifications.NotificationFilter;
 import com.godaddy.vps4.notifications.NotificationService;
@@ -143,6 +145,16 @@ public class SqlTestData {
                 notificationExtendedDetails, filters, validOn, validUntil);
     }
 
+
+    public static Long insertTestCustomNotes(UUID vmId, DataSource dataSource, String note, String user) {
+        CustomNotesService customNotesService = new JdbcCustomNotesService(dataSource);
+        return customNotesService.createCustomNote(vmId, note, user).id;
+    }
+
+    public static void cleanupTestCustomNotes(UUID vmId, DataSource dataSource) {
+        CustomNotesService customNotesService = new JdbcCustomNotesService(dataSource);
+        customNotesService.clearCustomNotes(vmId);
+    }
 
     public static void cleanupTestNotification(UUID notificationId, DataSource dataSource) {
         NotificationService notificationService = new JdbcNotificationService(dataSource);
