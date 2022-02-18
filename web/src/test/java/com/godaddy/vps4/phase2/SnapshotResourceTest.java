@@ -99,12 +99,7 @@ public class SnapshotResourceTest {
         Vps4User vps4User = userService.getOrCreateUserForShopper(GDUserMock.DEFAULT_SHOPPER, "1", UUID.randomUUID());
         testVm = SqlTestData.insertTestVm(vmId, vps4User.getId(), dataSource, "hfs-centos7");
     }
-
-    private void createTestOVHVm() {
-        Vps4User vps4User = userService.getOrCreateUserForShopper(GDUserMock.DEFAULT_SHOPPER, "1", UUID.randomUUID());
-        testVm = SqlTestData.insertTestVm(vmId, vps4User.getId(), dataSource, "hfs-win2019");
-    }
-
+    
     private Snapshot createTestSnapshot() {
         createTestVm();
         return SqlTestData.insertSnapshot(snapshotService, testVm.vmId, testVm.projectId, SnapshotType.ON_DEMAND);
@@ -397,18 +392,6 @@ public class SnapshotResourceTest {
     @Test
     public void testSnapshotProceedsWhenNydusIsDownOHVm() {
         createTestOHVm();
-        SnapshotRequest request = new SnapshotRequest();
-        request.vmId = testVm.vmId;
-        request.snapshotType = SnapshotType.ON_DEMAND;
-        request.name = "phase2test";
-        Phase2ExternalsModule.mockNydusDown();
-        SnapshotAction action = getSnapshotResource().createSnapshot(request);
-        assertNotNull(action);
-    }
-
-    @Test
-    public void testSnapshotProceedsWhenNydusIsDownOVHVm() {
-        createTestOVHVm();
         SnapshotRequest request = new SnapshotRequest();
         request.vmId = testVm.vmId;
         request.snapshotType = SnapshotType.ON_DEMAND;
