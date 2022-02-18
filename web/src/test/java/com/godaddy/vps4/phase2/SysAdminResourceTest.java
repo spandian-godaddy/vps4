@@ -81,6 +81,7 @@ public class SysAdminResourceTest {
     @After
     public void teardownTest(){
         SqlTestData.cleanupSqlTestData(dataSource);
+        SqlTestData.removeImportedVM(vm.vmId, dataSource);
     }
 
     private SysAdminResource getSysAdminResource() {
@@ -121,7 +122,6 @@ public class SysAdminResourceTest {
         request.username = "root";
         request.password = "newPassword1!";
         getSysAdminResource().setPassword(vm.vmId, request);
-        SqlTestData.removeImportedVM(vm.vmId, dataSource);
     }
 
     @Test

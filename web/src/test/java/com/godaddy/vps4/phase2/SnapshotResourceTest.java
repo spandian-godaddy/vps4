@@ -42,6 +42,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
 
+import static org.junit.Assert.assertNotNull;
 import static org.mockito.Mockito.mock;
 
 public class SnapshotResourceTest {
@@ -52,7 +53,7 @@ public class SnapshotResourceTest {
     private GDUser user;
     private VirtualMachine testVm;
     private SchedulerWebService schedulerWebService = mock(SchedulerWebService.class);
-
+    private UUID vmId = UUID.randomUUID();
     private Injector injector = Guice.createInjector(
             new DatabaseModule(),
             new SecurityModule(),
@@ -91,7 +92,17 @@ public class SnapshotResourceTest {
 
     private void createTestVm() {
         Vps4User vps4User = userService.getOrCreateUserForShopper(GDUserMock.DEFAULT_SHOPPER, "1", UUID.randomUUID());
-        testVm = SqlTestData.insertTestVm(UUID.randomUUID(), vps4User.getId(), dataSource);
+        testVm = SqlTestData.insertTestVm(vmId, vps4User.getId(), dataSource);
+    }
+
+    private void createTestOHVm() {
+        Vps4User vps4User = userService.getOrCreateUserForShopper(GDUserMock.DEFAULT_SHOPPER, "1", UUID.randomUUID());
+        testVm = SqlTestData.insertTestVm(vmId, vps4User.getId(), dataSource, "hfs-centos7");
+    }
+
+    private void createTestOVHVm() {
+        Vps4User vps4User = userService.getOrCreateUserForShopper(GDUserMock.DEFAULT_SHOPPER, "1", UUID.randomUUID());
+        testVm = SqlTestData.insertTestVm(vmId, vps4User.getId(), dataSource, "hfs-win2019");
     }
 
     private Snapshot createTestSnapshot() {
@@ -371,7 +382,7 @@ public class SnapshotResourceTest {
     }
 
     @Test
-    public void testSnapshotFailsWhenNydusIsDown() {
+    public void testSnapshotFailsWhenNydusIsDownOpenstackVm() {
         createTestVm();
         SnapshotRequest request = new SnapshotRequest();
         request.vmId = testVm.vmId;
@@ -383,4 +394,27 @@ public class SnapshotResourceTest {
             Assert.assertEquals("AGENT_DOWN", ex.getId());}
     }
 
+    @Test
+    public void testSnapshotProceedsWhenNydusIsDownOHVm() {
+        createTestOHVm();
+        SnapshotRequest request = new SnapshotRequest();
+        request.vmId = testVm.vmId;
+        request.snapshotType = SnapshotType.ON_DEMAND;
+        request.name = "phase2test";
+        Phase2ExternalsModule.mockNydusDown();
+        SnapshotAction action = getSnapshotResource().createSnapshot(request);
+        assertNotNull(action);
+    }
+
+    @Test
+    public void testSnapshotProceedsWhenNydusIsDownOVHVm() {
+        createTestOVHVm();
+        SnapshotRequest request = new SnapshotRequest();
+        request.vmId = testVm.vmId;
+        request.snapshotType = SnapshotType.ON_DEMAND;
+        request.name = "phase2test";
+        Phase2ExternalsModule.mockNydusDown();
+        SnapshotAction action = getSnapshotResource().createSnapshot(request);
+        assertNotNull(action);
+    }
 }

@@ -30,6 +30,7 @@ import com.godaddy.hfs.vm.VmExtendedInfo;
 import com.godaddy.hfs.vm.VmService;
 import com.godaddy.vps4.scheduler.api.web.SchedulerWebService;
 import com.godaddy.vps4.util.TroubleshootVmService;
+import com.godaddy.vps4.vm.ServerType;
 import com.godaddy.vps4.web.Vps4Exception;
 import org.json.simple.JSONObject;
 import org.slf4j.Logger;
@@ -140,8 +141,11 @@ public class SnapshotResource {
     public SnapshotAction createSnapshot(SnapshotRequest snapshotRequest) {
         // check to ensure snapshot belongs to vm and vm exists
         VirtualMachine vm = virtualMachineService.getVirtualMachine(snapshotRequest.vmId);
+
         validateVmExists(snapshotRequest.vmId, vm, user, false);
-        throwErrorIfAgentIsDown(vm);
+        if (vm.spec.serverType.platform == ServerType.Platform.OPENSTACK) {
+            throwErrorIfAgentIsDown(vm);
+        }
         if (user.isShopper()) {
             getAndValidateUserAccountCredit(creditService, vm.orionGuid, user.getShopperId());
         }
@@ -164,7 +168,6 @@ public class SnapshotResource {
         if (hfsVm.status.equals("ACTIVE") && (!troubleshootVmService.getHfsAgentStatus(vm.hfsVmId).equals("OK"))) {
             throw new Vps4Exception("AGENT_DOWN","Agent for vmId " + vm.vmId + " is down. Refusing to take snapshot.");
         }
-
     }
 
     private void validateCreation(UUID orionGuid, UUID backupJobId, String name, SnapshotType snapshotType) {
