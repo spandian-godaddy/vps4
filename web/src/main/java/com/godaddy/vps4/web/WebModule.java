@@ -8,6 +8,7 @@ import com.godaddy.vps4.web.console.ConsoleResource;
 import com.godaddy.vps4.web.controlPanel.cpanel.CPanelResource;
 import com.godaddy.vps4.web.controlPanel.plesk.PleskResource;
 import com.godaddy.vps4.web.credit.CreditResource;
+import com.godaddy.vps4.web.customNotes.CustomNotesResource;
 import com.godaddy.vps4.web.dns.ActionCommandHelper;
 import com.godaddy.vps4.web.dns.DnsResource;
 import com.godaddy.vps4.web.dns.ObjectMapperProvider;
@@ -120,6 +121,7 @@ public class WebModule extends AbstractModule {
         bind(VmNotificationResource.class);
         bind(WinexeResource.class);
         bind(VmPlanResource.class);
+        bind(CustomNotesResource.class);
 
         bind(CommandsResource.class);
         bind(CommandsViewResource.class);

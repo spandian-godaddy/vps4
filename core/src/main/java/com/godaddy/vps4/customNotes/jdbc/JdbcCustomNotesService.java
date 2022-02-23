@@ -41,10 +41,10 @@ public class JdbcCustomNotesService implements CustomNotesService {
     }
 
     @Override
-    public CustomNote createCustomNote(UUID vmId, String note, String initiatedBy) {
+    public CustomNote createCustomNote(UUID vmId, String note, String author) {
         Long id = Sql.with(dataSource).exec("INSERT INTO " + customNotesTableName +
                         " (vm_id, author, note) VALUES (?, ?, ?) RETURNING id;", Sql.nextOrNull(rs -> rs.getLong("id")),
-                vmId, initiatedBy, note);
+                vmId, author, note);
         return getCustomNote(id);
     }
 

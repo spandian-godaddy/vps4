@@ -6,7 +6,7 @@ import java.util.UUID;
 public interface CustomNotesService {
     List<CustomNote> getCustomNotes(UUID vmId);
     CustomNote getCustomNote(long customNoteId);
-    CustomNote createCustomNote(UUID vmId, String note, String initiatedBy);
+    CustomNote createCustomNote(UUID vmId, String note, String author);
     void clearCustomNotes(UUID vmId);
     void deleteCustomNote(Long noteId);
 }
