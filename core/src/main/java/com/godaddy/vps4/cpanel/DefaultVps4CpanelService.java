@@ -6,6 +6,7 @@ import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 import javax.inject.Inject;
 
@@ -107,12 +108,17 @@ public class DefaultVps4CpanelService implements Vps4CpanelService {
                 lastThrown = e;
 
             } catch (IOException e) {
-                logger.warn("Unable communicating with VM " + hfsVmId, e);
+                logger.debug("Unable to communicate with VM " + hfsVmId, e);
                 // we timed out attempting to connect/read from the target VM
                 // or we had some other transport-level issue
                 lastThrown = e;
-            }
 
+                try {
+                    TimeUnit.SECONDS.sleep(1);
+                } catch (InterruptedException ie) {
+                    logger.debug("Interrupted while sleeping", ie);
+                }
+            }
         }
         // if we've run out of time communicating with the VM, but our last issue
         // was that we were having auth issues, bubble that exception back up to
