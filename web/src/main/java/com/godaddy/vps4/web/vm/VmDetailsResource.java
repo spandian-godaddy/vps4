@@ -15,6 +15,7 @@ import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
 
+import com.godaddy.hfs.vm.Extended;
 import com.godaddy.hfs.vm.Vm;
 import com.godaddy.hfs.vm.VmExtendedInfo;
 import com.godaddy.vps4.credit.CreditService;
@@ -83,6 +84,13 @@ public class VmDetailsResource {
     }
 
     @GET
+    @Path("/{vmId}/hfsExtendedDetails")
+    public VmExtendedInfo getVmExtendedDetails(@PathParam("vmId") UUID vmId) {
+        VirtualMachine virtualMachine = vmResource.getVm(vmId);
+        return vmResource.getVmExtendedInfoFromVmVertical(virtualMachine.hfsVmId);
+    }
+
+    @GET
     @Path("/{vmId}/withDetails")
     public VirtualMachineWithDetails getVirtualMachineWithDetails(@PathParam("vmId") UUID vmId) {
         VirtualMachine virtualMachine = vmResource.getVm(vmId);
@@ -92,7 +100,9 @@ public class VmDetailsResource {
         String hypervisorHostname = null;
         if (user.isEmployee() && !credit.isDed4()) {
             VmExtendedInfo vmExtendedInfo = vmResource.getVmExtendedInfoFromVmVertical(virtualMachine.hfsVmId);
-            if (vmExtendedInfo != null) hypervisorHostname = vmExtendedInfo.extended.hypervisorHostname;
+            if (vmExtendedInfo != null) {
+                hypervisorHostname = vmExtendedInfo.extended.hypervisorHostname;
+            }
         }
 
         PanoptaServerDetails panoptaDetails = panoptaDataService.getPanoptaServerDetails(vmId);

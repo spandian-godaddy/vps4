@@ -262,4 +262,41 @@ public class VmDetailsResourceTest {
         assertFalse(withDetails.additionalIps.isEmpty());
         assertEquals(1, withDetails.additionalIps.size());
     }
+
+    @Test
+    public void testGetVmExtendedDetailsNullFromHfs() {
+        when(vmResource.getVmExtendedInfoFromVmVertical(hfsVmId)).thenReturn(null);
+
+        VmExtendedInfo vmExtendedInfo = vmDetailsResource.getVmExtendedDetails(vmId);
+
+        assertNull(vmExtendedInfo);
+    }
+
+    @Test
+    public void testGetVmExtendedDetailsNullTaskPowerStates() {
+        VmExtendedInfo value = new VmExtendedInfo();
+        value.extended = new Extended();
+        value.extended.hypervisorHostname = "hostname";
+        when(vmResource.getVmExtendedInfoFromVmVertical(hfsVmId)).thenReturn(value);
+
+        VmExtendedInfo vmExtendedInfo = vmDetailsResource.getVmExtendedDetails(vmId);
+
+        assertNull(vmExtendedInfo.extended.powerState);
+        assertNull(vmExtendedInfo.extended.taskState);
+    }
+
+    @Test
+    public void testGetVmExtendedDetails() {
+        VmExtendedInfo value = new VmExtendedInfo();
+        value.extended = new Extended();
+        value.extended.hypervisorHostname = "hostname";
+        value.extended.powerState = "paused";
+        value.extended.taskState = "image_snapshot";
+        when(vmResource.getVmExtendedInfoFromVmVertical(hfsVmId)).thenReturn(value);
+
+        VmExtendedInfo vmExtendedInfo = vmDetailsResource.getVmExtendedDetails(vmId);
+
+        assertEquals(value.extended.taskState, vmExtendedInfo.extended.taskState);
+        assertEquals(value.extended.powerState, vmExtendedInfo.extended.powerState);
+    }
 }

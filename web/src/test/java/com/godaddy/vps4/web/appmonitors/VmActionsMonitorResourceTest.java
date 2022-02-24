@@ -24,6 +24,10 @@ import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 
+import com.godaddy.hfs.vm.Extended;
+import com.godaddy.hfs.vm.Vm;
+import com.godaddy.hfs.vm.VmExtendedInfo;
+import com.godaddy.vps4.web.vm.VmDetailsResource;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -59,6 +63,7 @@ public class VmActionsMonitorResourceTest {
     private DatabaseCluster databaseCluster = mock(DatabaseCluster.class);
     private List<SnapshotActionData> expectedSnapshotActionData;
     private long pendingThreshold = 60L;
+    private VmDetailsResource vmDetailsResource = mock(VmDetailsResource.class);
 
     @Before
     public void setupTest() {
@@ -78,8 +83,12 @@ public class VmActionsMonitorResourceTest {
         VirtualMachine virtualMachine2 = new VirtualMachine();
         virtualMachine2.orionGuid = UUID.randomUUID();
         when(virtualMachineService.getVirtualMachine(any())).thenReturn(virtualMachine).thenReturn(virtualMachine2);
-        vmActionsMonitorResource = new VmActionsMonitorResource(monitorService, vmActionService, virtualMachineService,
-                                                                replicationLagService, databaseCluster);
+        vmActionsMonitorResource = new VmActionsMonitorResource(monitorService,
+                vmActionService,
+                virtualMachineService,
+                replicationLagService,
+                databaseCluster,
+                vmDetailsResource);
     }
 
     private void validateActionFilters(List<ActionType> typeList, List<ActionStatus> statusList) {
@@ -442,5 +451,30 @@ public class VmActionsMonitorResourceTest {
             Assert.assertEquals("REPLICATION_CHECK_FAILED", e.getId());
             Assert.assertEquals("Replication check not configured for this environment", e.getMessage());
         }
+    }
+
+    @Test
+    public void testGetlibvirtStuckVms() {
+        ResultSubset<Action> resultSubset = getTestResultSet(5, ActionType.RESTART_VM, ActionStatus.IN_PROGRESS);
+        VmExtendedInfo vmExtendedInfo = new VmExtendedInfo();
+        vmExtendedInfo.extended = new Extended();
+        vmExtendedInfo.extended.taskState = "image_snapshot";
+        Vm vm = new Vm();
+        vm.resourceUuid = UUID.randomUUID().toString();
+
+        ArgumentMatcher<ActionListFilters> expectedActionFilters = new ArgumentMatcher<ActionListFilters>() {
+            @Override
+            public boolean matches(Object item) {
+                ActionListFilters actionFilters = (ActionListFilters)item;
+                return actionFilters.getTypeList().get(0).equals(ActionType.RESTART_VM);
+            }
+        };
+        when(vmActionService.getActionList(argThat(expectedActionFilters))).thenReturn(resultSubset);
+        when(vmDetailsResource.getVmExtendedDetails(any())).thenReturn(vmExtendedInfo);
+        when(vmDetailsResource.getMoreDetails(any())).thenReturn(vm);
+
+        List<VmActionsMonitorResource.LibvirtStuckVm> stuckVms = vmActionsMonitorResource.getlibvirtStuckVms(15);
+
+        assertEquals(5, stuckVms.size());
     }
 }

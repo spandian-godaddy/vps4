@@ -22,6 +22,8 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
 
+import com.godaddy.hfs.vm.Vm;
+import com.godaddy.hfs.vm.VmExtendedInfo;
 import com.godaddy.vps4.appmonitors.ActionCheckpoint;
 import com.godaddy.vps4.appmonitors.BackupJobAuditData;
 import com.godaddy.vps4.appmonitors.Checkpoint;
@@ -43,6 +45,7 @@ import com.godaddy.vps4.web.Vps4Api;
 import com.godaddy.vps4.web.Vps4Exception;
 import com.godaddy.vps4.web.security.GDUser;
 import com.godaddy.vps4.web.security.RequiresRole;
+import com.godaddy.vps4.web.vm.VmDetailsResource;
 import com.google.inject.Inject;
 
 import io.swagger.annotations.Api;
@@ -63,18 +66,21 @@ public class VmActionsMonitorResource {
     private final VirtualMachineService virtualMachineService;
     private final ReplicationLagService replicationLagService;
     private final DatabaseCluster databaseCluster;
+    private final VmDetailsResource vmDetailsResource;
 
     @Inject
     public VmActionsMonitorResource(MonitorService monitorService,
                                     ActionService actionService,
                                     VirtualMachineService virtualMachineService,
                                     ReplicationLagService replicationLagService,
-                                    DatabaseCluster databaseCluster) {
+                                    DatabaseCluster databaseCluster,
+                                    VmDetailsResource vmDetailsResource) {
         this.monitorService = monitorService;
         this.vmActionService = actionService;
         this.virtualMachineService = virtualMachineService;
         this.replicationLagService = replicationLagService;
         this.databaseCluster = databaseCluster;
+        this.vmDetailsResource = vmDetailsResource;
     }
 
     private List<VmActionData> filterOverdueInProgressActionsByType(long thresholdInMinutes, ActionType... actionTypes) {
@@ -129,6 +135,40 @@ public class VmActionsMonitorResource {
             notes = "Find all VM id's that are pending restart vm action for longer than m minutes, default 15 minutes")
     public List<VmActionData> getRestartPendingVms(@QueryParam("thresholdInMinutes") @DefaultValue("15") long thresholdInMinutes) {
         return filterOverdueInProgressActionsByType(thresholdInMinutes, ActionType.RESTART_VM, ActionType.POWER_CYCLE);
+    }
+
+    @GET
+    @Path("/pending/libvirtStuckVms")
+    @ApiOperation(value = "Find all VM id's that are pending restart vm action for longer than m minutes, default 15 minutes and task " +
+                    "state is image_snapshot",
+            notes = "Find all VM id's that are pending restart vm action for longer than m minutes, default 15 minutes and task " +
+                    "state is image_snapshot. Use this padre command to clear the task_state, replacing the dc and os_guid values:\n" +
+                    "@padre run playbook clear_vm_snapshot_state cloud-<dc>-ztn uuid=<os_guid> desired_end_state=start")
+    public List<LibvirtStuckVm> getlibvirtStuckVms(@QueryParam("thresholdInMinutes") @DefaultValue("15") long thresholdInMinutes) {
+        List<VmActionData> vmList = filterOverdueInProgressActionsByType(thresholdInMinutes, ActionType.RESTART_VM);
+        List<LibvirtStuckVm> stuckVmList = new ArrayList<>();
+
+        for(VmActionData action : vmList) {
+            VmExtendedInfo vmExtendedInfo = vmDetailsResource.getVmExtendedDetails(action.vmId);
+            if(vmExtendedInfo != null
+                    && vmExtendedInfo.extended != null
+                    && vmExtendedInfo.extended.taskState != null
+                    && vmExtendedInfo.extended.taskState == "image_snapshot") {
+                Vm vm = vmDetailsResource.getMoreDetails(action.vmId);
+                stuckVmList.add(new LibvirtStuckVm(action.vmId, vm.resourceUuid));
+            }
+        }
+
+        return stuckVmList;
+    }
+
+    public class LibvirtStuckVm {
+        public LibvirtStuckVm(UUID vmId, String openstackGuid) {
+            this.vmId = vmId;
+            this.openstackGuid = openstackGuid;
+        }
+        public UUID vmId;
+        public String openstackGuid;
     }
 
     private List<VmActionData> mapActionsToVmActionData(List<Action> actions) {
