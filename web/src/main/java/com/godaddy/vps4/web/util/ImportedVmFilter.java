@@ -27,8 +27,6 @@ public class ImportedVmFilter extends VmFilter {
                             "consoleUrl",
                             "snapshots",
                             "restore",
-                            "abuseSuspend",
-                            "billingSuspend",
                             "reinstateAbuseSuspend",
                             "reinstateBillingSuspend",
                             "messaging",
@@ -37,7 +35,11 @@ public class ImportedVmFilter extends VmFilter {
                             "zombie",
                             "revive",
                             "setPassword",
-                            ""
+                            "",
+                            "suspend",
+                            "processSuspendMessage",
+                            "reinstate",
+                            "processReinstateMessage"
                 ),
               virtualMachineService);
     }
