@@ -1,6 +1,5 @@
 package com.godaddy.vps4.web.customNotes;
 
-import com.godaddy.vps4.customNotes.CustomNote;
 import com.godaddy.vps4.customNotes.CustomNotesService;
 import com.godaddy.vps4.jdbc.DatabaseModule;
 import com.godaddy.vps4.phase2.Phase2ExternalsModule;
@@ -34,6 +33,7 @@ public class CustomNotesResourceTest {
     private UUID vmId = UUID.randomUUID();
     private UUID orionGuid = UUID.randomUUID();
     private Long hfsVmId = 42L;
+    private long customNoteId = 123L;
     private VirtualMachine vps4Vm = new VirtualMachine();
     private Injector injector = Guice.createInjector(new DatabaseModule(),
             new SecurityModule(),
@@ -68,10 +68,17 @@ public class CustomNotesResourceTest {
     }
 
     @Test
-    public void testGetCustomNoteCallsCustomNotesService() {
+    public void testGetCustomNotesCallsGetVmAndCustomNotesService() {
         getCustomNotesResource().getCustomNotes(vmId);
-
+        verify(vmResource,times(1)).getVm(eq(vmId));
         verify(customNotesService,times(1)).getCustomNotes(eq(vmId));
+    }
+
+    @Test
+    public void testGetCustomNoteCallsGetVmAndCustomNotesService() {
+        getCustomNotesResource().getCustomNote(vmId, customNoteId);
+        verify(vmResource,times(1)).getVm(eq(vmId));
+        verify(customNotesService,times(1)).getCustomNote(eq(vmId), eq(customNoteId));
     }
 
     @Test
@@ -103,5 +110,19 @@ public class CustomNotesResourceTest {
 
         verify(customNotesService,times(1)).createCustomNote(eq(vmId),
                 eq("This is a test note created by staff"), eq(username));
+    }
+
+    @Test
+    public void testDeleteCustomNoteCallsGetVmAndCustomNotesService() {
+        getCustomNotesResource().deleteCustomNote(vmId, customNoteId);
+        verify(vmResource,times(1)).getVm(eq(vmId));
+        verify(customNotesService,times(1)).deleteCustomNote(eq(vmId), eq(customNoteId));
+    }
+
+    @Test
+    public void testClearCustomNoteCallsGetVmAndCustomNotesService() {
+        getCustomNotesResource().clearCustomNotes(vmId);
+        verify(vmResource,times(1)).getVm(eq(vmId));
+        verify(customNotesService,times(1)).clearCustomNotes(eq(vmId));
     }
 }

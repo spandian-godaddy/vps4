@@ -33,11 +33,11 @@ public class JdbcCustomNotesService implements CustomNotesService {
     }
 
     @Override
-    public CustomNote getCustomNote(long customNoteId) {
+    public CustomNote getCustomNote(UUID vmId, long customNoteId) {
         return Sql.with(dataSource).exec("SELECT id, vm_id, author, created, note " +
                         " FROM " + customNotesTableName +
-                        " WHERE id = ?",
-                Sql.nextOrNull(this::mapCustomNote), customNoteId);
+                        " WHERE vm_id = ? AND id = ?",
+                Sql.nextOrNull(this::mapCustomNote), vmId, customNoteId);
     }
 
     @Override
@@ -45,7 +45,7 @@ public class JdbcCustomNotesService implements CustomNotesService {
         Long id = Sql.with(dataSource).exec("INSERT INTO " + customNotesTableName +
                         " (vm_id, author, note) VALUES (?, ?, ?) RETURNING id;", Sql.nextOrNull(rs -> rs.getLong("id")),
                 vmId, author, note);
-        return getCustomNote(id);
+        return getCustomNote(vmId, id);
     }
 
     @Override
@@ -55,9 +55,9 @@ public class JdbcCustomNotesService implements CustomNotesService {
     }
 
     @Override
-    public void deleteCustomNote(Long noteId) {
+    public void deleteCustomNote(UUID vmId, Long noteId) {
         Sql.with(dataSource).exec("DELETE FROM " + customNotesTableName +
-                " WHERE id = ?", null, noteId);
+                " WHERE vm_id = ? AND id = ?", null, vmId, noteId);
     }
 
     private CustomNote mapCustomNote(ResultSet rs) throws SQLException {

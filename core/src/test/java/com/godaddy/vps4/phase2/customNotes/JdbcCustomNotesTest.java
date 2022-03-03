@@ -20,6 +20,7 @@ import java.util.UUID;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 
 public class JdbcCustomNotesTest {
 
@@ -77,11 +78,17 @@ public class JdbcCustomNotesTest {
 
     @Test
     public void getCustomNoteIsOk() {
-        CustomNote customNote = injector.getInstance(CustomNotesService.class).getCustomNote(differentVmNoteId);
+        CustomNote customNote = injector.getInstance(CustomNotesService.class).getCustomNote(differentVmId, differentVmNoteId);
 
         assertNotNull(customNote);
         assertEquals("Test Note Different VM", customNote.note);
         assertEquals("TestUser2", customNote.author);
+    }
+
+    @Test
+    public void getCustomNoteForWrongVmIdReturnsNull() {
+        CustomNote customNote = injector.getInstance(CustomNotesService.class).getCustomNote(vmId, differentVmNoteId);
+        assertNull(customNote);
     }
 
     @Test
@@ -92,8 +99,15 @@ public class JdbcCustomNotesTest {
     }
 
     @Test
+    public void deleteCustomNoteForWrongVmIdDoesNotDelete() {
+        injector.getInstance(CustomNotesService.class).deleteCustomNote(vmId, differentVmNoteId);
+        List<CustomNote> customNoteList = injector.getInstance(CustomNotesService.class).getCustomNotes(differentVmId);
+        assertEquals(1, customNoteList.size());
+    }
+
+    @Test
     public void deleteCustomNoteOk() {
-        injector.getInstance(CustomNotesService.class).deleteCustomNote(differentVmNoteId);
+        injector.getInstance(CustomNotesService.class).deleteCustomNote(differentVmId, differentVmNoteId);
         List<CustomNote> customNoteList = injector.getInstance(CustomNotesService.class).getCustomNotes(differentVmId);
         assertEquals(0, customNoteList.size());
     }

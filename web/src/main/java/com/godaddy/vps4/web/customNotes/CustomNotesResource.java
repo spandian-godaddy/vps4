@@ -1,8 +1,6 @@
 package com.godaddy.vps4.web.customNotes;
 import com.godaddy.vps4.customNotes.CustomNote;
 import com.godaddy.vps4.customNotes.CustomNotesService;
-import com.godaddy.vps4.notifications.NotificationExtendedDetails;
-import com.godaddy.vps4.notifications.NotificationType;
 import com.godaddy.vps4.web.Vps4Api;
 import com.godaddy.vps4.web.security.GDUser;
 import com.godaddy.vps4.web.security.RequiresRole;
@@ -13,6 +11,7 @@ import org.slf4j.LoggerFactory;
 
 import javax.inject.Inject;
 import javax.ws.rs.Consumes;
+import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
@@ -50,11 +49,32 @@ public class CustomNotesResource {
         return customNotesService.createCustomNote(vmId, request.note, gdUser.getUsername());
     }
 
+    @DELETE
+    @Path("/{vmId}/customNotes")
+    public void clearCustomNotes(@PathParam("vmId") UUID vmId) {
+        vmResource.getVm(vmId);
+        customNotesService.clearCustomNotes(vmId);
+    }
+
+    @DELETE
+    @Path("/{vmId}/customNote/{customNoteId}")
+    public void deleteCustomNote(@PathParam("vmId") UUID vmId, @PathParam("customNoteId") long customNoteId) {
+        vmResource.getVm(vmId);
+        customNotesService.deleteCustomNote(vmId, customNoteId);
+    }
+
     @GET
     @Path("/{vmId}/customNotes")
     public List<CustomNote> getCustomNotes(@PathParam("vmId") UUID vmId) {
         vmResource.getVm(vmId);
         return customNotesService.getCustomNotes(vmId);
+    }
+
+    @GET
+    @Path("/{vmId}/customNote/{customNoteId}")
+    public CustomNote getCustomNote(@PathParam("vmId") UUID vmId, @PathParam("customNoteId") long customNoteId) {
+        vmResource.getVm(vmId);
+        return customNotesService.getCustomNote(vmId, customNoteId);
     }
 
     public static class CustomNoteRequest {
