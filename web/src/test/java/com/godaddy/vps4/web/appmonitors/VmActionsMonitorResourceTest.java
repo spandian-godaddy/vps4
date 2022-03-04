@@ -473,8 +473,8 @@ public class VmActionsMonitorResourceTest {
         when(vmDetailsResource.getVmExtendedDetails(any())).thenReturn(vmExtendedInfo);
         when(vmDetailsResource.getMoreDetails(any())).thenReturn(vm);
 
-        List<VmActionsMonitorResource.LibvirtStuckVm> stuckVms = vmActionsMonitorResource.getlibvirtStuckVms(15);
+        List<VmActionsMonitorResource.LibvirtStuckVm> stuckVms = vmActionsMonitorResource.getLibvirtStuckVms(15);
 
-        assertEquals(5, stuckVms.size());
+        assertEquals(10, stuckVms.size());
     }
 }

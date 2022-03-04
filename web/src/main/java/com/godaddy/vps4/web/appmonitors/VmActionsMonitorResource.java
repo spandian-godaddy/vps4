@@ -4,6 +4,7 @@ import static com.godaddy.vps4.web.util.RequestValidation.validateAndReturnEnumV
 
 import java.time.Duration;
 import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -139,13 +140,14 @@ public class VmActionsMonitorResource {
 
     @GET
     @Path("/pending/libvirtStuckVms")
-    @ApiOperation(value = "Find all VM id's that are pending restart vm action for longer than m minutes, default 15 minutes and task " +
-                    "state is image_snapshot",
-            notes = "Find all VM id's that are pending restart vm action for longer than m minutes, default 15 minutes and task " +
-                    "state is image_snapshot. Use this padre command to clear the task_state, replacing the dc and os_guid values:\n" +
+    @ApiOperation(value = "Find all VM id's that are pending restart vm action for longer than m minutes, default 15 minutes, or that " +
+                          "have failed to restart in the last 24 hours and task state is image_snapshot",
+            notes = "Find all VM id's that are suspected to be stuck because of libvirt. Use this padre command to clear the task_state, " +
+                    "replacing the dc and os_guid values:\n" +
                     "@padre run playbook clear_vm_snapshot_state cloud-<dc>-ztn uuid=<os_guid> desired_end_state=start")
-    public List<LibvirtStuckVm> getlibvirtStuckVms(@QueryParam("thresholdInMinutes") @DefaultValue("15") long thresholdInMinutes) {
-        List<VmActionData> vmList = filterOverdueInProgressActionsByType(thresholdInMinutes, ActionType.RESTART_VM);
+    public List<LibvirtStuckVm> getLibvirtStuckVms(@QueryParam("thresholdInMinutes") @DefaultValue("15") long thresholdInMinutes) {
+        List<VmActionData> vmList = getErroredRestartsInTheLastDay();
+        vmList.addAll(filterOverdueInProgressActionsByType(thresholdInMinutes, ActionType.RESTART_VM));
         List<LibvirtStuckVm> stuckVmList = new ArrayList<>();
 
         for(VmActionData action : vmList) {
@@ -160,6 +162,16 @@ public class VmActionsMonitorResource {
         }
 
         return stuckVmList;
+    }
+
+    private List<VmActionData> getErroredRestartsInTheLastDay() {
+        ActionListFilters actionListFilters = new ActionListFilters();
+        actionListFilters.byStatus(ActionStatus.ERROR);
+        actionListFilters.byType(ActionType.RESTART_VM);
+        actionListFilters.byDateRange(Instant.now().minus(1, ChronoUnit.DAYS), Instant.now());
+        ResultSubset<Action> resultSubset = vmActionService.getActionList(actionListFilters);
+        List<VmActionData> erroredRestartsInTheLastDay = (resultSubset != null) ? mapActionsToVmActionData(resultSubset.results) : Collections.emptyList();
+        return erroredRestartsInTheLastDay;
     }
 
     public class LibvirtStuckVm {
