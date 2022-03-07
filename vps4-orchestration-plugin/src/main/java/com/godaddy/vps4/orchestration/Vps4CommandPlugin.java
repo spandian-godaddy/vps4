@@ -10,7 +10,6 @@ import com.godaddy.vps4.credit.CreditModule;
 import com.godaddy.vps4.hfs.HfsVmTrackingRecordModule;
 import com.godaddy.vps4.ipblacklist.IpBlacklistModule;
 import com.godaddy.vps4.jdbc.DatabaseModule;
-import com.godaddy.vps4.monitoring.MonitoringModule;
 import com.godaddy.vps4.orchestration.account.AccountModule;
 import com.godaddy.vps4.orchestration.hfs.HfsCommandModule;
 import com.godaddy.vps4.orchestration.hfs.HfsMockModule;
@@ -83,7 +82,6 @@ public class Vps4CommandPlugin implements CommandPlugin {
             new SchedulerModule(),
             new AccountModule(),
             new SecurityModule(),
-            new MonitoringModule(),
             new HfsVmTrackingRecordModule(),
             new PanoptaModule(),
             new IpBlacklistModule(),
