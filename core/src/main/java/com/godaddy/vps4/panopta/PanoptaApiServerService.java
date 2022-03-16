@@ -33,7 +33,6 @@ public interface PanoptaApiServerService {
     @Path("/{server_id}/network_service")
     PanoptaNetworkIdList getNetworkList(@PathParam("server_id") long serverId,
                                         @QueryParam("partner_customer_key") String partnerCustomerKey,
-                                        @QueryParam("server_interface") String serverInterface,
                                         @QueryParam("limit") int limit);
 
     @GET

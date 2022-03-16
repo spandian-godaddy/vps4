@@ -322,7 +322,7 @@ public class DefaultPanoptaService implements PanoptaService {
         PanoptaDetail detail = panoptaDataService.getPanoptaDetails(vmId);
         if (detail != null) {
             ids = panoptaApiServerService
-                    .getNetworkList(detail.getServerId(), detail.getPartnerCustomerKey(),null, UNLIMITED)
+                    .getNetworkList(detail.getServerId(), detail.getPartnerCustomerKey(), UNLIMITED)
                     .value;
             ids = ids.stream()
                     .filter(id -> panoptaMetricMapper.getVmMetric(id.typeId) != VmMetric.UNKNOWN)
@@ -338,7 +338,7 @@ public class DefaultPanoptaService implements PanoptaService {
         PanoptaDetail detail = panoptaDataService.getPanoptaDetails(vmId);
         if (detail != null) {
             ids = panoptaApiServerService
-                            .getNetworkList(detail.getServerId(), detail.getPartnerCustomerKey(), null, UNLIMITED)
+                            .getNetworkList(detail.getServerId(), detail.getPartnerCustomerKey(), UNLIMITED)
                             .value;
             ids = ids.stream().filter(t -> additionalFqdns.contains(t.serverInterface) &&
                     (Arrays.asList(VmMetric.HTTP, VmMetric.HTTPS)).contains(panoptaMetricMapper.getVmMetric(t.typeId)))
@@ -353,10 +353,11 @@ public class DefaultPanoptaService implements PanoptaService {
         PanoptaDetail detail = panoptaDataService.getPanoptaDetails(vmId);
         if (detail != null) {
             ids = panoptaApiServerService
-                    .getNetworkList(detail.getServerId(), detail.getPartnerCustomerKey(), fqdn, UNLIMITED)
+                    .getNetworkList(detail.getServerId(), detail.getPartnerCustomerKey(), UNLIMITED)
                     .value;
             ids = ids.stream()
-                    .filter(id -> (Arrays.asList(VmMetric.HTTP, VmMetric.HTTPS)).contains(panoptaMetricMapper.getVmMetric(id.typeId)))
+                    .filter(id -> (Arrays.asList(VmMetric.HTTP, VmMetric.HTTPS)).contains(panoptaMetricMapper.getVmMetric(id.typeId))
+                                    && id.serverInterface.equals(fqdn))
                     .collect(Collectors.toList());
         }
         if (ids.isEmpty()) {
@@ -571,7 +572,6 @@ public class DefaultPanoptaService implements PanoptaService {
                                                               UNLIMITED).value);
         metricIds.addAll(panoptaApiServerService.getNetworkList(panoptaDetail.getServerId(),
                                                                 panoptaDetail.getPartnerCustomerKey(),
-                                                                null,
                                                                 UNLIMITED).value);
         return metricIds;
     }

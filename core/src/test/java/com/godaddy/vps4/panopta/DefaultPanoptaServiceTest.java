@@ -240,9 +240,7 @@ public class DefaultPanoptaServiceTest {
                                 "ner.customer.key.prefix")).thenReturn("gdtest_");
         doNothing().when(panoptaApiCustomerService).createCustomer(any(PanoptaApiCustomerRequest.class));
         when(panoptaApiServerService.getUsageList(serverId, partnerCustomerKey, 0)).thenReturn(usageIdList);
-        when(panoptaApiServerService.getNetworkList(serverId, partnerCustomerKey, null , 0)).thenReturn(networkIdList);
-        when((panoptaApiServerService).getNetworkList(serverId, partnerCustomerKey, "additionalfqdn.fake", 0))
-                .thenReturn(networkIdList);
+        when(panoptaApiServerService.getNetworkList(serverId, partnerCustomerKey, 0)).thenReturn(networkIdList);
         when(panoptaApiServerService.getServer(serverId, partnerCustomerKey)).thenReturn(server);
         when(panoptaApiServerService.getServers(partnerCustomerKey, ipAddress, orionGuid.toString(), "active"))
                 .thenReturn(panoptaServers);
@@ -309,13 +307,13 @@ public class DefaultPanoptaServiceTest {
     public void testGetNetworkIdsWhenNoDbEntry() {
         when(panoptaDataService.getPanoptaDetails(vmId)).thenReturn(null);
         defaultPanoptaService.getNetworkIds(vmId);
-        verify(panoptaApiServerService, never()).getNetworkList(anyInt(), anyString(), eq(null) , anyInt());
+        verify(panoptaApiServerService, never()).getNetworkList(anyInt(), anyString(), anyInt());
     }
 
     @Test
     public void testGetNetworkIds() {
         List<PanoptaMetricId> ids = defaultPanoptaService.getNetworkIds(vmId);
-        verify(panoptaApiServerService).getNetworkList(serverId, partnerCustomerKey, null, 0);
+        verify(panoptaApiServerService).getNetworkList(serverId, partnerCustomerKey, 0);
         assertEquals(2, ids.size());
         assertEquals(networkIdList.value.get(0).id, ids.get(0).id);
         assertEquals(networkIdList.value.get(0).typeId, ids.get(0).typeId);
@@ -325,8 +323,8 @@ public class DefaultPanoptaServiceTest {
     public void testGetNetworkIdOfAdditionalFqdn() throws PanoptaServiceException {
         PanoptaMetricId affectedMetric = networkIdList.value.get(0);
         when(panoptaMetricMapper.getVmMetric(affectedMetric.typeId)).thenReturn(VmMetric.HTTPS);
-        PanoptaMetricId ids = defaultPanoptaService.getNetworkIdOfAdditionalFqdn(vmId, "additionalfqdn.fake");
-        verify(panoptaApiServerService).getNetworkList(serverId, partnerCustomerKey, "additionalfqdn.fake", 0);
+        PanoptaMetricId ids = defaultPanoptaService.getNetworkIdOfAdditionalFqdn(vmId, "additionalFqdn.fake");
+        verify(panoptaApiServerService).getNetworkList(serverId, partnerCustomerKey, 0);
         assertEquals(networkIdList.value.get(0).id, ids.id);
         assertEquals(networkIdList.value.get(0).typeId, ids.typeId);
     }
@@ -336,7 +334,7 @@ public class DefaultPanoptaServiceTest {
         when(panoptaMetricMapper.getVmMetric(anyLong())).thenReturn(VmMetric.HTTPS);
         when(panoptaDataService.getPanoptaActiveAdditionalFqdns(vmId)).thenReturn(Arrays.asList("additionalFqdn.fake", "additionalFqdn2.fake"));
         List<PanoptaMetricId> ids = defaultPanoptaService.getAdditionalFqdnMetricIds(vmId);
-        verify(panoptaApiServerService).getNetworkList(serverId, partnerCustomerKey, null, 0);
+        verify(panoptaApiServerService).getNetworkList(serverId, partnerCustomerKey, 0);
         assertEquals(2, ids.size());
         assertEquals(networkIdList.value.get(0).id, ids.get(0).id);;
         assertEquals(networkIdList.value.get(0).typeId, ids.get(0).typeId);
@@ -370,7 +368,7 @@ public class DefaultPanoptaServiceTest {
 
         List<PanoptaGraph> graphs = defaultPanoptaService.getNetworkGraphs(vmId, "hour");
 
-        verify(panoptaApiServerService).getNetworkList(serverId, partnerCustomerKey,null, 0);
+        verify(panoptaApiServerService).getNetworkList(serverId, partnerCustomerKey,0);
         verify(panoptaApiServerService, times(2))
                 .getNetworkGraph(eq(serverId), anyInt(), eq("hour"), eq(partnerCustomerKey));
         verify(pool, times(1))
@@ -409,7 +407,7 @@ public class DefaultPanoptaServiceTest {
 
         List<PanoptaGraph> graphs = defaultPanoptaService.getNetworkGraphs(vmId, "hour");
 
-        verify(panoptaApiServerService, never()).getNetworkList(anyInt(), anyString(), eq(null), anyInt());
+        verify(panoptaApiServerService, never()).getNetworkList(anyInt(), anyString(), anyInt());
         verify(panoptaApiServerService, never())
                 .getNetworkGraph(anyInt(), anyInt(), anyString(), anyString());
         assertEquals(graphs.get(0), networkGraph);
@@ -554,7 +552,7 @@ public class DefaultPanoptaServiceTest {
         assertEquals(mockOutage.started, outage.started);
         assertEquals(vmId, outage.vmId);
         verify(panoptaApiServerService, times(1)).getUsageList(serverId, partnerCustomerKey, 0);
-        verify(panoptaApiServerService, times(1)).getNetworkList(serverId, partnerCustomerKey, null, 0);
+        verify(panoptaApiServerService, times(1)).getNetworkList(serverId, partnerCustomerKey,  0);
         verify(panoptaApiOutageService, times(1)).getOutage(mockOutage.outageId, partnerCustomerKey);
     }
 
@@ -599,7 +597,7 @@ public class DefaultPanoptaServiceTest {
             assertEquals("NO_SERVER_FOUND", e.getId());
         }
         verify(panoptaApiServerService, never()).getUsageList(anyLong(), anyString(), anyInt());
-        verify(panoptaApiServerService, never()).getNetworkList(anyLong(), anyString(), eq(null), anyInt());
+        verify(panoptaApiServerService, never()).getNetworkList(anyLong(), anyString(), anyInt());
         verify(panoptaApiServerService, never()).getOutages(anyLong(), anyString(), anyString(), anyInt());
     }
 
@@ -613,7 +611,7 @@ public class DefaultPanoptaServiceTest {
             assertEquals("NO_OUTAGE_FOUND", e.getId());
         }
         verify(panoptaApiServerService, never()).getUsageList(anyLong(), anyString(), anyInt());
-        verify(panoptaApiServerService, never()).getNetworkList(anyLong(), anyString(), eq(null), anyInt());
+        verify(panoptaApiServerService, never()).getNetworkList(anyLong(), anyString(), anyInt());
         verify(panoptaApiServerService, never()).getOutages(anyLong(), anyString(), anyString(), anyInt());
     }
 
