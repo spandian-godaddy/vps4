@@ -140,41 +140,43 @@ public class VmActionsMonitorResource {
 
     @GET
     @Path("/pending/libvirtStuckVms")
-    @ApiOperation(value = "Find all VM id's that are pending restart vm action for longer than m minutes, default 15 minutes, or that " +
-                          "have failed to restart in the last 24 hours and task state is image_snapshot",
-            notes = "Find all VM id's that are suspected to be stuck because of libvirt. Use this padre command to clear the task_state, " +
-                    "replacing the dc and os_guid values:\n" +
-                    "@padre run playbook clear_vm_snapshot_state cloud-<dc>-ztn uuid=<os_guid> desired_end_state=start")
+    @ApiOperation(value = "Find all VM IDs that have power actions pending for longer than m minutes, default 15, " +
+                          "or that have failed power actions in the last 24 hours and task state is image_snapshot",
+                  notes = "Find all VM IDs that are suspected to be stuck because of libvirt. Use this padre command to clear the task_state, " +
+                          "replacing the dc and os_guid values:\n" +
+                          "@padre run playbook clear_vm_snapshot_state cloud-<dc>-ztn uuid=<os_guid> desired_end_state=start")
     public List<LibvirtStuckVm> getLibvirtStuckVms(@QueryParam("thresholdInMinutes") @DefaultValue("15") long thresholdInMinutes) {
-        List<VmActionData> vmList = getErroredRestartsInTheLastDay();
-        vmList.addAll(filterOverdueInProgressActionsByType(thresholdInMinutes, ActionType.RESTART_VM));
-        List<LibvirtStuckVm> stuckVmList = new ArrayList<>();
-
-        for(VmActionData action : vmList) {
-            VmExtendedInfo vmExtendedInfo = vmDetailsResource.getVmExtendedDetails(action.vmId);
-            if(vmExtendedInfo != null
-                    && vmExtendedInfo.extended != null
-                    && vmExtendedInfo.extended.taskState != null
-                    && vmExtendedInfo.extended.taskState == "image_snapshot") {
-                Vm vm = vmDetailsResource.getMoreDetails(action.vmId);
-                stuckVmList.add(new LibvirtStuckVm(action.vmId, vm.resourceUuid));
-            }
-        }
-
-        return stuckVmList;
+        List<VmActionData> vmActionList = new ArrayList<>();
+        vmActionList.addAll(getRecentErroredPowerActions());
+        vmActionList.addAll(filterOverdueInProgressActionsByType(thresholdInMinutes,
+                                                                 ActionType.RESTART_VM,
+                                                                 ActionType.STOP_VM,
+                                                                 ActionType.START_VM));
+        return vmActionList
+                .stream()
+                .filter(action -> {
+                    VmExtendedInfo vmExtendedInfo = vmDetailsResource.getVmExtendedDetails(action.vmId);
+                    return vmExtendedInfo != null
+                            && vmExtendedInfo.extended != null
+                            && vmExtendedInfo.extended.taskState.equals("image_snapshot");
+                })
+                .map(action -> {
+                    Vm vm = vmDetailsResource.getMoreDetails(action.vmId);
+                    return new LibvirtStuckVm(action.vmId, vm.resourceUuid);
+                })
+                .collect(Collectors.toList());
     }
 
-    private List<VmActionData> getErroredRestartsInTheLastDay() {
+    private List<VmActionData> getRecentErroredPowerActions() {
         ActionListFilters actionListFilters = new ActionListFilters();
         actionListFilters.byStatus(ActionStatus.ERROR);
-        actionListFilters.byType(ActionType.RESTART_VM);
+        actionListFilters.byType(ActionType.RESTART_VM, ActionType.STOP_VM, ActionType.START_VM);
         actionListFilters.byDateRange(Instant.now().minus(1, ChronoUnit.DAYS), Instant.now());
         ResultSubset<Action> resultSubset = vmActionService.getActionList(actionListFilters);
-        List<VmActionData> erroredRestartsInTheLastDay = (resultSubset != null) ? mapActionsToVmActionData(resultSubset.results) : Collections.emptyList();
-        return erroredRestartsInTheLastDay;
+        return (resultSubset != null) ? mapActionsToVmActionData(resultSubset.results) : Collections.emptyList();
     }
 
-    public class LibvirtStuckVm {
+    public static class LibvirtStuckVm {
         public LibvirtStuckVm(UUID vmId, String openstackGuid) {
             this.vmId = vmId;
             this.openstackGuid = openstackGuid;
