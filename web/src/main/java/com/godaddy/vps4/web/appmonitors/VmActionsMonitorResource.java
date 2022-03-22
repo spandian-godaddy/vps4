@@ -158,6 +158,7 @@ public class VmActionsMonitorResource {
                     VmExtendedInfo vmExtendedInfo = vmDetailsResource.getVmExtendedDetails(action.vmId);
                     return vmExtendedInfo != null
                             && vmExtendedInfo.extended != null
+                            && vmExtendedInfo.extended.taskState != null
                             && vmExtendedInfo.extended.taskState.equals("image_snapshot");
                 })
                 .map(action -> {
