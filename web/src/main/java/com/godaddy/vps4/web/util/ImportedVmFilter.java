@@ -39,7 +39,9 @@ public class ImportedVmFilter extends VmFilter {
                             "suspend",
                             "processSuspendMessage",
                             "reinstate",
-                            "processReinstateMessage"
+                            "processReinstateMessage",
+                            "customNote",
+                            "customNotes"
                 ),
               virtualMachineService);
     }
