@@ -51,6 +51,7 @@ public class CustomNotesResource {
 
     @DELETE
     @Path("/{vmId}/customNotes")
+    @RequiresRole(roles = {GDUser.Role.ADMIN, GDUser.Role.HS_LEAD})
     public void clearCustomNotes(@PathParam("vmId") UUID vmId) {
         vmResource.getVm(vmId);
         customNotesService.clearCustomNotes(vmId);
@@ -58,6 +59,7 @@ public class CustomNotesResource {
 
     @DELETE
     @Path("/{vmId}/customNote/{customNoteId}")
+    @RequiresRole(roles = {GDUser.Role.ADMIN, GDUser.Role.HS_LEAD})
     public void deleteCustomNote(@PathParam("vmId") UUID vmId, @PathParam("customNoteId") long customNoteId) {
         vmResource.getVm(vmId);
         customNotesService.deleteCustomNote(vmId, customNoteId);
