@@ -2,6 +2,7 @@ package com.godaddy.vps4.web.customNotes;
 import com.godaddy.vps4.customNotes.CustomNote;
 import com.godaddy.vps4.customNotes.CustomNotesService;
 import com.godaddy.vps4.web.Vps4Api;
+import com.godaddy.vps4.web.Vps4Exception;
 import com.godaddy.vps4.web.security.GDUser;
 import com.godaddy.vps4.web.security.RequiresRole;
 import com.godaddy.vps4.web.vm.VmResource;
@@ -33,6 +34,7 @@ public class CustomNotesResource {
     private final CustomNotesService customNotesService;
     private final GDUser gdUser;
     private final VmResource vmResource;
+    private static final long CUSTOM_NOTES_LIMIT = 5;
 
     @Inject
     public CustomNotesResource(GDUser user, CustomNotesService customNotesService, VmResource vmResource) {
@@ -45,6 +47,9 @@ public class CustomNotesResource {
     @POST
     @Path("/{vmId}/customNote")
     public CustomNote createCustomNote(@PathParam("vmId") UUID vmId, CustomNoteRequest request) {
+        if (customNotesService.getCustomNotes(vmId).size() >= CUSTOM_NOTES_LIMIT) {
+            throw new Vps4Exception("CUSTOM_NOTES_LIMIT_REACHED", "Limit of 5 reached for custom notes on this VM.");
+        }
         vmResource.getVm(vmId);
         return customNotesService.createCustomNote(vmId, request.note, gdUser.getUsername());
     }

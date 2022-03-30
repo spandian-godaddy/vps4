@@ -1,22 +1,27 @@
 package com.godaddy.vps4.web.customNotes;
 
+import com.godaddy.vps4.customNotes.CustomNote;
 import com.godaddy.vps4.customNotes.CustomNotesService;
 import com.godaddy.vps4.jdbc.DatabaseModule;
 import com.godaddy.vps4.phase2.Phase2ExternalsModule;
 import com.godaddy.vps4.security.GDUserMock;
 import com.godaddy.vps4.security.SecurityModule;
 import com.godaddy.vps4.vm.VirtualMachine;
+import com.godaddy.vps4.web.Vps4Exception;
 import com.godaddy.vps4.web.security.GDUser;
 import com.godaddy.vps4.web.vm.VmResource;
 import com.google.inject.AbstractModule;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
 import com.google.inject.Provides;
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.MockitoAnnotations;
 
 import java.time.Instant;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 
 import static org.mockito.Matchers.eq;
@@ -85,6 +90,24 @@ public class CustomNotesResourceTest {
     public void testCreateCustomNoteCallsGetVm() {
         getCustomNotesResource().createCustomNote(vmId, new CustomNotesResource.CustomNoteRequest());
         verify(vmResource,times(1)).getVm(eq(vmId));
+    }
+
+    @Test
+    public void testCreateCustomNoteFailsIfLimitReached() {
+        CustomNotesResource.CustomNoteRequest request = new CustomNotesResource.CustomNoteRequest();
+        request.note = "This is a test note created by admin";
+        List<CustomNote> customNotes = new ArrayList<>();
+        for(int i = 0; i < 5; i++) {
+            customNotes.add(new CustomNote());
+        }
+        when(customNotesService.getCustomNotes(vmId)).thenReturn(customNotes);
+        try {
+            getCustomNotesResource().createCustomNote(vmId, request);
+            Assert.fail();
+        }
+        catch (Vps4Exception e) {
+            Assert.assertEquals("CUSTOM_NOTES_LIMIT_REACHED", e.getId());
+        }
     }
 
     @Test
