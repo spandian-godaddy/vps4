@@ -75,7 +75,7 @@ public class JdbcNotificationService implements NotificationService {
     @Override
     public Notification getNotification(UUID notificationId) {
         return Sql.with(dataSource).exec("SELECT notification_id, nt.type, support_only," +
-                        " dismissible, valid_on, valid_until, ned.start_time, ned.end_time" +
+                        " dismissible, valid_on, valid_until, ned.start_time, ned.end_time, ned.translation_id" +
                         " FROM " + notificationTableName +
                         " as n JOIN notification_type AS nt USING(type_id)" +
                         " LEFT JOIN notification_extended_details AS ned USING(notification_id)" +
@@ -87,7 +87,7 @@ public class JdbcNotificationService implements NotificationService {
     public List<Notification> getNotifications(NotificationListSearchFilters searchFilters) {
         int andCount = 0;
         String primaryQuery = "SELECT DISTINCT n.notification_id, nt.type, support_only, dismissible," +
-                " valid_on, valid_until, ned.start_time, ned.end_time" +
+                " valid_on, valid_until, ned.start_time, ned.end_time, ned.translation_id" +
                 " FROM " + notificationTableName + " as n" +
                 " JOIN notification_type AS nt USING(type_id)" +
                 " JOIN notification_filter AS nf USING(notification_id)" +
@@ -154,10 +154,13 @@ public class JdbcNotificationService implements NotificationService {
             Sql.with(dataSource).exec("INSERT INTO " + notificationTableName + " (notification_id, type_id, support_only, dismissible, valid_on, valid_until) VALUES (?, ?, ?, ?, ?, ?);", null,
                     notificationId, type.getNotificationTypeId(), supportOnly, dismissible, LocalDateTime.ofInstant(validOn, ZoneOffset.UTC), LocalDateTime.ofInstant(validUntil, ZoneOffset.UTC));
         }
-        if (notificationExtendedDetails != null && (notificationExtendedDetails.start != null || notificationExtendedDetails.end != null)) {
-            Sql.with(dataSource).exec("INSERT INTO notification_extended_details (notification_id, start_time, end_time) VALUES (?, ?, ?);", null,
-                    notificationId, LocalDateTime.ofInstant(notificationExtendedDetails.start, ZoneOffset.UTC),
-                    LocalDateTime.ofInstant(notificationExtendedDetails.end, ZoneOffset.UTC));
+        if (notificationExtendedDetails != null) {
+                Sql.with(dataSource).exec("INSERT INTO notification_extended_details (notification_id, start_time, end_time, translation_id) VALUES (?, ?, ?, ?);", null,
+                        notificationId,
+                        notificationExtendedDetails.start == null ? null : LocalDateTime.ofInstant(notificationExtendedDetails.start, ZoneOffset.UTC),
+                        notificationExtendedDetails.end == null ? null : LocalDateTime.ofInstant(notificationExtendedDetails.end, ZoneOffset.UTC),
+                        notificationExtendedDetails.translationId);
+
         }
         addFilterToNotification(notificationId, filters);
         return getNotification(notificationId);
@@ -172,17 +175,20 @@ public class JdbcNotificationService implements NotificationService {
                      LocalDateTime.ofInstant(validOn == null ? Instant.now() : validOn, ZoneOffset.UTC),
                      validUntil == null ? LocalDateTime.MAX : LocalDateTime.ofInstant(validUntil, ZoneOffset.UTC),
                     notificationId);
-        if(notificationExtendedDetails == null || (notificationExtendedDetails.start == null && notificationExtendedDetails.end == null)) {
+        if(notificationExtendedDetails == null || (notificationExtendedDetails.start == null && notificationExtendedDetails.end == null &&
+                notificationExtendedDetails.translationId == null)) {
             Sql.with(dataSource).exec("DELETE FROM notification_extended_details WHERE notification_id = ?;", null,
                     notificationId);
         }
         else {
-            Sql.with(dataSource).exec("INSERT INTO notification_extended_details (notification_id, start_time, end_time) VALUES (?, ?, ?) " +
+            Sql.with(dataSource).exec("INSERT INTO notification_extended_details (notification_id, start_time, end_time, translation_id) VALUES (?, ?, ?, ?) " +
                             "ON CONFLICT (notification_id) DO UPDATE SET start_time = EXCLUDED.start_time," +
-                            " end_time = EXCLUDED.end_time WHERE notification_extended_details.notification_id = EXCLUDED.notification_id;", null,
+                            " end_time = EXCLUDED.end_time, translation_id = EXCLUDED.translation_id" +
+                            " WHERE notification_extended_details.notification_id = EXCLUDED.notification_id;", null,
                     notificationId,
                     LocalDateTime.ofInstant(notificationExtendedDetails.start == null ? Instant.now() : notificationExtendedDetails.start, ZoneOffset.UTC),
-                    notificationExtendedDetails.end == null ? LocalDateTime.MAX : LocalDateTime.ofInstant(notificationExtendedDetails.end, ZoneOffset.UTC));
+                    notificationExtendedDetails.end == null ? LocalDateTime.MAX : LocalDateTime.ofInstant(notificationExtendedDetails.end, ZoneOffset.UTC),
+                    notificationExtendedDetails.translationId);
         }
         Sql.with(dataSource).exec("DELETE FROM notification_filter WHERE notification_id = ?;", null,
                 notificationId);
@@ -221,6 +227,7 @@ public class JdbcNotificationService implements NotificationService {
                  rs.getTimestamp("start_time", TimestampUtils.utcCalendar).toInstant();
         notificationExtendedDetails.end = rs.getObject("end_time") == null ?  null :
                 rs.getTimestamp("end_time", TimestampUtils.utcCalendar).toInstant();
+        notificationExtendedDetails.translationId = rs.getString("translation_id");
         notification.notificationExtendedDetails = notificationExtendedDetails;
         notification.filters = getNotificationFilters(notification.notificationId);
         return notification;

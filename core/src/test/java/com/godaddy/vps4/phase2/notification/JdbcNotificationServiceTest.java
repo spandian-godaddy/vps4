@@ -39,7 +39,6 @@ public class JdbcNotificationServiceTest {
     static private Injector injectorForDS;
     private Injector injector;
     static private DataSource dataSource;
-    private String imageName = "hfs-ubuntu-1604";
 
     @BeforeClass
     public static void setUpInternalInjector() {
@@ -314,6 +313,27 @@ public class JdbcNotificationServiceTest {
         service.createNotification(testNotificationId, NotificationType.PATCHING,true,true,
                 notificationExtendedDetails, filters, null, null);
         assertNotNull(service.getNotification(testNotificationId));
+        service.deleteNotification(testNotificationId);
+        assertNull(service.getNotification(testNotificationId));
+    }
+
+    @Test
+    public void insertAndDeleteNotificationWithTranslationIdTest() {
+        NotificationService service = injector.getInstance(NotificationService.class);
+        UUID testNotificationId = UUID.randomUUID();
+        List<NotificationFilter> filters = new ArrayList<>();
+        NotificationFilter filter = new NotificationFilter();
+        filter.filterType = NotificationFilterType.RESELLER_ID;
+        filter.filterValue = Arrays.asList("1000");
+        filters.add(filter);
+        NotificationExtendedDetails notificationExtendedDetails = new NotificationExtendedDetails();
+        notificationExtendedDetails.translationId = "test_translation_id";
+        
+        service.createNotification(testNotificationId, NotificationType.NEW_FEATURE,true,true,
+                notificationExtendedDetails, filters, null, null);
+        
+        assertNotNull(service.getNotification(testNotificationId));
+        assertEquals("test_translation_id", service.getNotification(testNotificationId).notificationExtendedDetails.translationId);
         service.deleteNotification(testNotificationId);
         assertNull(service.getNotification(testNotificationId));
     }
