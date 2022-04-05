@@ -140,11 +140,12 @@ public class VmActionsMonitorResource {
 
     @GET
     @Path("/pending/libvirtStuckVms")
-    @ApiOperation(value = "Find all VM IDs that have power actions pending for longer than m minutes, default 15, " +
-                          "or that have failed power actions in the last 24 hours and task state is image_snapshot",
-                  notes = "Find all VM IDs that are suspected to be stuck because of libvirt. Use this padre command to clear the task_state, " +
-                          "replacing the dc and os_guid values:\n" +
-                          "@padre run playbook clear_vm_snapshot_state cloud-<dc>-ztn uuid=<os_guid> desired_end_state=start")
+    @ApiOperation(value = "Find all VM IDs that have power actions pending for longer than m minutes, default 15, or that have failed " +
+                          "power actions in the last 24 hours and task state is image_snapshot, or power_state is Paused",
+                  notes = "Find all VM IDs that are suspected to be stuck because of libvirt. The following commands can be used to clear" +
+                          " it, replacing the dc and os_guid values" +
+                          " --- @padre run playbook clear_vm_snapshot_state cloud-'dc'-ztn uuid='os_guid' desired_end_state=start ---- " +
+                          "@padre run playbook unpause_vm cloud-'dc'-ztn uuid='os_guid' ---")
     public List<LibvirtStuckVm> getLibvirtStuckVms(@QueryParam("thresholdInMinutes") @DefaultValue("15") long thresholdInMinutes) {
         List<VmActionData> vmActionList = new ArrayList<>();
         vmActionList.addAll(getRecentErroredPowerActions());
@@ -154,16 +155,18 @@ public class VmActionsMonitorResource {
                                                                  ActionType.START_VM));
         return vmActionList
                 .stream()
-                .filter(action -> {
-                    VmExtendedInfo vmExtendedInfo = vmDetailsResource.getVmExtendedDetails(action.vmId);
+                .map(action -> action.vmId)
+                .distinct()
+                .filter(vmId -> {
+                    VmExtendedInfo vmExtendedInfo = vmDetailsResource.getVmExtendedDetails(vmId);
                     return vmExtendedInfo != null
                             && vmExtendedInfo.extended != null
-                            && vmExtendedInfo.extended.taskState != null
-                            && vmExtendedInfo.extended.taskState.equals("image_snapshot");
+                            && ((vmExtendedInfo.extended.taskState != null && vmExtendedInfo.extended.taskState.equalsIgnoreCase("image_snapshot"))
+                            || (vmExtendedInfo.extended.powerState != null && vmExtendedInfo.extended.powerState.equalsIgnoreCase("Paused")));
                 })
-                .map(action -> {
-                    Vm vm = vmDetailsResource.getMoreDetails(action.vmId);
-                    return new LibvirtStuckVm(action.vmId, vm.resourceUuid);
+                .map(vmId -> {
+                    Vm vm = vmDetailsResource.getMoreDetails(vmId);
+                    return new LibvirtStuckVm(vmId, vm.resourceUuid);
                 })
                 .collect(Collectors.toList());
     }

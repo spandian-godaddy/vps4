@@ -456,9 +456,12 @@ public class VmActionsMonitorResourceTest {
     @Test
     public void testGetlibvirtStuckVms() {
         ResultSubset<Action> resultSubset = getTestResultSet(5, ActionType.RESTART_VM, ActionStatus.IN_PROGRESS);
-        VmExtendedInfo vmExtendedInfo = new VmExtendedInfo();
-        vmExtendedInfo.extended = new Extended();
-        vmExtendedInfo.extended.taskState = "image_snapshot";
+        VmExtendedInfo vmExtendedInfoImageSnapshot = new VmExtendedInfo();
+        vmExtendedInfoImageSnapshot.extended = new Extended();
+        vmExtendedInfoImageSnapshot.extended.taskState = "image_snapshot";
+        VmExtendedInfo vmExtendedInfoPaused = new VmExtendedInfo();
+        vmExtendedInfoPaused.extended = new Extended();
+        vmExtendedInfoPaused.extended.powerState = "Paused";
         Vm vm = new Vm();
         vm.resourceUuid = UUID.randomUUID().toString();
 
@@ -470,11 +473,11 @@ public class VmActionsMonitorResourceTest {
             }
         };
         when(vmActionService.getActionList(argThat(expectedActionFilters))).thenReturn(resultSubset);
-        when(vmDetailsResource.getVmExtendedDetails(any())).thenReturn(vmExtendedInfo);
+        when(vmDetailsResource.getVmExtendedDetails(any())).thenReturn(vmExtendedInfoImageSnapshot).thenReturn(vmExtendedInfoPaused);
         when(vmDetailsResource.getMoreDetails(any())).thenReturn(vm);
 
         List<VmActionsMonitorResource.LibvirtStuckVm> stuckVms = vmActionsMonitorResource.getLibvirtStuckVms(15);
 
-        assertEquals(10, stuckVms.size());
+        assertEquals(2, stuckVms.size());
     }
 }
