@@ -135,7 +135,7 @@ public class NotificationsResourceTest {
         List<String> emptyList = new ArrayList<>();
 
         getNotificationResource().getNotificationsBasedOnFilters(filterList,
-                filterList,emptyList,null,null,emptyList,emptyList,filterList,emptyList, false, null,true);
+                filterList,emptyList,null,null,emptyList,emptyList,filterList,emptyList, false, null, null,true);
 
         verify(notificationService,times(1)).getNotifications(anyObject());
     }
@@ -145,7 +145,7 @@ public class NotificationsResourceTest {
         List<String> filterList = Arrays.asList("1000");
         List<String> emptyList = new ArrayList<>();
         getNotificationResource().getNotificationsBasedOnFilters(filterList,
-                filterList,emptyList,null,null,emptyList,filterList,emptyList,emptyList,false,null,true);
+                filterList,emptyList,null,null,emptyList,filterList,emptyList,emptyList,false,null, null,true);
 
         verify(notificationService,times(1)).getNotifications(notificationListSearchFiltersArgumentCaptor.capture());
         NotificationListSearchFilters notificationListSearchFilters = notificationListSearchFiltersArgumentCaptor.getValue();

@@ -122,6 +122,7 @@ public class JdbcNotificationService implements NotificationService {
         andCount = buildFilterQuery(searchFilters.getPlatformIds(), filtersQuery, NotificationFilterType.PLATFORM_ID.getFilterTypeId(), andCount, filterValues);
         andCount = buildFilterQuery(searchFilters.getVmIds(), filtersQuery, NotificationFilterType.VM_ID.getFilterTypeId(), andCount, filterValues);
         andCount = buildFilterQuery(searchFilters.getIsManagedAsList(), filtersQuery, NotificationFilterType.IS_MANAGED.getFilterTypeId(), andCount, filterValues);
+        andCount = buildFilterQuery(searchFilters.getIsImportedAsList(), filtersQuery, NotificationFilterType.IS_IMPORTED.getFilterTypeId(), andCount, filterValues);
 
         if(andCount > 0){
             filtersQuery.append(")");
@@ -160,7 +161,6 @@ public class JdbcNotificationService implements NotificationService {
                         notificationExtendedDetails.start == null ? null : LocalDateTime.ofInstant(notificationExtendedDetails.start, ZoneOffset.UTC),
                         notificationExtendedDetails.end == null ? null : LocalDateTime.ofInstant(notificationExtendedDetails.end, ZoneOffset.UTC),
                         notificationExtendedDetails.translationId);
-
         }
         addFilterToNotification(notificationId, filters);
         return getNotification(notificationId);

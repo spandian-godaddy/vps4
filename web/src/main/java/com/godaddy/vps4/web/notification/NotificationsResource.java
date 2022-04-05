@@ -80,6 +80,7 @@ public class NotificationsResource {
             @ApiParam(value = "A list of vmIds to filter on", required = false) @QueryParam("vmId") List<String> vmId,
             @DefaultValue("true") @QueryParam("showActive") boolean showActive,
             @QueryParam("isManaged") Boolean isManaged,
+            @QueryParam("isImported") Boolean isImported,
             @ApiParam(value = "Whether to show all notifications including support only ones", required = false)
             @DefaultValue("false") @QueryParam("adminView") boolean adminView)
     {
@@ -103,6 +104,7 @@ public class NotificationsResource {
         searchFilters.byVmId(vmId);
         searchFilters.byAdminView(adminView);
         searchFilters.byIsManaged(isManaged);
+        searchFilters.byIsImported(isImported);
         return notificationService.getNotifications(searchFilters);
     }
 

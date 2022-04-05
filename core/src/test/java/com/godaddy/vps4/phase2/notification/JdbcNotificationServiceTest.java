@@ -79,6 +79,9 @@ public class JdbcNotificationServiceTest {
         NotificationFilter filterIsManaged = new NotificationFilter();
         filterIsManaged.filterType = NotificationFilterType.IS_MANAGED;
         filterIsManaged.filterValue = Arrays.asList(Boolean.toString(true));
+        NotificationFilter filterIsImported = new NotificationFilter();
+        filterIsImported.filterType = NotificationFilterType.IS_IMPORTED;
+        filterIsImported.filterValue = Arrays.asList(Boolean.toString(true));
 
         filterList.add(filterDC);
         filterList.add(filterImage);
@@ -87,6 +90,7 @@ public class JdbcNotificationServiceTest {
         filterList.add(filterHv);
         filterList.add(filterVmId);
         filterList.add(filterIsManaged);
+        filterList.add(filterIsImported);
 
         SqlTestData.insertTestNotification(notificationId, NotificationType.PATCHING,true,true,
                 null, null, null, null, filterList, dataSource);
@@ -235,6 +239,33 @@ public class JdbcNotificationServiceTest {
     }
 
     @Test
+    public void getNotificationsShowListOfNotificationsByIsImportedOk() {
+        NotificationListSearchFilters searchFilters = new NotificationListSearchFilters();
+        searchFilters.byIsImported(true);
+        searchFilters.byAdminView(true);
+        List<Notification> notifications = injector.getInstance(NotificationService.class).getNotifications(searchFilters);
+        assertNotNull(notifications);
+        assertFalse(0 == notifications.size());
+
+        NotificationService service = injector.getInstance(NotificationService.class);
+        UUID testNotificationId = UUID.randomUUID();
+        List<NotificationFilter> filters = new ArrayList<>();
+        NotificationFilter filter = new NotificationFilter();
+        filter.filterType = NotificationFilterType.IS_IMPORTED;
+        filter.filterValue = Arrays.asList(Boolean.toString(false));
+        filters.add(filter);
+        service.createNotification(testNotificationId, NotificationType.PATCHING,true,true,
+                null, filters, null, null);
+
+        searchFilters.byIsImported(false);
+        searchFilters.byAdminView(true);
+        List<Notification> notificationsWrong = injector.getInstance(NotificationService.class).getNotifications(searchFilters);
+        assertNotNull(notifications);
+        assertFalse(0 == notificationsWrong.size());
+        service.deleteNotification(testNotificationId);
+    }
+
+    @Test
     public void getNotificationsShowListOfNotificationsByTypeOk() {
         NotificationListSearchFilters searchFilters = new NotificationListSearchFilters();
         searchFilters.byType(NotificationType.PATCHING);
@@ -328,10 +359,10 @@ public class JdbcNotificationServiceTest {
         filters.add(filter);
         NotificationExtendedDetails notificationExtendedDetails = new NotificationExtendedDetails();
         notificationExtendedDetails.translationId = "test_translation_id";
-        
+
         service.createNotification(testNotificationId, NotificationType.NEW_FEATURE,true,true,
                 notificationExtendedDetails, filters, null, null);
-        
+
         assertNotNull(service.getNotification(testNotificationId));
         assertEquals("test_translation_id", service.getNotification(testNotificationId).notificationExtendedDetails.translationId);
         service.deleteNotification(testNotificationId);

@@ -20,6 +20,7 @@ import com.godaddy.vps4.credit.CreditService;
 import com.godaddy.vps4.credit.VirtualMachineCredit;
 import com.godaddy.vps4.notifications.Notification;
 import com.godaddy.vps4.vm.VirtualMachine;
+import com.godaddy.vps4.vm.VirtualMachineService;
 import com.godaddy.vps4.web.Vps4Api;
 import com.godaddy.vps4.web.notification.NotificationsResource;
 import com.godaddy.vps4.web.security.GDUser;
@@ -41,15 +42,21 @@ public class VmNotificationResource {
     private final NotificationsResource notificationsResource;
     private final VmResource vmResource;
     private final CreditService creditService;
+    private final VirtualMachineService virtualMachineService;
     private final GDUser user;
 
     @Inject
-    public VmNotificationResource(NotificationsResource notificationsResource,
+    public VmNotificationResource(NotificationsResource notificationsResource, VirtualMachineService virtualMachineService,
                                   CreditService creditService, VmResource vmResource, GDUser user) {
         this.creditService = creditService;
         this.vmResource = vmResource;
         this.notificationsResource = notificationsResource;
+        this.virtualMachineService = virtualMachineService;
         this.user = user;
+    }
+
+    private boolean isImported(UUID vmId) {
+        return virtualMachineService.getImportedVm(vmId) != null;
     }
 
     @GET
@@ -86,6 +93,7 @@ public class VmNotificationResource {
                     Arrays.asList((virtualMachine.vmId).toString()),
                     false,
                     virtualMachineCredit.isManaged(),
+                    isImported(vmId),
                     isSupport
             );
         }

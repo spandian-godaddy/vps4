@@ -23,6 +23,7 @@ public class NotificationListSearchFilters {
     private boolean showActive;
     private boolean adminView;
     private Boolean isManaged;
+    private Boolean isImported;
 
     public void byType(NotificationType... typeList) {
         types = Arrays.asList(typeList);
@@ -85,6 +86,10 @@ public class NotificationListSearchFilters {
         this.isManaged = managed;
     }
 
+    public void byIsImported(Boolean isImported) {
+        this.isImported = isImported;
+    }
+
     public void byAdminView(boolean adminView) {this.adminView = adminView;
     }
 
@@ -117,6 +122,15 @@ public class NotificationListSearchFilters {
             return new ArrayList<>();
         }
         return Arrays.asList(Boolean.toString(isManaged));
+    }
+    public Boolean getIsImported() {
+        return isImported;
+    }
+    public List<String> getIsImportedAsList() {
+        if(isImported == null) {
+            return new ArrayList<>();
+        }
+        return Arrays.asList(Boolean.toString(isImported));
     }
     public Instant getValidOn() {
         return validOn;

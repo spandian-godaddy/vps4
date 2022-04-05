@@ -168,6 +168,7 @@ public class VmNotificationResourceTest {
                         eq(Arrays.asList(vps4Vm.vmId.toString())),
                         anyBoolean(),
                         eq(credit.isManaged()),
+                        anyBoolean(),
                         anyBoolean())).thenReturn(Arrays.asList(notification));
         when(creditService.getVirtualMachineCredit(any())).thenReturn(credit);
         when(vmResource.getVmExtendedInfoFromVmVertical(hfsVmId)).thenReturn(vmExtendedInfoMock);
@@ -191,6 +192,7 @@ public class VmNotificationResourceTest {
                 eq(Arrays.asList(vps4Vm.vmId.toString())),
                 anyBoolean(),
                 eq(credit.isManaged()),
+                anyBoolean(),
                 anyBoolean());
     }
 
@@ -219,6 +221,7 @@ public class VmNotificationResourceTest {
                 eq(Arrays.asList(vps4Vm.vmId.toString())),
                 anyBoolean(),
                 eq(credit.isManaged()),
+                anyBoolean(),
                 eq(false));
     }
 
@@ -241,6 +244,7 @@ public class VmNotificationResourceTest {
                 eq(Arrays.asList(vps4Vm.vmId.toString())),
                 anyBoolean(),
                 eq(credit.isManaged()),
+                anyBoolean(),
                 eq(true));
     }
 
@@ -264,6 +268,7 @@ public class VmNotificationResourceTest {
                 eq(Arrays.asList(vps4Vm.vmId.toString())),
                 anyBoolean(),
                 eq(credit.isManaged()),
+                anyBoolean(),
                 eq(true));
     }
 
@@ -286,6 +291,7 @@ public class VmNotificationResourceTest {
                 eq(Arrays.asList(vps4Vm.vmId.toString())),
                 anyBoolean(),
                 eq(dedCredit.isManaged()),
+                anyBoolean(),
                 anyBoolean());
     }
 }

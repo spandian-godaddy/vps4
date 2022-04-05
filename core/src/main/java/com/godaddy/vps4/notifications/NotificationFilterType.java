@@ -12,7 +12,8 @@ public enum NotificationFilterType {
     TIER(4),
     PLATFORM_ID(5),
     VM_ID(6),
-    IS_MANAGED(7);
+    IS_MANAGED(7),
+    IS_IMPORTED(8);
 
     private final int typeId;
 
