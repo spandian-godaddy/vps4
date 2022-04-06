@@ -36,9 +36,8 @@ public class DefaultPanoptaService implements PanoptaService {
     private static final int SLEEP_SECONDS = 10;
     private static final int TIMEOUT_MINUTES = 1;
     private static final int NETWORK_METRIC_FREQUENCY_MANAGED = 60;
-    private static final int OUTAGE_CONFIRMATION_DELAY_MANAGED = 900;
     private static final int NETWORK_METRIC_FREQUENCY_SELF_MANAGED = 300;
-    private static final int OUTAGE_CONFIRMATION_DELAY_SELF_MANAGED = 300;
+    private static final int OUTAGE_CONFIRMATION_DELAY = 300;
     private static final int HTTPS_PORT = 443;
     private static final int HTTP_PORT = 80;
     private static final String SSL_EXPIRATION_WARNING_TIME = "14";
@@ -260,7 +259,6 @@ public class DefaultPanoptaService implements PanoptaService {
         PanoptaApiNetworkServiceRequest request;
         int port;
         int networkMetricFrequency = isManaged ? NETWORK_METRIC_FREQUENCY_MANAGED : NETWORK_METRIC_FREQUENCY_SELF_MANAGED;
-        int outageConfirmationDelay = isManaged ? OUTAGE_CONFIRMATION_DELAY_MANAGED : (hasMonitoring ? OUTAGE_CONFIRMATION_DELAY_MANAGED : OUTAGE_CONFIRMATION_DELAY_SELF_MANAGED);
         PanoptaApiNetworkServiceRequest.Metadata metadata = new PanoptaApiNetworkServiceRequest.Metadata();
         PanoptaApiNetworkServiceRequest.HttpsMetadata httpsMetadata = new PanoptaApiNetworkServiceRequest.HttpsMetadata();
         if(metric.equals(VmMetric.HTTPS)) {
@@ -280,7 +278,7 @@ public class DefaultPanoptaService implements PanoptaService {
         }
 
         request = new PanoptaApiNetworkServiceRequest(panoptaMetricMapper.getMetricTypeId(metric, osTypeId),
-                networkMetricFrequency, EXCLUDE_FROM_AVAILABILITY, outageConfirmationDelay, port, additionalFqdn,
+                networkMetricFrequency, EXCLUDE_FROM_AVAILABILITY, OUTAGE_CONFIRMATION_DELAY, port, additionalFqdn,
                 metric.equals(VmMetric.HTTPS) ? httpsMetadata : metadata);
         panoptaApiServerService.addNetworkService(panoptaDetails.getServerId(),
                 panoptaDetails.getPartnerCustomerKey(),
