@@ -31,7 +31,8 @@ public class Vps4AddDomainMonitoring extends ActionCommand<Vps4AddDomainMonitori
     @Override
     protected Void executeWithAction(CommandContext context, Vps4AddDomainMonitoring.Request request) throws IOException {
         this.context = context;
-        boolean isHttps = isHttps(request.additionalFqdn);
+        boolean isHttps = request.overrideProtocol == null ? isHttps(request.additionalFqdn) :
+                request.overrideProtocol.equals("HTTPS");
         addAdditionalFqdn(request.vmId, request.additionalFqdn, isHttps, request.osTypeId, request.isManaged, request.hasMonitoring);
         return null;
     }
@@ -66,6 +67,7 @@ public class Vps4AddDomainMonitoring extends ActionCommand<Vps4AddDomainMonitori
         public int osTypeId;
         public boolean isManaged;
         public boolean hasMonitoring;
+        public String overrideProtocol;
 
         @Override
         public long getActionId() {

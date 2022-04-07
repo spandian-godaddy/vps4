@@ -93,7 +93,8 @@ public class VmAddMonitoringResource {
 
     @POST
     @Path("/{vmId}/monitoring/additionalFqdn")
-    @ApiOperation(value = "Add domain to monitoring on customer server")
+    @ApiOperation(value = "Add domain to monitoring on customer server",
+            notes = "overrideProtocol field only accepts 'HTTP' or 'HTTPS' values")
     public VmAction addDomainToMonitoring(@PathParam("vmId") UUID vmId,
                                           AddDomainToMonitoringRequest addDomainMonitoringRequest) {
         if(addDomainMonitoringRequest.additionalFqdn == null ) {
@@ -102,6 +103,7 @@ public class VmAddMonitoringResource {
         VirtualMachine vm = vmResource.getVm(vmId);
         VirtualMachineCredit credit = creditService.getVirtualMachineCredit(vm.orionGuid);
         List<String> activeFqdns = panoptaDataService.getPanoptaActiveAdditionalFqdns(vmId);
+
         if(this.isManagedDomainLimitReached(credit.isManaged(), activeFqdns)) {
             throw new Vps4Exception("DOMAIN_LIMIT_REACHED", "Domain limit has been reached on this server.");
         }
@@ -112,6 +114,8 @@ public class VmAddMonitoringResource {
         validateNoConflictingActions(vmId, actionService, ActionType.ADD_MONITORING, ActionType.DELETE_DOMAIN_MONITORING, ActionType.ADD_DOMAIN_MONITORING);
 
         Vps4AddDomainMonitoring.Request request = new Vps4AddDomainMonitoring.Request();
+        request.overrideProtocol = addDomainMonitoringRequest.overrideProtocol == null ?
+                null : addDomainMonitoringRequest.overrideProtocol.toString();
         request.vmId = vmId;
         request.additionalFqdn = addDomainMonitoringRequest.additionalFqdn;
         request.osTypeId = vm.image.operatingSystem.getOperatingSystemId();
@@ -133,7 +137,12 @@ public class VmAddMonitoringResource {
                 ActionType.DELETE_DOMAIN_MONITORING,  request, "Vps4RemoveDomainMonitoring", user);
     }
 
+    public enum FqdnProtocol {
+        HTTP, HTTPS
+    }
+
     public static class AddDomainToMonitoringRequest {
         public String additionalFqdn;
+        public FqdnProtocol overrideProtocol;
     }
 }

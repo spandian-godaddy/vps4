@@ -18,8 +18,8 @@ import java.util.UUID;
 import com.godaddy.vps4.credit.CreditService;
 import com.godaddy.vps4.credit.ECommCreditService;
 import com.godaddy.vps4.credit.VirtualMachineCredit;
+import com.godaddy.vps4.orchestration.monitoring.Vps4AddDomainMonitoring;
 import com.godaddy.vps4.panopta.PanoptaDataService;
-import com.godaddy.vps4.panopta.PanoptaService;
 import com.godaddy.vps4.vm.AccountStatus;
 import com.godaddy.vps4.vm.DataCenterService;
 import com.godaddy.vps4.vm.Image;
@@ -158,6 +158,19 @@ public class VmAddMonitoringResourceTest {
         verify(commandService).executeCommand(argument.capture());
         CommandGroupSpec cmdGroup = argument.getValue();
         assertEquals("Vps4AddDomainMonitoring", cmdGroup.commands.get(0).command);
+    }
+
+    @Test
+    public void executesAddDomainMonitoringCommandWithOverrideProtocol() {
+        request.overrideProtocol = VmAddMonitoringResource.FqdnProtocol.HTTPS;
+        resource.addDomainToMonitoring(vmId, request);
+
+        ArgumentCaptor<CommandGroupSpec> argument = ArgumentCaptor.forClass(CommandGroupSpec.class);
+        verify(commandService).executeCommand(argument.capture());
+        CommandGroupSpec cmdGroup = argument.getValue();
+        Vps4AddDomainMonitoring.Request request = (Vps4AddDomainMonitoring.Request)cmdGroup.commands.get(0).request;
+        assertEquals("Vps4AddDomainMonitoring", cmdGroup.commands.get(0).command);
+        assertEquals("HTTPS", request.overrideProtocol);
     }
 
     @Test

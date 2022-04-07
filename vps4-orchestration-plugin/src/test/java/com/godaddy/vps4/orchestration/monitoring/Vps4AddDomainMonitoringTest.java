@@ -52,6 +52,7 @@ public class Vps4AddDomainMonitoringTest {
         req.vmId = vmId;
         req.osTypeId = 1;
         req.additionalFqdn = "thisfqdn.isdefinitely.fake";
+        req.overrideProtocol = null;
     }
 
     @Test
@@ -62,9 +63,8 @@ public class Vps4AddDomainMonitoringTest {
         verify(context).execute(eq(AddAdditionalFqdnPanopta.class), argument.capture());
     }
 
-
     @Test
-    public void executesAddAdditionalFqdnPanoptaFakeFqdn() {
+    public void executesWithFakeFqdn() {
         command.execute(context, req);
 
         ArgumentCaptor<AddAdditionalFqdnPanopta.Request> argument = ArgumentCaptor.forClass(AddAdditionalFqdnPanopta.Request.class);
@@ -76,9 +76,22 @@ public class Vps4AddDomainMonitoringTest {
         assertEquals(false, request.isHttps);
     }
 
+    @Test
+    public void acceptsHttpsOverride() {
+        req.overrideProtocol = "HTTPS";
+        command.execute(context, req);
+
+        ArgumentCaptor<AddAdditionalFqdnPanopta.Request> argument = ArgumentCaptor.forClass(AddAdditionalFqdnPanopta.Request.class);
+        verify(context).execute(eq(AddAdditionalFqdnPanopta.class), argument.capture());
+        AddAdditionalFqdnPanopta.Request request = argument.getValue();
+        assertEquals(vmId, request.vmId);
+        assertEquals(1, request.operatingSystemId);
+        assertEquals("thisfqdn.isdefinitely.fake", request.additionalFqdn);
+        assertEquals(true, request.isHttps);
+    }
 
     @Test
-    public void executesAddAdditionalFqdnPanoptaValidFqdn() {
+    public void executesWithValidFqdn() {
         req.additionalFqdn = "myh.godaddy.com";
         command.execute(context, req);
 
@@ -89,5 +102,20 @@ public class Vps4AddDomainMonitoringTest {
         assertEquals(1, request.operatingSystemId);
         assertEquals("myh.godaddy.com", request.additionalFqdn);
         assertEquals(true, request.isHttps);
+    }
+
+    @Test
+    public void acceptsHttpOverride() {
+        req.additionalFqdn = "myh.godaddy.com";
+        req.overrideProtocol = "HTTP";
+        command.execute(context, req);
+
+        ArgumentCaptor<AddAdditionalFqdnPanopta.Request> argument = ArgumentCaptor.forClass(AddAdditionalFqdnPanopta.Request.class);
+        verify(context).execute(eq(AddAdditionalFqdnPanopta.class), argument.capture());
+        AddAdditionalFqdnPanopta.Request request = argument.getValue();
+        assertEquals(vmId, request.vmId);
+        assertEquals(1, request.operatingSystemId);
+        assertEquals("myh.godaddy.com", request.additionalFqdn);
+        assertEquals(false, request.isHttps);
     }
 }
