@@ -161,6 +161,20 @@ public class RequestValidation {
         }
     }
 
+    private static Validator getHostnameValidatorByImage(Image image) {
+        if (image.controlPanel == ControlPanel.CPANEL) {
+            return ValidatorRegistry.getInstance().get("cpanelHostname");
+        }
+        return ValidatorRegistry.getInstance().get("hostname");
+    }
+
+    public static void validateHostname(String hostname, Image image) {
+        Validator validator = getHostnameValidatorByImage(image);
+        if (!validator.isValid(hostname)){
+            throw new Vps4Exception("INVALID_HOSTNAME", String.format("%s is an invalid hostname", hostname));
+        }
+    }
+
     private static boolean isBrandReseller(String resellerId) {
         String[] brandResellers = {
             "525848", // Heart Internet

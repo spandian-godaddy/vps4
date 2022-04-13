@@ -1,5 +1,6 @@
 package com.godaddy.vps4.web.sysadmin;
 
+import static com.godaddy.vps4.web.util.RequestValidation.validateHostname;
 import static com.godaddy.vps4.web.util.RequestValidation.validateNoConflictingActions;
 import static com.godaddy.vps4.web.util.RequestValidation.validateServerIsActive;
 
@@ -25,8 +26,6 @@ import com.godaddy.vps4.orchestration.sysadmin.Vps4SetHostname;
 import com.godaddy.vps4.orchestration.sysadmin.Vps4SetPassword;
 import com.godaddy.vps4.orchestration.sysadmin.Vps4ToggleAdmin;
 import com.godaddy.vps4.util.Cryptography;
-import com.godaddy.vps4.util.validators.Validator;
-import com.godaddy.vps4.util.validators.ValidatorRegistry;
 import com.godaddy.vps4.vm.ActionService;
 import com.godaddy.vps4.vm.ActionType;
 import com.godaddy.vps4.vm.Image.OperatingSystem;
@@ -138,11 +137,7 @@ public class SysAdminResource {
 
         validateServerIsActive(vmResource.getVmFromVmVertical(vm.hfsVmId));
         validateNoConflictingActions(vmId, actionService, ActionType.SET_HOSTNAME);
-
-        Validator validator = ValidatorRegistry.getInstance().get("hostname");
-        if (!validator.isValid(setHostnameRequest.hostname)){
-            throw new Vps4Exception("INVALID_HOSTNAME", String.format("%s is an invalid hostname", setHostnameRequest.hostname));
-        }
+        validateHostname(setHostnameRequest.hostname, vm.image);
 
         JSONObject hostnameJsonRequest = new JSONObject();
         hostnameJsonRequest.put("hostname", setHostnameRequest.hostname);

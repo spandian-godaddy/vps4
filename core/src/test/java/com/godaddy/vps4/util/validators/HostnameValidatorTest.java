@@ -87,4 +87,22 @@ public class HostnameValidatorTest {
         assertTrue(validator.isValid("wwww.is-also-valid.test"));
     }
 
+    @Test
+    public void cpanelHostnameShouldNotStartWithCpanelOrWHM() {
+        // Cpanel hostnames cannot begin with cpanel or whm prefix
+        Validator validator = ValidatorRegistry.getInstance().get("cpanelHostname");
+
+        assertFalse(validator.isValid("cpanel.is-invalid.test"));
+        assertFalse(validator.isValid("CPaNel.is-invalid.test"));
+        assertTrue(validator.isValid("the.cpanel-in-middle.test"));
+        assertTrue(validator.isValid("thiscpanel.is-valid.test"));
+        assertTrue(validator.isValid("cpanellll.is-valid.test"));
+
+        assertFalse(validator.isValid("whm.is-invalid.test"));
+        assertFalse(validator.isValid("WHM.is-invalid.test"));
+        assertTrue(validator.isValid("the.whm-in-middle.test"));
+        assertTrue(validator.isValid("thiswhm.is-valid.test"));
+        assertTrue(validator.isValid("whmmm.is-also-valid.test"));
+    }
+
 }

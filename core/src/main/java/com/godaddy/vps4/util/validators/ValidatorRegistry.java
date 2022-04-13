@@ -7,6 +7,7 @@ import java.util.Map;
 import com.godaddy.vps4.vm.Image;
 import static com.godaddy.vps4.vm.Image.ControlPanel.MYH;
 import static com.godaddy.vps4.vm.Image.ControlPanel.PLESK;
+import static com.godaddy.vps4.vm.Image.ControlPanel.CPANEL;
 
 public class ValidatorRegistry {
 
@@ -24,6 +25,7 @@ public class ValidatorRegistry {
         validators.put("password", getPasswordValidator());
         validators.put("pleskPassword", getPasswordValidator(PLESK));
         validators.put("hostname", getHostnameValidator());
+        validators.put("cpanelHostname", getHostnameValidator(CPANEL));
         validators.put("snapshot-name", getSnapshotNameValidator());
     }
 
@@ -49,6 +51,11 @@ public class ValidatorRegistry {
         return getPasswordValidator(MYH);
     }
 
+    // Non-specified controlPanel, returns default rules (MYH)
+    static Validator getHostnameValidator() {
+        return getHostnameValidator(MYH);
+    }
+
     static Validator getPasswordValidator(Image.ControlPanel controlPanel) {
         ArrayList<Rule> rules = new ArrayList<>(Arrays.asList(
             new Rule("Between 8 and 48 characters, with no disallowed characters", "[^&?;]{8,48}"),
@@ -63,8 +70,8 @@ public class ValidatorRegistry {
         return new Validator(rules);
     }
 
-    static Validator getHostnameValidator() {
-        return(new Validator(Arrays.asList(
+    static Validator getHostnameValidator(Image.ControlPanel controlPanel) {
+        ArrayList<Rule> rules = new ArrayList<>((Arrays.asList(
             new Rule("Fully Qualified Hostname (xxx.xxx.xxx)", "^[^\\.]+\\.([^\\.]+\\.)+[^\\.]+$"),
             new Rule(". and - are the only allowed special characters", "^[a-zA-Z0-9-.]*$"),
             new Rule("63 characters or fewer per section", "^[^\\.]{0,63}(\\.[^\\.]{0,63})*$"),
@@ -74,7 +81,11 @@ public class ValidatorRegistry {
             new Rule("Multiple hyphens may not be adjacent", "^((?!--).)*$"),
             new Rule("Doesn't begin with www.", "^(?!www\\.).*$"),
             new Rule("Contain a non-digit in the last section", "^.*\\.[^.]*[^.0-9][^.]*$")
-        )));
+          )));
+        if (controlPanel == CPANEL) {
+            rules.add(new Rule("Doesn't begin with cpanel or whm.", "^(?!(?i)(cpanel|whm)\\.).*$"));
+        }
+        return new Validator(rules);
     }
 
     static Validator getSnapshotNameValidator() {
