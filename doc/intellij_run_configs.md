@@ -1,4 +1,4 @@
-# Intellij Run configs
+# Intellij Run Configs
 Details on setting up run config(s) in IntelliJ to run various vps4 micro services as well as maven tasks
 
 ### Message consumer (run locally)

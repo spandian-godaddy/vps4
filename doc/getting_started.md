@@ -1,69 +1,117 @@
 # Getting Started developing on VPS4
 
 ## Access Rights
-- There are several requests for access you need to make to get started on developing:
-    - request to be added to the `dev-VPS4` AD group (for vps4-web-api)
-       - https://godaddy.service-now.com/gdsp
-       - Service Catalog -> My Digital Experience -> Access -> Security Group Updates -> Update My Security Groups  
-    - request to be added to the `admins_VPS4` AD group (for access to infrastructure servers)
-       - https://godaddy.service-now.com/gdsp
-       - Service Catalog -> My Digital Experience -> Access -> Security Group Updates -> Update My Security Groups
-    - request CRM - Validation Skip Access (for special admin-type access)
-       - https://godaddy.service-now.com/gdsp
-       - Service Catalog -> Go to Search bar -> Type "skip access" and enter-> Click on the "CRM - Validation Skip Access" link
-    - Note: the requests may be automatically marked as completed, however it usually takes a few hours for the system to update and for you to gain access.
-  
-## Getting Started
-- git clone vps4 code locally:
-    - https://github.secureserver.net/vps4/vps4
-    - note: you will not have write access to this repo until someone adds you as a collaborator or to the vps4 team in GitHub
-- install Tartufo - https://tartufo.readthedocs.io/en/stable/installation.html
-- install precommit and run the quick start - https://pre-commit.com/#install
-- download Java 8 SDK
-- download Eclipse IDE for Java Developers
-    - you can choose to use another IDE, like IntelliJ IDEA (Community Edition should be sufficient & does not require a license), but these specific instructions are catered for Eclipse setup
-- download Intellij Idea Ultimate edition IDE if that is your choice of IDE
-    - you can get a godaddy license activation by submitting a SNOW request (example: [RITM0120501](https://godaddy.service-now.com/nav_to.do?uri=sc_req_item.do?sys_id=b2e5047c37708384ce4fb15ec3990e9a)). After it is resolved, the JetBrains license will be connected to your GoDaddy email, you will then be able to activate license for both your IntelliJ IDEA IDE and WebStorm IDE.
-    - Note: this request might take a few days to resolve. In the meantime, you can still use the 30 day free trial version. 
-- make sure Maven is installed
-    - for Mac, if you have homebrew already installed, one way to do it:
-       - `brew install maven`
-- make sure Maven is using the correct version of Java 8 and not its own default Java by
-    - `mvn -v`
-    - if output is Java version larger than 1.8:
-        - make a ``~/.mavenrc`` file with this content:
-          ```
-          JAVA_HOME=`/usr/libexec/java_home -v 1.8`
-- create maven settings file (be sure to get the password for line 22):
-> File: ~/.m2/settings.xml
-```xml
-<settings>
-    <profiles>
-        <profile>
-            <id>default</id>
-            <repositories>
-                <repository>
-                    <id>default</id>
-                    <name>hosting local repo</name>
-                    <url>https://artifactory.secureserver.net/artifactory/java-hostingcore-local/</url>
-                    <layout>default</layout>
-                </repository>
-            </repositories>
-        </profile>
-    </profiles>
-    <activeProfiles>
-        <activeProfile>default</activeProfile>
-    </activeProfiles>
-    <servers>
-        <server>
-            <id>default</id>
-            <username>ci_hostingcore</username>
-            <password>ask-somone-on-the-team-for-real-password</password>
-        </server>
-    </servers>
-</settings>
-```
 
+- There are several requests for access you need to make to get started on developing:
+    - request to be added to the `Jomax/Dev-VPS4` AD group (for the VPS4 API)
+        - https://godaddy.service-now.com/gdsp
+        - Employee Technology > Access > Security Group Updates > Update My Security Groups
+    - request to be added to the `DC1/admins_vps4` AD group (for access to infrastructure servers)
+        - https://godaddy.service-now.com/gdsp
+        - Employee Technology > Access > Security Group Updates > Update My Security Groups
+    - request CRM - Validation Skip Access (for viewing customer dashboards)
+        - https://godaddy.service-now.com/gdsp
+        - search for "skip access" and choose `CRM - Validation Skip Access`
+    - Note: the requests may be automatically marked as completed, but it usually takes a few hours for the system to update and for you to gain access.
+
+## Getting Started
+
+- [set up your local database](#database-configuration)
+- clone the VPS4 code locally
+    - set up SSH keys for your account
+    - `git clone git@github.com:gdcorp-partners/vps4.git`
+    - if you need write access to this repo, ask a VPS4 team member to add you as a collaborator in GitHub
+- install [tartufo](https://tartufo.readthedocs.io/en/stable/installation.html)
+- install [pre-commit](https://pre-commit.com/#install) and follow the quick start
+    - the `.pre-commit-config.yaml` file is already set up and included in the VPS4 repo
+- install the [Java 8 SDK](https://www.oracle.com/java/technologies/downloads/#java8)
+- [install and configure maven](#maven-configuration)
+- install and configure your preferred IDE
+    - [IntelliJ](#intellij-setup)
+    - [Eclipse](#eclipse-setup)
+- [get configs from AWS secrets](#get-configs-from-aws-secrets)
+
+## Database Configuration
+
+- install postgresql locally or use vagrant
+    - for Mac with homebrew:
+        ```
+        brew install postgresql
+        brew services start postgresql
+        createuser -s -r postgres
+        ```
+    - add the following line to your `/etc/hosts` file, substituting 127.0.0.1 with your vagrant IP if using vagrant:
+        ```
+        127.0.0.1 vps4-local-dbserver.dev-godaddy.com
+        ```
+- in `vps4/core` directory, initialize postgres db:
+    ```bash
+    mvn initialize sql:execute@drop-create-database -Prebuild-database
+    mvn initialize flyway:migrate
+    ```
+- any future migrations can be applied with `mvn initialize flyway:migrate` in `vps4/core`
+
+## Maven Configuration
+
+- install Maven
+    - for Mac with homebrew, use `brew install maven`
+- check that Maven is using the correct version of Java with `mvn -v`
+    - if the  Java version larger than 1.8, make a ``~/.mavenrc`` file with this content:
+        ```
+        JAVA_HOME=`/usr/libexec/java_home -v 1.8.0`
+        ```
+- create a settings file
+    - `~/.m2/settings.xml`
+        ```xml
+        <settings>
+            <profiles>
+                <profile>
+                    <id>default</id>
+                    <repositories>
+                        <repository>
+                            <id>default</id>
+                            <name>hosting local repo</name>
+                            <url>https://artifactory.secureserver.net/artifactory/java-hostingcore-local/</url>
+                            <layout>default</layout>
+                        </repository>
+                    </repositories>
+                </profile>
+            </profiles>
+            <activeProfiles>
+                <activeProfile>default</activeProfile>
+            </activeProfiles>
+            <servers>
+                <server>
+                    <id>default</id>
+                    <username>ci_hostingcore</username>
+                    <password>CHANGE-THIS</password>
+                </server>
+            </servers>
+        </settings>
+        ```
+    - you can get the real password from a teammate or the CICD server
+
+## IntelliJ Setup
+
+- install IntelliJ
+    - the community edition is all you really need
+    - if you prefer the ultimate edition, you'll need a license
+        - submit a request (example: [RITM0120501](https://godaddy.service-now.com/nav_to.do?uri=sc_req_item.do?sys_id=b2e5047c37708384ce4fb15ec3990e9a))
+        - wait for the request to be approved. This may take a few days
+        - the JetBrains license will be connected to your GoDaddy email, and you will then be able to activate the license for IntelliJ or any other JetBrains IDEs
+- import code into Intellij Idea
+    - open the project with `Projects > Open > ~/path/to/vps4`
+    - set the SDK to Java 8 in `Module Settings > Project > SDK`
+- create Intellij Run Configurations
+    - Click on "Add Configuration" on the top right bar
+    - Click `Add new... > Application`
+    - Create configurations using the [IntelliJ Run Configs](../doc/intellij_run_configs.md) doc
+        - In the "Modify options" dropdown, make sure "Add VM options" is checked
+        - The majority of development can be done with just the `Local Orchestration Engine (Non-plugin)` and `Vps4 API` configs
+
+## Eclipse Setup
+
+- install the Eclipse IDE for Java Developers
 - import code into Eclipse
     - open Eclipse, select File -> Import -> Maven -> Existing Maven Projects
     - browse to dir of vps4 git code
@@ -72,24 +120,6 @@
     - in project explorer, right click vps4-core -> Maven -> Update project
     - after updating project, there may still be three errors in the "Problems" tab of Eclipse
         - if the errors say "plugin execution not covered by lifecycle configuration", this can be fixed by right clicking each error and ignoring in Eclipse
-
-- import code into Intellij Idea
-    - Import project -> find the pom.xml for the vps4-project and open it. 
-    - Select "Search for projects recursively" and "Import Maven projects automatically"
-    - go through the screens clicking "Next"
-    - Project should be opened in the editor once above steps are completed
-    - make sure IntelliJ is using the local Maven and not its own bundled Maven:
-        - Go to `Preferences -> Build, Execution, Deployment -> Build tools -> Maven`
-        - Confirm Maven home path is your local (/usr/local...e.t.c) and not Bundled Maven
-
-- create Intellij Run Configurations
-    - Click on "Edit configurations" on the top right bar
-    - Click on "+"/"Add new configurations" 
-        - Click on "Modify Options" dropdown, make sure "add VM Options" is checked
-        - Local Orchestration Engine (**Refer to the [intellij run configs](../doc/intellij_run_configs.md) under section "Orchestration (Non-plugin)" for instructions on setting up the run config for orchengine**)
-        - Web Server  (**Refer to the same link above, under section "Vps4 API"**)
-        - Scheduler (**Refer to the same link above under section "Scheduler memory mode"**)
-
 - create Eclipse Run Configurations
     - Run -> Run configurations
     - Java Application, create New launch configurations
@@ -108,103 +138,64 @@
             - Arguments tab: Add VM arguments: ```-Dvps4.user.fake=false -Dvps4.config.mode=file -Dorchestration.engine.clustered=false```
             - Apply
 
-- replace Java limited encryption jars if you’ve never done so
-    - Download the unlimited jce jars and see the readme.txt for instructions: http://www.oracle.com/technetwork/java/javase/downloads/jce8-download-2133166.html
+## Get Configs from AWS Secrets
 
-- setup Postgres database
-    - install postgresql locally or install vagrant
-    - for Mac, one way to do it:
-        - install homebrew
-        - `brew install postgresql`
-        - `brew services start postgresql`
-        - `createuser -s -r postgres`
-        - test using cmd: `psql -U postgres postgres`
-        - modify `/etc/hosts` to redirect domain vps4-local-dbserver.dev-godaddy.com
-        - locally if postgres installed locally or at vagrant IP if using vagrant
-            - ```echo "127.0.0.1   vps4-local-dbserver.dev-godaddy.com" >> /etc/hosts```
-    - via commandline, in `vps4/core` dir, initialize postgres db:
-        ```bash
-        mvn initialize sql:execute@drop-create-database -Prebuild-database
-        mvn initialize flyway:migrate
-        ```
-        - after the above initial setup, when needed / after pulling any updates run migrations as necessary in `vps4/core`
-            ```bash
-            mvn initialize flyway:migrate
-            ```
- - setup local configs if needed
-    - open: ```core/src/main/resources/com/godaddy/vps4/config/local/config.properties```
-    - edit the line: ```-hfs.sgid.prefix=vps4-local-``` into: ```-hfs.sgid.prefix=vps4-local-your_jomax_username```
-    
+- we have [a Jenkins job](https://vps4.jenkins.int.godaddy.com/view/AWS%20Secrets/job/AWS%20Get%20Secret/) for retrieving secrets from AWS
+- for each secret in the table, run the Jenkins job and store the result from the Jenkins workspace on your laptop
 
-- import HFS web developer client cert into browser (Chrome?) to use HFS swagger UI
-    - ask HFS team for read collaborator access to the `hfs/Creds` repo, and then git clone it locally
-        - https://github.secureserver.net/hfs/Creds
-    - repeat below steps for any environment needed.  Steps are for `STAGE`
+| Secret Name                    | File Name               | Environment | Path on Local Machine                                                         |
+|--------------------------------|-------------------------|-------------|-------------------------------------------------------------------------------|
+| /base/config.properties        | config.properties       | dev         | core/src/main/resources/com/godaddy/vps4/config/base/config.properties        |
+| /local/config.properties       | config.properties       | dev         | core/src/main/resources/com/godaddy/vps4/config/local/config.properties       |
+| /base/hfs.client.crt           | hfs.client.crt          | dev         | core/src/main/resources/com/godaddy/vps4/config/base/hfs.client.crt           |
+| /base/hfs.client.key           | hfs.client.key          | dev         | core/src/main/resources/com/godaddy/vps4/config/base/hfs.client.key           |
+| /local/messaging.api.crt       | messaging.api.crt       | dev         | core/src/main/resources/com/godaddy/vps4/config/local/messaging.api.crt       |
+| /local/messaging.api.key       | messaging.api.key       | dev         | core/src/main/resources/com/godaddy/vps4/config/local/messaging.api.key       |
+| /local/password_encryption.key | password_encryption.key | dev         | core/src/main/resources/com/godaddy/vps4/config/local/password_encryption.key |
 
-    - EITHER use the existing pksc12 cert:
-        - `Creds/ssl_ca/hfs/STAGE/hfs_end_web_developer.p12`
-    - OR generate the pksc12 cert if needed:
-        - Example:
-        ```bash
-        mkdir -p hfs_swagger_certs/{DEV,TEST,STAGE,PROD}
-        cd Creds/ssl_ca/hfs/STAGE/
-        cp hfs_end_web_developer.crt hfs_end_web_developer.key hfs_int_web.crt hfs_root.crt \
-                ~workspaces/vps4/hfs_swagger_certs/STAGE
-        cd !$
-        cat hfs_int_web.crt hfs_root.crt >> temp_certfile
-        openssl pkcs12 -export -passout pass:changeit -in hfs_end_web_developer.crt -inkey hfs_end_web_developer.key -certfile temp_certfile -out hfs_end_web_developer.p12
-        ```
-  - THEN Import into Mac KeyChain
-      - open KeyChain Access
-      - click login and My Certificates
-      - File -> Import Items, browse to .p12 file
-      - insert password from above: `changeit`
-      - if desired, Always Trust this certificate (right click certificate in Keychain Access, Trust -> When using this certificate Always Trust; exiting modal will prompt for password to Update Settings)
+## Creating Your First VM
 
-- FYI, if you wanted to bypass HFS altogether, use the Mock HFS:
-  - add to VM arguments in `LocalOrchestrationEngine` run configuration: `-Dvps4.hfs.mock=true`
-
-- create your first VM
-    - Run `LocalOrchestrationEngine`
-    - Run `WebServer`
-    - use a tool to generate a uuid, ex. python: `python -c "from uuid import uuid4; print(uuid4())"`
-        - ex: `17f0a467-293b-45ed-9990-a75d3d3adaa5`
-    - create a vps4 credit via the HFS swagger UI: https://hfs.api.stg-godaddy.com/#!/ecomm/createAccount
-        - Example POST:
+- run your local orchestration engine
+- run your local vps4 web server
+- set your `authorization` request header
+    - header should be in the format `Authorization: sso-jwt YOUR_DEV_IDP_TOKEN`
+    - the token can be found in your `auth_idp` cookie after signing in to [dev](https://sso.dev-godaddy.com/), or using a tool like [gotjwt](https://github.secureserver.net/sjohnson/gotjwt)
+- create a credit with the [POST /api/credits](http://localhost:8089/swagger/#!/credits/createCredit) endpoint
+    - Example:
         ```json
         {
-          "shopper_id": "yourDevShopperId",
-          "account_guid": "uuidGeneratedAbove",
-          "product": "vps4",
-          "status": "active",
-          "plan_features": {
-            "control_panel_type": "cPanel",
-            "managed_level": "2",
-            "monitoring": "0",
-            "operatingsystem": "Linux",
-            "tier": "20"
-          },
-          "product_meta": {},
-          "hfs_meta": {},
-          "sub_account_shopper_id": null,
-          "reseller_id": "1"
+            "controlPanel": "myh",
+            "managedLevel": 0,
+            "monitoring": 0,
+            "operatingSystem": "linux",
+            "resellerId": 1,
+            "shopperId": "YOUR_SHOPPER_ID",
+            "tier": 10
         }
         ```
-    - create a VM using this credit via the VPS4 local swagger UI: http://localhost:8089/swagger/#!/vms/provisionVm
-        - you have to use an appropriate request header when making calls or you will receive a “missing auth / no SSO token found in your request” error
-            - EITHER log in to https://www.dev-godaddy.com/ and get your `auth_idp` cookie value (can use Chrome plugin like EditThisCookie)
-            - OR use something like https://github.secureserver.net/sjohnson/gotjwt
-            - THEN add a `Authorization` `sso-jwt appropriateValue` request header (can use Chrome plugin like Modify Headers)
-        - Example POST:
+- create a VM with the [POST /api/vms](http://localhost:8089/swagger/#!/vms/provisionVm) endpoint
+    - Example:
         ```json
         {
           "name": "vm01",
           "orionGuid": "sameAsAccountGuidAbove",
-          "image": "vps4-centos-7-cpanel-11",
+          "image": "hfs-debian10",
           "dataCenterId": 1,
           "username": "myusername",
           "password": "onevps4ME!"
         }
         ```
-        - note: `Error while creating a backup schedule for VM: someGUID. Error details: {} java.net.ConnectException: Connection refused; Connect to 127.0.0.1:8180` during creates is normal / expected if you do not have a real scheduler
-        - note: Currently available cPanel image name can be found in vps4 database 'image' table.
+    - available image names can be found in vps4 database 'image' table
+
+## Calling the HFS API Directly
+
+- if you want to call the HFS API directly, you'll need the HFS web developer client certs in your system keychain
+    - ask HFS team for read collaborator access to the [hfs/Creds](https://github.secureserver.net/hfs/Creds) repo, and then git clone it locally
+    - for each environment, find its pkcs12 cert (example: `Creds/ssl_ca/hfs/STAGE/hfs_end_web_developer.p12`)
+    - import the .p12 file into Mac KeyChain
+        - open KeyChain Access
+        - File -> Import Items, browse to .p12 file
+        - insert password `changeit`
+
+- if you wanted to bypass HFS altogether, use the Mock HFS:
+    - add to VM arguments in `LocalOrchestrationEngine` run configuration: `-Dvps4.hfs.mock=true`
