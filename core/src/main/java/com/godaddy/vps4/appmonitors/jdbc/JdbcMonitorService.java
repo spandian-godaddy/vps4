@@ -57,7 +57,7 @@ public class JdbcMonitorService implements MonitorService {
             "AND action_status.status = 'COMPLETE' " +
             "AND action_type.type = 'CREATE_VM' " +
             "AND backup_job_id IS NULL " +
-            "AND st.platform = 'OPENSTACK' ";  // ensure only VPS4 vms are filtered since DED does not have scheduled backups
+            "AND st.platform != 'OVH' ";  // ensure only VPS4 vms are filtered since DED does not have scheduled backups
 
     @Inject
     public JdbcMonitorService(@Vps4ReportsDataSource DataSource reportsDataSource) {
