@@ -582,6 +582,14 @@ public class DefaultPanoptaService implements PanoptaService {
         vmOutage.reason = outage.reason;
         vmOutage.panoptaOutageId = outage.outageId;
 
+        vmOutage.domainMonitoringMetadata = allMetricIds.stream()
+                .filter(p -> outage.networkMetricMetadata.containsKey(p.id)
+                        && (panoptaMetricMapper.getVmMetric(p.typeId) == VmMetric.HTTP
+                        || panoptaMetricMapper.getVmMetric(p.typeId) == VmMetric.HTTPS))
+                .map(p -> new VmOutage.DomainMonitoringMetadata(p.serverInterface, outage.networkMetricMetadata.get(p.id),
+                        panoptaMetricMapper.getVmMetric(p.typeId)))
+                .collect(Collectors.toList());
+
         vmOutage.metrics = allMetricIds.stream()
                                        .filter(metricId -> outage.metricIds.contains(metricId.id))
                                        .map((metricId -> panoptaMetricMapper.getVmMetric(metricId.typeId)))

@@ -2,7 +2,9 @@ package com.godaddy.vps4.panopta;
 
 import java.time.Instant;
 import java.time.format.DateTimeFormatter;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -54,6 +56,7 @@ public class PanoptaOutage {
     public Instant ended;
     public String reason;
     public Set<Long> metricIds = new HashSet<>();
+    public Map<Long,String> networkMetricMetadata = new HashMap<>();
 
     @JsonProperty("url")
     private void mapUrl(String url) {
@@ -82,6 +85,8 @@ public class PanoptaOutage {
                                                          .map(t -> t.networkServiceId)
                                                          .collect(Collectors.toSet());
         this.metricIds.addAll(networkServiceIds);
+        this.networkMetricMetadata =
+                networkServiceTypes.stream().collect(Collectors.toMap(t -> t.networkServiceId, t -> t.metadata));
     }
 
     @JsonProperty("server_resource")
@@ -97,6 +102,7 @@ public class PanoptaOutage {
 
     public static class NetworkServiceType {
         public long networkServiceId;
+        public String metadata;
 
         @JsonProperty("network_service")
         private void mapNetworkService(String url) {

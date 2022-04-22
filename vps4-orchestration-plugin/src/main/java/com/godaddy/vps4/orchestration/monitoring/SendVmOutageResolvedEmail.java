@@ -4,6 +4,7 @@ import java.util.UUID;
 
 import javax.inject.Inject;
 
+import com.godaddy.vps4.vm.VmOutage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -28,6 +29,7 @@ public class SendVmOutageResolvedEmail extends SendMessagingEmailBase implements
     private static final Logger logger = LoggerFactory.getLogger(SendVmOutageResolvedEmail.class);
     private final Vps4MessagingService messagingService;
     private final VmAlertService vmAlertService;
+    private static String SSL_EXPIRING_WARNING = "SSL certificate is expiring";
 
     @Inject
     public SendVmOutageResolvedEmail(Vps4MessagingService vps4MessagingService, VmAlertService vmAlertService) {
@@ -40,11 +42,45 @@ public class SendVmOutageResolvedEmail extends SendMessagingEmailBase implements
         for (VmMetric metric : req.vmOutage.metrics) {
             executeForMetric(context, req, metric);
         }
+        for (VmOutage.DomainMonitoringMetadata domainMetric : req.vmOutage.domainMonitoringMetadata) {
+            executeForHTTPandHTTPS(context, req, domainMetric);
+        }
         return null;
     }
 
+    private void executeForHTTPandHTTPS(CommandContext context, VmOutageEmailRequest req, VmOutage.DomainMonitoringMetadata metricMetadata) {
+        String metricDomain = metricMetadata.metric + " (" + metricMetadata.additionalFqdn + ")";
+        String messageId;
+        if (emailAlertForMetricIsEnabled(req.vmId, metricMetadata.metric.toString())) {
+            if(metricMetadata.metadata.equals(SSL_EXPIRING_WARNING)) {
+                logger.warn("SSL Expiring Warning detected - no outage emails sent for shopper id {}, vm id {}.", req.shopperId,
+                        req.vmId);
+                return;
+            }
+
+            messageId = context.execute("SendVmOutageResolvedEmail-" + metricMetadata.metric,
+                        ctx -> messagingService
+                                .sendServiceOutageResolvedEmail(req.shopperId, req.accountName, req.ipAddress, req.orionGuid,
+                                        metricDomain, req.vmOutage.ended, req.managed),
+                        String.class);
+
+            if (messageId != null) {
+                context.execute("WaitForMessageComplete-" + metricMetadata.metric, ctx -> {
+                    waitForMessageComplete(ctx, messageId, req.shopperId);
+                    return null;
+                }, Void.class);
+            } else {
+                logger.warn("No outage resolved email sent, message id was null for shopper id {}.", req.shopperId);
+            }
+        } else {
+            logger.info(
+                    "No emails will be sent since email alert for metric {} is disabled for shopper id {}, vm id {}.",
+                    req.vmOutage.toString(), req.shopperId, req.vmId);
+        }
+    }
     private void executeForMetric(CommandContext context, VmOutageEmailRequest req, VmMetric metric) {
         logger.info("Sending outage resolved email for shopper {} and vm {}", req.shopperId, req.vmId);
+
         if (emailAlertForMetricIsEnabled(req.vmId, metric.toString())) {
             String messageId;
             switch (metric) {
@@ -69,9 +105,9 @@ public class SendVmOutageResolvedEmail extends SendMessagingEmailBase implements
                 case FTP:
                 case SSH:
                 case SMTP:
-                case HTTP:
                 case IMAP:
                 case POP3:
+                    logger.info("sending resolved email for {}", metric);
                     messageId = context.execute("SendVmOutageResolvedEmail-" + metric,
                             ctx -> messagingService
                                     .sendServiceOutageResolvedEmail(req.shopperId, req.accountName, req.ipAddress,
@@ -79,6 +115,9 @@ public class SendVmOutageResolvedEmail extends SendMessagingEmailBase implements
                             String.class);
                     break;
 
+                case HTTP:
+                case HTTPS:
+                    return;
                 case UNKNOWN:
                 default:
                     logger.warn(

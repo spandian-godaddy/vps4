@@ -62,7 +62,7 @@ public class VmAlertResourceTest {
         VmMetricAlert metricFTP = new VmMetricAlert();
         metricFTP.metric= VmMetric.FTP;
         VmMetricAlert metricSSH = new VmMetricAlert();
-        metricFTP.metric= VmMetric.SSH;
+        metricSSH.metric= VmMetric.SSH;
 
         testMetricList.add(metricSSH);
         testMetricList.add(metricFTP);

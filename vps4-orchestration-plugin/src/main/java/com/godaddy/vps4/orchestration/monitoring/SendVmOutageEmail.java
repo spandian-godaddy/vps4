@@ -6,6 +6,7 @@ import java.util.regex.Pattern;
 
 import javax.inject.Inject;
 
+import com.godaddy.vps4.vm.VmOutage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -30,6 +31,7 @@ public class SendVmOutageEmail extends SendMessagingEmailBase implements Command
     private static final Logger logger = LoggerFactory.getLogger(SendVmOutageEmail.class);
     private final Vps4MessagingService messagingService;
     private final VmAlertService vmAlertService;
+    private static String SSL_EXPIRING_WARNING = "SSL certificate is expiring";
 
     @Inject
     public SendVmOutageEmail(Vps4MessagingService vps4MessagingService, VmAlertService vmAlertService) {
@@ -42,7 +44,42 @@ public class SendVmOutageEmail extends SendMessagingEmailBase implements Command
         for (VmMetric metric : req.vmOutage.metrics) {
             executeForMetric(context, req, metric);
         }
+        for (VmOutage.DomainMonitoringMetadata domainMetric : req.vmOutage.domainMonitoringMetadata) {
+            executeForHttpAndHttps(context, req, domainMetric);
+        }
         return null;
+    }
+
+    private void executeForHttpAndHttps(CommandContext context, VmOutageEmailRequest req, VmOutage.DomainMonitoringMetadata metricMetadata) {
+        String metricDomain = metricMetadata.metric + " (" + metricMetadata.additionalFqdn + ")";
+        String messageId;
+        if (emailAlertForMetricIsEnabled(req.vmId, metricMetadata.metric.toString())) {
+            if (metricMetadata.metadata.equals(SSL_EXPIRING_WARNING)) {
+                logger.warn("SSL Expiring Warning detected - no outage emails sent for shopper id {}, vm id {}.", req.shopperId,
+                req.vmId);
+                return;
+            }
+
+            messageId = context.execute("SendVmOutageEmail-" + metricMetadata.metric,
+                        ctx -> messagingService
+                                .sendServicesDownEmail(req.shopperId, req.accountName, req.ipAddress, req.orionGuid,
+                                        metricDomain, req.vmOutage.started, req.managed),
+                        String.class);
+
+            if (messageId != null) {
+                context.execute("WaitForMessageComplete-" + metricMetadata.metric, ctx -> {
+                    waitForMessageComplete(ctx, messageId, req.shopperId);
+                    return null;
+                }, Void.class);
+            } else {
+                logger.warn("No outage email sent, message id was null for shopper id {}, vm id {}.", req.shopperId,
+                        req.vmId);
+            }
+        } else {
+            logger.info(
+                    "No emails will be sent since email alert for metric {} is disabled for shopper id {}, vm id {}.",
+                    req.vmOutage.toString(), req.shopperId, req.vmId);
+        }
     }
 
     private void executeForMetric(CommandContext context, VmOutageEmailRequest req, VmMetric metric) {
@@ -76,8 +113,6 @@ public class SendVmOutageEmail extends SendMessagingEmailBase implements Command
                 case FTP:
                 case SSH:
                 case SMTP:
-                case HTTP:
-                case HTTPS:
                 case IMAP:
                 case POP3:
                     messageId = context.execute("SendVmOutageEmail-" + metric,
@@ -87,6 +122,9 @@ public class SendVmOutageEmail extends SendMessagingEmailBase implements Command
                             String.class);
                     break;
 
+                case HTTP:
+                case HTTPS:
+                    return;
                 case UNKNOWN:
                 default:
                     logger.warn("Could not determine metric type, no outage email sent for shopper id {}, vm id {}.",
