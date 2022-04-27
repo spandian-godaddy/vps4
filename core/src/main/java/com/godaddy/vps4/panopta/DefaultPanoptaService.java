@@ -254,7 +254,7 @@ public class DefaultPanoptaService implements PanoptaService {
     }
 
     @Override
-    public void addNetworkService(UUID vmId, VmMetric metric, String additionalFqdn, int osTypeId, boolean isManaged, boolean hasMonitoring) throws PanoptaServiceException {
+    public void addNetworkService(UUID vmId, VmMetric metric, String additionalFqdn, int osTypeId, boolean isManaged) throws PanoptaServiceException {
         PanoptaDetail panoptaDetails = panoptaDataService.getPanoptaDetails(vmId);
         PanoptaApiNetworkServiceRequest request;
         int port;

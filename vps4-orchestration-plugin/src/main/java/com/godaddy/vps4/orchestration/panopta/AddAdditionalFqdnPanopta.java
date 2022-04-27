@@ -18,7 +18,6 @@ public class AddAdditionalFqdnPanopta implements Command<AddAdditionalFqdnPanopt
     private final PanoptaDataService panoptaDataService;
     private final PanoptaService panoptaService;
 
-    private CommandContext context;
     private Request request;
 
     @Inject
@@ -29,7 +28,6 @@ public class AddAdditionalFqdnPanopta implements Command<AddAdditionalFqdnPanopt
 
     @Override
     public Void execute(CommandContext context, Request request) {
-        this.context = context;
         this.request = request;
         this.updateAdditionalFqdnList();
         this.addMonitoringCheckToFqdn();
@@ -55,7 +53,7 @@ public class AddAdditionalFqdnPanopta implements Command<AddAdditionalFqdnPanopt
         logger.info("Attempting to add monitoring check to fqdn {}.", request.additionalFqdn);
         try {
             panoptaService.addNetworkService(request.vmId, request.isHttps ? VmMetric.HTTPS : VmMetric.HTTP,
-                    request.additionalFqdn, request.operatingSystemId, request.isManaged, request.hasMonitoring);
+                    request.additionalFqdn, request.operatingSystemId, request.isManaged);
         }
         catch (PanoptaServiceException e) {
             throw new RuntimeException(e);
@@ -67,6 +65,5 @@ public class AddAdditionalFqdnPanopta implements Command<AddAdditionalFqdnPanopt
         public boolean isHttps;
         public int operatingSystemId;
         public boolean isManaged;
-        public boolean hasMonitoring;
     }
 }

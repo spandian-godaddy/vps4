@@ -33,7 +33,7 @@ public class Vps4AddDomainMonitoring extends ActionCommand<Vps4AddDomainMonitori
         this.context = context;
         boolean isHttps = request.overrideProtocol == null ? isHttps(request.additionalFqdn) :
                 request.overrideProtocol.equals("HTTPS");
-        addAdditionalFqdn(request.vmId, request.additionalFqdn, isHttps, request.osTypeId, request.isManaged, request.hasMonitoring);
+        addAdditionalFqdn(request.vmId, request.additionalFqdn, isHttps, request.osTypeId, request.isManaged);
         return null;
     }
 
@@ -49,14 +49,13 @@ public class Vps4AddDomainMonitoring extends ActionCommand<Vps4AddDomainMonitori
     }
 
     private void addAdditionalFqdn(UUID vmId, String additionalFqdn, boolean isHttps, int operatingSystemId,
-                                   boolean isManaged, boolean hasMonitoring) {
+                                   boolean isManaged) {
         AddAdditionalFqdnPanopta.Request addFqdnRequest = new AddAdditionalFqdnPanopta.Request();
         addFqdnRequest.vmId = vmId;
         addFqdnRequest.additionalFqdn = additionalFqdn;
         addFqdnRequest.isHttps = isHttps;
         addFqdnRequest.operatingSystemId = operatingSystemId;
         addFqdnRequest.isManaged = isManaged;
-        addFqdnRequest.hasMonitoring = hasMonitoring;
         context.execute(AddAdditionalFqdnPanopta.class, addFqdnRequest);
     }
 
@@ -66,7 +65,6 @@ public class Vps4AddDomainMonitoring extends ActionCommand<Vps4AddDomainMonitori
         public String additionalFqdn;
         public int osTypeId;
         public boolean isManaged;
-        public boolean hasMonitoring;
         public String overrideProtocol;
 
         @Override

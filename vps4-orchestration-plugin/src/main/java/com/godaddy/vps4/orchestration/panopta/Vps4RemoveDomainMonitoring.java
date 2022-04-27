@@ -28,7 +28,6 @@ public class Vps4RemoveDomainMonitoring extends ActionCommand<Vps4RemoveDomainMo
     private final PanoptaDataService panoptaDataService;
     private final PanoptaService panoptaService;
 
-    private CommandContext context;
     private Request request;
 
     @Inject
@@ -40,7 +39,6 @@ public class Vps4RemoveDomainMonitoring extends ActionCommand<Vps4RemoveDomainMo
 
     @Override
     public Void executeWithAction(CommandContext context, Request request) {
-        this.context = context;
         this.request = request;
         this.deleteMonitoringCheckToFqdn();
         this.updateAdditionalFqdnList();

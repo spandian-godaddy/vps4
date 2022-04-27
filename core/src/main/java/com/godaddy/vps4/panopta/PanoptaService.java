@@ -31,7 +31,7 @@ public interface PanoptaService {
 
     List<PanoptaMetricId> getUsageIds(UUID vmId);
 
-    void addNetworkService(UUID vmId, VmMetric metric, String additionalFqdn, int osTypeId, boolean isManaged, boolean hasMonitoring) throws PanoptaServiceException;
+    void addNetworkService(UUID vmId, VmMetric metric, String additionalFqdn, int osTypeId, boolean isManaged) throws PanoptaServiceException;
 
     void deleteNetworkService(UUID vmId, long networkServiceId) throws PanoptaServiceException;
 

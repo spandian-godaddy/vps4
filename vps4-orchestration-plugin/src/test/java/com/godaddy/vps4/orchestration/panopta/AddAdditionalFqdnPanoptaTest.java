@@ -42,7 +42,6 @@ public class AddAdditionalFqdnPanoptaTest {
         request = new AddAdditionalFqdnPanopta.Request();
         request.additionalFqdn = "totally.fake.fqdn";
         request.isManaged = true;
-        request.hasMonitoring = false;
         request.vmId = vmId;
         request.isHttps = false;
         request.operatingSystemId = Image.OperatingSystem.LINUX.getOperatingSystemId();
@@ -57,7 +56,7 @@ public class AddAdditionalFqdnPanoptaTest {
         command.execute(context, request);
         verify(panoptaService, times(1)).addAdditionalFqdnToServer(vmId, request.additionalFqdn);
         verify(panoptaService, times(1)).addNetworkService(request.vmId, VmMetric.HTTP,
-                request.additionalFqdn, request.operatingSystemId, request.isManaged, request.hasMonitoring);
+                request.additionalFqdn, request.operatingSystemId, request.isManaged);
         verify(panoptaDataService, times(1)).addPanoptaAdditionalFqdn(request.additionalFqdn, panoptaServer.serverId);
     }
 }

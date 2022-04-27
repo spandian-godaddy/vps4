@@ -1,0 +1,1 @@
+INSERT INTO action_type(type_id, type) VALUES (53, 'REPLACE_DOMAIN_MONITORING');

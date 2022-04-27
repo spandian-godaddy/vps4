@@ -24,6 +24,7 @@ import com.godaddy.vps4.orchestration.panopta.Vps4RemoveDomainMonitoring;
 import com.godaddy.vps4.orchestration.panopta.PausePanoptaMonitoring;
 import com.godaddy.vps4.orchestration.panopta.ResumePanoptaMonitoring;
 import com.godaddy.vps4.orchestration.panopta.SetupPanopta;
+import com.godaddy.vps4.orchestration.panopta.Vps4ReplaceDomainMonitoring;
 import com.godaddy.vps4.orchestration.panopta.WaitForPanoptaAgentSync;
 import com.godaddy.vps4.orchestration.snapshot.Vps4DestroySnapshot;
 import com.godaddy.vps4.orchestration.snapshot.Vps4SnapshotVm;
@@ -146,5 +147,6 @@ public class Vps4CommandModule extends AbstractModule {
         bind(AddAdditionalFqdnPanopta.class);
         bind(Vps4UnclaimCredit.class);
         bind(Vps4RemoveDomainMonitoring.class);
+        bind(Vps4ReplaceDomainMonitoring.class);
     }
 }

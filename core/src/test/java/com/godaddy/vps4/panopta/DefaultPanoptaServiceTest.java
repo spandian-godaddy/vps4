@@ -687,32 +687,32 @@ public class DefaultPanoptaServiceTest {
 
     @Test
     public void testAddNetworkServiceServerHTTPCallsAddNetworkService() throws PanoptaServiceException {
-        defaultPanoptaService.addNetworkService(vmId, VmMetric.HTTP, "thisfqdn.istotallymostdefinitely.fake", 1, true, false);
+        defaultPanoptaService.addNetworkService(vmId, VmMetric.HTTP, "thisfqdn.istotallymostdefinitely.fake", 1, true);
         verify(panoptaApiServerService).addNetworkService(eq(serverId), eq(partnerCustomerKey), any());
     }
 
     @Test
     public void testAddNetworkServiceServerHTTPSCallsAddNetworkService() throws PanoptaServiceException {
-        defaultPanoptaService.addNetworkService(vmId, VmMetric.HTTPS, "thisfqdn.istotallymostdefinitely.fake", 1, true, false);
+        defaultPanoptaService.addNetworkService(vmId, VmMetric.HTTPS, "thisfqdn.istotallymostdefinitely.fake", 1, true);
         verify(panoptaApiServerService).addNetworkService(eq(serverId), eq(partnerCustomerKey), any());
     }
 
     @Test
     public void testAddNetworkServiceServerCallsAddNetworkServiceIsManagedFalse() throws PanoptaServiceException {
-        defaultPanoptaService.addNetworkService(vmId, VmMetric.HTTPS, "thisfqdn.istotallymostdefinitely.fake", 1, false, false);
+        defaultPanoptaService.addNetworkService(vmId, VmMetric.HTTPS, "thisfqdn.istotallymostdefinitely.fake", 1, false);
         verify(panoptaApiServerService).addNetworkService(eq(serverId), eq(partnerCustomerKey), any());
     }
 
     @Test
     public void testAddNetworkServiceServerCallsAddNetworkServiceIsManagedFalseMonitoringTrue() throws PanoptaServiceException {
-        defaultPanoptaService.addNetworkService(vmId, VmMetric.HTTPS, "thisfqdn.istotallymostdefinitely.fake", 1, false, true);
+        defaultPanoptaService.addNetworkService(vmId, VmMetric.HTTPS, "thisfqdn.istotallymostdefinitely.fake", 1, false);
         verify(panoptaApiServerService).addNetworkService(eq(serverId), eq(partnerCustomerKey), any());
     }
     
     @Test
     public void testAddNetworkServiceThrowsErrorIfMetricIsNotHTTPOrHTTPS() {
         try {
-            defaultPanoptaService.addNetworkService(vmId, VmMetric.PING, "thisfqdn.istotallymostdefinitely.fake", 1, true, false);
+            defaultPanoptaService.addNetworkService(vmId, VmMetric.PING, "thisfqdn.istotallymostdefinitely.fake", 1, true);
             fail();
         } catch (PanoptaServiceException e) {
             assertEquals("UNKNOWN_METRIC", e.getId());
