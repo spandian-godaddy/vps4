@@ -19,9 +19,6 @@ import java.util.Random;
 import java.util.UUID;
 import java.util.function.Function;
 
-import com.godaddy.vps4.orchestration.hfs.cpanel.ConfigureCpanel;
-import com.godaddy.vps4.orchestration.hfs.plesk.ConfigurePlesk;
-import com.godaddy.vps4.orchestration.hfs.plesk.SetPleskOutgoingEmailIp;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -41,7 +38,10 @@ import com.godaddy.vps4.credit.CreditService;
 import com.godaddy.vps4.credit.VirtualMachineCredit;
 import com.godaddy.vps4.hfs.HfsVmTrackingRecordService;
 import com.godaddy.vps4.network.NetworkService;
+import com.godaddy.vps4.orchestration.hfs.cpanel.ConfigureCpanel;
 import com.godaddy.vps4.orchestration.hfs.network.AllocateIp;
+import com.godaddy.vps4.orchestration.hfs.plesk.ConfigurePlesk;
+import com.godaddy.vps4.orchestration.hfs.plesk.SetPleskOutgoingEmailIp;
 import com.godaddy.vps4.orchestration.hfs.sysadmin.SetHostname;
 import com.godaddy.vps4.orchestration.hfs.sysadmin.SetPassword;
 import com.godaddy.vps4.orchestration.hfs.vm.CreateVm;
@@ -52,6 +52,7 @@ import com.godaddy.vps4.orchestration.scheduler.SetupAutomaticBackupSchedule;
 import com.godaddy.vps4.orchestration.vm.provision.ProvisionRequest;
 import com.godaddy.vps4.orchestration.vm.provision.Vps4ProvisionVm;
 import com.godaddy.vps4.vm.ActionService;
+import com.godaddy.vps4.vm.HostnameGenerator;
 import com.godaddy.vps4.vm.Image;
 import com.godaddy.vps4.vm.Image.ControlPanel;
 import com.godaddy.vps4.vm.ProvisionVmInfo;
@@ -348,7 +349,7 @@ public class Vps4ProvisionVmTest {
         verify(context, times(1)).execute(eq(SetHostname.class), setHostnameArgumentCaptor.capture());
         SetHostname.Request req = setHostnameArgumentCaptor.getValue();
         assertEquals(hfsVmId, req.hfsVmId);
-        String expectedHostname = "ip-" + primaryIp.address.replace('.', '-') + ".ip.secureserver.net";
+        String expectedHostname = HostnameGenerator.getHostname(primaryIp.address, image.operatingSystem);
         assertEquals(expectedHostname, req.hostname);
     }
 

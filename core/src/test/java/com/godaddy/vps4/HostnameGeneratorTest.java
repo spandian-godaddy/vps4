@@ -15,7 +15,7 @@ public class HostnameGeneratorTest {
         OperatingSystem os = OperatingSystem.LINUX;
 
         String hostname = HostnameGenerator.getHostname(ipAddress, os);
-        assertEquals("ip-192-168-1-1.ip.secureserver.net", hostname);
+        assertEquals("1.1.168.192.host.secureserver.net", hostname);
     }
 
     @Test
@@ -24,6 +24,6 @@ public class HostnameGeneratorTest {
         OperatingSystem os = OperatingSystem.WINDOWS;
 
         String hostname = HostnameGenerator.getHostname(ipAddress, os);
-        assertEquals("s192-168-1-1.secureserver.net", hostname);
+        assertEquals("1-1-168-192.host.secureserver.net", hostname);
     }
 }

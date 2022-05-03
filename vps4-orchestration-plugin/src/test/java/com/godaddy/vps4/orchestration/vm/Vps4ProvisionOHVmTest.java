@@ -48,6 +48,7 @@ import com.godaddy.vps4.orchestration.panopta.SetupPanopta;
 import com.godaddy.vps4.orchestration.vm.provision.ProvisionRequest;
 import com.godaddy.vps4.orchestration.vm.provision.Vps4ProvisionOHVm;
 import com.godaddy.vps4.vm.ActionService;
+import com.godaddy.vps4.vm.HostnameGenerator;
 import com.godaddy.vps4.vm.Image;
 import com.godaddy.vps4.vm.Image.ControlPanel;
 import com.godaddy.vps4.vm.ProvisionVmInfo;
@@ -251,7 +252,7 @@ public class Vps4ProvisionOHVmTest {
         SetHostname.Request req = setHostnameArgumentCaptor.getValue();
         assertEquals(req.controlPanel, request.vmInfo.image.getImageControlPanel());
         assertEquals(req.hfsVmId, hfsVmId);
-        String expectedHostname = "ip-" + hfsIp.ip_address.replace('.', '-') + ".ip.secureserver.net";
+        String expectedHostname = HostnameGenerator.getHostname(hfsIp.ip_address, image.operatingSystem);
         assertEquals(expectedHostname, req.hostname);
     }
 

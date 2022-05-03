@@ -1,5 +1,9 @@
 package com.godaddy.vps4.vm;
 
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+
 import com.godaddy.vps4.vm.Image.OperatingSystem;
 
 public class HostnameGenerator {
@@ -11,12 +15,19 @@ public class HostnameGenerator {
     }
 
     public static String getLinuxHostname(String ipAddress) {
-        // The ip-* format is important for cpanel SSO since it is setup to resolve in DNS
-        return "ip-" + ipAddress.replace('.', '-') + ".ip.secureserver.net";
+        // This format is important for cpanel SSO since it is set up to resolve in DNS
+        return getReverseIp(ipAddress, ".") + ".host.secureserver.net";
     }
 
     public static String getWindowsHostname(String ipAddress) {
-        // The s* format is necessary for windows since server name in windows is limited to 16 chars
-        return "s" + ipAddress.replace('.', '-') + ".secureserver.net";
+        // The special format is necessary for windows since ComputerName in Windows only includes up to the first period
+        // Windows hostnames do not resolve in DNS
+        return getReverseIp(ipAddress, "-") + ".host.secureserver.net";
+    }
+
+    private static String getReverseIp(String ipAddress, String delimiter) {
+        List<String> ipSegments = Arrays.asList(ipAddress.split("\\."));
+        Collections.reverse(ipSegments);
+        return String.join(delimiter, ipSegments);
     }
 }
