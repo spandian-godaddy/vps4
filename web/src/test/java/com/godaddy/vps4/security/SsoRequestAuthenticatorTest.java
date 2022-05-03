@@ -130,6 +130,19 @@ public class SsoRequestAuthenticatorTest {
     }
 
     @Test
+    public void testTechnicalServiceSysAdmin() {
+        SsoToken token = mockJomaxToken(Collections.singletonList("org-technical-services-sysadmins"));
+        when(tokenExtractor.extractToken(request)).thenReturn(token);
+
+        GDUser user = authenticator.authenticate(request);
+        Assert.assertEquals(null, user.getShopperId());
+        Assert.assertEquals(false, user.isShopper());
+        Assert.assertEquals(false, user.isAdmin());
+        Assert.assertEquals(true, user.isEmployee());
+        Assert.assertEquals(Arrays.asList(Role.HS_LEAD), user.roles());
+    }
+
+    @Test
     public void testHostingSupportAgent() {
         SsoToken token = mockJomaxToken(Collections.singletonList("C3-Hosting Support"));
         when(tokenExtractor.extractToken(request)).thenReturn(token);

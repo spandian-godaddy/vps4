@@ -25,6 +25,7 @@ public class SsoRequestAuthenticator implements RequestAuthenticator<GDUser> {
     private final String VPS4_TEAM = "Dev-VPS4";
     private final String C3_HOSTING_SUPPORT = "C3-Hosting Support";
     private final String C3_HOSTING_SUPPORT_LEAD = "HS_techleads";
+    private final String ORG_TECH_SERVICE_SYSADMIN= "org-technical-services-sysadmins";
     private final String LEGAL = "fs-Legal_IP_Claims";
     private final String HOSTING_OPERATIONS = "Hosting Ops";
     private final String DIGITAL_CRIMES_UNIT = "DCU-Phishstory";
@@ -117,7 +118,8 @@ public class SsoRequestAuthenticator implements RequestAuthenticator<GDUser> {
               groups.contains(DEV_PTGS)) {
             gdUser.isAdmin = true;
             userRoles.add(Role.ADMIN);
-        } if (groups.contains(C3_HOSTING_SUPPORT_LEAD)) {
+        } if (groups.contains(C3_HOSTING_SUPPORT_LEAD) ||
+              groups.contains(ORG_TECH_SERVICE_SYSADMIN)) {
             userRoles.add(Role.HS_LEAD);
         } if (groups.contains(HOSTING_OPERATIONS) ||
                 groups.contains(LEGAL) ||
