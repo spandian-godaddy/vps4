@@ -1,31 +1,32 @@
 package com.godaddy.vps4.web.vm;
 
-import com.godaddy.vps4.snapshot.SnapshotType;
-import com.godaddy.vps4.web.Vps4Exception;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
-
 import static org.mockito.Matchers.anyLong;
 import static org.mockito.Matchers.anyString;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 import static org.mockito.Mockito.any;
-import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 import java.time.Instant;
 import java.util.UUID;
+
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.Test;
 
 import com.godaddy.hfs.config.Config;
 import com.godaddy.hfs.vm.Extended;
 import com.godaddy.hfs.vm.VmExtendedInfo;
 import com.godaddy.hfs.vm.VmService;
 import com.godaddy.vps4.credit.CreditService;
+import com.godaddy.vps4.oh.OhBackupService;
 import com.godaddy.vps4.security.GDUserMock;
 import com.godaddy.vps4.snapshot.SnapshotService;
+import com.godaddy.vps4.snapshot.SnapshotType;
 import com.godaddy.vps4.vm.VirtualMachine;
 import com.godaddy.vps4.vm.VirtualMachineService;
+import com.godaddy.vps4.web.Vps4Exception;
 import com.godaddy.vps4.web.security.GDUser;
 import com.godaddy.vps4.web.snapshot.SnapshotResource;
 
@@ -33,6 +34,7 @@ public class VmSnapshotResourceTest {
 
     private GDUser user;
     private CreditService creditService;
+    private OhBackupService ohBackupService;
     private SnapshotService snapshotService;
     private SnapshotResource snapshotResource;
     private VirtualMachineService virtualMachineService;
@@ -45,13 +47,14 @@ public class VmSnapshotResourceTest {
     public void setupTest() {
         user = GDUserMock.createShopper();
         creditService = mock(CreditService.class);
+        ohBackupService = mock(OhBackupService.class);
         snapshotResource = mock(SnapshotResource.class);
         snapshotService = mock(SnapshotService.class);
         virtualMachineService = mock(VirtualMachineService.class);
         vmService = mock(VmService.class);
         config = mock(Config.class);
-        resource = new VmSnapshotResource(user, creditService, snapshotResource, snapshotService, virtualMachineService,
-                                          vmService, config);
+        resource = new VmSnapshotResource(user, creditService, ohBackupService, snapshotResource, snapshotService,
+                                          virtualMachineService, vmService, config);
 
         UUID vmId = UUID.randomUUID();
         testVm = new VirtualMachine();

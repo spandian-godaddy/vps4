@@ -1,5 +1,7 @@
 package com.godaddy.vps4.web.vm;
 
+import static com.godaddy.vps4.web.util.RequestValidation.validateAndReturnDateInstant;
+
 import java.time.Instant;
 import java.util.Arrays;
 import java.util.Collections;
@@ -15,6 +17,9 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.godaddy.hfs.vm.VmExtendedInfo;
 import com.godaddy.vps4.credit.CreditService;
 import com.godaddy.vps4.credit.VirtualMachineCredit;
@@ -24,12 +29,9 @@ import com.godaddy.vps4.vm.VirtualMachineService;
 import com.godaddy.vps4.web.Vps4Api;
 import com.godaddy.vps4.web.notification.NotificationsResource;
 import com.godaddy.vps4.web.security.GDUser;
+
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiParam;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import static com.godaddy.vps4.web.util.RequestValidation.validateAndReturnDateInstant;
 
 @Vps4Api
 @Api(tags = {"vms"})
@@ -67,9 +69,9 @@ public class VmNotificationResource {
         logger.info("Getting notifications for vmId:  {}", vmId);
         Instant validOnDate = beginDate == null ? Instant.now() : validateAndReturnDateInstant(beginDate);
         Instant validUntilDate = endDate == null ? Instant.now() : validateAndReturnDateInstant(endDate);
-        boolean isSupport = (user.roles().contains(GDUser.Role.HS_AGENT) ||
+        boolean isSupport = user.roles().contains(GDUser.Role.HS_AGENT) ||
                 user.roles().contains(GDUser.Role.ADMIN) ||
-                user.roles().contains(GDUser.Role.HS_LEAD)) ? true : false;
+                user.roles().contains(GDUser.Role.HS_LEAD);
 
         VirtualMachine virtualMachine = vmResource.getVm(vmId);
         List<Notification> listNotifications;

@@ -5,9 +5,6 @@ import java.util.List;
 
 import javax.inject.Singleton;
 
-import com.godaddy.vps4.reseller.ResellerModule;
-import com.godaddy.vps4.web.customNotes.CustomNotesModule;
-import com.godaddy.vps4.web.notification.NotificationsModule;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -31,9 +28,11 @@ import com.godaddy.vps4.ipblacklist.IpBlacklistModule;
 import com.godaddy.vps4.jdbc.DatabaseModule;
 import com.godaddy.vps4.mailrelay.MailRelayModule;
 import com.godaddy.vps4.messaging.MessagingModule;
+import com.godaddy.vps4.oh.OhModule;
 import com.godaddy.vps4.panopta.PanoptaModule;
 import com.godaddy.vps4.plan.PlanModule;
 import com.godaddy.vps4.plesk.PleskModule;
+import com.godaddy.vps4.reseller.ResellerModule;
 import com.godaddy.vps4.scheduler.api.client.SchedulerServiceClientModule;
 import com.godaddy.vps4.security.SecurityModule;
 import com.godaddy.vps4.shopperNotes.ShopperNotesModule;
@@ -42,8 +41,10 @@ import com.godaddy.vps4.sso.SsoModule;
 import com.godaddy.vps4.util.ObjectMapperProvider;
 import com.godaddy.vps4.util.UtilsModule;
 import com.godaddy.vps4.vm.VmModule;
+import com.godaddy.vps4.web.customNotes.CustomNotesModule;
 import com.godaddy.vps4.web.log.LogModule;
 import com.godaddy.vps4.web.network.NetworkModule;
+import com.godaddy.vps4.web.notification.NotificationsModule;
 import com.godaddy.vps4.web.security.AuthenticationFilter;
 import com.godaddy.vps4.web.security.GDUserModule;
 import com.godaddy.vps4.web.security.Vps4CorsFilter;
@@ -130,6 +131,7 @@ public class Vps4Injector {
         modules.add(new NotificationsModule());
         modules.add(new ResellerModule());
         modules.add(new CustomNotesModule());
+        modules.add(new OhModule());
         modules.add(binder -> {
             binder.bind(ObjectMapper.class).toProvider(ObjectMapperProvider.class);
         });

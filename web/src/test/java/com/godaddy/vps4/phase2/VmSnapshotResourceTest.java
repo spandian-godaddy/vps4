@@ -1,6 +1,20 @@
 package com.godaddy.vps4.phase2;
 
+import static org.mockito.Mockito.mock;
+
+import java.util.List;
+import java.util.UUID;
+
+import javax.inject.Inject;
+import javax.sql.DataSource;
+
+import org.junit.After;
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.Test;
+
 import com.godaddy.vps4.jdbc.DatabaseModule;
+import com.godaddy.vps4.oh.OhModule;
 import com.godaddy.vps4.scheduler.api.web.SchedulerWebService;
 import com.godaddy.vps4.security.GDUserMock;
 import com.godaddy.vps4.security.SecurityModule;
@@ -20,17 +34,6 @@ import com.google.inject.AbstractModule;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
 import com.google.inject.Provides;
-import org.junit.After;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
-
-import javax.inject.Inject;
-import javax.sql.DataSource;
-import java.util.List;
-import java.util.UUID;
-
-import static org.mockito.Mockito.mock;
 
 public class VmSnapshotResourceTest {
 
@@ -50,6 +53,7 @@ public class VmSnapshotResourceTest {
             new SnapshotModule(),
             new Phase2ExternalsModule(),
             new CancelActionModule(),
+            new OhModule(),
             new AbstractModule() {
 
                 @Override

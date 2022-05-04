@@ -14,8 +14,8 @@ public class IpBlacklistServiceProvider<T> extends HttpServiceProvider<T> implem
     IpBlacklistRequestFilter ipBlacklistRequestFilter;
 
     @Inject
-    public IpBlacklistServiceProvider(String baseUrl, Class<T> serviceClass) {
-        super(baseUrl, serviceClass);
+    public IpBlacklistServiceProvider(String baseUrlConfigPropName, Class<T> serviceClass) {
+        super(baseUrlConfigPropName, serviceClass);
     }
 
     @Override

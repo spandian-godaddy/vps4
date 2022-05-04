@@ -21,8 +21,11 @@ import com.godaddy.hfs.config.Config;
 import com.godaddy.hfs.vm.VmExtendedInfo;
 import com.godaddy.hfs.vm.VmService;
 import com.godaddy.vps4.credit.CreditService;
+import com.godaddy.vps4.oh.OhBackupService;
+import com.godaddy.vps4.oh.models.OhBackup;
 import com.godaddy.vps4.security.Views;
 import com.godaddy.vps4.snapshot.Snapshot;
+import com.godaddy.vps4.snapshot.SnapshotAction;
 import com.godaddy.vps4.snapshot.SnapshotService;
 import com.godaddy.vps4.snapshot.SnapshotStatus;
 import com.godaddy.vps4.snapshot.SnapshotType;
@@ -32,7 +35,6 @@ import com.godaddy.vps4.web.PATCH;
 import com.godaddy.vps4.web.Vps4Api;
 import com.godaddy.vps4.web.Vps4Exception;
 import com.godaddy.vps4.web.security.GDUser;
-import com.godaddy.vps4.snapshot.SnapshotAction;
 import com.godaddy.vps4.web.snapshot.SnapshotResource;
 import com.godaddy.vps4.web.snapshot.SnapshotResource.SnapshotRenameRequest;
 import com.google.inject.Inject;
@@ -50,6 +52,7 @@ import io.swagger.annotations.ApiOperation;
 public class VmSnapshotResource {
     private final GDUser user;
     private final CreditService creditService;
+    private final OhBackupService ohBackupService;
     private final SnapshotService snapshotService;
     private final SnapshotResource snapshotResource;
     private final VirtualMachineService virtualMachineService;
@@ -59,6 +62,7 @@ public class VmSnapshotResource {
     @Inject
     public VmSnapshotResource(GDUser user,
                               CreditService creditService,
+                              OhBackupService ohBackupService,
                               SnapshotResource snapshotResource,
                               SnapshotService snapshotService,
                               VirtualMachineService virtualMachineService,
@@ -66,6 +70,7 @@ public class VmSnapshotResource {
                               Config config) {
         this.user = user;
         this.creditService = creditService;
+        this.ohBackupService = ohBackupService;
         this.snapshotResource = snapshotResource;
         this.snapshotService = snapshotService;
         this.virtualMachineService = virtualMachineService;
@@ -77,7 +82,7 @@ public class VmSnapshotResource {
     @Path("/{vmId}/snapshots")
     @JsonView(Views.Public.class)
     public List<Snapshot> getSnapshotsForVM(@PathParam("vmId") UUID vmId) {
-        // check to ensure snapshot belongs to vm and vm exists
+        // check to ensure vm belongs to user and vm exists
         VirtualMachine virtualMachine = virtualMachineService.getVirtualMachine(vmId);
         validateVmExists(vmId, virtualMachine, user);
         if (user.isShopper()) {
@@ -85,9 +90,22 @@ public class VmSnapshotResource {
         }
 
         return snapshotService.getSnapshotsForVm(vmId)
-                .stream()
-                .filter(snapshot -> snapshot.status != SnapshotStatus.DESTROYED && snapshot.status != SnapshotStatus.CANCELLED)
-                .collect(Collectors.toList());
+                              .stream()
+                              .filter(snapshot -> snapshot.status != SnapshotStatus.DESTROYED && snapshot.status != SnapshotStatus.CANCELLED)
+                              .collect(Collectors.toList());
+    }
+
+    @GET
+    @Path("/{vmId}/ohSnapshots")
+    public List<OhBackup> getOhSnapshotsForVM(@PathParam("vmId") UUID vmId) {
+        // check to ensure vm belongs to user and vm exists
+        VirtualMachine virtualMachine = virtualMachineService.getVirtualMachine(vmId);
+        validateVmExists(vmId, virtualMachine, user);
+        if (user.isShopper()) {
+            getAndValidateUserAccountCredit(creditService, virtualMachine.orionGuid, user.getShopperId());
+        }
+
+        return ohBackupService.getBackups(vmId);
     }
 
     public static class VmSnapshotRequest {

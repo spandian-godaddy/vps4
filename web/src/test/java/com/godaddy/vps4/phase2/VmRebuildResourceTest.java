@@ -1,9 +1,35 @@
 package com.godaddy.vps4.phase2;
 
+import static org.mockito.Mockito.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
+import java.util.HashMap;
+import java.util.Map;
+import java.util.UUID;
+
+import javax.inject.Inject;
+import javax.sql.DataSource;
+import javax.ws.rs.NotFoundException;
+
+import org.json.simple.JSONObject;
+import org.junit.After;
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.BeforeClass;
+import org.junit.Test;
+import org.mockito.ArgumentCaptor;
+import org.mockito.Captor;
+import org.mockito.Mockito;
+import org.mockito.MockitoAnnotations;
+
 import com.godaddy.vps4.credit.CreditService;
 import com.godaddy.vps4.credit.VirtualMachineCredit;
 import com.godaddy.vps4.jdbc.DatabaseModule;
 import com.godaddy.vps4.mailrelay.MailRelayService;
+import com.godaddy.vps4.oh.OhModule;
 import com.godaddy.vps4.orchestration.vm.rebuild.Vps4RebuildVm;
 import com.godaddy.vps4.scheduler.api.web.SchedulerWebService;
 import com.godaddy.vps4.security.GDUserMock;
@@ -29,32 +55,10 @@ import com.google.inject.AbstractModule;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
 import com.google.inject.Provides;
+
 import gdg.hfs.orchestration.CommandGroupSpec;
 import gdg.hfs.orchestration.CommandService;
 import gdg.hfs.orchestration.CommandSpec;
-import org.json.simple.JSONObject;
-import org.junit.After;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Test;
-import org.mockito.ArgumentCaptor;
-import org.mockito.Captor;
-import org.mockito.Mockito;
-import org.mockito.MockitoAnnotations;
-
-import javax.inject.Inject;
-import javax.sql.DataSource;
-import javax.ws.rs.NotFoundException;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.UUID;
-
-import static org.mockito.Mockito.any;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
 
 public class VmRebuildResourceTest {
     private static GDUser us;
@@ -90,6 +94,7 @@ public class VmRebuildResourceTest {
             new SnapshotModule(),
             new Phase2ExternalsModule(),
             new CancelActionModule(),
+            new OhModule(),
             new AbstractModule() {
                 @Override
                 public void configure() {

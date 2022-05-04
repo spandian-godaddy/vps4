@@ -12,7 +12,7 @@ public class SchedulerServiceClientModule extends AbstractModule {
 
     @Override
     public void configure() {
-        String baseUrlCnfigPropName = "vps4.scheduler.url";
+        String baseUrlConfigPropName = "vps4.scheduler.url";
         String clientCertKeyPath = "scheduler.api.keyPath";
         String clientCertPath = "scheduler.api.certPath";
 
@@ -20,7 +20,7 @@ public class SchedulerServiceClientModule extends AbstractModule {
 
         bind(SchedulerWebService.class)
                 .toProvider(getClientCertAuthServiceProvider(SchedulerWebService.class,
-                        baseUrlCnfigPropName,
+                        baseUrlConfigPropName,
                         clientCertKeyPath,
                         clientCertPath))
                 .in(Singleton.class);
