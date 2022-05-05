@@ -1,5 +1,3 @@
-Github Hook Test
-
 Environments
 =============
 
