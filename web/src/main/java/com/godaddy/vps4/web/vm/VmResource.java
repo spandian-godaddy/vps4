@@ -361,19 +361,21 @@ public class VmResource {
             @ApiParam(value = "Shopper ID of the user", required = false) @QueryParam("shopperId") String shopperId,
             @ApiParam(value = "IP Address of the desired VM", required = false) @QueryParam("ipAddress") String ipAddress,
             @ApiParam(value = "Orion Guid associated with the VM", required = false) @QueryParam("orionGuid") UUID orionGuid,
-            @ApiParam(value = "HFS VM ID associated with the VM", required = false) @QueryParam("hfsVmId") Long hfsVmId) {
+            @ApiParam(value = "HFS VM ID associated with the VM", required = false) @QueryParam("hfsVmId") Long hfsVmId,
+            @ApiParam(value = "DC ID associated with the VM", required = false) @QueryParam("dcId") Integer dcId
+            ) {
         if (user.isEmployee()) {
-            return getVmsForEmployee(type, shopperId, ipAddress, orionGuid, hfsVmId);
+            return getVmsForEmployee(type, shopperId, ipAddress, orionGuid, hfsVmId, dcId);
         }
-        return getVmsForVps4User(type);
+        return getVmsForVps4User(type, dcId);
     }
 
     private List<VirtualMachine> getVmsForEmployee(VirtualMachineType type, String shopperId, String ipAddress,
-                                                   UUID orionGuid, Long hfsVmId) {
+                                                   UUID orionGuid, Long hfsVmId, Integer dcId) {
         List<VirtualMachine> vmList = new ArrayList<>();
         try {
             Long vps4UserId = getUserId(shopperId);
-            vmList = virtualMachineService.getVirtualMachines(type, vps4UserId, ipAddress, orionGuid, hfsVmId);
+            vmList = virtualMachineService.getVirtualMachines(type, vps4UserId, ipAddress, orionGuid, hfsVmId, dcId);
         } catch (Vps4UserNotFound ex) {
             logger.warn("Shopper not found", ex);
         }
@@ -399,7 +401,7 @@ public class VmResource {
         return vps4User.getId();
     }
 
-    private List<VirtualMachine> getVmsForVps4User(VirtualMachineType type) {
+    private List<VirtualMachine> getVmsForVps4User(VirtualMachineType type, Integer dcId) {
         if (StringUtils.isBlank(user.getShopperId())) {
             throw new Vps4NoShopperException();
         }
@@ -408,7 +410,7 @@ public class VmResource {
             return new ArrayList<VirtualMachine>();
         }
 
-        return virtualMachineService.getVirtualMachines(type, vps4User.getId(), null, null, null);
+        return virtualMachineService.getVirtualMachines(type, vps4User.getId(), null, null, null, dcId);
     }
 
     public Vm getVmFromVmVertical(long vmId) {

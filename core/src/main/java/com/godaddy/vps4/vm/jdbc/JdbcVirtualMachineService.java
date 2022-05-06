@@ -267,7 +267,7 @@ public class JdbcVirtualMachineService implements VirtualMachineService {
 
 	@Override
     public List<VirtualMachine> getVirtualMachines(VirtualMachineType type, Long vps4UserId, String ipAddress,
-            UUID orionGuid, Long hfsVmId) {
+            UUID orionGuid, Long hfsVmId, Integer dcId) {
         List<Object> args = new ArrayList<>();
         StringBuilder queryAddition = new StringBuilder();
 
@@ -298,6 +298,10 @@ public class JdbcVirtualMachineService implements VirtualMachineService {
         if(hfsVmId != null) {
             queryAddition.append(" AND vm.hfs_vm_id=?");
             args.add(hfsVmId);
+        }
+        if(dcId != null) {
+            queryAddition.append(" AND vm.data_center_id=?");
+            args.add(dcId);
         }
         String query = selectVirtualMachineQuery + queryAddition;
         return Sql.with(dataSource)

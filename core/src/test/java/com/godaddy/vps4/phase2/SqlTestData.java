@@ -42,11 +42,15 @@ public class SqlTestData {
     }
 
     public static VirtualMachine insertTestVm(UUID orionGuid, DataSource dataSource) {
-        return insertTestVm(orionGuid, 1, dataSource);
+        return insertTestVm(orionGuid, 1, dataSource, 1);
+    }
+
+    public static VirtualMachine insertTestVmCustomDc(UUID orionGuid, DataSource dataSource, int dataCenterId) {
+        return insertTestVm(orionGuid, 1, dataSource, dataCenterId);
     }
 
     public static VirtualMachine insertTestVmWithIp(UUID orionGuid, DataSource dataSource) {
-        VirtualMachine virtualMachine = insertTestVm(orionGuid, 1, dataSource);
+        VirtualMachine virtualMachine = insertTestVm(orionGuid, 1, dataSource, 1);
         return addIpToTestVm(dataSource, virtualMachine, 1);
     }
 
@@ -57,19 +61,19 @@ public class SqlTestData {
 
     public static Map<VirtualMachine, List<ScheduledJob>> insertTestVmWithScheduledBackup(UUID orionGuid,
                                                                                           DataSource dataSource) {
-        VirtualMachine virtualMachine = insertTestVm(orionGuid, 1, dataSource);
+        VirtualMachine virtualMachine = insertTestVm(orionGuid, 1, dataSource, 1);
         List<ScheduledJob> scheduledJobs = addScheduledBackupToVm(dataSource, virtualMachine);
         Map vmJobMap = new HashMap<VirtualMachine, List<ScheduledJob>>();
         vmJobMap.put(virtualMachine, scheduledJobs);
         return vmJobMap;
     }
 
-    public static VirtualMachine insertTestVm(UUID orionGuid, long vps4UserId, DataSource dataSource) {
+    public static VirtualMachine insertTestVm(UUID orionGuid, long vps4UserId, DataSource dataSource, int dataCenterId) {
         VirtualMachineService virtualMachineService = new JdbcVirtualMachineService(dataSource);
         long hfsVmId = getNextHfsVmId(dataSource);
         String sgidPrefix = "vps4-testing-" + Long.toString(hfsVmId) + "-";
         ProvisionVirtualMachineParameters params = new ProvisionVirtualMachineParameters(
-                vps4UserId, 1, sgidPrefix, orionGuid, "testVirtualMachine",
+                vps4UserId, dataCenterId, sgidPrefix, orionGuid, "testVirtualMachine",
                 10, 0, "centos-7");
         VirtualMachine virtualMachine = virtualMachineService.provisionVirtualMachine(params);
         virtualMachineService.addHfsVmIdToVirtualMachine(virtualMachine.vmId, hfsVmId);

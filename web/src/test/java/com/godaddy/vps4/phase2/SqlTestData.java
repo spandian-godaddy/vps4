@@ -51,7 +51,7 @@ public class SqlTestData {
     }
 
     public static VirtualMachine insertDedicatedTestVm(UUID orionGuid, DataSource dataSource) {
-        return insertTestVm(orionGuid, 1, dataSource, "centos7_64", 140);
+        return insertTestVm(orionGuid, 1, dataSource, "centos7_64", 140, 1);
     }
 
     public static VirtualMachine insertTestVm(UUID orionGuid, DataSource dataSource) {
@@ -63,13 +63,13 @@ public class SqlTestData {
     }
 
     public static VirtualMachine insertTestVm(UUID orionGuid, long vps4UserId, DataSource dataSource, String imageName) {
-        return insertTestVm(orionGuid, vps4UserId, dataSource, imageName, 10);
+        return insertTestVm(orionGuid, vps4UserId, dataSource, imageName, 10, 1);
     }
 
-    public static VirtualMachine insertTestVm(UUID orionGuid, long vps4UserId, DataSource dataSource, String imageName, int tier) {
+    public static VirtualMachine insertTestVm(UUID orionGuid, long vps4UserId, DataSource dataSource, String imageName, int tier, int dataCenterId) {
         VirtualMachineService virtualMachineService = new JdbcVirtualMachineService(dataSource);
         long hfsVmId = getNextHfsVmId(dataSource);
-        ProvisionVirtualMachineParameters params = new ProvisionVirtualMachineParameters(vps4UserId, 1, TEST_VM_SGID, orionGuid,
+        ProvisionVirtualMachineParameters params = new ProvisionVirtualMachineParameters(vps4UserId, dataCenterId, TEST_VM_SGID, orionGuid,
                 TEST_VM_NAME, tier, 1, imageName);
         VirtualMachine virtualMachine = virtualMachineService.provisionVirtualMachine(params);
         virtualMachineService.addHfsVmIdToVirtualMachine(virtualMachine.vmId, hfsVmId);
