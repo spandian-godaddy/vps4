@@ -82,7 +82,7 @@ public class VmUpgradeResource {
         }
 
         if (virtualMachine.spec.serverType.platform == ServerType.Platform.OPENSTACK) {
-            validatePassword(upgradeVmRequest.password, virtualMachine.image);
+            validatePassword(upgradeVmRequest.password);
         }
 
         String upgradeClassName = virtualMachine.spec.serverType.platform.getUpgradeCommand();

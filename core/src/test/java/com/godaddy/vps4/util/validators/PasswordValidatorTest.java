@@ -18,7 +18,9 @@ public class PasswordValidatorTest {
      * include a number
      * include a special character (! @ # $ %)
      * cannot include certain special characters (&,?,;)
-     * cannot include substring 'admin' (case-insensitive) if Plesk
+     * cannot include spaces
+     * cannot include admin
+     * cannot include international characters
      */
     private static enum EnumPasswordCharacters {
 
@@ -170,24 +172,32 @@ public class PasswordValidatorTest {
     }
 
     @Test
-    public void validToIncludeAdminIfNotPlesk() {
+    public void shouldNotIncludeAdmin() {
+        validator = ValidatorRegistry.getInstance().get("password");
         char[] adminArr = "admin".toCharArray();
         int randChar = randInt(0, 4);
         adminArr[randChar] = Character.toUpperCase(adminArr[randChar]);
 
         boolean isValid = validator.isValid(appendToValidPassword(new String(adminArr)));
 
-        assertTrue(isValid);
+        assertFalse(isValid);
     }
-
     @Test
-    public void shouldNotIncludeAdminIfPlesk() {
-        validator = ValidatorRegistry.getInstance().get("pleskPassword");
-        char[] adminArr = "admin".toCharArray();
+    public void shouldNotIncludeSpaces() {
+        validator = ValidatorRegistry.getInstance().get("password");
+        char[] spaceArr = "space".toCharArray();
         int randChar = randInt(0, 4);
-        adminArr[randChar] = Character.toUpperCase(adminArr[randChar]);
+        spaceArr[randChar] = ' ';
 
-        boolean isValid = validator.isValid(appendToValidPassword(new String(adminArr)));
+        boolean isValid = validator.isValid(appendToValidPassword(new String(spaceArr)));
+
+        assertFalse(isValid);
+    }
+    @Test
+    public void shouldNotIncludeSpecialCharacter() {
+        validator = ValidatorRegistry.getInstance().get("password");
+
+        boolean isValid = validator.isValid(appendToValidPassword("ßigMäuse"));
 
         assertFalse(isValid);
     }

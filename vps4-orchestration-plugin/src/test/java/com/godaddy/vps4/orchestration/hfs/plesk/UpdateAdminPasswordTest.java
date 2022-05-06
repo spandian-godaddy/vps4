@@ -40,7 +40,7 @@ public class UpdateAdminPasswordTest {
     public void testExecuteSuccess() throws Exception {
         UpdateAdminPassword.Request request = new UpdateAdminPassword.Request();
         request.vmId = 42;
-        String password = "pleskpassword";
+        String password = "password";
         request.encryptedPassword = password.getBytes();
 
         PleskAction pleskAction = mock(PleskAction.class);
@@ -57,7 +57,7 @@ public class UpdateAdminPasswordTest {
     public void failUpdateAdminPassword() throws Exception {
         UpdateAdminPassword.Request request = new UpdateAdminPassword.Request();
         request.vmId = 42;
-        request.encryptedPassword = "pleskpassword".getBytes();
+        request.encryptedPassword = "password".getBytes();
 
         // if HFS throws an exception on pleskService, the command should fail
         when(pleskService.adminPassUpdate(request.vmId, anyString())).thenThrow(new RuntimeException("Faked HFS failure"));

@@ -224,7 +224,7 @@ public class VmResource {
 
         Image image = imageResource.getImage(provisionRequest.image);
         validateRequestedImage(vmCredit, image);
-        validatePassword(provisionRequest.password, image);
+        validatePassword(provisionRequest.password);
 
         int previousRelays = getPreviousRelaysForVirtualServers(provisionRequest, image);
         ProvisionVirtualMachineParameters params;

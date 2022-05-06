@@ -147,15 +147,8 @@ public class RequestValidation {
         }
     }
 
-    private static Validator getValidatorByImage(Image image) {
-        if (image.controlPanel == ControlPanel.PLESK) {
-            return ValidatorRegistry.getInstance().get("pleskPassword");
-        }
-        return ValidatorRegistry.getInstance().get("password");
-    }
-
-    public static void validatePassword(String password, Image image) {
-        Validator validator = getValidatorByImage(image);
+    public static void validatePassword(String password) {
+        Validator validator = ValidatorRegistry.getInstance().get("password");
         if (!validator.isValid(password)){
             throw new Vps4Exception("INVALID_PASSWORD", String.format("%s is an invalid password", password));
         }

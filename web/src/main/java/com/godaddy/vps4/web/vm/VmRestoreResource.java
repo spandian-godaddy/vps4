@@ -138,7 +138,7 @@ public class VmRestoreResource {
         validateIfSnapshotIsLive(snapshotService, restoreVmRequest.backupId);
         validateIfSnapshotFromVm(virtualMachineService, snapshotService, vm.vmId, restoreVmRequest.backupId);
         if(vm.spec.serverType.platform == ServerType.Platform.OPENSTACK) {
-            validatePassword(restoreVmRequest.password, vm.image);
+            validatePassword(restoreVmRequest.password);
         }
     }
 

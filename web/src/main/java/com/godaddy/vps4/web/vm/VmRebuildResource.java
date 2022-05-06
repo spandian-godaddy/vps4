@@ -138,9 +138,8 @@ public class VmRebuildResource {
     }
 
     private void isValidRebuildVmRequest(UUID vmId, RebuildVmRequest rebuildVmRequest, UUID orionGuid) {
-        VirtualMachine vm = vmResource.getVm(vmId);
         validateNoConflictingActions(vmId, actionService, ActionType.RESTORE_VM, ActionType.CREATE_VM, ActionType.REBUILD_VM);
-        validatePassword(rebuildVmRequest.password, vm.image);
+        validatePassword(rebuildVmRequest.password);
         validateRequestedImage(creditService.getVirtualMachineCredit(orionGuid),imageResource.getImage(rebuildVmRequest.imageName));
         if (!StringUtils.isBlank(rebuildVmRequest.imageName)) {
             // Validate image name passed in. This should throw a 404 if image is disabled (for env or role)
