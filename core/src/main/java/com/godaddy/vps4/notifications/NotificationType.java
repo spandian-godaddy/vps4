@@ -10,7 +10,8 @@ public enum NotificationType {
     MAINTENANCE(2),
     NEW_MESSAGE_CENTER(3),
     NEW_FEATURE(4),
-    GENERIC_OUTAGE(5);
+    GENERIC_OUTAGE(5),
+    IMPORTANT_NOTICE(6);
 
     private final int typeId;
 
