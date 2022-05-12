@@ -154,6 +154,18 @@ pipeline {
                 slackSend(color: '#00CD48', message: "Post Deploy *P3 SMOKE TEST* was SUCCESSFUL. Job '${env.JOB_NAME} [${VPS4_VERSION}]' (${env.BUILD_URL})")
             }
         }
+
+        stage("Prod BOM Smoke Test") {
+            options {
+                timeout(time:45, unit:'MINUTES')
+            }
+            steps {
+                load("/home/jenkins/vps4_latest_version.properties")
+                echo "vps4 version: ${VPS4_VERSION}"
+                build job: 'prod_bom_phase_3_test', parameters: [string(name: 'VPS4_VERSION', value: VPS4_VERSION)]
+                slackSend(color: '#00CD48', message: "Post Deploy *BOM SMOKE TEST* was SUCCESSFUL. Job '${env.JOB_NAME} [${VPS4_VERSION}]' (${env.BUILD_URL})")
+            }
+        }
     }
     post {
         success {
