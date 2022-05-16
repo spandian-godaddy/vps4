@@ -1,12 +1,28 @@
 package com.godaddy.vps4.scheduler.web.scheduler;
 
 
+import java.util.List;
+import java.util.UUID;
+
+import javax.ws.rs.Consumes;
+import javax.ws.rs.DELETE;
+import javax.ws.rs.GET;
+import javax.ws.rs.POST;
+import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
+import javax.ws.rs.Produces;
+import javax.ws.rs.core.MediaType;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.godaddy.vps4.scheduler.api.core.JobRequest;
 import com.godaddy.vps4.scheduler.api.core.SchedulerJobDetail;
 import com.godaddy.vps4.scheduler.core.SchedulerService;
 import com.godaddy.vps4.scheduler.web.Vps4SchedulerApi;
 import com.godaddy.vps4.scheduler.web.Vps4SchedulerException;
 import com.google.inject.Inject;
+
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiImplicitParam;
 import io.swagger.annotations.ApiImplicitParams;
@@ -17,19 +33,6 @@ import io.swagger.annotations.ApiResponses;
 import io.swagger.annotations.Example;
 import io.swagger.annotations.ExampleProperty;
 import io.swagger.jaxrs.PATCH;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import javax.ws.rs.Consumes;
-import javax.ws.rs.DELETE;
-import javax.ws.rs.GET;
-import javax.ws.rs.POST;
-import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.Produces;
-import javax.ws.rs.core.MediaType;
-import java.util.List;
-import java.util.UUID;
 
 @Vps4SchedulerApi
 @Api(tags = {"scheduler"})
@@ -92,7 +95,7 @@ public class SchedulerResource {
             return schedulerService.createJob(product, jobGroup, requestJson);
         }
         catch (Exception e) {
-            logger.info("******** ERROR ************: {}", e.getMessage());
+            logger.error("******** ERROR ************", e);
             throw new Vps4SchedulerException("JOB_CREATION_ERROR", "Could not create job");
         }
     }
@@ -112,7 +115,7 @@ public class SchedulerResource {
             return schedulerService.getJob(product, jobGroup, jobId);
         }
         catch (Exception e) {
-            logger.info("******** ERROR ************: {}", e.getMessage());
+            logger.error("******** ERROR ************", e);
             throw new Vps4SchedulerException("NOT_FOUND", "Could not find job");
         }
     }
@@ -145,7 +148,7 @@ public class SchedulerResource {
             return schedulerService.updateJobSchedule(product, jobGroup, jobId, requestJson);
         }
         catch (Exception e) {
-            logger.info("******** ERROR ************: {}", e.getMessage());
+            logger.error("******** ERROR ************", e);
             throw new Vps4SchedulerException("JOB_UPDATE_ERROR", "Couldn't update job schedule");
         }
     }
@@ -164,7 +167,7 @@ public class SchedulerResource {
             schedulerService.deleteJob(product, jobGroup, jobId);
         }
         catch (Exception e) {
-            logger.info("******** ERROR ************: {}", e.getMessage());
+            logger.error("******** ERROR ************", e);
             throw new Vps4SchedulerException("JOB_DELETION_ERROR", "Could not delete job");
         }
     }
@@ -184,7 +187,7 @@ public class SchedulerResource {
             schedulerService.pauseJob(product, jobGroup, jobId);
         }
         catch (Exception e) {
-            logger.info("******** ERROR ************: {}", e.getMessage());
+            logger.error("******** ERROR ************", e);
             throw new Vps4SchedulerException("NOT_FOUND", "Could not find job");
         }
     }
@@ -204,7 +207,7 @@ public class SchedulerResource {
             schedulerService.resumeJob(product, jobGroup, jobId);
         }
         catch (Exception e) {
-            logger.info("******** ERROR ************: {}", e.getMessage());
+            logger.error("******** ERROR ************", e);
             throw new Vps4SchedulerException("NOT_FOUND", "Could not find job");
         }
     }
