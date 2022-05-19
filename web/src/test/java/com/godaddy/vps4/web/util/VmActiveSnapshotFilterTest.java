@@ -149,6 +149,15 @@ public class VmActiveSnapshotFilterTest {
         verify(chain).doFilter(request, response);
     }
 
+    @Test
+    public void testVmSyncApiPostWithPendingSnapshot() throws Exception {
+        when(request.getRequestURI()).thenReturn("/api/vms/" + vmid + "/syncVmStatus");
+
+        filter.doFilter(request, response, chain);
+        verify(jdbcVmService, never()).getPendingSnapshotActionIdByVmId(any());
+        verify(chain).doFilter(request, response);
+    }
+
    @Test
    public void initDoesNothing() throws Exception {
        FilterConfig fc = mock(FilterConfig.class);
