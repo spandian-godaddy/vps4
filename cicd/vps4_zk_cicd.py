@@ -33,11 +33,12 @@ def main(argv):
     product_service = ''
     zk_service_node = '/mcp/service'
     verbose = False
+    quick_deploy = False
     try:
-        opts, args = getopt.getopt(argv, "he:n:p:z:v", ["env=", "name=", "product=", "zkservicenode=", "verbose="])
+        opts, args = getopt.getopt(argv, "he:n:p:qz:v", ["env=", "name=", "product=", "zkservicenode=", "verbose", "quickdeploy"])
     except getopt.GetoptError:
         print("Invalid arguments provided")
-        print("project_stamp_zk_cicd.py -e <environment> -n <rpm name> -p <product_service> -z <zkservicenode> -v <verbose>")
+        print("vps4_zk_cicd.py -e <environment> -n <rpm name> -p <product_service> [-z <zkservicenode>] [-v | --verbose] [-q | --quickdeploy]")
         sys.exit(2)
 
     for opt, arg in opts:
@@ -59,6 +60,9 @@ def main(argv):
         elif opt in ("-z", "--zkservicenode"):
             print("Processing '-z' zk_service_node=%s" % arg)
             zk_service_node = arg
+        elif opt in ("-q", "--quickdeploy"):
+            print("Processing '-q' quick_deploy enabled")
+            quick_deploy = True
 
     # ENABLE LOGGING LEVEL
     if verbose:
@@ -87,7 +91,7 @@ def main(argv):
 
     zk = KazooClient(hosts=zookeeper_nodes, read_only=False)
     zk.start()
-    poke_zookeeper(zk, rpm_name, product_service, zk_service_node)
+    poke_zookeeper(zk, rpm_name, product_service, zk_service_node, quick_deploy)
     zk.stop()
     log.info("#########################################################")
     log.info("#########################################################")
@@ -113,25 +117,26 @@ def deployment_timeout():
     log.basicConfig()
 
 
-def is_service_deployed(zk, service_name, cicd_ver_json, zk_service_node):
+def is_service_deployed(zk, service_name, zk_service_node):
     """
-    Tests to see if the expected version of a vertical service is deployed
+    Tests to see if the expected version of a service is deployed
     """
-    # if not deployed:
-    #     if zk_count > 0:
-    deployed_ver = zk.get_children(zk_service_node + "/" + service_name)
-    deployed_ver_count = len(deployed_ver)
+    data, stat = zk.get(zk_config_node + "/" + service_name + "/latest")
+    jsondata = json.loads(data.decode('utf-8'))
+    expected_version = jsondata[u'rpm']
 
-    # If the Service's root node (e.g. vhfs-dms-web) only has one
-    #    child node and that child node is the same version as we
+    deployed_version = zk.get_children(zk_service_node + "/" + service_name)
+    deployed_version_count = len(deployed_version)
+
+    # If the service's deployed_version (e.g. vps4-web) only has one
+    #    child node and that child node is the same version as is
     #    requested to have deployed, then the deployment process
     #    is completed
-    if deployed_ver_count == 1 and deployed_ver[0] == cicd_ver_json:
+    if deployed_version_count == 1 and deployed_version[0] == expected_version:
         return True
     else:
-        log.info("Waiting on %s to deploy" % service_name)
+        log.info("Waiting on %s to deploy" % expected_version)
         return False
-
 
 def get_zk_count(svc_data):
     """
@@ -142,7 +147,7 @@ def get_zk_count(svc_data):
     return svc_json[u'count']
 
 
-def poke_zookeeper(zk, rpm_name, product_service, zk_service_node):
+def poke_zookeeper(zk, rpm_name, product_service, zk_service_node, quick_deploy):
     """
     Update Zookeeper(s) with new vertical service version information
     """
@@ -152,8 +157,6 @@ def poke_zookeeper(zk, rpm_name, product_service, zk_service_node):
     if not (zk.exists(zk_service_node)):
         log.error("MISSING MCP SERVICE NODE")
         sys.exit(1)
-
-    product_service_elements = []
 
     log.info("#########################################################")
     log.info("Setting Product Stamp version information in Zookeeper")
@@ -194,20 +197,22 @@ def poke_zookeeper(zk, rpm_name, product_service, zk_service_node):
         log.info("    " + product_service + " service does not need Zookeeper updated")
         is_deployed = True
 
-    product_service_elements.append('{"' + product_service + '": {"version": "' + rpm_name + '", "count": ' + str(
-        zk_count) + ', "is_deployed": "' + str(
-        is_deployed) + '"}}')
-
     log.info("##########")
     sys.stdout.flush()
-
     # Updating of nodes in Zookeeper is now complete
-    # Now we wait for MCP to finish deploying the VMs
 
+    if quick_deploy:
+        log.info("#########################################################")
+        log.info("Quick Deploy enabled, NOT waiting on MCP deployment")
+        log.info("#########################################################")
+        return
+
+    # Now we wait for MCP to finish deploying the VMs
     log.info("#########################################################")
     log.info("Waiting on MCP deployment process to complete")
     log.info("#########################################################")
     sys.stdout.flush()
+
     # get currently deployed services
     deployed_services = zk.get_children(zk_service_node)
     still_deploying = True if is_deployed is False else False
@@ -219,27 +224,13 @@ def poke_zookeeper(zk, rpm_name, product_service, zk_service_node):
         log.info("MCP wait time (secs): %s" % loop_time)
         sys.stdout.flush()
         still_deploying = False
+
         # for each deployed service, get its children
         for deployed_service in deployed_services:
-            for product_service_e_idx, product_service_element in enumerate(product_service_elements):
-                product_service_element_json = json.loads(product_service_element)
-                if deployed_service in product_service_element_json:
-                    is_deployed = is_service_deployed(zk, deployed_service
-                                                      , product_service_element_json[deployed_service]["version"], zk_service_node)
-                    if is_deployed is False:
-                        still_deploying = True
+            is_deployed = is_service_deployed(zk, deployed_service, zk_service_node)
+            if is_deployed is False:
+                still_deploying = True
 
-                    # The state of the service may have changed from "Not deployed" to "Deployed"
-                    #    so we replace the element in the list with the updated information
-                    product_service_elements.pop(product_service_e_idx)
-                    product_service_elements.insert(product_service_e_idx, '{"'
-                                                    + deployed_service
-                                                    + '": {"version": "'
-                                                    + product_service_element_json[deployed_service]["version"]
-                                                    + '", "count": "'
-                                                    + str(product_service_element_json[deployed_service]["count"])
-                                                    + '", "is_deployed": "' + str(is_deployed)
-                                                    + '"}}')
 
 if __name__ == '__main__':
     sys.exit(main(sys.argv[1:]))
