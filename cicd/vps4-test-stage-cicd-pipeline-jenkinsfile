@@ -28,7 +28,7 @@ pipeline {
                         productStampZk("test", "vps4-web-${VPS4_VERSION}.noarch", "vps4-web")
                         productStampZk("test", "vps4-message-consumer-${VPS4_VERSION}.noarch", "vps4-message-consumer")
                         productStampZk("test", "vps4-orchestration-plugin-${VPS4_VERSION}.noarch", "hfs-engine")
-                        productStampZk("test", "vps4-scheduler-${VPS4_VERSION}.noarch", "vps4-scheduler")
+                        productStampZkAndWait("test", "vps4-scheduler-${VPS4_VERSION}.noarch", "vps4-scheduler")
                         slackSend(color: '#00CD48', message: "vps4 *DEPLOY TO TEST* was SUCCESSFUL. Job '${env.JOB_NAME} [${VPS4_VERSION}]' (${env.BUILD_URL})")
                     }
                 }
@@ -40,7 +40,7 @@ pipeline {
                         productStampZk("stage", "vps4-web-${VPS4_VERSION}.noarch", "vps4-web")
                         productStampZk("stage", "vps4-message-consumer-${VPS4_VERSION}.noarch", "vps4-message-consumer")
                         productStampZk("stage", "vps4-orchestration-plugin-${VPS4_VERSION}.noarch", "hfs-engine")
-                        productStampZk("stage", "vps4-scheduler-${VPS4_VERSION}.noarch", "vps4-scheduler")
+                        productStampZkAndWait("stage", "vps4-scheduler-${VPS4_VERSION}.noarch", "vps4-scheduler")
                         slackSend(color: '#00CD48', message: "vps4 *DEPLOY TO STAGE* was SUCCESSFUL. Job '${env.JOB_NAME} [${VPS4_VERSION}]' (${env.BUILD_URL})")
                     }
                 }
@@ -80,10 +80,19 @@ private void cleanupEnvironment() {
     }
 }
 
-private void productStampZk(String targetEnv, String rpmName, String product) {
-    echo "targetEnv: ${targetEnv}, rpmName: ${rpmName}, product: ${product}"
-    shell("/usr/bin/python ./cicd/vps4_zk_cicd.py -e ${targetEnv} -n ${rpmName} -p ${product}")
+private void productStampZkAndWait(String targetEnv, String rpmName, String product) {
+    productStampZk(targetEnv, rpmName, product, false)
 }
+
+private void productStampZk(String targetEnv, String rpmName, String product, Boolean quickdeploy=true) {
+    echo "targetEnv: ${targetEnv}, rpmName: ${rpmName}, product: ${product}, quickdeploy: ${quickdeploy}"
+    if (quickdeploy) {
+        shell("/usr/bin/python ./cicd/vps4_zk_cicd.py -e ${targetEnv} -n ${rpmName} -p ${product} -q")
+    } else {
+        shell("/usr/bin/python ./cicd/vps4_zk_cicd.py -e ${targetEnv} -n ${rpmName} -p ${product}")
+    }
+}
+
 
 private void shell(GString script) {
     if (this.sh(returnStatus: true, script: script)) {

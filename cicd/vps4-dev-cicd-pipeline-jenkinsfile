@@ -30,7 +30,7 @@ pipeline {
                 productStampZk("dev", "vps4-web-${VPS4_VERSION}.noarch", "vps4-web")
                 productStampZk("dev", "vps4-message-consumer-${VPS4_VERSION}.noarch", "vps4-message-consumer")
                 productStampZk("dev", "vps4-orchestration-plugin-${VPS4_VERSION}.noarch", "hfs-engine")
-                productStampZk("dev", "vps4-scheduler-${VPS4_VERSION}.noarch", "vps4-scheduler")
+                productStampZkAndWait("dev", "vps4-scheduler-${VPS4_VERSION}.noarch", "vps4-scheduler")
                 slackSend(color: '#00CD48', message: "vps4 *DEV-ENV DEPLOY* of branch ${params.branch} was SUCCESSFUL. Job '${env.JOB_NAME} [${VPS4_VERSION}]' (${env.BUILD_URL})")
             }
         }
@@ -57,9 +57,17 @@ private void cleanupEnvironment() {
     }
 }
 
-private void productStampZk(String targetEnv, String rpmName, String product) {
-    echo "targetEnv: ${targetEnv}, rpmName: ${rpmName}, product: ${product}"
-    shell("/usr/bin/python ./cicd/vps4_zk_cicd.py -e ${targetEnv} -n ${rpmName} -p ${product}")
+private void productStampZkAndWait(String targetEnv, String rpmName, String product) {
+    productStampZk(targetEnv, rpmName, product, false)
+}
+
+private void productStampZk(String targetEnv, String rpmName, String product, Boolean quickdeploy=true) {
+    echo "targetEnv: ${targetEnv}, rpmName: ${rpmName}, product: ${product}, quickdeploy: ${quickdeploy}"
+    if (quickdeploy) {
+        shell("/usr/bin/python ./cicd/vps4_zk_cicd.py -e ${targetEnv} -n ${rpmName} -p ${product} -q")
+    } else {
+        shell("/usr/bin/python ./cicd/vps4_zk_cicd.py -e ${targetEnv} -n ${rpmName} -p ${product}")
+    }
 }
 
 private void shell(GString script) {
