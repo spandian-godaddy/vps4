@@ -6,6 +6,7 @@ import java.util.UUID;
 import javax.inject.Inject;
 
 import com.godaddy.vps4.orchestration.ActionRequest;
+import com.godaddy.vps4.orchestration.hfs.network.ReleaseIp;
 import gdg.hfs.orchestration.CommandRetryStrategy;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -53,8 +54,14 @@ public class Vps4AddIpAddress extends ActionCommand<Vps4AddIpAddress.Request, Vo
         logger.info("Add an IP to vm {}", request.vmId);
         VirtualMachine virtualMachine = virtualMachineService.getVirtualMachine(request.vmId);
         IpAddress hfsIp = allocateIp(context, request);
-        addIpToDatabase(context, hfsIp, virtualMachine.vmId);
-
+        try {
+            addIpToDatabase(context, hfsIp, virtualMachine.vmId);
+        }
+        catch(Exception e) {
+            logger.info("Failed adding IP {} to db for vm {}. Releasing IP", hfsIp.address, virtualMachine.vmId);
+            context.execute(ReleaseIp.class, hfsIp.addressId);
+            throw new RuntimeException(e);
+        }
         if (virtualMachine.spec.isVirtualMachine() && request.internetProtocolVersion == 4) {
             disableMailRelays(context, hfsIp);
         }

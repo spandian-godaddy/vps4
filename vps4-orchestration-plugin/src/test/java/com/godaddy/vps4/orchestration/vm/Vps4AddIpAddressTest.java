@@ -9,7 +9,9 @@ import static org.mockito.Mockito.when;
 
 import java.time.Instant;
 import java.util.UUID;
+import java.util.function.Function;
 
+import com.godaddy.vps4.orchestration.hfs.network.ReleaseIp;
 import org.junit.Test;
 
 import com.godaddy.vps4.network.NetworkService;
@@ -91,7 +93,52 @@ public class Vps4AddIpAddressTest {
             Assert.fail();
         }
         verify(context, times(1)).execute(eq(AllocateIp.class), any(AllocateIp.Request.class));
+        verify(context, times(0)).execute(eq(ReleaseIp.class), any());
     }
 
+    @Test
+    public void testAddIpReleasesIpIfDbFails() {
+        Vps4AddIpAddress.Request request = new Vps4AddIpAddress.Request();
+
+        ServerType vmServerType = new ServerType();
+        vmServerType.platform = ServerType.Platform.OVH;
+        vmServerType.serverType = ServerType.Type.VIRTUAL;
+        ServerSpec vmSpec = new ServerSpec();
+        vmSpec.serverType = vmServerType;
+        VirtualMachine virtualMachine = new VirtualMachine(UUID.randomUUID(),
+                1111,
+                UUID.randomUUID(),
+                0,
+                vmSpec,
+                "fakeName",
+                null,
+                null,
+                Instant.now(),
+                null,
+                null,
+                null,
+                "fake.hostname.com",
+                0,
+                UUID.randomUUID(),
+                null);
+        request.vmId = virtualMachine.vmId;
+        request.zone = "vps4-phx3";
+        request.sgid = "vps4-unittest-1234";
+
+        IpAddress hfsAddress = new IpAddress();
+        hfsAddress.address = "1.2.3.4";
+        hfsAddress.addressId = 3425;
+        when(virtualMachineService.getVirtualMachine(any())).thenReturn(virtualMachine);
+        when(context.execute(eq(AllocateIp.class), any(AllocateIp.Request.class))).thenReturn(hfsAddress);
+
+        when((context.execute(eq("Create-" + hfsAddress.addressId),
+                any(Function.class), any()))).thenThrow(new RuntimeException());
+        try {
+            command.executeWithAction(context, request);
+        } catch (Exception e) {
+            verify(context, times(1)).execute(eq(AllocateIp.class), any(AllocateIp.Request.class));
+            verify(context, times(1)).execute(eq(ReleaseIp.class), any());
+        }
+    }
 
 }
