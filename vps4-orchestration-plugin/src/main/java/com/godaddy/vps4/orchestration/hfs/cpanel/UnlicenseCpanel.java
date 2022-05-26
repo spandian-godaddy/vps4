@@ -12,7 +12,6 @@ import com.google.inject.Inject;
 import gdg.hfs.orchestration.Command;
 import gdg.hfs.orchestration.CommandContext;
 
-
 public class UnlicenseCpanel implements Command<Long, Void> {
 
     private CPanelService cpanelService;
@@ -33,7 +32,10 @@ public class UnlicenseCpanel implements Command<Long, Void> {
         CPanelAction action = context.execute("Unlicense-Cpanel",
                 ctx -> cpanelService.licenseRelease(null, hfsVmId),
                 CPanelAction.class);
-        context.execute(WaitForCpanelAction.class, action);
+        CPanelAction hfsCpanelAction = context.execute(WaitForCpanelAction.class, action);
+        if (hfsCpanelAction.status == CPanelAction.Status.FAILED) {
+            throw new RuntimeException("CPanel license release failed on vm " + hfsVmId);
+        }
         return null;
     }
     private boolean vmHasCpanelLicense(Long hfsVmId){
