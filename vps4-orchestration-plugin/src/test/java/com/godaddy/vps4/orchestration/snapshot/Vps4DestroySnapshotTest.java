@@ -15,6 +15,7 @@ import org.junit.Test;
 import com.godaddy.vps4.orchestration.TestCommandContext;
 import com.godaddy.vps4.orchestration.hfs.snapshot.DestroySnapshot;
 import com.godaddy.vps4.snapshot.SnapshotService;
+import com.godaddy.vps4.snapshot.SnapshotStatus;
 import com.godaddy.vps4.vm.ActionService;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
@@ -43,7 +44,8 @@ public class Vps4DestroySnapshotTest {
         command.execute(context, request);
 
         verify(context, times(1)).execute("DestroySnapshot", DestroySnapshot.class, request.hfsSnapshotId);
-        verify(snapshotService, times(1)).markSnapshotDestroyed(request.vps4SnapshotId);
+        verify(snapshotService, times(1))
+                .updateSnapshotStatus(request.vps4SnapshotId, SnapshotStatus.DESTROYED);
     }
 
     @Test(expected = RuntimeException.class)

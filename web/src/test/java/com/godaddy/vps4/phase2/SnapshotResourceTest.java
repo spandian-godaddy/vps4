@@ -1,8 +1,25 @@
 package com.godaddy.vps4.phase2;
 
+import static org.junit.Assert.assertNotNull;
+import static org.mockito.Mockito.mock;
+
+import java.util.Arrays;
+import java.util.List;
+import java.util.UUID;
+
+import javax.inject.Inject;
+import javax.sql.DataSource;
+import javax.ws.rs.NotFoundException;
+
+import org.junit.After;
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.Test;
+
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.godaddy.vps4.jdbc.DatabaseModule;
+import com.godaddy.vps4.oh.OhModule;
 import com.godaddy.vps4.scheduler.api.web.SchedulerWebService;
 import com.godaddy.vps4.security.GDUserMock;
 import com.godaddy.vps4.security.SecurityModule;
@@ -20,7 +37,6 @@ import com.godaddy.vps4.vm.ActionStatus;
 import com.godaddy.vps4.vm.VirtualMachine;
 import com.godaddy.vps4.vm.VmModule;
 import com.godaddy.vps4.web.Vps4Exception;
-import com.godaddy.vps4.web.Vps4NoShopperException;
 import com.godaddy.vps4.web.security.GDUser;
 import com.godaddy.vps4.web.security.RequiresRole;
 import com.godaddy.vps4.web.snapshot.SnapshotResource;
@@ -30,20 +46,6 @@ import com.google.inject.AbstractModule;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
 import com.google.inject.Provides;
-import org.junit.After;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
-
-import javax.inject.Inject;
-import javax.sql.DataSource;
-import javax.ws.rs.NotFoundException;
-import java.util.Arrays;
-import java.util.List;
-import java.util.UUID;
-
-import static org.junit.Assert.assertNotNull;
-import static org.mockito.Mockito.mock;
 
 public class SnapshotResourceTest {
     @Inject Vps4UserService userService;
@@ -61,6 +63,7 @@ public class SnapshotResourceTest {
             new SnapshotModule(),
             new Phase2ExternalsModule(),
             new CancelActionModule(),
+            new OhModule(),
             new AbstractModule() {
 
                 @Override
@@ -103,36 +106,6 @@ public class SnapshotResourceTest {
     private Snapshot createTestSnapshot() {
         createTestVm();
         return SqlTestData.insertSnapshot(snapshotService, testVm.vmId, testVm.projectId, SnapshotType.ON_DEMAND);
-    }
-
-    // === getSnapshotList Tests ===
-    private void testGetSnapshotList() {
-        Snapshot snapshot = createTestSnapshot();
-
-        List<Snapshot> snapshots = getSnapshotResource().getSnapshotsForUser();
-        Assert.assertEquals(1, snapshots.size());
-        Assert.assertEquals(snapshots.get(0).vmId, snapshot.vmId);
-    }
-
-    @Test
-    public void testShopperGetSnapshotList() {
-        user = GDUserMock.createShopper();
-        testGetSnapshotList();
-    }
-
-    @Test(expected = Vps4NoShopperException.class)
-    public void testAdminFailsGetSnapshotList() {
-        user = GDUserMock.createAdmin();
-        testGetSnapshotList();
-    }
-
-    @Test
-    public void testUnauthorizedShopperGetSnapshotList() {
-        createTestSnapshot();
-
-        user = GDUserMock.createShopper("shopperX");
-        List<Snapshot> snapshots = getSnapshotResource().getSnapshotsForUser();
-        Assert.assertEquals(0, snapshots.size());
     }
 
     // === getSnapshot Tests ===
@@ -233,7 +206,7 @@ public class SnapshotResourceTest {
     public void testEmployeeGetSnapshotWithDetails() {
         Snapshot snapshot = createTestSnapshot();
         UUID expectedVmId = snapshot.vmId;
-        long expectedHfsSnapshotId = snapshot.hfsSnapshotId;
+        Long expectedHfsSnapshotId = snapshot.hfsSnapshotId;
 
         user = GDUserMock.createEmployee();
         snapshot = getSnapshotResource().getSnapshotWithDetails(snapshot.id);
@@ -381,6 +354,8 @@ public class SnapshotResourceTest {
         createTestVm();
         SnapshotRequest request = new SnapshotRequest();
         request.vmId = testVm.vmId;
+        request.name = "on-demand";
+        request.snapshotType = SnapshotType.ON_DEMAND;
         Phase2ExternalsModule.mockNydusDown();
         try {
             getSnapshotResource().createSnapshot(request);

@@ -1,5 +1,24 @@
 package com.godaddy.vps4.phase2.vm;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+
+import java.time.Instant;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
+import java.util.stream.Collectors;
+
+import javax.sql.DataSource;
+
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
+
 import com.godaddy.vps4.credit.CreditHistory;
 import com.godaddy.vps4.jdbc.DatabaseModule;
 import com.godaddy.vps4.network.IpAddress;
@@ -25,24 +44,8 @@ import com.godaddy.vps4.vm.jdbc.JdbcImageService;
 import com.godaddy.vps4.vm.jdbc.JdbcVirtualMachineService;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
+
 import junit.framework.Assert;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
-
-import javax.sql.DataSource;
-import java.time.Instant;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
-import java.util.stream.Collectors;
-
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
 
 public class JdbcVirtualMachineServiceTest {
 
@@ -316,7 +319,7 @@ public class JdbcVirtualMachineServiceTest {
                 Instant.now(),
                 null,
                 "test-imageid",
-                (int) (Math.random() * 100000),
+                (long) (Math.random() * 100000),
                 SnapshotType.ON_DEMAND
         );
         SqlTestData.insertTestSnapshot(testSnapshot, dataSource);

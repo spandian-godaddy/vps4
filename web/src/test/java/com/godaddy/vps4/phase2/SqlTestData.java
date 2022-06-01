@@ -1,5 +1,13 @@
 package com.godaddy.vps4.phase2;
 
+import java.time.Instant;
+import java.util.List;
+import java.util.UUID;
+
+import javax.sql.DataSource;
+
+import org.json.simple.JSONObject;
+
 import com.godaddy.hfs.jdbc.Sql;
 import com.godaddy.vps4.network.IpAddress;
 import com.godaddy.vps4.network.IpAddress.IpAddressType;
@@ -23,12 +31,6 @@ import com.godaddy.vps4.vm.VirtualMachineService.ProvisionVirtualMachineParamete
 import com.godaddy.vps4.vm.VmUser;
 import com.godaddy.vps4.vm.jdbc.JdbcVirtualMachineService;
 import com.godaddy.vps4.vm.jdbc.JdbcVmActionService;
-import org.json.simple.JSONObject;
-
-import javax.sql.DataSource;
-import java.time.Instant;
-import java.util.List;
-import java.util.UUID;
 
 
 public class SqlTestData {
@@ -128,7 +130,7 @@ public class SqlTestData {
     }
 
     public static void invalidateSnapshot(SnapshotService snapshotService, UUID snapshotId) {
-        snapshotService.markSnapshotDestroyed(snapshotId);
+        snapshotService.updateSnapshotStatus(snapshotId, SnapshotStatus.DESTROYED);
     }
 
     public static void insertTestUser(VmUser user, DataSource dataSource) {

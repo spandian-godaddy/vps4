@@ -115,9 +115,8 @@ public class VmRestoreResource {
         String restoreClassName = vm.spec.serverType.platform.getRestoreCommand();
         ActionRequest commandRequest = generateRestoreVmOrchestrationRequest(vm, restoreVmRequest.backupId,
                                                          restoreVmRequest.password, restoreVmRequest.debugEnabled);
-        VmAction restoreAction = createActionAndExecute(actionService, commandService, vm.vmId, ActionType.RESTORE_VM,
-                                                        commandRequest, restoreClassName, user);
-        return restoreAction;
+        return createActionAndExecute(actionService, commandService, vm.vmId, ActionType.RESTORE_VM,
+                                      commandRequest, restoreClassName, user);
     }
 
     private void performAdminPrereqs(UUID vmId, RestoreVmRequest restoreVmRequest) {

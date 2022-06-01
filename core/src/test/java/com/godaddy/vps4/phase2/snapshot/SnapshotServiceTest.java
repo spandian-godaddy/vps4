@@ -60,7 +60,7 @@ public class SnapshotServiceTest {
                     Instant.now(),
                     null,
                     "test-imageid",
-                    (int) (Math.random() * 100000),
+                    (long) (Math.random() * 100000),
                     snapshotType
             );
             SqlTestData.insertTestSnapshot(testSnapshot, dataSource);
@@ -77,27 +77,16 @@ public class SnapshotServiceTest {
     @Test
     public void testCancelErroredSnapshots() {
         insertTestSnapshots(1, SnapshotStatus.ERROR, SnapshotType.AUTOMATIC);
-        Snapshot testSnapshot = snapshotService.getSnapshotsByOrionGuid(vm.orionGuid).get(0);
+        Snapshot testSnapshot = snapshotService.getSnapshotsForVm(vm.vmId).get(0);
         insertTestSnapshots(1, SnapshotStatus.ERROR, SnapshotType.ON_DEMAND);
         insertTestSnapshots(1, SnapshotStatus.LIVE, SnapshotType.AUTOMATIC);
         snapshotService.cancelErroredSnapshots(vm.orionGuid, SnapshotType.AUTOMATIC);
         testSnapshot = snapshotService.getSnapshot(testSnapshot.id);
         assertEquals(SnapshotStatus.CANCELLED, testSnapshot.status);
-        List<Snapshot> snapshots = snapshotService.getSnapshotsByOrionGuid(vm.orionGuid);
+        List<Snapshot> snapshots = snapshotService.getSnapshotsForVm(vm.vmId);
         assertEquals(3, snapshots.size());
-        assertEquals(1, snapshots.stream().filter(snapshot -> snapshot.status == SnapshotStatus.ERROR).collect(Collectors.toList()).size());
-        assertEquals(1, snapshots.stream().filter(snapshot -> snapshot.status == SnapshotStatus.LIVE).collect(Collectors.toList()).size());
-    }
-
-    @Test
-    public void testSnapshotsForUser() {
-        insertTestSnapshots(3, SnapshotStatus.LIVE, SnapshotType.ON_DEMAND);
-        List<UUID> actualSnapshotIds = snapshotService
-                .getSnapshotsForUser(1)
-                .stream()
-                .map(s -> s.id)
-                .collect(Collectors.toList());
-        assertThat(actualSnapshotIds, containsInAnyOrder(snapshotIds.toArray()));
+        assertEquals(1, snapshots.stream().filter(snapshot -> snapshot.status == SnapshotStatus.ERROR).count());
+        assertEquals(1, snapshots.stream().filter(snapshot -> snapshot.status == SnapshotStatus.LIVE).count());
     }
 
     @Test
@@ -253,7 +242,7 @@ public class SnapshotServiceTest {
     public void changeSnapshotStatusToInProgress() {
         insertTestSnapshots(1, SnapshotStatus.NEW, SnapshotType.ON_DEMAND);
         UUID snapshotId = snapshotIds.get(0);
-        snapshotService.markSnapshotInProgress(snapshotId);
+        snapshotService.updateSnapshotStatus(snapshotId, SnapshotStatus.IN_PROGRESS);
         assertEquals(SnapshotStatus.IN_PROGRESS, snapshotService.getSnapshot(snapshotId).status);
     }
 
@@ -261,7 +250,7 @@ public class SnapshotServiceTest {
     public void changeSnapshotStatusToLive() {
         insertTestSnapshots(1, SnapshotStatus.NEW, SnapshotType.ON_DEMAND);
         UUID snapshotId = snapshotIds.get(0);
-        snapshotService.markSnapshotLive(snapshotId);
+        snapshotService.updateSnapshotStatus(snapshotId, SnapshotStatus.LIVE);
         assertEquals(SnapshotStatus.LIVE, snapshotService.getSnapshot(snapshotId).status);
     }
 
@@ -269,7 +258,7 @@ public class SnapshotServiceTest {
     public void changeSnapshotStatusToErrored() {
         insertTestSnapshots(1, SnapshotStatus.NEW, SnapshotType.ON_DEMAND);
         UUID snapshotId = snapshotIds.get(0);
-        snapshotService.markSnapshotErrored(snapshotId);
+        snapshotService.updateSnapshotStatus(snapshotId, SnapshotStatus.ERROR);
         assertEquals(SnapshotStatus.ERROR, snapshotService.getSnapshot(snapshotId).status);
     }
 
@@ -277,7 +266,7 @@ public class SnapshotServiceTest {
     public void changeSnapshotStatusToDestroyed() {
         insertTestSnapshots(1, SnapshotStatus.NEW, SnapshotType.ON_DEMAND);
         UUID snapshotId = snapshotIds.get(0);
-        snapshotService.markSnapshotDestroyed(snapshotId);
+        snapshotService.updateSnapshotStatus(snapshotId, SnapshotStatus.DESTROYED);
         assertEquals(SnapshotStatus.DESTROYED, snapshotService.getSnapshot(snapshotId).status);
     }
 
@@ -285,7 +274,7 @@ public class SnapshotServiceTest {
     public void changeSnapshotStatusToDeprecated() {
         insertTestSnapshots(1, SnapshotStatus.NEW, SnapshotType.ON_DEMAND);
         UUID snapshotId = snapshotIds.get(0);
-        snapshotService.markSnapshotAsDeprecated(snapshotId);
+        snapshotService.updateSnapshotStatus(snapshotId, SnapshotStatus.DEPRECATED);
         assertEquals(SnapshotStatus.DEPRECATED, snapshotService.getSnapshot(snapshotId).status);
     }
 

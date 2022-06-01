@@ -1,5 +1,24 @@
 package com.godaddy.vps4.phase2.appmonitors;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+
+import java.sql.Timestamp;
+import java.time.Duration;
+import java.time.Instant;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
+import java.util.function.Predicate;
+
+import javax.sql.DataSource;
+
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
+
 import com.godaddy.hfs.jdbc.Sql;
 import com.godaddy.vps4.appmonitors.BackupJobAuditData;
 import com.godaddy.vps4.appmonitors.MonitorService;
@@ -21,23 +40,6 @@ import com.godaddy.vps4.vm.VirtualMachine;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
 import com.google.inject.Key;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
-
-import javax.sql.DataSource;
-import java.sql.Timestamp;
-import java.time.Duration;
-import java.time.Instant;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
-import java.util.function.Predicate;
-
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
 
 public class MonitorServiceTest {
 
@@ -80,7 +82,7 @@ public class MonitorServiceTest {
                 Instant.now(),
                 null,
                 "fake-imageid",
-                (int) (Math.random() * 100000),
+                (long) (Math.random() * 100000),
                 SnapshotType.AUTOMATIC
         );
         SqlTestData.insertTestSnapshot(testSnapshotVm6, reportsDataSource);
@@ -96,7 +98,7 @@ public class MonitorServiceTest {
                 Instant.now(),
                 null,
                 "fake-imageid",
-                (int) (Math.random() * 100000),
+                (long) (Math.random() * 100000),
                 SnapshotType.AUTOMATIC
         );
         SqlTestData.insertTestSnapshot(testSnapshotVm7, reportsDataSource);
@@ -160,7 +162,7 @@ public class MonitorServiceTest {
                 Instant.now(),
                 null,
                 "fake-imageid",
-                (int) (Math.random() * 100000),
+                (long) (Math.random() * 100000),
                 SnapshotType.ON_DEMAND
         );
         SqlTestData.insertTestSnapshot(testSnapshot, reportsDataSource);
@@ -182,7 +184,7 @@ public class MonitorServiceTest {
                 Instant.now(),
                 null,
                 "fake-imageid",
-                (int) (Math.random() * 100000),
+                (long) (Math.random() * 100000),
                 SnapshotType.ON_DEMAND
         );
         SqlTestData.insertTestSnapshot(testSnapshot, reportsDataSource);
@@ -220,7 +222,7 @@ public class MonitorServiceTest {
                 Instant.now(),
                 null,
                 "fake-imageid",
-                (int) (Math.random() * 100000),
+                (long) (Math.random() * 100000),
                 SnapshotType.AUTOMATIC
         );
         SqlTestData.insertTestSnapshot(testSnapshot, reportsDataSource);

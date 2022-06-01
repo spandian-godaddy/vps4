@@ -9,6 +9,7 @@ import com.godaddy.vps4.orchestration.Vps4ActionRequest;
 import com.godaddy.vps4.orchestration.hfs.snapshot.DestroySnapshot;
 import com.godaddy.vps4.snapshot.SnapshotActionService;
 import com.godaddy.vps4.snapshot.SnapshotService;
+import com.godaddy.vps4.snapshot.SnapshotStatus;
 import com.godaddy.vps4.vm.ActionService;
 
 import gdg.hfs.orchestration.CommandContext;
@@ -35,7 +36,7 @@ public class Vps4DestroySnapshot extends ActionCommand<Vps4DestroySnapshot.Reque
     public Void executeWithAction(CommandContext context, Request request) {
         context.execute("DestroySnapshot", DestroySnapshot.class, request.hfsSnapshotId);
 
-        snapshotService.markSnapshotDestroyed(request.vps4SnapshotId);
+        snapshotService.updateSnapshotStatus(request.vps4SnapshotId, SnapshotStatus.DESTROYED);
         return null;
     }
 

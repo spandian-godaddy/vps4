@@ -8,7 +8,7 @@ import com.godaddy.vps4.security.Views;
 
 public class Snapshot {
     public final UUID id;
-    public final long projectId;
+    public final Long projectId;
     public final UUID vmId;
     public final String name;
     public final SnapshotStatus status;
@@ -19,17 +19,17 @@ public class Snapshot {
     @JsonView(Views.Internal.class)
     public final String hfsImageId;
     @JsonView(Views.Internal.class)
-    public final long hfsSnapshotId;
+    public final Long hfsSnapshotId;
 
     public Snapshot(UUID id,
-                    long projectId,
+                    Long projectId,
                     UUID vmId,
                     String name,
                     SnapshotStatus status,
                     Instant createdAt,
                     Instant modifiedAt,
                     String hfsImageId,
-                    long hfsSnapshotId,
+                    Long hfsSnapshotId,
                     SnapshotType snapshotType) {
         this.id = id;
         this.projectId = projectId;

@@ -1,9 +1,31 @@
 package com.godaddy.vps4.phase2;
 
+import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.anyLong;
+import static org.mockito.Matchers.eq;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
+import java.util.List;
+import java.util.UUID;
+
+import javax.inject.Inject;
+import javax.sql.DataSource;
+import javax.ws.rs.NotFoundException;
+
+import org.junit.After;
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.BeforeClass;
+import org.junit.Test;
+
 import com.godaddy.hfs.vm.Extended;
 import com.godaddy.hfs.vm.VmExtendedInfo;
 import com.godaddy.hfs.vm.VmService;
 import com.godaddy.vps4.jdbc.DatabaseModule;
+import com.godaddy.vps4.oh.OhModule;
 import com.godaddy.vps4.scheduler.api.core.SchedulerJobDetail;
 import com.godaddy.vps4.scheduler.api.web.SchedulerWebService;
 import com.godaddy.vps4.security.GDUserMock;
@@ -29,27 +51,9 @@ import com.google.inject.AbstractModule;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
 import com.google.inject.Provides;
+
 import gdg.hfs.orchestration.CommandGroupSpec;
 import gdg.hfs.orchestration.CommandService;
-import org.junit.After;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Test;
-
-import javax.inject.Inject;
-import javax.sql.DataSource;
-import javax.ws.rs.NotFoundException;
-import java.util.List;
-import java.util.UUID;
-
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyLong;
-import static org.mockito.Matchers.eq;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
 
 public class SnapshotCreateResourceTest {
     private static GDUser us;
@@ -96,6 +100,7 @@ public class SnapshotCreateResourceTest {
             new SnapshotModule(),
             new Phase2ExternalsModule(),
             new CancelActionModule(),
+            new OhModule(),
             new AbstractModule() {
                 @Override
                 public void configure() {
@@ -197,7 +202,7 @@ public class SnapshotCreateResourceTest {
         user = us;
         SnapshotAction action1 = getSnapshotResource()
                 .createSnapshot(getRequestPayload(ourVmId, SqlTestData.TEST_SNAPSHOT_NAME));
-        vps4SnapshotService.markSnapshotLive(action1.snapshotId);
+        vps4SnapshotService.updateSnapshotStatus(action1.snapshotId, SnapshotStatus.LIVE);
         // Now the previous snapshot shot is live, hence the request on the next line should be accepted
         SnapshotAction action2 = getSnapshotResource()
                 .createSnapshot(getRequestPayload(ourVmId, SqlTestData.TEST_SNAPSHOT_NAME));
@@ -213,7 +218,7 @@ public class SnapshotCreateResourceTest {
         user = us;
         SnapshotAction action1 = getSnapshotResource()
                 .createSnapshot(getRequestPayload(ourVmId, SqlTestData.TEST_SNAPSHOT_NAME));
-        vps4SnapshotService.markSnapshotErrorRescheduled(action1.snapshotId);
+        vps4SnapshotService.updateSnapshotStatus(action1.snapshotId, SnapshotStatus.ERROR_RESCHEDULED);
 
         SnapshotAction action2 = getSnapshotResource()
                 .createSnapshot(getRequestPayload(ourVmId, SqlTestData.TEST_SNAPSHOT_NAME));
@@ -229,7 +234,7 @@ public class SnapshotCreateResourceTest {
         SnapshotRequest request = getRequestPayload(ourVmId, SqlTestData.TEST_SNAPSHOT_NAME);
         request.snapshotType = SnapshotType.AUTOMATIC;
         SnapshotAction action1 = getSnapshotResource().createSnapshot(request);
-        vps4SnapshotService.markSnapshotLive(action1.snapshotId);
+        vps4SnapshotService.updateSnapshotStatus(action1.snapshotId, SnapshotStatus.LIVE);
         Assert.assertEquals(SnapshotType.AUTOMATIC, vps4SnapshotService.getSnapshot(action1.snapshotId).snapshotType);
 
     }
@@ -253,7 +258,7 @@ public class SnapshotCreateResourceTest {
         SnapshotRequest request = getRequestPayload(ourVmId, SqlTestData.TEST_SNAPSHOT_NAME);
         request.snapshotType = SnapshotType.ON_DEMAND;
         SnapshotAction action1 = getSnapshotResource().createSnapshot(request);
-        vps4SnapshotService.markSnapshotLive(action1.snapshotId);
+        vps4SnapshotService.updateSnapshotStatus(action1.snapshotId, SnapshotStatus.LIVE);
         Assert.assertEquals(SnapshotType.ON_DEMAND, vps4SnapshotService.getSnapshot(action1.snapshotId).snapshotType);
     }
 
@@ -287,7 +292,7 @@ public class SnapshotCreateResourceTest {
         SnapshotRequest request = getRequestPayload(ourVmId, SqlTestData.TEST_SNAPSHOT_NAME);
         request.snapshotType = SnapshotType.AUTOMATIC;
         SnapshotAction action1 = getSnapshotResource().createSnapshot(request);
-        vps4SnapshotService.markSnapshotLive(action1.snapshotId);
+        vps4SnapshotService.updateSnapshotStatus(action1.snapshotId, SnapshotStatus.LIVE);
         try {
             getSnapshotResource().createSnapshot(request);
             Assert.fail("Exception not thrown");

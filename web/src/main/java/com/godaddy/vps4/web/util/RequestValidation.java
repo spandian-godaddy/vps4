@@ -85,7 +85,7 @@ public class RequestValidation {
             throw new Vps4Exception("SNAPSHOT_OVER_QUOTA", "Snapshot creation rejected as quota exceeded");
     }
 
-    public static void validateNoOtherSnapshotsInProgress(SnapshotService snapshotService, UUID orionGuid){
+    public static void validateNoOtherSnapshotsInProgress(SnapshotService snapshotService, UUID orionGuid) {
         if (snapshotService.hasSnapshotInProgress(orionGuid)){
             throw new Vps4Exception("SNAPSHOT_ALREADY_IN_PROGRESS", "Snapshot creation rejected as snapshot already in progress");
         }

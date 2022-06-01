@@ -18,6 +18,7 @@ import com.godaddy.vps4.scheduledJob.ScheduledJob;
 import com.godaddy.vps4.snapshot.Snapshot;
 import com.godaddy.vps4.snapshot.SnapshotActionService;
 import com.godaddy.vps4.snapshot.SnapshotService;
+import com.godaddy.vps4.snapshot.SnapshotStatus;
 import com.godaddy.vps4.snapshot.SnapshotType;
 import com.godaddy.vps4.vm.ActionService;
 import com.godaddy.vps4.vm.ActionType;
@@ -87,7 +88,7 @@ public class Vps4SnapshotVm extends ActionCommand<Vps4SnapshotVm.Request, Vps4Sn
         if (snapshotIdToBeDeprecated != null) {
             logger.info("Deprecate snapshot with id: {}", snapshotIdToBeDeprecated);
             context.execute("MarkSnapshotAsDeprecated" + snapshotIdToBeDeprecated, ctx -> {
-                vps4SnapshotService.markSnapshotAsDeprecated(snapshotIdToBeDeprecated);
+                vps4SnapshotService.updateSnapshotStatus(snapshotIdToBeDeprecated, SnapshotStatus.DEPRECATED);
                 return null;
             }, Void.class);
             Snapshot vps4Snapshot = vps4SnapshotService.getSnapshot(snapshotIdToBeDeprecated);
@@ -121,7 +122,7 @@ public class Vps4SnapshotVm extends ActionCommand<Vps4SnapshotVm.Request, Vps4Sn
         }
 
         context.execute("MarkSnapshotLive" + request.vps4SnapshotId, ctx -> {
-            vps4SnapshotService.markSnapshotLive(request.vps4SnapshotId);
+            vps4SnapshotService.updateSnapshotStatus(request.vps4SnapshotId, SnapshotStatus.LIVE);
             return null;
         }, Void.class);
         return hfsAction;
@@ -135,14 +136,14 @@ public class Vps4SnapshotVm extends ActionCommand<Vps4SnapshotVm.Request, Vps4Sn
 
     private void handleSnapshotCreationError(Request request, Exception e) {
         logger.info("Snapshot creation error for VPS4 snapshot with id: {}", request.vps4SnapshotId);
-        vps4SnapshotService.markSnapshotErrored(request.vps4SnapshotId);
+        vps4SnapshotService.updateSnapshotStatus(request.vps4SnapshotId, SnapshotStatus.ERROR);
         reverseSnapshotDeprecation();
         deleteVmHvForSnapshotTracking(request.vmId);
         if (request.snapshotType.equals(SnapshotType.AUTOMATIC)) {
             if (request.allowRetries && shouldRetryAgain(request.vmId)) {
                 int minutesToWait = Integer.parseInt(config.get("vps4.autobackup.rescheduleFailedBackupWaitMinutes", "720"));
                 rescheduleSnapshot(request, minutesToWait);
-                vps4SnapshotService.markSnapshotErrorRescheduled(request.vps4SnapshotId);
+                vps4SnapshotService.updateSnapshotStatus(request.vps4SnapshotId, SnapshotStatus.ERROR_RESCHEDULED);
             } else {
                 logger.warn("Retries not allowed or max retries exceeded for automatic snapshot on vm: {}  Will not retry again.",
                             request.vmId);
@@ -189,7 +190,7 @@ public class Vps4SnapshotVm extends ActionCommand<Vps4SnapshotVm.Request, Vps4Sn
 
             logger.info("HFS snapshot create request returned action: {}", hfsAction);
             context.execute("MarkSnapshotInProgress" + request.vps4SnapshotId, ctx -> {
-                vps4SnapshotService.markSnapshotInProgress(request.vps4SnapshotId);
+                vps4SnapshotService.updateSnapshotStatus(request.vps4SnapshotId, SnapshotStatus.IN_PROGRESS);
                 return null;
             }, Void.class);
             return hfsAction;
@@ -204,8 +205,8 @@ public class Vps4SnapshotVm extends ActionCommand<Vps4SnapshotVm.Request, Vps4Sn
         {
             logger.info("Reverse deprecation of VPS4 snapshot with id: {}", snapshotIdToBeDeprecated);
             context.execute("ReverseSnapshotDeprecation" + snapshotIdToBeDeprecated, ctx -> {
-            vps4SnapshotService.reverseSnapshotDeprecation(snapshotIdToBeDeprecated);
-            return null;
+                vps4SnapshotService.updateSnapshotStatus(snapshotIdToBeDeprecated, SnapshotStatus.LIVE);
+                return null;
             }, Void.class);
         }
     }

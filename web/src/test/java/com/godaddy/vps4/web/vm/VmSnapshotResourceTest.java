@@ -19,24 +19,20 @@ import com.godaddy.hfs.config.Config;
 import com.godaddy.hfs.vm.Extended;
 import com.godaddy.hfs.vm.VmExtendedInfo;
 import com.godaddy.hfs.vm.VmService;
-import com.godaddy.vps4.credit.CreditService;
-import com.godaddy.vps4.oh.OhBackupService;
-import com.godaddy.vps4.security.GDUserMock;
+import com.godaddy.vps4.oh.backups.OhBackupService;
 import com.godaddy.vps4.snapshot.SnapshotService;
 import com.godaddy.vps4.snapshot.SnapshotType;
 import com.godaddy.vps4.vm.VirtualMachine;
 import com.godaddy.vps4.vm.VirtualMachineService;
 import com.godaddy.vps4.web.Vps4Exception;
-import com.godaddy.vps4.web.security.GDUser;
 import com.godaddy.vps4.web.snapshot.SnapshotResource;
 
 public class VmSnapshotResourceTest {
 
-    private GDUser user;
-    private CreditService creditService;
+    private VmResource vmResource;
+    private SnapshotResource snapshotResource;
     private OhBackupService ohBackupService;
     private SnapshotService snapshotService;
-    private SnapshotResource snapshotResource;
     private VirtualMachineService virtualMachineService;
     private VmService vmService;
     private Config config;
@@ -45,15 +41,14 @@ public class VmSnapshotResourceTest {
 
     @Before
     public void setupTest() {
-        user = GDUserMock.createShopper();
-        creditService = mock(CreditService.class);
-        ohBackupService = mock(OhBackupService.class);
+        vmResource = mock(VmResource.class);
         snapshotResource = mock(SnapshotResource.class);
+        ohBackupService = mock(OhBackupService.class);
         snapshotService = mock(SnapshotService.class);
         virtualMachineService = mock(VirtualMachineService.class);
         vmService = mock(VmService.class);
         config = mock(Config.class);
-        resource = new VmSnapshotResource(user, creditService, ohBackupService, snapshotResource, snapshotService,
+        resource = new VmSnapshotResource(vmResource, snapshotResource, ohBackupService, snapshotService,
                                           virtualMachineService, vmService, config);
 
         UUID vmId = UUID.randomUUID();
@@ -145,6 +140,7 @@ public class VmSnapshotResourceTest {
         resource.createSnapshot(testVm.vmId,snapshotRequest);
 
     }
+
     @Test
     public void cannotSnapshotNowIfPauseSnapshotFlagIsTrue() {
         when(config.get("vps4.snapshot.currentlyPaused")).thenReturn("true");

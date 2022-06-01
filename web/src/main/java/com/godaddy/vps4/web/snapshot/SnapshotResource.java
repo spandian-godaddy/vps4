@@ -1,18 +1,14 @@
 package com.godaddy.vps4.web.snapshot;
 
-import static com.godaddy.vps4.web.util.RequestValidation.getAndValidateUserAccountCredit;
 import static com.godaddy.vps4.web.util.RequestValidation.validateIfSnapshotOverQuota;
 import static com.godaddy.vps4.web.util.RequestValidation.validateNoOtherSnapshotsInProgress;
 import static com.godaddy.vps4.web.util.RequestValidation.validateSnapshotExists;
 import static com.godaddy.vps4.web.util.RequestValidation.validateSnapshotName;
-import static com.godaddy.vps4.web.util.RequestValidation.validateUserIsShopper;
-import static com.godaddy.vps4.web.util.RequestValidation.validateVmExists;
 import static com.godaddy.vps4.web.util.RequestValidation.validateSnapshotNotPaused;
+import static com.godaddy.vps4.web.util.RequestValidation.validateUserIsShopper;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
 import javax.inject.Inject;
 import javax.ws.rs.Consumes;
@@ -24,45 +20,42 @@ import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
 
-import com.godaddy.hfs.config.Config;
-import com.godaddy.hfs.vm.Vm;
-import com.godaddy.hfs.vm.VmExtendedInfo;
-import com.godaddy.hfs.vm.VmService;
-import com.godaddy.vps4.scheduler.api.web.SchedulerWebService;
-import com.godaddy.vps4.util.TroubleshootVmService;
-import com.godaddy.vps4.vm.ServerType;
-import com.godaddy.vps4.web.Vps4Exception;
 import org.json.simple.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.fasterxml.jackson.annotation.JsonView;
-import com.godaddy.vps4.credit.CreditService;
+import com.godaddy.hfs.config.Config;
+import com.godaddy.hfs.vm.Vm;
+import com.godaddy.hfs.vm.VmExtendedInfo;
+import com.godaddy.hfs.vm.VmService;
+import com.godaddy.vps4.oh.backups.OhBackupService;
 import com.godaddy.vps4.orchestration.snapshot.Vps4DestroySnapshot;
 import com.godaddy.vps4.orchestration.snapshot.Vps4SnapshotVm;
+import com.godaddy.vps4.scheduler.api.web.SchedulerWebService;
 import com.godaddy.vps4.security.Views;
-import com.godaddy.vps4.security.Vps4User;
-import com.godaddy.vps4.security.Vps4UserService;
 import com.godaddy.vps4.snapshot.Snapshot;
 import com.godaddy.vps4.snapshot.SnapshotAction;
 import com.godaddy.vps4.snapshot.SnapshotActionService;
 import com.godaddy.vps4.snapshot.SnapshotService;
-import com.godaddy.vps4.snapshot.SnapshotStatus;
 import com.godaddy.vps4.snapshot.SnapshotType;
+import com.godaddy.vps4.util.TroubleshootVmService;
 import com.godaddy.vps4.vm.Action;
 import com.godaddy.vps4.vm.ActionService;
 import com.godaddy.vps4.vm.ActionType;
+import com.godaddy.vps4.vm.ServerType;
 import com.godaddy.vps4.vm.VirtualMachine;
-import com.godaddy.vps4.vm.VirtualMachineService;
 import com.godaddy.vps4.web.PATCH;
 import com.godaddy.vps4.web.Vps4Api;
-import com.godaddy.vps4.web.Vps4NoShopperException;
+import com.godaddy.vps4.web.Vps4Exception;
 import com.godaddy.vps4.web.security.GDUser;
 import com.godaddy.vps4.web.security.RequiresRole;
 import com.godaddy.vps4.web.util.Commands;
+import com.godaddy.vps4.web.vm.VmResource;
 
 import gdg.hfs.orchestration.CommandService;
 import gdg.hfs.orchestration.CommandState;
+
 import io.swagger.annotations.Api;
 
 @Vps4Api
@@ -78,80 +71,51 @@ public class SnapshotResource {
     private final ActionService actionService;
     private final CommandService commandService;
     private final GDUser user;
-    private final CreditService creditService;
     private final SnapshotService snapshotService;
-    private final VirtualMachineService virtualMachineService;
-    private final Vps4UserService userService;
     private final SnapshotActionResource snapshotActionResource;
     private final SchedulerWebService schedulerWebService;
     private final VmService vmService;
     private final TroubleshootVmService troubleshootVmService;
+    private final VmResource vmResource;
+    private final OhBackupService ohBackupService;
     private final Config config;
 
     @Inject
     public SnapshotResource(@SnapshotActionService ActionService actionService,
                             CommandService commandService,
                             GDUser user,
-                            CreditService creditService,
                             SnapshotService snapshotService,
-                            VirtualMachineService virtualMachineService,
-                            Vps4UserService userService,
                             SnapshotActionResource snapshotActionResource,
                             SchedulerWebService schedulerWebService,
                             VmService vmService,
                             TroubleshootVmService troubleshootVmService,
+                            VmResource vmResource,
+                            OhBackupService ohBackupService,
                             Config config) {
         this.actionService = actionService;
         this.commandService = commandService;
         this.user = user;
-        this.creditService = creditService;
         this.snapshotService = snapshotService;
-        this.virtualMachineService = virtualMachineService;
-        this.userService = userService;
         this.snapshotActionResource = snapshotActionResource;
         this.schedulerWebService = schedulerWebService;
         this.vmService = vmService;
         this.troubleshootVmService = troubleshootVmService;
+        this.vmResource = vmResource;
+        this.ohBackupService = ohBackupService;
         this.config = config;
-    }
-
-    @GET
-    @Path("/")
-    @JsonView(Views.Public.class)
-    public List<Snapshot> getSnapshotsForUser() {
-        if (user.getShopperId() == null)
-            throw new Vps4NoShopperException();
-        Vps4User vps4User = userService.getUser(user.getShopperId());
-        if(vps4User == null)
-            return new ArrayList<Snapshot>();
-
-        List<Snapshot> snapshots = snapshotService.getSnapshotsForUser(vps4User.getId());
-        return snapshots
-                .stream()
-                .filter(snapshot -> snapshot.status != SnapshotStatus.DESTROYED
-                        && snapshot.status != SnapshotStatus.CANCELLED
-                        && snapshot.status != SnapshotStatus.ERROR_RESCHEDULED
-                        && snapshot.status != SnapshotStatus.LIMIT_RESCHEDULED
-                        && snapshot.status != SnapshotStatus.AGENT_DOWN)
-                .collect(Collectors.toList());
     }
 
     @POST
     @Path("/")
     public SnapshotAction createSnapshot(SnapshotRequest snapshotRequest) {
-        // check to ensure snapshot belongs to vm and vm exists
-        VirtualMachine vm = virtualMachineService.getVirtualMachine(snapshotRequest.vmId);
+        VirtualMachine vm = vmResource.getVm(snapshotRequest.vmId); // auth validation
+        validateVmCanCreateSnapshot(vm.orionGuid, vm.backupJobId, snapshotRequest.name, snapshotRequest.snapshotType);
 
-        validateVmExists(snapshotRequest.vmId, vm, user, false);
+        validateVmCanCreateCephSnapshot(snapshotRequest, vm);
         if (vm.spec.serverType.platform == ServerType.Platform.OPENSTACK) {
             throwErrorIfAgentIsDown(vm);
         }
-        if (user.isShopper()) {
-            getAndValidateUserAccountCredit(creditService, vm.orionGuid, user.getShopperId());
-        }
-        validateCreation(vm.orionGuid, vm.backupJobId, snapshotRequest.name, snapshotRequest.snapshotType);
-        validateDCLimit(snapshotRequest);
-        validateHVLimit(snapshotRequest, vm.hfsVmId);
+
         Action action = createSnapshotAndActionEntries(vm, snapshotRequest.name, snapshotRequest.snapshotType);
         kickoffSnapshotCreation(vm.vmId, vm.hfsVmId, action, vm.orionGuid, snapshotRequest.snapshotType, user.getShopperId());
         return new SnapshotAction(actionService.getAction(action.id), user.isEmployee());
@@ -170,12 +134,17 @@ public class SnapshotResource {
         }
     }
 
-    private void validateCreation(UUID orionGuid, UUID backupJobId, String name, SnapshotType snapshotType) {
+    private void validateVmCanCreateSnapshot(UUID orionGuid, UUID backupJobId, String name, SnapshotType snapshotType) {
         validateUserIsShopper(user);
         validateIfSnapshotOverQuota(snapshotService, orionGuid, snapshotType);
         validateNoOtherSnapshotsInProgress(snapshotService, orionGuid);
         validateSnapshotName(name);
         validateSnapshotNotPaused(schedulerWebService, backupJobId, snapshotType);
+    }
+
+    private void validateVmCanCreateCephSnapshot(SnapshotRequest snapshotRequest, VirtualMachine vm) {
+        validateDCLimit(snapshotRequest);
+        validateHVLimit(snapshotRequest, vm.hfsVmId);
     }
 
     private Action createSnapshotAndActionEntries(VirtualMachine vm, String snapshotName, SnapshotType snapshotType) {
@@ -251,14 +220,10 @@ public class SnapshotResource {
     @JsonView(Views.Public.class)
     public Snapshot getSnapshot(@PathParam("snapshotId") UUID snapshotId) {
         Snapshot snapshot = snapshotService.getSnapshot(snapshotId);
-        validateSnapshotExists(snapshotId, snapshot, user);
 
-        // check to ensure snapshot belongs to vm and vm exists
-        VirtualMachine virtualMachine = virtualMachineService.getVirtualMachine(snapshot.vmId);
-        validateVmExists(snapshot.vmId, virtualMachine, user);
-        if (user.isShopper()) {
-            getAndValidateUserAccountCredit(creditService, virtualMachine.orionGuid, user.getShopperId());
-        }
+        validateSnapshotExists(snapshotId, snapshot, user);
+        vmResource.getVm(snapshot.vmId); // auth validation
+
         return snapshot;
     }
 
@@ -308,8 +273,7 @@ public class SnapshotResource {
 
     @PATCH
     @Path("/{snapshotId}")
-    public SnapshotAction renameSnapshot(@PathParam("snapshotId") UUID snapshotId,
-            SnapshotRenameRequest request) {
+    public SnapshotAction renameSnapshot(@PathParam("snapshotId") UUID snapshotId, SnapshotRenameRequest request) {
 
         Snapshot snapshot = getSnapshot(snapshotId);
         validateSnapshotName(request.name);
@@ -322,6 +286,4 @@ public class SnapshotResource {
 
         return new SnapshotAction(actionService.getAction(actionId), user.isEmployee());
     }
-
-
 }

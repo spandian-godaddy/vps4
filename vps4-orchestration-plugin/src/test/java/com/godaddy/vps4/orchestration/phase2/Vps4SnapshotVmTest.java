@@ -213,7 +213,8 @@ public class Vps4SnapshotVmTest {
 
         Function<CommandContext, Void> lambda = snapshotCaptor.getValue();
         lambda.apply(context);
-        verify(spySnapshotService, times(1)).markSnapshotInProgress(eq(vps4SnapshotId));
+        verify(spySnapshotService, times(1))
+                .updateSnapshotStatus(eq(vps4SnapshotId), eq(SnapshotStatus.IN_PROGRESS));
     }
 
     @Test
@@ -266,7 +267,7 @@ public class Vps4SnapshotVmTest {
         // vps4SnapshotIdToBeDeprecated is an On Demand backup, and should not be
         // deprecated to make way for an Automatic backup.
         verify(spySnapshotService, times(0))
-                .markSnapshotAsDeprecated(eq(vps4SnapshotIdToBeDeprecated));
+                .updateSnapshotStatus(eq(vps4SnapshotIdToBeDeprecated), eq(SnapshotStatus.DEPRECATED));
     }
 
     @Test
@@ -294,7 +295,8 @@ public class Vps4SnapshotVmTest {
             //ignore the exception that we forced it to throw.
         }
 
-        verify(spySnapshotService, times(1)).markSnapshotErrored(eq(vps4SnapshotId));
+        verify(spySnapshotService, times(1))
+                .updateSnapshotStatus(eq(vps4SnapshotId), eq(SnapshotStatus.ERROR));
         Assert.assertEquals(snapshotService.getSnapshot(vps4SnapshotId).status, SnapshotStatus.ERROR);
     }
 
@@ -343,7 +345,8 @@ public class Vps4SnapshotVmTest {
             // ignore the runtime exception we forced it to throw
         }
 
-        verify(spySnapshotService, times(1)).markSnapshotErrored(eq(vps4SnapshotId));
+        verify(spySnapshotService, times(1))
+                .updateSnapshotStatus(eq(vps4SnapshotId), eq(SnapshotStatus.ERROR));
         Assert.assertEquals(snapshotService.getSnapshot(vps4SnapshotId).status, SnapshotStatus.ERROR);
     }
 

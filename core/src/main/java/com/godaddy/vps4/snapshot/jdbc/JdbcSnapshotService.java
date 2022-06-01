@@ -1,20 +1,21 @@
 package com.godaddy.vps4.snapshot.jdbc;
 
-import com.godaddy.hfs.jdbc.Sql;
-import com.godaddy.vps4.snapshot.Snapshot;
-import com.godaddy.vps4.snapshot.SnapshotService;
-import com.godaddy.vps4.snapshot.SnapshotStatus;
-import com.godaddy.vps4.snapshot.SnapshotType;
-import com.godaddy.vps4.util.TimestampUtils;
-
-import javax.inject.Inject;
-import javax.sql.DataSource;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Stream;
+
+import javax.inject.Inject;
+import javax.sql.DataSource;
+
+import com.godaddy.hfs.jdbc.Sql;
+import com.godaddy.vps4.snapshot.Snapshot;
+import com.godaddy.vps4.snapshot.SnapshotService;
+import com.godaddy.vps4.snapshot.SnapshotStatus;
+import com.godaddy.vps4.snapshot.SnapshotType;
+import com.godaddy.vps4.util.TimestampUtils;
 
 public class JdbcSnapshotService implements SnapshotService {
     private static final long OPEN_SLOTS_PER_CREDIT = 1;
@@ -170,50 +171,6 @@ public class JdbcSnapshotService implements SnapshotService {
                 + " WHERE id=?", null, hfsImageId, snapshotId);
     }
 
-    @Override
-    public void markSnapshotInProgress(UUID snapshotId) {
-        updateSnapshotStatus(snapshotId, SnapshotStatus.IN_PROGRESS);
-    }
-
-    @Override
-    public void markSnapshotLive(UUID snapshotId) {
-        updateSnapshotStatus(snapshotId, SnapshotStatus.LIVE);
-    }
-
-    @Override
-    public void markSnapshotErrored(UUID snapshotId) {
-        updateSnapshotStatus(snapshotId, SnapshotStatus.ERROR);
-    }
-
-    @Override
-    public void markSnapshotErrorRescheduled(UUID snapshotId) {
-        updateSnapshotStatus(snapshotId, SnapshotStatus.ERROR_RESCHEDULED);
-    }
-
-    @Override
-    public void markSnapshotLimitRescheduled(UUID snapshotId) {
-        updateSnapshotStatus(snapshotId, SnapshotStatus.LIMIT_RESCHEDULED);
-    }
-
-    @Override
-    public void markSnapshotAgentDown(UUID snapshotId) {
-        updateSnapshotStatus(snapshotId, SnapshotStatus.AGENT_DOWN);
-    }
-
-    @Override
-    public void markSnapshotDestroyed(UUID snapshotId) {
-        updateSnapshotStatus(snapshotId, SnapshotStatus.DESTROYED);
-    }
-
-    @Override
-    public void markSnapshotAsDeprecated(UUID snapshotId) {
-        updateSnapshotStatus(snapshotId, SnapshotStatus.DEPRECATED);
-    }
-
-    private void markSnapshotForDeprecation(UUID snapshotId) {
-        updateSnapshotStatus(snapshotId, SnapshotStatus.DEPRECATING);
-    }
-
     private UUID getOldestLiveSnapshot(UUID orionGuid, SnapshotType type) {
         return Sql.with(dataSource).exec(
                 "SELECT s.id FROM SNAPSHOT s JOIN SNAPSHOT_STATUS ss ON s.status = ss.status_id "
@@ -222,12 +179,6 @@ public class JdbcSnapshotService implements SnapshotService {
                         + "AND s.snapshot_type_id = ? "
                         + "ORDER BY s.created_at LIMIT 1;",
                 Sql.nextOrNull(rs -> UUID.fromString(rs.getString("id"))), orionGuid, type.getSnapshotTypeId());
-    }
-
-    @Override
-    public void reverseSnapshotDeprecation(UUID snapshotId) {
-        // Reversing deprecation just sets a snapshot back to live
-        markSnapshotLive(snapshotId);
     }
 
     @Override
@@ -241,28 +192,12 @@ public class JdbcSnapshotService implements SnapshotService {
         if (shouldDeprecateSnapshot(orionGuid, snapshotType)) {
             UUID snapshotId = getOldestLiveSnapshot(orionGuid, snapshotType);
             if (snapshotId != null) {
-                markSnapshotForDeprecation(snapshotId);
+                updateSnapshotStatus(snapshotId, SnapshotStatus.DEPRECATING);
                 return snapshotId;
             }
         }
 
         return null;
-    }
-
-    @Override
-    public List<Snapshot> getSnapshotsForUser(long vps4UserId) {
-        return Sql.with(dataSource).exec(selectSnapshotQuery
-                        + "JOIN project prj ON prj.project_id = s.project_id "
-                        + "WHERE prj.vps4_user_id = ?;",
-                Sql.listOf(this::mapSnapshot), vps4UserId);
-    }
-
-    @Override
-    public List<Snapshot> getSnapshotsByOrionGuid(UUID orionGuid) {
-        return Sql.with(dataSource).exec(selectSnapshotQuery
-                        + "JOIN virtual_machine v ON s.vm_id = v.vm_id "
-                        + "WHERE v.orion_guid = ?;",
-                Sql.listOf(this::mapSnapshot), orionGuid);
     }
 
     @Override

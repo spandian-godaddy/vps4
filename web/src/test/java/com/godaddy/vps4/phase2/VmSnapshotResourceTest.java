@@ -113,7 +113,7 @@ public class VmSnapshotResourceTest {
     @Test
     public void testGetSnapshotsFiltersDestroyed() {
         Snapshot snapshot = createTestSnapshot();
-        snapshotService.markSnapshotDestroyed(snapshot.id);
+        snapshotService.updateSnapshotStatus(snapshot.id, SnapshotStatus.DESTROYED);
 
         List<Snapshot> snapshots = getVmSnapshotResource().getSnapshotsForVM(snapshot.vmId);
         Assert.assertEquals(0, snapshots.size());

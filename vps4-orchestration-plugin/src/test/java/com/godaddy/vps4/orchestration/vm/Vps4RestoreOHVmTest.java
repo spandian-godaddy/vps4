@@ -8,8 +8,6 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import java.time.Duration;
-import java.time.Instant;
 import java.util.UUID;
 import java.util.function.Function;
 
@@ -18,10 +16,7 @@ import org.junit.Test;
 
 import com.godaddy.hfs.vm.VmAction;
 import com.godaddy.vps4.orchestration.hfs.vm.RestoreOHVm;
-import com.godaddy.vps4.snapshot.Snapshot;
 import com.godaddy.vps4.snapshot.SnapshotService;
-import com.godaddy.vps4.snapshot.SnapshotStatus;
-import com.godaddy.vps4.snapshot.SnapshotType;
 import com.godaddy.vps4.vm.ActionService;
 import com.godaddy.vps4.vm.VirtualMachine;
 
@@ -46,19 +41,6 @@ public class Vps4RestoreOHVmTest {
         vm.vmId = UUID.randomUUID();
         vm.hfsVmId = 111L;
         request.virtualMachine = vm;
-
-        Snapshot snapshot = new Snapshot(
-                UUID.randomUUID(),
-                333,
-                vm.vmId,
-                "fake-snapshot",
-                SnapshotStatus.LIVE,
-                Instant.now().minus(Duration.ofMinutes(10)),
-                null,
-                "fake-imageid",
-                hfsSnapshotId,
-                SnapshotType.AUTOMATIC
-        );
 
         when(context.execute(eq("GetHfsSnapshotId"), any(Function.class), eq(
                 long.class))).thenReturn(hfsSnapshotId);

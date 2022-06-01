@@ -1,7 +1,7 @@
 package com.godaddy.vps4.web.vm;
 
-import static com.godaddy.vps4.web.util.RequestValidation.getAndValidateUserAccountCredit;
-import static com.godaddy.vps4.web.util.RequestValidation.validateVmExists;
+import static com.godaddy.vps4.snapshot.SnapshotStatus.CANCELLED;
+import static com.godaddy.vps4.snapshot.SnapshotStatus.DESTROYED;
 
 import java.util.List;
 import java.util.UUID;
@@ -20,21 +20,19 @@ import com.fasterxml.jackson.annotation.JsonView;
 import com.godaddy.hfs.config.Config;
 import com.godaddy.hfs.vm.VmExtendedInfo;
 import com.godaddy.hfs.vm.VmService;
-import com.godaddy.vps4.credit.CreditService;
-import com.godaddy.vps4.oh.OhBackupService;
-import com.godaddy.vps4.oh.models.OhBackup;
+import com.godaddy.vps4.oh.backups.OhBackupMapper;
+import com.godaddy.vps4.oh.backups.OhBackupService;
 import com.godaddy.vps4.security.Views;
 import com.godaddy.vps4.snapshot.Snapshot;
 import com.godaddy.vps4.snapshot.SnapshotAction;
 import com.godaddy.vps4.snapshot.SnapshotService;
-import com.godaddy.vps4.snapshot.SnapshotStatus;
 import com.godaddy.vps4.snapshot.SnapshotType;
+import com.godaddy.vps4.vm.ServerType;
 import com.godaddy.vps4.vm.VirtualMachine;
 import com.godaddy.vps4.vm.VirtualMachineService;
 import com.godaddy.vps4.web.PATCH;
 import com.godaddy.vps4.web.Vps4Api;
 import com.godaddy.vps4.web.Vps4Exception;
-import com.godaddy.vps4.web.security.GDUser;
 import com.godaddy.vps4.web.snapshot.SnapshotResource;
 import com.godaddy.vps4.web.snapshot.SnapshotResource.SnapshotRenameRequest;
 import com.google.inject.Inject;
@@ -50,62 +48,52 @@ import io.swagger.annotations.ApiOperation;
 @Consumes(MediaType.APPLICATION_JSON)
 
 public class VmSnapshotResource {
-    private final GDUser user;
-    private final CreditService creditService;
+    private final VmResource vmResource;
+    private final SnapshotResource snapshotResource;
     private final OhBackupService ohBackupService;
     private final SnapshotService snapshotService;
-    private final SnapshotResource snapshotResource;
     private final VirtualMachineService virtualMachineService;
     private final VmService vmService;
     private final Config config;
 
     @Inject
-    public VmSnapshotResource(GDUser user,
-                              CreditService creditService,
-                              OhBackupService ohBackupService,
+    public VmSnapshotResource(VmResource vmResource,
                               SnapshotResource snapshotResource,
+                              OhBackupService ohBackupService,
                               SnapshotService snapshotService,
                               VirtualMachineService virtualMachineService,
                               VmService vmService,
                               Config config) {
-        this.user = user;
-        this.creditService = creditService;
-        this.ohBackupService = ohBackupService;
+        this.vmResource = vmResource;
         this.snapshotResource = snapshotResource;
+        this.ohBackupService = ohBackupService;
         this.snapshotService = snapshotService;
         this.virtualMachineService = virtualMachineService;
         this.vmService = vmService;
         this.config = config;
     }
 
+    private boolean shouldUseOhBackups(VirtualMachine vm) {
+        return vm.image.serverType.platform == ServerType.Platform.OPTIMIZED_HOSTING
+                && Boolean.parseBoolean(config.get("oh.backups.enabled", "false"));
+    }
+
     @GET
     @Path("/{vmId}/snapshots")
     @JsonView(Views.Public.class)
     public List<Snapshot> getSnapshotsForVM(@PathParam("vmId") UUID vmId) {
-        // check to ensure vm belongs to user and vm exists
-        VirtualMachine virtualMachine = virtualMachineService.getVirtualMachine(vmId);
-        validateVmExists(vmId, virtualMachine, user);
-        if (user.isShopper()) {
-            getAndValidateUserAccountCredit(creditService, virtualMachine.orionGuid, user.getShopperId());
+        VirtualMachine vm = vmResource.getVm(vmId); // auth validation
+        if (shouldUseOhBackups(vm)) {
+            long projectId = virtualMachineService.getVirtualMachine(vmId).projectId;
+            return ohBackupService.getBackups(vmId)
+                    .stream()
+                    .map(ohBackup -> OhBackupMapper.toSnapshot(ohBackup, vmId, projectId))
+                    .collect(Collectors.toList());
         }
-
         return snapshotService.getSnapshotsForVm(vmId)
-                              .stream()
-                              .filter(snapshot -> snapshot.status != SnapshotStatus.DESTROYED && snapshot.status != SnapshotStatus.CANCELLED)
-                              .collect(Collectors.toList());
-    }
-
-    @GET
-    @Path("/{vmId}/ohSnapshots")
-    public List<OhBackup> getOhSnapshotsForVM(@PathParam("vmId") UUID vmId) {
-        // check to ensure vm belongs to user and vm exists
-        VirtualMachine virtualMachine = virtualMachineService.getVirtualMachine(vmId);
-        validateVmExists(vmId, virtualMachine, user);
-        if (user.isShopper()) {
-            getAndValidateUserAccountCredit(creditService, virtualMachine.orionGuid, user.getShopperId());
-        }
-
-        return ohBackupService.getBackups(vmId);
+                .stream()
+                .filter(snapshot -> snapshot.status != DESTROYED && snapshot.status != CANCELLED)
+                .collect(Collectors.toList());
     }
 
     public static class VmSnapshotRequest {
@@ -116,11 +104,10 @@ public class VmSnapshotResource {
     @POST
     @Path("/{vmId}/snapshots")
     public SnapshotAction createSnapshot(@PathParam("vmId") UUID vmId, VmSnapshotRequest vmSnapshotRequest) {
-        //check if config is currently pausing snapshot actions
-        if (Boolean.parseBoolean(config.get("vps4.snapshot.currentlyPaused")))
-        {
-            throw new Vps4Exception("JOB_PAUSED","Currently pausing all snapshot jobs. Refusing to take snapshot.");
+        if (Boolean.parseBoolean(config.get("vps4.snapshot.currentlyPaused"))) {
+            throw new Vps4Exception("JOB_PAUSED", "Currently pausing all snapshot jobs. Refusing to take snapshot.");
         }
+
         SnapshotResource.SnapshotRequest request = new SnapshotResource.SnapshotRequest();
         request.vmId = vmId;
         request.name = vmSnapshotRequest.name;
@@ -132,8 +119,7 @@ public class VmSnapshotResource {
     @GET
     @Path("/{vmId}/snapshots/{snapshotId}")
     @JsonView(Views.Public.class)
-    public Snapshot getSnapshot(
-            @PathParam("vmId") UUID vmId, @PathParam("snapshotId") UUID snapshotId) {
+    public Snapshot getSnapshot(@PathParam("vmId") UUID vmId, @PathParam("snapshotId") UUID snapshotId) {
         return snapshotResource.getSnapshot(snapshotId);
     }
 

@@ -1,5 +1,4 @@
-package com.godaddy.vps4.oh;
-
+package com.godaddy.vps4.oh.jobs;
 
 import java.util.UUID;
 
@@ -10,13 +9,14 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
 
-import com.godaddy.vps4.oh.models.OhBackups;
+import com.godaddy.vps4.oh.OhResponse;
+import com.godaddy.vps4.oh.jobs.models.OhJob;
 
-@Path("/v2.1/backup")
+@Path("/v2.1/job")
 @Consumes(MediaType.APPLICATION_JSON)
 @Produces(MediaType.APPLICATION_JSON)
-public interface OhApiBackupService {
+public interface OhApiJobService {
     @GET
     @Path("/")
-    OhBackups getBackups(@QueryParam("package_uuid") UUID packageId);
+    OhResponse<OhJob> getJob(@QueryParam("uuid") UUID jobId);
 }
