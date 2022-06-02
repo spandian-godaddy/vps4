@@ -19,14 +19,14 @@ public class VmOutage {
 
     public static class DomainMonitoringMetadata {
         public String additionalFqdn;
-        public String metadata;
+        public List<String> metadata;
         public VmMetric metric;
 
         // needed for deserializer
         public DomainMonitoringMetadata() {
         }
 
-        public DomainMonitoringMetadata(String additionalFqdn, String metadata, VmMetric metric) {
+        public DomainMonitoringMetadata(String additionalFqdn, List<String> metadata, VmMetric metric) {
             this.additionalFqdn = additionalFqdn;
             this.metadata = metadata;
             this.metric = metric;

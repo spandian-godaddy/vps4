@@ -142,7 +142,7 @@ public class SendVmOutageResolvedEmailTest {
         vmOutageEmailRequest.vmOutage.metrics = Collections.singleton(VmMetric.HTTP);
         vmMetricAlert.status = VmMetricAlert.Status.ENABLED;
         vmOutageEmailRequest.vmOutage.domainMonitoringMetadata = Arrays.asList(new VmOutage.DomainMonitoringMetadata(
-                "domainfake.here", "Unable to resolve host name domainfake.here", VmMetric.HTTP
+                "domainfake.here", Arrays.asList("Unable to resolve host name domainfake.here"), VmMetric.HTTP
         ));
         when(vmAlertService.getVmMetricAlert(any(UUID.class), anyString())).thenReturn(vmMetricAlert);
 
@@ -166,7 +166,33 @@ public class SendVmOutageResolvedEmailTest {
         vmOutageEmailRequest.vmOutage.metrics = Collections.singleton(VmMetric.HTTPS);
         vmMetricAlert.status = VmMetricAlert.Status.ENABLED;
         vmOutageEmailRequest.vmOutage.domainMonitoringMetadata = Arrays.asList(new VmOutage.DomainMonitoringMetadata(
-                "domainfake.here", "SSL error: certificate verify failed", VmMetric.HTTPS
+                "domainfake.here", Arrays.asList("SSL error: certificate verify failed"), VmMetric.HTTPS
+        ));
+        when(vmAlertService.getVmMetricAlert(any(UUID.class), anyString())).thenReturn(vmMetricAlert);
+
+        when(context.execute(anyString(), any(Function.class), any())).thenReturn(fakeMessageId);
+        when(vps4MessagingService
+                .sendServiceOutageResolvedEmail(eq(fakeShopperId), eq(fakeAccountName), eq(fakeIpAddress),
+                        eq(fakeOrionGuid), eq("HTTPS (domainfake.here)"), any(Instant.class),
+                        eq(true))).thenReturn(fakeMessageId);
+        command.execute(context, vmOutageEmailRequest);
+
+        verify(context, times(1))
+                .execute(eq("SendVmOutageResolvedEmail-HTTPS"), lambdaCaptor.capture(),
+                        eq(String.class));
+        Function<CommandContext, String> lambdaValue = lambdaCaptor.getValue();
+        String actualMessageId = lambdaValue.apply(context);
+        assertNotNull(actualMessageId);
+    }
+
+    @Test
+    public void sendsOutageForResolvedEmailMultipleReasons() {
+        vmOutageEmailRequest.vmOutage.metrics = Collections.singleton(VmMetric.HTTPS);
+        vmMetricAlert.status = VmMetricAlert.Status.ENABLED;
+        vmOutageEmailRequest.vmOutage.domainMonitoringMetadata = Arrays.asList(new VmOutage.DomainMonitoringMetadata(
+                "domainfake.here",
+                Arrays.asList("SSL certificate is expiring", "SSL error: certificate verify failed"),
+                VmMetric.HTTPS
         ));
         when(vmAlertService.getVmMetricAlert(any(UUID.class), anyString())).thenReturn(vmMetricAlert);
 
@@ -190,7 +216,7 @@ public class SendVmOutageResolvedEmailTest {
         vmOutageEmailRequest.vmOutage.metrics = Collections.singleton(VmMetric.HTTPS);
         vmMetricAlert.status = VmMetricAlert.Status.ENABLED;
         vmOutageEmailRequest.vmOutage.domainMonitoringMetadata = Arrays.asList(new VmOutage.DomainMonitoringMetadata(
-                "domainfake.here", "SSL certificate is expiring", VmMetric.HTTPS
+                "domainfake.here", Arrays.asList("SSL certificate is expiring"), VmMetric.HTTPS
         ));
         when(vmAlertService.getVmMetricAlert(any(UUID.class), anyString())).thenReturn(vmMetricAlert);
 
@@ -226,7 +252,7 @@ public class SendVmOutageResolvedEmailTest {
         vmOutageEmailRequest.vmOutage.metrics.add(VmMetric.IMAP);
         vmOutageEmailRequest.vmOutage.metrics.add(VmMetric.SSH);
         vmOutageEmailRequest.vmOutage.domainMonitoringMetadata = Arrays.asList(new VmOutage.DomainMonitoringMetadata(
-                "domainfake.here", "Unable to resolve host name domainfake.here", VmMetric.HTTP
+                "domainfake.here", Arrays.asList("Unable to resolve host name domainfake.here"), VmMetric.HTTP
         ));
         vmMetricAlert.status = VmMetricAlert.Status.ENABLED;
         vmOutageEmailRequest.vmOutage.reason = "unexpected string";

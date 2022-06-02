@@ -597,8 +597,8 @@ public class DefaultPanoptaServiceTest {
         PanoptaMetricId unaffectedMetric = networkIdList.value.get(1);
         PanoptaOutage mockOutage = mock(PanoptaOutage.class);
         mockOutage.metricIds = Collections.singleton(affectedMetric.id);
-        Map<Long,String> networkMetricMetadata = new HashMap<>();
-        networkMetricMetadata.put(affectedMetric.id, "Unable to resolve host name additionalFqdn.fake");
+        Map<Long, List<String>> networkMetricMetadata = new HashMap<>();
+        networkMetricMetadata.put(affectedMetric.id, Arrays.asList("Unable to resolve host name additionalFqdn.fake"));
         mockOutage.networkMetricMetadata = networkMetricMetadata;
         when(panoptaMetricMapper.getVmMetric(affectedMetric.typeId)).thenReturn(VmMetric.HTTP);
         when(panoptaMetricMapper.getVmMetric(unaffectedMetric.typeId)).thenReturn(VmMetric.SSH);
@@ -606,7 +606,7 @@ public class DefaultPanoptaServiceTest {
 
         VmOutage outage = defaultPanoptaService.getOutage(vmId, 123);
 
-        assertEquals("Unable to resolve host name additionalFqdn.fake", outage.domainMonitoringMetadata.get(0).metadata);
+        assertEquals(Arrays.asList("Unable to resolve host name additionalFqdn.fake"), outage.domainMonitoringMetadata.get(0).metadata);
         assertEquals("additionalFqdn.fake", outage.domainMonitoringMetadata.get(0).additionalFqdn);
         assertEquals(VmMetric.HTTP, outage.domainMonitoringMetadata.get(0).metric);
 

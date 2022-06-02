@@ -54,7 +54,7 @@ public class SendVmOutageEmail extends SendMessagingEmailBase implements Command
         String metricDomain = metricMetadata.metric + " (" + metricMetadata.additionalFqdn + ")";
         String messageId;
         if (emailAlertForMetricIsEnabled(req.vmId, metricMetadata.metric.toString())) {
-            if (metricMetadata.metadata.equals(SSL_EXPIRING_WARNING)) {
+            if(metricMetadata.metadata.size() == 1 && metricMetadata.metadata.get(0).equals(SSL_EXPIRING_WARNING)) {
                 logger.warn("SSL Expiring Warning detected - no outage emails sent for shopper id {}, vm id {}.", req.shopperId,
                 req.vmId);
                 return;

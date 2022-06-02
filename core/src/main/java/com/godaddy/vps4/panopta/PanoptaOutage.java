@@ -4,8 +4,10 @@ import java.time.Instant;
 import java.time.format.DateTimeFormatter;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collector;
 import java.util.stream.Collectors;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -56,7 +58,7 @@ public class PanoptaOutage {
     public Instant ended;
     public String reason;
     public Set<Long> metricIds = new HashSet<>();
-    public Map<Long,String> networkMetricMetadata = new HashMap<>();
+    public Map<Long, List<String>> networkMetricMetadata = new HashMap<>();
 
     @JsonProperty("url")
     private void mapUrl(String url) {
@@ -86,7 +88,10 @@ public class PanoptaOutage {
                                                          .collect(Collectors.toSet());
         this.metricIds.addAll(networkServiceIds);
         this.networkMetricMetadata =
-                networkServiceTypes.stream().collect(Collectors.toMap(t -> t.networkServiceId, t -> t.metadata));
+                networkServiceTypes.stream().collect(
+                        Collectors.groupingBy(
+                                NetworkServiceType::getNetworkServiceId,
+                                Collectors.mapping(NetworkServiceType::getMetadata, Collectors.toList())));
     }
 
     @JsonProperty("server_resource")
@@ -108,6 +113,14 @@ public class PanoptaOutage {
         private void mapNetworkService(String url) {
             String suffix = url.substring(url.lastIndexOf('/') + 1);
             this.networkServiceId = Long.parseLong(suffix);
+        }
+
+        private long getNetworkServiceId() {
+            return networkServiceId;
+        }
+
+        private String getMetadata() {
+            return metadata;
         }
     }
 }
