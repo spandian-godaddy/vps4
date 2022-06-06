@@ -4,6 +4,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import java.io.ByteArrayInputStream;
+import java.io.IOException;
 import java.io.InputStream;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -53,7 +54,7 @@ public class SecureHttpClientTest {
 
     @Test
     @SuppressWarnings("unchecked")
-    public void testDeserializeResponseIgnoresUnknownProperties() {
+    public void testDeserializeResponseIgnoresUnknownProperties() throws IOException {
         CloseableHttpClient mockClient = mock(CloseableHttpClient.class);
         SecureHttpClient client = new SecureHttpClient(null, null, null) {
             @Override
