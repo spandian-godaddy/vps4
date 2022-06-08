@@ -109,12 +109,13 @@ public class SnapshotResource {
     @Path("/")
     public SnapshotAction createSnapshot(SnapshotRequest snapshotRequest) {
         VirtualMachine vm = vmResource.getVm(snapshotRequest.vmId); // auth validation
-        validateVmCanCreateSnapshot(vm.orionGuid, vm.backupJobId, snapshotRequest.name, snapshotRequest.snapshotType);
 
-        validateVmCanCreateCephSnapshot(snapshotRequest, vm);
         if (vm.spec.serverType.platform == ServerType.Platform.OPENSTACK) {
             throwErrorIfAgentIsDown(vm);
         }
+
+        validateVmCanCreateSnapshot(vm.orionGuid, vm.backupJobId, snapshotRequest.name, snapshotRequest.snapshotType);
+        validateVmCanCreateCephSnapshot(snapshotRequest, vm);
 
         Action action = createSnapshotAndActionEntries(vm, snapshotRequest.name, snapshotRequest.snapshotType);
         kickoffSnapshotCreation(vm.vmId, vm.hfsVmId, action, vm.orionGuid, snapshotRequest.snapshotType, user.getShopperId());
