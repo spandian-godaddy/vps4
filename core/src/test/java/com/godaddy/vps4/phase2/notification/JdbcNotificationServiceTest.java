@@ -229,6 +229,38 @@ public class JdbcNotificationServiceTest {
     }
 
     @Test
+    public void getNotificationsShowListOfNotificationsByExcludedResellerIdOk() {
+        UUID excludedNotificationId = excludedResellerSetup();
+        NotificationListSearchFilters searchFilters = new NotificationListSearchFilters();
+
+        searchFilters.byResellerId("6000");
+        searchFilters.byAdminView(true);
+        List<Notification> notifications = injector.getInstance(NotificationService.class).getNotifications(searchFilters);
+        assertNotNull(notifications);
+        assertEquals(1, notifications.size());
+
+        searchFilters.byResellerId("7000");
+        searchFilters.byAdminView(true);
+        List<Notification> notificationsWrong = injector.getInstance(NotificationService.class).getNotifications(searchFilters);
+        assertEquals(0, notificationsWrong.size());
+
+        SqlTestData.cleanupTestNotification(excludedNotificationId, dataSource);
+    }
+
+    private UUID excludedResellerSetup() {
+        UUID excludedNotificationId = UUID.randomUUID();
+        NotificationFilter filterExcludedResellerId = new NotificationFilter();
+
+        filterExcludedResellerId.filterType = NotificationFilterType.EXCLUDED_RESELLER_ID;
+        filterExcludedResellerId.filterValue = Arrays.asList("7000");
+        List<NotificationFilter> filterList = Arrays.asList(filterExcludedResellerId);
+
+        SqlTestData.insertTestNotification(excludedNotificationId, NotificationType.PATCHING,true,true,
+                null, null, null, null, filterList, dataSource);
+        return excludedNotificationId;
+    }
+
+    @Test
     public void getNotificationsShowListOfNotificationsByIsManagedOk() {
         NotificationListSearchFilters searchFilters = new NotificationListSearchFilters();
         searchFilters.byIsManaged(true);

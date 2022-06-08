@@ -1,0 +1,1 @@
+INSERT into notification_filter_type (filter_type_id, filter_type) VALUES (9, 'EXCLUDED_RESELLER_ID');

@@ -28,6 +28,7 @@ import com.godaddy.vps4.notifications.NotificationFilterType;
 import com.godaddy.vps4.notifications.NotificationExtendedDetails;
 import com.godaddy.vps4.util.NotificationListSearchFilters;
 import com.godaddy.vps4.web.Vps4Api;
+import com.godaddy.vps4.web.Vps4Exception;
 import com.godaddy.vps4.web.security.GDUser;
 import com.godaddy.vps4.web.security.RequiresRole;
 import io.swagger.annotations.Api;
@@ -112,6 +113,7 @@ public class NotificationsResource {
     @Path("/")
     public Notification createNewNotification(NotificationRequest request) {
         UUID notificationId = UUID.randomUUID();
+        inclusionExclusionCheck(request.filters);
         return notificationService.createNotification(notificationId, request.type,
                 request.supportOnly, request.dismissible, request.notificationExtendedDetails, request.filters,
                 request.validOn, request.validUntil);
@@ -124,6 +126,7 @@ public class NotificationsResource {
         {
             throw new NotFoundException("Unknown notification ID: " + request.notificationId);
         }
+        inclusionExclusionCheck(request.filters);
         notificationService.addFilterToNotification(request.notificationId, request.filters);
         return request.notificationId;
     }
@@ -159,5 +162,14 @@ public class NotificationsResource {
     public static class NotificationFilterRequest {
         public List<NotificationFilter> filters;
         public UUID notificationId;
+    }
+
+    private void inclusionExclusionCheck(List<NotificationFilter> filters) {
+        int conflicts = 0;
+        for (NotificationFilter filter : filters) {
+            if (filter.filterType == NotificationFilterType.RESELLER_ID ||
+                    filter.filterType == NotificationFilterType.EXCLUDED_RESELLER_ID) conflicts++;
+            if (conflicts >= 2) throw new Vps4Exception("EXCLUSION_INCLUSION_CONFLICT", "RESELLER_ID and EXCLUDED_RESELLER_ID can't be used simultaneously");
+        }
     }
 }

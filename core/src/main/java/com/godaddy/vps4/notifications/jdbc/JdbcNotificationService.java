@@ -47,27 +47,24 @@ public class JdbcNotificationService implements NotificationService {
     }
 
     private int buildFilterQuery(List<String> filters, StringBuilder filtersQuery, int filterTypeId, int andCount, ArrayList<Object> filterValues) {
-        if(filters.size()>0) {
-            if(andCount==0){
-                filtersQuery.append(" and ( ( ");
-                andCount++;
-            }
-            else
-            {
-                filtersQuery.append(" or ( ");
-            }
-            filtersQuery.append(" nf.filter_type_id = ?");
-            filterValues.add(filterTypeId);
+        if (filters.size() > 0) {
+            boolean isExcluded = NotificationFilterType.isExcluded(filterTypeId);
 
-            filtersQuery.append(" and");
-            filtersQuery.append(" nf.filter_value");
+            filtersQuery.append(andCount++ == 0 ? "and (" : " or");
+
+            filterValues.add(filterTypeId);
             String whereInClause = " && ARRAY[%s]::varchar[]";
+            if (isExcluded) {
+                whereInClause = " <@ ARRAY[%s]::varchar[]";
+                filtersQuery.append(" ( nf.filter_type_id = ? and NOT ( nf.filter_value");
+            } else filtersQuery.append(" ( nf.filter_type_id = ? and nf.filter_value");
 
             List<String> paramaterizedTokens = filters.stream().map(t -> "?").collect(Collectors.toList());
             whereInClause = String.format(whereInClause, String.join(",", paramaterizedTokens));
             filterValues.addAll(filters.stream().collect(Collectors.toList()));
             filtersQuery.append(whereInClause);
-            filtersQuery.append(" ) ");
+
+            filtersQuery.append(isExcluded ? " ) ) " : " ) ");
         }
         return andCount;
     }
@@ -123,6 +120,7 @@ public class JdbcNotificationService implements NotificationService {
         andCount = buildFilterQuery(searchFilters.getVmIds(), filtersQuery, NotificationFilterType.VM_ID.getFilterTypeId(), andCount, filterValues);
         andCount = buildFilterQuery(searchFilters.getIsManagedAsList(), filtersQuery, NotificationFilterType.IS_MANAGED.getFilterTypeId(), andCount, filterValues);
         andCount = buildFilterQuery(searchFilters.getIsImportedAsList(), filtersQuery, NotificationFilterType.IS_IMPORTED.getFilterTypeId(), andCount, filterValues);
+        andCount = buildFilterQuery(searchFilters.getResellers(), filtersQuery, NotificationFilterType.EXCLUDED_RESELLER_ID.getFilterTypeId(), andCount, filterValues);
 
         if(andCount > 0){
             filtersQuery.append(")");

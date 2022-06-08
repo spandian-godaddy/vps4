@@ -13,7 +13,8 @@ public enum NotificationFilterType {
     PLATFORM_ID(5),
     VM_ID(6),
     IS_MANAGED(7),
-    IS_IMPORTED(8);
+    IS_IMPORTED(8),
+    EXCLUDED_RESELLER_ID(9);
 
     private final int typeId;
 
@@ -30,5 +31,10 @@ public enum NotificationFilterType {
 
     public int getFilterTypeId() {
         return typeId;
+    }
+
+    public static boolean isExcluded(int typeId) {
+        if (typeId == NotificationFilterType.EXCLUDED_RESELLER_ID.getFilterTypeId()) return true;
+        return false;
     }
 }

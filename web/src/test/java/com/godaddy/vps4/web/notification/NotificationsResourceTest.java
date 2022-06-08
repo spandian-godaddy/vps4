@@ -18,6 +18,7 @@ import com.godaddy.vps4.util.NotificationListSearchFilters;
 import com.godaddy.vps4.vm.VirtualMachine;
 import com.godaddy.vps4.vm.VirtualMachineService;
 import com.godaddy.vps4.vm.jdbc.JdbcVirtualMachineService;
+import com.godaddy.vps4.web.Vps4Exception;
 import com.godaddy.vps4.web.vm.VmResource;
 import com.google.inject.AbstractModule;
 import com.google.inject.Guice;
@@ -199,7 +200,7 @@ public class NotificationsResourceTest {
     }
 
     @Test(expected= NotFoundException.class)
-    public void testPutNotificationThrowsExceptionFOrUnknownNotification() {
+    public void testPutNotificationThrowsExceptionForUnknownNotification() {
         UUID notificationId = UUID.randomUUID();
 
         NotificationsResource.NotificationRequest request = new NotificationsResource.NotificationRequest();
@@ -261,5 +262,22 @@ public class NotificationsResourceTest {
         getNotificationResource().addFilterToNotification(notificationFilterRequest);
         verify(notificationService, times(1)).getNotification(eq(notificationFilterRequest.notificationId));
         verify(notificationService, times(1)).addFilterToNotification(eq(notificationFilterRequest.notificationId), eq(filterLists));
+    }
+
+    @Test (expected = Vps4Exception.class)
+    public void testThrowsExceptionForInclusionExclusionConflict() {
+        NotificationsResource.NotificationFilterRequest request = new NotificationsResource.NotificationFilterRequest();
+        request.notificationId = UUID.randomUUID();
+
+        NotificationFilter includesFilter = new NotificationFilter();
+        includesFilter.filterType = NotificationFilterType.RESELLER_ID;
+
+        NotificationFilter excludesFilter = new NotificationFilter();
+        excludesFilter.filterType = NotificationFilterType.EXCLUDED_RESELLER_ID;
+
+        request.filters = Arrays.asList(includesFilter, excludesFilter);
+
+        when(notificationService.getNotification(anyObject())).thenReturn(new Notification());
+        getNotificationResource().addFilterToNotification(request);
     }
 }
