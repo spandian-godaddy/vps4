@@ -27,6 +27,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.Date;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
@@ -77,6 +78,7 @@ public class ECommCreditServiceTest {
         account.plan_features.put("control_panel_type", "cpanel");
         account.plan_features.put("pf_id", "1066866");
         account.product_meta = new HashMap<>();
+        account.expire_date = new Date();
     }
 
     private void markCreditClaimed() {
@@ -110,6 +112,16 @@ public class ECommCreditServiceTest {
         VirtualMachineCredit credit = creditService.getVirtualMachineCredit(orionGuid);
 
         assertEquals(vmId, credit.getProductId());
+    }
+
+    @Test
+    public void testGetCreditIncludesExpireDate() {
+        Date expireDate = new Date();
+        account.expire_date = expireDate;
+        when(ecommService.getAccount(orionGuid.toString())).thenReturn(account);
+        VirtualMachineCredit credit = creditService.getVirtualMachineCredit(orionGuid);
+
+        assertEquals(expireDate.toInstant(), credit.getExpireDate());
     }
 
     @Test

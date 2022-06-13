@@ -110,6 +110,7 @@ public class ECommCreditService implements CreditService {
                     .withResellerID(account.reseller_id)
                     .withShopperID(getShopperId(account))
                     .withCustomerID(account.customer_id)
+                    .withExpireDate(account.expire_date)
                     .build();
             logger.info("Credit: {}", credit.toString());
             return credit;

@@ -12,6 +12,7 @@ import org.apache.commons.lang3.builder.ToStringStyle;
 
 import java.time.Instant;
 import java.util.Arrays;
+import java.util.Date;
 import java.util.Map;
 import java.util.UUID;
 
@@ -37,6 +38,7 @@ public class VirtualMachineCredit {
     private Instant purchasedAt;
     private boolean suspended;
     private UUID customerId;
+    private Instant expireDate;
 
     private VirtualMachineCredit() {
     }
@@ -163,6 +165,10 @@ public class VirtualMachineCredit {
         return suspended;
     }
 
+    public Instant getExpireDate() {
+        return expireDate;
+    }
+
     public UUID getCustomerId() { return customerId; }
 
     public static class Builder {
@@ -174,6 +180,7 @@ public class VirtualMachineCredit {
         private AccountStatus accountStatus;
         private final DataCenterService dataCenterService;
         private UUID customerId;
+        private Instant expireDate;
 
         public Builder(DataCenterService dataCenterService) {
             this.dataCenterService = dataCenterService;
@@ -210,6 +217,7 @@ public class VirtualMachineCredit {
             credit.accountStatus = this.accountStatus;
             credit.resellerId = this.resellerId;
             credit.customerId = this.customerId;
+            credit.expireDate = this.expireDate;
 
             return credit;
         }
@@ -249,6 +257,11 @@ public class VirtualMachineCredit {
             return this;
         }
 
+        public Builder withExpireDate(Date expireDate) {
+            this.expireDate = expireDate != null ? expireDate.toInstant() : null;
+            return this;
+        }
+
         private DataCenter getDataCenter() {
             DataCenter dc = null;
             if (productMeta.containsKey(ProductMetaField.DATA_CENTER.toString())) {
@@ -277,7 +290,5 @@ public class VirtualMachineCredit {
         private int parseMonitoring(String value) {
             return (Arrays.asList("true","1").contains(value)) ? 1 : 0;
         }
-
     }
-
 }
