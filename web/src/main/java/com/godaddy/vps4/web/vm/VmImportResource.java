@@ -19,6 +19,7 @@ import com.godaddy.vps4.vm.VirtualMachineService;
 import com.godaddy.vps4.vm.VirtualMachineService.ImportVirtualMachineParameters;
 import com.godaddy.vps4.vm.VmAction;
 import com.godaddy.vps4.web.Vps4Api;
+import com.godaddy.vps4.web.Vps4Exception;
 import com.godaddy.vps4.web.security.GDUser.Role;
 import com.godaddy.vps4.web.security.RequiresRole;
 import io.swagger.annotations.Api;
@@ -35,6 +36,7 @@ import java.util.List;
 import java.util.UUID;
 
 import static com.godaddy.vps4.web.util.RequestValidation.getAndValidateUserAccountCredit;
+import static com.godaddy.vps4.web.util.RequestValidation.validateCreditIsNotInUse;
 
 @Vps4Api
 @Api(tags = { "vms" })
@@ -104,6 +106,12 @@ public class VmImportResource {
         int platformId = ServerType.Platform.OPTIMIZED_HOSTING.getplatformId();
 
         VirtualMachineCredit virtualMachineCredit = getAndValidateUserAccountCredit(creditService, importVmRequest.entitlementId, importVmRequest.shopperId);
+        try {
+            validateCreditIsNotInUse(virtualMachineCredit);
+        } catch (Vps4Exception e) {
+            throw new Vps4Exception("DUPLICATE", "The entitlement for this import has already been provisioned, this import is a " +
+                    "duplicate", e);
+        }
         ServerSpec serverSpec = virtualMachineService.getSpec(virtualMachineCredit.getTier(), platformId);
 
         long imageId = getOrInsertImage(importVmRequest);

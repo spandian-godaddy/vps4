@@ -236,7 +236,6 @@ public class RequestValidation {
         if (!credit.isUsable())
             throw new Vps4Exception("CREDIT_ALREADY_IN_USE",
                     String.format("The virtual machine credit for orion guid %s is already provisioned'", credit.getOrionGuid()));
-
     }
 
     public static void validateDedResellerSelectedDc(DataCenterService dcService, String resellerId, int requestedDcId) {

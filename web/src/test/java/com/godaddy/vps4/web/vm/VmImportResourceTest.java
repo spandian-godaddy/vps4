@@ -21,6 +21,7 @@ import com.godaddy.vps4.vm.ServerType;
 import com.godaddy.vps4.vm.VirtualMachine;
 import com.godaddy.vps4.vm.VirtualMachineService;
 import com.godaddy.vps4.vm.VmAction;
+import com.godaddy.vps4.web.Vps4Exception;
 import com.godaddy.vps4.web.security.GDUser;
 import org.junit.Before;
 import org.junit.Test;
@@ -68,7 +69,7 @@ public class VmImportResourceTest {
     @Before
     public void setupTest() {
         user = GDUserMock.createShopper();
-        credit = createVmCredit(UUID.randomUUID(), AccountStatus.ACTIVE, "myh", 0, 0, 10, "Linux", Instant.now());
+        credit = createVmCredit(UUID.randomUUID(), AccountStatus.ACTIVE, "myh", 0, 0, 10, "Linux", null);
         when(creditService.getVirtualMachineCredit(credit.getOrionGuid())).thenReturn(credit);
         when(config.get("vps4.datacenter.defaultId")).thenReturn("1");
         when(config.get("imported.datacenter.defaultId")).thenReturn("1");
@@ -203,5 +204,14 @@ public class VmImportResourceTest {
         verify(networkService, times(1)).createIpAddress(1, action.virtualMachineId, "2001:0db8:85a3:0000:0000:8a2e:0370:7334", IpAddress.IpAddressType.SECONDARY);
         verify(networkService, times(1)).createIpAddress(2, action.virtualMachineId, "192.168.0.2", IpAddress.IpAddressType.SECONDARY);
         verify(networkService, times(1)).createIpAddress(3, action.virtualMachineId, "192.168.0.2", IpAddress.IpAddressType.SECONDARY);
+    }
+
+    @Test(expected = Vps4Exception.class)
+    public void ImportVmDuplicateTest(){
+        credit = createVmCredit(UUID.randomUUID(), AccountStatus.ACTIVE, "myh", 0, 0, 10, "Linux", Instant.now());
+        when(creditService.getVirtualMachineCredit(credit.getOrionGuid())).thenReturn(credit);
+        importVmRequest.entitlementId = credit.getOrionGuid();
+
+        VmAction action = vmImportResource.importVm(importVmRequest);
     }
 }
