@@ -70,7 +70,6 @@ public class CpanelClient {
                 .addParameter("api.version", "1")
                 .addParameter("service", service.name())
                 .addParameter("user", user)
-                .addParameter("preferred_domain", hostname) // forces domain to be hostname
                 .build();
 
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
