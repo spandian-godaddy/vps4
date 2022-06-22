@@ -63,8 +63,7 @@ public class CpanelClient {
                 ;
     }
 
-    public CPanelSession createSession(String user, String hostname, CpanelServiceType service) throws CpanelAccessDeniedException, IOException {
-
+    public CPanelSession createSession(String user, CpanelServiceType service) throws CpanelAccessDeniedException, IOException {
         HttpUriRequest get = newCpanelRequest()
                 .setUri(baseUrl + "/json-api/create_user_session")
                 .addParameter("api.version", "1")

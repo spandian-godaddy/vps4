@@ -14,12 +14,6 @@ public class HostnameGenerator {
         return getLinuxHostname(ipAddress);
     }
 
-    public static String getLegacyLinuxHostname(String ipAddress) {
-        // This is temporary code until we can put a translated message in the message center explaining the change
-        // to customers. We should remove it once that message is displayed in prod.
-        return "ip-" + ipAddress.replace('.', '-') + ".ip.secureserver.net";
-    }
-
     public static String getLinuxHostname(String ipAddress) {
         // This format is important for cpanel SSO since it is set up to resolve in DNS
         return getReverseIp(ipAddress, ".") + ".host.secureserver.net";
