@@ -8,6 +8,7 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -23,12 +24,15 @@ import com.godaddy.hfs.config.Config;
 import com.godaddy.vps4.network.IpAddress;
 import com.godaddy.vps4.network.IpAddress.IpAddressType;
 import com.godaddy.vps4.network.NetworkService;
+import com.godaddy.vps4.vm.VirtualMachine;
+import com.godaddy.vps4.vm.VirtualMachineService;
 
 public class CpanelAddonDomainsTest {
 
     Vps4CpanelService service;
     CpanelAccessHashService cpanelAccessHashService = mock(CpanelAccessHashService.class);
     NetworkService networkService = mock(NetworkService.class);
+    VirtualMachineService virtualMachineService = mock(VirtualMachineService.class);
     Config config = mock(Config.class);
     CpanelClient cpClient = mock(CpanelClient.class);
     @Captor private ArgumentCaptor<String> domainArgumentCaptor;
@@ -42,8 +46,9 @@ public class CpanelAddonDomainsTest {
     public class TestDefaultVps4CpanelService extends DefaultVps4CpanelService {
         public TestDefaultVps4CpanelService(CpanelAccessHashService accessHashService,
                                             NetworkService networkService,
+                                            VirtualMachineService virtualMachineService,
                                             int timeoutVal) {
-            super(accessHashService, networkService, timeoutVal);
+            super(accessHashService, networkService, virtualMachineService, timeoutVal);
         }
 
         @Override
@@ -58,10 +63,14 @@ public class CpanelAddonDomainsTest {
 
         UUID vmId = UUID.randomUUID();
         IpAddress ip = new IpAddress(1, 1, vmId, "123.0.0.1", IpAddressType.PRIMARY, null, null, null, 4);
+        VirtualMachine virtualMachine = mock(VirtualMachine.class);
+        virtualMachine.validOn = Instant.MAX;
+        virtualMachine.primaryIpAddress = ip;
         when(networkService.getVmPrimaryAddress(hfsVmId)).thenReturn(ip);
+        when(virtualMachineService.getVirtualMachine(hfsVmId)).thenReturn(virtualMachine);
         when(cpanelAccessHashService.getAccessHash(eq(hfsVmId), eq("123.0.0.1"), any())).thenReturn("randomaccesshash");
 
-        service = new TestDefaultVps4CpanelService(cpanelAccessHashService, networkService, 10);
+        service = new TestDefaultVps4CpanelService(cpanelAccessHashService, networkService, virtualMachineService, 10);
         MockitoAnnotations.initMocks(this);
     }
 

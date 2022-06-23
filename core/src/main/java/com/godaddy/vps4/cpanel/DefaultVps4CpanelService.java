@@ -22,6 +22,8 @@ import com.godaddy.vps4.cpanel.CpanelClient.CpanelServiceType;
 import com.godaddy.vps4.network.IpAddress;
 import com.godaddy.vps4.network.NetworkService;
 import com.godaddy.vps4.vm.HostnameGenerator;
+import com.godaddy.vps4.vm.VirtualMachine;
+import com.godaddy.vps4.vm.VirtualMachineService;
 
 public class DefaultVps4CpanelService implements Vps4CpanelService {
 
@@ -29,26 +31,33 @@ public class DefaultVps4CpanelService implements Vps4CpanelService {
 
     final CpanelAccessHashService accessHashService;
     final NetworkService networkService;
+    final VirtualMachineService virtualMachineService;
 
     final int timeoutVal;
     private static final long SUCCESS = 1;
 
     @Inject
     public DefaultVps4CpanelService(CpanelAccessHashService accessHashService, NetworkService networkService,
-                                    Config conf) {
-        this(accessHashService, networkService, Integer.parseInt(conf.get("vps4.callable.timeout", "10000")));
+                                    VirtualMachineService virtualMachineService, Config conf) {
+        this(accessHashService, networkService, virtualMachineService, Integer.parseInt(conf.get("vps4.callable.timeout", "10000")));
     }
 
     public DefaultVps4CpanelService(CpanelAccessHashService accessHashService, NetworkService networkService,
-                                    int timeoutVal) {
+                                    VirtualMachineService virtualMachineService, int timeoutVal) {
         this.accessHashService = accessHashService;
         this.networkService = networkService;
+        this.virtualMachineService = virtualMachineService;
         this.timeoutVal = timeoutVal;
     }
 
     private String getVmHostname(long hfsVmId) {
-        IpAddress ip = networkService.getVmPrimaryAddress(hfsVmId);
-        return HostnameGenerator.getLinuxHostname(ip.ipAddress);
+        VirtualMachine vm = virtualMachineService.getVirtualMachine(hfsVmId);
+        Instant cutoff = Instant.parse("2022-05-05T00:00:00.00Z");
+        if (vm.validOn.isBefore(cutoff)) {
+            return HostnameGenerator.getLegacyLinuxHostname(vm.primaryIpAddress.ipAddress);
+        } else {
+            return HostnameGenerator.getLinuxHostname(vm.primaryIpAddress.ipAddress);
+        }
     }
 
     interface CpanelClientHandler<T> {
@@ -212,8 +221,9 @@ public class DefaultVps4CpanelService implements Vps4CpanelService {
 
     @Override
     public CPanelSession createSession(long hfsVmId, String username, CpanelServiceType serviceType)
-            throws CpanelAccessDeniedException, CpanelTimeoutException {
-        return withAccessHash(hfsVmId, cPanelClient -> cPanelClient.createSession(username, serviceType));
+            throws CpanelAccessDeniedException, CpanelTimeoutException, IOException {
+        String hostname = getVmHostname(hfsVmId);
+        return withAccessHash(hfsVmId, cPanelClient -> cPanelClient.createSession(username, hostname, serviceType));
     }
 
     private boolean didCallSucceed(JSONObject responseJson) {
