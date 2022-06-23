@@ -11,6 +11,12 @@ public class Extended {
     @JsonProperty("task_state")
     public String taskState;
 
+    @JsonProperty("mail_port_blocked")
+    public String mailPortBlocked;
+
+    @JsonProperty("sub_state")
+    public String subState;
+
     @Override
     public String toString() {
         return ReflectionToStringBuilder.toString(this);

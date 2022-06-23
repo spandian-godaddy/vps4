@@ -292,11 +292,15 @@ public class VmDetailsResourceTest {
         value.extended.hypervisorHostname = "hostname";
         value.extended.powerState = "paused";
         value.extended.taskState = "image_snapshot";
+        value.extended.mailPortBlocked = "False";
+        value.extended.subState = "ok";
         when(vmResource.getVmExtendedInfoFromVmVertical(hfsVmId)).thenReturn(value);
 
         VmExtendedInfo vmExtendedInfo = vmDetailsResource.getVmExtendedDetails(vmId);
 
         assertEquals(value.extended.taskState, vmExtendedInfo.extended.taskState);
         assertEquals(value.extended.powerState, vmExtendedInfo.extended.powerState);
+        assertEquals(value.extended.mailPortBlocked, vmExtendedInfo.extended.mailPortBlocked);
+        assertEquals(value.extended.subState, vmExtendedInfo.extended.subState);
     }
 }
