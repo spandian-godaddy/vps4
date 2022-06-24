@@ -51,6 +51,7 @@ import com.godaddy.vps4.web.Vps4Exception;
 import com.godaddy.vps4.web.security.GDUser;
 import com.godaddy.vps4.web.vm.VmRebuildResource;
 import com.godaddy.vps4.web.vm.VmRebuildResource.RebuildVmRequest;
+import com.godaddy.vps4.web.vm.VmSnapshotResource;
 import com.google.inject.AbstractModule;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
@@ -78,6 +79,8 @@ public class VmRebuildResourceTest {
     @Inject ActionService actionService;
     @Inject CreditService creditService;
 
+    private final VmSnapshotResource vmSnapshotResource = mock(VmSnapshotResource.class);
+
     private GDUser user;
     private VirtualMachine ourVm;
     private VirtualMachine ourDedicated;
@@ -101,6 +104,7 @@ public class VmRebuildResourceTest {
                     SchedulerWebService swServ = Mockito.mock(SchedulerWebService.class);
                     bind(SchedulerWebService.class).toInstance(swServ);
                     bind(MailRelayService.class).toInstance(mock(MailRelayService.class));
+                    bind(VmSnapshotResource.class).toInstance(vmSnapshotResource);
                 }
 
                 @Provides
@@ -131,6 +135,7 @@ public class VmRebuildResourceTest {
         ourDedicated = createDedicatedVm(ourVps4User.getId());
         createVmUser(ourVm.vmId);
         createVmUser(ourDedicated.vmId);
+        when(vmSnapshotResource.getSnapshot(any(UUID.class), any(UUID.class))).thenReturn(null);
     }
 
     @After

@@ -147,6 +147,13 @@ public class RequestValidation {
         }
     }
 
+    public static void validateSnapshotBelongsToVm(UUID vmId, Snapshot snapshot) {
+        if (!snapshot.vmId.equals(vmId)) {
+            throw new Vps4Exception("VM_MISMATCH",
+                                    String.format("Snapshot %s does not belong to VM %s", snapshot.id, vmId));
+        }
+    }
+
     public static void validatePassword(String password) {
         Validator validator = ValidatorRegistry.getInstance().get("password");
         if (!validator.isValid(password)){
@@ -268,15 +275,6 @@ public class RequestValidation {
             throw new Vps4Exception("INVALID_IMAGE",
                     String.format(errMsg, image.hfsName, "platform", image.serverType.serverType));
         }
-    }
-
-    public static void verifyUserPrivilegeToProject(Vps4UserService userService, PrivilegeService privilegeService,
-            String shopperId, long projectId) {
-        Vps4User vps4User = userService.getUser(shopperId);
-        if (vps4User == null) {
-            throw new AuthorizationException(shopperId + " does not have privilege on service group " + projectId);
-        }
-        privilegeService.requireAnyPrivilegeToProjectId(vps4User, projectId);
     }
 
     public static void verifyUserPrivilegeToVm(Vps4UserService userService, PrivilegeService privilegeService,

@@ -1,7 +1,5 @@
 package com.godaddy.vps4.phase2;
 
-import java.time.Instant;
-import java.util.List;
 import java.util.UUID;
 
 import javax.sql.DataSource;
@@ -13,11 +11,6 @@ import com.godaddy.vps4.network.IpAddress;
 import com.godaddy.vps4.network.IpAddress.IpAddressType;
 import com.godaddy.vps4.network.NetworkService;
 import com.godaddy.vps4.network.jdbc.JdbcNetworkService;
-import com.godaddy.vps4.notifications.NotificationExtendedDetails;
-import com.godaddy.vps4.notifications.NotificationFilter;
-import com.godaddy.vps4.notifications.NotificationService;
-import com.godaddy.vps4.notifications.NotificationType;
-import com.godaddy.vps4.notifications.jdbc.JdbcNotificationService;
 import com.godaddy.vps4.snapshot.Snapshot;
 import com.godaddy.vps4.snapshot.SnapshotService;
 import com.godaddy.vps4.snapshot.SnapshotStatus;
@@ -91,15 +84,6 @@ public class SqlTestData {
         return actionService.getAction(actionId);
     }
 
-    public static void insertTestNotification(UUID notificationId, NotificationType notificationType, boolean supportOnly, boolean dismissible, Instant start,
-                                                Instant end, List<NotificationFilter> filters, DataSource dataSource) {
-        NotificationService notificationService = new JdbcNotificationService(dataSource);
-        NotificationExtendedDetails notificationExtendedDetails = new NotificationExtendedDetails();
-        notificationExtendedDetails.start = start;
-        notificationExtendedDetails.end = end;
-        notificationService.createNotification(notificationId,
-        notificationType, supportOnly, dismissible, notificationExtendedDetails, filters, null, null);
-    }
     public static void invalidateTestVm(UUID vmId, DataSource dataSource) {
         VirtualMachineService virtualMachineService = new JdbcVirtualMachineService(dataSource);
         VirtualMachine vm = virtualMachineService.getVirtualMachine(vmId);
@@ -129,10 +113,6 @@ public class SqlTestData {
         return snapshot;
     }
 
-    public static void invalidateSnapshot(SnapshotService snapshotService, UUID snapshotId) {
-        snapshotService.updateSnapshotStatus(snapshotId, SnapshotStatus.DESTROYED);
-    }
-
     public static void insertTestUser(VmUser user, DataSource dataSource) {
         Sql.with(dataSource).exec("INSERT INTO vm_user (name, admin_enabled, vm_id, vm_user_type_id) VALUES (?, ?, ?, ?)", null, user.username, user.adminEnabled, user.vmId, user.vmUserType.getVmUserTypeId());
     }
@@ -159,10 +139,6 @@ public class SqlTestData {
         Sql.with(dataSource).exec("DELETE FROM notification_extended_details ned WHERE ned.notification_id =  '" + notificationId + "'", null);
         Sql.with(dataSource).exec("DELETE FROM notification ntf WHERE ntf.notification_id =  '" + notificationId + "'", null);
         Sql.with(dataSource).exec("DELETE FROM project p WHERE " + test_sgid_condition, null);
-    }
-
-    public static void markVmDeleted(UUID vmId, DataSource dataSource) {
-        Sql.with(dataSource).exec("UPDATE virtual_machine SET valid_until=now_utc() WHERE vm_id = ?", null, vmId);
     }
 
     public static void addImportedVM(UUID vmId, DataSource dataSource) {

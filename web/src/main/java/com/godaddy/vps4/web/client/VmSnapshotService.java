@@ -1,10 +1,7 @@
 package com.godaddy.vps4.web.client;
 
-import com.godaddy.vps4.snapshot.Snapshot;
-import com.godaddy.vps4.web.PATCH;
-import com.godaddy.vps4.snapshot.SnapshotAction;
-import com.godaddy.vps4.web.snapshot.SnapshotResource.SnapshotRenameRequest;
-import com.godaddy.vps4.web.vm.VmSnapshotResource.VmSnapshotRequest;
+import java.util.List;
+import java.util.UUID;
 
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
@@ -15,9 +12,12 @@ import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.MediaType;
-import java.util.List;
-import java.util.UUID;
 
+import com.godaddy.vps4.snapshot.Snapshot;
+import com.godaddy.vps4.snapshot.SnapshotAction;
+import com.godaddy.vps4.web.PATCH;
+import com.godaddy.vps4.web.vm.VmSnapshotResource;
+import com.godaddy.vps4.web.vm.VmSnapshotResource.VmSnapshotRequest;
 
 @Path("/api/vms")
 @Produces(MediaType.APPLICATION_JSON)
@@ -46,5 +46,5 @@ public interface VmSnapshotService {
     @PATCH
     @Path("/{vmId}/snapshots/{snapshotId}")
     SnapshotAction renameSnapshot(@PathParam("vmId") UUID vmId, @PathParam("snapshotId") UUID snapshotId,
-            SnapshotRenameRequest request) throws WebApplicationException;
+                                  VmSnapshotResource.SnapshotRenameRequest request) throws WebApplicationException;
 }

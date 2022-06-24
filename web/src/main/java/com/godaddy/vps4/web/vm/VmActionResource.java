@@ -187,8 +187,6 @@ public class VmActionResource {
 
     private UUID queueRollbackCommand(Action action) {
         String cancelCommandName = actionTypeToCancelCmdNameMap.get(action.type);
-        // Right now the assumption is that a cancel command implementation only takes the action id as
-        // the request input
         CommandState command =  Commands.execute(commandService, cancelCommandName, action.id);
         logger.info("Queued cancel processing for action {} using command {}", action.id, command.commandId);
         return command.commandId;
