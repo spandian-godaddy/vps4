@@ -111,10 +111,31 @@ public class QuartzSchedulerService implements SchedulerService {
 
     private SchedulerJobDetail getSchedulerJobDetail(JobKey jobKey) throws Exception {
         Trigger trigger = getExistingTriggerForJob(jobKey);
-        Instant nextRun = trigger.getNextFireTime().toInstant();
+        Instant nextRun = null;
+        JobDetail jobDetail = null;
+        jobDetail = scheduler.getJobDetail(jobKey);
+
+        try {
+            jobDetail = scheduler.getJobDetail(jobKey);
+        }
+        catch (Exception e) {
+            logger.error("Error while getting job detail for trigger {} for job detail: {}. Error details: {}",
+                    trigger.toString(), jobDetail.toString(), e);
+            throw new RuntimeException(e);
+        }
+
+        try {
+            nextRun = trigger.getNextFireTime().toInstant();
+        }
+        catch (Exception e) {
+            logger.error("Error while getting fire time for trigger {} for job detail: {}. Error details: {}",
+                    trigger.toString(), jobDetail.toString(), e);
+            throw new RuntimeException(e);
+        }
+
         boolean isTriggerPaused = isTriggerPaused(trigger);
         // Get the job request data
-        JobDataMap jobDataMap = scheduler.getJobDetail(jobKey).getJobDataMap();
+        JobDataMap jobDataMap = jobDetail.getJobDataMap();
         String jobDataJson = jobDataMap.getString("jobDataJson");
         Class<? extends SchedulerJob> jobClass = getJobClassForGroup(jobKey.getGroup());
         JobRequest jobRequest = objectMapper.readValue(jobDataJson, getJobRequestClass(jobClass));
