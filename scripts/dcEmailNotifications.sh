@@ -15,6 +15,10 @@ set_env_vars() {
         export vps4Api=https://vps4.api.iad2.godaddy.com/api
         export dbHost=a2plvps4db01.cloud.iad2.gdg
         export dcDir=prod
+    elif [  $dc == phx3 ]; then
+        export vps4Api=https://vps4.api.phx3.godaddy.com/api
+        export dbHost=p3plvps4db01.cloud.phx3.gdg
+        export dcDir=prod_phx3
     else
         echo Unrecognized dc: $dc
     fi
