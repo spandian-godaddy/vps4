@@ -27,7 +27,7 @@ import org.quartz.Trigger;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.sql.Date;
+import java.util.Date;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -111,31 +111,12 @@ public class QuartzSchedulerService implements SchedulerService {
 
     private SchedulerJobDetail getSchedulerJobDetail(JobKey jobKey) throws Exception {
         Trigger trigger = getExistingTriggerForJob(jobKey);
-        Instant nextRun = null;
-        JobDetail jobDetail = null;
-        jobDetail = scheduler.getJobDetail(jobKey);
-
-        try {
-            jobDetail = scheduler.getJobDetail(jobKey);
-        }
-        catch (Exception e) {
-            logger.error("Error while getting job detail for trigger {} for job detail: {}. Error details: {}",
-                    trigger.toString(), jobDetail.toString(), e);
-            throw new RuntimeException(e);
-        }
-
-        try {
-            nextRun = trigger.getNextFireTime().toInstant();
-        }
-        catch (Exception e) {
-            logger.error("Error while getting fire time for trigger {} for job detail: {}. Error details: {}",
-                    trigger.toString(), jobDetail.toString(), e);
-            throw new RuntimeException(e);
-        }
+        Date fireTime = trigger.getNextFireTime();
+        Instant nextRun = (fireTime == null) ? null : fireTime.toInstant();
 
         boolean isTriggerPaused = isTriggerPaused(trigger);
         // Get the job request data
-        JobDataMap jobDataMap = jobDetail.getJobDataMap();
+        JobDataMap jobDataMap = scheduler.getJobDetail(jobKey).getJobDataMap();
         String jobDataJson = jobDataMap.getString("jobDataJson");
         Class<? extends SchedulerJob> jobClass = getJobClassForGroup(jobKey.getGroup());
         JobRequest jobRequest = objectMapper.readValue(jobDataJson, getJobRequestClass(jobClass));
