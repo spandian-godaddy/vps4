@@ -15,6 +15,8 @@ import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
 
+import com.godaddy.vps4.credit.CreditService;
+import com.godaddy.vps4.credit.VirtualMachineCredit;
 import com.godaddy.vps4.vm.Image;
 import com.godaddy.vps4.vm.VirtualMachine;
 import com.godaddy.vps4.vm.VmAlertService;
@@ -35,22 +37,33 @@ public class VmAlertResource {
 
     private final VmResource vmResource;
     private final VmAlertService vmAlertService;
+    private final CreditService creditService;
 
     @Inject
-    public VmAlertResource(VmResource vmResource, VmAlertService vmAlertService) {
+    public VmAlertResource(VmResource vmResource, VmAlertService vmAlertService,
+                           CreditService creditService) {
         this.vmResource = vmResource;
         this.vmAlertService = vmAlertService;
+        this.creditService = creditService;
     }
 
     @GET
     @Path("/{vmId}/alerts/")
     public List<VmMetricAlert> getMetricAlertList(@PathParam("vmId") UUID vmId) {
         VirtualMachine vm = vmResource.getVm(vmId);  // Auth validation
+        VirtualMachineCredit virtualMachineCredit = creditService.getVirtualMachineCredit(vm.orionGuid);
         List<VmMetricAlert> list = vmAlertService.getVmMetricAlertList(vmId);
+
+        list = list.stream().filter(m -> m.metric != VmMetric.HTTPS).collect(Collectors.toList());
 
         if (vm.image.operatingSystem == Image.OperatingSystem.WINDOWS) {
             list = list.stream().filter(m -> m.metric != VmMetric.SSH).collect(Collectors.toList());
         }
+
+        if (virtualMachineCredit.isManaged()) {
+            list = list.stream().filter(m -> m.metric != VmMetric.FTP).collect(Collectors.toList());
+        }
+
         return list;
     }
 

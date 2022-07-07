@@ -9,9 +9,18 @@ import static org.mockito.Mockito.when;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
+import com.godaddy.hfs.vm.Vm;
+import com.godaddy.vps4.credit.CreditService;
+import com.godaddy.vps4.credit.ECommCreditService;
+import com.godaddy.vps4.credit.VirtualMachineCredit;
+import com.godaddy.vps4.security.Privilege;
+import com.godaddy.vps4.vm.DataCenterService;
 import com.godaddy.vps4.vm.Image;
 import com.godaddy.vps4.vm.VirtualMachine;
 import com.godaddy.vps4.vm.VmAlertService;
@@ -26,52 +35,109 @@ public class VmAlertResourceTest {
 
     private VmResource vmResource = mock(VmResource.class);
     private VmAlertService vmAlertService = mock(VmAlertService.class);
-    private VmAlertResource resource = new VmAlertResource(vmResource, vmAlertService);
+    private CreditService creditService = mock(CreditService.class);
+    private VmAlertResource resource = new VmAlertResource(vmResource, vmAlertService, creditService);
     private UUID vmId = UUID.randomUUID();
     private VmMetric metric = VmMetric.CPU;
     private VirtualMachine testVm = new VirtualMachine();
+    private Map<String, String> planFeatures = new HashMap<>();
 
-    @Test
-    public void getAlertList() {
+    private void setupTestVm(VirtualMachine testVm, Image.OperatingSystem operatingSystem) {
         testVm.vmId = vmId;
+        testVm.orionGuid = UUID.randomUUID();
         testVm.canceled = Instant.now().plus(7,ChronoUnit.DAYS);
         testVm.validUntil = Instant.MAX;
 
         Image testImage = new Image();
-        testImage.operatingSystem = Image.OperatingSystem.LINUX;
+        testImage.operatingSystem = operatingSystem;
         testVm.image = testImage;
+    }
 
+    private VirtualMachineCredit setupTestCredit(String managedLevel) {
+        planFeatures.put(ECommCreditService.PlanFeatures.MANAGED_LEVEL.toString(), managedLevel);
+
+        VirtualMachineCredit testCredit = new VirtualMachineCredit.Builder(mock(DataCenterService.class))
+                .withAccountGuid(UUID.randomUUID().toString())
+                .withPlanFeatures(planFeatures)
+                .build();
+
+        return testCredit;
+    }
+
+    private void createTestMetricList(List<VmMetric> metrics) {
+        // create each metric and store in a list
+        List<VmMetricAlert> testMetricList = new ArrayList<>();
+        for (VmMetric m : metrics) {
+            VmMetricAlert vmMetricAlert = new VmMetricAlert();
+            vmMetricAlert.metric= m;
+            testMetricList.add(vmMetricAlert);
+        }
+        when(vmAlertService.getVmMetricAlertList(vmId)).thenReturn(testMetricList);
+    }
+
+    @Test
+    public void getAlertList() {
+        setupTestVm(testVm, Image.OperatingSystem.LINUX);
+        VirtualMachineCredit testSelfManagedCredit = setupTestCredit("0");
         when(vmResource.getVm(vmId)).thenReturn(testVm);
+        when(creditService.getVirtualMachineCredit(testVm.orionGuid)).thenReturn(testSelfManagedCredit);
         resource.getMetricAlertList(vmId);
         verify(vmResource).getVm(vmId);
         verify(vmAlertService).getVmMetricAlertList(vmId);
+        verify(creditService).getVirtualMachineCredit(testVm.orionGuid);
     }
 
     @Test
     public void getAlertListWindows() { // Prevent Windows from listing SSH.
-        testVm.vmId = vmId;
-        testVm.canceled = Instant.now().plus(7,ChronoUnit.DAYS);
-        testVm.validUntil = Instant.MAX;
+        setupTestVm(testVm, Image.OperatingSystem.WINDOWS);
 
-        Image testImage = new Image();
-        testImage.operatingSystem = Image.OperatingSystem.WINDOWS;
-        testVm.image = testImage;
+        VirtualMachineCredit testSelfManagedCredit = setupTestCredit("0");
+
         when(vmResource.getVm(vmId)).thenReturn(testVm);
-        List<VmMetricAlert> testMetricList = new ArrayList<>();
+        when(creditService.getVirtualMachineCredit(testVm.orionGuid)).thenReturn(testSelfManagedCredit);
 
-        VmMetricAlert metricFTP = new VmMetricAlert();
-        metricFTP.metric= VmMetric.FTP;
-        VmMetricAlert metricSSH = new VmMetricAlert();
-        metricSSH.metric= VmMetric.SSH;
+        createTestMetricList(Arrays.asList(VmMetric.FTP, VmMetric.SSH));
 
-        testMetricList.add(metricSSH);
-        testMetricList.add(metricFTP);
-
-        when(vmAlertService.getVmMetricAlertList(vmId)).thenReturn(testMetricList);
         List<VmMetricAlert> returnedList = resource.getMetricAlertList(vmId);
         verify(vmResource).getVm(vmId);
         verify(vmAlertService).getVmMetricAlertList(vmId);
+        verify(creditService).getVirtualMachineCredit(testVm.orionGuid);
         assertEquals(1, returnedList.size());
+        assertEquals(VmMetric.FTP, returnedList.get(0).metric);
+    }
+
+    @Test
+    public void getAlertListWithAdditionalFQDNs() { // Prevent returning HTTPs checks from additional domains
+        setupTestVm(testVm, Image.OperatingSystem.LINUX);
+
+        VirtualMachineCredit testSelfManagedCredit = setupTestCredit("0");
+
+        when(vmResource.getVm(vmId)).thenReturn(testVm);
+        when(creditService.getVirtualMachineCredit(testVm.orionGuid)).thenReturn(testSelfManagedCredit);
+
+        createTestMetricList(Arrays.asList(VmMetric.FTP, VmMetric.HTTPS));
+
+        List<VmMetricAlert> returnedList = resource.getMetricAlertList(vmId);
+
+        assertEquals(1, returnedList.size());
+        assertEquals(VmMetric.FTP, returnedList.get(0).metric);
+    }
+
+    @Test
+    public void getAlertListWithManagedCredit() { // Prevent returning FTP checks from managed
+        setupTestVm(testVm, Image.OperatingSystem.LINUX);
+
+        VirtualMachineCredit testManagedCredit = setupTestCredit("1");
+
+        when(vmResource.getVm(vmId)).thenReturn(testVm);
+        when(creditService.getVirtualMachineCredit(testVm.orionGuid)).thenReturn(testManagedCredit);
+
+        createTestMetricList(Arrays.asList(VmMetric.FTP, VmMetric.SSH));
+
+        List<VmMetricAlert> returnedList = resource.getMetricAlertList(vmId);
+
+        assertEquals(1, returnedList.size());
+        assertEquals(VmMetric.SSH, returnedList.get(0).metric);
     }
 
     @Test
