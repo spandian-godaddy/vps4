@@ -148,7 +148,7 @@ public class VmDomainMonitoringResource {
     }
 
     @PUT
-    @Path("/{vmId}/fqdns/{fqdn}")
+    @Path("/{vmId}/domains/{fqdn}")
     @ApiOperation(value = "replace HTTP/HTTPS domain monitoring on customer server")
     public VmAction replaceDomainMonitoring(@PathParam("vmId") UUID vmId, @PathParam("fqdn") String fqdn,
                                             ReplaceDomainMonitoringRequest replaceDomainMonitoringRequest) throws PanoptaServiceException {
