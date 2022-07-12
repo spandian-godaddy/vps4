@@ -29,7 +29,7 @@ public class JdbcMonitorService implements MonitorService {
     private final DataSource dataSource;
 
     private String buildSnapshotActionQuery(String actionStatuses, long thresholdInMinutes, String... filters) {
-        return "SELECT sna.id, sna.command_id, sna.snapshot_id, action_type.type as action_type, " +
+        return "SELECT sna.id, sna.command_id, sna.snapshot_id, snapshot.vm_id, action_type.type as action_type, " +
                 "action_status.status as action_status, sna.created as action_created_date " +
                 "FROM snapshot_action sna " +
                 "JOIN action_type ON sna.action_type_id=action_type.type_id " +
@@ -91,12 +91,12 @@ public class JdbcMonitorService implements MonitorService {
             String actionId = rs.getString("id");
             UUID commandId = rs.getString("command_id") == null ? null : java.util.UUID.fromString(rs.getString("command_id"));
             UUID snapshotId = rs.getString("snapshot_id") == null ? null : java.util.UUID.fromString(rs.getString("snapshot_id"));
+            UUID vmId = rs.getString("vm_id") == null ? null : java.util.UUID.fromString(rs.getString("vm_id"));
             String actionType = ActionType.valueOf(rs.getString("action_type")).name();
             String actionStatus = ActionStatus.valueOf(rs.getString("action_status")).name();
             String createdDate = rs.getString("action_created_date");
 
-            SnapshotActionData snapshotActionData = new SnapshotActionData(actionId, commandId, snapshotId, actionType, actionStatus, createdDate);
-            return snapshotActionData;
+            return new SnapshotActionData(actionId, commandId, snapshotId, vmId, actionType, actionStatus, createdDate);
 
         } catch (IllegalArgumentException iax) {
             throw new IllegalArgumentException("Could not map response. ", iax);

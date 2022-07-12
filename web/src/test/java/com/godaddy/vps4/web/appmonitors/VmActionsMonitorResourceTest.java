@@ -68,15 +68,9 @@ public class VmActionsMonitorResourceTest {
     @Before
     public void setupTest() {
         expectedSnapshotActionData = new ArrayList<>();
-
-        SnapshotActionData snapshotActionData = new SnapshotActionData("fake-action-id-1", UUID.randomUUID(), UUID.randomUUID(), ActionType.CREATE_SNAPSHOT.name(), ActionStatus.IN_PROGRESS.name(), Instant.now().minus(10, ChronoUnit.MINUTES).toString());
-        expectedSnapshotActionData.add(snapshotActionData);
-
-        snapshotActionData = new SnapshotActionData("fake-action-id-2", UUID.randomUUID(), UUID.randomUUID(), ActionType.CREATE_SNAPSHOT.name(), ActionStatus.IN_PROGRESS.name(), Instant.now().minus(10, ChronoUnit.MINUTES).toString());
-        expectedSnapshotActionData.add(snapshotActionData);
-
-        snapshotActionData = new SnapshotActionData("fake-action-id-3", UUID.randomUUID(), UUID.randomUUID(), ActionType.CREATE_SNAPSHOT.name(), ActionStatus.IN_PROGRESS.name(), Instant.now().minus(10, ChronoUnit.MINUTES).toString());
-        expectedSnapshotActionData.add(snapshotActionData);
+        expectedSnapshotActionData.add(createSnapshotActionData("fake-action-id-1"));
+        expectedSnapshotActionData.add(createSnapshotActionData("fake-action-id-2"));
+        expectedSnapshotActionData.add(createSnapshotActionData("fake-action-id-3"));
 
         VirtualMachine virtualMachine = new VirtualMachine();
         virtualMachine.orionGuid = UUID.randomUUID();
@@ -89,6 +83,12 @@ public class VmActionsMonitorResourceTest {
                 replicationLagService,
                 databaseCluster,
                 vmDetailsResource);
+    }
+
+    private SnapshotActionData createSnapshotActionData(String actionId) {
+        return new SnapshotActionData(actionId, UUID.randomUUID(), UUID.randomUUID(), UUID.randomUUID(),
+                                      ActionType.CREATE_SNAPSHOT.name(), ActionStatus.IN_PROGRESS.name(),
+                                      Instant.now().minus(10, ChronoUnit.MINUTES).toString());
     }
 
     private void validateActionFilters(List<ActionType> typeList, List<ActionStatus> statusList) {
