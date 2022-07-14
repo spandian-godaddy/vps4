@@ -48,7 +48,6 @@ import com.godaddy.vps4.vm.ActionType;
 import com.godaddy.vps4.vm.ServerSpec;
 import com.godaddy.vps4.vm.ServerType;
 import com.godaddy.vps4.vm.VirtualMachine;
-import com.godaddy.vps4.vm.VirtualMachineService;
 import com.godaddy.vps4.web.Vps4Exception;
 import com.godaddy.vps4.web.Vps4NoShopperException;
 import com.godaddy.vps4.web.security.GDUser;
@@ -69,7 +68,6 @@ public class VmSnapshotResourceTest {
     @Mock private SchedulerWebService schedulerWebService;
     @Mock private SnapshotService snapshotService;
     @Mock private TroubleshootVmService troubleshootVmService;
-    @Mock private VirtualMachineService virtualMachineService;
     @Mock private VmService vmService;
     @Mock private Config config;
 
@@ -117,7 +115,6 @@ public class VmSnapshotResourceTest {
                 .thenReturn(null);
         when(snapshotService.totalSnapshotsInProgress()).thenReturn(40);
         when(troubleshootVmService.getHfsAgentStatus(hfsVm.vmId)).thenReturn("OK");
-        when(virtualMachineService.getVirtualMachine(vm.vmId)).thenReturn(vm);
         when(vmService.getVm(vm.hfsVmId)).thenReturn(hfsVm);
         when(vmService.getVmExtendedInfo(vm.hfsVmId)).thenReturn(extendedInfo);
         when(vmResource.getVm(vm.vmId)).thenReturn(vm);
@@ -126,7 +123,7 @@ public class VmSnapshotResourceTest {
     private void setupResource() {
         resource = new VmSnapshotResource(user, vmResource, actionResourceProvider, actionService, commandService,
                                           ohBackupService, schedulerWebService, snapshotService, troubleshootVmService,
-                                          virtualMachineService, vmService, config);
+                                          vmService, config);
     }
 
     private void setupVm() {
@@ -190,30 +187,9 @@ public class VmSnapshotResourceTest {
     // GET /{vmId}/snapshots
 
     @Test
-    public void getsCephSnapshotsForOpenstack() {
-        vm.spec.serverType.platform = ServerType.Platform.OPENSTACK;
-        when(config.get("oh.backups.enabled", "false")).thenReturn("true");
+    public void getsHfsSnapshotsIfOhFlagIsDisabled() {
         resource.getSnapshotsForVM(vm.vmId);
-        verify(ohBackupService, never()).getBackups(vm.vmId);
         verify(snapshotService).getSnapshotsForVm(vm.vmId);
-    }
-
-    @Test
-    public void getsCephSnapshotsIfOhFlagIsDisabled() {
-        vm.spec.serverType.platform = ServerType.Platform.OPTIMIZED_HOSTING;
-        when(config.get("oh.backups.enabled", "false")).thenReturn("false");
-        resource.getSnapshotsForVM(vm.vmId);
-        verify(ohBackupService, never()).getBackups(vm.vmId);
-        verify(snapshotService).getSnapshotsForVm(vm.vmId);
-    }
-
-    @Test
-    public void getsOhBackupsIfOhFlagIsEnabled() {
-        vm.spec.serverType.platform = ServerType.Platform.OPTIMIZED_HOSTING;
-        when(config.get("oh.backups.enabled", "false")).thenReturn("true");
-        resource.getSnapshotsForVM(vm.vmId);
-        verify(ohBackupService).getBackups(vm.vmId);
-        verify(snapshotService, never()).getSnapshotsForVm(vm.vmId);
     }
 
     @Test
@@ -236,7 +212,7 @@ public class VmSnapshotResourceTest {
     }
 
     @Test
-    public void createsCephSnapshot() {
+    public void createsHfsSnapshot() {
         VmSnapshotResource.VmSnapshotRequest request = createSnapshotRequest();
         resource.createSnapshot(vm.vmId, request);
         verify(vmResource).getVm(vm.vmId);
@@ -278,7 +254,7 @@ public class VmSnapshotResourceTest {
     @Test
     public void abortsIfSnapshotOverQuota() {
         VmSnapshotResource.VmSnapshotRequest request = createSnapshotRequest();
-        when(snapshotService.isOverQuota(vm.orionGuid, request.snapshotType)).thenReturn(true);
+        when(snapshotService.totalFilledSlots(vm.orionGuid, request.snapshotType)).thenReturn(2);
         try {
             resource.createSnapshot(vm.vmId, request);
             fail();

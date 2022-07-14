@@ -22,7 +22,7 @@ public class VmActiveSnapshotFilter extends VmFilter {
 
     @Inject
     public VmActiveSnapshotFilter(VirtualMachineService virtualMachineService) {
-        super(Arrays.asList("messaging","outages","alerts","mergeShopper","syncVmStatus"), virtualMachineService);
+        super(Arrays.asList("messaging", "outages", "alerts", "mergeShopper", "syncVmStatus", "cancel"), virtualMachineService);
     }
 
     protected void doFilterSpecificFiltering(HttpServletRequest request, UUID vmId) {

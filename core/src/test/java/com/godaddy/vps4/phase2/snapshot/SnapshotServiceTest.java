@@ -124,31 +124,29 @@ public class SnapshotServiceTest {
     @Test
     public void isNotOverQuotaWhenAllExistingSnapshotsAreLive() {
         // When all the existing snapshot linked to an orion guid are LIVE then the oldest can be deprecated.
-        // Hence, quota test should return as false i.e. isOverQuota? = false
         insertTestSnapshots(1, SnapshotStatus.LIVE, SnapshotType.ON_DEMAND);
-        assertFalse(snapshotService.isOverQuota(orionGuid, SnapshotType.ON_DEMAND));
+        assertEquals(1, snapshotService.totalFilledSlots(orionGuid, SnapshotType.ON_DEMAND));
     }
 
     @Test
     public void isNotOverQuotaWhenAllExistingSnapshotsOfSameTypeAreLive() {
-        // AUTOMAITIC snapshots are not taken into account when testing if
-        // an ON_DEMAND backup is over quota
+        // AUTOMATIC snapshots are not taken into account when testing if an ON_DEMAND backup is over quota.
         insertTestSnapshots(1, SnapshotStatus.LIVE, SnapshotType.ON_DEMAND);
         insertTestSnapshots(1, SnapshotStatus.LIVE, SnapshotType.AUTOMATIC);
-        assertFalse(snapshotService.isOverQuota(orionGuid, SnapshotType.ON_DEMAND));
+        assertEquals(1, snapshotService.totalFilledSlots(orionGuid, SnapshotType.ON_DEMAND));
     }
 
 
     @Test
     public void erroredSnapshotsDontCountTowardsQuotaCheck() {
         insertTestSnapshots(1, SnapshotStatus.ERROR, SnapshotType.ON_DEMAND);
-        assertFalse(snapshotService.isOverQuota(orionGuid, SnapshotType.ON_DEMAND));
+        assertEquals(0, snapshotService.totalFilledSlots(orionGuid, SnapshotType.ON_DEMAND));
     }
 
     @Test
     public void destroyedSnapshotsDontCountTowardsQuotaCheck() {
         insertTestSnapshots(1, SnapshotStatus.DESTROYED, SnapshotType.ON_DEMAND);
-        assertFalse(snapshotService.isOverQuota(orionGuid, SnapshotType.ON_DEMAND));
+        assertEquals(0, snapshotService.totalFilledSlots(orionGuid, SnapshotType.ON_DEMAND));
     }
 
     @Test
@@ -156,7 +154,7 @@ public class SnapshotServiceTest {
         // When any existing snapshot linked to an orion guid is not LIVE then the customer is over quota.
         // Hence, quota test should return as not true i.e. isOverQuota? = true
         insertTestSnapshots(1, SnapshotStatus.NEW, SnapshotType.ON_DEMAND);
-        assertTrue(snapshotService.isOverQuota(orionGuid, SnapshotType.ON_DEMAND));
+        assertEquals(1, snapshotService.totalFilledSlots(orionGuid, SnapshotType.ON_DEMAND));
     }
 
     @Test
@@ -164,7 +162,7 @@ public class SnapshotServiceTest {
         // When any existing snapshot linked to an orion guid is not LIVE then the customer is over quota.
         // Hence, quota test should return as not true i.e. isOverQuota? = true
         insertTestSnapshots(1, SnapshotStatus.DEPRECATING, SnapshotType.ON_DEMAND);
-        assertTrue(snapshotService.isOverQuota(orionGuid, SnapshotType.ON_DEMAND));
+        assertEquals(1, snapshotService.totalFilledSlots(orionGuid, SnapshotType.ON_DEMAND));
     }
 
     @Test
@@ -172,7 +170,7 @@ public class SnapshotServiceTest {
         // When any existing snapshot linked to an orion guid is not LIVE then the customer is over quota.
         // Hence, quota test should return as not true i.e. isOverQuota? = true
         insertTestSnapshots(1, SnapshotStatus.DEPRECATED, SnapshotType.ON_DEMAND);
-        assertTrue(snapshotService.isOverQuota(orionGuid, SnapshotType.ON_DEMAND));
+        assertEquals(1, snapshotService.totalFilledSlots(orionGuid, SnapshotType.ON_DEMAND));
     }
 
     @Test

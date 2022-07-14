@@ -21,8 +21,9 @@ import com.fasterxml.jackson.annotation.JsonAlias;
 
 public class OhBackup {
     @JsonAlias({"uuid"}) public UUID id;
+    @JsonAlias({"package_uuid"}) public UUID packageId;
     @JsonAlias({"job_uuid"}) public UUID jobId;
-    @JsonAlias({"state"}) public OhBackupState status;
+    @JsonAlias({"state"}) public OhBackupState state;
     @JsonAlias({"purpose"}) public OhBackupPurpose purpose;
     @JsonAlias({"cdate"}) public Instant createdAt;
     @JsonAlias({"mdate"}) public Instant modifiedAt;

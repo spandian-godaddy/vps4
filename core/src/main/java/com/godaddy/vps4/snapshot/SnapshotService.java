@@ -10,7 +10,7 @@ public interface SnapshotService {
 
     UUID createSnapshot(long projectId, UUID vmId, String name, SnapshotType snapshotType);
 
-    boolean isOverQuota(UUID orionGuid, SnapshotType snapshotType);
+    int totalFilledSlots(UUID orionGuid, SnapshotType snapshotType);
 
     boolean hasSnapshotInProgress(UUID orionGuid);
 

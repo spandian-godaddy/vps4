@@ -10,6 +10,7 @@ import com.godaddy.vps4.credit.CreditModule;
 import com.godaddy.vps4.hfs.HfsVmTrackingRecordModule;
 import com.godaddy.vps4.ipblacklist.IpBlacklistModule;
 import com.godaddy.vps4.jdbc.DatabaseModule;
+import com.godaddy.vps4.oh.OhModule;
 import com.godaddy.vps4.orchestration.account.AccountModule;
 import com.godaddy.vps4.orchestration.hfs.HfsCommandModule;
 import com.godaddy.vps4.orchestration.hfs.HfsMockModule;
@@ -86,7 +87,8 @@ public class Vps4CommandPlugin implements CommandPlugin {
             new PanoptaModule(),
             new IpBlacklistModule(),
             new ShopperNotesModule(),
-            new ResellerModule()
+            new ResellerModule(),
+            new OhModule()
         );
 
         return new GuiceCommandProvider(injector);

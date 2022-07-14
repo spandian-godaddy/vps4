@@ -129,7 +129,7 @@ public class VmDestroyTest {
         SnapshotType snapshotType = SnapshotType.AUTOMATIC;
 
         return new Snapshot(snapshotId, projectId, vmId, name, status,
-                createdAt, modifiedAt, hfsImageId, hfsSnapshotId, snapshotType);
+                            createdAt, modifiedAt, hfsImageId, hfsSnapshotId, snapshotType);
     }
 
     @Test

@@ -5,6 +5,7 @@ import java.util.UUID;
 
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
+import javax.ws.rs.FormParam;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.PUT;
@@ -26,10 +27,14 @@ public interface OhApiBackupService {
     @Path("/")
     OhResponse<List<OhBackup>> getBackups(@QueryParam("package_uuid") UUID packageId,
                                           @QueryParam("state") OhBackupState state);
+
+    // The package_uuid is not required by the OH API, but passing it ensures that the backup corresponds with the
+    // requested server. This is used to ensure users actually own the backups they access.
     @GET
     @Path("/")
-    OhResponse<OhBackup> getBackup(@QueryParam("package_uuid") UUID packageId,
-                                   @QueryParam("uuid") UUID id);
+    OhResponse<OhBackup> getBackupWithAuthValidation(@QueryParam("package_uuid") UUID packageId,
+                                                     @QueryParam("uuid") UUID backupId);
+
     @GET
     @Path("/")
     OhResponse<OhBackup> getBackup(@QueryParam("uuid") UUID id);
@@ -42,11 +47,10 @@ public interface OhApiBackupService {
     @PUT
     @Path("/")
     void restoreBackup(@QueryParam("package_uuid") UUID packageId,
-                       @QueryParam("uuid") UUID jobId,
-                       @QueryParam("action") String action);
+                       @FormParam("uuid") UUID backupId,
+                       @FormParam("action") String action);
 
     @DELETE
     @Path("/")
-    void deleteBackup(@QueryParam("package_uuid") UUID packageId,
-                      @QueryParam("uuid") UUID id);
+    void deleteBackup(@QueryParam("uuid") UUID id);
 }

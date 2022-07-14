@@ -2,6 +2,7 @@ package com.godaddy.vps4.web.vm;
 
 import static com.godaddy.vps4.snapshot.SnapshotStatus.CANCELLED;
 import static com.godaddy.vps4.snapshot.SnapshotStatus.DESTROYED;
+import static com.godaddy.vps4.web.util.RequestValidation.validateAgentIsOk;
 import static com.godaddy.vps4.web.util.RequestValidation.validateIfSnapshotOverQuota;
 import static com.godaddy.vps4.web.util.RequestValidation.validateNoOtherSnapshotsInProgress;
 import static com.godaddy.vps4.web.util.RequestValidation.validateSnapshotBelongsToVm;
@@ -29,10 +30,8 @@ import org.slf4j.LoggerFactory;
 
 import com.fasterxml.jackson.annotation.JsonView;
 import com.godaddy.hfs.config.Config;
-import com.godaddy.hfs.vm.Vm;
 import com.godaddy.hfs.vm.VmExtendedInfo;
 import com.godaddy.hfs.vm.VmService;
-import com.godaddy.vps4.oh.backups.OhBackupMapper;
 import com.godaddy.vps4.oh.backups.OhBackupService;
 import com.godaddy.vps4.orchestration.snapshot.Vps4DestroySnapshot;
 import com.godaddy.vps4.orchestration.snapshot.Vps4SnapshotVm;
@@ -49,7 +48,6 @@ import com.godaddy.vps4.vm.ActionService;
 import com.godaddy.vps4.vm.ActionType;
 import com.godaddy.vps4.vm.ServerType;
 import com.godaddy.vps4.vm.VirtualMachine;
-import com.godaddy.vps4.vm.VirtualMachineService;
 import com.godaddy.vps4.web.PATCH;
 import com.godaddy.vps4.web.Vps4Api;
 import com.godaddy.vps4.web.Vps4Exception;
@@ -82,7 +80,6 @@ public class VmSnapshotResource {
     private final SchedulerWebService schedulerWebService;
     private final SnapshotService snapshotService;
     private final TroubleshootVmService troubleshootVmService;
-    private final VirtualMachineService virtualMachineService;
     private final VmService vmService;
     private final Config config;
 
@@ -96,7 +93,6 @@ public class VmSnapshotResource {
                               SchedulerWebService schedulerWebService,
                               SnapshotService snapshotService,
                               TroubleshootVmService troubleshootVmService,
-                              VirtualMachineService virtualMachineService,
                               VmService vmService,
                               Config config) {
         this.user = user;
@@ -108,35 +104,19 @@ public class VmSnapshotResource {
         this.schedulerWebService = schedulerWebService;
         this.snapshotService = snapshotService;
         this.troubleshootVmService = troubleshootVmService;
-        this.virtualMachineService = virtualMachineService;
         this.vmService = vmService;
         this.config = config;
-    }
-
-    private boolean shouldUseOhBackups(VirtualMachine vm) {
-        return vm.spec.serverType.platform == ServerType.Platform.OPTIMIZED_HOSTING
-                && Boolean.parseBoolean(config.get("oh.backups.enabled", "false"));
     }
 
     @GET
     @Path("/{vmId}/snapshots")
     @JsonView(Views.Public.class)
     public List<Snapshot> getSnapshotsForVM(@PathParam("vmId") UUID vmId) {
-        VirtualMachine vm = vmResource.getVm(vmId); // auth validation
-        List<Snapshot> snapshots;
-        if (shouldUseOhBackups(vm)) {
-            long projectId = virtualMachineService.getVirtualMachine(vmId).projectId;
-            snapshots = ohBackupService.getBackups(vmId)
-                                       .stream()
-                                       .map(ohBackup -> OhBackupMapper.toSnapshot(ohBackup, vmId, projectId))
-                                       .collect(Collectors.toList());
-        } else {
-            snapshots = snapshotService.getSnapshotsForVm(vmId);
-        }
-        return snapshots
-                .stream()
-                .filter(snapshot -> snapshot.status != DESTROYED && snapshot.status != CANCELLED)
-                .collect(Collectors.toList());
+        vmResource.getVm(vmId); // auth validation
+        return snapshotService.getSnapshotsForVm(vmId)
+                              .stream()
+                              .filter(snapshot -> snapshot.status != DESTROYED && snapshot.status != CANCELLED)
+                              .collect(Collectors.toList());
     }
 
     public static class VmSnapshotRequest {
@@ -152,36 +132,11 @@ public class VmSnapshotResource {
         }
 
         VirtualMachine vm = vmResource.getVm(vmId); // auth validation
-
-        if (vm.spec.serverType.platform == ServerType.Platform.OPENSTACK) {
-            throwErrorIfAgentIsDown(vm);
-        }
-        validateVmCanCreateSnapshot(vm.orionGuid, vm.backupJobId, request.name, request.snapshotType);
-        validateVmCanCreateCephSnapshot(request, vm);
+        validateVmCanCreateSnapshot(vm, request);
 
         Action action = createSnapshotAndActionEntries(vm, request.name, request.snapshotType);
         kickoffSnapshotCreation(vm.vmId, vm.hfsVmId, action, vm.orionGuid, request.snapshotType, user.getShopperId());
         return new SnapshotAction(actionService.getAction(action.id), user.isEmployee());
-    }
-
-    private void throwErrorIfAgentIsDown(VirtualMachine vm) {
-        Vm hfsVm = vmService.getVm(vm.hfsVmId);
-        if (hfsVm.status.equals("ACTIVE") && (!troubleshootVmService.getHfsAgentStatus(vm.hfsVmId).equals("OK"))) {
-            throw new Vps4Exception("AGENT_DOWN","Agent for vmId " + vm.vmId + " is down. Refusing to take snapshot.");
-        }
-    }
-
-    private void validateVmCanCreateSnapshot(UUID orionGuid, UUID backupJobId, String name, SnapshotType snapshotType) {
-        validateUserIsShopper(user);
-        validateIfSnapshotOverQuota(snapshotService, orionGuid, snapshotType);
-        validateNoOtherSnapshotsInProgress(snapshotService, orionGuid);
-        validateSnapshotName(name);
-        validateSnapshotNotPaused(schedulerWebService, backupJobId, snapshotType);
-    }
-
-    private void validateVmCanCreateCephSnapshot(VmSnapshotRequest request, VirtualMachine vm) {
-        validateDcLimit(vm.vmId, request);
-        validateHvLimitAndSaveToDb(vm.vmId, vm.hfsVmId, request);
     }
 
     private Action createSnapshotAndActionEntries(VirtualMachine vm, String snapshotName, SnapshotType snapshotType) {
@@ -190,6 +145,21 @@ public class VmSnapshotResource {
                 snapshotId, ActionType.CREATE_SNAPSHOT, new JSONObject().toJSONString(), user.getUsername());
         logger.info("Creating db entries for snapshot creation. Snapshot Action ID: {}, Snapshot ID: {}", actionId, snapshotId);
         return actionService.getAction(actionId);
+    }
+
+    private void validateVmCanCreateSnapshot(VirtualMachine vm, VmSnapshotRequest request) {
+        validateUserIsShopper(user);
+        validateSnapshotName(request.name);
+        validateIfSnapshotOverQuota(ohBackupService, snapshotService, vm, request.snapshotType);
+        validateNoOtherSnapshotsInProgress(ohBackupService, snapshotService, vm);
+        validateSnapshotNotPaused(schedulerWebService, vm.backupJobId, request.snapshotType);
+
+        if (vm.spec.serverType.platform == ServerType.Platform.OPENSTACK) {
+            validateAgentIsOk(vm, vmService, troubleshootVmService);
+        }
+
+        validateDcLimit(vm.vmId, request);
+        validateHvLimitAndSaveToDb(vm.vmId, vm.hfsVmId, request);
     }
 
     private void validateDcLimit(UUID vmId, VmSnapshotRequest request) {

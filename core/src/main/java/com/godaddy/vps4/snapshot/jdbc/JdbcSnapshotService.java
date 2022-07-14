@@ -5,7 +5,6 @@ import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.util.List;
 import java.util.UUID;
-import java.util.stream.Stream;
 
 import javax.inject.Inject;
 import javax.sql.DataSource;
@@ -47,74 +46,16 @@ public class JdbcSnapshotService implements SnapshotService {
     }
 
     @Override
-    public boolean isOverQuota(UUID orionGuid, SnapshotType snapshotType) {
-        // If there is not an open slot or there is a snapshot that isn't live then it's over quota
-        return !(hasOpenSlots(orionGuid, snapshotType) ||
-                allSlotsFilledOnlyByLiveSnapshots(orionGuid, snapshotType));
-    }
-
-    private boolean hasOpenSlots(UUID orionGuid, SnapshotType snapshotType) {
-        // check if number of snapshots (not in error, destroyed, cancelled, error_rescheduled, limit_rescheduled, or
-        // agent_down) linked to the credit is over the number of open slots available. Right now the number of open
-        // slots is hard coded to 1 but this might change in the future as HEG and MT get on-boarded.
+    public int totalFilledSlots(UUID orionGuid, SnapshotType snapshotType) {
+        // check the number of snapshots (not in error, destroyed, cancelled, error_rescheduled, limit_rescheduled, or
+        // agent_down) linked to the credit
         return Sql.with(dataSource).exec(
                 "SELECT COUNT(*) FROM SNAPSHOT s JOIN SNAPSHOT_STATUS ss ON s.status = ss.status_id "
                         + "JOIN VIRTUAL_MACHINE v ON s.vm_id = v.vm_id "
-                        + "WHERE v.orion_guid = ? AND ss.status NOT IN ("
-                        + "'ERROR', 'DESTROYED', 'CANCELLED', 'ERROR_RESCHEDULED', 'LIMIT_RESCHEDULED', 'AGENT_DOWN'"
+                        + "WHERE v.orion_guid = ? AND ss.status IN ("
+                        + "'NEW', 'IN_PROGRESS', 'LIVE', 'DEPRECATING', 'DEPRECATED'"
                         + ") AND s.snapshot_type_id = ?;",
-                this::hasOpenSlotsMapper, orionGuid, snapshotType.getSnapshotTypeId());
-    }
-
-    private boolean hasOpenSlotsMapper(ResultSet rs) throws SQLException {
-        return rs.next() && rs.getLong("count") < OPEN_SLOTS_PER_CREDIT;
-    }
-
-    private boolean allSlotsFilledOnlyByLiveSnapshots(UUID orionGuid, SnapshotType snapshotType) {
-        List<StatusCount> statusCounts = Sql.with(dataSource).exec(
-                "SELECT ss.status, COUNT(*) FROM SNAPSHOT s JOIN snapshot_status ss ON s.status = ss.status_id "
-                        + "JOIN VIRTUAL_MACHINE v ON s.vm_id = v.vm_id "
-                        + "WHERE v.orion_guid = ? "
-                        + "AND ss.status NOT IN ("
-                        + "'ERROR', 'DESTROYED', 'CANCELLED', 'ERROR_RESCHEDULED', 'LIMIT_RESCHEDULED', 'AGENT_DOWN'"
-                        + ") AND snapshot_type_id = ?"
-                        + "GROUP BY ss.status;",
-                Sql.listOf(this::mapStatusCount), orionGuid, snapshotType.getSnapshotTypeId());
-        long numInNew = getCountForStatus(statusCounts, SnapshotStatus.NEW);
-        long numInProgress = getCountForStatus(statusCounts, SnapshotStatus.IN_PROGRESS);
-        long numLive = getCountForStatus(statusCounts, SnapshotStatus.LIVE);
-        long numDeprecating = getCountForStatus(statusCounts, SnapshotStatus.DEPRECATING);
-        long numDeprecated = getCountForStatus(statusCounts, SnapshotStatus.DEPRECATED);
-
-        // If we have all the available slots filled up by snapshots that are 'LIVE', then we can deprecate the oldest
-        // Right now the number of open slots is hard coded to 1 but this might change in
-        // the future as HEG and MT get on-boarded.
-        return (numLive == OPEN_SLOTS_PER_CREDIT)
-                && (numInNew == 0)
-                && (numInProgress == 0)
-                && (numDeprecating == 0)
-                && (numDeprecated == 0);
-    }
-
-    private long getCountForStatus(List<StatusCount> statusCounts, SnapshotStatus status) {
-        Stream<StatusCount> statusCountStream = statusCounts.stream().filter(sc -> sc.status.equals(status));
-        return statusCountStream.findFirst().orElse(new StatusCount(status, 0)).count;
-    }
-
-    private class StatusCount {
-        final SnapshotStatus status;
-        final long count;
-
-        private StatusCount(SnapshotStatus status, long count) {
-            this.status = status;
-            this.count = count;
-        }
-    }
-
-    private StatusCount mapStatusCount(ResultSet rs) throws SQLException {
-        return new StatusCount(
-                SnapshotStatus.valueOf(rs.getString("status")),
-                rs.getLong("count"));
+                Sql.nextOrNull(rs -> rs.getInt("count")), orionGuid, snapshotType.getSnapshotTypeId());
     }
 
     @Override

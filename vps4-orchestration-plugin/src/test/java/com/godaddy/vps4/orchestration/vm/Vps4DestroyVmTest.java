@@ -346,8 +346,9 @@ public class Vps4DestroyVmTest {
     }
 
     private Snapshot createFakeSnapshot(SnapshotStatus status) {
-        return new Snapshot(UUID.randomUUID(), 0L, UUID.randomUUID(), "fake-snapshot", status, Instant.now(), null,
-                            "fake-image-id", (long) (Math.random() * 100000), SnapshotType.AUTOMATIC);
+        return new Snapshot(UUID.randomUUID(), 0L, UUID.randomUUID(), "fake-snapshot", status,
+                            Instant.now(), null, "fake-image-id", (long) (Math.random() * 100000),
+                            SnapshotType.AUTOMATIC);
     }
 
     @Test

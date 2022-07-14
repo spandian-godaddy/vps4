@@ -54,19 +54,21 @@ public class DefaultOhBackupServiceTest {
 
     @Before
     public void setUp() {
-        setUpMockBackups();
         setUpMockVm();
         setUpMockHfsVm();
+        setUpMockBackups();
         when(ohApiBackupServices.get("zone1")).thenReturn(ohApiBackupService1);
         when(ohApiBackupServices.get("zone2")).thenReturn(ohApiBackupService2);
         when(ohApiJobServices.get(anyString())).thenReturn(ohApiJobService);
         when(virtualMachineService.getVirtualMachine(vm.vmId)).thenReturn(vm);
         when(vmService.getVm(hfsVm.vmId)).thenReturn(hfsVm);
-        when(ohApiBackupService1.getBackups(UUID.fromString(hfsVm.resourceId), OhBackupState.COMPLETE))
+        when(ohApiBackupService1.getBackups(eq(UUID.fromString(hfsVm.resourceId)), any(OhBackupState.class)))
                 .thenReturn(backups);
-        when(ohApiBackupService2.getBackups(UUID.fromString(hfsVm.resourceId), OhBackupState.COMPLETE))
+        when(ohApiBackupService2.getBackups(eq(UUID.fromString(hfsVm.resourceId)), any(OhBackupState.class)))
                 .thenReturn(backups);
-        when(ohApiBackupService1.getBackup(UUID.fromString(hfsVm.resourceId), backup.value().id)).thenReturn(backup);
+        when(ohApiBackupService1.getBackupWithAuthValidation(UUID.fromString(hfsVm.resourceId), backup.value().id))
+                .thenReturn(backup);
+        when(ohApiBackupService1.getBackup(backup.value().id)).thenReturn(backup);
         when(ohApiJobService.getJob(job.value().id)).thenReturn(job);
         service = new DefaultOhBackupService(ohApiBackupServices, ohApiJobServices, virtualMachineService, vmService);
     }
@@ -84,6 +86,7 @@ public class DefaultOhBackupServiceTest {
     private OhBackup createMockBackup(OhBackupState status) {
         OhBackup backup = mock(OhBackup.class);
         backup.id = UUID.randomUUID();
+        backup.packageId = UUID.fromString(hfsVm.resourceId);
         backup.jobId = UUID.randomUUID();
         return backup;
     }
@@ -107,33 +110,38 @@ public class DefaultOhBackupServiceTest {
 
     @Test
     public void getBackupsGetsCorrectParameters() {
-        service.getBackups(vm.vmId);
+        service.getBackups(vm.vmId, OhBackupState.COMPLETE, OhBackupState.PENDING);
         verify(virtualMachineService).getVirtualMachine(vm.vmId);
         verify(vmService).getVm(vm.hfsVmId);
         verify(ohApiBackupServices).get(hfsVm.resourceRegion);
         verify(ohApiBackupService1).getBackups(UUID.fromString(hfsVm.resourceId), OhBackupState.COMPLETE);
+        verify(ohApiBackupService1).getBackups(UUID.fromString(hfsVm.resourceId), OhBackupState.PENDING);
         verify(ohApiBackupService2, never()).getBackups(any(UUID.class), eq(OhBackupState.COMPLETE));
+        verify(ohApiBackupService2, never()).getBackups(any(UUID.class), eq(OhBackupState.PENDING));
     }
 
     @Test
     public void getBackupsCallsCorrectZone() {
         hfsVm.resourceRegion = "zone2";
-        service.getBackups(vm.vmId);
+        service.getBackups(vm.vmId, OhBackupState.COMPLETE);
         verify(ohApiBackupService1, never()).getBackups(any(UUID.class), eq(OhBackupState.COMPLETE));
         verify(ohApiBackupService2).getBackups(UUID.fromString(hfsVm.resourceId), OhBackupState.COMPLETE);
     }
 
     @Test
     public void getBackupsReturnsBackupList() {
-        List<OhBackup> returnValue = service.getBackups(vm.vmId);
-        assert backups.value() == returnValue;
+        List<OhBackup> returnValue = service.getBackups(vm.vmId, OhBackupState.COMPLETE);
+        assertEquals(backups.value().size(), returnValue.size());
+        for (int i = 0; i < backups.value().size(); i++) {
+            assertEquals(backups.value().get(i), returnValue.get(i));
+        }
     }
 
     @Test
     public void getBackupsSuppressesNotFoundException() {
         when(ohApiBackupService1.getBackups(UUID.fromString(hfsVm.resourceId), OhBackupState.COMPLETE))
                 .thenThrow(new NotFoundException());
-        List<OhBackup> returnValue = service.getBackups(vm.vmId);
+        List<OhBackup> returnValue = service.getBackups(vm.vmId, OhBackupState.COMPLETE);
         assertEquals(0, returnValue.size());
     }
 
@@ -142,7 +150,7 @@ public class DefaultOhBackupServiceTest {
         OhBackup result = service.getBackup(vm.vmId, backup.value().id);
         verify(virtualMachineService).getVirtualMachine(vm.vmId);
         verify(vmService).getVm(vm.hfsVmId);
-        verify(ohApiBackupService1).getBackup(UUID.fromString(hfsVm.resourceId), backup.value().id);
+        verify(ohApiBackupService1).getBackupWithAuthValidation(UUID.fromString(hfsVm.resourceId), backup.value().id);
         assertSame(backup.value(), result);
     }
 
@@ -161,7 +169,7 @@ public class DefaultOhBackupServiceTest {
         service.deleteBackup(vm.vmId, backup.value().id);
         verify(virtualMachineService).getVirtualMachine(vm.vmId);
         verify(vmService).getVm(vm.hfsVmId);
-        verify(ohApiBackupService1).deleteBackup(UUID.fromString(hfsVm.resourceId), backup.value().id);
+        verify(ohApiBackupService1).deleteBackup(backup.value().id);
     }
 
     @Test
@@ -170,7 +178,7 @@ public class DefaultOhBackupServiceTest {
         verify(virtualMachineService).getVirtualMachine(vm.vmId);
         verify(vmService).getVm(vm.hfsVmId);
         verify(ohApiBackupService1).restoreBackup(UUID.fromString(hfsVm.resourceId), backup.value().id, "restore");
-        verify(ohApiBackupService1).getBackup(UUID.fromString(hfsVm.resourceId), backup.value().id);
+        verify(ohApiBackupService1).getBackup(backup.value().id);
         verify(ohApiJobService).getJob(backup.value().jobId);
         assertSame(job.value(), result);
     }

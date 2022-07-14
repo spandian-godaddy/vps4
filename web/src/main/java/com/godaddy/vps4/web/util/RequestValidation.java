@@ -9,8 +9,12 @@ import java.util.UUID;
 import javax.ws.rs.NotFoundException;
 
 import com.godaddy.hfs.vm.Vm;
+import com.godaddy.hfs.vm.VmService;
 import com.godaddy.vps4.credit.CreditService;
 import com.godaddy.vps4.credit.VirtualMachineCredit;
+import com.godaddy.vps4.oh.backups.OhBackupMapper;
+import com.godaddy.vps4.oh.backups.OhBackupService;
+import com.godaddy.vps4.oh.backups.models.OhBackupState;
 import com.godaddy.vps4.scheduler.api.web.SchedulerWebService;
 import com.godaddy.vps4.security.PrivilegeService;
 import com.godaddy.vps4.security.Vps4User;
@@ -20,6 +24,7 @@ import com.godaddy.vps4.snapshot.Snapshot;
 import com.godaddy.vps4.snapshot.SnapshotService;
 import com.godaddy.vps4.snapshot.SnapshotStatus;
 import com.godaddy.vps4.snapshot.SnapshotType;
+import com.godaddy.vps4.util.TroubleshootVmService;
 import com.godaddy.vps4.util.validators.Validator;
 import com.godaddy.vps4.util.validators.ValidatorRegistry;
 import com.godaddy.vps4.vm.ActionService;
@@ -38,6 +43,7 @@ import com.godaddy.vps4.web.security.GDUser;
 import com.godaddy.vps4.web.security.GDUser.Role;
 
 public class RequestValidation {
+    private static final long OPEN_SLOTS_PER_CREDIT = 1;
     static final int GODADDY_MAIL_RELAY_LIMIT = 10000;
     static final int BRAND_RESELLER_MAIL_RELAY_LIMIT = 25000;
 
@@ -80,14 +86,28 @@ public class RequestValidation {
         }
     }
 
-    public static void validateIfSnapshotOverQuota(SnapshotService snapshotService, UUID orionGuid, SnapshotType snapshotType) {
-        if (snapshotService.isOverQuota(orionGuid, snapshotType))
+    public static void validateIfSnapshotOverQuota(OhBackupService ohBackupService, SnapshotService snapshotService,
+                                                   VirtualMachine vm, SnapshotType snapshotType) {
+        long count = snapshotService.totalFilledSlots(vm.orionGuid, snapshotType);
+        if (snapshotType.equals(SnapshotType.ON_DEMAND)) {
+            count += ohBackupService.getBackups(vm.vmId, OhBackupState.PENDING, OhBackupState.COMPLETE)
+                                    .stream()
+                                    .map(ohBackup -> OhBackupMapper.toSnapshot(ohBackup, vm.vmId, vm.projectId))
+                                    .filter(backup -> backup.snapshotType.equals(snapshotType))
+                                    .count();
+        }
+        if (count > OPEN_SLOTS_PER_CREDIT) {
             throw new Vps4Exception("SNAPSHOT_OVER_QUOTA", "Snapshot creation rejected as quota exceeded");
+        }
     }
 
-    public static void validateNoOtherSnapshotsInProgress(SnapshotService snapshotService, UUID orionGuid) {
-        if (snapshotService.hasSnapshotInProgress(orionGuid)){
-            throw new Vps4Exception("SNAPSHOT_ALREADY_IN_PROGRESS", "Snapshot creation rejected as snapshot already in progress");
+    public static void validateNoOtherSnapshotsInProgress(OhBackupService ohBackupService,
+                                                          SnapshotService snapshotService,
+                                                          VirtualMachine vm) {
+        if (snapshotService.hasSnapshotInProgress(vm.orionGuid)
+                || !ohBackupService.getBackups(vm.vmId, OhBackupState.PENDING).isEmpty()) {
+            throw new Vps4Exception("SNAPSHOT_ALREADY_IN_PROGRESS",
+                                    "Snapshot creation rejected as snapshot already in progress");
         }
     }
 
@@ -101,6 +121,13 @@ public class RequestValidation {
     public static void validateUserIsShopper(GDUser user) {
         if (!user.isShopper())
             throw new Vps4NoShopperException();
+    }
+
+    public static void validateAgentIsOk(VirtualMachine vm, VmService vmService, TroubleshootVmService troubleshootVmService) {
+        Vm hfsVm = vmService.getVm(vm.hfsVmId);
+        if (hfsVm.status.equals("ACTIVE") && (!troubleshootVmService.getHfsAgentStatus(vm.hfsVmId).equals("OK"))) {
+            throw new Vps4Exception("AGENT_DOWN", "Agent for vmId " + vm.vmId + " is down. Refusing to take snapshot.");
+        }
     }
 
     public static void validateSnapshotName(String name) {
