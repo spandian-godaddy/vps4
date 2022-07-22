@@ -15,6 +15,7 @@ import com.godaddy.vps4.orchestration.account.AccountModule;
 import com.godaddy.vps4.orchestration.hfs.HfsCommandModule;
 import com.godaddy.vps4.orchestration.hfs.HfsMockModule;
 import com.godaddy.vps4.orchestration.hfs.HfsModule;
+import com.godaddy.vps4.orchestration.ohbackup.OhCommandModule;
 import com.godaddy.vps4.orchestration.scheduler.SchedulerModule;
 import com.godaddy.vps4.panopta.PanoptaModule;
 import com.godaddy.vps4.reseller.ResellerModule;
@@ -88,7 +89,8 @@ public class Vps4CommandPlugin implements CommandPlugin {
             new IpBlacklistModule(),
             new ShopperNotesModule(),
             new ResellerModule(),
-            new OhModule()
+            new OhModule(),
+            new OhCommandModule()
         );
 
         return new GuiceCommandProvider(injector);

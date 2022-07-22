@@ -3,6 +3,7 @@ package com.godaddy.vps4.web.ohbackup;
 import static com.godaddy.vps4.web.util.RequestValidation.validateIfSnapshotOverQuota;
 import static com.godaddy.vps4.web.util.RequestValidation.validateNoOtherSnapshotsInProgress;
 import static com.godaddy.vps4.web.util.RequestValidation.validateUserIsShopper;
+import static com.godaddy.vps4.web.util.VmHelper.createActionAndExecute;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -21,14 +22,18 @@ import com.godaddy.hfs.config.Config;
 import com.godaddy.vps4.oh.backups.OhBackupService;
 import com.godaddy.vps4.oh.backups.models.OhBackup;
 import com.godaddy.vps4.oh.backups.models.OhBackupState;
+import com.godaddy.vps4.orchestration.ohbackup.Vps4DestroyOhBackup;
+import com.godaddy.vps4.orchestration.ohbackup.Vps4RestoreOhBackup;
+import com.godaddy.vps4.orchestration.vm.VmActionRequest;
 import com.godaddy.vps4.snapshot.SnapshotService;
 import com.godaddy.vps4.snapshot.SnapshotType;
 import com.godaddy.vps4.vm.ActionService;
+import com.godaddy.vps4.vm.ActionType;
 import com.godaddy.vps4.vm.VirtualMachine;
 import com.godaddy.vps4.vm.VmAction;
 import com.godaddy.vps4.web.Vps4Api;
+import com.godaddy.vps4.web.Vps4Exception;
 import com.godaddy.vps4.web.security.GDUser;
-import com.godaddy.vps4.web.security.RequiresRole;
 import com.godaddy.vps4.web.vm.VmResource;
 import com.google.inject.Inject;
 
@@ -41,7 +46,6 @@ import io.swagger.annotations.Api;
 @Path("/api/vms")
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
-@RequiresRole(roles = {GDUser.Role.ADMIN})
 public class OhBackupResource {
     private final GDUser user;
     private final VmResource vmResource;
@@ -68,9 +72,17 @@ public class OhBackupResource {
         this.snapshotService = snapshotService;
     }
 
+    private void validateOhBackupsAreEnabled() {
+        boolean areBackupsEnabled = Boolean.parseBoolean(config.get("oh.backups.enabled", "false"));
+        if (!areBackupsEnabled) {
+            throw new Vps4Exception("FEATURE_DISABLED", "The OH backups feature is currently disabled.");
+        }
+    }
+
     @GET
     @Path("/{vmId}/ohBackups")
     public List<OhBackup> getOhBackups(@PathParam("vmId") UUID vmId) {
+        validateOhBackupsAreEnabled();
         vmResource.getVm(vmId); // auth validation
         List<OhBackup> backups = ohBackupService.getBackups(vmId, OhBackupState.PENDING,
                                                             OhBackupState.COMPLETE, OhBackupState.FAILED);
@@ -80,21 +92,22 @@ public class OhBackupResource {
     @POST
     @Path("/{vmId}/ohBackups")
     public VmAction createOhBackup(@PathParam("vmId") UUID vmId) {
+        validateOhBackupsAreEnabled();
         VirtualMachine vm = vmResource.getVm(vmId); // auth validation
         validateUserIsShopper(user);
         validateIfSnapshotOverQuota(ohBackupService, snapshotService, vm, SnapshotType.ON_DEMAND);
         validateNoOtherSnapshotsInProgress(ohBackupService, snapshotService, vm);
 
-//        VmActionRequest vmActionRequest = new VmActionRequest();
-//        vmActionRequest.virtualMachine = vm;
-//        return createActionAndExecute(actionService, commandService, vmId, ActionType.CREATE_OH_BACKUP, vmActionRequest,
-//                                      "Vps4CreateOhBackup", user);
-        return null;
+        VmActionRequest vmActionRequest = new VmActionRequest();
+        vmActionRequest.virtualMachine = vm;
+        return createActionAndExecute(actionService, commandService, vmId, ActionType.CREATE_OH_BACKUP, vmActionRequest,
+                                      "Vps4CreateOhBackup", user);
     }
 
     @GET
     @Path("/{vmId}/ohBackups/{backupId}")
     public OhBackup getOhBackup(@PathParam("vmId") UUID vmId, @PathParam("backupId") UUID backupId) {
+        validateOhBackupsAreEnabled();
         vmResource.getVm(vmId); // validates user owns VM
         return ohBackupService.getBackup(vmId, backupId); // validates backup corresponds with VM
     }
@@ -102,26 +115,26 @@ public class OhBackupResource {
     @DELETE
     @Path("/{vmId}/ohBackups/{backupId}")
     public VmAction destroyOhBackup(@PathParam("vmId") UUID vmId, @PathParam("backupId") UUID backupId) {
+        validateOhBackupsAreEnabled();
         VirtualMachine vm = vmResource.getVm(vmId); // validates user owns VM
         ohBackupService.getBackup(vmId, backupId); // validates backup corresponds with VM
-//        Vps4DestroyOhBackup.Request request = new Vps4DestroyOhBackup.Request();
-//        request.virtualMachine = vm;
-//        request.backupId = backupId;
-//        return createActionAndExecute(actionService, commandService, vmId, ActionType.DESTROY_OH_BACKUP, request,
-//                                      "Vps4DestroyOhBackup", user);
-        return null;
+        Vps4DestroyOhBackup.Request request = new Vps4DestroyOhBackup.Request();
+        request.virtualMachine = vm;
+        request.backupId = backupId;
+        return createActionAndExecute(actionService, commandService, vmId, ActionType.DESTROY_OH_BACKUP, request,
+                                      "Vps4DestroyOhBackup", user);
     }
 
     @POST
     @Path("/{vmId}/ohBackups/{backupId}/restore")
     public VmAction restoreOhBackup(@PathParam("vmId") UUID vmId, @PathParam("backupId") UUID backupId) {
+        validateOhBackupsAreEnabled();
         VirtualMachine vm = vmResource.getVm(vmId); // validates user owns VM
         ohBackupService.getBackup(vmId, backupId); // validates backup corresponds with VM
-//        Vps4RestoreOhBackup.Request request = new Vps4RestoreOhBackup.Request();
-//        request.virtualMachine = vm;
-//        request.backupId = backupId;
-//        return createActionAndExecute(actionService, commandService, vmId, ActionType.RESTORE_OH_BACKUP, request,
-//                                      "Vps4RestoreOhBackup", user);
-        return null;
+        Vps4RestoreOhBackup.Request request = new Vps4RestoreOhBackup.Request();
+        request.virtualMachine = vm;
+        request.backupId = backupId;
+        return createActionAndExecute(actionService, commandService, vmId, ActionType.RESTORE_OH_BACKUP, request,
+                                      "Vps4RestoreOhBackup", user);
     }
 }

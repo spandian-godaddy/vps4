@@ -28,6 +28,8 @@ import com.godaddy.vps4.oh.backups.OhBackupService;
 import com.godaddy.vps4.oh.backups.models.OhBackup;
 import com.godaddy.vps4.oh.backups.models.OhBackupPurpose;
 import com.godaddy.vps4.oh.backups.models.OhBackupState;
+import com.godaddy.vps4.orchestration.ohbackup.Vps4DestroyOhBackup;
+import com.godaddy.vps4.orchestration.ohbackup.Vps4RestoreOhBackup;
 import com.godaddy.vps4.security.GDUserMock;
 import com.godaddy.vps4.snapshot.SnapshotService;
 import com.godaddy.vps4.snapshot.SnapshotType;
@@ -35,6 +37,7 @@ import com.godaddy.vps4.vm.Action;
 import com.godaddy.vps4.vm.ActionService;
 import com.godaddy.vps4.vm.ActionType;
 import com.godaddy.vps4.vm.VirtualMachine;
+import com.godaddy.vps4.vm.VmAction;
 import com.godaddy.vps4.web.Vps4Exception;
 import com.godaddy.vps4.web.Vps4NoShopperException;
 import com.godaddy.vps4.web.security.GDUser;
@@ -74,6 +77,7 @@ public class OhBackupResourceTest {
                 .thenReturn(backups);
         when(actionService.getAction(anyLong())).thenReturn(action);
         when(commandService.executeCommand(any(CommandGroupSpec.class))).thenReturn(commandState);
+        when(config.get("oh.backups.enabled", "false")).thenReturn("true");
         when(vmResource.getVm(vm.vmId)).thenReturn(vm);
         user = GDUserMock.createShopper();
         loadResource();
@@ -115,6 +119,8 @@ public class OhBackupResourceTest {
     public void createBackup() {
         resource.createOhBackup(vm.vmId);
         verify(vmResource).getVm(vm.vmId);
+        verify(actionService).createAction(eq(vm.vmId), eq(ActionType.CREATE_OH_BACKUP), anyString(), anyString());
+        verify(commandService).executeCommand(any(CommandGroupSpec.class));
     }
 
     @Test
@@ -191,6 +197,12 @@ public class OhBackupResourceTest {
         resource.destroyOhBackup(vm.vmId, backup.id);
         verify(vmResource).getVm(vm.vmId);
         verify(ohBackupService).getBackup(vm.vmId, backup.id);
+        verify(actionService).createAction(eq(vm.vmId), eq(ActionType.DESTROY_OH_BACKUP), anyString(), anyString());
+        verify(commandService).executeCommand(commandCaptor.capture());
+        CommandGroupSpec spec = commandCaptor.getValue();
+        Vps4DestroyOhBackup.Request capturedRequest = (Vps4DestroyOhBackup.Request) spec.commands.get(0).request;
+        assertSame(vm, capturedRequest.virtualMachine);
+        assertEquals(backup.id, capturedRequest.backupId);
     }
 
     @Test
@@ -198,5 +210,11 @@ public class OhBackupResourceTest {
         resource.restoreOhBackup(vm.vmId, backup.id);
         verify(vmResource).getVm(vm.vmId);
         verify(ohBackupService).getBackup(vm.vmId, backup.id);
+        verify(actionService).createAction(eq(vm.vmId), eq(ActionType.RESTORE_OH_BACKUP), anyString(), anyString());
+        verify(commandService).executeCommand(commandCaptor.capture());
+        CommandGroupSpec spec = commandCaptor.getValue();
+        Vps4RestoreOhBackup.Request capturedRequest = (Vps4RestoreOhBackup.Request) spec.commands.get(0).request;
+        assertSame(vm, capturedRequest.virtualMachine);
+        assertEquals(backup.id, capturedRequest.backupId);
     }
 }
