@@ -12,6 +12,7 @@ import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
 
+import com.godaddy.vps4.oh.OhBackupDataService;
 import com.godaddy.vps4.oh.backups.OhBackupService;
 import com.godaddy.vps4.vm.ActionService;
 import com.godaddy.vps4.vm.VirtualMachine;
@@ -23,6 +24,7 @@ public class Vps4DestroyOhBackupTest {
     @Mock ActionService actionService;
     @Mock CommandContext commandContext;
     @Mock OhBackupService ohBackupService;
+    @Mock OhBackupDataService ohBackupDataService;
 
     private Vps4DestroyOhBackup command;
     private Vps4DestroyOhBackup.Request request;
@@ -30,7 +32,7 @@ public class Vps4DestroyOhBackupTest {
     @Before
     public void setUp() {
         setUpRequest();
-        command = new Vps4DestroyOhBackup(actionService, ohBackupService);
+        command = new Vps4DestroyOhBackup(actionService, ohBackupService, ohBackupDataService);
     }
 
     private void setUpRequest() {
@@ -44,5 +46,11 @@ public class Vps4DestroyOhBackupTest {
     public void callsBackupService() {
         command.executeWithAction(commandContext, request);
         verify(ohBackupService).deleteBackup(request.virtualMachine.vmId, request.backupId);
+    }
+
+    @Test
+    public void callsBackupDataService() {
+        command.executeWithAction(commandContext, request);
+        verify(ohBackupDataService).destroyBackup(request.backupId);
     }
 }

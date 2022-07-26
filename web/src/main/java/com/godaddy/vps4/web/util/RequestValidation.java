@@ -12,6 +12,7 @@ import com.godaddy.hfs.vm.Vm;
 import com.godaddy.hfs.vm.VmService;
 import com.godaddy.vps4.credit.CreditService;
 import com.godaddy.vps4.credit.VirtualMachineCredit;
+import com.godaddy.vps4.oh.OhBackupDataService;
 import com.godaddy.vps4.oh.backups.OhBackupMapper;
 import com.godaddy.vps4.oh.backups.OhBackupService;
 import com.godaddy.vps4.oh.backups.models.OhBackupState;
@@ -86,15 +87,13 @@ public class RequestValidation {
         }
     }
 
-    public static void validateIfSnapshotOverQuota(OhBackupService ohBackupService, SnapshotService snapshotService,
-                                                   VirtualMachine vm, SnapshotType snapshotType) {
+    public static void validateIfSnapshotOverQuota(OhBackupDataService ohBackupDataService,
+                                                   SnapshotService snapshotService,
+                                                   VirtualMachine vm,
+                                                   SnapshotType snapshotType) {
         long count = snapshotService.totalFilledSlots(vm.orionGuid, snapshotType);
         if (snapshotType.equals(SnapshotType.ON_DEMAND)) {
-            count += ohBackupService.getBackups(vm.vmId, OhBackupState.PENDING, OhBackupState.COMPLETE)
-                                    .stream()
-                                    .map(ohBackup -> OhBackupMapper.toSnapshot(ohBackup, vm.vmId, vm.projectId))
-                                    .filter(backup -> backup.snapshotType.equals(snapshotType))
-                                    .count();
+            count += ohBackupDataService.totalFilledSlots(vm.vmId);
         }
         if (count > OPEN_SLOTS_PER_CREDIT) {
             throw new Vps4Exception("SNAPSHOT_OVER_QUOTA", "Snapshot creation rejected as quota exceeded");

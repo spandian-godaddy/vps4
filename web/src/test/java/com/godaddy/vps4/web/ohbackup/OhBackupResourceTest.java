@@ -24,6 +24,7 @@ import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
 
 import com.godaddy.hfs.config.Config;
+import com.godaddy.vps4.oh.OhBackupDataService;
 import com.godaddy.vps4.oh.backups.OhBackupService;
 import com.godaddy.vps4.oh.backups.models.OhBackup;
 import com.godaddy.vps4.oh.backups.models.OhBackupPurpose;
@@ -55,6 +56,7 @@ public class OhBackupResourceTest {
     @Mock private CommandService commandService;
     @Mock private Config config;
     @Mock private OhBackupService ohBackupService;
+    @Mock private OhBackupDataService ohBackupDataService;
     @Mock private SnapshotService snapshotService;
     @Mock private VmResource vmResource;
 
@@ -71,8 +73,6 @@ public class OhBackupResourceTest {
     public void setUp() {
         setUpMocks();
         when(ohBackupService.getBackup(vm.vmId, backup.id)).thenReturn(backup);
-        when(ohBackupService.getBackups(vm.vmId, OhBackupState.PENDING, OhBackupState.COMPLETE))
-                .thenReturn(backups);
         when(ohBackupService.getBackups(vm.vmId, OhBackupState.PENDING, OhBackupState.COMPLETE, OhBackupState.FAILED))
                 .thenReturn(backups);
         when(actionService.getAction(anyLong())).thenReturn(action);
@@ -100,8 +100,8 @@ public class OhBackupResourceTest {
     }
 
     private void loadResource() {
-        resource = new OhBackupResource(user, vmResource, config, actionService,
-                                        commandService, ohBackupService, snapshotService);
+        resource = new OhBackupResource(user, vmResource, config, actionService, commandService, ohBackupService,
+                                        ohBackupDataService, snapshotService);
     }
 
     @Test
@@ -137,8 +137,8 @@ public class OhBackupResourceTest {
 
     @Test
     public void hfsSnapshotsCountTowardsQuota() {
-        when(snapshotService.totalFilledSlots(any(UUID.class), any(SnapshotType.class)))
-                .thenReturn(1);
+        when(ohBackupDataService.totalFilledSlots(any(UUID.class))).thenReturn(0);
+        when(snapshotService.totalFilledSlots(any(UUID.class), any(SnapshotType.class))).thenReturn(2);
         try {
             resource.createOhBackup(vm.vmId);
             fail();
@@ -149,11 +149,8 @@ public class OhBackupResourceTest {
 
     @Test
     public void onDemandOhBackupsCountTowardsQuota() {
-        List<OhBackup> largeBackupList = new ArrayList<>();
-        largeBackupList.add(createBackup(OhBackupState.COMPLETE, OhBackupPurpose.CUSTOMER));
-        largeBackupList.add(createBackup(OhBackupState.COMPLETE, OhBackupPurpose.CUSTOMER));
-        when(ohBackupService.getBackups(vm.vmId, OhBackupState.PENDING, OhBackupState.COMPLETE))
-                .thenReturn(largeBackupList);
+        when(ohBackupDataService.totalFilledSlots(any(UUID.class))).thenReturn(2);
+        when(snapshotService.totalFilledSlots(any(UUID.class), any(SnapshotType.class))).thenReturn(0);
         try {
             resource.createOhBackup(vm.vmId);
             fail();

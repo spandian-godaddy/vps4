@@ -19,6 +19,7 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
 
 import com.godaddy.hfs.config.Config;
+import com.godaddy.vps4.oh.OhBackupDataService;
 import com.godaddy.vps4.oh.backups.OhBackupService;
 import com.godaddy.vps4.oh.backups.models.OhBackup;
 import com.godaddy.vps4.oh.backups.models.OhBackupState;
@@ -53,6 +54,7 @@ public class OhBackupResource {
     private final ActionService actionService;
     private final CommandService commandService;
     private final OhBackupService ohBackupService;
+    private final OhBackupDataService ohBackupDataService;
     private final SnapshotService snapshotService;
 
     @Inject
@@ -62,6 +64,7 @@ public class OhBackupResource {
                             ActionService actionService,
                             CommandService commandService,
                             OhBackupService ohBackupService,
+                            OhBackupDataService ohBackupDataService,
                             SnapshotService snapshotService) {
         this.user = user;
         this.vmResource = vmResource;
@@ -69,6 +72,7 @@ public class OhBackupResource {
         this.actionService = actionService;
         this.commandService = commandService;
         this.ohBackupService = ohBackupService;
+        this.ohBackupDataService = ohBackupDataService;
         this.snapshotService = snapshotService;
     }
 
@@ -82,7 +86,6 @@ public class OhBackupResource {
     @GET
     @Path("/{vmId}/ohBackups")
     public List<OhBackup> getOhBackups(@PathParam("vmId") UUID vmId) {
-        validateOhBackupsAreEnabled();
         vmResource.getVm(vmId); // auth validation
         List<OhBackup> backups = ohBackupService.getBackups(vmId, OhBackupState.PENDING,
                                                             OhBackupState.COMPLETE, OhBackupState.FAILED);
@@ -95,7 +98,7 @@ public class OhBackupResource {
         validateOhBackupsAreEnabled();
         VirtualMachine vm = vmResource.getVm(vmId); // auth validation
         validateUserIsShopper(user);
-        validateIfSnapshotOverQuota(ohBackupService, snapshotService, vm, SnapshotType.ON_DEMAND);
+        validateIfSnapshotOverQuota(ohBackupDataService, snapshotService, vm, SnapshotType.ON_DEMAND);
         validateNoOtherSnapshotsInProgress(ohBackupService, snapshotService, vm);
 
         VmActionRequest vmActionRequest = new VmActionRequest();
@@ -107,7 +110,6 @@ public class OhBackupResource {
     @GET
     @Path("/{vmId}/ohBackups/{backupId}")
     public OhBackup getOhBackup(@PathParam("vmId") UUID vmId, @PathParam("backupId") UUID backupId) {
-        validateOhBackupsAreEnabled();
         vmResource.getVm(vmId); // validates user owns VM
         return ohBackupService.getBackup(vmId, backupId); // validates backup corresponds with VM
     }

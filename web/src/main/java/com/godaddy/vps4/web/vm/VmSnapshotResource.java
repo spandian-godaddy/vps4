@@ -32,6 +32,7 @@ import com.fasterxml.jackson.annotation.JsonView;
 import com.godaddy.hfs.config.Config;
 import com.godaddy.hfs.vm.VmExtendedInfo;
 import com.godaddy.hfs.vm.VmService;
+import com.godaddy.vps4.oh.OhBackupDataService;
 import com.godaddy.vps4.oh.backups.OhBackupService;
 import com.godaddy.vps4.orchestration.snapshot.Vps4DestroySnapshot;
 import com.godaddy.vps4.orchestration.snapshot.Vps4SnapshotVm;
@@ -77,6 +78,7 @@ public class VmSnapshotResource {
     private final ActionService actionService;
     private final CommandService commandService;
     private final OhBackupService ohBackupService;
+    private final OhBackupDataService ohBackupDataService;
     private final SchedulerWebService schedulerWebService;
     private final SnapshotService snapshotService;
     private final TroubleshootVmService troubleshootVmService;
@@ -90,6 +92,7 @@ public class VmSnapshotResource {
                               @SnapshotActionService ActionService actionService,
                               CommandService commandService,
                               OhBackupService ohBackupService,
+                              OhBackupDataService ohBackupDataService,
                               SchedulerWebService schedulerWebService,
                               SnapshotService snapshotService,
                               TroubleshootVmService troubleshootVmService,
@@ -101,6 +104,7 @@ public class VmSnapshotResource {
         this.actionService = actionService;
         this.commandService = commandService;
         this.ohBackupService = ohBackupService;
+        this.ohBackupDataService = ohBackupDataService;
         this.schedulerWebService = schedulerWebService;
         this.snapshotService = snapshotService;
         this.troubleshootVmService = troubleshootVmService;
@@ -150,7 +154,7 @@ public class VmSnapshotResource {
     private void validateVmCanCreateSnapshot(VirtualMachine vm, VmSnapshotRequest request) {
         validateUserIsShopper(user);
         validateSnapshotName(request.name);
-        validateIfSnapshotOverQuota(ohBackupService, snapshotService, vm, request.snapshotType);
+        validateIfSnapshotOverQuota(ohBackupDataService, snapshotService, vm, request.snapshotType);
         validateNoOtherSnapshotsInProgress(ohBackupService, snapshotService, vm);
         validateSnapshotNotPaused(schedulerWebService, vm.backupJobId, request.snapshotType);
 

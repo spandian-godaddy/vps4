@@ -30,6 +30,7 @@ import com.godaddy.hfs.vm.Extended;
 import com.godaddy.hfs.vm.Vm;
 import com.godaddy.hfs.vm.VmExtendedInfo;
 import com.godaddy.hfs.vm.VmService;
+import com.godaddy.vps4.oh.OhBackupDataService;
 import com.godaddy.vps4.oh.backups.OhBackupService;
 import com.godaddy.vps4.scheduler.api.core.SchedulerJobDetail;
 import com.godaddy.vps4.scheduler.api.web.SchedulerWebService;
@@ -65,6 +66,7 @@ public class VmSnapshotResourceTest {
     @Mock private ActionService actionService;
     @Mock private CommandService commandService;
     @Mock private OhBackupService ohBackupService;
+    @Mock private OhBackupDataService ohBackupDataService;
     @Mock private SchedulerWebService schedulerWebService;
     @Mock private SnapshotService snapshotService;
     @Mock private TroubleshootVmService troubleshootVmService;
@@ -122,8 +124,8 @@ public class VmSnapshotResourceTest {
 
     private void setupResource() {
         resource = new VmSnapshotResource(user, vmResource, actionResourceProvider, actionService, commandService,
-                                          ohBackupService, schedulerWebService, snapshotService, troubleshootVmService,
-                                          vmService, config);
+                                          ohBackupService, ohBackupDataService, schedulerWebService, snapshotService,
+                                          troubleshootVmService, vmService, config);
     }
 
     private void setupVm() {
