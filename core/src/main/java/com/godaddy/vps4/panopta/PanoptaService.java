@@ -55,5 +55,5 @@ public interface PanoptaService {
 
     String getDefaultGroup(String shopperId) throws PanoptaServiceException;
 
-    List<PanoptaMetricId> getAdditionalFqdnMetricIds(UUID vmId);
+    List<PanoptaDomain> getAdditionalDomains(UUID vmId);
 }

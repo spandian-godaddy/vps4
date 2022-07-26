@@ -12,6 +12,7 @@ import com.godaddy.vps4.panopta.PanoptaMetricId;
 import com.godaddy.vps4.panopta.PanoptaMetricMapper;
 import com.godaddy.vps4.panopta.PanoptaService;
 import com.godaddy.vps4.panopta.PanoptaServiceException;
+import com.godaddy.vps4.panopta.PanoptaDomain;
 import com.godaddy.vps4.security.GDUserMock;
 import com.godaddy.vps4.vm.AccountStatus;
 import com.godaddy.vps4.vm.Action;
@@ -131,10 +132,10 @@ public class VmDomainMonitoringResourceTest {
 
     @Test
     public void testGetAdditionalFqdnMetric() {
-        List<PanoptaMetricId> fqdnMetrics = resource.getFqdnMetrics(vmId);
+        List<PanoptaDomain> fqdnMetrics = resource.getFqdnMetrics(vmId);
 
         verify(vmResource).getVm(vmId);
-        verify(panoptaService).getAdditionalFqdnMetricIds(vmId);
+        verify(panoptaService).getAdditionalDomains(vmId);
         Assert.assertNotNull(fqdnMetrics);
     }
 

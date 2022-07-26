@@ -2,7 +2,9 @@ package com.godaddy.vps4.panopta.jdbc;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.time.Instant;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 import javax.inject.Inject;
@@ -172,5 +174,16 @@ public class JdbcPanoptaDataService implements PanoptaDataService {
                                 + " WHERE server_id=? AND fqdn=? AND valid_until = 'infinity'",
                         null, panoptaServerId,
                         fqdn);
+    }
+
+    @Override
+    public Map<String, Instant> getPanoptaAdditionalFqdnWithValidOn(UUID vmId) {
+        return Sql.with(dataSource).exec(
+                "SELECT paf.fqdn, paf.valid_on " +
+                        " FROM panopta_additional_fqdns paf " +
+                        " JOIN panopta_server ps USING (server_id) " +
+                        " WHERE ps.vm_id = ?  AND paf.valid_until = 'infinity' ",
+                Sql.mapOf(rs -> (rs.getTimestamp("valid_on").toInstant()),
+                        rs -> rs.getString("fqdn")), vmId);
     }
 }

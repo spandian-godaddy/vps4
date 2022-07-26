@@ -10,6 +10,7 @@ import com.godaddy.vps4.panopta.PanoptaMetricId;
 import com.godaddy.vps4.panopta.PanoptaMetricMapper;
 import com.godaddy.vps4.panopta.PanoptaService;
 import com.godaddy.vps4.panopta.PanoptaServiceException;
+import com.godaddy.vps4.panopta.PanoptaDomain;
 import com.godaddy.vps4.vm.ActionService;
 import com.godaddy.vps4.vm.ActionType;
 import com.godaddy.vps4.vm.VirtualMachine;
@@ -96,9 +97,9 @@ public class VmDomainMonitoringResource {
 
     @GET
     @Path("/{vmId}/domains")
-    public List<PanoptaMetricId> getFqdnMetrics(@PathParam("vmId") UUID vmId) {
+    public List<PanoptaDomain> getFqdnMetrics(@PathParam("vmId") UUID vmId) {
         vmResource.getVm(vmId);
-        return panoptaService.getAdditionalFqdnMetricIds(vmId);
+        return panoptaService.getAdditionalDomains(vmId);
     }
 
     @POST

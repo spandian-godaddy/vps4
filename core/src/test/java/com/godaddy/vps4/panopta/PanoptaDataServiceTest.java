@@ -11,6 +11,7 @@ import static org.mockito.Mockito.when;
 import java.time.Instant;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 import javax.sql.DataSource;
@@ -219,5 +220,15 @@ public class PanoptaDataServiceTest {
         panoptaDataService.deletePanoptaAdditionalFqdn("fqdn.fake", panoptaServer.serverId);
         Boolean deletedFqdnExists = panoptaDataService.activeAdditionalFqdnExistsForServer("fqdn.fake", panoptaServer.serverId);
         assertEquals(false, deletedFqdnExists);
+    }
+
+    @Test
+    public void canGetFqdnAndValidOnByVmId() {
+        panoptaDataService.createPanoptaCustomer(fakeShopperId, fakeCustomerKey);
+        panoptaDataService.createPanoptaServer(vm.vmId, fakeShopperId, fakeTemplateId, panoptaServer);
+        panoptaDataService.addPanoptaAdditionalFqdn("fqdn.fake", panoptaServer.serverId);
+
+        Map<String, Instant> map = panoptaDataService.getPanoptaAdditionalFqdnWithValidOn(vm.vmId);
+        assertTrue(!map.get("fqdn.fake").isBefore(Instant.now().minusSeconds(1)));
     }
 }

@@ -330,19 +330,21 @@ public class DefaultPanoptaService implements PanoptaService {
     }
 
     @Override
-    public List<PanoptaMetricId> getAdditionalFqdnMetricIds(UUID vmId) {
-        List<PanoptaMetricId> ids = new ArrayList<>();
-        List<String> additionalFqdns = panoptaDataService.getPanoptaActiveAdditionalFqdns(vmId);
+    public List<PanoptaDomain> getAdditionalDomains(UUID vmId) {
+        List<PanoptaDomain> domains = new ArrayList<>();
+        List<PanoptaMetricId> ids;
+        Map<String, Instant> fqdnValidOnMap = panoptaDataService.getPanoptaAdditionalFqdnWithValidOn(vmId);
         PanoptaDetail detail = panoptaDataService.getPanoptaDetails(vmId);
         if (detail != null) {
             ids = panoptaApiServerService
                             .getNetworkList(detail.getServerId(), detail.getPartnerCustomerKey(), UNLIMITED)
                             .value;
-            ids = ids.stream().filter(t -> additionalFqdns.contains(t.serverInterface) &&
+            ids = ids.stream().filter(t -> fqdnValidOnMap.containsKey(t.serverInterface) &&
                     (Arrays.asList(VmMetric.HTTP, VmMetric.HTTPS)).contains(panoptaMetricMapper.getVmMetric(t.typeId)))
                     .collect(Collectors.toList());
+            for (PanoptaMetricId id : ids) domains.add(new PanoptaDomain(id, fqdnValidOnMap.get(id.serverInterface)));
         }
-        return ids;
+    return domains;
     }
 
     @Override

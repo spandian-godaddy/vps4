@@ -1,6 +1,8 @@
 package com.godaddy.vps4.panopta;
 
+import java.time.Instant;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 import com.godaddy.vps4.panopta.jdbc.PanoptaCustomerDetails;
@@ -20,4 +22,5 @@ public interface PanoptaDataService {
     void addPanoptaAdditionalFqdn(String fqdn, long panoptaServerId);
     boolean activeAdditionalFqdnExistsForServer(String fqdn, long panoptaServerId);
     void deletePanoptaAdditionalFqdn(String fqdn, long panoptaServerId);
+    Map<String, Instant> getPanoptaAdditionalFqdnWithValidOn(UUID vmId);
 }

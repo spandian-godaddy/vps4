@@ -331,13 +331,16 @@ public class DefaultPanoptaServiceTest {
 
     @Test
     public void testGetAdditionalFqdnMetricIds() {
+        Map<String, Instant> fqdnValidOnMap = new HashMap<>();
+        fqdnValidOnMap.put("additionalFqdn.fake", Instant.now());
+        fqdnValidOnMap.put("additionalFqdn2.fake", Instant.now());
         when(panoptaMetricMapper.getVmMetric(anyLong())).thenReturn(VmMetric.HTTPS);
-        when(panoptaDataService.getPanoptaActiveAdditionalFqdns(vmId)).thenReturn(Arrays.asList("additionalFqdn.fake", "additionalFqdn2.fake"));
-        List<PanoptaMetricId> ids = defaultPanoptaService.getAdditionalFqdnMetricIds(vmId);
+        when(panoptaDataService.getPanoptaAdditionalFqdnWithValidOn(vmId)).thenReturn(fqdnValidOnMap);
+        List<PanoptaDomain> domains = defaultPanoptaService.getAdditionalDomains(vmId);
         verify(panoptaApiServerService).getNetworkList(serverId, partnerCustomerKey, 0);
-        assertEquals(2, ids.size());
-        assertEquals(networkIdList.value.get(0).id, ids.get(0).id);;
-        assertEquals(networkIdList.value.get(0).typeId, ids.get(0).typeId);
+        assertEquals(2, domains.size());
+        assertEquals(networkIdList.value.get(0).id, domains.get(0).id);
+        assertEquals(networkIdList.value.get(0).typeId, domains.get(0).typeId);
     }
 
     @Test
