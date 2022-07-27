@@ -37,8 +37,9 @@ import com.godaddy.vps4.snapshot.SnapshotType;
 import com.godaddy.vps4.vm.Action;
 import com.godaddy.vps4.vm.ActionService;
 import com.godaddy.vps4.vm.ActionType;
+import com.godaddy.vps4.vm.ServerSpec;
+import com.godaddy.vps4.vm.ServerType;
 import com.godaddy.vps4.vm.VirtualMachine;
-import com.godaddy.vps4.vm.VmAction;
 import com.godaddy.vps4.web.Vps4Exception;
 import com.godaddy.vps4.web.Vps4NoShopperException;
 import com.godaddy.vps4.web.security.GDUser;
@@ -89,6 +90,9 @@ public class OhBackupResourceTest {
         backups.add(backup);
         commandState.commandId = UUID.randomUUID();
         vm.vmId = UUID.randomUUID();
+        vm.spec = new ServerSpec();
+        vm.spec.serverType = new ServerType();
+        vm.spec.serverType.platform = ServerType.Platform.OPTIMIZED_HOSTING;
     }
 
     private OhBackup createBackup(OhBackupState state, OhBackupPurpose purpose) {

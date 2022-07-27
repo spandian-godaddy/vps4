@@ -35,6 +35,7 @@ import com.godaddy.vps4.vm.DataCenterService;
 import com.godaddy.vps4.vm.Image;
 import com.godaddy.vps4.vm.Image.ControlPanel;
 import com.godaddy.vps4.vm.Image.OperatingSystem;
+import com.godaddy.vps4.vm.ServerType;
 import com.godaddy.vps4.vm.ServerType.Type;
 import com.godaddy.vps4.vm.VirtualMachine;
 import com.godaddy.vps4.vm.VirtualMachineService;
@@ -92,7 +93,8 @@ public class RequestValidation {
                                                    VirtualMachine vm,
                                                    SnapshotType snapshotType) {
         long count = snapshotService.totalFilledSlots(vm.orionGuid, snapshotType);
-        if (snapshotType.equals(SnapshotType.ON_DEMAND)) {
+        if (snapshotType.equals(SnapshotType.ON_DEMAND)
+                && vm.spec.serverType.platform == ServerType.Platform.OPTIMIZED_HOSTING) {
             count += ohBackupDataService.totalFilledSlots(vm.vmId);
         }
         if (count > OPEN_SLOTS_PER_CREDIT) {
@@ -103,8 +105,10 @@ public class RequestValidation {
     public static void validateNoOtherSnapshotsInProgress(OhBackupService ohBackupService,
                                                           SnapshotService snapshotService,
                                                           VirtualMachine vm) {
-        if (snapshotService.hasSnapshotInProgress(vm.orionGuid)
-                || !ohBackupService.getBackups(vm.vmId, OhBackupState.PENDING).isEmpty()) {
+        boolean hasSnapshotInProgress = snapshotService.hasSnapshotInProgress(vm.orionGuid);
+        boolean hasOhBackupInProgress = vm.spec.serverType.platform == ServerType.Platform.OPTIMIZED_HOSTING
+                && !ohBackupService.getBackups(vm.vmId, OhBackupState.PENDING).isEmpty();
+        if (hasSnapshotInProgress || hasOhBackupInProgress) {
             throw new Vps4Exception("SNAPSHOT_ALREADY_IN_PROGRESS",
                                     "Snapshot creation rejected as snapshot already in progress");
         }
