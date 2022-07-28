@@ -29,6 +29,7 @@ import com.godaddy.vps4.jdbc.DatabaseModule;
 import com.godaddy.vps4.network.IpAddress;
 import com.godaddy.vps4.network.NetworkService;
 import com.godaddy.vps4.orchestration.scheduler.ScheduleAutomaticBackupRetry;
+import com.godaddy.vps4.orchestration.snapshot.Vps4DeprecateSnapshot;
 import com.godaddy.vps4.orchestration.snapshot.Vps4DestroySnapshot;
 import com.godaddy.vps4.orchestration.snapshot.Vps4SnapshotVm;
 import com.godaddy.vps4.orchestration.snapshot.WaitForSnapshotAction;
@@ -180,7 +181,7 @@ public class Vps4SnapshotVmTest {
     @Test
     public void marksTheOldSnapshotStatusToDeprecating() {
         command.execute(context, request);
-        verify(context, times(1)).execute(eq("MarkOldestSnapshotForDeprecation" + request.orionGuid),
+        verify(context, times(1)).execute(eq("MarkOldestSnapshotForDeprecation-" + request.orionGuid),
                 markOldestSnapshotCaptor.capture(),
                 eq(UUID.class));
 
@@ -271,17 +272,10 @@ public class Vps4SnapshotVmTest {
     }
 
     @Test
-    public void destroysTheOldSnapshot() {
+    public void deprecatesTheOldSnapshot() {
         command.execute(context, request);
         verify(context, times(1))
-            .execute(eq(Vps4DestroySnapshot.class), any(Vps4DestroySnapshot.Request.class));
-    }
-
-    @Test
-    public void createsActionToTrackOldSnapshotDestroy() {
-        command.execute(context, request);
-        Assert.assertEquals(
-                ActionType.DESTROY_SNAPSHOT, actionService.getActions(vps4SnapshotIdToBeDeprecated).get(0).type);
+            .execute(eq(Vps4DeprecateSnapshot.class), any(Vps4DeprecateSnapshot.Request.class));
     }
 
     @Test

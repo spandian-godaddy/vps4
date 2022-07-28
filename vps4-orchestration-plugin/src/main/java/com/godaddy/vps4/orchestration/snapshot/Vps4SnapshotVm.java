@@ -5,7 +5,6 @@ import java.util.UUID;
 import javax.inject.Inject;
 
 import org.apache.commons.text.RandomStringGenerator;
-import org.json.simple.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -15,13 +14,11 @@ import com.godaddy.vps4.orchestration.Vps4ActionRequest;
 import com.godaddy.vps4.orchestration.scheduler.ScheduleAutomaticBackupRetry;
 import com.godaddy.vps4.orchestration.vm.Vps4RecordScheduledJobForVm;
 import com.godaddy.vps4.scheduledJob.ScheduledJob;
-import com.godaddy.vps4.snapshot.Snapshot;
 import com.godaddy.vps4.snapshot.SnapshotActionService;
 import com.godaddy.vps4.snapshot.SnapshotService;
 import com.godaddy.vps4.snapshot.SnapshotStatus;
 import com.godaddy.vps4.snapshot.SnapshotType;
 import com.godaddy.vps4.vm.ActionService;
-import com.godaddy.vps4.vm.ActionType;
 
 import gdg.hfs.orchestration.CommandContext;
 import gdg.hfs.orchestration.CommandMetadata;
@@ -37,10 +34,10 @@ import gdg.hfs.vhfs.snapshot.SnapshotAction;
 public class Vps4SnapshotVm extends ActionCommand<Vps4SnapshotVm.Request, Vps4SnapshotVm.Response> {
     private static final Logger logger = LoggerFactory.getLogger(Vps4SnapshotVm.class);
     private CommandContext context;
+    private UUID snapshotIdToDeprecate;
 
     private final gdg.hfs.vhfs.snapshot.SnapshotService hfsSnapshotService;
     private final SnapshotService vps4SnapshotService;
-    private UUID snapshotIdToBeDeprecated;
     private final Config config;
 
     @Inject
@@ -61,12 +58,15 @@ public class Vps4SnapshotVm extends ActionCommand<Vps4SnapshotVm.Request, Vps4Sn
             vps4SnapshotService.cancelErroredSnapshots(request.orionGuid, request.snapshotType);
             return null;
         }, Void.class);
-        snapshotIdToBeDeprecated = context.execute("MarkOldestSnapshotForDeprecation" + request.orionGuid,
+        snapshotIdToDeprecate = context.execute("MarkOldestSnapshotForDeprecation-" + request.orionGuid,
                 ctx -> vps4SnapshotService.markOldestSnapshotForDeprecation(request.orionGuid, request.snapshotType),
                 UUID.class);
+
         SnapshotAction hfsAction = createAndWaitForSnapshotCompletion(request);
         deleteVmHvForSnapshotTracking(request.vmId);
-        deprecateOldSnapshot(request.initiatedBy);
+
+        context.execute(Vps4DeprecateSnapshot.class,
+                        new Vps4DeprecateSnapshot.Request(request.vmId, snapshotIdToDeprecate, request.initiatedBy));
         return generateResponse(hfsAction);
     }
 
@@ -82,36 +82,6 @@ public class Vps4SnapshotVm extends ActionCommand<Vps4SnapshotVm.Request, Vps4Sn
         hfsAction = waitForSnapshotCompletion(request, hfsAction);
         updateHfsImageId(request.vps4SnapshotId, hfsAction.snapshotId);
         return hfsAction;
-    }
-
-    private void deprecateOldSnapshot(String initiatedBy) {
-        if (snapshotIdToBeDeprecated != null) {
-            logger.info("Deprecate snapshot with id: {}", snapshotIdToBeDeprecated);
-            context.execute("MarkSnapshotAsDeprecated" + snapshotIdToBeDeprecated, ctx -> {
-                vps4SnapshotService.updateSnapshotStatus(snapshotIdToBeDeprecated, SnapshotStatus.DEPRECATED);
-                return null;
-            }, Void.class);
-            Snapshot vps4Snapshot = vps4SnapshotService.getSnapshot(snapshotIdToBeDeprecated);
-
-            try {
-                // now destroy the deprecated snapshot
-                destroyOldSnapshot(vps4Snapshot.hfsSnapshotId, initiatedBy);
-            } catch (Exception e) {
-                // Squelch any exceptions because we cant really do anything about it?
-                logger.info("Deprecation/Destroy failure for snapshot with id: {}", snapshotIdToBeDeprecated);
-            }
-        }
-    }
-
-    private void destroyOldSnapshot(long hfsSnapshotId, String initiatedBy) {
-        long delActionId = actionService.createAction(
-                snapshotIdToBeDeprecated,  ActionType.DESTROY_SNAPSHOT, new JSONObject().toJSONString(), initiatedBy);
-
-        Vps4DestroySnapshot.Request req = new Vps4DestroySnapshot.Request();
-        req.hfsSnapshotId = hfsSnapshotId;
-        req.vps4SnapshotId = snapshotIdToBeDeprecated;
-        req.actionId = delActionId;
-        context.execute(Vps4DestroySnapshot.class, req);
     }
 
     private SnapshotAction waitForSnapshotCompletion(Request request, SnapshotAction hfsAction) {
@@ -201,11 +171,10 @@ public class Vps4SnapshotVm extends ActionCommand<Vps4SnapshotVm.Request, Vps4Sn
     }
 
     private void reverseSnapshotDeprecation() {
-        if (snapshotIdToBeDeprecated != null)
-        {
-            logger.info("Reverse deprecation of VPS4 snapshot with id: {}", snapshotIdToBeDeprecated);
-            context.execute("ReverseSnapshotDeprecation" + snapshotIdToBeDeprecated, ctx -> {
-                vps4SnapshotService.updateSnapshotStatus(snapshotIdToBeDeprecated, SnapshotStatus.LIVE);
+        if (snapshotIdToDeprecate != null) {
+            logger.info("Reverse deprecation of VPS4 snapshot with id: {}", snapshotIdToDeprecate);
+            context.execute("ReverseSnapshotDeprecation" + snapshotIdToDeprecate, ctx -> {
+                vps4SnapshotService.updateSnapshotStatus(snapshotIdToDeprecate, SnapshotStatus.LIVE);
                 return null;
             }, Void.class);
         }

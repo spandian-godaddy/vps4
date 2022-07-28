@@ -7,6 +7,7 @@ import com.godaddy.vps4.oh.jobs.models.OhJob;
 import com.godaddy.vps4.orchestration.ActionCommand;
 import com.godaddy.vps4.orchestration.vm.VmActionRequest;
 import com.godaddy.vps4.vm.ActionService;
+import com.godaddy.vps4.vm.VirtualMachine;
 import com.google.inject.Inject;
 
 import gdg.hfs.orchestration.CommandContext;
@@ -14,8 +15,8 @@ import gdg.hfs.orchestration.CommandMetadata;
 import gdg.hfs.orchestration.CommandRetryStrategy;
 
 @CommandMetadata(
-        name="Vps4RestoreOhBackup",
-        requestType= Vps4RestoreOhBackup.Request.class,
+        name = "Vps4RestoreOhBackup",
+        requestType = Vps4RestoreOhBackup.Request.class,
         retryStrategy = CommandRetryStrategy.NEVER
 )
 public class Vps4RestoreOhBackup extends ActionCommand<Vps4RestoreOhBackup.Request, Void> {
@@ -29,6 +30,13 @@ public class Vps4RestoreOhBackup extends ActionCommand<Vps4RestoreOhBackup.Reque
 
     public static class Request extends VmActionRequest {
         public UUID backupId;
+
+        public Request() {} // needed for deserialization
+
+        public Request(VirtualMachine virtualMachine, UUID backupId) {
+            this.virtualMachine = virtualMachine;
+            this.backupId = backupId;
+        }
     }
 
     @Override

@@ -1,7 +1,6 @@
 package com.godaddy.vps4.oh.backups;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -41,9 +40,6 @@ public class DefaultOhBackupService implements OhBackupService {
         return vmService.getVm(vm.hfsVmId);
     }
 
-    // The package_uuid is not required by the OH API, but passing it ensures that the backup corresponds with the
-    // requested server. This is used to ensure users actually own the backups they access. The other methods in this
-    // class don't need to do this because it is assumed that getBackup will be called first.
     @Override
     public OhBackup getBackup(UUID vmId, UUID backupId) {
         Vm hfsVm = getHfsVm(vmId);

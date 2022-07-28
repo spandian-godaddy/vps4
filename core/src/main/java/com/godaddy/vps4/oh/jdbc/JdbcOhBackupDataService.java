@@ -2,7 +2,6 @@ package com.godaddy.vps4.oh.jdbc;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.List;
 import java.util.UUID;
 
 import javax.inject.Inject;
@@ -38,25 +37,19 @@ public class JdbcOhBackupDataService implements OhBackupDataService {
 
     @Override
     public void destroyBackup(UUID ohBackupId) {
-        String query = "UPDATE oh_backup SET valid_until = now_utc() WHERE oh_backup_id = ?";
+        String query = "UPDATE oh_backup SET destroyed = now_utc() WHERE oh_backup_id = ?";
         Sql.with(dataSource).exec(query, null, ohBackupId);
-    }
-
-    @Override
-    public OhBackupData getBackup(UUID ohBackupId) {
-        String query = "SELECT * FROM oh_backup WHERE oh_backup_id = ?";
-        return Sql.with(dataSource).exec(query, Sql.nextOrNull(this::ohBackupMapper), ohBackupId);
-    }
-
-    @Override
-    public List<OhBackupData> getBackups(UUID vmId) {
-        String query = "SELECT * FROM oh_backup WHERE vm_id = ?";
-        return Sql.with(dataSource).exec(query, Sql.listOf(this::ohBackupMapper), vmId);
     }
 
     @Override
     public int totalFilledSlots(UUID vmId) {
         String query = "SELECT count(*) FROM oh_backup WHERE vm_id = ? AND destroyed > now_utc()";
         return Sql.with(dataSource).exec(query, Sql.nextOrNull(rs -> rs.getInt("count")), vmId);
+    }
+
+    @Override
+    public OhBackupData getOldestBackup(UUID vmId) {
+        String query = "SELECT * FROM oh_backup WHERE vm_id = ? AND destroyed > now_utc() ORDER BY created LIMIT 1";
+        return Sql.with(dataSource).exec(query, Sql.nextOrNull(this::ohBackupMapper), vmId);
     }
 }

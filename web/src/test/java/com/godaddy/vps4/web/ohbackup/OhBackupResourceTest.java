@@ -8,6 +8,7 @@ import static org.mockito.Matchers.anyLong;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -68,6 +69,7 @@ public class OhBackupResourceTest {
     @Mock private VirtualMachine vm;
 
     private OhBackupResource resource;
+    private OhBackupResource.OhBackupRequest options;
     private GDUser user;
 
     @Before
@@ -80,6 +82,7 @@ public class OhBackupResourceTest {
         when(commandService.executeCommand(any(CommandGroupSpec.class))).thenReturn(commandState);
         when(config.get("oh.backups.enabled", "false")).thenReturn("true");
         when(vmResource.getVm(vm.vmId)).thenReturn(vm);
+        options = new OhBackupResource.OhBackupRequest("oh-backup");
         user = GDUserMock.createShopper();
         loadResource();
     }
@@ -121,7 +124,7 @@ public class OhBackupResourceTest {
 
     @Test
     public void createBackup() {
-        resource.createOhBackup(vm.vmId);
+        resource.createOhBackup(vm.vmId, options);
         verify(vmResource).getVm(vm.vmId);
         verify(actionService).createAction(eq(vm.vmId), eq(ActionType.CREATE_OH_BACKUP), anyString(), anyString());
         verify(commandService).executeCommand(any(CommandGroupSpec.class));
@@ -132,10 +135,34 @@ public class OhBackupResourceTest {
         user = GDUserMock.createAdmin();
         loadResource();
         try {
-            resource.createOhBackup(vm.vmId);
+            resource.createOhBackup(vm.vmId, options);
             fail();
         } catch (Vps4NoShopperException e) {
             assertEquals("SHOPPER_ID_REQUIRED", e.getId());
+        }
+    }
+
+    @Test
+    public void createBackupFailsIfNameIsInvalid() {
+        options = new OhBackupResource.OhBackupRequest("snapshot names can't have spaces");
+        loadResource();
+        try {
+            resource.createOhBackup(vm.vmId, options);
+            fail();
+        } catch (Vps4Exception e) {
+            assertEquals("INVALID_SNAPSHOT_NAME", e.getId());
+        }
+    }
+
+    @Test
+    public void createBackupFailsIfVmIsOpenstack() {
+        vm.spec.serverType.platform = ServerType.Platform.OPENSTACK;
+        loadResource();
+        try {
+            resource.createOhBackup(vm.vmId, options);
+            fail();
+        } catch (Vps4Exception e) {
+            assertEquals("INVALID_PLATFORM", e.getId());
         }
     }
 
@@ -144,7 +171,7 @@ public class OhBackupResourceTest {
         when(ohBackupDataService.totalFilledSlots(any(UUID.class))).thenReturn(0);
         when(snapshotService.totalFilledSlots(any(UUID.class), any(SnapshotType.class))).thenReturn(2);
         try {
-            resource.createOhBackup(vm.vmId);
+            resource.createOhBackup(vm.vmId, options);
             fail();
         } catch (Vps4Exception e) {
             assertEquals("SNAPSHOT_OVER_QUOTA", e.getId());
@@ -156,7 +183,7 @@ public class OhBackupResourceTest {
         when(ohBackupDataService.totalFilledSlots(any(UUID.class))).thenReturn(2);
         when(snapshotService.totalFilledSlots(any(UUID.class), any(SnapshotType.class))).thenReturn(0);
         try {
-            resource.createOhBackup(vm.vmId);
+            resource.createOhBackup(vm.vmId, options);
             fail();
         } catch (Vps4Exception e) {
             assertEquals("SNAPSHOT_OVER_QUOTA", e.getId());
@@ -164,21 +191,11 @@ public class OhBackupResourceTest {
     }
 
     @Test
-    public void automaticOhBackupsDoNotCountTowardsQuota() {
-        List<OhBackup> largeBackupList = new ArrayList<>();
-        largeBackupList.add(createBackup(OhBackupState.COMPLETE, OhBackupPurpose.DR));
-        largeBackupList.add(createBackup(OhBackupState.COMPLETE, OhBackupPurpose.DR));
-        when(ohBackupService.getBackups(vm.vmId, OhBackupState.PENDING, OhBackupState.COMPLETE))
-                .thenReturn(largeBackupList);
-        resource.createOhBackup(vm.vmId);
-    }
-
-    @Test
     public void createBackupFailsIfAnotherBackupIsInProgress() {
         when(ohBackupService.getBackups(vm.vmId, OhBackupState.PENDING))
                 .thenReturn(backups);
         try {
-            resource.createOhBackup(vm.vmId);
+            resource.createOhBackup(vm.vmId, options);
             fail();
         } catch (Vps4Exception e) {
             assertEquals("SNAPSHOT_ALREADY_IN_PROGRESS", e.getId());
@@ -217,5 +234,18 @@ public class OhBackupResourceTest {
         Vps4RestoreOhBackup.Request capturedRequest = (Vps4RestoreOhBackup.Request) spec.commands.get(0).request;
         assertSame(vm, capturedRequest.virtualMachine);
         assertEquals(backup.id, capturedRequest.backupId);
+    }
+
+    @Test
+    public void restoreBackupFailsIfBackupIsDeleted() {
+        backup.state = OhBackupState.DELETED;
+        try {
+            resource.restoreOhBackup(vm.vmId, backup.id);
+            fail();
+        } catch (Vps4Exception e) {
+            assertEquals("INVALID_STATE", e.getId());
+        }
+        verify(actionService, never()).createAction(any(UUID.class), any(ActionType.class), anyString(), anyString());
+        verify(commandService, never()).executeCommand(any(CommandGroupSpec.class));
     }
 }

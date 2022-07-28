@@ -46,13 +46,13 @@ public class Vps4RestoreOhBackupTest {
     @Before
     public void setUp() {
         setUpMocks();
-        setUpRequest();
         when(context.execute(eq("RestoreOhBackup"),
                              Matchers.<Function<CommandContext, OhJob>>any(),
                              eq(OhJob.class))).thenReturn(job);
         when(ohBackupService.restoreBackup(vm.vmId, backup.id)).thenReturn(job);
         when(ohBackupService.restoreBackup(any(UUID.class), any(UUID.class))).thenReturn(job);
         command = new Vps4RestoreOhBackup(actionService, ohBackupService);
+        request = new Vps4RestoreOhBackup.Request(vm, backup.id);
     }
 
     private void setUpMocks() {
@@ -60,13 +60,6 @@ public class Vps4RestoreOhBackupTest {
         backup.id = UUID.randomUUID();
         job.id = UUID.randomUUID();
         backup.jobId = job.id;
-    }
-
-    private void setUpRequest() {
-        request = new Vps4RestoreOhBackup.Request();
-        request.backupId = backup.id;
-        request.virtualMachine = vm;
-        request.virtualMachine.vmId = vm.vmId;
     }
 
     @Test

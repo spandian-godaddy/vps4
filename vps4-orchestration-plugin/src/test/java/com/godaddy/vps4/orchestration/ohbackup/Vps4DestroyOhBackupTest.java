@@ -36,10 +36,9 @@ public class Vps4DestroyOhBackupTest {
     }
 
     private void setUpRequest() {
-        request = new Vps4DestroyOhBackup.Request();
-        request.backupId = UUID.randomUUID();
-        request.virtualMachine = mock(VirtualMachine.class);
-        request.virtualMachine.vmId = UUID.randomUUID();
+        VirtualMachine vm = mock(VirtualMachine.class);
+        vm.vmId = UUID.randomUUID();
+        request = new Vps4DestroyOhBackup.Request(vm, UUID.randomUUID());
     }
 
     @Test

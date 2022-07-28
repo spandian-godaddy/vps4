@@ -13,7 +13,6 @@ import com.godaddy.hfs.vm.VmService;
 import com.godaddy.vps4.credit.CreditService;
 import com.godaddy.vps4.credit.VirtualMachineCredit;
 import com.godaddy.vps4.oh.OhBackupDataService;
-import com.godaddy.vps4.oh.backups.OhBackupMapper;
 import com.godaddy.vps4.oh.backups.OhBackupService;
 import com.godaddy.vps4.oh.backups.models.OhBackupState;
 import com.godaddy.vps4.scheduler.api.web.SchedulerWebService;
@@ -136,7 +135,7 @@ public class RequestValidation {
     public static void validateSnapshotName(String name) {
         Validator validator = ValidatorRegistry.getInstance().get("snapshot-name");
         if (!validator.isValid(name)) {
-            throw new Vps4Exception("INVALID_SNAPSHOT_NAME", String.format("%s is an invalid snapshot name", name));
+            throw new Vps4Exception("INVALID_SNAPSHOT_NAME", String.format("\"%s\" is an invalid snapshot name", name));
         }
     }
 
@@ -353,6 +352,13 @@ public class RequestValidation {
             return Enum.valueOf(clazz, name);
         } catch(IllegalArgumentException ex) {
             throw new Vps4Exception("INVALID_PARAMETER", String.format("%s is an invalid %s", name, clazz.getSimpleName()));
+        }
+    }
+
+    public static void validateServerPlatform(VirtualMachine vm, ServerType.Platform platform) {
+        if (vm.spec.serverType.platform != platform) {
+            throw new Vps4Exception("INVALID_PLATFORM",
+                                    String.format("Operation is not permitted for \"%s\"", platform));
         }
     }
 }

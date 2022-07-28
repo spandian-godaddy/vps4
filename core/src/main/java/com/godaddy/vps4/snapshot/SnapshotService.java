@@ -22,6 +22,8 @@ public interface SnapshotService {
 
     void updateHfsImageId(UUID snapshotId, String hfsImageId);
 
+    Snapshot getOldestLiveSnapshot(UUID orionGuid, SnapshotType type);
+
     UUID markOldestSnapshotForDeprecation(UUID orionGuid, SnapshotType snapshotType);
 
     void updateSnapshotStatus(UUID snapshotId, SnapshotStatus status);

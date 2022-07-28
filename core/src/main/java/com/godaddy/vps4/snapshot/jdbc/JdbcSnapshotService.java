@@ -19,11 +19,10 @@ import com.godaddy.vps4.util.TimestampUtils;
 public class JdbcSnapshotService implements SnapshotService {
     private static final long OPEN_SLOTS_PER_CREDIT = 1;
     private final DataSource dataSource;
-    private String selectSnapshotQuery = "SELECT s.id, s.hfs_image_id, s.project_id, "
+    private final String selectSnapshotQuery = "SELECT s.id, s.hfs_image_id, s.project_id, "
             + "s.hfs_snapshot_id, s.vm_id, s.name, ss.status, s.created_at, s.modified_at, st.snapshot_type "
             + "FROM snapshot s JOIN snapshot_status ss ON s.status = ss.status_id "
-            + "JOIN snapshot_type st  USING(snapshot_type_id) ";
-    private String orderByCompletedDateDesc = "ORDER BY modified_at DESC ";
+            + "JOIN snapshot_type st USING(snapshot_type_id) ";
 
     @Inject
     public JdbcSnapshotService(DataSource dataSource) {
@@ -50,8 +49,8 @@ public class JdbcSnapshotService implements SnapshotService {
         // check the number of snapshots (not in error, destroyed, cancelled, error_rescheduled, limit_rescheduled, or
         // agent_down) linked to the credit
         return Sql.with(dataSource).exec(
-                "SELECT COUNT(*) FROM SNAPSHOT s JOIN SNAPSHOT_STATUS ss ON s.status = ss.status_id "
-                        + "JOIN VIRTUAL_MACHINE v ON s.vm_id = v.vm_id "
+                "SELECT COUNT(*) FROM snapshot s JOIN snapshot_status ss ON s.status = ss.status_id "
+                        + "JOIN virtual_machine v ON s.vm_id = v.vm_id "
                         + "WHERE v.orion_guid = ? AND ss.status IN ("
                         + "'NEW', 'IN_PROGRESS', 'LIVE', 'DEPRECATING', 'DEPRECATED'"
                         + ") AND s.snapshot_type_id = ?;",
@@ -89,8 +88,8 @@ public class JdbcSnapshotService implements SnapshotService {
         // we should be deprecating a snapshot only if the number of LIVE snapshot is
         // equal to the max number of slots for the account (orionGuid)
         return Sql.with(dataSource).exec(
-                "SELECT COUNT(*) FROM SNAPSHOT s JOIN SNAPSHOT_STATUS ss ON s.status = ss.status_id "
-                        + "JOIN VIRTUAL_MACHINE v ON s.vm_id = v.vm_id "
+                "SELECT COUNT(*) FROM snapshot s JOIN snapshot_status ss ON s.status = ss.status_id "
+                        + "JOIN virtual_machine v ON s.vm_id = v.vm_id "
                         + "WHERE v.orion_guid = ? AND ss.status IN ('LIVE') "
                         + "AND s.snapshot_type_id = ?;",
                 this::shouldDeprecateMapper, orionGuid, snapshotType.getSnapshotTypeId());
@@ -112,16 +111,6 @@ public class JdbcSnapshotService implements SnapshotService {
                 + " WHERE id=?", null, hfsImageId, snapshotId);
     }
 
-    private UUID getOldestLiveSnapshot(UUID orionGuid, SnapshotType type) {
-        return Sql.with(dataSource).exec(
-                "SELECT s.id FROM SNAPSHOT s JOIN SNAPSHOT_STATUS ss ON s.status = ss.status_id "
-                        + "JOIN VIRTUAL_MACHINE v ON s.vm_id = v.vm_id "
-                        + "WHERE v.orion_guid = ? AND ss.status IN ('LIVE') "
-                        + "AND s.snapshot_type_id = ? "
-                        + "ORDER BY s.created_at LIMIT 1;",
-                Sql.nextOrNull(rs -> UUID.fromString(rs.getString("id"))), orionGuid, type.getSnapshotTypeId());
-    }
-
     @Override
     public void updateSnapshotStatus(UUID snapshotId, SnapshotStatus status) {
         Sql.with(dataSource).exec("UPDATE snapshot SET modified_at=now_utc(), status=? "
@@ -129,12 +118,22 @@ public class JdbcSnapshotService implements SnapshotService {
     }
 
     @Override
+    public Snapshot getOldestLiveSnapshot(UUID orionGuid, SnapshotType type) {
+        return Sql.with(dataSource).exec(selectSnapshotQuery
+                                                 + "JOIN virtual_machine v ON s.vm_id = v.vm_id "
+                                                 + "WHERE v.orion_guid = ? AND ss.status IN ('LIVE') "
+                                                 + "AND st.snapshot_type = ? "
+                                                 + "ORDER BY s.created_at LIMIT 1",
+                                         Sql.nextOrNull(this::mapSnapshot), orionGuid, type.name());
+    }
+
+    @Override
     public UUID markOldestSnapshotForDeprecation(UUID orionGuid, SnapshotType snapshotType) {
         if (shouldDeprecateSnapshot(orionGuid, snapshotType)) {
-            UUID snapshotId = getOldestLiveSnapshot(orionGuid, snapshotType);
-            if (snapshotId != null) {
-                updateSnapshotStatus(snapshotId, SnapshotStatus.DEPRECATING);
-                return snapshotId;
+            Snapshot snapshot = getOldestLiveSnapshot(orionGuid, snapshotType);
+            if (snapshot != null) {
+                updateSnapshotStatus(snapshot.id, SnapshotStatus.DEPRECATING);
+                return snapshot.id;
             }
         }
 
@@ -149,8 +148,8 @@ public class JdbcSnapshotService implements SnapshotService {
 
     @Override
     public List<Snapshot> getSnapshotsForVm(UUID vmId) {
-        return Sql.with(dataSource).exec(selectSnapshotQuery + "WHERE s.vm_id=? " + orderByCompletedDateDesc,
-                Sql.listOf(this::mapSnapshot), vmId);
+        return Sql.with(dataSource).exec(selectSnapshotQuery + "WHERE s.vm_id=? ORDER BY modified_at DESC",
+                                         Sql.listOf(this::mapSnapshot), vmId);
     }
 
     private Snapshot mapSnapshot(ResultSet rs) throws SQLException {
