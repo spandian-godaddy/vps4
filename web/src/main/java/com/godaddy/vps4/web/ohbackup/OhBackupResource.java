@@ -9,6 +9,7 @@ import static com.godaddy.vps4.web.util.VmHelper.createActionAndExecute;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 import javax.ws.rs.Consumes;
@@ -22,8 +23,10 @@ import javax.ws.rs.core.MediaType;
 
 import com.godaddy.hfs.config.Config;
 import com.godaddy.vps4.oh.OhBackupDataService;
+import com.godaddy.vps4.oh.backups.OhBackupData;
 import com.godaddy.vps4.oh.backups.OhBackupService;
 import com.godaddy.vps4.oh.backups.models.OhBackup;
+import com.godaddy.vps4.oh.backups.models.OhBackupPurpose;
 import com.godaddy.vps4.oh.backups.models.OhBackupState;
 import com.godaddy.vps4.orchestration.ohbackup.Vps4CreateOhBackup;
 import com.godaddy.vps4.orchestration.ohbackup.Vps4DestroyOhBackup;
@@ -99,6 +102,26 @@ public class OhBackupResource {
         validateServerPlatform(vm, ServerType.Platform.OPTIMIZED_HOSTING);
         List<OhBackup> backups = ohBackupService.getBackups(vmId, OhBackupState.PENDING,
                                                             OhBackupState.COMPLETE, OhBackupState.FAILED);
+        List<OhBackupData> ohBackupData = ohBackupDataService.getBackups(vm.vmId);
+
+        // filter out OH backups that correspond with HFS snapshots
+        backups.removeIf(b -> {
+            if (b.purpose == OhBackupPurpose.CUSTOMER) {
+                return ohBackupData.stream().noneMatch(obd -> obd.backupId.equals(b.id));
+            }
+            return b.purpose != OhBackupPurpose.DR;
+        });
+
+        // only return the most recent completed automatic backup
+        Optional<OhBackup> newestAutomatic = backups
+                .stream()
+                .filter(b -> b.purpose == OhBackupPurpose.DR && b.state == OhBackupState.COMPLETE)
+                .reduce((b1, b2) -> b1.createdAt.isAfter(b2.createdAt) ? b1 : b2);
+        newestAutomatic.ifPresent(b1 -> {
+            backups.removeIf(b2 -> !b1.id.equals(b2.id)
+                    && b2.purpose == OhBackupPurpose.DR
+                    && b2.state == OhBackupState.COMPLETE);
+        });
         return new ArrayList<>(backups);
     }
 

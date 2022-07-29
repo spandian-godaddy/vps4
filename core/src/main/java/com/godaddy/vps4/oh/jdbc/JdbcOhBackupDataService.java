@@ -2,6 +2,7 @@ package com.godaddy.vps4.oh.jdbc;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.List;
 import java.util.UUID;
 
 import javax.inject.Inject;
@@ -45,6 +46,12 @@ public class JdbcOhBackupDataService implements OhBackupDataService {
     public int totalFilledSlots(UUID vmId) {
         String query = "SELECT count(*) FROM oh_backup WHERE vm_id = ? AND destroyed > now_utc()";
         return Sql.with(dataSource).exec(query, Sql.nextOrNull(rs -> rs.getInt("count")), vmId);
+    }
+
+    @Override
+    public List<OhBackupData> getBackups(UUID vmId) {
+        String query = "SELECT * FROM oh_backup WHERE vm_id = ? AND destroyed > now_utc()";
+        return Sql.with(dataSource).exec(query, Sql.listOf(this::ohBackupMapper), vmId);
     }
 
     @Override

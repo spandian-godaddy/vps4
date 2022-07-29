@@ -16,9 +16,11 @@ public interface OhBackupService {
     OhBackup getBackup(UUID vmId, UUID backupId);
 
     /*
-     * Snapshots created through the HFS API will also show up in this list, since they are all the same as far as OH is
-     * concerned. HFS snapshots (on-demand and automatic) and on-demand OH backups will both have the property
-     * purpose=customer. On-demand OH backups are also stored in our database.
+     * Snapshots created through the HFS /snapshot API will also show up in this list, since they are technically OH
+     * backups. If you don't want that behavior then you can filter them out using the records in our database.
+     *
+     * HFS snapshots (on-demand and automatic) and OH backups (on-demand only) will have the property purpose=customer.
+     * OH backups are stored in the oh_backups database table.
      */
     List<OhBackup> getBackups(UUID vmId, OhBackupState... state);
 

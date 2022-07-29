@@ -1,7 +1,9 @@
 package com.godaddy.vps4.web.ohbackup;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertSame;
+import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyLong;
@@ -12,7 +14,9 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
 
@@ -26,6 +30,7 @@ import org.mockito.runners.MockitoJUnitRunner;
 
 import com.godaddy.hfs.config.Config;
 import com.godaddy.vps4.oh.OhBackupDataService;
+import com.godaddy.vps4.oh.backups.OhBackupData;
 import com.godaddy.vps4.oh.backups.OhBackupService;
 import com.godaddy.vps4.oh.backups.models.OhBackup;
 import com.godaddy.vps4.oh.backups.models.OhBackupPurpose;
@@ -62,8 +67,12 @@ public class OhBackupResourceTest {
     @Mock private SnapshotService snapshotService;
     @Mock private VmResource vmResource;
 
+    private OhBackup backup;
+    private OhBackup hfsBackup;
+    private OhBackup newAutomaticBackup;
+    private OhBackup oldAutomaticBackup;
+    private List<OhBackupData> ohBackupData;
     @Mock private Action action;
-    @Mock private OhBackup backup;
     @Mock private List<OhBackup> backups;
     @Mock private CommandState commandState;
     @Mock private VirtualMachine vm;
@@ -77,7 +86,8 @@ public class OhBackupResourceTest {
         setUpMocks();
         when(ohBackupService.getBackup(vm.vmId, backup.id)).thenReturn(backup);
         when(ohBackupService.getBackups(vm.vmId, OhBackupState.PENDING, OhBackupState.COMPLETE, OhBackupState.FAILED))
-                .thenReturn(backups);
+                .thenReturn(new ArrayList<>(backups));
+        when(ohBackupDataService.getBackups(vm.vmId)).thenReturn(ohBackupData);
         when(actionService.getAction(anyLong())).thenReturn(action);
         when(commandService.executeCommand(any(CommandGroupSpec.class))).thenReturn(commandState);
         when(config.get("oh.backups.enabled", "false")).thenReturn("true");
@@ -88,9 +98,13 @@ public class OhBackupResourceTest {
     }
 
     private void setUpMocks() {
-        backup = createBackup(OhBackupState.COMPLETE, OhBackupPurpose.CUSTOMER);
+        backup = createBackup("2022-03-01T00:00:00.00Z", OhBackupState.COMPLETE, OhBackupPurpose.CUSTOMER);
+        hfsBackup = createBackup("2022-01-01T00:00:00.00Z", OhBackupState.COMPLETE, OhBackupPurpose.CUSTOMER);
+        newAutomaticBackup = createBackup("2022-02-01T00:00:00.00Z", OhBackupState.COMPLETE, OhBackupPurpose.DR);
+        oldAutomaticBackup = createBackup("2022-01-01T00:00:00.00Z", OhBackupState.COMPLETE, OhBackupPurpose.DR);
+        ohBackupData = createBackupData(backup.id);
         backups = new ArrayList<>();
-        backups.add(backup);
+        Collections.addAll(backups, backup, hfsBackup, newAutomaticBackup, oldAutomaticBackup);
         commandState.commandId = UUID.randomUUID();
         vm.vmId = UUID.randomUUID();
         vm.spec = new ServerSpec();
@@ -98,12 +112,23 @@ public class OhBackupResourceTest {
         vm.spec.serverType.platform = ServerType.Platform.OPTIMIZED_HOSTING;
     }
 
-    private OhBackup createBackup(OhBackupState state, OhBackupPurpose purpose) {
+    private OhBackup createBackup(String created, OhBackupState state, OhBackupPurpose purpose) {
         OhBackup ohBackup = mock(OhBackup.class);
-        ohBackup.jobId = UUID.randomUUID();
+        ohBackup.id = UUID.randomUUID();
+        ohBackup.createdAt = Instant.parse(created);
         ohBackup.state = state;
         ohBackup.purpose = purpose;
         return ohBackup;
+    }
+
+    private List<OhBackupData> createBackupData(UUID... backupIds) {
+        List<OhBackupData> obd = new ArrayList<>();
+        for (UUID backupId : backupIds) {
+            OhBackupData data = new OhBackupData();
+            data.backupId = backupId;
+            obd.add(data);
+        }
+        return obd;
     }
 
     private void loadResource() {
@@ -117,9 +142,20 @@ public class OhBackupResourceTest {
         verify(vmResource).getVm(vm.vmId);
         verify(ohBackupService).getBackups(vm.vmId, OhBackupState.PENDING,
                                            OhBackupState.COMPLETE, OhBackupState.FAILED);
-        for (int i = 0; i < backups.size(); i++) {
-            assertSame(backups.get(i), result.get(i));
-        }
+        assertTrue(result.contains(backup));
+        assertTrue(result.contains(newAutomaticBackup));
+    }
+
+    @Test
+    public void getBackupsRemovesHfsSnapshots() {
+        List<OhBackup> result = resource.getOhBackups(vm.vmId);
+        assertFalse(result.contains(hfsBackup));
+    }
+
+    @Test
+    public void getBackupsRemovesOldAutomaticBackups() {
+        List<OhBackup> result = resource.getOhBackups(vm.vmId);
+        assertFalse(result.contains(oldAutomaticBackup));
     }
 
     @Test
