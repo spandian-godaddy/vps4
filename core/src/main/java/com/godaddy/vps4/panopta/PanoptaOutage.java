@@ -7,10 +7,10 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.stream.Collector;
 import java.util.stream.Collectors;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import org.apache.commons.lang3.StringUtils;
 
 /*
 {
@@ -96,8 +96,10 @@ public class PanoptaOutage {
 
     @JsonProperty("server_resource")
     private void mapServerResource(String url) {
-        String suffix = url.substring(url.lastIndexOf('/') + 1);
-        this.metricIds.add(Long.parseLong(suffix));
+        if(StringUtils.isNotBlank(url)) {
+            String suffix = url.substring(url.lastIndexOf('/') + 1);
+            this.metricIds.add(Long.parseLong(suffix));
+        }
     }
 
     private Instant stringToInstant(String time) {
