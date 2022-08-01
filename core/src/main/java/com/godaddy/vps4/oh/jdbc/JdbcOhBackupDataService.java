@@ -25,6 +25,7 @@ public class JdbcOhBackupDataService implements OhBackupDataService {
         OhBackupData data = new OhBackupData();
         data.backupId = UUID.fromString(rs.getString("oh_backup_id"));
         data.vmId = UUID.fromString(rs.getString("vm_id"));
+        data.name = rs.getString("name");
         data.created = rs.getTimestamp("created", TimestampUtils.utcCalendar).toInstant();
         data.destroyed = rs.getTimestamp("destroyed", TimestampUtils.utcCalendar).toInstant();
         return data;
@@ -52,6 +53,12 @@ public class JdbcOhBackupDataService implements OhBackupDataService {
     public List<OhBackupData> getBackups(UUID vmId) {
         String query = "SELECT * FROM oh_backup WHERE vm_id = ? AND destroyed > now_utc()";
         return Sql.with(dataSource).exec(query, Sql.listOf(this::ohBackupMapper), vmId);
+    }
+
+    @Override
+    public OhBackupData getBackup(UUID vmId) {
+        String query = "SELECT * FROM oh_backup WHERE oh_backup_id = ?";
+        return Sql.with(dataSource).exec(query, Sql.nextOrNull(this::ohBackupMapper), vmId);
     }
 
     @Override

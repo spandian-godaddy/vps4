@@ -30,6 +30,7 @@ import org.mockito.runners.MockitoJUnitRunner;
 
 import com.godaddy.hfs.config.Config;
 import com.godaddy.vps4.oh.OhBackupDataService;
+import com.godaddy.vps4.oh.backups.NamedOhBackup;
 import com.godaddy.vps4.oh.backups.OhBackupData;
 import com.godaddy.vps4.oh.backups.OhBackupService;
 import com.godaddy.vps4.oh.backups.models.OhBackup;
@@ -73,6 +74,7 @@ public class OhBackupResourceTest {
     private OhBackup oldAutomaticBackup;
     private List<OhBackupData> ohBackupData;
     @Mock private Action action;
+    @Mock private Action conflictingAction;
     @Mock private List<OhBackup> backups;
     @Mock private CommandState commandState;
     @Mock private VirtualMachine vm;
@@ -87,10 +89,12 @@ public class OhBackupResourceTest {
         when(ohBackupService.getBackup(vm.vmId, backup.id)).thenReturn(backup);
         when(ohBackupService.getBackups(vm.vmId, OhBackupState.PENDING, OhBackupState.COMPLETE, OhBackupState.FAILED))
                 .thenReturn(new ArrayList<>(backups));
+        when(ohBackupDataService.getBackup(backup.id)).thenReturn(ohBackupData.get(0));
         when(ohBackupDataService.getBackups(vm.vmId)).thenReturn(ohBackupData);
         when(actionService.getAction(anyLong())).thenReturn(action);
         when(commandService.executeCommand(any(CommandGroupSpec.class))).thenReturn(commandState);
         when(config.get("oh.backups.enabled", "false")).thenReturn("true");
+        when(config.get("vps4.autobackup.backupName")).thenReturn("auto-backup");
         when(vmResource.getVm(vm.vmId)).thenReturn(vm);
         options = new OhBackupResource.OhBackupRequest("oh-backup");
         user = GDUserMock.createShopper();
@@ -103,6 +107,7 @@ public class OhBackupResourceTest {
         newAutomaticBackup = createBackup("2022-02-01T00:00:00.00Z", OhBackupState.COMPLETE, OhBackupPurpose.DR);
         oldAutomaticBackup = createBackup("2022-01-01T00:00:00.00Z", OhBackupState.COMPLETE, OhBackupPurpose.DR);
         ohBackupData = createBackupData(backup.id);
+        conflictingAction.type = ActionType.CREATE_OH_BACKUP;
         backups = new ArrayList<>();
         Collections.addAll(backups, backup, hfsBackup, newAutomaticBackup, oldAutomaticBackup);
         commandState.commandId = UUID.randomUUID();
@@ -126,6 +131,7 @@ public class OhBackupResourceTest {
         for (UUID backupId : backupIds) {
             OhBackupData data = new OhBackupData();
             data.backupId = backupId;
+            data.name = "test-backup-" + backupId;
             obd.add(data);
         }
         return obd;
@@ -138,24 +144,32 @@ public class OhBackupResourceTest {
 
     @Test
     public void getBackups() {
-        List<OhBackup> result = resource.getOhBackups(vm.vmId);
+        List<NamedOhBackup> result = resource.getOhBackups(vm.vmId);
         verify(vmResource).getVm(vm.vmId);
         verify(ohBackupService).getBackups(vm.vmId, OhBackupState.PENDING,
                                            OhBackupState.COMPLETE, OhBackupState.FAILED);
-        assertTrue(result.contains(backup));
-        assertTrue(result.contains(newAutomaticBackup));
+        assertTrue(result.stream().anyMatch(b -> b.id.equals(backup.id)));
+        assertTrue(result.stream().anyMatch(b -> b.id.equals(newAutomaticBackup.id)));
+    }
+
+    @Test
+    public void getBackupsIncludesNameFromDatabase() {
+        List<NamedOhBackup> result = resource.getOhBackups(vm.vmId);
+        verify(ohBackupDataService).getBackups(vm.vmId);
+        assertTrue(result.stream().anyMatch(b -> b.name.equals("test-backup-" + backup.id)));
+        assertTrue(result.stream().anyMatch(b -> b.name.equals("auto-backup")));
     }
 
     @Test
     public void getBackupsRemovesHfsSnapshots() {
-        List<OhBackup> result = resource.getOhBackups(vm.vmId);
-        assertFalse(result.contains(hfsBackup));
+        List<NamedOhBackup> result = resource.getOhBackups(vm.vmId);
+        assertFalse(result.stream().anyMatch(b -> b.id.equals(hfsBackup.id)));
     }
 
     @Test
     public void getBackupsRemovesOldAutomaticBackups() {
-        List<OhBackup> result = resource.getOhBackups(vm.vmId);
-        assertFalse(result.contains(oldAutomaticBackup));
+        List<NamedOhBackup> result = resource.getOhBackups(vm.vmId);
+        assertFalse(result.stream().anyMatch(b -> b.id.equals(oldAutomaticBackup.id)));
     }
 
     @Test
@@ -203,6 +217,18 @@ public class OhBackupResourceTest {
     }
 
     @Test
+    public void createBackupFailsIfConflictingActionExists() {
+        when(actionService.getIncompleteActions(vm.vmId)).thenReturn(Collections.singletonList(conflictingAction));
+        loadResource();
+        try {
+            resource.createOhBackup(vm.vmId, options);
+            fail();
+        } catch (Vps4Exception e) {
+            assertEquals("CONFLICTING_INCOMPLETE_ACTION", e.getId());
+        }
+    }
+
+    @Test
     public void hfsSnapshotsCountTowardsQuota() {
         when(ohBackupDataService.totalFilledSlots(any(UUID.class))).thenReturn(0);
         when(snapshotService.totalFilledSlots(any(UUID.class), any(SnapshotType.class))).thenReturn(2);
@@ -240,10 +266,17 @@ public class OhBackupResourceTest {
 
     @Test
     public void getBackup() {
-        OhBackup result = resource.getOhBackup(vm.vmId, backup.id);
+        NamedOhBackup result = resource.getOhBackup(vm.vmId, backup.id);
         verify(vmResource).getVm(vm.vmId);
         verify(ohBackupService).getBackup(vm.vmId, backup.id);
-        assertSame(backup, result);
+        assertEquals(backup.id, result.id);
+    }
+
+    @Test
+    public void getBackupIncludesNameFromDatabase() {
+        NamedOhBackup result = resource.getOhBackup(vm.vmId, backup.id);
+        verify(ohBackupDataService).getBackup(backup.id);
+        assertEquals("test-backup-" + backup.id, result.name);
     }
 
     @Test
@@ -260,6 +293,18 @@ public class OhBackupResourceTest {
     }
 
     @Test
+    public void destroyBackupFailsIfConflictingActionExists() {
+        when(actionService.getIncompleteActions(vm.vmId)).thenReturn(Collections.singletonList(conflictingAction));
+        loadResource();
+        try {
+            resource.destroyOhBackup(vm.vmId, backup.id);
+            fail();
+        } catch (Vps4Exception e) {
+            assertEquals("CONFLICTING_INCOMPLETE_ACTION", e.getId());
+        }
+    }
+
+    @Test
     public void restoreBackup() {
         resource.restoreOhBackup(vm.vmId, backup.id);
         verify(vmResource).getVm(vm.vmId);
@@ -270,6 +315,18 @@ public class OhBackupResourceTest {
         Vps4RestoreOhBackup.Request capturedRequest = (Vps4RestoreOhBackup.Request) spec.commands.get(0).request;
         assertSame(vm, capturedRequest.virtualMachine);
         assertEquals(backup.id, capturedRequest.backupId);
+    }
+
+    @Test
+    public void restoreBackupFailsIfConflictingActionExists() {
+        when(actionService.getIncompleteActions(vm.vmId)).thenReturn(Collections.singletonList(conflictingAction));
+        loadResource();
+        try {
+            resource.restoreOhBackup(vm.vmId, backup.id);
+            fail();
+        } catch (Vps4Exception e) {
+            assertEquals("CONFLICTING_INCOMPLETE_ACTION", e.getId());
+        }
     }
 
     @Test

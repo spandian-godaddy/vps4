@@ -358,7 +358,8 @@ public class RequestValidation {
     public static void validateServerPlatform(VirtualMachine vm, ServerType.Platform platform) {
         if (vm.spec.serverType.platform != platform) {
             throw new Vps4Exception("INVALID_PLATFORM",
-                                    String.format("Operation is not permitted for \"%s\"", platform));
+                                    String.format("Operation is not permitted for \"%s\"",
+                                                  vm.spec.serverType.platform));
         }
     }
 }

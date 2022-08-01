@@ -6,6 +6,7 @@ import java.util.UUID;
 public class OhBackupData {
     public UUID backupId;
     public UUID vmId;
+    public String name;
     public Instant created;
     public Instant destroyed;
 }

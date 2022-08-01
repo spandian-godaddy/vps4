@@ -14,5 +14,7 @@ public interface OhBackupDataService {
 
     List<OhBackupData> getBackups(UUID vmId);
 
+    OhBackupData getBackup(UUID backupId);
+
     OhBackupData getOldestBackup(UUID vmId);
 }

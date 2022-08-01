@@ -1,16 +1,17 @@
 package com.godaddy.vps4.web.ohbackup;
 
 import static com.godaddy.vps4.web.util.RequestValidation.validateIfSnapshotOverQuota;
+import static com.godaddy.vps4.web.util.RequestValidation.validateNoConflictingActions;
 import static com.godaddy.vps4.web.util.RequestValidation.validateNoOtherSnapshotsInProgress;
 import static com.godaddy.vps4.web.util.RequestValidation.validateServerPlatform;
 import static com.godaddy.vps4.web.util.RequestValidation.validateSnapshotName;
 import static com.godaddy.vps4.web.util.RequestValidation.validateUserIsShopper;
 import static com.godaddy.vps4.web.util.VmHelper.createActionAndExecute;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
@@ -23,6 +24,7 @@ import javax.ws.rs.core.MediaType;
 
 import com.godaddy.hfs.config.Config;
 import com.godaddy.vps4.oh.OhBackupDataService;
+import com.godaddy.vps4.oh.backups.NamedOhBackup;
 import com.godaddy.vps4.oh.backups.OhBackupData;
 import com.godaddy.vps4.oh.backups.OhBackupService;
 import com.godaddy.vps4.oh.backups.models.OhBackup;
@@ -97,7 +99,7 @@ public class OhBackupResource {
 
     @GET
     @Path("/{vmId}/ohBackups")
-    public List<OhBackup> getOhBackups(@PathParam("vmId") UUID vmId) {
+    public List<NamedOhBackup> getOhBackups(@PathParam("vmId") UUID vmId) {
         VirtualMachine vm = vmResource.getVm(vmId); // auth validation
         validateServerPlatform(vm, ServerType.Platform.OPTIMIZED_HOSTING);
         List<OhBackup> backups = ohBackupService.getBackups(vmId, OhBackupState.PENDING,
@@ -122,7 +124,16 @@ public class OhBackupResource {
                     && b2.purpose == OhBackupPurpose.DR
                     && b2.state == OhBackupState.COMPLETE);
         });
-        return new ArrayList<>(backups);
+
+        // use the backup names from our database if available
+        String defaultName = config.get("vps4.autobackup.backupName");
+        return backups.stream().map(b -> {
+            Optional<OhBackupData> data = ohBackupData.stream()
+                                                      .filter(obd -> obd.backupId.equals(b.id))
+                                                      .findFirst();
+            return data.map(backupData -> new NamedOhBackup(b, backupData.name))
+                       .orElseGet(() -> new NamedOhBackup(b, defaultName));
+        }).collect(Collectors.toList());
     }
 
     @POST
@@ -133,6 +144,8 @@ public class OhBackupResource {
         validateUserIsShopper(user);
         validateSnapshotName(options.name);
         validateServerPlatform(vm, ServerType.Platform.OPTIMIZED_HOSTING);
+        validateNoConflictingActions(vm.vmId, actionService, ActionType.CREATE_OH_BACKUP,
+                                     ActionType.DESTROY_OH_BACKUP, ActionType.RESTORE_OH_BACKUP);
         validateIfSnapshotOverQuota(ohBackupDataService, snapshotService, vm, SnapshotType.ON_DEMAND);
         validateNoOtherSnapshotsInProgress(ohBackupService, snapshotService, vm);
 
@@ -153,10 +166,17 @@ public class OhBackupResource {
 
     @GET
     @Path("/{vmId}/ohBackups/{backupId}")
-    public OhBackup getOhBackup(@PathParam("vmId") UUID vmId, @PathParam("backupId") UUID backupId) {
+    public NamedOhBackup getOhBackup(@PathParam("vmId") UUID vmId, @PathParam("backupId") UUID backupId) {
         VirtualMachine vm = vmResource.getVm(vmId); // validates user owns VM
         validateServerPlatform(vm, ServerType.Platform.OPTIMIZED_HOSTING);
-        return ohBackupService.getBackup(vmId, backupId); // validates backup corresponds with VM
+
+        OhBackup backup = ohBackupService.getBackup(vmId, backupId); // validates backup corresponds with VM
+        OhBackupData ohBackupData = ohBackupDataService.getBackup(backupId);
+
+        String defaultName = config.get("vps4.autobackup.backupName");
+        return (ohBackupData == null)
+                ? new NamedOhBackup(backup, defaultName)
+                : new NamedOhBackup(backup, ohBackupData.name);
     }
 
     @DELETE
@@ -165,7 +185,10 @@ public class OhBackupResource {
         validateOhBackupsAreEnabled();
         VirtualMachine vm = vmResource.getVm(vmId); // validates user owns VM
         validateServerPlatform(vm, ServerType.Platform.OPTIMIZED_HOSTING);
+        validateNoConflictingActions(vm.vmId, actionService, ActionType.CREATE_OH_BACKUP,
+                                     ActionType.DESTROY_OH_BACKUP, ActionType.RESTORE_OH_BACKUP);
         ohBackupService.getBackup(vmId, backupId); // validates backup corresponds with VM
+
         Vps4DestroyOhBackup.Request request = new Vps4DestroyOhBackup.Request(vm, backupId);
         return createActionAndExecute(actionService, commandService, vmId, ActionType.DESTROY_OH_BACKUP, request,
                                       "Vps4DestroyOhBackup", user);
@@ -177,8 +200,11 @@ public class OhBackupResource {
         validateOhBackupsAreEnabled();
         VirtualMachine vm = vmResource.getVm(vmId); // validates user owns VM
         validateServerPlatform(vm, ServerType.Platform.OPTIMIZED_HOSTING);
+        validateNoConflictingActions(vm.vmId, actionService, ActionType.CREATE_OH_BACKUP,
+                                     ActionType.DESTROY_OH_BACKUP, ActionType.RESTORE_OH_BACKUP);
         OhBackup backup = ohBackupService.getBackup(vmId, backupId); // validates backup corresponds with VM
         validateOhBackupState(backup, OhBackupState.COMPLETE);
+
         Vps4RestoreOhBackup.Request request = new Vps4RestoreOhBackup.Request(vm, backupId);
         return createActionAndExecute(actionService, commandService, vmId, ActionType.RESTORE_OH_BACKUP, request,
                                       "Vps4RestoreOhBackup", user);
