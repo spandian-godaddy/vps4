@@ -80,6 +80,7 @@ public class DefaultPanoptaServiceTest {
 
     @Captor private ArgumentCaptor<PanoptaApiAttributeRequest> attributeRequest;
     @Captor private ArgumentCaptor<PanoptaApiUpdateServerRequest> updateServerRequest;
+    @Captor private ArgumentCaptor<PanoptaApiApplyTemplateRequest> applyTemplateRequest;
 
     private @PanoptaExecutorService ExecutorService pool;
     private UUID vmId;
@@ -481,11 +482,26 @@ public class DefaultPanoptaServiceTest {
     @Test
     public void testCreateServer() throws PanoptaServiceException {
         String ipAddress = virtualMachine.primaryIpAddress.ipAddress;
-        PanoptaServer server = defaultPanoptaService.createServer(shopperId, orionGuid, ipAddress, null, null);
+        PanoptaServer server = defaultPanoptaService.createServer(shopperId, orionGuid, ipAddress, null);
         verify(panoptaApiServerService).createServer(eq(partnerCustomerKey), any(PanoptaApiServerRequest.class));
         verify(panoptaApiServerService).getServers(partnerCustomerKey, ipAddress, orionGuid.toString(), "active");
         assertEquals(panoptaServers.servers.get(0).fqdn, server.fqdn);
         assertEquals(panoptaServers.servers.get(0).name, server.name);
+    }
+
+    @Test
+    public void testApplyTemplates() throws PanoptaServiceException {
+        String[] templates = { "https://api2.panopta.com/v2/server_template/fake_template_base",
+                "https://api2.panopta.com/v2/server_template/fake_template_dc" };
+
+        defaultPanoptaService.applyTemplates(serverId, partnerCustomerKey, templates);
+        verify(panoptaApiServerService, times(2)).applyTemplate(eq(serverId), eq(partnerCustomerKey), applyTemplateRequest.capture());
+        List<PanoptaApiApplyTemplateRequest> req = applyTemplateRequest.getAllValues();
+
+        assertEquals(templates[0], req.get(0).getServerTemplate());
+        assertEquals(templates[1], req.get(1).getServerTemplate());
+        assertEquals(true, req.get(0).isContinuous());
+        assertEquals(true, req.get(1).isContinuous());
     }
 
     @Test

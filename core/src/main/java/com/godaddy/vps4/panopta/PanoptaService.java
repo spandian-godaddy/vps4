@@ -14,8 +14,10 @@ public interface PanoptaService {
 
     void deleteCustomer(String shopperId);
 
-    PanoptaServer createServer(String shopperId, UUID orionGuid, String ipAddress, String[] templates, String[] tags)
+    PanoptaServer createServer(String shopperId, UUID orionGuid, String ipAddress, String[] tags)
             throws PanoptaServiceException;
+
+    void applyTemplates(long serverId, String partnerCustomerKey, String[] templates) throws PanoptaServiceException;
 
     PanoptaServer getServer(UUID vmId);
 

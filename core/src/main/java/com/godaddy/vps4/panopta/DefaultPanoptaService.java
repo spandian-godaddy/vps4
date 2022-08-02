@@ -140,10 +140,9 @@ public class DefaultPanoptaService implements PanoptaService {
     public PanoptaServer createServer(String shopperId,
                                       UUID orionGuid,
                                       String ipAddress,
-                                      String[] templates,
                                       String[] tags) throws PanoptaServiceException {
         PanoptaApiServerRequest request = new PanoptaApiServerRequest(ipAddress, orionGuid.toString(),
-                                                                      getDefaultGroup(shopperId), templates, tags);
+                                                                      getDefaultGroup(shopperId), tags);
 
         logger.info("Create Panopta server request: {}", request);
         panoptaApiServerService.createServer(getPartnerCustomerKey(shopperId), request);
@@ -159,6 +158,28 @@ public class DefaultPanoptaService implements PanoptaService {
             } catch (InterruptedException ignored) {}
         }
         throw new PanoptaServiceException("NO_SERVER_FOUND", "No matching server found.");
+    }
+
+
+    @Override
+    public void applyTemplates(long serverId, String partnerCustomerKey,
+                                      String[] templates) throws PanoptaServiceException {
+            for (String template : templates) {
+                logger.info("Applying template {} to serverId: {}", template, serverId);
+                applyTemplateToServer(serverId, partnerCustomerKey, template);
+            }
+    }
+
+    private void applyTemplateToServer(long serverId, String partnerCustomerKey,
+                                       String template) throws PanoptaServiceException {
+        PanoptaApiApplyTemplateRequest request = new PanoptaApiApplyTemplateRequest(template, true);
+        try {
+            panoptaApiServerService.applyTemplate(serverId, partnerCustomerKey, request);
+        }
+        catch (Exception e) {
+            throw new PanoptaServiceException("APPLY_TEMPLATES_FAILED",
+                    "Applying templates to Panopta server " + serverId + " failed: " + e);
+        }
     }
 
     @Override

@@ -9,11 +9,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
  * {
  *   "fqdn": "107.180.104.250",
  *   "name": "9c89f5e4-b662-44e8-98e8-75c69c7f5ec8",
- *   "server_group": "https://api2.panopta.com/v2/server_group/406698",
- *   "server_template": [
- *     "https://api2.panopta.com/v2/server_template/1146060",
- *     "https://api2.panopta.com/v2/server_template/1227785"
- *   ]
+ *   "server_group": "https://api2.panopta.com/v2/server_group/406698"
  * }
  */
 
@@ -24,20 +20,16 @@ public class PanoptaApiServerRequest {
     public String name;
     @JsonProperty("server_group")
     public String serverGroup;
-    @JsonProperty("server_template")
-    public String[] serverTemplates;
     @JsonProperty("tags")
     public String[] tags;
 
     PanoptaApiServerRequest(String fqdn,
                             String name,
                             String serverGroup,
-                            String[] serverTemplates,
                             String[] tags) {
         this.fqdn = fqdn;
         this.name = name;
         this.serverGroup = serverGroup;
-        this.serverTemplates = serverTemplates;
         this.tags = tags;
     }
 

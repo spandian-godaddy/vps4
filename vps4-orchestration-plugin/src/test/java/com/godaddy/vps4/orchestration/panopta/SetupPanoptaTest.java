@@ -16,7 +16,6 @@ import static org.mockito.Mockito.when;
 
 import java.util.Arrays;
 import java.util.Map;
-import java.util.Objects;
 import java.util.UUID;
 
 import org.junit.Before;
@@ -108,8 +107,10 @@ public class SetupPanoptaTest {
 
     private void setupPanoptaServer() throws PanoptaServiceException {
         server = mock(PanoptaServer.class);
-        when(panoptaService.createServer(eq(shopperId), eq(orionGuid), eq(fqdn), any(), any())).thenReturn(server);
+        when(panoptaService.createServer(eq(shopperId), eq(orionGuid), eq(fqdn), any())).thenReturn(server);
         serverDetails = mock(PanoptaServerDetails.class);
+        serverDetails.setServerId(0L);
+        serverDetails.setPartnerCustomerKey(partnerCustomerKey);
         when(serverDetails.getServerKey()).thenReturn(serverKey);
         when(panoptaDataService.getPanoptaServerDetails(vmId)).thenReturn(serverDetails);
         doNothing().when(panoptaDataService).createPanoptaServer(eq(vmId), eq(shopperId), any(), any());
@@ -180,7 +181,7 @@ public class SetupPanoptaTest {
     public void getsServerFromDb() throws PanoptaServiceException {
         setupPanopta.execute(context, request);
         verify(panoptaDataService, times(1)).getPanoptaServerDetails(vmId);
-        verify(panoptaService, never()).createServer(any(), any(), any(), any(), any());
+        verify(panoptaService, never()).createServer(any(), any(), any(), any());
     }
 
     @Test
@@ -191,9 +192,12 @@ public class SetupPanoptaTest {
         setupPanopta.execute(context, request);
         verify(panoptaDataService, times(2)).getPanoptaServerDetails(vmId);
         verify(panoptaService, times(1))
-                .createServer(eq(shopperId), eq(orionGuid), eq(fqdn), templateCaptor.capture(), tagCaptor.capture());
+                .createServer(eq(shopperId), eq(orionGuid), eq(fqdn), tagCaptor.capture());
 
+        verify(panoptaService, times(1))
+                .applyTemplates(eq(server.serverId), eq(server.partnerCustomerKey), templateCaptor.capture());
         String[] templates = templateCaptor.getValue();
+
         assertEquals("https://api2.panopta.com/v2/server_template/fake_template_base", templates[0]);
         assertEquals("https://api2.panopta.com/v2/server_template/fake_template_dc", templates[1]);
 
@@ -218,7 +222,9 @@ public class SetupPanoptaTest {
                 .thenReturn(serverDetails);
         setupPanopta.execute(context, request);
         verify(panoptaService, times(1))
-                .createServer(eq(shopperId), eq(orionGuid), eq(fqdn), templateCaptor.capture(), any());
+                .createServer(eq(shopperId), eq(orionGuid), eq(fqdn), any());
+        verify(panoptaService, times(1))
+                .applyTemplates(eq(server.serverId), eq(server.partnerCustomerKey), templateCaptor.capture());
         String[] templates = templateCaptor.getValue();
         assertEquals("https://api2.panopta.com/v2/server_template/fake_template_addon", templates[0]);
     }
@@ -231,7 +237,9 @@ public class SetupPanoptaTest {
                 .thenReturn(serverDetails);
         setupPanopta.execute(context, request);
         verify(panoptaService, times(1))
-                .createServer(eq(shopperId), eq(orionGuid), eq(fqdn), templateCaptor.capture(), any());
+                .createServer(eq(shopperId), eq(orionGuid), eq(fqdn), any());
+        verify(panoptaService, times(1))
+                .applyTemplates(eq(server.serverId), eq(server.partnerCustomerKey), templateCaptor.capture());
         String[] templates = templateCaptor.getValue();
         assertEquals("https://api2.panopta.com/v2/server_template/fake_template_managed", templates[0]);
     }
@@ -246,7 +254,7 @@ public class SetupPanoptaTest {
         setupPanopta.execute(context, request);
 
         verify(panoptaService, times(1))
-                .createServer(eq(shopperId), eq(orionGuid), eq(fqdn), any(), tagCaptor.capture());
+                .createServer(eq(shopperId), eq(orionGuid), eq(fqdn), tagCaptor.capture());
         String[] tags = tagCaptor.getValue();
         assertFalse(Arrays.asList(tags).contains("1"));
         assertTrue(Arrays.asList(tags).contains("495469"));

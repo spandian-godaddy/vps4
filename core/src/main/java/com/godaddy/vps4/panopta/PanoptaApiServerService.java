@@ -22,6 +22,11 @@ public interface PanoptaApiServerService {
     @Path("/")
     void createServer(@QueryParam("partner_customer_key") String partnerCustomerKey,
                       PanoptaApiServerRequest panoptaApiServerRequest);
+    @POST
+    @Path("/{server_id}/template")
+    void applyTemplate(@PathParam("server_id") long serverId,
+                       @QueryParam("partner_customer_key") String partnerCustomerKey,
+                       PanoptaApiApplyTemplateRequest panoptaApiApplyTemplateRequest);
 
     @GET
     @Path("/{server_id}/agent_resource")

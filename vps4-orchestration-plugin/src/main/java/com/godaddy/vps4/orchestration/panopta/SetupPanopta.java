@@ -58,7 +58,9 @@ public class SetupPanopta implements Command<SetupPanopta.Request, Void> {
         this.request = request;
         this.credit = creditService.getVirtualMachineCredit(request.orionGuid);
         PanoptaCustomerDetails customerDetails = getOrCreateCustomer();
-        PanoptaServerDetails serverDetails = getOrCreateServer();
+        String[] templateIds = getTemplateIds();
+        PanoptaServerDetails serverDetails = getOrCreateServer(templateIds[0]);
+        applyTemplates(serverDetails.getPartnerCustomerKey(), serverDetails.getServerId(), templateIds);
         installAgentOrFailGracefully(customerDetails.getCustomerKey(), serverDetails.getServerKey());
         return null;
     }
@@ -85,31 +87,39 @@ public class SetupPanopta implements Command<SetupPanopta.Request, Void> {
         }
     }
 
-    private PanoptaServerDetails getOrCreateServer() {
+    private PanoptaServerDetails getOrCreateServer(String templateId) {
         PanoptaServerDetails serverDetails = panoptaDataService.getPanoptaServerDetails(request.vmId);
         if (serverDetails == null) {
-            String[] templateIds = getTemplateIds();
             Map<Long, String> attributes = getAttributes();
             String[] tags = attributes.values().toArray(new String[0]);
-            PanoptaServer server = createServer(templateIds, tags);
-            panoptaDataService.createPanoptaServer(request.vmId, request.shopperId, templateIds[0], server);
+            PanoptaServer server = createServer(tags);
+            panoptaDataService.createPanoptaServer(request.vmId, request.shopperId, templateId, server);
             serverDetails = panoptaDataService.getPanoptaServerDetails(request.vmId);
             panoptaService.setServerAttributes(request.vmId, attributes);
         }
         return serverDetails;
     }
 
-    private PanoptaServer createServer(String[] templateIds, String[] tags) {
+    private PanoptaServer createServer(String[] tags) {
         logger.info("Creating new Panopta server for VM {}.", request.vmId);
-        String[] templates = Arrays.stream(templateIds)
-                                   .map(t -> "https://api2.panopta.com/v2/server_template/" + t)
-                                   .toArray(String[]::new);
         try {
             return panoptaService.createServer(request.shopperId,
                                                request.orionGuid,
                                                request.fqdn,
-                                               templates,
                                                tags);
+        } catch (PanoptaServiceException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private void applyTemplates(String partnerCustomerKey, long serverId, String[] templateIds) {
+        logger.info("applying templates to Panopta server for VM {}.", request.vmId);
+
+        String[] templates = Arrays.stream(templateIds)
+                .map(t -> "https://api2.panopta.com/v2/server_template/" + t)
+                .toArray(String[]::new);
+        try {
+            panoptaService.applyTemplates(serverId, partnerCustomerKey, templates);
         } catch (PanoptaServiceException e) {
             throw new RuntimeException(e);
         }
