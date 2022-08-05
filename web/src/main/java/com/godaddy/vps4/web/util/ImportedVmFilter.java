@@ -41,7 +41,8 @@ public class ImportedVmFilter extends VmFilter {
                             "reinstate",
                             "processReinstateMessage",
                             "customNote",
-                            "customNotes"
+                            "customNotes",
+                            "ohBackups"
                 ),
               virtualMachineService);
     }
