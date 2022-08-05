@@ -31,85 +31,117 @@ import com.godaddy.hfs.sso.token.SsoToken;
 public class Vps4SsoTokenExtractorTest {
 
     HttpServletRequest request = mock(HttpServletRequest.class);
-    Cookie[] cookies = { mock(Cookie.class) };
+    Cookie idpCookie = mock(Cookie.class);
+    Cookie jomaxCookie = mock(Cookie.class);
+    Cookie[] cookies = { idpCookie };
+    Cookie[] filteredIdpCookies = { idpCookie };
+
     SsoToken idpToken = mock(IdpSsoToken.class);
     SsoToken jomaxToken = mock(JomaxSsoToken.class);
     SsoService ssoService = mock(SsoService.class);
     long sessionTimeoutMs = 1000;
 
-    Vps4SsoTokenExtractor ssoTokExtractor;
+    Vps4SsoTokenExtractor ssoTokenExtractor;
 
     @Before
     public void setUp() throws Exception {
         when(request.getCookies()).thenReturn(cookies);
-        ssoTokExtractor = spy(new Vps4SsoTokenExtractor(ssoService, sessionTimeoutMs));
-        doNothing().when(ssoTokExtractor).validate(any(SsoToken.class));
+        when(idpCookie.getName()).thenReturn("auth_idp");
+        when(idpCookie.getValue()).thenReturn("value");
+        when(jomaxCookie.getName()).thenReturn("auth_jomax");
+        when(jomaxCookie.getValue()).thenReturn("value");
+        ssoTokenExtractor = spy(new Vps4SsoTokenExtractor(ssoService, sessionTimeoutMs));
+        doNothing().when(ssoTokenExtractor).validate(any(SsoToken.class));
     }
 
     @Test
     public void testRequestWithHeader() {
-        doReturn(idpToken).when(ssoTokExtractor).extractAuthorizationHeaderToken(request);
+        doReturn(idpToken).when(ssoTokenExtractor).extractAuthorizationHeaderToken(request);
 
-        SsoToken token = ssoTokExtractor.extractToken(request);
-        verify(ssoTokExtractor).extractAuthorizationHeaderToken(request);
-        verify(ssoTokExtractor, never()).extractIdpCookie(cookies);
+        SsoToken token = ssoTokenExtractor.extractToken(request);
+        verify(ssoTokenExtractor).extractAuthorizationHeaderToken(request);
+        verify(ssoTokenExtractor, never()).extractIdpCookie(cookies);
         assertEquals(idpToken, token);
     }
 
     @Test
     public void testRequestWithIdpCookieOnly() throws Exception {
-        doReturn(Collections.singletonList(idpToken)).when(ssoTokExtractor).extractTokens(cookies);
+        cookies = new Cookie[1];
+        cookies[0] = idpCookie;
+        when(request.getCookies()).thenReturn(cookies);
+        doReturn(Collections.singletonList(idpToken)).when(ssoTokenExtractor).extractTokens(filteredIdpCookies);
 
-        SsoToken token = ssoTokExtractor.extractToken(request);
-        verify(ssoTokExtractor).extractIdpCookie(cookies);
-        verify(ssoTokExtractor).validate(idpToken);
+        SsoToken token = ssoTokenExtractor.extractToken(request);
+        verify(ssoTokenExtractor).extractIdpCookie(cookies);
+        verify(ssoTokenExtractor).validate(idpToken);
         assertEquals(idpToken, token);
     }
 
     @Test
     public void testRequestWithJomaxCookieOnly() throws Exception {
-        doReturn(Collections.singletonList(jomaxToken)).when(ssoTokExtractor).extractTokens(cookies);
+        cookies = new Cookie[1];
+        cookies[0] = jomaxCookie;
+        when(request.getCookies()).thenReturn(cookies);
+        doReturn(Collections.singletonList(jomaxToken)).when(ssoTokenExtractor).extractTokens(filteredIdpCookies);
 
-        SsoToken token = ssoTokExtractor.extractToken(request);
-        verify(ssoTokExtractor).extractIdpCookie(cookies);
-        verify(ssoTokExtractor, never()).validate(jomaxToken);
+        SsoToken token = ssoTokenExtractor.extractToken(request);
+        verify(ssoTokenExtractor).extractIdpCookie(cookies);
+        verify(ssoTokenExtractor, never()).validate(jomaxToken);
         assertNull(token);
     }
 
     @Test
     public void testRequestWithIdpAndThenJomaxCookies() throws Exception {
-        doReturn(Arrays.asList(idpToken, jomaxToken)).when(ssoTokExtractor).extractTokens(cookies);
+        cookies = new Cookie[2];
+        cookies[0] = jomaxCookie;
+        cookies[1] = idpCookie;
 
-        SsoToken token = ssoTokExtractor.extractToken(request);
-        verify(ssoTokExtractor).extractIdpCookie(cookies);
-        verify(ssoTokExtractor).validate(idpToken);
-        verify(ssoTokExtractor, never()).validate(jomaxToken);
+        when(request.getCookies()).thenReturn(cookies);
+        doReturn(Arrays.asList(idpToken, jomaxToken)).when(ssoTokenExtractor).extractTokens(filteredIdpCookies);
+
+        SsoToken token = ssoTokenExtractor.extractToken(request);
+        verify(ssoTokenExtractor).extractIdpCookie(cookies);
+        verify(ssoTokenExtractor).validate(idpToken);
+        verify(ssoTokenExtractor, never()).validate(jomaxToken);
         assertEquals(idpToken, token);
     }
 
     @Test
     public void testRequestWithMultipleTokensAndThenIdp() throws Exception {
-        doReturn(Arrays.asList(jomaxToken, jomaxToken, idpToken)).when(ssoTokExtractor).extractTokens(cookies);
+        cookies = new Cookie[3];
+        cookies[0] = jomaxCookie;
+        cookies[1] = jomaxCookie;
+        cookies[2] = idpCookie;
 
-        SsoToken token = ssoTokExtractor.extractToken(request);
-        verify(ssoTokExtractor, never()).validate(jomaxToken);
-        verify(ssoTokExtractor).extractIdpCookie(cookies);
-        verify(ssoTokExtractor).validate(idpToken);
+        when(request.getCookies()).thenReturn(cookies);
+        doReturn(Arrays.asList(jomaxToken, jomaxToken, idpToken)).when(ssoTokenExtractor).extractTokens(filteredIdpCookies);
+
+        SsoToken token = ssoTokenExtractor.extractToken(request);
+        verify(ssoTokenExtractor, never()).validate(jomaxToken);
+        verify(ssoTokenExtractor).extractIdpCookie(cookies);
+        verify(ssoTokenExtractor).validate(idpToken);
         assertEquals(idpToken, token);
     }
 
     @Test
     public void testInvalidTokens() throws Exception {
+        cookies = new Cookie[3];
+        cookies[0] = idpCookie;
+        cookies[1] = idpCookie;
+        cookies[2] = idpCookie;
+
         SsoToken badToken = mock(IdpSsoToken.class);
         SsoToken expiredToken = mock(IdpSsoToken.class);
-        doReturn(Arrays.asList(badToken, expiredToken, idpToken)).when(ssoTokExtractor).extractTokens(cookies);
-        doThrow(new VerificationException("error")).when(ssoTokExtractor).validate(badToken);
-        doThrow(new TokenExpiredException("expired")).when(ssoTokExtractor).validate(expiredToken);
 
-        SsoToken token = ssoTokExtractor.extractToken(request);
-        verify(ssoTokExtractor).validate(badToken);
-        verify(ssoTokExtractor).validate(expiredToken);
-        verify(ssoTokExtractor).validate(idpToken);
+        when(request.getCookies()).thenReturn(cookies);
+        doReturn(Arrays.asList(badToken, expiredToken, idpToken)).when(ssoTokenExtractor).extractTokens(cookies);
+        doThrow(new VerificationException("error")).when(ssoTokenExtractor).validate(badToken);
+        doThrow(new TokenExpiredException("expired")).when(ssoTokenExtractor).validate(expiredToken);
+
+        SsoToken token = ssoTokenExtractor.extractToken(request);
+        verify(ssoTokenExtractor).validate(badToken);
+        verify(ssoTokenExtractor).validate(expiredToken);
+        verify(ssoTokenExtractor).validate(idpToken);
         assertEquals(idpToken, token);
     }
 

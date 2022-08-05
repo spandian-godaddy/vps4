@@ -1,5 +1,6 @@
 package com.godaddy.vps4.sso;
 
+import java.util.Arrays;
 import java.util.List;
 
 import javax.servlet.http.Cookie;
@@ -26,8 +27,7 @@ public class Vps4SsoTokenExtractor extends SsoTokenExtractor {
     /*
      * Extract first valid sso token from the http request in the following priority order:
      *  1 - Authorization http header
-     *  2 - auth_idp cookie
-     *  3 - auth_jomax cookie
+     *  2 - auth_idp cookie (the auth_jomax cookie is not accepted)
      *
      * @see com.godaddy.hfs.sso.SsoTokenExtractor#extractToken(javax.servlet.http.HttpServletRequest)
      */
@@ -39,13 +39,17 @@ public class Vps4SsoTokenExtractor extends SsoTokenExtractor {
         if (token == null) {
             // if the 'Authorization' header is not present (or the token could not be parsed),
             // fall back to the auth_idp cookie (the auth_jomax cookie is not accepted)
-            token = extractIdpCookie(request.getCookies());
+            token = request.getCookies() == null ? null : extractIdpCookie(request.getCookies());
         }
 
         return token;
     }
 
     public SsoToken extractIdpCookie(Cookie[] cookies) {
+            cookies = Arrays.stream(cookies).filter(c ->
+                            c.getName() != null && c.getName().equals("auth_idp"))
+                    .toArray(Cookie[]::new);
+
         List<SsoToken> tokens = extractTokens(cookies);
         for (SsoToken token : tokens) {
             try {
