@@ -8,6 +8,8 @@ import static com.godaddy.vps4.web.util.RequestValidation.validateSnapshotName;
 import static com.godaddy.vps4.web.util.RequestValidation.validateUserIsShopper;
 import static com.godaddy.vps4.web.util.VmHelper.createActionAndExecute;
 
+import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -114,16 +116,18 @@ public class OhBackupResource {
             return b.purpose != OhBackupPurpose.DR;
         });
 
-        // only return the most recent completed automatic backup
+        // only return the most recent automatic backup and the most recent completed automatic backup
         Optional<OhBackup> newestAutomatic = backups
+                .stream()
+                .filter(b -> b.purpose == OhBackupPurpose.DR)
+                .reduce((b1, b2) -> b1.createdAt.isAfter(b2.createdAt) ? b1 : b2);
+        Optional<OhBackup> newestCompleteAutomatic = backups
                 .stream()
                 .filter(b -> b.purpose == OhBackupPurpose.DR && b.state == OhBackupState.COMPLETE)
                 .reduce((b1, b2) -> b1.createdAt.isAfter(b2.createdAt) ? b1 : b2);
-        newestAutomatic.ifPresent(b1 -> {
-            backups.removeIf(b2 -> !b1.id.equals(b2.id)
-                    && b2.purpose == OhBackupPurpose.DR
-                    && b2.state == OhBackupState.COMPLETE);
-        });
+        backups.removeIf(b -> b.purpose == OhBackupPurpose.DR
+                && (newestAutomatic.isPresent() && !newestAutomatic.get().id.equals(b.id))
+                && (newestCompleteAutomatic.isPresent() && !newestCompleteAutomatic.get().id.equals(b.id)));
 
         // use the backup names from our database if available
         String defaultName = config.get("vps4.autobackup.backupName");

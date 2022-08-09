@@ -72,6 +72,8 @@ public class OhBackupResourceTest {
     private OhBackup hfsBackup;
     private OhBackup newAutomaticBackup;
     private OhBackup oldAutomaticBackup;
+    private OhBackup oldFailedAutomaticBackup1;
+    private OhBackup oldFailedAutomaticBackup2;
     private List<OhBackupData> ohBackupData;
     @Mock private Action action;
     @Mock private Action conflictingAction;
@@ -106,10 +108,13 @@ public class OhBackupResourceTest {
         hfsBackup = createBackup("2022-01-01T00:00:00.00Z", OhBackupState.COMPLETE, OhBackupPurpose.CUSTOMER);
         newAutomaticBackup = createBackup("2022-02-01T00:00:00.00Z", OhBackupState.COMPLETE, OhBackupPurpose.DR);
         oldAutomaticBackup = createBackup("2022-01-01T00:00:00.00Z", OhBackupState.COMPLETE, OhBackupPurpose.DR);
+        oldFailedAutomaticBackup1 = createBackup("2022-03-01T00:00:00.00Z", OhBackupState.FAILED, OhBackupPurpose.DR);
+        oldFailedAutomaticBackup2 = createBackup("2022-04-01T00:00:00.00Z", OhBackupState.FAILED, OhBackupPurpose.DR);
         ohBackupData = createBackupData(backup.id);
         conflictingAction.type = ActionType.CREATE_OH_BACKUP;
         backups = new ArrayList<>();
-        Collections.addAll(backups, backup, hfsBackup, newAutomaticBackup, oldAutomaticBackup);
+        Collections.addAll(backups, backup, hfsBackup, newAutomaticBackup, oldAutomaticBackup,
+                           oldFailedAutomaticBackup1, oldFailedAutomaticBackup2);
         commandState.commandId = UUID.randomUUID();
         vm.vmId = UUID.randomUUID();
         vm.spec = new ServerSpec();
@@ -170,6 +175,13 @@ public class OhBackupResourceTest {
     public void getBackupsRemovesOldAutomaticBackups() {
         List<NamedOhBackup> result = resource.getOhBackups(vm.vmId);
         assertFalse(result.stream().anyMatch(b -> b.id.equals(oldAutomaticBackup.id)));
+    }
+
+    @Test
+    public void getBackupsOnlyReturnsOneFailedBackup() {
+        List<NamedOhBackup> result = resource.getOhBackups(vm.vmId);
+        assertFalse(result.stream().anyMatch(b -> b.id.equals(oldFailedAutomaticBackup1.id)));
+        assertTrue(result.stream().anyMatch(b -> b.id.equals(oldFailedAutomaticBackup2.id)));
     }
 
     @Test
