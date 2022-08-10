@@ -1,6 +1,7 @@
 package com.godaddy.vps4.web.vm;
 
 import com.godaddy.hfs.config.Config;
+import com.godaddy.hfs.vm.Vm;
 import com.godaddy.vps4.credit.CreditService;
 import com.godaddy.vps4.credit.VirtualMachineCredit;
 import com.godaddy.vps4.network.IpAddress;
@@ -21,6 +22,7 @@ import com.godaddy.vps4.vm.ServerType;
 import com.godaddy.vps4.vm.VirtualMachine;
 import com.godaddy.vps4.vm.VirtualMachineService;
 import com.godaddy.vps4.vm.VmAction;
+import com.godaddy.vps4.vm.VmUserService;
 import com.godaddy.vps4.web.Vps4Exception;
 import com.godaddy.vps4.web.security.GDUser;
 import org.junit.Before;
@@ -54,6 +56,7 @@ public class VmImportResourceTest {
     NetworkService networkService = mock(NetworkService.class);
     ActionService actionService = mock(ActionService.class);
     VmActionResource vmActionResource = mock(VmActionResource.class);
+    VmUserService vmUserService = mock(VmUserService.class);
     Config config = mock(Config.class);
 
     VirtualMachineCredit credit;
@@ -77,6 +80,7 @@ public class VmImportResourceTest {
         importVmRequest = new ImportVmRequest();
         importVmRequest.entitlementId = credit.getOrionGuid();
         importVmRequest.shopperId = user.getShopperId();
+        importVmRequest.username = "testUser";
         importVmRequest.ip = "192.168.0.1";
         ImportVmIpAddress address1 = new ImportVmIpAddress();
         address1.hfsIpAddressId = 1;
@@ -99,6 +103,7 @@ public class VmImportResourceTest {
                                                 networkService,
                                                 actionService,
                                                 vmActionResource,
+                                                vmUserService,
                                                 config);
 
         spec = new ServerSpec();
@@ -147,17 +152,20 @@ public class VmImportResourceTest {
     }
 
     @Test
-    public void ImportVmTestExistingImage(){
-        int imageId = 1;
-        when(imageService.getImageIdByHfsName(importVmRequest.image)).thenReturn(imageId);
-
-
+    public void ImportVmReturnsAction(){
         VmAction action = vmImportResource.importVm(importVmRequest);
-
 
         assertEquals(ActionType.IMPORT_VM, action.type);
         assertEquals(ActionStatus.COMPLETE, action.status);
         assertEquals(virtualMachine.vmId, action.virtualMachineId);
+    }
+
+    @Test
+    public void ImportVmTestExistingImage(){
+        int imageId = 1;
+        when(imageService.getImageIdByHfsName(importVmRequest.image)).thenReturn(imageId);
+
+        vmImportResource.importVm(importVmRequest);
 
         verify(virtualMachineService, times(1)).importVirtualMachine(argument.capture());
         ImportVirtualMachineParameters parameters = argument.getValue();
@@ -168,12 +176,19 @@ public class VmImportResourceTest {
         assertEquals(spec.specId, parameters.specId);
         assertEquals(imageId, parameters.imageId);
         assertEquals(1, parameters.dataCenterId);
+    }
+
+
+    @Test
+    public void ImportVmAddsIp(){
+        VmAction action = vmImportResource.importVm(importVmRequest);
 
         verify(networkService, times(1)).createIpAddress(0, action.virtualMachineId, importVmRequest.ip, IpAddress.IpAddressType.PRIMARY);
         verify(networkService, times(1)).createIpAddress(1, action.virtualMachineId, "2001:0db8:85a3:0000:0000:8a2e:0370:7334", IpAddress.IpAddressType.SECONDARY);
         verify(networkService, times(1)).createIpAddress(2, action.virtualMachineId, "192.168.0.2", IpAddress.IpAddressType.SECONDARY);
         verify(networkService, times(1)).createIpAddress(3, action.virtualMachineId, "192.168.0.2", IpAddress.IpAddressType.SECONDARY);
         verify(creditService, times(1)).claimVirtualMachineCredit(importVmRequest.entitlementId, 1, virtualMachine.vmId);
+        verify(vmUserService, times(1)).createUser(importVmRequest.username, action.virtualMachineId);
     }
 
     @Test
@@ -181,14 +196,8 @@ public class VmImportResourceTest {
         long imageId = 2;
         when(imageService.insertImage(eq(0), eq(1), anyString(), eq(3), anyString(), eq(true))).thenReturn(imageId);
         when(imageService.getImageIdByHfsName(importVmRequest.image)).thenReturn(0);
-
-
-        VmAction action = vmImportResource.importVm(importVmRequest);
-
-
-        assertEquals(ActionType.IMPORT_VM, action.type);
-        assertEquals(ActionStatus.COMPLETE, action.status);
-        assertEquals(virtualMachine.vmId, action.virtualMachineId);
+        
+        vmImportResource.importVm(importVmRequest);
 
         verify(virtualMachineService, times(1)).importVirtualMachine(argument.capture());
         ImportVirtualMachineParameters parameters = argument.getValue();
@@ -199,11 +208,15 @@ public class VmImportResourceTest {
         assertEquals(spec.specId, parameters.specId);
         assertEquals(imageId, parameters.imageId);
         assertEquals(1, parameters.dataCenterId);
+    }
 
-        verify(networkService, times(1)).createIpAddress(0, action.virtualMachineId, importVmRequest.ip, IpAddress.IpAddressType.PRIMARY);
-        verify(networkService, times(1)).createIpAddress(1, action.virtualMachineId, "2001:0db8:85a3:0000:0000:8a2e:0370:7334", IpAddress.IpAddressType.SECONDARY);
-        verify(networkService, times(1)).createIpAddress(2, action.virtualMachineId, "192.168.0.2", IpAddress.IpAddressType.SECONDARY);
-        verify(networkService, times(1)).createIpAddress(3, action.virtualMachineId, "192.168.0.2", IpAddress.IpAddressType.SECONDARY);
+    @Test
+    public void ImportVmTestDefaultNoUsername(){
+        importVmRequest.username = null;
+        
+        VmAction action = vmImportResource.importVm(importVmRequest);
+
+        verify(vmUserService, times(0)).createUser(importVmRequest.username, action.virtualMachineId);
     }
 
     @Test(expected = Vps4Exception.class)

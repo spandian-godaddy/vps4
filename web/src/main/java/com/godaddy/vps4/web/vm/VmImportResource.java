@@ -18,11 +18,13 @@ import com.godaddy.vps4.vm.VirtualMachine;
 import com.godaddy.vps4.vm.VirtualMachineService;
 import com.godaddy.vps4.vm.VirtualMachineService.ImportVirtualMachineParameters;
 import com.godaddy.vps4.vm.VmAction;
+import com.godaddy.vps4.vm.VmUserService;
 import com.godaddy.vps4.web.Vps4Api;
 import com.godaddy.vps4.web.Vps4Exception;
 import com.godaddy.vps4.web.security.GDUser.Role;
 import com.godaddy.vps4.web.security.RequiresRole;
 import io.swagger.annotations.Api;
+import org.apache.commons.lang3.StringUtils;
 
 import javax.inject.Inject;
 import javax.ws.rs.Consumes;
@@ -55,6 +57,7 @@ public class VmImportResource {
     private final NetworkService networkService;
     private final ActionService actionService;
     private final VmActionResource vmActionResource;
+    private final VmUserService vmUserService;
     private final Config config;
     private final int defaultDatacenterId;
 
@@ -67,6 +70,7 @@ public class VmImportResource {
                             NetworkService networkService,
                             ActionService actionService,
                             VmActionResource vmActionResource,
+                            VmUserService vmUserService,
                             Config config) {
         this.virtualMachineService = virtualMachineService;
         this.creditService = creditService;
@@ -77,6 +81,7 @@ public class VmImportResource {
         this.actionService = actionService;
         this.vmActionResource = vmActionResource;
         this.config = config;
+        this.vmUserService = vmUserService;
         defaultDatacenterId = Integer.parseInt(config.get("vps4.datacenter.defaultId"));
     }
 
@@ -88,6 +93,7 @@ public class VmImportResource {
         public List<ImportVmIpAddress> additionalIps;
         public String sgid;
         public String image;
+        public String username;
 
         public ImportVmRequest() {
             additionalIps = new ArrayList<>();
@@ -132,6 +138,10 @@ public class VmImportResource {
         creditService.claimVirtualMachineCredit(importVmRequest.entitlementId, defaultDatacenterId, virtualMachine.vmId);
 
         importIpAddresses(importVmRequest, virtualMachine);
+
+        if (StringUtils.isNotBlank(importVmRequest.username)) {
+            vmUserService.createUser(importVmRequest.username, virtualMachine.vmId);
+        }
 
         return createReturnAction(virtualMachine);
     }
