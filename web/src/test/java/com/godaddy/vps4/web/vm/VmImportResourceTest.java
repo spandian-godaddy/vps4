@@ -25,6 +25,7 @@ import com.godaddy.vps4.vm.VmAction;
 import com.godaddy.vps4.vm.VmUserService;
 import com.godaddy.vps4.web.Vps4Exception;
 import com.godaddy.vps4.web.security.GDUser;
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
@@ -82,6 +83,7 @@ public class VmImportResourceTest {
         importVmRequest.shopperId = user.getShopperId();
         importVmRequest.username = "testUser";
         importVmRequest.ip = "192.168.0.1";
+        importVmRequest.name = "testVm";
         ImportVmIpAddress address1 = new ImportVmIpAddress();
         address1.hfsIpAddressId = 1;
         address1.ip = "2001:0db8:85a3:0000:0000:8a2e:0370:7334";
@@ -171,7 +173,7 @@ public class VmImportResourceTest {
         ImportVirtualMachineParameters parameters = argument.getValue();
         assertEquals(importVmRequest.hfsVmId, parameters.hfsVmId);
         assertEquals(importVmRequest.entitlementId, parameters.orionGuid);
-        assertEquals(importVmRequest.ip, parameters.name);
+        assertEquals(importVmRequest.name, parameters.name);
         assertEquals(project.getProjectId(), parameters.projectId);
         assertEquals(spec.specId, parameters.specId);
         assertEquals(imageId, parameters.imageId);
@@ -180,6 +182,27 @@ public class VmImportResourceTest {
 
 
     @Test
+    public void ImportVmCreatesUser(){
+        VmAction action = vmImportResource.importVm(importVmRequest);
+        
+        verify(vmUserService, times(1)).createUser(importVmRequest.username, action.virtualMachineId);
+    }
+    
+    @Test
+    public void ImportVmClaimsCredit(){
+        VmAction action = vmImportResource.importVm(importVmRequest);
+        
+        verify(creditService, times(1)).claimVirtualMachineCredit(importVmRequest.entitlementId, 1, virtualMachine.vmId);
+    }
+    
+    @Test
+    public void ImportVmSetsCommonName(){
+        VmAction action = vmImportResource.importVm(importVmRequest);
+
+        verify(creditService, times(1)).setCommonName(importVmRequest.entitlementId, importVmRequest.name);
+    }
+    
+    @Test
     public void ImportVmAddsIp(){
         VmAction action = vmImportResource.importVm(importVmRequest);
 
@@ -187,8 +210,6 @@ public class VmImportResourceTest {
         verify(networkService, times(1)).createIpAddress(1, action.virtualMachineId, "2001:0db8:85a3:0000:0000:8a2e:0370:7334", IpAddress.IpAddressType.SECONDARY);
         verify(networkService, times(1)).createIpAddress(2, action.virtualMachineId, "192.168.0.2", IpAddress.IpAddressType.SECONDARY);
         verify(networkService, times(1)).createIpAddress(3, action.virtualMachineId, "192.168.0.2", IpAddress.IpAddressType.SECONDARY);
-        verify(creditService, times(1)).claimVirtualMachineCredit(importVmRequest.entitlementId, 1, virtualMachine.vmId);
-        verify(vmUserService, times(1)).createUser(importVmRequest.username, action.virtualMachineId);
     }
 
     @Test
@@ -203,13 +224,13 @@ public class VmImportResourceTest {
         ImportVirtualMachineParameters parameters = argument.getValue();
         assertEquals(importVmRequest.hfsVmId, parameters.hfsVmId);
         assertEquals(importVmRequest.entitlementId, parameters.orionGuid);
-        assertEquals(importVmRequest.ip, parameters.name);
+        assertEquals(importVmRequest.name, parameters.name);
         assertEquals(project.getProjectId(), parameters.projectId);
         assertEquals(spec.specId, parameters.specId);
         assertEquals(imageId, parameters.imageId);
         assertEquals(1, parameters.dataCenterId);
     }
-
+    
     @Test
     public void ImportVmTestDefaultNoUsername(){
         importVmRequest.username = null;
@@ -219,12 +240,34 @@ public class VmImportResourceTest {
         verify(vmUserService, times(0)).createUser(importVmRequest.username, action.virtualMachineId);
     }
 
-    @Test(expected = Vps4Exception.class)
+    @Test
+    public void ImportVmTestDefaultNameToIp(){
+        importVmRequest.name = null;
+
+        VmAction action = vmImportResource.importVm(importVmRequest);
+        
+        assertEquals(ActionType.IMPORT_VM, action.type);
+        assertEquals(ActionStatus.COMPLETE, action.status);
+        assertEquals(virtualMachine.vmId, action.virtualMachineId);
+
+        verify(virtualMachineService, times(1)).importVirtualMachine(argument.capture());
+        ImportVirtualMachineParameters parameters = argument.getValue();
+        assertEquals(importVmRequest.hfsVmId, parameters.hfsVmId);
+        assertEquals(importVmRequest.entitlementId, parameters.orionGuid);
+        assertEquals(importVmRequest.ip, parameters.name);
+        verify(creditService, times(1)).setCommonName(parameters.orionGuid, importVmRequest.ip);
+    }
+
+    @Test
     public void ImportVmDuplicateTest(){
         credit = createVmCredit(UUID.randomUUID(), AccountStatus.ACTIVE, "myh", 0, 0, 10, "Linux", Instant.now());
         when(creditService.getVirtualMachineCredit(credit.getOrionGuid())).thenReturn(credit);
         importVmRequest.entitlementId = credit.getOrionGuid();
-
-        VmAction action = vmImportResource.importVm(importVmRequest);
+        try {
+            vmImportResource.importVm(importVmRequest);
+            Assert.fail("Exception not thrown");
+        } catch (Vps4Exception e) {
+            Assert.assertEquals("DUPLICATE", e.getId());
+        }
     }
 }

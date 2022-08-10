@@ -93,6 +93,7 @@ public class VmImportResource {
         public List<ImportVmIpAddress> additionalIps;
         public String sgid;
         public String image;
+        public String name;
         public String username;
 
         public ImportVmRequest() {
@@ -107,10 +108,9 @@ public class VmImportResource {
 
     @POST
     @Path("/importVm")
-    public VmAction importVm( ImportVmRequest importVmRequest) {
+    public VmAction importVm(ImportVmRequest importVmRequest) {
         int dataCenterId = Integer.parseInt(config.get("imported.datacenter.defaultId"));
         int platformId = ServerType.Platform.OPTIMIZED_HOSTING.getplatformId();
-
         VirtualMachineCredit virtualMachineCredit = getAndValidateUserAccountCredit(creditService, importVmRequest.entitlementId, importVmRequest.shopperId);
         try {
             validateCreditIsNotInUse(virtualMachineCredit);
@@ -126,16 +126,22 @@ public class VmImportResource {
                 virtualMachineCredit.getCustomerId());
         Project project = projectService.createProject(importVmRequest.entitlementId.toString(), vps4User.getId(), importVmRequest.sgid);
 
+
+        String importName = importVmRequest.name == null ? importVmRequest.ip : importVmRequest.name;
+
         ImportVirtualMachineParameters parameters = new ImportVirtualMachineParameters(importVmRequest.hfsVmId,
                                                                                        importVmRequest.entitlementId,
-                                                                                       importVmRequest.ip,
+                                                                                       importName,
                                                                                        project.getProjectId(),
                                                                                        serverSpec.specId,
                                                                                        imageId,
                                                                                        dataCenterId);
+
         VirtualMachine virtualMachine = virtualMachineService.importVirtualMachine(parameters);
 
         creditService.claimVirtualMachineCredit(importVmRequest.entitlementId, defaultDatacenterId, virtualMachine.vmId);
+
+        creditService.setCommonName(importVmRequest.entitlementId, importName);
 
         importIpAddresses(importVmRequest, virtualMachine);
 
