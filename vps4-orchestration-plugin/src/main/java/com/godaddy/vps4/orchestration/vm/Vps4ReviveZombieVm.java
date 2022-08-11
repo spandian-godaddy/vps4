@@ -13,7 +13,6 @@ import com.godaddy.vps4.orchestration.ActionRequest;
 import com.godaddy.vps4.orchestration.hfs.vm.EndRescueVm;
 import com.godaddy.vps4.orchestration.hfs.vm.StartVm;
 import com.godaddy.vps4.orchestration.panopta.ResumePanoptaMonitoring;
-import com.godaddy.vps4.scheduledJob.ScheduledJobService;
 import com.godaddy.vps4.vm.ActionService;
 import com.godaddy.vps4.vm.VirtualMachine;
 import com.godaddy.vps4.vm.VirtualMachineService;
@@ -28,15 +27,13 @@ public class Vps4ReviveZombieVm extends ActionCommand<Vps4ReviveZombieVm.Request
 
     private static final Logger logger = LoggerFactory.getLogger(Vps4ReviveZombieVm.class);
     private final VirtualMachineService virtualMachineService;
-    private final ScheduledJobService scheduledJobService;
     private final CreditService creditService;
 
     @Inject
     public Vps4ReviveZombieVm(ActionService actionService, VirtualMachineService virtualMachineService,
-                              ScheduledJobService scheduledJobService, CreditService creditService) {
+                              CreditService creditService) {
         super(actionService);
         this.virtualMachineService = virtualMachineService;
-        this.scheduledJobService = scheduledJobService;
         this.creditService = creditService;
     }
 
@@ -52,11 +49,23 @@ public class Vps4ReviveZombieVm extends ActionCommand<Vps4ReviveZombieVm.Request
 
         reviveInOurDb(context, request);
 
+        setEcommCommonName(context, request.newCreditId, request.vmId);
+
         startServer(context, request);
 
         resumePanoptaMonitoring(context, request);
 
         return null;
+    }
+
+
+    private void setEcommCommonName(CommandContext context, UUID orionGuid, UUID vmId) {
+        VirtualMachine virtualMachine = virtualMachineService.getVirtualMachine(vmId);
+
+        context.execute("SetCommonName", ctx -> {
+            creditService.setCommonName(orionGuid, virtualMachine.name);
+            return null;
+        }, Void.class);
     }
 
     private void startServer(CommandContext context, Request request) {

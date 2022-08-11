@@ -108,7 +108,7 @@ public class Vps4ReviveZombieVmTest{
             binder.bind(PanoptaService.class).toInstance(panoptaService);
         });
 
-        command = new Vps4ReviveZombieVm(actionService, virtualMachineService, scheduledJobService, creditService);
+        command = new Vps4ReviveZombieVm(actionService, virtualMachineService, creditService);
         context = new TestCommandContext(new GuiceCommandProvider(injector));
     }
 
@@ -118,6 +118,7 @@ public class Vps4ReviveZombieVmTest{
         request.vmId = job.vmId;
         request.newCreditId = UUID.randomUUID();
         request.oldCreditId = UUID.randomUUID();
+        vm.name = "testVm";
 
         Map<ProductMetaField, String> productMeta = new HashMap<>();
         when(creditService.getProductMeta(request.oldCreditId)).thenReturn(productMeta);
@@ -129,6 +130,7 @@ public class Vps4ReviveZombieVmTest{
 
         verify(virtualMachineService, times(1)).reviveZombieVm(request.vmId, request.newCreditId);
         verify(schedulerWebService, times(1)).deleteJob(product, group, job.id);
+        verify(creditService, times(1)).setCommonName(request.newCreditId, "testVm");
         verify(creditService, times(1)).updateProductMeta(request.newCreditId, productMeta);
         verify(vmService, times(0)).endRescueVm(vm.hfsVmId);
         verify(vmService, times(1)).startVm(vm.hfsVmId);
@@ -141,6 +143,7 @@ public class Vps4ReviveZombieVmTest{
         request.vmId = job.vmId;
         request.newCreditId = UUID.randomUUID();
         request.oldCreditId = UUID.randomUUID();
+        vm.name = "testDed";
 
         Map<ProductMetaField, String> productMeta = new HashMap<>();
         when(creditService.getProductMeta(request.oldCreditId)).thenReturn(productMeta);
@@ -152,6 +155,7 @@ public class Vps4ReviveZombieVmTest{
 
         verify(virtualMachineService, times(1)).reviveZombieVm(request.vmId, request.newCreditId);
         verify(schedulerWebService, times(1)).deleteJob(product, group, job.id);
+        verify(creditService, times(1)).setCommonName(request.newCreditId, "testDed");
         verify(creditService, times(1)).updateProductMeta(request.newCreditId, productMeta);
         verify(vmService, times(1)).endRescueVm(vm.hfsVmId);
         verify(vmService, times(0)).startVm(vm.hfsVmId);
