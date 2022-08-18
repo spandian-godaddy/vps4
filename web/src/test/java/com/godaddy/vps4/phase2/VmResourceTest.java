@@ -15,6 +15,7 @@ import javax.inject.Inject;
 import javax.sql.DataSource;
 import javax.ws.rs.NotFoundException;
 
+import com.godaddy.vps4.project.ProjectService;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -27,7 +28,6 @@ import com.godaddy.vps4.mailrelay.MailRelayService;
 import com.godaddy.vps4.network.IpAddress.IpAddressType;
 import com.godaddy.vps4.scheduler.api.web.SchedulerWebService;
 import com.godaddy.vps4.security.GDUserMock;
-import com.godaddy.vps4.security.SecurityModule;
 import com.godaddy.vps4.security.Vps4User;
 import com.godaddy.vps4.security.Vps4UserService;
 import com.godaddy.vps4.security.jdbc.AuthorizationException;
@@ -48,18 +48,19 @@ import com.google.inject.Injector;
 import com.google.inject.Provides;
 
 public class VmResourceTest {
-
-    @Inject Vps4UserService userService;
     @Inject DataSource dataSource;
     @Inject VirtualMachineService virtualMachineService;
 
+    UUID customerId;
+    Vps4User vps4User;
     private GDUser user;
     private final SchedulerWebService schedulerWebService = Mockito.mock(SchedulerWebService.class);
     private final MailRelayService mailRelayService = mock(MailRelayService.class);
+    private final Vps4UserService userService = mock(Vps4UserService.class);
+    private final ProjectService projectService = mock(ProjectService.class);
 
     private final Injector injector = Guice.createInjector(
             new DatabaseModule(),
-            new SecurityModule(),
             new VmModule(),
             new SnapshotModule(),
             new Phase2ExternalsModule(),
@@ -70,6 +71,8 @@ public class VmResourceTest {
                 public void configure() {
                     bind(SchedulerWebService.class).toInstance(schedulerWebService);
                     bind(MailRelayService.class).toInstance(mailRelayService);
+                    bind(Vps4UserService.class).toInstance(userService);
+                    bind(ProjectService.class).toInstance(projectService);
                 }
 
                 @Provides
@@ -83,6 +86,10 @@ public class VmResourceTest {
     public void setupTest() {
         injector.injectMembers(this);
         user = GDUserMock.createShopper();
+        customerId = UUID.randomUUID();
+        vps4User = new Vps4User(1, GDUserMock.DEFAULT_SHOPPER, customerId);
+        when(userService.getUser(vps4User.getShopperId())).thenReturn(vps4User);
+        when(userService.getUser(customerId)).thenReturn(vps4User);
         when(mailRelayService.getMailRelay(anyString())).thenReturn(new MailRelay());
     }
 
@@ -112,7 +119,6 @@ public class VmResourceTest {
     private VirtualMachine createTestServer(int tier, int dataCenterId) {
         String imageName = tier < 60 ? "hfs-centos-7" : "centos7_64";
         UUID orionGuid = UUID.randomUUID();
-        Vps4User vps4User = userService.getOrCreateUserForShopper(GDUserMock.DEFAULT_SHOPPER, "1", UUID.randomUUID());
         VirtualMachine server = SqlTestData.insertTestVm(orionGuid, vps4User.getId(), dataSource, imageName, tier, dataCenterId);
         long hfsAddressId = SqlTestData.getNextHfsAddressId(dataSource);
         SqlTestData.insertTestIp(hfsAddressId, server.vmId, createTestIP(), IpAddressType.PRIMARY, dataSource);
@@ -486,7 +492,27 @@ public class VmResourceTest {
         VirtualMachine vm = createTestVm();
 
         user = GDUserMock.createShopper();
-        List<VirtualMachine> vms = getVmResource().getVirtualMachines(VirtualMachineType.ACTIVE, user.getShopperId(), null, null, null, null);
+        List<VirtualMachine> vms = getVmResource().getVirtualMachines(VirtualMachineType.ACTIVE, user.getShopperId(), null, null, null, null, null);
+        Assert.assertEquals(1, vms.size());
+        Assert.assertEquals(vms.get(0).orionGuid, vm.orionGuid);
+    }
+
+    @Test
+    public void testCustomerIdGetVirtualMachines() {
+        VirtualMachine vm = createTestVm();
+
+        user = GDUserMock.createShopper();
+        List<VirtualMachine> vms = getVmResource().getVirtualMachines(VirtualMachineType.ACTIVE, null, null, null, null, null, customerId);
+        Assert.assertEquals(1, vms.size());
+        Assert.assertEquals(vms.get(0).orionGuid, vm.orionGuid);
+    }
+
+    @Test
+    public void testShopperAndCustomerIdGetVirtualMachines() {
+        VirtualMachine vm = createTestVm();
+
+        user = GDUserMock.createShopper();
+        List<VirtualMachine> vms = getVmResource().getVirtualMachines(VirtualMachineType.ACTIVE, user.getShopperId(), null, null, null, null, customerId);
         Assert.assertEquals(1, vms.size());
         Assert.assertEquals(vms.get(0).orionGuid, vm.orionGuid);
     }
@@ -497,7 +523,7 @@ public class VmResourceTest {
         virtualMachineService.setVmZombie(vm.vmId);
 
         user = GDUserMock.createShopper();
-        List<VirtualMachine> vms = getVmResource().getVirtualMachines(VirtualMachineType.ZOMBIE, user.getShopperId(), null, null, null, null);
+        List<VirtualMachine> vms = getVmResource().getVirtualMachines(VirtualMachineType.ZOMBIE, user.getShopperId(), null, null, null, null, null);
         Assert.assertEquals(1, vms.size());
         Assert.assertEquals(vms.get(0).orionGuid, vm.orionGuid);
     }
@@ -505,7 +531,7 @@ public class VmResourceTest {
     @Test
     public void testEmployeeShopperGetVirtualMachinesEmpty() {
         user = GDUserMock.createEmployee();
-        List<VirtualMachine> vms = getVmResource().getVirtualMachines(VirtualMachineType.ACTIVE, user.getShopperId(), "0.2.0.1", null, null, null);
+        List<VirtualMachine> vms = getVmResource().getVirtualMachines(VirtualMachineType.ACTIVE, user.getShopperId(), "0.2.0.1", null, null, null, null);
         Assert.assertTrue(vms.isEmpty());
     }
 
@@ -513,15 +539,41 @@ public class VmResourceTest {
     public void testEmployeeFakeShopperGetVirtualMachinesEmpty() {
         user = GDUserMock.createEmployee();
         String shopperId = "FakeShopper";
-        when(userService.getUser(user.getShopperId())).thenReturn(null, (Vps4User) null);
-        List<VirtualMachine> vms = getVmResource().getVirtualMachines(VirtualMachineType.ACTIVE, shopperId, null, null, null, null);
+        when(userService.getUser(shopperId)).thenReturn(null, (Vps4User) null);
+        List<VirtualMachine> vms = getVmResource().getVirtualMachines(VirtualMachineType.ACTIVE, shopperId, null, null, null, null, null);
+        Assert.assertTrue(vms.isEmpty());
+    }
+
+    @Test
+    public void testEmployeeFakeCustomerIdGetVirtualMachines() {
+        user = GDUserMock.createEmployee();
+        List<VirtualMachine> vms = getVmResource().getVirtualMachines(VirtualMachineType.ACTIVE, null, null, null, null, null, UUID.randomUUID());
         Assert.assertTrue(vms.isEmpty());
     }
 
     @Test
     public void testShopperGetVirtualMachinesEmpty() {
         user = GDUserMock.createShopper();
-        List<VirtualMachine> vms = getVmResource().getVirtualMachines(VirtualMachineType.ACTIVE, user.getShopperId(), null, null, null, null);
+        List<VirtualMachine> vms = getVmResource().getVirtualMachines(VirtualMachineType.ACTIVE, user.getShopperId(), null, null, null, null, null);
+        Assert.assertTrue(vms.isEmpty());
+    }
+
+    @Test
+    public void testGetVmsWithValidShopperAndInvalidCustomer() {
+        VirtualMachine vm = createTestVm();
+
+        user = GDUserMock.createShopper();
+        List<VirtualMachine> vms = getVmResource().getVirtualMachines(VirtualMachineType.ACTIVE, user.getShopperId(), null, null, null, null, UUID.randomUUID());
+        Assert.assertEquals(1, vms.size());
+        Assert.assertEquals(vms.get(0).orionGuid, vm.orionGuid);
+    }
+
+    @Test
+    public void testGetVmsWithInvalidShopperAndValidCustomer() {
+        createTestVm();
+
+        user = GDUserMock.createEmployee();
+        List<VirtualMachine> vms = getVmResource().getVirtualMachines(VirtualMachineType.ACTIVE, "FakeShopper", null, null, null, null, customerId);
         Assert.assertTrue(vms.isEmpty());
     }
 
@@ -530,7 +582,7 @@ public class VmResourceTest {
         createTestVm();
 
         user = GDUserMock.createShopper("shopperX");
-        List<VirtualMachine> vms = getVmResource().getVirtualMachines(VirtualMachineType.ACTIVE, user.getShopperId(), null, null, null, null);
+        List<VirtualMachine> vms = getVmResource().getVirtualMachines(VirtualMachineType.ACTIVE, user.getShopperId(), null, null, null, null, null);
         Assert.assertTrue(vms.isEmpty());
     }
 
@@ -538,7 +590,7 @@ public class VmResourceTest {
     public void testGetVmByIpAddress() {
         VirtualMachine vm = createTestVm();
         user = GDUserMock.createEmployee();
-        List<VirtualMachine> vms = getVmResource().getVirtualMachines(null, null, vm.primaryIpAddress.ipAddress, null, null, null);
+        List<VirtualMachine> vms = getVmResource().getVirtualMachines(null, null, vm.primaryIpAddress.ipAddress, null, null, null, null);
 
         Assert.assertEquals(vm.vmId, vms.get(0).vmId);
     }
@@ -547,7 +599,7 @@ public class VmResourceTest {
     public void testGetVmByOrionGuid() {
         VirtualMachine vm = createTestVm();
         user = GDUserMock.createEmployee();
-        List<VirtualMachine> vms = getVmResource().getVirtualMachines(null, null, null, vm.orionGuid, null, null);
+        List<VirtualMachine> vms = getVmResource().getVirtualMachines(null, null, null, vm.orionGuid, null, null, null);
 
         Assert.assertEquals(vm.vmId, vms.get(0).vmId);
     }
@@ -556,7 +608,16 @@ public class VmResourceTest {
     public void testGetVmByHfsVmId() {
         VirtualMachine vm = createTestVm();
         user = GDUserMock.createEmployee();
-        List<VirtualMachine> vms = getVmResource().getVirtualMachines(null, null, null, null, vm.hfsVmId, null);
+        List<VirtualMachine> vms = getVmResource().getVirtualMachines(null, null, null, null, vm.hfsVmId, null, null);
+
+        Assert.assertEquals(vm.vmId, vms.get(0).vmId);
+    }
+
+    @Test
+    public void testGetVmByCustomerId() {
+        VirtualMachine vm = createTestVm();
+        user = GDUserMock.createEmployee();
+        List<VirtualMachine> vms = getVmResource().getVirtualMachines(null, null, null, null, null, null, customerId);
 
         Assert.assertEquals(vm.vmId, vms.get(0).vmId);
     }
@@ -566,7 +627,19 @@ public class VmResourceTest {
         VirtualMachine vm = createTestVm();
         createTestVmCustomDc(3);
         user = GDUserMock.createShopper();
-        List<VirtualMachine> vms = getVmResource().getVirtualMachines(null, user.getShopperId(), null, null, null, 1);
+        List<VirtualMachine> vms = getVmResource().getVirtualMachines(null, user.getShopperId(), null, null, null, 1, null);
+
+        Assert.assertEquals(1, vms.size());
+        Assert.assertEquals(vm.vmId, vms.get(0).vmId);
+    }
+
+
+    @Test
+    public void testGetVmByDcIdAndCustomerId() {
+        VirtualMachine vm = createTestVm();
+        createTestVmCustomDc(3);
+        user = GDUserMock.createShopper();
+        List<VirtualMachine> vms = getVmResource().getVirtualMachines(null, null, null, null, null, 1, customerId);
 
         Assert.assertEquals(1, vms.size());
         Assert.assertEquals(vm.vmId, vms.get(0).vmId);
@@ -576,13 +649,12 @@ public class VmResourceTest {
     public void testE2SGetVirtualMachines() {
         VirtualMachine vm = createTestVm();
         VirtualMachine vm2 = createTestVm();
-        SqlTestData.insertTestVm(UUID.randomUUID(), dataSource);
         Set<UUID> expectedOrionGuids = new HashSet<>();
         expectedOrionGuids.add(vm.orionGuid);
         expectedOrionGuids.add(vm2.orionGuid);
 
         user = GDUserMock.createEmployee2Shopper();
-        List<VirtualMachine> vms = getVmResource().getVirtualMachines(VirtualMachineType.ACTIVE, null, null, null, null, null);
+        List<VirtualMachine> vms = getVmResource().getVirtualMachines(VirtualMachineType.ACTIVE, null, null, null, null, null, null);
         Assert.assertEquals(2, vms.size());
         Set<UUID> actualOrionGuids = new HashSet<>();
         actualOrionGuids.add(vms.get(0).orionGuid);

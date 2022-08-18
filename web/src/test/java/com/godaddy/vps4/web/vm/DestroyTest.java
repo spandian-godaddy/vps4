@@ -37,7 +37,6 @@ import com.godaddy.vps4.scheduler.api.web.SchedulerWebService;
 import com.godaddy.vps4.security.GDUserMock;
 import com.godaddy.vps4.security.PrivilegeService;
 import com.godaddy.vps4.security.SecurityModule;
-import com.godaddy.vps4.security.Vps4UserService;
 import com.godaddy.vps4.security.jdbc.JdbcPrivilegeService;
 import com.godaddy.vps4.snapshot.SnapshotModule;
 import com.godaddy.vps4.util.TroubleshootVmService;
@@ -81,7 +80,6 @@ public class DestroyTest {
     private VmResource vmResource;
     private VirtualMachine vm;
 
-    @Inject Vps4UserService userService;
     @Inject DataSource dataSource;
 
     @Captor private ArgumentCaptor<CommandGroupSpec> commandGroupSpecArgumentCaptor;

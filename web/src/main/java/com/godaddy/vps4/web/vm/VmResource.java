@@ -362,19 +362,19 @@ public class VmResource {
             @ApiParam(value = "IP Address of the desired VM", required = false) @QueryParam("ipAddress") String ipAddress,
             @ApiParam(value = "Orion Guid associated with the VM", required = false) @QueryParam("orionGuid") UUID orionGuid,
             @ApiParam(value = "HFS VM ID associated with the VM", required = false) @QueryParam("hfsVmId") Long hfsVmId,
-            @ApiParam(value = "DC ID associated with the VM", required = false) @QueryParam("dcId") Integer dcId
-            ) {
+            @ApiParam(value = "DC ID associated with the VM", required = false) @QueryParam("dcId") Integer dcId,
+            @ApiParam(value = "Customer ID of the user", required = false) @QueryParam("customerId") UUID customerId) {
         if (user.isEmployee()) {
-            return getVmsForEmployee(type, shopperId, ipAddress, orionGuid, hfsVmId, dcId);
+            return getVmsForEmployee(type, shopperId, customerId, ipAddress, orionGuid, hfsVmId, dcId);
         }
         return getVmsForVps4User(type, dcId);
     }
 
-    private List<VirtualMachine> getVmsForEmployee(VirtualMachineType type, String shopperId, String ipAddress,
+    private List<VirtualMachine> getVmsForEmployee(VirtualMachineType type, String shopperId, UUID customerId, String ipAddress,
                                                    UUID orionGuid, Long hfsVmId, Integer dcId) {
         List<VirtualMachine> vmList = new ArrayList<>();
         try {
-            Long vps4UserId = getUserId(shopperId);
+            Long vps4UserId = getUserId(shopperId, customerId);
             vmList = virtualMachineService.getVirtualMachines(type, vps4UserId, ipAddress, orionGuid, hfsVmId, dcId);
         } catch (Vps4UserNotFound ex) {
             logger.warn("Shopper not found", ex);
@@ -383,18 +383,32 @@ public class VmResource {
         return vmList;
     }
 
-    private Long getUserId(String shopperId) throws Vps4UserNotFound {
+    private Long getUserId(String shopperId, UUID customerId) throws Vps4UserNotFound {
         //Shopper ID from impersonation takes priority over the Shopper ID query parameter.
+        //Searches for Customer ID only if Shopper ID is null
         if (user.isEmployeeToShopper()) {
             return getVps4UserIdByShopperId(user.getShopperId());
         } else if (!StringUtils.isBlank(shopperId)) {
             return getVps4UserIdByShopperId(shopperId);
+        } else if (customerId != null) {
+            return getVps4UserIdByCustomerId(customerId);
         }
+
         return null;
+    }
+
+    private Long getVps4UserIdByCustomerId(UUID customerId) throws Vps4UserNotFound {
+        Vps4User vps4User = vps4UserService.getUser(customerId);
+
+        if (vps4User == null) {
+            throw new Vps4UserNotFound("User not found for Customer ID: " + customerId);
+        }
+        return vps4User.getId();
     }
 
     private Long getVps4UserIdByShopperId(String shopperId) throws Vps4UserNotFound {
         Vps4User vps4User = vps4UserService.getUser(shopperId);
+
         if (vps4User == null) {
             throw new Vps4UserNotFound("User not found for Shopper ID: " + shopperId);
         }
