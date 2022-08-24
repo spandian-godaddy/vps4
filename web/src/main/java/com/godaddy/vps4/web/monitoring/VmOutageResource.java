@@ -14,28 +14,26 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
 
-import com.godaddy.vps4.orchestration.monitoring.Vps4NewVmOutage;
-import com.godaddy.vps4.vm.ActionService;
-import com.godaddy.vps4.vm.ActionType;
-import com.godaddy.vps4.vm.VmAction;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.godaddy.vps4.credit.CreditService;
+import com.godaddy.vps4.credit.VirtualMachineCredit;
+import com.godaddy.vps4.orchestration.monitoring.VmOutageEmailRequest;
 import com.godaddy.vps4.panopta.PanoptaService;
 import com.godaddy.vps4.panopta.PanoptaServiceException;
 import com.godaddy.vps4.vm.VirtualMachine;
 import com.godaddy.vps4.vm.VmOutage;
 import com.godaddy.vps4.web.Vps4Api;
+import com.godaddy.vps4.web.Vps4Exception;
 import com.godaddy.vps4.web.security.GDUser;
 import com.godaddy.vps4.web.security.RequiresRole;
+import com.godaddy.vps4.web.util.Commands;
 import com.godaddy.vps4.web.vm.VmResource;
 
 import gdg.hfs.orchestration.CommandService;
 
 import io.swagger.annotations.Api;
-
-import static com.godaddy.vps4.web.util.VmHelper.createActionAndExecute;
 
 @Vps4Api
 @Api(tags = {"vms"})
@@ -51,22 +49,16 @@ public class VmOutageResource {
     private final CommandService commandService;
     private final CreditService creditService;
     private final PanoptaService panoptaService;
-    private final ActionService actionService;
-    private final GDUser user;
 
     @Inject
     public VmOutageResource(VmResource vmResource,
                             CommandService commandService,
                             CreditService creditService,
-                            PanoptaService panoptaService,
-                            ActionService actionService,
-                            GDUser user) {
+                            PanoptaService panoptaService) {
         this.vmResource = vmResource;
         this.commandService = commandService;
         this.creditService = creditService;
         this.panoptaService = panoptaService;
-        this.actionService = actionService;
-        this.user = user;
     }
 
     @GET
@@ -89,27 +81,50 @@ public class VmOutageResource {
     @POST
     @RequiresRole(roles = {GDUser.Role.ADMIN}) // From message consumer
     @Path("/{vmId}/outages/{outageId}")
-    public VmAction newVmOutage(@PathParam("vmId") UUID vmId, @PathParam("outageId") long outageId) {
+    public VmOutage newVmOutage(@PathParam("vmId") UUID vmId, @PathParam("outageId") long outageId) {
         VirtualMachine virtualMachine = vmResource.getVm(vmId); // Auth validation
+        VmOutage outage;
+        try {
+            outage = panoptaService.getOutage(vmId, outageId);
+        } catch (PanoptaServiceException e) {
+            throw new Vps4Exception(e.getId(), e.getMessage(), e);
+        }
 
-        Vps4NewVmOutage.Request request = new Vps4NewVmOutage.Request();
-        request.virtualMachine = virtualMachine;
+        logger.info("New outage {} reported for VM {}", outageId, vmId);
+        sendOutageNotificationEmail(vmId, virtualMachine, "SendVmOutageEmail", outage);
 
-        return createActionAndExecute(actionService, commandService, vmId, ActionType.NEW_VM_OUTAGE,
-                request, "Vps4NewVmOutage", user);
+        return outage;
     }
 
     @POST
     @RequiresRole(roles = {GDUser.Role.ADMIN}) // From message consumer
     @Path("/{vmId}/outages/{outageId}/clear")
-    public VmAction clearVmOutage(@PathParam("vmId") UUID vmId, @PathParam("outageId") long outageId) {
+    public VmOutage clearVmOutage(@PathParam("vmId") UUID vmId, @PathParam("outageId") long outageId) {
         VirtualMachine virtualMachine = vmResource.getVm(vmId); // Auth validation
+        VmOutage outage;
+        try {
+            outage = panoptaService.getOutage(vmId, outageId);
+        } catch (PanoptaServiceException e) {
+            throw new Vps4Exception(e.getId(), e.getMessage(), e);
+        }
 
-        Vps4NewVmOutage.Request request = new Vps4NewVmOutage.Request();
-        request.virtualMachine = virtualMachine;
+        logger.info("Clearing outage {} for VM {}", outageId, vmId);
+        sendOutageNotificationEmail(vmId, virtualMachine, "SendVmOutageResolvedEmail", outage);
 
-        return createActionAndExecute(actionService, commandService, vmId, ActionType.CLEAR_VM_OUTAGE,
-                request, "Vps4ClearVmOutage", user);
+        return outage;
+    }
+
+    private void sendOutageNotificationEmail(UUID vmId, VirtualMachine virtualMachine,
+                                             String emailOrchestrationClassname, VmOutage vmOutage) {
+
+        VirtualMachineCredit credit = creditService.getVirtualMachineCredit(virtualMachine.orionGuid);
+        if (credit != null && credit.isAccountActive() && virtualMachine.isActive() && !credit.isManaged()) {
+            VmOutageEmailRequest vmOutageEmailRequest =
+                    new VmOutageEmailRequest(virtualMachine.name, virtualMachine.primaryIpAddress.ipAddress,
+                                             credit.getOrionGuid(), credit.getShopperId(), vmId, credit.isManaged(),
+                                             vmOutage);
+            Commands.execute(commandService, emailOrchestrationClassname, vmOutageEmailRequest);
+        }
     }
 
 }

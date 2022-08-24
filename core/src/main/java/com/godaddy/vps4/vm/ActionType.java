@@ -62,9 +62,7 @@ public enum ActionType {
     REPLACE_DOMAIN_MONITORING(53),
     CREATE_OH_BACKUP(54),
     DESTROY_OH_BACKUP(55),
-    RESTORE_OH_BACKUP(56),
-    NEW_VM_OUTAGE(57),
-    CLEAR_VM_OUTAGE(58);
+    RESTORE_OH_BACKUP(56);
 
     private final int typeId;
 
