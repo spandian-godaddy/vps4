@@ -187,18 +187,11 @@ public class Vps4ProvisionVm extends ActionCommand<ProvisionRequest, Vps4Provisi
         req.vmId = vps4VmId;
         req.backupName = config.get("vps4.autobackup.backupName");
         req.shopperId = shopperId;
-        try {
-            UUID backupJobId = context.execute(SetupAutomaticBackupSchedule.class, req);
-            context.execute("AddBackupJobIdToVM", ctx -> {
-                virtualMachineService.setBackupJobId(vps4VmId, backupJobId);
-                return null;
-            }, Void.class);
-
-        } catch (RuntimeException e) {
-            // squelch this for now. dont fail a vm provisioning just because we couldn't create an auto backup schedule
-            // TODO: should this behaviour be changed?
-            logger.error("Automatic backup job creation failed {}", e);
-        }
+        UUID backupJobId = context.execute(SetupAutomaticBackupSchedule.class, req);
+        context.execute("AddBackupJobIdToVM", ctx -> {
+            virtualMachineService.setBackupJobId(vps4VmId, backupJobId);
+            return null;
+        }, Void.class);
     }
 
     protected void generateAndSetHostname(long hfsVmId, String ipAddress, String resourceId) {

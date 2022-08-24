@@ -18,7 +18,6 @@ import java.util.UUID;
 import java.util.function.Function;
 
 import com.godaddy.vps4.credit.VirtualMachineCredit;
-import com.godaddy.vps4.orchestration.messaging.SendMessagingEmailBase;
 import com.godaddy.vps4.orchestration.messaging.SendSetupCompletedEmail;
 import com.godaddy.vps4.orchestration.messaging.SetupCompletedEmailRequest;
 import org.junit.Before;

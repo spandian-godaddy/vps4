@@ -274,7 +274,6 @@ public class Vps4ProvisionVmTest {
                 .thenThrow(new RuntimeException("SendMessageFailed"));
         command.executeWithAction(context, this.request);
         verify(context, times(1)).execute(eq(SendSetupCompletedEmail.class), setupCompletedEmailRequestArgCaptor.capture());
-        verify(actionService).updateActionState(request.actionId, "{\"step\":\"SetupAutomaticBackupSchedule\"}");
     }
 
     @Test

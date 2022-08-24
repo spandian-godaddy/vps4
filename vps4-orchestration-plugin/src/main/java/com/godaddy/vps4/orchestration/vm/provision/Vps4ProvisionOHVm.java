@@ -1,5 +1,7 @@
 package com.godaddy.vps4.orchestration.vm.provision;
 
+import java.util.UUID;
+
 import javax.inject.Inject;
 
 import com.godaddy.hfs.config.Config;
@@ -47,6 +49,10 @@ public class Vps4ProvisionOHVm extends Vps4ProvisionVm {
         super.addIpToDb(hfsVm.address.ip_address);
         return hfsVm.address.ip_address;
     }
+
+    /* Optimized Hosting backups are initiated on the OH side */
+    @Override
+    protected void setupAutomaticBackupSchedule(UUID vps4VmId, String shopperId) {}
 
     @Override
     protected void destroyVm(Vps4DestroyVm.Request destroyRequest) {

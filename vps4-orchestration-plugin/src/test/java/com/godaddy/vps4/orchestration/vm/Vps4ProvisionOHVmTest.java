@@ -23,6 +23,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
+import org.mockito.Matchers;
 import org.mockito.MockitoAnnotations;
 
 import com.godaddy.hfs.config.Config;
@@ -45,6 +46,7 @@ import com.godaddy.vps4.orchestration.hfs.vm.CreateVm;
 import com.godaddy.vps4.orchestration.messaging.SendSetupCompletedEmail;
 import com.godaddy.vps4.orchestration.messaging.SetupCompletedEmailRequest;
 import com.godaddy.vps4.orchestration.panopta.SetupPanopta;
+import com.godaddy.vps4.orchestration.scheduler.SetupAutomaticBackupSchedule;
 import com.godaddy.vps4.orchestration.vm.provision.ProvisionRequest;
 import com.godaddy.vps4.orchestration.vm.provision.Vps4ProvisionOHVm;
 import com.godaddy.vps4.vm.ActionService;
@@ -219,7 +221,6 @@ public class Vps4ProvisionOHVmTest {
                 .thenThrow(new RuntimeException("SendMessageFailed"));
         command.executeWithAction(context, this.request);
         verify(context, times(1)).execute(eq(SendSetupCompletedEmail.class), setupCompletedEmailRequestArgCaptor.capture());
-        verify(actionService).updateActionState(request.actionId, "{\"step\":\"SetupAutomaticBackupSchedule\"}");
     }
 
     @Test
@@ -318,5 +319,13 @@ public class Vps4ProvisionOHVmTest {
         } catch (Exception e) {
             assertEquals(e.getMessage(), "Server is no longer tied to credit");
         }
+    }
+
+    @Test
+    public void doesNotSetBackupSchedule() {
+        command.executeWithAction(context, request);
+        verify(context, never()).execute(eq(SetupAutomaticBackupSchedule.class), any());
+        verify(context, never())
+                .execute(eq("AddBackupJobIdToVM"), Matchers.<Function<CommandContext, Void>> any(), eq(Void.class));
     }
 }
