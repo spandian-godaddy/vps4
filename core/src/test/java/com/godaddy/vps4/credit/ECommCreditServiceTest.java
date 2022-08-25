@@ -79,6 +79,7 @@ public class ECommCreditServiceTest {
         account.plan_features.put("pf_id", "1066866");
         account.product_meta = new HashMap<>();
         account.expire_date = new Date();
+        account.auto_renew = "true";
     }
 
     private void markCreditClaimed() {
@@ -122,6 +123,13 @@ public class ECommCreditServiceTest {
         VirtualMachineCredit credit = creditService.getVirtualMachineCredit(orionGuid);
 
         assertEquals(expireDate.toInstant(), credit.getExpireDate());
+    }
+
+    @Test
+    public void testGetCreditIncludesAutoRenew() {
+        when(ecommService.getAccount(orionGuid.toString())).thenReturn(account);
+        VirtualMachineCredit credit = creditService.getVirtualMachineCredit(orionGuid);
+        assertTrue(credit.isAutoRenew());
     }
 
     @Test

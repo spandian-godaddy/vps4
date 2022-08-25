@@ -261,7 +261,7 @@
         <dependency>
             <groupId>hfs</groupId>
             <artifactId>vhfs-ecomm-common-lib</artifactId>
-            <version>1.9.0.36</version>
+            <version>1.13.0.12</version>
             <exclusions>
                 <exclusion>
                     <groupId>*</groupId>

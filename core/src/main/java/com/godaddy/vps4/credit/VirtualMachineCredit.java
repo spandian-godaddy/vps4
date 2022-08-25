@@ -39,6 +39,7 @@ public class VirtualMachineCredit {
     private boolean suspended;
     private UUID customerId;
     private Instant expireDate;
+    private boolean autoRenew;
 
     private VirtualMachineCredit() {
     }
@@ -165,9 +166,9 @@ public class VirtualMachineCredit {
         return suspended;
     }
 
-    public Instant getExpireDate() {
-        return expireDate;
-    }
+    public Instant getExpireDate() { return expireDate; }
+
+    public boolean isAutoRenew() { return autoRenew; }
 
     public UUID getCustomerId() { return customerId; }
 
@@ -181,6 +182,7 @@ public class VirtualMachineCredit {
         private final DataCenterService dataCenterService;
         private UUID customerId;
         private Instant expireDate;
+        private boolean autoRenew;
 
         public Builder(DataCenterService dataCenterService) {
             this.dataCenterService = dataCenterService;
@@ -218,6 +220,7 @@ public class VirtualMachineCredit {
             credit.resellerId = this.resellerId;
             credit.customerId = this.customerId;
             credit.expireDate = this.expireDate;
+            credit.autoRenew = this.autoRenew;
 
             return credit;
         }
@@ -259,6 +262,11 @@ public class VirtualMachineCredit {
 
         public Builder withExpireDate(Date expireDate) {
             this.expireDate = expireDate != null ? expireDate.toInstant() : null;
+            return this;
+        }
+
+        public Builder withAutoRenew(String autoRenew) {
+            this.autoRenew = Boolean.parseBoolean(autoRenew);
             return this;
         }
 
