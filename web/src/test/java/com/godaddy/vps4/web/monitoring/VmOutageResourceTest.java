@@ -14,6 +14,10 @@ import java.time.temporal.ChronoUnit;
 import java.util.Collections;
 import java.util.UUID;
 
+import com.godaddy.vps4.vm.Action;
+import com.godaddy.vps4.vm.ActionService;
+import com.godaddy.vps4.vm.ActionType;
+import org.json.simple.JSONObject;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
@@ -41,14 +45,17 @@ public class VmOutageResourceTest {
     private CreditService creditService = mock(CreditService.class);
     private PanoptaService panoptaService = mock(PanoptaService.class);
     private VirtualMachineCredit credit = mock(VirtualMachineCredit.class);
+    private ActionService actionService = mock(ActionService.class);
     private GDUser gdUser = mock(GDUser.class);
 
-    private VmOutageResource resource = new VmOutageResource(vmResource, commandService, creditService, panoptaService);
+    private VmOutageResource resource = new VmOutageResource(vmResource, commandService, creditService, panoptaService, actionService,
+            gdUser);
     private UUID vmId = UUID.randomUUID();
     private VmMetricAlert vmMetricAlert = new VmMetricAlert();
     private VirtualMachine vm;
     private int outageId = 23;
     private String shopperId = "fake-shopper-id";
+    long actionId = 123321;
 
     private final ArgumentCaptor<CommandGroupSpec> commandCapture = ArgumentCaptor.forClass(CommandGroupSpec.class);
 
@@ -72,7 +79,13 @@ public class VmOutageResourceTest {
 
         vmMetricAlert.status = VmMetricAlert.Status.ENABLED;
         when(gdUser.getShopperId()).thenReturn(shopperId);
+        when(gdUser.isAdmin()).thenReturn(true);
         when(commandService.executeCommand(anyObject())).thenReturn(new CommandState());
+
+        Action action = mock(Action.class);
+        when(actionService.createAction(vmId, ActionType.NEW_VM_OUTAGE, new JSONObject().toJSONString(), gdUser.getUsername())).thenReturn(actionId);
+        when(actionService.createAction(vmId, ActionType.CLEAR_VM_OUTAGE, new JSONObject().toJSONString(), gdUser.getUsername())).thenReturn(actionId);
+        when(actionService.getAction(actionId)).thenReturn(action);
     }
 
     @Test
@@ -92,52 +105,14 @@ public class VmOutageResourceTest {
     @Test
     public void createOutage() throws PanoptaServiceException {
         resource.newVmOutage(vmId, outageId);
-        verify(vmResource).getVm(vmId);
-        verify(panoptaService).getOutage(vmId, outageId);
-        verify(creditService).getVirtualMachineCredit(vm.orionGuid);
-
         verify(commandService).executeCommand(commandCapture.capture());
-        assertEquals("SendVmOutageEmail", commandCapture.getValue().commands.get(0).command);
+        assertEquals("Vps4NewVmOutage", commandCapture.getValue().commands.get(0).command);
     }
 
     @Test
     public void clearOutage() throws PanoptaServiceException {
         resource.clearVmOutage(vmId, outageId);
-        verify(vmResource).getVm(vmId);
-        verify(panoptaService).getOutage(vmId, outageId);
-        verify(creditService).getVirtualMachineCredit(vm.orionGuid);
-
         verify(commandService).executeCommand(commandCapture.capture());
-        assertEquals("SendVmOutageResolvedEmail", commandCapture.getValue().commands.get(0).command);
+        assertEquals("Vps4ClearVmOutage", commandCapture.getValue().commands.get(0).command);
     }
-
-    @Test
-    public void noEmailCommandWhenAccountNotActive() throws PanoptaServiceException {
-        when(credit.isAccountActive()).thenReturn(false);
-        resource.newVmOutage(vmId, outageId);
-        verify(commandService, never()).executeCommand(any());
-    }
-
-    @Test
-    public void noEmailCommandWhenCreditNotFound() throws PanoptaServiceException {
-        when(creditService.getVirtualMachineCredit(eq(vm.orionGuid))).thenReturn(null);
-        resource.newVmOutage(vmId, outageId);
-        verify(commandService, never()).executeCommand(any());
-    }
-
-    @Test
-    public void noEmailCommandWhenVmDestroyed() throws PanoptaServiceException {
-        vm.validUntil = Instant.now().minus(5, ChronoUnit.MINUTES);
-        resource.newVmOutage(vmId, outageId);
-        verify(commandService, never()).executeCommand(any());
-    }
-
-    @Test
-    public void noEmailCommandWhenCreditIsFullyManaged() throws PanoptaServiceException {
-        when(credit.isManaged()).thenReturn(true);
-
-        resource.newVmOutage(vmId, outageId);
-        verify(commandService, never()).executeCommand(any());
-    }
-
 }

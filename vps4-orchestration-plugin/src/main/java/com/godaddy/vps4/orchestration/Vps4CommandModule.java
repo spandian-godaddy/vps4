@@ -11,12 +11,15 @@ import com.godaddy.vps4.orchestration.messaging.SendSetupCompletedEmail;
 import com.godaddy.vps4.orchestration.messaging.SendSystemDownFailoverEmail;
 import com.godaddy.vps4.orchestration.messaging.SendUnexpectedButScheduledMaintenanceEmail;
 import com.godaddy.vps4.orchestration.messaging.WaitForMessageComplete;
+import com.godaddy.vps4.orchestration.monitoring.GetPanoptaOutage;
 import com.godaddy.vps4.orchestration.monitoring.RemoveNodePingMonitoring;
 import com.godaddy.vps4.orchestration.monitoring.RemovePanoptaMonitoring;
 import com.godaddy.vps4.orchestration.monitoring.SendVmOutageEmail;
 import com.godaddy.vps4.orchestration.monitoring.SendVmOutageResolvedEmail;
 import com.godaddy.vps4.orchestration.monitoring.Vps4AddDomainMonitoring;
 import com.godaddy.vps4.orchestration.monitoring.Vps4AddMonitoring;
+import com.godaddy.vps4.orchestration.monitoring.Vps4ClearVmOutage;
+import com.godaddy.vps4.orchestration.monitoring.Vps4NewVmOutage;
 import com.godaddy.vps4.orchestration.monitoring.Vps4RemoveMonitoring;
 import com.godaddy.vps4.orchestration.network.RemoveIpFromBlacklist;
 import com.godaddy.vps4.orchestration.panopta.AddAdditionalFqdnPanopta;
@@ -150,5 +153,8 @@ public class Vps4CommandModule extends AbstractModule {
         bind(Vps4UnclaimCredit.class);
         bind(Vps4RemoveDomainMonitoring.class);
         bind(Vps4ReplaceDomainMonitoring.class);
+        bind(Vps4NewVmOutage.class);
+        bind(Vps4ClearVmOutage.class);
+        bind(GetPanoptaOutage.class);
     }
 }
