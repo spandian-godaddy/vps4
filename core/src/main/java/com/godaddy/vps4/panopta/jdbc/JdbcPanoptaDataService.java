@@ -183,7 +183,7 @@ public class JdbcPanoptaDataService implements PanoptaDataService {
                         " FROM panopta_additional_fqdns paf " +
                         " JOIN panopta_server ps USING (server_id) " +
                         " WHERE ps.vm_id = ?  AND paf.valid_until = 'infinity' ",
-                Sql.mapOf(rs -> (rs.getTimestamp("valid_on").toInstant()),
+                Sql.mapOf(rs -> (rs.getTimestamp("valid_on", TimestampUtils.utcCalendar).toInstant()),
                         rs -> rs.getString("fqdn")), vmId);
     }
 }
