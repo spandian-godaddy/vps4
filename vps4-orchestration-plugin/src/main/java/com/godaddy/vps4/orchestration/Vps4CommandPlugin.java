@@ -1,5 +1,6 @@
 package com.godaddy.vps4.orchestration;
 
+import com.godaddy.vps4.jsd.JsdModule;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -90,7 +91,8 @@ public class Vps4CommandPlugin implements CommandPlugin {
             new ShopperNotesModule(),
             new ResellerModule(),
             new OhModule(),
-            new OhCommandModule()
+            new OhCommandModule(),
+            new JsdModule()
         );
 
         return new GuiceCommandProvider(injector);
