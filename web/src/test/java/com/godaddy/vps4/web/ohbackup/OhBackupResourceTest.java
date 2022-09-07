@@ -15,6 +15,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -104,12 +105,12 @@ public class OhBackupResourceTest {
     }
 
     private void setUpMocks() {
-        backup = createBackup("2022-03-01T00:00:00.00Z", OhBackupState.COMPLETE, OhBackupPurpose.CUSTOMER);
-        hfsBackup = createBackup("2022-01-01T00:00:00.00Z", OhBackupState.COMPLETE, OhBackupPurpose.CUSTOMER);
-        newAutomaticBackup = createBackup("2022-02-01T00:00:00.00Z", OhBackupState.COMPLETE, OhBackupPurpose.DR);
-        oldAutomaticBackup = createBackup("2022-01-01T00:00:00.00Z", OhBackupState.COMPLETE, OhBackupPurpose.DR);
-        oldFailedAutomaticBackup1 = createBackup("2022-03-01T00:00:00.00Z", OhBackupState.FAILED, OhBackupPurpose.DR);
-        oldFailedAutomaticBackup2 = createBackup("2022-04-01T00:00:00.00Z", OhBackupState.FAILED, OhBackupPurpose.DR);
+        backup = createBackup(daysOld(1), OhBackupState.COMPLETE, OhBackupPurpose.CUSTOMER);
+        hfsBackup = createBackup(daysOld(2), OhBackupState.COMPLETE, OhBackupPurpose.CUSTOMER);
+        newAutomaticBackup = createBackup(daysOld(1), OhBackupState.COMPLETE, OhBackupPurpose.DR);
+        oldAutomaticBackup = createBackup(daysOld(8), OhBackupState.COMPLETE, OhBackupPurpose.DR);
+        oldFailedAutomaticBackup1 = createBackup(daysOld(8), OhBackupState.FAILED, OhBackupPurpose.DR);
+        oldFailedAutomaticBackup2 = createBackup(daysOld(9), OhBackupState.FAILED, OhBackupPurpose.DR);
         ohBackupData = createBackupData(backup.id);
         conflictingAction.type = ActionType.CREATE_OH_BACKUP;
         backups = new ArrayList<>();
@@ -122,10 +123,14 @@ public class OhBackupResourceTest {
         vm.spec.serverType.platform = ServerType.Platform.OPTIMIZED_HOSTING;
     }
 
-    private OhBackup createBackup(String created, OhBackupState state, OhBackupPurpose purpose) {
+    private Instant daysOld(int n) {
+        return Instant.now().minus(n, ChronoUnit.DAYS);
+    }
+
+    private OhBackup createBackup(Instant created, OhBackupState state, OhBackupPurpose purpose) {
         OhBackup ohBackup = mock(OhBackup.class);
         ohBackup.id = UUID.randomUUID();
-        ohBackup.createdAt = Instant.parse(created);
+        ohBackup.createdAt = created;
         ohBackup.state = state;
         ohBackup.purpose = purpose;
         return ohBackup;
@@ -178,10 +183,18 @@ public class OhBackupResourceTest {
     }
 
     @Test
-    public void getBackupsOnlyReturnsOneFailedBackup() {
+    public void getBackupsRemovesFailedBackups() {
         List<NamedOhBackup> result = resource.getOhBackups(vm.vmId);
         assertFalse(result.stream().anyMatch(b -> b.id.equals(oldFailedAutomaticBackup1.id)));
-        assertTrue(result.stream().anyMatch(b -> b.id.equals(oldFailedAutomaticBackup2.id)));
+        assertFalse(result.stream().anyMatch(b -> b.id.equals(oldFailedAutomaticBackup2.id)));
+    }
+
+    @Test
+    public void getBackupsIncludesFailedBackupIfItIsMostRecent() {
+        oldFailedAutomaticBackup1.createdAt = daysOld(0);
+        List<NamedOhBackup> result = resource.getOhBackups(vm.vmId);
+        assertTrue(result.stream().anyMatch(b -> b.id.equals(oldFailedAutomaticBackup1.id)));
+        assertFalse(result.stream().anyMatch(b -> b.id.equals(oldFailedAutomaticBackup2.id)));
     }
 
     @Test
