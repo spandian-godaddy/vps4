@@ -26,7 +26,6 @@ import javax.ws.rs.core.MediaType;
 import com.godaddy.hfs.vm.Vm;
 import com.godaddy.hfs.vm.VmExtendedInfo;
 import com.godaddy.vps4.appmonitors.ActionCheckpoint;
-import com.godaddy.vps4.appmonitors.BackupJobAuditData;
 import com.godaddy.vps4.appmonitors.Checkpoint;
 import com.godaddy.vps4.appmonitors.HvBlockingSnapshotsData;
 import com.godaddy.vps4.appmonitors.MonitorService;
@@ -260,14 +259,6 @@ public class VmActionsMonitorResource {
             + "was inserted into vm_hypervisor_snapshottracking table") @QueryParam("thresholdInHours")
                                                                         @DefaultValue("8") long thresholdInHours) {
         return monitorService.getHvsBlockingSnapshots(thresholdInHours);
-    }
-
-    @GET
-    @Path("/missing_backup_jobs")
-    @ApiOperation(value = "Find all active vms that do not have a backup job id, meaning scheduler create job failed",
-            notes = "Find all active vms that do not have a backup job id, meaning scheduler create job failed")
-    public List<BackupJobAuditData> getVmsWithoutBackupJob() {
-        return monitorService.getVmsFilteredByNullBackupJob();
     }
 
     @GET

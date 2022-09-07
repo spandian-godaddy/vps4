@@ -12,7 +12,6 @@ public interface MonitorService {
                                                      SnapshotType type,
                                                      ActionStatus... status);
     List<HvBlockingSnapshotsData> getHvsBlockingSnapshots(long thresholdInHours);
-    List<BackupJobAuditData> getVmsFilteredByNullBackupJob();
     ActionCheckpoint getActionCheckpoint(ActionType actionType);
     ActionCheckpoint setActionCheckpoint(ActionType actionType);
     void deleteActionCheckpoint(ActionType actionType);

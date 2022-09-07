@@ -4,7 +4,6 @@ import static java.util.Arrays.stream;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -12,11 +11,10 @@ import java.util.stream.Collectors;
 import javax.sql.DataSource;
 
 import com.godaddy.hfs.jdbc.Sql;
-import com.godaddy.vps4.appmonitors.BackupJobAuditData;
+import com.godaddy.vps4.appmonitors.ActionCheckpoint;
 import com.godaddy.vps4.appmonitors.Checkpoint;
 import com.godaddy.vps4.appmonitors.HvBlockingSnapshotsData;
 import com.godaddy.vps4.appmonitors.MonitorService;
-import com.godaddy.vps4.appmonitors.ActionCheckpoint;
 import com.godaddy.vps4.appmonitors.SnapshotActionData;
 import com.godaddy.vps4.jdbc.Vps4ReportsDataSource;
 import com.godaddy.vps4.snapshot.SnapshotType;
@@ -46,18 +44,6 @@ public class JdbcMonitorService implements MonitorService {
                 "AND now_utc() - sna.created >= INTERVAL '" + thresholdInMinutes + " minutes' " +
                 String.join(" ", filters) + " ORDER BY sna.created ASC";
     }
-
-    private final static String selectVmsFilteredByNullBackupJob = "SELECT vm.vm_id, vm.valid_on, * FROM virtual_machine vm " +
-            "JOIN vm_action USING (vm_id) " +
-            "JOIN virtual_machine_spec vmspec USING (spec_id) " +
-            "JOIN server_type st USING (server_type_id) " +
-            "JOIN action_status USING (status_id) " +
-            "JOIN action_type ON vm_action.action_type_id = action_type.type_id " +
-            "WHERE vm.valid_until = 'infinity' " +
-            "AND action_status.status = 'COMPLETE' " +
-            "AND action_type.type = 'CREATE_VM' " +
-            "AND backup_job_id IS NULL " +
-            "AND st.platform != 'OVH' ";  // ensure only VPS4 vms are filtered since DED does not have scheduled backups
 
     @Inject
     public JdbcMonitorService(@Vps4ReportsDataSource DataSource reportsDataSource) {
@@ -108,12 +94,6 @@ public class JdbcMonitorService implements MonitorService {
         return Sql.with(dataSource).exec(
                 "SELECT * FROM vm_hypervisor_snapshottracking WHERE now_utc() - created >= INTERVAL '" + thresholdInHours + " hours'",
               Sql.listOf(this::mapHvBlockingSnapshotsData));
-    }
-
-    @Override
-    public List<BackupJobAuditData> getVmsFilteredByNullBackupJob() {
-        return Sql.with(dataSource)
-                .exec(selectVmsFilteredByNullBackupJob, Sql.listOf(this::mapVmId));
     }
 
     @Override
@@ -209,17 +189,5 @@ public class JdbcMonitorService implements MonitorService {
                 UUID.fromString(rs.getString("vm_id")),
                 rs.getTimestamp("created", TimestampUtils.utcCalendar).toInstant()
         );
-    }
-
-    private BackupJobAuditData mapVmId(ResultSet rs) throws SQLException {
-        try {
-            UUID vmId = UUID.fromString(rs.getString("vm_id"));
-            Instant validOn = rs.getTimestamp("valid_on", TimestampUtils.utcCalendar).toInstant();
-
-            BackupJobAuditData auditData = new BackupJobAuditData(vmId, validOn);
-            return auditData;
-        } catch (IllegalArgumentException iax) {
-            throw new IllegalArgumentException("Could not map response. ", iax);
-        }
     }
 }

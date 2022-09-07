@@ -9,9 +9,7 @@ import java.sql.Timestamp;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
-import java.util.Map;
 import java.util.UUID;
-import java.util.function.Predicate;
 
 import javax.sql.DataSource;
 
@@ -20,14 +18,12 @@ import org.junit.Before;
 import org.junit.Test;
 
 import com.godaddy.hfs.jdbc.Sql;
-import com.godaddy.vps4.appmonitors.BackupJobAuditData;
 import com.godaddy.vps4.appmonitors.MonitorService;
 import com.godaddy.vps4.appmonitors.SnapshotActionData;
 import com.godaddy.vps4.appmonitors.jdbc.JdbcMonitorService;
 import com.godaddy.vps4.jdbc.DatabaseModule;
 import com.godaddy.vps4.jdbc.Vps4ReportsDataSource;
 import com.godaddy.vps4.phase2.SqlTestData;
-import com.godaddy.vps4.scheduledJob.ScheduledJob;
 import com.godaddy.vps4.security.Vps4User;
 import com.godaddy.vps4.security.Vps4UserService;
 import com.godaddy.vps4.security.jdbc.JdbcVps4UserService;
@@ -48,7 +44,7 @@ public class MonitorServiceTest {
     MonitorService provisioningMonitorService = new JdbcMonitorService(reportsDataSource);
 
     private UUID orionGuid = UUID.randomUUID();
-    private VirtualMachine vm1, vm2, vm3, vm4, vm5, vm6, vm7, vm8, vm9, vm10;
+    private VirtualMachine vm1, vm2, vm3, vm4, vm5, vm6, vm7, vm8, vm9;
     private Vps4User vps4User;
     private Vps4UserService vps4UserService;
     private Snapshot testSnapshotVm6, testSnapshotVm7;
@@ -107,15 +103,8 @@ public class MonitorServiceTest {
         vm8 = SqlTestData.insertTestVm(orionGuid, reportsDataSource);
         createActionWithDate(vm8.vmId, ActionType.CREATE_VM, ActionStatus.NEW, Instant.now().minus(Duration.ofMinutes(125)), reportsDataSource);
 
-        Map<VirtualMachine, List<ScheduledJob>> vmJobMap = SqlTestData.insertTestVmWithScheduledBackup(orionGuid, reportsDataSource);
-        if(!vmJobMap.isEmpty()) {
-            Map.Entry<VirtualMachine, List<ScheduledJob>> entry = vmJobMap.entrySet().iterator().next();
-            vm9 = entry.getKey();
-            createActionWithDate(vm9.vmId, ActionType.CREATE_VM, ActionStatus.COMPLETE, Instant.now().minus(Duration.ofMinutes(90)), reportsDataSource);
-        }
-
-        vm10 = SqlTestData.insertTestVm(orionGuid, reportsDataSource);
-        createActionWithDate(vm10.vmId, ActionType.CREATE_VM, ActionStatus.COMPLETE, Instant.now().minus(Duration.ofMinutes(90)), reportsDataSource);
+        vm9 = SqlTestData.insertTestVm(orionGuid, reportsDataSource);
+        createActionWithDate(vm9.vmId, ActionType.CREATE_VM, ActionStatus.COMPLETE, Instant.now().minus(Duration.ofMinutes(90)), reportsDataSource);
     }
 
     @After
@@ -129,7 +118,6 @@ public class MonitorServiceTest {
         SqlTestData.cleanupTestVmAndRelatedData(vm7.vmId, reportsDataSource);
         SqlTestData.cleanupTestVmAndRelatedData(vm8.vmId, reportsDataSource);
         SqlTestData.cleanupTestVmAndRelatedData(vm9.vmId, reportsDataSource);
-        SqlTestData.cleanupTestVmAndRelatedData(vm10.vmId, reportsDataSource);
         SqlTestData.deleteVps4User(vps4User.getId(), reportsDataSource);
     }
 
@@ -197,16 +185,6 @@ public class MonitorServiceTest {
                                                                    ActionStatus.ERROR);
         assertNotNull(problemVms);
         assertEquals(2, problemVms.size());
-    }
-
-    @Test
-    public void testGetVmsFilteredByNullBackupJob() {
-        List<BackupJobAuditData> vmsWithNoBackups = provisioningMonitorService.getVmsFilteredByNullBackupJob();
-        assertNotNull("Expected VMs with no backups, found none. ", vmsWithNoBackups);
-        assertFalse("Expected VMs with no backups, found none. ", vmsWithNoBackups.isEmpty());
-        assertTrue("Expected VM's with no backups, found none. ", vmsWithNoBackups.size() != 0);
-        Predicate<BackupJobAuditData> p = backup -> backup.vmId == vm9.vmId;
-        assertTrue("Expected vm to have backups but actual vm does not have backups. ", vmsWithNoBackups.stream().noneMatch(p));
     }
 
     private void verifyIgnoreSnapshotStatus(SnapshotStatus snapshotStatus) {
