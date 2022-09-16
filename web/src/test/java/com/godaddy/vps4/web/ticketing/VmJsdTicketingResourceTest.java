@@ -19,6 +19,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
 
+import java.time.Instant;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
@@ -81,7 +82,7 @@ public class VmJsdTicketingResourceTest {
         request.summary = "Monitoring Event - Agent Heartbeat (0000000)";
         request.partnerCustomerKey = "partnerCustomerKey";
         request.severity = "standard";
-        request.outageId = "0000000";
+        request.outageId = "1231231";
         request.metricTypes = "internal.agent.heartbeat";
         request.metricInfo = "Agent Heartbeat";
         request.metricReasons = "Agent Heartbeat (10.0.0.1)";
@@ -92,36 +93,36 @@ public class VmJsdTicketingResourceTest {
     }
 
     @Test
-    public void callsCreateTicketService() throws Exception {
+    public void callsCreateTicketService() {
         resource.createTicket(vmId, request);
 
         verify(jsdService).createTicket(any(CreateJsdTicketRequest.class));
     }
 
     @Test
-    public void passesCorrectParamsFromRequest() throws Exception {
+    public void passesCorrectParamsFromRequest() {
         resource.createTicket(vmId, request);
 
         verify(jsdService).createTicket(argument.capture());
-        CreateJsdTicketRequest createJSDTicketRequest = argument.getValue();
+        CreateJsdTicketRequest createJsdTicketRequest = argument.getValue();
 
-        assertEquals(vm.orionGuid.toString(), createJSDTicketRequest.orionGuid);
-        assertEquals(request.shopperId, createJSDTicketRequest.shopperId);
-        assertEquals(request.summary, createJSDTicketRequest.summary);
-        assertEquals(request.partnerCustomerKey, createJSDTicketRequest.partnerCustomerKey);
-        assertEquals( "123456", createJSDTicketRequest.plid);
-        assertEquals(vm.primaryIpAddress.ipAddress, createJSDTicketRequest.fqdn);
-        assertEquals(request.severity, createJSDTicketRequest.severity);
-        assertEquals(request.outageId, createJSDTicketRequest.outageId);
-        assertEquals("https://my.panopta.com/outage/manageIncident?incident_id=0000000", createJSDTicketRequest.outageIdUrl);
-        assertEquals("vps4", createJSDTicketRequest.supportProduct);
-        assertEquals("Fully Managed", createJSDTicketRequest.customerProduct);
-        assertEquals(request.metricTypes, createJSDTicketRequest.metricTypes);
-        assertEquals("a2", createJSDTicketRequest.dataCenter);
+        assertEquals(vm.orionGuid.toString(), createJsdTicketRequest.orionGuid);
+        assertEquals(request.shopperId, createJsdTicketRequest.shopperId);
+        assertEquals(request.summary, createJsdTicketRequest.summary);
+        assertEquals(request.partnerCustomerKey, createJsdTicketRequest.partnerCustomerKey);
+        assertEquals( "123456", createJsdTicketRequest.plid);
+        assertEquals(vm.primaryIpAddress.ipAddress, createJsdTicketRequest.fqdn);
+        assertEquals(request.severity, createJsdTicketRequest.severity);
+        assertEquals(request.outageId, createJsdTicketRequest.outageId);
+        assertEquals("https://my.panopta.com/outage/manageIncident?incident_id=" + request.outageId, createJsdTicketRequest.outageIdUrl);
+        assertEquals("vps4", createJsdTicketRequest.supportProduct);
+        assertEquals("Fully Managed", createJsdTicketRequest.customerProduct);
+        assertEquals(request.metricTypes, createJsdTicketRequest.metricTypes);
+        assertEquals("a2", createJsdTicketRequest.dataCenter);
     }
 
     @Test
-    public void throwsErrorForSelfManaged() throws Exception {
+    public void throwsErrorForSelfManaged() {
         when(creditService.getVirtualMachineCredit(orionGuid)).thenReturn(selfManagedCredit);
 
         try{
@@ -133,14 +134,34 @@ public class VmJsdTicketingResourceTest {
     }
 
     @Test
-    public void passesCorrectParamsForDedicated() throws Exception {
+    public void passesCorrectParamsForDedicated() {
         when(creditService.getVirtualMachineCredit(orionGuid)).thenReturn(dedCredit);
 
         resource.createTicket(vmId, request);
 
         verify(jsdService).createTicket(argument.capture());
-        CreateJsdTicketRequest createJSDTicketRequest = argument.getValue();
+        CreateJsdTicketRequest createJsdTicketRequest = argument.getValue();
 
-        assertEquals("ded4", createJSDTicketRequest.supportProduct);
+        assertEquals("ded4", createJsdTicketRequest.supportProduct);
+    }
+
+    @Test
+    public void callsSearchTicketService() {
+        Long outageIdStr = Long.parseLong(request.outageId);
+        resource.searchTicket(vmId, outageIdStr);
+
+        verify(jsdService).searchTicket(vm.primaryIpAddress.ipAddress, outageIdStr, vm.orionGuid);
+    }
+
+    @Test
+    public void callsCommentTicketServiceCorrectly() {
+        Instant timestamp = Instant.now();
+        VmJsdTicketingResource.CommentTicketRequest req = new VmJsdTicketingResource.CommentTicketRequest();
+        req.timestamp = timestamp;
+        req.items = request.metricInfo;
+
+        resource.commentTicket(vmId, "ticketId", req);
+
+        verify(jsdService).commentTicket("ticketId",  "10.0.0.1", request.metricInfo, timestamp);
     }
 }

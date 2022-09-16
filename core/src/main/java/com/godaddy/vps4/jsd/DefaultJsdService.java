@@ -1,24 +1,40 @@
 package com.godaddy.vps4.jsd;
 
 import com.godaddy.vps4.jsd.model.CreateJsdTicketRequest;
+import com.godaddy.vps4.jsd.model.JsdApiIssueCommentRequest;
 import com.godaddy.vps4.jsd.model.JsdApiIssueRequest;
+import com.godaddy.vps4.jsd.model.JsdApiSearchIssueRequest;
+import com.godaddy.vps4.jsd.model.JsdContentDoc;
+import com.godaddy.vps4.jsd.model.JsdContentNodeLabel;
+import com.godaddy.vps4.jsd.model.JsdContentNodeValue;
+import com.godaddy.vps4.jsd.model.JsdContentParagraph;
+import com.godaddy.vps4.jsd.model.JsdCreatedComment;
 import com.godaddy.vps4.jsd.model.JsdCreatedIssue;
 import com.godaddy.vps4.jsd.model.JsdFieldId;
 import com.godaddy.vps4.jsd.model.JsdFieldKey;
 import com.godaddy.vps4.jsd.model.JsdFieldName;
 import com.godaddy.vps4.jsd.model.JsdFieldValue;
+import com.godaddy.vps4.jsd.model.JsdIssueSearchResult;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.inject.Inject;
+import java.time.Instant;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.UUID;
+
 import com.godaddy.hfs.config.Config;
 
 public class DefaultJsdService implements JsdService {
     private static final String REQUEST_TYPE = "Special Request";
     private static final String SERVICE_REQUEST_CATEGORY = "Monitoring Event";
     private static final String SUPPORT_TIER_LEVEL = "Tier 3";
-
+    private final String timezoneForDateParams;
+    private final String dateTimePattern;
     private final JsdApiService jsdApiService;
     private final Config config;
     private static final Logger logger = LoggerFactory.getLogger(DefaultJsdService.class);
@@ -28,13 +44,14 @@ public class DefaultJsdService implements JsdService {
     public DefaultJsdService(JsdApiService jsdApiService, Config config) {
         this.jsdApiService = jsdApiService;
         this.config = config;
+        this.timezoneForDateParams = config.get("messaging.timezone");
+        this.dateTimePattern = config.get("messaging.datetime.pattern");
     }
 
     @Override
-    public JsdCreatedIssue createTicket(CreateJsdTicketRequest createJSDTicketRequest) throws Exception {
-        JsdApiIssueRequest.JSDIssueFields fields = buildRequestFields(createJSDTicketRequest);
+    public JsdCreatedIssue createTicket(CreateJsdTicketRequest createJsdTicketRequest) {
+        JsdApiIssueRequest.JsdIssueFields fields = buildRequestFields(createJsdTicketRequest);
         JsdApiIssueRequest jsdApiIssueRequest = new JsdApiIssueRequest(fields);
-        logger.info("request here {}", jsdApiIssueRequest);
         try {
             return jsdApiService.createTicket(jsdApiIssueRequest);
         }
@@ -44,7 +61,47 @@ public class DefaultJsdService implements JsdService {
         }
     }
 
-    private JsdApiIssueRequest.JSDIssueFields buildRequestFields(CreateJsdTicketRequest createTicketRequest) {
+    @Override
+    public JsdIssueSearchResult searchTicket(String primaryIpAddress, Long outageId, UUID orionId) {
+        String jql = "\"IP Address[Short text]\"~\"" + primaryIpAddress +
+                "\" AND \"Outage ID[Short text]\"~\"" + outageId +
+                "\" AND \"GUID[Short text]\"~\"" + orionId + "\"";
+
+        String[] fields = new String[]{"summary", "id", "key"};
+        JsdApiSearchIssueRequest jsdApiSearchIssueRequest = new JsdApiSearchIssueRequest(jql, 1, 0, fields);
+
+        try {
+            return jsdApiService.searchTicket(jsdApiSearchIssueRequest);
+        }
+        catch (Exception e) {
+            logger.error("Error searching for JSD ticket for outageId {} : Exception :", outageId, e);
+            throw e;
+        }
+    }
+
+    @Override
+    public JsdCreatedComment commentTicket(String ticketIdOrKey, String fqdn, String items, Instant timestamp) {
+        String contentText = String.format("Outage has been cleared for: \nFQDN: %s\nItems: %s\nTimestamp: %s %s",
+                                           fqdn, items, formatDateTime(timestamp), timezoneForDateParams);
+        JsdContentNodeValue contentNode = new JsdContentNodeValue(contentText);
+        JsdContentParagraph paragraph = new JsdContentParagraph(Collections.singletonList(contentNode));
+        JsdContentDoc body = new JsdContentDoc(Collections.singletonList(paragraph));
+        JsdApiIssueCommentRequest req = new JsdApiIssueCommentRequest(body);
+        try {
+            return jsdApiService.commentTicket(ticketIdOrKey, req);
+        } catch (Exception e) {
+            logger.error("Error commenting on for JSD ticket {} : Exception :", ticketIdOrKey, e);
+            throw e;
+        }
+    }
+
+    private String formatDateTime(Instant dateTime) {
+        ZonedDateTime zonedDateTime = dateTime.atZone(ZoneId.of(this.timezoneForDateParams));
+        DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern(this.dateTimePattern);
+        return dateTimeFormatter.format(zonedDateTime);
+    }
+
+    private JsdApiIssueRequest.JsdIssueFields buildRequestFields(CreateJsdTicketRequest createTicketRequest) {
         JsdFieldValue requestCategory, supportTier, severity, supportProduct, customerProduct, dataCenter;
 
         JsdFieldName issueType = new JsdFieldName(REQUEST_TYPE);
@@ -58,18 +115,17 @@ public class DefaultJsdService implements JsdService {
         customerProduct = new JsdFieldValue(createTicketRequest.customerProduct);
         dataCenter = new JsdFieldValue(createTicketRequest.dataCenter);
 
-        JsdApiIssueRequest.ContentDoc servicesAffected = buildServicesAffectedContent(createTicketRequest.metricTypes);
+        JsdContentDoc servicesAffected = buildServicesAffectedContent(createTicketRequest.metricTypes);
 
-        JsdApiIssueRequest.ContentParagraph contentFqdn = buildDescriptionContent("FQDN: ", createTicketRequest.fqdn);
+        JsdContentParagraph contentFqdn = buildDescriptionContent("FQDN: ", createTicketRequest.fqdn);
 
-        JsdApiIssueRequest.ContentParagraph contentItems = buildDescriptionContent("Items: ", createTicketRequest.metricInfo);
+        JsdContentParagraph contentItems = buildDescriptionContent("Items: ", createTicketRequest.metricInfo);
 
-        JsdApiIssueRequest.ContentParagraph contentReasons = buildDescriptionContent("Reasons: ", createTicketRequest.metricReasons);
+        JsdContentParagraph contentReasons = buildDescriptionContent("Reasons: ", createTicketRequest.metricReasons);
 
-        JsdApiIssueRequest.ContentDoc description =
-                new JsdApiIssueRequest.ContentDoc(Arrays.asList(contentFqdn, contentItems, contentReasons));
+        JsdContentDoc description = new JsdContentDoc(Arrays.asList(contentFqdn, contentItems, contentReasons));
 
-        JsdApiIssueRequest.JSDIssueFields fields = new JsdApiIssueRequest.JSDIssueFields();
+        JsdApiIssueRequest.JsdIssueFields fields = new JsdApiIssueRequest.JsdIssueFields();
 
         fields.issueType = issueType;
         fields.project = project;
@@ -95,20 +151,20 @@ public class DefaultJsdService implements JsdService {
         return fields;
     }
 
-    private JsdApiIssueRequest.ContentParagraph buildDescriptionContent(String text, String value) {
-        JsdApiIssueRequest.ContentNodeLabel contentNodeText = new JsdApiIssueRequest.ContentNodeLabel(text);
+    private JsdContentParagraph buildDescriptionContent(String text, String value) {
+        JsdContentNodeLabel contentNodeText = new JsdContentNodeLabel(text);
 
-        JsdApiIssueRequest.ContentNodeValue contentNodeValue = new JsdApiIssueRequest.ContentNodeValue(value);
+        JsdContentNodeValue contentNodeValue = new JsdContentNodeValue(value);
 
-        JsdApiIssueRequest.ContentParagraph content = new JsdApiIssueRequest.ContentParagraph(Arrays.asList(contentNodeText, contentNodeValue));
+        JsdContentParagraph content = new JsdContentParagraph(Arrays.asList(contentNodeText, contentNodeValue));
 
         return content;
     }
 
-    private JsdApiIssueRequest.ContentDoc buildServicesAffectedContent(String servicesAffected) {
-        JsdApiIssueRequest.ContentNodeLabel contentNode = new JsdApiIssueRequest.ContentNodeLabel(servicesAffected);
-        JsdApiIssueRequest.ContentParagraph content = new JsdApiIssueRequest.ContentParagraph(Arrays.asList(contentNode));
-        JsdApiIssueRequest.ContentDoc servicesAffectedContent = new JsdApiIssueRequest.ContentDoc(Arrays.asList(content));
+    private JsdContentDoc buildServicesAffectedContent(String servicesAffected) {
+        JsdContentNodeLabel contentNode = new JsdContentNodeLabel(servicesAffected);
+        JsdContentParagraph content = new JsdContentParagraph(Collections.singletonList(contentNode));
+        JsdContentDoc servicesAffectedContent = new JsdContentDoc(Collections.singletonList(content));
         return servicesAffectedContent;
     }
 }

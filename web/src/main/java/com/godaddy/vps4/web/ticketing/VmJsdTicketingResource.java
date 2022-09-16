@@ -3,8 +3,10 @@ package com.godaddy.vps4.web.ticketing;
 import com.godaddy.vps4.credit.CreditService;
 import com.godaddy.vps4.credit.VirtualMachineCredit;
 import com.godaddy.vps4.jsd.model.CreateJsdTicketRequest;
+import com.godaddy.vps4.jsd.model.JsdCreatedComment;
 import com.godaddy.vps4.jsd.model.JsdCreatedIssue;
 import com.godaddy.vps4.jsd.JsdService;
+import com.godaddy.vps4.jsd.model.JsdIssueSearchResult;
 import com.godaddy.vps4.vm.VirtualMachine;
 import com.godaddy.vps4.web.Vps4Api;
 import com.godaddy.vps4.web.Vps4Exception;
@@ -20,11 +22,13 @@ import org.slf4j.LoggerFactory;
 
 import javax.inject.Inject;
 import javax.ws.rs.Consumes;
+import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
+import java.time.Instant;
 import java.util.UUID;
 
 @Vps4Api
@@ -55,7 +59,7 @@ public class VmJsdTicketingResource {
     @RequiresRole(roles = {GDUser.Role.ADMIN})
     public JsdCreatedIssue createTicket(
             @ApiParam(value = "The ID of the server to create ticket for", required = true) @PathParam("vmId") UUID vmId,
-            CreateTicketRequest createTicketRequest ) throws Exception {
+            CreateTicketRequest createTicketRequest ) {
         logger.info("Creating JSD ticket for VM {}", vmId);
         VirtualMachine vm = vmResource.getVm(vmId);
         VirtualMachineCredit credit = creditService.getVirtualMachineCredit(vm.orionGuid);
@@ -83,6 +87,38 @@ public class VmJsdTicketingResource {
         return jsdService.createTicket(request);
     }
 
+    @GET
+    @Path("/{vmId}/ticket/{outageId}")
+    @ApiOperation(value = "Search for a JSD ticket of an outage for a VM",
+            notes = "Search for a JSD ticket of an outage for a VM")
+    @RequiresRole(roles = {GDUser.Role.ADMIN})
+    public JsdCreatedIssue searchTicket(
+            @ApiParam(value = "The ID of the server to search tickets for", required = true) @PathParam("vmId") UUID vmId,
+            @ApiParam(value = "The ID of the server outage to search tickets for", required = true) @PathParam("outageId") Long outageId) {
+        logger.info("Searching for JSD ticket for VM {} and outageId {}", vmId, outageId);
+        VirtualMachine vm = vmResource.getVm(vmId);
+
+        JsdIssueSearchResult result = jsdService.searchTicket(vm.primaryIpAddress.ipAddress, outageId, vm.orionGuid);
+        return (result != null && result.issues != null && !result.issues.isEmpty()) ? result.issues.get(0) : null;
+    }
+
+    @POST
+    @Path("/{vmId}/ticket/{ticketId}/comment")
+    @ApiOperation(value = "Create new comment on JSD ticket for a VM",
+            notes = "Create new comment on JSD ticket for a VM")
+    @RequiresRole(roles = {GDUser.Role.ADMIN})
+    public JsdCreatedComment commentTicket(
+            @ApiParam(value = "The ID of the server to search tickets for", required = true) @PathParam("vmId") UUID vmId,
+            @ApiParam(value = "The ID or Key of the ticket to update", required = true) @PathParam("ticketId") String ticketIdOrKey,
+            CommentTicketRequest commentTicketRequest) {
+        logger.info("Updating JSD ticket for VM {} and ticketId or key {}", vmId, ticketIdOrKey);
+        VirtualMachine vm = vmResource.getVm(vmId);
+
+        JsdCreatedComment result = jsdService.commentTicket(ticketIdOrKey, vm.primaryIpAddress.ipAddress,
+                commentTicketRequest.items, commentTicketRequest.timestamp);
+
+        return result;
+    }
     public String managedLevelMapper(boolean managed) {
         if (managed) {
                 return "Fully Managed";
@@ -122,5 +158,11 @@ public class VmJsdTicketingResource {
         public String metricTypes;
         public String metricInfo;
         public String metricReasons;
+    }
+
+
+    public static class CommentTicketRequest {
+        public String items;
+        public Instant timestamp;
     }
 }

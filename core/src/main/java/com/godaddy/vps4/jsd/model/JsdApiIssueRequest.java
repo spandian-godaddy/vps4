@@ -4,22 +4,14 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import org.apache.commons.lang3.builder.ReflectionToStringBuilder;
 import org.apache.commons.lang3.builder.ToStringStyle;
 
-import java.util.Arrays;
-import java.util.List;
-
 public class JsdApiIssueRequest {
-    private static final String CONTENT_MARKS = "strong";
-    private static final String CONTENT_TYPE_TEXT = "text";
-    private static final String CONTENT_TYPE_PARAGRAPH = "paragraph";
-    private static final String CONTENT_TYPE_DOC = "doc";
-    private static final int CONTENT_VERSION = 1;
-    @JsonProperty("fields") public JSDIssueFields fields;
+    @JsonProperty("fields") public JsdIssueFields fields;
 
-    public JsdApiIssueRequest(JSDIssueFields fields) {
+    public JsdApiIssueRequest(JsdIssueFields fields) {
         this.fields = fields;
     }
 
-    public static class JSDIssueFields {
+    public static class JsdIssueFields {
         @JsonProperty("issuetype") public JsdFieldName issueType;
         @JsonProperty("project") public JsdFieldKey project;
         @JsonProperty("reporter") public JsdFieldId reporter;
@@ -37,79 +29,13 @@ public class JsdApiIssueRequest {
         @JsonProperty("customfield_10234") public JsdFieldValue customerProduct;
         @JsonProperty("customfield_10247") public String orionGuid;
         @JsonProperty("customfield_10259") public String metricTypes;
-        @JsonProperty("customfield_10262") public ContentDoc servicesAffected;
+        @JsonProperty("customfield_10262") public JsdContentDoc servicesAffected;
         @JsonProperty("customfield_10264") public JsdFieldValue dataCenter;
-        @JsonProperty("description") public ContentDoc description;
+        @JsonProperty("description") public JsdContentDoc description;
 
-        public JSDIssueFields() {
+        public JsdIssueFields() {
         }
 
-        @Override
-        public String toString() {
-            return ReflectionToStringBuilder.toString(this, ToStringStyle.MULTI_LINE_STYLE);
-        }
-    }
-
-    public static class ContentDoc extends ContentParagraph{
-        @JsonProperty("version") public Integer version;
-
-        public ContentDoc(List<Object> contentList) {
-            super(contentList);
-            this.type = CONTENT_TYPE_DOC;
-            this.version = CONTENT_VERSION;
-        }
-        @Override
-        public String toString() {
-            return ReflectionToStringBuilder.toString(this, ToStringStyle.MULTI_LINE_STYLE);
-        }
-    }
-
-    public static class ContentParagraph {
-        @JsonProperty("content") public List<Object> contentList;
-        @JsonProperty("type") public String type;
-
-        public ContentParagraph(List<Object> contentList) {
-            this.type = CONTENT_TYPE_PARAGRAPH;
-            this.contentList = contentList;
-        }
-        @Override
-        public String toString() {
-            return ReflectionToStringBuilder.toString(this, ToStringStyle.MULTI_LINE_STYLE);
-        }
-    }
-
-    public static class ContentNodeMarks {
-        @JsonProperty("type") public String type;
-
-        public ContentNodeMarks(String type){
-            this.type = type;
-        }
-        @Override
-        public String toString() {
-            return ReflectionToStringBuilder.toString(this, ToStringStyle.MULTI_LINE_STYLE);
-        }
-    }
-
-    public static class ContentNodeLabel extends ContentNodeValue {
-        @JsonProperty("marks") public List<Object> marks;
-        public ContentNodeLabel(String text){
-            super(text);
-            this.marks = Arrays.asList(new ContentNodeMarks(CONTENT_MARKS));
-            this.type = CONTENT_TYPE_TEXT;
-        }
-        @Override
-        public String toString() {
-            return ReflectionToStringBuilder.toString(this, ToStringStyle.MULTI_LINE_STYLE);
-        }
-    }
-
-    public static class ContentNodeValue extends ContentNodeMarks{
-        @JsonProperty("text") public String text;
-
-        public ContentNodeValue(String text){
-            super(CONTENT_TYPE_TEXT);
-            this.text = text;
-        }
         @Override
         public String toString() {
             return ReflectionToStringBuilder.toString(this, ToStringStyle.MULTI_LINE_STYLE);
