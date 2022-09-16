@@ -70,6 +70,7 @@ public class Vps4AccountMessageHandlerTest {
 
     private UUID orionGuid;
     private VirtualMachine vm;
+    private VirtualMachineCredit vmCredit;
 
     private final String DEFAULT_TIER = "10";
     private final String UPGRADED_TIER = "20";
@@ -118,6 +119,7 @@ public class Vps4AccountMessageHandlerTest {
         CommandState command = new CommandState();
         command.commandId = UUID.randomUUID();
         when(commandServiceMock.executeCommand(anyObject())).thenReturn(command);
+        when(configMock.get("messaging.reseller.blacklist.fullyManaged", "")).thenReturn("");
     }
 
     private void setDefaultPlanFeatures() {
@@ -125,21 +127,25 @@ public class Vps4AccountMessageHandlerTest {
         planFeatures.put(PlanFeatures.MANAGED_LEVEL.toString(), DEFAULT_UNMANAGED);
         planFeatures.put(PlanFeatures.CONTROL_PANEL_TYPE.toString(), DEFAULT_CONTROLPANEL);
     }
-
-    private void mockVmCredit(AccountStatus accountStatus, UUID productId) {
+    private void mockVmCreditWithReseller(AccountStatus accountStatus, UUID productId, String resellerId) {
         if (productId != null) {
             productMeta.put(ProductMetaField.PRODUCT_ID.toString(), vm.vmId.toString());
             productMeta.put(ProductMetaField.DATA_CENTER.toString(), DEFAULT_DATACENTER);
         }
 
-        VirtualMachineCredit vmCredit = new VirtualMachineCredit.Builder(mock(DataCenterService.class))
+        vmCredit = new VirtualMachineCredit.Builder(mock(DataCenterService.class))
                 .withAccountGuid(orionGuid.toString())
                 .withAccountStatus(accountStatus)
                 .withShopperID("TestShopper")
                 .withProductMeta(productMeta)
                 .withPlanFeatures(planFeatures)
+                .withResellerID(resellerId)
                 .build();
         when(creditServiceMock.getVirtualMachineCredit(orionGuid)).thenReturn(vmCredit);
+    }
+
+    private void mockVmCredit(AccountStatus accountStatus, UUID productId) {
+        mockVmCreditWithReseller(accountStatus, productId, "1");
     }
 
     @SuppressWarnings("unchecked")
@@ -232,6 +238,32 @@ public class Vps4AccountMessageHandlerTest {
         ArgumentCaptor<CommandGroupSpec> argument = ArgumentCaptor.forClass(CommandGroupSpec.class);
         verify(commandServiceMock, times(1)).executeCommand(argument.capture());
         assertEquals("Vps4PlanChange", argument.getValue().commands.get(0).command);
+    }
+
+    @Test
+    public void testCreditPlidSendsManagedEmail() throws MissingShopperIdException, IOException, MessageHandlerException {
+        planFeatures.put(PlanFeatures.MANAGED_LEVEL.toString(), VPS4_MANAGED);
+        mockVmCreditWithReseller(AccountStatus.ACTIVE, vm.vmId, "12345");
+        when(configMock.get("vps4MessageHandler.processFullyManagedEmails")).thenReturn("true");
+        when(configMock.get("messaging.reseller.blacklist.fullyManaged", "")).thenReturn("4500,495469,527397,525848");
+
+        callHandleMessage(createTestKafkaMessage("added"));
+
+        verify(creditServiceMock).getVirtualMachineCredit(anyObject());
+        verify(messagingServiceMock).sendFullyManagedEmail("TestShopper", "myh");
+    }
+
+    @Test
+    public void testCreditPlidDoesNotSendManagedEmail() throws MissingShopperIdException, IOException, MessageHandlerException {
+        planFeatures.put(PlanFeatures.MANAGED_LEVEL.toString(), VPS4_MANAGED);
+        mockVmCreditWithReseller(AccountStatus.ACTIVE, vm.vmId, "4500");
+        when(configMock.get("messaging.reseller.blacklist.fullyManaged", "")).thenReturn("4500,495469,527397,525848");
+        when(configMock.get("vps4MessageHandler.processFullyManagedEmails")).thenReturn("true");
+
+        callHandleMessage(createTestKafkaMessage("added"));
+
+        verify(creditServiceMock).getVirtualMachineCredit(anyObject());
+        verify(messagingServiceMock, never()).sendFullyManagedEmail(anyString(), anyString());
     }
 
     @Test

@@ -18,6 +18,7 @@ import com.godaddy.vps4.web.client.VmZombieService;
 import com.godaddy.vps4.web.vm.VmShopperMergeResource.ShopperMergeRequest;
 import com.google.inject.Inject;
 import gdg.hfs.orchestration.CommandService;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -25,6 +26,9 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 import java.util.UUID;
 
 import static com.godaddy.vps4.handler.MessageNotificationType.ADDED;
@@ -41,14 +45,16 @@ public class Vps4AccountMessageHandler implements MessageHandler {
     private final CreditService creditService;
     private final ActionService vmActionService;
     private final CommandService commandService;
-    private final boolean processFullyManagedEmails;
+    private final boolean shouldProcessFullyManagedEmails;
     private final boolean primaryMessageConsumerServer;
+    private final List<String> resellerBlacklist;
     private final VmZombieService vmZombieService;
     private final VmShopperMergeService vmShopperMergeService;
     private final Vps4MessagingService messagingService;
     private final VmSuspendReinstateService vmSuspendReinstateService;
     private final VmService vmService;
     private final Config config;
+
     @Inject
     public Vps4AccountMessageHandler(
             VirtualMachineService virtualMachineService,
@@ -72,7 +78,8 @@ public class Vps4AccountMessageHandler implements MessageHandler {
         this.vmService = vmService;
         this.vmShopperMergeService = vmShopperMergeService;
         this.config = config;
-        processFullyManagedEmails = Boolean.parseBoolean(config.get("vps4MessageHandler.processFullyManagedEmails"));
+        resellerBlacklist = Arrays.asList(config.get("messaging.reseller.blacklist.fullyManaged", "").split(","));
+        shouldProcessFullyManagedEmails = Boolean.parseBoolean(config.get("vps4MessageHandler.processFullyManagedEmails"));
         primaryMessageConsumerServer =
                 Boolean.parseBoolean(config.get("vps4MessageHandler.primaryMessageConsumerServer"));
     }
@@ -143,7 +150,7 @@ public class Vps4AccountMessageHandler implements MessageHandler {
                     break;
                 case ADDED:
                     setPurchasedAt(vps4Message, credit);
-                    sendFullyManagedWelcomeEmail(credit);
+                    processFullyManagedEmails(credit);
                     processPlanChange(credit, vm);
                     break;
                 case RENEWED:
@@ -169,7 +176,7 @@ public class Vps4AccountMessageHandler implements MessageHandler {
     }
 
     private void ifVmSuspendedReinstateAccount(VirtualMachineCredit credit, VirtualMachine vm) {
-        if(credit.isVmSuspended() && !credit.isAccountSuspended())
+        if (credit.isVmSuspended() && !credit.isAccountSuspended())
             reinstateServer(vm);
     }
 
@@ -196,15 +203,25 @@ public class Vps4AccountMessageHandler implements MessageHandler {
                 Instant.now().toString());
     }
 
-    private void sendFullyManagedWelcomeEmail(VirtualMachineCredit credit) {
-        if (credit.getAccountStatus() == AccountStatus.ACTIVE && processFullyManagedEmails
-                && credit.isManaged() && !credit.isFullyManagedEmailSent()) {
-            try {
-                messagingService.sendFullyManagedEmail(credit.getShopperId(), credit.getControlPanel());
-                creditService.updateProductMeta(credit.getOrionGuid(), ProductMetaField.FULLY_MANAGED_EMAIL_SENT,"true");
-            } catch (MissingShopperIdException | IOException e) {
-                logger.warn("Failed to send fully managed welcome email", e);
+    private void processFullyManagedEmails(VirtualMachineCredit credit) {
+        if (credit.getAccountStatus() == AccountStatus.ACTIVE && shouldProcessFullyManagedEmails
+                        && credit.isManaged() && !credit.isFullyManagedEmailSent()) {
+            String resellerId = credit.getResellerId();
+            if (resellerBlacklist.contains(resellerId)) {
+                logger.info("Credit's Reseller Id {} is suppressed for email template VPSWelcomeCpanel/VPSWelcomePlesk." +
+                        "No longer attempting to send FullyManagedWelcomeEmail to credit {}", resellerId, credit.getOrionGuid());
+            } else {
+                sendFullyManagedWelcomeEmail(credit);
             }
+            creditService.updateProductMeta(credit.getOrionGuid(), ProductMetaField.FULLY_MANAGED_EMAIL_SENT, "true");
+        }
+    }
+
+    private void sendFullyManagedWelcomeEmail(VirtualMachineCredit credit) {
+        try {
+            messagingService.sendFullyManagedEmail(credit.getShopperId(), credit.getControlPanel());
+        } catch( MissingShopperIdException | IOException e) {
+            logger.warn("Failed to send fully managed welcome email", e);
         }
     }
 
