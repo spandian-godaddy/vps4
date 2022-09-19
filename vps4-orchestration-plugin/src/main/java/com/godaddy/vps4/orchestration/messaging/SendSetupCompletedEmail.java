@@ -16,7 +16,6 @@ import gdg.hfs.orchestration.CommandMetadata;
 import gdg.hfs.orchestration.CommandRetryStrategy;
 
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 
 @CommandMetadata(
@@ -38,8 +37,6 @@ public class SendSetupCompletedEmail extends SendMessagingEmailBase implements C
         this.messagingService = messagingService;
         this.creditService = creditService;
         this.config = config;
-        String rer = this.config.get("messaging.reseller.blacklist.setup", "");
-        String[] erwer = this.config.get("messaging.reseller.blacklist.setup", "").split(",");
         resellerBlacklist = Arrays.asList(this.config.get("messaging.reseller.blacklist.setup", "").split(","));
     }
 
@@ -50,9 +47,8 @@ public class SendSetupCompletedEmail extends SendMessagingEmailBase implements C
         String resellerId = credit.getResellerId();
 
         if (resellerBlacklist.contains(resellerId)){
-            logger.info("Credit's Reseller Id {} is suppressed for email template VirtualPrivateHostingProvisioned4. " +
-                    "No longer attempting to send SetupCompleted to shopper {}", resellerId, emailRequest.shopperId);
-            return null;
+            throw new RuntimeException(String.format("Credit's Reseller Id %s is suppressed for email template VirtualPrivateHostingProvisioned4. " +
+                    "No longer attempting to send SetupCompleted to shopper %s", resellerId, emailRequest.shopperId));
         }
         String messageId = context.execute("SendSetupCompletedEmail-" + emailRequest.shopperId,
                 ctx -> messagingService.sendSetupEmail(emailRequest.shopperId, emailRequest.serverName, emailRequest.ipAddress,

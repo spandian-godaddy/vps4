@@ -94,15 +94,12 @@ public class SendSetupCompletedEmailTest {
                 orionGuid.toString(), isManaged);
     }
 
-    @Test
-    public void testCreditPlidInBlacklist() {
+    @Test(expected=RuntimeException.class)
+    public void testCreditPlidInBlacklistThrowsException() {
         when(config.get("messaging.reseller.blacklist.setup", "")).thenReturn("4500,527397,525848");
         when(credit.getResellerId()).thenReturn("4500");
 
         command = new SendSetupCompletedEmail(messagingService, creditService, config);
         command.execute(context, request);
-
-        verify(messagingService, never()).sendSetupEmail(shopperId, serverName, ipAddress,
-                orionGuid.toString(), isManaged);
     }
 }

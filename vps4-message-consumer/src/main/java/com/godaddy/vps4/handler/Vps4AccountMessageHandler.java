@@ -208,7 +208,7 @@ public class Vps4AccountMessageHandler implements MessageHandler {
                         && credit.isManaged() && !credit.isFullyManagedEmailSent()) {
             String resellerId = credit.getResellerId();
             if (resellerBlacklist.contains(resellerId)) {
-                logger.info("Credit's Reseller Id {} is suppressed for email template VPSWelcomeCpanel/VPSWelcomePlesk." +
+                logger.error("Credit's Reseller Id {} is suppressed for email template VPSWelcomeCpanel/VPSWelcomePlesk." +
                         "No longer attempting to send FullyManagedWelcomeEmail to credit {}", resellerId, credit.getOrionGuid());
             } else {
                 sendFullyManagedWelcomeEmail(credit);
