@@ -168,7 +168,7 @@
         <dependency>
             <groupId>com.godaddy.hosting</groupId>
             <artifactId>orchestration-client</artifactId>
-            <version>0.5.2-43</version>
+            <version>${orchestration-version}</version>
         </dependency>
 
         <!-- External dependencies -->
@@ -187,7 +187,7 @@
         <dependency>
             <groupId>io.swagger</groupId>
             <artifactId>swagger-jaxrs</artifactId>
-            <version>1.5.13</version>
+            <version>${swagger-version}</version>
         </dependency>
     </dependencies>
 </project>
