@@ -13,12 +13,6 @@
     <name>VPS4</name>
     <packaging>pom</packaging>
 
-    <properties>
-        <orchestration-version>1.2.0-48</orchestration-version>
-        <jackson-version>2.13.3</jackson-version>
-        <swagger-version>1.6.6</swagger-version>
-    </properties>
-
     <dependencyManagement>
         <dependencies>
             <dependency>
@@ -40,6 +34,21 @@
                 <groupId>org.jboss.resteasy</groupId>
                 <artifactId>jaxrs-api</artifactId>
                 <version>3.0.19.Final</version>
+            </dependency>
+            <dependency>
+                <groupId>com.fasterxml.jackson.jaxrs</groupId>
+                <artifactId>jackson-jaxrs-json-provider</artifactId>
+                <version>2.9.8</version>
+            </dependency>
+            <dependency>
+                <groupId>com.fasterxml.jackson.datatype</groupId>
+                <artifactId>jackson-datatype-jsr310</artifactId>
+                <version>2.9.8</version>
+            </dependency>
+            <dependency>
+                <groupId>com.fasterxml.jackson.core</groupId>
+                <artifactId>jackson-databind</artifactId>
+                <version>2.9.8</version>
             </dependency>
         </dependencies>
     </dependencyManagement>

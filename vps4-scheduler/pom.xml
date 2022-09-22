@@ -219,23 +219,6 @@
     </build>
 
     <dependencies>
-        <!-- Jackson -->
-        <dependency>
-            <groupId>com.fasterxml.jackson.core</groupId>
-            <artifactId>jackson-databind</artifactId>
-            <version>${jackson-version}</version>
-        </dependency>
-        <dependency>
-            <groupId>com.fasterxml.jackson.datatype</groupId>
-            <artifactId>jackson-datatype-jsr310</artifactId>
-            <version>${jackson-version}</version>
-        </dependency>
-        <dependency>
-            <groupId>com.fasterxml.jackson.jaxrs</groupId>
-            <artifactId>jackson-jaxrs-json-provider</artifactId>
-            <version>${jackson-version}</version>
-        </dependency>
-
         <!-- Internal dependencies -->
         <dependency>
             <groupId>com.godaddy.hfs</groupId>
@@ -274,7 +257,6 @@
         </dependency>
 
         <!-- External dependencies -->
-
         <!-- JAX-RS spec, only use the 2.0 version  -->
         <dependency>
             <groupId>javax.ws.rs</groupId>

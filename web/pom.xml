@@ -63,7 +63,7 @@
 					</execution>
 				</executions>
 			</plugin>
-
+			
             <!-- externalize to HFS, use hfs.service.name property -->
 			<plugin>
                 <groupId>org.codehaus.mojo</groupId>
@@ -138,23 +138,8 @@
 	</build>
 
 	<dependencies>
-        <!-- Jackson -->
-        <dependency>
-            <groupId>com.fasterxml.jackson.core</groupId>
-            <artifactId>jackson-databind</artifactId>
-            <version>${jackson-version}</version>
-        </dependency>
-        <dependency>
-            <groupId>com.fasterxml.jackson.datatype</groupId>
-            <artifactId>jackson-datatype-jsr310</artifactId>
-            <version>${jackson-version}</version>
-        </dependency>
-        <dependency>
-            <groupId>com.fasterxml.jackson.jaxrs</groupId>
-            <artifactId>jackson-jaxrs-json-provider</artifactId>
-            <version>${jackson-version}</version>
-        </dependency>
-
+        
+        <!-- externals -->
         <!-- JAX-RS spec -->
         <dependency>
             <groupId>javax.ws.rs</groupId>
@@ -186,10 +171,10 @@
             <artifactId>hfs-web</artifactId>
             <version>0.9.1</version>
             <exclusions>
-                <exclusion>
-                    <groupId>org.glassfish.jersey.core</groupId>
-                    <artifactId>jersey-client</artifactId>
-                </exclusion>
+            	<exclusion>
+            		<groupId>org.glassfish.jersey.core</groupId>
+            		<artifactId>jersey-client</artifactId>
+            	</exclusion>
                 <exclusion>
                     <groupId>javax.ws.rs</groupId>
                     <artifactId>jsr311-api</artifactId>
@@ -216,12 +201,12 @@
         <dependency>
             <groupId>com.godaddy.hosting</groupId>
             <artifactId>orchestration-client</artifactId>
-            <version>${orchestration-version}</version>
+            <version>0.5.2-43</version>
         </dependency>
         <dependency>
             <groupId>com.godaddy.hosting</groupId>
             <artifactId>orchestration-web</artifactId>
-            <version>${orchestration-version}</version>
+            <version>0.5.1-27</version>
             <exclusions>
                 <exclusion>
                     <groupId>org.jboss.resteasy</groupId>
