@@ -27,7 +27,7 @@
         <dependency>
             <groupId>com.godaddy.hosting</groupId>
             <artifactId>orchestration-web</artifactId>
-            <version>0.5.1-40</version>
+            <version>${orchestration-version}</version>
         </dependency>
     </dependencies>
 </project>
