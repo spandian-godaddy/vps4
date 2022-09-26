@@ -94,7 +94,7 @@ public class VmOutageResource {
 
         Vps4NewVmOutage.Request request = new Vps4NewVmOutage.Request();
         request.virtualMachine = virtualMachine;
-
+        request.outageId = outageId;
         return createActionAndExecute(actionService, commandService, vmId, ActionType.NEW_VM_OUTAGE,
                 request, "Vps4NewVmOutage", user);
     }
