@@ -38,6 +38,11 @@ public class Vps4ClearVmOutage extends ActionCommand<Vps4ClearVmOutage.Request, 
     @Override
     protected Void executeWithAction(CommandContext context, Request request) {
         this.context = context;
+        if(request.virtualMachine.isCanceledOrDeleted())
+        {
+            logger.info("VM {} is not active, no need to clear outage {}", request.virtualMachine.vmId, request.outageId);
+            return null;
+        }
         VmOutage outage = getVmOutage(request);
         logger.info("Clearing outage {} for VM {}", request.outageId, request.virtualMachine.vmId);
         sendOutageNotificationEmail(request.virtualMachine, outage);
@@ -53,7 +58,6 @@ public class Vps4ClearVmOutage extends ActionCommand<Vps4ClearVmOutage.Request, 
     }
 
     private void sendOutageNotificationEmail(VirtualMachine virtualMachine, VmOutage vmOutage) {
-
         VirtualMachineCredit credit = creditService.getVirtualMachineCredit(virtualMachine.orionGuid);
         if (credit != null && credit.isAccountActive() && virtualMachine.isActive() && !credit.isManaged()) {
             VmOutageEmailRequest vmOutageEmailRequest =

@@ -90,6 +90,11 @@ public class VirtualMachine {
     }
 
     @JsonIgnore
+    public boolean isCanceledOrDeleted() {
+        return canceled.isBefore(Instant.now()) || validUntil.isBefore(Instant.now());
+    }
+
+    @JsonIgnore
     public boolean hasNydusWarningAcked () {
         return nydusWarningAck.isBefore(Instant.now());
     }
