@@ -52,7 +52,7 @@ public class ServerType {
         OPTIMIZED_HOSTING(3) {
             @Override public String getZone() {return "optimizedHosting.zone";}
             @Override public String getProvisionCommand() {return "ProvisionOHVm";}
-            @Override public String getDestroyCommand() {return "Vps4DestroyOHVm";}
+            @Override public String getDestroyCommand() {return "Vps4DestroyVm";}
             @Override public String getRebuildCommand() {return "Vps4RebuildOHVm";}
             @Override public String getRestoreCommand() {return "Vps4RestoreOHVm";}
             @Override public String getUpgradeCommand() {return "Vps4UpgradeOHVm";}

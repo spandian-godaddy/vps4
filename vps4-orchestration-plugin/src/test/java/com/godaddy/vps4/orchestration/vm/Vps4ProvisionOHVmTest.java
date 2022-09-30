@@ -304,7 +304,7 @@ public class Vps4ProvisionOHVmTest {
     @Test
     public void doesNotDestroySingleVm() {
         command.executeWithAction(context, request);
-        verify(context, never()).execute(eq(Vps4DestroyOHVm.class), isA(Vps4DestroyVm.Request.class));
+        verify(context, never()).execute(eq(Vps4DestroyVm.class), isA(Vps4DestroyVm.Request.class));
     }
 
     @Test
@@ -313,7 +313,7 @@ public class Vps4ProvisionOHVmTest {
             when(credit.getProductId()).thenReturn(UUID.randomUUID());
             ArgumentCaptor<Vps4DestroyVm.Request> captor = ArgumentCaptor.forClass(Vps4DestroyVm.Request.class);
             command.executeWithAction(context, request);
-            verify(context, times(1)).execute(eq(Vps4DestroyOHVm.class), captor.capture());
+            verify(context, times(1)).execute(eq(Vps4DestroyVm.class), captor.capture());
             assertEquals(vm.vmId, captor.getValue().virtualMachine.vmId);
             fail();
         } catch (Exception e) {
