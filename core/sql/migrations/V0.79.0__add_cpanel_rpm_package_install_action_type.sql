@@ -1,0 +1,1 @@
+INSERT INTO action_type(type_id, type) VALUES (59, 'INSTALL_CPANEL_PACKAGE');

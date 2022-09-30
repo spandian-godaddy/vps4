@@ -9,6 +9,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
 
@@ -188,6 +189,7 @@ public class CpanelAddonDomainsTest {
 
         try {
             service.calculatePasswordStrength(hfsVmId, password);
+            Assert.fail("This test shouldn't get here");
         }
         catch (RuntimeException e) {
             Assert.assertEquals("Password strength calculation failed due to reason: No reason provided", e.getMessage());
@@ -203,6 +205,7 @@ public class CpanelAddonDomainsTest {
 
         try {
             service.calculatePasswordStrength(hfsVmId, password);
+            Assert.fail("This test shouldn't get here");
         }
         catch (RuntimeException e) {
             Assert.assertEquals("Password strength calculation failed due to reason: " + reason, e.getMessage());
@@ -257,6 +260,7 @@ public class CpanelAddonDomainsTest {
 
         try {
             service.createAccount(hfsVmId, domainName, username, password, plan, email);
+            Assert.fail("This test shouldn't get here");
         }
         catch (RuntimeException e) {
             Assert.assertEquals("WHM account creation failed due to reason: No reason provided", e.getMessage());
@@ -283,15 +287,252 @@ public class CpanelAddonDomainsTest {
     }
 
     @Test
+    public void installRpmPackagesUsesCpanelClient() throws Exception{
+        String packageName = "testPackage";
+        String returnVal = "{\"metadata\":{\"reason\":\"OK\",\"version\":1,\"result\":1,\"command\":\"listpkgs\"},"
+            + "\"data\":{\"build\":12345}}";
+        when(cpClient.installRpmPackage(packageName)).thenReturn(returnVal);
+        service.installRpmPackage(hfsVmId, packageName);
+        verify(cpClient, times(1)).installRpmPackage(packageName);
+    }
+
+    @Test
+    public void installRpmPackagesReturnsCPanelBuildObject() throws Exception{
+        String packageName = "testPackage";
+        String returnVal = "{\"metadata\":{\"reason\":\"OK\",\"version\":1,\"result\":1,\"command\":\"listpkgs\"},"
+                + "\"data\":{\"build\":12345}}";
+        when(cpClient.installRpmPackage(packageName)).thenReturn(returnVal);
+        CpanelBuild build = service.installRpmPackage(hfsVmId, packageName);
+        Assert.assertEquals(12345, build.buildNumber);
+        Assert.assertEquals(packageName, build.packageName);
+    }
+
+    @Test
+    public void installRpmPackagesNoMetadata() throws Exception {
+        String packageName = "testPackage";
+        String returnVal = "{\"data\":{\"blah\": \"foo\"}, \"metadata\": null}";
+        when(cpClient.installRpmPackage(packageName)).thenReturn(returnVal);
+
+        try {
+            service.installRpmPackage(hfsVmId, packageName);
+            Assert.fail("This test shouldn't get here");
+        }
+        catch (RuntimeException e) {
+            Assert.assertEquals("WHM install rpm package failed due to reason: No reason provided", e.getMessage());
+        }
+    }
+
+    @Test
+    public void installRpmPackagesResultNotOk() throws Exception {
+        String packageName = "testPackage";
+        String reason = "no-workie";
+        String returnVal = "{\"metadata\":{\"version\":1,\"reason\":\"" + reason + "\", \"result\":0}}";
+        when(cpClient.installRpmPackage(packageName)).thenReturn(returnVal);
+
+        try {
+            service.installRpmPackage(hfsVmId, packageName);
+            Assert.fail("This test shouldn't get here");
+        }
+        catch (RuntimeException e) {
+            Assert.assertEquals("WHM install rpm package failed due to reason: " + reason, e.getMessage());
+        }
+    }
+
+    @Test
+    public void installRpmPackagesNullData() throws Exception {
+        String packageName = "testPackage";
+        String returnVal = "{\"data\": null, \"metadata\":{\"version\":1,\"reason\":\"OK\", \"result\":1}}";
+        when(cpClient.installRpmPackage(packageName)).thenReturn(returnVal);
+
+        try {
+            service.installRpmPackage(hfsVmId, packageName);
+            Assert.fail("This test shouldn't get here");
+        }
+        catch (RuntimeException e) {
+            Assert.assertEquals("Error while handling response for call installRpmPackage", e.getMessage());
+        }
+    }
+
+    @Test
+    public void installRpmPackagesNullBuild() throws Exception {
+        String packageName = "testPackage";
+        String returnVal = "{\"data\": {\"build\": null}, \"metadata\":{\"version\":1,\"reason\":\"OK\", \"result\":1}}";
+        when(cpClient.installRpmPackage(packageName)).thenReturn(returnVal);
+
+        try {
+            service.installRpmPackage(hfsVmId, packageName);
+            Assert.fail("This test shouldn't get here");
+        }
+        catch (RuntimeException e) {
+            Assert.assertEquals("WHM install rpm package failed: build returned null", e.getMessage());
+        }
+    }
+
+    @Test
+    public void listRpmPackagesUsesCpanelClient() throws Exception{
+        String returnVal = "{\"metadata\":{\"reason\":\"OK\",\"command\":\"package_manager_list_packages\",\"version\":1," +
+                "\"result\":1},\"data\":{\"packages\":[{\"package\":\"testPackage1\"},{\"package\":\"testPackage2\"}," +
+                "{\"package\":\"testPackage3\"},{\"package\":\"testPackage4\"}]}}";
+        when(cpClient.listInstalledRpmPackages()).thenReturn(returnVal);
+        service.listInstalledRpmPackages(hfsVmId);
+        verify(cpClient, times(1)).listInstalledRpmPackages();
+    }
+
+    @Test
+    public void listRpmPackagesReturnsCPanelBuildObject() throws Exception{
+        String returnVal = "{\"metadata\":{\"reason\":\"OK\",\"command\":\"package_manager_list_packages\",\"version\":1," +
+                "\"result\":1},\"data\":{\"packages\":[{\"package\":\"testPackage1\"},{\"package\":\"testPackage2\"}," +
+                "{\"package\":\"testPackage3\"},{\"package\":\"testPackage4\"}]}}";
+        when(cpClient.listInstalledRpmPackages()).thenReturn(returnVal);
+        List<String> packages = service.listInstalledRpmPackages(hfsVmId);
+        List<String> expectedPackages = Arrays.asList("testPackage1","testPackage2", "testPackage3", "testPackage4");
+        Assert.assertEquals(expectedPackages, packages);
+    }
+
+    @Test
+    public void listRpmPackagesNoMetadata() throws Exception {
+        String returnVal = "{\"data\":{\"blah\": \"foo\"}, \"metadata\": null}";
+        when(cpClient.listInstalledRpmPackages()).thenReturn(returnVal);
+
+        try {
+            service.listInstalledRpmPackages(hfsVmId);
+            Assert.fail("This test shouldn't get here");
+        }
+        catch (RuntimeException e) {
+            Assert.assertEquals("WHM list installed rpm packages failed due to reason: No reason provided", e.getMessage());
+        }
+    }
+
+    @Test
+    public void listRpmPackagesResultNotOk() throws Exception {
+        String reason = "no-workie";
+        String returnVal = "{\"metadata\":{\"version\":1,\"reason\":\"" + reason + "\", \"result\":0}}";
+        when(cpClient.listInstalledRpmPackages()).thenReturn(returnVal);
+
+        try {
+            service.listInstalledRpmPackages(hfsVmId);
+            Assert.fail("This test shouldn't get here");
+        }
+        catch (RuntimeException e) {
+            Assert.assertEquals("WHM list installed rpm packages failed due to reason: " + reason, e.getMessage());
+        }
+    }
+
+    @Test
+    public void listRpmPackagesNullData() throws Exception {
+        String returnVal = "{\"data\": null, \"metadata\":{\"version\":1,\"reason\":\"OK\", \"result\":1}}";
+        when(cpClient.listInstalledRpmPackages()).thenReturn(returnVal);
+
+        try {
+            service.listInstalledRpmPackages(hfsVmId);
+            Assert.fail("This test shouldn't get here");
+        }
+        catch (RuntimeException e) {
+            Assert.assertEquals("Error while handling response for call listInstalledRpms", e.getMessage());
+        }
+    }
+
+    @Test
+    public void listRpmPackagesNullBuild() throws Exception {
+        String returnVal = "{\"metadata\":{\"reason\":\"OK\",\"command\":\"package_manager_list_packages\",\"version\":1," +
+                "\"result\":1},\"data\":{\"packages\":null}}";
+        when(cpClient.listInstalledRpmPackages()).thenReturn(returnVal);
+
+        try {
+            service.listInstalledRpmPackages(hfsVmId);
+            Assert.fail("This test shouldn't get here");
+        }
+        catch (RuntimeException e) {
+            Assert.assertEquals("No installed cpanel rpm packages present", e.getMessage());
+        }
+    }
+
+    @Test
+    public void getActiveBuildsUsesCpanelClient() throws Exception{
+        String returnVal = "{\"data\":{\"active\":0},\"metadata\":{\"version\":1," +
+                "\"command\":\"package_manager_is_performing_actions\",\"reason\":\"OK\",\"result\":1}}";
+        when(cpClient.getRpmPackageUpdateStatus("12345")).thenReturn(returnVal);
+        service.getActiveBuilds(hfsVmId, 12345);
+        verify(cpClient, times(1)).getRpmPackageUpdateStatus("12345");
+    }
+
+    @Test
+    public void getActiveBuildsReturnsNumberOfActiveBuilds() throws Exception{
+        String returnVal = "{\"data\":{\"active\":1},\"metadata\":{\"version\":1," +
+                "\"command\":\"package_manager_is_performing_actions\",\"reason\":\"OK\",\"result\":1}}";
+        when(cpClient.getRpmPackageUpdateStatus("12345")).thenReturn(returnVal);
+        long activeBuilds = service.getActiveBuilds(hfsVmId, 12345);
+        Assert.assertEquals(1L, activeBuilds);
+    }
+
+    @Test
+    public void getActiveBuildsNoMetadata() throws Exception {
+        String returnVal = "{\"data\":{\"blah\": \"foo\"}, \"metadata\": null}";
+        when(cpClient.getRpmPackageUpdateStatus("12345")).thenReturn(returnVal);
+
+        try {
+            service.getActiveBuilds(hfsVmId, 12345);
+            Assert.fail("This test shouldn't get here");
+        }
+        catch (RuntimeException e) {
+            Assert.assertEquals("WHM get Rpm Package Update Status failed due to reason: No reason provided", e.getMessage());
+        }
+    }
+
+    @Test
+    public void getActiveBuildsResultNotOk() throws Exception {
+        String reason = "no-workie";
+        String returnVal = "{\"metadata\":{\"version\":1,\"reason\":\"" + reason + "\", \"result\":0}}";
+        when(cpClient.getRpmPackageUpdateStatus("12345")).thenReturn(returnVal);
+
+        try {
+            service.getActiveBuilds(hfsVmId, 12345);
+            Assert.fail("This test shouldn't get here");
+        } catch (RuntimeException e) {
+            Assert.assertEquals("WHM get Rpm Package Update Status failed due to reason: " + reason, e.getMessage());
+        }
+    }
+
+    @Test
+    public void getActiveBuildsNullData() throws Exception {
+        String returnVal = "{\"data\": null, \"metadata\":{\"version\":1,\"reason\":\"OK\", \"result\":1}}";
+        when(cpClient.getRpmPackageUpdateStatus("12345")).thenReturn(returnVal);
+
+        try {
+            service.getActiveBuilds(hfsVmId, 12345);
+            Assert.fail("This test shouldn't get here");
+        }
+        catch (RuntimeException e) {
+            Assert.assertEquals("Error while handling response for call getRpmPackageUpdateStatus", e.getMessage());
+        }
+    }
+
+    @Test
+    public void getActiveBuildsNullBuild() throws Exception {
+        String returnVal = "{\"data\":{\"active\":null},\"metadata\":{\"version\":1," +
+                "\"command\":\"package_manager_is_performing_actions\",\"reason\":\"OK\",\"result\":1}}";
+        when(cpClient.getRpmPackageUpdateStatus("12345")).thenReturn(returnVal);
+
+        try {
+            service.getActiveBuilds(hfsVmId, 12345);
+            Assert.fail("This test shouldn't get here");
+        }
+        catch (RuntimeException e) {
+            Assert.assertEquals("No active builds found - number of builds returned null", e.getMessage());
+        }
+    }
+
+
+    @Test
     public void listPackagesUsesCpanelClient() throws Exception{
         String returnVal = "{\"metadata\":{\"reason\":\"OK\",\"version\":1,\"result\":1,\"command\":\"listpkgs\"},"
-            + "\"data\":{\"pkg\":[{\"CPMOD\":\"paper_lantern\",\"IP\":\"n\",\"LANG\":\"en\",\"DIGESTAUTH\":\"n\","
-            + "\"FEATURELIST\":\"default\",\"name\":\"default\"},{\"QUOTA\":\"unlimited\","
-            + "\"MAX_EMAIL_PER_HOUR\":\"unlimited\",\"name\":\"test-package-1\",\"FEATURELIST\":\"default\","
-            + "\"CGI\":\"y\",\"MAX_DEFER_FAIL_PERCENTAGE\":\"unlimited\",\"MAXSQL\":\"unlimited\",\"MAXPARK\":\"0\""
-            + ",\"MAXADDON\":\"0\",\"HASSHELL\":\"n\",\"MAXLST\":\"unlimited\",\"_PACKAGE_EXTENSIONS\":\"\","
-            + "\"LANG\":\"en\",\"MAXFTP\":\"unlimited\",\"MAXPOP\":\"unlimited\",\"BWLIMIT\":\"unlimited\","
-            + "\"DIGESTAUTH\":\"n\",\"IP\":\"n\",\"CPMOD\":\"paper_lantern\",\"MAXSUB\":\"unlimited\"}]}}";
+                + "\"data\":{\"pkg\":[{\"CPMOD\":\"paper_lantern\",\"IP\":\"n\",\"LANG\":\"en\",\"DIGESTAUTH\":\"n\","
+                + "\"FEATURELIST\":\"default\",\"name\":\"default\"},{\"QUOTA\":\"unlimited\","
+                + "\"MAX_EMAIL_PER_HOUR\":\"unlimited\",\"name\":\"test-package-1\",\"FEATURELIST\":\"default\","
+                + "\"CGI\":\"y\",\"MAX_DEFER_FAIL_PERCENTAGE\":\"unlimited\",\"MAXSQL\":\"unlimited\",\"MAXPARK\":\"0\""
+                + ",\"MAXADDON\":\"0\",\"HASSHELL\":\"n\",\"MAXLST\":\"unlimited\",\"_PACKAGE_EXTENSIONS\":\"\","
+                + "\"LANG\":\"en\",\"MAXFTP\":\"unlimited\",\"MAXPOP\":\"unlimited\",\"BWLIMIT\":\"unlimited\","
+                + "\"DIGESTAUTH\":\"n\",\"IP\":\"n\",\"CPMOD\":\"paper_lantern\",\"MAXSUB\":\"unlimited\"}]}}";
         when(cpClient.listPackages()).thenReturn(returnVal);
         service.listPackages(hfsVmId);
         verify(cpClient, times(1)).listPackages();
@@ -327,6 +568,7 @@ public class CpanelAddonDomainsTest {
 
         try {
             service.listPackages(hfsVmId);
+            Assert.fail("This test shouldn't get here");
         }
         catch (RuntimeException e) {
             Assert.assertEquals("WHM list package failed due to reason: No reason provided", e.getMessage());
@@ -341,6 +583,7 @@ public class CpanelAddonDomainsTest {
 
         try {
             service.listPackages(hfsVmId);
+            Assert.fail("This test shouldn't get here");
         }
         catch (RuntimeException e) {
             Assert.assertEquals("WHM list package failed due to reason: " + reason, e.getMessage());

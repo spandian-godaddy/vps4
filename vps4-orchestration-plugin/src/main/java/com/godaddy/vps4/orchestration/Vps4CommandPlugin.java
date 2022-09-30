@@ -1,5 +1,6 @@
 package com.godaddy.vps4.orchestration;
 
+import com.godaddy.vps4.cpanel.CpanelModule;
 import com.godaddy.vps4.jsd.JsdModule;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -92,7 +93,8 @@ public class Vps4CommandPlugin implements CommandPlugin {
             new ResellerModule(),
             new OhModule(),
             new OhCommandModule(),
-            new JsdModule()
+            new JsdModule(),
+            new CpanelModule()
         );
 
         return new GuiceCommandProvider(injector);

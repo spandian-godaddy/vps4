@@ -95,6 +95,33 @@ public class CpanelClient {
         return callWhm(request);
     }
 
+    public String installRpmPackage(String packageName) throws CpanelAccessDeniedException, IOException {
+        HttpUriRequest request = newCpanelRequest()
+                .setUri(baseUrl + "/json-api/package_manager_submit_actions")
+                .addParameter("api.version", "1")
+                .addParameter("install", packageName)
+                .build();
+        return callWhm(request);
+    }
+
+    public String listInstalledRpmPackages() throws CpanelAccessDeniedException, IOException {
+        HttpUriRequest request = newCpanelRequest()
+                .setUri(baseUrl + "/json-api/package_manager_list_packages")
+                .addParameter("api.version", "1")
+                .addParameter("state", "installed")
+                .build();
+        return callWhm(request);
+    }
+
+    public String getRpmPackageUpdateStatus(String buildNumber) throws CpanelAccessDeniedException, IOException {
+        HttpUriRequest request = newCpanelRequest()
+                .setUri(baseUrl + "/json-api/package_manager_is_performing_actions")
+                .addParameter("api.version", "1")
+                .addParameter("build", buildNumber)
+                .build();
+        return callWhm(request);
+    }
+
     public String listAddOnDomains(String user) throws CpanelAccessDeniedException, IOException {
         HttpUriRequest request = newCpanelRequest()
                 .setUri(baseUrl + "/json-api/cpanel")

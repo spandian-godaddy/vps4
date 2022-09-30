@@ -1,127 +1,112 @@
 package com.godaddy.vps4.phase2;
 
+import com.godaddy.hfs.config.Config;
+import com.godaddy.hfs.vm.Vm;
 import com.godaddy.vps4.cpanel.CpanelInvalidUserException;
 import com.godaddy.vps4.cpanel.CpanelTimeoutException;
 import com.godaddy.vps4.cpanel.Vps4CpanelService;
-import com.godaddy.vps4.jdbc.DatabaseModule;
-import com.godaddy.vps4.mailrelay.MailRelayService;
-import com.godaddy.vps4.panopta.PanoptaApiCustomerService;
-import com.godaddy.vps4.panopta.PanoptaApiServerService;
-import com.godaddy.vps4.scheduler.api.web.SchedulerWebService;
 import com.godaddy.vps4.security.GDUserMock;
-import com.godaddy.vps4.security.SecurityModule;
-import com.godaddy.vps4.security.Vps4User;
-import com.godaddy.vps4.security.Vps4UserService;
-import com.godaddy.vps4.security.jdbc.AuthorizationException;
-import com.godaddy.vps4.snapshot.SnapshotModule;
-import com.godaddy.vps4.vm.AccountStatus;
+import com.godaddy.vps4.vm.Action;
+import com.godaddy.vps4.vm.ActionService;
+import com.godaddy.vps4.vm.ActionStatus;
+import com.godaddy.vps4.vm.ActionType;
+import com.godaddy.vps4.vm.Image;
 import com.godaddy.vps4.vm.VirtualMachine;
-import com.godaddy.vps4.vm.VmModule;
+import com.godaddy.vps4.vm.VmAction;
 import com.godaddy.vps4.web.Vps4Exception;
 import com.godaddy.vps4.web.controlPanel.cpanel.CPanelResource;
 import com.godaddy.vps4.web.security.GDUser;
-import com.google.inject.AbstractModule;
-import com.google.inject.Guice;
-import com.google.inject.Inject;
-import com.google.inject.Injector;
-import com.google.inject.Provides;
-import org.junit.After;
+import com.godaddy.vps4.web.vm.VmResource;
+import gdg.hfs.orchestration.CommandGroupSpec;
+import gdg.hfs.orchestration.CommandService;
+import gdg.hfs.orchestration.CommandState;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mockito;
 
-import javax.sql.DataSource;
-import javax.ws.rs.NotFoundException;
+import java.time.Instant;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
 
 import static org.mockito.Matchers.anyLong;
+import static org.mockito.Matchers.anyObject;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 public class CpanelResourceTest {
-
-    @Inject Vps4UserService userService;
-    @Inject DataSource dataSource;
-    private Vps4CpanelService cpServ;
+    private Action conflictingAction = mock(Action.class);
+    private VmResource vmResource = mock(VmResource.class);
+    private Vps4CpanelService vps4CpanelService = mock(Vps4CpanelService.class);
+    private ActionService actionService = mock(ActionService.class);
+    private CommandService commandService = mock(CommandService.class);
+    private Config config = mock(Config.class);
 
     private GDUser user;
     private VirtualMachine vm;
     private VirtualMachine centVm;
 
-    Injector injector = Guice.createInjector(new DatabaseModule(),
-            new SecurityModule(),
-            new VmModule(),
-            new SnapshotModule(),
-            new Phase2ExternalsModule(),
-            new CancelActionModule(),
-            new AbstractModule() {
-
-                @Override
-                protected void configure() {
-                    cpServ = mock(Vps4CpanelService.class);
-                    bind(Vps4CpanelService.class).toInstance(cpServ);
-                    SchedulerWebService swServ = mock(SchedulerWebService.class);
-                    bind(SchedulerWebService.class).toInstance(swServ);
-                    bind(PanoptaApiCustomerService.class).toInstance(mock(PanoptaApiCustomerService.class));
-                    bind(PanoptaApiServerService.class).toInstance(mock(PanoptaApiServerService.class));
-                    bind(MailRelayService.class).toInstance(mock(MailRelayService.class));
-                }
-
-                @Provides
-                GDUser provideUser() {
-                    return user;
-                }
-            });
-
     @Before
     public void setupTest(){
-        injector.injectMembers(this);
+        vm = createTestVm("hfs-centos-7-cpanel-11", Image.ControlPanel.CPANEL);
+        centVm = createTestVm("hfs-centos-7", Image.ControlPanel.MYH);
         user = GDUserMock.createShopper();
-        vm = createTestVm("hfs-centos-7-cpanel-11");
-        centVm = createTestVm("hfs-centos-7");
+        conflictingAction.type = ActionType.INSTALL_CPANEL_PACKAGE;
+        Vm hfsVm = new Vm();
+        hfsVm.status = "ACTIVE";
+        Action testAction = new Action(123L, vm.vmId, ActionType.INSTALL_CPANEL_PACKAGE, null, null, null,
+                ActionStatus.COMPLETE, Instant.now(), Instant.now(), null, UUID.randomUUID(),
+                null);
+        when(config.get("cpanel.rpm.packages", "")).thenReturn("ea-nginx,ea-nginx-http2,ea-nginx-brotli");
+        when(vmResource.getVm(vm.vmId)).thenReturn(vm);
+        when(vmResource.getVm(centVm.vmId)).thenReturn(centVm);
+        when(vmResource.getVmFromVmVertical(vm.hfsVmId)).thenReturn(hfsVm);
+        when(vmResource.getVmFromVmVertical(centVm.hfsVmId)).thenReturn(hfsVm);
+        when(actionService.getAction(anyLong())).thenReturn(testAction);
+        when(actionService.createAction(vm.vmId, ActionType.INSTALL_CPANEL_PACKAGE, null, user.getUsername()))
+                .thenReturn(testAction.id);
+        when(commandService.executeCommand(anyObject())).thenReturn(new CommandState());
+
     }
 
-    private VirtualMachine createTestVm(String imageName) {
-        UUID orionGuid = UUID.randomUUID();
-        Vps4User vps4User = userService.getOrCreateUserForShopper(GDUserMock.DEFAULT_SHOPPER, "1", UUID.randomUUID());
-        VirtualMachine vm = SqlTestData.insertTestVm(orionGuid, vps4User.getId(), dataSource, imageName);
+    private CPanelResource getcPanelResource() {
+        return new CPanelResource(vmResource, vps4CpanelService, actionService, commandService, user, config);
+    }
+    
+    private VirtualMachine createTestVm(String imageName, Image.ControlPanel controlPanel) {
+        VirtualMachine vm = new VirtualMachine();
+        vm.hfsVmId = 1234;
+        vm.vmId = UUID.randomUUID();
+        vm.orionGuid = UUID.randomUUID();
+        vm.image = new Image();
+        vm.image.imageName = imageName;
+        vm.image.controlPanel = controlPanel;
         return vm;
     }
 
-    @After
-    public void teardownTest(){
-        SqlTestData.cleanupSqlTestData(dataSource);
-    }
-
-    private CPanelResource getCpanelResource() {
-        return injector.getInstance(CPanelResource.class);
-    }
 
     // === whmSession Tests ===
     @Test
     public void testShopperGetWHMSession(){
-        getCpanelResource().getWHMSession(vm.vmId);
-    }
-
-    @Test(expected=AuthorizationException.class)
-    public void testUnauthorizedShopperGetWHMSession(){
-        user = GDUserMock.createShopper("shopperX");
-        getCpanelResource().getWHMSession(vm.vmId);
+        getcPanelResource().getWHMSession(vm.vmId);
     }
 
     @Test
     public void testAdminGetWHMSession(){
         user = GDUserMock.createAdmin();
-        getCpanelResource().getWHMSession(vm.vmId);
+        getcPanelResource().getWHMSession(vm.vmId);
     }
 
     @Test
     public void testGetWhmSessionInvalidImage(){
         try {
-            getCpanelResource().getWHMSession(centVm.vmId);
+            getcPanelResource().getWHMSession(centVm.vmId);
             Assert.fail();
         } catch (Vps4Exception e) {
             Assert.assertEquals("INVALID_IMAGE", e.getId());
@@ -130,33 +115,27 @@ public class CpanelResourceTest {
 
     @Test
     public void testGetWhmSessionIgnoresCpanelServiceException() throws Exception {
-        Mockito.when(cpServ.createSession(anyLong(), Mockito.anyString(), Mockito.any()))
+        when(vps4CpanelService.createSession(anyLong(), Mockito.anyString(), Mockito.any()))
                 .thenThrow(new CpanelTimeoutException("Timed out"));
-        Assert.assertNull(getCpanelResource().getWHMSession(vm.vmId));
+        Assert.assertNull(getcPanelResource().getWHMSession(vm.vmId));
     }
 
     // === cpanelSession Tests ===
     @Test
     public void testShopperGetCPanelSession(){
-        getCpanelResource().getCPanelSession(vm.vmId, "testuser");
-    }
-
-    @Test(expected=AuthorizationException.class)
-    public void testUnauthorizedShopperGetCPanelSession(){
-        user = GDUserMock.createShopper("shopperX");
-        getCpanelResource().getCPanelSession(vm.vmId, "testuser");
+        getcPanelResource().getCPanelSession(vm.vmId, "testuser");
     }
 
     @Test
     public void testAdminGetCPanelSession(){
         user = GDUserMock.createAdmin();
-        getCpanelResource().getCPanelSession(vm.vmId, "testuser");
+        getcPanelResource().getCPanelSession(vm.vmId, "testuser");
     }
 
     @Test
     public void testGetCPanelSessionInvalidImage(){
         try {
-            getCpanelResource().getCPanelSession(centVm.vmId, "testuser");
+            getcPanelResource().getCPanelSession(centVm.vmId, "testuser");
             Assert.fail();
         } catch (Vps4Exception e) {
             Assert.assertEquals("INVALID_IMAGE", e.getId());
@@ -165,33 +144,27 @@ public class CpanelResourceTest {
 
     @Test
     public void testGetCPanelSessionIgnoresCpanelServiceException() throws Exception {
-        Mockito.when(cpServ.createSession(anyLong(), Mockito.anyString(), Mockito.any()))
+        when(vps4CpanelService.createSession(anyLong(), Mockito.anyString(), Mockito.any()))
                 .thenThrow(new CpanelTimeoutException("Timed out"));
-        Assert.assertNull(getCpanelResource().getCPanelSession(vm.vmId, "testuser"));
+        Assert.assertNull(getcPanelResource().getCPanelSession(vm.vmId, "testuser"));
     }
 
     // === listAccounts Tests ===
     @Test
     public void testShopperListCpanelAccounts(){
-        getCpanelResource().listCpanelAccounts(vm.vmId);
-    }
-
-    @Test(expected=AuthorizationException.class)
-    public void testUnauthorizedShopperListCpanelAccounts(){
-        user = GDUserMock.createShopper("shopperX");
-        getCpanelResource().listCpanelAccounts(vm.vmId);
+        getcPanelResource().listCpanelAccounts(vm.vmId);
     }
 
     @Test
     public void testAdminListCpanelAccounts(){
         user = GDUserMock.createAdmin();
-        getCpanelResource().listCpanelAccounts(vm.vmId);
+        getcPanelResource().listCpanelAccounts(vm.vmId);
     }
 
     @Test
     public void testListCpanelAccountsInvalidImage(){
         try {
-            getCpanelResource().listCpanelAccounts(centVm.vmId);
+            getcPanelResource().listCpanelAccounts(centVm.vmId);
             Assert.fail();
         }
         catch (Vps4Exception e) {
@@ -199,51 +172,29 @@ public class CpanelResourceTest {
         }
     }
 
-    @Test(expected=NotFoundException.class)
-    public void testVmIdDoesntExist(){
-        getCpanelResource().listCpanelAccounts(UUID.randomUUID());
-    }
-
     @Test
     public void testListCpanelAccountsIgnoresCpanelServiceException() throws Exception {
-        Mockito.when(cpServ.listCpanelAccounts(anyLong()))
+        when(vps4CpanelService.listCpanelAccounts(anyLong()))
                 .thenThrow(new CpanelTimeoutException("Timed out"));
-        Assert.assertNull(getCpanelResource().listCpanelAccounts(vm.vmId));
-    }
-
-    @Test
-    public void testListCpanelAccountsSuspended() {
-        Phase2ExternalsModule.mockVmCredit(AccountStatus.SUSPENDED);
-        try {
-            getCpanelResource().listCpanelAccounts(centVm.vmId);
-            Assert.fail("Exception not thrown");
-        } catch (Vps4Exception e) {
-            Assert.assertEquals("ACCOUNT_SUSPENDED", e.getId());
-        }
+        Assert.assertNull(getcPanelResource().listCpanelAccounts(vm.vmId));
     }
 
     // list add on domains test
     @Test
     public void testShopperListAddonDomains(){
-        getCpanelResource().listAddOnDomains(vm.vmId, "fakeuser");
-    }
-
-    @Test(expected=AuthorizationException.class)
-    public void testUnauthorizedShopperListAddonDomains(){
-        user = GDUserMock.createShopper("shopperX");
-        getCpanelResource().listAddOnDomains(vm.vmId, "fakeuser");
+        getcPanelResource().listAddOnDomains(vm.vmId, "fakeuser");
     }
 
     @Test
     public void testAdminListAddonDomains(){
         user = GDUserMock.createAdmin();
-        getCpanelResource().listAddOnDomains(vm.vmId, "fakeUser");
+        getcPanelResource().listAddOnDomains(vm.vmId, "fakeUser");
     }
 
     @Test
     public void testListAddonDomainsInvalidImage(){
         try {
-            getCpanelResource().listAddOnDomains(centVm.vmId, "fakeuser");
+            getcPanelResource().listAddOnDomains(centVm.vmId, "fakeuser");
             Assert.fail();
         }
         catch (Vps4Exception e) {
@@ -251,34 +202,17 @@ public class CpanelResourceTest {
         }
     }
 
-    @Test(expected=NotFoundException.class)
-    public void testListAddonDomainsVmIdDoesntExist(){
-        getCpanelResource().listAddOnDomains(UUID.randomUUID(), "fakeuser");
-    }
-
     @Test
     public void testListAddonDomainsIgnoresCpanelServiceException() throws Exception {
-        Mockito.when(cpServ.listAddOnDomains(anyLong(), eq("fakeuser")))
+        when(vps4CpanelService.listAddOnDomains(anyLong(), eq("fakeuser")))
                 .thenThrow(new CpanelTimeoutException("Timed out"));
-        Assert.assertNull(getCpanelResource().listAddOnDomains(vm.vmId, "fakeuser"));
+        Assert.assertNull(getcPanelResource().listAddOnDomains(vm.vmId, "fakeuser"));
     }
 
     @Test(expected=Vps4Exception.class)
     public void testThrowsExceptionForInvalidUsername() throws Exception{
-        Mockito.when(cpServ.listAddOnDomains(anyLong(), eq("fakeuser2"))).thenThrow(new CpanelInvalidUserException(""));
-        getCpanelResource().listAddOnDomains(vm.vmId, "fakeuser2");
-    }
-
-
-    @Test
-    public void testListAddonDomainsSuspended() {
-        Phase2ExternalsModule.mockVmCredit(AccountStatus.SUSPENDED);
-        try {
-            getCpanelResource().listAddOnDomains(vm.vmId, "fakeuser");
-            Assert.fail("Exception not thrown");
-        } catch (Vps4Exception e) {
-            Assert.assertEquals("ACCOUNT_SUSPENDED", e.getId());
-        }
+        when(vps4CpanelService.listAddOnDomains(anyLong(), eq("fakeuser2"))).thenThrow(new CpanelInvalidUserException(""));
+        getcPanelResource().listAddOnDomains(vm.vmId, "fakeuser2");
     }
 
     // Calculate password strength
@@ -286,21 +220,21 @@ public class CpanelResourceTest {
     public void calculatePasswordStrengthCallsCpanelService() throws Exception {
         String password = "foobar";
         Long expectedStrength = 31L;
-        Mockito.when(cpServ.calculatePasswordStrength(anyLong(), eq(password))).thenReturn(expectedStrength);
+        when(vps4CpanelService.calculatePasswordStrength(anyLong(), eq(password))).thenReturn(expectedStrength);
         CPanelResource.PasswordStrengthRequest req = new CPanelResource.PasswordStrengthRequest();
         req.password = password;
-        Long strength = getCpanelResource().calculatePasswordStrength(vm.vmId, req);
+        Long strength = getcPanelResource().calculatePasswordStrength(vm.vmId, req);
         Assert.assertEquals(expectedStrength, strength);
     }
 
     @Test
     public void calculatePasswordStrengthThrowsException() throws Exception {
         String password = "foobar";
-        Mockito.when(cpServ.calculatePasswordStrength(anyLong(), eq(password))).thenThrow(new RuntimeException());
+        when(vps4CpanelService.calculatePasswordStrength(anyLong(), eq(password))).thenThrow(new RuntimeException());
         CPanelResource.PasswordStrengthRequest req = new CPanelResource.PasswordStrengthRequest();
         req.password = password;
         try {
-            getCpanelResource().calculatePasswordStrength(vm.vmId, req);
+            getcPanelResource().calculatePasswordStrength(vm.vmId, req);
         }
         catch (Vps4Exception e) {
             Assert.assertEquals("PASSWORD_STRENGTH_CALCULATION_FAILED", e.getId());
@@ -323,7 +257,7 @@ public class CpanelResourceTest {
         req.password = password;
         req.contactEmail = email;
         try {
-            getCpanelResource().createAccount(vm.vmId, req);
+            getcPanelResource().createAccount(vm.vmId, req);
         }
         catch (Exception e) {
             Assert.fail("This test shouldn't fail");
@@ -337,7 +271,7 @@ public class CpanelResourceTest {
         String password = "foobar";
         String plan = "plan";
         String email = "email@email.com";
-        Mockito.when(cpServ.createAccount(vm.hfsVmId, domainName, username, password, plan, email))
+        when(vps4CpanelService.createAccount(vm.hfsVmId, domainName, username, password, plan, email))
             .thenThrow(new RuntimeException());
         try {
             CPanelResource.CreateAccountRequest req = new CPanelResource.CreateAccountRequest();
@@ -346,7 +280,7 @@ public class CpanelResourceTest {
             req.plan = plan;
             req.password = password;
             req.contactEmail = email;
-            getCpanelResource().createAccount(vm.vmId, req);
+            getcPanelResource().createAccount(vm.vmId, req);
         }
         catch (Vps4Exception e) {
             Assert.assertEquals("CREATE_CPANEL_ACCOUNT_FAILED", e.getId());
@@ -357,20 +291,65 @@ public class CpanelResourceTest {
     @Test
     public void listPackagesCallsCpanelService() throws Exception {
         String[] expectedPackages = {"foobar", "helloworld"};
-        Mockito.when(cpServ.listPackages(anyLong())).thenReturn(Arrays.asList(expectedPackages));
-        List<String> packages = getCpanelResource().listPackages(vm.vmId);
+        when(vps4CpanelService.listPackages(anyLong())).thenReturn(Arrays.asList(expectedPackages));
+        List<String> packages = getcPanelResource().listPackages(vm.vmId);
         Assert.assertArrayEquals(expectedPackages, packages.toArray());
     }
 
     @Test
     public void listPackagesThrowsException() throws Exception {
-        Mockito.when(cpServ.listPackages(vm.hfsVmId)).thenThrow(new RuntimeException());
+        when(vps4CpanelService.listPackages(vm.hfsVmId)).thenThrow(new RuntimeException());
         try {
-            getCpanelResource().listPackages(vm.vmId);
+            getcPanelResource().listPackages(vm.vmId);
         }
         catch (Vps4Exception e) {
             Assert.assertEquals("LIST_PACKAGES_FAILED", e.getId());
         }
     }
 
+    // Install packages
+    @Test
+    public void installPackagesCallsCommandService() {
+        CPanelResource.InstallPackageRequest req = new CPanelResource.InstallPackageRequest();
+        req.packageName = "ea-nginx";
+        getcPanelResource().installRpmPackage(vm.vmId, req);
+        ArgumentCaptor<CommandGroupSpec> argument = ArgumentCaptor.forClass(CommandGroupSpec.class);
+        verify(commandService, times(1)).executeCommand(argument.capture());
+        Assert.assertEquals("Vps4InstallCPanelPackage", argument.getValue().commands.get(0).command);
+    }
+
+    @Test
+    public void installPackagesCreatesAction() {
+        CPanelResource.InstallPackageRequest req = new CPanelResource.InstallPackageRequest();
+        req.packageName = "ea-nginx";
+        getcPanelResource().installRpmPackage(vm.vmId, req);
+        verify(actionService, times(1)).createAction(vm.vmId, ActionType.INSTALL_CPANEL_PACKAGE,
+                "{\"packageName\":\"ea-nginx\"}", user.getUsername());
+
+    }
+
+    @Test
+    public void installPackagesPackageNotAllowed() {
+        CPanelResource.InstallPackageRequest req = new CPanelResource.InstallPackageRequest();
+        req.packageName = "ea-nginx-random";
+        try {
+            getcPanelResource().installRpmPackage(vm.vmId, req);
+            Assert.fail();
+        } catch (Vps4Exception e) {
+            Assert.assertEquals("PACKAGE_NOT_ALLOWED", e.getId());
+        }
+    }
+
+    @Test
+    public void installPackagesConflictingAction() {
+        when(actionService.getIncompleteActions(vm.vmId)).thenReturn(Collections.singletonList(conflictingAction));
+        CPanelResource.InstallPackageRequest req = new CPanelResource.InstallPackageRequest();
+        req.packageName = "ea-nginx";
+        try {
+            getcPanelResource().installRpmPackage(vm.vmId, req);
+            Assert.fail();
+        } catch (Vps4Exception e) {
+            Assert.assertEquals("CONFLICTING_INCOMPLETE_ACTION", e.getId());
+        }
+    }
 }

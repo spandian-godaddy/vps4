@@ -30,7 +30,8 @@ public class CpanelClientTest {
     CpanelClient cpanelClient;
     String hostname = "localhost";
 
-    @Captor private ArgumentCaptor<HttpUriRequest> httpUriRequestArgumentCaptor;
+    @Captor
+    private ArgumentCaptor<HttpUriRequest> httpUriRequestArgumentCaptor;
 
     @Before
     public void setUp() {
@@ -41,10 +42,9 @@ public class CpanelClientTest {
             ByteArrayEntity entity = new ByteArrayEntity("FOOBAR".getBytes(Charsets.UTF8));
             when(response.getEntity()).thenReturn(entity);
             when(response.getStatusLine())
-                .thenReturn(new BasicStatusLine(HttpVersion.HTTP_1_1, 200, ""));
+                    .thenReturn(new BasicStatusLine(HttpVersion.HTTP_1_1, 200, ""));
             when(httpClient.execute(any(HttpUriRequest.class))).thenReturn(response);
-        }
-        catch (IOException e) {
+        } catch (IOException e) {
             // the httpClient.execute call throws a checked exception IOException
         }
 
@@ -53,72 +53,90 @@ public class CpanelClientTest {
     }
 
     @Test
-    public void callsCpanelEndpointToCalculatePasswordStrength() {
+    public void callsCpanelEndpointToCalculatePasswordStrength() throws CpanelAccessDeniedException, IOException {
         String password = "password";
-        try {
-            cpanelClient.calculatePasswordStrength(password);
+        cpanelClient.calculatePasswordStrength(password);
 
-            verify(httpClient, times(1)).execute(httpUriRequestArgumentCaptor.capture());
-            HttpUriRequest capturedReq =  httpUriRequestArgumentCaptor.getValue();
-            String expectedUri = "https://" + hostname + ":2087"
+        verify(httpClient, times(1)).execute(httpUriRequestArgumentCaptor.capture());
+        HttpUriRequest capturedReq = httpUriRequestArgumentCaptor.getValue();
+        String expectedUri = "https://" + hostname + ":2087"
                 + "/json-api/get_password_strength?api.version=1&password=" + password;
-            Assert.assertEquals(expectedUri, capturedReq.getURI().toString());
-        }
-        catch (CpanelAccessDeniedException | IOException e) {
-            Assert.fail("This test shouldn't be failing!!");
-        }
+        Assert.assertEquals(expectedUri, capturedReq.getURI().toString());
     }
 
     @Test
-    public void callsCpanelEndpointToCreateAccount() {
+    public void callsCpanelEndpointToCreateAccount() throws CpanelAccessDeniedException, IOException {
         String domainName = "blah";
         String username = "blahtoo";
         String password = "password";
         String plan = "some fake plan";
         String email = "email@email.com";
-        try {
-            cpanelClient.createAccount(domainName, username, password, plan, email);
+        cpanelClient.createAccount(domainName, username, password, plan, email);
 
-            verify(httpClient, times(1)).execute(httpUriRequestArgumentCaptor.capture());
-            HttpUriRequest capturedReq =  httpUriRequestArgumentCaptor.getValue();
-            String expectedUri = "https://" + hostname + ":2087" + "/json-api/createacct?api.version=1&password="
-                    + URLEncoder.encode(password, "UTF-8") +
-                    "&domain=" + URLEncoder.encode(domainName, "UTF-8")
-                    + "&username=" + URLEncoder.encode(username, "UTF-8")
-                    + "&plan=" + URLEncoder.encode(plan, "UTF-8")
-                    + "&contactemail=" + URLEncoder.encode(email, "UTF-8");
-            Assert.assertEquals(expectedUri, capturedReq.getURI().toString());
-        }
-        catch (CpanelAccessDeniedException | IOException e) {
-            Assert.fail("This test shouldn't be failing!!");
-        }
+        verify(httpClient, times(1)).execute(httpUriRequestArgumentCaptor.capture());
+        HttpUriRequest capturedReq = httpUriRequestArgumentCaptor.getValue();
+        String expectedUri = "https://" + hostname + ":2087" + "/json-api/createacct?api.version=1&password="
+                + URLEncoder.encode(password, "UTF-8") +
+                "&domain=" + URLEncoder.encode(domainName, "UTF-8")
+                + "&username=" + URLEncoder.encode(username, "UTF-8")
+                + "&plan=" + URLEncoder.encode(plan, "UTF-8")
+                + "&contactemail=" + URLEncoder.encode(email, "UTF-8");
+        Assert.assertEquals(expectedUri, capturedReq.getURI().toString());
     }
 
     @Test
-    public void callsCpanelEndpointToListPackages() {
-        try {
-            cpanelClient.listPackages();
+    public void callsCpanelEndpointToListPackages() throws CpanelAccessDeniedException, IOException {
+        cpanelClient.listPackages();
 
-            verify(httpClient, times(1)).execute(httpUriRequestArgumentCaptor.capture());
-            HttpUriRequest capturedReq =  httpUriRequestArgumentCaptor.getValue();
-            String expectedUri = "https://" + hostname + ":2087"
-                    + "/json-api/listpkgs?api.version=1";
-            Assert.assertEquals(expectedUri, capturedReq.getURI().toString());
-        }
-        catch (CpanelAccessDeniedException | IOException e) {
-            Assert.fail("This test shouldn't be failing!!");
-        }
+        verify(httpClient, times(1)).execute(httpUriRequestArgumentCaptor.capture());
+        HttpUriRequest capturedReq = httpUriRequestArgumentCaptor.getValue();
+        String expectedUri = "https://" + hostname + ":2087"
+                + "/json-api/listpkgs?api.version=1";
+        Assert.assertEquals(expectedUri, capturedReq.getURI().toString());
     }
 
-    @Test(expected=CpanelAccessDeniedException.class)
+    @Test
+    public void callsCpanelEndpointToInstallRpmPackage() throws CpanelAccessDeniedException, IOException {
+        cpanelClient.installRpmPackage("testPackage");
+
+        verify(httpClient, times(1)).execute(httpUriRequestArgumentCaptor.capture());
+        HttpUriRequest capturedReq = httpUriRequestArgumentCaptor.getValue();
+        String expectedUri = "https://" + hostname + ":2087"
+                + "/json-api/package_manager_submit_actions?api.version=1&install=testPackage";
+        Assert.assertEquals(expectedUri, capturedReq.getURI().toString());
+    }
+
+    @Test
+    public void callsCpanelEndpointToListRpmPackage() throws CpanelAccessDeniedException, IOException {
+        cpanelClient.listInstalledRpmPackages();
+
+        verify(httpClient, times(1)).execute(httpUriRequestArgumentCaptor.capture());
+        HttpUriRequest capturedReq = httpUriRequestArgumentCaptor.getValue();
+        String expectedUri = "https://" + hostname + ":2087"
+                + "/json-api/package_manager_list_packages?api.version=1&state=installed";
+        Assert.assertEquals(expectedUri, capturedReq.getURI().toString());
+    }
+
+    @Test
+    public void callsCpanelEndpointToGetRpmPackageUpdateStatus() throws CpanelAccessDeniedException, IOException {
+        cpanelClient.getRpmPackageUpdateStatus("12345");
+
+        verify(httpClient, times(1)).execute(httpUriRequestArgumentCaptor.capture());
+        HttpUriRequest capturedReq = httpUriRequestArgumentCaptor.getValue();
+        String expectedUri = "https://" + hostname + ":2087"
+                + "/json-api/package_manager_is_performing_actions?api.version=1&build=12345";
+        Assert.assertEquals(expectedUri, capturedReq.getURI().toString());
+    }
+
+    @Test(expected = CpanelAccessDeniedException.class)
     public void testAccessDenied() throws Exception {
         when(response.getStatusLine())
-            .thenReturn(new BasicStatusLine(HttpVersion.HTTP_1_1, 403, ""));
+                .thenReturn(new BasicStatusLine(HttpVersion.HTTP_1_1, 403, ""));
         new FakeCpanelModule().provideAccessHashService();
         cpanelClient.listSites();
     }
 
-    @Test(expected=IOException.class)
+    @Test(expected = IOException.class)
     public void testConnectTimeout() throws Exception {
 
         CpanelClient client = new CpanelClient("192.168.254.254", "don'tneedone");

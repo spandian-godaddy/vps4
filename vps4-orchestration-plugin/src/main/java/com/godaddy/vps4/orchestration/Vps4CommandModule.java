@@ -1,6 +1,9 @@
 package com.godaddy.vps4.orchestration;
 
 import com.godaddy.vps4.orchestration.console.Vps4RequestConsole;
+import com.godaddy.vps4.orchestration.cpanel.InstallPackage;
+import com.godaddy.vps4.orchestration.cpanel.Vps4InstallCPanelPackage;
+import com.godaddy.vps4.orchestration.cpanel.WaitForPackageInstall;
 import com.godaddy.vps4.orchestration.dns.Vps4CreateDnsPtrRecord;
 import com.godaddy.vps4.orchestration.hfs.sysadmin.InstallPanoptaAgent;
 import com.godaddy.vps4.orchestration.hfs.sysadmin.UninstallPanoptaAgent;
@@ -154,5 +157,8 @@ public class Vps4CommandModule extends AbstractModule {
         bind(Vps4NewVmOutage.class);
         bind(Vps4ClearVmOutage.class);
         bind(GetPanoptaOutage.class);
+        bind(Vps4InstallCPanelPackage.class);
+        bind(InstallPackage.class);
+        bind(WaitForPackageInstall.class);
     }
 }

@@ -64,7 +64,8 @@ public enum ActionType {
     DESTROY_OH_BACKUP(55),
     RESTORE_OH_BACKUP(56),
     NEW_VM_OUTAGE(57),
-    CLEAR_VM_OUTAGE(58);
+    CLEAR_VM_OUTAGE(58),
+    INSTALL_CPANEL_PACKAGE(59);
 
     private final int typeId;
 

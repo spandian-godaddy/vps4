@@ -1,5 +1,6 @@
 package com.godaddy.vps4.web.controlPanel.cpanel;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
 
@@ -13,6 +14,15 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
 
+import com.godaddy.hfs.config.Config;
+import com.godaddy.vps4.orchestration.cpanel.Vps4InstallCPanelPackage;
+import com.godaddy.vps4.vm.ActionService;
+import com.godaddy.vps4.vm.ActionType;
+import com.godaddy.vps4.vm.VmAction;
+import com.godaddy.vps4.web.security.GDUser;
+import com.godaddy.vps4.web.util.Commands;
+import gdg.hfs.orchestration.CommandService;
+import org.json.simple.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -30,6 +40,8 @@ import com.godaddy.vps4.web.vm.VmResource;
 
 import io.swagger.annotations.Api;
 
+import static com.godaddy.vps4.web.util.RequestValidation.validateNoConflictingActions;
+
 @Vps4Api
 @Api(tags = { "vms" })
 @Path("/api/vms")
@@ -41,17 +53,25 @@ public class CPanelResource {
 
     final VmResource vmResource;
     final Vps4CpanelService cpanelService;
+    final ActionService actionService;
+    final CommandService commandService;
+    final GDUser user;
+    final Config config;
 
     @Inject
-    public CPanelResource(VmResource vmResource, Vps4CpanelService cpanelService) {
+    public CPanelResource(VmResource vmResource, Vps4CpanelService cpanelService, ActionService actionService,
+                          CommandService commandService, GDUser user, Config config) {
         this.vmResource = vmResource;
         this.cpanelService = cpanelService;
+        this.actionService = actionService;
+        this.commandService = commandService;
+        this.user = user;
+        this.config = config;
     }
 
     @GET
     @Path("{vmId}/cpanel/whmSession")
     public CPanelSession getWHMSession(@PathParam("vmId") UUID vmId) {
-
         logger.info("get WHM session for vmId {}", vmId);
 
         VirtualMachine vm = resolveVirtualMachine(vmId);
@@ -68,7 +88,6 @@ public class CPanelResource {
     @GET
     @Path("{vmId}/cpanel/cpanelSession")
     public CPanelSession getCPanelSession(@PathParam("vmId") UUID vmId, @QueryParam("username") String username) {
-
         logger.info("get cPanel session for vmId {}", vmId);
 
         VirtualMachine vm = resolveVirtualMachine(vmId);
@@ -84,7 +103,6 @@ public class CPanelResource {
     @GET
     @Path("/{vmId}/cpanel/accounts")
     public List<CPanelAccount> listCpanelAccounts(@PathParam("vmId") UUID vmId) {
-
         logger.info("GET listCpanelAccounts for VM: {}", vmId);
 
         VirtualMachine vm = resolveVirtualMachine(vmId);
@@ -100,7 +118,6 @@ public class CPanelResource {
     @GET
     @Path("/{vmId}/cpanel/{username}/addOnDomains")
     public List<String> listAddOnDomains(@PathParam("vmId") UUID vmId, @PathParam("username") String username) {
-
         logger.info("GET listAddOnDomains for user {} on VM: {}", username, vmId);
 
         VirtualMachine vm = resolveVirtualMachine(vmId);
@@ -161,7 +178,6 @@ public class CPanelResource {
     @Path("/{vmId}/cpanel/packages")
     public List<String> listPackages(@PathParam("vmId") UUID vmId) {
         VirtualMachine vm = resolveVirtualMachine(vmId);
-
         try {
             return cpanelService.listPackages(vm.hfsVmId);
         } catch (Exception e) {
@@ -170,9 +186,41 @@ public class CPanelResource {
         }
     }
 
+
+    @POST
+    @Path("/{vmId}/cpanel/rpmPackages")
+    public VmAction installRpmPackage(@PathParam("vmId") UUID vmId, InstallPackageRequest request) {
+        VirtualMachine vm = resolveVirtualMachine(vmId);
+        validateNoConflictingActions(vmId, actionService, ActionType.INSTALL_CPANEL_PACKAGE);
+        List<String> approvedPackageList = Arrays.asList(config.get("cpanel.rpm.packages", "").split(","));
+        if(!approvedPackageList.contains(request.packageName)) {
+            throw new Vps4Exception("PACKAGE_NOT_ALLOWED", "Package isn't in the list of approved CPanel rpm packages");
+        }
+
+        JSONObject packageJsonRequest = new JSONObject();
+        packageJsonRequest.put("packageName", request.packageName);
+
+        long actionId = actionService.createAction(vmId, ActionType.INSTALL_CPANEL_PACKAGE,
+                packageJsonRequest.toJSONString(), user.getUsername());
+
+        Vps4InstallCPanelPackage.Request installPackageReq = new Vps4InstallCPanelPackage.Request();
+        installPackageReq.packageName = request.packageName;
+        installPackageReq.hfsVmId = vm.hfsVmId;
+        installPackageReq.vmId = vmId;
+        installPackageReq.actionId = actionId;
+
+        Commands.execute(commandService, actionService, "Vps4InstallCPanelPackage", installPackageReq);
+
+        return new VmAction(actionService.getAction(actionId), user.isEmployee());
+    }
+
     private VirtualMachine resolveVirtualMachine(UUID vmId) {
         return ControlPanelRequestValidation.getValidVirtualMachine(vmResource,
                 ControlPanel.CPANEL, vmId);
+    }
+
+    public static class InstallPackageRequest {
+        public String packageName;
     }
 
 }

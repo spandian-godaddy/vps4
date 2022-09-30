@@ -216,6 +216,27 @@ public class DefaultVps4CpanelService implements Vps4CpanelService {
         return withAccessHash(hfsVmId, cPanelClient -> cPanelClient.createSession(username, serviceType));
     }
 
+    @Override
+    public CpanelBuild installRpmPackage(long hfsVmId, String packageName)
+            throws CpanelAccessDeniedException, CpanelTimeoutException {
+
+        return withAccessHash(hfsVmId, cPanelClient -> {
+            return handleCpanelCall(
+                    "installRpmPackage", () -> cPanelClient.installRpmPackage(packageName),
+                    dataJson -> {
+                        Long buildNumber = (Long) dataJson.get("build");
+                        if(buildNumber != null) {
+                            return new CpanelBuild(buildNumber, packageName);
+                        }
+                        throw new RuntimeException("WHM install rpm package failed: build returned null");
+
+                    },
+                    reason -> {
+                        throw new RuntimeException("WHM install rpm package failed due to reason: " + reason);
+                    });
+        });
+    }
+
     private boolean didCallSucceed(JSONObject responseJson) {
         JSONObject metadata = (JSONObject) responseJson.get("metadata");
         // https://documentation.cpanel.net/display/DD/WHM+API+1+-+Return+Data
@@ -285,6 +306,58 @@ public class DefaultVps4CpanelService implements Vps4CpanelService {
                     },
                     reason -> {
                         throw new RuntimeException("WHM account creation failed due to reason: " + reason);
+                    }
+            );
+        });
+    }
+
+
+    @Override
+    public Long getActiveBuilds(long hfsVmId, long buildNumber) throws CpanelAccessDeniedException, CpanelTimeoutException {
+        return withAccessHash(hfsVmId, cPanelClient -> {
+            // https://documentation.cpanel.net/display/DD/WHM+API+1+Functions+-+listpkgs
+            return handleCpanelCall(
+                    "getRpmPackageUpdateStatus",
+                    () -> cPanelClient.getRpmPackageUpdateStatus(Long.toString(buildNumber)),
+                    dataJson -> {
+                        Long activeCount = (Long) dataJson.get("active");
+                        if (activeCount != null){
+                            return activeCount;
+                        }
+                        throw new RuntimeException("No active builds found - number of builds returned null");
+                    },
+                    reason -> {
+                        throw new RuntimeException("WHM get Rpm Package Update Status failed due to reason: " + reason);
+                    }
+            );
+        });
+    }
+
+    @Override
+    public List<String> listInstalledRpmPackages(long hfsVmId) throws CpanelAccessDeniedException, CpanelTimeoutException {
+        return withAccessHash(hfsVmId, cPanelClient -> {
+            // https://documentation.cpanel.net/display/DD/WHM+API+1+Functions+-+listpkgs
+            return handleCpanelCall(
+                    "listInstalledRpms",
+                    () -> cPanelClient.listInstalledRpmPackages(),
+                    dataJson -> {
+                        JSONArray pkgsJson = (JSONArray) dataJson.get("packages");
+                        if (pkgsJson != null) {
+                            List<String> packages = new ArrayList<>();
+                            for (Object object : pkgsJson) {
+                                JSONObject pkgJsonObj = (JSONObject) object;
+                                String pkg = (String) pkgJsonObj.get("package");
+                                if (pkg != null) {
+                                    packages.add(pkg);
+                                }
+                            }
+
+                            return packages;
+                        }
+                        throw new RuntimeException("No installed cpanel rpm packages present");
+                    },
+                    reason -> {
+                        throw new RuntimeException("WHM list installed rpm packages failed due to reason: " + reason);
                     }
             );
         });

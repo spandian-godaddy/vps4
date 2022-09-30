@@ -25,4 +25,13 @@ public interface Vps4CpanelService {
     List<String> listPackages(long hfsVmId)
             throws CpanelAccessDeniedException, CpanelTimeoutException, IOException;
 
-}
+    CpanelBuild installRpmPackage(long hfsVmId, String packageName)
+            throws CpanelAccessDeniedException, CpanelTimeoutException;
+
+    List<String> listInstalledRpmPackages(long hfsVmId)
+            throws CpanelAccessDeniedException, CpanelTimeoutException;
+
+    Long getActiveBuilds(long hfsVmId, long buildNumber)
+            throws CpanelAccessDeniedException, CpanelTimeoutException;
+
+    }
