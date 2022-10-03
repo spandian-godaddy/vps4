@@ -9,6 +9,7 @@ import javax.cache.expiry.Duration;
 import com.godaddy.hfs.vm.ServerUsageStats;
 import com.godaddy.vps4.mailrelay.MailRelayService.CachedMailRelayHistory;
 import com.godaddy.vps4.panopta.DefaultPanoptaService;
+import com.godaddy.vps4.sso.models.Vps4SsoToken;
 
 public class CacheSettings {
 
@@ -20,6 +21,14 @@ public class CacheSettings {
                     .setTypes(String.class, String.class)
                     .setExpiryPolicyFactory(
                             AccessedExpiryPolicy.factoryOf(Duration.ONE_MINUTE))
+                    .setStatisticsEnabled(false));
+
+        cacheManager.createCache(CacheName.API_ACCESS_TOKENS,
+                new MutableConfiguration<String, String>()
+                    .setStoreByValue(true)
+                    .setTypes(String.class, String.class)
+                    .setExpiryPolicyFactory(
+                            CreatedExpiryPolicy.factoryOf(Duration.ONE_HOUR))
                     .setStatisticsEnabled(false));
 
         cacheManager.createCache(CacheName.CPANEL_ACCESSHASH,
@@ -47,11 +56,11 @@ public class CacheSettings {
                     .setStatisticsEnabled(false));
 
         cacheManager.createCache(CacheName.PANOPTA_METRIC_GRAPH,
-                 new MutableConfiguration<String, DefaultPanoptaService.CachedMonitoringGraphs>()
-                     .setStoreByValue(true)
-                     .setTypes(String.class, DefaultPanoptaService.CachedMonitoringGraphs.class)
-                     .setExpiryPolicyFactory(
-                             CreatedExpiryPolicy.factoryOf(Duration.FIVE_MINUTES))
-                     .setStatisticsEnabled(false));
+                new MutableConfiguration<String, DefaultPanoptaService.CachedMonitoringGraphs>()
+                    .setStoreByValue(true)
+                    .setTypes(String.class, DefaultPanoptaService.CachedMonitoringGraphs.class)
+                    .setExpiryPolicyFactory(
+                            CreatedExpiryPolicy.factoryOf(Duration.FIVE_MINUTES))
+                    .setStatisticsEnabled(false));
     }
 }
