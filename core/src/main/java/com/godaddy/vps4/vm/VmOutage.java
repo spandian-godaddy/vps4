@@ -14,6 +14,7 @@ public class VmOutage {
     public Instant started;
     public Instant ended;
     public String reason;
+    public String severity;
     public long panoptaOutageId;
     public List<DomainMonitoringMetadata> domainMonitoringMetadata;
 
@@ -31,6 +32,7 @@ public class VmOutage {
             this.metadata = metadata;
             this.metric = metric;
         }
+
     }
     @Override
     public String toString() {

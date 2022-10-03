@@ -57,6 +57,7 @@ public class PanoptaOutage {
     public Instant started;
     public Instant ended;
     public String reason;
+    public String severity;
     public Set<Long> metricIds = new HashSet<>();
     public Map<Long, List<String>> networkMetricMetadata = new HashMap<>();
 

@@ -15,6 +15,7 @@ import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
 
 import com.godaddy.vps4.orchestration.monitoring.Vps4NewVmOutage;
+import com.godaddy.vps4.panopta.PanoptaServer;
 import com.godaddy.vps4.vm.ActionService;
 import com.godaddy.vps4.vm.ActionType;
 import com.godaddy.vps4.vm.VmAction;
@@ -91,10 +92,13 @@ public class VmOutageResource {
     @Path("/{vmId}/outages/{outageId}")
     public VmAction newVmOutage(@PathParam("vmId") UUID vmId, @PathParam("outageId") long outageId) {
         VirtualMachine virtualMachine = vmResource.getVm(vmId); // Auth validation
+        PanoptaServer server = panoptaService.getServer(vmId);
 
         Vps4NewVmOutage.Request request = new Vps4NewVmOutage.Request();
         request.virtualMachine = virtualMachine;
+        request.partnerCustomerKey = server.partnerCustomerKey;
         request.outageId = outageId;
+
         return createActionAndExecute(actionService, commandService, vmId, ActionType.NEW_VM_OUTAGE,
                 request, "Vps4NewVmOutage", user);
     }

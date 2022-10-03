@@ -41,6 +41,7 @@ import com.godaddy.vps4.orchestration.sysadmin.Vps4RemoveSupportUser;
 import com.godaddy.vps4.orchestration.sysadmin.Vps4SetHostname;
 import com.godaddy.vps4.orchestration.sysadmin.Vps4SetPassword;
 import com.godaddy.vps4.orchestration.sysadmin.Vps4ToggleAdmin;
+import com.godaddy.vps4.orchestration.monitoring.CreateJsdOutageTicket;
 import com.godaddy.vps4.orchestration.vm.UnlicenseControlPanel;
 import com.godaddy.vps4.orchestration.vm.Vps4AddIpAddress;
 import com.godaddy.vps4.orchestration.vm.Vps4CancelAction;
@@ -157,6 +158,7 @@ public class Vps4CommandModule extends AbstractModule {
         bind(Vps4NewVmOutage.class);
         bind(Vps4ClearVmOutage.class);
         bind(GetPanoptaOutage.class);
+        bind(CreateJsdOutageTicket.class);
         bind(Vps4InstallCPanelPackage.class);
         bind(InstallPackage.class);
         bind(WaitForPackageInstall.class);

@@ -604,6 +604,7 @@ public class DefaultPanoptaService implements PanoptaService {
         vmOutage.ended = outage.ended;
         vmOutage.reason = outage.reason;
         vmOutage.panoptaOutageId = outage.outageId;
+        vmOutage.severity = outage.severity;
 
         vmOutage.domainMonitoringMetadata = allMetricIds.stream()
                 .filter(p -> outage.networkMetricMetadata.containsKey(p.id)

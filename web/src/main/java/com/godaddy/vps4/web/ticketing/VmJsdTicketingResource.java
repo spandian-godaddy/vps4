@@ -2,21 +2,23 @@ package com.godaddy.vps4.web.ticketing;
 
 import com.godaddy.vps4.credit.CreditService;
 import com.godaddy.vps4.credit.VirtualMachineCredit;
-import com.godaddy.vps4.jsd.model.CreateJsdTicketRequest;
 import com.godaddy.vps4.jsd.model.JsdCreatedComment;
 import com.godaddy.vps4.jsd.model.JsdCreatedIssue;
 import com.godaddy.vps4.jsd.JsdService;
 import com.godaddy.vps4.jsd.model.JsdIssueSearchResult;
+import com.godaddy.vps4.orchestration.monitoring.CreateJsdOutageTicket;
 import com.godaddy.vps4.vm.VirtualMachine;
 import com.godaddy.vps4.web.Vps4Api;
 import com.godaddy.vps4.web.Vps4Exception;
 import com.godaddy.vps4.web.security.GDUser;
 import com.godaddy.vps4.web.security.RequiresRole;
+import com.godaddy.vps4.web.util.Commands;
 import com.godaddy.vps4.web.vm.VmResource;
+import gdg.hfs.orchestration.CommandService;
+import gdg.hfs.orchestration.CommandState;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
-import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -38,17 +40,18 @@ import java.util.UUID;
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
 public class VmJsdTicketingResource {
-    private static final String INCIDENT_URL_PREFIX = "https://my.panopta.com/outage/manageIncident?incident_id=";
     private static final Logger logger = LoggerFactory.getLogger(VmJsdTicketingResource.class);
 
     private final VmResource vmResource;
     private final JsdService jsdService;
+    private final CommandService commandService;
     private final CreditService creditService;
 
     @Inject
-    public VmJsdTicketingResource(VmResource vmResource, JsdService jsdService, CreditService creditService) {
+    public VmJsdTicketingResource(VmResource vmResource, JsdService jsdService, CommandService commandService, CreditService creditService) {
         this.jsdService = jsdService;
         this.vmResource = vmResource;
+        this.commandService = commandService;
         this.creditService = creditService;
     }
 
@@ -57,36 +60,47 @@ public class VmJsdTicketingResource {
     @ApiOperation(value = "Create a JSD ticket for a VM",
             notes = "Create a JSD ticket for a VM")
     @RequiresRole(roles = {GDUser.Role.ADMIN})
-    public JsdCreatedIssue createTicket(
+    public TicketResponse createTicket(
             @ApiParam(value = "The ID of the server to create ticket for", required = true) @PathParam("vmId") UUID vmId,
             CreateTicketRequest createTicketRequest ) {
-        logger.info("Creating JSD ticket for VM {}", vmId);
         VirtualMachine vm = vmResource.getVm(vmId);
         VirtualMachineCredit credit = creditService.getVirtualMachineCredit(vm.orionGuid);
-        String managedLevel = managedLevelMapper(credit.isManaged());
-        if (StringUtils.isEmpty(managedLevel)) {
-            throw new Vps4Exception("NOT_ALLOWED_FOR_SELF_MANAGED", "This action is currently only available for fully managed services");
-        }
-        CreateJsdTicketRequest request = new CreateJsdTicketRequest();
-        request.orionGuid = vm.orionGuid.toString();
-        request.shopperId = createTicketRequest.shopperId;
-        request.summary = createTicketRequest.summary;
-        request.partnerCustomerKey = createTicketRequest.partnerCustomerKey;
-        request.plid = credit.getResellerId();
-        request.fqdn = vm.primaryIpAddress.ipAddress;
-        request.severity = createTicketRequest.severity;
-        request.outageId = createTicketRequest.outageId;
-        request.outageIdUrl = INCIDENT_URL_PREFIX + createTicketRequest.outageId;
-        request.metricTypes = createTicketRequest.metricTypes;
-        request.dataCenter = dataCenterMapper(vm.dataCenter.dataCenterId);
-        request.metricInfo = createTicketRequest.metricInfo;
-        request.metricReasons = createTicketRequest.metricReasons;
-        request.supportProduct = serverTypeMapper(credit.isDed4());
-        request.customerProduct = managedLevel;
 
-        return jsdService.createTicket(request);
+        if (!credit.isManaged()) {
+            throw new Vps4Exception("INCORRECT_MANAGED_LEVEL","This action is currently only available for fully managed services");
+        }
+
+        CreateJsdOutageTicket.Request req = buildCreateRequest(vmId, createTicketRequest);
+        CommandState command = Commands.execute(commandService, "CreateJsdOutageTicket", req);
+        return new TicketResponse(command.commandId, vmId, command.name, command.responseJson);
     }
 
+    public CreateJsdOutageTicket.Request buildCreateRequest(UUID vmId, CreateTicketRequest createTicketRequest) {
+        CreateJsdOutageTicket.Request req = new CreateJsdOutageTicket.Request();
+        req.vmId = vmId;
+        req.shopperId = createTicketRequest.shopperId;
+        req.summary = createTicketRequest.summary;
+        req.partnerCustomerKey = createTicketRequest.partnerCustomerKey;
+        req.severity = createTicketRequest.severity;
+        req.outageId = createTicketRequest.outageId;
+        req.metricTypes = createTicketRequest.metricTypes;
+        req.metricInfo = createTicketRequest.metricInfo;
+        req.metricReasons = createTicketRequest.metricReasons;
+        return req;
+    }
+
+    public class TicketResponse {
+        public UUID commandId;
+        public UUID vmId;
+        public String commandName;
+        public String responseJson;
+        public TicketResponse(UUID commandId, UUID vmId, String commandName, String responseJson){
+            this.commandId = commandId;
+            this.vmId = vmId;
+            this.commandName = commandName;
+            this.responseJson = responseJson;
+        }
+    }
     @GET
     @Path("/{vmId}/ticket/{outageId}")
     @ApiOperation(value = "Search for a JSD ticket of an outage for a VM",
@@ -118,35 +132,6 @@ public class VmJsdTicketingResource {
                 commentTicketRequest.items, commentTicketRequest.timestamp);
 
         return result;
-    }
-    public String managedLevelMapper(boolean managed) {
-        if (managed) {
-                return "Fully Managed";
-        }
-        return null; // currently, JSD tickets is only implemented for fully managed VMs
-    }
-
-    public String serverTypeMapper(boolean isDed4) {
-        if (isDed4) {
-            return "ded4";
-        }
-        return "vps4";
-    }
-
-    public String dataCenterMapper(int dcId) {
-        switch (dcId) {
-            case 1:
-                return "p3";
-            case 2:
-                return "a2";
-            case 4:
-                return "n3";
-            case 3:
-            case 5:
-                return "sg2";
-            default:
-                return null;
-        }
     }
 
     public static class CreateTicketRequest {

@@ -3,7 +3,6 @@ package com.godaddy.vps4.orchestration.monitoring;
 import com.godaddy.vps4.credit.CreditService;
 import com.godaddy.vps4.credit.VirtualMachineCredit;
 import com.godaddy.vps4.network.IpAddress;
-import com.godaddy.vps4.panopta.PanoptaService;
 import com.godaddy.vps4.vm.ActionService;
 import com.godaddy.vps4.vm.VirtualMachine;
 import com.godaddy.vps4.vm.VmOutage;

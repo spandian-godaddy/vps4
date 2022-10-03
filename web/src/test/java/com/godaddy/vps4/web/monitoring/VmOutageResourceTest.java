@@ -5,15 +5,14 @@ import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyObject;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.time.Instant;
-import java.time.temporal.ChronoUnit;
 import java.util.Collections;
 import java.util.UUID;
 
+import com.godaddy.vps4.panopta.PanoptaServer;
 import com.godaddy.vps4.vm.Action;
 import com.godaddy.vps4.vm.ActionService;
 import com.godaddy.vps4.vm.ActionType;
@@ -86,6 +85,10 @@ public class VmOutageResourceTest {
         when(actionService.createAction(vmId, ActionType.NEW_VM_OUTAGE, new JSONObject().toJSONString(), gdUser.getUsername())).thenReturn(actionId);
         when(actionService.createAction(vmId, ActionType.CLEAR_VM_OUTAGE, new JSONObject().toJSONString(), gdUser.getUsername())).thenReturn(actionId);
         when(actionService.getAction(actionId)).thenReturn(action);
+
+        PanoptaServer panoptaServer = mock(PanoptaServer.class);
+        panoptaServer.partnerCustomerKey = "gdtest_" + shopperId;
+        when(panoptaService.getServer(vmId)).thenReturn(panoptaServer);
     }
 
     @Test
