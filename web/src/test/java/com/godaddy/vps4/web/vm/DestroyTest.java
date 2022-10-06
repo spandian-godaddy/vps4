@@ -202,7 +202,7 @@ public class DestroyTest {
         verify(commandService, times(1)).executeCommand(commandGroupSpecArgumentCaptor.capture());
         CommandGroupSpec commandGroupSpec = commandGroupSpecArgumentCaptor.getValue();
         CommandSpec commandSpec = commandGroupSpec.commands.get(0);
-        Assert.assertEquals("Vps4DestroyVm", commandSpec.command);
+        Assert.assertEquals("Vps4DestroyOHVm", commandSpec.command);
 
     }
 }
