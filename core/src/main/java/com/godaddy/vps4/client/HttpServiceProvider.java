@@ -39,6 +39,8 @@ abstract public class HttpServiceProvider<T> {
 
     private static final Logger logger = LoggerFactory.getLogger(HttpServiceProvider.class);
 
+    static volatile KeyManager keyManager;
+
     @Inject Config config;
     @Inject JacksonJsonProvider jacksonJsonProvider;
     private final String baseUrlConfigPropName;

@@ -39,9 +39,9 @@ public class SecureHttpClient {
 
     private static final ObjectMapper payloadMapper = new ObjectMapper();
 
-    private final Config config;
-    private final String clientCertKeyPath;
-    private final String clientCertPath;
+    private Config config;
+    private String clientCertKeyPath;
+    private String clientCertPath;
 
     public SecureHttpClient(Config config, String clientCertKeyPath, String clientCertPath) {
         this.config = config;
@@ -59,7 +59,8 @@ public class SecureHttpClient {
         logger.debug(String.format("Calling api: %s", request.getURI()));
         HttpResponse response = client.execute(request);
         try {
-            return deserializeResponse(response.getEntity().getContent(), deserializeInto);
+            T deserializedResponse = deserializeResponse(response.getEntity().getContent(), deserializeInto);
+            return deserializedResponse;
         } catch (Exception e) {
             logger.error("deserializeResponse Exception.", e);
             e.printStackTrace();
@@ -69,7 +70,8 @@ public class SecureHttpClient {
     }
 
     protected <T> T deserializeResponse(InputStream inputStream, Class<T> deserializeInto) throws IOException {
-        return payloadMapper.readValue(new InputStreamReader(inputStream, "UTF-8"), deserializeInto);
+        T deserialized = payloadMapper.readValue(new InputStreamReader(inputStream, "UTF-8"), deserializeInto);
+        return deserialized;
     }
 
     CloseableHttpClient createHttpClient() {
@@ -98,10 +100,12 @@ public class SecureHttpClient {
                     .setConnectTimeout(5000)
                     .setSocketTimeout(20000).build();
 
-            return HttpClients.custom()
+            CloseableHttpClient httpclient = HttpClients.custom()
                     .setDefaultRequestConfig(requestConfig)
                     .setConnectionManager(connPool)
                     .build();
+
+            return httpclient;
         }
         catch(Exception e) {
             throw new RuntimeException(e);
@@ -109,10 +113,11 @@ public class SecureHttpClient {
     }
 
     public static Header[] getDefaultJsonHeaders() {
-        return new Header[]{
+        Header[] defaultHeaders = {
                 new BasicHeader("Content-type", "application/json"),
                 new BasicHeader("Accept", "application/json")
         };
+        return defaultHeaders;
     }
 
     public static HttpPost createJsonHttpPostWithHeaders(String uri, Map<String, String> headersToAdd){

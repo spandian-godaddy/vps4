@@ -77,9 +77,8 @@ public class HazelcastProvider implements Provider<HazelcastInstance> {
         config.setSerializationConfig(serializationConfig);
 
         // configure eviction policy per map
-        for (String cacheName : new String[]{CacheName.API_ACCESS_TOKENS,
+        for (String cacheName : new String[]{CacheName.CPANEL_ACCESSHASH,
                                              CacheName.SERVER_USAGE,
-                                             CacheName.CPANEL_ACCESSHASH,
                                              CacheName.MAIL_RELAY_HISTORY,
                                              CacheName.PANOPTA_METRIC_GRAPH}) {
             config.getMapConfig(cacheName)
