@@ -8,12 +8,11 @@ import static com.godaddy.vps4.web.util.RequestValidation.validateSnapshotName;
 import static com.godaddy.vps4.web.util.RequestValidation.validateUserIsShopper;
 import static com.godaddy.vps4.web.util.VmHelper.createActionAndExecute;
 
-import java.time.Instant;
-import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
@@ -108,28 +107,28 @@ public class OhBackupResource {
                                                             OhBackupState.COMPLETE, OhBackupState.FAILED);
         List<OhBackupData> ohBackupData = ohBackupDataService.getBackups(vm.vmId);
 
+        List<OhBackup> automatic = backups.stream()
+                                          .filter(b -> b.purpose == OhBackupPurpose.DR)
+                                          .collect(Collectors.toList());
+        List<OhBackup> onDemand = backups.stream()
+                                         .filter(b -> b.purpose == OhBackupPurpose.CUSTOMER)
+                                         .collect(Collectors.toList());
+
         // remove any customer OH backups that aren't tracked in our DB, since they are actually HFS snapshots
-        backups.removeIf(b -> {
-            if (b.purpose == OhBackupPurpose.CUSTOMER) {
-                return ohBackupData.stream().noneMatch(obd -> obd.backupId.equals(b.id));
-            }
-            return b.purpose != OhBackupPurpose.DR;
-        });
+        onDemand.removeIf(b -> ohBackupData.stream().noneMatch(obd -> obd.backupId.equals(b.id)));
 
         // remove automatic backups that are pending/failed, unless they are the most recent automatic backup
-        Optional<OhBackup> lastAutomatic = backups.stream()
-                                                  .filter(b -> b.purpose == OhBackupPurpose.DR)
-                                                  .reduce((b1, b2) -> b1.createdAt.isAfter(b2.createdAt) ? b1 : b2);
-        backups.removeIf(b -> b.purpose == OhBackupPurpose.DR && b.state != OhBackupState.COMPLETE
-                && lastAutomatic.isPresent() && !lastAutomatic.get().id.equals(b.id));
+        Optional<OhBackup> lastAutomatic = automatic.stream()
+                                                    .reduce((b1, b2) -> b1.createdAt.isAfter(b2.createdAt) ? b1 : b2);
+        automatic.removeIf(b -> b.state != OhBackupState.COMPLETE && !lastAutomatic.get().id.equals(b.id));
 
-        // remove any automatic backup older than 7 days
-        Instant cutoff = Instant.now().minus(7, ChronoUnit.DAYS);
-        backups.removeIf(b -> b.purpose == OhBackupPurpose.DR && b.createdAt.isBefore(cutoff));
+        // only return the last 7 automatic backups
+        automatic.sort((b1, b2) -> b2.createdAt.compareTo(b1.createdAt));
+        automatic = automatic.subList(0, Math.min(7, automatic.size()));
 
         // use the backup names from our database if available
         String defaultName = config.get("vps4.autobackup.backupName");
-        return backups.stream().map(b -> {
+        return Stream.concat(onDemand.stream(), automatic.stream()).map(b -> {
             Optional<OhBackupData> data = ohBackupData.stream()
                                                       .filter(obd -> obd.backupId.equals(b.id))
                                                       .findFirst();

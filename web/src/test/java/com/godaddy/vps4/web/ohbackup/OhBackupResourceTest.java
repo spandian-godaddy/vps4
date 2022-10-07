@@ -71,14 +71,14 @@ public class OhBackupResourceTest {
 
     private OhBackup backup;
     private OhBackup hfsBackup;
-    private OhBackup newAutomaticBackup;
     private OhBackup oldAutomaticBackup;
     private OhBackup oldFailedAutomaticBackup1;
     private OhBackup oldFailedAutomaticBackup2;
+    private List<OhBackup> backups;
+    private List<OhBackup> weekOfBackups;
     private List<OhBackupData> ohBackupData;
     @Mock private Action action;
     @Mock private Action conflictingAction;
-    @Mock private List<OhBackup> backups;
     @Mock private CommandState commandState;
     @Mock private VirtualMachine vm;
 
@@ -107,14 +107,18 @@ public class OhBackupResourceTest {
     private void setUpMocks() {
         backup = createBackup(daysOld(1), OhBackupState.COMPLETE, OhBackupPurpose.CUSTOMER);
         hfsBackup = createBackup(daysOld(2), OhBackupState.COMPLETE, OhBackupPurpose.CUSTOMER);
-        newAutomaticBackup = createBackup(daysOld(1), OhBackupState.COMPLETE, OhBackupPurpose.DR);
-        oldAutomaticBackup = createBackup(daysOld(8), OhBackupState.COMPLETE, OhBackupPurpose.DR);
+        oldAutomaticBackup = createBackup(daysOld(10), OhBackupState.COMPLETE, OhBackupPurpose.DR);
         oldFailedAutomaticBackup1 = createBackup(daysOld(8), OhBackupState.FAILED, OhBackupPurpose.DR);
         oldFailedAutomaticBackup2 = createBackup(daysOld(9), OhBackupState.FAILED, OhBackupPurpose.DR);
         ohBackupData = createBackupData(backup.id);
         conflictingAction.type = ActionType.CREATE_OH_BACKUP;
         backups = new ArrayList<>();
-        Collections.addAll(backups, backup, hfsBackup, newAutomaticBackup, oldAutomaticBackup,
+        weekOfBackups = new ArrayList<>();
+        for (int i = 0; i < 7; i++) {
+            weekOfBackups.add(createBackup(daysOld(i), OhBackupState.COMPLETE, OhBackupPurpose.DR));
+        }
+        backups.addAll(weekOfBackups);
+        Collections.addAll(backups, backup, hfsBackup, oldAutomaticBackup,
                            oldFailedAutomaticBackup1, oldFailedAutomaticBackup2);
         commandState.commandId = UUID.randomUUID();
         vm.vmId = UUID.randomUUID();
@@ -159,7 +163,9 @@ public class OhBackupResourceTest {
         verify(ohBackupService).getBackups(vm.vmId, OhBackupState.PENDING,
                                            OhBackupState.COMPLETE, OhBackupState.FAILED);
         assertTrue(result.stream().anyMatch(b -> b.id.equals(backup.id)));
-        assertTrue(result.stream().anyMatch(b -> b.id.equals(newAutomaticBackup.id)));
+        for (OhBackup b1 : weekOfBackups) {
+            assertTrue(result.stream().anyMatch(b2 -> b2.id.equals(b1.id)));
+        }
     }
 
     @Test
@@ -179,6 +185,9 @@ public class OhBackupResourceTest {
     @Test
     public void getBackupsRemovesOldAutomaticBackups() {
         List<NamedOhBackup> result = resource.getOhBackups(vm.vmId);
+        for (OhBackup weekOfBackup : weekOfBackups) {
+            assertTrue(result.stream().anyMatch(b -> b.id.equals(weekOfBackup.id)));
+        }
         assertFalse(result.stream().anyMatch(b -> b.id.equals(oldAutomaticBackup.id)));
     }
 
