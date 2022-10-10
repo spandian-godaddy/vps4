@@ -307,6 +307,26 @@ public class CpanelResourceTest {
         }
     }
 
+    // get version
+    @Test
+    public void getVersionCallsCpanelService() throws Exception {
+        String expectedVersion = "11.106.0.8";
+        when(vps4CpanelService.getVersion(vm.hfsVmId)).thenReturn(expectedVersion);
+        CPanelResource.CpanelVersionResponse response = getcPanelResource().getVersion(vm.vmId);
+        Assert.assertEquals(expectedVersion, response.version);
+    }
+
+    @Test
+    public void getVersionThrowsException() throws Exception {
+        when(vps4CpanelService.getVersion(vm.hfsVmId)).thenThrow(new RuntimeException());
+        try {
+            getcPanelResource().getVersion(vm.vmId);
+        }
+        catch (Vps4Exception e) {
+            Assert.assertEquals("GET_VERSION_FAILED", e.getId());
+        }
+    }
+
     // Install packages
     @Test
     public void installPackagesCallsCommandService() {

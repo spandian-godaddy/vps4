@@ -219,7 +219,7 @@ public class DefaultVps4CpanelService implements Vps4CpanelService {
     @Override
     public CpanelBuild installRpmPackage(long hfsVmId, String packageName)
             throws CpanelAccessDeniedException, CpanelTimeoutException {
-
+        // https://documentation.cpanel.net/display/DD/WHM+API+1+Functions+-+package_manager_submit_actions
         return withAccessHash(hfsVmId, cPanelClient -> {
             return handleCpanelCall(
                     "installRpmPackage", () -> cPanelClient.installRpmPackage(packageName),
@@ -311,11 +311,10 @@ public class DefaultVps4CpanelService implements Vps4CpanelService {
         });
     }
 
-
     @Override
     public Long getActiveBuilds(long hfsVmId, long buildNumber) throws CpanelAccessDeniedException, CpanelTimeoutException {
         return withAccessHash(hfsVmId, cPanelClient -> {
-            // https://documentation.cpanel.net/display/DD/WHM+API+1+Functions+-+listpkgs
+            // https://documentation.cpanel.net/display/DD/WHM+API+1+Functions+-+package_manager_is_performing_actions
             return handleCpanelCall(
                     "getRpmPackageUpdateStatus",
                     () -> cPanelClient.getRpmPackageUpdateStatus(Long.toString(buildNumber)),
@@ -336,7 +335,7 @@ public class DefaultVps4CpanelService implements Vps4CpanelService {
     @Override
     public List<String> listInstalledRpmPackages(long hfsVmId) throws CpanelAccessDeniedException, CpanelTimeoutException {
         return withAccessHash(hfsVmId, cPanelClient -> {
-            // https://documentation.cpanel.net/display/DD/WHM+API+1+Functions+-+listpkgs
+            // https://documentation.cpanel.net/display/DD/WHM+API+1+Functions+-+list_rpms
             return handleCpanelCall(
                     "listInstalledRpms",
                     () -> cPanelClient.listInstalledRpmPackages(),
@@ -358,6 +357,28 @@ public class DefaultVps4CpanelService implements Vps4CpanelService {
                     },
                     reason -> {
                         throw new RuntimeException("WHM list installed rpm packages failed due to reason: " + reason);
+                    }
+            );
+        });
+    }
+
+
+    @Override
+    public String getVersion(long hfsVmId) throws CpanelAccessDeniedException, CpanelTimeoutException {
+        return withAccessHash(hfsVmId, cPanelClient -> {
+            // https://documentation.cpanel.net/display/DD/WHM+API+1+Functions+-+version
+            return handleCpanelCall(
+                    "getVersion",
+                    () -> cPanelClient.getVersion(),
+                    dataJson -> {
+                        String version = (String) dataJson.get("version");
+                        if (version != null){
+                            return version;
+                        }
+                        throw new RuntimeException("No version found - version data returned null");
+                    },
+                    reason -> {
+                        throw new RuntimeException("WHM get Rpm version failed due to reason: " + reason);
                     }
             );
         });

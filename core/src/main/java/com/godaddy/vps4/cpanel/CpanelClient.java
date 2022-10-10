@@ -165,6 +165,14 @@ public class CpanelClient {
         return callWhm(request);
     }
 
+    public String getVersion() throws CpanelAccessDeniedException, IOException {
+        HttpUriRequest request = newCpanelRequest()
+                .setUri(baseUrl + "/json-api/version")
+                .addParameter("api.version", "1")
+                .build();
+        return callWhm(request);
+    }
+
     private String callWhm(HttpUriRequest request) throws CpanelAccessDeniedException, IOException {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         try (CloseableHttpResponse response = (CloseableHttpResponse) httpClient.execute(request)) {

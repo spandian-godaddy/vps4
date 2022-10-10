@@ -186,6 +186,27 @@ public class CPanelResource {
         }
     }
 
+    @GET
+    @Path("/{vmId}/cpanel/version")
+    public CpanelVersionResponse getVersion(@PathParam("vmId") UUID vmId) {
+        VirtualMachine vm = resolveVirtualMachine(vmId);
+        try {
+            String version = cpanelService.getVersion(vm.hfsVmId);
+            CpanelVersionResponse response = new CpanelVersionResponse(version);
+            return response;
+        } catch (Exception e) {
+            logger.warn("Could not retrieve CPanel/WHM version for vmId {} , Exception: {} ", vmId, e);
+            throw new Vps4Exception("GET_VERSION_FAILED", e.getMessage(), e);
+        }
+    }
+
+    public static class CpanelVersionResponse {
+        public String version;
+
+        public CpanelVersionResponse(String version) {
+            this.version = version;
+        }
+    }
 
     @POST
     @Path("/{vmId}/cpanel/rpmPackages")

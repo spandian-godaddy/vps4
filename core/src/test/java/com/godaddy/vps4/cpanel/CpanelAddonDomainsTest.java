@@ -522,6 +522,80 @@ public class CpanelAddonDomainsTest {
         }
     }
 
+    @Test
+    public void getVersionUsesCpanelClient() throws Exception{
+        String returnVal = "{\"metadata\":{\"result\":1,\"reason\":\"OK\",\"version\":1,\"command\":\"version\"}," +
+                "\"data\":{\"version\":\"11.106.0.8\"}}";
+        when(cpClient.getVersion()).thenReturn(returnVal);
+        service.getVersion(hfsVmId);
+        verify(cpClient, times(1)).getVersion();
+    }
+
+    @Test
+    public void getVersionReturnsVersion() throws Exception{
+        String returnVal = "{\"metadata\":{\"result\":1,\"reason\":\"OK\",\"version\":1,\"command\":\"version\"}," +
+                "\"data\":{\"version\":\"11.106.0.8\"}}";
+        when(cpClient.getVersion()).thenReturn(returnVal);
+        String version = service.getVersion(hfsVmId);
+        Assert.assertEquals("11.106.0.8", version);
+    }
+
+    @Test
+    public void getVersionNoMetadata() throws Exception {
+        String returnVal = "{\"metadata\":null,\"data\":{\"version\":\"11.106.0.8\"}}";
+        when(cpClient.getVersion()).thenReturn(returnVal);
+
+        try {
+            service.getVersion(hfsVmId);
+            Assert.fail("This test shouldn't get here");
+        }
+        catch (RuntimeException e) {
+            Assert.assertEquals("WHM get Rpm version failed due to reason: No reason provided", e.getMessage());
+        }
+    }
+
+    @Test
+    public void getVersionResultNotOk() throws Exception {
+        String reason = "no-workie";
+        String returnVal = "{\"metadata\":{\"version\":1,\"reason\":\"" + reason + "\", \"result\":0}}";
+        when(cpClient.getVersion()).thenReturn(returnVal);
+
+        try {
+            service.getVersion(hfsVmId);
+            Assert.fail("This test shouldn't get here");
+        } catch (RuntimeException e) {
+            Assert.assertEquals("WHM get Rpm version failed due to reason: " + reason, e.getMessage());
+        }
+    }
+
+    @Test
+    public void getVersionNullData() throws Exception {
+        String returnVal = "{\"data\": null, \"metadata\":{\"version\":1,\"reason\":\"OK\", \"result\":1}}";
+        when(cpClient.getVersion()).thenReturn(returnVal);
+
+        try {
+            service.getVersion(hfsVmId);
+            Assert.fail("This test shouldn't get here");
+        }
+        catch (RuntimeException e) {
+            Assert.assertEquals("Error while handling response for call getVersion", e.getMessage());
+        }
+    }
+
+    @Test
+    public void getVersionNullVersion() throws Exception {
+        String returnVal = "{\"metadata\":{\"result\":1,\"reason\":\"OK\",\"version\":1,\"command\":\"version\"}," +
+                "\"data\":{\"version\":null}}";
+        when(cpClient.getVersion()).thenReturn(returnVal);
+
+        try {
+            service.getVersion(hfsVmId);
+            Assert.fail("This test shouldn't get here");
+        }
+        catch (RuntimeException e) {
+            Assert.assertEquals("No version found - version data returned null", e.getMessage());
+        }
+    }
 
     @Test
     public void listPackagesUsesCpanelClient() throws Exception{

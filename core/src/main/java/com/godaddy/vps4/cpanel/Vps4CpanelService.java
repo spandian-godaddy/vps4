@@ -34,4 +34,7 @@ public interface Vps4CpanelService {
     Long getActiveBuilds(long hfsVmId, long buildNumber)
             throws CpanelAccessDeniedException, CpanelTimeoutException;
 
+    String getVersion(long hfsVmId)
+            throws CpanelAccessDeniedException, CpanelTimeoutException;
+
     }

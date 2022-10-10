@@ -128,6 +128,17 @@ public class CpanelClientTest {
         Assert.assertEquals(expectedUri, capturedReq.getURI().toString());
     }
 
+    @Test
+    public void callsCpanelEndpointToGetVersion() throws CpanelAccessDeniedException, IOException {
+        cpanelClient.getVersion();
+
+        verify(httpClient, times(1)).execute(httpUriRequestArgumentCaptor.capture());
+        HttpUriRequest capturedReq = httpUriRequestArgumentCaptor.getValue();
+        String expectedUri = "https://" + hostname + ":2087"
+                + "/json-api/version?api.version=1";
+        Assert.assertEquals(expectedUri, capturedReq.getURI().toString());
+    }
+
     @Test(expected = CpanelAccessDeniedException.class)
     public void testAccessDenied() throws Exception {
         when(response.getStatusLine())
