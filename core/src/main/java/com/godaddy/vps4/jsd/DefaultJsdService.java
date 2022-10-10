@@ -6,6 +6,7 @@ import com.godaddy.vps4.jsd.model.JsdApiIssueRequest;
 import com.godaddy.vps4.jsd.model.JsdApiSearchIssueRequest;
 import com.godaddy.vps4.jsd.model.JsdContentDoc;
 import com.godaddy.vps4.jsd.model.JsdContentNodeLabel;
+import com.godaddy.vps4.jsd.model.JsdContentNodeMarks;
 import com.godaddy.vps4.jsd.model.JsdContentNodeValue;
 import com.godaddy.vps4.jsd.model.JsdContentParagraph;
 import com.godaddy.vps4.jsd.model.JsdCreatedComment;
@@ -33,6 +34,7 @@ public class DefaultJsdService implements JsdService {
     private static final String REQUEST_TYPE = "Special Request";
     private static final String SERVICE_REQUEST_CATEGORY = "Monitoring Event";
     private static final String SUPPORT_TIER_LEVEL = "Tier 3";
+    private static final String CONTENT_MARKS = "strong";
     private final String timezoneForDateParams;
     private final String dateTimePattern;
     private final JsdApiService jsdApiService;
@@ -63,13 +65,12 @@ public class DefaultJsdService implements JsdService {
 
     @Override
     public JsdIssueSearchResult searchTicket(String primaryIpAddress, Long outageId, UUID orionId) {
-        String jql = "\"IP Address[Short text]\"~\"" + primaryIpAddress +
-                "\" AND \"Outage ID[Short text]\"~\"" + outageId +
-                "\" AND \"GUID[Short text]\"~\"" + orionId + "\"";
+        String jql = "\"IP Address[Short text]\"~\"\\\"" + primaryIpAddress +
+                "\\\"\" AND \"Outage ID[Short text]\"~\"\\\"" + outageId +
+                "\\\"\" AND \"GUID[Short text]\"~\"\\\"" + orionId + "\\\"\"";
 
         String[] fields = new String[]{"summary", "id", "key"};
         JsdApiSearchIssueRequest jsdApiSearchIssueRequest = new JsdApiSearchIssueRequest(jql, 1, 0, fields);
-
         try {
             return jsdApiService.searchTicket(jsdApiSearchIssueRequest);
         }
@@ -152,7 +153,7 @@ public class DefaultJsdService implements JsdService {
     }
 
     private JsdContentParagraph buildDescriptionContent(String text, String value) {
-        JsdContentNodeLabel contentNodeText = new JsdContentNodeLabel(text);
+        JsdContentNodeLabel contentNodeText = new JsdContentNodeLabel(text, new JsdContentNodeMarks(CONTENT_MARKS));
 
         JsdContentNodeValue contentNodeValue = new JsdContentNodeValue(value);
 
@@ -162,7 +163,7 @@ public class DefaultJsdService implements JsdService {
     }
 
     private JsdContentDoc buildServicesAffectedContent(String servicesAffected) {
-        JsdContentNodeLabel contentNode = new JsdContentNodeLabel(servicesAffected);
+        JsdContentNodeLabel contentNode = new JsdContentNodeLabel(servicesAffected, null);
         JsdContentParagraph content = new JsdContentParagraph(Collections.singletonList(contentNode));
         JsdContentDoc servicesAffectedContent = new JsdContentDoc(Collections.singletonList(content));
         return servicesAffectedContent;

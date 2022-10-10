@@ -133,5 +133,4 @@ public class VmJsdTicketingResourceTest {
             assertEquals("INCORRECT_MANAGED_LEVEL", e.getId());
         }
     }
-
 }

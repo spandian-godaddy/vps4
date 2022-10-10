@@ -15,6 +15,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
 
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.UUID;
 
@@ -62,12 +63,13 @@ public class Vps4NewVmOutageTest {
         when(credit.isAccountActive()).thenReturn(true);
         when(credit.isManaged()).thenReturn(false);
 
-        outage = mock(VmOutage.class);
+        outage = new VmOutage();
         outage.panoptaOutageId = request.outageId;
         outage.metrics = new HashSet<>();
         outage.metrics.add(VmMetric.CPU);
         outage.severity = "standard";
         outage.reason = "oopsie whoopsie";
+        outage.domainMonitoringMetadata = Collections.singletonList(null);
         when(context.execute(eq("GetPanoptaOutage"), eq(GetPanoptaOutage.class), any())).thenReturn(outage);
     }
 
@@ -79,9 +81,9 @@ public class Vps4NewVmOutageTest {
         vps4NewVmOutage.executeWithAction(context, request);
 
         verify(context).execute(eq("GetPanoptaOutage"), eq(GetPanoptaOutage.class), getPanoptaOutageRequestCaptor.capture());
-        GetPanoptaOutage.Request arg1 = getPanoptaOutageRequestCaptor.getValue();
-        Assert.assertEquals(request.virtualMachine.vmId, arg1.vmId);
-        Assert.assertEquals(request.outageId, arg1.outageId);
+        GetPanoptaOutage.Request actualRequest = getPanoptaOutageRequestCaptor.getValue();
+        Assert.assertEquals(request.virtualMachine.vmId, actualRequest.vmId);
+        Assert.assertEquals(request.outageId, actualRequest.outageId);
         verify(context).execute(eq("SendOutageNotificationEmail"), eq(SendVmOutageEmail.class),
                 vmOutageEmailRequestArgumentCaptor.capture());
         VmOutageEmailRequest arg2 = vmOutageEmailRequestArgumentCaptor.getValue();
@@ -134,8 +136,8 @@ public class Vps4NewVmOutageTest {
         Assert.assertEquals(request.virtualMachine.vmId, arg2.vmId);
         Assert.assertEquals("testShopperId", arg2.shopperId);
         Assert.assertEquals(request.partnerCustomerKey, arg2.partnerCustomerKey);
-        Assert.assertEquals(outage.metrics.toString(), arg2.metricInfo);
-        Assert.assertEquals(outage.metrics.toString(), arg2.metricTypes);
+        Assert.assertEquals("CPU", arg2.metricInfo);
+        Assert.assertEquals("CPU", arg2.metricTypes);
         Assert.assertEquals(outage.reason, arg2.metricReasons);
         Assert.assertEquals("Monitoring Event - " + outage.metrics.toString() + " - "+ arg2.metricReasons + " (" + 321123 + ")", arg2.summary);
     }

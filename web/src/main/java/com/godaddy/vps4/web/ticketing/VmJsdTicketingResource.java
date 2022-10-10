@@ -69,7 +69,6 @@ public class VmJsdTicketingResource {
         if (!credit.isManaged()) {
             throw new Vps4Exception("INCORRECT_MANAGED_LEVEL","This action is currently only available for fully managed services");
         }
-
         CreateJsdOutageTicket.Request req = buildCreateRequest(vmId, createTicketRequest);
         CommandState command = Commands.execute(commandService, "CreateJsdOutageTicket", req);
         return new TicketResponse(command.commandId, vmId, command.name, command.responseJson);
@@ -113,6 +112,7 @@ public class VmJsdTicketingResource {
         VirtualMachine vm = vmResource.getVm(vmId);
 
         JsdIssueSearchResult result = jsdService.searchTicket(vm.primaryIpAddress.ipAddress, outageId, vm.orionGuid);
+
         return (result != null && result.issues != null && !result.issues.isEmpty()) ? result.issues.get(0) : null;
     }
 

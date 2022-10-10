@@ -75,7 +75,9 @@ public class Vps4NewVmOutage extends ActionCommand<Vps4NewVmOutage.Request, Void
         }
     }
 
+
     private void createJsdTicket(VirtualMachine virtualMachine, String shopperId, VmOutage vmOutage, String partnerCustomerKey) {
+        String metricType = vmOutage.metricTypeMapper();
         CreateJsdOutageTicket.Request createJsdOutageTicketRequest = new CreateJsdOutageTicket.Request();
         createJsdOutageTicketRequest.vmId = virtualMachine.vmId;
         createJsdOutageTicketRequest.shopperId = shopperId;
@@ -84,8 +86,8 @@ public class Vps4NewVmOutage extends ActionCommand<Vps4NewVmOutage.Request, Void
         createJsdOutageTicketRequest.partnerCustomerKey = partnerCustomerKey;
         createJsdOutageTicketRequest.severity = vmOutage.severity;
         createJsdOutageTicketRequest.outageId = Long.toString(vmOutage.panoptaOutageId);
-        createJsdOutageTicketRequest.metricTypes = vmOutage.metrics.toString();
-        createJsdOutageTicketRequest.metricInfo = vmOutage.metrics.toString();
+        createJsdOutageTicketRequest.metricTypes = metricType;
+        createJsdOutageTicketRequest.metricInfo = metricType;
         createJsdOutageTicketRequest.metricReasons = vmOutage.reason;
         context.execute("CreateJsdOutageTicket", CreateJsdOutageTicket.class, createJsdOutageTicketRequest);
     }

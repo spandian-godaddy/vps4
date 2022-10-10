@@ -43,7 +43,6 @@ public class CreateJsdOutageTicket implements Command<CreateJsdOutageTicket.Requ
         logger.info("Creating JSD ticket for VM {}", request.vmId);
         VirtualMachine vm = vmService.getVirtualMachine(request.vmId);
         VirtualMachineCredit credit = creditService.getVirtualMachineCredit(vm.orionGuid);
-
         CreateJsdTicketRequest req = new CreateJsdTicketRequest();
         req.orionGuid = vm.orionGuid.toString();
         req.shopperId = request.shopperId;
@@ -68,7 +67,7 @@ public class CreateJsdOutageTicket implements Command<CreateJsdOutageTicket.Requ
         if (managed) {
             return "Fully Managed";
         }
-        return null; 
+        return null;
     }
 
     public String serverTypeMapper(boolean isDed4) {

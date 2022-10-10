@@ -172,9 +172,9 @@ public class DefaultJsdServiceTest {
         verify(jsdApiService).searchTicket(searchArgument.capture());
         JsdApiSearchIssueRequest jsdApiSearchIssueRequest = searchArgument.getValue();
 
-        String jql = "\"IP Address[Short text]\"~\"" + request.fqdn + "\" AND" +
-                " \"Outage ID[Short text]\"~\"" + request.outageId + "\" AND" +
-                " \"GUID[Short text]\"~\"" + request.orionGuid + "\"";
+        String jql = "\"IP Address[Short text]\"~\"\\\"" + request.fqdn + "\\\"\" AND" +
+                " \"Outage ID[Short text]\"~\"\\\"" + request.outageId + "\\\"\" AND" +
+                " \"GUID[Short text]\"~\"\\\"" + request.orionGuid + "\\\"\"";
         assertEquals("summary", jsdApiSearchIssueRequest.fields[0]);
         assertEquals("id", jsdApiSearchIssueRequest.fields[1]);
         assertEquals("key", jsdApiSearchIssueRequest.fields[2]);

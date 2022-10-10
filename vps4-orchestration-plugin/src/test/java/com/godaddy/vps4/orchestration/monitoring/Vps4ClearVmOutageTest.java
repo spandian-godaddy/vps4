@@ -1,10 +1,12 @@
 package com.godaddy.vps4.orchestration.monitoring;
 
+import com.godaddy.hfs.config.Config;
 import com.godaddy.vps4.credit.CreditService;
 import com.godaddy.vps4.credit.VirtualMachineCredit;
 import com.godaddy.vps4.network.IpAddress;
 import com.godaddy.vps4.vm.ActionService;
 import com.godaddy.vps4.vm.VirtualMachine;
+import com.godaddy.vps4.vm.VmMetric;
 import com.godaddy.vps4.vm.VmOutage;
 import gdg.hfs.orchestration.CommandContext;
 import org.junit.Assert;
@@ -12,6 +14,10 @@ import org.junit.Before;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
 
+import java.time.Instant;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashSet;
 import java.util.UUID;
 
 import static org.mockito.Matchers.any;
@@ -26,6 +32,7 @@ public class Vps4ClearVmOutageTest {
     private ActionService actionService = mock(ActionService.class);
     private CreditService creditService = mock(CreditService.class);
     private CommandContext context = mock(CommandContext.class);
+    private Config config = mock(Config.class);
     private Vps4ClearVmOutage vps4ClearVmOutage;
     Vps4ClearVmOutage.Request request;
     VirtualMachineCredit credit;
@@ -33,7 +40,9 @@ public class Vps4ClearVmOutageTest {
 
     @Before
     public void setup() {
-        vps4ClearVmOutage = new Vps4ClearVmOutage(actionService, creditService);
+        vps4ClearVmOutage = new Vps4ClearVmOutage(actionService, creditService, config);
+
+        when(config.get("jsd.enabled", "false")).thenReturn("true");
 
         request = new Vps4ClearVmOutage.Request();
         request.actionId = 123321;
@@ -53,8 +62,12 @@ public class Vps4ClearVmOutageTest {
         when(credit.isAccountActive()).thenReturn(true);
         when(credit.isManaged()).thenReturn(false);
 
-        outage = mock(VmOutage.class);
+        outage = new VmOutage();
         outage.panoptaOutageId = request.outageId;
+        outage.domainMonitoringMetadata = Collections.singletonList(null);
+        outage.metrics = new HashSet<>();
+        outage.metrics.add(VmMetric.CPU);
+        outage.ended = Instant.now();
         when(context.execute(eq("GetPanoptaOutage"), eq(GetPanoptaOutage.class), any())).thenReturn(outage);
     }
 
@@ -66,9 +79,9 @@ public class Vps4ClearVmOutageTest {
         vps4ClearVmOutage.executeWithAction(context, request);
 
         verify(context).execute(eq("GetPanoptaOutage"), eq(GetPanoptaOutage.class), getPanoptaOutageRequestCaptor.capture());
-        GetPanoptaOutage.Request arg1 = getPanoptaOutageRequestCaptor.getValue();
-        Assert.assertEquals(request.virtualMachine.vmId, arg1.vmId);
-        Assert.assertEquals(request.outageId, arg1.outageId);
+        GetPanoptaOutage.Request actualRequest = getPanoptaOutageRequestCaptor.getValue();
+        Assert.assertEquals(request.virtualMachine.vmId, actualRequest.vmId);
+        Assert.assertEquals(request.outageId, actualRequest.outageId);
         verify(context).execute(eq("SendOutageClearNotificationEmail"), eq(SendVmOutageResolvedEmail.class),
                 vmOutageEmailRequestArgumentCaptor.capture());
         VmOutageEmailRequest arg2 = vmOutageEmailRequestArgumentCaptor.getValue();
@@ -106,5 +119,81 @@ public class Vps4ClearVmOutageTest {
         when(credit.isManaged()).thenReturn(true);
         vps4ClearVmOutage.executeWithAction(context, request);
         verify(context, never()).execute(eq("SendOutageClearNotificationEmail"), eq(SendVmOutageEmail.class), any());
+    }
+
+    @Test
+    public void createJsdCommandWhenCreditIsFullyManaged() {
+        ArgumentCaptor<ClearJsdOutageTicket.Request> clearJsdOutageTicketArgumentCaptor = ArgumentCaptor.forClass(ClearJsdOutageTicket.Request.class);
+
+        when(credit.isManaged()).thenReturn(true);
+        vps4ClearVmOutage.executeWithAction(context, request);
+
+        verify(context).execute(eq("ClearJsdOutageTicket"), eq(ClearJsdOutageTicket.class), clearJsdOutageTicketArgumentCaptor.capture());
+        ClearJsdOutageTicket.Request actualRequest = clearJsdOutageTicketArgumentCaptor.getValue();
+        Assert.assertEquals(request.virtualMachine.vmId, actualRequest.vmId);
+        Assert.assertEquals(request.outageId, actualRequest.outageId);
+        Assert.assertEquals("CPU", actualRequest.outageMetrics);
+        Assert.assertEquals(outage.ended, actualRequest.outageTimestamp);
+    }
+
+    @Test
+    public void createJsdCommandCorrectlyOnMultipleMetrics() {
+        ArgumentCaptor<ClearJsdOutageTicket.Request> clearJsdOutageTicketArgumentCaptor = ArgumentCaptor.forClass(ClearJsdOutageTicket.Request.class);
+        outage.metrics.add(VmMetric.HTTPS);
+        outage.metrics.add(VmMetric.HTTP);
+        VmOutage.DomainMonitoringMetadata dmm1 = new VmOutage.DomainMonitoringMetadata();
+        dmm1.additionalFqdn = "testDomain.here";
+        dmm1.metric = VmMetric.HTTPS;
+        VmOutage.DomainMonitoringMetadata dmm2 = new VmOutage.DomainMonitoringMetadata();
+        dmm2.additionalFqdn = "testDomain2.here";
+        dmm2.metric = VmMetric.HTTP;
+
+        outage.domainMonitoringMetadata = Arrays.asList(dmm1, dmm2);
+        when(credit.isManaged()).thenReturn(true);
+        vps4ClearVmOutage.executeWithAction(context, request);
+
+        verify(context).execute(eq("ClearJsdOutageTicket"), eq(ClearJsdOutageTicket.class), clearJsdOutageTicketArgumentCaptor.capture());
+        ClearJsdOutageTicket.Request actualRequest = clearJsdOutageTicketArgumentCaptor.getValue();
+        Assert.assertEquals(request.virtualMachine.vmId, actualRequest.vmId);
+        Assert.assertEquals(request.outageId, actualRequest.outageId);
+        Assert.assertEquals("CPU, HTTPS (testDomain.here), HTTP (testDomain2.here)", actualRequest.outageMetrics);
+        Assert.assertEquals(outage.ended, actualRequest.outageTimestamp);
+    }
+
+    @Test
+    public void noJsdCommandWhenCreditIsSelfManaged() {
+        when(credit.isManaged()).thenReturn(false);
+        vps4ClearVmOutage.executeWithAction(context, request);
+        verify(context, never()).execute(eq("ClearJsdOutageTicket"), eq(ClearJsdOutageTicket.class), any());
+    }
+
+    @Test
+    public void noJsdCommandWhenAccountNotActive() {
+        when(credit.isAccountActive()).thenReturn(false);
+        vps4ClearVmOutage.executeWithAction(context, request);
+        verify(context, never()).execute(eq("ClearJsdOutageTicket"), eq(ClearJsdOutageTicket.class), any());
+    }
+
+    @Test
+    public void noJsdCommandWhenCreditNotFound() {
+        when(creditService.getVirtualMachineCredit(any())).thenReturn(null);
+        vps4ClearVmOutage.executeWithAction(context, request);
+        verify(context, never()).execute(eq("ClearJsdOutageTicket"), eq(ClearJsdOutageTicket.class), any());
+    }
+
+    @Test
+    public void noJsdCommandWhenVmDestroyed() {
+        when(request.virtualMachine.isActive()).thenReturn(false);
+        vps4ClearVmOutage.executeWithAction(context, request);
+        verify(context, never()).execute(eq("ClearJsdOutageTicket"), eq(ClearJsdOutageTicket.class), any());
+    }
+
+    @Test
+    public void noJsdCommandWhenConfigReturnsFalse() {
+        when(config.get("jsd.enabled", "false")).thenReturn("false");
+        when(credit.isManaged()).thenReturn(true);
+
+        vps4ClearVmOutage.executeWithAction(context, request);
+        verify(context, never()).execute(eq("ClearJsdOutageTicket"), eq(ClearJsdOutageTicket.class), any());
     }
 }
