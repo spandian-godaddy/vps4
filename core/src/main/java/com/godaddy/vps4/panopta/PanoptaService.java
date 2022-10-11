@@ -14,6 +14,10 @@ public interface PanoptaService {
 
     void deleteCustomer(String shopperId);
 
+    String getStatus(String shopperId);
+
+    void setStatus(String shopperId, String status);
+
     PanoptaServer createServer(String shopperId, UUID orionGuid, String ipAddress, String[] tags)
             throws PanoptaServiceException;
 

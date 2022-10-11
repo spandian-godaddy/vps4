@@ -8,6 +8,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.Optional;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
@@ -134,6 +135,38 @@ public class DefaultPanoptaService implements PanoptaService {
             logger.info("Deleting customer in Panopta. Panopta Details: {}", panoptaCustomerDetails);
             panoptaApiCustomerService.deleteCustomer(panoptaCustomerDetails.getCustomerKey());
         }
+    }
+
+    @Override
+    public String getStatus(String shopperId) {
+        String partnerCustomerKey = getPartnerCustomerKey(shopperId);
+        PanoptaApiCustomerList panoptaApiCustomerList = panoptaApiCustomerService.getCustomer(partnerCustomerKey);
+        if (!panoptaApiCustomerList.getCustomerList().isEmpty()) {
+            Optional<PanoptaApiCustomerList.Customer> customer = panoptaApiCustomerList.getCustomerList().stream().findFirst();
+            if (customer.isPresent()) {
+                return customer.get().status;
+            }
+        }
+        logger.info("Could not find customer in panopta for partner-customer-key {} ", partnerCustomerKey);
+        return null;
+    }
+
+    @Override
+    public void setStatus(String shopperId, String status) {
+        PanoptaCustomerDetails panoptaCustomerDetails = panoptaDataService.getPanoptaCustomerDetails(shopperId);
+
+        String emailAddress = config.get("panopta.api.customer.email");
+        String panoptaNamePrefix = config.get("panopta.api.name.prefix");
+        String panoptaPackage = config.get("panopta.api.package");
+
+        PanoptaApiUpdateCustomerRequest panoptaApiUpdateCustomerRequest = new PanoptaApiUpdateCustomerRequest();
+        panoptaApiUpdateCustomerRequest.setEmailAddress(emailAddress);
+        panoptaApiUpdateCustomerRequest.setName(panoptaNamePrefix + shopperId);
+        panoptaApiUpdateCustomerRequest.setPanoptaPackage(panoptaPackage);
+        panoptaApiUpdateCustomerRequest.setStatus(status);
+        logger.info("Update Panopta customer Request: {}", panoptaApiUpdateCustomerRequest);
+
+        panoptaApiCustomerService.updateCustomer(panoptaCustomerDetails.getCustomerKey(), panoptaApiUpdateCustomerRequest);
     }
 
     @Override

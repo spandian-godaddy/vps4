@@ -81,6 +81,7 @@ public class DefaultPanoptaServiceTest {
     @Captor private ArgumentCaptor<PanoptaApiAttributeRequest> attributeRequest;
     @Captor private ArgumentCaptor<PanoptaApiUpdateServerRequest> updateServerRequest;
     @Captor private ArgumentCaptor<PanoptaApiApplyTemplateRequest> applyTemplateRequest;
+    @Captor private ArgumentCaptor<PanoptaApiUpdateCustomerRequest> updateCustomerRequest;
 
     private @PanoptaExecutorService ExecutorService pool;
     private UUID vmId;
@@ -237,8 +238,10 @@ public class DefaultPanoptaServiceTest {
     private void setupOtherMocks() {
         when(virtualMachineService.getVirtualMachine(any(UUID.class))).thenReturn(virtualMachine);
         when(creditService.getVirtualMachineCredit(any(UUID.class))).thenReturn(credit);
-        when(config.get("panopta.api.part" +
-                                "ner.customer.key.prefix")).thenReturn("gdtest_");
+        when(config.get("panopta.api.partner.customer.key.prefix")).thenReturn("gdtest_");
+        when(config.get("panopta.api.customer.email")).thenReturn("dev-vps4@godaddy.com");
+        when(config.get("panopta.api.name.prefix")).thenReturn("");
+        when(config.get("panopta.api.package")).thenReturn("godaddy.hosting");
         doNothing().when(panoptaApiCustomerService).createCustomer(any(PanoptaApiCustomerRequest.class));
         when(panoptaApiServerService.getUsageList(serverId, partnerCustomerKey, 0)).thenReturn(usageIdList);
         when(panoptaApiServerService.getNetworkList(serverId, partnerCustomerKey, 0)).thenReturn(networkIdList);
@@ -477,6 +480,27 @@ public class DefaultPanoptaServiceTest {
         when(panoptaCustomerDetails.getCustomerKey()).thenReturn(customerKey);
         defaultPanoptaService.deleteCustomer(shopperId);
         verify(panoptaApiCustomerService).deleteCustomer(customerKey);
+    }
+
+    @Test
+    public void testGetStatus() {
+        String status = defaultPanoptaService.getStatus(shopperId);
+        verify(panoptaApiCustomerService).getCustomer(partnerCustomerKey);
+        assertEquals(status, "active");
+    }
+
+    @Test
+    public void testSetStatus() {
+        when(panoptaDataService.getPanoptaCustomerDetails(shopperId)).thenReturn(panoptaCustomerDetails);
+        when(panoptaCustomerDetails.getCustomerKey()).thenReturn(customerKey);
+        defaultPanoptaService.setStatus(shopperId, "active");
+        verify(panoptaApiCustomerService).updateCustomer(eq(customerKey), updateCustomerRequest.capture());
+        PanoptaApiUpdateCustomerRequest request = updateCustomerRequest.getValue();
+
+        assertEquals(request.getEmailAddress(), "dev-vps4@godaddy.com");
+        assertEquals(request.getName(), "dummy-shopper-id");
+        assertEquals(request.getPanoptaPackage(), "godaddy.hosting");
+        assertEquals(request.getStatus(), "active");
     }
 
     @Test

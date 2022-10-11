@@ -153,6 +153,12 @@ public class SetupPanoptaTest {
     }
 
     @Test
+    public void setsPanoptaCustomerStatusToActive() {
+        setupPanopta.execute(context, request);
+        verify(panoptaService, times(1)).setStatus(shopperId, "active");
+    }
+
+    @Test
     public void getsCustomerFromPanoptaAndStoresInDb() throws PanoptaServiceException {
         when(panoptaDataService.getPanoptaCustomerDetails(shopperId))
                 .thenReturn(null)

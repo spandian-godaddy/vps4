@@ -67,7 +67,10 @@ public class SetupPanopta implements Command<SetupPanopta.Request, Void> {
 
     private PanoptaCustomerDetails getOrCreateCustomer() {
         PanoptaCustomerDetails customerDetails = panoptaDataService.getPanoptaCustomerDetails(request.shopperId);
-        if (customerDetails == null) {
+        if (customerDetails != null) {
+            panoptaService.setStatus(request.shopperId, "active");
+        }
+        else {
             PanoptaCustomer customer = panoptaService.getCustomer(request.shopperId);
             if (customer == null) {
                 customer = createCustomer();
