@@ -40,8 +40,11 @@ public class WaitForOhJob implements Command<WaitForOhJob.Request, Void> {
                                                               () -> ohJobService.getJob(request.vmId, request.jobId));
         } while (job != null && (job.status == OhJobStatus.PENDING || job.status == OhJobStatus.STARTED));
 
-        if (job == null || job.status != OhJobStatus.SUCCESS) {
-            throw new RuntimeException(String.format("Failed to complete OH job: %s", job));
+        if (job == null) {
+            throw new RuntimeException("Failed to complete OH job");
+        }
+        if (job.status != OhJobStatus.SUCCESS) {
+            throw new RuntimeException(String.format("Failed to complete OH job: %s, status: %s", job.id, job.status));
         }
         return null;
     }
