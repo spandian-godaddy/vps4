@@ -14,7 +14,7 @@ import javax.ws.rs.ClientErrorException;
 import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.Response;
 
-import com.godaddy.hfs.vm.VmAction;
+import com.godaddy.vps4.vm.VmAction;
 import com.godaddy.vps4.scheduledJob.ScheduledJob;
 import com.godaddy.vps4.vm.ServerSpec;
 import com.godaddy.vps4.vm.ServerType;
@@ -137,6 +137,8 @@ public class Vps4BackupJobTest {
         request.backupName = "scheduledOhBackup";
         vps4BackupJob.setRequest(request);
         when(mockVmService.getVm(request.vmId)).thenReturn(mockVm);
+        VmAction mockVmAction = mock(VmAction.class);
+        when(mockVmOhBackupService.createOhBackup(eq(request.vmId), any())).thenReturn(mockVmAction);
 
         vps4BackupJob.execute(context);
 
