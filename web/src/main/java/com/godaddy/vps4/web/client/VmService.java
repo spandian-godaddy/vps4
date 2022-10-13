@@ -1,9 +1,11 @@
 package com.godaddy.vps4.web.client;
 
+import com.godaddy.vps4.vm.VirtualMachine;
 import com.godaddy.vps4.vm.VmAction;
 
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
+import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
@@ -23,4 +25,8 @@ public interface VmService {
     @POST
     @Path("/{vmId}/zombie")
     VmAction zombie(@PathParam("vmId") UUID vmId);
+
+    @GET
+    @Path("/{vmId}")
+    VirtualMachine getVm(@PathParam("vmId") UUID vmId);
 }

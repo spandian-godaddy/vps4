@@ -16,7 +16,11 @@ import javax.ws.rs.core.Response;
 
 import com.godaddy.hfs.vm.VmAction;
 import com.godaddy.vps4.scheduledJob.ScheduledJob;
+import com.godaddy.vps4.vm.ServerSpec;
+import com.godaddy.vps4.vm.ServerType;
+import com.godaddy.vps4.vm.VirtualMachine;
 import com.godaddy.vps4.web.client.VmOhBackupService;
+import com.godaddy.vps4.web.client.VmService;
 import com.godaddy.vps4.web.ohbackup.OhBackupResource;
 import org.json.simple.JSONObject;
 import org.junit.After;
@@ -49,6 +53,7 @@ public class Vps4BackupJobTest {
     static Injector injector;
     static VmSnapshotService mockVmSnapshotService;
     static VmOhBackupService mockVmOhBackupService;
+    static VmService mockVmService;
     static Config mockConfig;
 
     private final JobExecutionContext context = mock(JobExecutionContext.class);
@@ -61,6 +66,7 @@ public class Vps4BackupJobTest {
     public static void newInjector() {
         mockVmSnapshotService = mock(VmSnapshotService.class);
         mockVmOhBackupService = mock(VmOhBackupService.class);
+        mockVmService = mock(VmService.class);
         mockConfig = mock(Config.class);
         injector = Guice.createInjector(
             new AbstractModule() {
@@ -68,10 +74,17 @@ public class Vps4BackupJobTest {
                 protected void configure() {
                     bind(VmSnapshotService.class).toInstance(mockVmSnapshotService);
                     bind(VmOhBackupService.class).toInstance(mockVmOhBackupService);
+                    bind(VmService.class).toInstance(mockVmService);
                     bind(Config.class).toInstance(mockConfig);
                 }
             }
         );
+
+        VirtualMachine mockVm = mock(VirtualMachine.class);
+        mockVm.spec = mock(ServerSpec.class);
+        mockVm.spec.serverType = mock(ServerType.class);
+        mockVm.spec.serverType.platform = ServerType.Platform.OPENSTACK;
+        when(mockVmService.getVm(any())).thenReturn(mockVm);
     }
 
     @Before
@@ -115,11 +128,15 @@ public class Vps4BackupJobTest {
 
     @Test
     public void callsOhSnapshotEndpointToCreateAScheduledBackup() throws JobExecutionException {
+        VirtualMachine mockVm = mock(VirtualMachine.class);
+        mockVm.spec = mock(ServerSpec.class);
+        mockVm.spec.serverType = mock(ServerType.class);
+        mockVm.spec.serverType.platform = ServerType.Platform.OPTIMIZED_HOSTING;
         Vps4BackupJobRequest request = new Vps4BackupJobRequest();
         request.vmId = UUID.randomUUID();
         request.backupName = "scheduledOhBackup";
-        request.scheduledJobType = ScheduledJob.ScheduledJobType.BACKUPS_OH_MANUAL;
         vps4BackupJob.setRequest(request);
+        when(mockVmService.getVm(request.vmId)).thenReturn(mockVm);
 
         vps4BackupJob.execute(context);
 

@@ -179,6 +179,7 @@ public class SnapshotScheduleResource {
     @POST
     @Path("/{vmId}/snapshotSchedules")
     public SnapshotSchedule scheduleSnapshot(@PathParam("vmId") UUID vmId, ScheduleSnapshotRequest request) {
+        ScheduledJob.ScheduledJobType TYPE = ScheduledJob.ScheduledJobType.BACKUPS_MANUAL;
         // make sure the times are correct
         request.validate();
         // make sure the vm belongs to the customer
@@ -188,20 +189,17 @@ public class SnapshotScheduleResource {
             throw new Vps4Exception("MANUAL_SNAPSHOT_SCHEDULE_EXISTS", "A manual snapshot schedule already exists.");
         }
 
-        ScheduledJob.ScheduledJobType type = vm.spec.serverType.platform == ServerType.Platform.OPTIMIZED_HOSTING
-                ? ScheduledJob.ScheduledJobType.BACKUPS_OH_MANUAL : ScheduledJob.ScheduledJobType.BACKUPS_MANUAL;
-
         // create the job in the scheduler
-        Vps4BackupJobRequest jobRequest = createJobRequestData(vmId, request.getSnapshotTime(), JobType.ONE_TIME, null, type);
+        Vps4BackupJobRequest jobRequest = createJobRequestData(vmId, request.getSnapshotTime(), JobType.ONE_TIME, null, TYPE);
 
         SchedulerJobDetail jobDetail = schedulerWebService.submitJobToGroup("vps4", "backups", jobRequest);
 
         // record the job in the vps4 jobs table
-        scheduledJobService.insertScheduledJob(jobDetail.id, vmId, type);
+        scheduledJobService.insertScheduledJob(jobDetail.id, vmId, TYPE);
 
         createNewAction(vmId, ActionType.SCHEDULE_MANUAL_SNAPSHOT);
 
-        return new SnapshotSchedule(type, jobDetail);
+        return new SnapshotSchedule(TYPE, jobDetail);
     }
 
     @GET

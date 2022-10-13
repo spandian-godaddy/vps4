@@ -9,7 +9,10 @@ import com.godaddy.vps4.scheduler.core.JobMetadata;
 import com.godaddy.vps4.scheduler.core.SchedulerJob;
 import com.godaddy.vps4.snapshot.Snapshot;
 import com.godaddy.vps4.snapshot.SnapshotType;
+import com.godaddy.vps4.vm.ServerType;
+import com.godaddy.vps4.vm.VirtualMachine;
 import com.godaddy.vps4.web.client.VmOhBackupService;
+import com.godaddy.vps4.web.client.VmService;
 import com.godaddy.vps4.web.client.VmSnapshotService;
 import com.godaddy.vps4.snapshot.SnapshotAction;
 import com.godaddy.vps4.web.ohbackup.OhBackupResource;
@@ -45,6 +48,7 @@ public class Vps4BackupJob extends SchedulerJob {
 
     @Inject private VmSnapshotService vmSnapshotService;
     @Inject private VmOhBackupService vmOhBackupService;
+    @Inject private VmService vmService;
     @Inject private Config config;
 
     Vps4BackupJobRequest request;
@@ -102,7 +106,8 @@ public class Vps4BackupJob extends SchedulerJob {
 
     private void createAutomaticBackup(UUID vmId, String backupName, String shopperId, ScheduledJob.ScheduledJobType scheduledJobType) {
         logger.info("Creating backup for vm {}", vmId);
-        if(scheduledJobType == ScheduledJob.ScheduledJobType.BACKUPS_OH_MANUAL){
+        VirtualMachine vm = vmService.getVm(vmId);
+        if(vm.spec.serverType.platform == ServerType.Platform.OPTIMIZED_HOSTING){
             createOhBackup(vmId, backupName);
         }
         else {
