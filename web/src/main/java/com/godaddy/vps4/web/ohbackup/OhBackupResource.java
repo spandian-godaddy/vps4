@@ -50,6 +50,8 @@ import com.google.inject.Inject;
 import gdg.hfs.orchestration.CommandService;
 
 import io.swagger.annotations.Api;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @Vps4Api
 @Api(tags = {"vms"})
@@ -57,6 +59,7 @@ import io.swagger.annotations.Api;
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
 public class OhBackupResource {
+    private static final Logger logger = LoggerFactory.getLogger(OhBackupResource.class);
     private final GDUser user;
     private final VmResource vmResource;
     private final Config config;
@@ -140,6 +143,7 @@ public class OhBackupResource {
     @POST
     @Path("/{vmId}/ohBackups")
     public VmAction createOhBackup(@PathParam("vmId") UUID vmId, OhBackupRequest options) {
+        logger.debug("Begin OH Backup request validation for vm {}", vmId);
         validateOhBackupsAreEnabled();
         VirtualMachine vm = vmResource.getVm(vmId); // auth validation
         validateUserIsShopper(user);
@@ -150,6 +154,7 @@ public class OhBackupResource {
         validateIfSnapshotOverQuota(ohBackupDataService, snapshotService, vm, SnapshotType.ON_DEMAND);
         validateNoOtherSnapshotsInProgress(ohBackupService, snapshotService, vm);
 
+        logger.debug("Finished OH backup request validation for vm {}, call OH to create backup");
         Vps4CreateOhBackup.Request request = new Vps4CreateOhBackup.Request(vm, user.getUsername(), options.name);
         return createActionAndExecute(actionService, commandService, vmId, ActionType.CREATE_OH_BACKUP, request,
                                       "Vps4CreateOhBackup", user);

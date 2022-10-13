@@ -1,13 +1,12 @@
 package com.godaddy.vps4.scheduler.plugin.backups;
 
 import com.godaddy.hfs.config.Config;
-import com.godaddy.hfs.vm.VmAction;
+import com.godaddy.vps4.vm.VmAction;
 import com.godaddy.vps4.scheduledJob.ScheduledJob;
 import com.godaddy.vps4.scheduler.api.core.utils.Utils;
 import com.godaddy.vps4.scheduler.api.plugin.Vps4BackupJobRequest;
 import com.godaddy.vps4.scheduler.core.JobMetadata;
 import com.godaddy.vps4.scheduler.core.SchedulerJob;
-import com.godaddy.vps4.snapshot.Snapshot;
 import com.godaddy.vps4.snapshot.SnapshotType;
 import com.godaddy.vps4.vm.ServerType;
 import com.godaddy.vps4.vm.VirtualMachine;
@@ -116,12 +115,14 @@ public class Vps4BackupJob extends SchedulerJob {
     }
 
     private void createOhBackup(UUID vmId, String backupName) {
+        logger.info("Vps4BackupJob calling create OH backup for vm {}", vmId);
         OhBackupResource.OhBackupRequest request = new OhBackupResource.OhBackupRequest(backupName);
-        vmOhBackupService.createOhBackup(vmId, request);
-        logger.info("Scheduled backup created for vm {}, ", vmId);
+        VmAction action = vmOhBackupService.createOhBackup(vmId, request);
+        logger.info("Vps4BackupJob started OH backup for vm {}, actionId {}", vmId, action.id);
     }
 
     private void createHfsBackup(UUID vmId, String backupName, String shopperId, ScheduledJob.ScheduledJobType scheduledJobType) {
+        logger.info("Vps4BackupJob creating HFS backup for vm {}", vmId);
         VmSnapshotResource.VmSnapshotRequest vmSnapshotRequest = new VmSnapshotResource.VmSnapshotRequest();
         vmSnapshotRequest.name = backupName;
         vmSnapshotRequest.snapshotType = getSnapshotType(scheduledJobType);

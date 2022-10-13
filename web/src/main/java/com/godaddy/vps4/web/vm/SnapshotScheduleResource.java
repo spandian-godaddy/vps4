@@ -8,7 +8,10 @@ import com.godaddy.vps4.scheduler.api.core.JobType;
 import com.godaddy.vps4.scheduler.api.core.SchedulerJobDetail;
 import com.godaddy.vps4.scheduler.api.plugin.Vps4BackupJobRequest;
 import com.godaddy.vps4.scheduler.api.web.SchedulerWebService;
-import com.godaddy.vps4.vm.*;
+import com.godaddy.vps4.vm.ActionService;
+import com.godaddy.vps4.vm.ActionType;
+import com.godaddy.vps4.vm.VirtualMachine;
+import com.godaddy.vps4.vm.VirtualMachineService;
 import com.godaddy.vps4.web.PATCH;
 import com.godaddy.vps4.web.Vps4Api;
 import com.godaddy.vps4.web.Vps4Exception;
@@ -184,14 +187,12 @@ public class SnapshotScheduleResource {
         request.validate();
         // make sure the vm belongs to the customer
         VirtualMachine vm = getVirtualMachine(vmId);
-
         if(manualSnapshotScheduleExists(vmId)){
             throw new Vps4Exception("MANUAL_SNAPSHOT_SCHEDULE_EXISTS", "A manual snapshot schedule already exists.");
         }
 
         // create the job in the scheduler
         Vps4BackupJobRequest jobRequest = createJobRequestData(vmId, request.getSnapshotTime(), JobType.ONE_TIME, null, TYPE);
-
         SchedulerJobDetail jobDetail = schedulerWebService.submitJobToGroup("vps4", "backups", jobRequest);
 
         // record the job in the vps4 jobs table
