@@ -8,10 +8,7 @@ import com.godaddy.vps4.scheduler.api.core.JobType;
 import com.godaddy.vps4.scheduler.api.core.SchedulerJobDetail;
 import com.godaddy.vps4.scheduler.api.plugin.Vps4BackupJobRequest;
 import com.godaddy.vps4.scheduler.api.web.SchedulerWebService;
-import com.godaddy.vps4.vm.ActionService;
-import com.godaddy.vps4.vm.ActionType;
-import com.godaddy.vps4.vm.VirtualMachine;
-import com.godaddy.vps4.vm.VirtualMachineService;
+import com.godaddy.vps4.vm.*;
 import com.godaddy.vps4.web.PATCH;
 import com.godaddy.vps4.web.Vps4Api;
 import com.godaddy.vps4.web.Vps4Exception;
@@ -185,23 +182,26 @@ public class SnapshotScheduleResource {
         // make sure the times are correct
         request.validate();
         // make sure the vm belongs to the customer
-        getVirtualMachine(vmId);
+        VirtualMachine vm = getVirtualMachine(vmId);
 
         if(manualSnapshotScheduleExists(vmId)){
             throw new Vps4Exception("MANUAL_SNAPSHOT_SCHEDULE_EXISTS", "A manual snapshot schedule already exists.");
         }
 
+        ScheduledJob.ScheduledJobType type = vm.spec.serverType.platform == ServerType.Platform.OPTIMIZED_HOSTING
+                ? ScheduledJob.ScheduledJobType.BACKUPS_OH_MANUAL : ScheduledJob.ScheduledJobType.BACKUPS_MANUAL;
+
         // create the job in the scheduler
-        Vps4BackupJobRequest jobRequest = createJobRequestData(vmId, request.getSnapshotTime(), JobType.ONE_TIME, null, ScheduledJob.ScheduledJobType.BACKUPS_MANUAL);
+        Vps4BackupJobRequest jobRequest = createJobRequestData(vmId, request.getSnapshotTime(), JobType.ONE_TIME, null, type);
 
         SchedulerJobDetail jobDetail = schedulerWebService.submitJobToGroup("vps4", "backups", jobRequest);
 
         // record the job in the vps4 jobs table
-        scheduledJobService.insertScheduledJob(jobDetail.id, vmId, ScheduledJob.ScheduledJobType.BACKUPS_MANUAL);
+        scheduledJobService.insertScheduledJob(jobDetail.id, vmId, type);
 
         createNewAction(vmId, ActionType.SCHEDULE_MANUAL_SNAPSHOT);
 
-        return new SnapshotSchedule(ScheduledJob.ScheduledJobType.BACKUPS_MANUAL, jobDetail);
+        return new SnapshotSchedule(type, jobDetail);
     }
 
     @GET

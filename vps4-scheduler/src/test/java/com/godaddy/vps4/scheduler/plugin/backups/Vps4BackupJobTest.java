@@ -14,6 +14,10 @@ import javax.ws.rs.ClientErrorException;
 import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.Response;
 
+import com.godaddy.hfs.vm.VmAction;
+import com.godaddy.vps4.scheduledJob.ScheduledJob;
+import com.godaddy.vps4.web.client.VmOhBackupService;
+import com.godaddy.vps4.web.ohbackup.OhBackupResource;
 import org.json.simple.JSONObject;
 import org.junit.After;
 import org.junit.Assert;
@@ -44,22 +48,26 @@ import com.google.inject.Injector;
 public class Vps4BackupJobTest {
     static Injector injector;
     static VmSnapshotService mockVmSnapshotService;
+    static VmOhBackupService mockVmOhBackupService;
     static Config mockConfig;
 
     private final JobExecutionContext context = mock(JobExecutionContext.class);
 
     @Inject Vps4BackupJob vps4BackupJob;
     @Captor private ArgumentCaptor<VmSnapshotResource.VmSnapshotRequest> vmSnapshotRequestArgumentCaptor;
+    @Captor private ArgumentCaptor<OhBackupResource.OhBackupRequest> ohBackupRequestArgumentCaptor;
 
     @BeforeClass
     public static void newInjector() {
         mockVmSnapshotService = mock(VmSnapshotService.class);
+        mockVmOhBackupService = mock(VmOhBackupService.class);
         mockConfig = mock(Config.class);
         injector = Guice.createInjector(
             new AbstractModule() {
                 @Override
                 protected void configure() {
                     bind(VmSnapshotService.class).toInstance(mockVmSnapshotService);
+                    bind(VmOhBackupService.class).toInstance(mockVmOhBackupService);
                     bind(Config.class).toInstance(mockConfig);
                 }
             }
@@ -73,14 +81,11 @@ public class Vps4BackupJobTest {
         initBackupJobRequest();
     }
 
-    @After
-    public void tearDown() throws Exception {
-    }
-
     private void initBackupJobRequest() {
         Vps4BackupJobRequest request = new Vps4BackupJobRequest();
         request.vmId = UUID.randomUUID();
         request.backupName = "foobar";
+        request.scheduledJobType = ScheduledJob.ScheduledJobType.BACKUPS_AUTOMATIC;
         vps4BackupJob.setRequest(request);
     }
 
@@ -106,6 +111,23 @@ public class Vps4BackupJobTest {
         catch (JobExecutionException e) {
             fail("This shouldn't happen!!");
         }
+    }
+
+    @Test
+    public void callsOhSnapshotEndpointToCreateAScheduledBackup() throws JobExecutionException {
+        Vps4BackupJobRequest request = new Vps4BackupJobRequest();
+        request.vmId = UUID.randomUUID();
+        request.backupName = "scheduledOhBackup";
+        request.scheduledJobType = ScheduledJob.ScheduledJobType.BACKUPS_OH_MANUAL;
+        vps4BackupJob.setRequest(request);
+
+        vps4BackupJob.execute(context);
+
+        verify(mockVmOhBackupService, times(1))
+                .createOhBackup(eq(vps4BackupJob.request.vmId), ohBackupRequestArgumentCaptor.capture());
+
+        OhBackupResource.OhBackupRequest ohBackupRequest = ohBackupRequestArgumentCaptor.getValue();;
+        Assert.assertEquals(vps4BackupJob.request.backupName, ohBackupRequest.name);
     }
 
     @Test(expected = JobExecutionException.class)

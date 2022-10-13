@@ -1,0 +1,1 @@
+INSERT INTO scheduled_job_type (id, job_group) VALUES (8, 'BACKUPS_OH_MANUAL');
