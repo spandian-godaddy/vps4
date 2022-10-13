@@ -19,6 +19,11 @@ public class Vps4ApiWithSSOAuthClientModule extends AbstractModule {
                 .toProvider(getSsoAuthServiceProvider(VmSnapshotService.class, baseUrlConfigPropName))
                 .in(Singleton.class);
 
+        // VM OH Backup endpoint
+        bind(VmOhBackupService.class)
+                .toProvider(getSsoAuthServiceProvider(VmOhBackupService.class, baseUrlConfigPropName))
+                .in(Singleton.class);
+
         // VM endpoint
         bind(VmService.class).toProvider(getSsoAuthServiceProvider(VmService.class, baseUrlConfigPropName))
                 .in(Singleton.class);

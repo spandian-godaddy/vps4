@@ -29,6 +29,12 @@ public class Vps4ApiWithCertAuthClientModule extends AbstractModule {
                         this.clientCertKeyPath, this.clientCertPath))
                 .in(Singleton.class);
 
+        // VM OH Backup endpoint
+        bind(VmOhBackupService.class)
+                .toProvider(getClientCertAuthServiceProvider(VmOhBackupService.class, baseUrlConfigPropName,
+                        this.clientCertKeyPath, this.clientCertPath))
+                .in(Singleton.class);
+
         // VM endpoint
         bind(VmService.class)
                 .toProvider(
