@@ -5,7 +5,6 @@ import static com.godaddy.vps4.web.util.RequestValidation.validateNoConflictingA
 import static com.godaddy.vps4.web.util.RequestValidation.validateNoOtherSnapshotsInProgress;
 import static com.godaddy.vps4.web.util.RequestValidation.validateServerPlatform;
 import static com.godaddy.vps4.web.util.RequestValidation.validateSnapshotName;
-import static com.godaddy.vps4.web.util.RequestValidation.validateUserIsShopper;
 import static com.godaddy.vps4.web.util.VmHelper.createActionAndExecute;
 
 import java.util.List;
@@ -146,7 +145,6 @@ public class OhBackupResource {
         logger.debug("Begin OH Backup request validation for vm {}", vmId);
         validateOhBackupsAreEnabled();
         VirtualMachine vm = vmResource.getVm(vmId); // auth validation
-        validateUserIsShopper(user);
         validateSnapshotName(options.name);
         validateServerPlatform(vm, ServerType.Platform.OPTIMIZED_HOSTING);
         validateNoConflictingActions(vm.vmId, actionService, ActionType.CREATE_OH_BACKUP,

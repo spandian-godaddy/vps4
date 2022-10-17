@@ -215,18 +215,6 @@ public class OhBackupResourceTest {
     }
 
     @Test
-    public void createBackupFailsIfUserIsNotShopper() {
-        user = GDUserMock.createAdmin();
-        loadResource();
-        try {
-            resource.createOhBackup(vm.vmId, options);
-            fail();
-        } catch (Vps4NoShopperException e) {
-            assertEquals("SHOPPER_ID_REQUIRED", e.getId());
-        }
-    }
-
-    @Test
     public void createBackupFailsIfNameIsInvalid() {
         options = new OhBackupResource.OhBackupRequest("snapshot names can't have spaces");
         loadResource();
