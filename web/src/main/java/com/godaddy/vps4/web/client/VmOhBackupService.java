@@ -11,7 +11,7 @@ import java.util.UUID;
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
 public interface VmOhBackupService {
-    @GET
+    @POST
     @Path("/{vmId}/ohBackups")
     VmAction createOhBackup(@PathParam("vmId") UUID vmId, OhBackupResource.OhBackupRequest options);
 }
