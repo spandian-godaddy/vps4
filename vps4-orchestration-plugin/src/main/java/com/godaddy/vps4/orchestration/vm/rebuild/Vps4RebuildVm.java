@@ -328,13 +328,13 @@ public class Vps4RebuildVm extends ActionCommand<Vps4RebuildVm.Request, Void> {
     }
 
     private void sendSetupEmail(Vps4RebuildVm.Request request, String ipAddress) {
-        SetupCompletedEmailRequest setupCompleteEmailRequest = new SetupCompletedEmailRequest(request.rebuildVmInfo.shopperId,
+        SetupCompletedEmailRequest setupCompleteEmailRequest = new SetupCompletedEmailRequest(request.rebuildVmInfo.customerId,
                 request.rebuildVmInfo.isManaged, request.rebuildVmInfo.orionGuid, request.rebuildVmInfo.serverName, ipAddress);
         try {
             context.execute(SendSetupCompletedEmail.class, setupCompleteEmailRequest);
         } catch (Exception e) {
             logger.error(
-                    String.format("Failed sending setup email for shopper %s: %s", request.rebuildVmInfo.shopperId, e.getMessage()),
+                    String.format("Failed sending setup email for shopper %s: %s", request.rebuildVmInfo.customerId, e.getMessage()),
                     e);
         }
     }

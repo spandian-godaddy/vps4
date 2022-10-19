@@ -29,12 +29,12 @@ public class SendSystemDownFailoverEmail extends SendMessagingEmailBase implemen
 
     @Override
     public String execute(CommandContext context, FailOverEmailRequest emailRequest) {
-        logger.info("Sending SystemDownFailoverEmail for shopper {}", emailRequest.shopperId);
-        String messageId = context.execute("SendSystemDownEmail-" + emailRequest.shopperId,
-                ctx -> messagingService.sendSystemDownFailoverEmail(emailRequest.shopperId,
+        logger.info("Sending SystemDownFailoverEmail for shopper {}", emailRequest.customerId);
+        String messageId = context.execute("SendSystemDownEmail-" + emailRequest.customerId,
+                ctx -> messagingService.sendSystemDownFailoverEmail(emailRequest.customerId,
                         emailRequest.accountName, emailRequest.isManaged),
                 String.class);
-        this.waitForMessageComplete(context, messageId, emailRequest.shopperId);
+        this.waitForMessageComplete(context, messageId, emailRequest.customerId);
         return messageId;
     }
 }

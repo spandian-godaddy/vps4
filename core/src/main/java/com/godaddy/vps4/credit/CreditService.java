@@ -10,7 +10,7 @@ import com.godaddy.vps4.vm.AccountStatus;
 public interface CreditService {
 
     void createVirtualMachineCredit(UUID orionGuid, String shopperId, String osType, String controlPanel,
-            int tier, int managedLevel, int monitoring, int resellerId);
+            int tier, int managedLevel, int monitoring, int resellerId, UUID customerId);
 
     VirtualMachineCredit getVirtualMachineCredit(UUID orionGuid);
 

@@ -40,13 +40,13 @@ public class SendFailoverCompletedEmailTest {
     public void setupTest() {
         request = new FailOverEmailRequest();
         request.accountName = "vmname";
-        request.shopperId = "shopperid";
+        request.customerId = UUID.randomUUID();
         request.isManaged = false;
         messageId = UUID.randomUUID().toString();
         Message message = mock(Message.class);
         message.status = Message.Statuses.SUCCESS.toString();
 
-        when(messagingService.sendFailoverCompletedEmail("shopperid", "vmname", false)).thenReturn(messageId);
+        when(messagingService.sendFailoverCompletedEmail(request.customerId, "vmname", false)).thenReturn(messageId);
         when(messagingService.getMessageById(messageId)).thenReturn(message);
     }
 
@@ -59,7 +59,7 @@ public class SendFailoverCompletedEmailTest {
     @Test
     public void testCallsMessagingServiceToSendEmail() {
         command.execute(context, request);
-        verify(messagingService, times(1)).sendFailoverCompletedEmail("shopperid", "vmname", false);
+        verify(messagingService, times(1)).sendFailoverCompletedEmail(request.customerId, "vmname", false);
     }
 
     @Test

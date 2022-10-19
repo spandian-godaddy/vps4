@@ -74,9 +74,8 @@ public class VmMessagingResource {
 
         VirtualMachine vm = getAndValidateVm(vmId);
         VirtualMachineCredit credit = creditService.getVirtualMachineCredit(vm.orionGuid);
-        String shopperId = credit.getShopperId();
 
-        return new ScheduledMaintenanceEmailRequest(shopperId, vm.name, credit.isManaged(), startTimeInstant, durationMinutes);
+        return new ScheduledMaintenanceEmailRequest(credit.getCustomerId(), vm.name, credit.isManaged(), startTimeInstant, durationMinutes);
 	}
 
 	private VirtualMachine getAndValidateVm(UUID vmId) {
@@ -123,9 +122,8 @@ public class VmMessagingResource {
     private FailOverEmailRequest createEmailRequest(UUID vmId) {
 		VirtualMachine vm = getAndValidateVm(vmId);
         VirtualMachineCredit credit = creditService.getVirtualMachineCredit(vm.orionGuid);
-        String shopperId = credit.getShopperId();
 
-        return new FailOverEmailRequest(shopperId, vm.name, credit.isManaged());
+        return new FailOverEmailRequest(credit.getCustomerId(), vm.name, credit.isManaged());
 	}
 
     @POST
@@ -148,9 +146,8 @@ public class VmMessagingResource {
     private SetupCompletedEmailRequest createSetupCompleteEmailRequest(UUID vmId) {
         VirtualMachine vm = getAndValidateVm(vmId);
         VirtualMachineCredit credit = creditService.getVirtualMachineCredit(vm.orionGuid);
-        String shopperId = credit.getShopperId();
 
-        return new SetupCompletedEmailRequest(shopperId, credit.isManaged(), vm.orionGuid, vm.name, vm.primaryIpAddress.ipAddress);
+        return new SetupCompletedEmailRequest(credit.getCustomerId(), credit.isManaged(), vm.orionGuid, vm.name, vm.primaryIpAddress.ipAddress);
     }
 
     public class MessagingResponse {

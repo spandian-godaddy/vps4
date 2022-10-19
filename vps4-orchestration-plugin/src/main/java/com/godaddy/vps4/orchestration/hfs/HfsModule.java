@@ -6,9 +6,13 @@ import com.godaddy.hfs.cpanel.CPanelService;
 import com.godaddy.hfs.dns.HfsDnsService;
 import com.godaddy.hfs.mailrelay.MailRelayService;
 import com.godaddy.hfs.vm.VmService;
+import com.godaddy.vps4.customer.CustomerModule;
+import com.godaddy.vps4.customer.CustomerService;
+import com.godaddy.vps4.customer.CustomerServiceProvider;
 import com.godaddy.vps4.hfs.HfsClientProvider;
 import com.godaddy.vps4.messaging.MessagingProvider;
 import com.godaddy.vps4.messaging.Vps4MessagingService;
+import com.godaddy.vps4.sso.Vps4SsoModule;
 import com.google.inject.AbstractModule;
 
 import gdg.hfs.vhfs.ecomm.ECommService;
@@ -33,5 +37,7 @@ public class HfsModule extends AbstractModule {
         bind(SnapshotService.class).toProvider(new HfsClientProvider<>(SnapshotService.class)).in(Singleton.class);
         bind(Vps4MessagingService.class).toProvider(MessagingProvider.class).in(Singleton.class);
         bind(HfsDnsService.class).toProvider(new HfsClientProvider<HfsDnsService>(HfsDnsService.class)).in(Singleton.class);
+        install(new CustomerModule());
+        install(new Vps4SsoModule());
     }
 }

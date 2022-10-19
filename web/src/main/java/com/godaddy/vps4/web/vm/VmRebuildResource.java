@@ -167,6 +167,7 @@ public class VmRebuildResource {
         rebuildVmInfo.privateLabelId = credit.getResellerId();
         rebuildVmInfo.orionGuid = vm.orionGuid;
         rebuildVmInfo.shopperId = user.isShopper() ? user.getShopperId(): creditService.getVirtualMachineCredit(vm.orionGuid).getShopperId();
+        rebuildVmInfo.customerId = creditService.getVirtualMachineCredit(vm.orionGuid).getCustomerId();
         rebuildVmInfo.keepAdditionalIps = request.keepAdditionalIps;
         rebuildVmInfo.gdUserName = user.getUsername();
         rebuildVmInfo.isManaged = credit.isManaged();

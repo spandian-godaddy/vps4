@@ -96,6 +96,7 @@ public class Vps4RebuildDedicatedTest {
     private String fqdn = "10.0.0.1";
     private long hfsAddressId = 34L;
     UUID orionGuid = UUID.randomUUID();
+    UUID customerId = UUID.randomUUID();
     String shopperId = "12345678";
     @Inject private Vps4UserService vps4UserService;
     @Inject private ProjectService projectService;
@@ -255,6 +256,7 @@ public class Vps4RebuildDedicatedTest {
         req.rebuildVmInfo.privateLabelId = "1";
         req.rebuildVmInfo.orionGuid = orionGuid;
         req.rebuildVmInfo.shopperId = shopperId;
+        req.rebuildVmInfo.customerId = customerId;
         req.rebuildVmInfo.ipAddress = new IpAddress();
         req.rebuildVmInfo.ipAddress.ipAddress = fqdn;
         return req;

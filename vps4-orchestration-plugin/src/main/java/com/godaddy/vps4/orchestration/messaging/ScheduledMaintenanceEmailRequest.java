@@ -1,10 +1,11 @@
 package com.godaddy.vps4.orchestration.messaging;
 
 import java.time.Instant;
+import java.util.UUID;
 
 
 public class ScheduledMaintenanceEmailRequest {
-    public String shopperId;
+    public UUID customerId;
     public String accountName;
     public Instant startTime;
     public long durationMinutes;
@@ -12,9 +13,9 @@ public class ScheduledMaintenanceEmailRequest {
 
     public ScheduledMaintenanceEmailRequest() {
     }
-    public ScheduledMaintenanceEmailRequest(String shopperId, String accountName, boolean isManaged,
+    public ScheduledMaintenanceEmailRequest(UUID customerId, String accountName, boolean isManaged,
                                             Instant startTime, long durationMinutes) {
-        this.shopperId = shopperId;
+        this.customerId = customerId;
         this.accountName = accountName;
         this.isManaged = isManaged;
         this.startTime = startTime;

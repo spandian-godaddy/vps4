@@ -36,12 +36,13 @@ public class Vps4ClearVmOutageTest {
     private Vps4ClearVmOutage vps4ClearVmOutage;
     Vps4ClearVmOutage.Request request;
     VirtualMachineCredit credit;
+    UUID customerId;
     VmOutage outage;
 
     @Before
     public void setup() {
         vps4ClearVmOutage = new Vps4ClearVmOutage(actionService, creditService, config);
-
+        customerId = UUID.randomUUID();
         when(config.get("jsd.enabled", "false")).thenReturn("true");
 
         request = new Vps4ClearVmOutage.Request();
@@ -57,7 +58,7 @@ public class Vps4ClearVmOutageTest {
 
         credit = mock(VirtualMachineCredit.class);
         when(credit.getOrionGuid()).thenReturn(request.virtualMachine.orionGuid);
-        when(credit.getShopperId()).thenReturn("testShopperId");
+        when(credit.getCustomerId()).thenReturn(customerId);
         when(creditService.getVirtualMachineCredit(any())).thenReturn(credit);
         when(credit.isAccountActive()).thenReturn(true);
         when(credit.isManaged()).thenReturn(false);
@@ -84,13 +85,13 @@ public class Vps4ClearVmOutageTest {
         Assert.assertEquals(request.outageId, actualRequest.outageId);
         verify(context).execute(eq("SendOutageClearNotificationEmail"), eq(SendVmOutageResolvedEmail.class),
                 vmOutageEmailRequestArgumentCaptor.capture());
-        VmOutageEmailRequest arg2 = vmOutageEmailRequestArgumentCaptor.getValue();
-        Assert.assertEquals(request.virtualMachine.name, arg2.accountName);
-        Assert.assertEquals(request.virtualMachine.primaryIpAddress.ipAddress, arg2.ipAddress);
-        Assert.assertEquals(credit.getOrionGuid(), arg2.orionGuid);
-        Assert.assertEquals(credit.getShopperId(), arg2.shopperId);
-        Assert.assertEquals(request.virtualMachine.vmId, arg2.vmId);
-        Assert.assertEquals(outage.panoptaOutageId, arg2.vmOutage.panoptaOutageId);
+        VmOutageEmailRequest outageEmailRequest = vmOutageEmailRequestArgumentCaptor.getValue();
+        Assert.assertEquals(request.virtualMachine.name, outageEmailRequest.accountName);
+        Assert.assertEquals(request.virtualMachine.primaryIpAddress.ipAddress, outageEmailRequest.ipAddress);
+        Assert.assertEquals(credit.getOrionGuid(), outageEmailRequest.orionGuid);
+        Assert.assertEquals(credit.getCustomerId(), outageEmailRequest.customerId);
+        Assert.assertEquals(request.virtualMachine.vmId, outageEmailRequest.vmId);
+        Assert.assertEquals(outage.panoptaOutageId, outageEmailRequest.vmOutage.panoptaOutageId);
     }
 
     @Test
