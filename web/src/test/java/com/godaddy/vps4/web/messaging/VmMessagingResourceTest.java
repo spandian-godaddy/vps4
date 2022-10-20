@@ -43,7 +43,6 @@ public class VmMessagingResourceTest {
     CommandState command;
     VirtualMachine vm;
     GDUser gdUser;
-    UUID customerId;
 
     @Before
     public void setupMocks() {
@@ -60,8 +59,6 @@ public class VmMessagingResourceTest {
         ip.ipAddress = "127.0.0.1";
         vm.primaryIpAddress = ip;
 
-        customerId = UUID.randomUUID();
-
         gdUser = GDUserMock.createShopper();
 
         command  = new CommandState();
@@ -72,8 +69,7 @@ public class VmMessagingResourceTest {
 
         VirtualMachineCredit credit = mock(VirtualMachineCredit.class);
         when(credit.isManaged()).thenReturn(false);
-        when(credit.getCustomerId()).thenReturn(customerId);
-
+        when(credit.getShopperId()).thenReturn(GDUserMock.DEFAULT_SHOPPER);
         when(creditService.getVirtualMachineCredit(vm.orionGuid)).thenReturn(credit);
 
         resource = new VmMessagingResource(virtualMachineService, commandService, creditService, gdUser);
@@ -93,7 +89,7 @@ public class VmMessagingResourceTest {
         assertEquals(vm.name, request.accountName);
         assertEquals(duration, request.durationMinutes);
         assertEquals(false, request.isManaged);
-        assertEquals(customerId, request.customerId);
+        assertEquals(GDUserMock.DEFAULT_SHOPPER, request.shopperId);
         assertEquals(startTime, request.startTime);
         assertEquals(res.commandId,command.commandId);
         assertEquals(res.vmId,vm.vmId);
@@ -146,7 +142,7 @@ public class VmMessagingResourceTest {
         assertEquals(vm.name, request.accountName);
         assertEquals(duration, request.durationMinutes);
         assertEquals(false, request.isManaged);
-        assertEquals(customerId, request.customerId);
+        assertEquals(GDUserMock.DEFAULT_SHOPPER, request.shopperId);
         assertEquals(startTime, request.startTime);
         assertEquals(res.commandId,command.commandId);
         assertEquals(res.vmId,vm.vmId);
@@ -163,7 +159,7 @@ public class VmMessagingResourceTest {
         FailOverEmailRequest request = (FailOverEmailRequest) cgs.commands.get(0).request;
         assertEquals(vm.name, request.accountName);
         assertEquals(false, request.isManaged);
-        assertEquals(customerId, request.customerId);
+        assertEquals(GDUserMock.DEFAULT_SHOPPER, request.shopperId);
         assertEquals(res.commandId,command.commandId);
         assertEquals(res.vmId,vm.vmId);
         assertEquals(res.commandName,"SendSystemDownFailoverEmail");
@@ -179,7 +175,7 @@ public class VmMessagingResourceTest {
         FailOverEmailRequest request = (FailOverEmailRequest) cgs.commands.get(0).request;
         assertEquals(vm.name, request.accountName);
         assertEquals(false, request.isManaged);
-        assertEquals(customerId, request.customerId);
+        assertEquals(GDUserMock.DEFAULT_SHOPPER, request.shopperId);
         assertEquals(res.commandId,command.commandId);
         assertEquals(res.vmId,vm.vmId);
         assertEquals(res.commandName,"SendFailoverCompletedEmail");

@@ -20,7 +20,6 @@ public class RebuildVmInfo {
     public String serverName;
     public String privateLabelId;
     public UUID orionGuid;
-    public UUID customerId;
     public String shopperId;
     public boolean keepAdditionalIps;
     public String gdUserName;

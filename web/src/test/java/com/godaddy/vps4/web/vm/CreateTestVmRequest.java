@@ -45,10 +45,10 @@ public class CreateTestVmRequest {
         this.userService = userService;
     }
 
-    protected void provision(int tier, int managedLevel, int monitoring, String operatingSystem, String controlPanel, String shopperId, int resellerId, UUID customerId) {
+    protected void provision(int tier, int managedLevel, int monitoring, String operatingSystem, String controlPanel, String shopperId, int resellerId) {
 
         UUID orionGuid = UUID.randomUUID();
-        creditService.createVirtualMachineCredit(orionGuid, shopperId, operatingSystem, controlPanel, tier, managedLevel, monitoring, resellerId, customerId);
+        creditService.createVirtualMachineCredit(orionGuid, shopperId, operatingSystem, controlPanel, tier, managedLevel, monitoring, resellerId);
 
         // normally we would get this from HFS
         long hfsVmId = new Random().nextInt(1000000);
@@ -71,7 +71,7 @@ public class CreateTestVmRequest {
 
         CreateTestVmRequest force = injector.getInstance(CreateTestVmRequest.class);
 
-        force.provision(10, 0, 0, "centos-7", "cpanel", shopperId, 1, UUID.randomUUID());
+        force.provision(10, 0, 0, "centos-7", "cpanel", shopperId, 1);
     }
 
 }

@@ -93,7 +93,6 @@ public class Vps4ProvisionDedicatedTest {
     Image image;
     ProvisionVmInfo vmInfo;
     String shopperId;
-    UUID customerId;
     int diskGib;
     UUID orionGuid = UUID.randomUUID();
     long hfsVmId = 42;
@@ -106,7 +105,6 @@ public class Vps4ProvisionDedicatedTest {
         image.controlPanel = ControlPanel.CPANEL;
         image.hfsName = "foobar";
         expectedServerName = "VM Name";
-        customerId = UUID.randomUUID();
         vm = new VirtualMachine(UUID.randomUUID(),
                                      hfsVmId,
                                      UUID.randomUUID(),
@@ -147,7 +145,6 @@ public class Vps4ProvisionDedicatedTest {
         request.shopperId = shopperId;
         request.serverName = expectedServerName;
         request.orionGuid = orionGuid;
-        request.customerId = customerId;
 
         String messagedId = UUID.randomUUID().toString();
         when(sendSetupCompletedEmail.execute(any(CommandContext.class), any(SetupCompletedEmailRequest.class)))
@@ -171,7 +168,6 @@ public class Vps4ProvisionDedicatedTest {
         when(virtualMachineService.getVirtualMachine(vmInfo.vmId)).thenReturn(vm);
 
         when(credit.getProductId()).thenReturn(vmId);
-
         when(creditService.getVirtualMachineCredit(orionGuid)).thenReturn(credit);
 
         when(context.execute(eq(CreateVm.class), any(CreateVm.Request.class))).thenReturn(vmAction);
@@ -205,7 +201,7 @@ public class Vps4ProvisionDedicatedTest {
         assertEquals(capturedRequest.serverName, expectedServerName);
         assertEquals(capturedRequest.ipAddress, hfsIp.ip_address);
         assertEquals(capturedRequest.orionGuid, orionGuid);
-        assertEquals(capturedRequest.customerId, customerId);
+        assertEquals(capturedRequest.shopperId, shopperId);
         assertEquals(capturedRequest.isManaged, vmInfo.isManaged);
     }
 

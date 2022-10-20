@@ -30,13 +30,13 @@ public class SendUnexpectedButScheduledMaintenanceEmail extends SendMessagingEma
 
     @Override
     public String execute(CommandContext context, ScheduledMaintenanceEmailRequest emailRequest) {
-        logger.info("Sending UnexpectedButScheduledMaintenanceEmail for shopper {}", emailRequest.customerId);
-        String messageId = context.execute("SendUnscheduledMaintEmail-" + emailRequest.customerId,
+        logger.info("Sending UnexpectedButScheduledMaintenanceEmail for shopper {}", emailRequest.shopperId);
+        String messageId = context.execute("SendUnscheduledMaintEmail-" + emailRequest.shopperId,
                 ctx -> messagingService.sendUnexpectedButScheduledMaintenanceEmail(
-                        emailRequest.customerId, emailRequest.accountName, emailRequest.startTime,
+                        emailRequest.shopperId, emailRequest.accountName, emailRequest.startTime,
                         emailRequest.durationMinutes, emailRequest.isManaged),
                 String.class);
-        this.waitForMessageComplete(context, messageId, emailRequest.customerId);
+        this.waitForMessageComplete(context, messageId, emailRequest.shopperId);
         return messageId;
     }
 }

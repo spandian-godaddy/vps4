@@ -387,9 +387,8 @@ public class HfsMockModule extends AbstractModule {
                 gdMessagingServiceMessages.put(message.messageId, message);
             }
 
-            private String createFakeMessage(UUID customerId) {
+            private String createFakeMessage(String shopperId) {
                 String messageId = UUID.randomUUID().toString();
-                String shopperId = customerId.toString();
                 Message setupMessage = createMessage(shopperId, messageId);
                 storeMessage(setupMessage);
 
@@ -397,74 +396,74 @@ public class HfsMockModule extends AbstractModule {
             }
 
             @Override
-            public String sendSetupEmail(UUID customerId, String accountName, String ipAddress, String orionId,
+            public String sendSetupEmail(String shopperId, String accountName, String ipAddress, String orionId,
                     boolean isManaged) {
-                return createFakeMessage(customerId);
+                return createFakeMessage(shopperId);
             }
 
             @Override
-            public String sendFullyManagedEmail(UUID customerId, String controlPanel)
+            public String sendFullyManagedEmail(String shopperId, String controlPanel)
                     throws MissingShopperIdException, IOException {
-                return createFakeMessage(customerId);
+                return createFakeMessage(shopperId);
             }
 
             @Override
-            public String sendScheduledPatchingEmail(UUID customerId, String serverName, Instant startTime,
+            public String sendScheduledPatchingEmail(String shopperId, String serverName, Instant startTime,
                     long durationMinutes, boolean isManaged) {
-                return createFakeMessage(customerId);
+                return createFakeMessage(shopperId);
             }
 
             @Override
-            public String sendUnexpectedButScheduledMaintenanceEmail(UUID customerId, String serverName,
+            public String sendUnexpectedButScheduledMaintenanceEmail(String shopperId, String serverName,
                     Instant startTime, long durationMinutes,
                     boolean isManaged) {
-                return createFakeMessage(customerId);
+                return createFakeMessage(shopperId);
             }
 
             @Override
-            public String sendSystemDownFailoverEmail(UUID customerId, String serverName, boolean isManaged) {
-                return createFakeMessage(customerId);
+            public String sendSystemDownFailoverEmail(String shopperId, String serverName, boolean isManaged) {
+                return createFakeMessage(shopperId);
             }
 
             @Override
-            public String sendFailoverCompletedEmail(UUID customerId, String serverName, boolean isManaged) {
-                return createFakeMessage(customerId);
+            public String sendFailoverCompletedEmail(String shopperId, String serverName, boolean isManaged) {
+                return createFakeMessage(shopperId);
             }
 
             @Override
-            public String sendUptimeOutageEmail(UUID customerId, String accountName, String ipAddress, UUID orionGuid,
+            public String sendUptimeOutageEmail(String shopperId, String accountName, String ipAddress, UUID orionGuid,
                     Instant alertStart, boolean isFullyManaged) {
                 return null;
             }
 
             @Override
-            public String sendServerUsageOutageEmail(UUID customerId, String accountName, String ipAddress,
+            public String sendServerUsageOutageEmail(String shopperId, String accountName, String ipAddress,
                     UUID orionGuid, String resourceName, String resourceUsage,
                     Instant alertStart, boolean isFullyManaged) {
                 return null;
             }
 
             @Override
-            public String sendServicesDownEmail(UUID customerId, String accountName, String ipAddress, UUID orionGuid,
+            public String sendServicesDownEmail(String shopperId, String accountName, String ipAddress, UUID orionGuid,
                     String serviceName, Instant alertStart, boolean isFullyManaged) {
                 return null;
             }
 
             @Override
-            public String sendUptimeOutageResolvedEmail(UUID customerId, String accountName, String ipAddress,
+            public String sendUptimeOutageResolvedEmail(String shopperId, String accountName, String ipAddress,
                     UUID orionGuid, Instant alertEnd, boolean isFullyManaged) {
                 return null;
             }
 
             @Override
-            public String sendUsageOutageResolvedEmail(UUID customerId, String accountName, String ipAddress,
+            public String sendUsageOutageResolvedEmail(String shopperId, String accountName, String ipAddress,
                     UUID orionGuid, String resourceName, Instant alertEnd,
                     boolean isFullyManaged) {
                 return null;
             }
 
             @Override
-            public String sendServiceOutageResolvedEmail(UUID customerId, String accountName, String ipAddress,
+            public String sendServiceOutageResolvedEmail(String shopperId, String accountName, String ipAddress,
                     UUID orionGuid, String serviceName, Instant alertEnd,
                     boolean isFullyManaged) {
                 return null;

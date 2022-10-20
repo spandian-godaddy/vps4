@@ -86,7 +86,6 @@ public class Vps4RebuildVmTest {
 
     UUID vps4VmId = UUID.randomUUID();
     UUID orionGuid = UUID.randomUUID();
-    UUID customerId = UUID.randomUUID();
     String shopperId = "12345678";
     long originalHfsVmId = 123L;
     long newHfsVmId = 456L;
@@ -160,7 +159,6 @@ public class Vps4RebuildVmTest {
         request.rebuildVmInfo.hostname = "host.name";
         request.rebuildVmInfo.encryptedPassword = "encrypted".getBytes();
         request.rebuildVmInfo.shopperId = shopperId;
-        request.rebuildVmInfo.customerId = customerId;
         request.rebuildVmInfo.keepAdditionalIps = true;
         request.rebuildVmInfo.gdUserName = "fake-employee";
         request.rebuildVmInfo.ipAddress = publicIp;
@@ -364,7 +362,7 @@ public class Vps4RebuildVmTest {
         assertEquals(vm.name, capturedRequest.serverName);
         assertEquals(vm.primaryIpAddress.ipAddress, capturedRequest.ipAddress);
         assertEquals(orionGuid, capturedRequest.orionGuid);
-        assertEquals(customerId, capturedRequest.customerId);
+        assertEquals(shopperId, capturedRequest.shopperId);
         assertFalse(capturedRequest.isManaged);
     }
 

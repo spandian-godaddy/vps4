@@ -3,7 +3,7 @@ package com.godaddy.vps4.orchestration.messaging;
 import java.util.UUID;
 
 public class SetupCompletedEmailRequest {
-    public UUID customerId;
+    public String shopperId;
     public boolean isManaged;
     public UUID orionGuid;
     public String serverName;
@@ -12,8 +12,8 @@ public class SetupCompletedEmailRequest {
     public SetupCompletedEmailRequest() {
     }
 
-    public SetupCompletedEmailRequest(UUID customerId, boolean isManaged, UUID orionGuid, String serverName, String ipAddress) {
-        this.customerId = customerId;
+    public SetupCompletedEmailRequest(String shopperId, boolean isManaged, UUID orionGuid, String serverName, String ipAddress) {
+        this.shopperId = shopperId;
         this.isManaged = isManaged;
         this.orionGuid = orionGuid;
         this.serverName = serverName;

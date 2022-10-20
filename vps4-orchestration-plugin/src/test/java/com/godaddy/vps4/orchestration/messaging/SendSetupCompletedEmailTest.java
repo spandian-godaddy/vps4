@@ -19,6 +19,7 @@ import static org.junit.Assert.assertEquals;
 
 import static org.mockito.Matchers.anyObject;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.when;
 import static org.mockito.Mockito.verify;
@@ -38,7 +39,7 @@ public class SendSetupCompletedEmailTest {
 
     SetupCompletedEmailRequest request;
     String messageId;
-    UUID customerId = UUID.randomUUID();
+    String shopperId= "123456";
     String serverName= "MyNewServer";
     String ipAddress= "127.0.0.1";
     boolean isManaged = true;
@@ -51,12 +52,12 @@ public class SendSetupCompletedEmailTest {
         Message message = mock(Message.class);
         message.status = Message.Statuses.SUCCESS.toString();
         when(config.get("messaging.reseller.blacklist.setup", "")).thenReturn("");
-        when(messagingService.sendSetupEmail(customerId, serverName, ipAddress, orionGuid.toString(), isManaged)).thenReturn(messageId);
+        when(messagingService.sendSetupEmail(shopperId, serverName, ipAddress, orionGuid.toString(), isManaged)).thenReturn(messageId);
         when(messagingService.getMessageById(messageId)).thenReturn(message);
         when(credit.getResellerId()).thenReturn("1");
         when(creditService.getVirtualMachineCredit(anyObject())).thenReturn(credit);
 
-        request = new SetupCompletedEmailRequest(customerId, isManaged, orionGuid, serverName, ipAddress);
+        request = new SetupCompletedEmailRequest(shopperId, isManaged, orionGuid, serverName, ipAddress);
     }
 
     @Test
@@ -70,7 +71,7 @@ public class SendSetupCompletedEmailTest {
     public void testCallsMessagingServiceToSendEmail() {
         command = new SendSetupCompletedEmail(messagingService, creditService, config);
         command.execute(context, request);
-        verify(messagingService, times(1)).sendSetupEmail(customerId, serverName, ipAddress,
+        verify(messagingService, times(1)).sendSetupEmail(shopperId, serverName, ipAddress,
                 orionGuid.toString(), isManaged);
     }
 
@@ -89,7 +90,7 @@ public class SendSetupCompletedEmailTest {
         command = new SendSetupCompletedEmail(messagingService, creditService, config);
         command.execute(context, request);
 
-        verify(messagingService, times(1)).sendSetupEmail(customerId, serverName, ipAddress,
+        verify(messagingService, times(1)).sendSetupEmail(shopperId, serverName, ipAddress,
                 orionGuid.toString(), isManaged);
     }
 
