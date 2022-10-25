@@ -3,12 +3,16 @@ package com.godaddy.vps4.web.monitoring;
 import static org.junit.Assert.assertEquals;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyObject;
+import static org.mockito.Matchers.contains;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.Collections;
 import java.util.UUID;
 
@@ -16,6 +20,7 @@ import com.godaddy.vps4.panopta.PanoptaServer;
 import com.godaddy.vps4.vm.Action;
 import com.godaddy.vps4.vm.ActionService;
 import com.godaddy.vps4.vm.ActionType;
+import org.joda.time.Days;
 import org.json.simple.JSONObject;
 import org.junit.Before;
 import org.junit.Test;
@@ -67,6 +72,7 @@ public class VmOutageResourceTest {
         vm.primaryIpAddress = new IpAddress();
         vm.primaryIpAddress.ipAddress = "127.0.0.1";
         vm.validUntil = Instant.MAX;
+        vm.canceled = Instant.MAX;
         when(vmResource.getVm(any(UUID.class))).thenReturn(vm);
 
         when(creditService.getVirtualMachineCredit(eq(vm.orionGuid))).thenReturn(credit);
@@ -117,5 +123,19 @@ public class VmOutageResourceTest {
         resource.clearVmOutage(vmId, outageId);
         verify(commandService).executeCommand(commandCapture.capture());
         assertEquals("Vps4ClearVmOutage", commandCapture.getValue().commands.get(0).command);
+    }
+
+    @Test
+    public void createOutageInactiveServer() throws PanoptaServiceException {
+        vm.canceled = Instant.now().minus(1, ChronoUnit.DAYS);
+        resource.newVmOutage(vmId, outageId);
+        verify(commandService, never()).executeCommand(commandCapture.capture());
+    }
+
+    @Test
+    public void clearOutageInactiveService() throws PanoptaServiceException {
+        vm.canceled = Instant.now().minus(1, ChronoUnit.DAYS);
+        resource.clearVmOutage(vmId, outageId);
+        verify(commandService, never()).executeCommand(commandCapture.capture());
     }
 }

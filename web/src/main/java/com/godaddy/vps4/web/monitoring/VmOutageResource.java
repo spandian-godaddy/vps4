@@ -94,6 +94,11 @@ public class VmOutageResource {
         VirtualMachine virtualMachine = vmResource.getVm(vmId); // Auth validation
         PanoptaServer server = panoptaService.getServer(vmId);
 
+        if(virtualMachine.isCanceledOrDeleted() || server == null){
+            logger.info("VM {} is not active, no need to create outage {}", vmId, outageId);
+            return null;
+        }
+
         Vps4NewVmOutage.Request request = new Vps4NewVmOutage.Request();
         request.virtualMachine = virtualMachine;
         request.partnerCustomerKey = server.partnerCustomerKey;
@@ -108,6 +113,11 @@ public class VmOutageResource {
     @Path("/{vmId}/outages/{outageId}/clear")
     public VmAction clearVmOutage(@PathParam("vmId") UUID vmId, @PathParam("outageId") long outageId) {
         VirtualMachine virtualMachine = vmResource.getVm(vmId); // Auth validation
+
+        if(virtualMachine.isCanceledOrDeleted()){
+            logger.info("VM {} is not active, no need to clear outage {}", vmId, outageId);
+            return null;
+        }
 
         Vps4NewVmOutage.Request request = new Vps4NewVmOutage.Request();
         request.virtualMachine = virtualMachine;

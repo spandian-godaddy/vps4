@@ -38,6 +38,11 @@ public class Vps4NewVmOutage extends ActionCommand<Vps4NewVmOutage.Request, Void
     @Override
     protected Void executeWithAction(CommandContext context, Request request) {
         this.context = context;
+        if(request.virtualMachine.isCanceledOrDeleted())
+        {
+            logger.info("VM {} is not active, no need to create outage {}", request.virtualMachine.vmId, request.outageId);
+            return null;
+        }
         VmOutage outage = getVmOutage(request);
         logger.info("New outage {} reported for VM {}", request.outageId, request.virtualMachine.vmId);
         sendOutageNotificationEmail(request.virtualMachine, outage);
