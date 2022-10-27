@@ -411,7 +411,7 @@ public class Vps4ProvisionVm extends ActionCommand<ProvisionRequest, Vps4Provisi
     }
 
     private void sendSetupEmail(ProvisionRequest request, String ipAddress) {
-        SetupCompletedEmailRequest setupCompleteEmailRequest = new SetupCompletedEmailRequest(request.shopperId,
+        SetupCompletedEmailRequest setupCompleteEmailRequest = new SetupCompletedEmailRequest(request.customerId,
                 request.vmInfo.isManaged, request.orionGuid, request.serverName, ipAddress);
         try {
             context.execute(SendSetupCompletedEmail.class, setupCompleteEmailRequest);

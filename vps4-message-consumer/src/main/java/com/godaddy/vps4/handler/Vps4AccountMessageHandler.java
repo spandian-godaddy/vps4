@@ -219,7 +219,7 @@ public class Vps4AccountMessageHandler implements MessageHandler {
 
     private void sendFullyManagedWelcomeEmail(VirtualMachineCredit credit) {
         try {
-            messagingService.sendFullyManagedEmail(credit.getShopperId(), credit.getControlPanel());
+            messagingService.sendFullyManagedEmail(credit.getCustomerId(), credit.getControlPanel());
         } catch( MissingShopperIdException | IOException e) {
             logger.warn("Failed to send fully managed welcome email", e);
         }

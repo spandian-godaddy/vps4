@@ -13,6 +13,8 @@ import java.time.temporal.ChronoUnit;
 import java.util.EnumMap;
 import java.util.UUID;
 
+import com.godaddy.vps4.customer.Customer;
+import com.godaddy.vps4.customer.CustomerService;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
 import org.junit.Assert;
@@ -34,8 +36,9 @@ public class DefaultVps4MessagingServiceTest {
     private SecureHttpClient secureHttpClient;
     private Message mockResultMessage;
     private DefaultVps4MessagingService messagingService;
+    private CustomerService customerService;
     private MessagingResponse mockMessageId;
-    private String shopperId;
+    private UUID customerId;
     private String accountName;
     private String ipAddress;
     private UUID orionGuid;
@@ -47,7 +50,7 @@ public class DefaultVps4MessagingServiceTest {
 
     @Before
     public void setUp() {
-        shopperId = UUID.randomUUID().toString();
+        customerId = UUID.randomUUID();
         accountName = UUID.randomUUID().toString();
         ipAddress = UUID.randomUUID().toString();
         orionGuid = UUID.randomUUID();
@@ -56,12 +59,17 @@ public class DefaultVps4MessagingServiceTest {
         startTime = Instant.now();
         durationMinutes = 1440;
         secureHttpClient = mock(SecureHttpClient.class);
+        customerService = mock(CustomerService.class);
         mockResultMessage = mock(Message.class);
         mockMessageId = mock(MessagingResponse.class);
         mockMessageId.messageId = UUID.randomUUID().toString();
 
         config = Configs.getInstance();
-        messagingService = new DefaultVps4MessagingService(config, secureHttpClient);
+        Customer customer = mock(Customer.class);
+        when(customer.getShopperId()).thenReturn("testShopperId");
+        when(customerService.getCustomer(customerId)).thenReturn(customer);
+
+        messagingService = new DefaultVps4MessagingService(config, secureHttpClient, customerService);
     }
 
     @Test
@@ -75,9 +83,9 @@ public class DefaultVps4MessagingServiceTest {
     }
 
     @Test
-    public void testSendFullyManagedEmail() throws MissingShopperIdException, IOException {
+    public void testSendFullyManagedEmail() throws IOException {
         when(secureHttpClient.executeHttp(Mockito.any(HttpPost.class), Mockito.any())).thenReturn(mockMessageId);
-        String actualMessageId = messagingService.sendFullyManagedEmail(shopperId, "cpanel");
+        String actualMessageId = messagingService.sendFullyManagedEmail(customerId, "cpanel");
         Assert.assertNotNull(actualMessageId);
         Assert.assertEquals(mockMessageId.messageId, actualMessageId);
     }
@@ -85,15 +93,14 @@ public class DefaultVps4MessagingServiceTest {
     @Test
     public void testSendMessage() {
         try {
-            String shopperId = UUID.randomUUID().toString();
             String shopperMessageJson = UUID.randomUUID().toString();
 
             when(secureHttpClient.executeHttp(Mockito.any(HttpPost.class), Mockito.any())).thenReturn(mockMessageId);
-            Class[] args = new Class[]{String.class, String.class};
+            Class[] args = new Class[]{UUID.class, String.class};
             Method sendMessage = messagingService.getClass().getDeclaredMethod("sendMessage", args);
             sendMessage.setAccessible(true);
 
-            String actualResult = (String) sendMessage.invoke(messagingService, shopperId, shopperMessageJson);
+            String actualResult = (String) sendMessage.invoke(messagingService, customerId, shopperMessageJson);
             Assert.assertEquals(mockMessageId.messageId, actualResult);
         } catch (Exception ex) {
             ex.printStackTrace();
@@ -102,9 +109,9 @@ public class DefaultVps4MessagingServiceTest {
     }
 
     @Test
-    public void testSendSetupEmail() throws MissingShopperIdException, IOException {
+    public void testSendSetupEmail() throws IOException {
         when(secureHttpClient.executeHttp(Mockito.any(HttpPost.class), Mockito.any())).thenReturn(mockMessageId);
-        String actualMessageId = messagingService.sendSetupEmail(shopperId, accountName, ipAddress, orionId, isManaged);
+        String actualMessageId = messagingService.sendSetupEmail(customerId, accountName, ipAddress, orionId, isManaged);
         Assert.assertNotNull(actualMessageId);
         Assert.assertEquals(mockMessageId.messageId, actualMessageId);
     }
@@ -227,7 +234,7 @@ public class DefaultVps4MessagingServiceTest {
     @Test
     public void testSendScheduledPatchingEmail() throws MissingShopperIdException, IOException {
         when(secureHttpClient.executeHttp(Mockito.any(HttpPost.class), Mockito.any())).thenReturn(mockMessageId);
-        String actualMessageId = messagingService.sendScheduledPatchingEmail(shopperId, accountName, startTime, durationMinutes, isManaged);
+        String actualMessageId = messagingService.sendScheduledPatchingEmail(customerId, accountName, startTime, durationMinutes, isManaged);
         Assert.assertNotNull(actualMessageId);
         Assert.assertEquals(mockMessageId.messageId, actualMessageId);
     }
@@ -236,7 +243,7 @@ public class DefaultVps4MessagingServiceTest {
     public void testSendUnexpectedButScheduledMaintenanceEmail() throws MissingShopperIdException, IOException {
         when(secureHttpClient.executeHttp(Mockito.any(HttpPost.class), Mockito.any())).thenReturn(mockMessageId);
         String actualMessageId = messagingService
-                .sendUnexpectedButScheduledMaintenanceEmail(shopperId, accountName, startTime, durationMinutes,
+                .sendUnexpectedButScheduledMaintenanceEmail(customerId, accountName, startTime, durationMinutes,
                         isManaged);
         Assert.assertNotNull(actualMessageId);
         Assert.assertEquals(mockMessageId.messageId, actualMessageId);
@@ -273,7 +280,7 @@ public class DefaultVps4MessagingServiceTest {
     @Test
     public void testSendSystemDownFailoverEmail() throws MissingShopperIdException, IOException {
         when(secureHttpClient.executeHttp(Mockito.any(HttpPost.class), Mockito.any())).thenReturn(mockMessageId);
-        String actualMessageId = messagingService.sendSystemDownFailoverEmail(shopperId, accountName, isManaged);
+        String actualMessageId = messagingService.sendSystemDownFailoverEmail(customerId, accountName, isManaged);
         Assert.assertNotNull(actualMessageId);
         Assert.assertEquals(mockMessageId.messageId, actualMessageId);
     }
@@ -281,7 +288,7 @@ public class DefaultVps4MessagingServiceTest {
     @Test
     public void testSendFailoverCompletedEmail() throws MissingShopperIdException, IOException {
         when(secureHttpClient.executeHttp(Mockito.any(HttpPost.class), Mockito.any())).thenReturn(mockMessageId);
-        String actualMessageId = messagingService.sendFailoverCompletedEmail(shopperId, accountName, isManaged);
+        String actualMessageId = messagingService.sendFailoverCompletedEmail(customerId, accountName, isManaged);
         Assert.assertNotNull(actualMessageId);
         Assert.assertEquals(mockMessageId.messageId, actualMessageId);
     }
@@ -291,7 +298,7 @@ public class DefaultVps4MessagingServiceTest {
         Instant alertStart = Instant.now();
         when(secureHttpClient.executeHttp(Mockito.any(HttpPost.class), Mockito.any())).thenReturn(mockMessageId);
         String actualMessageId = messagingService
-                .sendUptimeOutageEmail(shopperId, accountName, ipAddress, orionGuid, alertStart, isManaged);
+                .sendUptimeOutageEmail(customerId, accountName, ipAddress, orionGuid, alertStart, isManaged);
         Assert.assertNotNull(actualMessageId);
         Assert.assertEquals(mockMessageId.messageId, actualMessageId);
     }
@@ -301,7 +308,7 @@ public class DefaultVps4MessagingServiceTest {
         Instant alertStart = Instant.now();
         when(secureHttpClient.executeHttp(Mockito.any(HttpPost.class), Mockito.any())).thenReturn(mockMessageId);
         String actualMessageId = messagingService
-                .sendServerUsageOutageEmail(shopperId, accountName, ipAddress, orionGuid, "CPU", "100%", alertStart,
+                .sendServerUsageOutageEmail(customerId, accountName, ipAddress, orionGuid, "CPU", "100%", alertStart,
                         isManaged);
         Assert.assertNotNull(actualMessageId);
         Assert.assertEquals(mockMessageId.messageId, actualMessageId);
@@ -312,7 +319,7 @@ public class DefaultVps4MessagingServiceTest {
         Instant alertStart = Instant.now();
         when(secureHttpClient.executeHttp(Mockito.any(HttpPost.class), Mockito.any())).thenReturn(mockMessageId);
         String actualMessageId = messagingService
-                .sendServicesDownEmail(shopperId, accountName, ipAddress, orionGuid, "IMAP", alertStart, isManaged);
+                .sendServicesDownEmail(customerId, accountName, ipAddress, orionGuid, "IMAP", alertStart, isManaged);
         Assert.assertNotNull(actualMessageId);
         Assert.assertEquals(mockMessageId.messageId, actualMessageId);
     }
@@ -322,7 +329,7 @@ public class DefaultVps4MessagingServiceTest {
         Instant alertEnd = Instant.now();
         when(secureHttpClient.executeHttp(Mockito.any(HttpPost.class), Mockito.any())).thenReturn(mockMessageId);
         String actualMessageId = messagingService
-                .sendUptimeOutageResolvedEmail(shopperId, accountName, ipAddress, orionGuid, alertEnd, isManaged);
+                .sendUptimeOutageResolvedEmail(customerId, accountName, ipAddress, orionGuid, alertEnd, isManaged);
         Assert.assertNotNull(actualMessageId);
         Assert.assertEquals(mockMessageId.messageId, actualMessageId);
     }
@@ -332,7 +339,7 @@ public class DefaultVps4MessagingServiceTest {
         Instant alertEnd = Instant.now();
         when(secureHttpClient.executeHttp(Mockito.any(HttpPost.class), Mockito.any())).thenReturn(mockMessageId);
         String actualMessageId = messagingService
-                .sendUsageOutageResolvedEmail(shopperId, accountName, ipAddress, orionGuid, "CPU", alertEnd, isManaged);
+                .sendUsageOutageResolvedEmail(customerId, accountName, ipAddress, orionGuid, "CPU", alertEnd, isManaged);
         Assert.assertNotNull(actualMessageId);
         Assert.assertEquals(mockMessageId.messageId, actualMessageId);
     }
@@ -342,7 +349,7 @@ public class DefaultVps4MessagingServiceTest {
         Instant alertEnd = Instant.now();
         when(secureHttpClient.executeHttp(Mockito.any(HttpPost.class), Mockito.any())).thenReturn(mockMessageId);
         String actualMessageId = messagingService
-                .sendServiceOutageResolvedEmail(shopperId, accountName, ipAddress, orionGuid, "CPU", alertEnd,
+                .sendServiceOutageResolvedEmail(customerId, accountName, ipAddress, orionGuid, "CPU", alertEnd,
                         isManaged);
         Assert.assertNotNull(actualMessageId);
         Assert.assertEquals(mockMessageId.messageId, actualMessageId);

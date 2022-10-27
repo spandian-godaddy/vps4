@@ -84,7 +84,7 @@ public class CreditResource {
         UUID orionGuid = UUID.randomUUID();
 
         creditService.createVirtualMachineCredit(orionGuid, request.shopperId, request.operatingSystem, request.controlPanel,
-                request.tier, request.managedLevel, request.monitoring, request.resellerId);
+                request.tier, request.managedLevel, request.monitoring, request.resellerId, request.customerId);
 
         VirtualMachineCredit credit = creditService.getVirtualMachineCredit(orionGuid);
         return credit;
@@ -94,6 +94,7 @@ public class CreditResource {
         public String shopperId;
         public String operatingSystem;
         public String controlPanel;
+        public UUID customerId;
         public int tier;
         public int managedLevel;
         public int monitoring;

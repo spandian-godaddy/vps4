@@ -11,7 +11,7 @@ public class VmOutageEmailRequest {
     public String accountName;
     public String ipAddress;
     public UUID orionGuid;
-    public String shopperId;
+    public UUID customerId;
     public UUID vmId;
     public boolean managed;
     public VmOutage vmOutage;
@@ -20,12 +20,12 @@ public class VmOutageEmailRequest {
         // empty constructor
     }
 
-    public VmOutageEmailRequest(String accountName, String ipAddress, UUID orionGuid, String shopperId, UUID vmId,
+    public VmOutageEmailRequest(String accountName, String ipAddress, UUID orionGuid, UUID customerId, UUID vmId,
                                 boolean managed, VmOutage vmOutage) {
         this.accountName = accountName;
         this.ipAddress = ipAddress;
         this.orionGuid = orionGuid;
-        this.shopperId = shopperId;
+        this.customerId = customerId;
         this.vmId = vmId;
         this.managed = managed;
         this.vmOutage = vmOutage;

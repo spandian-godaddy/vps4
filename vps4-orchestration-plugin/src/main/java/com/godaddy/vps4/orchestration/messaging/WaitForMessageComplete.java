@@ -35,7 +35,7 @@ public class WaitForMessageComplete implements Command<String, Void> {
 
             if (message.status.equalsIgnoreCase(Message.Statuses.SUCCESS.toString())) {
                 logger.info("Message.toString(): {} ", message.toString());
-                logger.info("Message id {} sent successfully for shopper [{}].", messageId, message.shopperId);
+                logger.info("Message id {} sent successfully.", messageId);
             } else if (message.status.equalsIgnoreCase(Message.Statuses.FAILED.toString())) {
                 String errorMessage = String.format("Message %s failed: %s", message.messageId, message.failureReason);
                 logger.error(errorMessage);

@@ -69,6 +69,8 @@ public class Vps4AccountMessageHandlerTest {
     private VmAction vmAction = mock(VmAction.class);
 
     private UUID orionGuid;
+    private UUID customerId;
+
     private VirtualMachine vm;
     private VirtualMachineCredit vmCredit;
 
@@ -94,6 +96,7 @@ public class Vps4AccountMessageHandlerTest {
         when(configMock.get("vps4.zombie.minimum.account.age")).thenReturn("7");
 
         orionGuid = UUID.randomUUID();
+        customerId = UUID.randomUUID();
 
         ServerSpec vmSpec = new ServerSpec();
         vmSpec.tier = 10;
@@ -136,7 +139,8 @@ public class Vps4AccountMessageHandlerTest {
         vmCredit = new VirtualMachineCredit.Builder(mock(DataCenterService.class))
                 .withAccountGuid(orionGuid.toString())
                 .withAccountStatus(accountStatus)
-                .withShopperID("TestShopper")
+                .withShopperID("testShopper")
+                .withCustomerID(customerId.toString())
                 .withProductMeta(productMeta)
                 .withPlanFeatures(planFeatures)
                 .withResellerID(resellerId)
@@ -215,7 +219,7 @@ public class Vps4AccountMessageHandlerTest {
 
         verify(creditServiceMock, times(1)).getVirtualMachineCredit(anyObject());
         verify(commandServiceMock, times(0)).executeCommand(anyObject());
-        verify(messagingServiceMock, never()).sendFullyManagedEmail(Mockito.anyString(), Mockito.anyString());
+        verify(messagingServiceMock, never()).sendFullyManagedEmail(Mockito.any(UUID.class), Mockito.anyString());
     }
 
     @Test
@@ -223,7 +227,7 @@ public class Vps4AccountMessageHandlerTest {
         planFeatures.put(PlanFeatures.CONTROL_PANEL_TYPE.toString(), String.valueOf("cpanel"));
         planFeatures.put(PlanFeatures.MANAGED_LEVEL.toString(), VPS4_MANAGED);
         mockVmCredit(AccountStatus.ACTIVE, vm.vmId);
-        when(messagingServiceMock.sendFullyManagedEmail("TestShopper", "cpanel")).thenReturn("messageId");
+        when(messagingServiceMock.sendFullyManagedEmail(customerId, "cpanel")).thenReturn("messageId");
         when(configMock.get("vps4MessageHandler.processFullyManagedEmails")).thenReturn("true");
         Mockito.doNothing().when(creditServiceMock)
                 .updateProductMeta(orionGuid, ProductMetaField.FULLY_MANAGED_EMAIL_SENT, "true");
@@ -231,7 +235,7 @@ public class Vps4AccountMessageHandlerTest {
         callHandleMessage(createTestKafkaMessage("added"));
 
         verify(creditServiceMock, times(1)).getVirtualMachineCredit(anyObject());
-        verify(messagingServiceMock, times(1)).sendFullyManagedEmail("TestShopper", "cpanel");
+        verify(messagingServiceMock, times(1)).sendFullyManagedEmail(customerId, "cpanel");
         verify(creditServiceMock, times(1))
                 .updateProductMeta(orionGuid, ProductMetaField.FULLY_MANAGED_EMAIL_SENT, "true");
 
@@ -250,7 +254,7 @@ public class Vps4AccountMessageHandlerTest {
         callHandleMessage(createTestKafkaMessage("added"));
 
         verify(creditServiceMock).getVirtualMachineCredit(anyObject());
-        verify(messagingServiceMock).sendFullyManagedEmail("TestShopper", "myh");
+        verify(messagingServiceMock).sendFullyManagedEmail(customerId, "myh");
     }
 
     @Test
@@ -263,7 +267,7 @@ public class Vps4AccountMessageHandlerTest {
         callHandleMessage(createTestKafkaMessage("added"));
 
         verify(creditServiceMock).getVirtualMachineCredit(anyObject());
-        verify(messagingServiceMock, never()).sendFullyManagedEmail(anyString(), anyString());
+        verify(messagingServiceMock, never()).sendFullyManagedEmail(Mockito.any(UUID.class), anyString());
     }
 
     @Test
@@ -275,7 +279,7 @@ public class Vps4AccountMessageHandlerTest {
         callHandleMessage(createTestKafkaMessage("added"));
 
         verify(creditServiceMock).getVirtualMachineCredit(anyObject());
-        verify(messagingServiceMock, never()).sendFullyManagedEmail(anyString(), anyString());
+        verify(messagingServiceMock, never()).sendFullyManagedEmail(Mockito.any(UUID.class), anyString());
     }
 
     @Test
@@ -287,20 +291,20 @@ public class Vps4AccountMessageHandlerTest {
         callHandleMessage(createTestKafkaMessage("added"));
 
         verify(creditServiceMock).getVirtualMachineCredit(anyObject());
-        verify(messagingServiceMock).sendFullyManagedEmail("TestShopper", "myh");
+        verify(messagingServiceMock).sendFullyManagedEmail(customerId, "myh");
     }
 
     @Test
     public void testDontProcessFullyManagedEmails() throws Exception {
         planFeatures.put(PlanFeatures.MANAGED_LEVEL.toString(), VPS4_MANAGED);
         mockVmCredit(AccountStatus.ACTIVE, null);
-        when(messagingServiceMock.sendFullyManagedEmail("TestShopper", "cpanel")).thenReturn("messageId");
+        when(messagingServiceMock.sendFullyManagedEmail(customerId, "cpanel")).thenReturn("messageId");
         when(configMock.get("vps4MessageHandler.processFullyManagedEmails")).thenReturn("false");
 
         callHandleMessage(createTestKafkaMessage("added"));
 
         verify(creditServiceMock, times(1)).getVirtualMachineCredit(anyObject());
-        verify(messagingServiceMock, never()).sendFullyManagedEmail(Mockito.anyString(), Mockito.anyString());
+        verify(messagingServiceMock, never()).sendFullyManagedEmail(Mockito.any(UUID.class), Mockito.anyString());
     }
 
     @Test
@@ -309,13 +313,13 @@ public class Vps4AccountMessageHandlerTest {
         VirtualMachineCredit vmCredit = new VirtualMachineCredit.Builder(dcService).build();
 
         when(creditServiceMock.getVirtualMachineCredit(orionGuid)).thenReturn(vmCredit);
-        when(messagingServiceMock.sendFullyManagedEmail("TestShopper", "cpanel")).thenReturn("messageId");
+        when(messagingServiceMock.sendFullyManagedEmail(customerId, "cpanel")).thenReturn("messageId");
         when(configMock.get("vps4MessageHandler.processFullyManagedEmails")).thenReturn("true");
 
         callHandleMessage(createTestKafkaMessage("added"));
 
         verify(creditServiceMock, times(1)).getVirtualMachineCredit(anyObject());
-        verify(messagingServiceMock, never()).sendFullyManagedEmail(Mockito.anyString(), Mockito.anyString());
+        verify(messagingServiceMock, never()).sendFullyManagedEmail(Mockito.any(UUID.class), Mockito.anyString());
     }
 
     @Test

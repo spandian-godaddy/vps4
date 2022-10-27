@@ -30,13 +30,13 @@ public class SendScheduledPatchingEmail extends SendMessagingEmailBase
 
     @Override
     public String execute(CommandContext context, ScheduledMaintenanceEmailRequest emailRequest) {
-        logger.info("Sending ScheduledPatchingEmail for shopper {}", emailRequest.shopperId);
-        String messageId = context.execute("SendPatchingEmail-" + emailRequest.shopperId,
-                ctx -> messagingService.sendScheduledPatchingEmail(emailRequest.shopperId,
+        logger.info("Sending ScheduledPatchingEmail for customerId {}", emailRequest.customerId);
+        String messageId = context.execute("SendPatchingEmail-" + emailRequest.customerId,
+                ctx -> messagingService.sendScheduledPatchingEmail(emailRequest.customerId,
                         emailRequest.accountName, emailRequest.startTime,
                         emailRequest.durationMinutes, emailRequest.isManaged),
                 String.class);
-        this.waitForMessageComplete(context, messageId, emailRequest.shopperId);
+        this.waitForMessageComplete(context, messageId, emailRequest.customerId);
         return messageId;
     }
 }

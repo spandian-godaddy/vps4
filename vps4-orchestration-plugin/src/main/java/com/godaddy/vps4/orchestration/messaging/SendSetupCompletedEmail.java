@@ -3,7 +3,6 @@ package com.godaddy.vps4.orchestration.messaging;
 import com.godaddy.hfs.config.Config;
 import com.godaddy.vps4.credit.CreditService;
 import com.godaddy.vps4.credit.VirtualMachineCredit;
-import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -42,19 +41,19 @@ public class SendSetupCompletedEmail extends SendMessagingEmailBase implements C
 
     @Override
     public String execute(CommandContext context, SetupCompletedEmailRequest emailRequest) {
-        logger.info("Sending SetupCompleted for shopper {}", emailRequest.shopperId);
+        logger.info("Sending SetupCompleted for customerId {}", emailRequest.customerId);
         VirtualMachineCredit credit = creditService.getVirtualMachineCredit(emailRequest.orionGuid);
         String resellerId = credit.getResellerId();
 
         if (resellerBlacklist.contains(resellerId)){
             throw new RuntimeException(String.format("Credit's Reseller Id %s is suppressed for email template VirtualPrivateHostingProvisioned4. " +
-                    "No longer attempting to send SetupCompleted to shopper %s", resellerId, emailRequest.shopperId));
+                    "No longer attempting to send SetupCompleted to shopper %s", resellerId, emailRequest.customerId));
         }
-        String messageId = context.execute("SendSetupCompletedEmail-" + emailRequest.shopperId,
-                ctx -> messagingService.sendSetupEmail(emailRequest.shopperId, emailRequest.serverName, emailRequest.ipAddress,
+        String messageId = context.execute("SendSetupCompletedEmail-" + emailRequest.customerId,
+                ctx -> messagingService.sendSetupEmail(emailRequest.customerId, emailRequest.serverName, emailRequest.ipAddress,
                         emailRequest.orionGuid.toString(), emailRequest.isManaged),
                 String.class);
-        this.waitForMessageComplete(context, messageId, emailRequest.shopperId);
+        this.waitForMessageComplete(context, messageId, emailRequest.customerId);
         return messageId;
     }
 }
