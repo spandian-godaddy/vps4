@@ -240,7 +240,7 @@
         <dependency>
             <groupId>com.godaddy.hfs</groupId>
             <artifactId>hfs-web</artifactId>
-            <version>0.9.1</version>
+            <version>${hfs-base-version}</version>
             <exclusions>
                 <exclusion>
                     <groupId>javax.ws.rs</groupId>
@@ -264,7 +264,7 @@
         <dependency>
             <groupId>com.godaddy.hfs</groupId>
             <artifactId>hfs-sso</artifactId>
-            <version>0.9.1</version>
+            <version>${hfs-base-version}</version>
         </dependency>
 
         <dependency>

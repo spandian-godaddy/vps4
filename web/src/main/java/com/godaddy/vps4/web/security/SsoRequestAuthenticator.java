@@ -2,6 +2,7 @@ package com.godaddy.vps4.web.security;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
 import javax.inject.Inject;
 import javax.servlet.http.HttpServletRequest;
@@ -88,16 +89,19 @@ public class SsoRequestAuthenticator implements RequestAuthenticator<GDUser> {
 
     private GDUser createGDUser(SsoToken token, HttpServletRequest request) {
         String shopperOverride = request.getHeader("X-Shopper-Id");
+        String customerOverride = request.getHeader("X-Customer-Id");
         GDUser gdUser = new GDUser();
         gdUser.token = token;
         if (token instanceof JomaxSsoToken) {
             gdUser.username = ((JomaxSsoToken) token).getUsername();
             gdUser.shopperId = shopperOverride;
+            gdUser.customerId = customerOverride == null ? null : UUID.fromString(customerOverride);
             gdUser.isEmployee = true;
             setPrivilegeByGroups(gdUser, ((JomaxSsoToken) token).getGroups());
         }
         else if (token instanceof IdpSsoToken) {
             gdUser.shopperId = ((IdpSsoToken) token).getShopperId();
+            gdUser.customerId = UUID.fromString(((IdpSsoToken) token).getCustomerId());
             if (token.employeeUser != null) {
                 gdUser.isEmployee = true;
                 setPrivilegeByGroups(gdUser, ((JomaxSsoToken) token.employeeUser).getGroups());

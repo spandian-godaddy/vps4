@@ -6,6 +6,7 @@ import static org.mockito.Mockito.when;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.UUID;
 import java.util.Vector;
 
 import javax.servlet.http.HttpServletRequest;
@@ -31,7 +32,7 @@ public class SsoRequestAuthenticatorTest {
     private SsoTokenExtractor tokenExtractor = mock(SsoTokenExtractor.class);
     private HttpServletRequest request = mock(HttpServletRequest.class);
     private Config config = mock(Config.class);
-
+    private String customerId = String.valueOf(UUID.randomUUID());
     private final Injector injector;
     {
         injector = Guice.createInjector(
@@ -48,6 +49,7 @@ public class SsoRequestAuthenticatorTest {
     private SsoToken mockIdpToken(String shopperId) {
         IdpSsoToken token = mock(IdpSsoToken.class);
         when(token.getShopperId()).thenReturn(shopperId);
+        when(token.getCustomerId()).thenReturn(customerId);
         return token;
     }
 
@@ -80,11 +82,13 @@ public class SsoRequestAuthenticatorTest {
     @Test
     public void testShopperCannotOverride() {
         when(request.getHeader("X-Shopper-Id")).thenReturn("shopperX");
+        when(request.getHeader("X-Customer-Id")).thenReturn(customerId);
         SsoToken token = mockIdpToken("shopperid");
         when(tokenExtractor.extractToken(request)).thenReturn(token);
 
         GDUser user = authenticator.authenticate(request);
         Assert.assertEquals("shopperid", user.getShopperId());
+        Assert.assertEquals(customerId, String.valueOf(user.getCustomerId()));
         Assert.assertEquals(true, user.isShopper());
         Assert.assertEquals(false, user.isAdmin());
         Assert.assertEquals(false, user.isEmployee());
@@ -260,6 +264,20 @@ public class SsoRequestAuthenticatorTest {
 
         GDUser user = authenticator.authenticate(request);
         Assert.assertEquals("shopperX", user.getShopperId());
+        Assert.assertEquals(true, user.isShopper());
+        Assert.assertEquals(true, user.isAdmin());
+        Assert.assertEquals(true, user.isEmployee());
+        Assert.assertEquals(Arrays.asList(Role.ADMIN), user.roles());
+    }
+
+    @Test
+    public void testAdminWithCustomerOverride() {
+        when(request.getHeader("X-Customer-Id")).thenReturn(customerId);
+        SsoToken token = mockJomaxToken(Collections.singletonList("Dev-VPS4"));
+        when(tokenExtractor.extractToken(request)).thenReturn(token);
+
+        GDUser user = authenticator.authenticate(request);
+        Assert.assertEquals(customerId, String.valueOf(user.getCustomerId()));
         Assert.assertEquals(true, user.isShopper());
         Assert.assertEquals(true, user.isAdmin());
         Assert.assertEquals(true, user.isEmployee());

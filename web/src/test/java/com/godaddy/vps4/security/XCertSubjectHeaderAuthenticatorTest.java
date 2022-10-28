@@ -13,6 +13,7 @@ import junit.framework.Assert;
 import org.junit.Test;
 
 import java.util.Arrays;
+import java.util.UUID;
 
 public class XCertSubjectHeaderAuthenticatorTest {
 
@@ -66,6 +67,7 @@ public class XCertSubjectHeaderAuthenticatorTest {
 
     @Test
     public void authenticationWithShopperOverride() throws Exception{
+        String customerId = String.valueOf(UUID.randomUUID());
         when(config.get("vps4.scheduler.certCN")).thenReturn("VPS4 Scheduler Client (MOCK)");
         XCertSubjectHeaderAuthenticator authenticator = new XCertSubjectHeaderAuthenticator(config);
 
@@ -73,12 +75,14 @@ public class XCertSubjectHeaderAuthenticatorTest {
                 "OU=Hosting Foundation Services,O=GoDaddy.com\\, Inc.,L=Scottsdale,ST=Arizona,C=US");
 
         when(request.getHeader("X-Shopper-Id")).thenReturn("12345");
+        when(request.getHeader("X-Customer-Id")).thenReturn(customerId);
 
         GDUser user = authenticator.authenticate(request);
 
         Assert.assertNotNull(user);
         Assert.assertEquals(Arrays.asList(Role.ADMIN), user.roles());
         Assert.assertEquals("12345", user.getShopperId());
+        Assert.assertEquals(customerId, String.valueOf(user.getCustomerId()));
     }
 
     @Test
