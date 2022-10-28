@@ -113,6 +113,15 @@ public class CpanelClient {
         return callWhm(request);
     }
 
+    public String getNginxCacheConfig() throws CpanelAccessDeniedException, IOException {
+        HttpUriRequest request = newCpanelRequest()
+                .setUri(baseUrl + "/json-api/nginxmanager_get_cache_config_users")
+                .addParameter("api.version", "1")
+                .addParameter("merge", "1")
+                .build();
+        return callWhm(request);
+    }
+
     public String getRpmPackageUpdateStatus(String buildNumber) throws CpanelAccessDeniedException, IOException {
         HttpUriRequest request = newCpanelRequest()
                 .setUri(baseUrl + "/json-api/package_manager_is_performing_actions")

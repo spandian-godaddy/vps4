@@ -2,6 +2,8 @@ package com.godaddy.vps4.phase2;
 
 import com.godaddy.hfs.config.Config;
 import com.godaddy.hfs.vm.Vm;
+import com.godaddy.vps4.cpanel.CPanelAccountCacheStatus;
+import com.godaddy.vps4.cpanel.CpanelAccessDeniedException;
 import com.godaddy.vps4.cpanel.CpanelInvalidUserException;
 import com.godaddy.vps4.cpanel.CpanelTimeoutException;
 import com.godaddy.vps4.cpanel.Vps4CpanelService;
@@ -52,8 +54,11 @@ public class CpanelResourceTest {
     private VirtualMachine vm;
     private VirtualMachine centVm;
 
+    private String expectedVersion = "11.106.0.8";
+    private String[] expectedPackages = {"foobar", "helloworld"};
+    private CPanelAccountCacheStatus cacheStatus = new CPanelAccountCacheStatus("testuser", true);
     @Before
-    public void setupTest(){
+    public void setupTest() throws CpanelTimeoutException, CpanelAccessDeniedException {
         vm = createTestVm("hfs-centos-7-cpanel-11", Image.ControlPanel.CPANEL);
         centVm = createTestVm("hfs-centos-7", Image.ControlPanel.MYH);
         user = GDUserMock.createShopper();
@@ -72,6 +77,10 @@ public class CpanelResourceTest {
         when(actionService.createAction(vm.vmId, ActionType.INSTALL_CPANEL_PACKAGE, null, user.getUsername()))
                 .thenReturn(testAction.id);
         when(commandService.executeCommand(anyObject())).thenReturn(new CommandState());
+
+        when(vps4CpanelService.getVersion(vm.hfsVmId)).thenReturn(expectedVersion);
+        when(vps4CpanelService.listInstalledRpmPackages(anyLong())).thenReturn(Arrays.asList(expectedPackages));
+        when(vps4CpanelService.getNginxCacheConfig(anyLong())).thenReturn(Arrays.asList(cacheStatus));
 
     }
 
@@ -310,8 +319,6 @@ public class CpanelResourceTest {
     // get version
     @Test
     public void getVersionCallsCpanelService() throws Exception {
-        String expectedVersion = "11.106.0.8";
-        when(vps4CpanelService.getVersion(vm.hfsVmId)).thenReturn(expectedVersion);
         CPanelResource.CpanelVersionResponse response = getcPanelResource().getVersion(vm.vmId);
         Assert.assertEquals(expectedVersion, response.version);
     }
@@ -327,6 +334,51 @@ public class CpanelResourceTest {
         }
     }
 
+    @Test
+    public void getVersionThrowsVersionFormatException() throws Exception {
+        when(vps4CpanelService.getVersion(vm.hfsVmId)).thenReturn("11.000.0.8.23");
+        try {
+            getcPanelResource().getVersion(vm.vmId);
+        }
+        catch (Vps4Exception e) {
+            Assert.assertEquals("INCORRECT_VERSION_FORMAT", e.getId());
+        }
+    }
+
+    // get nginx manager status
+    @Test
+    public void getNginxManagerStatusCallsCpanelService() {
+        CPanelResource.CpanelNginxStatusResponse response = getcPanelResource().getNginxManagerStatus(vm.vmId);
+        Assert.assertEquals(CPanelResource.NginxStatus.INSTALLABLE, response.installStatus);
+        Assert.assertEquals(0, response.accountCachingStatus.size());
+    }
+
+    @Test
+    public void getNginxManagerStatusReturnsNotInstallable() throws CpanelTimeoutException, CpanelAccessDeniedException {
+        when(vps4CpanelService.getVersion(vm.hfsVmId)).thenReturn("11.000.0.8");
+        CPanelResource.CpanelNginxStatusResponse response = getcPanelResource().getNginxManagerStatus(vm.vmId);
+        Assert.assertEquals(CPanelResource.NginxStatus.NOT_INSTALLABLE, response.installStatus);
+        Assert.assertEquals(0, response.accountCachingStatus.size());
+    }
+
+    @Test
+    public void getNginxManagerStatusReturnsInstalled() throws Exception {
+        when(vps4CpanelService.listInstalledRpmPackages(anyLong())).thenReturn(Collections.singletonList("ea-nginx"));
+        CPanelResource.CpanelNginxStatusResponse response = getcPanelResource().getNginxManagerStatus(vm.vmId);
+        Assert.assertEquals(CPanelResource.NginxStatus.INSTALLED, response.installStatus);
+        Assert.assertEquals(1, response.accountCachingStatus.size());
+    }
+
+    @Test
+    public void getNginxManagerStatusThrowsException() throws Exception {
+        when(vps4CpanelService.listInstalledRpmPackages(vm.hfsVmId)).thenThrow(new RuntimeException());
+        try {
+            getcPanelResource().getNginxManagerStatus(vm.vmId);
+        }
+        catch (Vps4Exception e) {
+            Assert.assertEquals("GET_NGINX_STATUS_FAILED", e.getId());
+        }
+    }
     // Install packages
     @Test
     public void installPackagesCallsCommandService() {

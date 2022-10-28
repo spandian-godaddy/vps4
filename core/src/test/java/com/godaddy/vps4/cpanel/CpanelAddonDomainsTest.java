@@ -598,7 +598,86 @@ public class CpanelAddonDomainsTest {
     }
 
     @Test
-    public void listPackagesUsesCpanelClient() throws Exception{
+    public void getNginxCacheConfigUsesCpanelClient() throws Exception {
+        String returnVal = "{\"data\":{\"users\":[{\"user\":\"dieptran\",\"config\":{\"x_cache_header\":false," +
+                "\"enabled\":true,\"proxy_cache_use_stale\":\"error timeout http_429 http_500 http_502 http_503 http_504\"," +
+                "\"logging\":false,\"proxy_cache_min_uses\":1},\"owner\":\"root\",\"merged\":\"1\"}]}," +
+                "\"metadata\":{\"reason\":\"OK\",\"version\":1,\"command\":\"nginxmanager_get_cache_config_users\",\"result\":1}}";
+        when(cpClient.getNginxCacheConfig()).thenReturn(returnVal);
+        service.getNginxCacheConfig(hfsVmId);
+        verify(cpClient, times(1)).getNginxCacheConfig();
+    }
+
+    @Test
+    public void getNginxCacheConfigReturnsEnabledConfig() throws Exception {
+        String returnVal = "{\"data\":{\"users\":[{\"user\":\"dieptran\",\"config\":{\"x_cache_header\":false," +
+                "\"enabled\":true,\"proxy_cache_use_stale\":\"error timeout http_429 http_500 http_502 http_503 http_504\"," +
+                "\"logging\":false,\"proxy_cache_min_uses\":1},\"owner\":\"root\",\"merged\":\"1\"}]}," +
+                "\"metadata\":{\"reason\":\"OK\",\"version\":1,\"command\":\"nginxmanager_get_cache_config_users\",\"result\":1}}";
+        when(cpClient.getNginxCacheConfig()).thenReturn(returnVal);
+        List<CPanelAccountCacheStatus> accountCacheStatusList = service.getNginxCacheConfig(hfsVmId);
+        Assert.assertEquals(1, accountCacheStatusList.size());
+        Assert.assertEquals(true, accountCacheStatusList.get(0).isEnabled);
+        Assert.assertEquals("dieptran", accountCacheStatusList.get(0).username);
+    }
+
+    @Test
+    public void getNginxCacheConfigNoMetadata() throws Exception {
+        String returnVal = "{\"data\":{\"blah\": \"foo\"}, \"metadata\": null}";
+        when(cpClient.getNginxCacheConfig()).thenReturn(returnVal);
+
+        try {
+            service.getNginxCacheConfig(hfsVmId);
+            Assert.fail("This test shouldn't get here");
+        } catch (RuntimeException e) {
+            Assert.assertEquals("WHM get nginx cache config failed due to reason: No reason provided", e.getMessage());
+        }
+    }
+
+    @Test
+    public void getNginxCacheConfigResultNotOk() throws Exception {
+        String reason = "no-workie";
+        String returnVal = "{\"metadata\":{\"version\":1,\"reason\":\"" + reason + "\", \"result\":0}}";
+        when(cpClient.getNginxCacheConfig()).thenReturn(returnVal);
+
+        try {
+            service.getNginxCacheConfig(hfsVmId);
+            Assert.fail("This test shouldn't get here");
+        } catch (RuntimeException e) {
+            Assert.assertEquals("WHM get nginx cache config failed due to reason: " + reason, e.getMessage());
+        }
+    }
+
+
+    @Test
+    public void getNginxCacheConfigNullData() throws Exception {
+        String returnVal = "{\"data\": null, \"metadata\":{\"version\":1,\"reason\":\"OK\", \"result\":1}}";
+        when(cpClient.getNginxCacheConfig()).thenReturn(returnVal);
+
+        try {
+            service.getNginxCacheConfig(hfsVmId);
+            Assert.fail("This test shouldn't get here");
+        } catch (RuntimeException e) {
+            Assert.assertEquals("Error while handling response for call getCacheConfig", e.getMessage());
+        }
+    }
+
+    @Test
+    public void getNginxCacheConfigNullUsersList() throws Exception {
+        String returnVal = "{\"metadata\":{\"result\":1,\"reason\":\"OK\",\"version\":1,\"command\":\"version\"}," +
+                "\"data\":{\"users\":null}}";
+        when(cpClient.getNginxCacheConfig()).thenReturn(returnVal);
+
+        try {
+            service.getNginxCacheConfig(hfsVmId);
+            Assert.fail("This test shouldn't get here");
+        } catch (RuntimeException e) {
+            Assert.assertEquals("No nginx cache config found - users list returned null", e.getMessage());
+        }
+    }
+
+    @Test
+    public void listPackagesUsesCpanelClient() throws Exception {
         String returnVal = "{\"metadata\":{\"reason\":\"OK\",\"version\":1,\"result\":1,\"command\":\"listpkgs\"},"
                 + "\"data\":{\"pkg\":[{\"CPMOD\":\"paper_lantern\",\"IP\":\"n\",\"LANG\":\"en\",\"DIGESTAUTH\":\"n\","
                 + "\"FEATURELIST\":\"default\",\"name\":\"default\"},{\"QUOTA\":\"unlimited\","

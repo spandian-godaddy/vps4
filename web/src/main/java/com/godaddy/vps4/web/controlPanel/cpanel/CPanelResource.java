@@ -1,7 +1,10 @@
 package com.godaddy.vps4.web.controlPanel.cpanel;
 
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 import javax.inject.Inject;
@@ -15,6 +18,7 @@ import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
 
 import com.godaddy.hfs.config.Config;
+import com.godaddy.vps4.cpanel.CPanelAccountCacheStatus;
 import com.godaddy.vps4.orchestration.cpanel.Vps4InstallCPanelPackage;
 import com.godaddy.vps4.vm.ActionService;
 import com.godaddy.vps4.vm.ActionType;
@@ -22,6 +26,7 @@ import com.godaddy.vps4.vm.VmAction;
 import com.godaddy.vps4.web.security.GDUser;
 import com.godaddy.vps4.web.util.Commands;
 import gdg.hfs.orchestration.CommandService;
+import org.codehaus.jackson.Version;
 import org.json.simple.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -48,7 +53,6 @@ import static com.godaddy.vps4.web.util.RequestValidation.validateNoConflictingA
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
 public class CPanelResource {
-
     private static final Logger logger = LoggerFactory.getLogger(CPanelResource.class);
 
     final VmResource vmResource;
@@ -184,6 +188,56 @@ public class CPanelResource {
             logger.warn("Could not list CPanel packages for vmId {} , Exception: {} ", vmId, e);
             throw new Vps4Exception("LIST_PACKAGES_FAILED", e.getMessage(), e);
         }
+    }
+
+    @GET
+    @Path("/{vmId}/cpanel/nginxManager")
+    public CpanelNginxStatusResponse getNginxManagerStatus(@PathParam("vmId") UUID vmId) {
+        VirtualMachine vm = resolveVirtualMachine(vmId);
+        NginxStatus nginxStatus = NginxStatus.NOT_INSTALLABLE;
+        List<CPanelAccountCacheStatus> accountCachingStatus = new ArrayList<>();
+        try {
+            List<String> rpmPackages = cpanelService.listInstalledRpmPackages(vm.hfsVmId);
+            if (rpmPackages != null && rpmPackages.contains("ea-nginx")){
+                nginxStatus = NginxStatus.INSTALLED;
+                accountCachingStatus = cpanelService.getNginxCacheConfig(vm.hfsVmId);
+            }
+            else{
+                String version = cpanelService.getVersion(vm.hfsVmId);
+                if(version != null && isVersionCompatible(version)) {
+                    nginxStatus = NginxStatus.INSTALLABLE;
+                }
+            }
+            return new CpanelNginxStatusResponse(nginxStatus, accountCachingStatus);
+        } catch (Exception e) {
+            logger.warn("Could not retrieve CPanel nginx manager status for vmId {} ", vmId, e);
+            throw new Vps4Exception("GET_NGINX_STATUS_FAILED", e.getMessage(), e);
+        }
+    }
+
+    public boolean isVersionCompatible(String actualVersion) {
+        // minimum compatible version is 11.102.0.0
+        String[] actualVerArr = actualVersion.split("\\.");
+        if(actualVerArr.length != 4) {
+            throw new Vps4Exception("INCORRECT_VERSION_FORMAT", "CPanel version format is incorrect.");
+        }
+        return Integer.parseInt(actualVerArr[0]) >= 11 ? Integer.parseInt(actualVerArr[1]) >= 102 : false;
+    }
+
+    public static class CpanelNginxStatusResponse {
+        public NginxStatus installStatus;
+        public List<CPanelAccountCacheStatus> accountCachingStatus;
+
+        public CpanelNginxStatusResponse(NginxStatus installStatus, List<CPanelAccountCacheStatus> accountCachingStatus) {
+            this.installStatus = installStatus;
+            this.accountCachingStatus = accountCachingStatus;
+        }
+    }
+
+    public enum NginxStatus{
+        INSTALLED,
+        NOT_INSTALLABLE,
+        INSTALLABLE
     }
 
     @GET

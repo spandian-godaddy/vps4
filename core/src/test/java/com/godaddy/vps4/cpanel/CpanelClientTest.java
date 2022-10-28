@@ -139,6 +139,17 @@ public class CpanelClientTest {
         Assert.assertEquals(expectedUri, capturedReq.getURI().toString());
     }
 
+    @Test
+    public void callsCpanelEndpointToGetNginxCacheConfig() throws CpanelAccessDeniedException, IOException {
+        cpanelClient.getNginxCacheConfig();
+
+        verify(httpClient, times(1)).execute(httpUriRequestArgumentCaptor.capture());
+        HttpUriRequest capturedReq = httpUriRequestArgumentCaptor.getValue();
+        String expectedUri = "https://" + hostname + ":2087"
+                + "/json-api/nginxmanager_get_cache_config_users?api.version=1&merge=1";
+        Assert.assertEquals(expectedUri, capturedReq.getURI().toString());
+    }
+
     @Test(expected = CpanelAccessDeniedException.class)
     public void testAccessDenied() throws Exception {
         when(response.getStatusLine())

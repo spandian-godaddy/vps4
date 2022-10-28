@@ -362,6 +362,36 @@ public class DefaultVps4CpanelService implements Vps4CpanelService {
         });
     }
 
+    @Override
+    public List<CPanelAccountCacheStatus> getNginxCacheConfig(long hfsVmId) throws CpanelAccessDeniedException, CpanelTimeoutException {
+        return withAccessHash(hfsVmId, cPanelClient -> {
+            // https://documentation.cpanel.net/display/DD/WHM+API+1+Functions+-+version
+            return handleCpanelCall(
+                    "getCacheConfig",
+                    () -> cPanelClient.getNginxCacheConfig(),
+                    dataJson -> {
+                        JSONArray userConfigsJson = (JSONArray) dataJson.get("users");
+                        if (userConfigsJson != null) {
+                            List<CPanelAccountCacheStatus> userConfigs = new ArrayList<>();
+                            for (Object object : userConfigsJson) {
+                                JSONObject userConfigsObj = (JSONObject) object;
+                                String username = (String) userConfigsObj.get("user");
+                                JSONObject configObj = (JSONObject)userConfigsObj.get("config");
+                                Boolean isEnabled = configObj != null ? (Boolean) configObj.get("enabled") : null;
+                                if (username != null && isEnabled != null) {
+                                    userConfigs.add(new CPanelAccountCacheStatus(username, isEnabled));
+                                }
+                            }
+                            return userConfigs;
+                        }
+                        throw new RuntimeException("No nginx cache config found - users list returned null");
+                    },
+                    reason -> {
+                        throw new RuntimeException("WHM get nginx cache config failed due to reason: " + reason);
+                    }
+            );
+        });
+    }
 
     @Override
     public String getVersion(long hfsVmId) throws CpanelAccessDeniedException, CpanelTimeoutException {
