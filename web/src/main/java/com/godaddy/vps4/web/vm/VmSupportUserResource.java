@@ -12,6 +12,7 @@ import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
 
+import com.godaddy.vps4.orchestration.sysadmin.Vps4SetSupportUserPassword;
 import org.json.simple.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -20,7 +21,7 @@ import com.godaddy.hfs.config.Config;
 import com.godaddy.vps4.orchestration.hfs.sysadmin.SetPassword;
 import com.godaddy.vps4.orchestration.sysadmin.Vps4AddSupportUser;
 import com.godaddy.vps4.orchestration.sysadmin.Vps4RemoveSupportUser;
-import com.godaddy.vps4.orchestration.sysadmin.Vps4SetPassword;
+import com.godaddy.vps4.orchestration.sysadmin.Vps4SetCustomerPassword;
 import com.godaddy.vps4.sysadmin.UsernamePasswordGenerator;
 import com.godaddy.vps4.util.Cryptography;
 import com.godaddy.vps4.vm.Action;
@@ -143,38 +144,36 @@ public class VmSupportUserResource {
     public VmActionWithDetails changeSupportUsersPassword(@PathParam("vmId") UUID vmId, @PathParam("supportUsername") String username) {
         VirtualMachine vm = vmResource.getVm(vmId);
 
-        if (vmUserService.supportUserExists(username, vmId)) {
-            String password = UsernamePasswordGenerator.generatePassword(14);
-
-            JSONObject setPasswordJson = new JSONObject();
-            setPasswordJson.put("username", username);
-            long actionId = actionService.createAction(vm.vmId, ActionType.SET_PASSWORD, setPasswordJson.toJSONString(),
-                    gdUser.getUsername());
-
-            // Dont set the controlPanel value on the request because this is the support user and not the
-            // primary user on this box.
-            SetPassword.Request setPasswordRequest = new SetPassword.Request();
-            setPasswordRequest.hfsVmId = vm.hfsVmId;
-            setPasswordRequest.usernames = Collections.singletonList(username);
-            setPasswordRequest.encryptedPassword = cryptography.encrypt(password);
-
-            Vps4SetPassword.Request vps4SetPasswordRequest = new Vps4SetPassword.Request();
-            vps4SetPasswordRequest.actionId = actionId;
-            vps4SetPasswordRequest.vmId = vm.vmId;
-            vps4SetPasswordRequest.setPasswordRequest = setPasswordRequest;
-            vps4SetPasswordRequest.controlPanel = vm.image.controlPanel;
-            CommandState command = Commands.execute(commandService, actionService, "Vps4SetPassword", vps4SetPasswordRequest);
-
-            logger.info("Changed support user password {} on vm {}", username, vmId);
-
-            Action action = actionService.getAction(actionId);
-            JSONObject message = new JSONObject();
-            message.put("Username", username);
-            message.put("Password", password);
-            return new VmActionWithDetails(action, command, message.toString(), gdUser.isEmployee());
-        } else {
+        if (!vmUserService.supportUserExists(username, vmId)) {
             logger.info("Support user {} not found in vm {}", username, vmId);
             throw new NotFoundException("Support user not found");
         }
+
+        String password = UsernamePasswordGenerator.generatePassword(14);
+
+        JSONObject setPasswordJson = new JSONObject();
+        setPasswordJson.put("username", username);
+        long actionId = actionService.createAction(vm.vmId, ActionType.SET_SUPPORT_USER_PASSWORD, setPasswordJson.toJSONString(),
+                gdUser.getUsername());
+
+        // Don't set the controlPanel value on the request, support users should not set the control panel password.
+        SetPassword.Request setPasswordRequest = new SetPassword.Request();
+        setPasswordRequest.hfsVmId = vm.hfsVmId;
+        setPasswordRequest.usernames = Collections.singletonList(username);
+        setPasswordRequest.encryptedPassword = cryptography.encrypt(password);
+
+        Vps4SetSupportUserPassword.Request vps4SetSupportUserPasswordRequest = new Vps4SetSupportUserPassword.Request();
+        vps4SetSupportUserPasswordRequest.actionId = actionId;
+        vps4SetSupportUserPasswordRequest.vmId = vm.vmId;
+        vps4SetSupportUserPasswordRequest.setPasswordRequest = setPasswordRequest;
+        CommandState command = Commands.execute(commandService, actionService, "Vps4SetSupportUserPassword", vps4SetSupportUserPasswordRequest);
+
+        logger.info("Changed support user password {} on vm {}", username, vmId);
+
+        Action action = actionService.getAction(actionId);
+        JSONObject message = new JSONObject();
+        message.put("Username", username);
+        message.put("Password", password);
+        return new VmActionWithDetails(action, command, message.toString(), gdUser.isEmployee());
     }
 }

@@ -23,7 +23,7 @@ import org.slf4j.LoggerFactory;
 import com.godaddy.vps4.orchestration.hfs.sysadmin.SetHostname;
 import com.godaddy.vps4.orchestration.hfs.sysadmin.SetPassword;
 import com.godaddy.vps4.orchestration.sysadmin.Vps4SetHostname;
-import com.godaddy.vps4.orchestration.sysadmin.Vps4SetPassword;
+import com.godaddy.vps4.orchestration.sysadmin.Vps4SetCustomerPassword;
 import com.godaddy.vps4.orchestration.sysadmin.Vps4ToggleAdmin;
 import com.godaddy.vps4.util.Cryptography;
 import com.godaddy.vps4.vm.ActionService;
@@ -112,7 +112,7 @@ public class SysAdminResource {
         request.hfsVmId = vm.hfsVmId;
         request.controlPanel = vm.image.getImageControlPanel();
 
-        Vps4SetPassword.Request vps4Request = new Vps4SetPassword.Request();
+        Vps4SetCustomerPassword.Request vps4Request = new Vps4SetCustomerPassword.Request();
         vps4Request.actionId = actionId;
         vps4Request.vmId = vm.vmId;
         vps4Request.setPasswordRequest = request;

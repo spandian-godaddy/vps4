@@ -65,7 +65,8 @@ public enum ActionType {
     RESTORE_OH_BACKUP(56),
     NEW_VM_OUTAGE(57),
     CLEAR_VM_OUTAGE(58),
-    INSTALL_CPANEL_PACKAGE(59);
+    INSTALL_CPANEL_PACKAGE(59),
+    SET_SUPPORT_USER_PASSWORD(60);
 
     private final int typeId;
 

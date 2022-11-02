@@ -15,13 +15,13 @@ import gdg.hfs.orchestration.CommandRetryStrategy;
 
 @CommandMetadata(
     name = "Vps4SetPassword",
-    requestType = Vps4SetPassword.Request.class,
+    requestType = Vps4SetCustomerPassword.Request.class,
     retryStrategy = CommandRetryStrategy.NEVER
 )
-public class Vps4SetPassword extends ActionCommand<Vps4SetPassword.Request, Void> {
+public class Vps4SetCustomerPassword extends ActionCommand<Vps4SetCustomerPassword.Request, Void> {
 
     @Inject
-    public Vps4SetPassword(ActionService actionService) {
+    public Vps4SetCustomerPassword(ActionService actionService) {
         super(actionService);
     }
 

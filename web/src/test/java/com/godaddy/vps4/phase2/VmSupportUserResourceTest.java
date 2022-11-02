@@ -162,7 +162,7 @@ public class VmSupportUserResourceTest {
         supportUsers.add(new VmUser("support-test", UUID.randomUUID(), true, VmUserType.SUPPORT));
 
         VmActionWithDetails action = getVmSupportUserResource().changeSupportUsersPassword(vm.vmId, "support-test");
-        Assert.assertEquals(action.type, ActionType.SET_PASSWORD);
+        Assert.assertEquals(action.type, ActionType.SET_SUPPORT_USER_PASSWORD);
         Assert.assertNotNull(action.commandId);
         Assert.assertNotNull(action.orchestrationCommand);
         Assert.assertNotNull(action.message);

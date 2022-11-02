@@ -17,6 +17,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
+import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
 import com.godaddy.vps4.orchestration.hfs.plesk.UpdateAdminPassword;
@@ -32,16 +33,14 @@ import gdg.hfs.vhfs.sysadmin.SysAdminAction.Status;
 import gdg.hfs.vhfs.sysadmin.SysAdminService;
 
 
-public class Vps4SetPasswordTest {
+public class Vps4SetCustomerPasswordTest {
 
-    ActionService actionService = mock(ActionService.class);
-    SysAdminService sysAdminService = mock(SysAdminService.class);
-    Cryptography cryptography = mock(Cryptography.class);
+    @Mock private ActionService actionService;
+    @Mock private SysAdminService sysAdminService;
+    @Mock private Cryptography cryptography;
     @Captor private ArgumentCaptor<SetPassword.Request> setPasswordRequestCaptor;
-
-    Vps4SetPassword command = spy(new Vps4SetPassword(actionService));
-
-    CommandContext context = mock(CommandContext.class);
+    @Mock private CommandContext context;
+    Vps4SetCustomerPassword command = spy(new Vps4SetCustomerPassword(actionService));
 
     @Before
     public void setUp() throws Exception {
@@ -60,7 +59,7 @@ public class Vps4SetPasswordTest {
         setPasswordRequest.encryptedPassword = "somenewpassword".getBytes();
         setPasswordRequest.controlPanel = controlPanel;
 
-        Vps4SetPassword.Request request = new Vps4SetPassword.Request();
+        Vps4SetCustomerPassword.Request request = new Vps4SetCustomerPassword.Request();
         request.actionId = 12;
         request.setPasswordRequest = setPasswordRequest;
         request.controlPanel = ControlPanel.MYH;
@@ -91,7 +90,7 @@ public class Vps4SetPasswordTest {
         SetPassword.Request setPasswordReq = mock(SetPassword.Request.class);
         UpdateAdminPassword.Request updateAdminReq = mock(UpdateAdminPassword.Request.class);
 
-        Vps4SetPassword.Request request = new Vps4SetPassword.Request();
+        Vps4SetCustomerPassword.Request request = new Vps4SetCustomerPassword.Request();
         request.actionId = 12;
         request.setPasswordRequest = setPasswordReq;
         request.controlPanel = ControlPanel.PLESK;
