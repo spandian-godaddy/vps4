@@ -182,6 +182,16 @@ public class CpanelClient {
         return callWhm(request);
     }
 
+    public String updateNginx(boolean enabled, String user) throws CpanelAccessDeniedException, IOException {
+        RequestBuilder request = newCpanelRequest()
+                .setUri(baseUrl + "/json-api/nginxmanager_set_cache_config")
+                .addParameter("api.version", "1")
+                .addParameter("enabled", enabled ? "1" : "0");
+        if (user != null && !user.isEmpty()) request.addParameter("user", user);
+
+        return callWhm(request.build());
+    }
+
     private String callWhm(HttpUriRequest request) throws CpanelAccessDeniedException, IOException {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         try (CloseableHttpResponse response = (CloseableHttpResponse) httpClient.execute(request)) {

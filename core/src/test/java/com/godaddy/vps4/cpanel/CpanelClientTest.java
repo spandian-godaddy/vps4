@@ -150,6 +150,42 @@ public class CpanelClientTest {
         Assert.assertEquals(expectedUri, capturedReq.getURI().toString());
     }
 
+    @Test
+    public void callsCpanelEndpointToUpdateNginxTrue() throws CpanelAccessDeniedException, IOException {
+        String expectedUri = "https://" + hostname + ":2087"
+                + "/json-api/nginxmanager_set_cache_config?api.version=1&enabled=1";
+
+        cpanelClient.updateNginx(true, "");
+
+        verify(httpClient, times(1)).execute(httpUriRequestArgumentCaptor.capture());
+        HttpUriRequest capturedReq = httpUriRequestArgumentCaptor.getValue();
+        Assert.assertEquals(expectedUri, capturedReq.getURI().toString());
+    }
+
+    @Test
+    public void callsCpanelEndpointToUpdateNginxFalse() throws CpanelAccessDeniedException, IOException {
+        String expectedUri = "https://" + hostname + ":2087"
+                + "/json-api/nginxmanager_set_cache_config?api.version=1&enabled=0";
+
+        cpanelClient.updateNginx(false, "");
+
+        verify(httpClient, times(1)).execute(httpUriRequestArgumentCaptor.capture());
+        HttpUriRequest capturedReq = httpUriRequestArgumentCaptor.getValue();
+        Assert.assertEquals(expectedUri, capturedReq.getURI().toString());
+    }
+
+    @Test
+    public void callsCpanelEndpointToUpdateNginxWithUsername() throws CpanelAccessDeniedException, IOException {
+        String expectedUri = "https://" + hostname + ":2087"
+                + "/json-api/nginxmanager_set_cache_config?api.version=1&enabled=1&user=vpsdev";
+
+        cpanelClient.updateNginx(true, "vpsdev");
+
+        verify(httpClient, times(1)).execute(httpUriRequestArgumentCaptor.capture());
+        HttpUriRequest capturedReq = httpUriRequestArgumentCaptor.getValue();
+        Assert.assertEquals(expectedUri, capturedReq.getURI().toString());
+    }
+
     @Test(expected = CpanelAccessDeniedException.class)
     public void testAccessDenied() throws Exception {
         when(response.getStatusLine())
@@ -170,5 +206,4 @@ public class CpanelClientTest {
 
         client.listSites();
     }
-
 }

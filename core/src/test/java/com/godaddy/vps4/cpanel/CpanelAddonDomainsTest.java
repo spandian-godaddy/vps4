@@ -37,6 +37,7 @@ public class CpanelAddonDomainsTest {
     @Captor private ArgumentCaptor<String> passwordArgumentCaptor;
     @Captor private ArgumentCaptor<String> planArgumentCaptor;
     @Captor private ArgumentCaptor<String> emailArgumentCaptor;
+    @Captor private ArgumentCaptor<Boolean> enabledArgumentCaptor;
 
     long hfsVmId = 1234;
 
@@ -769,5 +770,43 @@ public class CpanelAddonDomainsTest {
         catch (RuntimeException e) {
             Assert.assertEquals("No cpanel packages present", e.getMessage());
         }
+    }
+
+    @Test
+    public void updateNginxUsesCpanelClient() throws Exception{
+        boolean enabled = true;
+        String returnVal = "{\"metadata\":{\"command\":\"nginxmanager_set_cache_config\",\"version\":1," +
+                "\"reason\":\"OK\",\"result\":1}}";
+        String username = "vpsdev";
+        when(cpClient.updateNginx(enabled, username)).thenReturn(returnVal);
+
+        service.updateNginx(hfsVmId, enabled, username);
+
+        verify(cpClient, times(1))
+                .updateNginx(enabledArgumentCaptor.capture(), usernameArgumentCaptor.capture());
+        Assert.assertEquals(enabled, enabledArgumentCaptor.getValue());
+        Assert.assertEquals(username, usernameArgumentCaptor.getValue());
+    }
+
+    @Test(expected = RuntimeException.class)
+    public void updateNginxNoMetadata() throws Exception {
+        boolean enabled = true;
+        String username = "vpsdev";
+        String returnVal = "{\"metadata\": null}";
+        when(cpClient.updateNginx(enabled, username)).thenReturn(returnVal);
+
+        service.updateNginx(hfsVmId, enabled, username);
+    }
+
+    @Test(expected = RuntimeException.class)
+    public void updateNginxResultNotOk() throws Exception {
+        boolean enabled = true;
+        String username = "vpsdev";
+        String reason = "no-workie";
+        String returnVal = "{\"metadata\":{\"result\":0,\"reason\":\"" + reason + "\", " +
+                "\"command\":\"nginxmanager_set_cache_config\",\"version\":1}}";
+        when(cpClient.updateNginx(enabled, username)).thenReturn(returnVal);
+
+        service.updateNginx(hfsVmId, enabled, username);
     }
 }

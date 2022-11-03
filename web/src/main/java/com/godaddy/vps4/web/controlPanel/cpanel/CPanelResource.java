@@ -2,9 +2,7 @@ package com.godaddy.vps4.web.controlPanel.cpanel;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.UUID;
 
 import javax.inject.Inject;
@@ -18,7 +16,12 @@ import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
 
 import com.godaddy.hfs.config.Config;
+import com.godaddy.vps4.cpanel.CPanelAccount;
 import com.godaddy.vps4.cpanel.CPanelAccountCacheStatus;
+import com.godaddy.vps4.cpanel.CPanelSession;
+import com.godaddy.vps4.cpanel.Vps4CpanelService;
+import com.godaddy.vps4.cpanel.UpdateNginxRequest;
+import com.godaddy.vps4.cpanel.CpanelInvalidUserException;
 import com.godaddy.vps4.orchestration.cpanel.Vps4InstallCPanelPackage;
 import com.godaddy.vps4.vm.ActionService;
 import com.godaddy.vps4.vm.ActionType;
@@ -26,16 +29,11 @@ import com.godaddy.vps4.vm.VmAction;
 import com.godaddy.vps4.web.security.GDUser;
 import com.godaddy.vps4.web.util.Commands;
 import gdg.hfs.orchestration.CommandService;
-import org.codehaus.jackson.Version;
 import org.json.simple.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.godaddy.vps4.cpanel.CPanelAccount;
-import com.godaddy.vps4.cpanel.CPanelSession;
 import com.godaddy.vps4.cpanel.CpanelClient.CpanelServiceType;
-import com.godaddy.vps4.cpanel.CpanelInvalidUserException;
-import com.godaddy.vps4.cpanel.Vps4CpanelService;
 import com.godaddy.vps4.vm.Image.ControlPanel;
 import com.godaddy.vps4.vm.VirtualMachine;
 import com.godaddy.vps4.web.Vps4Api;
@@ -287,6 +285,18 @@ public class CPanelResource {
         Commands.execute(commandService, actionService, "Vps4InstallCPanelPackage", installPackageReq);
 
         return new VmAction(actionService.getAction(actionId), user.isEmployee());
+    }
+
+    @POST
+    @Path("/{vmId}/cpanel/updateNginx")
+    public void updateNginx(@PathParam("vmId") UUID vmId, UpdateNginxRequest updateNginxRequest) {
+        VirtualMachine vm = resolveVirtualMachine(vmId);
+        try {
+            cpanelService.updateNginx(vm.hfsVmId, updateNginxRequest.enabled, updateNginxRequest.username);
+        } catch (Exception e) {
+            logger.warn("Could not enabled NGiNX for vmId {} , username {}, Exception: {} ", vmId, updateNginxRequest.username, e);
+            throw new Vps4Exception("UPDATE_NGINX_FAILED", e.getMessage(), e);
+        }
     }
 
     private VirtualMachine resolveVirtualMachine(UUID vmId) {

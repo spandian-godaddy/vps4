@@ -251,6 +251,11 @@ public class DefaultVps4CpanelService implements Vps4CpanelService {
 
     private <T> T handleCpanelCall(String callName, CpanelCall callFn, SuccessHandler<T> successHandler,
                                    ErrorHandler errorHandler) throws CpanelAccessDeniedException, IOException {
+        return handleCpanelCall(callName, false, callFn, successHandler, errorHandler);
+    }
+
+    private <T> T handleCpanelCall(String callName, boolean hasNoResponseData, CpanelCall callFn, SuccessHandler<T> successHandler,
+                                   ErrorHandler errorHandler) throws CpanelAccessDeniedException, IOException {
 
         try {
             String response = callFn.handle();
@@ -259,6 +264,9 @@ public class DefaultVps4CpanelService implements Vps4CpanelService {
             JSONParser parser = new JSONParser();
             JSONObject responseJson = (JSONObject) parser.parse(response);
             if (didCallSucceed(responseJson)) {
+                if (hasNoResponseData) {
+                    return successHandler.handle(responseJson);
+                }
                 JSONObject data = (JSONObject) responseJson.get("data");
                 if (data != null) {
                     return successHandler.handle(data);
@@ -441,6 +449,24 @@ public class DefaultVps4CpanelService implements Vps4CpanelService {
                         throw new RuntimeException("WHM list package failed due to reason: " + reason);
                     }
                 );
+        });
+    }
+
+    @Override
+    public String updateNginx(long hfsVmId, boolean enabled, String user)
+        throws CpanelAccessDeniedException, CpanelTimeoutException {
+        return withAccessHash(hfsVmId, cPanelClient -> {
+            // https://api.docs.cpanel.net/openapi/whm/operation/nginxmanager_set_cache_config/
+            return handleCpanelCall(
+                    "updateNginx", true,
+                    () -> cPanelClient.updateNginx(enabled, user),
+                    dataJson -> {
+                        return null;
+                    },
+                    reason -> {
+                        throw new RuntimeException("Update NGiNX failed due to reason: " + reason);
+                    }
+            );
         });
     }
 }

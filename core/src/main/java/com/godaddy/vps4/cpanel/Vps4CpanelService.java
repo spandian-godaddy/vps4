@@ -40,4 +40,6 @@ public interface Vps4CpanelService {
     List<CPanelAccountCacheStatus> getNginxCacheConfig(long hfsVmId)
             throws CpanelAccessDeniedException, CpanelTimeoutException;
 
-    }
+    String updateNginx(long hfsVmId, boolean enabled, String user)
+            throws CpanelAccessDeniedException, CpanelTimeoutException, IOException;
+}

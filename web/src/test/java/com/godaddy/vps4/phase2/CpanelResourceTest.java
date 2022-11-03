@@ -7,6 +7,7 @@ import com.godaddy.vps4.cpanel.CpanelAccessDeniedException;
 import com.godaddy.vps4.cpanel.CpanelInvalidUserException;
 import com.godaddy.vps4.cpanel.CpanelTimeoutException;
 import com.godaddy.vps4.cpanel.Vps4CpanelService;
+import com.godaddy.vps4.cpanel.UpdateNginxRequest;
 import com.godaddy.vps4.security.GDUserMock;
 import com.godaddy.vps4.vm.Action;
 import com.godaddy.vps4.vm.ActionService;
@@ -14,7 +15,6 @@ import com.godaddy.vps4.vm.ActionStatus;
 import com.godaddy.vps4.vm.ActionType;
 import com.godaddy.vps4.vm.Image;
 import com.godaddy.vps4.vm.VirtualMachine;
-import com.godaddy.vps4.vm.VmAction;
 import com.godaddy.vps4.web.Vps4Exception;
 import com.godaddy.vps4.web.controlPanel.cpanel.CPanelResource;
 import com.godaddy.vps4.web.security.GDUser;
@@ -87,7 +87,7 @@ public class CpanelResourceTest {
     private CPanelResource getcPanelResource() {
         return new CPanelResource(vmResource, vps4CpanelService, actionService, commandService, user, config);
     }
-    
+
     private VirtualMachine createTestVm(String imageName, Image.ControlPanel controlPanel) {
         VirtualMachine vm = new VirtualMachine();
         vm.hfsVmId = 1234;
@@ -423,5 +423,26 @@ public class CpanelResourceTest {
         } catch (Vps4Exception e) {
             Assert.assertEquals("CONFLICTING_INCOMPLETE_ACTION", e.getId());
         }
+    }
+
+    // Enable or disable NGiNX
+    @Test
+    public void updateNginxCallsCpanelService() {
+        UpdateNginxRequest req = new UpdateNginxRequest();
+        req.username = "vpsdev";
+        req.enabled = true;
+
+        getcPanelResource().updateNginx(vm.vmId, req);
+    }
+
+    @Test(expected = Vps4Exception.class)
+    public void updateNginxThrowsException() throws Exception {
+        UpdateNginxRequest req = new UpdateNginxRequest();
+        req.username = "vpsdev";
+        req.enabled = true;
+
+        when(vps4CpanelService.updateNginx(vm.hfsVmId, true, req.username)).thenThrow(new RuntimeException());
+
+        getcPanelResource().updateNginx(vm.vmId, req);
     }
 }
