@@ -35,6 +35,7 @@ public class SsoRequestAuthenticator implements RequestAuthenticator<GDUser> {
     private final String CSR = "CSR";
     private final String MEDIA_TEMPLE_CS = "Media Temple - CS";
     private final String MIGRATION_TOOL = "Migration-Engine-SG";
+    private final String CSM = "CSM";
 
     private final SsoTokenExtractor tokenExtractor;
     private Config config;
@@ -128,7 +129,8 @@ public class SsoRequestAuthenticator implements RequestAuthenticator<GDUser> {
         } if (groups.contains(HOSTING_OPERATIONS) ||
                 groups.contains(LEGAL) ||
                 groups.contains(DIGITAL_CRIMES_UNIT) ||
-                groups.contains(CHARGEBACK)) {
+                groups.contains(CHARGEBACK) ||
+                groups.contains(CSM)) {
             userRoles.add(Role.SUSPEND_AUTH);
         } if (groups.contains(C3_HOSTING_SUPPORT) ||
                 groups.contains(MEDIA_TEMPLE_CS)) {
