@@ -26,7 +26,7 @@ pipeline {
                                         + '--shopper "${SHOPPER_CREDS_USR}" --password "${SHOPPER_CREDS_PSW}" '
                                         + "--sso-url 'https://sso.${API_ENV}-godaddy.com/v1/api/token' "
                                         + '--admin "${ADMIN_CREDS_USR}" --admin-pass "${ADMIN_CREDS_PSW}" '
-                                        + "--max-vms 28 --pool-size 1 --vm-timeout 7200 "
+                                        + "--max-vms 28 --pool-size 3 --vm-timeout 7200 "
                                         + "${env.ALL_OH_IMAGES.toBoolean() ? '--all-oh-images' : ''} "
                                         + "--images '${env.ADDITIONAL_IMAGES}' "
                                         + "2>&1 | tee daily_phase3_${BUILD_NUMBER}.log",
