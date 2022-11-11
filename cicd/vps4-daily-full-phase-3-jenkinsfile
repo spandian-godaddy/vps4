@@ -29,6 +29,7 @@ pipeline {
                                         + "--max-vms 28 --pool-size ${VM_COUNT} --vm-timeout 7200 "
                                         + "${env.ALL_OH_IMAGES.toBoolean() ? '--all-oh-images' : ''} "
                                         + "--images '${env.ADDITIONAL_IMAGES}' "
+                                        + "--tests-to-run '${TESTS_TO_RUN}'"
                                         + "2>&1 | tee daily_phase3_${BUILD_NUMBER}.log",
                                 returnStatus: true
                         )

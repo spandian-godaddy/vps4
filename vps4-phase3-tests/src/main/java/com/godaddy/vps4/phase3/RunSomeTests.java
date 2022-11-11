@@ -61,7 +61,9 @@ public class RunSomeTests {
         int maxVmWaitSeconds = Integer.parseInt(cmd.getOptionValue("vm-timeout"));
         int dcId = Integer.parseInt(cmd.getOptionValue("dc-id", "1"));
 
-        boolean smokeTest = Boolean.parseBoolean(cmd.getOptionValue("smoke-test", "false"));
+        String testsArg = cmd.getOptionValue("tests-to-run",
+                "ChangeHostnameTest,StopStartVmTest,SnapshotTest,SetPasswordTest,AddSupportUserTest,EnableDisableAdminTest,ConsoleUrlTest,GetServerActionsTest,ActivationTest,AddMonitoringTest,NetworkConnectivityTest");
+        String[] testsInput = testsArg.split(",");
 
         SsoClient ssoClient = new SsoClient(ssoUrl);
 
@@ -89,22 +91,7 @@ public class RunSomeTests {
                                                            threadPool,
                                                            dcId);
 
-        List<VmTest> tests = Arrays.asList(
-                new ChangeHostnameTest(randomHostname()),
-                new StopStartVmTest(),
-                new SnapshotTest(),
-                new SetPasswordTest(randomPassword(14)),
-                new AddSupportUserTest(),
-                new EnableDisableAdminTest(),
-                new ConsoleUrlTest(),
-                new GetServerActionsTest(),
-                new ActivationTest(),
-                new AddMonitoringTest(),
-                new NetworkConnectivityTest());
-
-        if (smokeTest) {
-            tests = Collections.singletonList(new ChangeHostnameTest(randomHostname()));
-        }
+        List<VmTest> tests = MapInputToTests(testsInput);
 
         TestGroup vps4 = new TestGroup("VPS4 Phase3 Tests");
 
@@ -138,6 +125,50 @@ public class RunSomeTests {
 
         vmPool.destroyAll();
         printResults(testGroupExecution);
+    }
+
+    private static List<VmTest> MapInputToTests(String[] testsInput) {
+        List<VmTest> tests = new ArrayList<>();
+
+        for (String test : testsInput) {
+            switch (test) {
+                case "ChangeHostnameTest":
+                    tests.add(new ChangeHostnameTest(randomHostname()));
+                    break;
+                case "StopStartVmTest":
+                    tests.add(new StopStartVmTest());
+                    break;
+                case "SnapshotTest":
+                    tests.add(new SnapshotTest());
+                    break;
+                case "SetPasswordTest":
+                    tests.add(new SetPasswordTest(randomPassword(14)));
+                    break;
+                case "AddSupportUserTest":
+                    tests.add(new AddSupportUserTest());
+                    break;
+                case "EnableDisableAdminTest":
+                    tests.add(new EnableDisableAdminTest());
+                    break;
+                case "ConsoleUrlTest":
+                    tests.add(new ConsoleUrlTest());
+                    break;
+                case "GetServerActionsTest":
+                    tests.add(new GetServerActionsTest());
+                    break;
+                case "ActivationTest":
+                    tests.add(new ActivationTest());
+                    break;
+                case "AddMonitoringTest":
+                    tests.add(new AddMonitoringTest());
+                    break;
+                case "NetworkConnectivityTest":
+                    tests.add(new NetworkConnectivityTest());
+                    break;
+            }
+        }
+
+        return tests;
     }
 
     private static void deleteAnyExistingVms(Vps4ApiClient vps4ApiClient) {
@@ -193,10 +224,10 @@ public class RunSomeTests {
         options.addOption( "m", "max-vms", true, "maximum number of vms to create");
         options.addOption( "p", "pool-size", true, "maximum number of vms per image type");
         options.addOption( "t", "vm-timeout", true, "maximum time in seconds a test will wait for a VM");
-        options.addOption( "b", "smoke-test", true, "only run a smoke test");
         options.addOption( "d", "dc-id", true, "the id of the dc in which the phase3 tests are being run");
         options.addOption( null, "all-oh-images", false, "automatically include all active OH images");
         options.addOption( "i", "images", true, "additional hfs images to test");
+        options.addOption("r", "tests-to-run", true, "tests to run");
 
         CommandLine cmd = parser.parse(options, args);
         for (Option option : cmd.getOptions())

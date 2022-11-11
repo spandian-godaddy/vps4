@@ -5,7 +5,7 @@
 These build jobs run basic phase3 tests on a single image in VPS4 **N3, SG2, A2 and P3 environments** respectively.
 3. Full suite of phase3 tests run daily by [daily_full_stage](https://vps4.jenkins.int.godaddy.com/job/daily_full_stage/) Jenkins job. This job runs around 2am MST daily (load balanced in Jenkins). And it runs all existing phase3 tests against a wide range of images (as of Feb 11 2021: all OpenStack images, all OptimizedHosting images, and a random OVH image are tested) in VPS4 **Stage environment**.
 
-* Note that (1) and (2) only run basic "smoke test" (passed by the "--smoke-test true" option), which is the *ChangeHostnameTest*. However, (3) runs the full suite of tests which are part of the [critical use cases](https://confluence.godaddy.com/display/HOSTING/VPS4+Critical+Use+Cases).
+* Note that (1) and (2) only run basic "smoke test" by only executing the *ChangeHostnameTest*. However, (3) runs the full suite of tests which are part of the [critical use cases](https://confluence.godaddy.com/display/HOSTING/VPS4+Critical+Use+Cases).
 * Also note that (1) and (3) are using the shopper ID **196569383**, but (2) uses a different shopper ID **227572632**.  The service account **SVCM2AbYa3jVxBHWa** is used for tests that require DEV-VPS4 privileges.
 
 ## Phase3 Tests Overview

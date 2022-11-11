@@ -67,9 +67,8 @@ public class SnapshotTest implements VmTest {
             logger.debug("Wait for ENABLE_ADMIN on vm {}, via action id: {}", vm.vmId, enableAdminActionId);
             vps4Client.pollForVmActionComplete(vm.vmId, enableAdminActionId, TROUBLESHOOT_TIMEOUT_SECONDS);
         }
-        logger.debug("Verify remote connection success after restoring snapshot {} on vm {}", snapshotId, vm.vmId);
-        Vps4RemoteAccessClient client = vm.remote();
-        assert(client.checkConnection());
+        logger.debug("Verify agent connection success after restoring snapshot {} on vm {}", snapshotId, vm.vmId);
+        vps4Client.pollForVmAgentStatusOK(vm.vmId, TROUBLESHOOT_TIMEOUT_SECONDS);
     }
     
     @Override
