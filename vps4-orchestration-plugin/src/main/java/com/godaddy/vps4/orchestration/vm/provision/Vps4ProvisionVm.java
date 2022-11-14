@@ -187,11 +187,19 @@ public class Vps4ProvisionVm extends ActionCommand<ProvisionRequest, Vps4Provisi
         req.vmId = vps4VmId;
         req.backupName = config.get("vps4.autobackup.backupName");
         req.shopperId = shopperId;
-        UUID backupJobId = context.execute(SetupAutomaticBackupSchedule.class, req);
-        context.execute("AddBackupJobIdToVM", ctx -> {
-            virtualMachineService.setBackupJobId(vps4VmId, backupJobId);
-            return null;
-        }, Void.class);
+        try {
+            UUID backupJobId = context.execute(SetupAutomaticBackupSchedule.class, req);
+            context.execute("AddBackupJobIdToVM", ctx -> {
+                virtualMachineService.setBackupJobId(vps4VmId, backupJobId);
+                return null;
+            }, Void.class);
+
+        } catch (RuntimeException e) {
+            // Don't fail a vm provisioning just because we couldn't create an auto backup schedule.
+            // Note that by removing this try catch block it will fail provisions of Openstack servers locally.
+            // TODO: Should this behaviour be changed?
+            logger.error("Automatic backup job creation failed {}", e);
+        }
     }
 
     protected void generateAndSetHostname(long hfsVmId, String ipAddress, String resourceId) {
