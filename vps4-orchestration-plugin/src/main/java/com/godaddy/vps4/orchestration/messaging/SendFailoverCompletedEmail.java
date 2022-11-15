@@ -29,11 +29,11 @@ public class SendFailoverCompletedEmail extends SendMessagingEmailBase implement
 
     @Override
     public String execute(CommandContext context, FailOverEmailRequest emailRequest) {
-        logger.info("Sending SystemDownFailoverEmail for customerId {}", emailRequest.customerId);
-        String messageId = context.execute("SendFailoverCompletedEmail-" + emailRequest.customerId,
-                ctx -> messagingService.sendFailoverCompletedEmail(emailRequest.customerId, emailRequest.accountName, emailRequest.isManaged),
+        logger.info("Sending SystemDownFailoverEmail for shopper {}", emailRequest.shopperId);
+        String messageId = context.execute("SendFailoverCompletedEmail-" + emailRequest.shopperId,
+                ctx -> messagingService.sendFailoverCompletedEmail(emailRequest.shopperId, emailRequest.accountName, emailRequest.isManaged),
                 String.class);
-        this.waitForMessageComplete(context, messageId, emailRequest.customerId);
+        this.waitForMessageComplete(context, messageId, emailRequest.shopperId);
         return messageId;
     }
 }

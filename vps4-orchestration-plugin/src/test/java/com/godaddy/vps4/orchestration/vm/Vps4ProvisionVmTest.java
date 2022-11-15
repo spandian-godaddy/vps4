@@ -115,7 +115,6 @@ public class Vps4ProvisionVmTest {
     String shopperId;
     int diskGib;
     UUID orionGuid = UUID.randomUUID();
-    UUID customerId = UUID.randomUUID();
     long hfsVmId = 42;
     VmAction vmAction;
     Vm hfsVm;
@@ -169,7 +168,6 @@ public class Vps4ProvisionVmTest {
         request.serverName = expectedServerName;
         request.orionGuid = orionGuid;
         request.privateLabelId = "1";
-        request.customerId = customerId;
 
         String messagedId = UUID.randomUUID().toString();
         when(sendSetupCompletedEmail.execute(any(CommandContext.class), any(SetupCompletedEmailRequest.class)))
@@ -266,7 +264,7 @@ public class Vps4ProvisionVmTest {
         assertEquals(expectedServerName, capturedRequest.serverName);
         assertEquals(primaryIp.address, capturedRequest.ipAddress);
         assertEquals(orionGuid, capturedRequest.orionGuid);
-        assertEquals(customerId, capturedRequest.customerId);
+        assertEquals(shopperId, capturedRequest.shopperId);
         assertEquals(vmInfo.isManaged, capturedRequest.isManaged);
     }
 

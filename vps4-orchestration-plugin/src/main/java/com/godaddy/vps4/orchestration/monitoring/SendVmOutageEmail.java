@@ -55,42 +55,42 @@ public class SendVmOutageEmail extends SendMessagingEmailBase implements Command
         String messageId;
         if (emailAlertForMetricIsEnabled(req.vmId, metricMetadata.metric.toString())) {
             if(metricMetadata.metadata.size() == 1 && metricMetadata.metadata.get(0).equals(SSL_EXPIRING_WARNING)) {
-                logger.warn("SSL Expiring Warning detected - no outage emails sent for customer id {}, vm id {}.", req.customerId,
+                logger.warn("SSL Expiring Warning detected - no outage emails sent for shopper id {}, vm id {}.", req.shopperId,
                 req.vmId);
                 return;
             }
 
             messageId = context.execute("SendVmOutageEmail-" + metricMetadata.metric,
                         ctx -> messagingService
-                                .sendServicesDownEmail(req.customerId, req.accountName, req.ipAddress, req.orionGuid,
+                                .sendServicesDownEmail(req.shopperId, req.accountName, req.ipAddress, req.orionGuid,
                                         metricDomain, req.vmOutage.started, req.managed),
                         String.class);
 
             if (messageId != null) {
                 context.execute("WaitForMessageComplete-" + metricMetadata.metric, ctx -> {
-                    waitForMessageComplete(ctx, messageId, req.customerId);
+                    waitForMessageComplete(ctx, messageId, req.shopperId);
                     return null;
                 }, Void.class);
             } else {
-                logger.warn("No outage email sent, message id was null for customer id {}, vm id {}.", req.customerId,
+                logger.warn("No outage email sent, message id was null for shopper id {}, vm id {}.", req.shopperId,
                         req.vmId);
             }
         } else {
             logger.info(
-                    "No emails will be sent since email alert for metric {} is disabled for customer id {}, vm id {}.",
-                    req.vmOutage.toString(), req.customerId, req.vmId);
+                    "No emails will be sent since email alert for metric {} is disabled for shopper id {}, vm id {}.",
+                    req.vmOutage.toString(), req.shopperId, req.vmId);
         }
     }
 
     private void executeForMetric(CommandContext context, VmOutageEmailRequest req, VmMetric metric) {
-        logger.info("Sending outage email for customer {} and vm {}", req.customerId, req.vmId);
+        logger.info("Sending outage email for shopper {} and vm {}", req.shopperId, req.vmId);
         String messageId;
         if (emailAlertForMetricIsEnabled(req.vmId, metric.toString())) {
             switch (metric) {
                 case PING:
                     messageId = context.execute("SendVmOutageEmail-" + metric,
                             ctx -> messagingService
-                                    .sendUptimeOutageEmail(req.customerId, req.accountName, req.ipAddress, req.orionGuid,
+                                    .sendUptimeOutageEmail(req.shopperId, req.accountName, req.ipAddress, req.orionGuid,
                                             req.vmOutage.started, req.managed),
                             String.class);
                     break;
@@ -104,7 +104,7 @@ public class SendVmOutageEmail extends SendMessagingEmailBase implements Command
 
                     messageId = context.execute("SendVmOutageEmail-" + metric,
                             ctx -> messagingService
-                                    .sendServerUsageOutageEmail(req.customerId, req.accountName, req.ipAddress,
+                                    .sendServerUsageOutageEmail(req.shopperId, req.accountName, req.ipAddress,
                                                                 req.orionGuid, metric.name(), percent,
                                                                 req.vmOutage.started, req.managed),
                             String.class);
@@ -117,7 +117,7 @@ public class SendVmOutageEmail extends SendMessagingEmailBase implements Command
                 case POP3:
                     messageId = context.execute("SendVmOutageEmail-" + metric,
                             ctx -> messagingService
-                                    .sendServicesDownEmail(req.customerId, req.accountName, req.ipAddress, req.orionGuid,
+                                    .sendServicesDownEmail(req.shopperId, req.accountName, req.ipAddress, req.orionGuid,
                                             metric.name(), req.vmOutage.started, req.managed),
                             String.class);
                     break;
@@ -127,23 +127,23 @@ public class SendVmOutageEmail extends SendMessagingEmailBase implements Command
                     return;
                 case UNKNOWN:
                 default:
-                    logger.warn("Could not determine metric type, no outage email sent for customer id {}, vm id {}.",
-                            req.customerId, req.vmId);
+                    logger.warn("Could not determine metric type, no outage email sent for shopper id {}, vm id {}.",
+                            req.shopperId, req.vmId);
                     return;
             }
             if (messageId != null) {
                 context.execute("WaitForMessageComplete-" + metric, ctx -> {
-                    waitForMessageComplete(ctx, messageId, req.customerId);
+                    waitForMessageComplete(ctx, messageId, req.shopperId);
                     return null;
                 }, Void.class);
             } else {
-                logger.warn("No outage email sent, message id was null for customer id {}, vm id {}.", req.customerId,
+                logger.warn("No outage email sent, message id was null for shopper id {}, vm id {}.", req.shopperId,
                         req.vmId);
             }
         } else {
             logger.info(
-                    "No emails will be sent since email alert for metric {} is disabled for customer id {}, vm id {}.",
-                    req.vmOutage.toString(), req.customerId, req.vmId);
+                    "No emails will be sent since email alert for metric {} is disabled for shopper id {}, vm id {}.",
+                    req.vmOutage.toString(), req.shopperId, req.vmId);
         }
     }
 

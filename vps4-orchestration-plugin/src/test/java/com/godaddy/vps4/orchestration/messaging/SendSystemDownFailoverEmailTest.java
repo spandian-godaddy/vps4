@@ -40,13 +40,13 @@ public class SendSystemDownFailoverEmailTest {
     public void setupTest() {
         request = new FailOverEmailRequest();
         request.accountName = "vmname";
-        request.customerId = UUID.randomUUID();
+        request.shopperId = "shopperid";
         request.isManaged = false;
         messageId = UUID.randomUUID().toString();
         Message message = mock(Message.class);
         message.status = Message.Statuses.SUCCESS.toString();
 
-        when(messagingService.sendSystemDownFailoverEmail(request.customerId, "vmname", false)).thenReturn(messageId);
+        when(messagingService.sendSystemDownFailoverEmail("shopperid", "vmname", false)).thenReturn(messageId);
         when(messagingService.getMessageById(messageId)).thenReturn(message);
     }
 
@@ -59,7 +59,7 @@ public class SendSystemDownFailoverEmailTest {
     @Test
     public void testCallsMessagingServiceToSendEmail() {
         command.execute(context, request);
-        verify(messagingService, times(1)).sendSystemDownFailoverEmail(request.customerId, "vmname", false);
+        verify(messagingService, times(1)).sendSystemDownFailoverEmail("shopperid", "vmname", false);
     }
 
     @Test

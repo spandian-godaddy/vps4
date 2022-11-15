@@ -3,9 +3,6 @@ package com.godaddy.vps4.consumer;
 import java.util.ArrayList;
 import java.util.List;
 
-import com.godaddy.vps4.cache.HazelcastCacheModule;
-import com.godaddy.vps4.customer.CustomerModule;
-import com.godaddy.vps4.sso.Vps4SsoModule;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -44,7 +41,6 @@ public class Vps4ConsumerInjector {
         modules.add(binder -> {
             binder.requireExplicitBindings();
         });
-        modules.add(new HazelcastCacheModule());
         modules.add(new ObjectMapperModule());
 
         if (System.getProperty("vps4.hfs.mock", "false").equals("true")) {
@@ -72,8 +68,6 @@ public class Vps4ConsumerInjector {
         modules.add(new DatabaseModule());
         modules.add(new CreditModule());
         modules.add(new PanoptaDataModule());
-        modules.add(new Vps4SsoModule());
-        modules.add(new CustomerModule());
 
         logger.info("Orchestration engine clustered: {}", isOrchestrationEngineClustered);
         if (isOrchestrationEngineClustered) {

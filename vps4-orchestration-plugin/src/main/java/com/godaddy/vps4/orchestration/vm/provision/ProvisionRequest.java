@@ -8,7 +8,6 @@ import com.godaddy.vps4.vm.ProvisionVmInfo;
 public class ProvisionRequest extends VmActionRequest {
     public ProvisionVmInfo vmInfo;
     public String shopperId;
-    public UUID customerId;
     public String serverName;
     public byte[] encryptedPassword;
     public UUID orionGuid;

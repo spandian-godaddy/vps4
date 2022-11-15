@@ -275,8 +275,7 @@ public class VmResource {
                                        provisionRequest.orionGuid,
                                        encryptedPassword,
                                        vmCredit.getResellerId(),
-                                       zone,
-                                       vmCredit.getCustomerId());
+                                       zone);
 
         String provisionClassName = virtualMachine.spec.serverType.platform.getProvisionCommand();
 
@@ -321,8 +320,7 @@ public class VmResource {
                                                     UUID orionGuid,
                                                     byte[] encryptedPassword,
                                                     String resellerId,
-                                                    String zone,
-                                                    UUID customerId) {
+                                                    String zone) {
         ProvisionRequest request = new ProvisionRequest();
         request.image_name = image;
         request.username = username;
@@ -335,7 +333,6 @@ public class VmResource {
         request.encryptedPassword = encryptedPassword;
         request.zone = zone;
         request.privateLabelId = resellerId;
-        request.customerId = customerId;
         return request;
     }
 

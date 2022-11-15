@@ -44,7 +44,7 @@ public class SendVmOutageResolvedEmailTest {
     VmMetricAlert vmMetricAlert = new VmMetricAlert();
     CommandContext context = mock(CommandContext.class);
     String fakeMessageId = "fake-message-id";
-    UUID fakeCustomerId = UUID.randomUUID();
+    String fakeShopperId = "fake-shopper-id";
     String fakeAccountName = "fake-account-name";
     String fakeIpAddress = "127.0.0.1";
     UUID fakeOrionGuid = UUID.randomUUID();
@@ -61,7 +61,7 @@ public class SendVmOutageResolvedEmailTest {
         Instant started = Instant.now();
         Instant ended = Instant.now();
         vmOutageEmailRequest.managed = true;
-        vmOutageEmailRequest.customerId = fakeCustomerId;
+        vmOutageEmailRequest.shopperId = fakeShopperId;
         vmOutageEmailRequest.vmId = fakeVmId;
         vmOutageEmailRequest.accountName = fakeAccountName;
         vmOutageEmailRequest.ipAddress = fakeIpAddress;
@@ -81,7 +81,7 @@ public class SendVmOutageResolvedEmailTest {
         when(vmAlertService.getVmMetricAlert(any(UUID.class), anyString())).thenReturn(vmMetricAlert);
         when(context.execute(anyString(), any(Function.class), any())).thenReturn(fakeMessageId);
         when(vps4MessagingService
-                     .sendUptimeOutageResolvedEmail(eq(fakeCustomerId), eq(fakeAccountName), eq(fakeIpAddress),
+                     .sendUptimeOutageResolvedEmail(eq(fakeShopperId), eq(fakeAccountName), eq(fakeIpAddress),
                                                     eq(fakeOrionGuid), any(Instant.class), eq(true)))
                 .thenReturn(fakeMessageId);
         command.execute(context, vmOutageEmailRequest);
@@ -102,7 +102,7 @@ public class SendVmOutageResolvedEmailTest {
         String fakeResourceName = VmMetric.CPU.name();
         when(context.execute(anyString(), any(Function.class), any())).thenReturn(fakeMessageId);
         when(vps4MessagingService
-                     .sendUsageOutageResolvedEmail(eq(fakeCustomerId), eq(fakeAccountName), eq(fakeIpAddress),
+                     .sendUsageOutageResolvedEmail(eq(fakeShopperId), eq(fakeAccountName), eq(fakeIpAddress),
                                                    eq(fakeOrionGuid), eq(fakeResourceName), any(Instant.class),
                                                    eq(true)))
                 .thenReturn(fakeMessageId);
@@ -124,7 +124,7 @@ public class SendVmOutageResolvedEmailTest {
         String fakeResourceName = VmMetric.FTP.name();
         when(context.execute(anyString(), any(Function.class), any())).thenReturn(fakeMessageId);
         when(vps4MessagingService
-                .sendServiceOutageResolvedEmail(eq(fakeCustomerId), eq(fakeAccountName), eq(fakeIpAddress),
+                .sendServiceOutageResolvedEmail(eq(fakeShopperId), eq(fakeAccountName), eq(fakeIpAddress),
                         eq(fakeOrionGuid), eq(fakeResourceName), any(Instant.class),
                         eq(true))).thenReturn(fakeMessageId);
         command.execute(context, vmOutageEmailRequest);
@@ -148,7 +148,7 @@ public class SendVmOutageResolvedEmailTest {
 
         when(context.execute(anyString(), any(Function.class), any())).thenReturn(fakeMessageId);
         when(vps4MessagingService
-                     .sendServiceOutageResolvedEmail(eq(fakeCustomerId), eq(fakeAccountName), eq(fakeIpAddress),
+                     .sendServiceOutageResolvedEmail(eq(fakeShopperId), eq(fakeAccountName), eq(fakeIpAddress),
                                                      eq(fakeOrionGuid), eq("HTTP (domainfake.here)"), any(Instant.class),
                                                      eq(true))).thenReturn(fakeMessageId);
         command.execute(context, vmOutageEmailRequest);
@@ -172,7 +172,7 @@ public class SendVmOutageResolvedEmailTest {
 
         when(context.execute(anyString(), any(Function.class), any())).thenReturn(fakeMessageId);
         when(vps4MessagingService
-                .sendServiceOutageResolvedEmail(eq(fakeCustomerId), eq(fakeAccountName), eq(fakeIpAddress),
+                .sendServiceOutageResolvedEmail(eq(fakeShopperId), eq(fakeAccountName), eq(fakeIpAddress),
                         eq(fakeOrionGuid), eq("HTTPS (domainfake.here)"), any(Instant.class),
                         eq(true))).thenReturn(fakeMessageId);
         command.execute(context, vmOutageEmailRequest);
@@ -198,7 +198,7 @@ public class SendVmOutageResolvedEmailTest {
 
         when(context.execute(anyString(), any(Function.class), any())).thenReturn(fakeMessageId);
         when(vps4MessagingService
-                .sendServiceOutageResolvedEmail(eq(fakeCustomerId), eq(fakeAccountName), eq(fakeIpAddress),
+                .sendServiceOutageResolvedEmail(eq(fakeShopperId), eq(fakeAccountName), eq(fakeIpAddress),
                         eq(fakeOrionGuid), eq("HTTPS (domainfake.here)"), any(Instant.class),
                         eq(true))).thenReturn(fakeMessageId);
         command.execute(context, vmOutageEmailRequest);
@@ -222,7 +222,7 @@ public class SendVmOutageResolvedEmailTest {
 
         when(context.execute(anyString(), any(Function.class), any())).thenReturn(fakeMessageId);
         when(vps4MessagingService
-                .sendServiceOutageResolvedEmail(eq(fakeCustomerId), eq(fakeAccountName), eq(fakeIpAddress),
+                .sendServiceOutageResolvedEmail(eq(fakeShopperId), eq(fakeAccountName), eq(fakeIpAddress),
                         eq(fakeOrionGuid), eq("HTTPS (domainfake.here)"), any(Instant.class),
                         eq(true))).thenReturn(fakeMessageId);
         command.execute(context, vmOutageEmailRequest);
@@ -241,7 +241,7 @@ public class SendVmOutageResolvedEmailTest {
         command.execute(context, vmOutageEmailRequest);
 
         verify(context, never())
-                .execute(eq("SendVmOutageResolvedEmail-" + fakeCustomerId), any(Function.class),
+                .execute(eq("SendVmOutageResolvedEmail-" + fakeShopperId), any(Function.class),
                          eq(String.class));
     }
 

@@ -21,8 +21,6 @@ chmod +x ./get_config_from_aws.sh;
 ./get_config_from_aws.sh $ACCESS_KEY_ID $SECRET_ACCESS_KEY $ROLE 'vps4_end_web_consumerclient.key' $ENV;
 ./get_config_from_aws.sh $ACCESS_KEY_ID $SECRET_ACCESS_KEY $ROLE 'vps4_end_web_schedulerclient.crt' $ENV;
 ./get_config_from_aws.sh $ACCESS_KEY_ID $SECRET_ACCESS_KEY $ROLE 'vps4_end_web_schedulerclient.key' $ENV;
-./get_config_from_aws.sh $ACCESS_KEY_ID $SECRET_ACCESS_KEY $ROLE 'vps4.customer.crt' $ENV;
-./get_config_from_aws.sh $ACCESS_KEY_ID $SECRET_ACCESS_KEY $ROLE 'vps4.customer.key' $ENV;
 #base scheduler config
 ./get_config_from_aws.sh $ACCESS_KEY_ID $SECRET_ACCESS_KEY $ROLE 'config.properties' 'base' 'scheduler';
 #dev scheduler config

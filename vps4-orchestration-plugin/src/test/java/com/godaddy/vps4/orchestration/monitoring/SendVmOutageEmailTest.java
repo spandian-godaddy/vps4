@@ -44,10 +44,10 @@ public class SendVmOutageEmailTest {
     VmOutage vmOutage = new VmOutage();
     VmMetricAlert vmMetricAlert = new VmMetricAlert();
     String fakeMessageId = "fake-message-id";
+    String fakeShopperId = "fake-shopper-id";
     String fakeAccountName = "fake-account-name";
     String fakeIpAddress = "127.0.0.1";
     UUID fakeOrionGuid = UUID.randomUUID();
-    UUID fakeCustomerId = UUID.randomUUID();
     String fakeReason = "fake-reason";
     UUID fakeVmId = UUID.randomUUID();
 
@@ -61,7 +61,7 @@ public class SendVmOutageEmailTest {
         Instant started = Instant.now();
         Instant ended = Instant.now();
         vmOutageEmailRequest.managed = true;
-        vmOutageEmailRequest.customerId = fakeCustomerId;
+        vmOutageEmailRequest.shopperId = fakeShopperId;
         vmOutageEmailRequest.vmId = fakeVmId;
         vmOutageEmailRequest.accountName = fakeAccountName;
         vmOutageEmailRequest.ipAddress = fakeIpAddress;
@@ -87,7 +87,7 @@ public class SendVmOutageEmailTest {
         vmOutageEmailRequest.vmOutage.metrics = Collections.singleton(VmMetric.PING);
         vmMetricAlert.status = VmMetricAlert.Status.ENABLED;
         when(vps4MessagingService
-                .sendUptimeOutageEmail(eq(fakeCustomerId), eq(fakeAccountName), eq(fakeIpAddress), eq(fakeOrionGuid),
+                .sendUptimeOutageEmail(eq(fakeShopperId), eq(fakeAccountName), eq(fakeIpAddress), eq(fakeOrionGuid),
                         any(Instant.class), eq(true))).thenReturn(fakeMessageId);
         command.execute(context, vmOutageEmailRequest);
 
@@ -104,7 +104,7 @@ public class SendVmOutageEmailTest {
         vmOutageEmailRequest.vmOutage.metrics = Collections.singleton(VmMetric.CPU);
         vmMetricAlert.status = VmMetricAlert.Status.ENABLED;
         String fakeResourceName = VmMetric.CPU.name();
-        when(vps4MessagingService.sendServerUsageOutageEmail(eq(fakeCustomerId), eq(fakeAccountName), eq(fakeIpAddress),
+        when(vps4MessagingService.sendServerUsageOutageEmail(eq(fakeShopperId), eq(fakeAccountName), eq(fakeIpAddress),
                 eq(fakeOrionGuid), eq(fakeResourceName), anyString(), any(Instant.class), eq(true)))
                 .thenReturn(fakeMessageId);
         command.execute(context, vmOutageEmailRequest);
@@ -122,7 +122,7 @@ public class SendVmOutageEmailTest {
         vmMetricAlert.status = VmMetricAlert.Status.ENABLED;
         String fakeResourceName = VmMetric.FTP.name();
         when(vps4MessagingService
-                .sendServicesDownEmail(eq(fakeCustomerId), eq(fakeAccountName), eq(fakeIpAddress), eq(fakeOrionGuid),
+                .sendServicesDownEmail(eq(fakeShopperId), eq(fakeAccountName), eq(fakeIpAddress), eq(fakeOrionGuid),
                         eq(fakeResourceName), any(Instant.class), eq(true))).thenReturn(fakeMessageId);
         command.execute(context, vmOutageEmailRequest);
 
@@ -141,7 +141,7 @@ public class SendVmOutageEmailTest {
                 "domainfake.here", Arrays.asList("Unable to resolve host name domainfake.here"), VmMetric.HTTP
         ));
         when(vps4MessagingService
-                .sendServicesDownEmail(eq(fakeCustomerId), eq(fakeAccountName), eq(fakeIpAddress), eq(fakeOrionGuid),
+                .sendServicesDownEmail(eq(fakeShopperId), eq(fakeAccountName), eq(fakeIpAddress), eq(fakeOrionGuid),
                         eq("HTTP (domainfake.here)"), any(Instant.class), eq(true))).thenReturn(fakeMessageId);
         command.execute(context, vmOutageEmailRequest);
 
@@ -160,7 +160,7 @@ public class SendVmOutageEmailTest {
                 "domainfake.here", Arrays.asList("SSL error: certificate verify failed"), VmMetric.HTTPS
         ));
         when(vps4MessagingService
-                .sendServicesDownEmail(eq(fakeCustomerId), eq(fakeAccountName), eq(fakeIpAddress), eq(fakeOrionGuid),
+                .sendServicesDownEmail(eq(fakeShopperId), eq(fakeAccountName), eq(fakeIpAddress), eq(fakeOrionGuid),
                         eq("HTTPS (domainfake.here)"), any(Instant.class), eq(true))).thenReturn(fakeMessageId);
         command.execute(context, vmOutageEmailRequest);
 
@@ -180,7 +180,7 @@ public class SendVmOutageEmailTest {
                 "SSL error: certificate verify failed"), VmMetric.HTTPS
         ));
         when(vps4MessagingService
-                .sendServicesDownEmail(eq(fakeCustomerId), eq(fakeAccountName), eq(fakeIpAddress), eq(fakeOrionGuid),
+                .sendServicesDownEmail(eq(fakeShopperId), eq(fakeAccountName), eq(fakeIpAddress), eq(fakeOrionGuid),
                         eq("HTTPS (domainfake.here)"), any(Instant.class), eq(true))).thenReturn(fakeMessageId);
         command.execute(context, vmOutageEmailRequest);
 
@@ -199,7 +199,7 @@ public class SendVmOutageEmailTest {
                 "domainfake.here", Arrays.asList("SSL certificate is expiring"), VmMetric.HTTPS
         ));
         when(vps4MessagingService
-                .sendServicesDownEmail(eq(fakeCustomerId), eq(fakeAccountName), eq(fakeIpAddress), eq(fakeOrionGuid),
+                .sendServicesDownEmail(eq(fakeShopperId), eq(fakeAccountName), eq(fakeIpAddress), eq(fakeOrionGuid),
                         eq("HTTPS (domainfake.here)"), any(Instant.class), eq(true))).thenReturn(fakeMessageId);
         command.execute(context, vmOutageEmailRequest);
 
@@ -214,7 +214,7 @@ public class SendVmOutageEmailTest {
         command.execute(context, vmOutageEmailRequest);
 
         verify(context, never())
-                .execute(eq("SendVmOutageEmail-" + fakeCustomerId), any(Function.class), eq(String.class));
+                .execute(eq("SendVmOutageEmail-" + fakeShopperId), any(Function.class), eq(String.class));
     }
 
     @Test
@@ -229,7 +229,7 @@ public class SendVmOutageEmailTest {
                 .execute(eq("SendVmOutageEmail-DISK"), lambdaCaptor.capture(), eq(String.class));
 
         lambdaCaptor.getValue().apply(context);
-        verify(vps4MessagingService, times(1)).sendServerUsageOutageEmail(eq(fakeCustomerId), eq(fakeAccountName),
+        verify(vps4MessagingService, times(1)).sendServerUsageOutageEmail(eq(fakeShopperId), eq(fakeAccountName),
                                                                           eq(fakeIpAddress), eq(fakeOrionGuid),
                                                                           eq(VmMetric.DISK.name()), eq("42%"),
                                                                           any(Instant.class), eq(true));
@@ -247,7 +247,7 @@ public class SendVmOutageEmailTest {
                 .execute(eq("SendVmOutageEmail-DISK"), lambdaCaptor.capture(), eq(String.class));
 
         lambdaCaptor.getValue().apply(context);
-        verify(vps4MessagingService, times(1)).sendServerUsageOutageEmail(eq(fakeCustomerId), eq(fakeAccountName),
+        verify(vps4MessagingService, times(1)).sendServerUsageOutageEmail(eq(fakeShopperId), eq(fakeAccountName),
                                                                           eq(fakeIpAddress), eq(fakeOrionGuid),
                                                                           eq(VmMetric.DISK.name()), eq("95%"),
                                                                           any(Instant.class), eq(true));

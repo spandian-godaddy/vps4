@@ -36,13 +36,11 @@ public class Vps4NewVmOutageTest {
     private Vps4NewVmOutage vps4NewVmOutage;
     Vps4NewVmOutage.Request request;
     VirtualMachineCredit credit;
-    UUID customerId;
     VmOutage outage;
 
     @Before
     public void setup() {
         vps4NewVmOutage = new Vps4NewVmOutage(actionService, creditService, config);
-        customerId = UUID.randomUUID();
 
         when(config.get("jsd.enabled", "false")).thenReturn("true");
 
@@ -60,7 +58,6 @@ public class Vps4NewVmOutageTest {
 
         credit = mock(VirtualMachineCredit.class);
         when(credit.getOrionGuid()).thenReturn(request.virtualMachine.orionGuid);
-        when(credit.getCustomerId()).thenReturn(customerId);
         when(credit.getShopperId()).thenReturn("testShopperId");
         when(creditService.getVirtualMachineCredit(any())).thenReturn(credit);
         when(credit.isAccountActive()).thenReturn(true);
@@ -89,13 +86,13 @@ public class Vps4NewVmOutageTest {
         Assert.assertEquals(request.outageId, actualRequest.outageId);
         verify(context).execute(eq("SendOutageNotificationEmail"), eq(SendVmOutageEmail.class),
                 vmOutageEmailRequestArgumentCaptor.capture());
-        VmOutageEmailRequest outageEmailRequest = vmOutageEmailRequestArgumentCaptor.getValue();
-        Assert.assertEquals(request.virtualMachine.name, outageEmailRequest.accountName);
-        Assert.assertEquals(request.virtualMachine.primaryIpAddress.ipAddress, outageEmailRequest.ipAddress);
-        Assert.assertEquals(credit.getOrionGuid(), outageEmailRequest.orionGuid);
-        Assert.assertEquals(credit.getCustomerId(), outageEmailRequest.customerId);
-        Assert.assertEquals(request.virtualMachine.vmId, outageEmailRequest.vmId);
-        Assert.assertEquals(outage.panoptaOutageId, outageEmailRequest.vmOutage.panoptaOutageId);
+        VmOutageEmailRequest arg2 = vmOutageEmailRequestArgumentCaptor.getValue();
+        Assert.assertEquals(request.virtualMachine.name, arg2.accountName);
+        Assert.assertEquals(request.virtualMachine.primaryIpAddress.ipAddress, arg2.ipAddress);
+        Assert.assertEquals(credit.getOrionGuid(), arg2.orionGuid);
+        Assert.assertEquals(credit.getShopperId(), arg2.shopperId);
+        Assert.assertEquals(request.virtualMachine.vmId, arg2.vmId);
+        Assert.assertEquals(outage.panoptaOutageId, arg2.vmOutage.panoptaOutageId);
     }
 
     @Test
@@ -134,15 +131,15 @@ public class Vps4NewVmOutageTest {
         vps4NewVmOutage.executeWithAction(context, request);
 
         verify(context).execute(eq("CreateJsdOutageTicket"), eq(CreateJsdOutageTicket.class), createJsdOutageTicketArgumentCaptor.capture());
-        CreateJsdOutageTicket.Request createJsdOutageTicket = createJsdOutageTicketArgumentCaptor.getValue();
-        Assert.assertEquals(outage.panoptaOutageId, Long.parseLong(createJsdOutageTicket.outageId));
-        Assert.assertEquals(request.virtualMachine.vmId, createJsdOutageTicket.vmId);
-        Assert.assertEquals("testShopperId", createJsdOutageTicket.shopperId);
-        Assert.assertEquals(request.partnerCustomerKey, createJsdOutageTicket.partnerCustomerKey);
-        Assert.assertEquals("CPU", createJsdOutageTicket.metricInfo);
-        Assert.assertEquals("CPU", createJsdOutageTicket.metricTypes);
-        Assert.assertEquals(outage.reason, createJsdOutageTicket.metricReasons);
-        Assert.assertEquals("Monitoring Event - " + outage.metrics.toString() + " - "+ createJsdOutageTicket.metricReasons + " (" + 321123 + ")", createJsdOutageTicket.summary);
+        CreateJsdOutageTicket.Request arg2 = createJsdOutageTicketArgumentCaptor.getValue();
+        Assert.assertEquals(outage.panoptaOutageId, Long.parseLong(arg2.outageId));
+        Assert.assertEquals(request.virtualMachine.vmId, arg2.vmId);
+        Assert.assertEquals("testShopperId", arg2.shopperId);
+        Assert.assertEquals(request.partnerCustomerKey, arg2.partnerCustomerKey);
+        Assert.assertEquals("CPU", arg2.metricInfo);
+        Assert.assertEquals("CPU", arg2.metricTypes);
+        Assert.assertEquals(outage.reason, arg2.metricReasons);
+        Assert.assertEquals("Monitoring Event - " + outage.metrics.toString() + " - "+ arg2.metricReasons + " (" + 321123 + ")", arg2.summary);
     }
 
     @Test

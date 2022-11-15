@@ -1,17 +1,15 @@
 package com.godaddy.vps4.orchestration.messaging;
 
-import java.util.UUID;
-
 public class FailOverEmailRequest {
-    public UUID customerId;
+    public String shopperId;
     public String accountName;
     public boolean isManaged;
 
     public FailOverEmailRequest() {
     }
 
-    public FailOverEmailRequest(UUID customerId, String accountName, boolean isManaged) {
-        this.customerId = customerId;
+    public FailOverEmailRequest(String shopperId, String accountName, boolean isManaged) {
+        this.shopperId = shopperId;
         this.accountName = accountName;
         this.isManaged = isManaged;
     }

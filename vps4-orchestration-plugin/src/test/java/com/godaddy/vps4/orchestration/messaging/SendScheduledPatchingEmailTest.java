@@ -41,7 +41,7 @@ public class SendScheduledPatchingEmailTest {
     public void setupTest() {
         request = new ScheduledMaintenanceEmailRequest();
         request.accountName = "vmname";
-        request.customerId = UUID.randomUUID();
+        request.shopperId = "shopperid";
         request.isManaged = false;
         request.startTime = startTime;
         request.durationMinutes = 30;
@@ -50,7 +50,7 @@ public class SendScheduledPatchingEmailTest {
         Message message = mock(Message.class);
         message.status = Message.Statuses.SUCCESS.toString();
 
-        when(messagingService.sendScheduledPatchingEmail(request.customerId, "vmname", startTime, 30, false)).thenReturn(messageId);
+        when(messagingService.sendScheduledPatchingEmail("shopperid", "vmname", startTime, 30, false)).thenReturn(messageId);
         when(messagingService.getMessageById(messageId)).thenReturn(message);
     }
 
@@ -63,7 +63,7 @@ public class SendScheduledPatchingEmailTest {
     @Test
     public void testCallsMessagingServiceToSendEmail() {
         command.execute(context, request);
-        verify(messagingService, times(1)).sendScheduledPatchingEmail(request.customerId, "vmname", startTime, 30, false);
+        verify(messagingService, times(1)).sendScheduledPatchingEmail("shopperid", "vmname", startTime, 30, false);
     }
 
     @Test
