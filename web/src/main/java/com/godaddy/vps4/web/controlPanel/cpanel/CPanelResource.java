@@ -9,6 +9,7 @@ import javax.inject.Inject;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
+import javax.ws.rs.DELETE;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
@@ -296,6 +297,18 @@ public class CPanelResource {
         } catch (Exception e) {
             logger.warn("Could not enabled NGiNX for vmId {} , username {}, Exception: {} ", vmId, updateNginxRequest.username, e);
             throw new Vps4Exception("UPDATE_NGINX_FAILED", e.getMessage(), e);
+        }
+    }
+
+    @DELETE
+    @Path("/{vmId}/cpanel/clearNginxCache")
+    public void clearNginxCache(@PathParam("vmId") UUID vmId, @QueryParam("usernames") List<String> usernames) {
+        VirtualMachine vm = resolveVirtualMachine(vmId);
+        try {
+            cpanelService.clearNginxCache(vm.hfsVmId, usernames);
+        } catch (Exception e) {
+            logger.warn("Could not clear NGiNX cache for vmId {} , users {}, Exception: {} ", vmId, usernames, e);
+            throw new Vps4Exception("CLEAR_NGINX_CACHE_FAILED", e.getMessage(), e);
         }
     }
 

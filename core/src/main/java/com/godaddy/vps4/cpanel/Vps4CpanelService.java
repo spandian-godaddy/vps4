@@ -42,4 +42,7 @@ public interface Vps4CpanelService {
 
     String updateNginx(long hfsVmId, boolean enabled, String user)
             throws CpanelAccessDeniedException, CpanelTimeoutException, IOException;
+
+    String clearNginxCache(long hfsVmId, List<String> usernames)
+            throws CpanelAccessDeniedException, CpanelTimeoutException, IOException;
 }

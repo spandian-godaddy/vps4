@@ -469,4 +469,22 @@ public class DefaultVps4CpanelService implements Vps4CpanelService {
             );
         });
     }
+
+    @Override
+    public String clearNginxCache(long hfsVmId, List<String> usernames)
+        throws CpanelAccessDeniedException, CpanelTimeoutException {
+        return withAccessHash(hfsVmId, cPanelClient -> {
+            // https://api.docs.cpanel.net/openapi/whm/operation/nginxmanager_clear_cache/
+            return handleCpanelCall(
+                    "clearNginxCache", true,
+                    () -> cPanelClient.clearNginxCache(usernames),
+                    dataJson -> {
+                        return null;
+                    },
+                    reason -> {
+                        throw new RuntimeException("Clear NGiNX cache failed due to reason: " + reason);
+                    }
+            );
+        });
+    }
 }

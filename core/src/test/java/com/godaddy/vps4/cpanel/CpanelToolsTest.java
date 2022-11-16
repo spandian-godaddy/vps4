@@ -25,7 +25,7 @@ import com.godaddy.vps4.network.IpAddress;
 import com.godaddy.vps4.network.IpAddress.IpAddressType;
 import com.godaddy.vps4.network.NetworkService;
 
-public class CpanelAddonDomainsTest {
+public class CpanelToolsTest {
 
     Vps4CpanelService service;
     CpanelAccessHashService cpanelAccessHashService = mock(CpanelAccessHashService.class);
@@ -38,6 +38,7 @@ public class CpanelAddonDomainsTest {
     @Captor private ArgumentCaptor<String> planArgumentCaptor;
     @Captor private ArgumentCaptor<String> emailArgumentCaptor;
     @Captor private ArgumentCaptor<Boolean> enabledArgumentCaptor;
+    @Captor private ArgumentCaptor<List<String>> usernamesArgumentCaptor;
 
     long hfsVmId = 1234;
 
@@ -808,5 +809,39 @@ public class CpanelAddonDomainsTest {
         when(cpClient.updateNginx(enabled, username)).thenReturn(returnVal);
 
         service.updateNginx(hfsVmId, enabled, username);
+    }
+
+    @Test
+    public void clearNginxCacheUsesCpanelClient() throws Exception{
+        String returnVal = "{\"metadata\":{\"reason\":\"OK\",\"version\":1," +
+                "\"command\":\"nginxmanager_clear_cache\",\"result\":1}}";
+        List<String> usernames = Arrays.asList("vpsdev1", "vpsdev2");
+        when(cpClient.clearNginxCache(usernames)).thenReturn(returnVal);
+
+        service.clearNginxCache(hfsVmId, usernames);
+
+        verify(cpClient, times(1))
+                .clearNginxCache(usernamesArgumentCaptor.capture());
+        Assert.assertEquals(usernames, usernamesArgumentCaptor.getValue());
+    }
+
+    @Test(expected = RuntimeException.class)
+    public void clearNginxCacheNoMetadata() throws Exception {
+        List<String> usernames = Arrays.asList("vpsdev1", "vpsdev2");
+        String returnVal = "{\"metadata\": null}";
+        when(cpClient.clearNginxCache(usernames)).thenReturn(returnVal);
+
+        service.clearNginxCache(hfsVmId, usernames);
+    }
+
+    @Test(expected = RuntimeException.class)
+    public void clearNginxCacheResultNotOk() throws Exception {
+        List<String> usernames = Arrays.asList("vpsdev1", "vpsdev2");
+        String reason = "no-workie";
+        String returnVal = "{\"metadata\":{\"result\":0,\"reason\":\"" + reason + "\",\"version\":1," +
+                "\"command\":\"nginxmanager_clear_cache\"}}";
+        when(cpClient.clearNginxCache(usernames)).thenReturn(returnVal);
+
+        service.clearNginxCache(hfsVmId, usernames);
     }
 }

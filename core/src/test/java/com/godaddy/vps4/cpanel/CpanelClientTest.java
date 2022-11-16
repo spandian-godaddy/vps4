@@ -2,6 +2,8 @@ package com.godaddy.vps4.cpanel;
 
 import java.io.IOException;
 import java.net.URLEncoder;
+import java.util.Arrays;
+import java.util.List;
 
 import com.godaddy.hfs.io.Charsets;
 import org.apache.http.HttpVersion;
@@ -180,6 +182,32 @@ public class CpanelClientTest {
                 + "/json-api/nginxmanager_set_cache_config?api.version=1&enabled=1&user=vpsdev";
 
         cpanelClient.updateNginx(true, "vpsdev");
+
+        verify(httpClient, times(1)).execute(httpUriRequestArgumentCaptor.capture());
+        HttpUriRequest capturedReq = httpUriRequestArgumentCaptor.getValue();
+        Assert.assertEquals(expectedUri, capturedReq.getURI().toString());
+    }
+
+    @Test
+    public void callsCpanelEndpointToClearNginxCache() throws CpanelAccessDeniedException, IOException {
+        String expectedUri = "https://" + hostname + ":2087"
+                + "/json-api/nginxmanager_clear_cache?api.version=1";
+
+        cpanelClient.clearNginxCache(null);
+
+        verify(httpClient, times(1)).execute(httpUriRequestArgumentCaptor.capture());
+        HttpUriRequest capturedReq = httpUriRequestArgumentCaptor.getValue();
+        Assert.assertEquals(expectedUri, capturedReq.getURI().toString());
+    }
+
+    @Test
+    public void callsCpanelEndpointToClearNginxCacheWithUsernames() throws CpanelAccessDeniedException, IOException {
+        List<String> usernames = Arrays.asList("vpsdev1", "vpsdev2");
+        String expectedUri = "https://" + hostname + ":2087"
+                + "/json-api/nginxmanager_clear_cache?api.version=1"
+                + "&user=vpsdev1&user=vpsdev2";
+
+        cpanelClient.clearNginxCache(usernames);
 
         verify(httpClient, times(1)).execute(httpUriRequestArgumentCaptor.capture());
         HttpUriRequest capturedReq = httpUriRequestArgumentCaptor.getValue();

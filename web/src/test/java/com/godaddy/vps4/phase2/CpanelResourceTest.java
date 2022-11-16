@@ -28,6 +28,7 @@ import org.junit.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mockito;
 
+import java.io.IOException;
 import java.time.Instant;
 import java.util.Arrays;
 import java.util.Collections;
@@ -252,25 +253,15 @@ public class CpanelResourceTest {
 
     // Create cpanel account
     @Test
-    public void createAccountCallsCpanelService() throws Exception {
-        String domainName = "domain";
-        String username = "user";
-        String password = "foobar";
-        String plan = "plan";
-        String email = "email@email.com";
-
+    public void createAccountCallsCpanelService() {
         CPanelResource.CreateAccountRequest req = new CPanelResource.CreateAccountRequest();
-        req.domainName = domainName;
-        req.username = username;
-        req.plan = plan;
-        req.password = password;
-        req.contactEmail = email;
-        try {
-            getcPanelResource().createAccount(vm.vmId, req);
-        }
-        catch (Exception e) {
-            Assert.fail("This test shouldn't fail");
-        }
+        req.domainName = "domain";
+        req.username = "user";
+        req.plan = "plan";
+        req.password = "foobar";
+        req.contactEmail = "email@email.com";
+
+        getcPanelResource().createAccount(vm.vmId, req);
     }
 
     @Test
@@ -444,5 +435,23 @@ public class CpanelResourceTest {
         when(vps4CpanelService.updateNginx(vm.hfsVmId, true, req.username)).thenThrow(new RuntimeException());
 
         getcPanelResource().updateNginx(vm.vmId, req);
+    }
+
+    // Clear NGiNX cache
+    @Test
+    public void clearNginxCacheCallsCpanelService() throws CpanelTimeoutException, IOException, CpanelAccessDeniedException {
+        List<String> usernames = Arrays.asList("vpsdev1", "vpsdev2");
+
+        getcPanelResource().clearNginxCache(vm.vmId, usernames);
+
+        verify(vps4CpanelService,times(1)).clearNginxCache(vm.hfsVmId, usernames);
+    }
+
+    @Test(expected = Vps4Exception.class)
+    public void clearNginxCacheThrowsException() throws Exception {
+        List<String> usernames = Arrays.asList("vpsdev1", "vpsdev2");
+        when(vps4CpanelService.clearNginxCache(vm.hfsVmId, usernames)).thenThrow(new RuntimeException());
+
+        getcPanelResource().clearNginxCache(vm.vmId, usernames);
     }
 }

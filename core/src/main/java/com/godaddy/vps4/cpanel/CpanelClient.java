@@ -2,6 +2,7 @@ package com.godaddy.vps4.cpanel;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.util.List;
 
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.config.RequestConfig;
@@ -188,6 +189,16 @@ public class CpanelClient {
                 .addParameter("api.version", "1")
                 .addParameter("enabled", enabled ? "1" : "0");
         if (user != null && !user.isEmpty()) request.addParameter("user", user);
+
+        return callWhm(request.build());
+    }
+
+    public String clearNginxCache(List<String> usernames) throws CpanelAccessDeniedException, IOException {
+        RequestBuilder request = newCpanelRequest()
+                .setUri(baseUrl + "/json-api/nginxmanager_clear_cache")
+                .addParameter("api.version", "1");
+        if (usernames != null && !usernames.isEmpty())
+            for (String username : usernames) request.addParameter("user", username);
 
         return callWhm(request.build());
     }
