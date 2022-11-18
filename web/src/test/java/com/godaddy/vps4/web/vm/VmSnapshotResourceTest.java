@@ -245,14 +245,6 @@ public class VmSnapshotResourceTest {
         resource.createSnapshot(vm.vmId, request);
     }
 
-    @Test(expected = Vps4NoShopperException.class)
-    public void abortsIfCallerIsNotShopper() {
-        user = GDUserMock.createEmployee();
-        setupResource();
-        VmSnapshotResource.VmSnapshotRequest request = createSnapshotRequest();
-        resource.createSnapshot(vm.vmId, request);
-    }
-
     @Test
     public void abortsIfSnapshotOverQuota() {
         VmSnapshotResource.VmSnapshotRequest request = createSnapshotRequest();

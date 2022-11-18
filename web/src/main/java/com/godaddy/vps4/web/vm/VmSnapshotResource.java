@@ -9,7 +9,6 @@ import static com.godaddy.vps4.web.util.RequestValidation.validateSnapshotBelong
 import static com.godaddy.vps4.web.util.RequestValidation.validateSnapshotExists;
 import static com.godaddy.vps4.web.util.RequestValidation.validateSnapshotName;
 import static com.godaddy.vps4.web.util.RequestValidation.validateSnapshotNotPaused;
-import static com.godaddy.vps4.web.util.RequestValidation.validateUserIsShopper;
 
 import java.util.List;
 import java.util.UUID;
@@ -152,7 +151,6 @@ public class VmSnapshotResource {
     }
 
     private void validateVmCanCreateSnapshot(VirtualMachine vm, VmSnapshotRequest request) {
-        validateUserIsShopper(user);
         validateSnapshotName(request.name);
         validateIfSnapshotOverQuota(ohBackupDataService, snapshotService, vm, request.snapshotType);
         validateNoOtherSnapshotsInProgress(ohBackupService, snapshotService, vm);
