@@ -122,6 +122,7 @@ public class DefaultJsdServiceTest {
         assertEquals("reporterID", jsdApiIssueRequest.fields.reporter.id);
         assertEquals("Monitoring Event", jsdApiIssueRequest.fields.serviceRequestCategory.value);
         assertEquals("Tier 3", jsdApiIssueRequest.fields.supportTier.value);
+        assertEquals("Fully Managed Server", jsdApiIssueRequest.fields.escalationReason.value);
     }
 
 

@@ -31,6 +31,8 @@ public class JsdApiIssueRequest {
         @JsonProperty("customfield_10259") public String metricTypes;
         @JsonProperty("customfield_10262") public JsdContentDoc servicesAffected;
         @JsonProperty("customfield_10264") public JsdFieldValue dataCenter;
+        @JsonProperty("customfield_10116")  public JsdFieldValue escalationReason;
+
         @JsonProperty("description") public JsdContentDoc description;
 
         public JsdIssueFields() {

@@ -35,6 +35,8 @@ public class DefaultJsdService implements JsdService {
     private static final String SERVICE_REQUEST_CATEGORY = "Monitoring Event";
     private static final String SUPPORT_TIER_LEVEL = "Tier 3";
     private static final String CONTENT_MARKS = "strong";
+    private static final String ESCALATION_REASON = "Fully Managed Server";
+
     private final String timezoneForDateParams;
     private final String dateTimePattern;
     private final JsdApiService jsdApiService;
@@ -103,7 +105,7 @@ public class DefaultJsdService implements JsdService {
     }
 
     private JsdApiIssueRequest.JsdIssueFields buildRequestFields(CreateJsdTicketRequest createTicketRequest) {
-        JsdFieldValue requestCategory, supportTier, severity, supportProduct, customerProduct, dataCenter;
+        JsdFieldValue requestCategory, supportTier, severity, supportProduct, customerProduct, dataCenter, escalationReason;
 
         JsdFieldName issueType = new JsdFieldName(REQUEST_TYPE);
         JsdFieldKey project = new JsdFieldKey(config.get("jsd.project.key"));
@@ -115,6 +117,7 @@ public class DefaultJsdService implements JsdService {
         supportProduct = new JsdFieldValue(createTicketRequest.supportProduct);
         customerProduct = new JsdFieldValue(createTicketRequest.customerProduct);
         dataCenter = new JsdFieldValue(createTicketRequest.dataCenter);
+        escalationReason = new JsdFieldValue(ESCALATION_REASON);
 
         JsdContentDoc servicesAffected = buildServicesAffectedContent(createTicketRequest.metricTypes);
 
@@ -142,6 +145,7 @@ public class DefaultJsdService implements JsdService {
         fields.outageId = createTicketRequest.outageId;
         fields.outageIdUrl = createTicketRequest.outageIdUrl;
         fields.supportProduct = supportProduct;
+        fields.escalationReason = escalationReason;
         fields.customerProduct = customerProduct;
         fields.orionGuid = createTicketRequest.orionGuid;
         fields.metricTypes = createTicketRequest.metricTypes;
