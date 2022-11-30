@@ -453,13 +453,13 @@ public class DefaultVps4CpanelService implements Vps4CpanelService {
     }
 
     @Override
-    public String updateNginx(long hfsVmId, boolean enabled, String user)
+    public String updateNginx(long hfsVmId, boolean enabled, List<String> usernames)
         throws CpanelAccessDeniedException, CpanelTimeoutException {
         return withAccessHash(hfsVmId, cPanelClient -> {
             // https://api.docs.cpanel.net/openapi/whm/operation/nginxmanager_set_cache_config/
             return handleCpanelCall(
                     "updateNginx", true,
-                    () -> cPanelClient.updateNginx(enabled, user),
+                    () -> cPanelClient.updateNginx(enabled, usernames),
                     dataJson -> {
                         return null;
                     },

@@ -778,37 +778,37 @@ public class CpanelToolsTest {
         boolean enabled = true;
         String returnVal = "{\"metadata\":{\"command\":\"nginxmanager_set_cache_config\",\"version\":1," +
                 "\"reason\":\"OK\",\"result\":1}}";
-        String username = "vpsdev";
-        when(cpClient.updateNginx(enabled, username)).thenReturn(returnVal);
+        List<String> usernames = Arrays.asList("vpsdev1", "vpsdev2");
+        when(cpClient.updateNginx(enabled, usernames)).thenReturn(returnVal);
 
-        service.updateNginx(hfsVmId, enabled, username);
+        service.updateNginx(hfsVmId, enabled, usernames);
 
         verify(cpClient, times(1))
-                .updateNginx(enabledArgumentCaptor.capture(), usernameArgumentCaptor.capture());
+                .updateNginx(enabledArgumentCaptor.capture(), usernamesArgumentCaptor.capture());
         Assert.assertEquals(enabled, enabledArgumentCaptor.getValue());
-        Assert.assertEquals(username, usernameArgumentCaptor.getValue());
+        Assert.assertEquals(usernames, usernamesArgumentCaptor.getValue());
     }
 
     @Test(expected = RuntimeException.class)
     public void updateNginxNoMetadata() throws Exception {
         boolean enabled = true;
-        String username = "vpsdev";
+        List<String> usernames = Arrays.asList("vpsdev1", "vpsdev2");
         String returnVal = "{\"metadata\": null}";
-        when(cpClient.updateNginx(enabled, username)).thenReturn(returnVal);
+        when(cpClient.updateNginx(enabled, usernames)).thenReturn(returnVal);
 
-        service.updateNginx(hfsVmId, enabled, username);
+        service.updateNginx(hfsVmId, enabled, usernames);
     }
 
     @Test(expected = RuntimeException.class)
     public void updateNginxResultNotOk() throws Exception {
         boolean enabled = true;
-        String username = "vpsdev";
+        List<String> usernames = Arrays.asList("vpsdev1", "vpsdev2");
         String reason = "no-workie";
         String returnVal = "{\"metadata\":{\"result\":0,\"reason\":\"" + reason + "\", " +
                 "\"command\":\"nginxmanager_set_cache_config\",\"version\":1}}";
-        when(cpClient.updateNginx(enabled, username)).thenReturn(returnVal);
+        when(cpClient.updateNginx(enabled, usernames)).thenReturn(returnVal);
 
-        service.updateNginx(hfsVmId, enabled, username);
+        service.updateNginx(hfsVmId, enabled, usernames);
     }
 
     @Test

@@ -157,7 +157,7 @@ public class CpanelClientTest {
         String expectedUri = "https://" + hostname + ":2087"
                 + "/json-api/nginxmanager_set_cache_config?api.version=1&enabled=1";
 
-        cpanelClient.updateNginx(true, "");
+        cpanelClient.updateNginx(true, null);
 
         verify(httpClient, times(1)).execute(httpUriRequestArgumentCaptor.capture());
         HttpUriRequest capturedReq = httpUriRequestArgumentCaptor.getValue();
@@ -169,7 +169,7 @@ public class CpanelClientTest {
         String expectedUri = "https://" + hostname + ":2087"
                 + "/json-api/nginxmanager_set_cache_config?api.version=1&enabled=0";
 
-        cpanelClient.updateNginx(false, "");
+        cpanelClient.updateNginx(false, null);
 
         verify(httpClient, times(1)).execute(httpUriRequestArgumentCaptor.capture());
         HttpUriRequest capturedReq = httpUriRequestArgumentCaptor.getValue();
@@ -177,11 +177,12 @@ public class CpanelClientTest {
     }
 
     @Test
-    public void callsCpanelEndpointToUpdateNginxWithUsername() throws CpanelAccessDeniedException, IOException {
+    public void callsCpanelEndpointToUpdateNginxWithUsernames() throws CpanelAccessDeniedException, IOException {
         String expectedUri = "https://" + hostname + ":2087"
-                + "/json-api/nginxmanager_set_cache_config?api.version=1&enabled=1&user=vpsdev";
+                + "/json-api/nginxmanager_set_cache_config?api.version=1&enabled=1&user=vpsdev1&user=vpsdev2";
+        List<String> usernames = Arrays.asList("vpsdev1", "vpsdev2");
 
-        cpanelClient.updateNginx(true, "vpsdev");
+        cpanelClient.updateNginx(true, usernames);
 
         verify(httpClient, times(1)).execute(httpUriRequestArgumentCaptor.capture());
         HttpUriRequest capturedReq = httpUriRequestArgumentCaptor.getValue();

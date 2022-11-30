@@ -420,7 +420,7 @@ public class CpanelResourceTest {
     @Test
     public void updateNginxCallsCpanelService() {
         UpdateNginxRequest req = new UpdateNginxRequest();
-        req.username = "vpsdev";
+        req.usernames = Arrays.asList("vpsdev1", "vpsdev2");
         req.enabled = true;
 
         getcPanelResource().updateNginx(vm.vmId, req);
@@ -429,10 +429,10 @@ public class CpanelResourceTest {
     @Test(expected = Vps4Exception.class)
     public void updateNginxThrowsException() throws Exception {
         UpdateNginxRequest req = new UpdateNginxRequest();
-        req.username = "vpsdev";
+        req.usernames = Arrays.asList("vpsdev1", "vpsdev2");
         req.enabled = true;
 
-        when(vps4CpanelService.updateNginx(vm.hfsVmId, true, req.username)).thenThrow(new RuntimeException());
+        when(vps4CpanelService.updateNginx(vm.hfsVmId, true, req.usernames)).thenThrow(new RuntimeException());
 
         getcPanelResource().updateNginx(vm.vmId, req);
     }

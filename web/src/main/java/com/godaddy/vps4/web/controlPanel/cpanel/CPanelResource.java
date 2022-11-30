@@ -293,9 +293,9 @@ public class CPanelResource {
     public void updateNginx(@PathParam("vmId") UUID vmId, UpdateNginxRequest updateNginxRequest) {
         VirtualMachine vm = resolveVirtualMachine(vmId);
         try {
-            cpanelService.updateNginx(vm.hfsVmId, updateNginxRequest.enabled, updateNginxRequest.username);
+            cpanelService.updateNginx(vm.hfsVmId, updateNginxRequest.enabled, updateNginxRequest.usernames);
         } catch (Exception e) {
-            logger.warn("Could not enabled NGiNX for vmId {} , username {}, Exception: {} ", vmId, updateNginxRequest.username, e);
+            logger.warn("Could not enabled NGINX for vmId {} , username {}, Exception: {} ", vmId, updateNginxRequest.usernames, e);
             throw new Vps4Exception("UPDATE_NGINX_FAILED", e.getMessage(), e);
         }
     }

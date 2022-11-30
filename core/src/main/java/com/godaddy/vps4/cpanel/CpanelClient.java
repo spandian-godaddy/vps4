@@ -183,12 +183,13 @@ public class CpanelClient {
         return callWhm(request);
     }
 
-    public String updateNginx(boolean enabled, String user) throws CpanelAccessDeniedException, IOException {
+    public String updateNginx(boolean enabled, List<String> usernames) throws CpanelAccessDeniedException, IOException {
         RequestBuilder request = newCpanelRequest()
                 .setUri(baseUrl + "/json-api/nginxmanager_set_cache_config")
                 .addParameter("api.version", "1")
                 .addParameter("enabled", enabled ? "1" : "0");
-        if (user != null && !user.isEmpty()) request.addParameter("user", user);
+        if (usernames != null && !usernames.isEmpty())
+            for (String username : usernames) request.addParameter("user", username);
 
         return callWhm(request.build());
     }
