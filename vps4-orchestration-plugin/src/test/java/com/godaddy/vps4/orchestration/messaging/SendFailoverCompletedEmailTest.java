@@ -62,10 +62,4 @@ public class SendFailoverCompletedEmailTest {
         verify(messagingService, times(1)).sendFailoverCompletedEmail("shopperid", "vmname", false);
     }
 
-    @Test
-    public void testWaitsForMessageComplete() {
-        command.execute(context, request);
-        verify(context, times(1)).execute(WaitForMessageComplete.class, messageId);
-    }
-
 }

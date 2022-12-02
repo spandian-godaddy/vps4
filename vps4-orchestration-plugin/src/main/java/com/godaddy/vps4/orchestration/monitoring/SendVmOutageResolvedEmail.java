@@ -9,7 +9,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.godaddy.vps4.messaging.Vps4MessagingService;
-import com.godaddy.vps4.orchestration.messaging.SendMessagingEmailBase;
 import com.godaddy.vps4.vm.VmAlertService;
 import com.godaddy.vps4.vm.VmMetric;
 import com.godaddy.vps4.vm.VmMetricAlert;
@@ -24,7 +23,7 @@ import gdg.hfs.orchestration.CommandRetryStrategy;
         requestType = VmOutageEmailRequest.class,
         retryStrategy = CommandRetryStrategy.NEVER
 )
-public class SendVmOutageResolvedEmail extends SendMessagingEmailBase implements Command<VmOutageEmailRequest, Void> {
+public class SendVmOutageResolvedEmail implements Command<VmOutageEmailRequest, Void> {
 
     private static final Logger logger = LoggerFactory.getLogger(SendVmOutageResolvedEmail.class);
     private final Vps4MessagingService messagingService;
@@ -65,10 +64,7 @@ public class SendVmOutageResolvedEmail extends SendMessagingEmailBase implements
                         String.class);
 
             if (messageId != null) {
-                context.execute("WaitForMessageComplete-" + metricMetadata.metric, ctx -> {
-                    waitForMessageComplete(ctx, messageId, req.shopperId);
-                    return null;
-                }, Void.class);
+                logger.info("Outage resolved message ID {} sent for VMID {}", messageId, req.vmId);
             } else {
                 logger.warn("No outage resolved email sent, message id was null for shopper id {}.", req.shopperId);
             }
@@ -126,10 +122,7 @@ public class SendVmOutageResolvedEmail extends SendMessagingEmailBase implements
                     return;
             }
             if (messageId != null) {
-                context.execute("WaitForMessageComplete-" + metric, ctx -> {
-                    waitForMessageComplete(ctx, messageId, req.shopperId);
-                    return null;
-                }, Void.class);
+                logger.info("Outage Resolved message ID {} sent for VMID {}", messageId, req.vmId);
             } else {
                 logger.warn(
                         "No outage resolved email sent, message id was null for shopper id {}.", req.shopperId);

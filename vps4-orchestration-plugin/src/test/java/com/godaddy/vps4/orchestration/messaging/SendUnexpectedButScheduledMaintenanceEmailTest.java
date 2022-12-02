@@ -65,11 +65,4 @@ public class SendUnexpectedButScheduledMaintenanceEmailTest {
         command.execute(context, request);
         verify(messagingService, times(1)).sendUnexpectedButScheduledMaintenanceEmail("shopperid", "vmname", startTime, 30, false);
     }
-
-    @Test
-    public void testWaitsForMessageComplete() {
-        command.execute(context, request);
-        verify(context, times(1)).execute(WaitForMessageComplete.class, messageId);
-    }
 }
-

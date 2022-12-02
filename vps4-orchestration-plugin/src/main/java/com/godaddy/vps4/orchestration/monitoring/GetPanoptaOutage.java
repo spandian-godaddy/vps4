@@ -1,12 +1,7 @@
 package com.godaddy.vps4.orchestration.monitoring;
 
-import com.godaddy.vps4.messaging.Vps4MessagingService;
-import com.godaddy.vps4.orchestration.messaging.SendMessagingEmailBase;
 import com.godaddy.vps4.panopta.PanoptaService;
 import com.godaddy.vps4.panopta.PanoptaServiceException;
-import com.godaddy.vps4.vm.VmAlertService;
-import com.godaddy.vps4.vm.VmMetric;
-import com.godaddy.vps4.vm.VmMetricAlert;
 import com.godaddy.vps4.vm.VmOutage;
 import gdg.hfs.orchestration.Command;
 import gdg.hfs.orchestration.CommandContext;
@@ -17,8 +12,6 @@ import org.slf4j.LoggerFactory;
 
 import javax.inject.Inject;
 import java.util.UUID;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 @CommandMetadata(
         name = "GetPanoptaOutage",

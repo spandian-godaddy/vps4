@@ -3,7 +3,6 @@ package com.godaddy.vps4.orchestration.messaging;
 import com.godaddy.hfs.config.Config;
 import com.godaddy.vps4.credit.CreditService;
 import com.godaddy.vps4.credit.VirtualMachineCredit;
-import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -23,7 +22,7 @@ import java.util.List;
         requestType = SetupCompletedEmailRequest.class,
         retryStrategy = CommandRetryStrategy.NEVER
 )
-public class SendSetupCompletedEmail extends SendMessagingEmailBase implements Command<SetupCompletedEmailRequest, String> {
+public class SendSetupCompletedEmail implements Command<SetupCompletedEmailRequest, String> {
 
     private static final Logger logger = LoggerFactory.getLogger(SendSetupCompletedEmail.class);
 
@@ -54,7 +53,7 @@ public class SendSetupCompletedEmail extends SendMessagingEmailBase implements C
                 ctx -> messagingService.sendSetupEmail(emailRequest.shopperId, emailRequest.serverName, emailRequest.ipAddress,
                         emailRequest.orionGuid.toString(), emailRequest.isManaged),
                 String.class);
-        this.waitForMessageComplete(context, messageId, emailRequest.shopperId);
+        logger.info("Sent message ID {} for SetupComplete to shopperId {} or account {}", messageId, emailRequest.shopperId, emailRequest.orionGuid);
         return messageId;
     }
 }

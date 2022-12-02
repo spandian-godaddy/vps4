@@ -16,7 +16,7 @@ import gdg.hfs.orchestration.CommandRetryStrategy;
     requestType = FailOverEmailRequest.class,
     retryStrategy = CommandRetryStrategy.NEVER
 )
-public class SendSystemDownFailoverEmail extends SendMessagingEmailBase implements Command<FailOverEmailRequest, String> {
+public class SendSystemDownFailoverEmail implements Command<FailOverEmailRequest, String> {
 
     private static final Logger logger = LoggerFactory.getLogger(SendSystemDownFailoverEmail.class);
 
@@ -29,12 +29,11 @@ public class SendSystemDownFailoverEmail extends SendMessagingEmailBase implemen
 
     @Override
     public String execute(CommandContext context, FailOverEmailRequest emailRequest) {
-        logger.info("Sending SystemDownFailoverEmail for shopper {}", emailRequest.shopperId);
         String messageId = context.execute("SendSystemDownEmail-" + emailRequest.shopperId,
                 ctx -> messagingService.sendSystemDownFailoverEmail(emailRequest.shopperId,
                         emailRequest.accountName, emailRequest.isManaged),
                 String.class);
-        this.waitForMessageComplete(context, messageId, emailRequest.shopperId);
+        logger.info("Sending SystemDownFailoverEmail with message ID {} for shopper {}", messageId, emailRequest.shopperId);
         return messageId;
     }
 }

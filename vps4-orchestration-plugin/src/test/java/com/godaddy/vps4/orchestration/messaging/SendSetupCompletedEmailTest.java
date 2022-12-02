@@ -74,14 +74,6 @@ public class SendSetupCompletedEmailTest {
         verify(messagingService, times(1)).sendSetupEmail(shopperId, serverName, ipAddress,
                 orionGuid.toString(), isManaged);
     }
-
-    @Test
-    public void testWaitsForMessageComplete() {
-        command = new SendSetupCompletedEmail(messagingService, creditService, config);
-        command.execute(context, request);
-        verify(context, times(1)).execute(WaitForMessageComplete.class, messageId);
-    }
-
     @Test
     public void testCreditPlidNotInBlacklist() {
         when(config.get("messaging.reseller.blacklist.setup", "")).thenReturn("4500,527397,525848");

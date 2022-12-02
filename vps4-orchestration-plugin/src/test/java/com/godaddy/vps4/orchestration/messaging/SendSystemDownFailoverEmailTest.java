@@ -61,11 +61,4 @@ public class SendSystemDownFailoverEmailTest {
         command.execute(context, request);
         verify(messagingService, times(1)).sendSystemDownFailoverEmail("shopperid", "vmname", false);
     }
-
-    @Test
-    public void testWaitsForMessageComplete() {
-        command.execute(context, request);
-        verify(context, times(1)).execute(WaitForMessageComplete.class, messageId);
-    }
-
 }
