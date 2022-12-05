@@ -40,7 +40,7 @@ public class VmOutage {
         String metricString = metrics.stream().filter(m -> m != VmMetric.HTTP && m != VmMetric.HTTPS ).map(VmMetric::name)
                 .collect(Collectors.joining(", "));
 
-        metricString += domainMonitoringMetadata.size() > 1 ? ", " + domainMonitoringMetadata.stream().map(m -> m.metric.toString() + " (" + m.additionalFqdn +")")
+        metricString += domainMonitoringMetadata.size() >= 1 ? ", " + domainMonitoringMetadata.stream().map(m -> m.metric.toString() + " (" + m.additionalFqdn +")")
                 .collect(Collectors.joining(", ")) : "";
 
         return metricString;
