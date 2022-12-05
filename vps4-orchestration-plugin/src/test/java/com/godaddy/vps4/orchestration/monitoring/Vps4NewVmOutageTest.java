@@ -117,10 +117,10 @@ public class Vps4NewVmOutageTest {
     }
 
     @Test
-    public void noEmailCommandWhenCreditIsFullyManaged() {
+    public void executeEmailCommandWhenCreditIsFullyManaged() {
         when(credit.isManaged()).thenReturn(true);
         vps4NewVmOutage.executeWithAction(context, request);
-        verify(context, never()).execute(eq("SendOutageNotificationEmail"), eq(SendVmOutageEmail.class), any());
+        verify(context).execute(eq("SendOutageNotificationEmail"), eq(SendVmOutageEmail.class), any());
     }
 
     @Test
