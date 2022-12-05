@@ -69,7 +69,7 @@ public class Vps4NewVmOutageTest {
         outage.metrics.add(VmMetric.CPU);
         outage.severity = "standard";
         outage.reason = "oopsie whoopsie";
-        outage.domainMonitoringMetadata = Collections.singletonList(null);
+        outage.domainMonitoringMetadata = Collections.emptyList();
         when(context.execute(eq("GetPanoptaOutage"), eq(GetPanoptaOutage.class), any())).thenReturn(outage);
     }
 

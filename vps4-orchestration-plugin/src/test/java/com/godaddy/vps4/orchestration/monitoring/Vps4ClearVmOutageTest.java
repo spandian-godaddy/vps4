@@ -64,7 +64,7 @@ public class Vps4ClearVmOutageTest {
 
         outage = new VmOutage();
         outage.panoptaOutageId = request.outageId;
-        outage.domainMonitoringMetadata = Collections.singletonList(null);
+        outage.domainMonitoringMetadata = Collections.emptyList();
         outage.metrics = new HashSet<>();
         outage.metrics.add(VmMetric.CPU);
         outage.ended = Instant.now();
