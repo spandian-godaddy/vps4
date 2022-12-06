@@ -8,6 +8,7 @@ import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -40,6 +41,7 @@ import com.godaddy.vps4.vm.Action;
 import com.godaddy.vps4.vm.ActionService;
 import com.godaddy.vps4.vm.ActionStatus;
 import com.godaddy.vps4.vm.ActionType;
+import com.godaddy.vps4.vm.ActionWithOrionGuid;
 import com.godaddy.vps4.vm.VirtualMachineService;
 import com.godaddy.vps4.web.Vps4Api;
 import com.godaddy.vps4.web.Vps4Exception;
@@ -267,38 +269,69 @@ public class VmActionsMonitorResource {
             @ApiParam(value = "Number of actions to use in percentage calculation.") @DefaultValue("20") @QueryParam("windowSize") long windowSize,
             @ApiParam(value = "A list of actions to filter the actions.") @DefaultValue("CREATE_VM")  @QueryParam("criticalActionType") List<String> criticalActionTypeList) {
         List<ActionTypeErrorData> result = new ArrayList<>();
-        ActionListFilters actionFilters = new ActionListFilters();
-        actionFilters.setLimit(windowSize);
 
         List<ActionType> criticalActionTypeListToCheck = criticalActionTypeList.stream()
                                                 .map(t -> validateAndReturnEnumValue(ActionType.class, t))
                                                 .collect(Collectors.toList());
 
+        Map<Integer, ActionCheckpoint> checkpointMap = getCheckpointsMap();
+        List<ActionWithOrionGuid> actions = vmActionService.getActionsForFailedPercentMonitor(windowSize);
+
         for(ActionType type : ActionType.values()) {
-            ActionCheckpoint checkpoint = monitorService.getActionCheckpoint(type);
-            Instant beginDate = checkpoint == null ? null : checkpoint.checkpoint;
-
-            actionFilters.byDateRange(beginDate, null);
-            actionFilters.byType(type);
-
-            ResultSubset<Action> resultSubset = vmActionService.getActionList(actionFilters);
-            List<Action> actions = resultSubset==null?new ArrayList<>():resultSubset.results;
-            List<Action> errors = actions.stream().filter(a -> a.status==ActionStatus.ERROR).collect(Collectors.toList());
+            Instant beginDate = getBeginDateOfWindow(checkpointMap, type);
+            List<ActionWithOrionGuid> errors = getErrorsForActionType(actions, type, beginDate);
 
             if(!errors.isEmpty()) {
-                double failurePercentage = ((double) errors.size() / windowSize) * 100;
-                long affectedAccounts = getCountOfAffectedAccounts(errors);
-                boolean isCritical = criticalActionTypeListToCheck.contains(type);
-                ActionTypeErrorData actionTypeError = new ActionTypeErrorData(type, failurePercentage, affectedAccounts, isCritical, errors);
-                result.add(actionTypeError);
+                result.add(getActionTypeErrorData(windowSize, criticalActionTypeListToCheck, type, errors));
             }
         }
         return result;
     }
 
-	private long getCountOfAffectedAccounts(List<Action> errors) {
-        Set<UUID> accounts = errors.stream().map(e -> virtualMachineService.getVirtualMachine(e.resourceId).orionGuid).collect(Collectors.toSet());
-        return accounts.size();
+    private Map<Integer, ActionCheckpoint> getCheckpointsMap() {
+        List<ActionCheckpoint> checkpoints = monitorService.getActionCheckpoints();
+        return checkpoints.stream()
+                          .collect(Collectors.toMap(ActionCheckpoint::getActionTypeId, c->c));
+    }
+
+    private static Instant getBeginDateOfWindow(Map<Integer, ActionCheckpoint> checkpointMap, ActionType type) {
+        ActionCheckpoint checkpoint = checkpointMap.get(type.getActionTypeId());
+        Instant beginDate = checkpoint == null ? null : checkpoint.checkpoint;
+        return beginDate;
+    }
+
+    private static List<ActionWithOrionGuid> getErrorsForActionType(List<ActionWithOrionGuid> actions, ActionType type, Instant beginDate) {
+        List<ActionWithOrionGuid> actionsOfType = actions.stream()
+                .filter(a->a.action.type.getActionTypeId() == type.getActionTypeId())
+                .collect(Collectors.toList());
+        if(beginDate != null) {
+            actionsOfType = actionsOfType.stream()
+                    .filter(a -> a.action.created.isAfter(beginDate))
+                    .collect(Collectors.toList());
+        }
+        List<ActionWithOrionGuid> errors = actionsOfType.stream()
+                .filter(a -> a.action.status==ActionStatus.ERROR)
+                .collect(Collectors.toList());
+        return errors;
+    }
+
+    private ActionTypeErrorData getActionTypeErrorData(long windowSize,
+                                                       List<ActionType> criticalActionTypeListToCheck,
+                                                       ActionType type,
+                                                       List<ActionWithOrionGuid> errors) {
+        double failurePercentage = ((double) errors.size() / windowSize) * 100;
+        long affectedAccounts = getNumberOfAffectedAccounts(errors);
+        boolean isCritical = criticalActionTypeListToCheck.contains(type);
+        ActionTypeErrorData actionTypeErrorData = new ActionTypeErrorData(type,
+                failurePercentage,
+                affectedAccounts,
+                isCritical,
+                errors.stream().map(a->a.action).collect(Collectors.toList()));
+        return actionTypeErrorData;
+    }
+
+    private static int getNumberOfAffectedAccounts(List<ActionWithOrionGuid> errors) {
+        return errors.stream().map(e -> e.orionGuid).collect(Collectors.toSet()).size();
     }
 
     @POST
@@ -379,13 +412,13 @@ public class VmActionsMonitorResource {
                     "corrupt, etc).")
     public ActionTypeErrorData getCreatesWithoutPanopta(
             @QueryParam("windowSize") @DefaultValue("10") long windowSize) {
-        List<Action> errors = vmActionService.getCreatesWithoutPanopta(windowSize);
+        List<ActionWithOrionGuid> errors = vmActionService.getCreatesWithoutPanopta(windowSize);
         if (errors.isEmpty()) {
             return new ActionTypeErrorData(ActionType.CREATE_VM,
                                            0,
                                            0,
                                            true,
-                                           errors);
+                                           new ArrayList<>());
         } else {
             Checkpoint checkpoint = monitorService.getCheckpoint(Checkpoint.Name.CREATES_WITHOUT_PANOPTA);
             Instant beginDate = checkpoint == null ? null : checkpoint.checkpoint;
@@ -396,12 +429,12 @@ public class VmActionsMonitorResource {
             actionFilters.setLimit(windowSize);
             List<Long> allCreateIds = getFilteredActions(actionFilters)
                     .stream().map(a -> a.actionId).collect(Collectors.toList());
-            errors.removeIf(e -> !allCreateIds.contains(e.id));
+            errors.removeIf(e -> !allCreateIds.contains(e.action.id));
             return new ActionTypeErrorData(ActionType.CREATE_VM,
-                                           ((double) errors.size() / allCreateIds.size()) * 100,
-                                           getCountOfAffectedAccounts(errors),
-                                           true,
-                                           errors);
+                    ((double) errors.size() / allCreateIds.size()) * 100,
+                    getNumberOfAffectedAccounts(errors),
+                    true,
+                    errors.stream().map(e->e.action).collect(Collectors.toList()));
         }
     }
 

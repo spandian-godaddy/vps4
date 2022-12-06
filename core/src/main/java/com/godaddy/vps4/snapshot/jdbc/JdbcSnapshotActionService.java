@@ -19,6 +19,7 @@ import com.godaddy.vps4.vm.Action;
 import com.godaddy.vps4.vm.ActionService;
 import com.godaddy.vps4.vm.ActionStatus;
 import com.godaddy.vps4.vm.ActionType;
+import com.godaddy.vps4.vm.ActionWithOrionGuid;
 
 public class JdbcSnapshotActionService implements ActionService {
 
@@ -149,7 +150,12 @@ public class JdbcSnapshotActionService implements ActionService {
     }
 
     @Override
-    public List<Action> getCreatesWithoutPanopta(long windowSize) {
+    public List<ActionWithOrionGuid> getCreatesWithoutPanopta(long windowSize) {
+        throw new UnsupportedOperationException("Not yet implemented for snapshots");
+    }
+
+    @Override
+    public List<ActionWithOrionGuid> getActionsForFailedPercentMonitor(long windowSize) {
         throw new UnsupportedOperationException("Not yet implemented for snapshots");
     }
 }

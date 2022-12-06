@@ -7,4 +7,8 @@ import java.time.Instant;
 public class ActionCheckpoint {
     public ActionType actionType;
     public Instant checkpoint;
+
+    public int getActionTypeId() {
+        return actionType.getActionTypeId();
+    }
 }

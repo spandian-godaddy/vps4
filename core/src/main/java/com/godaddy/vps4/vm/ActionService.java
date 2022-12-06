@@ -8,6 +8,8 @@ import com.godaddy.vps4.util.ActionListFilters;
 
 public interface ActionService {
 
+    List<ActionWithOrionGuid> getActionsForFailedPercentMonitor(long windowSize);
+
     long createAction(UUID resourceId, ActionType actionType, String request, String initiatedBy);
 
     Action getAction(long actionId);
@@ -36,5 +38,5 @@ public interface ActionService {
 
     List<Action> getIncompleteActions(int minimumAttempts, String action);
 
-    List<Action> getCreatesWithoutPanopta(long windowSize);
+    List<ActionWithOrionGuid> getCreatesWithoutPanopta(long windowSize);
 }

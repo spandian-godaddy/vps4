@@ -20,6 +20,7 @@ import com.godaddy.vps4.vm.Action;
 import com.godaddy.vps4.vm.ActionService;
 import com.godaddy.vps4.vm.ActionStatus;
 import com.godaddy.vps4.vm.ActionType;
+import com.godaddy.vps4.vm.ActionWithOrionGuid;
 
 public class JdbcVmActionService implements ActionService {
 
@@ -30,6 +31,21 @@ public class JdbcVmActionService implements ActionService {
     public JdbcVmActionService(DataSource dataSource) {
         this.dataSource = dataSource;
         actionListUtils = new ActionListUtils("vm_action", "vm_id", dataSource);
+    }
+
+    @Override
+    public List<ActionWithOrionGuid> getActionsForFailedPercentMonitor(long windowSize) {
+        return Sql.with(dataSource).exec("SELECT * FROM " +
+                "(SELECT ROW_NUMBER() OVER (PARTITION BY action_type_id ORDER BY created DESC) AS row, " +
+                "va.*, " +
+                "vm.orion_guid " +
+                "FROM vm_action va join virtual_machine vm on va.vm_id = vm.vm_id) x " +
+                "WHERE x.row <= ?", Sql.listOf(this::mapActionWithOrionGuid), windowSize);
+    }
+
+    private ActionWithOrionGuid mapActionWithOrionGuid(ResultSet resultSet) throws SQLException {
+        Action action = mapAction(resultSet);
+        return new ActionWithOrionGuid(action, UUID.fromString(resultSet.getString("orion_guid")));
     }
 
     @Override
@@ -182,17 +198,18 @@ public class JdbcVmActionService implements ActionService {
     }
 
     @Override
-    public List<Action> getCreatesWithoutPanopta(long windowSize) {
+    public List<ActionWithOrionGuid> getCreatesWithoutPanopta(long windowSize) {
         return Sql.with(dataSource).exec(
-                "SELECT va.*, acs.status, act.type " +
+                "SELECT va.*, acs.status, act.type, vm.orion_guid " +
                         "FROM vm_action va " +
                         "JOIN action_type act ON va.action_type_id = act.type_id " +
                         "JOIN action_status acs ON va.status_id = acs.status_id " +
+                        "JOIN virtual_machine vm on ma.vm_id = vm.vm_id " +
                         "LEFT JOIN panopta_server ps ON va.vm_id = ps.vm_id " +
                         "WHERE ps.vm_id IS NULL " +
                         "AND act.type = 'CREATE_VM' " +
                         "AND acs.status = 'COMPLETE' " +
                         "ORDER BY va.created DESC LIMIT ?",
-                Sql.listOf(this::mapAction), windowSize);
+                Sql.listOf(this::mapActionWithOrionGuid), windowSize);
     }
 }

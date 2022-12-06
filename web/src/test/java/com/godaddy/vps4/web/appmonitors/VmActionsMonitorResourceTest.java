@@ -6,6 +6,7 @@ import static org.junit.Assert.fail;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyLong;
 import static org.mockito.Matchers.argThat;
+import static org.mockito.Matchers.matches;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
@@ -23,10 +24,12 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 import com.godaddy.hfs.vm.Extended;
 import com.godaddy.hfs.vm.Vm;
 import com.godaddy.hfs.vm.VmExtendedInfo;
+import com.godaddy.vps4.vm.ActionWithOrionGuid;
 import com.godaddy.vps4.web.vm.VmDetailsResource;
 import org.junit.Assert;
 import org.junit.Before;
@@ -189,6 +192,12 @@ public class VmActionsMonitorResourceTest {
     }
 
     private ResultSubset<Action> getTestResultSet(long size, ActionType actionType, ActionStatus actionStatus, List<Action> testActions) {
+        List<Action> actions = getTestList(size, actionType, actionStatus, testActions);
+        return new ResultSubset<>(actions, actions.size());
+    }
+
+    private List<Action> getTestList(long size, ActionType actionType, ActionStatus actionStatus, List<Action> testActions)
+    {
         Action action = new Action(0, UUID.randomUUID(), actionType, null, null, null,
                 actionStatus, Instant.now().minus(10, ChronoUnit.MINUTES), Instant.now(), null,
                 UUID.randomUUID(), "tester");
@@ -201,25 +210,20 @@ public class VmActionsMonitorResourceTest {
                     UUID.randomUUID(), "tester");
             testActions.add(action2);
         }
-        return new ResultSubset<>(testActions, testActions.size());
+        return testActions;
     }
 
     @Test
     public void testCheckForFailingActions() {
-        ResultSubset<Action> resultSubset = getTestResultSet(5, ActionType.START_VM, ActionStatus.COMPLETE);
-        resultSubset = getTestResultSet(5, ActionType.START_VM, ActionStatus.ERROR, resultSubset.results);
-        ResultSubset<Action> emptyResultSet = new ResultSubset<>(new ArrayList<>(), 0);
-
-        ArgumentMatcher<ActionListFilters> expectedActionFilters = new ArgumentMatcher<ActionListFilters>() {
-            @Override
-            public boolean matches(Object item) {
-                ActionListFilters actionFilters = (ActionListFilters)item;
-                return actionFilters.getTypeList().get(0).equals(ActionType.START_VM);
-            }
-        };
-        when(vmActionService.getActionList(argThat(expectedActionFilters))).thenReturn(resultSubset).thenReturn(emptyResultSet);
+        UUID orionGuid = UUID.randomUUID();
+        List<Action> actionList = getTestList(5, ActionType.START_VM, ActionStatus.COMPLETE, new ArrayList<>());
+        getTestList(5, ActionType.START_VM, ActionStatus.ERROR, actionList);
+        List<ActionWithOrionGuid> actionWithOrionGuidList = actionList.stream().map(a->new ActionWithOrionGuid(a, orionGuid)).collect(Collectors.toList());
+        List<ActionWithOrionGuid> emptyResultSet = new ArrayList<>();
+        when(vmActionService.getActionsForFailedPercentMonitor(10)).thenReturn(actionWithOrionGuidList).thenReturn(emptyResultSet);
 
         List<ActionTypeErrorData> errorData = vmActionsMonitorResource.getFailedActionsForAllTypes(10, Collections.<String> emptyList());
+
         Assert.assertEquals(1, errorData.size());
         ActionTypeErrorData actionTypeErrorData = errorData.get(0);
         Assert.assertEquals(5, actionTypeErrorData.failedActions.size());
@@ -230,19 +234,14 @@ public class VmActionsMonitorResourceTest {
 
     @Test
     public void testCheckForFailingActionsWithCriticalActionType() {
-        ResultSubset<Action> resultSubset = getTestResultSet(5, ActionType.START_VM, ActionStatus.COMPLETE);
-        resultSubset = getTestResultSet(5, ActionType.START_VM, ActionStatus.ERROR, resultSubset.results);
-        ResultSubset<Action> emptyResultSet = new ResultSubset<>(new ArrayList<>(), 0);
+        UUID orionGuid = UUID.randomUUID();
+        List<Action> actionList = getTestList(5, ActionType.START_VM, ActionStatus.COMPLETE, new ArrayList<>());
+        getTestList(5, ActionType.START_VM, ActionStatus.ERROR, actionList);
+        List<ActionWithOrionGuid> actionWithOrionGuidList = actionList.stream().map(a->new ActionWithOrionGuid(a, orionGuid)).collect(Collectors.toList());
+        List<ActionWithOrionGuid> emptyResultSet = new ArrayList<>();
         List<String> criticalActionList = Arrays.asList("START_VM");
 
-        ArgumentMatcher<ActionListFilters> expectedActionFilters = new ArgumentMatcher<ActionListFilters>() {
-            @Override
-            public boolean matches(Object item) {
-                ActionListFilters actionFilters = (ActionListFilters)item;
-                return actionFilters.getTypeList().get(0).equals(ActionType.START_VM);
-            }
-        };
-        when(vmActionService.getActionList(argThat(expectedActionFilters))).thenReturn(resultSubset).thenReturn(emptyResultSet);
+        when(vmActionService.getActionsForFailedPercentMonitor(10)).thenReturn(actionWithOrionGuidList).thenReturn(emptyResultSet);
 
         List<ActionTypeErrorData> errorData = vmActionsMonitorResource.getFailedActionsForAllTypes(10, criticalActionList);
         Assert.assertEquals(1, errorData.size());
@@ -254,23 +253,17 @@ public class VmActionsMonitorResourceTest {
 
     @Test
     public void testCheckForFailingActionsWithCheckpoint() {
-        ResultSubset<Action> resultSubset = getTestResultSet(5, ActionType.START_VM, ActionStatus.COMPLETE);
-        resultSubset = getTestResultSet(5, ActionType.START_VM, ActionStatus.ERROR, resultSubset.results);
-        ResultSubset<Action> emptyResultSet = new ResultSubset<>(new ArrayList<>(), 0);
+        UUID orionGuid = UUID.randomUUID();
+        List<Action> actionList = getTestList(5, ActionType.START_VM, ActionStatus.COMPLETE, new ArrayList<>());
+        actionList = getTestList(5, ActionType.START_VM, ActionStatus.ERROR, actionList);
+        List<ActionWithOrionGuid> actionWithOrionGuidList = actionList.stream().map(a->new ActionWithOrionGuid(a, orionGuid)).collect(Collectors.toList());
+        List<ActionWithOrionGuid> emptyList = new ArrayList<>();
         ActionCheckpoint checkpoint = new ActionCheckpoint();
         checkpoint.checkpoint = Instant.now().minus(1, ChronoUnit.DAYS);
 
         when(monitorService.getActionCheckpoint(ActionType.START_VM)).thenReturn(checkpoint);
 
-        ArgumentMatcher<ActionListFilters> expectedActionFilters = new ArgumentMatcher<ActionListFilters>() {
-            @Override
-            public boolean matches(Object item) {
-                ActionListFilters actionFilters = (ActionListFilters)item;
-                return actionFilters.getTypeList().get(0).equals(ActionType.START_VM)
-                        && actionFilters.getStart().equals(checkpoint.checkpoint);
-            }
-        };
-        when(vmActionService.getActionList(argThat(expectedActionFilters))).thenReturn(resultSubset).thenReturn(emptyResultSet);
+        when(vmActionService.getActionsForFailedPercentMonitor(10)).thenReturn(actionWithOrionGuidList).thenReturn(emptyList);
 
         List<ActionTypeErrorData> errorData = vmActionsMonitorResource.getFailedActionsForAllTypes(10, Collections.<String> emptyList());
         Assert.assertEquals(1, errorData.size());
@@ -282,18 +275,14 @@ public class VmActionsMonitorResourceTest {
 
     @Test
     public void testCheckForFailingActionsNotFullWindow() {
-        ResultSubset<Action> resultSubset = getTestResultSet(2, ActionType.START_VM, ActionStatus.COMPLETE);
-        resultSubset = getTestResultSet(3, ActionType.START_VM, ActionStatus.ERROR, resultSubset.results);
-        ResultSubset<Action> emptyResultSet = new ResultSubset<>(new ArrayList<>(), 0);
+        UUID orionGuid = UUID.randomUUID();
+        List<Action> actionList = getTestList(2, ActionType.START_VM, ActionStatus.COMPLETE, new ArrayList<>());
+        getTestList(3, ActionType.START_VM, ActionStatus.ERROR, actionList);
+        List<ActionWithOrionGuid> actionWithOrionGuidList = actionList.stream().map(a->new ActionWithOrionGuid(a, orionGuid)).collect(Collectors.toList());
+        actionWithOrionGuidList.stream().filter(a->a.action.status==ActionStatus.ERROR).findFirst().get().orionGuid = UUID.randomUUID();
+        List<ActionWithOrionGuid> emptyList = new ArrayList<>();
 
-        ArgumentMatcher<ActionListFilters> expectedActionFilters = new ArgumentMatcher<ActionListFilters>() {
-            @Override
-            public boolean matches(Object item) {
-                ActionListFilters actionFilters = (ActionListFilters)item;
-                return actionFilters.getTypeList().get(0).equals(ActionType.START_VM);
-            }
-        };
-        when(vmActionService.getActionList(argThat(expectedActionFilters))).thenReturn(resultSubset).thenReturn(emptyResultSet);
+        when(vmActionService.getActionsForFailedPercentMonitor(10)).thenReturn(actionWithOrionGuidList).thenReturn(emptyList);
 
         List<ActionTypeErrorData> errorData = vmActionsMonitorResource.getFailedActionsForAllTypes(10, Collections.<String> emptyList());
         Assert.assertEquals(1, errorData.size());
@@ -406,11 +395,12 @@ public class VmActionsMonitorResourceTest {
 
     @Test
     public void testGetCreatesWithoutPanopta() {
-        Action action = mock(Action.class);
-        action.type = ActionType.CREATE_VM;
-        List<Action> actions = new ArrayList<>();
+        ActionWithOrionGuid action = mock(ActionWithOrionGuid.class);
+        action.action = mock(Action.class);
+        action.action.type = ActionType.CREATE_VM;
+        List<ActionWithOrionGuid> actions = new ArrayList<>();
         actions.add(action);
-        ResultSubset<Action> result = new ResultSubset<>(actions, actions.size());
+        ResultSubset<Action> result = new ResultSubset<>(actions.stream().map(a->a.action).collect(Collectors.toList()), actions.size());
         when(vmActionService.getActionList(any())).thenReturn(result);
         when(vmActionService.getCreatesWithoutPanopta(anyLong())).thenReturn(actions);
         ActionTypeErrorData actualCreates = vmActionsMonitorResource.getCreatesWithoutPanopta(anyLong());
@@ -419,6 +409,25 @@ public class VmActionsMonitorResourceTest {
         Assert.assertEquals(ActionType.CREATE_VM, actualCreates.actionType);
         Assert.assertEquals(1, actualCreates.failedActions.size());
     }
+
+//    @Test
+//    public void testGetCreatesWithoutPanopta() {
+//        Action action = mock(Action.class);
+//        action.type = ActionType.CREATE_VM;
+//        List<Action> actions = new ArrayList<>();
+//        actions.add(action);
+//        ResultSubset<Action> result = new ResultSubset<>(actions, actions.size());
+//        when(vmActionService.getActionList(any())).thenReturn(result);
+//        when(vmActionService.getCreatesWithoutPanopta(anyLong())).thenReturn(actions);
+//        ActionTypeErrorData actualCreates = vmActionsMonitorResource.getCreatesWithoutPanopta(anyLong());
+//        Assert.assertEquals(1, actualCreates.affectedAccounts);
+//        Assert.assertEquals(100, actualCreates.failurePercentage, 0);
+//        Assert.assertEquals(ActionType.CREATE_VM, actualCreates.actionType);
+//        Assert.assertEquals(1, actualCreates.failedActions.size());
+//    }
+
+
+
 
     @Test
     public void testGetReplicationStatus() {
