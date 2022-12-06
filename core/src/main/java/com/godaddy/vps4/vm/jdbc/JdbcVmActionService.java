@@ -36,12 +36,12 @@ public class JdbcVmActionService implements ActionService {
     @Override
     public List<ActionWithOrionGuid> getActionsForFailedPercentMonitor(long windowSize) {
         return Sql.with(dataSource).exec("SELECT * FROM " +
-                        "(SELECT ROW_NUMBER() OVER (PARTITION BY action_type_id ORDER BY created DESC) AS row," +
-                        "vm_action.*, virtual_machine.orion_guid, action_status.*, action_type.*" +
-                        "FROM vm_action" +
-                        "JOIN virtual_machine on vm_action.vm_id = virtual_machine.vm_id" +
-                        "JOIN action_status on vm_action.status_id = action_status.status_id" +
-                        "JOIN action_type on  vm_action.action_type_id = action_type.type_id" +
+                        "(SELECT ROW_NUMBER() OVER (PARTITION BY action_type_id ORDER BY created DESC) AS row, " +
+                        "vm_action.*, virtual_machine.orion_guid, action_status.*, action_type.* " +
+                        "FROM vm_action " +
+                        "JOIN virtual_machine on vm_action.vm_id = virtual_machine.vm_id " +
+                        "JOIN action_status on vm_action.status_id = action_status.status_id " +
+                        "JOIN action_type on  vm_action.action_type_id = action_type.type_id " +
                         ") x WHERE x.row <= ?;", Sql.listOf(this::mapActionWithOrionGuid), windowSize);
     }
 
