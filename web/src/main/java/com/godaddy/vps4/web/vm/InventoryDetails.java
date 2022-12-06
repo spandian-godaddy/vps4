@@ -8,6 +8,7 @@ public class InventoryDetails {
     public int inUse;
     public int hfsInUse;
     public int reserved;
+    public int retired;
     public int cpus;
     public int ram;
     public int diskSize;

@@ -105,6 +105,7 @@ public class InventoryResource {
         inventoryDetails.inUse = matchedHfsInventoryData.getInUse();
         inventoryDetails.hfsInUse = matchedHfsInventoryData.getHfsInUse();
         inventoryDetails.reserved = matchedHfsInventoryData.getReserved();
+        inventoryDetails.retired = matchedHfsInventoryData.getRetired();
         inventoryDetails.cpus = serverSpec.cpuCoreCount;
         inventoryDetails.diskSize = serverSpec.diskGib;
         inventoryDetails.ram = serverSpec.memoryMib;

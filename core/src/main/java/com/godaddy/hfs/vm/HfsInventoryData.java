@@ -14,6 +14,7 @@ public class HfsInventoryData {
     @JsonProperty("hfs_in_use")
     int hfsInUse;
     int reserved;
+    int retired;
 
     public String getName() {
         return name;
@@ -30,6 +31,8 @@ public class HfsInventoryData {
     public int getReserved() {
         return reserved;
     }
+
+    public int getRetired() { return retired; }
 
     @Override
     public String toString() {

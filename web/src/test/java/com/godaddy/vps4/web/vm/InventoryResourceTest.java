@@ -49,7 +49,8 @@ public class InventoryResourceTest {
     }
 
     private List<HfsInventoryData> createDummyInventory() throws IOException {
-        String inventoryString = " { \"available\": 21, \"name\": \"test.spec\", \"reserved\": 0, \"in_use\": 50 }";
+        String inventoryString = " { \"available\": 21, \"name\": \"test.spec\", \"reserved\": 0, \"in_use\": 50, " +
+                "\"hfs_in_use\": 1, \"retired\": 11 }";
         HfsInventoryData dummyHfsInventoryData = new ObjectMapper().readValue(inventoryString, HfsInventoryData.class);
         return Collections.singletonList(dummyHfsInventoryData);
     }
@@ -111,6 +112,8 @@ public class InventoryResourceTest {
         assertNotNull(inventoryDetails.hfsInUse);
         assertEquals(0, inventoryDetails.vps4Active);
         assertEquals(0, inventoryDetails.vps4Zombie);
+        assertEquals(1, inventoryDetails.hfsInUse);
+        assertEquals(11, inventoryDetails.retired);
     }
 
     @Test
