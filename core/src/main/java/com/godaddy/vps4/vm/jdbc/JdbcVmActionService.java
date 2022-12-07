@@ -206,7 +206,7 @@ public class JdbcVmActionService implements ActionService {
                         "FROM vm_action va " +
                         "JOIN action_type act ON va.action_type_id = act.type_id " +
                         "JOIN action_status acs ON va.status_id = acs.status_id " +
-                        "JOIN virtual_machine vm on ma.vm_id = vm.vm_id " +
+                        "JOIN virtual_machine vm on va.vm_id = vm.vm_id " +
                         "LEFT JOIN panopta_server ps ON va.vm_id = ps.vm_id " +
                         "WHERE ps.vm_id IS NULL " +
                         "AND act.type = 'CREATE_VM' " +
