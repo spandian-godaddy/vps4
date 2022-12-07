@@ -36,6 +36,7 @@ public class DefaultJsdService implements JsdService {
     private static final String SUPPORT_TIER_LEVEL = "Tier 3";
     private static final String CONTENT_MARKS = "strong";
     private static final String ESCALATION_REASON = "Fully Managed Server";
+    private static final String COMMENT_PROPERTY = "sd.public.comment";
 
     private final String timezoneForDateParams;
     private final String dateTimePattern;
@@ -85,11 +86,14 @@ public class DefaultJsdService implements JsdService {
     @Override
     public JsdCreatedComment commentTicket(String ticketIdOrKey, String fqdn, String items, Instant timestamp) {
         String contentText = String.format("Outage has been cleared for: \nFQDN: %s\nItems: %s\nTimestamp: %s %s",
-                                           fqdn, items, formatDateTime(timestamp), timezoneForDateParams);
+                fqdn, items, formatDateTime(timestamp), timezoneForDateParams);
         JsdContentNodeValue contentNode = new JsdContentNodeValue(contentText);
         JsdContentParagraph paragraph = new JsdContentParagraph(Collections.singletonList(contentNode));
         JsdContentDoc body = new JsdContentDoc(Collections.singletonList(paragraph));
         JsdApiIssueCommentRequest req = new JsdApiIssueCommentRequest(body);
+        JsdApiIssueCommentRequest.PropertyValue value = new JsdApiIssueCommentRequest.PropertyValue(true);
+        JsdApiIssueCommentRequest.JsdCommentProperty property = new JsdApiIssueCommentRequest.JsdCommentProperty(COMMENT_PROPERTY, value);
+        req.commentProperties = Collections.singletonList(property);
         try {
             return jsdApiService.commentTicket(ticketIdOrKey, req);
         } catch (Exception e) {

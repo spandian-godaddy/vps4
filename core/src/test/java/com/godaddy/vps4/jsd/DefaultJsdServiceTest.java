@@ -148,7 +148,6 @@ public class DefaultJsdServiceTest {
         contentNodeReasonsText = (JsdContentNodeLabel) contentReasons.contentList.get(0);
         contentNodeReasonsValue = (JsdContentNodeValue) contentReasons.contentList.get(1);
 
-
         assertEquals("doc", jsdApiIssueRequest.fields.description.type);
         assertEquals(new Integer(1), jsdApiIssueRequest.fields.description.version);
         assertEquals("strong",contentMark.type);
@@ -222,6 +221,8 @@ public class DefaultJsdServiceTest {
         assertEquals("paragraph", contentParagraph.type);
         assertEquals(comment, contentValue.text);
         assertEquals("text", contentValue.type);
+        assertEquals("sd.public.comment", jsdApiIssueCommentRequest.commentProperties.get(0).key);
+        assertEquals(true, jsdApiIssueCommentRequest.commentProperties.get(0).value.internal);
     }
 
     @Test(expected = Exception.class)
@@ -229,6 +230,5 @@ public class DefaultJsdServiceTest {
         when(jsdApiService.commentTicket(eq("ticketId"), any(JsdApiIssueCommentRequest.class))).thenThrow(new Exception());
         defaultJsdService.commentTicket("ticketId", request.fqdn,  request.metricInfo, Instant.now());
     }
-
 
 }

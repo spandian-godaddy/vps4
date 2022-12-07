@@ -12,5 +12,4 @@ public interface JsdService {
     JsdCreatedIssue createTicket(CreateJsdTicketRequest createJsdTicketRequest);
     JsdIssueSearchResult searchTicket(String primaryIpAddress, Long outageId, UUID orionId);
     JsdCreatedComment commentTicket(String ticketIdOrKey, String fqdn, String items, Instant timestamp);
-
 }
