@@ -31,9 +31,23 @@ public class Vps4SubmitReinstateServerTest {
     public void testSubmitSuspend() throws Exception {
         Vps4SubmitReinstateServer.Request request = new Vps4SubmitReinstateServer.Request();
         request.virtualMachine = vm;
+        request.reason = ECommCreditService.SuspensionReason.LEGAL;
+
+        command.executeWithAction(context, request);
+        verify(creditService, times(1)).submitReinstate(vm.orionGuid,
+                ECommCreditService.SuspensionReason.LEGAL);
+    }
+
+
+    @Test
+    public void testSubmitSuspendForBothPolicyAndLegal() throws Exception {
+        Vps4SubmitReinstateServer.Request request = new Vps4SubmitReinstateServer.Request();
+        request.virtualMachine = vm;
         request.reason = ECommCreditService.SuspensionReason.FRAUD;
 
         command.executeWithAction(context, request);
+        verify(creditService, times(1)).submitReinstate(vm.orionGuid,
+                ECommCreditService.SuspensionReason.POLICY);
         verify(creditService, times(1)).submitReinstate(vm.orionGuid,
                 ECommCreditService.SuspensionReason.FRAUD);
     }

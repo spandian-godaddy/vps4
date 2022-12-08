@@ -35,7 +35,13 @@ public class Vps4SubmitReinstateServer extends ActionCommand<Vps4SubmitReinstate
     @Override
     protected Void executeWithAction(CommandContext context, Vps4SubmitReinstateServer.Request request) throws Exception {
         logger.info("Request: {}", request);
-        creditService.submitReinstate(request.virtualMachine.orionGuid, request.reason);
+        if (request.reason == ECommCreditService.SuspensionReason.FRAUD ||
+            request.reason == ECommCreditService.SuspensionReason.POLICY) {
+            creditService.submitReinstate(request.virtualMachine.orionGuid, ECommCreditService.SuspensionReason.FRAUD);
+            creditService.submitReinstate(request.virtualMachine.orionGuid, ECommCreditService.SuspensionReason.POLICY);
+        } else  {
+            creditService.submitReinstate(request.virtualMachine.orionGuid, request.reason);
+        }
         return null;
     }
 

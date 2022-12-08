@@ -111,7 +111,8 @@ public class VmSuspendReinstateResource {
     @Path("{vmId}/reinstate")
     @ApiOperation(value = "Reinstate a server. This is a pass through to the corresponding HFS method.",
             notes = "Reinstate a server. " +
-                    "This is a pass through to the corresponding HFS method.")
+                    "This is a pass through to the corresponding HFS method. Reinstates for FRAUD or POLICY will " +
+                    "attempt to reinstate for both FRAUD and POLICY reasons.")
     @RequiresRole(roles = {GDUser.Role.ADMIN, GDUser.Role.HS_LEAD, GDUser.Role.SUSPEND_AUTH})
     public VmAction reinstateVm(@PathParam("vmId") UUID vmId,
                                 @ApiParam(value = "Available reasons are FRAUD, LEGAL, POLICY.", required = true) @QueryParam("reason") String reason) {
