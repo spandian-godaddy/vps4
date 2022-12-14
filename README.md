@@ -377,6 +377,3 @@ TODO: Eventually need to puppetize this process below.
     service sensu-client start
     tail -50f /var/log/sensu/sensu-client.log
     ```
-
-
-This change is to trigger a webhook test 5
