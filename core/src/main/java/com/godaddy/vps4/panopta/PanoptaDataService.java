@@ -22,5 +22,6 @@ public interface PanoptaDataService {
     void addPanoptaAdditionalFqdn(String fqdn, long panoptaServerId);
     boolean activeAdditionalFqdnExistsForServer(String fqdn, long panoptaServerId);
     void deletePanoptaAdditionalFqdn(String fqdn, long panoptaServerId);
+    void deleteVirtualMachineAdditionalFqdns(UUID vmId);
     Map<String, Instant> getPanoptaAdditionalFqdnWithValidOn(UUID vmId);
 }

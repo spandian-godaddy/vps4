@@ -177,6 +177,17 @@ public class JdbcPanoptaDataService implements PanoptaDataService {
     }
 
     @Override
+    public void deleteVirtualMachineAdditionalFqdns(UUID vmId) {
+        Sql.with(dataSource)
+                .exec("UPDATE panopta_additional_fqdns set valid_until = now_utc()" +
+                                " WHERE additional_fqdn_id in" +
+                                " (select paf.additional_fqdn_id from panopta_additional_fqdns paf" +
+                                " join panopta_server ps on paf.server_id = ps.server_id" +
+                                " where ps.vm_id=?);",
+                        null, vmId);
+    }
+
+    @Override
     public Map<String, Instant> getPanoptaAdditionalFqdnWithValidOn(UUID vmId) {
         return Sql.with(dataSource).exec(
                 "SELECT paf.fqdn, paf.valid_on " +

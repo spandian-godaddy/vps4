@@ -223,6 +223,21 @@ public class PanoptaDataServiceTest {
     }
 
     @Test
+    public void canDeletePanoptaAdditionalFqdnsFromVmId() {
+        panoptaDataService.createPanoptaCustomer(fakeShopperId, fakeCustomerKey);
+        panoptaDataService.createPanoptaServer(vm.vmId, fakeShopperId, fakeTemplateId, panoptaServer);
+        panoptaDataService.addPanoptaAdditionalFqdn("fqdn.fake", panoptaServer.serverId);
+        panoptaDataService.addPanoptaAdditionalFqdn("fqdn3.fake", panoptaServer.serverId);
+        List<String> additionalFqdns = panoptaDataService.getPanoptaActiveAdditionalFqdns(vm.vmId);
+        assertEquals("fqdn.fake", additionalFqdns.get(0));
+        assertEquals("fqdn3.fake", additionalFqdns.get(1));
+
+        panoptaDataService.deleteVirtualMachineAdditionalFqdns(vm.vmId);
+        List<String> additionalFqdnsDeleted = panoptaDataService.getPanoptaActiveAdditionalFqdns(vm.vmId);
+        assertEquals(0, additionalFqdnsDeleted.size());
+    }
+
+    @Test
     public void canGetFqdnAndValidOnByVmId() {
         panoptaDataService.createPanoptaCustomer(fakeShopperId, fakeCustomerKey);
         panoptaDataService.createPanoptaServer(vm.vmId, fakeShopperId, fakeTemplateId, panoptaServer);

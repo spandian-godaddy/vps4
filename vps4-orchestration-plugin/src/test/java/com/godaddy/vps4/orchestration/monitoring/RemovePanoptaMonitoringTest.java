@@ -25,6 +25,7 @@ public class RemovePanoptaMonitoringTest {
     public void removesMonitoring() {
         command.execute(context, vmId);
         verify(panoptaService).deleteServer(vmId);
+        verify(panoptaDataService).deleteVirtualMachineAdditionalFqdns(vmId);
         verify(panoptaDataService).setPanoptaServerDestroyed(vmId);
     }
 }

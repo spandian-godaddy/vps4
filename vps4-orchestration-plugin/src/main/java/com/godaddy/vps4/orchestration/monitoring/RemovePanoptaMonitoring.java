@@ -32,6 +32,7 @@ public class RemovePanoptaMonitoring implements Command<UUID, Void> {
     @Override
     public Void execute(CommandContext context, UUID vmId) {
         panoptaService.deleteServer(vmId);
+        panoptaDataService.deleteVirtualMachineAdditionalFqdns(vmId);
         panoptaDataService.setPanoptaServerDestroyed(vmId);
         return null;
     }
