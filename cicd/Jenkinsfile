@@ -8,108 +8,28 @@ pipeline {
         skipStagesAfterUnstable()
         timestamps()
         disableConcurrentBuilds()
+        skipDefaultCheckout() 
     }
     stages {
-        stage ("Build and Deploy Master to Test and Stage")
+        stage ("PR Verification")
+        {
+            when {
+                not {
+                    branch 'Master'
+                }
+            }
+            steps{
+                build job: 'pr-validation', parameters: [string(name: 'branch', value: "${env.BRANCH_NAME}")]
+            }
+        }
+        stage ("Build Master and Deploy to Test and Stage")
         {
             when {
                     branch 'Master'
             }
-            stages {
-                stage('Build') {
-                    steps {
-                        load("/home/jenkins/vps4_latest_version.properties")
-                        slackSend(color: '#00CD48', message: "vps4 *STARTING NEW BUILD*. Job '${env.JOB_NAME} [${VPS4_VERSION}]' (${env.BUILD_URL})")
-                        build job: 'vps4'
-                        echo "vps4 version: ${VPS4_VERSION}"
-                        slackSend(color: '#00CD48', message: "vps4 *BUILD* was successful. Job '${env.JOB_NAME} [${VPS4_VERSION}]' (${env.BUILD_URL})")
-                    }
-                }
-                stage("Deploy") {
-                    parallel {
-                        stage("Deploy to Test") {
-                            steps {
-                                load("/home/jenkins/vps4_latest_version.properties")
-                                echo "vps4 version: ${VPS4_VERSION}"
-                                build job: 'deployment/deploy_to_test', parameters: [string(name: 'VPS4_VERSION', value: VPS4_VERSION)]
-                                productStampZk("test", "vps4-web-${VPS4_VERSION}.noarch", "vps4-web")
-                                productStampZk("test", "vps4-message-consumer-${VPS4_VERSION}.noarch", "vps4-message-consumer")
-                                productStampZk("test", "vps4-orchestration-plugin-${VPS4_VERSION}.noarch", "hfs-engine")
-                                productStampZkAndWait("test", "vps4-scheduler-${VPS4_VERSION}.noarch", "vps4-scheduler")
-                                slackSend(color: '#00CD48', message: "vps4 *DEPLOY TO TEST* was SUCCESSFUL. Job '${env.JOB_NAME} [${VPS4_VERSION}]' (${env.BUILD_URL})")
-                            }
-                        }
-                        stage("Deploy to Stage") {            
-                            steps {
-                                load("/home/jenkins/vps4_latest_version.properties")
-                                echo "vps4 version: ${VPS4_VERSION}"
-                                build job: 'deployment/deploy_to_stage', parameters: [string(name: 'VPS4_VERSION', value: VPS4_VERSION)]
-                                productStampZk("stage", "vps4-web-${VPS4_VERSION}.noarch", "vps4-web")
-                                productStampZk("stage", "vps4-message-consumer-${VPS4_VERSION}.noarch", "vps4-message-consumer")
-                                productStampZk("stage", "vps4-orchestration-plugin-${VPS4_VERSION}.noarch", "hfs-engine")
-                                productStampZkAndWait("stage", "vps4-scheduler-${VPS4_VERSION}.noarch", "vps4-scheduler")
-                                slackSend(color: '#00CD48', message: "vps4 *DEPLOY TO STAGE* was SUCCESSFUL. Job '${env.JOB_NAME} [${VPS4_VERSION}]' (${env.BUILD_URL})")
-                            }
-                        }
-                    }
-                }
-                stage("Phase3 Stage") {
-                    options {
-                        timeout(time: 45, unit: 'MINUTES')
-                        retry(1)
-                    }
-                    steps {
-                        load("/home/jenkins/vps4_latest_version.properties")
-                        echo "vps4 version: ${VPS4_VERSION}"
-                        timeout(time:45, unit:'MINUTES') {
-                            build job: 'stage_phase_3_test', parameters: [string(name: 'VPS4_VERSION', value: VPS4_VERSION)]
-                        }
-                        slackSend(color: '#00CD48', message: "vps4 *PHASE 3 TESTS* in stage env were SUCCESSFUL. Job '${env.JOB_NAME} [${VPS4_VERSION}]' (${env.BUILD_URL})")
-                    }
-                }
-            }
-            post {
-                success {
-                    cleanupEnvironment()
-                    slackSend(color: '#00CD48', message: "vps4 *TEST/STAGE DEPLOYMENT COMPLETE*. Job '${env.JOB_NAME} [${VPS4_VERSION}]' (${env.BUILD_URL})")
-                }
-                failure {
-                    slackSend(color: '#ff0000', message: "*ERROR*: Job '${env.JOB_NAME} [${VPS4_VERSION}]' (${env.BUILD_URL})")
-                }
+            steps {
+                build job: 'test-stage'
             }
         }
     }
-}
-
-private void cleanupEnvironment() {
-    if (currentBuild.currentResult == 'SUCCESS') {
-        cleanWs cleanWhenAborted: false, cleanWhenFailure: false, cleanWhenNotBuilt: false, cleanWhenUnstable: false
-    } else {
-        echo "Skipping workspace cleanup due to errors in build"
-    }
-}
-
-private void productStampZkAndWait(String targetEnv, String rpmName, String product) {
-    productStampZk(targetEnv, rpmName, product, false)
-}
-
-private void productStampZk(String targetEnv, String rpmName, String product, Boolean quickdeploy=true) {
-    echo "targetEnv: ${targetEnv}, rpmName: ${rpmName}, product: ${product}, quickdeploy: ${quickdeploy}"
-    if (quickdeploy) {
-        shell("/usr/bin/python ./cicd/vps4_zk_cicd.py -e ${targetEnv} -n ${rpmName} -p ${product} -q")
-    } else {
-        shell("/usr/bin/python ./cicd/vps4_zk_cicd.py -e ${targetEnv} -n ${rpmName} -p ${product}")
-    }
-}
-
-
-private void shell(GString script) {
-    if (this.sh(returnStatus: true, script: script)) {
-        this.currentBuild.result = 'ERROR'
-        this.error("Error running shell script")
-    }
-}
-
-private void shell(String script) {
-    this.shell("${script}")
-}
+} 
