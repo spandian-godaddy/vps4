@@ -40,7 +40,8 @@ public class ECommCreditService implements CreditService {
         PURCHASED_AT,
         RELEASED_AT,
         RELAY_COUNT,
-        SUSPENDED;
+        SUSPENDED,
+        BILLING_SUSPENDED_FLAG;
 
         @Override
         public String toString() {
