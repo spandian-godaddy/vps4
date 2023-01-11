@@ -171,7 +171,7 @@ public class Vps4ProcessAccountCancellationTest {
     @Test
     public void calculatesValidUntilWhenAccountCancellationIsProcessed() {
         Instant now = Instant.now();
-        long zombieWaitDuration = 7;
+        long zombieWaitDuration = 21;
         when(config.get("vps4.zombie.cleanup.waittime")).thenReturn(String.valueOf(zombieWaitDuration));
 
         command.execute(context, request);

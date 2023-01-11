@@ -114,7 +114,7 @@ public class VmZombieResourceTest {
         scheduledJob.id = jobId;
         when(scheduledJobService.getScheduledJobsByType(eq(testVm.vmId),
                 eq(ScheduledJob.ScheduledJobType.ZOMBIE))).thenReturn(scheduledJobs);
-        when(config.get(eq("vps4.zombie.cleanup.waittime"))).thenReturn("7");
+        when(config.get(eq("vps4.zombie.cleanup.waittime"))).thenReturn("21");
         when(schedulerWebService.getJob(eq("vps4"), eq("zombie"), eq(jobId))).thenReturn(job);
     }
 
