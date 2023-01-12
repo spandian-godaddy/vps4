@@ -2,7 +2,6 @@ package com.godaddy.vps4.web.security;
 
 import java.util.Arrays;
 import java.util.List;
-import java.util.UUID;
 import java.util.stream.Collectors;
 
 import javax.inject.Inject;
@@ -79,11 +78,9 @@ public class XCertSubjectHeaderAuthenticator implements RequestAuthenticator<GDU
 
     private GDUser createGDUser(HttpServletRequest request) {
         String shopperId = request.getHeader("X-Shopper-Id");
-        String customerId = request.getHeader("X-Customer-Id");
 
         GDUser gdUser = new GDUser();
         gdUser.shopperId = shopperId;
-        gdUser.customerId = customerId == null ? null : UUID.fromString(customerId);
         gdUser.isEmployee = true;
         gdUser.isAdmin = true;
         gdUser.username = username;
