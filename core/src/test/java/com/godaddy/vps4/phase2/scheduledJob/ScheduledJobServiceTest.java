@@ -9,6 +9,7 @@ import java.util.UUID;
 
 import javax.sql.DataSource;
 
+import com.godaddy.vps4.security.Vps4User;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -30,17 +31,20 @@ public class ScheduledJobServiceTest {
     ScheduledJobService sjs = injector.getInstance(ScheduledJobService.class);
     VirtualMachine vm1;
     VirtualMachine vm2;
-      
+    Vps4User user;
+
     @Before
     public void setup() {
-        vm1 = SqlTestData.insertTestVm(UUID.randomUUID(), dataSource);
-        vm2 = SqlTestData.insertTestVm(UUID.randomUUID(), dataSource);
+        user = SqlTestData.insertTestVps4User(dataSource);
+        vm1 = SqlTestData.insertTestVm(UUID.randomUUID(), dataSource, user.getId());
+        vm2 = SqlTestData.insertTestVm(UUID.randomUUID(), dataSource, user.getId());
     }
     
     @After
     public void cleanup() {
         SqlTestData.cleanupTestVmAndRelatedData(vm1.vmId, dataSource);
         SqlTestData.cleanupTestVmAndRelatedData(vm2.vmId, dataSource);
+        SqlTestData.deleteTestVps4User(dataSource);
     }
     
     @Test

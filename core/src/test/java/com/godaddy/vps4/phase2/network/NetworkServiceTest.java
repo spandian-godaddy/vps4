@@ -10,6 +10,7 @@ import java.util.UUID;
 
 import javax.sql.DataSource;
 
+import com.godaddy.vps4.security.Vps4User;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -38,6 +39,7 @@ public class NetworkServiceTest {
     private DataSource dataSource;
     private VirtualMachine vm;
     private VirtualMachine vmTwo;
+    private Vps4User vps4User;
 
     @Before
     public void setupService() {
@@ -45,14 +47,16 @@ public class NetworkServiceTest {
         networkService = new JdbcNetworkService(dataSource);
         projectService = new JdbcProjectService(dataSource);
 
-        vm = SqlTestData.insertTestVm(orionGuid, dataSource);
-        vmTwo = SqlTestData.insertTestVm(orionGuidTwo, dataSource);
+        vps4User = SqlTestData.insertTestVps4User(dataSource);
+        vm = SqlTestData.insertTestVm(orionGuid, dataSource, vps4User.getId());
+        vmTwo = SqlTestData.insertTestVm(orionGuidTwo, dataSource, vps4User.getId());
     }
 
     @After
     public void cleanup() {
         SqlTestData.cleanupTestVmAndRelatedData(vm.vmId, dataSource);
         SqlTestData.cleanupTestVmAndRelatedData(vmTwo.vmId, dataSource);
+        SqlTestData.deleteTestVps4User(dataSource);
     }
 
     @Test

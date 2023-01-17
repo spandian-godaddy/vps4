@@ -5,6 +5,7 @@ import com.godaddy.vps4.customNotes.CustomNotesService;
 import com.godaddy.vps4.customNotes.jdbc.JdbcCustomNotesService;
 import com.godaddy.vps4.jdbc.DatabaseModule;
 import com.godaddy.vps4.phase2.SqlTestData;
+import com.godaddy.vps4.security.Vps4User;
 import com.godaddy.vps4.vm.VirtualMachine;
 import com.google.inject.AbstractModule;
 import com.google.inject.Guice;
@@ -29,7 +30,7 @@ public class JdbcCustomNotesTest {
     static private DataSource dataSource;
     private UUID vmId;
     private UUID differentVmId;
-
+    private Vps4User user;
     private Long differentVmNoteId;
 
     @BeforeClass
@@ -47,8 +48,9 @@ public class JdbcCustomNotesTest {
                 bind(CustomNotesService.class).to(JdbcCustomNotesService.class);
             }
         });
-        VirtualMachine vm = SqlTestData.insertTestVm(UUID.randomUUID(), dataSource);
-        VirtualMachine differentVm = SqlTestData.insertTestVm(UUID.randomUUID(), dataSource);
+        user = SqlTestData.insertTestVps4User(dataSource);
+        VirtualMachine vm = SqlTestData.insertTestVm(UUID.randomUUID(), dataSource, user.getId());
+        VirtualMachine differentVm = SqlTestData.insertTestVm(UUID.randomUUID(), dataSource, user.getId());
         differentVmId = differentVm.vmId;
         vmId = vm.vmId;
         SqlTestData.insertTestCustomNotes(vmId, dataSource, "Test Note 1", "TestUser1");
@@ -62,6 +64,7 @@ public class JdbcCustomNotesTest {
         SqlTestData.cleanupTestCustomNotes(differentVmId, dataSource);
         SqlTestData.cleanupTestVmAndRelatedData(vmId, dataSource);
         SqlTestData.cleanupTestVmAndRelatedData(differentVmId, dataSource);
+        SqlTestData.deleteTestVps4User(dataSource);
     }
 
     @Test

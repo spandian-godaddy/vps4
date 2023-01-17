@@ -16,6 +16,9 @@ import java.util.UUID;
 
 import javax.sql.DataSource;
 
+import com.godaddy.vps4.security.Vps4User;
+import com.godaddy.vps4.security.Vps4UserService;
+import com.godaddy.vps4.security.jdbc.JdbcVps4UserService;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -44,7 +47,9 @@ public class PanoptaDataServiceTest {
     private VirtualMachine vm;
 
     private PanoptaDataService panoptaDataService;
+
     private PanoptaServer panoptaServer;
+    private Vps4User user;
     private Config config = mock(Config.class);
 
     private Injector injector = Guice.createInjector(new DatabaseModule());
@@ -52,7 +57,8 @@ public class PanoptaDataServiceTest {
 
     @Before
     public void setUp() throws Exception {
-        vm = SqlTestData.insertTestVm(orionGuid, dataSource);
+        user = SqlTestData.insertTestVps4User(dataSource);
+        vm = SqlTestData.insertTestVm(orionGuid, dataSource, user.getId());
         panoptaDataService = new JdbcPanoptaDataService(dataSource, config);
         String fakeName = "s64-202-190-85.secureserver.net";
         String fakeFqdn = "s64-202-190-85.secureserver.net";
@@ -72,6 +78,7 @@ public class PanoptaDataServiceTest {
         Sql.with(dataSource).exec("DELETE FROM panopta_customer WHERE partner_customer_key = ?", null, fakePartnerCustomerKey);
 
         SqlTestData.cleanupTestVmAndRelatedData(vm.vmId, dataSource);
+        SqlTestData.deleteTestVps4User(dataSource);
     }
 
     @Test

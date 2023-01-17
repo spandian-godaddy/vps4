@@ -53,22 +53,22 @@ public class MonitorServiceTest {
     public void setupService() {
         vps4UserService = new JdbcVps4UserService(reportsDataSource);
         vps4User = vps4UserService.getOrCreateUserForShopper("FakeShopper", "1", UUID.randomUUID());
-        vm1 = SqlTestData.insertTestVm(orionGuid, reportsDataSource);
+        vm1 = SqlTestData.insertTestVm(orionGuid, reportsDataSource, vps4User.getId());
         createActionWithDate(vm1.vmId, ActionType.CREATE_VM, ActionStatus.IN_PROGRESS, Instant.now().minus(Duration.ofMinutes(61)),  reportsDataSource);
 
-        vm2 = SqlTestData.insertTestVm(orionGuid, reportsDataSource);
+        vm2 = SqlTestData.insertTestVm(orionGuid, reportsDataSource, vps4User.getId());
         createActionWithDate(vm2.vmId, ActionType.CREATE_VM, ActionStatus.IN_PROGRESS, Instant.now().minus(Duration.ofMinutes(10)), reportsDataSource);
 
-        vm3 = SqlTestData.insertTestVm(orionGuid, reportsDataSource);
+        vm3 = SqlTestData.insertTestVm(orionGuid, reportsDataSource, vps4User.getId());
         createActionWithDate(vm3.vmId, ActionType.CREATE_VM, ActionStatus.IN_PROGRESS, Instant.now().minus(Duration.ofMinutes(90)), reportsDataSource);
 
-        vm4 = SqlTestData.insertTestVm(orionGuid, reportsDataSource);
+        vm4 = SqlTestData.insertTestVm(orionGuid, reportsDataSource, vps4User.getId());
         createActionWithDate(vm4.vmId, ActionType.ENABLE_ADMIN_ACCESS, ActionStatus.IN_PROGRESS, Instant.now().minus(Duration.ofMinutes(90)), reportsDataSource);
 
-        vm5 = SqlTestData.insertTestVm(orionGuid, reportsDataSource);
+        vm5 = SqlTestData.insertTestVm(orionGuid, reportsDataSource, vps4User.getId());
         createActionWithDate(vm5.vmId, ActionType.CREATE_VM, ActionStatus.ERROR, Instant.now().minus(Duration.ofMinutes(90)), reportsDataSource);
 
-        vm6 = SqlTestData.insertTestVm(orionGuid, reportsDataSource);
+        vm6 = SqlTestData.insertTestVm(orionGuid, reportsDataSource, vps4User.getId());
         testSnapshotVm6 = new Snapshot(
                 UUID.randomUUID(),
                 vm6.projectId,
@@ -84,7 +84,7 @@ public class MonitorServiceTest {
         SqlTestData.insertTestSnapshot(testSnapshotVm6, reportsDataSource);
         createSnapshotActionWithDate(testSnapshotVm6.id, ActionType.CREATE_SNAPSHOT, ActionStatus.IN_PROGRESS, Instant.now().minus(Duration.ofMinutes(125)), reportsDataSource);
 
-        vm7 = SqlTestData.insertTestVm(orionGuid, reportsDataSource);
+        vm7 = SqlTestData.insertTestVm(orionGuid, reportsDataSource, vps4User.getId());
         testSnapshotVm7 = new Snapshot(
                 UUID.randomUUID(),
                 vm7.projectId,
@@ -100,10 +100,10 @@ public class MonitorServiceTest {
         SqlTestData.insertTestSnapshot(testSnapshotVm7, reportsDataSource);
         createSnapshotActionWithDate(testSnapshotVm7.id, ActionType.CREATE_SNAPSHOT, ActionStatus.IN_PROGRESS, Instant.now().minus(Duration.ofMinutes(60)), reportsDataSource);
 
-        vm8 = SqlTestData.insertTestVm(orionGuid, reportsDataSource);
+        vm8 = SqlTestData.insertTestVm(orionGuid, reportsDataSource, vps4User.getId());
         createActionWithDate(vm8.vmId, ActionType.CREATE_VM, ActionStatus.NEW, Instant.now().minus(Duration.ofMinutes(125)), reportsDataSource);
 
-        vm9 = SqlTestData.insertTestVm(orionGuid, reportsDataSource);
+        vm9 = SqlTestData.insertTestVm(orionGuid, reportsDataSource, vps4User.getId());
         createActionWithDate(vm9.vmId, ActionType.CREATE_VM, ActionStatus.COMPLETE, Instant.now().minus(Duration.ofMinutes(90)), reportsDataSource);
     }
 

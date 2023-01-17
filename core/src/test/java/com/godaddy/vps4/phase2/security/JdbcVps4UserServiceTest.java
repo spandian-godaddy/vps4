@@ -49,15 +49,10 @@ public class JdbcVps4UserServiceTest {
         assertEquals(shopperId, user3.getShopperId());
     }
 
-    @Test
-    public void getUserForShopperTestNullCustomerId() {
+    @Test(expected = RuntimeException.class)
+    public void cannotCreateShopperWithNullCustomerId() {
         Vps4UserService userService = new JdbcVps4UserService(dataSource);
-
-        Vps4User user1 = userService.getOrCreateUserForShopper(shopperId, "1", null);
-        assertEquals(shopperId, user1.getShopperId());
-
-        assertEquals(shopperId, user1.getShopperId());
-        assertNull(user1.getCustomerId());
+        userService.getOrCreateUserForShopper(shopperId, "1", null);
     }
 
     @Test

@@ -15,6 +15,7 @@ import java.util.UUID;
 import javax.inject.Inject;
 import javax.sql.DataSource;
 
+import com.godaddy.vps4.security.Vps4User;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -52,6 +53,7 @@ public class VmResourceProvisionTest {
     @Inject DataSource dataSource;
 
     private GDUser user;
+    private String customerId;
     private CreditService creditService;
     private CommandService mockCmdService;
 
@@ -111,6 +113,8 @@ public class VmResourceProvisionTest {
         request.image = "hfs-centos-7";
         request.name = SqlTestData.TEST_VM_NAME;
         request.password = "Password1!";
+
+        customerId = UUID.randomUUID().toString();
     }
 
     @After
@@ -127,6 +131,7 @@ public class VmResourceProvisionTest {
             .withAccountGuid(orionGuid.toString())
             .withAccountStatus(accountStatus)
             .withShopperID(GDUserMock.DEFAULT_SHOPPER)
+            .withCustomerID(customerId)
             .withResellerID(resellerId)
             .withProductMeta(productMeta)
             .withPlanFeatures(planFeatures)

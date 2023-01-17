@@ -8,9 +8,9 @@ import com.godaddy.vps4.notifications.NotificationFilter;
 import com.godaddy.vps4.notifications.NotificationService;
 import com.godaddy.vps4.notifications.NotificationType;
 import com.godaddy.vps4.notifications.jdbc.JdbcNotificationService;
-import com.godaddy.vps4.scheduledJob.ScheduledJob;
-import com.godaddy.vps4.scheduledJob.ScheduledJobService;
-import com.godaddy.vps4.scheduledJob.jdbc.JdbcScheduledJobService;
+import com.godaddy.vps4.security.Vps4User;
+import com.godaddy.vps4.security.Vps4UserService;
+import com.godaddy.vps4.security.jdbc.JdbcVps4UserService;
 import com.godaddy.vps4.snapshot.Snapshot;
 import com.godaddy.vps4.vm.ActionStatus;
 import com.godaddy.vps4.vm.ActionType;
@@ -22,9 +22,7 @@ import com.godaddy.vps4.vm.jdbc.JdbcVirtualMachineService;
 import javax.sql.DataSource;
 import java.sql.Timestamp;
 import java.time.Instant;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Random;
 import java.util.UUID;
 
@@ -45,12 +43,16 @@ public class SqlTestData {
         return insertTestVm(orionGuid, 1, dataSource, 1);
     }
 
-    public static VirtualMachine insertTestVmCustomDc(UUID orionGuid, DataSource dataSource, int dataCenterId) {
-        return insertTestVm(orionGuid, 1, dataSource, dataCenterId);
+    public static VirtualMachine insertTestVm(UUID orionGuid, DataSource dataSource, long vps4UserId) {
+        return insertTestVm(orionGuid, vps4UserId, dataSource, 1);
     }
 
-    public static VirtualMachine insertTestVmWithIp(UUID orionGuid, DataSource dataSource) {
-        VirtualMachine virtualMachine = insertTestVm(orionGuid, 1, dataSource, 1);
+    public static VirtualMachine insertTestVmCustomDc(UUID orionGuid, DataSource dataSource, int dataCenterId, long vps4UserId) {
+        return insertTestVm(orionGuid, vps4UserId, dataSource, dataCenterId);
+    }
+
+    public static VirtualMachine insertTestVmWithIp(UUID orionGuid, DataSource dataSource, long vps4UserId) {
+        VirtualMachine virtualMachine = insertTestVm(orionGuid, vps4UserId, dataSource, 1);
         return addIpToTestVm(dataSource, virtualMachine, 1);
     }
 
@@ -59,19 +61,19 @@ public class SqlTestData {
         return addIpToTestVm(dataSource, virtualMachineService.getVirtualMachine(vmId), 2);
     }
 
-    public static Map<VirtualMachine, List<ScheduledJob>> insertTestVmWithScheduledBackup(UUID orionGuid,
-                                                                                          DataSource dataSource) {
-        VirtualMachine virtualMachine = insertTestVm(orionGuid, 1, dataSource, 1);
-        List<ScheduledJob> scheduledJobs = addScheduledBackupToVm(dataSource, virtualMachine);
-        Map vmJobMap = new HashMap<VirtualMachine, List<ScheduledJob>>();
-        vmJobMap.put(virtualMachine, scheduledJobs);
-        return vmJobMap;
+    public static Vps4User insertTestVps4User(DataSource dataSource) {
+        Vps4UserService vps4UserService = new JdbcVps4UserService(dataSource);
+        return vps4UserService.getOrCreateUserForShopper("TestVps4User", "1", UUID.randomUUID());
+    }
+
+    public static void deleteTestVps4User(DataSource dataSource) {
+        Sql.with(dataSource).exec("DELETE FROM vps4_user WHERE shopper_id = ?", null, "TestVps4User");
     }
 
     public static VirtualMachine insertTestVm(UUID orionGuid, long vps4UserId, DataSource dataSource, int dataCenterId) {
         VirtualMachineService virtualMachineService = new JdbcVirtualMachineService(dataSource);
         long hfsVmId = getNextHfsVmId(dataSource);
-        String sgidPrefix = "vps4-testing-" + Long.toString(hfsVmId) + "-";
+        String sgidPrefix = "vps4-testing-" + hfsVmId + "-";
         ProvisionVirtualMachineParameters params = new ProvisionVirtualMachineParameters(
                 vps4UserId, dataCenterId, sgidPrefix, orionGuid, "testVirtualMachine",
                 10, 0, "centos-7");
@@ -93,18 +95,6 @@ public class SqlTestData {
                         hfsAddressId, ipAddress, ipTypeId, virtualMachine.vmId);
         VirtualMachineService virtualMachineService = new JdbcVirtualMachineService(dataSource);
         return virtualMachineService.getVirtualMachine(virtualMachine.vmId);
-    }
-
-    private static List<ScheduledJob> addScheduledBackupToVm(DataSource dataSource, VirtualMachine virtualMachine) {
-        UUID backupJobId = UUID.randomUUID();
-        Sql.with(dataSource)
-                .exec("INSERT INTO scheduled_job(id, vm_id, scheduled_job_type_id, created) VALUES (?, ?, 1, NOW())",
-                        null,
-                        backupJobId, virtualMachine.vmId);
-        Sql.with(dataSource).exec("UPDATE virtual_machine SET backup_job_id = ? WHERE vm_id = ?", null,
-                backupJobId, virtualMachine.vmId);
-        ScheduledJobService scheduledJobService = new JdbcScheduledJobService(dataSource);
-        return scheduledJobService.getScheduledJobs(virtualMachine.vmId);
     }
 
     public static void cleanupTestVmAndRelatedData(UUID vmId, DataSource dataSource) {

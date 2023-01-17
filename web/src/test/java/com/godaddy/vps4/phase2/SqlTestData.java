@@ -4,6 +4,9 @@ import java.util.UUID;
 
 import javax.sql.DataSource;
 
+import com.godaddy.vps4.security.Vps4User;
+import com.godaddy.vps4.security.Vps4UserService;
+import com.godaddy.vps4.security.jdbc.JdbcVps4UserService;
 import org.json.simple.JSONObject;
 
 import com.godaddy.hfs.jdbc.Sql;
@@ -45,12 +48,17 @@ public class SqlTestData {
                 Sql.nextOrNull(rs -> rs.isAfterLast() ? 0 : rs.getLong("hfs_address_id"))) + 1;
     }
 
-    public static VirtualMachine insertDedicatedTestVm(UUID orionGuid, DataSource dataSource) {
-        return insertTestVm(orionGuid, 1, dataSource, "centos7_64", 140, 1);
+    public static Vps4User insertTestVps4User(DataSource dataSource) {
+        Vps4UserService vps4UserService = new JdbcVps4UserService(dataSource);
+        return vps4UserService.getOrCreateUserForShopper("validUserShopperId", "1", UUID.randomUUID());
     }
 
-    public static VirtualMachine insertTestVm(UUID orionGuid, DataSource dataSource) {
-        return insertTestVm(orionGuid, 1, dataSource);
+    public static void deleteTestVps4User(DataSource dataSource) {
+        Sql.with(dataSource).exec("DELETE FROM vps4_user WHERE shopper_id = ?", null, "validUserShopperId");
+    }
+
+    public static VirtualMachine insertDedicatedTestVm(UUID orionGuid, long vps4UserId, DataSource dataSource) {
+        return insertTestVm(orionGuid, vps4UserId, dataSource, "centos7_64", 140, 1);
     }
 
     public static VirtualMachine insertTestVm(UUID orionGuid, long vps4UserId, DataSource dataSource){
@@ -139,6 +147,7 @@ public class SqlTestData {
         Sql.with(dataSource).exec("DELETE FROM notification_extended_details ned WHERE ned.notification_id =  '" + notificationId + "'", null);
         Sql.with(dataSource).exec("DELETE FROM notification ntf WHERE ntf.notification_id =  '" + notificationId + "'", null);
         Sql.with(dataSource).exec("DELETE FROM project p WHERE " + test_sgid_condition, null);
+        Sql.with(dataSource).exec("DELETE FROM vps4_user WHERE shopper_id = ?", null, "validUserShopperId");
     }
 
     public static void addImportedVM(UUID vmId, DataSource dataSource) {
@@ -148,9 +157,4 @@ public class SqlTestData {
     public static void removeImportedVM(UUID vmId, DataSource dataSource) {
         Sql.with(dataSource).exec("DELETE FROM imported_vm WHERE vm_id = ?", null, vmId);
     }
-
-    public static void markSnapshotDestroyed(UUID snapshotId, DataSource dataSource) {
-        Sql.with(dataSource).exec("UPDATE snapshot SET status=5 WHERE id = ?",  null, snapshotId);
-    }
-
 }

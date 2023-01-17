@@ -7,6 +7,7 @@ import java.util.UUID;
 
 import javax.sql.DataSource;
 
+import com.godaddy.vps4.security.Vps4User;
 import org.json.simple.JSONObject;
 import org.junit.After;
 import org.junit.Before;
@@ -15,16 +16,11 @@ import org.junit.Test;
 import com.godaddy.vps4.jdbc.DatabaseModule;
 import com.godaddy.hfs.jdbc.Sql;
 import com.godaddy.vps4.phase2.SqlTestData;
-import com.godaddy.vps4.project.Project;
-import com.godaddy.vps4.project.ProjectService;
-import com.godaddy.vps4.project.jdbc.JdbcProjectService;
 import com.godaddy.vps4.vm.Action;
 import com.godaddy.vps4.vm.ActionService;
 import com.godaddy.vps4.vm.ActionStatus;
 import com.godaddy.vps4.vm.ActionType;
 import com.godaddy.vps4.vm.VirtualMachine;
-import com.godaddy.vps4.vm.VirtualMachineService;
-import com.godaddy.vps4.vm.jdbc.JdbcVirtualMachineService;
 import com.godaddy.vps4.vm.jdbc.JdbcVmActionService;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
@@ -33,17 +29,16 @@ public class ActionTest {
     Injector injector = Guice.createInjector(new DatabaseModule());
     DataSource dataSource = injector.getInstance(DataSource.class);
     ActionService actionService = new JdbcVmActionService(dataSource);
-    ProjectService projectService = new JdbcProjectService(dataSource);
-    VirtualMachineService vmService = new JdbcVirtualMachineService(dataSource);
 
     private UUID orionGuid = UUID.randomUUID();
-    Project project;
+    Vps4User vps4User;
     ActionType type;
     VirtualMachine vm;
 
     @Before
     public void setupService(){
-        vm = SqlTestData.insertTestVm(orionGuid, dataSource);
+        vps4User = SqlTestData.insertTestVps4User(dataSource);
+        vm = SqlTestData.insertTestVm(orionGuid, dataSource, vps4User.getId());
         type = ActionType.CREATE_VM;
     }
 
@@ -51,6 +46,7 @@ public class ActionTest {
     public void cleanupService() {
         Sql.with(dataSource).exec("DELETE from vm_action where vm_id = ?", null, vm.vmId);
         SqlTestData.cleanupTestVmAndRelatedData(vm.vmId, dataSource);
+        SqlTestData.deleteTestVps4User(dataSource);
     }
 
     @Test

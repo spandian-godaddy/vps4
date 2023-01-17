@@ -14,6 +14,7 @@ import java.util.stream.Collectors;
 
 import javax.sql.DataSource;
 
+import com.godaddy.vps4.security.Vps4User;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -39,13 +40,15 @@ public class SnapshotServiceTest {
     private UUID orionGuid = UUID.randomUUID();
     private DataSource dataSource;
     private VirtualMachine vm;
+    private Vps4User user;
     private List<UUID> snapshotIds;
 
     @Before
     public void setupService() {
         dataSource = injector.getInstance(DataSource.class);
         snapshotService = new JdbcSnapshotService(dataSource);
-        vm = SqlTestData.insertTestVm(orionGuid, dataSource);
+        user = SqlTestData.insertTestVps4User(dataSource);
+        vm = SqlTestData.insertTestVm(orionGuid, dataSource,user.getId());
         snapshotIds = new ArrayList<>();
     }
 
@@ -71,6 +74,7 @@ public class SnapshotServiceTest {
     @After
     public void cleanup() {
         SqlTestData.cleanupTestVmAndRelatedData(vm.vmId, dataSource);
+        SqlTestData.deleteTestVps4User(dataSource);
     }
 
 

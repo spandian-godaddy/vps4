@@ -17,6 +17,7 @@ import java.util.stream.Collectors;
 
 import javax.sql.DataSource;
 
+import com.godaddy.vps4.security.Vps4User;
 import org.json.simple.JSONObject;
 import org.junit.After;
 import org.junit.Before;
@@ -44,6 +45,7 @@ public class JdbcHfsVmTrackingRecordServiceTest {
     VirtualMachineService virtualMachineService = new JdbcVirtualMachineService(dataSource);
     ActionService actionService = new JdbcVmActionService(dataSource);
     VirtualMachine vmOne, vmTwo, vmThree;
+    Vps4User vps4User;
     HfsVmTrackingRecord hfs11, hfs12, hfs13, hfs21, hfs22, hfs23, hfs31, hfs32, hfs33;
     long vmOneCreateActionId, vmTwoCreateActionId, vmThreeCreateActionId,
             vmOneCancelActionId, vmTwoCancelActionId, vmThreeCancelActionId,
@@ -51,9 +53,10 @@ public class JdbcHfsVmTrackingRecordServiceTest {
 
     @Before
     public void setup() {
-        vmOne = SqlTestData.insertTestVm(UUID.randomUUID(), dataSource);
-        vmTwo = SqlTestData.insertTestVm(UUID.randomUUID(), dataSource);
-        vmThree = SqlTestData.insertTestVm(UUID.randomUUID(), dataSource);
+        vps4User = SqlTestData.insertTestVps4User(dataSource);
+        vmOne = SqlTestData.insertTestVm(UUID.randomUUID(), dataSource, vps4User.getId());
+        vmTwo = SqlTestData.insertTestVm(UUID.randomUUID(), dataSource, vps4User.getId());
+        vmThree = SqlTestData.insertTestVm(UUID.randomUUID(), dataSource, vps4User.getId());
 
         vmOneCreateActionId = actionService.createAction(vmOne.vmId, ActionType.CREATE_VM, new JSONObject().toJSONString(), "username");
         vmTwoCreateActionId = actionService.createAction(vmTwo.vmId, ActionType.CREATE_VM, new JSONObject().toJSONString(), "username");
@@ -74,6 +77,7 @@ public class JdbcHfsVmTrackingRecordServiceTest {
         SqlTestData.cleanupTestVmAndRelatedData(vmOne.vmId, dataSource);
         SqlTestData.cleanupTestVmAndRelatedData(vmTwo.vmId, dataSource);
         SqlTestData.cleanupTestVmAndRelatedData(vmThree.vmId, dataSource);
+        SqlTestData.deleteTestVps4User(dataSource);
     }
 
     private void createHfsTrackingRecords() {

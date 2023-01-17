@@ -10,6 +10,7 @@ import java.util.UUID;
 
 import javax.sql.DataSource;
 
+import com.godaddy.vps4.security.Vps4User;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -44,6 +45,7 @@ public class ActionServiceTest {
     private VirtualMachine vm;
     private VirtualMachine vm1;
     private VirtualMachine vm2;
+    private Vps4User vps4User;
     private UUID snapshotId;
     private UUID snapshotId1;
     private UUID snapshotId2;
@@ -54,9 +56,10 @@ public class ActionServiceTest {
         vmActionService = new JdbcVmActionService(dataSource);
         snapshotActionService = new JdbcSnapshotActionService(dataSource);
         snapshotService = new JdbcSnapshotService(dataSource);
-        vm = SqlTestData.insertTestVm(orionGuid, dataSource);
-        vm1 = SqlTestData.insertTestVm(orionGuid, dataSource);
-        vm2 = SqlTestData.insertTestVm(orionGuid, dataSource);
+        vps4User = SqlTestData.insertTestVps4User(dataSource);
+        vm = SqlTestData.insertTestVm(orionGuid, dataSource, vps4User.getId());
+        vm1 = SqlTestData.insertTestVm(orionGuid, dataSource, vps4User.getId());
+        vm2 = SqlTestData.insertTestVm(orionGuid, dataSource, vps4User.getId());
         snapshotId = snapshotService.createSnapshot(vm.projectId, vm.vmId, "vmSnapshot", SnapshotType.AUTOMATIC);
         snapshotId1 = snapshotService.createSnapshot(vm1.projectId, vm1.vmId, "vm1Snapshot", SnapshotType.AUTOMATIC);
         snapshotId2 = snapshotService.createSnapshot(vm2.projectId, vm2.vmId, "vmSnapshot", SnapshotType.AUTOMATIC);
@@ -67,6 +70,7 @@ public class ActionServiceTest {
         SqlTestData.cleanupTestVmAndRelatedData(vm.vmId, dataSource);
         SqlTestData.cleanupTestVmAndRelatedData(vm1.vmId, dataSource);
         SqlTestData.cleanupTestVmAndRelatedData(vm2.vmId, dataSource);
+        SqlTestData.deleteTestVps4User(dataSource);
     }
 
 

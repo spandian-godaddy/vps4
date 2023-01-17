@@ -35,7 +35,6 @@ import com.godaddy.vps4.scheduler.api.web.SchedulerWebService;
 import com.godaddy.vps4.security.GDUserMock;
 import com.godaddy.vps4.security.SecurityModule;
 import com.godaddy.vps4.security.Vps4User;
-import com.godaddy.vps4.security.Vps4UserService;
 import com.godaddy.vps4.security.jdbc.AuthorizationException;
 import com.godaddy.vps4.snapshot.SnapshotModule;
 import com.godaddy.vps4.vm.AccountStatus;
@@ -74,7 +73,6 @@ public class VmRebuildResourceTest {
     private static String imageName = "hfs-centos-7";
     private static String dedImageName = "centos7_64";
 
-    @Inject Vps4UserService userService;
     @Inject DataSource dataSource;
     @Inject ActionService actionService;
     @Inject CreditService creditService;
@@ -130,7 +128,7 @@ public class VmRebuildResourceTest {
     public void setupTest() {
         MockitoAnnotations.initMocks(this);
 
-        ourVps4User = userService.getOrCreateUserForShopper(us.getShopperId(), "1", UUID.randomUUID());
+        ourVps4User = SqlTestData.insertTestVps4User(dataSource);
         ourVm = createVm(ourVps4User.getId());
         ourDedicated = createDedicatedVm(ourVps4User.getId());
         createVmUser(ourVm.vmId);
@@ -148,7 +146,7 @@ public class VmRebuildResourceTest {
     }
 
     private VirtualMachine createDedicatedVm(long vps4UserId) {
-        return SqlTestData.insertDedicatedTestVm(UUID.randomUUID(), dataSource);
+        return SqlTestData.insertDedicatedTestVm(UUID.randomUUID(), vps4UserId, dataSource);
     }
 
     private void createVmUser(UUID vmId) {

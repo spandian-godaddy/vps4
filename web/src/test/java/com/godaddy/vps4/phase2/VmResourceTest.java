@@ -87,7 +87,7 @@ public class VmResourceTest {
         injector.injectMembers(this);
         user = GDUserMock.createShopper();
         customerId = UUID.randomUUID();
-        vps4User = new Vps4User(1, GDUserMock.DEFAULT_SHOPPER, customerId);
+        vps4User = SqlTestData.insertTestVps4User(dataSource);
         when(userService.getUser(vps4User.getShopperId())).thenReturn(vps4User);
         when(userService.getUser(customerId)).thenReturn(vps4User);
         when(mailRelayService.getMailRelay(anyString())).thenReturn(new MailRelay());
@@ -492,7 +492,7 @@ public class VmResourceTest {
         VirtualMachine vm = createTestVm();
 
         user = GDUserMock.createShopper();
-        List<VirtualMachine> vms = getVmResource().getVirtualMachines(VirtualMachineType.ACTIVE, user.getShopperId(), null, null, null, null, null);
+        List<VirtualMachine> vms = getVmResource().getVirtualMachines(VirtualMachineType.ACTIVE, vps4User.getShopperId(), null, null, null, null, null);
         Assert.assertEquals(1, vms.size());
         Assert.assertEquals(vms.get(0).orionGuid, vm.orionGuid);
     }

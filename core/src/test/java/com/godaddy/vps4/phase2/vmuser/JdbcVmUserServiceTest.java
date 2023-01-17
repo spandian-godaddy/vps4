@@ -5,53 +5,49 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
-import java.sql.SQLException;
 import java.util.List;
 import java.util.UUID;
 
 import javax.sql.DataSource;
 
+import com.godaddy.vps4.security.Vps4User;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
 import com.godaddy.vps4.jdbc.DatabaseModule;
 import com.godaddy.vps4.phase2.SqlTestData;
-import com.godaddy.vps4.project.ProjectService;
-import com.godaddy.vps4.project.jdbc.JdbcProjectService;
 import com.godaddy.vps4.vm.VirtualMachine;
-import com.godaddy.vps4.vm.VirtualMachineService;
 import com.godaddy.vps4.vm.VmUser;
 import com.godaddy.vps4.vm.VmUserService;
 import com.godaddy.vps4.vm.VmUserType;
-import com.godaddy.vps4.vm.jdbc.JdbcVirtualMachineService;
 import com.godaddy.vps4.vm.jdbc.JdbcVmUserService;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
 
 public class JdbcVmUserServiceTest {
-
     private Injector injector = Guice.createInjector(new DatabaseModule());
     private DataSource dataSource = injector.getInstance(DataSource.class);
-    ProjectService projectService = new JdbcProjectService(dataSource);
-    VirtualMachineService vmService = new JdbcVirtualMachineService(dataSource);
 
     private UUID orionGuid = UUID.randomUUID();
     private String username = "testuser";
+    private Vps4User user;
     private VirtualMachine vm;
 
     @Before
-    public void setupServers() throws SQLException {
-        vm = SqlTestData.insertTestVm(orionGuid, dataSource);
+    public void setupServers() {
+        user =  SqlTestData.insertTestVps4User(dataSource);
+        vm = SqlTestData.insertTestVm(orionGuid, dataSource, user.getId());
     }
 
     @After
     public void cleanup() {
         SqlTestData.cleanupTestVmAndRelatedData(vm.vmId, dataSource);
+        SqlTestData.deleteTestVps4User(dataSource);
     }
 
     @Test
-    public void testCreateUser() throws SQLException {
+    public void testCreateUser() {
         VmUserService service = new JdbcVmUserService(dataSource);
         service.createUser(username, vm.vmId, true, VmUserType.CUSTOMER);
         List<VmUser> ul = service.listUsers(vm.vmId, null);
@@ -64,7 +60,7 @@ public class JdbcVmUserServiceTest {
     }
 
     @Test
-    public void testCreateUserNoAdmin() throws SQLException {
+    public void testCreateUserNoAdmin() {
         VmUserService service = new JdbcVmUserService(dataSource);
         service.createUser(username, vm.vmId, false);
         List<VmUser> ul = service.listUsers(vm.vmId, null);
@@ -86,7 +82,7 @@ public class JdbcVmUserServiceTest {
     }
 
     @Test(expected = RuntimeException.class)
-    public void testCreateUserAlreadyExists() throws SQLException {
+    public void testCreateUserAlreadyExists() {
         VmUserService service = new JdbcVmUserService(dataSource);
         service.createUser(username, vm.vmId, false);
         service.createUser(username, vm.vmId, false);

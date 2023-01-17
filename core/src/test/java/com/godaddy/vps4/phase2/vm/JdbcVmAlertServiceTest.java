@@ -13,6 +13,7 @@ import java.util.UUID;
 
 import javax.sql.DataSource;
 
+import com.godaddy.vps4.security.Vps4User;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -34,17 +35,20 @@ public class JdbcVmAlertServiceTest {
     DataSource dataSource = injector.getInstance(DataSource.class);
     private VmAlertService vmAlertService;
     private VirtualMachine vm;
+    private Vps4User user;
     private UUID orionGuid = UUID.randomUUID();
 
     @Before
     public void setUp() throws Exception {
-        vm = SqlTestData.insertTestVm(orionGuid, dataSource);
+        user = SqlTestData.insertTestVps4User(dataSource);
+        vm = SqlTestData.insertTestVm(orionGuid, dataSource, user.getId());
         vmAlertService = new JdbcVmAlertService(dataSource);
     }
 
     @After
     public void tearDown() throws Exception {
         SqlTestData.cleanupTestVmAndRelatedData(vm.vmId, dataSource);
+        SqlTestData.deleteTestVps4User(dataSource);
     }
 
     @Test
