@@ -16,7 +16,7 @@ public class JsdApiIssueRequest {
         @JsonProperty("project") public JsdFieldKey project;
         @JsonProperty("reporter") public JsdFieldId reporter;
         @JsonProperty("summary") public String summary;
-        @JsonProperty("customfield_10229")  public String partnerCustomerKey;
+        @JsonProperty("customfield_10229") public String partnerCustomerKey;
         @JsonProperty("customfield_10165") public String plid;
         @JsonProperty("customfield_10197") public JsdFieldValue serviceRequestCategory;
         @JsonProperty("customfield_10207") public String fqdn;
@@ -31,7 +31,9 @@ public class JsdApiIssueRequest {
         @JsonProperty("customfield_10259") public String metricTypes;
         @JsonProperty("customfield_10262") public JsdContentDoc servicesAffected;
         @JsonProperty("customfield_10264") public JsdFieldValue dataCenter;
-        @JsonProperty("customfield_10116")  public JsdFieldValue escalationReason;
+        @JsonProperty("customfield_10116") public JsdFieldValue escalationReason;
+        @JsonProperty("customfield_10206") public String emailIsc;
+        @JsonProperty("customfield_10180") public JsdFieldValue emailTarget;
 
         @JsonProperty("description") public JsdContentDoc description;
 

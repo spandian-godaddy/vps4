@@ -37,6 +37,8 @@ public class DefaultJsdService implements JsdService {
     private static final String CONTENT_MARKS = "strong";
     private static final String ESCALATION_REASON = "Fully Managed Server";
     private static final String COMMENT_PROPERTY = "sd.public.comment";
+    private static final String EMAIL_ISC = "sysadmin";
+    private static final String EMAIL_TARGET = "Shopper ID and Participants";
 
     private final String timezoneForDateParams;
     private final String dateTimePattern;
@@ -109,7 +111,7 @@ public class DefaultJsdService implements JsdService {
     }
 
     private JsdApiIssueRequest.JsdIssueFields buildRequestFields(CreateJsdTicketRequest createTicketRequest) {
-        JsdFieldValue requestCategory, supportTier, severity, supportProduct, customerProduct, dataCenter, escalationReason;
+        JsdFieldValue requestCategory, supportTier, severity, supportProduct, customerProduct, dataCenter, escalationReason, emailTarget;
 
         JsdFieldName issueType = new JsdFieldName(REQUEST_TYPE);
         JsdFieldKey project = new JsdFieldKey(config.get("jsd.project.key"));
@@ -122,6 +124,7 @@ public class DefaultJsdService implements JsdService {
         customerProduct = new JsdFieldValue(createTicketRequest.customerProduct);
         dataCenter = new JsdFieldValue(createTicketRequest.dataCenter);
         escalationReason = new JsdFieldValue(ESCALATION_REASON);
+        emailTarget = new JsdFieldValue(EMAIL_TARGET);
 
         JsdContentDoc servicesAffected = buildServicesAffectedContent(createTicketRequest.metricTypes);
 
@@ -156,6 +159,8 @@ public class DefaultJsdService implements JsdService {
         fields.servicesAffected = servicesAffected;
         fields.dataCenter = dataCenter;
         fields.description = description;
+        fields.emailIsc = EMAIL_ISC;
+        fields.emailTarget = emailTarget;
 
         return fields;
     }
