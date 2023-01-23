@@ -156,7 +156,7 @@ public class Vps4BackupJobTest {
         when(mockVmSnapshotService.createSnapshot(
                 eq(vps4BackupJob.request.vmId),
                 any(VmSnapshotResource.VmSnapshotRequest.class)))
-            .thenThrow(new RuntimeException("Boom!!"));
+            .thenThrow(new WebApplicationException("Boom!!"));
 
         vps4BackupJob.execute(context);
     }
