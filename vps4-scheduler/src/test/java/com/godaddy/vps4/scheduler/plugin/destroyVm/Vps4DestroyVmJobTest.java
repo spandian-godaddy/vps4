@@ -81,7 +81,7 @@ public class Vps4DestroyVmJobTest {
     @Test(expected = JobExecutionException.class)
     public void throwsJobExecutionExceptionInCaseOfErrorWhileDestroyingVm() throws JobExecutionException {
         when(mockVmService.destroyVm(eq(vps4DestroyVmJob.request.vmId)))
-                .thenThrow(new WebApplicationException("Boom!!"));
+                .thenThrow(new RuntimeException("Boom!!"));
 
         vps4DestroyVmJob.execute(context);
     }

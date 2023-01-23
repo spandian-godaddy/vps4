@@ -85,7 +85,7 @@ public class Vps4RemoveSupportUserJobTest {
     @Test(expected = JobExecutionException.class)
     public void throwsJobExecutionExceptionInCaseOfErrorRemovingSupportUser() throws JobExecutionException {
         when(mockVmSupportUserService.removeSupportUsers(eq(vps4RemoveSupportUserJob.request.vmId), eq(vps4RemoveSupportUserJob.request.username)))
-           .thenThrow(new WebApplicationException("Boom!!"));
+           .thenThrow(new RuntimeException("Boom!!"));
 
         vps4RemoveSupportUserJob.execute(context);
     }

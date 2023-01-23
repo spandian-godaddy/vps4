@@ -81,7 +81,7 @@ public class Vps4ZombieCleanupJobTest {
     @Test(expected = JobExecutionException.class)
     public void throwsJobExecutionExceptionInCaseOfErrorWhileDestroyingVm() throws JobExecutionException {
         when(mockVmService.destroyVm(eq(vps4ZombieCleanupJob.request.vmId)))
-           .thenThrow(new WebApplicationException("Boom!!"));
+           .thenThrow(new RuntimeException("Boom!!"));
 
         vps4ZombieCleanupJob.execute(context);
     }
