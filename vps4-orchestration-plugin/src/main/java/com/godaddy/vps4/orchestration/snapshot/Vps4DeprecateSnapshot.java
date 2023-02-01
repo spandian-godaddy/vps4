@@ -43,6 +43,8 @@ public class Vps4DeprecateSnapshot extends ActionCommand<Vps4DeprecateSnapshot.R
         public UUID snapshotIdToDeprecate;
         public String initiatedBy;
 
+        public Request() {} // needed for deserialization
+
         public Request(UUID vmId, UUID snapshotIdToDeprecate, String initiatedBy) {
             this.vmId = vmId;
             this.snapshotIdToDeprecate = snapshotIdToDeprecate;
