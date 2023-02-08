@@ -93,32 +93,34 @@ public class Vps4ClearVmOutageTest {
         Assert.assertEquals(outage.panoptaOutageId, arg2.vmOutage.panoptaOutageId);
     }
 
+
+    @Test
+    public void executeEmailCommandWhenCreditIsFullyManaged() {
+        when(credit.isManaged()).thenReturn(true);
+        vps4ClearVmOutage.executeWithAction(context, request);
+        verify(context).execute(eq("GetPanoptaOutage"), eq(GetPanoptaOutage.class), any());
+        verify(context).execute(eq("SendOutageClearNotificationEmail"), eq(SendVmOutageResolvedEmail.class), any());
+    }
+
     @Test
     public void noEmailCommandWhenAccountNotActive() {
         when(credit.isAccountActive()).thenReturn(false);
         vps4ClearVmOutage.executeWithAction(context, request);
-        verify(context, never()).execute(eq("SendOutageClearNotificationEmail"), eq(SendVmOutageEmail.class), any());
+        verify(context, never()).execute(eq("SendOutageClearNotificationEmail"), eq(SendVmOutageResolvedEmail.class), any());
     }
 
     @Test
     public void noEmailCommandWhenCreditNotFound() {
         when(creditService.getVirtualMachineCredit(any())).thenReturn(null);
         vps4ClearVmOutage.executeWithAction(context, request);
-        verify(context, never()).execute(eq("SendOutageClearNotificationEmail"), eq(SendVmOutageEmail.class), any());
+        verify(context, never()).execute(eq("SendOutageClearNotificationEmail"), eq(SendVmOutageResolvedEmail.class), any());
     }
 
     @Test
     public void noEmailCommandWhenVmDestroyed() {
         when(request.virtualMachine.isActive()).thenReturn(false);
         vps4ClearVmOutage.executeWithAction(context, request);
-        verify(context, never()).execute(eq("SendOutageClearNotificationEmail"), eq(SendVmOutageEmail.class), any());
-    }
-
-    @Test
-    public void noEmailCommandWhenCreditIsFullyManaged() {
-        when(credit.isManaged()).thenReturn(true);
-        vps4ClearVmOutage.executeWithAction(context, request);
-        verify(context, never()).execute(eq("SendOutageClearNotificationEmail"), eq(SendVmOutageEmail.class), any());
+        verify(context, never()).execute(eq("SendOutageClearNotificationEmail"), eq(SendVmOutageResolvedEmail.class), any());
     }
 
     @Test

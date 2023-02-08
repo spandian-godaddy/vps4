@@ -81,7 +81,7 @@ public class Vps4ClearVmOutage extends ActionCommand<Vps4ClearVmOutage.Request, 
 
     private void sendOutageNotificationEmail(VirtualMachine virtualMachine, VmOutage vmOutage) {
         VirtualMachineCredit credit = creditService.getVirtualMachineCredit(virtualMachine.orionGuid);
-        if (credit != null && credit.isAccountActive() && virtualMachine.isActive() && !credit.isManaged()) {
+        if (credit != null && credit.isAccountActive() && virtualMachine.isActive()) {
             VmOutageEmailRequest vmOutageEmailRequest =
                     new VmOutageEmailRequest(virtualMachine.name, virtualMachine.primaryIpAddress.ipAddress,
                             credit.getOrionGuid(), credit.getShopperId(), virtualMachine.vmId, credit.isManaged(),
