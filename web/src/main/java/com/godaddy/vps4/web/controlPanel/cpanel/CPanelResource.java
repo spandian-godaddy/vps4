@@ -1,5 +1,7 @@
 package com.godaddy.vps4.web.controlPanel.cpanel;
 
+import java.io.UnsupportedEncodingException;
+import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -52,6 +54,8 @@ import static com.godaddy.vps4.web.util.RequestValidation.validateNoConflictingA
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
 public class CPanelResource {
+    public static final String INSTALLATRON_PATH = "3rdparty/installatron/index.cgi?#/";
+
     private static final Logger logger = LoggerFactory.getLogger(CPanelResource.class);
 
     final VmResource vmResource;
@@ -90,17 +94,49 @@ public class CPanelResource {
 
     @GET
     @Path("{vmId}/cpanel/cpanelSession")
-    public CPanelSession getCPanelSession(@PathParam("vmId") UUID vmId, @QueryParam("username") String username) {
+    public CPanelSession getCPanelSession(@PathParam("vmId") UUID vmId, @QueryParam("username") String username,
+                                          @QueryParam("installatronAppId") String appId,
+                                          @QueryParam("installatronCommand") InstallatronCommand command) {
         logger.info("get cPanel session for vmId {}", vmId);
-
         VirtualMachine vm = resolveVirtualMachine(vmId);
 
         try {
-            return cpanelService.createSession(vm.hfsVmId, username, CpanelServiceType.cpaneld);
+            CPanelSession session = cpanelService.createSession(vm.hfsVmId, username, CpanelServiceType.cpaneld);
+
+            return command != null ? appendGoToURI(session, command, appId) : session;
         } catch (Exception e) {
             logger.warn("Could not provide cpanel session for vmId {} , Exception: {} ", vmId, e);
         }
+
         return null;
+    }
+
+    public enum InstallatronCommand {
+        LIST_INSTALLED_APPS,
+        MANAGE_APP,
+        BROWSE_APPS
+    }
+
+    private CPanelSession appendGoToURI(CPanelSession session, InstallatronCommand command, String appId) throws UnsupportedEncodingException {
+        String path = INSTALLATRON_PATH;
+
+        switch (command) {
+            case LIST_INSTALLED_APPS:
+                path += "installs?";
+                break;
+            case MANAGE_APP:
+                path += "installs/" + appId ;
+                break;
+            case BROWSE_APPS:
+                path += "apps?";
+                break;
+            default:
+                break;
+        }
+
+        String encodedURI = "&goto_uri=" + URLEncoder.encode(path, "UTF-8");
+        session.data.url += encodedURI;
+        return session;
     }
 
     @GET

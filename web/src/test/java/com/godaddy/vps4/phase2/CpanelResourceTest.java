@@ -3,6 +3,7 @@ package com.godaddy.vps4.phase2;
 import com.godaddy.hfs.config.Config;
 import com.godaddy.hfs.vm.Vm;
 import com.godaddy.vps4.cpanel.CPanelAccountCacheStatus;
+import com.godaddy.vps4.cpanel.CPanelSession;
 import com.godaddy.vps4.cpanel.CpanelAccessDeniedException;
 import com.godaddy.vps4.cpanel.CpanelInvalidUserException;
 import com.godaddy.vps4.cpanel.CpanelTimeoutException;
@@ -82,7 +83,6 @@ public class CpanelResourceTest {
         when(vps4CpanelService.getVersion(vm.hfsVmId)).thenReturn(expectedVersion);
         when(vps4CpanelService.listInstalledRpmPackages(anyLong())).thenReturn(Arrays.asList(expectedPackages));
         when(vps4CpanelService.getNginxCacheConfig(anyLong())).thenReturn(Arrays.asList(cacheStatus));
-
     }
 
     private CPanelResource getcPanelResource() {
@@ -133,19 +133,19 @@ public class CpanelResourceTest {
     // === cpanelSession Tests ===
     @Test
     public void testShopperGetCPanelSession(){
-        getcPanelResource().getCPanelSession(vm.vmId, "testuser");
+        getcPanelResource().getCPanelSession(vm.vmId, "testuser", null, null);
     }
 
     @Test
     public void testAdminGetCPanelSession(){
         user = GDUserMock.createAdmin();
-        getcPanelResource().getCPanelSession(vm.vmId, "testuser");
+        getcPanelResource().getCPanelSession(vm.vmId, "testuser", null, null);
     }
 
     @Test
     public void testGetCPanelSessionInvalidImage(){
         try {
-            getcPanelResource().getCPanelSession(centVm.vmId, "testuser");
+            getcPanelResource().getCPanelSession(centVm.vmId, "testuser", null, null);
             Assert.fail();
         } catch (Vps4Exception e) {
             Assert.assertEquals("INVALID_IMAGE", e.getId());
@@ -153,10 +153,36 @@ public class CpanelResourceTest {
     }
 
     @Test
+    public void testGetCPanelSessionWithInstallatronCommand() throws Exception {
+        String url = "https://testUrl:2083/cpsess0000000/login/?session=blahblah%3acreate_user_session%2blahblah";
+        CPanelSession session = new CPanelSession();
+        CPanelSession.Data data = session.new Data();
+        data.url = url;
+        session.data = data;
+        when(vps4CpanelService.createSession(anyLong(), Mockito.anyString(), Mockito.any()))
+                .thenReturn(session);
+        CPanelSession returnedSession = getcPanelResource().getCPanelSession(vm.vmId, "testuser", null, CPanelResource.InstallatronCommand.LIST_INSTALLED_APPS);
+        Assert.assertEquals(url + "&goto_uri=3rdparty%2Finstallatron%2Findex.cgi%3F%23%2Finstalls%3F", returnedSession.data.url);
+    }
+
+    @Test
+    public void testGetCPanelSessionWithInstallatronCommandAndAppId() throws Exception {
+        String url = "https://testUrl:2083/cpsess0000000/login/?session=blahblah%3acreate_user_session%2blahblah";
+        CPanelSession session = new CPanelSession();
+        CPanelSession.Data data = session.new Data();
+        data.url = url;
+        session.data = data;
+        when(vps4CpanelService.createSession(anyLong(), Mockito.anyString(), Mockito.any()))
+                .thenReturn(session);
+        CPanelSession returnedSession = getcPanelResource().getCPanelSession(vm.vmId, "testuser", "appId", CPanelResource.InstallatronCommand.MANAGE_APP);
+        Assert.assertEquals(url + "&goto_uri=3rdparty%2Finstallatron%2Findex.cgi%3F%23%2Finstalls%2FappId", returnedSession.data.url);
+    }
+
+    @Test
     public void testGetCPanelSessionIgnoresCpanelServiceException() throws Exception {
         when(vps4CpanelService.createSession(anyLong(), Mockito.anyString(), Mockito.any()))
                 .thenThrow(new CpanelTimeoutException("Timed out"));
-        Assert.assertNull(getcPanelResource().getCPanelSession(vm.vmId, "testuser"));
+        Assert.assertNull(getcPanelResource().getCPanelSession(vm.vmId, "testuser", null, null));
     }
 
     // === listAccounts Tests ===
