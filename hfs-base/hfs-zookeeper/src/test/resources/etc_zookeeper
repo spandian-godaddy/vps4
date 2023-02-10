@@ -1,0 +1,5 @@
+# ZooKeeper servers defined for environment (dev)
+
+# This file is maintained by Puppet and will be overwritten
+
+ZK_HOSTS="p3dlvps4zk01.cloud.phx3.gdg:2181,p3dlvps4zk02.cloud.phx3.gdg:2181,p3dlvps4zk03.cloud.phx3.gdg:2181,p3dlvps4zk04.cloud.phx3.gdg:2181"

@@ -5,7 +5,6 @@ import java.util.List;
 
 import javax.inject.Singleton;
 
-import com.godaddy.vps4.jsd.JsdModule;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -23,10 +22,10 @@ import com.godaddy.vps4.cache.HazelcastCacheModule;
 import com.godaddy.vps4.cpanel.CpanelModule;
 import com.godaddy.vps4.credit.CreditModule;
 import com.godaddy.vps4.hfs.HfsClientModule;
-import com.godaddy.vps4.hfs.HfsMockModule;
 import com.godaddy.vps4.hfs.HfsVmTrackingRecordModule;
 import com.godaddy.vps4.ipblacklist.IpBlacklistModule;
 import com.godaddy.vps4.jdbc.DatabaseModule;
+import com.godaddy.vps4.jsd.JsdModule;
 import com.godaddy.vps4.mailrelay.MailRelayModule;
 import com.godaddy.vps4.messaging.MessagingModule;
 import com.godaddy.vps4.oh.OhModule;
@@ -101,12 +100,7 @@ public class Vps4Injector {
         modules.add(new ZooKeeperModule());
         modules.add(new ZkServiceRegistrationModule());
 
-        if (System.getProperty("vps4.hfs.mock", "false").equals("true")) {
-            modules.add(new HfsMockModule());
-            logger.info("USING MOCK HFS");
-        } else {
-            modules.add(new HfsClientModule());
-        }
+        modules.add(new HfsClientModule());
 
         modules.add(new GDUserModule());
         modules.add(new DatabaseModule());

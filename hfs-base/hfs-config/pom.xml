@@ -1,0 +1,30 @@
+<project>
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>com.godaddy.hfs</groupId>
+        <artifactId>hfs-base-project</artifactId>
+        <version>0.0.1-SNAPSHOT</version>
+    </parent>
+
+    <artifactId>hfs-config</artifactId>
+    <name>HFS Config</name>
+    <packaging>jar</packaging>
+    
+    <dependencies>
+        <dependency>
+            <groupId>com.godaddy.hfs</groupId>
+            <artifactId>hfs-core</artifactId>
+        <version>0.0.1-SNAPSHOT</version>
+        </dependency>
+        
+        <!-- external -->
+        <dependency>
+            <groupId>commons-io</groupId>
+            <artifactId>commons-io</artifactId>
+            <version>2.5</version>
+        </dependency>
+    
+    </dependencies>
+    
+</project>

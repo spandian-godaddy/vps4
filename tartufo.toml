@@ -6,7 +6,6 @@ entropy = true
 exclude-path-patterns = [
     'web/src/main/resources/com/godaddy/swagger',
     'web/src/main/java/com/godaddy/vps4/web/cpanel/FakeCpanelModule.java', # This has a fake cpanel hash
-    'web/src/main/java/com/godaddy/vps4/hfs/HfsMockModule.java', # Contains a fake access hash
     'web/src/test', # Multiple instances of high entropy test data
     'core/src/test', # Several instances of high entropy test data
     'vps4-phase3-tests', # Contains test data, fake JWT tokens

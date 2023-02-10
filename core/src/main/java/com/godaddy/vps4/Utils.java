@@ -14,7 +14,7 @@ public class Utils {
                 any git repo. The only place this key is readily available is on the jenkins build slave.
                 The first step is therefore to get on the jenkins slave box and get hold of the environment specific
                 master encryption key.
-                a. ssh into the jenkins build slave p3mlvps4cicd01.cloud.phx3.gdg
+                a. ssh into the jenkins build slave p3plvps4cicd01.cloud.phx3.gdg
                 b. cd into the /opt/vps4/keys folder.
                 c. Locate the appropriate key for the environment and copy (or scp) it into the
                    ${vps4_code_path_root}/vps4/core/src/main/resources/com/godaddy/vps4/config folder.
