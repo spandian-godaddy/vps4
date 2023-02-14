@@ -55,7 +55,8 @@ public class ECommCreditService implements CreditService {
         MONITORING,
         OPERATINGSYSTEM,
         CONTROL_PANEL_TYPE,
-        PF_ID;
+        PF_ID,
+        MSSQL;
 
         @Override
         public String toString() {

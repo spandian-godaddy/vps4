@@ -133,6 +133,21 @@ public class ECommCreditServiceTest {
     }
 
     @Test
+    public void testGetCreditIncludesMssqlNull() {
+        when(ecommService.getAccount(orionGuid.toString())).thenReturn(account);
+        VirtualMachineCredit credit = creditService.getVirtualMachineCredit(orionGuid);
+        assertNull(credit.getMssql());
+    }
+
+    @Test
+    public void testGetCreditIncludesMssqlNotNull() {
+        account.plan_features.put("mssql", "web");
+        when(ecommService.getAccount(orionGuid.toString())).thenReturn(account);
+        VirtualMachineCredit credit = creditService.getVirtualMachineCredit(orionGuid);
+        assertEquals("web", credit.getMssql());
+    }
+    
+    @Test
     public void testGetCreditNoAccountFoundReturnsNull() {
         when(ecommService.getAccount(orionGuid.toString())).thenThrow(new WebApplicationException());
         VirtualMachineCredit credit = creditService.getVirtualMachineCredit(orionGuid);

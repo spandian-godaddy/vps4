@@ -40,6 +40,7 @@ public class VirtualMachineCredit {
     private UUID customerId;
     private Instant expireDate;
     private boolean autoRenew;
+    private String mssql;
 
     private VirtualMachineCredit() {
     }
@@ -172,6 +173,10 @@ public class VirtualMachineCredit {
 
     public UUID getCustomerId() { return customerId; }
 
+    public String getMssql() {
+        return mssql;
+    }
+
     public static class Builder {
         private Map<String, String> planFeatures;
         private Map<String, String> productMeta;
@@ -203,6 +208,7 @@ public class VirtualMachineCredit {
                 }
                 credit.controlPanel = planFeatures.get(PlanFeatures.CONTROL_PANEL_TYPE.toString());
                 credit.pfid = Integer.parseInt(planFeatures.getOrDefault(PlanFeatures.PF_ID.toString(), "0"));
+                credit.mssql = planFeatures.get(PlanFeatures.MSSQL.toString());
             }
 
             if (productMeta != null) {
