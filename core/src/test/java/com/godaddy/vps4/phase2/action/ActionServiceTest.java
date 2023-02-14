@@ -3,9 +3,13 @@ package com.godaddy.vps4.phase2.action;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 
 import java.time.Duration;
 import java.time.Instant;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 import java.util.UUID;
 
 import javax.sql.DataSource;
@@ -409,5 +413,31 @@ public class ActionServiceTest {
         actions = snapshotActionService.getActionList(actionFilters);
         assertEquals(2, actions.results.size());
         assertEquals(ActionType.DESTROY_SNAPSHOT, actions.results.get(0).type); // order by created desc
+    }
+
+    @Test
+    public void testGetVmActionTypesReturnsActionTypes() {
+        List<String> expected = new ArrayList<>(Arrays.asList("CREATE_OH_BACKUP", "CREATE_VM", "DESTROY_OH_BACKUP"));
+        vmActionService.createAction(vm.vmId, ActionType.DESTROY_OH_BACKUP, "{}", "tester");
+        vmActionService.createAction(vm.vmId, ActionType.CREATE_VM, "{}", "tester");
+        vmActionService.createAction(vm.vmId, ActionType.CREATE_OH_BACKUP, "{}", "tester");
+
+        List<String> result = vmActionService.getVmActionTypes(vm.vmId);
+
+        assertTrue(expected.equals(result));
+    }
+
+    @Test
+    public void testGetVmActionTypesDoesNotReturnDuplicates() {
+        List<String> expected = new ArrayList<>(Arrays.asList("CREATE_OH_BACKUP", "CREATE_VM", "DESTROY_OH_BACKUP"));
+        vmActionService.createAction(vm.vmId, ActionType.CREATE_VM, "{}", "tester");
+        vmActionService.createAction(vm.vmId, ActionType.CREATE_OH_BACKUP, "{}", "tester");
+        vmActionService.createAction(vm.vmId, ActionType.DESTROY_OH_BACKUP, "{}", "tester");
+        vmActionService.createAction(vm.vmId, ActionType.CREATE_OH_BACKUP, "{}", "tester");
+        vmActionService.createAction(vm.vmId, ActionType.DESTROY_OH_BACKUP, "{}", "tester");
+
+        List<String> result = vmActionService.getVmActionTypes(vm.vmId);
+
+        assertTrue(expected.equals(result));
     }
 }

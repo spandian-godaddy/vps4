@@ -214,4 +214,14 @@ public class JdbcVmActionService implements ActionService {
                         "ORDER BY va.created DESC LIMIT ?",
                 Sql.listOf(this::mapActionWithOrionGuid), windowSize);
     }
+
+    public List<String> getVmActionTypes(UUID vmId) {
+        return Sql.with(dataSource).exec(
+                "SELECT DISTINCT action_type.type " +
+                        "FROM vm_action " +
+                        "JOIN action_type " +
+                        "ON vm_action.vm_id = ? " +
+                        "AND action_type.type_id = vm_action.action_type_id;",
+                Sql.listOf(rs -> rs.getString("type")), vmId);
+    }
 }

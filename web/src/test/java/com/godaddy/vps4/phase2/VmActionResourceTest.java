@@ -56,6 +56,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.never;
 
 public class VmActionResourceTest {
 
@@ -413,5 +414,17 @@ public class VmActionResourceTest {
         Assert.assertNull(action.commandId);
         actionResource.cancelVmAction(vm.vmId, action.id);
         verify(commandService, times(0)).cancel(action.commandId);
+    }
+
+    @Test
+    public void getVmActionTypesCallsActionService() {
+        ActionService mockActionService = mock(ActionService.class);
+        VirtualMachine vm = createTestVm(user.getShopperId());
+        createTestVmAction(vm.vmId, ActionType.CREATE_VM);
+
+        mockActionService.getVmActionTypes(vm.vmId);
+
+        verify(mockActionService, times(1)).getVmActionTypes(vm.vmId);
+        verify(commandService, never()).executeCommand(any());
     }
 }

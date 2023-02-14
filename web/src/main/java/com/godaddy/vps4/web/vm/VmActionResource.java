@@ -181,6 +181,14 @@ public class VmActionResource {
         actionService.cancelAction(actionId, new JSONObject().toJSONString(), note);
     }
 
+    @GET
+    @Path("{vmId}/actionTypes")
+    public List<String> getVmActionTypes(@PathParam("vmId") UUID vmId) {
+        if (user.isShopper())
+            RequestValidation.verifyUserPrivilegeToVm(userService, privilegeService, user.getShopperId(), vmId);
+        return actionService.getVmActionTypes(vmId);
+    }
+
     private boolean shouldQueueRollbackCommand(ActionType actionType) {
         return actionTypeToCancelCmdNameMap.containsKey(actionType);
     }

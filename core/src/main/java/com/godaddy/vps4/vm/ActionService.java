@@ -39,4 +39,6 @@ public interface ActionService {
     List<Action> getIncompleteActions(int minimumAttempts, String action);
 
     List<ActionWithOrionGuid> getCreatesWithoutPanopta(long windowSize);
+
+    List<String> getVmActionTypes(UUID vmId);
 }
