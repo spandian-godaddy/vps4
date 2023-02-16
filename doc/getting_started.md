@@ -196,3 +196,6 @@
         - open KeyChain Access
         - File -> Import Items, browse to .p12 file
         - insert password `changeit`
+
+- if you wanted to bypass HFS altogether, use the Mock HFS:
+    - add to VM arguments in `LocalOrchestrationEngine` run configuration: `-Dvps4.hfs.mock=true`

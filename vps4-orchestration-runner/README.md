@@ -2,14 +2,15 @@ This main purpose of this module is to allow orchestration engine to be run loca
 
 
 Orchestration engine when run can be configured to pickup plugin commands found either on the jvm classpath or those found in a jar. The 'IDE run configs' for the these options are listed below.
-**NOTE**: some options in the run config may be named differently and/or optional depending on the IDE
+**NOTE**: some of the options in the run config may be named differently and/or optional depending on the IDE
 
 
 1 **Classpath**: To have orchestration engine pickup the vps4 plugin commands from the vps4-orchestration-plugin module (i.e. via the classpath) the run config should be setup with the parameters below.
 
 ```
     Main Class: gdg.hfs.orchestration.web.OrchestrationWebApplication
-    VM Options: -Dorchestration.engine.mode=memory -Dhfs.http.port=8088
+    VM Options: -Dorchestration.engine.mode=memory
+                -Dhfs.http.port=8088 -Dvps4.hfs.mock=false 
     Working Directory: {PATH_TO_VPS4_SOURCE}/vps4-orchestration-runner 
     Use classpath of module: vps4-orchestration-runner
 ```
@@ -21,12 +22,17 @@ Orchestration engine when run can be configured to pickup plugin commands found 
 
 ```
     Main Class: gdg.hfs.orchestration.web.OrchestrationWebApplication
-    VM Options: -Dorchestration.engine.mode=memory -Dhfs.http.port=8088
+    VM Options: -Dorchestration.engine.mode=memory
+                -Dhfs.http.port=8088 -Dvps4.hfs.mock=false
                 -Dorchestration.plugins.path={PATH_TO_VPS4_SOURCE}/vps4-orchestration-plugin/target 
     Working Directory: {PATH_TO_VPS4_SOURCE}/vps4-orchestration-runner 
     Use classpath of module: vps4-orchestration-runner
 ```
         
+
+To have the plugin use a mocked version of hfs set the 'vps4.hfs.mock' option to true, in the above 2 run configs.
+
+
 **FOR ECLIPSE USERS:**
 Eclipse doesn't recognise this module as a java project hence doesnt allow creation of a run-configuration using this module.
 To fix this, create 2 files with the following content in the vps4-orchestration-runner folder. Once these files are in place, eclipse should allow creation of the above run-configs.

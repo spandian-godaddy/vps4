@@ -153,25 +153,25 @@
         <dependency>
             <groupId>com.godaddy.hfs</groupId>
             <artifactId>hfs-config</artifactId>
-            <version>0.0.1-SNAPSHOT</version>
+            <version>${hfs-base-version}</version>
         </dependency>
 
         <dependency>
             <groupId>com.godaddy.hfs</groupId>
             <artifactId>hfs-config-zookeeper</artifactId>
-            <version>0.0.1-SNAPSHOT</version>
+            <version>${hfs-base-version}</version>
         </dependency>
 
         <dependency>
             <groupId>com.godaddy.hfs</groupId>
             <artifactId>hfs-crypto</artifactId>
-            <version>0.0.1-SNAPSHOT</version>
+            <version>${hfs-base-version}</version>
         </dependency>
 
         <dependency>
             <groupId>com.godaddy.hfs</groupId>
             <artifactId>hfs-jdbc</artifactId>
-            <version>0.0.1-SNAPSHOT</version>
+            <version>${hfs-base-version}</version>
         </dependency>
 
         <!-- https://mvnrepository.com/artifact/org.apache.commons/commons-lang3 -->
