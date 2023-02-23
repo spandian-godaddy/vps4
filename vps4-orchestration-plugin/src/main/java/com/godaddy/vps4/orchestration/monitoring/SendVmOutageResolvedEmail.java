@@ -8,7 +8,7 @@ import com.godaddy.vps4.vm.VmOutage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.godaddy.vps4.messaging.Vps4MessagingService;
+import com.godaddy.vps4.messaging.MessagingService;
 import com.godaddy.vps4.vm.VmAlertService;
 import com.godaddy.vps4.vm.VmMetric;
 import com.godaddy.vps4.vm.VmMetricAlert;
@@ -26,13 +26,13 @@ import gdg.hfs.orchestration.CommandRetryStrategy;
 public class SendVmOutageResolvedEmail implements Command<VmOutageEmailRequest, Void> {
 
     private static final Logger logger = LoggerFactory.getLogger(SendVmOutageResolvedEmail.class);
-    private final Vps4MessagingService messagingService;
+    private final MessagingService messagingService;
     private final VmAlertService vmAlertService;
     private static String SSL_EXPIRING_WARNING = "SSL certificate is expiring";
 
     @Inject
-    public SendVmOutageResolvedEmail(Vps4MessagingService vps4MessagingService, VmAlertService vmAlertService) {
-        this.messagingService = vps4MessagingService;
+    public SendVmOutageResolvedEmail(MessagingService messagingService, VmAlertService vmAlertService) {
+        this.messagingService = messagingService;
         this.vmAlertService = vmAlertService;
     }
 

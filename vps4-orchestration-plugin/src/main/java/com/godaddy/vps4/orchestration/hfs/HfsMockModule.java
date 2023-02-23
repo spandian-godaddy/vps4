@@ -28,10 +28,7 @@ import com.godaddy.hfs.vm.VmAddress;
 import com.godaddy.hfs.vm.VmExtendedInfo;
 import com.godaddy.hfs.vm.VmList;
 import com.godaddy.hfs.vm.VmService;
-import com.godaddy.vps4.messaging.DefaultVps4MessagingService;
-import com.godaddy.vps4.messaging.MissingShopperIdException;
-import com.godaddy.vps4.messaging.Vps4MessagingService;
-import com.godaddy.vps4.messaging.models.Message;
+import com.godaddy.vps4.messaging.MessagingService;
 import com.google.inject.AbstractModule;
 import com.google.inject.Provides;
 import gdg.hfs.request.CompleteResponse;
@@ -65,12 +62,11 @@ import gdg.hfs.vhfs.sysadmin.AddUserRequestBody;
 import gdg.hfs.vhfs.sysadmin.ChangePasswordRequestBody;
 import gdg.hfs.vhfs.sysadmin.SysAdminAction;
 import gdg.hfs.vhfs.sysadmin.SysAdminService;
-import org.joda.time.DateTime;
+
 import org.mockito.Mockito;
 
 import javax.ws.rs.NotFoundException;
 import javax.ws.rs.core.Response;
-import java.io.IOException;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -99,7 +95,6 @@ public class HfsMockModule extends AbstractModule {
     private static final Map<Long, List<AddressAction>> addressActionList;
     private static final Map<Long, AddressActionEntry> addressActions;
     private static final Map<Long, CPanelAction> cPanelActions;
-    private static final Map<String, Message> gdMessagingServiceMessages;
 
     static {
         customerSnapshots = new HashMap<>();
@@ -119,7 +114,6 @@ public class HfsMockModule extends AbstractModule {
         addressActionList = new HashMap<>();
         addressActions = new HashMap<>();
         cPanelActions = new HashMap<>();
-        gdMessagingServiceMessages = new HashMap<>();
     }
 
     @Override
@@ -359,114 +353,83 @@ public class HfsMockModule extends AbstractModule {
     }
 
     @Provides
-    public Vps4MessagingService provideMessagingService(Config vps4Config) {
-        return new Vps4MessagingService() {
-            @Override
-            public Message getMessageById(String messageId) {
-                if (!gdMessagingServiceMessages.containsKey(messageId)) {
-                    throw new NotFoundException(String.format("Messaging id not found: %s", messageId));
-                }
-
-                return gdMessagingServiceMessages.get(messageId);
-            }
-
-            private Message createMessage(String shopperId, String messageId) {
-                Message message = new Message();
-                message.messageId = messageId;
-                message.shopperId = shopperId;
-                message.templateTypeKey =
-                        DefaultVps4MessagingService.EmailTemplates.VirtualPrivateHostingProvisioned4.toString();
-                message.templateNamespaceKey = DefaultVps4MessagingService.TEMPLATE_NAMESPACE_KEY;
-                message.privateLabelId = 1;
-                message.createdAt = DateTime.now().toString();
-
-                return message;
-            }
-
-            private void storeMessage(Message message) {
-                gdMessagingServiceMessages.put(message.messageId, message);
-            }
-
-            private String createFakeMessage(String shopperId) {
-                String messageId = UUID.randomUUID().toString();
-                Message setupMessage = createMessage(shopperId, messageId);
-                storeMessage(setupMessage);
-
-                return messageId;
+    public MessagingService provideMessagingService(Config vps4Config) {
+        return new MessagingService() {
+            private String createFakeMessage() {
+                return UUID.randomUUID().toString();
             }
 
             @Override
             public String sendSetupEmail(String shopperId, String accountName, String ipAddress, String orionId,
                     boolean isManaged) {
-                return createFakeMessage(shopperId);
+                return createFakeMessage();
             }
 
             @Override
-            public String sendFullyManagedEmail(String shopperId, String controlPanel)
-                    throws MissingShopperIdException, IOException {
-                return createFakeMessage(shopperId);
+            public String sendFullyManagedEmail(String shopperId, String controlPanel) {
+                return createFakeMessage();
             }
 
             @Override
             public String sendScheduledPatchingEmail(String shopperId, String serverName, Instant startTime,
                     long durationMinutes, boolean isManaged) {
-                return createFakeMessage(shopperId);
+                return createFakeMessage();
             }
 
             @Override
             public String sendUnexpectedButScheduledMaintenanceEmail(String shopperId, String serverName,
                     Instant startTime, long durationMinutes,
                     boolean isManaged) {
-                return createFakeMessage(shopperId);
+                return createFakeMessage();
             }
 
             @Override
             public String sendSystemDownFailoverEmail(String shopperId, String serverName, boolean isManaged) {
-                return createFakeMessage(shopperId);
+                return createFakeMessage();
             }
 
             @Override
             public String sendFailoverCompletedEmail(String shopperId, String serverName, boolean isManaged) {
-                return createFakeMessage(shopperId);
+                return createFakeMessage();
             }
 
             @Override
             public String sendUptimeOutageEmail(String shopperId, String accountName, String ipAddress, UUID orionGuid,
                     Instant alertStart, boolean isFullyManaged) {
-                return null;
+                return createFakeMessage();
             }
 
             @Override
             public String sendServerUsageOutageEmail(String shopperId, String accountName, String ipAddress,
                     UUID orionGuid, String resourceName, String resourceUsage,
                     Instant alertStart, boolean isFullyManaged) {
-                return null;
+                return createFakeMessage();
             }
 
             @Override
             public String sendServicesDownEmail(String shopperId, String accountName, String ipAddress, UUID orionGuid,
                     String serviceName, Instant alertStart, boolean isFullyManaged) {
-                return null;
+                return createFakeMessage();
             }
 
             @Override
             public String sendUptimeOutageResolvedEmail(String shopperId, String accountName, String ipAddress,
                     UUID orionGuid, Instant alertEnd, boolean isFullyManaged) {
-                return null;
+                return createFakeMessage();
             }
 
             @Override
             public String sendUsageOutageResolvedEmail(String shopperId, String accountName, String ipAddress,
                     UUID orionGuid, String resourceName, Instant alertEnd,
                     boolean isFullyManaged) {
-                return null;
+                return createFakeMessage();
             }
 
             @Override
             public String sendServiceOutageResolvedEmail(String shopperId, String accountName, String ipAddress,
                     UUID orionGuid, String serviceName, Instant alertEnd,
                     boolean isFullyManaged) {
-                return null;
+                return createFakeMessage();
             }
         };
     }
@@ -1313,12 +1276,12 @@ public class HfsMockModule extends AbstractModule {
             }
 
             @Override
-            public Response suspend(String s, String s1, Suspension suspension) throws Exception {
+            public Response suspend(String s, String s1, Suspension suspension) {
                 return null;
             }
 
             @Override
-            public Response reinstate(String s, String s1, Reinstatement reinstatement) throws Exception {
+            public Response reinstate(String s, String s1, Reinstatement reinstatement) {
                 return null;
             }
 

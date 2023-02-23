@@ -13,8 +13,7 @@ import java.util.UUID;
 import org.junit.Before;
 import org.junit.Test;
 
-import com.godaddy.vps4.messaging.Vps4MessagingService;
-import com.godaddy.vps4.messaging.models.Message;
+import com.godaddy.vps4.messaging.MessagingService;
 import com.godaddy.vps4.orchestration.TestCommandContext;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
@@ -24,11 +23,11 @@ import gdg.hfs.orchestration.GuiceCommandProvider;
 
 public class SendUnexpectedButScheduledMaintenanceEmailTest {
 
-    Vps4MessagingService messagingService = mock(Vps4MessagingService.class);
+    MessagingService messagingService = mock(MessagingService.class);
     SendUnexpectedButScheduledMaintenanceEmail command = new SendUnexpectedButScheduledMaintenanceEmail(messagingService);
 
     Injector injector = Guice.createInjector(binder -> {
-        binder.bind(Vps4MessagingService.class).toInstance(messagingService);
+        binder.bind(MessagingService.class).toInstance(messagingService);
     });
 
     CommandContext context = spy(new TestCommandContext(new GuiceCommandProvider(injector)));
@@ -47,11 +46,8 @@ public class SendUnexpectedButScheduledMaintenanceEmailTest {
         request.durationMinutes = 30;
 
         messageId = UUID.randomUUID().toString();
-        Message message = mock(Message.class);
-        message.status = Message.Statuses.SUCCESS.toString();
 
         when(messagingService.sendUnexpectedButScheduledMaintenanceEmail("shopperid", "vmname", startTime, 30, false)).thenReturn(messageId);
-        when(messagingService.getMessageById(messageId)).thenReturn(message);
     }
 
     @Test
