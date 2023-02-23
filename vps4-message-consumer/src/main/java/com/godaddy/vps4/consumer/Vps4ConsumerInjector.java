@@ -7,6 +7,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.godaddy.hfs.zookeeper.ZooKeeperModule;
+import com.godaddy.vps4.cache.HazelcastCacheModule;
 import com.godaddy.vps4.config.ConfigModule;
 import com.godaddy.vps4.credit.CreditModule;
 import com.godaddy.vps4.hfs.HfsClientModule;
@@ -70,6 +71,7 @@ public class Vps4ConsumerInjector {
         modules.add(new CreditModule());
         modules.add(new PanoptaDataModule());
         modules.add(new Vps4SsoModule());
+        modules.add(new HazelcastCacheModule());
 
         logger.info("Orchestration engine clustered: {}", isOrchestrationEngineClustered);
         if (isOrchestrationEngineClustered) {
