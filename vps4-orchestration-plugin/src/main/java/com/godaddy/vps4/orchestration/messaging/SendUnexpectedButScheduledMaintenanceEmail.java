@@ -3,7 +3,7 @@ package com.godaddy.vps4.orchestration.messaging;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.godaddy.vps4.messaging.MessagingService;
+import com.godaddy.vps4.messaging.Vps4MessagingService;
 import com.google.inject.Inject;
 
 import gdg.hfs.orchestration.Command;
@@ -21,10 +21,10 @@ public class SendUnexpectedButScheduledMaintenanceEmail
 
     private static final Logger logger = LoggerFactory.getLogger(SendUnexpectedButScheduledMaintenanceEmail.class);
 
-    final MessagingService messagingService;
+    final Vps4MessagingService messagingService;
 
     @Inject
-    public SendUnexpectedButScheduledMaintenanceEmail(MessagingService messagingService) {
+    public SendUnexpectedButScheduledMaintenanceEmail(Vps4MessagingService messagingService) {
         this.messagingService = messagingService;
     }
 

@@ -38,6 +38,7 @@ import com.godaddy.hfs.vm.VmService;
 import com.godaddy.vps4.credit.CreditService;
 import com.godaddy.vps4.credit.VirtualMachineCredit;
 import com.godaddy.vps4.hfs.HfsVmTrackingRecordService;
+import com.godaddy.vps4.messaging.MissingShopperIdException;
 import com.godaddy.vps4.network.NetworkService;
 import com.godaddy.vps4.orchestration.hfs.sysadmin.SetHostname;
 import com.godaddy.vps4.orchestration.hfs.sysadmin.SetPassword;
@@ -106,7 +107,7 @@ public class Vps4ProvisionOHVmTest {
     long hfsVmId = 42;
 
     @Before
-    public void setupTest() {
+    public void setupTest() throws Exception {
         MockitoAnnotations.initMocks(this);
         this.image = new Image();
         image.operatingSystem = Image.OperatingSystem.LINUX;
@@ -203,7 +204,7 @@ public class Vps4ProvisionOHVmTest {
     }
 
     @Test
-    public void testSendSetupEmail() {
+    public void testSendSetupEmail() throws MissingShopperIdException {
         command.executeWithAction(context, this.request);
         verify(context, times(1)).execute(eq(SendSetupCompletedEmail.class), setupCompletedEmailRequestArgCaptor.capture());
         SetupCompletedEmailRequest capturedRequest = setupCompletedEmailRequestArgCaptor.getValue();
@@ -215,7 +216,7 @@ public class Vps4ProvisionOHVmTest {
     }
 
     @Test
-    public void testSendSetupEmailDoesNotThrowException() {
+    public void testSendSetupEmailDoesNotThrowException() throws IOException {
         when(context.execute(eq(SendSetupCompletedEmail.class), any(SetupCompletedEmailRequest.class)))
                 .thenThrow(new RuntimeException("SendMessageFailed"));
         command.executeWithAction(context, this.request);

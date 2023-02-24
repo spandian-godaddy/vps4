@@ -4,7 +4,8 @@ import com.godaddy.hfs.config.Config;
 import com.godaddy.vps4.credit.CreditService;
 import com.godaddy.vps4.credit.ECommCreditService.ProductMetaField;
 import com.godaddy.vps4.credit.VirtualMachineCredit;
-import com.godaddy.vps4.messaging.MessagingService;
+import com.godaddy.vps4.messaging.MissingShopperIdException;
+import com.godaddy.vps4.messaging.Vps4MessagingService;
 import com.godaddy.vps4.orchestration.vm.Vps4PlanChange;
 import com.godaddy.vps4.vm.AccountStatus;
 import com.godaddy.vps4.vm.ActionService;
@@ -17,14 +18,16 @@ import com.godaddy.vps4.web.client.VmZombieService;
 import com.godaddy.vps4.web.vm.VmShopperMergeResource.ShopperMergeRequest;
 import com.google.inject.Inject;
 import gdg.hfs.orchestration.CommandService;
-
+import org.apache.commons.lang3.StringUtils;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.IOException;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
 
@@ -47,7 +50,7 @@ public class Vps4AccountMessageHandler implements MessageHandler {
     private final List<String> resellerBlacklist;
     private final VmZombieService vmZombieService;
     private final VmShopperMergeService vmShopperMergeService;
-    private final MessagingService messagingService;
+    private final Vps4MessagingService messagingService;
     private final VmSuspendReinstateService vmSuspendReinstateService;
     private final VmService vmService;
     private final Config config;
@@ -58,7 +61,7 @@ public class Vps4AccountMessageHandler implements MessageHandler {
             CreditService creditService,
             ActionService vmActionService,
             CommandService commandService,
-            MessagingService messagingService,
+            Vps4MessagingService messagingService,
             VmZombieService vmZombieService,
             VmSuspendReinstateService vmSuspendReinstateService,
             VmService vmService,
@@ -208,9 +211,17 @@ public class Vps4AccountMessageHandler implements MessageHandler {
                 logger.error("Credit's Reseller Id {} is suppressed for email template VPSWelcomeCpanel/VPSWelcomePlesk." +
                         "No longer attempting to send FullyManagedWelcomeEmail to credit {}", resellerId, credit.getOrionGuid());
             } else {
-                messagingService.sendFullyManagedEmail(credit.getShopperId(), credit.getControlPanel());
+                sendFullyManagedWelcomeEmail(credit);
             }
             creditService.updateProductMeta(credit.getOrionGuid(), ProductMetaField.FULLY_MANAGED_EMAIL_SENT, "true");
+        }
+    }
+
+    private void sendFullyManagedWelcomeEmail(VirtualMachineCredit credit) {
+        try {
+            messagingService.sendFullyManagedEmail(credit.getShopperId(), credit.getControlPanel());
+        } catch( MissingShopperIdException | IOException e) {
+            logger.warn("Failed to send fully managed welcome email", e);
         }
     }
 

@@ -3,7 +3,7 @@ package com.godaddy.vps4.orchestration.messaging;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.godaddy.vps4.messaging.MessagingService;
+import com.godaddy.vps4.messaging.Vps4MessagingService;
 import com.google.inject.Inject;
 
 import gdg.hfs.orchestration.Command;
@@ -20,10 +20,10 @@ public class SendSystemDownFailoverEmail implements Command<FailOverEmailRequest
 
     private static final Logger logger = LoggerFactory.getLogger(SendSystemDownFailoverEmail.class);
 
-    final MessagingService messagingService;
+    final Vps4MessagingService messagingService;
 
     @Inject
-    public SendSystemDownFailoverEmail(MessagingService messagingService) {
+    public SendSystemDownFailoverEmail(Vps4MessagingService messagingService) {
         this.messagingService = messagingService;
     }
 

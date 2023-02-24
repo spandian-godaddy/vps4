@@ -26,7 +26,7 @@ import org.mockito.Captor;
 import org.mockito.Matchers;
 import org.mockito.runners.MockitoJUnitRunner;
 
-import com.godaddy.vps4.messaging.MessagingService;
+import com.godaddy.vps4.messaging.Vps4MessagingService;
 import com.godaddy.vps4.vm.VmAlertService;
 import com.godaddy.vps4.vm.VmMetric;
 import com.godaddy.vps4.vm.VmMetricAlert;
@@ -37,7 +37,7 @@ import gdg.hfs.orchestration.CommandContext;
 @RunWith(MockitoJUnitRunner.class)
 public class SendVmOutageResolvedEmailTest {
 
-    MessagingService messagingService = mock(MessagingService.class);
+    Vps4MessagingService vps4MessagingService = mock(Vps4MessagingService.class);
     VmAlertService vmAlertService = mock(VmAlertService.class);
     VmOutageEmailRequest vmOutageEmailRequest = new VmOutageEmailRequest();
     VmOutage vmOutage = new VmOutage();
@@ -51,7 +51,7 @@ public class SendVmOutageResolvedEmailTest {
     String fakeReason = "fake-reason";
     UUID fakeVmId = UUID.randomUUID();
 
-    SendVmOutageResolvedEmail command = new SendVmOutageResolvedEmail(messagingService, vmAlertService);
+    SendVmOutageResolvedEmail command = new SendVmOutageResolvedEmail(vps4MessagingService, vmAlertService);
 
     @Captor
     ArgumentCaptor<Function<CommandContext, String>> lambdaCaptor;
@@ -80,7 +80,7 @@ public class SendVmOutageResolvedEmailTest {
         vmMetricAlert.status = VmMetricAlert.Status.ENABLED;
         when(vmAlertService.getVmMetricAlert(any(UUID.class), anyString())).thenReturn(vmMetricAlert);
         when(context.execute(anyString(), any(Function.class), any())).thenReturn(fakeMessageId);
-        when(messagingService
+        when(vps4MessagingService
                      .sendUptimeOutageResolvedEmail(eq(fakeShopperId), eq(fakeAccountName), eq(fakeIpAddress),
                                                     eq(fakeOrionGuid), any(Instant.class), eq(true)))
                 .thenReturn(fakeMessageId);
@@ -101,7 +101,7 @@ public class SendVmOutageResolvedEmailTest {
         when(vmAlertService.getVmMetricAlert(any(UUID.class), anyString())).thenReturn(vmMetricAlert);
         String fakeResourceName = VmMetric.CPU.name();
         when(context.execute(anyString(), any(Function.class), any())).thenReturn(fakeMessageId);
-        when(messagingService
+        when(vps4MessagingService
                      .sendUsageOutageResolvedEmail(eq(fakeShopperId), eq(fakeAccountName), eq(fakeIpAddress),
                                                    eq(fakeOrionGuid), eq(fakeResourceName), any(Instant.class),
                                                    eq(true)))
@@ -123,7 +123,7 @@ public class SendVmOutageResolvedEmailTest {
         when(vmAlertService.getVmMetricAlert(any(UUID.class), anyString())).thenReturn(vmMetricAlert);
         String fakeResourceName = VmMetric.FTP.name();
         when(context.execute(anyString(), any(Function.class), any())).thenReturn(fakeMessageId);
-        when(messagingService
+        when(vps4MessagingService
                 .sendServiceOutageResolvedEmail(eq(fakeShopperId), eq(fakeAccountName), eq(fakeIpAddress),
                         eq(fakeOrionGuid), eq(fakeResourceName), any(Instant.class),
                         eq(true))).thenReturn(fakeMessageId);
@@ -147,7 +147,7 @@ public class SendVmOutageResolvedEmailTest {
         when(vmAlertService.getVmMetricAlert(any(UUID.class), anyString())).thenReturn(vmMetricAlert);
 
         when(context.execute(anyString(), any(Function.class), any())).thenReturn(fakeMessageId);
-        when(messagingService
+        when(vps4MessagingService
                      .sendServiceOutageResolvedEmail(eq(fakeShopperId), eq(fakeAccountName), eq(fakeIpAddress),
                                                      eq(fakeOrionGuid), eq("HTTP (domainfake.here)"), any(Instant.class),
                                                      eq(true))).thenReturn(fakeMessageId);
@@ -171,7 +171,7 @@ public class SendVmOutageResolvedEmailTest {
         when(vmAlertService.getVmMetricAlert(any(UUID.class), anyString())).thenReturn(vmMetricAlert);
 
         when(context.execute(anyString(), any(Function.class), any())).thenReturn(fakeMessageId);
-        when(messagingService
+        when(vps4MessagingService
                 .sendServiceOutageResolvedEmail(eq(fakeShopperId), eq(fakeAccountName), eq(fakeIpAddress),
                         eq(fakeOrionGuid), eq("HTTPS (domainfake.here)"), any(Instant.class),
                         eq(true))).thenReturn(fakeMessageId);
@@ -197,7 +197,7 @@ public class SendVmOutageResolvedEmailTest {
         when(vmAlertService.getVmMetricAlert(any(UUID.class), anyString())).thenReturn(vmMetricAlert);
 
         when(context.execute(anyString(), any(Function.class), any())).thenReturn(fakeMessageId);
-        when(messagingService
+        when(vps4MessagingService
                 .sendServiceOutageResolvedEmail(eq(fakeShopperId), eq(fakeAccountName), eq(fakeIpAddress),
                         eq(fakeOrionGuid), eq("HTTPS (domainfake.here)"), any(Instant.class),
                         eq(true))).thenReturn(fakeMessageId);
@@ -221,7 +221,7 @@ public class SendVmOutageResolvedEmailTest {
         when(vmAlertService.getVmMetricAlert(any(UUID.class), anyString())).thenReturn(vmMetricAlert);
 
         when(context.execute(anyString(), any(Function.class), any())).thenReturn(fakeMessageId);
-        when(messagingService
+        when(vps4MessagingService
                 .sendServiceOutageResolvedEmail(eq(fakeShopperId), eq(fakeAccountName), eq(fakeIpAddress),
                         eq(fakeOrionGuid), eq("HTTPS (domainfake.here)"), any(Instant.class),
                         eq(true))).thenReturn(fakeMessageId);

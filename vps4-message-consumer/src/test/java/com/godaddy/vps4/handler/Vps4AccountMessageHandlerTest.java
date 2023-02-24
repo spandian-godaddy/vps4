@@ -5,7 +5,8 @@ import com.godaddy.vps4.credit.CreditService;
 import com.godaddy.vps4.credit.ECommCreditService.PlanFeatures;
 import com.godaddy.vps4.credit.ECommCreditService.ProductMetaField;
 import com.godaddy.vps4.credit.VirtualMachineCredit;
-import com.godaddy.vps4.messaging.MessagingService;
+import com.godaddy.vps4.messaging.MissingShopperIdException;
+import com.godaddy.vps4.messaging.Vps4MessagingService;
 import com.godaddy.vps4.vm.AccountStatus;
 import com.godaddy.vps4.vm.ActionService;
 import com.godaddy.vps4.vm.DataCenter;
@@ -64,7 +65,7 @@ public class Vps4AccountMessageHandlerTest {
     private VmService vmService = mock(VmService.class);
     private VmShopperMergeService vmShopperMergeService = mock(VmShopperMergeService.class);
     private Config configMock = mock(Config.class);
-    private MessagingService messagingServiceMock = mock(MessagingService.class);
+    private Vps4MessagingService messagingServiceMock = mock(Vps4MessagingService.class);
     private VmAction vmAction = mock(VmAction.class);
 
     private UUID orionGuid;
@@ -207,7 +208,8 @@ public class Vps4AccountMessageHandlerTest {
     }
 
     @Test
-    public void testHandleMessageAddedCausesNoChange() throws MessageHandlerException {
+    public void testHandleMessageAddedCausesNoChange()
+            throws MessageHandlerException, MissingShopperIdException, IOException {
         mockVmCredit(AccountStatus.ACTIVE, null);
         callHandleMessage(createTestKafkaMessage("added"));
 
@@ -217,7 +219,7 @@ public class Vps4AccountMessageHandlerTest {
     }
 
     @Test
-    public void testVps4ManagedCredit() throws MessageHandlerException {
+    public void testVps4ManagedCredit() throws MessageHandlerException, MissingShopperIdException, IOException {
         planFeatures.put(PlanFeatures.CONTROL_PANEL_TYPE.toString(), String.valueOf("cpanel"));
         planFeatures.put(PlanFeatures.MANAGED_LEVEL.toString(), VPS4_MANAGED);
         mockVmCredit(AccountStatus.ACTIVE, vm.vmId);
@@ -239,7 +241,7 @@ public class Vps4AccountMessageHandlerTest {
     }
 
     @Test
-    public void testCreditPlidSendsManagedEmail() throws MessageHandlerException {
+    public void testCreditPlidSendsManagedEmail() throws MissingShopperIdException, IOException, MessageHandlerException {
         planFeatures.put(PlanFeatures.MANAGED_LEVEL.toString(), VPS4_MANAGED);
         mockVmCreditWithReseller(AccountStatus.ACTIVE, vm.vmId, "12345");
         when(configMock.get("vps4MessageHandler.processFullyManagedEmails")).thenReturn("true");
@@ -252,7 +254,7 @@ public class Vps4AccountMessageHandlerTest {
     }
 
     @Test
-    public void testCreditPlidDoesNotSendManagedEmail() throws MessageHandlerException {
+    public void testCreditPlidDoesNotSendManagedEmail() throws MissingShopperIdException, IOException, MessageHandlerException {
         planFeatures.put(PlanFeatures.MANAGED_LEVEL.toString(), VPS4_MANAGED);
         mockVmCreditWithReseller(AccountStatus.ACTIVE, vm.vmId, "4500");
         when(configMock.get("messaging.reseller.blacklist.fullyManaged", "")).thenReturn("4500,495469,527397,525848");
@@ -265,7 +267,7 @@ public class Vps4AccountMessageHandlerTest {
     }
 
     @Test
-    public void testDed4DoesNotSendManagedEmail() throws MessageHandlerException {
+    public void testDed4DoesNotSendManagedEmail() throws MessageHandlerException, MissingShopperIdException, IOException {
         planFeatures.put(PlanFeatures.TIER.toString(), DED4_TIER);
         planFeatures.put(PlanFeatures.MANAGED_LEVEL.toString(), VPS4_MANAGED);
         mockVmCredit(AccountStatus.ACTIVE, vm.vmId);
@@ -277,7 +279,7 @@ public class Vps4AccountMessageHandlerTest {
     }
 
     @Test
-    public void testDed4SendsManagedEmail() throws MessageHandlerException {
+    public void testDed4SendsManagedEmail() throws MessageHandlerException, MissingShopperIdException, IOException {
         planFeatures.put(PlanFeatures.TIER.toString(), DED4_TIER);
         planFeatures.put(PlanFeatures.MANAGED_LEVEL.toString(), DED4_MANAGED);
         mockVmCredit(AccountStatus.ACTIVE, vm.vmId);
@@ -302,7 +304,8 @@ public class Vps4AccountMessageHandlerTest {
     }
 
     @Test
-    public void testFullyManagedEmailAlreadySent() throws MessageHandlerException {
+    public void testFullyManagedEmailAlreadySent()
+            throws MessageHandlerException, MissingShopperIdException, IOException {
         VirtualMachineCredit vmCredit = new VirtualMachineCredit.Builder(dcService).build();
 
         when(creditServiceMock.getVirtualMachineCredit(orionGuid)).thenReturn(vmCredit);
@@ -472,7 +475,7 @@ public class Vps4AccountMessageHandlerTest {
     }
 
     @Test
-    public void accountRemovalDeletesAccountWithPurchasedAtLessThan7DaysOld() throws MessageHandlerException {
+    public void accountRemovalDeletesAccountWithPurchasedAtLessThan7DaysOld() throws Exception {
         Instant sixDaysAgo = Instant.now().minus(6, DAYS);
         productMeta.put(ProductMetaField.PURCHASED_AT.toString(), sixDaysAgo.toString());
         mockVmCredit(AccountStatus.REMOVED, vm.vmId);
@@ -482,7 +485,7 @@ public class Vps4AccountMessageHandlerTest {
     }
 
     @Test
-    public void accountRemovalZombiesAccountWithPurchasedAt7DaysOld() throws MessageHandlerException {
+    public void accountRemovalZombiesAccountWithPurchasedAt7DaysOld() throws Exception {
         Instant sevenDaysAgo = Instant.now().minus(7, DAYS);
         productMeta.put(ProductMetaField.PURCHASED_AT.toString(), sevenDaysAgo.toString());
         mockVmCredit(AccountStatus.REMOVED, vm.vmId);

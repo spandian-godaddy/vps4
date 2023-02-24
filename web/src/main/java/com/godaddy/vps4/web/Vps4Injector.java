@@ -39,7 +39,6 @@ import com.godaddy.vps4.security.SecurityModule;
 import com.godaddy.vps4.shopperNotes.ShopperNotesModule;
 import com.godaddy.vps4.snapshot.SnapshotModule;
 import com.godaddy.vps4.sso.SsoModule;
-import com.godaddy.vps4.sso.Vps4SsoModule;
 import com.godaddy.vps4.util.ObjectMapperProvider;
 import com.godaddy.vps4.util.UtilsModule;
 import com.godaddy.vps4.vm.VmModule;
@@ -135,7 +134,6 @@ public class Vps4Injector {
         modules.add(new CustomNotesModule());
         modules.add(new OhModule());
         modules.add(new JsdModule());
-        modules.add(new Vps4SsoModule());
         modules.add(binder -> {
             binder.bind(ObjectMapper.class).toProvider(ObjectMapperProvider.class);
         });

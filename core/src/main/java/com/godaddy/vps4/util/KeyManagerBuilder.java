@@ -6,7 +6,6 @@ import java.net.Socket;
 import java.security.Principal;
 import java.security.PrivateKey;
 import java.security.cert.X509Certificate;
-import java.util.Arrays;
 import java.util.Objects;
 
 import javax.net.ssl.KeyManager;
@@ -87,7 +86,7 @@ public class KeyManagerBuilder {
                     Charsets.UTF8));
 
             logger.info("client private key: {}", privatePemFile.getPrivateKey());
-            logger.info("client public key: {}", Arrays.toString(publicPemFile.getCertChain()));
+            logger.info("client public key: {}", publicPemFile.getCertChain().toString());
 
             return new CertificateKeyManager(publicPemFile.getCertChain(), privatePemFile.getPrivateKey());
         }
