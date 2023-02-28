@@ -30,6 +30,7 @@ pipeline {
                                         + "${env.ALL_OH_IMAGES.toBoolean() ? '--all-oh-images' : ''} "
                                         + "--images '${env.ADDITIONAL_IMAGES}' "
                                         + "--tests-to-run '${TESTS_TO_RUN}' "
+                                        + "--keep-vms '${KEEP_VMS}' "
                                         + "2>&1 | tee daily_phase3_${BUILD_NUMBER}.log",
                                 returnStatus: true
                         )

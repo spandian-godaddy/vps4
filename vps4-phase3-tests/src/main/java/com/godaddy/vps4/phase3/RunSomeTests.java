@@ -2,7 +2,6 @@ package com.godaddy.vps4.phase3;
 
 import java.security.SecureRandom;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
@@ -52,6 +51,7 @@ public class RunSomeTests {
         CommandLine cmd = parseCliArgs(args);
         String URL = cmd.getOptionValue("api-url");
         String ssoUrl = cmd.getOptionValue("sso-url");
+        boolean keepVms = Boolean.parseBoolean(cmd.getOptionValue("keep-vms"));
 
         String vps4ShopperId = cmd.getOptionValue("shopper");
         String vps4Password = cmd.getOptionValue("password");
@@ -123,7 +123,9 @@ public class RunSomeTests {
             System.exit(1);
         }
 
-        vmPool.destroyAll();
+        if(!keepVms) {
+            vmPool.destroyAll();
+        }
         printResults(testGroupExecution);
     }
 
