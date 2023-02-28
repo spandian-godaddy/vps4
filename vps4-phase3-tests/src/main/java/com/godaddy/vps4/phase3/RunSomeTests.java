@@ -229,7 +229,8 @@ public class RunSomeTests {
         options.addOption( "d", "dc-id", true, "the id of the dc in which the phase3 tests are being run");
         options.addOption( null, "all-oh-images", false, "automatically include all active OH images");
         options.addOption( "i", "images", true, "additional hfs images to test");
-        options.addOption("r", "tests-to-run", true, "tests to run");
+        options.addOption( "r", "tests-to-run", true, "tests to run");
+        options.addOption( "k", "keep-vms", true, "keep vms after the tests run");
 
         CommandLine cmd = parser.parse(options, args);
         for (Option option : cmd.getOptions())
