@@ -1,5 +1,6 @@
 def creds_file1 = 'vps4data1.json'
 def creds_file2 = 'vps4data2.json'
+def creds_file3 = 'vps4data3.json'
 
 pipeline {
     agent any
@@ -36,6 +37,34 @@ aws secretsmanager get-secret-value --secret-id $SECRET_NAME2 --query SecretStri
                 }
             }
         }
+        stage('Get current AWS dev-private credentials') {
+            steps {
+                withCredentials([aws(accessKeyVariable: 'ACCESS_KEY_ID', credentialsId: 'VPS4Data_DeployUser_DevPrivate', secretKeyVariable: 'SECRET_ACCESS_KEY')]) {
+                    script {
+                        script_result = sh(
+                            script: '''set +x
+unset AWS_ACCESS_KEY_ID AWS_SECRET_ACCESS_KEY AWS_SESSION_TOKEN
+
+export AWS_REGION=\'us-west-2\'
+
+export AWS_ACCESS_KEY_ID=$ACCESS_KEY_ID
+export AWS_SECRET_ACCESS_KEY=$SECRET_ACCESS_KEY
+creds=$(aws sts assume-role --role-arn arn:aws:iam::152924559564:role/GD-AWS-USA-CPO-VPS4Data-Dev-Private-Deploy --role-session-name dev-deploy)
+
+export AWS_ACCESS_KEY_ID=$(echo $creds | jq -r \'.Credentials.AccessKeyId\')
+export AWS_SECRET_ACCESS_KEY=$(echo $creds | jq -r \'.Credentials.SecretAccessKey\')
+export AWS_SESSION_TOKEN=$(echo $creds | jq -r \'.Credentials.SessionToken\')
+
+SECRET_NAME3=\'/Secrets/IAMUser/GD-AWS-DeployUser-VPS4Data-Dev-Private\'
+aws secretsmanager get-secret-value --secret-id $SECRET_NAME3 --query SecretString --output text > vps4data3.json''',
+                            returnStdout: true
+                        )
+                        println "Script for getting Dev AWS credentials finished"
+                        println script_result
+                    }
+                }
+            }
+        }
         stage('Update Producer credentials') {
             steps {
                 script {
@@ -59,7 +88,7 @@ aws secretsmanager get-secret-value --secret-id $SECRET_NAME2 --query SecretStri
                 }
             }
         }
-        stage('Update DeployUser credentials') {
+        stage('Update Prod DeployUser credentials') {
             steps {
                 script {
                     def creds2 = readJSON file: creds_file2, text: ''    
@@ -72,7 +101,28 @@ aws secretsmanager get-secret-value --secret-id $SECRET_NAME2 --query SecretStri
                             hudson.util.Secret newDeployAccessKeyId = hudson.util.Secret.fromString(deployUserAccessKeyId)
                             hudson.util.Secret newDeploySecretAccessKey = hudson.util.Secret.fromString(deployUserSecretAccessKey)
                             build job: 'Update_Jenkins_AWS_Credentials', parameters: [string(name: 'credIdName', value: 'GD-AWS-DeployUser-VPS4Data-Prod'), password(name: 'newAccessKeyId', value: newDeployAccessKeyId), password(name: 'newSecretAccessKey', value: newDeploySecretAccessKey)]
-                            slackSend(color: '#00CD48', message: "VPS4Data Deploy USer AWS credentials successfully updated.")
+                            slackSend(color: '#00CD48', message: "Prod VPS4Data Deploy USer AWS credentials successfully updated.")
+                        } else {
+                            println "No update needed for VPS4Data Deploy User"
+                        }
+                    }
+                }
+            }
+        }
+        stage('Update Dev-Private DeployUser credentials') {
+            steps {
+                script {
+                    def creds3 = readJSON file: creds_file3, text: ''    
+                    def devDeployUserAccessKeyId = creds3['AccessKeyId']
+                    def devDeployUserSecretAccessKey = creds3['SecretAccessKey']
+
+                    withCredentials([aws(accessKeyVariable: 'DEV_DEPLOY_ACCESS_KEY_ID', credentialsId: 'VPS4Data_DeployUser_DevPrivate', secretKeyVariable: 'DEV_DEPLOY_SECRET_ACCESS_KEY')]) {
+                        if (DEV_DEPLOY_ACCESS_KEY_ID != devDeployUserAccessKeyId || DEV_DEPLOY_SECRET_ACCESS_KEY != devDeployUserSecretAccessKey) {
+                            println "Mismatch Dev-Private Deploy User creds, updating Jenkins..."
+                            hudson.util.Secret newDevDeployAccessKeyId = hudson.util.Secret.fromString(deployUserAccessKeyId)
+                            hudson.util.Secret newDevDeploySecretAccessKey = hudson.util.Secret.fromString(deployUserSecretAccessKey)
+                            build job: 'Update_Jenkins_AWS_Credentials', parameters: [string(name: 'credIdName', value: 'AWS_Dev_Private_VPS4_Data_DeployUser'), password(name: 'newAccessKeyId', value: newDevDeployAccessKeyId), password(name: 'newSecretAccessKey', value: newDevDeploySecretAccessKey)]
+                            slackSend(color: '#00CD48', message: "Dev-Private VPS4Data Deploy USer AWS credentials successfully updated.")
                         } else {
                             println "No update needed for VPS4Data Deploy User"
                         }
