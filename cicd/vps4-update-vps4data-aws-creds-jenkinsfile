@@ -31,7 +31,7 @@ SECRET_NAME2=\'/Secrets/IAMUser/GD-AWS-DeployUser-VPS4Data-Prod\'
 aws secretsmanager get-secret-value --secret-id $SECRET_NAME2 --query SecretString --output text > vps4data2.json''',
                             returnStdout: true
                         )
-                        println "Script for getting AWS credentials finished"
+                        println "Script for getting Prod AWS credentials finished"
                         println script_result
                     }
                 }
@@ -80,7 +80,7 @@ aws secretsmanager get-secret-value --secret-id $SECRET_NAME3 --query SecretStri
                             build job: 'Update_Jenkins_AWS_Credentials', parameters: [string(name: 'credIdName', value: 'AWS_VPS4DATA_KINESIS_CREDS_PROD'), password(name: 'newAccessKeyId', value: newKinesisAccessKeyId), password(name: 'newSecretAccessKey', value: newKinesisSecretAccessKey)]
                             slackSend(color: '#00CD48', message: "VPS4Data Producer AWS credentials successfully updated.")
                         } else {
-                            println "No update needed for VPS4Data Producer"
+                            println "No update needed for Prod VPS4Data Producer"
                         }
                     }
 
@@ -103,7 +103,7 @@ aws secretsmanager get-secret-value --secret-id $SECRET_NAME3 --query SecretStri
                             build job: 'Update_Jenkins_AWS_Credentials', parameters: [string(name: 'credIdName', value: 'GD-AWS-DeployUser-VPS4Data-Prod'), password(name: 'newAccessKeyId', value: newDeployAccessKeyId), password(name: 'newSecretAccessKey', value: newDeploySecretAccessKey)]
                             slackSend(color: '#00CD48', message: "Prod VPS4Data Deploy USer AWS credentials successfully updated.")
                         } else {
-                            println "No update needed for VPS4Data Deploy User"
+                            println "No update needed for Prod VPS4Data Deploy User"
                         }
                     }
                 }
@@ -124,7 +124,7 @@ aws secretsmanager get-secret-value --secret-id $SECRET_NAME3 --query SecretStri
                             build job: 'Update_Jenkins_AWS_Credentials', parameters: [string(name: 'credIdName', value: 'AWS_Dev_Private_VPS4_Data_DeployUser'), password(name: 'newAccessKeyId', value: newDevDeployAccessKeyId), password(name: 'newSecretAccessKey', value: newDevDeploySecretAccessKey)]
                             slackSend(color: '#00CD48', message: "Dev-Private VPS4Data Deploy USer AWS credentials successfully updated.")
                         } else {
-                            println "No update needed for VPS4Data Deploy User"
+                            println "No update needed for Dev-Private VPS4Data Deploy User"
                         }
                     }
                 }
@@ -138,7 +138,7 @@ aws secretsmanager get-secret-value --secret-id $SECRET_NAME3 --query SecretStri
             }
         }
         failure {
-            slackSend(color: '#ff0000', message: "Updating VPS4Data Prod AWS credentials failed.")
+            slackSend(color: '#ff0000', message: "Updating VPS4Data Prod & Dev-Private AWS credentials failed.")
         }
     }
 }
