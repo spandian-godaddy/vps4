@@ -49,7 +49,7 @@ export AWS_REGION=\'us-west-2\'
 
 export AWS_ACCESS_KEY_ID=$DEV_ACCESS_KEY_ID
 export AWS_SECRET_ACCESS_KEY=$DEV_SECRET_ACCESS_KEY
-creds=$(aws sts assume-role --role-arn arn:aws:iam::152924559564:role/GD-AWS-USA-CPO-VPS4Data-Dev-Private-Deploy --role-session-name dev-deploy)
+creds=$(aws sts assume-role --role-arn arn:aws:iam::299093022176:role/GD-AWS-USA-CPO-VPS4Data-Dev-Private-Deploy --role-session-name dev-deploy)
 
 export AWS_ACCESS_KEY_ID=$(echo $creds | jq -r \'.Credentials.AccessKeyId\')
 export AWS_SECRET_ACCESS_KEY=$(echo $creds | jq -r \'.Credentials.SecretAccessKey\')
