@@ -7,6 +7,7 @@ import com.godaddy.vps4.cpanel.CPanelSession;
 import com.godaddy.vps4.cpanel.CpanelAccessDeniedException;
 import com.godaddy.vps4.cpanel.CpanelInvalidUserException;
 import com.godaddy.vps4.cpanel.CpanelTimeoutException;
+import com.godaddy.vps4.cpanel.InstallatronApplication;
 import com.godaddy.vps4.cpanel.Vps4CpanelService;
 import com.godaddy.vps4.cpanel.UpdateNginxRequest;
 import com.godaddy.vps4.security.GDUserMock;
@@ -58,9 +59,11 @@ public class CpanelResourceTest {
 
     private String expectedVersion = "11.106.0.8";
     private String[] expectedPackages = {"foobar", "helloworld"};
+    private InstallatronApplication testApp = new InstallatronApplication("testApp", "testId", "testdomain.com", "testversion");
+    private List<InstallatronApplication> installatronApps= Arrays.asList(testApp);
     private CPanelAccountCacheStatus cacheStatus = new CPanelAccountCacheStatus("testuser", true);
     @Before
-    public void setupTest() throws CpanelTimeoutException, CpanelAccessDeniedException {
+    public void setupTest() throws CpanelTimeoutException, CpanelAccessDeniedException, IOException {
         vm = createTestVm("hfs-centos-7-cpanel-11", Image.ControlPanel.CPANEL);
         centVm = createTestVm("hfs-centos-7", Image.ControlPanel.MYH);
         user = GDUserMock.createShopper();
@@ -83,6 +86,7 @@ public class CpanelResourceTest {
         when(vps4CpanelService.getVersion(vm.hfsVmId)).thenReturn(expectedVersion);
         when(vps4CpanelService.listInstalledRpmPackages(anyLong())).thenReturn(Arrays.asList(expectedPackages));
         when(vps4CpanelService.getNginxCacheConfig(anyLong())).thenReturn(Arrays.asList(cacheStatus));
+        when(vps4CpanelService.listInstalledInstallatronApplications(vm.hfsVmId, user.getUsername())).thenReturn(installatronApps);
     }
 
     private CPanelResource getcPanelResource() {
@@ -271,6 +275,7 @@ public class CpanelResourceTest {
         req.password = password;
         try {
             getcPanelResource().calculatePasswordStrength(vm.vmId, req);
+            Assert.fail();
         }
         catch (Vps4Exception e) {
             Assert.assertEquals("PASSWORD_STRENGTH_CALCULATION_FAILED", e.getId());
@@ -307,6 +312,7 @@ public class CpanelResourceTest {
             req.password = password;
             req.contactEmail = email;
             getcPanelResource().createAccount(vm.vmId, req);
+            Assert.fail();
         }
         catch (Vps4Exception e) {
             Assert.assertEquals("CREATE_CPANEL_ACCOUNT_FAILED", e.getId());
@@ -327,6 +333,7 @@ public class CpanelResourceTest {
         when(vps4CpanelService.listPackages(vm.hfsVmId)).thenThrow(new RuntimeException());
         try {
             getcPanelResource().listPackages(vm.vmId);
+            Assert.fail();
         }
         catch (Vps4Exception e) {
             Assert.assertEquals("LIST_PACKAGES_FAILED", e.getId());
@@ -335,7 +342,7 @@ public class CpanelResourceTest {
 
     // get version
     @Test
-    public void getVersionCallsCpanelService() throws Exception {
+    public void getVersionCallsCpanelService() {
         CPanelResource.CpanelVersionResponse response = getcPanelResource().getVersion(vm.vmId);
         Assert.assertEquals(expectedVersion, response.version);
     }
@@ -345,22 +352,43 @@ public class CpanelResourceTest {
         when(vps4CpanelService.getVersion(vm.hfsVmId)).thenThrow(new RuntimeException());
         try {
             getcPanelResource().getVersion(vm.vmId);
+            Assert.fail();
         }
         catch (Vps4Exception e) {
             Assert.assertEquals("GET_VERSION_FAILED", e.getId());
         }
     }
 
+    // list installatron installed applications
     @Test
-    public void getVersionThrowsVersionFormatException() throws Exception {
-        when(vps4CpanelService.getVersion(vm.hfsVmId)).thenReturn("11.000.0.8.23");
+    public void listInstallatronAppsCallsCpanelService() {
+        List<InstallatronApplication> response = getcPanelResource().getInstalledInstallatronApps(vm.vmId, user.getUsername());
+        Assert.assertEquals(1, response.size());
+        Assert.assertEquals(testApp.name, response.get(0).name);
+        Assert.assertEquals(testApp.id, response.get(0).id);
+        Assert.assertEquals(testApp.domain, response.get(0).domain);
+        Assert.assertEquals(testApp.version, response.get(0).version);
+    }
+
+    @Test
+    public void listInstallatronAppsReturnsEmptyLust() throws CpanelTimeoutException, IOException, CpanelAccessDeniedException {
+        when(vps4CpanelService.listInstalledInstallatronApplications(vm.hfsVmId, user.getUsername())).thenReturn(Collections.emptyList());
+        List<InstallatronApplication> response = getcPanelResource().getInstalledInstallatronApps(vm.vmId, user.getUsername());
+        Assert.assertEquals(0, response.size());
+    }
+
+    @Test
+    public void listInstallatronAppsThrowsException() throws Exception {
+        when(vps4CpanelService.listInstalledInstallatronApplications(vm.hfsVmId, user.getUsername())).thenThrow(new RuntimeException());
         try {
-            getcPanelResource().getVersion(vm.vmId);
+            getcPanelResource().getInstalledInstallatronApps(vm.vmId, user.getUsername());
+            Assert.fail();
         }
         catch (Vps4Exception e) {
-            Assert.assertEquals("INCORRECT_VERSION_FORMAT", e.getId());
+            Assert.assertEquals("LIST_INSTALLATRON_APPS_FAILED", e.getId());
         }
     }
+
 
     // get nginx manager status
     @Test
@@ -391,11 +419,25 @@ public class CpanelResourceTest {
         when(vps4CpanelService.listInstalledRpmPackages(vm.hfsVmId)).thenThrow(new RuntimeException());
         try {
             getcPanelResource().getNginxManagerStatus(vm.vmId);
+            Assert.fail();
         }
         catch (Vps4Exception e) {
             Assert.assertEquals("GET_NGINX_STATUS_FAILED", e.getId());
         }
     }
+
+    @Test
+    public void getNginxManagerStatusThrowsVersionFormatException() throws Exception {
+        when(vps4CpanelService.getVersion(vm.hfsVmId)).thenReturn("11.0002");
+        try {
+            getcPanelResource().getNginxManagerStatus(vm.vmId);
+            Assert.fail();
+        }
+        catch (Vps4Exception e) {
+            Assert.assertEquals("GET_NGINX_STATUS_FAILED", e.getId());
+        }
+    }
+
     // Install packages
     @Test
     public void installPackagesCallsCommandService() {

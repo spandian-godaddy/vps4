@@ -22,6 +22,9 @@ public interface Vps4CpanelService {
     Void createAccount(long hfsVmId, String domainName, String username, String password, String plan, String contactEmail)
             throws CpanelAccessDeniedException, CpanelTimeoutException, IOException;
 
+    List<InstallatronApplication> listInstalledInstallatronApplications(long hfsVmId, String username)
+            throws CpanelAccessDeniedException, CpanelTimeoutException;
+
     List<String> listPackages(long hfsVmId)
             throws CpanelAccessDeniedException, CpanelTimeoutException, IOException;
 

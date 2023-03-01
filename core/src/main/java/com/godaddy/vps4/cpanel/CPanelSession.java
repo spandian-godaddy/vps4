@@ -1,5 +1,8 @@
 package com.godaddy.vps4.cpanel;
 
+import com.fasterxml.jackson.annotation.JsonAlias;
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 import java.time.Instant;
 
 public class CPanelSession {
@@ -11,6 +14,7 @@ public class CPanelSession {
     }
 
     public class Data {
+        @JsonAlias("cp_security_token")
         public String cpSecurityToken;
         public String service;
         private Instant expires;

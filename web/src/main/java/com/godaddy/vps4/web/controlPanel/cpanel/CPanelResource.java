@@ -22,6 +22,7 @@ import com.godaddy.hfs.config.Config;
 import com.godaddy.vps4.cpanel.CPanelAccount;
 import com.godaddy.vps4.cpanel.CPanelAccountCacheStatus;
 import com.godaddy.vps4.cpanel.CPanelSession;
+import com.godaddy.vps4.cpanel.InstallatronApplication;
 import com.godaddy.vps4.cpanel.Vps4CpanelService;
 import com.godaddy.vps4.cpanel.UpdateNginxRequest;
 import com.godaddy.vps4.cpanel.CpanelInvalidUserException;
@@ -137,6 +138,19 @@ public class CPanelResource {
         String encodedURI = "&goto_uri=" + URLEncoder.encode(path, "UTF-8");
         session.data.url += encodedURI;
         return session;
+    }
+
+    @GET
+    @Path("{vmId}/cpanel/{username}/installatronApps")
+    public List<InstallatronApplication> getInstalledInstallatronApps(@PathParam("vmId") UUID vmId, @PathParam("username") String username) {
+        VirtualMachine vm = resolveVirtualMachine(vmId);
+
+        try {
+            return cpanelService.listInstalledInstallatronApplications(vm.hfsVmId, username);
+        } catch (Exception e) {
+            logger.warn("Could not get list of installed Installatron applications for vmId {}", vmId);
+            throw new Vps4Exception("LIST_INSTALLATRON_APPS_FAILED", e.getMessage(), e);
+        }
     }
 
     @GET

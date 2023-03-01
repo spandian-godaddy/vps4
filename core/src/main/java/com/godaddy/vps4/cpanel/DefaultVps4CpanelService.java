@@ -10,6 +10,8 @@ import java.util.concurrent.TimeUnit;
 
 import javax.inject.Inject;
 
+import org.apache.http.client.config.RequestConfig;
+import org.apache.http.client.methods.RequestBuilder;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
@@ -316,6 +318,37 @@ public class DefaultVps4CpanelService implements Vps4CpanelService {
                         throw new RuntimeException("WHM account creation failed due to reason: " + reason);
                     }
             );
+        });
+    }
+
+    @Override
+    public List<InstallatronApplication> listInstalledInstallatronApplications(long hfsVmId, String username) throws CpanelAccessDeniedException, CpanelTimeoutException {
+
+        return withAccessHash(hfsVmId, cPanelClient -> {
+            JSONParser parser = new JSONParser();
+            String installedAppJson = cPanelClient.listInstalledInstallatronApplications(username);
+            try {
+                List<InstallatronApplication> installedApps = new ArrayList<>();
+                JSONObject jsonObject = (JSONObject) parser.parse(installedAppJson);
+                Boolean installatronResult = (Boolean) jsonObject.get("result");
+                if (installatronResult == true) {
+                    JSONArray data;
+                    data = (JSONArray) jsonObject.get("data");
+                    for (Object object : data) {
+                        JSONObject installedApp = (JSONObject) object;
+                        String appName = (String) installedApp.get("installer");
+                        String id = (String) installedApp.get("id");
+                        String version = (String) installedApp.get("version");
+                        String domain = (String) installedApp.get("url");
+                        InstallatronApplication app = new InstallatronApplication(appName, id, domain, version);
+                        installedApps.add(app);
+                    }
+                    return installedApps;
+                }
+                throw new RuntimeException("Error querying Installatron for list of installed applications due to reason: " + jsonObject.get("message"));
+            } catch (ParseException | ClassCastException e) {
+                throw new IOException("Error parsing list of Installatron installed applications", e);
+            }
         });
     }
 

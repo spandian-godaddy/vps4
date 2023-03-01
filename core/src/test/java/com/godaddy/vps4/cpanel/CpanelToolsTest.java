@@ -450,6 +450,65 @@ public class CpanelToolsTest {
     }
 
     @Test
+    public void listInstallatronAppsUsesCpanelClient() throws Exception{
+        String returnVal = "{\"result\":true,\"message\":\"The task is complete.\\n\",\"errcode\":null," +
+                "\"errfield\":null,\"data\":[{\"id\":\"testId\"," +
+                "\"file\":\"\\/home\\/dtstus\\/.appdata\\/current\\/testId\",\"installer\":\"sitebar\"," +
+                "\"version\":\"3.6.2\",\"owner\":\"dtstus\",\"path\":\"\\/home\\/dtstus\\/public_html\\/sitebar\"," +
+                "\"url\":\"http:\\/\\/www.tester.fake\\/sitebar\",\"url-domain\":\"tester.fake\",\"title\":\"My bookmarks\"}]}";
+        when(cpClient.listInstalledInstallatronApplications("fakeUsername")).thenReturn(returnVal);
+        service.listInstalledInstallatronApplications(hfsVmId, "fakeUsername");
+        verify(cpClient, times(1)).listInstalledInstallatronApplications("fakeUsername");
+    }
+
+    @Test
+    public void listInstallatronAppsReturnsInstallatronList() throws Exception{
+        String returnVal = "{\"result\":true,\"message\":\"The task is complete.\\n\",\"errcode\":null," +
+                "\"errfield\":null,\"data\":[{\"id\":\"testId\"," +
+                "\"file\":\"\\/home\\/dtstus\\/.appdata\\/current\\/testId\",\"installer\":\"testApp\"," +
+                "\"version\":\"3.6.2\",\"owner\":\"dtstus\",\"path\":\"\\/home\\/dtstus\\/public_html\\/sitebar\"," +
+                "\"url\":\"http:\\/\\/www.tester.fake\\/sitebar\",\"url-domain\":\"tester.fake\",\"title\":\"My bookmarks\"}]}";
+        when(cpClient.listInstalledInstallatronApplications("fakeUsername")).thenReturn(returnVal);
+        List<InstallatronApplication> apps = service.listInstalledInstallatronApplications(hfsVmId,"fakeUsername");
+        Assert.assertEquals(1, apps.size());
+        Assert.assertEquals("testApp", apps.get(0).name);
+        Assert.assertEquals("testId", apps.get(0).id);
+        Assert.assertEquals("http://www.tester.fake/sitebar", apps.get(0).domain);
+        Assert.assertEquals("3.6.2", apps.get(0).version);
+    }
+
+    @Test
+    public void listInstallatronAppsResultFalse() throws Exception {
+        String returnVal =  "{\"result\":false,\"message\":\"Error: Missing argument\\n\"," +
+                "\"errcode\":\"empty_argument_application\",\"errfield\":null,\"data\":null}";
+        when(cpClient.listInstalledInstallatronApplications("fakeUsername")).thenReturn(returnVal);
+
+        try {
+            service.listInstalledInstallatronApplications(hfsVmId,"fakeUsername");
+            Assert.fail("This test shouldn't get here");
+        }
+        catch (RuntimeException e) {
+            Assert.assertEquals("Error querying Installatron for list of installed applications" +
+                    " due to reason: Error: Missing argument\n", e.getMessage());
+        }
+    }
+
+    @Test(expected = RuntimeException.class)
+    public void listInstallatronAppsNullData() throws Exception {
+        String returnVal =  "{\"result\":true,\"message\":\"The task is complete.\\n\",\"errcode\":null,\"errfield\":null,\"data\":null}";
+        when(cpClient.listInstalledInstallatronApplications("fakeUsername")).thenReturn(returnVal);
+        service.listInstalledInstallatronApplications(hfsVmId,"fakeUsername");
+    }
+
+    @Test
+    public void listInstallatronAppsEmptyData() throws Exception {
+        String returnVal = "{\"result\":true,\"message\":\"The task is complete.\\n\",\"errcode\":null,\"errfield\":null,\"data\":[]}";
+        when(cpClient.listInstalledInstallatronApplications("fakeUsername")).thenReturn(returnVal);
+        List<InstallatronApplication> apps = service.listInstalledInstallatronApplications(hfsVmId,"fakeUsername");
+        Assert.assertEquals(0, apps.size());
+    }
+
+    @Test
     public void getActiveBuildsUsesCpanelClient() throws Exception{
         String returnVal = "{\"data\":{\"active\":0},\"metadata\":{\"version\":1," +
                 "\"command\":\"package_manager_is_performing_actions\",\"reason\":\"OK\",\"result\":1}}";
