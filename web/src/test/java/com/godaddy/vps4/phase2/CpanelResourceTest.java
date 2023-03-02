@@ -59,7 +59,7 @@ public class CpanelResourceTest {
 
     private String expectedVersion = "11.106.0.8";
     private String[] expectedPackages = {"foobar", "helloworld"};
-    private InstallatronApplication testApp = new InstallatronApplication("testApp", "testId", "testdomain.com", "testversion");
+    private InstallatronApplication testApp = new InstallatronApplication("testApp", "testId", "testdomain.com", "testdomain.com", "testversion");
     private List<InstallatronApplication> installatronApps= Arrays.asList(testApp);
     private CPanelAccountCacheStatus cacheStatus = new CPanelAccountCacheStatus("testuser", true);
     @Before
@@ -367,6 +367,7 @@ public class CpanelResourceTest {
         Assert.assertEquals(testApp.name, response.get(0).name);
         Assert.assertEquals(testApp.id, response.get(0).id);
         Assert.assertEquals(testApp.domain, response.get(0).domain);
+        Assert.assertEquals(testApp.urlDomain, response.get(0).urlDomain);
         Assert.assertEquals(testApp.version, response.get(0).version);
     }
 

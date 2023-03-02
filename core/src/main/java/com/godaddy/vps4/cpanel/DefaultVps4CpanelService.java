@@ -340,7 +340,8 @@ public class DefaultVps4CpanelService implements Vps4CpanelService {
                         String id = (String) installedApp.get("id");
                         String version = (String) installedApp.get("version");
                         String domain = (String) installedApp.get("url");
-                        InstallatronApplication app = new InstallatronApplication(appName, id, domain, version);
+                        String urlDomain = (String) installedApp.get("url-domain");
+                        InstallatronApplication app = new InstallatronApplication(appName, id, domain, urlDomain, version);
                         installedApps.add(app);
                     }
                     return installedApps;

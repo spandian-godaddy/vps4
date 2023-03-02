@@ -474,6 +474,7 @@ public class CpanelToolsTest {
         Assert.assertEquals("testApp", apps.get(0).name);
         Assert.assertEquals("testId", apps.get(0).id);
         Assert.assertEquals("http://www.tester.fake/sitebar", apps.get(0).domain);
+        Assert.assertEquals("tester.fake", apps.get(0).urlDomain);
         Assert.assertEquals("3.6.2", apps.get(0).version);
     }
 
