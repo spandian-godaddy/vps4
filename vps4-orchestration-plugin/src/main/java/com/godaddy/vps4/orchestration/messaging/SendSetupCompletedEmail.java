@@ -6,7 +6,7 @@ import com.godaddy.vps4.credit.VirtualMachineCredit;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.godaddy.vps4.messaging.Vps4MessagingService;
+import com.godaddy.vps4.messaging.MessagingService;
 import com.google.inject.Inject;
 
 import gdg.hfs.orchestration.Command;
@@ -26,13 +26,13 @@ public class SendSetupCompletedEmail implements Command<SetupCompletedEmailReque
 
     private static final Logger logger = LoggerFactory.getLogger(SendSetupCompletedEmail.class);
 
-    final Vps4MessagingService messagingService;
+    final MessagingService messagingService;
     final CreditService creditService;
     final Config config;
     final List<String> resellerBlacklist;
 
     @Inject
-    public SendSetupCompletedEmail(Vps4MessagingService messagingService, CreditService creditService, Config config) {
+    public SendSetupCompletedEmail(MessagingService messagingService, CreditService creditService, Config config) {
         this.messagingService = messagingService;
         this.creditService = creditService;
         this.config = config;

@@ -27,7 +27,7 @@ public class CacheSettings {
                     .setStoreByValue(true)
                     .setTypes(String.class, String.class)
                     .setExpiryPolicyFactory(
-                            CreatedExpiryPolicy.factoryOf(Duration.ONE_HOUR))
+                            CreatedExpiryPolicy.factoryOf(Duration.TEN_MINUTES))
                     .setStatisticsEnabled(false));
 
         cacheManager.createCache(CacheName.CPANEL_ACCESSHASH,

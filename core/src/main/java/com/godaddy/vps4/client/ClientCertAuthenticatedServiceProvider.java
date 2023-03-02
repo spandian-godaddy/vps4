@@ -13,10 +13,11 @@ import com.google.inject.Provider;
 
 public class ClientCertAuthenticatedServiceProvider<T> extends HttpServiceProvider<T> implements Provider<T> {
 
-    static volatile KeyManager keyManager;
     private final String clientCertificateKeyPath;
     private final String clientCertificatePath;
     @Inject @ShopperId Provider<String> shopperIdProvider;
+
+    private volatile KeyManager keyManager;
 
     public ClientCertAuthenticatedServiceProvider(String baseUrlConfigPropName,
                                                   Class<T> serviceClass,
@@ -34,8 +35,7 @@ public class ClientCertAuthenticatedServiceProvider<T> extends HttpServiceProvid
             keyManager = KeyManagerBuilder.newKeyManager(config, clientCertificateKeyPath, clientCertificatePath);
         }
 
-        KeyManager[] keyManagers = { keyManager };
-        return keyManagers;
+        return new KeyManager[]{ keyManager };
     }
 
     @Override

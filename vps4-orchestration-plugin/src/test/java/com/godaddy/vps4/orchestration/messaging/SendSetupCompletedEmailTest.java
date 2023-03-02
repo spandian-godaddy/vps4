@@ -1,38 +1,37 @@
 package com.godaddy.vps4.orchestration.messaging;
 
-import com.godaddy.vps4.credit.CreditService;
-import com.godaddy.vps4.credit.VirtualMachineCredit;
-import com.godaddy.vps4.messaging.Vps4MessagingService;
-import com.godaddy.vps4.messaging.models.Message;
-import com.godaddy.vps4.orchestration.TestCommandContext;
-import com.google.inject.Guice;
-import com.google.inject.Injector;
-import gdg.hfs.orchestration.CommandContext;
-import gdg.hfs.orchestration.GuiceCommandProvider;
-import com.godaddy.hfs.config.Config;
-import org.junit.Before;
-import org.junit.Test;
+import static org.junit.Assert.assertEquals;
+import static org.mockito.Matchers.anyObject;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 import java.util.UUID;
 
-import static org.junit.Assert.assertEquals;
+import org.junit.Before;
+import org.junit.Test;
 
-import static org.mockito.Matchers.anyObject;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.spy;
-import static org.mockito.Mockito.when;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.times;
+import com.godaddy.hfs.config.Config;
+import com.godaddy.vps4.credit.CreditService;
+import com.godaddy.vps4.credit.VirtualMachineCredit;
+import com.godaddy.vps4.messaging.MessagingService;
+import com.godaddy.vps4.orchestration.TestCommandContext;
+import com.google.inject.Guice;
+import com.google.inject.Injector;
+
+import gdg.hfs.orchestration.CommandContext;
+import gdg.hfs.orchestration.GuiceCommandProvider;
 
 public class SendSetupCompletedEmailTest {
 
-    Vps4MessagingService messagingService = mock(Vps4MessagingService.class);
+    MessagingService messagingService = mock(MessagingService.class);
     CreditService creditService = mock(CreditService.class);
     Config config = mock(Config.class);
     SendSetupCompletedEmail command;
     Injector injector = Guice.createInjector(binder -> {
-        binder.bind(Vps4MessagingService.class).toInstance(messagingService);
+        binder.bind(MessagingService.class).toInstance(messagingService);
     });
 
     CommandContext context = spy(new TestCommandContext(new GuiceCommandProvider(injector)));
@@ -49,11 +48,8 @@ public class SendSetupCompletedEmailTest {
     @Before
     public void setupTest() {
         messageId = UUID.randomUUID().toString();
-        Message message = mock(Message.class);
-        message.status = Message.Statuses.SUCCESS.toString();
         when(config.get("messaging.reseller.blacklist.setup", "")).thenReturn("");
         when(messagingService.sendSetupEmail(shopperId, serverName, ipAddress, orionGuid.toString(), isManaged)).thenReturn(messageId);
-        when(messagingService.getMessageById(messageId)).thenReturn(message);
         when(credit.getResellerId()).thenReturn("1");
         when(creditService.getVirtualMachineCredit(anyObject())).thenReturn(credit);
 

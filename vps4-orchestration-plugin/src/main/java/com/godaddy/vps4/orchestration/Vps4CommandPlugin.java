@@ -12,6 +12,7 @@ import com.godaddy.vps4.credit.CreditModule;
 import com.godaddy.vps4.hfs.HfsVmTrackingRecordModule;
 import com.godaddy.vps4.ipblacklist.IpBlacklistModule;
 import com.godaddy.vps4.jdbc.DatabaseModule;
+import com.godaddy.vps4.messaging.MessagingModule;
 import com.godaddy.vps4.oh.OhModule;
 import com.godaddy.vps4.orchestration.account.AccountModule;
 import com.godaddy.vps4.orchestration.hfs.HfsCommandModule;
@@ -25,6 +26,7 @@ import com.godaddy.vps4.scheduler.api.client.SchedulerServiceClientModule;
 import com.godaddy.vps4.security.SecurityModule;
 import com.godaddy.vps4.shopperNotes.ShopperNotesModule;
 import com.godaddy.vps4.snapshot.SnapshotModule;
+import com.godaddy.vps4.sso.Vps4SsoModule;
 import com.godaddy.vps4.util.ObjectMapperModule;
 import com.godaddy.vps4.util.UtilsModule;
 import com.godaddy.vps4.vm.VmModule;
@@ -70,7 +72,7 @@ public class Vps4CommandPlugin implements CommandPlugin {
         else{
             hfsModule = new HfsModule();
         }
-        
+
         Injector injector = Guice.createInjector(
             new HazelcastCacheModule(),
             new ObjectMapperModule(),
@@ -94,7 +96,9 @@ public class Vps4CommandPlugin implements CommandPlugin {
             new OhModule(),
             new OhCommandModule(),
             new JsdModule(),
-            new CpanelModule()
+            new CpanelModule(),
+            new Vps4SsoModule(),
+            new MessagingModule()
         );
 
         return new GuiceCommandProvider(injector);

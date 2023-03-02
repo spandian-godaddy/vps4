@@ -1,27 +1,34 @@
 package com.godaddy.vps4.messaging.models;
 
 import java.util.EnumMap;
-import java.util.List;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class ShopperMessage {
+    public String templateNamespaceKey = "Hosting";
+    public TemplateType templateTypeKey;
+    public EnumMap<Substitution, String> substitutionValues;
+    public EnumMap<Transformation, String> transformationData;
 
-    public String templateNamespaceKey;
-    public String templateTypeKey;
-    public ShopperOverride shopperOverride;
-    public List<EmailRecipient> additionalRecipients = null;
-    public EnumMap<?, String> substitutionValues;
-    public EnumMap<?, String> transformationData;
-    public Boolean sendToShopper;
-    public ShopperNote shopperNote;
+    // Empty constructor required for Jackson
+    public ShopperMessage() {}
 
-    @Override
-    public String toString() {
-        return "ShopperMessage [templateNamespaceKey: " + templateNamespaceKey +
-                " templateTypeKey: " + templateTypeKey +
-                " sendToShopper: " + sendToShopper + " shopperNote: " + shopperNote.toString() +
-                " shopperOverride: " + shopperOverride.toString() + "]";
+    public ShopperMessage(TemplateType templateTypeKey) {
+        this.templateTypeKey = templateTypeKey;
+    }
+
+    public void substitute(Substitution key, String value) {
+        if (substitutionValues == null) {
+            substitutionValues = new EnumMap<>(Substitution.class);
+        }
+        substitutionValues.put(key, value);
+    }
+
+    public void transform(Transformation key, String value) {
+        if (transformationData == null) {
+            transformationData = new EnumMap<>(Transformation.class);
+        }
+        transformationData.put(key, value);
     }
 }
