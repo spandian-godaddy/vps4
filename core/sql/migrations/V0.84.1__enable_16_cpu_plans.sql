@@ -1,0 +1,1 @@
+update plan set enabled = true where package_id like '%tier7%';
