@@ -1,9 +1,7 @@
 package com.godaddy.vps4.messaging;
 
 import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.eq;
-import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -12,9 +10,6 @@ import java.time.temporal.ChronoUnit;
 import java.util.EnumMap;
 import java.util.UUID;
 import java.util.concurrent.Callable;
-
-import javax.cache.Cache;
-import javax.cache.CacheManager;
 
 import org.junit.Assert;
 import org.junit.Before;
@@ -25,26 +20,16 @@ import org.mockito.Captor;
 import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
 
-import com.godaddy.vps4.cache.CacheName;
 import com.godaddy.vps4.messaging.models.MessagingResponse;
 import com.godaddy.vps4.messaging.models.ShopperMessage;
 import com.godaddy.vps4.messaging.models.Substitution;
 import com.godaddy.vps4.messaging.models.TemplateType;
 import com.godaddy.vps4.messaging.models.Transformation;
-import com.godaddy.vps4.sso.Vps4SsoService;
-import com.godaddy.vps4.sso.models.Vps4SsoToken;
 
 @RunWith(MockitoJUnitRunner.class)
 public class DefaultMessagingServiceTest {
-    private static final String CACHE_KEY = "messaging-api";
-    private static final String JWT = "test-jwt";
-
     @Captor private ArgumentCaptor<ShopperMessage> captor;
-    @Mock private Cache<String, String> cache;
-    @Mock private CacheManager cacheManager;
     @Mock private MessagingApiService messagingApiService;
-    @Mock private Vps4SsoService vps4SsoService;
-    @Mock private Vps4SsoToken vps4SsoToken;
 
     private MessagingResponse messagingResponse;
     private DefaultMessagingService messagingService;
@@ -66,14 +51,10 @@ public class DefaultMessagingServiceTest {
         messagingResponse = new MessagingResponse();
         messagingResponse.messageId = UUID.randomUUID().toString();
 
-        when(cacheManager.getCache(CacheName.API_ACCESS_TOKENS, String.class, String.class)).thenReturn(cache);
-        when(cache.containsKey(CACHE_KEY)).thenReturn(true);
-        when(cache.get(CACHE_KEY)).thenReturn(JWT);
-        when(vps4SsoService.getToken("cert")).thenReturn(vps4SsoToken);
-        when(messagingApiService.sendMessage(anyString(), eq(shopperId), any(ShopperMessage.class)))
+        when(messagingApiService.sendMessage(eq(shopperId), any(ShopperMessage.class)))
                 .thenReturn(messagingResponse);
 
-        messagingService = new DefaultMessagingService(cacheManager, messagingApiService, vps4SsoService);
+        messagingService = new DefaultMessagingService(messagingApiService);
     }
 
     private void testEmail(Callable<String> method,
@@ -82,7 +63,7 @@ public class DefaultMessagingServiceTest {
                            EnumMap<Transformation, String> transformations) throws Exception {
         String messageId = method.call();
         Assert.assertEquals(messagingResponse.messageId, messageId);
-        verify(messagingApiService).sendMessage(eq("sso-jwt " + JWT), eq(shopperId), captor.capture());
+        verify(messagingApiService).sendMessage(eq(shopperId), captor.capture());
         ShopperMessage message = captor.getValue();
         Assert.assertEquals(type, message.templateTypeKey);
         if (substitutions == null) {
@@ -111,28 +92,6 @@ public class DefaultMessagingServiceTest {
             put(Substitution.ISMANAGEDSUPPORT, Boolean.toString(isManaged));
         }});
         testEmail(method, type, substitutions, transformations);
-    }
-
-    @Test
-    public void testAuthFromCache() {
-        messagingService.sendSetupEmail(shopperId, accountName, ipAddress, orionId, isManaged);
-        verify(messagingApiService).sendMessage(eq("sso-jwt " + JWT), any(), any());
-        verify(cache).containsKey(CACHE_KEY);
-        verify(cache).get(CACHE_KEY);
-        verify(vps4SsoService, never()).getToken(anyString());
-        verify(cache, never()).put(anyString(), anyString());
-    }
-
-    @Test
-    public void testAuthFromSsoService() {
-        when(cache.containsKey(CACHE_KEY)).thenReturn(false);
-        when(vps4SsoToken.value()).thenReturn("test-jwt-from-sso-service");
-        messagingService.sendSetupEmail(shopperId, accountName, ipAddress, orionId, isManaged);
-        verify(messagingApiService).sendMessage(eq("sso-jwt test-jwt-from-sso-service"), any(), any());
-        verify(cache).containsKey(CACHE_KEY);
-        verify(cache, never()).get(anyString());
-        verify(vps4SsoService).getToken(anyString());
-        verify(cache).put(anyString(), anyString());
     }
 
     @Test

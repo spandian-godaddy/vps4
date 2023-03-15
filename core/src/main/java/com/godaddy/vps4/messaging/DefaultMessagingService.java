@@ -7,57 +7,34 @@ import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
 import java.util.UUID;
 
-import javax.cache.Cache;
-import javax.cache.CacheManager;
 import javax.inject.Inject;
 
 import org.apache.commons.lang3.StringUtils;
 
-import com.godaddy.vps4.cache.CacheName;
 import com.godaddy.vps4.messaging.models.ShopperMessage;
 import com.godaddy.vps4.messaging.models.Substitution;
 import com.godaddy.vps4.messaging.models.TemplateType;
 import com.godaddy.vps4.messaging.models.Transformation;
-import com.godaddy.vps4.sso.Vps4SsoService;
-import com.godaddy.vps4.sso.clients.Vps4SsoMessagingApi;
-import com.godaddy.vps4.sso.models.Vps4SsoToken;
 
 public class DefaultMessagingService implements MessagingService {
-    private static final String CACHE_KEY = "messaging-api";
-
     private final DateTimeFormatter dateTimeFormatter;
-    private final Cache<String, String> cache;
     private final MessagingApiService messagingApiService;
-    private final Vps4SsoService vps4SsoService;
 
     @Inject
-    public DefaultMessagingService(CacheManager cacheManager,
-                                   MessagingApiService messagingApiService,
-                                   @Vps4SsoMessagingApi Vps4SsoService vps4SsoService) {
+    public DefaultMessagingService(MessagingApiService messagingApiService) {
         this.dateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
-        this.cache = cacheManager.getCache(CacheName.API_ACCESS_TOKENS, String.class, String.class);
         this.messagingApiService = messagingApiService;
-        this.vps4SsoService = vps4SsoService;
-    }
-
-    private String getAuth() {
-        if (cache.containsKey(CACHE_KEY)) {
-            return "sso-jwt " + cache.get(CACHE_KEY);
-        }
-        Vps4SsoToken token = vps4SsoService.getToken("cert");
-        cache.put(CACHE_KEY, token.value());
-        return "sso-jwt " + token.value();
     }
 
     @Override
     public String sendSetupEmail(String shopperId, String accountName, String ipAddress, String orionGuid,
                                  boolean isManaged) {
-        ShopperMessage message = new ShopperMessage(TemplateType.VirtualPrivateHostingProvisioned4);
-        message.substitute(Substitution.ACCOUNTNAME, accountName);
-        message.substitute(Substitution.IPADDRESS, ipAddress);
-        message.substitute(Substitution.ORION_ID, orionGuid);
-        message.substitute(Substitution.ISMANAGEDSUPPORT, Boolean.toString(isManaged));
-        return messagingApiService.sendMessage(getAuth(), shopperId, message).messageId;
+        ShopperMessage message = new ShopperMessage(TemplateType.VirtualPrivateHostingProvisioned4)
+                .substitute(Substitution.ACCOUNTNAME, accountName)
+                .substitute(Substitution.IPADDRESS, ipAddress)
+                .substitute(Substitution.ORION_ID, orionGuid)
+                .substitute(Substitution.ISMANAGEDSUPPORT, Boolean.toString(isManaged));
+        return messagingApiService.sendMessage(shopperId, message).messageId;
     }
 
     @Override
@@ -73,7 +50,7 @@ public class DefaultMessagingService implements MessagingService {
             default:
                 throw new IllegalArgumentException("Specified control panel not supported for fully managed email.");
         }
-        return messagingApiService.sendMessage(getAuth(), shopperId, message).messageId;
+        return messagingApiService.sendMessage(shopperId, message).messageId;
     }
 
     private String formatDateTime(Instant dateTime) {
@@ -84,39 +61,39 @@ public class DefaultMessagingService implements MessagingService {
     @Override
     public String sendScheduledPatchingEmail(String shopperId, String accountName, Instant startTime,
                                              long durationMinutes, boolean isManaged) {
-        ShopperMessage message = new ShopperMessage(TemplateType.VPS4ScheduledPatchingV2);
-        message.substitute(Substitution.ACCOUNTNAME, accountName);
-        message.substitute(Substitution.START_DATE_TIME, formatDateTime(startTime));
-        message.substitute(Substitution.END_DATE_TIME, formatDateTime(startTime.plus(durationMinutes, ChronoUnit.MINUTES)));
-        message.substitute(Substitution.ISMANAGEDSUPPORT, Boolean.toString(isManaged));
-        return messagingApiService.sendMessage(getAuth(), shopperId, message).messageId;
+        ShopperMessage message = new ShopperMessage(TemplateType.VPS4ScheduledPatchingV2)
+                .substitute(Substitution.ACCOUNTNAME, accountName)
+                .substitute(Substitution.START_DATE_TIME, formatDateTime(startTime))
+                .substitute(Substitution.END_DATE_TIME, formatDateTime(startTime.plus(durationMinutes, ChronoUnit.MINUTES)))
+                .substitute(Substitution.ISMANAGEDSUPPORT, Boolean.toString(isManaged));
+        return messagingApiService.sendMessage(shopperId, message).messageId;
     }
 
     @Override
     public String sendUnexpectedButScheduledMaintenanceEmail(String shopperId, String accountName, Instant startTime,
                                                              long durationMinutes, boolean isManaged) {
-        ShopperMessage message = new ShopperMessage(TemplateType.VPS4UnexpectedbutScheduledMaintenanceV2);
-        message.substitute(Substitution.ACCOUNTNAME, accountName);
-        message.substitute(Substitution.START_DATE_TIME, formatDateTime(startTime));
-        message.substitute(Substitution.END_DATE_TIME, formatDateTime(startTime.plus(durationMinutes, ChronoUnit.MINUTES)));
-        message.substitute(Substitution.ISMANAGEDSUPPORT, Boolean.toString(isManaged));
-        return messagingApiService.sendMessage(getAuth(), shopperId, message).messageId;
+        ShopperMessage message = new ShopperMessage(TemplateType.VPS4UnexpectedbutScheduledMaintenanceV2)
+                .substitute(Substitution.ACCOUNTNAME, accountName)
+                .substitute(Substitution.START_DATE_TIME, formatDateTime(startTime))
+                .substitute(Substitution.END_DATE_TIME, formatDateTime(startTime.plus(durationMinutes, ChronoUnit.MINUTES)))
+                .substitute(Substitution.ISMANAGEDSUPPORT, Boolean.toString(isManaged));
+        return messagingApiService.sendMessage(shopperId, message).messageId;
     }
 
     @Override
     public String sendSystemDownFailoverEmail(String shopperId, String accountName, boolean isManaged) {
-        ShopperMessage message = new ShopperMessage(TemplateType.VPS4SystemDownFailoverV2);
-        message.substitute(Substitution.ACCOUNTNAME, accountName);
-        message.substitute(Substitution.ISMANAGEDSUPPORT, Boolean.toString(isManaged));
-        return messagingApiService.sendMessage(getAuth(), shopperId, message).messageId;
+        ShopperMessage message = new ShopperMessage(TemplateType.VPS4SystemDownFailoverV2)
+                .substitute(Substitution.ACCOUNTNAME, accountName)
+                .substitute(Substitution.ISMANAGEDSUPPORT, Boolean.toString(isManaged));
+        return messagingApiService.sendMessage(shopperId, message).messageId;
     }
 
     @Override
     public String sendFailoverCompletedEmail(String shopperId, String accountName, boolean isManaged) {
-        ShopperMessage message = new ShopperMessage(TemplateType.VPS4UnexpectedscheduledmaintenanceFailoveriscompleted);
-        message.substitute(Substitution.ACCOUNTNAME, accountName);
-        message.substitute(Substitution.ISMANAGEDSUPPORT, Boolean.toString(isManaged));
-        return messagingApiService.sendMessage(getAuth(), shopperId, message).messageId;
+        ShopperMessage message = new ShopperMessage(TemplateType.VPS4UnexpectedscheduledmaintenanceFailoveriscompleted)
+                .substitute(Substitution.ACCOUNTNAME, accountName)
+                .substitute(Substitution.ISMANAGEDSUPPORT, Boolean.toString(isManaged));
+        return messagingApiService.sendMessage(shopperId, message).messageId;
     }
 
     @Override
@@ -125,7 +102,7 @@ public class DefaultMessagingService implements MessagingService {
         ShopperMessage message = buildOutageJson(
                 isManaged ? TemplateType.NewFinalManagedUptime : TemplateType.NewFinalSelfManagedUptime,
                 accountName, ipAddress, orionGuid, null, null, alertStart, null, isManaged);
-        return messagingApiService.sendMessage(getAuth(), shopperId, message).messageId;
+        return messagingApiService.sendMessage(shopperId, message).messageId;
     }
 
     @Override
@@ -135,7 +112,7 @@ public class DefaultMessagingService implements MessagingService {
         ShopperMessage message = buildOutageJson(
                 isManaged ? TemplateType.NewFinalManagedServerUsage : TemplateType.NewFinalSelfManagedServerUsage,
                 accountName, ipAddress, orionGuid, resourceName, resourceUsage, alertStart, null, isManaged);
-        return messagingApiService.sendMessage(getAuth(), shopperId, message).messageId;
+        return messagingApiService.sendMessage(shopperId, message).messageId;
     }
 
     @Override
@@ -144,7 +121,7 @@ public class DefaultMessagingService implements MessagingService {
         ShopperMessage message = buildOutageJson(
                 isManaged ? TemplateType.NewFinalManagedServicesDown : TemplateType.NewFinalSelfManagedServicesDown,
                 accountName, ipAddress, orionGuid, serviceName, null, alertStart, null, isManaged);
-        return messagingApiService.sendMessage(getAuth(), shopperId, message).messageId;
+        return messagingApiService.sendMessage(shopperId, message).messageId;
     }
 
     @Override
@@ -153,7 +130,7 @@ public class DefaultMessagingService implements MessagingService {
         ShopperMessage message =
                 buildOutageJson(TemplateType.VPS_DED_4_Issue_Resolved_Uptime, accountName, ipAddress, orionGuid, null,
                                 null, null, alertEnd, isManaged);
-        return messagingApiService.sendMessage(getAuth(), shopperId, message).messageId;
+        return messagingApiService.sendMessage(shopperId, message).messageId;
     }
 
     @Override
@@ -162,7 +139,7 @@ public class DefaultMessagingService implements MessagingService {
         ShopperMessage message =
                 buildOutageJson(TemplateType.VPS_DED_4_Issue_Resolved_Resources, accountName, ipAddress, orionGuid,
                                 resourceName, null, null, alertEnd, isManaged);
-        return messagingApiService.sendMessage(getAuth(), shopperId, message).messageId;
+        return messagingApiService.sendMessage(shopperId, message).messageId;
     }
 
     @Override
@@ -171,7 +148,7 @@ public class DefaultMessagingService implements MessagingService {
         ShopperMessage message =
                 buildOutageJson(TemplateType.VPS_DED_4_Issue_Resolved_Services, accountName, ipAddress, orionGuid,
                                 serviceName, null, null, alertEnd, isManaged);
-        return messagingApiService.sendMessage(getAuth(), shopperId, message).messageId;
+        return messagingApiService.sendMessage(shopperId, message).messageId;
     }
 
     /*
@@ -183,12 +160,12 @@ public class DefaultMessagingService implements MessagingService {
                                            String ipAddress, UUID orionGuid,
                                            String metricName, String resourceUsage, Instant alertStart,
                                            Instant alertEnd, boolean isManaged) {
-        ShopperMessage message = new ShopperMessage(templateType);
-        message.substitute(Substitution.ACCOUNTNAME, accountName);
-        message.substitute(Substitution.SERVERNAME, accountName);
-        message.substitute(Substitution.IPADDRESS, ipAddress);
-        message.substitute(Substitution.ORION_ID, orionGuid.toString());
-        message.substitute(Substitution.ISMANAGEDSUPPORT, Boolean.toString(isManaged));
+        ShopperMessage message = new ShopperMessage(templateType)
+                .substitute(Substitution.ACCOUNTNAME, accountName)
+                .substitute(Substitution.SERVERNAME, accountName)
+                .substitute(Substitution.IPADDRESS, ipAddress)
+                .substitute(Substitution.ORION_ID, orionGuid.toString())
+                .substitute(Substitution.ISMANAGEDSUPPORT, Boolean.toString(isManaged));
         if (alertStart != null) {
             message.transform(Transformation.ALERTSTARTTIME, alertStart.toString());
         }

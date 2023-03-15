@@ -10,13 +10,13 @@ import javax.ws.rs.client.ClientRequestFilter;
 
 import com.google.inject.Provider;
 
-public class SsoJwtAuthenticatedServiceProvider<T> extends HttpServiceProvider<T> implements Provider<T> {
+public class SsoJwtAuthServiceProvider<T> extends HttpServiceProvider<T> implements Provider<T> {
 
     @Inject SsoTokenService ssoTokenService;
     @Inject @ShopperId Provider<String> shopperIdProvider;
 
-    public SsoJwtAuthenticatedServiceProvider(String baseUrlConfigPropName,
-                                              Class<T> serviceClass) {
+    public SsoJwtAuthServiceProvider(String baseUrlConfigPropName,
+                                     Class<T> serviceClass) {
         super(baseUrlConfigPropName, serviceClass);
     }
 
@@ -26,10 +26,5 @@ public class SsoJwtAuthenticatedServiceProvider<T> extends HttpServiceProvider<T
         requestFilters.add(getSsoJwtInjectionFilter(ssoTokenService));
         requestFilters.add(getShopperIdInjectionFilter(shopperIdProvider));
         return requestFilters;
-    }
-
-    @Override
-    public T get() {
-        return super.get();
     }
 }
