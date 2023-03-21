@@ -36,4 +36,9 @@ public class JsdClientServiceProvider<T> extends HttpServiceProvider<T> implemen
         return responseFilters;
     }
 
+    @Override
+    public T get() {
+        return super.get();
+    }
+
 }

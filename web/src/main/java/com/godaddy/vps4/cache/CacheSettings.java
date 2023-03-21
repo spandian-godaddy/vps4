@@ -9,7 +9,6 @@ import javax.cache.expiry.Duration;
 import com.godaddy.hfs.vm.ServerUsageStats;
 import com.godaddy.vps4.mailrelay.MailRelayService.CachedMailRelayHistory;
 import com.godaddy.vps4.panopta.DefaultPanoptaService;
-import com.godaddy.vps4.sso.CertJwtApi;
 
 public class CacheSettings {
 
@@ -24,9 +23,9 @@ public class CacheSettings {
                     .setStatisticsEnabled(false));
 
         cacheManager.createCache(CacheName.API_ACCESS_TOKENS,
-                new MutableConfiguration<CertJwtApi, String>()
+                new MutableConfiguration<String, String>()
                     .setStoreByValue(true)
-                    .setTypes(CertJwtApi.class, String.class)
+                    .setTypes(String.class, String.class)
                     .setExpiryPolicyFactory(
                             CreatedExpiryPolicy.factoryOf(Duration.TEN_MINUTES))
                     .setStatisticsEnabled(false));

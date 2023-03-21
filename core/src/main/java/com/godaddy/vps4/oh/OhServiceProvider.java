@@ -29,4 +29,9 @@ public class OhServiceProvider<T> extends HttpServiceProvider<T> implements Prov
         requestFilters.add(getAuthFilter());
         return requestFilters;
     }
+
+    @Override
+    public T get() {
+        return super.get();
+    }
 }

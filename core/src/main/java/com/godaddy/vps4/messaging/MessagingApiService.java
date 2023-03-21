@@ -16,5 +16,7 @@ import com.godaddy.vps4.messaging.models.ShopperMessage;
 public interface MessagingApiService {
     @POST
     @Path("/messages")
-    MessagingResponse sendMessage(@HeaderParam("x-shopper-id") String shopperId, ShopperMessage request);
+    MessagingResponse sendMessage(@HeaderParam("authorization") String auth,
+                                  @HeaderParam("x-shopper-id") String shopperId,
+                                  ShopperMessage request);
 }
