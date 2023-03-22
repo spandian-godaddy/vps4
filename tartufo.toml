@@ -4,23 +4,51 @@ json = false
 regex = true
 entropy = true
 exclude-path-patterns = [
-    'web/src/main/resources/com/godaddy/swagger',
-    'web/src/main/java/com/godaddy/vps4/web/cpanel/FakeCpanelModule.java', # This has a fake cpanel hash
-    'web/src/main/java/com/godaddy/vps4/hfs/HfsMockModule.java', # Contains a fake access hash
-    'web/src/test', # Multiple instances of high entropy test data
-    'core/src/test', # Several instances of high entropy test data
-    'vps4-phase3-tests', # Contains test data, fake JWT tokens
-    'vps4-message-consumer/src/test', # Test project with long filenames and test data
-    'vps4-scheduler/src/test',
-    '.git',
+    {path-pattern="web/src/main/resources/com/godaddy/swagger"},
+    {path-pattern="web/src/main/java/com/godaddy/vps4/web/cpanel/FakeCpanelModule.java", reason="This has a fake cpanel hash"},
+    {path-pattern="web/src/main/java/com/godaddy/vps4/hfs/HfsMockModule.java", reason="Contains a fake access hash"},
+    {path-pattern="web/src/test", reason="Multiple instances of high entropy test data"},
+    {path-pattern="core/src/test", reason="Several instances of high entropy test data"},
+    {path-pattern="vps4-phase3-tests", reason="Contains test data, fake JWT tokens"},
+    {path-pattern="vps4-message-consumer/src/test", reason="Test project with long filenames and test data"},
+    {path-pattern="vps4-scheduler/src/test"},
+    {path-pattern=".git"},
+    {path-pattern="tartufo.toml"},
+    {path-pattern="cicd/tartufo.toml"},
+    {path-pattern="hfs-base/hfs-swagger/src/main/resources/com/godaddy/swagger/assets/swagger-ui.min.js", reason="javascript minimized file"},
+    {path-pattern="hfs-base/src/main/resources/swagger/assets/swagger-ui.min.js", reason="javascript minimized file"},
+    {path-pattern="core/src/main/java/com/godaddy/vps4/cpanel/DefaultVps4CpanelService.java"},
 ]
 exclude-signatures = [
-    "62f22e4500140a6ed959a6143c52b0e81c74e7491081292fce733de4ec574542", # tartufo.toml
-    "ecbbe1edd6373c7e2b88b65d24d7fe84610faafd1bc2cf6ae35b43a77183e80b", # tartufo.toml
-    '0dd873925e8903005aa9cd35970ca80dd961b10ed8a18de26463f8e11a462007', # tartufo.toml
-    'e363cafbdee5c5fb64a523d00603642d2720dccc1cfa5f0b8b72e6a6f78ab294', # Fake password in the readme
-    '216396c5093fb8279688e9596c2d465292a3e405cd1fae8c52aacc76c0a07cc1', # Fake workflow ID in ServerUsageStats.java
-    '8cd27fffa0a97ecf82fe497e941706a6c7ae64f47e92af8536a3264f5b351f46', # Link to a snow ticket with ID
-    'b0ee7ec301c57ee4c93e5b232fc9ef336174964699ef89660d702caf99869c04', # Link to the SOAK article in the readme
-    'ecab918563787be5bb94d22ef918f169189826ae4a7b57be13f588393c4e0224', # DB Connection string pattern - doesn't contain any secret value.
+    {signature="e363cafbdee5c5fb64a523d00603642d2720dccc1cfa5f0b8b72e6a6f78ab294", reason="Fake password in the readme"},
+    {signature="216396c5093fb8279688e9596c2d465292a3e405cd1fae8c52aacc76c0a07cc1", reason="Fake workflow ID in ServerUsageStats.java"},
+    {signature="8cd27fffa0a97ecf82fe497e941706a6c7ae64f47e92af8536a3264f5b351f46", reason="Link to a snow ticket with ID"},
+    {signature="b0ee7ec301c57ee4c93e5b232fc9ef336174964699ef89660d702caf99869c04", reason="Link to the SOAK article in the readme"},
+    {signature="ecab918563787be5bb94d22ef918f169189826ae4a7b57be13f588393c4e0224", reason="DB Connection string pattern - doesn't contain any secret value."},
+    {signature="49b505aa40b5960152b863f5165c829f17c5e526fb428487d886b111f9b5f566", reason="Link to a cpanel help article"},
+    {signature="13eb27be83f6fad8e9d58f76fd7d3d37fc69f7fb50196d02cd37b4ef76a15c06", reason="Link to a cpanel help article"},
+    {signature="1e21a4f099caa618a61e177ed6f22743a0a703e6f003200dd453e4d170fdd11d", reason="Old auth token in a test file"},
+    {signature="2fa3a8353ad637b58afb869d617fd6383697f27adba65f9aba7dfc32cb01a96c", reason="Old auth token in a test file"},
+    {signature="a02ccb50a53d054fea67f46dfb7c0e7db024544768d732b82509b85d8a955a30", reason="Old auth token in a test file"},
+    {signature="46e641bb9065718740b0454369adf8b2ae7fcb511ccad0cd1e162be32081e8be", reason="Old auth token in a test file"},
+    {signature="22d505da1f163b62cbd751c48fad38686e28da9750ea395e4958852660a7f25b", reason="Old auth token in a test file"},
+    {signature="a610f90d7eea2247fc0ebb84698a2ac16192891d6cddf5a466afabcc1ecf49c6", reason="Old auth token in a test file"},
+    {signature="d4d126418c7d260d5ae0924299816ec0cd5dbb41f9d741fcfac35b8328375ae6", reason="Old auth token in a test file"},
+    {signature="f949b97ca961458f23bf14fc17d72dd41ae7cb3f2ccdc4df7518137c6d79cc44", reason="Old auth token in a test file"},
+    {signature="4657ca2a4f665bc4c37af9df360ba4e502785b541c715595c98e3928e9674121", reason="Old auth token in a test file"},
+    {signature="ddb6439dd1b9af632828a65d29386449ca1174167935d6087f83779f0f88f60e", reason="Old auth token in a test file"},
+    {signature="e26afe9d6ddefedbf1fa9f1f0173bb4ef56e4fa016242637a8a90534166e1d62", reason="Old auth token in a test file"},
+    {signature="f7f4b793d876cfa4f2657a05456b6444ea5c1e469885e71e7c6c3ef1903b5ceb", reason="Old auth token in a test file"},
+    {signature="df7900f3a32b560de0e32e137b88850b58263bb2f7b0f3a27d4cdf637d499e58", reason="Old auth token in a test file"},
+    {signature="c39986ac06a0af5218749cab32aadddb161cccd1656bbb9900facec477f4e0ab", reason="Old auth token in a test file"},
+    {signature="322ee23fdc98e7ffcd1e08f8b580bdad450a77d1169d6a32873c487126519da8", reason="Old auth token in a test file"},
+    {signature="323642a4af2df37a675e4eb5f099f9bbe792077df3d7bd35156d29afe17c1fe7", reason="URL in the scheduler readme"},
+    {signature="69229e7ba2325610376a92d2b177492e4c2dbbc08663c0a6f0426554f61ae6a1", reason="URL in the scheduler readme"},
+    {signature="caadca3e994c5a788343f6dd616d8f1e65531f8674b11fb723b365966cf959ec", reason="URL in the scheduler readme"},
+    {signature="76e59151d624beb25bf1d6d12cd8846034a2401cc22160995cf533632a5e3f7a", reason="URL in the readme"},
+    {signature="43c46fbf2209f035060750da2e0e6104c9bcf1da5c90a368736772764d279fe9", reason="Database connection pattern"},
+]
+exclude-entropy-patterns = [
+    {pattern='b\/', reason="PR path"},
+    {pattern='a\/', reason="PR path"},
 ]
