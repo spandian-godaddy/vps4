@@ -25,7 +25,7 @@ pipeline {
                 pip install hfsutils
                 pip install requests
                 list_bucket_contents --env vps4-p3-test --bucket_name vps4-jenkins-backup
-                set_contents_from_file --env vps4-p3-test --bucket_name vps4-jenkins-backup --source_path /tmp/vps4_jenkins_auto_backup.tgz
+                set_contents_from_file --env vps4-p3-test --bucket_name vps4-jenkins-backup --key vps4_jenkins_auto_backup.tgz --source_path /tmp/vps4_jenkins_auto_backup.tgz
                 list_bucket_contents --env vps4-p3-test --bucket_name vps4-jenkins-backup
               '''
               slackSend(color: 'good', message: "Backup of Jenkins stored successfully")
