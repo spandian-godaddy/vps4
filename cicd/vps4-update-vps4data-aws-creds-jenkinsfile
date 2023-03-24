@@ -119,8 +119,8 @@ aws secretsmanager get-secret-value --secret-id $SECRET_NAME3 --query SecretStri
                     withCredentials([aws(accessKeyVariable: 'DEV_DEPLOY_ACCESS_KEY_ID', credentialsId: 'VPS4Data_DeployUser_DevPrivate', secretKeyVariable: 'DEV_DEPLOY_SECRET_ACCESS_KEY')]) {
                         if (DEV_DEPLOY_ACCESS_KEY_ID != devDeployUserAccessKeyId || DEV_DEPLOY_SECRET_ACCESS_KEY != devDeployUserSecretAccessKey) {
                             println "Mismatch Dev-Private Deploy User creds, updating Jenkins..."
-                            hudson.util.Secret newDevDeployAccessKeyId = hudson.util.Secret.fromString(deployUserAccessKeyId)
-                            hudson.util.Secret newDevDeploySecretAccessKey = hudson.util.Secret.fromString(deployUserSecretAccessKey)
+                            hudson.util.Secret newDevDeployAccessKeyId = hudson.util.Secret.fromString(devDeployUserAccessKeyId)
+                            hudson.util.Secret newDevDeploySecretAccessKey = hudson.util.Secret.fromString(devDeployUserSecretAccessKey)
                             build job: 'Update_Jenkins_AWS_Credentials', parameters: [string(name: 'credIdName', value: 'AWS_Dev_Private_VPS4_Data_DeployUser'), password(name: 'newAccessKeyId', value: newDevDeployAccessKeyId), password(name: 'newSecretAccessKey', value: newDevDeploySecretAccessKey)]
                             slackSend(color: '#00CD48', message: "Dev-Private VPS4Data Deploy USer AWS credentials successfully updated.")
                         } else {
