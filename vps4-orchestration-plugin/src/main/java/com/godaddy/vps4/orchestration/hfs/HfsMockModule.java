@@ -166,6 +166,11 @@ public class HfsMockModule extends AbstractModule {
             }
 
             @Override
+            public CPanelAction requestApiToken(long serverId) {
+                return null;
+            }
+
+            @Override
             public CPanelAction getAction(long actionId) {
                 if (!cPanelActions.containsKey(actionId)) {
                     throw new NotFoundException("CPanel action not present");

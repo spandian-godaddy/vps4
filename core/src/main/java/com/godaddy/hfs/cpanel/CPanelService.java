@@ -20,7 +20,11 @@ public interface CPanelService {
     CPanelAction requestAccess(
             @ApiParam(name = "serverId", required = true, value = "The ID of the vm to prepare cPanel on") @QueryParam("serverId") long serverId,
             @ApiParam(name = "publicIP", required = true, value = "The public IP of the cPanel VM request access to") @QueryParam("publicIP") String publicIP);
-
+    @POST
+    @Path("/apiToken")
+    @ApiOperation( value = "Request api token to cPanel VM. Api token will be available in CPanelAction.responsePayload", notes = "", code=202)
+    CPanelAction requestApiToken(
+            @ApiParam(name = "serverId", required = true, value = "The ID of the VM to get an API token from") @QueryParam("serverId") long serverId);
     @POST
     @Path("/siteList")
     @ApiOperation( value = "Retrieve the list of sites on a cPanel VM.  List will be available in CPanelAction.responsePayload", notes = "", code=202)

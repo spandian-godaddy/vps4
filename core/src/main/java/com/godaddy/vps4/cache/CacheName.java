@@ -8,6 +8,8 @@ public interface CacheName {
 
     String CPANEL_ACCESSHASH = "cpanel.accesshash";
 
+    String CPANEL_API_TOKEN = "cpanel.api.token";
+
     String MAIL_RELAY_HISTORY = "mail.relay.history";
 
     String PANOPTA_METRIC_GRAPH = "panopta.metric.graph";

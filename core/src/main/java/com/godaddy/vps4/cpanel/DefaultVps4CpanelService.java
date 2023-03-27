@@ -10,8 +10,6 @@ import java.util.concurrent.TimeUnit;
 
 import javax.inject.Inject;
 
-import org.apache.http.client.config.RequestConfig;
-import org.apache.http.client.methods.RequestBuilder;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
@@ -30,22 +28,30 @@ public class DefaultVps4CpanelService implements Vps4CpanelService {
     private static final Logger logger = LoggerFactory.getLogger(DefaultVps4CpanelService.class);
 
     final CpanelAccessHashService accessHashService;
+    final CpanelApiTokenService apiTokenService;
+
     final NetworkService networkService;
 
     final int timeoutVal;
+    final boolean useApiToken;
     private static final long SUCCESS = 1;
 
     @Inject
-    public DefaultVps4CpanelService(CpanelAccessHashService accessHashService, NetworkService networkService,
-                                    Config conf) {
-        this(accessHashService, networkService, Integer.parseInt(conf.get("vps4.callable.timeout", "10000")));
+    public DefaultVps4CpanelService(CpanelAccessHashService accessHashService, CpanelApiTokenService apiTokenService,
+                                    NetworkService networkService, Config conf) {
+        this(accessHashService, apiTokenService,
+                networkService, Integer.parseInt(conf.get("vps4.callable.timeout", "10000")),
+                Boolean.parseBoolean(conf.get("cpanel.api.token.enabled", "false")));
     }
 
-    public DefaultVps4CpanelService(CpanelAccessHashService accessHashService, NetworkService networkService,
-                                    int timeoutVal) {
+    public DefaultVps4CpanelService(CpanelAccessHashService accessHashService, CpanelApiTokenService apiTokenService,
+                                    NetworkService networkService,
+                                    int timeoutVal, boolean useApiToken) {
         this.accessHashService = accessHashService;
         this.networkService = networkService;
+        this.apiTokenService = apiTokenService;
         this.timeoutVal = timeoutVal;
+        this.useApiToken = useApiToken;
     }
 
     private String getVmHostname(long hfsVmId) {
@@ -74,7 +80,7 @@ public class DefaultVps4CpanelService implements Vps4CpanelService {
         return new CpanelClient(hostname, accessHash);
     }
 
-    <T> T withAccessHash(long hfsVmId, CpanelClientHandler<T> handler)
+    <T> T withAccessToken(long hfsVmId, CpanelClientHandler<T> handler)
             throws CpanelAccessDeniedException, CpanelTimeoutException {
 
         Instant timeoutAt = Instant.now().plus(timeoutVal, ChronoUnit.MILLIS);
@@ -84,8 +90,10 @@ public class DefaultVps4CpanelService implements Vps4CpanelService {
         while (Instant.now().isBefore(timeoutAt)) {
             String hostname = getVmHostname(hfsVmId);
             IpAddress ip = networkService.getVmPrimaryAddress(hfsVmId);
-            String accessHash = accessHashService.getAccessHash(hfsVmId, ip.ipAddress, timeoutAt);
-            if (accessHash == null) {
+            String accessToken = useApiToken ?
+                    apiTokenService.getApiToken(hfsVmId, timeoutAt) :
+                    accessHashService.getAccessHash(hfsVmId, ip.ipAddress, timeoutAt);
+            if (accessToken == null) {
                 // we couldn't get the access hash, so no point in even
                 // trying to contact the VM
 
@@ -95,7 +103,7 @@ public class DefaultVps4CpanelService implements Vps4CpanelService {
 
             // TODO make sure we're still within timeoutAt to actually
             //      make the call to the VM
-            CpanelClient cPanelClient = getCpanelClient(hostname, accessHash);
+            CpanelClient cPanelClient = getCpanelClient(hostname, accessToken);
             try {
                 // need to configure read timeout in HTTP client
                 return handler.handle(cPanelClient);
@@ -108,7 +116,9 @@ public class DefaultVps4CpanelService implements Vps4CpanelService {
                 // access hash we thought was good, but has now been invalidated,
                 // so invalidate the access hash so a new one will be attempted
                 //cached.invalidate(fetchedAt);
-                accessHashService.invalidAccessHash(hfsVmId, accessHash);
+                if (useApiToken) {
+                    apiTokenService.invalidateApiToken(hfsVmId, accessToken);
+                } else { accessHashService.invalidAccessHash(hfsVmId, accessToken); }
                 lastThrown = e;
 
             } catch (IOException e) {
@@ -139,7 +149,7 @@ public class DefaultVps4CpanelService implements Vps4CpanelService {
     public List<CPanelAccount> listCpanelAccounts(long hfsVmId)
             throws CpanelAccessDeniedException, CpanelTimeoutException, IOException {
 
-        return withAccessHash(hfsVmId, cPanelClient -> {
+        return withAccessToken(hfsVmId, cPanelClient -> {
 
             JSONParser parser = new JSONParser();
 
@@ -176,7 +186,7 @@ public class DefaultVps4CpanelService implements Vps4CpanelService {
     @Override
     public List<String> listAddOnDomains(long hfsVmId, String username)
             throws CpanelAccessDeniedException, CpanelTimeoutException, IOException {
-        return withAccessHash(hfsVmId, cPanelClient -> {
+        return withAccessToken(hfsVmId, cPanelClient -> {
             JSONParser parser = new JSONParser();
             String sitesJson = cPanelClient.listAddOnDomains(username);
             try {
@@ -215,14 +225,14 @@ public class DefaultVps4CpanelService implements Vps4CpanelService {
     @Override
     public CPanelSession createSession(long hfsVmId, String username, CpanelServiceType serviceType)
             throws CpanelAccessDeniedException, CpanelTimeoutException {
-        return withAccessHash(hfsVmId, cPanelClient -> cPanelClient.createSession(username, serviceType));
+        return withAccessToken(hfsVmId, cPanelClient -> cPanelClient.createSession(username, serviceType));
     }
 
     @Override
     public CpanelBuild installRpmPackage(long hfsVmId, String packageName)
             throws CpanelAccessDeniedException, CpanelTimeoutException {
         // https://documentation.cpanel.net/display/DD/WHM+API+1+Functions+-+package_manager_submit_actions
-        return withAccessHash(hfsVmId, cPanelClient -> {
+        return withAccessToken(hfsVmId, cPanelClient -> {
             return handleCpanelCall(
                     "installRpmPackage", () -> cPanelClient.installRpmPackage(packageName),
                     dataJson -> {
@@ -289,7 +299,7 @@ public class DefaultVps4CpanelService implements Vps4CpanelService {
     @Override
     public Long calculatePasswordStrength(long hfsVmId, String password)
             throws CpanelAccessDeniedException, CpanelTimeoutException, IOException {
-        return withAccessHash(hfsVmId, cPanelClient -> {
+        return withAccessToken(hfsVmId, cPanelClient -> {
             // https://documentation.cpanel.net/display/DD/WHM+API+1+Functions+-+get_password_strength
             return handleCpanelCall(
                     "calculatePasswordStrength",
@@ -306,7 +316,7 @@ public class DefaultVps4CpanelService implements Vps4CpanelService {
     public Void createAccount(long hfsVmId, String domainName, String username,
                               String password, String plan, String contactEmail)
             throws CpanelAccessDeniedException, CpanelTimeoutException, IOException {
-        return withAccessHash(hfsVmId, cPanelClient -> {
+        return withAccessToken(hfsVmId, cPanelClient -> {
             // https://documentation.cpanel.net/display/DD/WHM+API+1+Functions+-+createacct
             return handleCpanelCall(
                     "createAccount",
@@ -324,7 +334,7 @@ public class DefaultVps4CpanelService implements Vps4CpanelService {
     @Override
     public List<InstallatronApplication> listInstalledInstallatronApplications(long hfsVmId, String username) throws CpanelAccessDeniedException, CpanelTimeoutException {
 
-        return withAccessHash(hfsVmId, cPanelClient -> {
+        return withAccessToken(hfsVmId, cPanelClient -> {
             JSONParser parser = new JSONParser();
             String installedAppJson = cPanelClient.listInstalledInstallatronApplications(username);
             try {
@@ -355,7 +365,7 @@ public class DefaultVps4CpanelService implements Vps4CpanelService {
 
     @Override
     public Long getActiveBuilds(long hfsVmId, long buildNumber) throws CpanelAccessDeniedException, CpanelTimeoutException {
-        return withAccessHash(hfsVmId, cPanelClient -> {
+        return withAccessToken(hfsVmId, cPanelClient -> {
             // https://documentation.cpanel.net/display/DD/WHM+API+1+Functions+-+package_manager_is_performing_actions
             return handleCpanelCall(
                     "getRpmPackageUpdateStatus",
@@ -376,7 +386,7 @@ public class DefaultVps4CpanelService implements Vps4CpanelService {
 
     @Override
     public List<String> listInstalledRpmPackages(long hfsVmId) throws CpanelAccessDeniedException, CpanelTimeoutException {
-        return withAccessHash(hfsVmId, cPanelClient -> {
+        return withAccessToken(hfsVmId, cPanelClient -> {
             // https://documentation.cpanel.net/display/DD/WHM+API+1+Functions+-+list_rpms
             return handleCpanelCall(
                     "listInstalledRpms",
@@ -406,7 +416,7 @@ public class DefaultVps4CpanelService implements Vps4CpanelService {
 
     @Override
     public List<CPanelAccountCacheStatus> getNginxCacheConfig(long hfsVmId) throws CpanelAccessDeniedException, CpanelTimeoutException {
-        return withAccessHash(hfsVmId, cPanelClient -> {
+        return withAccessToken(hfsVmId, cPanelClient -> {
             // https://documentation.cpanel.net/display/DD/WHM+API+1+Functions+-+version
             return handleCpanelCall(
                     "getCacheConfig",
@@ -437,7 +447,7 @@ public class DefaultVps4CpanelService implements Vps4CpanelService {
 
     @Override
     public String getVersion(long hfsVmId) throws CpanelAccessDeniedException, CpanelTimeoutException {
-        return withAccessHash(hfsVmId, cPanelClient -> {
+        return withAccessToken(hfsVmId, cPanelClient -> {
             // https://documentation.cpanel.net/display/DD/WHM+API+1+Functions+-+version
             return handleCpanelCall(
                     "getVersion",
@@ -458,7 +468,7 @@ public class DefaultVps4CpanelService implements Vps4CpanelService {
 
     @Override
     public List<String> listPackages(long hfsVmId) throws CpanelAccessDeniedException, CpanelTimeoutException, IOException {
-        return withAccessHash(hfsVmId, cPanelClient -> {
+        return withAccessToken(hfsVmId, cPanelClient -> {
             // https://documentation.cpanel.net/display/DD/WHM+API+1+Functions+-+listpkgs
             return handleCpanelCall(
                 "listPackages",
@@ -489,7 +499,7 @@ public class DefaultVps4CpanelService implements Vps4CpanelService {
     @Override
     public String updateNginx(long hfsVmId, boolean enabled, List<String> usernames)
         throws CpanelAccessDeniedException, CpanelTimeoutException {
-        return withAccessHash(hfsVmId, cPanelClient -> {
+        return withAccessToken(hfsVmId, cPanelClient -> {
             // https://api.docs.cpanel.net/openapi/whm/operation/nginxmanager_set_cache_config/
             return handleCpanelCall(
                     "updateNginx", true,
@@ -507,7 +517,7 @@ public class DefaultVps4CpanelService implements Vps4CpanelService {
     @Override
     public String clearNginxCache(long hfsVmId, List<String> usernames)
         throws CpanelAccessDeniedException, CpanelTimeoutException {
-        return withAccessHash(hfsVmId, cPanelClient -> {
+        return withAccessToken(hfsVmId, cPanelClient -> {
             // https://api.docs.cpanel.net/openapi/whm/operation/nginxmanager_clear_cache/
             return handleCpanelCall(
                     "clearNginxCache", true,

@@ -360,6 +360,11 @@ public class HfsMockModule extends AbstractModule {
             }
 
             @Override
+            public CPanelAction requestApiToken(long serverId) {
+                return null;
+            }
+
+            @Override
             public CPanelAction imagePrep(long arg0) {
                 // NOTE: do nothing, Implement when needed
                 throw new UnsupportedOperationException("Not implemented, yet");

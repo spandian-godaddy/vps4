@@ -80,6 +80,7 @@ public class HazelcastProvider implements Provider<HazelcastInstance> {
         for (String cacheName : new String[]{CacheName.API_ACCESS_TOKENS,
                                              CacheName.SERVER_USAGE,
                                              CacheName.CPANEL_ACCESSHASH,
+                                             CacheName.CPANEL_API_TOKEN,
                                              CacheName.MAIL_RELAY_HISTORY,
                                              CacheName.PANOPTA_METRIC_GRAPH}) {
             config.getMapConfig(cacheName)
