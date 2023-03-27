@@ -393,7 +393,7 @@ public class DefaultPanoptaService implements PanoptaService {
             ids = panoptaApiServerService
                             .getNetworkList(detail.getServerId(), detail.getPartnerCustomerKey(), UNLIMITED)
                             .value;
-            ids = ids.stream().filter(t -> fqdnValidOnMap.containsKey(t.serverInterface) &&
+            ids = ids.stream().filter(t -> fqdnValidOnMap.containsKey(t.serverInterface.toLowerCase()) &&
                     (Arrays.asList(VmMetric.HTTP, VmMetric.HTTPS)).contains(panoptaMetricMapper.getVmMetric(t.typeId)))
                     .collect(Collectors.toList());
             for (PanoptaMetricId id : ids) domains.add(new PanoptaDomain(id, fqdnValidOnMap.get(id.serverInterface)));

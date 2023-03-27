@@ -334,10 +334,10 @@ public class DefaultPanoptaServiceTest {
     }
 
     @Test
-    public void testGetAdditionalFqdnMetricIds() {
+    public void testGetAdditionalFqdnMetricIdsIgnoreCase() {
         Map<String, Instant> fqdnValidOnMap = new HashMap<>();
-        fqdnValidOnMap.put("additionalFqdn.fake", Instant.now());
-        fqdnValidOnMap.put("additionalFqdn2.fake", Instant.now());
+        fqdnValidOnMap.put("additionalfqdn.fake", Instant.now());
+        fqdnValidOnMap.put("additionalfqdn2.fake", Instant.now());
         when(panoptaMetricMapper.getVmMetric(anyLong())).thenReturn(VmMetric.HTTPS);
         when(panoptaDataService.getPanoptaAdditionalFqdnWithValidOn(vmId)).thenReturn(fqdnValidOnMap);
         List<PanoptaDomain> domains = defaultPanoptaService.getAdditionalDomains(vmId);

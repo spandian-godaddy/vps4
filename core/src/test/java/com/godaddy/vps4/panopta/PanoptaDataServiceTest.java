@@ -245,12 +245,12 @@ public class PanoptaDataServiceTest {
     }
 
     @Test
-    public void canGetFqdnAndValidOnByVmId() {
+    public void canGetLowerCaseFqdnAndValidOnByVmId() {
         panoptaDataService.createPanoptaCustomer(fakeShopperId, fakeCustomerKey);
         panoptaDataService.createPanoptaServer(vm.vmId, fakeShopperId, fakeTemplateId, panoptaServer);
-        panoptaDataService.addPanoptaAdditionalFqdn("fqdn.fake", panoptaServer.serverId);
+        panoptaDataService.addPanoptaAdditionalFqdn("CapitalizedFqdn.fake", panoptaServer.serverId);
 
         Map<String, Instant> map = panoptaDataService.getPanoptaAdditionalFqdnWithValidOn(vm.vmId);
-        assertTrue(!map.get("fqdn.fake").isBefore(Instant.now().minusSeconds(1)));
+        assertTrue(!map.get("capitalizedfqdn.fake").isBefore(Instant.now().minusSeconds(1)));
     }
 }
