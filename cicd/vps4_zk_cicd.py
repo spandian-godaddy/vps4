@@ -125,18 +125,26 @@ def is_service_deployed(zk, service_name, zk_service_node):
     jsondata = json.loads(data.decode('utf-8'))
     expected_version = jsondata[u'rpm']
 
-    deployed_version = zk.get_children(zk_service_node + "/" + service_name)
-    deployed_version_count = len(deployed_version)
+    # When the service (e.g. vps4-web) is deployed, only the expected version
+    #    should have child nodes.  If the expected version does not have any
+    #    nodes or if alternate versions still have child nodes then the
+    #    deployment is not complete
+    app_node = zk_service_node + "/" + service_name
+    tracked_versions = zk.get_children(app_node)
+    for version in tracked_versions:
+        active_servers = zk.get_children(app_node + "/" + version)
+        if version == expected_version:
+            if len(active_servers) == 0:
+                log.info("Waiting on %s to deploy" % version)
+                return False
+        else:
+            if len(active_servers) > 0:
+                log.info("Old version %s still running" % version)
+                return False
 
-    # If the service's deployed_version (e.g. vps4-web) only has one
-    #    child node and that child node is the same version as is
-    #    requested to have deployed, then the deployment process
-    #    is completed
-    if deployed_version_count == 1 and deployed_version[0] == expected_version:
-        return True
-    else:
-        log.info("Waiting on %s to deploy" % expected_version)
-        return False
+    log.info("Successfully deployed %s" % expected_version)
+    return True
+
 
 def get_zk_count(svc_data):
     """
