@@ -30,7 +30,11 @@ public class Vps4RemoveIp implements Command<IpAddress, Void> {
             }
             context.execute(ReleaseIp.class, address.hfsAddressId);
         }
-        context.execute(RemoveIpFromBlacklist.class, address.ipAddress);
+        try {
+            context.execute(RemoveIpFromBlacklist.class, address.ipAddress);
+        } catch (Exception e) {
+            logger.warn("Could not remove IP {} from black list, Exception: {} ", address.ipAddress, e);
+        }
         return null;
     }
 }
