@@ -18,6 +18,7 @@ exclude-path-patterns = [
     {path-pattern="hfs-base/hfs-swagger/src/main/resources/com/godaddy/swagger/assets/swagger-ui.min.js", reason="javascript minimized file"},
     {path-pattern="hfs-base/src/main/resources/swagger/assets/swagger-ui.min.js", reason="javascript minimized file"},
     {path-pattern="core/src/main/java/com/godaddy/vps4/cpanel/DefaultVps4CpanelService.java"},
+    {path-pattern="core/src/main/java/com/godaddy/vps4/cpanel/FakeCpanelModule.java", reason="fake cpanel access hashes"},
 ]
 exclude-signatures = [
     {signature="e363cafbdee5c5fb64a523d00603642d2720dccc1cfa5f0b8b72e6a6f78ab294", reason="Fake password in the readme"},
