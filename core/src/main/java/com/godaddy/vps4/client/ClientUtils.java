@@ -1,10 +1,14 @@
 package com.godaddy.vps4.client;
 
+import javax.cache.Cache;
 import javax.ws.rs.client.ClientRequestFilter;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.godaddy.vps4.sso.CertJwtApi;
+import com.godaddy.vps4.sso.Vps4SsoService;
+import com.godaddy.vps4.sso.models.Vps4SsoToken;
 import com.google.inject.Provider;
 
 public class ClientUtils {
@@ -37,15 +41,37 @@ public class ClientUtils {
         };
     }
 
-    public static <T> SsoJwtAuthenticatedServiceProvider<T> getSsoAuthServiceProvider(Class<T> serviceClass,
-                                                                                      String baseUrlConfigPropName) {
-        return new SsoJwtAuthenticatedServiceProvider<>(baseUrlConfigPropName, serviceClass);
+    public static ClientRequestFilter getSsoCertJwtInjectionFilter(Cache<CertJwtApi, String> cache,
+                                                                   Vps4SsoService vps4SsoService,
+                                                                   CertJwtApi certJwtApi) {
+        return requestContext -> {
+            String authToken;
+            if (cache.containsKey(certJwtApi)) {
+                authToken = "sso-jwt " + cache.get(certJwtApi);
+            } else {
+                Vps4SsoToken token = vps4SsoService.getToken("cert");
+                cache.put(certJwtApi, token.value());
+                authToken = "sso-jwt " + token.value();
+            }
+            requestContext.getHeaders().add("Authorization", authToken);
+        };
     }
 
-    public static <T> ClientCertAuthenticatedServiceProvider<T> getClientCertAuthServiceProvider(Class<T> serviceClass,
-                                                                                                 String baseUrlConfigPropName,
-                                                                                                 String clientCertKeyPath,
-                                                                                                 String clientCertPath) {
-        return new ClientCertAuthenticatedServiceProvider<>(baseUrlConfigPropName, serviceClass, clientCertKeyPath, clientCertPath);
+    public static <T> SsoJwtAuthServiceProvider<T> getSsoAuthServiceProvider(Class<T> serviceClass,
+                                                                             String baseUrlConfigPropName) {
+        return new SsoJwtAuthServiceProvider<>(baseUrlConfigPropName, serviceClass);
+    }
+
+    public static <T> ClientCertAuthServiceProvider<T> getClientCertAuthServiceProvider(Class<T> serviceClass,
+                                                                                        String baseUrlConfigPropName,
+                                                                                        String clientCertKeyPath,
+                                                                                        String clientCertPath) {
+        return new ClientCertAuthServiceProvider<>(baseUrlConfigPropName, serviceClass, clientCertKeyPath, clientCertPath);
+    }
+
+    public static <T> CertJwtAuthServiceProvider<T> getCertJwtAuthServiceProvider(Class<T> serviceClass,
+                                                                                  String baseUrlConfigPropName,
+                                                                                  CertJwtApi certJwtApi) {
+        return new CertJwtAuthServiceProvider<>(baseUrlConfigPropName, serviceClass, certJwtApi);
     }
 }

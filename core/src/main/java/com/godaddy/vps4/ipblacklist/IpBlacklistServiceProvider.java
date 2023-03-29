@@ -25,9 +25,4 @@ public class IpBlacklistServiceProvider<T> extends HttpServiceProvider<T> implem
         return requestFilters;
     }
 
-    @Override
-    public T get() {
-        return super.get();
-    }
-
 }

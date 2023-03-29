@@ -37,9 +37,4 @@ public class PanoptaClientServiceProvider<T> extends HttpServiceProvider<T> impl
         return responseFilters;
     }
 
-    @Override
-    public T get() {
-        return super.get();
-    }
-
 }

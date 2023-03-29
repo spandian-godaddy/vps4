@@ -2,11 +2,11 @@ package com.godaddy.vps4.cache;
 
 public interface CacheName {
 
-    String API_ACCESS_TOKENS = "api.access.tokens";
+    String CERT_JWT_TOKENS = "cert.jwt.tokens";
 
     String SERVER_USAGE = "server.usage";
 
-    String CPANEL_ACCESSHASH = "cpanel.accesshash";
+    String CPANEL_ACCESS_HASH = "cpanel.access.hash";
 
     String CPANEL_API_TOKEN = "cpanel.api.token";
 

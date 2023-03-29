@@ -18,11 +18,12 @@ public class ShopperMessage {
         this.templateTypeKey = templateTypeKey;
     }
 
-    public void substitute(Substitution key, String value) {
+    public ShopperMessage substitute(Substitution key, String value) {
         if (substitutionValues == null) {
             substitutionValues = new EnumMap<>(Substitution.class);
         }
         substitutionValues.put(key, value);
+        return this;
     }
 
     public void transform(Transformation key, String value) {
