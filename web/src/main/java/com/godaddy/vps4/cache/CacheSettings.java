@@ -24,9 +24,9 @@ public class CacheSettings {
                     .setStatisticsEnabled(false));
 
         cacheManager.createCache(CacheName.CERT_JWT_TOKENS,
-                new MutableConfiguration<CertJwtApi, String>()
+                new MutableConfiguration<String, String>()
                     .setStoreByValue(true)
-                    .setTypes(CertJwtApi.class, String.class)
+                    .setTypes(String.class, String.class)
                     .setExpiryPolicyFactory(
                             CreatedExpiryPolicy.factoryOf(Duration.TEN_MINUTES))
                     .setStatisticsEnabled(false));

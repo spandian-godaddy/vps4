@@ -26,7 +26,7 @@ import com.godaddy.vps4.sso.models.Vps4SsoToken;
 @RunWith(MockitoJUnitRunner.class)
 public class ClientUtilsTest {
     @Mock private ClientRequestContext context;
-    @Mock private Cache<CertJwtApi, String> cache;
+    @Mock private Cache<String, String> cache;
     @Mock private Vps4SsoService vps4SsoService;
     @Mock private MultivaluedMap<String,Object> headers;
     @Mock private Vps4SsoToken vps4SsoToken;
@@ -37,8 +37,8 @@ public class ClientUtilsTest {
     @Before
     public void setUp() {
         when(context.getHeaders()).thenReturn(headers);
-        when(cache.containsKey(certJwtApi)).thenReturn(true);
-        when(cache.get(certJwtApi)).thenReturn(jwt);
+        when(cache.containsKey(certJwtApi.name())).thenReturn(true);
+        when(cache.get(certJwtApi.name())).thenReturn(jwt);
         when(vps4SsoService.getToken("cert")).thenReturn(vps4SsoToken);
         when(vps4SsoToken.value()).thenReturn(jwt);
     }
@@ -47,22 +47,22 @@ public class ClientUtilsTest {
     public void testCertJwtFilterCallsCache() throws IOException {
         ClientRequestFilter crf = ClientUtils.getSsoCertJwtInjectionFilter(cache, vps4SsoService, certJwtApi);
         crf.filter(context);
-        verify(cache).containsKey(certJwtApi);
-        verify(cache).get(certJwtApi);
+        verify(cache).containsKey(certJwtApi.name());
+        verify(cache).get(certJwtApi.name());
         verify(vps4SsoService, never()).getToken(anyString());
-        verify(cache, never()).put(any(CertJwtApi.class), anyString());
+        verify(cache, never()).put(anyString(), anyString());
         verify(headers).add("Authorization", "sso-jwt " + jwt);
     }
 
     @Test
     public void testCertJwtFilterCallsSsoService() throws IOException {
-        when(cache.containsKey(certJwtApi)).thenReturn(false);
+        when(cache.containsKey(certJwtApi.name())).thenReturn(false);
         ClientRequestFilter crf = ClientUtils.getSsoCertJwtInjectionFilter(cache, vps4SsoService, certJwtApi);
         crf.filter(context);
-        verify(cache).containsKey(certJwtApi);
-        verify(cache, never()).get(certJwtApi);
+        verify(cache).containsKey(certJwtApi.name());
+        verify(cache, never()).get(certJwtApi.name());
         verify(vps4SsoService).getToken("cert");
-        verify(cache).put(certJwtApi, jwt);
+        verify(cache).put(certJwtApi.name(), jwt);
         verify(headers).add("Authorization", "sso-jwt " + jwt);
     }
 }

@@ -41,16 +41,16 @@ public class ClientUtils {
         };
     }
 
-    public static ClientRequestFilter getSsoCertJwtInjectionFilter(Cache<CertJwtApi, String> cache,
+    public static ClientRequestFilter getSsoCertJwtInjectionFilter(Cache<String, String> cache,
                                                                    Vps4SsoService vps4SsoService,
                                                                    CertJwtApi certJwtApi) {
         return requestContext -> {
             String authToken;
-            if (cache.containsKey(certJwtApi)) {
-                authToken = "sso-jwt " + cache.get(certJwtApi);
+            if (cache.containsKey(certJwtApi.name())) {
+                authToken = "sso-jwt " + cache.get(certJwtApi.name());
             } else {
                 Vps4SsoToken token = vps4SsoService.getToken("cert");
-                cache.put(certJwtApi, token.value());
+                cache.put(certJwtApi.name(), token.value());
                 authToken = "sso-jwt " + token.value();
             }
             requestContext.getHeaders().add("Authorization", authToken);
