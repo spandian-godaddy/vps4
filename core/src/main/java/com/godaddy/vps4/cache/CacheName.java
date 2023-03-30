@@ -2,7 +2,7 @@ package com.godaddy.vps4.cache;
 
 public interface CacheName {
 
-    String CERT_JWT_TOKENS = "cert.jwt.tokens";
+    String API_JWT_TOKENS = "api.jwt.tokens";
 
     String SERVER_USAGE = "server.usage";
 

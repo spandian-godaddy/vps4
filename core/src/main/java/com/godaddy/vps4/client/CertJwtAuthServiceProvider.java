@@ -31,7 +31,7 @@ public class CertJwtAuthServiceProvider<T> extends HttpServiceProvider<T> implem
     @Override
     public List<ClientRequestFilter> getRequestFilters() {
         List<ClientRequestFilter> requestFilters = super.getRequestFilters();
-        Cache<String, String> cache = cacheManager.getCache(CacheName.CERT_JWT_TOKENS,
+        Cache<String, String> cache = cacheManager.getCache(CacheName.API_JWT_TOKENS,
                                                                 String.class,
                                                                 String.class);
         Vps4SsoService vps4SsoService = ssoServiceMap.get(certJwtApi);
