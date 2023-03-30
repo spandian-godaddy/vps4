@@ -3,10 +3,15 @@ package com.godaddy.vps4.handler;
 import static com.godaddy.vps4.handler.util.Utils.isDBError;
 import static com.godaddy.vps4.handler.util.Utils.isVps4ApiDown;
 
+import java.time.Instant;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeFormatterBuilder;
 import java.util.UUID;
 
 import javax.inject.Inject;
 
+import com.godaddy.vps4.web.monitoring.VmOutageRequest;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -74,7 +79,17 @@ public class Vps4PanoptaMessageHandler implements MessageHandler {
 
     private void clearVmMetricOutages(UUID vmId, Vps4PanoptaMessage msg) {
         long panoptaOutageId = Long.parseLong(msg.outageId);
+        VmOutageRequest request = new VmOutageRequest(formatTimestamp(msg.start));
         logger.info("Clearing outage {} on VM {} from panopta webhook alert", msg.outageId, vmId);
-        vmOutageApi.clearVmOutage(vmId, panoptaOutageId);
+        vmOutageApi.clearVmOutage(vmId, panoptaOutageId, request);
+    }
+
+    private String formatTimestamp(String timestamp) {
+        String pattern = "yyyy-MM-dd HH:mm:ss z";
+        DateTimeFormatter formatter = new DateTimeFormatterBuilder()
+                .appendPattern(pattern)
+                .toFormatter()
+                .withZone(ZoneId.of("UTC"));
+        return formatter.parse(timestamp, Instant::from).toString();
     }
 }

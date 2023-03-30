@@ -3,11 +3,10 @@ package com.godaddy.vps4.handler;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
+import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.eq;
-import static org.mockito.Mockito.atLeast;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -18,6 +17,7 @@ import javax.ws.rs.BadRequestException;
 import javax.ws.rs.InternalServerErrorException;
 import javax.ws.rs.ServiceUnavailableException;
 
+import com.godaddy.vps4.web.monitoring.VmOutageRequest;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.json.simple.JSONObject;
 import org.junit.Before;
@@ -106,7 +106,7 @@ public class Vps4PanoptaMessageHandlerTest {
     @Test
     public void handlesClearEventMessage() throws MessageHandlerException {
         callHandleMessage(createClearEventMessage().toJSONString());
-        verify(vmOutageApi).clearVmOutage(vmId, panoptaOutageId);
+        verify(vmOutageApi).clearVmOutage(eq(vmId), eq(panoptaOutageId), any(VmOutageRequest.class));
     }
 
     @Test

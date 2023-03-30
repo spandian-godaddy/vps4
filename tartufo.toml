@@ -19,6 +19,7 @@ exclude-path-patterns = [
     {path-pattern="hfs-base/src/main/resources/swagger/assets/swagger-ui.min.js", reason="javascript minimized file"},
     {path-pattern="core/src/main/java/com/godaddy/vps4/cpanel/DefaultVps4CpanelService.java"},
     {path-pattern="core/src/main/java/com/godaddy/vps4/cpanel/FakeCpanelModule.java", reason="fake cpanel access hashes"},
+    {path-pattern="/core/src/main/java/com/godaddy/vps4/oh/OhClientException.java", reason="link to a confluence doc"},
 ]
 exclude-signatures = [
     {signature="e363cafbdee5c5fb64a523d00603642d2720dccc1cfa5f0b8b72e6a6f78ab294", reason="Fake password in the readme"},
@@ -48,6 +49,7 @@ exclude-signatures = [
     {signature="caadca3e994c5a788343f6dd616d8f1e65531f8674b11fb723b365966cf959ec", reason="URL in the scheduler readme"},
     {signature="76e59151d624beb25bf1d6d12cd8846034a2401cc22160995cf533632a5e3f7a", reason="URL in the readme"},
     {signature="43c46fbf2209f035060750da2e0e6104c9bcf1da5c90a368736772764d279fe9", reason="Database connection pattern"},
+    {signature="8c63e3497e4b1990d943f02e864059ecff7613fb324c86cccaa141bd2bedcd05", reason="link to a confluence doc"},
 ]
 exclude-entropy-patterns = [
     {pattern='b\/', reason="PR path"},

@@ -14,6 +14,7 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
 
+import com.godaddy.vps4.orchestration.monitoring.Vps4ClearVmOutage;
 import com.godaddy.vps4.orchestration.monitoring.Vps4NewVmOutage;
 import com.godaddy.vps4.panopta.PanoptaServer;
 import com.godaddy.vps4.vm.ActionService;
@@ -36,6 +37,7 @@ import gdg.hfs.orchestration.CommandService;
 
 import io.swagger.annotations.Api;
 
+import static com.godaddy.vps4.web.util.RequestValidation.validateAndReturnDateInstant;
 import static com.godaddy.vps4.web.util.VmHelper.createActionAndExecute;
 
 @Vps4Api
@@ -111,7 +113,8 @@ public class VmOutageResource {
     @POST
     @RequiresRole(roles = {GDUser.Role.ADMIN}) // From message consumer
     @Path("/{vmId}/outages/{outageId}/clear")
-    public VmAction clearVmOutage(@PathParam("vmId") UUID vmId, @PathParam("outageId") long outageId) {
+    public VmAction clearVmOutage(@PathParam("vmId") UUID vmId, @PathParam("outageId") long outageId,
+                                  VmOutageRequest request) {
         VirtualMachine virtualMachine = vmResource.getVm(vmId); // Auth validation
 
         if(virtualMachine.isCanceledOrDeleted()){
@@ -119,12 +122,13 @@ public class VmOutageResource {
             return null;
         }
 
-        Vps4NewVmOutage.Request request = new Vps4NewVmOutage.Request();
-        request.virtualMachine = virtualMachine;
-        request.outageId = outageId;
+        Vps4ClearVmOutage.Request clearVmOutageRequest = new Vps4ClearVmOutage.Request();
+        clearVmOutageRequest.virtualMachine = virtualMachine;
+        clearVmOutageRequest.outageId = outageId;
+        clearVmOutageRequest.timestamp = validateAndReturnDateInstant(request.timestamp);
 
         return createActionAndExecute(actionService, commandService, vmId, ActionType.CLEAR_VM_OUTAGE,
-                request, "Vps4ClearVmOutage", user);
+                clearVmOutageRequest, "Vps4ClearVmOutage", user);
     }
 
 }

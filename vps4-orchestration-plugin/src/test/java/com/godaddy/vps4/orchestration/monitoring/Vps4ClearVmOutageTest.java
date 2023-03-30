@@ -47,6 +47,7 @@ public class Vps4ClearVmOutageTest {
         request = new Vps4ClearVmOutage.Request();
         request.actionId = 123321;
         request.outageId = 321123;
+        request.timestamp = Instant.parse("2019-12-09T21:19:51Z");
         request.virtualMachine = mock(VirtualMachine.class);
         request.virtualMachine.name="TestVm";
         request.virtualMachine.primaryIpAddress = new IpAddress();
@@ -67,7 +68,7 @@ public class Vps4ClearVmOutageTest {
         outage.domainMonitoringMetadata = Collections.emptyList();
         outage.metrics = new HashSet<>();
         outage.metrics.add(VmMetric.CPU);
-        outage.ended = Instant.now();
+        outage.ended = Instant.parse("2020-12-09T21:19:51Z");
         when(context.execute(eq("GetPanoptaOutage"), eq(GetPanoptaOutage.class), any())).thenReturn(outage);
     }
 

@@ -10,7 +10,7 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
 
 import com.godaddy.vps4.vm.VmAction;
-import com.godaddy.vps4.vm.VmOutage;
+import com.godaddy.vps4.web.monitoring.VmOutageRequest;
 
 @Path("/api/vms")
 @Produces(MediaType.APPLICATION_JSON)
@@ -23,5 +23,6 @@ public interface VmOutageApiService {
 
     @POST
     @Path("{vmId}/outages/{outageId}/clear")
-    VmAction clearVmOutage(@PathParam("vmId") UUID vmId, @PathParam("outageId") long outageId);
+    VmAction clearVmOutage(@PathParam("vmId") UUID vmId, @PathParam("outageId") long outageId,
+                           VmOutageRequest request);
 }

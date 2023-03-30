@@ -15,6 +15,8 @@ import gdg.hfs.orchestration.CommandRetryStrategy;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.time.Instant;
+
 @CommandMetadata(
         name = "Vps4ClearVmOutage",
         requestType = Vps4ClearVmOutage.Request.class,
@@ -56,6 +58,7 @@ public class Vps4ClearVmOutage extends ActionCommand<Vps4ClearVmOutage.Request, 
         getOutageRequest.vmId = request.virtualMachine.vmId;
         getOutageRequest.outageId = request.outageId;
         VmOutage outage = context.execute("GetPanoptaOutage", GetPanoptaOutage.class, getOutageRequest);
+        outage.ended = request.timestamp;
         return outage;
     }
 
@@ -92,6 +95,7 @@ public class Vps4ClearVmOutage extends ActionCommand<Vps4ClearVmOutage.Request, 
 
     public static class Request extends VmActionRequest {
         public long outageId;
+        public Instant timestamp;
         public VirtualMachine virtualMachine;
 
         @Override

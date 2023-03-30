@@ -3,11 +3,9 @@ package com.godaddy.vps4.web.monitoring;
 import static org.junit.Assert.assertEquals;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyObject;
-import static org.mockito.Matchers.contains;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -20,7 +18,6 @@ import com.godaddy.vps4.panopta.PanoptaServer;
 import com.godaddy.vps4.vm.Action;
 import com.godaddy.vps4.vm.ActionService;
 import com.godaddy.vps4.vm.ActionType;
-import org.joda.time.Days;
 import org.json.simple.JSONObject;
 import org.junit.Before;
 import org.junit.Test;
@@ -54,6 +51,7 @@ public class VmOutageResourceTest {
 
     private VmOutageResource resource = new VmOutageResource(vmResource, commandService, creditService, panoptaService, actionService,
             gdUser);
+    private VmOutageRequest request = new VmOutageRequest("2021-12-10T03:00:38Z");
     private UUID vmId = UUID.randomUUID();
     private VmMetricAlert vmMetricAlert = new VmMetricAlert();
     private VirtualMachine vm;
@@ -112,30 +110,30 @@ public class VmOutageResourceTest {
     }
 
     @Test
-    public void createOutage() throws PanoptaServiceException {
+    public void createOutage() {
         resource.newVmOutage(vmId, outageId);
         verify(commandService).executeCommand(commandCapture.capture());
         assertEquals("Vps4NewVmOutage", commandCapture.getValue().commands.get(0).command);
     }
 
     @Test
-    public void clearOutage() throws PanoptaServiceException {
-        resource.clearVmOutage(vmId, outageId);
+    public void clearOutage() {
+        resource.clearVmOutage(vmId, outageId, request);
         verify(commandService).executeCommand(commandCapture.capture());
         assertEquals("Vps4ClearVmOutage", commandCapture.getValue().commands.get(0).command);
     }
 
     @Test
-    public void createOutageInactiveServer() throws PanoptaServiceException {
+    public void createOutageInactiveServer() {
         vm.canceled = Instant.now().minus(1, ChronoUnit.DAYS);
         resource.newVmOutage(vmId, outageId);
         verify(commandService, never()).executeCommand(commandCapture.capture());
     }
 
     @Test
-    public void clearOutageInactiveService() throws PanoptaServiceException {
+    public void clearOutageInactiveService() {
         vm.canceled = Instant.now().minus(1, ChronoUnit.DAYS);
-        resource.clearVmOutage(vmId, outageId);
+        resource.clearVmOutage(vmId, outageId, request);
         verify(commandService, never()).executeCommand(commandCapture.capture());
     }
 }
