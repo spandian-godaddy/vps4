@@ -58,6 +58,15 @@ public class JdbcPanoptaDataService implements PanoptaDataService {
     }
 
     @Override
+    public void setAllPanoptaServersOfCustomerDestroyed(String shopperId) {
+        Sql.with(dataSource)
+                .exec("UPDATE panopta_server SET destroyed = now_utc() WHERE " +
+                                "partner_customer_key = ? " +
+                                "and destroyed = 'infinity'",
+                        null, getPartnerCustomerKey(shopperId));
+    }
+
+    @Override
     public boolean checkAndSetPanoptaCustomerDestroyed(String shopperId) {
         if(noActivePanoptaServers(shopperId)) {
             Sql.with(dataSource)

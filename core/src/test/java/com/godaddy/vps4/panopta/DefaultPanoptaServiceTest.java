@@ -3,6 +3,7 @@ package com.godaddy.vps4.panopta;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.mockito.Matchers.any;
@@ -539,6 +540,24 @@ public class DefaultPanoptaServiceTest {
         assertEquals(instant, result.agentLastSynced);
     }
 
+    @Test
+    public void testGetServerThrowsNotFoundException() throws NotFoundException {
+        when(panoptaApiServerService.getServer(serverId, partnerCustomerKey)).thenThrow(new NotFoundException());
+
+        PanoptaServer result = defaultPanoptaService.getServer(vmId);
+        verify(panoptaDataService).getPanoptaDetails(vmId);
+        verify(panoptaApiServerService).getServer(serverId, partnerCustomerKey);
+        assertNull(result);
+    }
+    @Test
+    public void testGetServerNotFoundInDb() {
+        when(panoptaDataService.getPanoptaDetails(vmId)).thenReturn(null);
+
+        PanoptaServer result = defaultPanoptaService.getServer(vmId);
+        verify(panoptaDataService).getPanoptaDetails(vmId);
+        verify(panoptaApiServerService, never()).getServer(serverId, partnerCustomerKey);
+        assertNull(result);
+    }
     @Test
     public void testDeleteServer() {
         defaultPanoptaService.deleteServer(vmId);

@@ -265,13 +265,20 @@ public class DefaultPanoptaService implements PanoptaService {
 
     @Override
     public PanoptaServer getServer(UUID vmId) {
-        PanoptaDetail panoptaDetails = panoptaDataService.getPanoptaDetails(vmId);
-        if (panoptaDetails != null) {
-            long serverId = panoptaDetails.getServerId();
-            String partnerCustomerKey = panoptaDetails.getPartnerCustomerKey();
-            return mapServer(partnerCustomerKey, panoptaApiServerService.getServer(serverId, partnerCustomerKey));
+        PanoptaDetail serverInDb = panoptaDataService.getPanoptaDetails(vmId);
+        if (serverInDb != null) {
+            long serverId = serverInDb.getServerId();
+            String partnerCustomerKey = serverInDb.getPartnerCustomerKey();
+            PanoptaServers.Server serverInPanopta = null;
+            try {
+                serverInPanopta = panoptaApiServerService.getServer(serverId, partnerCustomerKey);
+            } catch (NotFoundException e) {
+                logger.info("Could not find server in Panopta for VM ID {} ", vmId);
+                return null;
+            }
+            return mapServer(partnerCustomerKey, serverInPanopta);
         }
-        logger.info("Could not find server in panopta for VM ID {} ", vmId);
+        logger.info("Could not find server in database for VM ID {} ", vmId);
         return null;
     }
 

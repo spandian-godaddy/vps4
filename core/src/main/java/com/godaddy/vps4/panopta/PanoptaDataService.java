@@ -16,6 +16,7 @@ public interface PanoptaDataService {
     List<PanoptaServerDetails> getPanoptaServerDetailsList(String shopperId);
     PanoptaDetail getPanoptaDetails(UUID vmId);
     void setPanoptaServerDestroyed(UUID vmId);
+    void setAllPanoptaServersOfCustomerDestroyed(String shopperId);
     boolean checkAndSetPanoptaCustomerDestroyed(String shopperId);
     UUID getVmId(String serverKey);
     List<String> getPanoptaActiveAdditionalFqdns(UUID vmId);
