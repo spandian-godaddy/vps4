@@ -223,6 +223,32 @@ public class DefaultVps4CpanelService implements Vps4CpanelService {
     }
 
     @Override
+    public List<CPanelDomain> listDomains(long hfsVmId, CPanelDomainType type)
+            throws CpanelAccessDeniedException, CpanelTimeoutException {
+        return withAccessToken(hfsVmId, cPanelClient -> handleCpanelCall(
+                "listDomains", () -> cPanelClient.listDomains(type),
+                dataJson -> {
+                    JSONArray domainsJson = (JSONArray) dataJson.get("domains");
+                    if (domainsJson != null) {
+                        List<CPanelDomain> domains = new ArrayList<>();
+                        for (Object object : domainsJson) {
+                            JSONObject domainJson = (JSONObject) object;
+                            CPanelDomain domain = new CPanelDomain();
+                            domain.domainName = (String) domainJson.get("domain");
+                            domain.domainType =  (String) domainJson.get("domain_type");
+                            domain.username = (String) domainJson.get("user");
+                            domains.add(domain);
+                        }
+                        return domains;
+                    }
+                    throw new RuntimeException("WHM list domains by type failed: domains returned null");
+                },
+                reason -> {
+                    throw new RuntimeException("WHM list domains by type failed due to reason: " + reason);
+                }));
+    }
+
+    @Override
     public CPanelSession createSession(long hfsVmId, String username, CpanelServiceType serviceType)
             throws CpanelAccessDeniedException, CpanelTimeoutException {
         return withAccessToken(hfsVmId, cPanelClient -> cPanelClient.createSession(username, serviceType));

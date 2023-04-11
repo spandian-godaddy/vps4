@@ -67,6 +67,34 @@ public class CpanelClientTest {
     }
 
     @Test
+    public void callsCpanelEndpointToListAllDomains() throws CpanelAccessDeniedException, IOException {
+        cpanelClient.listDomains(CPanelDomainType.ALL);
+
+        verify(httpClient, times(1)).execute(httpUriRequestArgumentCaptor.capture());
+        HttpUriRequest capturedReq = httpUriRequestArgumentCaptor.getValue();
+        String expectedUri = "https://" + hostname + ":2087"
+                + "/json-api/get_domain_info?api.version=1"
+                + "&api.filter.a.field=domain_type&api.filter.a.arg0=all&api.filter.a.type=eq&api.filter.enable=0"
+                + "&api.sort.a.field=domain&api.sort.enable=1&api.columns.a=user"
+                + "&api.columns.b=domain&api.columns.c=domain_type&api.columns.enable=1";
+        Assert.assertEquals(expectedUri, capturedReq.getURI().toString());
+    }
+
+    @Test
+    public void callsCpanelEndpointToListAddOnDomains() throws CpanelAccessDeniedException, IOException {
+        cpanelClient.listDomains(CPanelDomainType.ADDON);
+
+        verify(httpClient, times(1)).execute(httpUriRequestArgumentCaptor.capture());
+        HttpUriRequest capturedReq = httpUriRequestArgumentCaptor.getValue();
+        String expectedUri = "https://" + hostname + ":2087"
+                + "/json-api/get_domain_info?api.version=1"
+                + "&api.filter.a.field=domain_type&api.filter.a.arg0=addon&api.filter.a.type=eq&api.filter.enable=1"
+                + "&api.sort.a.field=domain&api.sort.enable=1&api.columns.a=user"
+                + "&api.columns.b=domain&api.columns.c=domain_type&api.columns.enable=1";
+        Assert.assertEquals(expectedUri, capturedReq.getURI().toString());
+    }
+
+    @Test
     public void callsCpanelEndpointToCreateAccount() throws CpanelAccessDeniedException, IOException {
         String domainName = "blah";
         String username = "blahtoo";

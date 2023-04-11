@@ -9,6 +9,7 @@ import java.util.UUID;
 
 import javax.inject.Inject;
 import javax.ws.rs.Consumes;
+import javax.ws.rs.DefaultValue;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.DELETE;
@@ -21,6 +22,8 @@ import javax.ws.rs.core.MediaType;
 import com.godaddy.hfs.config.Config;
 import com.godaddy.vps4.cpanel.CPanelAccount;
 import com.godaddy.vps4.cpanel.CPanelAccountCacheStatus;
+import com.godaddy.vps4.cpanel.CPanelDomain;
+import com.godaddy.vps4.cpanel.CPanelDomainType;
 import com.godaddy.vps4.cpanel.CPanelSession;
 import com.godaddy.vps4.cpanel.InstallatronApplication;
 import com.godaddy.vps4.cpanel.Vps4CpanelService;
@@ -182,8 +185,25 @@ public class CPanelResource {
         }
         catch (Exception e) {
             logger.warn("Could not provide cpanel add on domains for user {} on vmId {} , Exception: {} ", username, vmId, e);
+
         }
         return null;
+    }
+
+
+    @GET
+    @Path("/{vmId}/cpanel/domains")
+    public List<CPanelDomain> listDomains(@PathParam("vmId") UUID vmId, @QueryParam("domainType")@DefaultValue("ALL") CPanelDomainType domainType) {
+        logger.info("GET domains with {} type(s) on VM: {}", domainType, vmId);
+
+        VirtualMachine vm = resolveVirtualMachine(vmId);
+
+        try {
+            return cpanelService.listDomains(vm.hfsVmId, domainType);
+        }
+        catch (Exception e) {
+            throw new Vps4Exception("CPANEL_LIST_DOMAINS_FAILED", e.getMessage(), e);
+        }
     }
 
     public static class PasswordStrengthRequest {

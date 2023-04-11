@@ -13,6 +13,9 @@ public interface Vps4CpanelService {
     List<String> listAddOnDomains(long hfsVmId, String username)
             throws CpanelAccessDeniedException, CpanelTimeoutException, IOException;
 
+    List<CPanelDomain> listDomains(long hfsVmId, CPanelDomainType domainType)
+            throws CpanelAccessDeniedException, CpanelTimeoutException;
+
     CPanelSession createSession(long hfsVmId, String username, CpanelServiceType serviceType)
             throws CpanelAccessDeniedException, CpanelTimeoutException, IOException;
 

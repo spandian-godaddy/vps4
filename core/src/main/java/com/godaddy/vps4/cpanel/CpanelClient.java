@@ -144,6 +144,25 @@ public class CpanelClient {
         return callWhm(request);
     }
 
+    public String listDomains(CPanelDomainType domainType) throws CpanelAccessDeniedException, IOException {
+        HttpUriRequest request = newCpanelRequest()
+                .setUri(baseUrl + "/json-api/get_domain_info")
+                .addParameter("api.version", "1")
+                .addParameter("api.filter.a.field", "domain_type")
+                .addParameter("api.filter.a.arg0", domainType.toString().toLowerCase())
+                .addParameter("api.filter.a.type", "eq")
+                .addParameter("api.filter.enable", domainType == domainType.ALL ? "0" :"1")
+                .addParameter("api.sort.a.field","domain")
+                .addParameter("api.sort.enable","1")
+                .addParameter("api.columns.a","user")
+                .addParameter("api.columns.b","domain")
+                .addParameter("api.columns.c","domain_type")
+                .addParameter("api.columns.enable","1")
+                .build();
+        return callWhm(request);
+    }
+
+
     public String listInstalledInstallatronApplications(String user) throws CpanelAccessDeniedException, IOException {
         HttpUriRequest request = newCpanelRequest()
                 .setUri(baseUrl + "/installatron/index.cgi")

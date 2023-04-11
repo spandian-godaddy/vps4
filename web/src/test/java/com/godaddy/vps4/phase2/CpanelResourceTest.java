@@ -3,6 +3,8 @@ package com.godaddy.vps4.phase2;
 import com.godaddy.hfs.config.Config;
 import com.godaddy.hfs.vm.Vm;
 import com.godaddy.vps4.cpanel.CPanelAccountCacheStatus;
+import com.godaddy.vps4.cpanel.CPanelDomain;
+import com.godaddy.vps4.cpanel.CPanelDomainType;
 import com.godaddy.vps4.cpanel.CPanelSession;
 import com.godaddy.vps4.cpanel.CpanelAccessDeniedException;
 import com.godaddy.vps4.cpanel.CpanelInvalidUserException;
@@ -253,6 +255,25 @@ public class CpanelResourceTest {
     public void testThrowsExceptionForInvalidUsername() throws Exception{
         when(vps4CpanelService.listAddOnDomains(anyLong(), eq("fakeuser2"))).thenThrow(new CpanelInvalidUserException(""));
         getcPanelResource().listAddOnDomains(vm.vmId, "fakeuser2");
+    }
+
+    // list domains test
+    @Test
+    public void testListDomains(){
+        getcPanelResource().listDomains(vm.vmId, CPanelDomainType.ALL);
+    }
+
+    @Test
+    public void testListDomainsThrowsCpanelServiceException() throws Exception {
+        when(vps4CpanelService.listDomains(anyLong(), eq(CPanelDomainType.ALL)))
+                .thenThrow(new CpanelTimeoutException("Timed out"));
+        try {
+            getcPanelResource().listDomains(vm.vmId, CPanelDomainType.ALL);
+            Assert.fail();
+        }
+        catch (Vps4Exception e) {
+            Assert.assertEquals("CPANEL_LIST_DOMAINS_FAILED", e.getId());
+        }
     }
 
     // Calculate password strength

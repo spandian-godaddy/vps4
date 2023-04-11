@@ -175,6 +175,50 @@ public class CpanelToolsTest {
         assertEquals(returnValue, service.listAddOnDomains(hfsVmId, "fakeUsername"));
     }
 
+    @Test()
+    public void testListDomainsSuccessZeroDomains() throws Exception {
+        String returnVal = "{\"metadata\":{\"result\":1,\"reason\":\"OK\"," +
+                "\"version\":1,\"command\":\"get_domain_info\"},\"data\":" +
+                "{\"domains\":[]}}";
+        when(cpClient.listDomains(CPanelDomainType.ADDON)).thenReturn(returnVal);
+        List<CPanelDomain> returnValue = new ArrayList<>();
+        assertEquals(returnValue, service.listDomains(hfsVmId, CPanelDomainType.ADDON));
+    }
+
+    @Test()
+    public void testListDomainsSuccess() throws Exception {
+        String returnVal = "{\"metadata\":{\"result\":1,\"reason\":\"OK\"," +
+                "\"version\":1,\"command\":\"get_domain_info\"},\"data\":" +
+                "{\"domains\":[{\"domain_type\":\"addon\",\"domain\":\"hello.fake\",\"user\":\"testuser\"}," +
+                "{\"domain_type\":\"addon\",\"domain\":\"hello2.fake\",\"user\":\"testuser2\"}]}}";
+        when(cpClient.listDomains(CPanelDomainType.ADDON)).thenReturn(returnVal);
+        List<CPanelDomain> domains = service.listDomains(hfsVmId, CPanelDomainType.ADDON);
+
+        assertEquals(2, domains.size());
+        assertEquals("hello.fake", domains.get(0).domainName);
+        assertEquals("testuser", domains.get(0).username);
+        assertEquals("addon", domains.get(0).domainType);
+        assertEquals("hello2.fake", domains.get(1).domainName);
+        assertEquals("testuser2", domains.get(1).username);
+        assertEquals("addon", domains.get(1).domainType);
+    }
+
+    @Test
+    public void testListDomainsError() throws Exception{
+        String reason = "no-workie";
+        String returnVal = "{\"metadata\":{\"version\":1,\"reason\":\"" + reason + "\", \"result\":0}}";
+        when(cpClient.listDomains(CPanelDomainType.ALL)).thenReturn(returnVal);
+
+        try {
+            service.listDomains(hfsVmId, CPanelDomainType.ALL);
+            Assert.fail("This test shouldn't get here");
+        }
+        catch (RuntimeException e) {
+            Assert.assertEquals("WHM list domains by type failed due to reason: " + reason, e.getMessage());
+        }
+    }
+
+
     @Test
     public void calculatePasswordStrengthUsesCpanelClient() throws Exception{
         String password = "password123";
