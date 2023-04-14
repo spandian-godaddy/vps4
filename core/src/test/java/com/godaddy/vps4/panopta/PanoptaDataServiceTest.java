@@ -39,20 +39,16 @@ public class PanoptaDataServiceTest {
     private final UUID orionGuid = UUID.randomUUID();
     private final String fakeCustomerKey = "fake_customer_key";
     private final String fakeServerKey = "totally-fake-server-key";
-    private final String fakeServerKey2 = "totally-fake-server-key-2";
     private final String fakeShopperId = "so-fake-shopperid";
     private final String fakePartnerCustomerKey = "gdtest_" + fakeShopperId;
     private final String fakeTemplateId = "12345";
     private final long fakeServerId = 1234567;
-    private final long fakeServerId2 = 1234568;
 
     private VirtualMachine vm;
-    private VirtualMachine vm2;
 
     private PanoptaDataService panoptaDataService;
 
     private PanoptaServer panoptaServer;
-    private PanoptaServer panoptaServer2;
     private Vps4User user;
     private Config config = mock(Config.class);
 
@@ -63,7 +59,6 @@ public class PanoptaDataServiceTest {
     public void setUp() throws Exception {
         user = SqlTestData.insertTestVps4User(dataSource);
         vm = SqlTestData.insertTestVm(orionGuid, dataSource, user.getId());
-        vm2 = SqlTestData.insertTestVm(UUID.randomUUID(), dataSource, user.getId());
         panoptaDataService = new JdbcPanoptaDataService(dataSource, config);
         String fakeName = "s64-202-190-85.secureserver.net";
         String fakeFqdn = "s64-202-190-85.secureserver.net";
@@ -73,23 +68,16 @@ public class PanoptaDataServiceTest {
         PanoptaServer.Status status = PanoptaServer.Status.ACTIVE;
         panoptaServer = new PanoptaServer(fakePartnerCustomerKey, fakeServerId, fakeServerKey, fakeName, fakeFqdn,
                                         fakeAdditionalFqdns, serverGroup, status, Instant.now());
-        panoptaServer2 = new PanoptaServer(fakePartnerCustomerKey, fakeServerId2,
-                fakeServerKey2, fakeName, fakeFqdn,
-                fakeAdditionalFqdns, serverGroup, status, Instant.now());
-
         when(config.get("panopta.api.partner.customer.key.prefix")).thenReturn("gdtest_");
     }
 
     @After
     public void tearDown() {
         Sql.with(dataSource).exec("DELETE FROM panopta_additional_fqdns WHERE server_id = ?", null, fakeServerId);
-        Sql.with(dataSource).exec("DELETE FROM panopta_additional_fqdns WHERE server_id = ?", null, fakeServerId2);
         Sql.with(dataSource).exec("DELETE FROM panopta_server WHERE vm_id = ?", null, vm.vmId);
-        Sql.with(dataSource).exec("DELETE FROM panopta_server WHERE vm_id = ?", null, vm2.vmId);
         Sql.with(dataSource).exec("DELETE FROM panopta_customer WHERE partner_customer_key = ?", null, fakePartnerCustomerKey);
 
         SqlTestData.cleanupTestVmAndRelatedData(vm.vmId, dataSource);
-        SqlTestData.cleanupTestVmAndRelatedData(vm2.vmId, dataSource);
         SqlTestData.deleteTestVps4User(dataSource);
     }
 
@@ -155,24 +143,6 @@ public class PanoptaDataServiceTest {
         List<PanoptaServerDetails> panoptaServerDetailsList = panoptaDataService.getPanoptaServerDetailsList(fakeShopperId);
         assertNotNull(panoptaServerDetailsList);
         assertFalse(panoptaServerDetailsList.isEmpty());
-    }
-
-    @Test
-    public void removeAllActivePanoptaServersOfCustomer() {
-        panoptaDataService.createPanoptaCustomer(fakeShopperId, fakeCustomerKey);
-        panoptaDataService.createPanoptaServer(vm.vmId, fakeShopperId, fakeTemplateId, panoptaServer);
-        panoptaDataService.createPanoptaServer(vm2.vmId, fakeShopperId, fakeTemplateId, panoptaServer2);
-
-        panoptaDataService.setAllPanoptaServersOfCustomerDestroyed(fakeShopperId);
-
-        PanoptaServerDetails panoptaServerDetails = panoptaDataService.getPanoptaServerDetails(vm.vmId);
-        assertNull(panoptaServerDetails);
-        PanoptaServerDetails panoptaServerDetails2 = panoptaDataService.getPanoptaServerDetails(vm2.vmId);
-        assertNull(panoptaServerDetails2);
-        PanoptaCustomerDetails panoptaCustomerDetails = panoptaDataService.getPanoptaCustomerDetails(fakeShopperId);
-        assertNotNull(panoptaCustomerDetails);
-        assertEquals(fakePartnerCustomerKey, panoptaCustomerDetails.getPartnerCustomerKey());
-        assertEquals(fakeCustomerKey, panoptaCustomerDetails.getCustomerKey());
     }
 
     @Test

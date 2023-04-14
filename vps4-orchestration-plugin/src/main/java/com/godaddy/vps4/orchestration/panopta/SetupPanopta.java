@@ -65,35 +65,20 @@ public class SetupPanopta implements Command<SetupPanopta.Request, Void> {
         return null;
     }
 
-    private PanoptaCustomerDetails createAndGetCustomerInDb(String customerKey) {
-        panoptaDataService.createPanoptaCustomer(request.shopperId, customerKey);
-        return panoptaDataService.getPanoptaCustomerDetails(request.shopperId);
-    }
-
     private PanoptaCustomerDetails getOrCreateCustomer() {
-        PanoptaCustomerDetails customerInDb = panoptaDataService.getPanoptaCustomerDetails(request.shopperId);
-        PanoptaCustomer customerInPanopta = panoptaService.getCustomer(request.shopperId);
-        if (customerInPanopta == null) {
-            if (customerInDb != null) {
-                // if customer is destroyed in Panopta, but not cleaned up in our db
-                panoptaDataService.setAllPanoptaServersOfCustomerDestroyed(request.shopperId);
-                panoptaDataService.checkAndSetPanoptaCustomerDestroyed(request.shopperId);
-            }
-            // if customer has not been created
-            customerInPanopta = createCustomer();
-            customerInDb = createAndGetCustomerInDb(customerInPanopta.customerKey);
-        } else {
-            if(customerInDb != null && customerInPanopta.customerKey != customerInDb.getCustomerKey()) {
-                // if customer is out of sync in different data centers
-                panoptaDataService.setAllPanoptaServersOfCustomerDestroyed(request.shopperId);
-                panoptaDataService.checkAndSetPanoptaCustomerDestroyed(request.shopperId);
-                customerInDb = createAndGetCustomerInDb(customerInPanopta.customerKey);
-            } else if (customerInDb == null) {
-                // if customer is created in Panopta but not yet in this data center's db
-                customerInDb = createAndGetCustomerInDb(customerInPanopta.customerKey);
-            }
+        PanoptaCustomerDetails customerDetails = panoptaDataService.getPanoptaCustomerDetails(request.shopperId);
+        if (customerDetails != null) {
+            panoptaService.setStatus(request.shopperId, "active");
         }
-        return customerInDb;
+        else {
+            PanoptaCustomer customer = panoptaService.getCustomer(request.shopperId);
+            if (customer == null) {
+                customer = createCustomer();
+            }
+            panoptaDataService.createPanoptaCustomer(request.shopperId, customer.customerKey);
+            customerDetails = panoptaDataService.getPanoptaCustomerDetails(request.shopperId);
+        }
+        return customerDetails;
     }
 
     private PanoptaCustomer createCustomer() {
@@ -106,20 +91,16 @@ public class SetupPanopta implements Command<SetupPanopta.Request, Void> {
     }
 
     private PanoptaServerDetails getOrCreateServer(String templateId) {
-        PanoptaServerDetails serverInDb = panoptaDataService.getPanoptaServerDetails(request.vmId);
-        PanoptaServer serverInPanopta = panoptaService.getServer(request.vmId);
-        if (serverInPanopta == null) {
-            if (serverInDb != null) {
-                panoptaDataService.setPanoptaServerDestroyed(request.vmId);
-            }
+        PanoptaServerDetails serverDetails = panoptaDataService.getPanoptaServerDetails(request.vmId);
+        if (serverDetails == null) {
             Map<Long, String> attributes = getAttributes();
             String[] tags = attributes.values().toArray(new String[0]);
             PanoptaServer server = createServer(tags);
             panoptaDataService.createPanoptaServer(request.vmId, request.shopperId, templateId, server);
-            serverInDb = panoptaDataService.getPanoptaServerDetails(request.vmId);
+            serverDetails = panoptaDataService.getPanoptaServerDetails(request.vmId);
             panoptaService.setServerAttributes(request.vmId, attributes);
         }
-        return serverInDb;
+        return serverDetails;
     }
 
     private PanoptaServer createServer(String[] tags) {
