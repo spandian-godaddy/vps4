@@ -29,7 +29,7 @@ public class JdbcPanoptaDataService implements PanoptaDataService {
     }
 
     @Override
-    public void createPanoptaCustomer(String shopperId, String customerKey) {
+    public void createOrUpdatePanoptaCustomer(String shopperId, String customerKey) {
         String partnerCustomerKey = getPartnerCustomerKey(shopperId);
         Sql.with(dataSource)
            .exec("INSERT INTO panopta_customer (partner_customer_key, customer_key) values (?,?) " +
@@ -55,6 +55,15 @@ public class JdbcPanoptaDataService implements PanoptaDataService {
     public void setPanoptaServerDestroyed(UUID vmId) {
         Sql.with(dataSource)
            .exec("UPDATE panopta_server SET destroyed = now_utc() WHERE vm_id = ? ", null, vmId);
+    }
+
+    @Override
+    public void setAllPanoptaServersOfCustomerDestroyed(String shopperId) {
+        Sql.with(dataSource)
+                .exec("UPDATE panopta_server SET destroyed = now_utc() WHERE " +
+                                "partner_customer_key = ? " +
+                                "and destroyed = 'infinity'",
+                        null, getPartnerCustomerKey(shopperId));
     }
 
     @Override

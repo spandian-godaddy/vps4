@@ -102,12 +102,13 @@ public class SetupPanoptaTest {
         customerDetails = mock(PanoptaCustomerDetails.class);
         when(customerDetails.getCustomerKey()).thenReturn(customerKey);
         when(panoptaDataService.getPanoptaCustomerDetails(shopperId)).thenReturn(customerDetails);
-        doNothing().when(panoptaDataService).createPanoptaCustomer(shopperId, customerKey);
+        doNothing().when(panoptaDataService).createOrUpdatePanoptaCustomer(shopperId, customerKey);
     }
 
     private void setupPanoptaServer() throws PanoptaServiceException {
         server = mock(PanoptaServer.class);
         when(panoptaService.createServer(eq(shopperId), eq(orionGuid), eq(fqdn), any())).thenReturn(server);
+        when(panoptaService.getServer(eq(vmId))).thenReturn(server);
         serverDetails = mock(PanoptaServerDetails.class);
         serverDetails.setServerId(0L);
         serverDetails.setPartnerCustomerKey(partnerCustomerKey);
@@ -147,19 +148,13 @@ public class SetupPanoptaTest {
     public void getsCustomerFromDb() throws PanoptaServiceException {
         setupPanopta.execute(context, request);
         verify(panoptaDataService, times(1)).getPanoptaCustomerDetails(shopperId);
-        verify(panoptaService, never()).getCustomer(shopperId);
+        verify(panoptaService, times(1)).getCustomer(shopperId);
         verify(panoptaService, never()).createCustomer(shopperId);
-        verify(panoptaDataService, never()).createPanoptaCustomer(anyString(), anyString());
+        verify(panoptaDataService, never()).createOrUpdatePanoptaCustomer(anyString(), anyString());
     }
 
     @Test
-    public void setsPanoptaCustomerStatusToActive() {
-        setupPanopta.execute(context, request);
-        verify(panoptaService, times(1)).setStatus(shopperId, "active");
-    }
-
-    @Test
-    public void getsCustomerFromPanoptaAndStoresInDb() throws PanoptaServiceException {
+    public void createsPanoptaCustomer() throws PanoptaServiceException {
         when(panoptaDataService.getPanoptaCustomerDetails(shopperId))
                 .thenReturn(null)
                 .thenReturn(customerDetails);
@@ -168,11 +163,11 @@ public class SetupPanoptaTest {
         verify(panoptaDataService, times(2)).getPanoptaCustomerDetails(shopperId);
         verify(panoptaService, times(1)).getCustomer(shopperId);
         verify(panoptaService, times(1)).createCustomer(shopperId);
-        verify(panoptaDataService, times(1)).createPanoptaCustomer(anyString(), anyString());
+        verify(panoptaDataService, times(1)).createOrUpdatePanoptaCustomer(anyString(), anyString());
     }
 
     @Test
-    public void createsPanoptaCustomer() throws PanoptaServiceException {
+    public void getsCustomerFromPanoptaAndStoresInDb() throws PanoptaServiceException {
         when(panoptaDataService.getPanoptaCustomerDetails(shopperId))
                 .thenReturn(null)
                 .thenReturn(customerDetails);
@@ -180,7 +175,30 @@ public class SetupPanoptaTest {
         verify(panoptaDataService, times(2)).getPanoptaCustomerDetails(shopperId);
         verify(panoptaService, times(1)).getCustomer(shopperId);
         verify(panoptaService, never()).createCustomer(shopperId);
-        verify(panoptaDataService, times(1)).createPanoptaCustomer(anyString(), anyString());
+        verify(panoptaDataService, times(1)).createOrUpdatePanoptaCustomer(anyString(), anyString());
+    }
+
+    @Test
+    public void createsCustomerAndUpdatesDbIfDestroyedInPanopta() throws PanoptaServiceException {
+        when(panoptaService.getCustomer(shopperId)).thenReturn(null);
+        setupPanopta.execute(context, request);
+        verify(panoptaDataService, times(2)).getPanoptaCustomerDetails(shopperId);
+        verify(panoptaDataService, times(1)).setAllPanoptaServersOfCustomerDestroyed(shopperId);
+        verify(panoptaDataService, times(1)).checkAndSetPanoptaCustomerDestroyed(shopperId);
+        verify(panoptaService, times(1)).getCustomer(shopperId);
+        verify(panoptaService, times(1)).createCustomer(shopperId);
+        verify(panoptaDataService, times(1)).createOrUpdatePanoptaCustomer(anyString(), anyString());
+    }
+
+    @Test
+    public void updatesDbIfCustomerKeyIsOutOfSync() {
+        when(customerDetails.getCustomerKey()).thenReturn(customerKey+"-2");
+        setupPanopta.execute(context, request);
+        verify(panoptaDataService, times(2)).getPanoptaCustomerDetails(shopperId);
+        verify(panoptaDataService, times(1)).setAllPanoptaServersOfCustomerDestroyed(shopperId);
+        verify(panoptaDataService, times(1)).checkAndSetPanoptaCustomerDestroyed(shopperId);
+        verify(panoptaService, times(1)).getCustomer(shopperId);
+        verify(panoptaDataService, times(1)).createOrUpdatePanoptaCustomer(anyString(), anyString());
     }
 
     @Test
@@ -195,6 +213,8 @@ public class SetupPanoptaTest {
         when(panoptaDataService.getPanoptaServerDetails(vmId))
                 .thenReturn(null)
                 .thenReturn(serverDetails);
+        when(panoptaService.getServer(vmId))
+                .thenReturn(null);
         setupPanopta.execute(context, request);
         verify(panoptaDataService, times(2)).getPanoptaServerDetails(vmId);
         verify(panoptaService, times(1))
@@ -226,6 +246,8 @@ public class SetupPanoptaTest {
         when(panoptaDataService.getPanoptaServerDetails(vmId))
                 .thenReturn(null)
                 .thenReturn(serverDetails);
+        when(panoptaService.getServer(vmId))
+                .thenReturn(null);
         setupPanopta.execute(context, request);
         verify(panoptaService, times(1))
                 .createServer(eq(shopperId), eq(orionGuid), eq(fqdn), any());
@@ -241,6 +263,8 @@ public class SetupPanoptaTest {
         when(panoptaDataService.getPanoptaServerDetails(vmId))
                 .thenReturn(null)
                 .thenReturn(serverDetails);
+        when(panoptaService.getServer(vmId))
+                .thenReturn(null);
         setupPanopta.execute(context, request);
         verify(panoptaService, times(1))
                 .createServer(eq(shopperId), eq(orionGuid), eq(fqdn), any());
@@ -257,6 +281,9 @@ public class SetupPanoptaTest {
         when(panoptaDataService.getPanoptaServerDetails(vmId))
                 .thenReturn(null)
                 .thenReturn(serverDetails);
+        when(panoptaService.getServer(vmId))
+                .thenReturn(null);
+
         setupPanopta.execute(context, request);
 
         verify(panoptaService, times(1))
