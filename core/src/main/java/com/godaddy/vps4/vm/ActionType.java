@@ -66,7 +66,8 @@ public enum ActionType {
     NEW_VM_OUTAGE(57),
     CLEAR_VM_OUTAGE(58),
     INSTALL_CPANEL_PACKAGE(59),
-    SET_SUPPORT_USER_PASSWORD(60);
+    SET_SUPPORT_USER_PASSWORD(60),
+    ADD_ADDON_DOMAIN(61);
 
     private final int typeId;
 

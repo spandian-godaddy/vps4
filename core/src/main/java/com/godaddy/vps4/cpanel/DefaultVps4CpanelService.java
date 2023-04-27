@@ -41,7 +41,7 @@ public class DefaultVps4CpanelService implements Vps4CpanelService {
                                     NetworkService networkService, Config conf) {
         this(accessHashService, apiTokenService,
                 networkService, Integer.parseInt(conf.get("vps4.callable.timeout", "10000")),
-                Boolean.parseBoolean(conf.get("cpanel.api.token.enabled", "false")));
+                Boolean.parseBoolean(conf.get("cpanel.api.token.enabled", "true")));
     }
 
     public DefaultVps4CpanelService(CpanelAccessHashService accessHashService, CpanelApiTokenService apiTokenService,
@@ -76,7 +76,7 @@ public class DefaultVps4CpanelService implements Vps4CpanelService {
         Void handle(String reason);
     }
 
-    protected CpanelClient getCpanelClient(String hostname, String accessHash){
+    protected CpanelClient getCpanelClient(String hostname, String accessHash) {
         return new CpanelClient(hostname, accessHash);
     }
 
@@ -118,7 +118,9 @@ public class DefaultVps4CpanelService implements Vps4CpanelService {
                 //cached.invalidate(fetchedAt);
                 if (useApiToken) {
                     apiTokenService.invalidateApiToken(hfsVmId, accessToken);
-                } else { accessHashService.invalidAccessHash(hfsVmId, accessToken); }
+                } else {
+                    accessHashService.invalidAccessHash(hfsVmId, accessToken);
+                }
                 lastThrown = e;
 
             } catch (IOException e) {
@@ -138,7 +140,7 @@ public class DefaultVps4CpanelService implements Vps4CpanelService {
         // was that we were having auth issues, bubble that exception back up to
         // the client, since that's the best description of the troubles we're having
         if (lastThrown != null && lastThrown instanceof CpanelAccessDeniedException) {
-            throw (CpanelAccessDeniedException)lastThrown;
+            throw (CpanelAccessDeniedException) lastThrown;
         }
 
         // any other issue is bubbled as a general timeout exception
@@ -185,7 +187,7 @@ public class DefaultVps4CpanelService implements Vps4CpanelService {
 
     @Override
     public List<String> listAddOnDomains(long hfsVmId, String username)
-            throws CpanelAccessDeniedException, CpanelTimeoutException, IOException {
+            throws CpanelAccessDeniedException, CpanelTimeoutException {
         return withAccessToken(hfsVmId, cPanelClient -> {
             JSONParser parser = new JSONParser();
             String sitesJson = cPanelClient.listAddOnDomains(username);
@@ -197,12 +199,12 @@ public class DefaultVps4CpanelService implements Vps4CpanelService {
                     JSONArray data;
                     try {
                         data = (JSONArray) cpanelResult.get("data");
-                    } catch (ClassCastException e){
+                    } catch (ClassCastException e) {
                         String error = (String) cpanelResult.get("error");
-                        if (error != null && error.equals("User parameter is invalid or was not supplied")){
+                        if (error != null && error.equals("User parameter is invalid or was not supplied")) {
                             // cpanel will still return a 200 return status even if there's an error,
                             //  so checking the error value is the next best way to detect this error.
-                            throw new CpanelInvalidUserException("User parameter ("+username+") is invalid or was not supplied");
+                            throw new CpanelInvalidUserException("User parameter (" + username + ") is invalid or was not supplied");
                         }
                         throw e;
                     }
@@ -225,8 +227,7 @@ public class DefaultVps4CpanelService implements Vps4CpanelService {
     @Override
     public List<CPanelDomain> listDomains(long hfsVmId, CPanelDomainType type)
             throws CpanelAccessDeniedException, CpanelTimeoutException {
-        return withAccessToken(hfsVmId, cPanelClient -> handleCpanelCall(
-                "listDomains", () -> cPanelClient.listDomains(type),
+        return withAccessToken(hfsVmId, cPanelClient -> handleCpanelCall("listDomains", () -> cPanelClient.listDomains(type),
                 dataJson -> {
                     JSONArray domainsJson = (JSONArray) dataJson.get("domains");
                     if (domainsJson != null) {
@@ -235,7 +236,7 @@ public class DefaultVps4CpanelService implements Vps4CpanelService {
                             JSONObject domainJson = (JSONObject) object;
                             CPanelDomain domain = new CPanelDomain();
                             domain.domainName = (String) domainJson.get("domain");
-                            domain.domainType =  (String) domainJson.get("domain_type");
+                            domain.domainType = (String) domainJson.get("domain_type");
                             domain.username = (String) domainJson.get("user");
                             domains.add(domain);
                         }
@@ -245,7 +246,51 @@ public class DefaultVps4CpanelService implements Vps4CpanelService {
                 },
                 reason -> {
                     throw new RuntimeException("WHM list domains by type failed due to reason: " + reason);
-                }));
+                })
+        );
+    }
+
+    private JSONArray getResponseDataOrHandleException(JSONObject cPanelResult, String error, String username) {
+        JSONArray data;
+        try {
+            data = (JSONArray) cPanelResult.get("data");
+        } catch (ClassCastException e) {
+            if (error != null && error.equals("User parameter is invalid or was not supplied")) {
+                // cPanel will still return a 200 return status even if there's an error,
+                // checking the error's value is the best way to detect this error.
+                throw new CpanelInvalidUserException("The cPanel username (" + username + ") is either invalid or not supplied");
+            }
+            throw e;
+        }
+        return data;
+    }
+
+    @Override
+    public String addAddOnDomain(long hfsVmId, String username, String newDomain) throws CpanelTimeoutException, CpanelAccessDeniedException {
+        return withAccessToken(hfsVmId, cPanelClient -> {
+            // https://documentation.cpanel.net/display/DD/cPanel+API+2+Functions+-+AddonDomain%3A%3Aaddaddondomain
+            String responseJson = cPanelClient.addAddOnDomain(username, newDomain);
+            String result = "0";
+            String error;
+
+            JSONArray data;
+            JSONObject jsonObject;
+            JSONObject cPanelResult;
+
+            try {
+                jsonObject = (JSONObject) new JSONParser().parse(responseJson);
+                cPanelResult = (JSONObject) jsonObject.get("cpanelresult");
+            } catch (ParseException | ClassCastException e) {
+                throw new IOException("Error parsing cPanel account list response", e);
+            }
+
+            if (cPanelResult != null) {
+                error = (String) cPanelResult.get("error");
+                data = getResponseDataOrHandleException(cPanelResult, error, username);
+                result = error == null ? String.valueOf(((JSONObject) data.get(0)).get("result")) : error;
+            }
+            return result;
+        });
     }
 
     @Override
@@ -263,7 +308,7 @@ public class DefaultVps4CpanelService implements Vps4CpanelService {
                     "installRpmPackage", () -> cPanelClient.installRpmPackage(packageName),
                     dataJson -> {
                         Long buildNumber = (Long) dataJson.get("build");
-                        if(buildNumber != null) {
+                        if (buildNumber != null) {
                             return new CpanelBuild(buildNumber, packageName);
                         }
                         throw new RuntimeException("WHM install rpm package failed: build returned null");
@@ -309,8 +354,7 @@ public class DefaultVps4CpanelService implements Vps4CpanelService {
                 if (data != null) {
                     return successHandler.handle(data);
                 }
-            }
-            else {
+            } else {
                 String reason = getFailureReason(responseJson);
                 errorHandler.handle(reason);
 
@@ -398,7 +442,7 @@ public class DefaultVps4CpanelService implements Vps4CpanelService {
                     () -> cPanelClient.getRpmPackageUpdateStatus(Long.toString(buildNumber)),
                     dataJson -> {
                         Long activeCount = (Long) dataJson.get("active");
-                        if (activeCount != null){
+                        if (activeCount != null) {
                             return activeCount;
                         }
                         throw new RuntimeException("No active builds found - number of builds returned null");
@@ -454,7 +498,7 @@ public class DefaultVps4CpanelService implements Vps4CpanelService {
                             for (Object object : userConfigsJson) {
                                 JSONObject userConfigsObj = (JSONObject) object;
                                 String username = (String) userConfigsObj.get("user");
-                                JSONObject configObj = (JSONObject)userConfigsObj.get("config");
+                                JSONObject configObj = (JSONObject) userConfigsObj.get("config");
                                 Boolean isEnabled = configObj != null ? (Boolean) configObj.get("enabled") : null;
                                 if (username != null && isEnabled != null) {
                                     userConfigs.add(new CPanelAccountCacheStatus(username, isEnabled));
@@ -480,7 +524,7 @@ public class DefaultVps4CpanelService implements Vps4CpanelService {
                     () -> cPanelClient.getVersion(),
                     dataJson -> {
                         String version = (String) dataJson.get("version");
-                        if (version != null){
+                        if (version != null) {
                             return version;
                         }
                         throw new RuntimeException("No version found - version data returned null");
@@ -497,7 +541,7 @@ public class DefaultVps4CpanelService implements Vps4CpanelService {
         return withAccessToken(hfsVmId, cPanelClient -> {
             // https://documentation.cpanel.net/display/DD/WHM+API+1+Functions+-+listpkgs
             return handleCpanelCall(
-                "listPackages",
+                    "listPackages",
                     () -> cPanelClient.listPackages(),
                     dataJson -> {
                         JSONArray pkgsJson = (JSONArray) dataJson.get("pkg");
@@ -518,13 +562,13 @@ public class DefaultVps4CpanelService implements Vps4CpanelService {
                     reason -> {
                         throw new RuntimeException("WHM list package failed due to reason: " + reason);
                     }
-                );
+            );
         });
     }
 
     @Override
     public String updateNginx(long hfsVmId, boolean enabled, List<String> usernames)
-        throws CpanelAccessDeniedException, CpanelTimeoutException {
+            throws CpanelAccessDeniedException, CpanelTimeoutException {
         return withAccessToken(hfsVmId, cPanelClient -> {
             // https://api.docs.cpanel.net/openapi/whm/operation/nginxmanager_set_cache_config/
             return handleCpanelCall(
@@ -542,7 +586,7 @@ public class DefaultVps4CpanelService implements Vps4CpanelService {
 
     @Override
     public String clearNginxCache(long hfsVmId, List<String> usernames)
-        throws CpanelAccessDeniedException, CpanelTimeoutException {
+            throws CpanelAccessDeniedException, CpanelTimeoutException {
         return withAccessToken(hfsVmId, cPanelClient -> {
             // https://api.docs.cpanel.net/openapi/whm/operation/nginxmanager_clear_cache/
             return handleCpanelCall(
@@ -553,6 +597,39 @@ public class DefaultVps4CpanelService implements Vps4CpanelService {
                     },
                     reason -> {
                         throw new RuntimeException("Clear NGiNX cache failed due to reason: " + reason);
+                    }
+            );
+        });
+    }
+
+    @Override
+    public String getTweakSettings(long hfsVmId, String key) throws CpanelTimeoutException, CpanelAccessDeniedException {
+        return withAccessToken(hfsVmId, cPanelClient -> {
+            // https://api.docs.cpanel.net/openapi/whm/operation/get_tweaksetting/
+            return handleCpanelCall(
+                    "getTweakSettings",
+                    () -> cPanelClient.getTweakSettings(key),
+                    dataJson -> {
+                        JSONObject tweakSettingJsonObj = (JSONObject) dataJson.get("tweaksetting");
+                        return (String) tweakSettingJsonObj.get("value");
+                    },
+                    reason -> {
+                        throw new RuntimeException("Get tweak settings failed due to reason: " + reason);
+                    }
+            );
+        });
+    }
+
+    @Override
+    public Void setTweakSettings(long hfsVmId, String key, String value) throws CpanelAccessDeniedException, CpanelTimeoutException {
+        return withAccessToken(hfsVmId, cPanelClient -> {
+            // https://api.docs.cpanel.net/openapi/whm/operation/set_tweaksetting/
+            return handleCpanelCall(
+                    "setTweakSettings", true,
+                    () -> cPanelClient.setTweakSettings(key, value),
+                    dataJson -> null,
+                    reason -> {
+                        throw new RuntimeException("Set tweak settings failed due to reason: " + reason);
                     }
             );
         });

@@ -16,6 +16,9 @@ public interface Vps4CpanelService {
     List<CPanelDomain> listDomains(long hfsVmId, CPanelDomainType domainType)
             throws CpanelAccessDeniedException, CpanelTimeoutException;
 
+    String addAddOnDomain(long hfsVmId, String username, String newDomain)
+            throws CpanelAccessDeniedException, CpanelTimeoutException;
+
     CPanelSession createSession(long hfsVmId, String username, CpanelServiceType serviceType)
             throws CpanelAccessDeniedException, CpanelTimeoutException, IOException;
 
@@ -51,4 +54,10 @@ public interface Vps4CpanelService {
 
     String clearNginxCache(long hfsVmId, List<String> usernames)
             throws CpanelAccessDeniedException, CpanelTimeoutException, IOException;
+
+    String getTweakSettings(long hfsVmId, String key)
+            throws CpanelAccessDeniedException, CpanelTimeoutException;
+
+    Void setTweakSettings(long hfsVmId, String key, String value)
+            throws CpanelAccessDeniedException, CpanelTimeoutException;
 }

@@ -126,6 +126,27 @@ public class CpanelClientTest {
     }
 
     @Test
+    public void callsCpanelEndpointToCreateAddOnDomain() throws CpanelAccessDeniedException, IOException {
+        String username = "vpsdev";
+        String newDomain = "godaddy.com";
+        String expectedUri = "https://" + hostname + ":2087/json-api/cpanel?api.version=1" +
+                "&cpanel_jsonapi_user=vpsdev" +
+                "&cpanel_jsonapi_apiversion=2" +
+                "&cpanel_jsonapi_module=AddonDomain" +
+                "&cpanel_jsonapi_func=addaddondomain" +
+                "&dir=godaddy.com" +
+                "&newdomain=godaddy.com" +
+                "&subdomain=godaddy.com" +
+                "&ftp_is_optional=false";
+
+        cpanelClient.addAddOnDomain(username, newDomain);
+
+        verify(httpClient, times(1)).execute(httpUriRequestArgumentCaptor.capture());
+        HttpUriRequest capturedReq = httpUriRequestArgumentCaptor.getValue();
+        Assert.assertEquals(expectedUri, capturedReq.getURI().toString());
+    }
+
+    @Test
     public void callsCpanelEndpointToInstallRpmPackage() throws CpanelAccessDeniedException, IOException {
         cpanelClient.installRpmPackage("testPackage");
 
@@ -237,6 +258,33 @@ public class CpanelClientTest {
                 + "&user=vpsdev1&user=vpsdev2";
 
         cpanelClient.clearNginxCache(usernames);
+
+        verify(httpClient, times(1)).execute(httpUriRequestArgumentCaptor.capture());
+        HttpUriRequest capturedReq = httpUriRequestArgumentCaptor.getValue();
+        Assert.assertEquals(expectedUri, capturedReq.getURI().toString());
+    }
+
+    @Test
+    public void callsCpanelEndpointToGetTweakSettingsWithKey() throws CpanelAccessDeniedException, IOException {
+        String key = "allowremotedomains";
+        String expectedUri = "https://" + hostname + ":2087"
+                + "/json-api/get_tweaksetting?api.version=1&key=allowremotedomains";
+
+        cpanelClient.getTweakSettings(key);
+
+        verify(httpClient, times(1)).execute(httpUriRequestArgumentCaptor.capture());
+        HttpUriRequest capturedReq = httpUriRequestArgumentCaptor.getValue();
+        Assert.assertEquals(expectedUri, capturedReq.getURI().toString());
+    }
+
+    @Test
+    public void callsCpanelEndpointToSetTweakSettingsWithKeyAndValue() throws CpanelAccessDeniedException, IOException {
+        String key = "allowremotedomains";
+        String value = "1";
+        String expectedUri = "https://" + hostname + ":2087"
+                + "/json-api/set_tweaksetting?api.version=1&key=allowremotedomains&value=1";
+
+        cpanelClient.setTweakSettings(key, value);
 
         verify(httpClient, times(1)).execute(httpUriRequestArgumentCaptor.capture());
         HttpUriRequest capturedReq = httpUriRequestArgumentCaptor.getValue();

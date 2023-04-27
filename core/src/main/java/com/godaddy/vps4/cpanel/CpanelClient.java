@@ -151,17 +151,32 @@ public class CpanelClient {
                 .addParameter("api.filter.a.field", "domain_type")
                 .addParameter("api.filter.a.arg0", domainType.toString().toLowerCase())
                 .addParameter("api.filter.a.type", "eq")
-                .addParameter("api.filter.enable", domainType == domainType.ALL ? "0" :"1")
-                .addParameter("api.sort.a.field","domain")
-                .addParameter("api.sort.enable","1")
-                .addParameter("api.columns.a","user")
-                .addParameter("api.columns.b","domain")
-                .addParameter("api.columns.c","domain_type")
-                .addParameter("api.columns.enable","1")
+                .addParameter("api.filter.enable", domainType == domainType.ALL ? "0" : "1")
+                .addParameter("api.sort.a.field", "domain")
+                .addParameter("api.sort.enable", "1")
+                .addParameter("api.columns.a", "user")
+                .addParameter("api.columns.b", "domain")
+                .addParameter("api.columns.c", "domain_type")
+                .addParameter("api.columns.enable", "1")
                 .build();
         return callWhm(request);
     }
 
+    public String addAddOnDomain(String username, String newDomain) throws CpanelAccessDeniedException, IOException {
+        HttpUriRequest request = newCpanelRequest()
+                .setUri(baseUrl + "/json-api/cpanel")
+                .addParameter("api.version", "1")
+                .addParameter("cpanel_jsonapi_user", username)
+                .addParameter("cpanel_jsonapi_apiversion", "2")
+                .addParameter("cpanel_jsonapi_module", "AddonDomain")
+                .addParameter("cpanel_jsonapi_func", "addaddondomain")
+                .addParameter("dir", newDomain)
+                .addParameter("newdomain", newDomain)
+                .addParameter("subdomain", newDomain)
+                .addParameter("ftp_is_optional", String.valueOf(false))
+                .build();
+        return callWhm(request);
+    }
 
     public String listInstalledInstallatronApplications(String user) throws CpanelAccessDeniedException, IOException {
         HttpUriRequest request = newCpanelRequest()
@@ -231,6 +246,25 @@ public class CpanelClient {
             for (String username : usernames) request.addParameter("user", username);
 
         return callWhm(request.build());
+    }
+
+    public String getTweakSettings(String key) throws CpanelAccessDeniedException, IOException {
+        HttpUriRequest request = newCpanelRequest()
+                .setUri(baseUrl + "/json-api/get_tweaksetting")
+                .addParameter("api.version", "1")
+                .addParameter("key", key)
+                .build();
+        return callWhm(request);
+    }
+
+    public String setTweakSettings(String key, String value) throws CpanelAccessDeniedException, IOException {
+        HttpUriRequest request = newCpanelRequest()
+                .setUri(baseUrl + "/json-api/set_tweaksetting")
+                .addParameter("api.version", "1")
+                .addParameter("key", key)
+                .addParameter("value", value)
+                .build();
+        return callWhm(request);
     }
 
     private String callWhm(HttpUriRequest request) throws CpanelAccessDeniedException, IOException {

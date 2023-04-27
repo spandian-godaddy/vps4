@@ -29,6 +29,7 @@ import com.godaddy.vps4.cpanel.InstallatronApplication;
 import com.godaddy.vps4.cpanel.Vps4CpanelService;
 import com.godaddy.vps4.cpanel.UpdateNginxRequest;
 import com.godaddy.vps4.cpanel.CpanelInvalidUserException;
+import com.godaddy.vps4.orchestration.cpanel.Vps4AddAddOnDomain;
 import com.godaddy.vps4.orchestration.cpanel.Vps4InstallCPanelPackage;
 import com.godaddy.vps4.vm.ActionService;
 import com.godaddy.vps4.vm.ActionType;
@@ -190,6 +191,31 @@ public class CPanelResource {
         return null;
     }
 
+    @POST
+    @Path("/{vmId}/cpanel/{username}/addOnDomain")
+    public VmAction createAddOnDomain(@PathParam("vmId") UUID vmId, @PathParam("username") String username, CreateAddOnDomainRequest request) {
+        VirtualMachine vm = resolveVirtualMachine(vmId);
+
+        validateNoConflictingActions(vmId, actionService, ActionType.ADD_ADDON_DOMAIN);
+
+        JSONObject addOnDomainRequest = new JSONObject();
+        addOnDomainRequest.put("username", username);
+        addOnDomainRequest.put("newDomain", request.newDomain);
+
+        long actionId = actionService.createAction(vmId, ActionType.ADD_ADDON_DOMAIN,
+                addOnDomainRequest.toJSONString(), user.getUsername());
+
+        Vps4AddAddOnDomain.Request addAddOnDomainReq = new Vps4AddAddOnDomain.Request();
+        addAddOnDomainReq.hfsVmId = vm.hfsVmId;
+        addAddOnDomainReq.vmId = vmId;
+        addAddOnDomainReq.actionId = actionId;
+        addAddOnDomainReq.username = username;
+        addAddOnDomainReq.newDomain = request.newDomain;
+
+        Commands.execute(commandService, actionService, "Vps4AddAddonDomain", addAddOnDomainReq);
+
+        return new VmAction(actionService.getAction(actionId), user.isEmployee());
+    }
 
     @GET
     @Path("/{vmId}/cpanel/domains")
@@ -200,8 +226,7 @@ public class CPanelResource {
 
         try {
             return cpanelService.listDomains(vm.hfsVmId, domainType);
-        }
-        catch (Exception e) {
+        } catch (Exception e) {
             throw new Vps4Exception("CPANEL_LIST_DOMAINS_FAILED", e.getMessage(), e);
         }
     }
@@ -365,7 +390,7 @@ public class CPanelResource {
         try {
             cpanelService.updateNginx(vm.hfsVmId, updateNginxRequest.enabled, updateNginxRequest.usernames);
         } catch (Exception e) {
-            logger.warn("Could not enabled NGINX for vmId {} , username {}, Exception: {} ", vmId, updateNginxRequest.usernames, e);
+            logger.warn("Could not enabled NGINX for vmId {}, username {}, Exception: {} ", vmId, updateNginxRequest.usernames, e);
             throw new Vps4Exception("UPDATE_NGINX_FAILED", e.getMessage(), e);
         }
     }
@@ -377,7 +402,7 @@ public class CPanelResource {
         try {
             cpanelService.clearNginxCache(vm.hfsVmId, usernames);
         } catch (Exception e) {
-            logger.warn("Could not clear NGiNX cache for vmId {} , users {}, Exception: {} ", vmId, usernames, e);
+            logger.warn("Could not clear NGiNX cache for vmId {}, users {}, Exception: {} ", vmId, usernames, e);
             throw new Vps4Exception("CLEAR_NGINX_CACHE_FAILED", e.getMessage(), e);
         }
     }
@@ -391,4 +416,7 @@ public class CPanelResource {
         public String packageName;
     }
 
+    public static class CreateAddOnDomainRequest {
+        public String newDomain;
+    }
 }

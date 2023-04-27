@@ -41,6 +41,8 @@ public class CpanelToolsTest {
     @Captor private ArgumentCaptor<String> emailArgumentCaptor;
     @Captor private ArgumentCaptor<Boolean> enabledArgumentCaptor;
     @Captor private ArgumentCaptor<List<String>> usernamesArgumentCaptor;
+    @Captor private ArgumentCaptor<String> keyArgumentCaptor;
+    @Captor private ArgumentCaptor<String> valueArgumentCaptor;
 
     long hfsVmId = 1234;
 
@@ -352,6 +354,39 @@ public class CpanelToolsTest {
         catch (RuntimeException e) {
             Assert.assertEquals("WHM account creation failed due to reason: " + reason, e.getMessage());
         }
+    }
+
+    @Test
+    public void addAddOnDomainUsesCpanelClient() throws Exception {
+        String username = "vpsdev";
+        String newDomain = "test.com";
+        String returnVal = "{\"cpanelresult\":{\"preevent\":{\"result\":1},\"data\":[{\"result\":1,\"reason\":\"The " +
+                "system successfully parked (aliased) the domain “test.com” on top of the domain " +
+                "“test.com.vpsdev.net”.\"}],\"postevent\":{\"result\":1},\"module\":\"AddonDomain\"," +
+                "\"func\":\"addaddondomain\",\"apiversion\":2,\"event\":{\"result\":1}}}";
+        when(cpClient.addAddOnDomain(username, newDomain)).thenReturn(returnVal);
+
+        service.addAddOnDomain(hfsVmId, username, newDomain);
+
+        verify(cpClient, times(1))
+                .addAddOnDomain(usernameArgumentCaptor.capture(), domainArgumentCaptor.capture());
+        Assert.assertEquals(username, usernameArgumentCaptor.getValue());
+        Assert.assertEquals(newDomain, domainArgumentCaptor.getValue());
+    }
+
+    @Test
+    public void addAddOnDomainResultNotOk() throws Exception {
+        String username = "vpsdev";
+        String newDomain = "test.com";
+        String reason = "(XID xbn4z2) The domain test.com already exists in the userdata.";
+        String returnVal = "{\"cpanelresult\":{\"event\":{\"result\":1},\"apiversion\":2,\"func\":\"addaddondomain\"," +
+                "\"module\":\"AddonDomain\",\"postevent\":{\"result\":1},\"error\":\"" + reason + "\"," +
+                "\"data\":[{\"result\":0,\"reason\":\"" + reason + "\"}],\"preevent\":{\"result\":1}}}";
+        when(cpClient.addAddOnDomain(username, newDomain)).thenReturn(returnVal);
+
+        String response = service.addAddOnDomain(hfsVmId, username, newDomain);
+
+        Assert.assertEquals(reason, response);
     }
 
     @Test
@@ -969,5 +1004,54 @@ public class CpanelToolsTest {
         when(cpClient.clearNginxCache(usernames)).thenReturn(returnVal);
 
         service.clearNginxCache(hfsVmId, usernames);
+    }
+
+    @Test
+    public void getTweakSettingsUsesCpanelClient() throws Exception{
+        String key = "allowremotedomains";
+        String returnVal = "{\"data\":{\"tweaksetting\":{\"value\":\"1\",\"key\":\"allowremotedomains\"}}," +
+                "\"metadata\":{\"version\":1,\"result\":1,\"command\":\"get_tweaksetting\",\"reason\":\"OK\"}}";
+        when(cpClient.getTweakSettings(key)).thenReturn(returnVal);
+
+        service.getTweakSettings(hfsVmId, key);
+
+        verify(cpClient, times(1))
+                .getTweakSettings(keyArgumentCaptor.capture());
+        Assert.assertEquals(key, keyArgumentCaptor.getValue());
+    }
+
+    @Test(expected = RuntimeException.class)
+    public void getTweakSettingsResultNotOk() throws Exception {
+        String key = "allowremotedomains";
+        String returnVal = "{\"metadata\":{\"command\":\"get_tweaksetting\"," +
+                "\"reason\":\"Invalid tweaksetting key\",\"version\":1,\"result\":0}}";
+        when(cpClient.getTweakSettings(key)).thenReturn(returnVal);
+
+        service.getTweakSettings(hfsVmId, key);
+    }
+
+    @Test
+    public void setTweakSettingsUsesCpanelClient() throws Exception{
+        String key = "allowremotedomains";
+        String value = "1";
+        String returnVal = "{\"metadata\":{\"command\":\"set_tweaksetting\",\"reason\":\"OK\",\"version\":1,\"result\":1}}";
+        when(cpClient.setTweakSettings(key, value)).thenReturn(returnVal);
+
+        service.setTweakSettings(hfsVmId, key, value);
+
+        verify(cpClient, times(1))
+                .setTweakSettings(keyArgumentCaptor.capture(), valueArgumentCaptor.capture());
+        Assert.assertEquals(key, keyArgumentCaptor.getValue());
+    }
+
+    @Test(expected = RuntimeException.class)
+    public void setTweakSettingsResultNotOk() throws Exception {
+        String key = "allowremotedomains";
+        String value = "1";
+        String returnVal = "{\"metadata\":{\"version\":1,\"result\":0,\"reason\":" +
+                "\"Invalid tweaksetting key\",\"command\":\"set_tweaksetting\"}}";
+        when(cpClient.setTweakSettings(key, value)).thenReturn(returnVal);
+
+        service.setTweakSettings(hfsVmId, key, value);
     }
 }

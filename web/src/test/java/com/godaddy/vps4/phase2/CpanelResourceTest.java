@@ -3,7 +3,6 @@ package com.godaddy.vps4.phase2;
 import com.godaddy.hfs.config.Config;
 import com.godaddy.hfs.vm.Vm;
 import com.godaddy.vps4.cpanel.CPanelAccountCacheStatus;
-import com.godaddy.vps4.cpanel.CPanelDomain;
 import com.godaddy.vps4.cpanel.CPanelDomainType;
 import com.godaddy.vps4.cpanel.CPanelSession;
 import com.godaddy.vps4.cpanel.CpanelAccessDeniedException;
@@ -256,7 +255,7 @@ public class CpanelResourceTest {
         when(vps4CpanelService.listAddOnDomains(anyLong(), eq("fakeuser2"))).thenThrow(new CpanelInvalidUserException(""));
         getcPanelResource().listAddOnDomains(vm.vmId, "fakeuser2");
     }
-
+    
     // list domains test
     @Test
     public void testListDomains(){
@@ -270,9 +269,51 @@ public class CpanelResourceTest {
         try {
             getcPanelResource().listDomains(vm.vmId, CPanelDomainType.ALL);
             Assert.fail();
-        }
-        catch (Vps4Exception e) {
+        } catch (Vps4Exception e) {
             Assert.assertEquals("CPANEL_LIST_DOMAINS_FAILED", e.getId());
+        }
+    }
+
+    // Add add-on domain test
+    @Test
+    public void addAddOnDomainCallsCommandService() {
+        CPanelResource.CreateAddOnDomainRequest req = new CPanelResource.CreateAddOnDomainRequest();
+        String username = "vpsdev";
+        req.newDomain = "test.com";
+        getcPanelResource().createAddOnDomain(vm.vmId, username, req);
+        ArgumentCaptor<CommandGroupSpec> argument = ArgumentCaptor.forClass(CommandGroupSpec.class);
+
+        verify(commandService, times(1)).executeCommand(argument.capture());
+
+        Assert.assertEquals("Vps4AddAddonDomain", argument.getValue().commands.get(0).command);
+    }
+
+    @Test
+    public void addAddOnDomainCreatesAction() {
+        CPanelResource.CreateAddOnDomainRequest req = new CPanelResource.CreateAddOnDomainRequest();
+        String username = "vpsdev";
+        req.newDomain = "test.com";
+
+        getcPanelResource().createAddOnDomain(vm.vmId, username, req);
+
+        verify(actionService, times(1)).createAction(vm.vmId, ActionType.ADD_ADDON_DOMAIN,
+                "{\"newDomain\":\"test.com\",\"username\":\"vpsdev\"}", user.getUsername());
+    }
+
+    @Test
+    public void addAddOnDomainConflictingAction() {
+        conflictingAction.type = ActionType.ADD_ADDON_DOMAIN;
+        when(actionService.getIncompleteActions(vm.vmId)).thenReturn(Collections.singletonList(conflictingAction));
+
+        CPanelResource.CreateAddOnDomainRequest req = new CPanelResource.CreateAddOnDomainRequest();
+        String username = "vpsdev";
+        req.newDomain = "test.com";
+
+        try {
+            getcPanelResource().createAddOnDomain(vm.vmId, username, req);
+            Assert.fail();
+        } catch (Vps4Exception e) {
+            Assert.assertEquals("CONFLICTING_INCOMPLETE_ACTION", e.getId());
         }
     }
 
