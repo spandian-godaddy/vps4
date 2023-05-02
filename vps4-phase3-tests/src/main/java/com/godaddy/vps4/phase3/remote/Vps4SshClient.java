@@ -84,8 +84,8 @@ public class Vps4SshClient extends Vps4RemoteAccessClient {
 
     @Override
     public boolean hasPanoptaAgent() {
-        String result = executeCommand("test -d /etc/panopta-agent && echo \"success\" || " +
-                                               "test -d /etc/fm-agent && echo \"success\" || echo \"failure\"");
+        String result = executeCommand("test -d /etc/panopta-agent -o -d /etc/fm-agent && echo \"success\" " +
+                "|| echo \"failure\"");
         return result.equals("success");
     }
 
