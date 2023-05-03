@@ -54,7 +54,21 @@ public class StopStartVmTest implements VmTest {
         vps4Client.pollForVmAgentStatusOK(vm.vmId, DED_RESTART_TIMEOUT_SECONDS);
 
         logger.debug("Verify remote connection success on vm {} after reboot", vm.vmId);
-        assert(client.checkConnection());
+        boolean sshConnected = false;
+        for(int i = 0; i < 10; i++) {
+            sshConnected = client.checkConnection();
+            if(sshConnected) break;
+            else {
+                try {
+                    logger.debug("Failed to connect to server after restart, wait 30s and try again.");
+                    Thread.sleep(30000);
+                } catch (InterruptedException e) {
+                    throw new RuntimeException(e);
+                }
+            }
+        }
+
+        assert(sshConnected);
     }
 
     @Override
