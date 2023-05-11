@@ -88,7 +88,8 @@ public class Vps4Consumer implements Runnable {
         }
         catch (Exception ex) {
             logger.error("Caught exception : ", ex);
-            throw ex;
+            logger.error("Calling System.exit(1) to close the program");
+            System.exit(1);
         }
         finally {
             logger.info("Closing consumer {}", threadName);
