@@ -44,7 +44,8 @@ public class ImportedVmFilter extends VmFilter {
                             "customNotes",
                             "ohBackups",
                             "mergeShopper",
-                            "setHostname"
+                            "setHostname",
+                            "rescue"
                 ),
               virtualMachineService);
     }
