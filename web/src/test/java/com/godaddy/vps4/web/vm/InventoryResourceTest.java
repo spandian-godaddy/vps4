@@ -20,6 +20,7 @@ import java.util.Map;
 
 import javax.ws.rs.ServiceUnavailableException;
 
+import com.godaddy.vps4.web.Vps4Exception;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -48,11 +49,15 @@ public class InventoryResourceTest {
         inventoryResource = new InventoryResource(vmService, virtualMachineService);
     }
 
-    private List<HfsInventoryData> createDummyInventory() throws IOException {
-        String inventoryString = " { \"available\": 21, \"name\": \"test.spec\", \"reserved\": 0, \"in_use\": 50, " +
+    private List<HfsInventoryData> createDummyInventory(int available) throws IOException {
+        String inventoryString = " { \"available\": " + available + ", \"name\": \"test.spec\", \"reserved\": 0, \"in_use\": 50, " +
                 "\"hfs_in_use\": 1, \"retired\": 11 }";
         HfsInventoryData dummyHfsInventoryData = new ObjectMapper().readValue(inventoryString, HfsInventoryData.class);
         return Collections.singletonList(dummyHfsInventoryData);
+    }
+
+    private List<HfsInventoryData> createDummyInventory() throws IOException {
+        return createDummyInventory(21);
     }
 
     private ServerSpec createDummyServerSpec() {
@@ -140,5 +145,37 @@ public class InventoryResourceTest {
         InventoryDetails inventoryDetails = inventoryDetailsList.get(0);
         assertEquals(activeServerCount, inventoryDetails.vps4Active);
         assertEquals(zombieServerCount, inventoryDetails.vps4Zombie);
+    }
+
+    @Test
+    public void getTierAvailabilityForAvailableInventory() throws IOException {
+        when(virtualMachineService.getSpec(anyString())).thenReturn(createDummyServerSpec());
+        when(vmService.getInventory(anyString())).thenReturn(createDummyInventory());
+        boolean tierAvailability = inventoryResource.getTierAvailability("ded.hdd.c16.r128.d16000");
+        assertTrue(tierAvailability);
+    }
+
+    @Test
+    public void getTierAvailabilityForNoAvailableInventory() throws IOException {
+        when(virtualMachineService.getSpec(anyString())).thenReturn(createDummyServerSpec());
+        when(vmService.getInventory(anyString())).thenReturn(createDummyInventory(0));
+        boolean tierAvailability = inventoryResource.getTierAvailability("ded.hdd.c16.r128.d16000");
+        assertFalse(tierAvailability);
+    }
+
+    @Test(expected = Vps4Exception.class)
+    public void getTierAvailabilityForVirtualTier() {
+        ServerSpec dummySpec = createDummyServerSpec();
+        dummySpec.serverType.serverType = ServerType.Type.VIRTUAL;
+        when(virtualMachineService.getSpec(anyString())).thenReturn(dummySpec);
+
+        try {
+            inventoryResource.getTierAvailability("oh.hosting.c1.r2.d40");
+        } catch(Vps4Exception e) {
+            assert (e.getMessage().equalsIgnoreCase(
+                    "Spec name is not a valid DED4 spec."));
+            assert (e.getId().equalsIgnoreCase("INVALID_SPEC_NAME"));
+            throw e;
+        }
     }
 }

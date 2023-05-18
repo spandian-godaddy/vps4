@@ -11,9 +11,12 @@ import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
+import javax.ws.rs.PathParam;
 import javax.ws.rs.ServiceUnavailableException;
 import javax.ws.rs.core.MediaType;
 
+import com.godaddy.vps4.vm.ServerType;
+import com.godaddy.vps4.web.Vps4Exception;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -66,6 +69,15 @@ public class InventoryResource {
                     .collect(Collectors.toList());
         }
         return inventoryDetails;
+    }
+
+    @GET
+    @Path("/ded/{specName}/available")
+    public Boolean getTierAvailability(@PathParam("specName") String specName) {
+        ServerSpec serverSpec = virtualMachineService.getSpec(specName);
+        if (serverSpec != null && !serverSpec.isVirtualMachine())
+            return getAllInventoryDetails().stream().anyMatch(detail -> detail.tier == serverSpec.tier && detail.available > 0);
+        throw new Vps4Exception("INVALID_SPEC_NAME", "Spec name is not a valid DED4 spec.");
     }
 
     private List<InventoryDetails> getAllInventoryDetails() {
