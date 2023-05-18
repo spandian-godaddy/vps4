@@ -363,19 +363,21 @@ public class VmResource {
             @ApiParam(value = "Orion Guid associated with the VM", required = false) @QueryParam("orionGuid") UUID orionGuid,
             @ApiParam(value = "HFS VM ID associated with the VM", required = false) @QueryParam("hfsVmId") Long hfsVmId,
             @ApiParam(value = "DC ID associated with the VM", required = false) @QueryParam("dcId") Integer dcId,
-            @ApiParam(value = "Customer ID of the user", required = false) @QueryParam("customerId") UUID customerId) {
+            @ApiParam(value = "Customer ID of the user", required = false) @QueryParam("customerId") UUID customerId,
+            @ApiParam(value = "Platform of the VM", required = false) @QueryParam("platform") ServerType.Platform platform) {
         if (user.isEmployee()) {
-            return getVmsForEmployee(type, shopperId, customerId, ipAddress, orionGuid, hfsVmId, dcId);
+            return getVmsForEmployee(type, shopperId, customerId, ipAddress, orionGuid, hfsVmId, dcId, platform);
         }
         return getVmsForVps4User(type, dcId);
     }
 
     private List<VirtualMachine> getVmsForEmployee(VirtualMachineType type, String shopperId, UUID customerId, String ipAddress,
-                                                   UUID orionGuid, Long hfsVmId, Integer dcId) {
+                                                   UUID orionGuid, Long hfsVmId, Integer dcId, ServerType.Platform platform) {
         List<VirtualMachine> vmList = new ArrayList<>();
         try {
             Long vps4UserId = getUserId(shopperId, customerId);
-            vmList = virtualMachineService.getVirtualMachines(type, vps4UserId, ipAddress, orionGuid, hfsVmId, dcId);
+            String platformStr = platform != null ? platform.toString() : null;
+            vmList = virtualMachineService.getVirtualMachines(type, vps4UserId, ipAddress, orionGuid, hfsVmId, dcId, platformStr);
         } catch (Vps4UserNotFound ex) {
             logger.warn("Shopper not found", ex);
         }
@@ -424,7 +426,7 @@ public class VmResource {
             return new ArrayList<VirtualMachine>();
         }
 
-        return virtualMachineService.getVirtualMachines(type, vps4User.getId(), null, null, null, dcId);
+        return virtualMachineService.getVirtualMachines(type, vps4User.getId(), null, null, null, dcId, null);
     }
 
     public Vm getVmFromVmVertical(long vmId) {

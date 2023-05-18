@@ -40,20 +40,24 @@ public class SqlTestData {
     }
 
     public static VirtualMachine insertTestVm(UUID orionGuid, DataSource dataSource) {
-        return insertTestVm(orionGuid, 1, dataSource, 1);
+        return insertTestVm(orionGuid, 1, dataSource, 1, 10, "centos-7");
     }
 
     public static VirtualMachine insertTestVm(UUID orionGuid, DataSource dataSource, long vps4UserId) {
-        return insertTestVm(orionGuid, vps4UserId, dataSource, 1);
+        return insertTestVm(orionGuid, vps4UserId, dataSource, 1, 10, "centos-7");
     }
 
     public static VirtualMachine insertTestVmCustomDc(UUID orionGuid, DataSource dataSource, int dataCenterId, long vps4UserId) {
-        return insertTestVm(orionGuid, vps4UserId, dataSource, dataCenterId);
+        return insertTestVm(orionGuid, vps4UserId, dataSource, dataCenterId, 10, "centos-7");
     }
 
     public static VirtualMachine insertTestVmWithIp(UUID orionGuid, DataSource dataSource, long vps4UserId) {
-        VirtualMachine virtualMachine = insertTestVm(orionGuid, vps4UserId, dataSource, 1);
+        VirtualMachine virtualMachine = insertTestVm(orionGuid, vps4UserId, dataSource, 1, 10, "centos-7");
         return addIpToTestVm(dataSource, virtualMachine, 1);
+    }
+
+    public static VirtualMachine insertTestVmCustomSpec(UUID orionGuid, DataSource dataSource, long vps4UserId, int tier, String image) {
+        return insertTestVm(orionGuid, vps4UserId, dataSource, 1, tier, image);
     }
 
     public static VirtualMachine insertSecondaryIpToVm(UUID vmId, DataSource dataSource) {
@@ -70,13 +74,13 @@ public class SqlTestData {
         Sql.with(dataSource).exec("DELETE FROM vps4_user WHERE shopper_id = ?", null, "TestVps4User");
     }
 
-    public static VirtualMachine insertTestVm(UUID orionGuid, long vps4UserId, DataSource dataSource, int dataCenterId) {
+    public static VirtualMachine insertTestVm(UUID orionGuid, long vps4UserId, DataSource dataSource, int dataCenterId, int tier, String image) {
         VirtualMachineService virtualMachineService = new JdbcVirtualMachineService(dataSource);
         long hfsVmId = getNextHfsVmId(dataSource);
         String sgidPrefix = "vps4-testing-" + hfsVmId + "-";
         ProvisionVirtualMachineParameters params = new ProvisionVirtualMachineParameters(
                 vps4UserId, dataCenterId, sgidPrefix, orionGuid, "testVirtualMachine",
-                10, 0, "centos-7");
+                tier, 0, image);
         VirtualMachine virtualMachine = virtualMachineService.provisionVirtualMachine(params);
         virtualMachineService.addHfsVmIdToVirtualMachine(virtualMachine.vmId, hfsVmId);
         virtualMachine = virtualMachineService.getVirtualMachine(virtualMachine.vmId);
@@ -170,5 +174,14 @@ public class SqlTestData {
                         + " (snapshot_id, action_type_id, initiated_by, status_id)"
                         + " VALUES (?, ?, ?, ?);",
                 null, snapshotId, actionType.getActionTypeId(), "tester", statusType.ordinal() + 1);
+    }
+
+    public static void updateSpecAndImageId(DataSource dataSource, int spec, int imageId, UUID orionGuid) {
+        Sql.with(dataSource)
+                .exec("UPDATE virtual_machine SET " +
+                                "spec_id = ?, " +
+                                "image_id = ? " +
+                                "WHERE virtual_machine.orion_guid = ?",
+                        null, spec, imageId, orionGuid);
     }
 }

@@ -36,6 +36,7 @@ public class ServerType {
             @Override public String getRebuildCommand() {return "Vps4RebuildVm";}
             @Override public String getRestoreCommand() {return "Vps4RestoreVm";}
             @Override public String getUpgradeCommand() {return "Vps4UpgradeVm";}
+            @Override public String toString() {return "OPENSTACK";}
         },
         OVH(2) {
             @Override public String getZone() {return "ovh.zone";}
@@ -48,6 +49,7 @@ public class ServerType {
             @Override public String getUpgradeCommand() {
                 throw new UnsupportedOperationException("Not supported for OVH");
             }
+            @Override public String toString() {return "OVH";}
         },
         OPTIMIZED_HOSTING(3) {
             @Override public String getZone() {return "optimizedHosting.zone";}
@@ -56,6 +58,7 @@ public class ServerType {
             @Override public String getRebuildCommand() {return "Vps4RebuildOHVm";}
             @Override public String getRestoreCommand() {return "Vps4RestoreOHVm";}
             @Override public String getUpgradeCommand() {return "Vps4UpgradeOHVm";}
+            @Override public String toString() {return "OPTIMIZED_HOSTING";}
         };
 
         private final int platformId;
@@ -73,6 +76,7 @@ public class ServerType {
         public abstract String getRestoreCommand();
         public abstract String getRebuildCommand();
         public abstract String getUpgradeCommand();
+        public abstract String toString();
 
         public static Platform valueOf(int platformId) {
             return map.get(platformId);

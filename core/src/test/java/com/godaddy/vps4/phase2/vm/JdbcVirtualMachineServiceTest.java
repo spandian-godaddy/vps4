@@ -64,7 +64,7 @@ public class JdbcVirtualMachineServiceTest {
 
     @Before
     public void setup() {
-        List<VirtualMachine> oldVms = virtualMachineService.getVirtualMachines(VirtualMachineType.ACTIVE, vps4User.getId(), null, null, null, null);
+        List<VirtualMachine> oldVms = virtualMachineService.getVirtualMachines(VirtualMachineType.ACTIVE, vps4User.getId(), null, null, null, null, null);
         for (VirtualMachine oldVm : oldVms) {
             SqlTestData.cleanupTestVmAndRelatedData(oldVm.vmId, dataSource);
         }
@@ -89,7 +89,7 @@ public class JdbcVirtualMachineServiceTest {
 
         virtualMachineService.provisionVirtualMachine(params);
 
-        VirtualMachine vm = virtualMachineService.getVirtualMachines(VirtualMachineType.ACTIVE, vps4User.getId(), null, null, null, null).get(0);
+        VirtualMachine vm = virtualMachineService.getVirtualMachines(VirtualMachineType.ACTIVE, vps4User.getId(), null, null, null, null, null).get(0);
         virtualMachines.add(vm);
         Assert.assertTrue(virtualMachineService.virtualMachineHasCpanel(vm.vmId));
     }
@@ -100,7 +100,7 @@ public class JdbcVirtualMachineServiceTest {
                 orionGuid, "testServer", 10, 1, "windows-2012r2-plesk-12.5");
 
         virtualMachineService.provisionVirtualMachine(params);
-        VirtualMachine vm = virtualMachineService.getVirtualMachines(VirtualMachineType.ACTIVE, vps4User.getId(), null, null, null, null).get(0);
+        VirtualMachine vm = virtualMachineService.getVirtualMachines(VirtualMachineType.ACTIVE, vps4User.getId(), null, null, null, null, null).get(0);
         virtualMachines.add(vm);
         Assert.assertTrue(virtualMachineService.virtualMachineHasPlesk(vm.vmId));
     }
@@ -115,7 +115,7 @@ public class JdbcVirtualMachineServiceTest {
                 orionGuid, name, tier, 1, "centos-7");
 
         virtualMachineService.provisionVirtualMachine(params);
-        List<VirtualMachine> vms = virtualMachineService.getVirtualMachines(VirtualMachineType.ACTIVE, vps4User.getId(), null, null, null, null);
+        List<VirtualMachine> vms = virtualMachineService.getVirtualMachines(VirtualMachineType.ACTIVE, vps4User.getId(), null, null, null, null, null);
         assertEquals(1, vms.size());
 
         VirtualMachine vm = vms.get(0);
@@ -145,7 +145,7 @@ public class JdbcVirtualMachineServiceTest {
         UUID orionGuid = UUID.randomUUID();
         VirtualMachine testVm = SqlTestData.insertTestVm(orionGuid, dataSource, vps4User.getId());
         virtualMachines.add(testVm);
-        VirtualMachine actualVm = virtualMachineService.getVirtualMachines(null, null, null, orionGuid, null, null).get(0);
+        VirtualMachine actualVm = virtualMachineService.getVirtualMachines(null, null, null, orionGuid, null, null, null).get(0);
         assertEquals(testVm.vmId, actualVm.vmId);
     }
 
@@ -162,7 +162,7 @@ public class JdbcVirtualMachineServiceTest {
         UUID orionGuid = UUID.randomUUID();
         VirtualMachine testVm = SqlTestData.insertTestVmWithIp(orionGuid, dataSource, vps4User.getId());
         virtualMachines.add(testVm);
-        VirtualMachine actualVm = virtualMachineService.getVirtualMachines(null, null, testVm.primaryIpAddress.ipAddress, null, null, null).get(0);
+        VirtualMachine actualVm = virtualMachineService.getVirtualMachines(null, null, testVm.primaryIpAddress.ipAddress, null, null, null, null).get(0);
         assertEquals(testVm.hfsVmId, actualVm.hfsVmId);
     }
 
@@ -173,7 +173,7 @@ public class JdbcVirtualMachineServiceTest {
         SqlTestData.insertSecondaryIpToVm(testVm.vmId, dataSource);
         virtualMachines.add(testVm);
         IpAddress additionalIp = networkService.getVmSecondaryAddress(testVm.hfsVmId).get(0);
-        VirtualMachine actualVm = virtualMachineService.getVirtualMachines(null, null, additionalIp.ipAddress , null, null, null).get(0);
+        VirtualMachine actualVm = virtualMachineService.getVirtualMachines(null, null, additionalIp.ipAddress , null, null, null, null).get(0);
         assertEquals(testVm.hfsVmId, actualVm.hfsVmId);
     }
 
@@ -183,7 +183,7 @@ public class JdbcVirtualMachineServiceTest {
             VirtualMachine testVm = SqlTestData.insertTestVm(UUID.randomUUID(), dataSource, vps4User.getId());
             virtualMachines.add(testVm);
         }
-        List<VirtualMachine> actualVms = virtualMachineService.getVirtualMachines(null, vps4User.getId(), null, null, null, null);
+        List<VirtualMachine> actualVms = virtualMachineService.getVirtualMachines(null, vps4User.getId(), null, null, null, null, null);
         assertEquals(virtualMachines.size(), actualVms.size());
     }
 
@@ -195,7 +195,7 @@ public class JdbcVirtualMachineServiceTest {
         virtualMachines.add(testVm);
         virtualMachines.add(testVmOtherDc);
 
-        List<VirtualMachine> vms = virtualMachineService.getVirtualMachines(null, vps4User.getId(), null, null, null, 1);
+        List<VirtualMachine> vms = virtualMachineService.getVirtualMachines(null, vps4User.getId(), null, null, null, 1, null);
         VirtualMachine actualVm = vms.get(0);
         assertEquals(1, vms.size());
         assertEquals(testVm.vmId, actualVm.vmId);
@@ -208,7 +208,7 @@ public class JdbcVirtualMachineServiceTest {
             testVm = SqlTestData.insertTestVmWithIp(UUID.randomUUID(), dataSource, vps4User.getId());
             virtualMachines.add(testVm);
         }
-        List<VirtualMachine> actualVms = virtualMachineService.getVirtualMachines(null, null, testVm.primaryIpAddress.ipAddress, null, testVm.hfsVmId+1, null);
+        List<VirtualMachine> actualVms = virtualMachineService.getVirtualMachines(null, null, testVm.primaryIpAddress.ipAddress, null, testVm.hfsVmId+1, null, null);
         assertEquals(0, actualVms.size());
     }
 
@@ -219,15 +219,15 @@ public class JdbcVirtualMachineServiceTest {
             testVm = SqlTestData.insertTestVmWithIp(UUID.randomUUID(), dataSource, vps4User.getId());
             virtualMachines.add(testVm);
         }
-        virtualMachines.add(SqlTestData.insertTestVm(UUID.randomUUID(), vps4User2.getId(), dataSource, 1));
+        virtualMachines.add(SqlTestData.insertTestVm(UUID.randomUUID(), dataSource, vps4User2.getId()));
 
 
         List<VirtualMachine> actualVms = virtualMachineService.getVirtualMachines(null, vps4User2.getId(),
-                null, null, testVm.hfsVmId, null);
+                null, null, testVm.hfsVmId, null, null);
         assertEquals(0, actualVms.size());
 
         actualVms = virtualMachineService.getVirtualMachines(null, vps4User.getId(), null, null,
-                testVm.hfsVmId, null);
+                testVm.hfsVmId, null, null);
         assertEquals(1, actualVms.size());
         assertEquals(testVm.vmId, actualVms.get(0).vmId);
     }
@@ -235,9 +235,9 @@ public class JdbcVirtualMachineServiceTest {
     @Test
     public void testGetCreditHistory() {
         UUID orionGuid = UUID.randomUUID();
-        virtualMachines.add(SqlTestData.insertTestVm(orionGuid, vps4User.getId(), dataSource, 1));
-        virtualMachines.add(SqlTestData.insertTestVm(orionGuid, vps4User.getId(), dataSource, 1));
-        virtualMachines.add(SqlTestData.insertTestVm(UUID.randomUUID(), vps4User.getId(), dataSource, 1));
+        virtualMachines.add(SqlTestData.insertTestVm(orionGuid, dataSource, vps4User.getId()));
+        virtualMachines.add(SqlTestData.insertTestVm(orionGuid, dataSource, vps4User.getId()));
+        virtualMachines.add(SqlTestData.insertTestVm(UUID.randomUUID(), dataSource, vps4User.getId()));
         virtualMachineService.setVmRemoved(virtualMachines.get(1).vmId);
 
         List<CreditHistory> creditHistories = virtualMachineService.getCreditHistory(orionGuid);
@@ -270,13 +270,13 @@ public class JdbcVirtualMachineServiceTest {
         List<UUID> createdVms = new ArrayList<>();
         for(int i = 0; i < 3; i++) {
             createdVms.add(UUID.randomUUID());
-            virtualMachines.add(SqlTestData.insertTestVm(createdVms.get(i), vps4User.getId(), dataSource, 1));
+            virtualMachines.add(SqlTestData.insertTestVm(createdVms.get(i), dataSource, vps4User.getId()));
             vmCredits.add(UUID.randomUUID());
         }
         virtualMachineService.setVmRemoved(virtualMachines.get(1).vmId);
         createdVms.remove(virtualMachines.get(1).orionGuid);
 
-        List<VirtualMachine> vms = virtualMachineService.getVirtualMachines(VirtualMachineType.ACTIVE, vps4User.getId(), null, null, null, null);
+        List<VirtualMachine> vms = virtualMachineService.getVirtualMachines(VirtualMachineType.ACTIVE, vps4User.getId(), null, null, null, null, null);
         List<UUID> vmGuids = vms.stream().map(vm -> vm.orionGuid).collect(Collectors.toList());
         for (UUID vm : createdVms)
             assertTrue(vmGuids.contains(vm));
@@ -288,7 +288,7 @@ public class JdbcVirtualMachineServiceTest {
         List<UUID> createdVms = new ArrayList<>();
         for(int i = 0; i < 4; i++) {
             createdVms.add(UUID.randomUUID());
-            virtualMachines.add(SqlTestData.insertTestVm(createdVms.get(i), vps4User.getId(), dataSource, 1));
+            virtualMachines.add(SqlTestData.insertTestVm(createdVms.get(i), dataSource, vps4User.getId()));
             vmCredits.add(UUID.randomUUID());
         }
         virtualMachineService.setVmRemoved(virtualMachines.get(1).vmId);
@@ -296,7 +296,7 @@ public class JdbcVirtualMachineServiceTest {
         virtualMachineService.setVmZombie(virtualMachines.get(2).vmId);
 
 
-        List<VirtualMachine> vms = virtualMachineService.getVirtualMachines(VirtualMachineType.ZOMBIE, vps4User.getId(), null, null, null, null);
+        List<VirtualMachine> vms = virtualMachineService.getVirtualMachines(VirtualMachineType.ZOMBIE, vps4User.getId(), null, null, null, null, null);
         List<UUID> vmGuids = vms.stream().map(vm -> vm.vmId).collect(Collectors.toList());
         assertTrue(vmGuids.contains(virtualMachines.get(0).vmId));
         assertTrue(vmGuids.contains(virtualMachines.get(2).vmId));
@@ -468,7 +468,20 @@ public class JdbcVirtualMachineServiceTest {
         UUID orionGuid = UUID.randomUUID();
         VirtualMachine testVm = SqlTestData.insertTestVmWithIp(orionGuid, dataSource, vps4User.getId());
         virtualMachines.add(testVm);
-        VirtualMachine actualVm = virtualMachineService.getVirtualMachines(null, null, null, orionGuid, null, null).get(0);
+        VirtualMachine actualVm = virtualMachineService.getVirtualMachines(null, null, null, orionGuid, null, null, null).get(0);
         assertNotNull(actualVm.spec.ipAddressLimit);
+    }
+
+    @Test
+    public void testGetVirtualMachineByPlatform() {
+        String platform = "OPTIMIZED_HOSTING";
+        virtualMachines.add(SqlTestData.insertTestVmCustomSpec(UUID.randomUUID(), dataSource, vps4User.getId(), 10, "hfs-centos7"));
+        virtualMachines.add(SqlTestData.insertTestVm(UUID.randomUUID(), dataSource, vps4User.getId()));
+
+        List<VirtualMachine> vms = virtualMachineService.getVirtualMachines(null, vps4User.getId(), null, null, null, null, platform);
+        VirtualMachine vm = vms.get(0);
+
+        assertEquals(1, vms.size());
+        assertEquals(platform, vm.spec.serverType.platform.name());
     }
 }

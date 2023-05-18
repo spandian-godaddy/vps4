@@ -17,6 +17,7 @@ import com.godaddy.vps4.vm.DataCenterService;
 import com.godaddy.vps4.vm.VirtualMachine;
 import com.godaddy.vps4.vm.VirtualMachineService;
 import com.godaddy.vps4.vm.VirtualMachineType;
+import com.godaddy.vps4.vm.ServerType;
 import com.godaddy.vps4.web.security.GDUser;
 import org.junit.Before;
 import org.junit.Test;
@@ -131,10 +132,10 @@ public class GetVirtualMachineTest {
 
         when(virtualMachineService.getVirtualMachine(vmId)).thenReturn(vm);
         when(virtualMachineService
-                .getVirtualMachines(Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any(), eq(null)))
+                .getVirtualMachines(Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any(), eq(null), Mockito.any()))
                 .thenReturn(Collections.singletonList(vm));
         when(virtualMachineService
-                .getVirtualMachines(Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any(), eq(2)))
+                .getVirtualMachines(Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any(), eq(2), Mockito.any()))
                 .thenReturn(Collections.singletonList(vmOtherDc));
         return virtualMachineService;
     }
@@ -161,7 +162,7 @@ public class GetVirtualMachineTest {
     @Test
     public void testGetVirtualMachinesForShopperId() {
         List<VirtualMachine> vms =
-                vmResource.getVirtualMachines(VirtualMachineType.ACTIVE, user.getShopperId(), null, null, null, null, null);
+                vmResource.getVirtualMachines(VirtualMachineType.ACTIVE, user.getShopperId(), null, null, null, null, null, null);
         assertEquals(1, vms.size());
         assertEquals(vmId, vms.get(0).vmId);
     }
@@ -169,43 +170,50 @@ public class GetVirtualMachineTest {
     @Test
     public void testGetZombieVirtualMachinesForShopperId() {
         List<VirtualMachine> vms =
-                vmResource.getVirtualMachines(VirtualMachineType.ZOMBIE, user.getShopperId(), null, null, null, null, null);
+                vmResource.getVirtualMachines(VirtualMachineType.ZOMBIE, user.getShopperId(), null, null, null, null, null, null);
         assertEquals(1, vms.size());
         assertEquals(vmId, vms.get(0).vmId);
     }
 
     @Test
     public void testGetVmByIpAddress() {
-        List<VirtualMachine> vms = vmResource.getVirtualMachines(null, null, "127.0.0.1", null, null, null, null);
+        List<VirtualMachine> vms = vmResource.getVirtualMachines(null, null, "127.0.0.1", null, null, null, null, null);
         assertEquals(1, vms.size());
         assertEquals(vmId, vms.get(0).vmId);
     }
 
     @Test
     public void testGetVmByOrionGuid() {
-        List<VirtualMachine> vms = vmResource.getVirtualMachines(null, null, null, orionGuid, null, null, null);
+        List<VirtualMachine> vms = vmResource.getVirtualMachines(null, null, null, orionGuid, null, null, null, null);
         assertEquals(1, vms.size());
         assertEquals(vmId, vms.get(0).vmId);
     }
 
     @Test
     public void testGetVmByHfsVmId() {
-        List<VirtualMachine> vms = vmResource.getVirtualMachines(null, null, null, null, hfsVmId, null, null);
+        List<VirtualMachine> vms = vmResource.getVirtualMachines(null, null, null, null, hfsVmId, null, null, null);
         assertEquals(1, vms.size());
         assertEquals(vmId, vms.get(0).vmId);
     }
 
     @Test
     public void testGetVmByShopperId() {
-        List<VirtualMachine> vms = vmResource.getVirtualMachines(null, user.getShopperId(), null, null, null, null, null);
+        List<VirtualMachine> vms = vmResource.getVirtualMachines(null, user.getShopperId(), null, null, null, null, null, null);
         assertEquals(1, vms.size());
         assertEquals(vmId, vms.get(0).vmId);
     }
 
     @Test
     public void testGetVmByDcId() {
-        List<VirtualMachine> vms = vmResource.getVirtualMachines(null, null, null, null, null, 2, null);
+        List<VirtualMachine> vms = vmResource.getVirtualMachines(null, null, null, null, null, 2, null, null);
         assertEquals(1, vms.size());
         assertEquals(vmIdOtherDc, vms.get(0).vmId);
+    }
+
+    @Test
+    public void testGetVmByPlatform() {
+        List<VirtualMachine> vms = vmResource.getVirtualMachines(null, null, null, null, null, null, null, ServerType.Platform.OPENSTACK);
+        assertEquals(1, vms.size());
+        assertEquals(vmId, vms.get(0).vmId);
     }
 }
