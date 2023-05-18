@@ -6,6 +6,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import javax.inject.Inject;
@@ -39,6 +40,8 @@ public class Vps4Consumer implements Runnable {
 
     private final AtomicBoolean closed = new AtomicBoolean(false);
 
+    private Boolean shouldRestart;
+
     private volatile KafkaConsumer<String, String> kafkaConsumer;
 
     protected void setKafkaConsumer(KafkaConsumer<String, String> kafkaConsumer) {
@@ -64,6 +67,7 @@ public class Vps4Consumer implements Runnable {
 
         try {
             initKafkaConsumer();
+            shouldRestart = false;
 
             while (!wasServiceRequestedToShutdown()) {
                 logger.info("Fetching messages in consumer {} from topic {}...", threadName, kafkaConfig.getTopic());
@@ -84,10 +88,11 @@ public class Vps4Consumer implements Runnable {
         catch (InterruptedException ex) {
             logger.error("Thread [{}] interrupted by {}", threadName, ex);
             Thread.currentThread().interrupt(); // reset the interruption status
-
         }
         catch (Exception ex) {
             logger.error("Caught exception : ", ex);
+            logger.error("The kafka consumer will be closed then attempt to restart");
+            shouldRestart = true;
             throw ex;
         }
         finally {
@@ -98,6 +103,15 @@ public class Vps4Consumer implements Runnable {
             } catch(InterruptException iex) {
                 logger.error("Caught exception during kafka consumer close action : ", iex);
                 Thread.currentThread().interrupt(); // reset the interruption status
+            }
+            if(shouldRestart) {
+                logger.info("Sleeping for 1 minute, then restarting the KafkaConsumer");
+                try {
+                    TimeUnit.MINUTES.sleep(1);
+                } catch (InterruptedException e) {
+                    logger.error("Error occurred while waiting for 1 minute, will proceed with the restart now.");
+                }
+                run();
             }
         }
     }
@@ -179,7 +193,6 @@ public class Vps4Consumer implements Runnable {
                 logger.error("Message handling error. Will not retry. {}", ex);
             }
         }
-
         return true;
     }
 
