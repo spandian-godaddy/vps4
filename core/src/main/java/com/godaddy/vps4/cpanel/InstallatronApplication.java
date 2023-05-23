@@ -6,12 +6,14 @@ public class InstallatronApplication {
     public String domain;
     public String urlDomain;
     public String version;
+    public String owner;
 
-    public InstallatronApplication(String name, String id, String domain, String urlDomain, String version) {
+    public InstallatronApplication(String name, String id, String domain, String urlDomain, String version, String owner) {
         this.name = name;
         this.id = id;
         this.domain = domain;
         this.urlDomain = urlDomain;
         this.version = version;
+        this.owner = owner;
     }
 }

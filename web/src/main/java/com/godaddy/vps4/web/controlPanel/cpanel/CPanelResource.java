@@ -158,6 +158,18 @@ public class CPanelResource {
     }
 
     @GET
+    @Path("{vmId}/cpanel/installatronApps")
+    public List<InstallatronApplication> getAllInstalledInstallatronApps(@PathParam("vmId") UUID vmId) {
+        VirtualMachine vm = resolveVirtualMachine(vmId);
+
+        try {
+            return cpanelService.listAllInstalledInstallatronApplications(vm.hfsVmId);
+        } catch (Exception e) {
+            logger.warn("Could not get list of all installed Installatron applications for vmId {}", vmId);
+            throw new Vps4Exception("LIST_ALL_INSTALLATRON_APPS_FAILED", e.getMessage(), e);
+        }
+    }
+    @GET
     @Path("/{vmId}/cpanel/accounts")
     public List<CPanelAccount> listCpanelAccounts(@PathParam("vmId") UUID vmId) {
         logger.info("GET listCpanelAccounts for VM: {}", vmId);

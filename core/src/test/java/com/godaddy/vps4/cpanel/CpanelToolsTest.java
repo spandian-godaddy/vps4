@@ -611,6 +611,85 @@ public class CpanelToolsTest {
     }
 
     @Test
+    public void listAllInstallatronAppsUsesCpanelClient() throws Exception{
+        String returnVal = "{\"result\":true,\"message\":\"The task is complete.\\n\",\"errcode\":null," +
+                "\"errfield\":null,\"data\":[{\"id\":\"testId\"," +
+                "\"file\":\"\\/home\\/dtstus\\/.appdata\\/current\\/testId\",\"installer\":\"sitebar\"," +
+                "\"version\":\"3.6.2\",\"owner\":\"dtstus\",\"path\":\"\\/home\\/dtstus\\/public_html\\/sitebar\"," +
+                "\"url\":\"http:\\/\\/www.tester.fake\\/sitebar\",\"url-domain\":\"tester.fake\",\"title\":\"My bookmarks\"}]}";
+        when(cpClient.listAllInstalledInstallatronApplications()).thenReturn(returnVal);
+
+        service.listAllInstalledInstallatronApplications(hfsVmId);
+        
+        verify(cpClient, times(1)).listAllInstalledInstallatronApplications();
+    }
+
+    @Test
+    public void listAllInstallatronAppsReturnsInstallatronList() throws Exception{
+        String returnVal = "{\"result\":true,\"message\":\"The task is complete.\\n\",\"errcode\":null," +
+                "\"errfield\":null,\"data\":[{\"id\":\"testId\"," +
+                "\"file\":\"\\/home\\/dtstus\\/.appdata\\/current\\/testId\",\"installer\":\"testApp\"," +
+                "\"version\":\"3.6.2\",\"owner\":\"dtstus\",\"path\":\"\\/home\\/dtstus\\/public_html\\/sitebar\"," +
+                "\"url\":\"http:\\/\\/www.tester.fake\\/sitebar\",\"url-domain\":\"tester.fake\",\"title\":\"My bookmarks\"},"+
+                "{\"id\":\"testId2\",\"file\":\"\\/home\\/dtstus2\\/.appdata\\/current\\/testId2\",\"installer\":\"testApp2\"," +
+                "\"version\":\"3.6.2\",\"owner\":\"dtstus2\",\"path\":\"\\/home\\/dtstus2\\/public_html\\/sitebar\"," +
+                "\"url\":\"http:\\/\\/www.tester2.fake\\/sitebar\",\"url-domain\":\"tester2.fake\",\"title\":\"My bookmarks2\"}]}";
+        when(cpClient.listAllInstalledInstallatronApplications()).thenReturn(returnVal);
+
+        List<InstallatronApplication> apps = service.listAllInstalledInstallatronApplications(hfsVmId);
+
+        Assert.assertEquals(2, apps.size());
+
+        Assert.assertEquals("testApp", apps.get(0).name);
+        Assert.assertEquals("testId", apps.get(0).id);
+        Assert.assertEquals("http://www.tester.fake/sitebar", apps.get(0).domain);
+        Assert.assertEquals("tester.fake", apps.get(0).urlDomain);
+        Assert.assertEquals("3.6.2", apps.get(0).version);
+        Assert.assertEquals("dtstus", apps.get(0).owner);
+
+        Assert.assertEquals("testApp2", apps.get(1).name);
+        Assert.assertEquals("testId2", apps.get(1).id);
+        Assert.assertEquals("http://www.tester2.fake/sitebar", apps.get(1).domain);
+        Assert.assertEquals("tester2.fake", apps.get(1).urlDomain);
+        Assert.assertEquals("3.6.2", apps.get(1).version);
+        Assert.assertEquals("dtstus2", apps.get(1).owner);
+    }
+
+    @Test
+    public void listAllInstallatronAppsResultFalse() throws Exception {
+        String returnVal =  "{\"result\":false,\"message\":\"Error: Missing argument\\n\"," +
+                "\"errcode\":\"empty_argument_application\",\"errfield\":null,\"data\":null}";
+        when(cpClient.listAllInstalledInstallatronApplications()).thenReturn(returnVal);
+
+        try {
+            service.listAllInstalledInstallatronApplications(hfsVmId);
+            Assert.fail("This test shouldn't get here");
+        }
+        catch (RuntimeException e) {
+            Assert.assertEquals("Error querying Installatron for list of installed applications" +
+                    " due to reason: Error: Missing argument\n", e.getMessage());
+        }
+    }
+
+    @Test(expected = RuntimeException.class)
+    public void listAllInstallatronAppsNullData() throws Exception {
+        String returnVal =  "{\"result\":true,\"message\":\"The task is complete.\\n\",\"errcode\":null,\"errfield\":null,\"data\":null}";
+        when(cpClient.listAllInstalledInstallatronApplications()).thenReturn(returnVal);
+
+        service.listAllInstalledInstallatronApplications(hfsVmId);
+    }
+
+    @Test
+    public void listAllInstallatronAppsEmptyData() throws Exception {
+        String returnVal = "{\"result\":true,\"message\":\"The task is complete.\\n\",\"errcode\":null,\"errfield\":null,\"data\":[]}";
+        when(cpClient.listAllInstalledInstallatronApplications()).thenReturn(returnVal);
+
+        List<InstallatronApplication> apps = service.listAllInstalledInstallatronApplications(hfsVmId);
+        
+        Assert.assertEquals(0, apps.size());
+    }
+
+    @Test
     public void getActiveBuildsUsesCpanelClient() throws Exception{
         String returnVal = "{\"data\":{\"active\":0},\"metadata\":{\"version\":1," +
                 "\"command\":\"package_manager_is_performing_actions\",\"reason\":\"OK\",\"result\":1}}";

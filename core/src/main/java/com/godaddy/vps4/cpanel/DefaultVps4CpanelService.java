@@ -403,7 +403,6 @@ public class DefaultVps4CpanelService implements Vps4CpanelService {
 
     @Override
     public List<InstallatronApplication> listInstalledInstallatronApplications(long hfsVmId, String username) throws CpanelAccessDeniedException, CpanelTimeoutException {
-
         return withAccessToken(hfsVmId, cPanelClient -> {
             JSONParser parser = new JSONParser();
             String installedAppJson = cPanelClient.listInstalledInstallatronApplications(username);
@@ -421,7 +420,42 @@ public class DefaultVps4CpanelService implements Vps4CpanelService {
                         String version = (String) installedApp.get("version");
                         String domain = (String) installedApp.get("url");
                         String urlDomain = (String) installedApp.get("url-domain");
-                        InstallatronApplication app = new InstallatronApplication(appName, id, domain, urlDomain, version);
+                        String owner = (String) installedApp.get("owner");
+                        InstallatronApplication app =
+                                new InstallatronApplication(appName, id, domain, urlDomain, version, owner);
+                        installedApps.add(app);
+                    }
+                    return installedApps;
+                }
+                throw new RuntimeException("Error querying Installatron for list of installed applications due to reason: " + jsonObject.get("message"));
+            } catch (ParseException | ClassCastException e) {
+                throw new IOException("Error parsing list of Installatron installed applications", e);
+            }
+        });
+    }
+
+    @Override
+    public List<InstallatronApplication> listAllInstalledInstallatronApplications(long hfsVmId) throws CpanelAccessDeniedException, CpanelTimeoutException {
+        return withAccessToken(hfsVmId, cPanelClient -> {
+            JSONParser parser = new JSONParser();
+            String installedAppJson = cPanelClient.listAllInstalledInstallatronApplications();
+            try {
+                List<InstallatronApplication> installedApps = new ArrayList<>();
+                JSONObject jsonObject = (JSONObject) parser.parse(installedAppJson);
+                Boolean installatronResult = (Boolean) jsonObject.get("result");
+                if (installatronResult == true) {
+                    JSONArray data;
+                    data = (JSONArray) jsonObject.get("data");
+                    for (Object object : data) {
+                        JSONObject installedApp = (JSONObject) object;
+                        String appName = (String) installedApp.get("installer");
+                        String id = (String) installedApp.get("id");
+                        String version = (String) installedApp.get("version");
+                        String domain = (String) installedApp.get("url");
+                        String urlDomain = (String) installedApp.get("url-domain");
+                        String owner = (String) installedApp.get("owner");
+                        InstallatronApplication app =
+                                new InstallatronApplication(appName, id, domain, urlDomain, version, owner);
                         installedApps.add(app);
                     }
                     return installedApps;

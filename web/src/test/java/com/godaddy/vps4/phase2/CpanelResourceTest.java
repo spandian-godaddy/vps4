@@ -60,8 +60,12 @@ public class CpanelResourceTest {
 
     private String expectedVersion = "11.106.0.8";
     private String[] expectedPackages = {"foobar", "helloworld"};
-    private InstallatronApplication testApp = new InstallatronApplication("testApp", "testId", "testdomain.com", "testdomain.com", "testversion");
+    private InstallatronApplication testApp = new InstallatronApplication("testApp", "testId",
+            "testdomain.com", "testdomain.com", "testversion", "testuser");
+    private InstallatronApplication testApp2 = new InstallatronApplication("testApp", "testId",
+            "testdomain.com", "testdomain.com", "testversion", "testuser2");
     private List<InstallatronApplication> installatronApps= Arrays.asList(testApp);
+    private List<InstallatronApplication> allInstallatronApps= Arrays.asList(testApp, testApp2);
     private CPanelAccountCacheStatus cacheStatus = new CPanelAccountCacheStatus("testuser", true);
     @Before
     public void setupTest() throws CpanelTimeoutException, CpanelAccessDeniedException, IOException {
@@ -88,6 +92,7 @@ public class CpanelResourceTest {
         when(vps4CpanelService.listInstalledRpmPackages(anyLong())).thenReturn(Arrays.asList(expectedPackages));
         when(vps4CpanelService.getNginxCacheConfig(anyLong())).thenReturn(Arrays.asList(cacheStatus));
         when(vps4CpanelService.listInstalledInstallatronApplications(vm.hfsVmId, user.getUsername())).thenReturn(installatronApps);
+        when(vps4CpanelService.listAllInstalledInstallatronApplications(vm.hfsVmId)).thenReturn(allInstallatronApps);
     }
 
     private CPanelResource getcPanelResource() {
@@ -434,7 +439,7 @@ public class CpanelResourceTest {
     }
 
     @Test
-    public void listInstallatronAppsReturnsEmptyLust() throws CpanelTimeoutException, IOException, CpanelAccessDeniedException {
+    public void listInstallatronAppsReturnsEmptyList() throws CpanelTimeoutException, IOException, CpanelAccessDeniedException {
         when(vps4CpanelService.listInstalledInstallatronApplications(vm.hfsVmId, user.getUsername())).thenReturn(Collections.emptyList());
         List<InstallatronApplication> response = getcPanelResource().getInstalledInstallatronApps(vm.vmId, user.getUsername());
         Assert.assertEquals(0, response.size());
@@ -451,6 +456,50 @@ public class CpanelResourceTest {
             Assert.assertEquals("LIST_INSTALLATRON_APPS_FAILED", e.getId());
         }
     }
+
+
+    // list all installatron installed applications
+    @Test
+    public void listAllInstallatronAppsCallsCpanelService() {
+        List<InstallatronApplication> response = getcPanelResource().getAllInstalledInstallatronApps(vm.vmId);
+        
+        Assert.assertEquals(2, response.size());
+        Assert.assertEquals(testApp.name, response.get(0).name);
+        Assert.assertEquals(testApp.id, response.get(0).id);
+        Assert.assertEquals(testApp.domain, response.get(0).domain);
+        Assert.assertEquals(testApp.urlDomain, response.get(0).urlDomain);
+        Assert.assertEquals(testApp.version, response.get(0).version);
+        Assert.assertEquals(testApp.owner, response.get(0).owner);
+
+        Assert.assertEquals(testApp2.name, response.get(1).name);
+        Assert.assertEquals(testApp2.id, response.get(1).id);
+        Assert.assertEquals(testApp2.domain, response.get(1).domain);
+        Assert.assertEquals(testApp2.urlDomain, response.get(1).urlDomain);
+        Assert.assertEquals(testApp2.version, response.get(1).version);
+        Assert.assertEquals(testApp2.owner, response.get(1).owner);
+    }
+
+    @Test
+    public void listAllInstallatronAppsReturnsEmptyList() throws CpanelTimeoutException, CpanelAccessDeniedException {
+        when(vps4CpanelService.listAllInstalledInstallatronApplications(vm.hfsVmId)).thenReturn(Collections.emptyList());
+
+        List<InstallatronApplication> response = getcPanelResource().getAllInstalledInstallatronApps(vm.vmId);
+        
+        Assert.assertEquals(0, response.size());
+    }
+
+    @Test
+    public void listAllInstallatronAppsThrowsException() throws Exception {
+        when(vps4CpanelService.listAllInstalledInstallatronApplications(vm.hfsVmId)).thenThrow(new RuntimeException());
+        try {
+            getcPanelResource().getAllInstalledInstallatronApps(vm.vmId);
+            Assert.fail("listAllInstallatronAppsThrowsException failed, expected Vps4Exception but no exception was thrown");
+        }
+        catch (Vps4Exception e) {
+            Assert.assertEquals("LIST_ALL_INSTALLATRON_APPS_FAILED", e.getId());
+        }
+    }
+
 
 
     // get nginx manager status

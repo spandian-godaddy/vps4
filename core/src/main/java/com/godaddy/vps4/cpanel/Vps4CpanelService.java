@@ -31,6 +31,9 @@ public interface Vps4CpanelService {
     List<InstallatronApplication> listInstalledInstallatronApplications(long hfsVmId, String username)
             throws CpanelAccessDeniedException, CpanelTimeoutException;
 
+    List<InstallatronApplication> listAllInstalledInstallatronApplications(long hfsVmId)
+            throws CpanelAccessDeniedException, CpanelTimeoutException;
+
     List<String> listPackages(long hfsVmId)
             throws CpanelAccessDeniedException, CpanelTimeoutException, IOException;
 
