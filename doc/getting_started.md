@@ -16,11 +16,13 @@
 
 ## Getting Started
 
-- [set up your local database](#database-configuration)
 - clone the VPS4 code locally
     - set up SSH keys for your account
     - `git clone git@github.com:gdcorp-partners/vps4.git`
     - if you need write access to this repo, ask a VPS4 team member to add you as a collaborator in GitHub
+- [install and configure maven](#maven-configuration)
+- [get configs from AWS secrets](#get-configs-from-aws-secrets)
+- [set up your local database](#database-configuration)
 - install [tartufo](https://tartufo.readthedocs.io/en/stable/installation.html)
 - install [pre-commit](https://pre-commit.com/#install) and follow the quick start
     - the `.pre-commit-config.yaml` file is already set up and included in the VPS4 repo
@@ -29,14 +31,14 @@
 - install and configure your preferred IDE
     - [IntelliJ](#intellij-setup)
     - [Eclipse](#eclipse-setup)
-- [get configs from AWS secrets](#get-configs-from-aws-secrets)
 
 ## Database Configuration
 
+- we use postgresql version 9.6.8, but brew doesn't support the installation of that version anymore, so 10 will work.
 - install postgresql locally or use vagrant
     - for Mac with homebrew:
         ```
-        brew install postgresql
+        brew install postgresql@10
         brew services start postgresql
         createuser -s -r postgres
         ```
@@ -50,6 +52,7 @@
     mvn initialize flyway:migrate
     ```
 - any future migrations can be applied with `mvn initialize flyway:migrate` in `vps4/core`
+- if you happen to get an error regarding `vhfs-sysadmin-common-lib` contact a team member to help you get a copy of the version we use from artifactory since HFS deleted it.
 
 ## Maven Configuration
 
