@@ -67,18 +67,6 @@ public class CpanelClientTest {
     }
 
     @Test
-    public void callsCpanelEndpointToListAllInstallatronApps() throws CpanelAccessDeniedException, IOException {
-        String expectedUri = "https://" + hostname + ":2087"
-                + "/installatron/index.cgi?api=json&cmd=installs&filter-ownedaccounts=true";
-
-        cpanelClient.listAllInstalledInstallatronApplications();
-
-        verify(httpClient, times(1)).execute(httpUriRequestArgumentCaptor.capture());
-        HttpUriRequest capturedReq = httpUriRequestArgumentCaptor.getValue();
-        Assert.assertEquals(expectedUri, capturedReq.getURI().toString());
-    }
-
-    @Test
     public void callsCpanelEndpointToListAllDomains() throws CpanelAccessDeniedException, IOException {
         cpanelClient.listDomains(CPanelDomainType.ALL);
 

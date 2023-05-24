@@ -188,16 +188,6 @@ public class CpanelClient {
         return callWhm(request);
     }
 
-    public String listAllInstalledInstallatronApplications() throws CpanelAccessDeniedException, IOException {
-        HttpUriRequest request = newCpanelRequest()
-                .setUri(baseUrl + "/installatron/index.cgi")
-                .addParameter("api", "json")
-                .addParameter("cmd", "installs")
-                .addParameter("filter-ownedaccounts", "true")
-                .build();
-        return callWhm(request);
-    }
-
     public String calculatePasswordStrength(String password) throws CpanelAccessDeniedException, IOException {
         HttpUriRequest request = newCpanelRequest()
                 .setUri(baseUrl + "/json-api/get_password_strength")
