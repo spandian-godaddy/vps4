@@ -279,6 +279,6 @@ public class PanoptaDataServiceTest {
         panoptaDataService.addPanoptaAdditionalFqdn("CapitalizedFqdn.fake", panoptaServer.serverId);
 
         Map<String, Instant> map = panoptaDataService.getPanoptaAdditionalFqdnWithValidOn(vm.vmId);
-        assertTrue(!map.get("capitalizedfqdn.fake").isBefore(Instant.now().minusSeconds(1)));
+        assertFalse(map.get("capitalizedfqdn.fake").isBefore(Instant.now().minusSeconds(1)));
     }
 }

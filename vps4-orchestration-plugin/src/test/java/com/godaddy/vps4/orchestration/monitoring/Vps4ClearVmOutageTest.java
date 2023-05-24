@@ -142,14 +142,14 @@ public class Vps4ClearVmOutageTest {
     @Test
     public void createJsdCommandCorrectlyOnMultipleMetrics() {
         ArgumentCaptor<ClearJsdOutageTicket.Request> clearJsdOutageTicketArgumentCaptor = ArgumentCaptor.forClass(ClearJsdOutageTicket.Request.class);
-        outage.metrics.add(VmMetric.HTTPS);
-        outage.metrics.add(VmMetric.HTTP);
+        outage.metrics.add(VmMetric.HTTPS_DOMAIN);
+        outage.metrics.add(VmMetric.HTTP_DOMAIN);
         VmOutage.DomainMonitoringMetadata dmm1 = new VmOutage.DomainMonitoringMetadata();
         dmm1.additionalFqdn = "testDomain.here";
-        dmm1.metric = VmMetric.HTTPS;
+        dmm1.metric = VmMetric.HTTPS_DOMAIN;
         VmOutage.DomainMonitoringMetadata dmm2 = new VmOutage.DomainMonitoringMetadata();
         dmm2.additionalFqdn = "testDomain2.here";
-        dmm2.metric = VmMetric.HTTP;
+        dmm2.metric = VmMetric.HTTP_DOMAIN;
 
         outage.domainMonitoringMetadata = Arrays.asList(dmm1, dmm2);
         when(credit.isManaged()).thenReturn(true);
@@ -159,7 +159,7 @@ public class Vps4ClearVmOutageTest {
         ClearJsdOutageTicket.Request actualRequest = clearJsdOutageTicketArgumentCaptor.getValue();
         Assert.assertEquals(request.virtualMachine.vmId, actualRequest.vmId);
         Assert.assertEquals(request.outageId, actualRequest.outageId);
-        Assert.assertEquals("CPU, HTTPS (testDomain.here), HTTP (testDomain2.here)", actualRequest.outageMetrics);
+        Assert.assertEquals("CPU, HTTPS_DOMAIN (testDomain.here), HTTP_DOMAIN (testDomain2.here)", actualRequest.outageMetrics);
         Assert.assertEquals(outage.ended, actualRequest.outageTimestamp);
     }
 

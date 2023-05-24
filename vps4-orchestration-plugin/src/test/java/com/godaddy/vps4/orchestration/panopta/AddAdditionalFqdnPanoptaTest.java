@@ -55,7 +55,7 @@ public class AddAdditionalFqdnPanoptaTest {
         UUID vmId = UUID.fromString("89111e35-6b2d-48c6-b293-d8cdb5207b19");
         command.execute(context, request);
         verify(panoptaService, times(1)).addAdditionalFqdnToServer(vmId, request.additionalFqdn);
-        verify(panoptaService, times(1)).addNetworkService(request.vmId, VmMetric.HTTP,
+        verify(panoptaService, times(1)).addNetworkService(request.vmId, VmMetric.HTTP_DOMAIN,
                 request.additionalFqdn, request.operatingSystemId, request.isManaged);
         verify(panoptaDataService, times(1)).addPanoptaAdditionalFqdn(request.additionalFqdn, panoptaServer.serverId);
     }

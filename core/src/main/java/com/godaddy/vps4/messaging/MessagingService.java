@@ -27,7 +27,7 @@ public interface MessagingService {
                                       String resourceName, String resourceUsage, Instant alertStart, boolean isManaged);
 
     String sendServicesDownEmail(String shopperId, String accountName, String ipAddress, UUID orionGuid,
-                                 String serviceName, Instant alertStart, boolean isManaged);
+                                 String services, Instant alertStart, boolean isManaged);
 
     String sendUptimeOutageResolvedEmail(String shopperId, String accountName, String ipAddress, UUID orionGuid,
                                          Instant alertEnd, boolean isManaged);

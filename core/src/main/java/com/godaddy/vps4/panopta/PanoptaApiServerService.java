@@ -1,8 +1,6 @@
 package com.godaddy.vps4.panopta;
 
 
-import com.fasterxml.jackson.annotation.JsonInclude;
-
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;

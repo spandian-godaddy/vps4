@@ -204,6 +204,6 @@ public class JdbcPanoptaDataService implements PanoptaDataService {
                         " JOIN panopta_server ps USING (server_id) " +
                         " WHERE ps.vm_id = ?  AND paf.valid_until = 'infinity' ",
                 Sql.mapOf(rs -> (rs.getTimestamp("valid_on", TimestampUtils.utcCalendar).toInstant()),
-                        rs -> rs.getString("fqdn").toLowerCase()), vmId);
+                          rs -> rs.getString("fqdn").toLowerCase()), vmId);
     }
 }

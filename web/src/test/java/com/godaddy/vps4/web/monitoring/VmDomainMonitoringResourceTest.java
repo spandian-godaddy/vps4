@@ -8,11 +8,11 @@ import com.godaddy.vps4.jdbc.ResultSubset;
 import com.godaddy.vps4.orchestration.monitoring.Vps4AddDomainMonitoring;
 import com.godaddy.vps4.orchestration.panopta.Vps4ReplaceDomainMonitoring;
 import com.godaddy.vps4.panopta.PanoptaDataService;
+import com.godaddy.vps4.panopta.PanoptaDomain;
 import com.godaddy.vps4.panopta.PanoptaMetricId;
 import com.godaddy.vps4.panopta.PanoptaMetricMapper;
 import com.godaddy.vps4.panopta.PanoptaService;
 import com.godaddy.vps4.panopta.PanoptaServiceException;
-import com.godaddy.vps4.panopta.PanoptaDomain;
 import com.godaddy.vps4.security.GDUserMock;
 import com.godaddy.vps4.vm.AccountStatus;
 import com.godaddy.vps4.vm.Action;
@@ -99,7 +99,7 @@ public class VmDomainMonitoringResourceTest {
         request.additionalFqdn = "domain.test";
 
         replaceDomainToMonitoringRequest = new VmDomainMonitoringResource.ReplaceDomainMonitoringRequest();
-        replaceDomainToMonitoringRequest.protocol = VmDomainMonitoringResource.FqdnProtocol.HTTP;
+        replaceDomainToMonitoringRequest.protocol = VmDomainMonitoringResource.FqdnProtocol.HTTP_DOMAIN;
 
         VirtualMachineCredit managedVmCredit = createMockCredit();
         VirtualMachine vm = createMockVm();
@@ -120,7 +120,7 @@ public class VmDomainMonitoringResourceTest {
         when(panoptaService.getNetworkIdOfAdditionalFqdn(vmId, request.additionalFqdn))
                 .thenReturn(metric);
         when(panoptaMetricMapper.getVmMetric(metric.typeId))
-                .thenReturn(VmMetric.HTTPS);
+                .thenReturn(VmMetric.HTTPS_DOMAIN);
 
         when(actionService.getAction(anyLong())).thenReturn(vmAction);
         when(actionService.getActionList(any())).thenReturn(actions);
@@ -157,7 +157,7 @@ public class VmDomainMonitoringResourceTest {
 
     @Test
     public void executesAddDomainMonitoringCommandWithOverrideProtocol() {
-        request.overrideProtocol = VmDomainMonitoringResource.FqdnProtocol.HTTPS;
+        request.overrideProtocol = VmDomainMonitoringResource.FqdnProtocol.HTTPS_DOMAIN;
         resource.addDomainMonitoring(vmId, request);
 
         ArgumentCaptor<CommandGroupSpec> argument = ArgumentCaptor.forClass(CommandGroupSpec.class);
@@ -165,7 +165,7 @@ public class VmDomainMonitoringResourceTest {
         CommandGroupSpec cmdGroup = argument.getValue();
         Vps4AddDomainMonitoring.Request request = (Vps4AddDomainMonitoring.Request) cmdGroup.commands.get(0).request;
         assertEquals("Vps4AddDomainMonitoring", cmdGroup.commands.get(0).command);
-        assertEquals("HTTPS", request.overrideProtocol);
+        assertEquals("HTTPS_DOMAIN", request.overrideProtocol);
     }
 
     @Test
@@ -329,7 +329,7 @@ public class VmDomainMonitoringResourceTest {
 
     @Test
     public void doesNotCreateVmActionIfProtocolIsTheSame() throws PanoptaServiceException {
-        replaceDomainToMonitoringRequest.protocol = VmDomainMonitoringResource.FqdnProtocol.HTTPS;
+        replaceDomainToMonitoringRequest.protocol = VmDomainMonitoringResource.FqdnProtocol.HTTPS_DOMAIN;
         resource.replaceDomainMonitoring(vmId,"domain.test", replaceDomainToMonitoringRequest);
         verify(actionService, never()).createAction(vmId, ActionType.REPLACE_DOMAIN_MONITORING, "{}", user.getUsername());
     }

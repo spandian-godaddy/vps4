@@ -6,11 +6,11 @@ import com.godaddy.vps4.orchestration.monitoring.Vps4AddDomainMonitoring;
 import com.godaddy.vps4.orchestration.panopta.Vps4RemoveDomainMonitoring;
 import com.godaddy.vps4.orchestration.panopta.Vps4ReplaceDomainMonitoring;
 import com.godaddy.vps4.panopta.PanoptaDataService;
+import com.godaddy.vps4.panopta.PanoptaDomain;
 import com.godaddy.vps4.panopta.PanoptaMetricId;
 import com.godaddy.vps4.panopta.PanoptaMetricMapper;
 import com.godaddy.vps4.panopta.PanoptaService;
 import com.godaddy.vps4.panopta.PanoptaServiceException;
-import com.godaddy.vps4.panopta.PanoptaDomain;
 import com.godaddy.vps4.vm.ActionService;
 import com.godaddy.vps4.vm.ActionType;
 import com.godaddy.vps4.vm.VirtualMachine;
@@ -108,17 +108,17 @@ public class VmDomainMonitoringResource {
             notes = "overrideProtocol field only accepts 'HTTP' or 'HTTPS' values")
     public VmAction addDomainMonitoring(@PathParam("vmId") UUID vmId,
                                         AddDomainMonitoringRequest addDomainMonitoringRequest) {
-        if(addDomainMonitoringRequest.additionalFqdn == null ) {
+        if (addDomainMonitoringRequest.additionalFqdn == null) {
             throw new Vps4Exception("INVALID_ADDITIONAL_FQDN", "Additional fqdn field cannot be empty.");
         }
         VirtualMachine vm = vmResource.getVm(vmId);
         VirtualMachineCredit credit = creditService.getVirtualMachineCredit(vm.orionGuid);
         List<String> activeFqdns = panoptaDataService.getPanoptaActiveAdditionalFqdns(vmId);
 
-        if(this.isManagedDomainLimitReached(credit.isManaged(), activeFqdns)) {
+        if (isManagedDomainLimitReached(credit.isManaged(), activeFqdns)) {
             throw new Vps4Exception("DOMAIN_LIMIT_REACHED", "Domain limit has been reached on this server.");
         }
-        if(this.isFqdnDuplicate(addDomainMonitoringRequest.additionalFqdn, activeFqdns)) {
+        if (isFqdnDuplicate(addDomainMonitoringRequest.additionalFqdn, activeFqdns)) {
             throw new Vps4Exception("DUPLICATE_FQDN", "This server already has an active entry for fqdn: " + addDomainMonitoringRequest.additionalFqdn );
         }
 
@@ -145,7 +145,7 @@ public class VmDomainMonitoringResource {
         request.vmId = vmId;
         request.additionalFqdn = fqdn;
         return createActionAndExecute(actionService, commandService, vmId,
-                ActionType.DELETE_DOMAIN_MONITORING,  request, "Vps4RemoveDomainMonitoring", user);
+                                      ActionType.DELETE_DOMAIN_MONITORING,  request, "Vps4RemoveDomainMonitoring", user);
     }
 
     @PUT
@@ -162,12 +162,11 @@ public class VmDomainMonitoringResource {
 
         validateFqdnConflictingActions(vmId);
 
-        PanoptaMetricId metric =
-                panoptaService.getNetworkIdOfAdditionalFqdn(vmId, fqdn);
-
+        PanoptaMetricId metric = panoptaService.getNetworkIdOfAdditionalFqdn(vmId, fqdn);
         if (metric == null) {
             throw new Vps4Exception("METRIC_NOT_FOUND", "Panopta metric was not found.");
         }
+
         if (replaceDomainMonitoringRequest.protocol.toString().equals(panoptaMetricMapper.getVmMetric(metric.typeId).toString())) {
             logger.info("Requested protocol matches existing protocol for vmId {} - no further action for metric Id {} ", vmId, metric.id);
             return null;
@@ -184,7 +183,7 @@ public class VmDomainMonitoringResource {
     }
 
     public enum FqdnProtocol {
-        HTTP, HTTPS
+        HTTP_DOMAIN, HTTPS_DOMAIN
     }
 
     public static class AddDomainMonitoringRequest {

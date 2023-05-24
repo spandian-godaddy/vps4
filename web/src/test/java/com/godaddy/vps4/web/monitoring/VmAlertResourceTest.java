@@ -15,11 +15,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
-import com.godaddy.hfs.vm.Vm;
 import com.godaddy.vps4.credit.CreditService;
 import com.godaddy.vps4.credit.ECommCreditService;
 import com.godaddy.vps4.credit.VirtualMachineCredit;
-import com.godaddy.vps4.security.Privilege;
 import com.godaddy.vps4.vm.DataCenterService;
 import com.godaddy.vps4.vm.Image;
 import com.godaddy.vps4.vm.VirtualMachine;
@@ -115,7 +113,7 @@ public class VmAlertResourceTest {
         when(vmResource.getVm(vmId)).thenReturn(testVm);
         when(creditService.getVirtualMachineCredit(testVm.orionGuid)).thenReturn(testSelfManagedCredit);
 
-        createTestMetricList(Arrays.asList(VmMetric.FTP, VmMetric.HTTPS));
+        createTestMetricList(Arrays.asList(VmMetric.FTP, VmMetric.HTTPS_DOMAIN));
 
         List<VmMetricAlert> returnedList = resource.getMetricAlertList(vmId);
 

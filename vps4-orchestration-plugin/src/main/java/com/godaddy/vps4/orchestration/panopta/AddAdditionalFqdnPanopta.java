@@ -52,7 +52,7 @@ public class AddAdditionalFqdnPanopta implements Command<AddAdditionalFqdnPanopt
     public void addMonitoringCheckToFqdn() {
         logger.info("Attempting to add monitoring check to fqdn {}.", request.additionalFqdn);
         try {
-            panoptaService.addNetworkService(request.vmId, request.isHttps ? VmMetric.HTTPS : VmMetric.HTTP,
+            panoptaService.addNetworkService(request.vmId, request.isHttps ? VmMetric.HTTPS_DOMAIN : VmMetric.HTTP_DOMAIN,
                     request.additionalFqdn, request.operatingSystemId, request.isManaged);
         }
         catch (PanoptaServiceException e) {

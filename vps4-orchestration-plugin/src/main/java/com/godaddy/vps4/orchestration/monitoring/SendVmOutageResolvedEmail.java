@@ -74,6 +74,7 @@ public class SendVmOutageResolvedEmail implements Command<VmOutageEmailRequest, 
                     req.vmOutage.toString(), req.shopperId, req.vmId);
         }
     }
+
     private void executeForMetric(CommandContext context, VmOutageEmailRequest req, VmMetric metric) {
         logger.info("Sending outage resolved email for shopper {} and vm {}", req.shopperId, req.vmId);
 
@@ -99,6 +100,7 @@ public class SendVmOutageResolvedEmail implements Command<VmOutageEmailRequest, 
                     break;
 
                 case FTP:
+                case HTTP:
                 case SSH:
                 case SMTP:
                 case IMAP:
@@ -111,8 +113,8 @@ public class SendVmOutageResolvedEmail implements Command<VmOutageEmailRequest, 
                             String.class);
                     break;
 
-                case HTTP:
-                case HTTPS:
+                case HTTP_DOMAIN:
+                case HTTPS_DOMAIN:
                     return;
                 case UNKNOWN:
                 default:

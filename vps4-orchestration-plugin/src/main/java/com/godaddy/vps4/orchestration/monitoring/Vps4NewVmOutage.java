@@ -54,8 +54,7 @@ public class Vps4NewVmOutage extends ActionCommand<Vps4NewVmOutage.Request, Void
         GetPanoptaOutage.Request getOutageRequest = new GetPanoptaOutage.Request();
         getOutageRequest.vmId = request.virtualMachine.vmId;
         getOutageRequest.outageId = request.outageId;
-        VmOutage outage = context.execute("GetPanoptaOutage", GetPanoptaOutage.class, getOutageRequest);
-        return outage;
+        return context.execute("GetPanoptaOutage", GetPanoptaOutage.class, getOutageRequest);
     }
 
     private void executeCreateJsdTicket(VirtualMachine virtualMachine, VmOutage outage, String partnerCustomerKey) {

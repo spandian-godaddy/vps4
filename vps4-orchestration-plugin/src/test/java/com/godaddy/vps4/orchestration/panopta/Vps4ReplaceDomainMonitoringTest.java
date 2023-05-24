@@ -50,7 +50,7 @@ public class Vps4ReplaceDomainMonitoringTest {
     public void testExecuteSuccess() throws PanoptaServiceException {
         command.execute(context, request);
         verify(panoptaService, times(1)).deleteNetworkService(request.vmId, 123456);
-        verify(panoptaService, times(1)).addNetworkService(request.vmId, VmMetric.HTTP,
+        verify(panoptaService, times(1)).addNetworkService(request.vmId, VmMetric.HTTP_DOMAIN,
                 request.additionalFqdn,
                 request.operatingSystemId,
                 request.isManaged);

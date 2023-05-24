@@ -410,25 +410,6 @@ public class VmActionsMonitorResourceTest {
         Assert.assertEquals(1, actualCreates.failedActions.size());
     }
 
-//    @Test
-//    public void testGetCreatesWithoutPanopta() {
-//        Action action = mock(Action.class);
-//        action.type = ActionType.CREATE_VM;
-//        List<Action> actions = new ArrayList<>();
-//        actions.add(action);
-//        ResultSubset<Action> result = new ResultSubset<>(actions, actions.size());
-//        when(vmActionService.getActionList(any())).thenReturn(result);
-//        when(vmActionService.getCreatesWithoutPanopta(anyLong())).thenReturn(actions);
-//        ActionTypeErrorData actualCreates = vmActionsMonitorResource.getCreatesWithoutPanopta(anyLong());
-//        Assert.assertEquals(1, actualCreates.affectedAccounts);
-//        Assert.assertEquals(100, actualCreates.failurePercentage, 0);
-//        Assert.assertEquals(ActionType.CREATE_VM, actualCreates.actionType);
-//        Assert.assertEquals(1, actualCreates.failedActions.size());
-//    }
-
-
-
-
     @Test
     public void testGetReplicationStatus() {
         String master = "p3plvps4db01.cloud.phx3.gdg";

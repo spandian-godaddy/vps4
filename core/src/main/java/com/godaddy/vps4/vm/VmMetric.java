@@ -12,5 +12,6 @@ public enum VmMetric {
     IMAP,
     POP3,
     PING,
-    HTTPS
+    HTTP_DOMAIN,
+    HTTPS_DOMAIN
 }

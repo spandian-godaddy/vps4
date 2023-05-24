@@ -107,6 +107,7 @@ public class SendVmOutageEmail implements Command<VmOutageEmailRequest, Void> {
                     break;
 
                 case FTP:
+                case HTTP:
                 case SSH:
                 case SMTP:
                 case IMAP:
@@ -118,8 +119,8 @@ public class SendVmOutageEmail implements Command<VmOutageEmailRequest, Void> {
                             String.class);
                     break;
 
-                case HTTP:
-                case HTTPS:
+                case HTTP_DOMAIN:
+                case HTTPS_DOMAIN:
                     return;
                 case UNKNOWN:
                 default:

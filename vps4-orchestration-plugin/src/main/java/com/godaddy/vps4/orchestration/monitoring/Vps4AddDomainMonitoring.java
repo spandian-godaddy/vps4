@@ -1,19 +1,19 @@
 package com.godaddy.vps4.orchestration.monitoring;
 
-import com.godaddy.vps4.orchestration.ActionCommand;
-import com.godaddy.vps4.orchestration.ActionRequest;
-import com.godaddy.vps4.orchestration.panopta.AddAdditionalFqdnPanopta;
-import com.godaddy.vps4.vm.ActionService;
-import gdg.hfs.orchestration.CommandContext;
-import gdg.hfs.orchestration.CommandMetadata;
-import gdg.hfs.orchestration.CommandRetryStrategy;
+import java.net.URL;
+import java.util.UUID;
 
 import javax.inject.Inject;
 import javax.net.ssl.HttpsURLConnection;
 
-import java.io.IOException;
-import java.net.URL;
-import java.util.UUID;
+import com.godaddy.vps4.orchestration.ActionCommand;
+import com.godaddy.vps4.orchestration.ActionRequest;
+import com.godaddy.vps4.orchestration.panopta.AddAdditionalFqdnPanopta;
+import com.godaddy.vps4.vm.ActionService;
+
+import gdg.hfs.orchestration.CommandContext;
+import gdg.hfs.orchestration.CommandMetadata;
+import gdg.hfs.orchestration.CommandRetryStrategy;
 
 @CommandMetadata(
         name="Vps4AddDomainMonitoring",
@@ -29,7 +29,7 @@ public class Vps4AddDomainMonitoring extends ActionCommand<Vps4AddDomainMonitori
     }
 
     @Override
-    protected Void executeWithAction(CommandContext context, Vps4AddDomainMonitoring.Request request) throws IOException {
+    protected Void executeWithAction(CommandContext context, Vps4AddDomainMonitoring.Request request) {
         this.context = context;
         boolean isHttps = request.overrideProtocol == null ? isHttps(request.additionalFqdn) :
                 request.overrideProtocol.equals("HTTPS");

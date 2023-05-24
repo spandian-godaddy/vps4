@@ -327,7 +327,7 @@ public class DefaultPanoptaServiceTest {
     @Test
     public void testGetNetworkIdOfAdditionalFqdn() throws PanoptaServiceException {
         PanoptaMetricId affectedMetric = networkIdList.value.get(0);
-        when(panoptaMetricMapper.getVmMetric(affectedMetric.typeId)).thenReturn(VmMetric.HTTPS);
+        when(panoptaMetricMapper.getVmMetric(affectedMetric.typeId)).thenReturn(VmMetric.HTTPS_DOMAIN);
         PanoptaMetricId ids = defaultPanoptaService.getNetworkIdOfAdditionalFqdn(vmId, "additionalFqdn.fake");
         verify(panoptaApiServerService).getNetworkList(serverId, partnerCustomerKey, 0);
         assertEquals(networkIdList.value.get(0).id, ids.id);
@@ -335,11 +335,11 @@ public class DefaultPanoptaServiceTest {
     }
 
     @Test
-    public void testGetAdditionalFqdnMetricIdsIgnoreCase() {
+    public void testGetAdditionalFqdns() {
         Map<String, Instant> fqdnValidOnMap = new HashMap<>();
         fqdnValidOnMap.put("additionalfqdn.fake", Instant.now());
         fqdnValidOnMap.put("additionalfqdn2.fake", Instant.now());
-        when(panoptaMetricMapper.getVmMetric(anyLong())).thenReturn(VmMetric.HTTPS);
+        when(panoptaMetricMapper.getVmMetric(anyLong())).thenReturn(VmMetric.HTTPS_DOMAIN);
         when(panoptaDataService.getPanoptaAdditionalFqdnWithValidOn(vmId)).thenReturn(fqdnValidOnMap);
         List<PanoptaDomain> domains = defaultPanoptaService.getAdditionalDomains(vmId);
         verify(panoptaApiServerService).getNetworkList(serverId, partnerCustomerKey, 0);
@@ -640,13 +640,13 @@ public class DefaultPanoptaServiceTest {
         PanoptaOutage mockOutage = mock(PanoptaOutage.class);
         mockOutage.metricIds = Collections.singleton(affectedMetric.id);
         mockOutage.networkMetricMetadata = new HashMap<>();
-        when(panoptaMetricMapper.getVmMetric(affectedMetric.typeId)).thenReturn(VmMetric.HTTP);
+        when(panoptaMetricMapper.getVmMetric(affectedMetric.typeId)).thenReturn(VmMetric.HTTP_DOMAIN);
         when(panoptaMetricMapper.getVmMetric(unaffectedMetric.typeId)).thenReturn(VmMetric.SSH);
         when(panoptaApiOutageService.getOutage(123, partnerCustomerKey)).thenReturn(mockOutage);
 
         VmOutage outage = defaultPanoptaService.getOutage(vmId, 123);
 
-        assertTrue(outage.metrics.contains(VmMetric.HTTP));
+        assertTrue(outage.metrics.contains(VmMetric.HTTP_DOMAIN));
         assertFalse(outage.metrics.contains(VmMetric.SSH));
         verify(panoptaMetricMapper, times(1)).getVmMetric(affectedMetric.typeId);
         verify(panoptaMetricMapper, never()).getVmMetric(unaffectedMetric.typeId);
@@ -662,7 +662,7 @@ public class DefaultPanoptaServiceTest {
         Map<Long, List<String>> networkMetricMetadata = new HashMap<>();
         networkMetricMetadata.put(affectedMetric.id, Arrays.asList("Unable to resolve host name additionalFqdn.fake"));
         mockOutage.networkMetricMetadata = networkMetricMetadata;
-        when(panoptaMetricMapper.getVmMetric(affectedMetric.typeId)).thenReturn(VmMetric.HTTP);
+        when(panoptaMetricMapper.getVmMetric(affectedMetric.typeId)).thenReturn(VmMetric.HTTP_DOMAIN);
         when(panoptaMetricMapper.getVmMetric(unaffectedMetric.typeId)).thenReturn(VmMetric.SSH);
         when(panoptaApiOutageService.getOutage(123, partnerCustomerKey)).thenReturn(mockOutage);
 
@@ -670,7 +670,7 @@ public class DefaultPanoptaServiceTest {
 
         assertEquals(Arrays.asList("Unable to resolve host name additionalFqdn.fake"), outage.domainMonitoringMetadata.get(0).metadata);
         assertEquals("additionalFqdn.fake", outage.domainMonitoringMetadata.get(0).additionalFqdn);
-        assertEquals(VmMetric.HTTP, outage.domainMonitoringMetadata.get(0).metric);
+        assertEquals(VmMetric.HTTP_DOMAIN, outage.domainMonitoringMetadata.get(0).metric);
 
         verify(panoptaMetricMapper, times(3)).getVmMetric(affectedMetric.typeId);
         verify(panoptaMetricMapper, never()).getVmMetric(unaffectedMetric.typeId);
@@ -749,25 +749,25 @@ public class DefaultPanoptaServiceTest {
 
     @Test
     public void testAddNetworkServiceServerHTTPCallsAddNetworkService() throws PanoptaServiceException {
-        defaultPanoptaService.addNetworkService(vmId, VmMetric.HTTP, "thisfqdn.istotallymostdefinitely.fake", 1, true);
+        defaultPanoptaService.addNetworkService(vmId, VmMetric.HTTP_DOMAIN, "thisfqdn.istotallymostdefinitely.fake", 1, true);
         verify(panoptaApiServerService).addNetworkService(eq(serverId), eq(partnerCustomerKey), any());
     }
 
     @Test
     public void testAddNetworkServiceServerHTTPSCallsAddNetworkService() throws PanoptaServiceException {
-        defaultPanoptaService.addNetworkService(vmId, VmMetric.HTTPS, "thisfqdn.istotallymostdefinitely.fake", 1, true);
+        defaultPanoptaService.addNetworkService(vmId, VmMetric.HTTPS_DOMAIN, "thisfqdn.istotallymostdefinitely.fake", 1, true);
         verify(panoptaApiServerService).addNetworkService(eq(serverId), eq(partnerCustomerKey), any());
     }
 
     @Test
     public void testAddNetworkServiceServerCallsAddNetworkServiceIsManagedFalse() throws PanoptaServiceException {
-        defaultPanoptaService.addNetworkService(vmId, VmMetric.HTTPS, "thisfqdn.istotallymostdefinitely.fake", 1, false);
+        defaultPanoptaService.addNetworkService(vmId, VmMetric.HTTPS_DOMAIN, "thisfqdn.istotallymostdefinitely.fake", 1, false);
         verify(panoptaApiServerService).addNetworkService(eq(serverId), eq(partnerCustomerKey), any());
     }
 
     @Test
     public void testAddNetworkServiceServerCallsAddNetworkServiceIsManagedFalseMonitoringTrue() throws PanoptaServiceException {
-        defaultPanoptaService.addNetworkService(vmId, VmMetric.HTTPS, "thisfqdn.istotallymostdefinitely.fake", 1, false);
+        defaultPanoptaService.addNetworkService(vmId, VmMetric.HTTPS_DOMAIN, "thisfqdn.istotallymostdefinitely.fake", 1, false);
         verify(panoptaApiServerService).addNetworkService(eq(serverId), eq(partnerCustomerKey), any());
     }
     

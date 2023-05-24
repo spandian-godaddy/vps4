@@ -27,8 +27,6 @@ public class Vps4ReplaceDomainMonitoring extends ActionCommand<Vps4ReplaceDomain
 
     private final PanoptaService panoptaService;
 
-    private Request request;
-
     @Inject
     public Vps4ReplaceDomainMonitoring(ActionService actionService, PanoptaService panoptaService) {
         super(actionService);
@@ -37,13 +35,12 @@ public class Vps4ReplaceDomainMonitoring extends ActionCommand<Vps4ReplaceDomain
 
     @Override
     public Void executeWithAction(CommandContext context, Request request) {
-        this.request = request;
         try {
             logger.info("Replacing monitoring check of fqdn {}.", request.additionalFqdn);
 
             PanoptaMetricId panoptaMetricId = panoptaService.getNetworkIdOfAdditionalFqdn(request.vmId, request.additionalFqdn);
             panoptaService.deleteNetworkService(request.vmId, panoptaMetricId.id);
-            panoptaService.addNetworkService(request.vmId, request.protocol.equals("HTTPS") ? VmMetric.HTTPS : VmMetric.HTTP,
+            panoptaService.addNetworkService(request.vmId, request.protocol.equals("HTTPS") ? VmMetric.HTTPS_DOMAIN : VmMetric.HTTP_DOMAIN,
                     request.additionalFqdn, request.operatingSystemId, request.isManaged);
         } catch (PanoptaServiceException e) {
             throw new RuntimeException(e);

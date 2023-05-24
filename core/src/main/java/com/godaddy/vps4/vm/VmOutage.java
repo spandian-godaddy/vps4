@@ -6,9 +6,6 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
-import org.apache.commons.lang3.builder.ReflectionToStringBuilder;
-import org.apache.commons.lang3.builder.ToStringStyle;
-
 public class VmOutage {
     public UUID vmId;
     public Set<VmMetric> metrics;
@@ -25,8 +22,7 @@ public class VmOutage {
         public VmMetric metric;
 
         // needed for deserializer
-        public DomainMonitoringMetadata() {
-        }
+        public DomainMonitoringMetadata() {}
 
         public DomainMonitoringMetadata(String additionalFqdn, List<String> metadata, VmMetric metric) {
             this.additionalFqdn = additionalFqdn;
@@ -37,18 +33,17 @@ public class VmOutage {
     }
 
     public String metricTypeMapper() {
-        String metricString = metrics.stream().filter(m -> m != VmMetric.HTTP && m != VmMetric.HTTPS ).map(VmMetric::name)
-                .collect(Collectors.joining(", "));
+        String metricString = metrics.stream()
+                                     .filter(m -> m != VmMetric.HTTP_DOMAIN && m != VmMetric.HTTPS_DOMAIN)
+                                     .map(VmMetric::name)
+                                     .collect(Collectors.joining(", "));
 
-        metricString += domainMonitoringMetadata.size() >= 1 ? ", " + domainMonitoringMetadata.stream().map(m -> m.metric.toString() + " (" + m.additionalFqdn +")")
-                .collect(Collectors.joining(", ")) : "";
+        if (domainMonitoringMetadata.size() >= 1) {
+            metricString += ", " + domainMonitoringMetadata.stream()
+                                                           .map(m -> m.metric.toString() + " (" + m.additionalFqdn + ")")
+                                                           .collect(Collectors.joining(", "));
+        }
 
         return metricString;
     }
-
-    @Override
-    public String toString() {
-        return ReflectionToStringBuilder.toString(this, ToStringStyle.MULTI_LINE_STYLE);
-    }
-
 }

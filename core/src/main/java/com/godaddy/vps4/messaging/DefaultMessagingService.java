@@ -117,10 +117,10 @@ public class DefaultMessagingService implements MessagingService {
 
     @Override
     public String sendServicesDownEmail(String shopperId, String accountName, String ipAddress, UUID orionGuid,
-                                        String serviceName, Instant alertStart, boolean isManaged) {
+                                        String services, Instant alertStart, boolean isManaged) {
         ShopperMessage message = buildOutageJson(
                 isManaged ? TemplateType.NewFinalManagedServicesDown : TemplateType.NewFinalSelfManagedServicesDown,
-                accountName, ipAddress, orionGuid, serviceName, null, alertStart, null, isManaged);
+                accountName, ipAddress, orionGuid, services, null, alertStart, null, isManaged);
         return messagingApiService.sendMessage(shopperId, message).messageId;
     }
 
