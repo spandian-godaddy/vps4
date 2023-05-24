@@ -5,6 +5,7 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
+import static org.mockito.Matchers.anyInt;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -149,17 +150,19 @@ public class InventoryResourceTest {
 
     @Test
     public void getTierAvailabilityForAvailableInventory() throws IOException {
+        when(virtualMachineService.getSpec(anyInt(), anyInt())).thenReturn(createDummyServerSpec());
         when(virtualMachineService.getSpec(anyString())).thenReturn(createDummyServerSpec());
         when(vmService.getInventory(anyString())).thenReturn(createDummyInventory());
-        boolean tierAvailability = inventoryResource.getTierAvailability("ded.hdd.c16.r128.d16000");
+        boolean tierAvailability = inventoryResource.getTierAvailability(100);
         assertTrue(tierAvailability);
     }
 
     @Test
     public void getTierAvailabilityForNoAvailableInventory() throws IOException {
+        when(virtualMachineService.getSpec(anyInt(), anyInt())).thenReturn(createDummyServerSpec());
         when(virtualMachineService.getSpec(anyString())).thenReturn(createDummyServerSpec());
         when(vmService.getInventory(anyString())).thenReturn(createDummyInventory(0));
-        boolean tierAvailability = inventoryResource.getTierAvailability("ded.hdd.c16.r128.d16000");
+        boolean tierAvailability = inventoryResource.getTierAvailability(100);
         assertFalse(tierAvailability);
     }
 
@@ -167,14 +170,14 @@ public class InventoryResourceTest {
     public void getTierAvailabilityForVirtualTier() {
         ServerSpec dummySpec = createDummyServerSpec();
         dummySpec.serverType.serverType = ServerType.Type.VIRTUAL;
-        when(virtualMachineService.getSpec(anyString())).thenReturn(dummySpec);
+        when(virtualMachineService.getSpec(anyInt(), anyInt())).thenReturn(dummySpec);
 
         try {
-            inventoryResource.getTierAvailability("oh.hosting.c1.r2.d40");
+            inventoryResource.getTierAvailability(10);
         } catch(Vps4Exception e) {
             assert (e.getMessage().equalsIgnoreCase(
-                    "Spec name is not a valid DED4 spec."));
-            assert (e.getId().equalsIgnoreCase("INVALID_SPEC_NAME"));
+                    "Tier is not a valid DED4 tier."));
+            assert (e.getId().equalsIgnoreCase("INVALID_TIER"));
             throw e;
         }
     }

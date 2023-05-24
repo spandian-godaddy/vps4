@@ -72,12 +72,12 @@ public class InventoryResource {
     }
 
     @GET
-    @Path("/ded/{specName}/available")
-    public Boolean getTierAvailability(@PathParam("specName") String specName) {
-        ServerSpec serverSpec = virtualMachineService.getSpec(specName);
+    @Path("/ded/{tier}/available")
+    public Boolean getTierAvailability(@PathParam("tier") int tier) {
+        ServerSpec serverSpec = virtualMachineService.getSpec(tier, 2);
         if (serverSpec != null && !serverSpec.isVirtualMachine())
             return getAllInventoryDetails().stream().anyMatch(detail -> detail.tier == serverSpec.tier && detail.available > 0);
-        throw new Vps4Exception("INVALID_SPEC_NAME", "Spec name is not a valid DED4 spec.");
+        throw new Vps4Exception("INVALID_TIER", "Tier is not a valid DED4 tier.");
     }
 
     private List<InventoryDetails> getAllInventoryDetails() {
