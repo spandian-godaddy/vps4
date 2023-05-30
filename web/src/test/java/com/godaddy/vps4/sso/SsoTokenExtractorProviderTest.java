@@ -38,6 +38,7 @@ public class SsoTokenExtractorProviderTest {
     public void setUp() {
         when(mockConfig.get("sso.url")).thenReturn(defaultSsoUrl);
         when(mockConfig.get("sso.url.ote", null)).thenReturn(null);
+        when(mockConfig.get("http.sso.timeout.seconds", "30")).thenReturn("30");
         ssoTokenExtractorProvider = new SsoTokenExtractorProvider(mockConfig);
     }
 

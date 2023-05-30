@@ -5,6 +5,8 @@ import java.time.Duration;
 import javax.inject.Inject;
 import javax.inject.Provider;
 
+import org.apache.http.client.config.RequestConfig;
+import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -56,7 +58,15 @@ public class SsoTokenExtractorProvider implements Provider<SsoTokenExtractor> {
     }
 
     SsoService getKeyService(String ssoUrl) {
-        return new HttpSsoService(ssoUrl, HttpClientBuilder.create().build());
+        int timeout = Integer.parseInt(config.get("http.sso.timeout.seconds", "30"));
+        RequestConfig config = RequestConfig.custom()
+                .setConnectTimeout(timeout * 1000)
+                .setConnectionRequestTimeout(timeout * 1000)
+                .setSocketTimeout(timeout * 1000).build();
+        CloseableHttpClient httpClient = HttpClientBuilder.create()
+                .setDefaultRequestConfig(config)
+                .build();
+        return new HttpSsoService(ssoUrl, httpClient);
     }
 
     long getSsoTimeoutMs() {
