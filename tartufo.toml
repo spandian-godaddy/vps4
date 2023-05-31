@@ -50,6 +50,10 @@ exclude-signatures = [
     {signature="76e59151d624beb25bf1d6d12cd8846034a2401cc22160995cf533632a5e3f7a", reason="URL in the readme"},
     {signature="43c46fbf2209f035060750da2e0e6104c9bcf1da5c90a368736772764d279fe9", reason="Database connection pattern"},
     {signature="8c63e3497e4b1990d943f02e864059ecff7613fb324c86cccaa141bd2bedcd05", reason="link to a confluence doc"},
+    {signature="013e7f4adba157e69eea3149459632fa4557996c56c46801a80ebb9b5cba594d", reason="HTTP_DOMAIN check"},
+    {signature="1e9200e342108513a6728b2e101a9554480a84dbda660f6762198c7845dfc8b7", reason="HTTP_DOMAIN check"},
+    {signature="3c646cdc35a1a36a1d254b98314f1fb2e09b43d9fa23239ceef7970f07be1e5a", reason="HTTP_DOMAIN check"},
+    {signature="d1208af117432dc091c250f7e57124878009646bfd10d4a24e5fbbcf60a570f3", reason="HTTP_DOMAIN check"}
 ]
 exclude-entropy-patterns = [
     {pattern='b\/', reason="PR path"},
