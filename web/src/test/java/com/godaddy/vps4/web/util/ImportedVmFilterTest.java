@@ -192,6 +192,15 @@ public class ImportedVmFilterTest {
     }
 
     @Test
+    public void testVmApiEndRescueImportedVm() throws Exception {
+        when(request.getRequestURI()).thenReturn("/api/vms/" + importedVmId + "/endRescue");
+        when(request.getMethod()).thenReturn("POST");
+
+        filter.doFilter(request, response, chain);
+        verify(chain).doFilter(request, response);
+    }
+
+    @Test
    public void initDoesNothing() throws Exception {
        FilterConfig fc = mock(FilterConfig.class);
        filter.init(fc);
