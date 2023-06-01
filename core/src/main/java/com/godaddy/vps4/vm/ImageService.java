@@ -2,11 +2,11 @@ package com.godaddy.vps4.vm;
 
 import java.util.List;
 
+import com.godaddy.vps4.vm.Image.ControlPanel;
+import com.godaddy.vps4.vm.Image.OperatingSystem;
+import com.godaddy.vps4.vm.ServerType.Platform;
+
 public interface ImageService {
-
-    List<String> obtainCompatibleImages();
-
-    void addCompatibleImage(String name, Long controlPanelId);
 
     void removeCompatibleImage(String name);
 
@@ -17,5 +17,6 @@ public interface ImageService {
     long insertImage(int controlPanelId, int osTypeId, String name, int serverTypeId, String hfsName,
                      boolean importedImage);
 
-    List<Image> getImages(String os, String controlPanel, String hfsName, String platform);
+    List<Image> getImages(OperatingSystem os, ControlPanel controlPanel, String hfsName, Platform platform);
+
 }

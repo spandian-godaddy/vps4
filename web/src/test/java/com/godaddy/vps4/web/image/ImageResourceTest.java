@@ -1,6 +1,7 @@
 package com.godaddy.vps4.web.image;
 
 import static org.junit.Assert.assertEquals;
+import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
@@ -16,21 +17,24 @@ import org.junit.Before;
 import org.junit.Test;
 
 import com.godaddy.vps4.vm.Image;
+import com.godaddy.vps4.vm.Image.ControlPanel;
+import com.godaddy.vps4.vm.Image.OperatingSystem;
 import com.godaddy.vps4.vm.ImageService;
+import com.godaddy.vps4.vm.ServerType;
+import com.godaddy.vps4.vm.ServerType.Platform;
 import com.godaddy.vps4.web.vm.ImageResource;
 import com.google.inject.AbstractModule;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
-
 
 public class ImageResourceTest {
     private ImageService imageService = mock(ImageService.class);
     private ImageResource resource;
 
     private Injector injector;
-    private String os = "linux";
-    private String controlPanel = "myh";
-    private String platform = "openstack";
+    private OperatingSystem os = Image.OperatingSystem.LINUX;
+    private ControlPanel controlPanel = Image.ControlPanel.MYH;
+    private Platform platform = ServerType.Platform.OPENSTACK;
     private List<Image> images;
     private List<Image> verifyImages;
     private Image image = mock(Image.class);
@@ -48,7 +52,7 @@ public class ImageResourceTest {
         images = testImages("Ubuntu 16.04", "CentOS 7");
         verifyImages = testImages("Ubuntu 16.04", "CentOS 7");
 
-        when(imageService.getImages(anyString(), anyString(), anyString(), anyString())).thenReturn(images);
+        when(imageService.getImages(any(), any(), anyString(), any())).thenReturn(images);
         when(imageService.getImageByHfsName(anyString())).thenReturn(image);
 
         resource = injector.getInstance(ImageResource.class);
@@ -66,21 +70,13 @@ public class ImageResourceTest {
 
     @Test
     public void getImagesCallsImageServiceToGetListOfImages(){
-        resource.getImages(os, controlPanel, null, 0, platform);
+        resource.getImages(os, controlPanel, null, platform);
         verify(imageService, times(1)).getImages(os, controlPanel, null, platform);
     }
 
     @Test
-    public void getImagesWithoutPlatformToGetListOfImages(){
-        resource.getImages(os, controlPanel, null, 60, null);
-        verify(imageService, times(1)).getImages(os, controlPanel, null, "OVH");
-        resource.getImages(os, controlPanel, null, 10, null);
-        verify(imageService, times(1)).getImages(os, controlPanel, null, "OPENSTACK");
-    }
-
-    @Test
     public void getImagesReturnsListOfImagesFound(){
-        List<Image> retImages = resource.getImages(os, controlPanel, null, 0, platform);
+        List<Image> retImages = resource.getImages(os, controlPanel, null, platform);
         for (int i = 0; i < retImages.size(); i++) {
             assertEquals(verifyImages.get(i).imageName, retImages.get(i).imageName);
         }

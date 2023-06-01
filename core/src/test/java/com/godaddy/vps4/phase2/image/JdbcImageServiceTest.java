@@ -16,6 +16,7 @@ import org.junit.Test;
 import com.godaddy.vps4.jdbc.DatabaseModule;
 import com.godaddy.vps4.vm.Image;
 import com.godaddy.vps4.vm.ImageService;
+import com.godaddy.vps4.vm.ServerType;
 import com.godaddy.vps4.vm.jdbc.JdbcImageService;
 import com.google.inject.AbstractModule;
 import com.google.inject.Guice;
@@ -52,7 +53,10 @@ public class JdbcImageServiceTest {
 
     @Test
     public void getImagesIncludesImageNotDisabled() {
-        List<Image> images = injector.getInstance(ImageService.class).getImages("linux", "myh", null, "openstack");
+        List<Image> images = injector.getInstance(ImageService.class).getImages(Image.OperatingSystem.LINUX,
+                                                                                Image.ControlPanel.MYH,
+                                                                                null,
+                                                                                ServerType.Platform.OPENSTACK);
         assertTrue(images.stream().map(i -> i.hfsName).anyMatch(name -> name.equals(imageName)));
     }
 

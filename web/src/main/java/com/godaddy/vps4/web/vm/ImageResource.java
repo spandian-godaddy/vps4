@@ -15,8 +15,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.godaddy.vps4.vm.Image;
+import com.godaddy.vps4.vm.Image.ControlPanel;
+import com.godaddy.vps4.vm.Image.OperatingSystem;
 import com.godaddy.vps4.vm.ImageService;
-import com.godaddy.vps4.vm.ServerType;
+import com.godaddy.vps4.vm.ServerType.Platform;
 import com.godaddy.vps4.web.Vps4Api;
 import com.godaddy.vps4.web.featureFlag.ConfigFeatureMask;
 import com.godaddy.vps4.web.featureFlag.ImageDetailFeatureSetting;
@@ -49,22 +51,10 @@ public class ImageResource {
         setting = ImageListFeatureSetting.class,
         disabled = false
     )
-    public List<Image> getImages(@QueryParam("os") String os,
-                                 @QueryParam("controlPanel") String controlPanel,
+    public List<Image> getImages(@QueryParam("os") OperatingSystem os,
+                                 @QueryParam("controlPanel") ControlPanel controlPanel,
                                  @ApiParam(value = "HFS Image name") @QueryParam("imageName") String hfsImageName,
-                                 @QueryParam("tier") int tier,
-                                 @QueryParam("platform") String platform) {
-        // tier and platform are mutually exclusive, thus if platform is set it will override tier
-        // tier is deprecated and will be removed to support optimized hosting
-        if (platform != null) {
-            return imageService.getImages(os, controlPanel, hfsImageName, platform);
-        }
-
-        if (tier >= 60) {
-            platform = ServerType.Platform.OVH.name();
-        } else {
-            platform = ServerType.Platform.OPENSTACK.name();
-        }
+                                 @QueryParam("platform") Platform platform) {
         return imageService.getImages(os, controlPanel, hfsImageName, platform);
     }
 

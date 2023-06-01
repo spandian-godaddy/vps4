@@ -13,6 +13,7 @@ import com.godaddy.vps4.vm.Image.ControlPanel;
 import com.godaddy.vps4.vm.Image.OperatingSystem;
 import com.godaddy.vps4.vm.ImageService;
 import com.godaddy.vps4.vm.ServerType;
+import com.godaddy.vps4.vm.ServerType.Platform;
 
 
 public class JdbcImageService implements ImageService {
@@ -23,20 +24,6 @@ public class JdbcImageService implements ImageService {
     @Inject
     public JdbcImageService(DataSource dataSource) {
         this.dataSource = dataSource;
-    }
-
-    @Override
-    public List<String> obtainCompatibleImages() {
-        return Sql.with(dataSource).exec("SELECT name FROM " + this.tableName,
-                Sql.listOf(rs -> rs.getString("name")));
-    }
-
-    @Override
-    public void addCompatibleImage(String name, Long controlPanelId) {
-        Sql.with(dataSource)
-                .exec("INSERT INTO " + this.tableName
-                        + " (name, control_panel_id) VALUES (?, ?)", null,
-                        name, controlPanelId);
     }
 
     @Override
@@ -82,21 +69,24 @@ public class JdbcImageService implements ImageService {
     }
 
     @Override
-    public List<Image> getImages(String os, String controlPanel, String hfsName, String platform) {
-        return Sql.with(dataSource).exec("SELECT image.image_id, image.name, image.hfs_name, image.control_panel_id, image.os_type_id, "+
+    public List<Image> getImages(OperatingSystem os, ControlPanel controlPanel, String hfsName, Platform platform) {
+        return Sql.with(dataSource).exec("SELECT i.image_id, i.name, i.hfs_name, i.control_panel_id, i.os_type_id, " +
                 "st.server_type_id, st.server_type, st.platform " +
-                " FROM image AS image " +
-                " JOIN control_panel AS cp ON image.control_panel_id = cp.control_panel_id " +
-                " JOIN os_type AS os ON image.os_type_id = os.os_type_id " +
-                " JOIN server_type AS st ON image.server_type_id = st.server_type_id " +
-                " WHERE image.valid_until > now_utc() " +
-                " AND   (?::text is null or LOWER(os.name) = LOWER(?))" +
-                " AND   (?::text is null or LOWER(cp.name) = LOWER(?))" +
-                " AND   (?::text is null or LOWER(image.hfs_name) = LOWER(?))" +
-                " AND   (?::text is null or LOWER(st.platform) = LOWER(?))" +
-                " AND   image.imported_image = false",
+                " FROM image i " +
+                " JOIN control_panel cp ON i.control_panel_id = cp.control_panel_id " +
+                " JOIN os_type os ON i.os_type_id = os.os_type_id " +
+                " JOIN server_type st ON i.server_type_id = st.server_type_id " +
+                " WHERE i.valid_until > now_utc() " +
+                " AND LOWER(?) IN ('', LOWER(os.name))" +
+                " AND LOWER(?) IN ('', LOWER(cp.name))" +
+                " AND LOWER(?) IN ('', LOWER(i.hfs_name))" +
+                " AND LOWER(?) IN ('', LOWER(st.platform))" +
+                " AND i.imported_image = false",
                 Sql.listOf(this::mapImage),
-                os, os, controlPanel, controlPanel, hfsName, hfsName,  platform, platform);
+                (os == null) ? "" : os.name(),
+                (controlPanel == null) ? "" : controlPanel.name(),
+                (hfsName == null) ? "" : hfsName,
+                (platform == null) ? "" : platform.name());
     }
 
     private Image mapImage(ResultSet rs) throws SQLException {
