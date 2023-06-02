@@ -111,6 +111,12 @@
     - Create configurations using the [IntelliJ Run Configs](../doc/intellij_run_configs.md) doc
         - In the "Modify options" dropdown, make sure "Add VM options" is checked
         - The majority of development can be done with just the `Local Orchestration Engine (Non-plugin)` and `Vps4 API` configs
+- Settings Sharing
+    - Install the Repository Settings plugin at https://plugins.jetbrains.com/plugin/7566-settings-repository
+    - Go to File -> Manage IDE Settings -> Settings Repository...
+    - Put in the URL of the settings repo: https://github.com/gdcorp-partners/vps4-intellijsettings.git
+    - Choose the appropriate setting, Merge, Overwrite Local, Overwrite Remote. Overwrite local is recommended to begin to not overwrite the teams settings.
+
 
 ## Eclipse Setup
 
