@@ -153,7 +153,7 @@ public class InventoryResourceTest {
         when(virtualMachineService.getSpec(anyInt(), anyInt())).thenReturn(createDummyServerSpec());
         when(virtualMachineService.getSpec(anyString())).thenReturn(createDummyServerSpec());
         when(vmService.getInventory(anyString())).thenReturn(createDummyInventory());
-        boolean tierAvailability = inventoryResource.getTierAvailability(100);
+        boolean tierAvailability = inventoryResource.getTierAvailability(100).available;
         assertTrue(tierAvailability);
     }
 
@@ -162,7 +162,7 @@ public class InventoryResourceTest {
         when(virtualMachineService.getSpec(anyInt(), anyInt())).thenReturn(createDummyServerSpec());
         when(virtualMachineService.getSpec(anyString())).thenReturn(createDummyServerSpec());
         when(vmService.getInventory(anyString())).thenReturn(createDummyInventory(0));
-        boolean tierAvailability = inventoryResource.getTierAvailability(100);
+        boolean tierAvailability = inventoryResource.getTierAvailability(100).available;
         assertFalse(tierAvailability);
     }
 

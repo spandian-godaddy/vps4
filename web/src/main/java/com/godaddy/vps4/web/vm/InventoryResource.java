@@ -15,7 +15,6 @@ import javax.ws.rs.PathParam;
 import javax.ws.rs.ServiceUnavailableException;
 import javax.ws.rs.core.MediaType;
 
-import com.godaddy.vps4.vm.ServerType;
 import com.godaddy.vps4.web.Vps4Exception;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
@@ -71,12 +70,20 @@ public class InventoryResource {
         return inventoryDetails;
     }
 
+    static class AvailableResponse {
+        public boolean available;
+    }
+
     @GET
     @Path("/ded/{tier}/available")
-    public Boolean getTierAvailability(@PathParam("tier") int tier) {
+    public AvailableResponse getTierAvailability(@PathParam("tier") int tier) {
         ServerSpec serverSpec = virtualMachineService.getSpec(tier, 2);
-        if (serverSpec != null && !serverSpec.isVirtualMachine())
-            return getAllInventoryDetails().stream().anyMatch(detail -> detail.tier == serverSpec.tier && detail.available > 0);
+
+        if (serverSpec != null && !serverSpec.isVirtualMachine()) {
+            AvailableResponse response = new AvailableResponse();
+            response.available = getAllInventoryDetails().stream().anyMatch(detail -> detail.tier == serverSpec.tier && detail.available > 0);
+            return response;
+        }
         throw new Vps4Exception("INVALID_TIER", "Tier is not a valid DED4 tier.");
     }
 
