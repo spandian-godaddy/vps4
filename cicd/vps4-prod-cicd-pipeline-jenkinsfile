@@ -28,6 +28,14 @@ pipeline {
             }
         }
 
+        stage ("Promote RPMs") {
+            steps {
+                load("/home/jenkins/vps4_latest_version.properties")
+                echo "Promote vps4 version ${VPS4_VERSION} to PROD repo"
+                build job: 'Prod-Promote', parameters: [string(name: 'VPS4_VERSION', value: VPS4_VERSION)]
+            }
+        }
+
         stage ("Deploy to AMS3") {
             steps {
                 load("/home/jenkins/vps4_latest_version.properties")
