@@ -10,7 +10,7 @@ Orchestration engine when run can be configured to pickup plugin commands found 
 ```
     Main Class: gdg.hfs.orchestration.web.OrchestrationWebApplication
     VM Options: -Dorchestration.engine.mode=memory
-                -Dhfs.http.port=8088 -Dvps4.hfs.mock=false 
+                -Dhfs.http.port=8088
     Working Directory: {PATH_TO_VPS4_SOURCE}/vps4-orchestration-runner 
     Use classpath of module: vps4-orchestration-runner
 ```
@@ -23,15 +23,11 @@ Orchestration engine when run can be configured to pickup plugin commands found 
 ```
     Main Class: gdg.hfs.orchestration.web.OrchestrationWebApplication
     VM Options: -Dorchestration.engine.mode=memory
-                -Dhfs.http.port=8088 -Dvps4.hfs.mock=false
+                -Dhfs.http.port=8088
                 -Dorchestration.plugins.path={PATH_TO_VPS4_SOURCE}/vps4-orchestration-plugin/target 
     Working Directory: {PATH_TO_VPS4_SOURCE}/vps4-orchestration-runner 
     Use classpath of module: vps4-orchestration-runner
 ```
-        
-
-To have the plugin use a mocked version of hfs set the 'vps4.hfs.mock' option to true, in the above 2 run configs.
-
 
 **FOR ECLIPSE USERS:**
 Eclipse doesn't recognise this module as a java project hence doesnt allow creation of a run-configuration using this module.

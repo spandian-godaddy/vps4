@@ -6,7 +6,6 @@ entropy = true
 exclude-path-patterns = [
     {path-pattern="web/src/main/resources/com/godaddy/swagger"},
     {path-pattern="web/src/main/java/com/godaddy/vps4/web/cpanel/FakeCpanelModule.java", reason="This has a fake cpanel hash"},
-    {path-pattern="web/src/main/java/com/godaddy/vps4/hfs/HfsMockModule.java", reason="Contains a fake access hash"},
     {path-pattern="web/src/test", reason="Multiple instances of high entropy test data"},
     {path-pattern="core/src/test", reason="Several instances of high entropy test data"},
     {path-pattern="vps4-phase3-tests", reason="Contains test data, fake JWT tokens"},

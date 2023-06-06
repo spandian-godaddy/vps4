@@ -13,7 +13,6 @@ import com.godaddy.vps4.credit.CreditModule;
 import com.godaddy.vps4.hfs.HfsClientModule;
 import com.godaddy.vps4.jdbc.DatabaseModule;
 import com.godaddy.vps4.messaging.MessagingModule;
-import com.godaddy.vps4.orchestration.hfs.HfsMockModule;
 import com.godaddy.vps4.panopta.PanoptaDataModule;
 import com.godaddy.vps4.security.SecurityModule;
 import com.godaddy.vps4.snapshot.SnapshotModule;
@@ -22,6 +21,7 @@ import com.godaddy.vps4.util.ObjectMapperModule;
 import com.godaddy.vps4.vm.VmModule;
 import com.godaddy.vps4.web.client.Vps4ApiWithCertAuthClientModule;
 import com.godaddy.vps4.web.client.Vps4ApiWithSSOAuthClientModule;
+import com.google.inject.Binder;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
 import com.google.inject.Module;
@@ -29,7 +29,6 @@ import com.google.inject.Module;
 import gdg.hfs.orchestration.cluster.ClusterClientModule;
 
 public class Vps4ConsumerInjector {
-
 
     private static final Logger logger = LoggerFactory.getLogger(Vps4ConsumerInjector.class);
 
@@ -40,19 +39,7 @@ public class Vps4ConsumerInjector {
 
     public static Injector newInstance() {
         List<Module> modules = new ArrayList<>();
-        modules.add(binder -> {
-            binder.requireExplicitBindings();
-        });
-        modules.add(new ObjectMapperModule());
-
-        if (System.getProperty("vps4.hfs.mock", "false").equals("true")) {
-            // the HFSMockModule also provides bindings for the messaging service
-            logger.info("USING MOCK HFS");
-            modules.add(new HfsMockModule());
-        } else {
-            modules.add(new MessagingModule());
-            modules.add(new HfsClientModule());
-        }
+        modules.add(Binder::requireExplicitBindings);
 
         if (Boolean.parseBoolean(System.getProperty("vps4.web.useJwtAuth", "false"))) {
             logger.info("Using the Vps4ApiWithSSOAuthClientModule and sso-jwt token.");
@@ -62,16 +49,6 @@ public class Vps4ConsumerInjector {
             modules.add(new Vps4ApiWithCertAuthClientModule(
                     "consumer.client.keyPath", "consumer.client.certPath"));
         }
-
-        modules.add(new ConfigModule());
-        modules.add(new VmModule());
-        modules.add(new SnapshotModule());
-        modules.add(new SecurityModule());
-        modules.add(new DatabaseModule());
-        modules.add(new CreditModule());
-        modules.add(new PanoptaDataModule());
-        modules.add(new Vps4SsoModule());
-        modules.add(new HazelcastCacheModule());
 
         logger.info("Orchestration engine clustered: {}", isOrchestrationEngineClustered);
         if (isOrchestrationEngineClustered) {
@@ -84,12 +61,21 @@ public class Vps4ConsumerInjector {
             modules.add(new CommandClientModule());
         }
 
+        modules.add(new ObjectMapperModule());
+        modules.add(new MessagingModule());
+        modules.add(new HfsClientModule());
+        modules.add(new ConfigModule());
+        modules.add(new VmModule());
+        modules.add(new SnapshotModule());
+        modules.add(new SecurityModule());
+        modules.add(new DatabaseModule());
+        modules.add(new CreditModule());
+        modules.add(new PanoptaDataModule());
+        modules.add(new Vps4SsoModule());
+        modules.add(new HazelcastCacheModule());
         modules.add(new Vps4ConsumerModule());
-        return Guice.createInjector(modules);
-    }
 
-    public Injector getInstance() {
-        return INJECTOR;
+        return Guice.createInjector(modules);
     }
 
 }

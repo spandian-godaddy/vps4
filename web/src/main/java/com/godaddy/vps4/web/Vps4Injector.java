@@ -23,7 +23,6 @@ import com.godaddy.vps4.cache.HazelcastCacheModule;
 import com.godaddy.vps4.cpanel.CpanelModule;
 import com.godaddy.vps4.credit.CreditModule;
 import com.godaddy.vps4.hfs.HfsClientModule;
-import com.godaddy.vps4.hfs.HfsMockModule;
 import com.godaddy.vps4.hfs.HfsVmTrackingRecordModule;
 import com.godaddy.vps4.ipblacklist.IpBlacklistModule;
 import com.godaddy.vps4.jdbc.DatabaseModule;
@@ -102,13 +101,7 @@ public class Vps4Injector {
         modules.add(new ZooKeeperModule());
         modules.add(new ZkServiceRegistrationModule());
 
-        if (System.getProperty("vps4.hfs.mock", "false").equals("true")) {
-            modules.add(new HfsMockModule());
-            logger.info("USING MOCK HFS");
-        } else {
-            modules.add(new HfsClientModule());
-        }
-
+        modules.add(new HfsClientModule());
         modules.add(new GDUserModule());
         modules.add(new DatabaseModule());
         modules.add(new WebModule());

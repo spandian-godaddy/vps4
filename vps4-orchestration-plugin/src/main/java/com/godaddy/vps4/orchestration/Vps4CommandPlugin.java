@@ -1,22 +1,18 @@
 package com.godaddy.vps4.orchestration;
 
-import com.godaddy.vps4.cpanel.CpanelModule;
-import com.godaddy.vps4.jsd.JsdModule;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import com.godaddy.hfs.config.Config;
 import com.godaddy.vps4.cache.HazelcastCacheModule;
 import com.godaddy.vps4.config.ConfigModule;
+import com.godaddy.vps4.cpanel.CpanelModule;
 import com.godaddy.vps4.credit.CreditModule;
 import com.godaddy.vps4.hfs.HfsVmTrackingRecordModule;
 import com.godaddy.vps4.ipblacklist.IpBlacklistModule;
 import com.godaddy.vps4.jdbc.DatabaseModule;
+import com.godaddy.vps4.jsd.JsdModule;
 import com.godaddy.vps4.messaging.MessagingModule;
 import com.godaddy.vps4.oh.OhModule;
 import com.godaddy.vps4.orchestration.account.AccountModule;
 import com.godaddy.vps4.orchestration.hfs.HfsCommandModule;
-import com.godaddy.vps4.orchestration.hfs.HfsMockModule;
 import com.godaddy.vps4.orchestration.hfs.HfsModule;
 import com.godaddy.vps4.orchestration.ohbackup.OhCommandModule;
 import com.godaddy.vps4.orchestration.scheduler.SchedulerModule;
@@ -30,7 +26,6 @@ import com.godaddy.vps4.sso.Vps4SsoModule;
 import com.godaddy.vps4.util.ObjectMapperModule;
 import com.godaddy.vps4.util.UtilsModule;
 import com.godaddy.vps4.vm.VmModule;
-import com.google.inject.AbstractModule;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
 
@@ -41,8 +36,6 @@ import gdg.hfs.orchestration.GuiceCommandProvider;
 import ch.qos.logback.classic.Level;
 
 public class Vps4CommandPlugin implements CommandPlugin {
-
-    private static final Logger logger = LoggerFactory.getLogger(Vps4CommandPlugin.class);
 
     @Override
     public String getName() {
@@ -62,21 +55,10 @@ public class Vps4CommandPlugin implements CommandPlugin {
     @Override
     public CommandProvider newCommandProvider() {
 
-        
-        AbstractModule hfsModule = null;
-        
-        if (System.getProperty("vps4.hfs.mock", "false").equals("true")) {
-            hfsModule = new HfsMockModule();
-            logger.info("USING MOCK HFS");
-        }
-        else{
-            hfsModule = new HfsModule();
-        }
-
         Injector injector = Guice.createInjector(
             new HazelcastCacheModule(),
             new ObjectMapperModule(),
-            hfsModule,
+            new HfsModule(),
             new HfsCommandModule(),
             new DatabaseModule(),
             new VmModule(),
