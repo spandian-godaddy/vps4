@@ -1,5 +1,7 @@
 package com.godaddy.vps4.web.vm;
 
+import static com.godaddy.vps4.web.util.RequestValidation.validateAndReturnEnumValue;
+
 import java.util.List;
 
 import javax.ws.rs.Consumes;
@@ -51,11 +53,14 @@ public class ImageResource {
         setting = ImageListFeatureSetting.class,
         disabled = false
     )
-    public List<Image> getImages(@QueryParam("os") OperatingSystem os,
-                                 @QueryParam("controlPanel") ControlPanel controlPanel,
-                                 @ApiParam(value = "HFS Image name") @QueryParam("imageName") String hfsImageName,
-                                 @QueryParam("platform") Platform platform) {
-        return imageService.getImages(os, controlPanel, hfsImageName, platform);
+    public List<Image> getImages(@QueryParam("os") String os,
+                                 @QueryParam("controlPanel") String controlPanel,
+                                 @ApiParam(value = "HFS image name") @QueryParam("imageName") String hfsImageName,
+                                 @QueryParam("platform") String platform) {
+        return imageService.getImages(validateAndReturnEnumValue(OperatingSystem.class, os.toUpperCase()),
+                                      validateAndReturnEnumValue(ControlPanel.class, controlPanel.toUpperCase()),
+                                      hfsImageName,
+                                      validateAndReturnEnumValue(Platform.class, platform.toUpperCase()));
     }
 
     @GET

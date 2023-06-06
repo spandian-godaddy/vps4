@@ -1,6 +1,14 @@
 import chalk from 'chalk';
 import { isIP } from 'net';
 
+/*
+    SELECT DISTINCT( vm.vm_id )
+    FROM   virtual_machine vm
+        JOIN panopta_server ps using(vm_id)
+        JOIN panopta_additional_fqdns paf using(server_id)
+    WHERE  vm.valid_until > Now_utc();
+ */
+
 const api = 'http://localhost:8089/api';
 const pckPrefix = 'gdtest_'
 const vmIds = [
@@ -56,6 +64,11 @@ async function printErr(res, message) {
             continue;
         }
         const vm = await res.json();
+
+        if (!vm.monitoringAgent) {
+            console.log(chalk.dim`-> Skipping VM ${vmId} since it does not have Panopta`);
+            continue;
+        }
 
         // Get VM's old HTTP port checks
         res = await fetch(`https://api2.panopta.com/v2/server/${vm.monitoringAgent.serverId}`

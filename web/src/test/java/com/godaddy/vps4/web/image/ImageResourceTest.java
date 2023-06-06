@@ -28,28 +28,26 @@ import com.google.inject.Guice;
 import com.google.inject.Injector;
 
 public class ImageResourceTest {
-    private ImageService imageService = mock(ImageService.class);
+    private final ImageService imageService = mock(ImageService.class);
     private ImageResource resource;
 
-    private Injector injector;
-    private OperatingSystem os = Image.OperatingSystem.LINUX;
-    private ControlPanel controlPanel = Image.ControlPanel.MYH;
-    private Platform platform = ServerType.Platform.OPENSTACK;
-    private List<Image> images;
+    private final OperatingSystem os = Image.OperatingSystem.LINUX;
+    private final ControlPanel controlPanel = Image.ControlPanel.MYH;
+    private final Platform platform = ServerType.Platform.OPENSTACK;
     private List<Image> verifyImages;
-    private Image image = mock(Image.class);
-    private String imageName = "foobar";
+    private final Image image = mock(Image.class);
+    private final String imageName = "foobar";
 
     @Before
     public void setupTest() {
-        injector = Guice.createInjector(new AbstractModule() {
+        Injector injector = Guice.createInjector(new AbstractModule() {
             @Override
             protected void configure() {
                 bind(ImageService.class).toInstance(imageService);
             }
         });
 
-        images = testImages("Ubuntu 16.04", "CentOS 7");
+        List<Image> images = testImages("Ubuntu 16.04", "CentOS 7");
         verifyImages = testImages("Ubuntu 16.04", "CentOS 7");
 
         when(imageService.getImages(any(), any(), anyString(), any())).thenReturn(images);
@@ -70,13 +68,13 @@ public class ImageResourceTest {
 
     @Test
     public void getImagesCallsImageServiceToGetListOfImages(){
-        resource.getImages(os, controlPanel, null, platform);
+        resource.getImages(os.name(), controlPanel.name(), null, platform.name());
         verify(imageService, times(1)).getImages(os, controlPanel, null, platform);
     }
 
     @Test
     public void getImagesReturnsListOfImagesFound(){
-        List<Image> retImages = resource.getImages(os, controlPanel, null, platform);
+        List<Image> retImages = resource.getImages(os.name(), controlPanel.name(), null, platform.name());
         for (int i = 0; i < retImages.size(); i++) {
             assertEquals(verifyImages.get(i).imageName, retImages.get(i).imageName);
         }
