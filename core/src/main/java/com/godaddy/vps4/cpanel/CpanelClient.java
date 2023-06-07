@@ -25,19 +25,19 @@ public class CpanelClient {
 
     private final String baseUrl;
 
-    private final String accessHash;
+    private final String apiToken;
 
     private final HttpClient httpClient;
 
     private int timeout;
 
-    public CpanelClient(String hostname, String accessHash) {
-        this(hostname, accessHash, DefaultHttpClient.get());
+    public CpanelClient(String hostname, String apiToken) {
+        this(hostname, apiToken, DefaultHttpClient.get());
     }
 
-    public CpanelClient(String hostname, String accessHash, HttpClient httpClient) {
+    public CpanelClient(String hostname, String apiToken, HttpClient httpClient) {
         baseUrl = "https://" + hostname + ":2087";
-        this.accessHash = accessHash;
+        this.apiToken = apiToken;
         this.httpClient = httpClient;
         this.timeout = DEFAULT_TIMEOUT;
     }
@@ -60,7 +60,7 @@ public class CpanelClient {
                         // wait 3 seconds for read/write operations
                         .setSocketTimeout(timeout)
                         .build())
-                .setHeader("Authorization", "WHM root:" + accessHash)
+                .setHeader("Authorization", "WHM root:" + apiToken)
                 ;
     }
 

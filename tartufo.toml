@@ -5,7 +5,6 @@ regex = true
 entropy = true
 exclude-path-patterns = [
     {path-pattern="web/src/main/resources/com/godaddy/swagger"},
-    {path-pattern="web/src/main/java/com/godaddy/vps4/web/cpanel/FakeCpanelModule.java", reason="This has a fake cpanel hash"},
     {path-pattern="web/src/test", reason="Multiple instances of high entropy test data"},
     {path-pattern="core/src/test", reason="Several instances of high entropy test data"},
     {path-pattern="vps4-phase3-tests", reason="Contains test data, fake JWT tokens"},
@@ -17,7 +16,6 @@ exclude-path-patterns = [
     {path-pattern="hfs-base/hfs-swagger/src/main/resources/com/godaddy/swagger/assets/swagger-ui.min.js", reason="javascript minimized file"},
     {path-pattern="hfs-base/src/main/resources/swagger/assets/swagger-ui.min.js", reason="javascript minimized file"},
     {path-pattern="core/src/main/java/com/godaddy/vps4/cpanel/DefaultVps4CpanelService.java"},
-    {path-pattern="core/src/main/java/com/godaddy/vps4/cpanel/FakeCpanelModule.java", reason="fake cpanel access hashes"},
     {path-pattern="/core/src/main/java/com/godaddy/vps4/oh/OhClientException.java", reason="link to a confluence doc"},
 ]
 exclude-signatures = [

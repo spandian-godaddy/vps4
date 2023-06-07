@@ -28,7 +28,7 @@ import static org.mockito.Mockito.when;
 public class CpanelClientTest {
     private HttpClient httpClient;
     CloseableHttpResponse response = mock(CloseableHttpResponse.class);
-    String accessHash;
+    String apiToken;
     CpanelClient cpanelClient;
     String hostname = "localhost";
 
@@ -37,7 +37,7 @@ public class CpanelClientTest {
 
     @Before
     public void setUp() {
-        accessHash = "FAKEACCESSHASH";
+        apiToken = "FAKEAPITOKEN";
         response = mock(CloseableHttpResponse.class);
         httpClient = mock(HttpClient.class);
         try {
@@ -50,7 +50,7 @@ public class CpanelClientTest {
             // the httpClient.execute call throws a checked exception IOException
         }
 
-        cpanelClient = new CpanelClient(hostname, accessHash, httpClient);
+        cpanelClient = new CpanelClient(hostname, apiToken, httpClient);
         MockitoAnnotations.initMocks(this);
     }
 
@@ -295,7 +295,6 @@ public class CpanelClientTest {
     public void testAccessDenied() throws Exception {
         when(response.getStatusLine())
                 .thenReturn(new BasicStatusLine(HttpVersion.HTTP_1_1, 403, ""));
-        new FakeCpanelModule().provideAccessHashService();
         cpanelClient.listSites();
     }
 

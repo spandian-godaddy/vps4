@@ -27,31 +27,26 @@ public class DefaultVps4CpanelService implements Vps4CpanelService {
 
     private static final Logger logger = LoggerFactory.getLogger(DefaultVps4CpanelService.class);
 
-    final CpanelAccessHashService accessHashService;
     final CpanelApiTokenService apiTokenService;
 
     final NetworkService networkService;
 
     final int timeoutVal;
-    final boolean useApiToken;
     private static final long SUCCESS = 1;
 
     @Inject
-    public DefaultVps4CpanelService(CpanelAccessHashService accessHashService, CpanelApiTokenService apiTokenService,
+    public DefaultVps4CpanelService(CpanelApiTokenService apiTokenService,
                                     NetworkService networkService, Config conf) {
-        this(accessHashService, apiTokenService,
-                networkService, Integer.parseInt(conf.get("vps4.callable.timeout", "10000")),
-                Boolean.parseBoolean(conf.get("cpanel.api.token.enabled", "true")));
+        this(apiTokenService,
+                networkService, Integer.parseInt(conf.get("vps4.callable.timeout", "10000")));
     }
 
-    public DefaultVps4CpanelService(CpanelAccessHashService accessHashService, CpanelApiTokenService apiTokenService,
+    public DefaultVps4CpanelService(CpanelApiTokenService apiTokenService,
                                     NetworkService networkService,
-                                    int timeoutVal, boolean useApiToken) {
-        this.accessHashService = accessHashService;
+                                    int timeoutVal) {
         this.networkService = networkService;
         this.apiTokenService = apiTokenService;
         this.timeoutVal = timeoutVal;
-        this.useApiToken = useApiToken;
     }
 
     private String getVmHostname(long hfsVmId) {
@@ -76,8 +71,8 @@ public class DefaultVps4CpanelService implements Vps4CpanelService {
         Void handle(String reason);
     }
 
-    protected CpanelClient getCpanelClient(String hostname, String accessHash) {
-        return new CpanelClient(hostname, accessHash);
+    protected CpanelClient getCpanelClient(String hostname, String apiToken) {
+        return new CpanelClient(hostname, apiToken);
     }
 
     <T> T withAccessToken(long hfsVmId, CpanelClientHandler<T> handler)
@@ -89,12 +84,9 @@ public class DefaultVps4CpanelService implements Vps4CpanelService {
 
         while (Instant.now().isBefore(timeoutAt)) {
             String hostname = getVmHostname(hfsVmId);
-            IpAddress ip = networkService.getVmPrimaryAddress(hfsVmId);
-            String accessToken = useApiToken ?
-                    apiTokenService.getApiToken(hfsVmId, timeoutAt) :
-                    accessHashService.getAccessHash(hfsVmId, ip.ipAddress, timeoutAt);
+            String accessToken = apiTokenService.getApiToken(hfsVmId, timeoutAt);
             if (accessToken == null) {
-                // we couldn't get the access hash, so no point in even
+                // we couldn't get the access token, so no point in even
                 // trying to contact the VM
 
                 // TODO throw this as CpanelAccessDeniedException?
@@ -110,17 +102,13 @@ public class DefaultVps4CpanelService implements Vps4CpanelService {
 
             } catch (CpanelAccessDeniedException e) {
 
-                logger.warn("Access denied for cPanel VM {}, invalidating access hash", hostname);
+                logger.warn("Access denied for cPanel VM {}, invalidating access token", hostname);
 
                 // we weren't able to access the target VM, which may be due to an
-                // access hash we thought was good, but has now been invalidated,
-                // so invalidate the access hash so a new one will be attempted
+                // access token we thought was good, but has now been invalidated,
+                // so invalidate the access token so a new one will be attempted
                 //cached.invalidate(fetchedAt);
-                if (useApiToken) {
-                    apiTokenService.invalidateApiToken(hfsVmId, accessToken);
-                } else {
-                    accessHashService.invalidAccessHash(hfsVmId, accessToken);
-                }
+                apiTokenService.invalidateApiToken(hfsVmId, accessToken);
                 lastThrown = e;
 
             } catch (IOException e) {

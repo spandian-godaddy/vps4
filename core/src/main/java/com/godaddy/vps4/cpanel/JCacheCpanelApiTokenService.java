@@ -43,7 +43,7 @@ public class JCacheCpanelApiTokenService implements CpanelApiTokenService {
 
     @Override
     public void invalidateApiToken(long vmId, String apiToken) {
-        // if the access hash no longer works, remove it from the cache
+        // if the api token no longer works, remove it from the cache
         logger.debug("invalidate api token for vm {}", vmId);
         cache.remove(vmId);
     }

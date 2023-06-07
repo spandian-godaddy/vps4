@@ -20,7 +20,7 @@ public class HfsCpanelApiTokenService implements CpanelApiTokenService {
     }
 
     @Override
-    public void invalidateApiToken(long vmId, String accessHash) {
+    public void invalidateApiToken(long vmId, String apiToken) {
         return;
     }
 

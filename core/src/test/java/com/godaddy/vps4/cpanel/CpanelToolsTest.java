@@ -4,7 +4,6 @@ import static org.junit.Assert.assertEquals;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -29,7 +28,6 @@ import com.godaddy.vps4.network.NetworkService;
 public class CpanelToolsTest {
 
     Vps4CpanelService service;
-    CpanelAccessHashService cpanelAccessHashService = mock(CpanelAccessHashService.class);
     CpanelApiTokenService cpanelApiTokenService = mock(CpanelApiTokenService.class);
     NetworkService networkService = mock(NetworkService.class);
     Config config = mock(Config.class);
@@ -47,16 +45,14 @@ public class CpanelToolsTest {
     long hfsVmId = 1234;
 
     public class TestDefaultVps4CpanelService extends DefaultVps4CpanelService {
-        public TestDefaultVps4CpanelService(CpanelAccessHashService accessHashService,
-                                            CpanelApiTokenService apiTokenService,
+        public TestDefaultVps4CpanelService(CpanelApiTokenService apiTokenService,
                                             NetworkService networkService,
-                                            int timeoutVal,
-                                            boolean useApiToken) {
-            super(accessHashService, apiTokenService, networkService, timeoutVal, useApiToken);
+                                            int timeoutVal) {
+            super(apiTokenService, networkService, timeoutVal);
         }
 
         @Override
-        protected CpanelClient getCpanelClient(String publicIp, String accessHash){
+        protected CpanelClient getCpanelClient(String publicIp, String apiToken){
             return cpClient;
         }
     }
@@ -68,27 +64,16 @@ public class CpanelToolsTest {
         UUID vmId = UUID.randomUUID();
         IpAddress ip = new IpAddress(1, 1, vmId, "123.0.0.1", IpAddressType.PRIMARY, null, null, null, 4);
         when(networkService.getVmPrimaryAddress(hfsVmId)).thenReturn(ip);
-        when(cpanelAccessHashService.getAccessHash(eq(hfsVmId), eq("123.0.0.1"), any())).thenReturn("randomaccesshash");
         when(cpanelApiTokenService.getApiToken(eq(hfsVmId), any())).thenReturn("randomapitoken");
 
-        service = new TestDefaultVps4CpanelService(cpanelAccessHashService, cpanelApiTokenService, networkService, 10, true);
+        service = new TestDefaultVps4CpanelService(cpanelApiTokenService, networkService, 10);
         MockitoAnnotations.initMocks(this);
     }
 
     @Test()
-    public void testCallsGetAccessHashServiceOnConfigFlagFalse() throws Exception{
-        service = new TestDefaultVps4CpanelService(cpanelAccessHashService, cpanelApiTokenService, networkService, 10, false);
+    public void testCallsGetApiTokenService() throws Exception{
         when(cpClient.createSession( "root", CpanelClient.CpanelServiceType.whostmgrd)).thenReturn(new CPanelSession());
         service.createSession(hfsVmId, "root", CpanelClient.CpanelServiceType.whostmgrd);
-        verify(cpanelAccessHashService, times(1)).getAccessHash(eq(hfsVmId), eq("123.0.0.1"), any());
-        verify(cpanelApiTokenService, never()).getApiToken(eq(hfsVmId), any());
-    }
-
-    @Test()
-    public void testCallsGetApiTokenServiceOnConfigFlagTrue() throws Exception{
-        when(cpClient.createSession( "root", CpanelClient.CpanelServiceType.whostmgrd)).thenReturn(new CPanelSession());
-        service.createSession(hfsVmId, "root", CpanelClient.CpanelServiceType.whostmgrd);
-        verify(cpanelAccessHashService, never()).getAccessHash(eq(hfsVmId), eq("123.0.0.1"), any());
         verify(cpanelApiTokenService, times(1)).getApiToken(eq(hfsVmId), any());
     }
 

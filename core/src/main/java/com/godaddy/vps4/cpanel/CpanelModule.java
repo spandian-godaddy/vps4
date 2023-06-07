@@ -19,21 +19,6 @@ public class CpanelModule extends AbstractModule {
             .to(DefaultVps4CpanelService.class)
             .in(Scopes.SINGLETON);
     }
-
-    @Provides
-    public CpanelAccessHashService provideAccessHashService(
-            CPanelService cpanelService,
-            CacheManager cacheManager) {
-
-        ExecutorService pool = Executors.newCachedThreadPool();
-
-        CpanelAccessHashService hfsAccessHash = new HfsCpanelAccessHashService(cpanelService);
-
-        CpanelAccessHashService jcacheAccessHash = new JCacheCpanelAccessHashService(hfsAccessHash, cacheManager);
-
-        return new CachedCpanelAccessHashService(pool, jcacheAccessHash);
-    }
-
     @Provides
     public CpanelApiTokenService provideApiTokenService(
             CPanelService cpanelService,
@@ -41,9 +26,9 @@ public class CpanelModule extends AbstractModule {
 
         ExecutorService pool = Executors.newCachedThreadPool();
 
-        HfsCpanelApiTokenService hfsAccessHash = new HfsCpanelApiTokenService(cpanelService);
+        CpanelApiTokenService hfsApiToken = new HfsCpanelApiTokenService(cpanelService);
 
-        JCacheCpanelApiTokenService jcacheApiTokenService = new JCacheCpanelApiTokenService(hfsAccessHash, cacheManager);
+        CpanelApiTokenService jcacheApiTokenService = new JCacheCpanelApiTokenService(hfsApiToken, cacheManager);
 
         return new CachedCpanelApiTokenService(pool, jcacheApiTokenService);
     }
