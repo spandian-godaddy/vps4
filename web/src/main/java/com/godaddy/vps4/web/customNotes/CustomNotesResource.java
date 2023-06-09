@@ -46,6 +46,12 @@ public class CustomNotesResource {
 
     @POST
     @Path("/{vmId}/customNote")
+    public CustomNote createCustomNoteLegacy(@PathParam("vmId") UUID vmId, CustomNoteRequest request) {
+        return this.createCustomNote(vmId, request);
+    }
+
+    @POST
+    @Path("/{vmId}/customNotes")
     public CustomNote createCustomNote(@PathParam("vmId") UUID vmId, CustomNoteRequest request) {
         if (customNotesService.getCustomNotes(vmId).size() >= CUSTOM_NOTES_LIMIT) {
             throw new Vps4Exception("CUSTOM_NOTES_LIMIT_REACHED", "Limit of 5 reached for custom notes on this VM.");
@@ -63,7 +69,7 @@ public class CustomNotesResource {
     }
 
     @DELETE
-    @Path("/{vmId}/customNote/{customNoteId}")
+    @Path("/{vmId}/customNotes/{customNoteId}")
     @RequiresRole(roles = {GDUser.Role.ADMIN, GDUser.Role.HS_LEAD})
     public void deleteCustomNote(@PathParam("vmId") UUID vmId, @PathParam("customNoteId") long customNoteId) {
         vmResource.getVm(vmId);
@@ -78,7 +84,7 @@ public class CustomNotesResource {
     }
 
     @GET
-    @Path("/{vmId}/customNote/{customNoteId}")
+    @Path("/{vmId}/customNotes/{customNoteId}")
     public CustomNote getCustomNote(@PathParam("vmId") UUID vmId, @PathParam("customNoteId") long customNoteId) {
         vmResource.getVm(vmId);
         return customNotesService.getCustomNote(vmId, customNoteId);
