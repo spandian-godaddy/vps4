@@ -79,7 +79,6 @@ public class HazelcastProvider implements Provider<HazelcastInstance> {
         // configure eviction policy per map
         for (String cacheName : new String[]{CacheName.API_JWT_TOKENS,
                                              CacheName.SERVER_USAGE,
-                                             CacheName.CPANEL_ACCESS_HASH,
                                              CacheName.CPANEL_API_TOKEN,
                                              CacheName.MAIL_RELAY_HISTORY,
                                              CacheName.PANOPTA_METRIC_GRAPH}) {
